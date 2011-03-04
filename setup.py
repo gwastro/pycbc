@@ -184,8 +184,7 @@ class pycbc_install_lib(install_lib.install_lib):
 # base source files that do not require special libraries
 pycbc_swig_sources = [ 'include/pycbc.i' ]
 pycbc_c_sources = [ 
-  'src/types.c',
-  'src/fft.c'
+  'src/types.c'
   ]
 
 # define the extension module
@@ -215,8 +214,6 @@ setup (name = 'pycbc',
     'sources' : pycbc_c_sources,
     'include_dirs' : ['include'],
     'macros' : [] }]],
-  headers = ['include/pycbc.h',
-    'include/types.h',
-    'include/fftplan.h' ],
+  headers = ['include/pycbc.h'],
   package_dir = {'' : 'include'},
   py_modules = ['pycbc'] )
