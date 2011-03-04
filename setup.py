@@ -137,7 +137,7 @@ class pycbc_build(build.build):
   def run(self):
     self.run_command('config')
     build.build.run(self)
-    
+
   sub_commands = [
     ('build_clib',    build.build.has_c_libraries),
     ('build_ext',     build.build.has_ext_modules),
@@ -147,7 +147,6 @@ class pycbc_build(build.build):
 
 class pycbc_build_clib(build_clib.build_clib):
   def run(self):
-     
     # if we are using mac os x, remove any existing static libraries
     # so that otool does not complain
     if sys.platform[:6] == "darwin":
@@ -181,7 +180,6 @@ class pycbc_install_lib(install_lib.install_lib):
         file_util.copy_file(src_file, dest_file)
         if sys.platform[:6] == "darwin":
           spawn.spawn(['ranlib'] + [dest_file])
-
 
 # base source files that do not require special libraries
 pycbc_swig_sources = [ 'include/pycbc.i' ]
