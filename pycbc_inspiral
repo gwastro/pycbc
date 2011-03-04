@@ -1,0 +1,95 @@
+#!/usr/bin/python
+#
+# pycbc should follow <http://www.python.org/dev/peps/pep-0008/>
+#
+# vim: tabstop=4:softtabstop=4:shiftwidth=4:expandtab
+
+import pycbc
+
+#
+# create classes needed by filtering engine
+#
+
+class TaylorF2Template(pycbc.TaylorF2Template, pycbc.TaylorF2TemplateGPU):
+    def __init__(self):
+        pycbc.TaylorF2Template.__init__(self)
+        pycbc.TaylorF2TemplateGPU.__init__(self)
+
+
+class TemplateBank(pycbc.TemplateBank, pycbc.TemplateBankGPU, TaylorF2Template):
+    def __init__(self):
+        pycbc.TemplateBank.__init__(self)
+        pycbc.TemplateBankGPU.__init__(self)
+        TaylorF2Template.__init__(self)
+
+
+class MatchedFilter(pycbc.MatchedFilter, pycbc.MatchedFilterGPU):
+    def __init__(self):
+
+
+class ChisqVeto(pycbc.ChisqVeto, pycbc.ChisqVetoGPU):
+    def __init__(self):
+
+
+class SingleDetectorEvent(pycbc.SingleDetectorEvent, pycbc.SingleDetectorEventGPU):
+    def __init__(self):
+
+
+#
+# main program for the filtering
+#
+
+# read the input h(t) from a single detector
+data = pycbc.StrainData()
+data.read_frames("H1:LSC-STRAIN", t_start, t_end, "/path/to/cache.txt")
+
+# perform software injections
+injections = pycbc.Injector("/path/to/injections.xml")
+injections.inject(data)
+
+# reseample the data to the desired rate
+resample_filter = pycbc.Resampler(delta_t)
+resample_filter.resample(data)
+
+# high pass the strain data to avoid dynamic range problems
+high_pass_filter = pycbc.BandPassFilter()
+high_pass_filter.high_pass(data, 35.0, "butterworth", 8)
+
+# convert the data to a four-byte floating point number
+data.to_float()
+
+# create the overwhitening filter
+psd = pycbc.Spectrum(delta_t, N)
+psd.power_spectrum(data, "hann", "medianmean", 256, 128)
+psd.inverse()
+psd.truncate(16)
+
+# create the overwhitened data segments in the frequency domain
+data.fft_segments(256, 128)
+data *= psd
+
+# create a template bank to filter against
+bank = TemplateBank()
+bank.read_templates( "/path/to/templates.xml" )
+
+# apply any template-specific data preconditioning
+data *= bank.condition_data()
+
+# create the objects needed to perform the filtering
+matched_filter = MatchedFilter( data )
+chisq_veto = ChisqVeto( 15, psd )
+events = SingleDetectorEvent()
+
+# filter the data against the template bank
+for h in bank:
+    h.generate_waveform()
+    chisq.compute_bins()
+    for s in data:
+        matched_filter.generate_snr( s, h )
+        if matched_filter.above( 5.5 ):
+            chisq_veto.generate_chisq( matched_filter )
+            events.find_events( h, matched_filter, chisq_veto )
+
+# cluster the events across the template bank
+events.cluster_events( 0.1 )
+events.write( "/path/to/output.xml" )
