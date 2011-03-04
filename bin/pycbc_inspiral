@@ -16,7 +16,8 @@ class TaylorF2Template(pycbc.TaylorF2Template, pycbc.TaylorF2TemplateGPU):
         pycbc.TaylorF2TemplateGPU.__init__(self)
 
 
-class TemplateBank(pycbc.TemplateBank, pycbc.TemplateBankGPU, TaylorF2Template):
+class TemplateBank(pycbc.TemplateBank, pycbc.TemplateBankGPU,
+                   TaylorF2Template):
     def __init__(self):
         pycbc.TemplateBank.__init__(self)
         pycbc.TemplateBankGPU.__init__(self)
@@ -31,7 +32,8 @@ class ChisqVeto(pycbc.ChisqVeto, pycbc.ChisqVetoGPU):
     def __init__(self):
 
 
-class SingleDetectorEvent(pycbc.SingleDetectorEvent, pycbc.SingleDetectorEventGPU):
+class SingleDetectorEvent(pycbc.SingleDetectorEvent, 
+                          pycbc.SingleDetectorEventGPU):
     def __init__(self):
 
 
@@ -70,7 +72,7 @@ data *= psd
 
 # create a template bank to filter against
 bank = TemplateBank()
-bank.read_templates( "/path/to/templates.xml" )
+bank.read( "/path/to/templates.xml" )
 
 # apply any template-specific data preconditioning
 data *= bank.condition_data()
@@ -81,14 +83,14 @@ chisq_veto = ChisqVeto( 15, psd )
 events = SingleDetectorEvent()
 
 # filter the data against the template bank
-for h in bank:
-    h.generate_waveform()
-    chisq.compute_bins()
-    for s in data:
-        matched_filter.generate_snr( s, h )
-        if matched_filter.above( 5.5 ):
+for htilde in bank:
+    htilde.generate_filter_waveform()
+    chisq.compute_frequency_bins(htilde)
+    for stilde in data:
+        matched_filter.generate_snr( stilde, htilde )
+        if matched_filter.max() > 5.5:
             chisq_veto.generate_chisq( matched_filter )
-            events.find_events( h, matched_filter, chisq_veto )
+            events.find_events( htilde, matched_filter, chisq_veto )
 
 # cluster the events across the template bank
 events.cluster_events( 0.1 )
