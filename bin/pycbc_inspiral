@@ -52,8 +52,8 @@ resample_filter = pycbc.Resampler(delta_t)
 resample_filter.resample(data)
 
 # high pass the strain data to avoid dynamic range problems
-high_pass_filter = pycbc.BandPassFilter()
-high_pass_filter.high_pass(data, 35.0, "butterworth", 8)
+high_pass_filter = pycbc.ForwardsBackwardsButterworthFilter()
+high_pass_filter.high_pass(data, 35.0, 8)
 
 # convert the data to a four-byte floating point number
 data.to_float()
