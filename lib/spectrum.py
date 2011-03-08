@@ -20,14 +20,17 @@ class Spectrum():
     then this function will interpolate the computed psd to the desired
     resolution.
     """
+       pass
 
     def inverse(self):
     """
     Compute the inverse of the data in self.__spectrum
     """
+        pass
 
     def truncate(self, length_in_seconds):
     """
     Truncate the PSD to a specified length by converting to the time domain
     and then back to the frequency domain
     """
+        pass

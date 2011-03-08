@@ -1,4 +1,4 @@
-class SingleDetectorEvent():
+class SingleDetectorEvent:
     def __init__(self):
         self.__event_array = []
 
@@ -6,20 +6,25 @@ class SingleDetectorEvent():
     """
     Perform some clustering on the events
     """
+        pass
 
     def write(self, path):
     """
     Write the event array to disk as ligolw_xml
     """
+        pass
 
 
-class SingleDetectorEventCPU():
+class SingleDetectorEventCPU:
     def __init__(self):
+        pass
 
     def find_events(self, htilde, matched_filter, chisq_veto):
+        pass
 
-
-class SingleDetectorEventGPU():
+class SingleDetectorEventGPU:
     def __init__(self):
+        pass
 
     def find_events(self, htilde, matched_filter, chisq_veto):
+        pass

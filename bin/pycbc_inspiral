@@ -50,8 +50,8 @@ injections = pycbc.Injector("/path/to/injections.xml")
 injections.inject(data)
 
 # reseample the data to the desired rate
-resample_filter = pycbc.Resampler(delta_t)
-resample_filter.resample(data)
+resample_filter = pycbc.Resampler(data.dt)
+resample_filter.resample(data, output_dt)
 
 # high pass the strain data to avoid dynamic range problems
 high_pass_filter = pycbc.ForwardsBackwardsButterworthFilter()
@@ -62,7 +62,7 @@ data.to_float()
 
 # create the overwhitening filter
 psd = pycbc.Spectrum(delta_t, N)
-psd.power_spectrum(data, "hann", "medianmean", 256, 128)
+psd.power_spectrum(data, "medianmean", "hanning", 256, 128)
 psd.inverse()
 psd.truncate(16)
 

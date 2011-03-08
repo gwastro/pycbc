@@ -1,12 +1,15 @@
 class TemplateBank():
-    def __init__(self, dt, n)
+    def __init__(self, dt, n):
+        pass
 
     def __iter__(self):
+        pass
 
     def read(self, url):
     """
     Read templates from a ligolw xml file
     """
+        pass
 
 
 class TemplateBankCPU():
@@ -17,6 +20,7 @@ class TemplateBankCPU():
     """
     use malloc()
     """
+        pass
 
 
 class TemplateBankGPU():
@@ -27,3 +31,4 @@ class TemplateBankGPU():
     """
     use cudaMalloc()
     """
+        pass
