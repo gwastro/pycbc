@@ -4,38 +4,60 @@
 #
 # vim: tabstop=4:softtabstop=4:shiftwidth=4:expandtab
 
-import pycbc
+import sys
+# preliminary hard coded path to packages 
+sys.path.append('/Users/kawies/dev/src/pycbc')
+
+#import pycbc
+#
+#    pycbc.data_vec         module defining data
+from pycbc.datavector.datavector_opencl import DataVectorOpenCl as DataVector 
+from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
+#    pycbc.template_bank    module defining the template banks
+#    pycbc.chisq_veto       module defining the chisq vetos
+#    pycbc.events           module defining handling of events
+#
+#
+# 
+
+#Leo: Recurse over generators, keyword arguments
+#
+#  for buffer in inject(read_frames(cache), injections)
+#  or 
+#  for trigger in xcorr (inject(read_frames(cache), injections), bank)
+
+htilde = DataVector(2, 3, 4000)
+print htilde
+
+matched_filter = MatchedFilter(htilde)
+print matched_filter
+
+exit()
 
 #
 # create classes needed by filtering engine
 #
 
-class TaylorF2Template(pycbc.TaylorF2Template, pycbc.TaylorF2TemplateGPU):
-    def __init__(self):
-        pycbc.TaylorF2Template.__init__(self)
-        pycbc.TaylorF2TemplateGPU.__init__(self)
+#class TaylorF2Template(pycbc.TaylorF2Template, pycbc.TaylorF2TemplateGPU):
+#    def __init__(self):
+#        pycbc.TaylorF2Template.__init__(self)
+#        pycbc.TaylorF2TemplateGPU.__init__(self)
 
+#class TemplateBank(pycbc.TemplateBank, pycbc.TemplateBankGPU,
+#                   TaylorF2Template):
+#    def __init__(self):
+#        pycbc.TemplateBank.__init__(self)
+#        pycbc.TemplateBankGPU.__init__(self)
+#        TaylorF2Template.__init__(self)
 
-class TemplateBank(pycbc.TemplateBank, pycbc.TemplateBankGPU,
-                   TaylorF2Template):
-    def __init__(self):
-        pycbc.TemplateBank.__init__(self)
-        pycbc.TemplateBankGPU.__init__(self)
-        TaylorF2Template.__init__(self)
+#class ChisqVeto(pycbc.ChisqVeto, pycbc.ChisqVetoGPU):
+#    def __init__(self):
+#        pass
 
-
-class MatchedFilter(pycbc.MatchedFilter, pycbc.MatchedFilterGPU):
-    def __init__(self):
-
-
-class ChisqVeto(pycbc.ChisqVeto, pycbc.ChisqVetoGPU):
-    def __init__(self):
-
-
-class SingleDetectorEvent(pycbc.SingleDetectorEvent, 
-                          pycbc.SingleDetectorEventGPU):
-    def __init__(self):
-
+#class SingleDetectorEvent(pycbc.SingleDetectorEvent, 
+#                          pycbc.SingleDetectorEventGPU):
+#    def __init__(self):
+#        pass
 
 #
 # main program for the filtering

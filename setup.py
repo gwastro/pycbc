@@ -182,10 +182,8 @@ class pycbc_install_lib(install_lib.install_lib):
           spawn.spawn(['ranlib'] + [dest_file])
 
 # base source files that do not require special libraries
-pycbc_swig_sources = [ 'include/pycbc.i' ]
-pycbc_c_sources = [ 
-  'src/types.c'
-  ]
+pycbc_swig_sources = ['include/pycbc.i']
+pycbc_c_sources = ['src/types.c']
 
 # define the extension module
 pycbc_ext = Extension( '_pycbc', 
@@ -215,5 +213,5 @@ setup (name = 'pycbc',
     'include_dirs' : ['include'],
     'macros' : [] }]],
   headers = ['include/pycbc.h'],
-  package_dir = {'' : 'include'},
-  py_modules = ['pycbc'] )
+  package_dir = {'pycbc' : 'lib'},
+  packages = ['pycbc'] )
