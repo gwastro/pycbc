@@ -5,6 +5,7 @@
 # vim: tabstop=4:softtabstop=4:shiftwidth=4:expandtab
 
 import sys
+
 # preliminary hard coded path to packages 
 sys.path.append('/Users/kawies/dev/src/pycbc')
 
@@ -20,8 +21,8 @@ from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as Matc
 #
 # 
 
-#Leo: Recurse over generators, keyword arguments
-#
+# Leo: Recurse over generators, keyword arguments
+# 
 #  for buffer in inject(read_frames(cache), injections)
 #  or 
 #  for trigger in xcorr (inject(read_frames(cache), injections), bank)
@@ -29,8 +30,15 @@ from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as Matc
 htilde = DataVector(2, 3, 4000)
 print htilde
 
-matched_filter = MatchedFilter(htilde)
+stilde = DataVector(2, 3, 4000)
+print stilde
+
+matched_filter = MatchedFilter(2048)
 print matched_filter
+
+matched_filter.perform_generate_snr(stilde, htilde)
+
+
 
 exit()
 
