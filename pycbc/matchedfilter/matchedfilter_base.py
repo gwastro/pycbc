@@ -38,7 +38,10 @@ class MatchedFilterBase:
         print "MatchedFilterBase.__init__ called" 
         self.length = length
         self.gen_snr_impl = gen_snr_impl()
-
+        if not isinstance(self.gen_snr_impl, GenSnrImplementationBase):
+            print "MatchedFilterBase.__init__: gen_snr_impl is not a derivate of GenSnrImplementationBase "
+            exit(0)
+        
     def perform_generate_snr(self, stilde, htilde):
         """
         Fill this objects internal memory with \rho(t)
@@ -52,6 +55,8 @@ class GenSnrImplementationBase:
     
     def __init__(self):
         print "GenSnrImplementationBase.__init__ called" 
+        
+        #typechecking here
 
     @abstractmethod
     def generate_snr(self, stilde, htilde):

@@ -30,13 +30,14 @@ MatchedFilter OpenCl implementation class for the pycbc package
 from pycbc.datavector.datavector_base import DataVectorBase
 from matchedfilter_base import *
 
+
 class MatchedFilterOpenCl(MatchedFilterBase):
 
     def __init__(self, length=0):
         print "MatchedFilterOpenCl.__init__ called" 
-        self.gen_snr_impl_open_cl = GenSnrImplementationOpenCl()
-        super(MatchedFilterOpenCl, self).__init__(length, GenSnrImplementationOpenCl )
-        #super(MatchedFilterOpenCl, self).__init__(length, self.gen_snr_impl_open_cl )
+        # Instanciate generate-snr-implementation in base class  
+        super(MatchedFilterOpenCl, self).__init__(length, 
+              GenSnrImplementationOpenCl)
         
 
 class  GenSnrImplementationOpenCl(GenSnrImplementationBase):

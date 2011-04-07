@@ -12,7 +12,7 @@ sys.path.append('/Users/kawies/dev/src/pycbc')
 #import pycbc
 #
 #    pycbc.data_vec         module defining data
-from pycbc.datavector.datavector_opencl import DataVectorOpenCl as DataVector 
+from pycbc.datavector.datavector_opencl import DataVectorOpenClGlobal as DataVectorGlobal 
 from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
 #    pycbc.template_bank    module defining the template banks
 #    pycbc.chisq_veto       module defining the chisq vetos
@@ -27,10 +27,10 @@ from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as Matc
 #  or 
 #  for trigger in xcorr (inject(read_frames(cache), injections), bank)
 
-htilde = DataVector(2, 3, 4000)
+htilde = DataVectorGlobal("float", 2048)
 print htilde
 
-stilde = DataVector(2, 3, 4000)
+stilde = DataVectorGlobal("float", 2048)
 print stilde
 
 matched_filter = MatchedFilter(2048)
