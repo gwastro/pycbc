@@ -30,28 +30,50 @@ MatchedFilter OpenCl implementation class for the pycbc package
 from pycbc.datavector.datavector_base import DataVectorBase
 from matchedfilter_base import *
 
-
 class MatchedFilterOpenCl(MatchedFilterBase):
 
     def __init__(self, length=0):
-        print "MatchedFilterOpenCl.__init__ called" 
+        print "instanciated MatchedFilterOpenCl" 
+        
         # Instanciate generate-snr-implementation in base class  
         super(MatchedFilterOpenCl, self).__init__(length, 
-              GenSnrImplementationOpenCl)
-        
+              GenSnrImplementationOpenCl, MaxImplementationOpenCl)
 
 class  GenSnrImplementationOpenCl(GenSnrImplementationBase):
 
     def __init__(self):
-        print "GenSnrImplementationOpenCl.__init__ called" 
+        print "instanciated GenSnrImplementationOpenCl" 
         super(GenSnrImplementationOpenCl, self).__init__()
     
     def generate_snr(self, stilde, htilde):
         """
         Process matched filtering by generating snr timeseries \rho(t)
         """
-        isinstance(stilde, DataVectorBase)
-        isinstance(htilde, DataVectorBase)
-        print " Generate Snr OpenCl Implementation"
+        # we don't know with which derived data vector this method was called
+        # but we can check against the base data vector type
+        assert isinstance(stilde, DataVectorBase), "wrong input data base type"
+        assert isinstance(htilde, DataVectorBase), "wrong input data base type"
+        
+        print "generate snr openCl implementation"
+        snr = stilde  # just simulate to return the right datatype
+        
+        return snr
+
+class  MaxImplementationOpenCl(MaxImplementationBase):
+
+    def __init__(self):
+        print "instanciated MaxImplementationOpenCl" 
+        super(MaxImplementationOpenCl, self).__init__()
+    
+    def max(self, snr):
+        """
+        Find the maximum in the generated snr timeseries \rho(t)
+        """
+        # we don't know with which derived data vector this method was called
+        # but we can check against the base data vector type
+        assert isinstance(snr, DataVectorBase), "wrong input data base type"
+                    
+        print "finding maximum of snr series"             
+        return 5.5 # just simulate to return the right datatype
 
 

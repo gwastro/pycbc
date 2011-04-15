@@ -1,104 +1,139 @@
 #!/usr/bin/python
 #
+# Copyright (C) 2011 Karsten Wiesner
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
 # pycbc should follow <http://www.python.org/dev/peps/pep-0008/>
 #
 # vim: tabstop=4:softtabstop=4:shiftwidth=4:expandtab
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+"""
+Application of gravitational wave search for inspiral mergers based on the 
+pycbc (py-thon c-ompact b-inary c-oalecence) package 
+
+
+Current Status: "Application Prototype" (not yet swig wrapping anything to lower 
+                layers but prototyping look and feel of the pycbc package
+                from the viewpoint of an application programmer) 
+
+"""
 
 import sys
 
 # preliminary hard coded path to packages 
 sys.path.append('/Users/kawies/dev/src/pycbc')
 
-#import pycbc
-#
-#    pycbc.data_vec         module defining data
-from pycbc.datavector.datavector_opencl import DataVectorOpenClGlobal as DataVectorGlobal 
+# @todo lalsuite like commandline parsing
+# commandline arguments can (but doesn't have to) be used to 
+# set up the following mapping of different memorytypes 
+# and implementations
+
+from pycbc.straindata import StrainDataGeneric as StrainData 
+from pycbc.injector import Injector as Injector
+from pycbc.resampler import  Resampler as Resampler
+from pycbc.bandpassfilter import  ForwardsBackwardsButterworthFilter as BandpassFilter
+
+
+from pycbc.datavector.datavector_opencl import DataVectorOpenClGlobal as PreprocessedStrainData
+from pycbc.datavector.datavector_opencl import DataVectorOpenClPrivate as TemplateWaveform
+from pycbc.datavector.datavector_opencl import DataVectorOpenClGlobal as SnrData
+
 from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
+
+# @todo imports:
+#
 #    pycbc.template_bank    module defining the template banks
 #    pycbc.chisq_veto       module defining the chisq vetos
 #    pycbc.events           module defining handling of events
-#
-#
-# 
 
-# Leo: Recurse over generators, keyword arguments
-# 
-#  for buffer in inject(read_frames(cache), injections)
-#  or 
-#  for trigger in xcorr (inject(read_frames(cache), injections), bank)
 
-htilde = DataVectorGlobal("float", 2048)
+# Provisionally displaced the test of the matched filter API to here ###########
+
+htilde = TemplateWaveform(2048)
 print htilde
 
-stilde = DataVectorGlobal("float", 2048)
+stilde = PreprocessedStrainData(2048)
 print stilde
+
+snr = SnrData(2048)
+print snr
 
 matched_filter = MatchedFilter(2048)
 print matched_filter
 
-matched_filter.perform_generate_snr(stilde, htilde)
+snr = matched_filter.perform_generate_snr(stilde, htilde)
+print snr
+
+max = matched_filter.perform_max(snr)
+print max
 
 
-
-exit()
-
-#
-# create classes needed by filtering engine
-#
-
-#class TaylorF2Template(pycbc.TaylorF2Template, pycbc.TaylorF2TemplateGPU):
-#    def __init__(self):
-#        pycbc.TaylorF2Template.__init__(self)
-#        pycbc.TaylorF2TemplateGPU.__init__(self)
-
-#class TemplateBank(pycbc.TemplateBank, pycbc.TemplateBankGPU,
-#                   TaylorF2Template):
-#    def __init__(self):
-#        pycbc.TemplateBank.__init__(self)
-#        pycbc.TemplateBankGPU.__init__(self)
-#        TaylorF2Template.__init__(self)
-
-#class ChisqVeto(pycbc.ChisqVeto, pycbc.ChisqVetoGPU):
-#    def __init__(self):
-#        pass
-
-#class SingleDetectorEvent(pycbc.SingleDetectorEvent, 
-#                          pycbc.SingleDetectorEventGPU):
-#    def __init__(self):
-#        pass
-
-#
-# main program for the filtering
+################################################################################
+# main cbc search context
 #
 
 # read the input h(t) from a single detector
-data = pycbc.StrainData()
-data.read_frames("H1:LSC-STRAIN", t_start, t_end, "/path/to/cache.txt")
+data = StrainData()
+data.read_frames("H1:LSC-STRAIN", 871147532, 871149580, "/path/to/cache.txt")
+data.time_series.display()
 
 # perform software injections
-injections = pycbc.Injector("/path/to/injections.xml")
-injections.inject(data)
+injector = Injector(data.time_series.length)
+injector.read_injections("/path/to/injections.xml")
+data = injector.inject_to_time_series(data)
+data.time_series.display()
 
-# reseample the data to the desired rate
-resample_filter = pycbc.Resampler(data.dt)
-resample_filter.resample(data, output_dt)
+# resample the data to the desired sampling frequency
+resample_filter = Resampler(4096)
+data = resample_filter.resample_time_series(data)
+data.time_series.display()
+
+
 
 # high pass the strain data to avoid dynamic range problems
-high_pass_filter = pycbc.ForwardsBackwardsButterworthFilter()
-high_pass_filter.high_pass(data, 35.0, 8)
+high_pass_filter = BandpassFilter(0.1, 0.2, 0.3)
+data = high_pass_filter.high_pass(data, 35.0, 24)
 
 # convert the data to a four-byte floating point number
-data.to_float()
+data.time_series.to_float()
+data.time_series.display()
+
+
+
+exit()  # implemented prototype until here #####################################
+
+
 
 # create the overwhitening filter
-psd = pycbc.Spectrum(delta_t, N)
-psd.power_spectrum(data, "medianmean", "hanning", 256, 128)
-psd.inverse()
-psd.truncate(16)
+overwhitening_spectrum = pycbc.Spectrum(delta_t, N)
+overwhitening_spectrum.power_spectrum(data, "medianmean", "hanning", 256, 128)
+overwhitening_spectrum.inverse()
+overwhitening_spectrum.truncate(16)
 
 # create the overwhitened data segments in the frequency domain
 data.fft_segments(256, 128)
-data *= psd
+data *= overwhitening_spectrum     # overwhitening_spectrum
 
 # create a template bank to filter against
 bank = TemplateBank()
@@ -106,6 +141,13 @@ bank.read( "/path/to/templates.xml" )
 
 # apply any template-specific data preconditioning
 data *= bank.condition_data()
+
+# Point of data transfer between the different memories (Python, CPU, Cuda ...)
+# could be specified here by calling
+# a data transfer object (it knows how to transfer data by the datatypes 
+# it is called with:
+
+# data_transfer(data, stilde)  
 
 # create the objects needed to perform the filtering
 matched_filter = MatchedFilter( data )
@@ -117,10 +159,10 @@ for htilde in bank:
     htilde.generate_filter_waveform()
     chisq.compute_frequency_bins(htilde)
     for stilde in data:
-        matched_filter.generate_snr( stilde, htilde )
+        snr = matched_filter.generate_snr( stilde, htilde )
         if matched_filter.max() > 5.5:
-            chisq_veto.generate_chisq( matched_filter )
-            events.find_events( htilde, matched_filter, chisq_veto )
+            chisq_veto.generate_chisq( snr )
+            events.find_events( htilde, snr, chisq_veto )
 
 # cluster the events across the template bank
 events.cluster_events( 0.1 )

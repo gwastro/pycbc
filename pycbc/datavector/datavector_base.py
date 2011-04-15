@@ -33,23 +33,25 @@ class DataVectorBase:
     
     __metaclass__ = ABCMeta
     
-    __slots__ = ("data_vector", "element_size", "element_type", 
-                 "meta_type", "length" )
+    __slots__ = ("data_vector", "element_size", "element_datatype", 
+                 "element_numbertype", "meta_type", "length" )
     
-    def __init__(self, element_type=0, length=0, element_size=0,
-                 meta_type='non_specified_memory', data_vector=0):
+    def __init__(self, element_datatype='float', element_numbertype='real', 
+                 length=0, element_size=0, meta_type='non_specified_memory', 
+                 data_vector=0):
         """
         Initialize the DataVectorBase type
         """
-        print "DataVectorBase.__init__ called"
+        print "instanciated DataVectorBase"
         
-        self.element_size = element_size     #: element size in bytes
-        self.element_type = element_type     #: element type (float, double, int)
+        self.element_size = element_size       #: element size in bytes
+        self.element_type = element_datatype   #: element data type (float, double, int)
+        self.element_type = element_numbertype #: element number (real, complex)
         self.meta_type = meta_type                    
         """specifies origin and meta type of the memory used: 
         cbc_memory_meta_type, 
         gpu_cuda_global_memory,
-        gpu_cuda_global_memory,
+        gpu_cuda_shared_memory,
         gpu_cuda_constant_memory,
         gpu_cuda_texture_memory,
         gpu_opencl_global_memory,

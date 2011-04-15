@@ -1,3 +1,11 @@
+
+
+#class SingleDetectorEvent(pycbc.SingleDetectorEvent, 
+#                          pycbc.SingleDetectorEventGPU):
+#    def __init__(self):
+#        pass
+
+
 class SingleDetectorEvent:
     def __init__(self):
         self.__event_array = []

@@ -34,19 +34,40 @@ class MatchedFilterBase:
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, length, gen_snr_impl):
-        print "MatchedFilterBase.__init__ called" 
+    def __init__(self, length, gen_snr_impl, max_impl):
+        print "instanciated MatchedFilterBase" 
         self.length = length
         self.gen_snr_impl = gen_snr_impl()
         if not isinstance(self.gen_snr_impl, GenSnrImplementationBase):
             print "MatchedFilterBase.__init__: gen_snr_impl is not a derivate of GenSnrImplementationBase "
             exit(0)
+        self.max_impl = max_impl()
+        if not isinstance(self.max_impl, MaxImplementationBase):
+            print "MatchedFilterBase.__init__: max_impl is not a derivate of MaxImplementationBase "
+            exit(0)
+            
         
     def perform_generate_snr(self, stilde, htilde):
         """
-        Fill this objects internal memory with \rho(t)
+        calls the generate_snr methode of the derived implementation object
+        @type  stilde: DataVectorBase
+        @param stilde: Straindata frequency domain
+        @type  htilde: DataVectorBase
+        @param htilde: Template waveform frequency domain
+        @rtype:  snr:  DataVectorBase
+        @return: snr:  Signal to noise ratio series
         """
-        self.gen_snr_impl.generate_snr(stilde, htilde)
+        return self.gen_snr_impl.generate_snr(stilde, htilde)
+
+    def perform_max(self, snr):
+        """
+        calls the max methode of the derived implementation object
+        @rtype:  snr:  DataVectorBase
+        @return: snr:  Signal to noise ratio series
+        @rtype:  float
+        @return: Maximum of snr series
+        """
+        return self.max_impl.max(snr)
         
 
 class GenSnrImplementationBase:
@@ -54,13 +75,21 @@ class GenSnrImplementationBase:
     __metaclass__ = ABCMeta
     
     def __init__(self):
-        print "GenSnrImplementationBase.__init__ called" 
+        print "instanciated GenSnrImplementationBase" 
         
-        #typechecking here
-
     @abstractmethod
     def generate_snr(self, stilde, htilde):
         pass
         
+class MaxImplementationBase:
+    
+    __metaclass__ = ABCMeta
+    
+    def __init__(self):
+        print "instanciated MaxImplementationBase" 
+        
+    @abstractmethod
+    def max(self, snr):
+        pass
         
         

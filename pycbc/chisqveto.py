@@ -1,3 +1,9 @@
+
+#class ChisqVeto(pycbc.ChisqVeto, pycbc.ChisqVetoGPU):
+#    def __init__(self):
+#        pass
+
+
 class ChisqVeto:
     def __init__(self, number_of_bins, inverse_power_spectrum):
         pass

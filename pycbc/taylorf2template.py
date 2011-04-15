@@ -1,3 +1,10 @@
+
+#class TaylorF2Template(pycbc.TaylorF2Template, pycbc.TaylorF2TemplateGPU):
+#    def __init__(self):
+#        pycbc.TaylorF2Template.__init__(self)
+#        pycbc.TaylorF2TemplateGPU.__init__(self)
+
+
 class TaylorF2Template():
     def __init__(self):
         pass

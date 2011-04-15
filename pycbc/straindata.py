@@ -1,7 +1,52 @@
-class StrainData:
+# Copyright (C) 2011 Karsten Wiesner
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+"""
+Base class of strain data
+"""
+
+import numpy as np
+
+class TimeSeriesGeneric(object):
+    def __init__(self, data, length, fs):
+        self.data = None
+        self.length = None
+        self.fs = None
+        
+    def display(self):
+        print self.data, self.data.dtype, self.length
+    
+    def to_float(self):
+        self.data = self.data.astype(np.float32)
+
+class StrainDataGeneric(object):
     def __init__(self):
-        self.__time_series_data = None
-        self.__frequency_series_array = []
+        print 'instanciated StrainData'
+        self.time_series = TimeSeriesGeneric(None, 1, 1)
+        self.__frequency_series = None
+        self.__global_time_intervall = None
 
     def __iter__(self):
         """
@@ -15,23 +60,41 @@ class StrainData:
         """
         pass
 
-    def read_frames(self, channel_name, interval, cache_url):
-        """
-        channel_name: input gravitational wave strain channel name (e.g.  H1-LSC_STRAIN)
-        interval: glue segment containing [start_time, end_time) of data to be read in
-        cache_url: URL of a lal frame cache file
+    @property
+    def time_series(self):
+        return self.__time_series
         
-        This method fils self.__time_series_data with the data read in from the
-        frame. It is responsible for allocating memory for the input data in a
-        real_vector_t.
+    @time_series.setter
+    def time_series(self, value):
+        self.__time_series = value
+    
+    def read_frames(self, channel_name, gps_start_time, gps_end_time, cache_url):
         """
-        pass
-
-    def to_float(self):
+        @type  channel_name: string
+        @param channel_name: input gravitational wave strain channel name 
+        @type gps_start_time: int
+        @param gps_start_time: gps start_time of data to be read in
+        @type gps_end_time:  int
+        @param gps_end_time: gps end_time of data to be read in
+        @type  cache_url: string
+        @param cache_url: URL of a lal frame cache file
+        
+        This method fills self.__time_series_data with the data read in from the
+        frame. It is responsible for allocating memory in the C layer 
+        for the input data in a real_vector_t.
         """
-        convert the data in self.__time_series_data to single precision
-        """
-        pass
+        
+        self.__global_time_intervall = gps_end_time - gps_start_time
+        
+        print 'reading frame data of {0} from {1} to {2} in total {3} s'.format(
+               channel_name, gps_start_time, gps_end_time, \
+               self.__global_time_intervall)
+        
+        self.time_series.fs = 8192
+        self.time_series.length = self.__global_time_intervall * self.time_series.fs
+        self.time_series.data = np.random.rand(self.time_series.length)
+        #self.time_series.data = np.ones(self.time_series.length)
+                        
 
     def fft_segments(self, segment_length, segment_overlap):
         """

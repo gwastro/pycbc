@@ -1,3 +1,12 @@
+
+#class TemplateBank(pycbc.TemplateBank, pycbc.TemplateBankGPU,
+#                   TaylorF2Template):
+#    def __init__(self):
+#        pycbc.TemplateBank.__init__(self)
+#        pycbc.TemplateBankGPU.__init__(self)
+#        TaylorF2Template.__init__(self)
+
+
 class TemplateBank():
     def __init__(self, dt, n):
         pass
