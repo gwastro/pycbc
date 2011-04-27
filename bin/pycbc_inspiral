@@ -54,9 +54,10 @@ from pycbc.injector import Injector as Injector
 from pycbc.resampler import  Resampler as Resampler
 from pycbc.bandpassfilter import  ForwardsBackwardsButterworthFilter as BandpassFilter
 
+# Testing CPU memory 
+from pycbc.datavector.datavector_cpu import DataVectorCpuGeneric as PreprocessedStrainData
+from pycbc.datavector.datavector_cpu import DataVectorCpuFfftwAligned as TemplateWaveform
 
-from pycbc.datavector.datavector_opencl import DataVectorOpenClGlobal as PreprocessedStrainData
-from pycbc.datavector.datavector_opencl import DataVectorOpenClPrivate as TemplateWaveform
 from pycbc.datavector.datavector_opencl import DataVectorOpenClGlobal as SnrData
 
 from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
@@ -108,8 +109,6 @@ data.time_series.display()
 resample_filter = Resampler(4096)
 data = resample_filter.resample_time_series(data)
 data.time_series.display()
-
-
 
 # high pass the strain data to avoid dynamic range problems
 high_pass_filter = BandpassFilter(0.1, 0.2, 0.3)
