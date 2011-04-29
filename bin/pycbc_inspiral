@@ -135,6 +135,12 @@ data.fft_segments(256, 128)
 data *= overwhitening_spectrum     # overwhitening_spectrum
 
 # create a template bank to filter against
+
+#Hint: TemplateBank would get it's target architecture (C, Cuda, openCl ...)
+#      from the constructor call but the type of approximant would be read from the
+#      xml-file. So it should instanciate it's gen_waveform_implementation-member
+#      after reading the xml-file (by itself).
+
 bank = TemplateBank()
 bank.read( "/path/to/templates.xml" )
 
