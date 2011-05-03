@@ -2,7 +2,6 @@
 #include "datavectorcpu_types.h"
 #include "datavectorcpu_prototypes.h"
 
-/* real vector manipulation */
 real_vector_t* new_real_vector_t(int length, int memory_location )
 {
     

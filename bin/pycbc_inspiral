@@ -71,27 +71,29 @@ from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as Matc
 
 # Provisionally displaced the test of the matched filter API to here ###########
 
-#htilde = TemplateWaveform(2048)
-#print htilde
 
-from datavectorcpu import real_vector_t
+# Some very early and humble datavector (and swigging) testing:
 
-data_vector= real_vector_t(1000, 0)
-print data_vector
-print len(data_vector)
+htilde = TemplateWaveform(2048, 0)
+print htilde
+print len(htilde)
 #data_vector[10]= 1234   data assignment to be implemented
-print data_vector[10]
-data_vector.t_start= 30
-print data_vector.t_start
-data_vector.dx= 30
-print data_vector.dx
- 
+print htilde[10]
+htilde.t_start= 30
+print htilde.t_start
+htilde.dx= 30
+print htilde.dx
 
-exit()  ######### test swig
-
-
-stilde = PreprocessedStrainData(2048)
+stilde = PreprocessedStrainData(1000, 1)
 print stilde
+print len(stilde)
+#data_vector[10]= 1234   data assignment to be implemented
+print stilde[10]
+stilde.t_start= 30
+print stilde.t_start
+stilde.dx= 30
+print stilde.dx
+
 
 snr = SnrData(2048)
 print snr

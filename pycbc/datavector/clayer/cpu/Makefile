@@ -5,8 +5,8 @@ SWIG = swig
 all: datavectorcpu.i datavectorcpu_types.h datavectorcpu_prototypes.h datavectorcpu.c
 	$(SWIG) -python datavectorcpu.i
 	$(PYTHON) setup.py build_ext --inplace
-	cp datavectorcpu.py ../../../../bin
-	cp _datavectorcpu.so ../../../../bin
+	cp datavectorcpu.py ../../
+	cp _datavectorcpu.so ../../
 
 tidy:
 	$(RM) -f *~
