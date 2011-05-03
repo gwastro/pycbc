@@ -3,19 +3,28 @@
 %define DOCSTRING
 "Copyright 2011, 2011 Karsten Wiesner <karsten.wiesner@ligo.org>."
 %enddef
+
 %module(docstring=DOCSTRING) datavectorcpu
+
 %feature("autodoc", "1");
+
+// This goes directly to the wrap-code (no swig preprocess)
+// wrap code needs to have typedefs and function prototypes!
 %{
-#include "datavectorcpu.h"
-    %}
+#include "datavectorcpu_types.h"
+#include "datavectorcpu_prototypes.h"
+%}
 
 %pythoncode %{
     import types
     import warnings
     %}
 
-/* Parse the header file to generate wrappers */
-%include "datavectorcpu.h"
+// To extend the c-types by methodes they have to be defined here
+// but to declare function prototypes as well would raise a 
+// "is multiply defined error". That is the reason for splitting 
+// the headerfiles
+%include "datavectorcpu_types.h"
 
 %extend real_vector_t {
     real_vector_t(int vector_length, int on_gpu);

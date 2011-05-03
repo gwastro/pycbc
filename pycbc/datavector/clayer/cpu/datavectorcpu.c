@@ -1,9 +1,13 @@
-#include "datavectorcpu.h"
+#include <stdio.h>
+#include "datavectorcpu_types.h"
+#include "datavectorcpu_prototypes.h"
 
 /* real vector manipulation */
-real_vector_t* new_real_vector_t(int length, enum cbc_memory_meta_types_t memory_location )
+real_vector_t* new_real_vector_t(int length, int memory_location )
 {
-    real_vector_t* c = (real_vector_t*) malloc( sizeof(real_vector_t) );
+    
+    real_vector_t* c;
+    c = (real_vector_t*) malloc( sizeof(real_vector_t) );
     
     c->t_start = 0;
     c->dx = 1;

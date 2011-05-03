@@ -56,7 +56,7 @@ from pycbc.bandpassfilter import  ForwardsBackwardsButterworthFilter as Bandpass
 
 # Testing CPU memory 
 from pycbc.datavector.datavector_cpu import DataVectorCpuGeneric as PreprocessedStrainData
-from pycbc.datavector.datavector_cpu import DataVectorCpuFfftwAligned as TemplateWaveform
+from pycbc.datavector.datavector_cpu import DataVectorCpuGeneric as TemplateWaveform
 
 from pycbc.datavector.datavector_opencl import DataVectorOpenClGlobal as SnrData
 
@@ -71,8 +71,24 @@ from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as Matc
 
 # Provisionally displaced the test of the matched filter API to here ###########
 
-htilde = TemplateWaveform(2048)
-print htilde
+#htilde = TemplateWaveform(2048)
+#print htilde
+
+from datavectorcpu import real_vector_t
+
+data_vector= real_vector_t(1000, 0)
+print data_vector
+print len(data_vector)
+#data_vector[10]= 1234   data assignment to be implemented
+print data_vector[10]
+data_vector.t_start= 30
+print data_vector.t_start
+data_vector.dx= 30
+print data_vector.dx
+ 
+
+exit()  ######### test swig
+
 
 stilde = PreprocessedStrainData(2048)
 print stilde

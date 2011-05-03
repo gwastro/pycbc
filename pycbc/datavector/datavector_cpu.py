@@ -28,16 +28,20 @@ package for cpu data vectors
 
 
 from datavector_base import *
+from datavectorcpu import real_vector_t
 
 class DataVectorCpuGeneric(DataVectorBase):
     
-    def __init__(self, length=0):
+    def __init__(self, length=1024):
         print "instanciated DataVectorCpuGeneric"
         
-        self.data_vector= [length] #: references by swig to C Layer 
+        self.data_vector= real_vector_t(length, 0)#: references by swig to C Layer
+       
+        # currently overwrites self.data_vector which is obviously wrong!
+        # Would call the real_vector_t destructor then
         
-        super(DataVectorCpuGeneric, self).__init__('float', 'real', length, 
-              4, 'cpu_generic_memory')
+        #super(DataVectorCpuGeneric, self).__init__('float', 'real', length, 
+        #      4, 'cpu_generic_memory')
 
 
 class DataVectorCpuFfftwAligned(DataVectorBase):

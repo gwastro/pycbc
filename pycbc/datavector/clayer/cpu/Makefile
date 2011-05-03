@@ -1,12 +1,15 @@
 RM = /bin/rm
-PYTHON = /usr/bin/python
-SWIG = /usr/bin/swig
+PYTHON = python
+SWIG = swig
 
-all: datavectorcpu.i datavectorcpu.h datavectorcpu.c
+all: datavectorcpu.i datavectorcpu_types.h datavectorcpu_prototypes.h datavectorcpu.c
 	$(SWIG) -python datavectorcpu.i
 	$(PYTHON) setup.py build_ext --inplace
+	cp datavectorcpu.py ../../../../bin
+	cp _datavectorcpu.so ../../../../bin
+
 tidy:
 	$(RM) -f *~
 clean: tidy
-	$(RM) -rf datavectorcpu_wrap.c datavectorcpu.py datavectorcpu.pyc _datavectorcpu.so /build
+	$(RM) -rf datavectorcpu_wrap.c datavectorcpu.py datavectorcpu.pyc _datavectorcpu.so build
  

@@ -1,8 +1,7 @@
-#ifndef DATAVECTORCPU_H
-#define DATAVECTORCPU_H
+#ifndef DATAVECTORCPU_TYPES_H
+#define DATAVECTORCPU_TYPES_H
 
 #include <stdlib.h>
-
 
 enum cbc_memory_meta_types_t {
     gpu_cuda_global_memory,
@@ -30,5 +29,4 @@ typedef struct
 }
 real_vector_t;
 
-
-#endif /* DATAVECTORCPU_H */
+#endif /* DATAVECTORCPU_TYPES_H */
