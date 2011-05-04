@@ -26,6 +26,16 @@
 // the headerfiles
 %include "datavectorcpu_types.h"
 
+// We want to inherit from DataVectorBase but it seems not to work this way ...
+//%include <pyabc.i>
+//%pythonabc(real_vector_t, DataVectorBase);
+
+// ... so we patch the proxy class for real_vector_t in datavectorcpu.py with:
+
+//from datavector_base import *
+//class real_vector_t( DataVectorBase, _object):  # _object has to be the second parent!
+
+
 %extend real_vector_t {
     real_vector_t(int vector_length, int on_gpu);
     ~real_vector_t();
