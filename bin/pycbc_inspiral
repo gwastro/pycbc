@@ -54,13 +54,14 @@ from pycbc.injector import Injector as Injector
 from pycbc.resampler import  Resampler as Resampler
 from pycbc.bandpassfilter import  ForwardsBackwardsButterworthFilter as BandpassFilter
 
-# Testing CPU memory 
 from pycbc.datavector.datavector_cpu import DataVectorCpuGeneric as PreprocessedStrainData
 from pycbc.datavector.datavector_cpu import DataVectorCpuGeneric as TemplateWaveform
 
 from pycbc.datavector.datavector_opencl import DataVectorOpenClGlobal as SnrData
 
-from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
+#from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
+from pycbc.matchedfilter.matchedfilter_cpu import MatchedFilterCpu as MatchedFilter
+
 
 # @todo imports:
 #
@@ -104,8 +105,8 @@ print matched_filter
 snr = matched_filter.perform_generate_snr(stilde, htilde)
 print snr
 
-max = matched_filter.perform_max(snr)
-print max
+#max = matched_filter.perform_max(snr)
+#print max
 
 
 ################################################################################

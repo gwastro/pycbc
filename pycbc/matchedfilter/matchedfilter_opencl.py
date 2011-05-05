@@ -28,7 +28,13 @@ MatchedFilter OpenCl implementation class for the pycbc package
 """
 
 from pycbc.datavector.datavector_base import DataVectorBase
-from matchedfilter_base import *
+
+from matchedfilter_base import MatchedFilterBase
+from matchedfilter_base import GenSnrImplementationBase
+from matchedfilter_base import MaxImplementationBase
+
+#from matchedfilteropencl import gen_snr_opencl as gen_snr
+
 
 class MatchedFilterOpenCl(MatchedFilterBase):
 
@@ -49,15 +55,13 @@ class  GenSnrImplementationOpenCl(GenSnrImplementationBase):
         """
         Process matched filtering by generating snr timeseries \rho(t)
         """
-        # we don't know with which derived data vector this method was called
-        # but we can check against the base data vector type
+
         assert isinstance(stilde, DataVectorBase), "wrong input data base type"
         assert isinstance(htilde, DataVectorBase), "wrong input data base type"
         
-        print "generate snr openCl implementation"
-        snr = stilde  # just simulate to return the right datatype
+#        snr= gen_snr(stilde, htilde)
         
-        return snr
+#        return snr
 
 class  MaxImplementationOpenCl(MaxImplementationBase):
 
@@ -69,8 +73,7 @@ class  MaxImplementationOpenCl(MaxImplementationBase):
         """
         Find the maximum in the generated snr timeseries \rho(t)
         """
-        # we don't know with which derived data vector this method was called
-        # but we can check against the base data vector type
+
         assert isinstance(snr, DataVectorBase), "wrong input data base type"
                     
         print "finding maximum of snr series"             

@@ -5,7 +5,7 @@
 
 typedef struct
 {
-    int tbd;
+    int nothing_to_define_yet;
 }
 matched_filter_cpu_t;
 
