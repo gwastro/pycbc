@@ -26,23 +26,27 @@
 // the headerfiles
 %include "datavectorcpu_types.h"
 
-// real_vector_t inherits from DataVectorBase (by patching the proxy class)
-// see Makefile for details
-%extend real_vector_t {
-    real_vector_t(int vector_length, int on_gpu);
-    ~real_vector_t();
+%extend real_vector_single_t {
+    real_vector_single_t(int vector_length, int on_gpu);
+    ~real_vector_single_t();
     
     char *__str__() {
         static char a[1024];
         snprintf( a, sizeof(a)/sizeof(*a), 
-                     "<real_vector_t, in cpu memory, length %d, data ptr %p>", 
-                     self->vector_length, self->data );
+                     "<real_vector_single_t, in cpu memory, length %d, data ptr %p>", 
+                     self->meta_data.vector_length, self->data );
         return a;
     }
     
     int __len__() {
-        return self->vector_length;
+        return self->meta_data.vector_length;
     }
+    
+    
+    // 
+    // TBD a zero init function which is called automatically in the constructor
+    // but could also be called from outside
+    //
     
     double __getitem__(int i) {
         float* data = (float*) self->data; 
@@ -50,18 +54,18 @@
     }
     
     void set_t_start( unsigned long int t_start ) {
-        self->t_start = t_start;
+        self->meta_data.t_start = t_start;
     }
     
     double get_t_start( void ) {
-        return self->t_start;
+        return self->meta_data.t_start;
     }
     
     void set_dx( double dx ) {
-        self->dx = dx;
+        self->meta_data.dx = dx;
     }
     
     double get_dx( void ) {
-        return self->dx;
+        return self->meta_data.dx;
     }
 }

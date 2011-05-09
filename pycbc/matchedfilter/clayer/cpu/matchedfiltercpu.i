@@ -38,6 +38,8 @@
 //%}
 
 // prototype declaration of a function to wrap (has to be impl. in a c file)
-real_vector_t* gen_snr_cpu(real_vector_t* stilde, real_vector_t* htilde);
+int gen_snr_cpu(real_vector_single_t* stilde, 
+                real_vector_single_t* htilde,
+                real_vector_single_t* snr);
 
 

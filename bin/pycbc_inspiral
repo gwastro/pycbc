@@ -57,10 +57,9 @@ from pycbc.bandpassfilter import  ForwardsBackwardsButterworthFilter as Bandpass
 #from pycbc.datavector.datavector_cpu import DataVectorCpuGeneric as PreprocessedStrainData
 #from pycbc.datavector.datavector_cpu import DataVectorCpuGeneric as TemplateWaveform
 
-from pycbc.datavector.datavectorcpu import real_vector_t as PreprocessedStrainData
-from pycbc.datavector.datavectorcpu import real_vector_t as TemplateWaveform
-
-from pycbc.datavector.datavector_opencl import DataVectorOpenClGlobal as SnrData
+from pycbc.datavector.datavectorcpu import real_vector_single_t as PreprocessedStrainData
+from pycbc.datavector.datavectorcpu import real_vector_single_t as TemplateWaveform
+from pycbc.datavector.datavectorcpu import real_vector_single_t as SnrData
 
 #from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
 from pycbc.matchedfilter.matchedfilter_cpu import MatchedFilterCpu as MatchedFilter
@@ -94,14 +93,20 @@ print stilde.t_start
 stilde.dx= 30
 print stilde.dx
 
-
-snr = SnrData(2048)
+snr = SnrData(2048, 0)
 print snr
+print len(snr)
+#data_vector[10]= 1234   data assignment to be implemented
+print stilde[10]
+snr.t_start= 30
+print snr.t_start
+snr.dx= 30
+print snr.dx
 
 matched_filter = MatchedFilter(2048)
 print matched_filter
 
-snr = matched_filter.perform_generate_snr(stilde, htilde)
+matched_filter.perform_generate_snr(stilde, htilde, snr)
 print snr
 
 #max = matched_filter.perform_max(snr)

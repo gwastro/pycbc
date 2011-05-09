@@ -47,7 +47,7 @@ class MatchedFilterBase:
             exit(0)
             
         
-    def perform_generate_snr(self, stilde, htilde):
+    def perform_generate_snr(self, stilde, htilde, snr):
         """
         calls the generate_snr methode of the derived implementation object
         @type  stilde: DataVectorBase
@@ -57,7 +57,7 @@ class MatchedFilterBase:
         @rtype:  snr:  DataVectorBase
         @return: snr:  Signal to noise ratio series
         """
-        return self.gen_snr_impl.generate_snr(stilde, htilde)
+        return self.gen_snr_impl.generate_snr(stilde, htilde, snr)
 
     def perform_max(self, snr):
         """
@@ -78,7 +78,7 @@ class GenSnrImplementationBase:
         print "instanciated GenSnrImplementationBase" 
         
     @abstractmethod
-    def generate_snr(self, stilde, htilde):
+    def generate_snr(self, stilde, htilde ,snr):
         pass
         
 class MaxImplementationBase:
