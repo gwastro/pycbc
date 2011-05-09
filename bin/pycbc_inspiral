@@ -54,14 +54,16 @@ from pycbc.injector import Injector as Injector
 from pycbc.resampler import  Resampler as Resampler
 from pycbc.bandpassfilter import  ForwardsBackwardsButterworthFilter as BandpassFilter
 
-from pycbc.datavector.datavector_cpu import DataVectorCpuGeneric as PreprocessedStrainData
-from pycbc.datavector.datavector_cpu import DataVectorCpuGeneric as TemplateWaveform
+#from pycbc.datavector.datavector_cpu import DataVectorCpuGeneric as PreprocessedStrainData
+#from pycbc.datavector.datavector_cpu import DataVectorCpuGeneric as TemplateWaveform
+
+from pycbc.datavector.datavectorcpu import real_vector_t as PreprocessedStrainData
+from pycbc.datavector.datavectorcpu import real_vector_t as TemplateWaveform
 
 from pycbc.datavector.datavector_opencl import DataVectorOpenClGlobal as SnrData
 
 #from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
 from pycbc.matchedfilter.matchedfilter_cpu import MatchedFilterCpu as MatchedFilter
-
 
 # @todo imports:
 #
@@ -71,9 +73,6 @@ from pycbc.matchedfilter.matchedfilter_cpu import MatchedFilterCpu as MatchedFil
 
 
 # Provisionally displaced the test of the matched filter API to here ###########
-
-
-# Some very early and humble datavector (and swigging) testing:
 
 htilde = TemplateWaveform(2048, 0)
 print htilde
