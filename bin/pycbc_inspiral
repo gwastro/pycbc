@@ -54,12 +54,13 @@ from pycbc.injector import Injector as Injector
 from pycbc.resampler import  Resampler as Resampler
 from pycbc.bandpassfilter import  ForwardsBackwardsButterworthFilter as BandpassFilter
 
-#from pycbc.datavector.datavector_cpu import DataVectorCpuGeneric as PreprocessedStrainData
-#from pycbc.datavector.datavector_cpu import DataVectorCpuGeneric as TemplateWaveform
-
 from pycbc.datavector.datavectorcpu import real_vector_single_t as PreprocessedStrainData
 from pycbc.datavector.datavectorcpu import real_vector_single_t as TemplateWaveform
 from pycbc.datavector.datavectorcpu import real_vector_single_t as SnrData
+
+#                                          complex_vector_single_t as FrequencySeriesXYZ
+#                                          complex_vector_double_t as Timeseries ....
+
 
 #from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
 from pycbc.matchedfilter.matchedfilter_cpu import MatchedFilterCpu as MatchedFilter
@@ -73,41 +74,58 @@ from pycbc.matchedfilter.matchedfilter_cpu import MatchedFilterCpu as MatchedFil
 
 # Provisionally displaced the test of the matched filter API to here ###########
 
-htilde = TemplateWaveform(2048, 0)
+proc_size= 16
+
+htilde = TemplateWaveform(proc_size)
 print htilde
 print len(htilde)
-#data_vector[10]= 1234   data assignment to be implemented
+htilde[0]= 1.234
 print htilde[10]
-htilde.t_start= 30
-print htilde.t_start
+htilde.start= 30
+print htilde.start
 htilde.dx= 30
 print htilde.dx
 
-stilde = PreprocessedStrainData(1000, 1)
+stilde = PreprocessedStrainData(proc_size)
 print stilde
 print len(stilde)
-#data_vector[10]= 1234   data assignment to be implemented
+stilde[1]= 1.234
 print stilde[10]
-stilde.t_start= 30
-print stilde.t_start
+stilde.start= 30
+print stilde.start
 stilde.dx= 30
 print stilde.dx
 
-snr = SnrData(2048, 0)
+snr = SnrData(proc_size)
 print snr
 print len(snr)
-#data_vector[10]= 1234   data assignment to be implemented
-print stilde[10]
-snr.t_start= 30
-print snr.t_start
+snr[2]= 1.234
+print snr[10]
+snr.start= 30
+print snr.start
 snr.dx= 30
 print snr.dx
 
-matched_filter = MatchedFilter(2048)
+print
+
+#snr.reinitialize(2.0)
+
+for i in range(len(htilde)):
+    print i, snr[i]
+
+for i in range(len(stilde)):
+    print i, snr[i]
+
+for i in range(len(snr)):
+    print i, snr[i]
+
+
+matched_filter = MatchedFilter(proc_size)
 print matched_filter
 
 matched_filter.perform_generate_snr(stilde, htilde, snr)
 print snr
+
 
 #max = matched_filter.perform_max(snr)
 #print max
@@ -141,8 +159,7 @@ data = high_pass_filter.high_pass(data, 35.0, 24)
 data.time_series.to_float()
 data.time_series.display()
 
-
-
+print "exit pycbc"
 exit()  # implemented prototype until here #####################################
 
 

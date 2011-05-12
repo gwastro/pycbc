@@ -1,8 +1,5 @@
 #include <stdio.h>
 #include "../../../datavector/clayer/cpu/datavectorcpu_types.h"
-//#include "matchedfiltercpu_types.h"
-//#include "matchedfiltercpu_prototypes.h"
-
 
 int gen_snr_cpu(real_vector_single_t* stilde, 
                 real_vector_single_t* htilde,
@@ -17,6 +14,6 @@ int gen_snr_cpu(real_vector_single_t* stilde,
     
     printf("stilde->data = %p \n", stilde->data);
     
-    return 1;  // return true or error code
+    return 0;  // return 0 or error code
 
 }

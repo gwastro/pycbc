@@ -51,11 +51,13 @@ class MatchedFilterBase:
         """
         calls the generate_snr methode of the derived implementation object
         @type  stilde: DataVectorBase
-        @param stilde: Straindata frequency domain
+        @param stilde: Input: Straindata frequency domain
         @type  htilde: DataVectorBase
-        @param htilde: Template waveform frequency domain
-        @rtype:  snr:  DataVectorBase
-        @return: snr:  Signal to noise ratio series
+        @param htilde: Input: Template waveform frequency domain
+        @type  snr:    DataVectorBase
+        @param snr:    Output: Signal to noise ratio series
+        @rtype:  err:  int
+        @return: err:  Error value. 0 if no error
         """
         return self.gen_snr_impl.generate_snr(stilde, htilde, snr)
 
