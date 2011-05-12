@@ -56,7 +56,7 @@
     real_vector_single_t(int vector_length);
     ~real_vector_single_t();
     
-    char *__str__() {
+    char* __str__() {
         static char a[1024];
         snprintf( a, sizeof(a)/sizeof(*a), 
                      "<real_vector_single_t, in cpu memory, length %d, data ptr %p>", 
@@ -93,15 +93,11 @@
     double get_dx( void ) {
         return self->meta_data.dx;
     }
-    
-    void reinitialize (float init_value) {
-        int i;
-        float* data = (float*) self->data;
-        int length = self->meta_data.vector_length;
-        for (i=0; i <= length; i++) {
-            *data++ = init_value;
-        }
-    }    
+
+    char* get_module_name( void ) {
+        return self->meta_data.module_name;
+    }
+
 }
 
 %extend real_vector_double_t {
@@ -146,14 +142,6 @@
         return self->meta_data.dx;
     }
     
-    void reinitialize (double init_value) {
-        int i;
-        double* data = (double*) self->data;
-        int length = self->meta_data.vector_length;
-        for (i=0; i <= length; i++) {
-            *data++ = init_value;
-        }
-    }    
 }
 
 %extend complex_vector_single_t {
@@ -198,14 +186,6 @@
         return self->meta_data.dx;
     }
     
-    void reinitialize (float init_value) {
-        int i;
-        float* data = (float*) self->data;
-        int length = self->meta_data.vector_length;
-        for (i=0; i <= length; i++) {
-            *data++ = init_value;
-        }
-    }    
 }
 
 %extend complex_vector_double_t {
@@ -250,14 +230,6 @@
         return self->meta_data.dx;
     }
     
-    void reinitialize (double init_value) {
-        int i;
-        double* data = (double*) self->data;
-        int length = self->meta_data.vector_length;
-        for (i=0; i <= length; i++) {
-            *data++ = init_value;
-        }
-    }    
 }
 
 

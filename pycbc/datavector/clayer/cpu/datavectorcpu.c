@@ -30,9 +30,12 @@
 
 real_vector_single_t* new_real_vector_single_t(int length)
 {
-    
+
     real_vector_single_t* c;
     c = (real_vector_single_t*) malloc( sizeof(real_vector_single_t) );
+
+//    snprintf( c->meta_data.module_name, sizeof(c->meta_data.module_name)/sizeof(*c->meta_data.module_name), 
+//             "datavectorcpu");
     
     c->meta_data.start = 0;
     c->meta_data.dx = 1;
