@@ -57,7 +57,7 @@
     ~real_vector_single_t();
     
     char* __str__() {
-        static char a[1024];
+        static char a[512];
         snprintf( a, sizeof(a)/sizeof(*a), 
                      "<real_vector_single_t, in cpu memory, length %d, data ptr %p>", 
                      self->meta_data.vector_length, self->data );
@@ -93,11 +93,7 @@
     double get_dx( void ) {
         return self->meta_data.dx;
     }
-
-    char* get_module_name( void ) {
-        return self->meta_data.module_name;
-    }
-
+    
 }
 
 %extend real_vector_double_t {

@@ -84,9 +84,6 @@ from pycbc.matchedfilter.matchedfilter_cpu import MatchedFilterCpu as MatchedFil
 proc_size= 16
 
 htilde = TemplateWaveform(proc_size)
-
-#print htilde.module_name
-
 print htilde
 print len(htilde)
 htilde[0]= 1.234

@@ -23,7 +23,6 @@
 #
 # =============================================================================
 #
-# datavector local makefile for pycbc
 
 """
 setup.py file for swig wrap datavectorcpu into pycbc
