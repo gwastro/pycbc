@@ -54,16 +54,23 @@ from pycbc.injector import Injector as Injector
 from pycbc.resampler import  Resampler as Resampler
 from pycbc.bandpassfilter import  ForwardsBackwardsButterworthFilter as BandpassFilter
 
-from pycbc.datavector.datavectorcpu import real_vector_single_t as PreprocessedStrainData
-from pycbc.datavector.datavectorcpu import real_vector_single_t as TemplateWaveform
-from pycbc.datavector.datavectorcpu import real_vector_single_t as SnrData
+#from pycbc.datavector.datavectorcpu import real_vector_single_t as PreprocessedStrainData
+#from pycbc.datavector.datavectorcpu import real_vector_single_t as TemplateWaveform
+#from pycbc.datavector.datavectorcpu import real_vector_single_t as SnrData
+
+#from pycbc.datavector.datavectorcuda import real_vector_single_t as PreprocessedStrainData
+#from pycbc.datavector.datavectorcuda import real_vector_single_t as TemplateWaveform
+#from pycbc.datavector.datavectorcuda import real_vector_single_t as SnrData
+
+from pycbc.datavector.datavectoropencl import real_vector_single_t as PreprocessedStrainData
+from pycbc.datavector.datavectoropencl import real_vector_single_t as TemplateWaveform
+from pycbc.datavector.datavectoropencl import real_vector_single_t as SnrData
 
 # examples for datavectors:
 
 # from pycbc.datavector.datavectorcpu import real_vector_double_t as FrequencySeries...
 # from pycbc.datavector.datavectorcpu import complex_vector_single_t as TimeSeries ....
 # from pycbc.datavector.datavectorcpu import complex_vector_double_t as TimeSeries ....
-
 # from pycbc.datavector.datavectorcuda import complex_vector_single_t as TimeSeries ....
 # from pycbc.datavector.datavectorcuda import complex_vector_double_t as TimeSeries ....
 
