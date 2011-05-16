@@ -58,5 +58,4 @@ typedef struct
 }
 complex_vector_double_t;
 
-
 #endif /* DATAVECTORCPU_TYPES_H */

@@ -24,23 +24,16 @@
 //
 // datavector constructors and destructors implementation for pycbc
 
+
 #include <stdio.h>
 #include "datavectorcpu_types.h"
 #include "datavectorcpu_prototypes.h"
 
-real_vector_single_t* new_real_vector_single_t(int length)
+real_vector_single_t* new_real_vector_single_t(unsigned length)
 {
-
-    real_vector_single_t* c;
-    c = (real_vector_single_t*) malloc( sizeof(real_vector_single_t) );
-
-    c->meta_data.start = 0;
-    c->meta_data.dx = 1;
-    c->meta_data.vector_length = length;
-    
-    c->meta_data.element_size_bytes = sizeof(float); // single precision specified here
-    c->data = calloc( c->meta_data.vector_length , c->meta_data.element_size_bytes );
-
+    CONSTRUCTOR_TEMPLATE(real_vector_single_t, float)
+    c->data = calloc( c->meta_data.vector_length , 
+                      c->meta_data.element_size_bytes );
     printf("created real_vector_single_t at %p\n", c );
     return c;
 }
@@ -52,19 +45,12 @@ void delete_real_vector_single_t( real_vector_single_t* p )
     free( p );
 }
 
-real_vector_double_t* new_real_vector_double_t(int length)
+real_vector_double_t* new_real_vector_double_t(unsigned length)
 {
     
-    real_vector_double_t* c;
-    c = (real_vector_double_t*) malloc( sizeof(real_vector_double_t) );
-    
-    c->meta_data.start = 0;
-    c->meta_data.dx = 1;
-    c->meta_data.vector_length = length;
-    
-    c->meta_data.element_size_bytes = sizeof(double); // double precision specified here
-    c->data = calloc( c->meta_data.vector_length , c->meta_data.element_size_bytes );
-    
+    CONSTRUCTOR_TEMPLATE(real_vector_double_t, double)
+    c->data = calloc( c->meta_data.vector_length , 
+                      c->meta_data.element_size_bytes );
     printf("created real_vector_double_t at %p\n", c );
     return c;
 }
@@ -76,20 +62,12 @@ void delete_real_vector_double_t( real_vector_double_t* p )
     free( p );
 }
 
-complex_vector_single_t* new_complex_vector_single_t(int length)
+complex_vector_single_t* new_complex_vector_single_t(unsigned length)
 {
     
-    complex_vector_single_t* c;
-    c = (complex_vector_single_t*) malloc( sizeof(complex_vector_single_t) );
-    
-    c->meta_data.start = 0;
-    c->meta_data.dx = 1;
-    c->meta_data.vector_length = length;
-    
-    c->meta_data.element_size_bytes = sizeof(float);   // single precision specified here
-    c->data = calloc( 2 * c->meta_data.vector_length , // complex => 2 * length
-                      c->meta_data.element_size_bytes );
-    
+    CONSTRUCTOR_TEMPLATE(complex_vector_single_t, float)
+    c->data = calloc( 2 * c->meta_data.vector_length ,
+                          c->meta_data.element_size_bytes );
     printf("created complex_vector_single_t at %p\n", c );
     return c;
 }
@@ -101,20 +79,12 @@ void delete_complex_vector_single_t( complex_vector_single_t* p )
     free( p );
 }
 
-complex_vector_double_t* new_complex_vector_double_t(int length)
+complex_vector_double_t* new_complex_vector_double_t(unsigned length)
 {
     
-    complex_vector_double_t* c;
-    c = (complex_vector_double_t*) malloc( sizeof(complex_vector_double_t) );
-    
-    c->meta_data.start = 0;
-    c->meta_data.dx = 1;
-    c->meta_data.vector_length = length;
-    
-    c->meta_data.element_size_bytes = sizeof(double);  // double precision specified here
-    c->data = calloc( 2 * c->meta_data.vector_length , // complex => 2 * length
-                      c->meta_data.element_size_bytes );
-    
+    CONSTRUCTOR_TEMPLATE(complex_vector_double_t, double)    
+    c->data = calloc( 2 * c->meta_data.vector_length,
+                          c->meta_data.element_size_bytes );
     printf("created complex_vector_double_t at %p\n", c );
     return c;
 }

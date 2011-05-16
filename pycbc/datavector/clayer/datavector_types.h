@@ -24,11 +24,14 @@
 //
 // datavector meta data type for pycbc
 
-
 #ifndef DATAVECTOR_TYPES_H
 #define DATAVECTOR_TYPES_H
 
 #include <stdlib.h>
+
+// To add new elements add them here in the typedef meta_data_t, 
+// in the CONSTRUCTOR_TEMPLATE 
+// and in the TYPE_INTERFACE_TEMPLATE macro in the datavector_types.i file
 
 typedef struct
 {
@@ -36,7 +39,17 @@ typedef struct
     double            dx;
     unsigned int      vector_length;
     size_t            element_size_bytes;
+    int               generic_new_element_for_testing;
 }
 meta_data_t;
+
+#define CONSTRUCTOR_TEMPLATE(name,type)\
+name* c;\
+c = (name*) malloc( sizeof(name) );\
+c->meta_data.start = 0;\
+c->meta_data.dx = 1;\
+c->meta_data.vector_length = length;\
+c->meta_data.element_size_bytes = sizeof(type);\
+c->meta_data.generic_new_element_for_testing =10;\
 
 #endif /* DATAVECTOR_TYPES_H */

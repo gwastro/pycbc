@@ -49,183 +49,24 @@
 // To extend the c-types by methodes they have to be defined here
 // but to declare function prototypes as well would raise a 
 // "is multiply defined error". That is the reason for splitting 
-// the headerfiles
+// the headerfiles into _types and _prototypes
 %include "datavectorcpu_types.h"
+%include "../datavector_types.i"
 
 %extend real_vector_single_t {
-    real_vector_single_t(int vector_length);
-    ~real_vector_single_t();
-    
-    char* __str__() {
-        static char a[512];
-        snprintf( a, sizeof(a)/sizeof(*a), 
-                     "<real_vector_single_t, in cpu memory, length %d, data ptr %p>", 
-                     self->meta_data.vector_length, self->data );
-        return a;
-    }
-    
-    int __len__() {
-        return self->meta_data.vector_length;
-    }
-    
-    double __getitem__(int i) {
-        float* data = (float*) self->data; 
-        return (float) data[i];
-    }
-
-    void __setitem__(int i, double value) {
-        float* data = (float*) self->data; 
-        data[i] = value;
-    }
-    
-    void set_start( unsigned long int start ) {
-        self->meta_data.start = start;
-    }
-    
-    double get_start( void ) {
-        return self->meta_data.start;
-    }
-    
-    void set_dx( double dx ) {
-        self->meta_data.dx = dx;
-    }
-    
-    double get_dx( void ) {
-        return self->meta_data.dx;
-    }
-    
+    TYPE_INTERFACE_TEMPLATE(real_vector_single_t,float)
 }
 
 %extend real_vector_double_t {
-    real_vector_double_t(int vector_length);
-    ~real_vector_double_t();
-    
-    char *__str__() {
-        static char a[1024];
-        snprintf( a, sizeof(a)/sizeof(*a), 
-                 "<real_vector_double_t, in cpu memory, length %d, data ptr %p>", 
-                 self->meta_data.vector_length, self->data );
-        return a;
-    }
-    
-    int __len__() {
-        return self->meta_data.vector_length;
-    }
-    
-    double __getitem__(int i) {
-        double* data = (double*) self->data; 
-        return (double) data[i];
-    }
-    
-    void __setitem__(int i, double value) {
-        double* data = (double*) self->data; 
-        data[i] = value;
-    }
-    
-    void set_start( unsigned long int start ) {
-        self->meta_data.start = start;
-    }
-    
-    double get_start( void ) {
-        return self->meta_data.start;
-    }
-    
-    void set_dx( double dx ) {
-        self->meta_data.dx = dx;
-    }
-    
-    double get_dx( void ) {
-        return self->meta_data.dx;
-    }
-    
+    TYPE_INTERFACE_TEMPLATE(real_vector_double_t,double)
 }
 
 %extend complex_vector_single_t {
-    complex_vector_single_t(int vector_length);
-    ~complex_vector_single_t();
-    
-    char *__str__() {
-        static char a[1024];
-        snprintf( a, sizeof(a)/sizeof(*a), 
-                 "<complex_vector_single_t, in cpu memory, length %d, data ptr %p>", 
-                 self->meta_data.vector_length, self->data );
-        return a;
-    }
-    
-    int __len__() {
-        return self->meta_data.vector_length;
-    }
-    
-    double __getitem__(int i) {
-        float* data = (float*) self->data; 
-        return (float) data[i];
-    }
-    
-    void __setitem__(int i, double value) {
-        float* data = (float*) self->data; 
-        data[i] = value;
-    }
-    
-    void set_start( unsigned long int start ) {
-        self->meta_data.start = start;
-    }
-    
-    double get_start( void ) {
-        return self->meta_data.start;
-    }
-    
-    void set_dx( double dx ) {
-        self->meta_data.dx = dx;
-    }
-    
-    double get_dx( void ) {
-        return self->meta_data.dx;
-    }
-    
+    TYPE_INTERFACE_TEMPLATE(complex_vector_single_t,float)
 }
 
 %extend complex_vector_double_t {
-    complex_vector_double_t(int vector_length);
-    ~complex_vector_double_t();
-    
-    char *__str__() {
-        static char a[1024];
-        snprintf( a, sizeof(a)/sizeof(*a), 
-                 "<complex_vector_double_t, in cpu memory, length %d, data ptr %p>", 
-                 self->meta_data.vector_length, self->data );
-        return a;
-    }
-    
-    int __len__() {
-        return self->meta_data.vector_length;
-    }
-    
-    double __getitem__(int i) {
-        double* data = (double*) self->data; 
-        return (double) data[i];
-    }
-    
-    void __setitem__(int i, double value) {
-        double* data = (double*) self->data; 
-        data[i] = value;
-    }
-    
-    void set_start( unsigned long int start ) {
-        self->meta_data.start = start;
-    }
-    
-    double get_start( void ) {
-        return self->meta_data.start;
-    }
-    
-    void set_dx( double dx ) {
-        self->meta_data.dx = dx;
-    }
-    
-    double get_dx( void ) {
-        return self->meta_data.dx;
-    }
-    
+    TYPE_INTERFACE_TEMPLATE(complex_vector_double_t,double)
 }
 
 

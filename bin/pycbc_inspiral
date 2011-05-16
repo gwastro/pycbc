@@ -92,6 +92,8 @@ htilde.start= 30
 print htilde.start
 htilde.dx= 30
 print htilde.dx
+htilde.generic_new_element_for_testing= 55
+print htilde.generic_new_element_for_testing
 
 stilde = PreprocessedStrainData(proc_size)
 print stilde

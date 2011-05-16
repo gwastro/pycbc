@@ -30,16 +30,16 @@
 #include <stdlib.h>
 
 // prototypes of all methodes that will extend pure c typedefs
-real_vector_single_t* new_real_vector_single_t(int);
+real_vector_single_t* new_real_vector_single_t(unsigned);
 void delete_real_vector_single_t( real_vector_single_t* );
 
-real_vector_double_t* new_real_vector_double_t(int);
+real_vector_double_t* new_real_vector_double_t(unsigned);
 void delete_real_vector_double_t( real_vector_double_t* );
 
-complex_vector_single_t* new_complex_vector_single_t(int);
+complex_vector_single_t* new_complex_vector_single_t(unsigned);
 void delete_complex_vector_single_t( complex_vector_single_t* );
 
-complex_vector_double_t* new_complex_vector_double_t(int);
+complex_vector_double_t* new_complex_vector_double_t(unsigned);
 void delete_complex_vector_double_t( complex_vector_double_t* );
 
 #endif /* DATAVECTORCPU_PROTOTYPES_H */
