@@ -32,10 +32,9 @@
 Application of gravitational wave search for inspiral mergers based on the 
 pycbc (py-thon c-ompact b-inary c-oalecence) package 
 
+Single Detector CBC Pipeline
 
-Current Status: "Application Prototype" (not yet swig wrapping anything to lower 
-                layers but prototyping look and feel of the pycbc package
-                from the viewpoint of an application programmer) 
+Current Status: "Application Prototype" 
 
 """
 
@@ -179,8 +178,8 @@ exit()  # implemented prototype until here #####################################
 # create the overwhitening filter
 overwhitening_spectrum = pycbc.Spectrum(delta_t, N)
 overwhitening_spectrum.power_spectrum(data, "medianmean", "hanning", 256, 128)
-overwhitening_spectrum.inverse()
-overwhitening_spectrum.truncate(16)
+overwhitening_spectrum.inverse()       # 1/x
+overwhitening_spectrum.truncate(16)    # ifft -> truncate in time domain -> fft
 
 # create the overwhitened data segments in the frequency domain
 data.fft_segments(256, 128)
