@@ -48,7 +48,7 @@ sys.path.append('/Users/kawies/dev/src/pycbc')
 # set up the following mapping of different memorytypes 
 # and implementations
 
-from pycbc.straindata import StrainDataGeneric as StrainData 
+from pycbc.straindata.straindata_cpu import StrainData as StrainData 
 from pycbc.injector import Injector as Injector
 from pycbc.resampler import  Resampler as Resampler
 from pycbc.bandpassfilter import  ForwardsBackwardsButterworthFilter as BandpassFilter
@@ -147,28 +147,27 @@ print max
 #
 
 # read the input h(t) from a single detector
-data = StrainData()
-data.read_frames("H1:LSC-STRAIN", 871147532, 871149580, "/path/to/cache.txt")
-data.time_series.display()
+data = StrainData(15, 1024, "H1")
+#data.read_frames("H1:LSC-STRAIN", 871147532, 871149580, "/path/to/cache.txt")
 
 # perform software injections
-injector = Injector(data.time_series.length)
-injector.read_injections("/path/to/injections.xml")
-data = injector.inject_to_time_series(data)
-data.time_series.display()
+#injector = Injector(data.time_series.length)
+#injector.read_injections("/path/to/injections.xml")
+#data = injector.inject_to_time_series(data)
+#data.time_series.display()
 
 # resample the data to the desired sampling frequency
 resample_filter = Resampler(4096)
-data = resample_filter.resample_time_series(data)
-data.time_series.display()
+#data = resample_filter.resample_time_series(data)
+#data.time_series.display()
 
 # high pass the strain data to avoid dynamic range problems
 high_pass_filter = BandpassFilter(0.1, 0.2, 0.3)
-data = high_pass_filter.high_pass(data, 35.0, 24)
+#data = high_pass_filter.high_pass(data, 35.0, 24)
 
 # convert the data to a four-byte floating point number
-data.time_series.to_float()
-data.time_series.display()
+#data.time_series.to_float()
+#data.time_series.display()
 
 print "exit pycbc"
 exit()  # implemented prototype until here #####################################

@@ -29,6 +29,10 @@ Base class of strain data
 
 import numpy as np
 
+from pycbc.datavector.datavectorcpu import real_vector_double_t as InitialTimeSeriesDoublePreci
+from pycbc.datavector.datavectorcpu import real_vector_single_t as TimeSeriesSinglePreci
+from pycbc.datavector.datavectorcpu import complex_vector_single_t as FreqSeriesStilde
+
 class TimeSeriesGeneric(object):
     def __init__(self, data, length, fs):
         self.data = None
@@ -41,12 +45,27 @@ class TimeSeriesGeneric(object):
     def to_float(self):
         self.data = self.data.astype(np.float32)
 
-class StrainDataGeneric(object):
-    def __init__(self):
+class StrainData(object):
+    
+    def __init__(self, segments, length, ifo):
+        
+        self.__segments= segments
+        self.__length= length
+        self.__interferometer = ifo
+        
+        self.__strain_time_series= InitialTimeSeriesDoublePreci(length)
+
+        self.__strain_freq_series= []
+        for i in range(segments):
+            tmp_series = FreqSeriesStilde(length)
+            self.__strain_freq_series.append(tmp_series)
+            print i
+        
         print 'instanciated StrainData'
-        self.time_series = TimeSeriesGeneric(None, 1, 1)
-        self.__frequency_series = None
-        self.__global_time_intervall = None
+        
+        # self.time_series = TimeSeriesGeneric(None, 1, 1)
+        # self.__frequency_series = None
+        # self.__global_time_intervall = None
 
     def __iter__(self):
         """
@@ -61,12 +80,21 @@ class StrainDataGeneric(object):
         pass
 
     @property
-    def time_series(self):
-        return self.__time_series
+    def strain_time_series(self):
+        return self.__strain_time_series
+
+    @property
+    def strain_freq_series(self):
+        return self.__strain_freq_series
+
+
+    #@property
+    #def time_series(self):
+    #    return self.__time_series
         
-    @time_series.setter
-    def time_series(self, value):
-        self.__time_series = value
+    #@time_series.setter
+    #def time_series(self, value):
+    #    self.__time_series = value
     
     def read_frames(self, channel_name, gps_start_time, gps_end_time, cache_url):
         """
