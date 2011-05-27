@@ -32,64 +32,108 @@
 unittest for the StrainData class
 """
 
-import sys
 # preliminary hard coded path to packages 
+import sys
 sys.path.append('/Users/kawies/dev/src/pycbc')
 sys.path.append('/Users/kawies/dev/src/pycbc/pycbc/straindata')
 
 from straindata_cpu import StrainData as DUT_StrainData
 import unittest
-
-#import random
+import random
 
 class TestStrainDataCPU(unittest.TestCase):
 
     # Test Fixture ---------------------------
 
     def setUp(self):
-        print "setUp called"
         
-        self.length =   128
-        self.segments = 2
-        
-        self.dut= DUT_StrainData(self.segments, self.length, "H1")
+        self.length =   5
+        self.segments = 3
+        self.interferometer = "H1"
+        self.dut= DUT_StrainData(self.segments, self.length, self.interferometer)
+
+        random.seed()
+        self.digits_to_check_single_against_double = 7
 
     def tearDown(self):
-        print "tearDown called"
-
+        pass
+        
     # Sub tests -------------------------------
 
     def test_1_initial_timeseries(self):
         """
-        Test proper initialization, datatype and access of the initial 
-        double precision time series for strain data
+        Test proper datatype, initialization and access of the initial 
+        double precision time series of strain data s(t)
         """
 
+        # check type
         self.assertTrue(repr(self.dut.strain_time_series).find("datavectorcpu.real_vector_double_t") >= 0,
-        " Wrong type of datavector for straindata at the initial timepoint")
+        " Wrong type of datavector for straindata at the initial phase")
+
+        # check correct initialization
+        for i in range(self.length):
+            self.assertEquals(self.dut.strain_time_series[i], 0.0,
+            "strain_time_series not initialized by 0.0 at index: {0}".format(i))
         
-        print self.dut.strain_time_series
+        # access test
+        for i in range(self.length):
+            tmp= random.uniform(-1,1)
+            self.dut.strain_time_series[i] = tmp
+            self.assertEquals(self.dut.strain_time_series[i], tmp,
+            "strain_time_series access test failed at index: {0}".format(i))
 
-        print repr(self.dut.strain_time_series)
-         
+    def test_2_convert(self):
+        """
+        Test the conversion of the initial 
+        double precision time series of strain data s(t) to a single precision
+        time series
+        """
+        pass
 
 
+    def test_3_segmenting(self):
+        """
+        Test proper datatype, initialization and access of the segmented 
+        single precision frequency series of strain data stilde(f)
+        """
 
-    def test_2_access_datavectors(self):
+        # iterate over segments
+        for stilde in self.dut:
+            # check type
+            self.assertTrue(repr(stilde).find("datavectorcpu.complex_vector_single_t") >= 0,
+            " Wrong type of datavector for stilde")
 
-        self.dut.strain_time_series[0]= 1.234
-        self.assertEqual(self.dut.strain_time_series[0], 1.234)
+            # check correct initialization
+            for i in range(self.length):
+                self.assertEquals(stilde[i], 0.0,
+                "strain_freq_series not initialized by 0.0 at index: {0}".format(i))
         
-        #self.dut.strain_time_series[self.length-1]= 1.234
-        #self.assertEqual(self.dut.strain_time_series[self.length-1], 1.234)
+            # access test
+            for j in range(self.length * 2): # complex!
+                tmp= random.uniform(-1,1)
+                stilde[j] = tmp
+                self.assertAlmostEquals(stilde[j], tmp, 
+                self.digits_to_check_single_against_double,
+                "stilde access test failed at index: {0}".format(j))
 
-        #self.dut.strain_freq_series[0]= 1.23456789
-        #self.assertEqual(self.dut.strain_freq_series[0], 1.23456789)
+        # 2nd run to check if the iterator was resetted correctly
+        for stilde in self.dut:
+                   
+            for j in range(self.length * 2): # complex!
+                tmp= random.uniform(-1,1)
+                stilde[j] = tmp
+                self.assertAlmostEquals(stilde[j], tmp, 
+                self.digits_to_check_single_against_double,
+                "stilde access test failed at index: {0}".format(j))
         
-        #self.dut.strain_freq_series[self.length-1]= 1.23456789
-        #self.assertEqual(self.dut.strain_freq_series[self.length-1], 1.23456789)
+        #element = random.choice(self.seq)
+        #self.assertTrue(element in self.seq)
+        
+        #with self.assertRaises(ValueError):
+        #    random.sample(self.seq, 20)
+        #for element in random.sample(self.seq, 5):
+        #    self.assertTrue(element in self.seq)
 
-                
         # make sure the shuffled sequence does not lose any elements
         #random.shuffle(self.seq)
         #self.seq.sort()
@@ -97,18 +141,6 @@ class TestStrainDataCPU(unittest.TestCase):
 
         # should raise an exception for an immutable sequence
         #self.assertRaises(TypeError, random.shuffle, (1,2,3))
-
-    def test_3_attributes_datavectors(self):
-        pass
-        #element = random.choice(self.seq)
-        #self.assertTrue(element in self.seq)
-
-    def test_4_sample(self):
-        pass
-        #with self.assertRaises(ValueError):
-        #    random.sample(self.seq, 20)
-        #for element in random.sample(self.seq, 5):
-        #    self.assertTrue(element in self.seq)
 
 
 #if __name__ == '__main__':

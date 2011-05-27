@@ -22,34 +22,20 @@
 #
 # =============================================================================
 #
-
 """
 Base class of strain data
 """
 
-import numpy as np
-
 from pycbc.datavector.datavectorcpu import real_vector_double_t as InitialTimeSeriesDoublePreci
 from pycbc.datavector.datavectorcpu import real_vector_single_t as TimeSeriesSinglePreci
 from pycbc.datavector.datavectorcpu import complex_vector_single_t as FreqSeriesStilde
-
-class TimeSeriesGeneric(object):
-    def __init__(self, data, length, fs):
-        self.data = None
-        self.length = None
-        self.fs = None
-        
-    def display(self):
-        print self.data, self.data.dtype, self.length
-    
-    def to_float(self):
-        self.data = self.data.astype(np.float32)
 
 class StrainData(object):
     
     def __init__(self, segments, length, ifo):
         
         self.__segments= segments
+        self.__segments_index = 0
         self.__length= length
         self.__interferometer = ifo
         
@@ -59,20 +45,24 @@ class StrainData(object):
         for i in range(segments):
             tmp_series = FreqSeriesStilde(length)
             self.__strain_freq_series.append(tmp_series)
-            print i
-        
-        print 'instanciated StrainData'
-        
-        # self.time_series = TimeSeriesGeneric(None, 1, 1)
-        # self.__frequency_series = None
-        # self.__global_time_intervall = None
 
+    # define the iterater of StrainData. Other access patterns to the data 
+    # should be implemented by generators (i.g. reverse())
     def __iter__(self):
         """
-        provide functionality to iterate over the array of frequency elements
+        define straindata itself to iterate over it's inherent list of segments
         """
-        pass
+        return self
 
+    def next(self):
+        if self.__segments_index == self.__segments:
+            self.__segments_index = 0
+            raise StopIteration
+        self.__segments_index = self.__segments_index + 1
+        return self.__strain_freq_series[self.__segments_index-1]
+
+    # multiplication with itself shall be used to apply the overwhitening filter. 
+    # It is a complex *= real operation
     def __rmul__(self):
         """
         overload multiply for data objects, e.g. to allow multiplcation by a psd
@@ -83,19 +73,20 @@ class StrainData(object):
     def strain_time_series(self):
         return self.__strain_time_series
 
+    @strain_time_series.setter
+    def strain_time_series(self, value):
+        self.__strain_time_series = value
+
+
     @property
     def strain_freq_series(self):
         return self.__strain_freq_series
 
+    @strain_freq_series.setter
+    def strain_freq_series(self, value):
+        self.__strain_freq_series = value
 
-    #@property
-    #def time_series(self):
-    #    return self.__time_series
-        
-    #@time_series.setter
-    #def time_series(self, value):
-    #    self.__time_series = value
-    
+          
     def read_frames(self, channel_name, gps_start_time, gps_end_time, cache_url):
         """
         @type  channel_name: string
