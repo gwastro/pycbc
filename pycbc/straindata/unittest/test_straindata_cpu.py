@@ -38,6 +38,7 @@ sys.path.append('/Users/kawies/dev/src/pycbc')
 sys.path.append('/Users/kawies/dev/src/pycbc/pycbc/straindata')
 
 from straindata_cpu import StrainData as DUT_StrainData
+
 import unittest
 import random
 
@@ -47,10 +48,15 @@ class TestStrainDataCPU(unittest.TestCase):
 
     def setUp(self):
         
-        self.length =   5
-        self.segments = 3
+        self.length =   1024
+        self.segments = 15
         self.interferometer = "H1"
-        self.dut= DUT_StrainData(self.segments, self.length, self.interferometer)
+        self.dut= DUT_StrainData(self.segments,self.length,self.interferometer)
+
+        #print "instanciated:"
+        #print self.dut.strain_time_series
+        #for stilde in self.dut:
+        #    print stilde
 
         random.seed()
         self.digits_to_check_single_against_double = 7
@@ -60,15 +66,19 @@ class TestStrainDataCPU(unittest.TestCase):
         
     # Sub tests -------------------------------
 
-    def test_1_initial_timeseries(self):
+    def test_1_initial_timeseries(self): #######################################
         """
         Test proper datatype, initialization and access of the initial 
         double precision time series of strain data s(t)
         """
 
         # check type
-        self.assertTrue(repr(self.dut.strain_time_series).find("datavectorcpu.real_vector_double_t") >= 0,
+        self.assertTrue(repr(self.dut.strain_time_series).
+        find("datavectorcpu.real_vector_double_t") >= 0,
         " Wrong type of datavector for straindata at the initial phase")
+        
+        # check for indexing the datavector wrong
+        self.dut.strain_time_series[200000] = 3.0
 
         # check correct initialization
         for i in range(self.length):
@@ -79,68 +89,94 @@ class TestStrainDataCPU(unittest.TestCase):
         for i in range(self.length):
             tmp= random.uniform(-1,1)
             self.dut.strain_time_series[i] = tmp
-            self.assertEquals(self.dut.strain_time_series[i], tmp,
+            self.assertEquals(self.dut.strain_time_series[i], tmp, 
             "strain_time_series access test failed at index: {0}".format(i))
+            
 
-    def test_2_convert(self):
+    def test_2_convert_to_single_preci(self): ##################################
         """
         Test the conversion of the initial 
         double precision time series of strain data s(t) to a single precision
         time series
         """
-        pass
+        
+        tmp_series = []
+        for i in range(self.length):
+            tmp = random.uniform(-1,1)
+            tmp_series.append(tmp)
+            self.dut.strain_time_series[i] = tmp
+        
+        self.dut.convert_to_single_preci()
+        
+        # check type (straindata converted to single precision)
+        self.assertTrue(repr(self.dut.strain_time_series).
+        find("datavectorcpu.real_vector_single_t") >= 0,
+        " Wrong type of datavector for straindata after convert() call")
+        
+        # check data integrity after conversion
+        for i in range(self.length):
+                self.assertAlmostEquals(self.dut.strain_time_series[i], 
+                                        tmp_series[i], 
+                self.digits_to_check_single_against_double,
+                "straindata access test failed after convert() at index: {0}".
+                format(i))
 
-
-    def test_3_segmenting(self):
+    def test_3_segmenting(self): ###############################################
         """
         Test proper datatype, initialization and access of the segmented 
         single precision frequency series of strain data stilde(f)
         """
 
+#  straindata must have a segment length property 
+#  where as segment length is usually length/2
+
+
         # iterate over segments
         for stilde in self.dut:
             # check type
-            self.assertTrue(repr(stilde).find("datavectorcpu.complex_vector_single_t") >= 0,
+            self.assertTrue(repr(stilde).
+            find("datavectorcpu.complex_vector_single_t") >= 0,
             " Wrong type of datavector for stilde")
 
             # check correct initialization
             for i in range(self.length):
                 self.assertEquals(stilde[i], 0.0,
-                "strain_freq_series not initialized by 0.0 at index: {0}".format(i))
+                "strain_freq_series not initialized by 0.0 at index: {0}".
+                format(i))
         
             # access test
-            for j in range(self.length * 2): # complex!
+            for i in range(self.length ): ############* 2): # complex!   Not unique checkable for all types
                 tmp= random.uniform(-1,1)
-                stilde[j] = tmp
-                self.assertAlmostEquals(stilde[j], tmp, 
+                stilde[i] = tmp
+                self.assertAlmostEquals(stilde[i], tmp, 
                 self.digits_to_check_single_against_double,
-                "stilde access test failed at index: {0}".format(j))
+                "stilde access test failed at index: {0}".format(i))
 
         # 2nd run to check if the iterator was resetted correctly
         for stilde in self.dut:
                    
-            for j in range(self.length * 2): # complex!
+            for i in range(self.length ):  ############## * 2): # complex!
                 tmp= random.uniform(-1,1)
-                stilde[j] = tmp
-                self.assertAlmostEquals(stilde[j], tmp, 
+                stilde[i] = tmp
+                self.assertAlmostEquals(stilde[i], tmp, 
                 self.digits_to_check_single_against_double,
-                "stilde access test failed at index: {0}".format(j))
+                "stilde access test failed at index: {0}".format(i))
         
-        #element = random.choice(self.seq)
-        #self.assertTrue(element in self.seq)
+#element = random.choice(self.seq)
+#self.assertTrue(element in self.seq)
         
-        #with self.assertRaises(ValueError):
-        #    random.sample(self.seq, 20)
-        #for element in random.sample(self.seq, 5):
-        #    self.assertTrue(element in self.seq)
+#with self.assertRaises(ValueError):
+#    random.sample(self.seq, 20)
+#for element in random.sample(self.seq, 5):
+#    self.assertTrue(element in self.seq)
 
-        # make sure the shuffled sequence does not lose any elements
-        #random.shuffle(self.seq)
-        #self.seq.sort()
-        #self.assertEqual(self.seq, range(10))
+# make sure the shuffled sequence does not lose any elements
+#random.shuffle(self.seq)
+#self.seq.sort()
+#self.assertEqual(self.seq, range(10))
 
-        # should raise an exception for an immutable sequence
-        #self.assertRaises(TypeError, random.shuffle, (1,2,3))
+# should raise an exception for an immutable sequence
+#self.assertRaises(TypeError, random.shuffle, (1,2,3))
 
 
 #if __name__ == '__main__':

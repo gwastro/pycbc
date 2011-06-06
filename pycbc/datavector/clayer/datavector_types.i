@@ -24,7 +24,6 @@
 //
 // swig properties for datavector elements
 
-
 // add new element properties here:
 %define TYPE_INTERFACE_TEMPLATE(name,type)
 name(unsigned vector_length);
@@ -48,8 +47,15 @@ type __getitem__(unsigned i) {
 }
 
 void __setitem__(unsigned i, type value) {
-    type* data = (type*) self->data; 
-    data[i] = value;
+    try {
+        if (i >= self->meta_data.vector_length)
+            throw(RangeError);
+        type* data = (type*) self->data; 
+        data[i] = value;
+    } catch (RangeError) {
+        PyErr_SetString(PyExc_IndexError,"Index for datavector access out of range");
+    } finally 
+        PyErr_SetString(PyExc_MemoryError,"Unknown exception while datavector access");
 }
 
 void set_start( unsigned start ) {
@@ -75,7 +81,6 @@ void set_generic_new_element_for_testing( int value ) {
 int get_generic_new_element_for_testing( void ) {
     return self->meta_data.generic_new_element_for_testing;
 }
-
 
 %enddef
 

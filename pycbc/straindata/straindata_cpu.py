@@ -61,11 +61,11 @@ class StrainData(object):
         self.__segments_index = self.__segments_index + 1
         return self.__strain_freq_series[self.__segments_index-1]
 
-    # multiplication with itself shall be used to apply the overwhitening filter. 
-    # It is a complex *= real operation
+    # multiplication with itself will be used to apply the overwhitening filter. 
+    # (complex *= real operation)
     def __rmul__(self):
         """
-        overload multiply for data objects, e.g. to allow multiplcation by a psd
+        overload multiply for data objects, to allow multiplcation by a psd series
         """
         pass
 
@@ -77,7 +77,6 @@ class StrainData(object):
     def strain_time_series(self, value):
         self.__strain_time_series = value
 
-
     @property
     def strain_freq_series(self):
         return self.__strain_freq_series
@@ -86,7 +85,13 @@ class StrainData(object):
     def strain_freq_series(self, value):
         self.__strain_freq_series = value
 
-          
+    
+    def convert_to_single_preci(self):
+        tmp_series= TimeSeriesSinglePreci(self.__length)
+        for i in range(self.__length):
+            tmp_series[i] = self.__strain_time_series[i]
+        self.__strain_time_series = tmp_series
+                                                  
     def read_frames(self, channel_name, gps_start_time, gps_end_time, cache_url):
         """
         @type  channel_name: string

@@ -37,6 +37,7 @@
 // This goes directly to the wrap-code (no swig preprocess)
 // wrap code needs to have typedefs and function prototypes!
 %{
+#include "../except.h"
 #include "datavectorcpu_types.h"
 #include "datavectorcpu_prototypes.h"
 %}
