@@ -24,10 +24,21 @@
 //
 // swig properties for datavector elements
 
+
 // add new element properties here:
 %define TYPE_INTERFACE_TEMPLATE(name,type)
 name(unsigned vector_length);
 ~name();
+
+%typemap(check) unsigned vector_index {
+    if ($1 >= arg1->meta_data.vector_length) {
+        SWIG_exception(SWIG_ValueError, "Index for datavector access out of range");
+    }
+}
+
+// ToDo out typemap for malloc to raise an out of memory exception! 
+// Probably it is not that neccessary because if malloc would 
+// deliver a NULL pointer all other unittests would fail immideately.
 
 char* __str__() {
     static char a[512];
@@ -41,12 +52,18 @@ unsigned __len__() {
     return self->meta_data.vector_length;
 }
 
-type __getitem__(unsigned i) {
+type __getitem__(unsigned vector_index) {
     type* data = (type*) self->data; 
-    return (type) data[i];
+    return (type) data[vector_index];
 }
 
-void __setitem__(unsigned i, type value) {
+void __setitem__(unsigned vector_index, type value) {
+    type* data = (type*) self->data; 
+    data[vector_index] = value;
+
+    /* Even though the exception appeares in python it 
+       can't be catched there by "except". Because the python interpreter
+       get's confused if the funcion returns a none-NULL 
     try {
         if (i >= self->meta_data.vector_length)
             throw(RangeError);
@@ -56,10 +73,11 @@ void __setitem__(unsigned i, type value) {
         PyErr_SetString(PyExc_IndexError,"Index for datavector access out of range");
     } finally 
         PyErr_SetString(PyExc_MemoryError,"Unknown exception while datavector access");
+    */
 }
 
-void set_start( unsigned start ) {
-    self->meta_data.start = start;
+void set_start( unsigned vector_index ) {
+    self->meta_data.start = vector_index;
 }
 
 unsigned get_start( void ) {

@@ -48,15 +48,11 @@ class TestStrainDataCPU(unittest.TestCase):
 
     def setUp(self):
         
-        self.length =   1024
-        self.segments = 15
+        self.length =   375
+        self.segments = 23
+        
         self.interferometer = "H1"
         self.dut= DUT_StrainData(self.segments,self.length,self.interferometer)
-
-        #print "instanciated:"
-        #print self.dut.strain_time_series
-        #for stilde in self.dut:
-        #    print stilde
 
         random.seed()
         self.digits_to_check_single_against_double = 7
@@ -76,22 +72,36 @@ class TestStrainDataCPU(unittest.TestCase):
         self.assertTrue(repr(self.dut.strain_time_series).
         find("datavectorcpu.real_vector_double_t") >= 0,
         " Wrong type of datavector for straindata at the initial phase")
-        
-        # check for indexing the datavector wrong
-        self.dut.strain_time_series[200000] = 3.0
+
 
         # check correct initialization
         for i in range(self.length):
             self.assertEquals(self.dut.strain_time_series[i], 0.0,
             "strain_time_series not initialized by 0.0 at index: {0}".format(i))
         
+        # check datavectors for throwing exceptions if 
+        # trying to access out of bounds
+        def out_of_bounds_access(self, vector_to_test):
+            vector_to_test[self.length] = 2.0
+            tmp = vector_to_test[self.length]
+        
+        self.assertRaises(ValueError, out_of_bounds_access, self, 
+                          self.dut.strain_time_series)
+
+        self.assertRaises(ValueError, self.dut.strain_time_series.set_start, 
+                          self.length)
+        
+        #try:
+        #    self.dut.strain_time_series[self.length] = 2.0
+        #except ValueError:
+        #    print 'Catched ValueError'
+            
         # access test
         for i in range(self.length):
             tmp= random.uniform(-1,1)
             self.dut.strain_time_series[i] = tmp
             self.assertEquals(self.dut.strain_time_series[i], tmp, 
             "strain_time_series access test failed at index: {0}".format(i))
-            
 
     def test_2_convert_to_single_preci(self): ##################################
         """
@@ -100,6 +110,7 @@ class TestStrainDataCPU(unittest.TestCase):
         time series
         """
         
+        # initialize datavector by random numbers and save in temporarily list 
         tmp_series = []
         for i in range(self.length):
             tmp = random.uniform(-1,1)
@@ -127,9 +138,8 @@ class TestStrainDataCPU(unittest.TestCase):
         single precision frequency series of strain data stilde(f)
         """
 
-#  straindata must have a segment length property 
+#  todo straindata must have a segment length property 
 #  where as segment length is usually length/2
-
 
         # iterate over segments
         for stilde in self.dut:
@@ -143,7 +153,9 @@ class TestStrainDataCPU(unittest.TestCase):
                 self.assertEquals(stilde[i], 0.0,
                 "strain_freq_series not initialized by 0.0 at index: {0}".
                 format(i))
-        
+
+#  todo add exception tests like above
+#        
             # access test
             for i in range(self.length ): ############* 2): # complex!   Not unique checkable for all types
                 tmp= random.uniform(-1,1)
@@ -162,28 +174,8 @@ class TestStrainDataCPU(unittest.TestCase):
                 self.digits_to_check_single_against_double,
                 "stilde access test failed at index: {0}".format(i))
         
-#element = random.choice(self.seq)
-#self.assertTrue(element in self.seq)
-        
-#with self.assertRaises(ValueError):
-#    random.sample(self.seq, 20)
-#for element in random.sample(self.seq, 5):
-#    self.assertTrue(element in self.seq)
 
-# make sure the shuffled sequence does not lose any elements
-#random.shuffle(self.seq)
-#self.seq.sort()
-#self.assertEqual(self.seq, range(10))
-
-# should raise an exception for an immutable sequence
-#self.assertRaises(TypeError, random.shuffle, (1,2,3))
-
-
-#if __name__ == '__main__':
-#    unittest.main()
- 
 # automate the process of creating a test suite    
-          
 suite = unittest.TestLoader().loadTestsFromTestCase(TestStrainDataCPU)
 unittest.TextTestRunner(verbosity=2).run(suite)
 
