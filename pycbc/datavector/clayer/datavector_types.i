@@ -27,10 +27,15 @@
 
 // add new element properties here:
 %define TYPE_INTERFACE_TEMPLATE(name,type)
-name(unsigned vector_length);
+name(unsigned long vector_length);
 ~name();
 
-%typemap(check) unsigned vector_index {
+
+//   todo   typemap for wrapping complex_t to py-complex type
+//          by that we clean up the size/length issue
+//          for complex datavectors
+
+%typemap(check) unsigned long vector_index {
     if ($1 >= arg1->meta_data.vector_length) {
         SWIG_exception(SWIG_ValueError, "Index for datavector access out of range");
     }
@@ -38,12 +43,12 @@ name(unsigned vector_length);
 
 // ToDo out typemap for malloc to raise an out of memory exception! 
 // Probably it is not that neccessary because if malloc would 
-// deliver a NULL pointer all other unittests would fail immideately.
+// deliver a NULL pointer all other unittests would fail.
 
 char* __str__() {
     static char a[512];
     snprintf( a, sizeof(a)/sizeof(*a), 
-             "<name, length %d, data ptr %p>", 
+             "<name, length %ld, data ptr %p>", 
              self->meta_data.vector_length, self->data );
     return a;
 }
@@ -52,12 +57,12 @@ unsigned __len__() {
     return self->meta_data.vector_length;
 }
 
-type __getitem__(unsigned vector_index) {
+type __getitem__(unsigned long vector_index) {
     type* data = (type*) self->data; 
     return (type) data[vector_index];
 }
 
-void __setitem__(unsigned vector_index, type value) {
+void __setitem__(unsigned long vector_index, type value) {
     type* data = (type*) self->data; 
     data[vector_index] = value;
 
@@ -76,7 +81,7 @@ void __setitem__(unsigned vector_index, type value) {
     */
 }
 
-void set_start( unsigned vector_index ) {
+void set_start( unsigned long vector_index ) {
     self->meta_data.start = vector_index;
 }
 
@@ -84,11 +89,11 @@ unsigned get_start( void ) {
     return self->meta_data.start;
 }
 
-void set_dx( type dx ) {
+void set_dx( double dx ) {            // ToDo better rename dx to delta_t
     self->meta_data.dx = dx;
 }
 
-double get_dx( void ) {
+double get_dx( void ) {               // "  "
     return self->meta_data.dx;
 }
 

@@ -65,11 +65,11 @@
 }
 
 %extend complex_vector_single_t {
-    TYPE_INTERFACE_TEMPLATE(complex_vector_single_t,float)
+    TYPE_INTERFACE_TEMPLATE(complex_vector_single_t,complex_float_t)
 }
 
 %extend complex_vector_double_t {
-    TYPE_INTERFACE_TEMPLATE(complex_vector_double_t,double)
+    TYPE_INTERFACE_TEMPLATE(complex_vector_double_t,complex_double_t)
 }
 
 

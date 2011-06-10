@@ -48,7 +48,7 @@ class TestStrainDataCPU(unittest.TestCase):
 
     def setUp(self):
         
-        self.length =   375
+        self.length =   1000
         self.segments = 23
         
         self.interferometer = "H1"
@@ -141,13 +141,18 @@ class TestStrainDataCPU(unittest.TestCase):
 #  todo straindata must have a segment length property 
 #  where as segment length is usually length/2
 
+# SOLUTION by cleanly typemapping complex. length means length * complex_t  !!!
+
         # iterate over segments
         for stilde in self.dut:
             # check type
             self.assertTrue(repr(stilde).
             find("datavectorcpu.complex_vector_single_t") >= 0,
             " Wrong type of datavector for stilde")
-
+            
+            print stilde
+            print repr(stilde[10])
+            
             # check correct initialization
             for i in range(self.length):
                 self.assertEquals(stilde[i], 0.0,

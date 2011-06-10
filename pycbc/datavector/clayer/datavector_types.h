@@ -35,13 +35,27 @@
 
 typedef struct
 {
-    unsigned long int start;
-    double            dx;
-    unsigned int      vector_length;
-    size_t            element_size_bytes;
-    int               generic_new_element_for_testing;
+    unsigned long start;
+    double        dx;
+    unsigned long vector_length;
+    size_t        element_size_bytes;
+    int           generic_new_element_for_testing;
 }
 meta_data_t;
+
+typedef struct
+{
+    float re;
+    float im;
+}
+complex_float_t;
+
+typedef struct
+{
+    double re;
+    double im;
+}
+complex_double_t;
 
 #define CONSTRUCTOR_TEMPLATE(name,type)\
 name* c;\
