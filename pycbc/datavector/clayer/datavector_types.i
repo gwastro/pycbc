@@ -30,20 +30,29 @@
 name(unsigned long vector_length);
 ~name();
 
+%typemap(in) complex_float_t {
+    $1.re = (float)PyComplex_RealAsDouble($input);
+    $1.im = (float)PyComplex_ImagAsDouble($input);
+}
 
-//   todo   typemap for wrapping complex_t to py-complex type
-//          by that we clean up the size/length issue
-//          for complex datavectors
+%typemap(in) complex_double_t {
+    $1.re = PyComplex_RealAsDouble($input);
+    $1.im = PyComplex_ImagAsDouble($input);
+}
+
+%typemap(out) complex_float_t {
+    $result = PyComplex_FromDoubles((double)$1.re, (double)$1.im);    
+}
+
+%typemap(out) complex_double_t {
+    $result = PyComplex_FromDoubles($1.re, $1.im); 
+}
 
 %typemap(check) unsigned long vector_index {
     if ($1 >= arg1->meta_data.vector_length) {
         SWIG_exception(SWIG_ValueError, "Index for datavector access out of range");
     }
 }
-
-// ToDo out typemap for malloc to raise an out of memory exception! 
-// Probably it is not that neccessary because if malloc would 
-// deliver a NULL pointer all other unittests would fail.
 
 char* __str__() {
     static char a[512];

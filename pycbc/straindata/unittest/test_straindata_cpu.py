@@ -48,8 +48,8 @@ class TestStrainDataCPU(unittest.TestCase):
 
     def setUp(self):
         
-        self.length =   1000
-        self.segments = 23
+        self.length =   5
+        self.segments = 3
         
         self.interferometer = "H1"
         self.dut= DUT_StrainData(self.segments,self.length,self.interferometer)
@@ -138,11 +138,6 @@ class TestStrainDataCPU(unittest.TestCase):
         single precision frequency series of strain data stilde(f)
         """
 
-#  todo straindata must have a segment length property 
-#  where as segment length is usually length/2
-
-# SOLUTION by cleanly typemapping complex. length means length * complex_t  !!!
-
         # iterate over segments
         for stilde in self.dut:
             # check type
@@ -150,20 +145,18 @@ class TestStrainDataCPU(unittest.TestCase):
             find("datavectorcpu.complex_vector_single_t") >= 0,
             " Wrong type of datavector for stilde")
             
-            print stilde
-            print repr(stilde[10])
-            
             # check correct initialization
             for i in range(self.length):
-                self.assertEquals(stilde[i], 0.0,
-                "strain_freq_series not initialized by 0.0 at index: {0}".
+                self.assertEquals(stilde[i], (0+0j),
+                "strain_freq_series not initialized by (0+0j) at index: {0}".
                 format(i))
 
+#
 #  todo add exception tests like above
 #        
             # access test
-            for i in range(self.length ): ############* 2): # complex!   Not unique checkable for all types
-                tmp= random.uniform(-1,1)
+            for i in range(self.length ):
+                tmp= complex(random.uniform(-1,1), random.uniform(-1,1))
                 stilde[i] = tmp
                 self.assertAlmostEquals(stilde[i], tmp, 
                 self.digits_to_check_single_against_double,
@@ -172,8 +165,8 @@ class TestStrainDataCPU(unittest.TestCase):
         # 2nd run to check if the iterator was resetted correctly
         for stilde in self.dut:
                    
-            for i in range(self.length ):  ############## * 2): # complex!
-                tmp= random.uniform(-1,1)
+            for i in range(self.length ):
+                tmp= complex(random.uniform(-1,1), random.uniform(-1,1))
                 stilde[i] = tmp
                 self.assertAlmostEquals(stilde[i], tmp, 
                 self.digits_to_check_single_against_double,

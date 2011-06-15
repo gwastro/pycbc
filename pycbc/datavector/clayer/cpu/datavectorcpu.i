@@ -53,8 +53,9 @@
 // but to declare function prototypes as well would raise a 
 // "is multiply defined error". That is the reason for splitting 
 // the headerfiles into _types and _prototypes
-%include "datavectorcpu_types.h"
+%include "../datavector_types.h"
 %include "../datavector_types.i"
+%include "datavectorcpu_types.h"
 
 %extend real_vector_single_t {
     TYPE_INTERFACE_TEMPLATE(real_vector_single_t,float)

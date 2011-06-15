@@ -62,7 +62,7 @@ complex_vector_single_t* new_complex_vector_single_t(unsigned long length)
 {
     
     CONSTRUCTOR_TEMPLATE(complex_vector_single_t, complex_float_t)
-    c->data = (complex_float_t*)calloc( 2 * c->meta_data.vector_length ,
+    c->data = (complex_float_t*)calloc(c->meta_data.vector_length ,
                           c->meta_data.element_size_bytes );
     return c;
 }
@@ -78,7 +78,7 @@ complex_vector_double_t* new_complex_vector_double_t(unsigned long length)
 {
     
     CONSTRUCTOR_TEMPLATE(complex_vector_double_t, complex_double_t)    
-    c->data = (complex_double_t*)calloc( 2 * c->meta_data.vector_length,
+    c->data = (complex_double_t*)calloc(c->meta_data.vector_length,
                           c->meta_data.element_size_bytes );
     return c;
 }
