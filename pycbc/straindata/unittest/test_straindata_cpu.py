@@ -37,7 +37,7 @@ import sys
 sys.path.append('/Users/kawies/dev/src/pycbc')
 sys.path.append('/Users/kawies/dev/src/pycbc/pycbc/straindata')
 
-from straindata_cpu import StrainData as DUT_StrainData
+from straindata_cpu import StrainDataCpu as DUT_StrainData
 
 import unittest
 import random
@@ -69,15 +69,15 @@ class TestStrainDataCPU(unittest.TestCase):
         """
 
         # check type
-        self.assertTrue(repr(self.dut.strain_time_series).
+        self.assertTrue(repr(self.dut.time_series).
         find("datavectorcpu.real_vector_double_t") >= 0,
         " Wrong type of datavector for straindata at the initial phase")
 
 
         # check correct initialization
         for i in range(self.length):
-            self.assertEquals(self.dut.strain_time_series[i], 0.0,
-            "strain_time_series not initialized by 0.0 at index: {0}".format(i))
+            self.assertEquals(self.dut.time_series[i], 0.0,
+            "time_series not initialized by 0.0 at index: {0}".format(i))
         
         # check datavectors for throwing exceptions if 
         # trying to access out of bounds
@@ -86,22 +86,22 @@ class TestStrainDataCPU(unittest.TestCase):
             tmp = vector_to_test[self.length]
         
         self.assertRaises(ValueError, out_of_bounds_access, self, 
-                          self.dut.strain_time_series)
+                          self.dut.time_series)
 
-        self.assertRaises(ValueError, self.dut.strain_time_series.set_start, 
+        self.assertRaises(ValueError, self.dut.time_series.set_start, 
                           self.length)
         
         #try:
-        #    self.dut.strain_time_series[self.length] = 2.0
+        #    self.dut.time_series[self.length] = 2.0
         #except ValueError:
         #    print 'Catched ValueError'
             
         # access test
         for i in range(self.length):
             tmp= random.uniform(-1,1)
-            self.dut.strain_time_series[i] = tmp
-            self.assertEquals(self.dut.strain_time_series[i], tmp, 
-            "strain_time_series access test failed at index: {0}".format(i))
+            self.dut.time_series[i] = tmp
+            self.assertEquals(self.dut.time_series[i], tmp, 
+            "time_series access test failed at index: {0}".format(i))
 
     def test_2_convert_to_single_preci(self): ##################################
         """
@@ -115,18 +115,18 @@ class TestStrainDataCPU(unittest.TestCase):
         for i in range(self.length):
             tmp = random.uniform(-1,1)
             tmp_series.append(tmp)
-            self.dut.strain_time_series[i] = tmp
+            self.dut.time_series[i] = tmp
         
         self.dut.convert_to_single_preci()
         
         # check type (straindata converted to single precision)
-        self.assertTrue(repr(self.dut.strain_time_series).
+        self.assertTrue(repr(self.dut.time_series).
         find("datavectorcpu.real_vector_single_t") >= 0,
         " Wrong type of datavector for straindata after convert() call")
         
         # check data integrity after conversion
         for i in range(self.length):
-                self.assertAlmostEquals(self.dut.strain_time_series[i], 
+                self.assertAlmostEquals(self.dut.time_series[i], 
                                         tmp_series[i], 
                 self.digits_to_check_single_against_double,
                 "straindata access test failed after convert() at index: {0}".
@@ -150,7 +150,7 @@ class TestStrainDataCPU(unittest.TestCase):
             # check correct initialization
             for i in range(self.length):
                 self.assertEquals(stilde[i], (0+0j),
-                "strain_freq_series not initialized by (0+0j) at index: {0}".
+                "frequency_series not initialized by (0+0j) at index: {0}".
                 format(i))
 
             # check datavectors for throwing exceptions if 
