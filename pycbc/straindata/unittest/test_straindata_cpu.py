@@ -48,8 +48,8 @@ class TestStrainDataCPU(unittest.TestCase):
 
     def setUp(self):
         
-        self.length =   5
-        self.segments = 3
+        self.length =   512
+        self.segments = 22
         
         self.interferometer = "H1"
         self.dut= DUT_StrainData(self.segments,self.length,self.interferometer)
@@ -145,15 +145,26 @@ class TestStrainDataCPU(unittest.TestCase):
             find("datavectorcpu.complex_vector_single_t") >= 0,
             " Wrong type of datavector for stilde")
             
+
+            
             # check correct initialization
             for i in range(self.length):
                 self.assertEquals(stilde[i], (0+0j),
                 "strain_freq_series not initialized by (0+0j) at index: {0}".
                 format(i))
 
-#
-#  todo add exception tests like above
-#        
+            # check datavectors for throwing exceptions if 
+            # trying to access out of bounds
+            def out_of_bounds_access(self, vector_to_test):
+                vector_to_test[self.length] = 2.0
+                tmp = vector_to_test[self.length]
+        
+            self.assertRaises(ValueError, out_of_bounds_access, self, 
+                                stilde)
+
+            self.assertRaises(ValueError, stilde.set_start, 
+                                self.length)
+       
             # access test
             for i in range(self.length ):
                 tmp= complex(random.uniform(-1,1), random.uniform(-1,1))
