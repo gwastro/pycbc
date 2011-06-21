@@ -46,22 +46,16 @@ class StrainDataBase(object):
 
         self.__segments= n_segments
         self.__segments_index = 0
-        
-        self.__segments_length = self.__length / self.__segments
+        self.__overlap_fact= 0.5
+
+        # calculate and check segment length -----------------------------------
+        self.__segments_length = self.__length / (1-self.__overlap_fact) / (self.__segments + 1)
         seg_len_base = log(self.__segments_length,2)
         assert seg_len_base == int(seg_len_base), "calculated segment length "+\
         "from parameters {0} not radix 2 ".format(self.__segments_length)
-     
-        
-        # todo buggy !!!
-        
-        self.__overlap_fact= 1 - (self.__length/(self.__segments + 1)/self.__segments_length) 
-     
-        # todo assert overlp fact to be 0.5!!!
-        #self.__overlap_fact= 0.5
-        
-        self.__interferometer = interferometer
+        self.__segments_length = int(self.__segments_length)
 
+        self.__interferometer = interferometer
         self.__time_series_t = time_series_t
 
         print

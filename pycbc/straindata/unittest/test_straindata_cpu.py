@@ -48,10 +48,10 @@ class TestStrainDataCPU(unittest.TestCase):
 
     def setUp(self):
         
-        self.search_time = 256
+        self.search_time = 2048
         self.sample_freq = 4096
         self.length =      self.search_time * self.sample_freq
-        self.segments = 32
+        self.segments = 15
         self.gps_start_time= 871147532
         self.gps_end_time= self.gps_start_time + self.search_time
         self.interferometer = "H1"
