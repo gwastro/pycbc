@@ -48,11 +48,21 @@ class TestStrainDataCPU(unittest.TestCase):
 
     def setUp(self):
         
-        self.length =   512
-        self.segments = 22
-        
+        self.search_time = 256
+        self.sample_freq = 4096
+        self.length =      self.search_time * self.sample_freq
+        self.segments = 32
+        self.gps_start_time= 871147532
+        self.gps_end_time= self.gps_start_time + self.search_time
         self.interferometer = "H1"
-        self.dut= DUT_StrainData(self.segments,self.length,self.interferometer)
+        
+        self.dut= DUT_StrainData(self.gps_start_time, self.gps_end_time, 
+                                 self.segments, self.sample_freq, 
+                                 self.interferometer)
+
+
+        print
+        print "setup strain w/ segment length: {0}".format(self.dut.segments_length)
 
         random.seed()
         self.digits_to_check_single_against_double = 7
@@ -145,10 +155,8 @@ class TestStrainDataCPU(unittest.TestCase):
             find("datavectorcpu.complex_vector_single_t") >= 0,
             " Wrong type of datavector for stilde")
             
-
-            
             # check correct initialization
-            for i in range(self.length):
+            for i in range(self.dut.segments_length):
                 self.assertEquals(stilde[i], (0+0j),
                 "frequency_series not initialized by (0+0j) at index: {0}".
                 format(i))
@@ -166,7 +174,7 @@ class TestStrainDataCPU(unittest.TestCase):
                                 self.length)
        
             # access test
-            for i in range(self.length ):
+            for i in range(self.dut.segments_length):
                 tmp= complex(random.uniform(-1,1), random.uniform(-1,1))
                 stilde[i] = tmp
                 self.assertAlmostEquals(stilde[i], tmp, 
@@ -176,7 +184,7 @@ class TestStrainDataCPU(unittest.TestCase):
         # 2nd run to check if the iterator was resetted correctly
         for stilde in self.dut:
                    
-            for i in range(self.length ):
+            for i in range(self.dut.segments_length):
                 tmp= complex(random.uniform(-1,1), random.uniform(-1,1))
                 stilde[i] = tmp
                 self.assertAlmostEquals(stilde[i], tmp, 

@@ -27,32 +27,62 @@ Base class of strain data
 """
 
 from abc import ABCMeta, abstractmethod, abstractproperty
+from math import * 
 
 
 class StrainDataBase(object):
     
     __metaclass__ = ABCMeta
     
-    def __init__(self, segments, length, ifo, 
+    def __init__(self, t_start, t_end, n_segments, sample_freq,
+                 interferometer, 
                  initial_time_series_t,
                  time_series_t, 
-                 frequency_series_t ):
-        #objects:
-        self.__segments= segments
+                 frequency_series_t):
+        
+        # init members
+        self.__sample_freq= sample_freq
+        self.__length= (t_end - t_start) * self.__sample_freq
+
+        self.__segments= n_segments
         self.__segments_index = 0
-        self.__length= length
-        self.__interferometer = ifo
-        #classes:
+        
+        self.__segments_length = self.__length / self.__segments
+        seg_len_base = log(self.__segments_length,2)
+        assert seg_len_base == int(seg_len_base), "calculated segment length "+\
+        "from parameters {0} not radix 2 ".format(self.__segments_length)
+     
+        
+        # todo buggy !!!
+        
+        self.__overlap_fact= 1 - (self.__length/(self.__segments + 1)/self.__segments_length) 
+     
+        # todo assert overlp fact to be 0.5!!!
+        #self.__overlap_fact= 0.5
+        
+        self.__interferometer = interferometer
+
         self.__time_series_t = time_series_t
-        #self.__frequency_series_t = frequency_series_t
+
+        print
+        print seg_len_base
+        print self.__sample_freq
+        print self.__length
         
+        print self.__segments
+        print self.__segments_index
+        print self.__segments_length
         
-        #self.__strain_time_series= InitialTimeSeriesDoublePreci(length)
+        print self.__overlap_fact
+        print self.__interferometer
+        print self.__time_series_t
+
+        # setup initial data vectors            
         self.__time_series = initial_time_series_t(self.__length)
         
         self.__frequency_series= []
-        for i in range(segments):
-            tmp_series = frequency_series_t(self.__length)
+        for i in range(self.__segments):
+            tmp_series = frequency_series_t(self.__segments_length)
             self.__frequency_series.append(tmp_series)
 
     # define the iterater of StrainData. Other access patterns to the data 
@@ -78,27 +108,33 @@ class StrainDataBase(object):
         """
         pass
 
+    #-interface-----------------------------------------------------------------
+
     @property
     def time_series(self):
         return self.__time_series
 
-    @time_series.setter
-    def time_series(self, value):
-        self.__time_series = value
+    #@time_series.setter
+    #def time_series(self, value):
+    #    self.__time_series = value
 
     @property
     def frequency_series(self):
         return self.__frequency_series
 
-    @frequency_series.setter
-    def frequency_series(self, value):
-        self.__frequency_series = value
+    #@frequency_series.setter
+    #def frequency_series(self, value):
+    #    self.__frequency_series = value
 
+    @property
+    def segments_length(self):
+        return self.__segments_length
 
+    #---------------------------------------------------------------------------
+    
     @abstractmethod
     def render(self):
         pass  
-
     
     def convert_to_single_preci(self):
         tmp_series= self.__time_series_t(self.__length)

@@ -34,9 +34,10 @@ from pycbc.datavector.datavectorcpu import complex_vector_single_t as FrequencyS
 
 class StrainDataCpu(StrainDataBase):
 
-    def __init__(self, segments, length, ifo):
+    def __init__(self, t_start, t_end, n_segments, sample_freq,interferometer,):
         
-        super(StrainDataCpu, self).__init__(segments, length, ifo,
+        super(StrainDataCpu, self).__init__(t_start, t_end, n_segments, sample_freq,
+                                            interferometer,
                                             InitialTimeSeriesDoublePreci,
                                             TimeSeriesSinglePreci,
                                             FrequencySeries)
