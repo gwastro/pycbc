@@ -1,0 +1,102 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2011 Karsten Wiesner
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+# pycbc should follow <http://www.python.org/dev/peps/pep-0008/>
+#
+# vim: tabstop=4:softtabstop=4:shiftwidth=4:expandtab
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+"""
+Application of gravitational wave search for inspiral mergers based on the 
+pycbc (py-thon c-ompact b-inary c-oalecence) package 
+
+Single Detector minimal pipeline used as prototype to test pycbc architecture
+for the due date 5th July 2011
+
+
+"""
+
+import sys
+import random
+
+# preliminary hard coded path to packages 
+sys.path.append('/Users/kawies/dev/src/pycbc')
+
+from pycbc.straindata.straindata_cpu import StrainDataCpu as StrainData 
+from pycbc.templatebank import TemplateBankCpu as TemplateBank 
+from pycbc.matchedfilter.matchedfilter_cpu import MatchedFilterCpu as MatchedFilter
+
+# setup straindata
+
+search_time = 2048
+sample_freq = 4096
+length =      search_time * sample_freq
+segments = 15
+gps_start_time= 871147532
+gps_end_time= gps_start_time + search_time
+interferometer = "H1"
+        
+strain_data= StrainData(gps_start_time, gps_end_time, 
+                        segments, sample_freq, 
+                        interferometer)
+
+
+# initialize straindata w/ white noise
+
+for i in range(length):
+    tmp= random.uniform(-1,1)
+    strain_data.time_series[i] = tmp
+
+
+# convert straindata to single precision
+
+strain_data.convert_to_single_preci()
+
+
+# segmenting straindata and transform into frequency domain
+
+strain_data.fft_segments()
+
+
+# transfer straindata to appropriate memory space on target device
+
+strain_data.render()
+
+# create a template bank with one template from a fixed equal mass system or even 
+# read the waveform from a file render directly to cpu memory and in the 2nd step
+# to cuda device memory
+
+bank = TemplateBank()   ### Me to implement Templatebank skeleton  TODO
+
+
+# create matched filter (only generate_snr() is to be implemented at this phase
+
+matched_filter = MatchedFilter( strain_data.segments_length )
+
+# filter the data against the template bank
+#for htilde in bank:
+#    htilde.generate_filter_waveform()
+#    for stilde in strain_data:
+#        snr = matched_filter.generate_snr( stilde, htilde )

@@ -164,7 +164,7 @@ class StrainDataBase(object):
         #self.time_series.data = np.ones(self.time_series.length)
                         
 
-    def fft_segments(self, segment_length, segment_overlap):
+    def fft_segments(self):
         """
         split the time_series data into segments and transform each segment into
         the frequency domain using fftw on the cpu.

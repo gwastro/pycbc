@@ -60,8 +60,6 @@ class TestStrainDataCPU(unittest.TestCase):
                                  self.segments, self.sample_freq, 
                                  self.interferometer)
 
-
-        print
         print "setup strain w/ segment length: {0}".format(self.dut.segments_length)
 
         random.seed()

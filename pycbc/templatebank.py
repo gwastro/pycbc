@@ -21,7 +21,7 @@ class TemplateBank():
         pass
 
 
-class TemplateBankCPU():
+class TemplateBankCpu():
     def __init__(self):
         self.create_template_frequency_series()
 
@@ -32,7 +32,7 @@ class TemplateBankCPU():
         pass
 
 
-class TemplateBankGPU():
+class TemplateBankGpu():
     def __init__(self):
         self.create_template_frequency_series()
 
