@@ -49,7 +49,9 @@ class StrainDataBase(object):
         self.__overlap_fact= 0.5
 
         # calculate and check segment length -----------------------------------
-        self.__segments_length = self.__length / (1-self.__overlap_fact) / (self.__segments + 1)
+        self.__segments_length = \
+            self.__length / (1-self.__overlap_fact) / (self.__segments + 1)
+            
         seg_len_base = log(self.__segments_length,2)
         assert seg_len_base == int(seg_len_base), "calculated segment length "+\
         "from parameters {0} not radix 2 ".format(self.__segments_length)
@@ -57,19 +59,20 @@ class StrainDataBase(object):
 
         self.__interferometer = interferometer
         self.__time_series_t = time_series_t
-
-        print
-        print seg_len_base
-        print self.__sample_freq
-        print self.__length
         
-        print self.__segments
-        print self.__segments_index
-        print self.__segments_length
+        #Debug
+        #print
+        #print seg_len_base
+        #print self.__sample_freq
+        #print self.__length
         
-        print self.__overlap_fact
-        print self.__interferometer
-        print self.__time_series_t
+        #print self.__segments
+        #print self.__segments_index
+        #print self.__segments_length
+        
+        #print self.__overlap_fact
+        #print self.__interferometer
+        #print self.__time_series_t
 
         # setup initial data vectors            
         self.__time_series = initial_time_series_t(self.__length)
@@ -98,7 +101,7 @@ class StrainDataBase(object):
     # (complex *= real operation)
     def __rmul__(self):
         """
-        overload multiply for data objects, to allow multiplcation by a psd series
+        overload mul for data objects, to allow multiplcation by a psd series
         """
         pass
 
@@ -136,7 +139,7 @@ class StrainDataBase(object):
             tmp_series[i] = self.__time_series[i]
         self.__time_series = tmp_series
                                                   
-    def read_frames(self, channel_name, gps_start_time, gps_end_time, cache_url):
+    def read_frames(self, channel_name,gps_start_time,gps_end_time,cache_url):
         """
         @type  channel_name: string
         @param channel_name: input gravitational wave strain channel name 
@@ -159,7 +162,8 @@ class StrainDataBase(object):
                self.__global_time_intervall)
         
         self.time_series.fs = 8192
-        self.time_series.length = self.__global_time_intervall * self.time_series.fs
+        self.time_series.length = self.__global_time_intervall * \
+                                  self.time_series.fs
         self.time_series.data = np.random.rand(self.time_series.length)
         #self.time_series.data = np.ones(self.time_series.length)
                         

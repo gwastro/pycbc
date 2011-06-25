@@ -45,13 +45,14 @@ import random
 sys.path.append('/Users/kawies/dev/src/pycbc')
 
 from pycbc.straindata.straindata_cpu import StrainDataCpu as StrainData 
-from pycbc.templatebank import TemplateBankCpu as TemplateBank 
+from pycbc.templatebank.templatebank_cpu import TemplateBankCpu as TemplateBank 
 from pycbc.matchedfilter.matchedfilter_cpu import MatchedFilterCpu as MatchedFilter
+from pycbc.datavector.datavectorcpu import real_vector_single_t as SnrResultTimeSeries
 
 # setup straindata
 
-search_time = 2048
-sample_freq = 4096
+search_time = 128 # typ design spec: 2048
+sample_freq = 256 # typ design spec: 4096
 length =      search_time * sample_freq
 segments = 15
 gps_start_time= 871147532
@@ -84,19 +85,24 @@ strain_data.fft_segments()
 
 strain_data.render()
 
-# create a template bank with one template from a fixed equal mass system or even 
+# create a template bank with 1 template from a fixed equal mass system or 
 # read the waveform from a file render directly to cpu memory and in the 2nd step
 # to cuda device memory
 
-bank = TemplateBank()   ### Me to implement Templatebank skeleton  TODO
-
+# create 5 templates for testing the iterator
+bank = TemplateBank( 5, strain_data.segments_length )
 
 # create matched filter (only generate_snr() is to be implemented at this phase
 
 matched_filter = MatchedFilter( strain_data.segments_length )
 
 # filter the data against the template bank
-#for htilde in bank:
-#    htilde.generate_filter_waveform()
-#    for stilde in strain_data:
-#        snr = matched_filter.generate_snr( stilde, htilde )
+
+snr= SnrResultTimeSeries(strain_data.segments_length)
+
+for template in bank:
+    htilde = bank.perform_generate_waveform(template)
+    for stilde in strain_data:
+        matched_filter.perform_generate_snr(stilde, htilde, snr)
+        
+        

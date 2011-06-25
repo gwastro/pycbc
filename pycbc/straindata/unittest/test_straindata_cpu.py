@@ -48,8 +48,8 @@ class TestStrainDataCPU(unittest.TestCase):
 
     def setUp(self):
         
-        self.search_time = 2048
-        self.sample_freq = 4096
+        self.search_time = 128 # typ design spec: 2048
+        self.sample_freq = 256 # typ design spec: 4096
         self.length =      self.search_time * self.sample_freq
         self.segments = 15
         self.gps_start_time= 871147532

@@ -23,25 +23,16 @@
 # =============================================================================
 #
 """
-Cpu version of strain data class
+Cpu version of the Template Bank
 """
 
-from straindata_base import StrainDataBase
+from templatebank_base import TemplateBankBase
+from pycbc.datavector.datavectorcpu import complex_vector_single_t as WaveformFrequencySeries
 
-from pycbc.datavector.datavectorcpu import real_vector_double_t as InitialTimeSeriesDoublePreci
-from pycbc.datavector.datavectorcpu import real_vector_single_t as TimeSeriesSinglePreci
-from pycbc.datavector.datavectorcpu import complex_vector_single_t as FrequencySeries
+class TemplateBankCpu(TemplateBankBase):
 
-class StrainDataCpu(StrainDataBase):
-
-    def __init__(self, t_start, t_end, n_segments, sample_freq, interferometer):
+    def __init__(self, n_templates, waveform_length):
         
-        super(StrainDataCpu, self).__init__(t_start, t_end, n_segments, sample_freq,
-                                            interferometer,
-                                            InitialTimeSeriesDoublePreci,
-                                            TimeSeriesSinglePreci,
-                                            FrequencySeries)
+        super(TemplateBankCpu, self).__init__(n_templates, waveform_length,
+                 WaveformFrequencySeries)
 
-    def render(self):
-        pass         # nothing to render in cpu version (data remaines in place)
-                                            

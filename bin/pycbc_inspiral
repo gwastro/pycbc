@@ -57,24 +57,6 @@ from pycbc.datavector.datavectorcpu import real_vector_single_t as PreprocessedS
 from pycbc.datavector.datavectorcpu import real_vector_single_t as TemplateWaveform
 from pycbc.datavector.datavectorcpu import real_vector_single_t as SnrData
 
-#from pycbc.datavector.datavectorcuda import real_vector_single_t as PreprocessedStrainData
-#from pycbc.datavector.datavectorcuda import real_vector_single_t as TemplateWaveform
-#from pycbc.datavector.datavectorcuda import real_vector_single_t as SnrData
-
-#from pycbc.datavector.datavectoropencl import real_vector_single_t as PreprocessedStrainData
-#from pycbc.datavector.datavectoropencl import real_vector_single_t as TemplateWaveform
-#from pycbc.datavector.datavectoropencl import real_vector_single_t as SnrData
-
-# examples for datavectors:
-
-# from pycbc.datavector.datavectorcpu import real_vector_double_t as FrequencySeries...
-# from pycbc.datavector.datavectorcpu import complex_vector_single_t as TimeSeries ....
-# from pycbc.datavector.datavectorcpu import complex_vector_double_t as TimeSeries ....
-# from pycbc.datavector.datavectorcuda import complex_vector_single_t as TimeSeries ....
-# from pycbc.datavector.datavectorcuda import complex_vector_double_t as TimeSeries ....
-
-# ...
-
 #from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
 from pycbc.matchedfilter.matchedfilter_cpu import MatchedFilterCpu as MatchedFilter
 
