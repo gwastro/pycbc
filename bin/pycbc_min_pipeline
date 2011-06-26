@@ -33,7 +33,13 @@ Application of gravitational wave search for inspiral mergers based on the
 pycbc (py-thon c-ompact b-inary c-oalecence) package 
 
 Single Detector minimal pipeline used as prototype to test pycbc architecture
-for the due date 5th July 2011
+to incorporate:
+
+- CUDA GPU implementation of CBC SPA waveform generator and 
+  matched filter by Alex Nitz (Univerity of Syracuse)
+
+- Open Cl GPU implementation of full CBC pipeline by Benjamin Somhegyi and
+  Gergely Debreczeni (KFKI, RMKI Budapest)
 
 
 """
@@ -63,6 +69,8 @@ strain_data= StrainData(gps_start_time, gps_end_time,
                         segments, sample_freq, 
                         interferometer)
 
+
+print "instanciated StrainData w/ segment length: {0}".format(strain_data.segments_length)
 
 # initialize straindata w/ white noise
 

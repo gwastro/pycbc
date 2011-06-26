@@ -45,15 +45,14 @@ class TemplateBankBase(object):
         self.__template_params= []
 
         for i in range(self.__templates):
-            tmp = [i*1.0, i*0.5] # m1, m2 very prototyping model of parameter space
+            tmp = [i*1.0, i*0.5] # m1, m2 very prototyping model of a parameter space
             self.__template_params.append(tmp)
 
+        print "prototyping templatebank:"
         print self.__template_params
 
         self.__waveform_length= waveform_length
         self.__waveform_frequency_series_t = waveform_frequency_series_t
-        
-        self.__template_params= int(3)
         
         # setup initial data vectors            
         self.__waveform = self.__waveform_frequency_series_t(self.__waveform_length)
@@ -67,7 +66,7 @@ class TemplateBankBase(object):
 
     #---------------------------------------------------------------------------
 
-
+    # iterate over templates in the parameter space
     def next(self):
         if self.__template_index == self.__templates:
             raise StopIteration
@@ -105,6 +104,7 @@ class TemplateBankBase(object):
         """
             
         # call the right approximation model generator with "template"!
+        # currently we make some noise for prototyping
         for i in range(self.waveform_length):
             self.__waveform[i] = random.uniform(-1,1)
                 

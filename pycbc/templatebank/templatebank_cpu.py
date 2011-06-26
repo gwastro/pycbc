@@ -23,7 +23,7 @@
 # =============================================================================
 #
 """
-Cpu version of the Template Bank
+Cpu version of the Template Bank. Status: Very prototyping
 """
 
 from templatebank_base import TemplateBankBase
