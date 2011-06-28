@@ -12,6 +12,8 @@ from distutils.command.clean import clean
 from distutils import file_util
 from distutils import spawn
 
+# test
+
 set_runtime_library_dirs = False
 argv_replace = []
 
