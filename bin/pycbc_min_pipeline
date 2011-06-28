@@ -69,7 +69,6 @@ strain_data= StrainData(gps_start_time, gps_end_time,
                         segments, sample_freq, 
                         interferometer)
 
-
 print "instanciated StrainData w/ segment length: {0}".format(strain_data.segments_length)
 
 # initialize straindata w/ white noise
@@ -104,10 +103,12 @@ bank = TemplateBank( 5, strain_data.segments_length )
 
 matched_filter = MatchedFilter( strain_data.segments_length )
 
-# filter the data against the template bank
-
+# instanciate result vector
 snr= SnrResultTimeSeries(strain_data.segments_length)
 
+# filter the data against the template bank
+# ToDo check the transfer of a result vector a return value
+ 
 for template in bank:
     htilde = bank.perform_generate_waveform(template)
     for stilde in strain_data:

@@ -170,14 +170,8 @@ class StrainDataBase(object):
 
     def fft_segments(self):
         """
-        split the time_series data into segments and transform each segment into
+        transform each segment into
         the frequency domain using fftw on the cpu.
-        """
-        pass
-
-    def frequency_series_array_to_cuda_global_memory(self):
-        """
-        move the frequency series data from cpu memory to the gpu
         """
         pass
 
