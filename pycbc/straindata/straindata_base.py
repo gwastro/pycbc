@@ -74,7 +74,7 @@ class StrainDataBase:
             self.__frequency_series.append(tmp_series)
 
         # instanciate the (fft) segmenting implementation object
-        self.__fft_segments_impl = fft_segments_impl_t(self.__segments_length, time_series_t, frequency_series_t)
+        self.__fft_segments_impl = fft_segments_impl_t(self.__segments_length, self.__overlap_fact, time_series_t, frequency_series_t)
         
         if not isinstance(self.__fft_segments_impl, FftSegmentsImplementationBase):
             print "StrainDataBase.__init__: fft_segments_impl is not a derivate of FftSegmentsImplementationBase "

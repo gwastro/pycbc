@@ -6,10 +6,10 @@
 //prototypes of all functions that swig wraps to methods
 
 void* fftw_generate_plan(unsigned long length, real_vector_single_t* in_tmp,
-                       complex_vector_single_t* out_tmp, char* sign, char* style);
+                    complex_vector_single_t* out_tmp, char* sign, char* style);
 
-int fftw_transform_segments(void* plan,
-                            real_vector_single_t* in_buf, 
+int fftw_transform_segments(void* plan, real_vector_single_t* in_buf, 
+                            unsigned long input_buf_offset, 
                             complex_vector_single_t* out_buf);
 
 

@@ -33,7 +33,6 @@ from pycbc.datavector.datavectorcpu import real_vector_double_t as InitialTimeSe
 from pycbc.datavector.datavectorcpu import real_vector_single_t as TimeSeriesSinglePreci
 from pycbc.datavector.datavectorcpu import complex_vector_single_t as FrequencySeries
 
-
 from straindatacpu import fftw_generate_plan
 from straindatacpu import fftw_transform_segments
 
@@ -52,11 +51,10 @@ class StrainDataCpu(StrainDataBase):
     def render(self):
         pass         # nothing to render in cpu version (data remaines in place)
                                             
-  
                                                                                                                                                                           
 class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
 
-    def __init__(self, length, input_buf_t, output_buffer_t):
+    def __init__(self, length, overlap_fact, input_buf_t, output_buffer_t):
         print "instanciated FftSegmentsImplementationCpu" 
 
         assert repr(input_buf_t).find("datavectorcpu") >= 0, "try to instanciate FftSegmentsImplementationFftw with wrong type of datavector for input_buf"
@@ -65,15 +63,14 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         super(FftSegmentsImplementationFftw, self).__init__()
     
         self.__length = length
+        self.__overlap_fact = overlap_fact
         self.__input_buf_t = input_buf_t
         self.__output_buffer_t =  output_buffer_t
 
         # create plan
         in_tmp  = self.__input_buf_t(self.__length)
         out_tmp = self.__output_buffer_t(self.__length)
-        
         self.__fft_forward_plan= fftw_generate_plan(self.__length, in_tmp, out_tmp, "FFTW_FORWARD", "FFTW_ESTIMATE")
-
     
     def fft_segments(self, input_buf, output_buf):
         """
@@ -81,9 +78,9 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         """
         
         print self.__fft_forward_plan
-        
-        #for out_buf in self.output_buffers:
-       
-        fftw_transform_segments(self.__fft_forward_plan, input_buf, output_buf[0])
-                 
 
+        input_buf_offset = 0
+        for output_buffer_segment in output_buf:
+            print input_buf_offset
+            fftw_transform_segments(self.__fft_forward_plan, input_buf, input_buf_offset, output_buffer_segment)
+            input_buf_offset = int( input_buf_offset + self.__length * (1 - self.__overlap_fact) )
