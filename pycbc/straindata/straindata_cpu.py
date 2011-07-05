@@ -27,10 +27,16 @@ Cpu version of strain data class
 """
 
 from straindata_base import StrainDataBase
+from straindata_base import FftSegmentsImplementationBase
 
 from pycbc.datavector.datavectorcpu import real_vector_double_t as InitialTimeSeriesDoublePreci
 from pycbc.datavector.datavectorcpu import real_vector_single_t as TimeSeriesSinglePreci
 from pycbc.datavector.datavectorcpu import complex_vector_single_t as FrequencySeries
+
+
+from straindatacpu import fftw_generate_plan
+from straindatacpu import fftw_transform_segments
+
 
 class StrainDataCpu(StrainDataBase):
 
@@ -40,8 +46,42 @@ class StrainDataCpu(StrainDataBase):
                                             interferometer,
                                             InitialTimeSeriesDoublePreci,
                                             TimeSeriesSinglePreci,
-                                            FrequencySeries)
+                                            FrequencySeries,
+                                            FftSegmentsImplementationFftw)
 
     def render(self):
         pass         # nothing to render in cpu version (data remaines in place)
                                             
+  
+                                                                                                                                                                          
+class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
+
+    def __init__(self, length, input_buf_t, output_buffer_t):
+        print "instanciated FftSegmentsImplementationCpu" 
+
+        assert repr(input_buf_t).find("datavectorcpu") >= 0, "try to instanciate FftSegmentsImplementationFftw with wrong type of datavector for input_buf"
+        assert repr(output_buffer_t).find("datavectorcpu") >= 0, "try to instanciate FftSegmentsImplementationFftw with wrong type of datavector for output_buffers_t"
+
+        super(FftSegmentsImplementationFftw, self).__init__()
+    
+        self.__length = length
+        self.__input_buf_t = input_buf_t
+        self.__output_buffer_t =  output_buffer_t
+
+        # create plan
+        in_tmp  = self.__input_buf_t(self.__length)
+        out_tmp = self.__output_buffer_t(self.__length)
+        
+        self.__fft_forward_plan= fftw_generate_plan(self.__length, in_tmp, out_tmp, "FFTW_FORWARD", "FFTW_ESTIMATE")
+
+    
+    def fft_segments(self, input_buf, output_buf):
+        """
+        Process ffts of strain data segments
+        """
+        
+        #for out_buf in self.output_buffers:
+       
+        fftw_transform_segments(self.__fft_forward_plan, input_buf, output_buf[0])
+                 
+

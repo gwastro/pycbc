@@ -27,10 +27,11 @@ Base class of strain data
 """
 
 from abc import ABCMeta, abstractmethod, abstractproperty
+
 from math import * 
 
 
-class StrainDataBase(object):
+class StrainDataBase:
     
     __metaclass__ = ABCMeta
     
@@ -38,15 +39,16 @@ class StrainDataBase(object):
                  interferometer, 
                  initial_time_series_t,
                  time_series_t, 
-                 frequency_series_t):
+                 frequency_series_t,
+                 fft_segments_impl_t):
         
         # init members
         self.__sample_freq= sample_freq
         self.__length= (t_end - t_start) * self.__sample_freq
-
         self.__segments= n_segments
         self.__segments_index = 0
         self.__overlap_fact= 0.5
+        self.__interferometer = interferometer
 
         # calculate and check segment length -----------------------------------
         self.__segments_length = \
@@ -55,11 +57,29 @@ class StrainDataBase(object):
         seg_len_base = log(self.__segments_length,2)
         assert seg_len_base == int(seg_len_base), "calculated segment length "+\
         "from parameters {0} not radix 2 ".format(self.__segments_length)
+        
         self.__segments_length = int(self.__segments_length)
 
-        self.__interferometer = interferometer
+        # setup datavectors
+        # save the type of the time_series for convert_to_single_preci()
         self.__time_series_t = time_series_t
+
+        # setup initial data time series            
+        self.__time_series = initial_time_series_t(self.__length)
         
+        #setup segmented frequency series stilde(f)
+        self.__frequency_series= []
+        for i in range(self.__segments):
+            tmp_series = frequency_series_t(self.__segments_length)
+            self.__frequency_series.append(tmp_series)
+
+        # instanciate the (fft) segmenting implementation object
+        self.__fft_segments_impl = fft_segments_impl_t(self.__segments_length, time_series_t, frequency_series_t)
+        
+        if not isinstance(self.__fft_segments_impl, FftSegmentsImplementationBase):
+            print "StrainDataBase.__init__: fft_segments_impl is not a derivate of FftSegmentsImplementationBase "
+            exit(0)
+
         #Debug
         #print
         #print seg_len_base
@@ -74,13 +94,6 @@ class StrainDataBase(object):
         #print self.__interferometer
         #print self.__time_series_t
 
-        # setup initial data vectors            
-        self.__time_series = initial_time_series_t(self.__length)
-        
-        self.__frequency_series= []
-        for i in range(self.__segments):
-            tmp_series = frequency_series_t(self.__segments_length)
-            self.__frequency_series.append(tmp_series)
 
     # define the iterater of StrainData. Other access patterns to the data 
     # should be implemented by generators (i.g. reverse())
@@ -105,7 +118,7 @@ class StrainDataBase(object):
         """
         pass
 
-    #-interface-----------------------------------------------------------------
+    #-properties----------------------------------------------------------------
 
     @property
     def time_series(self):
@@ -132,6 +145,9 @@ class StrainDataBase(object):
     @abstractmethod
     def render(self):
         pass  
+
+    def perform_fft_segments(self):
+        return self.__fft_segments_impl.fft_segments(self.__time_series, self.__frequency_series)
     
     def convert_to_single_preci(self):
         tmp_series= self.__time_series_t(self.__length)
@@ -166,12 +182,15 @@ class StrainDataBase(object):
                                   self.time_series.fs
         self.time_series.data = np.random.rand(self.time_series.length)
         #self.time_series.data = np.ones(self.time_series.length)
-                        
-
-    def fft_segments(self):
-        """
-        transform each segment into
-        the frequency domain using fftw on the cpu.
-        """
+ 
+class FftSegmentsImplementationBase:
+    
+    __metaclass__ = ABCMeta
+    
+    def __init__(self):
+        print "instanciated FftSegmentsImplementationBase" 
+        
+    @abstractmethod
+    def fft_segments(self, input_buf, output_buf):
         pass
-
+                       

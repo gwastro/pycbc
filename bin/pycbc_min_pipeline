@@ -85,7 +85,7 @@ strain_data.convert_to_single_preci()
 
 # segmenting straindata and transform into frequency domain
 
-strain_data.fft_segments()
+strain_data.perform_fft_segments()
 
 
 # transfer straindata to appropriate memory space on target device
