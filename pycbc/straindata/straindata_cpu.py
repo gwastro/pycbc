@@ -80,6 +80,8 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         Process ffts of strain data segments
         """
         
+        print self.__fft_forward_plan
+        
         #for out_buf in self.output_buffers:
        
         fftw_transform_segments(self.__fft_forward_plan, input_buf, output_buf[0])
