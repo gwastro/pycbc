@@ -36,15 +36,23 @@ class MatchedFilterBase:
 
     def __init__(self, length, gen_snr_impl, max_impl):
         print "instanciated MatchedFilterBase" 
-        self.length = length
-        self.gen_snr_impl = gen_snr_impl()
-        if not isinstance(self.gen_snr_impl, GenSnrImplementationBase):
+        self.__length = length
+        self.__gen_snr_impl = gen_snr_impl()
+        if not isinstance(self.__gen_snr_impl, GenSnrImplementationBase):
             print "MatchedFilterBase.__init__: gen_snr_impl is not a derivate of GenSnrImplementationBase "
             exit(0)
-        self.max_impl = max_impl()
-        if not isinstance(self.max_impl, MaxImplementationBase):
+        self.__max_impl = max_impl()
+        if not isinstance(self.__max_impl, MaxImplementationBase):
             print "MatchedFilterBase.__init__: max_impl is not a derivate of MaxImplementationBase "
             exit(0)
+
+    #-properties----------------------------------------------------------------
+ 
+    @property
+    def length(self):
+        return self.__length
+
+    #---------------------------------------------------------------------------
             
         
     def perform_generate_snr(self, stilde, htilde, snr):
@@ -59,7 +67,7 @@ class MatchedFilterBase:
         @rtype:  err:  int
         @return: err:  Error value. 0 if no error
         """
-        return self.gen_snr_impl.generate_snr(stilde, htilde, snr)
+        return self.__gen_snr_impl.generate_snr(stilde, htilde, snr)
 
     def perform_max(self, snr):
         """
@@ -69,7 +77,7 @@ class MatchedFilterBase:
         @rtype:  float
         @return: Maximum of snr series
         """
-        return self.max_impl.max(snr)
+        return self.__max_impl.max(snr)
         
 
 class GenSnrImplementationBase:

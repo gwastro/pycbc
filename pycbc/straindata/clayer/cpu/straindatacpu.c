@@ -28,10 +28,17 @@ int fftw_transform_segments(void* plan, real_vector_single_t* in_buf,
     printf("fftw_transform_segments: plan= %p, in_buf + offset = %p, out_buf = %p\n",
            plan, in_buf->data + input_buf_offset, out_buf->data);
     
-    // free(plan); // temporarily for testing
+    // free(plan); // just a test makes no sense for frequently calls
     // The plan lives in python as:
     // <Swig Object of type 'void *' at 0x1004ebfc0>
-    // When will it be destroyed ??? 
+    // pointers a correctly wrapped by swig in this  way
+    // 
+    // To ensure that the plan is constructed and first of all destructed 
+    // correctly by the fftw destructor
+    // we should define the plan as a regular swigged object (like datavector)
+    // with a new_ and a delete_ function in C 
+    // so the lifetime is determined by the owner object 
+    // (FftSegmentsImplementation) in python 
     
     return 0;
 }

@@ -29,7 +29,7 @@ Base class of strain data
 from abc import ABCMeta, abstractmethod, abstractproperty
 
 from math import * 
-
+import logging
 
 class StrainDataBase:
     
@@ -41,6 +41,8 @@ class StrainDataBase:
                  time_series_t, 
                  frequency_series_t,
                  fft_segments_impl_t):
+                 
+        self.__logger= logging.getLogger('pycbc.StrainDataBase')
         
         # init members
         self.__sample_freq= sample_freq
@@ -80,20 +82,15 @@ class StrainDataBase:
             print "StrainDataBase.__init__: fft_segments_impl is not a derivate of FftSegmentsImplementationBase "
             exit(0)
 
-        #Debug
-        #print
-        #print seg_len_base
-        #print self.__sample_freq
-        #print self.__length
-        
-        #print self.__segments
-        #print self.__segments_index
-        #print self.__segments_length
-        
-        #print self.__overlap_fact
-        #print self.__interferometer
-        #print self.__time_series_t
-
+        self.__logger.debug("Instanciated with:")
+        self.__logger.debug("self.__sample_freq: {0}".format(self.__sample_freq))
+        self.__logger.debug("self.__length: {0}".format(self.__length))
+        self.__logger.debug("self.__segments: {0}".format(self.__segments))
+        self.__logger.debug("self.__segments_index: {0}".format(self.__segments_index))
+        self.__logger.debug("self.__segments_length: {0}".format(self.__segments_length))
+        self.__logger.debug("self.__overlap_fact: {0}".format(self.__overlap_fact))
+        self.__logger.debug("self.__interferometer: {0}".format(self.__interferometer))
+        self.__logger.debug("self.__time_series_t: {0}".format(self.__time_series_t))
 
     # define the iterater of StrainData. Other access patterns to the data 
     # should be implemented by generators (i.g. reverse())
@@ -188,7 +185,7 @@ class FftSegmentsImplementationBase:
     __metaclass__ = ABCMeta
     
     def __init__(self):
-        print "instanciated FftSegmentsImplementationBase" 
+        pass
         
     @abstractmethod
     def fft_segments(self, input_buf, output_buf):

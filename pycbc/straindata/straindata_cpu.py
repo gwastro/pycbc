@@ -36,6 +36,7 @@ from pycbc.datavector.datavectorcpu import complex_vector_single_t as FrequencyS
 from straindatacpu import fftw_generate_plan
 from straindatacpu import fftw_transform_segments
 
+import logging
 
 class StrainDataCpu(StrainDataBase):
 
@@ -62,6 +63,8 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
 
         super(FftSegmentsImplementationFftw, self).__init__()
     
+        self.__logger= logging.getLogger('pycbc.FftSegmentsImplementationFftw')
+    
         self.__length = length
         self.__overlap_fact = overlap_fact
         self.__input_buf_t = input_buf_t
@@ -77,10 +80,10 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         Process ffts of strain data segments
         """
         
-        print self.__fft_forward_plan
+        self.__logger.debug("self.__fft_forward_plan: {0}".format(self.__fft_forward_plan))
 
         input_buf_offset = 0
         for output_buffer_segment in output_buf:
-            print input_buf_offset
+            self.__logger.debug("input_buf_offset: {0}".format(input_buf_offset))
             fftw_transform_segments(self.__fft_forward_plan, input_buf, input_buf_offset, output_buffer_segment)
             input_buf_offset = int( input_buf_offset + self.__length * (1 - self.__overlap_fact) )
