@@ -31,6 +31,8 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 from math import * 
 import logging
 
+from straindatacpu import frame_cpp_read_frames
+
 class StrainDataBase:
     
     __metaclass__ = ABCMeta
@@ -68,6 +70,9 @@ class StrainDataBase:
 
         # setup initial data time series            
         self.__time_series = initial_time_series_t(self.__length)
+
+
+        self.read_frames("channel_name", t_start, t_end, "cache_filename")
         
         #setup segmented frequency series stilde(f)
         self.__frequency_series= []
@@ -156,29 +161,21 @@ class StrainDataBase:
         """
         @type  channel_name: string
         @param channel_name: input gravitational wave strain channel name 
-        @type gps_start_time: int
+        @type gps_start_time: unsigned long
         @param gps_start_time: gps start_time of data to be read in
-        @type gps_end_time:  int
+        @type gps_end_time:  unsigned long
         @param gps_end_time: gps end_time of data to be read in
         @type  cache_url: string
         @param cache_url: URL of a lal frame cache file
-        
-        This method fills self.__time_series_data with the data read in from the
-        frame. It is responsible for allocating memory in the C layer 
-        for the input data in a real_vector_t.
         """
-        
-        self.__global_time_intervall = gps_end_time - gps_start_time
-        
-        print 'reading frame data of {0} from {1} to {2} in total {3} s'.format(
-               channel_name, gps_start_time, gps_end_time, \
-               self.__global_time_intervall)
-        
-        self.time_series.fs = 8192
-        self.time_series.length = self.__global_time_intervall * \
-                                  self.time_series.fs
-        self.time_series.data = np.random.rand(self.time_series.length)
-        #self.time_series.data = np.ones(self.time_series.length)
+
+        # skeleton for further implementation. Redirection to clayer via swig:
+ 
+        frame_cpp_read_frames(self.time_series,  # use own property to transfer result vector 
+                              channel_name, 
+                              gps_start_time, gps_end_time, 
+                              cache_url)
+
  
 class FftSegmentsImplementationBase:
     

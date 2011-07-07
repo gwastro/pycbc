@@ -43,5 +43,15 @@ int fftw_transform_segments(void* plan, real_vector_single_t* in_buf,
     return 0;
 }
 
+int frame_cpp_read_frames(real_vector_double_t* out_buf, char* channel_name, 
+                          unsigned long gps_start_time, unsigned long gps_end_time, 
+                          char* cache_url)
+{
+
+    printf("frame_cpp_read_frames: out_buf: %p, channel_name= %s, gps_start_time = %ld, gps_end_time = %ld, cache_url= %s\n",
+           out_buf, channel_name, gps_start_time, gps_end_time, cache_url);
+    
+    return 0;
+}
 
 

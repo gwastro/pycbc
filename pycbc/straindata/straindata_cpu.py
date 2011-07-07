@@ -56,15 +56,14 @@ class StrainDataCpu(StrainDataBase):
 class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
 
     def __init__(self, length, overlap_fact, input_buf_t, output_buffer_t):
-        print "instanciated FftSegmentsImplementationCpu" 
+        
+        self.__logger= logging.getLogger('pycbc.FftSegmentsImplementationFftw')
 
         assert repr(input_buf_t).find("datavectorcpu") >= 0, "try to instanciate FftSegmentsImplementationFftw with wrong type of datavector for input_buf"
         assert repr(output_buffer_t).find("datavectorcpu") >= 0, "try to instanciate FftSegmentsImplementationFftw with wrong type of datavector for output_buffers_t"
 
         super(FftSegmentsImplementationFftw, self).__init__()
-    
-        self.__logger= logging.getLogger('pycbc.FftSegmentsImplementationFftw')
-    
+
         self.__length = length
         self.__overlap_fact = overlap_fact
         self.__input_buf_t = input_buf_t
@@ -74,13 +73,15 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         in_tmp  = self.__input_buf_t(self.__length)
         out_tmp = self.__output_buffer_t(self.__length)
         self.__fft_forward_plan= fftw_generate_plan(self.__length, in_tmp, out_tmp, "FFTW_FORWARD", "FFTW_ESTIMATE")
+
+        self.__logger.debug("instanciated FftSegmentsImplementationCpu")
     
     def fft_segments(self, input_buf, output_buf):
         """
         Process ffts of strain data segments
         """
         
-        self.__logger.debug("self.__fft_forward_plan: {0}".format(self.__fft_forward_plan))
+        self.__logger.debug("performing fft w/ plan {0}".format(self.__fft_forward_plan))
 
         input_buf_offset = 0
         for output_buffer_segment in output_buf:
