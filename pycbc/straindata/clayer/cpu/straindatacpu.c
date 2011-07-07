@@ -48,8 +48,8 @@ int frame_cpp_read_frames(real_vector_double_t* out_buf, char* channel_name,
                           char* cache_url)
 {
 
-    printf("frame_cpp_read_frames: out_buf: %p, channel_name= %s, gps_start_time = %ld, gps_end_time = %ld, cache_url= %s\n",
-           out_buf, channel_name, gps_start_time, gps_end_time, cache_url);
+    printf("frame_cpp_read_frames: out_buf: %p, channel_name= %s, gps_start_time = %ld, gps_end_time = %ld, cache_url= %s, vector_length: %d\n",
+           out_buf, channel_name, gps_start_time, gps_end_time, cache_url, out_buf->meta_data.vector_length);
     
     return 0;
 }
