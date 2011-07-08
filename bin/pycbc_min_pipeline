@@ -32,7 +32,7 @@
 Application of gravitational wave search for inspiral mergers based on the 
 pycbc (py-thon c-ompact b-inary c-oalecence) package 
 
-Single Detector minimal pipeline used as prototype to test pycbc architecture
+Single detector minimal pipeline used as prototype to test pycbc architecture
 to incorporate:
 
 - CUDA GPU implementation of CBC SPA waveform generator and 
@@ -62,6 +62,11 @@ logging.basicConfig(level=logging.DEBUG,
                     filemode='w')
 
 logger= logging.getLogger('pycbc.main_script')
+
+
+start_message = 'Starting pycbc single detector minimal pipeline ...'
+logger.debug(start_message)
+print start_message
 
 # setup straindata
 search_time = 128 # typ design spec: 2048
@@ -136,7 +141,11 @@ for template in bank:
 # datavector (as well as for stilde and htilde). More efford to document
 # what is the input and what ist the output.
 #
-    
+ 
+end_message = '... end of pycbc single detector minimal pipeline.'
+logger.debug(end_message)
+print end_message
+       
 
 
 

@@ -71,7 +71,6 @@ class StrainDataBase:
         # setup initial data time series            
         self.__time_series = initial_time_series_t(self.__length)
 
-
         self.read_frames("channel_name", t_start, t_end, "cache_filename")
         
         #setup segmented frequency series stilde(f)
@@ -82,11 +81,8 @@ class StrainDataBase:
 
         # instanciate the (fft) segmenting implementation object
         self.__fft_segments_impl = fft_segments_impl_t(self.__segments_length, self.__overlap_fact, time_series_t, frequency_series_t)
+        assert isinstance(self.__fft_segments_impl, FftSegmentsImplementationBase), "fft_segments implementation class is not derivate FftSegmentsImplementationBase"
         
-        if not isinstance(self.__fft_segments_impl, FftSegmentsImplementationBase):
-            print "StrainDataBase.__init__: fft_segments_impl is not a derivate of FftSegmentsImplementationBase "
-            exit(0)
-
         self.__logger.debug("Instanciated with:")
         self.__logger.debug("self.__sample_freq: {0}".format(self.__sample_freq))
         self.__logger.debug("self.__length: {0}".format(self.__length))
@@ -160,7 +156,7 @@ class StrainDataBase:
     def read_frames(self, channel_name,gps_start_time,gps_end_time,cache_url):
         """
         @type  channel_name: string
-        @param channel_name: input gravitational wave strain channel name 
+        @param channel_name: input gw strain channel name 
         @type gps_start_time: unsigned long
         @param gps_start_time: gps start_time of data to be read in
         @type gps_end_time:  unsigned long

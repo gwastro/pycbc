@@ -42,7 +42,7 @@ class Resampler(object):
         data.time_series.fs = self.__target_fs
         
         # using Fourier interpolation w/ numpy
-        # only for prototyping! Works not correct
+        # only for prototyping
         
         tmp_data = np.fft.irfft(np.fft.rfft(data.time_series.data),\
                                 data.time_series.length) * conversion_ratio
