@@ -31,8 +31,8 @@ from pycbc.datavector.datavectorcpu import complex_vector_single_t as WaveformFr
 
 class TemplateBankCpu(TemplateBankBase):
 
-    def __init__(self, n_templates, waveform_length):
+    def __init__(self, n_templates, waveform_length, waveform_delta_x):
         
         super(TemplateBankCpu, self).__init__(n_templates, waveform_length,
-                 WaveformFrequencySeries)
+                                  waveform_delta_x, WaveformFrequencySeries)
 

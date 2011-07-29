@@ -98,7 +98,7 @@ strain_data.perform_fft_segments()
 strain_data.render()
 
 # create 5 templates (testing the iterator of TemplateBank)
-bank = TemplateBank( 5, strain_data.segments_length )
+bank = TemplateBank( 5, strain_data.segments_length, strain_data.segments_delta_x )
 logger.debug("instanciated TemplateBank w/ waveform length: {0}".format(bank.waveform_length))
 
 
@@ -108,7 +108,7 @@ matched_filter = MatchedFilter(strain_data.segments_length)
 logger.debug("instanciated MatchedFilter w/ length: {0}".format(matched_filter.length))
 
 # instanciate result vectors
-snr = SnrResultTimeSeries(strain_data.segments_length)
+snr = SnrResultTimeSeries(strain_data.segments_length, strain_data.segments_delta_x)
 logger.debug("instanciated SnrResultTimeSeries as {0}".format(repr(snr)))
 
 # filter the data against the template bank

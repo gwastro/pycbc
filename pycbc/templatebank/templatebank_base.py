@@ -36,7 +36,7 @@ class TemplateBankBase(object):
     
     __metaclass__ = ABCMeta
     
-    def __init__(self,  n_templates, waveform_length,
+    def __init__(self,  n_templates, waveform_length, waveform_delta_x,
                  waveform_frequency_series_t):
         
         # init members
@@ -52,10 +52,12 @@ class TemplateBankBase(object):
         self.__logger.debug("prototyping templatebank: {0}".format(self.__template_params))
 
         self.__waveform_length= waveform_length
+        self.__waveform_delta_x= waveform_delta_x
+        
         self.__waveform_frequency_series_t = waveform_frequency_series_t
         
         # setup initial data vectors            
-        self.__waveform = self.__waveform_frequency_series_t(self.__waveform_length)
+        self.__waveform = self.__waveform_frequency_series_t(self.__waveform_length, self.__waveform_delta_x)
         
 
     #-interface-----------------------------------------------------------------

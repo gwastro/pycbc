@@ -29,7 +29,8 @@
 #include "datavectorcpu_types.h"
 #include "datavectorcpu_prototypes.h"
 
-real_vector_single_t* new_real_vector_single_t(unsigned long length)
+real_vector_single_t* new_real_vector_single_t(unsigned long length, 
+                                               double delta_x)
 {
     CONSTRUCTOR_TEMPLATE(real_vector_single_t, float)
     c->data = (float*)calloc( c->meta_data.vector_length , 
@@ -43,7 +44,8 @@ void delete_real_vector_single_t( real_vector_single_t* p )
     free( p );
 }
 
-real_vector_double_t* new_real_vector_double_t(unsigned long length)
+real_vector_double_t* new_real_vector_double_t(unsigned long length, 
+                                               double delta_x)
 {
     
     CONSTRUCTOR_TEMPLATE(real_vector_double_t, double)
@@ -58,7 +60,8 @@ void delete_real_vector_double_t( real_vector_double_t* p )
     free( p );
 }
 
-complex_vector_single_t* new_complex_vector_single_t(unsigned long length)
+complex_vector_single_t* new_complex_vector_single_t(unsigned long length, 
+                                                     double delta_x)
 {
     
     CONSTRUCTOR_TEMPLATE(complex_vector_single_t, complex_float_t)
@@ -74,7 +77,8 @@ void delete_complex_vector_single_t( complex_vector_single_t* p )
     free( p );
 }
 
-complex_vector_double_t* new_complex_vector_double_t(unsigned long length)
+complex_vector_double_t* new_complex_vector_double_t(unsigned long length, 
+                                                     double delta_x)
 {
     
     CONSTRUCTOR_TEMPLATE(complex_vector_double_t, complex_double_t)    

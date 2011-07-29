@@ -27,7 +27,7 @@
 
 // add new element properties here:
 %define TYPE_INTERFACE_TEMPLATE(name,type)
-name(unsigned long vector_length);
+name(unsigned long vector_length, double delta_x);
 ~name();
 
 %typemap(in) complex_float_t {
@@ -98,21 +98,12 @@ unsigned get_start( void ) {
     return self->meta_data.start;
 }
 
-void set_dx( double dx ) {            // ToDo better rename dx to delta_t
-    self->meta_data.dx = dx;
+void set_delta_x( double delta_x ) {
+    self->meta_data.delta_x = delta_x;
 }
 
-double get_dx( void ) {               // "  "
-    return self->meta_data.dx;
-}
-
-void set_generic_new_element_for_testing( int value ) {
-    self->meta_data.generic_new_element_for_testing = value;
-}
-
-int get_generic_new_element_for_testing( void ) {
-    return self->meta_data.generic_new_element_for_testing;
+double get_delta_x( void ) {
+    return self->meta_data.delta_x;
 }
 
 %enddef
-
