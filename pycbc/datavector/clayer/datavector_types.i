@@ -54,6 +54,7 @@ name(unsigned long vector_length, double delta_x);
     }
 }
 
+    
 char* __str__() {
     static char a[512];
     snprintf( a, sizeof(a)/sizeof(*a), 
@@ -74,20 +75,6 @@ type __getitem__(unsigned long vector_index) {
 void __setitem__(unsigned long vector_index, type value) {
     type* data = (type*) self->data; 
     data[vector_index] = value;
-
-    /* Even though the exception appeares in python it 
-       can't be catched there by "except". Because the python interpreter
-       get's confused if the funcion returns a none-NULL 
-    try {
-        if (i >= self->meta_data.vector_length)
-            throw(RangeError);
-        type* data = (type*) self->data; 
-        data[i] = value;
-    } catch (RangeError) {
-        PyErr_SetString(PyExc_IndexError,"Index for datavector access out of range");
-    } finally 
-        PyErr_SetString(PyExc_MemoryError,"Unknown exception while datavector access");
-    */
 }
 
 void set_start( unsigned long vector_index ) {
