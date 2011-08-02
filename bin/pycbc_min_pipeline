@@ -48,7 +48,7 @@ import sys
 import random
 
 # preliminary hard coded path to packages 
-sys.path.append('/Users/kawies/dev/src/pycbc')
+sys.path.append('/Users/kawies/tmp/pycbc')
 
 from pycbc.straindata.straindata_cpu import StrainDataCpu as StrainData 
 from pycbc.templatebank.templatebank_cpu import TemplateBankCpu as TemplateBank 
