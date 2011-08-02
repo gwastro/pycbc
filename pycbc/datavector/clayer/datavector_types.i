@@ -27,7 +27,7 @@
 
 // add new element properties here:
 %define TYPE_INTERFACE_TEMPLATE(name,type)
-name(unsigned long vector_length);
+name(unsigned long vector_length, double delta_x);
 ~name();
 
 %typemap(in) complex_float_t {
@@ -54,6 +54,7 @@ name(unsigned long vector_length);
     }
 }
 
+    
 char* __str__() {
     static char a[512];
     snprintf( a, sizeof(a)/sizeof(*a), 
@@ -74,20 +75,6 @@ type __getitem__(unsigned long vector_index) {
 void __setitem__(unsigned long vector_index, type value) {
     type* data = (type*) self->data; 
     data[vector_index] = value;
-
-    /* Even though the exception appeares in python it 
-       can't be catched there by "except". Because the python interpreter
-       get's confused if the funcion returns a none-NULL 
-    try {
-        if (i >= self->meta_data.vector_length)
-            throw(RangeError);
-        type* data = (type*) self->data; 
-        data[i] = value;
-    } catch (RangeError) {
-        PyErr_SetString(PyExc_IndexError,"Index for datavector access out of range");
-    } finally 
-        PyErr_SetString(PyExc_MemoryError,"Unknown exception while datavector access");
-    */
 }
 
 void set_start( unsigned long vector_index ) {
@@ -98,21 +85,12 @@ unsigned get_start( void ) {
     return self->meta_data.start;
 }
 
-void set_dx( double dx ) {            // ToDo better rename dx to delta_t
-    self->meta_data.dx = dx;
+void set_delta_x( double delta_x ) {
+    self->meta_data.delta_x = delta_x;
 }
 
-double get_dx( void ) {               // "  "
-    return self->meta_data.dx;
-}
-
-void set_generic_new_element_for_testing( int value ) {
-    self->meta_data.generic_new_element_for_testing = value;
-}
-
-int get_generic_new_element_for_testing( void ) {
-    return self->meta_data.generic_new_element_for_testing;
+double get_delta_x( void ) {
+    return self->meta_data.delta_x;
 }
 
 %enddef
-

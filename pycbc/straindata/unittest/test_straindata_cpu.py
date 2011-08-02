@@ -50,7 +50,7 @@ class TestStrainDataCPU(unittest.TestCase):
         
         self.search_time = 128 # typ design spec: 2048
         self.sample_freq = 256 # typ design spec: 4096
-        self.length =      self.search_time * self.sample_freq
+        self.length = self.search_time * self.sample_freq
         self.segments = 15
         self.gps_start_time= 871147532
         self.gps_end_time= self.gps_start_time + self.search_time
@@ -98,11 +98,6 @@ class TestStrainDataCPU(unittest.TestCase):
 
         self.assertRaises(ValueError, self.dut.time_series.set_start, 
                           self.length)
-        
-        #try:
-        #    self.dut.time_series[self.length] = 2.0
-        #except ValueError:
-        #    print 'Catched ValueError'
             
         # access test
         for i in range(self.length):

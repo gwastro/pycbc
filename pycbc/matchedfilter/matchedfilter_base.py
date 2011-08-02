@@ -29,22 +29,33 @@ Abstract Base Class (ABC) of matched filters in the pycbc package based on:
 """
 
 from abc import ABCMeta, abstractmethod, abstractproperty
-        
+
+import logging
+       
 class MatchedFilterBase:
 
     __metaclass__ = ABCMeta
 
     def __init__(self, length, gen_snr_impl, max_impl):
-        print "instanciated MatchedFilterBase" 
-        self.length = length
-        self.gen_snr_impl = gen_snr_impl()
-        if not isinstance(self.gen_snr_impl, GenSnrImplementationBase):
-            print "MatchedFilterBase.__init__: gen_snr_impl is not a derivate of GenSnrImplementationBase "
+        self.__logger= logging.getLogger('pycbc.MatchedFilterBase')
+        self.__logger.debug("instanciated MatchedFilterBase")
+        self.__length = length
+        self.__gen_snr_impl = gen_snr_impl()
+        if not isinstance(self.__gen_snr_impl, GenSnrImplementationBase):
+            self.__logger.debug("MatchedFilterBase.__init__: gen_snr_impl is not a derivate of GenSnrImplementationBase")
             exit(0)
-        self.max_impl = max_impl()
-        if not isinstance(self.max_impl, MaxImplementationBase):
-            print "MatchedFilterBase.__init__: max_impl is not a derivate of MaxImplementationBase "
+        self.__max_impl = max_impl()
+        if not isinstance(self.__max_impl, MaxImplementationBase):
+            self.__logger.debug("MatchedFilterBase.__init__: max_impl is not a derivate of MaxImplementationBase")
             exit(0)
+
+    #-properties----------------------------------------------------------------
+ 
+    @property
+    def length(self):
+        return self.__length
+
+    #---------------------------------------------------------------------------
             
         
     def perform_generate_snr(self, stilde, htilde, snr):
@@ -59,7 +70,7 @@ class MatchedFilterBase:
         @rtype:  err:  int
         @return: err:  Error value. 0 if no error
         """
-        return self.gen_snr_impl.generate_snr(stilde, htilde, snr)
+        return self.__gen_snr_impl.generate_snr(stilde, htilde, snr)
 
     def perform_max(self, snr):
         """
@@ -69,7 +80,7 @@ class MatchedFilterBase:
         @rtype:  float
         @return: Maximum of snr series
         """
-        return self.max_impl.max(snr)
+        return self.__max_impl.max(snr)
         
 
 class GenSnrImplementationBase:
@@ -77,7 +88,8 @@ class GenSnrImplementationBase:
     __metaclass__ = ABCMeta
     
     def __init__(self):
-        print "instanciated GenSnrImplementationBase" 
+        self.__logger= logging.getLogger('pycbc.GenSnrImplementationBase')
+        self.__logger.debug("instanciated GenSnrImplementationBase")
         
     @abstractmethod
     def generate_snr(self, stilde, htilde ,snr):
@@ -88,7 +100,8 @@ class MaxImplementationBase:
     __metaclass__ = ABCMeta
     
     def __init__(self):
-        print "instanciated MaxImplementationBase" 
+        self.__logger= logging.getLogger('pycbc.MaxImplementationBase')
+        self.__logger.debug("instanciated MaxImplementationBase") 
         
     @abstractmethod
     def max(self, snr):

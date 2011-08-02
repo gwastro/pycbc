@@ -23,23 +23,24 @@
 # =============================================================================
 #
 """
-Base class of templatebanks
+Base class of template bank
 """
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 from math import * 
 import random
 
+import logging
 
 class TemplateBankBase(object):
     
     __metaclass__ = ABCMeta
     
-    def __init__(self,  n_templates, waveform_length,
+    def __init__(self,  n_templates, waveform_length, waveform_delta_x,
                  waveform_frequency_series_t):
         
         # init members
-        
+        self.__logger= logging.getLogger('pycbc.TemplateBankBase')
         self.__templates= n_templates
         self.__template_index = 0
         self.__template_params= []
@@ -48,14 +49,15 @@ class TemplateBankBase(object):
             tmp = [i*1.0, i*0.5] # m1, m2 very prototyping model of a parameter space
             self.__template_params.append(tmp)
 
-        print "prototyping templatebank:"
-        print self.__template_params
+        self.__logger.debug("prototyping templatebank: {0}".format(self.__template_params))
 
         self.__waveform_length= waveform_length
+        self.__waveform_delta_x= waveform_delta_x
+        
         self.__waveform_frequency_series_t = waveform_frequency_series_t
         
         # setup initial data vectors            
-        self.__waveform = self.__waveform_frequency_series_t(self.__waveform_length)
+        self.__waveform = self.__waveform_frequency_series_t(self.__waveform_length, self.__waveform_delta_x)
         
 
     #-interface-----------------------------------------------------------------
@@ -85,14 +87,14 @@ class TemplateBankBase(object):
     # should be implemented by generators (i.g. reverse())
     def __iter__(self):
         """
-        define TemplateBank itself to iterate over it's inherent list of
-        waveform series
+        define the template bank object itself to iterate over it's inherent
+        parameter space
         """
         return self
         
     def read_parameter_space(self):
         """
-        read the parameterspace of the template bank from a file (LAL)
+        read the parameter space of the template bank from a file or library
         """
         pass
                 
@@ -104,7 +106,7 @@ class TemplateBankBase(object):
         """
             
         # call the right approximation model generator with "template"!
-        # currently we make some noise for prototyping
+        # currently we generate noise for prototyping
         for i in range(self.waveform_length):
             self.__waveform[i] = random.uniform(-1,1)
                 
