@@ -30,16 +30,21 @@
 #include <stdlib.h>
 
 // To add new elements add them here in the typedef meta_data_t, 
-// in the CONSTRUCTOR_TEMPLATE 
+// in the CONSTRUCTOR_TEMPLATE (in this file)
 // and in the TYPE_INTERFACE_TEMPLATE macro in the datavector_types.i file
 
 typedef struct
 {
-    unsigned long start;
-    double        dx;
+    
+    // add "epoch";segment start time accociated w/ initial time series 
+    unsigned long start;    // better rename to x0;
+                            // offset of the data from origin series applies 
+                            // only for segmenting ????
+    double        delta_x;  // Depending on the data either sample intervall
+                            // in time domain or frequency domain
+    
     unsigned long vector_length;
     size_t        element_size_bytes;
-    int           generic_new_element_for_testing;
 }
 meta_data_t;
 
@@ -57,13 +62,15 @@ typedef struct
 }
 complex_double_t;
 
+
+// TODO start needs to be added to constructor
+
 #define CONSTRUCTOR_TEMPLATE(name,type)\
 name* c;\
 c = (name*) malloc( sizeof(name) );\
 c->meta_data.start = 0;\
-c->meta_data.dx = 1;\
+c->meta_data.delta_x = delta_x;\
 c->meta_data.vector_length = length;\
 c->meta_data.element_size_bytes = sizeof(type);\
-c->meta_data.generic_new_element_for_testing =10;\
 
 #endif /* DATAVECTOR_TYPES_H */

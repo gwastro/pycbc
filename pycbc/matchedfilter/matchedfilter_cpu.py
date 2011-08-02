@@ -33,10 +33,13 @@ from matchedfilter_base import MaxImplementationBase
 
 from matchedfiltercpu import gen_snr_cpu
 
+import logging
+
 class MatchedFilterCpu(MatchedFilterBase):
 
     def __init__(self, length=0):
-        print "instanciated MatchedFilterCpu" 
+        self.__logger= logging.getLogger('pycbc.MatchedFilterCpu')
+        self.__logger.debug("instanciated MatchedFilterCpu") 
         
         # Instanciate generate-snr-implementation in base class  
         super(MatchedFilterCpu, self).__init__(length, 
@@ -45,7 +48,8 @@ class MatchedFilterCpu(MatchedFilterBase):
 class  GenSnrImplementationCpu(GenSnrImplementationBase):
 
     def __init__(self):
-        print "instanciated GenSnrImplementationCpu" 
+        self.__logger= logging.getLogger('pycbc.GenSnrImplementationCpu')
+        self.__logger.debug("instanciated GenSnrImplementationCpu")
         super(GenSnrImplementationCpu, self).__init__()
     
     def generate_snr(self, stilde, htilde, snr):
@@ -63,7 +67,8 @@ class  GenSnrImplementationCpu(GenSnrImplementationBase):
 class  MaxImplementationCpu(MaxImplementationBase):
 
     def __init__(self):
-        print "instanciated MaxImplementationCpu" 
+        self.__logger= logging.getLogger('pycbc.MaxImplementationCpu')
+        self.__logger.debug("instanciated MaxImplementationCpu") 
         super(MaxImplementationCpu, self).__init__()
     
     def max(self, snr):
@@ -72,7 +77,7 @@ class  MaxImplementationCpu(MaxImplementationBase):
         """
         assert repr(snr).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for snr"
         
-        print "finding maximum of snr series - to be implemented in clayer"             
+        self.__logger.debug("finding maximum of snr series - to be implemented in clayer")            
         return 5.5
 
 

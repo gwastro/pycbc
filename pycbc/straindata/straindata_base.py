@@ -27,10 +27,22 @@ Base class of strain data
 """
 
 from abc import ABCMeta, abstractmethod, abstractproperty
-from math import * 
 
+from math import *
+ 
+import logging
 
-class StrainDataBase(object):
+# Swigged C-layer functions
+from straindatacpu import frame_cpp_read_frames
+
+class StrainDataBase:
+    """
+    Holds straindata from interferometers in different representations:
+    - Initial data
+    - Segmented and fourier transformed data
+    Transfers data to the appropriate processing architecture 
+    after preprocessing (Render data)
+    """
     
     __metaclass__ = ABCMeta
     
@@ -38,15 +50,44 @@ class StrainDataBase(object):
                  interferometer, 
                  initial_time_series_t,
                  time_series_t, 
-                 frequency_series_t):
+                 frequency_series_t,
+                 fft_segments_impl_t):
+        """
+        Constructor of the straindata base class
+        @type t_start: int
+        @param t_start: GPS start time of the strain data 
+        @type t_end: int
+        @param t_end: GPS start time of the strain data
+        @type n_segments: int
+        @param n_segments: Number of the overlapping segments to transform
+        @type sample_freq: double
+        @param sample_freq: Sample frequency in Hz
+        @type interferometer: string
+        @param interferometer: Interferometer name (H0, H1, L1 etc.)
+        @type initial_time_series_t: class
+        @param initial_time_series_t: real_vector_double_t initial straindata
+        @type time_series_t: class
+        @param time_series_t: real_vector_single_t straindata after being 
+                              converted to single precision
+        @type frequency_series_t: class
+        @param frequency_series_t: complex_vector_single_t segmented straindata
+                                   transformed into frequency domain
+        @type fft_segments_impl_t: class
+        @param fft_segments_impl_t: implementation class of segmenting (and 
+                                    fft transforming)
+        @rtype: none
+        @return: none
+        """
+                 
+        self.__logger= logging.getLogger('pycbc.StrainDataBase')
         
         # init members
         self.__sample_freq= sample_freq
         self.__length= (t_end - t_start) * self.__sample_freq
-
         self.__segments= n_segments
         self.__segments_index = 0
         self.__overlap_fact= 0.5
+        self.__interferometer = interferometer
 
         # calculate and check segment length -----------------------------------
         self.__segments_length = \
@@ -54,35 +95,58 @@ class StrainDataBase(object):
             
         seg_len_base = log(self.__segments_length,2)
         assert seg_len_base == int(seg_len_base), "calculated segment length "+\
-        "from parameters {0} not radix 2 ".format(self.__segments_length)
+        "from parameters: {0} not radix 2 ".format(self.__segments_length)
+        
         self.__segments_length = int(self.__segments_length)
 
-        self.__interferometer = interferometer
+        # setup datavectors
+        # save the type of the time_series for convert_to_single_preci()
         self.__time_series_t = time_series_t
-        
-        #Debug
-        #print
-        #print seg_len_base
-        #print self.__sample_freq
-        #print self.__length
-        
-        #print self.__segments
-        #print self.__segments_index
-        #print self.__segments_length
-        
-        #print self.__overlap_fact
-        #print self.__interferometer
-        #print self.__time_series_t
 
-        # setup initial data vectors            
-        self.__time_series = initial_time_series_t(self.__length)
+        # setup initial data time series            
+        self.__time_series = initial_time_series_t(self.__length, 
+                                                   1.0/self.__sample_freq)
+
         
+        # TODO This is currently only prototyping a call to the swigged 
+        # C-layer function to read in real straindata from a 3rd party 
+        # library like frame-cpp
+        self.read_frames("channel_name", t_start, t_end, "cache_filename")
+        
+        #setup segmented frequency series stilde(f)
         self.__frequency_series= []
         for i in range(self.__segments):
-            tmp_series = frequency_series_t(self.__segments_length)
+            tmp_series = frequency_series_t(self.__segments_length, 
+                                            self.__sample_freq)
             self.__frequency_series.append(tmp_series)
 
-    # define the iterater of StrainData. Other access patterns to the data 
+        # instanciate the (fft) segmenting-implementation object
+        self.__fft_segments_impl = fft_segments_impl_t(self.__segments_length, 
+                    self.__overlap_fact, time_series_t, frequency_series_t)
+        assert isinstance(self.__fft_segments_impl, 
+                          FftSegmentsImplementationBase), "fft_segments "+\
+                          "implementation class is not derivate \n\
+                          FftSegmentsImplementationBase"
+        
+        self.__logger.debug("Instanciated with:")
+        self.__logger.debug("self.__sample_freq: {0}".
+                            format(self.__sample_freq))
+        self.__logger.debug("self.__length: {0}".
+                            format(self.__length))
+        self.__logger.debug("self.__segments: {0}".
+                            format(self.__segments))
+        self.__logger.debug("self.__segments_index: {0}".
+                             format(self.__segments_index))
+        self.__logger.debug("self.__segments_length: {0}".
+                             format(self.__segments_length))
+        self.__logger.debug("self.__overlap_fact: {0}".
+                            format(self.__overlap_fact))
+        self.__logger.debug("self.__interferometer: {0}".
+                            format(self.__interferometer))
+        self.__logger.debug("self.__time_series_t: {0}".
+                            format(self.__time_series_t))
+
+    # Define the iterater of StrainData. Other access patterns to the data 
     # should be implemented by generators (i.g. reverse())
     def __iter__(self):
         """
@@ -91,21 +155,27 @@ class StrainDataBase(object):
         return self
 
     def next(self):
+        """
+        define straindata's next methode to iterate over it's inherent list 
+        of segments
+        """
+
         if self.__segments_index == self.__segments:
             self.__segments_index = 0
             raise StopIteration
         self.__segments_index = self.__segments_index + 1
         return self.__frequency_series[self.__segments_index-1]
 
-    # multiplication with itself will be used to apply the overwhitening filter. 
+    # Multiplication with itself will be used to apply the overwhitening filter. 
     # (complex *= real operation)
     def __rmul__(self):
         """
-        overload mul for data objects, to allow multiplcation by a psd series
+        Overload mul for data objects, to allow multiplcation by a psd series
         """
+        # TODO
         pass
 
-    #-interface-----------------------------------------------------------------
+    #-properties----------------------------------------------------------------
 
     @property
     def time_series(self):
@@ -127,51 +197,72 @@ class StrainDataBase(object):
     def segments_length(self):
         return self.__segments_length
 
+    @property
+    def segments_delta_x(self):
+        return self.__frequency_series[0].get_delta_x()
+
     #---------------------------------------------------------------------------
     
     @abstractmethod
     def render(self):
+        """
+        Force every derivate of StrainDataBase to implement a render() methode
+        """
         pass  
+
+    def perform_fft_segments(self):
+        """
+        Call the fft_segments() methode has been specified by the constructor
+        of StrainDataBase
+        
+        """
+        return self.__fft_segments_impl.fft_segments(self.__time_series, 
+               self.__frequency_series)
     
     def convert_to_single_preci(self):
-        tmp_series= self.__time_series_t(self.__length)
+        """
+        Convert the initial double precision timeseries to single precision
+        
+        """
+        tmp_series= self.__time_series_t(self.__length, 1.0/self.__sample_freq)
         for i in range(self.__length):
             tmp_series[i] = self.__time_series[i]
         self.__time_series = tmp_series
                                                   
-    def read_frames(self, channel_name,gps_start_time,gps_end_time,cache_url):
+    def read_frames(self, channel_name, gps_start_time, gps_end_time,cache_url):
         """
         @type  channel_name: string
-        @param channel_name: input gravitational wave strain channel name 
-        @type gps_start_time: int
+        @param channel_name: input gw strain channel name 
+        @type gps_start_time: unsigned long
         @param gps_start_time: gps start_time of data to be read in
-        @type gps_end_time:  int
+        @type gps_end_time:  unsigned long
         @param gps_end_time: gps end_time of data to be read in
         @type  cache_url: string
         @param cache_url: URL of a lal frame cache file
-        
-        This method fills self.__time_series_data with the data read in from the
-        frame. It is responsible for allocating memory in the C layer 
-        for the input data in a real_vector_t.
         """
-        
-        self.__global_time_intervall = gps_end_time - gps_start_time
-        
-        print 'reading frame data of {0} from {1} to {2} in total {3} s'.format(
-               channel_name, gps_start_time, gps_end_time, \
-               self.__global_time_intervall)
-        
-        self.time_series.fs = 8192
-        self.time_series.length = self.__global_time_intervall * \
-                                  self.time_series.fs
-        self.time_series.data = np.random.rand(self.time_series.length)
-        #self.time_series.data = np.ones(self.time_series.length)
-                        
 
-    def fft_segments(self):
+        # Redirection to swigged C-layer function:
+ 
+        frame_cpp_read_frames(self.time_series, channel_name, 
+                              gps_start_time, gps_end_time, 
+                              cache_url)
+
+ 
+class FftSegmentsImplementationBase:
+    """
+    Base class of fft segmenting 
+    """
+    
+    __metaclass__ = ABCMeta
+    
+    def __init__(self):
+        pass
+        
+    @abstractmethod
+    def fft_segments(self, input_buf, output_buf):
         """
-        transform each segment into
-        the frequency domain using fftw on the cpu.
+        Force every derivate of FftSegmentsImplementationBase to implement 
+        a fft_segments() methode
         """
         pass
-
+                       

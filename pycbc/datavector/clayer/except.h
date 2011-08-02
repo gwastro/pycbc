@@ -34,8 +34,16 @@ extern int exception_status;
 #define throw(val) longjmp(exception_buffer,val)
 #define finally else
 
-/* Exception codes */
-
-#define RangeError     1
-#define DivisionByZero 2
-#define OutOfMemory    3
+// Exception codes (according to SWIG exceptions)
+#define IOError             1
+#define RuntimeError        2
+#define IndexError          3
+#define TypeError           4
+#define DivisionByZero      5
+#define OverflowError       6
+#define SyntaxError         7
+#define ValueError          8
+#define SystemError         9
+#define AttributeError     10
+#define MemoryError        11
+#define NullReferenceError 12
