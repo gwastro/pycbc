@@ -37,5 +37,5 @@ all: datavectoropencl.i datavectoropencl_types.h datavectoropencl_prototypes.h d
 tidy:
 	$(RM) -f *~
 clean: tidy
-	$(RM) -rf datavectoropencl_wrap.c datavectoropencl.py datavectoropencl.pyc _datavectoropencl.so build
- 
+	$(RM) -rf datavectoropencl_wrap.c datavectoropencl.py ../../datavectoropencl.py \
+        datavectoropencl.pyc _datavectoropencl.so ../../_datavectoropencl.so build 

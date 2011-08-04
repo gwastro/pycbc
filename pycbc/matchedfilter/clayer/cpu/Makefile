@@ -11,5 +11,6 @@ all: matchedfiltercpu.i matchedfiltercpu_types.h matchedfiltercpu_prototypes.h m
 tidy:
 	$(RM) -f *~
 clean: tidy
-	$(RM) -rf matchedfiltercpu_wrap.c matchedfiltercpu.py matchedfiltercpu.pyc _matchedfiltercpu.so build
+	$(RM) -rf matchedfiltercpu_wrap.c matchedfiltercpu.py ../../matchedfiltercpu.py \
+        matchedfiltercpu.pyc _matchedfiltercpu.so ../../_matchedfiltercpu.so build
  

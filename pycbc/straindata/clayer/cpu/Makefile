@@ -11,5 +11,6 @@ all: straindatacpu.i straindatacpu_types.h straindatacpu_prototypes.h straindata
 tidy:
 	$(RM) -f *~
 clean: tidy
-	$(RM) -rf straindatacpu_wrap.c straindatacpu.py straindatacpu.pyc _straindatacpu.so build
+	$(RM) -rf straindatacpu_wrap.c straindatacpu.py ../../straindatacpu.py \
+        straindatacpu.pyc _straindatacpu.so ../../_straindatacpu.so build
  

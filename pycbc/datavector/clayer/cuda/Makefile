@@ -37,5 +37,6 @@ all: datavectorcuda.i datavectorcuda_types.h datavectorcuda_prototypes.h datavec
 tidy:
 	$(RM) -f *~
 clean: tidy
-	$(RM) -rf datavectorcuda_wrap.c datavectorcuda.py datavectorcuda.pyc _datavectorcuda.so build
- 
+	$(RM) -rf datavectorcuda_wrap.c datavectorcuda.py ../../datavectorcuda.py \
+        datavectorcuda.pyc _datavectorcuda.so ../../_datavectorcuda.so build 
+

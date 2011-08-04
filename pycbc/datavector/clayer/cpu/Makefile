@@ -46,5 +46,6 @@ all: datavectorcpu.i datavectorcpu_types.h datavectorcpu_prototypes.h datavector
 tidy:
 	$(RM) -f *~
 clean: tidy
-	$(RM) -rf datavectorcpu_wrap.c datavectorcpu.py datavectorcpu.pyc _datavectorcpu.so build
+	$(RM) -rf datavectorcpu_wrap.c datavectorcpu.py ../../datavectorcpu.py \
+        datavectorcpu.pyc _datavectorcpu.so ../../_datavectorcpu.so build 
  
