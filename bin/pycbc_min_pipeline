@@ -47,7 +47,9 @@ import sys
 import random
 
 # preliminary hard coded path to packages 
-sys.path.append('/Users/kawies/tmp/pycbc')
+sys.path.append('/Users/kawies/dev/src/pycbc')
+
+from pycbc.pycbc import OpenClDeviceContext as ProccessingTargetContext
 
 from pycbc.straindata.straindata_cpu import StrainDataCpu as StrainData 
 from pycbc.templatebank.templatebank_cpu import TemplateBankCpu as TemplateBank 
@@ -76,72 +78,64 @@ segments = 15
 gps_start_time= 871147532
 gps_end_time= gps_start_time + search_time
 interferometer = "H1"
+
+with ProccessingTargetContext(1) as context:
         
-strain_data= StrainData(gps_start_time, gps_end_time, 
+    strain_data= StrainData(gps_start_time, gps_end_time, 
                         segments, sample_freq, 
                         interferometer)
-logger.debug("instanciated StrainData w/ segment length: {0}".format(strain_data.segments_length))
+                        
+    logger.debug("instanciated StrainData w/ segment length: {0}".format(strain_data.segments_length))
 
-# initialize straindata w/ white noise
-for i in range(length):
-    tmp= random.uniform(-1,1)
-    strain_data.time_series[i] = tmp
+    # initialize straindata w/ white noise
+    for i in range(length):
+        tmp= random.uniform(-1,1)
+        strain_data.time_series[i] = tmp
 
-# convert straindata to single precision
-strain_data.convert_to_single_preci()
+    # convert straindata to single precision
+    strain_data.convert_to_single_preci()
 
-
-# segmenting straindata and transform into frequency domain
-strain_data.perform_fft_segments()
-
-# transfer straindata to appropriate memory space on target device
-strain_data.render()
-
-# create 5 templates (testing the iterator of TemplateBank)
-bank = TemplateBank( 5, strain_data.segments_length, strain_data.segments_delta_x )
-logger.debug("instanciated TemplateBank w/ waveform length: {0}".format(bank.waveform_length))
+    # segmenting straindata and transform into frequency domain
+    strain_data.perform_fft_segments()
 
 
-# create matched filter (only generate_snr() has to be implemented
-# for the minimal pipeline)
-matched_filter = MatchedFilter(strain_data.segments_length)
-logger.debug("instanciated MatchedFilter w/ length: {0}".format(matched_filter.length))
+    # transfer straindata to appropriate memory space on target device
+    strain_data.render()
 
-# instanciate result vectors
-snr = SnrResultTimeSeries(strain_data.segments_length, strain_data.segments_delta_x)
-logger.debug("instanciated SnrResultTimeSeries as {0}".format(repr(snr)))
+    # create 5 templates (testing the iterator of TemplateBank)
+    bank = TemplateBank( 5, strain_data.segments_length, strain_data.segments_delta_x )
+    logger.debug("instanciated TemplateBank w/ waveform length: {0}".format(bank.waveform_length))
 
-# filter the data against the template bank
-for template in bank:
-    htilde = bank.perform_generate_waveform(template)
-    for stilde in strain_data:
-        matched_filter.perform_generate_snr(stilde, htilde, snr)
 
-        
-# Two different schemes of handling data buffers can be seen here:
-#
-# htilde = bank.perform_generate_waveform(template) 
-# returns a datavector that is instanciated as a member of the bank object
-# (<complex_vector_single_t, length 4096, data ptr 0x10090ae00>)
-#
-# pro: Input and output is clearly defined. Bank object (derivative) knows
-# best the kind of datavector and it's size to instanciate it. datavector will
-# be destroyed when bank is destructed (by calling the swigged destructor) 
-#
-# cons: ?
-#
-# matched_filter.perform_generate_snr(stilde, htilde, snr)
-# stilde and htilde are input buffers, snr is the outputbuffer
-# snr has to be instantiated in the script context:
-# snr = SnrResultTimeSeries(strain_data.segments_length)
-# 
-# pro: ?
-#
-# cons: matched_filter object has to check against the type of the given 
-# datavector (as well as for stilde and htilde). More efford to document
-# what is the input and what ist the output.
-#
- 
+    # create matched filter (only generate_snr() has to be implemented
+    # for the minimal pipeline)
+    matched_filter = MatchedFilter(strain_data.segments_length)
+    logger.debug("instanciated MatchedFilter w/ length: {0}".format(matched_filter.length))
+
+    # instanciate result vectors
+    snr = SnrResultTimeSeries(strain_data.segments_length, strain_data.segments_delta_x)
+    logger.debug("instanciated SnrResultTimeSeries as {0}".format(repr(snr)))
+
+    # filter the data against the template bank
+    for template in bank:
+        htilde = bank.perform_generate_waveform(template)
+        # will the garbage collection destroy the old htilde guaranteed here?
+        # otherwise device memory remnants could survive the context !!!
+        for stilde in strain_data:
+            matched_filter.perform_generate_snr(stilde, htilde, snr)
+            
+    ############################################################################
+    # prepare to leave the processing context (objects that contain device 
+    # memory are not deleted automatically here!)
+    del(strain_data)
+    del(bank)
+    del(matched_filter)
+    del(snr)
+    del(htilde)
+    
+    # leaving the ProccessingTargetContext NOW (destroy the device context)
+    ############################################################################
+    
 end_message = '... end of pycbc single detector minimal pipeline.'
 logger.debug(end_message)
 print end_message

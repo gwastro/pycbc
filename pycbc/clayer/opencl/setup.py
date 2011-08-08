@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # Copyright (C) 2011 Karsten Wiesner
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -22,25 +23,37 @@
 #
 # =============================================================================
 #
+
 """
-Cpu version of the template bank. Status: Very prototyping
+setup.py file for swig wrap pycbcopencl into pycbc
 """
 
-from templatebank_base import TemplateBankBase
-from pycbc.datavector.datavectorcpu import complex_vector_single_t as WaveformFrequencySeries
+from distutils.core import setup, Extension
 
-import logging
+vector_module = Extension('_pycbcopencl',
+                          sources=['pycbcopencl_wrap.c','pycbcopencl.c'],
+                          )
 
 
-class TemplateBankCpu(TemplateBankBase):
+# base source files that do not require special libraries
+pycbcopencl_swig_sources = ['pycbcopencl.i']
+pycbcopencl_c_sources = ['pycbcopencl.c']
 
-    def __init__(self, n_templates, waveform_length, waveform_delta_x):
-        self.__logger= logging.getLogger('pycbc.TemplateBankCpu')
-        super(TemplateBankCpu, self).__init__(n_templates, waveform_length,
-                                  waveform_delta_x, WaveformFrequencySeries)
 
-    #def __del__(self): 
-    #    print "called TemplateBankCpu destructor"
-        # there is no logger anymore! self.__logger.debug("called destructor")
-                                
+# define the extension module
+pycbcopencl_ext = Extension( '_pycbcopencl', 
+  sources = pycbcopencl_swig_sources + pycbcopencl_c_sources,
+  depends = ['pycbcopencl.h'],
+  swig_opts = [],
+  include_dirs = [],
+  extra_compile_args = ['-Wall'],
+  library_dirs = [],
+  libraries = [])
 
+setup (name = 'pycbcopencl',
+       version = '0.1',
+       author = "Karsten Wiesner",
+       description = """Swig wrap pycbcopencl""",
+       ext_modules = [pycbcopencl_ext],
+       py_modules = ["pycbcopencl"],
+       )

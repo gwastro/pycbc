@@ -11,4 +11,4 @@ The pycbc package contains the following subpackages and modules:
 """
 
 __author__ = 'Karsten Wiesner <karsten.wiesner@ligo.org>'
-__all__ = ["datavector","matchedfilter","templatebank"]
+__all__ = ["datavector","matchedfilter","templatebank","pycbc"]

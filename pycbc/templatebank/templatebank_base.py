@@ -58,7 +58,7 @@ class TemplateBankBase(object):
         
         # setup initial data vectors            
         self.__waveform = self.__waveform_frequency_series_t(self.__waveform_length, self.__waveform_delta_x)
-        
+    
 
     #-interface-----------------------------------------------------------------
 
