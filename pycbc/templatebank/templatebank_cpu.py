@@ -41,6 +41,5 @@ class TemplateBankCpu(TemplateBankBase):
 
     #def __del__(self): 
     #    print "called TemplateBankCpu destructor"
-        # there is no logger anymore! self.__logger.debug("called destructor")
                                 
 
