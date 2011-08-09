@@ -79,6 +79,9 @@ gps_start_time= 871147532
 gps_end_time= gps_start_time + search_time
 interferometer = "H1"
 
+# occupy a certain processing resource
+# <device num> from batch system (condor etc.)
+# 'none' to examine and occupy the first available 
 with ProccessingTargetContext(1) as context:
         
     strain_data= StrainData(gps_start_time, gps_end_time, 
