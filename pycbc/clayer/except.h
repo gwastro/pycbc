@@ -22,7 +22,7 @@
 //
 // =============================================================================
 //
-// add exception capability to C.
+// add exceptions to C.
 
 #include <setjmp.h>
 

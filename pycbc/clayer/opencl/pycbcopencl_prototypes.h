@@ -22,24 +22,15 @@
 //
 // =============================================================================
 //
-// datavector constructor destructor prototypes for pycbc
+// pycbc constructor destructor prototypes for pycbc
 
-#ifndef DATAVECTORCPU_PROTOTYPES_H
-#define DATAVECTORCPU_PROTOTYPES_H
+#ifndef PYCBCOPENCL_PROTOTYPES_H
+#define PYCBCOPENCL_PROTOTYPES_H
 
 #include <stdlib.h>
 
 // prototypes of all methodes that will extend pure c typedefs
-real_vector_single_t* new_real_vector_single_t(unsigned long, double);
-void delete_real_vector_single_t( real_vector_single_t* );
+cl_context_t* new_cl_context_t(unsigned);
+void delete_cl_context_t( cl_context_t* );
 
-real_vector_double_t* new_real_vector_double_t(unsigned long, double);
-void delete_real_vector_double_t( real_vector_double_t* );
-
-complex_vector_single_t* new_complex_vector_single_t(unsigned long, double);
-void delete_complex_vector_single_t( complex_vector_single_t* );
-
-complex_vector_double_t* new_complex_vector_double_t(unsigned long, double);
-void delete_complex_vector_double_t( complex_vector_double_t* );
-
-#endif /* DATAVECTORCPU_PROTOTYPES_H */
+#endif /* PYCBCOPENCL_PROTOTYPES_H */

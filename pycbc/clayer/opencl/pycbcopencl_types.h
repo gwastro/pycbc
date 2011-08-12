@@ -22,40 +22,17 @@
 //
 // =============================================================================
 //
-// datavector type definitions for pycbc
+// pycbc type definitions for pycbc
 
-#ifndef DATAVECTORCPU_TYPES_H
-#define DATAVECTORCPU_TYPES_H
+#ifndef PYCBCOPENCL_TYPES_H
+#define PYCBCOPENCL_TYPES_H
 
 #include <stdlib.h>
-#include "../datavector_types.h"
 
 typedef struct
 {
-    meta_data_t meta_data;
-    float *data;
+    unsigned device_id;
 }
-real_vector_single_t;
+cl_context_t;
 
-typedef struct
-{
-    meta_data_t meta_data;
-    double *data;
-}
-real_vector_double_t;
-
-typedef struct
-{
-    meta_data_t meta_data;
-    complex_float_t *data;
-}
-complex_vector_single_t;
-
-typedef struct
-{
-    meta_data_t meta_data;
-    complex_double_t *data;
-}
-complex_vector_double_t;
-
-#endif /* DATAVECTORCPU_TYPES_H */
+#endif /* PYCBCOPENCL_TYPES_H */
