@@ -22,19 +22,28 @@
 //
 // =============================================================================
 //
-// add exceptions to C.
+// headerfile to extend C by exceptions
 
 #include <setjmp.h>
 
-extern jmp_buf exception_buffer;
-extern int exception_status;
+extern jmp_buf pycbc_clayer_exception_buffer;
+extern int pycbc_clayer_exception_status;
+extern char pycbc_clayer_exception_message[2048];
 
-#define try if ((exception_status = setjmp(exception_buffer)) == 0)
-#define catch(val) else if (exception_status == val)
-#define throw(val) longjmp(exception_buffer,val)
+#define try if ((pycbc_clayer_exception_status = \
+setjmp(pycbc_clayer_exception_buffer)) == 0)
+
+#define catch(val) else if (pycbc_clayer_exception_status == val)
+
+#define throw(val, msg) \
+{snprintf( pycbc_clayer_exception_message, \
+ sizeof(pycbc_clayer_exception_message)/\
+ sizeof(*pycbc_clayer_exception_message), msg); \
+ longjmp(pycbc_clayer_exception_buffer,val);}
+
 #define finally else
 
-// Exception codes (according to SWIG exceptions)
+// Exception codes (according to SWIG_exception())
 #define IOError             1
 #define RuntimeError        2
 #define IndexError          3

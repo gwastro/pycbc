@@ -22,9 +22,10 @@
 //
 // =============================================================================
 //
-// add exceptions to C
+// module to extend C by exceptions
 
 #include <setjmp.h>
 
-jmp_buf exception_buffer;
-int exception_status;
+jmp_buf pycbc_clayer_exception_buffer;
+int pycbc_clayer_exception_status;
+char pycbc_clayer_exception_message[1024];

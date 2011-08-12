@@ -67,7 +67,7 @@ class OpenClDeviceContext:
         print "__exit__ called for OpenClDeviceContext "
         self.__logger.debug("__exit__ called ")
         
-        # destroy physical device context
+        # destroy OpenCl device context
         del(self.__openclcontext)
         
 
