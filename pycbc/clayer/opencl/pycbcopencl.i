@@ -30,7 +30,7 @@
 "Copyright 2011, 2011 Karsten Wiesner <karsten.wiesner@ligo.org>."
 %enddef
 
-%module(docstring=DOCSTRING) datavectorcpu
+%module(docstring=DOCSTRING) pycbcopencl
 
 %feature("autodoc", "1");
 
@@ -50,7 +50,25 @@
 // "is multiply defined error". That is the reason for splitting 
 // the headerfiles into _types and _prototypes
 // prototype declaration of a function to wrap (has to be impl. in a c-file)
-int create_context(unsigned device_id);
 
-int destroy_context(unsigned context_id);
+%include "pycbcopencl_types.h"
 
+%extend cl_context_t {
+
+    cl_context_t(unsigned device_id);
+    ~cl_context_t();
+
+    %typemap(check) unsigned device_id {
+        if ($1 < 0) {
+            SWIG_exception(SWIG_ValueError, "Invalid device id");
+        }   
+    }
+
+    char* __str__() {
+        static char a[512];
+        snprintf( a, sizeof(a)/sizeof(*a), 
+             "<cl_context_t, device_id %d>", 
+             self->device_id);
+        return a;
+    }
+}

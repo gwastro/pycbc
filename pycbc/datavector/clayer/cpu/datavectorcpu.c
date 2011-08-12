@@ -27,7 +27,7 @@
 
 #include <stdio.h>
 
-#include "../except.h"
+#include "../../../clayer/except.h"
 
 #include "datavectorcpu_types.h"
 #include "datavectorcpu_prototypes.h"

@@ -37,7 +37,7 @@ vector_module = Extension('_datavectorcpu',
 
 # base source files that do not require special libraries
 datavectorcpu_swig_sources = ['datavectorcpu.i']
-datavectorcpu_c_sources = ['datavectorcpu.c','../except.c']
+datavectorcpu_c_sources = ['datavectorcpu.c','../../../clayer/except.c']
 
 
 # define the extension module

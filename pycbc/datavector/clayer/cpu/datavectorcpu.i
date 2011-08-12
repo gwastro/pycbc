@@ -36,7 +36,7 @@
 
 // This goes directly to the wrap-code (no swig preprocess)
 %{
-#include "../except.h"
+#include "../../../clayer/except.h"
 #include "datavectorcpu_types.h"
 #include "datavectorcpu_prototypes.h"
 %}
@@ -46,47 +46,15 @@
     import warnings
     %}
 
-%include "exception.i"
-
 // To extend the c-types by methodes they have to be defined here
 // but to declare function prototypes as well would raise a 
 // "is multiply defined error". That is the reason for splitting 
 // the headerfiles into _types and _prototypes
+
+%include "../../../clayer/except.i"
 %include "../datavector_types.h"
 %include "../datavector_types.i"
 %include "datavectorcpu_types.h"
-
-%exception {
-    try {
-        $action
-    } catch(IOError) {
-        SWIG_exception(SWIG_IOError, "IO Error");
-    } catch(RuntimeError) {
-        SWIG_exception(SWIG_RuntimeError, "Runtime Error");
-    } catch(IndexError) {
-        SWIG_exception(SWIG_IndexError, "Index Error");
-    } catch(TypeError) {
-        SWIG_exception(SWIG_TypeError, "Type Error");
-    } catch(DivisionByZero) {
-        SWIG_exception(SWIG_DivisionByZero, "Division By Zero");
-    } catch(OverflowError) {
-        SWIG_exception(SWIG_OverflowError, "Overflow Error");
-    } catch(SyntaxError) {
-        SWIG_exception(SWIG_SyntaxError, "Syntax Error");
-    } catch(ValueError) {
-        SWIG_exception(SWIG_ValueError, "Value Error");
-    } catch(SystemError) {
-        SWIG_exception(SWIG_SystemError, "System Error");
-    } catch(AttributeError) {
-        SWIG_exception(SWIG_AttributeError, "Attribute Error");
-    } catch(MemoryError) {
-        SWIG_exception(SWIG_MemoryError, "Memory Error");
-    } catch(NullReferenceError) {
-        SWIG_exception(SWIG_NullReferenceError, "Null Reference Error");
-    } finally {
-        SWIG_exception(SWIG_UnknownError, "Unknown error");
-    }
-}
 
 %extend real_vector_single_t {
     TYPE_INTERFACE_TEMPLATE(real_vector_single_t,float)

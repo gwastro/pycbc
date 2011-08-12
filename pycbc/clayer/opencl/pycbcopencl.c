@@ -22,86 +22,32 @@
 //
 // =============================================================================
 //
-// datavector constructors and destructors implementation for pycbc
-
+// pycbc's constructors and destructors implementation for pycbc
 
 #include <stdio.h>
 
-#include "../except.h"
+//#include "../except.h"
 
-#include "datavectorcpu_types.h"
-#include "datavectorcpu_prototypes.h"
+#include "pycbcopencl_types.h"
+#include "pycbcopencl_prototypes.h"
 
-real_vector_single_t* new_real_vector_single_t(unsigned long length, 
-                                               double delta_x)
+cl_context_t* new_cl_context_t(unsigned device_id)
 {
-    CONSTRUCTOR_TEMPLATE(real_vector_single_t, float)
-
-    c->data = (float*)calloc( c->meta_data.vector_length , 
-                      c->meta_data.element_size_bytes );
-    if(c->data == NULL)
-        throw(MemoryError);
-    return c;
-}
-
-void delete_real_vector_single_t( real_vector_single_t* p )
-{
-    free( p->data );
-    free( p );
-}
-
-real_vector_double_t* new_real_vector_double_t(unsigned long length, 
-                                               double delta_x)
-{
+    cl_context_t* c;
     
-    CONSTRUCTOR_TEMPLATE(real_vector_double_t, double)
-    c->data = (double*)calloc( c->meta_data.vector_length , 
-                      c->meta_data.element_size_bytes );
-    if(c->data == NULL)
-        throw(MemoryError);
-    return c;
-}
-
-void delete_real_vector_double_t( real_vector_double_t* p )
-{
-    free( p->data );
-    free( p );
-}
-
-complex_vector_single_t* new_complex_vector_single_t(unsigned long length, 
-                                                     double delta_x)
-{
+    c       = (cl_context_t*) malloc(sizeof(cl_context_t));
     
-    CONSTRUCTOR_TEMPLATE(complex_vector_single_t, complex_float_t)
-    c->data = (complex_float_t*)calloc(c->meta_data.vector_length ,
-                          c->meta_data.element_size_bytes );
-    if(c->data == NULL)
-        throw(MemoryError);
-    return c;
-}
-
-void delete_complex_vector_single_t( complex_vector_single_t* p )
-{
-
-    free( p->data );
-    free( p );
-}
-
-complex_vector_double_t* new_complex_vector_double_t(unsigned long length, 
-                                                     double delta_x)
-{
+    printf("<#message#>");
     
-    CONSTRUCTOR_TEMPLATE(complex_vector_double_t, complex_double_t)    
-    c->data = (complex_double_t*)calloc(c->meta_data.vector_length,
-                          c->meta_data.element_size_bytes );
-    if(c->data == NULL)
-        throw(MemoryError);
+    //if(c == NULL)
+    //    throw(MemoryError);
+    
     return c;
 }
 
-void delete_complex_vector_double_t( complex_vector_double_t* p )
+void delete_cl_context_t( cl_context_t* p )
 {
-    free( p->data );
+    printf("destructed");
     free( p );
 }
 
