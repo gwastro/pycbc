@@ -37,7 +37,7 @@ vector_module = Extension('_pycbcopencl',
 
 # base source files that do not require special libraries
 pycbcopencl_swig_sources = ['pycbcopencl.i']
-pycbcopencl_c_sources = ['pycbcopencl.c']
+pycbcopencl_c_sources = ['pycbcopencl.c','../except.c']
 
 
 # define the extension module
