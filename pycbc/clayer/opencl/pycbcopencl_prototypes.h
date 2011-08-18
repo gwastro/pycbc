@@ -29,8 +29,15 @@
 
 #include <stdlib.h>
 
+extern unsigned pycbcopencl_err_stash;
+extern char pycbcopencl_err_map[][5];
+
+int pycbc_err_occurred(void);
+char* pycbc_err_message(void);
+
 // prototypes of all methodes that will extend pure c typedefs
 cl_context_t* new_cl_context_t(unsigned);
 void delete_cl_context_t( cl_context_t* );
+
 
 #endif /* PYCBCOPENCL_PROTOTYPES_H */

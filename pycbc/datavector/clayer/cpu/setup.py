@@ -31,13 +31,13 @@ setup.py file for swig wrap datavectorcpu into pycbc
 from distutils.core import setup, Extension
 
 vector_module = Extension('_datavectorcpu',
-                          sources=['datavectorcpu_wrap.c','datavectorcpu.c','../except.c'],
+                          sources=['datavectorcpu_wrap.c','datavectorcpu.c'],
                           )
 
 
 # base source files that do not require special libraries
 datavectorcpu_swig_sources = ['datavectorcpu.i']
-datavectorcpu_c_sources = ['datavectorcpu.c','../../../clayer/except.c']
+datavectorcpu_c_sources = ['datavectorcpu.c']
 
 
 # define the extension module

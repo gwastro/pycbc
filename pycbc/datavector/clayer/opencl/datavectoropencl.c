@@ -28,6 +28,15 @@
 #include "datavectoropencl_types.h"
 #include "datavectoropencl_prototypes.h"
 
+
+/*
+ *
+ *     Module for OpenCl datavectors TBD! Currently prototyping 
+ *     by allocating system memory
+ *
+ */
+
+
 real_vector_single_t* new_real_vector_single_t(unsigned length)
 {
     CONSTRUCTOR_TEMPLATE(real_vector_single_t, float)

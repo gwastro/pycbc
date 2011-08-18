@@ -52,7 +52,26 @@
 // prototype declaration of a function to wrap (has to be impl. in a c-file)
 
 %include "pycbcopencl_types.h"
+%include "exception.i"
 
+
+// Generic errorhandling 
+%exception {
+    $action
+    if (pycbc_err_occurred()) {
+        SWIG_exception(SWIG_RuntimeError, pycbc_err_message());
+        return NULL;
+    }
+}
+
+// Function specific errorhandling
+%exception cl_context_t {
+    $action
+    if (!result) {
+        SWIG_exception(SWIG_MemoryError, "cl_context_t allocation fails");
+        return NULL;
+    }
+}
 %extend cl_context_t {
 
     cl_context_t(unsigned device_id);
