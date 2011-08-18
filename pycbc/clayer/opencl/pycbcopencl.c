@@ -31,10 +31,32 @@
 
 //#include "gclUtils.h"
 
+unsigned pycbcopencl_err_stash = 0;
+char pycbcopencl_err_map[][5] = {"NoErr", "aerr", "berr", "cerr", "Undef"};
+
+int pycbc_err_occurred()
+{
+    if (!pycbcopencl_err_stash) {
+        return 0;
+    }
+    else {
+        return 1;
+    }
+}
+
+char* pycbc_err_message() 
+{
+    unsigned tmp;
+    
+    tmp = pycbcopencl_err_stash;
+    pycbcopencl_err_stash = 0;
+    
+    return pycbcopencl_err_map[tmp];
+}
 
 cl_context_t* new_cl_context_t(unsigned device_id)
 {
-    int err;
+   // int err;
     cl_context_t* c;
     
     c = (cl_context_t*) malloc(sizeof(cl_context_t));
@@ -63,7 +85,8 @@ cl_context_t* new_cl_context_t(unsigned device_id)
     
    // if(err != CL_SUCCESS)
    //     printf("OpenCl init error: %d", err);
-    
+      
+    // pycbcopencl_err_stash = 3; 
     
     return c;
 }
