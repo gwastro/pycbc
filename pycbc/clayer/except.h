@@ -28,7 +28,7 @@
 
 extern jmp_buf pycbc_clayer_exception_buffer;
 extern int pycbc_clayer_exception_status;
-extern char pycbc_clayer_exception_message[2048];
+extern char* pycbc_clayer_exception_message;
 
 #define try if ((pycbc_clayer_exception_status = \
 setjmp(pycbc_clayer_exception_buffer)) == 0)

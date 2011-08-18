@@ -67,9 +67,8 @@ cl_context_t* new_cl_context_t(unsigned device_id)
    //     printf("OpenCl init error: %d", err);
     
     
-    // *** currently buggy - I'm working on it. K. Wiesner *** 
-    //if(c == NULL)
-    //    throw(MemoryError, "Could not allocate cl_context_t")
+    if(c == NULL)
+        throw(MemoryError, "could not allocate cl_context_t")
     
     return c;
 }
