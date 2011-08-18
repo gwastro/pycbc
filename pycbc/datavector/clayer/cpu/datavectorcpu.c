@@ -27,8 +27,6 @@
 
 #include <stdio.h>
 
-#include "../../../clayer/except.h"
-
 #include "datavectorcpu_types.h"
 #include "datavectorcpu_prototypes.h"
 
@@ -39,8 +37,6 @@ real_vector_single_t* new_real_vector_single_t(unsigned long length,
 
     c->data = (float*)calloc( c->meta_data.vector_length , 
                       c->meta_data.element_size_bytes );
-    if(c->data == NULL)
-        throw(MemoryError, "Could not allocate real_vector_single_t")
     return c;
 }
 
@@ -56,8 +52,6 @@ real_vector_double_t* new_real_vector_double_t(unsigned long length,
     CONSTRUCTOR_TEMPLATE(real_vector_double_t, double)
     c->data = (double*)calloc( c->meta_data.vector_length , 
                       c->meta_data.element_size_bytes );
-    if(c->data == NULL)
-        throw(MemoryError, "Could not allocate real_vector_double_t")
     return c;
 }
 
@@ -73,8 +67,6 @@ complex_vector_single_t* new_complex_vector_single_t(unsigned long length,
     CONSTRUCTOR_TEMPLATE(complex_vector_single_t, complex_float_t)
     c->data = (complex_float_t*)calloc(c->meta_data.vector_length ,
                           c->meta_data.element_size_bytes );
-    if(c->data == NULL)
-        throw(MemoryError, "Could not allocate complex_vector_single_t")
     return c;
 }
 
@@ -91,8 +83,6 @@ complex_vector_double_t* new_complex_vector_double_t(unsigned long length,
     CONSTRUCTOR_TEMPLATE(complex_vector_double_t, complex_double_t)    
     c->data = (complex_double_t*)calloc(c->meta_data.vector_length,
                           c->meta_data.element_size_bytes );
-    if(c->data == NULL)
-        throw(MemoryError, "Could not allocate complex_vector_double_t")
     return c;
 }
 

@@ -26,8 +26,6 @@
 
 #include <stdio.h>
 
-#include "../except.h"
-
 #include "pycbcopencl_types.h"
 #include "pycbcopencl_prototypes.h"
 
@@ -66,9 +64,6 @@ cl_context_t* new_cl_context_t(unsigned device_id)
    // if(err != CL_SUCCESS)
    //     printf("OpenCl init error: %d", err);
     
-    
-    if(c == NULL)
-        throw(MemoryError, "could not allocate cl_context_t")
     
     return c;
 }

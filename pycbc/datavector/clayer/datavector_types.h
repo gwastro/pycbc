@@ -29,14 +29,14 @@
 
 #include <stdlib.h>
 
-// To add new elements add them here in the typedef meta_data_t, 
-// in the CONSTRUCTOR_TEMPLATE (in this file)
+// To add new elements add them in the typedef meta_data_t  
+// and in the CONSTRUCTOR_TEMPLATE macro
 // and in the TYPE_INTERFACE_TEMPLATE macro in the datavector_types.i file
 
 typedef struct
 {
     
-    // add "epoch";segment start time accociated w/ initial time series 
+    // add "epoch" -> segment start time accociated w/ initial time series 
     unsigned long start;    // better rename to x0;
                             // offset of the data from origin series applies 
                             // only for segmenting ????

@@ -28,6 +28,16 @@
 #include "datavectorcuda_types.h"
 #include "datavectorcuda_prototypes.h"
 
+
+/*
+ *
+ *     Module for Cuda datavectors TBD! Currently prototyping 
+ *     by allocating system memory
+ *
+ */
+
+
+
 real_vector_single_t* new_real_vector_single_t(unsigned length)
 {
     CONSTRUCTOR_TEMPLATE(real_vector_single_t, float)
