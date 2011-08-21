@@ -29,6 +29,8 @@ pycbc management and tools
 
 from pycbcopencl import cl_context_t as OpenClContext
 
+#from pycbcopencl import pycbc_err_occurred as err_occurred
+
 import logging
 
 class CpuDeviceContext:
@@ -63,11 +65,24 @@ class OpenClDeviceContext:
         self.__logger.debug( repr(self.__openclcontext) )
         self.__logger.debug( str(self.__openclcontext) )
         
+        #print "testing access of the error functions"
+        #although they are supposed to be called only from C
+        #err_occurred()        
+                    
+
+        
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.__logger.debug( "__exit__ called " )
         
         # destroy OpenCl device context
         del(self.__openclcontext)
+        
+    #-properties----------------------------------------------------------------
+
+    #@property
+    #def con(self):
+    #    return self.__openclcontext
+
         
 
 class CudaDeviceContext:

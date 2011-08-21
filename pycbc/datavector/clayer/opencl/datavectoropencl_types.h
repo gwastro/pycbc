@@ -47,14 +47,14 @@ real_vector_double_t;
 typedef struct
 {
     meta_data_t meta_data;
-    float *data;
+    complex_float_t *data;
 }
 complex_vector_single_t;
 
 typedef struct
 {
     meta_data_t meta_data;
-    double *data;
+    complex_double_t *data;
 }
 complex_vector_double_t;
 

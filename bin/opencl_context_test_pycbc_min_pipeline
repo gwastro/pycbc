@@ -51,13 +51,11 @@ sys.path.append('/Users/kawies/dev/src/pycbc')
 
 from pycbc.pycbc import OpenClDeviceContext as ProccessingTargetContext
 
-from pycbc.straindata.straindata_cpu import StrainDataCpu as StrainData 
-from pycbc.templatebank.templatebank_cpu import TemplateBankCpu as TemplateBank 
+from pycbc.straindata.straindata_opencl import StrainDataOpenCl as StrainData 
 
-from pycbc.matchedfilter.matchedfilter_cpu import MatchedFilterCpu as MatchedFilter
-#from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
+from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
 
-from pycbc.datavector.datavectorcpu import real_vector_single_t as SnrResultTimeSeries
+from pycbc.datavector.datavectoropencl import real_vector_single_t as SnrResultTimeSeries
 
 import logging
 
@@ -69,7 +67,7 @@ logging.basicConfig(level=logging.DEBUG,
 logger= logging.getLogger('pycbc.main_script')
 
 
-start_message = 'Starting pycbc single detector minimal pipeline ...'
+start_message = 'Testing OpenCl Context ...'
 logger.debug(start_message)
 print start_message
 
@@ -101,14 +99,8 @@ with ProccessingTargetContext(1) as context:
     # segmenting straindata and transform into frequency domain
     strain_data.perform_fft_segments()
 
-
     # transfer straindata to appropriate memory space on target device
     strain_data.render()
-
-    # create 5 templates (testing the iterator of TemplateBank)
-    bank = TemplateBank( 5, strain_data.segments_length, strain_data.segments_delta_x )
-    logger.debug("instanciated TemplateBank w/ waveform length: {0}".format(bank.waveform_length))
-
 
     # create matched filter (only generate_snr() has to be implemented
     # for the minimal pipeline)
@@ -119,22 +111,19 @@ with ProccessingTargetContext(1) as context:
     snr = SnrResultTimeSeries(strain_data.segments_length, strain_data.segments_delta_x)
     logger.debug("instanciated SnrResultTimeSeries as {0}".format(repr(snr)))
 
-    # filter the data against the template bank
-    for template in bank:
-        htilde = bank.perform_generate_waveform(template)
-        # will the garbage collection destroy the old htilde guaranteed here?
-        # otherwise device memory remnants could survive the context !!!
-        for stilde in strain_data:
-            matched_filter.perform_generate_snr(stilde, htilde, snr)
+
+    # messy prototyping of htilde (mimic a templatebank)
+    from pycbc.datavector.datavectoropencl import complex_vector_single_t as WaveformFrequencySeries
+    htilde = WaveformFrequencySeries(strain_data.segments_length, 1)
+
+    matched_filter.perform_generate_snr(context, snr, htilde, htilde, )
             
     ############################################################################
     # prepare to leave the processing context (objects that contain device 
     # memory are not deleted automatically here!)
     del(strain_data)
-    del(bank)
     del(matched_filter)
     del(snr)
-    del(htilde)
     
     # leaving the ProccessingTargetContext NOW (destroy the device context)
     ############################################################################

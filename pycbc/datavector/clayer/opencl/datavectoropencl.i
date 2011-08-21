@@ -35,9 +35,7 @@
 %feature("autodoc", "1");
 
 // This goes directly to the wrap-code (no swig preprocess)
-// wrap code needs to have typedefs and function prototypes!
 %{
-#include "../except.h"
 #include "datavectoropencl_types.h"
 #include "datavectoropencl_prototypes.h"
 %}
@@ -51,24 +49,52 @@
 // but to declare function prototypes as well would raise a 
 // "is multiply defined error". That is the reason for splitting 
 // the headerfiles into _types and _prototypes
-%include "datavectoropencl_types.h"
+%include "../datavector_types.h"
 %include "../datavector_types.i"
+%include "datavectoropencl_types.h"
+%include "exception.i"
 
+%exception real_vector_single_t {
+    $action
+    if (!result) {
+        SWIG_exception(SWIG_MemoryError, "real_vector_single_t allocation fails");
+        return NULL;
+    }
+}
 %extend real_vector_single_t {
     TYPE_INTERFACE_TEMPLATE(real_vector_single_t,float)
 }
 
+%exception real_vector_double_t {
+    $action
+    if (!result) {
+        SWIG_exception(SWIG_MemoryError, "real_vector_double_t allocation fails");
+        return NULL;
+    }
+}
 %extend real_vector_double_t {
     TYPE_INTERFACE_TEMPLATE(real_vector_double_t,double)
 }
 
+%exception complex_vector_single_t {
+    $action
+    if (!result) {
+        SWIG_exception(SWIG_MemoryError, "complex_vector_single_t allocation fails");
+        return NULL;
+    }
+}
 %extend complex_vector_single_t {
-    TYPE_INTERFACE_TEMPLATE(complex_vector_single_t,float)
+    TYPE_INTERFACE_TEMPLATE(complex_vector_single_t,complex_float_t)
 }
 
+%exception complex_vector_double_t {
+    $action
+    if (!result) {
+        SWIG_exception(SWIG_MemoryError, "complex_vector_double_t allocation fails");
+        return NULL;
+    }
+}
 %extend complex_vector_double_t {
-    TYPE_INTERFACE_TEMPLATE(complex_vector_double_t,double)
+    TYPE_INTERFACE_TEMPLATE(complex_vector_double_t,complex_double_t)
 }
-
-
 

@@ -55,6 +55,13 @@
 %include "exception.i"
 
 
+// just testwise, error functions can be swig wrapped 
+// and called as memberfunctions of the python context object
+//int pycbc_err_occurred(void);
+//char* pycbc_err_message(void);
+//void pycbc_set_error(unsigned);
+
+
 // Generic errorhandling 
 %exception {
     $action
