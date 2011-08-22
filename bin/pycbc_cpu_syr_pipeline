@@ -80,7 +80,11 @@ gps_end_time= gps_start_time + search_time
 interferometer = "H1"
 
 with ProccessingTargetContext(0) as context:
-    
+ 
+    print repr(context)
+    print context
+
+          
     strain_data= StrainData(gps_start_time, gps_end_time, 
                         segments, sample_freq, 
                         interferometer)
