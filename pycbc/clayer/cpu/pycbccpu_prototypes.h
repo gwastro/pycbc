@@ -22,22 +22,25 @@
 //
 // =============================================================================
 //
-// pycbc type definitions for pycbc
+// pycbc constructor destructor prototypes for pycbc
 
-#ifndef PYCBCOPENCL_TYPES_H
-#define PYCBCOPENCL_TYPES_H
+#ifndef PYCBCCPU_PROTOTYPES_H
+#define PYCBCCPU_PROTOTYPES_H
 
 #include <stdlib.h>
 
-typedef struct
-{
-    unsigned device_id;
-    
-    int (*err_occurred)(void);
-    char* (*err_message)(void);
-    void (*set_error)(unsigned);
-    
-}
-cl_context_t;
+#define ERR_STRING_LEN 256 
 
-#endif /* PYCBCOPENCL_TYPES_H */
+extern unsigned pycbccpu_err_stash;
+extern char pycbccpu_err_map[][ERR_STRING_LEN];
+
+int pycbc_err_occurred(void);
+char* pycbc_err_message(void);
+void pycbc_set_error(unsigned);
+
+// prototypes of all methodes that will extend pure c typedefs
+cpu_context_t* new_cpu_context_t(unsigned);
+void delete_cpu_context_t( cpu_context_t* );
+
+
+#endif /* PYCBCCPU_PROTOTYPES_H */

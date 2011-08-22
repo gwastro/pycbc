@@ -24,8 +24,8 @@
 //
 // pycbc type definitions for pycbc
 
-#ifndef PYCBCOPENCL_TYPES_H
-#define PYCBCOPENCL_TYPES_H
+#ifndef PYCBCCPU_TYPES_H
+#define PYCBCCPU_TYPES_H
 
 #include <stdlib.h>
 
@@ -38,6 +38,6 @@ typedef struct
     void (*set_error)(unsigned);
     
 }
-cl_context_t;
+cpu_context_t;
 
-#endif /* PYCBCOPENCL_TYPES_H */
+#endif /* PYCBCCPU_TYPES_H */

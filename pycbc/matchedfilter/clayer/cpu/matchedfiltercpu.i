@@ -12,6 +12,7 @@
 // wrap code needs to have typedefs and function prototypes!
 %{
 #include "../../../datavector/clayer/cpu/datavectorcpu_types.h"
+#include "../../../clayer/cpu/pycbccpu_types.h"
 #include "matchedfiltercpu_prototypes.h"
 %}
 
@@ -37,8 +38,9 @@
 //%}
 
 // prototype declaration of a function to wrap (has to be impl. in a c-file)
-int gen_snr_cpu(complex_vector_single_t* stilde, 
-                complex_vector_single_t* htilde,
-                real_vector_single_t* snr);
+void gen_snr_cpu(cpu_context_t* context,
+                real_vector_single_t* snr,
+                complex_vector_single_t* stilde, 
+                complex_vector_single_t* htilde);
 
 

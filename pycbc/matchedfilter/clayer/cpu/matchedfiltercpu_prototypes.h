@@ -4,8 +4,9 @@
 #include <stdlib.h>
 
 //prototypes of all functions that swig wraps to methods
-int gen_snr_cpu(complex_vector_single_t* stilde, 
-                complex_vector_single_t* htilde,
-                real_vector_single_t* snr);
+void gen_snr_cpu(cpu_context_t* context,
+                real_vector_single_t* snr,
+                complex_vector_single_t* stilde, 
+                complex_vector_single_t* htilde);
 
 #endif /* MATCHEDFILTERCPU_PROTOTYPES_H */
