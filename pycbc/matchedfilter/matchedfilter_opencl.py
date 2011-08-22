@@ -52,7 +52,7 @@ class  GenSnrImplementationOpenCl(GenSnrImplementationBase):
         self.__logger.debug("instanciated GenSnrImplementationOpenCl")
         super(GenSnrImplementationOpenCl, self).__init__()
     
-    def generate_snr(self, stilde, htilde, snr):
+    def generate_snr(self, context, snr, stilde, htilde):
         """
         Process matched filtering by generating snr timeseries \rho(t)
         """
@@ -60,9 +60,9 @@ class  GenSnrImplementationOpenCl(GenSnrImplementationBase):
         assert repr(htilde).find("datavectoropencl") >= 0, "try to call gen_snr_opencl() with wrong type of datavector for htilde"
         assert repr(snr).find("datavectoropencl") >= 0, "try to call gen_snr_opencl() with wrong type of datavector for snr"
         
-        gen_snr_opencl(stilde, htilde, snr)
+        gen_snr_opencl(context, snr, stilde, htilde)
         
-        return 0
+
         
 class  MaxImplementationOpenCl(MaxImplementationBase):
 

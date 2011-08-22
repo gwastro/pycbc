@@ -58,19 +58,20 @@ class MatchedFilterBase:
     #---------------------------------------------------------------------------
             
         
-    def perform_generate_snr(self, stilde, htilde, snr):
+    def perform_generate_snr(self, context, snr, stilde, htilde):
         """
         calls the generate_snr methode of the derived implementation object
+        @type  context: Device Context
+        @param context: Input: Device Context
+        @type  snr:     DataVectorBase
+        @param snr:     Output: Signal to noise ratio series
         @type  stilde: DataVectorBase
         @param stilde: Input: Straindata frequency domain
         @type  htilde: DataVectorBase
         @param htilde: Input: Template waveform frequency domain
-        @type  snr:    DataVectorBase
-        @param snr:    Output: Signal to noise ratio series
-        @rtype:  err:  int
-        @return: err:  Error value. 0 if no error
         """
-        return self.__gen_snr_impl.generate_snr(stilde, htilde, snr)
+        self.__gen_snr_impl.generate_snr(context, snr, stilde, htilde)
+
 
     def perform_max(self, snr):
         """

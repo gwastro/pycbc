@@ -52,7 +52,7 @@ class  GenSnrImplementationCpu(GenSnrImplementationBase):
         self.__logger.debug("instanciated GenSnrImplementationCpu")
         super(GenSnrImplementationCpu, self).__init__()
     
-    def generate_snr(self, stilde, htilde, snr):
+    def generate_snr(self, context, snr, stilde, htilde):
         """
         Process matched filtering by generating snr timeseries \rho(t)
         """
@@ -60,9 +60,9 @@ class  GenSnrImplementationCpu(GenSnrImplementationBase):
         assert repr(htilde).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for htilde"
         assert repr(snr).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for snr"
 
-        gen_snr_cpu(stilde, htilde, snr)
+        gen_snr_cpu(context, snr, stilde, htilde)
         
-        return 0
+
 
 class  MaxImplementationCpu(MaxImplementationBase):
 
