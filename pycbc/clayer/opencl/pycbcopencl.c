@@ -32,10 +32,18 @@
 //#include "gclUtils.h"
 
 unsigned pycbcopencl_err_stash = 0;
-char pycbcopencl_err_map[][5] = {"NoErr", "aerr", "berr", "cerr", "Undef"};
+char pycbcopencl_err_map[][ERR_STRING_LEN] = {
+    "No Error", 
+    "Memory Error", 
+    "berr", 
+    "cerr", 
+    "Undefined Error"};
+
 
 int pycbc_err_occurred()
 {
+    printf("\ndebug: pycbc_err_occurred\n");
+    
     if (!pycbcopencl_err_stash) {
         return 0;
     }
@@ -47,20 +55,31 @@ int pycbc_err_occurred()
 char* pycbc_err_message() 
 {
     unsigned tmp;
-    
+    printf("debug: pycbc_err_message");    
+
     tmp = pycbcopencl_err_stash;
     pycbcopencl_err_stash = 0;
     
     return pycbcopencl_err_map[tmp];
 }
 
+void pycbc_set_error(unsigned err)
+{
+    printf("debug: pycbc_set_error"); 
+    pycbcopencl_err_stash = err;
+}
+
+
 cl_context_t* new_cl_context_t(unsigned device_id)
 {
-   // int err;
     cl_context_t* c;
     
     c = (cl_context_t*) malloc(sizeof(cl_context_t));
-    
+    if ( c == NULL )  
+    {
+        return c;
+    }
+        
   //  gclInitErrorMessages();
   //  gclInitLogMessages();
   //  gclLogLevel = gclINFO;
@@ -86,7 +105,11 @@ cl_context_t* new_cl_context_t(unsigned device_id)
    // if(err != CL_SUCCESS)
    //     printf("OpenCl init error: %d", err);
       
-    // pycbcopencl_err_stash = 3; 
+    c->err_occurred = pycbc_err_occurred;
+    c->err_message  = pycbc_err_message;
+    c->set_error    = pycbc_set_error;
+    
+    // c->set_error(1);
     
     return c;
 }

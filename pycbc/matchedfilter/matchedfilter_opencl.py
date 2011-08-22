@@ -27,19 +27,19 @@
 MatchedFilter OpenCl implementation class for the pycbc package
 """
 
-from pycbc.datavector.datavector_base import DataVectorBase
-
 from matchedfilter_base import MatchedFilterBase
 from matchedfilter_base import GenSnrImplementationBase
 from matchedfilter_base import MaxImplementationBase
 
-#from matchedfilteropencl import gen_snr_opencl as gen_snr
+from matchedfilteropencl import gen_snr_opencl
 
+import logging
 
 class MatchedFilterOpenCl(MatchedFilterBase):
 
     def __init__(self, length=0):
-        print "instanciated MatchedFilterOpenCl" 
+        self.__logger= logging.getLogger('pycbc.MatchedFilterOpenCl')
+        self.__logger.debug("instanciated MatchedFilterOpenCl") 
         
         # Instanciate generate-snr-implementation in base class  
         super(MatchedFilterOpenCl, self).__init__(length, 
@@ -48,25 +48,27 @@ class MatchedFilterOpenCl(MatchedFilterBase):
 class  GenSnrImplementationOpenCl(GenSnrImplementationBase):
 
     def __init__(self):
-        print "instanciated GenSnrImplementationOpenCl" 
+        self.__logger= logging.getLogger('pycbc.GenSnrImplementationOpenCl')
+        self.__logger.debug("instanciated GenSnrImplementationOpenCl")
         super(GenSnrImplementationOpenCl, self).__init__()
     
-    def generate_snr(self, stilde, htilde):
+    def generate_snr(self, stilde, htilde, snr):
         """
         Process matched filtering by generating snr timeseries \rho(t)
         """
-
-        assert isinstance(stilde, DataVectorBase), "wrong input data base type"
-        assert isinstance(htilde, DataVectorBase), "wrong input data base type"
+        assert repr(stilde).find("datavectoropencl") >= 0, "try to call gen_snr_opencl() with wrong type of datavector for stilde"
+        assert repr(htilde).find("datavectoropencl") >= 0, "try to call gen_snr_opencl() with wrong type of datavector for htilde"
+        assert repr(snr).find("datavectoropencl") >= 0, "try to call gen_snr_opencl() with wrong type of datavector for snr"
         
-#        snr= gen_snr(stilde, htilde)
+        gen_snr_opencl(stilde, htilde, snr)
         
-#        return snr
-
+        return 0
+        
 class  MaxImplementationOpenCl(MaxImplementationBase):
 
     def __init__(self):
-        print "instanciated MaxImplementationOpenCl" 
+        self.__logger= logging.getLogger('pycbc.MaxImplementationOpenCl')
+        self.__logger.debug("instanciated MaxImplementationOpenCl") 
         super(MaxImplementationOpenCl, self).__init__()
     
     def max(self, snr):
@@ -74,9 +76,9 @@ class  MaxImplementationOpenCl(MaxImplementationBase):
         Find the maximum in the generated snr timeseries \rho(t)
         """
 
-        assert isinstance(snr, DataVectorBase), "wrong input data base type"
-                    
-        print "finding maximum of snr series"             
-        return 5.5 # just simulate to return the right datatype
-
+        assert repr(snr).find("datavectoropencl") >= 0, "try to call gen_snr_opencl() with wrong type of datavector for snr"
+        
+        self.__logger.debug("finding maximum of snr series - to be implemented in clayer")            
+        return 5.5
+        
 
