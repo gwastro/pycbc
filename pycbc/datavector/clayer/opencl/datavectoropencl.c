@@ -42,8 +42,16 @@ real_vector_single_t* new_real_vector_single_t(unsigned long length,
 {
     CONSTRUCTOR_TEMPLATE(real_vector_single_t, float)
     
-    c->data = (float*)calloc( c->meta_data.vector_length , 
-                             c->meta_data.element_size_bytes );
+    c->real_data = (float*)calloc( c->meta_data.vector_length , 
+                                   c->meta_data.element_size_bytes );
+    c->imag_data = (float*)calloc( c->meta_data.vector_length , 
+                                   c->meta_data.element_size_bytes );
+    
+    //
+    // and so on ...
+    //
+    
+    
     return c;
 }
 
