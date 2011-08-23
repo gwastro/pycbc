@@ -82,8 +82,8 @@ interferometer = "H1"
 with ProccessingTargetContext(0) as context:
  
     # context testing by karsten
-    print repr(context.cpucontext)
-    print context.cpucontext
+    print repr(context)
+    print context
           
     strain_data= StrainData(gps_start_time, gps_end_time, 
                         segments, sample_freq, 
@@ -111,7 +111,7 @@ with ProccessingTargetContext(0) as context:
 
     # create matched filter (only generate_snr() has to be implemented
     # for the minimal pipeline)
-    matched_filter = MatchedFilter(strain_data.segments_length)
+    matched_filter = MatchedFilter(strain_data.segments_length, strain_data.segments_delta_x)
     logger.debug("instanciated MatchedFilter w/ length: {0}".format(matched_filter.length))
 
     # instanciate result vectors

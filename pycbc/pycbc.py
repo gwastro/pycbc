@@ -39,9 +39,9 @@ class CpuDeviceContext:
         self.__logger.debug("instanciated CpuDeviceContext {0}".format(self.__devicehandle))
 
         # create Cpu device context
-        self.cpucontext = CpuContext(self.__devicehandle)
-        self.__logger.debug( repr(self.cpucontext) )
-        self.__logger.debug( str(self.cpucontext) )
+        self.__cpucontext = CpuContext(self.__devicehandle)
+        self.__logger.debug( repr(self.__cpucontext) )
+        self.__logger.debug( str(self.__cpucontext) )
 
 
     def __enter__(self):
@@ -51,7 +51,7 @@ class CpuDeviceContext:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.__logger.debug("__exit__ called ")
         # destroy Cpu device context
-        del(self.cpucontext)
+        del(self.__cpucontext)
 
 
 class OpenClDeviceContext:

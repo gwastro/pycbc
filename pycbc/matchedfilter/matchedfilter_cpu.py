@@ -32,16 +32,20 @@ from matchedfilter_base import GenSnrImplementationBase
 from matchedfilter_base import MaxImplementationBase
 
 from matchedfiltercpu import gen_snr_cpu
-from datavectorcpu import complex_vector_single_t
-from datavectorcpu import real_vector_single_t
+from pycbc.datavector.datavectorcpu import complex_vector_single_t
+from pycbc.datavector.datavectorcpu import real_vector_single_t
 
 import logging
 
 class MatchedFilterCpu(MatchedFilterBase):
 
-    def __init__(self, length=0):
+    def __init__(self, length=0, delta_x=1):
         self.__logger= logging.getLogger('pycbc.MatchedFilterCpu')
-        self.__logger.debug("instanciated MatchedFilterCpu") 
+        self.__logger.debug("instanciated MatchedFilterCpu")
+        self.__length= length
+        self.__delta_x= delta_x
+        self.__qtilde= complex_vector_single_t(self.__length, self.__delta_x)
+        self.__q= real_vector_single_t(self.__length, self.__delta_x)
         
         # Instanciate generate-snr-implementation in base class  
         super(MatchedFilterCpu, self).__init__(length, 
@@ -63,7 +67,6 @@ class  GenSnrImplementationCpu(GenSnrImplementationBase):
         assert repr(snr).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for snr"
 
         gen_snr_cpu(context, snr, stilde, htilde)
-        
 
 
 class  MaxImplementationCpu(MaxImplementationBase):
