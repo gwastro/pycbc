@@ -26,10 +26,8 @@
 pycbc management and tools
 """
 
-
 from pycbcopencl import cl_context_t as OpenClContext
-
-#from pycbcopencl import pycbc_err_occurred as err_occurred
+from pycbccpu import cpu_context_t as CpuContext
 
 import logging
 
@@ -40,6 +38,11 @@ class CpuDeviceContext:
         self.__devicehandle = devicehandle
         self.__logger.debug("instanciated CpuDeviceContext {0}".format(self.__devicehandle))
 
+        # create Cpu device context
+        self.__cpucontext = CpuContext(self.__devicehandle)
+        self.__logger.debug( repr(self.__cpucontext) )
+        self.__logger.debug( str(self.__cpucontext) )
+
 
     def __enter__(self):
         self.__logger.debug("__enter__ called ")
@@ -47,6 +50,8 @@ class CpuDeviceContext:
         
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.__logger.debug("__exit__ called ")
+        # destroy Cpu device context
+        del(self.__cpucontext)
 
 
 class OpenClDeviceContext:
@@ -56,24 +61,16 @@ class OpenClDeviceContext:
         self.__devicehandle = devicehandle
         self.__logger.debug("instanciated OpenClDeviceContext {0}".format(self.__devicehandle))
 
-
     def __enter__(self):
         self.__logger.debug("__enter__ called ")
         
         # create OpenCl device context
-        self.__openclcontext = OpenClContext(1)
+        self.__openclcontext = OpenClContext(self.__devicehandle)
         self.__logger.debug( repr(self.__openclcontext) )
         self.__logger.debug( str(self.__openclcontext) )
-        
-        #print "testing access of the error functions"
-        #although they are supposed to be called only from C
-        #err_occurred()        
-                    
-
-        
+                
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.__logger.debug( "__exit__ called " )
-        
         # destroy OpenCl device context
         del(self.__openclcontext)
         
