@@ -38,9 +38,18 @@
 //%}
 
 // prototype declaration of a function to wrap (has to be impl. in a c-file)
-void gen_snr_cpu(cpu_context_t* context,
-                real_vector_single_t* snr,
-                complex_vector_single_t* stilde, 
-                complex_vector_single_t* htilde);
+/* void gen_snr_cpu(cpu_context_t* context, */
+/*                 real_vector_single_t* snr, */
+/*                 complex_vector_single_t* stilde,  */
+/*                 complex_vector_single_t* htilde); */
 
+void gen_snr_cpu(cpu_context_t* context,
+		 real_vector_single_t* snr,
+		 complex_vector_single_t* stilde, 
+		 complex_vector_single_t* htilde,
+		 complex_vector_single_t* q,
+		 complex_vector_single_t* qtilde,
+		 /*complex_fft_plan_t* plan,*/
+		 double f_min,
+		 double sigma_sq);
 
