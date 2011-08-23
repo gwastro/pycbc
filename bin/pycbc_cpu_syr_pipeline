@@ -81,9 +81,9 @@ interferometer = "H1"
 
 with ProccessingTargetContext(0) as context:
  
-    print repr(context)
-    print context
-
+    # context testing by karsten
+    print repr(context.cpucontext)
+    print context.cpucontext
           
     strain_data= StrainData(gps_start_time, gps_end_time, 
                         segments, sample_freq, 
@@ -102,14 +102,12 @@ with ProccessingTargetContext(0) as context:
     # segmenting straindata and transform into frequency domain
     strain_data.perform_fft_segments()
 
-
     # transfer straindata to appropriate memory space on target device
     strain_data.render()
 
     # create 5 templates (testing the iterator of TemplateBank)
     bank = TemplateBank( 5, strain_data.segments_length, strain_data.segments_delta_x )
     logger.debug("instanciated TemplateBank w/ waveform length: {0}".format(bank.waveform_length))
-
 
     # create matched filter (only generate_snr() has to be implemented
     # for the minimal pipeline)
@@ -121,8 +119,9 @@ with ProccessingTargetContext(0) as context:
     logger.debug("instanciated SnrResultTimeSeries as {0}".format(repr(snr)))
 
     # filter the data against the template bank
-    for template in bank:
+    for template in bank:        
         htilde = bank.perform_generate_waveform(template)
+        print("generating htilde {0}".format(repr(htilde)))
         for stilde in strain_data:
             matched_filter.perform_generate_snr(context, snr, stilde, htilde)
             

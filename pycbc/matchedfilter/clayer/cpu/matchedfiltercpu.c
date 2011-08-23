@@ -8,11 +8,11 @@ void gen_snr_cpu(cpu_context_t* context,
                 complex_vector_single_t* stilde, 
                 complex_vector_single_t* htilde)
 {    
-    //printf("gen_snr_cpu called w/: complex_vector_single_t* stilde= %p\n", 
-    //       stilde->data);
-    //printf("gen_snr_cpu called w/: complex_vector_single_t* htilde= %p\n", 
-    //       htilde->data);
-    //printf("gen_snr_cpu called w/: real_vector_single_t* snr= %p\n", snr->data);
+    static unsigned cnt=0;
+    
+    printf("%d: called gen_snr_cpu with context: %p, snr: %p s: %p h: %p\n", 
+           cnt++, context, snr, stilde, htilde);
+    
     
     return;
 

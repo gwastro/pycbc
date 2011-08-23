@@ -69,17 +69,21 @@ void pycbc_set_error(unsigned err)
     pycbccpu_err_stash = err;
 }
 
-
 cpu_context_t* new_cpu_context_t(unsigned device_id)
 {
     cpu_context_t* c;
+
+    printf("IN before malloc new_cpu_context_t device_id= %d", device_id);
+
     
     c = (cpu_context_t*) malloc(sizeof(cpu_context_t));
     if ( c == NULL )  
     {
         return c;
     }
-        
+    
+    printf("IN fter malloc  new_cpu_context_t device_id= %d   %p", device_id, c);
+    c->device_id = device_id;
       
     c->err_occurred = pycbc_err_occurred;
     c->err_message  = pycbc_err_message;

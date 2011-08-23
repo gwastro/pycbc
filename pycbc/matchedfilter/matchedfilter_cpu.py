@@ -32,6 +32,8 @@ from matchedfilter_base import GenSnrImplementationBase
 from matchedfilter_base import MaxImplementationBase
 
 from matchedfiltercpu import gen_snr_cpu
+from datavectorcpu import complex_vector_single_t
+from datavectorcpu import real_vector_single_t
 
 import logging
 
