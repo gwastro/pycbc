@@ -2,6 +2,8 @@
 #define MATCHEDFILTERCPU_PROTOTYPES_H
 
 #include <stdlib.h>
+#include "../../../clayer/cpu/pycbccpu_types.h"
+
 
 //prototypes of all functions that swig wraps to methods
 

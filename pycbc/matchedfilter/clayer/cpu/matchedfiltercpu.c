@@ -30,7 +30,7 @@ void gen_snr_cpu(cpu_context_t* context,
     /* complex_vec_fft( q, qtilde, plan->theplan ); */
   
     /* normalize the snr */
-    for ( j = 0; j < rhosq->n; ++j )
+    for ( j = 0; j < q->meta_data.vector_length; ++j )
         snr->data[j] = (norm/sigma_sq) * 
         (q->data[j].re * q->data[j].re + q->data[j].im * q->data[j].im);
 
