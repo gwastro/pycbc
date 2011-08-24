@@ -21,28 +21,6 @@
     import warnings
     %}
 
-// To extend the c-types by methodes they have to be defined here
-// but to declare function prototypes as well would raise a 
-// "is multiply defined error". That is the reason for splitting 
-// the headerfiles
-
-// inline definition of a function to wrap:
-//%include "../../../datavector/clayer/cpu/datavectorcpu_types.h"
-//%include "matchedfiltercpu_types.h"
-//%inline %{
-//real_vector_t* gen_snr_cpu(real_vector_t* stilde, real_vector_t* htilde)
-//{
-//    return stilde;
-//
-//}
-//%}
-
-// prototype declaration of a function to wrap (has to be impl. in a c-file)
-/* void gen_snr_cpu(cpu_context_t* context, */
-/*                 real_vector_single_t* snr, */
-/*                 complex_vector_single_t* stilde,  */
-/*                 complex_vector_single_t* htilde); */
-
 void gen_snr_cpu(cpu_context_t* context,
 		 real_vector_single_t* snr,
 		 complex_vector_single_t* stilde, 

@@ -31,38 +31,37 @@ from matchedfilter_base import MatchedFilterBase
 from matchedfilter_base import GenSnrImplementationBase
 from matchedfilter_base import MaxImplementationBase
 
+# import processing functions from the clayer 
 from matchedfiltercpu import gen_snr_cpu
 
+# import member datavectors
 from pycbc.datavector.datavectorcpu import complex_vector_single_t
-from pycbc.datavector.datavectorcpu import real_vector_single_t
 
 import logging
 
 class MatchedFilterCpu(MatchedFilterBase):
 
     def __init__(self, length=0, delta_x=1):
+
         self.__logger= logging.getLogger('pycbc.MatchedFilterCpu')
         self.__logger.debug("instanciated MatchedFilterCpu")
+
         self.__length= length
         self.__delta_x= delta_x
-        # Matched filter internal datavectors
-        self._qtilde= complex_vector_single_t(self.__length, self.__delta_x)
-        self._q= complex_vector_single_t(self.__length, self.__delta_x)
-        self._test = 6
-
         
-        # Instanciate generate-snr-implementation in base class  
-        super(MatchedFilterCpu, self).__init__(length, 
-              GenSnrImplementationCpu, MaxImplementationCpu, self)
+        super(MatchedFilterCpu, self).__init__(self.__length, self.__delta_x,
+              GenSnrImplementationCpu, MaxImplementationCpu, 
+              complex_vector_single_t, complex_vector_single_t, self)
+
 
 class  GenSnrImplementationCpu(GenSnrImplementationBase):
 
-    def __init__(self, matched_filter):
+    def __init__(self, owner_mfilt):
+
         self.__logger= logging.getLogger('pycbc.GenSnrImplementationCpu')
         self.__logger.debug("instanciated GenSnrImplementationCpu")
-        #    self.__qtilde= complex_vector_single_t(4096, 1)
-        #    self.__q= complex_vector_single_t(4096, 1)
-        super(GenSnrImplementationCpu, self).__init__(matched_filter)
+
+        super(GenSnrImplementationCpu, self).__init__(owner_mfilt)
     
     def generate_snr(self, context, snr, stilde, htilde):
         """
@@ -72,17 +71,20 @@ class  GenSnrImplementationCpu(GenSnrImplementationBase):
         assert repr(htilde).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for htilde"
         assert repr(snr).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for snr"
 
-        self._owner_mfilt._test = 8
-
-        gen_snr_cpu(context, snr, stilde, htilde, self._owner_mfilt._q, self._owner_mfilt._qtilde, 1.0, 1.0)
+        gen_snr_cpu(context, snr, stilde, htilde, self._owner_mfilt._q, 
+                    self._owner_mfilt._qtilde, 1.0, 1.0) # just for prototyping
+                                                         # f_min and sigma_sq
+                                                         # are magic numbers
 
 
 class  MaxImplementationCpu(MaxImplementationBase):
 
-    def __init__(self):
+    def __init__(self, owner_mfilt):
+
         self.__logger= logging.getLogger('pycbc.MaxImplementationCpu')
         self.__logger.debug("instanciated MaxImplementationCpu") 
-        super(MaxImplementationCpu, self).__init__()
+
+        super(MaxImplementationCpu, self).__init__(owner_mfilt)
     
     def max(self, snr):
         """
@@ -91,6 +93,7 @@ class  MaxImplementationCpu(MaxImplementationBase):
         assert repr(snr).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for snr"
         
         self.__logger.debug("finding maximum of snr series - to be implemented in clayer")            
+
         return 5.5
 
 
