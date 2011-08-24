@@ -2,6 +2,7 @@
 #define TEMPLATEBANKCPU_PROTOTYPES_H
 
 #include <stdlib.h>
+#include "../../../clayer/cpu/pycbccpu_types.h"
 
 //prototypes of all functions that swig wraps to methods
 real_vector_single_t* new_kfac_vec(
@@ -25,7 +26,7 @@ void compute_template_phasing(
     double f_max,
     int N,
     double dt,
-    real_vec_t* minus_one_by_three
+    real_vector_single_t* minus_one_by_three
     );
 
 #endif /* TEMPLATEBANKCPU_PROTOTYPES_H */

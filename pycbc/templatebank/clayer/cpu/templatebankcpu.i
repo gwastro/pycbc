@@ -10,6 +10,10 @@
 
 // This goes directly to the wrap-code (no swig preprocess)
 // wrap code needs to have typedefs and function prototypes!
-%include "templatebankcpu_prototypes.h"
+%{
+#include "../../../datavector/clayer/cpu/datavectorcpu_types.h"
+#include "../../../clayer/cpu/pycbccpu_types.h"
+#include "templatebankcpu_prototypes.h"
+%}
 
 
