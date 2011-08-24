@@ -32,6 +32,7 @@ from matchedfilter_base import GenSnrImplementationBase
 from matchedfilter_base import MaxImplementationBase
 
 from matchedfiltercpu import gen_snr_cpu
+
 from pycbc.datavector.datavectorcpu import complex_vector_single_t
 from pycbc.datavector.datavectorcpu import real_vector_single_t
 
@@ -44,21 +45,24 @@ class MatchedFilterCpu(MatchedFilterBase):
         self.__logger.debug("instanciated MatchedFilterCpu")
         self.__length= length
         self.__delta_x= delta_x
-#        self.__qtilde= complex_vector_single_t(self.__length, self.__delta_x)
-#        self.__q= real_vector_single_t(self.__length, self.__delta_x)
+        # Matched filter internal datavectors
+        self._qtilde= complex_vector_single_t(self.__length, self.__delta_x)
+        self._q= complex_vector_single_t(self.__length, self.__delta_x)
+        self._test = 6
+
         
         # Instanciate generate-snr-implementation in base class  
         super(MatchedFilterCpu, self).__init__(length, 
-              GenSnrImplementationCpu, MaxImplementationCpu)
+              GenSnrImplementationCpu, MaxImplementationCpu, self)
 
 class  GenSnrImplementationCpu(GenSnrImplementationBase):
 
-    def __init__(self):
+    def __init__(self, matched_filter):
         self.__logger= logging.getLogger('pycbc.GenSnrImplementationCpu')
         self.__logger.debug("instanciated GenSnrImplementationCpu")
-        self.__qtilde= complex_vector_single_t(4096, 1)
-        self.__q= complex_vector_single_t(4096, 1)
-        super(GenSnrImplementationCpu, self).__init__()
+        #    self.__qtilde= complex_vector_single_t(4096, 1)
+        #    self.__q= complex_vector_single_t(4096, 1)
+        super(GenSnrImplementationCpu, self).__init__(matched_filter)
     
     def generate_snr(self, context, snr, stilde, htilde):
         """
@@ -68,7 +72,9 @@ class  GenSnrImplementationCpu(GenSnrImplementationBase):
         assert repr(htilde).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for htilde"
         assert repr(snr).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for snr"
 
-        gen_snr_cpu(context, snr, stilde, htilde, self.__q, self.__qtilde, 1.0, 1.0)
+        self._owner_mfilt._test = 8
+
+        gen_snr_cpu(context, snr, stilde, htilde, self._owner_mfilt._q, self._owner_mfilt._qtilde, 1.0, 1.0)
 
 
 class  MaxImplementationCpu(MaxImplementationBase):
