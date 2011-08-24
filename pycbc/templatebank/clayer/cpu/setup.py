@@ -12,8 +12,8 @@ vector_module = Extension('_templatebankcpu',
 
 
 # base source files that do not require special libraries
-matchedfiltercpu_swig_sources = ['templatebankcpu.i']
-matchedfiltercpu_c_sources = ['templatebankcpu.c']
+templatebankcpu_swig_sources = ['templatebankcpu.i']
+templatebankcpu_c_sources = ['templatebankcpu.c']
 
 
 # define the extension module

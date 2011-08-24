@@ -1,43 +1,35 @@
 #include <stdio.h>
+#include <memory.h>
 #include "../../../datavector/clayer/cpu/datavectorcpu_types.h"
-#include <lal/LALConstants.h>
+#include <math.h>
+#include <complex.h>
+//#include <lal/LALConstants.h>
+#define LAL_PI        3.1415926535897932384626433832795029  /**< pi */
+#define LAL_GAMMA     0.5772156649015328606065120900824024  /**< gamma */
+#define LAL_MTSUN_SI  4.92549095e-6   /**< Geometrized solar mass, s */
 
 /*
  * internal structure and prototype
  */
 
-static struct {
-    double phN,
-    double ph2,
-    double ph3,
-    double ph4,
-    double ph5,
-    double ph5l,
-    double ph6,
-    double ph7,
-    double ph8
+typedef struct {
+    double phN;
+    double ph2;
+    double ph3;
+    double ph4;
+    double ph5;
+    double ph5l;
+    double ph6;
+    double ph7;
+    double ph8;
 } pycbc_templatebank_pnconstants;
 
-static int sp_phase_engine(
+static void sp_phase_engine(
     complex_vector_single_t* exp_psi,
     const double M,
-    const pycbc_templatebank_pnconstants pn_consts;
+    const pycbc_templatebank_pnconstants pn_consts,
     double f_min,
     double f_max,
-    int N,
-    double dt,
-    real_vector_single_t* minus_one_by_three);
-
-static void sp_sstpn_phase_mt(
-    complex_vector_single_t* exp_psi,
-    double M,
-    double eta,
-    double beta,
-    int order,
-    double f_min,
-    double f_max,
-    int N,
-    double dt,
     real_vector_single_t* minus_one_by_three
     );
 
@@ -46,32 +38,28 @@ static void sp_sstpn_phase_mt(
  */
 
 
-real_vector_single_t* new_kfac_vec(
-    const unsigned length,
-    const double kfac,
-    const double deltax
+void new_kfac_vec(
+    real_vector_single_t* vec,
+    const double kfac
     )
 {
     int i;
 
-    real_vector_single_t *vec = new_real_vector_single_t(length, deltax);
-
-    for (i = 0; i < length; i++)
+    for (i = 0; i < vec->meta_data.vector_length; i++)
     {
-        vec->data[i] = pow(i * deltax, kfac);
+        vec->data[i] = pow(i * vec->meta_data.delta_x, kfac);
     }
 
-    return vec;
+    return;
 }
 
 
-real_vector_single_t* precondition_factor(
-    const unsigned length,
-    const double deltat
+void precondition_factor(
+    real_vector_single_t* vec
     )
 {
-    real_vector_single_t* badri_factor = new_kfac_vec(length, -7./6., deltat);
-    return badri_factor;
+    new_kfac_vec(vec, -7./6.);
+    return;
 }
 
 
@@ -82,13 +70,11 @@ void compute_template_phasing(
     int order,
     double f_min,
     double f_max,
-    int N,
-    double dt,
     real_vector_single_t* minus_one_by_three
     )
 {
     pycbc_templatebank_pnconstants pn_consts;
-    memset(pn_consts, 0, sizeof(pycbc_templatebank_pnconstants));
+    memset(&pn_consts, 0, sizeof(pycbc_templatebank_pnconstants));
 
     switch (order)
     {
@@ -137,29 +123,30 @@ void compute_template_phasing(
             abort();
     }
 
-    sp_phase_engine(exp_psi, M, pn_consts, f_min, f_max, N, dt, minus_one_by_three);
+    sp_phase_engine(exp_psi, M, pn_consts, f_min, f_max, minus_one_by_three);
     return;
 }
 
 static void sp_phase_engine(
     complex_vector_single_t* exp_psi,
     const double M,
-    const pycbc_templatebank_pnconstants pn_consts;
+    const pycbc_templatebank_pnconstants pn_consts,
     double f_min,
     double f_max,
-    int N,
-    double dt,
     real_vector_single_t* minus_one_by_three
     )
 {
     int k, k_min, k_max;
     double x, x1, psi, psi0, psi1, psi2;
 
+    /* length of frequency vector */
+    const int N = exp_psi->meta_data.vector_length;
+
     /* frequency interval */
-    const double df = 1.0 / (N * dt);
+    const double df = exp_psi->meta_data.delta_x;
 
     /* initial velocity */
-    const double v0 = cbrt( LAL_PI * M * LAL_MTSUN_SI * f_min )
+    const double v0 = cbrt( LAL_PI * M * LAL_MTSUN_SI * f_min );
 
     /* post-Newtonian constants */
     const double c0  = pn_consts.phN;
@@ -179,14 +166,14 @@ static void sp_phase_engine(
     const double c2 = -0.49670;
     const double c4 =  0.03705;
 
-    memset( exp_psi->data, 0, exp_psi->length * sizeof(complex) );
+    memset( exp_psi->data, 0, exp_psi->meta_data.vector_length * sizeof(complex_float_t) );
 
     /* compute cutoff indices */
     k_min = f_min / df > 1 ? f_min / df : 1;
-    k_max = f_max / df < N/2 ? f_max / df : N/2;
+    k_max = f_max / df < N ? f_max / df : N;
 
     x1 = 1. / cbrt(LAL_PI * M * LAL_MTSUN_SI * df);
-    x = x1 * minus_one_by_three->d[k_min];
+    x = x1 * minus_one_by_three->data[k_min];
     psi = c0 * x * ( c20 + x * ( c15 + x * (c10 + x * x ) ) );
     psi += c0 * (c25_a*(1.0 + 3.0*log( 1.0/(x*v0) )) + c25_b*log( 1.0/(x*v0)) );
     if ( c30 )
@@ -197,7 +184,7 @@ static void sp_phase_engine(
 
     for ( k = k_min; k < k_max ; ++k )
     {
-        x = x1 * minus_one_by_three->d[k];
+        x = x1 * minus_one_by_three->data[k];
         psi = c0 * x * ( c20 + x * ( c15 + x * (c10 + x * x ) ) );
         psi += c0 * (c25_a*(1.0 + 3.0*log( 1.0/(x*v0) )) + c25_b*log( 1.0/(x*v0)) );
         if ( c30 )
@@ -224,23 +211,23 @@ static void sp_phase_engine(
             psi1 = -LAL_PI - psi1;
             psi2 = psi1 * psi1;
             /* XXX note minus sign on imag part is due to LAL sign convention vs PN literature sign convention */
-            exp_psi->d[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
-            exp_psi->d[k].re = -1 - psi2 * ( c2 + psi2 * c4 );
+            exp_psi->data[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+            exp_psi->data[k].re = -1 - psi2 * ( c2 + psi2 * c4 );
         }
         else if ( psi1 > LAL_PI/2 )
         {
             psi1 = LAL_PI - psi1;
             psi2 = psi1 * psi1;
             /* XXX note minus sign on imag part is due to LAL sign convention vs PN literature sign convention */
-            exp_psi->d[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
-            exp_psi->d[k].re = -1 - psi2 * ( c2 + psi2 * c4 );
+            exp_psi->data[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+            exp_psi->data[k].re = -1 - psi2 * ( c2 + psi2 * c4 );
         }
         else
         {
             psi2 = psi1 * psi1;
             /* XXX note minus sign on imag part is due to LAL sign convention vs PN literature sign convention */
-            exp_psi->d[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
-            exp_psi->d[k].re = 1 + psi2 * ( c2 + psi2 * c4 );
+            exp_psi->data[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+            exp_psi->data[k].re = 1 + psi2 * ( c2 + psi2 * c4 );
         }
     }
 
