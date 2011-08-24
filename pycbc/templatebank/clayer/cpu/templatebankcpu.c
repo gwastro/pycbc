@@ -3,7 +3,10 @@
 #include "../../../datavector/clayer/cpu/datavectorcpu_types.h"
 #include <math.h>
 #include <complex.h>
-#include <lal/LALConstants.h>
+//#include <lal/LALConstants.h>
+#define LAL_PI        3.1415926535897932384626433832795029  /**< pi */
+#define LAL_GAMMA     0.5772156649015328606065120900824024  /**< gamma */
+#define LAL_MTSUN_SI  4.92549095e-6   /**< Geometrized solar mass, s */
 
 /*
  * internal structure and prototype
@@ -27,8 +30,6 @@ static void sp_phase_engine(
     const pycbc_templatebank_pnconstants pn_consts,
     double f_min,
     double f_max,
-    int N,
-    double dt,
     real_vector_single_t* minus_one_by_three
     );
 
@@ -37,32 +38,28 @@ static void sp_phase_engine(
  */
 
 
-real_vector_single_t* new_kfac_vec(
-    const unsigned length,
-    const double kfac,
-    const double deltax
+void new_kfac_vec(
+    real_vector_single_t* vec,
+    const double kfac
     )
 {
     int i;
 
-    real_vector_single_t *vec = new_real_vector_single_t(length, deltax);
-
-    for (i = 0; i < length; i++)
+    for (i = 0; i < vec->meta_data.vector_length; i++)
     {
-        vec->data[i] = pow(i * deltax, kfac);
+        vec->data[i] = pow(i * vec->meta_data.delta_x, kfac);
     }
 
-    return vec;
+    return;
 }
 
 
-real_vector_single_t* precondition_factor(
-    const unsigned length,
-    const double deltat
+void precondition_factor(
+    real_vector_single_t* vec
     )
 {
-    real_vector_single_t* badri_factor = new_kfac_vec(length, -7./6., deltat);
-    return badri_factor;
+    new_kfac_vec(vec, -7./6.);
+    return;
 }
 
 
@@ -73,8 +70,6 @@ void compute_template_phasing(
     int order,
     double f_min,
     double f_max,
-    int N,
-    double dt,
     real_vector_single_t* minus_one_by_three
     )
 {
@@ -128,7 +123,7 @@ void compute_template_phasing(
             abort();
     }
 
-    sp_phase_engine(exp_psi, M, pn_consts, f_min, f_max, N, dt, minus_one_by_three);
+    sp_phase_engine(exp_psi, M, pn_consts, f_min, f_max, minus_one_by_three);
     return;
 }
 
@@ -138,16 +133,17 @@ static void sp_phase_engine(
     const pycbc_templatebank_pnconstants pn_consts,
     double f_min,
     double f_max,
-    int N,
-    double dt,
     real_vector_single_t* minus_one_by_three
     )
 {
     int k, k_min, k_max;
     double x, x1, psi, psi0, psi1, psi2;
 
+    /* length of frequency vector */
+    const int N = exp_psi->meta_data.vector_length;
+
     /* frequency interval */
-    const double df = 1.0 / (N * dt);
+    const double df = exp_psi->meta_data.delta_x;
 
     /* initial velocity */
     const double v0 = cbrt( LAL_PI * M * LAL_MTSUN_SI * f_min );
@@ -174,7 +170,7 @@ static void sp_phase_engine(
 
     /* compute cutoff indices */
     k_min = f_min / df > 1 ? f_min / df : 1;
-    k_max = f_max / df < N/2 ? f_max / df : N/2;
+    k_max = f_max / df < N ? f_max / df : N;
 
     x1 = 1. / cbrt(LAL_PI * M * LAL_MTSUN_SI * df);
     x = x1 * minus_one_by_three->data[k_min];

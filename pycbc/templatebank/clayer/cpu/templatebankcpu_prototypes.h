@@ -5,27 +5,22 @@
 #include "../../../clayer/cpu/pycbccpu_types.h"
 
 //prototypes of all functions that swig wraps to methods
-real_vector_single_t* new_kfac_vec(
-    const unsigned length,
-    const double kfac,
-    const double deltax
+void new_kfac_vec(
+    real_vector_single_t* vec,
+    const double kfac
     );
 
-real_vector_single_t* precondition_factor(
-    const unsigned length,
-    const double deltat
+void precondition_factor(
+    real_vector_single_t* vec
     );
 
 void compute_template_phasing(
     complex_vector_single_t* exp_psi,
-    double m1,
-    double m2,
-    double beta,
+    double M,
+    double eta,
     int order,
     double f_min,
     double f_max,
-    int N,
-    double dt,
     real_vector_single_t* minus_one_by_three
     );
 
