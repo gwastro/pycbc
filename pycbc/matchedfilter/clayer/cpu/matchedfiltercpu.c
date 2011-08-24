@@ -23,8 +23,6 @@ void gen_snr_cpu(cpu_context_t* context,
     printf("%d: called gen_snr_cpu with context: %p, snr: %p s: %p h: %p q: %p qtilde %p\n", 
            cnt++, context, snr, stilde, htilde, q, qtilde);
     
-    
-    
     /* perform the correlation */
     correlate_complex_freq_vectors( qtilde, stilde, htilde, f_min );
     /* complex_vec_fft( q, qtilde, plan->theplan ); */

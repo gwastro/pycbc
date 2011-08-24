@@ -36,15 +36,26 @@ class MatchedFilterBase:
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, length, gen_snr_impl, max_impl, derived_mfilt):
+    def __init__(self, length, delta_x, gen_snr_impl, max_impl, 
+                 qtilde_vector_t, q_vector_t, derived_mfilt):
+
         self.__logger= logging.getLogger('pycbc.MatchedFilterBase')
         self.__logger.debug("instanciated MatchedFilterBase")
+
         self.__length = length
+        self.__delta_x = delta_x
+
+        # instanciate member datavectors:
+        self._qtilde= qtilde_vector_t(self.__length, self.__delta_x)
+        self._q= q_vector_t(self.__length, self.__delta_x)
+
+        # instanciate implementation class members of the processing functions
         self.__gen_snr_impl = gen_snr_impl(derived_mfilt)
         if not isinstance(self.__gen_snr_impl, GenSnrImplementationBase):
             self.__logger.debug("MatchedFilterBase.__init__: gen_snr_impl is not a derivate of GenSnrImplementationBase")
             exit(0)
-        self.__max_impl = max_impl()
+
+        self.__max_impl = max_impl(derived_mfilt)
         if not isinstance(self.__max_impl, MaxImplementationBase):
             self.__logger.debug("MatchedFilterBase.__init__: max_impl is not a derivate of MaxImplementationBase")
             exit(0)
@@ -89,8 +100,10 @@ class GenSnrImplementationBase:
     __metaclass__ = ABCMeta
     
     def __init__(self, owner_mfilt):
+
         self.__logger= logging.getLogger('pycbc.GenSnrImplementationBase')
         self.__logger.debug("instanciated GenSnrImplementationBase")
+
         self._owner_mfilt = owner_mfilt
         
     @abstractmethod
@@ -101,9 +114,11 @@ class MaxImplementationBase:
     
     __metaclass__ = ABCMeta
     
-    def __init__(self):
+    def __init__(self, owner_mfilt):
+
         self.__logger= logging.getLogger('pycbc.MaxImplementationBase')
         self.__logger.debug("instanciated MaxImplementationBase") 
+        self._owner_mfilt = owner_mfilt
         
     @abstractmethod
     def max(self, snr):
