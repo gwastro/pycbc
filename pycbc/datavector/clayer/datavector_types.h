@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Karsten Wiesner
+// Copyright (C) 2011 Karsten Wiesner, Josh Willis
 //
 // This program is free software; you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by the
@@ -28,6 +28,7 @@
 #define DATAVECTOR_TYPES_H
 
 #include <stdlib.h>
+#include <complex.h>
 
 // To add new elements add them in the typedef meta_data_t  
 // and in the CONSTRUCTOR_TEMPLATE macro
@@ -47,21 +48,6 @@ typedef struct
     size_t        element_size_bytes;
 }
 meta_data_t;
-
-typedef struct
-{
-    float re;
-    float im;
-}
-complex_float_t;
-
-typedef struct
-{
-    double re;
-    double im;
-}
-complex_double_t;
-
 
 // TODO start needs to be added to constructor
 

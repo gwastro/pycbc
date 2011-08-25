@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Karsten Wiesner
+// Copyright (C) 2011 Karsten Wiesner, Josh Willis
 //
 // This program is free software; you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by the
@@ -84,7 +84,7 @@
     }
 }
 %extend complex_vector_single_t {
-    TYPE_INTERFACE_TEMPLATE(complex_vector_single_t,complex_float_t)
+    TYPE_INTERFACE_TEMPLATE(complex_vector_single_t,complex float)
 }
 
 %exception complex_vector_double_t {
@@ -95,6 +95,6 @@
     }
 }
 %extend complex_vector_double_t {
-    TYPE_INTERFACE_TEMPLATE(complex_vector_double_t,complex_double_t)
+    TYPE_INTERFACE_TEMPLATE(complex_vector_double_t,complex double )
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Karsten Wiesner
+// Copyright (C) 2011 Karsten Wiesner, Josh Willis
 //
 // This program is free software; you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by the
@@ -24,28 +24,29 @@
 //
 // swig properties for datavector elements
 
+%{
+#include <complex.h>
+%}
 
 // add new element properties here:
 %define TYPE_INTERFACE_TEMPLATE(name,type)
 name(unsigned long vector_length, double delta_x);
 ~name();
 
-%typemap(in) complex_float_t {
-    $1.re = (float)PyComplex_RealAsDouble($input);
-    $1.im = (float)PyComplex_ImagAsDouble($input);
+%typemap(in) complex float {
+    $1 = (float)PyComplex_RealAsDouble($input) + (float)PyComplex_ImagAsDouble($input)*I;
 }
 
-%typemap(in) complex_double_t {
-    $1.re = PyComplex_RealAsDouble($input);
-    $1.im = PyComplex_ImagAsDouble($input);
+%typemap(in) complex double {
+    $1 = PyComplex_RealAsDouble($input) + PyComplex_ImagAsDouble($input)*I;
 }
 
-%typemap(out) complex_float_t {
-    $result = PyComplex_FromDoubles((double)$1.re, (double)$1.im);    
+%typemap(out) complex float {
+  $result = PyComplex_FromDoubles((double) crealf($1), (double)cimagf($1));    
 }
 
-%typemap(out) complex_double_t {
-    $result = PyComplex_FromDoubles($1.re, $1.im); 
+%typemap(out) complex double {
+  $result = PyComplex_FromDoubles(creal($1), cimag($1)); 
 }
 
 %typemap(check) unsigned long vector_index {

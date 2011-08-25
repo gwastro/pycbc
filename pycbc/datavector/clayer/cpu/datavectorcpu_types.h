@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Karsten Wiesner
+// Copyright (C) 2011 Karsten Wiesner, Josh Willis
 //
 // This program is free software; you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by the
@@ -47,14 +47,14 @@ real_vector_double_t;
 typedef struct
 {
     meta_data_t meta_data;
-    complex_float_t *data;
+    complex float *data;
 }
 complex_vector_single_t;
 
 typedef struct
 {
     meta_data_t meta_data;
-    complex_double_t *data;
+    complex double *data;
 }
 complex_vector_double_t;
 

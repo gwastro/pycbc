@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Karsten Wiesner
+// Copyright (C) 2011 Karsten Wiesner, Josh Willis
 //
 // This program is free software; you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by the
@@ -64,8 +64,8 @@ void delete_real_vector_double_t( real_vector_double_t* p )
 complex_vector_single_t* new_complex_vector_single_t(unsigned long length, 
                                                      double delta_x)
 {
-    CONSTRUCTOR_TEMPLATE(complex_vector_single_t, complex_float_t)
-    c->data = (complex_float_t*)calloc(c->meta_data.vector_length ,
+    CONSTRUCTOR_TEMPLATE(complex_vector_single_t, complex float)
+    c->data = (complex float *)calloc(c->meta_data.vector_length ,
                           c->meta_data.element_size_bytes );
     return c;
 }
@@ -80,8 +80,8 @@ void delete_complex_vector_single_t( complex_vector_single_t* p )
 complex_vector_double_t* new_complex_vector_double_t(unsigned long length, 
                                                      double delta_x)
 {
-    CONSTRUCTOR_TEMPLATE(complex_vector_double_t, complex_double_t)    
-    c->data = (complex_double_t*)calloc(c->meta_data.vector_length,
+    CONSTRUCTOR_TEMPLATE(complex_vector_double_t, complex double)    
+    c->data = (complex double *)calloc(c->meta_data.vector_length,
                           c->meta_data.element_size_bytes );
     return c;
 }
