@@ -30,7 +30,8 @@ void gen_snr_cpu(cpu_context_t* context,
     /* normalize the snr */
     for ( j = 0; j < q->meta_data.vector_length; ++j )
         snr->data[j] = (norm/sigma_sq) * 
-        (q->data[j].re * q->data[j].re + q->data[j].im * q->data[j].im);
+        (__real__ q->data[j] * __real__ q->data[j] + 
+         __imag__ q->data[j] * __imag__ q->data[j]);
 
     snr->meta_data.delta_x = q->meta_data.delta_x;
   
@@ -51,10 +52,12 @@ void correlate_complex_freq_vectors( complex_vector_single_t* out,
 
     for ( k = bin_min; k < len-1; k++ )
     {
-        out->data[k].re = x->data[k].re * y->data[k].re - 
-            x->data[k].im * ( 0.0 - y->data[k].im );
-        out->data[k].im = x->data[k].re * (0.0 - y->data[k].im) + 
-            x->data[k].im * y->data[k].re;
+        __real__ out->data[k] = __real__ x->data[k] * __real__ y->data[k] - 
+                                __imag__ x->data[k] * 
+                                ( 0.0 - __imag__ y->data[k] );
+        __imag__ out->data[k] = __real__ x->data[k] * 
+                                (0.0 - __imag__ y->data[k]) + 
+                                __imag__ x->data[k] * __real__ y->data[k];
     }
 
     out->meta_data.delta_x = df;

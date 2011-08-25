@@ -37,7 +37,7 @@ class MatchedFilterBase:
     __metaclass__ = ABCMeta
 
     def __init__(self, length, delta_x, gen_snr_impl, max_impl, 
-                 qtilde_vector_t, q_vector_t, derived_mfilt):
+                 snr_vector_t, qtilde_vector_t, q_vector_t, derived_mfilt):
 
         self.__logger= logging.getLogger('pycbc.MatchedFilterBase')
         self.__logger.debug("instanciated MatchedFilterBase")
@@ -46,6 +46,7 @@ class MatchedFilterBase:
         self.__delta_x = delta_x
 
         # instanciate member datavectors:
+        self._snr= snr_vector_t(self.__length, self.__delta_x)
         self._qtilde= qtilde_vector_t(self.__length, self.__delta_x)
         self._q= q_vector_t(self.__length, self.__delta_x)
 
@@ -69,19 +70,21 @@ class MatchedFilterBase:
     #---------------------------------------------------------------------------
             
         
-    def perform_generate_snr(self, context, snr, stilde, htilde):
+    def perform_generate_snr(self, context, stilde, htilde):
         """
         calls the generate_snr methode of the derived implementation object
         @type  context: Device Context
         @param context: Input: Device Context
-        @type  snr:     DataVectorBase
-        @param snr:     Output: Signal to noise ratio series
         @type  stilde: DataVectorBase
         @param stilde: Input: Straindata frequency domain
         @type  htilde: DataVectorBase
         @param htilde: Input: Template waveform frequency domain
+        @rtype  snr:   DataVectorBase
+        @return snr:   Output: Signal to noise ratio series
         """
-        self.__gen_snr_impl.generate_snr(context, snr, stilde, htilde)
+        self.__gen_snr_impl.generate_snr(context, self._snr, stilde, htilde)
+        
+        return self._snr
 
 
     def perform_max(self, snr):

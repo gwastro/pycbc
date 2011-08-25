@@ -36,6 +36,7 @@ from matchedfiltercpu import gen_snr_cpu
 
 # import member datavectors
 from pycbc.datavector.datavectorcpu import complex_vector_single_t
+from pycbc.datavector.datavectorcpu import real_vector_single_t
 
 import logging
 
@@ -50,8 +51,9 @@ class MatchedFilterCpu(MatchedFilterBase):
         self.__delta_x= delta_x
         
         super(MatchedFilterCpu, self).__init__(self.__length, self.__delta_x,
-              GenSnrImplementationCpu, MaxImplementationCpu, 
-              complex_vector_single_t, complex_vector_single_t, self)
+                               GenSnrImplementationCpu, MaxImplementationCpu, 
+                               real_vector_single_t, complex_vector_single_t, 
+                               complex_vector_single_t, self)
 
 
 class  GenSnrImplementationCpu(GenSnrImplementationBase):
