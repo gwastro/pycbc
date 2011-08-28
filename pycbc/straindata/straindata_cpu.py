@@ -31,14 +31,9 @@ from straindata_base import StrainDataBase
 from straindata_base import FftSegmentsImplementationBase
 
 # Map the correct memory for this processing architecture
-from pycbc.datavector.datavectorcpu import\
-     real_vector_double_t as InitialTimeSeriesDoublePreci
-     
-from pycbc.datavector.datavectorcpu import\
-     real_vector_single_t as TimeSeriesSinglePreci
-
-from pycbc.datavector.datavectorcpu import\
-     complex_vector_single_t as FrequencySeries
+from pycbc.datavector.datavectorcpu import real_vector_double_t
+from pycbc.datavector.datavectorcpu import real_vector_single_t
+from pycbc.datavector.datavectorcpu import complex_vector_single_t
 
 # Swigged C-layer functions
 from straindatacpu import fftw_generate_plan
@@ -70,12 +65,11 @@ class StrainDataCpu(StrainDataBase):
         """
     
         super(StrainDataCpu, self).__init__(t_start, t_end, n_segments, 
-                                            sample_freq,
-                                            interferometer,
-                                            InitialTimeSeriesDoublePreci,
-                                            TimeSeriesSinglePreci,
-                                            FrequencySeries,
-                                            FftSegmentsImplementationFftw)
+                    sample_freq, interferometer,
+                    initial_time_series_t = real_vector_double_t,
+                    time_series_t =         real_vector_single_t,
+                    frequency_series_t=     complex_vector_single_t,
+                    fft_segments_impl_t=    FftSegmentsImplementationFftw)
 
     def render(self):
         """
@@ -134,7 +128,7 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         in_tmp  = self.__input_buf_t(segments_length, delta_x_tmp)
         out_tmp = self.__output_buffer_t(segments_length, delta_x_tmp)
         self.__fft_forward_plan= fftw_generate_plan(segments_length, in_tmp, 
-                                    out_tmp, "FFTW_FORWARD", "FFTW_ESTIMATE")
+        out_tmp, "FFTW_FORWARD", "FFTW_ESTIMATE")
 
         self.__logger.debug("instanciated FftSegmentsImplementationCpu")
     

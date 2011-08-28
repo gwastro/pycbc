@@ -37,7 +37,10 @@ class MatchedFilterBase:
     __metaclass__ = ABCMeta
 
     def __init__(self, length, delta_x, gen_snr_impl, max_impl, 
-                 snr_vector_t, qtilde_vector_t, q_vector_t, derived_mfilt):
+                 snr_vector_t =    None, 
+                 qtilde_vector_t = None, 
+                 q_vector_t =      None, 
+                 derived_mfilt =   None):
 
         self.__logger= logging.getLogger('pycbc.MatchedFilterBase')
         self.__logger.debug("instanciated MatchedFilterBase")

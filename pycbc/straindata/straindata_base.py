@@ -48,10 +48,10 @@ class StrainDataBase:
     
     def __init__(self, t_start, t_end, n_segments, sample_freq,
                  interferometer, 
-                 initial_time_series_t,
-                 time_series_t, 
-                 frequency_series_t,
-                 fft_segments_impl_t):
+                 initial_time_series_t= None,
+                 time_series_t=         None, 
+                 frequency_series_t=    None,
+                 fft_segments_impl_t=   None):
         """
         Constructor of the straindata base class
         @type t_start: int
@@ -78,7 +78,7 @@ class StrainDataBase:
         @rtype: none
         @return: none
         """
-                 
+   
         self.__logger= logging.getLogger('pycbc.StrainDataBase')
         
         # init members
@@ -106,7 +106,6 @@ class StrainDataBase:
         # setup initial data time series            
         self.__time_series = initial_time_series_t(self.__length, 
                                                    1.0/self.__sample_freq)
-
         
         # TODO This is currently only prototyping a call to the swigged 
         # C-layer function to read in real straindata from a 3rd party 
@@ -228,6 +227,7 @@ class StrainDataBase:
         for i in range(self.__length):
             tmp_series[i] = self.__time_series[i]
         self.__time_series = tmp_series
+        
                                                   
     def read_frames(self, channel_name, gps_start_time, gps_end_time,cache_url):
         """

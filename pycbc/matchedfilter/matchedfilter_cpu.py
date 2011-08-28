@@ -52,8 +52,10 @@ class MatchedFilterCpu(MatchedFilterBase):
         
         super(MatchedFilterCpu, self).__init__(self.__length, self.__delta_x,
                                GenSnrImplementationCpu, MaxImplementationCpu, 
-                               real_vector_single_t, complex_vector_single_t, 
-                               complex_vector_single_t, self)
+                               snr_vector_t=    real_vector_single_t, 
+                               qtilde_vector_t= complex_vector_single_t, 
+                               q_vector_t =     complex_vector_single_t, 
+                               derived_mfilt =  self)
 
 
 class  GenSnrImplementationCpu(GenSnrImplementationBase):
