@@ -38,6 +38,12 @@ from matchedfiltercpu import gen_snr_cpu
 from pycbc.datavector.datavectorcpu import complex_vector_single_t
 from pycbc.datavector.datavectorcpu import real_vector_single_t
 
+# import FFT members
+
+# Josh to fix the fftwf fftw issue when the setup.py system allows to link to fftw
+#from pycbc.fft.fftcpu import fft_real_single_plan
+#from pycbc.fft.fftcpu import execute_real_single_reverse_fft_cpu
+
 import logging
 
 class MatchedFilterCpu(MatchedFilterBase):

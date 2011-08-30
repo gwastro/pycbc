@@ -30,7 +30,7 @@ Cpu version of strain data class
 from straindata_base import StrainDataBase
 from straindata_base import FftSegmentsImplementationBase
 
-# Map the correct memory for this processing architecture
+# import member datavectors
 from pycbc.datavector.datavectorcpu import real_vector_double_t
 from pycbc.datavector.datavectorcpu import real_vector_single_t
 from pycbc.datavector.datavectorcpu import complex_vector_single_t
