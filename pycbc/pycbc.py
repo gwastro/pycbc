@@ -29,7 +29,57 @@ pycbc management and tools
 from pycbcopencl import cl_context_t as OpenClContext
 from pycbccpu import cpu_context_t as CpuContext
 
+from abc import ABCMeta, abstractmethod, abstractproperty
+
 import logging
+
+
+# data_in prototyping. data_in() is called for every input datavector. 
+# in case of an alien datavector (does not fit to self-architecture) data_in
+# create the new datavector, copies the data by calling the proper transfer 
+# function and set new_datavector = old_datavector (thus destroy the old 
+# datavector or evtl. use del(old_datavector)) 
+
+class PyCbcProcessingObj:
+
+    __metaclass__ = ABCMeta
+
+    def __init__(self, device_context):
+        self._logger= logging.getLogger('pycbc.pycbc')
+        self._devicecontext = device_context
+
+    @abstractmethod
+    def data_in(self, datavector):
+        pass
+
+
+class CpuProcessingObj(PyCbcProcessingObj):
+
+    def __init__(self, device_context):
+    
+        super(CpuProcessingObj, self).__init__(device_context)
+        
+    def data_in(self, datavector):
+    
+        print 'data_in of ' + repr(self) + ' called'
+        # currently throw an error if datavector don't fit. 
+        # in real system datatransfer to new datavector would be issued
+        # then the oldvector = newvector (with automatic deletion of the old 
+        # vector would do the job)
+        # assert repr(datavector).find("datavectorcpu") >= 0, "called data_in with alien datavector. performing transfer xyz to xyz"
+        
+        
+        
+        if repr(datavector).find("datavectorcpu") < 0:
+        
+            print 'aliendatavector found:'
+            print repr(datavector)
+            
+        
+        
+        pass
+
+
 
 class CpuDeviceContext:
 
@@ -52,8 +102,8 @@ class CpuDeviceContext:
         self.__logger.debug("__exit__ called ")
         # destroy Cpu device context
         del(self.__cpucontext)
-
-
+        
+        
 class OpenClDeviceContext:
 
     def __init__(self, devicehandle):

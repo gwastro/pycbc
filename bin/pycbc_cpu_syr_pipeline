@@ -79,7 +79,7 @@ gps_start_time= 871147532
 gps_end_time= gps_start_time + search_time
 interferometer = "H1"
 
-with ProccessingTargetContext(0) as context:
+with ProccessingTargetContext(15) as context:
  
     # context testing by karsten
     print repr(context)
@@ -95,6 +95,8 @@ with ProccessingTargetContext(0) as context:
     for i in range(length):
         tmp= random.uniform(-1,1)
         strain_data.time_series[i] = tmp
+        
+    print repr(strain_data.time_series)
 
     # convert straindata to single precision
     strain_data.convert_to_single_preci()

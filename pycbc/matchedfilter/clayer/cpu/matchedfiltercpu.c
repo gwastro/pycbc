@@ -20,8 +20,8 @@ void gen_snr_cpu(cpu_context_t* context,
     double norm = 4.0 / ((double) N * (double) N * stilde->meta_data.delta_x); 
     norm *= norm;
     
-    printf("%d: called gen_snr_cpu with context: %p, snr: %p s: %p h: %p q: %p qtilde %p\n", 
-           cnt++, context, snr, stilde, htilde, q, qtilde);
+    //printf("%d: called gen_snr_cpu with context: %p, snr: %p s: %p h: %p q: %p qtilde %p\n", 
+    //       cnt++, context, snr, stilde, htilde, q, qtilde);
     
     /* perform the correlation */
     correlate_complex_freq_vectors( qtilde, stilde, htilde, f_min );

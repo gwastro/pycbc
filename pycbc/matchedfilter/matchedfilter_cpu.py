@@ -38,6 +38,11 @@ from matchedfiltercpu import gen_snr_cpu
 from pycbc.datavector.datavectorcpu import complex_vector_single_t
 from pycbc.datavector.datavectorcpu import real_vector_single_t
 
+# for testing data_in
+from pycbc.datavector.datavectoropencl import real_vector_single_t as alien_datavector_t
+
+from pycbc.pycbc import CpuProcessingObj
+
 # import FFT members
 
 # Josh to fix the fftwf fftw issue when the setup.py system allows to link to fftw
@@ -46,7 +51,7 @@ from pycbc.datavector.datavectorcpu import real_vector_single_t
 
 import logging
 
-class MatchedFilterCpu(MatchedFilterBase):
+class MatchedFilterCpu(MatchedFilterBase, CpuProcessingObj):
 
     def __init__(self, length=0, delta_x=1):
 
@@ -77,9 +82,21 @@ class  GenSnrImplementationCpu(GenSnrImplementationBase):
         """
         Process matched filtering by generating snr timeseries \rho(t)
         """
-        assert repr(stilde).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for stilde"
-        assert repr(htilde).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for htilde"
-        assert repr(snr).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for snr"
+        
+        # for testing data_in()
+        self._aliendatavector = alien_datavector_t(4096, 1.0)
+        
+        
+        self._owner_mfilt.data_in(snr)
+        self._owner_mfilt.data_in(stilde)
+        self._owner_mfilt.data_in(htilde)
+        
+        self._owner_mfilt.data_in(self._aliendatavector)
+            
+        # testing done in dadta_in    
+        #assert repr(stilde).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for stilde"
+        #assert repr(htilde).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for htilde"
+        #assert repr(snr).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for snr"
 
         gen_snr_cpu(context, snr, stilde, htilde, self._owner_mfilt._q, 
                     self._owner_mfilt._qtilde, 1.0, 1.0) # just for prototyping
