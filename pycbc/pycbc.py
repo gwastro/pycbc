@@ -29,17 +29,21 @@ pycbc management and tools
 from pycbcopencl import cl_context_t as OpenClContext
 from pycbccpu import cpu_context_t as CpuContext
 
+# I agree on changing the all too generic naming of datavectors in the C layer
+# to real_vector_single_cpu_t real_vector_single_cuda_t real_vector_single_opencl_t
+# and so on for the other data types 
+from datavector.datavectorcpu import real_vector_single_t as real_vector_single_cpu_t
+
 from abc import ABCMeta, abstractmethod, abstractproperty
 
 import logging
 
+# ------------------- pycbc processing base classes section --------------------
 
-# data_in prototyping. data_in() is called for every input datavector. 
-# in case of an alien datavector (does not fit to self-architecture) data_in
-# create the new datavector, copies the data by calling the proper transfer 
-# function and set new_datavector = old_datavector (thus destroy the old 
-# datavector or evtl. use del(old_datavector)) 
+# data_in prototyping and generic ProcessingObj inheritance showcase
+# 
 
+# All processing objects have to inherit from this base class via ...
 class PyCbcProcessingObj:
 
     __metaclass__ = ABCMeta
@@ -52,34 +56,44 @@ class PyCbcProcessingObj:
     def data_in(self, datavector):
         pass
 
-
+# ... their correct derivative according to their processing architecture:
 class CpuProcessingObj(PyCbcProcessingObj):
 
     def __init__(self, device_context):
     
         super(CpuProcessingObj, self).__init__(device_context)
-        
+
+    # data_in() is to be called for every input datavector. 
+    # in case of an alien datavector (does not fit to self-architecture) data_in
+    # create the new datavector, copies the data by calling the proper transfer 
+    # function in the C layer and set new_datavector = old_datavector 
+    # (thus destroy the old datavector)
+
     def data_in(self, datavector):
-    
+
         print 'data_in of ' + repr(self) + ' called'
-        # currently throw an error if datavector don't fit. 
-        # in real system datatransfer to new datavector would be issued
-        # then the oldvector = newvector (with automatic deletion of the old 
-        # vector would do the job)
-        # assert repr(datavector).find("datavectorcpu") >= 0, "called data_in with alien datavector. performing transfer xyz to xyz"
+        print 'with ' + repr(datavector)
         
-        
-        
-        if repr(datavector).find("datavectorcpu") < 0:
-        
+        if repr(datavector).find("datavectorcpu") >= 0:
+            # it is one of us
+            return datavector
+
+        else:
             print 'aliendatavector found:'
-            print repr(datavector)
+            alien_repr_str= repr(datavector)
+            print alien_repr_str
+            # find correct new datatype. by parsing alien_repr_str.
+            # and instanciate the correct thing, " cloning " from the alien
+            new_arch_vector = real_vector_single_cpu_t(len(datavector), datavector.get_delta_x())
             
-        
-        
-        pass
+            # call the transfer function in the C layer
+            # prototyping it here:
+            for i in range(len(datavector)):
+                new_arch_vector[i] = datavector[i]
+            
+            return new_arch_vector
 
-
+# ------------------- device context section -----------------------------------
 
 class CpuDeviceContext:
 

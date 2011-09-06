@@ -83,17 +83,29 @@ class  GenSnrImplementationCpu(GenSnrImplementationBase):
         Process matched filtering by generating snr timeseries \rho(t)
         """
         
-        # for testing data_in()
-        self._aliendatavector = alien_datavector_t(4096, 1.0)
+        # for the purpose of testing data_in()
+        self._aliendatavector = alien_datavector_t(len(snr), stilde.get_delta_x())
+        print
+        print "self._aliendatavector before data_in() : "
+        print self._aliendatavector
+        self._aliendatavector = self._owner_mfilt.data_in(self._aliendatavector)
+        print "self._aliendatavector after data_in() : "
+        print self._aliendatavector
+        print "after data_in() call aliendatavector is now correct: "+ repr(self._aliendatavector)
+        print
+
+        print
+        print "snr before data_in() : "
+        print snr
+        snr =   self._owner_mfilt.data_in(snr)
+        print "snr after data_in() : "
+        print snr
+        print
         
-        
-        self._owner_mfilt.data_in(snr)
-        self._owner_mfilt.data_in(stilde)
-        self._owner_mfilt.data_in(htilde)
-        
-        self._owner_mfilt.data_in(self._aliendatavector)
+        stilde= self._owner_mfilt.data_in(stilde)
+        htilde= self._owner_mfilt.data_in(htilde)
             
-        # testing done in dadta_in    
+        # all testing now done in data_in    
         #assert repr(stilde).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for stilde"
         #assert repr(htilde).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for htilde"
         #assert repr(snr).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for snr"
