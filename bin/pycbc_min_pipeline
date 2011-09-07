@@ -57,7 +57,7 @@ from pycbc.templatebank.templatebank_cpu import TemplateBankCpu as TemplateBank
 from pycbc.matchedfilter.matchedfilter_cpu import MatchedFilterCpu as MatchedFilter
 #from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
 
-from pycbc.datavector.datavectorcpu import real_vector_single_t as SnrResultTimeSeries
+from pycbc.datavector.datavectorcpu import real_vector_single_cpu_t as SnrResultTimeSeries
 
 import logging
 

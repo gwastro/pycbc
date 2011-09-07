@@ -32,17 +32,17 @@ from straindata_base import FftSegmentsImplementationBase
 
 # Map the correct memory for this processing architecture
 from pycbc.datavector.datavectorcpu import\
-     real_vector_double_t as InitialTimeSeriesDoublePreci
+     real_vector_double_opencl_t as InitialTimeSeriesDoublePreci
      
 from pycbc.datavector.datavectorcpu import\
-     real_vector_single_t as TimeSeriesSinglePreci
+     real_vector_single_opencl_t as TimeSeriesSinglePreci
 
 from pycbc.datavector.datavectorcpu import\
-     complex_vector_single_t as FrequencySeries
+     complex_vector_single_opencl_t as FrequencySeries
      
 # Target processing memory     
 from pycbc.datavector.datavectoropencl import\
-     complex_vector_single_t as RenderedFrequencySeries
+     complex_vector_single_opencl_t as RenderedFrequencySeries
      
 
 # Swigged C-layer functions
@@ -127,9 +127,9 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         @type overlap_fact: double
         @param overlap_fact: overlapping factor
         @type input_buf_t: class
-        @param input_buf_t: class of inputbuffer(ig. real_vector_single_t)
+        @param input_buf_t: class of inputbuffer(ig. real_vector_single_opencl_t)
         @type output_buffer_t: class
-        @param output_buffer_t: class of inputbuffer(ig.complex_vector_single_t)
+        @param output_buffer_t: class of inputbuffer(ig.complex_vector_single_opencl_t)
         @rtype: none
         @return: none
         """

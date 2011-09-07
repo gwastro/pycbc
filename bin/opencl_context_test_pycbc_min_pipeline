@@ -55,7 +55,7 @@ from pycbc.straindata.straindata_opencl import StrainDataOpenCl as StrainData
 
 from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
 
-from pycbc.datavector.datavectoropencl import real_vector_single_t as SnrResultTimeSeries
+from pycbc.datavector.datavectoropencl import real_vector_single_opencl_t as SnrResultTimeSeries
 
 import logging
 
@@ -113,7 +113,7 @@ with ProccessingTargetContext(1) as context:
 
 
     # messy prototyping of htilde (mimic a templatebank)
-    from pycbc.datavector.datavectoropencl import complex_vector_single_t as WaveformFrequencySeries
+    from pycbc.datavector.datavectoropencl import complex_vector_single_opencl_t as WaveformFrequencySeries
     htilde = WaveformFrequencySeries(strain_data.segments_length, 1)
 
     matched_filter.perform_generate_snr(context, snr, htilde, htilde)

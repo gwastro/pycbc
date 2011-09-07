@@ -54,20 +54,20 @@
 %include "datavectorcuda_types.h"
 %include "../datavector_types.i"
 
-%extend real_vector_single_t {
-    TYPE_INTERFACE_TEMPLATE(real_vector_single_t,float)
+%extend real_vector_single_cuda_t {
+    TYPE_INTERFACE_TEMPLATE(real_vector_single_cuda_t,float)
 }
 
-%extend real_vector_double_t {
-    TYPE_INTERFACE_TEMPLATE(real_vector_double_t,double)
+%extend real_vector_double_cuda_t {
+    TYPE_INTERFACE_TEMPLATE(real_vector_double_cuda_t,double)
 }
 
-%extend complex_vector_single_t {
-    TYPE_INTERFACE_TEMPLATE(complex_vector_single_t,float)
+%extend complex_vector_single_cuda_t {
+    TYPE_INTERFACE_TEMPLATE(complex_vector_single_cuda_t,float)
 }
 
-%extend complex_vector_double_t {
-    TYPE_INTERFACE_TEMPLATE(complex_vector_double_t,double)
+%extend complex_vector_double_cuda_t {
+    TYPE_INTERFACE_TEMPLATE(complex_vector_double_cuda_t,double)
 }
 
 

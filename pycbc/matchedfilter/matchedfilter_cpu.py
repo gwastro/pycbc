@@ -35,11 +35,11 @@ from matchedfilter_base import MaxImplementationBase
 from matchedfiltercpu import gen_snr_cpu
 
 # import member datavectors
-from pycbc.datavector.datavectorcpu import complex_vector_single_t
-from pycbc.datavector.datavectorcpu import real_vector_single_t
+from pycbc.datavector.datavectorcpu import complex_vector_single_cpu_t
+from pycbc.datavector.datavectorcpu import real_vector_single_cpu_t
 
 # for testing data_in
-from pycbc.datavector.datavectoropencl import real_vector_single_t as alien_datavector_t
+from pycbc.datavector.datavectoropencl import real_vector_single_opencl_t as alien_datavector_t
 
 from pycbc.pycbc import CpuProcessingObj
 
@@ -63,9 +63,9 @@ class MatchedFilterCpu(MatchedFilterBase, CpuProcessingObj):
         
         super(MatchedFilterCpu, self).__init__(self.__length, self.__delta_x,
                                GenSnrImplementationCpu, MaxImplementationCpu, 
-                               snr_vector_t=    real_vector_single_t, 
-                               qtilde_vector_t= complex_vector_single_t, 
-                               q_vector_t =     complex_vector_single_t, 
+                               snr_vector_t=    real_vector_single_cpu_t, 
+                               qtilde_vector_t= complex_vector_single_cpu_t, 
+                               q_vector_t =     complex_vector_single_cpu_t, 
                                derived_mfilt =  self)
 
 

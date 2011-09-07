@@ -30,63 +30,63 @@
 #include "datavectorcpu_types.h"
 #include "datavectorcpu_prototypes.h"
 
-real_vector_single_t* new_real_vector_single_t(unsigned long length, 
+real_vector_single_cpu_t* new_real_vector_single_cpu_t(unsigned long length, 
                                                double delta_x)
 {
-    CONSTRUCTOR_TEMPLATE(real_vector_single_t, float)
+    CONSTRUCTOR_TEMPLATE(real_vector_single_cpu_t, float)
 
     c->data = (float*)calloc( c->meta_data.vector_length , 
                       c->meta_data.element_size_bytes );
     return c;
 }
 
-void delete_real_vector_single_t( real_vector_single_t* p )
+void delete_real_vector_single_cpu_t( real_vector_single_cpu_t* p )
 {
     free( p->data );
     free( p );
 }
 
-real_vector_double_t* new_real_vector_double_t(unsigned long length, 
+real_vector_double_cpu_t* new_real_vector_double_cpu_t(unsigned long length, 
                                                double delta_x)
 {
-    CONSTRUCTOR_TEMPLATE(real_vector_double_t, double)
+    CONSTRUCTOR_TEMPLATE(real_vector_double_cpu_t, double)
     c->data = (double*)calloc( c->meta_data.vector_length , 
                       c->meta_data.element_size_bytes );
     return c;
 }
 
-void delete_real_vector_double_t( real_vector_double_t* p )
+void delete_real_vector_double_cpu_t( real_vector_double_cpu_t* p )
 {
     free( p->data );
     free( p );
 }
 
-complex_vector_single_t* new_complex_vector_single_t(unsigned long length, 
+complex_vector_single_cpu_t* new_complex_vector_single_cpu_t(unsigned long length, 
                                                      double delta_x)
 {
-    CONSTRUCTOR_TEMPLATE(complex_vector_single_t, complex float)
+    CONSTRUCTOR_TEMPLATE(complex_vector_single_cpu_t, complex float)
     c->data = (complex float *)calloc(c->meta_data.vector_length ,
                           c->meta_data.element_size_bytes );
     return c;
 }
 
-void delete_complex_vector_single_t( complex_vector_single_t* p )
+void delete_complex_vector_single_cpu_t( complex_vector_single_cpu_t* p )
 {
 
     free( p->data );
     free( p );
 }
 
-complex_vector_double_t* new_complex_vector_double_t(unsigned long length, 
+complex_vector_double_cpu_t* new_complex_vector_double_cpu_t(unsigned long length, 
                                                      double delta_x)
 {
-    CONSTRUCTOR_TEMPLATE(complex_vector_double_t, complex double)    
+    CONSTRUCTOR_TEMPLATE(complex_vector_double_cpu_t, complex double)    
     c->data = (complex double *)calloc(c->meta_data.vector_length,
                           c->meta_data.element_size_bytes );
     return c;
 }
 
-void delete_complex_vector_double_t( complex_vector_double_t* p )
+void delete_complex_vector_double_cpu_t( complex_vector_double_cpu_t* p )
 {
     free( p->data );
     free( p );

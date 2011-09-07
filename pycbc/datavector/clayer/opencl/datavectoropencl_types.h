@@ -35,14 +35,14 @@ typedef struct
     meta_data_t meta_data;
     float *data;
 }
-real_vector_single_t;
+real_vector_single_opencl_t;
 
 typedef struct
 {
     meta_data_t meta_data;
     double *data;
 }
-real_vector_double_t;
+real_vector_double_opencl_t;
 
 typedef struct
 {
@@ -50,7 +50,7 @@ typedef struct
     float *real_data;
     float *imag_data;
 }
-complex_vector_single_t;
+complex_vector_single_opencl_t;
 
 typedef struct
 {
@@ -58,6 +58,6 @@ typedef struct
     double *real_data;
     double *imag_data;
 }
-complex_vector_double_t;
+complex_vector_double_opencl_t;
 
 #endif /* DATAVECTOROPENCL_TYPES_H */

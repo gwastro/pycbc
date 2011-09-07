@@ -50,51 +50,153 @@
 // "is multiply defined error". That is the reason for splitting 
 // the headerfiles into _types and _prototypes
 %include "../datavector_types.h"
-%include "../datavector_types.i"
+// opencl datavectors have two pointers so 
+// we have to implement the swigging different than -> %include "../datavector_types.i"
 %include "datavectoropencl_types.h"
 %include "exception.i"
 
-%exception real_vector_single_t {
-    $action
-    if (!result) {
-        SWIG_exception(SWIG_MemoryError, "real_vector_single_t allocation fails");
-        return NULL;
-    }
-}
-%extend real_vector_single_t {
-    TYPE_INTERFACE_TEMPLATE(real_vector_single_t,float)
+// swig properties for datavector elements
+
+%{
+#include <complex.h>
+%}
+
+// add new element properties here:
+%define TYPE_INTERFACE_TEMPLATE(name,type)
+name(unsigned long vector_length, double delta_x);
+~name();
+
+%typemap(in) complex float {
+    $1 = (float)PyComplex_RealAsDouble($input) + (float)PyComplex_ImagAsDouble($input)*I;
 }
 
-%exception real_vector_double_t {
-    $action
-    if (!result) {
-        SWIG_exception(SWIG_MemoryError, "real_vector_double_t allocation fails");
-        return NULL;
-    }
-}
-%extend real_vector_double_t {
-    TYPE_INTERFACE_TEMPLATE(real_vector_double_t,double)
+%typemap(in) complex double {
+    $1 = PyComplex_RealAsDouble($input) + PyComplex_ImagAsDouble($input)*I;
 }
 
-%exception complex_vector_single_t {
-    $action
-    if (!result) {
-        SWIG_exception(SWIG_MemoryError, "complex_vector_single_t allocation fails");
-        return NULL;
-    }
-}
-%extend complex_vector_single_t {
-    TYPE_INTERFACE_TEMPLATE(complex_vector_single_t,complex_float_t)
+%typemap(out) complex float {
+    $result = PyComplex_FromDoubles((double) crealf($1), (double)cimagf($1));    
 }
 
-%exception complex_vector_double_t {
+%typemap(out) complex double {
+    $result = PyComplex_FromDoubles(creal($1), cimag($1)); 
+}
+
+%typemap(check) unsigned long vector_index {
+    if ($1 >= arg1->meta_data.vector_length) {
+        SWIG_exception(SWIG_ValueError, "Index for datavector access out of range");
+    }
+}
+
+
+char* __str__() {
+    static char a[512];
+//    snprintf( a, sizeof(a)/sizeof(*a), 
+//             "<name, length %ld, real_data ptr %p, imag_data ptr %p>", 
+//             self->meta_data.vector_length, self->real_data, self->imag_data);
+    
+// obvoiusly we have the ptoblem here of real_vecs have only a *data ptr
+// and complex ones have the two real and imag data ptrs    
+
+    return a;
+}
+
+unsigned __len__() {
+    return self->meta_data.vector_length;
+}
+
+
+// ToDo
+// As well it might make trouble to NOT use the C99 complex type here! 
+// BTW.: Also check all the complex to python complex stuff at the other
+// <arch> datavectors !!!!!!   
+
+///
+/// ToDo find out to get/set complex data ////////////////////////////////
+///
+
+// same problem applies here:
+// obvoiusly we have the ptoblem here of real_vecs have only a *data ptr
+// and complex ones have the two real and imag data ptrs    
+
+
+/*type __getitem__(unsigned long vector_index) {
+    type* data = (type*) self->real_data; 
+    return (type) real_data[vector_index];
+}
+
+void __setitem__(unsigned long vector_index, type value) {
+    type* data = (type*) self->real_data; 
+    real_data[vector_index] = value;
+}
+ 
+*/
+
+//////////////////////////////////////////////////////////////////////////
+
+
+
+void set_start( unsigned long vector_index ) {
+    self->meta_data.start = vector_index;
+}
+
+unsigned get_start( void ) {
+    return self->meta_data.start;
+}
+
+void set_delta_x( double delta_x ) {
+    self->meta_data.delta_x = delta_x;
+}
+
+double get_delta_x( void ) {
+    return self->meta_data.delta_x;
+}
+
+%enddef
+
+// exceptions section ----------------------------------------------------------
+
+%exception real_vector_single_opencl_t {
     $action
     if (!result) {
-        SWIG_exception(SWIG_MemoryError, "complex_vector_double_t allocation fails");
+        SWIG_exception(SWIG_MemoryError, "real_vector_single_opencl_t allocation fails");
         return NULL;
     }
 }
-%extend complex_vector_double_t {
-    TYPE_INTERFACE_TEMPLATE(complex_vector_double_t,complex_double_t)
+%extend real_vector_single_opencl_t {
+    TYPE_INTERFACE_TEMPLATE(real_vector_single_opencl_t,float)
+}
+
+%exception real_vector_double_opencl_t {
+    $action
+    if (!result) {
+        SWIG_exception(SWIG_MemoryError, "real_vector_double_opencl_t allocation fails");
+        return NULL;
+    }
+}
+%extend real_vector_double_opencl_t {
+    TYPE_INTERFACE_TEMPLATE(real_vector_double_opencl_t,double)
+}
+
+%exception complex_vector_single_opencl_t {
+    $action
+    if (!result) {
+        SWIG_exception(SWIG_MemoryError, "complex_vector_single_opencl_t allocation fails");
+        return NULL;
+    }
+}
+%extend complex_vector_single_opencl_t {
+    TYPE_INTERFACE_TEMPLATE(complex_vector_single_opencl_t,complex_float_t)
+}
+
+%exception complex_vector_double_opencl_t {
+    $action
+    if (!result) {
+        SWIG_exception(SWIG_MemoryError, "complex_vector_double_opencl_t allocation fails");
+        return NULL;
+    }
+}
+%extend complex_vector_double_opencl_t {
+    TYPE_INTERFACE_TEMPLATE(complex_vector_double_opencl_t,complex_double_opencl_t)
 }
 

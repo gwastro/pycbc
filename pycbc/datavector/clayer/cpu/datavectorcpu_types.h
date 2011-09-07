@@ -35,27 +35,27 @@ typedef struct
     meta_data_t meta_data;
     float *data;
 }
-real_vector_single_t;
+real_vector_single_cpu_t;
 
 typedef struct
 {
     meta_data_t meta_data;
     double *data;
 }
-real_vector_double_t;
+real_vector_double_cpu_t;
 
 typedef struct
 {
     meta_data_t meta_data;
     complex float *data;
 }
-complex_vector_single_t;
+complex_vector_single_cpu_t;
 
 typedef struct
 {
     meta_data_t meta_data;
     complex double *data;
 }
-complex_vector_double_t;
+complex_vector_double_cpu_t;
 
 #endif /* DATAVECTORCPU_TYPES_H */

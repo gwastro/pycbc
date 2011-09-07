@@ -31,9 +31,9 @@ from straindata_base import StrainDataBase
 from straindata_base import FftSegmentsImplementationBase
 
 # import member datavectors
-from pycbc.datavector.datavectorcpu import real_vector_double_t
-from pycbc.datavector.datavectorcpu import real_vector_single_t
-from pycbc.datavector.datavectorcpu import complex_vector_single_t
+from pycbc.datavector.datavectorcpu import real_vector_double_cpu_t
+from pycbc.datavector.datavectorcpu import real_vector_single_cpu_t
+from pycbc.datavector.datavectorcpu import complex_vector_single_cpu_t
 
 # Swigged C-layer functions
 from straindatacpu import fftw_generate_plan
@@ -66,9 +66,9 @@ class StrainDataCpu(StrainDataBase):
     
         super(StrainDataCpu, self).__init__(t_start, t_end, n_segments, 
                     sample_freq, interferometer,
-                    initial_time_series_t = real_vector_double_t,
-                    time_series_t =         real_vector_single_t,
-                    frequency_series_t=     complex_vector_single_t,
+                    initial_time_series_t = real_vector_double_cpu_t,
+                    time_series_t =         real_vector_single_cpu_t,
+                    frequency_series_t=     complex_vector_single_cpu_t,
                     fft_segments_impl_t=    FftSegmentsImplementationFftw)
 
     def render(self):
@@ -98,9 +98,9 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         @type overlap_fact: double
         @param overlap_fact: overlapping factor
         @type input_buf_t: class
-        @param input_buf_t: class of inputbuffer(ig. real_vector_single_t)
+        @param input_buf_t: class of inputbuffer(ig. real_vector_single_cpu_t)
         @type output_buffer_t: class
-        @param output_buffer_t: class of inputbuffer(ig.complex_vector_single_t)
+        @param output_buffer_t: class of inputbuffer(ig.complex_vector_single_cpu_t)
         @rtype: none
         @return: none
         """

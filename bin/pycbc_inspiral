@@ -53,9 +53,9 @@ from pycbc.injector import Injector as Injector
 from pycbc.resampler import  Resampler as Resampler
 from pycbc.bandpassfilter import  ForwardsBackwardsButterworthFilter as BandpassFilter
 
-from pycbc.datavector.datavectorcpu import real_vector_single_t as PreprocessedStrainData
-from pycbc.datavector.datavectorcpu import real_vector_single_t as TemplateWaveform
-from pycbc.datavector.datavectorcpu import real_vector_single_t as SnrData
+from pycbc.datavector.datavectorcpu import real_vector_single_cpu_t as PreprocessedStrainData
+from pycbc.datavector.datavectorcpu import real_vector_single_cpu_t as TemplateWaveform
+from pycbc.datavector.datavectorcpu import real_vector_single_cpu_t as SnrData
 
 #from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
 from pycbc.matchedfilter.matchedfilter_cpu import MatchedFilterCpu as MatchedFilter

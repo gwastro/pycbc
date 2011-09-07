@@ -54,47 +54,47 @@
 %include "datavectorcpu_types.h"
 %include "exception.i"
 
-%exception real_vector_single_t {
+%exception real_vector_single_cpu_t {
     $action
     if (!result) {
-        SWIG_exception(SWIG_MemoryError, "real_vector_single_t allocation fails");
+        SWIG_exception(SWIG_MemoryError, "real_vector_single_cpu_t allocation fails");
         return NULL;
     }
 }
-%extend real_vector_single_t {
-    TYPE_INTERFACE_TEMPLATE(real_vector_single_t,float)
+%extend real_vector_single_cpu_t {
+    TYPE_INTERFACE_TEMPLATE(real_vector_single_cpu_t,float)
 }
 
-%exception real_vector_double_t {
+%exception real_vector_double_cpu_t {
     $action
     if (!result) {
-        SWIG_exception(SWIG_MemoryError, "real_vector_double_t allocation fails");
+        SWIG_exception(SWIG_MemoryError, "real_vector_double_cpu_t allocation fails");
         return NULL;
     }
 }
-%extend real_vector_double_t {
-    TYPE_INTERFACE_TEMPLATE(real_vector_double_t,double)
+%extend real_vector_double_cpu_t {
+    TYPE_INTERFACE_TEMPLATE(real_vector_double_cpu_t,double)
 }
 
-%exception complex_vector_single_t {
+%exception complex_vector_single_cpu_t {
     $action
     if (!result) {
-        SWIG_exception(SWIG_MemoryError, "complex_vector_single_t allocation fails");
+        SWIG_exception(SWIG_MemoryError, "complex_vector_single_cpu_t allocation fails");
         return NULL;
     }
 }
-%extend complex_vector_single_t {
-    TYPE_INTERFACE_TEMPLATE(complex_vector_single_t,complex float)
+%extend complex_vector_single_cpu_t {
+    TYPE_INTERFACE_TEMPLATE(complex_vector_single_cpu_t,complex float)
 }
 
-%exception complex_vector_double_t {
+%exception complex_vector_double_cpu_t {
     $action
     if (!result) {
-        SWIG_exception(SWIG_MemoryError, "complex_vector_double_t allocation fails");
+        SWIG_exception(SWIG_MemoryError, "complex_vector_double_cpu_t allocation fails");
         return NULL;
     }
 }
-%extend complex_vector_double_t {
-    TYPE_INTERFACE_TEMPLATE(complex_vector_double_t,complex double )
+%extend complex_vector_double_cpu_t {
+    TYPE_INTERFACE_TEMPLATE(complex_vector_double_cpu_t,complex double )
 }
 

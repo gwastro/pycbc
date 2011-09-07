@@ -35,27 +35,27 @@ typedef struct
     meta_data_t meta_data;
     float *data;
 }
-real_vector_single_t;
+real_vector_single_cuda_t;
 
 typedef struct
 {
     meta_data_t meta_data;
     double *data;
 }
-real_vector_double_t;
+real_vector_double_cuda_t;
 
 typedef struct
 {
     meta_data_t meta_data;
     float *data;
 }
-complex_vector_single_t;
+complex_vector_single_cuda_t;
 
 typedef struct
 {
     meta_data_t meta_data;
     double *data;
 }
-complex_vector_double_t;
+complex_vector_double_cuda_t;
 
 #endif /* DATAVECTORCUDA_TYPES_H */

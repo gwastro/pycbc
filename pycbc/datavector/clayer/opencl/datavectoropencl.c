@@ -37,73 +37,75 @@
  */
 
 
-real_vector_single_t* new_real_vector_single_t(unsigned long length, 
-                                               double delta_x)
+real_vector_single_opencl_t* new_real_vector_single_opencl_t(unsigned long length, 
+                                                             double delta_x)
 {
-    CONSTRUCTOR_TEMPLATE(real_vector_single_t, float)
+    CONSTRUCTOR_TEMPLATE(real_vector_single_opencl_t, float)
     
-    c->real_data = (float*)calloc( c->meta_data.vector_length , 
-                                   c->meta_data.element_size_bytes );
-    c->imag_data = (float*)calloc( c->meta_data.vector_length , 
-                                   c->meta_data.element_size_bytes );
-    
-    //
-    // and so on ...
-    //
-    
-    
-    return c;
-}
-
-void delete_real_vector_single_t( real_vector_single_t* p )
-{
-    free( p->data );
-    free( p );
-}
-
-real_vector_double_t* new_real_vector_double_t(unsigned long length, 
-                                               double delta_x)
-{
-    CONSTRUCTOR_TEMPLATE(real_vector_double_t, double)
-    c->data = (double*)calloc( c->meta_data.vector_length , 
+    c->data = (float*)calloc( c->meta_data.vector_length , 
                               c->meta_data.element_size_bytes );
+    
     return c;
 }
 
-void delete_real_vector_double_t( real_vector_double_t* p )
+void delete_real_vector_single_opencl_t( real_vector_single_opencl_t* p )
 {
     free( p->data );
     free( p );
 }
 
-complex_vector_single_t* new_complex_vector_single_t(unsigned long length, 
-                                                     double delta_x)
+real_vector_double_opencl_t* new_real_vector_double_opencl_t(unsigned long length, 
+                                                             double delta_x)
 {
-    CONSTRUCTOR_TEMPLATE(complex_vector_single_t, complex_float_t)
-    c->data = (complex_float_t*)calloc(c->meta_data.vector_length ,
-                                       c->meta_data.element_size_bytes );
+    CONSTRUCTOR_TEMPLATE(real_vector_double_opencl_t, double)
+    
+    c->data = (double*)calloc( c->meta_data.vector_length , 
+                               c->meta_data.element_size_bytes );
     return c;
 }
 
-void delete_complex_vector_single_t( complex_vector_single_t* p )
+void delete_real_vector_double_opencl_t( real_vector_double_opencl_t* p )
+{
+    free( p->data );
+    free( p );
+}
+
+complex_vector_single_opencl_t* new_complex_vector_single_opencl_t(unsigned long length, 
+                                                                   double delta_x)
+{
+    CONSTRUCTOR_TEMPLATE(complex_vector_single_opencl_t, float)
+
+    c->real_data = (float*)calloc(c->meta_data.vector_length ,
+                                  c->meta_data.element_size_bytes );
+    c->imag_data = (float*)calloc(c->meta_data.vector_length ,
+                                  c->meta_data.element_size_bytes );
+    return c;
+}
+
+void delete_complex_vector_single_opencl_t( complex_vector_single_opencl_t* p )
 {
     
-    free( p->data );
+    free( p->real_data );
+    free( p->imag_data );
     free( p );
 }
 
-complex_vector_double_t* new_complex_vector_double_t(unsigned long length, 
-                                                     double delta_x)
+complex_vector_double_opencl_t* new_complex_vector_double_opencl_t(unsigned long length, 
+                                                                   double delta_x)
 {
-    CONSTRUCTOR_TEMPLATE(complex_vector_double_t, complex_double_t)    
-    c->data = (complex_double_t*)calloc(c->meta_data.vector_length,
-                                        c->meta_data.element_size_bytes );
+    CONSTRUCTOR_TEMPLATE(complex_vector_double_opencl_t, double)    
+
+    c->real_data = (double*)calloc(c->meta_data.vector_length,
+                                   c->meta_data.element_size_bytes );
+    c->imag_data = (double*)calloc(c->meta_data.vector_length,
+                                   c->meta_data.element_size_bytes );
     return c;
 }
 
-void delete_complex_vector_double_t( complex_vector_double_t* p )
+void delete_complex_vector_double_opencl_t( complex_vector_double_opencl_t* p )
 {
-    free( p->data );
+    free( p->real_data );
+    free( p->imag_data );
     free( p );
 }
 

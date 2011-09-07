@@ -78,7 +78,7 @@ class TestStrainDataCPU(unittest.TestCase):
 
         # check type
         self.assertTrue(repr(self.dut.time_series).
-        find("datavectorcpu.real_vector_double_t") >= 0,
+        find("datavectorcpu.real_vector_double_cpu_t") >= 0,
         " Wrong type of datavector for straindata at the initial phase")
 
 
@@ -124,7 +124,7 @@ class TestStrainDataCPU(unittest.TestCase):
         
         # check type (straindata converted to single precision)
         self.assertTrue(repr(self.dut.time_series).
-        find("datavectorcpu.real_vector_single_t") >= 0,
+        find("datavectorcpu.real_vector_single_cpu_t") >= 0,
         " Wrong type of datavector for straindata after convert() call")
         
         # check data integrity after conversion
@@ -145,7 +145,7 @@ class TestStrainDataCPU(unittest.TestCase):
         for stilde in self.dut:
             # check type
             self.assertTrue(repr(stilde).
-            find("datavectorcpu.complex_vector_single_t") >= 0,
+            find("datavectorcpu.complex_vector_single_cpu_t") >= 0,
             " Wrong type of datavector for stilde")
             
             # check correct initialization

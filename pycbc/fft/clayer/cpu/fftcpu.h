@@ -55,18 +55,18 @@ void delete_fft_complex_double_plan_cpu(fft_complex_double_plan *self);
 /*
   Functions to execute FFTW plans
 */
-void execute_complex_single_fft_cpu(complex_vector_single_t *output, complex_vector_single_t *input,
+void execute_complex_single_fft_cpu(complex_vector_single_cpu_t *output, complex_vector_single_cpu_t *input,
 				fft_complex_single_plan *plan);
-void execute_real_single_forward_fft_cpu(complex_vector_single_t *output, real_vector_single_t *input,
+void execute_real_single_forward_fft_cpu(complex_vector_single_cpu_t *output, real_vector_single_cpu_t *input,
 				fft_real_single_plan *plan);
-void execute_real_single_reverse_fft_cpu(real_vector_single_t *output, complex_vector_single_t *input,
+void execute_real_single_reverse_fft_cpu(real_vector_single_cpu_t *output, complex_vector_single_cpu_t *input,
 				fft_real_single_plan *plan);
 
-void execute_complex_double_fft_cpu(complex_vector_double_t *output, complex_vector_double_t *input,
+void execute_complex_double_fft_cpu(complex_vector_double_cpu_t *output, complex_vector_double_cpu_t *input,
 				fft_complex_double_plan *plan);
-void execute_real_double_forward_fft_cpu(complex_vector_double_t *output, real_vector_double_t *input,
+void execute_real_double_forward_fft_cpu(complex_vector_double_cpu_t *output, real_vector_double_cpu_t *input,
 				fft_real_double_plan *plan);
-void execute_real_double_reverse_fft_cpu(real_vector_double_t *output, complex_vector_double_t *input,
+void execute_real_double_reverse_fft_cpu(real_vector_double_cpu_t *output, complex_vector_double_cpu_t *input,
 				fft_real_double_plan *plan);
 
 #endif /* FFTCPU_H */

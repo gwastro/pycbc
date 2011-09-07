@@ -29,10 +29,7 @@ pycbc management and tools
 from pycbcopencl import cl_context_t as OpenClContext
 from pycbccpu import cpu_context_t as CpuContext
 
-# I agree on changing the all too generic naming of datavectors in the C layer
-# to real_vector_single_cpu_t real_vector_single_cuda_t real_vector_single_opencl_t
-# and so on for the other data types 
-from datavector.datavectorcpu import real_vector_single_t as real_vector_single_cpu_t
+from datavector.datavectorcpu import *
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 
@@ -89,7 +86,9 @@ class CpuProcessingObj(PyCbcProcessingObj):
             # call the transfer function in the C layer
             # prototyping it here:
             for i in range(len(datavector)):
-                new_arch_vector[i] = datavector[i]
+                pass
+               # new_arch_vector[i] = datavector[i]
+               # fix opencl datavector probs first
             
             return new_arch_vector
 

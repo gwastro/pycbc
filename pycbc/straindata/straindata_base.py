@@ -65,12 +65,12 @@ class StrainDataBase:
         @type interferometer: string
         @param interferometer: Interferometer name (H0, H1, L1 etc.)
         @type initial_time_series_t: class
-        @param initial_time_series_t: real_vector_double_t initial straindata
+        @param initial_time_series_t: real_vector_double_<arch>_t initial straindata
         @type time_series_t: class
-        @param time_series_t: real_vector_single_t straindata after being 
+        @param time_series_t: real_vector_single_<arch>_t straindata after being 
                               converted to single precision
         @type frequency_series_t: class
-        @param frequency_series_t: complex_vector_single_t segmented straindata
+        @param frequency_series_t: complex_vector_single_<arch>_t segmented straindata
                                    transformed into frequency domain
         @type fft_segments_impl_t: class
         @param fft_segments_impl_t: implementation class of segmenting (and 
