@@ -104,7 +104,7 @@ class TestDatavectorCPU(unittest.TestCase):
             self.digits_to_check_single_against_double,
             "datavector access test failed at index: {0}".format(i))
 
-    def test_2_real_double_datavector(self): ##################################
+    def test_2_real_double_datavector(self): ###################################
         """
         Test proper datatype, initialization and access of the  
         double precision datavector

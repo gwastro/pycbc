@@ -182,3 +182,23 @@ double get_delta_x( void ) {
     TYPE_INTERFACE_TEMPLATE_CMPLX(complex_vector_double_opencl_t)
 }
 
+// transfer functions ----------------------------------------------------------
+void transfer_real_vector_single_from_cpu(real_vector_single_opencl_t, 
+                                          real_vector_single_cpu_t);
+void transfer_real_vector_single_to_cpu( real_vector_single_cpu_t, 
+                                         real_vector_single_opencl_t);
+
+void transfer_real_vector_double_from_cpu(real_vector_double_opencl_t, 
+                                          real_vector_double_cpu_t);
+void transfer_real_vector_double_to_cpu( real_vector_double_cpu_t, 
+                                         real_vector_double_opencl_t);
+
+void transfer_complex_vector_single_from_cpu(complex_vector_single_opencl_t, 
+                                             complex_vector_single_cpu_t);
+void transfer_complex_vector_single_to_cpu( complex_vector_single_cpu_t, 
+                                            complex_vector_single_opencl_t);
+
+void transfer_complex_vector_double_from_cpu(complex_vector_double_opencl_t, 
+                                             complex_vector_double_cpu_t);
+void transfer_complex_vector_double_to_cpu( complex_vector_double_cpu_t, 
+                                            complex_vector_double_opencl_t);

@@ -38,6 +38,7 @@ sys.path.append('/Users/kawies/dev/src/pycbc')
 sys.path.append('/Users/kawies/dev/src/pycbc/pycbc/datavector')
 
 from datavectoropencl import *
+from datavectorcpu import *
 
 import unittest
 import random
@@ -59,11 +60,16 @@ class TestDatavectorOpenCl(unittest.TestCase):
                                                                 self.delta_x)
         self.dut_complex_double= complex_vector_double_opencl_t(self.length, 
                                                                 self.delta_x)
-        print                                                        
-        print self.dut_real_single
-        print self.dut_real_double
-        print self.dut_complex_single
-        print self.dut_complex_double
+        
+        #print                                                        
+        #print self.dut_real_single
+        #print repr(self.dut_real_single)
+        #print self.dut_real_double
+        #print repr(self.dut_real_double)
+        #print self.dut_complex_single
+        #print repr(self.dut_complex_single)
+        #print self.dut_complex_double
+        #print repr(self.dut_complex_double)
 
         random.seed()
         self.digits_to_check_single_against_double = 7
@@ -83,9 +89,38 @@ class TestDatavectorOpenCl(unittest.TestCase):
         self.assertTrue(repr(self.dut_real_single).
         find("datavectoropencl.real_vector_single_opencl_t") >= 0,
         " Wrong type of datavector after instanciation")
+        
+        reference_vector= real_vector_single_cpu_t(self.length, self.delta_x)
 
+        # check correct initialization
+        transfer_real_vector_single_to_cpu(reference_vector, 
+                                           self.dut_real_single)
+        for i in range(self.length):
+            self.assertEquals(reference_vector[i], 0.0,
+            "datavector not initialized by 0.0 at index: {0}".format(i))
 
-    def test_2_real_double_datavector(self): ##################################
+        # data integrity test:
+        
+        # generate data
+        for i in range(self.length):
+            reference_vector[i]= random.uniform(-1,1)
+
+        # transfer to GPU
+        transfer_real_vector_single_from_cpu(self.dut_real_single, 
+                                             reference_vector)
+        
+        test_vector= real_vector_single_cpu_t(self.length, self.delta_x)
+
+        # fetch from GPU
+        transfer_real_vector_single_to_cpu(test_vector, self.dut_real_single)
+
+        # check element by element
+        for i in range(self.length):
+            self.assertEquals(reference_vector[i], test_vector[i],
+            "data integrity failed at index: {0}".
+            format(i))
+
+    def test_2_real_double_datavector(self): ###################################
         """
         Test proper datatype, initialization and access of the  
         double precision datavector
@@ -95,6 +130,36 @@ class TestDatavectorOpenCl(unittest.TestCase):
         self.assertTrue(repr(self.dut_real_double).
         find("datavectoropencl.real_vector_double_opencl_t") >= 0,
         " Wrong type of datavector after instanciation")
+        
+        reference_vector= real_vector_double_cpu_t(self.length, self.delta_x)
+
+        # check correct initialization
+        transfer_real_vector_double_to_cpu(reference_vector, 
+                                           self.dut_real_double)
+        for i in range(self.length):
+            self.assertEquals(reference_vector[i], 0.0,
+            "datavector not initialized by 0.0 at index: {0}".format(i))
+
+        # data integrity test:
+        
+        # generate data
+        for i in range(self.length):
+            reference_vector[i]= random.uniform(-1,1)
+
+        # transfer to GPU
+        transfer_real_vector_double_from_cpu(self.dut_real_double, 
+                                             reference_vector)
+        
+        test_vector= real_vector_double_cpu_t(self.length, self.delta_x)
+
+        # fetch from GPU
+        transfer_real_vector_double_to_cpu(test_vector, self.dut_real_double)
+
+        # check element by element
+        for i in range(self.length):
+            self.assertEquals(reference_vector[i], test_vector[i],
+            "data integrity failed at index: {0}".
+            format(i))
 
 
     def test_3_complex_single_datavector(self): ################################
@@ -108,6 +173,38 @@ class TestDatavectorOpenCl(unittest.TestCase):
         find("datavectoropencl.complex_vector_single_opencl_t") >= 0,
             " Wrong type of datavector for dut_complex_single")
             
+        reference_vector= complex_vector_single_cpu_t(self.length, self.delta_x)
+
+        # check correct initialization
+        transfer_complex_vector_single_to_cpu(reference_vector, 
+                                              self.dut_complex_single)
+        for i in range(self.length):
+            self.assertEquals(reference_vector[i], (0+0j),
+            "datavector not initialized by 0+0j at index: {0}".format(i))
+
+        # data integrity test:
+        
+        # generate data
+        for i in range(self.length):
+            reference_vector[i]= complex(random.uniform(-1,1), 
+                                         random.uniform(-1,1))
+
+        # transfer to GPU
+        transfer_complex_vector_single_from_cpu(self.dut_complex_single, 
+                                                reference_vector)
+        
+        test_vector= complex_vector_single_cpu_t(self.length, self.delta_x)
+
+        # fetch from GPU
+        transfer_complex_vector_single_to_cpu(test_vector, 
+                                              self.dut_complex_single)
+
+        # check element by element
+        for i in range(self.length):
+            self.assertEquals(reference_vector[i], test_vector[i],
+            "data integrity failed at index: {0}".
+            format(i))
+            
 
     def test_4_complex_double_datavector(self): ################################
         """
@@ -119,6 +216,39 @@ class TestDatavectorOpenCl(unittest.TestCase):
         self.assertTrue(repr(self.dut_complex_double).
         find("datavectoropencl.complex_vector_double_opencl_t") >= 0,
             " Wrong type of datavector for dut_complex_double")
+
+
+        reference_vector= complex_vector_double_cpu_t(self.length, self.delta_x)
+
+        # check correct initialization
+        transfer_complex_vector_double_to_cpu(reference_vector, 
+                                              self.dut_complex_double)
+        for i in range(self.length):
+            self.assertEquals(reference_vector[i], (0+0j),
+            "datavector not initialized by 0+0j at index: {0}".format(i))
+
+        # data integrity test:
+        
+        # generate data
+        for i in range(self.length):
+            reference_vector[i]= complex(random.uniform(-1,1), 
+                                         random.uniform(-1,1))
+
+        # transfer to GPU
+        transfer_complex_vector_double_from_cpu(self.dut_complex_double, 
+                                                reference_vector)
+        
+        test_vector= complex_vector_double_cpu_t(self.length, self.delta_x)
+
+        # fetch from GPU
+        transfer_complex_vector_double_to_cpu(test_vector, 
+                                              self.dut_complex_double)
+
+        # check element by element
+        for i in range(self.length):
+            self.assertEquals(reference_vector[i], test_vector[i],
+            "data integrity failed at index: {0}".
+            format(i))
             
 
 # automate the process of creating a test suite    

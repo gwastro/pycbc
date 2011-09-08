@@ -28,21 +28,15 @@
 #include "datavectoropencl_types.h"
 #include "datavectoropencl_prototypes.h"
 
+// real_vector_single methods --------------------------------------------------
 
-/*
- *
- *     Module for OpenCl datavectors TBD! Currently prototyping 
- *     by allocating system memory
- *
- */
-
-
-real_vector_single_opencl_t* new_real_vector_single_opencl_t(unsigned long length, 
-                                                             double delta_x)
+real_vector_single_opencl_t* new_real_vector_single_opencl_t(
+                                                        unsigned long length, 
+                                                        double delta_x)
 {
     CONSTRUCTOR_TEMPLATE(real_vector_single_opencl_t, float)
     
-    c->data = (float*)calloc( c->meta_data.vector_length , 
+    c->data = (float*)calloc( c->meta_data.vector_length, 
                               c->meta_data.element_size_bytes );
     
     return c;
@@ -54,8 +48,39 @@ void delete_real_vector_single_opencl_t( real_vector_single_opencl_t* p )
     free( p );
 }
 
-real_vector_double_opencl_t* new_real_vector_double_opencl_t(unsigned long length, 
-                                                             double delta_x)
+void transfer_real_vector_single_from_cpu( real_vector_single_opencl_t dest, 
+                                           real_vector_single_cpu_t src )
+{
+    unsigned long i=0;
+    
+    if (dest.meta_data.vector_length != src.meta_data.vector_length)
+        return; // ERROR!
+
+    // prototyping the transfer (currently opencldata is cpudata)
+    for (i=0; i < dest.meta_data.vector_length; i++) {
+        *dest.data++ = *src.data++;
+    }
+}
+
+void transfer_real_vector_single_to_cpu( real_vector_single_cpu_t dest, 
+                                         real_vector_single_opencl_t src )
+{
+    unsigned long i=0;
+
+    if (dest.meta_data.vector_length != src.meta_data.vector_length)
+        return; // ERROR!
+    
+    // prototyping the transfer (currently opencldata is cpudata)
+    for (i=0; i < dest.meta_data.vector_length; i++) {
+        *dest.data++ = *src.data++;
+    }
+}
+
+// real_vector_double methods --------------------------------------------------
+
+real_vector_double_opencl_t* new_real_vector_double_opencl_t(
+                                                        unsigned long length, 
+                                                        double delta_x)
 {
     CONSTRUCTOR_TEMPLATE(real_vector_double_opencl_t, double)
     
@@ -70,8 +95,40 @@ void delete_real_vector_double_opencl_t( real_vector_double_opencl_t* p )
     free( p );
 }
 
-complex_vector_single_opencl_t* new_complex_vector_single_opencl_t(unsigned long length, 
-                                                                   double delta_x)
+void transfer_real_vector_double_from_cpu( real_vector_double_opencl_t dest, 
+                                           real_vector_double_cpu_t src )
+{
+    unsigned long i=0;
+    
+    if (dest.meta_data.vector_length != src.meta_data.vector_length)
+        return; // ERROR!
+    
+    // prototyping the transfer (currently opencldata is cpudata)
+    for (i=0; i < dest.meta_data.vector_length; i++) {
+        *dest.data++ = *src.data++;
+    }
+}
+
+void transfer_real_vector_double_to_cpu( real_vector_double_cpu_t dest, 
+                                         real_vector_double_opencl_t src )
+{
+    unsigned long i=0;
+    
+    if (dest.meta_data.vector_length != src.meta_data.vector_length)
+        return; // ERROR!
+    
+    // prototyping the transfer (currently opencldata is cpudata)
+    for (i=0; i < dest.meta_data.vector_length; i++) {
+        *dest.data++ = *src.data++;
+    }
+}
+
+
+// complex_vector_single methods -----------------------------------------------
+
+complex_vector_single_opencl_t* new_complex_vector_single_opencl_t(
+                                                        unsigned long length, 
+                                                        double delta_x)
 {
     CONSTRUCTOR_TEMPLATE(complex_vector_single_opencl_t, float)
 
@@ -90,8 +147,43 @@ void delete_complex_vector_single_opencl_t( complex_vector_single_opencl_t* p )
     free( p );
 }
 
-complex_vector_double_opencl_t* new_complex_vector_double_opencl_t(unsigned long length, 
-                                                                   double delta_x)
+void transfer_complex_vector_single_from_cpu( 
+                                            complex_vector_single_opencl_t dest, 
+                                            complex_vector_single_cpu_t src )
+{
+    unsigned long i=0;
+    
+    if (dest.meta_data.vector_length != src.meta_data.vector_length)
+        return; // ERROR!
+    
+    // prototyping the transfer (currently opencldata is cpudata)
+    for (i=0; i < dest.meta_data.vector_length; i++) {
+        *dest.real_data++ = __real__ *src.data;
+        *dest.imag_data++ = __imag__ *src.data++;
+    }
+}
+
+void transfer_complex_vector_single_to_cpu( complex_vector_single_cpu_t dest, 
+                                            complex_vector_single_opencl_t src )
+{
+    unsigned long i=0;
+    
+    if (dest.meta_data.vector_length != src.meta_data.vector_length)
+        return; // ERROR!
+    
+    // prototyping the transfer (currently opencldata is cpudata)
+    for (i=0; i < dest.meta_data.vector_length; i++) {
+        __real__ *dest.data   = *src.real_data++;
+        __imag__ *dest.data++ = *src.imag_data++;
+    }
+}
+
+
+// complex_vector_double methods -----------------------------------------------
+
+complex_vector_double_opencl_t* new_complex_vector_double_opencl_t(
+                                                        unsigned long length, 
+                                                        double delta_x)
 {
     CONSTRUCTOR_TEMPLATE(complex_vector_double_opencl_t, double)    
 
@@ -107,5 +199,36 @@ void delete_complex_vector_double_opencl_t( complex_vector_double_opencl_t* p )
     free( p->real_data );
     free( p->imag_data );
     free( p );
+}
+
+void transfer_complex_vector_double_from_cpu(
+                                            complex_vector_double_opencl_t dest, 
+                                            complex_vector_double_cpu_t src )
+{
+    unsigned long i=0;
+    
+    if (dest.meta_data.vector_length != src.meta_data.vector_length)
+        return; // ERROR!
+    
+    // prototyping the transfer (currently opencldata is cpudata)
+    for (i=0; i < dest.meta_data.vector_length; i++) {
+        *dest.real_data++ = __real__ *src.data;
+        *dest.imag_data++ = __imag__ *src.data++;
+    }
+}
+
+void transfer_complex_vector_double_to_cpu( complex_vector_double_cpu_t dest, 
+                                           complex_vector_double_opencl_t src )
+{
+    unsigned long i=0;
+    
+    if (dest.meta_data.vector_length != src.meta_data.vector_length)
+        return; // ERROR!
+    
+    // prototyping the transfer (currently opencldata is cpudata)
+    for (i=0; i < dest.meta_data.vector_length; i++) {
+        __real__ *dest.data   = *src.real_data++;
+        __imag__ *dest.data++ = *src.imag_data++;
+    }
 }
 
