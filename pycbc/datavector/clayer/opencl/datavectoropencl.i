@@ -50,8 +50,9 @@
 // "is multiply defined error". That is the reason for splitting 
 // the headerfiles into _types and _prototypes
 %include "../datavector_types.h"
-// opencl datavectors have two pointers so 
-// we have to implement the swigging different than -> %include "../datavector_types.i"
+// opencl datavectors have two pointers so we have 
+// to implement the swigging different than in -> 
+// %include "../datavector_types.i"
 %include "datavectoropencl_types.h"
 %include "exception.i"
 
@@ -61,42 +62,16 @@
 #include <complex.h>
 %}
 
-// add new element properties here:
-%define TYPE_INTERFACE_TEMPLATE(name,type)
+// add new element properties for OpenCl real vectors here:
+%define TYPE_INTERFACE_TEMPLATE_REAL(name)
 name(unsigned long vector_length, double delta_x);
 ~name();
 
-%typemap(in) complex float {
-    $1 = (float)PyComplex_RealAsDouble($input) + (float)PyComplex_ImagAsDouble($input)*I;
-}
-
-%typemap(in) complex double {
-    $1 = PyComplex_RealAsDouble($input) + PyComplex_ImagAsDouble($input)*I;
-}
-
-%typemap(out) complex float {
-    $result = PyComplex_FromDoubles((double) crealf($1), (double)cimagf($1));    
-}
-
-%typemap(out) complex double {
-    $result = PyComplex_FromDoubles(creal($1), cimag($1)); 
-}
-
-%typemap(check) unsigned long vector_index {
-    if ($1 >= arg1->meta_data.vector_length) {
-        SWIG_exception(SWIG_ValueError, "Index for datavector access out of range");
-    }
-}
-
-
 char* __str__() {
     static char a[512];
-//    snprintf( a, sizeof(a)/sizeof(*a), 
-//             "<name, length %ld, real_data ptr %p, imag_data ptr %p>", 
-//             self->meta_data.vector_length, self->real_data, self->imag_data);
-    
-// obvoiusly we have the ptoblem here of real_vecs have only a *data ptr
-// and complex ones have the two real and imag data ptrs    
+    snprintf( a, sizeof(a)/sizeof(*a), 
+             "<name, length %ld, data ptr %p", 
+             self->meta_data.vector_length, self->data);
 
     return a;
 }
@@ -104,37 +79,6 @@ char* __str__() {
 unsigned __len__() {
     return self->meta_data.vector_length;
 }
-
-
-// ToDo
-// As well it might make trouble to NOT use the C99 complex type here! 
-// BTW.: Also check all the complex to python complex stuff at the other
-// <arch> datavectors !!!!!!   
-
-///
-/// ToDo find out to get/set complex data ////////////////////////////////
-///
-
-// same problem applies here:
-// obvoiusly we have the ptoblem here of real_vecs have only a *data ptr
-// and complex ones have the two real and imag data ptrs    
-
-
-/*type __getitem__(unsigned long vector_index) {
-    type* data = (type*) self->real_data; 
-    return (type) real_data[vector_index];
-}
-
-void __setitem__(unsigned long vector_index, type value) {
-    type* data = (type*) self->real_data; 
-    real_data[vector_index] = value;
-}
- 
-*/
-
-//////////////////////////////////////////////////////////////////////////
-
-
 
 void set_start( unsigned long vector_index ) {
     self->meta_data.start = vector_index;
@@ -154,6 +98,43 @@ double get_delta_x( void ) {
 
 %enddef
 
+// add new element properties for OpenCl complex vectors here:
+%define TYPE_INTERFACE_TEMPLATE_CMPLX(name)
+name(unsigned long vector_length, double delta_x);
+~name();
+
+char* __str__() {
+    static char a[512];
+    snprintf( a, sizeof(a)/sizeof(*a), 
+             "<name, length %ld, real_data ptr %p, imag_data ptr %p>", 
+             self->meta_data.vector_length, self->real_data, self->imag_data);
+    
+    return a;
+}
+
+unsigned __len__() {
+    return self->meta_data.vector_length;
+}
+
+void set_start( unsigned long vector_index ) {
+    self->meta_data.start = vector_index;
+}
+
+unsigned get_start( void ) {
+    return self->meta_data.start;
+}
+
+void set_delta_x( double delta_x ) {
+    self->meta_data.delta_x = delta_x;
+}
+
+double get_delta_x( void ) {
+    return self->meta_data.delta_x;
+}
+
+%enddef
+
+
 // exceptions section ----------------------------------------------------------
 
 %exception real_vector_single_opencl_t {
@@ -164,7 +145,7 @@ double get_delta_x( void ) {
     }
 }
 %extend real_vector_single_opencl_t {
-    TYPE_INTERFACE_TEMPLATE(real_vector_single_opencl_t,float)
+    TYPE_INTERFACE_TEMPLATE_REAL(real_vector_single_opencl_t)
 }
 
 %exception real_vector_double_opencl_t {
@@ -175,7 +156,7 @@ double get_delta_x( void ) {
     }
 }
 %extend real_vector_double_opencl_t {
-    TYPE_INTERFACE_TEMPLATE(real_vector_double_opencl_t,double)
+    TYPE_INTERFACE_TEMPLATE_REAL(real_vector_double_opencl_t)
 }
 
 %exception complex_vector_single_opencl_t {
@@ -186,7 +167,8 @@ double get_delta_x( void ) {
     }
 }
 %extend complex_vector_single_opencl_t {
-    TYPE_INTERFACE_TEMPLATE(complex_vector_single_opencl_t,complex_float_t)
+    TYPE_INTERFACE_TEMPLATE_CMPLX(complex_vector_single_opencl_t)
+    
 }
 
 %exception complex_vector_double_opencl_t {
@@ -197,6 +179,6 @@ double get_delta_x( void ) {
     }
 }
 %extend complex_vector_double_opencl_t {
-    TYPE_INTERFACE_TEMPLATE(complex_vector_double_opencl_t,complex_double_opencl_t)
+    TYPE_INTERFACE_TEMPLATE_CMPLX(complex_vector_double_opencl_t)
 }
 
