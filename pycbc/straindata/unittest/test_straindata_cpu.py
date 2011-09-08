@@ -157,7 +157,7 @@ class TestStrainDataCPU(unittest.TestCase):
             # check datavectors for throwing exceptions if 
             # trying to access out of bounds
             def out_of_bounds_access(self, vector_to_test):
-                vector_to_test[self.length] = 2.0
+                vector_to_test[self.length] = (2.0+3.0j)
                 tmp = vector_to_test[self.length]
         
             self.assertRaises(ValueError, out_of_bounds_access, self, 
