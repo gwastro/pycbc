@@ -80,7 +80,6 @@ interferometer = "H1"
 
 with ProccessingTargetContext(15) as context:
  
-    # context testing by karsten
     print repr(context)
     print context
           
@@ -112,7 +111,7 @@ with ProccessingTargetContext(15) as context:
 
     # create matched filter (only generate_snr() has to be implemented
     # for the minimal pipeline)
-    matched_filter = MatchedFilter(strain_data.segments_length, strain_data.segments_delta_x)
+    matched_filter = MatchedFilter(context, strain_data.segments_length, strain_data.segments_delta_x)
     logger.debug("instanciated MatchedFilter w/ length: {0}".format(matched_filter.length))
 
     # instanciate result vectors
@@ -124,7 +123,7 @@ with ProccessingTargetContext(15) as context:
         htilde = bank.perform_generate_waveform(template)
         print("generating htilde {0}".format(repr(htilde)))
         for stilde in strain_data:
-            snr = matched_filter.perform_generate_snr(context, stilde, htilde)
+            snr = matched_filter.perform_generate_snr(stilde, htilde)
             
     ############################################################################
     # prepare to leave the processing context (objects that contain device 

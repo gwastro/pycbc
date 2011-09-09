@@ -53,7 +53,7 @@ import logging
 
 class MatchedFilterCpu(MatchedFilterBase, CpuProcessingObj):
 
-    def __init__(self, length=0, delta_x=1):
+    def __init__(self, context, length=0, delta_x=1):
 
         self.__logger= logging.getLogger('pycbc.MatchedFilterCpu')
         self.__logger.debug("instanciated MatchedFilterCpu")
@@ -61,7 +61,8 @@ class MatchedFilterCpu(MatchedFilterBase, CpuProcessingObj):
         self.__length= length
         self.__delta_x= delta_x
         
-        super(MatchedFilterCpu, self).__init__(self.__length, self.__delta_x,
+        super(MatchedFilterCpu, self).__init__(context, self.__length, 
+                               self.__delta_x,
                                GenSnrImplementationCpu, MaxImplementationCpu, 
                                snr_vector_t=    real_vector_single_cpu_t, 
                                qtilde_vector_t= complex_vector_single_cpu_t, 
@@ -78,43 +79,21 @@ class  GenSnrImplementationCpu(GenSnrImplementationBase):
 
         super(GenSnrImplementationCpu, self).__init__(owner_mfilt)
     
-    def generate_snr(self, context, snr, stilde, htilde):
+    def generate_snr(self, stilde, htilde):
         """
         Process matched filtering by generating snr timeseries \rho(t)
         """
-        
-        # for the purpose of testing data_in()
-        self._aliendatavector = alien_datavector_t(len(snr), stilde.get_delta_x())
-        print
-        print "self._aliendatavector before data_in() : "
-        print self._aliendatavector
-        self._aliendatavector = self._owner_mfilt.data_in(self._aliendatavector)
-        print "self._aliendatavector after data_in() : "
-        print self._aliendatavector
-        print "after data_in() call aliendatavector is now correct: "+ repr(self._aliendatavector)
-        print
-
-        print
-        print "snr before data_in() : "
-        print snr
-        snr =   self._owner_mfilt.data_in(snr)
-        print "snr after data_in() : "
-        print snr
-        print
-        
+                
+        # check and possibly transfer input datavectors
         stilde= self._owner_mfilt.data_in(stilde)
         htilde= self._owner_mfilt.data_in(htilde)
             
-        # all testing now done in data_in    
-        #assert repr(stilde).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for stilde"
-        #assert repr(htilde).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for htilde"
-        #assert repr(snr).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for snr"
-
-        gen_snr_cpu(context, snr, stilde, htilde, self._owner_mfilt._q, 
+        gen_snr_cpu(self._owner_mfilt._devicecontext, self._owner_mfilt._snr, 
+                    stilde, htilde, 
+                    self._owner_mfilt._q, 
                     self._owner_mfilt._qtilde, 1.0, 1.0) # just for prototyping
                                                          # f_min and sigma_sq
                                                          # are magic numbers
-
 
 class  MaxImplementationCpu(MaxImplementationBase):
 

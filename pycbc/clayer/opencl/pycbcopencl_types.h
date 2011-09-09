@@ -33,6 +33,9 @@ typedef struct
 {
     unsigned device_id;
     
+
+    // ... opencl context elements 
+    
     int (*err_occurred)(void);
     char* (*err_message)(void);
     void (*set_error)(unsigned);

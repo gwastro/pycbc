@@ -75,11 +75,9 @@ cl_context_t* new_cl_context_t(unsigned device_id)
     cl_context_t* c;
     
     c = (cl_context_t*) malloc(sizeof(cl_context_t));
-    if ( c == NULL )  
-    {
-        return c;
-    }
-        
+    
+    c->device_id = device_id; 
+            
   //  gclInitErrorMessages();
   //  gclInitLogMessages();
   //  gclLogLevel = gclINFO;
@@ -110,6 +108,8 @@ cl_context_t* new_cl_context_t(unsigned device_id)
     c->set_error    = pycbc_set_error;
     
     // c->set_error(1);
+
+    //printf("allocated (malloc) context %p", c);
     
     return c;
 }

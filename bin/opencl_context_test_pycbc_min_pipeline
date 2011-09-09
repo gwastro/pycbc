@@ -51,11 +51,10 @@ sys.path.append('/Users/kawies/dev/src/pycbc')
 
 from pycbc.pycbc import OpenClDeviceContext as ProccessingTargetContext
 
-from pycbc.straindata.straindata_opencl import StrainDataOpenCl as StrainData 
-
+from pycbc.straindata.straindata_cpu import StrainDataCpu as StrainData 
 from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
 
-from pycbc.datavector.datavectoropencl import real_vector_single_opencl_t as SnrResultTimeSeries
+from pycbc.datavector.datavectoropencl import complex_vector_single_opencl_t as WaveformFrequencySeries
 
 import logging
 
@@ -67,7 +66,7 @@ logging.basicConfig(level=logging.DEBUG,
 logger= logging.getLogger('pycbc.main_script')
 
 
-start_message = 'Testing OpenCl Context ...'
+start_message = 'OpenCl prototyping pipeline ...'
 logger.debug(start_message)
 print start_message
 
@@ -80,7 +79,7 @@ gps_start_time= 871147532
 gps_end_time= gps_start_time + search_time
 interferometer = "H1"
 
-with ProccessingTargetContext(1) as context:
+with ProccessingTargetContext(4) as context:
     
     strain_data= StrainData(gps_start_time, gps_end_time, 
                         segments, sample_freq, 
@@ -88,7 +87,7 @@ with ProccessingTargetContext(1) as context:
                         
     logger.debug("instanciated StrainData w/ segment length: {0}".format(strain_data.segments_length))
 
-    # initialize straindata w/ white noise
+    # initialize straindata w/ noise
     for i in range(length):
         tmp= random.uniform(-1,1)
         strain_data.time_series[i] = tmp
@@ -99,36 +98,27 @@ with ProccessingTargetContext(1) as context:
     # segmenting straindata and transform into frequency domain
     strain_data.perform_fft_segments()
 
-    # transfer straindata to appropriate memory space on target device
-    strain_data.render()
-
-    # create matched filter (only generate_snr() has to be implemented
-    # for the minimal pipeline)
-    matched_filter = MatchedFilter(strain_data.segments_length)
+    # create matched filter
+    matched_filter = MatchedFilter(context, strain_data.segments_length, strain_data.segments_delta_x)
     logger.debug("instanciated MatchedFilter w/ length: {0}".format(matched_filter.length))
 
-    # instanciate result vectors
-    snr = SnrResultTimeSeries(strain_data.segments_length, strain_data.segments_delta_x)
-    logger.debug("instanciated SnrResultTimeSeries as {0}".format(repr(snr)))
+    # messy prototyping of htilde (until we have a template bank)
+    htilde = WaveformFrequencySeries(strain_data.segments_length, strain_data.segments_delta_x)
 
-
-    # messy prototyping of htilde (mimic a templatebank)
-    from pycbc.datavector.datavectoropencl import complex_vector_single_opencl_t as WaveformFrequencySeries
-    htilde = WaveformFrequencySeries(strain_data.segments_length, 1)
-
-    matched_filter.perform_generate_snr(context, snr, htilde, htilde)
+    # hot loop
+    for stilde in strain_data:
+        snr = matched_filter.perform_generate_snr(stilde, htilde)
             
     ############################################################################
     # prepare to leave the processing context (objects that contain device 
     # memory are not deleted automatically here!)
     del(strain_data)
     del(matched_filter)
-    del(snr)
     
     # leaving the ProccessingTargetContext NOW (destroy the device context)
     ############################################################################
     
-end_message = '... end of pycbc single detector minimal pipeline.'
+end_message = '... end of OpenCl prototyping pipeline'
 logger.debug(end_message)
 print end_message
        

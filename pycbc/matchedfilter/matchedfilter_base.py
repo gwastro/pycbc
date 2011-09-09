@@ -36,11 +36,14 @@ class MatchedFilterBase:
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, length, delta_x, gen_snr_impl, max_impl, 
+    def __init__(self, context, length, delta_x, gen_snr_impl, max_impl, 
                  snr_vector_t =    None, 
                  qtilde_vector_t = None, 
                  q_vector_t =      None, 
                  derived_mfilt =   None):
+
+        # actually calling init of <arch>ProcessingObj (that's the way super() does)
+        super(MatchedFilterBase, self).__init__(context)
 
         self.__logger= logging.getLogger('pycbc.MatchedFilterBase')
         self.__logger.debug("instanciated MatchedFilterBase")
@@ -73,7 +76,7 @@ class MatchedFilterBase:
     #---------------------------------------------------------------------------
             
         
-    def perform_generate_snr(self, context, stilde, htilde):
+    def perform_generate_snr(self, stilde, htilde):
         """
         calls the generate_snr methode of the derived implementation object
         @type  context: Device Context
@@ -85,7 +88,7 @@ class MatchedFilterBase:
         @rtype  snr:   DataVectorBase
         @return snr:   Output: Signal to noise ratio series
         """
-        self.__gen_snr_impl.generate_snr(context, self._snr, stilde, htilde)
+        self.__gen_snr_impl.generate_snr(stilde, htilde)
         
         return self._snr
 

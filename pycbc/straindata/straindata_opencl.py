@@ -99,7 +99,10 @@ class StrainDataOpenCl(StrainDataBase):
         ### will go into a clayer/opencl function to transfer data
         ### then private self.__frequency_series has to be made accessible
         ### and take the new reference ...
+       
         
+         #### OUTDATED CONCEPT! WE USE data_in() methodes now!
+           
         
         #self.__frequency_series= []
         #for i in range(15):

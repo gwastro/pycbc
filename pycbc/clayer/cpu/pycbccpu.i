@@ -93,8 +93,8 @@
     char* __str__() {
         static char a[512];
         snprintf( a, sizeof(a)/sizeof(*a), 
-             "<cpu_context_t, device_id %d>", 
-             self->device_id);
+             "<cpu_context_t at %p, device_id %d>", 
+             self, self->device_id);
         return a;
     }
 }

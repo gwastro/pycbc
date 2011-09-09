@@ -27,49 +27,73 @@
 MatchedFilter OpenCl implementation class for the pycbc package
 """
 
+# import framework related parent
+from pycbc.pycbc import OpenClProcessingObj
+
+# import algorithm related parents
 from matchedfilter_base import MatchedFilterBase
 from matchedfilter_base import GenSnrImplementationBase
 from matchedfilter_base import MaxImplementationBase
 
+# import processing functions from the clayer 
 from matchedfilteropencl import gen_snr_opencl
+
+# import member datavectors
+from pycbc.datavector.datavectoropencl import complex_vector_single_opencl_t
+from pycbc.datavector.datavectoropencl import real_vector_single_opencl_t
+
 
 import logging
 
-class MatchedFilterOpenCl(MatchedFilterBase):
+class MatchedFilterOpenCl(MatchedFilterBase, OpenClProcessingObj):
 
-    def __init__(self, length=0):
+    def __init__(self, context, length=0, delta_x=1):
         self.__logger= logging.getLogger('pycbc.MatchedFilterOpenCl')
         self.__logger.debug("instanciated MatchedFilterOpenCl") 
+
+        self.__length= length
+        self.__delta_x= delta_x
         
-        # Instanciate generate-snr-implementation in base class  
-        super(MatchedFilterOpenCl, self).__init__(length, 
-              GenSnrImplementationOpenCl, MaxImplementationOpenCl)
+        super(MatchedFilterOpenCl, self).__init__(context, self.__length, 
+                self.__delta_x, 
+                GenSnrImplementationOpenCl, MaxImplementationOpenCl,
+                snr_vector_t=    real_vector_single_opencl_t, 
+                qtilde_vector_t= complex_vector_single_opencl_t, 
+                q_vector_t =     complex_vector_single_opencl_t, 
+                derived_mfilt =  self)
+
 
 class  GenSnrImplementationOpenCl(GenSnrImplementationBase):
 
-    def __init__(self):
+    def __init__(self, owner_mfilt):
+    
         self.__logger= logging.getLogger('pycbc.GenSnrImplementationOpenCl')
         self.__logger.debug("instanciated GenSnrImplementationOpenCl")
-        super(GenSnrImplementationOpenCl, self).__init__()
     
-    def generate_snr(self, context, snr, stilde, htilde):
+        super(GenSnrImplementationOpenCl, self).__init__(owner_mfilt)
+    
+    def generate_snr(self, stilde, htilde):
         """
         Process matched filtering by generating snr timeseries \rho(t)
         """
-        assert repr(stilde).find("datavectoropencl") >= 0, "try to call gen_snr_opencl() with wrong type of datavector for stilde"
-        assert repr(htilde).find("datavectoropencl") >= 0, "try to call gen_snr_opencl() with wrong type of datavector for htilde"
-        assert repr(snr).find("datavectoropencl") >= 0, "try to call gen_snr_opencl() with wrong type of datavector for snr"
+
+        # check and possibly transfer input datavectors
+        stilde= self._owner_mfilt.data_in(stilde)
+        htilde= self._owner_mfilt.data_in(htilde)
         
-        gen_snr_opencl(context, snr, stilde, htilde)
-        
+        # this finally calls the clayer function:
+        gen_snr_opencl(self._owner_mfilt._devicecontext, self._owner_mfilt._snr,
+                       stilde, htilde)
 
         
 class  MaxImplementationOpenCl(MaxImplementationBase):
 
-    def __init__(self):
+    def __init__(self, owner_mfilt):
+    
         self.__logger= logging.getLogger('pycbc.MaxImplementationOpenCl')
         self.__logger.debug("instanciated MaxImplementationOpenCl") 
-        super(MaxImplementationOpenCl, self).__init__()
+    
+        super(MaxImplementationOpenCl, self).__init__(owner_mfilt)
     
     def max(self, snr):
         """
