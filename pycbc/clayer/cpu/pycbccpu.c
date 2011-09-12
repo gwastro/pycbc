@@ -29,21 +29,16 @@
 #include "pycbccpu_types.h"
 #include "pycbccpu_prototypes.h"
 
-//#include "gclUtils.h"
-
 unsigned pycbccpu_err_stash = 0;
 char pycbccpu_err_map[][ERR_STRING_LEN] = {
     "No Error", 
     "Memory Error", 
-    "berr", 
-    "cerr", 
     "Undefined Error"};
+// ... extend error map on demand
 
-
-int pycbc_err_occurred()
+int pycbc_cpu_check_err_occurred()
 {
-    printf("\ndebug: pycbc_err_occurred\n");
-    
+    //printf("debug: pycbc_cpu_check_err_occurred\n");
     if (!pycbccpu_err_stash) {
         return 0;
     }
@@ -52,22 +47,56 @@ int pycbc_err_occurred()
     }
 }
 
-char* pycbc_err_message() 
+char* pycbc_cpu_get_err_message() 
 {
-    unsigned tmp;
-    printf("debug: pycbc_err_message");    
-
-    tmp = pycbccpu_err_stash;
-    pycbccpu_err_stash = 0;
-    
-    return pycbccpu_err_map[tmp];
+    //printf("debug: pycbc_cpu_get_err_message\n");    
+    return pycbccpu_err_map[pycbccpu_err_stash];
 }
 
-void pycbc_set_error(unsigned err)
+void pycbc_cpu_set_error(unsigned err)
 {
-    printf("debug: pycbc_set_error"); 
+    //printf("debug: pycbc_cpu_set_error\n"); 
     pycbccpu_err_stash = err;
 }
+
+void pycbc_cpu_clear_error()
+{
+    //printf("debug: pycbc_cpu_clear_error\n"); 
+    pycbccpu_err_stash = 0;
+}
+
+
+/* from QM. Slightly different:
+
+ ... 
+ 
+static char error_message[256];
+static int error_status = 0;
+
+void throw_exception(int num, char* msg)
+{
+    strncpy(error_message,msg,256);
+    error_status = num;
+}
+
+void clear_exception()
+{
+    error_status = QM_NO_ERROR;
+}
+
+int check_exception() 
+{
+    return error_status;
+}
+
+char* get_error_message()
+{
+    return error_message;
+}
+...
+*/
+
+
 
 cpu_context_t* new_cpu_context_t(unsigned device_id)
 {
@@ -76,12 +105,10 @@ cpu_context_t* new_cpu_context_t(unsigned device_id)
     c = (cpu_context_t*) malloc(sizeof(cpu_context_t));
 
     c->device_id = device_id;
-      
-    c->err_occurred = pycbc_err_occurred;
-    c->err_message  = pycbc_err_message;
-    c->set_error    = pycbc_set_error;
-    
-    // c->set_error(1);
+    c->set_error = pycbc_cpu_set_error;
+
+    // testing error handler
+    c->set_error(1);
     
     return c;
 }

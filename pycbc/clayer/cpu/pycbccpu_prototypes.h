@@ -34,9 +34,10 @@
 extern unsigned pycbccpu_err_stash;
 extern char pycbccpu_err_map[][ERR_STRING_LEN];
 
-int pycbc_err_occurred(void);
-char* pycbc_err_message(void);
-void pycbc_set_error(unsigned);
+int pycbc_cpu_check_err_occurred(void);
+char* pycbc_cpu_get_err_message(void);
+void pycbc_cpu_set_error(unsigned);
+void pycbc_cpu_clear_error(void);
 
 // prototypes of all methodes that will extend pure c typedefs
 cpu_context_t* new_cpu_context_t(unsigned);
