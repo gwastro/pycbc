@@ -108,7 +108,7 @@ cpu_context_t* new_cpu_context_t(unsigned device_id)
     c->set_error = pycbc_cpu_set_error;
 
     // testing error handler
-    c->set_error(1);
+    // c->set_error(1);
     
     return c;
 }
