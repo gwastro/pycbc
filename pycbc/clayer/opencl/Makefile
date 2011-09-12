@@ -25,6 +25,7 @@
 RM = /bin/rm
 PYTHON = python
 SWIG = swig
+OPENCL_INC = /usr/local/nvidia/sdk-3.2/OpenCL/common/inc/
 
 all: pycbcopencl.i pycbcopencl_types.h pycbcopencl_prototypes.h pycbcopencl.c
 	$(SWIG) -python pycbcopencl.i
