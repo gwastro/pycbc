@@ -34,9 +34,10 @@
 extern unsigned pycbcopencl_err_stash;
 extern char pycbcopencl_err_map[][ERR_STRING_LEN];
 
-int pycbc_err_occurred(void);
-char* pycbc_err_message(void);
-void pycbc_set_error(unsigned);
+int pycbc_opencl_check_err_occurred(void);
+char* pycbc_opencl_get_err_message(void);
+void pycbc_opencl_set_error(unsigned);
+void pycbc_opencl_clear_error(void);
 
 // prototypes of all methodes that will extend pure c typedefs
 cl_context_t* new_cl_context_t(unsigned);

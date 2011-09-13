@@ -35,15 +35,12 @@ unsigned pycbcopencl_err_stash = 0;
 char pycbcopencl_err_map[][ERR_STRING_LEN] = {
     "No Error", 
     "Memory Error", 
-    "berr", 
-    "cerr", 
     "Undefined Error"};
+// ... extend error map on demand
 
-
-int pycbc_err_occurred()
+int pycbc_opencl_check_err_occurred()
 {
-    printf("\ndebug: pycbc_err_occurred\n");
-    
+    //printf("debug: pycbc_opencl_check_err_occurred\n");
     if (!pycbcopencl_err_stash) {
         return 0;
     }
@@ -52,21 +49,22 @@ int pycbc_err_occurred()
     }
 }
 
-char* pycbc_err_message()
+char* pycbc_opencl_get_err_message()
 {
-    unsigned tmp;
-    printf("debug: pycbc_err_message");
-
-    tmp = pycbcopencl_err_stash;
-    pycbcopencl_err_stash = 0;
-
-    return pycbcopencl_err_map[tmp];
+    //printf("debug: pycbc_opencl_get_err_message\n");  
+    return pycbcopencl_err_map[pycbcopencl_err_stash];
 }
 
-void pycbc_set_error(unsigned err)
+void pycbc_opencl_set_error(unsigned err)
 {
-    printf("debug: pycbc_set_error");
+    //printf("debug: pycbc_opencl_set_error\n"); 
     pycbcopencl_err_stash = err;
+}
+
+void pycbc_opencl_clear_error()
+{
+    //printf("debug: pycbc_opencl_clear_error\n"); 
+    pycbcopencl_err_stash = 0;
 }
 
 
@@ -77,9 +75,16 @@ cl_context_t* new_cl_context_t(unsigned device_id)
     c = (cl_context_t*) malloc(sizeof(cl_context_t));
 
     c->device_id = device_id;
-
+    c->set_error = pycbc_cpu_set_error;
+    
+    // this will update c with all OpenCl context elements
     int err = gpuinsp_InitGPU(c, device_id);
+    
     printf("Error%d",err);
+    
+    if(err)
+        c->set_error(err)
+    
     return c;
 }
 
