@@ -25,8 +25,9 @@
 RM = /bin/rm
 PYTHON = python
 SWIG = swig
+OPENCL_INC = /usr/local/nvidia/sdk-3.2/OpenCL/common/inc/
 
-all: pycbcopencl.i pycbcopencl_types.h pycbcopencl_prototypes.h pycbcopencl.c
+all: pycbcopencl.i pycbcopencl_types.h pycbcopencl_prototypes.h pycbcopencl.c gpu_inspiral_gpuutils.h gpu_inspiral_gpuutils.c
 	$(SWIG) -python pycbcopencl.i
 	$(PYTHON) setup.py build_ext --inplace
 	cp pycbcopencl.py ../../
@@ -34,6 +35,7 @@ all: pycbcopencl.i pycbcopencl_types.h pycbcopencl_prototypes.h pycbcopencl.c
 
 tidy:
 	$(RM) -f *~
+
 clean: tidy
 	$(RM) -rf pycbcopencl_wrap.c pycbcopencl.py ../../pycbcopencl.py \
         pycbcopencl.pyc _pycbcopencl.so ../../_pycbcopencl.so build 
