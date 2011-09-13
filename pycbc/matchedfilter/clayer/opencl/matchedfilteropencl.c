@@ -31,10 +31,14 @@ void gen_snr_opencl(cl_context_t* context,
                    complex_vector_single_opencl_t* htilde)
 {    
 
-    printf("gen_snr_opencl in C layer called with context_ptr: %p, device_id: %d\n", 
-           context, context->device_id);
+    unsigned dev;
 
-    context->set_error(1);
+    printf("gen_snr_opencl in C layer called with context->device_id: %d\n", 
+            context->device_id);
+
+     dev= context->device_id;
+
+    //context->set_error(1);
     
     return;
 

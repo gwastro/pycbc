@@ -106,10 +106,14 @@ with ProccessingTargetContext(0) as context:
     # messy prototyping of htilde (until we have a template bank)
     htilde = WaveformFrequencySeries(strain_data.segments_length, strain_data.segments_delta_x)
 
+    print 'before hot loop'
+
     # hot loop
     for stilde in strain_data:
         snr = matched_filter.perform_generate_snr(stilde, htilde)
-            
+    
+    print 'after hot loop'    
+        
     ############################################################################
     # prepare to leave the processing context (objects that contain device 
     # memory are not deleted automatically here!)
