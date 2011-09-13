@@ -64,9 +64,12 @@
 
 // Generic errorhandling 
 %exception {
+    char* err_message;
     $action
-    if (pycbc_err_occurred()) {
-        SWIG_exception(SWIG_RuntimeError, pycbc_err_message());
+    if (pycbc_opencl_check_err_occurred()) {
+        err_message= pycbc_opencl_get_err_message();
+        pycbc_opencl_clear_error();
+        SWIG_exception(SWIG_RuntimeError, err_message);
         return NULL;
     }
 }

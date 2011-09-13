@@ -19,6 +19,7 @@ cl_int gpuinsp_InitGPU(cl_context_t* c, unsigned device_id)
 //Getting the platforms
   err = clGetPlatformIDs(0, NULL, &numPlatforms);
   printf("-1Err: %d\n",err);
+  printf("BlaBla\n");
   if (0 < numPlatforms)
     {
         err = clGetPlatformIDs(numPlatforms, Platforms, NULL);

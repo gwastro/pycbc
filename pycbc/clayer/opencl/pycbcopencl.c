@@ -75,7 +75,7 @@ cl_context_t* new_cl_context_t(unsigned device_id)
     c = (cl_context_t*) malloc(sizeof(cl_context_t));
 
     c->device_id = device_id;
-    c->set_error = pycbc_cpu_set_error;
+    c->set_error = pycbc_opencl_set_error;
     
     // this will update c with all OpenCl context elements
     int err = gpuinsp_InitGPU(c, device_id);
@@ -83,7 +83,7 @@ cl_context_t* new_cl_context_t(unsigned device_id)
     printf("Error%d",err);
     
     if(err)
-        c->set_error(err)
+      c->set_error(err);
     
     return c;
 }
