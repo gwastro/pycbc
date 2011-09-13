@@ -69,17 +69,17 @@ class CpuProcessingObj(PyCbcProcessingObj):
 
     def data_in(self, datavector):
 
-        print 'data_in of ' + repr(self) + ' called'
-        print 'with ' + repr(datavector)
+        #print 'data_in of ' + repr(self) + ' called'
+        #print 'with ' + repr(datavector)
         
         if repr(datavector).find("datavectorcpu") >= 0:
             # it is one of us
             return datavector
 
         else:
-            print 'aliendatavector found:'
+            #print 'aliendatavector found:'
             alien_repr_str= repr(datavector)
-            print alien_repr_str
+            #print alien_repr_str
             # find correct new datatype. by parsing alien_repr_str.
             # and instanciate the correct thing, " cloning " from the alien
             new_arch_vector = real_vector_single_cpu_t(len(datavector), datavector.get_delta_x())

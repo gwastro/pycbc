@@ -47,7 +47,8 @@ import sys
 import random
 
 # preliminary hard coded path to packages 
-sys.path.append('/home/gdebrecz/pycbc')
+
+sys.path.append('/home/kawies/dev-dbg/src/pycbc')
 
 from pycbc.pycbc import OpenClDeviceContext as ProccessingTargetContext
 
@@ -79,7 +80,7 @@ gps_start_time= 871147532
 gps_end_time= gps_start_time + search_time
 interferometer = "H1"
 
-with ProccessingTargetContext(4) as context:
+with ProccessingTargetContext(0) as context:
     
     strain_data= StrainData(gps_start_time, gps_end_time, 
                         segments, sample_freq, 
@@ -105,10 +106,14 @@ with ProccessingTargetContext(4) as context:
     # messy prototyping of htilde (until we have a template bank)
     htilde = WaveformFrequencySeries(strain_data.segments_length, strain_data.segments_delta_x)
 
+    print 'before hot loop'
+
     # hot loop
     for stilde in strain_data:
         snr = matched_filter.perform_generate_snr(stilde, htilde)
-            
+    
+    print 'after hot loop'    
+        
     ############################################################################
     # prepare to leave the processing context (objects that contain device 
     # memory are not deleted automatically here!)

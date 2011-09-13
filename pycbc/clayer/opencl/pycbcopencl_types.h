@@ -40,12 +40,7 @@ typedef struct
     cl_command_queue io_queue;
     cl_program       program;
 
-    // ... opencl context elements 
-
-    int (*err_occurred)(void);
-    char* (*err_message)(void);
     void (*set_error)(unsigned);
-
 }
 cl_context_t;
 

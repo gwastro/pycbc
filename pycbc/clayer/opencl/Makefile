@@ -1,4 +1,4 @@
-# Copyright (C) 2011 Karsten Wiesner
+# Copyright (C) 2011 Gergely Debreczeni, Karsten Wiesner
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -20,12 +20,11 @@
 #
 # =============================================================================
 #
-# datavector local makefile for pycbc
+# pycbcopencl local makefile for pycbc
 
 RM = /bin/rm
 PYTHON = python
 SWIG = swig
-OPENCL_INC = /usr/local/nvidia/sdk-3.2/OpenCL/common/inc/
 
 all: pycbcopencl.i pycbcopencl_types.h pycbcopencl_prototypes.h pycbcopencl.c gpu_inspiral_gpuutils.h gpu_inspiral_gpuutils.c
 	$(SWIG) -python pycbcopencl.i
