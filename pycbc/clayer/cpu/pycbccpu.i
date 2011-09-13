@@ -54,19 +54,14 @@
 %include "pycbccpu_types.h"
 %include "exception.i"
 
-
-// just testwise, error functions can be swig wrapped 
-// and called as memberfunctions of the python context object
-//int pycbc_err_occurred(void);
-//char* pycbc_err_message(void);
-//void pycbc_set_error(unsigned);
-
-
 // Generic errorhandling 
 %exception {
+    char* err_message;
     $action
-    if (pycbc_err_occurred()) {
-        SWIG_exception(SWIG_RuntimeError, pycbc_err_message());
+    if (pycbc_cpu_check_err_occurred()) {
+        err_message= pycbc_cpu_get_err_message();
+        pycbc_cpu_clear_error();
+        SWIG_exception(SWIG_RuntimeError, err_message);
         return NULL;
     }
 }

@@ -12,7 +12,8 @@
 // wrap code needs to have typedefs and function prototypes!
 %{
 #include "../../../datavector/clayer/opencl/datavectoropencl_types.h"
-#include "../../../clayer/opencl/pycbcopencl_types.h"    
+#include "../../../clayer/opencl/pycbcopencl_types.h"
+#include "matchedfilteropencl_types.h"    
 #include "matchedfilteropencl_prototypes.h"
 %}
 
@@ -26,16 +27,34 @@
 // "is multiply defined error". That is the reason for splitting 
 // the headerfiles
 
-// inline definition of a function to wrap:
-//%include "../../../datavector/clayer/opencl/datavectoropencl_types.h"
-//%include "matchedfilteropencl_types.h"
-//%inline %{
-//real_vector_t* gen_snr_opencl(real_vector_t* stilde, real_vector_t* htilde)
-//{
-//    return stilde;
-//
-//}
-//%}
+%include "matchedfilteropencl_types.h"
+
+%exception matched_filter_opencl_t {
+    $action
+    if (!result) {
+        SWIG_exception(SWIG_MemoryError, "matched_filter_opencl_t allocation fails");
+        return NULL;
+    }
+}
+%extend matched_filter_opencl_t {
+    
+    matched_filter_opencl_t();
+    ~matched_filter_opencl_t();
+    
+    //%typemap(check) unsigned some_MF_constructor_parameter {
+    //    if ($1 < 0) {
+    //        SWIG_exception(SWIG_ValueError, "Invalid some_MF_constructor_parameter");
+    //    }   
+    //}
+    
+    char* __str__() {
+        static char a[512];
+        snprintf( a, sizeof(a)/sizeof(*a), 
+                 "<matched_filter_opencl_t at %p, some_MF_parameter %d>", 
+                 self, 5); // self->device_id);
+        return a;
+    }
+}
 
 // prototype declaration of a function to wrap (has to be impl. in a c-file)
 void gen_snr_opencl(cl_context_t* context,

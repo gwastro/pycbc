@@ -80,8 +80,8 @@ interferometer = "H1"
 
 with ProccessingTargetContext(15) as context:
  
-    print repr(context)
-    print context
+    #print repr(context)
+    #print context
           
     strain_data= StrainData(gps_start_time, gps_end_time, 
                         segments, sample_freq, 
@@ -94,7 +94,7 @@ with ProccessingTargetContext(15) as context:
         tmp= random.uniform(-1,1)
         strain_data.time_series[i] = tmp
         
-    print repr(strain_data.time_series)
+    # print repr(strain_data.time_series)
 
     # convert straindata to single precision
     strain_data.convert_to_single_preci()
@@ -121,7 +121,7 @@ with ProccessingTargetContext(15) as context:
     # filter the data against the template bank
     for template in bank:        
         htilde = bank.perform_generate_waveform(template)
-        print("generating htilde {0}".format(repr(htilde)))
+        #print("generating htilde {0}".format(repr(htilde)))
         for stilde in strain_data:
             snr = matched_filter.perform_generate_snr(stilde, htilde)
             

@@ -52,20 +52,20 @@ int pycbc_err_occurred()
     }
 }
 
-char* pycbc_err_message() 
+char* pycbc_err_message()
 {
     unsigned tmp;
-    printf("debug: pycbc_err_message");    
+    printf("debug: pycbc_err_message");
 
     tmp = pycbcopencl_err_stash;
     pycbcopencl_err_stash = 0;
-    
+
     return pycbcopencl_err_map[tmp];
 }
 
 void pycbc_set_error(unsigned err)
 {
-    printf("debug: pycbc_set_error"); 
+    printf("debug: pycbc_set_error");
     pycbcopencl_err_stash = err;
 }
 
@@ -73,18 +73,18 @@ void pycbc_set_error(unsigned err)
 cl_context_t* new_cl_context_t(unsigned device_id)
 {
     cl_context_t* c;
-    
+
     c = (cl_context_t*) malloc(sizeof(cl_context_t));
-    
-    c->device_id = device_id; 
-            
+
+    c->device_id = device_id;
+
   //  gclInitErrorMessages();
   //  gclInitLogMessages();
   //  gclLogLevel = gclINFO;
   //  gclLog(gclINFO, "Initializing GPU environment...");
   //  err = gclInitGPU(gclFirstAvailable);
-    
-    
+
+
     // all these globals should become an element of cl_context_t
     /*
     cl_int                 gcl_err             = CL_SUCCESS;

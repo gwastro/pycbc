@@ -33,10 +33,7 @@ typedef struct
 {
     unsigned device_id;
     
-    int (*err_occurred)(void);
-    char* (*err_message)(void);
     void (*set_error)(unsigned);
-    
 }
 cpu_context_t;
 

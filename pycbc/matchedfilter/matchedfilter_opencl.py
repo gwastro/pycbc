@@ -37,6 +37,8 @@ from matchedfilter_base import MaxImplementationBase
 
 # import processing functions from the clayer 
 from matchedfilteropencl import gen_snr_opencl
+from matchedfilteropencl import matched_filter_opencl_t
+
 
 # import member datavectors
 from pycbc.datavector.datavectoropencl import complex_vector_single_opencl_t
@@ -53,6 +55,9 @@ class MatchedFilterOpenCl(MatchedFilterBase, OpenClProcessingObj):
 
         self.__length= length
         self.__delta_x= delta_x
+        
+        self.__mf_opencl_clayer_struct= matched_filter_opencl_t()
+        print matched_filter_opencl_t
         
         super(MatchedFilterOpenCl, self).__init__(context, self.__length, 
                 self.__delta_x, 
