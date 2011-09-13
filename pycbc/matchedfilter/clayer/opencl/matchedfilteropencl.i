@@ -28,6 +28,7 @@
 // the headerfiles
 
 %include "matchedfilteropencl_types.h"
+%include "exception.i"
 
 %exception matched_filter_opencl_t {
     $action
