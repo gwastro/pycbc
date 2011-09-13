@@ -32,9 +32,9 @@
 typedef struct
 {
     unsigned       device_id;
-    cl_platform_id platform;
-    cl_device_id   device;
-    cl_context     context;
+    //cl_platform_id platform;
+    //cl_device_id   device;
+    //cl_context     context;
  
     // ... opencl context elements 
 
