@@ -25,9 +25,9 @@
 // pycbc's constructors and destructors implementation for pycbc
 
 #include <stdio.h>
-
 #include "pycbcopencl_types.h"
 #include "pycbcopencl_prototypes.h"
+#include "gpu_inspiral_gpuutils.h"
 
 //#include "gclUtils.h"
 
@@ -78,39 +78,8 @@ cl_context_t* new_cl_context_t(unsigned device_id)
 
     c->device_id = device_id;
 
-  //  gclInitErrorMessages();
-  //  gclInitLogMessages();
-  //  gclLogLevel = gclINFO;
-  //  gclLog(gclINFO, "Initializing GPU environment...");
-  //  err = gclInitGPU(gclFirstAvailable);
-
-
-    // all these globals should become an element of cl_context_t
-    /*
-    cl_int                 gcl_err             = CL_SUCCESS;
-    cl_uint                gcl_numPlatforms;
-    cl_platform_id         gcl_platform        = NULL;
-    cl_platform_id*        gcl_platforms       = new cl_platform_id[gclMaxPlatforms];
-    size_t                 gcl_devicenumber;
-    cl_device_id*          gcl_devices;
-    cl_device_id           gcl_available_device= NULL;
-    cl_context_properties  gcl_cps[3]          = {CL_CONTEXT_PLATFORM, (cl_context_properties) gcl_platform, 0};
-    cl_context_properties* gcl_cprops;
-    cl_context             gcl_context;
-    cl_program             gcl_programs[gclMaxPrograms]; 
-    */
-    
-   // if(err != CL_SUCCESS)
-   //     printf("OpenCl init error: %d", err);
-      
-    c->err_occurred = pycbc_err_occurred;
-    c->err_message  = pycbc_err_message;
-    c->set_error    = pycbc_set_error;
-    
-    // c->set_error(1);
-
-    //printf("allocated (malloc) context %p", c);
-    
+    int err = gpuinsp_InitGPU(c, device_id);
+    printf("Error%d",err);
     return c;
 }
 
