@@ -45,7 +45,7 @@ void gpuinsp_getErrMessage(char * errMessage, const cl_int err) {
    case CL_MAP_FAILURE:
          strcpy(errMessage,"CL_MAP_FAILURE");
          break;
-/*
+/* These are opencl 1.1 features not yet defined
    case CL_MISALIGNED_SUB_BUFFER_OFFSET:
          strcpy(errMessage,"CL_MISALIGNED_SUB_BUFFER_OFFSET");
          break;
