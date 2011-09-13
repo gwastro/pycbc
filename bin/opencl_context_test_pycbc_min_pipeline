@@ -47,7 +47,7 @@ import sys
 import random
 
 # preliminary hard coded path to packages 
-sys.path.append('/Users/kawies/dev/src/pycbc')
+sys.path.append('/home/kawies/dev-dbg/src/pycbc')
 
 from pycbc.pycbc import OpenClDeviceContext as ProccessingTargetContext
 
@@ -79,7 +79,7 @@ gps_start_time= 871147532
 gps_end_time= gps_start_time + search_time
 interferometer = "H1"
 
-with ProccessingTargetContext(4) as context:
+with ProccessingTargetContext(0) as context:
     
     strain_data= StrainData(gps_start_time, gps_end_time, 
                         segments, sample_freq, 
