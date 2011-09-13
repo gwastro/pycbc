@@ -190,6 +190,7 @@ cl_int gpuinsp_InitGPU(cl_context_t* c, unsigned device_id)
   err = -4;
   if (gpuinsp_checkError(err,"Determining number of platforms") !=0)  goto cleanup;
 
+  printf("almalasdkjhaksdjhfa;k");
   if (0 < numPlatforms)
     {
         err = clGetPlatformIDs(numPlatforms, Platforms, NULL);
