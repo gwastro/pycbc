@@ -1,17 +1,23 @@
-cl_int gpuinsp_InitGPU() (cl_context_t* c, unsigned device_id)
+#include <stdio.h>
+#include <string.h>
+#include <CL/opencl.h>
+#include "pycbcopencl_types.h"
+
+cl_int gpuinsp_InitGPU(cl_context_t* c, unsigned device_id)
 {
   int err;
   cl_uint 		 numPlatforms;
+  cl_platform_id         Platform             = 0;
   cl_platform_id*	 Platforms            = new cl_platform_id[10];
-  cl_context_properties  cps[3]               = {CL_CONTEXT_PLATFORM, (cl_context_properties) gcl_platform, 0};
+  cl_context_properties  cps[3]               = {CL_CONTEXT_PLATFORM, (cl_context_properties) Platform, 0};
   cl_context_properties* cprops;
   cl_uint                numDevices;
   cl_device_id*          Devices;
-  char                   DeviceName[200];
   cl_device_id           AvailableDevice      = NULL;
+  char                   DeviceName[200];
 
 //Getting the platforms
-  err = clGetPlatformIDs(0, NULL, numPlatforms);
+  err = clGetPlatformIDs(0, NULL, &numPlatforms);
   if (0 < numPlatforms)
     {
         err = clGetPlatformIDs(numPlatforms, Platforms, NULL);
@@ -26,7 +32,7 @@ cl_int gpuinsp_InitGPU() (cl_context_t* c, unsigned device_id)
 
   err = clGetDeviceIDs(c->platform, CL_DEVICE_TYPE_GPU, 0, NULL, &numDevices);
   Devices = (cl_device_id*) malloc(sizeof(cl_device_id) * numDevices);
-  err = clGetDeviceIDs(gcl_platform, CL_DEVICE_TYPE_GPU, numDevices, Devices, NULL);
+  err = clGetDeviceIDs(Platform, CL_DEVICE_TYPE_GPU, numDevices, Devices, NULL);
   for (unsigned int i = 0; i < numDevices; ++i)
       {
         cl_bool available;
@@ -39,20 +45,18 @@ cl_int gpuinsp_InitGPU() (cl_context_t* c, unsigned device_id)
             }
             else
             {
-                gcl_err = clGetDeviceInfo(Devices[i], CL_DEVICE_NAME, sizeof(DeviceName), DeviceName, NULL);
-                if (gcl_err == CL_SUCCESS)
-                    printf("Device %s not available for compute.", DeviceName);
+                err = clGetDeviceInfo(Devices[i], CL_DEVICE_NAME, sizeof(DeviceName), DeviceName, NULL);
+                if (err == CL_SUCCESS)
+                    printf("Device %s available for compute.", DeviceName);
                 else
-                    printf("Device #%d not available for compute.", DeviceName);
+                    printf("Device #%d not available for compute.", i);
             }
-        }
         if (AvailableDevice == NULL)
         {
           return(-1);
         }
         c->device = AvailableDevice;
       }
-
-    c->context = clCreateContext(cprops, 1, &AvailableDevice, NULL, NULL, &err);
-
+  c->context = (cl_context) clCreateContext(cprops, 1, &AvailableDevice, NULL, NULL, &err);
+  return(err);
 }

@@ -29,6 +29,11 @@ setup.py file for swig wrap pycbcopencl into pycbc
 """
 
 from distutils.core import setup, Extension
+import os; 
+
+# Setting the ocmpier to use g++
+
+os.environ['CC'] = 'g++'; 
 
 vector_module = Extension('_pycbcopencl',
                           sources=['pycbcopencl_wrap.c','pycbcopencl.c'],
@@ -38,17 +43,18 @@ vector_module = Extension('_pycbcopencl',
 # base source files that do not require special libraries
 pycbcopencl_swig_sources = ['pycbcopencl.i']
 pycbcopencl_c_sources = ['pycbcopencl.c']
+gpu_inspiral_gpuutils_c_sources = ['gpu_inspiral_gpuutils.c']
 
 
 # define the extension module
 pycbcopencl_ext = Extension( '_pycbcopencl', 
-  sources = pycbcopencl_swig_sources + pycbcopencl_c_sources,
-  depends = ['pycbcopencl.h'],
+  sources = pycbcopencl_swig_sources + pycbcopencl_c_sources + gpu_inspiral_gpuutils_c_sources,
+  depends = ['pycbcopencl.h','gpu_inspiral_gpuutils.h'],
   swig_opts = [],
-  include_dirs = [],
+  include_dirs = ['/usr/local/nvidia/sdk-3.2/OpenCL/common/inc/'],
   extra_compile_args = ['-Wall'],
-  library_dirs = [],
-  libraries = [])
+  library_dirs = ['/usr/lib'],
+  libraries = ['OpenCL'])
 
 setup (name = 'pycbcopencl',
        version = '0.1',

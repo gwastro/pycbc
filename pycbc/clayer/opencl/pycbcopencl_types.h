@@ -28,6 +28,7 @@
 #define PYCBCOPENCL_TYPES_H
 
 #include <stdlib.h>
+#include <CL/opencl.h>
 
 typedef struct
 {
