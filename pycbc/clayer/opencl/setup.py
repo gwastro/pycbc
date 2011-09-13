@@ -54,7 +54,7 @@ pycbcopencl_ext = Extension( '_pycbcopencl',
   include_dirs = ['/usr/local/nvidia/sdk-3.2/OpenCL/common/inc/'],
   extra_compile_args = ['-Wall'],
   library_dirs = ['/usr/lib'],
-  libraries = ['OpenCL'])
+  libraries = ['OpenCL','stdc++'])
 
 setup (name = 'pycbcopencl',
        version = '0.1',

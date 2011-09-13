@@ -18,9 +18,11 @@ cl_int gpuinsp_InitGPU(cl_context_t* c, unsigned device_id)
 
 //Getting the platforms
   err = clGetPlatformIDs(0, NULL, &numPlatforms);
+  printf("-1Err: %d\n",err);
   if (0 < numPlatforms)
     {
         err = clGetPlatformIDs(numPlatforms, Platforms, NULL);
+        printf("0Err: %d\n",err);
         c->platform = Platforms[0];
     } else {return -1;}
 
@@ -31,16 +33,22 @@ cl_int gpuinsp_InitGPU(cl_context_t* c, unsigned device_id)
   cprops = (NULL == c->platform) ? NULL : cps;
 
   err = clGetDeviceIDs(c->platform, CL_DEVICE_TYPE_GPU, 0, NULL, &numDevices);
+  printf("1Err: %d\n",err);
   Devices = (cl_device_id*) malloc(sizeof(cl_device_id) * numDevices);
-  err = clGetDeviceIDs(Platform, CL_DEVICE_TYPE_GPU, numDevices, Devices, NULL);
+  err = clGetDeviceIDs(c->platform, CL_DEVICE_TYPE_GPU, numDevices, Devices, NULL);
+  printf("2Err: %d\n",err);
+
+//Getting the first available device
   for (unsigned int i = 0; i < numDevices; ++i)
       {
         cl_bool available;
         err = clGetDeviceInfo(Devices[i], CL_DEVICE_AVAILABLE, sizeof(cl_bool), &available, NULL);
+        printf("3Err: %d\n",err);
         if (available)
             {
                 AvailableDevice = Devices[i];
                 err = clGetDeviceInfo(Devices[i], CL_DEVICE_NAME, sizeof(DeviceName), DeviceName, NULL);
+                c->device = AvailableDevice;
                 break;
             }
             else
@@ -55,8 +63,15 @@ cl_int gpuinsp_InitGPU(cl_context_t* c, unsigned device_id)
         {
           return(-1);
         }
-        c->device = AvailableDevice;
       }
   c->context = (cl_context) clCreateContext(cprops, 1, &AvailableDevice, NULL, NULL, &err);
+
+//Creating the kernel and command queues
+
+  c->kernel_queue = clCreateCommandQueue(c->context, c->device, 0, &err);
+  printf("4Err: %d\n",err);
+  c->io_queue     = clCreateCommandQueue(c->context, c->device, 0, &err);
+  printf("5Err: %d\n",err);
+
   return(err);
 }

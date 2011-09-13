@@ -32,11 +32,14 @@
 
 typedef struct
 {
-    unsigned       device_id;
-    cl_platform_id platform;
-    cl_device_id   device;
-    cl_context     context;
- 
+    unsigned         device_id;
+    cl_platform_id   platform;
+    cl_device_id     device;
+    cl_context       context;
+    cl_command_queue kernel_queue;
+    cl_command_queue io_queue;
+    cl_program       program;
+
     // ... opencl context elements 
 
     int (*err_occurred)(void);
