@@ -20,7 +20,7 @@
 #include <OpenCL/opencl.h>
 #else
 #include <CL/opencl.h>
-#endif 
+#endif
 
 
 #include <string.h>
