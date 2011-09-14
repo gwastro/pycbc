@@ -29,14 +29,16 @@
 
 #include <stdlib.h>
 
-#define ERR_STRING_LEN 256 
+#define ERROR_STRING_LEN 512 
 
-extern unsigned pycbcopencl_err_stash;
-extern char pycbcopencl_err_map[][ERR_STRING_LEN];
+extern unsigned pycbcopencl_error_stash;
+extern char pycbcopencl_error_message[ERROR_STRING_LEN];
 
-int pycbc_opencl_check_err_occurred(void);
-char* pycbc_opencl_get_err_message(void);
-void pycbc_opencl_set_error(unsigned);
+//extern char pycbcopencl_err_map[][ERR_STRING_LEN];
+
+int pycbc_opencl_check_error(void);
+char* pycbc_opencl_get_error_message(void);
+void pycbc_opencl_set_error(int, char*);
 void pycbc_opencl_clear_error(void);
 
 // prototypes of all methodes that will extend pure c typedefs

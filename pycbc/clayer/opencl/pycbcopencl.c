@@ -25,46 +25,47 @@
 // pycbc's constructors and destructors implementation for pycbc
 
 #include <stdio.h>
+#include <string.h>
 #include "pycbcopencl_types.h"
 #include "pycbcopencl_prototypes.h"
 #include "gpu_inspiral_gpuutils.h"
 
 //#include "gclUtils.h"
 
-unsigned pycbcopencl_err_stash = 0;
-char pycbcopencl_err_map[][ERR_STRING_LEN] = {
-    "No Error", 
-    "Memory Error", 
-    "Undefined Error"};
+unsigned pycbcopencl_error_stash = 0;
+char pycbcopencl_error_message[ERROR_STRING_LEN];
+
+//char pycbcopencl_error_map[][ERR_STRING_LEN] = {
+//    "No Error", 
+//    "Memory Error", 
+//    "Undefined Error"};
 // ... extend error map on demand
 
-int pycbc_opencl_check_err_occurred()
+int pycbc_opencl_check_error()
 {
-    //printf("debug: pycbc_opencl_check_err_occurred\n");
-    if (!pycbcopencl_err_stash) {
-        return 0;
-    }
-    else {
-        return 1;
-    }
+    //printf("debug: pycbc_opencl_check_error\n");
+    return pycbcopencl_error_stash;
 }
 
-char* pycbc_opencl_get_err_message()
+char* pycbc_opencl_get_error_message()
 {
-    //printf("debug: pycbc_opencl_get_err_message\n");  
-    return pycbcopencl_err_map[pycbcopencl_err_stash];
+    //printf("debug: pycbc_opencl_get_error_message\n");
+
+    return pycbcopencl_error_message;
+    //return pycbcopencl_err_map[pycbcopencl_err_stash];
 }
 
-void pycbc_opencl_set_error(unsigned err)
+void pycbc_opencl_set_error(int error_id, char* error_message)
 {
     //printf("debug: pycbc_opencl_set_error\n"); 
-    pycbcopencl_err_stash = err;
+    pycbcopencl_error_stash = error_id;
+    strncpy(pycbcopencl_error_message, error_message, ERROR_STRING_LEN);
 }
 
 void pycbc_opencl_clear_error()
 {
     //printf("debug: pycbc_opencl_clear_error\n"); 
-    pycbcopencl_err_stash = 0;
+    pycbcopencl_error_stash = 0;
 }
 
 
@@ -83,7 +84,10 @@ cl_context_t* new_cl_context_t(unsigned device_id)
     printf("Error%d",err);
     
     if(err)
-      c->set_error(err);
+      c->set_error( PYCBC_RUNTIME_ERROR, "gpuinsp_InitGPU failed");
+
+    // just testing the error handling
+    // c->set_error( PYCBC_RUNTIME_ERROR, "gpuinsp_InitGPU failed");
     
     return c;
 }
