@@ -34,8 +34,7 @@
 extern unsigned pycbcopencl_error_stash;
 extern char pycbcopencl_error_message[ERROR_STRING_LEN];
 
-//extern char pycbcopencl_err_map[][ERR_STRING_LEN];
-
+// pycbc opencl error functions
 int pycbc_opencl_check_error(void);
 char* pycbc_opencl_get_error_message(void);
 void pycbc_opencl_set_error(int, char*);

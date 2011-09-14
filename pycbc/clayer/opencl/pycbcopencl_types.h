@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <CL/opencl.h>
 
-/* error codes */
+/* pycbc error ids - python exceptions will be raised accordingly */
 #define PYCBC_NO_ERROR            0        /* no error */
 #define PYCBC_ATTRIBUTE_ERROR     1        /* invalid attribute accessed */
 #define PYCBC_EOF_ERROR           2        /* end of file on io */

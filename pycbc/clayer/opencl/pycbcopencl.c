@@ -35,12 +35,6 @@
 unsigned pycbcopencl_error_stash = 0;
 char pycbcopencl_error_message[ERROR_STRING_LEN];
 
-//char pycbcopencl_error_map[][ERR_STRING_LEN] = {
-//    "No Error", 
-//    "Memory Error", 
-//    "Undefined Error"};
-// ... extend error map on demand
-
 int pycbc_opencl_check_error()
 {
     //printf("debug: pycbc_opencl_check_error\n");
