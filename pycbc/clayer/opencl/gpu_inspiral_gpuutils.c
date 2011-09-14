@@ -1,8 +1,39 @@
+// Copyright (C) 2011 Gergely Deberczeni (Gergely.Debreczeni@rmki.kfki.hu)
+//
+// This program is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License as published by the
+// Free Software Foundation; either version 2 of the License, or (at your
+// option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+// Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+//
+// =============================================================================
+//
+//                                   Preamble
+//
+// =============================================================================
+//
+// OpenCL uitilites for initialization of context and error checking
+// Merged from the 'GPU_INSPIRAL' opencl matched filter implementation
+
 #include <stdio.h>
 #include <string.h>
 #include <CL/opencl.h>
 #include "pycbcopencl_types.h"
 
+//
+// Mapping the Opencl error codes to error strings
+// (Generated from OpenCL docs, should have a better solution soon
+//
 void gpuinsp_getErrMessage(char * errMessage, const cl_int err) {
 
  switch (err) {
@@ -161,7 +192,11 @@ void gpuinsp_getErrMessage(char * errMessage, const cl_int err) {
   }
 }
 
-static cl_int gpuinsp_checkError(cl_int err, const char* errstr) 
+
+//
+// Error checking and mapping error string to error codes
+//
+static cl_int gpuinsp_checkError(cl_int err, const char* errstr)
 {
     char errMessage[200];
     if (err != CL_SUCCESS)
@@ -172,29 +207,39 @@ static cl_int gpuinsp_checkError(cl_int err, const char* errstr)
     return err;
 }
 
+//
+// Freeing and releasing the varioub openCl objects
+//
+cl_int gpuinsp_DestroyGPU(cl_context_t * c) {
+  if (c->kernel_queue) clReleaseCommandQueue(c->kernel_queue);
+  if (c->io_queue) clReleaseCommandQueue(c->io_queue);
+  return 0;
+}
+
+//
+// The creation of context layer, platform,device id assignment happens here
+//
 cl_int gpuinsp_InitGPU(cl_context_t* c, unsigned device_id)
 {
   int  err;
-  cl_uint 		 numPlatforms;
-  cl_platform_id         Platform             = 0;
+  cl_uint 		 numPlatforms         = 0;
+  cl_platform_id         Platform;
   cl_platform_id*	 Platforms            = new cl_platform_id[10];
   cl_context_properties  cps[3]               = {CL_CONTEXT_PLATFORM, (cl_context_properties) Platform, 0};
   cl_context_properties* cprops;
-  cl_uint                numDevices;
+  cl_uint                numDevices           = 0;
   cl_device_id*          Devices;
   cl_device_id           AvailableDevice      = NULL;
   char                   DeviceName[200];
 
 //Getting the platforms
   err = clGetPlatformIDs(0, NULL, &numPlatforms);
-  err = -4;
   if (gpuinsp_checkError(err,"Determining number of platforms") !=0)  goto cleanup;
 
-  printf("almalasdkjhaksdjhfa;k");
   if (0 < numPlatforms)
     {
         err = clGetPlatformIDs(numPlatforms, Platforms, NULL);
-        printf("0Err: %d\n",err);
+        if (gpuinsp_checkError(err,"Determining number of platforms") !=0)  goto cleanup;
         c->platform = Platforms[0];
     } else {return -1;}
 
@@ -205,21 +250,22 @@ cl_int gpuinsp_InitGPU(cl_context_t* c, unsigned device_id)
   cprops = (NULL == c->platform) ? NULL : cps;
 
   err = clGetDeviceIDs(c->platform, CL_DEVICE_TYPE_GPU, 0, NULL, &numDevices);
-  printf("1Err: %d\n",err);
+  if (gpuinsp_checkError(err,"Determining number of platforms") !=0)  goto cleanup;
   Devices = (cl_device_id*) malloc(sizeof(cl_device_id) * numDevices);
   err = clGetDeviceIDs(c->platform, CL_DEVICE_TYPE_GPU, numDevices, Devices, NULL);
-  printf("2Err: %d\n",err);
+  if (gpuinsp_checkError(err,"Determining number of platforms") !=0)  goto cleanup;
 
 //Getting the first available device
   for (unsigned int i = 0; i < numDevices; ++i)
       {
         cl_bool available;
         err = clGetDeviceInfo(Devices[i], CL_DEVICE_AVAILABLE, sizeof(cl_bool), &available, NULL);
-        printf("3Err: %d\n",err);
+        if (gpuinsp_checkError(err,"Determining number of platforms") !=0)  goto cleanup;
         if (available)
             {
                 AvailableDevice = Devices[i];
                 err = clGetDeviceInfo(Devices[i], CL_DEVICE_NAME, sizeof(DeviceName), DeviceName, NULL);
+               if (gpuinsp_checkError(err,"Determining number of platforms") !=0)  goto cleanup;
                 c->device = AvailableDevice;
                 break;
             }
@@ -241,14 +287,15 @@ cl_int gpuinsp_InitGPU(cl_context_t* c, unsigned device_id)
 //Creating the kernel and command queues
 
   c->kernel_queue = clCreateCommandQueue(c->context, c->device, 0, &err);
-  printf("4Err: %d\n",err);
+  if (gpuinsp_checkError(err,"Determining number of platforms") !=0)  goto cleanup;
   c->io_queue     = clCreateCommandQueue(c->context, c->device, 0, &err);
-  printf("5Err: %d\n",err);
+  if (gpuinsp_checkError(err,"Determining number of platforms") !=0)  goto cleanup;
 
 //This is the return point in case of successful creation of the context
   return(0);
 
 // Emergency exit
 cleanup:
+  gpuinsp_DestroyGPU(c);
   return(err);
 }

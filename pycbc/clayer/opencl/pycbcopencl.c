@@ -29,8 +29,6 @@
 #include "pycbcopencl_prototypes.h"
 #include "gpu_inspiral_gpuutils.h"
 
-//#include "gclUtils.h"
-
 unsigned pycbcopencl_err_stash = 0;
 char pycbcopencl_err_map[][ERR_STRING_LEN] = {
     "No Error", 

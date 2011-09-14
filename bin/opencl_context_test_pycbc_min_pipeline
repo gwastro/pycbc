@@ -48,7 +48,7 @@ import random
 
 # preliminary hard coded path to packages 
 
-sys.path.append('/home/kawies/dev-dbg/src/pycbc')
+sys.path.append('/home/gdebrecz/pycbc')
 
 from pycbc.pycbc import OpenClDeviceContext as ProccessingTargetContext
 
