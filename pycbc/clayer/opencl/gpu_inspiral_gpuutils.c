@@ -34,7 +34,7 @@
 // Mapping the Opencl error codes to error strings
 // (Generated from OpenCL docs, should have a better solution soon
 //
-void gpuinsp_getErrMessage(char * errMessage, const cl_int err) {
+extern "C" void gpuinsp_getErrMessage(char * errMessage, const cl_int err) {
 
  switch (err) {
    case CL_SUCCESS:
@@ -196,7 +196,7 @@ void gpuinsp_getErrMessage(char * errMessage, const cl_int err) {
 //
 // Error checking and mapping error string to error codes
 //
-static cl_int gpuinsp_checkError(cl_int err, const char* errstr)
+extern "C" cl_int gpuinsp_checkError(cl_int err, const char* errstr)
 {
     char errMessage[200];
     if (err != CL_SUCCESS)
@@ -210,7 +210,7 @@ static cl_int gpuinsp_checkError(cl_int err, const char* errstr)
 //
 // Freeing and releasing the varioub openCl objects
 //
-cl_int gpuinsp_DestroyGPU(cl_context_t * c) {
+extern "C" cl_int gpuinsp_DestroyGPU(cl_context_t * c) {
   if (c->kernel_queue) clReleaseCommandQueue(c->kernel_queue);
   if (c->io_queue) clReleaseCommandQueue(c->io_queue);
   return 0;
@@ -219,7 +219,7 @@ cl_int gpuinsp_DestroyGPU(cl_context_t * c) {
 //
 // The creation of context layer, platform,device id assignment happens here
 //
-cl_int gpuinsp_InitGPU(cl_context_t* c, unsigned device_id)
+extern "C" cl_int gpuinsp_InitGPU(cl_context_t* c, unsigned device_id)
 {
   int  err;
   cl_uint 		 numPlatforms         = 0;

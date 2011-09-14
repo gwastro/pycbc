@@ -52,7 +52,7 @@ pycbcopencl_ext = Extension( '_pycbcopencl',
   depends = ['pycbcopencl.h','gpu_inspiral_gpuutils.h'],
   swig_opts = [],
   include_dirs = ['/usr/local/nvidia/sdk-3.2/OpenCL/common/inc/'],
-  extra_compile_args = ['-Wall'],
+  extra_compile_args = ['-Wall','-fPIC'],
   library_dirs = ['/usr/lib'],
   libraries = ['OpenCL','stdc++'])
 

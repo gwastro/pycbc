@@ -28,6 +28,15 @@ setup.py file for swig wrap datavectoropencl into pycbc
 """
 
 from distutils.core import setup, Extension
+import os;
+
+# Setting the ocmpier to use g++
+
+os.environ['CC'] = 'g++';
+#os.environ['CXX'] = 'g++';
+#os.environ['CPP'] = 'g++';
+#os.environ['LDSHARED'] = 'g++';
+
 
 vector_module = Extension('_datavectoropencl',
                           sources=['datavectoropencl_wrap.c','datavectoropencl.c'],
@@ -44,10 +53,10 @@ datavectoropencl_ext = Extension( '_datavectoropencl',
   sources = datavectoropencl_swig_sources + datavectoropencl_c_sources,
   depends = ['datavectoropencl.h'],
   swig_opts = [],
-  include_dirs = [],
-  extra_compile_args = ['-Wall'],
-  library_dirs = [],
-  libraries = [])
+  include_dirs = ['/usr/local/nvidia/sdk-3.2/OpenCL/common/inc/','../../../clayer/opencl'],
+  extra_compile_args = ['-Wall','-fPIC'],
+  library_dirs = ['/usr/lib','/usr/lib','../../../'],
+  libraries = ['pycbcopencl','OpenCL','stdc++'])
 
 setup (name = 'datavectoropencl',
        version = '0.1',

@@ -30,34 +30,35 @@
 #include <stdlib.h>
 #include "../datavector_types.h"
 #include "../cpu/datavectorcpu_types.h"
+#include <CL/opencl.h>
 
 typedef struct
 {
     meta_data_t meta_data;
-    float *data;
+    cl_mem data;
 }
 real_vector_single_opencl_t;
 
 typedef struct
 {
     meta_data_t meta_data;
-    double *data;
+    cl_mem data;
 }
 real_vector_double_opencl_t;
 
 typedef struct
 {
     meta_data_t meta_data;
-    float *real_data;
-    float *imag_data;
+    float* real_data;
+    float* imag_data;
 }
 complex_vector_single_opencl_t;
 
 typedef struct
 {
     meta_data_t meta_data;
-    double *real_data;
-    double *imag_data;
+    double*  real_data;
+    double* imag_data;
 }
 complex_vector_double_opencl_t;
 

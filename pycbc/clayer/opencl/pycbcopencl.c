@@ -31,17 +31,17 @@
 
 unsigned pycbcopencl_err_stash = 0;
 char pycbcopencl_err_map[][ERR_STRING_LEN] = {
-    "No Error", 
-    "Memory Error", 
-    "berr", 
-    "cerr", 
+    "No Error",
+    "Memory Error",
+    "berr",
+    "cerr",
     "Undefined Error"};
 
 
 int pycbc_err_occurred()
 {
     printf("\ndebug: pycbc_err_occurred\n");
-    
+
     if (!pycbcopencl_err_stash) {
         return 0;
     }

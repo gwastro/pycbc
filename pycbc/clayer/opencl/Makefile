@@ -31,6 +31,7 @@ all: pycbcopencl.i pycbcopencl_types.h pycbcopencl_prototypes.h pycbcopencl.c gp
 	$(PYTHON) setup.py build_ext --inplace
 	cp pycbcopencl.py ../../
 	cp _pycbcopencl.so ../../
+	ln -s -f ../../_pycbcopencl.so ../../libpycbcopencl.so
 
 tidy:
 	$(RM) -f *~
