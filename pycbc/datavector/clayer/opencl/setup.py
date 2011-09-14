@@ -33,9 +33,6 @@ import os;
 # Setting the ocmpier to use g++
 
 os.environ['CC'] = 'g++';
-#os.environ['CXX'] = 'g++';
-#os.environ['CPP'] = 'g++';
-#os.environ['LDSHARED'] = 'g++';
 
 
 vector_module = Extension('_datavectoropencl',

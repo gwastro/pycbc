@@ -77,7 +77,6 @@ cl_context_t* new_cl_context_t(unsigned device_id)
     c->device_id = device_id;
 
     int err = gpuinsp_InitGPU(c, device_id);
-    printf("Error%d",err);
     return c;
 }
 

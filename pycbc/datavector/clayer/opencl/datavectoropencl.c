@@ -86,14 +86,14 @@ real_vector_double_opencl_t* new_real_vector_double_opencl_t(cl_context_t * cont
     return c;
 }
 
-void delete_double_vector_double_opencl_t( real_vector_single_opencl_t* p )
+void delete_real_vector_double_opencl_t( real_vector_double_opencl_t* p )
 {
 
     if (p->data) clReleaseMemObject(p->data);
     free( p );
 }
 
-void transfer_double_vector_double_from_cpu( cl_context_t * context,
+void transfer_real_vector_double_from_cpu( cl_context_t * context,
                                            real_vector_double_opencl_t dest,
                                            real_vector_double_cpu_t src )
 {
@@ -102,7 +102,7 @@ void transfer_double_vector_double_from_cpu( cl_context_t * context,
     clFinish(context->io_queue);
 }
 
-void transfer_double_vector_double_to_cpu( cl_context_t * context,
+void transfer_real_vector_double_to_cpu( cl_context_t * context,
                                          real_vector_double_cpu_t dest,
                                          real_vector_double_opencl_t src )
 {
