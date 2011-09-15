@@ -35,6 +35,7 @@ from datavector.datavectoropencl import *
 from abc import ABCMeta, abstractmethod, abstractproperty
 
 import logging
+import re
 
 # ------------------- pycbc processing base classes section --------------------
 
@@ -97,6 +98,8 @@ class OpenClProcessingObj(PyCbcProcessingObj):
 
     def __init__(self, device_context):
     
+        self.__logger= logging.getLogger('pycbc.OpenClProcessingObj')
+
         super(OpenClProcessingObj, self).__init__(device_context)
 
     # data_in() is to be called for every input datavector. 
@@ -107,20 +110,28 @@ class OpenClProcessingObj(PyCbcProcessingObj):
 
     def data_in(self, datavector):
 
-        #print 'data_in of ' + repr(self) + ' called'
-        #print 'with ' + repr(datavector)
-        
         if repr(datavector).find("datavectoropencl") >= 0:
-            # one of us
+            self.__logger.debug("data_in found aboriginal datavector thus don't touch it")
             return datavector
 
         else:
-         #   print 'aliendatavector found:'
-         #   alien_repr_str= repr(datavector)
-         #   print alien_repr_str
-            # find correct new datatype. by parsing alien_repr_str.
-            # and instanciate the correct thing, " cloning " from the alien
-            
+
+            alien_repr_str= repr(datavector)
+            self.__logger.debug("data_in found alien datavector {0} thus transfer it".format(alien_repr_str))
+ 
+            # cloning the alien:
+            #      pycbc.datavector.datavector<arch>.complex_vector_single_<arch>_t
+
+
+
+            new_datatype= re.search( r'pycbc.datavector.datavectorcpu.(.*)_cpu_t(.*)', alien_repr_str)
+
+            self.__logger.debug("extracted {0}".format(new_datatype.group(2)))
+
+
+
+
+
             # currently assuming complex_vector_single_opencl_t
             new_arch_vector = complex_vector_single_opencl_t(len(datavector), 
                                                     datavector.get_delta_x())

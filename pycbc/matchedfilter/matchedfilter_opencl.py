@@ -83,9 +83,14 @@ class  GenSnrImplementationOpenCl(GenSnrImplementationBase):
         """
 
         # check and possibly transfer input datavectors
+        self.__logger.debug("call data_in(stilde) for {0}".format(stilde))
         stilde= self._owner_mfilt.data_in(stilde)
-        htilde= self._owner_mfilt.data_in(htilde)
+        self.__logger.debug("after data_in(stilde) for {0}".format(stilde))
         
+        self.__logger.debug("call data_in(htilde) for {0}".format(htilde))
+        htilde= self._owner_mfilt.data_in(htilde)
+        self.__logger.debug("after data_in(htilde) for {0}".format(htilde))
+
         # this finally calls the clayer function:
         gen_snr_opencl(self._owner_mfilt._devicecontext, self._owner_mfilt._snr,
                        stilde, htilde)
