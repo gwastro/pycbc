@@ -9,6 +9,12 @@ typedef struct
     cl_program program
     char * kernel_source;
     size_t kernel_source_size;
+
+    cl_mem cl_stilde_even_real;
+    cl_mem cl_stilde_even_imag;
+    cl_mem cl_stilde_odd_real;
+    cl_mem cl_stilde_odd_imag;
+
     cl_kernel gpu_snr_product;
     cl_kernel gpu_snr_normalize;
     cl_kernel gpu_template_product;
