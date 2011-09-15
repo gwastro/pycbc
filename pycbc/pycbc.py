@@ -122,11 +122,13 @@ class OpenClProcessingObj(PyCbcProcessingObj):
             # and instanciate the correct thing, " cloning " from the alien
             
             # currently assuming complex_vector_single_opencl_t
-            new_arch_vector = complex_vector_single_opencl_t(len(datavector), 
+            new_arch_vector = complex_vector_single_opencl_t(self._devicecontext,
+                                                    len(datavector), 
                                                     datavector.get_delta_x())
             
             # call the transfer function in the C layer
-            transfer_complex_vector_single_from_cpu(new_arch_vector, datavector)
+            transfer_complex_vector_single_from_cpu(self._devicecontext,
+                                                   new_arch_vector, datavector)
             
             return new_arch_vector
 

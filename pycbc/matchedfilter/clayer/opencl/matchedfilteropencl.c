@@ -40,6 +40,7 @@ matched_filter_opencl_t* new_matched_filter_opencl_t(void)
 
     c = (matched_filter_opencl_t*) malloc( sizeof(matched_filter_opencl_t) );
 
+/*
 //Loading the kernel source
     std::ifstream kernel_source_file("./gpu_inspiral_matchedfilter.cl");
     std::string prog( std::istreambuf_iterator<char>(kernel_source_file), (std::istreambuf_iterator<char>()));
@@ -100,16 +101,18 @@ matched_filter_opencl_t* new_matched_filter_opencl_t(void)
     if(gpuinsp_checkError(err, "clCreateKernel(gpuHammingWeight)") != CL_SUCCESS) goto cleanup;
     c->gpu_avrg_psd = clCreateKernel(c->program, "gpuAvrgPSD", &err);
     if(gpuinsp_checkError(err, "clCreateKernel(gpuAvrgPSD)") != CL_SUCCESS) goto cleanup;
+*/
 
 //Normal termination
     return c;
-
+/*
 //Freeing up the temporaly pointers and quiting
 cleanup:
     if (c) free(c);
     if (cdDevices) free(cdDevices);
     if (LogMessage) free(LogMessage);
     return NULL;
+*/
 }
 
 void delete_matched_filter_opencl_t( matched_filter_opencl_t* p )
@@ -131,10 +134,11 @@ void gen_snr_opencl(cl_context_t* context,
     printf("gen_snr_opencl in C layer called with context->device_id: %d\n", 
             context->device_id);
 
-     dev= context->device_id;
+//     dev = context->device_id;
 
     //context->set_error(1);
 
+    printf("i'm here\n");
     return;
 
 }

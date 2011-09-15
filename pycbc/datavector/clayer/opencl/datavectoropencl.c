@@ -25,6 +25,7 @@
 // datavector constructors and destructors implementation for pycbc
 
 #include <stdio.h>
+#include <complex.h>
 #include <pycbcopencl_types.h>
 #include "gpu_inspiral_gpuutils.h"
 #include "datavectoropencl_types.h"
@@ -114,109 +115,157 @@ void transfer_real_vector_double_to_cpu( cl_context_t * context,
 
 // complex_vector_single methods -----------------------------------------------
 
-complex_vector_single_opencl_t* new_complex_vector_single_opencl_t(
-                                                        unsigned long length, 
+complex_vector_single_opencl_t* new_complex_vector_single_opencl_t(cl_context_t * context,
+                                                        unsigned long length,
                                                         double delta_x)
 {
+    int err;
     CONSTRUCTOR_TEMPLATE(complex_vector_single_opencl_t, float)
 
-    c->real_data = (float*)calloc(c->meta_data.vector_length ,
-                                  c->meta_data.element_size_bytes );
-    c->imag_data = (float*)calloc(c->meta_data.vector_length ,
-                                  c->meta_data.element_size_bytes );
+    c->real_data = clCreateBuffer(context->context, CL_MEM_READ_WRITE, sizeof(float)*length, NULL, &err);
+    if (gpuinsp_checkError(err,"Allocating real part of complex float opencl vector on GPU") !=0 )
+           return NULL;
+
+    c->imag_data = clCreateBuffer(context->context, CL_MEM_READ_WRITE, sizeof(float)*length, NULL, &err);
+    if (gpuinsp_checkError(err,"Allocating imag part of complex float opencl vector on GPU") !=0 )
+           return NULL;
     return c;
 }
 
 void delete_complex_vector_single_opencl_t( complex_vector_single_opencl_t* p )
 {
-    
-    free( p->real_data );
-    free( p->imag_data );
+    if (p->real_data) clReleaseMemObject(p->real_data);
+    if (p->imag_data) clReleaseMemObject(p->real_data);
     free( p );
 }
 
-void transfer_complex_vector_single_from_cpu( 
-                                            complex_vector_single_opencl_t dest, 
+void transfer_complex_vector_single_from_cpu( cl_context_t* context,
+                                            complex_vector_single_opencl_t dest,
                                             complex_vector_single_cpu_t src )
 {
-    unsigned long i=0;
-    
-    if (dest.meta_data.vector_length != src.meta_data.vector_length)
+   int err;
+   if (dest.meta_data.vector_length != src.meta_data.vector_length)
         return; // ERROR!
-    
-    // prototyping the transfer (currently opencldata is cpudata)
-    for (i=0; i < dest.meta_data.vector_length; i++) {
-        *dest.real_data++ = __real__ *src.data;
-        *dest.imag_data++ = __imag__ *src.data++;
-    }
+
+   long int buffersize = src.meta_data.element_size_bytes*src.meta_data.vector_length;
+   float*   cpureal = (float*) malloc(sizeof(float)*buffersize);
+   float*   cpuimag = (float*) malloc(sizeof(float)*buffersize);
+
+   for (unsigned long i = 0; i < src.meta_data.vector_length; i++) {
+     cpureal[i] = __real__ src.data[i];
+     cpuimag[i] = __imag__ src.data[i];
+   }
+
+   err = clEnqueueWriteBuffer(context->io_queue, dest.real_data, CL_TRUE, 0, buffersize, cpureal, 0, NULL, NULL);
+   err |= clEnqueueWriteBuffer(context->io_queue, dest.imag_data, CL_TRUE, 0, buffersize, cpuimag, 0, NULL, NULL);
+   clFinish(context->io_queue);
+
+   free(cpureal);
+   free(cpuimag);
 }
 
-void transfer_complex_vector_single_to_cpu( complex_vector_single_cpu_t dest, 
+
+void transfer_complex_vector_single_to_cpu( cl_context_t* context,
+                                            complex_vector_single_cpu_t dest,
                                             complex_vector_single_opencl_t src )
 {
-    unsigned long i=0;
-    
-    if (dest.meta_data.vector_length != src.meta_data.vector_length)
-        return; // ERROR!
-    
-    // prototyping the transfer (currently opencldata is cpudata)
-    for (i=0; i < dest.meta_data.vector_length; i++) {
-        __real__ *dest.data   = *src.real_data++;
-        __imag__ *dest.data++ = *src.imag_data++;
-    }
+
+   int err;
+   if (dest.meta_data.vector_length != src.meta_data.vector_length)
+       return; // ERROR!
+
+
+   long int buffersize = src.meta_data.element_size_bytes*src.meta_data.vector_length;
+   float*   cpureal = (float*) malloc(sizeof(float)*buffersize);
+   float*   cpuimag = (float*) malloc(sizeof(float)*buffersize);
+
+   err = clEnqueueReadBuffer(context->io_queue, src.real_data, CL_TRUE, 0, buffersize, cpureal, 0, NULL, NULL);
+   err |= clEnqueueReadBuffer(context->io_queue, src.imag_data, CL_TRUE, 0, buffersize, cpuimag, 0, NULL, NULL);
+   clFinish(context->io_queue);
+
+   for (unsigned long i = 0; i< src.meta_data.vector_length; i++) {
+     __real__ dest.data[i] = cpureal[i];
+     __imag__ dest.data[i] = cpuimag[i];
+   }
+   free(cpureal);
+   free(cpuimag);
 }
 
 
 // complex_vector_double methods -----------------------------------------------
 
-complex_vector_double_opencl_t* new_complex_vector_double_opencl_t(
-                                                        unsigned long length, 
+complex_vector_double_opencl_t* new_complex_vector_double_opencl_t(cl_context_t * context,
+                                                        unsigned long length,
                                                         double delta_x)
 {
-    CONSTRUCTOR_TEMPLATE(complex_vector_double_opencl_t, double)    
 
-    c->real_data = (double*)calloc(c->meta_data.vector_length,
-                                   c->meta_data.element_size_bytes );
-    c->imag_data = (double*)calloc(c->meta_data.vector_length,
-                                   c->meta_data.element_size_bytes );
+    int err;
+    CONSTRUCTOR_TEMPLATE(complex_vector_double_opencl_t, double)
+
+    c->real_data = clCreateBuffer(context->context, CL_MEM_READ_WRITE, sizeof(double)*length, NULL, &err);
+    if (gpuinsp_checkError(err,"Allocating real part of complex float opencl vector on GPU") !=0 )
+           return NULL;
+
+    c->imag_data = clCreateBuffer(context->context, CL_MEM_READ_WRITE, sizeof(double)*length, NULL, &err);
+    if (gpuinsp_checkError(err,"Allocating imag part of complex float opencl vector on GPU") !=0 )
+           return NULL;
     return c;
 }
 
 void delete_complex_vector_double_opencl_t( complex_vector_double_opencl_t* p )
 {
-    free( p->real_data );
-    free( p->imag_data );
+    if (p->real_data) clReleaseMemObject(p->real_data);
+    if (p->imag_data) clReleaseMemObject(p->real_data);
     free( p );
 }
 
-void transfer_complex_vector_double_from_cpu(
-                                            complex_vector_double_opencl_t dest, 
+void transfer_complex_vector_double_from_cpu( cl_context_t* context,
+                                            complex_vector_double_opencl_t dest,
                                             complex_vector_double_cpu_t src )
 {
-    unsigned long i=0;
-    
-    if (dest.meta_data.vector_length != src.meta_data.vector_length)
+   int err;
+   if (dest.meta_data.vector_length != src.meta_data.vector_length)
         return; // ERROR!
-    
-    // prototyping the transfer (currently opencldata is cpudata)
-    for (i=0; i < dest.meta_data.vector_length; i++) {
-        *dest.real_data++ = __real__ *src.data;
-        *dest.imag_data++ = __imag__ *src.data++;
-    }
+
+   long int buffersize = src.meta_data.element_size_bytes*src.meta_data.vector_length;
+   double*   cpureal = (double*) malloc(sizeof(double)*buffersize);
+   double*   cpuimag = (double*) malloc(sizeof(double)*buffersize);
+
+   for (unsigned long i = 0; i < src.meta_data.vector_length; i++) {
+     cpureal[i] = __real__ src.data[i];
+     cpuimag[i] = __imag__ src.data[i];
+   }
+
+   err = clEnqueueWriteBuffer(context->io_queue, dest.real_data, CL_TRUE, 0, buffersize, cpureal, 0, NULL, NULL);
+   err |= clEnqueueWriteBuffer(context->io_queue, dest.imag_data, CL_TRUE, 0, buffersize, cpuimag, 0, NULL, NULL);
+   clFinish(context->io_queue);
+
+   free(cpureal);
+   free(cpuimag);
 }
 
-void transfer_complex_vector_double_to_cpu( complex_vector_double_cpu_t dest, 
+void transfer_complex_vector_double_to_cpu(cl_context_t* context,
+                                           complex_vector_double_cpu_t dest,
                                            complex_vector_double_opencl_t src )
 {
-    unsigned long i=0;
-    
-    if (dest.meta_data.vector_length != src.meta_data.vector_length)
-        return; // ERROR!
-    
-    // prototyping the transfer (currently opencldata is cpudata)
-    for (i=0; i < dest.meta_data.vector_length; i++) {
-        __real__ *dest.data   = *src.real_data++;
-        __imag__ *dest.data++ = *src.imag_data++;
-    }
+   int err;
+   if (dest.meta_data.vector_length != src.meta_data.vector_length)
+       return; // ERROR!
+
+
+   long int buffersize = src.meta_data.element_size_bytes*src.meta_data.vector_length;
+   double*   cpureal = (double*) malloc(sizeof(double)*buffersize);
+   double*   cpuimag = (double*) malloc(sizeof(double)*buffersize);
+
+   err = clEnqueueReadBuffer(context->io_queue, src.real_data, CL_TRUE, 0, buffersize, cpureal, 0, NULL, NULL);
+   err |= clEnqueueReadBuffer(context->io_queue, src.imag_data, CL_TRUE, 0, buffersize, cpuimag, 0, NULL, NULL);
+   clFinish(context->io_queue);
+
+   for (unsigned long i = 0; i< src.meta_data.vector_length; i++) {
+     __real__ dest.data[i] = cpureal[i];
+     __imag__ dest.data[i] = cpuimag[i];
+   }
+   free(cpureal);
+   free(cpuimag);
 }
 

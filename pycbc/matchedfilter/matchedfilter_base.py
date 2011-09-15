@@ -52,9 +52,9 @@ class MatchedFilterBase:
         self.__delta_x = delta_x
 
         # instanciate member datavectors:
-        self._snr= snr_vector_t(self.__length, self.__delta_x)
-        self._qtilde= qtilde_vector_t(self.__length, self.__delta_x)
-        self._q= q_vector_t(self.__length, self.__delta_x)
+        self._snr= snr_vector_t(context, self.__length, self.__delta_x)
+        self._qtilde= qtilde_vector_t(context, self.__length, self.__delta_x)
+        self._q= q_vector_t(context, self.__length, self.__delta_x)
 
         # instanciate implementation class members of the processing functions
         self.__gen_snr_impl = gen_snr_impl(derived_mfilt)
