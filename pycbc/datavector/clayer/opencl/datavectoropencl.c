@@ -135,7 +135,7 @@ complex_vector_single_opencl_t* new_complex_vector_single_opencl_t(cl_context_t 
 void delete_complex_vector_single_opencl_t( complex_vector_single_opencl_t* p )
 {
     if (p->real_data) clReleaseMemObject(p->real_data);
-    if (p->imag_data) clReleaseMemObject(p->real_data);
+    if (p->imag_data) clReleaseMemObject(p->imag_data);
     free( p );
 }
 
@@ -143,23 +143,33 @@ void transfer_complex_vector_single_from_cpu( cl_context_t* context,
                                             complex_vector_single_opencl_t dest,
                                             complex_vector_single_cpu_t src )
 {
+
    int err;
    if (dest.meta_data.vector_length != src.meta_data.vector_length)
         return; // ERROR!
 
-   long int buffersize = src.meta_data.element_size_bytes*src.meta_data.vector_length;
-   float*   cpureal = (float*) malloc(sizeof(float)*buffersize);
-   float*   cpuimag = (float*) malloc(sizeof(float)*buffersize);
+   size_t buffersize = dest.meta_data.element_size_bytes*dest.meta_data.vector_length;
+   float*   cpureal = (float*) malloc(buffersize);
+   float*   cpuimag = (float*) malloc(buffersize);
 
+   if (cpureal == NULL || cpuimag == NULL ) {
+       printf("Cannot allocate temporary buffer on CPU.\n");
+       goto cleanup;
+   }
    for (unsigned long i = 0; i < src.meta_data.vector_length; i++) {
      cpureal[i] = __real__ src.data[i];
      cpuimag[i] = __imag__ src.data[i];
    }
 
    err = clEnqueueWriteBuffer(context->io_queue, dest.real_data, CL_TRUE, 0, buffersize, cpureal, 0, NULL, NULL);
-   err |= clEnqueueWriteBuffer(context->io_queue, dest.imag_data, CL_TRUE, 0, buffersize, cpuimag, 0, NULL, NULL);
+   if (gpuinsp_checkError(err,"Transfering complex single vector real part from CPU") !=0 ) goto cleanup;
+
+   err = clEnqueueWriteBuffer(context->io_queue, dest.imag_data, CL_TRUE, 0, buffersize, cpuimag, 0, NULL, NULL);
+   if (gpuinsp_checkError(err,"Transfering complex single vector imag part from CPU") !=0 ) goto cleanup;
+
    clFinish(context->io_queue);
 
+cleanup:
    free(cpureal);
    free(cpuimag);
 }
@@ -174,19 +184,28 @@ void transfer_complex_vector_single_to_cpu( cl_context_t* context,
    if (dest.meta_data.vector_length != src.meta_data.vector_length)
        return; // ERROR!
 
-
    long int buffersize = src.meta_data.element_size_bytes*src.meta_data.vector_length;
-   float*   cpureal = (float*) malloc(sizeof(float)*buffersize);
-   float*   cpuimag = (float*) malloc(sizeof(float)*buffersize);
+   float*   cpureal = (float*) malloc(buffersize);
+   float*   cpuimag = (float*) malloc(buffersize);
+
+   if (cpureal == NULL || cpuimag == NULL ) {
+       printf("Cannot allocate temporary buffer on CPU.\n");
+       goto cleanup;
+   }
 
    err = clEnqueueReadBuffer(context->io_queue, src.real_data, CL_TRUE, 0, buffersize, cpureal, 0, NULL, NULL);
+   if (gpuinsp_checkError(err,"Transfering complex single vector real part from GPU") !=0 ) goto cleanup;
+
    err |= clEnqueueReadBuffer(context->io_queue, src.imag_data, CL_TRUE, 0, buffersize, cpuimag, 0, NULL, NULL);
+   if (gpuinsp_checkError(err,"Transfering complex single vector imag part from GPU") !=0 ) goto cleanup;
    clFinish(context->io_queue);
 
-   for (unsigned long i = 0; i< src.meta_data.vector_length; i++) {
+   for (unsigned long i = 0; i < src.meta_data.vector_length; i++) {
      __real__ dest.data[i] = cpureal[i];
      __imag__ dest.data[i] = cpuimag[i];
    }
+
+cleanup:
    free(cpureal);
    free(cpuimag);
 }
@@ -203,11 +222,11 @@ complex_vector_double_opencl_t* new_complex_vector_double_opencl_t(cl_context_t 
     CONSTRUCTOR_TEMPLATE(complex_vector_double_opencl_t, double)
 
     c->real_data = clCreateBuffer(context->context, CL_MEM_READ_WRITE, sizeof(double)*length, NULL, &err);
-    if (gpuinsp_checkError(err,"Allocating real part of complex float opencl vector on GPU") !=0 )
+    if (gpuinsp_checkError(err,"Allocating real part of complex double opencl vector on GPU") !=0 )
            return NULL;
 
     c->imag_data = clCreateBuffer(context->context, CL_MEM_READ_WRITE, sizeof(double)*length, NULL, &err);
-    if (gpuinsp_checkError(err,"Allocating imag part of complex float opencl vector on GPU") !=0 )
+    if (gpuinsp_checkError(err,"Allocating imag part of complex double opencl vector on GPU") !=0 )
            return NULL;
     return c;
 }
@@ -215,7 +234,7 @@ complex_vector_double_opencl_t* new_complex_vector_double_opencl_t(cl_context_t 
 void delete_complex_vector_double_opencl_t( complex_vector_double_opencl_t* p )
 {
     if (p->real_data) clReleaseMemObject(p->real_data);
-    if (p->imag_data) clReleaseMemObject(p->real_data);
+    if (p->imag_data) clReleaseMemObject(p->imag_data);
     free( p );
 }
 
@@ -227,19 +246,28 @@ void transfer_complex_vector_double_from_cpu( cl_context_t* context,
    if (dest.meta_data.vector_length != src.meta_data.vector_length)
         return; // ERROR!
 
-   long int buffersize = src.meta_data.element_size_bytes*src.meta_data.vector_length;
-   double*   cpureal = (double*) malloc(sizeof(double)*buffersize);
-   double*   cpuimag = (double*) malloc(sizeof(double)*buffersize);
+   size_t buffersize = dest.meta_data.element_size_bytes*dest.meta_data.vector_length;
+   double*   cpureal = (double*) malloc(buffersize);
+   double*   cpuimag = (double*) malloc(buffersize);
 
+   if (cpureal == NULL || cpuimag == NULL ) {
+       printf("Cannot allocate temporary buffer on CPU.\n");
+       goto cleanup;
+   }
    for (unsigned long i = 0; i < src.meta_data.vector_length; i++) {
      cpureal[i] = __real__ src.data[i];
      cpuimag[i] = __imag__ src.data[i];
    }
 
    err = clEnqueueWriteBuffer(context->io_queue, dest.real_data, CL_TRUE, 0, buffersize, cpureal, 0, NULL, NULL);
-   err |= clEnqueueWriteBuffer(context->io_queue, dest.imag_data, CL_TRUE, 0, buffersize, cpuimag, 0, NULL, NULL);
+   if (gpuinsp_checkError(err,"Transfering complex double vector real part from CPU") !=0 ) goto cleanup;
+
+   err = clEnqueueWriteBuffer(context->io_queue, dest.imag_data, CL_TRUE, 0, buffersize, cpuimag, 0, NULL, NULL);
+   if (gpuinsp_checkError(err,"Transfering complex double vector imag part from CPU") !=0 ) goto cleanup;
+
    clFinish(context->io_queue);
 
+cleanup:
    free(cpureal);
    free(cpuimag);
 }
@@ -248,23 +276,33 @@ void transfer_complex_vector_double_to_cpu(cl_context_t* context,
                                            complex_vector_double_cpu_t dest,
                                            complex_vector_double_opencl_t src )
 {
+
    int err;
    if (dest.meta_data.vector_length != src.meta_data.vector_length)
        return; // ERROR!
 
-
    long int buffersize = src.meta_data.element_size_bytes*src.meta_data.vector_length;
-   double*   cpureal = (double*) malloc(sizeof(double)*buffersize);
-   double*   cpuimag = (double*) malloc(sizeof(double)*buffersize);
+   double*   cpureal = (double*) malloc(buffersize);
+   double*   cpuimag = (double*) malloc(buffersize);
+
+   if (cpureal == NULL || cpuimag == NULL ) {
+       printf("Cannot allocate temporary buffer on CPU.\n");
+       goto cleanup;
+   }
 
    err = clEnqueueReadBuffer(context->io_queue, src.real_data, CL_TRUE, 0, buffersize, cpureal, 0, NULL, NULL);
+   if (gpuinsp_checkError(err,"Transfering complex double vector real part from GPU") !=0 ) goto cleanup;
+
    err |= clEnqueueReadBuffer(context->io_queue, src.imag_data, CL_TRUE, 0, buffersize, cpuimag, 0, NULL, NULL);
+   if (gpuinsp_checkError(err,"Transfering complex double vector imag part from GPU") !=0 ) goto cleanup;
    clFinish(context->io_queue);
 
-   for (unsigned long i = 0; i< src.meta_data.vector_length; i++) {
+   for (unsigned long i = 0; i < src.meta_data.vector_length; i++) {
      __real__ dest.data[i] = cpureal[i];
      __imag__ dest.data[i] = cpuimag[i];
    }
+
+cleanup:
    free(cpureal);
    free(cpuimag);
 }

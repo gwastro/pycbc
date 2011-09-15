@@ -138,7 +138,6 @@ void gen_snr_opencl(cl_context_t* context,
 
     //context->set_error(1);
 
-    printf("i'm here\n");
     return;
 
 }

@@ -232,6 +232,8 @@ extern "C" cl_int gpuinsp_InitGPU(cl_context_t* c, unsigned device_id)
   cl_device_id           AvailableDevice      = NULL;
   char                   DeviceName[200];
 
+  cl_mem                 testdata_gpu;
+  float*                 testdata_cpu         = NULL;
 //Getting the platforms
   err = clGetPlatformIDs(0, NULL, &numPlatforms);
   if (gpuinsp_checkError(err,"Determining number of platforms") !=0)  goto cleanup;
@@ -291,11 +293,21 @@ extern "C" cl_int gpuinsp_InitGPU(cl_context_t* c, unsigned device_id)
   c->io_queue     = clCreateCommandQueue(c->context, c->device, 0, &err);
   if (gpuinsp_checkError(err,"Determining number of platforms") !=0)  goto cleanup;
 
+// Performing a test mem array allocation and transfer
+
+   testdata_cpu = (float*) malloc(sizeof(float)*1024);
+   testdata_gpu = clCreateBuffer(c->context, CL_MEM_READ_WRITE, sizeof(float)*1024, NULL, &err);
+   if (gpuinsp_checkError(err,"Test allocation in GPU memory") !=0)  goto cleanup;
+   err = clEnqueueWriteBuffer(c->io_queue, testdata_gpu, CL_TRUE, 0, 1024*sizeof(float), testdata_cpu, 0, NULL, NULL);
+   if (gpuinsp_checkError(err,"Test writing to  GPU memory") !=0)  goto cleanup;
+
 //This is the return point in case of successful creation of the context
   return(0);
 
 // Emergency exit
 cleanup:
   gpuinsp_DestroyGPU(c);
+  if (testdata_cpu) free(testdata_cpu);
+  if (testdata_gpu) clReleaseMemObject(testdata_gpu);
   return(err);
 }

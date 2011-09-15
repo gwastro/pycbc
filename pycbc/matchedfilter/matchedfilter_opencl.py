@@ -89,7 +89,6 @@ class  GenSnrImplementationOpenCl(GenSnrImplementationBase):
         # this finally calls the clayer function:
         gen_snr_opencl(self._owner_mfilt._devicecontext, self._owner_mfilt._snr,
                        stilde, htilde)
-	print "I'm still here"
         
 class  MaxImplementationOpenCl(MaxImplementationBase):
 

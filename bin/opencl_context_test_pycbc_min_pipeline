@@ -112,7 +112,6 @@ with ProccessingTargetContext(0) as context:
     for stilde in strain_data:
 	print context
         snr = matched_filter.perform_generate_snr(stilde, htilde)
-	print "still living"
     
     print 'after hot loop'    
         
