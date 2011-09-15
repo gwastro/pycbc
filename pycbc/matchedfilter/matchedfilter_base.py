@@ -48,11 +48,12 @@ class MatchedFilterBase:
         self.__logger= logging.getLogger('pycbc.MatchedFilterBase')
         self.__logger.debug("instanciated MatchedFilterBase")
 
+        self.__context = context
         self.__length = length
         self.__delta_x = delta_x
 
         # instanciate member datavectors:
-        self._snr= snr_vector_t(self.__length, self.__delta_x)
+        self._snr= snr_vector_t(self.__context, self.__length, self.__delta_x)
         self._qtilde= qtilde_vector_t(self.__length, self.__delta_x)
         self._q= q_vector_t(self.__length, self.__delta_x)
 

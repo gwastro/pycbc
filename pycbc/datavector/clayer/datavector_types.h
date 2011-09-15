@@ -36,14 +36,14 @@
 
 typedef struct
 {
-    
+
     // add "epoch" -> segment start time accociated w/ initial time series 
     unsigned long start;    // better rename to x0;
                             // offset of the data from origin series applies 
                             // only for segmenting ????
     double        delta_x;  // Depending on the data either sample intervall
                             // in time domain or frequency domain
-    
+
     unsigned long vector_length;
     size_t        element_size_bytes;
 }

@@ -30,8 +30,6 @@
 #include "pycbcopencl_prototypes.h"
 #include "gpu_inspiral_gpuutils.h"
 
-//#include "gclUtils.h"
-
 unsigned pycbcopencl_error_stash = 0;
 char pycbcopencl_error_message[ERROR_STRING_LEN];
 
@@ -75,7 +73,6 @@ cl_context_t* new_cl_context_t(unsigned device_id)
     // this will update c with all OpenCl context elements
     int err = gpuinsp_InitGPU(c, device_id);
     
-    printf("Error%d",err);
     
     if(err)
       c->set_error( PYCBC_RUNTIME_ERROR, "gpuinsp_InitGPU failed");
@@ -83,6 +80,7 @@ cl_context_t* new_cl_context_t(unsigned device_id)
     // just testing the error handling
     // c->set_error( PYCBC_RUNTIME_ERROR, "gpuinsp_InitGPU failed");
     
+
     return c;
 }
 

@@ -36,6 +36,7 @@
 
 // This goes directly to the wrap-code (no swig preprocess)
 %{
+#include "pycbcopencl_types.h"
 #include "datavectoropencl_types.h"
 #include "datavectoropencl_prototypes.h"
 %}
@@ -64,7 +65,7 @@
 
 // add new element properties for OpenCl real vectors here:
 %define TYPE_INTERFACE_TEMPLATE_REAL(name)
-name(unsigned long vector_length, double delta_x);
+name(cl_context_t *, unsigned long vector_length, double delta_x);
 ~name();
 
 char* __str__() {
@@ -183,22 +184,26 @@ double get_delta_x( void ) {
 }
 
 // transfer functions ----------------------------------------------------------
-void transfer_real_vector_single_from_cpu(real_vector_single_opencl_t, 
+void transfer_real_vector_single_from_cpu(cl_context_t *,
+                                          real_vector_single_opencl_t,
                                           real_vector_single_cpu_t);
-void transfer_real_vector_single_to_cpu( real_vector_single_cpu_t, 
+void transfer_real_vector_single_to_cpu( cl_context_t *,
+                                         real_vector_single_cpu_t,
                                          real_vector_single_opencl_t);
 
-void transfer_real_vector_double_from_cpu(real_vector_double_opencl_t, 
+void transfer_real_vector_double_from_cpu(cl_context_t *,
+                                          real_vector_double_opencl_t,
                                           real_vector_double_cpu_t);
-void transfer_real_vector_double_to_cpu( real_vector_double_cpu_t, 
+void transfer_real_vector_double_to_cpu( cl_context_t *,
+                                         real_vector_double_cpu_t,
                                          real_vector_double_opencl_t);
 
-void transfer_complex_vector_single_from_cpu(complex_vector_single_opencl_t, 
+void transfer_complex_vector_single_from_cpu(complex_vector_single_opencl_t,
                                              complex_vector_single_cpu_t);
-void transfer_complex_vector_single_to_cpu( complex_vector_single_cpu_t, 
+void transfer_complex_vector_single_to_cpu( complex_vector_single_cpu_t,
                                             complex_vector_single_opencl_t);
 
-void transfer_complex_vector_double_from_cpu(complex_vector_double_opencl_t, 
+void transfer_complex_vector_double_from_cpu(complex_vector_double_opencl_t,
                                              complex_vector_double_cpu_t);
-void transfer_complex_vector_double_to_cpu( complex_vector_double_cpu_t, 
+void transfer_complex_vector_double_to_cpu( complex_vector_double_cpu_t,
                                             complex_vector_double_opencl_t);
