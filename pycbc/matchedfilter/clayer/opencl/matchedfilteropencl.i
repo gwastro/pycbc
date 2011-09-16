@@ -51,8 +51,8 @@
     char* __str__() {
         static char a[512];
         snprintf( a, sizeof(a)/sizeof(*a), 
-                 "<matched_filter_opencl_t at %p, some_MF_parameter %d>", 
-                 self, 5); // self->device_id);
+                 "<matched_filter_opencl_t at %p, prog %p, cl_stilde %p, cl_htilde %p, gpu_snr_prod %p>", 
+		  self, self->program, self->cl_stilde, self->cl_htilde, self->gpu_snr_product);
         return a;
     }
 }

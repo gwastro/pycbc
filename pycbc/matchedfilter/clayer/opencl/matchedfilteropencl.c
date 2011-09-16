@@ -89,7 +89,7 @@ extern "C" matched_filter_opencl_t* new_matched_filter_opencl_t(cl_context_t * c
     
     printf("in mf constructor c->program %p  ", c->program);
 
-    // c->gpu_snr_product = clCreateKernel(c->program, "gpuSnrProduct", &err);
+    c->gpu_snr_product = clCreateKernel(c->program, "gpuSnrProduct", &err);
     if(gpuinsp_checkError(err, "clCreateKernel(gpuSnrProduct)") != CL_SUCCESS) goto cleanup;
 
 //Normal termination

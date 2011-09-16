@@ -90,6 +90,8 @@ class  GenSnrImplementationOpenCl(GenSnrImplementationBase):
         htilde= self._owner_mfilt.data_in(htilde)
         self.__logger.debug("after data_in(htilde) for {0}".format(htilde))
 
+        self.__logger.debug("call gen_snr_opencl with clayer members {0}".format(self._owner_mfilt._clayer_members))
+
         # this finally calls the clayer function:
         gen_snr_opencl(self._owner_mfilt._devicecontext,
                        self._owner_mfilt._clayer_members,
