@@ -61,7 +61,8 @@ extern "C" matched_filter_opencl_t* new_matched_filter_opencl_t(cl_context_t * c
 
 //Creating the program from the kernel source
     c->program = clCreateProgramWithSource(context->context, 1, &kernel_source, &kernel_source_size, &err);
-    if (gpuinsp_checkError(err,"Creating program from source file") !=0)  goto cleanup;
+    if (gpuinsp_checkError(err,"Creating program from source file") !=0)  
+      goto cleanup;
 
 //Building the kernel
     err = clBuildProgram(c->program, 0 , NULL, NULL, NULL, NULL);
@@ -84,7 +85,11 @@ extern "C" matched_filter_opencl_t* new_matched_filter_opencl_t(cl_context_t * c
         }
 
 //Ok, now we can create the kernels
-    c->gpu_snr_product = clCreateKernel(c->program, "gpuSnrProduct", &err);
+
+    
+    printf("in mf constructor c->program %p  ", c->program);
+
+    // c->gpu_snr_product = clCreateKernel(c->program, "gpuSnrProduct", &err);
     if(gpuinsp_checkError(err, "clCreateKernel(gpuSnrProduct)") != CL_SUCCESS) goto cleanup;
 
 //Normal termination

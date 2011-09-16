@@ -36,7 +36,9 @@ class MatchedFilterBase:
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, context, length, delta_x, gen_snr_impl, max_impl, 
+    def __init__(self, context, 
+                 clayer_members_t,
+                 length, delta_x, gen_snr_impl, max_impl, 
                  snr_vector_t =    None, 
                  qtilde_vector_t = None, 
                  q_vector_t =      None, 
@@ -51,6 +53,9 @@ class MatchedFilterBase:
         self.__context = context
         self.__length = length
         self.__delta_x = delta_x
+
+        # instanciate the clayer part of matched filter members
+        self._clayer_members = clayer_members_t(self.__context)
 
         # instanciate member datavectors:
         self._snr= snr_vector_t(context, self.__length, self.__delta_x)
