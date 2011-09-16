@@ -51,8 +51,8 @@ matchedfilteropencl_ext = Extension( '_matchedfilteropencl',
   swig_opts = [],
   include_dirs = ['/usr/local/nvidia/sdk-3.2/OpenCL/common/inc/'],
   extra_compile_args = ['-Wall'],
-  library_dirs = ['/usr/lib'],
-  libraries = ['OpenCL','stdc++'])
+  library_dirs = ['/usr/lib','../../../'],
+  libraries = ['OpenCL','stdc++','pycbcopencl'])
 
 setup (name = 'matchedfilteropencl',
        version = '0.1',

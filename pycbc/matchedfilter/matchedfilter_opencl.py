@@ -56,8 +56,7 @@ class MatchedFilterOpenCl(MatchedFilterBase, OpenClProcessingObj):
         self.__length= length
         self.__delta_x= delta_x
         
-        self.__mf_opencl_clayer_struct= matched_filter_opencl_t()
-        print matched_filter_opencl_t
+        self.__mf_opencl_clayer_struct= matched_filter_opencl_t(context)
         
         super(MatchedFilterOpenCl, self).__init__(context, self.__length, 
                 self.__delta_x, 
@@ -92,9 +91,9 @@ class  GenSnrImplementationOpenCl(GenSnrImplementationBase):
         self.__logger.debug("after data_in(htilde) for {0}".format(htilde))
 
         # this finally calls the clayer function:
-        gen_snr_opencl(self._owner_mfilt._devicecontext, self._owner_mfilt._snr,
+        gen_snr_opencl(self._owner_mfilt._devicecontext, 
+                       self._owner_mfilt._snr,
                        stilde, htilde)
-
         
 class  MaxImplementationOpenCl(MaxImplementationBase):
 

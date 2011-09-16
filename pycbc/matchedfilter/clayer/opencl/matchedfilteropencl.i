@@ -39,7 +39,7 @@
 }
 %extend matched_filter_opencl_t {
     
-    matched_filter_opencl_t();
+    matched_filter_opencl_t(cl_context_t*);
     ~matched_filter_opencl_t();
     
     //%typemap(check) unsigned some_MF_constructor_parameter {
@@ -59,6 +59,7 @@
 
 // prototype declaration of a function to wrap (has to be impl. in a c-file)
 void gen_snr_opencl(cl_context_t* context,
+                    matched_filter_opencl_t * matchedfilter,
                     real_vector_single_opencl_t* snr,
                     complex_vector_single_opencl_t* stilde, 
                     complex_vector_single_opencl_t* htilde);

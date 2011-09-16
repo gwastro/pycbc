@@ -49,16 +49,16 @@ real_vector_double_opencl_t;
 typedef struct
 {
     meta_data_t meta_data;
-    float* real_data;
-    float* imag_data;
+    cl_mem real_data;
+    cl_mem imag_data;
 }
 complex_vector_single_opencl_t;
 
 typedef struct
 {
     meta_data_t meta_data;
-    double*  real_data;
-    double* imag_data;
+    cl_mem real_data;
+    cl_mem imag_data;
 }
 complex_vector_double_opencl_t;
 

@@ -104,12 +104,13 @@ with ProccessingTargetContext(0) as context:
     logger.debug("instanciated MatchedFilter w/ length: {0}".format(matched_filter.length))
 
     # messy prototyping of htilde (until we have a template bank)
-    htilde = WaveformFrequencySeries(strain_data.segments_length, strain_data.segments_delta_x)
+    htilde = WaveformFrequencySeries(context, strain_data.segments_length, strain_data.segments_delta_x)
 
     print 'before hot loop'
 
     # hot loop
     for stilde in strain_data:
+	print context
         snr = matched_filter.perform_generate_snr(stilde, htilde)
     
     print 'after hot loop'    
