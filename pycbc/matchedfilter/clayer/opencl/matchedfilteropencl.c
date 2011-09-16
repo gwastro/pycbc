@@ -66,7 +66,6 @@ extern "C" matched_filter_opencl_t* new_matched_filter_opencl_t(cl_context_t * c
 
 //Building the kernel
     err = clBuildProgram(c->program, 0 , NULL, NULL, NULL, NULL);
-    if (gpuinsp_checkError(err,"Building program source") !=0)  goto cleanup;
 
 //Trying to fetch the build log if build failed
     if (err != CL_BUILD_SUCCESS) {
@@ -86,10 +85,11 @@ extern "C" matched_filter_opencl_t* new_matched_filter_opencl_t(cl_context_t * c
 
 //Ok, now we can create the kernels
 
-    
     printf("in mf constructor c->program %p  ", c->program);
 
-    c->gpu_snr_product = clCreateKernel(c->program, "gpuSnrProduct", &err);
+
+     c->gpu_snr_product = clCreateKernel(c->program, "gpuSnrProduct", &err);
+
     if(gpuinsp_checkError(err, "clCreateKernel(gpuSnrProduct)") != CL_SUCCESS) goto cleanup;
 
 //Normal termination
@@ -115,30 +115,25 @@ void delete_matched_filter_opencl_t( matched_filter_opencl_t* p )
 extern "C" void gen_snr_opencl(cl_context_t* context,
                    matched_filter_opencl_t * matchedfilter,
                    real_vector_single_opencl_t* snr,
-                   complex_vector_single_opencl_t* stilde, 
+                   complex_vector_single_opencl_t* stilde,
                    complex_vector_single_opencl_t* htilde)
 {
 
-    printf("gen_snr_opencl in C layer called with context->device_id: %d\n", context->device_id);
+    size_t local_size   = 256;
+    size_t global_size  = stilde->meta_data.vector_length/2;
+    int err          = 0;
 
-/*
-   err = clSetKernelArg(_plan->gpu_gen_templates, 0, sizeof(int), &_plan->signal_batch_size);
-        err |= clSetKernelArg(_plan->gpu_gen_templates, 1, sizeof(int), &_plan->signal_batch_number);
-        err |= clSetKernelArg(_plan->gpu_gen_templates, 2, sizeof(int), &_plan->flow);
-        err |= clSetKernelArg(_plan->gpu_gen_templates, 3, sizeof(cl_mem), &_plan->cl_mass_array);
-        err |= clSetKernelArg(_plan->gpu_gen_templates, 4, sizeof(int), &_plan->template_length);
-       	err |= clSetKernelArg(_plan->gpu_gen_templates, 5, sizeof(cl_mem), &_plan->cl_signals_batch_real[i]);
-        err |= clSetKernelArg(_plan->gpu_gen_templates, 6, sizeof(cl_mem), &_plan->cl_signals_batch_imag[i]);
-        if(checkError(err, "clSetKernelArg(gpu_gen_templates)") != CL_SUCCESS) return err;
+    err = clSetKernelArg(matchedfilter->gpu_snr_product, 0, sizeof(size_t), &stilde->meta_data.vector_length);
+    err |= clSetKernelArg(matchedfilter->gpu_snr_product, 1, sizeof(cl_mem), &stilde->real_data);
+    err |= clSetKernelArg(matchedfilter->gpu_snr_product, 2, sizeof(cl_mem), &stilde->imag_data);
+    err |= clSetKernelArg(matchedfilter->gpu_snr_product, 3, sizeof(cl_mem), &htilde->real_data);
+    err |= clSetKernelArg(matchedfilter->gpu_snr_product, 4, sizeof(cl_mem), &htilde->imag_data);
+    err |= clSetKernelArg(matchedfilter->gpu_snr_product, 5, sizeof(cl_mem), &snr->data);
+    if(gpuinsp_checkError(err, "clSetKernelArg(gpu_snr_product)") != CL_SUCCESS) return;
 
-        local_size = 256;
-        global_size = _plan->template_length*_plan->signal_batch_size/2;
-        err = clEnqueueNDRangeKernel(_plan->kernel_queue, _plan->gpu_gen_templates, 1, 0, &global_size, &local_size, 0, NULL, NULL);
-        if (checkError(err, "clEnqueueNDRangeKernel(gpu_gen_templates)") != CL_SUCCESS) return err;
-    }
-    clFinish(_plan->kernel_queue);
-*/
 
-    return;
+    err = clEnqueueNDRangeKernel(context->kernel_queue, matchedfilter->gpu_snr_product, 1, 0, &global_size, &local_size, 0, NULL, NULL);
+    if (gpuinsp_checkError(err, "clEnqueueNDRangeKernel(gpu_snr_product)") != CL_SUCCESS) return;
+    clFinish(context->kernel_queue);
 
 }
