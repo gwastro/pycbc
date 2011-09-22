@@ -28,7 +28,7 @@ MatchedFilter OpenCl implementation class for the pycbc package
 """
 
 # import framework related parent
-from pycbc.pycbc import OpenClProcessingObj
+from pycbc.pycbc_opencl import OpenClProcessingObj
 
 # import algorithm related parents
 from matchedfilter_base import MatchedFilterBase

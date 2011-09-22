@@ -50,7 +50,7 @@ import random
 
 sys.path.append('/home/kawies/dev-dbg/src/pycbc')
 
-from pycbc.pycbc import OpenClDeviceContext as ProccessingTargetContext
+from pycbc.pycbc_opencl import OpenClDeviceContext as ProccessingTargetContext
 
 from pycbc.straindata.straindata_cpu import StrainDataCpu as StrainData 
 from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
