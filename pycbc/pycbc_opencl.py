@@ -23,110 +23,51 @@
 # =============================================================================
 #
 """
-pycbc management and tools
+pyCBC OpenCl processing object - base class and context
 """
 
+from pycbc_base import PyCbcProcessingObj
 from pycbcopencl import cl_context_t as OpenClContext
-from pycbccpu import cpu_context_t as CpuContext
 
-from datavector.datavectorcpu import *
 from datavector.datavectoropencl import *    
-
-from abc import ABCMeta, abstractmethod, abstractproperty
 
 import logging
 import re
 
-# ------------------- pycbc processing base classes section --------------------
-
-# data_in prototyping and generic ProcessingObj inheritance showcase
-# 
-
-# All processing objects have to inherit from this base class via ...
-class PyCbcProcessingObj:
-
-    __metaclass__ = ABCMeta
-
-    def __init__(self, device_context):
-        self._logger= logging.getLogger('pycbc.pycbc')
-        self._devicecontext = device_context
-
-    @abstractmethod
-    def data_in(self, datavector):
-        pass
-
-# ... their correct derivative according to their processing architecture:
-class CpuProcessingObj(PyCbcProcessingObj):
-
-    def __init__(self, device_context):
-    
-        super(CpuProcessingObj, self).__init__(device_context)
-
-    # data_in() is to be called for every input datavector. 
-    # in case of an alien datavector (does not fit to self-architecture) data_in
-    # create the new datavector, copies the data by calling the proper transfer 
-    # function in the C layer and set new_datavector = old_datavector 
-    # (thus destroy the old datavector)
-
-    def data_in(self, datavector):
-
-        #print 'data_in of ' + repr(self) + ' called'
-        #print 'with ' + repr(datavector)
-        
-        if repr(datavector).find("datavectorcpu") >= 0:
-            # it is one of us
-            return datavector
-
-        else:
-            #print 'aliendatavector found:'
-            alien_repr_str= repr(datavector)
-            #print alien_repr_str
-            # find correct new datatype. by parsing alien_repr_str.
-            # and instanciate the correct thing, " cloning " from the alien
-            new_arch_vector = real_vector_single_cpu_t(len(datavector), datavector.get_delta_x())
-            
-            # call the transfer function in the C layer
-            # prototyping it here:
-            for i in range(len(datavector)):
-                pass
-               # new_arch_vector[i] = datavector[i]
-               # fix opencl datavector probs first
-            
-            return new_arch_vector
+# ------------------- architecture dependent processing base classes section ---
 
 class OpenClProcessingObj(PyCbcProcessingObj):
-
-
-    #
-    #
-    #  TODO   split into separated modules cpu/cuda/opencl 
-    #  to avoid name conflicts with
-    #  Ex.: transfer_real_vector_double_from_cpu
-    #
-    #
-
 
     def __init__(self, device_context):
     
         self.__logger= logging.getLogger('pycbc.OpenClProcessingObj')
 
         super(OpenClProcessingObj, self).__init__(device_context)
-
-
-    # data_in() is to be called for every input datavector. 
-    # in case of an alien datavector (does not fit to self-architecture) data_in
-    # create the new datavector, copies the data by calling the proper transfer 
-    # function in the C layer and set new_datavector = old_datavector 
-    # (thus destroy the old datavector)
+        
     def data_in(self, datavector):
+        """
+        this method has to be called by a pyCBC processing object 
+        for/with every incoming input-datavector. In case of an "alien"
+        datavector (which does not fit to the architecture of the calling)
+        pyCBC processing object) the method instanciates the correct
+        datavector (an "aboriginal" datavector), copies the data or transfer it 
+        to the GPU and return a reference of the new datavector. The old 
+        datavector will be dereferenced so it will be deleted by the 
+        garbage collection
+        @type  datavector: datavector_<arch>_t
+        @param datavector: any datavector
+        @rtype  snr:   datavector_opencl_t
+        @return snr:   OpenCl datavector
+        """
 
         vector_repr = repr(datavector)
         if (vector_repr.find("datavectoropencl") >= 0):
-            self.__logger.debug("data_in found aboriginal datavector {0} thus return".format(vector_repr))
+            # aboriginal datavector. just return it as it is
+            self.__logger.debug("data_in found aboriginal datavector {0} thus return it".format(vector_repr))
             return datavector
 
         else:
-            # cloning the alien datavector
+            # cloning the alien datavector (currently only _cpu_t is allowed)
             self.__logger.debug("data_in found alien datavector {0} thus transfer it".format(vector_repr))
             datatype_match= re.search( r'<pycbc.datavector.datavectorcpu.(.*)(_cpu_t);(.*)', vector_repr)
             tmptype = datatype_match.groups(1)
@@ -184,36 +125,11 @@ class OpenClProcessingObj(PyCbcProcessingObj):
             return new_arch_vector
 
 # ------------------- device context section -----------------------------------
-
-class CpuDeviceContext:
-
-    def __init__(self, devicehandle):
-        self.__logger= logging.getLogger('pycbc.pycbc')
-        self.__devicehandle = devicehandle
-
-    def __enter__(self):
-        self.__logger.debug("__enter__ called ")
-        
-        # create Cpu device context
-        self.__cpucontext = CpuContext(self.__devicehandle)
-        
-        self.__logger.debug(" On __enter__ create context with {0}:".format(self.__devicehandle)) 
-        self.__logger.debug( repr(self.__cpucontext) )
-        self.__logger.debug( str(self.__cpucontext) )
-        
-        return self.__cpucontext  # at with statement binding to as ###
-                
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.__logger.debug( "__exit__ called " )
-        
-        # destroy Cpu device context
-        del(self.__cpucontext)
-         
         
 class OpenClDeviceContext:
 
     def __init__(self, devicehandle):
-        self.__logger= logging.getLogger('pycbc.pycbc')
+        self.__logger= logging.getLogger('pycbc.OpenClDeviceContext')
         self.__devicehandle = devicehandle
 
     def __enter__(self):
@@ -222,32 +138,16 @@ class OpenClDeviceContext:
         # create OpenCl device context
         self.__openclcontext = OpenClContext(self.__devicehandle)
         
-        self.__logger.debug(" On __enter__ create context with {0}:".format(self.__devicehandle)) 
+        self.__logger.debug(" On __enter__ create context for device {0}:".format(self.__devicehandle)) 
         self.__logger.debug( repr(self.__openclcontext) )
         self.__logger.debug( str(self.__openclcontext) )
         
-        return self.__openclcontext  # at with statement binding to as ###
+        return self.__openclcontext # at the "with" statement binding to "as" context
                 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.__logger.debug( "__exit__ called " )
         
-        # destroy OpenCl device context
+        # destroy OpenCl device context clayer member
         del(self.__openclcontext)
+        self.__logger.debug(" On __exit__ destroyed openclcontext of device {0}:".format(self.__devicehandle))
                 
-
-class CudaDeviceContext:
-
-    def __init__(self, devicehandle):
-        self.__logger= logging.getLogger('pycbc.pycbc')
-        self.__devicehandle = devicehandle
-        self.__logger.debug("instanciated CudaDeviceContext {0}".format(self.__devicehandle))
-
-    def __enter__(self):
-        self.__logger.debug("__enter__ called ")
-        
-        
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.__logger.debug("__exit__ called ")
-        
-
-        
