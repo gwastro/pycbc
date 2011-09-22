@@ -29,6 +29,7 @@ pyCBC Cpu processing object - base class and context
 from pycbc_base import PyCbcProcessingObj
 from pycbccpu import cpu_context_t as CpuContext
 
+from datavector.datavectoropencl import *
 from datavector.datavectorcpu import *    
 
 import logging
@@ -58,6 +59,14 @@ class CpuProcessingObj(PyCbcProcessingObj):
         @param datavector: any datavector
         @rtype  snr:   datavector_cpu_t
         @return snr:   Cpu datavector
+
+
+
+        Currently support only OPENCL !!!
+
+        later distinguish by the context!
+
+
         """
 
         vector_repr = repr(datavector)
@@ -67,11 +76,62 @@ class CpuProcessingObj(PyCbcProcessingObj):
             return datavector
 
         else:
+
+            # cloning the alien datavector (currently only _cpu_t is allowed)
+            self.__logger.debug("data_in found alien datavector {0} thus transfer it".format(vector_repr))
+            datatype_match= re.search( r'<pycbc.datavector.datavectoropencl.(.*)(_opencl_t);(.*)', vector_repr)
+            tmptype = datatype_match.groups(1)
+            datatype = tmptype[0]
+            self.__logger.debug("extracted: {0}".format(datatype))
+
+            datavector_tupel= re.split('_+', datatype)
+
+            if datavector_tupel[1] != 'vector':
+                raise TypeError('data_in called with something else than a datavector')
         
-            raise TypeError('data_in cpu has to be implemented to transfer alien datavectors to the cpu')
-        
-            return none
-        
+            if datavector_tupel[0] == 'real':
+                if datavector_tupel[2] == 'single':
+                    self.__logger.debug("data_in create real_vector_single")
+                    self.__logger.debug("data_in create complex_vector_single")
+                    new_arch_vector = real_vector_single_cpu_t(len(datavector),
+                                                               datavector.get_delta_x())
+                    transfer_real_vector_single_to_cpu(self._devicecontext,
+                                                         new_arch_vector, datavector)
+
+                elif datavector_tupel[2] == 'double':
+                    self.__logger.debug("data_in create real_vector_double")
+                    new_arch_vector = real_vector_double_opencl_t(self._devicecontext,
+                                                                  len(datavector),
+                                                                  datavector.get_delta_x())
+                    transfer_real_vector_double_to_cpu(self._devicecontext,
+                                                         new_arch_vector, datavector)
+                    
+                else:
+                    raise TypeError('real datavector neither single nor double')
+
+            elif datavector_tupel[0] == 'complex':
+                if datavector_tupel[2] == 'single':
+                    self.__logger.debug("data_in create complex_vector_single")
+                    new_arch_vector = complex_vector_single_opencl_t(self._devicecontext,
+                                                                     len(datavector),
+                                                                     datavector.get_delta_x())
+                    transfer_complex_vector_single_to_cpu(self._devicecontext,
+                                                            new_arch_vector, datavector)
+
+                elif datavector_tupel[2] == 'double':
+                    self.__logger.debug("data_in create complex_vector_double")
+                    new_arch_vector = complex_vector_double_opencl_t(self._devicecontext,
+                                                                     len(datavector),
+                                                                     datavector.get_delta_x())
+                    transfer_complex_vector_double_to_cpu(self._devicecontext,
+                                                            new_arch_vector, datavector)
+
+                else:
+                    raise TypeError('complex datavector neither single nor double')
+            else:
+                raise TypeError('datavector neither real nor complex')
+    
+            return new_arch_vector
 
 
 # ------------------- device context section -----------------------------------

@@ -55,7 +55,11 @@ from pycbc.pycbc_opencl import OpenClDeviceContext as ProccessingTargetContext
 from pycbc.straindata.straindata_cpu import StrainDataCpu as StrainData 
 from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
 
+from pycbc.datavecterm_cpu import *
+
 from pycbc.datavector.datavectoropencl import complex_vector_single_opencl_t as WaveformFrequencySeries
+
+
 
 import logging
 
@@ -106,6 +110,8 @@ with ProccessingTargetContext(0) as context:
     # messy prototyping of htilde (until we have a template bank)
     htilde = WaveformFrequencySeries(context, strain_data.segments_length, strain_data.segments_delta_x)
 
+    terminator = DataVecTermCpu(context)
+
     print 'before hot loop'
 
     # hot loop
@@ -113,6 +119,11 @@ with ProccessingTargetContext(0) as context:
 	print context
         snr = matched_filter.perform_generate_snr(stilde, htilde)
     
+        result_vector = terminator.data_in(snr)
+
+        print "result_vector = {0}".format(result_vector)
+
+
     print 'after hot loop'    
         
     ############################################################################
