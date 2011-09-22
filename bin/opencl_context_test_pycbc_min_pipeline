@@ -56,6 +56,7 @@ from pycbc.straindata.straindata_cpu import StrainDataCpu as StrainData
 from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
 
 from pycbc.datavecterm_cpu import *
+from pycbc.datavecstim_opencl import *
 
 from pycbc.datavector.datavectoropencl import complex_vector_single_opencl_t as WaveformFrequencySeries
 
@@ -109,21 +110,46 @@ with ProccessingTargetContext(0) as context:
 
     # messy prototyping of htilde (until we have a template bank)
     htilde = WaveformFrequencySeries(context, strain_data.segments_length, strain_data.segments_delta_x)
+ 
 
+    # testing the kernel: ####################################################
+
+    from pycbc.datavector.datavectoropencl import *
+    from pycbc.datavector.datavectorcpu import *
+
+    stimulator = DataVecStimOpenCl(context)
     terminator = DataVecTermCpu(context)
 
-    print 'before hot loop'
+    test_size= 4096
 
+    test_mf    = MatchedFilter(context, test_size, 1.0)
+
+    inputcpuA  = complex_vector_single_cpu_t(test_size, 1.0)
+    for i in range(test_size):
+        inputcpuA[i]= 2+2j
+    #inputgpuA  = stimulator.data_in(inputcpuA) 
+ 
+    inputcpuB  = complex_vector_single_cpu_t(test_size, 1.0)
+    for i in range(test_size):
+        inputcpuB[i]= 3+3j
+    #inputgpuB  = stimulator.data_in(inputcpuB)
+
+    outputgpu = test_mf.perform_generate_snr(inputcpuA, inputcpuB)
+
+    outputcpu = terminator.data_in(outputgpu)
+
+    for i in range(test_size):
+        print "output @ index {0} = {1}".format(i, outputcpu[i])
+
+    ###########################################################################
+
+    print 'before hot loop'
     # hot loop
     for stilde in strain_data:
-	print context
+        
+    	print context
         snr = matched_filter.perform_generate_snr(stilde, htilde)
-    
-        result_vector = terminator.data_in(snr)
-
-        print "result_vector = {0}".format(result_vector)
-
-
+        
     print 'after hot loop'    
         
     ############################################################################
