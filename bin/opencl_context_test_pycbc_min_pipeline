@@ -85,7 +85,7 @@ gps_start_time= 871147532
 gps_end_time= gps_start_time + search_time
 interferometer = "H1"
 
-with ProccessingTargetContext(0) as context:
+with ProccessingTargetContext(1) as context:
     
     strain_data= StrainData(gps_start_time, gps_end_time, 
                         segments, sample_freq, 
@@ -138,7 +138,8 @@ with ProccessingTargetContext(0) as context:
 
     outputcpu = terminator.data_in(outputgpu)
 
-    for i in range(test_size):
+    # for i in range(test_size):
+    for i in range(10):
         print "output @ index {0} = {1}".format(i, outputcpu[i])
 
     ###########################################################################

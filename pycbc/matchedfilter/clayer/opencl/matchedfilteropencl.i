@@ -13,6 +13,7 @@
 %{
 #include "../../../datavector/clayer/opencl/datavectoropencl_types.h"
 #include "../../../clayer/opencl/pycbcopencl_types.h"
+#include "../../../clayer/opencl/pycbcopencl_prototypes.h"
 #include "matchedfilteropencl_types.h"    
 #include "matchedfilteropencl_prototypes.h"
 %}
@@ -29,6 +30,55 @@
 
 %include "matchedfilteropencl_types.h"
 %include "exception.i"
+
+
+%exception {
+    char* error_message;
+    int   error_id;
+    $action
+    if ( (error_id = pycbc_opencl_check_error()) )
+    {
+	    error_message = pycbc_opencl_get_error_message();
+	    pycbc_opencl_clear_error();
+	    switch (error_id)
+        {
+            case PYCBC_ATTRIBUTE_ERROR:
+                PyErr_SetString(PyExc_AttributeError, error_message);
+                break;
+            case PYCBC_EOF_ERROR:
+                PyErr_SetString(PyExc_EOFError, error_message);
+                break;
+            case PYCBC_IO_ERROR:
+                PyErr_SetString(PyExc_IOError, error_message);
+                break;
+            case PYCBC_INDEX_ERROR:
+                PyErr_SetString(PyExc_IndexError, error_message);
+                break;
+            case PYCBC_TYPE_ERROR:
+                PyErr_SetString(PyExc_TypeError, error_message);
+                break;
+            case PYCBC_VALUE_ERROR:
+                PyErr_SetString(PyExc_ValueError, error_message);
+                break;
+            case PYCBC_MEMORY_ERROR:
+                PyErr_SetString(PyExc_MemoryError, error_message);
+                break;
+            case PYCBC_NAME_ERROR:
+                PyErr_SetString(PyExc_NameError, error_message);
+                break;
+            case PYCBC_OVERFLOW_ERROR:
+                PyErr_SetString(PyExc_OverflowError, error_message);
+                break;
+            case PYCBC_ZERO_DIVISION_ERROR:
+                PyErr_SetString(PyExc_ZeroDivisionError, error_message);
+                break;
+            case PYCBC_RUNTIME_ERROR:
+            default:
+                PyErr_SetString(PyExc_RuntimeError, error_message);
+        }
+        return NULL;
+    }
+}
 
 %exception matched_filter_opencl_t {
     $action

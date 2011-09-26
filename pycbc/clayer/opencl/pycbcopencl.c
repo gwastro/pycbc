@@ -256,7 +256,7 @@ void pycbc_opencl_set_error(int opencl_error_id, char* generic_err_message)
     }
     
     sprintf(pycbcopencl_error_message, " %s %s", opencl_err_message, 
-                                                 generic_err_message)
+	    generic_err_message);
     return;
 }
 
@@ -269,7 +269,8 @@ void pycbc_opencl_clear_error()
 
 cl_context_t* new_cl_context_t(unsigned device_id)
 {
-    cl_context_t* c;
+  cl_context_t* c  = NULL;;
+    int opencl_err = 0;
 
     c = (cl_context_t*) malloc(sizeof(cl_context_t));
 
@@ -277,10 +278,10 @@ cl_context_t* new_cl_context_t(unsigned device_id)
     c->set_error = pycbc_opencl_set_error;
     
     // this will update c with all OpenCl context elements
-    int err = gpuinsp_InitGPU(c, device_id);
+    opencl_err = gpuinsp_InitGPU(c, device_id);
     
-    if(err)
-      c->set_error( err, "gpuinsp_InitGPU failed");
+    if(opencl_err != CL_SUCCESS)
+      c->set_error( opencl_err, "gpuinsp_InitGPU failed");
 
     return c;
 }

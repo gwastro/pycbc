@@ -61,6 +61,12 @@ extern "C" matched_filter_opencl_t* new_matched_filter_opencl_t(cl_context_t * c
 
 //Creating the program from the kernel source
     c->program = clCreateProgramWithSource(context->context, 1, &kernel_source, &kernel_source_size, &err);
+
+
+    // example of using the pycbc-context error handler:
+    // context->set_error(-2, "test");
+
+
     if (gpuinsp_checkError(err,"Creating program from source file") !=0)  
       goto cleanup;
 
