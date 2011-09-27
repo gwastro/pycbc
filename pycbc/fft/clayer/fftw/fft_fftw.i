@@ -29,15 +29,15 @@
 "Copyright 2011, Josh Willis <joshua.willis@ligo.org>."
 %enddef
 
-%module(docstring=DOCSTRING) fftcpu
+%module(docstring=DOCSTRING) fft_fftw
 
 %feature("autodoc", "1");
 
 // This goes directly to the wrap-code (no swig preprocess)
 %{
-#include "fftcpu.h"
-#include "../fft.h"
+#include "fft_fftw.h"
+#include "fft_fftw_private.h"
 %}
 
-%include "fftcpu.h"
+%include "fft_fftw.h"
 

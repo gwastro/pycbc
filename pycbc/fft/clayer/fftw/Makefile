@@ -28,15 +28,13 @@ RM = /bin/rm
 PYTHON = python
 SWIG = swig
 
-all: fftcpu.i fftcpu.h fftcpu.c
-	$(SWIG) -python fftcpu.i
+all: fft_fftw.i fft_fftw.h fft_fftw.c fft_fftw_private.h
+	$(SWIG) -python fft_fftw.i
 	$(PYTHON) setup.py build_ext --inplace
-	cp fftcpu.py ../../
-	cp _fftcpu.so ../../
+	cp fft_fftw.py ../../
+	cp _fft_fftw.so ../../
 
-tidy:
-	$(RM) -f *~
-clean: tidy
-	$(RM) -rf fftcpu_wrap.c fftcpu.py ../../fftcpu.py \
-        fftcpu.pyc _fftcpu.so ../../_fftcpu.so ../../fftcpu.pyc  build 
+clean: 
+	$(RM) -rf fft_fftw_wrap.c fft_fftw.py ../../fft_fftw.py \
+        fft_fftw.pyc _fft_fftw.so ../../_fft_fftw.so ../../fft_fftw.pyc  build 
  
