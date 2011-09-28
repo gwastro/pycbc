@@ -48,7 +48,7 @@ fft_fftw_ext = Extension( '_fft_fftw',
   include_dirs = [],
   extra_compile_args = ['-Wall'],
   library_dirs = [],
-  libraries = [])
+  libraries = ['fftw3','fftw3f'])
 
 setup (name = 'fft_fftw',
        version = '0.1',

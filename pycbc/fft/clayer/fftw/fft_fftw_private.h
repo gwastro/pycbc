@@ -7,23 +7,20 @@
 
 /* Struct common for single-precision plans */
 #define FFT_PLAN_STRUCT_DATA_FFTWF \
-  fftwf_plan    *theplan; \
+  fftwf_plan    theplan; \
   unsigned long size; \
   int           fwdflag; \
 
 /* Struct common for double-precision plans */
 #define FFT_PLAN_STRUCT_DATA_FFTW \
-  fftw_plan    *theplan; \
+  fftw_plan     theplan; \
   unsigned long size; \
   int           fwdflag; \
 
 /* Now the actual structs our functions use */
 
 typedef struct {
-  //FFT_PLAN_STRUCT_DATA_FFTWF
-  fftwf_plan    *theplan; 
-  unsigned long size; 
-  int           fwdflag; 
+  FFT_PLAN_STRUCT_DATA_FFTWF
 } fft_real_single_plan_fftw;
 
 typedef struct {

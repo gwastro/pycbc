@@ -37,4 +37,4 @@ all: fft_fftw.i fft_fftw.h fft_fftw.c fft_fftw_private.h
 clean: 
 	$(RM) -rf fft_fftw_wrap.c fft_fftw.py ../../fft_fftw.py \
         fft_fftw.pyc _fft_fftw.so ../../_fft_fftw.so ../../fft_fftw.pyc  build 
- 
+
