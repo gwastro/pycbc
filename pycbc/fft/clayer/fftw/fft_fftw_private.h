@@ -4,36 +4,30 @@
 #include <stdlib.h>
 #include <complex.h>
 #include <fftw3.h>
+#include "fft_fftw.h"
 
-/* Struct common for single-precision plans */
-#define FFT_PLAN_STRUCT_DATA_FFTWF \
-  fftwf_plan    theplan; \
-  unsigned long size; \
-  int           fwdflag; \
+/*
+ Prototypes of constructors/destructors.  
+*/
 
-/* Struct common for double-precision plans */
-#define FFT_PLAN_STRUCT_DATA_FFTW \
-  fftw_plan     theplan; \
-  unsigned long size; \
-  int           fwdflag; \
+fft_real_single_plan_fftw *new_fft_real_single_plan_fftw(unsigned long size, 
+							 int fwdflag, 
+							 int measurelvl);
+void delete_fft_real_single_plan_fftw(fft_real_single_plan_fftw *self);
 
-/* Now the actual structs our functions use */
+fft_real_double_plan_fftw *new_fft_real_double_plan_fftw(unsigned long size, 
+							 int fwdflag,
+							 int measurelvl);
+void delete_fft_real_double_plan_fftw(fft_real_double_plan_fftw *self);
 
-typedef struct {
-  FFT_PLAN_STRUCT_DATA_FFTWF
-} fft_real_single_plan_fftw;
+fft_complex_single_plan_fftw *new_fft_complex_single_plan_fftw(unsigned long size,
+							       int fwdflag, 
+							       int measurelvl);
+void delete_fft_complex_single_plan_fftw(fft_complex_single_plan_fftw *self);
 
-typedef struct {
-FFT_PLAN_STRUCT_DATA_FFTW
-} fft_real_double_plan_fftw;
-
-typedef struct {
-FFT_PLAN_STRUCT_DATA_FFTWF
-} fft_complex_single_plan_fftw;
-
-typedef struct {
-FFT_PLAN_STRUCT_DATA_FFTW
-} fft_complex_double_plan_fftw;
-
+fft_complex_double_plan_fftw *new_fft_complex_double_plan_fftw(unsigned long size, 
+							       int fwdflag,
+							       int measurelvl);
+void delete_fft_complex_double_plan_fftw(fft_complex_double_plan_fftw *self);
 
 #endif  /* #ifndef FFT_FFTW_PRIVATE_H */

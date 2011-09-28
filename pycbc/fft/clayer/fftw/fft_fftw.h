@@ -30,34 +30,38 @@
 #include <stdlib.h>
 #include <complex.h>
 #include <fftw3.h>
-#include "fft_fftw_private.h"
 #include "../../../datavector/clayer/cpu/datavectorcpu_types.h"
 
-/*
- Prototypes of constructors/destructors.  These are just SWIG wrapped into 
- functions; one layer above the interface file calls the appropriate function based 
- on where the memory will live.
-*/
+/* Struct common for single-precision plans */
+#define FFT_PLAN_STRUCT_DATA_FFTWF \
+  fftwf_plan    theplan; \
+  unsigned long size; \
+  int           fwdflag; 
 
-fft_real_single_plan_fftw *new_fft_real_single_plan_fftw(unsigned long size, 
-							 int fwdflag, 
-							 int measurelvl);
-void delete_fft_real_single_plan_fftw(fft_real_single_plan_fftw *self);
+/* Struct common for double-precision plans */
+#define FFT_PLAN_STRUCT_DATA_FFTW \
+  fftw_plan     theplan; \
+  unsigned long size; \
+  int           fwdflag; 
 
-fft_real_double_plan_fftw *new_fft_real_double_plan_fftw(unsigned long size, 
-							 int fwdflag,
-							 int measurelvl);
-void delete_fft_real_double_plan_fftw(fft_real_double_plan_fftw *self);
+/* Now the actual structs our functions use */
 
-fft_complex_single_plan_fftw *new_fft_complex_single_plan_fftw(unsigned long size,
-							       int fwdflag, 
-							       int measurelvl);
-void delete_fft_complex_single_plan_fftw(fft_complex_single_plan_fftw *self);
+typedef struct {
+FFT_PLAN_STRUCT_DATA_FFTWF
+} fft_real_single_plan_fftw;
 
-fft_complex_double_plan_fftw *new_fft_complex_double_plan_fftw(unsigned long size, 
-							       int fwdflag,
-							       int measurelvl);
-void delete_fft_complex_double_plan_fftw(fft_complex_double_plan_fftw *self);
+typedef struct {
+FFT_PLAN_STRUCT_DATA_FFTW
+} fft_real_double_plan_fftw;
+
+typedef struct {
+FFT_PLAN_STRUCT_DATA_FFTWF
+} fft_complex_single_plan_fftw;
+
+typedef struct {
+FFT_PLAN_STRUCT_DATA_FFTW
+} fft_complex_double_plan_fftw;
+
 
 /*
   Functions to execute FFTW plans
