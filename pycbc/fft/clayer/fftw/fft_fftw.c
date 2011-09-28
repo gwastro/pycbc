@@ -183,25 +183,25 @@ fft_complex_double_plan_fftw *new_fft_complex_double_plan_fftw(unsigned long siz
   return self;
 }
 
-void delete_real_single_plan_fftw(fft_real_single_plan_fftw *self){
+void delete_fft_real_single_plan_fftw(fft_real_single_plan_fftw *self){
   fftwf_destroy_plan(self->theplan);
   free(self);
   return;
 }
 
-void delete_complex_single_plan_fftw(fft_complex_single_plan_fftw *self){
+void delete_fft_complex_single_plan_fftw(fft_complex_single_plan_fftw *self){
   fftwf_destroy_plan(self->theplan);
   free(self);
   return;
 }
 
-void delete_real_double_plan_fftw(fft_real_double_plan_fftw *self){
+void delete_fft_real_double_plan_fftw(fft_real_double_plan_fftw *self){
   fftw_destroy_plan(self->theplan);
   free(self);
   return;
 }
 
-void delete_complex_double_plan_fftw(fft_complex_double_plan_fftw *self){
+void delete_fft_complex_double_plan_fftw(fft_complex_double_plan_fftw *self){
   fftw_destroy_plan(self->theplan);
   free(self);
   return;
