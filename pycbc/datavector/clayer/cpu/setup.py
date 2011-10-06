@@ -44,6 +44,11 @@ class pycbc_build_ext(build_ext):
         # copy the python stub for the _xyz.so ext library to the 
         # build/lib location. this won't be done by the build_ext cmd.
         file_util.copy_file('datavectorcpu.py', self.build_lib)
+        
+        # temporarily copy up files to ensure test run from package dir        
+        file_util.copy_file('datavectorcpu.py', '../../')
+        shared_lib_ext= os.path.join(self.build_lib, '_datavectorcpu.so')
+        file_util.copy_file(shared_lib_ext, '../../' )
 
 
 class pycbc_clean(clean):
@@ -53,7 +58,9 @@ class pycbc_clean(clean):
         self.all = 1       # clean everything in build/
         clean.run(self)
                            # clean specific files
-        self.clean_files = ['datavectorcpu.py','datavectorcpu_wrap.c']
+        self.clean_files = ['datavectorcpu.py','datavectorcpu_wrap.c',
+                            '../../datavectorcpu.py', '../../_datavectorcpu.so']
+                            
         for f in self.clean_files:
             print "removing {0}".format(f)
             try:
