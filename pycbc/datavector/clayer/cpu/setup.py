@@ -29,31 +29,50 @@ setup.py file for swig wrap datavectorcpu into pycbc
 """
 
 from distutils.core import setup, Extension
-
-vector_module = Extension('_datavectorcpu',
-                          sources=['datavectorcpu_wrap.c','datavectorcpu.c'],
-                          )
+from distutils.command.build_ext import build_ext
+from distutils import file_util
 
 
-# base source files that do not require special libraries
-datavectorcpu_swig_sources = ['datavectorcpu.i']
-datavectorcpu_c_sources = ['datavectorcpu.c']
+class pycbc_build_ext(build_ext):
+    
+    def run(self):
+        build_ext.run(self)
+        # copy the python stub for the _xyz.so ext library to the 
+        # build/lib location. this won't be done by the build_ext cmd.
+        file_util.copy_file('datavectorcpu.py', self.build_lib)
 
 
-# define the extension module
-datavectorcpu_ext = Extension( '_datavectorcpu', 
-  sources = datavectorcpu_swig_sources + datavectorcpu_c_sources,
-  depends = ['datavectorcpu.h'],
-  swig_opts = [],
-  include_dirs = [],
-  extra_compile_args = ['-Wall'],
-  library_dirs = [],
-  libraries = [])
+datavectorcpu_ext = Extension(
+    name= '_datavectorcpu', 
+    sources = ['datavectorcpu.i',
+               'datavectorcpu.c'],
+    #not documented option: swig_opts = [],
+    include_dirs = ['.','../'],
+    #define_macros=[('TESTMACRO', '1')],
+    #undef_macros=['TESTMACRO'],
+    library_dirs = [],
+    libraries = [],
+    runtime_library_dirs = [],
+    extra_objects = [],
+    extra_compile_args = ['-Wall'],
+    extra_link_args = [],
+    export_symbols = [],
+    depends = ['datavectorcpu.c',
+               'datavectorcpu.i',
+               'datavectorcpu_types.h',
+               'datavectorcpu_prototypes.h'],
+    language = []
+)
+
 
 setup (name = 'datavectorcpu',
        version = '0.1',
        author = "Karsten Wiesner",
-       description = """Swig wrap datavectorcpu""",
+       description = 'swig wrapped python extension datavectorcpu',
        ext_modules = [datavectorcpu_ext],
-       py_modules = ["datavectorcpu"],
-       )
+       cmdclass = {
+            'build_ext' : pycbc_build_ext }  # extend build_ext for pycbc
+
+       #py_modules = ["datavectorcpu"],   don't list the swig generated 
+       #python extension stub here
+       )                                   
