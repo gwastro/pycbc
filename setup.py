@@ -50,6 +50,9 @@ matchedfiltercpu_ext = Extension(
     name = '_matchedfiltercpu', 
     sources = ['pycbc/matchedfilter/clayer/cpu/matchedfiltercpu.i','pycbc/matchedfilter/clayer/cpu/matchedfiltercpu.c'],
     # not in doc swig_opts = [],
+    cmdclass = {
+    'build_ext' : pycbc_clean},
+
     include_dirs = ['pycbc/matchedfilter/clayer/cpu/','pycbc/matchedfilter/clayer/'],
     define_macros=[('TESTMACRO', '1')],
     undef_macros=['TESTMACRO'],

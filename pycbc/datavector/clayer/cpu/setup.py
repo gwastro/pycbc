@@ -28,8 +28,12 @@
 setup.py file for swig wrap datavectorcpu into pycbc
 """
 
+import os
+
+from distutils import log
 from distutils.core import setup, Extension
 from distutils.command.build_ext import build_ext
+from distutils.command.clean import clean
 from distutils import file_util
 
 
@@ -42,12 +46,28 @@ class pycbc_build_ext(build_ext):
         file_util.copy_file('datavectorcpu.py', self.build_lib)
 
 
+class pycbc_clean(clean):
+    
+    def run(self):
+        
+        self.all = 1       # clean everything in build/
+        clean.run(self)
+                           # clean specific files
+        self.clean_files = ['datavectorcpu.py','datavectorcpu_wrap.c']
+        for f in self.clean_files:
+            print "removing {0}".format(f)
+            try:
+                os.unlink(f)
+            except:
+                log.warn("'%s' does not exist -- can't clean it" % f)
+
+
 datavectorcpu_ext = Extension(
     name= '_datavectorcpu', 
     sources = ['datavectorcpu.i',
                'datavectorcpu.c'],
-    #not documented option: swig_opts = [],
-    include_dirs = ['.','../'],
+    swig_opts = ['-I../'],            # add include dirs for swig here
+    include_dirs = [],                # add include dirs for compilers here
     #define_macros=[('TESTMACRO', '1')],
     #undef_macros=['TESTMACRO'],
     library_dirs = [],
@@ -71,7 +91,9 @@ setup (name = 'datavectorcpu',
        description = 'swig wrapped python extension datavectorcpu',
        ext_modules = [datavectorcpu_ext],
        cmdclass = {
-            'build_ext' : pycbc_build_ext }  # extend build_ext for pycbc
+            'build_ext' : pycbc_build_ext,
+            'clean' : pycbc_clean 
+       }
 
        #py_modules = ["datavectorcpu"],   don't list the swig generated 
        #python extension stub here
