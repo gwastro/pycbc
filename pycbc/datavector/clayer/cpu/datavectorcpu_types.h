@@ -28,7 +28,7 @@
 #define DATAVECTORCPU_TYPES_H
 
 #include <stdlib.h>
-#include "../datavector_types.h"
+#include "datavector_types.h"
 
 typedef struct
 {

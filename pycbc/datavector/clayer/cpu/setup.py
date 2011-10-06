@@ -74,7 +74,7 @@ datavectorcpu_ext = Extension(
     sources = ['datavectorcpu.i',
                'datavectorcpu.c'],
     swig_opts = ['-I../'],            # add include dirs for swig here
-    include_dirs = [],                # add include dirs for compilers here
+    include_dirs = ['../'],           # add include dirs for compilers here
     #define_macros=[('TESTMACRO', '1')],
     #undef_macros=['TESTMACRO'],
     library_dirs = [],
