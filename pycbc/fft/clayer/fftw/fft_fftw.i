@@ -29,15 +29,35 @@
 "Copyright 2011, Josh Willis <joshua.willis@ligo.org>."
 %enddef
 
-%module(docstring=DOCSTRING) fftcpu
+%module(docstring=DOCSTRING) fft_fftw
 
 %feature("autodoc", "1");
 
 // This goes directly to the wrap-code (no swig preprocess)
 %{
-#include "fftcpu.h"
-#include "../fft.h"
+#include "fft_fftw.h"
+#include "fft_fftw_private.h"
 %}
 
-%include "fftcpu.h"
+%include "fft_fftw.h"
+
+%extend fft_real_single_plan_fftw {
+	fft_real_single_plan_fftw(unsigned long size, int fwdflag, int measurelvl);
+	~fft_real_single_plan_fftw();
+}
+
+%extend fft_complex_single_plan_fftw {
+	fft_complex_single_plan_fftw(unsigned long size, int fwdflag, int measurelvl);
+	~fft_complex_single_plan_fftw();
+}
+
+%extend fft_real_double_plan_fftw {
+	fft_real_double_plan_fftw(unsigned long size, int fwdflag, int measurelvl);
+	~fft_real_double_plan_fftw();
+}
+
+%extend fft_complex_double_plan_fftw {
+	fft_complex_double_plan_fftw(unsigned long size, int fwdflag, int measurelvl);
+	~fft_complex_double_plan_fftw();
+}
 

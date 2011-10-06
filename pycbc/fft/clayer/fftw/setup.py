@@ -25,35 +25,35 @@
 #
 
 """
-setup.py file for swig wrap fftcpu into pycbc
+setup.py file for swig wrap fft_fftw into pycbc
 """
 
 from distutils.core import setup, Extension
 
-fftcpu_module = Extension('_fftcpu',
-                          sources=['fftcpu_wrap.c','fftcpu.c'],
+fft_fftw_module = Extension('_fft_fftw',
+                          sources=['fft_fftw_wrap.c','fft_fftw.c'],
                           )
 
 
 # base source files that do not require special libraries
-fftcpu_swig_sources = ['fftcpu.i']
-fftcpu_c_sources = ['fftcpu.c']
+fft_fftw_swig_sources = ['fft_fftw.i']
+fft_fftw_c_sources = ['fft_fftw.c']
 
 
 # define the extension module
-fftcpu_ext = Extension( '_fftcpu', 
-  sources = fftcpu_swig_sources + fftcpu_c_sources,
-  depends = ['fftcpu.h'],
+fft_fftw_ext = Extension( '_fft_fftw', 
+  sources = fft_fftw_swig_sources + fft_fftw_c_sources,
+  depends = ['fft_fftw.h','fft_fftw_private.h'],
   swig_opts = [],
   include_dirs = [],
   extra_compile_args = ['-Wall'],
   library_dirs = [],
-  libraries = [])
+  libraries = ['fftw3','fftw3f'])
 
-setup (name = 'fftcpu',
+setup (name = 'fft_fftw',
        version = '0.1',
        author = "Josh Willis",
-       description = """Swig wrap fftcpu""",
-       ext_modules = [fftcpu_ext],
-       py_modules = ["fftcpu"],
+       description = """Swig wrap fft_fftw""",
+       ext_modules = [fft_fftw_ext],
+       py_modules = ["fft_fftw"],
        )
