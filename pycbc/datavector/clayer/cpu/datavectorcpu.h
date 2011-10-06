@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Karsten Wiesner, Josh Willis
+// Copyright (C) 2011 Karsten Wiesner
 //
 // This program is free software; you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by the
@@ -22,13 +22,13 @@
 //
 // =============================================================================
 //
-// datavector type definitions for pycbc
+// datavectorcpu type definitions for pycbc
 
-#ifndef DATAVECTORCPU_TYPES_H
-#define DATAVECTORCPU_TYPES_H
+#ifndef DATAVECTORCPU_H
+#define DATAVECTORCPU_H
 
 #include <stdlib.h>
-#include "datavector_types.h"
+#include "datavector.h"
 
 typedef struct
 {
@@ -58,4 +58,4 @@ typedef struct
 }
 complex_vector_double_cpu_t;
 
-#endif /* DATAVECTORCPU_TYPES_H */
+#endif /* DATAVECTORCPU_H */

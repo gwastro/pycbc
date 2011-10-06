@@ -22,14 +22,18 @@
 //
 // =============================================================================
 //
-// datavector constructor destructor prototypes for pycbc
+// datavectorcpu declarations that are not going to be swig wrapped 
+// thus they are private property of the clayer
 
-#ifndef DATAVECTORCPU_PROTOTYPES_H
-#define DATAVECTORCPU_PROTOTYPES_H
+
+#ifndef DATAVECTORCPU_PRIVATE_H
+#define DATAVECTORCPU_PRIVATE_H
 
 #include <stdlib.h>
 
-// prototypes of all methodes that will extend pure c typedefs
+
+// prototypes of constructors/destructors.  
+
 real_vector_single_cpu_t* new_real_vector_single_cpu_t(unsigned long, double);
 void delete_real_vector_single_cpu_t( real_vector_single_cpu_t* );
 
@@ -42,4 +46,4 @@ void delete_complex_vector_single_cpu_t( complex_vector_single_cpu_t* );
 complex_vector_double_cpu_t* new_complex_vector_double_cpu_t(unsigned long, double);
 void delete_complex_vector_double_cpu_t( complex_vector_double_cpu_t* );
 
-#endif /* DATAVECTORCPU_PROTOTYPES_H */
+#endif /* DATAVECTORCPU_PRIVATE_H */

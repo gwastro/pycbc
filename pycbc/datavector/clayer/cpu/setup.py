@@ -45,7 +45,7 @@ class pycbc_build_ext(build_ext):
         # build/lib location. this won't be done by the build_ext cmd.
         file_util.copy_file('datavectorcpu.py', self.build_lib)
         
-        # temporarily copy up files to ensure test run from package dir        
+        # copy files updir to ensure test run from package dir        
         file_util.copy_file('datavectorcpu.py', '../../')
         shared_lib_ext= os.path.join(self.build_lib, '_datavectorcpu.so')
         file_util.copy_file(shared_lib_ext, '../../' )
@@ -86,8 +86,10 @@ datavectorcpu_ext = Extension(
     export_symbols = [],
     depends = ['datavectorcpu.c',
                'datavectorcpu.i',
-               'datavectorcpu_types.h',
-               'datavectorcpu_prototypes.h'],
+               'datavectorcpu.h',
+               'datavectorcpu_private.h',
+               'datavector.i',
+               'datavector.h'],
     language = []
 )
 

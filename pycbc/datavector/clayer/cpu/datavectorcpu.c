@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Karsten Wiesner, Josh Willis
+// Copyright (C) 2011 Karsten Wiesner
 //
 // This program is free software; you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by the
@@ -27,8 +27,8 @@
 
 #include <stdio.h>
 
-#include "datavectorcpu_types.h"
-#include "datavectorcpu_prototypes.h"
+#include "datavectorcpu.h"
+#include "datavectorcpu_private.h"
 
 real_vector_single_cpu_t* new_real_vector_single_cpu_t(unsigned long length, 
                                                double delta_x)

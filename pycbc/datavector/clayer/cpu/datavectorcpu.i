@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Karsten Wiesner, Josh Willis
+// Copyright (C) 2011 Karsten Wiesner
 //
 // This program is free software; you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by the
@@ -22,7 +22,7 @@
 //
 // =============================================================================
 //
-// datavector swig file for pycbc
+// datavectorcpu swig file for pycbc
 
 /* vim: tabstop=4:softtabstop=4:shiftwidth=4:expandtab */
 
@@ -36,8 +36,8 @@
 
 // This goes directly to the wrap-code (no swig preprocess)
 %{
-#include "datavectorcpu_types.h"
-#include "datavectorcpu_prototypes.h"
+#include "datavectorcpu.h"
+#include "datavectorcpu_private.h"
 %}
 
 %pythoncode %{
@@ -45,13 +45,9 @@
     import warnings
     %}
 
-// To extend the c-types by methodes they have to be defined here
-// but to declare function prototypes as well would raise a 
-// "is multiply defined error". That is the reason for splitting 
-// the headerfiles into _types and _prototypes
-%include "datavector_types.h"
-%include "datavector_types.i"
-%include "datavectorcpu_types.h"
+%include "datavector.h"
+%include "datavector.i"
+%include "datavectorcpu.h"
 %include "exception.i"
 
 %exception real_vector_single_cpu_t {
@@ -97,4 +93,3 @@
 %extend complex_vector_double_cpu_t {
     TYPE_INTERFACE_TEMPLATE(complex_vector_double_cpu_t,complex double )
 }
-

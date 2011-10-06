@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Karsten Wiesner, Josh Willis
+// Copyright (C) 2011 Karsten Wiesner
 //
 // This program is free software; you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by the
@@ -24,15 +24,15 @@
 //
 // datavector meta data type for pycbc
 
-#ifndef DATAVECTOR_TYPES_H
-#define DATAVECTOR_TYPES_H
+#ifndef DATAVECTOR_H
+#define DATAVECTOR_H
 
 #include <stdlib.h>
 #include <complex.h>
 
 // To add new elements add them in the typedef meta_data_t  
 // and in the CONSTRUCTOR_TEMPLATE macro
-// and in the TYPE_INTERFACE_TEMPLATE macro in the datavector_types.i file
+// and in the TYPE_INTERFACE_TEMPLATE macro in the datavector.i file
 
 typedef struct
 {
@@ -59,4 +59,4 @@ c->meta_data.delta_x = delta_x;\
 c->meta_data.vector_length = length;\
 c->meta_data.element_size_bytes = sizeof(type);\
 
-#endif /* DATAVECTOR_TYPES_H */
+#endif /* DATAVECTOR_H */
