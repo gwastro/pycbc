@@ -28,9 +28,9 @@
 #define DATAVECTOROPENCL_TYPES_H
 
 #include <stdlib.h>
-#include "../datavector_types.h"
-#include "../cpu/datavectorcpu_types.h"
-#include <CL/opencl.h>
+#include "../datavector.h"
+#include "../cpu/datavectorcpu.h"
+#include "opencl.h"
 
 typedef struct
 {

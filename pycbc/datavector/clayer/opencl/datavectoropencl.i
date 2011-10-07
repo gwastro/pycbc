@@ -46,14 +46,8 @@
     import warnings
     %}
 
-// To extend the c-types by methodes they have to be defined here
-// but to declare function prototypes as well would raise a 
-// "is multiply defined error". That is the reason for splitting 
-// the headerfiles into _types and _prototypes
-%include "../datavector_types.h"
-// opencl datavectors have two pointers so we have 
-// to implement the swigging different than in -> 
-// %include "../datavector_types.i"
+
+%include "../datavector.h"
 %include "datavectoropencl_types.h"
 %include "exception.i"
 
