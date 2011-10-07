@@ -94,7 +94,10 @@ matchedfilteropencl_ext = Extension(
     depends = ['matchedfilteropencl.c',
                'matchedfilteropencl.i',
                'matchedfilteropencl.h',
-               'matchedfilteropencl_private.h'],
+               'matchedfilteropencl_private.h',
+               'datavectoropencl.h',
+               'pycbcopencl.h',
+               'gpu_inspiral_gpuutils.h'],
     language = []
 )
 
