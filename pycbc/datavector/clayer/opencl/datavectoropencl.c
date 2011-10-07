@@ -26,7 +26,7 @@
 
 #include <stdio.h>
 #include <complex.h>
-#include "pycbcopencl_types.h"
+#include "pycbcopencl.h"
 #include "gpu_inspiral_gpuutils.h"
 #include "datavectoropencl.h"
 #include "datavectoropencl_private.h"

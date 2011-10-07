@@ -29,7 +29,7 @@
 #define DATAVECTOROPENCL_PRIVATE_H
 
 #include <stdlib.h>
-#include <pycbcopencl_types.h>
+#include <pycbcopencl.h>
 #include "CL/opencl.h"
 
 // prototypes of constructors/destructors.  

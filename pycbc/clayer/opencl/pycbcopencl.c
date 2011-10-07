@@ -26,8 +26,8 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "pycbcopencl_types.h"
-#include "pycbcopencl_prototypes.h"
+#include "pycbcopencl.h"
+#include "pycbcopencl_private.h"
 #include "gpu_inspiral_gpuutils.h"
 
 unsigned pycbcopencl_error_stash = 0;

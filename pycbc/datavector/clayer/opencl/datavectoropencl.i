@@ -34,7 +34,7 @@
 
 // This goes directly to the wrap-code (no swig preprocess)
 %{
-#include "pycbcopencl_types.h"
+#include "pycbcopencl.h"
 #include "datavectoropencl.h"
 #include "datavectoropencl_private.h"
 %}

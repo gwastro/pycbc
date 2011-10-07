@@ -95,7 +95,7 @@ datavectoropencl_ext = Extension(
                'datavector.i',
                'datavector.h',
                'datavectorcpu.h'
-               'pycbcopencl_types'],
+               'pycbcopencl.h'],
     language = []
 )
 
