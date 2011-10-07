@@ -34,8 +34,8 @@ unittest for the datavector opencl class
 
 # preliminary hard coded path to packages 
 import sys
-sys.path.append('/Users/kawies/dev/src/pycbc')
-sys.path.append('/Users/kawies/dev/src/pycbc/pycbc/datavector')
+sys.path.append('/home/kawies/dev-dbg/src/pycbc')
+sys.path.append('/home/kawies/dev-dbg/src/pycbc/pycbc/datavector')
 
 from datavectoropencl import *
 from datavectorcpu import *
