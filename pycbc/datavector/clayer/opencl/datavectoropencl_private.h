@@ -22,44 +22,28 @@
 //
 // =============================================================================
 //
-// datavector type definitions for pycbc
+// datavectoropencl declarations that are not going to be swig wrapped 
+// thus they are private property of the clayer
 
-#ifndef DATAVECTOROPENCL_TYPES_H
-#define DATAVECTOROPENCL_TYPES_H
+#ifndef DATAVECTOROPENCL_PRIVATE_H
+#define DATAVECTOROPENCL_PRIVATE_H
 
 #include <stdlib.h>
-#include "../datavector.h"
-#include "../cpu/datavectorcpu.h"
+#include <pycbcopencl_types.h>
 #include "CL/opencl.h"
 
-typedef struct
-{
-    meta_data_t meta_data;
-    cl_mem data;
-}
-real_vector_single_opencl_t;
+// prototypes of constructors/destructors.  
 
-typedef struct
-{
-    meta_data_t meta_data;
-    cl_mem data;
-}
-real_vector_double_opencl_t;
+real_vector_single_opencl_t* new_real_vector_single_opencl_t(cl_context_t*, unsigned long, double);
+void delete_real_vector_single_opencl_t( real_vector_single_opencl_t* );
 
-typedef struct
-{
-    meta_data_t meta_data;
-    cl_mem real_data;
-    cl_mem imag_data;
-}
-complex_vector_single_opencl_t;
+real_vector_double_opencl_t* new_real_vector_double_opencl_t(cl_context_t*,unsigned long, double);
+void delete_real_vector_double_opencl_t( real_vector_double_opencl_t* );
 
-typedef struct
-{
-    meta_data_t meta_data;
-    cl_mem real_data;
-    cl_mem imag_data;
-}
-complex_vector_double_opencl_t;
+complex_vector_single_opencl_t* new_complex_vector_single_opencl_t(cl_context_t*, unsigned long, double);
+void delete_complex_vector_single_opencl_t( complex_vector_single_opencl_t* );
 
-#endif /* DATAVECTOROPENCL_TYPES_H */
+complex_vector_double_opencl_t* new_complex_vector_double_opencl_t(cl_context_t*, unsigned long, double);
+void delete_complex_vector_double_opencl_t( complex_vector_double_opencl_t* );
+
+#endif /* DATAVECTOROPENCL_PRIVATE_H */

@@ -27,30 +27,6 @@
 setup.py file for swig wrap datavectoropencl into pycbc
 """
 
-#from distutils.core import setup, Extension
-#import os;
-
-# define the extension module
-#datavectoropencl_ext = Extension( '_datavectoropencl', 
-#  sources = datavectoropencl_swig_sources + datavectoropencl_c_sources,
-#  depends = ['datavectoropencl.h'],
-#  swig_opts = [],
-#  include_dirs = ['/usr/local/nvidia/sdk-3.2/OpenCL/common/inc/',
-#                  '/Developer/GPU\ Computing/OpenCL/common/inc/Cl',
-#                  '../../../clayer/opencl'],
-#  extra_compile_args = ['-Wall','-fPIC'],
-#  library_dirs = ['/usr/lib','/usr/lib','../../../'],
-#  libraries = ['pycbcopencl','OpenCL','stdc++'])
-
-#setup (name = 'datavectoropencl',
-#       version = '0.1',
-#       author = "Karsten Wiesner",
-#       description = """Swig wrap datavectoropencl""",
-#       ext_modules = [datavectoropencl_ext],
-#       py_modules = ["datavectoropencl"],
-#       )
-
-
 import os
 
 from distutils import log
@@ -101,6 +77,7 @@ datavectoropencl_ext = Extension(
     swig_opts = ['-I../'],                     # add include dirs for swig here
     include_dirs = ['../','/usr/local/nvidia/sdk-3.2/OpenCL/common/inc/',
                     '/Developer/GPU\ Computing/OpenCL/common/inc/',
+                    '../cpu',
                     '../../../clayer/opencl'], # add include dirs for compilers here
     #define_macros=[('TESTMACRO', '1')],
     #undef_macros=['TESTMACRO'],
@@ -116,7 +93,9 @@ datavectoropencl_ext = Extension(
                'datavectoropencl.h',
                'datavectoropencl_private.h',
                'datavector.i',
-               'datavector.h'],
+               'datavector.h',
+               'datavectorcpu.h'
+               'pycbcopencl_types'],
     language = []
 )
 

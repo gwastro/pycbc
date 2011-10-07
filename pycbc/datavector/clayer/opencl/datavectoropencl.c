@@ -26,10 +26,10 @@
 
 #include <stdio.h>
 #include <complex.h>
-#include <pycbcopencl_types.h>
+#include "pycbcopencl_types.h"
 #include "gpu_inspiral_gpuutils.h"
-#include "datavectoropencl_types.h"
-#include "datavectoropencl_prototypes.h"
+#include "datavectoropencl.h"
+#include "datavectoropencl_private.h"
 
 // real_vector_single methods --------------------------------------------------
 

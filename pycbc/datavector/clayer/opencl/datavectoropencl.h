@@ -22,29 +22,45 @@
 //
 // =============================================================================
 //
-// datavector constructor destructor prototypes for pycbc
+// datavector type definitions for pycbc
 
-#ifndef DATAVECTOROPENCL_PROTOTYPES_H
-#define DATAVECTOROPENCL_PROTOTYPES_H
+#ifndef DATAVECTOROPENCL_H
+#define DATAVECTOROPENCL_H
 
 #include <stdlib.h>
-#include <pycbcopencl_types.h>
+#include "datavector.h"
+#include "datavectorcpu.h"
 #include "CL/opencl.h"
 
-// prototypes of all methodes that will extend pure c typedefs
+typedef struct
+{
+    meta_data_t meta_data;
+    cl_mem data;
+}
+real_vector_single_opencl_t;
 
-// constructors, destructors
-real_vector_single_opencl_t* new_real_vector_single_opencl_t(cl_context_t*, unsigned long, double);
-void delete_real_vector_single_opencl_t( real_vector_single_opencl_t* );
+typedef struct
+{
+    meta_data_t meta_data;
+    cl_mem data;
+}
+real_vector_double_opencl_t;
 
-real_vector_double_opencl_t* new_real_vector_double_opencl_t(cl_context_t*,unsigned long, double);
-void delete_real_vector_double_opencl_t( real_vector_double_opencl_t* );
+typedef struct
+{
+    meta_data_t meta_data;
+    cl_mem real_data;
+    cl_mem imag_data;
+}
+complex_vector_single_opencl_t;
 
-complex_vector_single_opencl_t* new_complex_vector_single_opencl_t(cl_context_t*, unsigned long, double);
-void delete_complex_vector_single_opencl_t( complex_vector_single_opencl_t* );
-
-complex_vector_double_opencl_t* new_complex_vector_double_opencl_t(cl_context_t*, unsigned long, double);
-void delete_complex_vector_double_opencl_t( complex_vector_double_opencl_t* );
+typedef struct
+{
+    meta_data_t meta_data;
+    cl_mem real_data;
+    cl_mem imag_data;
+}
+complex_vector_double_opencl_t;
 
 
 // transfer functions
@@ -80,4 +96,5 @@ void transfer_complex_vector_double_to_cpu( cl_context_t*,
                                            complex_vector_double_cpu_t,
                                            complex_vector_double_opencl_t);
 
-#endif /* DATAVECTOROPENCL_PROTOTYPES_H */
+
+#endif /* DATAVECTOROPENCL_H */

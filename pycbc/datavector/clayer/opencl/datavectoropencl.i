@@ -22,9 +22,7 @@
 //
 // =============================================================================
 //
-// datavector swig file for pycbc
-
-/* vim: tabstop=4:softtabstop=4:shiftwidth=4:expandtab */
+// datavectoropencl swig file for pycbc
 
 %define DOCSTRING
 "Copyright 2011, 2011 Karsten Wiesner <karsten.wiesner@ligo.org>."
@@ -37,8 +35,8 @@
 // This goes directly to the wrap-code (no swig preprocess)
 %{
 #include "pycbcopencl_types.h"
-#include "datavectoropencl_types.h"
-#include "datavectoropencl_prototypes.h"
+#include "datavectoropencl.h"
+#include "datavectoropencl_private.h"
 %}
 
 %pythoncode %{
@@ -47,8 +45,8 @@
     %}
 
 
-%include "../datavector.h"
-%include "datavectoropencl_types.h"
+%include "datavector.h"
+%include "datavectoropencl.h"
 %include "exception.i"
 
 // swig properties for datavector elements
