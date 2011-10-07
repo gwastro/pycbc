@@ -100,7 +100,7 @@ datavectoropencl_ext = Extension(
                'datavectoropencl.c'],
     swig_opts = ['-I../'],                     # add include dirs for swig here
     include_dirs = ['../','/usr/local/nvidia/sdk-3.2/OpenCL/common/inc/',
-                    '/Developer/GPU\ Computing/OpenCL/common/inc/CL',
+                    '/Developer/GPU\ Computing/OpenCL/common/inc/',
                     '../../../clayer/opencl'], # add include dirs for compilers here
     #define_macros=[('TESTMACRO', '1')],
     #undef_macros=['TESTMACRO'],

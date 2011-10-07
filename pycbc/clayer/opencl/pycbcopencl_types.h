@@ -28,7 +28,7 @@
 #define PYCBCOPENCL_TYPES_H
 
 #include <stdlib.h>
-#include "opencl.h"
+#include "CL/opencl.h"
 
 /* pycbc error ids - python exceptions will be raised accordingly */
 #define PYCBC_NO_ERROR            0        /* no error */

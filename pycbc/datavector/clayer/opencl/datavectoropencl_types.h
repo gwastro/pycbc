@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include "../datavector.h"
 #include "../cpu/datavectorcpu.h"
-#include "opencl.h"
+#include "CL/opencl.h"
 
 typedef struct
 {

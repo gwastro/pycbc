@@ -29,7 +29,7 @@
 
 #include <stdlib.h>
 #include <pycbcopencl_types.h>
-#include "opencl.h"
+#include "CL/opencl.h"
 
 // prototypes of all methodes that will extend pure c typedefs
 
