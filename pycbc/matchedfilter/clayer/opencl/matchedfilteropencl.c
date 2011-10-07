@@ -30,10 +30,10 @@
 #include <string.h>
 #include <iostream>
 #include <fstream>
-#include "../../../datavector/clayer/opencl/datavectoropencl_types.h"
-#include "../../../clayer/opencl/pycbcopencl_types.h"
-#include "../../../clayer/opencl/gpu_inspiral_gpuutils.h"
-#include "matchedfilteropencl_types.h"
+#include "datavectoropencl.h"
+#include "pycbcopencl.h"
+#include "gpu_inspiral_gpuutils.h"
+#include "matchedfilteropencl.h"
 
 using namespace std;
 // constructor/destructor of matched filter ------------------------------------

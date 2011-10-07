@@ -1,18 +1,37 @@
-#ifndef MATCHEDFILTEROPENCL_PROTOTYPES_H
-#define MATCHEDFILTEROPENCL_PROTOTYPES_H
+// Copyright (C) 2011 Karsten Wiesner
+//
+// This program is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License as published by the
+// Free Software Foundation; either version 2 of the License, or (at your
+// option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+// Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+//
+// =============================================================================
+//
+//                                   Preamble
+//
+// =============================================================================
+//
+// matchedfilteropencl declarations that are not going to be swig wrapped 
+// thus they are private property of the clayer
+
+#ifndef MATCHEDFILTEROPENCL_PRIVATE_H
+#define MATCHEDFILTEROPENCL_PRIVATE_H
 
 #include <stdlib.h>
-
 
 // prototypes of all methodes that will extend pure c typedefs
 extern "C" matched_filter_opencl_t* new_matched_filter_opencl_t(cl_context_t*);
 void delete_matched_filter_opencl_t( matched_filter_opencl_t* );
 
-//prototypes of all functions that swig wraps to methods
-extern "C" void gen_snr_opencl(cl_context_t* context,
-                    matched_filter_opencl_t * matchedfilter,
-                    real_vector_single_opencl_t* snr,
-                    complex_vector_single_opencl_t* stilde, 
-                    complex_vector_single_opencl_t* htilde);
-
-#endif /* MATCHEDFILTEROPENCL_PROTOTYPES_H */
+#endif /* MATCHEDFILTEROPENCL_PRIVATE_H */

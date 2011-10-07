@@ -81,7 +81,7 @@ pycbcopencl_ext = Extension(
                     '/Developer/GPU\ Computing/OpenCL/common/inc/'], # add include dirs for compilers here
     #define_macros=[('TESTMACRO', '1')],
     #undef_macros=['TESTMACRO'],
-    library_dirs = ['/usr/lib','/usr/lib'],
+    library_dirs = ['/usr/lib'],
     libraries = ['OpenCL','stdc++'],
     runtime_library_dirs = [],
     extra_objects = [],

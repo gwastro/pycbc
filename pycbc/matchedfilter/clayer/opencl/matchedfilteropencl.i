@@ -11,11 +11,11 @@
 // This goes directly to the wrap-code (no swig preprocess)
 // wrap code needs to have typedefs and function prototypes!
 %{
-#include "../../../datavector/clayer/opencl/datavectoropencl_types.h"
-#include "../../../clayer/opencl/pycbcopencl_types.h"
-#include "../../../clayer/opencl/pycbcopencl_prototypes.h"
-#include "matchedfilteropencl_types.h"    
-#include "matchedfilteropencl_prototypes.h"
+#include "datavectoropencl.h"
+#include "pycbcopencl.h"
+#include "pycbcopencl_private.h"
+#include "matchedfilteropencl.h"    
+#include "matchedfilteropencl_private.h"
 %}
 
 %pythoncode %{
@@ -23,12 +23,8 @@
     import warnings
     %}
 
-// To extend the c-types by methodes they have to be defined here
-// but to declare function prototypes as well would raise a 
-// "is multiply defined error". That is the reason for splitting 
-// the headerfiles
 
-%include "matchedfilteropencl_types.h"
+%include "matchedfilteropencl.h"
 %include "exception.i"
 
 
