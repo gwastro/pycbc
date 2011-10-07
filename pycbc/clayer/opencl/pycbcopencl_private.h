@@ -22,10 +22,12 @@
 //
 // =============================================================================
 //
-// pycbc constructor destructor prototypes for pycbc
+// pycbcopencl declarations that are not going to be swig wrapped 
+// thus they are private property of the clayer
 
-#ifndef PYCBCOPENCL_PROTOTYPES_H
-#define PYCBCOPENCL_PROTOTYPES_H
+
+#ifndef PYCBCOPENCL_PRIVATE_H
+#define PYCBCOPENCL_PRIVATE_H
 
 #include <stdlib.h>
 
@@ -45,4 +47,4 @@ cl_context_t* new_cl_context_t(unsigned);
 void delete_cl_context_t( cl_context_t* );
 
 
-#endif /* PYCBCOPENCL_PROTOTYPES_H */
+#endif /* PYCBCOPENCL_PRIVATE_H */

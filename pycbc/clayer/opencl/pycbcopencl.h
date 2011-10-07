@@ -24,8 +24,8 @@
 //
 // pycbc type definitions for pycbc
 
-#ifndef PYCBCOPENCL_TYPES_H
-#define PYCBCOPENCL_TYPES_H
+#ifndef PYCBCOPENCL_H
+#define PYCBCOPENCL_H
 
 #include <stdlib.h>
 #include "CL/opencl.h"
@@ -58,4 +58,4 @@ typedef struct
 }
 cl_context_t;
 
-#endif /* PYCBCOPENCL_TYPES_H */
+#endif /* PYCBCOPENCL_H */

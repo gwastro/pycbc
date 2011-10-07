@@ -28,50 +28,6 @@
 setup.py file for swig wrap pycbcopencl into pycbc
 """
 
-from distutils.core import setup, Extension
-import os; 
-
-# Setting the ocmpier to use g++
-
-os.environ['CC'] = 'g++'; 
-
-vector_module = Extension('_pycbcopencl',
-                          sources=['pycbcopencl_wrap.c','pycbcopencl.c'],
-                          )
-
-
-# base source files that do not require special libraries
-pycbcopencl_swig_sources = ['pycbcopencl.i']
-pycbcopencl_c_sources = ['pycbcopencl.c']
-gpu_inspiral_gpuutils_c_sources = ['gpu_inspiral_gpuutils.c']
-
-
-# define the extension module
-pycbcopencl_ext = Extension( '_pycbcopencl', 
-  sources = pycbcopencl_swig_sources + pycbcopencl_c_sources + gpu_inspiral_gpuutils_c_sources,
-  depends = ['pycbcopencl.h','gpu_inspiral_gpuutils.h'],
-  swig_opts = [],
-  include_dirs = ['/usr/local/nvidia/sdk-3.2/OpenCL/common/inc/'],
-  extra_compile_args = ['-Wall','-fPIC'],
-  library_dirs = ['/usr/lib'],
-  libraries = ['OpenCL','stdc++'])
-
-setup (name = 'pycbcopencl',
-       version = '0.1',
-       author = "Karsten Wiesner",
-       description = """Swig wrap pycbcopencl""",
-       ext_modules = [pycbcopencl_ext],
-       py_modules = ["pycbcopencl"],
-       )
-
-
-
-
-
-
-
-
-
 import os
 
 from distutils import log
@@ -118,14 +74,15 @@ class pycbc_clean(clean):
 pycbcopencl_ext = Extension(
     name= '_pycbcopencl', 
     sources = ['pycbcopencl.i',
-               'pycbcopencl.c'],
-    swig_opts = ['-I../'],                     # add include dirs for swig here
-    include_dirs = ['../','/usr/local/nvidia/sdk-3.2/OpenCL/common/inc/',
+               'pycbcopencl.c',
+               'gpu_inspiral_gpuutils.c'],
+    swig_opts = [],                     # add include dirs for swig here
+    include_dirs = ['/usr/local/nvidia/sdk-3.2/OpenCL/common/inc/',
                     '/Developer/GPU\ Computing/OpenCL/common/inc/'], # add include dirs for compilers here
     #define_macros=[('TESTMACRO', '1')],
     #undef_macros=['TESTMACRO'],
-    library_dirs = ['/usr/lib','/usr/lib','../../../'],
-    libraries = ['pycbcopencl','OpenCL','stdc++'],
+    library_dirs = ['/usr/lib','/usr/lib'],
+    libraries = ['OpenCL','stdc++'],
     runtime_library_dirs = [],
     extra_objects = [],
     extra_compile_args = ['-Wall','-fPIC'],
@@ -134,7 +91,9 @@ pycbcopencl_ext = Extension(
     depends = ['pycbcopencl.c',
                'pycbcopencl.i',
                'pycbcopencl.h',
-               'pycbcopencl_private.h']
+               'pycbcopencl_private.h',
+               'gpu_inspiral_gpuutils.c',
+               'gpu_inspiral_gpuutils.h'],
     language = []
 )
 

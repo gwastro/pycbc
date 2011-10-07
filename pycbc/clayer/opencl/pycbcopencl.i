@@ -36,8 +36,8 @@
 
 // This goes directly to the wrap-code (no swig preprocess)
 %{
-#include "pycbcopencl_types.h"
-#include "pycbcopencl_prototypes.h"
+#include "pycbcopencl.h"
+#include "pycbcopencl_private.h"
 %}
 
 %pythoncode %{
@@ -45,13 +45,7 @@
     import warnings
     %}
 
-// To extend the c-types by methodes they have to be defined here
-// but to declare function prototypes as well would raise a 
-// "is multiply defined error". That is the reason for splitting 
-// the headerfiles into _types and _prototypes
-// prototype declaration of a function to wrap (has to be impl. in a c-file)
-
-%include "pycbcopencl_types.h"
+%include "pycbcopencl.h"
 %include "exception.i"
 
 %exception {

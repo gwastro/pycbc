@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <CL/opencl.h>
-#include "pycbcopencl_types.h"
+#include "pycbcopencl.h"
 
 //
 // Mapping the Opencl error codes to error strings
