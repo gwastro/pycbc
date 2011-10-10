@@ -1,82 +1,92 @@
+#!/usr/bin/python
+# Copyright (C) 2011 Karsten Wiesner
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+"""
+setup.py file for PyCBC package
+"""
+
 import os
-import sys
-import glob
-from types import *
+
 from distutils import log
-from distutils.core import setup, Extension
+from distutils.core import setup
 from distutils.command import config
 from distutils.command import build
-from distutils.command import build_clib
-from distutils.command import install_lib
+from distutils.command.build import build
 from distutils.command.clean import clean
 from distutils import file_util
 from distutils import spawn
 
 ver = 0.1
 
-# classes specific to the pycbc build
-class pycbc_clean(clean):
-    def finalize_options (self):
-        clean.finalize_options(self)
-        self.clean_files = [ 'build/lib*', 'build/temp*' ]
+class pycbc_build(build):
+    
     def run(self):
+
+        # run setup.py for all extensions
+        
+        current_dir = os.getcwd()
+        
+        os.chdir('/Users/kawies/dev/src/pycbc/pycbc/datavector/clayer/cpu')
+        
+        spawn.spawn(['python'] + ['setup.py'] + ['build'])
+        # os.system('python hello.py')
+
+        os.chdir(current_dir)
+        
+        build.run(self)
+    
+        # filecopy the _xyz.so libs to appropriate dirs in build
+
+
+class pycbc_clean(clean):
+    
+    def run(self):
+        
+        self.all = 1       # clean everything in build/
         clean.run(self)
+                           # clean specific files
+        self.clean_files = []
+                            
         for f in self.clean_files:
-            self.announce('removing ' + f)
-        try:
-            os.unlink(f)
-        except:
-            log.warn("'%s' does not exist -- can't clean it" % f)
-
-datavectorcpu_ext = Extension(
-    name= '_datavectorcpu', 
-    sources = ['pycbc/datavector/clayer/cpu/datavectorcpu.i','pycbc/datavector/clayer/cpu/datavectorcpu.c'],
-    #  not in doc swig_opts = [],
-    include_dirs = ['pycbc/datavector/clayer/cpu/','pycbc/datavector/clayer/'],
-    define_macros=[('TESTMACRO', '1')],
-    undef_macros=['TESTMACRO'],
-    library_dirs = [],
-    libraries = [],
-    runtime_library_dirs = [],
-    extra_objects = [],
-    extra_compile_args = ['-Wall'],
-    extra_link_args = [],
-    export_symbols = [],
-    # later ... depends = ['pycbc/datavector/clayer/cpu/'],
-    language = []
-)
-
-matchedfiltercpu_ext = Extension( 
-    name = '_matchedfiltercpu', 
-    sources = ['pycbc/matchedfilter/clayer/cpu/matchedfiltercpu.i','pycbc/matchedfilter/clayer/cpu/matchedfiltercpu.c'],
-    # not in doc swig_opts = [],
-    cmdclass = {
-    'build_ext' : pycbc_clean},
-
-    include_dirs = ['pycbc/matchedfilter/clayer/cpu/','pycbc/matchedfilter/clayer/'],
-    define_macros=[('TESTMACRO', '1')],
-    undef_macros=['TESTMACRO'],
-    library_dirs = [],
-    libraries = [],
-    runtime_library_dirs = [],
-    extra_objects = [],
-    extra_compile_args = ['-Wall'],
-    extra_link_args = [],
-    export_symbols = [],
-    #later ... depends = ['pycbc/matchedfilter/clayer/cpu/'],
-    language = []
-)
+            print "removing {0}".format(f)
+            try:
+                os.unlink(f)
+            except:
+                log.warn("'%s' does not exist -- can't clean it" % f)
 
 
 # do the actual work of building the package
 setup (
     name = 'pycbc',
     version = ver,
-    description = 'inspiral analysis toolkit',
+    description = 'gravitational wave CBC analysis toolkit',
     author = 'Ligo Virgo Collaboration - pyCBC team',
     author_email = 'https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home',
-    ext_modules = [datavectorcpu_ext, matchedfiltercpu_ext],
-    py_modules = ['datavectorcpu','matchedfiltercpu'],
+    #ext_modules = [datavectorcpu_ext, matchedfiltercpu_ext],
+    #py_modules = ['datavecstim_opencl', 'datavecterm_cpu'],
     # library_dirs = [],
     # libraries = [[ 'pycbc', {        #### what is this?:
     #   'sources' : pycbc_c_sources,
@@ -85,6 +95,16 @@ setup (
     # headers = ['include/pycbc.h'],
     package_dir = {'pycbc' : 'pycbc'},
     packages = ['pycbc',
+                'pycbc.chisqveto',
                 'pycbc.datavector',
-                'pycbc.matchedfilter']
+                'pycbc.fft',
+                'pycbc.matchedfilter',
+                'pycbc.overwhiteningfilter',
+                'pycbc.singledetectorevent',
+                'pycbc.straindata',
+                'pycbc.templatebank',], # list package directories
+    cmdclass = {
+            'build' : pycbc_build,
+            'clean' : pycbc_clean 
+       }
 )
