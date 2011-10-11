@@ -29,7 +29,7 @@ setup.py file for PyCBC package
 """
 
 import os
-
+import glob
 from distutils import log
 from distutils.core import setup
 from distutils.command import config
@@ -43,31 +43,48 @@ ver = 0.1
 
 # all supported extension directories (specifying also the order of the build!) 
 main_package_dir = os.getcwd()
+
 extension_dirs = [
-            main_package_dir + '/pycbc/clayer/cpu',
-            main_package_dir + '/pycbc/clayer/opencl',
-            main_package_dir + '/pycbc/datavector/clayer/cpu',
-            main_package_dir + '/pycbc/datavector/clayer/opencl',
-            # todo setup.py main_package_dir + '/pycbc/straindata/clayer/cpu',
-            main_package_dir + '/pycbc/matchedfilter/clayer/opencl']
+            '/pycbc/clayer/cpu',
+            '/pycbc/clayer/opencl',
+            '/pycbc/datavector/clayer/cpu',
+            '/pycbc/datavector/clayer/opencl',
+            # todo setup.py '/pycbc/straindata/clayer/cpu',
+            '/pycbc/matchedfilter/clayer/opencl']
+
+module_dirs = [
+            '/pycbc',
+            '/pycbc/datavector',
+            '/pycbc/straindata',                                      
+            '/pycbc/matchedfilter']
 
 
 class pycbc_build(build):
     
     def run(self):
 
+        print self.build_lib
+
         # run setup.py for all extensions
         current_dir = os.getcwd()
         for dir in extension_dirs:
-            print 'changing dir to {0}'.format(dir)
-            os.chdir(dir)
+            print 'changing dir to {0}'.format(main_package_dir + dir)
+            os.chdir(main_package_dir + dir)
             spawn.spawn(['python'] + ['setup.py'] + ['build'])
         os.chdir(current_dir)
 
         # generic build of python modules
         build.run(self)
-    
-        # todo filecopy the _xyz.so libs to appropriate dirs in build
+
+        # copy shared libs _xyz.so to build lib
+        for dir in module_dirs:
+            shared_ext_libs = glob.glob(main_package_dir + dir + '*.*')
+            print shared_ext_libs
+
+            # todo .....
+
+            
+
 
 
 class pycbc_clean(clean):
@@ -81,8 +98,8 @@ class pycbc_clean(clean):
         # clean all extensions
         current_dir = os.getcwd()
         for dir in extension_dirs:
-            print 'changing dir to {0}'.format(dir) 
-            os.chdir(dir)
+            print 'changing dir to {0}'.format(main_package_dir + dir) 
+            os.chdir(main_package_dir + dir)
             spawn.spawn(['python'] + ['setup.py'] + ['clean'])
         os.chdir(current_dir)
 
