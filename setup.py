@@ -41,6 +41,17 @@ from distutils import spawn
 
 ver = 0.1
 
+# all supported extension directories 
+extension_dirs = [
+            '/Users/kawies/dev/src/pycbc/pycbc/datavector/clayer/cpu',
+            '/Users/kawies/dev/src/pycbc/pycbc/datavector/clayer/opencl',
+            '/Users/kawies/dev/src/pycbc/pycbc/clayer/cpu',
+            '/Users/kawies/dev/src/pycbc/pycbc/clayer/opencl',
+            # todo setup.py '/Users/kawies/dev/src/pycbc/pycbc/straindata/clayer/cpu',
+            '/Users/kawies/dev/src/pycbc/pycbc/matchedfilter/clayer/opencl']
+
+
+
 class pycbc_build(build):
     
     def run(self):
@@ -48,17 +59,15 @@ class pycbc_build(build):
         # run setup.py for all extensions
         
         current_dir = os.getcwd()
-        
-        os.chdir('/Users/kawies/dev/src/pycbc/pycbc/datavector/clayer/cpu')
-        
-        spawn.spawn(['python'] + ['setup.py'] + ['build'])
-        # os.system('python hello.py')
+
+        for dir in extension_dirs:
+            os.chdir(dir)
+            spawn.spawn(['python'] + ['setup.py'] + ['build'])
 
         os.chdir(current_dir)
-        
         build.run(self)
     
-        # filecopy the _xyz.so libs to appropriate dirs in build
+        # todo filecopy the _xyz.so libs to appropriate dirs in build
 
 
 class pycbc_clean(clean):
@@ -85,14 +94,6 @@ setup (
     description = 'gravitational wave CBC analysis toolkit',
     author = 'Ligo Virgo Collaboration - pyCBC team',
     author_email = 'https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home',
-    #ext_modules = [datavectorcpu_ext, matchedfiltercpu_ext],
-    #py_modules = ['datavecstim_opencl', 'datavecterm_cpu'],
-    # library_dirs = [],
-    # libraries = [[ 'pycbc', {        #### what is this?:
-    #   'sources' : pycbc_c_sources,
-    #   'include_dirs' : ['include'],
-    #   'macros' : [] }]],
-    # headers = ['include/pycbc.h'],
     package_dir = {'pycbc' : 'pycbc'},
     packages = ['pycbc',
                 'pycbc.chisqveto',
