@@ -41,15 +41,15 @@ from distutils import spawn
 
 ver = 0.1
 
-# all supported extension directories 
+# all supported extension directories (specifying also the order of the build!) 
+main_package_dir = os.getcwd()
 extension_dirs = [
-            '/Users/kawies/dev/src/pycbc/pycbc/datavector/clayer/cpu',
-            '/Users/kawies/dev/src/pycbc/pycbc/datavector/clayer/opencl',
-            '/Users/kawies/dev/src/pycbc/pycbc/clayer/cpu',
-            '/Users/kawies/dev/src/pycbc/pycbc/clayer/opencl',
-            # todo setup.py '/Users/kawies/dev/src/pycbc/pycbc/straindata/clayer/cpu',
-            '/Users/kawies/dev/src/pycbc/pycbc/matchedfilter/clayer/opencl']
-
+            main_package_dir + '/pycbc/clayer/cpu',
+            main_package_dir + '/pycbc/clayer/opencl',
+            main_package_dir + '/pycbc/datavector/clayer/cpu',
+            main_package_dir + '/pycbc/datavector/clayer/opencl',
+            # todo setup.py main_package_dir + '/pycbc/straindata/clayer/cpu',
+            main_package_dir + '/pycbc/matchedfilter/clayer/opencl']
 
 
 class pycbc_build(build):
@@ -57,14 +57,14 @@ class pycbc_build(build):
     def run(self):
 
         # run setup.py for all extensions
-        
         current_dir = os.getcwd()
-
         for dir in extension_dirs:
+            print 'changing dir to {0}'.format(dir)
             os.chdir(dir)
             spawn.spawn(['python'] + ['setup.py'] + ['build'])
-
         os.chdir(current_dir)
+
+        # generic build of python modules
         build.run(self)
     
         # todo filecopy the _xyz.so libs to appropriate dirs in build
@@ -74,11 +74,23 @@ class pycbc_clean(clean):
     
     def run(self):
         
-        self.all = 1       # clean everything in build/
+        # clean everything in build/
+        self.all = 1
         clean.run(self)
-                           # clean specific files
+
+        # clean all extensions
+        current_dir = os.getcwd()
+        for dir in extension_dirs:
+            print 'changing dir to {0}'.format(dir) 
+            os.chdir(dir)
+            spawn.spawn(['python'] + ['setup.py'] + ['clean'])
+        os.chdir(current_dir)
+
+        # clean *.pyc files
+        os.system('find . -name *.pyc -exec rm {} \;')
+
+        # clean specific files
         self.clean_files = []
-                            
         for f in self.clean_files:
             print "removing {0}".format(f)
             try:
