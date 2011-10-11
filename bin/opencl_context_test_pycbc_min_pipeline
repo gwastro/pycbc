@@ -49,6 +49,7 @@ import random
 # preliminary hard coded path to packages 
 
 sys.path.append('/home/kawies/dev-dbg/src/pycbc')
+#sys.path.append('/home/kawies/dev-dbg/src/pycbc/build/lib.linux-x86_64-2.6/')
 
 from pycbc.pycbc_opencl import OpenClDeviceContext as ProccessingTargetContext
 

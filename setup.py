@@ -41,9 +41,10 @@ from distutils import spawn
 
 ver = 0.1
 
-# all supported extension directories (specifying also the order of the build!) 
 main_package_dir = os.getcwd()
 
+# all supported extension directories (specifying also the order of the 
+# (extension's) build!) 
 extension_dirs = [
             '/pycbc/clayer/cpu',
             '/pycbc/clayer/opencl',
@@ -63,8 +64,6 @@ class pycbc_build(build):
     
     def run(self):
 
-        print self.build_lib
-
         # run setup.py for all extensions
         current_dir = os.getcwd()
         for dir in extension_dirs:
@@ -76,15 +75,18 @@ class pycbc_build(build):
         # generic build of python modules
         build.run(self)
 
-        # copy shared libs _xyz.so to build lib
+        # copy shared libs (xyz.so) to build lib
+        current_dir = os.getcwd()
         for dir in module_dirs:
-            shared_ext_libs = glob.glob(main_package_dir + dir + '*.*')
-            print shared_ext_libs
-
-            # todo .....
-
-            
-
+            os.chdir(main_package_dir + dir)
+            shared_ext_libs = glob.glob('_*.so')
+            for f in shared_ext_libs:
+                # destf = os.path.join(main_package_dir, self.build_lib, dir)
+                # os.path.join unfortunately does it not right :-(  check this out TODO!
+                destf = main_package_dir + '/' + self.build_lib + dir
+                file_util.copy_file(f, destf)
+        
+        os.chdir(current_dir)    
 
 
 class pycbc_clean(clean):
