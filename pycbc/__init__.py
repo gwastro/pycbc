@@ -12,6 +12,3 @@ Provides
 """
 
 __author__ = 'Karsten Wiesner <karsten.wiesner@ligo.org>'
-__all__ = ["datavecstim_opencl, datavecterm_cpu, datavector, fft, \
-            highpassfilter, injector, matchedfilter, overwhiteningfilter, \
-            resampler, singledetectorevent, straindata, templatebank"]
