@@ -30,7 +30,7 @@
 "Copyright 2011, 2011 Karsten Wiesner <karsten.wiesner@ligo.org>."
 %enddef
 
-%module(docstring=DOCSTRING) pycbccpu
+%module(docstring=DOCSTRING,package="pycbc.clayer") cpu
 
 %feature("autodoc", "1");
 
