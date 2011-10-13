@@ -43,6 +43,15 @@ base_ext_cpu = Extension( 'pycbc.clayer._cpu',
     extra_compile_args = ['-Wall','-fPIC']
     )
 
+datavector_ext_cpu = Extension( 'pycbc.datavector.clayer._cpu', 
+    sources = ['pycbc/datavector/clayer/cpu/datavectorcpu.i',
+               'pycbc/datavector/clayer/cpu/datavectorcpu.c'],
+    depends = ['pycbc/datavector/clayer/cpu/datavectorcpu.h',
+               'pycbc/datavector/clayer/cpu/datavectorcpu_private.h'],
+    swig_opts = ['-outdir','pycbc/datavector/clayer'],
+    extra_compile_args = ['-Wall','-fPIC']
+    )
+
 # do the actual work of building the package
 setup (
     name = 'pycbc',
@@ -50,6 +59,8 @@ setup (
     description = 'Gravitational wave CBC analysis toolkit',
     author = 'Ligo Virgo Collaboration - pyCBC team',
     author_email = 'https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home',
-    ext_modules = [base_ext_cpu],
-    packages = ['pycbc','pycbc.clayer']
+    ext_modules = [base_ext_cpu,
+                   datavector_ext_cpu],
+    packages = ['pycbc','pycbc.clayer',
+                'pycbc.datavector','pycbc.datavector.clayer']
 )

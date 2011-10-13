@@ -30,7 +30,7 @@
 "Copyright 2011, 2011 Karsten Wiesner <karsten.wiesner@ligo.org>."
 %enddef
 
-%module(docstring=DOCSTRING) datavectorcpu
+%module(docstring=DOCSTRING,module="pycbc.datavector.clayer") cpu
 
 %feature("autodoc", "1");
 
@@ -45,8 +45,8 @@
     import warnings
     %}
 
-%include "datavector.h"
-%include "datavector.i"
+%include "../datavector.h"
+%include "../datavector.i"
 %include "datavectorcpu.h"
 %include "exception.i"
 
