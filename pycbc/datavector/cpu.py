@@ -30,7 +30,7 @@ transfers datavectors from a GPU to the CPU
 """
 
 # import framework related parent
-from pycbc.pycbc_cpu import CpuProcessingObj
+from pycbc.cpu import CpuProcessingObj
 
 
 import logging
