@@ -26,11 +26,14 @@
 pyCBC Cpu processing object - base class and context
 """
 
-from pycbc_base import PyCbcProcessingObj
-from pycbccpu import cpu_context_t as CpuContext
+from pycbc.base import PyCbcProcessingObj
+from pycbc.clayer.cpu import cpu_context_t as CpuContext
 
-from datavector.datavectoropencl import *
-from datavector.datavectorcpu import *    
+try:
+    from datavector.clayer.opencl import *
+except:
+    pass
+from datavector.clayer.cpu import *    
 
 import logging
 import re
