@@ -56,23 +56,36 @@ class clean(_clean):
 
 
 # extension modules for the top-level package
-base_ext_cpu = Extension( 'pycbc.clayer._cpu', 
+pycbc_extensions = []
+
+
+pycbc_extensions.append(Extension( 'pycbc.clayer._cpu', 
     sources = ['pycbc/clayer/cpu/pycbccpu.i',
                'pycbc/clayer/cpu/pycbccpu.c'],
     depends = ['pycbc/clayer/cpu/pycbccpu_types.h',
                'pycbc/clayer/cpu/pycbccpu_prototypes.h'],
     swig_opts = ['-outdir','pycbc/clayer'],
     extra_compile_args = ['-Wall','-fPIC']
-    )
+    ))
 
-datavector_ext_cpu = Extension( 'pycbc.datavector.clayer._cpu', 
+pycbc_extensions.append(Extension( 'pycbc.datavector.clayer._cpu', 
     sources = ['pycbc/datavector/clayer/cpu/datavectorcpu.i',
                'pycbc/datavector/clayer/cpu/datavectorcpu.c'],
     depends = ['pycbc/datavector/clayer/cpu/datavectorcpu.h',
                'pycbc/datavector/clayer/cpu/datavectorcpu_private.h'],
     swig_opts = ['-outdir','pycbc/datavector/clayer'],
     extra_compile_args = ['-Wall','-fPIC']
-    )
+    ))
+
+pycbc_extensions.append(Extension( 'pycbc.straindata.clayer._cpu', 
+    sources = ['pycbc/straindata/clayer/cpu/straindatacpu.i',
+               'pycbc/straindata/clayer/cpu/straindatacpu.c'],
+    depends = ['pycbc/straindata/clayer/cpu/straindatacpu_types.h',
+               'pycbc/straindata/clayer/cpu/straindatacpu_prototypes.h'],
+    include_dirs = ['pycbc/datavector/clayer/cpu'],
+    swig_opts = ['-outdir','pycbc/straindata/clayer'],
+    extra_compile_args = ['-Wall','-fPIC']
+    ))
 
 # do the actual work of building the package
 setup (
@@ -82,8 +95,7 @@ setup (
     author = 'Ligo Virgo Collaboration - pyCBC team',
     author_email = 'https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home',
     cmdclass = { 'clean' : clean },
-    ext_modules = [base_ext_cpu,
-                   datavector_ext_cpu],
+    ext_modules = pycbc_extensions,
     packages = ['pycbc','pycbc.clayer',
                 'pycbc.datavector','pycbc.datavector.clayer',
                 'pycbc.bandpass',
@@ -91,5 +103,6 @@ setup (
                 'pycbc.injection',
                 'pycbc.overwhiteningfilter',
                 'pycbc.resample',
-                'pycbc.singledetectorevent']
+                'pycbc.singledetectorevent',
+                'pycbc.straindata','pycbc.straindata.clayer']
 )

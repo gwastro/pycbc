@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "../../../datavector/clayer/cpu/datavectorcpu_types.h"
+#include <datavectorcpu.h>
 
 // 
 // Prototype implementation of the ffts for segmenting straindata 

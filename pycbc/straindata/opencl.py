@@ -23,28 +23,38 @@
 # ==============================================================================
 #
 """
-Cpu version of strain data class
+OpenCl version of strain data class
 """
 
 # Import base classes
-from straindata_base import StrainDataBase
-from straindata_base import FftSegmentsImplementationBase
+from pycbc.straindata.base import StrainDataBase
+from pycbc.straindata.base import FftSegmentsImplementationBase
 
-# import member datavectors
-from pycbc.datavector.datavectorcpu import real_vector_double_cpu_t
-from pycbc.datavector.datavectorcpu import real_vector_single_cpu_t
-from pycbc.datavector.datavectorcpu import complex_vector_single_cpu_t
+# Map the correct memory for this processing architecture
+from pycbc.datavector.cpu import\
+     real_vector_double_opencl_t as InitialTimeSeriesDoublePreci
+     
+from pycbc.datavector.cpu import\
+     real_vector_single_opencl_t as TimeSeriesSinglePreci
+
+from pycbc.datavector.cpu import\
+     complex_vector_single_opencl_t as FrequencySeries
+     
+# Target processing memory     
+from pycbc.datavector.opencl import\
+     complex_vector_single_opencl_t as RenderedFrequencySeries
+     
 
 # Swigged C-layer functions
-from straindatacpu import fftw_generate_plan
-from straindatacpu import fftw_transform_segments
+from pycbc.straindata.clayer.cpu import fftw_generate_plan
+from pycbc.straindata.clayer.cpu import fftw_transform_segments
 
 import logging
 
 
-class StrainDataCpu(StrainDataBase):
+class StrainDataOpenCl(StrainDataBase):
     """
-    CPU derivate of straindata class
+    OpenCl derivate of straindata class
     """
     
     def __init__(self, t_start, t_end, n_segments, sample_freq, interferometer):
@@ -64,12 +74,13 @@ class StrainDataCpu(StrainDataBase):
         @return: none
         """
     
-        super(StrainDataCpu, self).__init__(t_start, t_end, n_segments, 
-                    sample_freq, interferometer,
-                    initial_time_series_t = real_vector_double_cpu_t,
-                    time_series_t =         real_vector_single_cpu_t,
-                    frequency_series_t=     complex_vector_single_cpu_t,
-                    fft_segments_impl_t=    FftSegmentsImplementationFftw)
+        super(StrainDataOpenCl, self).__init__(t_start, t_end, n_segments, 
+                                            sample_freq,
+                                            interferometer,
+                                            InitialTimeSeriesDoublePreci,
+                                            TimeSeriesSinglePreci,
+                                            FrequencySeries,
+                                            FftSegmentsImplementationFftw)
 
     def render(self):
         """
@@ -78,8 +89,29 @@ class StrainDataCpu(StrainDataBase):
         @rtype: none
         @return: none
         """
-        pass         # nothing to render in cpu version (data remaines in place)
-                                            
+        
+        ########### ToDo Transfer Straindata to the GPU by OpenCl
+        ########### Just a quick hack to prototype that
+        ########### 
+        
+        ########### check sample freq isn't it start_x now?????
+        
+        ### will go into a clayer/opencl function to transfer data
+        ### then private self.__frequency_series has to be made accessible
+        ### and take the new reference ...
+       
+        
+         #### OUTDATED CONCEPT! WE USE data_in() methodes now!
+           
+        
+        #self.__frequency_series= []
+        #for i in range(15):
+        #    tmp_series = RenderedFrequencySeries(self.segments_length, 
+        #                                         1.0)
+        #    self.__frequency_series.append(tmp_series)
+        
+        pass
+                                                
                                                                                                                                                                           
 class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
     """
@@ -98,9 +130,9 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         @type overlap_fact: double
         @param overlap_fact: overlapping factor
         @type input_buf_t: class
-        @param input_buf_t: class of inputbuffer(ig. real_vector_single_cpu_t)
+        @param input_buf_t: class of inputbuffer(ig. real_vector_single_opencl_t)
         @type output_buffer_t: class
-        @param output_buffer_t: class of inputbuffer(ig.complex_vector_single_cpu_t)
+        @param output_buffer_t: class of inputbuffer(ig.complex_vector_single_opencl_t)
         @rtype: none
         @return: none
         """
@@ -128,7 +160,7 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         in_tmp  = self.__input_buf_t(segments_length, delta_x_tmp)
         out_tmp = self.__output_buffer_t(segments_length, delta_x_tmp)
         self.__fft_forward_plan= fftw_generate_plan(segments_length, in_tmp, 
-        out_tmp, "FFTW_FORWARD", "FFTW_ESTIMATE")
+                                    out_tmp, "FFTW_FORWARD", "FFTW_ESTIMATE")
 
         self.__logger.debug("instanciated FftSegmentsImplementationCpu")
     

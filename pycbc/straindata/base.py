@@ -33,7 +33,7 @@ from math import *
 import logging
 
 # Swigged C-layer functions
-from straindatacpu import frame_cpp_read_frames
+from pycbc.straindata.clayer.cpu import frame_cpp_read_frames
 
 class StrainDataBase:
     """

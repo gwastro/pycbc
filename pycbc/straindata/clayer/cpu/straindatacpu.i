@@ -1,17 +1,17 @@
-/* vim: tabstop=4:softtabstop=4:shiftwidth=4:expandtab */
+// vim: tabstop=4:softtabstop=4:shiftwidth=4:expandtab:syntax=c
 
 %define DOCSTRING
 "Copyright 2011, 2011 Karsten Wiesner <karsten.wiesner@ligo.org>."
 %enddef
 
-%module(docstring=DOCSTRING) straindatacpu
+%module(docstring=DOCSTRING,module="pycbc.straindata.clayer") cpu
 
 %feature("autodoc", "1");
 
 // This goes directly to the wrap-code (no swig preprocess)
 // wrap code needs to have typedefs and function prototypes!
 %{
-#include "../../../datavector/clayer/cpu/datavectorcpu_types.h"
+#include <datavectorcpu.h>
 #include "straindatacpu_prototypes.h"
 %}
 
