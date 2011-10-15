@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <memory.h>
-#include "../../../datavector/clayer/cpu/datavectorcpu_types.h"
+#include <datavectorcpu.h>
 #include <math.h>
 #include <complex.h>
 //#include <lal/LALConstants.h>
@@ -25,12 +25,12 @@ typedef struct {
 } pycbc_templatebank_pnconstants;
 
 static void sp_phase_engine(
-    complex_vector_single_t* exp_psi,
+    complex_vector_single_cpu_t* exp_psi,
     const double M,
     const pycbc_templatebank_pnconstants pn_consts,
     double f_min,
     double f_max,
-    real_vector_single_t* minus_one_by_three
+    real_vector_single_cpu_t* minus_one_by_three
     );
 
 /* 
@@ -39,7 +39,7 @@ static void sp_phase_engine(
 
 
 void new_kfac_vec(
-    real_vector_single_t* vec,
+    real_vector_single_cpu_t* vec,
     const double kfac
     )
 {
@@ -55,7 +55,7 @@ void new_kfac_vec(
 
 
 void precondition_factor(
-    real_vector_single_t* vec
+    real_vector_single_cpu_t* vec
     )
 {
     new_kfac_vec(vec, -7./6.);
@@ -64,13 +64,13 @@ void precondition_factor(
 
 
 void compute_template_phasing(
-    complex_vector_single_t* exp_psi,
+    complex_vector_single_cpu_t* exp_psi,
     double M,
     double eta,
     int order,
     double f_min,
     double f_max,
-    real_vector_single_t* minus_one_by_three
+    real_vector_single_cpu_t* minus_one_by_three
     )
 {
     pycbc_templatebank_pnconstants pn_consts;
@@ -128,12 +128,12 @@ void compute_template_phasing(
 }
 
 static void sp_phase_engine(
-    complex_vector_single_t* exp_psi,
+    complex_vector_single_cpu_t* exp_psi,
     const double M,
     const pycbc_templatebank_pnconstants pn_consts,
     double f_min,
     double f_max,
-    real_vector_single_t* minus_one_by_three
+    real_vector_single_cpu_t* minus_one_by_three
     )
 {
     int k, k_min, k_max;
@@ -166,7 +166,7 @@ static void sp_phase_engine(
     const double c2 = -0.49670;
     const double c4 =  0.03705;
 
-    memset( exp_psi->data, 0, exp_psi->meta_data.vector_length * sizeof(complex_float_t) );
+    memset( exp_psi->data, 0, exp_psi->meta_data.vector_length * sizeof(complex float) );
 
     /* compute cutoff indices */
     k_min = f_min / df > 1 ? f_min / df : 1;
@@ -206,28 +206,29 @@ static void sp_phase_engine(
         }
 
         /* compute approximate sine and cosine */
+        /* FIXME change the g99 __real__ and __imag__ syntax to something more portable */
         if ( psi1 < -LAL_PI/2 )
         {
             psi1 = -LAL_PI - psi1;
             psi2 = psi1 * psi1;
             /* XXX note minus sign on imag part is due to LAL sign convention vs PN literature sign convention */
-            exp_psi->data[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
-            exp_psi->data[k].re = -1 - psi2 * ( c2 + psi2 * c4 );
+            __imag__ exp_psi->data[k] = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+            __real__ exp_psi->data[k] = -1 - psi2 * ( c2 + psi2 * c4 );
         }
         else if ( psi1 > LAL_PI/2 )
         {
             psi1 = LAL_PI - psi1;
             psi2 = psi1 * psi1;
             /* XXX note minus sign on imag part is due to LAL sign convention vs PN literature sign convention */
-            exp_psi->data[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
-            exp_psi->data[k].re = -1 - psi2 * ( c2 + psi2 * c4 );
+            __real__ exp_psi->data[k] = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+            __imag__ exp_psi->data[k] = -1 - psi2 * ( c2 + psi2 * c4 );
         }
         else
         {
             psi2 = psi1 * psi1;
             /* XXX note minus sign on imag part is due to LAL sign convention vs PN literature sign convention */
-            exp_psi->data[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
-            exp_psi->data[k].re = 1 + psi2 * ( c2 + psi2 * c4 );
+            __real__ exp_psi->data[k] = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+            __imag__ exp_psi->data[k] = 1 + psi2 * ( c2 + psi2 * c4 );
         }
     }
 

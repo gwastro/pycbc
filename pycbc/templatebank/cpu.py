@@ -26,8 +26,8 @@
 Cpu version of the template bank. Status: Very prototyping
 """
 
-from templatebank_base import TemplateBankBase
-from pycbc.datavector.datavectorcpu import complex_vector_single_cpu_t as WaveformFrequencySeries
+from pycbc.templatebank.base import TemplateBankBase
+from pycbc.datavector.clayer.cpu import complex_vector_single_cpu_t as WaveformFrequencySeries
 
 import logging
 
