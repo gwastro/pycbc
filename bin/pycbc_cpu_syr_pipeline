@@ -46,14 +46,11 @@ to incorporate:
 import sys
 import random
 
-# preliminary hard coded path to packages 
-sys.path.append('/Users/kawies/dev/src/pycbc')
+from pycbc.cpu import CpuDeviceContext as ProccessingTargetContext
 
-from pycbc.pycbc import CpuDeviceContext as ProccessingTargetContext
-
-from pycbc.straindata.straindata_cpu import StrainDataCpu as StrainData 
-from pycbc.templatebank.templatebank_cpu import TemplateBankCpu as TemplateBank 
-from pycbc.matchedfilter.matchedfilter_cpu import MatchedFilterCpu as MatchedFilter
+from pycbc.straindata.cpu import StrainDataCpu as StrainData 
+from pycbc.templatebank.cpu import TemplateBankCpu as TemplateBank 
+from pycbc.matchedfilter.cpu import MatchedFilterCpu as MatchedFilter
 
 import logging
 

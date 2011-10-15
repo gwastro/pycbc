@@ -1,4 +1,4 @@
-#!/opt/local/bin/python/
+#!/usr/bin/python
 #
 # Copyright (C) 2011 Karsten Wiesner
 #
@@ -63,7 +63,7 @@ import random
 from pycbc.matchedfilter.cpu import MatchedFilterCpu as MatchedFilter
 #from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
 
-from pycbc.datavector.cpu import real_vector_single_cpu_t as SnrResultTimeSeries
+from pycbc.datavector.clayer.cpu import real_vector_single_cpu_t as SnrResultTimeSeries
 
 import logging
 
