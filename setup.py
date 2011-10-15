@@ -89,5 +89,7 @@ setup (
                 'pycbc.bandpass',
                 'pycbc.chisqveto',
                 'pycbc.injection',
-                'pycbc.overwhiteningfilter']
+                'pycbc.overwhiteningfilter',
+                'pycbc.resample',
+                'pycbc.singledetectorevent']
 )
