@@ -87,5 +87,6 @@ setup (
     packages = ['pycbc','pycbc.clayer',
                 'pycbc.datavector','pycbc.datavector.clayer',
                 'pycbc.bandpass',
-                'pycbc.chisqveto']
+                'pycbc.chisqveto',
+                'pycbc.injection']
 )
