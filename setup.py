@@ -110,5 +110,6 @@ setup (
                 'pycbc.overwhiteningfilter',
                 'pycbc.resample',
                 'pycbc.singledetectorevent',
-                'pycbc.straindata','pycbc.straindata.clayer']
+                'pycbc.straindata','pycbc.straindata.clayer',
+                'pycbc.waveform']
 )
