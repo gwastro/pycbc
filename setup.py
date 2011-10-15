@@ -85,5 +85,6 @@ setup (
     ext_modules = [base_ext_cpu,
                    datavector_ext_cpu],
     packages = ['pycbc','pycbc.clayer',
-                'pycbc.datavector','pycbc.datavector.clayer']
+                'pycbc.datavector','pycbc.datavector.clayer',
+                'pycbc.bandpass']
 )
