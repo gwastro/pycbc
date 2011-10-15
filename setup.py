@@ -86,5 +86,6 @@ setup (
                    datavector_ext_cpu],
     packages = ['pycbc','pycbc.clayer',
                 'pycbc.datavector','pycbc.datavector.clayer',
-                'pycbc.bandpass']
+                'pycbc.bandpass',
+                'pycbc.chisqveto']
 )
