@@ -36,7 +36,7 @@ Single detector minimal pipeline used as prototype to test pycbc architecture
 to incorporate:
 
 - CUDA GPU implementation of CBC SPA waveform generator and 
-  matched filter by Alex Nitz (Univerity of Syracuse)
+  matched filter by Alex Nitz (Syracuse University)
 
 - Open Cl GPU implementation of full CBC pipeline by Benjamin Somhegyi and
   Gergely Debreczeni (KFKI, RMKI Budapest)
@@ -60,10 +60,10 @@ import random
 #from pycbc.straindata.straindata_cpu import StrainDataCpu as StrainData 
 #from pycbc.templatebank.templatebank_cpu import TemplateBankCpu as TemplateBank 
 
-from pycbc.matchedfilter.matchedfilter_cpu import MatchedFilterCpu as MatchedFilter
+from pycbc.matchedfilter.cpu import MatchedFilterCpu as MatchedFilter
 #from pycbc.matchedfilter.matchedfilter_opencl import MatchedFilterOpenCl as MatchedFilter
 
-from pycbc.datavector.datavectorcpu import real_vector_single_cpu_t as SnrResultTimeSeries
+from pycbc.datavector.cpu import real_vector_single_cpu_t as SnrResultTimeSeries
 
 import logging
 

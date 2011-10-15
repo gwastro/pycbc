@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "../../../datavector/clayer/cpu/datavectorcpu_types.h"
+#include <datavectorcpu.h>
 #include "matchedfiltercpu_prototypes.h"
 #include "matchedfiltercpu_types.h"
 

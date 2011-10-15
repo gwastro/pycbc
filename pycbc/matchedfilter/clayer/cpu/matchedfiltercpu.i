@@ -1,18 +1,18 @@
-/* vim: tabstop=4:softtabstop=4:shiftwidth=4:expandtab */
+// vim: tabstop=4:softtabstop=4:shiftwidth=4:expandtab:syntax=c
 
 %define DOCSTRING
 "Copyright 2011, 2011 Karsten Wiesner <karsten.wiesner@ligo.org>."
 %enddef
 
-%module(docstring=DOCSTRING) matchedfiltercpu
+%module(docstring=DOCSTRING,module="pycbc.matchedfilter.clayer") cpu
 
 %feature("autodoc", "1");
 
 // This goes directly to the wrap-code (no swig preprocess)
 // wrap code needs to have typedefs and function prototypes!
 %{
-#include "../../../datavector/clayer/cpu/datavectorcpu_types.h"
-#include "../../../clayer/cpu/pycbccpu_types.h"
+#include <datavectorcpu.h>
+#include <pycbccpu_types.h>
 #include "matchedfiltercpu_prototypes.h"
 %}
 

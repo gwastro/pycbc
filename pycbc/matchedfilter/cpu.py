@@ -27,21 +27,21 @@
 MatchedFilter Cpu implementation class for the pycbc package
 """
 
-from matchedfilter_base import MatchedFilterBase
-from matchedfilter_base import GenSnrImplementationBase
-from matchedfilter_base import MaxImplementationBase
+from pycbc.matchedfilter.base import MatchedFilterBase
+from pycbc.matchedfilter.base import GenSnrImplementationBase
+from pycbc.matchedfilter.base import MaxImplementationBase
 
 # import processing functions from the clayer 
-from matchedfiltercpu import gen_snr_cpu
+from pycbc.matchedfilter.clayer.cpu import gen_snr_cpu
 
 # import member datavectors
-from pycbc.datavector.datavectorcpu import complex_vector_single_cpu_t
-from pycbc.datavector.datavectorcpu import real_vector_single_cpu_t
+from pycbc.datavector.clayer.cpu import complex_vector_single_cpu_t
+from pycbc.datavector.clayer.cpu import real_vector_single_cpu_t
 
 # for testing data_in
-from pycbc.datavector.datavectoropencl import real_vector_single_opencl_t as alien_datavector_t
+#from pycbc.datavector.datavectoropencl import real_vector_single_opencl_t as alien_datavector_t
 
-from pycbc.pycbc import CpuProcessingObj
+from pycbc.cpu import CpuProcessingObj
 
 # import FFT members
 
