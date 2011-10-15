@@ -88,5 +88,6 @@ setup (
                 'pycbc.datavector','pycbc.datavector.clayer',
                 'pycbc.bandpass',
                 'pycbc.chisqveto',
-                'pycbc.injection']
+                'pycbc.injection',
+                'pycbc.overwhiteningfilter']
 )
