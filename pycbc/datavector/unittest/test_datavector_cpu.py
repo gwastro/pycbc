@@ -34,10 +34,13 @@ unittest for the datavector cpu class
 
 # preliminary hard coded path to packages 
 import sys
-sys.path.append('/home/kawies/dev-dbg/src/pycbc')
-sys.path.append('/home/kawies/dev-dbg/src/pycbc/pycbc/datavector')
+sys.path.append('/Users/kawies/dev/src/pycbc/build/lib.macosx-10.6-x86_64-2.6/')
 
-from datavectorcpu import *
+from pycbc.datavector.clayer.cpu import real_vector_double_cpu_t
+from pycbc.datavector.clayer.cpu import real_vector_single_cpu_t
+from pycbc.datavector.clayer.cpu import complex_vector_single_cpu_t
+from pycbc.datavector.clayer.cpu import complex_vector_double_cpu_t
+
 
 import unittest
 import random
@@ -76,7 +79,7 @@ class TestDatavectorCPU(unittest.TestCase):
 
         # check type
         self.assertTrue(repr(self.dut_real_single).
-        find("datavectorcpu.real_vector_single_cpu_t") >= 0,
+        find("pycbc.datavector.clayer.cpu.real_vector_single_cpu_t") >= 0,
         " Wrong type of datavector after instanciation")
 
         # check correct initialization
@@ -112,7 +115,7 @@ class TestDatavectorCPU(unittest.TestCase):
 
         # check type
         self.assertTrue(repr(self.dut_real_double).
-        find("datavectorcpu.real_vector_double_cpu_t") >= 0,
+        find("pycbc.datavector.clayer.cpu.real_vector_double_cpu_t") >= 0,
         " Wrong type of datavector after instanciation")
 
         # check correct initialization
@@ -147,7 +150,7 @@ class TestDatavectorCPU(unittest.TestCase):
 
         # check type
         self.assertTrue(repr(self.dut_complex_single).
-        find("datavectorcpu.complex_vector_single_cpu_t") >= 0,
+        find("pycbc.datavector.clayer.cpu.complex_vector_single_cpu_t") >= 0,
             " Wrong type of datavector for dut_complex_single")
             
         # check correct initialization
@@ -184,7 +187,7 @@ class TestDatavectorCPU(unittest.TestCase):
 
         # check type
         self.assertTrue(repr(self.dut_complex_double).
-        find("datavectorcpu.complex_vector_double_cpu_t") >= 0,
+        find("pycbc.datavector.clayer.cpu.complex_vector_double_cpu_t") >= 0,
             " Wrong type of datavector for dut_complex_double")
             
         # check correct initialization

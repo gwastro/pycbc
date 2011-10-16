@@ -34,11 +34,18 @@ unittest for the datavector opencl class
 
 # preliminary hard coded path to packages 
 import sys
-sys.path.append('/home/kawies/dev-dbg/src/pycbc')
-sys.path.append('/home/kawies/dev-dbg/src/pycbc/pycbc/datavector')
 
-from datavectoropencl import *
-from datavectorcpu import *
+sys.path.append('/Users/kawies/dev/src/pycbc/build/lib.macosx-10.6-x86_64-2.6/')
+
+from pycbc.datavector.clayer.cpu import real_vector_double_cpu_t
+from pycbc.datavector.clayer.cpu import real_vector_single_cpu_t
+from pycbc.datavector.clayer.cpu import complex_vector_single_cpu_t
+from pycbc.datavector.clayer.cpu import complex_vector_double_cpu_t
+
+from pycbc.datavector.clayer.opencl import real_vector_double_opencl_t
+from pycbc.datavector.clayer.opencl import real_vector_single_opencl_t
+from pycbc.datavector.clayer.opencl import complex_vector_opencl_cpu_t
+from pycbc.datavector.clayer.opencl import complex_vector_opencl_cpu_t
 
 import unittest
 import random
@@ -87,7 +94,7 @@ class TestDatavectorOpenCl(unittest.TestCase):
 
         # check type
         self.assertTrue(repr(self.dut_real_single).
-        find("datavectoropencl.real_vector_single_opencl_t") >= 0,
+        find("pycbc.datavector.clayer.opencl.real_vector_single_opencl_t") >= 0,
         " Wrong type of datavector after instanciation")
         
         reference_vector= real_vector_single_cpu_t(self.length, self.delta_x)
@@ -128,7 +135,7 @@ class TestDatavectorOpenCl(unittest.TestCase):
 
         # check type
         self.assertTrue(repr(self.dut_real_double).
-        find("datavectoropencl.real_vector_double_opencl_t") >= 0,
+        find("pycbc.datavector.clayer.opencl.real_vector_double_opencl_t") >= 0,
         " Wrong type of datavector after instanciation")
         
         reference_vector= real_vector_double_cpu_t(self.length, self.delta_x)
@@ -170,7 +177,7 @@ class TestDatavectorOpenCl(unittest.TestCase):
 
         # check type
         self.assertTrue(repr(self.dut_complex_single).
-        find("datavectoropencl.complex_vector_single_opencl_t") >= 0,
+        find("pycbc.datavector.clayer.opencl.complex_vector_single_opencl_t") >= 0,
             " Wrong type of datavector for dut_complex_single")
             
         reference_vector= complex_vector_single_cpu_t(self.length, self.delta_x)
@@ -214,7 +221,7 @@ class TestDatavectorOpenCl(unittest.TestCase):
 
         # check type
         self.assertTrue(repr(self.dut_complex_double).
-        find("datavectoropencl.complex_vector_double_opencl_t") >= 0,
+        find("pycbc.datavector.clayer.opencl.complex_vector_double_opencl_t") >= 0,
             " Wrong type of datavector for dut_complex_double")
 
 

@@ -108,7 +108,7 @@ class  MaxImplementationCpu(MaxImplementationBase):
         """
         Find the maximum in the generated snr timeseries \rho(t)
         """
-        assert repr(snr).find("datavectorcpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for snr"
+        assert repr(snr).find("pycbc.datavector.clayer.cpu") >= 0, "try to call gen_snr_cpu() with wrong type of datavector for snr"
         
         self.__logger.debug("finding maximum of snr series - to be implemented in clayer")            
 

@@ -139,11 +139,11 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         
         self.__logger= logging.getLogger('pycbc.FftSegmentsImplementationFftw')
 
-        assert repr(input_buf_t).find("datavectorcpu") >= 0, "try to \n\
+        assert repr(input_buf_t).find("pycbc.datavector.clayer.cpu") >= 0, "try to \n\
         instanciate FftSegmentsImplementationFftw CPU implementation with \n\
         wrong type of datavector for input_buf"
         
-        assert repr(output_buffer_t).find("datavectorcpu") >= 0, "try to \n\
+        assert repr(output_buffer_t).find("pycbc.datavector.clayer.cpu") >= 0, "try to \n\
         instanciate FftSegmentsImplementationFftw CPU implementation with \n\
         wrong type of datavector for output_buffers_t"
 
