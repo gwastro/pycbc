@@ -34,7 +34,6 @@ unittest for the datavector cpu class
 
 # preliminary hard coded path to packages 
 import sys
-sys.path.append('/Users/kawies/dev/src/pycbc/build/lib.macosx-10.6-x86_64-2.6/')
 
 from pycbc.datavector.clayer.cpu import real_vector_double_cpu_t
 from pycbc.datavector.clayer.cpu import real_vector_single_cpu_t

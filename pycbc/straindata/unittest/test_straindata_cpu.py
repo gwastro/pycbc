@@ -34,7 +34,6 @@ unittest for the StrainData class
 
 # preliminary hard coded path to packages 
 import sys
-sys.path.append('/Users/kawies/dev/src/pycbc/build/lib.macosx-10.6-x86_64-2.6/')
 
 from pycbc.straindata.cpu import StrainDataCpu as DUT_StrainData
 
