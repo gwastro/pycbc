@@ -36,8 +36,8 @@
 
 // This goes directly to the wrap-code (no swig preprocess)
 %{
-#include "pycbccpu_types.h"
-#include "pycbccpu_prototypes.h"
+#include "pycbccpu.h"
+#include "pycbccpu_private.h"
 %}
 
 %pythoncode %{
@@ -51,7 +51,7 @@
 // the headerfiles into _types and _prototypes
 // prototype declaration of a function to wrap (has to be impl. in a c-file)
 
-%include "pycbccpu_types.h"
+%include "pycbccpu.h"
 %include "exception.i"
 
 // Generic errorhandling 

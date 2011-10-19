@@ -1,7 +1,24 @@
 #include <stdio.h>
-#include <datavectorcpu.h>
-#include "matchedfiltercpu_prototypes.h"
-#include "matchedfiltercpu_types.h"
+#include "datavectorcpu.h"
+#include "pycbccpu.h"
+#include "matchedfiltercpu_private.h"
+#include "matchedfiltercpu.h"
+
+matched_filter_cpu_t* new_matched_filter_cpu_t(cpu_context_t * context)
+{
+
+    matched_filter_cpu_t* c;
+    c = (matched_filter_cpu_t*) malloc( sizeof(matched_filter_cpu_t) );
+
+    return c;
+}
+
+
+void delete_matched_filter_opencl_t( matched_filter_cpu_t* p )
+{
+    free( p );
+}
+
 
 void gen_snr_cpu(cpu_context_t* context,
 		 real_vector_single_cpu_t* snr,

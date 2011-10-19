@@ -11,9 +11,10 @@
 // This goes directly to the wrap-code (no swig preprocess)
 // wrap code needs to have typedefs and function prototypes!
 %{
-#include <datavectorcpu.h>
-#include <pycbccpu_types.h>
-#include "matchedfiltercpu_prototypes.h"
+#include "datavectorcpu.h"
+#include "pycbccpu.h"    
+#include "matchedfiltercpu.h"
+#include "matchedfiltercpu_private.h"
 %}
 
 %pythoncode %{
@@ -21,13 +22,5 @@
     import warnings
     %}
 
-void gen_snr_cpu(cpu_context_t* context,
-		 real_vector_single_cpu_t* snr,
-		 complex_vector_single_cpu_t* stilde, 
-		 complex_vector_single_cpu_t* htilde,
-		 complex_vector_single_cpu_t* q,
-		 complex_vector_single_cpu_t* qtilde,
-		 /*complex_fft_plan_t* plan,*/
-		 double f_min,
-		 double sigma_sq);
+%include "matchedfiltercpu.h"
 

@@ -32,9 +32,6 @@
 unittest for the StrainData class
 """
 
-# preliminary hard coded path to packages 
-import sys
-
 from pycbc.straindata.cpu import StrainDataCpu as DUT_StrainData
 
 import unittest

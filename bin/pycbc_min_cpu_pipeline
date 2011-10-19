@@ -31,32 +31,21 @@
 """
 Application of gravitational wave search for inspiral mergers based on the 
 pycbc (py-thon c-ompact b-inary c-oalecence) package 
-
-Single detector minimal pipeline used as prototype to test pycbc architecture
-to incorporate:
-
-- CUDA GPU implementation of CBC SPA waveform generator and 
-  matched filter by Alex Nitz (Univerity of Syracuse)
-
-- Open Cl GPU implementation of full CBC pipeline by Benjamin Somhegyi and
-  Gergely Debreczeni (KFKI, RMKI Budapest)
-
 """
 
 import sys
 import random
 
-from pycbc.cpu import CpuDeviceContext as ProccessingTargetContext
-
 from pycbc.straindata.cpu import StrainDataCpu as StrainData 
 from pycbc.templatebank.cpu import TemplateBankCpu as TemplateBank 
 from pycbc.matchedfilter.cpu import MatchedFilterCpu as MatchedFilter
+from pycbc.cpu import CpuDeviceContext as ProccessingTargetContext
 
 import logging
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(name)s %(asctime)s %(levelname)s %(message)s',
-                    filename='pycbc_min_pipeline.log',
+                    filename='pycbc_run.log',
                     filemode='w')
 
 logger= logging.getLogger('pycbc.main_script')
@@ -77,9 +66,6 @@ interferometer = "H1"
 
 with ProccessingTargetContext(15) as context:
  
-    #print repr(context)
-    #print context
-          
     strain_data= StrainData(gps_start_time, gps_end_time, 
                         segments, sample_freq, 
                         interferometer)
@@ -106,8 +92,7 @@ with ProccessingTargetContext(15) as context:
     bank = TemplateBank( 5, strain_data.segments_length, strain_data.segments_delta_x )
     logger.debug("instanciated TemplateBank w/ waveform length: {0}".format(bank.waveform_length))
 
-    # create matched filter (only generate_snr() has to be implemented
-    # for the minimal pipeline)
+    # create matched filter
     matched_filter = MatchedFilter(context, strain_data.segments_length, strain_data.segments_delta_x)
     logger.debug("instanciated MatchedFilter w/ length: {0}".format(matched_filter.length))
 
@@ -129,7 +114,7 @@ with ProccessingTargetContext(15) as context:
     del(bank)
     del(matched_filter)
     
-    # leaving the ProccessingTargetContext NOW (destroy the device context)
+    # leaving the ProccessingTargetContext now (destroying the device context)
     ############################################################################
     
 end_message = '... end of pycbc single detector minimal pipeline.'

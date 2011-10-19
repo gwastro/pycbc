@@ -32,9 +32,6 @@
 unittest for the datavector opencl class
 """
 
-# preliminary hard coded path to packages 
-import sys
-
 from pycbc.datavector.clayer.cpu import real_vector_double_cpu_t
 from pycbc.datavector.clayer.cpu import real_vector_single_cpu_t
 from pycbc.datavector.clayer.cpu import complex_vector_single_cpu_t

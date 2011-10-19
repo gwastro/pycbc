@@ -1,5 +1,3 @@
-// Copyright (C) 2011 Karsten Wiesner
-//
 // This program is free software; you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by the
 // Free Software Foundation; either version 2 of the License, or (at your
@@ -22,19 +20,27 @@
 //
 // =============================================================================
 //
-// pycbc type definitions for pycbc
+// matchedfiltercpu declarations that are not going to be swig wrapped 
+// thus they are private property of the clayer
 
-#ifndef PYCBCCPU_TYPES_H
-#define PYCBCCPU_TYPES_H
+#ifndef MATCHEDFILTERCPU_PRIVATE_H
+#define MATCHEDFILTERCPU_PRIVATE_H
 
 #include <stdlib.h>
+#include "pycbccpu.h"
+#include "datavectorcpu.h"
+#include "matchedfiltercpu_private.h"
+#include "matchedfiltercpu.h"
 
-typedef struct
-{
-    unsigned device_id;
-    
-    void (*set_error)(unsigned);
-}
-cpu_context_t;
 
-#endif /* PYCBCCPU_TYPES_H */
+// prototypes of all methodes that will extend pure c typedefs
+matched_filter_cpu_t* new_matched_filter_cpu_t(cpu_context_t*);
+void delete_matched_filter_cpu_t( matched_filter_cpu_t* );
+
+
+void correlate_complex_freq_vectors( complex_vector_single_cpu_t* out,
+				     complex_vector_single_cpu_t* x, 
+				     complex_vector_single_cpu_t* y, 
+				     double f_min);
+
+#endif /* MATCHEDFILTERCPU_PROTOTYPES_H */

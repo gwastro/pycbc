@@ -26,8 +26,8 @@
 
 #include <stdio.h>
 
-#include "pycbccpu_types.h"
-#include "pycbccpu_prototypes.h"
+#include "pycbccpu.h"
+#include "pycbccpu_private.h"
 
 unsigned pycbccpu_err_stash = 0;
 char pycbccpu_err_map[][ERR_STRING_LEN] = {
@@ -65,36 +65,6 @@ void pycbc_cpu_clear_error()
     pycbccpu_err_stash = 0;
 }
 
-
-/* from QM. Slightly different:
-
- ... 
- 
-static char error_message[256];
-static int error_status = 0;
-
-void throw_exception(int num, char* msg)
-{
-    strncpy(error_message,msg,256);
-    error_status = num;
-}
-
-void clear_exception()
-{
-    error_status = QM_NO_ERROR;
-}
-
-int check_exception() 
-{
-    return error_status;
-}
-
-char* get_error_message()
-{
-    return error_message;
-}
-...
-*/
 
 
 

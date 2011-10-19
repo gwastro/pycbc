@@ -33,6 +33,7 @@ from pycbc.matchedfilter.base import MaxImplementationBase
 
 # import processing functions from the clayer 
 from pycbc.matchedfilter.clayer.cpu import gen_snr_cpu
+from pycbc.matchedfilter.clayer.cpu import matched_filter_cpu_t
 
 # import member datavectors
 from pycbc.datavector.clayer.cpu import complex_vector_single_cpu_t
@@ -61,7 +62,9 @@ class MatchedFilterCpu(MatchedFilterBase, CpuProcessingObj):
         self.__length= length
         self.__delta_x= delta_x
         
-        super(MatchedFilterCpu, self).__init__(context, self.__length, 
+        super(MatchedFilterCpu, self).__init__(context, 
+                               matched_filter_cpu_t,
+                               self.__length, 
                                self.__delta_x,
                                GenSnrImplementationCpu, MaxImplementationCpu, 
                                snr_vector_t=    real_vector_single_cpu_t, 

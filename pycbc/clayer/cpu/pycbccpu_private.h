@@ -22,14 +22,15 @@
 //
 // =============================================================================
 //
-// pycbc constructor destructor prototypes for pycbc
+// pycbccpu declarations that are not going to be swig wrapped 
+// thus they are private property of the clayer
 
-#ifndef PYCBCCPU_PROTOTYPES_H
-#define PYCBCCPU_PROTOTYPES_H
+#ifndef PYCBCCPU_PRIVATE_H
+#define PYCBCCPU_PRIVATE_H
 
 #include <stdlib.h>
 
-#define ERR_STRING_LEN 256 
+#define ERR_STRING_LEN 512 
 
 extern unsigned pycbccpu_err_stash;
 extern char pycbccpu_err_map[][ERR_STRING_LEN];
@@ -44,4 +45,4 @@ cpu_context_t* new_cpu_context_t(unsigned);
 void delete_cpu_context_t( cpu_context_t* );
 
 
-#endif /* PYCBCCPU_PROTOTYPES_H */
+#endif /* PYCBCCPU_PRIVATE_H */
