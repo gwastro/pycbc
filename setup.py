@@ -32,6 +32,7 @@ import os
 from distutils.core import setup
 from distutils.core import Extension
 from distutils.command.clean import clean as _clean
+from distutils.command.build import build as _build
 
 ver = '0.1'
 pycbc_extensions = []
@@ -123,6 +124,18 @@ class clean(_clean):
                 pass
 
 
+class build(_build):
+    # override order of build sub-commands to work around
+    # <http://bugs.python.org/issue7562>
+    sub_commands = [ ('build_clib', _build.has_c_libraries),
+                     ('build_ext', _build.has_ext_modules),
+                     ('build_py', _build.has_pure_modules),
+                     ('build_scripts', _build.has_scripts) ]
+
+    def run(self):
+        _build.run(self)
+
+
 # do the actual work of building the package
 setup (
     name = 'pycbc',
@@ -130,7 +143,8 @@ setup (
     description = 'Gravitational wave CBC analysis toolkit',
     author = 'Ligo Virgo Collaboration - pyCBC team',
     author_email = 'https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home',
-    cmdclass = { 'clean' : clean },
+    cmdclass = { 'clean' : clean,
+                 'build' : build },
     ext_modules = pycbc_extensions,
     packages = ['pycbc','pycbc.clayer',
                 'pycbc.datavector','pycbc.datavector.clayer',
