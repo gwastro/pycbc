@@ -24,3 +24,22 @@
 
 %include "matchedfiltercpu.h"
 
+%extend matched_filter_cpu_t {
+    
+    matched_filter_cpu_t(cpu_context_t*);
+    ~matched_filter_cpu_t();
+    
+    //%typemap(check) unsigned some_MF_constructor_parameter {
+    //    if ($1 < 0) {
+    //        SWIG_exception(SWIG_ValueError, "Invalid some_MF_constructor_parameter");
+    //    }   
+    //}
+    
+    char* __str__() {
+        static char a[512];
+        snprintf( a, sizeof(a)/sizeof(*a), 
+                 "<matched_filter_cpu_t nothing_to_define_yet %d>", 
+                 self, self->nothing_to_define_yet);
+        return a;
+    }
+}

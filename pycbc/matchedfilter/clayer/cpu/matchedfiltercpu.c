@@ -4,7 +4,7 @@
 #include "matchedfiltercpu_private.h"
 #include "matchedfiltercpu.h"
 
-matched_filter_cpu_t* new_matched_filter_cpu_t(cpu_context_t * context)
+matched_filter_cpu_t* new_matched_filter_cpu_t(cpu_context_t* context)
 {
 
     matched_filter_cpu_t* c;
@@ -14,7 +14,7 @@ matched_filter_cpu_t* new_matched_filter_cpu_t(cpu_context_t * context)
 }
 
 
-void delete_matched_filter_opencl_t( matched_filter_cpu_t* p )
+void delete_matched_filter_cpu_t( matched_filter_cpu_t* p )
 {
     free( p );
 }
