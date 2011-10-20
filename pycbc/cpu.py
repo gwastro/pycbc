@@ -65,15 +65,16 @@ class CpuProcessingObj(PyCbcProcessingObj):
 
 
 
-        Currently support only OPENCL !!!
+        Currently supporting only OPENCL aliens !!!
 
-        later distinguish by the context!
+        todo -> distinguish by the context!
 
 
         """
 
         vector_repr = repr(datavector)
-        if (vector_repr.find("datavectorcpu") >= 0):
+        print vector_repr
+        if (vector_repr.find("datavector.clayer.cpu") >= 0):
             # aboriginal datavector. just return it as it is
             self.__logger.debug("data_in found aboriginal datavector {0} thus return it".format(vector_repr))
             return datavector
@@ -82,7 +83,7 @@ class CpuProcessingObj(PyCbcProcessingObj):
 
             # cloning the alien datavector (currently only _cpu_t is allowed)
             self.__logger.debug("data_in found alien datavector {0} thus transfer it".format(vector_repr))
-            datatype_match= re.search( r'<pycbc.datavector.datavectoropencl.(.*)(_opencl_t);(.*)', vector_repr)
+            datatype_match= re.search( r'<pycbc.datavector.datavector.clayer.opencl.(.*)(_opencl_t);(.*)', vector_repr)
             tmptype = datatype_match.groups(1)
             datatype = tmptype[0]
             self.__logger.debug("extracted: {0}".format(datatype))

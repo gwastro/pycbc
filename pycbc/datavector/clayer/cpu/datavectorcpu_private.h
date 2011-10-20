@@ -34,16 +34,20 @@
 
 // prototypes of constructors/destructors.  
 
-real_vector_single_cpu_t* new_real_vector_single_cpu_t(unsigned long, double);
+real_vector_single_cpu_t* new_real_vector_single_cpu_t(cpu_context_t* context,
+                                                       unsigned long, double);
 void delete_real_vector_single_cpu_t( real_vector_single_cpu_t* );
 
-real_vector_double_cpu_t* new_real_vector_double_cpu_t(unsigned long, double);
+real_vector_double_cpu_t* new_real_vector_double_cpu_t(cpu_context_t* context,
+                                                       unsigned long, double);
 void delete_real_vector_double_cpu_t( real_vector_double_cpu_t* );
 
-complex_vector_single_cpu_t* new_complex_vector_single_cpu_t(unsigned long, double);
+complex_vector_single_cpu_t* new_complex_vector_single_cpu_t(cpu_context_t* context,
+                                                             unsigned long, double);
 void delete_complex_vector_single_cpu_t( complex_vector_single_cpu_t* );
 
-complex_vector_double_cpu_t* new_complex_vector_double_cpu_t(unsigned long, double);
+complex_vector_double_cpu_t* new_complex_vector_double_cpu_t(cpu_context_t* context,
+                                                             unsigned long, double);
 void delete_complex_vector_double_cpu_t( complex_vector_double_cpu_t* );
 
 #endif /* DATAVECTORCPU_PRIVATE_H */

@@ -47,7 +47,7 @@ class StrainDataCpu(StrainDataBase):
     CPU derivate of straindata class
     """
     
-    def __init__(self, t_start, t_end, n_segments, sample_freq, interferometer):
+    def __init__(self, context, t_start, t_end, n_segments, sample_freq, interferometer):
         """
         Constructor of the straindata class
         @type t_start: int
@@ -64,7 +64,8 @@ class StrainDataCpu(StrainDataBase):
         @return: none
         """
     
-        super(StrainDataCpu, self).__init__(t_start, t_end, n_segments, 
+        super(StrainDataCpu, self).__init__(context,
+                    t_start, t_end, n_segments, 
                     sample_freq, interferometer,
                     initial_time_series_t = real_vector_double_cpu_t,
                     time_series_t =         real_vector_single_cpu_t,
@@ -89,7 +90,8 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
     low computepower)
     """
 
-    def __init__(self, segments_length, overlap_fact, input_buf_t, 
+    def __init__(self, owner_mstraindat, 
+                 segments_length, overlap_fact, input_buf_t, 
                  output_buffer_t):
         """
         Constructor of the segmenting-implementation class
@@ -115,7 +117,7 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         instanciate FftSegmentsImplementationFftw CPU implementation with \n\
         wrong type of datavector for output_buffers_t"
 
-        super(FftSegmentsImplementationFftw, self).__init__()
+        super(FftSegmentsImplementationFftw, self).__init__(owner_mstraindat)
 
         self.__segments_length = segments_length
         self.__overlap_fact = overlap_fact
@@ -125,8 +127,10 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         # create fft plan
         delta_x_tmp = 1.0 # not used in fft plan generation, just for 
                           # datavector constructor
-        in_tmp  = self.__input_buf_t(segments_length, delta_x_tmp)
-        out_tmp = self.__output_buffer_t(segments_length, delta_x_tmp)
+        in_tmp  = self.__input_buf_t(self._owner_mstraindat._context,
+                                     segments_length, delta_x_tmp)
+        out_tmp = self.__output_buffer_t(self._owner_mstraindat._context,
+                                         segments_length, delta_x_tmp)
         self.__fft_forward_plan= fftw_generate_plan(segments_length, in_tmp, 
         out_tmp, "FFTW_FORWARD", "FFTW_ESTIMATE")
 

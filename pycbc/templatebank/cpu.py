@@ -34,9 +34,9 @@ import logging
 
 class TemplateBankCpu(TemplateBankBase):
 
-    def __init__(self, n_templates, waveform_length, waveform_delta_x):
+    def __init__(self, context, n_templates, waveform_length, waveform_delta_x):
         self.__logger= logging.getLogger('pycbc.TemplateBankCpu')
-        super(TemplateBankCpu, self).__init__(n_templates, waveform_length,
+        super(TemplateBankCpu, self).__init__(context, n_templates, waveform_length,
                                   waveform_delta_x, WaveformFrequencySeries)
 
     #def __del__(self): 

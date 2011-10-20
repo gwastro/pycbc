@@ -46,7 +46,8 @@ class StrainDataBase:
     
     __metaclass__ = ABCMeta
     
-    def __init__(self, t_start, t_end, n_segments, sample_freq,
+    def __init__(self, context,
+                 t_start, t_end, n_segments, sample_freq,
                  interferometer, 
                  initial_time_series_t= None,
                  time_series_t=         None, 
@@ -82,6 +83,7 @@ class StrainDataBase:
         self.__logger= logging.getLogger('pycbc.StrainDataBase')
         
         # init members
+        self._context = context
         self.__sample_freq= sample_freq
         self.__length= (t_end - t_start) * self.__sample_freq
         self.__segments= n_segments
@@ -104,7 +106,8 @@ class StrainDataBase:
         self.__time_series_t = time_series_t
 
         # setup initial data time series            
-        self.__time_series = initial_time_series_t(self.__length, 
+        self.__time_series = initial_time_series_t(self._context,
+                                                   self.__length, 
                                                    1.0/self.__sample_freq)
         
         # TODO This is currently only prototyping a call to the swigged 
@@ -115,13 +118,18 @@ class StrainDataBase:
         #setup segmented frequency series stilde(f)
         self.__frequency_series= []
         for i in range(self.__segments):
-            tmp_series = frequency_series_t(self.__segments_length, 
+            tmp_series = frequency_series_t(self._context,
+                                            self.__segments_length, 
                                             self.__sample_freq)
             self.__frequency_series.append(tmp_series)
 
         # instanciate the (fft) segmenting-implementation object
-        self.__fft_segments_impl = fft_segments_impl_t(self.__segments_length, 
-                    self.__overlap_fact, time_series_t, frequency_series_t)
+        self.__fft_segments_impl = fft_segments_impl_t(self, 
+                                                    self.__segments_length, 
+                                                    self.__overlap_fact, 
+                                                    time_series_t, 
+                                                    frequency_series_t)
+                    
         assert isinstance(self.__fft_segments_impl, 
                           FftSegmentsImplementationBase), "fft_segments "+\
                           "implementation class is not derivate \n\
@@ -223,7 +231,8 @@ class StrainDataBase:
         Convert the initial double precision timeseries to single precision
         
         """
-        tmp_series= self.__time_series_t(self.__length, 1.0/self.__sample_freq)
+        tmp_series= self.__time_series_t(self._context,
+                                         self.__length, 1.0/self.__sample_freq)
         for i in range(self.__length):
             tmp_series[i] = self.__time_series[i]
         self.__time_series = tmp_series
@@ -255,8 +264,9 @@ class FftSegmentsImplementationBase:
     
     __metaclass__ = ABCMeta
     
-    def __init__(self):
-        pass
+    def __init__(self, owner_mstraindat):
+        
+        self._owner_mstraindat = owner_mstraindat
         
     @abstractmethod
     def fft_segments(self, input_buf, output_buf):

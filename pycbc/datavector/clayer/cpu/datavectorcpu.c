@@ -27,11 +27,13 @@
 
 #include <stdio.h>
 
+#include "pycbccpu.h"
 #include "datavectorcpu.h"
 #include "datavectorcpu_private.h"
 
-real_vector_single_cpu_t* new_real_vector_single_cpu_t(unsigned long length, 
-                                               double delta_x)
+real_vector_single_cpu_t* new_real_vector_single_cpu_t(cpu_context_t* context,
+                                                       unsigned long length, 
+                                                       double delta_x)
 {
     CONSTRUCTOR_TEMPLATE(real_vector_single_cpu_t, float)
 
@@ -46,8 +48,9 @@ void delete_real_vector_single_cpu_t( real_vector_single_cpu_t* p )
     free( p );
 }
 
-real_vector_double_cpu_t* new_real_vector_double_cpu_t(unsigned long length, 
-                                               double delta_x)
+real_vector_double_cpu_t* new_real_vector_double_cpu_t(cpu_context_t* context,
+                                                       unsigned long length, 
+                                                       double delta_x)
 {
     CONSTRUCTOR_TEMPLATE(real_vector_double_cpu_t, double)
     c->data = (double*)calloc( c->meta_data.vector_length , 
@@ -61,8 +64,9 @@ void delete_real_vector_double_cpu_t( real_vector_double_cpu_t* p )
     free( p );
 }
 
-complex_vector_single_cpu_t* new_complex_vector_single_cpu_t(unsigned long length, 
-                                                     double delta_x)
+complex_vector_single_cpu_t* new_complex_vector_single_cpu_t(cpu_context_t* context,
+                                                             unsigned long length, 
+                                                             double delta_x)
 {
     CONSTRUCTOR_TEMPLATE(complex_vector_single_cpu_t, complex float)
     c->data = (complex float *)calloc(c->meta_data.vector_length ,
@@ -77,8 +81,9 @@ void delete_complex_vector_single_cpu_t( complex_vector_single_cpu_t* p )
     free( p );
 }
 
-complex_vector_double_cpu_t* new_complex_vector_double_cpu_t(unsigned long length, 
-                                                     double delta_x)
+complex_vector_double_cpu_t* new_complex_vector_double_cpu_t(cpu_context_t* context,
+                                                             unsigned long length, 
+                                                             double delta_x)
 {
     CONSTRUCTOR_TEMPLATE(complex_vector_double_cpu_t, complex double)    
     c->data = (complex double *)calloc(c->meta_data.vector_length,
