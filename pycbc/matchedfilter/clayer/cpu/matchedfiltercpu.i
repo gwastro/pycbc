@@ -39,7 +39,7 @@
         static char a[512];
         snprintf( a, sizeof(a)/sizeof(*a), 
                  "<matched_filter_cpu_t nothing_to_define_yet %d>", 
-                 self, self->nothing_to_define_yet);
+                 self->nothing_to_define_yet);
         return a;
     }
 }

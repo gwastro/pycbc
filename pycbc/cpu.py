@@ -73,7 +73,6 @@ class CpuProcessingObj(PyCbcProcessingObj):
         """
 
         vector_repr = repr(datavector)
-        print vector_repr
         if (vector_repr.find("datavector.clayer.cpu") >= 0):
             # aboriginal datavector. just return it as it is
             self.__logger.debug("data_in found aboriginal datavector {0} thus return it".format(vector_repr))

@@ -22,25 +22,19 @@
 //
 // =============================================================================
 //
-// matchedfiltercpu declarations that are not going to be swig wrapped 
+// templatebankcpu declarations that are not going to be swig wrapped 
 // thus they are private property of the clayer
 
-#ifndef MATCHEDFILTERCPU_PRIVATE_H
-#define MATCHEDFILTERCPU_PRIVATE_H
+#ifndef TEMPLATEBANKCPU_PRIVATE_H
+#define TEMPLATEBANKCPU_PRIVATE_H
 
 #include <stdlib.h>
 #include "pycbccpu.h"
 #include "datavectorcpu.h"
-#include "matchedfiltercpu.h"
+#include "templatebankcpu.h"
 
 // prototypes of all methodes that will extend pure c typedefs
-matched_filter_cpu_t* new_matched_filter_cpu_t(cpu_context_t*);
-void delete_matched_filter_cpu_t( matched_filter_cpu_t* );
+template_bank_cpu_t* new_template_bank_cpu_t(cpu_context_t*);
+void delete_template_bank_cpu_t( template_bank_cpu_t* );
 
-
-void correlate_complex_freq_vectors( complex_vector_single_cpu_t* out,
-				     complex_vector_single_cpu_t* x, 
-				     complex_vector_single_cpu_t* y, 
-				     double f_min);
-
-#endif /* MATCHEDFILTERCPU_PROTOTYPES_H */
+#endif /* TEMPLATEBANKCPU_PRIVATE_H */

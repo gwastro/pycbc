@@ -32,6 +32,9 @@
 unittest for the StrainData class
 """
 
+
+from pycbc.clayer.cpu import cpu_context_t
+
 from pycbc.straindata.cpu import StrainDataCpu as DUT_StrainData
 
 import unittest
@@ -43,6 +46,8 @@ class TestStrainDataCPU(unittest.TestCase):
 
     def setUp(self):
         
+        self.context = cpu_context_t(1)
+        
         self.search_time = 128 # typ design spec: 2048
         self.sample_freq = 256 # typ design spec: 4096
         self.length = self.search_time * self.sample_freq
@@ -51,7 +56,8 @@ class TestStrainDataCPU(unittest.TestCase):
         self.gps_end_time= self.gps_start_time + self.search_time
         self.interferometer = "H1"
         
-        self.dut= DUT_StrainData(self.gps_start_time, self.gps_end_time, 
+        self.dut= DUT_StrainData(self.context, 
+                                 self.gps_start_time, self.gps_end_time, 
                                  self.segments, self.sample_freq, 
                                  self.interferometer)
 
