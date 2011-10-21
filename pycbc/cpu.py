@@ -164,4 +164,4 @@ class CpuDeviceContext:
         # destroy Cpu device context clayer member
         del(self.__cpucontext)
         self.__logger.debug(" On __exit__ destroyed cpucontext of device {0}:".format(self.__devicehandle))
-                
+        

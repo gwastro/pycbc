@@ -32,6 +32,8 @@
 unittest for the datavector cpu class
 """
 
+from pycbc.clayer.cpu import cpu_context_t
+
 from pycbc.datavector.clayer.cpu import real_vector_double_cpu_t
 from pycbc.datavector.clayer.cpu import real_vector_single_cpu_t
 from pycbc.datavector.clayer.cpu import complex_vector_single_cpu_t
@@ -50,13 +52,22 @@ class TestDatavectorCPU(unittest.TestCase):
         self.length = 128 # typ design spec: 4096
         self.delta_x = 1.0
         
-        self.dut_real_single= real_vector_single_cpu_t(self.length, 
+        self.context = cpu_context_t(1)
+  
+        self.dut_real_single= real_vector_single_cpu_t(self.context,
+                                                       self.length, 
                                                        self.delta_x)
-        self.dut_real_double= real_vector_double_cpu_t(self.length, 
+                                                       
+        self.dut_real_double= real_vector_double_cpu_t(self.context,
+                                                       self.length, 
                                                        self.delta_x)
-        self.dut_complex_single= complex_vector_single_cpu_t(self.length, 
+                                                       
+        self.dut_complex_single= complex_vector_single_cpu_t(self.context,
+                                                             self.length, 
                                                              self.delta_x)
-        self.dut_complex_double= complex_vector_double_cpu_t(self.length, 
+                                                             
+        self.dut_complex_double= complex_vector_double_cpu_t(self.context,
+                                                             self.length, 
                                                              self.delta_x)
 
         random.seed()
