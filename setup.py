@@ -42,8 +42,8 @@ pycbc_clean_files = []
 pycbc_extensions.append(Extension( 'pycbc.clayer._cpu', 
     sources = ['pycbc/clayer/cpu/pycbccpu.i',
                'pycbc/clayer/cpu/pycbccpu.c'],
-    depends = ['pycbc/clayer/cpu/pycbccpu_types.h',
-               'pycbc/clayer/cpu/pycbccpu_prototypes.h'],
+    depends = ['pycbc/clayer/cpu/pycbccpu.h',
+               'pycbc/clayer/cpu/pycbccpu_private.h'],
     swig_opts = ['-outdir','pycbc/clayer'],
     extra_compile_args = ['-Wall','-fPIC']
     ))
@@ -56,7 +56,11 @@ pycbc_extensions.append(Extension( 'pycbc.datavector.clayer._cpu',
     sources = ['pycbc/datavector/clayer/cpu/datavectorcpu.i',
                'pycbc/datavector/clayer/cpu/datavectorcpu.c'],
     depends = ['pycbc/datavector/clayer/cpu/datavectorcpu.h',
-               'pycbc/datavector/clayer/cpu/datavectorcpu_private.h'],
+               'pycbc/datavector/clayer/cpu/datavectorcpu_private.h',
+               'pycbc/datavector/clayer/datavector.h',
+               'pycbc/clayer/cpu/pycbccpu.h'],
+    include_dirs = ['pycbc/clayer/cpu',
+                    'pycbc/datavector/clayer'],
     swig_opts = ['-outdir','pycbc/datavector/clayer'],
     extra_compile_args = ['-Wall','-fPIC']
     ))
@@ -68,9 +72,10 @@ pycbc_clean_files.append('pycbc/datavector/clayer/cpu/datavectorcpu_wrap.c')
 pycbc_extensions.append(Extension( 'pycbc.straindata.clayer._cpu', 
     sources = ['pycbc/straindata/clayer/cpu/straindatacpu.i',
                'pycbc/straindata/clayer/cpu/straindatacpu.c'],
-    depends = ['pycbc/straindata/clayer/cpu/straindatacpu_types.h',
-               'pycbc/straindata/clayer/cpu/straindatacpu_prototypes.h'],
-    include_dirs = ['pycbc/datavector/clayer/cpu'],
+    depends = ['pycbc/straindata/clayer/cpu/straindatacpu.h',
+               'pycbc/straindata/clayer/cpu/straindatacpu_private.h'],
+    include_dirs = ['pycbc/clayer/cpu',
+                    'pycbc/datavector/clayer/cpu'],
     swig_opts = ['-outdir','pycbc/straindata/clayer'],
     extra_compile_args = ['-Wall','-fPIC']
     ))
@@ -82,7 +87,8 @@ pycbc_clean_files.append('pycbc/straindata/clayer/cpu/straindatacpu_wrap.c')
 pycbc_extensions.append(Extension( 'pycbc.templatebank.clayer._cpu', 
     sources = ['pycbc/templatebank/clayer/cpu/templatebankcpu.i',
                'pycbc/templatebank/clayer/cpu/templatebankcpu.c'],
-    depends = ['pycbc/templatebank/clayer/cpu/templatebankcpu_prototypes.h'],
+    depends = ['pycbc/templatebank/clayer/cpu/templatebankcpu.h',
+               'pycbc/templatebank/clayer/cpu/templatebankcpu_private.h'],
     include_dirs = ['pycbc/clayer/cpu',
                'pycbc/datavector/clayer/cpu'],
     swig_opts = ['-outdir','pycbc/templatebank/clayer'],
@@ -96,8 +102,8 @@ pycbc_clean_files.append('pycbc/templatebank/clayer/cpu/templatebankcpu_wrap.c')
 pycbc_extensions.append(Extension( 'pycbc.matchedfilter.clayer._cpu', 
     sources = ['pycbc/matchedfilter/clayer/cpu/matchedfiltercpu.i',
                'pycbc/matchedfilter/clayer/cpu/matchedfiltercpu.c'],
-    depends = ['pycbc/matchedfilter/clayer/cpu/matchedfiltercpu_types.h',
-               'pycbc/matchedfilter/clayer/cpu/matchedfiltercpu_prototypes.h'],
+    depends = ['pycbc/matchedfilter/clayer/cpu/matchedfiltercpu.h',
+               'pycbc/matchedfilter/clayer/cpu/matchedfiltercpu_private.h'],
     include_dirs = ['pycbc/clayer/cpu',
                'pycbc/datavector/clayer/cpu'],
     swig_opts = ['-outdir','pycbc/matchedfilter/clayer'],
@@ -158,7 +164,5 @@ setup (
                 'pycbc.templatebank','pycbc.templatebank.clayer',
                 'pycbc.matchedfilter','pycbc.matchedfilter.clayer',
                 'pycbc.waveform'],
-    scripts = ['bin/pycbc_min_pipeline',
-               'bin/pycbc_cpu_syr_pipeline']
-
+    scripts = ['bin/pycbc_min_cpu_pipeline']
 )
