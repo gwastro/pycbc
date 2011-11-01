@@ -46,10 +46,6 @@ to incorporate:
 import sys
 import random
 
-# preliminary hard coded path to packages 
-sys.path.append('/Users/kawies/dev/src/pycbc/build/lib.macosx-10.6-x86_64-2.6/')
-
-
 from pycbc.pycbc_opencl import OpenClDeviceContext as ProccessingTargetContext
 
 from pycbc.straindata.straindata_cpu import StrainDataCpu as StrainData 

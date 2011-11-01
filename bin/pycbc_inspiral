@@ -40,9 +40,6 @@ Current Status: "Application Prototype"
 
 import sys
 
-# preliminary hard coded path to packages 
-sys.path.append('/Users/kawies/dev/src/pycbc')
-
 # @todo lalsuite like commandline parsing
 # commandline arguments can (but doesn't have to) be used to 
 # set up the following mapping of different memorytypes 
