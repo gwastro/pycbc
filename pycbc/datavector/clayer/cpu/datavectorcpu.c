@@ -26,10 +26,12 @@
 
 
 #include <stdio.h>
+#include <pycbc/clayer/except.h>
 
 #include "pycbccpu.h"
 #include "datavectorcpu.h"
 #include "datavectorcpu_private.h"
+
 
 real_vector_single_cpu_t* new_real_vector_single_cpu_t(cpu_context_t* context,
                                                        unsigned long length, 
@@ -39,6 +41,9 @@ real_vector_single_cpu_t* new_real_vector_single_cpu_t(cpu_context_t* context,
 
     c->data = (float*)calloc( c->meta_data.vector_length , 
                       c->meta_data.element_size_bytes );
+                      
+    if (!c->data) pycbc_throw_exception(PYCBC_MEMORY_ERROR,"real_vector_single_cpu_t allocation fails");
+
     return c;
 }
 
@@ -55,6 +60,9 @@ real_vector_double_cpu_t* new_real_vector_double_cpu_t(cpu_context_t* context,
     CONSTRUCTOR_TEMPLATE(real_vector_double_cpu_t, double)
     c->data = (double*)calloc( c->meta_data.vector_length , 
                       c->meta_data.element_size_bytes );
+                          
+    if (!c->data) pycbc_throw_exception(PYCBC_MEMORY_ERROR,"real_vector_double_cpu_t allocation fails");
+    
     return c;
 }
 
@@ -71,6 +79,10 @@ complex_vector_single_cpu_t* new_complex_vector_single_cpu_t(cpu_context_t* cont
     CONSTRUCTOR_TEMPLATE(complex_vector_single_cpu_t, complex float)
     c->data = (complex float *)calloc(c->meta_data.vector_length ,
                           c->meta_data.element_size_bytes );
+              
+                          
+    if (!c->data) pycbc_throw_exception(PYCBC_MEMORY_ERROR,"complex_vector_single_cpu_t allocation fails");
+                          
     return c;
 }
 
@@ -88,6 +100,9 @@ complex_vector_double_cpu_t* new_complex_vector_double_cpu_t(cpu_context_t* cont
     CONSTRUCTOR_TEMPLATE(complex_vector_double_cpu_t, complex double)    
     c->data = (complex double *)calloc(c->meta_data.vector_length,
                           c->meta_data.element_size_bytes );
+                                               
+    if (!c->data) pycbc_throw_exception(PYCBC_MEMORY_ERROR,"complex_vector_double_cpu_t allocation fails");                      
+                          
     return c;
 }
 

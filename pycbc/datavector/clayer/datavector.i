@@ -28,6 +28,8 @@
 #include <complex.h>
 %}
 
+%include <pycbc/clayer/except.i>
+
 // add new element properties here:
 %define TYPE_INTERFACE_TEMPLATE(name,type)
 name(unsigned long vector_length, double delta_x);

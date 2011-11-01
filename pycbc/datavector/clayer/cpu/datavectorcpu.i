@@ -48,7 +48,7 @@
 
 %include "../datavector.h"
 %include "datavectorcpu.h"
-%include "exception.i"
+%include <pycbc/clayer/except.i>
 
 // add new element properties for CPU vectors here:
 %define TYPE_INTERFACE_TEMPLATE(name,type)
@@ -118,48 +118,18 @@ double get_delta_x( void ) {
 
 %enddef
 
-// exceptions section ----------------------------------------------------------
-
-%exception real_vector_single_cpu_t {
-    $action
-    if (!result) {
-        SWIG_exception(SWIG_MemoryError, "real_vector_single_cpu_t allocation fails");
-        return NULL;
-    }
-}
 %extend real_vector_single_cpu_t {
     TYPE_INTERFACE_TEMPLATE(real_vector_single_cpu_t,float)
 }
 
-%exception real_vector_double_cpu_t {
-    $action
-    if (!result) {
-        SWIG_exception(SWIG_MemoryError, "real_vector_double_cpu_t allocation fails");
-        return NULL;
-    }
-}
 %extend real_vector_double_cpu_t {
     TYPE_INTERFACE_TEMPLATE(real_vector_double_cpu_t,double)
 }
 
-%exception complex_vector_single_cpu_t {
-    $action
-    if (!result) {
-        SWIG_exception(SWIG_MemoryError, "complex_vector_single_cpu_t allocation fails");
-        return NULL;
-    }
-}
 %extend complex_vector_single_cpu_t {
     TYPE_INTERFACE_TEMPLATE(complex_vector_single_cpu_t,complex float)
 }
 
-%exception complex_vector_double_cpu_t {
-    $action
-    if (!result) {
-        SWIG_exception(SWIG_MemoryError, "complex_vector_double_cpu_t allocation fails");
-        return NULL;
-    }
-}
 %extend complex_vector_double_cpu_t {
     TYPE_INTERFACE_TEMPLATE(complex_vector_double_cpu_t,complex double )
 }
