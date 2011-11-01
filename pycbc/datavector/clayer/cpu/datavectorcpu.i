@@ -46,7 +46,7 @@
     import warnings
     %}
 
-%include "datavector.h"
+%include "../datavector.h"
 %include "datavectorcpu.h"
 %include "exception.i"
 
