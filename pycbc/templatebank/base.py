@@ -29,31 +29,32 @@ Base class of template bank
 from abc import ABCMeta, abstractmethod, abstractproperty
 from math import * 
 import random
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+from glue.ligolw.utils import ligolw_add
 
 import logging
 
-class TemplateBankBase(object):
+class TemplateBank(object):
     
     __metaclass__ = ABCMeta
     
-    def __init__(self, context, n_templates, waveform_length, waveform_delta_x,
+    def __init__(self, context, waveform_length, waveform_delta_x,
                  waveform_frequency_series_t):
-        
+        self.__logger = logging.getLogger('pycbc.TemplateBank')
+
         # init members
-        self._context= context
-        self.__logger= logging.getLogger('pycbc.TemplateBankBase')
-        self.__templates= n_templates
+        self._context = context
+        self.__templates_num = 0
         self.__template_index = 0
-        self.__template_params= []
+        self.__template_params = []
+        self.__filename = ''
+        self.templates = None
 
-        for i in range(self.__templates):
-            tmp = [i*1.0, i*0.5] # m1, m2 very prototyping model of a parameter space
-            self.__template_params.append(tmp)
-
-        self.__logger.debug("prototyping templatebank: {0}".format(self.__template_params))
-
-        self.__waveform_length= waveform_length
-        self.__waveform_delta_x= waveform_delta_x
+        self.__waveform_length = waveform_length
+        self.__waveform_delta_x = waveform_delta_x
         
         self.__waveform_frequency_series_t = waveform_frequency_series_t
         
@@ -72,47 +73,45 @@ class TemplateBankBase(object):
     #---------------------------------------------------------------------------
 
     # iterate over templates in the parameter space
-    def next(self):
-        if self.__template_index == self.__templates:
-            raise StopIteration
-        self.__template_index = self.__template_index + 1
-        return self.__template_params[self.__template_index-1]
-
-    # iterate over waveform buffers  
-    #def next(self):
-    #    if self.__waveform_index == self.__templates:
-    #        self.__waveform_index = 0
-    #        raise StopIteration
-    #    self.__waveform_index = self.__waveform_index + 1
-    #    return self.__waveforms[self.__waveform_index-1]
-
     # define the iterater of TemplateBank. Other access patterns to the data 
-    # should be implemented by generators (i.g. reverse())
+    # should be implemented by generators (e.g., reverse())
     def __iter__(self):
         """
         define the template bank object itself to iterate over it's inherent
         parameter space
         """
         return self
-        
-    def read_parameter_space(self):
-        """
-        read the parameter space of the template bank from a file or library
-        """
-        pass
-                
-    def perform_generate_waveform(self, template):
+
+    def next(self):
+        if self.__template_index == self.__templates:
+            raise StopIteration
+        self.__template_index = self.__template_index + 1
+        return self.__template_params[self.__template_index-1]
+
+    def read_from_file(self, filename, verbose=False):
+        # load the xml file containing the templates and extract the sngl_inspiral table
+        self.__logger.debug("loading templatebank: %s"%(filename))
+        self.__filename = filename
+        xmldoc = ligolw_add.ligolw_add(ligolw.Document(), [filename], verbose=verbose)
+        self.templates = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+        self.__logger.debug("obtained %i templates"%(len(self.templates)))
+        self.__templates_num = len(self.templates)
+        self.__template_index = 0
+
+        self.__logger.debug("extracting templatebank mass parameters")
+        m1s = self.templates.get_column('mass1')
+        m2s = self.templates.get_column('mass2')
+        self.__template_params = zip(m1s,m2s)
+
+    def generate_filter(self, template):
         """
         generate waveform on target architecture/device - get's into the 
         ABC scheme later (like in Matchedfilter
         perform_generate_snr ...) 
         """
-            
-        # call the right approximation model generator with "template"!
-        # currently we generate noise for prototyping
-        for i in range(self.waveform_length):
-            self.__waveform[i] = random.uniform(-1,1)
-                
+
+        self.__waveform_generator( template)
+
         return self.__waveform
             
          
