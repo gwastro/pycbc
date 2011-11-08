@@ -39,7 +39,7 @@ class disttest(Command):
         
         #FIXME WHEN WE HAVE THE CONFIGURATION DONE 
         # self.test_modules+= self.test_cuda()
-        # self.test_modules+= self.test_opencl()
+        #self.test_modules+= self.test_opencl()
         
         # Run from the build directory
         sys.path.insert(0,self.build_dir)
@@ -48,4 +48,7 @@ class disttest(Command):
         suite = unittest.TestLoader().loadTestsFromNames(self.test_modules)
 
         # run test suite
-        unittest.TextTestRunner().run(suite)
+        results=unittest.TextTestRunner().run(suite)
+        if( not results.wasSuccessful()):
+	    raise SystemExit(1)    
+	
