@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Karsten Wiesner
+// Copyright (C) 2011 Karsten Wiesner, Josh Willis
 //
 // This program is free software; you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by the
@@ -32,16 +32,37 @@
 #include "datavectorcpu.h"
 #include "datavectorcpu_private.h"
 
+/*
+  The constant below is used by posix_memalign() to ensure that the
+  datavectors generated for the CPU architecture are properly aligned
+  to allow the use of FFTW SIMD extensions (a capability assumed in the
+  FFTW wrappings of PyCBC).
+
+  It is defined here so that the CPU datavectors can be built even if
+  FFTW is not being used as the FFT library (though the alignment may,
+  in that case, be unnecessary).
+
+  Also note that maintainers should keep up enough with the internals
+  of FFTW to know the appropriate value to use here.  At present, LAL
+  and the LSC use FFTW 3.2, for which 16-byte alignment is all that is
+  needed.  However, for FFTW 3.3 (which supports AVX instructions), the
+  documentation states that still only 16-byte alignment is -needed-
+  (which is true) but internally it used 32-byte alignment because that
+  can give a performance benefit (even though not needed to avoid
+  segmentation faults).
+
+ */
+#define PYCBC_CPU_DATAVECTOR_ALIGNMENT 16
 
 real_vector_single_cpu_t* new_real_vector_single_cpu_t(cpu_context_t* context,
-                                                       unsigned long length, 
+                                                       unsigned long length,
                                                        double delta_x)
 {
     CONSTRUCTOR_TEMPLATE(real_vector_single_cpu_t, float)
 
-    c->data = (float*)calloc( c->meta_data.vector_length , 
+    c->data = (float*)calloc( c->meta_data.vector_length ,
                       c->meta_data.element_size_bytes );
-                      
+
     if (!c->data) pycbc_throw_exception(PYCBC_MEMORY_ERROR,"real_vector_single_cpu_t allocation fails");
 
     return c;
@@ -54,15 +75,15 @@ void delete_real_vector_single_cpu_t( real_vector_single_cpu_t* p )
 }
 
 real_vector_double_cpu_t* new_real_vector_double_cpu_t(cpu_context_t* context,
-                                                       unsigned long length, 
+                                                       unsigned long length,
                                                        double delta_x)
 {
     CONSTRUCTOR_TEMPLATE(real_vector_double_cpu_t, double)
-    c->data = (double*)calloc( c->meta_data.vector_length , 
+    c->data = (double*)calloc( c->meta_data.vector_length ,
                       c->meta_data.element_size_bytes );
-                          
+
     if (!c->data) pycbc_throw_exception(PYCBC_MEMORY_ERROR,"real_vector_double_cpu_t allocation fails");
-    
+
     return c;
 }
 
@@ -73,16 +94,15 @@ void delete_real_vector_double_cpu_t( real_vector_double_cpu_t* p )
 }
 
 complex_vector_single_cpu_t* new_complex_vector_single_cpu_t(cpu_context_t* context,
-                                                             unsigned long length, 
+                                                             unsigned long length,
                                                              double delta_x)
 {
     CONSTRUCTOR_TEMPLATE(complex_vector_single_cpu_t, complex float)
     c->data = (complex float *)calloc(c->meta_data.vector_length ,
                           c->meta_data.element_size_bytes );
-              
-                          
+
     if (!c->data) pycbc_throw_exception(PYCBC_MEMORY_ERROR,"complex_vector_single_cpu_t allocation fails");
-                          
+
     return c;
 }
 
@@ -94,15 +114,15 @@ void delete_complex_vector_single_cpu_t( complex_vector_single_cpu_t* p )
 }
 
 complex_vector_double_cpu_t* new_complex_vector_double_cpu_t(cpu_context_t* context,
-                                                             unsigned long length, 
+                                                             unsigned long length,
                                                              double delta_x)
 {
-    CONSTRUCTOR_TEMPLATE(complex_vector_double_cpu_t, complex double)    
+    CONSTRUCTOR_TEMPLATE(complex_vector_double_cpu_t, complex double)
     c->data = (complex double *)calloc(c->meta_data.vector_length,
                           c->meta_data.element_size_bytes );
-                                               
-    if (!c->data) pycbc_throw_exception(PYCBC_MEMORY_ERROR,"complex_vector_double_cpu_t allocation fails");                      
-                          
+
+    if (!c->data) pycbc_throw_exception(PYCBC_MEMORY_ERROR,"complex_vector_double_cpu_t allocation fails");
+
     return c;
 }
 
