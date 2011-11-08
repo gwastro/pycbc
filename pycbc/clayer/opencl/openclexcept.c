@@ -2,6 +2,7 @@
 #include <string.h>
 #include <pycbc/clayer/except.h>
 #include <gpu_inspiral_gpuutils.h>
+#include <stdarg.h>
 
 void pycbc_throw_opencl_exception(int opencl_error_id, ...)
 {    
@@ -96,7 +97,7 @@ void pycbc_throw_opencl_exception(int opencl_error_id, ...)
             error_status = PYCBC_RUNTIME_ERROR;
             break;
         case CL_INVALID_CONTEXT:
-            strncpy(error_message,"CL_INVALID_CONTEXT",EXCEPTION_MESSAGE_SIZE");
+            strncpy(error_message,"CL_INVALID_CONTEXT",EXCEPTION_MESSAGE_SIZE);
             error_status = PYCBC_RUNTIME_ERROR;
             break;
         case CL_INVALID_QUEUE_PROPERTIES:
@@ -223,7 +224,7 @@ void pycbc_throw_opencl_exception(int opencl_error_id, ...)
 
     //append the generic error message to the opencl specific one
     strncat(error_message,":",EXCEPTION_MESSAGE_SIZE-strlen(error_message));
-    strncat(error_message,generic_err_message,EXCEPTION_MESSAGE_SIZE-strlen(error-message));
+    strncat(error_message,generic_error_message,EXCEPTION_MESSAGE_SIZE-strlen(error_message));
     
     throw_exception_bare(error_status,error_message);
     return;

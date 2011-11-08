@@ -66,7 +66,7 @@ void pycbc_throw_cuda_exception(cudaError_t cuda_error_t, ...)
     //append the generic error message to the cuda specific one
     strncat(error_message,cuda_message,EXCEPTION_MESSAGE_SIZE);
     strncat(error_message,":",EXCEPTION_MESSAGE_SIZE-strlen(error_message));
-    strncat(error_message,generic_err_message,EXCEPTION_MESSAGE_SIZE-strlen(error-message));
+    strncat(error_message,generic_error_message,EXCEPTION_MESSAGE_SIZE-strlen(error_message));
     
     pycbc_throw_exception_bare(error_status,error_message);
     return;
