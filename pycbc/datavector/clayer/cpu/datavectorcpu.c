@@ -62,7 +62,7 @@ real_vector_single_cpu_t* new_real_vector_single_cpu_t(cpu_context_t* context,
 {
     CONSTRUCTOR_TEMPLATE(real_vector_single_cpu_t, float)
 
-    if (posix_memalign(&(c->data),PYCBC_CPU_DATAVECTOR_ALIGNMENT,
+    if (posix_memalign((void **) &(c->data),PYCBC_CPU_DATAVECTOR_ALIGNMENT,
 		       c->meta_data.vector_length*c->meta_data.element_size_bytes))
 	{
 	  c->data = NULL; /* We failed, for some reason */
@@ -72,7 +72,8 @@ real_vector_single_cpu_t* new_real_vector_single_cpu_t(cpu_context_t* context,
 	}
     else
       {
-	memset(c->data,0,c->meta_data.vector_length*c->meta_data.element_size_bytes);
+	memset((void *) c->data,0,
+	       c->meta_data.vector_length*c->meta_data.element_size_bytes);
 	return c;
       }
 }
@@ -89,7 +90,7 @@ real_vector_double_cpu_t* new_real_vector_double_cpu_t(cpu_context_t* context,
 {
     CONSTRUCTOR_TEMPLATE(real_vector_double_cpu_t, double)
 
-    if (posix_memalign(&(c->data),PYCBC_CPU_DATAVECTOR_ALIGNMENT,
+    if (posix_memalign((void **) &(c->data),PYCBC_CPU_DATAVECTOR_ALIGNMENT,
 		       c->meta_data.vector_length*c->meta_data.element_size_bytes))
 	{
 	  c->data = NULL; /* We failed, for some reason */
@@ -99,7 +100,8 @@ real_vector_double_cpu_t* new_real_vector_double_cpu_t(cpu_context_t* context,
 	}
     else
       {
-	memset(c->data,0,c->meta_data.vector_length*c->meta_data.element_size_bytes);
+	memset((void *) c->data,0,
+	       c->meta_data.vector_length*c->meta_data.element_size_bytes);
 	return c;
       }
 }
@@ -116,7 +118,7 @@ complex_vector_single_cpu_t* new_complex_vector_single_cpu_t(cpu_context_t* cont
 {
     CONSTRUCTOR_TEMPLATE(complex_vector_single_cpu_t, complex float)
 
-    if (posix_memalign(&(c->data),PYCBC_CPU_DATAVECTOR_ALIGNMENT,
+    if (posix_memalign((void **) &(c->data),PYCBC_CPU_DATAVECTOR_ALIGNMENT,
 		       c->meta_data.vector_length*c->meta_data.element_size_bytes))
 	{
 	  c->data = NULL; /* We failed, for some reason */
@@ -126,7 +128,8 @@ complex_vector_single_cpu_t* new_complex_vector_single_cpu_t(cpu_context_t* cont
 	}
     else
       {
-	memset(c->data,0,c->meta_data.vector_length*c->meta_data.element_size_bytes);
+	memset((void *) c->data,0,
+	       c->meta_data.vector_length*c->meta_data.element_size_bytes);
 	return c;
       }
 }
@@ -145,7 +148,7 @@ complex_vector_double_cpu_t* new_complex_vector_double_cpu_t(cpu_context_t* cont
 
     CONSTRUCTOR_TEMPLATE(complex_vector_double_cpu_t, complex double)
 
-    if (posix_memalign(&(c->data),PYCBC_CPU_DATAVECTOR_ALIGNMENT,
+    if (posix_memalign((void **) &(c->data),PYCBC_CPU_DATAVECTOR_ALIGNMENT,
 		       c->meta_data.vector_length*c->meta_data.element_size_bytes))
 	{
 	  c->data = NULL; /* We failed, for some reason */
@@ -155,7 +158,8 @@ complex_vector_double_cpu_t* new_complex_vector_double_cpu_t(cpu_context_t* cont
 	}
     else
       {
-	memset(c->data,0,c->meta_data.vector_length*c->meta_data.element_size_bytes);
+	memset((void *) c->data,0,
+	       c->meta_data.vector_length*c->meta_data.element_size_bytes);
 	return c;
       }
 }
