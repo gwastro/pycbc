@@ -29,10 +29,12 @@ setup.py file for PyCBC package
 """
 
 import os
-from distutils.core import setup
+from distutils.core import setup,Command
 from distutils.core import Extension
 from distutils.command.clean import clean as _clean
 from distutils.command.build import build as _build
+from distutils.command.install import install as _install
+from disttest import disttest
 
 ver = '0.1'
 pycbc_extensions = []
@@ -140,7 +142,12 @@ class build(_build):
 
     def run(self):
         _build.run(self)
-
+        
+# Override the standard install to ensure that all the unittests pass
+class install(_install):
+  def run(self):
+    self.run_command('test')
+    _install.run(self)
 
 # do the actual work of building the package
 setup (
@@ -150,7 +157,9 @@ setup (
     author = 'Ligo Virgo Collaboration - pyCBC team',
     author_email = 'https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home',
     cmdclass = { 'clean' : clean,
-                 'build' : build },
+                 'build' : build,
+                 'install':install,
+		 'test'  : disttest },
     ext_modules = pycbc_extensions,
     packages = ['pycbc','pycbc.clayer',
                 'pycbc.datavector','pycbc.datavector.clayer',
@@ -166,3 +175,4 @@ setup (
                 'pycbc.waveform'],
     scripts = ['bin/pycbc_min_cpu_pipeline']
 )
+
