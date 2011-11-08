@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Karsten Wiesner
+// Copyright (C) 2011 Karsten Wiesner, Josh Willis
 //
 // This program is free software; you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by the
@@ -54,9 +54,13 @@ meta_data_t;
 #define CONSTRUCTOR_TEMPLATE(name,type)\
 name* c;\
 c = (name*) malloc( sizeof(name) );\
+if (c) {\
 c->meta_data.start = 0;\
 c->meta_data.delta_x = delta_x;\
 c->meta_data.vector_length = length;\
 c->meta_data.element_size_bytes = sizeof(type);\
+} else { \
+return NULL; \
+}\
 
 #endif /* DATAVECTOR_H */
