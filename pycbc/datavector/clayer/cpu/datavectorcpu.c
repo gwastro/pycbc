@@ -27,6 +27,8 @@
 
 #include <stdio.h>
 #include <pycbc/clayer/except.h>
+/* Following needed for memset() */
+#include <string.h>
 
 #include "pycbccpu.h"
 #include "datavectorcpu.h"
@@ -60,12 +62,19 @@ real_vector_single_cpu_t* new_real_vector_single_cpu_t(cpu_context_t* context,
 {
     CONSTRUCTOR_TEMPLATE(real_vector_single_cpu_t, float)
 
-    c->data = (float*)calloc( c->meta_data.vector_length ,
-                      c->meta_data.element_size_bytes );
-
-    if (!c->data) pycbc_throw_exception(PYCBC_MEMORY_ERROR,"real_vector_single_cpu_t allocation fails");
-
-    return c;
+    if (posix_memalign(&(c->data),PYCBC_CPU_DATAVECTOR_ALIGNMENT,
+		       c->meta_data.vector_length*c->meta_data.element_size_bytes))
+	{
+	  c->data = NULL; /* We failed, for some reason */
+	  free(c);
+	  pycbc_throw_exception(PYCBC_MEMORY_ERROR,"real_vector_single_cpu_t allocation failed");
+	  return NULL;
+	}
+    else
+      {
+	memset(c->data,0,c->meta_data.vector_length*c->meta_data.element_size_bytes);
+	return c;
+      }
 }
 
 void delete_real_vector_single_cpu_t( real_vector_single_cpu_t* p )
@@ -79,12 +88,20 @@ real_vector_double_cpu_t* new_real_vector_double_cpu_t(cpu_context_t* context,
                                                        double delta_x)
 {
     CONSTRUCTOR_TEMPLATE(real_vector_double_cpu_t, double)
-    c->data = (double*)calloc( c->meta_data.vector_length ,
-                      c->meta_data.element_size_bytes );
 
-    if (!c->data) pycbc_throw_exception(PYCBC_MEMORY_ERROR,"real_vector_double_cpu_t allocation fails");
-
-    return c;
+    if (posix_memalign(&(c->data),PYCBC_CPU_DATAVECTOR_ALIGNMENT,
+		       c->meta_data.vector_length*c->meta_data.element_size_bytes))
+	{
+	  c->data = NULL; /* We failed, for some reason */
+	  free(c);
+	  pycbc_throw_exception(PYCBC_MEMORY_ERROR,"real_vector_double_cpu_t allocation failed");
+	  return NULL;
+	}
+    else
+      {
+	memset(c->data,0,c->meta_data.vector_length*c->meta_data.element_size_bytes);
+	return c;
+      }
 }
 
 void delete_real_vector_double_cpu_t( real_vector_double_cpu_t* p )
@@ -98,12 +115,20 @@ complex_vector_single_cpu_t* new_complex_vector_single_cpu_t(cpu_context_t* cont
                                                              double delta_x)
 {
     CONSTRUCTOR_TEMPLATE(complex_vector_single_cpu_t, complex float)
-    c->data = (complex float *)calloc(c->meta_data.vector_length ,
-                          c->meta_data.element_size_bytes );
 
-    if (!c->data) pycbc_throw_exception(PYCBC_MEMORY_ERROR,"complex_vector_single_cpu_t allocation fails");
-
-    return c;
+    if (posix_memalign(&(c->data),PYCBC_CPU_DATAVECTOR_ALIGNMENT,
+		       c->meta_data.vector_length*c->meta_data.element_size_bytes))
+	{
+	  c->data = NULL; /* We failed, for some reason */
+	  free(c);
+	  pycbc_throw_exception(PYCBC_MEMORY_ERROR,"complex_vector_single_cpu_t allocation failed");
+	  return NULL;
+	}
+    else
+      {
+	memset(c->data,0,c->meta_data.vector_length*c->meta_data.element_size_bytes);
+	return c;
+      }
 }
 
 void delete_complex_vector_single_cpu_t( complex_vector_single_cpu_t* p )
@@ -117,13 +142,22 @@ complex_vector_double_cpu_t* new_complex_vector_double_cpu_t(cpu_context_t* cont
                                                              unsigned long length,
                                                              double delta_x)
 {
+
     CONSTRUCTOR_TEMPLATE(complex_vector_double_cpu_t, complex double)
-    c->data = (complex double *)calloc(c->meta_data.vector_length,
-                          c->meta_data.element_size_bytes );
 
-    if (!c->data) pycbc_throw_exception(PYCBC_MEMORY_ERROR,"complex_vector_double_cpu_t allocation fails");
-
-    return c;
+    if (posix_memalign(&(c->data),PYCBC_CPU_DATAVECTOR_ALIGNMENT,
+		       c->meta_data.vector_length*c->meta_data.element_size_bytes))
+	{
+	  c->data = NULL; /* We failed, for some reason */
+	  free(c);
+	  pycbc_throw_exception(PYCBC_MEMORY_ERROR,"complex_vector_double_cpu_t allocation failed");
+	  return NULL;
+	}
+    else
+      {
+	memset(c->data,0,c->meta_data.vector_length*c->meta_data.element_size_bytes);
+	return c;
+      }
 }
 
 void delete_complex_vector_double_cpu_t( complex_vector_double_cpu_t* p )
