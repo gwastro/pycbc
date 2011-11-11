@@ -29,17 +29,18 @@
 
 #include <stdlib.h>
 #include <complex.h>
+#include <pycbc/clayer/except.h>
 
-// To add new elements add them in the typedef meta_data_t  
+// To add new elements add them in the typedef meta_data_t
 // and in the CONSTRUCTOR_TEMPLATE macro
 // and in the TYPE_INTERFACE_TEMPLATE macro in the datavector.i file
 
 typedef struct
 {
 
-    // add "epoch" -> segment start time accociated w/ initial time series 
+    // add "epoch" -> segment start time accociated w/ initial time series
     unsigned long start;    // better rename to x0;
-                            // offset of the data from origin series applies 
+                            // offset of the data from origin series applies
                             // only for segmenting ????
     double        delta_x;  // Depending on the data either sample intervall
                             // in time domain or frequency domain
@@ -60,6 +61,7 @@ c->meta_data.delta_x = delta_x;\
 c->meta_data.vector_length = length;\
 c->meta_data.element_size_bytes = sizeof(type);\
 } else { \
+pycbc_throw_exception(PYCBC_MEMORY_ERROR,"allocation of datavector struct failed");\
 return NULL; \
 }\
 
