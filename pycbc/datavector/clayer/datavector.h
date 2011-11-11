@@ -29,7 +29,6 @@
 
 #include <stdlib.h>
 #include <complex.h>
-#include <pycbc/clayer/except.h>
 
 // To add new elements add them in the typedef meta_data_t
 // and in the CONSTRUCTOR_TEMPLATE macro
