@@ -64,8 +64,10 @@ real_vector_single_cpu_t* new_real_vector_single_cpu_t(cpu_context_t* context,
 
     if (posix_memalign((void **) &(c->data),PYCBC_CPU_DATAVECTOR_ALIGNMENT,
 		       c->meta_data.vector_length*c->meta_data.element_size_bytes))
-	{
-	  c->data = NULL; /* We failed, for some reason */
+	{ /*
+	    We failed, for some reason.  There should not be any memory allocated to
+	    c->data, but we must clean up c itself.
+	  */
 	  free(c);
 	  pycbc_throw_exception(PYCBC_MEMORY_ERROR,"real_vector_single_cpu_t allocation failed");
 	  return NULL;
@@ -92,8 +94,10 @@ real_vector_double_cpu_t* new_real_vector_double_cpu_t(cpu_context_t* context,
 
     if (posix_memalign((void **) &(c->data),PYCBC_CPU_DATAVECTOR_ALIGNMENT,
 		       c->meta_data.vector_length*c->meta_data.element_size_bytes))
-	{
-	  c->data = NULL; /* We failed, for some reason */
+	{/*
+	    We failed, for some reason.  There should not be any memory allocated to
+	    c->data, but we must clean up c itself.
+	  */
 	  free(c);
 	  pycbc_throw_exception(PYCBC_MEMORY_ERROR,"real_vector_double_cpu_t allocation failed");
 	  return NULL;
@@ -120,8 +124,10 @@ complex_vector_single_cpu_t* new_complex_vector_single_cpu_t(cpu_context_t* cont
 
     if (posix_memalign((void **) &(c->data),PYCBC_CPU_DATAVECTOR_ALIGNMENT,
 		       c->meta_data.vector_length*c->meta_data.element_size_bytes))
-	{
-	  c->data = NULL; /* We failed, for some reason */
+	{/*
+	    We failed, for some reason.  There should not be any memory allocated to
+	    c->data, but we must clean up c itself.
+	  */
 	  free(c);
 	  pycbc_throw_exception(PYCBC_MEMORY_ERROR,"complex_vector_single_cpu_t allocation failed");
 	  return NULL;
@@ -150,8 +156,10 @@ complex_vector_double_cpu_t* new_complex_vector_double_cpu_t(cpu_context_t* cont
 
     if (posix_memalign((void **) &(c->data),PYCBC_CPU_DATAVECTOR_ALIGNMENT,
 		       c->meta_data.vector_length*c->meta_data.element_size_bytes))
-	{
-	  c->data = NULL; /* We failed, for some reason */
+	{/*
+	    We failed, for some reason.  There should not be any memory allocated to
+	    c->data, but we must clean up c itself.
+	  */
 	  free(c);
 	  pycbc_throw_exception(PYCBC_MEMORY_ERROR,"complex_vector_double_cpu_t allocation failed");
 	  return NULL;
