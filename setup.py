@@ -30,6 +30,7 @@ setup.py file for PyCBC package
 import os, fnmatch, sys
 from trace import fullmodname
 import unittest
+from distutils import sysconfig
 from distutils.core import setup,Command
 from distutils.core import Extension
 from distutils.command.clean import clean as _clean
@@ -39,10 +40,6 @@ from distutils.command.install import install as _install
 ver = '0.1'
 pycbc_extensions = []
 pycbc_clean_files = []
-
-platform_sources = ['pycbc/clayer/except.c','pycbc/clayer/log.c']
-platform_depends = ['pycbc/clayer/except.h','pycbc/clayer/log.h']
-platform_include_dirs = ['./']
 
 # extension modules for the top-level package
 pycbc_extensions.append(Extension( 'pycbc.clayer._cpu', 
@@ -59,13 +56,13 @@ pycbc_clean_files.append('pycbc/clayer/cpu/pycbccpu_wrap.c')
 
 
 pycbc_extensions.append(Extension( 'pycbc.datavector.clayer._cpu', 
-    sources = platform_sources + ['pycbc/datavector/clayer/cpu/datavectorcpu.i',
+    sources = ['pycbc/datavector/clayer/cpu/datavectorcpu.i',
                'pycbc/datavector/clayer/cpu/datavectorcpu.c'],
-    depends = platform_depends + ['pycbc/datavector/clayer/cpu/datavectorcpu.h',
+    depends = ['pycbc/datavector/clayer/cpu/datavectorcpu.h',
                'pycbc/datavector/clayer/cpu/datavectorcpu_private.h',
                'pycbc/datavector/clayer/datavector.h',
                'pycbc/clayer/cpu/pycbccpu.h'],
-    include_dirs = platform_include_dirs + ['pycbc/clayer/cpu',
+    include_dirs = ['pycbc/clayer/cpu', './',
                     'pycbc/datavector/clayer'],
     swig_opts = ['-outdir','pycbc/datavector/clayer'],
     extra_compile_args = ['-Wall','-fPIC']
@@ -76,11 +73,11 @@ pycbc_clean_files.append('pycbc/datavector/clayer/cpu/datavectorcpu_wrap.c')
 
 
 pycbc_extensions.append(Extension( 'pycbc.straindata.clayer._cpu', 
-    sources = platform_sources + ['pycbc/straindata/clayer/cpu/straindatacpu.i',
+    sources = ['pycbc/straindata/clayer/cpu/straindatacpu.i',
                'pycbc/straindata/clayer/cpu/straindatacpu.c'],
-    depends = platform_depends + ['pycbc/straindata/clayer/cpu/straindatacpu.h',
+    depends = ['pycbc/straindata/clayer/cpu/straindatacpu.h',
                'pycbc/straindata/clayer/cpu/straindatacpu_private.h'],
-    include_dirs = platform_include_dirs + ['pycbc/clayer/cpu',
+    include_dirs = ['pycbc/clayer/cpu',
                     'pycbc/datavector/clayer/cpu'],
     swig_opts = ['-outdir','pycbc/straindata/clayer'],
     extra_compile_args = ['-Wall','-fPIC']
@@ -202,13 +199,27 @@ class install(_install):
             self.run_command('test')
         _install.run(self)
 
+# Find all of the pycbc c source files
+pycbc_cpu_sources=['pycbc/clayer/except.c','pycbc/clayer/log.c']
+pycbc_include_dirs=['./',sysconfig.get_python_inc()]
+for ext in pycbc_extensions:
+    for source in ext.sources:
+        # We only want the .c files (need to exclude other architectures and .i files)
+        if ".c" in source:
+            pycbc_cpu_sources.append(source)
+    pycbc_include_dirs+=ext.include_dirs
+
 # do the actual work of building the package
 setup (
     name = 'pycbc',
     version = ver,
     description = 'Gravitational wave CBC analysis toolkit',
     author = 'Ligo Virgo Collaboration - pyCBC team',
-    author_email = 'https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home',
+    url = 'https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home',
+    libraries = [[ 'pycbc', { 
+    'sources' : pycbc_cpu_sources,
+    'include_dirs' : pycbc_include_dirs,
+    'macros' : [] }]],
     cmdclass = { 'clean' : clean,
                  'build' : build,
                  'install':install,
@@ -226,6 +237,6 @@ setup (
                 'pycbc.templatebank','pycbc.templatebank.clayer',
                 'pycbc.matchedfilter','pycbc.matchedfilter.clayer',
                 'pycbc.waveform'],
-    scripts = ['bin/pycbc_min_cpu_pipeline']
+    scripts = ['bin/pycbc_min_cpu_pipeline'],
 )
 
