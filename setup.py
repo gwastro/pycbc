@@ -167,6 +167,8 @@ setup (
                 'pycbc.straindata','pycbc.straindata.clayer',
                 'pycbc.templatebank','pycbc.templatebank.clayer',
                 'pycbc.matchedfilter','pycbc.matchedfilter.clayer',
-                'pycbc.waveform'],
-    scripts = ['bin/pycbc_min_cpu_pipeline']
+                'pycbc.waveformgenerator'],
+    scripts = ['bin/pycbc_min_cpu_pipeline',
+               'pycbc/datavector/unittest/test_datavector_cpu.py',
+               'pycbc/templatebank/unittest/test_templatebank_cpu.py']
 )

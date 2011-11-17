@@ -23,36 +23,26 @@
 # =============================================================================
 #
 """
-TemplateBank Cpu implementation class for the pycbc package
+Waveform Generator Cpu implementation class for the pycbc package
 """
 
 from pycbc.cpu import CpuProcessingObj
-from pycbc.templatebank.base import TemplateBankBase
-
-from pycbc.datavector.clayer.cpu import complex_vector_single_cpu_t
-from pycbc.datavector.clayer.cpu import real_vector_single_cpu_t
-
-from pycbc.waveformgenerator.cpu import WaveFormGeneratorCpu
+from pycbc.waveformgenerator.base import WaveFormGeneratorBase
 
 import logging
 
-class TemplateBankCpu(TemplateBankBase, CpuProcessingObj):
+class WaveFormGeneratorCpu(WaveFormGeneratorBase, CpuProcessingObj):
 
     def __init__(self, 
                  context, 
                  waveform_length=0, 
                  waveform_delta_x=1,
-                 template_table_filename=None):
+                 approximation_model=None):
                  
-        self.__logger= logging.getLogger('pycbc.TemplateBankCpu')
+        self.__logger= logging.getLogger('pycbc.WaveFormGeneratorCpu')
         
-        super(TemplateBankCpu, self).__init__(
-                context,  
-                waveform_length= waveform_length, 
-                waveform_delta_x= waveform_delta_x,
-                template_table_filename= template_table_filename,
-                filter_waveform_vector_t= complex_vector_single_cpu_t,
-                pre_condition_vector_t=real_vector_single_cpu_t, # precodition data 
-                                                                 # is currently 
-                                                                 # fixed to a cpu vector
-                waveform_generator_t= WaveFormGeneratorCpu) 
+        super(WaveFormGeneratorCpu, self).__init__(
+                                context,  
+                                waveform_length=waveform_length, 
+                                waveform_delta_x=waveform_delta_x,
+                                approximation_model=approximation_model) 
