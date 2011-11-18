@@ -36,7 +36,6 @@ class WaveFormGeneratorBase:
     docstring for WaveFormGeneratorBase
     """
     __metaclass__ = ABCMeta
-
     
     # constructor --------------------------------------------------------------
     def __init__(self, 
@@ -46,34 +45,24 @@ class WaveFormGeneratorBase:
                  approximation_model=None):
                  
         self.__logger = logging.getLogger('pycbc.WaveFormGeneratorBase')
-
+        self.__logger.debug("instanciate WaveFormGeneratorBase")
+        
         # call constructor of <arch>ProcessingObj (2nd parent of WaveFormGeneratorBase 
         # derivative TemplatBank<arch>
         super(WaveFormGeneratorBase, self).__init__(context)
         
         self.waveform_length = waveform_length
         self.waveform_delta_x = waveform_delta_x
+        self._approximation_model= approximation_model 
 
- 
-    def perform_generate_precondition(self, pre_condition_vector_t):
+    @abstractmethod
+    def perform_generate_precondition(self, sngl_insp_tab_row, pre_condition_vector_t):
         
-        # pre instanciate precon vector
-        precon_vec= pre_condition_vector_t(self._devicecontext,
-                                           self.waveform_length,
-                                           self.waveform_delta_x,)
-        
-        # CHECK can a methode be handled as a member?
-        # call member self.clayer generate_precondition( precon_vec , ...)
-
-        # depending on the approx model and thus on the implementation of
-        # self.clayer generate_precondition() would return True or False
-        # if false return none if true return precon vec! 
-                
-        return precon_vec
-    
+        pass
     
     def perform_generate_filterwaveform(self, filter_waveform):
         
+        self.__logger.debug("called perform_generate_filterwaveform")
         # will be called from the hot loop and reuse the filter_waveform
         # vector for each loop run
                 

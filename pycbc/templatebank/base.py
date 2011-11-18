@@ -56,7 +56,8 @@ class TemplateBankBase:
                  pre_condition_vector_t=None,
                  waveform_generator_t=None):
 
-        self.__logger = logging.getLogger('pycbc.TemplateBank')
+        self.__logger = logging.getLogger('pycbc.TemplateBankBase')
+        self.__logger.debug("instanciate TemplateBankBase")
 
         # call constructor of <arch>ProcessingObj (2nd parent of TemplateBankBase 
         # derivative TemplatBank<arch>
@@ -84,11 +85,11 @@ class TemplateBankBase:
         try: 
             if not self._sngl_inspiral_table_fname:
                 raise ValueError
-                
+            
             self.read_single_inspiral_table(self._sngl_inspiral_table_fname)
         
         except ValueError:
-            print "no filename given prototyping simple Tf2 templatebank"
+            self.__logger.debug("no filename given -> prototyping simple Tf2 templatebank")
             self._templates_num = 20
             for i in range(self._templates_num):
                 tmp = [i*1.0, i*0.5] # m1, m2 very prototyping model of a parameter space              
@@ -102,8 +103,15 @@ class TemplateBankBase:
                                                       self.approximation_model)
 
         # get the precondition vector which might be None depending on the 
-        # approximation model                                               
-        self.precondition_data= self.waveform_generator.perform_generate_precondition(self.pre_condition_vector_t)
+        # approximation model   
+        
+        # ToDo
+        self._row=[] # assume we have the row. probably this should go into a 
+        #method that is to be called after read_single_inspiral_table()
+                                                                                                
+        self.precondition_data= \
+        self.waveform_generator.perform_generate_precondition(self._row, 
+                                                    self.pre_condition_vector_t)
         
                
         

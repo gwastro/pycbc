@@ -45,6 +45,7 @@ class TemplateBankCpu(TemplateBankBase, CpuProcessingObj):
                  template_table_filename=None):
                  
         self.__logger= logging.getLogger('pycbc.TemplateBankCpu')
+        self.__logger.debug("instanciate TemplateBankCpu")   
         
         super(TemplateBankCpu, self).__init__(
                 context,  

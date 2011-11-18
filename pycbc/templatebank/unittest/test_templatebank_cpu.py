@@ -39,10 +39,20 @@ from pycbc.templatebank.cpu import TemplateBankCpu as DUT_TemplateBank
 
 import unittest
 import random
+import logging
 
 class TestTemplateBankCPU(unittest.TestCase):
 
     # Test Fixture ---------------------------
+    logging.basicConfig(level=logging.DEBUG,
+                    format='%(name)s %(asctime)s %(levelname)s %(message)s',
+                    filename='test_templatebank_cpu.log',
+                    filemode='w')
+
+    logger= logging.getLogger('pycbc.templatebank.unittest.test_templatebank_cpu')
+
+    start_message = 'Starting pycbc templatebank unittest ...'
+    logger.debug(start_message)
 
     def setUp(self):
         
@@ -53,8 +63,8 @@ class TestTemplateBankCPU(unittest.TestCase):
         
         self.dut= DUT_TemplateBank(self.context, 
                                    self.wave_len, 
-                                   self.wave_dx) 
-                                   #,'no_file_yet')
+                                   self.wave_dx)#, 
+                                   #'H1-TMPLTBANK-871154847-2048.xml.gz')
 
         print "setup templatebank w/ approximation model: {0}".format(self.dut.approximation_model)
 
@@ -76,7 +86,15 @@ class TestTemplateBankCPU(unittest.TestCase):
 
         for template in self.dut:
             print repr(template)
-
+            
+        print repr(self.dut.pre_condition_vector_t)
+        
+        #templatebank has instanciated a waveformgenerator
+        #which should has generated a precondition vector
+        print self.dut.precondition_data
+        for i in range(self.wave_len):
+            print self.dut.precondition_data[i]
+        
         
 
 # automate the process of creating a test suite    
