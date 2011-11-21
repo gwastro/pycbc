@@ -94,7 +94,7 @@ class TemplateBankBase:
             for i in range(self._templates_num):
                 tmp = [i*1.0, i*0.5] # m1, m2 very prototyping model of a parameter space              
                 self._template_params.append(tmp)
-            self.approximation_model= 'Tf2'
+            self.approximation_model= 'TaylorF2'
 
         # instanciate waveform generator
         self.waveform_generator= waveform_generator_t(self._devicecontext,

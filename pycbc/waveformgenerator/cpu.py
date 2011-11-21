@@ -49,14 +49,23 @@ class WaveFormGeneratorCpu(WaveFormGeneratorBase, CpuProcessingObj):
                                 waveform_length=waveform_length, 
                                 waveform_delta_x=waveform_delta_x,
                                 approximation_model=approximation_model) 
+                                
         
-        # fetch right approx clayer function via functor
-        self.gen_precon_vector= GenPreconVec()                                               
-    
+        self._gen_precon_map={"TaylorF2":GenPreconVecTaylorF2(), 
+                              "SpinTaylorT4":None}
+                                                      
+        self.__logger.debug("created a map of aproximation-models to " +
+              "generate-precondition-functors {0}".format(self._gen_precon_map))
+        
+        self.gen_precon_vector= self._gen_precon_map[self._approximation_model]
+        self.__logger.debug("mapped self.gen_precon_vector functor to " + 
+                            "{0}".format(self.gen_precon_vector))
+        
+        print self.gen_precon_vector
     
     # implementation of ABC's abstractmethod
-    def perform_generate_precondition(self, sngl_insp_tab_row, pre_condition_vector_t):
-        #super(WaveFormGeneratorCpu, self).perform_generate_precondition(pre_condition_vector_t)
+    def perform_generate_precondition(self, sngl_insp_tab_row, 
+                                            pre_condition_vector_t):
 
         self.__logger.debug("called perform_generate_precondition")
         
@@ -75,20 +84,19 @@ class WaveFormGeneratorCpu(WaveFormGeneratorBase, CpuProcessingObj):
             return None        
         
         
-class GenPreconVec:
+class GenPreconVecTaylorF2:
     """
-    functor definition of GenPreconVec
+    functor definition of gen_precon_vector_Tf2_from_row
     """
     
     def __init__(self):
     
-        # we know self._approximation_model here
-        # if then else approx func= clayerfunction???
         pass
-        # self._statevars in clayer regrading this function goes here !
+        # status variables etc for/in clayer regrading this function goes here !
     
     def __call__(self, sngl_insp_tab_row, precon_vec ):
      
-            #ToDo have to define clayer typefor : sngl_insp_tab_row, precon_vec
+        #ToDo have to define clayer type for : sngl_insp_tab_row, precon_vec
         return gen_precon_vector_Tf2_from_row(precon_vec)
-    
+        
+#ToDo: class GenPreconVecSpinTaylorT4 and so on ...   
