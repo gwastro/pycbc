@@ -47,8 +47,7 @@ void delete_waveform_generator_cpu_t( waveform_generator_cpu_t* p )
 }
 
 
-int gen_precon_vector_Tf2_from_row( //void* sngl_insp_tab_row, ToDo define type
-                                    real_vector_single_cpu_t* precon_vec)
+int gen_precon_vector_TaylorF2(real_vector_single_cpu_t* precon_vec)
 {    
 
     int i;
@@ -60,3 +59,4 @@ int gen_precon_vector_Tf2_from_row( //void* sngl_insp_tab_row, ToDo define type
     
     return 1;
 }
+

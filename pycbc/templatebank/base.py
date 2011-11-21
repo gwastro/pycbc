@@ -105,16 +105,9 @@ class TemplateBankBase:
         # get the precondition vector which might be None depending on the 
         # approximation model   
         
-        # ToDo
-        self._row=[] # assume we have the row. probably this should go into a 
-        #method that is to be called after read_single_inspiral_table()
-                                                                                                
         self.precondition_data= \
-        self.waveform_generator.perform_generate_precondition(self._row, 
+        self.waveform_generator.perform_generate_precondition( 
                                                     self.pre_condition_vector_t)
-        
-               
-        
                                     
     
     # iterator over the templates in the parameter space -----------------------

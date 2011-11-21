@@ -29,7 +29,7 @@ Waveform Generator Cpu implementation class for the pycbc package
 from pycbc.cpu import CpuProcessingObj
 from pycbc.waveformgenerator.base import WaveFormGeneratorBase
 
-from pycbc.waveformgenerator.clayer.cpu import gen_precon_vector_Tf2_from_row
+from pycbc.waveformgenerator.clayer.cpu import gen_precon_vector_TaylorF2
 
 import logging
 
@@ -52,8 +52,7 @@ class WaveFormGeneratorCpu(WaveFormGeneratorBase, CpuProcessingObj):
                                 
         
         self._gen_precon_map={"TaylorF2":GenPreconVecTaylorF2(), 
-                              "SpinTaylorT4":None}
-                                                      
+                              "SpinTaylorT4":None}                                                      
         self.__logger.debug("created a map of aproximation-models to " +
               "generate-precondition-functors {0}".format(self._gen_precon_map))
         
@@ -64,8 +63,7 @@ class WaveFormGeneratorCpu(WaveFormGeneratorBase, CpuProcessingObj):
         print self.gen_precon_vector
     
     # implementation of ABC's abstractmethod
-    def perform_generate_precondition(self, sngl_insp_tab_row, 
-                                            pre_condition_vector_t):
+    def perform_generate_precondition(self, pre_condition_vector_t):
 
         self.__logger.debug("called perform_generate_precondition")
         
@@ -78,7 +76,7 @@ class WaveFormGeneratorCpu(WaveFormGeneratorBase, CpuProcessingObj):
         # self.clayer generate_precondition() would return True or False
         # if false return none if true return precon vec! 
         
-        if self.gen_precon_vector(sngl_insp_tab_row, precon_vec):
+        if self.gen_precon_vector(precon_vec):
             return precon_vec
         else:
             return None        
@@ -94,9 +92,9 @@ class GenPreconVecTaylorF2:
         pass
         # status variables etc for/in clayer regrading this function goes here !
     
-    def __call__(self, sngl_insp_tab_row, precon_vec ):
+    def __call__(self, precon_vec ):
      
         #ToDo have to define clayer type for : sngl_insp_tab_row, precon_vec
-        return gen_precon_vector_Tf2_from_row(precon_vec)
+        return gen_precon_vector_TaylorF2(precon_vec)
         
 #ToDo: class GenPreconVecSpinTaylorT4 and so on ...   

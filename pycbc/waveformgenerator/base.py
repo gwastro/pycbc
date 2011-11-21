@@ -56,7 +56,7 @@ class WaveFormGeneratorBase:
         self._approximation_model= approximation_model 
 
     @abstractmethod
-    def perform_generate_precondition(self, sngl_insp_tab_row, pre_condition_vector_t):
+    def perform_generate_precondition(self, pre_condition_vector_t):
         
         pass
         
