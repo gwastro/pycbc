@@ -59,13 +59,17 @@ class WaveFormGeneratorBase:
     def perform_generate_precondition(self, sngl_insp_tab_row, pre_condition_vector_t):
         
         pass
-    
-    def perform_generate_filterwaveform(self, filter_waveform):
+        
+        
+    # ToDo: @abstractmethod
+    def perform_generate_filterwaveform(self, template, bank):
         
         self.__logger.debug("called perform_generate_filterwaveform")
         # will be called from the hot loop and reuse the filter_waveform
         # vector for each loop run
+        
+        # ToDo generate waveform in bank.filter_waveform
                 
-        pass       
+        return bank.filter_waveform       
         
         

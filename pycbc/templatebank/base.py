@@ -165,7 +165,9 @@ class TemplateBankBase:
         # if self.precondition_data
         #     strain_data *= self.precondition_data
 
-        pass            
+        pass  
+        
+                            
          
             
         
