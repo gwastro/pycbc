@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <pycbc/clayer/except.h>
-#include <gpu_inspiral_gpuutils.h>
+#include <CL/opencl.h>
 #include <stdarg.h>
 
 void pycbc_throw_opencl_exception(int opencl_error_id, ...)

@@ -111,7 +111,6 @@ pycbc_extensions+=pycbc_add_extensions( 'pycbc.clayer','pycbccpu',
         include_dirs= ['pycbc/clayer','./'],
         depends = ['pycbc/clayer/cpu/pycbccpu.h','pycbc/clayer/cpu/pycbccpu_private.h'],
         extra_compile_args = ['-Wall','-fPIC'],
-        pkg_libraries=["lal"],
         swig_opts = ['-outdir','pycbc/clayer'],
     )
 
@@ -187,25 +186,29 @@ pycbc_clean_files.append('pycbc/matchedfilter/clayer/cpu/matchedfiltercpu_wrap.c
 
 # ======== OPENCL extension modules ===========================================
 
+# THIS IS JUST AN EXAMPLE RIGHT NOW
+
 pycbc_opencl_extensions = []
 
-pycbc_opencl_extensions+=pycbc_add_extensions( 'pycbc.datavector.clayer', 'datavectoropencl',
-    sources = ['pycbc/datavector/clayer/opencl/datavectoropencl.c'],
-    swig_source = ['pycbc/datavector/clayer/opencl/datavectoropencl.i'],
-    depends = ['pycbc/datavector/clayer/opencl/datavectoropencl.h',
-               'pycbc/datavector/clayer/opencl/datavectoropencl_private.h',
-               'pycbc/datavector/clayer/datavector.h',
-               'pycbc/clayer/opencl/pycbccpu.h'],
-    include_dirs = ['pycbc/clayer/opencl', './',
-                    'pycbc/datavector/clayer','pycbc/datavector/clayer/opencl','/usr/local/cuda-4.0.17/include/',
-                    'pycbc/datavector/clayer/cpu'],
-    libraries = ['pycbccpu'],
-    swig_opts = ['-outdir','pycbc/datavector/clayer'],
-    extra_compile_args = ['-Wall','-fPIC']
+pycbc_opencl_extensions+=pycbc_add_extensions( 'pycbc.clayer','pycbcopencl', 
+        sources = ['pycbc/clayer/opencl/pycbcopencl.c',
+                    'pycbc/clayer/opencl/openclexcept.c'], 
+        swig_source = ['pycbc/clayer/opencl/pycbcopencl.i'],
+        include_dirs= ['pycbc/clayer','./',
+                     'pycbc/clayer/opencl'],
+        depends = ['pycbc/clayer/opencl/pycbcopencl.h',
+                    'pycbc/clayer/opencl/pycbcopencl_private.h',
+                    'pycbc/clayer/opencl/gpu_inspiral_utils.h'],
+        extra_compile_args = ['-Wall','-fPIC'],
+        libraries=['pycbccpu','OpenCL'],
+        pkg_libraries=[],
+        swig_opts = ['-outdir','pycbc/clayer'],
     )
 
-pycbc_clean_files.append('pycbc/datavector/clayer/opencl.py')
-pycbc_clean_files.append('pycbc/datavector/clayer/cpu/datavectoropencl_wrap.c')
+pycbc_clean_files.append('pycbc/opencl/opencl.py')
+pycbc_clean_files.append('pycbc/clayer/cpu/pycbcopencl_wrap.c')
+
+
 
 # ======== (END) OPENCL extension modules =====================================
 
@@ -217,7 +220,30 @@ pycbc_cuda_extensions = []
 
 
 
-# ======== DISTUTILS CONFIGURATION AND BUILD SCRIPTS ==========================  
+# ======== DISTUTILS CONFIGURATION AND BUILD SCRIPTS ==========================
+
+# Configure the pycbc package #FIXME, this is temporary
+class config(_config):
+    user_options = [('with-opencl=', None,"specify the opencl toolkit location")]
+    def initialize_options(self):
+        _config.initialize_options(self)
+        self.with_opencl=None
+    def finalize_options(self):
+        _config.finalize_options(self)
+        #Check for opencl headers
+        if (self.with_opencl!=None):
+            log.warn("looking for opencl headers")
+            if not self.check_header("CL/opencl.h",include_dirs=[self.with_opencl+"/include"]):
+                log.warn("could not find opencl.h")
+                self.with_opencl=None
+            else:
+                log.good("found opencl headers")
+                #Everthing looks ok, build the opencl modules
+                self.distribution.ext_modules+=pycbc_opencl_extensions
+        else:
+            log.warn("will not build opencl modules")
+            self.with_opencl=None
+    
         
 # Run all of the testing scripts
 class test(Command):
@@ -254,7 +280,7 @@ class test(Command):
         
         #FIXME WHEN WE HAVE THE CONFIGURATION DONE 
         # self.test_modules+= self.test_cuda()
-        #self.test_modules+= self.test_opencl()
+        # self.test_modules+= self.test_opencl()
         
         # Run from the build directory
         sys.path.insert(0,self.build_dir)
@@ -288,13 +314,20 @@ class build_ext(_build_ext):
     def initialize_options(self):
         _build_ext.initialize_options(self)
         self.install_dir = None
+        self.opencl_dir = None 
     def finalize_options(self):
         _build_ext.finalize_options(self)
-        self.set_undefined_options('install',('install_lib','install_dir'))   
+        self.set_undefined_options('install',('install_lib','install_dir')) 
+        self.set_undefined_options('config',('with_opencl','opencl_dir'))   
     def run(self):
         self.rpath.append(self.build_lib)
         self.rpath.append(self.install_dir)
         self.library_dirs.append(self.build_lib)
+        
+        #Add opencl header to include_dir if we are building those modules
+        if (self.opencl_dir != None):
+            self.include_dirs+=[self.opencl_dir+"/include"]
+            
         _build_ext.run(self)
 
 class build(_build):
@@ -306,7 +339,6 @@ class build(_build):
                      ('build_scripts', _build.has_scripts) ]
 
     def run(self):
-        self.run_command('config')
         _build.run(self)
 
         
@@ -316,8 +348,6 @@ class install(_install):
         if (not self.force):  
             self.run_command('test')
         _install.run(self)
-        
-pycbc_extensions += pycbc_opencl_extensions
 
 # do the actual work of building the package
 setup (
@@ -326,7 +356,8 @@ setup (
     description = 'Gravitational wave CBC analysis toolkit',
     author = 'Ligo Virgo Collaboration - pyCBC team',
     url = 'https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home',
-    cmdclass = { 'clean' : clean,
+    cmdclass = { 'config' : config,
+                 'clean' : clean,
                  'build' : build,
                  'install':install,
 		         'test'  : test ,

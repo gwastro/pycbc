@@ -32,15 +32,15 @@
 unittest for the datavector opencl class
 """
 
-from pycbc.datavector.clayer.cpu import real_vector_double_cpu_t
-from pycbc.datavector.clayer.cpu import real_vector_single_cpu_t
-from pycbc.datavector.clayer.cpu import complex_vector_single_cpu_t
-from pycbc.datavector.clayer.cpu import complex_vector_double_cpu_t
+from pycbc.datavector.cpu import real_vector_double_cpu_t
+from pycbc.datavector.cpu import real_vector_single_cpu_t
+from pycbc.datavector.cpu import complex_vector_single_cpu_t
+from pycbc.datavector.cpu import complex_vector_double_cpu_t
 
-from pycbc.datavector.clayer.opencl import real_vector_double_opencl_t
-from pycbc.datavector.clayer.opencl import real_vector_single_opencl_t
-from pycbc.datavector.clayer.opencl import complex_vector_opencl_cpu_t
-from pycbc.datavector.clayer.opencl import complex_vector_opencl_cpu_t
+from pycbc.datavector.opencl import real_vector_double_opencl_t
+from pycbc.datavector.opencl import real_vector_single_opencl_t
+from pycbc.datavector.opencl import complex_vector_opencl_cpu_t
+from pycbc.datavector.opencl import complex_vector_opencl_cpu_t
 
 import unittest
 import random
