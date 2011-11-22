@@ -36,35 +36,34 @@ class WaveFormGeneratorBase:
     docstring for WaveFormGeneratorBase
     """
     __metaclass__ = ABCMeta
-    
-    # constructor --------------------------------------------------------------
-    def __init__(self, 
-                 context, 
-                 waveform_length=0, 
-                 waveform_delta_x=1,
-                 approximation_model=None,
-                 waveform_filter=None):
-                 
+
+    # constructor -------------------------------------------------------------
+    def __init__(self, context, approximation_model=None):
+
         self.__logger = logging.getLogger('pycbc.WaveFormGeneratorBase')
         self.__logger.debug("instanciate WaveFormGeneratorBase")
-        
+
         # call constructor of <arch>ProcessingObj (2nd parent of WaveFormGeneratorBase 
         # derivative TemplatBank<arch>
         super(WaveFormGeneratorBase, self).__init__(context)
-        
+
         self.waveform_length = waveform_length
         self.waveform_delta_x = waveform_delta_x
         self._approximation_model= approximation_model
-        self._waveform_filter= waveform_filter 
 
     @abstractmethod
-    def perform_generate_precondition(self, pre_condition_vector_t):
-        
+    def perform_generate_precondition(self, length, delta_x, pre_condition_vector_t):
+
         pass
-        
-        
+
     @abstractmethod
-    def perform_generate_waveform_filter(self, template):
-        
-        pass        
-        
+    def perform_generate_waveform_filter(self, waveform_filter, length, delta_x, template):
+        #FIXME: This needs to be different since different approximants take different parameters
+
+        pass
+
+    @abstractmethod
+    def perform_generate_waveform_filter_from_row(self, waveform_filter, length, delta_x, template):
+
+        pass
+
