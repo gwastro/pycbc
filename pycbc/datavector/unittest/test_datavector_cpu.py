@@ -32,12 +32,12 @@
 unittest for the datavector cpu class
 """
 
-from pycbc.clayer.cpu import cpu_context_t
+from pycbc.cpu import cpu_context_t
 
-from pycbc.datavector.clayer.cpu import real_vector_double_cpu_t
-from pycbc.datavector.clayer.cpu import real_vector_single_cpu_t
-from pycbc.datavector.clayer.cpu import complex_vector_single_cpu_t
-from pycbc.datavector.clayer.cpu import complex_vector_double_cpu_t
+from pycbc.datavector.cpu import real_vector_double_cpu_t
+from pycbc.datavector.cpu import real_vector_single_cpu_t
+from pycbc.datavector.cpu import complex_vector_single_cpu_t
+from pycbc.datavector.cpu import complex_vector_double_cpu_t
 
 
 import unittest
@@ -86,7 +86,7 @@ class TestDatavectorCPU(unittest.TestCase):
 
         # check type
         self.assertTrue(repr(self.dut_real_single).
-        find("pycbc.datavector.clayer.cpu.real_vector_single_cpu_t") >= 0,
+        find("pycbc.datavector.clayer.datavectorcpu.real_vector_single_cpu_t") >= 0,
         " Wrong type of datavector after instanciation")
 
         # check correct initialization
@@ -122,7 +122,7 @@ class TestDatavectorCPU(unittest.TestCase):
 
         # check type
         self.assertTrue(repr(self.dut_real_double).
-        find("pycbc.datavector.clayer.cpu.real_vector_double_cpu_t") >= 0,
+        find("pycbc.datavector.clayer.datavectorcpu.real_vector_double_cpu_t") >= 0,
         " Wrong type of datavector after instanciation")
 
         # check correct initialization
@@ -157,7 +157,7 @@ class TestDatavectorCPU(unittest.TestCase):
 
         # check type
         self.assertTrue(repr(self.dut_complex_single).
-        find("pycbc.datavector.clayer.cpu.complex_vector_single_cpu_t") >= 0,
+        find("pycbc.datavector.clayer.datavectorcpu.complex_vector_single_cpu_t") >= 0,
             " Wrong type of datavector for dut_complex_single")
             
         # check correct initialization
@@ -194,7 +194,7 @@ class TestDatavectorCPU(unittest.TestCase):
 
         # check type
         self.assertTrue(repr(self.dut_complex_double).
-        find("pycbc.datavector.clayer.cpu.complex_vector_double_cpu_t") >= 0,
+        find("pycbc.datavector.clayer.datavectorcpu.complex_vector_double_cpu_t") >= 0,
             " Wrong type of datavector for dut_complex_double")
             
         # check correct initialization

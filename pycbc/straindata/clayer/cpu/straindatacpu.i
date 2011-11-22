@@ -4,7 +4,7 @@
 "Copyright 2011, 2011 Karsten Wiesner <karsten.wiesner@ligo.org>."
 %enddef
 
-%module(docstring=DOCSTRING,module="pycbc.straindata.clayer") cpu
+%module(docstring=DOCSTRING,module="pycbc.straindata.clayer") straindatacpu
 
 %feature("autodoc", "1");
 

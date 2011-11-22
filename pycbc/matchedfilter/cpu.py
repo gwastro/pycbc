@@ -36,8 +36,8 @@ from pycbc.matchedfilter.clayer.cpu import gen_snr_cpu
 from pycbc.matchedfilter.clayer.cpu import matched_filter_cpu_t
 
 # import member datavectors
-from pycbc.datavector.clayer.cpu import complex_vector_single_cpu_t
-from pycbc.datavector.clayer.cpu import real_vector_single_cpu_t
+from pycbc.datavector.cpu import complex_vector_single_cpu_t
+from pycbc.datavector.cpu import real_vector_single_cpu_t
 
 # for testing data_in
 #from pycbc.datavector.datavectoropencl import real_vector_single_opencl_t as alien_datavector_t

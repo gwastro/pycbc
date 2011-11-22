@@ -33,7 +33,7 @@ unittest for the StrainData class
 """
 
 
-from pycbc.clayer.cpu import cpu_context_t
+from pycbc.cpu import cpu_context_t
 
 from pycbc.straindata.cpu import StrainDataCpu as DUT_StrainData
 
@@ -79,7 +79,7 @@ class TestStrainDataCPU(unittest.TestCase):
 
         # check type
         self.assertTrue(repr(self.dut.time_series).
-        find("pycbc.datavector.clayer.cpu.real_vector_double_cpu_t") >= 0,
+        find("pycbc.datavector.clayer.datavectorcpu.real_vector_double_cpu_t") >= 0,
         " Wrong type of datavector for straindata at the initial phase")
 
 
@@ -125,7 +125,7 @@ class TestStrainDataCPU(unittest.TestCase):
         
         # check type (straindata converted to single precision)
         self.assertTrue(repr(self.dut.time_series).
-        find("pycbc.datavector.clayer.cpu.real_vector_single_cpu_t") >= 0,
+        find("pycbc.datavector.clayer.datavectorcpu.real_vector_single_cpu_t") >= 0,
         " Wrong type of datavector for straindata after convert() call")
         
         # check data integrity after conversion
@@ -146,7 +146,7 @@ class TestStrainDataCPU(unittest.TestCase):
         for stilde in self.dut:
             # check type
             self.assertTrue(repr(stilde).
-            find("pycbc.datavector.clayer.cpu.complex_vector_single_cpu_t") >= 0,
+            find("pycbc.datavector.clayer.datavectorcpu.complex_vector_single_cpu_t") >= 0,
             " Wrong type of datavector for stilde")
             
             # check correct initialization
