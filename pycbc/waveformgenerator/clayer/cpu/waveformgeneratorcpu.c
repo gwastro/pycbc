@@ -47,16 +47,41 @@ void delete_waveform_generator_cpu_t( waveform_generator_cpu_t* p )
 }
 
 
+// TaylorF2 section ------------------------------------------------------------
+
 int gen_precon_vector_TaylorF2(real_vector_single_cpu_t* precon_vec)
 {    
 
     int i;
+    
+    //printf("called clayer: gen_precon_vector_TaylorF2");
     
     for (i=0; i < precon_vec->meta_data.vector_length; i++) {
         precon_vec->data[i]=i;
     }
 
     
-    return 1;
+    return 1;  // Yes TaylorF2 _has_ precondition capability and data
+               // otherwise we would return 0 here to inform the framework
+               // to not do preconditioning the data
 }
+
+void gen_waveform_filter_TaylorF2( complex_vector_single_cpu_t* waveform_filter,
+                                   float mass1, float mass2 )
+{    
+    
+    int i;
+    
+    //printf("called clayer: gen_waveform_filter_TaylorF2");
+    
+    // prototyping
+    
+    for (i=0; i < waveform_filter->meta_data.vector_length; i++) {
+        __real__ waveform_filter->data[i]=i*mass1;
+        __imag__ waveform_filter->data[i]=i*mass2;
+    }
+    
+    
+}
+
 

@@ -76,7 +76,7 @@ class TemplateBankBase:
         self.pre_condition_vector_t = pre_condition_vector_t
         
         # setup initial data vectors            
-        self.filter_waveform = self.filter_waveform_vector_t(self._devicecontext,
+        self.waveform_filter = self.filter_waveform_vector_t(self._devicecontext,
                                                          self.waveform_length,
                                                          self.waveform_delta_x)
         
@@ -100,7 +100,8 @@ class TemplateBankBase:
         self.waveform_generator= waveform_generator_t(self._devicecontext,
                                                       self.waveform_length,
                                                       self.waveform_delta_x,
-                                                      self.approximation_model)
+                                                      self.approximation_model,
+                                                      self.waveform_filter)
 
         # get the precondition vector which might be None depending on the 
         # approximation model   
@@ -120,6 +121,7 @@ class TemplateBankBase:
 
     def next(self):
         if self._template_index == self._templates_num:
+            self._template_index = 0
             raise StopIteration
         self._template_index = self._template_index + 1
         return self._template_params[self._template_index-1]

@@ -102,7 +102,7 @@ with ProccessingTargetContext(1) as context:
 
     # filter the data against the template bank
     for template in bank:        
-        htilde = bank.waveform_generator.perform_generate_filterwaveform(template, bank)
+        htilde = bank.waveform_generator.perform_generate_waveform_filter(template)
         #print("generating htilde {0}".format(repr(htilde)))
         for stilde in strain_data:
             logger.debug("call matchedfilt gensnr: {0}, {1}".format(stilde, htilde))

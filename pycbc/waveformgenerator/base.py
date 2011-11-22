@@ -42,7 +42,8 @@ class WaveFormGeneratorBase:
                  context, 
                  waveform_length=0, 
                  waveform_delta_x=1,
-                 approximation_model=None):
+                 approximation_model=None,
+                 waveform_filter=None):
                  
         self.__logger = logging.getLogger('pycbc.WaveFormGeneratorBase')
         self.__logger.debug("instanciate WaveFormGeneratorBase")
@@ -53,7 +54,8 @@ class WaveFormGeneratorBase:
         
         self.waveform_length = waveform_length
         self.waveform_delta_x = waveform_delta_x
-        self._approximation_model= approximation_model 
+        self._approximation_model= approximation_model
+        self._waveform_filter= waveform_filter 
 
     @abstractmethod
     def perform_generate_precondition(self, pre_condition_vector_t):
@@ -61,15 +63,8 @@ class WaveFormGeneratorBase:
         pass
         
         
-    # ToDo: @abstractmethod
-    def perform_generate_filterwaveform(self, template, bank):
+    @abstractmethod
+    def perform_generate_waveform_filter(self, template):
         
-        self.__logger.debug("called perform_generate_filterwaveform")
-        # will be called from the hot loop and reuse the filter_waveform
-        # vector for each loop run
-        
-        # ToDo generate waveform in bank.filter_waveform
-                
-        return bank.filter_waveform       
-        
+        pass        
         

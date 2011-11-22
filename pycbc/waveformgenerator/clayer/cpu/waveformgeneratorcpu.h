@@ -35,6 +35,9 @@ typedef struct
 }
 waveform_generator_cpu_t;
 
-int gen_precon_vector_TaylorF2(real_vector_single_cpu_t* precon_vec);
+int gen_precon_vector_TaylorF2(real_vector_single_cpu_t* );
+
+void gen_waveform_filter_TaylorF2( complex_vector_single_cpu_t* waveform_filter,
+                                   float mass1, float mass2 );
 
 #endif /* WAVEFORMGENERATORCPU_H */

@@ -63,7 +63,7 @@ class TestTemplateBankCPU(unittest.TestCase):
         
         self.dut= DUT_TemplateBank(self.context, 
                                    self.wave_len, 
-                                   self.wave_dx)#, 
+                                   self.wave_dx) #, 
                                    #'H1-TMPLTBANK-871154847-2048.xml.gz')
 
         print "setup templatebank w/ approximation model: {0}".format(self.dut.approximation_model)
@@ -90,12 +90,24 @@ class TestTemplateBankCPU(unittest.TestCase):
         print repr(self.dut.pre_condition_vector_t)
         
         #templatebank has instanciated a waveformgenerator
-        #which should has generated a precondition vector
+        #which could have generated a precondition vector
         print self.dut.precondition_data
         for i in range(self.wave_len):
             print self.dut.precondition_data[i]
+
+        print "start generate waveform filters"    
+        for template in self.dut:
+            print template
+            htilde = self.dut.waveform_generator.perform_generate_waveform_filter(template)
+                
+            print htilde
+            
+        print "end generate waveform filters"
         
-        
+        # check just the last one
+        for i in range(self.wave_len):
+            print htilde[i]
+
 
 # automate the process of creating a test suite    
 suite = unittest.TestLoader().loadTestsFromTestCase(TestTemplateBankCPU)
