@@ -52,7 +52,7 @@ ver = '0.1'
 pycbc_clean_files = []
 
 # Create the swig wrapped extension library along with the unwrapped shared library
-def pycbc_add_extensions(path,name,sources,
+def pycbc_add_extension(path,name,sources,
                         swig_source,
                         libraries=[],
                         depends=[], 
@@ -104,83 +104,93 @@ def pycbc_add_extensions(path,name,sources,
 
 # ======== CPU extension modules for the top-level package ====================
 pycbc_extensions = []
+pycbc_sources = []
 
-pycbc_extensions+=pycbc_add_extensions( 'pycbc.clayer','pycbccpu', 
-        sources = ['pycbc/clayer/cpu/pycbccpu.c','pycbc/clayer/except.c'], 
-        swig_source = ['pycbc/clayer/cpu/pycbccpu.i'],
+pycbc_sources += ['pycbc/clayer/cpu/pycbccpu.c','pycbc/clayer/except.c','pycbc/clayer/log.c']
+pycbc_extensions.append(Extension( 'pycbc.clayer._pycbccpu',  
+        sources = ['pycbc/clayer/cpu/pycbccpu.i'],
         include_dirs= ['pycbc/clayer','./'],
         depends = ['pycbc/clayer/cpu/pycbccpu.h','pycbc/clayer/cpu/pycbccpu_private.h'],
         extra_compile_args = ['-Wall','-fPIC'],
         swig_opts = ['-outdir','pycbc/clayer'],
-    )
-
+        libraries = ['pycbc']
+    ))
 pycbc_clean_files.append('pycbc/clayer/cpu.py')
 pycbc_clean_files.append('pycbc/clayer/cpu/pycbccpu_wrap.c')
 
-
-pycbc_extensions+=pycbc_add_extensions( 'pycbc.datavector.clayer','datavectorcpu',
-    sources = ['pycbc/datavector/clayer/cpu/datavectorcpu.c'],
-    swig_source = ['pycbc/datavector/clayer/cpu/datavectorcpu.i'],
+pycbc_sources += ['pycbc/datavector/clayer/cpu/datavectorcpu.c']
+pycbc_extensions.append(Extension('pycbc.datavector.clayer._datavectorcpu',
+    sources = ['pycbc/datavector/clayer/cpu/datavectorcpu.i'],
     depends = ['pycbc/datavector/clayer/cpu/datavectorcpu.h',
                'pycbc/datavector/clayer/cpu/datavectorcpu_private.h',
                'pycbc/datavector/clayer/datavector.h',
                'pycbc/clayer/cpu/pycbccpu.h'],
-    include_dirs = ['pycbc/clayer/cpu', './',
-                    'pycbc/datavector/clayer'],
-    libraries = ['pycbccpu'],
+    include_dirs = ['pycbc/clayer/cpu', './','pycbc/datavector/clayer'],
+    libraries = ['pycbc'],
     swig_opts = ['-outdir','pycbc/datavector/clayer'],
     extra_compile_args = ['-Wall','-fPIC']
-    )
-    
-
+    ))
 pycbc_clean_files.append('pycbc/datavector/clayer/cpu.py')
 pycbc_clean_files.append('pycbc/datavector/clayer/cpu/datavectorcpu_wrap.c')
 
-
-pycbc_extensions+=pycbc_add_extensions( 'pycbc.straindata.clayer','straindatacpu', 
-    sources = ['pycbc/straindata/clayer/cpu/straindatacpu.c'],
-    swig_source = ['pycbc/straindata/clayer/cpu/straindatacpu.i'],
+pycbc_sources += ['pycbc/straindata/clayer/cpu/straindatacpu.c']
+pycbc_extensions.append(Extension( 'pycbc.straindata.clayer._straindatacpu', 
+    sources = ['pycbc/straindata/clayer/cpu/straindatacpu.i'],
     depends = ['pycbc/straindata/clayer/cpu/straindatacpu.h',
                'pycbc/straindata/clayer/cpu/straindatacpu_private.h'],
-    include_dirs = ['pycbc/clayer/cpu',
-                    'pycbc/datavector/clayer/cpu','pycbc/datavector/clayer'],
+    include_dirs = ['pycbc/clayer/cpu','pycbc/datavector/clayer/cpu','pycbc/datavector/clayer'],
     swig_opts = ['-outdir','pycbc/straindata/clayer'],
-    libraries = ['pycbccpu'],
+    libraries = ['pycbc'],
     extra_compile_args = ['-Wall','-fPIC']
-    )
-
+    ))
 pycbc_clean_files.append('pycbc/straindata/clayer/cpu.py')
 pycbc_clean_files.append('pycbc/straindata/clayer/cpu/straindatacpu_wrap.c')
 
-
-pycbc_extensions+=pycbc_add_extensions( 'pycbc.templatebank.clayer','templatebankcpu',
-    sources = ['pycbc/templatebank/clayer/cpu/templatebankcpu.c'],
-    swig_source = ['pycbc/templatebank/clayer/cpu/templatebankcpu.i'],
+pycbc_sources += ['pycbc/templatebank/clayer/cpu/templatebankcpu.c']
+pycbc_extensions.append(Extension( 'pycbc.templatebank.clayer._templatebankcpu',
+    sources = ['pycbc/templatebank/clayer/cpu/templatebankcpu.i'],
     depends = ['pycbc/templatebank/clayer/cpu/templatebankcpu.h',
                'pycbc/templatebank/clayer/cpu/templatebankcpu_private.h'],
-    include_dirs = ['pycbc/clayer/cpu',
-               'pycbc/datavector/clayer/cpu','pycbc/datavector/clayer'],
+    include_dirs = ['pycbc/clayer/cpu','pycbc/datavector/clayer/cpu','pycbc/datavector/clayer'],
     swig_opts = ['-outdir','pycbc/templatebank/clayer'],
+    libraries = ['pycbc'],
     extra_compile_args = ['-Wall','-fPIC']
-    )
-
+    ))
 pycbc_clean_files.append('pycbc/templatebank/clayer/cpu.py')
 pycbc_clean_files.append('pycbc/templatebank/clayer/cpu/templatebankcpu_wrap.c')
 
-
-pycbc_extensions+=pycbc_add_extensions( 'pycbc.matchedfilter.clayer','matchedfiltercpu', 
-    sources = ['pycbc/matchedfilter/clayer/cpu/matchedfiltercpu.c'],
-    swig_source = ['pycbc/matchedfilter/clayer/cpu/matchedfiltercpu.i'],
+pycbc_sources += ['pycbc/matchedfilter/clayer/cpu/matchedfiltercpu.c']
+pycbc_extensions.append(Extension( 'pycbc.matchedfilter.clayer._matchedfiltercpu', 
+    sources = ['pycbc/matchedfilter/clayer/cpu/matchedfiltercpu.i'],
     depends = ['pycbc/matchedfilter/clayer/cpu/matchedfiltercpu.h',
                'pycbc/matchedfilter/clayer/cpu/matchedfiltercpu_private.h'],
-    include_dirs = ['pycbc/clayer/cpu',
-               'pycbc/datavector/clayer/cpu','pycbc/datavector/clayer'],
+    include_dirs = ['pycbc/clayer/cpu','pycbc/datavector/clayer/cpu','pycbc/datavector/clayer'],
     swig_opts = ['-outdir','pycbc/matchedfilter/clayer'],
+    libraries = ['pycbc'],
     extra_compile_args = ['-Wall','-fPIC']
-    )
-
+    ))
 pycbc_clean_files.append('pycbc/matchedfilter/clayer/cpu.py')
 pycbc_clean_files.append('pycbc/matchedfilter/clayer/cpu/matchedfiltercpu_wrap.c')
+
+#Pull in the needed information to build libpycbc from the extensions
+pycbc_depends = []
+pycbc_include_dirs = []
+pycbc_libraries = []
+pycbc_extra_compile_args = []
+print pycbc_sources
+for ext in pycbc_extensions:
+    pycbc_depends += ext.depends
+    pycbc_libraries += ext.libraries
+    pycbc_extra_compile_args += ext.extra_compile_args
+    pycbc_include_dirs += ext.include_dirs
+
+pycbc_extensions.insert(0,Extension('libpycbc',
+    sources = list(set(pycbc_sources)),
+    depends = list(set(pycbc_depends)),
+    libraries = list(set(pycbc_libraries)),
+    extra_compile_args = list(set(pycbc_extra_compile_args)),
+    include_dirs = list(set(pycbc_include_dirs))))
+    
 
 # ======== (END) CPU extension modules for the top-level package ==============
 
@@ -189,25 +199,40 @@ pycbc_clean_files.append('pycbc/matchedfilter/clayer/cpu/matchedfiltercpu_wrap.c
 # THIS IS JUST AN EXAMPLE RIGHT NOW
 
 pycbc_opencl_extensions = []
+pycbc_opencl_sources = []
 
-pycbc_opencl_extensions+=pycbc_add_extensions( 'pycbc.clayer','pycbcopencl', 
-        sources = ['pycbc/clayer/opencl/pycbcopencl.c',
-                    'pycbc/clayer/opencl/openclexcept.c'], 
-        swig_source = ['pycbc/clayer/opencl/pycbcopencl.i'],
-        include_dirs= ['pycbc/clayer','./',
-                     'pycbc/clayer/opencl'],
+pycbc_opencl_sources += ['pycbc/clayer/opencl/pycbcopencl.c','pycbc/clayer/opencl/openclexcept.c']
+pycbc_opencl_extensions.append(Extension( 'pycbc.clayer._pycbcopencl', 
+        sources = ['pycbc/clayer/opencl/pycbcopencl.i'],
+        include_dirs= ['pycbc/clayer','./','pycbc/clayer/opencl'],
         depends = ['pycbc/clayer/opencl/pycbcopencl.h',
                     'pycbc/clayer/opencl/pycbcopencl_private.h',
                     'pycbc/clayer/opencl/gpu_inspiral_utils.h'],
         extra_compile_args = ['-Wall','-fPIC'],
-        libraries=['pycbccpu','OpenCL'],
-        pkg_libraries=[],
-        swig_opts = ['-outdir','pycbc/clayer'],
-    )
-
+        libraries=['pycbc','pycbcopencl','OpenCL'],
+        swig_opts = ['-outdir','pycbc/clayer']))
 pycbc_clean_files.append('pycbc/opencl/opencl.py')
 pycbc_clean_files.append('pycbc/clayer/cpu/pycbcopencl_wrap.c')
 
+#Pull in the needed information to build libpycbcopencl from the extensions
+pycbc_opencl_depends = []
+pycbc_opencl_include_dirs = []
+pycbc_opencl_libraries = []
+pycbc_opencl_extra_compile_args = []
+print pycbc_sources
+for ext in pycbc_opencl_extensions:
+    pycbc_opencl_depends += ext.depends
+    pycbc_opencl_libraries += ext.libraries
+    pycbc_opencl_extra_compile_args += ext.extra_compile_args
+    pycbc_opencl_include_dirs += ext.include_dirs
+
+pycbc_opencl_extensions.insert(0,Extension('libpycbcopencl',
+    sources = list(set(pycbc_opencl_sources)),
+    depends = list(set(pycbc_opencl_depends)),
+    libraries = list(set(pycbc_opencl_libraries)),
+    extra_compile_args = list(set(pycbc_opencl_extra_compile_args)),
+    include_dirs = list(set(pycbc_opencl_include_dirs))))
+    
 
 
 # ======== (END) OPENCL extension modules =====================================
@@ -230,7 +255,8 @@ class config(_config):
         self.with_opencl=None
     def finalize_options(self):
         _config.finalize_options(self)
-        #Check for opencl headers
+        
+        #Check for OPENCL headers
         if (self.with_opencl!=None):
             log.warn("looking for opencl headers")
             if not self.check_header("CL/opencl.h",include_dirs=[self.with_opencl+"/include"]):
@@ -244,6 +270,7 @@ class config(_config):
             log.warn("will not build opencl modules")
             self.with_opencl=None
     
+        #Check for CUDA
         
 # Run all of the testing scripts
 class test(Command):
