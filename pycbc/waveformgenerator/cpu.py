@@ -55,14 +55,16 @@ class WaveFormGeneratorCpu(WaveFormGeneratorBase, CpuProcessingObj):
                                 
         # mapping clayer functions according to approximation model
         
-        gen_precon_map={"TaylorF2":GenPreconVecTaylorF2(), 
-                              "SpinTaylorT4":None}                                                      
+        gen_precon_map={
+            "TaylorF2":GenPreconVecTaylorF2(), 
+            "SpinTaylorT4":None
+            }
         self.__logger.debug("created a map of aproximation-models to " +
-              "generate_precondition-functors {0}".format(gen_precon_map))
+            "generate_precondition-functors {0}".format(gen_precon_map))
         
         self.gen_precon_vector = gen_precon_map[self._approximation_model]
         self.__logger.debug("mapped gen_precon_vector functor to " + 
-                            "{0}".format(self.gen_precon_vector))
+            "{0}".format(self.gen_precon_vector))
         
         gen_waveform_filter_from_row_map = {
             "TaylorF2":GenWaveformFilterTaylorF2FromRow(),
@@ -75,31 +77,29 @@ class WaveFormGeneratorCpu(WaveFormGeneratorBase, CpuProcessingObj):
         self.gen_waveform_filter_from_row = \
             gen_waveform_filter_from_row_map[self._approximation_model]
         self.__logger.debug("mapped self.gen_waveform_filter functor to " +
-                            "{0}".format(self.gen_waveform_filter))
+            "{0}".format(self.gen_waveform_filter))
 
         gen_waveform_filter_map = {
             "TaylorF2":GenWaveformFilterTaylorF2(),
             "SpinTaylorT4":None
             }
         self.__logger.debug("created a map of aproximation-models to " +
-              "generate_waveform_filter-functors {0}".format(gen_waveform_filter_map))
+            "generate_waveform_filter-functors "
+            "{0}".format(gen_waveform_filter_map))
 
         self.gen_waveform_filter = \
             self._gen_waveform_filter_map[self._approximation_model]
         self.__logger.debug("mapped self.gen_waveform_filter functor to " +
-                            "{0}".format(self.gen_waveform_filter))
-
+            "{0}".format(self.gen_waveform_filter))
 
 
     # implementation of ABC's abstractmethod
-    def perform_generate_precondition(self, pre_condition_vector_t):
+    def perform_generate_precondition_factor(self, length, delta_x, pre_condition_vector_t):
 
-        self.__logger.debug("called perform_generate_precondition")
+        self.__logger.debug("called perform_generate_precondition_factor")
 
         # pre instanciate precon vector
-        precon_vec= pre_condition_vector_t(self._devicecontext,
-                                           self.waveform_length,
-                                           self.waveform_delta_x,)
+        precon_vec = pre_condition_vector_t(self._devicecontext, length, delta_x)
 
         # depending on the approx model and thus on the implementation of
         # self.clayer generate_precondition() would return True or False
@@ -111,23 +111,25 @@ class WaveFormGeneratorCpu(WaveFormGeneratorBase, CpuProcessingObj):
             return None        
 
     # implementation of ABC's abstractmethod
-    def perform_generate_waveform_filter(self, waveform_filter, length, delta_x, template):
-        #FIXME: this needs to be fixed, possibly not an abstract method?
+    def perform_generate_waveform_filter(self, waveform_filter, **kwargs):
+
         self.__logger.debug("called perform_generate_waveform_filter")
 
-        self.gen_waveform_filter(template, waveform_filter)
+        self.gen_waveform_filter(waveform_filter, **kwargs)
 
         return self._waveform_filter
 
     # implementation of ABC's abstractmethod
-    def perform_generate_waveform_filter_from_row(self, waveform_filter, length, delta_x, template):
+    def perform_generate_waveform_filter_from_row(self, waveform_filter, template):
 
         self.__logger.debug("called perform_generate_waveform_filter")
 
-        self.gen_waveform_filter(template, waveform_filter)
+        self.gen_waveform_filter(waveform_filter, template)
 
         return self._waveform_filter
 
+
+## Functors for the TaylorF2 approximant
 class GenPreconVecTaylorF2:
     """
     functor definition for gen_precon_vector_TaylorF2
@@ -143,15 +145,32 @@ class GenPreconVecTaylorF2:
 
 class GenWaveformFilterTaylorF2:
     """
-    functor definition for gen_waveform_filter_TaylorF2_from_row
+    functor definition for gen_waveform_filter_TaylorF2
     """
 
     def __init__(self):
         # status variables etc for/in clayer regrading this function goes here !
         pass
 
-    def __call__(self, waveform_filter, length, delta_x, mass1, mass2):
-        gen_waveform_filter_TaylorF2(waveform_filter, length, delta_x, mass1, mass2)
+    def __call__(self, waveform_filter, **kwargs):
+
+	## used_kwargs lists the kwargs that are needed for this approximant
+	used_kwargs = ['mass1', 'mass2']
+
+	for kwarg in used_kwargs:
+		if kwarg not in kwargs:
+			#FIXME: add logging message
+			raise KeyError
+
+	for kwarg in kwargs:
+		if kwarg not in used_kwargs:
+			#FIXME: add logging message
+			raise Warning
+
+	mass1 = kwargs['mass1'] #FIXME: need to multiply by solar_mass in kg
+	mass2 = kwargs['mass2'] #FIXME: need to multiply by solar_mass in kg
+
+        gen_waveform_filter_TaylorF2(waveform_filter, mass1, mass2)
 
 class GenWaveformFilterTaylorF2FromRow:
     """
@@ -162,11 +181,9 @@ class GenWaveformFilterTaylorF2FromRow:
         # status variables etc for/in clayer regrading this function goes here !
         pass
 
-    def __call__(self, waveform_filter, length, delta_x, template):
+    def __call__(self, waveform_filter, template):
 
-        # ToDo: fetch proper parameters from single inspiral table according
-        # to TaylorF2 approximation (clayer function)
-        mass1 = template.mass1
-        mass2 = template.mass2 * 
-        gen_waveform_filter_TaylorF2(waveform_filter, length, delta_x, mass1, mass2)
+        mass1 = template.mass1 #FIXME: need to multiply by solar_mass in kg
+        mass2 = template.mass2 #FIXME: need to multiply by solar_mass in kg
+        gen_waveform_filter_TaylorF2(waveform_filter, mass1, mass2)
 

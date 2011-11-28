@@ -47,23 +47,20 @@ class WaveFormGeneratorBase:
         # derivative TemplatBank<arch>
         super(WaveFormGeneratorBase, self).__init__(context)
 
-        self.waveform_length = waveform_length
-        self.waveform_delta_x = waveform_delta_x
         self._approximation_model= approximation_model
 
     @abstractmethod
-    def perform_generate_precondition(self, length, delta_x, pre_condition_vector_t):
+    def perform_generate_precondition_factor(self, length, delta_x, pre_condition_vector_t):
 
         pass
 
     @abstractmethod
-    def perform_generate_waveform_filter(self, waveform_filter, length, delta_x, template):
-        #FIXME: This needs to be different since different approximants take different parameters
+    def perform_generate_waveform_filter(self, waveform_filter, **kwargs):
 
         pass
 
     @abstractmethod
-    def perform_generate_waveform_filter_from_row(self, waveform_filter, length, delta_x, template):
+    def perform_generate_waveform_filter_from_row(self, waveform_filter, template):
 
         pass
 
