@@ -27,7 +27,8 @@
 """
 setup.py file for PyCBC package
 """
-import os, fnmatch, sys,commands
+import os, fnmatch, sys, commands, glob
+import ctypes
 from trace import fullmodname
 import unittest
 from distutils import sysconfig,file_util
@@ -49,7 +50,18 @@ except KeyError:
 
 
 ver = '0.1'
-pycbc_clean_files = []
+pycbc_clean_files = ['log.pyc']
+
+def find_modules(pattern):
+    # Find all the unittests that match a given string pattern
+    modules= []
+    for path, dirs, files in os.walk(os.getcwd()):
+        for filename in fnmatch.filter(files, pattern):
+            #add the test directories to the path
+            sys.path.append(os.path.join(path))
+            #save the module name for importing
+            modules.append(fullmodname(filename))
+    return modules
 
 # Create the swig wrapped extension library along with the unwrapped shared library
 def pkg_config(libraries=[],library_dirs=[],include_dirs=[],pkg_libraries=[]):
@@ -88,7 +100,7 @@ pycbc_extensions.append(Extension( 'pycbc.clayer._pycbccpu',
         swig_opts = ['-outdir','pycbc/clayer'],
         libraries = ['pycbc']
     ))
-pycbc_clean_files.append('pycbc/clayer/cpu.py')
+pycbc_clean_files.append('pycbc/clayer/pycbccpu.py')
 pycbc_clean_files.append('pycbc/clayer/cpu/pycbccpu_wrap.c')
 
 pycbc_sources += ['pycbc/datavector/clayer/cpu/datavectorcpu.c']
@@ -103,7 +115,7 @@ pycbc_extensions.append(Extension('pycbc.datavector.clayer._datavectorcpu',
     swig_opts = ['-outdir','pycbc/datavector/clayer'],
     extra_compile_args = ['-Wall','-fPIC']
     ))
-pycbc_clean_files.append('pycbc/datavector/clayer/cpu.py')
+pycbc_clean_files.append('pycbc/datavector/clayer/datavectorcpu.py')
 pycbc_clean_files.append('pycbc/datavector/clayer/cpu/datavectorcpu_wrap.c')
 
 pycbc_sources += ['pycbc/straindata/clayer/cpu/straindatacpu.c']
@@ -116,7 +128,7 @@ pycbc_extensions.append(Extension( 'pycbc.straindata.clayer._straindatacpu',
     libraries = ['pycbc'],
     extra_compile_args = ['-Wall','-fPIC']
     ))
-pycbc_clean_files.append('pycbc/straindata/clayer/cpu.py')
+pycbc_clean_files.append('pycbc/straindata/clayer/straindatacpu.py')
 pycbc_clean_files.append('pycbc/straindata/clayer/cpu/straindatacpu_wrap.c')
 
 pycbc_sources += ['pycbc/templatebank/clayer/cpu/templatebankcpu.c']
@@ -129,7 +141,7 @@ pycbc_extensions.append(Extension( 'pycbc.templatebank.clayer._templatebankcpu',
     libraries = ['pycbc'],
     extra_compile_args = ['-Wall','-fPIC']
     ))
-pycbc_clean_files.append('pycbc/templatebank/clayer/cpu.py')
+pycbc_clean_files.append('pycbc/templatebank/clayer/templatebankcpu.py')
 pycbc_clean_files.append('pycbc/templatebank/clayer/cpu/templatebankcpu_wrap.c')
 
 pycbc_sources += ['pycbc/matchedfilter/clayer/cpu/matchedfiltercpu.c']
@@ -142,7 +154,7 @@ pycbc_extensions.append(Extension( 'pycbc.matchedfilter.clayer._matchedfiltercpu
     libraries = ['pycbc'],
     extra_compile_args = ['-Wall','-fPIC']
     ))
-pycbc_clean_files.append('pycbc/matchedfilter/clayer/cpu.py')
+pycbc_clean_files.append('pycbc/matchedfilter/clayer/matchedfiltercpu.py')
 pycbc_clean_files.append('pycbc/matchedfilter/clayer/cpu/matchedfiltercpu_wrap.c')
 
 #Pull in the needed information to build libpycbc from the extensions
@@ -150,17 +162,16 @@ pycbc_depends = []
 pycbc_extra_compile_args = []
 for ext in pycbc_extensions:
     pycbc_depends += ext.depends
-    pycbc_libraries += ext.libraries
-    pycbc_extra_compile_args += ext.extra_compile_args
     pycbc_include_dirs += ext.include_dirs
 
 pycbc_extensions.insert(0,Extension('libpycbc',
-    sources = list(set(pycbc_sources)),
+    sources = pycbc_sources,
     depends = list(set(pycbc_depends)),
-    library_dirs = list(set(pycbc_library_dirs)),
-    libraries = list(set(pycbc_libraries)),
-    extra_compile_args = list(set(pycbc_extra_compile_args)),
-    include_dirs = list(set(pycbc_include_dirs))))
+    library_dirs = pycbc_library_dirs,
+    libraries = pycbc_libraries,
+    extra_compile_args = ['-Wall', '-fPIC'],
+    include_dirs = pycbc_include_dirs
+    ))
     
 
 # ======== (END) CPU extension modules for the top-level package ==============
@@ -192,16 +203,15 @@ pycbc_opencl_libraries = []
 pycbc_opencl_extra_compile_args = []
 for ext in pycbc_opencl_extensions:
     pycbc_opencl_depends += ext.depends
-    pycbc_opencl_libraries += ext.libraries
-    pycbc_opencl_extra_compile_args += ext.extra_compile_args
     pycbc_opencl_include_dirs += ext.include_dirs
 
 pycbc_opencl_extensions.insert(0,Extension('libpycbcopencl',
-    sources = list(set(pycbc_opencl_sources)),
+    sources = pycbc_opencl_sources,
     depends = list(set(pycbc_opencl_depends)),
-    libraries = list(set(pycbc_opencl_libraries)),
-    extra_compile_args = list(set(pycbc_opencl_extra_compile_args)),
-    include_dirs = list(set(pycbc_opencl_include_dirs))))
+    libraries = pycbc_opencl_libraries,
+    extra_compile_args = ['-Wall', '-fPIC'],
+    include_dirs = pycbc_opencl_include_dirs
+    ))
     
 
 
@@ -252,22 +262,12 @@ class test(Command):
         #Populate the needed variables
         self.set_undefined_options('build',('build_lib', 'build_dir'))
         
-    def find_test_modules(self,pattern):
-       # Find all the unittests that match a given string pattern
-        modules= []
-        for path, dirs, files in os.walk(os.getcwd()):
-            for filename in fnmatch.filter(files, pattern):
-                #add the test directories to the path
-                sys.path.append(os.path.join(path))
-                #save the module name for importing
-                modules.append(fullmodname(filename))
-        return modules
     def test_cpu(self):
-        return self.find_test_modules("test_*cpu*.py")
+        return find_modules("test_*cpu*.py")
     def test_opencl(self):
-        return self.find_test_modules("test_*opencl*.py")
+        return find_modules("test_*opencl*.py")
     def test_cuda(self):
-        return self.find_test_modules("test_*cuda*.py")
+        return find_modules("test_*cuda*.py")
     def run(self):
         # Ensure that we have everything built first
         self.run_command('build')
@@ -295,7 +295,7 @@ class test(Command):
 class clean(_clean):
     def finalize_options (self):
         _clean.finalize_options(self)
-        self.clean_files = pycbc_clean_files
+        self.clean_files = pycbc_clean_files + glob.glob('*/*/unittest/*.pyc')
 
     def run(self):
         _clean.run(self)
@@ -317,8 +317,9 @@ class build_ext(_build_ext):
         self.set_undefined_options('install',('install_lib','install_dir')) 
         self.set_undefined_options('config',('with_opencl','opencl_dir'))   
     def run(self):
-        self.rpath.append(self.build_lib)
-        self.rpath.append(self.install_dir)
+        #self.rpath.append(self.install_dir)
+        self.rpath.append("$ORIGIN/../../")
+        self.rpath.append("$ORIGIN/../../../")
         self.library_dirs.append(self.build_lib)
         
         #Add opencl header to include_dir if we are building those modules
@@ -356,9 +357,9 @@ setup (
     cmdclass = { 'config' : config,
                  'clean' : clean,
                  'build' : build,
-                 'install':install,
-		         'test'  : test ,
-		         'build_ext': build_ext},
+                 'install' : install,
+                 'test'  : test ,
+                 'build_ext': build_ext},
     ext_modules = pycbc_extensions,
     packages = ['pycbc','pycbc.clayer',
                 'pycbc.datavector','pycbc.datavector.clayer',
