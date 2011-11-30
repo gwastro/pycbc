@@ -88,19 +88,19 @@ pycbc_clean_files.append('pycbc/straindata/clayer/cpu.py')
 pycbc_clean_files.append('pycbc/straindata/clayer/cpu/straindatacpu_wrap.c')
 
 
-pycbc_extensions.append(Extension( 'pycbc.templatebank.clayer._cpu', 
-    sources = ['pycbc/templatebank/clayer/cpu/templatebankcpu.i',
-               'pycbc/templatebank/clayer/cpu/templatebankcpu.c'],
-    depends = ['pycbc/templatebank/clayer/cpu/templatebankcpu.h',
-               'pycbc/templatebank/clayer/cpu/templatebankcpu_private.h'],
-    include_dirs = ['pycbc/clayer/cpu',
-               'pycbc/datavector/clayer/cpu'],
-    swig_opts = ['-outdir','pycbc/templatebank/clayer'],
-    extra_compile_args = ['-Wall','-fPIC']
-    ))
+#pycbc_extensions.append(Extension( 'pycbc.templatebank.clayer._cpu', 
+#    sources = ['pycbc/templatebank/clayer/cpu/templatebankcpu.i',
+#               'pycbc/templatebank/clayer/cpu/templatebankcpu.c'],
+#    depends = ['pycbc/templatebank/clayer/cpu/templatebankcpu.h',
+#               'pycbc/templatebank/clayer/cpu/templatebankcpu_private.h'],
+#    include_dirs = ['pycbc/clayer/cpu',
+#               'pycbc/datavector/clayer/cpu'],
+#    swig_opts = ['-outdir','pycbc/templatebank/clayer'],
+#    extra_compile_args = ['-Wall','-fPIC']
+#    ))
 
-pycbc_clean_files.append('pycbc/templatebank/clayer/cpu.py')
-pycbc_clean_files.append('pycbc/templatebank/clayer/cpu/templatebankcpu_wrap.c')
+#pycbc_clean_files.append('pycbc/templatebank/clayer/cpu.py')
+#pycbc_clean_files.append('pycbc/templatebank/clayer/cpu/templatebankcpu_wrap.c')
 
 
 pycbc_extensions.append(Extension( 'pycbc.matchedfilter.clayer._cpu', 
@@ -179,7 +179,7 @@ setup (
                 'pycbc.resample',
                 'pycbc.singledetectorevent',
                 'pycbc.straindata','pycbc.straindata.clayer',
-                'pycbc.templatebank','pycbc.templatebank.clayer',
+                'pycbc.templatebank',#'pycbc.templatebank.clayer',
                 'pycbc.matchedfilter','pycbc.matchedfilter.clayer',
                 'pycbc.waveformgenerator','pycbc.waveformgenerator.clayer'],
     scripts = ['bin/pycbc_min_cpu_pipeline',

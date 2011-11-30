@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Karsten Wiesner
+// Copyright (C) 2011 Karsten Wiesner, Drew Keppel
 //
 // This program is free software; you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by the
@@ -35,9 +35,28 @@ typedef struct
 }
 waveform_generator_cpu_t;
 
-int gen_precon_vector_TaylorF2(real_vector_single_cpu_t* );
+int gen_precon_vector_TaylorF2(
+    real_vector_single_cpu_t*
+    );
 
-void gen_waveform_filter_TaylorF2( complex_vector_single_cpu_t* waveform_filter,
-                                   float mass1, float mass2 );
+void gen_waveform_filter_TaylorF2(
+    complex_vector_single_cpu_t* waveform_filter,
+    double M,
+    double eta,
+    int order,
+    double f_min,
+    double f_max,
+    real_vector_single_cpu_t* minus_one_by_three
+    );
 
+void gen_waveform_strain_TaylorF2(
+    complex_vector_single_cpu_t* waveform_strain,
+    double M,
+    double eta,
+    int order,
+    double f_min,
+    double f_max,
+    real_vector_single_cpu_t* minus_one_by_three,
+    real_vector_single_cpu_t* precon_vec
+    );
 #endif /* WAVEFORMGENERATORCPU_H */
