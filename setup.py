@@ -97,6 +97,7 @@ pycbc_extensions.append(Extension( 'pycbc.clayer._pycbccpu',
         include_dirs = pycbc_include_dirs + ['pycbc/clayer','./'],
         depends = ['pycbc/clayer/cpu/pycbccpu.h','pycbc/clayer/cpu/pycbccpu_private.h'],
         extra_compile_args = ['-Wall','-fPIC'],
+        runtime_library_dirs = ["$ORIGIN/../../"],
         swig_opts = ['-outdir','pycbc/clayer'],
         libraries = ['pycbc']
     ))
@@ -112,6 +113,7 @@ pycbc_extensions.append(Extension('pycbc.datavector.clayer._datavectorcpu',
                'pycbc/clayer/cpu/pycbccpu.h'],
     include_dirs =  pycbc_include_dirs +  ['pycbc/clayer/cpu', './','pycbc/datavector/clayer'],
     libraries = ['pycbc'],
+    runtime_library_dirs = ["$ORIGIN/../../../"],
     swig_opts = ['-outdir','pycbc/datavector/clayer'],
     extra_compile_args = ['-Wall','-fPIC']
     ))
@@ -126,6 +128,7 @@ pycbc_extensions.append(Extension( 'pycbc.straindata.clayer._straindatacpu',
     include_dirs =  pycbc_include_dirs +  ['pycbc/clayer/cpu','pycbc/datavector/clayer/cpu','pycbc/datavector/clayer'],
     swig_opts = ['-outdir','pycbc/straindata/clayer'],
     libraries = ['pycbc'],
+    runtime_library_dirs = ["$ORIGIN/../../../"],
     extra_compile_args = ['-Wall','-fPIC']
     ))
 pycbc_clean_files.append('pycbc/straindata/clayer/straindatacpu.py')
@@ -139,6 +142,7 @@ pycbc_extensions.append(Extension( 'pycbc.templatebank.clayer._templatebankcpu',
     include_dirs =  pycbc_include_dirs +  ['pycbc/clayer/cpu','pycbc/datavector/clayer/cpu','pycbc/datavector/clayer'],
     swig_opts = ['-outdir','pycbc/templatebank/clayer'],
     libraries = ['pycbc'],
+    runtime_library_dirs = ["$ORIGIN/../../../"],
     extra_compile_args = ['-Wall','-fPIC']
     ))
 pycbc_clean_files.append('pycbc/templatebank/clayer/templatebankcpu.py')
@@ -152,6 +156,7 @@ pycbc_extensions.append(Extension( 'pycbc.matchedfilter.clayer._matchedfiltercpu
     include_dirs =  pycbc_include_dirs +  ['pycbc/clayer/cpu','pycbc/datavector/clayer/cpu','pycbc/datavector/clayer'],
     swig_opts = ['-outdir','pycbc/matchedfilter/clayer'],
     libraries = ['pycbc'],
+    runtime_library_dirs = ["$ORIGIN/../../../"],
     extra_compile_args = ['-Wall','-fPIC']
     ))
 pycbc_clean_files.append('pycbc/matchedfilter/clayer/matchedfiltercpu.py')
@@ -192,6 +197,7 @@ pycbc_opencl_extensions.append(Extension( 'pycbc.clayer._pycbcopencl',
                     'pycbc/clayer/opencl/gpu_inspiral_utils.h'],
         extra_compile_args = ['-Wall','-fPIC'],
         libraries=['pycbc','pycbcopencl','OpenCL'],
+        runtime_library_dirs = ["$ORIGIN/../../"],
         swig_opts = ['-outdir','pycbc/clayer']))
 pycbc_clean_files.append('pycbc/opencl/opencl.py')
 pycbc_clean_files.append('pycbc/clayer/cpu/pycbcopencl_wrap.c')
@@ -306,7 +312,6 @@ class clean(_clean):
             except:
                 pass
           
-# Set the libpycbc location in the extensions modules' rpath    
 class build_ext(_build_ext):
     def initialize_options(self):
         _build_ext.initialize_options(self)
@@ -317,9 +322,6 @@ class build_ext(_build_ext):
         self.set_undefined_options('install',('install_lib','install_dir')) 
         self.set_undefined_options('config',('with_opencl','opencl_dir'))   
     def run(self):
-        #self.rpath.append(self.install_dir)
-        self.rpath.append("$ORIGIN/../../")
-        self.rpath.append("$ORIGIN/../../../")
         self.library_dirs.append(self.build_lib)
         
         #Add opencl header to include_dir if we are building those modules
