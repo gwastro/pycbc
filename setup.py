@@ -245,7 +245,7 @@ class config(_config):
         #Check for OPENCL headers
         if (self.with_opencl!=None):
             log.warn("looking for opencl headers")
-            if not self.check_header("CL/opencl.h",include_dirs=[self.with_opencl+"/include"]):
+            if not self.check_header("CL/opencl.h",include_dirs=[self.with_opencl]):
                 log.warn("could not find opencl.h")
                 self.with_opencl=None
             else:
@@ -326,7 +326,7 @@ class build_ext(_build_ext):
         
         #Add opencl header to include_dir if we are building those modules
         if (self.opencl_dir != None):
-            self.include_dirs+=[self.opencl_dir+"/include"]
+            self.include_dirs+=[self.opencl_dir]
             
         _build_ext.run(self)
 
