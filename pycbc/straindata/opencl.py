@@ -46,8 +46,8 @@ from pycbc.datavector.opencl import\
      
 
 # Swigged C-layer functions
-from pycbc.straindata.clayer.cpu import fftw_generate_plan
-from pycbc.straindata.clayer.cpu import fftw_transform_segments
+from pycbc.straindatacpu import fftw_generate_plan
+from pycbc.straindata.cpu import fftw_transform_segments
 
 import logging
 

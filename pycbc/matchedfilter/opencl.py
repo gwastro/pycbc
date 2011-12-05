@@ -41,8 +41,8 @@ from matchedfilteropencl import matched_filter_opencl_t
 
 
 # import member datavectors
-from pycbc.datavector.datavectoropencl import complex_vector_single_opencl_t
-from pycbc.datavector.datavectoropencl import real_vector_single_opencl_t
+from pycbc.datavector.opencl import complex_vector_single_opencl_t
+from pycbc.datavector.opencl import real_vector_single_opencl_t
 
 
 import logging

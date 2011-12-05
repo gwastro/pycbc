@@ -4,7 +4,7 @@
 "Copyright 2011, 2011 Karsten Wiesner <karsten.wiesner@ligo.org>."
 %enddef
 
-%module(docstring=DOCSTRING,module="pycbc.templatebank.clayer") cpu
+%module(docstring=DOCSTRING,module="pycbc.templatebank.clayer") templatebankcpu
 
 %feature("autodoc", "1");
 

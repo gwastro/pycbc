@@ -4,7 +4,7 @@
 "Copyright 2011, 2011 Karsten Wiesner <karsten.wiesner@ligo.org>."
 %enddef
 
-%module(docstring=DOCSTRING,module="pycbc.matchedfilter.clayer") cpu
+%module(docstring=DOCSTRING,module="pycbc.matchedfilter.clayer") matchedfiltercpu
 
 %feature("autodoc", "1");
 

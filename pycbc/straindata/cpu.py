@@ -31,13 +31,13 @@ from pycbc.straindata.base import StrainDataBase
 from pycbc.straindata.base import FftSegmentsImplementationBase
 
 # import member datavectors
-from pycbc.datavector.clayer.cpu import real_vector_double_cpu_t
-from pycbc.datavector.clayer.cpu import real_vector_single_cpu_t
-from pycbc.datavector.clayer.cpu import complex_vector_single_cpu_t
+from pycbc.datavector.cpu import real_vector_double_cpu_t
+from pycbc.datavector.cpu import real_vector_single_cpu_t
+from pycbc.datavector.cpu import complex_vector_single_cpu_t
 
 # Swigged C-layer functions
-from pycbc.straindata.clayer.cpu import fftw_generate_plan
-from pycbc.straindata.clayer.cpu import fftw_transform_segments
+from pycbc.straindata.clayer.straindatacpu import fftw_generate_plan
+from pycbc.straindata.clayer.straindatacpu import fftw_transform_segments
 
 import logging
 
@@ -109,11 +109,11 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         
         self.__logger= logging.getLogger('pycbc.FftSegmentsImplementationFftw')
 
-        assert repr(input_buf_t).find("pycbc.datavector.clayer.cpu") >= 0, "try to \n\
+        assert repr(input_buf_t).find("pycbc.datavector.clayer.datavectorcpu") >= 0, "try to \n\
         instanciate FftSegmentsImplementationFftw CPU implementation with \n\
         wrong type of datavector for input_buf"
         
-        assert repr(output_buffer_t).find("pycbc.datavector.clayer.cpu") >= 0, "try to \n\
+        assert repr(output_buffer_t).find("pycbc.datavector.clayer.datavectorcpu") >= 0, "try to \n\
         instanciate FftSegmentsImplementationFftw CPU implementation with \n\
         wrong type of datavector for output_buffers_t"
 

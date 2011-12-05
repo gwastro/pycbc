@@ -45,7 +45,7 @@
     %}
 
 
-%include "datavector.h"
+%include "../datavector.h"
 %include "datavectoropencl.h"
 %include "exception.i"
 

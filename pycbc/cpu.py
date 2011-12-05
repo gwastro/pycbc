@@ -27,13 +27,13 @@ pyCBC Cpu processing object - base class and context
 """
 
 from pycbc.base import PyCbcProcessingObj
-from pycbc.clayer.cpu import cpu_context_t as CpuContext
+from pycbc.clayer.pycbccpu import * 
 
 try:
-    from datavector.clayer.opencl import *
+    from datavector.opencl import *
 except:
     pass
-from datavector.clayer.cpu import *    
+from datavector.cpu import *    
 
 import logging
 import re
@@ -73,7 +73,7 @@ class CpuProcessingObj(PyCbcProcessingObj):
         """
 
         vector_repr = repr(datavector)
-        if (vector_repr.find("datavector.clayer.cpu") >= 0):
+        if (vector_repr.find("datavector.clayer.datavectorcpu") >= 0):
             # aboriginal datavector. just return it as it is
             self.__logger.debug("data_in found aboriginal datavector {0} thus return it".format(vector_repr))
             return datavector
@@ -149,7 +149,7 @@ class CpuDeviceContext:
         self.__logger.debug("__enter__ called ")
         
         # create Cpu device context
-        self.__cpucontext = CpuContext(self.__devicehandle)
+        self.__cpucontext = cpu_context_t(self.__devicehandle)
         
         self.__logger.debug(" On __enter__ create context for device {0}:".format(self.__devicehandle)) 
         self.__logger.debug( repr(self.__cpucontext) )
