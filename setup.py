@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright (C) 2011 Karsten Wiesner, Duncan Brown, Alex Nitz
+# Copyright (C) 2011 Karsten Wiesner, Duncan Brown, Alex Nitz, Josh Willis
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -89,7 +89,7 @@ def pkg_config(libraries=[],library_dirs=[],include_dirs=[],pkg_libraries=[]):
 # ======== CPU extension modules for the top-level package ====================
 pycbc_extensions = []
 pycbc_sources = []
-pycbc_libraries, pycbc_library_dirs, pycbc_include_dirs=pkg_config(pkg_libraries=["fftw3","lal"])
+pycbc_libraries, pycbc_library_dirs, pycbc_include_dirs=pkg_config(pkg_libraries=["fftw3","fftw3f","lal"])
 
 pycbc_sources += ['pycbc/clayer/cpu/pycbccpu.c','pycbc/clayer/except.c','pycbc/clayer/log.c']
 pycbc_extensions.append(Extension( 'pycbc.clayer._pycbccpu',  
