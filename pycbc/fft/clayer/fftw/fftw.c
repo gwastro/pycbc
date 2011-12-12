@@ -20,19 +20,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "fft_fftw_private.h"
-#include "fft_fftw.h"
+#include "fftw_private.h"
+#include "fftw.h"
 #include "../../../datavector/clayer/cpu/datavectorcpu_types.h"
-/* Note that fft_fftw.h includes <complex.h> and <fftw3.h> (in that order, which is important!) */
+/* Note that fftw.h includes <complex.h> and <fftw3.h> (in that order, which is important!) */
 
-fft_real_single_plan_fftw *new_fft_real_single_plan_fftw(unsigned long size,
-							 int fwdflag,
-							 int measurelvl)
+fftw_real_single_plan *new_fftw_real_single_plan(unsigned long size,
+						 int fwdflag,
+						 int measurelvl)
 {
-  fft_real_single_plan_fftw *self;
+  fftw_real_single_plan *self;
   float *scratchin, *scratchout;
   int flags = 0;
-  
+
   switch (measurelvl) {
   case 0:
     flags |= FFTW_ESTIMATE;
@@ -47,8 +47,8 @@ fft_real_single_plan_fftw *new_fft_real_single_plan_fftw(unsigned long size,
     flags |= FFTW_MEASURE;
     break;
   }
-  
-  self = (fft_real_single_plan_fftw *) malloc(sizeof(fft_real_single_plan_fftw));
+
+  self = (fftw_real_single_plan *) malloc(sizeof(fftw_real_single_plan));
   fftwf_import_system_wisdom();
 
   scratchin  = (float *) fftwf_malloc(size*sizeof(float));
@@ -65,14 +65,14 @@ fft_real_single_plan_fftw *new_fft_real_single_plan_fftw(unsigned long size,
 }
 
 
-fft_real_double_plan_fftw *new_fft_real_double_plan_fftw(unsigned long size,
-							 int fwdflag,
-							 int measurelvl)
+fftw_real_double_plan *new_fftw_real_double_plan(unsigned long size,
+						 int fwdflag,
+						 int measurelvl)
 {
-  fft_real_double_plan_fftw *self;
+  fftw_real_double_plan *self;
   double *scratchin, *scratchout;
   int flags = 0;
-  
+
   switch (measurelvl) {
   case 0:
     flags |= FFTW_ESTIMATE;
@@ -87,8 +87,8 @@ fft_real_double_plan_fftw *new_fft_real_double_plan_fftw(unsigned long size,
     flags |= FFTW_MEASURE;
     break;
   }
-  
-  self = (fft_real_double_plan_fftw *) malloc(sizeof(fft_real_double_plan_fftw));
+
+  self = (fftw_real_double_plan *) malloc(sizeof(fftw_real_double_plan));
   fftw_import_system_wisdom();
 
   scratchin  = (double *) fftw_malloc(size*sizeof(double));
@@ -104,14 +104,14 @@ fft_real_double_plan_fftw *new_fft_real_double_plan_fftw(unsigned long size,
   return self;
 }
 
-fft_complex_single_plan_fftw *new_fft_complex_single_plan_fftw(unsigned long size,
-							       int fwdflag,
-							       int measurelvl)
+fftw_complex_single_plan *new_fftw_complex_single_plan(unsigned long size,
+						       int fwdflag,
+						       int measurelvl)
 {
-  fft_complex_single_plan_fftw *self;
+  fftw_complex_single_plan *self;
   fftwf_complex *scratchin, *scratchout;
   int flags = 0;
-  
+
   switch (measurelvl) {
   case 0:
     flags |= FFTW_ESTIMATE;
@@ -126,8 +126,8 @@ fft_complex_single_plan_fftw *new_fft_complex_single_plan_fftw(unsigned long siz
     flags |= FFTW_MEASURE;
     break;
   }
-  
-  self = (fft_complex_single_plan_fftw *) malloc(sizeof(fft_complex_single_plan_fftw));
+
+  self = (fftw_complex_single_plan *) malloc(sizeof(fftw_complex_single_plan));
   fftwf_import_system_wisdom();
 
   scratchin  = (fftwf_complex *) fftwf_malloc(size*sizeof(fftwf_complex));
@@ -144,13 +144,13 @@ fft_complex_single_plan_fftw *new_fft_complex_single_plan_fftw(unsigned long siz
   return self;
 }
 
-fft_complex_double_plan_fftw *new_fft_complex_double_plan_fftw(unsigned long size,
-							       int fwdflag,
-							       int measurelvl){
-  fft_complex_double_plan_fftw *self;
+fftw_complex_double_plan *new_fftw_complex_double_plan(unsigned long size,
+						       int fwdflag,
+						       int measurelvl){
+  fftw_complex_double_plan *self;
   fftw_complex *scratchin, *scratchout;
   int flags = 0;
-  
+
   switch (measurelvl) {
   case 0:
     flags |= FFTW_ESTIMATE;
@@ -165,8 +165,8 @@ fft_complex_double_plan_fftw *new_fft_complex_double_plan_fftw(unsigned long siz
     flags |= FFTW_MEASURE;
     break;
   }
-  
-  self = (fft_complex_double_plan_fftw *) malloc(sizeof(fft_complex_double_plan_fftw));
+
+  self = (fftw_complex_double_plan *) malloc(sizeof(fftw_complex_double_plan));
   fftwf_import_system_wisdom();
 
   scratchin  = (fftw_complex *) fftw_malloc(size*sizeof(fftw_complex));
@@ -183,35 +183,35 @@ fft_complex_double_plan_fftw *new_fft_complex_double_plan_fftw(unsigned long siz
   return self;
 }
 
-void delete_fft_real_single_plan_fftw(fft_real_single_plan_fftw *self){
+void delete_fftw_real_single_plan(fftw_real_single_plan *self){
   fftwf_destroy_plan(self->theplan);
   free(self);
   return;
 }
 
-void delete_fft_complex_single_plan_fftw(fft_complex_single_plan_fftw *self){
+void delete_fftw_complex_single_plan(fftw_complex_single_plan *self){
   fftwf_destroy_plan(self->theplan);
   free(self);
   return;
 }
 
-void delete_fft_real_double_plan_fftw(fft_real_double_plan_fftw *self){
+void delete_fftw_real_double_plan(fftw_real_double_plan *self){
   fftw_destroy_plan(self->theplan);
   free(self);
   return;
 }
 
-void delete_fft_complex_double_plan_fftw(fft_complex_double_plan_fftw *self){
+void delete_fftw_complex_double_plan(fftw_complex_double_plan *self){
   fftw_destroy_plan(self->theplan);
   free(self);
   return;
 }
 
 /* Functions to execute single precision CPU FFTs with FFTW */
-				
-void execute_complex_single_fft_fftw(complex_vector_single_cpu_t *output,
-				     complex_vector_single_cpu_t *input,
-				     fft_complex_single_plan_fftw *plan)
+
+void execute_complex_single_fft(complex_vector_single_cpu_t *output,
+				complex_vector_single_cpu_t *input,
+				fftw_complex_single_plan *plan)
 {
   if ( !output || !input ){
     abort(); /* Need better error handling eventually */
@@ -225,7 +225,7 @@ void execute_complex_single_fft_fftw(complex_vector_single_cpu_t *output,
     abort(); /* Need better error handling eventually */
   }
 
-  if ( (output->meta_data.vector_length != plan->size) || 
+  if ( (output->meta_data.vector_length != plan->size) ||
        (input->meta_data.vector_length != plan->size) ){
     abort(); /* Need better error handling eventually */
   }
@@ -238,9 +238,9 @@ void execute_complex_single_fft_fftw(complex_vector_single_cpu_t *output,
   return;
 }
 
-void execute_real_single_forward_fft_fftw(complex_vector_single_cpu_t *output,
-					  real_vector_single_cpu_t *input,
-					  fft_real_single_plan_fftw *plan)
+void execute_real_single_forward_fft(complex_vector_single_cpu_t *output,
+				     real_vector_single_cpu_t *input,
+				     fftw_real_single_plan *plan)
 {
   unsigned long k;
   float *tmp;
@@ -290,9 +290,9 @@ void execute_real_single_forward_fft_fftw(complex_vector_single_cpu_t *output,
   return;
 }
 
-void execute_real_single_reverse_fft_fftw(real_vector_single_cpu_t *output,
-					  complex_vector_single_cpu_t *input,
-					  fft_real_single_plan_fftw *plan){
+void execute_real_single_reverse_fft(real_vector_single_cpu_t *output,
+				     complex_vector_single_cpu_t *input,
+				     fftw_real_single_plan *plan){
   unsigned long k;
   float *tmp;
 
@@ -353,10 +353,10 @@ void execute_real_single_reverse_fft_fftw(real_vector_single_cpu_t *output,
 }
 
 /* Functions to execute double precision CPU FFTs with FFTW */
-			
-void execute_complex_double_fft_fftw(complex_vector_double_cpu_t *output,
-				     complex_vector_double_cpu_t *input,
-				     fft_complex_double_plan_fftw *plan){
+
+void execute_complex_double_fft(complex_vector_double_cpu_t *output,
+				complex_vector_double_cpu_t *input,
+				fftw_complex_double_plan *plan){
 
   if ( !output || !input ){
     abort(); /* Need better error handling eventually */
@@ -370,7 +370,7 @@ void execute_complex_double_fft_fftw(complex_vector_double_cpu_t *output,
     abort(); /* Need better error handling eventually */
   }
 
-  if ( (output->meta_data.vector_length != plan->size) || 
+  if ( (output->meta_data.vector_length != plan->size) ||
        (input->meta_data.vector_length != plan->size) ){
     abort(); /* Need better error handling eventually */
   }
@@ -383,9 +383,9 @@ void execute_complex_double_fft_fftw(complex_vector_double_cpu_t *output,
   return;
 }
 
-void execute_real_double_forward_fft_fftw(complex_vector_double_cpu_t *output,
-					  real_vector_double_cpu_t *input,
-					  fft_real_double_plan_fftw *plan){
+void execute_real_double_forward_fft(complex_vector_double_cpu_t *output,
+				     real_vector_double_cpu_t *input,
+				     fftw_real_double_plan *plan){
   unsigned long k;
   double *tmp;
 
@@ -434,9 +434,9 @@ void execute_real_double_forward_fft_fftw(complex_vector_double_cpu_t *output,
   return;
 }
 
-void execute_real_double_reverse_fft_fftw(real_vector_double_cpu_t *output,
-					  complex_vector_double_cpu_t *input,
-					  fft_real_double_plan_fftw *plan){
+void execute_real_double_reverse_fft(real_vector_double_cpu_t *output,
+				     complex_vector_double_cpu_t *input,
+				     fftw_real_double_plan *plan){
   unsigned long k;
   double *tmp;
 

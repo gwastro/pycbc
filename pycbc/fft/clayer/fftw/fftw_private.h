@@ -1,33 +1,33 @@
-#ifndef FFT_FFTW_PRIVATE_H
-#define FFT_FFTW_PRIVATE_H
+#ifndef PYCBC_FFTW_PRIVATE_H
+#define PYCBC_FFTW_PRIVATE_H
 
 #include <stdlib.h>
 #include <complex.h>
 #include <fftw3.h>
-#include "fft_fftw.h"
+#include "fftw.h"
 
 /*
- Prototypes of constructors/destructors.  
+ Prototypes of constructors/destructors.
 */
 
-fft_real_single_plan_fftw *new_fft_real_single_plan_fftw(unsigned long size, 
-							 int fwdflag, 
-							 int measurelvl);
-void delete_fft_real_single_plan_fftw(fft_real_single_plan_fftw *self);
+fftw_real_single_plan *new_fftw_real_single_plan(unsigned long size,
+						 int fwdflag,
+						 int measurelvl);
+void delete_fftw_real_single_plan(fftw_real_single_plan *self);
 
-fft_real_double_plan_fftw *new_fft_real_double_plan_fftw(unsigned long size, 
-							 int fwdflag,
-							 int measurelvl);
-void delete_fft_real_double_plan_fftw(fft_real_double_plan_fftw *self);
+fftw_real_double_plan *new_fftw_real_double_plan(unsigned long size,
+						 int fwdflag,
+						 int measurelvl);
+void delete_fftw_real_double_plan(fftw_real_double_plan *self);
 
-fft_complex_single_plan_fftw *new_fft_complex_single_plan_fftw(unsigned long size,
-							       int fwdflag, 
-							       int measurelvl);
-void delete_fft_complex_single_plan_fftw(fft_complex_single_plan_fftw *self);
+fftw_complex_single_plan *new_fftw_complex_single_plan(unsigned long size,
+						       int fwdflag,
+						       int measurelvl);
+void delete_fftw_complex_single_plan(fftw_complex_single_plan *self);
 
-fft_complex_double_plan_fftw *new_fft_complex_double_plan_fftw(unsigned long size, 
-							       int fwdflag,
-							       int measurelvl);
-void delete_fft_complex_double_plan_fftw(fft_complex_double_plan_fftw *self);
+fftw_complex_double_plan *new_fftw_complex_double_plan(unsigned long size,
+						       int fwdflag,
+						       int measurelvl);
+void delete_fftw_complex_double_plan(fftw_complex_double_plan *self);
 
-#endif  /* #ifndef FFT_FFTW_PRIVATE_H */
+#endif  /* #ifndef PYCBC_FFTW_PRIVATE_H */

@@ -22,42 +22,42 @@
 //
 // =============================================================================
 //
-// fft swig file for pycbc
+// FFTW swig file for pycbc
 
 
 %define DOCSTRING
 "Copyright 2011, Josh Willis <joshua.willis@ligo.org>."
 %enddef
 
-%module(docstring=DOCSTRING) fft_fftw
+%module(docstring=DOCSTRING) fftw
 
 %feature("autodoc", "1");
 
 // This goes directly to the wrap-code (no swig preprocess)
 %{
-#include "fft_fftw.h"
-#include "fft_fftw_private.h"
+#include "fftw.h"
+#include "fftw_private.h"
 %}
 
-%include "fft_fftw.h"
+%include "fftw.h"
 
-%extend fft_real_single_plan_fftw {
-	fft_real_single_plan_fftw(unsigned long size, int fwdflag, int measurelvl);
-	~fft_real_single_plan_fftw();
+%extend fftw_real_single_plan {
+	fftw_real_single_plan(unsigned long size, int fwdflag, int measurelvl);
+	~fftw_real_single_plan();
 }
 
-%extend fft_complex_single_plan_fftw {
-	fft_complex_single_plan_fftw(unsigned long size, int fwdflag, int measurelvl);
-	~fft_complex_single_plan_fftw();
+%extend fftw_complex_single_plan {
+	fftw_complex_single_plan(unsigned long size, int fwdflag, int measurelvl);
+	~fftw_complex_single_plan();
 }
 
-%extend fft_real_double_plan_fftw {
-	fft_real_double_plan_fftw(unsigned long size, int fwdflag, int measurelvl);
-	~fft_real_double_plan_fftw();
+%extend fftw_real_double_plan {
+	fftw_real_double_plan(unsigned long size, int fwdflag, int measurelvl);
+	~fftw_real_double_plan();
 }
 
-%extend fft_complex_double_plan_fftw {
-	fft_complex_double_plan_fftw(unsigned long size, int fwdflag, int measurelvl);
-	~fft_complex_double_plan_fftw();
+%extend fftw_complex_double_plan {
+	fftw_complex_double_plan(unsigned long size, int fwdflag, int measurelvl);
+	~fftw_complex_double_plan();
 }
 

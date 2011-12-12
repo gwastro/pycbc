@@ -24,8 +24,8 @@
 //
 // fftw plan constructor and destructor prototypes for pycbc
 
-#ifndef FFT_FFTW_H
-#define FFT_FFTW_H
+#ifndef PYCBC_FFTW_H
+#define PYCBC_FFTW_H
 
 #include <stdlib.h>
 #include <complex.h>
@@ -33,58 +33,58 @@
 #include "../../../datavector/clayer/cpu/datavectorcpu_types.h"
 
 /* Struct common for single-precision plans */
-#define FFT_PLAN_STRUCT_DATA_FFTWF \
+#define FFTWF_PLAN_STRUCT_DATA \
   fftwf_plan    theplan; \
   unsigned long size; \
-  int           fwdflag; 
+  int           fwdflag;
 
 /* Struct common for double-precision plans */
-#define FFT_PLAN_STRUCT_DATA_FFTW \
+#define FFTW_PLAN_STRUCT_DATA \
   fftw_plan     theplan; \
   unsigned long size; \
-  int           fwdflag; 
+  int           fwdflag;
 
 /* Now the actual structs our functions use */
 
 typedef struct {
-FFT_PLAN_STRUCT_DATA_FFTWF
-} fft_real_single_plan_fftw;
+FFTWF_PLAN_STRUCT_DATA
+} fftw_real_single_plan;
 
 typedef struct {
-FFT_PLAN_STRUCT_DATA_FFTW
-} fft_real_double_plan_fftw;
+FFTW_PLAN_STRUCT_DATA
+} fftw_real_double_plan;
 
 typedef struct {
-FFT_PLAN_STRUCT_DATA_FFTWF
-} fft_complex_single_plan_fftw;
+FFTWF_PLAN_STRUCT_DATA
+} fftw_complex_single_plan;
 
 typedef struct {
-FFT_PLAN_STRUCT_DATA_FFTW
-} fft_complex_double_plan_fftw;
+FFTW_PLAN_STRUCT_DATA
+} fftw_complex_double_plan;
 
 
 /*
   Functions to execute FFTW plans
 */
 
-void execute_complex_single_fft_fftw(complex_vector_single_cpu_t *output,
+void execute_complex_single_fft(complex_vector_single_cpu_t *output,
+				complex_vector_single_cpu_t *input,
+				fftw_complex_single_plan *plan);
+void execute_real_single_forward_fft(complex_vector_single_cpu_t *output,
+				     real_vector_single_cpu_t *input,
+				     fftw_real_single_plan *plan);
+void execute_real_single_reverse_fft(real_vector_single_cpu_t *output,
 				     complex_vector_single_cpu_t *input,
-				     fft_complex_single_plan_fftw *plan);
-void execute_real_single_forward_fft_fftw(complex_vector_single_cpu_t *output,
-					  real_vector_single_cpu_t *input,
-					  fft_real_single_plan_fftw *plan);
-void execute_real_single_reverse_fft_fftw(real_vector_single_cpu_t *output,
-					  complex_vector_single_cpu_t *input,
-					  fft_real_single_plan_fftw *plan);
+				     fftw_real_single_plan *plan);
 
-void execute_complex_double_fft_fftw(complex_vector_double_cpu_t *output,
+void execute_complex_double_fft(complex_vector_double_cpu_t *output,
+				complex_vector_double_cpu_t *input,
+				fftw_complex_double_plan *plan);
+void execute_real_double_forward_fft(complex_vector_double_cpu_t *output,
+				     real_vector_double_cpu_t *input,
+				     fftw_real_double_plan *plan);
+void execute_real_double_reverse_fft(real_vector_double_cpu_t *output,
 				     complex_vector_double_cpu_t *input,
-				     fft_complex_double_plan_fftw *plan);
-void execute_real_double_forward_fft_fftw(complex_vector_double_cpu_t *output,
-					  real_vector_double_cpu_t *input,
-					  fft_real_double_plan_fftw *plan);
-void execute_real_double_reverse_fft_fftw(real_vector_double_cpu_t *output,
-					  complex_vector_double_cpu_t *input,
-					  fft_real_double_plan_fftw *plan);
+				     fftw_real_double_plan *plan);
 
-#endif /* FFT_FFTW_H */
+#endif /* PYCBC_FFTW_H */
