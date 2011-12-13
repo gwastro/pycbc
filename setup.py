@@ -183,7 +183,7 @@ pycbc_extensions.append(Extension( 'pycbc.fft.clayer._fftw',
                'pycbc/fft/clayer/fftw/fftw_private.h'],
     include_dirs = pycbc_include_dirs + ['pycbc/clayer/cpu','pycbc/datavector/clayer/cpu','pycbc/datavector/clayer'],
     swig_opts = ['-outdir','pycbc/fft/clayer'],
-    libraries = ['pycbc','fftw3','fftw3f'],
+    libraries = ['pycbc'],
     runtime_library_dirs = ["$ORIGIN/../../../"],
     extra_compile_args = ['-Wall','-fPIC']
     ))
