@@ -40,7 +40,8 @@ below:
                                    data_type='complex',
                                    transform_direction='forward',
                                    data_precision='double',
-                                   measure_level=0)
+                                   measure_level=0,
+                                   device_context=MyContext)
 
 where:
 
@@ -62,7 +63,8 @@ planning is desired.  For example:
  mylen=1024
  output_list = []
  MyFFT = FastFourierTransformFFTW(vector_length=mylen,data_type='complex',
-                        transform_direction='forward',data_precision='single')
+                        transform_direction='forward',data_precision='single',
+                        device_context=Mycontext)
  for invec in vector_list:
       new_output = complex_vector_single_cpu_t(mylen)
       MyFFT.perform_transform(invec,new_output)
