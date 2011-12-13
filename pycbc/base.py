@@ -1,4 +1,4 @@
-# Copyright (C) 2011 Karsten Wiesner
+# Copyright (C) 2011 Karsten Wiesner, Josh Willis
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -30,16 +30,24 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 
 import logging
 
+# All PyCBC classes should ultimately inherit from the following class,
+# as its __init__ method intercepts any remaining keyword arguments,
+# so that unneeded arguments may safely be passed to __init__
+class PyCBCRootClass(object):
+    def __init__(self,**kwargs):
+        pass
+
 # ------------------- pycbc processing base classes section --------------------
 
 # All processing objects have to inherit from this base class
-class PyCbcProcessingObj:
+class PyCbcProcessingObj(PyCBCRootClass):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, device_context):
+    def __init__(self, device_context, **kwargs):
         self._logger= logging.getLogger('pycbc.pycbc_base')
         self._devicecontext = device_context
+        super(PyCbcProcessingObj,self).__init__(**kwargs)
 
     @abstractmethod
     def data_in(self, datavector):

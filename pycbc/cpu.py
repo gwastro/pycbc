@@ -1,4 +1,4 @@
-# Copyright (C) 2011 Karsten Wiesner
+# Copyright (C) 2011 Karsten Wiesner, Josh Willis
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -27,13 +27,13 @@ pyCBC Cpu processing object - base class and context
 """
 
 from pycbc.base import PyCbcProcessingObj
-from pycbc.clayer.pycbccpu import * 
+from pycbc.clayer.pycbccpu import *
 
 try:
     from datavector.opencl import *
 except:
     pass
-from datavector.cpu import *    
+from datavector.cpu import *
 
 import logging
 import re
@@ -42,21 +42,21 @@ import re
 
 class CpuProcessingObj(PyCbcProcessingObj):
 
-    def __init__(self, device_context):
-    
+    def __init__(self, **kwargs):
+
         self.__logger= logging.getLogger('pycbc.CpuProcessingObj')
 
-        super(CpuProcessingObj, self).__init__(device_context)
-        
+        super(CpuProcessingObj, self).__init__(**kwargs)
+
     def data_in(self, datavector):
         """
-        this method has to be called by a pyCBC processing object 
+        this method has to be called by a pyCBC processing object
         for/with every incoming input-datavector. In case of an "alien"
         datavector (which does not fit to the architecture of the calling)
         pyCBC processing object) the method instanciates the correct
-        datavector (an "aboriginal" datavector), copies the data or transfer it 
-        to the GPU and return a reference of the new datavector. The old 
-        datavector will be dereferenced so it will be deleted by the 
+        datavector (an "aboriginal" datavector), copies the data or transfer it
+        to the GPU and return a reference of the new datavector. The old
+        datavector will be dereferenced so it will be deleted by the
         garbage collection
         @type  datavector: datavector_<arch>_t
         @param datavector: any datavector
@@ -91,7 +91,7 @@ class CpuProcessingObj(PyCbcProcessingObj):
 
             if datavector_tupel[1] != 'vector':
                 raise TypeError('data_in called with something else than a datavector')
-        
+
             if datavector_tupel[0] == 'real':
                 if datavector_tupel[2] == 'single':
                     self.__logger.debug("data_in create real_vector_single")
@@ -108,7 +108,7 @@ class CpuProcessingObj(PyCbcProcessingObj):
                                                                   datavector.get_delta_x())
                     transfer_real_vector_double_to_cpu(self._devicecontext,
                                                          new_arch_vector, datavector)
-                    
+
                 else:
                     raise TypeError('real datavector neither single nor double')
 
@@ -133,7 +133,7 @@ class CpuProcessingObj(PyCbcProcessingObj):
                     raise TypeError('complex datavector neither single nor double')
             else:
                 raise TypeError('datavector neither real nor complex')
-    
+
             return new_arch_vector
 
 
@@ -147,20 +147,20 @@ class CpuDeviceContext:
 
     def __enter__(self):
         self.__logger.debug("__enter__ called ")
-        
+
         # create Cpu device context
         self.__cpucontext = cpu_context_t(self.__devicehandle)
-        
-        self.__logger.debug(" On __enter__ create context for device {0}:".format(self.__devicehandle)) 
+
+        self.__logger.debug(" On __enter__ create context for device {0}:".format(self.__devicehandle))
         self.__logger.debug( repr(self.__cpucontext) )
         self.__logger.debug( str(self.__cpucontext) )
-        
+
         return self.__cpucontext  # at the "with" statement binding to "as" context
-                
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.__logger.debug( "__exit__ called " )
-        
+
         # destroy Cpu device context clayer member
         del(self.__cpucontext)
         self.__logger.debug(" On __exit__ destroyed cpucontext of device {0}:".format(self.__devicehandle))
-        
+

@@ -33,7 +33,7 @@ should call the __init__ of this base class.
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 
-class FastFourierTransformBase(object):
+class FastFourierTransformBase(PyCBCRootClass):
     """
     This is the base class for all FastFourierTransform
     classes in PyCBC.  All particular implementations should derive from
