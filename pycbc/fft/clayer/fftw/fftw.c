@@ -22,7 +22,7 @@
 
 #include "fftw_private.h"
 #include "fftw.h"
-#include "../../../datavector/clayer/cpu/datavectorcpu_types.h"
+#include "datavectorcpu.h"
 /* Note that fftw.h includes <complex.h> and <fftw3.h> (in that order, which is important!) */
 
 fftw_real_single_plan *new_fftw_real_single_plan(unsigned long size,

@@ -32,6 +32,7 @@ should call the __init__ of this base class.
 """
 
 from abc import ABCMeta, abstractmethod, abstractproperty
+from pycbc.base import PyCBCRootClass
 
 class FastFourierTransformBase(PyCBCRootClass):
     """
@@ -62,6 +63,7 @@ class FastFourierTransformBase(PyCBCRootClass):
                 self._fwdflag = 1
             else:
                 self._fwdflag = 0
+            self._transform_direction = transform_direction
 
         if data_precision not in ['single','double']:
             raise ValueError("Invalid value for data_precision")

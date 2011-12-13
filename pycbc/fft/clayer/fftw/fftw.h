@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <complex.h>
 #include <fftw3.h>
-#include "../../../datavector/clayer/cpu/datavectorcpu_types.h"
+#include "datavectorcpu.h"
 
 /* Struct common for single-precision plans */
 #define FFTWF_PLAN_STRUCT_DATA \

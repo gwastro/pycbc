@@ -98,7 +98,7 @@ class FastFourierTransformFFTW(FastFourierTransformBase,CpuProcessingObj):
 
         # Next, responsibilities specific to FFTW:
 
-        if measure_level is not in [0,1,2,3]:
+        if measure_level not in [0,1,2,3]:
             raise ValueError("Invalid measure_level; must be 0, 1, 2, or 3")
 
         # The values of all params not specific to FFTW have

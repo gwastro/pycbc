@@ -72,9 +72,9 @@ def pkg_config(libraries=[],library_dirs=[],include_dirs=[],pkg_libraries=[]):
         else:
             log.fatal("could not find %s library",pkg)
             sys.exit(1)
-        
+
     # Get the pck-config flags
-    if len(pkg_libraries)>0 : 
+    if len(pkg_libraries)>0 :
         for token in commands.getoutput("pkg-config --libs --cflags %s" % ' '.join(pkg_libraries)).split():
             if token[:2]== "-l":
                 libraries.append(token[2:])
@@ -82,7 +82,7 @@ def pkg_config(libraries=[],library_dirs=[],include_dirs=[],pkg_libraries=[]):
                 library_dirs.append(token[2:])
             if token[:2] == "-I":
                 include_dirs.append(token[2:])
-            
+
     return libraries,library_dirs,include_dirs
 
 
@@ -92,7 +92,7 @@ pycbc_sources = []
 pycbc_libraries, pycbc_library_dirs, pycbc_include_dirs=pkg_config(pkg_libraries=["fftw3","fftw3f","lal"])
 
 pycbc_sources += ['pycbc/clayer/cpu/pycbccpu.c','pycbc/clayer/except.c','pycbc/clayer/log.c']
-pycbc_extensions.append(Extension( 'pycbc.clayer._pycbccpu',  
+pycbc_extensions.append(Extension( 'pycbc.clayer._pycbccpu',
         sources = ['pycbc/clayer/cpu/pycbccpu.i'],
         include_dirs = pycbc_include_dirs + ['pycbc/clayer','./'],
         depends = ['pycbc/clayer/cpu/pycbccpu.h','pycbc/clayer/cpu/pycbccpu_private.h'],
@@ -121,7 +121,7 @@ pycbc_clean_files.append('pycbc/datavector/clayer/datavectorcpu.py')
 pycbc_clean_files.append('pycbc/datavector/clayer/cpu/datavectorcpu_wrap.c')
 
 pycbc_sources += ['pycbc/straindata/clayer/cpu/straindatacpu.c']
-pycbc_extensions.append(Extension( 'pycbc.straindata.clayer._straindatacpu', 
+pycbc_extensions.append(Extension( 'pycbc.straindata.clayer._straindatacpu',
     sources = ['pycbc/straindata/clayer/cpu/straindatacpu.i'],
     depends = ['pycbc/straindata/clayer/cpu/straindatacpu.h',
                'pycbc/straindata/clayer/cpu/straindatacpu_private.h'],
@@ -149,7 +149,7 @@ pycbc_clean_files.append('pycbc/templatebank/clayer/templatebankcpu.py')
 pycbc_clean_files.append('pycbc/templatebank/clayer/cpu/templatebankcpu_wrap.c')
 
 pycbc_sources += ['pycbc/matchedfilter/clayer/cpu/matchedfiltercpu.c']
-pycbc_extensions.append(Extension( 'pycbc.matchedfilter.clayer._matchedfiltercpu', 
+pycbc_extensions.append(Extension( 'pycbc.matchedfilter.clayer._matchedfiltercpu',
     sources = ['pycbc/matchedfilter/clayer/cpu/matchedfiltercpu.i'],
     depends = ['pycbc/matchedfilter/clayer/cpu/matchedfiltercpu.h',
                'pycbc/matchedfilter/clayer/cpu/matchedfiltercpu_private.h'],
@@ -176,6 +176,20 @@ pycbc_extensions.append(Extension( 'pycbc.waveformgenerator.clayer._waveformgene
 pycbc_clean_files.append('pycbc/waveformgenerator/clayer/waveformgeneratorcpu.py')
 pycbc_clean_files.append('pycbc/waveformgenerator/clayer/cpu/waveformgeneratorcpu_wrap.c')
 
+pycbc_sources += ['pycbc/fft/clayer/fftw/fftw.c']
+pycbc_extensions.append(Extension( 'pycbc.fft.clayer._fftw',
+    sources = ['pycbc/fft/clayer/fftw/fftw.i'],
+    depends = ['pycbc/fft/clayer/fftw/fftw.h',
+               'pycbc/fft/clayer/fftw/fftw_private.h'],
+    include_dirs = pycbc_include_dirs + ['pycbc/clayer/cpu','pycbc/datavector/clayer/cpu','pycbc/datavector/clayer'],
+    swig_opts = ['-outdir','pycbc/fft/clayer'],
+    libraries = ['pycbc','fftw3','fftw3f'],
+    runtime_library_dirs = ["$ORIGIN/../../../"],
+    extra_compile_args = ['-Wall','-fPIC']
+    ))
+pycbc_clean_files.append('pycbc/fft/clayer/fftw.py')
+pycbc_clean_files.append('pycbc/fft/clayer/fftw/fftw_wrap.c')
+
 #Pull in the needed information to build libpycbc from the extensions
 pycbc_depends = []
 pycbc_extra_compile_args = []
@@ -191,7 +205,7 @@ pycbc_extensions.insert(0,Extension('libpycbc',
     extra_compile_args = ['-Wall', '-fPIC'],
     include_dirs = pycbc_include_dirs
     ))
-    
+
 
 # ======== (END) CPU extension modules for the top-level package ==============
 
@@ -203,7 +217,7 @@ pycbc_opencl_extensions = []
 pycbc_opencl_sources = []
 
 pycbc_opencl_sources += ['pycbc/clayer/opencl/pycbcopencl.c','pycbc/clayer/opencl/openclexcept.c']
-pycbc_opencl_extensions.append(Extension( 'pycbc.clayer._pycbcopencl', 
+pycbc_opencl_extensions.append(Extension( 'pycbc.clayer._pycbcopencl',
         sources = ['pycbc/clayer/opencl/pycbcopencl.i'],
         include_dirs= ['pycbc/clayer','./','pycbc/clayer/opencl'],
         depends = ['pycbc/clayer/opencl/pycbcopencl.h',
@@ -232,7 +246,7 @@ pycbc_opencl_extensions.insert(0,Extension('libpycbcopencl',
     extra_compile_args = ['-Wall', '-fPIC'],
     include_dirs = pycbc_opencl_include_dirs
     ))
-    
+
 
 
 # ======== (END) OPENCL extension modules =====================================
@@ -255,7 +269,7 @@ class config(_config):
         self.with_opencl=None
     def finalize_options(self):
         _config.finalize_options(self)
-        
+
         #Check for OPENCL headers
         if (self.with_opencl!=None):
             log.warn("looking for opencl headers")
@@ -269,9 +283,9 @@ class config(_config):
         else:
             log.warn("will not build opencl modules")
             self.with_opencl=None
-    
+
         #Check for CUDA
-        
+
 # Run all of the testing scripts
 class test(Command):
     user_options = []
@@ -281,7 +295,7 @@ class test(Command):
     def finalize_options(self):
         #Populate the needed variables
         self.set_undefined_options('build',('build_lib', 'build_dir'))
-        
+
     def test_cpu(self):
         return find_modules("test_*cpu*.py")
     def test_opencl(self):
@@ -294,11 +308,11 @@ class test(Command):
 
         # Get the list of cpu test modules
         self.test_modules+= self.test_cpu()
-        
-        #FIXME WHEN WE HAVE THE CONFIGURATION DONE 
+
+        #FIXME WHEN WE HAVE THE CONFIGURATION DONE
         # self.test_modules+= self.test_cuda()
         # self.test_modules+= self.test_opencl()
-        
+
         # Run from the build directory
         sys.path.insert(0,self.build_dir)
 
@@ -311,7 +325,6 @@ class test(Command):
             log.good("All tests passed")
 	else:
             log.warn("Some or all tests failed: pycbc could be broken")
-	
 
 # class to clean up the files automatically generated by swig
 class clean(_clean):
@@ -327,23 +340,23 @@ class clean(_clean):
                 print 'removed {0}'.format(f)
             except:
                 pass
-          
+
 class build_ext(_build_ext):
     def initialize_options(self):
         _build_ext.initialize_options(self)
         self.install_dir = None
-        self.opencl_dir = None 
+        self.opencl_dir = None
     def finalize_options(self):
         _build_ext.finalize_options(self)
-        self.set_undefined_options('install',('install_lib','install_dir')) 
-        self.set_undefined_options('config',('with_opencl','opencl_dir'))   
+        self.set_undefined_options('install',('install_lib','install_dir'))
+        self.set_undefined_options('config',('with_opencl','opencl_dir'))
     def run(self):
         self.library_dirs.append(self.build_lib)
-        
+
         #Add opencl header to include_dir if we are building those modules
         if (self.opencl_dir != None):
             self.include_dirs+=[self.opencl_dir]
-            
+
         _build_ext.run(self)
 
 class build(_build):
@@ -357,11 +370,11 @@ class build(_build):
     def run(self):
         _build.run(self)
 
-        
+
 # Override the standard install to ensure that all the unittests pass
 class install(_install):
-    def run(self):      
-        if (not self.force):  
+    def run(self):
+        if (not self.force):
             self.run_command('test')
         _install.run(self)
 
@@ -390,7 +403,8 @@ setup (
                 'pycbc.straindata','pycbc.straindata.clayer',
                 'pycbc.templatebank','pycbc.templatebank.clayer',
                 'pycbc.matchedfilter','pycbc.matchedfilter.clayer',
-                'pycbc.waveformgenerator','pycbc.waveformgenerator.clayer'],
+                'pycbc.waveformgenerator','pycbc.waveformgenerator.clayer',
+                'pycbc.fft','pycbc.fft.clayer'],
     scripts = ['bin/pycbc_min_cpu_pipeline'],
 )
 
