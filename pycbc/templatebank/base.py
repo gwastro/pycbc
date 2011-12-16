@@ -98,10 +98,9 @@ class TemplateBankBase:
 
         # get the precondition vector which might be None depending on the 
         # approximation model   
-
-        self.precondition_factor = \
-        self.waveform_generator.perform_generate_precondition( 
-            self.pre_condition_vector_t)
+        #self.precondition_factor = \
+        #self.waveform_generator.perform_generate_precondition( 
+        #    self.pre_condition_vector_t)
                                     
 
     # iterator over the templates in the parameter space ----------------------
@@ -141,7 +140,7 @@ class TemplateBankBase:
         for row in process_params:
             if row.param == '--approximant':
                 self.approximation_model = row.value
-        if self.approximant is None:
+        if self.approximation_model is None:
             self.__logger.debug("no approximant found in template bank file")
             raise KeyError
 
