@@ -29,8 +29,8 @@ TemplateBank Cpu implementation class for the pycbc package
 from pycbc.cpu import CpuProcessingObj
 from pycbc.templatebank.base import TemplateBankBase
 
-from pycbc.datavector.clayer.cpu import complex_vector_single_cpu_t
-from pycbc.datavector.clayer.cpu import real_vector_single_cpu_t
+from pycbc.datavector.cpu import complex_vector_single_cpu_t
+from pycbc.datavector.cpu import real_vector_single_cpu_t
 
 from pycbc.waveformgenerator.cpu import WaveFormGeneratorCpu
 
@@ -56,4 +56,4 @@ class TemplateBankCpu(TemplateBankBase, CpuProcessingObj):
                 pre_condition_vector_t=real_vector_single_cpu_t, # precodition data 
                                                                  # is currently 
                                                                  # fixed to a cpu vector
-                waveform_generator_t= WaveFormGeneratorCpu) 
+                waveform_generator_t= WaveFormGeneratorCpu)
