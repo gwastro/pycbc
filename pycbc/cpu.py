@@ -42,11 +42,11 @@ import re
 
 class CpuProcessingObj(PyCbcProcessingObj):
 
-    def __init__(self, **kwargs):
+    def __init__(self, device_context, **kwargs):
 
         self.__logger= logging.getLogger('pycbc.CpuProcessingObj')
 
-        super(CpuProcessingObj, self).__init__(**kwargs)
+        super(CpuProcessingObj, self).__init__(device_context, **kwargs)
 
     def data_in(self, datavector):
         """
