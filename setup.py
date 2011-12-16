@@ -374,7 +374,7 @@ setup (
                 'pycbc.straindata','pycbc.straindata.clayer',
                 'pycbc.templatebank','pycbc.templatebank.clayer',
                 'pycbc.matchedfilter','pycbc.matchedfilter.clayer',
-                'pycbc.waveform'],
+                'pycbc.waveformgenerator','pycbc.waveformgenerator.clayer'],
     scripts = ['bin/pycbc_min_cpu_pipeline'],
 )
 
