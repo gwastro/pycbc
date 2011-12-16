@@ -35,6 +35,7 @@ pycbc (py-thon c-ompact b-inary c-oalecence) package
 
 import sys
 import random
+import optparse
 
 from pycbc.straindata.cpu import StrainDataCpu as StrainData 
 from pycbc.templatebank.cpu import TemplateBankCpu as TemplateBank 
@@ -54,6 +55,16 @@ logger= logging.getLogger('pycbc.main_script')
 start_message = 'Starting pycbc single detector minimal pipeline ...'
 logger.debug(start_message)
 print start_message
+
+parser = optparse.OptionParser()
+parser.add_option("-t", "--template-bank", dest="template_bank_file", help="read template bank from FILE", metavar="FILE", default=None)
+(options, args) = parser.parse_args()
+
+if options.template_bank_file:
+    logger.debug("reading templates from: {0}".format(options.template_bank_file))
+else:
+    print >> sys.stderr, "--template-bank must be specified"
+    raise ValueError
 
 # setup straindata
 search_time = 128 # typ design spec: 2048
@@ -89,7 +100,7 @@ with ProccessingTargetContext(1) as context:
     strain_data.render()
 
     # create 5 templates (testing the iterator of TemplateBank)
-    bank = TemplateBank( context, strain_data.segments_length, strain_data.segments_delta_x)
+    bank = TemplateBank( context, strain_data.segments_length, strain_data.segments_delta_x, options.template_bank_file)
     logger.debug("instanciated TemplateBank w/ waveform length: {0}".format(bank.waveform_length))
 
     # create matched filter
@@ -102,11 +113,13 @@ with ProccessingTargetContext(1) as context:
 
     # filter the data against the template bank
     for template in bank:        
-        htilde = bank.waveform_generator.perform_generate_waveform_filter(template)
-        #print("generating htilde {0}".format(repr(htilde)))
+        logger.debug("generating htilde for {0}".format(template))
+        # FIXME: this doesn not work properly
+        #htilde = bank.waveform_generator.perform_generate_waveform_filter(template)
         for stilde in strain_data:
-            logger.debug("call matchedfilt gensnr: {0}, {1}".format(stilde, htilde))
-            snr = matched_filter.perform_generate_snr(stilde, htilde)
+            logger.debug("call matchedfilt gensnr: {0}, {1}".format(stilde, template))
+            # FIXME: this does not work properly
+            #snr = matched_filter.perform_generate_snr(stilde, htilde)
             
     ############################################################################
     # prepare to leave the processing context (objects that contain device 
