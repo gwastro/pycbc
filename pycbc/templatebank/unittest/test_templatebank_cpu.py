@@ -33,7 +33,7 @@ unittest for the TemplateBank class
 """
 
 
-from pycbc.clayer.cpu import cpu_context_t
+from pycbc.cpu import cpu_context_t
 
 from pycbc.templatebank.cpu import TemplateBankCpu as DUT_TemplateBank
 
@@ -63,8 +63,8 @@ class TestTemplateBankCPU(unittest.TestCase):
         
         self.dut= DUT_TemplateBank(self.context, 
                                    self.wave_len, 
-                                   self.wave_dx) #, 
-                                   #'H1-TMPLTBANK-871154847-2048.xml.gz')
+                                   self.wave_dx, 
+                                   'share/H1-TMPLTBANK-953079039-2048.xml.gz')
 
         print "setup templatebank w/ approximation model: {0}".format(self.dut.approximation_model)
 
