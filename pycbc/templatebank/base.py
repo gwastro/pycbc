@@ -1,4 +1,4 @@
-# Copyright (C) 2011 Karsten Wiesner
+# Copyright (C) 2011 Karsten Wiesner, Drew Keppel
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -26,97 +26,133 @@
 Base class of template bank
 """
 
-from abc import ABCMeta, abstractmethod, abstractproperty
-from math import * 
 import random
+
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+from glue.ligolw.utils import ligolw_add
 
 import logging
 
-class TemplateBankBase(object):
-    
+from abc import ABCMeta, abstractmethod, abstractproperty
+
+class TemplateBankBase:
+    """
+    docstring for TemplateBank
+    """
     __metaclass__ = ABCMeta
-    
-    def __init__(self, context, n_templates, waveform_length, waveform_delta_x,
-                 waveform_frequency_series_t):
-        
-        # init members
-        self._context= context
-        self.__logger= logging.getLogger('pycbc.TemplateBankBase')
-        self.__templates= n_templates
-        self.__template_index = 0
-        self.__template_params= []
 
-        for i in range(self.__templates):
-            tmp = [i*1.0, i*0.5] # m1, m2 very prototyping model of a parameter space
-            self.__template_params.append(tmp)
+    # constructor -------------------------------------------------------------
+    def __init__(self, context, waveform_length=0, waveform_delta_x=1,
+            template_table_filename=None, waveform_approximant=None,
+            filter_waveform_vector_t=None, pre_condition_vector_t=None,
+            waveform_generator_t=None):
 
-        self.__logger.debug("prototyping templatebank: {0}".format(self.__template_params))
+        self.__logger = logging.getLogger('pycbc.TemplateBankBase')
+        self.__logger.debug("instanciate TemplateBankBase")
 
-        self.__waveform_length= waveform_length
-        self.__waveform_delta_x= waveform_delta_x
+        # call constructor of <arch>ProcessingObj (2nd parent of TemplateBankBase 
+        # derivative TemplatBank<arch>
+        super(TemplateBankBase, self).__init__(context) # setting the devicecontext!
+
+        self._sngl_inspiral_table = None        # SnglInspTable from ligolw
+        self._sngl_inspiral_table_fname = template_table_filename
+
+        self._template_index = 0
+
+        self.waveform_length = waveform_length
+        self.waveform_delta_x = waveform_delta_x
         
-        self.__waveform_frequency_series_t = waveform_frequency_series_t
-        
+        self.filter_waveform_vector_t = filter_waveform_vector_t
+        self.pre_condition_vector_t = pre_condition_vector_t
+
         # setup initial data vectors            
-        self.__waveform = self.__waveform_frequency_series_t(self._context,
-                                                        self.__waveform_length,
-                                                        self.__waveform_delta_x)
-    
+        self.waveform_filter = self.filter_waveform_vector_t(self._devicecontext,
+            self.waveform_length,
+            self.waveform_delta_x)
+        
 
-    #-interface-----------------------------------------------------------------
+        # try to obtain templates and approximation model from ligolw
+        try: 
+            if not self._sngl_inspiral_table_fname:
+                raise ValueError
 
-    @property
-    def waveform_length(self):
-        return self.__waveform_length
+            self.read_single_inspiral_table(self._sngl_inspiral_table_fname)
 
-    #---------------------------------------------------------------------------
+        except ValueError:
+            self.__logger.debug("no filename given")
+            raise ValueError
 
-    # iterate over templates in the parameter space
-    def next(self):
-        if self.__template_index == self.__templates:
-            raise StopIteration
-        self.__template_index = self.__template_index + 1
-        return self.__template_params[self.__template_index-1]
+        # override template bank approximant if given to constructor
+        if waveform_approximant:
+            self.approximation_model = waveform_approximant
 
-    # iterate over waveform buffers  
-    #def next(self):
-    #    if self.__waveform_index == self.__templates:
-    #        self.__waveform_index = 0
-    #        raise StopIteration
-    #    self.__waveform_index = self.__waveform_index + 1
-    #    return self.__waveforms[self.__waveform_index-1]
+        # instanciate waveform generator
+        self.waveform_generator = waveform_generator_t(self._devicecontext,
+            self.waveform_length,
+            self.waveform_delta_x,
+            self.approximation_model,
+            self.waveform_filter)
 
-    # define the iterater of TemplateBank. Other access patterns to the data 
-    # should be implemented by generators (i.g. reverse())
+        # get the precondition vector which might be None depending on the 
+        # approximation model   
+
+        self.precondition_factor = \
+        self.waveform_generator.perform_generate_precondition( 
+            self.pre_condition_vector_t)
+                                    
+
+    # iterator over the templates in the parameter space ----------------------
     def __iter__(self):
         """
         define the template bank object itself to iterate over it's inherent
         parameter space
         """
         return self
-        
-    def read_parameter_space(self):
+
+    def next(self):
+        if self._template_index == self._templates_num:
+            self._template_index = 0
+            raise StopIteration
+        self._template_index = self._template_index + 1
+        return self._sngl_inspiral_table[self._template_index-1]
+
+    # methods -----------------------------------------------------------------
+    def read_single_inspiral_table(self, filename, verbose=False):
+        """ 
+        load the xml file containing the templates and extract the sngl_inspiral table
+        """        
+        self.__logger.debug("loading templatebank parameterspace: %s"%(filename))
+
+        self._sngl_inspiral_table_fname = filename
+        xmldoc = ligolw_add.ligolw_add(ligolw.Document(), 
+            [self._sngl_inspiral_table_fname], verbose=verbose)
+
+        self._sngl_inspiral_table = table.get_table(xmldoc, 
+            lsctables.SnglInspiralTable.tableName)
+
+        self.__logger.debug("obtained %i templates"%(len(self._sngl_inspiral_table)))
+
+        process_params = table.get_table(xmldoc, 
+            lsctables.ProcessParamsTable.tableName)
+
+        for row in process_params:
+            if row.param == '--approximant':
+                self.approximation_model = row.value
+        if self.approximant is None:
+            self.__logger.debug("no approximant found in template bank file")
+            raise KeyError
+
+        self._templates_num = len(self._sngl_inspiral_table)
+        self._template_index = 0
+
+    def precondition_data(self, strain_data):
         """
-        read the parameter space of the template bank from a file or library
         """
+        # if self.precondition_data
+        #     strain_data *= self.precondition_data
+
         pass
-                
-    def perform_generate_waveform(self, template):
-        """
-        generate waveform on target architecture/device - get's into the 
-        ABC scheme later (like in Matchedfilter
-        perform_generate_snr ...) 
-        """
-            
-        # call the right approximation model generator with "template"!
-        # currently we generate noise for prototyping
-        for i in range(self.waveform_length):
-            self.__waveform[i] = random.uniform(-1,1)
-                
-        return self.__waveform
-            
-         
-            
-        
-        
 
