@@ -29,8 +29,8 @@ Waveform Generator Cpu implementation class for the pycbc package
 from pycbc.cpu import CpuProcessingObj
 from pycbc.waveformgenerator.base import WaveFormGeneratorBase
 
-from pycbc.waveformgenerator.clayer.cpu import gen_precon_vector_TaylorF2
-from pycbc.waveformgenerator.clayer.cpu import gen_waveform_filter_TaylorF2
+from pycbc.waveformgenerator.clayer.waveformgeneratorcpu import gen_precon_vector_TaylorF2
+from pycbc.waveformgenerator.clayer.waveformgeneratorcpu import gen_waveform_filter_TaylorF2
 
 import logging
 
@@ -48,12 +48,11 @@ class WaveFormGeneratorCpu(WaveFormGeneratorBase, CpuProcessingObj):
         
         super(WaveFormGeneratorCpu, self).__init__(
                                 context,  
-                                waveform_length=waveform_length, 
-                                waveform_delta_x=waveform_delta_x,
-                                approximation_model=approximation_model,
-                                waveform_filter=waveform_filter) 
+                                approximation_model=approximation_model)
                                 
         # mapping clayer functions according to approximation model
+        self.__logger.debug("Using approximation model " + 
+            "{0}".format(self._approximation_model))
         
         gen_precon_map={
             "TaylorF2":GenPreconVecTaylorF2(), 
@@ -76,8 +75,8 @@ class WaveFormGeneratorCpu(WaveFormGeneratorBase, CpuProcessingObj):
 
         self.gen_waveform_filter_from_row = \
             gen_waveform_filter_from_row_map[self._approximation_model]
-        self.__logger.debug("mapped self.gen_waveform_filter functor to " +
-            "{0}".format(self.gen_waveform_filter))
+        self.__logger.debug("mapped self.gen_waveform_filter_from_row functor to " +
+            "{0}".format(self.gen_waveform_filter_from_row))
 
         gen_waveform_filter_map = {
             "TaylorF2":GenWaveformFilterTaylorF2(),
@@ -88,7 +87,7 @@ class WaveFormGeneratorCpu(WaveFormGeneratorBase, CpuProcessingObj):
             "{0}".format(gen_waveform_filter_map))
 
         self.gen_waveform_filter = \
-            self._gen_waveform_filter_map[self._approximation_model]
+            gen_waveform_filter_map[self._approximation_model]
         self.__logger.debug("mapped self.gen_waveform_filter functor to " +
             "{0}".format(self.gen_waveform_filter))
 
@@ -149,8 +148,10 @@ class GenWaveformFilterTaylorF2:
     """
 
     def __init__(self):
+        self.__logger= logging.getLogger('pycbc.GenWaveformFilterTaylorF2')
+        self.__logger.debug("instanciate GenWaveformFilterTaylorF2")
+
         # status variables etc for/in clayer regrading this function goes here !
-        pass
 
     def __call__(self, waveform_filter, **kwargs):
 
@@ -159,12 +160,12 @@ class GenWaveformFilterTaylorF2:
 
 	for kwarg in used_kwargs:
 		if kwarg not in kwargs:
-			#FIXME: add logging message
+			self.__logger.debug("missing kwarg {0}".format(kwarg))
 			raise KeyError
 
 	for kwarg in kwargs:
 		if kwarg not in used_kwargs:
-			#FIXME: add logging message
+			self.__logger.debug("unused kwarg {0}".format(kwarg))
 			raise Warning
 
 	mass1 = kwargs['mass1'] #FIXME: need to multiply by solar_mass in kg
@@ -185,5 +186,6 @@ class GenWaveformFilterTaylorF2FromRow:
 
         mass1 = template.mass1 #FIXME: need to multiply by solar_mass in kg
         mass2 = template.mass2 #FIXME: need to multiply by solar_mass in kg
+
         gen_waveform_filter_TaylorF2(waveform_filter, mass1, mass2)
 
