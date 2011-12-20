@@ -405,6 +405,7 @@ setup (
                 'pycbc.matchedfilter','pycbc.matchedfilter.clayer',
                 'pycbc.waveformgenerator','pycbc.waveformgenerator.clayer',
                 'pycbc.fft','pycbc.fft.clayer'],
-    scripts = ['bin/pycbc_min_cpu_pipeline'],
+    scripts = ['bin/pycbc_min_cpu_pipeline',
+               'pycbc/matchedfilter/unittest/test_matchedfilter_cpu.py']
 )
 
