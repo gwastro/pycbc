@@ -105,7 +105,6 @@ with ProccessingTargetContext(1) as context:
 
     # create matched filter
     matched_filter = MatchedFilter(context, strain_data.segments_length, strain_data.segments_delta_x)
-    logger.debug("instanciated MatchedFilter w/ length: {0}".format(matched_filter.length))
 
     # instanciate result vectors
     #### snr = SnrResultTimeSeries(strain_data.segments_length, strain_data.segments_delta_x)
