@@ -26,95 +26,144 @@
 """
 MatchedFilter OpenCl implementation class for the pycbc package
 """
+from pycbc.matchedfilter.base import MatchedFilterBase
 
-# import framework related parent
-from pycbc.pycbc_opencl import OpenClProcessingObj
+# import modul data structure and processing functions from the clayer
+from pycbc.matchedfilter.clayer.matchedfilteropencl import matched_filter_opencl_t
+from pycbc.matchedfilter.clayer.matchedfilteropencl import gen_snr_opencl
+##### FIXME add to clayer from pycbc.matchedfilter.clayer.opencl import find_max_opencl
 
-# import algorithm related parents
-from matchedfilter_base import MatchedFilterBase
-from matchedfilter_base import GenSnrImplementationBase
-from matchedfilter_base import MaxImplementationBase
+# get functions from swig's pointer library to allow
+# call by reference from python to c 
 
-# import processing functions from the clayer 
-from matchedfilteropencl import gen_snr_opencl
-from matchedfilteropencl import matched_filter_opencl_t
+##### FIXME add to .i file --> for find max
+#from pycbc.matchedfilter.clayer.matchedfilteropencl import copy_ulongp
+#from pycbc.matchedfilter.clayer.matchedfilteropencl import copy_doublep
+#from pycbc.matchedfilter.clayer.matchedfilteropencl import ulongp_value
+#from pycbc.matchedfilter.clayer.matchedfilteropencl import doublep_value
+#from pycbc.matchedfilter.clayer.matchedfilteropencl import delete_ulongp
+#from pycbc.matchedfilter.clayer.matchedfilteropencl import delete_doublep
 
 
 # import member datavectors
 from pycbc.datavector.opencl import complex_vector_single_opencl_t
 from pycbc.datavector.opencl import real_vector_single_opencl_t
 
+from pycbc.opencl import OpenClProcessingObj
 
 import logging
 
 class MatchedFilterOpenCl(MatchedFilterBase, OpenClProcessingObj):
 
     def __init__(self, context, length=0, delta_x=1):
+
         self.__logger= logging.getLogger('pycbc.MatchedFilterOpenCl')
         self.__logger.debug("instanciated MatchedFilterOpenCl") 
 
-        self.__length= length
-        self.__delta_x= delta_x
-        
         super(MatchedFilterOpenCl, self).__init__(context, 
-                matched_filter_opencl_t,
-                self.__length, 
-                self.__delta_x, 
-                GenSnrImplementationOpenCl, MaxImplementationOpenCl,
+                length, 
+                delta_x, 
                 snr_vector_t=    real_vector_single_opencl_t, 
                 qtilde_vector_t= complex_vector_single_opencl_t, 
-                q_vector_t =     complex_vector_single_opencl_t, 
-                derived_mfilt =  self)
+                q_vector_t =     complex_vector_single_opencl_t)
 
+        self.__logger.debug("A")                
+        # instantiate the matched filter data structure in the clayer
+        self._mf_clayer_state = matched_filter_opencl_t(self._context)
+        self.__logger.debug("B")        
 
-class  GenSnrImplementationOpenCl(GenSnrImplementationBase):
+        # instantiate the matched filter clayer functions from functors
+        self._gen_snr_opencl=  GenerateSnrOpenCl()
+        self.__logger.debug("C")
+#### FIXME        self._find_max_opencl= FindMaximumOpenCl()
+                
+                
 
-    def __init__(self, owner_mfilt):
-    
-        self.__logger= logging.getLogger('pycbc.GenSnrImplementationOpenCl')
-        self.__logger.debug("instanciated GenSnrImplementationOpenCl")
-    
-        super(GenSnrImplementationOpenCl, self).__init__(owner_mfilt)
-    
-    def generate_snr(self, stilde, htilde):
+    # implementation of ABC's abstractmethod
+    def perform_generate_snr(self, stilde, htilde):
         """
-        Process matched filtering by generating snr timeseries \rho(t)
+        calls the generate_snr methode of the derived implementation object
+        @type  context: Device Context
+        @param context: Input: Device Context
+        @type  stilde: DataVectorBase
+        @param stilde: Input: Straindata frequency domain
+        @type  htilde: DataVectorBase
+        @param htilde: Input: Template waveform frequency domain
+        @rtype  snr:   DataVectorBase
+        @return snr:   Output: Signal to noise ratio series
         """
-
-        # check and possibly transfer input datavectors
-        self.__logger.debug("call data_in(stilde) for {0}".format(stilde))
-        stilde= self._owner_mfilt.data_in(stilde)
-        self.__logger.debug("after data_in(stilde) for {0}".format(stilde))
         
-        self.__logger.debug("call data_in(htilde) for {0}".format(htilde))
-        htilde= self._owner_mfilt.data_in(htilde)
-        self.__logger.debug("after data_in(htilde) for {0}".format(htilde))
+        stilde= self.data_in(stilde)
+        htilde= self.data_in(htilde)
 
-        self.__logger.debug("call gen_snr_opencl with clayer members {0}".format(self._owner_mfilt._clayer_members))
-
-        # this finally calls the clayer function:
-        gen_snr_opencl(self._owner_mfilt._devicecontext,
-                       self._owner_mfilt._clayer_members,
-                       self._owner_mfilt._snr,
-                       stilde, htilde)
+        self._gen_snr_opencl(self._context, self._mf_clayer_state, 
+                             self._snr, stilde, htilde)
+                             # FIXME at gen_snr_cpu : self._q, self._qtilde, 1.0, 1.0) 
         
-class  MaxImplementationOpenCl(MaxImplementationBase):
+        return self._snr
 
-    def __init__(self, owner_mfilt):
-    
-        self.__logger= logging.getLogger('pycbc.MaxImplementationOpenCl')
-        self.__logger.debug("instanciated MaxImplementationOpenCl") 
-    
-        super(MaxImplementationOpenCl, self).__init__(owner_mfilt)
-    
-    def max(self, snr):
+
+
+    def perform_find_max(self, snr):
         """
-        Find the maximum in the generated snr timeseries \rho(t)
+        calls the max methode of the derived implementation object
+        @rtype:  snr:  DataVectorBase
+        @return: snr:  Signal to noise ratio series
+        @rtype:  float
+        @return: Maximum of snr series
         """
+        pass
+# FIXME add find max in clayer        return self._find_max_opencl(self._context, snr)
 
-        assert repr(snr).find("datavectoropencl") >= 0, "try to call gen_snr_opencl() with wrong type of datavector for snr"
-        
-        self.__logger.debug("finding maximum of snr series - to be implemented in clayer")            
-        return 5.5
-        
+## Functors of the matched filter cpu clayer extension
+#
+class GenerateSnrOpenCl:
+    """
+    functor definition for gen_snr_cpu()
+    """                                           #FIXME use kwargs
 
+    def __init__(self):
+        # status variables etc for/in clayer regrading this function goes here !
+        pass
+    
+    ## Functor GenSnr 
+    #  @param self The object pointer.
+    #  @param output_snr FIXME describe purpose
+    #  @param stilde     FIXME describe purpose
+    #  @param htilde     FIXME describe purpose
+    #  @param q          FIXME describe purpose
+    #  @param qtilde     FIXME describe purpose
+    #  @param f_min      FIXME describe purpose
+    #  @param sigma_sq   FIXME describe purpose
+    def __call__(self, context, mf_clayer_state, output_snr, stilde, htilde): # FIXME at gen_snr_cpu : , q, qtilde, f_min, sigma_sq ):
+        
+        gen_snr_opencl(context,  mf_clayer_state, output_snr, stilde, htilde) # FIXME at gen_snr_cpu : , q, qtilde, f_min, sigma_sq)
+        return 
+
+#class FindMaximumOpenCl:
+#    """
+#    functor definition for find_max_cpu()
+#    """
+#                                     #FIXME use kwargs#
+#
+#
+#    def __init__(self):
+#        # status variables etc for/in clayer regrading this function goes here !
+#        pass
+    
+    ## Functor GenSnr 
+    #  @param self The object pointer.
+    #  @param snr        FIXME describe purpose
+    #  @param max        FIXME describe purpose
+    #  @param index      FIXME describe purpose
+#    def __call__(self, context, snr):
+#        max= copy_doublep(0.0)
+#        index= copy_ulongp(0)
+#        
+#        find_max_opencl(context, max, index, snr)
+#        
+#        max_ret= doublep_value(max)           ## FIXME probably put all pointer alloc/free to constructor
+#        index_ret= ulongp_value(index)
+#        delete_doublep(max)
+#        delete_ulongp(index)
+#        return max_ret, index_ret

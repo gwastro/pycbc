@@ -42,7 +42,7 @@ typedef struct
 matched_filter_opencl_t;
 
 
-extern "C" void gen_snr_opencl(cl_context_t* context,
+void gen_snr_opencl(cl_context_t* context,
                     matched_filter_opencl_t * matchedfilter,
                     real_vector_single_opencl_t* snr,
                     complex_vector_single_opencl_t* stilde, 

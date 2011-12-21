@@ -46,4 +46,9 @@ void gen_snr_cpu(cpu_context_t* context,
                  double f_min,
                  double sigma_sq);
 
+void find_max_cpu(cpu_context_t* context,
+                  double* max,
+                  unsigned long* index,
+                  real_vector_single_cpu_t* snr);
+
 #endif /* MATCHEDFILTERCPU_H */

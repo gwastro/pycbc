@@ -31,7 +31,7 @@
 #include <stdlib.h>
 
 // prototypes of all methodes that will extend pure c typedefs
-extern "C" matched_filter_opencl_t* new_matched_filter_opencl_t(cl_context_t*);
+matched_filter_opencl_t* new_matched_filter_opencl_t(cl_context_t*);
 void delete_matched_filter_opencl_t( matched_filter_opencl_t* );
 
 #endif /* MATCHEDFILTEROPENCL_PRIVATE_H */

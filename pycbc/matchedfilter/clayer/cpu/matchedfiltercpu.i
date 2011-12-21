@@ -8,6 +8,13 @@
 
 %feature("autodoc", "1");
 
+
+%include cpointer.i  // allow python to allocate and dereference pointers
+// for the purpose of call by reference at clayer functions
+%pointer_functions(unsigned long, ulongp);
+%pointer_functions(double, doublep);
+
+
 // This goes directly to the wrap-code (no swig preprocess)
 // wrap code needs to have typedefs and function prototypes!
 %{

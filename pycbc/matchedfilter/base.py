@@ -23,10 +23,12 @@
 # =============================================================================
 #
 
+"""@package docstring
+Base class of matched filter
 """
-Abstract Base Class (ABC) of matched filters in the pycbc package based on:
-<http://www.python.org/dev/peps/pep-3119/>
-"""
+## @package matchedfilter.base
+#  Base class of matched filter
+
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 
@@ -37,51 +39,28 @@ class MatchedFilterBase:
     __metaclass__ = ABCMeta
 
     def __init__(self, context, 
-                 clayer_members_t,
-                 length, delta_x, gen_snr_impl, max_impl, 
+                 length, delta_x, 
                  snr_vector_t =    None, 
                  qtilde_vector_t = None, 
-                 q_vector_t =      None, 
-                 derived_mfilt =   None):
+                 q_vector_t =      None):
 
-        # actually calling init of <arch>ProcessingObj (that's the way super() does)
+        # calling constructor of <arch>ProcessingObj
         super(MatchedFilterBase, self).__init__(context)
 
         self.__logger= logging.getLogger('pycbc.MatchedFilterBase')
         self.__logger.debug("instanciated MatchedFilterBase")
 
-        self.__context = context
-        self.__length = length
-        self.__delta_x = delta_x
-
-        # instanciate the clayer part of matched filter members
-        self._clayer_members = clayer_members_t(self.__context)
+        self._context = context
+        self._length =  length
+        self._delta_x = delta_x
 
         # instanciate member datavectors:
-        self._snr= snr_vector_t(self.__context, self.__length, self.__delta_x)
-        self._qtilde= qtilde_vector_t(self.__context, self.__length, self.__delta_x)
-        self._q= q_vector_t(self.__context, self.__length, self.__delta_x)
+        self._snr= snr_vector_t(self._context, self._length, self._delta_x)
+        self._qtilde= qtilde_vector_t(self._context, self._length, self._delta_x)
+        self._q= q_vector_t(self._context, self._length, self._delta_x)
 
-        # instanciate implementation class members of the processing functions
-        self.__gen_snr_impl = gen_snr_impl(derived_mfilt)
-        if not isinstance(self.__gen_snr_impl, GenSnrImplementationBase):
-            self.__logger.debug("MatchedFilterBase.__init__: gen_snr_impl is not a derivate of GenSnrImplementationBase")
-            exit(0)
 
-        self.__max_impl = max_impl(derived_mfilt)
-        if not isinstance(self.__max_impl, MaxImplementationBase):
-            self.__logger.debug("MatchedFilterBase.__init__: max_impl is not a derivate of MaxImplementationBase")
-            exit(0)
-
-    #-properties----------------------------------------------------------------
- 
-    @property
-    def length(self):
-        return self.__length
-
-    #---------------------------------------------------------------------------
-            
-        
+    @abstractmethod    
     def perform_generate_snr(self, stilde, htilde):
         """
         calls the generate_snr methode of the derived implementation object
@@ -94,12 +73,10 @@ class MatchedFilterBase:
         @rtype  snr:   DataVectorBase
         @return snr:   Output: Signal to noise ratio series
         """
-        self.__gen_snr_impl.generate_snr(stilde, htilde)
-        
-        return self._snr
-
-
-    def perform_max(self, snr):
+        pass        
+       
+    @abstractmethod
+    def perform_find_max(self, snr):
         """
         calls the max methode of the derived implementation object
         @rtype:  snr:  DataVectorBase
@@ -107,36 +84,5 @@ class MatchedFilterBase:
         @rtype:  float
         @return: Maximum of snr series
         """
-        return self.__max_impl.max(snr)
-        
-
-class GenSnrImplementationBase:
-    
-    __metaclass__ = ABCMeta
-    
-    def __init__(self, owner_mfilt):
-
-        self.__logger= logging.getLogger('pycbc.GenSnrImplementationBase')
-        self.__logger.debug("instanciated GenSnrImplementationBase")
-
-        self._owner_mfilt = owner_mfilt
-        
-    @abstractmethod
-    def generate_snr(self, stilde, htilde ,snr):
         pass
-        
-class MaxImplementationBase:
-    
-    __metaclass__ = ABCMeta
-    
-    def __init__(self, owner_mfilt):
-
-        self.__logger= logging.getLogger('pycbc.MaxImplementationBase')
-        self.__logger.debug("instanciated MaxImplementationBase") 
-        self._owner_mfilt = owner_mfilt
-        
-    @abstractmethod
-    def max(self, snr):
-        pass
-        
         
