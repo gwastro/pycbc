@@ -1,4 +1,4 @@
-# Copyright (C) 2011 Karsten Wiesner
+# Copyright (C) 2011 Karsten Wiesner, Josh Willis
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -46,12 +46,12 @@ class StrainDataCpu(StrainDataBase):
     """
     CPU derivate of straindata class
     """
-    
+
     def __init__(self, context, t_start, t_end, n_segments, sample_freq, interferometer):
         """
         Constructor of the straindata class
         @type t_start: int
-        @param t_start: GPS start time of the strain data 
+        @param t_start: GPS start time of the strain data
         @type t_end: int
         @param t_end: GPS start time of the strain data
         @type n_segments: int
@@ -59,13 +59,13 @@ class StrainDataCpu(StrainDataBase):
         @type sample_freq: double
         @param sample_freq: Sample frequency in Hz
         @type interferometer: string
-        @param interferometer: Interferometer name (H0, H1, L1 etc.) 
+        @param interferometer: Interferometer name (H0, H1, L1 etc.)
         @rtype: none
         @return: none
         """
-    
+
         super(StrainDataCpu, self).__init__(context,
-                    t_start, t_end, n_segments, 
+                    t_start, t_end, n_segments,
                     sample_freq, interferometer,
                     initial_time_series_t = real_vector_double_cpu_t,
                     time_series_t =         real_vector_single_cpu_t,
@@ -75,28 +75,28 @@ class StrainDataCpu(StrainDataBase):
     def render(self):
         """
         Renders straindata to the final processing architecture (ig. transfer
-        the data to the GPU by copy it into a datavectoropencl memory object) 
+        the data to the GPU by copy it into a datavectoropencl memory object)
         @rtype: none
         @return: none
         """
         pass         # nothing to render in cpu version (data remaines in place)
-                                            
-                                                                                                                                                                          
+
+
 class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
     """
-    Implementation class of segmentation and fourier transform on 
+    Implementation class of segmentation and fourier transform on
     CPU architecture (currently we will perform this task exclusively
-    on the CPU because it is out of the hot loop. Hence it consumes relatively 
+    on the CPU because it is out of the hot loop. Hence it consumes relatively
     low computepower)
     """
 
-    def __init__(self, owner_mstraindat, 
-                 segments_length, overlap_fact, input_buf_t, 
+    def __init__(self, owner_mstraindat,
+                 segments_length, overlap_fact, input_buf_t,
                  output_buffer_t):
         """
         Constructor of the segmenting-implementation class
         @type length: int
-        @param length: segments length 
+        @param length: segments length
         @type overlap_fact: double
         @param overlap_fact: overlapping factor
         @type input_buf_t: class
@@ -106,13 +106,13 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         @rtype: none
         @return: none
         """
-        
+
         self.__logger= logging.getLogger('pycbc.FftSegmentsImplementationFftw')
 
         assert repr(input_buf_t).find("pycbc.datavector.clayer.datavectorcpu") >= 0, "try to \n\
         instanciate FftSegmentsImplementationFftw CPU implementation with \n\
         wrong type of datavector for input_buf"
-        
+
         assert repr(output_buffer_t).find("pycbc.datavector.clayer.datavectorcpu") >= 0, "try to \n\
         instanciate FftSegmentsImplementationFftw CPU implementation with \n\
         wrong type of datavector for output_buffers_t"
@@ -125,17 +125,17 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         self.__output_buffer_t =  output_buffer_t
 
         # create fft plan
-        delta_x_tmp = 1.0 # not used in fft plan generation, just for 
+        delta_x_tmp = 1.0 # not used in fft plan generation, just for
                           # datavector constructor
         in_tmp  = self.__input_buf_t(self._owner_mstraindat._context,
                                      segments_length, delta_x_tmp)
         out_tmp = self.__output_buffer_t(self._owner_mstraindat._context,
                                          segments_length, delta_x_tmp)
-        self.__fft_forward_plan= fftw_generate_plan(segments_length, in_tmp, 
+        self.__fft_forward_plan= fftw_generate_plan(segments_length, in_tmp,
         out_tmp, "FFTW_FORWARD", "FFTW_ESTIMATE")
 
         self.__logger.debug("instanciated FftSegmentsImplementationCpu")
-    
+
     def fft_segments(self, input_buf, output_buf):
         """
         Process ffts of strain data segments
@@ -147,7 +147,7 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         @return: none
 
         """
-        
+
         self.__logger.debug("performing fft w/ plan {0}".
         format(self.__fft_forward_plan))
 
@@ -155,8 +155,8 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         for output_buffer_segment in output_buf:
             self.__logger.debug("input_buf_offset: {0}".
             format(input_buf_offset))
-            fftw_transform_segments(self.__fft_forward_plan, input_buf, 
+            fftw_transform_segments(self.__fft_forward_plan, input_buf,
                                     input_buf_offset, output_buffer_segment)
-            input_buf_offset = int( input_buf_offset + self.__segments_length * 
+            input_buf_offset = int( input_buf_offset + self.__segments_length *
                                     (1 - self.__overlap_fact) )
-                                    
+
