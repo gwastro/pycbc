@@ -44,7 +44,7 @@ int copy_subvector_complex_single_cpu(complex_vector_double_cpu_t *src, complex_
 int copy_subvector_real_double_cpu(complex_vector_double_cpu_t *src, complex_vector_double_cpu_t *dst,
 				   unsigned long offset, unsigned long length);
 int copy_subvector_real_single_cpu(complex_vector_double_cpu_t *src, complex_vector_double_cpu_t *dst,
-				   unsigned long offset, unsigned long length)
+				   unsigned long offset, unsigned long length);
 
 void* fftw_generate_plan(unsigned long length, real_vector_single_cpu_t* in_tmp,
                          complex_vector_single_cpu_t* out_tmp, char* sign, char* style);

@@ -15,10 +15,9 @@
 #include "pycbccpu.h" 
 #include "straindatacpu.h"
 #include "straindatacpu_private.h"
-#include <except.i>
 %}
 
-%include <except.i>
+%include <pycbc/clayer/except.i>
 
 %pythoncode %{
     import types
