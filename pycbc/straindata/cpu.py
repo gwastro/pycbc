@@ -39,6 +39,7 @@ from pycbc.datavector.cpu import complex_vector_single_cpu_t
 from pycbc.straindata.clayer.straindatacpu import fftw_generate_plan
 from pycbc.straindata.clayer.straindatacpu import fftw_transform_segments
 import pycbc.straindata.clayer.straindatacpu as sdcpu
+import pycbc.fft.fftw as fftw
 
 import logging
 
@@ -93,7 +94,7 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
 
     def __init__(self, owner_mstraindat,
                  segments_length, overlap_fact, input_buf_t,
-                 output_buffer_t):
+                 output_buffer_t, context):
         """
         Constructor of the segmenting-implementation class
         @type length: int
@@ -124,16 +125,29 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         self.__overlap_fact = overlap_fact
         self.__input_buf_t = input_buf_t
         self.__output_buffer_t =  output_buffer_t
+        self._context = context
 
-        # create fft plan
-        delta_x_tmp = 1.0 # not used in fft plan generation, just for
-                          # datavector constructor
-        in_tmp  = self.__input_buf_t(self._owner_mstraindat._context,
-                                     segments_length, delta_x_tmp)
-        out_tmp = self.__output_buffer_t(self._owner_mstraindat._context,
-                                         segments_length, delta_x_tmp)
-        self.__fft_forward_plan= fftw_generate_plan(segments_length, in_tmp,
-        out_tmp, "FFTW_FORWARD", "FFTW_ESTIMATE")
+        # =============================
+        # NOTE (JLW): The current FFTW wrapper does *not* explicitly make the plan available to
+        # calling functions, so the code below has been commented out and replaced with its
+        # nearest equivalent.
+        # ==============================
+        ## create fft plan
+        #delta_x_tmp = 1.0 # not used in fft plan generation, just for
+        #                  # datavector constructor
+        #in_tmp  = self.__input_buf_t(self._owner_mstraindat._context,
+        #                             segments_length, delta_x_tmp)
+        #out_tmp = self.__output_buffer_t(self._owner_mstraindat._context,
+        #                                 segments_length, delta_x_tmp)
+        #self.__fft_forward_plan= fftw_generate_plan(segments_length, in_tmp,
+        #out_tmp, "FFTW_FORWARD", "FFTW_ESTIMATE")
+        # ==============================
+        self._fft = fftw.FastFourierTransformFFTW(vector_length=segments_length,
+                                                  data_type='real',
+                                                  transform_direction='forward',
+                                                  data_precision='single',
+                                                  measure_level=1,
+                                                  device_context=self._context)
 
         self.__logger.debug("instanciated FftSegmentsImplementationCpu")
 
@@ -149,15 +163,36 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
 
         """
 
-        self.__logger.debug("performing fft w/ plan {0}".
-        format(self.__fft_forward_plan))
+        # ===========================
+        # NOTE (JLW): Code below again commented out, and replaced with
+        # equivalent code that uses the pycbc.fft.fftw module
+        # ===========================
+        #self.__logger.debug("performing fft w/ plan {0}".
+        #format(self.__fft_forward_plan))
+
+        #input_buf_offset = 0
+        #for output_buffer_segment in output_buf:
+        #    self.__logger.debug("input_buf_offset: {0}".
+        #    format(input_buf_offset))
+        #    fftw_transform_segments(self.__fft_forward_plan, input_buf,
+        #                            input_buf_offset, output_buffer_segment)
+        #    input_buf_offset = int( input_buf_offset + self.__segments_length *
+        #                            (1 - self.__overlap_fact) )
+        # ===========================
+        self.__logger.debug("Performing segmentation using FFT {0}".
+                            format(self._fft))
 
         input_buf_offset = 0
+        tmp_input = self.__input_buf_t(self._owner_mstraindat._context,
+                                       self.__segments_length,
+                                       input_buf.delta_x)
         for output_buffer_segment in output_buf:
-            self.__logger.debug("input_buf_offset: {0}".
-            format(input_buf_offset))
-            fftw_transform_segments(self.__fft_forward_plan, input_buf,
-                                    input_buf_offset, output_buffer_segment)
+            self.__logger.debug("input_buf_offset: {0}".format(input_buf_offset))
+            sdcpu.copy_subvector_real_single_cpu(input_buf,tmp_input,input_buf_offset,
+                                                 self.__segments_length)
+            self._fft.perform_transform(tmp_input,output_buffer_segment)
             input_buf_offset = int( input_buf_offset + self.__segments_length *
                                     (1 - self.__overlap_fact) )
+
+        del tmp_input
 
