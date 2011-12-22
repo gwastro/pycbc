@@ -10,76 +10,76 @@
   another.  To be eventually replaced by slice arguments to datavectors.
  */
 
-int copy_subvector_complex_double_cpu(complex_vector_double_cpu_t *src,
-				      complex_vector_double_cpu_t *dst,
-				      unsigned long offset,
-				      unsigned long length)
+void copy_subvector_complex_double_cpu(complex_vector_double_cpu_t *src,
+				       complex_vector_double_cpu_t *dst,
+				       unsigned long offset,
+				       unsigned long length)
 {
   if (dst->meta_data.vector_length < length){
     pycbc_throw_exception(PYCBC_INDEX_ERROR,"Destination datavector too small to hold source subvector\n");
-    return PYCBC_INDEX_ERROR;
+    return;
   }
   if (src->meta_data.vector_length < offset + length){
     pycbc_throw_exception(PYCBC_INDEX_ERROR,"Source subvector ends after source vector\n");
-    return PYCBC_INDEX_ERROR;
+    return;
   }
 
   memcpy((void *) dst->data, (void *) &(src->data[offset]), length*sizeof(*(src->data)));
-  return PYCBC_NO_ERROR;
+  return;
 }
 
-int copy_subvector_complex_single_cpu(complex_vector_single_cpu_t *src,
-				      complex_vector_single_cpu_t *dst,
-				      unsigned long offset,
-				      unsigned long length)
+void copy_subvector_complex_single_cpu(complex_vector_single_cpu_t *src,
+				       complex_vector_single_cpu_t *dst,
+				       unsigned long offset,
+				       unsigned long length)
 {
   if (dst->meta_data.vector_length < length){
     pycbc_throw_exception(PYCBC_INDEX_ERROR,"Destination datavector too small to hold source subvector\n");
-    return PYCBC_INDEX_ERROR;
+    return;
   }
   if (src->meta_data.vector_length < offset + length){
     pycbc_throw_exception(PYCBC_INDEX_ERROR,"Source subvector ends after source vector\n");
-    return PYCBC_INDEX_ERROR;
+    return;
   }
 
   memcpy((void *) dst->data, (void *) &(src->data[offset]), length*sizeof(*(src->data)));
-  return PYCBC_NO_ERROR;
+  return;
 }
 
-int copy_subvector_real_double_cpu(real_vector_double_cpu_t *src,
-				   real_vector_double_cpu_t *dst,
-				   unsigned long offset,
-				   unsigned long length)
+void copy_subvector_real_double_cpu(real_vector_double_cpu_t *src,
+				    real_vector_double_cpu_t *dst,
+				    unsigned long offset,
+				    unsigned long length)
 {
   if (dst->meta_data.vector_length < length){
     pycbc_throw_exception(PYCBC_INDEX_ERROR,"Destination datavector too small to hold source subvector\n");
-    return PYCBC_INDEX_ERROR;
+    return;
   }
   if (src->meta_data.vector_length < offset + length){
     pycbc_throw_exception(PYCBC_INDEX_ERROR,"Source subvector ends after source vector\n");
-    return PYCBC_INDEX_ERROR;
+    return;
   }
 
   memcpy((void *) dst->data, (void *) &(src->data[offset]), length*sizeof(*(src->data)));
-  return PYCBC_NO_ERROR;
+  return;
 }
 
-int copy_subvector_real_single_cpu(real_vector_single_cpu_t *src,
-				   real_vector_single_cpu_t *dst,
-				   unsigned long offset,
-				   unsigned long length)
+void copy_subvector_real_single_cpu(real_vector_single_cpu_t *src,
+				    real_vector_single_cpu_t *dst,
+				    unsigned long offset,
+				    unsigned long length)
 {
   if (dst->meta_data.vector_length < length){
     pycbc_throw_exception(PYCBC_INDEX_ERROR,"Destination datavector too small to hold source subvector\n");
-    return PYCBC_INDEX_ERROR;
+    return;
   }
   if (src->meta_data.vector_length < offset + length){
     pycbc_throw_exception(PYCBC_INDEX_ERROR,"Source subvector ends after source vector\n");
-    return PYCBC_INDEX_ERROR;
+    return;
   }
 
   memcpy((void *) dst->data, (void *) &(src->data[offset]), length*sizeof(*(src->data)));
-  return PYCBC_NO_ERROR;
+  return;
 }
 
 //

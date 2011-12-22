@@ -37,13 +37,13 @@ strain_data_cpu_t;
 
 //prototypes of all functions that swig wraps to methods
 
-int copy_subvector_complex_double_cpu(complex_vector_double_cpu_t *src, complex_vector_double_cpu_t *dst,
+void copy_subvector_complex_double_cpu(complex_vector_double_cpu_t *src, complex_vector_double_cpu_t *dst,
 				      unsigned long offset, unsigned long length);
-int copy_subvector_complex_single_cpu(complex_vector_single_cpu_t *src, complex_vector_single_cpu_t *dst,
+void copy_subvector_complex_single_cpu(complex_vector_single_cpu_t *src, complex_vector_single_cpu_t *dst,
 				      unsigned long offset, unsigned long length);
-int copy_subvector_real_double_cpu(real_vector_double_cpu_t *src, real_vector_double_cpu_t *dst,
+void copy_subvector_real_double_cpu(real_vector_double_cpu_t *src, real_vector_double_cpu_t *dst,
 				   unsigned long offset, unsigned long length);
-int copy_subvector_real_single_cpu(real_vector_single_cpu_t *src, real_vector_single_cpu_t *dst,
+void copy_subvector_real_single_cpu(real_vector_single_cpu_t *src, real_vector_single_cpu_t *dst,
 				   unsigned long offset, unsigned long length);
 
 void* fftw_generate_plan(unsigned long length, real_vector_single_cpu_t* in_tmp,
