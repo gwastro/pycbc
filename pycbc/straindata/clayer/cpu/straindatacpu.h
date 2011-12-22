@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Karsten Wiesner
+// Copyright (C) 2011 Karsten Wiesner, Josh Willis
 //
 // This program is free software; you can redistribute it and/or modify it
 // under the terms of the GNU General Public License as published by the
@@ -36,6 +36,15 @@ typedef struct
 strain_data_cpu_t;
 
 //prototypes of all functions that swig wraps to methods
+
+int copy_subvector_complex_double_cpu(complex_vector_double_cpu_t *src, complex_vector_double_cpu_t *dst,
+				      unsigned long offset, unsigned long length);
+int copy_subvector_complex_single_cpu(complex_vector_double_cpu_t *src, complex_vector_double_cpu_t *dst,
+				      unsigned long offset, unsigned long length);
+int copy_subvector_real_double_cpu(complex_vector_double_cpu_t *src, complex_vector_double_cpu_t *dst,
+				   unsigned long offset, unsigned long length);
+int copy_subvector_real_single_cpu(complex_vector_double_cpu_t *src, complex_vector_double_cpu_t *dst,
+				   unsigned long offset, unsigned long length)
 
 void* fftw_generate_plan(unsigned long length, real_vector_single_cpu_t* in_tmp,
                          complex_vector_single_cpu_t* out_tmp, char* sign, char* style);
