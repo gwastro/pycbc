@@ -69,15 +69,17 @@ void gen_snr_cpu( cpu_context_t* context,
     
     /* perform the correlation */
     correlate_complex_freq_vectors( qtilde, stilde, htilde, f_min );
-    /* complex_vec_fft( q, qtilde, plan->theplan ); */
-  
+
+    /* execute complex single ifft */
+    execute_complex_single_fft(q, qtilde, plan);
+
     /* normalize the snr */
     for ( j = 0; j < q->meta_data.vector_length; ++j )
-        snr->data[j] = (float)j*5.0; ///////// FIXME ///////// temporarily for testing mf base in python layer 
-    /*  snr->data[j] = (norm/sigma_sq) * 
+      /*    snr->data[j] = (float)j*5.0; ////// just for testing: some prototyping code to get snr full with some data */
+      snr->data[j] = (norm/sigma_sq) * 
         (__real__ q->data[j] * __real__ q->data[j] + 
          __imag__ q->data[j] * __imag__ q->data[j]);
-    */
+  
     snr->meta_data.delta_x = q->meta_data.delta_x;
   
     return;
