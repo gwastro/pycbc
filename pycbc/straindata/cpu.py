@@ -38,6 +38,7 @@ from pycbc.datavector.cpu import complex_vector_single_cpu_t
 # Swigged C-layer functions
 from pycbc.straindata.clayer.straindatacpu import fftw_generate_plan
 from pycbc.straindata.clayer.straindatacpu import fftw_transform_segments
+import pycbc.straindata.clayer.straindatacpu as sdcpu
 
 import logging
 

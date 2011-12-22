@@ -2,6 +2,8 @@
 #include <datavectorcpu.h>
 #include <except.h> /* For PyCBC exceptions */
 #include <string.h> /* For memcpy */
+#include "straindatacpu.h"
+#include "straindatacpu_private.h"
 
 /*
   Temporary functions to copy the contents of a subvector of one datavector to
