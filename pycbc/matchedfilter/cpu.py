@@ -49,6 +49,8 @@ from pycbc.datavector.cpu import real_vector_single_cpu_t
 
 from pycbc.cpu import CpuProcessingObj
 
+from pycbc.fft.fftw import FastFourierTransformFFTW 
+
 import logging
 
 class MatchedFilterCpu(MatchedFilterBase, CpuProcessingObj):
@@ -71,6 +73,18 @@ class MatchedFilterCpu(MatchedFilterBase, CpuProcessingObj):
         # instantiate the matched filter clayer functions from functors
         self._gen_snr_cpu=  GenerateSnrCpu()
         self._find_max_cpu= FindMaximumCpu()
+
+        # instantiate the fft to transform q into qtilde in clayer/gen_snr
+        self._fft_qtilde= FastFourierTransformFFTW(vector_length=self._length,
+                                                   data_type='complex',
+                                                   transform_direction='reverse',
+                                                   data_precision='single',
+                                                   measure_level=1,
+                                                   device_context=self._context)
+
+        self._fft_plan= self._fft_qtilde._fftw_plan
+
+        self.__logger.debug("instanciated FFT {0} with plan {1}".format(self._fft_qtilde, self._fft_plan))
 
 
     # implementation of ABC's abstractmethod
