@@ -94,7 +94,7 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
 
     def __init__(self, owner_mstraindat,
                  segments_length, overlap_fact, input_buf_t,
-                 output_buffer_t, context):
+                 output_buffer_t):
         """
         Constructor of the segmenting-implementation class
         @type length: int
@@ -125,7 +125,6 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         self.__overlap_fact = overlap_fact
         self.__input_buf_t = input_buf_t
         self.__output_buffer_t =  output_buffer_t
-        self._context = context
 
         # =============================
         # NOTE (JLW): The current FFTW wrapper does *not* explicitly make the plan available to
@@ -147,7 +146,7 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
                                                   transform_direction='forward',
                                                   data_precision='single',
                                                   measure_level=1,
-                                                  device_context=self._context)
+                                                  device_context=self._owner_mstraindat._context)
 
         self.__logger.debug("instanciated FftSegmentsImplementationCpu")
 
@@ -185,7 +184,7 @@ class  FftSegmentsImplementationFftw(FftSegmentsImplementationBase):
         input_buf_offset = 0
         tmp_input = self.__input_buf_t(self._owner_mstraindat._context,
                                        self.__segments_length,
-                                       input_buf.delta_x)
+                                       input_buf.get_delta_x())
         for output_buffer_segment in output_buf:
             self.__logger.debug("input_buf_offset: {0}".format(input_buf_offset))
             sdcpu.copy_subvector_real_single_cpu(input_buf,tmp_input,input_buf_offset,
