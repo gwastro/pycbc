@@ -107,7 +107,7 @@ class MatchedFilterCpu(MatchedFilterBase, CpuProcessingObj):
         self._gen_snr_cpu(self._context, self._snr, stilde, htilde, 
                                          self._q, self._qtilde, self._fft_plan,
                                          1.0, 1.0) 
-        
+
         return self._snr
 
 

@@ -104,11 +104,19 @@ class TestMatchedFilterCPU(unittest.TestCase):
         print snr
         for i in range(self.strain_len):
             print snr[i]
-            
+
         print "found maximum snr: {0}".format(self.dut.perform_find_max(snr))
+        print
+        print "intermediate ifft:"
 
-        
+        print "qtilde:"
+        for i in range(self.strain_len):
+            print self.dut._qtilde[i]
 
+        print "q:"
+        for i in range(self.strain_len):
+            print self.dut._q[i]
+            
 
 # automate the process of creating a test suite    
 suite = unittest.TestLoader().loadTestsFromTestCase(TestMatchedFilterCPU)
