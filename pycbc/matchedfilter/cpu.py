@@ -105,7 +105,8 @@ class MatchedFilterCpu(MatchedFilterBase, CpuProcessingObj):
         htilde= self.data_in(htilde)
 
         self._gen_snr_cpu(self._context, self._snr, stilde, htilde, 
-                                         self._q, self._qtilde, 1.0, 1.0) 
+                                         self._q, self._qtilde, self._fft_plan,
+                                         1.0, 1.0) 
         
         return self._snr
 
@@ -143,9 +144,9 @@ class GenerateSnrCpu:
     #  @param qtilde     FIXME describe purpose
     #  @param f_min      FIXME describe purpose
     #  @param sigma_sq   FIXME describe purpose
-    def __call__(self, context, output_snr, stilde, htilde, q, qtilde, f_min, sigma_sq ):
+    def __call__(self, context, output_snr, stilde, htilde, q, qtilde, fft_plan, f_min, sigma_sq ):
         
-        gen_snr_cpu(context, output_snr, stilde, htilde, q, qtilde, f_min, sigma_sq)
+        gen_snr_cpu(context, output_snr, stilde, htilde, q, qtilde, fft_plan, f_min, sigma_sq)
         return 
 
 class FindMaximumCpu:

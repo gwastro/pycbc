@@ -153,7 +153,7 @@ pycbc_extensions.append(Extension( 'pycbc.matchedfilter.clayer._matchedfiltercpu
     sources = ['pycbc/matchedfilter/clayer/cpu/matchedfiltercpu.i'],
     depends = ['pycbc/matchedfilter/clayer/cpu/matchedfiltercpu.h',
                'pycbc/matchedfilter/clayer/cpu/matchedfiltercpu_private.h'],
-    include_dirs =  pycbc_include_dirs +  ['pycbc/clayer/cpu','pycbc/datavector/clayer/cpu','pycbc/datavector/clayer'],
+    include_dirs =  pycbc_include_dirs +  ['pycbc/clayer/cpu','pycbc/datavector/clayer/cpu','pycbc/datavector/clayer','pycbc/fft/clayer/fftw'],
     swig_opts = ['-outdir','pycbc/matchedfilter/clayer'],
     libraries = ['pycbc'],
     runtime_library_dirs = ["$ORIGIN/../../../"],

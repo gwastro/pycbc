@@ -19,7 +19,8 @@
 // wrap code needs to have typedefs and function prototypes!
 %{
 #include "datavectorcpu.h"
-#include "pycbccpu.h"    
+#include "pycbccpu.h"
+#include "fftw.h"    
 #include "matchedfiltercpu.h"
 #include "matchedfiltercpu_private.h"
 %}

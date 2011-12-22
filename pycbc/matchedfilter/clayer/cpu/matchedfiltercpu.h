@@ -42,7 +42,7 @@ void gen_snr_cpu(cpu_context_t* context,
                  complex_vector_single_cpu_t* htilde,
                  complex_vector_single_cpu_t* q,
                  complex_vector_single_cpu_t* qtilde,
-                 /*complex_fft_plan_t* plan,*/
+                 fftw_complex_single_plan* plan,
                  double f_min,
                  double sigma_sq);
 

@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include "datavectorcpu.h"
 #include "pycbccpu.h"
+#include "fftw.h" 
 #include "matchedfiltercpu_private.h"
 #include "matchedfiltercpu.h"
 
@@ -52,7 +53,7 @@ void gen_snr_cpu( cpu_context_t* context,
 		          complex_vector_single_cpu_t* htilde,
 		          complex_vector_single_cpu_t* q,
 		          complex_vector_single_cpu_t* qtilde,
-		          /*complex_fft_plan_t* plan,*/
+		          fftw_complex_single_plan* plan,
 		          double f_min,
 		          double sigma_sq)
 {    
@@ -63,8 +64,8 @@ void gen_snr_cpu( cpu_context_t* context,
     double norm = 4.0 / ((double) N * (double) N * stilde->meta_data.delta_x); 
     norm *= norm;
     
-    //printf("%d: called gen_snr_cpu with context: %p, snr: %p s: %p h: %p q: %p qtilde %p\n", 
-    //       cnt++, context, snr, stilde, htilde, q, qtilde);
+    printf("%d: called gen_snr_cpu with context: %p, snr: %p s: %p h: %p q: %p qtilde %p fft_plan: %p, fmin: %f, sigma-sq: %f\n", 
+           cnt++, context, snr, stilde, htilde, q, qtilde, plan, f_min, sigma_sq);
     
     /* perform the correlation */
     correlate_complex_freq_vectors( qtilde, stilde, htilde, f_min );
