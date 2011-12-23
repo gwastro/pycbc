@@ -118,8 +118,11 @@ class StrainDataBase:
         #setup segmented frequency series stilde(f)
         self.__frequency_series= []
         for i in range(self.__segments):
+            # NOTE (JLW): Length of each frequency series vector should NOT
+            # be the same as the length of each time series segment, as the
+            # freq. series segments are complex not real datavectors.
             tmp_series = frequency_series_t(self._context,
-                                            self.__segments_length,
+                                            (self.__segments_length)/2+1,
                                             self.__sample_freq)
             self.__frequency_series.append(tmp_series)
 
