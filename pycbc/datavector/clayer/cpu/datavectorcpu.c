@@ -26,6 +26,7 @@
 
 
 #include <stdio.h>
+#include <stdlib.h> /* Needed for posix_memalign decl */
 #include <pycbc/clayer/except.h>
 /* Following needed for memset() */
 #include <string.h>

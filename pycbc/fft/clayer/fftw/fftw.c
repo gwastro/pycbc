@@ -341,11 +341,6 @@ void execute_real_single_forward_fft(complex_vector_single_cpu_t *output,
     return;
   }
 
-  if ( output->data == input->data ){ /* No in place transforms */
-    pycbc_throw_exception(PYCBC_VALUE_ERROR,"No in-place transforms for execute_real_single_forward_fft().\n");
-    return;
-  }
-
   if ( !plan ){
     pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty plan given to execute_real_single_forward_fft().\n");
     return;
@@ -408,11 +403,6 @@ void execute_real_single_reverse_fft(real_vector_single_cpu_t *output,
 
   if ( !(output->data) || !(input->data) ){
     pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty input or output datavector->data to execute_real_single_reverse_fft().\n");
-    return;
-  }
-
-  if ( output->data == input->data ){ /* No in place transforms */
-    pycbc_throw_exception(PYCBC_VALUE_ERROR,"No in-place transforms for execute_real_single_reverse_fft().\n");
     return;
   }
 
@@ -533,11 +523,6 @@ void execute_real_double_forward_fft(complex_vector_double_cpu_t *output,
     return;
   }
 
-  if ( output->data == input->data ){ /* No in place transforms */
-    pycbc_throw_exception(PYCBC_VALUE_ERROR,"No in-place transforms for execute_real_double_forward_fft().\n");
-    return;
-  }
-
   if ( !plan ){
     pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty plan given to execute_real_double_forward_fft().\n");
     return;
@@ -599,11 +584,6 @@ void execute_real_double_reverse_fft(real_vector_double_cpu_t *output,
 
   if ( !(output->data) || !(input->data) ){
     pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty input or output datavector->data to execute_real_double_reverse_fft().\n");
-    return;
-  }
-
-  if ( output->data == input->data ){ /* No in place transforms */
-    pycbc_throw_exception(PYCBC_VALUE_ERROR,"No in-place transforms for execute_real_double_reverse_fft().\n");
     return;
   }
 
