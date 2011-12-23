@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <except.h> /* For PyCBC exception handling */
 #include "fftw_private.h"
 #include "fftw.h"
 #include "datavectorcpu.h"
@@ -49,15 +50,34 @@ fftw_real_single_plan *new_fftw_real_single_plan(unsigned long size,
   }
 
   self = (fftw_real_single_plan *) malloc(sizeof(fftw_real_single_plan));
+  if (!self) {
+    pycbc_throw_exception(PYCBC_MEMORY_ERROR,"Could not allocate space for real single plan\n");
+    return NULL;
+  }
+
   fftwf_import_system_wisdom();
 
   scratchin  = (float *) fftwf_malloc(size*sizeof(float));
   scratchout = (float *) fftwf_malloc(size*sizeof(float));
+  if ((!scratchin) || (!scratchout)){
+    free(scratchin);
+    free(scratchout);
+    free(self);
+    pycbc_throw_exception(PYCBC_MEMORY_ERROR,"Could not allocate scratch space needed to create real single plan\n");
+    return NULL;
+  }
+
   self->theplan = fftwf_plan_r2r_1d(size,scratchin,scratchout,
 				    fwdflag ? FFTW_R2HC : FFTW_HC2R,
 				    flags);
   fftwf_free(scratchin);
   fftwf_free(scratchout);
+
+  if (!(self->theplan)){
+    free(self);
+    pycbc_throw_exception(PYCBC_RUNTIME_ERROR,"FFTW3 unable to create real single plan\n");
+    return NULL;
+  }
 
   self->size = size;
   self->fwdflag = fwdflag;
@@ -89,15 +109,34 @@ fftw_real_double_plan *new_fftw_real_double_plan(unsigned long size,
   }
 
   self = (fftw_real_double_plan *) malloc(sizeof(fftw_real_double_plan));
+  if (!self) {
+    pycbc_throw_exception(PYCBC_MEMORY_ERROR,"Could not allocate space for real double plan\n");
+    return NULL;
+  }
+
   fftw_import_system_wisdom();
 
   scratchin  = (double *) fftw_malloc(size*sizeof(double));
   scratchout = (double *) fftw_malloc(size*sizeof(double));
+  if ((!scratchin) || (!scratchout)){
+    free(scratchin);
+    free(scratchout);
+    free(self);
+    pycbc_throw_exception(PYCBC_MEMORY_ERROR,"Could not allocate scratch space needed to create real double plan\n");
+    return NULL;
+  }
+
   self->theplan = fftw_plan_r2r_1d(size,scratchin,scratchout,
 				   fwdflag ? FFTW_R2HC : FFTW_HC2R,
 				   flags);
   fftw_free(scratchin);
   fftw_free(scratchout);
+
+  if (!(self->theplan)){
+    free(self);
+    pycbc_throw_exception(PYCBC_RUNTIME_ERROR,"FFTW3 unable to create real double plan\n");
+    return NULL;
+  }
 
   self->size = size;
   self->fwdflag = fwdflag;
@@ -128,16 +167,35 @@ fftw_complex_single_plan *new_fftw_complex_single_plan(unsigned long size,
   }
 
   self = (fftw_complex_single_plan *) malloc(sizeof(fftw_complex_single_plan));
+  if (!self) {
+    pycbc_throw_exception(PYCBC_MEMORY_ERROR,"Could not allocate space for complex single plan\n");
+    return NULL;
+  }
+
   fftwf_import_system_wisdom();
 
   scratchin  = (fftwf_complex *) fftwf_malloc(size*sizeof(fftwf_complex));
   scratchout = (fftwf_complex *) fftwf_malloc(size*sizeof(fftwf_complex));
+  if ((!scratchin) || (!scratchout)){
+    free(scratchin);
+    free(scratchout);
+    free(self);
+    pycbc_throw_exception(PYCBC_MEMORY_ERROR,"Could not allocate scratch space needed to create complex single plan\n");
+    return NULL;
+  }
+
   self->theplan = fftwf_plan_dft_1d(size,scratchin,scratchout,
 				    fwdflag ? FFTW_FORWARD : FFTW_BACKWARD,
 				    flags);
 
   fftwf_free(scratchin);
   fftwf_free(scratchout);
+
+  if (!(self->theplan)){
+    free(self);
+    pycbc_throw_exception(PYCBC_RUNTIME_ERROR,"FFTW3 unable to create complex single plan\n");
+    return NULL;
+  }
 
   self->size = size;
   self->fwdflag = fwdflag;
@@ -167,16 +225,35 @@ fftw_complex_double_plan *new_fftw_complex_double_plan(unsigned long size,
   }
 
   self = (fftw_complex_double_plan *) malloc(sizeof(fftw_complex_double_plan));
-  fftwf_import_system_wisdom();
+  if (!self) {
+    pycbc_throw_exception(PYCBC_MEMORY_ERROR,"Could not allocate space for complex double plan\n");
+    return NULL;
+  }
+
+  fftw_import_system_wisdom();
 
   scratchin  = (fftw_complex *) fftw_malloc(size*sizeof(fftw_complex));
   scratchout = (fftw_complex *) fftw_malloc(size*sizeof(fftw_complex));
+  if ((!scratchin) || (!scratchout)){
+    free(scratchin);
+    free(scratchout);
+    free(self);
+    pycbc_throw_exception(PYCBC_MEMORY_ERROR,"Could not allocate scratch space needed to create complex double plan\n");
+    return NULL;
+  }
+
   self->theplan = fftw_plan_dft_1d(size,scratchin,scratchout,
 				   fwdflag ? FFTW_FORWARD : FFTW_BACKWARD,
 				   flags);
 
   fftw_free(scratchin);
   fftw_free(scratchout);
+
+  if (!(self->theplan)){
+    free(self);
+    pycbc_throw_exception(PYCBC_RUNTIME_ERROR,"FFTW3 unable to create complex double plan\n");
+    return NULL;
+  }
 
   self->size = size;
   self->fwdflag = fwdflag;
@@ -214,20 +291,29 @@ void execute_complex_single_fft(complex_vector_single_cpu_t *output,
 				fftw_complex_single_plan *plan)
 {
   if ( !output || !input ){
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty input or output datavector to execute_complex_single_fft().\n");
+    return;
+  }
+
+  if ( !(output->data) || !(input->data) ){
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty input or output datavector->data to execute_complex_single_fft().\n");
+    return;
   }
 
   if ( output->data == input->data ){ /* No in place transforms */
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"No in-place transforms for execute_complex_single_fft().\n");
+    return;
   }
 
   if ( !plan ){
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty plan given to execute_complex_single_fft().\n");
+    return;
   }
 
   if ( (output->meta_data.vector_length != plan->size) ||
        (input->meta_data.vector_length != plan->size) ){
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Input or output detavector length does not match plan length in execute_complex_single_fft().\n");
+    return;
   }
 
   fftwf_execute_dft(plan->theplan,(fftwf_complex *)input->data,(fftwf_complex *)output->data);
@@ -246,23 +332,42 @@ void execute_real_single_forward_fft(complex_vector_single_cpu_t *output,
   float *tmp;
 
   if ( !output || !input ){
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty input or output datavector to execute_real_single_forward_fft().\n");
+    return;
+  }
+
+  if ( !(output->data) || !(input->data) ){
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty input or output datavector->data to execute_real_single_forward_fft().\n");
+    return;
+  }
+
+  if ( output->data == input->data ){ /* No in place transforms */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"No in-place transforms for execute_real_single_forward_fft().\n");
+    return;
   }
 
   if ( !plan ){
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty plan given to execute_real_single_forward_fft().\n");
+    return;
   }
 
   if ( !(plan->fwdflag) ) {
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Called execute_real_single_forward_fft() withOUT fwdflag set.\n");
+    return;
   }
 
   if ( (input->meta_data.vector_length != plan->size) ||
        (output->meta_data.vector_length != (plan->size/2+1))){
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Input or output detavector length does not match plan length in execute_real_single_forward_fft().\n");
+    return;
   }
 
   tmp = (float *) fftwf_malloc(plan->size *sizeof(*tmp));
+  if (!tmp){
+    pycbc_throw_exception(PYCBC_MEMORY_ERROR,"Could not allocate scratch space in execute_real_single_forward_fft().\n");
+    return;
+  }
+
 
   fftwf_execute_r2r(plan->theplan,input->data,tmp);
 
@@ -297,31 +402,51 @@ void execute_real_single_reverse_fft(real_vector_single_cpu_t *output,
   float *tmp;
 
   if ( !output || !input ){
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty input or output datavector to execute_real_single_reverse_fft().\n");
+    return;
+  }
+
+  if ( !(output->data) || !(input->data) ){
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty input or output datavector->data to execute_real_single_reverse_fft().\n");
+    return;
+  }
+
+  if ( output->data == input->data ){ /* No in place transforms */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"No in-place transforms for execute_real_single_reverse_fft().\n");
+    return;
   }
 
   if ( !plan ){
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty plan given to execute_real_single_reverse_fft().\n");
+    return;
   }
 
-  if ( plan->fwdflag ) {
-    abort(); /* Need better error handling eventually */
+  if (plan->fwdflag) {
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Called execute_real_single_reverse_fft() WITH fwdflag set.\n");
+    return;
   }
 
   if ( (output->meta_data.vector_length != plan->size) ||
        (input->meta_data.vector_length != (plan->size/2+1))){
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Input or output detavector length does not match plan length in execute_real_single_reverse_fft().\n");
+    return;
   }
 
   if ( cimagf(input->data[0]) != 0.0 ) { // Imag part DC must be zero
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Imaginary part of input DC nonzero in execute_real_single_reverse_fft().\n");
+    return;
   }
 
   if ( ((plan->size % 2) == 0) && cimagf(input->data[plan->size]) != 0.0 ) { // Imag part Nyquist must be zero
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Imaginary part of input Nyquist nonzero for even length in execute_real_single_reverse_fft().\n");
+    return;
   }
 
   tmp = (float *) fftwf_malloc(plan->size *sizeof(*tmp));
+  if (!tmp){
+    pycbc_throw_exception(PYCBC_MEMORY_ERROR,"Could not allocate scratch space in execute_real_single_reverse_fft().\n");
+    return;
+  }
 
   /* DC component */
 
@@ -359,20 +484,29 @@ void execute_complex_double_fft(complex_vector_double_cpu_t *output,
 				fftw_complex_double_plan *plan){
 
   if ( !output || !input ){
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty input or output datavector to execute_complex_double_fft().\n");
+    return;
+  }
+
+  if ( !(output->data) || !(input->data) ){
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty input or output datavector->data to execute_complex_double_fft().\n");
+    return;
   }
 
   if ( output->data == input->data ){ /* No in-place transforms */
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"No in-place transforms for execute_complex_double_fft().\n");
+    return;
   }
 
   if ( !plan ){
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty plan given to execute_complex_double_fft().\n");
+    return;
   }
 
   if ( (output->meta_data.vector_length != plan->size) ||
        (input->meta_data.vector_length != plan->size) ){
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Input or output detavector length does not match plan length in execute_complex_double_fft().\n");
+    return;
   }
 
   fftw_execute_dft(plan->theplan,(fftw_complex *)input->data,(fftw_complex *)output->data);
@@ -390,23 +524,41 @@ void execute_real_double_forward_fft(complex_vector_double_cpu_t *output,
   double *tmp;
 
   if ( !output || !input ){
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty input or output datavector to execute_real_double_forward_fft().\n");
+    return;
+  }
+
+  if ( !(output->data) || !(input->data) ){
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty input or output datavector->data to execute_real_double_forward_fft().\n");
+    return;
+  }
+
+  if ( output->data == input->data ){ /* No in place transforms */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"No in-place transforms for execute_real_double_forward_fft().\n");
+    return;
   }
 
   if ( !plan ){
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty plan given to execute_real_double_forward_fft().\n");
+    return;
   }
 
   if ( !(plan->fwdflag) ) {
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Called execute_real_double_forward_fft() withOUT fwdflag set.\n");
+    return;
   }
 
   if ( (input->meta_data.vector_length != plan->size) ||
        (output->meta_data.vector_length != (plan->size/2+1))){
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Input or output detavector length does not match plan length in execute_real_double_forward_fft().\n");
+    return;
   }
 
   tmp = (double *) fftw_malloc(plan->size *sizeof(*tmp));
+  if (!tmp){
+    pycbc_throw_exception(PYCBC_MEMORY_ERROR,"Could not allocate scratch space in execute_real_single_forward_fft().\n");
+    return;
+  }
 
   fftw_execute_r2r(plan->theplan,input->data,tmp);
 
@@ -441,31 +593,51 @@ void execute_real_double_reverse_fft(real_vector_double_cpu_t *output,
   double *tmp;
 
   if ( !output || !input ){
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty input or output datavector to execute_real_double_reverse_fft().\n");
+    return;
+  }
+
+  if ( !(output->data) || !(input->data) ){
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty input or output datavector->data to execute_real_double_reverse_fft().\n");
+    return;
+  }
+
+  if ( output->data == input->data ){ /* No in place transforms */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"No in-place transforms for execute_real_double_reverse_fft().\n");
+    return;
   }
 
   if ( !plan ){
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Empty plan given to execute_real_double_reverse_fft().\n");
+    return;
   }
 
   if ( plan->fwdflag ) {
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Called execute_real_double_reverse_fft() WITH fwdflag set.\n");
+    return;
   }
 
   if ( (output->meta_data.vector_length != plan->size) ||
        (input->meta_data.vector_length != (plan->size/2+1))){
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Input or output detavector length does not match plan length in execute_real_double_reverse_fft().\n");
+    return;
   }
 
   if ( cimag(input->data[0]) != 0.0 ) { // Imag part DC must be zero
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Imaginary part of input DC nonzero in execute_real_double_reverse_fft().\n");
+    return;
   }
 
   if ( ((plan->size % 2) == 0) && cimag(input->data[plan->size]) != 0.0 ) { // Imag part Nyquist must be zero
-    abort(); /* Need better error handling eventually */
+    pycbc_throw_exception(PYCBC_VALUE_ERROR,"Imaginary part of input Nyquist nonzero for even length in execute_real_double_reverse_fft().\n");
+    return;
   }
 
   tmp = (double *) fftw_malloc(plan->size *sizeof(*tmp));
+  if (!tmp){
+    pycbc_throw_exception(PYCBC_MEMORY_ERROR,"Could not allocate scratch space in execute_real_double_reverse_fft().\n");
+    return;
+  }
 
   /* DC component */
 

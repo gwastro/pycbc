@@ -39,6 +39,7 @@
 #include "fftw_private.h"
 %}
 
+%include <pycbc/clayer/except.i>
 %include "fftw.h"
 
 %extend fftw_real_single_plan {
