@@ -66,7 +66,7 @@ planning is desired.  For example:
                         transform_direction='forward',data_precision='single',
                         device_context=Mycontext)
  for invec in vector_list:
-      new_output = complex_vector_single_cpu_t(mylen)
+      new_output = complex_vector_single_cpu_t(mylen,...)
       MyFFT.perform_transform(invec,new_output)
       output_list.append(new_output)
 
@@ -81,6 +81,28 @@ from pycbc.fft.base import FastFourierTransformBase
 # Need to check that SWIG-wrapped Python code provides '__all__',
 # or else provide it ourselves.
 import pycbc.fft.clayer.fftw as cfftw
+
+# The following is the dictionary mapping transform parameters to
+# their corresponding implementation function. The tuple that is
+# the key is (type,precision,fwdflag).
+FFTWTransformDict = \
+    {('real','single',0) : getattr(cfftw,'execute_real_single_reverse_fft'),
+     ('real','single',1) : getattr(cfftw,'execute_real_single_forward_fft'),
+     ('real','double',0) : getattr(cfftw,'execute_real_double_reverse_fft'),
+     ('real','double',1) : getattr(cfftw,'execute_real_double_forward_fft'),
+     ('complex','single',0) : getattr(cfftw,'execute_complex_single_fft'),
+     ('complex','single',1) : getattr(cfftw,'execute_complex_single_fft'),
+     ('complex','double',0) : getattr(cfftw,'execute_complex_double_fft'),
+     ('complex','double',1) : getattr(cfftw,'execute_complex_double_fft')}
+
+# The following is the dictionary mapping transform parameters to
+# their corresponding plan constructor. The tuple that is
+# the key is (type,precision).
+FFTWPlanConstructorDict = \
+    {('real','single') : getattr(cfftw,'fftw_real_single_plan'),
+     ('real','double') : getattr(cfftw,'fftw_real_double_plan'),
+     ('complex','single') : getattr(cfftw,'fftw_complex_single_plan'),
+     ('complex','double') : getattr(cfftw,'fftw_complex_double_plan')}
 
 class FastFourierTransformFFTW(FastFourierTransformBase,CpuProcessingObj):
     """
@@ -104,54 +126,17 @@ class FastFourierTransformFFTW(FastFourierTransformBase,CpuProcessingObj):
             raise ValueError("Invalid measure_level; must be 0, 1, 2, or 3")
 
         # The values of all params not specific to FFTW have
-        # already been sanity-checked, so the logic below
-        # is safe; exactly one plan-creation 'if' statement
-        # will be invoked.
+        # already been sanity-checked, so create the plan
 
         ordered_args = (self._data_type,self._data_precision)
-
-        if ordered_args == ('real','single'):
-            self._fftw_plan = cfftw.fftw_real_single_plan(
-                self._vector_length,self._fwdflag,measure_level)
-        if ordered_args == ('real','double'):
-            self._fftw_plan = cfftw.fftw_real_double_plan(
-                self._vector_length,self._fwdflag,measure_level)
-        if ordered_args == ('complex','single'):
-            self._fftw_plan = cfftw.fftw_complex_single_plan(
-                self._vector_length,self._fwdflag,measure_level)
-        if ordered_args == ('complex','double'):
-            self._fftw_plan = cfftw.fftw_complex_double_plan(
-                self._vector_length,self._fwdflag,measure_level)
+        plan_constructor = FFTWPlanConstructorDict[ordered_args]
+        self._fftw_plan = plan_constructor(self._vector_length,
+                                           self._fwdflag,
+                                           measure_level)
 
     def perform_transform(self,input_vector,output_vector,**kwargs):
-        # Here's where we do the work; the plan was created in
-        # by __init__(). Again, sanity checking was already
-        # performed, so exactly one of the six exectute functions
-        # gets called.
+        # Create the key, lookup and execute the transform
 
         ordered_args = (self._data_type,self._data_precision,self._fwdflag)
-
-        if ordered_args == ('real','single',1):
-            cfftw.execute_real_single_forward_fft(output_vector,
-                                           input_vector,self._fftw_plan)
-        if ordered_args == ('real','single',0):
-            cfftw.execute_real_single_reverse_fft(output_vector,
-                                           input_vector,self._fftw_plan)
-        if ordered_args == ('real','double',1):
-            cfftw.execute_real_double_forward_fft(output_vector,
-                                           input_vector,self._fftw_plan)
-        if ordered_args == ('real','double',0):
-            cfftw.execute_real_double_reverse_fft(output_vector,
-                                           input_vector,self._fftw_plan)
-        if ordered_args[0:2] == ('complex','single'):
-            cfftw.execute_complex_single_fft(output_vector,input_vector,
-                                           self._fftw_plan)
-        if ordered_args[0:2] == ('complex','double'):
-            cfftw.execute_complex_double_fft(output_vector,input_vector,
-                                           self._fftw_plan)
-
-        # Maybe call the method of the parent class, for
-        # consistency? Note that this shouldn't do anything
-
-        #super(FastFourierTransformFFTW,self).perform_transform(
-        #    input_vector,output_vector,**kwargs)
+        transform_function = FFTWTransformDict[ordered_args]
+        transform_function(output_vector,input_vector,self._fftw_plan)
