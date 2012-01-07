@@ -28,17 +28,14 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <iostream>
-#include <fstream>
 #include "datavectoropencl.h"
 #include "pycbcopencl.h"
 #include "gpu_inspiral_gpuutils.h"
 #include "matchedfilteropencl.h"
 
-using namespace std;
 // constructor/destructor of matched filter ------------------------------------
 
-extern "C" matched_filter_opencl_t* new_matched_filter_opencl_t(cl_context_t * context)
+matched_filter_opencl_t* new_matched_filter_opencl_t(cl_context_t * context)
 {
     matched_filter_opencl_t* c;
 
@@ -47,16 +44,20 @@ extern "C" matched_filter_opencl_t* new_matched_filter_opencl_t(cl_context_t * c
     size_t LogSize;
     char * BuildLog = NULL;
     cl_device_id *cdDevices;
-
+    FILE * sourcefile;
+    size_t kernel_source_size;
+    char * kernel_source = calloc(1,16384);
     int err;
 
     c = (matched_filter_opencl_t*) malloc( sizeof(matched_filter_opencl_t) );
 
 //Loading the kernel source
-    std::ifstream kernel_source_file("./gpu_inspiral_matchedfilter.cl");
-    std::string prog( std::istreambuf_iterator<char>(kernel_source_file), (std::istreambuf_iterator<char>()));
-    const char * kernel_source = prog.c_str();
-    size_t kernel_source_size = prog.size();
+
+    sourcefile = fopen("./gpu_inspiral_matchedfilter.cl","r");
+    if (sourcefile != NULL ) {
+     kernel_source_size = fread(kernel_source, 1,1000,sourcefile);
+     fclose(sourcefile);
+    }
 
 
 //Creating the program from the kernel source
@@ -118,7 +119,7 @@ void delete_matched_filter_opencl_t( matched_filter_opencl_t* p )
 
 // processing functions of matched filter --------------------------------------
 
-extern "C" void gen_snr_opencl(cl_context_t* context,
+void gen_snr_opencl(cl_context_t* context,
                    matched_filter_opencl_t * matchedfilter,
                    real_vector_single_opencl_t* snr,
                    complex_vector_single_opencl_t* stilde,
