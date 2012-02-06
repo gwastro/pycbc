@@ -1,0 +1,18 @@
+Welcome to PYCBC
+
+More information can be found at the website:
+https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home
+
+When installing pycbc:
+python setup.py install --prefix=/path/to/install/directory
+
+To test pycbc:
+python setup.py test
+
+
+
+
+
+The most current development version is always available from our
+git repository:
+https://sugwg-git.phy.syr.edu/git/pycbc/
