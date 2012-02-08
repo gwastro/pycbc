@@ -26,14 +26,6 @@
 
 import pycbc 
 
-if pycbc.have_cuda:
-    import pycuda
-    import pycuda.gpuarray
-
-if pycbc.have_opencl:
-    import pyopencl
-    import pyopencl.array
-
 
 __author__ = "Alex Nitz <alex.nitz@ligo.org>"
 
@@ -81,6 +73,7 @@ class CUDAContext(object):
 class OpenCLContext(object):
 
     def __init__(self):
+        import pyopencl
         self.device_context = pyopencl.create_some_context()
         self.queue = pyopencl.CommandQueue(self.device_context)   
         self.prior_context = None
