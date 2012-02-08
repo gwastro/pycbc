@@ -1,23 +1,16 @@
 
-# Check for optional components
-have_cuda=False
-have_opencl=False
 
-try:
+
+
+import pycbc
+
+if pycbc.have_cuda:
     import pycuda
     import pycuda.gpuarray
-    import pycuda.autoinit
-    have_cuda=True
-except ImportError:
-    have_cuda=False
-    
-try:
+
+if pycbc.have_opencl:
     import pyopencl
     import pyopencl.array
-    have_opencl=True
-except ImportError:
-    have_opencl=False
-
 
 import unittest
 from pycbc.array import Array
@@ -123,7 +116,7 @@ class cpu(unittest.TestCase):
         
     
 
-if have_opencl: 
+if pycbc.have_opencl: 
 
     class OpenCL(unittest.TestCase):
 
@@ -241,7 +234,7 @@ if have_opencl:
             b_cpu = b._data.get()
             self.assertEqual(b_cpu[0],(1-2j))
        
-if have_cuda:
+if pycbc.have_cuda:
  
     class CUDA(unittest.TestCase):
 

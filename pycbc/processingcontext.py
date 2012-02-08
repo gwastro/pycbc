@@ -23,24 +23,16 @@
 # =============================================================================
 #
 
-# Check for optional components
-have_cuda=False
-have_opencl=False
 
-try:
+import pycbc 
+
+if pycbc.have_cuda:
     import pycuda
     import pycuda.gpuarray
-    import pycuda.autoinit
-    have_cuda=True
-except ImportError:
-    have_cuda=False
-    
-try:
+
+if pycbc.have_opencl:
     import pyopencl
     import pyopencl.array
-    have_opencl=True
-except ImportError:
-    have_opencl=False
 
 
 __author__ = "Alex Nitz <alex.nitz@ligo.org>"
@@ -66,44 +58,44 @@ class CPUContext(object):
         #Restore the prior context
         current_context = prior_context
 
-if have_cuda:
-    class CUDAContext(object):
-        def __init__(self):
-            self.device_context = None
-            self.prior_context = None
-            
+
+class CUDAContext(object):
+    def __init__(self):
+        self.device_context = None
+        self.prior_context = None
+        import pycuda.autoinit
         
-        def __enter__(self):
-            #Save the old context so it can be restored and set the current context
-            # to this object 
-            self.prior_context=current_context
-            current_context=self
-            return self
+    
+    def __enter__(self):
+        #Save the old context so it can be restored and set the current context
+        # to this object 
+        self.prior_context=current_context
+        current_context=self
+        return self
 
-        def __exit__(self,type,value,tracebook):
+    def __exit__(self,type,value,tracebook):
 
-            #Restore the prior context
-            current_context = prior_context
+        #Restore the prior context
+        current_context = prior_context
 
-if have_opencl:
-    class OpenCLContext(object):
+class OpenCLContext(object):
 
-        def __init__(self):
-            self.device_context = pyopencl.create_some_context()
-            self.queue = pyopencl.CommandQueue(self.device_context)   
-            self.prior_context = None
+    def __init__(self):
+        self.device_context = pyopencl.create_some_context()
+        self.queue = pyopencl.CommandQueue(self.device_context)   
+        self.prior_context = None
 
-        def __enter__(self): 
-            #Save the old context so it can be restored and set the current context
-            # to this object 
-            self.prior_context=current_context
-            current_context=self
-            return self
+    def __enter__(self): 
+        #Save the old context so it can be restored and set the current context
+        # to this object 
+        self.prior_context=current_context
+        current_context=self
+        return self
 
-        def __exit__(self,type,value,tracebook):
+    def __exit__(self,type,value,tracebook):
 
-            #Restore the prior context
-            current_context = prior_context
+        #Restore the prior context
+        current_context = prior_context
     
 #Set the default Processing Context to be the CPU
 current_context=CPUContext()

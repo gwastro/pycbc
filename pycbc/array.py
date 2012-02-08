@@ -30,27 +30,17 @@ Numpy.
 import numpy
 import pycbc.processingcontext
 import functools
+import pycbc
 
 __author__ = "Alex Nitz <alex.nitz@ligo.org>"
 
-# Check for optional components
-have_cuda=False
-have_opencl=False
-
-try:
+if pycbc.have_cuda:
     import pycuda
     import pycuda.gpuarray
-    import pycuda.autoinit
-    have_cuda=True
-except ImportError:
-    have_cuda=False
-    
-try:
+
+if pycbc.have_opencl:
     import pyopencl
     import pyopencl.array
-    have_opencl=True
-except ImportError:
-    have_opencl=False
     
 
 class Array(object):
@@ -89,9 +79,9 @@ class Array(object):
                 self._data=object._data
             elif type(object) is numpy.ndarray:
                 self._data = object
-            elif have_cuda and type(object) is pycuda.gpuarray.GPUArray:
+            elif pycbc.have_cuda and type(object) is pycuda.gpuarray.GPUArray:
                 self._data = object
-            elif have_opencl and type(object) is pyopencl.array.Array:
+            elif pycbc.have_opencl and type(object) is pyopencl.array.Array:
                 self._data = object
             else:
                 raise TypeError, str(type(object))+' is not supported'
@@ -105,21 +95,21 @@ class Array(object):
                 input_data=object
 
             if type(self._context) is pycbc.processingcontext.CPUContext:
-                if have_cuda and type(input_data) is pycuda.gpuarray.GPUArray:
+                if pycbc.have_cuda and type(input_data) is pycuda.gpuarray.GPUArray:
                     self._data = input_data.get()
-                elif have_opencl and type(input_data) is pyopencl.array.Array:
+                elif pycbc.have_opencl and type(input_data) is pyopencl.array.Array:
                     self._data = input_data.get() 
                 else:
                     self._data = numpy.array(input_data,dtype = dtype)           
                     
-            elif have_cuda and type(self._context) is pycbc.processingcontext.CUDAContext:
+            elif pycbc.have_cuda and type(self._context) is pycbc.processingcontext.CUDAContext:
                 if type(input_data) is pycuda.gpuarray.GPUArray:
                     self._data = pycuda.gpuarray.zeros(input_data.size,input_data.dtype)
                     pycuda.driver.memcpy_dtod(self._data.gpudata,input_data.gpudata,self._data.nbytes)
                 else:
                     self._data = pycuda.gpuarray.to_gpu(numpy.array(input_data,dtype=dtype))
                     
-            elif have_opencl and type(self._context) is pycbc.processingcontext.OpenCLContext:
+            elif pycbc.have_opencl and type(self._context) is pycbc.processingcontext.OpenCLContext:
                 if type(input_data) is pyopencl.array.Array:
                     self._data = pyopencl.array.zeros(self._context.queue,input_data.size,input_data.dtype)
                     pyopencl.enqueue_copy(self._context.queue,self._data.data,input_data.data)
@@ -264,10 +254,10 @@ class Array(object):
         if type(_data) is numpy.ndarray:
             return _data.ctypes.get_data()
             
-        if have_cuda and type(_data) is pycuda.gpuarray.GPUArray:
+        if pycbc.have_cuda and type(_data) is pycuda.gpuarray.GPUArray:
             return _data.ptr
     
-        if have_opencl and type(_data) is pyopencl.array.Array:
+        if pycbc.have_opencl and type(_data) is pyopencl.array.Array:
             return _data.data
         
    
