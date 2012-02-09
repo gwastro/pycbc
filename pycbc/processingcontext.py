@@ -30,7 +30,7 @@ import pycbc
 __author__ = "Alex Nitz <alex.nitz@ligo.org>"
 
 
-current_context=None
+current_context = None
 
 class CPUContext(object):
     def __init__(self):
@@ -40,15 +40,17 @@ class CPUContext(object):
     def __enter__(self):
 
         #Save the old context so it can be restored and set the current context
-        # to this object 
-        self.prior_context=current_context
+        # to this object
+        global current_context 
+        self.prior_context= current_context
         current_context=self
         return self
 
     def __exit__(self,type,value,tracebook):
 
         #Restore the prior context
-        current_context = prior_context
+        global current_context
+        current_context = self.prior_context
 
 
 class CUDAContext(object):
@@ -61,6 +63,7 @@ class CUDAContext(object):
     def __enter__(self):
         #Save the old context so it can be restored and set the current context
         # to this object 
+        global current_context
         self.prior_context=current_context
         current_context=self
         return self
@@ -68,12 +71,13 @@ class CUDAContext(object):
     def __exit__(self,type,value,tracebook):
 
         #Restore the prior context
-        current_context = prior_context
+        global current_context
+        current_context = self.prior_context
 
 class OpenCLContext(object):
 
     def __init__(self):
-        import pyopencl
+            
         self.device_context = pyopencl.create_some_context()
         self.queue = pyopencl.CommandQueue(self.device_context)   
         self.prior_context = None
@@ -81,6 +85,7 @@ class OpenCLContext(object):
     def __enter__(self): 
         #Save the old context so it can be restored and set the current context
         # to this object 
+        global current_context
         self.prior_context=current_context
         current_context=self
         return self
@@ -88,7 +93,8 @@ class OpenCLContext(object):
     def __exit__(self,type,value,tracebook):
 
         #Restore the prior context
-        current_context = prior_context
+        global current_context
+        current_context = self.prior_context
     
 #Set the default Processing Context to be the CPU
 current_context=CPUContext()
