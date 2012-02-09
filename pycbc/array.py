@@ -45,12 +45,12 @@ if _pycbc.have_opencl:
     
 
 
-# Supported dtypes 
+# Supported Types 
+_allowed_dtypes = [_numpy.float32,_numpy.float64,_numpy.complex64,_numpy.complex128]
+_allowed_scalars = [int,long, float]
 
-allowed_dtypes = []
 
-
-from numpy import float32,float64,complex64
+from numpy import float32,float64,complex64,complex128
 
 class Array(object):
     """Array used to do numeric calculations on a various compute devices. It is a 
@@ -95,39 +95,58 @@ class Array(object):
             else:
                 raise TypeError, str(type(object))+' is not supported'
                 
+            # Check that the dtype is supported
+            if self._data.dtype not in _allowed_dtypes:
+                raise TypeError, str(self._data.dtype) + ' is not supported' 
+            
+                
         if copy is True:
         
+            #Check that a valid dtype was given
+            if dtype: 
+                if dtype not in _allowed_dtypes:
+                    raise TypeError, str(dtype) + ' is not supported'   
+        
+            #Unwrap object    
             input_data = None
             if type(object) is Array:
                 input_data = object._data
             else:
                 input_data=object
 
+            #Create new instance with input_data as initialization
             if type(self._context) is _processingcontext.CPUContext:
                 if _pycbc.have_cuda and type(input_data) is _cudaarray.GPUArray:
                     self._data = input_data.get()
                 elif _pycbc.have_opencl and type(input_data) is _openclarray.Array:
-                    self._data = input_data.get() 
+                    self._data = input_data.get()
                 else:
-                    self._data = _numpy.array(input_data,dtype = dtype)           
+                    self._data = _numpy.array(input_data,dtype=dtype)     
+  
                     
             elif _pycbc.have_cuda and type(self._context) is _processingcontext.CUDAContext:
                 if type(input_data) is _cudaarray.GPUArray:
-                    self._data = _cudaarray.zeros(input_data.size,input_data.dtype)
-                    _pycuda.driver.memcpy_dtod(self._data.gpudata,input_data.gpudata,self._data.nbytes)
-                else:
-                    self._data = _cudaarray.to_gpu(_numpy.array(input_data,dtype=dtype))
+                    input_data = input_data.get()
+
+                self._data = _cudaarray.to_gpu(_numpy.array(input_data,dtype=dtype))
                     
             elif _pycbc.have_opencl and type(self._context) is _processingcontext.OpenCLContext:
                 if type(input_data) is _openclarray.Array:
-                    self._data = _openclarray.zeros(self._context.queue,input_data.size,input_data.dtype)
-                    _pyopencl.enqueue_copy(self._context.queue,self._data.data,input_data.data)
-                else:
-                    self._data = _openclarray.to_device(self._context.queue,_numpy.array(input_data,dtype=dtype))
+                    input_data = input_data.get()
+                    
+                self._data = _openclarray.to_device(self._context.queue,_numpy.array(input_data,dtype=dtype))
             
             else:
-                raise RuntimeError   
-                                    
+                raise TypeError, ' Invalid Processing Context Type'  
+                
+                   
+            #If no dtype was not given, default to Double, and Double Complex 
+            if not dtype:
+                if self._data.dtype.kind == 'c':
+                    self._data = self._data.astype(_numpy.complex128)
+                else:
+                    self._data = self._data.astype(_numpy.float64)
+                
         
     def _returnarray(fn):
         """ Wrapper for method functions to return a PyCBC Array class """
@@ -140,9 +159,17 @@ class Array(object):
         """ Checks the input to method functions """
         @_functools.wraps(fn)
         def checked(self,other):
-            # TODO Check if other is compatible array (dtype)
-            # TODO Check if other is compatible scaler type
+
+            if type(other) not in _allowed_scalars and not Array:
+                raise TypeError,str( type(other) ) + ' is incompatible with ' + str( type(self)  ) 
+                
             if type(other) is Array:
+                if type(self._context) is not type(other._context):
+                    raise TypeError, "Incompatible Contexts"
+                
+                if self._data.dtype is not other._data.dtype:
+                    raise TypeError, "dtypes do not match"
+ 
                 other=other._data
             return fn(self,other)
         return checked
@@ -257,16 +284,27 @@ class Array(object):
     
     def innerprod(self,other):
         pass
+    
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return Array(self._data[index],copy=False)
+        else:
+            if type(self._data) is _numpy.ndarray:
+                return self._data[index]
+            elif _pycbc.have_cuda and type(self._data) is _cudaarray.GPUArray:
+                return self._data.get()[index]
+            elif _pycbc.have_opencl and type(self._data) is _openclarray.Array:
+                return self._data.get()[index]
         
     def ptr(self):
         """ Return pointer to memory """
-        if type(_data) is _numpy.ndarray:
-            return _data.ctypes.get_data()
+        if type(self._data) is _numpy.ndarray:
+            return self._data.ctypes.get_data()
             
-        if _pycbc.have_cuda and type(_data) is _cudaarray.GPUArray:
-            return _data.ptr
+        if _pycbc.have_cuda and type(self._data) is _cudaarray.GPUArray:
+            return self._data.ptr
     
-        if _pycbc.have_opencl and type(_data) is _openclarray.Array:
-            return _data.data
+        if _pycbc.have_opencl and type(self._data) is _openclarray.Array:
+            return self._data.data
         
    
