@@ -77,7 +77,8 @@ class CUDAContext(object):
 class OpenCLContext(object):
 
     def __init__(self):
-            
+        
+        import pyopencl
         self.device_context = pyopencl.create_some_context()
         self.queue = pyopencl.CommandQueue(self.device_context)   
         self.prior_context = None
