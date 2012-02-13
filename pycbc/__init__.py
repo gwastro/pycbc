@@ -1,16 +1,16 @@
 
 # Check for optional components of the PyCBC Package
-have_cuda = False
-have_opencl = False
+HAVE_CUDA = False
+HAVE_OPENCL = False
 
 try:
     import pycuda as _pycuda
-    have_cuda=True
+    HAVE_CUDA=True
 except ImportError:
     pass
     
 try:
     import pyopencl as _pyopencl
-    have_opencl=True
+    HAVE_OPENCL=True
 except ImportError:
     pass

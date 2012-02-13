@@ -4,11 +4,11 @@
 
 import pycbc
 
-if pycbc.have_cuda:
+if pycbc.HAVE_CUDA:
     import pycuda
     import pycuda.gpuarray
 
-if pycbc.have_opencl:
+if pycbc.HAVE_OPENCL:
     import pyopencl
     import pyopencl.array
 
@@ -132,13 +132,13 @@ cpu_test2 = array_test_maker(CPUContext(),numpy.float32)
 cpu_test3 = array_test_maker(CPUContext(),numpy.complex128)
 cpu_test4 = array_test_maker(CPUContext(),numpy.complex64)
 
-if pycbc.have_cuda:
+if pycbc.HAVE_CUDA:
     cuda_test = array_test_maker(CUDAContext(),numpy.float64)
     cuda_test2 = array_test_maker(CUDAContext(),numpy.float32)
     cuda_test3 = array_test_maker(CUDAContext(),numpy.complex128)
     cuda_test4 = array_test_maker(CUDAContext(),numpy.complex64)
 
-if pycbc.have_opencl:
+if pycbc.HAVE_OPENCL:
     cl_test = array_test_maker(OpenCLContext(),numpy.float64)
     cl_test2 = array_test_maker(OpenCLContext(),numpy.float32)
     cl_test3 = array_test_maker(OpenCLContext(),numpy.complex128)

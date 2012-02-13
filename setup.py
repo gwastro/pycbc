@@ -19,15 +19,17 @@
 """
 setup.py file for PyCBC package
 """
-import os, fnmatch, sys,commands
+import os
+import fnmatch
+import sys
+import commands
 from trace import fullmodname
 import unittest
 from distutils import sysconfig,file_util
 from distutils.core import setup,Command,Extension
 
 
-# ======== DISTUTILS CONFIGURATION AND BUILD SCRIPTS ==========================
-        
+# ======== DISTUTILS CONFIGURATION AND BUILD SCRIPTS ==========================        
 # Run all of the testing scripts
 class test(Command):
     user_options = []

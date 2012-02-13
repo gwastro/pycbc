@@ -27,9 +27,6 @@
 import pycbc 
 
 
-__author__ = "Alex Nitz <alex.nitz@ligo.org>"
-
-
 current_context = None
 
 class CPUContext(object):
