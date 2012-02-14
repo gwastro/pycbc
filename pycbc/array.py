@@ -52,8 +52,8 @@ class Array(object):
     _pycuda. 
     """
 
-    def __init__(self,object, dtype=None, copy=True,context=None):
-        """ object: An array-like object as specified by NumPy, this also 
+    def __init__(self,initial_array, dtype=None, copy=True,context=None):
+        """ initial_array: An array-like object as specified by NumPy, this also 
         includes instances of an underlying data type as described in 
         section 3 or an instance of the PYCBC Array class itself. This
         object is used to populate the data of the array.
@@ -61,7 +61,7 @@ class Array(object):
         dtype: A NumPy style dtype that describes the type of 
         encapsulated data (float32,compex64, etc)
 
-        copy: This defines whether the object is copied to instantiate the 
+        copy: This defines whether the initial_array is copied to instantiate the 
         array or is simply referenced. If copy is false, new data is not 
         created, and so the context is ignored. The default is to copy the
         given object.
@@ -70,24 +70,21 @@ class Array(object):
         """
         self._context = None
         self._data = None
-        
-        #Determine the correct context for the new Array instance.
-        if context is not None:
-            self._context=context
-        else:
-            self._context=_processingcontext.current_context
 
         if not copy:
-            if type(object) is Array:
-                self._data = object._data
-            elif type(object) is _numpy.ndarray:
-                self._data = object
-            elif _pycbc.HAVE_CUDA and type(object) is _cudaarray.GPUArray:
-                self._data = object
-            elif _pycbc.HAVE_OPENCL and type(object) is _openclarray.Array:
-                self._data = object
+            if type(initial_array) is Array:
+                self._data = initial_array._data
+                self._context=initial_array._context
+            elif type(initial_array) is _numpy.ndarray:
+                self._data = initial_array
+            elif _pycbc.HAVE_CUDA and type(initial_array) is _cudaarray.GPUArray:
+                self._data = initial_array
+                self._context = _processingcontext.CUDAContext()
+            elif _pycbc.HAVE_OPENCL and type(initial_array) is _openclarray.Array:
+                self._data = initial_array
+                self._context = _processingcontext.OpenCLContext()
             else:
-                raise TypeError(str(type(object))+' is not supported')
+                raise TypeError(str(type(initial_array))+' is not supported')
                 
             # Check that the dtype is supported.
             if self._data.dtype not in _ALLOWED_DTYPES:
@@ -95,17 +92,24 @@ class Array(object):
             
                 
         if copy:  
+        
+            #Determine the correct context for the new Array instance.
+            if context is not None:
+                self._context=context
+            else:
+                self._context=_processingcontext.current_context
+        
             #Check that a valid dtype was given.
             if dtype is not None: 
                 if dtype not in _ALLOWED_DTYPES:
                     raise TypeError(str(dtype) + ' is not supported')   
         
-            #Unwrap object
+            #Unwrap initial_array
             input_data = None
-            if type(object) is Array:
-                input_data = object._data
+            if type(initial_array) is Array:
+                input_data = initial_array._data
             else:
-                input_data = object
+                input_data = initial_array
 
             #Create new instance with input_data as initialization.
             if type(self._context) is _processingcontext.CPUContext:

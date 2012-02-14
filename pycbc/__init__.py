@@ -1,4 +1,6 @@
+"""
 
+"""
 # Check for optional components of the PyCBC Package
 HAVE_CUDA = False
 HAVE_OPENCL = False
