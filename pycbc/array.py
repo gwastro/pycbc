@@ -52,7 +52,7 @@ class Array(object):
     _pycuda. 
     """
 
-    def __init__(self,initial_array, dtype=None, copy=True,context=None):
+    def __init__(self,initial_array, dtype=None, copy=True,force_cpu=False):
         """ initial_array: An array-like object as specified by NumPy, this also 
         includes instances of an underlying data type as described in 
         section 3 or an instance of the PYCBC Array class itself. This
@@ -63,10 +63,10 @@ class Array(object):
 
         copy: This defines whether the initial_array is copied to instantiate the 
         array or is simply referenced. If copy is false, new data is not 
-        created, and so the context is ignored. The default is to copy the
-        given object.
+        created, and so all arguments that would force a copy are ignored. 
+        The default is to copy the given object. 
 
-        context: This one of the contexts found in _processingcontext
+        force_cpu: Force the array to use cpu memory
         """
         self._context = None
         self._data = None
@@ -91,11 +91,10 @@ class Array(object):
                 raise TypeError(str(self._data.dtype) + ' is not supported')
             
                 
-        if copy:  
-        
+        if copy:          
             #Determine the correct context for the new Array instance.
-            if context is not None:
-                self._context=context
+            if force_cpu:
+                self._context=_rocessingcontext.CPUContext()
             else:
                 self._context=_processingcontext.current_context
         
@@ -261,12 +260,12 @@ class Array(object):
     @_returnarray
     def real(self):
         """ Return real part of Array """
-        return Array(self._data.real,copy=True,context=self._context)
+        return Array(self._data.real,copy=True)
 
     @_returnarray
     def imag(self):
         """ Return imaginary part of Array """
-        return Array(self._data.imag,copy=True,context=self._context)
+        return Array(self._data.imag,copy=True)
     
     @_returnarray
     def conj(self):

@@ -35,64 +35,62 @@ class CPUContext(object):
         self.prior_context = None
 
     def __enter__(self):
-
-        #Save the old context so it can be restored and set the current context
-        # to this object
         global current_context 
-        self.prior_context= current_context
+        
+        if type(current_context) is not CPUContext:
+            raise RuntimeError("Nesting Contexts is not allowed")
+        
         current_context=self
         return self
 
     def __exit__(self,type,value,tracebook):
-
-        #Restore the prior context
-        global current_context
-        current_context = self.prior_context
+        pass
 
 
 class CUDAContext(object):
-    def __init__(self):
+    def __init__(self,device_id=None):
         self.device_context = None
-        self.prior_context = None
+        self.device = None
+        self.device_id=device_id
         import pycuda.autoinit
-        
+                
     
     def __enter__(self):
-        #Save the old context so it can be restored and set the current context
-        # to this object 
+    
         global current_context
-        self.prior_context=current_context
-        current_context=self
+        if type(current_context) is not CPUContext:
+            raise RuntimeError("Nesting Contexts is not allowed")
+        
+        current_context=self 
         return self
 
     def __exit__(self,type,value,tracebook):
 
-        #Restore the prior context
+    
         global current_context
-        current_context = self.prior_context
+        current_context = CPUContext()
 
 class OpenCLContext(object):
 
-    def __init__(self):
-        
+    def __init__(self,device_id=None):
+        self.device_context = None
+        self.device_id=device_id
         import pyopencl
         self.device_context = pyopencl.create_some_context()
         self.queue = pyopencl.CommandQueue(self.device_context)   
-        self.prior_context = None
+        pass
 
     def __enter__(self): 
-        #Save the old context so it can be restored and set the current context
-        # to this object 
+
+
         global current_context
-        self.prior_context=current_context
         current_context=self
+        
         return self
 
     def __exit__(self,type,value,tracebook):
-
-        #Restore the prior context
         global current_context
-        current_context = self.prior_context
+        current_context = CPUContext()
     
 #Set the default Processing Context to be the CPU
 current_context=CPUContext()
