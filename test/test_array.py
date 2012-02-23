@@ -1,7 +1,3 @@
-
-
-
-
 import pycbc
 
 if pycbc.HAVE_CUDA:
@@ -14,7 +10,7 @@ if pycbc.HAVE_OPENCL:
 
 import unittest
 from pycbc.array import Array
-from pycbc.processingcontext import *
+from pycbc.scheme import *
 import numpy 
 
 # ********************GENERIC ARRAY TESTS ***********************
@@ -145,22 +141,22 @@ def array_test_maker(context,dtype):
     tests.__name__ = str(type(context)) + " " + dtype.__name__
     return tests
 
-cpu_test = array_test_maker(CPUContext(),numpy.float64)
-cpu_test2 = array_test_maker(CPUContext(),numpy.float32)
-cpu_test3 = array_test_maker(CPUContext(),numpy.complex128)
-cpu_test4 = array_test_maker(CPUContext(),numpy.complex64)
+cpu_test = array_test_maker(CPUScheme(),numpy.float64)
+cpu_test2 = array_test_maker(CPUScheme(),numpy.float32)
+cpu_test3 = array_test_maker(CPUScheme(),numpy.complex128)
+cpu_test4 = array_test_maker(CPUScheme(),numpy.complex64)
 
 if pycbc.HAVE_CUDA:
-    cuda_test = array_test_maker(CUDAContext(),numpy.float64)
-    cuda_test2 = array_test_maker(CUDAContext(),numpy.float32)
-    cuda_test3 = array_test_maker(CUDAContext(),numpy.complex128)
-    cuda_test4 = array_test_maker(CUDAContext(),numpy.complex64)
+    cuda_test = array_test_maker(CUDAScheme(),numpy.float64)
+    cuda_test2 = array_test_maker(CUDAScheme(),numpy.float32)
+    cuda_test3 = array_test_maker(CUDAScheme(),numpy.complex128)
+    cuda_test4 = array_test_maker(CUDAScheme(),numpy.complex64)
 
 if pycbc.HAVE_OPENCL:
-    cl_test = array_test_maker(OpenCLContext(),numpy.float64)
-    cl_test2 = array_test_maker(OpenCLContext(),numpy.float32)
-    cl_test3 = array_test_maker(OpenCLContext(),numpy.complex128)
-    cl_test4 = array_test_maker(OpenCLContext(),numpy.complex64)
+    cl_test = array_test_maker(OpenCLScheme(),numpy.float64)
+    cl_test2 = array_test_maker(OpenCLScheme(),numpy.float32)
+    cl_test3 = array_test_maker(OpenCLScheme(),numpy.complex128)
+    cl_test4 = array_test_maker(OpenCLScheme(),numpy.complex64)
 
 
 # TODO More specific array tests (instatiation, failure modes, type conversion, etc)

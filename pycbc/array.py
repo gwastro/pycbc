@@ -33,7 +33,7 @@ import numpy as _numpy
 from numpy import float32,float64,complex64,complex128
 
 import pycbc as _pycbc
-import pycbc.processingcontext as _processingcontext
+import pycbc.scheme as _scheme
 
 if _pycbc.HAVE_CUDA:
     import pycuda as _pycuda
@@ -68,21 +68,20 @@ class Array(object):
 
         force_cpu: Force the array to use cpu memory
         """
-        self._context = None
+        context = None
         self._data = None
 
         if not copy:
             if type(initial_array) is Array:
                 self._data = initial_array._data
-                self._context=initial_array._context
             elif type(initial_array) is _numpy.ndarray:
                 self._data = initial_array
             elif _pycbc.HAVE_CUDA and type(initial_array) is _cudaarray.GPUArray:
                 self._data = initial_array
-                self._context = _processingcontext.CUDAContext()
+                context = _scheme.CUDAScheme()
             elif _pycbc.HAVE_OPENCL and type(initial_array) is _openclarray.Array:
                 self._data = initial_array
-                self._context = _processingcontext.OpenCLContext()
+                context = _scheme.OpenCLScheme()
             else:
                 raise TypeError(str(type(initial_array))+' is not supported')
                 
@@ -94,9 +93,9 @@ class Array(object):
         if copy:          
             #Determine the correct context for the new Array instance.
             if force_cpu:
-                self._context=_rocessingcontext.CPUContext()
+                context=_scheme.CPUScheme()
             else:
-                self._context=_processingcontext.current_context
+                context=_scheme.current_context
         
             #Check that a valid dtype was given.
             if dtype is not None: 
@@ -111,7 +110,7 @@ class Array(object):
                 input_data = initial_array
 
             #Create new instance with input_data as initialization.
-            if type(self._context) is _processingcontext.CPUContext:
+            if type(context) is _scheme.CPUScheme:
                 if _pycbc.HAVE_CUDA and (type(input_data) is
                                          _cudaarray.GPUArray):
                     self._data = input_data.get()
@@ -120,17 +119,17 @@ class Array(object):
                     self._data = input_data.get()
                 else:
                     self._data = _numpy.array(input_data,dtype=dtype)          
-            elif _pycbc.HAVE_CUDA and (type(self._context) is 
-                                       _processingcontext.CUDAContext):
+            elif _pycbc.HAVE_CUDA and (type(context) is 
+                                       _scheme.CUDAScheme):
                 if type(input_data) is _cudaarray.GPUArray:
                     input_data = input_data.get()
                 self._data = _cudaarray.to_gpu(_numpy.array(input_data,
                                                             dtype=dtype))       
-            elif _pycbc.HAVE_OPENCL and (type(self._context) is 
-                                         _processingcontext.OpenCLContext):
+            elif _pycbc.HAVE_OPENCL and (type(context) is 
+                                         _scheme.OpenCLScheme):
                 if type(input_data) is _openclarray.Array:
                     input_data = input_data.get()
-                self._data = _openclarray.to_device(self._context.queue,
+                self._data = _openclarray.to_device(context.queue,
                                                     _numpy.array(input_data,
                                                                  dtype=dtype))
             else:
@@ -159,8 +158,8 @@ class Array(object):
                 raise TypeError(str(type(other)) + ' is incompatible with ' +
                                 str(type(self)))          
             if type(other) is Array:
-                if type(self._context) is not type(other._context):
-                    raise TypeError("Incompatible Contexts")     
+                if type(self._data) is not type(other._data):
+                    raise TypeError("Incompatible Types")     
                 if self._data.dtype is not other._data.dtype:
                     raise TypeError("dtypes do not match")
                 other = other._data

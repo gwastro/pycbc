@@ -29,15 +29,11 @@ import pycbc
 
 current_context = None
 
-class CPUContext(object):
-    def __init__(self):
-        self.device_context = None
-        self.prior_context = None
-
+class CPUScheme(object):
     def __enter__(self):
         global current_context 
         
-        if type(current_context) is not CPUContext:
+        if type(current_context) is not CPUScheme:
             raise RuntimeError("Nesting Contexts is not allowed")
         
         current_context=self
@@ -47,51 +43,52 @@ class CPUContext(object):
         pass
 
 
-class CUDAContext(object):
+class CUDAScheme(object):
     def __init__(self,device_id=None):
         self.device_context = None
         self.device = None
         self.device_id=device_id
-        import pycuda.autoinit
+        import pycuda.autoinit      
                 
     
     def __enter__(self):
-    
         global current_context
-        if type(current_context) is not CPUContext:
-            raise RuntimeError("Nesting Contexts is not allowed")
+    
+        if type(current_context) is not CPUScheme:
+            raise RuntimeError("Nesting is not allowed")
         
-        current_context=self 
+        current_context=self     
         return self
 
     def __exit__(self,type,value,tracebook):
-
-    
         global current_context
-        current_context = CPUContext()
+        current_context = CPUScheme()
 
-class OpenCLContext(object):
 
-    def __init__(self,device_id=None):
-        self.device_context = None
-        self.device_id=device_id
+class OpenCLScheme(object):
+
+    def __init__(self,platform_id=0,device_id=0):
         import pyopencl
-        self.device_context = pyopencl.create_some_context()
+        
+        self.platform = pyopencl.get_platforms()[platform_id]
+        self.device =  self.platform.get_devices()[device_id]
+    
+        self.device_context = pyopencl.Context(self.platform.get_devices())
         self.queue = pyopencl.CommandQueue(self.device_context)   
-        pass
 
-    def __enter__(self): 
-
-
+    def __enter__(self):
         global current_context
+        if type(current_context) is not CPUScheme:
+            raise RuntimeError("Nesting is not allowed")
+
         current_context=self
         
         return self
 
     def __exit__(self,type,value,tracebook):
         global current_context
-        current_context = CPUContext()
+        current_context = CPUScheme()
     
 #Set the default Processing Context to be the CPU
-current_context=CPUContext()
+current_context=CPUScheme()
 
