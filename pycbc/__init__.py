@@ -1,4 +1,4 @@
-"""
+"""PyCBC contains a toolkit for CBC gravitational wave analysis
 
 """
 # Check for optional components of the PyCBC Package

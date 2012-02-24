@@ -129,6 +129,18 @@ class tests_base(object):
             a = Array([5]  ,dtype=self.dtype)
             b = a.conj()
             self.assertEqual(b[0],(5))
+            
+    def test_sum(self):
+        with self.context:
+            a = Array([5]  ,dtype=self.dtype)
+            b = a.sum()
+            self.assertEqual(b,(5))
+            
+    def test_dot(self):
+        with self.context:
+            a = Array([5]  ,dtype=self.dtype)
+            b = a.dot(a)
+            self.assertEqual(b,(25))
         
     
 

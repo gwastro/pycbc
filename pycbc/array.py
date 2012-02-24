@@ -53,16 +53,16 @@ class Array(object):
     """
 
     def __init__(self,initial_array, dtype=None, copy=True,force_cpu=False):
-        """ initial_array: An array-like object as specified by NumPy, this also 
-        includes instances of an underlying data type as described in 
+        """ initial_array: An array-like object as specified by NumPy, this 
+        also includes instances of an underlying data type as described in 
         section 3 or an instance of the PYCBC Array class itself. This
         object is used to populate the data of the array.
 
         dtype: A NumPy style dtype that describes the type of 
         encapsulated data (float32,compex64, etc)
 
-        copy: This defines whether the initial_array is copied to instantiate the 
-        array or is simply referenced. If copy is false, new data is not 
+        copy: This defines whether the initial_array is copied to instantiate 
+        the array or is simply referenced. If copy is false, new data is not 
         created, and so all arguments that would force a copy are ignored. 
         The default is to copy the given object. 
 
@@ -271,11 +271,24 @@ class Array(object):
         """ Return complex conjugate of Array. """ 
         return self._data.conj()
         
-    def norm(self):
-        pass
+    def sum(self):
+        """ Return the sum of the the array. """
+        if type(self._data) is _numpy.ndarray:
+            return self._data.sum()
+        elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
+            return _pycuda.gpuarray.sum(self._data).get().max()
+        elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
+            return _pyopencl.array.sum(self._data).get().max()
     
-    def innerprod(self,other):
-        pass
+    @_checkother
+    def dot(self,other):
+        """ Return the dot product"""
+        if type(self._data) is _numpy.ndarray:
+            return self._data.dot(other)
+        elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
+            return _pycuda.gpuarray.dot(self._data,other).get().max()
+        elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
+            return _pyopencl.array.dot(self._data,other).get().max()
     
     def __getitem__(self, index):
         if isinstance(index, slice):
@@ -298,3 +311,11 @@ class Array(object):
 
         if _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
             return self._data.data
+            
+    def lal_ptr():
+        """ Returns a lal vector that points to the memory of this array """
+        pass
+        
+        
+        
+        
