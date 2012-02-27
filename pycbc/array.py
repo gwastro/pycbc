@@ -95,7 +95,7 @@ class Array(object):
             if force_cpu:
                 context=_scheme.CPUScheme()
             else:
-                context=_scheme.current_context
+                context=_scheme.current_scheme
         
             #Check that a valid dtype was given.
             if dtype is not None: 
@@ -314,7 +314,12 @@ class Array(object):
             
     def lal_ptr():
         """ Returns a lal vector that points to the memory of this array """
-        pass
+        if type(self._data) is _numpy.ndarray:
+            pass
+        if _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
+            raise RuntimeError("Cannot convert GPU memory into a lal type")
+        if _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
+            raise RuntimeError("Cannot convert GPU memory into a lal type")
         
         
         

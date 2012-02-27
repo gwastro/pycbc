@@ -37,16 +37,16 @@ class CPUScheme(object):
 
 class _DeviceScheme(object):
     def __enter__(self):
-        global current_context 
-        if type(current_context) is not CPUScheme:
+        global current_scheme 
+        if type(current_scheme) is not CPUScheme:
             raise RuntimeError("Nesting processing schemes are not supported.")
         
-        current_context = self
+        current_scheme = self
         return self
 
     def __exit__(self,type,value,traceback):
-        global current_context
-        current_context = CPUScheme()
+        global current_scheme
+        current_scheme = CPUScheme()
 
 class CUDAScheme(_DeviceScheme):
     """Context that sets PyCBC objects to use a CUDA processing scheme. """
@@ -69,16 +69,25 @@ class CUDAScheme(_DeviceScheme):
            
 class OpenCLScheme(_DeviceScheme):
     """Context that sets PyCBC objects to use a OpenCL processing scheme. """
-    def __init__(self,platform_id=0,device_num=0):
+    def __init__(self,platform_name=None,device_num=0):
         if not pycbc.HAVE_OPENCL:
             raise RuntimeError("Install PyOpenCL to use OpenCL processing")   
         import pyopencl  
+        
+        #If no platform is given, use the first one
+        if platform_name is None:
+            platform_id = 0
+        elif platform_name is not None:
+            for platform in pyopencl.get_platforms():
+                if platform.name == platform_name:
+                    platform_id = pyopencl.get_platforms().index(platform)
+        
         self.platform = pyopencl.get_platforms()[platform_id]
         self.device =  self.platform.get_devices()[device_num]
-        self.device_context = pyopencl.Context(self.platform.get_devices())
-        self.queue = pyopencl.CommandQueue(self.device_context)     
+        self.context = pyopencl.Context([self.device])
+        self.queue = pyopencl.CommandQueue(self.context)     
 
 
 #Set the default Processing Context to be the CPU
-current_context=CPUScheme()
+current_scheme=CPUScheme()
 
