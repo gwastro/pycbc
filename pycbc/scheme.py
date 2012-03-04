@@ -59,6 +59,11 @@ mgr = _SchemeManager()
 
 class DefaultScheme(object):
     """Context that sets PyCBC objects to use CPU processing. """
+    _single = None
+    def __init__(self):
+        if DefaultScheme._single is not None:
+            raise RuntimeError("Only one processing scheme can be used")
+        DefaultScheme._single = True
     def __enter__(self):
         if type(self) is DefaultScheme:
             mgr.shift_to(None)
@@ -68,30 +73,35 @@ class DefaultScheme(object):
     def __exit__(self,type,value,traceback):
         mgr.unlock()
         mgr.shift_to(None)
+        
+    def __del__(self):
+        DefaultScheme._single = None
+
+def clean_cuda(context):
+    context.pop()
+    from pycuda.tools import clear_context_caches
+    clear_context_caches()
 
 class CUDAScheme(DefaultScheme):
     """Context that sets PyCBC objects to use a CUDA processing scheme. """
     def __init__(self,device_num=0):
+        DefaultScheme.__init__(self)
         if not pycbc.HAVE_CUDA:
             raise RuntimeError("Install PyCUDA to use CUDA processing")    
         import pycuda.driver   
         pycuda.driver.init()
         self.device = pycuda.driver.Device(device_num)
         self.context = self.device.make_context()
-        self.context.pop()
+        import atexit
+        atexit.register(clean_cuda,self.context)
         
-    def __enter__(self):
-        DefaultScheme.__enter__(self)
-        self.context.push()
-        
-    def __exit__(self,type,value,traceback):
-        DefaultScheme.__exit__(self,type,value,traceback)
-        self.context.pop()
-        
-           
+
+
 class OpenCLScheme(DefaultScheme):
     """Context that sets PyCBC objects to use a OpenCL processing scheme. """
+    _single = None
     def __init__(self,platform_name=None,device_num=0):
+        DefaultScheme.__init__(self)
         if not pycbc.HAVE_OPENCL:
             raise RuntimeError("Install PyOpenCL to use OpenCL processing")   
         import pyopencl  

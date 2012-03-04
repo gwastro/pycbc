@@ -151,6 +151,7 @@ def array_test_maker(context,dtype):
             self.dtype=dtype
             unittest.TestCase.__init__(self,*args)
     tests.__name__ = str(type(context)) + " " + dtype.__name__
+    DefaultScheme._single = None
     return tests
 
 cpu_test = array_test_maker(DefaultScheme(),numpy.float64)

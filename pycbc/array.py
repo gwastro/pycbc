@@ -84,9 +84,11 @@ class Array(object):
                 self._data = initial_array._data
             elif type(initial_array) is _numpy.ndarray:
                 self._data = initial_array
-            elif type(self._scheme) is _scheme.CUDAScheme  and type(initial_array) is _cudaarray.GPUArray:
+            elif type(self._scheme) is _scheme.CUDAScheme  and \
+            type(initial_array) is _cudaarray.GPUArray:
                 self._data = initial_array
-            elif type(self._scheme) is _scheme.OpenCLScheme and type(initial_array) is _openclarray.Array:
+            elif type(self._scheme) is _scheme.OpenCLScheme and \
+            type(initial_array) is _openclarray.Array:
                 self._data = initial_array
             else:
                 raise TypeError(str(type(initial_array))+' is not supported')
@@ -160,9 +162,9 @@ class Array(object):
                 raise TypeError(str(type(other)) + ' is incompatible with ' +
                                 str(type(self)))          
             if type(other) is Array:
-                _convert_to_scheme(other)    
                 if self._data.dtype is not other._data.dtype:
                     raise TypeError("dtypes do not match")
+                _convert_to_scheme(other)    
                 other = other._data
             return fn(self,other)
         return checked  
@@ -331,14 +333,14 @@ class Array(object):
                 return self._data.get()[index]
 
     @_convert
-    def lal_ptr():
+    def ptr(self):
         """ Returns a lal vector that points to the memory of this array """
         if type(self._data) is _numpy.ndarray:
             pass
         if _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
-            raise RuntimeError("Cannot convert GPU memory into a lal type")
+            return self._data.ptr
         if _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-            raise RuntimeError("Cannot convert GPU memory into a lal type")
+            return self._data.data
         
         
         
