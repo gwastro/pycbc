@@ -28,27 +28,48 @@ objects.
 """
 import pycbc
 
-class CPUScheme(object):
+class _SchemeManager(object):
+
+    _single = None
+
+    def __init__(self):
+
+        if _SchemeManager._single is not None: 
+            raise RuntimeError("SchemeManager is a private class")
+        _SchemeManager._single= self
+
+        self.state= None  
+        self._lock= False
+        
+    def lock(self):
+        self._lock= True 
+        
+    def unlock(self):
+        self._lock= False
+    
+    def shift_to(self, state):
+        if self._lock is False:
+            self.state = state
+        else:
+            raise RuntimeError("The state is locked, cannot shift schemes")
+
+# Create the global processing scheme manager
+mgr = _SchemeManager()
+
+
+class DefaultScheme(object):
     """Context that sets PyCBC objects to use CPU processing. """
     def __enter__(self):
-        pass
+        if type(self) is DefaultScheme:
+            mgr.shift_to(None)
+        else:
+            mgr.shift_to(self)
+        mgr.lock()
     def __exit__(self,type,value,traceback):
-        pass
+        mgr.unlock()
+        mgr.shift_to(None)
 
-class _DeviceScheme(object):
-    def __enter__(self):
-        global current_scheme 
-        if type(current_scheme) is not CPUScheme:
-            raise RuntimeError("Nesting processing schemes are not supported.")
-        
-        current_scheme = self
-        return self
-
-    def __exit__(self,type,value,traceback):
-        global current_scheme
-        current_scheme = CPUScheme()
-
-class CUDAScheme(_DeviceScheme):
+class CUDAScheme(DefaultScheme):
     """Context that sets PyCBC objects to use a CUDA processing scheme. """
     def __init__(self,device_num=0):
         if not pycbc.HAVE_CUDA:
@@ -60,14 +81,15 @@ class CUDAScheme(_DeviceScheme):
         self.context.pop()
         
     def __enter__(self):
-        _DeviceScheme.__enter__(self)
+        DefaultScheme.__enter__(self)
         self.context.push()
         
     def __exit__(self,type,value,traceback):
-        _DeviceScheme.__exit__(self,type,value,traceback)
+        DefaultScheme.__exit__(self,type,value,traceback)
         self.context.pop()
+        
            
-class OpenCLScheme(_DeviceScheme):
+class OpenCLScheme(DefaultScheme):
     """Context that sets PyCBC objects to use a OpenCL processing scheme. """
     def __init__(self,platform_name=None,device_num=0):
         if not pycbc.HAVE_OPENCL:
@@ -88,6 +110,4 @@ class OpenCLScheme(_DeviceScheme):
         self.queue = pyopencl.CommandQueue(self.context)     
 
 
-#Set the default Processing Context to be the CPU
-current_scheme=CPUScheme()
 

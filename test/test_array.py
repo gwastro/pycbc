@@ -153,10 +153,10 @@ def array_test_maker(context,dtype):
     tests.__name__ = str(type(context)) + " " + dtype.__name__
     return tests
 
-cpu_test = array_test_maker(CPUScheme(),numpy.float64)
-cpu_test2 = array_test_maker(CPUScheme(),numpy.float32)
-cpu_test3 = array_test_maker(CPUScheme(),numpy.complex128)
-cpu_test4 = array_test_maker(CPUScheme(),numpy.complex64)
+cpu_test = array_test_maker(DefaultScheme(),numpy.float64)
+cpu_test2 = array_test_maker(DefaultScheme(),numpy.float32)
+cpu_test3 = array_test_maker(DefaultScheme(),numpy.complex128)
+cpu_test4 = array_test_maker(DefaultScheme(),numpy.complex64)
 
 if pycbc.HAVE_CUDA:
     cuda_test = array_test_maker(CUDAScheme(),numpy.float64)

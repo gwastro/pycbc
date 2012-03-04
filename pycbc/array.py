@@ -46,13 +46,21 @@ _ALLOWED_DTYPES = [_numpy.float32,_numpy.float64,_numpy.complex64,
                    _numpy.complex128]
 _ALLOWED_SCALARS = [int,long, float]
 
+
+def _convert_to_scheme(ary):
+    if ary._scheme is not _scheme.mgr.state: 
+        converted_array = Array(ary,dtype=ary._data.dtype) 
+        ary._data = converted_array._data
+        ary._scheme = _scheme.mgr.state
+
+
 class Array(object):
     """Array used to do numeric calculations on a various compute
     devices. It is a convience wrapper around _numpy, _pyopencl, and
     _pycuda. 
     """
 
-    def __init__(self,initial_array, dtype=None, copy=True,force_cpu=False):
+    def __init__(self,initial_array, dtype=None, copy=True):
         """ initial_array: An array-like object as specified by NumPy, this 
         also includes instances of an underlying data type as described in 
         section 3 or an instance of the PYCBC Array class itself. This
@@ -65,23 +73,21 @@ class Array(object):
         the array or is simply referenced. If copy is false, new data is not 
         created, and so all arguments that would force a copy are ignored. 
         The default is to copy the given object. 
-
-        force_cpu: Force the array to use cpu memory
         """
-        context = None
+        self._scheme=_scheme.mgr.state
         self._data = None
-
+        
         if not copy:
             if type(initial_array) is Array:
+                if self._scheme is not initial_array._scheme:
+                    raise TypeError("Cannot avoid a copy of this Array")
                 self._data = initial_array._data
             elif type(initial_array) is _numpy.ndarray:
                 self._data = initial_array
-            elif _pycbc.HAVE_CUDA and type(initial_array) is _cudaarray.GPUArray:
+            elif type(self._scheme) is _scheme.CUDAScheme  and type(initial_array) is _cudaarray.GPUArray:
                 self._data = initial_array
-                context = _scheme.CUDAScheme()
-            elif _pycbc.HAVE_OPENCL and type(initial_array) is _openclarray.Array:
+            elif type(self._scheme) is _scheme.OpenCLScheme and type(initial_array) is _openclarray.Array:
                 self._data = initial_array
-                context = _scheme.OpenCLScheme()
             else:
                 raise TypeError(str(type(initial_array))+' is not supported')
                 
@@ -90,13 +96,7 @@ class Array(object):
                 raise TypeError(str(self._data.dtype) + ' is not supported')
             
                 
-        if copy:          
-            #Determine the correct context for the new Array instance.
-            if force_cpu:
-                context=_scheme.CPUScheme()
-            else:
-                context=_scheme.current_scheme
-        
+        if copy:                  
             #Check that a valid dtype was given.
             if dtype is not None: 
                 if dtype not in _ALLOWED_DTYPES:
@@ -110,7 +110,7 @@ class Array(object):
                 input_data = initial_array
 
             #Create new instance with input_data as initialization.
-            if type(context) is _scheme.CPUScheme:
+            if self._scheme is None:
                 if _pycbc.HAVE_CUDA and (type(input_data) is
                                          _cudaarray.GPUArray):
                     self._data = input_data.get()
@@ -119,21 +119,21 @@ class Array(object):
                     self._data = input_data.get()
                 else:
                     self._data = _numpy.array(input_data,dtype=dtype)          
-            elif _pycbc.HAVE_CUDA and (type(context) is 
+            elif _pycbc.HAVE_CUDA and (type(self._scheme) is 
                                        _scheme.CUDAScheme):
                 if type(input_data) is _cudaarray.GPUArray:
                     input_data = input_data.get()
                 self._data = _cudaarray.to_gpu(_numpy.array(input_data,
                                                             dtype=dtype))       
-            elif _pycbc.HAVE_OPENCL and (type(context) is 
+            elif _pycbc.HAVE_OPENCL and (type(self._scheme) is 
                                          _scheme.OpenCLScheme):
                 if type(input_data) is _openclarray.Array:
                     input_data = input_data.get()
-                self._data = _openclarray.to_device(context.queue,
+                self._data = _openclarray.to_device(self._scheme.queue,
                                                     _numpy.array(input_data,
                                                                  dtype=dtype))
             else:
-                raise TypeError('Invalid Processing Context Type')
+                raise TypeError('Invalid Processing scheme Type')
                 
                    
             #If no dtype was not given, default to Double, and Double Complex. 
@@ -150,6 +150,8 @@ class Array(object):
             return Array(fn(*args),copy=False)
         return wrapped
     
+
+    
     def _checkother(fn):
         # Checks the input to method functions 
         @_functools.wraps(fn)
@@ -158,45 +160,58 @@ class Array(object):
                 raise TypeError(str(type(other)) + ' is incompatible with ' +
                                 str(type(self)))          
             if type(other) is Array:
-                if type(self._data) is not type(other._data):
-                    raise TypeError("Incompatible Types")     
+                _convert_to_scheme(other)    
                 if self._data.dtype is not other._data.dtype:
                     raise TypeError("dtypes do not match")
                 other = other._data
             return fn(self,other)
-        return checked
+        return checked  
+            
+    def _convert(fn):
+        # Convert this array to the current processing scheme
+        @_functools.wraps(fn)
+        def converted(self,*args):
+            _convert_to_scheme(self)
+            return fn(self,*args)
+        return converted
             
     @_returnarray
+    @_convert
     @_checkother 
     def __mul__(self,other):
         """ Multiply by an Array or a scalar and return an Array. """
         return self._data * other
     
-    @_checkother
     @_returnarray
+    @_convert
+    @_checkother
     def __rmul__(self,other):
         """ Multiply by an Array or a scalar and return an Array. """
         return self._data * other
 
+    @_convert
     @_checkother
     def __imul__(self,other):
         """ Multiply by an Array or a scalar and return an Array. """
         self._data *= other
         return self
     
-    @_checkother
     @_returnarray
+    @_convert
+    @_checkother
     def __add__(self,other):
         """ Add Array to Array or scalar and return an Array. """
         return self._data + other
         
-    @_checkother
     @_returnarray
+    @_convert
+    @_checkother
     def __radd__(self,other):
         """ Add Array to Array or scalar and return an Array. """
         return self._data + other
     
-    @_checkother 
+    @_convert
+    @_checkother
     def __iadd__(self,other):
         """ Add Array to Array or scalar and return an Array. """
         self._data += other
@@ -208,43 +223,50 @@ class Array(object):
         """ Divide Array by Array or scalar and return an Array. """
         return self._data / other
         
-    @_checkother
     @_returnarray
+    @_convert
+    @_checkother
     def __rdiv__(self,other):
         """ Divide Array by Array or scalar and return an Array. """
         return other / self._data
         
+    @_convert
     @_checkother
     def __idiv__(self,other):
         """ Divide Array by Array or scalar and return an Array. """
         self._data /= other
         return self
         
-    @_checkother
     @_returnarray
+    @_convert
+    @_checkother
     def __sub__(self,other):
         """ Subtract Array or scalar from Array and return an Array. """
         return self._data - other 
         
-    @_checkother
     @_returnarray
+    @_convert
+    @_checkother
     def __rsub__(self,other):
         """ Subtract Array or scalar from Array and return an Array. """
         return other - self._data
         
+    @_convert   
     @_checkother
     def __isub__(self,other):
         """ Subtract Array or scalar from Array and return an Array. """
         self._data -= other
         return self
         
-    @_checkother
     @_returnarray
+    @_convert
+    @_checkother
     def __pow__(self,other):
         """ Exponentiate Arrary by scalar """
         return self._data ** other
     
     @_returnarray  
+    @_convert
     def __abs__(self):
         """ Return absolute value of Array """
         return abs(self._data)
@@ -253,24 +275,29 @@ class Array(object):
         """ Return length of Array """
         return len(self._data)
         
+    @_convert
     def __str__(self):
         return str(self._data)
     
     @_returnarray
+    @_convert
     def real(self):
         """ Return real part of Array """
         return Array(self._data.real,copy=True)
 
     @_returnarray
+    @_convert
     def imag(self):
         """ Return imaginary part of Array """
         return Array(self._data.imag,copy=True)
     
     @_returnarray
+    @_convert
     def conj(self):
         """ Return complex conjugate of Array. """ 
         return self._data.conj()
         
+    @_convert
     def sum(self):
         """ Return the sum of the the array. """
         if type(self._data) is _numpy.ndarray:
@@ -280,6 +307,7 @@ class Array(object):
         elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
             return _pyopencl.array.sum(self._data).get().max()
     
+    @_convert
     @_checkother
     def dot(self,other):
         """ Return the dot product"""
@@ -290,6 +318,7 @@ class Array(object):
         elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
             return _pyopencl.array.dot(self._data,other).get().max()
     
+    @_convert
     def __getitem__(self, index):
         if isinstance(index, slice):
             return Array(self._data[index],copy=False)
@@ -301,17 +330,7 @@ class Array(object):
             elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
                 return self._data.get()[index]
 
-    def ptr(self):
-        """ Return pointer to memory. """
-        if type(self._data) is _numpy.ndarray:
-            return self._data.ctypes.get_data()
-
-        if _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
-            return self._data.ptr
-
-        if _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-            return self._data.data
-            
+    @_convert
     def lal_ptr():
         """ Returns a lal vector that points to the memory of this array """
         if type(self._data) is _numpy.ndarray:
