@@ -343,5 +343,21 @@ class Array(object):
             return self._data.data
         
         
-        
-        
+    @_convert
+    def  lal(self):
+        """ Returns a LAL Object that contains this data """
+        import swiglal       
+        lal_data = None
+        if type(self._data) is not _numpy.ndarray:
+            raise TypeError("Cannot return lal type from the GPU") 
+        elif self._data.dtype == float32:
+            lal_data = swiglal.XLALCreateREAL4Vector(len(self))
+        elif self._data.dtype == float64:
+            lal_data = swiglal.XLALCreateREAL8Vector(len(self))
+        elif self._data.dtype == complex64:
+            lal_data = swiglal.XLALCreateCOMPLEX8Vector(len(self))
+        elif self._data.dtype == complex128:
+            lal_data = swiglal.XLALCreateCOMPLEX16Vector(len(self))    
+
+        lal_data.data = self._data
+        return lal_data
