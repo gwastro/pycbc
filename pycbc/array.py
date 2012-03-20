@@ -78,7 +78,7 @@ class Array(object):
         self._data = None
         
         if not copy:
-            if type(initial_array) is Array:
+            if isinstance(initial_array,Array):
                 if self._scheme is not initial_array._scheme:
                     raise TypeError("Cannot avoid a copy of this Array")
                 self._data = initial_array._data
@@ -106,7 +106,7 @@ class Array(object):
         
             #Unwrap initial_array
             input_data = None
-            if type(initial_array) is Array:
+            if isinstance(initial_array,Array):
                 input_data = initial_array._data
             else:
                 input_data = initial_array
@@ -161,7 +161,7 @@ class Array(object):
             if type(other) not in _ALLOWED_SCALARS and not Array:
                 raise TypeError(str(type(other)) + ' is incompatible with ' +
                                 str(type(self)))          
-            if type(other) is Array:
+            if isinstance(other,Array):
                 if self._data.dtype is not other._data.dtype:
                     raise TypeError("dtypes do not match")
                 _convert_to_scheme(other)    
@@ -334,7 +334,7 @@ class Array(object):
 
     @_convert
     def ptr(self):
-        """ Returns a lal vector that points to the memory of this array """
+        """ Returns a pointer to the memory of this array """
         if type(self._data) is _numpy.ndarray:
             pass
         if _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
@@ -361,3 +361,9 @@ class Array(object):
 
         lal_data.data = self._data
         return lal_data
+
+def zeros(length,dtype=None):
+	return Array(_numpy.zeros(length),dtype=None)
+
+
+

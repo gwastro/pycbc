@@ -54,16 +54,12 @@ class test(Command):
     def run(self):
         # Ensure that we have everything built first
         self.run_command('build')
-
         # Get the list of cpu test modules
-        self.test_modules+= self.find_test_modules("test*.py")
-        
+        self.test_modules+= self.find_test_modules("test*.py")     
         # Run from the build directory
         sys.path.insert(0,self.build_dir)
-
         # load all of the tests into a suite
         suite = unittest.TestLoader().loadTestsFromNames(self.test_modules)
-
         # run test suite
         results=unittest.TextTestRunner(verbosity=2).run(suite)
 
@@ -77,6 +73,7 @@ setup (
     url = 'https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home',
     cmdclass = { 'test'  : test ,},
     ext_modules = [],
+	requires = ['swiglal'],
     packages = ['pycbc'],
     scripts = [],
 )
