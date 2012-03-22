@@ -29,6 +29,7 @@ PyOpen CL, and Numpy.
 
 import functools as _functools
 
+import swiglal as _swiglal
 import numpy as _numpy
 from numpy import float32,float64,complex64,complex128
 
@@ -136,10 +137,9 @@ class Array(object):
                                                                  dtype=dtype))
             else:
                 raise TypeError('Invalid Processing scheme Type')
-                
-                   
-            #If no dtype was not given, default to Double, and Double Complex. 
-            if not dtype:
+
+            #If no dtype was given, default to Double, and Double Complex. 
+            if dtype is None:
                 if self._data.dtype.kind == 'c':
                     self._data = self._data.astype(_numpy.complex128)
                 else:
@@ -162,8 +162,6 @@ class Array(object):
                 raise TypeError(str(type(other)) + ' is incompatible with ' +
                                 str(type(self)))          
             if isinstance(other,Array):
-                if self._data.dtype is not other._data.dtype:
-                    raise TypeError("dtypes do not match")
                 _convert_to_scheme(other)    
                 other = other._data
             return fn(self,other)
@@ -219,6 +217,7 @@ class Array(object):
         self._data += other
         return self
         
+    @_convert
     @_checkother
     @_returnarray    
     def __div__(self,other):
@@ -277,7 +276,6 @@ class Array(object):
         """ Return length of Array """
         return len(self._data)
         
-    @_convert
     def __str__(self):
         return str(self._data)
     
@@ -336,7 +334,7 @@ class Array(object):
     def ptr(self):
         """ Returns a pointer to the memory of this array """
         if type(self._data) is _numpy.ndarray:
-            pass
+            raise TypeError("Please use swiglal for CPU objects")
         if _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
             return self._data.ptr
         if _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
@@ -346,18 +344,17 @@ class Array(object):
     @_convert
     def  lal(self):
         """ Returns a LAL Object that contains this data """
-        import swiglal       
         lal_data = None
         if type(self._data) is not _numpy.ndarray:
             raise TypeError("Cannot return lal type from the GPU") 
         elif self._data.dtype == float32:
-            lal_data = swiglal.XLALCreateREAL4Vector(len(self))
+            lal_data = _swiglal.XLALCreateREAL4Vector(len(self))
         elif self._data.dtype == float64:
-            lal_data = swiglal.XLALCreateREAL8Vector(len(self))
+            lal_data = _swiglal.XLALCreateREAL8Vector(len(self))
         elif self._data.dtype == complex64:
-            lal_data = swiglal.XLALCreateCOMPLEX8Vector(len(self))
+            lal_data = _swiglal.XLALCreateCOMPLEX8Vector(len(self))
         elif self._data.dtype == complex128:
-            lal_data = swiglal.XLALCreateCOMPLEX16Vector(len(self))    
+            lal_data = _swiglal.XLALCreateCOMPLEX16Vector(len(self))    
 
         lal_data.data = self._data
         return lal_data
