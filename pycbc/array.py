@@ -54,7 +54,6 @@ def _convert_to_scheme(ary):
         ary._data = converted_array._data
         ary._scheme = _scheme.mgr.state
 
-
 class Array(object):
     """Array used to do numeric calculations on a various compute
     devices. It is a convience wrapper around _numpy, _pyopencl, and
@@ -143,17 +142,18 @@ class Array(object):
                 if self._data.dtype.kind == 'c':
                     self._data = self._data.astype(_numpy.complex128)
                 else:
-                    self._data = self._data.astype(_numpy.float64)            
-        
+                       self._data = self._data.astype(_numpy.float64)             
+
     def _returnarray(fn):
         # Wrapper for method functions to return a PyCBC Array class 
         @_functools.wraps(fn)
-        def wrapped(*args):
-            return Array(fn(*args),copy=False)
+        def wrapped(self,*args):
+            return self._returntype(fn(self,*args))
         return wrapped
-    
 
-    
+    def _returntype(self,ary):
+        return Array(ary, copy=False)
+
     def _checkother(fn):
         # Checks the input to method functions 
         @_functools.wraps(fn)
@@ -162,7 +162,7 @@ class Array(object):
                 raise TypeError(str(type(other)) + ' is incompatible with ' +
                                 str(type(self)))          
             if isinstance(other,Array):
-                _convert_to_scheme(other)    
+                _convert_to_scheme(other)
                 other = other._data
             return fn(self,other)
         return checked  
@@ -338,8 +338,7 @@ class Array(object):
         if _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
             return self._data.ptr
         if _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-            return self._data.data
-        
+            return self._data.data 
         
     @_convert
     def  lal(self):
@@ -361,6 +360,4 @@ class Array(object):
 
 def zeros(length,dtype=None):
 	return Array(_numpy.zeros(length),dtype=None)
-
-
 
