@@ -24,7 +24,7 @@
 #
 """
 This modules provides a device independent Array class based on PyCUDA,
-PyOpen CL, and Numpy. 
+PyOpenCL, and Numpy. 
 """
 
 import functools as _functools
@@ -144,28 +144,43 @@ class Array(object):
                 else:
                        self._data = self._data.astype(_numpy.float64)             
 
-    def _returnarray(fn):
-        # Wrapper for method functions to return a PyCBC Array class 
+    def _returntype(fn):
+        """ Wrapper for method functions to return a PyCBC Array class """
         @_functools.wraps(fn)
         def wrapped(self,*args):
-            return self._returntype(fn(self,*args))
+            ary = fn(self,*args)
+            if ary is NotImplemented:
+                return NotImplemented
+            return self._return(ary)
         return wrapped
 
-    def _returntype(self,ary):
+    def _return(self,ary):
+        """Wrap the ary to return an Array type """
         return Array(ary, copy=False)
 
     def _checkother(fn):
-        # Checks the input to method functions 
+        """ Checks the input to method functions """
         @_functools.wraps(fn)
         def checked(self,other):
-            if type(other) not in _ALLOWED_SCALARS and not Array:
+            if self._typecheck(other) is NotImplemented:
+                return NotImplemented
+            if type(other) not in _ALLOWED_SCALARS and not isinstance(other,Array):
                 raise TypeError(str(type(other)) + ' is incompatible with ' +
-                                str(type(self)))          
+                                str(type(self)))      
             if isinstance(other,Array):
                 _convert_to_scheme(other)
                 other = other._data
             return fn(self,other)
         return checked  
+
+    def _typecheck(self,other):
+        """ Additional typechecking for other. Stops Array from avoiding
+        checks of derived types 
+        """  
+        b = type(other) is not Array
+        if type(other) is not Array:
+            return NotImplemented
+    
             
     def _convert(fn):
         # Convert this array to the current processing scheme
@@ -175,14 +190,14 @@ class Array(object):
             return fn(self,*args)
         return converted
             
-    @_returnarray
+    @_returntype
     @_convert
     @_checkother 
     def __mul__(self,other):
         """ Multiply by an Array or a scalar and return an Array. """
         return self._data * other
     
-    @_returnarray
+    @_returntype
     @_convert
     @_checkother
     def __rmul__(self,other):
@@ -196,14 +211,14 @@ class Array(object):
         self._data *= other
         return self
     
-    @_returnarray
+    @_returntype
     @_convert
     @_checkother
     def __add__(self,other):
         """ Add Array to Array or scalar and return an Array. """
         return self._data + other
         
-    @_returnarray
+    @_returntype
     @_convert
     @_checkother
     def __radd__(self,other):
@@ -219,12 +234,12 @@ class Array(object):
         
     @_convert
     @_checkother
-    @_returnarray    
+    @_returntype    
     def __div__(self,other):
         """ Divide Array by Array or scalar and return an Array. """
         return self._data / other
         
-    @_returnarray
+    @_returntype
     @_convert
     @_checkother
     def __rdiv__(self,other):
@@ -238,14 +253,14 @@ class Array(object):
         self._data /= other
         return self
         
-    @_returnarray
+    @_returntype
     @_convert
     @_checkother
     def __sub__(self,other):
         """ Subtract Array or scalar from Array and return an Array. """
         return self._data - other 
         
-    @_returnarray
+    @_returntype
     @_convert
     @_checkother
     def __rsub__(self,other):
@@ -259,14 +274,14 @@ class Array(object):
         self._data -= other
         return self
         
-    @_returnarray
+    @_returntype
     @_convert
     @_checkother
     def __pow__(self,other):
         """ Exponentiate Arrary by scalar """
         return self._data ** other
     
-    @_returnarray  
+    @_returntype  
     @_convert
     def __abs__(self):
         """ Return absolute value of Array """
@@ -279,19 +294,19 @@ class Array(object):
     def __str__(self):
         return str(self._data)
     
-    @_returnarray
+    @_returntype
     @_convert
     def real(self):
         """ Return real part of Array """
         return Array(self._data.real,copy=True)
 
-    @_returnarray
+    @_returntype
     @_convert
     def imag(self):
         """ Return imaginary part of Array """
         return Array(self._data.imag,copy=True)
     
-    @_returnarray
+    @_returntype
     @_convert
     def conj(self):
         """ Return complex conjugate of Array. """ 
