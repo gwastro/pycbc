@@ -162,11 +162,8 @@ class Array(object):
         """ Checks the input to method functions """
         @_functools.wraps(fn)
         def checked(self,other):
-            if self._typecheck(other) is NotImplemented:
-                return NotImplemented
-            if type(other) not in _ALLOWED_SCALARS and not isinstance(other,Array):
-                raise TypeError(str(type(other)) + ' is incompatible with ' +
-                                str(type(self)))      
+            if type(other) not in _ALLOWED_SCALARS and self._typecheck(other) is NotImplemented:
+                return NotImplemented     
             if isinstance(other,Array):
                 _convert_to_scheme(other)
                 other = other._data
@@ -177,7 +174,6 @@ class Array(object):
         """ Additional typechecking for other. Stops Array from avoiding
         checks of derived types 
         """  
-        b = type(other) is not Array
         if type(other) is not Array:
             return NotImplemented
     
