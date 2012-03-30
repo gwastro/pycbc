@@ -74,7 +74,7 @@ setup (
     cmdclass = { 'test'  : test ,},
     ext_modules = [],
 	requires = ['swiglal'],
-    packages = ['pycbc'],
+    packages = ['pycbc','pycbc.fft'],
     scripts = [],
 )
 
