@@ -341,6 +341,13 @@ class Array(object):
             elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
                 return self._data.get()[index]
 
+    @property
+    @_convert
+    def data(self):
+        """Returns the internal python array """
+        return self._data
+
+    @property
     @_convert
     def ptr(self):
         """ Returns a pointer to the memory of this array """
@@ -351,6 +358,7 @@ class Array(object):
         if _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
             return self._data.data 
         
+    @property
     @_convert
     def  lal(self):
         """ Returns a LAL Object that contains this data """
@@ -365,9 +373,15 @@ class Array(object):
             lal_data = _swiglal.XLALCreateCOMPLEX8Vector(len(self))
         elif self._data.dtype == complex128:
             lal_data = _swiglal.XLALCreateCOMPLEX16Vector(len(self))    
-
+       
         lal_data.data = self._data
+        self._data = lal_data.data
+
         return lal_data
+
+    @property
+    def dtype(self):
+        return self._data.dtype
 
 def zeros(length,dtype=None):
 	return Array(_numpy.zeros(length),dtype=None)
