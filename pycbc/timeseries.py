@@ -26,3 +26,66 @@
 This module provides a class representing a time series.
 """
 
+from pycbc.array import Array
+import swiglal as _swiglal
+
+class TimeSeries(Array):
+    def __init__(self, initial_array, delta_t, epoch=None, dtype=None, copy=True):
+        """initial_array: array containing sampled data.        
+        delta_t: time between consecutive samples in seconds.
+        epoch: time series start time in seconds. Must be a swiglal.LIGOTimeGPS object.
+        """
+        if len(initial_array) < 1:
+            raise ValueError('initial_array must contain at least one sample.')
+        if not delta_t > 0:
+            raise ValueError('delta_t must be a positive number')
+        if epoch is not None and not isinstance(epoch, _swiglal.LIGOTimeGPS):
+            raise TypeError('epoch must be either None or a swiglal.LIGOTimeGPS')
+        Array.__init__(self, initial_array, dtype=dtype, copy=copy)
+        self._delta_t = delta_t
+        self._epoch = epoch
+    
+    def _return(self, ary):
+        return TimeSeries(ary, self._delta_t, epoch=self._epoch, copy=False)
+    
+    def _typecheck(self, other):
+        if not isinstance(other, Array):
+            return NotImplemented
+        if isinstance(other, TimeSeries):
+            if other._delta_t != self._delta_t:
+                raise ValueError('different delta_t')
+            if other._epoch != self._epoch:
+                raise ValueError('different epoch')
+
+    def get_delta_t(self):
+        "Return time between consecutive samples in seconds."
+        return self._delta_t
+    delta_t = property(get_delta_t)
+
+    def get_duration(self):
+        "Return duration of time series in seconds."
+        # assumes instantaneous samples (duration
+        # of a 2-sample TimeSeries equals delta_t)
+        return (len(self) - 1) * self._delta_t
+    duration = property(get_duration)
+
+    def get_start_time(self):
+        "Return time series start time as a LIGOTimeGPS."
+        if self._epoch:
+            return self._epoch
+        else:
+            return None
+    start_time = property(get_start_time)
+
+    def get_end_time(self):
+        "Return time series end time as a LIGOTimeGPS."
+        if self._epoch:
+            return self._epoch + self.get_duration()
+        else:
+            return None
+    end_time = property(get_end_time)
+
+    def resample(self, new_delta_t):
+        "Return a resampled TimeSeries with the specified delta_t."
+        return NotImplemented
+
