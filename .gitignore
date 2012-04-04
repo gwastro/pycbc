@@ -5,3 +5,5 @@
 dist/
 html/
 pycbc_inspiralc
+build/
+*.pyc
