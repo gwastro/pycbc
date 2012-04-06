@@ -26,3 +26,41 @@
 This module provides a class representing a frequency series.
 """
 
+from pycbc.array import Array
+import swiglal as _swiglal
+
+class FrequencySeries(Array):
+    def __init__(self, initial_array, delta_f, epoch=None, dtype=None, copy=True):
+        """initial_array: array containing sampled data.
+        delta_f: frequency between consecutive samples in Hertz.
+        epoch: start time of the associated time domain data, in seconds.
+               Must be a swiglal.LIGOTimeGPS object.
+        """
+        if len(initial_array) < 1:
+            raise ValueError('initial_array must contain at least one sample.')
+        if not delta_f > 0:
+            raise ValueError('delta_f must be a positive number')
+        if epoch is not None and not isinstance(epoch, _swiglal.LIGOTimeGPS):
+            raise TypeError('epoch must be either None or a swiglal.LIGOTimeGPS')
+        Array.__init__(self, initial_array, dtype=dtype, copy=copy)
+        self._delta_f = delta_f
+        self._epoch = epoch
+    
+    def _return(self, ary):
+        return FrequencySeries(ary, self._delta_f, epoch=self._epoch, copy=False)
+
+    def _typecheck(self, other):
+        if not isinstance(other, Array):
+            return NotImplemented
+        if isinstance(other, FrequencySeries):
+            if other._delta_f != self._delta_f:
+                raise ValueError('different delta_f')
+            # consistency of _epoch is not required because we may want
+            # to combine frequency series estimated at different times
+            # (e.g. PSD estimation)
+    
+    def get_delta_f(self):
+        "Return frequency between consecutive samples in Hertz."
+        return self._delta_f
+    delta_f = property(get_delta_f)
+
