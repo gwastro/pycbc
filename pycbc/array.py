@@ -346,6 +346,15 @@ class Array(object):
     def data(self):
         """Returns the internal python array """
         return self._data
+ 
+    @data.setter
+    def data(self,other):
+        dtype = None
+        if hasattr(other,'dtype'):
+            dtype = other.dtype
+        temp = Array(other,dtype=dtype)
+        self._data = temp._data
+    
 
     @property
     @_convert
