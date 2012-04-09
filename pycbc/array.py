@@ -384,5 +384,5 @@ class Array(object):
         return self._data.dtype
 
 def zeros(length,dtype=None):
-	return Array(_numpy.zeros(length),dtype=None)
+	return Array(_numpy.zeros(length),dtype=dtype)
 
