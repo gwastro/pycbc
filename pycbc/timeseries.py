@@ -54,12 +54,7 @@ class TimeSeries(Array):
         if isinstance(other, TimeSeries):
             if other._delta_t != self._delta_t:
                 raise ValueError('different delta_t')
-            # the messy logic is a workaround for an apparent swiglal bug:
-            # swiglal.LIGOTimeGPS(1000) == None ---> Segmentation fault
-            if self._epoch is None:
-                if other._epoch is not None:
-                    raise ValueError('different epoch')
-            elif other._epoch is not None and other._epoch != self._epoch:
+            if self._epoch != other._epoch:
                 raise ValueError('different epoch')
 
     def get_delta_t(self):
