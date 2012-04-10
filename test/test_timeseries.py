@@ -27,6 +27,14 @@ class TestTimeSeriesBase(object):
         # timeseries with different delta_t
         self.ts5 = TimeSeries([10, 20, 30], 0.01, epoch=self.epoch, dtype=self.odtype)
 
+    def test_duration(self):
+        with self.context:
+            self.assertEqual(self.ts1.duration, 0.1 * 3)
+            self.assertEqual(self.ts2.duration, 0.1 * 3)
+            self.assertEqual(self.ts3.duration, 0.1 * 3)
+            self.assertEqual(self.ts4.duration, 0.1 * 3)
+            self.assertEqual(self.ts5.duration, 0.01 * 3)
+
     def test_sum(self):
         with self.context:
             s = self.ts1 + self.ts2

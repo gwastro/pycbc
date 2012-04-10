@@ -69,9 +69,7 @@ class TimeSeries(Array):
 
     def get_duration(self):
         "Return duration of time series in seconds."
-        # assumes instantaneous samples (duration
-        # of a 2-sample TimeSeries equals delta_t)
-        return (len(self) - 1) * self._delta_t
+        return len(self) * self._delta_t
     duration = property(get_duration)
 
     def get_start_time(self):
