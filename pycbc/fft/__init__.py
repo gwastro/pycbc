@@ -31,6 +31,13 @@ import pycbc.scheme
 import pycbc.array
 from numpy import dtype
 
+# Helper function to import a possible module and update available.
+
+def _backend_update(key,possible,available):
+    mod = __import__('pycbc.fft.'+possible[key],
+                     fromlist=['pycbc.fft'])
+    available.update({key:mod})
+
 # Package initialization: loop over *possible* backends, trying to
 # import them, and adding to the list of available backends. Also set
 # the default backend for each of the three schemes, and it is an error
@@ -54,23 +61,38 @@ _cpu_backends = {None: _cpu_default}
 # Python 3!
 for backend in _cpu_possible_backends.iterkeys():
     try:
-        mod = __import__('pycbc.fft.'+_cpu_possible_backends[backend],
-                         fromlist=['pycbc.fft'])
-        _cpu_backends.update({backend:mod})
+        _backend_update(backend,_cpu_possible_backends,_cpu_backends)
     except ImportError:
         pass
 
 # CUDA backends; blank for now
 if pycbc.HAVE_CUDA:
-    _cuda_default = None
-    _cuda_possible_backends = {}
-    _cuda_backends = {None: _cuda_default}
+    import cufft as _cuda_default
+    _cuda_possible_backends = {'cuda' : 'cufft'}
+    _cuda_backends = {None : _cuda_default}
+
+   # NOTE: Syntax below for iteration over dict keys should change in
+   # Python 3!
+    for backend in _cuda_possible_backends.iterkeys():
+        try:
+        _backend_update(backend,_cuda_possible_backends,_cuda_backends)
+        except ImportError:
+            pass
 
 # OpenCL backends; blank for now
 if pycbc.HAVE_OPENCL:
-    _opencl_default = None
-    _opencl_possible_backends = {}
+    import cldefault as _opencl_default
+    _opencl_possible_backends = {'opencl' : 'cldefault'}
     _opencl_backends = {None: _opencl_default}
+
+   # NOTE: Syntax below for iteration over dict keys should change in
+   # Python 3!
+    for backend in _opencl_possible_backends.iterkeys():
+        try:
+        _backend_update(backend,_opencl_possible_backends,
+                        _opencl_backends)
+        except ImportError:
+            pass
 
 # Now create a dict-of-dicts of backends
 
