@@ -90,7 +90,7 @@ if pycbc.HAVE_OPENCL:
     for backend in _opencl_possible_backends.iterkeys():
         try:
             _backend_update(backend,_opencl_possible_backends,
-                        _opencl_backends)
+                            _opencl_backends)
         except ImportError:
             pass
 
