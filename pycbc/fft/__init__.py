@@ -107,14 +107,14 @@ def _check_fft_args(invec,outvec):
     # Later we should add checks for TimeSeries and
     # FrequencySeries: input and output should map one
     # to the other.
-    iprec = _prec_dict[invec._data.dtype]
-    oprec = _prec_dict[outvec._data.dtype]
+    iprec = _prec_dict[invec.dtype]
+    oprec = _prec_dict[outvec.dtype]
     if iprec is not oprec:
         raise TypeError("Input and output precisions must agree")
     else:
         prec = iprec
-    itype = _type_dict[invec._data.dtype]
-    otype = _type_dict[outvec._data.dtype]
+    itype = _type_dict[invec.dtype]
+    otype = _type_dict[outvec.dtype]
     return [prec,itype,otype]
 
 def fft(invec,outvec,backend=None):
