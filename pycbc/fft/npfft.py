@@ -31,19 +31,19 @@ import numpy.fft
 
 def fft(invec,outvec,prec,itype,otype):
     if itype is 'complex' and otype is 'complex':
-        outvec.data() # Just to move output, if necessary
-        outvec._data = numpy.fft.fft(invec.data())
+        outvec.data # Just to move output, if necessary
+        outvec.data = numpy.fft.fft(invec.data)
     elif itype is 'real' and otype is 'complex':
-        outvec.data() # Just to move output, if necessary
-        outvec._data = numpy.fft.rfft(invec.data())
+        outvec.data # Just to move output, if necessary
+        outvec.data = numpy.fft.rfft(invec.data)
 
 def ifft(invec,outvec,backend=None):
     if itype is 'complex' and otype is 'complex':
-        outvec.data() # Just to move output, if necessary
-        outvec._data = numpy.fft.ifft(invec.data())
+        outvec.data # Just to move output, if necessary
+        outvec.data = numpy.fft.ifft(invec.data)
         outvec *= len(outvec)
     elif itype is 'complex' and otype is 'real':
-        outvec.data() # Just to move output, if necessary
-        outvec._data = numpy.fft.irfft(invec.data())
+        outvec.data # Just to move output, if necessary
+        outvec.data = numpy.fft.irfft(invec.data)
         outvec *= len(outvec)
 
