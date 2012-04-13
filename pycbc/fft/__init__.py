@@ -71,11 +71,11 @@ if pycbc.HAVE_CUDA:
     _cuda_possible_backends = {'cuda' : 'cufft'}
     _cuda_backends = {None : _cuda_default}
 
-   # NOTE: Syntax below for iteration over dict keys should change in
-   # Python 3!
+    # NOTE: Syntax below for iteration over dict keys should change in
+    # Python 3!
     for backend in _cuda_possible_backends.iterkeys():
         try:
-        _backend_update(backend,_cuda_possible_backends,_cuda_backends)
+            _backend_update(backend,_cuda_possible_backends,_cuda_backends)
         except ImportError:
             pass
 
@@ -85,11 +85,11 @@ if pycbc.HAVE_OPENCL:
     _opencl_possible_backends = {'opencl' : 'cldefault'}
     _opencl_backends = {None: _opencl_default}
 
-   # NOTE: Syntax below for iteration over dict keys should change in
-   # Python 3!
+    # NOTE: Syntax below for iteration over dict keys should change in
+    # Python 3!
     for backend in _opencl_possible_backends.iterkeys():
         try:
-        _backend_update(backend,_opencl_possible_backends,
+            _backend_update(backend,_opencl_possible_backends,
                         _opencl_backends)
         except ImportError:
             pass
