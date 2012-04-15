@@ -55,13 +55,15 @@ import npfft as _cpu_default
 #      all CPU platforms)
 _cpu_possible_backends = {'numpy':'npfft',
                           'lal':'swiglalfft'}
-_cpu_backends = {None: _cpu_default}
+_cpu_backends = {'Default': _cpu_default}
+cpu_backends = ['Default']
 
 # NOTE: Syntax below for iteration over dict keys should change in
 # Python 3!
 for backend in _cpu_possible_backends.iterkeys():
     try:
         _backend_update(backend,_cpu_possible_backends,_cpu_backends)
+        cpu_backends.append(backend)
     except ImportError:
         pass
 
@@ -69,13 +71,15 @@ for backend in _cpu_possible_backends.iterkeys():
 if pycbc.HAVE_CUDA:
     import cufft as _cuda_default
     _cuda_possible_backends = {'cuda' : 'cufft'}
-    _cuda_backends = {None : _cuda_default}
+    _cuda_backends = {'Default' : _cuda_default}
+    cuda_backends = ['Default']
 
     # NOTE: Syntax below for iteration over dict keys should change in
     # Python 3!
     for backend in _cuda_possible_backends.iterkeys():
         try:
             _backend_update(backend,_cuda_possible_backends,_cuda_backends)
+            cuda_backends.append(backend)
         except ImportError:
             pass
 
@@ -83,7 +87,8 @@ if pycbc.HAVE_CUDA:
 if pycbc.HAVE_OPENCL:
     import cldefault as _opencl_default
     _opencl_possible_backends = {'opencl' : 'cldefault'}
-    _opencl_backends = {None: _opencl_default}
+    _opencl_backends = {'Default': _opencl_default}
+    opencl_backends = ['Default']
 
     # NOTE: Syntax below for iteration over dict keys should change in
     # Python 3!
@@ -91,6 +96,7 @@ if pycbc.HAVE_OPENCL:
         try:
             _backend_update(backend,_opencl_possible_backends,
                             _opencl_backends)
+            opencl_backends.append(backend)
         except ImportError:
             pass
 
@@ -139,7 +145,7 @@ def _check_fft_args(invec,outvec):
     otype = _type_dict[outvec.dtype]
     return [prec,itype,otype]
 
-def fft(invec,outvec,backend=None):
+def fft(invec,outvec,backend='Default'):
     [prec,itype,otype] = _check_fft_args(invec,outvec)
     if itype is 'complex' and otype is 'complex':
         if len(invec) is not len(outvec):
@@ -155,7 +161,7 @@ def fft(invec,outvec,backend=None):
     thebackend = _fft_backends[thescheme][backend]
     thebackend.fft(invec,outvec,prec,itype,otype)
 
-def ifft(invec,outvec,backend=None):
+def ifft(invec,outvec,backend='Default'):
     [prec,itype,otype] = _check_fft_args(invec,outvec)
     if itype is 'complex' and otype is 'complex':
         if len(invec) is not len(outvec):
