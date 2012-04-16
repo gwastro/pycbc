@@ -236,7 +236,7 @@ class _BaseTestFFTClass(object):
                           places=self.splaces,msg=self.smsg)
         # Now test that the proper exceptions are raised when we give
         # erroneous arguments
-        self.out_badlen = pycbc.array.zeros(2,dtype=dtype('float32'))
+        self.out_badlen = pycbc.array.zeros(5,dtype=dtype('float32'))
         args = [self.in_odd,self.out_badlen,self.backend]
         self.assertRaises(ValueError,pycbc.fft.ifft,*args)
         self.out_badprec = pycbc.array.zeros(3,dtype=dtype('float64'))
@@ -294,7 +294,7 @@ class _BaseTestFFTClass(object):
                           places=self.dplaces,msg=self.dmsg)
         # Now test that the proper exceptions are raised when we give
         # erroneous arguments
-        self.out_badlen = pycbc.array.zeros(2,dtype=dtype('float64'))
+        self.out_badlen = pycbc.array.zeros(5,dtype=dtype('float64'))
         args = [self.in_odd,self.out_badlen,self.backend]
         self.assertRaises(ValueError,pycbc.fft.ifft,*args)
         self.out_badprec = pycbc.array.zeros(3,dtype=dtype('float32'))

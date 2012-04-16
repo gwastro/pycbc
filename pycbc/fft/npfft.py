@@ -44,6 +44,6 @@ def ifft(invec,outvec,prec,itype,otype):
         outvec *= len(outvec)
     elif itype is 'complex' and otype is 'real':
         outvec.data # Just to move output, if necessary
-        outvec.data = numpy.fft.irfft(invec.data)
+        outvec.data = numpy.fft.irfft(invec.data,len(outvec))
         outvec *= len(outvec)
 
