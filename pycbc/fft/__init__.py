@@ -138,7 +138,7 @@ def _check_fft_args(invec,outvec):
     iprec = _prec_dict[invec.dtype]
     oprec = _prec_dict[outvec.dtype]
     if iprec is not oprec:
-        raise TypeError("Input and output precisions must agree")
+        raise ValueError("Input and output precisions must agree")
     else:
         prec = iprec
     itype = _type_dict[invec.dtype]
@@ -156,7 +156,7 @@ def fft(invec,outvec,backend='Default'):
             raise ValueError(
                 "Output length of R2HC must be half input length plus one")
     else:
-        raise ValueError("Inconsistent types for forward FFT")
+        raise ValueError("Inconsistent dtypes for forward FFT")
     thescheme = pycbc.scheme.mgr.state
     thebackend = _fft_backends[thescheme][backend]
     thebackend.fft(invec,outvec,prec,itype,otype)
@@ -172,7 +172,7 @@ def ifft(invec,outvec,backend='Default'):
             raise ValueError(
                 "Input length of R2HC@r must be half output length plus one")
     else:
-        raise ValueError("Inconsistent types for reverse FFT")
+        raise ValueError("Inconsistent dtypes for reverse FFT")
     thescheme = pycbc.scheme.mgr.state
     thebackend = _fft_backends[thescheme][backend]
     thebackend.ifft(invec,outvec,prec,itype,otype)
