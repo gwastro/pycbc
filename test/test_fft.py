@@ -466,6 +466,47 @@ class _BaseTestFFTClass(object):
         args = [self.in_badarray,self.out_cmplx_test,self.backend]
         self.assertRaises(TypeError,pycbc.fft.ifft,*args)
 
+    def test_time_frequency_forward(self):
+        # In this test we look only at exceptions and metadata
+        self.in_ts = pycbc.timeseries.TimeSeries([0.0,0.0],dtype=dtype('complex64'),
+                                              delta_t=0.01)
+        self.in_fs = pycbc.frequencyseries.FrequencySeries([0.0,0.0],
+                            dtype = dtype('complex64'),delta_f = 0.01)
+        self.out_ts = pycbc.timeseries.TimeSeries([0.0,0.0],dtype=dtype('complex64'),
+                                              delta_t=0.01)
+        self.out_fs = pycbc.frequencyseries.FrequencySeries([0.0,0.0],
+                            dtype = dtype('complex64'),delta_f = 0.01)
+        self.out_array = pycbc.array.zeros(2,dtype=dtype('complex64'))
+        # First, check for appropriate exceptions to be raised:
+        args = [self.in_ts,self.out_ts,self.backend]
+        self.assertRaises(TypeError,pycbc.fft.fft,*args)
+        args = [self.in_ts,self.out_array,self.backend]
+        self.assertRaises(TypeError,pycbc.fft.fft,*args)
+        args = [self.in_fs,self.out_fs,self.backend]
+        self.assertRaises(TypeError,pycbc.fft.fft,*args)
+        args = [self.in_fs,self.out_array,self.backend]
+        self.assertRaises(TypeError,pycbc.fft.fft,*args)
+
+    def test_time_frequency_inverse(self):
+        # In this test we look only at exceptions and metadata
+        self.in_ts = pycbc.timeseries.TimeSeries([0.0,0.0],dtype=dtype('complex64'),
+                                              delta_t=0.01)
+        self.in_fs = pycbc.frequencyseries.FrequencySeries([0.0,0.0],
+                            dtype = dtype('complex64'),delta_f = 0.01)
+        self.out_ts = pycbc.timeseries.TimeSeries([0.0,0.0],dtype=dtype('complex64'),
+                                              delta_t=0.01)
+        self.out_fs = pycbc.frequencyseries.FrequencySeries([0.0,0.0],
+                            dtype = dtype('complex64'),delta_f = 0.01)
+        self.out_array = pycbc.array.zeros(2,dtype=dtype('complex64'))
+        # First, check for appropriate exceptions to be raised:
+        args = [self.in_ts,self.out_ts,self.backend]
+        self.assertRaises(TypeError,pycbc.fft.ifft,*args)
+        args = [self.in_ts,self.out_array,self.backend]
+        self.assertRaises(TypeError,pycbc.fft.ifft,*args)
+        args = [self.in_fs,self.out_fs,self.backend]
+        self.assertRaises(TypeError,pycbc.fft.ifft,*args)
+        args = [self.in_fs,self.out_array,self.backend]
+        self.assertRaises(TypeError,pycbc.fft.ifft,*args)
 
 # Now, factories to create test cases for each available backend.
 # The automation means that the default for each scheme will get created

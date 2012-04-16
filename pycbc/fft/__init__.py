@@ -29,6 +29,8 @@ implementations within PyCBC.
 import pycbc
 import pycbc.scheme
 import pycbc.array
+import pycbc.timeseries
+import pycbc.frequencyseries
 from numpy import dtype
 
 # Helper function to import a possible module and update available.
@@ -132,6 +134,14 @@ def _check_fft_args(invec,outvec):
         raise TypeError("Input is not a PyCBC Array")
     if not isinstance(outvec,pycbc.array.Array):
         raise TypeError("Output is not a PyCBC Array")
+    if isinstance(invec,pycbc.timeseries.TimeSeries) and not isinstance(
+        outvec,pycbc.frequencyseries.FrequencySeries):
+        raise TypeError(
+            "When input is TimeSeries output must be FrequencySeries")
+    if isinstance(invec,pycbc.frequencyseries.FrequencySeries) and not isinstance(
+        outvec,pycbc.timeseries.TimeSeries):
+        raise TypeError(
+            "When input is FrequencySeries output must be TimeSeries")
     # Later we should add checks for TimeSeries and
     # FrequencySeries: input and output should map one
     # to the other.
