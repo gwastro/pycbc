@@ -142,9 +142,6 @@ def _check_fft_args(invec,outvec):
         outvec,pycbc.timeseries.TimeSeries):
         raise TypeError(
             "When input is FrequencySeries output must be TimeSeries")
-    # Later we should add checks for TimeSeries and
-    # FrequencySeries: input and output should map one
-    # to the other.
     iprec = _prec_dict[invec.dtype]
     oprec = _prec_dict[outvec.dtype]
     if iprec is not oprec:
@@ -170,6 +167,14 @@ def fft(invec,outvec,backend='Default'):
     thescheme = pycbc.scheme.mgr.state
     thebackend = _fft_backends[thescheme][backend]
     thebackend.fft(invec,outvec,prec,itype,otype)
+    if isinstance(invec,pycbc.timeseries.TimeSeries):
+        outvec._epoch = invec._epoch
+        outvec._delta_f = 1.0/(invec._delta_t*len(invec))
+        outvec *= invec._delta_t
+    elif isinstance(invec,pycbc.frequencyseries.FrequencySeries):
+        outvec._epoch = invec._epoch
+        outvec._delta_t = 1.0/(invec._delta_f*len(invec))
+        outvec *= invec._delta_f
 
 def ifft(invec,outvec,backend='Default'):
     [prec,itype,otype] = _check_fft_args(invec,outvec)
@@ -186,3 +191,11 @@ def ifft(invec,outvec,backend='Default'):
     thescheme = pycbc.scheme.mgr.state
     thebackend = _fft_backends[thescheme][backend]
     thebackend.ifft(invec,outvec,prec,itype,otype)
+    if isinstance(invec,pycbc.timeseries.TimeSeries):
+        outvec._epoch = invec._epoch
+        outvec._delta_f = 1.0/(invec._delta_t*len(invec))
+        outvec *= invec._delta_t
+    elif isinstance(invec,pycbc.frequencyseries.FrequencySeries):
+        outvec._epoch = invec._epoch
+        outvec._delta_t = 1.0/(invec._delta_f*len(invec))
+        outvec *= invec._delta_f
