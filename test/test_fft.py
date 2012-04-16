@@ -28,6 +28,8 @@ These are the unittests for the pycbc.fft subpackage
 import pycbc
 import pycbc.scheme
 import pycbc.array
+import pycbc.timeseries
+import pycbc.frequencyseries
 import numpy
 from numpy import dtype
 import pycbc.fft
@@ -466,47 +468,68 @@ class _BaseTestFFTClass(object):
         args = [self.in_badarray,self.out_cmplx_test,self.backend]
         self.assertRaises(TypeError,pycbc.fft.ifft,*args)
 
-    def test_time_frequency_forward(self):
-        # In this test we look only at exceptions and metadata
-        self.in_ts = pycbc.timeseries.TimeSeries([0.0,0.0],dtype=dtype('complex64'),
-                                              delta_t=0.01)
-        self.in_fs = pycbc.frequencyseries.FrequencySeries([0.0,0.0],
-                            dtype = dtype('complex64'),delta_f = 0.01)
-        self.out_ts = pycbc.timeseries.TimeSeries([0.0,0.0],dtype=dtype('complex64'),
-                                              delta_t=0.01)
-        self.out_fs = pycbc.frequencyseries.FrequencySeries([0.0,0.0],
-                            dtype = dtype('complex64'),delta_f = 0.01)
-        self.out_array = pycbc.array.zeros(2,dtype=dtype('complex64'))
-        # First, check for appropriate exceptions to be raised:
-        args = [self.in_ts,self.out_ts,self.backend]
+    def test_time_frequency(self):
+        # In these tests we look only at exceptions, metadata, and scaling
+        self.in_ts = pycbc.timeseries.TimeSeries([1.0,2.0,3.0],
+                            dtype=dtype('float32'),delta_t=1.0/4096.0)
+        self.out_ts = pycbc.timeseries.TimeSeries([1.0,2.0,3.0],
+                            dtype=dtype('float32'),delta_t=1.0/4096.0)
+        self.fs_deltaf = 4096.0/3.0
+        self.out_ts_test = pycbc.timeseries.TimeSeries([0.0,0.0,0.0],
+                            dtype=dtype('float32'),delta_t=0.01)
+        self.out_fs_test = pycbc.frequencyseries.FrequencySeries([0.0,0.0],
+                            dtype=dtype('complex64'),delta_f = 0.01)
+        # First, check for appropriate exceptions to be raised by forward fft:
+        self.out_ts_badtype = pycbc.timeseries.TimeSeries([0.0,0.0],
+                               dtype=dtype('complex64'),delta_t=0.01)
+        args = [self.in_ts,self.out_ts_badtype,self.backend]
         self.assertRaises(TypeError,pycbc.fft.fft,*args)
-        args = [self.in_ts,self.out_array,self.backend]
-        self.assertRaises(TypeError,pycbc.fft.fft,*args)
-        args = [self.in_fs,self.out_fs,self.backend]
-        self.assertRaises(TypeError,pycbc.fft.fft,*args)
-        args = [self.in_fs,self.out_array,self.backend]
+        self.out_fs_badtype = pycbc.frequencyseries.FrequencySeries([0.0,0.0],
+                               dtype=dtype('complex64'),delta_f=0.01)
+        args = [self.out_fs_test,self.out_fs_badtype,self.backend]
         self.assertRaises(TypeError,pycbc.fft.fft,*args)
 
-    def test_time_frequency_inverse(self):
-        # In this test we look only at exceptions and metadata
-        self.in_ts = pycbc.timeseries.TimeSeries([0.0,0.0],dtype=dtype('complex64'),
-                                              delta_t=0.01)
-        self.in_fs = pycbc.frequencyseries.FrequencySeries([0.0,0.0],
-                            dtype = dtype('complex64'),delta_f = 0.01)
-        self.out_ts = pycbc.timeseries.TimeSeries([0.0,0.0],dtype=dtype('complex64'),
-                                              delta_t=0.01)
-        self.out_fs = pycbc.frequencyseries.FrequencySeries([0.0,0.0],
-                            dtype = dtype('complex64'),delta_f = 0.01)
-        self.out_array = pycbc.array.zeros(2,dtype=dtype('complex64'))
-        # First, check for appropriate exceptions to be raised:
-        args = [self.in_ts,self.out_ts,self.backend]
+        self.out_badarray = pycbc.array.zeros(2,dtype=dtype('complex64'))
+        args = [self.in_ts,self.out_badarray,self.backend]
+        self.assertRaises(TypeError,pycbc.fft.fft,*args)
+        args = [self.out_fs_test,self.out_badarray,self.backend]
+        self.assertRaises(TypeError,pycbc.fft.fft,*args)
+
+        # Next, check for appropriate exceptions to be raised by inverse fft:
+        self.in_ts_badtype = pycbc.timeseries.TimeSeries([0.0,0.0],
+                               dtype=dtype('complex64'),delta_t=0.01)
+        args = [self.in_ts_badtype,self.out_ts_test,self.backend]
         self.assertRaises(TypeError,pycbc.fft.ifft,*args)
-        args = [self.in_ts,self.out_array,self.backend]
+        self.in_fs_badtype = pycbc.frequencyseries.FrequencySeries([0.0,0.0],
+                               dtype=dtype('complex64'),delta_f=0.01)
+        args = [self.in_fs_badtype,self.out_fs_test,self.backend]
         self.assertRaises(TypeError,pycbc.fft.ifft,*args)
-        args = [self.in_fs,self.out_fs,self.backend]
+
+        self.in_badarray = pycbc.array.zeros(2,dtype=dtype('complex64'))
+        args = [self.in_badarray,self.out_ts_test,self.backend]
         self.assertRaises(TypeError,pycbc.fft.ifft,*args)
-        args = [self.in_fs,self.out_array,self.backend]
+        args = [self.in_badarray,self.out_fs_test,self.backend]
         self.assertRaises(TypeError,pycbc.fft.ifft,*args)
+
+        # Finally, check that we get the correct values based.  Since we're
+        # testing both forward and backward, we check that ifft(fft(in))
+        # is len(in)*in, and that the intermediate delta_f is set correctly.
+        pycbc.fft.fft(self.in_ts,self.out_fs_test,backend=self.backend)
+        self.assertAlmostEqual(self.out_fs_test._delta_f,self.fs_deltaf,
+                               places=self.splaces,msg=self.smsg)
+        pycbc.fft.ifft(self.out_fs_test,self.out_ts_test,backend=self.backend)
+        self.assertAlmostEqual(self.out_ts_test[0],self.out_ts[0],
+                               places=self.splaces,msg=self.smsg)
+        self.assertAlmostEqual(self.out_ts_test[1],self.out_ts[1],
+                               places=self.splaces,msg=self.smsg)
+        self.assertAlmostEqual(self.out_ts_test[2],self.out_ts[2],
+                               places=self.splaces,msg=self.smsg)
+        self.assertAlmostEqual(self.out_ts_test._delta_t,self.out_ts._delta_t,
+                               places=self.splaces,msg=self.smsg)
+        self.assertAlmostEqual(self.out_ts_test[0],self.out_ts[0],
+                               places=self.splaces,msg=self.smsg)
+
+
 
 # Now, factories to create test cases for each available backend.
 # The automation means that the default for each scheme will get created
