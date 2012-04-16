@@ -526,10 +526,6 @@ class _BaseTestFFTClass(object):
                                places=self.splaces,msg=self.smsg)
         self.assertAlmostEqual(self.out_ts_test._delta_t,self.out_ts._delta_t,
                                places=self.splaces,msg=self.smsg)
-        self.assertAlmostEqual(self.out_ts_test[0],self.out_ts[0],
-                               places=self.splaces,msg=self.smsg)
-
-
 
 # Now, factories to create test cases for each available backend.
 # The automation means that the default for each scheme will get created
