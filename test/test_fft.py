@@ -501,7 +501,7 @@ if __name__ == '__main__':
     for klass in CPUTestClasses:
         suiteCPU.addTest(unittest.makeSuite(klass))
 
-    unittest.TextTestRunner().run(suiteCPU)
+    unittest.TextTestRunner(verbosity=2).run(suiteCPU)
 
     if pycbc.HAVE_CUDA:
         suiteCUDA = unittest.TestSuite()
@@ -509,7 +509,7 @@ if __name__ == '__main__':
             suiteCUDA.addTest(unittest.makeSuite(klass))
 
         with CUDAScheme():
-            unittest.TextTestRunner().run(suiteCUDA)
+            unittest.TextTestRunner(verbosity=2).run(suiteCUDA)
 
     if pycbc.HAVE_OPENCL:
         suiteOpenCL = unittest.TestSuite()
@@ -517,4 +517,4 @@ if __name__ == '__main__':
             suiteOpenCL.addTest(unittest.makeSuite(klass))
 
         with OpenCLScheme():
-            unittest.TextTestRunner().run(suiteOpenCL)
+            unittest.TextTestRunner(verbosity=2).run(suiteOpenCL)
