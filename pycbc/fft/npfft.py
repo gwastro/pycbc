@@ -37,7 +37,7 @@ def fft(invec,outvec,prec,itype,otype):
         outvec.data # Just to move output, if necessary
         outvec.data = numpy.fft.rfft(invec.data)
 
-def ifft(invec,outvec,backend=None):
+def ifft(invec,outvec,prec,itype,otype):
     if itype is 'complex' and otype is 'complex':
         outvec.data # Just to move output, if necessary
         outvec.data = numpy.fft.ifft(invec.data)

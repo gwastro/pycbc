@@ -535,7 +535,7 @@ if __name__ == '__main__':
 
     suiteCPU = unittest.TestSuite()
     for klass in CPUTestClasses:
-        suiteCPU.addTests(klass)
+        suiteCPU.addTest(unittest.makeSuite(klass))
 
     unittest.TextTestRunner().run(suiteCPU)
 
