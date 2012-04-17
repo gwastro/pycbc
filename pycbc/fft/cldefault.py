@@ -31,6 +31,6 @@ import pycbc.array
 def fft(invec,outvec,prec,itype,otype):
     raise NotImplementedError("No OpenCL implementation of fft yet.")
 
-def ifft(invec,outvec,backend=None):
+def ifft(invec,outvec,prec,itype,otype):
     raise NotImplementedError("No OpenCL implementation of ifft yet.")
 
