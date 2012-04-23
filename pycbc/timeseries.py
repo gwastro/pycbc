@@ -83,6 +83,14 @@ class TimeSeries(Array):
             return None
     end_time = property(get_end_time)
 
+    def get_sample_times(self):
+        "Return an Array containing the sample times."
+        if self._epoch is None:
+            return Array(range(len(self))) * self._delta_t
+        else:
+            return Array(range(len(self))) * self._delta_t + float(self._epoch)
+    sample_times = property(get_sample_times)
+
     def resample(self, new_delta_t):
         "Return a resampled TimeSeries with the specified delta_t."
         return NotImplemented
