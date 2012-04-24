@@ -144,6 +144,8 @@ and produce error-free Python 3 code. But that may change in the future.
 
 ### The Array Class ###
 
+The basic data type arra is defined as: 
+
 pycbc.array.Array(object, dtype=None, copy=True)
 
 where,
