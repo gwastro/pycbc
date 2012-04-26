@@ -323,7 +323,7 @@ class Array(object):
     def dot(self,other):
         """ Return the dot product"""
         if type(self._data) is _numpy.ndarray:
-            return self._data.dot(other)
+            return _numpy.dot(self._data,other)
         elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
             return _pycuda.gpuarray.dot(self._data,other).get().max()
         elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
