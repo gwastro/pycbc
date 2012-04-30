@@ -317,6 +317,35 @@ class Array(object):
             return _pycuda.gpuarray.sum(self._data).get().max()
         elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
             return _pyopencl.array.sum(self._data).get().max()
+           
+    def max(self):
+        """ Return the maximum value in the array. """
+        if type(self._data) is _numpy.ndarray:
+            return self._data.max()
+        elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
+            return _pycuda.gpuarray.sum(self._data).get().max()
+        elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
+            return _pyopencl.array.sum(self._data).get().max()        
+     
+    @_convert
+    def max(self):
+        """ Return the maximum value in the array. """
+        if type(self._data) is _numpy.ndarray:
+            return self._data.max()
+        elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
+            return _pycuda.gpuarray.max(self._data).get().max()
+        elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
+            return _pyopencl.array.max(self._data).get().max()  
+            
+    @_convert
+    def min(self):
+        """ Return the maximum value in the array. """
+        if type(self._data) is _numpy.ndarray:
+            return self._data.min()
+        elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
+            return _pycuda.gpuarray.min(self._data).get().max()
+        elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
+            return _pyopencl.array.min(self._data).get().max()         
 
     @_convert
     @_checkother
@@ -340,6 +369,11 @@ class Array(object):
                 return self._data.get()[index]
             elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
                 return self._data.get()[index]
+                
+    @_convert
+    def __setitem__(self,index,other):
+        self._data[index]=other
+                
 
     @property
     @_convert

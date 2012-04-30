@@ -19,6 +19,7 @@ class tests_base(object):
     def setUp(self):
         self.a = Array([5], dtype = self.dtype)
         self.v = Array([10],dtype = self.odtype)
+        self.d = Array([1,2,3],dtype = self.dtype)
         self.n = 5
         pass
 
@@ -158,7 +159,15 @@ class tests_base(object):
         with self.context:        
             b = self.a.dot(self.a)
             self.assertEqual(b,(25))
-        
+    
+    def test_max(self):
+        with self.context:
+            self.assertEqual(self.d.max(),3)
+            
+    def test_min(self):
+        with self.context:
+            self.assertEqual(self.d.min(),1)
+                
     
 
 def array_test_maker(context,dtype,odtype):
