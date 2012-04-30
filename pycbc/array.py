@@ -53,6 +53,14 @@ def _convert_to_scheme(ary):
         converted_array = Array(ary,dtype=ary._data.dtype)
         ary._data = converted_array._data
         ary._scheme = _scheme.mgr.state
+        
+def _convert(fn):
+    # Convert this array to the current processing scheme
+    @_functools.wraps(fn)
+    def converted(self,*args):
+        _convert_to_scheme(self)
+        return fn(self,*args)
+    return converted
 
 class Array(object):
     """Array used to do numeric calculations on a various compute
@@ -176,15 +184,6 @@ class Array(object):
         """
         if type(other) is not Array:
             return NotImplemented
-
-
-    def _convert(fn):
-        # Convert this array to the current processing scheme
-        @_functools.wraps(fn)
-        def converted(self,*args):
-            _convert_to_scheme(self)
-            return fn(self,*args)
-        return converted
 
     @_returntype
     @_convert
@@ -361,7 +360,7 @@ class Array(object):
     @_convert
     def __getitem__(self, index):
         if isinstance(index, slice):
-            return Array(self._data[index],copy=False)
+            return self._return(self._data[index])
         else:
             if type(self._data) is _numpy.ndarray:
                 return self._data[index]

@@ -26,8 +26,9 @@
 This module provides a class representing a frequency series.
 """
 
-from pycbc.array import Array
+from pycbc.array import Array,_convert
 import swiglal as _swiglal
+import numpy as _numpy
 
 class FrequencySeries(Array):
     def __init__(self, initial_array, delta_f, epoch=None, dtype=None, copy=True):
@@ -63,9 +64,39 @@ class FrequencySeries(Array):
         "Return frequency between consecutive samples in Hertz."
         return self._delta_f
     delta_f = property(get_delta_f)
+    
+    @property
+    @_convert
+    def  lal(self):
+        """ Returns a LAL Object that contains this data """
+        lal_data = None
+        epoch = _swiglal.LIGOTimeGPS()
+        if self._epoch is not None:
+            epoch = self._epoch
+            
+        if type(self._data) is not _numpy.ndarray:
+            raise TypeError("Cannot return lal type from the GPU")
+        elif self._data.dtype == _numpy.float32:
+            lal_data = _swiglal.XLALCreateREAL4FrequencySeries("",epoch,
+                                    0,self._delta_f,_swiglal.LALUnit(),len(self))
+        elif self._data.dtype == _numpy.float64:
+            lal_data = _swiglal.XLALCreateREAL8FrequencySeries("",epoch,
+                                    0,self._delta_f,_swiglal.LALUnit(),len(self))
+        elif self._data.dtype == _numpy.complex64:
+            lal_data = _swiglal.XLALCreateCOMPLEX8FrequencySeries("",epoch,
+                                    0,self._delta_f,_swiglal.LALUnit(),len(self))
+        elif self._data.dtype == _numpy.complex128:
+            lal_data = _swiglal.XLALCreateCOMPLEX16FrequencySeries("",epoch,
+                                    0,self._delta_f,_swiglal.LALUnit(),len(self))
+
+        lal_data.data.data = self._data
+        self.data = lal_data.data.data
+        
+        return lal_data
 
     def get_sample_frequencies(self):
         "Return an Array containing the sample frequencies."
         return Array(range(len(self))) * self._delta_f
     sample_frequencies = property(get_sample_frequencies)
+
 

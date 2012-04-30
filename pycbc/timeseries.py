@@ -26,8 +26,9 @@
 This module provides a class representing a time series.
 """
 
-from pycbc.array import Array
+from pycbc.array import Array,_convert
 import swiglal as _swiglal
+import numpy as _numpy
 
 class TimeSeries(Array):
     def __init__(self, initial_array, delta_t, epoch=None, dtype=None, copy=True):
@@ -112,4 +113,32 @@ class TimeSeries(Array):
     def resample(self, new_delta_t):
         "Return a resampled TimeSeries with the specified delta_t."
         return NotImplemented
+            
+    @property
+    @_convert
+    def  lal(self):
+        """ Returns a LAL Object that contains this data """
+        lal_data = None
+        epoch = _swiglal.LIGOTimeGPS()
+        if self._epoch is not None:
+            epoch = self._epoch            
+        
+        if type(self._data) is not _numpy.ndarray:
+            raise TypeError("Cannot return lal type from the GPU")
+        elif self._data.dtype == _numpy.float32:
+            lal_data = _swiglal.XLALCreateREAL4TimeSeries("",epoch,
+                                    0,self._delta_t,_swiglal.LALUnit(),len(self))
+        elif self._data.dtype == _numpy.float64:
+            lal_data = _swiglal.XLALCreateREAL8TimeSeries("",epoch,
+                                    0,self._delta_t,_swiglal.LALUnit(),len(self))
+        elif self._data.dtype == _numpy.complex64:
+            lal_data = _swiglal.XLALCreateCOMPLEX8TimeSeries("",epoch,
+                                    0,self._delta_t,_swiglal.LALUnit(),len(self))
+        elif self._data.dtype == _numpy.complex128:
+            lal_data = _swiglal.XLALCreateCOMPLEX16TimeSeries("",epoch,
+                                    0,self._delta_t,_swiglal.LALUnit(),len(self))
 
+        lal_data.data.data = self._data
+        self.data = lal_data.data.data
+
+        return lal_data
