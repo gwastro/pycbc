@@ -10,7 +10,6 @@ if pycbc.HAVE_OPENCL:
 
 import unittest
 from pycbc.array import *
-from pycbc.timeseries import TimeSeries
 from pycbc.scheme import *
 import numpy 
 import swiglal

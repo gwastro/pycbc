@@ -29,8 +29,7 @@ implementations within PyCBC.
 import pycbc
 import pycbc.scheme
 import pycbc.array
-import pycbc.timeseries
-import pycbc.frequencyseries
+
 from numpy import dtype
 
 # Helper function to import a possible module and update available.
@@ -136,20 +135,20 @@ def _check_fft_args(invec,outvec):
     if not isinstance(outvec,pycbc.array.Array):
         raise TypeError("Output is not a PyCBC Array")
 
-    if isinstance(invec,pycbc.timeseries.TimeSeries) and not isinstance(
-        outvec,pycbc.frequencyseries.FrequencySeries):
+    if isinstance(invec,pycbc.array.TimeSeries) and not isinstance(
+        outvec,pycbc.array.FrequencySeries):
         raise TypeError(
             "When input is TimeSeries output must be FrequencySeries")
-    if isinstance(outvec,pycbc.timeseries.TimeSeries) and not isinstance(
-        invec,pycbc.frequencyseries.FrequencySeries):
+    if isinstance(outvec,pycbc.array.TimeSeries) and not isinstance(
+        invec,pycbc.array.FrequencySeries):
         raise TypeError(
             "When output is TimeSeries input must be FrequencySeries")
-    if isinstance(invec,pycbc.frequencyseries.FrequencySeries) and not isinstance(
-        outvec,pycbc.timeseries.TimeSeries):
+    if isinstance(invec,pycbc.array.FrequencySeries) and not isinstance(
+        outvec,pycbc.array.TimeSeries):
         raise TypeError(
             "When input is FrequencySeries output must be TimeSeries")
-    if isinstance(outvec,pycbc.frequencyseries.FrequencySeries) and not isinstance(
-        invec,pycbc.timeseries.TimeSeries):
+    if isinstance(outvec,pycbc.array.FrequencySeries) and not isinstance(
+        invec,pycbc.array.TimeSeries):
         raise TypeError(
             "When output is FrequencySeries input must be TimeSeries")
 
@@ -180,11 +179,11 @@ def fft(invec,outvec,backend='Default'):
     thebackend.fft(invec,outvec,prec,itype,otype)
     # For a forward FFT, the length of the *input* vector is the length
     # we should divide by, whether C2C or R2HC transform
-    if isinstance(invec,pycbc.timeseries.TimeSeries):
+    if isinstance(invec,pycbc.array.TimeSeries):
         outvec._epoch = invec._epoch
         outvec._delta_f = 1.0/(invec._delta_t*len(invec))
         outvec *= invec._delta_t
-    elif isinstance(invec,pycbc.frequencyseries.FrequencySeries):
+    elif isinstance(invec,pycbc.array.FrequencySeries):
         outvec._epoch = invec._epoch
         outvec._delta_t = 1.0/(invec._delta_f*len(invec))
         outvec *= invec._delta_f
@@ -206,11 +205,11 @@ def ifft(invec,outvec,backend='Default'):
     thebackend.ifft(invec,outvec,prec,itype,otype)
     # For an inverse FFT, the length of the *output* vector is the length
     # we should divide by, whether C2C or HC2R transform
-    if isinstance(invec,pycbc.timeseries.TimeSeries):
+    if isinstance(invec,pycbc.array.TimeSeries):
         outvec._epoch = invec._epoch
         outvec._delta_f = 1.0/(invec._delta_t*len(outvec))
         outvec *= invec._delta_t
-    elif isinstance(invec,pycbc.frequencyseries.FrequencySeries):
+    elif isinstance(invec,pycbc.array.FrequencySeries):
         outvec._epoch = invec._epoch
         outvec._delta_t = 1.0/(invec._delta_f*len(outvec))
         outvec *= invec._delta_f

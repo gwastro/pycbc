@@ -28,13 +28,10 @@ These are the unittests for the pycbc.fft subpackage
 import pycbc
 import pycbc.scheme
 import pycbc.array
-import pycbc.timeseries
-import pycbc.frequencyseries
 import numpy
 from numpy import dtype
 import pycbc.fft
 import unittest
-
 class _BaseTestFFTClass(object):
     """
     This is the base class from which unit tests for all FFT backends
@@ -470,21 +467,21 @@ class _BaseTestFFTClass(object):
 
     def test_time_frequency(self):
         # In these tests we look only at exceptions, metadata, and scaling
-        self.in_ts = pycbc.timeseries.TimeSeries([1.0,2.0,3.0],
+        self.in_ts = pycbc.array.TimeSeries([1.0,2.0,3.0],
                             dtype=dtype('float32'),delta_t=1.0/4096.0)
-        self.out_ts = pycbc.timeseries.TimeSeries([1.0,2.0,3.0],
+        self.out_ts = pycbc.array.TimeSeries([1.0,2.0,3.0],
                             dtype=dtype('float32'),delta_t=1.0/4096.0)
         self.fs_deltaf = 4096.0/3.0
-        self.out_ts_test = pycbc.timeseries.TimeSeries([0.0,0.0,0.0],
+        self.out_ts_test = pycbc.array.TimeSeries([0.0,0.0,0.0],
                             dtype=dtype('float32'),delta_t=0.01)
-        self.out_fs_test = pycbc.frequencyseries.FrequencySeries([0.0,0.0],
+        self.out_fs_test = pycbc.array.FrequencySeries([0.0,0.0],
                             dtype=dtype('complex64'),delta_f = 0.01)
         # First, check for appropriate exceptions to be raised by forward fft:
-        self.out_ts_badtype = pycbc.timeseries.TimeSeries([0.0,0.0],
+        self.out_ts_badtype = pycbc.array.TimeSeries([0.0,0.0],
                                dtype=dtype('complex64'),delta_t=0.01)
         args = [self.in_ts,self.out_ts_badtype,self.backend]
         self.assertRaises(TypeError,pycbc.fft.fft,*args)
-        self.out_fs_badtype = pycbc.frequencyseries.FrequencySeries([0.0,0.0],
+        self.out_fs_badtype = pycbc.array.FrequencySeries([0.0,0.0],
                                dtype=dtype('complex64'),delta_f=0.01)
         args = [self.out_fs_test,self.out_fs_badtype,self.backend]
         self.assertRaises(TypeError,pycbc.fft.fft,*args)
@@ -496,11 +493,11 @@ class _BaseTestFFTClass(object):
         self.assertRaises(TypeError,pycbc.fft.fft,*args)
 
         # Next, check for appropriate exceptions to be raised by inverse fft:
-        self.in_ts_badtype = pycbc.timeseries.TimeSeries([0.0,0.0],
+        self.in_ts_badtype = pycbc.array.TimeSeries([0.0,0.0],
                                dtype=dtype('complex64'),delta_t=0.01)
         args = [self.in_ts_badtype,self.out_ts_test,self.backend]
         self.assertRaises(TypeError,pycbc.fft.ifft,*args)
-        self.in_fs_badtype = pycbc.frequencyseries.FrequencySeries([0.0,0.0],
+        self.in_fs_badtype = pycbc.array.FrequencySeries([0.0,0.0],
                                dtype=dtype('complex64'),delta_f=0.01)
         args = [self.in_fs_badtype,self.out_fs_test,self.backend]
         self.assertRaises(TypeError,pycbc.fft.ifft,*args)

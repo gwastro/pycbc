@@ -9,10 +9,6 @@ python setup.py install --prefix=/path/to/install/directory
 To test pycbc:
 python setup.py test
 
-
-
-
-
 The most current development version is always available from our
 git repository:
 https://sugwg-git.phy.syr.edu/git/pycbc/
