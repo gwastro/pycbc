@@ -19,50 +19,8 @@
 """
 setup.py file for PyCBC package
 """
-import os
-import fnmatch
-import sys
-import commands
-from trace import fullmodname
-import unittest
-from distutils import sysconfig,file_util
-from distutils.core import setup,Command,Extension
 
-
-# ======== DISTUTILS CONFIGURATION AND BUILD SCRIPTS ==========================        
-# Run all of the testing scripts
-class test(Command):
-    user_options = []
-    test_modules = []
-    def initialize_options(self):
-        self.build_dir = None
-    def finalize_options(self):
-        #Populate the needed variables
-        self.set_undefined_options('build',('build_lib', 'build_dir'))
-        
-    def find_test_modules(self,pattern):
-       # Find all the unittests that match a given string pattern
-        modules= []
-        for path, dirs, files in os.walk("test"):
-            for filename in fnmatch.filter(files, pattern):
-                #add the test directories to the path
-                sys.path.append(os.path.join(path))
-                #save the module name for importing
-                modules.append(fullmodname(filename))
-        return modules
-        
-    def run(self):
-        # Ensure that we have everything built first
-        self.run_command('build')
-        # Get the list of cpu test modules
-        self.test_modules+= self.find_test_modules("test*.py")     
-        # Run from the build directory
-        sys.path.insert(0,self.build_dir)
-        # load all of the tests into a suite
-        suite = unittest.TestLoader().loadTestsFromNames(self.test_modules)
-        # run test suite
-        results=unittest.TextTestRunner(verbosity=2).run(suite)
-
+from setuptools import setup,find_packages
 
 # do the actual work of building the package
 setup (
@@ -71,10 +29,12 @@ setup (
     description = 'Gravitational wave CBC analysis toolkit',
     author = 'Ligo Virgo Collaboration - PyCBC team',
     url = 'https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home',
-    cmdclass = { 'test'  : test ,},
     ext_modules = [],
-	requires = ['swiglal'],
-    packages = ['pycbc','pycbc.fft'],
+    test_suite = "test",
+	install_requires = ['numpy','swiglal','swiglalsimulation','swiglalframe'],
+	extras_require = {"CUDA":["pycuda"],
+	                  "OpenCL":["pyopencl"]},
+    packages = find_packages(),
     scripts = [],
 )
 
