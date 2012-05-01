@@ -60,26 +60,26 @@ def _get_inv_plan(prec,itype,otype,outlen):
 
 def fft(invec,outvec,prec,itype,otype):
     theplan = _get_fwd_plan(prec,itype,otype,len(invec))
-    if itype is 'complex' and otype is 'complex':
-        if prec is 'single':
+    if itype == 'complex' and otype == 'complex':
+        if prec == 'single':
             swiglal.XLALCOMPLEX8VectorFFT(outvec.lal,invec.lal,theplan)
         else:
             swiglal.XLALCOMPLEX16VectorFFT(outvec.lal,invec.lal,theplan)
-    elif itype is 'real' and otype is 'complex':
-        if prec is 'single':
+    elif itype == 'real' and otype == 'complex':
+        if prec == 'single':
             swiglal.XLALREAL4ForwardFFT(outvec.lal,invec.lal,theplan)
         else:
             swiglal.XLALREAL8ForwardFFT(outvec.lal,invec.lal,theplan)
 
 def ifft(invec,outvec,prec,itype,otype):
     theplan = _get_inv_plan(prec,itype,otype,len(outvec))
-    if itype is 'complex' and otype is 'complex':
-        if prec is 'single':
+    if itype == 'complex' and otype == 'complex':
+        if prec == 'single':
             swiglal.XLALCOMPLEX8VectorFFT(outvec.lal,invec.lal,theplan)
         else:
             swiglal.XLALCOMPLEX16VectorFFT(outvec.lal,invec.lal,theplan)
-    elif itype is 'complex' and otype is 'real':
-        if prec is 'single':
+    elif itype == 'complex' and otype == 'real':
+        if prec == 'single':
             swiglal.XLALREAL4ReverseFFT(outvec.lal,invec.lal,theplan)
         else:
             swiglal.XLALREAL8ReverseFFT(outvec.lal,invec.lal,theplan)

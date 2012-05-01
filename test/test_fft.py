@@ -511,9 +511,9 @@ class _BaseTestFFTClass(object):
         args = [self.in_badarray,self.out_fs_test,self.backend]
         self.assertRaises(TypeError,pycbc.fft.ifft,*args)
 
-        # Finally, check that we get the correct values based.  Since we're
-        # testing both forward and backward, we check that ifft(fft(in))
-        # is len(in)*in, and that the intermediate delta_f is set correctly.
+        # Finally, check that we get the correct scaled values.  Since we're
+        # testing both forward and backward, we check that ifft(fft(input))
+        # is input, and that the intermediate delta_f is set correctly.
         pycbc.fft.fft(self.in_ts,self.out_fs_test,backend=self.backend)
         self.assertAlmostEqual(self.out_fs_test._delta_f,self.fs_deltaf,
                                places=self.splaces,msg=self.smsg)

@@ -154,7 +154,7 @@ def _check_fft_args(invec,outvec):
 
     iprec = _prec_dict[invec.dtype]
     oprec = _prec_dict[outvec.dtype]
-    if iprec is not oprec:
+    if iprec != oprec:
         raise ValueError("Input and output precisions must agree")
     else:
         prec = iprec
@@ -164,12 +164,12 @@ def _check_fft_args(invec,outvec):
 
 def fft(invec,outvec,backend='Default'):
     [prec,itype,otype] = _check_fft_args(invec,outvec)
-    if itype is 'complex' and otype is 'complex':
-        if len(invec) is not len(outvec):
+    if itype == 'complex' and otype == 'complex':
+        if len(invec) != len(outvec):
             raise ValueError(
                 "Lengths of input and output vectors must agree")
-    elif itype is 'real' and otype is 'complex':
-        if len(outvec) is not (len(invec)/2+1):
+    elif itype == 'real' and otype == 'complex':
+        if len(outvec) != (len(invec)/2+1):
             raise ValueError(
                 "Output length of R2HC must be half input length plus one")
     else:
@@ -190,12 +190,12 @@ def fft(invec,outvec,backend='Default'):
 
 def ifft(invec,outvec,backend='Default'):
     [prec,itype,otype] = _check_fft_args(invec,outvec)
-    if itype is 'complex' and otype is 'complex':
-        if len(invec) is not len(outvec):
+    if itype == 'complex' and otype == 'complex':
+        if len(invec) != len(outvec):
             raise ValueError(
                 "Lengths of input and output vectors must agree")
-    elif itype is 'complex' and otype is 'real':
-        if len(invec) is not (len(outvec)/2+1):
+    elif itype == 'complex' and otype == 'real':
+        if len(invec) != (len(outvec)/2+1):
             raise ValueError(
                 "Input length of R2HC@r must be half output length plus one")
     else:
