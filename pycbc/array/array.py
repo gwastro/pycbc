@@ -45,7 +45,7 @@ if _pycbc.HAVE_OPENCL:
 
 _ALLOWED_DTYPES = [_numpy.float32,_numpy.float64,_numpy.complex64,
                    _numpy.complex128]
-_ALLOWED_SCALARS = [int,long, float]
+_ALLOWED_SCALARS = [int,long, float]+_ALLOWED_DTYPES
 
 
 def _convert_to_scheme(ary):
@@ -111,13 +111,16 @@ class Array(object):
             if dtype is not None:
                 if dtype not in _ALLOWED_DTYPES:
                     raise TypeError(str(dtype) + ' is not supported')
-
+            elif hasattr(initial_array,'dtype'):
+                dtype = initial_array.dtype
+        
             #Unwrap initial_array
             input_data = None
             if isinstance(initial_array,Array):
                 input_data = initial_array._data
             else:
                 input_data = initial_array
+                
 
             #Create new instance with input_data as initialization.
             if self._scheme is None:
@@ -359,6 +362,7 @@ class Array(object):
 
     @_convert
     def __getitem__(self, index):
+        print index
         if isinstance(index, slice):
             return self._return(self._data[index])
         else:
@@ -371,7 +375,10 @@ class Array(object):
                 
     @_convert
     def __setitem__(self,index,other):
-        self._data[index]=other
+        if isinstance(other,Array):
+            self._data[index]=other._data
+        else:
+            raise TypeError('Can only copy data from another Array')
                 
 
     @property
