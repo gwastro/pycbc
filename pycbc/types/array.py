@@ -362,7 +362,6 @@ class Array(object):
 
     @_convert
     def __getitem__(self, index):
-        print index
         if isinstance(index, slice):
             return self._return(self._data[index])
         else:
