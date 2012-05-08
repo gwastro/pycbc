@@ -26,7 +26,7 @@ This module provides the SwigLAL backend of the fast Fourier transform
 for the PyCBC package.
 """
 
-import pycbc.array
+import pycbc.types
 import swiglal
 
 _default_measurelvl = 1
