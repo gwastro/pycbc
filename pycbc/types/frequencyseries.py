@@ -26,7 +26,7 @@
 This module provides a class representing a frequency series.
 """
 
-from pycbc.array.array import Array,_convert
+from pycbc.types.array import Array,_convert
 import swiglal as _swiglal
 import numpy as _numpy
 

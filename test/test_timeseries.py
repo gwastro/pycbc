@@ -9,7 +9,7 @@ if pycbc.HAVE_OPENCL:
     import pyopencl.array
 
 import unittest
-from pycbc.array import *
+from pycbc.types import *
 from pycbc.scheme import *
 import numpy 
 import swiglal
