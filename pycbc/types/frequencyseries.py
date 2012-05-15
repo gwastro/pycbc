@@ -67,12 +67,14 @@ class FrequencySeries(Array):
     
     @property
     @_convert
-    def  lal(self):
+    def  lal_timeseries(self):
         """ Returns a LAL Object that contains this data """
         lal_data = None
-        epoch = _swiglal.LIGOTimeGPS()
+        
         if self._epoch is not None:
             epoch = self._epoch
+        else:
+            epoch = _swiglal.LIGOTimeGPS()
             
         if type(self._data) is not _numpy.ndarray:
             raise TypeError("Cannot return lal type from the GPU")
