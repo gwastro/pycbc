@@ -57,6 +57,24 @@ class TimeSeries(Array):
             if self._epoch != other._epoch:
                 raise ValueError('different epoch')
 
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            if index.start > index.stop:
+                raise ValueError('start index must be smaller than stop index')
+            if index.step is None:
+                new_delta_t = self._delta_t
+            elif index.step < 0:
+                raise ValueError('negative step is not supported')
+            else:
+                new_delta_t = index.step * self._delta_t
+            if self._epoch is None:
+                new_epoch = None
+            else:
+                new_epoch = self._epoch + index.start * self._delta_t
+            return TimeSeries(Array.__getitem__(self, index), new_delta_t, new_epoch)
+        else:
+            return Array.__getitem__(self, index)
+
     def get_delta_t(self):
         "Return time between consecutive samples in seconds."
         return self._delta_t
@@ -82,6 +100,14 @@ class TimeSeries(Array):
         else:
             return None
     end_time = property(get_end_time)
+
+    def get_sample_times(self):
+        "Return an Array containing the sample times."
+        if self._epoch is None:
+            return Array(range(len(self))) * self._delta_t
+        else:
+            return Array(range(len(self))) * self._delta_t + float(self._epoch)
+    sample_times = property(get_sample_times)
 
     def resample(self, new_delta_t):
         "Return a resampled TimeSeries with the specified delta_t."

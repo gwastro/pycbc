@@ -29,11 +29,24 @@ class TestTimeSeriesBase(object):
 
     def test_duration(self):
         with self.context:
-            self.assertEqual(self.ts1.duration, 0.1 * 3)
-            self.assertEqual(self.ts2.duration, 0.1 * 3)
-            self.assertEqual(self.ts3.duration, 0.1 * 3)
-            self.assertEqual(self.ts4.duration, 0.1 * 3)
-            self.assertEqual(self.ts5.duration, 0.01 * 3)
+            self.assertAlmostEqual(self.ts1.duration, 0.3)
+            self.assertAlmostEqual(self.ts2.duration, 0.3)
+            self.assertAlmostEqual(self.ts3.duration, 0.3)
+            self.assertAlmostEqual(self.ts4.duration, 0.3)
+            self.assertAlmostEqual(self.ts5.duration, 0.03)
+
+    def test_sample_times(self):
+        with self.context:
+            self.assertEqual(len(self.ts1.sample_times), 3)
+            self.assertAlmostEqual(self.ts1.sample_times[-1] - self.ts1.sample_times[0], 0.2)
+            self.assertEqual(len(self.ts2.sample_times), 3)
+            self.assertAlmostEqual(self.ts2.sample_times[-1] - self.ts2.sample_times[0], 0.2)
+            self.assertEqual(len(self.ts3.sample_times), 3)
+            self.assertAlmostEqual(self.ts3.sample_times[-1] - self.ts3.sample_times[0], 0.2)
+            self.assertEqual(len(self.ts4.sample_times), 3)
+            self.assertAlmostEqual(self.ts4.sample_times[-1] - self.ts4.sample_times[0], 0.2)
+            self.assertEqual(len(self.ts5.sample_times), 3)
+            self.assertAlmostEqual(self.ts5.sample_times[-1] - self.ts5.sample_times[0], 0.02)
 
     def test_sum(self):
         with self.context:

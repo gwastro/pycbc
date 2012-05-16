@@ -64,3 +64,8 @@ class FrequencySeries(Array):
         return self._delta_f
     delta_f = property(get_delta_f)
 
+    def get_sample_frequencies(self):
+        "Return an Array containing the sample frequencies."
+        return Array(range(len(self))) * self._delta_f
+    sample_frequencies = property(get_sample_frequencies)
+
