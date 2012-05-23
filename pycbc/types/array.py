@@ -430,7 +430,15 @@ class Array(object):
     @property
     def dtype(self):
         return self._data.dtype
+    
+    @property
+    def precision(self):
+        if self.dtype == float32 or self.dtype == complex64:
+            return 'single'
+        elif self.dtype == complex128 or self.dtype == float64:
+            return 'double'
 
 def zeros(length,dtype=None):
 	return Array(_numpy.zeros(length),dtype=dtype)
+	
 

@@ -1,4 +1,4 @@
-from pycbc.types import zeros,TimeSeries,FrequencySeries,float32,complex64
+from pycbc.types import zeros,TimeSeries,FrequencySeries,float32,complex64,float64,complex128
 from pycbc.fft import fft,ifft
 from math import log,ceil,sqrt
 
@@ -25,7 +25,11 @@ def get_frequencyseries(vec):
     if isinstance(vec,TimeSeries):
         N = len(vec)
         n = N/2+1    
-        vectilde = FrequencySeries(zeros(n),delta_f=1, dtype=complex64)
+        if vec.precision is 'single':
+            dtype = complex64
+        elif vec.precision is 'double':
+            dtype = complex128
+        vectilde = FrequencySeries(zeros(n),delta_f=1, dtype=dtype)
         fft(vec,vectilde)
         
         return vectilde
@@ -62,13 +66,16 @@ def matchedfilter(template,data,psd=None,low_frequency_cutoff=None,high_frequenc
 
     # Calculate the length we need for the temporary memory 
     # Check that this is a power of two?
-    N = (len(htilde)-1) * 2 
-    
-    kmin,kmax = get_cutoff_indices(low_frequency_cutoff,high_frequency_cutoff,stilde.delta_f,N)
+    N = (len(htilde)-1) * 2   
+    kmin,kmax = get_cutoff_indices(low_frequency_cutoff,high_frequency_cutoff,stilde.delta_f,N) 
    
     # Create workspace memory
-    q = zeros(N,dtype=complex64)
-    qtilde = zeros(N,dtype=complex64)
+    if data.precision is 'single':
+        dtype = complex64
+    elif data.precision is 'double':
+        dtype = complex128
+    q = zeros(N,dtype=dtype)
+    qtilde = zeros(N,dtype=dtype)
    
     #Weighted Correlation
     qtilde[kmin:kmax] = htilde.conj()[kmin:kmax] * stilde[kmin:kmax]
