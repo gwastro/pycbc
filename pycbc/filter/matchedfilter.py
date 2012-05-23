@@ -25,11 +25,12 @@ def get_frequencyseries(vec):
     if isinstance(vec,TimeSeries):
         N = len(vec)
         n = N/2+1    
+        delta_f = 1.0 / N / vec.delta_t
         if vec.precision is 'single':
             dtype = complex64
         elif vec.precision is 'double':
             dtype = complex128
-        vectilde = FrequencySeries(zeros(n),delta_f=1, dtype=dtype)
+        vectilde = FrequencySeries(zeros(n),delta_f=delta_f, dtype=dtype)
         fft(vec,vectilde)
         
         return vectilde
@@ -37,14 +38,20 @@ def get_frequencyseries(vec):
         raise TypeError("Can only convert a TimeSeries to a FrequencySeries")
         
 
-def sigmasq(htilde,psd = None,low_frequency_cutoff=None,high_frequency_cutoff=None):
+def sigmasq_series(htilde,psd = None,low_frequency_cutoff=None,high_frequency_cutoff=None):
     N = (len(htilde)-1) * 2 
     norm = 4.0 / (N * N * htilde.delta_f)
     moment = htilde.conj()*htilde
     kmin,kmax = get_cutoff_indices(low_frequency_cutoff,high_frequency_cutoff,htilde.delta_f,N)
     if psd is not None:
         moment /= psd
-    return moment[kmin:kmax].sum() * norm
+    return moment[kmin:kmax],norm
+
+def sigmasq(htilde,psd = None,low_frequency_cutoff=None,high_frequency_cutoff=None):
+    moment,norm = sigmasq_series(htilde,psd,low_frequency_cutoff,high_frequency_cutoff)
+    if psd is not None:
+        moment /= psd
+    return moment.real().sum() * norm
     
 def get_cutoff_indices(flow,fhigh,df,N):
     if flow:
@@ -97,6 +104,48 @@ def match(vec1,vec2,psd=None,low_frequency_cutoff=None,high_frequency_cutoff=Non
     htilde = get_frequencyseries(vec1)
     stilde = get_frequencyseries(vec2)
     snr,norm = matchedfilter(htilde,stilde,psd,low_frequency_cutoff,high_frequency_cutoff)
-    maxsnrsq = (snr.conj()*snr).max()
+    maxsnrsq = (snr.conj()*snr).real().max()
     return sqrt(maxsnrsq/sigmasq(stilde,psd,low_frequency_cutoff,high_frequency_cutoff))*norm
+    
+def real_same_precision_as(data):
+    if data.precision is 'single':
+        return float32
+    elif data.precision is 'double':
+        return float64
+        
+def complex_same_precision_as(data):
+    if data.precision is 'single':
+        return float64
+    elif data.precision is 'double':
+        return complex128
+    
+def chisq(template, data,num_bins, psd = None , low_frequency_cutoff=None,high_frequency_cutoff=None):
+    bins = get_chisq_bin_sizes(num_bins,template,psd,low_frequency_cutoff,high_frequency_cutoff)
+ 
+    total_snr,norm = matchedfilter(template,data,psd,low_frequency_cutoff,high_frequency_cutoff)
+    
+    bin_snrs = []
+    N = (len(htilde)-1) * 2   
+    delta_t = 1.0 / N / data.delta_f
+    
+    chisq_series = TimeSeries(zeros(N),delta_t=delta_t,dtype = real_same_precision_as(data))
+    
+    for kmin,kmax in bins:
+        template_piece = template[kmin:kmax]
+        snr,part_norm = matchedfilter(template_piece,data,psd,low_frequency_cutoff,high_frequency_cutoff)
+        delta = (snr/num_bins - total_snr)
+        chisq_series += (delta.conj()*delta).real()
+        
+    chisq_series *= norm * num_bins
+    return chisq_series
+    
+   
+def get_chisq_bin_sizes(num_bins,template,psd=None,low_frequency_cutoff=None,high_frequency_cutoff=None):
+    pass
+    
+    
+
+
+
+
     
