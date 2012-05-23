@@ -2,10 +2,10 @@ from pycbc.types import zeros,TimeSeries,FrequencySeries,float32,complex64
 from pycbc.fft import fft,ifft
 from math import log,ceil,sqrt
 
-def get_frequencyseries(vec):
-    if isinstance(vec,FrequencySeries):
-        return vec
-    if isinstance(vec,TimeSeries):
+def get_padded_frequencyseries(vec):
+    if not isinstance(vec,TimeSeries):
+        raise TypeError("Can only return padded frequency series from a time series")
+    else:
         power = ceil(log(len(vec),2))+1
         N = 2 ** power
         n = N/2+1
@@ -16,6 +16,17 @@ def get_frequencyseries(vec):
         vectilde = FrequencySeries(zeros(n),delta_f=1, dtype=complex64)
         
         fft(vec_pad,vectilde)
+        
+        return vectilde
+
+def get_frequencyseries(vec):
+    if isinstance(vec,FrequencySeries):
+        return vec
+    if isinstance(vec,TimeSeries):
+        N = len(vec)
+        n = N/2+1    
+        vectilde = FrequencySeries(zeros(n),delta_f=1, dtype=complex64)
+        fft(vec,vectilde)
         
         return vectilde
     else:
