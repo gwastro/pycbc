@@ -27,7 +27,6 @@ These are the unittests for the pycbc.fft subpackage
 
 import pycbc
 import pycbc.scheme
-from pycbc.scheme import *
 import pycbc.array
 import pycbc.timeseries
 import pycbc.frequencyseries
@@ -569,7 +568,7 @@ if __name__ == '__main__':
         for klass in CUDATestClasses:
             suiteCUDA.addTest(unittest.makeSuite(klass))
 
-        with CUDAScheme():
+        with pycbc.scheme.CUDAScheme():
             unittest.TextTestRunner(verbosity=2).run(suiteCUDA)
 
     if pycbc.HAVE_OPENCL:
