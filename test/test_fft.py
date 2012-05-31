@@ -568,7 +568,7 @@ if __name__ == '__main__':
         for klass in CUDATestClasses:
             suiteCUDA.addTest(unittest.makeSuite(klass))
 
-        with CUDAScheme():
+        with pycbc.scheme.CUDAScheme():
             unittest.TextTestRunner(verbosity=2).run(suiteCUDA)
 
     if pycbc.HAVE_OPENCL:
