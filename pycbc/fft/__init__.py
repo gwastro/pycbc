@@ -105,7 +105,7 @@ if pycbc.HAVE_OPENCL:
 
 # Now create a dict-of-dicts of backends
 
-_fft_backends = {None: _cpu_backends}
+_fft_backends = {None.__class__: _cpu_backends}
 if pycbc.HAVE_CUDA:
     _fft_backends.update({pycbc.scheme.CUDAScheme:
                           _cuda_backends})
@@ -175,7 +175,7 @@ def fft(invec,outvec,backend='Default'):
                 "Output length of R2HC must be half input length plus one")
     else:
         raise ValueError("Inconsistent dtypes for forward FFT")
-    thescheme = pycbc.scheme.mgr.state
+    thescheme = pycbc.scheme.mgr.state.__class__
     thebackend = _fft_backends[thescheme][backend]
     thebackend.fft(invec,outvec,prec,itype,otype)
     # For a forward FFT, the length of the *input* vector is the length
@@ -201,7 +201,7 @@ def ifft(invec,outvec,backend='Default'):
                 "Input length of R2HC@r must be half output length plus one")
     else:
         raise ValueError("Inconsistent dtypes for reverse FFT")
-    thescheme = pycbc.scheme.mgr.state
+    thescheme = pycbc.scheme.mgr.state.__class__
     thebackend = _fft_backends[thescheme][backend]
     thebackend.ifft(invec,outvec,prec,itype,otype)
     # For an inverse FFT, the length of the *output* vector is the length
