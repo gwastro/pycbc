@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Josh Willis
+# Copyright (C) 2012  Josh Willis, Andrew Miller
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -69,10 +69,11 @@ for backend in _cpu_possible_backends.iterkeys():
     except ImportError:
         pass
 
-# CUDA backends; blank for now
+# CUDA backends;
 if pycbc.HAVE_CUDA:
-    import cufft as _cuda_default
-    _cuda_possible_backends = {'cuda' : 'cufft'}
+    import pyfft as _cuda_default
+    _cuda_possible_backends = {'pyfft':'pyfft',
+                               'cuda' : 'cufft'}
     _cuda_backends = {'Default' : _cuda_default}
     cuda_backends = ['Default']
 
