@@ -50,6 +50,6 @@ def ifft(invec,outvec,prec,itype,otype):
         pyplan=Plan(len(invec),dtype=invec.dtype,normalize=False,fast_math=True)
         pyplan.execute(invec.data,outvec.data,inverse=True)
 
-    elif itype=='real' and otype=='complex':
+    elif itype=='complex' and otype=='real':
         raise NotImplementedError("Only Complex to Complex IFFTs for pyfft currently.")
 
