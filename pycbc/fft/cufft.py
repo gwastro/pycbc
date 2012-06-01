@@ -34,20 +34,22 @@ def fft(invec,outvec,prec,itype,otype):
     invec.data #Move input if necessary
     if itype =='complex' and otype == 'complex':
         cuplan = cu_fft.Plan((len(invec),),invec.dtype,outvec.dtype)
-        cu_fft.fft(invec.data,outvec.data,cuplan,scale=True)
+        cu_fft.fft(invec.data,outvec.data,cuplan)
 
     elif itype=='real' and otype=='complex':
         cuplan = cu_fft.Plan((len(invec),),invec.dtype,outvec.dtype)
-        cu_fft.fft(invec.data,outvec.data,cuplan,scale=True)
+        cu_fft.fft(invec.data,outvec.data,cuplan)
 
 def ifft(invec,outvec,prec,itype,otype):
     outvec.data #Move output if necessary
     invec.data #Move input if necessary
     if itype =='complex' and otype == 'complex':
         cuplan = cu_fft.Plan((len(invec),),invec.dtype,outvec.dtype)
-        cu_fft.ifft(invec.data,outvec.data,cuplan,scale=True)
+        cu_fft.ifft(invec.data,outvec.data,cuplan)
 
     elif itype=='complex' and otype=='real':
-        cuplan = cu_fft.Plan((len(invec),),invec.dtype,outvec.dtype)
-        cu_fft.ifft(invec.data,outvec.data,cuplan,scale=True)
+        #This plan wants the actual size, not the N/2+1
+        #That's why this plan uses the outvec length, instead of the invec
+        cuplan = cu_fft.Plan((len(outvec),),invec.dtype,outvec.dtype)
+        cu_fft.ifft(invec.data,outvec.data,cuplan)
 
