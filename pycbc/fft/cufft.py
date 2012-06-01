@@ -37,6 +37,9 @@ def fft(invec,outvec,prec,itype,otype):
         cu_fft.fft(invec.data,outvec.data,cuplan)
 
     elif itype=='real' and otype=='complex':
+        #The cufft algorithm doesn't return exact zeros for imaginary parts of this transform
+        #it returns imaginary components on the order of 10^-16. Because of this, the forward
+        #real to complex tests do not currently pass the unit tests.
         cuplan = cu_fft.Plan((len(invec),),invec.dtype,outvec.dtype)
         cu_fft.fft(invec.data,outvec.data,cuplan)
 
