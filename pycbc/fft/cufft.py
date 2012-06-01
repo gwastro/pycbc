@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Josh Willis
+# Copyright (C) 2012  Josh Willis, Andrew Miller
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -27,10 +27,27 @@ for the PyCBC package.
 """
 
 import pycbc.array
+import scikits.cuda.fft as cu_fft
 
 def fft(invec,outvec,prec,itype,otype):
-    raise NotImplementedError("No cuFFT implementation of fft yet.")
+    outvec.data #Move output if necessary
+    invec.data #Move input if necessary
+    if itype =='complex' and otype == 'complex':
+        cuplan = cu_fft.Plan((len(invec),),invec.dtype,outvec.dtype)
+        cu_fft.fft(invec.data,outvec.data,cuplan,scale=True)
+
+    elif itype=='real' and otype=='complex':
+        cuplan = cu_fft.Plan((len(invec),),invec.dtype,outvec.dtype)
+        cu_fft.fft(invec.data,outvec.data,cuplan,scale=True)
 
 def ifft(invec,outvec,prec,itype,otype):
-    raise NotImplementedError("No cuFFT implementation of ifft yet.")
+    outvec.data #Move output if necessary
+    invec.data #Move input if necessary
+    if itype =='complex' and otype == 'complex':
+        cuplan = cu_fft.Plan((len(invec),),invec.dtype,outvec.dtype)
+        cu_fft.ifft(invec.data,outvec.data,cuplan,scale=True)
+
+    elif itype=='complex' and otype=='real':
+        cuplan = cu_fft.Plan((len(invec),),invec.dtype,outvec.dtype)
+        cu_fft.ifft(invec.data,outvec.data,cuplan,scale=True)
 

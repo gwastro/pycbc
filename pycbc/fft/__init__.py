@@ -71,7 +71,7 @@ for backend in _cpu_possible_backends.iterkeys():
 
 # CUDA backends;
 if pycbc.HAVE_CUDA:
-    import pythonfft as _cuda_default
+    import cufft as _cuda_default
     _cuda_possible_backends = {'pyfft':'pythonfft',
                                'cuda' : 'cufft'}
     _cuda_backends = {'Default' : _cuda_default}
