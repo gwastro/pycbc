@@ -14,3 +14,8 @@ try:
     HAVE_OPENCL=True
 except ImportError:
     HAVE_OPENCL=False
+    
+    
+# PYCBC Specfic Constants
+
+DYN_RANGE_FAC =  5.9029581035870565e+20
