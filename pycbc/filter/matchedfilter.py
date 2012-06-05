@@ -1,6 +1,45 @@
+# Copyright (C) 2012  Alex Nitz
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+"""
+This modules provides matchedfiltering and related match and chisq calculations.
+"""
+
 from pycbc.types import zeros,TimeSeries,FrequencySeries,float32,complex64,float64,complex128
 from pycbc.fft import fft,ifft
 from math import log,ceil,sqrt
+
+def real_same_precision_as(data):
+    if data.precision is 'single':
+        return float32
+    elif data.precision is 'double':
+        return float64
+        
+def complex_same_precision_as(data):
+    if data.precision is 'single':
+        return complex64
+    elif data.precision is 'double':
+        return complex128
 
 def get_padded_frequencyseries(vec):
     if not isinstance(vec,TimeSeries):
@@ -10,10 +49,10 @@ def get_padded_frequencyseries(vec):
         N = 2 ** power
         n = N/2+1
         
-        vec_pad = TimeSeries(zeros(N),delta_t=vec.delta_t,dtype=float32)
+        vec_pad = TimeSeries(zeros(N),delta_t=vec.delta_t,dtype=real_same_precision_as(vec))
         vec_pad[0:len(vec)] = vec
         
-        vectilde = FrequencySeries(zeros(n),delta_f=1, dtype=complex64)
+        vectilde = FrequencySeries(zeros(n),delta_f=1, dtype=complex_same_precision_as(vec))
         
         fft(vec_pad,vectilde)
         
@@ -26,13 +65,8 @@ def get_frequencyseries(vec):
         N = len(vec)
         n = N/2+1    
         delta_f = 1.0 / N / vec.delta_t
-        if vec.precision is 'single':
-            dtype = complex64
-        elif vec.precision is 'double':
-            dtype = complex128
-        vectilde = FrequencySeries(zeros(n),delta_f=delta_f, dtype=dtype)
-        fft(vec,vectilde)
-        
+        vectilde = FrequencySeries(zeros(n),delta_f=delta_f, dtype=complex_same_precision_as(vec))
+        fft(vec,vectilde)   
         return vectilde
     else:
         raise TypeError("Can only convert a TimeSeries to a FrequencySeries")
@@ -44,13 +78,11 @@ def sigmasq_series(htilde,psd = None,low_frequency_cutoff=None,high_frequency_cu
     moment = htilde.conj()*htilde
     kmin,kmax = get_cutoff_indices(low_frequency_cutoff,high_frequency_cutoff,htilde.delta_f,N)
     if psd is not None:
-        moment /= psd
+        moment[kmin:kmax] /= psd[kmin:kmax]
     return moment[kmin:kmax],norm
 
 def sigmasq(htilde,psd = None,low_frequency_cutoff=None,high_frequency_cutoff=None):
     moment,norm = sigmasq_series(htilde,psd,low_frequency_cutoff,high_frequency_cutoff)
-    if psd is not None:
-        moment /= psd
     return moment.real().sum() * norm
     
 def get_cutoff_indices(flow,fhigh,df,N):
@@ -66,7 +98,7 @@ def get_cutoff_indices(flow,fhigh,df,N):
     return kmin,kmax
     
 def matchedfilter(template,data,psd=None,low_frequency_cutoff=None,high_frequency_cutoff=None):
-
+  
     # Get the Inputs in terms of htilde and stilde
     htilde = get_frequencyseries(template)
     stilde = get_frequencyseries(data)
@@ -77,12 +109,8 @@ def matchedfilter(template,data,psd=None,low_frequency_cutoff=None,high_frequenc
     kmin,kmax = get_cutoff_indices(low_frequency_cutoff,high_frequency_cutoff,stilde.delta_f,N) 
    
     # Create workspace memory
-    if data.precision is 'single':
-        dtype = complex64
-    elif data.precision is 'double':
-        dtype = complex128
-    q = zeros(N,dtype=dtype)
-    qtilde = zeros(N,dtype=dtype)
+    q = zeros(N,dtype=complex_same_precision_as(data))
+    qtilde = zeros(N,dtype=complex_same_precision_as(data))
    
     #Weighted Correlation
     qtilde[kmin:kmax] = htilde.conj()[kmin:kmax] * stilde[kmin:kmax]
@@ -106,18 +134,6 @@ def match(vec1,vec2,psd=None,low_frequency_cutoff=None,high_frequency_cutoff=Non
     snr,norm = matchedfilter(htilde,stilde,psd,low_frequency_cutoff,high_frequency_cutoff)
     maxsnrsq = (snr.conj()*snr).real().max()
     return sqrt(maxsnrsq/sigmasq(stilde,psd,low_frequency_cutoff,high_frequency_cutoff))*norm
-    
-def real_same_precision_as(data):
-    if data.precision is 'single':
-        return float32
-    elif data.precision is 'double':
-        return float64
-        
-def complex_same_precision_as(data):
-    if data.precision is 'single':
-        return float64
-    elif data.precision is 'double':
-        return complex128
     
 def chisq(template, data,num_bins, psd = None , low_frequency_cutoff=None,high_frequency_cutoff=None):
     bins = get_chisq_bin_sizes(num_bins,template,psd,low_frequency_cutoff,high_frequency_cutoff)
