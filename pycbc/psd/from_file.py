@@ -32,7 +32,7 @@ from pycbc.types import FrequencySeries
 from scipy.interpolate import interp1d
 from pycbc.filter import *
 
-def psd_from_file(filename,delta_f,length,low_frequency_cutoff=None,high_frequency_cutoff=None,dtype=None):
+def psd_from_asd_file(filename,delta_f,length,low_frequency_cutoff=None,high_frequency_cutoff=None,dtype=None):
     """Returns the psd from an ascii file containing an asd
     """
     fpsd = numpy.loadtxt(filename)          
@@ -54,9 +54,4 @@ def psd_from_file(filename,delta_f,length,low_frequency_cutoff=None,high_frequen
    
     return FrequencySeries(psd,delta_f=delta_f,dtype=dtype,copy=False)
   
-#def asd_from_file(filename,delta_f,length):
-#    """Returns the interpolated asd from an ascii file containing an asd 
-#    """
-#    asd = psd_from_file(filename,delta_f,length)
-#    return asd ** 2
     
