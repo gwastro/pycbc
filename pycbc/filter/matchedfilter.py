@@ -42,6 +42,7 @@ def complex_same_precision_as(data):
         return complex128
 
 def get_padded_frequencyseries(vec):
+    print type(vec)
     if not isinstance(vec,TimeSeries):
         raise TypeError("Can only return padded frequency series from a time series")
     else:

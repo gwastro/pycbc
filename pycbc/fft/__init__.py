@@ -46,7 +46,7 @@ def _backend_update(key,possible,available):
 
 # CPU backends:
 
-import swiglalfft as _cpu_default
+import npfft as _cpu_default
 
 # The next part is a little tricky.  There are two issues:
 #  (1) The logical name for what the user specifies as the backend

@@ -38,6 +38,7 @@ def psd_from_file(filename,delta_f,length,low_frequency_cutoff=None,high_frequen
     fpsd = numpy.loadtxt(filename)          
     freq_data=fpsd[:,0]
     psd_data=fpsd[:,1]*DYN_RANGE_FAC
+    psd_data = psd_data **2
     psd_interp= interp1d(freq_data,psd_data) 
     N = (length-1) * 2  
 
