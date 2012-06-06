@@ -22,7 +22,8 @@
 #
 # =============================================================================
 #
-"""
+"""Convenience functions to genenerate gravitational wave templates and
+waveforms.
 """
 import swiglal as lal
 import swiglalsimulation as lalsim
