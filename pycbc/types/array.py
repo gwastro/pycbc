@@ -38,6 +38,7 @@ import pycbc.scheme as _scheme
 
 if _pycbc.HAVE_CUDA:
     import pycuda as _pycuda
+    import pycuda.driver as _cudriver
     import pycuda.gpuarray as _cudaarray
 if _pycbc.HAVE_OPENCL:
     import pyopencl as _pyopencl
@@ -375,7 +376,15 @@ class Array(object):
     @_convert
     def __setitem__(self,index,other):
         if isinstance(other,Array):
-            self._data[index]=other._data
+            if type(self._data) is _numpy.ndarray:
+                self._data[index]=other.data
+            elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
+                if (other._data[index].nbytes <= self._data[index].nbytes) and other.dtype == self.dtype:
+                    _cudriver.memcpy_dtod_async(self[index].ptr,other.ptr,other._data.nbytes)
+                else:
+                    raise RuntimeError
+            elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
+                raise NotImplementedError
         else:
             raise TypeError('Can only copy data from another Array')
                 
@@ -440,6 +449,11 @@ class Array(object):
             return 'double'
 
 def zeros(length,dtype=None):
-	return Array(_numpy.zeros(length),dtype=dtype)
+    if _scheme.mgr.state is None:
+        return Array(_numpy.zeros(length,dtype=dtype),copy=False)
+    if type(_scheme.mgr.state) is _scheme.CUDAScheme:
+        return Array(_cudaarray.zeros(length,dtype),copy=False)
+    if type(_scheme.mgr.state) is _scheme.OpenCLScheme:
+        raise NotImplementedError
 	
 

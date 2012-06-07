@@ -111,13 +111,15 @@ def matchedfilter(template,data,psd=None,low_frequency_cutoff=None,high_frequenc
     # Create workspace memory
     q = zeros(N,dtype=complex_same_precision_as(data))
     qtilde = zeros(N,dtype=complex_same_precision_as(data))
-   
+
     #Weighted Correlation
     qtilde[kmin:kmax] = htilde.conj()[kmin:kmax] * stilde[kmin:kmax]
-    
+
+    #print qtilde,type(htilde.data),type(stilde.data),kmin,kmax
     if psd is not None:
         qtilde[kmin:kmax] /= psd[kmin:kmax]
 
+    
     #Inverse FFT
     ifft(qtilde,q) 
 
