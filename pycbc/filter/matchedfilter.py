@@ -25,21 +25,10 @@
 This modules provides matchedfiltering and related match and chisq calculations.
 """
 
-from pycbc.types import zeros,TimeSeries,FrequencySeries,float32,complex64,float64,complex128
+from pycbc.types import *
 from pycbc.fft import fft,ifft
 from math import log,ceil,sqrt
 
-def real_same_precision_as(data):
-    if data.precision is 'single':
-        return float32
-    elif data.precision is 'double':
-        return float64
-        
-def complex_same_precision_as(data):
-    if data.precision is 'single':
-        return complex64
-    elif data.precision is 'double':
-        return complex128
 
 def get_padded_frequencyseries(vec):
     if not isinstance(vec,TimeSeries):
@@ -70,20 +59,24 @@ def get_frequencyseries(vec):
         return vectilde
     else:
         raise TypeError("Can only convert a TimeSeries to a FrequencySeries")
-        
 
-def sigmasq_series(htilde,psd = None,low_frequency_cutoff=None,high_frequency_cutoff=None):
+
+
+def sigmasq_series(htilde,psd = None,low_frequency_cutoff=None,high_frequency_cutoff=None):    
     N = (len(htilde)-1) * 2 
-    norm = 4.0 / (N * N * htilde.delta_f)
-    moment = htilde.conj()*htilde
-    kmin,kmax = get_cutoff_indices(low_frequency_cutoff,high_frequency_cutoff,htilde.delta_f,N)
+    norm = 4.0 / (N * N * htilde.delta_f) 
+    kmin,kmax = get_cutoff_indices(low_frequency_cutoff,high_frequency_cutoff,htilde.delta_f,N)   
+    
+    moment = htilde.squared_norm()
+    
     if psd is not None:
-        moment[kmin:kmax] /= psd[kmin:kmax]
+        moment[kmin:kmax] /= psd[kmin:kmax]      
+        
     return moment[kmin:kmax],norm
 
 def sigmasq(htilde,psd = None,low_frequency_cutoff=None,high_frequency_cutoff=None):
     moment,norm = sigmasq_series(htilde,psd,low_frequency_cutoff,high_frequency_cutoff)
-    return moment.real().sum() * norm
+    return moment.sum() * norm
     
 def get_cutoff_indices(flow,fhigh,df,N):
     if flow:
@@ -97,7 +90,13 @@ def get_cutoff_indices(flow,fhigh,df,N):
         
     return kmin,kmax
     
+
+_q = None
+_qtilde = None
+
 def matchedfilter(template,data,psd=None,low_frequency_cutoff=None,high_frequency_cutoff=None):
+    global _q
+    global _qtilde
   
     # Get the Inputs in terms of htilde and stilde
     htilde = get_frequencyseries(template)
@@ -109,32 +108,34 @@ def matchedfilter(template,data,psd=None,low_frequency_cutoff=None,high_frequenc
     kmin,kmax = get_cutoff_indices(low_frequency_cutoff,high_frequency_cutoff,stilde.delta_f,N) 
    
     # Create workspace memory
-    q = zeros(N,dtype=complex_same_precision_as(data))
-    qtilde = zeros(N,dtype=complex_same_precision_as(data))
+    if (_q is None) or (len(_q) != N):
+        _q = zeros(N,dtype=complex_same_precision_as(data))
+    else:
+        _q.fill(0)
+        
+    if (_qtilde is None) or (len(_q) != N):
+        _qtilde = zeros(N,dtype=complex_same_precision_as(data))
+    else:
+        _qtilde.fill(0)
 
-    #Weighted Correlation
-    qtilde[kmin:kmax] = htilde.conj()[kmin:kmax] * stilde[kmin:kmax]
-
-    #print qtilde,type(htilde.data),type(stilde.data),kmin,kmax
+    correlate(htilde[kmin:kmax],stilde[kmin:kmax],_qtilde[kmin:kmax])
     if psd is not None:
-        qtilde[kmin:kmax] /= psd[kmin:kmax]
+        _qtilde[kmin:kmax] /= psd[kmin:kmax]
 
-    
-    #Inverse FFT
-    ifft(qtilde,q) 
+    ifft(_qtilde,_q) 
 
-    #Calculate the Normalization
     norm = sqrt(((4.0 / (N * N * stilde.delta_f)) **2) / sigmasq(htilde,psd,low_frequency_cutoff,high_frequency_cutoff) )
-
+    
     #return complex snr
-    return q,norm
+    return _q,norm
     
     
 def match(vec1,vec2,psd=None,low_frequency_cutoff=None,high_frequency_cutoff=None):
     htilde = get_frequencyseries(vec1)
     stilde = get_frequencyseries(vec2)
     snr,norm = matchedfilter(htilde,stilde,psd,low_frequency_cutoff,high_frequency_cutoff)
-    maxsnrsq = (snr.conj()*snr).real().max()
+
+    maxsnrsq = (snr.squared_norm()).max()
     return sqrt(maxsnrsq/sigmasq(stilde,psd,low_frequency_cutoff,high_frequency_cutoff))*norm
     
 def chisq(template, data,num_bins, psd = None , low_frequency_cutoff=None,high_frequency_cutoff=None):
@@ -152,7 +153,7 @@ def chisq(template, data,num_bins, psd = None , low_frequency_cutoff=None,high_f
         template_piece = template[kmin:kmax]
         snr,part_norm = matchedfilter(template_piece,data,psd,low_frequency_cutoff,high_frequency_cutoff)
         delta = (snr/num_bins - total_snr)
-        chisq_series += (delta.conj()*delta).real()
+        chisq_series += (delta.conj()*delta)
         
     chisq_series *= norm * num_bins
     return chisq_series

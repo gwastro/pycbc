@@ -30,8 +30,6 @@ import pycbc.array
 import scikits.cuda.fft as cu_fft
 
 def fft(invec,outvec,prec,itype,otype):
-    outvec.data #Move output if necessary
-    invec.data #Move input if necessary
     if itype =='complex' and otype == 'complex':
         cuplan = cu_fft.Plan((len(invec),),invec.dtype,outvec.dtype)
         cu_fft.fft(invec.data,outvec.data,cuplan)
@@ -44,8 +42,6 @@ def fft(invec,outvec,prec,itype,otype):
         cu_fft.fft(invec.data,outvec.data,cuplan)
 
 def ifft(invec,outvec,prec,itype,otype):
-    outvec.data #Move output if necessary
-    invec.data #Move input if necessary
     if itype =='complex' and otype == 'complex':
         cuplan = cu_fft.Plan((len(invec),),invec.dtype,outvec.dtype)
         cu_fft.ifft(invec.data,outvec.data,cuplan)

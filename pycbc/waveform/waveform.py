@@ -137,7 +137,6 @@ def get_waveform(template=None,**kwargs):
                         err_str += " or " +  str(alt)
                 raise KeyError( err_str )
 
-    print waveform_args
     lal_hp,lal_hc = definition['FUNC'].__call__(*waveform_args)
     hp = TimeSeries(lal_hp.data.data,delta_t=lal_hp.deltaT)
     hc = TimeSeries(lal_hc.data.data,delta_t=lal_hc.deltaT)

@@ -34,8 +34,6 @@ from pyfft.cuda import Plan
 import numpy
 
 def fft(invec,outvec,prec,itype,otype):
-    outvec.data #Move output if necessary
-    invec.data #Move input if necessary
     if itype =='complex' and otype == 'complex':
         pyplan=Plan(len(invec),dtype=invec.dtype,normalize=False,fast_math=True)
         pyplan.execute(invec.data,outvec.data)
@@ -44,8 +42,6 @@ def fft(invec,outvec,prec,itype,otype):
         raise NotImplementedError("Only Complex to Complex FFTs for pyfft currently.")
 
 def ifft(invec,outvec,prec,itype,otype):
-    outvec.data #Move output if necessary
-    invec.data #Move input if necessary
     if itype =='complex' and otype == 'complex':
         pyplan=Plan(len(invec),dtype=invec.dtype,normalize=False,fast_math=True)
         pyplan.execute(invec.data,outvec.data,inverse=True)

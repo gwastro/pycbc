@@ -39,7 +39,10 @@ import pycbc.scheme as _scheme
 if _pycbc.HAVE_CUDA:
     import pycuda as _pycuda
     import pycuda.driver as _cudriver
-    import pycuda.gpuarray as _cudaarray
+    import pycuda.gpuarray as _cudaarray    
+    from array_cuda_kernels import squared_norm as cuda_squared_norm
+    from array_cuda_kernels import correlate as cuda_correlate 
+    
 if _pycbc.HAVE_OPENCL:
     import pyopencl as _pyopencl
     import pyopencl.array as _openclarray
@@ -216,6 +219,9 @@ class Array(object):
     def __add__(self,other):
         """ Add Array to Array or scalar and return an Array. """
         return self._data + other
+        
+    def fill(self,value):
+        self._data.fill(value)
 
     @_returntype
     @_convert
@@ -310,6 +316,19 @@ class Array(object):
     def conj(self):
         """ Return complex conjugate of Array. """
         return self._data.conj()
+        
+    @_returntype
+    @_convert
+    def squared_norm(self):
+        """ Return the squared norm of the array """
+        if type(self._data) is _numpy.ndarray:
+            return self.data * self.data.conj()
+        elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
+            tmp = zeros(len(self),dtype=real_same_precision_as(self))
+            cuda_squared_norm[self.precision](self.data,tmp.data)
+            return tmp
+        elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
+            raise NotImplementedError         
 
     @_convert
     def sum(self):
@@ -443,16 +462,37 @@ class Array(object):
     
     @property
     def precision(self):
+    
         if self.dtype == float32 or self.dtype == complex64:
             return 'single'
         elif self.dtype == complex128 or self.dtype == float64:
             return 'double'
+            
+def real_same_precision_as(data):
+    if data.precision is 'single':
+        return float32
+    elif data.precision is 'double':
+        return float64
+        
+def complex_same_precision_as(data):
+    if data.precision is 'single':
+        return complex64
+    elif data.precision is 'double':
+        return complex128            
 
 def zeros(length,dtype=None):
     if _scheme.mgr.state is None:
         return Array(_numpy.zeros(length,dtype=dtype),copy=False)
     if type(_scheme.mgr.state) is _scheme.CUDAScheme:
         return Array(_cudaarray.zeros(length,dtype),copy=False)
+    if type(_scheme.mgr.state) is _scheme.OpenCLScheme:
+        raise NotImplementedError
+        
+def correlate(x,y,z):
+    if _scheme.mgr.state is None:
+        z[:] = x.conj()*y
+    if type(_scheme.mgr.state) is _scheme.CUDAScheme:
+        cuda_correlate[x.precision](x.data,y.data,z.data)
     if type(_scheme.mgr.state) is _scheme.OpenCLScheme:
         raise NotImplementedError
 	
