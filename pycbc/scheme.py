@@ -77,7 +77,19 @@ class DefaultScheme(object):
     def __del__(self):
         DefaultScheme._single = None
 
+_cuda_cleanup_list=[]
+
+def register_clean_cuda(function):
+    _cuda_cleanup_list.append(function)
+
 def clean_cuda(context):
+    #Before cuda context is destroyed, all item destructions dependent on cuda must take place
+    #This calls all functions that have been registered with _register_clean_cuda() in reverse order
+    #So the last one registered, is the first one cleaned
+    _cuda_cleanup_list.reverse()
+    for func in _cuda_cleanup_list:
+        func()
+    
     context.pop()
     from pycuda.tools import clear_context_caches
     clear_context_caches()
