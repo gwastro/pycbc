@@ -37,7 +37,7 @@ def fft(invec,outvec,prec,itype,otype):
     outvec.data #Move output if necessary
     invec.data #Move input if necessary
     if itype =='complex' and otype == 'complex':
-        pyplan=Plan(len(invec),dtype=invec.dtype,normalize=False,fast_math=True)
+        pyplan=Plan(len(invec),dtype=invec.dtype,queue=pycbc.scheme.mgr.state.queue,normalize=False,fast_math=True)
         pyplan.execute(invec.data.data,outvec.data.data)
 
     elif itype=='real' and otype=='complex':
@@ -47,7 +47,7 @@ def ifft(invec,outvec,prec,itype,otype):
     outvec.data #Move output if necessary
     invec.data #Move input if necessary
     if itype =='complex' and otype == 'complex':
-        pyplan=Plan(len(invec),dtype=invec.dtype,normalize=False,fast_math=True)
+        pyplan=Plan(len(invec),dtype=invec.dtype,queue=pycbc.scheme.mgr.state.queue,normalize=False,fast_math=True)
         pyplan.execute(invec.data.data,outvec.data.data,inverse=True)
 
     elif itype=='complex' and otype=='real':
