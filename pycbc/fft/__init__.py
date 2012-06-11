@@ -73,7 +73,7 @@ for backend in _cpu_possible_backends.iterkeys():
 if pycbc.HAVE_CUDA:
     import cufft as _cuda_default
     _cuda_possible_backends = {'cuda' : 'cufft',
-                               'pyfft':'pythonfft'}
+                               'pyfft':'cuda_pyfft'}
     _cuda_backends = {'Default' : _cuda_default}
     cuda_backends = ['Default']
 
@@ -88,8 +88,8 @@ if pycbc.HAVE_CUDA:
 
 # OpenCL backends; blank for now
 if pycbc.HAVE_OPENCL:
-    import cldefault as _opencl_default
-    _opencl_possible_backends = {'opencl' : 'cldefault'}
+    import pythonfft as _opencl_default
+    _opencl_possible_backends = {'pyfft' : 'cl_pyfft'}
     _opencl_backends = {'Default': _opencl_default}
     opencl_backends = ['Default']
 

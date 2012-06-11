@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Josh Willis
+# Copyright (C) 2012  Josh Willis, Andrew Miller
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -576,5 +576,5 @@ if __name__ == '__main__':
         for klass in OpenCLTestClasses:
             suiteOpenCL.addTest(unittest.makeSuite(klass))
 
-        with OpenCLScheme():
+        with pycbc.scheme.OpenCLScheme():
             unittest.TextTestRunner(verbosity=2).run(suiteOpenCL)
