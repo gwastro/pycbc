@@ -22,7 +22,7 @@
 # =============================================================================
 #
 """
-This module provides the pyfft backend of the fast Fourier transform
+This module provides the OpenCL pyfft backend of the fast Fourier transform
 for the PyCBC package.
 """
 
@@ -30,15 +30,15 @@ import pycbc.array
 
 #these imports are just what is used in the pyfft quickstart... 
 #they may need to be changed
-from pyfft.cl import Plan
+from pyfft.cl import Plan as clPlan
 import numpy
 
 def fft(invec,outvec,prec,itype,otype):
     outvec.data #Move output if necessary
     invec.data #Move input if necessary
     if itype =='complex' and otype == 'complex':
-        pyplan=Plan(len(invec),dtype=invec.dtype,normalize=False,fast_math=True)
-        pyplan.execute(invec.data,outvec.data)
+        pyplan=clPlan(len(invec),dtype=invec.dtype,queue=pycbc.scheme.mgr.state.queue,normalize=False,fast_math=True)
+        pyplan.execute(invec.data.data,outvec.data.data)
 
     elif itype=='real' and otype=='complex':
         raise NotImplementedError("Only Complex to Complex FFTs for pyfft currently.")
@@ -47,8 +47,8 @@ def ifft(invec,outvec,prec,itype,otype):
     outvec.data #Move output if necessary
     invec.data #Move input if necessary
     if itype =='complex' and otype == 'complex':
-        pyplan=Plan(len(invec),dtype=invec.dtype,normalize=False,fast_math=True)
-        pyplan.execute(invec.data,outvec.data,inverse=True)
+        pyplan=clPlan(len(invec),dtype=invec.dtype,queue=pycbc.scheme.mgr.state.queue,normalize=False,fast_math=True)
+        pyplan.execute(invec.data.data,outvec.data.data,inverse=True)
 
     elif itype=='complex' and otype=='real':
         raise NotImplementedError("Only Complex to Complex IFFTs for pyfft currently.")
