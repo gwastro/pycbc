@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Andrew Miller
+# Copyright (C) 2012  Josh Willis
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -22,34 +22,15 @@
 # =============================================================================
 #
 """
-This module provides the pyfft backend of the fast Fourier transform
+This module provides the default opencl backend of the fast Fourier transform
 for the PyCBC package.
 """
 
 import pycbc.array
 
-#these imports are just what is used in the pyfft quickstart... 
-#they may need to be changed
-from pyfft.cl import Plan
-import numpy
-
 def fft(invec,outvec,prec,itype,otype):
-    outvec.data #Move output if necessary
-    invec.data #Move input if necessary
-    if itype =='complex' and otype == 'complex':
-        pyplan=Plan(len(invec),dtype=invec.dtype,normalize=False,fast_math=True)
-        pyplan.execute(invec.data,outvec.data)
-
-    elif itype=='real' and otype=='complex':
-        raise NotImplementedError("Only Complex to Complex FFTs for pyfft currently.")
+    raise NotImplementedError("No OpenCL implementation of fft yet.")
 
 def ifft(invec,outvec,prec,itype,otype):
-    outvec.data #Move output if necessary
-    invec.data #Move input if necessary
-    if itype =='complex' and otype == 'complex':
-        pyplan=Plan(len(invec),dtype=invec.dtype,normalize=False,fast_math=True)
-        pyplan.execute(invec.data,outvec.data,inverse=True)
-
-    elif itype=='complex' and otype=='real':
-        raise NotImplementedError("Only Complex to Complex IFFTs for pyfft currently.")
+    raise NotImplementedError("No OpenCL implementation of ifft yet.")
 

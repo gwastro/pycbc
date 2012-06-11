@@ -88,7 +88,7 @@ if pycbc.HAVE_CUDA:
 
 # OpenCL backends; blank for now
 if pycbc.HAVE_OPENCL:
-    import cl_pyfft as _opencl_default
+    import pythonfft as _opencl_default
     _opencl_possible_backends = {'pyfft' : 'cl_pyfft'}
     _opencl_backends = {'Default': _opencl_default}
     opencl_backends = ['Default']
