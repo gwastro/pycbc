@@ -28,14 +28,31 @@ for the PyCBC package.
 
 import pycbc.array
 
-#these imports are just what is used in the pyfft quickstart... 
-#they may need to be changed
 from pyfft.cuda import Plan
 import numpy
 
+_plans = {}
+
+#These dicts need to be cleared before the cuda context is destroyed
+def _clear_plan_dict():
+    _plans.clear()
+
+pycbc.scheme.register_clean_cuda(_clear_plan_dict)
+
+
+#itype and otype are actual dtypes here, not strings
+def _get_plan(itype,otype,inlen):
+    try:
+        theplan = _plans[(itype,otype,inlen)]
+    except KeyError:
+        theplan = Plan(inlen,dtype = itype,normalize=False,fast_math=True)
+        _plans.update({(itype,otype,inlen) : theplan })
+
+    return theplan
+
 def fft(invec,outvec,prec,itype,otype):
     if itype =='complex' and otype == 'complex':
-        pyplan=Plan(len(invec),dtype=invec.dtype,normalize=False,fast_math=True)
+        pyplan=_get_plan(invec.dtype, outvec.dtype, len(invec))
         pyplan.execute(invec.data,outvec.data)
 
     elif itype=='real' and otype=='complex':
@@ -43,7 +60,7 @@ def fft(invec,outvec,prec,itype,otype):
 
 def ifft(invec,outvec,prec,itype,otype):
     if itype =='complex' and otype == 'complex':
-        pyplan=Plan(len(invec),dtype=invec.dtype,normalize=False,fast_math=True)
+        pyplan=_get_plan(invec.dtype,outvec.dtype,len(invec))
         pyplan.execute(invec.data,outvec.data,inverse=True)
 
     elif itype=='complex' and otype=='real':

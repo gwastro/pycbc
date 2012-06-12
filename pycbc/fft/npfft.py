@@ -31,19 +31,15 @@ import numpy.fft
 
 def fft(invec,outvec,prec,itype,otype):
     if itype == 'complex' and otype == 'complex':
-        outvec.data # Just to move output, if necessary
         outvec.data = numpy.asarray(numpy.fft.fft(invec.data),dtype=outvec.dtype)
     elif itype == 'real' and otype == 'complex':
-        outvec.data # Just to move output, if necessary
         outvec.data = numpy.asarray(numpy.fft.rfft(invec.data),dtype=outvec.dtype)
 
 def ifft(invec,outvec,prec,itype,otype):
     if itype == 'complex' and otype == 'complex':
-        outvec.data # Just to move output, if necessary
         outvec.data = numpy.asarray(numpy.fft.ifft(invec.data),dtype=outvec.dtype)
         outvec *= len(outvec)
     elif itype == 'complex' and otype == 'real':
-        outvec.data # Just to move output, if necessary
         outvec.data = numpy.asarray(numpy.fft.irfft(invec.data,len(outvec)),
                                     dtype=outvec.dtype)
         outvec *= len(outvec)

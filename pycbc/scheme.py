@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Alex Nitz
+# Copyright (C) 2012  Alex Nitz, Andrew Miller
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -111,7 +111,6 @@ class CUDAScheme(DefaultScheme):
 
 class OpenCLScheme(DefaultScheme):
     """Context that sets PyCBC objects to use a OpenCL processing scheme. """
-    _single = None
     def __init__(self,platform_name=None,device_num=0):
         DefaultScheme.__init__(self)
         if not pycbc.HAVE_OPENCL:
