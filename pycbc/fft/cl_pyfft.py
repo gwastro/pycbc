@@ -28,8 +28,6 @@ for the PyCBC package.
 
 import pycbc.array
 
-#these imports are just what is used in the pyfft quickstart... 
-#they may need to be changed
 from pyfft.cl import Plan
 import numpy
 
@@ -47,8 +45,6 @@ def _get_plan(itype,otype,inlen):
     return theplan
 
 def fft(invec,outvec,prec,itype,otype):
-    outvec.data #Move output if necessary
-    invec.data #Move input if necessary
     if itype =='complex' and otype == 'complex':
         pyplan=_get_plan(invec.dtype,outvec.dtype,len(invec))
         pyplan.execute(invec.data.data,outvec.data.data)
@@ -57,8 +53,6 @@ def fft(invec,outvec,prec,itype,otype):
         raise NotImplementedError("Only Complex to Complex FFTs for pyfft currently.")
 
 def ifft(invec,outvec,prec,itype,otype):
-    outvec.data #Move output if necessary
-    invec.data #Move input if necessary
     if itype =='complex' and otype == 'complex':
         pyplan=_get_plan(invec.dtype,outvec.dtype,len(invec))
         pyplan.execute(invec.data.data,outvec.data.data,inverse=True)
