@@ -33,11 +33,24 @@ import pycbc.array
 from pyfft.cl import Plan
 import numpy
 
+_plans = {}
+
+
+#itype and otype are actual dtypes here, not strings
+def _get_plan(itype,otype,inlen):
+    try:
+        theplan = _plans[(itype,otype,inlen)]
+    except KeyError:
+        theplan = Plan(inlen,dtype=itype,queue=pycbc.scheme.mgr.state.queue,normalize=False,fast_math=True)
+        _plans.update({(itype,otype,inlen) : theplan })
+
+    return theplan
+
 def fft(invec,outvec,prec,itype,otype):
     outvec.data #Move output if necessary
     invec.data #Move input if necessary
     if itype =='complex' and otype == 'complex':
-        pyplan=Plan(len(invec),dtype=invec.dtype,queue=pycbc.scheme.mgr.state.queue,normalize=False,fast_math=True)
+        pyplan=_get_plan(invec.dtype,outvec.dtype,len(invec))
         pyplan.execute(invec.data.data,outvec.data.data)
 
     elif itype=='real' and otype=='complex':
@@ -47,7 +60,7 @@ def ifft(invec,outvec,prec,itype,otype):
     outvec.data #Move output if necessary
     invec.data #Move input if necessary
     if itype =='complex' and otype == 'complex':
-        pyplan=Plan(len(invec),dtype=invec.dtype,queue=pycbc.scheme.mgr.state.queue,normalize=False,fast_math=True)
+        pyplan=_get_plan(invec.dtype,outvec.dtype,len(invec))
         pyplan.execute(invec.data.data,outvec.data.data,inverse=True)
 
     elif itype=='complex' and otype=='real':
