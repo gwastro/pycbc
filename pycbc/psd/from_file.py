@@ -44,14 +44,13 @@ def psd_from_asd_file(filename,delta_f,length,low_frequency_cutoff=None,high_fre
 
     kmin,kmax = get_cutoff_indices(low_frequency_cutoff,high_frequency_cutoff,delta_f,N) 
 
-    psd = numpy.zeros(length)
+    psd = numpy.zeros(length,dtype=dtype)
     for k in range(0,kmax,1):
         if (k<kmin):
-            psd[k]=0
+            psd[k]=float('inf')
         else:
             psd[k]=float(psd_interp( k* delta_f ) )                   
-
    
-    return FrequencySeries(psd,delta_f=delta_f,dtype=dtype,copy=False)
+    return FrequencySeries(psd,delta_f=delta_f,copy=False)
   
     

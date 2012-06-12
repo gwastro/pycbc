@@ -31,6 +31,9 @@ from math import log,ceil,sqrt
 
 
 def get_padded_frequencyseries(vec):
+    """Pad a TimeSeries with a length of zeros greater than its length, such
+    that the total length is the closest power of 2.
+    """
     if not isinstance(vec,TimeSeries):
         raise TypeError("Input must be a Timeseries")
     else:
@@ -38,7 +41,8 @@ def get_padded_frequencyseries(vec):
         N = 2 ** power
         n = N/2+1
         
-        vec_pad = TimeSeries(zeros(N),delta_t=vec.delta_t,dtype=real_same_precision_as(vec))
+        vec_pad = TimeSeries(zeros(N),delta_t=vec.delta_t,
+                             dtype=real_same_precision_as(vec))
         vec_pad[0:len(vec)] = vec
         
         vectilde = FrequencySeries(zeros(n),delta_f=1, dtype=complex_same_precision_as(vec))
@@ -48,6 +52,9 @@ def get_padded_frequencyseries(vec):
         return vectilde
 
 def get_frequencyseries(vec):
+    """Convenience function that returns immediately if given a FrequencySeries,
+    or ffts it and returns a frequency series.
+    """
     if isinstance(vec,FrequencySeries):
         return vec
     if isinstance(vec,TimeSeries):
@@ -103,7 +110,6 @@ def matchedfilter(template,data,psd=None,low_frequency_cutoff=None,high_frequenc
     stilde = get_frequencyseries(data)
 
     # Calculate the length we need for the temporary memory 
-    # Check that this is a power of two?
     N = (len(htilde)-1) * 2   
     kmin,kmax = get_cutoff_indices(low_frequency_cutoff,high_frequency_cutoff,stilde.delta_f,N) 
    
@@ -119,6 +125,7 @@ def matchedfilter(template,data,psd=None,low_frequency_cutoff=None,high_frequenc
         _qtilde.fill(0)
 
     correlate(htilde[kmin:kmax],stilde[kmin:kmax],_qtilde[kmin:kmax])
+    
     if psd is not None:
         _qtilde[kmin:kmax] /= psd[kmin:kmax]
 
@@ -131,14 +138,17 @@ def matchedfilter(template,data,psd=None,low_frequency_cutoff=None,high_frequenc
     
     
 def match(vec1,vec2,psd=None,low_frequency_cutoff=None,high_frequency_cutoff=None):
+    """ Return the match between the two vectors.
+    """
     htilde = get_frequencyseries(vec1)
     stilde = get_frequencyseries(vec2)
     snr,norm = matchedfilter(htilde,stilde,psd,low_frequency_cutoff,high_frequency_cutoff)
-
     maxsnrsq = (snr.squared_norm()).max()
     return sqrt(maxsnrsq/sigmasq(stilde,psd,low_frequency_cutoff,high_frequency_cutoff))*norm
     
 def chisq(template, data,num_bins, psd = None , low_frequency_cutoff=None,high_frequency_cutoff=None):
+    """ Return the chisq time series
+    """
     bins = get_chisq_bin_sizes(num_bins,template,psd,low_frequency_cutoff,high_frequency_cutoff)
  
     total_snr,norm = matchedfilter(template,data,psd,low_frequency_cutoff,high_frequency_cutoff)

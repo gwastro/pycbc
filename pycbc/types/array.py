@@ -401,7 +401,7 @@ class Array(object):
                 if (other._data[index].nbytes <= self._data[index].nbytes) and other.dtype == self.dtype:
                     _cudriver.memcpy_dtod_async(self[index].ptr,other.ptr,other._data.nbytes)
                 else:
-                    raise RuntimeError
+                    raise RuntimeError("The arrays must the same length and dtype")
             elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
                 raise NotImplementedError
         else:
@@ -467,7 +467,9 @@ class Array(object):
             return 'single'
         elif self.dtype == complex128 or self.dtype == float64:
             return 'double'
-            
+
+# Convenience functions for determining dtypes            
+
 def real_same_precision_as(data):
     if data.precision is 'single':
         return float32

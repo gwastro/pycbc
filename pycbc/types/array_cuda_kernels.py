@@ -26,26 +26,27 @@ from pycuda.elementwise import ElementwiseKernel
 
 
 squared_norm_double = ElementwiseKernel(
-        "pycuda::complex<double> *x, double *z",
-        "z[i] = x[i].real() * x[i].real() + x[i].imag() * x[i].imag()",
-        "squared_norm_double")
+    "pycuda::complex<double> *x, double *z",
+    "z[i] = x[i].real() * x[i].real() + x[i].imag() * x[i].imag()",
+    "squared_norm_double")
         
 squared_norm_single = ElementwiseKernel(
-        "pycuda::complex<float> *x, float *z",
-        "z[i] = x[i].real() * x[i].real() + x[i].imag() * x[i].imag()",
-        "squared_norm_single")
+    "pycuda::complex<float> *x, float *z",
+    "z[i] = x[i].real() * x[i].real() + x[i].imag() * x[i].imag()",
+    "squared_norm_single")
         
 squared_norm = {'single':squared_norm_single,'double':squared_norm_double}        
         
+
 correlate_single = ElementwiseKernel(
-        "pycuda::complex<float> *x, pycuda::complex<float> *y, pycuda::complex<float> *z",
-        "z[i] = conj(x[i]) * y[i]",
-        "correlate_single")
+    "pycuda::complex<float> *x, pycuda::complex<float> *y, pycuda::complex<float> *z",
+    "z[i] = conj(x[i]) * y[i]",
+    "correlate_single")
         
 correlate_double = ElementwiseKernel(
-        "pycuda::complex<double> *x, pycuda::complex<double> *y, pycuda::complex<double> *z",
-        "z[i] = conj(x[i]) * y[i]",
-        "correlate_double")
+    "pycuda::complex<double> *x, pycuda::complex<double> *y, pycuda::complex<double> *z",
+    "z[i] = conj(x[i]) * y[i]",
+    "correlate_double")
 
 correlate = {'single':correlate_single,'double':correlate_double}
 

@@ -70,11 +70,9 @@ WAVEFORM_DEFS = {
              ('phase_order',7),('amp_order',0)]} ,
 'EOBNRv2HM'  : 
     {'FUNC':lalsim.XLALSimIMREOBNRv2DominantMode,
-     'ARGS':['phi0', 'delta_t', 'm1SI', 'm2SI', 'f_lower', 'distance', 'inclination'] ,
      'ARGS':[('phi0',0),('delta_t',None),('m1SI',None),('m2SI',None),('f_lower',None),('distance',None),('inclination',0)]},
 'EOBNRv2'  : 
     {'FUNC':lalsim.XLALSimIMREOBNRv2DominantMode,
-     'ARGS':['phi0', 'delta_t', 'm1SI', 'm2SI', 'f_lower', 'distance', 'inclination'] ,
      'ARGS':[('phi0',0),('delta_t',None),('m1SI',None),('m2SI',None),('f_lower',None),('distance',None),('inclination',0)]},
 'SEOBNRv1' : 
     {'FUNC':lalsim.XLALSimIMRSpinAlignedEOBWaveform, 
@@ -146,6 +144,8 @@ def get_waveform(template=None,**kwargs):
 
 
 def find_conversion(input_params, arg,default):
+    """ Try to find a value for the argument 
+    """
     value = None
     try:
         for alt in CONVERSIONS[arg]:
