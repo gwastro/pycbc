@@ -111,7 +111,6 @@ class CUDAScheme(DefaultScheme):
 
 class OpenCLScheme(DefaultScheme):
     """Context that sets PyCBC objects to use a OpenCL processing scheme. """
-    _single = None
     def __init__(self,platform_name=None,device_num=0):
         DefaultScheme.__init__(self)
         if not pycbc.HAVE_OPENCL:
