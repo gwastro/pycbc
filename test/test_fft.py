@@ -38,22 +38,10 @@ from optparse import OptionParser
 
 _parser = OptionParser()
 
-def _check_options(option, opt, value, parser):
-    #As long as nothing has been set yet, we can set the value to true
-    if parser.values.cpu is None and parser.values.cuda is None and parser.values.opencl is None:
-        setattr(parser.values, option.dest, True)
-    else:
-        raise optparse.OptionValueError("Can't select multiple schemes")
+_parser.add_option('--scheme','-s', action='store',choices = ('cpu','cuda','opencl'), default = 'cpu',
+                     dest = 'scheme', help = 'specifies processing scheme, can be cpu, cuda, or opencl')
 
-_parser.add_option('--cpu','-c', action='callback', callback = _check_options, dest = 'cpu',
-                    help = 'use the CPU scheme [default]')
-
-_parser.add_option('--cuda','-d', action='callback', callback = _check_options,dest = 'cuda',
-                    help = 'use the CUDA scheme')
-
-_parser.add_option('--opencl','-l', action='callback', callback = _check_options, dest = 'opencl',
-                    help = 'use the OpenCL scheme')
-_parser.add_option('--device-num','-n', action='store', type = 'int', dest = 'devicenum', default=0,
+_parser.add_option('--device-num','-d', action='store', type = 'int', dest = 'devicenum', default=0,
                     help = 'specifies a GPU device to use for CUDA or OpenCL, 0 by default')
 
 (_opt_list, _args) = _parser.parse_args()
@@ -61,14 +49,10 @@ _parser.add_option('--device-num','-n', action='store', type = 'int', dest = 'de
 #Changing the optvalues to a dict makes them easier to read
 _options = vars(_opt_list)
 
-#Sets the CPU to default
-if not _options['cpu'] and not _options['cuda'] and not _options['opencl']:
-    _options['cpu']=True
-
-if _options['cuda'] and not pycbc.HAVE_CUDA:
+if _options['scheme']=='cuda' and not pycbc.HAVE_CUDA:
     raise optparse.OptionValueError("CUDA not found")
     
-if _options['opencl'] and not pycbc.HAVE_OPENCL:
+if _options['scheme']=='opencl' and not pycbc.HAVE_OPENCL:
     raise optparse.OptionValueError("OpenCL not found")
 
 class _BaseTestFFTClass(object):
@@ -567,7 +551,7 @@ class _BaseTestFFTClass(object):
 # The automation means that the default for each scheme will get created
 # and run twice, once as 'Default' and once under its own name.
 
-if _options['cpu']:
+if _options['scheme']=='cpu':
     CPUTestClasses = []
 
     for backend in pycbc.fft.cpu_backends:
@@ -576,14 +560,14 @@ if _options['cpu']:
                      {'backend': backend})
         CPUTestClasses.append(klass)
 
-if _options['cuda']:
+if _options['scheme']=='cuda':
     CUDATestClasses = []
     for backend in pycbc.fft.cuda_backends:
         CUDATestClasses.append(type('CUDA_{0}Test'.format(backend),
                                     (_BaseTestFFTClass,unittest.TestCase),
                                     {'backend': backend}))
 
-if _options['opencl']:
+if _options['scheme']=='opencl':
     OpenCLTestClasses = []
     for backend in pycbc.fft.opencl_backends:
         OpenCLTestClasses.append(type('OpenCL_{0}Test'.format(backend),
@@ -594,14 +578,14 @@ if _options['opencl']:
 
 if __name__ == '__main__':
 
-    if _options['cpu']:
+    if _options['scheme']=='cpu':
         suiteCPU = unittest.TestSuite()
         for klass in CPUTestClasses:
             suiteCPU.addTest(unittest.makeSuite(klass))
 
         unittest.TextTestRunner(verbosity=2).run(suiteCPU)
 
-    if _options['cuda']:
+    if _options['scheme']=='cuda':
         suiteCUDA = unittest.TestSuite()
         for klass in CUDATestClasses:
             suiteCUDA.addTest(unittest.makeSuite(klass))
@@ -609,7 +593,7 @@ if __name__ == '__main__':
         with pycbc.scheme.CUDAScheme(device_num=_options['devicenum']):
             unittest.TextTestRunner(verbosity=2).run(suiteCUDA)
 
-    if _options['opencl']:
+    if _options['scheme']=='opencl':
         suiteOpenCL = unittest.TestSuite()
         for klass in OpenCLTestClasses:
             suiteOpenCL.addTest(unittest.makeSuite(klass))
