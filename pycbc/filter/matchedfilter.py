@@ -97,7 +97,6 @@ def sigmasq_series(htilde,psd = None,low_frequency_cutoff=None,high_frequency_cu
 
 def sigmasq(htilde,psd = None,low_frequency_cutoff=None,high_frequency_cutoff=None):
     moment,norm = sigmasq_series(htilde,psd,low_frequency_cutoff,high_frequency_cutoff)
-    print moment.sum(),norm
     return moment.sum() * norm
     
 def get_cutoff_indices(flow,fhigh,df,N):
