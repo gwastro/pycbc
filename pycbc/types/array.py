@@ -340,7 +340,7 @@ class Array(object):
     def sum(self):
         """ Return the sum of the the array. """
         if type(self._data) is _numpy.ndarray:
-            return self._data.sum()
+            return _numpy.sum(self._data,dtype=float64)
         elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
             return _pycuda.gpuarray.sum(self._data).get().max()
         elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
