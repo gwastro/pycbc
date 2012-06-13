@@ -38,8 +38,17 @@ from optparse import OptionParser
 
 _parser = OptionParser()
 
-_parser.add_option('--scheme','-s', action='store',choices = ('cpu','cuda','opencl'), default = 'cpu',
-                     dest = 'scheme', help = 'specifies processing scheme, can be cpu, cuda, or opencl')
+def _check_scheme(option, opt_str, scheme, parser):
+    if scheme=='cuda' and not pycbc.HAVE_CUDA:
+        raise optparse.OptionValueError("CUDA not found")
+
+    if scheme=='opencl' and not pycbc.HAVE_OPENCL:
+        raise optparse.OptionValueError("OpenCL not found")
+    setattr (parser.values, option.dest, scheme)
+
+_parser.add_option('--scheme','-s', action='callback', type = 'choice', choices = ('cpu','cuda','opencl'), 
+                    default = 'cpu', dest = 'scheme', callback = _check_scheme,
+                    help = 'specifies processing scheme, can be cpu [default], cuda, or opencl')
 
 _parser.add_option('--device-num','-d', action='store', type = 'int', dest = 'devicenum', default=0,
                     help = 'specifies a GPU device to use for CUDA or OpenCL, 0 by default')
@@ -48,12 +57,6 @@ _parser.add_option('--device-num','-d', action='store', type = 'int', dest = 'de
 
 #Changing the optvalues to a dict makes them easier to read
 _options = vars(_opt_list)
-
-if _options['scheme']=='cuda' and not pycbc.HAVE_CUDA:
-    raise optparse.OptionValueError("CUDA not found")
-    
-if _options['scheme']=='opencl' and not pycbc.HAVE_OPENCL:
-    raise optparse.OptionValueError("OpenCL not found")
 
 class _BaseTestFFTClass(object):
     """
