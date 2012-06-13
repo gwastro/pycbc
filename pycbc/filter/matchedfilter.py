@@ -25,10 +25,24 @@
 This modules provides matchedfiltering and related match and chisq calculations.
 """
 
-from pycbc.types import *
-from pycbc.fft import fft,ifft
 from math import log,ceil,sqrt
+from pycbc.types import TimeSeries,FrequencySeries,zeros
+from pycbc.types import complex_same_precision_as,real_same_precision_as
+from pycbc.fft import fft,ifft
+import pycbc.scheme
+import pycbc
 
+if pycbc.HAVE_CUDA:
+    from matchedfilter_cuda import correlate as cuda_correlate
+
+def correlate(x,y,z):
+    if pycbc.scheme.mgr.state is None:
+        z[:] = x.conj()*y
+    if type(pycbc.scheme.mgr.state) is pycbc.scheme.CUDAScheme:
+        cuda_correlate[x.precision](x.data,y.data,z.data)
+    if type(pycbc.scheme.mgr.state) is pycbc.scheme.OpenCLScheme:
+        raise NotImplementedError
+	
 
 def get_padded_frequencyseries(vec):
     """Pad a TimeSeries with a length of zeros greater than its length, such
@@ -44,8 +58,8 @@ def get_padded_frequencyseries(vec):
         vec_pad = TimeSeries(zeros(N),delta_t=vec.delta_t,
                              dtype=real_same_precision_as(vec))
         vec_pad[0:len(vec)] = vec
-        
-        vectilde = FrequencySeries(zeros(n),delta_f=1, dtype=complex_same_precision_as(vec))
+        vectilde = FrequencySeries(zeros(n),delta_f=1, 
+                                   dtype=complex_same_precision_as(vec))
         
         fft(vec_pad,vectilde)
         
@@ -83,6 +97,7 @@ def sigmasq_series(htilde,psd = None,low_frequency_cutoff=None,high_frequency_cu
 
 def sigmasq(htilde,psd = None,low_frequency_cutoff=None,high_frequency_cutoff=None):
     moment,norm = sigmasq_series(htilde,psd,low_frequency_cutoff,high_frequency_cutoff)
+    print moment.sum(),norm
     return moment.sum() * norm
     
 def get_cutoff_indices(flow,fhigh,df,N):
@@ -132,7 +147,6 @@ def matchedfilter(template,data,psd=None,low_frequency_cutoff=None,high_frequenc
     ifft(_qtilde,_q) 
 
     norm = sqrt(((4.0 / (N * N * stilde.delta_f)) **2) / sigmasq(htilde,psd,low_frequency_cutoff,high_frequency_cutoff) )
-    
     #return complex snr
     return _q,norm
     

@@ -40,8 +40,7 @@ if _pycbc.HAVE_CUDA:
     import pycuda as _pycuda
     import pycuda.driver as _cudriver
     import pycuda.gpuarray as _cudaarray    
-    from array_cuda_kernels import squared_norm as cuda_squared_norm
-    from array_cuda_kernels import correlate as cuda_correlate 
+    from array_cuda import squared_norm as cuda_squared_norm
     
 if _pycbc.HAVE_OPENCL:
     import pyopencl as _pyopencl
@@ -177,11 +176,19 @@ class Array(object):
         """ Checks the input to method functions """
         @_functools.wraps(fn)
         def checked(self,other):
-            if type(other) not in _ALLOWED_SCALARS and self._typecheck(other) is NotImplemented:
+            self._typecheck(other) 
+    
+            if type(other) in _ALLOWED_SCALARS:
+                pass
+            elif isinstance(other,Array):
+                if other.precision == self.precision:
+                    _convert_to_scheme(other)
+                    other = other._data
+                else:
+                    raise TypeError('dtypes do not match')
+            else:
                 return NotImplemented
-            if isinstance(other,Array):
-                _convert_to_scheme(other)
-                other = other._data
+
             return fn(self,other)
         return checked
 
@@ -189,8 +196,7 @@ class Array(object):
         """ Additional typechecking for other. Stops Array from avoiding
         checks of derived types
         """
-        if type(other) is not Array:
-            return NotImplemented
+        pass
 
     @_returntype
     @_convert
@@ -322,7 +328,7 @@ class Array(object):
     def squared_norm(self):
         """ Return the squared norm of the array """
         if type(self._data) is _numpy.ndarray:
-            return self.data * self.data.conj()
+            return (self.data * self.data.conj()).real
         elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
             tmp = zeros(len(self),dtype=real_same_precision_as(self))
             cuda_squared_norm[self.precision](self.data,tmp.data)
@@ -398,10 +404,10 @@ class Array(object):
             if type(self._data) is _numpy.ndarray:
                 self._data[index]=other.data
             elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
-                if (other._data[index].nbytes <= self._data[index].nbytes) and other.dtype == self.dtype:
+                if (other._data[index].nbytes <= self._data[index].nbytes) :
                     _cudriver.memcpy_dtod_async(self[index].ptr,other.ptr,other._data.nbytes)
                 else:
-                    raise RuntimeError("The arrays must the same length and dtype")
+                    raise RuntimeError("The arrays must the same length")
             elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
                 raise NotImplementedError
         else:
@@ -489,13 +495,4 @@ def zeros(length,dtype=None):
         return Array(_cudaarray.zeros(length,dtype),copy=False)
     if type(_scheme.mgr.state) is _scheme.OpenCLScheme:
         raise NotImplementedError
-        
-def correlate(x,y,z):
-    if _scheme.mgr.state is None:
-        z[:] = x.conj()*y
-    if type(_scheme.mgr.state) is _scheme.CUDAScheme:
-        cuda_correlate[x.precision](x.data,y.data,z.data)
-    if type(_scheme.mgr.state) is _scheme.OpenCLScheme:
-        raise NotImplementedError
-	
 

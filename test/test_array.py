@@ -182,7 +182,8 @@ def array_test_maker(context,dtype,odtype):
     return tests
 
 scs = [DefaultScheme()]
-types = [float32,float64,complex64,complex128]
+types = [ (float32,[float32,complex64]), (float64,[float64,complex128]),
+        (complex64,[complex64,float32]), (complex128,[float64,complex128]) ]
 if pycbc.HAVE_CUDA:
     DefaultScheme._single = None
     scs.append(CUDAScheme())
@@ -193,8 +194,8 @@ tests = []
 
 ind = 0
 for sc in scs:
-    for ty in types:
-        for ot in types:
+    for ty,oktype in types:
+        for ot in oktype:
             na = 'test' + str(ind)
             vars()[na] = array_test_maker(sc,ty,ot)
             ind += 1

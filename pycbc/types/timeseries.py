@@ -50,8 +50,6 @@ class TimeSeries(Array):
         return TimeSeries(ary, self._delta_t, epoch=self._epoch, copy=False)
     
     def _typecheck(self, other):
-        if not isinstance(other, Array):
-            return NotImplemented
         if isinstance(other, TimeSeries):
             if other._delta_t != self._delta_t:
                 raise ValueError('different delta_t')
@@ -109,38 +107,4 @@ class TimeSeries(Array):
         else:
             return Array(range(len(self))) * self._delta_t + float(self._epoch)
     sample_times = property(get_sample_times)
-
-    def resample(self, new_delta_t):
-        "Return a resampled TimeSeries with the specified delta_t."
-        return NotImplemented
             
-    @property
-    @_convert
-    def  lal_frequencyseries(self):
-        """ Returns a LAL Object that contains this data """
-        lal_data = None
-
-        if self._epoch is not None:
-            epoch = self._epoch
-        else:
-            epoch = _swiglal.LIGOTimeGPS()           
-        
-        if type(self._data) is not _numpy.ndarray:
-            raise TypeError("Cannot return lal type from the GPU")
-        elif self._data.dtype == _numpy.float32:
-            lal_data = _swiglal.XLALCreateREAL4TimeSeries("",epoch,
-                                    0,self._delta_t,_swiglal.LALUnit(),len(self))
-        elif self._data.dtype == _numpy.float64:
-            lal_data = _swiglal.XLALCreateREAL8TimeSeries("",epoch,
-                                    0,self._delta_t,_swiglal.LALUnit(),len(self))
-        elif self._data.dtype == _numpy.complex64:
-            lal_data = _swiglal.XLALCreateCOMPLEX8TimeSeries("",epoch,
-                                    0,self._delta_t,_swiglal.LALUnit(),len(self))
-        elif self._data.dtype == _numpy.complex128:
-            lal_data = _swiglal.XLALCreateCOMPLEX16TimeSeries("",epoch,
-                                    0,self._delta_t,_swiglal.LALUnit(),len(self))
-
-        lal_data.data.data = self._data
-        self.data = lal_data.data.data
-
-        return lal_data

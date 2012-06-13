@@ -36,19 +36,6 @@ squared_norm_single = ElementwiseKernel(
     "squared_norm_single")
         
 squared_norm = {'single':squared_norm_single,'double':squared_norm_double}        
-        
-
-correlate_single = ElementwiseKernel(
-    "pycuda::complex<float> *x, pycuda::complex<float> *y, pycuda::complex<float> *z",
-    "z[i] = conj(x[i]) * y[i]",
-    "correlate_single")
-        
-correlate_double = ElementwiseKernel(
-    "pycuda::complex<double> *x, pycuda::complex<double> *y, pycuda::complex<double> *z",
-    "z[i] = conj(x[i]) * y[i]",
-    "correlate_double")
-
-correlate = {'single':correlate_single,'double':correlate_double}
 
 
         

@@ -55,7 +55,8 @@ def test_maker(context, dtype, odtype):
 
 DefaultScheme._single = None
 schemes = [DefaultScheme()]
-types = [float32, float64, complex64, complex128]
+types = [ (float32,[float32,complex64]), (float64,[float64,complex128]),
+        (complex64,[complex64,float32]), (complex128,[float64,complex128]) ]
 if pycbc.HAVE_CUDA:
     DefaultScheme._single = None
     schemes.append(CUDAScheme())
@@ -66,8 +67,8 @@ tests = []
 
 i = 0
 for s in schemes:
-    for t in types:
-        for ot in types:
+    for t,otypes in types:
+        for ot in otypes:
             na = 'test' + str(i)
             vars()[na] = test_maker(s, t, ot)
             i += 1

@@ -26,7 +26,7 @@ This module provides the cufft backend of the fast Fourier transform
 for the PyCBC package.
 """
 
-import pycbc.array
+import pycbc.scheme
 import scikits.cuda.fft as cu_fft
 
 _forward_plans = {}
