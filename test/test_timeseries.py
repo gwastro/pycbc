@@ -1,5 +1,4 @@
 import pycbc
-
 import unittest
 from pycbc.types import *
 from pycbc.scheme import *

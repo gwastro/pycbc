@@ -195,7 +195,6 @@ def array_test_maker(context,dtype,odtype):
             self.odtype=odtype
             unittest.TestCase.__init__(self,*args)
     tests.__name__ = _options['scheme'] + " " + dtype.__name__ + " with " + odtype.__name__
-#    DefaultScheme._single = None
     return tests
 
 types = [ (float32,[float32,complex64]), (float64,[float64,complex128]),
