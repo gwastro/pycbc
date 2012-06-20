@@ -110,7 +110,6 @@ if _options['scheme'] == 'cuda':
     schemes.append(CUDAScheme(device_num=_options['devicenum']))
 if _options['scheme'] == 'opencl':
     schemes.append(OpenCLScheme(device_num=_options['devicenum']))
-tests = []
 
 i = 0
 for s in schemes:

@@ -84,8 +84,6 @@ if _options['scheme']=='cuda':
 if _options['scheme']=='opencl':
     schemes.append(OpenCLScheme(device_num=_options['devicenum']))
 
-tests = []
-
 suite = unittest.TestSuite()
 
 i = 0

@@ -210,8 +210,6 @@ if _options['scheme'] == 'cuda':
 if _options['scheme'] == 'opencl':
     scs.append(OpenCLScheme(device_num=_options['devicenum']))
 
-tests = []
-
 ind = 0
 for sc in scs:
     for ty,oktype in types:
