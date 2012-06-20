@@ -58,6 +58,7 @@ _parser.add_option('--device-num','-d', action='store', type = 'int', dest = 'de
 #Changing the optvalues to a dict makes them easier to read
 _options = vars(_opt_list)
 
+
 class _BaseTestFFTClass(object):
     """
     This is the base class from which unit tests for all FFT backends
@@ -584,14 +585,14 @@ if __name__ == '__main__':
     if _options['scheme']=='cpu':
         suiteCPU = unittest.TestSuite()
         for klass in CPUTestClasses:
-            suiteCPU.addTest(unittest.makeSuite(klass))
+            suiteCPU.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
 
         unittest.TextTestRunner(verbosity=2).run(suiteCPU)
 
     if _options['scheme']=='cuda':
         suiteCUDA = unittest.TestSuite()
         for klass in CUDATestClasses:
-            suiteCUDA.addTest(unittest.makeSuite(klass))
+            suiteCUDA.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
 
         with pycbc.scheme.CUDAScheme(device_num=_options['devicenum']):
             unittest.TextTestRunner(verbosity=2).run(suiteCUDA)
@@ -599,7 +600,7 @@ if __name__ == '__main__':
     if _options['scheme']=='opencl':
         suiteOpenCL = unittest.TestSuite()
         for klass in OpenCLTestClasses:
-            suiteOpenCL.addTest(unittest.makeSuite(klass))
+            suiteOpenCL.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
 
         with pycbc.scheme.OpenCLScheme(device_num=_options['devicenum']):
             unittest.TextTestRunner(verbosity=2).run(suiteOpenCL)
