@@ -1,13 +1,4 @@
 import pycbc
-
-#if pycbc.HAVE_CUDA:
- #   import pycuda
-  #  import pycuda.gpuarray
-
-#if pycbc.HAVE_OPENCL:
- #   import pyopencl
-  #  import pyopencl.array
-
 import unittest
 from pycbc.types import *
 from pycbc.scheme import *
@@ -216,9 +207,9 @@ scs =[]
 if _options['scheme'] == 'cpu':
     scs.append(DefaultScheme())
 if _options['scheme'] == 'cuda':
-    scs.append(CUDAScheme())
+    scs.append(CUDAScheme(device_num=_options['devicenum']))
 if _options['scheme'] == 'opencl':
-    scs.append(OpenCLScheme())
+    scs.append(OpenCLScheme(device_num=_options['devicenum']))
 
 tests = []
 

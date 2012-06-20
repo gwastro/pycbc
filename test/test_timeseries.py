@@ -1,18 +1,35 @@
 import pycbc
 
-if pycbc.HAVE_CUDA:
-    import pycuda
-    import pycuda.gpuarray
-
-if pycbc.HAVE_OPENCL:
-    import pyopencl
-    import pyopencl.array
-
 import unittest
 from pycbc.types import *
 from pycbc.scheme import *
 import numpy 
 import swiglal
+
+import optparse
+from optparse import OptionParser
+
+_parser = OptionParser()
+
+def _check_scheme(option, opt_str, scheme, parser):
+    if scheme=='cuda' and not pycbc.HAVE_CUDA:
+        raise optparse.OptionValueError("CUDA not found")
+
+    if scheme=='opencl' and not pycbc.HAVE_OPENCL:
+        raise optparse.OptionValueError("OpenCL not found")
+    setattr (parser.values, option.dest, scheme)
+
+_parser.add_option('--scheme','-s', action='callback', type = 'choice', choices = ('cpu','cuda','opencl'), 
+                    default = 'cpu', dest = 'scheme', callback = _check_scheme,
+                    help = 'specifies processing scheme, can be cpu [default], cuda, or opencl')
+
+_parser.add_option('--device-num','-d', action='store', type = 'int', dest = 'devicenum', default=0,
+                    help = 'specifies a GPU device to use for CUDA or OpenCL, 0 by default')
+
+(_opt_list, _args) = _parser.parse_args()
+
+#Changing the optvalues to a dict makes them easier to read
+_options = vars(_opt_list)
 
 class TestTimeSeriesBase(object):
     def setUp(self):
@@ -78,19 +95,22 @@ def test_maker(context, dtype, odtype):
             self.dtype = dtype
             self.odtype = odtype
             unittest.TestCase.__init__(self, *args)
-    TestTimeSeries.__name__ = str(type(context)) + " " + dtype.__name__ + " with " + odtype.__name__
+    TestTimeSeries.__name__ = _options['scheme'] + " " + dtype.__name__ + " with " + odtype.__name__
     return TestTimeSeries
 
-DefaultScheme._single = None
-schemes = [DefaultScheme()]
 types = [ (float32,[float32,complex64]), (float64,[float64,complex128]),
         (complex64,[complex64,float32]), (complex128,[float64,complex128]) ]
-if pycbc.HAVE_CUDA:
-    DefaultScheme._single = None
-    schemes.append(CUDAScheme())
-if pycbc.HAVE_OPENCL:
-    DefaultScheme._single = None
-    schemes.append(OpenCLScheme())
+
+suite = unittest.TestSuite()
+
+schemes = []
+
+if _options['scheme'] == 'cpu':
+    schemes.append(DefaultScheme())
+if _options['scheme'] == 'cuda':
+    schemes.append(CUDAScheme(device_num=_options['devicenum']))
+if _options['scheme'] == 'opencl':
+    schemes.append(OpenCLScheme(device_num=_options['devicenum']))
 tests = []
 
 i = 0
@@ -99,7 +119,8 @@ for s in schemes:
         for ot in otypes:
             na = 'test' + str(i)
             vars()[na] = test_maker(s, t, ot)
+            suite.addTest(unittest.TestLoader().loadTestsFromTestCase(vars()[na]))
             i += 1
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.TextTestRunner(verbosity=2).run(suite)
