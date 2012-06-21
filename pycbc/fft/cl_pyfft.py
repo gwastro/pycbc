@@ -26,8 +26,6 @@ This module provides the pyfft backend of the fast Fourier transform
 for the PyCBC package.
 """
 
-import pycbc.array
-
 from pyfft.cl import Plan
 import numpy
 
