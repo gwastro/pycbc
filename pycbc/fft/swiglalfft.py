@@ -28,24 +28,49 @@ for the PyCBC package.
 
 import pycbc.types
 import swiglal
+from swiglal import XLALCreateForwardCOMPLEX16FFTPlan as _CreateForwardCOMPLEX16FFTPlan
+from swiglal import XLALCreateForwardCOMPLEX8FFTPlan as _CreateForwardCOMPLEX8FFTPlan
+from swiglal import XLALCreateForwardREAL8FFTPlan as _CreateForwardREAL8FFTPlan
+from swiglal import XLALCreateForwardREAL4FFTPlan as _CreateForwardREAL4FFTPlan
+from swiglal import XLALCreateReverseCOMPLEX16FFTPlan as _CreateReverseCOMPLEX16FFTPlan
+from swiglal import XLALCreateReverseCOMPLEX8FFTPlan as _CreateReverseCOMPLEX8FFTPlan
+from swiglal import XLALCreateReverseREAL8FFTPlan as _CreateReverseREAL8FFTPlan
+from swiglal import XLALCreateReverseREAL4FFTPlan as _CreateReverseREAL4FFTPlan
+
+from swiglal import XLALCOMPLEX16VectorFFT as _COMPLEX16VectorFFT
+from swiglal import XLALCOMPLEX8VectorFFT as _COMPLEX8VectorFFT
+from swiglal import XLALREAL8ForwardFFT as _REAL8ForwardFFT
+from swiglal import XLALREAL4ForwardFFT as _REAL4ForwardFFT
+from swiglal import XLALCOMPLEX16VectorFFT as _COMPLEX16VectorFFT
+from swiglal import XLALCOMPLEX8VectorFFT as _COMPLEX8VectorFFT
+from swiglal import XLALREAL8ReverseFFT as _REAL8ReverseFFT
+from swiglal import XLALREAL4ReverseFFT as _REAL4ReverseFFT
 
 _default_measurelvl = 1
 _forward_plans = {}
 _reverse_plans = {}
-_forward_fn_dict = {('double','complex','complex') : swiglal.XLALCreateForwardCOMPLEX16FFTPlan,
-                    ('single','complex','complex') : swiglal.XLALCreateForwardCOMPLEX8FFTPlan,
-                    ('double','real','complex') : swiglal.XLALCreateForwardREAL8FFTPlan,
-                    ('single','real','complex') : swiglal.XLALCreateForwardREAL4FFTPlan}
-_reverse_fn_dict = {('double','complex','complex') : swiglal.XLALCreateReverseCOMPLEX16FFTPlan,
-                    ('single','complex','complex') : swiglal.XLALCreateReverseCOMPLEX8FFTPlan,
-                    ('double','complex','real') : swiglal.XLALCreateReverseREAL8FFTPlan,
-                    ('single','complex','real') : swiglal.XLALCreateReverseREAL4FFTPlan}
+_forward_plan_fn_dict = {('double','complex','complex') : _CreateForwardCOMPLEX16FFTPlan,
+                    ('single','complex','complex') : _CreateForwardCOMPLEX8FFTPlan,
+                    ('double','real','complex') : _CreateForwardREAL8FFTPlan,
+                    ('single','real','complex') : _CreateForwardREAL4FFTPlan}
+_reverse_plan_fn_dict = {('double','complex','complex') : _CreateReverseCOMPLEX16FFTPlan,
+                    ('single','complex','complex') : _CreateReverseCOMPLEX8FFTPlan,
+                    ('double','complex','real') : _CreateReverseREAL8FFTPlan,
+                    ('single','complex','real') : _CreateReverseREAL4FFTPlan}
+_forward_fft_fn_dict = {('double','complex','complex') : _COMPLEX16VectorFFT,
+                    ('single','complex','complex') : _COMPLEX8VectorFFT,
+                    ('double','real','complex') : _REAL8ForwardFFT,
+                    ('single','real','complex') : _REAL4ForwardFFT}
+_reverse_fft_fn_dict = {('double','complex','complex') : _COMPLEX16VectorFFT,
+                    ('single','complex','complex') : _COMPLEX8VectorFFT,
+                    ('double','complex','real') : _REAL8ReverseFFT,
+                    ('single','complex','real') : _REAL4ReverseFFT}
 
 def _get_fwd_plan(prec,itype,otype,inlen):
     try:
         theplan = _forward_plans[(prec,itype,otype,inlen)]
     except KeyError:
-        theplan = _forward_fn_dict[(prec,itype,otype)](inlen,_default_measurelvl)
+        theplan = _forward_plan_fn_dict[(prec,itype,otype)](inlen,_default_measurelvl)
         _forward_plans.update({(prec,itype,otype,inlen) : theplan})
     return theplan
 
@@ -53,34 +78,15 @@ def _get_inv_plan(prec,itype,otype,outlen):
     try:
         theplan = _reverse_plans[(prec,itype,otype,outlen)]
     except KeyError:
-        theplan = _reverse_fn_dict[(prec,itype,otype)](outlen,_default_measurelvl)
+        theplan = _reverse_plan_fn_dict[(prec,itype,otype)](outlen,_default_measurelvl)
         _reverse_plans.update({(prec,itype,otype,outlen) : theplan})
     return theplan
 
 
 def fft(invec,outvec,prec,itype,otype):
     theplan = _get_fwd_plan(prec,itype,otype,len(invec))
-    if itype == 'complex' and otype == 'complex':
-        if prec == 'single':
-            swiglal.XLALCOMPLEX8VectorFFT(outvec.lal,invec.lal,theplan)
-        else:
-            swiglal.XLALCOMPLEX16VectorFFT(outvec.lal,invec.lal,theplan)
-    elif itype == 'real' and otype == 'complex':
-        if prec == 'single':
-            swiglal.XLALREAL4ForwardFFT(outvec.lal,invec.lal,theplan)
-        else:
-            swiglal.XLALREAL8ForwardFFT(outvec.lal,invec.lal,theplan)
+    _forward_fft_fn_dict[(prec,itype,otype)](outvec.lal,invec.lal,theplan)
 
 def ifft(invec,outvec,prec,itype,otype):
     theplan = _get_inv_plan(prec,itype,otype,len(outvec))
-    if itype == 'complex' and otype == 'complex':
-        if prec == 'single':
-            swiglal.XLALCOMPLEX8VectorFFT(outvec.lal,invec.lal,theplan)
-        else:
-            swiglal.XLALCOMPLEX16VectorFFT(outvec.lal,invec.lal,theplan)
-    elif itype == 'complex' and otype == 'real':
-        if prec == 'single':
-            swiglal.XLALREAL4ReverseFFT(outvec.lal,invec.lal,theplan)
-        else:
-            swiglal.XLALREAL8ReverseFFT(outvec.lal,invec.lal,theplan)
-
+    _reverse_fft_fn_dict[(prec,itype,otype)](outvec.lal,invec.lal,theplan)
