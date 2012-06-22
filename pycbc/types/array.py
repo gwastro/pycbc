@@ -107,6 +107,14 @@ class Array(object):
             # Check that the dtype is supported.
             if self._data.dtype not in _ALLOWED_DTYPES:
                 raise TypeError(str(self._data.dtype) + ' is not supported')
+            if self._data.dtype == float32 or self.data.dtype == float64:
+                self.kind = 'real'
+            else:
+                self.kind = 'complex'
+            if self.data.dtype == float32 or self.data.dtype == complex64:
+                self.precision = 'single'
+            else:
+                self.precision = 'double'
 
 
         if copy:
@@ -123,7 +131,22 @@ class Array(object):
                 input_data = initial_array._data
             else:
                 input_data = initial_array
-                
+
+            #If no dtype was given, default to Double, and Double Complex.
+            if dtype is None:
+                if type(input_data[0]) == 'complex':
+                    dtype = complex128
+                else:
+                    dtype = float64
+
+            if dtype == float32 or dtype == float64:
+                self.kind = 'real'
+            else:
+                self.kind = 'complex'
+            if dtype == float32 or dtype == complex64:
+                self.precision = 'single'
+            else:
+                self.precision = 'double'
 
             #Create new instance with input_data as initialization.
             if self._scheme is None:
@@ -150,13 +173,6 @@ class Array(object):
                                                                  dtype=dtype))
             else:
                 raise TypeError('Invalid Processing scheme Type')
-
-            #If no dtype was given, default to Double, and Double Complex.
-            if dtype is None:
-                if self._data.dtype.kind == 'c':
-                    self._data = self._data.astype(_numpy.complex128)
-                else:
-                       self._data = self._data.astype(_numpy.float64)
 
     def _returntype(fn):
         """ Wrapper for method functions to return a PyCBC Array class """
@@ -465,14 +481,6 @@ class Array(object):
     @property
     def dtype(self):
         return self._data.dtype
-    
-    @property
-    def precision(self):
-    
-        if self.dtype == float32 or self.dtype == complex64:
-            return 'single'
-        elif self.dtype == complex128 or self.dtype == float64:
-            return 'double'
 
 # Convenience functions for determining dtypes            
 

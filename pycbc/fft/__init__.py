@@ -120,15 +120,6 @@ if pycbc.HAVE_OPENCL:
 # facilitate this checking, we define dicts mapping the numpy dtype
 # to the corresponding precisions and types.
 
-_type_dict = {dtype('float32'):'real',
-              dtype('float64'):'real',
-              dtype('complex64'):'complex',
-              dtype('complex128'):'complex'}
-_prec_dict = {dtype('float32'):'single',
-              dtype('float64'):'double',
-              dtype('complex64'):'single',
-              dtype('complex128'):'double'}
-
 def _check_fft_args(invec,outvec):
     if not isinstance(invec,pycbc.types.Array):
         raise TypeError("Input is not a PyCBC Array")
@@ -152,15 +143,14 @@ def _check_fft_args(invec,outvec):
         raise TypeError(
             "When output is FrequencySeries input must be TimeSeries")
 
-    iprec = _prec_dict[invec.dtype]
-    oprec = _prec_dict[outvec.dtype]
+    iprec = invec.precision
+    oprec = outvec.precision
     if iprec != oprec:
         raise ValueError("Input and output precisions must agree")
-    else:
-        prec = iprec
-    itype = _type_dict[invec.dtype]
-    otype = _type_dict[outvec.dtype]
-    return [prec,itype,otype]
+        
+    itype = invec.kind
+    otype = outvec.kind
+    return [iprec,itype,otype]
 
 def fft(invec,outvec,backend='Default'):
     [prec,itype,otype] = _check_fft_args(invec,outvec)
