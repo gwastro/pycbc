@@ -107,11 +107,11 @@ class Array(object):
             # Check that the dtype is supported.
             if self._data.dtype not in _ALLOWED_DTYPES:
                 raise TypeError(str(self._data.dtype) + ' is not supported')
-            if self._data.dtype == float32 or self.data.dtype == float64:
+            if self._data.dtype == float32 or self._data.dtype == float64:
                 self.kind = 'real'
             else:
                 self.kind = 'complex'
-            if self.data.dtype == float32 or self.data.dtype == complex64:
+            if self._data.dtype == float32 or self._data.dtype == complex64:
                 self.precision = 'single'
             else:
                 self.precision = 'double'
