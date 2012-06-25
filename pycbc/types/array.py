@@ -152,17 +152,23 @@ class Array(object):
             if self._scheme is None:
                 if _pycbc.HAVE_CUDA and (type(input_data) is
                                          _cudaarray.GPUArray):
-                    self._data = input_data.get()
+                    self._data = input_data.get().astype(dtype)
                 elif _pycbc.HAVE_OPENCL and (type(input_data) is
                                              _openclarray.Array):
-                    self._data = input_data.get()
+                    self._data = input_data.get().astype(dtype)
                 else:
                     self._data = _numpy.array(input_data,dtype=dtype)
             elif _pycbc.HAVE_CUDA and (type(self._scheme) is
                                        _scheme.CUDAScheme):
                 if type(input_data) is _cudaarray.GPUArray:
-                    input_data = input_data.get()
-                self._data = _cudaarray.to_gpu(_numpy.array(input_data,
+                    if input_data.dtype == dtype:
+                        self._data = _cudaarray.GPUArray((input_data.size),dtype)
+                        _cudriver.memcpy_dtod(self._data.gpudata,input_data.gpudata,
+                                                input_data.nbytes)
+                    else:
+                        self._data = input_data.astype(dtype)
+                else:
+                    self._data = _cudaarray.to_gpu(_numpy.array(input_data,
                                                             dtype=dtype))
             elif _pycbc.HAVE_OPENCL and (type(self._scheme) is
                                          _scheme.OpenCLScheme):
