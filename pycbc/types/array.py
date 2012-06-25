@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Alex Nitz, Josh Willis
+# Copyright (C) 2012  Alex Nitz, Josh Willis, Andrew Miller
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
