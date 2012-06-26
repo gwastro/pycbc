@@ -173,8 +173,15 @@ class Array(object):
             elif _pycbc.HAVE_OPENCL and (type(self._scheme) is
                                          _scheme.OpenCLScheme):
                 if type(input_data) is _openclarray.Array:
-                    input_data = input_data.get()
-                self._data = _openclarray.to_device(self._scheme.queue,
+                    if input_data.dtype == dtype:
+                    #Unsure how to copy memory directly with OpenCL, these two lines are 
+                    #a temporary workaround, still probably better than going to the host and back though
+                        self._data = _openclarray.zeros_like(input_data)
+                        self._data += input_data
+                    else:
+                        self._data = input_data.astype(dtype)
+                else:
+                    self._data = _openclarray.to_device(self._scheme.queue,
                                                     _numpy.array(input_data,
                                                                  dtype=dtype))
             else:
