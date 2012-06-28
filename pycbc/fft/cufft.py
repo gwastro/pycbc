@@ -62,23 +62,11 @@ def _get_inv_plan(itype,otype,outlen):
 
 
 def fft(invec,outvec,prec,itype,otype):
-    if itype =='complex' and otype == 'complex':
-        cuplan = _get_fwd_plan(invec.dtype,outvec.dtype,len(invec))
-        cu_fft.fft(invec.data,outvec.data,cuplan)
-
-    elif itype=='real' and otype=='complex':
-        #The cufft algorithm doesn't return exact zeros for imaginary parts of this transform
-        #it returns imaginary components on the order of 10^-16 for double, and 10^-8 for single.
-        #Because of this, the forward real to complex tests do not currently pass the unit tests.
-        cuplan = _get_fwd_plan(invec.dtype,outvec.dtype,len(invec))
-        cu_fft.fft(invec.data,outvec.data,cuplan)
+    cuplan = _get_fwd_plan(invec.dtype,outvec.dtype,len(invec))
+    cu_fft.fft(invec.data,outvec.data,cuplan)
 
 def ifft(invec,outvec,prec,itype,otype):
-    if itype =='complex' and otype == 'complex':
-        cuplan = _get_inv_plan(invec.dtype,outvec.dtype,len(outvec))
-        cu_fft.ifft(invec.data,outvec.data,cuplan)
+    cuplan = _get_inv_plan(invec.dtype,outvec.dtype,len(outvec))
+    cu_fft.ifft(invec.data,outvec.data,cuplan)
 
-    elif itype=='complex' and otype=='real':
-        cuplan = _get_inv_plan(invec.dtype,outvec.dtype,len(outvec))
-        cu_fft.ifft(invec.data,outvec.data,cuplan)
 
