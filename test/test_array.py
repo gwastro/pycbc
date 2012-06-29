@@ -201,8 +201,22 @@ class tests_base(object):
             self.assertEqual(out4[0],5)
             self.assertEqual(out4[1],3)
             self.assertEqual(out4[2],1)
-            self.assertTrue(out4.dtype==numpy.complex128)                    
-
+            self.assertTrue(out4.dtype==numpy.complex128)
+            
+            #We also need to check the zero function
+            out5 = zeros(3,dtype=self.dtype)
+            out6 = zeros(3)
+            
+            self.assertEqual(out5[0],0)
+            self.assertEqual(out5[1],0)
+            self.assertEqual(out5[2],0)
+            self.assertTrue(out5.dtype == self.dtype)
+            
+            self.assertEqual(out6[0],0)               
+            self.assertEqual(out6[1],0)
+            self.assertEqual(out6[2],0)
+            self.assertTrue(out6.dtype == numpy.float64)
+            
     def test_mul(self):
         with self.context:   
             b = self.a * 2
