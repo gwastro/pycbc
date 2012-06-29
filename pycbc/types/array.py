@@ -134,7 +134,7 @@ class Array(object):
 
             #If no dtype was given, default to Double, and Double Complex.
             if dtype is None:
-                if type(input_data[0]) == 'complex':
+                if type(input_data[0]) == complex:
                     dtype = complex128
                 else:
                     dtype = float64
