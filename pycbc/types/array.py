@@ -515,5 +515,5 @@ def zeros(length,dtype=None):
     if type(_scheme.mgr.state) is _scheme.CUDAScheme:
         return Array(_cudaarray.zeros(length,dtype),copy=False)
     if type(_scheme.mgr.state) is _scheme.OpenCLScheme:
-        raise NotImplementedError
+        return Array(_openclarray.zeros(_scheme.mgr.state.queue,length,dtype),copy=False)
 
