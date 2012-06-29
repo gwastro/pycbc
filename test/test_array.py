@@ -85,32 +85,36 @@ class tests_base(object):
                                 numpy.complex128 : numpy.complex64,
                                 numpy.float32 : numpy.float64,
                                 numpy.float64 : numpy.float32}
-            
-            #First we must check that the dtype is correct when specified
+                                
             in1 = numpy.array([5,3,1],dtype=self.odtype)
             in2 = numpy.array([5,3,1],dtype=other_precision[self.odtype])
-            out1 = Array(in1, dtype=self.dtype)
-            out2 = Array(in2, dtype=self.dtype)
-            #to be sure that it is copied
-            in1 += 1
-            in2 += 1
             
-            self.assertEqual(out1[0],5)
-            self.assertEqual(out1[1],3)
-            self.assertEqual(out1[2],1)
-            self.assertTrue(out1.dtype==self.dtype)
-            
-            self.assertEqual(out2[0],5)
-            self.assertEqual(out2[1],3)
-            self.assertEqual(out2[2],1)
-            self.assertTrue(out2.dtype==self.dtype)
+            #We don't want to cast complex as real
+            if not (self.kind=='real' and (self.odtype == numpy.complex64 or self.odtype==numpy.complex128)):
+                #First we must check that the dtype is correct when specified
+                out1 = Array(in1, dtype=self.dtype)
+                out2 = Array(in2, dtype=self.dtype)
+                #to be sure that it is copied
+                in1 += 1
+                in2 += 1
+                self.assertEqual(out1[0],5)
+                self.assertEqual(out1[1],3)
+                self.assertEqual(out1[2],1)
+                self.assertTrue(out1.dtype==self.dtype)
+                
+                self.assertEqual(out2[0],5)
+                self.assertEqual(out2[1],3)
+                self.assertEqual(out2[2],1)
+                self.assertTrue(out2.dtype==self.dtype)
+                in1-=1
+                in2-=1
             
             #Also, when it is unspecified
             out3 = Array(in1)
             in1 += 1
-            self.assertEqual(out3[0],6)
-            self.assertEqual(out3[1],4)
-            self.assertEqual(out3[2],2)
+            self.assertEqual(out3[0],5)
+            self.assertEqual(out3[1],3)
+            self.assertEqual(out3[2],1)
             self.assertTrue(out3.dtype==self.odtype)
             
             #Check for copy=false
@@ -133,31 +137,37 @@ class tests_base(object):
                                 numpy.float32 : numpy.float64,
                                 numpy.float64 : numpy.float32}
             
-            #First we must check that the dtype is correct when specified
+            
             in1 = Array([5,3,1],dtype=self.odtype)
             in2 = Array([5,3,1],dtype=other_precision[self.odtype])
-            out1 = Array(in1, dtype=self.dtype)
-            out2 = Array(in2, dtype=self.dtype)
-            #to be sure that it is copied
-            in1 += 1
-            in2 += 1
-            
-            self.assertEqual(out1[0],5)
-            self.assertEqual(out1[1],3)
-            self.assertEqual(out1[2],1)
-            self.assertTrue(out1.dtype==self.dtype)
-            
-            self.assertEqual(out2[0],5)
-            self.assertEqual(out2[1],3)
-            self.assertEqual(out2[2],1)
-            self.assertTrue(out2.dtype==self.dtype)
+            #We don't want to cast complex as real
+            if not (self.kind=='real' and (self.odtype == numpy.complex64 or self.odtype==numpy.complex128)):
+                #First we must check that the dtype is correct when specified
+                out1 = Array(in1, dtype=self.dtype)
+                out2 = Array(in2, dtype=self.dtype)
+                #to be sure that it is copied
+                in1 += 1
+                in2 += 1
+                
+                self.assertEqual(out1[0],5)
+                self.assertEqual(out1[1],3)
+                self.assertEqual(out1[2],1)
+                self.assertTrue(out1.dtype==self.dtype)
+                
+                self.assertEqual(out2[0],5)
+                self.assertEqual(out2[1],3)
+                self.assertEqual(out2[2],1)
+                self.assertTrue(out2.dtype==self.dtype)
+                
+                in1-=1
+                in2-=1
             
             #Also, when it is unspecified
             out3 = Array(in1)
             in1 += 1
-            self.assertEqual(out3[0],6)
-            self.assertEqual(out3[1],4)
-            self.assertEqual(out3[2],2)
+            self.assertEqual(out3[0],5)
+            self.assertEqual(out3[1],3)
+            self.assertEqual(out3[2],1)
             self.assertTrue(out3.dtype==self.odtype)
             
             #Check for copy=false
