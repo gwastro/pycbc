@@ -154,6 +154,19 @@ class tests_base(object):
                 self.assertEqual(out1[2],1)
                 self.assertTrue(out1.dtype==self.dtype)
                 
+                if out1.dtype == numpy.float32:
+                    self.assertTrue(out1.precision == 'single')
+                    #self.assertTrue(out1.kind == 'real')
+                if out1.dtype == numpy.float64:
+                    self.assertTrue(out1.precision == 'double')
+                    #self.assertTrue(out1.kind == 'real')
+                if out1.dtype == numpy.complex64:
+                    self.assertTrue(out1.precision == 'single')
+                    #self.assertTrue(out1.kind == 'complex')
+                if out1.dtype == numpy.complex128:
+                    self.assertTrue(out1.precision == 'double')
+                    #self.assertTrue(out1.kind == 'complex')                
+                
                 self.assertEqual(out2[0],5)
                 self.assertEqual(out2[1],3)
                 self.assertEqual(out2[2],1)
@@ -192,6 +205,19 @@ class tests_base(object):
             self.assertEqual(out1[1],3)
             self.assertEqual(out1[2],1)
             self.assertTrue(out1.dtype==self.dtype)
+            
+            if out1.dtype == numpy.float32:
+                self.assertTrue(out1.precision == 'single')
+                #self.assertTrue(out1.kind == 'real')
+            if out1.dtype == numpy.float64:
+                self.assertTrue(out1.precision == 'double')
+                #self.assertTrue(out1.kind == 'real')
+            if out1.dtype == numpy.complex64:
+                self.assertTrue(out1.precision == 'single')
+                #self.assertTrue(out1.kind == 'complex')
+            if out1.dtype == numpy.complex128:
+                self.assertTrue(out1.precision == 'double')
+                #self.assertTrue(out1.kind == 'complex')  
             
             if self.kind == 'complex':
                 out2 = Array([5+0j,3+0j,1+0j], dtype=self.dtype)
