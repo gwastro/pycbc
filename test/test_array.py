@@ -559,6 +559,26 @@ class tests_base(object):
             self.assertEqual(self.v[0],10)
             self.assertEqual(self.v[1],8)
             self.assertEqual(self.v[2],6)
+            
+            if self.kind == 'complex':
+                d = 5 / self.comp
+                e = self.v / self.comp
+                
+                self.assertAlmostEqual(e[0],25.0/13.0-5.0j/13.0, places=self.places)
+                self.assertAlmostEqual(e[1],4.0/3.0-4.0j/3.0, places=self.places)
+                self.assertAlmostEqual(e[2],3.0/13.0-15.0j/13.0, places=self.places)
+                
+                self.assertAlmostEqual(d[0],25.0/26.0-5.0j/26.0, places=self.places)
+                self.assertAlmostEqual(d[1],5.0/6.0-5.0j/6.0, places=self.places)
+                self.assertAlmostEqual(d[2],5.0/26.0-25.0j/26.0, places=self.places)
+                
+                self.assertEqual(self.comp[0],5+1j)
+                self.assertEqual(self.comp[1],3+3j)
+                self.assertEqual(self.comp[2],1+5j)
+                
+                self.assertEqual(self.v[0],10)
+                self.assertEqual(self.v[1],8)
+                self.assertEqual(self.v[2],6)
         
     def test_idiv(self):
         with self.context:  
