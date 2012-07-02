@@ -343,6 +343,41 @@ class tests_base(object):
                 self.assertEqual(self.v[0],10)
                 self.assertEqual(self.v[1],8)
                 self.assertEqual(self.v[2],6)
+                
+    def test_set(self):
+        with self.context:
+            if not (self.kind == 'real' and (self.odtype == numpy.complex64 or self.odtype == numpy.complex128)):
+                b = self.a * 1
+                b[0] = Array(self.v[0])
+                b[2] = Array(self.v[2])
+                
+                self.assertEqual(b[0],10)
+                self.assertEqual(b[1],3)
+                self.assertEqual(b[2],6)
+                
+                self.assertEqual(self.a[0],5)
+                self.assertEqual(self.a[1],3)
+                self.assertEqual(self.a[2],1)
+                
+                self.assertEqual(self.v[0],10)
+                self.assertEqual(self.v[1],8)
+                self.assertEqual(self.v[2],6)
+
+            if self.kind == 'complex':
+                c = self.comp * 1
+                c[0] = Array(self.v[0])
+                c[2] = Array(self.v[2])
+                self.assertEqual(c[0],10)
+                self.assertEqual(c[1],3+3j)
+                self.assertEqual(c[2],6)
+                
+                self.assertEqual(self.comp[0],5+1j)
+                self.assertEqual(self.comp[1],3+3j)
+                self.assertEqual(self.comp[2],1+5j)
+                
+                self.assertEqual(self.v[0],10)
+                self.assertEqual(self.v[1],8)
+                self.assertEqual(self.v[2],6)
         
     def test_imul(self):
         with self.context:
