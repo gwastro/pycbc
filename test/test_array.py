@@ -770,6 +770,21 @@ class tests_base(object):
             self.assertEqual(self.a[0],5)
             self.assertEqual(self.a[1],3)
             self.assertEqual(self.a[2],1)
+            
+            if self.kind == 'complex':
+                c = self.comp ** 2 
+                
+                self.assertAlmostEqual(c[0],24+10j, places=self.places)
+                self.assertAlmostEqual(c[1],18j, places=self.places)
+                self.assertAlmostEqual(c[2],-24+10j, places=self.places)
+                
+                self.assertEqual(self.comp[0],5+1j)
+                self.assertEqual(self.comp[1],3+3j)
+                self.assertEqual(self.comp[2],1+5j)
+                
+                self.assertEqual(self.v[0],10)
+                self.assertEqual(self.v[1],8)
+                self.assertEqual(self.v[2],6)
         
     def test_abs(self):
         with self.context:
@@ -787,6 +802,26 @@ class tests_base(object):
             self.assertEqual(self.a[0],5)
             self.assertEqual(self.a[1],3)
             self.assertEqual(self.a[2],1)
+            
+            if self.kind == 'complex':
+                d = abs(self.comp)
+                e = abs(self.comp * -1)
+
+                self.assertAlmostEqual(d[0],pow(26,.5), places=self.places)
+                self.assertAlmostEqual(d[1],3*pow(2,.5), places=self.places)
+                self.assertAlmostEqual(d[2],pow(26,.5), places=self.places)
+                
+                self.assertAlmostEqual(e[0],pow(26,.5), places=self.places)
+                self.assertAlmostEqual(e[1],3*pow(2,.5), places=self.places)
+                self.assertAlmostEqual(e[2],pow(26,.5), places=self.places)
+                
+                self.assertEqual(self.comp[0],5+1j)
+                self.assertEqual(self.comp[1],3+3j)
+                self.assertEqual(self.comp[2],1+5j)
+                
+                self.assertEqual(self.v[0],10)
+                self.assertEqual(self.v[1],8)
+                self.assertEqual(self.v[2],6)
         
     def test_real(self):
         with self.context:        
@@ -799,6 +834,21 @@ class tests_base(object):
             self.assertEqual(self.a[0],5)
             self.assertEqual(self.a[1],3)
             self.assertEqual(self.a[2],1)
+            
+            if self.kind == 'complex':
+                c = self.comp.real() 
+                
+                self.assertEqual(c[0],5)
+                self.assertEqual(c[1],3)
+                self.assertEqual(c[2],1)
+                
+                self.assertEqual(self.comp[0],5+1j)
+                self.assertEqual(self.comp[1],3+3j)
+                self.assertEqual(self.comp[2],1+5j)
+                
+                self.assertEqual(self.v[0],10)
+                self.assertEqual(self.v[1],8)
+                self.assertEqual(self.v[2],6)
         
     def test_imag(self):
         with self.context:        
@@ -811,6 +861,21 @@ class tests_base(object):
             self.assertEqual(self.a[0],5)
             self.assertEqual(self.a[1],3)
             self.assertEqual(self.a[2],1)
+            
+            if self.kind == 'complex':
+                c = self.comp.imag() 
+                
+                self.assertEqual(c[0],1)
+                self.assertEqual(c[1],3)
+                self.assertEqual(c[2],5)
+                
+                self.assertEqual(self.comp[0],5+1j)
+                self.assertEqual(self.comp[1],3+3j)
+                self.assertEqual(self.comp[2],1+5j)
+                
+                self.assertEqual(self.v[0],10)
+                self.assertEqual(self.v[1],8)
+                self.assertEqual(self.v[2],6)
         
     def test_conj(self):
         with self.context:       
@@ -823,6 +888,21 @@ class tests_base(object):
             self.assertEqual(self.a[0],5)
             self.assertEqual(self.a[1],3)
             self.assertEqual(self.a[2],1)
+            
+            if self.kind == 'complex':
+                c = self.comp.conj() 
+                
+                self.assertEqual(c[0],5-1j)
+                self.assertEqual(c[1],3-3j)
+                self.assertEqual(c[2],1-5j)
+                
+                self.assertEqual(self.comp[0],5+1j)
+                self.assertEqual(self.comp[1],3+3j)
+                self.assertEqual(self.comp[2],1+5j)
+                
+                self.assertEqual(self.v[0],10)
+                self.assertEqual(self.v[1],8)
+                self.assertEqual(self.v[2],6)
             
     def test_sum(self):
         with self.context:         
@@ -846,30 +926,53 @@ class tests_base(object):
     def test_dot(self):
         with self.context:        
             b = self.a.dot(self.a)
+            c = self.a.dot(self.v)
             
             self.assertEqual(b,(35))
+            self.assertEqual(c,(80))
+            
+            self.assertEqual(self.v[0],10)
+            self.assertEqual(self.v[1],8)
+            self.assertEqual(self.v[2],6)
             
             self.assertEqual(self.a[0],5)
             self.assertEqual(self.a[1],3)
             self.assertEqual(self.a[2],1)
+            
+            if self.kind == 'complex':
+                d = self.comp.dot(self.comp)
+                e = self.comp.dot(self.v)
+                
+                self.assertEqual(d,(38j))
+                self.assertEqual(e,(80+64j))
+                
+                self.assertEqual(self.comp[0],5+1j)
+                self.assertEqual(self.comp[1],3+3j)
+                self.assertEqual(self.comp[2],1+5j)
+                
+                self.assertEqual(self.v[0],10)
+                self.assertEqual(self.v[1],8)
+                self.assertEqual(self.v[2],6)
     
     def test_max(self):
         with self.context:
             #When updated, this should call self.a.kind
             if self.kind == 'real':
                 self.assertEqual(self.a.max(),5)
-            self.assertEqual(self.a[0],5)
-            self.assertEqual(self.a[1],3)
-            self.assertEqual(self.a[2],1)
-            
+                
+                self.assertEqual(self.a[0],5)
+                self.assertEqual(self.a[1],3)
+                self.assertEqual(self.a[2],1)
+                
     def test_min(self):
         with self.context:
             #When updated, this should call self.a.kind
             if self.kind == 'real':
                 self.assertEqual(self.a.min(),1)
-            self.assertEqual(self.a[0],5)
-            self.assertEqual(self.a[1],3)
-            self.assertEqual(self.a[2],1)
+                
+                self.assertEqual(self.a[0],5)
+                self.assertEqual(self.a[1],3)
+                self.assertEqual(self.a[2],1)
                 
     
 
