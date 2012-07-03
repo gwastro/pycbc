@@ -183,8 +183,8 @@ class tests_base(object):
             
             #self.rdiv = [2.+6.j/5., 8./3.+4.j/3, 6.+2.j]
             self.rdiv = [2.+1.2j, 2.66666666666666666667+1.33333333333333333333j, 6.+2.j]
-            #self.rdiv_s = [1.+2.j/5., 5./3.+2.j/5., 5.+2.j/5.]
-            self.rdiv_s = [1.+0.4j, 1.66666666666666666667+0.4j, 5.+0.4j]
+            #self.rdiv_s = [1.+2.j/5., 5./3.+2.j/3., 5.+2.j]
+            self.rdiv_s = [1.+0.4j, 1.66666666666666666667+0.666666666666666666667j, 5.+2.j]
             
             self.sub = [-5-6j, -5-4j, -5-2j]
             self.sub_s = [0-2j, -2-2j, -4-2j]
@@ -879,21 +879,21 @@ class tests_base(object):
             t3 = abs(self.a * 1j)
             t4 = abs(self.a * -1j)
             
-            self.assertEqual(t1[0],self.abs[0])
-            self.assertEqual(t1[1],self.abs[1])
-            self.assertEqual(t1[2],self.abs[2])
+            self.assertAlmostEqual(t1[0],self.abs[0], places=self.places)
+            self.assertAlmostEqual(t1[1],self.abs[1], places=self.places)
+            self.assertAlmostEqual(t1[2],self.abs[2], places=self.places)
             
-            self.assertEqual(t2[0],self.abs[0])
-            self.assertEqual(t2[1],self.abs[1])
-            self.assertEqual(t2[2],self.abs[2])
+            self.assertAlmostEqual(t2[0],self.abs[0], places=self.places)
+            self.assertAlmostEqual(t2[1],self.abs[1], places=self.places)
+            self.assertAlmostEqual(t2[2],self.abs[2], places=self.places)
             
-            self.assertEqual(t3[0],self.abs[0])
-            self.assertEqual(t3[1],self.abs[1])
-            self.assertEqual(t3[2],self.abs[2])
+            self.assertAlmostEqual(t3[0],self.abs[0], places=self.places)
+            self.assertAlmostEqual(t3[1],self.abs[1], places=self.places)
+            self.assertAlmostEqual(t3[2],self.abs[2], places=self.places)
             
-            self.assertEqual(t4[0],self.abs[0])
-            self.assertEqual(t4[1],self.abs[1])
-            self.assertEqual(t4[2],self.abs[2])
+            self.assertAlmostEqual(t4[0],self.abs[0], places=self.places)
+            self.assertAlmostEqual(t4[1],self.abs[1], places=self.places)
+            self.assertAlmostEqual(t4[2],self.abs[2], places=self.places)
             
             self.assertEqual(self.a[0],self.a2[0])
             self.assertEqual(self.a[1],self.a2[1])
