@@ -63,31 +63,203 @@ _options = vars(_opt_list)
 class tests_base(object):
     def setUp(self):
     
-        #We need to check for correct creation from all dtypes, 
-        #and errors from incorrect operations so the other precision of 
-        #odtype needs to be available as well
+        # We need to check for correct creation from all dtypes, 
+        # and errors from incorrect operations so the other precision of 
+        # odtype needs to be available as well
         self.other_precision = {numpy.complex64 : numpy.complex128,
                             numpy.complex128 : numpy.complex64,
                             numpy.float32 : numpy.float64,
                             numpy.float64 : numpy.float32}
         
-        self.a = Array([5,3,1], dtype = self.dtype)
-        self.v = Array([10,8,6],dtype = self.odtype)
-        self.bad = Array([1,1,1],dtype = self.other_precision[self.odtype])
         # Number of decimal places to compare for single precision
-        if self.a.precision == 'single':
+        if self.dtype == numpy.float32 or self.dtype == numpy.complex64:
             self.places = 5
         # Number of decimal places to compare for double precision
-        if self.a.precision == 'double':
+        else:
             self.places = 13
+            
+        # We will also need to check whether dtype and odtype are real or complex,
+        # so that we can test non-zero imaginary parts. 
         if self.dtype == numpy.float32 or self.dtype == numpy.float64:
             self.kind = 'real'
         else:
             self.kind = 'complex'
+        if self.odtype == numpy.float32 or self.odtype == numpy.float64:
+            self.okind = 'real'
+        else:
+            self.okind = 'complex'
             
-        if self.kind == 'complex':
-            self.comp = Array([5+1j,3+3j,1+5j],dtype=self.dtype)
-        pass
+        # Here two test arrays are created. Their content depends on their dtype,
+        # so that we can make use of non-zero imaginary parts.
+        # These arrays are just arbitrarily chosen, but in such a way that they are not
+        # oversimplified, e.g. we don't want to multiply by one, or add zero, or have
+        # the answer be one or zero.
+        # We will make 2 of each, so that we can always check that the operation has not
+        # altered anything it shouldn't.
+        if self.kind == 'real':
+            self.a = Array([5,3,1], dtype=self.dtype)
+            self.a2 = Array([5,3,1], dtype=self.dtype)
+        else:
+            self.a = Array([5+1j,3+3j,1+5j], dtype=self.dtype)
+            self.a2 = Array([5+1j,3+3j,1+5j], dtype=self.dtype)
+            
+        if self.okind == 'real':
+            self.b = Array([10,8,6], dtype=self.odtype)
+            self.b2 = Array([10,8,6], dtype=self.odtype)
+        else:
+            self.b = Array([10+6j,8+4j,6+2j], dtype=self.odtype)
+            self.b2 = Array([10+6j,8+4j,6+2j], dtype=self.odtype)
+        
+        # We will need to also test a non-zero imaginary part scalar.
+        # For simplicity, we will test with a real scalar when odtype is real, 
+        # and a complex scalar when odtype is complex. This will prevent redundancy,
+        # and make it easier to spot problems, just based off of the test names.
+        if self.okind =='real':
+            self.s = 5
+            self.s2 = 5
+        else:
+            self.s = 5+2j
+            self.s2 = 5+2j
+
+        # Finally, we want to have an array that we shouldn't be able to operate on,
+        # because the precision is wrong.
+        self.bad = Array([1,1,1],dtype = self.other_precision[self.odtype])
+        
+        # All the answers are stored here to make it easier to read in the actual tests.
+        # Again, it makes a difference whether they are complex or real valued, so there
+        # are four sets of possible answers, depending on the dtypes.
+        if self.kind == 'real' and self.okind == 'real':
+        
+            self.mul = [50, 24, 6]
+            self.mul_s = [25, 15, 5]
+                        
+            self.add = [15, 11, 7]
+            self.add_s = [10, 8, 6]
+                        
+            self.div = [1./2., 3./8., 1./6.]
+            self.div_s = [1., 3./5., 1./5.]
+                        
+            self.rdiv = [2., 8./3., 6.]
+            self.rdiv_s = [1., 5./3., 5.]
+            
+            self.sub = [-5, -5, -5]
+            self.sub_s = [0, -2, -4]
+            
+            self.rsub = [5, 5, 5]
+            self.rsub_s = [0, 2, 4]
+            
+            self.pow1 = [25., 9., 1.]
+            self.pow2 = [pow(5,-1.5), pow(3,-1.5), pow(1,-1.5)]
+            
+            self.abs = [5, 3, 1]
+            
+            self.real = [5,3,1]
+            self.imag = [0, 0, 0]
+            self.conj = [5, 3, 1]
+            
+            self.sum = 9
+            
+            self.dot = 80
+                        
+        if self.kind =='real' and self.okind == 'complex':
+            
+            self.mul = [50+30j, 24+12j, 6+2j]
+            self.mul_s = [25+10j, 15+6j, 5+2j]
+            
+            self.add = [15+6j, 11+4j, 7+2j]
+            self.add_s = [10+2j, 8+2j, 6+2j]
+            
+            self.div = [25./68.-15.j/68., 3./10.-3.j/20., 3./20.-1.j/20.] 
+            self.div_s = [25./29.-10.j/29., 15./29.-6.j/29., 5./29.-2.j/29.]
+            
+            self.rdiv = [2.+6.j/5., 8./3.+4.j/3, 6.+2.j]
+            self.rdiv_s = [1.+2.j/5., 5./3.+2.j/5., 5.+2.j/5.]
+            
+            self.sub = [-5-6j, -5-4j, -5-2j]
+            self.sub_s = [0-2j, -2-2j, -4-2j]
+            
+            self.rsub = [5+6j, 5+4j, 5+2j]
+            self.rsub_s = [0+2j, 2+2j, 4+2j]
+            
+            self.pow1 = [25., 9., 1.]
+            self.pow2 = [pow(5,-1.5), pow(3,-1.5), pow(1,-1.5)]
+            
+            self.abs = [5, 3, 1]
+            
+            self.real = [5,3,1]
+            self.imag = [0, 0, 0]
+            self.conj = [5, 3, 1]
+            
+            self.sum = 9
+            
+            self.dot = 80+44j
+            
+        if self.kind == 'complex' and self.okind == 'real':
+            
+            self.mul = [50+10j, 24+24j, 6+30j]
+            self.mul_s = [25+5j, 15+15j, 5+25j]
+            
+            self.add = [15+1j, 11+3j, 7+5j]
+            self.add_s = [10+1j, 8+3j, 6+5j]
+            
+            self.div = [1./2.+1.j/10., 3./8.+3.j/8., 1./6.+5.j/6.]
+            self.div_s = [1.+1.j/5., 3./5.+3.j/5., 1./5.+1.j]
+            
+            self.rdiv = [25./13.-5.j/13., 4./3.-4.j/3., 3./13.-15.j/13.]
+            self.rdiv_s = [25./26.-5.j/26., 5./6.-5.j/6., 5./26.-25.j/26.]
+            
+            self.sub = [-5+1j, -5+3j, -5+5j]
+            self.sub_s = [0+1j, -2+3j, -4+5j]
+            
+            self.rsub = [5-1j, 5-3j, 5-5j]
+            self.rsub_s = [0-1j, 2-3j, 4-5j]
+            
+            self.pow1 = [24.+10.j, 0.+18.j, -24.+10.j]
+            self.pow2 = [pow(5+1j,-1.5), pow(3+3j,-1.5), pow(1+5j,-1.5)]
+            
+            self.abs = [pow(26,.5), 3*pow(2,.5), pow(26,.5)]
+            
+            self.real = [5,3,1]
+            self.imag = [1, 3, 5]
+            self.conj = [5-1j, 3-3j, 1-5j]
+            
+            self.sum = 9+9j
+            
+            self.dot = 80+64j
+            
+        if self.kind =='complex' and self.okind =='complex':
+            
+            self.mul = [44+40j, 12+36j, -4+32j]
+            self.mul_s = [23+15j, 9+21j, -5+27j]
+            
+            self.add = [15+7j, 11+7j, 7+7j]
+            self.add_s = [10+3j, 8+5j, 6+7j]
+            
+            self.div = [7./17.-5.j/34., 9./20.+3.j/20., 2./5.+7.j/10.]
+            self.div_s = [27./29.-5.j/29., 21./29.+9.j/29., 15./29.+23.j/29.]
+            
+            self.rdiv = [28./13.+10.j/13., 2.-2.j/3., 8./13.-14.j/13.]
+            self.rdiv_s = [27./26.+5.j/26., 7./6.-1.j/2., 15./26.-23.j/26]
+            
+            self.sub = [-5-5j, -5-1j, -5+3j]
+            self.sub_s = [0-1j, -2+1j, -4+3j]
+            
+            self.rsub = [5+5j, 5+1j, 5-3j]
+            self.rsub_s = [0+1j, 2-1j, 4-3j]
+            
+            self.pow1 = [24.+10.j, 0.+18.j, -24.+10.j]
+            self.pow2 = [pow(5+1j,-1.5), pow(3+3j,-1.5), pow(1+5j,-1.5)]
+            
+            self.abs = [pow(26,.5), 3*pow(2,.5), pow(26,.5)]
+            
+            self.real = [5,3,1]
+            self.imag = [1, 3, 5]
+            self.conj = [5-1j, 3-3j, 1-5j]
+            
+            self.sum = 9+9j
+            
+            self.dot = 52+108j
+            
 
     def test_numpy_init(self):
         with self.context:                                
@@ -95,7 +267,7 @@ class tests_base(object):
             in2 = numpy.array([5,3,1],dtype=self.other_precision[self.odtype])
             
             #We don't want to cast complex as real
-            if not (self.kind=='real' and (self.odtype == numpy.complex64 or self.odtype==numpy.complex128)):
+            if not (self.kind == 'real' and self.okind == 'complex'):
                 #First we must check that the dtype is correct when specified
                 out1 = Array(in1, dtype=self.dtype)
                 out2 = Array(in2, dtype=self.dtype)
@@ -258,762 +430,492 @@ class tests_base(object):
             
             self.assertRaises(TypeError,Array,[1,2,3],copy=False)
             
+    def test_set(self):
+        with self.context:
+            t1 = self.a * 1
+            
+            if not (self.kind == 'real' and self.okind == 'complex'):                
+                t1[0] = Array(self.b[0])
+                t1[2] = Array(self.b[2])
+                
+                self.assertEqual(t1[0],self.b2[0])
+                self.assertEqual(t1[1],self.a2[1])
+                self.assertEqual(t1[2],self.b2[2])
+                
+            else:
+                self.assertRaises(TypeError, t1.__setitem__, 0, Array(self.b[0]))
+                
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
+            
+            self.assertEqual(self.b[0],self.b2[0])
+            self.assertEqual(self.b[1],self.b2[1])
+            self.assertEqual(self.b[2],self.b2[2])
+            
     def test_mul(self):
-        with self.context:     
-            self.assertRaises(TypeError, self.a.__mul__, self.bad)       
-            b = self.a * 2
-            c = self.a * self.v
+        with self.context:  
+           
+            self.assertRaises(TypeError, self.a.__mul__, self.bad)  
+                 
+            t1 = self.a * self.s
+            t2 = self.a * self.b
             
-            self.assertEqual(c[0],50)
-            self.assertEqual(c[1],24)
-            self.assertEqual(c[2],6)
+            self.assertEqual(t1[0],self.mul_s[0])
+            self.assertEqual(t1[1],self.mul_s[1])
+            self.assertEqual(t1[2],self.mul_s[2])
             
-            self.assertEqual(b[0],10)
-            self.assertEqual(b[1],6)
-            self.assertEqual(b[2],2)
+            self.assertEqual(t2[0],self.mul[0])
+            self.assertEqual(t2[1],self.mul[1])
+            self.assertEqual(t2[2],self.mul[2])
+
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
             
-            self.assertEqual(self.a[0],5)
-            self.assertEqual(self.a[1],3)
-            self.assertEqual(self.a[2],1)
+            self.assertEqual(self.b[0],self.b2[0])
+            self.assertEqual(self.b[1],self.b2[1])
+            self.assertEqual(self.b[2],self.b2[2])
             
-            self.assertEqual(self.v[0],10)
-            self.assertEqual(self.v[1],8)
-            self.assertEqual(self.v[2],6)
-            
-            if self.kind == 'complex':
-                d = self.comp * 2
-                e = self.comp * self.v
-                
-                self.assertEqual(e[0],50+10j)
-                self.assertEqual(e[1],24+24j)
-                self.assertEqual(e[2],6+30j)
-                
-                self.assertEqual(d[0],10+2j)
-                self.assertEqual(d[1],6+6j)
-                self.assertEqual(d[2],2+10j)
-                
-                self.assertEqual(self.comp[0],5+1j)
-                self.assertEqual(self.comp[1],3+3j)
-                self.assertEqual(self.comp[2],1+5j)
-                
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
-                
-                
+            self.assertEqual(self.s,self.s2)
         
     def test_rmul(self):
         with self.context:  
-            self.assertRaises(TypeError, self.a.__rmul__, self.bad)       
-            b = 2 * self.a 
-            c = self.v * self.a
-            
-            self.assertEqual(c[0],50)
-            self.assertEqual(c[1],24)
-            self.assertEqual(c[2],6)
-            
-            self.assertEqual(b[0],10)
-            self.assertEqual(b[1],6)
-            self.assertEqual(b[2],2)
-            
-            self.assertEqual(self.a[0],5)
-            self.assertEqual(self.a[1],3)
-            self.assertEqual(self.a[2],1)
-            
-            self.assertEqual(self.v[0],10)
-            self.assertEqual(self.v[1],8)
-            self.assertEqual(self.v[2],6)
-            
-            if self.kind == 'complex':
-                d = 2 * self.comp
-                e = self.v * self.comp
-                
-                self.assertEqual(e[0],50+10j)
-                self.assertEqual(e[1],24+24j)
-                self.assertEqual(e[2],6+30j)
-                
-                self.assertEqual(d[0],10+2j)
-                self.assertEqual(d[1],6+6j)
-                self.assertEqual(d[2],2+10j)
-                
-                self.assertEqual(self.comp[0],5+1j)
-                self.assertEqual(self.comp[1],3+3j)
-                self.assertEqual(self.comp[2],1+5j)
-                
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
-                
-    def test_set(self):
-        with self.context:
-            if not (self.kind == 'real' and (self.odtype == numpy.complex64 or self.odtype == numpy.complex128)):
-                b = self.a * 1
-                b[0] = Array(self.v[0])
-                b[2] = Array(self.v[2])
-                
-                self.assertEqual(b[0],10)
-                self.assertEqual(b[1],3)
-                self.assertEqual(b[2],6)
-                
-                self.assertEqual(self.a[0],5)
-                self.assertEqual(self.a[1],3)
-                self.assertEqual(self.a[2],1)
-                
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
-
-            if self.kind == 'complex':
-                c = self.comp * 1
-                c[0] = Array(self.v[0])
-                c[2] = Array(self.v[2])
-                self.assertEqual(c[0],10)
-                self.assertEqual(c[1],3+3j)
-                self.assertEqual(c[2],6)
-                
-                self.assertEqual(self.comp[0],5+1j)
-                self.assertEqual(self.comp[1],3+3j)
-                self.assertEqual(self.comp[2],1+5j)
-                
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
         
+            self.assertRaises(TypeError, self.a.__rmul__, self.bad)  
+                 
+            t1 = self.s * self.a
+            t2 = self.a.__rmul__(self.b)
+            
+            self.assertEqual(t1[0],self.mul_s[0])
+            self.assertEqual(t1[1],self.mul_s[1])
+            self.assertEqual(t1[2],self.mul_s[2])
+            
+            self.assertEqual(t2[0],self.mul[0])
+            self.assertEqual(t2[1],self.mul[1])
+            self.assertEqual(t2[2],self.mul[2])
+
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
+            
+            self.assertEqual(self.b[0],self.b2[0])
+            self.assertEqual(self.b[1],self.b2[1])
+            self.assertEqual(self.b[2],self.b2[2])
+            
+            self.assertEqual(self.s,self.s2)
+                
     def test_imul(self):
-        with self.context:
-            if not (self.kind=='real' and (self.odtype == numpy.complex64 or self.odtype==numpy.complex128)):
-                self.assertRaises(TypeError, self.a.__imul__, self.bad)          
-                t = self.a * 1 
-                t2 = self.a * 1
-                t *= 2
-                t2 *= self.v
-                
-                self.assertEqual(t2[0],50)
-                self.assertEqual(t2[1],24)
-                self.assertEqual(t2[2],6)
-                
-                self.assertEqual(t[0],10)
-                self.assertEqual(t[1],6)
-                self.assertEqual(t[2],2)
+        with self.context:  
+            self.assertRaises(TypeError, self.a.__imul__, self.bad)
             
-                self.assertEqual(self.a[0],5)
-                self.assertEqual(self.a[1],3)
-                self.assertEqual(self.a[2],1)
-                
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
+            t1 = self.a * 1
+            t2 = self.a * 1
             
-            if self.kind == 'complex':
-                d = self.comp * 1 
-                e = self.comp * 1
-                d *= 2
-                e *= self.v
+            if not (self.kind == 'real' and self.okind == 'complex'):
+                t1 *= self.s
+                t2 *= self.b
                 
-                self.assertEqual(e[0],50+10j)
-                self.assertEqual(e[1],24+24j)
-                self.assertEqual(e[2],6+30j)
+                self.assertEqual(t1[0],self.mul_s[0])
+                self.assertEqual(t1[1],self.mul_s[1])
+                self.assertEqual(t1[2],self.mul_s[2])
                 
-                self.assertEqual(d[0],10+2j)
-                self.assertEqual(d[1],6+6j)
-                self.assertEqual(d[2],2+10j)
+                self.assertEqual(t2[0],self.mul[0])
+                self.assertEqual(t2[1],self.mul[1])
+                self.assertEqual(t2[2],self.mul[2])
+
+            else:
+                self.assertRaises(TypeError, t1.__imul__,self.s)
+                self.assertRaises(TypeError, t1.__imul__,self.b)
                 
-                self.assertEqual(self.comp[0],5+1j)
-                self.assertEqual(self.comp[1],3+3j)
-                self.assertEqual(self.comp[2],1+5j)
+                self.assertEqual(t1[0],self.a2[0])
+                self.assertEqual(t1[1],self.a2[1])
+                self.assertEqual(t1[2],self.a2[2])
                 
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
+            
+            self.assertEqual(self.b[0],self.b2[0])
+            self.assertEqual(self.b[1],self.b2[1])
+            self.assertEqual(self.b[2],self.b2[2])
+            
+            self.assertEqual(self.s,self.s2)
         
     def test_add(self):
-        with self.context:
-            self.assertRaises(TypeError, self.a.__add__, self.bad)            
-            b = self.a + 5
-            c = self.a + self.v
+        with self.context:  
+           
+            self.assertRaises(TypeError, self.a.__add__, self.bad)  
+                 
+            t1 = self.a + self.s
+            t2 = self.a + self.b
             
-            self.assertEqual(c[0],15)
-            self.assertEqual(c[1],11)
-            self.assertEqual(c[2],7)
+            self.assertEqual(t1[0],self.add_s[0])
+            self.assertEqual(t1[1],self.add_s[1])
+            self.assertEqual(t1[2],self.add_s[2])
             
-            self.assertEqual(b[0],10)
-            self.assertEqual(b[1],8)
-            self.assertEqual(b[2],6)
+            self.assertEqual(t2[0],self.add[0])
+            self.assertEqual(t2[1],self.add[1])
+            self.assertEqual(t2[2],self.add[2])
+
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
             
-            self.assertEqual(self.a[0],5)
-            self.assertEqual(self.a[1],3)
-            self.assertEqual(self.a[2],1)
+            self.assertEqual(self.b[0],self.b2[0])
+            self.assertEqual(self.b[1],self.b2[1])
+            self.assertEqual(self.b[2],self.b2[2])
             
-            self.assertEqual(self.v[0],10)
-            self.assertEqual(self.v[1],8)
-            self.assertEqual(self.v[2],6)
-            
-            if self.kind == 'complex':
-                d = self.comp + 5
-                e = self.comp + self.v
-                
-                self.assertEqual(e[0],15+1j)
-                self.assertEqual(e[1],11+3j)
-                self.assertEqual(e[2],7+5j)
-                
-                self.assertEqual(d[0],10+1j)
-                self.assertEqual(d[1],8+3j)
-                self.assertEqual(d[2],6+5j)
-                
-                self.assertEqual(self.comp[0],5+1j)
-                self.assertEqual(self.comp[1],3+3j)
-                self.assertEqual(self.comp[2],1+5j)
-                
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
+            self.assertEqual(self.s,self.s2)
         
     def test_radd(self):
-        with self.context:    
-            self.assertRaises(TypeError, self.a.__radd__, self.bad)            
-            b = 5 + self.a
-            c = self.v + self.a
+        with self.context:  
+           
+            self.assertRaises(TypeError, self.a.__radd__, self.bad)  
+                 
+            t1 = self.s + self.a
+            t2 = self.a.__radd__(self.b)
             
-            self.assertEqual(c[0],15)
-            self.assertEqual(c[1],11)
-            self.assertEqual(c[2],7)
+            self.assertEqual(t1[0],self.add_s[0])
+            self.assertEqual(t1[1],self.add_s[1])
+            self.assertEqual(t1[2],self.add_s[2])
             
-            self.assertEqual(b[0],10)
-            self.assertEqual(b[1],8)
-            self.assertEqual(b[2],6)
+            self.assertEqual(t2[0],self.add[0])
+            self.assertEqual(t2[1],self.add[1])
+            self.assertEqual(t2[2],self.add[2])
+
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
             
-            self.assertEqual(self.a[0],5)
-            self.assertEqual(self.a[1],3)
-            self.assertEqual(self.a[2],1)
+            self.assertEqual(self.b[0],self.b2[0])
+            self.assertEqual(self.b[1],self.b2[1])
+            self.assertEqual(self.b[2],self.b2[2])
             
-            self.assertEqual(self.v[0],10)
-            self.assertEqual(self.v[1],8)
-            self.assertEqual(self.v[2],6)
-            
-            if self.kind == 'complex':
-                d = 5 + self.comp
-                e = self.v + self.comp
-                
-                self.assertEqual(e[0],15+1j)
-                self.assertEqual(e[1],11+3j)
-                self.assertEqual(e[2],7+5j)
-                
-                self.assertEqual(d[0],10+1j)
-                self.assertEqual(d[1],8+3j)
-                self.assertEqual(d[2],6+5j)
-                
-                self.assertEqual(self.comp[0],5+1j)
-                self.assertEqual(self.comp[1],3+3j)
-                self.assertEqual(self.comp[2],1+5j)
-                
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
+            self.assertEqual(self.s,self.s2)
         
     def test_iadd(self):
-        with self.context:
-            if not (self.kind=='real' and (self.odtype == numpy.complex64 or self.odtype==numpy.complex128)):
-                self.assertRaises(TypeError, self.a.__iadd__, self.bad)         
-                t = self.a * 1
-                t2 = self.a * 1         
-                t += 5
-                t2 += self.v
-                
-                self.assertEqual(t2[0],15)
-                self.assertEqual(t2[1],11)
-                self.assertEqual(t2[2],7)
-                
-                self.assertEqual(t[0],10)
-                self.assertEqual(t[1],8)
-                self.assertEqual(t[2],6)
+        with self.context:  
+            self.assertRaises(TypeError, self.a.__iadd__, self.bad)
             
-                self.assertEqual(self.a[0],5)
-                self.assertEqual(self.a[1],3)
-                self.assertEqual(self.a[2],1)
-                
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
+            t1 = self.a * 1
+            t2 = self.a * 1
             
-            if self.kind == 'complex':
-                d = self.comp * 1 
-                e = self.comp * 1
-                d += 5
-                e += self.v
+            if not (self.kind == 'real' and self.okind == 'complex'):
+                t1 += self.s
+                t2 += self.b
                 
-                self.assertEqual(e[0],15+1j)
-                self.assertEqual(e[1],11+3j)
-                self.assertEqual(e[2],7+5j)
+                self.assertEqual(t1[0],self.add_s[0])
+                self.assertEqual(t1[1],self.add_s[1])
+                self.assertEqual(t1[2],self.add_s[2])
                 
-                self.assertEqual(d[0],10+1j)
-                self.assertEqual(d[1],8+3j)
-                self.assertEqual(d[2],6+5j)
+                self.assertEqual(t2[0],self.add[0])
+                self.assertEqual(t2[1],self.add[1])
+                self.assertEqual(t2[2],self.add[2])
+
+            else:
+                self.assertRaises(TypeError, t1.__iadd__,self.s)
+                self.assertRaises(TypeError, t1.__iadd__,self.b)
                 
-                self.assertEqual(self.comp[0],5+1j)
-                self.assertEqual(self.comp[1],3+3j)
-                self.assertEqual(self.comp[2],1+5j)
+                self.assertEqual(t1[0],self.a2[0])
+                self.assertEqual(t1[1],self.a2[1])
+                self.assertEqual(t1[2],self.a2[2])
                 
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
+            
+            self.assertEqual(self.b[0],self.b2[0])
+            self.assertEqual(self.b[1],self.b2[1])
+            self.assertEqual(self.b[2],self.b2[2])
+            
+            self.assertEqual(self.s,self.s2)
 
     def test_div(self):
         with self.context:  
-            self.assertRaises(TypeError, self.a.__div__, self.bad)               
-            b = self.a / 5
-            c = self.a /self.v
+           
+            self.assertRaises(TypeError, self.a.__div__, self.bad)  
+                 
+            t1 = self.a / self.s
+            t2 = self.a / self.b
             
-            self.assertAlmostEqual(c[0],1.0/2.0, places=self.places)
-            self.assertAlmostEqual(c[1],3.0/8.0, places=self.places)
-            self.assertAlmostEqual(c[2],1.0/6.0, places=self.places)
+            self.assertAlmostEqual(t1[0],self.div_s[0], places=self.places)
+            self.assertAlmostEqual(t1[1],self.div_s[1], places=self.places)
+            self.assertAlmostEqual(t1[2],self.div_s[2], places=self.places)
             
-            self.assertAlmostEqual(b[0],1.0, places=self.places)
-            self.assertAlmostEqual(b[1],3.0/5.0, places=self.places)
-            self.assertAlmostEqual(b[2],1.0/5.0, places=self.places)
+            self.assertAlmostEqual(t2[0],self.div[0], places=self.places)
+            self.assertAlmostEqual(t2[1],self.div[1], places=self.places)
+            self.assertAlmostEqual(t2[2],self.div[2], places=self.places)
+
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
             
-            self.assertEqual(self.a[0],5)
-            self.assertEqual(self.a[1],3)
-            self.assertEqual(self.a[2],1)
+            self.assertEqual(self.b[0],self.b2[0])
+            self.assertEqual(self.b[1],self.b2[1])
+            self.assertEqual(self.b[2],self.b2[2])
             
-            self.assertEqual(self.v[0],10)
-            self.assertEqual(self.v[1],8)
-            self.assertEqual(self.v[2],6)
-            
-            if self.kind == 'complex':
-                d = self.comp / 5
-                e = self.comp / self.v
-                
-                self.assertAlmostEqual(e[0],1.0/2.0+1.0j/10.0, places=self.places)
-                self.assertAlmostEqual(e[1],3.0/8.0+3.0j/8.0, places=self.places)
-                self.assertAlmostEqual(e[2],1.0/6.0+5.0j/6.0, places=self.places)
-                
-                self.assertAlmostEqual(d[0],1.0+1.0j/5.0, places=self.places)
-                self.assertAlmostEqual(d[1],3.0/5.0+3.0j/5.0, places=self.places)
-                self.assertAlmostEqual(d[2],1.0/5.0+1.0j, places=self.places)
-                
-                self.assertEqual(self.comp[0],5+1j)
-                self.assertEqual(self.comp[1],3+3j)
-                self.assertEqual(self.comp[2],1+5j)
-                
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
+            self.assertEqual(self.s,self.s2)
         
     def test_rdiv(self):
-        with self.context:
-            self.assertRaises(TypeError, self.a.__rdiv__, self.bad)
-            b = 5 / self.a
-            c = self.v /self.a
+        with self.context:  
+           
+            self.assertRaises(TypeError, self.a.__rdiv__, self.bad)  
+                 
+            t1 = self.s / self.a
+            t2 = self.a.__rdiv__(self.b)
             
-            self.assertAlmostEqual(c[0],2.0, places=self.places)
-            self.assertAlmostEqual(c[1],8.0/3.0, places=self.places)
-            self.assertAlmostEqual(c[2],6.0, places=self.places)
+            self.assertAlmostEqual(t1[0],self.rdiv_s[0], places=self.places)
+            self.assertAlmostEqual(t1[1],self.rdiv_s[1], places=self.places)
+            self.assertAlmostEqual(t1[2],self.rdiv_s[2], places=self.places)
             
-            self.assertAlmostEqual(b[0],1.0, places=self.places)
-            self.assertAlmostEqual(b[1],5.0/3.0, places=self.places)
-            self.assertAlmostEqual(b[2],5.0, places=self.places)
+            self.assertAlmostEqual(t2[0],self.rdiv[0], places=self.places)
+            self.assertAlmostEqual(t2[1],self.rdiv[1], places=self.places)
+            self.assertAlmostEqual(t2[2],self.rdiv[2], places=self.places)
+
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
             
-            self.assertEqual(self.a[0],5)
-            self.assertEqual(self.a[1],3)
-            self.assertEqual(self.a[2],1)
+            self.assertEqual(self.b[0],self.b2[0])
+            self.assertEqual(self.b[1],self.b2[1])
+            self.assertEqual(self.b[2],self.b2[2])
             
-            self.assertEqual(self.v[0],10)
-            self.assertEqual(self.v[1],8)
-            self.assertEqual(self.v[2],6)
-            
-            if self.kind == 'complex':
-                d = 5 / self.comp
-                e = self.v / self.comp
-                
-                self.assertAlmostEqual(e[0],25.0/13.0-5.0j/13.0, places=self.places)
-                self.assertAlmostEqual(e[1],4.0/3.0-4.0j/3.0, places=self.places)
-                self.assertAlmostEqual(e[2],3.0/13.0-15.0j/13.0, places=self.places)
-                
-                self.assertAlmostEqual(d[0],25.0/26.0-5.0j/26.0, places=self.places)
-                self.assertAlmostEqual(d[1],5.0/6.0-5.0j/6.0, places=self.places)
-                self.assertAlmostEqual(d[2],5.0/26.0-25.0j/26.0, places=self.places)
-                
-                self.assertEqual(self.comp[0],5+1j)
-                self.assertEqual(self.comp[1],3+3j)
-                self.assertEqual(self.comp[2],1+5j)
-                
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
+            self.assertEqual(self.s,self.s2)
         
     def test_idiv(self):
         with self.context:  
-            if not (self.kind=='real' and (self.odtype == numpy.complex64 or self.odtype==numpy.complex128)):
-                self.assertRaises(TypeError, self.a.__idiv__, self.bad)        
-                t = self.a * 1
-                t2 = self.a * 1       
-                t /= 5
-                t2 /= self.v
-                
-                self.assertAlmostEqual(t2[0],1.0/2.0, places=self.places)
-                self.assertAlmostEqual(t2[1],3.0/8.0, places=self.places)
-                self.assertAlmostEqual(t2[2],1.0/6.0, places=self.places)
-                
-                self.assertAlmostEqual(t[0],1.0, places=self.places)
-                self.assertAlmostEqual(t[1],3.0/5.0, places=self.places)
-                self.assertAlmostEqual(t[2],1.0/5.0, places=self.places)
+            self.assertRaises(TypeError, self.a.__idiv__, self.bad)
             
-                self.assertEqual(self.a[0],5)
-                self.assertEqual(self.a[1],3)
-                self.assertEqual(self.a[2],1)
-                
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
+            t1 = self.a * 1
+            t2 = self.a * 1
             
-            if self.kind == 'complex':
-                d = self.comp * 1 
-                e = self.comp * 1
-                d /= 5
-                e /= self.v
+            if not (self.kind == 'real' and self.okind == 'complex'):
+                t1 /= self.s
+                t2 /= self.b
                 
-                self.assertAlmostEqual(e[0],1.0/2.0+1.0j/10.0, places=self.places)
-                self.assertAlmostEqual(e[1],3.0/8.0+3.0j/8.0, places=self.places)
-                self.assertAlmostEqual(e[2],1.0/6.0+5.0j/6.0, places=self.places)
+                self.assertAlmostEqual(t1[0],self.div_s[0], places=self.places)
+                self.assertAlmostEqual(t1[1],self.div_s[1], places=self.places)
+                self.assertAlmostEqual(t1[2],self.div_s[2], places=self.places)
                 
-                self.assertAlmostEqual(d[0],1.0+1.0j/5.0, places=self.places)
-                self.assertAlmostEqual(d[1],3.0/5.0+3.0j/5.0, places=self.places)
-                self.assertAlmostEqual(d[2],1.0/5.0+1.0j, places=self.places)
+                self.assertAlmostEqual(t2[0],self.div[0], places=self.places)
+                self.assertAlmostEqual(t2[1],self.div[1], places=self.places)
+                self.assertAlmostEqual(t2[2],self.div[2], places=self.places)
+
+            else:
+                self.assertRaises(TypeError, t1.__idiv__,self.s)
+                self.assertRaises(TypeError, t1.__idiv__,self.b)
                 
-                self.assertEqual(self.comp[0],5+1j)
-                self.assertEqual(self.comp[1],3+3j)
-                self.assertEqual(self.comp[2],1+5j)
+                self.assertEqual(t1[0],self.a2[0])
+                self.assertEqual(t1[1],self.a2[1])
+                self.assertEqual(t1[2],self.a2[2])
                 
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
+            
+            self.assertEqual(self.b[0],self.b2[0])
+            self.assertEqual(self.b[1],self.b2[1])
+            self.assertEqual(self.b[2],self.b2[2])
+            
+            self.assertEqual(self.s,self.s2)
             
     def test_sub(self):
-        with self.context: 
-            self.assertRaises(TypeError, self.a.__sub__, self.bad)              
-            b = self.a - 5
-            c = self.a - self.v
+        with self.context:  
+           
+            self.assertRaises(TypeError, self.a.__sub__, self.bad)  
+                 
+            t1 = self.a - self.s
+            t2 = self.a - self.b
             
-            self.assertEqual(c[0],-5)
-            self.assertEqual(c[1],-5)
-            self.assertEqual(c[2],-5)
+            self.assertEqual(t1[0],self.sub_s[0])
+            self.assertEqual(t1[1],self.sub_s[1])
+            self.assertEqual(t1[2],self.sub_s[2])
             
-            self.assertEqual(b[0],0)
-            self.assertEqual(b[1],-2)
-            self.assertEqual(b[2],-4)
+            self.assertEqual(t2[0],self.sub[0])
+            self.assertEqual(t2[1],self.sub[1])
+            self.assertEqual(t2[2],self.sub[2])
+
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
             
-            self.assertEqual(self.a[0],5)
-            self.assertEqual(self.a[1],3)
-            self.assertEqual(self.a[2],1)
+            self.assertEqual(self.b[0],self.b2[0])
+            self.assertEqual(self.b[1],self.b2[1])
+            self.assertEqual(self.b[2],self.b2[2])
             
-            self.assertEqual(self.v[0],10)
-            self.assertEqual(self.v[1],8)
-            self.assertEqual(self.v[2],6)
-            
-            if self.kind == 'complex':
-                d = self.comp - 5
-                e = self.comp - self.v
-                
-                self.assertEqual(e[0],-5+1j)
-                self.assertEqual(e[1],-5+3j)
-                self.assertEqual(e[2],-5+5j)
-                
-                self.assertEqual(d[0],0+1j)
-                self.assertEqual(d[1],-2+3j)
-                self.assertEqual(d[2],-4+5j)
-                
-                self.assertEqual(self.comp[0],5+1j)
-                self.assertEqual(self.comp[1],3+3j)
-                self.assertEqual(self.comp[2],1+5j)
-                
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
+            self.assertEqual(self.s,self.s2)
         
     def test_rsub(self):
-        with self.context:        
-            self.assertRaises(TypeError, self.a.__rsub__, self.bad)     
-            b = 5 - self.a
-            c = self.v - self.a
+        with self.context:  
+           
+            self.assertRaises(TypeError, self.a.__rsub__, self.bad)  
+                 
+            t1 = self.s - self.a
+            t2 = self.a.__rsub__(self.b)
             
-            self.assertEqual(c[0],5)
-            self.assertEqual(c[1],5)
-            self.assertEqual(c[2],5)
+            self.assertEqual(t1[0],self.rsub_s[0])
+            self.assertEqual(t1[1],self.rsub_s[1])
+            self.assertEqual(t1[2],self.rsub_s[2])
             
-            self.assertEqual(b[0],0)
-            self.assertEqual(b[1],2)
-            self.assertEqual(b[2],4)
+            self.assertEqual(t2[0],self.rsub[0])
+            self.assertEqual(t2[1],self.rsub[1])
+            self.assertEqual(t2[2],self.rsub[2])
+
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
             
-            self.assertEqual(self.a[0],5)
-            self.assertEqual(self.a[1],3)
-            self.assertEqual(self.a[2],1)
+            self.assertEqual(self.b[0],self.b2[0])
+            self.assertEqual(self.b[1],self.b2[1])
+            self.assertEqual(self.b[2],self.b2[2])
             
-            self.assertEqual(self.v[0],10)
-            self.assertEqual(self.v[1],8)
-            self.assertEqual(self.v[2],6)
-            
-            if self.kind == 'complex':
-                d = 5 - self.comp
-                e = self.v - self.comp
-                
-                self.assertEqual(e[0],5-1j)
-                self.assertEqual(e[1],5-3j)
-                self.assertEqual(e[2],5-5j)
-                
-                self.assertEqual(d[0],0-1j)
-                self.assertEqual(d[1],2-3j)
-                self.assertEqual(d[2],4-5j)
-                
-                self.assertEqual(self.comp[0],5+1j)
-                self.assertEqual(self.comp[1],3+3j)
-                self.assertEqual(self.comp[2],1+5j)
-                
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
+            self.assertEqual(self.s,self.s2)
         
     def test_isub(self):
-        with self.context:
-            if not (self.kind=='real' and (self.odtype == numpy.complex64 or self.odtype==numpy.complex128)):
-                self.assertRaises(TypeError, self.a.__isub__, self.bad)    
-                t = self.a * 1 
-                t2 = self.a * 1        
-                t -= 5
-                t2 -= self.v
-                
-                self.assertEqual(t2[0],-5)
-                self.assertEqual(t2[1],-5)
-                self.assertEqual(t2[2],-5)
-                
-                self.assertEqual(t[0],0)
-                self.assertEqual(t[1],-2)
-                self.assertEqual(t[2],-4)
+        with self.context:  
+            self.assertRaises(TypeError, self.a.__isub__, self.bad)
             
-                self.assertEqual(self.a[0],5)
-                self.assertEqual(self.a[1],3)
-                self.assertEqual(self.a[2],1)
+            t1 = self.a * 1
+            t2 = self.a * 1
+            
+            if not (self.kind == 'real' and self.okind == 'complex'):
+                t1 -= self.s
+                t2 -= self.b
                 
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)      
+                self.assertEqual(t1[0],self.sub_s[0])
+                self.assertEqual(t1[1],self.sub_s[1])
+                self.assertEqual(t1[2],self.sub_s[2])
                 
-            if self.kind == 'complex':
-                d = self.comp * 1 
-                e = self.comp * 1
-                d -= 5
-                e -= self.v
+                self.assertEqual(t2[0],self.sub[0])
+                self.assertEqual(t2[1],self.sub[1])
+                self.assertEqual(t2[2],self.sub[2])
+
+            else:
+                self.assertRaises(TypeError, t1.__isub__,self.s)
+                self.assertRaises(TypeError, t1.__isub__,self.b)
                 
-                self.assertEqual(e[0],-5+1j)
-                self.assertEqual(e[1],-5+3j)
-                self.assertEqual(e[2],-5+5j)
+                self.assertEqual(t1[0],self.a2[0])
+                self.assertEqual(t1[1],self.a2[1])
+                self.assertEqual(t1[2],self.a2[2])
                 
-                self.assertEqual(d[0],0+1j)
-                self.assertEqual(d[1],-2+3j)
-                self.assertEqual(d[2],-4+5j)
-                
-                self.assertEqual(self.comp[0],5+1j)
-                self.assertEqual(self.comp[1],3+3j)
-                self.assertEqual(self.comp[2],1+5j)
-                
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
+            
+            self.assertEqual(self.b[0],self.b2[0])
+            self.assertEqual(self.b[1],self.b2[1])
+            self.assertEqual(self.b[2],self.b2[2])
+            
+            self.assertEqual(self.s,self.s2)
         
     def test_pow(self):
         with self.context:
-            b = self.a ** 2
-           # c = 2 ** self.v
-           # self.assertTrue(c[0],1024)
-            self.assertAlmostEqual(b[0],25, places=self.places)
-            self.assertAlmostEqual(b[1],9, places=self.places)
-            self.assertAlmostEqual(b[2],1, places=self.places)
+            t1 = self.a ** 2
+            t2 = self.a ** -1.5
             
-            self.assertEqual(self.a[0],5)
-            self.assertEqual(self.a[1],3)
-            self.assertEqual(self.a[2],1)
+            self.assertAlmostEqual(t1[0],self.pow1[0], places=self.places)
+            self.assertAlmostEqual(t1[1],self.pow1[1], places=self.places)
+            self.assertAlmostEqual(t1[2],self.pow1[2], places=self.places)
             
-            if self.kind == 'complex':
-                c = self.comp ** 2 
-                
-                self.assertAlmostEqual(c[0],24+10j, places=self.places)
-                self.assertAlmostEqual(c[1],18j, places=self.places)
-                self.assertAlmostEqual(c[2],-24+10j, places=self.places)
-                
-                self.assertEqual(self.comp[0],5+1j)
-                self.assertEqual(self.comp[1],3+3j)
-                self.assertEqual(self.comp[2],1+5j)
-                
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
+            self.assertAlmostEqual(t2[0],self.pow2[0], places=self.places)
+            self.assertAlmostEqual(t2[1],self.pow2[1], places=self.places)
+            self.assertAlmostEqual(t2[2],self.pow2[2], places=self.places)
+            
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
         
     def test_abs(self):
         with self.context:
-            b = abs(self.a)
-            c = abs(self.a * -1)
             
-            self.assertEqual(b[0],5)
-            self.assertEqual(b[1],3)
-            self.assertEqual(b[2],1)
+            # We want to check that absolute value behaves correctly no matter
+            # what quadran it's in
             
-            self.assertEqual(c[0],5)
-            self.assertEqual(c[1],3)
-            self.assertEqual(c[2],1)
+            t1 = abs(self.a * 1)
+            t2 = abs(self.a * -1)
+            t3 = abs(self.a * 1j)
+            t4 = abs(self.a * -1j)
             
-            self.assertEqual(self.a[0],5)
-            self.assertEqual(self.a[1],3)
-            self.assertEqual(self.a[2],1)
+            self.assertEqual(t1[0],self.abs[0])
+            self.assertEqual(t1[1],self.abs[1])
+            self.assertEqual(t1[2],self.abs[2])
             
-            if self.kind == 'complex':
-                d = abs(self.comp)
-                e = abs(self.comp * -1)
-
-                self.assertAlmostEqual(d[0],pow(26,.5), places=self.places)
-                self.assertAlmostEqual(d[1],3*pow(2,.5), places=self.places)
-                self.assertAlmostEqual(d[2],pow(26,.5), places=self.places)
-                
-                self.assertAlmostEqual(e[0],pow(26,.5), places=self.places)
-                self.assertAlmostEqual(e[1],3*pow(2,.5), places=self.places)
-                self.assertAlmostEqual(e[2],pow(26,.5), places=self.places)
-                
-                self.assertEqual(self.comp[0],5+1j)
-                self.assertEqual(self.comp[1],3+3j)
-                self.assertEqual(self.comp[2],1+5j)
-                
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
+            self.assertEqual(t2[0],self.abs[0])
+            self.assertEqual(t2[1],self.abs[1])
+            self.assertEqual(t2[2],self.abs[2])
+            
+            self.assertEqual(t3[0],self.abs[0])
+            self.assertEqual(t3[1],self.abs[1])
+            self.assertEqual(t3[2],self.abs[2])
+            
+            self.assertEqual(t4[0],self.abs[0])
+            self.assertEqual(t4[1],self.abs[1])
+            self.assertEqual(t4[2],self.abs[2])
+            
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
         
     def test_real(self):
         with self.context:        
-            b = self.a.real()
+            t1 = self.a.real()
             
-            self.assertEqual(b[0],5)
-            self.assertEqual(b[1],3)
-            self.assertEqual(b[2],1)
+            self.assertEqual(t1[0],self.real[0])
+            self.assertEqual(t1[1],self.real[1])
+            self.assertEqual(t1[2],self.real[2])
             
-            self.assertEqual(self.a[0],5)
-            self.assertEqual(self.a[1],3)
-            self.assertEqual(self.a[2],1)
-            
-            if self.kind == 'complex':
-                c = self.comp.real() 
-                
-                self.assertEqual(c[0],5)
-                self.assertEqual(c[1],3)
-                self.assertEqual(c[2],1)
-                
-                self.assertEqual(self.comp[0],5+1j)
-                self.assertEqual(self.comp[1],3+3j)
-                self.assertEqual(self.comp[2],1+5j)
-                
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
         
     def test_imag(self):
         with self.context:        
-            b = self.a.imag()
+            t1 = self.a.imag()
             
-            self.assertEqual(b[0],0)
-            self.assertEqual(b[1],0)
-            self.assertEqual(b[2],0)
+            self.assertEqual(t1[0],self.imag[0])
+            self.assertEqual(t1[1],self.imag[1])
+            self.assertEqual(t1[2],self.imag[2])
             
-            self.assertEqual(self.a[0],5)
-            self.assertEqual(self.a[1],3)
-            self.assertEqual(self.a[2],1)
-            
-            if self.kind == 'complex':
-                c = self.comp.imag() 
-                
-                self.assertEqual(c[0],1)
-                self.assertEqual(c[1],3)
-                self.assertEqual(c[2],5)
-                
-                self.assertEqual(self.comp[0],5+1j)
-                self.assertEqual(self.comp[1],3+3j)
-                self.assertEqual(self.comp[2],1+5j)
-                
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
         
     def test_conj(self):
         with self.context:       
-            b = self.a.conj()
+            t1 = self.a.conj()
             
-            self.assertEqual(b[0],5)
-            self.assertEqual(b[1],3)
-            self.assertEqual(b[2],1)
+            self.assertEqual(t1[0],self.conj[0])
+            self.assertEqual(t1[1],self.conj[1])
+            self.assertEqual(t1[2],self.conj[2])
             
-            self.assertEqual(self.a[0],5)
-            self.assertEqual(self.a[1],3)
-            self.assertEqual(self.a[2],1)
-            
-            if self.kind == 'complex':
-                c = self.comp.conj() 
-                
-                self.assertEqual(c[0],5-1j)
-                self.assertEqual(c[1],3-3j)
-                self.assertEqual(c[2],1-5j)
-                
-                self.assertEqual(self.comp[0],5+1j)
-                self.assertEqual(self.comp[1],3+3j)
-                self.assertEqual(self.comp[2],1+5j)
-                
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
             
     def test_sum(self):
         with self.context:         
-            b = self.a.sum()
+            t1 = self.a.sum()
             
-            self.assertEqual(b,(9))
+            self.assertEqual(t1,self.sum)
             
-            self.assertEqual(self.a[0],5)
-            self.assertEqual(self.a[1],3)
-            self.assertEqual(self.a[2],1)
-            
-            if self.kind == 'complex':
-                c = self.comp.sum()
-                
-                self.assertEqual(c,(9+9j))
-                self.assertEqual(self.comp[0],5+1j)
-                self.assertEqual(self.comp[1],3+3j)
-                self.assertEqual(self.comp[2],1+5j)
-                
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
             
     def test_dot(self):
-        with self.context:        
-            b = self.a.dot(self.a)
-            c = self.a.dot(self.v)
+        with self.context:
+            t1 = self.a.dot(self.b)
             
-            self.assertEqual(b,(35))
-            self.assertEqual(c,(80))
+            self.assertEqual(t1,self.dot)
             
-            self.assertEqual(self.v[0],10)
-            self.assertEqual(self.v[1],8)
-            self.assertEqual(self.v[2],6)
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
             
-            self.assertEqual(self.a[0],5)
-            self.assertEqual(self.a[1],3)
-            self.assertEqual(self.a[2],1)
-            
-            if self.kind == 'complex':
-                d = self.comp.dot(self.comp)
-                e = self.comp.dot(self.v)
-                
-                self.assertEqual(d,(38j))
-                self.assertEqual(e,(80+64j))
-                
-                self.assertEqual(self.comp[0],5+1j)
-                self.assertEqual(self.comp[1],3+3j)
-                self.assertEqual(self.comp[2],1+5j)
-                
-                self.assertEqual(self.v[0],10)
-                self.assertEqual(self.v[1],8)
-                self.assertEqual(self.v[2],6)
+            self.assertEqual(self.b[0],self.b2[0])
+            self.assertEqual(self.b[1],self.b2[1])
+            self.assertEqual(self.b[2],self.b2[2])
     
     def test_max(self):
         with self.context:
@@ -1021,9 +923,9 @@ class tests_base(object):
             if self.kind == 'real':
                 self.assertEqual(self.a.max(),5)
                 
-                self.assertEqual(self.a[0],5)
-                self.assertEqual(self.a[1],3)
-                self.assertEqual(self.a[2],1)
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
                 
     def test_min(self):
         with self.context:
@@ -1031,9 +933,9 @@ class tests_base(object):
             if self.kind == 'real':
                 self.assertEqual(self.a.min(),1)
                 
-                self.assertEqual(self.a[0],5)
-                self.assertEqual(self.a[1],3)
-                self.assertEqual(self.a[2],1)
+            self.assertEqual(self.a[0],self.a2[0])
+            self.assertEqual(self.a[1],self.a2[1])
+            self.assertEqual(self.a[2],self.a2[2])
                 
     
 
