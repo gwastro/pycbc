@@ -48,7 +48,7 @@ if _pycbc.HAVE_OPENCL:
 
 _ALLOWED_DTYPES = [_numpy.float32,_numpy.float64,_numpy.complex64,
                    _numpy.complex128]
-_ALLOWED_SCALARS = [int,long, float]+_ALLOWED_DTYPES
+_ALLOWED_SCALARS = [int,long, float, complex]+_ALLOWED_DTYPES
 
 
 def _convert_to_scheme(ary):
