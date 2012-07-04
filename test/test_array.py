@@ -62,56 +62,63 @@ _options = vars(_opt_list)
 
 class tests_base(object):
     def checkScheme(self, a, b, s, c, c_ans):
+    
+            self.assertTrue(type(a._scheme) == self.scheme)
             self.assertEqual(a[0],self.alist[0])
             self.assertEqual(a[1],self.alist[1])
             self.assertEqual(a[2],self.alist[2])
-            self.assertTrue(type(a._scheme) == self.scheme)
             
+            self.assertTrue(type(b._scheme) == self.scheme)
             self.assertEqual(b[0],self.blist[0])
             self.assertEqual(b[1],self.blist[1])
             self.assertEqual(b[2],self.blist[2])
-            self.assertTrue(type(b._scheme) == self.scheme)
+            
             
             self.assertEqual(s, self.s2)
             
             if type(c_ans) == list:
                 if c_ans[3]:
+                    self.assertTrue(type(c._scheme) == self.scheme)
                     self.assertEqual(c[0], c_ans[0])
                     self.assertEqual(c[1], c_ans[1])
                     self.assertEqual(c[2], c_ans[2])
-                    self.assertTrue(type(c._scheme) == self.scheme)
+                    
                 else:
+                    self.assertTrue(type(c._scheme) == self.scheme)
                     self.assertAlmostEqual(c[0], c_ans[0], self.places)
                     self.assertAlmostEqual(c[1], c_ans[1], self.places)
                     self.assertAlmostEqual(c[2], c_ans[2], self.places)
-                    self.assertTrue(type(c._scheme) == self.scheme)
+                    
             else:
                 self.assertEqual(c, c_ans)
                 
     def checkCPU(self, a, b, s, c, c_ans):
+            self.assertTrue(a._scheme == None)
             self.assertEqual(a[0],self.alist[0])
             self.assertEqual(a[1],self.alist[1])
             self.assertEqual(a[2],self.alist[2])
-            self.assertTrue(a._scheme == None)
             
+            self.assertTrue(b._scheme == None)
             self.assertEqual(b[0],self.blist[0])
             self.assertEqual(b[1],self.blist[1])
             self.assertEqual(b[2],self.blist[2])
-            self.assertTrue(b._scheme == None)
+            
             
             self.assertEqual(s, self.s2)
             
             if type(c_ans) == list:
                 if c_ans[3]:
+                    self.assertTrue(c._scheme == None)
                     self.assertEqual(c[0], c_ans[0])
                     self.assertEqual(c[1], c_ans[1])
                     self.assertEqual(c[2], c_ans[2])
-                    self.assertTrue(c._scheme == None)
+                    
                 else:
+                    self.assertTrue(c._scheme == None)
                     self.assertAlmostEqual(c[0], c_ans[0], self.places)
                     self.assertAlmostEqual(c[1], c_ans[1], self.places)
                     self.assertAlmostEqual(c[2], c_ans[2], self.places)
-                    self.assertTrue(c._scheme == None)
+                    
             else:
                 self.assertEqual(c, c_ans)
 
@@ -1179,6 +1186,7 @@ class tests_base(object):
         
     def test_pow(self):
         with self.context:
+            self.b1 *= 1
             # From CPU
             c1 = self.a1 ** 2
             c2 = self.a2 ** -1.5
@@ -1189,8 +1197,8 @@ class tests_base(object):
         c1 = self.a1 ** 2
         c2 = self.a2 ** -1.5
         
-        self.checkCPU(self.a1, self.b1, self.s, c1, self.pow1)
-        self.checkCPU(self.a2, self.b1, self.s, c2, self.pow2)
+        self.checkCPU(self.a1, self.b2, self.s, c1, self.pow1)
+        self.checkCPU(self.a2, self.b2, self.s, c2, self.pow2)
         
     def test_abs(self):
         # We want to check that absolute value behaves correctly no matter
@@ -1200,6 +1208,7 @@ class tests_base(object):
         t3 = self.a1 * 1j
         t4 = self.a1 * -1j
         with self.context:
+            self.b1 *= 1
             c1 = abs(t1)
             c2 = abs(t2)
             c3 = abs(t3)
@@ -1225,24 +1234,25 @@ class tests_base(object):
         c3 = abs(t3)
         c4 = abs(t4)
         
-        self.checkCPU(t1, self.b1, self.s, c1, self.abs)
-        self.checkCPU(t1, self.b1, self.s, c2, self.abs)
-        self.checkCPU(t1, self.b1, self.s, c3, self.abs)
-        self.checkCPU(t1, self.b1, self.s, c4, self.abs)
+        self.checkCPU(t1, self.b2, self.s, c1, self.abs)
+        self.checkCPU(t1, self.b2, self.s, c2, self.abs)
+        self.checkCPU(t1, self.b2, self.s, c3, self.abs)
+        self.checkCPU(t1, self.b2, self.s, c4, self.abs)
         #And finally, from the CPU to the CPU
         c1 = abs(t1)
         c2 = abs(t2)
         c3 = abs(t3)
         c4 = abs(t4)
         
-        self.checkCPU(t1, self.b1, self.s, c1, self.abs)
-        self.checkCPU(t1, self.b1, self.s, c2, self.abs)
-        self.checkCPU(t1, self.b1, self.s, c3, self.abs)
-        self.checkCPU(t1, self.b1, self.s, c4, self.abs)
+        self.checkCPU(t1, self.b2, self.s, c1, self.abs)
+        self.checkCPU(t1, self.b2, self.s, c2, self.abs)
+        self.checkCPU(t1, self.b2, self.s, c3, self.abs)
+        self.checkCPU(t1, self.b2, self.s, c4, self.abs)
             
         
     def test_real(self):
         with self.context:
+            self.b1 *= 1
             # From CPU
             c = self.a1.real()
             self.checkScheme(self.a1, self.b1, self.s, c, self.real)
@@ -1252,15 +1262,16 @@ class tests_base(object):
             self.checkScheme(self.a1, self.b1, self.s, c, self.real)
         # Now on the CPU, from Other
         c = self.a1.real()
-        self.checkCPU(self.a1, self.b1, self.s, c, self.real)
+        self.checkCPU(self.a1, self.b2, self.s, c, self.real)
         # And finally CPU on the CPU
         c = self.a1.real()
-        self.checkCPU(self.a1, self.b1, self.s, c, self.real)
+        self.checkCPU(self.a1, self.b2, self.s, c, self.real)
             
 
         
     def test_imag(self):
         with self.context:
+            self.b1 *= 1
             # From CPU
             c = self.a1.imag()
             self.checkScheme(self.a1, self.b1, self.s, c, self.imag)
@@ -1270,13 +1281,14 @@ class tests_base(object):
             self.checkScheme(self.a1, self.b1, self.s, c, self.imag)
         # Now on the CPU, from Other
         c = self.a1.imag()
-        self.checkCPU(self.a1, self.b1, self.s, c, self.imag)
+        self.checkCPU(self.a1, self.b2, self.s, c, self.imag)
         # And finally CPU on the CPU
         c = self.a1.imag()
-        self.checkCPU(self.a1, self.b1, self.s, c, self.imag)
+        self.checkCPU(self.a1, self.b2, self.s, c, self.imag)
         
     def test_conj(self):
         with self.context:
+            self.b1 *= 1
             # From CPU
             c = self.a1.conj()
             self.checkScheme(self.a1, self.b1, self.s, c, self.conj)
@@ -1286,13 +1298,14 @@ class tests_base(object):
             self.checkScheme(self.a1, self.b1, self.s, c, self.conj)
         # Now on the CPU, from Other
         c = self.a1.conj()
-        self.checkCPU(self.a1, self.b1, self.s, c, self.conj)
+        self.checkCPU(self.a1, self.b2, self.s, c, self.conj)
         # And finally CPU on the CPU
         c = self.a1.conj()
-        self.checkCPU(self.a1, self.b1, self.s, c, self.conj)
+        self.checkCPU(self.a1, self.b2, self.s, c, self.conj)
             
     def test_sum(self):
         with self.context:
+            self.b1 *= 1
             # From CPU
             c = self.a1.sum()
             self.checkScheme(self.a1, self.b1, self.s, c, self.sum)
@@ -1302,10 +1315,10 @@ class tests_base(object):
             self.checkScheme(self.a1, self.b1, self.s, c, self.sum)
         # Now on the CPU, from Other
         c = self.a1.sum()
-        self.checkCPU(self.a1, self.b1, self.s, c, self.sum)
+        self.checkCPU(self.a1, self.b2, self.s, c, self.sum)
         # And finally CPU on the CPU
         c = self.a1.sum()
-        self.checkCPU(self.a1, self.b1, self.s, c, self.sum)
+        self.checkCPU(self.a1, self.b2, self.s, c, self.sum)
             
     def test_dot(self):
         with self.context:
@@ -1341,6 +1354,7 @@ class tests_base(object):
     def test_max(self):
         if self.kind == 'real':
             with self.context:
+                self.b1 *= 1
                 # From CPU
                 c = self.a1.max()
                 self.checkScheme(self.a1, self.b1, self.s, c, self.max)
@@ -1349,14 +1363,15 @@ class tests_base(object):
                 self.checkScheme(self.a1, self.b1, self.s, c, self.max)
             # From Other
             c = self.a1.max()
-            self.checkScheme(self.a1, self.b1, self.s, c, self.max)
+            self.checkCPU(self.a1, self.b2, self.s, c, self.max)
             # From CPU
             c = self.a1.max()
-            self.checkScheme(self.a1, self.b1, self.s, c, self.max)
+            self.checkCPU(self.a1, self.b2, self.s, c, self.max)
 
     def test_min(self):
         if self.kind == 'real':
             with self.context:
+                self.b1 *= 1
                 # From CPU
                 c = self.a1.min()
                 self.checkScheme(self.a1, self.b1, self.s, c, self.min)
@@ -1365,10 +1380,10 @@ class tests_base(object):
                 self.checkScheme(self.a1, self.b1, self.s, c, self.min)
             # From Other
             c = self.a1.min()
-            self.checkScheme(self.a1, self.b1, self.s, c, self.min)
+            self.checkCPU(self.a1, self.b2, self.s, c, self.min)
             # From CPU
             c = self.a1.min()
-            self.checkScheme(self.a1, self.b1, self.s, c, self.min)
+            self.checkCPU(self.a1, self.b2, self.s, c, self.min)
                 
     
 
