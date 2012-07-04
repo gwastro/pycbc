@@ -320,11 +320,13 @@ class tests_base(object):
                 self.assertEqual(out1[1],3)
                 self.assertEqual(out1[2],1)
                 self.assertTrue(out1.dtype==self.dtype)
+                self.assertTrue(out1._scheme == self.scheme)
                 
                 self.assertEqual(out2[0],5)
                 self.assertEqual(out2[1],3)
                 self.assertEqual(out2[2],1)
                 self.assertTrue(out2.dtype==self.dtype)
+                self.assertTrue(out2._scheme == self.scheme)
                 in1-=1
                 in2-=1
             
@@ -335,6 +337,7 @@ class tests_base(object):
             self.assertEqual(out3[1],3)
             self.assertEqual(out3[2],1)
             self.assertTrue(out3.dtype==self.odtype)
+            self.assertTrue(out3._scheme == self.scheme)
             
             #Check for copy=false
             if _options['scheme'] == 'cpu':
@@ -346,6 +349,7 @@ class tests_base(object):
                 self.assertEqual(out4[1],4)
                 self.assertEqual(out4[2],2)
                 self.assertTrue(out4.dtype==self.dtype)
+                self.assertTrue(out4._scheme == self.scheme)
                     
 
     def test_array_init(self):
@@ -354,6 +358,8 @@ class tests_base(object):
         with self.context:      
             in1 = Array([5,3,1],dtype=self.odtype)
             in2 = Array([5,3,1],dtype=self.other_precision[self.odtype])
+            self.assertTrue(in1._scheme == self.scheme)
+            self.assertTrue(in2._scheme == self.scheme)
             #We don't want to cast complex as real
             if not (self.kind=='real' and (self.odtype == numpy.complex64 or self.odtype==numpy.complex128)):
                 #First we must check that the dtype is correct when specified
@@ -367,6 +373,7 @@ class tests_base(object):
                 self.assertEqual(out1[1],3)
                 self.assertEqual(out1[2],1)
                 self.assertTrue(out1.dtype==self.dtype)
+                self.assertTrue(out1._scheme == self.scheme)
                 
                 if out1.dtype == numpy.float32:
                     self.assertTrue(out1.precision == 'single')
@@ -385,6 +392,7 @@ class tests_base(object):
                 self.assertEqual(out2[1],3)
                 self.assertEqual(out2[2],1)
                 self.assertTrue(out2.dtype==self.dtype)
+                self.assertTrue(out2._scheme == self.scheme)
                 
                 in1-=1
                 in2-=1
@@ -396,6 +404,7 @@ class tests_base(object):
             self.assertEqual(out3[1],3)
             self.assertEqual(out3[2],1)
             self.assertTrue(out3.dtype==self.odtype)
+            self.assertTrue(out3._scheme == self.scheme)
             
             #Check for copy=false
             in3 = Array([5,3,1],dtype=self.dtype)
@@ -406,6 +415,7 @@ class tests_base(object):
             self.assertEqual(out4[1],4)
             self.assertEqual(out4[2],2)
             self.assertTrue(out4.dtype==self.dtype)
+            self.assertTrue(out4._scheme == self.scheme)
             
             if _options['scheme'] != 'cpu':
                 self.assertRaises(TypeError,Array,cpuarray,copy=False)
@@ -419,6 +429,7 @@ class tests_base(object):
             self.assertEqual(out1[1],3)
             self.assertEqual(out1[2],1)
             self.assertTrue(out1.dtype==self.dtype)
+            self.assertTrue(out1._scheme == self.scheme)
             
             if out1.dtype == numpy.float32:
                 self.assertTrue(out1.precision == 'single')
@@ -440,6 +451,7 @@ class tests_base(object):
                 self.assertEqual(out2[1],3)
                 self.assertEqual(out2[2],1)
                 self.assertTrue(out2.dtype==self.dtype)
+                self.assertTrue(out2._scheme == self.scheme)
             
             #Also, when it is unspecified
             out3 = Array([5,3,1])
@@ -448,6 +460,7 @@ class tests_base(object):
             self.assertEqual(out3[1],3)
             self.assertEqual(out3[2],1)
             self.assertTrue(out3.dtype==numpy.float64)
+            self.assertTrue(out3._scheme == self.scheme)
             
             out4 = Array([5+0j,3+0j,1+0j])
             
@@ -455,6 +468,7 @@ class tests_base(object):
             self.assertEqual(out4[1],3)
             self.assertEqual(out4[2],1)
             self.assertTrue(out4.dtype==numpy.complex128)
+            self.assertTrue(out4._scheme == self.scheme)
             
             #We also need to check the zero function
             out5 = zeros(3,dtype=self.dtype)
@@ -464,11 +478,13 @@ class tests_base(object):
             self.assertEqual(out5[1],0)
             self.assertEqual(out5[2],0)
             self.assertTrue(out5.dtype == self.dtype)
+            self.assertTrue(out5._scheme == self.scheme)
             
             self.assertEqual(out6[0],0)               
             self.assertEqual(out6[1],0)
             self.assertEqual(out6[2],0)
             self.assertTrue(out6.dtype == numpy.float64)
+            self.assertTrue(out6._scheme == self.scheme)
             
             self.assertRaises(TypeError,Array,[1,2,3],copy=False)
             
@@ -987,6 +1003,12 @@ def array_test_maker(context,dtype,odtype):
             self.context=context
             self.dtype=dtype
             self.odtype=odtype
+            if _options['scheme'] == 'cpu':
+                self.scheme = None
+            elif _options['scheme'] =='cuda':
+                self.scheme == pycbc.scheme.CUDAScheme
+            else:
+                self.scheme == pycbc.scheme.OpenCLScheme            
             unittest.TestCase.__init__(self,*args)
     tests.__name__ = _options['scheme'] + " " + dtype.__name__ + " with " + odtype.__name__
     return tests
