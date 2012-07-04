@@ -214,7 +214,31 @@ class Array(object):
                     _convert_to_scheme(other)
                     other = other._data
                 else:
-                    raise TypeError('dtypes do not match')
+                    raise TypeError('precisions do not match')
+            else:
+                return NotImplemented
+
+            return fn(self,other)
+        return checked
+        
+    def _icheckother(fn):
+        """ Checks the input to method functions """
+        @_functools.wraps(fn)
+        def checked(self,other):
+            self._typecheck(other) 
+    
+            if type(other) in _ALLOWED_SCALARS:
+                if self.kind == 'real' and type(other) == complex:
+                    raise TypeError('dtypes are incompatible')
+                pass
+            elif isinstance(other,Array):
+                if self.kind == 'real' and other.kind == 'complex':
+                    raise TypeError('dtypes are incompatible')
+                if other.precision == self.precision:
+                    _convert_to_scheme(other)
+                    other = other._data
+                else:
+                    raise TypeError('precisions do not match')
             else:
                 return NotImplemented
 
@@ -242,7 +266,7 @@ class Array(object):
         return self._data * other
 
     @_convert
-    @_checkother
+    @_icheckother
     def __imul__(self,other):
         """ Multiply by an Array or a scalar and return an Array. """
         self._data *= other
@@ -266,7 +290,7 @@ class Array(object):
         return self._data + other
 
     @_convert
-    @_checkother
+    @_icheckother
     def __iadd__(self,other):
         """ Add Array to Array or scalar and return an Array. """
         self._data += other
@@ -287,7 +311,7 @@ class Array(object):
         return other / self._data
 
     @_convert
-    @_checkother
+    @_icheckother
     def __idiv__(self,other):
         """ Divide Array by Array or scalar and return an Array. """
         self._data /= other
@@ -308,7 +332,7 @@ class Array(object):
         return other - self._data
 
     @_convert
-    @_checkother
+    @_icheckother
     def __isub__(self,other):
         """ Subtract Array or scalar from Array and return an Array. """
         self._data -= other
