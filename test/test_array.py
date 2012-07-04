@@ -729,7 +729,7 @@ class tests_base(object):
         else:
             with self.context:
                 self.assertRaises(TypeError, self.a1.__imul__,self.s)
-                self.assertRaises(TypeError, self.a1.__imul__,self.b)
+                self.assertRaises(TypeError, self.a1.__imul__,self.b1)
             
     def test_add(self):
         with self.context:
@@ -880,7 +880,7 @@ class tests_base(object):
         else:
             with self.context:
                 self.assertRaises(TypeError, self.a1.__iadd__,self.s)
-                self.assertRaises(TypeError, self.a1.__iadd__,self.b)
+                self.assertRaises(TypeError, self.a1.__iadd__,self.b1)
     
     def test_div(self):
         with self.context:
@@ -1031,7 +1031,7 @@ class tests_base(object):
         else:
             with self.context:
                 self.assertRaises(TypeError, self.a1.__idiv__,self.s)
-                self.assertRaises(TypeError, self.a1.__idiv__,self.b)
+                self.assertRaises(TypeError, self.a1.__idiv__,self.b1)
             
     def test_sub(self):
         with self.context:
@@ -1182,7 +1182,7 @@ class tests_base(object):
         else:
             with self.context:
                 self.assertRaises(TypeError, self.a1.__isub__,self.s)
-                self.assertRaises(TypeError, self.a1.__isub__,self.b)
+                self.assertRaises(TypeError, self.a1.__isub__,self.b1)
         
     def test_pow(self):
         with self.context:
