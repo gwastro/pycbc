@@ -57,18 +57,32 @@ _parser.add_option('--device-num','-d', action='store', type = 'int', dest = 'de
 #Changing the optvalues to a dict makes them easier to read
 _options = vars(_opt_list)
 
-
 # ********************GENERIC ARRAY TESTS ***********************
+
+# By importing the current schemes array type, it will make it easier to check the  array types later
+if _options['scheme'] == 'cuda':
+    import pycuda
+    import pycuda.gpuarray
+    from pycuda.gpuarray import GPUArray as SchemeArray
+elif _options['scheme'] == 'opencl':
+    import pyopencl
+    import pyopencl.array
+    from pyopencl.array import Array as SchemeArray
+elif _options['scheme'] == 'cpu':
+    from numpy import ndarray as SchemeArray
+
 
 class tests_base(object):
     def checkScheme(self, a, b, s, c, c_ans):
     
             self.assertTrue(type(a._scheme) == self.scheme)
+            self.assertTrue(type(a._data) is SchemeArray)
             self.assertEqual(a[0],self.alist[0])
             self.assertEqual(a[1],self.alist[1])
             self.assertEqual(a[2],self.alist[2])
             
             self.assertTrue(type(b._scheme) == self.scheme)
+            self.assertTrue(type(b._data) is SchemeArray)
             self.assertEqual(b[0],self.blist[0])
             self.assertEqual(b[1],self.blist[1])
             self.assertEqual(b[2],self.blist[2])
@@ -79,12 +93,14 @@ class tests_base(object):
             if type(c_ans) == list:
                 if c_ans[3]:
                     self.assertTrue(type(c._scheme) == self.scheme)
+                    self.assertTrue(type(c._data) is SchemeArray)
                     self.assertEqual(c[0], c_ans[0])
                     self.assertEqual(c[1], c_ans[1])
                     self.assertEqual(c[2], c_ans[2])
                     
                 else:
                     self.assertTrue(type(c._scheme) == self.scheme)
+                    self.assertTrue(type(c._data) is SchemeArray)
                     self.assertAlmostEqual(c[0], c_ans[0], self.places)
                     self.assertAlmostEqual(c[1], c_ans[1], self.places)
                     self.assertAlmostEqual(c[2], c_ans[2], self.places)
@@ -94,11 +110,13 @@ class tests_base(object):
                 
     def checkCPU(self, a, b, s, c, c_ans):
             self.assertTrue(a._scheme == None)
+            self.assertTrue(type(a._data) is numpy.ndarray)
             self.assertEqual(a[0],self.alist[0])
             self.assertEqual(a[1],self.alist[1])
             self.assertEqual(a[2],self.alist[2])
             
             self.assertTrue(b._scheme == None)
+            self.assertTrue(type(b._data) is numpy.ndarray)
             self.assertEqual(b[0],self.blist[0])
             self.assertEqual(b[1],self.blist[1])
             self.assertEqual(b[2],self.blist[2])
@@ -109,12 +127,14 @@ class tests_base(object):
             if type(c_ans) == list:
                 if c_ans[3]:
                     self.assertTrue(c._scheme == None)
+                    self.assertTrue(type(c._data) is numpy.ndarray)
                     self.assertEqual(c[0], c_ans[0])
                     self.assertEqual(c[1], c_ans[1])
                     self.assertEqual(c[2], c_ans[2])
                     
                 else:
                     self.assertTrue(c._scheme == None)
+                    self.assertTrue(type(c._data) is numpy.ndarray)
                     self.assertAlmostEqual(c[0], c_ans[0], self.places)
                     self.assertAlmostEqual(c[1], c_ans[1], self.places)
                     self.assertAlmostEqual(c[2], c_ans[2], self.places)
