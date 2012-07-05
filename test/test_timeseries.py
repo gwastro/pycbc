@@ -207,9 +207,312 @@ class TestTimeSeriesBase(array_base.array_base):
         else:
             self.bad4 = TimeSeries([1,1,1], 0.1, epoch=None, dtype = self.dtype)
         
-        # We now need to set all the answer arrays up
+        # We now need to set all the answer arrays up. These are all stored in the parent class.
         self.setAnswers()
-        
+
+    def test_numpy_init(self):
+        with self.context:                                
+            in1 = numpy.array([5,3,1],dtype=self.odtype)
+            in2 = numpy.array([5,3,1],dtype=self.other_precision[self.odtype])
+            
+            #We don't want to cast complex as real
+            if not (self.kind == 'real' and self.okind == 'complex'):
+                #First we must check that the dtype is correct when specified
+                out1 = TimeSeries(in1,0.1, dtype=self.dtype)
+                out2 = TimeSeries(in2,0.1, dtype=self.dtype)
+                #to be sure that it is copied
+                in1 += 1
+                in2 += 1
+                self.assertTrue(type(out1._scheme) == self.scheme)
+                self.assertTrue(type(out1._data) is SchemeArray)
+                self.assertEqual(out1[0],5)
+                self.assertEqual(out1[1],3)
+                self.assertEqual(out1[2],1)
+                self.assertTrue(out1.dtype==self.dtype)
+                self.assertEqual(out1.delta_t, 0.1)
+                self.assertEqual(out1.start_time, None)
+                
+                
+                self.assertTrue(type(out2._scheme) == self.scheme)
+                self.assertTrue(type(out2._data) is SchemeArray)
+                self.assertEqual(out2[0],5)
+                self.assertEqual(out2[1],3)
+                self.assertEqual(out2[2],1)
+                self.assertTrue(out2.dtype==self.dtype)
+                self.assertEqual(out2.delta_t,0.1)
+                self.assertEqual(out2.start_time, None)
+                
+                in1-=1
+                in2-=1
+            
+            # Also, when it is unspecified
+            out3 = TimeSeries(in1,0.1,epoch=self.epoch)
+            in1 += 1
+            self.assertTrue(type(out3._scheme) == self.scheme)
+            self.assertTrue(type(out3._data) is SchemeArray)
+            self.assertEqual(out3[0],5)
+            self.assertEqual(out3[1],3)
+            self.assertEqual(out3[2],1)
+            self.assertTrue(out3.dtype==self.odtype)
+            self.assertEqual(out3.delta_t,0.1)
+            self.assertEqual(out3.start_time, self.epoch)
+                        
+            # Check for copy=false
+            # On the CPU, this should be possible
+            in3 = numpy.array([5,3,1],dtype=self.dtype)
+            if _options['scheme'] == 'cpu':
+                out4 = TimeSeries(in3,0.1,copy=False)
+                in3 += 1
+                
+                self.assertTrue(out4.dtype==self.dtype)
+                self.assertTrue(type(out4._scheme) == self.scheme)
+                self.assertEqual(out4[0],6)
+                self.assertEqual(out4[1],4)
+                self.assertEqual(out4[2],2)
+                self.assertEqual(out4.delta_t,0.1)
+                self.assertEqual(out4.start_time, None)
+                
+            # If we're in different scheme, this should raise an error
+            else:
+                self.assertRaises(TypeError, Array, in3, 0.1, copy=False)
+
+            # We also need to check initialization using GPU arrays
+            if _options['scheme'] == 'cuda':
+                in4 = pycuda.gpuarray.zeros(3,self.dtype)
+            elif _options['scheme'] == 'opencl':
+                in4 = pyopencl.array.zeros(pycbc.scheme.mgr.state.queue,3, self.dtype)
+            if _options['scheme'] != 'cpu':
+                out4 = TimeSeries(in4,0.1, copy=False)
+                in4 += 1
+                self.assertTrue(type(out4._scheme) == self.scheme)
+                self.assertTrue(type(out4._data) is SchemeArray)
+                self.assertEqual(out4[0],1)
+                self.assertEqual(out4[1],1)
+                self.assertEqual(out4[2],1)
+                self.assertTrue(out4.dtype==self.dtype)
+                self.assertEqual(out4.delta_t,0.1)
+                self.assertEqual(out4.start_time, None)
+                            
+            # We should be able to create an array from the wrong dtype, and
+            # it should be cast as float64
+            in5 = numpy.array([1,2,3],dtype=numpy.int32)
+            out5 = TimeSeries(in5,0.1)
+            in5 += 1
+            self.assertTrue(type(out5._scheme) == self.scheme)
+            self.assertTrue(type(out5._data) is SchemeArray)
+            self.assertEqual(out5[0],1)
+            self.assertEqual(out5[1],2)
+            self.assertEqual(out5[2],3)
+            self.assertTrue(out5.dtype==numpy.float64)
+            self.assertEqual(out5.delta_t,0.1)
+            self.assertEqual(out5.start_time, None)
+            
+            # We shouldn't be able to copy it though
+            self.assertRaises(TypeError,TimeSeries,in5, 0.1, copy=False)
+            
+            # Finally, just checking a few things specific to timeseries
+            inbad = numpy.array([],dtype=float64)
+            self.assertRaises(ValueError, TimeSeries, in1, -1)
+            self.assertRaises(ValueError, TimeSeries, inbad, .1)
+            self.assertRaises(TypeError, TimeSeries, in1, .1, epoch=5)
+            
+        if _options['scheme'] != 'cpu':
+            self.assertRaises(TypeError, TimeSeries, in4, 0.1, copy=False)
+        self.assertRaises(TypeError, TimeSeries, in5,0.1, copy=False)
+                    
+
+    def test_array_init(self):
+        # this array is made outside the context so we can check that an error is raised when copy = false in a GPU scheme
+        cpuarray = Array([1,2,3])
+        with self.context:      
+            in1 = Array([5,3,1],dtype=self.odtype)
+            in2 = Array([5,3,1],dtype=self.other_precision[self.odtype])
+            self.assertTrue(type(in1._scheme) == self.scheme)
+            self.assertTrue(type(in1._data) is SchemeArray)
+            self.assertTrue(type(in2._scheme) == self.scheme)
+            self.assertTrue(type(in2._data) is SchemeArray)
+            # We don't want to cast complex as real
+            if not (self.kind=='real' and self.okind == 'complex'):
+                # First we must check that the dtype is correct when specified
+                out1 = TimeSeries(in1, 0.1, epoch=None, dtype=self.dtype)
+                out2 = TimeSeries(in2, 0.1, epoch=None, dtype=self.dtype)
+                # to be sure that it is copied
+                in1 += 1
+                in2 += 1
+                
+                self.assertTrue(type(out1._scheme) == self.scheme)
+                self.assertTrue(type(out1._data) is SchemeArray)
+                self.assertEqual(out1[0],5)
+                self.assertEqual(out1[1],3)
+                self.assertEqual(out1[2],1)
+                self.assertTrue(out1.dtype==self.dtype)
+                self.assertEqual(out1.delta_t, 0.1)
+                self.assertEqual(out1.start_time, None)
+                                
+                if out1.dtype == numpy.float32:
+                    self.assertTrue(out1.precision == 'single')
+                    #self.assertTrue(out1.kind == 'real')
+                if out1.dtype == numpy.float64:
+                    self.assertTrue(out1.precision == 'double')
+                    #self.assertTrue(out1.kind == 'real')
+                if out1.dtype == numpy.complex64:
+                    self.assertTrue(out1.precision == 'single')
+                    #self.assertTrue(out1.kind == 'complex')
+                if out1.dtype == numpy.complex128:
+                    self.assertTrue(out1.precision == 'double')
+                    #self.assertTrue(out1.kind == 'complex')                
+                
+                self.assertTrue(type(out2._scheme) == self.scheme)
+                self.assertTrue(type(out2._data) is SchemeArray)
+                self.assertEqual(out2[0],5)
+                self.assertEqual(out2[1],3)
+                self.assertEqual(out2[2],1)
+                self.assertTrue(out2.dtype==self.dtype)
+                self.assertEqual(out2.delta_t, 0.1)
+                self.assertEqual(out2.start_time, None)
+                                
+                in1-=1
+                in2-=1
+            # Giving complex input and specifying a real dtype should raise an error
+            else:
+                self.assertRaises(TypeError, TimeSeries, in1,0.1, dtype = self.dtype)
+                self.assertRaises(TypeError, TimeSeries, in2,0.1, dtype = self.dtype)
+            
+            # Also, when it is unspecified
+            out3 = TimeSeries(in1,0.1,epoch=self.epoch)
+            in1 += 1
+            
+            self.assertTrue(type(out3._scheme) == self.scheme)
+            self.assertTrue(type(out3._data) is SchemeArray)
+            self.assertEqual(out3[0],5)
+            self.assertEqual(out3[1],3)
+            self.assertEqual(out3[2],1)
+            self.assertTrue(out3.dtype==self.odtype)
+            self.assertEqual(out3.delta_t, 0.1)
+            self.assertEqual(out3.start_time, self.epoch)
+                        
+            # We should also be able to create from a CPU Array
+            out4 = TimeSeries(cpuarray,0.1, dtype=self.dtype)
+            
+            self.assertTrue(type(out4._scheme) == self.scheme)
+            self.assertTrue(type(out4._data) is SchemeArray)
+            self.assertEqual(out4[0],1)
+            self.assertEqual(out4[1],2)
+            self.assertEqual(out4[2],3)
+            self.assertTrue(out4.dtype==self.dtype)
+            self.assertEqual(out4.delta_t, 0.1)
+            self.assertEqual(out4.start_time, None)
+                        
+            self.assertRaises(TypeError, TimeSeries,in1,0.1, dtype=numpy.int32)
+            
+            # Check for copy=false
+            in3 = Array([5,3,1],dtype=self.dtype)
+            out5 = TimeSeries(in3,0.1,copy=False)
+            in3 += 1
+            
+            self.assertTrue(type(out5._scheme) == self.scheme)
+            self.assertTrue(type(out5._data) is SchemeArray)
+            self.assertEqual(out5[0],6)
+            self.assertEqual(out5[1],4)
+            self.assertEqual(out5[2],2)
+            self.assertTrue(out5.dtype==self.dtype)
+            self.assertEqual(out5.delta_t, 0.1)
+            self.assertEqual(out5.start_time, None)
+                        
+            if _options['scheme'] != 'cpu':
+                self.assertRaises(TypeError,TimeSeries,0.1,cpuarray,copy=False)
+            # Things specific to timeseries
+            inbad = Array(numpy.array([],dtype=float64))
+            self.assertRaises(ValueError, TimeSeries, in1, -1)
+            self.assertRaises(ValueError, TimeSeries, inbad, .1)
+            self.assertRaises(TypeError, TimeSeries, in1, .1, epoch=5)
+            
+        # Also checking that a cpu array can't be made out of another scheme without copying
+        if _options['scheme'] != 'cpu':
+            self.assertRaises(TypeError, TimeSeries, out4, 0.1, copy=False)
+            out6 = TimeSeries(out4, 0.1, dtype=self.dtype)
+            self.assertTrue(type(out6._scheme) == type(None))
+            self.assertTrue(type(out6._data) is numpy.ndarray)
+            self.assertEqual(out6[0],1)
+            self.assertEqual(out6[1],2)
+            self.assertEqual(out6[2],3)
+            self.assertTrue(out6.dtype==self.dtype)
+            self.assertEqual(out6.delta_t, 0.1)
+            self.assertEqual(out6.start_time, None)
+            
+    def test_list_init(self):
+        with self.context:
+            # When specified
+            out1 = TimeSeries([5,3,1],0.1, dtype=self.dtype)
+            
+            self.assertTrue(type(out1._scheme) == self.scheme)
+            self.assertTrue(type(out1._data) is SchemeArray)
+            self.assertEqual(out1[0],5)
+            self.assertEqual(out1[1],3)
+            self.assertEqual(out1[2],1)
+            self.assertTrue(out1.dtype==self.dtype)
+            self.assertEqual(out1.delta_t, 0.1)
+            self.assertEqual(out1.start_time, None)
+                        
+            if out1.dtype == numpy.float32:
+                self.assertTrue(out1.precision == 'single')
+                #self.assertTrue(out1.kind == 'real')
+            if out1.dtype == numpy.float64:
+                self.assertTrue(out1.precision == 'double')
+                #self.assertTrue(out1.kind == 'real')
+            if out1.dtype == numpy.complex64:
+                self.assertTrue(out1.precision == 'single')
+                #self.assertTrue(out1.kind == 'complex')
+            if out1.dtype == numpy.complex128:
+                self.assertTrue(out1.precision == 'double')
+                #self.assertTrue(out1.kind == 'complex')  
+            
+            if self.kind == 'complex':
+                out2 = TimeSeries([5+0j,3+0j,1+0j], 0.1, dtype=self.dtype)
+            
+                self.assertTrue(type(out2._scheme) == self.scheme)
+                self.assertTrue(type(out2._data) is SchemeArray)
+                self.assertEqual(out2[0],5)
+                self.assertEqual(out2[1],3)
+                self.assertEqual(out2[2],1)
+                self.assertTrue(out2.dtype==self.dtype)
+                self.assertEqual(out2.delta_t, 0.1)
+                self.assertEqual(out2.start_time, None)
+                                
+            else:
+                self.assertRaises(TypeError, TimeSeries,[5+0j, 3+0j, 1+0j], 0.1, dtype=self.dtype)
+            self.assertRaises(TypeError, TimeSeries,[1,2,3],0.1, dtype=numpy.int32)
+            
+            #Also, when it is unspecified
+            out3 = TimeSeries([5,3,1],0.1,epoch=self.epoch)
+            
+            self.assertTrue(type(out3._scheme) == self.scheme)
+            self.assertTrue(type(out3._data) is SchemeArray)
+            self.assertEqual(out3[0],5)
+            self.assertEqual(out3[1],3)
+            self.assertEqual(out3[2],1)
+            self.assertTrue(out3.dtype==numpy.float64)
+            self.assertEqual(out3.delta_t, 0.1)
+            self.assertEqual(out3.start_time, self.epoch)
+                        
+            out4 = TimeSeries([5+0j,3+0j,1+0j],0.1,epoch = self.epoch)
+            
+            self.assertTrue(type(out4._scheme) == self.scheme)
+            self.assertTrue(type(out4._data) is SchemeArray)
+            self.assertEqual(out4[0],5)
+            self.assertEqual(out4[1],3)
+            self.assertEqual(out4[2],1)
+            self.assertTrue(out4.dtype==numpy.complex128)
+            self.assertEqual(out4.delta_t, 0.1)
+            self.assertEqual(out4.start_time, self.epoch)
+                        
+            self.assertRaises(TypeError,TimeSeries,[1,2,3],copy=False)
+            
+            # Things specific to timeseries
+            self.assertRaises(ValueError, TimeSeries, [1,2,3], -1)
+            self.assertRaises(ValueError, TimeSeries, [], .1)
+            self.assertRaises(TypeError, TimeSeries, [1,2,3], .1, epoch=5)
+
     def test_mul(self):
         super(TestTimeSeriesBase,self).test_mul()
         self.assertRaises(ValueError, self.a1.__mul__,self.bad3)

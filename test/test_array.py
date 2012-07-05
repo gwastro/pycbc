@@ -305,6 +305,12 @@ class array_tests_base(array_base.array_base):
             # We shouldn't be able to copy it though
             self.assertRaises(TypeError,Array,in5, copy=False)
             
+            # Just checking that we can make an empty array correctly
+            empty = numpy.array([])
+            out6 = Array(empty)
+            self.assertTrue(out6.dtype==numpy.float64)
+            self.assertRaises(IndexError, out6.__getitem__,0)
+            
         if _options['scheme'] != 'cpu':
             self.assertRaises(TypeError, Array, in4, copy=False)
         self.assertRaises(TypeError, Array, in5, copy=False)
@@ -400,6 +406,13 @@ class array_tests_base(array_base.array_base):
                         
             if _options['scheme'] != 'cpu':
                 self.assertRaises(TypeError,Array,cpuarray,copy=False)
+                
+            # Just checking that we can make an empty array correctly
+            empty = Array(numpy.array([]))
+            out7 = Array(empty)
+            self.assertTrue(out7.dtype==numpy.float64)
+            self.assertRaises(IndexError, out7.__getitem__,0)
+            
         # Also checking that a cpu array can't be made out of another scheme without copying
         if _options['scheme'] != 'cpu':
             self.assertRaises(TypeError, Array, out4, copy=False)
@@ -469,6 +482,11 @@ class array_tests_base(array_base.array_base):
             self.assertEqual(out4[1],3)
             self.assertEqual(out4[2],1)
             self.assertTrue(out4.dtype==numpy.complex128)
+            
+            # Just checking that we can make an empty array correctly
+            out7 = Array([])
+            self.assertTrue(out7.dtype==numpy.float64)
+            self.assertRaises(IndexError, out7.__getitem__,0)
                         
             #We also need to check the zero function
             out5 = zeros(3,dtype=self.dtype)
