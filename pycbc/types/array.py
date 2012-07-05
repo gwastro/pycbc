@@ -123,7 +123,13 @@ class Array(object):
                 if dtype not in _ALLOWED_DTYPES:
                     raise TypeError(str(dtype) + ' is not supported')
             elif hasattr(initial_array,'dtype'):
-                dtype = initial_array.dtype
+                if initial_array.dtype in _ALLOWED_DTYPES:
+                    dtype = initial_array.dtype
+                else:
+                    if initial_array.dtype.kind == 'c':
+                        dtype = complex128
+                    else:
+                        dtype = float64
         
             #Unwrap initial_array
             input_data = None
