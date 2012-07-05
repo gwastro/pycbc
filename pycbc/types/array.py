@@ -210,6 +210,8 @@ class Array(object):
             if type(other) in _ALLOWED_SCALARS:
                 pass
             elif isinstance(other,Array):
+                if len(other) != len(self):
+                    raise ValueError('lengths do not match')
                 if other.precision == self.precision:
                     _convert_to_scheme(other)
                     other = other._data
@@ -232,6 +234,8 @@ class Array(object):
                     raise TypeError('dtypes are incompatible')
                 pass
             elif isinstance(other,Array):
+                if len(other) != len(self):
+                    raise ValueError('lengths do not match')
                 if self.kind == 'real' and other.kind == 'complex':
                     raise TypeError('dtypes are incompatible')
                 if other.precision == self.precision:
