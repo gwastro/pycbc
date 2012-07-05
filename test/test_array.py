@@ -209,8 +209,9 @@ class tests_base(object):
             self.s2 = 5+2j
 
         # Finally, we want to have an array that we shouldn't be able to operate on,
-        # because the precision is wrong.
+        # because the precision is wrong, and one where the length is wrong.
         self.bad = Array([1,1,1],dtype = self.other_precision[self.odtype])
+        self.bad2 = Array([1,1,1,1], dtype = self.dtype)
         
         # All the answers are stored here to make it easier to read in the actual tests.
         # Again, it makes a difference whether they are complex or real valued, so there
@@ -410,16 +411,18 @@ class tests_base(object):
                 self.assertEqual(out1[2],1)
                 self.assertTrue(out1.dtype==self.dtype)
                 self.assertTrue(type(out1._scheme) == self.scheme)
+                self.assertTrue(type(out1._data) is SchemeArray)
                 
                 self.assertEqual(out2[0],5)
                 self.assertEqual(out2[1],3)
                 self.assertEqual(out2[2],1)
                 self.assertTrue(out2.dtype==self.dtype)
                 self.assertTrue(type(out2._scheme) == self.scheme)
+                self.assertTrue(type(out2._data) is SchemeArray)
                 in1-=1
                 in2-=1
             
-            #Also, when it is unspecified
+            # Also, when it is unspecified
             out3 = Array(in1)
             in1 += 1
             self.assertEqual(out3[0],5)
@@ -427,10 +430,12 @@ class tests_base(object):
             self.assertEqual(out3[2],1)
             self.assertTrue(out3.dtype==self.odtype)
             self.assertTrue(type(out3._scheme) == self.scheme)
+            self.assertTrue(type(out3._data) is SchemeArray)
             
-            #Check for copy=false
+            # Check for copy=false
+            # On the CPU, this should be possible
+            in3 = numpy.array([5,3,1],dtype=self.dtype)
             if _options['scheme'] == 'cpu':
-                in3 = numpy.array([5,3,1],dtype=self.dtype)
                 out4 = Array(in3,copy=False)
                 in3 += 1
                 
@@ -439,22 +444,47 @@ class tests_base(object):
                 self.assertEqual(out4[2],2)
                 self.assertTrue(out4.dtype==self.dtype)
                 self.assertTrue(type(out4._scheme) == self.scheme)
+            # If we're in different scheme, this should raise an error
+            else:
+                self.assertRaises(TypeError, Array, in3, copy=False)
+
+            # We also need to check initialization using GPU arrays
+            if _options['scheme'] == 'cuda':
+                in4 = pycuda.gpuarray.zeros(3,self.dtype)
+            elif _options['scheme'] == 'opencl':
+                in4 = pyopencl.array.zeros(pycbc.scheme.mgr.state.queue,3, self.dtype)
+            if _options['scheme'] != 'cpu':
+                out4 = Array(in4, copy=False)
+                in4 += 1
+                self.assertEqual(out4[0],1)
+                self.assertEqual(out4[1],1)
+                self.assertEqual(out4[2],1)
+                self.assertTrue(out4.dtype==self.dtype)
+                self.assertTrue(type(out4._scheme) == self.scheme)
+                self.assertTrue(type(out4._data) is SchemeArray)
+            in5 = numpy.array([1,2,3],dtype=numpy.int32)
+            self.assertRaises(TypeError,Array,in5, copy=False)
+        if _options['scheme'] != 'cpu':
+            self.assertRaises(TypeError, Array, in4, copy=False)
+        self.assertRaises(TypeError, Array, in5, copy=False)
                     
 
     def test_array_init(self):
-        #this array is made outside the context so we can check that an error is raised when copy = false in a GPU scheme
+        # this array is made outside the context so we can check that an error is raised when copy = false in a GPU scheme
         cpuarray = Array([1,2,3])
         with self.context:      
             in1 = Array([5,3,1],dtype=self.odtype)
             in2 = Array([5,3,1],dtype=self.other_precision[self.odtype])
             self.assertTrue(type(in1._scheme) == self.scheme)
+            self.assertTrue(type(in1._data) is SchemeArray)
             self.assertTrue(type(in2._scheme) == self.scheme)
-            #We don't want to cast complex as real
+            self.assertTrue(type(in2._data) is SchemeArray)
+            # We don't want to cast complex as real
             if not (self.kind=='real' and self.okind == 'complex'):
-                #First we must check that the dtype is correct when specified
+                # First we must check that the dtype is correct when specified
                 out1 = Array(in1, dtype=self.dtype)
                 out2 = Array(in2, dtype=self.dtype)
-                #to be sure that it is copied
+                # to be sure that it is copied
                 in1 += 1
                 in2 += 1
                 
@@ -463,6 +493,7 @@ class tests_base(object):
                 self.assertEqual(out1[2],1)
                 self.assertTrue(out1.dtype==self.dtype)
                 self.assertTrue(type(out1._scheme) == self.scheme)
+                self.assertTrue(type(out1._data) is SchemeArray)
                 
                 if out1.dtype == numpy.float32:
                     self.assertTrue(out1.precision == 'single')
@@ -482,11 +513,16 @@ class tests_base(object):
                 self.assertEqual(out2[2],1)
                 self.assertTrue(out2.dtype==self.dtype)
                 self.assertTrue(type(out2._scheme) == self.scheme)
+                self.assertTrue(type(out2._data) is SchemeArray)
                 
                 in1-=1
                 in2-=1
+            # Giving complex input and specifying a real dtype should raise an error
+            else:
+                self.assertRaises(TypeError, Array, in1, dtype = self.dtype)
+                self.assertRaises(TypeError, Array, in2, dtype = self.dtype)
             
-            #Also, when it is unspecified
+            # Also, when it is unspecified
             out3 = Array(in1)
             in1 += 1
             self.assertEqual(out3[0],5)
@@ -494,24 +530,48 @@ class tests_base(object):
             self.assertEqual(out3[2],1)
             self.assertTrue(out3.dtype==self.odtype)
             self.assertTrue(type(out3._scheme) == self.scheme)
+            self.assertTrue(type(out3._data) is SchemeArray)
             
-            #Check for copy=false
-            in3 = Array([5,3,1],dtype=self.dtype)
-            out4 = Array(in3,copy=False)
-            in3 += 1
+            # We should also be able to create from a CPU Array
+            out4 = Array(cpuarray, dtype=self.dtype)
             
-            self.assertEqual(out4[0],6)
-            self.assertEqual(out4[1],4)
-            self.assertEqual(out4[2],2)
+            self.assertEqual(out4[0],1)
+            self.assertEqual(out4[1],2)
+            self.assertEqual(out4[2],3)
             self.assertTrue(out4.dtype==self.dtype)
             self.assertTrue(type(out4._scheme) == self.scheme)
+            self.assertTrue(type(out4._data) is SchemeArray)
+            
+            self.assertRaises(TypeError, Array,in1, dtype=numpy.int32)
+            
+            # Check for copy=false
+            in3 = Array([5,3,1],dtype=self.dtype)
+            out5 = Array(in3,copy=False)
+            in3 += 1
+            
+            self.assertEqual(out5[0],6)
+            self.assertEqual(out5[1],4)
+            self.assertEqual(out5[2],2)
+            self.assertTrue(out5.dtype==self.dtype)
+            self.assertTrue(type(out5._scheme) == self.scheme)
+            self.assertTrue(type(out5._data) is SchemeArray)
             
             if _options['scheme'] != 'cpu':
                 self.assertRaises(TypeError,Array,cpuarray,copy=False)
+        # Also checking that a cpu array can't be made out of another scheme without copying
+        if _options['scheme'] != 'cpu':
+            self.assertRaises(TypeError, Array, out4, copy=False)
+            out6 = Array(out4, dtype=self.dtype)
+            self.assertEqual(out6[0],1)
+            self.assertEqual(out6[1],2)
+            self.assertEqual(out6[2],3)
+            self.assertTrue(out6.dtype==self.dtype)
+            self.assertTrue(type(out6._scheme) == type(None))
+            self.assertTrue(type(out6._data) is numpy.ndarray)
             
     def test_list_init(self):
         with self.context:
-            #When specified
+            # When specified
             out1 = Array([5,3,1], dtype=self.dtype)
             
             self.assertEqual(out1[0],5)
@@ -541,6 +601,9 @@ class tests_base(object):
                 self.assertEqual(out2[2],1)
                 self.assertTrue(out2.dtype==self.dtype)
                 self.assertTrue(type(out2._scheme) == self.scheme)
+            else:
+                self.assertRaises(TypeError, Array,[5+0j, 3+0j, 1+0j],dtype=self.dtype)
+            self.assertRaises(TypeError, Array,[1,2,3], dtype=numpy.int32)
             
             #Also, when it is unspecified
             out3 = Array([5,3,1])
@@ -622,6 +685,7 @@ class tests_base(object):
             self.checkScheme(self.a1, self.b1, self.s, c, self.mul_s)
             
             self.assertRaises(TypeError, self.a1.__mul__, self.bad)
+            self.assertRaises(ValueError, self.a1.__mul__, self.bad2)
             
         # Now taking Other Array and going back to the CPU
         # Other with Other
@@ -665,6 +729,7 @@ class tests_base(object):
             self.checkScheme(self.a1, self.b1, self.s, c, self.mul_s)
             
             self.assertRaises(TypeError, self.a1.__rmul__, self.bad)
+            self.assertRaises(ValueError, self.a1.__rmul__, self.bad2)
             
         # Now taking Other Array and going back to the CPU
         # Other with Other
@@ -718,6 +783,7 @@ class tests_base(object):
                 self.checkScheme(self.a1, self.b1, self.s, c6, self.mul_s)
                 
                 self.assertRaises(TypeError, self.a1.__imul__, self.bad)
+                self.assertRaises(ValueError, self.a1.__imul__, self.bad2)
                 
                 # We now need to set cs back to the correct values and locations
                 c1 = self.a1 * 1
@@ -773,6 +839,7 @@ class tests_base(object):
             self.checkScheme(self.a1, self.b1, self.s, c, self.add_s)
             
             self.assertRaises(TypeError, self.a1.__add__, self.bad)
+            self.assertRaises(ValueError, self.a1.__add__, self.bad2)
             
         # Now taking Other Array and going back to the CPU
         # Other with Other
@@ -816,6 +883,7 @@ class tests_base(object):
             self.checkScheme(self.a1, self.b1, self.s, c, self.add_s)
             
             self.assertRaises(TypeError, self.a1.__radd__, self.bad)
+            self.assertRaises(ValueError, self.a1.__radd__, self.bad2)
             
         # Now taking Other Array and going back to the CPU
         # Other with Other
@@ -869,6 +937,7 @@ class tests_base(object):
                 self.checkScheme(self.a1, self.b1, self.s, c6, self.add_s)
                 
                 self.assertRaises(TypeError, self.a1.__iadd__, self.bad)
+                self.assertRaises(ValueError, self.a1.__iadd__, self.bad2)
                 
                 # We now need to set cs back to the correct values and locations
                 c1 = self.a1 * 1
@@ -924,6 +993,7 @@ class tests_base(object):
             self.checkScheme(self.a1, self.b1, self.s, c, self.div_s)
             
             self.assertRaises(TypeError, self.a1.__div__, self.bad)
+            self.assertRaises(ValueError, self.a1.__div__, self.bad2)
             
         # Now taking Other Array and going back to the CPU
         # Other with Other
@@ -967,6 +1037,7 @@ class tests_base(object):
             self.checkScheme(self.a1, self.b1, self.s, c, self.rdiv_s)
             
             self.assertRaises(TypeError, self.a1.__rdiv__, self.bad)
+            self.assertRaises(ValueError, self.a1.__rdiv__, self.bad2)
             
         # Now taking Other Array and going back to the CPU
         # Other with Other
@@ -1020,6 +1091,7 @@ class tests_base(object):
                 self.checkScheme(self.a1, self.b1, self.s, c6, self.div_s)
                 
                 self.assertRaises(TypeError, self.a1.__idiv__, self.bad)
+                self.assertRaises(ValueError, self.a1.__idiv__, self.bad2)
                 
                 # We now need to set cs back to the correct values and locations
                 c1 = self.a1 * 1
@@ -1075,6 +1147,7 @@ class tests_base(object):
             self.checkScheme(self.a1, self.b1, self.s, c, self.sub_s)
             
             self.assertRaises(TypeError, self.a1.__sub__, self.bad)
+            self.assertRaises(ValueError, self.a1.__sub__, self.bad2)
             
         # Now taking Other Array and going back to the CPU
         # Other with Other
@@ -1118,6 +1191,7 @@ class tests_base(object):
             self.checkScheme(self.a1, self.b1, self.s, c, self.rsub_s)
             
             self.assertRaises(TypeError, self.a1.__rsub__, self.bad)
+            self.assertRaises(ValueError, self.a1.__rsub__, self.bad2)
             
         # Now taking Other Array and going back to the CPU
         # Other with Other
@@ -1171,6 +1245,7 @@ class tests_base(object):
                 self.checkScheme(self.a1, self.b1, self.s, c6, self.sub_s)
                 
                 self.assertRaises(TypeError, self.a1.__isub__, self.bad)
+                self.assertRaises(ValueError, self.a1.__isub__, self.bad2)
                 
                 # We now need to set cs back to the correct values and locations
                 c1 = self.a1 * 1
@@ -1356,6 +1431,7 @@ class tests_base(object):
             self.checkScheme(self.a1, self.b2, self.s, c, self.dot)
             
             self.assertRaises(TypeError, self.a1.dot, self.bad)
+            self.assertRaises(ValueError, self.a1.dot, self.bad2)
             
         # Now taking Other Array and going back to the CPU
         # Other with Other
