@@ -135,7 +135,7 @@ class Array(object):
             # The list might just be empty
             if dtype is None:
                 try:
-                    if type(initial__array[0]) == complex:
+                    if type(initial_array[0]) == complex:
                         dtype = complex128
                     else:
                         dtype = float64
