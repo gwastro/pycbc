@@ -130,21 +130,18 @@ class Array(object):
                         dtype = complex128
                     else:
                         dtype = float64
-        
-            #Unwrap initial_array
-            input_data = None
-            if isinstance(initial_array,Array):
-                input_data = initial_array._data
-            else:
-                input_data = initial_array
-
-            #If no dtype was given, default to Double, and Double Complex.
+                        
+            # If no dtype was given, default to Double, or Double Complex.
+            # The list might just be empty
             if dtype is None:
-                if type(input_data[0]) == complex:
-                    dtype = complex128
-                else:
-                    dtype = float64
-
+                try:
+                    if type(initial__array[0]) == complex:
+                        dtype = complex128
+                    else:
+                        dtype = float64
+                except IndexError:
+                    dtype = float64 
+                       
             if dtype == float32 or dtype == float64:
                 self.kind = 'real'
             else:
@@ -152,7 +149,13 @@ class Array(object):
             if dtype == float32 or dtype == complex64:
                 self.precision = 'single'
             else:
-                self.precision = 'double'
+                self.precision = 'double'                        
+            #Unwrap initial_array
+            input_data = None
+            if isinstance(initial_array,Array):
+                input_data = initial_array._data
+            else:
+                input_data = initial_array
 
             #Create new instance with input_data as initialization.
             if self._scheme is None:
