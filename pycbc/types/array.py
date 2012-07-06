@@ -118,29 +118,39 @@ class Array(object):
 
 
         if copy:
-            #Check that a valid dtype was given.
+            # First we will check the dtype that we are given
+            initdtype = None
+            if hasattr(initial_array,'dtype'):
+                if initial_array.dtype in _ALLOWED_DTYPES:
+                    initdtype = initial_array.dtype
+                else:
+                    if initial_array.dtype.kind == 'c':
+                        initdtype = complex128
+                    else:
+                        initdtype = float64
+                        
+            # If no dtype can be extracted, default to Double, or Double Complex.
+            # The list might just be empty
+            if initdtype is None:
+                try:
+                    if type(initial_array[0]) == complex:
+                        initdtype = complex128
+                    else:
+                        initdtype = float64
+                except IndexError:
+                    initdtype = float64 
+            # Now that we know the dtype of the data, we can determine whether the specified dtype
+            # is valid. If the data is complex, and a real dtype has been specified, this should
+            # raise an error.
             if dtype is not None:
                 if dtype not in _ALLOWED_DTYPES:
                     raise TypeError(str(dtype) + ' is not supported')
-            elif hasattr(initial_array,'dtype'):
-                if initial_array.dtype in _ALLOWED_DTYPES:
-                    dtype = initial_array.dtype
-                else:
-                    if initial_array.dtype.kind == 'c':
-                        dtype = complex128
-                    else:
-                        dtype = float64
-                        
-            # If no dtype was given, default to Double, or Double Complex.
-            # The list might just be empty
-            if dtype is None:
-                try:
-                    if type(initial_array[0]) == complex:
-                        dtype = complex128
-                    else:
-                        dtype = float64
-                except IndexError:
-                    dtype = float64 
+                if _numpy.dtype(dtype).kind != 'c' and _numpy.dtype(initdtype).kind == 'c':
+                    raise TypeError(str(initdtype) + ' cannot be cast as ' + str(dtype))
+            else:
+                dtype = initdtype
+                
+            
                        
             if dtype == float32 or dtype == float64:
                 self.kind = 'real'
