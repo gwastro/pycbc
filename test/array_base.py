@@ -208,46 +208,6 @@ class array_base(object):
             self.dot = 52+108j
         self.min = 1
         self.max = 5
-    
-    def test_set(self):
-        c = self.a1 * 1
-        with self.context:
-            # First we will check that get works properly for all
-            # the different python syntaxes
-            self.assertTrue(self.a1[:][0] == self.alist[0:3][0])
-            self.assertTrue(self.a1[:][1] == self.alist[0:3][1])
-            self.assertTrue(self.a1[:][2] == self.alist[0:3][2])
-            self.assertRaises(IndexError,self.a1[:].__getitem__,3)
-            self.assertTrue(self.a1[-1] ==self.alist[2])
-            self.assertTrue(self.a1[-2] == self.alist[1])
-            self.assertTrue(self.a1[1:2][0] == self.alist[1])
-            self.assertRaises(IndexError,self.a1[1:2].__getitem__,1)
-            self.assertTrue(self.a1[:-1][0] == self.alist[0:2][0])
-            self.assertTrue(self.a1[:-1][1] == self.alist[0:2][1])
-            self.assertTrue(self.a1[-1:][0] == self.alist[2])
-            self.assertRaises(IndexError, self.a1.__getitem__, 3)
-            self.assertRaises(IndexError, self.a1.__getitem__, -4)
-                            
-        if not (self.kind == 'real' and self.okind == 'complex'):   
-            with self.context:
-                # We will check setting from arrays on multiple contexts
-                self.a1 *= 1
-                c[0] = Array(self.b1[0])
-                c[1] = Array(self.b2[1])
-                c[2] = Array(self.b1[2])
-                self.checkScheme(self.a1, self.b1, self.s, c, self.blist)
-                self.checkScheme(self.a1, self.b2, self.s, c, self.blist)
-                c = self.a1 * 1
-            # And also going back to the CPU from Other
-            c[0] = Array(self.b1[0])
-            c[1] = Array(self.b2[1])
-            c[2] = Array(self.b1[2])
-            self.checkCPU(self.a2, self.b1, self.s, c, self.blist)
-            self.checkCPU(self.a2, self.b2, self.s, c, self.blist)
-                
-        else:
-            with self.context:
-                self.assertRaises(ValueError, self.a1.__setitem__, 0, Array(self.b1[0]))
             
     def test_mul(self):
         with self.context:
