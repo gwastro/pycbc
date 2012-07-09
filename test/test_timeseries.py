@@ -207,7 +207,8 @@ class TestTimeSeriesBase(base_test.array_base):
                 
             # If we're in different scheme, this should raise an error
             else:
-                self.assertRaises(TypeError, Array, in3, 0.1, copy=False)
+                with self.context:
+                    self.assertRaises(TypeError, TimeSeries, in3, 0.1, copy=False)
 
             # We also need to check initialization using GPU arrays
             if _options['scheme'] == 'cuda':
