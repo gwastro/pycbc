@@ -31,7 +31,7 @@ from pycbc.types import *
 from pycbc.scheme import *
 import numpy 
 import swiglal
-import array_base
+import base_test
 
 import optparse
 from optparse import OptionParser
@@ -70,91 +70,22 @@ elif _options['scheme'] == 'opencl':
 elif _options['scheme'] == 'cpu':
     from numpy import ndarray as SchemeArray
 
-class TestFrequencySeriesBase(array_base.array_base):
+class TestFrequencySeriesBase(base_test.array_base):
 
-    def checkScheme(self, a, b, s, c, c_ans):
-    
-            self.assertTrue(type(a._scheme) == self.scheme)
-            self.assertTrue(type(a._data) is SchemeArray)
-            self.assertEqual(a[0],self.alist[0])
-            self.assertEqual(a[1],self.alist[1])
-            self.assertEqual(a[2],self.alist[2])
-            self.assertEqual(a.delta_f, self.alist[4])
-            self.assertEqual(a._epoch, self.epoch)
-            
-            self.assertTrue(type(b._scheme) == self.scheme)
-            self.assertTrue(type(b._data) is SchemeArray)
-            self.assertEqual(b[0],self.blist[0])
-            self.assertEqual(b[1],self.blist[1])
-            self.assertEqual(b[2],self.blist[2])
-            self.assertEqual(b.delta_f, self.blist[4])
-            self.assertEqual(b._epoch, self.epoch)
-            
-            self.assertEqual(s, self.s2)
-            
-            if type(c_ans) == list:
-                if c_ans[3]:
-                    self.assertTrue(type(c._scheme) == self.scheme)
-                    self.assertTrue(type(c._data) is SchemeArray)
-                    self.assertEqual(c[0], c_ans[0])
-                    self.assertEqual(c[1], c_ans[1])
-                    self.assertEqual(c[2], c_ans[2])
-                    self.assertEqual(c.delta_f, self.alist[4])
-                    self.assertEqual(c._epoch, self.epoch)
-                    
-                else:
-                    self.assertTrue(type(c._scheme) == self.scheme)
-                    self.assertTrue(type(c._data) is SchemeArray)
-                    self.assertAlmostEqual(c[0], c_ans[0], self.places)
-                    self.assertAlmostEqual(c[1], c_ans[1], self.places)
-                    self.assertAlmostEqual(c[2], c_ans[2], self.places)
-                    self.assertEqual(c.delta_f, self.alist[4])
-                    self.assertEqual(c._epoch, self.epoch)
-                    
-            else:
-                self.assertEqual(c, c_ans)
+    def checkScheme(self, inputs, results, places):
+        super(TestFrequencySeriesBase,self).checkScheme(inputs, results, places)
+        for a in inputs:
+            if isinstance(a,pycbc.types.Array):
+                self.assertEqual(a.delta_f, self.delta_f)
+                self.assertEqual(a._epoch, self.epoch)
                 
-    def checkCPU(self, a, b, s, c, c_ans):
-            self.assertTrue(a._scheme == None)
-            self.assertTrue(type(a._data) is numpy.ndarray)
-            self.assertEqual(a[0],self.alist[0])
-            self.assertEqual(a[1],self.alist[1])
-            self.assertEqual(a[2],self.alist[2])
-            self.assertEqual(a.delta_f, self.alist[4])
-            self.assertEqual(a._epoch, self.epoch)
-            
-            self.assertTrue(b._scheme == None)
-            self.assertTrue(type(b._data) is numpy.ndarray)
-            self.assertEqual(b[0],self.blist[0])
-            self.assertEqual(b[1],self.blist[1])
-            self.assertEqual(b[2],self.blist[2])
-            self.assertEqual(b.delta_f, self.blist[4])
-            self.assertEqual(b._epoch, self.epoch)            
-            
-            self.assertEqual(s, self.s2)
-            
-            if type(c_ans) == list:
-                if c_ans[3]:
-                    self.assertTrue(c._scheme == None)
-                    self.assertTrue(type(c._data) is numpy.ndarray)
-                    self.assertEqual(c[0], c_ans[0])
-                    self.assertEqual(c[1], c_ans[1])
-                    self.assertEqual(c[2], c_ans[2])
-                    self.assertEqual(c.delta_f, self.alist[4])
-                    self.assertEqual(c._epoch, self.epoch)
-                    
-                else:
-                    self.assertTrue(c._scheme == None)
-                    self.assertTrue(type(c._data) is numpy.ndarray)
-                    self.assertAlmostEqual(c[0], c_ans[0], self.places)
-                    self.assertAlmostEqual(c[1], c_ans[1], self.places)
-                    self.assertAlmostEqual(c[2], c_ans[2], self.places)
-                    self.assertEqual(c.delta_f, self.alist[4])
-                    self.assertEqual(c._epoch, self.epoch)
-                    
-            else:
-                self.assertEqual(c, c_ans)
-                
+    def checkCPU(self, inputs, results, places):
+        super(TestFrequencySeriesBase,self).checkCPU(inputs, results, places)
+        for a in inputs:
+            if isinstance(a,pycbc.types.Array):
+                self.assertEqual(a.delta_f, self.delta_f)
+                self.assertEqual(a._epoch, self.epoch)
+
     def setUp(self):
     
         # We need to check for correct creation from all dtypes, 
@@ -182,45 +113,22 @@ class TestFrequencySeriesBase(array_base.array_base):
             self.okind = 'real'
         else:
             self.okind = 'complex'
-            
-        # Here two test FrequencySeries are created. Their content depends on their dtype,
-        # so that we can make use of non-zero imaginary parts.
-        # These arrays are just arbitrarily chosen, but in such a way that they are not
-        # oversimplified, e.g. we don't want to multiply by one, or add zero, or have
-        # the answer be one or zero.
-        # We will make multiples of each to check things are on the cpu/gpu when they should be
-        # and a list containing the values so we can tell it hasn't altered anything it shouldn't.
         
-        if self.kind == 'real':
-            self.a1 = FrequencySeries([5,3,1], 0.1, epoch=self.epoch, dtype=self.dtype)
-            self.a2 = FrequencySeries([5,3,1], 0.1, epoch=self.epoch, dtype=self.dtype)
-            self.a3 = FrequencySeries([5,3,1], 0.1, epoch=self.epoch, dtype=self.dtype)
-            self.alist = [5,3,1, True, 0.1]
-        else:
-            self.a1 = FrequencySeries([5+1j,3+3j,1+5j], 0.1, epoch=self.epoch, dtype=self.dtype)
-            self.a2 = FrequencySeries([5+1j,3+3j,1+5j], 0.1, epoch=self.epoch, dtype=self.dtype)
-            self.a3 = FrequencySeries([5+1j,3+3j,1+5j], 0.1, epoch=self.epoch, dtype=self.dtype)
-            self.alist = [5+1j,3+3j,1+5j, True, 0.1]
+        # Now that the kinds are set, we need to call our parent method to set up all the
+        # inputs and answers for our functions
+        self.setNumbers()
             
-        if self.okind == 'real':
-            self.b1 = FrequencySeries([10,8,6], 0.1, epoch=self.epoch, dtype=self.odtype)
-            self.b2 = FrequencySeries([10,8,6], 0.1, epoch=self.epoch, dtype=self.odtype)
-            self.blist = [10,8,6, True, 0.1]
-        else:
-            self.b1 = FrequencySeries([10+6j,8+4j,6+2j], 0.1, epoch=self.epoch, dtype=self.odtype)
-            self.b2 = FrequencySeries([10+6j,8+4j,6+2j], 0.1, epoch=self.epoch, dtype=self.odtype)
-            self.blist = [10+6j,8+4j,6+2j, True, 0.1]
-        
+        # Here our test FrequencySeries are created.
+        self.delta_f = 0.1
+        self.a1 = FrequencySeries(self.alist, self.delta_f, epoch=self.epoch, dtype=self.dtype)
+        self.a2 = FrequencySeries(self.alist, self.delta_f, epoch=self.epoch, dtype=self.dtype)
+        self.a3 = FrequencySeries(self.alist, self.delta_f, epoch=self.epoch, dtype=self.dtype)
+
+        self.b1 = FrequencySeries(self.blist, self.delta_f, epoch=self.epoch, dtype=self.odtype)
+        self.b2 = FrequencySeries(self.blist, self.delta_f, epoch=self.epoch, dtype=self.odtype)
+    
         # We will need to also test a non-zero imaginary part scalar.
-        # For simplicity, we will test with a real scalar when odtype is real, 
-        # and a complex scalar when odtype is complex. This will prevent redundancy,
-        # and make it easier to spot problems, just based off of the test names.
-        if self.okind =='real':
-            self.s = 5
-            self.s2 = 5
-        else:
-            self.s = 5+2j
-            self.s2 = 5+2j
+        self.s = self.scalar
 
         # Finally, we want to have an array that we shouldn't be able to operate on,
         # because the precision is wrong, and one where the length is wrong.
@@ -234,9 +142,6 @@ class TestFrequencySeriesBase(array_base.array_base):
             self.bad4 = FrequencySeries([1,1,1], 0.1, epoch = swiglal.LIGOTimeGPS(1000, 1000), dtype = self.dtype)
         else:
             self.bad4 = FrequencySeries([1,1,1], 0.1, epoch=None, dtype = self.dtype)
-        
-        # We now need to set all the answer arrays up. These are all stored in the parent class.
-        self.setAnswers()
 
     def test_numpy_init(self):
         with self.context:                                

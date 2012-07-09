@@ -32,7 +32,7 @@ import numpy
 from numpy import dtype
 import pycbc.fft
 import unittest
-import function_base
+import base_test
 
 import optparse
 from optparse import OptionParser
@@ -59,8 +59,16 @@ _parser.add_option('--device-num','-d', action='store', type = 'int', dest = 'de
 #Changing the optvalues to a dict makes them easier to read
 _options = vars(_opt_list)
 
+# We will need these imported in order to check that things are in the current scheme
+if _options['scheme'] == 'cuda':
+    import pycuda
+    import pycuda.gpuarray
+elif _options['scheme'] == 'opencl':
+    import pyopencl
+    import pyopencl.array
 
-class _BaseTestFFTClass(function_base.function_base):
+
+class _BaseTestFFTClass(base_test.function_base):
     """
     This is the base class from which unit tests for all FFT backends
     are derived.
@@ -86,10 +94,10 @@ class _BaseTestFFTClass(function_base.function_base):
         self.out_even_test = pycbc.types.zeros(3,dtype=dtype('complex64'))
         
         if _options['scheme'] != 'cpu':
-            self.scheme_swap(pycbc.fft.fft,(self.in_even,self.out_even_test), 
+            self.scheme_test(pycbc.fft.fft,(self.in_even,self.out_even_test), 
                                             (self.in_pristine,self.out_even),self.splaces,backend=self.backend)
             for back in pycbc.fft.cpu_backends:
-                self.cpu_swap(pycbc.fft.fft,(self.in_even,self.out_even_test), 
+                self.cpu_test(pycbc.fft.fft,(self.in_even,self.out_even_test), 
                                             (self.in_pristine,self.out_even),self.splaces,backend=back)
         with self.context:
             pycbc.fft.fft(self.in_even,self.out_even_test,backend=self.backend)
@@ -124,10 +132,10 @@ class _BaseTestFFTClass(function_base.function_base):
                                          dtype=dtype('complex64'))
         self.out_odd_test = pycbc.types.zeros(2,dtype=dtype('complex64'))
         if _options['scheme'] != 'cpu':
-            self.scheme_swap(pycbc.fft.fft,(self.in_odd,self.out_odd_test), 
+            self.scheme_test(pycbc.fft.fft,(self.in_odd,self.out_odd_test), 
                                             (self.in_odd,self.out_odd),self.splaces,backend=self.backend)
             for back in pycbc.fft.cpu_backends:
-                self.cpu_swap(pycbc.fft.fft,(self.in_odd,self.out_odd_test), 
+                self.cpu_test(pycbc.fft.fft,(self.in_odd,self.out_odd_test), 
                                             (self.in_odd,self.out_odd),self.splaces,backend=back)
         with self.context:
             pycbc.fft.fft(self.in_odd,self.out_odd_test,backend=self.backend)
@@ -173,10 +181,10 @@ class _BaseTestFFTClass(function_base.function_base):
                                           dtype=dtype('complex128'))
         self.out_even_test = pycbc.types.zeros(3,dtype=dtype('complex128'))
         if _options['scheme'] != 'cpu':
-            self.scheme_swap(pycbc.fft.fft,(self.in_even,self.out_even_test), 
+            self.scheme_test(pycbc.fft.fft,(self.in_even,self.out_even_test), 
                                             (self.in_pristine,self.out_even),self.dplaces,backend=self.backend)
             for back in pycbc.fft.cpu_backends:
-                self.cpu_swap(pycbc.fft.fft,(self.in_even,self.out_even_test), 
+                self.cpu_test(pycbc.fft.fft,(self.in_even,self.out_even_test), 
                                             (self.in_pristine,self.out_even),self.dplaces,backend=back)
         with self.context:
             pycbc.fft.fft(self.in_even,self.out_even_test,backend=self.backend)
@@ -211,10 +219,10 @@ class _BaseTestFFTClass(function_base.function_base):
                                          dtype=dtype('complex128'))
         self.out_odd_test = pycbc.types.zeros(2,dtype=dtype('complex128'))
         if _options['scheme'] != 'cpu':
-            self.scheme_swap(pycbc.fft.fft,(self.in_odd,self.out_odd_test), 
+            self.scheme_test(pycbc.fft.fft,(self.in_odd,self.out_odd_test), 
                                             (self.in_odd,self.out_odd),self.dplaces,backend=self.backend)
             for back in pycbc.fft.cpu_backends:
-                self.cpu_swap(pycbc.fft.fft,(self.in_odd,self.out_odd_test), 
+                self.cpu_test(pycbc.fft.fft,(self.in_odd,self.out_odd_test), 
                                             (self.in_odd,self.out_odd),self.dplaces,backend=back)
         with self.context:
             pycbc.fft.fft(self.in_odd,self.out_odd_test,backend=self.backend)
@@ -260,10 +268,10 @@ class _BaseTestFFTClass(function_base.function_base):
                                          dtype=dtype('float32'))
         self.out_even_test = pycbc.types.zeros(4,dtype=dtype('float32'))
         if _options['scheme'] != 'cpu':
-            self.scheme_swap(pycbc.fft.ifft,(self.in_even,self.out_even_test), 
+            self.scheme_test(pycbc.fft.ifft,(self.in_even,self.out_even_test), 
                                             (self.in_pristine,self.out_even),self.splaces,backend=self.backend)
             for back in pycbc.fft.cpu_backends:
-                self.cpu_swap(pycbc.fft.ifft,(self.in_even,self.out_even_test), 
+                self.cpu_test(pycbc.fft.ifft,(self.in_even,self.out_even_test), 
                                             (self.in_pristine,self.out_even),self.splaces,backend=back)
         with self.context:
             pycbc.fft.ifft(self.in_even,self.out_even_test,backend=self.backend)
@@ -291,10 +299,10 @@ class _BaseTestFFTClass(function_base.function_base):
                                         dtype=dtype('float32'))
         self.out_odd_test = pycbc.types.zeros(3,dtype=dtype('float32'))
         if _options['scheme'] != 'cpu':
-            self.scheme_swap(pycbc.fft.ifft,(self.in_odd,self.out_odd_test), 
+            self.scheme_test(pycbc.fft.ifft,(self.in_odd,self.out_odd_test), 
                                             (self.in_odd,self.out_odd),self.splaces,backend=self.backend)
             for back in pycbc.fft.cpu_backends:
-                self.cpu_swap(pycbc.fft.ifft,(self.in_odd,self.out_odd_test), 
+                self.cpu_test(pycbc.fft.ifft,(self.in_odd,self.out_odd_test), 
                                             (self.in_odd,self.out_odd),self.splaces,backend=back)
         with self.context:
             pycbc.fft.ifft(self.in_odd,self.out_odd_test,backend=self.backend)
@@ -333,10 +341,10 @@ class _BaseTestFFTClass(function_base.function_base):
                                          dtype=dtype('float64'))
         self.out_even_test = pycbc.types.zeros(4,dtype=dtype('float64'))
         if _options['scheme'] != 'cpu':
-            self.scheme_swap(pycbc.fft.ifft,(self.in_even,self.out_even_test), 
+            self.scheme_test(pycbc.fft.ifft,(self.in_even,self.out_even_test), 
                                             (self.in_pristine,self.out_even),self.dplaces,backend=self.backend)
             for back in pycbc.fft.cpu_backends:
-                self.cpu_swap(pycbc.fft.ifft,(self.in_even,self.out_even_test), 
+                self.cpu_test(pycbc.fft.ifft,(self.in_even,self.out_even_test), 
                                             (self.in_pristine,self.out_even),self.dplaces,backend=back)
         with self.context:
             pycbc.fft.ifft(self.in_even,self.out_even_test,backend=self.backend)
@@ -363,10 +371,10 @@ class _BaseTestFFTClass(function_base.function_base):
                                         dtype=dtype('float64'))
         self.out_odd_test = pycbc.types.zeros(3,dtype=dtype('float64'))
         if _options['scheme'] != 'cpu':
-            self.scheme_swap(pycbc.fft.ifft,(self.in_odd,self.out_odd_test), 
+            self.scheme_test(pycbc.fft.ifft,(self.in_odd,self.out_odd_test), 
                                             (self.in_odd,self.out_odd),self.dplaces,backend=self.backend)
             for back in pycbc.fft.cpu_backends:
-                self.cpu_swap(pycbc.fft.ifft,(self.in_odd,self.out_odd_test), 
+                self.cpu_test(pycbc.fft.ifft,(self.in_odd,self.out_odd_test), 
                                             (self.in_odd,self.out_odd),self.dplaces,backend=back)
         with self.context:
             pycbc.fft.ifft(self.in_odd,self.out_odd_test,backend=self.backend)
@@ -405,10 +413,10 @@ class _BaseTestFFTClass(function_base.function_base):
                                            dtype=dtype('complex64'))
         self.out_cmplx_test = pycbc.types.zeros(2,dtype=dtype('complex64'))
         if _options['scheme'] != 'cpu':
-            self.scheme_swap(pycbc.fft.fft,(self.in_cmplx,self.out_cmplx_test), 
+            self.scheme_test(pycbc.fft.fft,(self.in_cmplx,self.out_cmplx_test), 
                                             (self.in_pristine,self.out_cmplx),self.splaces,backend=self.backend)
             for back in pycbc.fft.cpu_backends:
-                self.cpu_swap(pycbc.fft.fft,(self.in_cmplx,self.out_cmplx_test), 
+                self.cpu_test(pycbc.fft.fft,(self.in_cmplx,self.out_cmplx_test), 
                                             (self.in_pristine,self.out_cmplx),self.splaces,backend=back)
         with self.context:
             pycbc.fft.fft(self.in_cmplx,self.out_cmplx_test,backend=self.backend)
@@ -451,10 +459,10 @@ class _BaseTestFFTClass(function_base.function_base):
                                            dtype=dtype('complex128'))
         self.out_cmplx_test = pycbc.types.zeros(2,dtype=dtype('complex128'))
         if _options['scheme'] != 'cpu':
-            self.scheme_swap(pycbc.fft.fft,(self.in_cmplx,self.out_cmplx_test), 
+            self.scheme_test(pycbc.fft.fft,(self.in_cmplx,self.out_cmplx_test), 
                                             (self.in_pristine,self.out_cmplx),self.dplaces,backend=self.backend)
             for back in pycbc.fft.cpu_backends:
-                self.cpu_swap(pycbc.fft.fft,(self.in_cmplx,self.out_cmplx_test), 
+                self.cpu_test(pycbc.fft.fft,(self.in_cmplx,self.out_cmplx_test), 
                                             (self.in_pristine,self.out_cmplx),self.dplaces,backend=back)
         with self.context:
             pycbc.fft.fft(self.in_cmplx,self.out_cmplx_test,backend=self.backend)
@@ -497,10 +505,10 @@ class _BaseTestFFTClass(function_base.function_base):
                                           dtype=dtype('complex64'))
         self.out_cmplx_test = pycbc.types.zeros(2,dtype=dtype('complex64'))
         if _options['scheme'] != 'cpu':
-            self.scheme_swap(pycbc.fft.ifft,(self.in_cmplx,self.out_cmplx_test), 
+            self.scheme_test(pycbc.fft.ifft,(self.in_cmplx,self.out_cmplx_test), 
                                             (self.in_pristine,self.out_cmplx),self.splaces,backend=self.backend)
             for back in pycbc.fft.cpu_backends:
-                self.cpu_swap(pycbc.fft.ifft,(self.in_cmplx,self.out_cmplx_test), 
+                self.cpu_test(pycbc.fft.ifft,(self.in_cmplx,self.out_cmplx_test), 
                                             (self.in_pristine,self.out_cmplx),self.splaces,backend=back)
         with self.context:
             pycbc.fft.ifft(self.in_cmplx,self.out_cmplx_test,backend=self.backend)
@@ -543,10 +551,10 @@ class _BaseTestFFTClass(function_base.function_base):
                                           dtype=dtype('complex128'))
         self.out_cmplx_test = pycbc.types.zeros(2,dtype=dtype('complex128'))
         if _options['scheme'] != 'cpu':
-            self.scheme_swap(pycbc.fft.ifft,(self.in_cmplx,self.out_cmplx_test), 
+            self.scheme_test(pycbc.fft.ifft,(self.in_cmplx,self.out_cmplx_test), 
                                             (self.in_pristine,self.out_cmplx),self.dplaces,backend=self.backend)
             for back in pycbc.fft.cpu_backends:
-                self.cpu_swap(pycbc.fft.ifft,(self.in_cmplx,self.out_cmplx_test), 
+                self.cpu_test(pycbc.fft.ifft,(self.in_cmplx,self.out_cmplx_test), 
                                             (self.in_pristine,self.out_cmplx),self.dplaces,backend=back)
         with self.context:
             pycbc.fft.ifft(self.in_cmplx,self.out_cmplx_test,backend=self.backend)

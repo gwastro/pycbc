@@ -31,7 +31,7 @@ import unittest
 from pycbc.types import *
 from pycbc.scheme import *
 import numpy
-import array_base
+import base_test
 
 import optparse
 from optparse import OptionParser
@@ -73,7 +73,7 @@ elif _options['scheme'] == 'cpu':
     from numpy import ndarray as SchemeArray
 
 
-class array_tests_base(array_base.array_base):
+class array_tests_base(base_test.array_base):
     def setUp(self):
     
         # We need to check for correct creation from all dtypes, 
@@ -101,121 +101,26 @@ class array_tests_base(array_base.array_base):
             self.okind = 'real'
         else:
             self.okind = 'complex'
-            
-        # Here two test arrays are created. Their content depends on their dtype,
-        # so that we can make use of non-zero imaginary parts.
-        # These arrays are just arbitrarily chosen, but in such a way that they are not
-        # oversimplified, e.g. we don't want to multiply by one, or add zero, or have
-        # the answer be one or zero.
-        # We will make multiples of each to check things are on the cpu/gpu when they should be
-        # and a list containing the values so we can tell it hasn't altered anything it shouldn't.
-        if self.kind == 'real':
-            self.a1 = Array([5,3,1], dtype=self.dtype)
-            self.a2 = Array([5,3,1], dtype=self.dtype)
-            self.a3 = Array([5,3,1], dtype=self.dtype)
-            self.alist = [5,3,1, True]
-        else:
-            self.a1 = Array([5+1j,3+3j,1+5j], dtype=self.dtype)
-            self.a2 = Array([5+1j,3+3j,1+5j], dtype=self.dtype)
-            self.a3 = Array([5+1j,3+3j,1+5j], dtype=self.dtype)
-            self.alist = [5+1j,3+3j,1+5j, True]
-            
-        if self.okind == 'real':
-            self.b1 = Array([10,8,6], dtype=self.odtype)
-            self.b2 = Array([10,8,6], dtype=self.odtype)
-            self.blist = [10,8,6, True]
-        else:
-            self.b1 = Array([10+6j,8+4j,6+2j], dtype=self.odtype)
-            self.b2 = Array([10+6j,8+4j,6+2j], dtype=self.odtype)
-            self.blist = [10+6j,8+4j,6+2j, True]
+        # Now that the kinds are set, we need to call our parent method to set up all the
+        # inputs and answers for our functions
+        self.setNumbers()
         
-        # We will need to also test a non-zero imaginary part scalar.
-        # For simplicity, we will test with a real scalar when odtype is real, 
-        # and a complex scalar when odtype is complex. This will prevent redundancy,
-        # and make it easier to spot problems, just based off of the test names.
-        if self.okind =='real':
-            self.s = 5
-            self.s2 = 5
-        else:
-            self.s = 5+2j
-            self.s2 = 5+2j
+        # Here two test arrays are created.
+        # We will use multiples of each to check things are on the cpu/gpu when they should be.
+        self.a1 = Array(self.alist, dtype=self.dtype)
+        self.a2 = Array(self.alist, dtype=self.dtype)
+        self.a3 = Array(self.alist, dtype=self.dtype)
+
+        self.b1 = Array(self.blist, dtype=self.odtype)
+        self.b2 = Array(self.blist, dtype=self.odtype)
+        
+        # And now we'll make a copy of the scalar. We make a copy so we can still check it later.
+        self.s = self.scalar
 
         # Finally, we want to have an array that we shouldn't be able to operate on,
         # because the precision is wrong, and one where the length is wrong.
         self.bad = Array([1,1,1],dtype = self.other_precision[self.odtype])
         self.bad2 = Array([1,1,1,1], dtype = self.dtype)
-        
-        # We now need to set all the answer arrays up
-        self.setAnswers()
-
-    def checkScheme(self, a, b, s, c, c_ans):
-    
-        self.assertTrue(type(a._scheme) == self.scheme)
-        self.assertTrue(type(a._data) is SchemeArray)
-        self.assertEqual(a[0],self.alist[0])
-        self.assertEqual(a[1],self.alist[1])
-        self.assertEqual(a[2],self.alist[2])
-        
-        self.assertTrue(type(b._scheme) == self.scheme)
-        self.assertTrue(type(b._data) is SchemeArray)
-        self.assertEqual(b[0],self.blist[0])
-        self.assertEqual(b[1],self.blist[1])
-        self.assertEqual(b[2],self.blist[2])
-        
-        
-        self.assertEqual(s, self.s2)
-        
-        if type(c_ans) == list:
-            if c_ans[3]:
-                self.assertTrue(type(c._scheme) == self.scheme)
-                self.assertTrue(type(c._data) is SchemeArray)
-                self.assertEqual(c[0], c_ans[0])
-                self.assertEqual(c[1], c_ans[1])
-                self.assertEqual(c[2], c_ans[2])
-                
-            else:
-                self.assertTrue(type(c._scheme) == self.scheme)
-                self.assertTrue(type(c._data) is SchemeArray)
-                self.assertAlmostEqual(c[0], c_ans[0], self.places)
-                self.assertAlmostEqual(c[1], c_ans[1], self.places)
-                self.assertAlmostEqual(c[2], c_ans[2], self.places)
-                
-        else:
-            self.assertEqual(c, c_ans)
-                
-    def checkCPU(self, a, b, s, c, c_ans):
-        self.assertTrue(a._scheme == None)
-        self.assertTrue(type(a._data) is numpy.ndarray)
-        self.assertEqual(a[0],self.alist[0])
-        self.assertEqual(a[1],self.alist[1])
-        self.assertEqual(a[2],self.alist[2])
-        
-        self.assertTrue(b._scheme == None)
-        self.assertTrue(type(b._data) is numpy.ndarray)
-        self.assertEqual(b[0],self.blist[0])
-        self.assertEqual(b[1],self.blist[1])
-        self.assertEqual(b[2],self.blist[2])
-        
-        
-        self.assertEqual(s, self.s2)
-        
-        if type(c_ans) == list:
-            if c_ans[3]:
-                self.assertTrue(c._scheme == None)
-                self.assertTrue(type(c._data) is numpy.ndarray)
-                self.assertEqual(c[0], c_ans[0])
-                self.assertEqual(c[1], c_ans[1])
-                self.assertEqual(c[2], c_ans[2])
-                
-            else:
-                self.assertTrue(c._scheme == None)
-                self.assertTrue(type(c._data) is numpy.ndarray)
-                self.assertAlmostEqual(c[0], c_ans[0], self.places)
-                self.assertAlmostEqual(c[1], c_ans[1], self.places)
-                self.assertAlmostEqual(c[2], c_ans[2], self.places)
-                
-        else:
-            self.assertEqual(c, c_ans)
 
     def test_set(self):
         c = self.a1 * 1
@@ -239,19 +144,17 @@ class array_tests_base(array_base.array_base):
         if not (self.kind == 'real' and self.okind == 'complex'):   
             with self.context:
                 # We will check setting from arrays on multiple contexts
-                self.a1 *= 1
+                self.b1 *= 1
                 c[0] = Array(self.b1[0])
                 c[1] = Array(self.b2[1])
                 c[2] = Array(self.b1[2])
-                self.checkScheme(self.a1, self.b1, self.s, c, self.blist)
-                self.checkScheme(self.a1, self.b2, self.s, c, self.blist)
+                self.checkScheme((self.b1, self.b2, c),(self.blist,self.blist,self.blist), self.places)
                 c = self.a1 * 1
             # And also going back to the CPU from Other
             c[0] = Array(self.b1[0])
             c[1] = Array(self.b2[1])
             c[2] = Array(self.b1[2])
-            self.checkCPU(self.a2, self.b1, self.s, c, self.blist)
-            self.checkCPU(self.a2, self.b2, self.s, c, self.blist)
+            self.checkCPU((self.b1, self.b2, c),(self.blist,self.blist,self.blist), self.places)
                 
         else:
             with self.context:
@@ -548,46 +451,6 @@ class array_tests_base(array_base.array_base):
                         
             self.assertRaises(TypeError,Array,[1,2,3],copy=False)
             
-    def test_set(self):
-        c = self.a1 * 1
-        with self.context:
-            # First we will check that get works properly for all
-            # the different python syntaxes
-            self.assertTrue(self.a1[:][0] == self.alist[0:3][0])
-            self.assertTrue(self.a1[:][1] == self.alist[0:3][1])
-            self.assertTrue(self.a1[:][2] == self.alist[0:3][2])
-            self.assertRaises(IndexError,self.a1[:].__getitem__,3)
-            self.assertTrue(self.a1[-1] ==self.alist[2])
-            self.assertTrue(self.a1[-2] == self.alist[1])
-            self.assertTrue(self.a1[1:2][0] == self.alist[1])
-            self.assertRaises(IndexError,self.a1[1:2].__getitem__,1)
-            self.assertTrue(self.a1[:-1][0] == self.alist[0:2][0])
-            self.assertTrue(self.a1[:-1][1] == self.alist[0:2][1])
-            self.assertTrue(self.a1[-1:][0] == self.alist[2])
-            self.assertRaises(IndexError, self.a1.__getitem__, 3)
-            self.assertRaises(IndexError, self.a1.__getitem__, -4)
-                            
-        if not (self.kind == 'real' and self.okind == 'complex'):   
-            with self.context:
-                # We will check setting from arrays on multiple contexts
-                self.a1 *= 1
-                c[0] = Array(self.b1[0])
-                c[1] = Array(self.b2[1])
-                c[2] = Array(self.b1[2])
-                self.checkScheme(self.a1, self.b1, self.s, c, self.blist)
-                self.checkScheme(self.a1, self.b2, self.s, c, self.blist)
-                c = self.a1 * 1
-            # And also going back to the CPU from Other
-            c[0] = Array(self.b1[0])
-            c[1] = Array(self.b2[1])
-            c[2] = Array(self.b1[2])
-            self.checkCPU(self.a2, self.b1, self.s, c, self.blist)
-            self.checkCPU(self.a2, self.b2, self.s, c, self.blist)
-                
-        else:
-            with self.context:
-                self.assertRaises(ValueError, self.a1.__setitem__, 0, Array(self.b1[0]))    
-
 def array_test_maker(context,dtype,odtype):
     class tests(array_tests_base,unittest.TestCase):
         def __init__(self,*args):
