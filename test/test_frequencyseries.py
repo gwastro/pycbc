@@ -518,6 +518,12 @@ class TestFrequencySeriesBase(base_test.array_base):
         self.assertRaises(ValueError, self.a1.__idiv__,self.bad3)
         self.a1 /= self.bad4
         self.assertTrue(self.a1._epoch==self.epoch)
+        
+    def test_dot(self):
+        super(TestTimeSeriesBase,self).test_dot()
+        self.assertRaises(ValueError, self.a1.dot,self.bad3)
+        self.a1.dot(self.bad4)
+        self.assertTrue(self.a1._epoch==self.epoch)
 
     def test_sample_frequencies(self):
         with self.context:

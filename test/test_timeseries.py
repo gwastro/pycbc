@@ -507,6 +507,11 @@ class TestTimeSeriesBase(base_test.array_base):
         self.assertRaises(ValueError, self.a1.__idiv__,self.bad3)
         self.assertRaises(ValueError, self.a1.__idiv__,self.bad4)
         
+    def test_dot(self):
+        super(TestTimeSeriesBase,self).test_dot()
+        self.assertRaises(ValueError, self.a1.dot,self.bad3)
+        self.assertRaises(ValueError, self.a1.dot,self.bad4)
+        
     def test_duration(self):
         with self.context:
             # Moving these to the current scheme
