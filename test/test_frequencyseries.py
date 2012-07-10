@@ -72,15 +72,8 @@ elif _options['scheme'] == 'cpu':
 
 class TestFrequencySeriesBase(base_test.array_base):
 
-    def checkScheme(self, inputs, results, places):
-        super(TestFrequencySeriesBase,self).checkScheme(inputs, results, places)
-        for a in inputs:
-            if isinstance(a,pycbc.types.Array):
-                self.assertEqual(a.delta_f, self.delta_f)
-                self.assertEqual(a._epoch, self.epoch)
-                
-    def checkCPU(self, inputs, results, places):
-        super(TestFrequencySeriesBase,self).checkCPU(inputs, results, places)
+    def checkCurrentState(self, inputs, results, places):
+        super(TestFrequencySeriesBase,self).checkCurrentState(inputs, results, places)
         for a in inputs:
             if isinstance(a,pycbc.types.Array):
                 self.assertEqual(a.delta_f, self.delta_f)

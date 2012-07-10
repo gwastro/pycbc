@@ -23,7 +23,7 @@
 #
 '''
 This module tests basic operations including when the starting arrays are on different schemes.
-The checkCPU and checkScheme functions must be declared in the child class, because they require
+The checkCurrentState and checkCurrentState functions must be declared in the child class, because they require
 different checks for Arrays, TimeSeries or FrequencySeries.
 '''
 import pycbc
@@ -36,11 +36,11 @@ if pycbc.HAVE_OPENCL:
 import numpy
 
 class checks(object):
-    def checkScheme(self, inputs, results, places):
+    def checkCurrentState(self, inputs, results, places):
         # First importing the correct dtype the context
-        if type(self.context) is pycbc.scheme.CUDAScheme:
+        if type(pycbc.scheme.mgr.state) is pycbc.scheme.CUDAScheme:
             SchemeArray = pycuda.gpuarray.GPUArray
-        elif type(self.context) is pycbc.scheme.OpenCLScheme:
+        elif type(pycbc.scheme.mgr.state) is pycbc.scheme.OpenCLScheme:
             SchemeArray = pyopencl.array.Array
         else:
             SchemeArray = numpy.ndarray
@@ -58,21 +58,6 @@ class checks(object):
                 
                 # These can be almostequal tests, because the child class should perform
                 # the numerical tests, this is just to be sure that it isn't garbled
-                self.assertEqual(len(val), len(trueval))
-                for i in range(len(trueval)):
-                    self.assertAlmostEqual(val[i], trueval[i], places=places)
-            else:
-                self.assertTrue(val==trueval)
-        
-    def checkCPU(self,inputs, results, places):
-        for k in range(len(inputs)):
-            val = inputs[k]
-            trueval = results[k]
-            if isinstance(val,pycbc.types.Array):
-                # We will need to check the scheme, and data type
-                self.assertTrue(type(val.data)==numpy.ndarray)
-                self.assertTrue(val._scheme==None)
-                
                 self.assertEqual(len(val), len(trueval))
                 for i in range(len(trueval)):
                     self.assertAlmostEqual(val[i], trueval[i], places=places)
@@ -99,7 +84,7 @@ class function_base(checks):
         with self.context:
             for i in range(pow(2,len(inputs))):
                 function(*finalargs[i],**kwargs)
-                self.checkScheme(finalargs[i][0:len(inputs)],results,places)
+                self.checkCurrentState(finalargs[i][0:len(inputs)],results,places)
                 
     # This function is here so that when different kwargs need to be specified for running on the cpu,
     # the tests can call them correctly.
@@ -119,7 +104,7 @@ class function_base(checks):
         
         for i in range(pow(2,len(inputs))):
             function(*finalargs[i],**kwargs)
-            self.checkCPU(finalargs[i][0:len(inputs)],results,places)
+            self.checkCurrentState(finalargs[i][0:len(inputs)],results,places)
 
 class array_base(checks):
     def setNumbers(self):
@@ -322,22 +307,22 @@ class array_base(checks):
         with self.context:
             # CPU with CPU
             c = self.a1 * self.b1
-            self.checkScheme((self.a1, self.b1, c), (self.alist, self.blist, self.mul), self.places)
+            self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.mul), self.places)
             # CPU with Other
             c = self.a2 * self.b1
-            self.checkScheme((self.a2, self.b1, c), (self.alist, self.blist, self.mul), self.places)
+            self.checkCurrentState((self.a2, self.b1, c), (self.alist, self.blist, self.mul), self.places)
             # Current Scheme with Current Scheme
             c = self.a1 * self.b1
-            self.checkScheme((self.a1, self.b1, c), (self.alist, self.blist, self.mul), self.places)
+            self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.mul), self.places)
             # Current Scheme with CPU
             c = self.a1 * self.b2
-            self.checkScheme((self.a1, self.b2, c), (self.alist, self.blist, self.mul), self.places)
+            self.checkCurrentState((self.a1, self.b2, c), (self.alist, self.blist, self.mul), self.places)
             # CPU with scalar
             c = self.a3 * self.s
-            self.checkScheme((self.a3, self.s, c), (self.alist, self.scalar, self.mul_s), self.places)
+            self.checkCurrentState((self.a3, self.s, c), (self.alist, self.scalar, self.mul_s), self.places)
             # Current Scheme with scalar
             c = self.a1 * self.s
-            self.checkScheme((self.a1, self.s, c), (self.alist, self.scalar, self.mul_s), self.places)
+            self.checkCurrentState((self.a1, self.s, c), (self.alist, self.scalar, self.mul_s), self.places)
             
             self.assertRaises(TypeError, self.a1.__mul__, self.bad)
             self.assertRaises(ValueError, self.a1.__mul__, self.bad2)
@@ -345,43 +330,43 @@ class array_base(checks):
         # Now taking Current Scheme Array and going back to the CPU
         # Current Scheme with Current Scheme
         c = self.a1 * self.b1
-        self.checkCPU((self.a1, self.b1, c), (self.alist, self.blist, self.mul), self.places)
+        self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.mul), self.places)
         # CPU with Current Scheme
         c = self.a1 * self.b2
-        self.checkCPU((self.a1, self.b2, c), (self.alist, self.blist, self.mul), self.places)
+        self.checkCurrentState((self.a1, self.b2, c), (self.alist, self.blist, self.mul), self.places)
         # CPU with CPU
         c = self.a1 * self.b1
-        self.checkCPU((self.a1, self.b1, c), (self.alist, self.blist, self.mul), self.places)
+        self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.mul), self.places)
         # Current Scheme with CPU
         c = self.a2 * self.b1
-        self.checkCPU((self.a2, self.b1, c), (self.alist, self.blist, self.mul), self.places)
+        self.checkCurrentState((self.a2, self.b1, c), (self.alist, self.blist, self.mul), self.places)
         # Current Scheme with scalar
         c = self.a3 * self.s
-        self.checkCPU((self.a3, self.s, c), (self.alist, self.scalar, self.mul_s), self.places)
+        self.checkCurrentState((self.a3, self.s, c), (self.alist, self.scalar, self.mul_s), self.places)
         # CPU with scalar
         c = self.a1 * self.s
-        self.checkCPU((self.a1, self.s, c), (self.alist, self.scalar, self.mul_s), self.places)
+        self.checkCurrentState((self.a1, self.s, c), (self.alist, self.scalar, self.mul_s), self.places)
         
     def test_rmul(self):
         with self.context:
             # CPU with CPU
             c = self.a1.__rmul__(self.b1)
-            self.checkScheme((self.a1, self.b1, c), (self.alist, self.blist, self.mul), self.places)
+            self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.mul), self.places)
             # CPU with Current Scheme
             c = self.a2.__rmul__(self.b1)
-            self.checkScheme((self.a2, self.b1, c), (self.alist, self.blist, self.mul), self.places)
+            self.checkCurrentState((self.a2, self.b1, c), (self.alist, self.blist, self.mul), self.places)
             # Current Scheme with Current Scheme
             c = self.a1.__rmul__(self.b1)
-            self.checkScheme((self.a1, self.b1, c), (self.alist, self.blist, self.mul), self.places)
+            self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.mul), self.places)
             # Current Scheme with CPU
             c = self.a1.__rmul__(self.b2)
-            self.checkScheme((self.a1, self.b2, c), (self.alist, self.blist, self.mul), self.places)
+            self.checkCurrentState((self.a1, self.b2, c), (self.alist, self.blist, self.mul), self.places)
             # CPU with scalar
             c = self.s * self.a3
-            self.checkScheme((self.a3, self.s, c), (self.alist, self.scalar, self.mul_s), self.places)
+            self.checkCurrentState((self.a3, self.s, c), (self.alist, self.scalar, self.mul_s), self.places)
             # Current Scheme with scalar
             c = self.s * self.a1
-            self.checkScheme((self.a1, self.s, c), (self.alist, self.scalar, self.mul_s), self.places)
+            self.checkCurrentState((self.a1, self.s, c), (self.alist, self.scalar, self.mul_s), self.places)
             
             self.assertRaises(TypeError, self.a1.__rmul__, self.bad)
             self.assertRaises(ValueError, self.a1.__rmul__, self.bad2)
@@ -389,22 +374,22 @@ class array_base(checks):
         # Now taking Current Scheme Array and going back to the CPU
         # Current Scheme with Current Scheme
         c = self.a1.__rmul__(self.b1)
-        self.checkCPU((self.a1, self.b1, c), (self.alist, self.blist, self.mul), self.places)
+        self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.mul), self.places)
         # CPU with Current Scheme
         c = self.a1.__rmul__(self.b2)
-        self.checkCPU((self.a1, self.b2, c), (self.alist, self.blist, self.mul), self.places)
+        self.checkCurrentState((self.a1, self.b2, c), (self.alist, self.blist, self.mul), self.places)
         # CPU with CPU
         c = self.a1.__rmul__(self.b1)
-        self.checkCPU((self.a1, self.b1, c), (self.alist, self.blist, self.mul), self.places)
+        self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.mul), self.places)
         # Current Scheme with CPU
         c = self.a2.__rmul__(self.b1)
-        self.checkCPU((self.a2, self.b1, c), (self.alist, self.blist, self.mul), self.places)
+        self.checkCurrentState((self.a2, self.b1, c), (self.alist, self.blist, self.mul), self.places)
         # Current Scheme with scalar
         c = self.s * self.a3
-        self.checkCPU((self.a3, self.s, c), (self.alist, self.scalar, self.mul_s), self.places)
+        self.checkCurrentState((self.a3, self.s, c), (self.alist, self.scalar, self.mul_s), self.places)
         # CPU with scalar
         c = self.s * self.a1
-        self.checkCPU((self.a1, self.s, c), (self.alist, self.scalar, self.mul_s), self.places)
+        self.checkCurrentState((self.a1, self.s, c), (self.alist, self.scalar, self.mul_s), self.places)
                 
     def test_imul(self):
         if not (self.kind == 'real' and self.okind == 'complex'):
@@ -420,22 +405,22 @@ class array_base(checks):
                 
                 # CPU with CPU
                 c1 *= self.b1
-                self.checkScheme((self.b1, c1), (self.blist, self.mul), self.places)
+                self.checkCurrentState((self.b1, c1), (self.blist, self.mul), self.places)
                 # CPU with Current Scheme
                 c2 *= self.b1
-                self.checkScheme((self.b1, c2), (self.blist, self.mul), self.places)
+                self.checkCurrentState((self.b1, c2), (self.blist, self.mul), self.places)
                 # Current Scheme with Current Scheme
                 c4 *= self.b1
-                self.checkScheme((self.b1, c4), (self.blist, self.mul), self.places)
+                self.checkCurrentState((self.b1, c4), (self.blist, self.mul), self.places)
                 # Current Scheme with CPU
                 c5 *= self.b2
-                self.checkScheme((self.b2, c5), (self.blist, self.mul), self.places)
+                self.checkCurrentState((self.b2, c5), (self.blist, self.mul), self.places)
                 # CPU with scalar
                 c3 *= self.s
-                self.checkScheme((self.s, c3), (self.scalar, self.mul_s), self.places)
+                self.checkCurrentState((self.s, c3), (self.scalar, self.mul_s), self.places)
                 # Current Scheme with scalar
                 c6 *= self.s
-                self.checkScheme((self.s, c6), (self.scalar, self.mul_s), self.places)
+                self.checkCurrentState((self.s, c6), (self.scalar, self.mul_s), self.places)
                 
                 self.assertRaises(TypeError, self.a1.__imul__, self.bad)
                 self.assertRaises(ValueError, self.a1.__imul__, self.bad2)
@@ -450,22 +435,22 @@ class array_base(checks):
             # Now taking Current Scheme Array and going back to the CPU
             # Current Scheme with Current Scheme
             c1 *= self.b1
-            self.checkCPU((self.b1, c1), (self.blist, self.mul), self.places)
+            self.checkCurrentState((self.b1, c1), (self.blist, self.mul), self.places)
             # CPU with Current Scheme
             c4 *= self.b2
-            self.checkCPU((self.b2, c4), (self.blist, self.mul), self.places)
+            self.checkCurrentState((self.b2, c4), (self.blist, self.mul), self.places)
             # CPU with CPU
             c5 *= self.b1
-            self.checkCPU((self.b1, c5), (self.blist, self.mul), self.places)
+            self.checkCurrentState((self.b1, c5), (self.blist, self.mul), self.places)
             # Current Scheme with CPU
             c2 *= self.b1
-            self.checkCPU((self.b1, c2), (self.blist, self.mul), self.places)
+            self.checkCurrentState((self.b1, c2), (self.blist, self.mul), self.places)
             # Current Scheme with scalar
             c3 *= self.s
-            self.checkCPU((self.s, c3), (self.scalar, self.mul_s), self.places)
+            self.checkCurrentState((self.s, c3), (self.scalar, self.mul_s), self.places)
             # CPU with scalar
             c6 *= self.s
-            self.checkCPU((self.s, c6), (self.scalar, self.mul_s), self.places)
+            self.checkCurrentState((self.s, c6), (self.scalar, self.mul_s), self.places)
             
         else:
             with self.context:
@@ -476,22 +461,22 @@ class array_base(checks):
         with self.context:
             # CPU with CPU
             c = self.a1 + self.b1
-            self.checkScheme((self.a1, self.b1, c), (self.alist, self.blist, self.add), self.places)
+            self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.add), self.places)
             # CPU with Other
             c = self.a2 + self.b1
-            self.checkScheme((self.a2, self.b1, c), (self.alist, self.blist, self.add), self.places)
+            self.checkCurrentState((self.a2, self.b1, c), (self.alist, self.blist, self.add), self.places)
             # Current Scheme with Current Scheme
             c = self.a1 + self.b1
-            self.checkScheme((self.a1, self.b1, c), (self.alist, self.blist, self.add), self.places)
+            self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.add), self.places)
             # Current Scheme with CPU
             c = self.a1 + self.b2
-            self.checkScheme((self.a1, self.b2, c), (self.alist, self.blist, self.add), self.places)
+            self.checkCurrentState((self.a1, self.b2, c), (self.alist, self.blist, self.add), self.places)
             # CPU with scalar
             c = self.a3 + self.s
-            self.checkScheme((self.a3, self.s, c), (self.alist, self.scalar, self.add_s), self.places)
+            self.checkCurrentState((self.a3, self.s, c), (self.alist, self.scalar, self.add_s), self.places)
             # Current Scheme with scalar
             c = self.a1 + self.s
-            self.checkScheme((self.a1, self.s, c), (self.alist, self.scalar, self.add_s), self.places)
+            self.checkCurrentState((self.a1, self.s, c), (self.alist, self.scalar, self.add_s), self.places)
             
             self.assertRaises(TypeError, self.a1.__add__, self.bad)
             self.assertRaises(ValueError, self.a1.__add__, self.bad2)
@@ -499,43 +484,43 @@ class array_base(checks):
         # Now taking Current Scheme Array and going back to the CPU
         # Current Scheme with Current Scheme
         c = self.a1 + self.b1
-        self.checkCPU((self.a1, self.b1, c), (self.alist, self.blist, self.add), self.places)
+        self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.add), self.places)
         # CPU with Current Scheme
         c = self.a1 + self.b2
-        self.checkCPU((self.a1, self.b2, c), (self.alist, self.blist, self.add), self.places)
+        self.checkCurrentState((self.a1, self.b2, c), (self.alist, self.blist, self.add), self.places)
         # CPU with CPU
         c = self.a1 + self.b1
-        self.checkCPU((self.a1, self.b1, c), (self.alist, self.blist, self.add), self.places)
+        self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.add), self.places)
         # Current Scheme with CPU
         c = self.a2 + self.b1
-        self.checkCPU((self.a2, self.b1, c), (self.alist, self.blist, self.add), self.places)
+        self.checkCurrentState((self.a2, self.b1, c), (self.alist, self.blist, self.add), self.places)
         # Current Scheme with scalar
         c = self.a3 + self.s
-        self.checkCPU((self.a3, self.s, c), (self.alist, self.scalar, self.add_s), self.places)
+        self.checkCurrentState((self.a3, self.s, c), (self.alist, self.scalar, self.add_s), self.places)
         # CPU with scalar
         c = self.a1 + self.s
-        self.checkCPU((self.a1, self.s, c), (self.alist, self.scalar, self.add_s), self.places)
+        self.checkCurrentState((self.a1, self.s, c), (self.alist, self.scalar, self.add_s), self.places)
         
     def test_radd(self):
         with self.context:
             # CPU with CPU
             c = self.a1.__radd__(self.b1)
-            self.checkScheme((self.a1, self.b1, c), (self.alist, self.blist, self.add), self.places)
+            self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.add), self.places)
             # CPU with Current Scheme
             c = self.a2.__radd__(self.b1)
-            self.checkScheme((self.a2, self.b1, c), (self.alist, self.blist, self.add), self.places)
+            self.checkCurrentState((self.a2, self.b1, c), (self.alist, self.blist, self.add), self.places)
             # Current Scheme with Current Scheme
             c = self.a1.__radd__(self.b1)
-            self.checkScheme((self.a1, self.b1, c), (self.alist, self.blist, self.add), self.places)
+            self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.add), self.places)
             # Current Scheme with CPU
             c = self.a1.__radd__(self.b2)
-            self.checkScheme((self.a1, self.b2, c), (self.alist, self.blist, self.add), self.places)
+            self.checkCurrentState((self.a1, self.b2, c), (self.alist, self.blist, self.add), self.places)
             # CPU with scalar
             c = self.s + self.a3
-            self.checkScheme((self.a3, self.s, c), (self.alist, self.scalar, self.add_s), self.places)
+            self.checkCurrentState((self.a3, self.s, c), (self.alist, self.scalar, self.add_s), self.places)
             # Current Scheme with scalar
             c = self.s + self.a1
-            self.checkScheme((self.a1, self.s, c), (self.alist, self.scalar, self.add_s), self.places)
+            self.checkCurrentState((self.a1, self.s, c), (self.alist, self.scalar, self.add_s), self.places)
             
             self.assertRaises(TypeError, self.a1.__radd__, self.bad)
             self.assertRaises(ValueError, self.a1.__radd__, self.bad2)
@@ -543,22 +528,22 @@ class array_base(checks):
         # Now taking Current Scheme Array and going back to the CPU
         # Current Scheme with Current Scheme
         c = self.a1.__radd__(self.b1)
-        self.checkCPU((self.a1, self.b1, c), (self.alist, self.blist, self.add), self.places)
+        self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.add), self.places)
         # CPU with Current Scheme
         c = self.a1.__radd__(self.b2)
-        self.checkCPU((self.a1, self.b2, c), (self.alist, self.blist, self.add), self.places)
+        self.checkCurrentState((self.a1, self.b2, c), (self.alist, self.blist, self.add), self.places)
         # CPU with CPU
         c = self.a1.__radd__(self.b1)
-        self.checkCPU((self.a1, self.b1, c), (self.alist, self.blist, self.add), self.places)
+        self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.add), self.places)
         # Current Scheme with CPU
         c = self.a2.__radd__(self.b1)
-        self.checkCPU((self.a2, self.b1, c), (self.alist, self.blist, self.add), self.places)
+        self.checkCurrentState((self.a2, self.b1, c), (self.alist, self.blist, self.add), self.places)
         # Current Scheme with scalar
         c = self.s + self.a3
-        self.checkCPU((self.a3, self.s, c), (self.alist, self.scalar, self.add_s), self.places)
+        self.checkCurrentState((self.a3, self.s, c), (self.alist, self.scalar, self.add_s), self.places)
         # CPU with scalar
         c = self.s + self.a1
-        self.checkCPU((self.a1, self.s, c), (self.alist, self.scalar, self.add_s), self.places)
+        self.checkCurrentState((self.a1, self.s, c), (self.alist, self.scalar, self.add_s), self.places)
         
     def test_iadd(self):
         if not (self.kind == 'real' and self.okind == 'complex'):
@@ -574,22 +559,22 @@ class array_base(checks):
                 
                 # CPU with CPU
                 c1 += self.b1
-                self.checkScheme((self.b1, c1), (self.blist, self.add), self.places)
+                self.checkCurrentState((self.b1, c1), (self.blist, self.add), self.places)
                 # CPU with Current Scheme
                 c2 += self.b1
-                self.checkScheme((self.b1, c2), (self.blist, self.add), self.places)
+                self.checkCurrentState((self.b1, c2), (self.blist, self.add), self.places)
                 # Current Scheme with Current Scheme
                 c4 += self.b1
-                self.checkScheme((self.b1, c4), (self.blist, self.add), self.places)
+                self.checkCurrentState((self.b1, c4), (self.blist, self.add), self.places)
                 # Current Scheme with CPU
                 c5 += self.b2
-                self.checkScheme((self.b2, c5), (self.blist, self.add), self.places)
+                self.checkCurrentState((self.b2, c5), (self.blist, self.add), self.places)
                 # CPU with scalar
                 c3 += self.s
-                self.checkScheme((self.s, c3), (self.scalar, self.add_s), self.places)
+                self.checkCurrentState((self.s, c3), (self.scalar, self.add_s), self.places)
                 # Current Scheme with scalar
                 c6 += self.s
-                self.checkScheme((self.s, c6), (self.scalar, self.add_s), self.places)
+                self.checkCurrentState((self.s, c6), (self.scalar, self.add_s), self.places)
                 
                 self.assertRaises(TypeError, self.a1.__iadd__, self.bad)
                 self.assertRaises(ValueError, self.a1.__iadd__, self.bad2)
@@ -604,22 +589,22 @@ class array_base(checks):
             # Now taking Current Scheme Array and going back to the CPU
             # Current Scheme with Current Scheme
             c1 += self.b1
-            self.checkCPU((self.b1, c1), (self.blist, self.add), self.places)
+            self.checkCurrentState((self.b1, c1), (self.blist, self.add), self.places)
             # CPU with Current Scheme
             c4 += self.b2
-            self.checkCPU((self.b2, c4), (self.blist, self.add), self.places)
+            self.checkCurrentState((self.b2, c4), (self.blist, self.add), self.places)
             # CPU with CPU
             c5 += self.b1
-            self.checkCPU((self.b1, c5), (self.blist, self.add), self.places)
+            self.checkCurrentState((self.b1, c5), (self.blist, self.add), self.places)
             # Current Scheme with CPU
             c2 += self.b1
-            self.checkCPU((self.b1, c2), (self.blist, self.add), self.places)
+            self.checkCurrentState((self.b1, c2), (self.blist, self.add), self.places)
             # Current Scheme with scalar
             c3 += self.s
-            self.checkCPU((self.s, c3), (self.scalar, self.add_s), self.places)
+            self.checkCurrentState((self.s, c3), (self.scalar, self.add_s), self.places)
             # CPU with scalar
             c6 += self.s
-            self.checkCPU((self.s, c6), (self.scalar, self.add_s), self.places)
+            self.checkCurrentState((self.s, c6), (self.scalar, self.add_s), self.places)
             
         else:
             with self.context:
@@ -630,22 +615,22 @@ class array_base(checks):
         with self.context:
             # CPU with CPU
             c = self.a1 / self.b1
-            self.checkScheme((self.a1, self.b1, c), (self.alist, self.blist, self.div), self.places)
+            self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.div), self.places)
             # CPU with Current Scheme
             c = self.a2 / self.b1
-            self.checkScheme((self.a2, self.b1, c), (self.alist, self.blist, self.div), self.places)
+            self.checkCurrentState((self.a2, self.b1, c), (self.alist, self.blist, self.div), self.places)
             # Current Scheme with Current Scheme
             c = self.a1 / self.b1
-            self.checkScheme((self.a1, self.b1, c), (self.alist, self.blist, self.div), self.places)
+            self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.div), self.places)
             # Current Scheme with CPU
             c = self.a1 / self.b2
-            self.checkScheme((self.a1, self.b2, c), (self.alist, self.blist, self.div), self.places)
+            self.checkCurrentState((self.a1, self.b2, c), (self.alist, self.blist, self.div), self.places)
             # CPU with scalar
             c = self.a3 / self.s
-            self.checkScheme((self.a3, self.s, c), (self.alist, self.scalar, self.div_s), self.places)
+            self.checkCurrentState((self.a3, self.s, c), (self.alist, self.scalar, self.div_s), self.places)
             # Current Scheme with scalar
             c = self.a1 / self.s
-            self.checkScheme((self.a1, self.s, c), (self.alist, self.scalar, self.div_s), self.places)
+            self.checkCurrentState((self.a1, self.s, c), (self.alist, self.scalar, self.div_s), self.places)
             
             self.assertRaises(TypeError, self.a1.__div__, self.bad)
             self.assertRaises(ValueError, self.a1.__div__, self.bad2)
@@ -653,43 +638,43 @@ class array_base(checks):
         # Now taking Current Scheme Array and going back to the CPU
         # Current Scheme with Current Scheme
         c = self.a1 / self.b1
-        self.checkCPU((self.a1, self.b1, c), (self.alist, self.blist, self.div), self.places)
+        self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.div), self.places)
         # CPU with Current Scheme
         c = self.a1 / self.b2
-        self.checkCPU((self.a1, self.b2, c), (self.alist, self.blist, self.div), self.places)
+        self.checkCurrentState((self.a1, self.b2, c), (self.alist, self.blist, self.div), self.places)
         # CPU with CPU
         c = self.a1 / self.b1
-        self.checkCPU((self.a1, self.b1, c), (self.alist, self.blist, self.div), self.places)
+        self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.div), self.places)
         # Current Scheme with CPU
         c = self.a2 / self.b1
-        self.checkCPU((self.a2, self.b1, c), (self.alist, self.blist, self.div), self.places)
+        self.checkCurrentState((self.a2, self.b1, c), (self.alist, self.blist, self.div), self.places)
         # Current Scheme with scalar
         c = self.a3 / self.s
-        self.checkCPU((self.a3, self.s, c), (self.alist, self.scalar, self.div_s), self.places)
+        self.checkCurrentState((self.a3, self.s, c), (self.alist, self.scalar, self.div_s), self.places)
         # CPU with scalar
         c = self.a1 / self.s
-        self.checkCPU((self.a1, self.s, c), (self.alist, self.scalar, self.div_s), self.places)
+        self.checkCurrentState((self.a1, self.s, c), (self.alist, self.scalar, self.div_s), self.places)
         
     def test_rdiv(self):
         with self.context:
             # CPU with CPU
             c = self.a1.__rdiv__(self.b1)
-            self.checkScheme((self.a1, self.b1, c), (self.alist, self.blist, self.rdiv), self.places)
+            self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.rdiv), self.places)
             # CPU with Current Scheme
             c = self.a2.__rdiv__(self.b1)
-            self.checkScheme((self.a2, self.b1, c), (self.alist, self.blist, self.rdiv), self.places)
+            self.checkCurrentState((self.a2, self.b1, c), (self.alist, self.blist, self.rdiv), self.places)
             # Current Scheme with Current Scheme
             c = self.a1.__rdiv__(self.b1)
-            self.checkScheme((self.a1, self.b1, c), (self.alist, self.blist, self.rdiv), self.places)
+            self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.rdiv), self.places)
             # Current Scheme with CPU
             c = self.a1.__rdiv__(self.b2)
-            self.checkScheme((self.a1, self.b2, c), (self.alist, self.blist, self.rdiv), self.places)
+            self.checkCurrentState((self.a1, self.b2, c), (self.alist, self.blist, self.rdiv), self.places)
             # CPU with scalar
             c = self.s / self.a3
-            self.checkScheme((self.a3, self.s, c), (self.alist, self.scalar, self.rdiv_s), self.places)
+            self.checkCurrentState((self.a3, self.s, c), (self.alist, self.scalar, self.rdiv_s), self.places)
             # Current Scheme with scalar
             c = self.s / self.a1
-            self.checkScheme((self.a1, self.s, c), (self.alist, self.scalar, self.rdiv_s), self.places)
+            self.checkCurrentState((self.a1, self.s, c), (self.alist, self.scalar, self.rdiv_s), self.places)
             
             self.assertRaises(TypeError, self.a1.__rdiv__, self.bad)
             self.assertRaises(ValueError, self.a1.__rdiv__, self.bad2)
@@ -697,22 +682,22 @@ class array_base(checks):
         # Now taking Current Scheme Array and going back to the CPU
         # Current Scheme with Current Scheme
         c = self.a1.__rdiv__(self.b1)
-        self.checkCPU((self.a1, self.b1, c), (self.alist, self.blist, self.rdiv), self.places)
+        self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.rdiv), self.places)
         # CPU with Current Scheme
         c = self.a1.__rdiv__(self.b2)
-        self.checkCPU((self.a1, self.b2, c), (self.alist, self.blist, self.rdiv), self.places)
+        self.checkCurrentState((self.a1, self.b2, c), (self.alist, self.blist, self.rdiv), self.places)
         # CPU with CPU
         c = self.a1.__rdiv__(self.b1)
-        self.checkCPU((self.a1, self.b1, c), (self.alist, self.blist, self.rdiv), self.places)
+        self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.rdiv), self.places)
         # Current Scheme with CPU
         c = self.a2.__rdiv__(self.b1)
-        self.checkCPU((self.a2, self.b1, c), (self.alist, self.blist, self.rdiv), self.places)
+        self.checkCurrentState((self.a2, self.b1, c), (self.alist, self.blist, self.rdiv), self.places)
         # Current Scheme with scalar
         c = self.s / self.a3
-        self.checkCPU((self.a3, self.s, c), (self.alist, self.scalar, self.rdiv_s), self.places)
+        self.checkCurrentState((self.a3, self.s, c), (self.alist, self.scalar, self.rdiv_s), self.places)
         # CPU with scalar
         c = self.s / self.a1
-        self.checkCPU((self.a1, self.s, c), (self.alist, self.scalar, self.rdiv_s), self.places)
+        self.checkCurrentState((self.a1, self.s, c), (self.alist, self.scalar, self.rdiv_s), self.places)
         
     def test_idiv(self):
         if not (self.kind == 'real' and self.okind == 'complex'):
@@ -728,22 +713,22 @@ class array_base(checks):
                 
                 # CPU with CPU
                 c1 /= self.b1
-                self.checkScheme((self.b1, c1), (self.blist, self.div), self.places)
+                self.checkCurrentState((self.b1, c1), (self.blist, self.div), self.places)
                 # CPU with Current Scheme
                 c2 /= self.b1
-                self.checkScheme((self.b1, c2), (self.blist, self.div), self.places)
+                self.checkCurrentState((self.b1, c2), (self.blist, self.div), self.places)
                 # Current Scheme with Current Scheme
                 c4 /= self.b1
-                self.checkScheme((self.b1, c4), (self.blist, self.div), self.places)
+                self.checkCurrentState((self.b1, c4), (self.blist, self.div), self.places)
                 # Current Scheme with CPU
                 c5 /= self.b2
-                self.checkScheme((self.b2, c5), (self.blist, self.div), self.places)
+                self.checkCurrentState((self.b2, c5), (self.blist, self.div), self.places)
                 # CPU with scalar
                 c3 /= self.s
-                self.checkScheme((self.s, c3), (self.scalar, self.div_s), self.places)
+                self.checkCurrentState((self.s, c3), (self.scalar, self.div_s), self.places)
                 # Current Scheme with scalar
                 c6 /= self.s
-                self.checkScheme((self.s, c6), (self.scalar, self.div_s), self.places)
+                self.checkCurrentState((self.s, c6), (self.scalar, self.div_s), self.places)
                 
                 self.assertRaises(TypeError, self.a1.__idiv__, self.bad)
                 self.assertRaises(ValueError, self.a1.__idiv__, self.bad2)
@@ -758,22 +743,22 @@ class array_base(checks):
             # Now taking Current Scheme Array and going back to the CPU
             # Current Scheme with Current Scheme
             c1 /= self.b1
-            self.checkCPU((self.b1, c1), (self.blist, self.div), self.places)
+            self.checkCurrentState((self.b1, c1), (self.blist, self.div), self.places)
             # CPU with Current Scheme
             c4 /= self.b2
-            self.checkCPU((self.b2, c4), (self.blist, self.div), self.places)
+            self.checkCurrentState((self.b2, c4), (self.blist, self.div), self.places)
             # CPU with CPU
             c5 /= self.b1
-            self.checkCPU((self.b1, c5), (self.blist, self.div), self.places)
+            self.checkCurrentState((self.b1, c5), (self.blist, self.div), self.places)
             # Current Scheme with CPU
             c2 /= self.b1
-            self.checkCPU((self.b1, c2), (self.blist, self.div), self.places)
+            self.checkCurrentState((self.b1, c2), (self.blist, self.div), self.places)
             # Current Scheme with scalar
             c3 /= self.s
-            self.checkCPU((self.s, c3), (self.scalar, self.div_s), self.places)
+            self.checkCurrentState((self.s, c3), (self.scalar, self.div_s), self.places)
             # CPU with scalar
             c6 /= self.s
-            self.checkCPU((self.s, c6), (self.scalar, self.div_s), self.places)
+            self.checkCurrentState((self.s, c6), (self.scalar, self.div_s), self.places)
             
         else:
             with self.context:
@@ -784,22 +769,22 @@ class array_base(checks):
         with self.context:
             # CPU with CPU
             c = self.a1 - self.b1
-            self.checkScheme((self.a1, self.b1, c), (self.alist, self.blist, self.sub), self.places)
+            self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.sub), self.places)
             # CPU with Current Scheme
             c = self.a2 - self.b1
-            self.checkScheme((self.a2, self.b1, c), (self.alist, self.blist, self.sub), self.places)
+            self.checkCurrentState((self.a2, self.b1, c), (self.alist, self.blist, self.sub), self.places)
             # Current Scheme with Current Scheme
             c = self.a1 - self.b1
-            self.checkScheme((self.a1, self.b1, c), (self.alist, self.blist, self.sub), self.places)
+            self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.sub), self.places)
             # Current Scheme with CPU
             c = self.a1 - self.b2
-            self.checkScheme((self.a1, self.b2, c), (self.alist, self.blist, self.sub), self.places)
+            self.checkCurrentState((self.a1, self.b2, c), (self.alist, self.blist, self.sub), self.places)
             # CPU with scalar
             c = self.a3 - self.s
-            self.checkScheme((self.a3, self.s, c), (self.alist, self.scalar, self.sub_s), self.places)
+            self.checkCurrentState((self.a3, self.s, c), (self.alist, self.scalar, self.sub_s), self.places)
             # Current Scheme with scalar
             c = self.a1 - self.s
-            self.checkScheme((self.a1, self.s, c), (self.alist, self.scalar, self.sub_s), self.places)
+            self.checkCurrentState((self.a1, self.s, c), (self.alist, self.scalar, self.sub_s), self.places)
             
             self.assertRaises(TypeError, self.a1.__sub__, self.bad)
             self.assertRaises(ValueError, self.a1.__sub__, self.bad2)
@@ -807,43 +792,43 @@ class array_base(checks):
         # Now taking Current Scheme Array and going back to the CPU
         # Current Scheme with Current Scheme
         c = self.a1 - self.b1
-        self.checkCPU((self.a1, self.b1, c), (self.alist, self.blist, self.sub), self.places)
+        self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.sub), self.places)
         # CPU with Current Scheme
         c = self.a1 - self.b2
-        self.checkCPU((self.a1, self.b2, c), (self.alist, self.blist, self.sub), self.places)
+        self.checkCurrentState((self.a1, self.b2, c), (self.alist, self.blist, self.sub), self.places)
         # CPU with CPU
         c = self.a1 - self.b1
-        self.checkCPU((self.a1, self.b1, c), (self.alist, self.blist, self.sub), self.places)
+        self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.sub), self.places)
         # Current Scheme with CPU
         c = self.a2 - self.b1
-        self.checkCPU((self.a2, self.b1, c), (self.alist, self.blist, self.sub), self.places)
+        self.checkCurrentState((self.a2, self.b1, c), (self.alist, self.blist, self.sub), self.places)
         # Current Scheme with scalar
         c = self.a3 - self.s
-        self.checkCPU((self.a3, self.s, c), (self.alist, self.scalar, self.sub_s), self.places)
+        self.checkCurrentState((self.a3, self.s, c), (self.alist, self.scalar, self.sub_s), self.places)
         # CPU with scalar
         c = self.a1 - self.s
-        self.checkCPU((self.a1, self.s, c), (self.alist, self.scalar, self.sub_s), self.places)
+        self.checkCurrentState((self.a1, self.s, c), (self.alist, self.scalar, self.sub_s), self.places)
         
     def test_rsub(self):
         with self.context:
             # CPU with CPU
             c = self.a1.__rsub__(self.b1)
-            self.checkScheme((self.a1, self.b1, c), (self.alist, self.blist, self.rsub), self.places)
+            self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.rsub), self.places)
             # CPU with Current Scheme
             c = self.a2.__rsub__(self.b1)
-            self.checkScheme((self.a2, self.b1, c), (self.alist, self.blist, self.rsub), self.places)
+            self.checkCurrentState((self.a2, self.b1, c), (self.alist, self.blist, self.rsub), self.places)
             # Current Scheme with Current Scheme
             c = self.a1.__rsub__(self.b1)
-            self.checkScheme((self.a1, self.b1, c), (self.alist, self.blist, self.rsub), self.places)
+            self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.rsub), self.places)
             # Current Scheme with CPU
             c = self.a1.__rsub__(self.b2)
-            self.checkScheme((self.a1, self.b2, c), (self.alist, self.blist, self.rsub), self.places)
+            self.checkCurrentState((self.a1, self.b2, c), (self.alist, self.blist, self.rsub), self.places)
             # CPU with scalar
             c = self.s - self.a3
-            self.checkScheme((self.a3, self.s, c), (self.alist, self.scalar, self.rsub_s), self.places)
+            self.checkCurrentState((self.a3, self.s, c), (self.alist, self.scalar, self.rsub_s), self.places)
             # Current Scheme with scalar
             c = self.s - self.a1
-            self.checkScheme((self.a1, self.s, c), (self.alist, self.scalar, self.rsub_s), self.places)
+            self.checkCurrentState((self.a1, self.s, c), (self.alist, self.scalar, self.rsub_s), self.places)
             
             self.assertRaises(TypeError, self.a1.__rsub__, self.bad)
             self.assertRaises(ValueError, self.a1.__rsub__, self.bad2)
@@ -851,22 +836,22 @@ class array_base(checks):
         # Now taking Current Scheme Array and going back to the CPU
         # Current Scheme with Current Scheme
         c = self.a1.__rsub__(self.b1)
-        self.checkCPU((self.a1, self.b1, c), (self.alist, self.blist, self.rsub), self.places)
+        self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.rsub), self.places)
         # CPU with Current Scheme
         c = self.a1.__rsub__(self.b2)
-        self.checkCPU((self.a1, self.b2, c), (self.alist, self.blist, self.rsub), self.places)
+        self.checkCurrentState((self.a1, self.b2, c), (self.alist, self.blist, self.rsub), self.places)
         # CPU with CPU
         c = self.a1.__rsub__(self.b1)
-        self.checkCPU((self.a1, self.b1, c), (self.alist, self.blist, self.rsub), self.places)
+        self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.rsub), self.places)
         # Current Scheme with CPU
         c = self.a2.__rsub__(self.b1)
-        self.checkCPU((self.a2, self.b1, c), (self.alist, self.blist, self.rsub), self.places)
+        self.checkCurrentState((self.a2, self.b1, c), (self.alist, self.blist, self.rsub), self.places)
         # Current Scheme with scalar
         c = self.s - self.a3
-        self.checkCPU((self.a3, self.s, c), (self.alist, self.scalar, self.rsub_s), self.places)
+        self.checkCurrentState((self.a3, self.s, c), (self.alist, self.scalar, self.rsub_s), self.places)
         # CPU with scalar
         c = self.s - self.a1
-        self.checkCPU((self.a1, self.s, c), (self.alist, self.scalar, self.rsub_s), self.places)
+        self.checkCurrentState((self.a1, self.s, c), (self.alist, self.scalar, self.rsub_s), self.places)
         
     def test_isub(self):
         if not (self.kind == 'real' and self.okind == 'complex'):
@@ -882,22 +867,22 @@ class array_base(checks):
                 
                 # CPU with CPU
                 c1 -= self.b1
-                self.checkScheme((self.b1, c1), (self.blist, self.sub), self.places)
+                self.checkCurrentState((self.b1, c1), (self.blist, self.sub), self.places)
                 # CPU with Current Scheme
                 c2 -= self.b1
-                self.checkScheme((self.b1, c2), (self.blist, self.sub), self.places)
+                self.checkCurrentState((self.b1, c2), (self.blist, self.sub), self.places)
                 # Current Scheme with Current Scheme
                 c4 -= self.b1
-                self.checkScheme((self.b1, c4), (self.blist, self.sub), self.places)
+                self.checkCurrentState((self.b1, c4), (self.blist, self.sub), self.places)
                 # Current Scheme with CPU
                 c5 -= self.b2
-                self.checkScheme((self.b2, c5), (self.blist, self.sub), self.places)
+                self.checkCurrentState((self.b2, c5), (self.blist, self.sub), self.places)
                 # CPU with scalar
                 c3 -= self.s
-                self.checkScheme((self.s, c3), (self.scalar, self.sub_s), self.places)
+                self.checkCurrentState((self.s, c3), (self.scalar, self.sub_s), self.places)
                 # Current Scheme with scalar
                 c6 -= self.s
-                self.checkScheme((self.s, c6), (self.scalar, self.sub_s), self.places)
+                self.checkCurrentState((self.s, c6), (self.scalar, self.sub_s), self.places)
                 
                 self.assertRaises(TypeError, self.a1.__isub__, self.bad)
                 self.assertRaises(ValueError, self.a1.__isub__, self.bad2)
@@ -912,22 +897,22 @@ class array_base(checks):
             # Now taking Current Scheme Array and going back to the CPU
             # Current Scheme with Current Scheme
             c1 -= self.b1
-            self.checkCPU((self.b1, c1), (self.blist, self.sub), self.places)
+            self.checkCurrentState((self.b1, c1), (self.blist, self.sub), self.places)
             # CPU with Current Scheme
             c4 -= self.b2
-            self.checkCPU((self.b2, c4), (self.blist, self.sub), self.places)
+            self.checkCurrentState((self.b2, c4), (self.blist, self.sub), self.places)
             # CPU with CPU
             c5 -= self.b1
-            self.checkCPU((self.b1, c5), (self.blist, self.sub), self.places)
+            self.checkCurrentState((self.b1, c5), (self.blist, self.sub), self.places)
             # Current Scheme with CPU
             c2 -= self.b1
-            self.checkCPU((self.b1, c2), (self.blist, self.sub), self.places)
+            self.checkCurrentState((self.b1, c2), (self.blist, self.sub), self.places)
             # Current Scheme with scalar
             c3 -= self.s
-            self.checkCPU((self.s, c3), (self.scalar, self.sub_s), self.places)
+            self.checkCurrentState((self.s, c3), (self.scalar, self.sub_s), self.places)
             # CPU with scalar
             c6 -= self.s
-            self.checkCPU((self.s, c6), (self.scalar, self.sub_s), self.places)
+            self.checkCurrentState((self.s, c6), (self.scalar, self.sub_s), self.places)
             
         else:
             with self.context:
@@ -941,14 +926,14 @@ class array_base(checks):
             c1 = self.a1 ** 2
             c2 = self.a2 ** -1.5
             
-            self.checkScheme((self.a1, c1), (self.alist, self.pow1), self.places)
-            self.checkScheme((self.a2, c2), (self.alist, self.pow2), self.places)
+            self.checkCurrentState((self.a1, c1), (self.alist, self.pow1), self.places)
+            self.checkCurrentState((self.a2, c2), (self.alist, self.pow2), self.places)
         # From Current Scheme
         c1 = self.a1 ** 2
         c2 = self.a2 ** -1.5
         
-        self.checkCPU((self.a1, c1), (self.alist, self.pow1), self.places)
-        self.checkCPU((self.a2, c2), (self.alist, self.pow2), self.places)
+        self.checkCurrentState((self.a1, c1), (self.alist, self.pow1), self.places)
+        self.checkCurrentState((self.a2, c2), (self.alist, self.pow2), self.places)
         
     def test_abs(self):
         # We want to check that absolute value behaves correctly no matter
@@ -964,57 +949,57 @@ class array_base(checks):
             c3 = abs(t3)
             c4 = abs(t4)
             
-            self.checkScheme((t1, c1), (self.alist,self.abs), self.places)
-            self.checkScheme((t1, c2), (self.alist,self.abs), self.places)
-            self.checkScheme((t1, c3), (self.alist,self.abs), self.places)
-            self.checkScheme((t1, c4), (self.alist,self.abs), self.places)
+            self.checkCurrentState((t1, c1), (self.alist,self.abs), self.places)
+            self.checkCurrentState((t1, c2), (self.alist,self.abs), self.places)
+            self.checkCurrentState((t1, c3), (self.alist,self.abs), self.places)
+            self.checkCurrentState((t1, c4), (self.alist,self.abs), self.places)
             # Now coming from the current scheme
             c1 = abs(t1)
             c2 = abs(t2)
             c3 = abs(t3)
             c4 = abs(t4)
             
-            self.checkScheme((t1, c1), (self.alist,self.abs), self.places)
-            self.checkScheme((t1, c2), (self.alist,self.abs), self.places)
-            self.checkScheme((t1, c3), (self.alist,self.abs), self.places)
-            self.checkScheme((t1, c4), (self.alist,self.abs), self.places)
+            self.checkCurrentState((t1, c1), (self.alist,self.abs), self.places)
+            self.checkCurrentState((t1, c2), (self.alist,self.abs), self.places)
+            self.checkCurrentState((t1, c3), (self.alist,self.abs), self.places)
+            self.checkCurrentState((t1, c4), (self.alist,self.abs), self.places)
         # Now taking abs of the current scheme on the CPU
         c1 = abs(t1)
         c2 = abs(t2)
         c3 = abs(t3)
         c4 = abs(t4)
         
-        self.checkCPU((t1, c1), (self.alist,self.abs), self.places)
-        self.checkCPU((t1, c2), (self.alist,self.abs), self.places)
-        self.checkCPU((t1, c3), (self.alist,self.abs), self.places)
-        self.checkCPU((t1, c4), (self.alist,self.abs), self.places)
+        self.checkCurrentState((t1, c1), (self.alist,self.abs), self.places)
+        self.checkCurrentState((t1, c2), (self.alist,self.abs), self.places)
+        self.checkCurrentState((t1, c3), (self.alist,self.abs), self.places)
+        self.checkCurrentState((t1, c4), (self.alist,self.abs), self.places)
         #And finally, from the CPU to the CPU
         c1 = abs(t1)
         c2 = abs(t2)
         c3 = abs(t3)
         c4 = abs(t4)
         
-        self.checkCPU((t1, c1), (self.alist,self.abs), self.places)
-        self.checkCPU((t1, c2), (self.alist,self.abs), self.places)
-        self.checkCPU((t1, c3), (self.alist,self.abs), self.places)
-        self.checkCPU((t1, c4), (self.alist,self.abs), self.places)
+        self.checkCurrentState((t1, c1), (self.alist,self.abs), self.places)
+        self.checkCurrentState((t1, c2), (self.alist,self.abs), self.places)
+        self.checkCurrentState((t1, c3), (self.alist,self.abs), self.places)
+        self.checkCurrentState((t1, c4), (self.alist,self.abs), self.places)
             
         
     def test_real(self):
         with self.context:
             # From CPU
             c = self.a1.real()
-            self.checkScheme((self.a1, c),(self.alist,self.real), self.places)
+            self.checkCurrentState((self.a1, c),(self.alist,self.real), self.places)
             
             # From Current Scheme
             c = self.a1.real()
-            self.checkScheme((self.a1, c),(self.alist,self.real), self.places)
+            self.checkCurrentState((self.a1, c),(self.alist,self.real), self.places)
         # Now on the CPU, from Current Scheme
         c = self.a1.real()
-        self.checkCPU((self.a1, c),(self.alist,self.real), self.places)
+        self.checkCurrentState((self.a1, c),(self.alist,self.real), self.places)
         # And finally CPU on the CPU
         c = self.a1.real()
-        self.checkCPU((self.a1, c),(self.alist,self.real), self.places)
+        self.checkCurrentState((self.a1, c),(self.alist,self.real), self.places)
             
 
         
@@ -1022,64 +1007,64 @@ class array_base(checks):
         with self.context:
             # From CPU
             c = self.a1.imag()
-            self.checkScheme((self.a1, c),(self.alist,self.imag), self.places)
+            self.checkCurrentState((self.a1, c),(self.alist,self.imag), self.places)
             
             # From Current Scheme
             c = self.a1.imag()
-            self.checkScheme((self.a1, c),(self.alist,self.imag), self.places)
+            self.checkCurrentState((self.a1, c),(self.alist,self.imag), self.places)
         # Now on the CPU, from Current Scheme
         c = self.a1.imag()
-        self.checkCPU((self.a1, c),(self.alist,self.imag), self.places)
+        self.checkCurrentState((self.a1, c),(self.alist,self.imag), self.places)
         # And finally CPU on the CPU
         c = self.a1.imag()
-        self.checkCPU((self.a1, c),(self.alist,self.imag), self.places)
+        self.checkCurrentState((self.a1, c),(self.alist,self.imag), self.places)
         
     def test_conj(self):
         with self.context:
             # From CPU
             c = self.a1.conj()
-            self.checkScheme((self.a1, c),(self.alist,self.conj), self.places)
+            self.checkCurrentState((self.a1, c),(self.alist,self.conj), self.places)
             
             # From Current Scheme
             c = self.a1.conj()
-            self.checkScheme((self.a1, c),(self.alist,self.conj), self.places)
+            self.checkCurrentState((self.a1, c),(self.alist,self.conj), self.places)
         # Now on the CPU, from Current Scheme
         c = self.a1.conj()
-        self.checkCPU((self.a1, c),(self.alist,self.conj), self.places)
+        self.checkCurrentState((self.a1, c),(self.alist,self.conj), self.places)
         # And finally CPU on the CPU
         c = self.a1.conj()
-        self.checkCPU((self.a1, c),(self.alist,self.conj), self.places)
+        self.checkCurrentState((self.a1, c),(self.alist,self.conj), self.places)
             
     def test_sum(self):
         with self.context:
             # From CPU
             c = self.a1.sum()
-            self.checkScheme((self.a1, c),(self.alist,self.sum), self.places)
+            self.checkCurrentState((self.a1, c),(self.alist,self.sum), self.places)
             
             # From Current Scheme
             c = self.a1.sum()
-            self.checkScheme((self.a1, c),(self.alist,self.sum), self.places)
+            self.checkCurrentState((self.a1, c),(self.alist,self.sum), self.places)
         # Now on the CPU, from Current Scheme
         c = self.a1.sum()
-        self.checkCPU((self.a1, c),(self.alist,self.sum), self.places)
+        self.checkCurrentState((self.a1, c),(self.alist,self.sum), self.places)
         # And finally CPU on the CPU
         c = self.a1.sum()
-        self.checkCPU((self.a1, c),(self.alist,self.sum), self.places)
+        self.checkCurrentState((self.a1, c),(self.alist,self.sum), self.places)
             
     def test_dot(self):
         with self.context:
             # CPU with CPU
             c = self.a1.dot(self.b1)
-            self.checkScheme((self.a1, self.b1, c),(self.alist, self.blist, self.dot), self.places)
+            self.checkCurrentState((self.a1, self.b1, c),(self.alist, self.blist, self.dot), self.places)
             # CPU with Current Scheme
             c = self.a2.dot(self.b1)
-            self.checkScheme((self.a2, self.b1, c),(self.alist, self.blist, self.dot), self.places)
+            self.checkCurrentState((self.a2, self.b1, c),(self.alist, self.blist, self.dot), self.places)
             # Current Scheme with Current Scheme
             c = self.a1.dot(self.b1)
-            self.checkScheme((self.a1, self.b1, c),(self.alist, self.blist, self.dot), self.places)
+            self.checkCurrentState((self.a1, self.b1, c),(self.alist, self.blist, self.dot), self.places)
             # Current Scheme with CPU
             c = self.a1.dot(self.b2)
-            self.checkScheme((self.a1, self.b2, c),(self.alist, self.blist, self.dot), self.places)
+            self.checkCurrentState((self.a1, self.b2, c),(self.alist, self.blist, self.dot), self.places)
             
             self.assertRaises(TypeError, self.a1.dot, self.bad)
             self.assertRaises(ValueError, self.a1.dot, self.bad2)
@@ -1087,32 +1072,32 @@ class array_base(checks):
         # Now taking Current Scheme Array and going back to the CPU
         # Current Scheme with Current Scheme
         c = self.a1.dot(self.b1)
-        self.checkCPU((self.a1, self.b1, c),(self.alist, self.blist, self.dot), self.places)
+        self.checkCurrentState((self.a1, self.b1, c),(self.alist, self.blist, self.dot), self.places)
         # CPU with Current Scheme
         c = self.a1.dot(self.b2)
-        self.checkCPU((self.a1, self.b2, c),(self.alist, self.blist, self.dot), self.places)
+        self.checkCurrentState((self.a1, self.b2, c),(self.alist, self.blist, self.dot), self.places)
         # CPU with CPU
         c = self.a1.dot(self.b1)
-        self.checkCPU((self.a1, self.b1, c),(self.alist, self.blist, self.dot), self.places)
+        self.checkCurrentState((self.a1, self.b1, c),(self.alist, self.blist, self.dot), self.places)
         # Current Scheme with CPU
         c = self.a2.dot(self.b1)
-        self.checkCPU((self.a2, self.b1, c),(self.alist, self.blist, self.dot), self.places)
+        self.checkCurrentState((self.a2, self.b1, c),(self.alist, self.blist, self.dot), self.places)
     
     def test_max(self):
         if self.kind == 'real':
             with self.context:
                 # From CPU
                 c = self.a1.max()
-                self.checkScheme((self.a1, c),(self.alist,self.max), self.places)
+                self.checkCurrentState((self.a1, c),(self.alist,self.max), self.places)
                 # From Current Scheme
                 c = self.a1.max()
-                self.checkScheme((self.a1, c),(self.alist,self.max), self.places)
+                self.checkCurrentState((self.a1, c),(self.alist,self.max), self.places)
             # From Current Scheme
             c = self.a1.max()
-            self.checkCPU((self.a1, c),(self.alist,self.max), self.places)
+            self.checkCurrentState((self.a1, c),(self.alist,self.max), self.places)
             # From CPU
             c = self.a1.max()
-            self.checkCPU((self.a1, c),(self.alist,self.max), self.places)
+            self.checkCurrentState((self.a1, c),(self.alist,self.max), self.places)
 
     def test_min(self):
         if self.kind == 'real':
@@ -1120,14 +1105,14 @@ class array_base(checks):
                 self.b1 *= 1
                 # From CPU
                 c = self.a1.min()
-                self.checkScheme((self.a1, c),(self.alist,self.min), self.places)
+                self.checkCurrentState((self.a1, c),(self.alist,self.min), self.places)
                 # From Current Scheme
                 c = self.a1.min()
-                self.checkScheme((self.a1, c),(self.alist,self.min), self.places)
+                self.checkCurrentState((self.a1, c),(self.alist,self.min), self.places)
             # From Current Scheme
             c = self.a1.min()
-            self.checkCPU((self.a1, c),(self.alist,self.min), self.places)
+            self.checkCurrentState((self.a1, c),(self.alist,self.min), self.places)
             # From CPU
             c = self.a1.min()
-            self.checkCPU((self.a1, c),(self.alist,self.min), self.places)
+            self.checkCurrentState((self.a1, c),(self.alist,self.min), self.places)
                 

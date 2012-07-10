@@ -148,13 +148,13 @@ class ArrayTestBase(base_test.array_base):
                 c[0] = Array(self.b1[0])
                 c[1] = Array(self.b2[1])
                 c[2] = Array(self.b1[2])
-                self.checkScheme((self.b1, self.b2, c),(self.blist,self.blist,self.blist), self.places)
+                self.checkCurrentState((self.b1, self.b2, c),(self.blist,self.blist,self.blist), self.places)
                 c = self.a1 * 1
             # And also going back to the CPU from Other
             c[0] = Array(self.b1[0])
             c[1] = Array(self.b2[1])
             c[2] = Array(self.b1[2])
-            self.checkCPU((self.b1, self.b2, c),(self.blist,self.blist,self.blist), self.places)
+            self.checkCurrentState((self.b1, self.b2, c),(self.blist,self.blist,self.blist), self.places)
                 
         else:
             with self.context:
@@ -495,4 +495,5 @@ for sc in scs:
         
         
 if __name__ == '__main__':
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    results = unittest.TextTestRunner(verbosity=2).run(suite)
+        

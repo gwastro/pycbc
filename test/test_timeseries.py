@@ -72,15 +72,8 @@ elif _options['scheme'] == 'cpu':
 
 class TestTimeSeriesBase(base_test.array_base):
 
-    def checkScheme(self, inputs, results, places):
-        super(TestTimeSeriesBase,self).checkScheme(inputs, results, places)
-        for a in inputs:
-            if isinstance(a,pycbc.types.Array):
-                self.assertEqual(a.delta_t, self.delta_t)
-                self.assertEqual(a.start_time, self.epoch)
-                
-    def checkCPU(self, inputs, results, places):
-        super(TestTimeSeriesBase,self).checkCPU(inputs, results, places)
+    def checkCurrentState(self, inputs, results, places):
+        super(TestTimeSeriesBase,self).checkCurrentState(inputs, results, places)
         for a in inputs:
             if isinstance(a,pycbc.types.Array):
                 self.assertEqual(a.delta_t, self.delta_t)
