@@ -73,7 +73,7 @@ elif _options['scheme'] == 'cpu':
     from numpy import ndarray as SchemeArray
 
 
-class array_tests_base(base_test.array_base):
+class ArrayTestBase(base_test.array_base):
     def setUp(self):
     
         # We need to check for correct creation from all dtypes, 
@@ -452,7 +452,7 @@ class array_tests_base(base_test.array_base):
             self.assertRaises(TypeError,Array,[1,2,3],copy=False)
             
 def array_test_maker(context,dtype,odtype):
-    class tests(array_tests_base,unittest.TestCase):
+    class tests(ArrayTestBase,unittest.TestCase):
         def __init__(self,*args):
             self.context=context
             self.dtype=dtype
