@@ -32,6 +32,7 @@ from pycbc.types import *
 from pycbc.scheme import *
 import numpy
 import base_test
+import sys
 
 import optparse
 from optparse import OptionParser
@@ -497,4 +498,26 @@ for sc in scs:
         
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
+    
+    NotImpErrors = 0
+    for error in results.errors:
+        for errormsg in error:
+            if type(errormsg) is str:
+                if 'NotImplented' in errormsg:
+                    NotImpErrors +=1
+                    break
+    if results.wasSuccessful():
+        sys.exit(0)
+    elif len(results.failures)==0 and len(results.errors)==NotImpErrors:
+        sys.exit(1)
+    else:
+        sys.exit(2)
+#    elif len(results.errors) == 0:
+#        sys.exit(2)
+#    elif len(results.errors)==NotImpErrors:
+#        sys.exit(3)
+#    elif len(results.failures)==0:
+#        sys.exit(4)
+#    else:
+#        sys.exit(5)
         

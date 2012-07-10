@@ -33,6 +33,7 @@ from numpy import dtype
 import pycbc.fft
 import unittest
 import base_test
+import sys
 
 import optparse
 from optparse import OptionParser
@@ -684,16 +685,30 @@ if __name__ == '__main__':
         suiteCPU = unittest.TestSuite()
         for klass in CPUTestClasses:
             suiteCPU.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
-        unittest.TextTestRunner(verbosity=2).run(suiteCPU)
+        results = unittest.TextTestRunner(verbosity=2).run(suiteCPU)
 
     if _options['scheme']=='cuda':
         suiteCUDA = unittest.TestSuite()
         for klass in CUDATestClasses:
             suiteCUDA.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
-        unittest.TextTestRunner(verbosity=2).run(suiteCUDA)
+        results = unittest.TextTestRunner(verbosity=2).run(suiteCUDA)
 
     if _options['scheme']=='opencl':
         suiteOpenCL = unittest.TestSuite()
         for klass in OpenCLTestClasses:
             suiteOpenCL.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
-        unittest.TextTestRunner(verbosity=2).run(suiteOpenCL)
+        results = unittest.TextTestRunner(verbosity=2).run(suiteOpenCL)
+        
+    NotImpErrors = 0
+    for error in results.errors:
+        for errormsg in error:
+            if type(errormsg) is str:
+                if 'NotImplented' in errormsg:
+                    NotImpErrors +=1
+                    break
+    if results.wasSuccessful():
+        sys.exit(0)
+    elif len(results.failures)==0 and len(results.errors)==NotImpErrors:
+        sys.exit(1)
+    else:
+        sys.exit(2)

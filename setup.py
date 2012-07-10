@@ -22,6 +22,7 @@ setup.py file for PyCBC package
 import os
 import fnmatch
 import sys
+import subprocess
 import commands
 from trace import fullmodname
 import unittest
@@ -32,6 +33,7 @@ from distutils.core import setup,Command,Extension
 # ======== DISTUTILS CONFIGURATION AND BUILD SCRIPTS ==========================        
 # Run all of the testing scripts
 class test(Command):
+    
     user_options = []
     test_modules = []
     def initialize_options(self):
@@ -52,16 +54,50 @@ class test(Command):
         return modules
         
     def run(self):
-        # Ensure that we have everything built first
-        self.run_command('build')
+        import pycbc
         # Get the list of cpu test modules
         self.test_modules+= self.find_test_modules("test*.py")     
         # Run from the build directory
         sys.path.insert(0,self.build_dir)
-        # load all of the tests into a suite
-        suite = unittest.TestLoader().loadTestsFromNames(self.test_modules)
-        # run test suite
-        results=unittest.TextTestRunner(verbosity=2).run(suite)
+
+        results = []
+        cuda_results = []
+        opencl_results = []
+        for test in self.test_modules:
+            a = subprocess.call(['python','test/'+test+'.py','-s', 'cpu'])
+            results.append([test,a])
+        if pycbc.HAVE_CUDA:
+            for test in self.test_modules:
+                a = subprocess.call(['python','test/'+test+'.py','-s', 'cuda'])
+                cuda_results.append([test,a])
+        if pycbc.HAVE_OPENCL:
+            for test in self.test_modules:
+                a = subprocess.call(['python','test/'+test+'.py','-s', 'opencl'])
+                opencl_results.append([test,a])
+        
+        print "\n-----CPU Results-----"
+        for test in results:
+            print test[0] + " status - "+str(test[1])
+        if len(cuda_results) != 0:
+            print "\n-----CUDA Results-----"
+            for test in cuda_results:
+                print test[0] + " status - "+str(test[1])
+        if len(opencl_results) != 0:
+            print "\n-----OpenCL Results-----"
+            for test in opencl_results:
+                print test[0] + " status - "+str(test[1])
+        summary = 0
+        for test in results:
+            if test[1] > summary:
+                summary = test[1]
+        for test in cuda_results:
+            if test[1] > summary:
+                summary = test[1]
+        for test in opencl_results:
+            if test[1] > summary:
+                summary = test[1]
+        print "\n-----Summary-----"
+        print summary
 
 
 # do the actual work of building the package
