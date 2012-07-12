@@ -49,7 +49,7 @@ def _backend_update(key,possible,available):
 
 # CPU backends:
 
-import swiglalfft as _cpu_default
+import lalfft as _cpu_default
 
 # The next part is a little tricky.  There are two issues:
 #  (1) The logical name for what the user specifies as the backend
@@ -58,7 +58,7 @@ import swiglalfft as _cpu_default
 #      in principle may not be available on all platforms (even
 #      all CPU platforms)
 _cpu_possible_backends = {'numpy':'npfft',
-                          'lal':'swiglalfft'}
+                          'lal':'lalfft'}
 _cpu_backends = {'Default': _cpu_default}
 cpu_backends = ['Default']
 
