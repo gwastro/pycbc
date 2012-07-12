@@ -554,23 +554,11 @@ class Array(object):
     @_convert
     def  lal(self):
         """ Returns a LAL Object that contains this data """
-        
-        lal_data = None
+
         if type(self._data) is not _numpy.ndarray:
             raise TypeError("Cannot return lal type from the GPU")
-        elif self._data.dtype == float32:
-            lal_data = _lal.CreateREAL4Vector(len(self))
-        elif self._data.dtype == float64:
-            lal_data = _lal.CreateREAL8Vector(len(self))
-        elif self._data.dtype == complex64:
-            lal_data = _lal.CreateCOMPLEX8Vector(len(self))
-        elif self._data.dtype == complex128:
-            lal_data = _lal.CreateCOMPLEX16Vector(len(self))
-
-        lal_data.data[:] = self._data
-        self._data = lal_data.data
-
-        return lal_data
+        else:
+            return self;
 
     @property
     def dtype(self):
