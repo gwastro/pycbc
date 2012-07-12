@@ -56,7 +56,7 @@ def ReadFrame(filename, channels, start=None, end=None):
             else:
                 end = int(end)             
         span = end - start
-        if span < 0:
+        if span <= 0:
             raise ValueError('beginning must be before end')
     else:
         start = -1
@@ -94,7 +94,7 @@ def ReadCache(filename, channels, start, end):
         else:
             end = int(end)
     span = end - start
-    if span < 0:
+    if span <= 0:
         raise ValueError('beginning must be before end')
     with open(filename,'r') as f:
         lal_cache = lal.Cache.fromfile(f)
