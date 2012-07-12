@@ -92,7 +92,10 @@ def ReadCache(filename, channels, start, end):
         if int(end) != end:
             raise ValueError('start and end times must be integer valued')
         else:
-            end = int(end)  
+            end = int(end)
+    span = end - start
+    if span < 0:
+        raise ValueError('beginning must be before end')
     with open(filename,'r') as f:
         lal_cache = lal.Cache.fromfile(f)
     frdata = frutils.FrameCache(lal_cache)
