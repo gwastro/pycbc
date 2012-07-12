@@ -54,7 +54,6 @@ class test(Command):
         return modules
         
     def run(self):
-        import pycbc
         # Get the list of cpu test modules
         self.test_modules+= self.find_test_modules("test*.py")     
         # Run from the build directory
@@ -66,14 +65,10 @@ class test(Command):
         for test in self.test_modules:
             a = subprocess.call(['python','test/'+test+'.py','-s', 'cpu'])
             results.append([test,a])
-        if pycbc.HAVE_CUDA:
-            for test in self.test_modules:
-                a = subprocess.call(['python','test/'+test+'.py','-s', 'cuda'])
-                cuda_results.append([test,a])
-        if pycbc.HAVE_OPENCL:
-            for test in self.test_modules:
-                a = subprocess.call(['python','test/'+test+'.py','-s', 'opencl'])
-                opencl_results.append([test,a])
+            a = subprocess.call(['python','test/'+test+'.py','-s', 'cuda'])
+            cuda_results.append([test,a])
+            a = subprocess.call(['python','test/'+test+'.py','-s', 'opencl'])
+            opencl_results.append([test,a])
         
         print "\n-----CPU Results-----"
         for test in results:
@@ -86,18 +81,6 @@ class test(Command):
             print "\n-----OpenCL Results-----"
             for test in opencl_results:
                 print test[0] + " status - "+str(test[1])
-        summary = 0
-        for test in results:
-            if test[1] > summary:
-                summary = test[1]
-        for test in cuda_results:
-            if test[1] > summary:
-                summary = test[1]
-        for test in opencl_results:
-            if test[1] > summary:
-                summary = test[1]
-        print "\n-----Summary-----"
-        print summary
 
 
 # do the actual work of building the package
