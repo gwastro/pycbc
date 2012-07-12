@@ -34,19 +34,30 @@ import swiglal as _swiglal
 import numpy as _numpy
 
 def ReadFrame(filename, channels, start=None, end=None):
-'''
-This function will read a Time-Series  or list of Time-Series in from a LIGO frame file. 
-It accepts a filename (str), a channel (str) or list of channels, and a start and end time 
-(these nust be integers, they can be LIGOTimeGPS instances, or simply  numbers)
-'''
     if start is not None and end is not None:
-        start = float(start)
-        end = float(end)
+        if type(start) is _swiglal.LIGOTimeGPS:
+            if start.gpsNanoSeconds != 0:
+                raise ValueError('start and end times must be integer valued')
+            else:
+                start = start.gpsSeconds
+        else:
+            if int(start) != start:
+                raise ValueError('start and end times must be integer valued')
+            else:
+                start = int(start)                
+        if type(end) is _swiglal.LIGOTimeGPS:
+            if end.gpsNanoSeconds != 0:
+                raise ValueError('start and end times must be integer valued')
+            else:
+                end = end.gpsSeconds
+        else:
+            if int(end) != end:
+                raise ValueError('start and end times must be integer valued')
+            else:
+                end = int(end)             
         span = end - start
         if span < 0:
             raise ValueError('beginning must be before end')
-        if start%1 != 0 or end%1 != 0:
-            raise ValueError('start and end times must be integers')
     else:
         start = -1
         span = -1
@@ -62,15 +73,26 @@ It accepts a filename (str), a channel (str) or list of channels, and a start an
     return ts
 
 def ReadCache(filename, channels, start, end):
-'''
-This function will read a Time-Series  or list of Time-Series in from a LIGO cache file. 
-It accepts a filename (str), a channel (str) or list of channels, and a start and end time 
-(these nust be integers, they can be LIGOTimeGPS instances, or simply  numbers)
-'''
-    start = float(start)
-    end = float(end)
-    if start%1 != 0 or end%1 != 0:
-        raise ValueError('start and end times must be integers')
+    if type(start) is _swiglal.LIGOTimeGPS:
+        if start.gpsNanoSeconds != 0:
+            raise ValueError('start and end times must be integer valued')
+        else:
+            start = start.gpsSeconds
+    else:
+        if int(start) != start:
+            raise ValueError('start and end times must be integer valued')
+        else:
+            start = int(start)                
+    if type(end) is _swiglal.LIGOTimeGPS:
+        if end.gpsNanoSeconds != 0:
+            raise ValueError('start and end times must be integer valued')
+        else:
+            end = end.gpsSeconds
+    else:
+        if int(end) != end:
+            raise ValueError('start and end times must be integer valued')
+        else:
+            end = int(end)  
     with open(filename,'r') as f:
         lal_cache = lal.Cache.fromfile(f)
     frdata = frutils.FrameCache(lal_cache)
