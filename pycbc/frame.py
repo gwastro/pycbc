@@ -33,7 +33,7 @@ from pylal import Fr, frutils
 import swiglal as _swiglal
 import numpy as _numpy
 
-def ReadFrame(filename, channels, start=None, end=None):
+def read_frame(filename, channels, start=None, end=None):
     if start is not None and end is not None:
         if type(start) is _swiglal.LIGOTimeGPS:
             if start.gpsNanoSeconds != 0:
@@ -72,7 +72,7 @@ def ReadFrame(filename, channels, start=None, end=None):
         ts = pycbc.types.TimeSeries(frdata[0],frdata[3], _swiglal.LIGOTimeGPS(frdata[1]), copy=False)
     return ts
 
-def ReadCache(filename, channels, start, end):
+def read_cache(filename, channels, start, end):
     if type(start) is _swiglal.LIGOTimeGPS:
         if start.gpsNanoSeconds != 0:
             raise ValueError('start and end times must be integer valued')
