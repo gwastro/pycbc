@@ -27,21 +27,21 @@ This module provides a class representing a time series.
 """
 
 from pycbc.types.array import Array,_convert
-import swiglal as _swiglal
+import lal as _lal
 import numpy as _numpy
 
 class TimeSeries(Array):
     def __init__(self, initial_array, delta_t, epoch=None, dtype=None, copy=True):
         """initial_array: array containing sampled data.        
         delta_t: time between consecutive samples in seconds.
-        epoch: time series start time in seconds. Must be a swiglal.LIGOTimeGPS object.
+        epoch: time series start time in seconds. Must be a lal.LIGOTimeGPS object.
         """
         if len(initial_array) < 1:
             raise ValueError('initial_array must contain at least one sample.')
         if not delta_t > 0:
             raise ValueError('delta_t must be a positive number')
-        if epoch is not None and not isinstance(epoch, _swiglal.LIGOTimeGPS):
-            raise TypeError('epoch must be either None or a swiglal.LIGOTimeGPS')
+        if epoch is not None and not isinstance(epoch, _lal.LIGOTimeGPS):
+            raise TypeError('epoch must be either None or a lal.LIGOTimeGPS')
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
         self._delta_t = delta_t
         self._epoch = epoch

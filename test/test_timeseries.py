@@ -30,7 +30,7 @@ import unittest
 from pycbc.types import *
 from pycbc.scheme import *
 import numpy 
-import swiglal
+import lal
 import base_test
 import sys
 
@@ -133,7 +133,7 @@ class TestTimeSeriesBase(base_test.array_base):
         # These are timeseries that have problems specific to timeseries
         self.bad3 = TimeSeries([1,1,1], 0.2, epoch=self.epoch, dtype = self.dtype)
         if self.epoch is None:
-            self.bad4 = TimeSeries([1,1,1], self.delta_t, epoch = swiglal.LIGOTimeGPS(1000, 1000), dtype = self.dtype)
+            self.bad4 = TimeSeries([1,1,1], self.delta_t, epoch = lal.LIGOTimeGPS(1000, 1000), dtype = self.dtype)
         else:
             self.bad4 = TimeSeries([1,1,1], self.delta_t, epoch=None, dtype = self.dtype)
 
@@ -552,7 +552,7 @@ types = [ (float32,[float32,complex64]), (float64,[float64,complex128]),
 suite = unittest.TestSuite()
 
 # Unlike the regular array tests, we will need to test with an epoch, and with none
-epochs = [swiglal.LIGOTimeGPS(1000, 1000),None]
+epochs = [lal.LIGOTimeGPS(1000, 1000),None]
 
 schemes = []
 

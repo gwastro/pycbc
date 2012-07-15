@@ -27,24 +27,24 @@ for the PyCBC package.
 """
 
 import pycbc.types
-import swiglal
-from swiglal import XLALCreateForwardCOMPLEX16FFTPlan as _CreateForwardCOMPLEX16FFTPlan
-from swiglal import XLALCreateForwardCOMPLEX8FFTPlan as _CreateForwardCOMPLEX8FFTPlan
-from swiglal import XLALCreateForwardREAL8FFTPlan as _CreateForwardREAL8FFTPlan
-from swiglal import XLALCreateForwardREAL4FFTPlan as _CreateForwardREAL4FFTPlan
-from swiglal import XLALCreateReverseCOMPLEX16FFTPlan as _CreateReverseCOMPLEX16FFTPlan
-from swiglal import XLALCreateReverseCOMPLEX8FFTPlan as _CreateReverseCOMPLEX8FFTPlan
-from swiglal import XLALCreateReverseREAL8FFTPlan as _CreateReverseREAL8FFTPlan
-from swiglal import XLALCreateReverseREAL4FFTPlan as _CreateReverseREAL4FFTPlan
+import lal
+from lal import CreateForwardCOMPLEX16FFTPlan as _CreateForwardCOMPLEX16FFTPlan
+from lal import CreateForwardCOMPLEX8FFTPlan as _CreateForwardCOMPLEX8FFTPlan
+from lal import CreateForwardREAL8FFTPlan as _CreateForwardREAL8FFTPlan
+from lal import CreateForwardREAL4FFTPlan as _CreateForwardREAL4FFTPlan
+from lal import CreateReverseCOMPLEX16FFTPlan as _CreateReverseCOMPLEX16FFTPlan
+from lal import CreateReverseCOMPLEX8FFTPlan as _CreateReverseCOMPLEX8FFTPlan
+from lal import CreateReverseREAL8FFTPlan as _CreateReverseREAL8FFTPlan
+from lal import CreateReverseREAL4FFTPlan as _CreateReverseREAL4FFTPlan
 
-from swiglal import XLALCOMPLEX16VectorFFT as _COMPLEX16VectorFFT
-from swiglal import XLALCOMPLEX8VectorFFT as _COMPLEX8VectorFFT
-from swiglal import XLALREAL8ForwardFFT as _REAL8ForwardFFT
-from swiglal import XLALREAL4ForwardFFT as _REAL4ForwardFFT
-from swiglal import XLALCOMPLEX16VectorFFT as _COMPLEX16VectorFFT
-from swiglal import XLALCOMPLEX8VectorFFT as _COMPLEX8VectorFFT
-from swiglal import XLALREAL8ReverseFFT as _REAL8ReverseFFT
-from swiglal import XLALREAL4ReverseFFT as _REAL4ReverseFFT
+from lal import COMPLEX16VectorFFT as _COMPLEX16VectorFFT
+from lal import COMPLEX8VectorFFT as _COMPLEX8VectorFFT
+from lal import REAL8ForwardFFT as _REAL8ForwardFFT
+from lal import REAL4ForwardFFT as _REAL4ForwardFFT
+from lal import COMPLEX16VectorFFT as _COMPLEX16VectorFFT
+from lal import COMPLEX8VectorFFT as _COMPLEX8VectorFFT
+from lal import REAL8ReverseFFT as _REAL8ReverseFFT
+from lal import REAL4ReverseFFT as _REAL4ReverseFFT
 
 _default_measurelvl = 1
 _forward_plans = {}

@@ -27,7 +27,7 @@ This module provides a class representing a frequency series.
 """
 
 from pycbc.types.array import Array,_convert
-import swiglal as _swiglal
+import lal as _lal
 import numpy as _numpy
 
 class FrequencySeries(Array):
@@ -35,14 +35,14 @@ class FrequencySeries(Array):
         """initial_array: array containing sampled data.
         delta_f: frequency between consecutive samples in Hertz.
         epoch: start time of the associated time domain data, in seconds.
-               Must be a swiglal.LIGOTimeGPS object.
+               Must be a lal.LIGOTimeGPS object.
         """
         if len(initial_array) < 1:
             raise ValueError('initial_array must contain at least one sample.')
         if not delta_f > 0:
             raise ValueError('delta_f must be a positive number')
-        if epoch is not None and not isinstance(epoch, _swiglal.LIGOTimeGPS):
-            raise TypeError('epoch must be either None or a swiglal.LIGOTimeGPS')
+        if epoch is not None and not isinstance(epoch, _lal.LIGOTimeGPS):
+            raise TypeError('epoch must be either None or a lal.LIGOTimeGPS')
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
         self._delta_f = delta_f
         self._epoch = epoch

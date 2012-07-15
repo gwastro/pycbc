@@ -29,7 +29,7 @@ PyOpenCL, and Numpy.
 
 import functools as _functools
 
-import swiglal as _swiglal
+import lal as _lal
 import numpy as _numpy
 from numpy import float32,float64,complex64,complex128
 
@@ -513,7 +513,7 @@ class Array(object):
     def ptr(self):
         """ Returns a pointer to the memory of this array """
         if type(self._data) is _numpy.ndarray:
-            raise TypeError("Please use swiglal for CPU objects")
+            raise TypeError("Please use lal for CPU objects")
         if _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
             return self._data.ptr
         if _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
@@ -528,13 +528,13 @@ class Array(object):
         if type(self._data) is not _numpy.ndarray:
             raise TypeError("Cannot return lal type from the GPU")
         elif self._data.dtype == float32:
-            lal_data = _swiglal.XLALCreateREAL4Vector(len(self))
+            lal_data = _lal.CreateREAL4Vector(len(self))
         elif self._data.dtype == float64:
-            lal_data = _swiglal.XLALCreateREAL8Vector(len(self))
+            lal_data = _lal.CreateREAL8Vector(len(self))
         elif self._data.dtype == complex64:
-            lal_data = _swiglal.XLALCreateCOMPLEX8Vector(len(self))
+            lal_data = _lal.CreateCOMPLEX8Vector(len(self))
         elif self._data.dtype == complex128:
-            lal_data = _swiglal.XLALCreateCOMPLEX16Vector(len(self))
+            lal_data = _lal.CreateCOMPLEX16Vector(len(self))
 
         lal_data.data[:] = self._data
         self._data = lal_data.data
