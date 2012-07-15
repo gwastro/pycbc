@@ -70,9 +70,27 @@ class TestBase(Command):
             else:
                 result_str = str(test).ljust(30) + ": Pass" 
             test_results.append(result_str)
+        
+        for test in test_results:
+            print test
+            
 
 class test(Command):
-    sub_commands = [('test_cpu',None),('test_cuda',None),('test_opencl',None)]
+    def has_cuda(self):
+        try:
+            import pycuda
+            return True
+        except:
+            return False
+        
+    def has_opencl(self):
+        try:
+            import pyopencl
+            return True
+        except:
+            return False
+
+    sub_commands = [('test_cpu',None),('test_cuda',has_cuda),('test_opencl',has_opencl)]
     user_options = []
     description = "run the available tests for all compute schemes (cpu,cuda,opencl)"
     def initialize_options(self):
@@ -82,8 +100,6 @@ class test(Command):
     def run(self):
         for cmd_name in self.get_sub_commands():
             self.run_command(cmd_name)
-        for test in test_results:
-            print test
     
 class test_cpu(TestBase):
     description = "run all CPU tests"
@@ -114,7 +130,7 @@ setup (
     cmdclass = { 'test'  : test , 'test_cpu':test_cpu,'test_cuda':test_cuda,
                  'test_opencl':test_opencl},
     ext_modules = [],
-	requires = ['swiglal'],
+	requires = ['lal'],
     packages = ['pycbc','pycbc.fft','pycbc.types'],
     scripts = [],
 )
