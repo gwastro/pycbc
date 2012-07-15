@@ -55,14 +55,16 @@ class TestBase(Command):
         return modules
         
     def run(self):
+        self.run_command('build')
         # Get the list of cpu test modules
         self.test_modules = self.find_test_modules("test*.py")     
         # Run from the build directory
-        sys.path.insert(0,self.build_dir)
+        os.environ['PYTHONPATH'] = self.build_dir + ":" + os.environ['PYTHONPATH']
 
-        test_results.append("\n" + (self.scheme + " tests ").rjust(30))
+        test_results.append("\n" + (self.scheme + " tests ").rjust(30))    
         for test in self.test_modules:
-            a = subprocess.call(['python','test/'+test+'.py','-s', self.scheme])
+            test_command = 'python ' + 'test/' + test + '.py -s ' + self.scheme 
+            a = subprocess.call(test_command,env=os.environ,shell=True)
             if a != 0:
                 result_str = str(test).ljust(30) + ": Fail : " + str(a)
             else:
