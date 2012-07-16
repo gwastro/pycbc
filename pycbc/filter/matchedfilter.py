@@ -136,11 +136,18 @@ def matchedfilter(template,data,psd=None,low_frequency_cutoff=None,
     # Only weight by the psd if it was explictly given.
     # In most cases, the expectation is to prewhiten the data 
     if psd is not None:
-        _qtilde[kmin:kmax] /= psd[kmin:kmax]
+        if isinstance(psd,FrequencySeries):
+            if psd.delta_f == stilde.delta_f :
+                _qtilde[kmin:kmax] /= psd[kmin:kmax]
+            else:
+                raise TypeError("PSD delta_f does not match data")
+        else:
+            raise TypeError("PSD must be a FrequencySeries")
+            
 
     ifft(_qtilde,_q)
     
-    # Only calculate the normalization if needed. For SPA waveforms this can be 
+    # Only calculate the normalization if needed. For SPA waveforms
     # this can be done ahead of time.
     if calculate_norm:
         s_norm = sigmasq(htilde,psd,low_frequency_cutoff,high_frequency_cutoff)

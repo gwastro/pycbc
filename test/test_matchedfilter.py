@@ -25,6 +25,7 @@
 """
 These are the unittests for the pycbc.filter.matchedfilter module
 """
+import sys
 import pycbc
 import unittest
 from pycbc.types import *
@@ -127,6 +128,19 @@ class TestMatchedFilter(unittest.TestCase):
         f2 = get_frequencyseries(self.filt2D)
         o = match(self.filtD,self.filt2D)
         self.assertAlmostEqual(sqrt(0.5),o,places=3)
+        
+    def test_errors(self):
+
+        #Check that an incompatible data and filter produce an error
+        self.assertRaises(ValueError,match,self.filt,self.filt[0:5])
+        
+        #Check that an incompatible psd produces an error
+        self.assertRaises(TypeError,match,self.filt,self.filt,psd=self.filt) 
+        psd = FrequencySeries(zeros(len(self.filt)/2+1),delta_f=100000)
+        self.assertRaises(TypeError,match,self.filt,self.filt,psd=psd)
+        
+        #Check that only TimeSeries or FrequencySeries are accepted
+        self.assertRaises(TypeError,match,zeros(10),zeros(10))
 
 
 scheme = None
@@ -143,4 +157,18 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestMatchedFilter))
 
 if __name__ == '__main__':
     with scheme:
-        unittest.TextTestRunner(verbosity=2).run(suite)
+        results = unittest.TextTestRunner(verbosity=2).run(suite)
+        
+    NotImpErrors = 0
+    for error in results.errors:
+        for errormsg in error:
+            if type(errormsg) is str:
+                if 'NotImplented' in errormsg:
+                    NotImpErrors +=1
+                    break
+    if results.wasSuccessful():
+        sys.exit(0)
+    elif len(results.failures)==0 and len(results.errors)==NotImpErrors:
+        sys.exit(1)
+    else:
+        sys.exit(2)
