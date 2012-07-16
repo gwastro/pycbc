@@ -37,6 +37,7 @@ import tempfile
 import swiglal
 from glue import lal
 from pylal import frutils, Fr
+import subprocess
 
 import optparse
 from optparse import OptionParser
@@ -163,7 +164,36 @@ class FrameTestBase(base_test.function_base):
                 
                 
     def test_cache(self):
-        pass
+        # These need to be named so that lalapps_path2cache can turn them into a single cache file.
+        frmfile1 = tempfile.NamedTemporaryFile(prefix='H-frame_1-'+str(int(self.epoch))+str(int(1/self.delta_t)))
+        frmfile2 = tempfile.NamedTemporaryFile(prefix='H-frame_2-'+str(int(self.epoch+(self.size/2)*self.delta_t))+str(int(1/self.delta_t)))
+        frmfile3 = tempfile.NamedTemporaryFile(prefix='H-frame_3-'+str(int(self.epoch+16+(self.size/2)*self.delta_t))+str(int(1/self.delta_t)))
+        # We will need access to the actual filenames.
+        frmname1 = frmfile1.name
+        frmname2 = frmfile2.name
+        frmname3 = frmfile3.name
+                
+        # Now we will create a frame file, this will hold the first half of our data
+        Fr.frputvect(frmname1,[{'name':'channel1', 'data':self.data1[0:self.size/2], 'start':int(self.epoch), 'dx':self.delta_t,'type':1},
+                                {'name':'channel2', 'data':self.data2[0:self.size/2], 'start':int(self.epoch), 'dx':self.delta_t,'type':1}])
+        # This will hold the second.
+        Fr.frputvect(frmname2,[{'name':'channel1', 'data':self.data1[self.size/2:], 'start':int(self.epoch+(self.size/2)*self.delta_t), 'dx':self.delta_t,'type':1},
+                                {'name':'channel2', 'data':self.data2[self.size/2:], 'start':int(self.epoch+(self.size/2)*self.delta_t), 'dx':self.delta_t,'type':1}])
+                                
+        # This third one will hold the second half, but with a gap, so we can check importing from a cache with holes.
+        Fr.frputvect(frmname3,[{'name':'channel1', 'data':self.data1[self.size/2+16/self.delta_t], 'start':int(self.epoch+16+(self.size/2)*self.delta_t), 'dx':self.delta_t,'type':1},
+                                {'name':'channel2', 'data':self.data2[self.size/2+16/self.delta_t], 'start':int(self.epoch+16+(self.size/2)*self.delta_t), 'dx':self.delta_t,'type':1}])
+        
+        frmlist1 = tempfile.NamedTemporaryFile()
+        frmlist2 = tempfile.NamedTemporaryFile()
+        print frmfile1.name
+        with open(frmlist1, 'w') as f:
+            f.write(frmfile1.name)
+            f.write(frmfile2.name)
+        with open(frmlist2, 'w') as f:
+            f.write(frmfile1.name)
+            f.write(frmfile3.name)
+            
         
         
 def frame_test_maker(context,dtype):
