@@ -94,13 +94,20 @@ class Array(object):
                     raise TypeError("Cannot avoid a copy of this Array")
                 self._data = initial_array._data
             elif type(initial_array) is _numpy.ndarray:
-                self._data = initial_array
-            elif type(self._scheme) is _scheme.CUDAScheme  and \
-            type(initial_array) is _cudaarray.GPUArray:
-                self._data = initial_array
-            elif type(self._scheme) is _scheme.OpenCLScheme and \
-            type(initial_array) is _openclarray.Array:
-                self._data = initial_array
+                if self._scheme is not None:
+                    raise TypeError("Cannot avoid a copy of this Array")
+                else:
+                    self._data = initial_array
+            elif type(initial_array) is _cudaarray.GPUArray:
+                if type(self._scheme) is not _scheme.CUDAScheme:
+                    raise TypeError("Cannot avoid a copy of this Array")
+                else:
+                    self._data = initial_array
+            elif type(initial_array) is _openclarray.Array:
+                if type(self._scheme) is not _scheme.OpenCLScheme:
+                    raise TypeError("Cannot avoid a copy of this Array")
+                else:
+                    self._data = initial_array
             else:
                 raise TypeError(str(type(initial_array))+' is not supported')
 
