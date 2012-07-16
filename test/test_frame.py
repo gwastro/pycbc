@@ -67,8 +67,6 @@ _options = vars(_opt_list)
 
 # ********************GENERIC ARRAY TESTS ***********************
 
-# By importing the current schemes array type, it will make it easier to check the  array types later
-
 # Although these tests don't require CPU/GPU swapping of inputs, we will
 # still inherit from the function_base so that we can use the check function.
 class FrameTestBase(base_test.function_base):
@@ -81,7 +79,12 @@ class FrameTestBase(base_test.function_base):
                 self.assertTrue(a.dtype == self.dtype)
 
     def setUp(self):
-            
+        if _options['scheme'] == 'cpu':
+            self.scheme = type(None)
+        elif _options['scheme'] == 'cuda':
+            self.scheme = pycbc.scheme.CUDAScheme
+        else:
+            self.scheme = pycbc.scheme.OpenCLScheme 
         # Number of decimal places to compare for single precision
         if self.dtype == numpy.float32 or self.dtype == numpy.complex64:
             self.places = 5
@@ -98,6 +101,7 @@ class FrameTestBase(base_test.function_base):
 
         self.data1 = numpy.array(numpy.random.rand(self.size), dtype=self.dtype)
         self.data2 = numpy.array(numpy.random.rand(self.size), dtype=self.dtype)
+        
         # If the dtype is complex, we should throw in some complex values as well
         if self.kind == 'complex':
             self.data1 += numpy.random.rand(self.size) * 1j
@@ -107,6 +111,7 @@ class FrameTestBase(base_test.function_base):
         self.epoch = swiglal.LIGOTimeGPS(123456,0)
         
     def test_frame(self):
+        
         # This is a file in the temp directory that will be deleted when it is garbage collected
         frmfile = tempfile.NamedTemporaryFile()  
         filename = frmfile.name
@@ -118,36 +123,46 @@ class FrameTestBase(base_test.function_base):
         with self.context:
             if _options['scheme'] == 'cpu':
                 # Reading just one channel first
-                ts = pycbc.frame.read_frame(filename,'channel1')
-                self.checkCurrentState([ts],[self.data1],self.places)
-                self.assertTrue(ts.start_time == self.epoch)
-                self.assertTrue(ts.end_time-ts.start_time == self.size*self.delta_t)
+                ts1 = pycbc.frame.read_frame(filename,'channel1')
+                # Chacking all values
+                self.checkCurrentState((ts1,),(self.data1,),self.places)
+                # Now checking the start time
+                self.assertTrue(ts1.start_time == self.epoch)
+                # And the duration
+                self.assertTrue(ts1.end_time-ts1.start_time == self.size*self.delta_t)
                 
                 # Now reading multiple channels
-                ts = pycbc.frame.read_frame(filename,['channel1','channel2'])
-                self.assertTrue(type(ts) is list)
-                self.checkCurrentState(ts, [self.data1,self.data2], self.places)
-                self.assertTrue(ts[0].start_time == self.epoch)
-                self.assertTrue(ts[1].start_time == self.epoch)
-                self.assertTrue(ts[0].end_time-ts[0].start_time == self.size*self.delta_t)
-                self.assertTrue(ts[1].end_time-ts[1].start_time == self.size*self.delta_t)
+                ts2 = pycbc.frame.read_frame(filename,['channel1','channel2'])
+                # We should get back a list
+                self.assertTrue(type(ts2) is list)
+                self.checkCurrentState(ts2, (self.data1,self.data2), self.places)
+                self.assertTrue(ts2[0].start_time == self.epoch)
+                self.assertTrue(ts2[1].start_time == self.epoch)
+                self.assertTrue(ts2[0].end_time-ts2[0].start_time == self.size*self.delta_t)
+                self.assertTrue(ts2[1].end_time-ts2[1].start_time == self.size*self.delta_t)
+                
+                # These are the times and indices for the segment we will try to read
+                start = self.epoch+10
+                end = self.epoch+50
+                startind = int(10/self.delta_t)
+                endind = int(50/self.delta_t)
                 
                 # Now reading in a specific segment with an integer
-                ts = pycbc.frame.read_frame(filename, 'channel1', start=int(self.epoch+10), 
-                                                                    end=int(self.epoch+50))
-                self.checkCurrentState([ts], [self.data1[int(10/self.delta_t):int(50/self.delta_t)]], self.places)
-                self.assertTrue(40 - (ts.end_time-ts.start_time) < self.delta_t)
-                self.assertTrue(ts.start_time == self.epoch+10)
+                ts3 = pycbc.frame.read_frame(filename, 'channel1', start=int(start), end=int(end))
                 
                 # The same, but with a LIGOTimeGPS for the start and end times
-                ts = pycbc.frame.read_frame(filename, 'channel1', start=self.epoch+10, 
-                                                                    end=self.epoch+50)
-                self.checkCurrentState([ts], [self.data1[int(10/self.delta_t):int(50/self.delta_t)]], self.places)
-                self.assertTrue(40 - (ts.end_time-ts.start_time) < self.delta_t)
-                self.assertTrue(ts.start_time == self.epoch+10)
+                ts4 = pycbc.frame.read_frame(filename, 'channel1', start=start, end=end)
+
+                # Now we will check those two TimeSeries
+                self.checkCurrentState((ts3,ts4), (self.data1[startind:endind],self.data1[startind:endind]), self.places)
+                self.assertTrue(40 - (ts3.end_time-ts3.start_time) < self.delta_t)
+                self.assertTrue(ts3.start_time == start)
                 
+                self.assertTrue(40 - (ts4.end_time-ts4.start_time) < self.delta_t)
+                self.assertTrue(ts4.start_time == start)
+
                 # And now some cases that should raise errors
-                
+
                 # There must be a span grater than 0
                 self.assertRaises(ValueError, pycbc.frame.read_frame,filename,'channel1',
                                     start=self.epoch,end=self.epoch)
@@ -161,148 +176,150 @@ class FrameTestBase(base_test.function_base):
                                     start=self.epoch,end=badtime)
                 self.assertRaises(ValueError, pycbc.frame.read_frame,filename,'channel1',
                                     start=float(self.epoch),end=float(badtime))
+    
+    def test_cache(self):
+        # Knowing the middle of our array will be helpful, because we will put half on one frame, 
+        # and half on hte other. We will also need this to read in a segment of hte cache that 
+        # crosses this seam.
+        half = int((self.size/2)*self.delta_t)
+        # These need to be named so that lalapps_path2cache can turn them into a single cache file.
+        frmfile1 = tempfile.NamedTemporaryFile(prefix='H-frame-'+str(int(self.epoch))+'-'+str(half)+'.')
+        frmfile2 = tempfile.NamedTemporaryFile(prefix='H-frame-'+str(int(self.epoch+half))+'-'+str(half)+'.')
+        frmfile3 = tempfile.NamedTemporaryFile(prefix='H-frame-'+str(int(self.epoch+half+16))+'-'+str(half-16)+'.')
+        # We will need access to the actual filenames.
+        frmname1 = frmfile1.name
+        frmname2 = frmfile2.name
+        frmname3 = frmfile3.name
         
-    if False:           
-        def test_cache(self):
-            half = int((self.size/2)*self.delta_t)
-            # These need to be named so that lalapps_path2cache can turn them into a single cache file.
-            frmfile1 = tempfile.NamedTemporaryFile(prefix='H-frame-'+str(int(self.epoch))+'-'+str(half)+'.')
-            frmfile2 = tempfile.NamedTemporaryFile(prefix='H-frame-'+str(int(self.epoch+half))+'-'+str(half)+'.')
-            frmfile3 = tempfile.NamedTemporaryFile(prefix='H-frame-'+str(int(self.epoch+half+16))+'-'+str(half-16)+'.')
-            # We will need access to the actual filenames.
-            frmname1 = frmfile1.name
-            frmname2 = frmfile2.name
-            frmname3 = frmfile3.name
-            
-            firsthalf1 = numpy.array(self.data1[0:(self.size/2)],dtype=self.dtype)
-            secondhalf1 = numpy.array(self.data1[(self.size/2):],dtype=self.dtype)
-            gaphalf1 = numpy.array(self.data1[(self.size/2+16/self.delta_t):],dtype=self.dtype)
-            
-            firsthalf2 = numpy.array(self.data2[0:(self.size/2)],dtype=self.dtype)
-            secondhalf2 = numpy.array(self.data2[(self.size/2):],dtype=self.dtype)
-            gaphalf2 = numpy.array(self.data2[(self.size/2+16/self.delta_t):],dtype=self.dtype)
-            
-            # Now we will create a frame file, this will hold the first half of our data
-            Fr.frputvect(frmname1,[{'name':'channel1', 'data':firsthalf1, 'start':int(self.epoch), 'dx':self.delta_t,'type':1},
-                                    {'name':'channel2', 'data':firsthalf2, 'start':int(self.epoch), 'dx':self.delta_t,'type':1}])
-            # This will hold the second.
-            Fr.frputvect(frmname2,[{'name':'channel1', 'data':secondhalf1, 'start':int(self.epoch+half), 'dx':self.delta_t,'type':1},
-                                    {'name':'channel2', 'data':secondhalf2, 'start':int(self.epoch+half), 'dx':self.delta_t,'type':1}])
-                                    
-            # This third one will hold the second half, but with a gap, so we can check importing from a cache with holes.
-            Fr.frputvect(frmname3,[{'name':'channel1', 'data':gaphalf1, 'start':int(self.epoch+16+half), 'dx':self.delta_t,'type':1},
-                                    {'name':'channel2', 'data':gaphalf2, 'start':int(self.epoch+16+half), 'dx':self.delta_t,'type':1}])
-            
-            # These files are what path2cache will actually read, they will hold a list of frames
-            frmlist1 = tempfile.NamedTemporaryFile()
-            frmlist2 = tempfile.NamedTemporaryFile()
-            
-            listname1 = frmlist1.name
-            listname2 = frmlist2.name
-            
-            with open(listname1, 'w') as f1:
-                f1.write(frmname1+'\n')
-                f1.write(frmname2)
-            with open(listname2, 'w') as f2:
-                f2.write(frmname1+'\n')
-                f2.write(frmname3)
-                
-            cache1 = tempfile.NamedTemporaryFile()
-            cache2 = tempfile.NamedTemporaryFile()
-            
-            cachename1 = cache1.name
-            cachename2 = cache2.name
-            # Now we can actually make the caches.
-            subprocess.call(['lalapps_path2cache','-i',listname1,'-o',cachename1])
-            subprocess.call(['lalapps_path2cache','-i',listname2,'-o',cachename2])
-               
-            with self.context:
-                if _options['scheme'] == 'cpu':
-                    # Reading just one channel first
-                    ts = pycbc.frame.read_cache(cachename1,'channel1',self.epoch,self.epoch+self.size*self.delta_t)
-                    self.checkCurrentState([ts],[self.data1],self.places)
-                    self.assertTrue(ts.start_time == self.epoch)
-                    self.assertTrue(ts.end_time-ts.start_time == self.size*self.delta_t)
-                    
-                    # Now reading multiple channels
-                    ts = pycbc.frame.read_cache(cachename1,['channel1','channel2'],self.epoch,self.epoch+self.size*self.delta_t)
-                    self.assertTrue(type(ts) is list)
-                    self.checkCurrentState(ts, [self.data1,self.data2], self.places)
-                    self.assertTrue(ts[0].start_time == self.epoch)
-                    self.assertTrue(ts[1].start_time == self.epoch)
-                    self.assertTrue(ts[0].end_time-ts[0].start_time == self.size*self.delta_t)
-                    self.assertTrue(ts[1].end_time-ts[1].start_time == self.size*self.delta_t)
-                    
-                    # Now reading in a specific segment with an integer
-                    ts = pycbc.frame.read_cache(cachename1, 'channel1', start=int(self.epoch+10), 
-                                                                        end=int(self.epoch+half+50))
-                    self.checkCurrentState([ts], [self.data1[int(10/self.delta_t):int(half/self.delta_t+50/self.delta_t)]], self.places)
-                    self.assertTrue((40+half) - (ts.end_time-ts.start_time) < self.delta_t)
-                    self.assertTrue(ts.start_time == self.epoch+10)
-                    
-                    # The same, but with a LIGOTimeGPS for the start and end times
-                    ts = pycbc.frame.read_cache(cachename1, 'channel1', start=self.epoch+10, 
-                                                                        end=self.epoch+half+50)
-                    self.checkCurrentState([ts], [self.data1[int(10/self.delta_t):int(half/self.delta_t+50/self.delta_t)]], self.places)
-                    self.assertTrue((40+half) - (ts.end_time-ts.start_time) < self.delta_t)
-                    self.assertTrue(ts.start_time == self.epoch+10)
-                    
-                    # And now some cases that should raise errors
-                    
-                    # There should be an error if there are gaps in the data
-                    self.assertRaises(ValueError, pycbc.frame.read_cache,cachename2,'channel1',
-                                        self.epoch,self.epoch+self.size*self.delta_t)
-                    
-                    # There must be a span grater than 0
-                    self.assertRaises(ValueError, pycbc.frame.read_cache,cachename1,'channel1',
-                                        start=self.epoch,end=self.epoch)
-                    # The start must be before the end
-                    self.assertRaises(ValueError, pycbc.frame.read_cache,cachename1,'channel1',
-                                        start=self.epoch+1,end=self.epoch)
-                    # Non integer times should also raise an error
-                    badtime = swiglal.LIGOTimeGPS(int(self.epoch)+5,1000)
-                    
-                    self.assertRaises(ValueError, pycbc.frame.read_cache,cachename1,'channel1',
-                                        start=self.epoch,end=badtime)
-                    self.assertRaises(ValueError, pycbc.frame.read_cache,cachename1,'channel1',
-                                        start=float(self.epoch),end=float(badtime))
-                
+        firsthalf1 = self.data1[0:(self.size/2)]
+        secondhalf1 = self.data1[(self.size/2):]
+        # This third piece will be paired up with the first one to create a cache file with a gap
+        # of 16 seconds after the half-way point
+        gaphalf1 = self.data1[(self.size/2 + 16/self.delta_t):]
         
-def frame_test_maker(context,dtype):
-    class tests(FrameTestBase,unittest.TestCase):
-        def __init__(self,*args):
-            self.context=context
-            self.dtype=dtype
+        # The same is done to the second dataset
+        firsthalf2 = self.data2[0:(self.size/2)]
+        secondhalf2 = self.data2[(self.size/2):]
+        gaphalf2 = self.data2[(self.size/2 + 16/self.delta_t):]
+        
+        # Now we will create a frame file, this will hold the first half of our data
+        Fr.frputvect(frmname1,[{'name':'channel1', 'data':firsthalf1, 'start':int(self.epoch), 'dx':self.delta_t,'type':1},
+                                {'name':'channel2', 'data':firsthalf2, 'start':int(self.epoch), 'dx':self.delta_t,'type':1}])
+        # This will hold the second half
+        Fr.frputvect(frmname2,[{'name':'channel1', 'data':secondhalf1, 'start':int(self.epoch+half), 'dx':self.delta_t,'type':1},
+                                {'name':'channel2', 'data':secondhalf2, 'start':int(self.epoch+half), 'dx':self.delta_t,'type':1}])
+                                
+        # This third one will hold the second half, but without the first 16 seconds, so we can check importing from a cache with holes.
+        Fr.frputvect(frmname3,[{'name':'channel1', 'data':gaphalf1, 'start':int(self.epoch + half + 16), 'dx':self.delta_t,'type':1},
+                                {'name':'channel2', 'data':gaphalf2, 'start':int(self.epoch + half + 16), 'dx':self.delta_t,'type':1}])
+        
+        # These files are what path2cache will actually read, they will hold a list of frames
+        frmlist1 = tempfile.NamedTemporaryFile()
+        frmlist2 = tempfile.NamedTemporaryFile()
+        
+        listname1 = frmlist1.name
+        listname2 = frmlist2.name
+        
+        # The first one will contain the complete set, split over two frames
+        with open(listname1, 'w') as f1:
+            f1.write(frmname1+'\n')
+            f1.write(frmname2)
+            
+        # This second one will use the gap frame for the second half, so there
+        # will be a 16 second gap in the middle of this cache
+        with open(listname2, 'w') as f2:
+            f2.write(frmname1+'\n')
+            f2.write(frmname3)
+            
+        cache1 = tempfile.NamedTemporaryFile()
+        cache2 = tempfile.NamedTemporaryFile()
+        
+        cachename1 = cache1.name
+        cachename2 = cache2.name
+        
+        # Now we can actually make the caches from the list of frames
+        subprocess.call(['lalapps_path2cache','-i',listname1,'-o',cachename1])
+        subprocess.call(['lalapps_path2cache','-i',listname2,'-o',cachename2])
+           
+        with self.context:
             if _options['scheme'] == 'cpu':
-                self.scheme = type(None)
-            elif _options['scheme'] == 'cuda':
-                self.scheme = pycbc.scheme.CUDAScheme
-            else:
-                self.scheme = pycbc.scheme.OpenCLScheme            
-            unittest.TestCase.__init__(self,*args)
-    tests.__name__ = _options['scheme'] + " " + dtype.__name__
-    return tests
+                # Reading just one channel first
+                ts = pycbc.frame.read_cache(cachename1,'channel1',self.epoch,self.epoch+self.size*self.delta_t)
+                self.checkCurrentState([ts],[self.data1],self.places)
+                self.assertTrue(ts.start_time == self.epoch)
+                self.assertTrue(ts.end_time-ts.start_time == self.size*self.delta_t)
+                
+                # Now reading multiple channels
+                ts = pycbc.frame.read_cache(cachename1,['channel1','channel2'],self.epoch,self.epoch+self.size*self.delta_t)
+                self.assertTrue(type(ts) is list)
+                self.checkCurrentState(ts, [self.data1,self.data2], self.places)
+                self.assertTrue(ts[0].start_time == self.epoch)
+                self.assertTrue(ts[1].start_time == self.epoch)
+                self.assertTrue(ts[0].end_time-ts[0].start_time == self.size*self.delta_t)
+                self.assertTrue(ts[1].end_time-ts[1].start_time == self.size*self.delta_t)
+                
+                # Now reading in a specific segment with an integer
+                start = self.epoch + 10
+                end = self.epoch + half + 50
+                startind = 10/self.delta_t
+                endind = (half + 50) / self.delta_t
+                ts = pycbc.frame.read_cache(cachename1, 'channel1', start=int(start), end=int(end))
+                
+                # Now we'll check all the values
+                self.checkCurrentState((ts,), (self.data1[startind:endind],), self.places)
+                # The duration
+                self.assertTrue((40+half) - (ts.end_time-ts.start_time) < self.delta_t)
+                # And the start
+                self.assertTrue(ts.start_time == self.epoch+10)
+                
+                # The same, but with a LIGOTimeGPS for the start and end times
+                ts = pycbc.frame.read_cache(cachename1, 'channel1', start=start, end=end)
+                # Now we'll check all the values
+                self.checkCurrentState((ts,), (self.data1[startind:endind],), self.places)
+                # The duration
+                self.assertTrue((40+half) - (ts.end_time-ts.start_time) < self.delta_t)
+                # And the start
+                self.assertTrue(ts.start_time == self.epoch+10)
+                
+                # And now some cases that should raise errors
+                
+                # There should be an error if there are gaps in the data requested
+                self.assertRaises(ValueError, pycbc.frame.read_cache,cachename2,'channel1',
+                                    self.epoch,self.epoch+self.size*self.delta_t)
+                
+                # There must be a span grater than 0
+                self.assertRaises(ValueError, pycbc.frame.read_cache,cachename1,'channel1',
+                                    start=self.epoch,end=self.epoch)
+                # The start must be before the end
+                self.assertRaises(ValueError, pycbc.frame.read_cache,cachename1,'channel1',
+                                    start=self.epoch+1,end=self.epoch)
+                # Non integer times should also raise an error
+                badtime = swiglal.LIGOTimeGPS(int(self.epoch)+5,1000)
+                
+                self.assertRaises(ValueError, pycbc.frame.read_cache,cachename1,'channel1',
+                                    start=self.epoch,end=badtime)
+                self.assertRaises(ValueError, pycbc.frame.read_cache,cachename1,'channel1',
+                                    start=float(self.epoch),end=float(badtime))
 
+if _options['scheme']=='cpu':
+    context = pycbc.scheme.DefaultScheme()
+elif _options['scheme']=='cuda':
+    context = pycbc.scheme.CUDAScheme(device_num=_options['devicenum'])
+elif _options['scheme']=='opencl':
+    context = pycbc.scheme.OpenCLScheme(device_num=_options['devicenum'])
+        
+TestClasses = []
 types = [numpy.float32, numpy.float64, numpy.complex64, numpy.complex128]
 
-suite = unittest.TestSuite()
-
-scs =[]
-if _options['scheme'] == 'cpu':
-    scs.append(DefaultScheme())
-if _options['scheme'] == 'cuda':
-    scs.append(CUDAScheme(device_num=_options['devicenum']))
-if _options['scheme'] == 'opencl':
-    scs.append(OpenCLScheme(device_num=_options['devicenum']))
-
-ind = 0
-for sc in scs:
-    for ty in types:
-        na = 'test' + str(ind)
-        vars()[na] = frame_test_maker(sc,ty)
-        suite.addTest(unittest.TestLoader().loadTestsFromTestCase(vars()[na]))
-        ind += 1
+for ty in types:
+    klass = type('{0}_{1}_Test'.format(_options['scheme'],ty.__name__),
+                    (FrameTestBase,unittest.TestCase),
+                    {'dtype': ty, 'context' : context})
+    TestClasses.append(klass)
 
 if __name__ == '__main__':
+    suite = unittest.TestSuite()
+    for klass in TestClasses:
+        suite.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
     results = unittest.TextTestRunner(verbosity=2).run(suite)
         

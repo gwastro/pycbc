@@ -66,10 +66,16 @@ def read_frame(filename, channels, start=None, end=None):
         ts = []
         for channel in channels:
             frdata = Fr.frgetvect1d(filename, channel, start, span)
-            ts.append(pycbc.types.TimeSeries(frdata[0],frdata[3], _swiglal.LIGOTimeGPS(frdata[1]), copy=False))
+            ts.append(pycbc.types.TimeSeries(initial_array=frdata[0],
+                                            delta_t=frdata[3],
+                                            epoch=_swiglal.LIGOTimeGPS(frdata[1]),
+                                            copy=False))
     else:
         frdata = Fr.frgetvect1d(filename, channels, start, span)
-        ts = pycbc.types.TimeSeries(frdata[0],frdata[3], _swiglal.LIGOTimeGPS(frdata[1]), copy=False)
+        ts = pycbc.types.TimeSeries(initial_array=frdata[0],
+                                    delta_t=frdata[3],
+                                    epoch=_swiglal.LIGOTimeGPS(frdata[1]),
+                                    copy=False)
     return ts
 
 def read_cache(filename, channels, start, end):
@@ -104,11 +110,18 @@ def read_cache(filename, channels, start, end):
         for channel in channels:
             data = frdata.fetch(channel,start,end)
             dt = data.metadata.dt
-            ts.append(pycbc.types.TimeSeries(data.A,dt, _swiglal.LIGOTimeGPS(data.metadata.segments[0][0]),copy=False))
+            # Now we actually create the new TimeSeries, and append it to the list
+            ts.append(pycbc.types.TimeSeries(initial_array=data.A,
+                                                delta_t=dt,
+                                                epoch=_swiglal.LIGOTimeGPS(data.metadata.segments[0][0]),
+                                                copy=False))
     else:
         data = frdata.fetch(channels,start,end)
         dt = data.metadata.dt
-        ts = pycbc.types.TimeSeries(data.A,dt, _swiglal.LIGOTimeGPS(data.metadata.segments[0][0]),copy=False)
+        ts = pycbc.types.TimeSeries(initial_array=data.A,
+                                    delta_t=dt,
+                                    epoch=_swiglal.LIGOTimeGPS(data.metadata.segments[0][0]),
+                                    copy=False)
     return ts
         
         
