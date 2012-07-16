@@ -131,7 +131,7 @@ setup (
                  'test_opencl':test_opencl},
     ext_modules = [],
 	requires = ['lal'],
-    packages = ['pycbc','pycbc.fft','pycbc.types'],
+    packages = ['pycbc','pycbc.fft','pycbc.types','pycbc.filter'],
     scripts = [],
 )
 
