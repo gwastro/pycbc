@@ -98,12 +98,12 @@ class Array(object):
                     raise TypeError("Cannot avoid a copy of this Array")
                 else:
                     self._data = initial_array
-            elif type(initial_array) is _cudaarray.GPUArray:
+            elif _pycbc.HAVE_CUDA and type(initial_array) is _cudaarray.GPUArray:
                 if type(self._scheme) is not _scheme.CUDAScheme:
                     raise TypeError("Cannot avoid a copy of this Array")
                 else:
                     self._data = initial_array
-            elif type(initial_array) is _openclarray.Array:
+            elif _pycbc.HAVE_OPENCL and type(initial_array) is _openclarray.Array:
                 if type(self._scheme) is not _scheme.OpenCLScheme:
                     raise TypeError("Cannot avoid a copy of this Array")
                 else:
