@@ -70,7 +70,7 @@ class TimeSeries(Array):
                 new_epoch = None
             else:
                 new_epoch = self._epoch + index.start * self._delta_t
-            return TimeSeries(Array.__getitem__(self, index), new_delta_t, new_epoch)
+            return TimeSeries(Array.__getitem__(self, index), new_delta_t, new_epoch, copy=False)
         else:
             return Array.__getitem__(self, index)
 
