@@ -1,3 +1,22 @@
+/* **********************************************************************
+Copyright (C) 2012  Josh Willis
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*************************************************************************/
+
+
 %module testlal
 
 %{
@@ -6,8 +25,8 @@
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
-#include <lal/VectorOps.h>
 #include <numpy/arrayobject.h>
+#include <lal/VectorOps.h>
 #include <lal/ComplexFFT.h>
 #include <lal/XLALError.h>
 %}
@@ -969,7 +988,7 @@ typedef struct {
 		     objname);
 	return 1;
       }
-      if (PyDict_SetAttrString(argument,"_name",nameobj)) {
+      if (PyObject_SetAttrString(argument,"_name",nameobj) == -1) {
 	PyErr_Format(PyExc_RuntimeError,
 		     "Could not modify '%s._name'",objname);
 	Py_DECREF(nameobj);
@@ -1033,9 +1052,9 @@ The INPUT typemap should be applied to any argument of that array-like type to a
 and will cause the corresponding Python wrapped function to expect (directly) an instance of the
 appropriate type from pycbc.types.  The _data property of this input argument should be a
 C-contiguous, one-dimensional Numpy array of the dtype appropriate to that vector. Note that
-this vector may in fact be treated by the XLAL function as "output", with its contents
-modified in place. The elements of _data could have been modified, or also any of its properties
-that can be set by the constructor.
+this object may in fact be treated by the XLAL function as "output", with its contents
+modified in place. The elements of _data could have been modified, or also any of the object's
+other properties that correspond to members of the corresponding XLAL struct.
 
 The NEWOUT typemaps are for when a function returns a newly-allocated vector
 of that type. This function will be wrapped into one which returns a newly allocated
@@ -1043,17 +1062,16 @@ instance of pycbc.types.{Array,TimeSeries,FrequencySeries}, with its '_data' ele
 appropriate numpy type, and avoiding any memory copies. Other properties will be set as appropriate
 to that specific array-like type (e.g. epoch, delta_t, etc).
 
-The NONEOUT typemap is for functions that return a vector, but that vector is in
-fact the same as one of the function's input vectors (which has been modified in
+The NONEOUT typemap is for functions that return an object type, but that object is in
+fact the same as one of the function's input arguments (which has been modified in
 place).  In this case the wrapped function will always return "None" on successful
-completion, and the effect of the function should be accessed through the
-appropriate input input numpy array.
+completion, and the effect of the function should be accessed through its effect on the
+appropriate input object.
 
 The ARGOUT typemap is for arguments that are double-pointers to an array-like type. These will
 be wrapped into Python functions returning (possibly in a list, if there is more than one
 return value) the new instances of the appropriate pycbc.type object created by those functions.
 There will be no corresponding input argument to the wrapped function.
-
 
 All of the typemaps except the NONEOUT typemaps have additional features which
 will deallocate the temporary struct needed to pass the necessary memory between
@@ -1063,12 +1081,17 @@ or disabled or memory leaks will result.
 ** IMPORTANT NOTE **
 
 Not all XLAL functions will leave the location of their internal memory unchanged.
-In particular any function that calls realloc() on a vector's data (including
-functions that "cut" or "resize" vectors) can change the location of the data
-pointer.  There is no way to accomodate this into Numpy's memory model, so you
-should ensure that you never SWIG-wrap (with the typemaps of this file) any
-function that may change the location in memory of the associated vector struct's
-data. The best you might expect is a difficult-to-reproduce segfault.
+In particular any function that calls realloc() on an object's data (including
+functions that "cut" or "resize" objects) can change the location of the data
+pointer. Certainly anything than can change the size of 'self._data' is suspect, though
+problematic functions are not necessarily limited to those. There is no way to accomodate
+this behavior into Numpy's memory model, so you should ensure that you never SWIG-wrap
+(with the typemaps of this file) any function that may change the location in memory of the
+associated struct's data. The best you might expect is a difficult-to-reproduce segfault.
+
+If you find you need to call such a function and it is not time-critical, one alternative
+is to call the usual swiglal wrapped function and copy the output into a pycbc type for
+further processing.
 
 YOU HAVE BEEN WARNED!
 
@@ -1436,6 +1459,7 @@ YOU HAVE BEEN WARNED!
 extern REAL4Vector *XLALSSVectorMultiply(REAL4Vector *out, REAL4Vector *in1, REAL4Vector *in2);
 
 %rename("%s") XLALCreateREAL4Vector;
+%newobject XLALCreateReal4Vector;
 %apply REAL4Vector *NEWOUT_REAL4V {REAL4Vector *XLALCreateREAL4Vector};
 extern REAL4Vector *XLALCreateREAL4Vector(UINT4 length);
 
