@@ -38,6 +38,7 @@ import lal
 from pylal import frutils, Fr
 import os
 import subprocess
+import sys
 
 import optparse
 from optparse import OptionParser
@@ -154,10 +155,10 @@ class FrameTestBase(base_test.function_base):
 
                 # Now we will check those two TimeSeries
                 self.checkCurrentState((ts3,ts4), (self.data1[startind:endind],self.data1[startind:endind]), self.places)
-                self.assertTrue(40 - (ts3.end_time-ts3.start_time) < self.delta_t)
+                self.assertTrue(40 - (float(ts3.end_time)-float(ts3.start_time)) < self.delta_t)
                 self.assertTrue(ts3.start_time == start)
                 
-                self.assertTrue(40 - (ts4.end_time-ts4.start_time) < self.delta_t)
+                self.assertTrue(40 - (float(ts4.end_time)-float(ts4.start_time)) < self.delta_t)
                 self.assertTrue(ts4.start_time == start)
 
                 # And now some cases that should raise errors
@@ -267,7 +268,7 @@ class FrameTestBase(base_test.function_base):
                 # Now we'll check all the values
                 self.checkCurrentState((ts,), (self.data1[startind:endind],), self.places)
                 # The duration
-                self.assertTrue((40+half) - (ts.end_time-ts.start_time) < self.delta_t)
+                self.assertTrue((40+half) - (float(ts.end_time)-float(ts.start_time)) < self.delta_t)
                 # And the start
                 self.assertTrue(ts.start_time == self.epoch+10)
                 
@@ -276,7 +277,7 @@ class FrameTestBase(base_test.function_base):
                 # Now we'll check all the values
                 self.checkCurrentState((ts,), (self.data1[startind:endind],), self.places)
                 # The duration
-                self.assertTrue((40+half) - (ts.end_time-ts.start_time) < self.delta_t)
+                self.assertTrue((40+half) - (float(ts.end_time)-float(ts.start_time)) < self.delta_t)
                 # And the start
                 self.assertTrue(ts.start_time == self.epoch+10)
                 
