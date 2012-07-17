@@ -30,12 +30,12 @@ import pycbc
 import pycbc.types
 from glue import lal
 from pylal import Fr, frutils
-import swiglal as _swiglal
+import lal as _lal
 import numpy as _numpy
 
 def read_frame(filename, channels, start=None, end=None):
     if start is not None and end is not None:
-        if type(start) is _swiglal.LIGOTimeGPS:
+        if type(start) is _lal.LIGOTimeGPS:
             if start.gpsNanoSeconds != 0:
                 raise ValueError('start and end times must be integer valued')
             else:
@@ -45,7 +45,7 @@ def read_frame(filename, channels, start=None, end=None):
                 raise ValueError('start and end times must be integer valued')
             else:
                 start = int(start)                
-        if type(end) is _swiglal.LIGOTimeGPS:
+        if type(end) is _lal.LIGOTimeGPS:
             if end.gpsNanoSeconds != 0:
                 raise ValueError('start and end times must be integer valued')
             else:
@@ -68,18 +68,18 @@ def read_frame(filename, channels, start=None, end=None):
             frdata = Fr.frgetvect1d(filename, channel, start, span)
             ts.append(pycbc.types.TimeSeries(initial_array=frdata[0],
                                             delta_t=frdata[3],
-                                            epoch=_swiglal.LIGOTimeGPS(frdata[1]),
+                                            epoch=_lal.LIGOTimeGPS(frdata[1]),
                                             copy=False))
     else:
         frdata = Fr.frgetvect1d(filename, channels, start, span)
         ts = pycbc.types.TimeSeries(initial_array=frdata[0],
                                     delta_t=frdata[3],
-                                    epoch=_swiglal.LIGOTimeGPS(frdata[1]),
+                                    epoch=_lal.LIGOTimeGPS(frdata[1]),
                                     copy=False)
     return ts
 
 def read_cache(filename, channels, start, end):
-    if type(start) is _swiglal.LIGOTimeGPS:
+    if type(start) is _lal.LIGOTimeGPS:
         if start.gpsNanoSeconds != 0:
             raise ValueError('start and end times must be integer valued')
         else:
@@ -89,7 +89,7 @@ def read_cache(filename, channels, start, end):
             raise ValueError('start and end times must be integer valued')
         else:
             start = int(start)                
-    if type(end) is _swiglal.LIGOTimeGPS:
+    if type(end) is _lal.LIGOTimeGPS:
         if end.gpsNanoSeconds != 0:
             raise ValueError('start and end times must be integer valued')
         else:
@@ -113,14 +113,14 @@ def read_cache(filename, channels, start, end):
             # Now we actually create the new TimeSeries, and append it to the list
             ts.append(pycbc.types.TimeSeries(initial_array=data.A,
                                                 delta_t=dt,
-                                                epoch=_swiglal.LIGOTimeGPS(data.metadata.segments[0][0]),
+                                                epoch=_lal.LIGOTimeGPS(data.metadata.segments[0][0]),
                                                 copy=False))
     else:
         data = frdata.fetch(channels,start,end)
         dt = data.metadata.dt
         ts = pycbc.types.TimeSeries(initial_array=data.A,
                                     delta_t=dt,
-                                    epoch=_swiglal.LIGOTimeGPS(data.metadata.segments[0][0]),
+                                    epoch=_lal.LIGOTimeGPS(data.metadata.segments[0][0]),
                                     copy=False)
     return ts
         

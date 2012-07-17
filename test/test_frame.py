@@ -34,8 +34,7 @@ import pycbc.frame
 import numpy
 import base_test
 import tempfile
-import swiglal
-from glue import lal
+import lal
 from pylal import frutils, Fr
 import os
 import subprocess
@@ -108,7 +107,7 @@ class FrameTestBase(base_test.function_base):
             self.data2 += numpy.random.rand(self.size) * 1j        
             
         self.delta_t = .5
-        self.epoch = swiglal.LIGOTimeGPS(123456,0)
+        self.epoch = lal.LIGOTimeGPS(123456,0)
         
     def test_frame(self):
         
@@ -170,7 +169,7 @@ class FrameTestBase(base_test.function_base):
                 self.assertRaises(ValueError, pycbc.frame.read_frame,filename,'channel1',
                                     start=self.epoch+1,end=self.epoch)
                 # Non integer times should also raise an error
-                badtime = swiglal.LIGOTimeGPS(int(self.epoch)+5,1000)
+                badtime = lal.LIGOTimeGPS(int(self.epoch)+5,1000)
                 
                 self.assertRaises(ValueError, pycbc.frame.read_frame,filename,'channel1',
                                     start=self.epoch,end=badtime)
@@ -294,7 +293,7 @@ class FrameTestBase(base_test.function_base):
                 self.assertRaises(ValueError, pycbc.frame.read_cache,cachename1,'channel1',
                                     start=self.epoch+1,end=self.epoch)
                 # Non integer times should also raise an error
-                badtime = swiglal.LIGOTimeGPS(int(self.epoch)+5,1000)
+                badtime = lal.LIGOTimeGPS(int(self.epoch)+5,1000)
                 
                 self.assertRaises(ValueError, pycbc.frame.read_cache,cachename1,'channel1',
                                     start=self.epoch,end=badtime)
