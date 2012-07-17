@@ -327,7 +327,7 @@ if __name__ == '__main__':
     for error in results.errors:
         for errormsg in error:
             if type(errormsg) is str:
-                if 'NotImplented' in errormsg:
+                if 'NotImplemented' in errormsg:
                     NotImpErrors +=1
                     break
     if results.wasSuccessful():
