@@ -40,7 +40,6 @@ if _pycbc.HAVE_CUDA:
     import pycuda as _pycuda
     import pycuda.driver as _cudriver
     import pycuda.gpuarray as _cudaarray    
-    from array_cuda import squared_norm as cuda_squared_norm
     
 if _pycbc.HAVE_OPENCL:
     import pyopencl as _pyopencl
@@ -419,8 +418,9 @@ class Array(object):
         if type(self._data) is _numpy.ndarray:
             return (self.data * self.data.conj()).real
         elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
+            from array_cuda import squared_norm
             tmp = zeros(len(self),dtype=real_same_precision_as(self))
-            cuda_squared_norm[self.precision](self.data,tmp.data)
+            squared_norm[self.precision](self.data,tmp.data)
             return tmp
         elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
             raise NotImplementedError         
@@ -458,14 +458,17 @@ class Array(object):
             return _pyopencl.array.max(self._data).get().max()  
             
     @_convert
-    def max_arg(self):
+    def max_loc(self):
         """Return the maximum value in the array along with the. """
         if type(self._data) is _numpy.ndarray:
             return self._data.max(),_numpy.argmax(self._data)
         elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
-            return _pycuda.gpuarray.max(self._data).get().max(), 0
+            from array_cuda import max_loc
+            maxloc = max_loc[self.precision](self._data)
+            maxloc = maxloc.get()
+            return float(maxloc['max']),int(maxloc['loc'])
         elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-            return _pyopencl.array.max(self._data).get().max(), 0  
+            raise NotImplementedError 
     
     @_convert
     def min(self):

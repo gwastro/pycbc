@@ -108,7 +108,6 @@ class TestMatchedFilter(unittest.TestCase):
         o,i = match(self.filt,self.filt)
         self.assertAlmostEqual(1,o,places=4)
         self.assertEqual(0,i)
-        
         o,i = match(self.filtD,self.filtD)
         self.assertAlmostEqual(1,o,places=4)
         self.assertEqual(0,i)
