@@ -458,6 +458,16 @@ class Array(object):
             return _pyopencl.array.max(self._data).get().max()  
             
     @_convert
+    def max_arg(self):
+        """Return the maximum value in the array along with the. """
+        if type(self._data) is _numpy.ndarray:
+            return self._data.max(),_numpy.argmax(self._data)
+        elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
+            return _pycuda.gpuarray.max(self._data).get().max(), 0
+        elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
+            return _pyopencl.array.max(self._data).get().max(), 0  
+    
+    @_convert
     def min(self):
         """ Return the maximum value in the array. """
         if type(self._data) is _numpy.ndarray:

@@ -105,30 +105,34 @@ class TestMatchedFilter(unittest.TestCase):
         self.assertAlmostEqual(2,ave,places=5)
         
     def test_perfect_match(self):
-        o = match(self.filt,self.filt)
+        o,i = match(self.filt,self.filt)
         self.assertAlmostEqual(1,o,places=4)
+        self.assertEqual(0,i)
         
-        o = match(self.filtD,self.filtD)
+        o,i = match(self.filtD,self.filtD)
         self.assertAlmostEqual(1,o,places=4)
+        self.assertEqual(0,i)
         
     def test_perfect_match_offset(self):
-        o = match(self.filt,self.filt_offset)
+        o,i = match(self.filt,self.filt_offset)
         self.assertAlmostEqual(1,o,places=4)
+        self.assertEqual(4096*32,i)
         
-        o = match(self.filtD,self.filt_offsetD)
+        o,i = match(self.filtD,self.filt_offsetD)
         self.assertAlmostEqual(1,o,places=4)
+        self.assertEqual(4096*32,i)
         
     def test_imperfect_match(self):
         f = get_frequencyseries(self.filt)
         f2 = get_frequencyseries(self.filt2)
-        o = match(self.filt,self.filt2)
+        o,i = match(self.filt,self.filt2)
         self.assertAlmostEqual(sqrt(0.5),o,places=3)
-        
+
         f = get_frequencyseries(self.filtD)
         f2 = get_frequencyseries(self.filt2D)
-        o = match(self.filtD,self.filt2D)
+        o,i = match(self.filtD,self.filt2D)
         self.assertAlmostEqual(sqrt(0.5),o,places=3)
-        
+
     def test_errors(self):
 
         #Check that an incompatible data and filter produce an error
@@ -163,7 +167,7 @@ if __name__ == '__main__':
     for error in results.errors:
         for errormsg in error:
             if type(errormsg) is str:
-                if 'NotImplented' in errormsg:
+                if 'NotImplemented' in errormsg:
                     NotImpErrors +=1
                     break
     if results.wasSuccessful():
