@@ -552,7 +552,7 @@ class Array(object):
 
     @property
     @_convert
-    def  lal(self):
+    def  _lal(self):
         """ Returns a LAL Object that contains this data """
 
         if type(self._data) is not _numpy.ndarray:
@@ -564,19 +564,19 @@ class Array(object):
     def dtype(self):
         return self._data.dtype
 
-# Convenience functions for determining dtypes            
+# Convenience functions for determining dtypes
 
 def real_same_precision_as(data):
     if data.precision is 'single':
         return float32
     elif data.precision is 'double':
         return float64
-        
+
 def complex_same_precision_as(data):
     if data.precision is 'single':
         return complex64
     elif data.precision is 'double':
-        return complex128            
+        return complex128
 
 def zeros(length,dtype=None):
     if _scheme.mgr.state is None:
