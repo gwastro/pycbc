@@ -25,10 +25,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
+#include <lal/XLALError.h>
 #include <numpy/arrayobject.h>
 #include <lal/VectorOps.h>
 #include <lal/ComplexFFT.h>
-#include <lal/XLALError.h>
 %}
 
 %ignore XLALCOMPLEX8VectorFFT;
@@ -593,11 +593,10 @@ typedef struct {
 }
 
 %fragment("MarshallOutputTS","header",fragment="GenericTS") {
-  PyObject *MarshallOutputVector(GenericTS *ts, const int numpy_type) {
+  PyObject *MarshallOutputTS(GenericTS *ts, const int numpy_type) {
     PyObject *result, *dataobj, *dtypeobj, *copybool, *constrdict;
     PyObject *epochobj, *delta_tobj;
     LIGOTimeGPS *epoch_ptr;
-    int i;
 
     if (!(ts)) {
       PyErr_SetString(PyExc_ValueError,"Unexpected null time-series returned from function");
@@ -739,10 +738,9 @@ typedef struct {
  }
 
 %fragment("MarshallArgoutTS","header",fragment="GenericTS") {
-  int *MarshallArgoutVector(PyObject *argument, GenericTS *ts, const char *objname) {
-    PyObject *epochobj, *delta_tobj;
+  int *MarshallArgoutTS(PyObject *argument, GenericTS *ts, const char *objname) {
+    PyObject *tmpobj;
     LIGOTimeGPS *epoch_ptr;
-    int i;
 
     if (!(ts)) {
       PyErr_Format(PyExc_ValueError,
@@ -775,34 +773,35 @@ typedef struct {
     }
     epoch_ptr->gpsSeconds = (ts->epoch).gpsSeconds;
     epoch_ptr->gpsNanoSeconds = (ts->epoch).gpsNanoSeconds;
-    epochobj = SWIG_NewPointerObj((void *) epoch_ptr,$descriptor(LIGOTimeGPS *),SWIG_POINTER_OWN);
-    if (!epochobj) {
+    tmpobj = SWIG_NewPointerObj((void *) epoch_ptr,$descriptor(LIGOTimeGPS *),SWIG_POINTER_OWN);
+    if (!tmpobj) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not create output epoch object for '%s._epoch'",objname);
       free(epoch_ptr);
       return 1;
     }
-    if (PyObject_SetAttrString(argument,"_epoch",epochobj) == -1) {
+    if (PyObject_SetAttrString(argument,"_epoch",tmpobj) == -1) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not modify '%s._epoch'",objname);
-      Py_DECREF(epochobj);
+      Py_DECREF(tmpobj);
       return 1;
     }
+    Py_DECREF(tmpobj);
 
     // The _delta_t attribute:
-    delta_tobj = PyFloat_FromDouble((double) ts->deltaT);
-    if (!delta_tobj) {
+    tmpobj = PyFloat_FromDouble((double) ts->deltaT);
+    if (!tmpobj) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not create output delta_t object for argument '%s._delta_t'",objname);
       return 1;
     }
-    if (PyObject_SetAttrString(argument,"_delta_t",delta_tobj) == -1) {
+    if (PyObject_SetAttrString(argument,"_delta_t",tmpobj) == -1) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not modify '%s._delta_t'",objname);
-      Py_DECREF(delta_tobj);
+      Py_DECREF(tmpobj);
       return 1;
     }
-
+    Py_DECREF(tmpobj);
 
     return 0;
   }
@@ -810,6 +809,410 @@ typedef struct {
 
 %fragment("BuildArgoutTS","header",
 	  fragment="BuildReturnFromValue",fragment="MarshallOutputTS") {};
+
+
+%fragment("MarshallInputFS","header",fragment="GenericFS") {
+  GenericFS *MarshallInputFS(PyObject *obj, const int numpy_type, const char *objname) {
+    GenericVector *vecptr;
+    GenericFS *returnptr;
+    PyObject *dataobj, *tmpobj;
+    LIGOTimeGPS *epoch_ptr;
+
+    tmpobj = PyObject_GetAttrString(obj,"_lal");
+
+    // We explicitly access the '_lal' attribute of the argument, to force it onto
+    // the CPU (if it was on the GPU and the current scheme is CPU) or to raise an
+    // exception (if the current scheme is GPU).
+
+    // We should have a '_lal' attribute, and it should point back to our argument, or
+    // there's a problem.
+
+    if (tmpobj != obj) {
+      PyErr_Format(PyExc_TypeError,
+		   "Argument '%s' has wrong or missing '_lal' attribute---it is not an instance of pycbc.types.FrequencySeries",
+		   objname);
+      Py_XDECREF(tmpobj);
+      return NULL;
+    }
+
+    // If we get here, it means that the lal property did behave as expected, so to avoid
+    // an ever-increasing refcount, we must now decrement it:
+
+    Py_DECREF(tmpobj);
+
+    if (PyObject_IsInstance(obj,CBC_FS) !=1){
+      PyErr_Format(PyExc_TypeError,
+		   "Argument '%s' must be an instance of pycbc.types.FrequencySeries or subclass", objname);
+      return NULL;
+    }
+
+    // First, marshall everything for the numpy array that is "self._data"
+
+    dataobj = PyObject_GetAttrString(obj,"_data");
+    if (!dataobj){
+      PyErr_Format(PyExc_TypeError,
+		   "Could not get _data property of argument '%s'", objname);
+      return NULL;
+    }
+    if (!PyArray_Check(dataobj)){
+      PyErr_Format(PyExc_TypeError,
+		   "Argument '%s._data' must be a numpy array", objname);
+      return NULL;
+    }
+    if (!(PyArray_ISCARRAY((PyArrayObject *) dataobj)
+	  || PyArray_ISCARRAY_RO((PyArrayObject *) dataobj)) ){
+      PyErr_Format(PyExc_TypeError,
+		   "Argument '%s._data' is not C-order contiguous",objname);
+      return NULL;
+    }
+    if ( PyArray_NDIM((PyArrayObject *) dataobj) != 1) {
+      PyErr_Format(PyExc_ValueError,
+		   "Argument '%s._data' is not one-dimensional",objname);
+      return NULL;
+    }
+    if (PyArray_TYPE((PyArrayObject *) dataobj) != numpy_type) {
+      PyErr_Format(PyExc_ValueError,
+		   "Argument '%s._data' has wrong dtype for corresponding LAL vector",objname);
+      return NULL;
+    }
+
+    // Start assembling our return object, which is a GenericFS.  If LAL should ever change
+    // its definitions of FS so that different types change by more than underlying datatypes,
+    // this would all have to be redone into a case statement based on the dtype.
+
+
+    // Another important point: we use *calloc* not *malloc*.  This means that things we do not
+    // read from our input (name, and sampleUnits) are set to zero.  As this corresponds to
+    // a blank string, 0.0, and lalDimensionlessUnit, respectively, this is OK.  Hence there is
+    // no code below to set those members of our temporary struct that we pass to the wrapped
+    // function.
+    vecptr = (GenericVector *) calloc(1,sizeof(GenericVector));
+    returnptr = (GenericFS *) calloc(1,sizeof(GenericFrequencySeries));
+    if (!returnptr || !vecptr) {
+      PyErr_Format(PyExc_MemoryError,
+		   "Could not allocate temporary FrequencySeries for argument '%s'",objname);
+      if (vecptr) free(vecptr);
+      if (returnptr) free(returnptr);
+      return NULL;
+    }
+    vecptr->data = PyArray_DATA(dataobj);
+    vecptr->length = (UINT4) PyArray_DIM(dataobj,0);
+    returnptr->data = vecptr;
+
+    // We should now release the reference count acquired through 'GetAttrString':
+
+    Py_DECREF(dataobj);
+
+    // Next, marshall all of the other pieces of a FrequencySeries that we do want to
+    // get from our input.
+
+    // First, epoch:
+
+    tmpobj = PyObject_GetAttrString(obj,"_epoch");
+    if (!tmpobj ||
+	(SWIG_ConvertPtr(tmpobj,(void **) &epoch_ptr,$descriptor(LIGOTimeGPS *),SWIG_POINTER_EXCEPTION) == -1)){
+      Py_XDECREF(tmpobj);
+      PyErr_Format(PyExc_TypeError,
+		   "Argument '%s._epoch' does not exist or is not an instance of LIGOTimeGPS",objname);
+      return NULL;
+    }
+    (returnptr->epoch).gpsSeconds = epoch->gpsSeconds;
+    (returnptr->epoch).gpsNanoSeconds = epoch->gpsNanoSeconds;
+    Py_DECREF(tmpobj);
+
+    // Next, f0:
+
+    tmpobj = PyObject_GetAttrString(obj,"_f0");
+    if (!tmpobj || !PyFloat_Check(tmpobj)){
+      Py_XDECREF(tmpobj);
+      PyErr_Format(PyExc_TypeError,
+		   "Argument '%s._f0' does not exist or is not a valid Python double",objname);
+      return NULL;
+    }
+    // We use the macro form below---which doesn't check for errors--because
+    // we've already checked that we have a float.
+    returnptr->f0 = (REAL8) PyFloat_AS_DOUBLE(tmpobj);
+    Py_DECREF(tmpobj);
+
+    // Finally, delta_f:
+
+    tmpobj = PyObject_GetAttrString(obj,"_delta_f");
+    if (!tmpobj || !PyFloat_Check(tmpobj)){
+      Py_XDECREF(tmpobj);
+      PyErr_Format(PyExc_TypeError,
+		   "Argument '%s._delta_f' does not exist or is not a valid Python double",objname);
+      return NULL;
+    }
+    // We use the macro form below---which doesn't check for errors--because
+    // we've already checked that we have a float.
+    returnptr->deltaF = (REAL8) PyFloat_AS_DOUBLE(tmpobj);
+    Py_DECREF(tmpobj);
+
+    // We're done, so return something non-NULL:
+
+    return returnptr;
+  }
+}
+
+%fragment("MarshallOutputFS","header",fragment="GenericFS") {
+  PyObject *MarshallOutputFS(GenericFS *fs, const int numpy_type) {
+    PyObject *result, *dataobj, *dtypeobj, *copybool, *constrdict;
+    PyObject *epochobj, *delta_fobj, *f0obj;
+    LIGOTimeGPS *epoch_ptr;
+
+    if (!(fs)) {
+      PyErr_SetString(PyExc_ValueError,"Unexpected null frequency-series returned from function");
+      return NULL;
+    }
+    if ( !(fs->data) ) {
+      PyErr_SetString(PyExc_ValueError,"Frequency series output had empty data vector");
+      return NULL;
+    }
+    if ( !(fs->data->data) &&  !(fs->data->length) ) {
+      PyErr_SetString(PyExc_ValueError,
+		      "Frequency series had null data pointer returned for non-zero length");
+      return NULL;
+    }
+
+    constrdict = PyDict_New();
+    if (!constrdict) {
+      PyErr_SetString(PyExc_RuntimeError,"Could not create dictionary for return value constructor");
+      return NULL;
+    }
+
+    npy_intp dimensions[1];
+    dimensions[0] = (npy_intp) vect->length;
+    dataobj = PyArray_SimpleNewFromData(1,dimensions,numpy_type,(void *) vect->data);
+    if (!dataobj) {
+      PyErr_SetString(PyExc_RuntimeError,"Could not create output data object");
+      Py_DECREF(constrdict); // Dict still empty, so just delete
+      return NULL;
+    }
+    if (PyDict_SetItemString(constrdict,"initial_array",dataobj)) {
+      PyErr_SetString(PyExc_RuntimeError,"Could not add data object to cosntructor dict");
+      Py_DECREF(constrdict); // Dict still empty, so just delete
+      Py_DECREF(dataobj);
+      return NULL;
+    }
+
+    dtypeobj = (PyObject *) PyArray_DescrFromType(numpy_type);
+    if (!dtypeobj){
+      PyErr_SetString(PyExc_RuntimeError,"Could not create output dtype object");
+      PyDict_Clear(constrdict);
+      Py_DECREF(constrdict);
+      Py_DECREF(dataobj);
+      return NULL;
+    }
+    if (PyDict_SetItemString(constrdict,"dtype",dtypeobj)) {
+      PyErr_SetString(PyExc_RuntimeError,"Could not add dtype object to constructor dict");
+      PyDict_Clear(constrdict);
+      Py_DECREF(constrdict);
+      Py_DECREF(dataobj);
+      Py_DECREF(dtypeobj);
+      return NULL;
+    }
+
+    Py_INCREF(Py_False);
+    copybool = Py_False;
+    if (PyDict_SetItemString(constrdict,"copy",copybool)) {
+      PyErr_SetString(PyExc_RuntimeError,"Could not add copy object to constructor dict");
+      PyDict_Clear(constrdict);
+      Py_DECREF(constrdict);
+      Py_DECREF(dataobj);
+      Py_DECREF(dtypeobj);
+      Py_DECREF(copybool);
+      return NULL;
+    }
+
+    epoch_ptr = calloc(1,sizeof(LIGOTimeGPS));
+    if (!epoch_ptr) {
+      PyErr_SetString(PyExc_RuntimeError,"Could not create output epoch object");
+      PyDict_Clear(constrdict);
+      Py_DECREF(constrdict);
+      Py_DECREF(dataobj);
+      Py_DECREF(dtypeobj);
+      Py_DECREF(copybool);
+      return NULL;
+    }
+    epoch_ptr->gpsSeconds = (fs->epoch).gpsSeconds;
+    epoch_ptr->gpsNanoSeconds = (fs->epoch).gpsNanoSeconds;
+    epochobj = SWIG_NewPointerObj((void *) epoch_ptr,$descriptor(LIGOTimeGPS *),SWIG_POINTER_OWN);
+    if (!epochobj) {
+      PyErr_SetString(PyExc_RuntimeError,"Could not create output epoch object");
+      PyDict_Clear(constrdict);
+      Py_DECREF(constrdict);
+      Py_DECREF(dataobj);
+      Py_DECREF(dtypeobj);
+      Py_DECREF(copybool);
+      free(epoch_ptr);
+      return NULL;
+    }
+    if (PyDict_SetItemString(constrdict,"epoch",epochobj)) {
+      PyErr_SetString(PyExc_RuntimeError,"Could not add epoch object to constructor dict");
+      PyDict_Clear(constrdict);
+      Py_DECREF(constrdict);
+      Py_DECREF(dataobj);
+      Py_DECREF(dtypeobj);
+      Py_DECREF(copybool);
+      Py_DECREF(epochobj);
+      return NULL;
+    }
+
+    delta_fobj = PyFloat_FromDouble(fs->deltaF);
+    if (!delta_fobj) {
+      PyErr_SetString(PyExc_RuntimeError,"Could not create output delta_f object");
+      PyDict_Clear(constrdict);
+      Py_DECREF(constrdict);
+      Py_DECREF(dataobj);
+      Py_DECREF(dtypeobj);
+      Py_DECREF(copybool);
+      Py_DECREF(epochobj);
+      return NULL;
+    }
+    if (PyDict_SetItemString(constrdict,"delta_f",delta_fobj)) {
+      PyErr_SetString(PyExc_RuntimeError,"Could not add delta_f object to constructor dict");
+      PyDict_Clear(constrdict);
+      Py_DECREF(constrdict);
+      Py_DECREF(dataobj);
+      Py_DECREF(dtypeobj);
+      Py_DECREF(copybool);
+      Py_DECREF(epochobj);
+      Py_DECREF(delta_fobj);
+      return NULL;
+    }
+
+    f0obj = PyFloat_FromDouble(fs->f0);
+    if (!f0obj) {
+      PyErr_SetString(PyExc_RuntimeError,"Could not create output f0 object");
+      PyDict_Clear(constrdict);
+      Py_DECREF(constrdict);
+      Py_DECREF(dataobj);
+      Py_DECREF(dtypeobj);
+      Py_DECREF(copybool);
+      Py_DECREF(epochobj);
+      Py_DECREF(delta_fobj);
+      return NULL;
+    }
+    if (PyDict_SetItemString(constrdict,"f0",f0obj)) {
+      PyErr_SetString(PyExc_RuntimeError,"Could not add f0 object to constructor dict");
+      PyDict_Clear(constrdict);
+      Py_DECREF(constrdict);
+      Py_DECREF(dataobj);
+      Py_DECREF(dtypeobj);
+      Py_DECREF(copybool);
+      Py_DECREF(epochobj);
+      Py_DECREF(delta_fobj);
+      Py_DECREF(f0obj);
+      return NULL;
+    }
+
+    result = PyObject_Call(CBC_FS,EmptyTuple,constrdict);
+    if (!result) {
+      PyErr_SetString(PyExc_RuntimeError,"Could not create new instance of pycbc.types.FrequencySeries");
+    }
+    // We don't need to do anything else for that last failure, as we'll be returning NULL
+    // anyway and we have to do the same cleanup
+    PyDict_Clear(constrdict);
+    Py_DECREF(constrdict);
+    Py_DECREF(dataobj);
+    Py_DECREF(dtypeobj);
+    Py_DECREF(copybool);
+    Py_DECREF(epochobj);
+    Py_DECREF(delta_fobj);
+    Py_DECREF(f0obj);
+
+    return result;
+  }
+ }
+
+%fragment("MarshallArgoutFS","header",fragment="GenericFS") {
+  int *MarshallArgoutFS(PyObject *argument, GenericFS *fs, const char *objname) {
+    PyObject *tmpobj;
+    LIGOTimeGPS *epoch_ptr;
+
+    if (!(fs)) {
+      PyErr_Format(PyExc_ValueError,
+		   "Unexpected null frequency-series for argument '%s' after return",objname);
+      return 1;
+    }
+    if ( !(fs->data) ) {
+      PyErr_Format(PyExc_ValueError,
+		   "Frequency series argument '%s' had empty data vector after return",objname);
+      return 1;
+    }
+    if ( !(fs->data->data) &&  !(fs->data->length) ) {
+      PyErr_Format(PyExc_ValueError,
+		   "Frequency series argument '%s' had null data pointer returned for non-zero length",
+		   objname);
+      return 1;
+    }
+
+    // The _data attribute should have automatically been modified in place, as it was
+    // wrapped from a numpy array.  For all other elements of the returned TimeSeries,
+    // we modify the existing attribute in place, since there's no easy way to know whether
+    // or not the wrapped LAL function changed it.
+
+    // The _epoch attribute:
+    epoch_ptr = calloc(1,sizeof(LIGOTimeGPS));
+    if (!epoch_ptr) {
+      PyErr_Format(PyExc_RuntimeError,
+		   "Could not create output epoch object for '%s._epoch'",objname);
+      return 1;
+    }
+    epoch_ptr->gpsSeconds = (fs->epoch).gpsSeconds;
+    epoch_ptr->gpsNanoSeconds = (fs->epoch).gpsNanoSeconds;
+    tmpobj = SWIG_NewPointerObj((void *) epoch_ptr,$descriptor(LIGOTimeGPS *),SWIG_POINTER_OWN);
+    if (!tmpobj) {
+      PyErr_Format(PyExc_RuntimeError,
+		   "Could not create output epoch object for '%s._epoch'",objname);
+      free(epoch_ptr);
+      return 1;
+    }
+    if (PyObject_SetAttrString(argument,"_epoch",tmpobj) == -1) {
+      PyErr_Format(PyExc_RuntimeError,
+		   "Could not modify '%s._epoch'",objname);
+      Py_DECREF(tmpobj);
+      return 1;
+    }
+    Py_DECREF(tmpobj);
+
+    // The _delta_f attribute:
+    tmpobj = PyFloat_FromDouble((double) fs->deltaF);
+    if (!tmpobj) {
+      PyErr_Format(PyExc_RuntimeError,
+		   "Could not create output delta_f object for argument '%s._delta_f'",objname);
+      return 1;
+    }
+    if (PyObject_SetAttrString(argument,"_delta_f",tmpobj) == -1) {
+      PyErr_Format(PyExc_RuntimeError,
+		   "Could not modify '%s._delta_f'",objname);
+      Py_DECREF(tmpobj);
+      return 1;
+    }
+    Py_DECREF(tmpobj);
+
+    // The _f0 attribute:
+    tmpobj = PyFloat_FromDouble((double) fs->f0);
+    if (!tmpobj) {
+      PyErr_Format(PyExc_RuntimeError,
+		   "Could not create output f0 object for argument '%s._f0'",objname);
+      return 1;
+    }
+    if (PyObject_SetAttrString(argument,"_f0",tmpobj) == -1) {
+      PyErr_Format(PyExc_RuntimeError,
+		   "Could not modify '%s._f0'",objname);
+      Py_DECREF(tmpobj);
+      return 1;
+    }
+    Py_DECREF(tmpobj);
+
+    return 0;
+  }
+}
+
+%fragment("BuildArgoutFS","header",
+	  fragment="BuildReturnFromValue",fragment="MarshallOutputFS") {};
+
 
 /*
 
@@ -1229,6 +1632,192 @@ YOU HAVE BEEN WARNED!
 				 MarshallOutputTS((GenericTS *) *($1),NPY_COMPLEX128));
   if (!($result)) SWIG_fail;
 }
+
+// Typemaps for REAL4 Frequency Series
+
+%typemap(in, fragment="MarshallInputFS") REAL4FrequencySeries *INPUT_REAL4FS {
+  $1 =(REAL4FrequencySeries *) MarshallInputFS($input,NPY_FLOAT32,"$1_name");
+  if (!($1)) SWIG_fail;
+}
+
+%typemap(argout, fragment="MarshallArgoutFS") REAL4FrequencySeries *INPUT_REAL4FS {
+  if (MarshallArgoutFS($input,$1,"$1_name") ) SWIG_fail;
+}
+
+%typemap(freearg) REAL4FrequencySeries *INPUT_REAL4FS {
+  if ($1) {
+    if ( ((REAL4FrequencySeries *)$1)->data) {
+      free ((REAL4Vector *) ((REAL4FrequencySeries *)$1)->data);
+    }
+    free((REAL4FrequencySeries *) $1);
+  }
+}
+
+%typemap(out, fragment="MarshallOutputFS") REAL4FrequencySeries *NEWOUT_REAL4FS{
+  $result = MarshallOutputFS((GenericFS *) $1,NPY_FLOAT32);
+  if (!($result)) SWIG_fail;
+}
+
+%typemap(newfree) REAL4FrequencySeries *NEWOUT_REAL4FS{
+  if ( ((REAL4FrequencySeries *) $1)->data) free( (REAL4Vector *)((REAL4FrequencySeries *) $1)->data);
+  free( (REAL4FrequencySeries *) $1);
+}
+
+%typemap(out) REAL4FrequencySeries *NONEOUT_REAL4FS{
+  Py_INCREF(Py_None);
+  $result = Py_None;
+}
+
+%typemap(in,numinputs=0) REAL4FrequencySeries **ARGOUT_REAL4FS (REAL4FrequencySeries *temp) {
+  temp = NULL;
+  $1 = &temp;
+}
+
+%typemap(argout, fragment="BuildArgoutFS") REAL4FrequencySeries **ARGOUT_REAL4FS {
+  $result = BuildReturnFromValue($result,
+				 MarshallOutputFS((GenericFS *) *($1),NPY_FLOAT32));
+  if (!($result)) SWIG_fail;
+}
+
+// Typemaps for REAL8 Frequency Series
+
+%typemap(in, fragment="MarshallInputFS") REAL8FrequencySeries *INPUT_REAL8FS {
+  $1 =(REAL8FrequencySeries *) MarshallInputFS($input,NPY_FLOAT64,"$1_name");
+  if (!($1)) SWIG_fail;
+}
+
+%typemap(argout, fragment="MarshallArgoutFS") REAL8FrequencySeries *INPUT_REAL8FS {
+  if (MarshallArgoutFS($input,$1,"$1_name") ) SWIG_fail;
+}
+
+%typemap(freearg) REAL8FrequencySeries *INPUT_REAL8FS {
+  if ($1) {
+    if ( ((REAL8FrequencySeries *)$1)->data) {
+      free ((REAL8Vector *) ((REAL8FrequencySeries *)$1)->data);
+    }
+    free((REAL8FrequencySeries *) $1);
+  }
+}
+
+%typemap(out, fragment="MarshallOutputFS") REAL8FrequencySeries *NEWOUT_REAL8FS{
+  $result = MarshallOutputFS((GenericFS *) $1,NPY_FLOAT64);
+  if (!($result)) SWIG_fail;
+}
+
+%typemap(newfree) REAL8FrequencySeries *NEWOUT_REAL8FS{
+  if ( ((REAL8FrequencySeries *) $1)->data) free( (REAL8Vector *)((REAL8FrequencySeries *) $1)->data);
+  free( (REAL8FrequencySeries *) $1);
+}
+
+%typemap(out) REAL8FrequencySeries *NONEOUT_REAL8FS{
+  Py_INCREF(Py_None);
+  $result = Py_None;
+}
+
+%typemap(in,numinputs=0) REAL8FrequencySeries **ARGOUT_REAL8FS (REAL8FrequencySeries *temp) {
+  temp = NULL;
+  $1 = &temp;
+}
+
+%typemap(argout, fragment="BuildArgoutFS") REAL8FrequencySeries **ARGOUT_REAL8FS {
+  $result = BuildReturnFromValue($result,
+				 MarshallOutputFS((GenericFS *) *($1),NPY_FLOAT64));
+  if (!($result)) SWIG_fail;
+}
+
+
+// Typemaps for COMPLEX8 Frequency Series
+
+%typemap(in, fragment="MarshallInputFS") COMPLEX8FrequencySeries *INPUT_COMPLEX8FS {
+  $1 =(COMPLEX8FrequencySeries *) MarshallInputFS($input,NPY_COMPLEX64,"$1_name");
+  if (!($1)) SWIG_fail;
+}
+
+%typemap(argout, fragment="MarshallArgoutFS") COMPLEX8FrequencySeries *INPUT_COMPLEX8FS {
+  if (MarshallArgoutFS($input,$1,"$1_name") ) SWIG_fail;
+}
+
+%typemap(freearg) COMPLEX8FrequencySeries *INPUT_COMPLEX8FS {
+  if ($1) {
+    if ( ((COMPLEX8FrequencySeries *)$1)->data) {
+      free ((COMPLEX8Vector *) ((COMPLEX8FrequencySeries *)$1)->data);
+    }
+    free((COMPLEX8FrequencySeries *) $1);
+  }
+}
+
+%typemap(out, fragment="MarshallOutputFS") COMPLEX8FrequencySeries *NEWOUT_COMPLEX8FS{
+  $result = MarshallOutputFS((GenericFS *) $1,NPY_COMPLEX64);
+  if (!($result)) SWIG_fail;
+}
+
+%typemap(newfree) COMPLEX8FrequencySeries *NEWOUT_COMPLEX8FS{
+  if ( ((COMPLEX8FrequencySeries *) $1)->data) free( (COMPLEX8Vector *)((COMPLEX8FrequencySeries *) $1)->data);
+  free( (COMPLEX8FrequencySeries *) $1);
+}
+
+%typemap(out) COMPLEX8FrequencySeries *NONEOUT_COMPLEX8FS{
+  Py_INCREF(Py_None);
+  $result = Py_None;
+}
+
+%typemap(in,numinputs=0) COMPLEX8FrequencySeries **ARGOUT_COMPLEX8FS (COMPLEX8FrequencySeries *temp) {
+  temp = NULL;
+  $1 = &temp;
+}
+
+%typemap(argout, fragment="BuildArgoutFS") COMPLEX8FrequencySeries **ARGOUT_COMPLEX8FS {
+  $result = BuildReturnFromValue($result,
+				 MarshallOutputFS((GenericFS *) *($1),NPY_COMPLEX64));
+  if (!($result)) SWIG_fail;
+}
+
+// Typemaps for COMPLEX16 Frequency Series
+
+%typemap(in, fragment="MarshallInputFS") COMPLEX16FrequencySeries *INPUT_COMPLEX16FS {
+  $1 =(COMPLEX16FrequencySeries *) MarshallInputFS($input,NPY_COMPLEX128,"$1_name");
+  if (!($1)) SWIG_fail;
+}
+
+%typemap(argout, fragment="MarshallArgoutFS") COMPLEX16FrequencySeries *INPUT_COMPLEX16FS {
+  if (MarshallArgoutFS($input,$1,"$1_name") ) SWIG_fail;
+}
+
+%typemap(freearg) COMPLEX16FrequencySeries *INPUT_COMPLEX16FS {
+  if ($1) {
+    if ( ((COMPLEX16FrequencySeries *)$1)->data) {
+      free ((COMPLEX16Vector *) ((COMPLEX16FrequencySeries *)$1)->data);
+    }
+    free((COMPLEX16FrequencySeries *) $1);
+  }
+}
+
+%typemap(out, fragment="MarshallOutputFS") COMPLEX16FrequencySeries *NEWOUT_COMPLEX16FS{
+  $result = MarshallOutputFS((GenericFS *) $1,NPY_COMPLEX128);
+  if (!($result)) SWIG_fail;
+}
+
+%typemap(newfree) COMPLEX16FrequencySeries *NEWOUT_COMPLEX16FS{
+  if ( ((COMPLEX16FrequencySeries *) $1)->data) free( (COMPLEX16Vector *)((COMPLEX16FrequencySeries *) $1)->data);
+  free( (COMPLEX16FrequencySeries *) $1);
+}
+
+%typemap(out) COMPLEX16FrequencySeries *NONEOUT_COMPLEX16FS{
+  Py_INCREF(Py_None);
+  $result = Py_None;
+}
+
+%typemap(in,numinputs=0) COMPLEX16FrequencySeries **ARGOUT_COMPLEX16FS (COMPLEX16FrequencySeries *temp) {
+  temp = NULL;
+  $1 = &temp;
+}
+
+%typemap(argout, fragment="BuildArgoutFS") COMPLEX16FrequencySeries **ARGOUT_COMPLEX16FS {
+  $result = BuildReturnFromValue($result,
+				 MarshallOutputFS((GenericFS *) *($1),NPY_COMPLEX128));
+  if (!($result)) SWIG_fail;
+}
+
 
 // Some tests:
 %rename("%s") XLALSSVectorMultiply;
