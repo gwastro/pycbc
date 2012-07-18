@@ -370,6 +370,10 @@ typedef struct {
     returnptr->data = PyArray_DATA(dataobj);
     returnptr->length = (UINT4) PyArray_DIM(dataobj,0);
 
+    // We should now release the reference count acquired through 'GetAttrString':
+
+    Py_DECREF(dataobj);
+
     return returnptr;
   }
 }
@@ -461,10 +465,8 @@ typedef struct {
   GenericTS *MarshallInputTS(PyObject *obj, const int numpy_type, const char *objname) {
     GenericVector *vecptr;
     GenericTS *returnptr;
-    PyObject *dataobj, *tmpobj, *nameobj;
-    char *NameString, BlankString[1] = '\0';
-    double f0, deltaT;
-    LALUnit *sampleUnits_ptr;
+    PyObject *dataobj, *tmpobj;
+    REAL8 deltaT;
     LIGOTimeGPS *epoch_ptr;
     int i;
 
@@ -530,6 +532,12 @@ typedef struct {
     // its definitions of TS so that different types change by more than underlying datatypes,
     // this would all have to be redone into a case statement based on the dtype.
 
+
+    // Another important point: we use *calloc* not *malloc*.  This means that things we do not
+    // read from our input (name, f0, and sampleUnits) are set to zero.  As this corresponds to
+    // a blank string, 0.0, and lalDimensionlessUnit, respectively, this is OK.  Hence there is
+    // no code below to set those members of our temporary struct that we pass to the wrapped
+    // function.
     vecptr = (GenericVector *) calloc(1,sizeof(GenericVector));
     returnptr = (GenericTS *) calloc(1,sizeof(GenericTimeSeries));
     if (!returnptr || !vecptr) {
@@ -543,36 +551,14 @@ typedef struct {
     vecptr->length = (UINT4) PyArray_DIM(dataobj,0);
     returnptr->data = vecptr;
 
-    // Next, marshall all of the other pieces of a TimeSeries.  Our PyCBC types
-    // don't necessarily have all of these set, in which case we put in default
-    // values to pass through to LAL (which should not have these as garbage or missing).
+    // We should now release the reference count acquired through 'GetAttrString':
 
-    // First, the name, one of the things that may be missing.  This is actually one of the
-    // trickiest things to deal with, because the Python C-API function PyString_AsString()
-    // returns a pointer to its internal buffer, which must not be modified or deallocated.
-    // To simplify passing *back* this argument, we always create a new string for our name,
-    // and if our object passed in had the name string set it will get back a new string
-    // with the same value (rather than figuring out whether it was modfied in place or not).
+    Py_DECREF(dataobj);
 
-    if (PyObject_HasAttrString(obj,"_name")){
-      tmpobj = PyObject_GetAttrString(obj,"_name");
-      if (!tmpobj || !PyString_Check(tmpobj)) {
-	Py_XDECREF(tmpobj);
-	PyErr_Format(PyExc_TypeError,"Argument '%s._name' exists but is not a valid Python string",objname);
-	return NULL;
-      }
-      NameString = PyString_AsString(tmpobj);
-      // The following cannot deallocate the string, because the python object obj
-      // holds a reference to the 'name' attribute, and the C-API function call holds
-      // a reference to obj.
-      Py_XDECREF(tmpobj);
-    } else {
-      NameString = BlankName;
-    }
-    strncpy(returnptr->name,NameString,LALNameLength-1);
-    returnptr->name[LALNameLength-1] = '\0';
+    // Next, marshall all of the other pieces of a TimeSeries that we do want to
+    // get from our input.
 
-    // Next, epoch, which is required:
+    // First, epoch:
 
     tmpobj = PyObject_GetAttrString(obj,"_epoch");
     if (!tmpobj ||
@@ -586,7 +572,7 @@ typedef struct {
     returnptr->epoch.gpsNanoSeconds = epoch->gpsNanoSeconds;
     Py_DECREF(tmpobj);
 
-    // Next, delta_t, which is required:
+    // Next, delta_t:
 
     tmpobj = PyObject_GetAttrString(obj,"_delta_t");
     if (!tmpobj || !PyFloat_Check(tmpobj)){
@@ -597,47 +583,10 @@ typedef struct {
     }
     // We use the macro form below---which doesn't check for errors--because
     // we've already checked that we have a float.
-    returnptr->deltaT = PyFloat_AS_DOUBLE(tmpobj);
+    returnptr->deltaT = (REAL8) PyFloat_AS_DOUBLE(tmpobj);
     Py_DECREF(tmpobj);
 
-    // Next, f0, which is optional:
-
-    if (PyObject_HasAttrString(obj,"_f0")) {
-      tmpobj = PyObject_GetAttrString(obj,"_f0");
-      if (!tmpobj || !PyFloat_Check(tmpobj)){
-	Py_XDECREF(tmpobj);
-	PyErr_Format(PyExc_TypeError,
-		     "Argument '%s._f0' exists but is not a valid Python double",objname);
-	return NULL;
-      }
-      // We use the macro form below---which doesn't check for errors--because
-      // we've already checked that we have a float.
-      returnptr->f0 = PyFloat_AS_DOUBLE(tmpobj);
-      Py_DECREF(tmpobj);
-    } else {
-      returnptr->f0 = 0.0;
-    }
-
-    // Finally, sampleUnits, which is optional:
-
-    if (PyObject_HasAttrString(obj,"_sample_units")) {
-      tmpobj = PyObject_GetAttrString(obj,"_sample_units");
-      if (!tmpobj ||
-	  (SWIG_ConvertPtr(tmpobj,(void **) &sampleUnits_ptr,$descriptor(LALUnit *),SWIG_POINTER_EXCEPTION) == -1)){
-	Py_XDECREF(tmpobj);
-	PyErr_Format(PyExc_TypeError,
-		     "Argument '%s._sample_units' exists but is not a valid LALUnit object",objname);
-	return NULL;
-      }
-      returnptr->sampleUnits.powerOfTen = sampleUnits_ptr->powerOfTen;
-      for (i=0;i<LALNumUnits;i++){
-	returnptr->sampleUnits.unitNumerator[i] = sampleUnits_ptr->unitNumerator[i];
-	returnptr->sampleUnits.unitDenominatorMinusOne[i] = sampleUnits_ptr->unitDenominatorMinusOne[i];
-      }
-      Py_DECREF(tmpobj);
-    } else {
-      returnptr->sampleUnits = lalDimensionlessUnit;
-    }
+    // We're done, so return something non-NULL:
 
     return returnptr;
   }
@@ -646,8 +595,7 @@ typedef struct {
 %fragment("MarshallOutputTS","header",fragment="GenericTS") {
   PyObject *MarshallOutputVector(GenericTS *ts, const int numpy_type) {
     PyObject *result, *dataobj, *dtypeobj, *copybool, *constrdict;
-    PyObject *f0obj, *epochobj, *delta_tobj, *nameobj, *unitsobj;
-    LALUnit *sampleUnits_ptr;
+    PyObject *epochobj, *delta_tobj;
     LIGOTimeGPS *epoch_ptr;
     int i;
 
@@ -715,27 +663,6 @@ typedef struct {
       return NULL;
     }
 
-    f0obj = PyFloat_FromDouble(ts->f0);
-    if (!f0obj) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not create output f0 object");
-      PyDict_Clear(constrdict);
-      Py_DECREF(constrdict);
-      Py_DECREF(dataobj);
-      Py_DECREF(dtypeobj);
-      Py_DECREF(copybool);
-      return NULL;
-    }
-    if (PyDict_SetItemString(constrdict,"f0",f0obj)) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not add f0 object to constructor dict");
-      PyDict_Clear(constrdict);
-      Py_DECREF(constrdict);
-      Py_DECREF(dataobj);
-      Py_DECREF(dtypeobj);
-      Py_DECREF(copybool);
-      Py_DECREF(f0obj);
-      return NULL;
-    }
-
     epoch_ptr = calloc(1,sizeof(LIGOTimeGPS));
     if (!epoch_ptr) {
       PyErr_SetString(PyExc_RuntimeError,"Could not create output epoch object");
@@ -744,7 +671,6 @@ typedef struct {
       Py_DECREF(dataobj);
       Py_DECREF(dtypeobj);
       Py_DECREF(copybool);
-      Py_DECREF(f0obj);
       return NULL;
     }
     epoch_ptr->gpsSeconds = (ts->epoch).gpsSeconds;
@@ -757,7 +683,6 @@ typedef struct {
       Py_DECREF(dataobj);
       Py_DECREF(dtypeobj);
       Py_DECREF(copybool);
-      Py_DECREF(f0obj);
       free(epoch_ptr);
       return NULL;
     }
@@ -768,7 +693,6 @@ typedef struct {
       Py_DECREF(dataobj);
       Py_DECREF(dtypeobj);
       Py_DECREF(copybool);
-      Py_DECREF(f0obj);
       Py_DECREF(epochobj);
       return NULL;
     }
@@ -781,7 +705,6 @@ typedef struct {
       Py_DECREF(dataobj);
       Py_DECREF(dtypeobj);
       Py_DECREF(copybool);
-      Py_DECREF(f0obj);
       Py_DECREF(epochobj);
       return NULL;
     }
@@ -792,86 +715,8 @@ typedef struct {
       Py_DECREF(dataobj);
       Py_DECREF(dtypeobj);
       Py_DECREF(copybool);
-      Py_DECREF(f0obj);
       Py_DECREF(epochobj);
       Py_DECREF(delta_tobj);
-      return NULL;
-    }
-
-    nameobj = PyString_FromStringAndSize(ts->name,LALNameLength);
-    // If ts->name was NULL, then nameobj is uninitalized
-    if (!nameobj) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not create output name object");
-      PyDict_Clear(constrdict);
-      Py_DECREF(constrdict);
-      Py_DECREF(dataobj);
-      Py_DECREF(dtypeobj);
-      Py_DECREF(copybool);
-      Py_DECREF(f0obj);
-      Py_DECREF(epochobj);
-      Py_DECREF(delta_tobj);
-      return NULL;
-    }
-    if (PyDict_SetItemString(constrdict,"name",nameobj)) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not add name object to constructor dict");
-      PyDict_Clear(constrdict);
-      Py_DECREF(constrdict);
-      Py_DECREF(dataobj);
-      Py_DECREF(dtypeobj);
-      Py_DECREF(copybool);
-      Py_DECREF(f0obj);
-      Py_DECREF(epochobj);
-      Py_DECREF(delta_tobj);
-      Py_DECREF(nameobj);
-      return NULL;
-    }
-
-    sampleUnits_ptr = calloc(1,sizeof(LALUnit));
-    if (!sampleUnits_ptr) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not create output sample_units object");
-      PyDict_Clear(constrdict);
-      Py_DECREF(constrdict);
-      Py_DECREF(dataobj);
-      Py_DECREF(dtypeobj);
-      Py_DECREF(copybool);
-      Py_DECREF(f0obj);
-      Py_DECREF(epochobj);
-      Py_DECREF(delta_tobj);
-      Py_DECREF(nameobj);
-      return NULL;
-    }
-    sampleUnits_ptr->powerOfTen = (ts->sampleUnits).powerOfTen;
-    for (i=0; i < LALNumUnits; i++) {
-      (sampleUnits_ptr->unitNumerator)[i] = (ts->sampleUnits).unitNumerator[i];
-      (sampleUnits_ptr->unitDenominatorMinusOne)[i] = (ts->sampleUnits).unitDenominatorMinusOne[i];
-    }
-    unitsobj = SWIG_NewPointerObj((void *) sampleUnits_ptr,$descriptor(LALUnit *),SWIG_POINTER_OWN);
-    if (!unitsobj) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not create output sample_units object");
-      PyDict_Clear(constrdict);
-      Py_DECREF(constrdict);
-      Py_DECREF(dataobj);
-      Py_DECREF(dtypeobj);
-      Py_DECREF(copybool);
-      Py_DECREF(f0obj);
-      Py_DECREF(epochobj);
-      Py_DECREF(delta_tobj);
-      Py_DECREF(nameobj);
-      free(sampleUnits_ptr);
-      return NULL;
-    }
-    if (PyDict_SetItemString(constrdict,"sample_units",unitsobj)) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not add sample_units object to constructor dict");
-      PyDict_Clear(constrdict);
-      Py_DECREF(constrdict);
-      Py_DECREF(dataobj);
-      Py_DECREF(dtypeobj);
-      Py_DECREF(copybool);
-      Py_DECREF(f0obj);
-      Py_DECREF(epochobj);
-      Py_DECREF(delta_tobj);
-      Py_DECREF(nameobj);
-      Py_DECREF(unitsobj);
       return NULL;
     }
 
@@ -886,11 +731,8 @@ typedef struct {
     Py_DECREF(dataobj);
     Py_DECREF(dtypeobj);
     Py_DECREF(copybool);
-    Py_DECREF(f0obj);
     Py_DECREF(epochobj);
     Py_DECREF(delta_tobj);
-    Py_DECREF(nameobj);
-    Py_DECREF(unitsobj);
 
     return result;
   }
@@ -898,8 +740,7 @@ typedef struct {
 
 %fragment("MarshallArgoutTS","header",fragment="GenericTS") {
   int *MarshallArgoutVector(PyObject *argument, GenericTS *ts, const char *objname) {
-    PyObject *f0obj, *epochobj, *delta_tobj, *nameobj, *unitsobj;
-    LALUnit *sampleUnits_ptr;
+    PyObject *epochobj, *delta_tobj;
     LIGOTimeGPS *epoch_ptr;
     int i;
 
@@ -922,26 +763,10 @@ typedef struct {
 
     // The _data attribute should have automatically been modified in place, as it was
     // wrapped from a numpy array.  For all other elements of the returned TimeSeries,
-    // we check that the corresponding attribute (if it's optional) exists for
-    // 'argument', and modify it in place.
+    // we modify the existing attribute in place, since there's no easy way to know whether
+    // or not the wrapped LAL function changed it or not.
 
-    // The _f0 argument is optional
-    if (PyObject_HasAttrString(argument,"_f0")){
-	f0obj = PyFloat_FromDouble(ts->f0);
-	if (!f0obj) {
-	  PyErr_Format(PyExc_RuntimeError,
-		       "Could not create output f0 object for '%s._f0'",objname);
-	  return 1;
-	}
-	if (PyObject_SetAttrString(argument,"_f0",f0obj) == -1) {
-	  PyErr_Format(PyExc_RuntimeError,
-		       "Could not modify '%s._f0'",objname);
-	  Py_DECREF(f0obj);
-	  return 1;
-	}
-    }
-
-    // The _epoch attribute is mandatory
+    // The _epoch attribute:
     epoch_ptr = calloc(1,sizeof(LIGOTimeGPS));
     if (!epoch_ptr) {
       PyErr_Format(PyExc_RuntimeError,
@@ -964,8 +789,8 @@ typedef struct {
       return 1;
     }
 
-    // The _delta_t attribute is mandatory
-    delta_tobj = PyFloat_FromDouble(ts->deltaT);
+    // The _delta_t attribute:
+    delta_tobj = PyFloat_FromDouble((double) ts->deltaT);
     if (!delta_tobj) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not create output delta_t object for argument '%s._delta_t'",objname);
@@ -978,57 +803,10 @@ typedef struct {
       return 1;
     }
 
-    // The _name attribute is optional
-    if (PyObject_HasAttrString(argument,"_name")){
-      nameobj = PyString_FromStringAndSize(ts->name,LALNameLength);
-      // If ts->name was NULL, then nameobj is uninitalized
-      if (!nameobj) {
-	PyErr_Format(PyExc_RuntimeError,
-		     "Could not create output name object for argument '%s._name'"
-		     objname);
-	return 1;
-      }
-      if (PyObject_SetAttrString(argument,"_name",nameobj) == -1) {
-	PyErr_Format(PyExc_RuntimeError,
-		     "Could not modify '%s._name'",objname);
-	Py_DECREF(nameobj);
-	return 1;
-      }
-    }
 
-    // The _sample_units attribute is optional
-    if (PyObject_HasAttrString(argument,"_sample_units"){
-	sampleUnits_ptr = calloc(1,sizeof(LALUnit));
-	if (!sampleUnits_ptr) {
-	  PyErr_Format(PyExc_RuntimeError,
-		       "Could not create output sample_units object for argument '%s._sample_units",
-		       objname);
-	  return 1;
-	}
-	sampleUnits_ptr->powerOfTen = (ts->sampleUnits).powerOfTen;
-	for (i=0; i < LALNumUnits; i++) {
-	  (sampleUnits_ptr->unitNumerator)[i] = (ts->sampleUnits).unitNumerator[i];
-	  (sampleUnits_ptr->unitDenominatorMinusOne)[i] = (ts->sampleUnits).unitDenominatorMinusOne[i];
-	}
-	unitsobj = SWIG_NewPointerObj((void *) sampleUnits_ptr,$descriptor(LALUnit *),SWIG_POINTER_OWN);
-	if (!unitsobj) {
-	  PyErr_Format(PyExc_RuntimeError,
-		       "Could not create output sample_units object for argument '%s._sample_units",
-		       objname);
-	  free(sampleUnits_ptr);
-	  return 1;
-	}
-	if (PyObject_SetAttrString(argument,"_sample_units",unitsobj) == -1) {
-	  PyErr_Format(PyExc_RuntimeError,
-		       "Could not modify '%s._sample_units",objname);
-	  Py_DECREF(unitsobj);
-	  return 1;
-	}
-      }
-
-      return 0;
-      }
+    return 0;
   }
+}
 
 %fragment("BuildArgoutTS","header",
 	  fragment="BuildReturnFromValue",fragment="MarshallOutputTS") {};
