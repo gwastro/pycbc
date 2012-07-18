@@ -56,13 +56,11 @@ class checks(object):
                 else:
                     self.assertTrue(val._scheme==None)
                 
-                # These can be almostequal tests, because the child class should perform
-                # the numerical tests, this is just to be sure that it isn't garbled
                 self.assertEqual(len(val), len(trueval))
                 for i in range(len(trueval)):
                     self.assertAlmostEqual(val[i], trueval[i], places=places)
             else:
-                self.assertTrue(val==trueval)
+                self.assertAlmostEqual(val,trueval,places=places)
 
 class function_base(checks):
     

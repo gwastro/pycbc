@@ -137,7 +137,7 @@ class Array(object):
                         initdtype = float64
                         
             # If no dtype can be extracted, default to Double, or Double Complex.
-            # The list might just be empty
+            # The list might just be empty, or it could also be a list of numpy values
             if initdtype is None:
                 try:
                     if type(initial_array[0]) == complex:
@@ -189,8 +189,9 @@ class Array(object):
                 if type(input_data) is _cudaarray.GPUArray:
                     if input_data.dtype == dtype:
                         self._data = _cudaarray.GPUArray((input_data.size),dtype)
-                        _cudriver.memcpy_dtod(self._data.gpudata,input_data.gpudata,
-                                                input_data.nbytes)
+                        if len(input_data) > 0:
+                            _cudriver.memcpy_dtod(self._data.gpudata,input_data.gpudata,
+                                                    input_data.nbytes)
                     else:
                         self._data = input_data.astype(dtype)
                 else:
@@ -202,8 +203,13 @@ class Array(object):
                     if input_data.dtype == dtype:
                     #Unsure how to copy memory directly with OpenCL, these two lines are 
                     #a temporary workaround, still probably better than going to the host and back though
-                        self._data = _openclarray.zeros_like(input_data)
-                        self._data += input_data
+                        # This function doesn't behave nicely when the array is empty
+                        # because it tries to fill it with zeros
+                        if len(input_data) > 0:
+                            self._data = _openclarray.zeros_like(input_data)
+                            self._data += input_data
+                        else:
+                            self._data = _openclarray.Array(self._scheme.queue,(0,),dtype)
                     else:
                         self._data = input_data.astype(dtype)
                 else:
