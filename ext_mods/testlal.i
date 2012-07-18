@@ -39,7 +39,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 // <lal/lalswig.i>.  Might be a bug in lalswig, or might just be
 // unavoidable given that we %import rather than %include the
 // lal wrappings.
-%include <exception.i>
+#%include <exception.i>
 %import <lal/lalswig.i>
 
 %begin %{
@@ -568,8 +568,8 @@ typedef struct {
 		   "Argument '%s._epoch' does not exist or is not an instance of LIGOTimeGPS",objname);
       return NULL;
     }
-    returnptr->epoch.gpsSeconds = epoch->gpsSeconds;
-    returnptr->epoch.gpsNanoSeconds = epoch->gpsNanoSeconds;
+    (returnptr->epoch).gpsSeconds = epoch->gpsSeconds;
+    (returnptr->epoch).gpsNanoSeconds = epoch->gpsNanoSeconds;
     Py_DECREF(tmpobj);
 
     // Next, delta_t:
@@ -764,7 +764,7 @@ typedef struct {
     // The _data attribute should have automatically been modified in place, as it was
     // wrapped from a numpy array.  For all other elements of the returned TimeSeries,
     // we modify the existing attribute in place, since there's no easy way to know whether
-    // or not the wrapped LAL function changed it or not.
+    // or not the wrapped LAL function changed it.
 
     // The _epoch attribute:
     epoch_ptr = calloc(1,sizeof(LIGOTimeGPS));
