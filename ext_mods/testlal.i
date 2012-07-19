@@ -39,7 +39,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 // <lal/lalswig.i>.  Might be a bug in lalswig, or might just be
 // unavoidable given that we %import rather than %include the
 // lal wrappings.
-#%include <exception.i>
+%include <exception.i>
 %import <lal/lalswig.i>
 
 %begin %{
@@ -882,7 +882,7 @@ typedef struct {
 
 
     // Another important point: we use *calloc* not *malloc*.  This means that things we do not
-    // read from our input (name, and sampleUnits) are set to zero.  As this corresponds to
+    // read from our input (name, f0 and sampleUnits) are set to zero.  As this corresponds to
     // a blank string, 0.0, and lalDimensionlessUnit, respectively, this is OK.  Hence there is
     // no code below to set those members of our temporary struct that we pass to the wrapped
     // function.
@@ -920,6 +920,10 @@ typedef struct {
     (returnptr->epoch).gpsNanoSeconds = epoch->gpsNanoSeconds;
     Py_DECREF(tmpobj);
 
+
+    /* The code below is commented out and not used, but retained here in case it is decided
+       to shadow the "f0" member in LAL FrequencySeries structs in the PyCBC type.
+
     // Next, f0:
 
     tmpobj = PyObject_GetAttrString(obj,"_f0");
@@ -933,6 +937,8 @@ typedef struct {
     // we've already checked that we have a float.
     returnptr->f0 = (REAL8) PyFloat_AS_DOUBLE(tmpobj);
     Py_DECREF(tmpobj);
+
+    */
 
     // Finally, delta_f:
 
@@ -957,7 +963,7 @@ typedef struct {
 %fragment("MarshallOutputFS","header",fragment="GenericFS") {
   PyObject *MarshallOutputFS(GenericFS *fs, const int numpy_type) {
     PyObject *result, *dataobj, *dtypeobj, *copybool, *constrdict;
-    PyObject *epochobj, *delta_fobj, *f0obj;
+    PyObject *epochobj, *delta_fobj;  // *f0obj;  // Commented out; see below
     LIGOTimeGPS *epoch_ptr;
 
     if (!(fs)) {
@@ -1081,6 +1087,9 @@ typedef struct {
       return NULL;
     }
 
+    /* The code below is commented out and not used, but retained here in case it is decided
+       to shadow the "f0" member in LAL FrequencySeries structs in the PyCBC type.
+
     f0obj = PyFloat_FromDouble(fs->f0);
     if (!f0obj) {
       PyErr_SetString(PyExc_RuntimeError,"Could not create output f0 object");
@@ -1106,6 +1115,9 @@ typedef struct {
       return NULL;
     }
 
+    */
+
+
     result = PyObject_Call(CBC_FS,EmptyTuple,constrdict);
     if (!result) {
       PyErr_SetString(PyExc_RuntimeError,"Could not create new instance of pycbc.types.FrequencySeries");
@@ -1119,7 +1131,7 @@ typedef struct {
     Py_DECREF(copybool);
     Py_DECREF(epochobj);
     Py_DECREF(delta_fobj);
-    Py_DECREF(f0obj);
+    // Py_DECREF(f0obj); // Commented out; see above
 
     return result;
   }
@@ -1191,6 +1203,9 @@ typedef struct {
     }
     Py_DECREF(tmpobj);
 
+    /* The code below is commented out and not used, but retained here in case it is decided
+       to shadow the "f0" member in LAL FrequencySeries structs in the PyCBC type.
+
     // The _f0 attribute:
     tmpobj = PyFloat_FromDouble((double) fs->f0);
     if (!tmpobj) {
@@ -1205,6 +1220,8 @@ typedef struct {
       return 1;
     }
     Py_DECREF(tmpobj);
+
+    */
 
     return 0;
   }
