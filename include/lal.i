@@ -17,7 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 *************************************************************************/
 
 
-%module testlal
+%module lal
 
 %{
 #include <lal/VectorOps.h>
