@@ -12,6 +12,7 @@ testlal_module = Extension('_testlal',
                            include_dirs = ['/home/jwillis/dev/root/lalsuite/branches/master/include',get_include()],
                            library_dirs = ['/home/jwillis/dev/root/lalsuite/branches/master/lib'],
                            define_macros=[('SWIG_TYPE_TABLE','swiglal')],
+                           extra_compile_args=['-std=c99'],
                            libraries=['lal','fftw3','fftw3f','gsl']
                           )
 

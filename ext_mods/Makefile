@@ -5,7 +5,6 @@ RM = /bin/rm
 PYTHON = python
 #SWIG = swig
 SWIG = /home/jwillis/local/swig/bin/swig
-CFLAGS += -std=gnu99
 
 all: testlal
 
