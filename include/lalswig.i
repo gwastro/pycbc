@@ -24,25 +24,36 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <lal/ComplexFFT.h>
 %}
 
-%ignore XLALCOMPLEX8VectorFFT;
-%ignore XLALSSVectorMultiply;
-%ignore XLALCreateREAL4Vector;
-
 %include "laltypemaps.i"
 
 // Some tests:
+
 %rename("%s") XLALSSVectorMultiply;
 %apply REAL4Vector *NONEOUT_REAL4V { REAL4Vector *XLALSSVectorMultiply };
 %apply REAL4Vector *INPUT_REAL4V {REAL4Vector *};
 extern REAL4Vector *XLALSSVectorMultiply(REAL4Vector *out, REAL4Vector *in1, REAL4Vector *in2);
 
-%rename("%s") XLALCreateREAL4Vector;
-%newobject XLALCreateReal4Vector;
-%apply REAL4Vector *NEWOUT_REAL4V {REAL4Vector *XLALCreateREAL4Vector};
-extern REAL4Vector *XLALCreateREAL4Vector(UINT4 length);
-
-
 %rename("%s") XLALCOMPLEX8VectorFFT;
 %apply COMPLEX8Vector *INPUT_COMPLEX8V {COMPLEX8Vector *};
 extern int XLALCOMPLEX8VectorFFT(COMPLEX8Vector *output, COMPLEX8Vector *input, const COMPLEX8FFTPlan *plan );
+
+%rename("%s") XLALCreateREAL4Vector;
+%newobject XLALCreateREAL4Vector;
+%apply REAL4Vector *NEWOUT_REAL4V {REAL4Vector *XLALCreateREAL4Vector};
+extern REAL4Vector *XLALCreateREAL4Vector(UINT4 length);
+
+%rename("%s") XLALCreateREAL8Vector;
+%newobject XLALCreateREAL8Vector;
+%apply REAL8Vector *NEWOUT_REAL8V {REAL8Vector *XLALCreateREAL8Vector};
+extern REAL8Vector *XLALCreateREAL8Vector(UINT4 length);
+
+%rename("%s") XLALCreateCOMPLEX8Vector;
+%newobject XLALCreateCOMPLEX8Vector;
+%apply COMPLEX8Vector *NEWOUT_COMPLEX8V {COMPLEX8Vector *XLALCreateCOMPLEX8Vector};
+extern COMPLEX8Vector *XLALCreateCOMPLEX8Vector(UINT4 length);
+
+%rename("%s") XLALCreateCOMPLEX16Vector;
+%newobject XLALCreateCOMPLEX16Vector;
+%apply COMPLEX16Vector *NEWOUT_COMPLEX16V {COMPLEX16Vector *XLALCreateCOMPLEX16Vector};
+extern COMPLEX16Vector *XLALCreateCOMPLEX16Vector(UINT4 length);
 

@@ -37,6 +37,11 @@ developers are not expected to routinely need to modify this file.
 #include <numpy/arrayobject.h>
 %}
 
+// Ignore all of the names from the swiglal wrappings, so that they
+// do not override what we will wrap.
+
+%ignore "";
+
 // Seems we must manually include <exception.i> before importing
 // <lal/lalswig.i>.  Might be a bug in lalswig, or might just be
 // unavoidable given that we %import rather than %include the
