@@ -24,11 +24,13 @@ import fnmatch
 import sys
 import subprocess
 import commands
-import os
 from trace import fullmodname
 import unittest
 from distutils import sysconfig,file_util
 from distutils.core import setup,Command,Extension
+from distutils.command.clean import clean as _clean
+from distutils.command.build import build as _build
+from numpy import get_include as np_get_include
 
 
 # Below function copied from PyCBC v1 setup.py file.  Not sure whom to credit--Duncan?
@@ -38,6 +40,7 @@ def pkg_config(libraries=[],library_dirs=[],include_dirs=[],pkg_libraries=[]):
         if os.system('pkg-config --exists %s 2>/dev/null' % pkg) == 0:
             pass
         else:
+            print "Could not find library {0}".format(pkg)
             sys.exit(1)
 
     # Get the pck-config flags
@@ -51,6 +54,61 @@ def pkg_config(libraries=[],library_dirs=[],include_dirs=[],pkg_libraries=[]):
                 include_dirs.append(token[2:])
 
     return libraries,library_dirs,include_dirs
+
+# Now use the above function to set up our extension library's needs:
+
+ext_libraries, ext_library_dirs, ext_include_dirs = pkg_config(pkg_libraries=["lal"])
+
+# Setup our swig options. We need the first two to match with how the swiglal
+# wrappings are compiled, so that our module can talk to theirs.  Then we must
+# reassemble the include_dirs to add the "-I" so swig can find things
+ext_swig_opts = ['-O','-builtin','-outdir','pycbc']
+for libpath in ext_include_dirs:
+    ext_swig_opts.append('-I'+str(libpath))
+
+# Numpy include must be added separately:
+
+ext_include_dirs += [np_get_include()]
+
+# Define our extension module
+
+lalswig_module = Extension('_lalswig',
+                           sources=['include/lalswig.i'],
+                           depends=['include/laltypemaps.i'],
+                           swig_opts=ext_swig_opts,
+                           include_dirs=ext_include_dirs,
+                           library_dirs=ext_library_dirs,
+                           libraries=ext_libraries,
+                           extra_compile_args=['-std=c99']
+                           )
+
+# Add swig-generated files to the list of things to clean, so they
+# get regenerated each time.
+class clean(_clean):
+    def finalize_options (self):
+        _clean.finalize_options(self)
+        self.clean_files = ['pycbc/lalswig.py','pycbc/lalswig.pyc','include/lalswig_wrap.c']
+
+    def run(self):
+        _clean.run(self)
+        for f in self.clean_files:
+            try:
+                os.unlink(f)
+                print 'removed {0}'.format(f)
+            except:
+                pass
+
+# Override build order, so swig is handled first.
+class build(_build):
+    # override order of build sub-commands to work around
+    # <http://bugs.python.org/issue7562>
+    sub_commands = [ ('build_clib', _build.has_c_libraries),
+                     ('build_ext', _build.has_ext_modules),
+                     ('build_py', _build.has_pure_modules),
+                     ('build_scripts', _build.has_scripts) ]
+
+    def run(self):
+        _build.run(self)
 
 test_results = []
 # Run all of the testing scripts
@@ -147,9 +205,13 @@ setup (
     description = 'Gravitational wave CBC analysis toolkit',
     author = 'Ligo Virgo Collaboration - PyCBC team',
     url = 'https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home',
-    cmdclass = { 'test'  : test , 'test_cpu':test_cpu,'test_cuda':test_cuda,
-                 'test_opencl':test_opencl},
-    ext_modules = [],
+    cmdclass = { 'test'  : test,
+                 'test_cpu':test_cpu,
+                 'test_cuda':test_cuda,
+                 'test_opencl':test_opencl,
+                 'clean' : clean,
+                 'build' : build},
+    ext_modules = [lalswig_module],
     requires = ['lal'],
     packages = ['pycbc','pycbc.fft','pycbc.types','pycbc.filter'],
     scripts = [],
