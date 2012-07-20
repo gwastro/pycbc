@@ -33,6 +33,7 @@ from pycbc.scheme import *
 from pycbc.filter import *
 import pycbc.fft
 import numpy 
+import base_test
 
 import optparse
 from optparse import OptionParser
@@ -61,8 +62,19 @@ _parser.add_option('--device-num','-d', action='store', type = 'int',
 #Changing the optvalues to a dict makes them easier to read
 _options = vars(_opt_list)
 
-class TestMatchedFilter(unittest.TestCase):
-    def setUp(self):
+if _options['scheme'] == 'cpu':
+    context = DefaultScheme()
+if _options['scheme'] == 'cuda':
+    context = CUDAScheme(device_num=_options['devicenum'])
+if _options['scheme'] == 'opencl':
+    context = OpenCLScheme(device_num=_options['devicenum'])
+
+
+
+
+class TestMatchedFilter(base_test.function_base,unittest.TestCase):
+    def setUp(self,*args): 
+        self.context = context
         from math import sin
         # Use sine wave as test signal
         data = numpy.sin(numpy.arange(0,100,100/(4096.0*64)))
@@ -76,91 +88,96 @@ class TestMatchedFilter(unittest.TestCase):
         self.filt2D = (self.filtD*1)
         self.filt2D[0:len(self.filt2D)/2].fill(0)  
         self.filt_offsetD = TimeSeries(numpy.roll(data,4096*32), dtype=float64,
-                                      delta_t=1.0/4096)                             
-         
-
+                                      delta_t=1.0/4096)         
+                                      
+        self.filt_short =TimeSeries([0,1,2,3,4],dtype=float32,delta_t=1.0/4096) 
+                                      
+    def test_scheme_change(self):
+        if _options['scheme'] != 'cpu':
+            self.scheme_test(match,(self.filt_short,self.filt_short), 
+                                            (self.filt_short,self.filt_short),7)
+                                            
+            self.scheme_test(matchedfilter,(self.filt_short,self.filt_short), 
+                                            (self.filt_short,self.filt_short),7)
+        else:
+            pass
+            
     def test_ave_snr_noise(self):
-        #Test that the average snr in noise is 2
-        from numpy.random import normal
+        with self.context:
+            #Test that the average snr in noise is 2
+            from numpy.random import normal
 
-        noise = normal(0.0,2,4096*64)
-        nplus= TimeSeries(noise,dtype=float32,delta_t=1.0/4096) 
-        ntilde = get_frequencyseries(nplus)
-        # Calculate a Faux psd for normalization, replace with better algorithm
-        psd = (ntilde).squared_norm()  / float(len(nplus)) * nplus.delta_t *2.0
+            noise = normal(0.0,2,4096*64)
+            nplus= TimeSeries(noise,dtype=float32,delta_t=1.0/4096) 
+            ntilde = get_frequencyseries(nplus)
+            # Calculate a Faux psd for normalization, replace with better algorithm
+            psd = (ntilde).squared_norm()  / float(len(nplus)) * nplus.delta_t *2.0
 
-        snr,norm = matchedfilter(self.filt,nplus,psd=psd)   
-        ave = snr.squared_norm().sum() * norm * norm /len(snr)
-        self.assertAlmostEqual(2,ave,places=5)
-        
-        
-        noise = normal(0.0,2,4096*64)
-        nplus= TimeSeries(noise,dtype=float64,delta_t=1.0/4096) 
-        ntilde = get_frequencyseries(nplus)
-        # Calculate a Faux psd for normalization, replace with better algorithm
-        psd = (ntilde).squared_norm()  / float(len(nplus)) * nplus.delta_t *2.0
+            snr,norm = matchedfilter(self.filt,nplus,psd=psd)   
+            ave = snr.squared_norm().sum() * norm * norm /len(snr)
+            self.assertAlmostEqual(2,ave,places=5)
+            
+            
+            noise = normal(0.0,2,4096*64)
+            nplus= TimeSeries(noise,dtype=float64,delta_t=1.0/4096) 
+            ntilde = get_frequencyseries(nplus)
+            # Calculate a Faux psd for normalization, replace with better algorithm
+            psd = (ntilde).squared_norm()  / float(len(nplus)) * nplus.delta_t *2.0
 
-        snr,norm = matchedfilter(self.filtD,nplus,psd=psd)   
-        ave = snr.squared_norm().sum() * norm * norm /len(snr)
-        self.assertAlmostEqual(2,ave,places=5)
+            snr,norm = matchedfilter(self.filtD,nplus,psd=psd)   
+            ave = snr.squared_norm().sum() * norm * norm /len(snr)
+            self.assertAlmostEqual(2,ave,places=5)
         
     def test_perfect_match(self):
-        o,i = match(self.filt,self.filt)
-        self.assertAlmostEqual(1,o,places=4)
-        self.assertEqual(0,i)
-        o,i = match(self.filtD,self.filtD)
-        self.assertAlmostEqual(1,o,places=4)
-        self.assertEqual(0,i)
+        with self.context:
+            o,i = match(self.filt,self.filt)
+            self.assertAlmostEqual(1,o,places=4)
+            self.assertEqual(0,i)
+            o,i = match(self.filtD,self.filtD)
+            self.assertAlmostEqual(1,o,places=4)
+            self.assertEqual(0,i)
         
     def test_perfect_match_offset(self):
-        o,i = match(self.filt,self.filt_offset)
-        self.assertAlmostEqual(1,o,places=4)
-        self.assertEqual(4096*32,i)
-        
-        o,i = match(self.filtD,self.filt_offsetD)
-        self.assertAlmostEqual(1,o,places=4)
-        self.assertEqual(4096*32,i)
+        with self.context:
+            o,i = match(self.filt,self.filt_offset)
+            self.assertAlmostEqual(1,o,places=4)
+            self.assertEqual(4096*32,i)
+            
+            o,i = match(self.filtD,self.filt_offsetD)
+            self.assertAlmostEqual(1,o,places=4)
+            self.assertEqual(4096*32,i)
         
     def test_imperfect_match(self):
-        f = get_frequencyseries(self.filt)
-        f2 = get_frequencyseries(self.filt2)
-        o,i = match(self.filt,self.filt2)
-        self.assertAlmostEqual(sqrt(0.5),o,places=3)
+        with self.context:
+            f = get_frequencyseries(self.filt)
+            f2 = get_frequencyseries(self.filt2)
+            o,i = match(self.filt,self.filt2)
+            self.assertAlmostEqual(sqrt(0.5),o,places=3)
 
-        f = get_frequencyseries(self.filtD)
-        f2 = get_frequencyseries(self.filt2D)
-        o,i = match(self.filtD,self.filt2D)
-        self.assertAlmostEqual(sqrt(0.5),o,places=3)
+            f = get_frequencyseries(self.filtD)
+            f2 = get_frequencyseries(self.filt2D)
+            o,i = match(self.filtD,self.filt2D)
+            self.assertAlmostEqual(sqrt(0.5),o,places=3)
 
     def test_errors(self):
+        with self.context:
+            #Check that an incompatible data and filter produce an error
+            self.assertRaises(ValueError,match,self.filt,self.filt[0:5])
+            
+            #Check that an incompatible psd produces an error
+            self.assertRaises(TypeError,match,self.filt,self.filt,psd=self.filt) 
+            psd = FrequencySeries(zeros(len(self.filt)/2+1),delta_f=100000)
+            self.assertRaises(TypeError,match,self.filt,self.filt,psd=psd)
+            
+            #Check that only TimeSeries or FrequencySeries are accepted
+            self.assertRaises(TypeError,match,zeros(10),zeros(10))
 
-        #Check that an incompatible data and filter produce an error
-        self.assertRaises(ValueError,match,self.filt,self.filt[0:5])
-        
-        #Check that an incompatible psd produces an error
-        self.assertRaises(TypeError,match,self.filt,self.filt,psd=self.filt) 
-        psd = FrequencySeries(zeros(len(self.filt)/2+1),delta_f=100000)
-        self.assertRaises(TypeError,match,self.filt,self.filt,psd=psd)
-        
-        #Check that only TimeSeries or FrequencySeries are accepted
-        self.assertRaises(TypeError,match,zeros(10),zeros(10))
-
-
-scheme = None
-
-if _options['scheme'] == 'cpu':
-    scheme = DefaultScheme()
-if _options['scheme'] == 'cuda':
-    scheme = CUDAScheme(device_num=_options['devicenum'])
-if _options['scheme'] == 'opencl':
-    scheme = OpenCLScheme(device_num=_options['devicenum'])
     
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestMatchedFilter))
 
 if __name__ == '__main__':
-    with scheme:
-        results = unittest.TextTestRunner(verbosity=2).run(suite)
+    results = unittest.TextTestRunner(verbosity=2).run(suite)
         
     NotImpErrors = 0
     for error in results.errors:
