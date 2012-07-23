@@ -121,8 +121,8 @@ def matchedfilter(template,data,psd=None,low_frequency_cutoff=None,
 
     N = (len(stilde)-1) * 2   
     kmin,kmax = get_cutoff_indices(low_frequency_cutoff,
-                                   high_frequency_cutoff,stilde.delta_f,N) 
-   
+                                   high_frequency_cutoff,stilde.delta_f,N)   
+
     if (_q is None) or (len(_q) != N) or _q.dtype != data.dtype:
         _q = zeros(N,dtype=complex_same_precision_as(data))
     else:
@@ -131,7 +131,7 @@ def matchedfilter(template,data,psd=None,low_frequency_cutoff=None,
     if (_qtilde is None) or (len(_qtilde) != N) or _qtilde.dtype != data.dtype:
         _qtilde = zeros(N,dtype=complex_same_precision_as(data))
     else:
-        _q.fill(0)        
+        _qtilde.fill(0)         
     
     #REPLACE with in place operations once they are fixed in PyCUDA
     _qtilde[kmin:kmax] = htilde[kmin:kmax].conj() * stilde[kmin:kmax]
