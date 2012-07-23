@@ -1132,6 +1132,16 @@ typedef struct {
 %fragment("BuildArgoutFS","header",
 	  fragment="BuildReturnFromValue",fragment="MarshallOutputFS") {};
 
+// Force inclusion of all of our marshalling functions, to help in debugging
+
+%fragment("MarshallInputVector");
+%fragment("MarshallOutputVector");
+%fragment("MarshallInputTS");
+%fragment("MarshallOutputTS");
+%fragment("MarshallArgoutTS");
+%fragment("MarshallInputFS");
+%fragment("MarshallOutputFS");
+%fragment("MarshallArgoutFS");
 
 /*
 
