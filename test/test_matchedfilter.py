@@ -172,6 +172,8 @@ class TestMatchedFilter(base_test.function_base,unittest.TestCase):
             #Check that only TimeSeries or FrequencySeries are accepted
             self.assertRaises(TypeError,match,zeros(10),zeros(10))
 
+            self.assertRaises(ValueError,match,self.filt,self.filt[0:len(self.filt)-1])
+
     
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestMatchedFilter))
