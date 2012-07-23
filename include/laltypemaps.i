@@ -569,7 +569,7 @@ typedef struct {
 
     tmpobj = PyObject_GetAttrString(obj,"_epoch");
     if (!tmpobj ||
-	(SWIG_ConvertPtr(tmpobj,(void **) &epoch_ptr,$descriptor(LIGOTimeGPS *),SWIG_POINTER_EXCEPTION) == -1)){
+	(SWIG_ConvertPtr(tmpobj,(void **) &epoch_ptr,SWIG_TypeQuery("LIGOTimeGPS *"),SWIG_POINTER_EXCEPTION) == -1)){
       Py_XDECREF(tmpobj);
       PyErr_Format(PyExc_TypeError,
 		   "Argument '%s._epoch' does not exist or is not an instance of LIGOTimeGPS",objname);
@@ -626,8 +626,8 @@ typedef struct {
     }
 
     npy_intp dimensions[1];
-    dimensions[0] = (npy_intp) vect->length;
-    dataobj = PyArray_SimpleNewFromData(1,dimensions,numpy_type,(void *) vect->data);
+    dimensions[0] = (npy_intp) ts->data->length;
+    dataobj = PyArray_SimpleNewFromData(1,dimensions,numpy_type,(void *) ts->data->data);
     if (!dataobj) {
       PyErr_SetString(PyExc_RuntimeError,"Could not create output data object");
       Py_DECREF(constrdict); // Dict still empty, so just delete
@@ -681,7 +681,7 @@ typedef struct {
     }
     epoch_ptr->gpsSeconds = (ts->epoch).gpsSeconds;
     epoch_ptr->gpsNanoSeconds = (ts->epoch).gpsNanoSeconds;
-    epochobj = SWIG_NewPointerObj((void *) epoch_ptr,$descriptor(LIGOTimeGPS *),SWIG_POINTER_OWN);
+    epochobj = SWIG_NewPointerObj((void *) epoch_ptr,SWIG_TypeQuery("LIGOTimeGPS *"),SWIG_POINTER_OWN);
     if (!epochobj) {
       PyErr_SetString(PyExc_RuntimeError,"Could not create output epoch object");
       PyDict_Clear(constrdict);
@@ -780,7 +780,7 @@ typedef struct {
     }
     epoch_ptr->gpsSeconds = (ts->epoch).gpsSeconds;
     epoch_ptr->gpsNanoSeconds = (ts->epoch).gpsNanoSeconds;
-    tmpobj = SWIG_NewPointerObj((void *) epoch_ptr,$descriptor(LIGOTimeGPS *),SWIG_POINTER_OWN);
+    tmpobj = SWIG_NewPointerObj((void *) epoch_ptr,SWIG_TypeQuery("LIGOTimeGPS *"),SWIG_POINTER_OWN);
     if (!tmpobj) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not create output epoch object for '%s._epoch'",objname);
@@ -917,7 +917,7 @@ typedef struct {
 
     tmpobj = PyObject_GetAttrString(obj,"_epoch");
     if (!tmpobj ||
-	(SWIG_ConvertPtr(tmpobj,(void **) &epoch_ptr,$descriptor(LIGOTimeGPS *),SWIG_POINTER_EXCEPTION) == -1)){
+	(SWIG_ConvertPtr(tmpobj,(void **) &epoch_ptr,SWIG_TypeQuery("LIGOTimeGPS *"),SWIG_POINTER_EXCEPTION) == -1)){
       Py_XDECREF(tmpobj);
       PyErr_Format(PyExc_TypeError,
 		   "Argument '%s._epoch' does not exist or is not an instance of LIGOTimeGPS",objname);
@@ -994,8 +994,8 @@ typedef struct {
     }
 
     npy_intp dimensions[1];
-    dimensions[0] = (npy_intp) vect->length;
-    dataobj = PyArray_SimpleNewFromData(1,dimensions,numpy_type,(void *) vect->data);
+    dimensions[0] = (npy_intp) fs->data->length;
+    dataobj = PyArray_SimpleNewFromData(1,dimensions,numpy_type,(void *) fs->data->data);
     if (!dataobj) {
       PyErr_SetString(PyExc_RuntimeError,"Could not create output data object");
       Py_DECREF(constrdict); // Dict still empty, so just delete
@@ -1049,7 +1049,7 @@ typedef struct {
     }
     epoch_ptr->gpsSeconds = (fs->epoch).gpsSeconds;
     epoch_ptr->gpsNanoSeconds = (fs->epoch).gpsNanoSeconds;
-    epochobj = SWIG_NewPointerObj((void *) epoch_ptr,$descriptor(LIGOTimeGPS *),SWIG_POINTER_OWN);
+    epochobj = SWIG_NewPointerObj((void *) epoch_ptr,SWIG_TypeQuery("LIGOTimeGPS *"),SWIG_POINTER_OWN);
     if (!epochobj) {
       PyErr_SetString(PyExc_RuntimeError,"Could not create output epoch object");
       PyDict_Clear(constrdict);
@@ -1180,7 +1180,7 @@ typedef struct {
     }
     epoch_ptr->gpsSeconds = (fs->epoch).gpsSeconds;
     epoch_ptr->gpsNanoSeconds = (fs->epoch).gpsNanoSeconds;
-    tmpobj = SWIG_NewPointerObj((void *) epoch_ptr,$descriptor(LIGOTimeGPS *),SWIG_POINTER_OWN);
+    tmpobj = SWIG_NewPointerObj((void *) epoch_ptr,SWIG_TypeQuery("LIGOTimeGPS *"),SWIG_POINTER_OWN);
     if (!tmpobj) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not create output epoch object for '%s._epoch'",objname);
@@ -1842,3 +1842,6 @@ YOU HAVE BEEN WARNED!
   if (!($result)) SWIG_fail;
 }
 
+%define %unignore(NAME)
+%rename("%s") NAME;
+%enddef
