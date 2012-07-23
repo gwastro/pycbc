@@ -116,7 +116,10 @@ def matchedfilter(template,data,psd=None,low_frequency_cutoff=None,
     htilde = get_frequencyseries(template)
     stilde = get_frequencyseries(data)
 
-    N = (len(htilde)-1) * 2   
+    if len(htilde) != len(stilde):
+        raise ValueError("Length of template and data must match")
+
+    N = (len(stilde)-1) * 2   
     kmin,kmax = get_cutoff_indices(low_frequency_cutoff,
                                    high_frequency_cutoff,stilde.delta_f,N) 
    
@@ -166,8 +169,8 @@ def match(vec1,vec2,psd=None,low_frequency_cutoff=None,high_frequency_cutoff=Non
     snr,norm = matchedfilter(htilde,stilde,psd,low_frequency_cutoff,
                              high_frequency_cutoff)
     maxsnrsq, max_id = (snr.squared_norm()).max_loc()
-    vec1_normsq = sigmasq(stilde,psd,low_frequency_cutoff,high_frequency_cutoff)
-    return sqrt(maxsnrsq/vec1_normsq)*norm, max_id
+    vec2_normsq = sigmasq(stilde,psd,low_frequency_cutoff,high_frequency_cutoff)
+    return sqrt(maxsnrsq/vec2_normsq)*norm, max_id
     
 
 
