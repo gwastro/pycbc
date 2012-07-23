@@ -418,7 +418,7 @@ typedef struct {
       Py_DECREF(constrdict); // Dict still empty, so just delete
       return NULL;
     }
-    if (PyDict_SetItemString(constrdict,"initial_array",dataobj)) {
+    if (PyDict_SetItemString(constrdict,"initial_array",tmpobj)) {
       PyErr_SetString(PyExc_RuntimeError,"Could not add data object to cosntructor dict");
       Py_DECREF(constrdict); // Dict still empty, so just delete
       Py_DECREF(tmpobj);
@@ -513,7 +513,7 @@ typedef struct {
     // no code below to set those members of our temporary struct that we pass to the wrapped
     // function.
 
-    returnptr = (GenericTS *) calloc(1,sizeof(GenericTimeSeries));
+    returnptr = (GenericTS *) calloc(1,sizeof(GenericTS));
     if (!returnptr) {
       PyErr_Format(PyExc_MemoryError,
 		   "Could not allocate temporary TimeSeries for argument '%s'",objname);
@@ -698,7 +698,7 @@ typedef struct {
  }
 
 %fragment("MarshallArgoutTS","header",fragment="GenericTS") {
-  int *MarshallArgoutTS(PyObject *argument, GenericTS *ts, const char *objname) {
+  int MarshallArgoutTS(PyObject *argument, GenericTS *ts, const char *objname) {
     PyObject *tmpobj;
     LIGOTimeGPS *epoch_ptr;
 
@@ -811,7 +811,7 @@ typedef struct {
     // no code below to set those members of our temporary struct that we pass to the wrapped
     // function.
 
-    returnptr = (GenericFS *) calloc(1,sizeof(GenericFrequencySeries));
+    returnptr = (GenericFS *) calloc(1,sizeof(GenericFS));
     if (!returnptr) {
       PyErr_Format(PyExc_MemoryError,
 		   "Could not allocate temporary FrequencySeries for argument '%s'",objname);
@@ -1038,7 +1038,7 @@ typedef struct {
  }
 
 %fragment("MarshallArgoutFS","header",fragment="GenericFS") {
-  int *MarshallArgoutFS(PyObject *argument, GenericFS *fs, const char *objname) {
+  int MarshallArgoutFS(PyObject *argument, GenericFS *fs, const char *objname) {
     PyObject *tmpobj;
     LIGOTimeGPS *epoch_ptr;
 
