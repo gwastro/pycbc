@@ -125,7 +125,7 @@ def matchedfilter(template,data,psd=None,low_frequency_cutoff=None,
     else:
         pass
         
-    if (_qtilde is None) or (len(_q) != N) or _qtilde.dtype != data.dtype:
+    if (_qtilde is None) or (len(_qtilde) != N) or _qtilde.dtype != data.dtype:
         _qtilde = zeros(N,dtype=complex_same_precision_as(data))
     else:
         _q.fill(0)        
