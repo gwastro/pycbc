@@ -575,8 +575,8 @@ typedef struct {
 		   "Argument '%s._epoch' does not exist or is not an instance of LIGOTimeGPS",objname);
       return NULL;
     }
-    (returnptr->epoch).gpsSeconds = epoch->gpsSeconds;
-    (returnptr->epoch).gpsNanoSeconds = epoch->gpsNanoSeconds;
+    (returnptr->epoch).gpsSeconds = epoch_ptr->gpsSeconds;
+    (returnptr->epoch).gpsNanoSeconds = epoch_ptr->gpsNanoSeconds;
     Py_DECREF(tmpobj);
 
     // Next, delta_t:
@@ -923,8 +923,8 @@ typedef struct {
 		   "Argument '%s._epoch' does not exist or is not an instance of LIGOTimeGPS",objname);
       return NULL;
     }
-    (returnptr->epoch).gpsSeconds = epoch->gpsSeconds;
-    (returnptr->epoch).gpsNanoSeconds = epoch->gpsNanoSeconds;
+    (returnptr->epoch).gpsSeconds = epoch_ptr->gpsSeconds;
+    (returnptr->epoch).gpsNanoSeconds = epoch_ptr->gpsNanoSeconds;
     Py_DECREF(tmpobj);
 
 
