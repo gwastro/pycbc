@@ -85,7 +85,7 @@ def sigmasq(htilde,psd = None,low_frequency_cutoff=None,
     if psd is not None:
         moment[kmin:kmax] /= psd[kmin:kmax] 
         
-    sq = moment.sum() 
+    sq = moment[kmin:kmax].sum() 
         
     return sq * norm
     
