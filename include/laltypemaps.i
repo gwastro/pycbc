@@ -308,7 +308,7 @@ typedef struct {
 // function, called by all "MarshallInput" functions.
 
 %fragment("VectFromPyCBCType","header",fragment="GenericVector"){
-  GenericVector *VectFromDPyCBCType(PyObject *obj, const int numpy_type, const char *objname){
+  GenericVector *VectFromPyCBCType(PyObject *obj, const int numpy_type, const char *objname){
     GenericVector *returnptr;
     PyObject *tmpobj;
 
