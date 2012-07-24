@@ -552,8 +552,8 @@ class Array(object):
 
     @property
     @_convert
-    def  _lal(self):
-        """ Returns a LAL Object that contains this data """
+    def  _swighelper(self):
+        """ Used internally by SWIG typemaps to ensure @_convert is called and scheme is correct  """
 
         if type(self._data) is not _numpy.ndarray:
             raise TypeError("Cannot return lal type from the GPU")

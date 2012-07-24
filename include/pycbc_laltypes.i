@@ -421,18 +421,18 @@ typedef struct {
     GenericVector *returnptr;
     PyObject *tmpobj;
 
-    tmpobj = PyObject_GetAttrString(obj,"_lal");
+    tmpobj = PyObject_GetAttrString(obj,"_swighelper");
 
-    // We explicitly access the '_lal' attribute of the argument, to force it onto
+    // We explicitly access the '_swighelper' attribute of the argument, to force it onto
     // the CPU (if it was on the GPU and the current scheme is CPU) or to raise an
     // exception (if the current scheme is GPU).
 
-    // We should have a '_lal' attribute, and it should point back to our argument, or
+    // We should have a '_swighelper' attribute, and it should point back to our argument, or
     // there's a problem.
 
     if (tmpobj != obj) {
       PyErr_Format(PyExc_TypeError,
-		   "Argument '%s' has no '_lal' attribute---it is not an instance of pycbc.types.Array",
+		   "Argument '%s' has no '_swighelper' attribute---it is not an instance of pycbc.types.Array",
 		   objname);
       Py_XDECREF(tmpobj);
       return NULL;
@@ -485,18 +485,18 @@ typedef struct {
     PyObject *tmpobj;
     LIGOTimeGPS *epoch_ptr;
 
-    tmpobj = PyObject_GetAttrString(obj,"_lal");
+    tmpobj = PyObject_GetAttrString(obj,"_swighelper");
 
-    // We explicitly access the '_lal' attribute of the argument, to force it onto
+    // We explicitly access the '_swighelper' attribute of the argument, to force it onto
     // the CPU (if it was on the GPU and the current scheme is CPU) or to raise an
     // exception (if the current scheme is GPU).
 
-    // We should have a '_lal' attribute, and it should point back to our argument, or
+    // We should have a '_swighelper' attribute, and it should point back to our argument, or
     // there's a problem.
 
     if (tmpobj != obj) {
       PyErr_Format(PyExc_TypeError,
-		   "Argument '%s' has wrong or missing '_lal' attribute---it is not an instance of pycbc.types.TimeSeries",
+		   "Argument '%s' has wrong or missing '_swighelper' attribute---it is not an instance of pycbc.types.TimeSeries",
 		   objname);
       Py_XDECREF(tmpobj);
       return NULL;
@@ -702,18 +702,18 @@ typedef struct {
     PyObject *tmpobj;
     LIGOTimeGPS *epoch_ptr;
 
-    tmpobj = PyObject_GetAttrString(obj,"_lal");
+    tmpobj = PyObject_GetAttrString(obj,"_swighelper");
 
-    // We explicitly access the '_lal' attribute of the argument, to force it onto
+    // We explicitly access the '_swighelper' attribute of the argument, to force it onto
     // the CPU (if it was on the GPU and the current scheme is CPU) or to raise an
     // exception (if the current scheme is GPU).
 
-    // We should have a '_lal' attribute, and it should point back to our argument, or
+    // We should have a '_swighelper' attribute, and it should point back to our argument, or
     // there's a problem.
 
     if (tmpobj != obj) {
       PyErr_Format(PyExc_TypeError,
-		   "Argument '%s' has wrong or missing '_lal' attribute---it is not an instance of pycbc.types.FrequencySeries",
+		   "Argument '%s' has wrong or missing '_swighelper' attribute---it is not an instance of pycbc.types.FrequencySeries",
 		   objname);
       Py_XDECREF(tmpobj);
       return NULL;
