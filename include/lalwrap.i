@@ -17,7 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 *************************************************************************/
 
 
-%module lalswig
+%module lalwrap
 
 %{
 #include <lal/VectorOps.h>

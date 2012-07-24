@@ -72,8 +72,8 @@ ext_include_dirs += [np_get_include()]
 
 # Define our extension module
 
-lalswig_module = Extension('_lalswig',
-                           sources=['include/lalswig.i'],
+lalwrap_module = Extension('_lalwrap',
+                           sources=['include/lalwrap.i'],
                            depends=['include/pycbc_laltypes.i'],
                            swig_opts=ext_swig_opts,
                            include_dirs=ext_include_dirs,
@@ -87,7 +87,7 @@ lalswig_module = Extension('_lalswig',
 class clean(_clean):
     def finalize_options (self):
         _clean.finalize_options(self)
-        self.clean_files = ['pycbc/lalswig.py','pycbc/lalswig.pyc','include/lalswig_wrap.c']
+        self.clean_files = ['pycbc/lalwrap.py','pycbc/lalwrap.pyc','include/lalwrap_wrap.c']
 
     def run(self):
         _clean.run(self)
@@ -211,7 +211,7 @@ setup (
                  'test_opencl':test_opencl,
                  'clean' : clean,
                  'build' : build},
-    ext_modules = [lalswig_module],
+    ext_modules = [lalwrap_module],
     requires = ['lal'],
     packages = ['pycbc','pycbc.fft','pycbc.types','pycbc.filter'],
     scripts = [],
