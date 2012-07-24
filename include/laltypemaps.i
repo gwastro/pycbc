@@ -235,71 +235,19 @@ typedef struct {
 // there be more than one (that we must worry about).  It doesn't care
 // at all what kind of Python objects its two inputs represent; the
 // first is whatever output has been built up to now, and the second is
-// the new value to add.  This is based on the example code with the
-// SWIG documentation, except unlike that documentation we check the C
-// functions we call for success.
+// the new value to add.
+
+// This function directly calls a SWIG runtime function, and it seems
+// impossible to tell whether this API is considered stable (as with most
+// things in SWIG internals, it's completely undocumented).  Also, the
+// SWIG function we call appears to perform no error checking on the Python
+// C-API functions it calls.  However, its behavior depends on compile-time
+// options of SWIG and this seems (at least for now) the easiest way to handle
+// this.
 
 %fragment("BuildReturnFromValue","header") {
   PyObject *BuildReturnFromValue(PyObject *CurrReturn, PyObject *value){
-    PyObject *o1 = NULL, *o2 = NULL, *NewReturn = NULL;
-
-    if (!CurrReturn){
-      NewReturn = value;
-    } else if (CurrReturn == Py_None) {
-      Py_DECREF(Py_None);
-      NewReturn = value;
-    } else {
-      if (!PyTuple_Check(CurrReturn)) {
-	// We have exactly one thing in the current return already,
-	// so we save it, make a new tuple, and make what was there
-	// into a single-element tuple.
-	o1 = CurrReturn;
-	CurrReturn = PyTuple_New(1);
-	if (!(CurrReturn)) {
-	  PyErr_SetString(PyExc_RuntimeError,
-			  "Error building return tuple");
-	  Py_DECREF(value); // When we return, we'll got right to SWIG_fail
-	  Py_DECREF(o1);
-	  return NULL;
-	}
-	// Note: PyTuple_SetItem steals the reference to o1, so
-	// we don't DECREF it.
-	if (PyTuple_SetItem(CurrReturn,0,o1)) {
-	  PyErr_SetString(PyExc_RuntimeError,
-			  "Error building return tuple");
-	  Py_DECREF(value);
-	  Py_DECREF(CurrReturn);
-	  return NULL;
-	}
-      }
-      // If we get here CurrReturn is a tuple of previous returns
-      o2 = PyTuple_New(1);
-      if (!o2) {
-	PyErr_SetString(PyExc_RuntimeError,
-			"Error building return tuple");
-	Py_DECREF(value);
-	Py_DECREF(CurrReturn);
-	return NULL;
-      }
-      // Again, PyTuple_SetItem steals a reference to value, so no need
-      // to DECREF it.
-      if(PyTuple_SetItem(o2,0,value)){
-	Py_DECREF(CurrReturn);
-	Py_DECREF(o2);
-	return NULL;
-      }
-      // Now each of CurrReturn and o2 are tuples.  We want to
-      // return their concatentation, and clean up if that fails
-      NewReturn = PySequence_concat(CurrReturn,o2);
-      if (!NewReturn) {
-	Py_DECREF(CurrReturn);
-	Py_DECREF(o2);
-	return NULL;
-      }
-      Py_DECREF(CurrReturn);
-      Py_DECREF(o2);
-    }
-    return NewReturn;
+    return SWIG_Python_AppendOutput(CurrReturn,value);
   }
 }
 
