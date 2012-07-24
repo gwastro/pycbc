@@ -314,6 +314,11 @@ typedef struct {
   }
 }
 
+// Similar to above, but for handling output.  This function returns (if
+// successful) a PyDict with constructor entries for data, dtype, and copy;
+// for pycbc.types.Array those are all that is needed.  Time and frequency
+// series will further append to this dict before calling the constructor.
+
 %fragment("ArrayDictFromVect","header",fragment="GenericVector"){
   PyObject *ArrayDictFromVect(GenericVector *vect, int numpy_type){
     PyObject *tmpobj, *constrdict;
@@ -379,6 +384,37 @@ typedef struct {
     return constrdict;
   }
  }
+
+// Common code for converting an instance of LIGOTimeGPS into a SWIG-wrapped
+// Python object, with a dynamically allocated copy of the original object
+// (which can therefore be garbage-collected by Python).
+
+// Note: it is important that the PyObject *self be passed in, and have that
+// name, for the SWIG runtime function SWIG_NewPointerObj() to work properly
+// on the builtin LIGOTimeGPS wrapper that swiglal uses.  This is why that
+// object pointer is passed not only to this function, but also from the actual
+// typemaps into the marshalling functions that call the following function.
+
+%fragment("EpochFromLAL","header") {
+  PyObject *EpochFromLAL(PyObject *self,LIGOTimeGPS theepoch) {
+    LIGOTimeGPS *epoch_ptr;
+    PyObject *returnobj;
+
+    epoch_ptr = calloc(1,sizeof(LIGOTimeGPS));
+    if (!epoch_ptr) {
+      PyErr_SetString(PyExc_RuntimeError,"Could not create output epoch object");
+      return NULL;
+    }
+    epoch_ptr->gpsSeconds = theepoch.gpsSeconds;
+    epoch_ptr->gpsNanoSeconds = theepoch.gpsNanoSeconds;
+    returnobj = SWIG_NewPointerObj((void *) epoch_ptr,SWIG_TypeQuery("LIGOTimeGPS *"),SWIG_POINTER_OWN);
+    if (!returnobj) {
+      PyErr_SetString(PyExc_RuntimeError,"Could not create output epoch object");
+      free(epoch_ptr);
+    }
+    return returnobj;
+  }
+}
 
 %fragment("MarshallInputVector","header",fragment="VectFromPyCBCType") {
   GenericVector *MarshallInputVector(PyObject *obj, const int numpy_type, const char *objname) {
@@ -538,10 +574,10 @@ typedef struct {
   }
 }
 
-%fragment("MarshallOutputTS","header",fragment="GenericTS",fragment="ArrayDictFromVect") {
-  PyObject *MarshallOutputTS(GenericTS *ts, const int numpy_type) {
+%fragment("MarshallOutputTS","header",fragment="GenericTS",
+	  fragment="ArrayDictFromVect",fragment="EpochFromLAL") {
+  PyObject *MarshallOutputTS(PyObject *parentself, GenericTS *ts, const int numpy_type) {
     PyObject *result, *tmpobj, *constrdict;
-    LIGOTimeGPS *epoch_ptr;
 
     if (!(ts)) {
       PyErr_SetString(PyExc_ValueError,"Unexpected null time-series returned from function");
@@ -553,22 +589,10 @@ typedef struct {
       return NULL;
     }
 
-    epoch_ptr = calloc(1,sizeof(LIGOTimeGPS));
-    if (!epoch_ptr) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not create output epoch object");
+    tmpobj = EpochFromLAL(parentself,ts->epoch);
+    if (!tmpobj) { // Error message already set
       PyDict_Clear(constrdict);
       Py_DECREF(constrdict);
-      return NULL;
-    }
-    epoch_ptr->gpsSeconds = (ts->epoch).gpsSeconds;
-    epoch_ptr->gpsNanoSeconds = (ts->epoch).gpsNanoSeconds;
-    tmpobj = SWIG_NewPointerObj((void *) epoch_ptr,SWIG_TypeQuery("LIGOTimeGPS *"),SWIG_POINTER_OWN);
-    if (!tmpobj) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not create output epoch object");
-      PyDict_Clear(constrdict);
-      Py_DECREF(constrdict);
-      free(epoch_ptr);
-      return NULL;
     }
     if (PyDict_SetItemString(constrdict,"epoch",tmpobj)) {
       PyErr_SetString(PyExc_RuntimeError,"Could not add epoch object to constructor dict");
@@ -608,10 +632,10 @@ typedef struct {
   }
  }
 
-%fragment("MarshallArgoutTS","header",fragment="GenericTS") {
-  int MarshallArgoutTS(PyObject *argument, GenericTS *ts, const char *objname) {
+%fragment("MarshallArgoutTS","header",fragment="GenericTS",fragment="EpochFromLAL") {
+  int MarshallArgoutTS(PyObject *parentself, PyObject *argument,
+		       GenericTS *ts, const char *objname) {
     PyObject *tmpobj;
-    LIGOTimeGPS *epoch_ptr;
 
     if (!(ts)) {
       PyErr_Format(PyExc_ValueError,
@@ -636,19 +660,9 @@ typedef struct {
     // or not the wrapped LAL function changed it.
 
     // The _epoch attribute:
-    epoch_ptr = calloc(1,sizeof(LIGOTimeGPS));
-    if (!epoch_ptr) {
-      PyErr_Format(PyExc_RuntimeError,
-		   "Could not create output epoch object for '%s._epoch'",objname);
-      return 1;
-    }
-    epoch_ptr->gpsSeconds = (ts->epoch).gpsSeconds;
-    epoch_ptr->gpsNanoSeconds = (ts->epoch).gpsNanoSeconds;
-    tmpobj = SWIG_NewPointerObj((void *) epoch_ptr,SWIG_TypeQuery("LIGOTimeGPS *"),SWIG_POINTER_OWN);
+
+    tmpobj = EpochFromLAL(parentself,ts->epoch);
     if (!tmpobj) {
-      PyErr_Format(PyExc_RuntimeError,
-		   "Could not create output epoch object for '%s._epoch'",objname);
-      free(epoch_ptr);
       return 1;
     }
     if (PyObject_SetAttrString(argument,"_epoch",tmpobj) == -1) {
@@ -793,10 +807,10 @@ typedef struct {
   }
 }
 
-%fragment("MarshallOutputFS","header",fragment="GenericFS",fragment="ArrayDictFromVect") {
-  PyObject *MarshallOutputFS(GenericFS *fs, const int numpy_type) {
+%fragment("MarshallOutputFS","header",fragment="GenericFS",
+	  fragment="ArrayDictFromVect",fragment="EpochFromLAL") {
+  PyObject *MarshallOutputFS(PyObject *parentself, GenericFS *fs, const int numpy_type) {
     PyObject *result, *tmpobj, *constrdict;
-    LIGOTimeGPS *epoch_ptr;
 
     if (!(fs)) {
       PyErr_SetString(PyExc_ValueError,"Unexpected null frequency-series returned from function");
@@ -808,22 +822,10 @@ typedef struct {
       return NULL;
     }
 
-    epoch_ptr = calloc(1,sizeof(LIGOTimeGPS));
-    if (!epoch_ptr) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not create output epoch object");
+    tmpobj = EpochFromLAL(parentself,fs->epoch);
+    if (!tmpobj) { // Error message already set
       PyDict_Clear(constrdict);
       Py_DECREF(constrdict);
-      return NULL;
-    }
-    epoch_ptr->gpsSeconds = (fs->epoch).gpsSeconds;
-    epoch_ptr->gpsNanoSeconds = (fs->epoch).gpsNanoSeconds;
-    tmpobj = SWIG_NewPointerObj((void *) epoch_ptr,SWIG_TypeQuery("LIGOTimeGPS *"),SWIG_POINTER_OWN);
-    if (!tmpobj) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not create output epoch object");
-      PyDict_Clear(constrdict);
-      Py_DECREF(constrdict);
-      free(epoch_ptr);
-      return NULL;
     }
     if (PyDict_SetItemString(constrdict,"epoch",tmpobj)) {
       PyErr_SetString(PyExc_RuntimeError,"Could not add epoch object to constructor dict");
@@ -886,10 +888,10 @@ typedef struct {
   }
  }
 
-%fragment("MarshallArgoutFS","header",fragment="GenericFS") {
-  int MarshallArgoutFS(PyObject *argument, GenericFS *fs, const char *objname) {
+%fragment("MarshallArgoutFS","header",fragment="GenericFS",fragment="EpochFromLAL") {
+  int MarshallArgoutFS(PyObject *parentself, PyObject *argument,
+		       GenericFS *fs, const char *objname) {
     PyObject *tmpobj;
-    LIGOTimeGPS *epoch_ptr;
 
     if (!(fs)) {
       PyErr_Format(PyExc_ValueError,
@@ -909,24 +911,13 @@ typedef struct {
     }
 
     // The _data attribute should have automatically been modified in place, as it was
-    // wrapped from a numpy array.  For all other elements of the returned TimeSeries,
+    // wrapped from a numpy array.  For all other elements of the returned FrequencySeries,
     // we modify the existing attribute in place, since there's no easy way to know whether
     // or not the wrapped LAL function changed it.
 
     // The _epoch attribute:
-    epoch_ptr = calloc(1,sizeof(LIGOTimeGPS));
-    if (!epoch_ptr) {
-      PyErr_Format(PyExc_RuntimeError,
-		   "Could not create output epoch object for '%s._epoch'",objname);
-      return 1;
-    }
-    epoch_ptr->gpsSeconds = (fs->epoch).gpsSeconds;
-    epoch_ptr->gpsNanoSeconds = (fs->epoch).gpsNanoSeconds;
-    tmpobj = SWIG_NewPointerObj((void *) epoch_ptr,SWIG_TypeQuery("LIGOTimeGPS *"),SWIG_POINTER_OWN);
+    tmpobj = EpochFromLAL(parentself,fs->epoch);
     if (!tmpobj) {
-      PyErr_Format(PyExc_RuntimeError,
-		   "Could not create output epoch object for '%s._epoch'",objname);
-      free(epoch_ptr);
       return 1;
     }
     if (PyObject_SetAttrString(argument,"_epoch",tmpobj) == -1) {
@@ -936,6 +927,7 @@ typedef struct {
       return 1;
     }
     Py_DECREF(tmpobj);
+
 
     // The _delta_f attribute:
     tmpobj = PyFloat_FromDouble((double) fs->deltaF);
@@ -1226,6 +1218,12 @@ YOU HAVE BEEN WARNED!
   free( (COMPLEX16Vector *) *($1));
 }
 
+// Typemaps for time and frequency series.  Note that those calling the functions
+// MarshallOutput{T,F}S and MarshallArgout{T,F}S have as their first argument "self".
+// This variable is defined in the wrapped function, and hence will exist even though
+// it is not a $special SWIG variable.
+
+
 // Typemaps for REAL4 Time Series
 
 %typemap(in, fragment="MarshallInputTS") REAL4TimeSeries *INPUT_REAL4TS {
@@ -1234,7 +1232,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(argout, fragment="MarshallArgoutTS") REAL4TimeSeries *INPUT_REAL4TS {
-  if (MarshallArgoutTS($input,$1,"$1_name") ) SWIG_fail;
+  if (MarshallArgoutTS(self,$input,$1,"$1_name") ) SWIG_fail;
 }
 
 %typemap(freearg) REAL4TimeSeries *INPUT_REAL4TS {
@@ -1247,7 +1245,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(out, fragment="MarshallOutputTS") REAL4TimeSeries *NEWOUT_REAL4TS{
-  $result = MarshallOutputTS((GenericTS *) $1,NPY_FLOAT32);
+  $result = MarshallOutputTS(self,(GenericTS *) $1,NPY_FLOAT32);
   if (!($result)) SWIG_fail;
 }
 
@@ -1268,7 +1266,7 @@ YOU HAVE BEEN WARNED!
 
 %typemap(argout, fragment="BuildArgoutTS") REAL4TimeSeries **ARGOUT_REAL4TS {
   $result = BuildReturnFromValue($result,
-				 MarshallOutputTS((GenericTS *) *($1),NPY_FLOAT32));
+				 MarshallOutputTS(self,(GenericTS *) *($1),NPY_FLOAT32));
   if (!($result)) SWIG_fail;
 }
 
@@ -1280,7 +1278,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(argout, fragment="MarshallArgoutTS") REAL8TimeSeries *INPUT_REAL8TS {
-  if (MarshallArgoutTS($input,$1,"$1_name") ) SWIG_fail;
+  if (MarshallArgoutTS(self,$input,$1,"$1_name") ) SWIG_fail;
 }
 
 %typemap(freearg) REAL8TimeSeries *INPUT_REAL8TS {
@@ -1293,7 +1291,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(out, fragment="MarshallOutputTS") REAL8TimeSeries *NEWOUT_REAL8TS{
-  $result = MarshallOutputTS((GenericTS *) $1,NPY_FLOAT64);
+  $result = MarshallOutputTS(self,(GenericTS *) $1,NPY_FLOAT64);
   if (!($result)) SWIG_fail;
 }
 
@@ -1314,7 +1312,7 @@ YOU HAVE BEEN WARNED!
 
 %typemap(argout, fragment="BuildArgoutTS") REAL8TimeSeries **ARGOUT_REAL8TS {
   $result = BuildReturnFromValue($result,
-				 MarshallOutputTS((GenericTS *) *($1),NPY_FLOAT64));
+				 MarshallOutputTS(self,(GenericTS *) *($1),NPY_FLOAT64));
   if (!($result)) SWIG_fail;
 }
 
@@ -1327,7 +1325,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(argout, fragment="MarshallArgoutTS") COMPLEX8TimeSeries *INPUT_COMPLEX8TS {
-  if (MarshallArgoutTS($input,$1,"$1_name") ) SWIG_fail;
+  if (MarshallArgoutTS(self,$input,$1,"$1_name") ) SWIG_fail;
 }
 
 %typemap(freearg) COMPLEX8TimeSeries *INPUT_COMPLEX8TS {
@@ -1340,7 +1338,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(out, fragment="MarshallOutputTS") COMPLEX8TimeSeries *NEWOUT_COMPLEX8TS{
-  $result = MarshallOutputTS((GenericTS *) $1,NPY_COMPLEX64);
+  $result = MarshallOutputTS(self,(GenericTS *) $1,NPY_COMPLEX64);
   if (!($result)) SWIG_fail;
 }
 
@@ -1361,7 +1359,7 @@ YOU HAVE BEEN WARNED!
 
 %typemap(argout, fragment="BuildArgoutTS") COMPLEX8TimeSeries **ARGOUT_COMPLEX8TS {
   $result = BuildReturnFromValue($result,
-				 MarshallOutputTS((GenericTS *) *($1),NPY_COMPLEX64));
+				 MarshallOutputTS(self,(GenericTS *) *($1),NPY_COMPLEX64));
   if (!($result)) SWIG_fail;
 }
 
@@ -1373,7 +1371,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(argout, fragment="MarshallArgoutTS") COMPLEX16TimeSeries *INPUT_COMPLEX16TS {
-  if (MarshallArgoutTS($input,$1,"$1_name") ) SWIG_fail;
+  if (MarshallArgoutTS(self,$input,$1,"$1_name") ) SWIG_fail;
 }
 
 %typemap(freearg) COMPLEX16TimeSeries *INPUT_COMPLEX16TS {
@@ -1386,7 +1384,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(out, fragment="MarshallOutputTS") COMPLEX16TimeSeries *NEWOUT_COMPLEX16TS{
-  $result = MarshallOutputTS((GenericTS *) $1,NPY_COMPLEX128);
+  $result = MarshallOutputTS(self,(GenericTS *) $1,NPY_COMPLEX128);
   if (!($result)) SWIG_fail;
 }
 
@@ -1407,7 +1405,7 @@ YOU HAVE BEEN WARNED!
 
 %typemap(argout, fragment="BuildArgoutTS") COMPLEX16TimeSeries **ARGOUT_COMPLEX16TS {
   $result = BuildReturnFromValue($result,
-				 MarshallOutputTS((GenericTS *) *($1),NPY_COMPLEX128));
+				 MarshallOutputTS(self,(GenericTS *) *($1),NPY_COMPLEX128));
   if (!($result)) SWIG_fail;
 }
 
@@ -1419,7 +1417,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(argout, fragment="MarshallArgoutFS") REAL4FrequencySeries *INPUT_REAL4FS {
-  if (MarshallArgoutFS($input,$1,"$1_name") ) SWIG_fail;
+  if (MarshallArgoutFS(self,$input,$1,"$1_name") ) SWIG_fail;
 }
 
 %typemap(freearg) REAL4FrequencySeries *INPUT_REAL4FS {
@@ -1432,7 +1430,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(out, fragment="MarshallOutputFS") REAL4FrequencySeries *NEWOUT_REAL4FS{
-  $result = MarshallOutputFS((GenericFS *) $1,NPY_FLOAT32);
+  $result = MarshallOutputFS(self,(GenericFS *) $1,NPY_FLOAT32);
   if (!($result)) SWIG_fail;
 }
 
@@ -1453,7 +1451,7 @@ YOU HAVE BEEN WARNED!
 
 %typemap(argout, fragment="BuildArgoutFS") REAL4FrequencySeries **ARGOUT_REAL4FS {
   $result = BuildReturnFromValue($result,
-				 MarshallOutputFS((GenericFS *) *($1),NPY_FLOAT32));
+				 MarshallOutputFS(self,(GenericFS *) *($1),NPY_FLOAT32));
   if (!($result)) SWIG_fail;
 }
 
@@ -1465,7 +1463,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(argout, fragment="MarshallArgoutFS") REAL8FrequencySeries *INPUT_REAL8FS {
-  if (MarshallArgoutFS($input,$1,"$1_name") ) SWIG_fail;
+  if (MarshallArgoutFS(self,$input,$1,"$1_name") ) SWIG_fail;
 }
 
 %typemap(freearg) REAL8FrequencySeries *INPUT_REAL8FS {
@@ -1478,7 +1476,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(out, fragment="MarshallOutputFS") REAL8FrequencySeries *NEWOUT_REAL8FS{
-  $result = MarshallOutputFS((GenericFS *) $1,NPY_FLOAT64);
+  $result = MarshallOutputFS(self,(GenericFS *) $1,NPY_FLOAT64);
   if (!($result)) SWIG_fail;
 }
 
@@ -1499,7 +1497,7 @@ YOU HAVE BEEN WARNED!
 
 %typemap(argout, fragment="BuildArgoutFS") REAL8FrequencySeries **ARGOUT_REAL8FS {
   $result = BuildReturnFromValue($result,
-				 MarshallOutputFS((GenericFS *) *($1),NPY_FLOAT64));
+				 MarshallOutputFS(self,(GenericFS *) *($1),NPY_FLOAT64));
   if (!($result)) SWIG_fail;
 }
 
@@ -1512,7 +1510,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(argout, fragment="MarshallArgoutFS") COMPLEX8FrequencySeries *INPUT_COMPLEX8FS {
-  if (MarshallArgoutFS($input,$1,"$1_name") ) SWIG_fail;
+  if (MarshallArgoutFS(self,$input,$1,"$1_name") ) SWIG_fail;
 }
 
 %typemap(freearg) COMPLEX8FrequencySeries *INPUT_COMPLEX8FS {
@@ -1525,7 +1523,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(out, fragment="MarshallOutputFS") COMPLEX8FrequencySeries *NEWOUT_COMPLEX8FS{
-  $result = MarshallOutputFS((GenericFS *) $1,NPY_COMPLEX64);
+  $result = MarshallOutputFS(self,(GenericFS *) $1,NPY_COMPLEX64);
   if (!($result)) SWIG_fail;
 }
 
@@ -1546,7 +1544,7 @@ YOU HAVE BEEN WARNED!
 
 %typemap(argout, fragment="BuildArgoutFS") COMPLEX8FrequencySeries **ARGOUT_COMPLEX8FS {
   $result = BuildReturnFromValue($result,
-				 MarshallOutputFS((GenericFS *) *($1),NPY_COMPLEX64));
+				 MarshallOutputFS(self,(GenericFS *) *($1),NPY_COMPLEX64));
   if (!($result)) SWIG_fail;
 }
 
@@ -1558,7 +1556,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(argout, fragment="MarshallArgoutFS") COMPLEX16FrequencySeries *INPUT_COMPLEX16FS {
-  if (MarshallArgoutFS($input,$1,"$1_name") ) SWIG_fail;
+  if (MarshallArgoutFS(self,$input,$1,"$1_name") ) SWIG_fail;
 }
 
 %typemap(freearg) COMPLEX16FrequencySeries *INPUT_COMPLEX16FS {
@@ -1571,7 +1569,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(out, fragment="MarshallOutputFS") COMPLEX16FrequencySeries *NEWOUT_COMPLEX16FS{
-  $result = MarshallOutputFS((GenericFS *) $1,NPY_COMPLEX128);
+  $result = MarshallOutputFS(self,(GenericFS *) $1,NPY_COMPLEX128);
   if (!($result)) SWIG_fail;
 }
 
@@ -1592,9 +1590,12 @@ YOU HAVE BEEN WARNED!
 
 %typemap(argout, fragment="BuildArgoutFS") COMPLEX16FrequencySeries **ARGOUT_COMPLEX16FS {
   $result = BuildReturnFromValue($result,
-				 MarshallOutputFS((GenericFS *) *($1),NPY_COMPLEX128));
+				 MarshallOutputFS(self,(GenericFS *) *($1),NPY_COMPLEX128));
   if (!($result)) SWIG_fail;
 }
+
+// The following statment is more intuitive for developers to use than the direct
+// use of the %rename("%s") syntax of SWIG.
 
 %define %unignore(NAME)
 %rename("%s") NAME;
