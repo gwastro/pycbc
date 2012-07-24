@@ -36,17 +36,14 @@ FrequencySeries.  To add a function do the following:
 (2) In the section beneath the comment "Add wrappings here" add at least the
     following:
     (a) %unignore(XLALMyFavoriteFunc);
-    (b) %newobject directives for anything the function returns that are
-         newly allocated (that is, the wrapped function has allocated the
-         memory for that object).
-    (c) %apply directives for any typemaps FOR ARRAY, TIMESERIES, OR
+    (b) %apply directives for any typemaps FOR ARRAY, TIMESERIES, OR
          FREQUENCYSERIES OBJECTS ONLY that the function accepts as input,
 	 returns as output, or returns as an "output argument". Also ensure
 	 that if the return value of a function is one of those types but it
 	 should be ignored (generally because it returns one of its arguments,
 	 but that argument is also modified in place) then you apply the
 	 appropriate NONEOUT typemap to the function.
-    (d) Finally, include the function declaration, as "extern"
+    (c) Finally, include the function declaration, as "extern"
 
 In the resulting wrapped function---which will appear in the module
 pycbc.lalwrap---all places where the LAL function accepts as input a LAL Vector,
@@ -77,9 +74,6 @@ then to wrap it we would in all likelihood do the following:
     to the header section of the file.
 (2) We add the following lines to the declaration section:
        %unignore(XLALSomeFunc);
-       %newobject hplus;
-       %newobject hcross;
-       %newobject XLALSomeFunc;
        %apply ARGOUT_REAL4TS {REAL4TimeSeries **};
        %apply NEWOUT_COMPLEX16FS {COMPLEX16FrequencySeries *XLALSomeFunc};
        %apply INPUT_COMPLEX16FS {COMPLEX16FrequencySeries *};
@@ -112,7 +106,7 @@ NewFS, hplus, hcross = pycbc.lalwrap.XLALSomeFunc(inputFS,MyEpoch)
 assuming the inputs were of the appropriate type.
 
 The available typemaps are, for each of the four floating-point LAL array-like types,
-the following four sets:
+are the following:
 
 (1) INPUT_<TYPE>{V,TS,FS}    *<TYPE>{Vector,TimeSeries,FrequencySeries}
 (2) NEWOUT_<TYPE>{V,TS,FS}   *<TYPE>{Vector,TimeSeries,FrequencySeries}
@@ -189,21 +183,17 @@ extern REAL4Vector *XLALSSVectorMultiply(REAL4Vector *out, REAL4Vector *in1, REA
 extern int XLALCOMPLEX8VectorFFT(COMPLEX8Vector *output, COMPLEX8Vector *input, const COMPLEX8FFTPlan *plan );
 
 %unignore(XLALCreateREAL4Vector);
-%newobject XLALCreateREAL4Vector;
 %apply REAL4Vector *NEWOUT_REAL4V {REAL4Vector *XLALCreateREAL4Vector};
 extern REAL4Vector *XLALCreateREAL4Vector(UINT4 length);
 
 %unignore(XLALCreateREAL8Vector);
-%newobject XLALCreateREAL8Vector;
 %apply REAL8Vector *NEWOUT_REAL8V {REAL8Vector *XLALCreateREAL8Vector};
 extern REAL8Vector *XLALCreateREAL8Vector(UINT4 length);
 
 %unignore(XLALCreateCOMPLEX8Vector);
-%newobject XLALCreateCOMPLEX8Vector;
 %apply COMPLEX8Vector *NEWOUT_COMPLEX8V {COMPLEX8Vector *XLALCreateCOMPLEX8Vector};
 extern COMPLEX8Vector *XLALCreateCOMPLEX8Vector(UINT4 length);
 
 %unignore(XLALCreateCOMPLEX16Vector);
-%newobject XLALCreateCOMPLEX16Vector;
 %apply COMPLEX16Vector *NEWOUT_COMPLEX16V {COMPLEX16Vector *XLALCreateCOMPLEX16Vector};
 extern COMPLEX16Vector *XLALCreateCOMPLEX16Vector(UINT4 length);
