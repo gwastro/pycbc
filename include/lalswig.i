@@ -24,7 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <lal/ComplexFFT.h>
 %}
 
-%include "laltypemaps.i"
+%include "pycbc_laltypes.i"
 
 // Some tests:
 

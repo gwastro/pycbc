@@ -18,7 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 /*
 
-This is the laltypemaps.i file.
+This is the pycbc_laltypes.i file.
 
 It provides the typemaps used by PyCBC when time-critical code needs to
 access LAL functions.  See the (PyCBC) file lal.i for more instructions on

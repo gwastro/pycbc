@@ -74,7 +74,7 @@ ext_include_dirs += [np_get_include()]
 
 lalswig_module = Extension('_lalswig',
                            sources=['include/lalswig.i'],
-                           depends=['include/laltypemaps.i'],
+                           depends=['include/pycbc_laltypes.i'],
                            swig_opts=ext_swig_opts,
                            include_dirs=ext_include_dirs,
                            library_dirs=ext_library_dirs,
