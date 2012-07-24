@@ -366,57 +366,17 @@ typedef struct {
   }
 }
 
-%fragment("MarshallInputVector","header",fragment="VectFromPyCBCType") {
-  GenericVector *MarshallInputVector(PyObject *obj, const int numpy_type, const char *objname) {
-    GenericVector *returnptr;
-    PyObject *tmpobj;
-
-    tmpobj = PyObject_GetAttrString(obj,"_lal");
-
-    // We explicitly access the '_lal' attribute of the argument, to force it onto
-    // the CPU (if it was on the GPU and the current scheme is CPU) or to raise an
-    // exception (if the current scheme is GPU).
-
-    // We should have a '_lal' attribute, and it should point back to our argument, or
-    // there's a problem.
-
-    if (tmpobj != obj) {
-      PyErr_Format(PyExc_TypeError,
-		   "Argument '%s' has no '_lal' attribute---it is not an instance of pycbc.types.Array",
-		   objname);
-      Py_XDECREF(tmpobj);
-      return NULL;
-    }
-
-    // If we get here, it means that the lal property did behave as expected, so to avoid
-    // an ever-increasing refcount, we must now decrement it:
-
-    Py_DECREF(tmpobj);
-
-    if (PyObject_IsInstance(obj,CBC_Arr) !=1){
-      PyErr_Format(PyExc_TypeError,
-		   "Argument '%s' must be an instance of pycbc.types.Array or subclass", objname);
-      return NULL;
-    }
-
-    returnptr = VectFromPyCBCType(obj,numpy_type,objname);
-
-    return returnptr;
-  }
-}
-
-%fragment("MarshallOutputVector","header",fragment="GenericVector") {
-  PyObject *MarshallOutputVector(GenericVector *vect, const int numpy_type) {
-    PyObject *result, *tmpobj, *constrdict;
+%fragment("ArrayDictFromVect","header",fragment="GenericVector"){
+  PyObject *ArrayDictFromVect(GenericVector *vect, int numpy_type){
+    PyObject *tmpobj, *constrdict;
     npy_intp dimensions[1];
-
 
     if (!(vect)) {
       PyErr_SetString(PyExc_ValueError,"Unexpected null vector returned from function");
       return NULL;
     }
     if ( (vect->length) &&  !(vect->data) ) {
-      PyErr_SetString(PyExc_ValueError,"Null data pointer returned for non-zero length array");
+      PyErr_SetString(PyExc_ValueError,"Null data pointer returned for non-zero length object");
       return NULL;
     }
 
@@ -468,12 +428,63 @@ typedef struct {
     }
     Py_DECREF(tmpobj);
 
+    return constrdict;
+  }
+ }
+
+%fragment("MarshallInputVector","header",fragment="VectFromPyCBCType") {
+  GenericVector *MarshallInputVector(PyObject *obj, const int numpy_type, const char *objname) {
+    GenericVector *returnptr;
+    PyObject *tmpobj;
+
+    tmpobj = PyObject_GetAttrString(obj,"_lal");
+
+    // We explicitly access the '_lal' attribute of the argument, to force it onto
+    // the CPU (if it was on the GPU and the current scheme is CPU) or to raise an
+    // exception (if the current scheme is GPU).
+
+    // We should have a '_lal' attribute, and it should point back to our argument, or
+    // there's a problem.
+
+    if (tmpobj != obj) {
+      PyErr_Format(PyExc_TypeError,
+		   "Argument '%s' has no '_lal' attribute---it is not an instance of pycbc.types.Array",
+		   objname);
+      Py_XDECREF(tmpobj);
+      return NULL;
+    }
+
+    // If we get here, it means that the lal property did behave as expected, so to avoid
+    // an ever-increasing refcount, we must now decrement it:
+
+    Py_DECREF(tmpobj);
+
+    if (PyObject_IsInstance(obj,CBC_Arr) !=1){
+      PyErr_Format(PyExc_TypeError,
+		   "Argument '%s' must be an instance of pycbc.types.Array or subclass", objname);
+      return NULL;
+    }
+
+    returnptr = VectFromPyCBCType(obj,numpy_type,objname);
+
+    return returnptr;
+  }
+}
+
+%fragment("MarshallOutputVector","header",fragment="ArrayDictFromVect") {
+  PyObject *MarshallOutputVector(GenericVector *vect, const int numpy_type) {
+    PyObject *result, *constrdict;
+
+    constrdict = ArrayDictFromVect(vect,numpy_type);
+    if (!constrdict) {
+      return NULL;
+    }
+
     result = PyObject_Call(CBC_Arr,EmptyTuple,constrdict);
     if (!result) {
       PyErr_SetString(PyExc_RuntimeError,"Could not create new instance of pycbc.types.Array");
     }
-    // We don't need to do anything else for that last failure, as we'll be returning NULL
-    // anyway and we have to do the same cleanup
+
     PyDict_Clear(constrdict);
     Py_DECREF(constrdict);
 
@@ -579,73 +590,20 @@ typedef struct {
   }
 }
 
-%fragment("MarshallOutputTS","header",fragment="GenericTS") {
+%fragment("MarshallOutputTS","header",fragment="GenericTS",fragment="ArrayDictFromVect") {
   PyObject *MarshallOutputTS(GenericTS *ts, const int numpy_type) {
     PyObject *result, *tmpobj, *constrdict;
     LIGOTimeGPS *epoch_ptr;
-    npy_intp dimensions[1];
 
     if (!(ts)) {
       PyErr_SetString(PyExc_ValueError,"Unexpected null time-series returned from function");
       return NULL;
     }
-    if ( !(ts->data) ) {
-      PyErr_SetString(PyExc_ValueError,"Time series output had empty data vector");
-      return NULL;
-    }
-    if ( !(ts->data->data) &&  !(ts->data->length) ) {
-      PyErr_SetString(PyExc_ValueError,
-		      "Time series had null data pointer returned for non-zero length");
-      return NULL;
-    }
 
-    constrdict = PyDict_New();
+    constrdict = ArrayDictFromVect(ts->data,numpy_type);
     if (!constrdict) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not create dictionary for return value constructor");
       return NULL;
     }
-
-    dimensions[0] = (npy_intp) ts->data->length;
-    tmpobj = PyArray_SimpleNewFromData(1,dimensions,numpy_type,(void *) ts->data->data);
-    if (!tmpobj) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not create output data object");
-      Py_DECREF(constrdict); // Dict still empty, so just delete
-      return NULL;
-    }
-    if (PyDict_SetItemString(constrdict,"initial_array",tmpobj)) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not add data object to cosntructor dict");
-      Py_DECREF(constrdict); // Dict still empty, so just delete
-      Py_DECREF(tmpobj);
-      return NULL;
-    }
-    Py_DECREF(tmpobj);
-
-    tmpobj = (PyObject *) PyArray_DescrFromType(numpy_type);
-    if (!tmpobj){
-      PyErr_SetString(PyExc_RuntimeError,"Could not create output dtype object");
-      PyDict_Clear(constrdict);
-      Py_DECREF(constrdict);
-      return NULL;
-    }
-    if (PyDict_SetItemString(constrdict,"dtype",tmpobj)) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not add dtype object to constructor dict");
-      PyDict_Clear(constrdict);
-      Py_DECREF(constrdict);
-      Py_DECREF(tmpobj);
-      return NULL;
-    }
-    Py_DECREF(tmpobj);
-
-    Py_INCREF(Py_False);
-    tmpobj = Py_False;
-    if (PyDict_SetItemString(constrdict,"copy",tmpobj)) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not add copy object to constructor dict");
-      PyDict_Clear(constrdict);
-      Py_DECREF(constrdict);
-      Py_DECREF(tmpobj);
-      return NULL;
-    }
-    Py_DECREF(tmpobj);
 
     epoch_ptr = calloc(1,sizeof(LIGOTimeGPS));
     if (!epoch_ptr) {
@@ -887,73 +845,20 @@ typedef struct {
   }
 }
 
-%fragment("MarshallOutputFS","header",fragment="GenericFS") {
+%fragment("MarshallOutputFS","header",fragment="GenericFS",fragment="ArrayDictFromVect") {
   PyObject *MarshallOutputFS(GenericFS *fs, const int numpy_type) {
     PyObject *result, *tmpobj, *constrdict;
     LIGOTimeGPS *epoch_ptr;
-    npy_intp dimensions[1];
 
     if (!(fs)) {
       PyErr_SetString(PyExc_ValueError,"Unexpected null frequency-series returned from function");
       return NULL;
     }
-    if ( !(fs->data) ) {
-      PyErr_SetString(PyExc_ValueError,"Frequency series output had empty data vector");
-      return NULL;
-    }
-    if ( !(fs->data->data) &&  !(fs->data->length) ) {
-      PyErr_SetString(PyExc_ValueError,
-		      "Frequency series had null data pointer returned for non-zero length");
-      return NULL;
-    }
 
-    constrdict = PyDict_New();
+    constrdict = ArrayDictFromVect(fs->data,numpy_type);
     if (!constrdict) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not create dictionary for return value constructor");
       return NULL;
     }
-
-    dimensions[0] = (npy_intp) fs->data->length;
-    tmpobj = PyArray_SimpleNewFromData(1,dimensions,numpy_type,(void *) fs->data->data);
-    if (!tmpobj) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not create output data object");
-      Py_DECREF(constrdict); // Dict still empty, so just delete
-      return NULL;
-    }
-    if (PyDict_SetItemString(constrdict,"initial_array",tmpobj)) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not add data object to cosntructor dict");
-      Py_DECREF(constrdict); // Dict still empty, so just delete
-      Py_DECREF(tmpobj);
-      return NULL;
-    }
-    Py_DECREF(tmpobj);
-
-    tmpobj = (PyObject *) PyArray_DescrFromType(numpy_type);
-    if (!tmpobj){
-      PyErr_SetString(PyExc_RuntimeError,"Could not create output dtype object");
-      PyDict_Clear(constrdict);
-      Py_DECREF(constrdict);
-      return NULL;
-    }
-    if (PyDict_SetItemString(constrdict,"dtype",tmpobj)) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not add dtype object to constructor dict");
-      PyDict_Clear(constrdict);
-      Py_DECREF(constrdict);
-      Py_DECREF(tmpobj);
-      return NULL;
-    }
-    Py_DECREF(tmpobj);
-
-    Py_INCREF(Py_False);
-    tmpobj = Py_False;
-    if (PyDict_SetItemString(constrdict,"copy",tmpobj)) {
-      PyErr_SetString(PyExc_RuntimeError,"Could not add copy object to constructor dict");
-      PyDict_Clear(constrdict);
-      Py_DECREF(constrdict);
-      Py_DECREF(tmpobj);
-      return NULL;
-    }
-    Py_DECREF(tmpobj);
 
     epoch_ptr = calloc(1,sizeof(LIGOTimeGPS));
     if (!epoch_ptr) {
