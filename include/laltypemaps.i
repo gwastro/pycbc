@@ -303,38 +303,14 @@ typedef struct {
   }
 }
 
-%fragment("MarshallInputVector","header",fragment="GenericVector") {
-  GenericVector *MarshallInputVector(PyObject *obj, const int numpy_type, const char *objname) {
+// Since all three of Array, TimeSeries, and FrequencySeries have a "_data" property
+// that must be managed in the same way, we separate that handling into the following
+// function, called by all "MarshallInput" functions.
+
+%fragment("VectFromPyCBCType","header",fragment="GenericVector"){
+  GenericVector *VectFromDPyCBCType(PyObject *obj, const int numpy_type, const char *objname){
     GenericVector *returnptr;
     PyObject *tmpobj;
-
-    tmpobj = PyObject_GetAttrString(obj,"_lal");
-
-    // We explicitly access the '_lal' attribute of the argument, to force it onto
-    // the CPU (if it was on the GPU and the current scheme is CPU) or to raise an
-    // exception (if the current scheme is GPU).
-
-    // We should have a '_lal' attribute, and it should point back to our argument, or
-    // there's a problem.
-
-    if (tmpobj != obj) {
-      PyErr_Format(PyExc_TypeError,
-		   "Argument '%s' has no '_lal' attribute---it is not an instance of pycbc.types.Array",
-		   objname);
-      Py_XDECREF(tmpobj);
-      return NULL;
-    }
-
-    // If we get here, it means that the lal property did behave as expected, so to avoid
-    // an ever-increasing refcount, we must now decrement it:
-
-    Py_DECREF(tmpobj);
-
-    if (PyObject_IsInstance(obj,CBC_Arr) !=1){
-      PyErr_Format(PyExc_TypeError,
-		   "Argument '%s' must be an instance of pycbc.types.Array or subclass", objname);
-      return NULL;
-    }
 
     tmpobj = PyObject_GetAttrString(obj,"_data");
     if (!tmpobj){
@@ -385,6 +361,45 @@ typedef struct {
     // We should now release the reference count acquired through 'GetAttrString':
 
     Py_DECREF(tmpobj);
+
+    return returnptr;
+  }
+}
+
+%fragment("MarshallInputVector","header",fragment="VectFromPyCBCType") {
+  GenericVector *MarshallInputVector(PyObject *obj, const int numpy_type, const char *objname) {
+    GenericVector *returnptr;
+    PyObject *tmpobj;
+
+    tmpobj = PyObject_GetAttrString(obj,"_lal");
+
+    // We explicitly access the '_lal' attribute of the argument, to force it onto
+    // the CPU (if it was on the GPU and the current scheme is CPU) or to raise an
+    // exception (if the current scheme is GPU).
+
+    // We should have a '_lal' attribute, and it should point back to our argument, or
+    // there's a problem.
+
+    if (tmpobj != obj) {
+      PyErr_Format(PyExc_TypeError,
+		   "Argument '%s' has no '_lal' attribute---it is not an instance of pycbc.types.Array",
+		   objname);
+      Py_XDECREF(tmpobj);
+      return NULL;
+    }
+
+    // If we get here, it means that the lal property did behave as expected, so to avoid
+    // an ever-increasing refcount, we must now decrement it:
+
+    Py_DECREF(tmpobj);
+
+    if (PyObject_IsInstance(obj,CBC_Arr) !=1){
+      PyErr_Format(PyExc_TypeError,
+		   "Argument '%s' must be an instance of pycbc.types.Array or subclass", objname);
+      return NULL;
+    }
+
+    returnptr = VectFromPyCBCType(obj,numpy_type,objname);
 
     return returnptr;
   }
@@ -469,7 +484,7 @@ typedef struct {
 %fragment("BuildArgoutVector","header",
 	  fragment="BuildReturnFromValue",fragment="MarshallOutputVector") {};
 
-%fragment("MarshallInputTS","header",fragment="GenericTS",fragment="MarshallInputVector") {
+%fragment("MarshallInputTS","header",fragment="GenericTS",fragment="VectFromPyCBCType") {
   GenericTS *MarshallInputTS(PyObject *obj, const int numpy_type, const char *objname) {
     GenericTS *returnptr;
     PyObject *tmpobj;
@@ -521,21 +536,11 @@ typedef struct {
     }
 
     // First, marshall everything for the numpy array that is "self._data"
-
-    tmpobj = PyObject_GetAttrString(obj,"_data");
-    if (!tmpobj){
-      PyErr_Format(PyExc_TypeError,
-		   "Could not get _data property of argument '%s'", objname);
-      return NULL;
-    }
-    returnptr->data = MarshallInputVector(tmpobj,numpy_type,objname);
+    returnptr->data = VectFromPyCBCType(obj,numpy_type,objname);
     if (!(returnptr->data)) {
-      // MarshallInputVector has already set the error string, so just return
-      Py_DECREF(tmpobj);
+      // VectFromPyCBCType has already set the error string, so just return
       return NULL;
     }
-    Py_DECREF(tmpobj);
-
 
     // Next, marshall all of the other pieces of a TimeSeries that we do want to
     // get from our input.
@@ -771,7 +776,7 @@ typedef struct {
 	  fragment="BuildReturnFromValue",fragment="MarshallOutputTS") {};
 
 
-%fragment("MarshallInputFS","header",fragment="GenericFS",fragment="MarshallInputVector") {
+%fragment("MarshallInputFS","header",fragment="GenericFS",fragment="VectFromPyCBCType") {
   GenericFS *MarshallInputFS(PyObject *obj, const int numpy_type, const char *objname) {
     GenericFS *returnptr;
     PyObject *tmpobj;
@@ -819,20 +824,11 @@ typedef struct {
     }
 
     // First, marshall everything for the numpy array that is "self._data"
-
-    tmpobj = PyObject_GetAttrString(obj,"_data");
-    if (!tmpobj){
-      PyErr_Format(PyExc_TypeError,
-		   "Could not get _data property of argument '%s'", objname);
-      return NULL;
-    }
-    returnptr->data = MarshallInputVector(tmpobj,numpy_type,objname);
+    returnptr->data = VectFromPyCBCType(obj,numpy_type,objname);
     if (!(returnptr->data)) {
-      // MarshallInputVector has already set the error string, so just return
-      Py_DECREF(tmpobj);
+      // VectFromPyCBCType has already set the error string, so just return
       return NULL;
     }
-    Py_DECREF(tmpobj);
 
     // Next, marshall all of the other pieces of a FrequencySeries that we do want to
     // get from our input.
