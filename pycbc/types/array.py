@@ -556,7 +556,7 @@ class Array(object):
         """ Used internally by SWIG typemaps to ensure @_convert is called and scheme is correct  """
 
         if type(self._data) is not _numpy.ndarray:
-            raise TypeError("Cannot return lal type from the GPU")
+            raise TypeError("Cannot call LAL function from the GPU")
         else:
             return self;
 
