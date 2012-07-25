@@ -247,6 +247,12 @@ typedef struct {
 
 %fragment("BuildReturnFromValue","header") {
   PyObject *BuildReturnFromValue(PyObject *CurrReturn, PyObject *value){
+    // Since this function is often called directly before the second
+    // argument can be checked in the caller, return failure if second
+    // argument is NULL.  It's unclear what, if any, Python cleanup (i.e.
+    // appropriate Py_DECREF's) is done in SWIG_Python_AppendOutput(). But
+    // at least we do no worse than that function...
+    if (!(value)) return NULL;
     return SWIG_Python_AppendOutput(CurrReturn,value);
   }
 }
