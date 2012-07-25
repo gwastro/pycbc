@@ -37,14 +37,12 @@ from lal import CreateReverseCOMPLEX8FFTPlan as _CreateReverseCOMPLEX8FFTPlan
 from lal import CreateReverseREAL8FFTPlan as _CreateReverseREAL8FFTPlan
 from lal import CreateReverseREAL4FFTPlan as _CreateReverseREAL4FFTPlan
 
-from lal import COMPLEX16VectorFFT as _COMPLEX16VectorFFT
-from lal import COMPLEX8VectorFFT as _COMPLEX8VectorFFT
-from lal import REAL8ForwardFFT as _REAL8ForwardFFT
-from lal import REAL4ForwardFFT as _REAL4ForwardFFT
-from lal import COMPLEX16VectorFFT as _COMPLEX16VectorFFT
-from lal import COMPLEX8VectorFFT as _COMPLEX8VectorFFT
-from lal import REAL8ReverseFFT as _REAL8ReverseFFT
-from lal import REAL4ReverseFFT as _REAL4ReverseFFT
+from pycbc.lalwrap import XLALCOMPLEX16VectorFFT as _COMPLEX16VectorFFT
+from pycbc.lalwrap import XLALCOMPLEX8VectorFFT as _COMPLEX8VectorFFT
+from pycbc.lalwrap import XLALREAL8ForwardFFT as _REAL8ForwardFFT
+from pycbc.lalwrap import XLALREAL4ForwardFFT as _REAL4ForwardFFT
+from pycbc.lalwrap import XLALREAL8ReverseFFT as _REAL8ReverseFFT
+from pycbc.lalwrap import XLALREAL4ReverseFFT as _REAL4ReverseFFT
 
 _default_measurelvl = 1
 _forward_plans = {}
@@ -85,8 +83,8 @@ def _get_inv_plan(prec,itype,otype,outlen):
 
 def fft(invec,outvec,prec,itype,otype):
     theplan = _get_fwd_plan(prec,itype,otype,len(invec))
-    _forward_fft_fn_dict[(prec,itype,otype)](outvec.lal,invec.lal,theplan)
+    _forward_fft_fn_dict[(prec,itype,otype)](outvec,invec,theplan)
 
 def ifft(invec,outvec,prec,itype,otype):
     theplan = _get_inv_plan(prec,itype,otype,len(outvec))
-    _reverse_fft_fn_dict[(prec,itype,otype)](outvec.lal,invec.lal,theplan)
+    _reverse_fft_fn_dict[(prec,itype,otype)](outvec,invec,theplan)

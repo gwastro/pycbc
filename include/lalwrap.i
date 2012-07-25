@@ -166,6 +166,7 @@ YOU HAVE BEEN WARNED!
 // Add LAL header files here:
 #include <lal/VectorOps.h>
 #include <lal/ComplexFFT.h>
+#include <lal/RealFFT.h>
 %}
 
 // DO NOT! change the following:
@@ -173,15 +174,51 @@ YOU HAVE BEEN WARNED!
 
 // Add wrappings here:
 
+// An example of the usage of "NONEOUT": the vector returned by
+// the function is the same as the function argument "out"
 %unignore(XLALSSVectorMultiply);
 %apply REAL4Vector *NONEOUT_REAL4V { REAL4Vector *XLALSSVectorMultiply };
 %apply REAL4Vector *INPUT_REAL4V {REAL4Vector *};
 extern REAL4Vector *XLALSSVectorMultiply(REAL4Vector *out, REAL4Vector *in1, REAL4Vector *in2);
 
+// Functions to perform FFTs:
 %unignore(XLALCOMPLEX8VectorFFT);
 %apply COMPLEX8Vector *INPUT_COMPLEX8V {COMPLEX8Vector *};
 extern int XLALCOMPLEX8VectorFFT(COMPLEX8Vector *output, COMPLEX8Vector *input, const COMPLEX8FFTPlan *plan );
 
+%unignore(XLALCOMPLEX16VectorFFT);
+%apply COMPLEX16Vector *INPUT_COMPLEX16V {COMPLEX16Vector *};
+extern int XLALCOMPLEX16VectorFFT(COMPLEX16Vector *output, COMPLEX16Vector *input, const COMPLEX16FFTPlan *plan );
+
+%unignore(XLALREAL4ForwardFFT);
+%apply COMPLEX8Vector *INPUT_COMPLEX8V {COMPLEX8Vector *};
+%apply REAL4Vector *INPUT_REAL4V {REAL4Vector *};
+extern int XLALREAL4ForwardFFT(COMPLEX8Vector *output, REAL4Vector *input, REAL4FFTPlan *plan );
+
+%unignore(XLALREAL4ReverseFFT);
+%apply COMPLEX8Vector *INPUT_COMPLEX8V {COMPLEX8Vector *};
+%apply REAL4Vector *INPUT_REAL4V {REAL4Vector *};
+extern int XLALREAL4ReverseFFT(REAL4Vector *output, COMPLEX8Vector *input, REAL4FFTPlan *plan );
+
+%unignore(XLALREAL4VectorFFT);
+%apply REAL4Vector *INPUT_REAL4V {REAL4Vector *};
+extern int XLALREAL4VectorFFT(REAL4Vector *output, REAL4Vector *input, REAL4FFTPlan *plan );
+
+%unignore(XLALREAL8ForwardFFT);
+%apply COMPLEX16Vector *INPUT_COMPLEX16V {COMPLEX16Vector *};
+%apply REAL8Vector *INPUT_REAL8V {REAL8Vector *};
+extern int XLALREAL8ForwardFFT(COMPLEX16Vector *output, REAL8Vector *input, REAL8FFTPlan *plan );
+
+%unignore(XLALREAL8ReverseFFT);
+%apply COMPLEX16Vector *INPUT_COMPLEX16V {COMPLEX16Vector *};
+%apply REAL8Vector *INPUT_REAL8V {REAL8Vector *};
+extern int XLALREAL8ReverseFFT(REAL8Vector *output, COMPLEX16Vector *input, REAL8FFTPlan *plan );
+
+%unignore(XLALREAL8VectorFFT);
+%apply REAL8Vector *INPUT_REAL8V {REAL8Vector *};
+extern int XLALREAL8VectorFFT(REAL8Vector *output, REAL8Vector *input, REAL8FFTPlan *plan );
+
+// Constructors for all four basic Vector types:
 %unignore(XLALCreateREAL4Vector);
 %apply REAL4Vector *NEWOUT_REAL4V {REAL4Vector *XLALCreateREAL4Vector};
 extern REAL4Vector *XLALCreateREAL4Vector(UINT4 length);

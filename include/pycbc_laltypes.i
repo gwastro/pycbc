@@ -1185,7 +1185,7 @@ YOU HAVE BEEN WARNED!
 // Typemaps for COMPLEX16Vectors:
 
 %typemap(in, fragment="MarshallInputVector") COMPLEX16Vector *INPUT_COMPLEX16V {
-  $1 =(COMPLEX8Vector *) MarshallInputVector($input,NPY_COMPLEX128,"$1_name");
+  $1 =(COMPLEX16Vector *) MarshallInputVector($input,NPY_COMPLEX128,"$1_name");
   if (!($1)) SWIG_fail;
 }
 
@@ -1214,7 +1214,7 @@ YOU HAVE BEEN WARNED!
   $1 = &temp;
  }
 
-%typemap(argout, fragment="BuildArgoutVector") COMPLEX16Vector **ARGOUT_COMPLEX8V {
+%typemap(argout, fragment="BuildArgoutVector") COMPLEX16Vector **ARGOUT_COMPLEX16V {
   $result = BuildReturnFromValue($result,
 				 MarshallOutputVector((GenericVector *) *($1),NPY_COMPLEX128));
   if (!($result)) SWIG_fail;
