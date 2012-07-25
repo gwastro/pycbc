@@ -28,14 +28,14 @@ FrequencySeries.  To add a function do the following:
     typemaps (see below for more details).  In particular, none of the
     LAL Vectors, TimeSeries, or FrequencySeries that it takes as input may have
     their data pointers changed.  Any function which reallocs or resizes its
-    inputs is suspect.
+    inputs will cause such a problem.
 (1) Add the header file in which it is defined to the section beneath the
     comment "Add LAL header files here".  It must be between the %{ and %}.
     The basic headers <lal/LALAtomicDatatypes.h> and <lal/LALDatatypes.h>
     have already been included.
-(2) In the section beneath the comment "Add wrappings here" add at least the
+(2) In the section beneath the comment "Add wrappings here" add the
     following:
-    (a) %unignore(XLALMyFavoriteFunc);
+    (a) %unignore(<name of function>);
     (b) %apply directives for any typemaps FOR ARRAY, TIMESERIES, OR
          FREQUENCYSERIES OBJECTS ONLY that the function accepts as input,
 	 returns as output, or returns as an "output argument". Also ensure
@@ -105,7 +105,7 @@ NewFS, hplus, hcross = pycbc.lalwrap.XLALSomeFunc(inputFS,MyEpoch)
 
 assuming the inputs were of the appropriate type.
 
-The available typemaps are, for each of the four floating-point LAL array-like types,
+The available typemaps, for each of the four floating-point LAL array-like types,
 are the following:
 
 (1) INPUT_<TYPE>{V,TS,FS}    *<TYPE>{Vector,TimeSeries,FrequencySeries}
@@ -121,7 +121,7 @@ appropriate type from pycbc.types.  The _data property of this input argument sh
 C-contiguous, one-dimensional Numpy array of the dtype appropriate to that vector. Note that
 this object may in fact be treated by the XLAL function as "output", with its contents
 modified in place. The elements of _data could have been modified, or also any of the object's
-other properties that correspond to members of the corresponding XLAL struct.
+other properties that correspond to members of the corresponding LAL struct.
 
 The NEWOUT typemaps are for when a function returns a newly-allocated vector
 of that type. This function will be wrapped into one which returns a newly allocated
