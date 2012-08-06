@@ -74,9 +74,9 @@ then to wrap it we would in all likelihood do the following:
     to the header section of the file.
 (2) We add the following lines to the declaration section:
        %unignore(XLALSomeFunc);
-       %apply ARGOUT_REAL4TS {REAL4TimeSeries **};
-       %apply NEWOUT_COMPLEX16FS {COMPLEX16FrequencySeries *XLALSomeFunc};
-       %apply INPUT_COMPLEX16FS {COMPLEX16FrequencySeries *};
+       %apply REAL4TimeSeries **ARGOUT_REAL4TS {REAL4TimeSeries **};
+       %apply COMPLEX16FrequencySeries *NEWOUT_COMPLEX16FS {COMPLEX16FrequencySeries *XLALSomeFunc};
+       %apply COMPLEX16FrequencySeries *INPUT_COMPLEX16FS {COMPLEX16FrequencySeries *};
        extern COMPLEX16FrequencySeries *XLALSomeFunc(REAL4TimeSeries **hplus,
               REAL4TimeSeries **hcross,COMPLEX16FrequencySeries *input,
 	      LIGOTimeGPS MyStart);
