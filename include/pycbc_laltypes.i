@@ -230,6 +230,41 @@ typedef struct {
 
 }
 
+// SWIG does not insert temporary object cleanup code into SWIG_Fail
+// when called with "newout" code.  Thus all of our functions that
+// marshall a newly allocated PyCBC type must destroy the temporary
+// LAL struct created to hold the return; that cannot be done just
+// in the typemap.  So we create common functions to do that here:
+
+%fragment("ClearVect","header",fragment="GenericVector"){
+  void ClearVect(GenericVector *self) {
+    if (self) {
+      free(self);
+    }
+    return;
+  }
+}
+
+%fragment("ClearTS","header",fragment="GenericTS",fragment="ClearVect"){
+  void ClearTS(GenericTS *self){
+    if (self) {
+      ClearVect(self->data);
+      free(self);
+    }
+    return;
+  }
+}
+
+%fragment("ClearFS","header",fragment="GenericFS",fragment="ClearVect"){
+  void ClearFS(GenericFS *self){
+    if (self) {
+      ClearVect(self->data);
+      free(self);
+    }
+    return;
+  }
+}
+
 // The following fragment is used by any of the "ARGOUT" types to build
 // a (possible) tuple of return values, since only in this case can
 // there be more than one (that we must worry about).  It doesn't care
@@ -325,7 +360,7 @@ typedef struct {
 // for pycbc.types.Array those are all that is needed.  Time and frequency
 // series will further append to this dict before calling the constructor.
 
-%fragment("ArrayDictFromVect","header",fragment="GenericVector"){
+%fragment("ArrayDictFromVect","header",fragment="GenericVector",fragment="ClearVect"){
   PyObject *ArrayDictFromVect(GenericVector *vect, int numpy_type){
     PyObject *tmpobj, *constrdict;
     npy_intp dimensions[1];
@@ -336,12 +371,14 @@ typedef struct {
     }
     if ( (vect->length) &&  !(vect->data) ) {
       PyErr_SetString(PyExc_ValueError,"Null data pointer returned for non-zero length object");
+      ClearVect(vect);
       return NULL;
     }
 
     constrdict = PyDict_New();
     if (!constrdict) {
       PyErr_SetString(PyExc_RuntimeError,"Could not create dictionary for return value constructor");
+      ClearVect(vect);
       return NULL;
     }
 
@@ -350,12 +387,14 @@ typedef struct {
     if (!tmpobj) {
       PyErr_SetString(PyExc_RuntimeError,"Could not create output data object");
       Py_DECREF(constrdict); // Dict still empty, so just delete
+      ClearVect(vect);
       return NULL;
     }
     if (PyDict_SetItemString(constrdict,"initial_array",tmpobj)) {
       PyErr_SetString(PyExc_RuntimeError,"Could not add data object to cosntructor dict");
       Py_DECREF(constrdict); // Dict still empty, so just delete
       Py_DECREF(tmpobj);
+      ClearVect(vect);
       return NULL;
     }
     Py_DECREF(tmpobj);
@@ -365,6 +404,7 @@ typedef struct {
       PyErr_SetString(PyExc_RuntimeError,"Could not create output dtype object");
       PyDict_Clear(constrdict);
       Py_DECREF(constrdict);
+      ClearVect(vect);
       return NULL;
     }
     if (PyDict_SetItemString(constrdict,"dtype",tmpobj)) {
@@ -372,6 +412,7 @@ typedef struct {
       PyDict_Clear(constrdict);
       Py_DECREF(constrdict);
       Py_DECREF(tmpobj);
+      ClearVect(vect);
       return NULL;
     }
     Py_DECREF(tmpobj);
@@ -383,6 +424,7 @@ typedef struct {
       PyDict_Clear(constrdict);
       Py_DECREF(constrdict);
       Py_DECREF(tmpobj);
+      ClearVect(vect);
       return NULL;
     }
     Py_DECREF(tmpobj);
@@ -444,8 +486,8 @@ typedef struct {
       return NULL;
     }
 
-    // If we get here, it means that the lal property did behave as expected, so to avoid
-    // an ever-increasing refcount, we must now decrement it:
+    // If we get here, it means that the _swighelper property did behave as expected,
+    // so to avoid an ever-increasing refcount, we must now decrement it:
 
     Py_DECREF(tmpobj);
 
@@ -473,6 +515,7 @@ typedef struct {
     result = PyObject_Call(CBC_Arr,EmptyTuple,constrdict);
     if (!result) {
       PyErr_SetString(PyExc_RuntimeError,"Could not create new instance of pycbc.types.Array");
+      ClearVect(vect);
     }
 
     PyDict_Clear(constrdict);
@@ -580,7 +623,7 @@ typedef struct {
   }
 }
 
-%fragment("MarshallOutputTS","header",fragment="GenericTS",
+%fragment("MarshallOutputTS","header",fragment="GenericTS",fragment="ClearTS",
 	  fragment="ArrayDictFromVect",fragment="EpochFromLAL") {
   PyObject *MarshallOutputTS(PyObject *parentself, GenericTS *ts, const int numpy_type) {
     PyObject *result, *tmpobj, *constrdict;
@@ -592,6 +635,9 @@ typedef struct {
 
     constrdict = ArrayDictFromVect(ts->data,numpy_type);
     if (!constrdict) {
+      // We have already cleared ts->data
+      ts->data = NULL;
+      ClearTS(ts);
       return NULL;
     }
 
@@ -599,12 +645,15 @@ typedef struct {
     if (!tmpobj) { // Error message already set
       PyDict_Clear(constrdict);
       Py_DECREF(constrdict);
+      ClearTS(ts);
+      return NULL;
     }
     if (PyDict_SetItemString(constrdict,"epoch",tmpobj)) {
       PyErr_SetString(PyExc_RuntimeError,"Could not add epoch object to constructor dict");
       PyDict_Clear(constrdict);
       Py_DECREF(constrdict);
       Py_DECREF(tmpobj);
+      ClearTS(ts);
       return NULL;
     }
     Py_DECREF(tmpobj);
@@ -614,6 +663,7 @@ typedef struct {
       PyErr_SetString(PyExc_RuntimeError,"Could not create output delta_t object");
       PyDict_Clear(constrdict);
       Py_DECREF(constrdict);
+      ClearTS(ts);
       return NULL;
     }
     if (PyDict_SetItemString(constrdict,"delta_t",tmpobj)) {
@@ -621,6 +671,7 @@ typedef struct {
       PyDict_Clear(constrdict);
       Py_DECREF(constrdict);
       Py_DECREF(tmpobj);
+      ClearTS(ts);
       return NULL;
     }
     Py_DECREF(tmpobj);
@@ -628,6 +679,7 @@ typedef struct {
     result = PyObject_Call(CBC_TS,EmptyTuple,constrdict);
     if (!result) {
       PyErr_SetString(PyExc_RuntimeError,"Could not create new instance of pycbc.types.TimeSeries");
+      ClearTS(ts);
     }
     // We don't need to do anything else for that last failure, as we'll be returning NULL
     // anyway and we have to do the same cleanup
@@ -638,7 +690,8 @@ typedef struct {
   }
  }
 
-%fragment("MarshallArgoutTS","header",fragment="GenericTS",fragment="EpochFromLAL") {
+%fragment("MarshallArgoutTS","header",fragment="GenericTS",fragment="ClearTS",
+	  fragment="EpochFromLAL") {
   int MarshallArgoutTS(PyObject *parentself, PyObject *argument,
 		       GenericTS *ts, const char *objname) {
     PyObject *tmpobj;
@@ -651,12 +704,14 @@ typedef struct {
     if ( !(ts->data) ) {
       PyErr_Format(PyExc_ValueError,
 		   "Time series argument '%s' had empty data vector after return",objname);
+      ClearTS(ts);
       return 1;
     }
     if ( !(ts->data->data) &&  !(ts->data->length) ) {
       PyErr_Format(PyExc_ValueError,
 		   "Time series argument '%s' had null data pointer returned for non-zero length",
 		   objname);
+      ClearTS(ts);
       return 1;
     }
 
@@ -669,12 +724,14 @@ typedef struct {
 
     tmpobj = EpochFromLAL(parentself,ts->epoch);
     if (!tmpobj) {
+      ClearTS(ts);
       return 1;
     }
     if (PyObject_SetAttrString(argument,"_epoch",tmpobj) == -1) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not modify '%s._epoch'",objname);
       Py_DECREF(tmpobj);
+      ClearTS(ts);
       return 1;
     }
     Py_DECREF(tmpobj);
@@ -684,12 +741,14 @@ typedef struct {
     if (!tmpobj) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not create output delta_t object for argument '%s._delta_t'",objname);
+      ClearTS(ts);
       return 1;
     }
     if (PyObject_SetAttrString(argument,"_delta_t",tmpobj) == -1) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not modify '%s._delta_t'",objname);
       Py_DECREF(tmpobj);
+      ClearTS(ts);
       return 1;
     }
     Py_DECREF(tmpobj);
@@ -813,7 +872,7 @@ typedef struct {
   }
 }
 
-%fragment("MarshallOutputFS","header",fragment="GenericFS",
+%fragment("MarshallOutputFS","header",fragment="GenericFS",fragment="ClearFS",
 	  fragment="ArrayDictFromVect",fragment="EpochFromLAL") {
   PyObject *MarshallOutputFS(PyObject *parentself, GenericFS *fs, const int numpy_type) {
     PyObject *result, *tmpobj, *constrdict;
@@ -825,6 +884,8 @@ typedef struct {
 
     constrdict = ArrayDictFromVect(fs->data,numpy_type);
     if (!constrdict) {
+      fs->data = NULL;
+      ClearFS(fs);
       return NULL;
     }
 
@@ -832,12 +893,15 @@ typedef struct {
     if (!tmpobj) { // Error message already set
       PyDict_Clear(constrdict);
       Py_DECREF(constrdict);
+      ClearFS(fs);
+      return NULL;
     }
     if (PyDict_SetItemString(constrdict,"epoch",tmpobj)) {
       PyErr_SetString(PyExc_RuntimeError,"Could not add epoch object to constructor dict");
       PyDict_Clear(constrdict);
       Py_DECREF(constrdict);
       Py_DECREF(tmpobj);
+      ClearFS(fs);
       return NULL;
     }
     Py_DECREF(tmpobj);
@@ -847,6 +911,7 @@ typedef struct {
       PyErr_SetString(PyExc_RuntimeError,"Could not create output delta_f object");
       PyDict_Clear(constrdict);
       Py_DECREF(constrdict);
+      ClearFS(fs);
       return NULL;
     }
     if (PyDict_SetItemString(constrdict,"delta_f",tmpobj)) {
@@ -854,6 +919,7 @@ typedef struct {
       PyDict_Clear(constrdict);
       Py_DECREF(constrdict);
       Py_DECREF(tmpobj);
+      ClearFS(fs);
       return NULL;
     }
     Py_DECREF(tmpobj);
@@ -868,6 +934,7 @@ typedef struct {
       PyErr_SetString(PyExc_RuntimeError,"Could not create output f0 object");
       PyDict_Clear(constrdict);
       Py_DECREF(constrdict);
+      ClearFS(fs);
       return NULL;
     }
     if (PyDict_SetItemString(constrdict,"f0",tmpobj)) {
@@ -875,6 +942,7 @@ typedef struct {
       PyDict_Clear(constrdict);
       Py_DECREF(constrdict);
       Py_DECREF(tmpobj);
+      ClearFS(fs);
       return NULL;
     }
     Py_DECREF(tmpobj);
@@ -884,6 +952,7 @@ typedef struct {
     result = PyObject_Call(CBC_FS,EmptyTuple,constrdict);
     if (!result) {
       PyErr_SetString(PyExc_RuntimeError,"Could not create new instance of pycbc.types.FrequencySeries");
+      ClearFS(fs);
     }
     // We don't need to do anything else for that last failure, as we'll be returning NULL
     // anyway and we have to do the same cleanup
@@ -894,7 +963,8 @@ typedef struct {
   }
  }
 
-%fragment("MarshallArgoutFS","header",fragment="GenericFS",fragment="EpochFromLAL") {
+%fragment("MarshallArgoutFS","header",fragment="GenericFS",fragment="ClearTS",
+	  fragment="EpochFromLAL") {
   int MarshallArgoutFS(PyObject *parentself, PyObject *argument,
 		       GenericFS *fs, const char *objname) {
     PyObject *tmpobj;
@@ -907,12 +977,14 @@ typedef struct {
     if ( !(fs->data) ) {
       PyErr_Format(PyExc_ValueError,
 		   "Frequency series argument '%s' had empty data vector after return",objname);
+      ClearFS(fs);
       return 1;
     }
     if ( !(fs->data->data) &&  !(fs->data->length) ) {
       PyErr_Format(PyExc_ValueError,
 		   "Frequency series argument '%s' had null data pointer returned for non-zero length",
 		   objname);
+      ClearFS(fs);
       return 1;
     }
 
@@ -924,12 +996,14 @@ typedef struct {
     // The _epoch attribute:
     tmpobj = EpochFromLAL(parentself,fs->epoch);
     if (!tmpobj) {
+      ClearFS(fs);
       return 1;
     }
     if (PyObject_SetAttrString(argument,"_epoch",tmpobj) == -1) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not modify '%s._epoch'",objname);
       Py_DECREF(tmpobj);
+      ClearFS(fs);
       return 1;
     }
     Py_DECREF(tmpobj);
@@ -940,12 +1014,14 @@ typedef struct {
     if (!tmpobj) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not create output delta_f object for argument '%s._delta_f'",objname);
+      ClearFS(fs);
       return 1;
     }
     if (PyObject_SetAttrString(argument,"_delta_f",tmpobj) == -1) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not modify '%s._delta_f'",objname);
       Py_DECREF(tmpobj);
+      ClearFS(fs);
       return 1;
     }
     Py_DECREF(tmpobj);
@@ -960,12 +1036,14 @@ typedef struct {
     if (!tmpobj) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not create output f0 object for argument '%s._f0'",objname);
+      ClearFS(fs);
       return 1;
     }
     if (PyObject_SetAttrString(argument,"_f0",tmpobj) == -1) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not modify '%s._f0'",objname);
       Py_DECREF(tmpobj);
+      ClearFS(fs);
       return 1;
     }
     Py_DECREF(tmpobj);
@@ -1063,38 +1141,36 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(freearg) REAL4Vector *INPUT_REAL4V {
-  if ($1) {
-    free((REAL4Vector *) $1);
-  }
- }
+  ClearVect((GenericVector *) $1);
+}
 
 %typemap(out, fragment="MarshallOutputVector") REAL4Vector *NEWOUT_REAL4V{
   $result = MarshallOutputVector((GenericVector *) $1,NPY_FLOAT32);
   if (!($result)) SWIG_fail;
- }
+}
 
 %typemap(newfree) REAL4Vector *NEWOUT_REAL4V{
-  free( (REAL4Vector *) $1);
- }
+  ClearVect((GenericVector *) $1);
+}
 
 %typemap(out) REAL4Vector *NONEOUT_REAL4V{
   Py_INCREF(Py_None);
   $result = Py_None;
- }
+}
 
 %typemap(in,numinputs=0) REAL4Vector **ARGOUT_REAL4V (REAL4Vector *temp) {
   temp = NULL;
   $1 = &temp;
- }
+}
 
 %typemap(argout, fragment="BuildArgoutVector") REAL4Vector **ARGOUT_REAL4V {
   $result = BuildReturnFromValue($result,
 				 MarshallOutputVector((GenericVector *) *($1),NPY_FLOAT32));
   if (!($result)) SWIG_fail;
- }
+}
 
 %typemap(newfree) REAL4Vector **ARGOUT_REAL4V {
-  free( (REAL4Vector *) *($1));
+  ClearVect((GenericVector *) *($1));
 }
 
 
@@ -1103,13 +1179,11 @@ YOU HAVE BEEN WARNED!
 %typemap(in, fragment="MarshallInputVector") REAL8Vector *INPUT_REAL8V {
   $1 =(REAL8Vector *) MarshallInputVector($input,NPY_FLOAT64,"$1_name");
   if (!($1)) SWIG_fail;
- }
+}
 
 %typemap(freearg) REAL8Vector *INPUT_REAL8V {
-  if ($1) {
-    free((REAL8Vector *) $1);
-  }
- }
+  ClearVect((GenericVector *) $1);
+}
 
 %typemap(out, fragment="MarshallOutputVector") REAL8Vector *NEWOUT_REAL8V{
   $result = MarshallOutputVector((GenericVector *) $1,NPY_FLOAT64);
@@ -1117,8 +1191,8 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(newfree) REAL8Vector *NEWOUT_REAL8V{
-  free( (REAL8Vector *) $1);
- }
+  ClearVect((GenericVector *) $1);
+}
 
 %typemap(out) REAL8Vector *NONEOUT_REAL8V{
   Py_INCREF(Py_None);
@@ -1128,16 +1202,16 @@ YOU HAVE BEEN WARNED!
 %typemap(in,numinputs=0) REAL8Vector **ARGOUT_REAL8V (REAL8Vector *temp) {
   temp = NULL;
   $1 = &temp;
- }
+}
 
 %typemap(argout, fragment="BuildArgoutVector") REAL8Vector **ARGOUT_REAL8V {
   $result = BuildReturnFromValue($result,
 				 MarshallOutputVector((GenericVector *) *($1),NPY_FLOAT64));
   if (!($result)) SWIG_fail;
- }
+}
 
 %typemap(newfree) REAL8Vector **ARGOUT_REAL8V {
-  free( (REAL8Vector *) *($1));
+  ClearVect((GenericVector *) *($1));
 }
 
 // Typemaps for COMPLEX8Vectors:
@@ -1148,38 +1222,36 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(freearg) COMPLEX8Vector *INPUT_COMPLEX8V {
-  if ($1) {
-    free((COMPLEX8Vector *) $1);
-  }
+  ClearVect((GenericVector *) $1);
 }
 
 %typemap(out, fragment="MarshallOutputVector") COMPLEX8Vector *NEWOUT_COMPLEX8V{
   $result = MarshallOutputVector((GenericVector *) $1,NPY_COMPLEX64);
   if (!($result)) SWIG_fail;
- }
+}
 
 %typemap(newfree) COMPLEX8Vector *NEWOUT_COMPLEX8V{
-  free( (COMPLEX8Vector *) $1);
- }
+  ClearVect((GenericVector *) $1);
+}
 
 %typemap(out) COMPLEX8Vector *NONEOUT_COMPLEX8V{
   Py_INCREF(Py_None);
   $result = Py_None;
- }
+}
 
 %typemap(in,numinputs=0) COMPLEX8Vector **ARGOUT_COMPLEX8V (COMPLEX8Vector *temp) {
   temp = NULL;
   $1 = &temp;
- }
+}
 
 %typemap(argout, fragment="BuildArgoutVector") COMPLEX8Vector **ARGOUT_COMPLEX8V {
   $result = BuildReturnFromValue($result,
 				 MarshallOutputVector((GenericVector *) *($1),NPY_COMPLEX64));
   if (!($result)) SWIG_fail;
- }
+}
 
 %typemap(newfree) COMPLEX8Vector **ARGOUT_COMPLEX8V {
-  free( (COMPLEX8Vector *) *($1));
+  ClearVect((GenericVector *) *($1));
 }
 
 // Typemaps for COMPLEX16Vectors:
@@ -1190,9 +1262,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(freearg) COMPLEX16Vector *INPUT_COMPLEX16V {
-  if ($1) {
-    free((COMPLEX16Vector *) $1);
-  }
+  ClearVect((GenericVector *) $1);
 }
 
 %typemap(out, fragment="MarshallOutputVector") COMPLEX16Vector *NEWOUT_COMPLEX16V{
@@ -1201,27 +1271,27 @@ YOU HAVE BEEN WARNED!
  }
 
 %typemap(newfree) COMPLEX16Vector *NEWOUT_COMPLEX16V{
-  free( (COMPLEX16Vector *) $1);
- }
+  ClearVect((GenericVector *) $1);
+}
 
 %typemap(out) COMPLEX16Vector *NONEOUT_COMPLEX16V{
   Py_INCREF(Py_None);
   $result = Py_None;
- }
+}
 
 %typemap(in,numinputs=0) COMPLEX16Vector **ARGOUT_COMPLEX16V (COMPLEX16Vector *temp) {
   temp = NULL;
   $1 = &temp;
- }
+}
 
 %typemap(argout, fragment="BuildArgoutVector") COMPLEX16Vector **ARGOUT_COMPLEX16V {
   $result = BuildReturnFromValue($result,
 				 MarshallOutputVector((GenericVector *) *($1),NPY_COMPLEX128));
   if (!($result)) SWIG_fail;
- }
+}
 
 %typemap(newfree) COMPLEX16Vector **ARGOUT_COMPLEX16V {
-  free( (COMPLEX16Vector *) *($1));
+  ClearVect((GenericVector *) *($1));
 }
 
 // Typemaps for time and frequency series.  Note that those calling the functions
@@ -1242,12 +1312,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(freearg) REAL4TimeSeries *INPUT_REAL4TS {
-  if ($1) {
-    if ( ((REAL4TimeSeries *)$1)->data) {
-      free ((REAL4Vector *) ((REAL4TimeSeries *)$1)->data);
-    }
-    free((REAL4TimeSeries *) $1);
-  }
+  ClearTS($1);
 }
 
 %typemap(out, fragment="MarshallOutputTS") REAL4TimeSeries *NEWOUT_REAL4TS{
@@ -1256,8 +1321,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(newfree) REAL4TimeSeries *NEWOUT_REAL4TS{
-  if ( ((REAL4TimeSeries *) $1)->data) free( (REAL4Vector *)((REAL4TimeSeries *) $1)->data);
-  free( (REAL4TimeSeries *) $1);
+  ClearTS($1);
 }
 
 %typemap(out) REAL4TimeSeries *NONEOUT_REAL4TS{
@@ -1288,12 +1352,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(freearg) REAL8TimeSeries *INPUT_REAL8TS {
-  if ($1) {
-    if ( ((REAL8TimeSeries *)$1)->data) {
-      free ((REAL8Vector *) ((REAL8TimeSeries *)$1)->data);
-    }
-    free((REAL8TimeSeries *) $1);
-  }
+  ClearTS($1);
 }
 
 %typemap(out, fragment="MarshallOutputTS") REAL8TimeSeries *NEWOUT_REAL8TS{
@@ -1302,8 +1361,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(newfree) REAL8TimeSeries *NEWOUT_REAL8TS{
-  if ( ((REAL8TimeSeries *) $1)->data) free( (REAL8Vector *)((REAL8TimeSeries *) $1)->data);
-  free( (REAL8TimeSeries *) $1);
+  ClearTS($1);
 }
 
 %typemap(out) REAL8TimeSeries *NONEOUT_REAL8TS{
@@ -1335,12 +1393,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(freearg) COMPLEX8TimeSeries *INPUT_COMPLEX8TS {
-  if ($1) {
-    if ( ((COMPLEX8TimeSeries *)$1)->data) {
-      free ((COMPLEX8Vector *) ((COMPLEX8TimeSeries *)$1)->data);
-    }
-    free((COMPLEX8TimeSeries *) $1);
-  }
+  ClearTS($1);
 }
 
 %typemap(out, fragment="MarshallOutputTS") COMPLEX8TimeSeries *NEWOUT_COMPLEX8TS{
@@ -1349,8 +1402,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(newfree) COMPLEX8TimeSeries *NEWOUT_COMPLEX8TS{
-  if ( ((COMPLEX8TimeSeries *) $1)->data) free( (COMPLEX8Vector *)((COMPLEX8TimeSeries *) $1)->data);
-  free( (COMPLEX8TimeSeries *) $1);
+  ClearTS($1);
 }
 
 %typemap(out) COMPLEX8TimeSeries *NONEOUT_COMPLEX8TS{
@@ -1381,12 +1433,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(freearg) COMPLEX16TimeSeries *INPUT_COMPLEX16TS {
-  if ($1) {
-    if ( ((COMPLEX16TimeSeries *)$1)->data) {
-      free ((COMPLEX16Vector *) ((COMPLEX16TimeSeries *)$1)->data);
-    }
-    free((COMPLEX16TimeSeries *) $1);
-  }
+  ClearTS($1);
 }
 
 %typemap(out, fragment="MarshallOutputTS") COMPLEX16TimeSeries *NEWOUT_COMPLEX16TS{
@@ -1395,8 +1442,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(newfree) COMPLEX16TimeSeries *NEWOUT_COMPLEX16TS{
-  if ( ((COMPLEX16TimeSeries *) $1)->data) free( (COMPLEX16Vector *)((COMPLEX16TimeSeries *) $1)->data);
-  free( (COMPLEX16TimeSeries *) $1);
+  ClearTS($1);
 }
 
 %typemap(out) COMPLEX16TimeSeries *NONEOUT_COMPLEX16TS{
@@ -1427,12 +1473,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(freearg) REAL4FrequencySeries *INPUT_REAL4FS {
-  if ($1) {
-    if ( ((REAL4FrequencySeries *)$1)->data) {
-      free ((REAL4Vector *) ((REAL4FrequencySeries *)$1)->data);
-    }
-    free((REAL4FrequencySeries *) $1);
-  }
+  ClearFS($1);
 }
 
 %typemap(out, fragment="MarshallOutputFS") REAL4FrequencySeries *NEWOUT_REAL4FS{
@@ -1441,8 +1482,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(newfree) REAL4FrequencySeries *NEWOUT_REAL4FS{
-  if ( ((REAL4FrequencySeries *) $1)->data) free( (REAL4Vector *)((REAL4FrequencySeries *) $1)->data);
-  free( (REAL4FrequencySeries *) $1);
+  ClearFS($1);
 }
 
 %typemap(out) REAL4FrequencySeries *NONEOUT_REAL4FS{
@@ -1473,12 +1513,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(freearg) REAL8FrequencySeries *INPUT_REAL8FS {
-  if ($1) {
-    if ( ((REAL8FrequencySeries *)$1)->data) {
-      free ((REAL8Vector *) ((REAL8FrequencySeries *)$1)->data);
-    }
-    free((REAL8FrequencySeries *) $1);
-  }
+  ClearFS($1);
 }
 
 %typemap(out, fragment="MarshallOutputFS") REAL8FrequencySeries *NEWOUT_REAL8FS{
@@ -1487,8 +1522,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(newfree) REAL8FrequencySeries *NEWOUT_REAL8FS{
-  if ( ((REAL8FrequencySeries *) $1)->data) free( (REAL8Vector *)((REAL8FrequencySeries *) $1)->data);
-  free( (REAL8FrequencySeries *) $1);
+  ClearFS($1);
 }
 
 %typemap(out) REAL8FrequencySeries *NONEOUT_REAL8FS{
@@ -1520,12 +1554,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(freearg) COMPLEX8FrequencySeries *INPUT_COMPLEX8FS {
-  if ($1) {
-    if ( ((COMPLEX8FrequencySeries *)$1)->data) {
-      free ((COMPLEX8Vector *) ((COMPLEX8FrequencySeries *)$1)->data);
-    }
-    free((COMPLEX8FrequencySeries *) $1);
-  }
+  ClearFS($1);
 }
 
 %typemap(out, fragment="MarshallOutputFS") COMPLEX8FrequencySeries *NEWOUT_COMPLEX8FS{
@@ -1534,8 +1563,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(newfree) COMPLEX8FrequencySeries *NEWOUT_COMPLEX8FS{
-  if ( ((COMPLEX8FrequencySeries *) $1)->data) free( (COMPLEX8Vector *)((COMPLEX8FrequencySeries *) $1)->data);
-  free( (COMPLEX8FrequencySeries *) $1);
+  ClearFS($1);
 }
 
 %typemap(out) COMPLEX8FrequencySeries *NONEOUT_COMPLEX8FS{
@@ -1566,12 +1594,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(freearg) COMPLEX16FrequencySeries *INPUT_COMPLEX16FS {
-  if ($1) {
-    if ( ((COMPLEX16FrequencySeries *)$1)->data) {
-      free ((COMPLEX16Vector *) ((COMPLEX16FrequencySeries *)$1)->data);
-    }
-    free((COMPLEX16FrequencySeries *) $1);
-  }
+  ClearFS($1);
 }
 
 %typemap(out, fragment="MarshallOutputFS") COMPLEX16FrequencySeries *NEWOUT_COMPLEX16FS{
@@ -1580,8 +1603,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(newfree) COMPLEX16FrequencySeries *NEWOUT_COMPLEX16FS{
-  if ( ((COMPLEX16FrequencySeries *) $1)->data) free( (COMPLEX16Vector *)((COMPLEX16FrequencySeries *) $1)->data);
-  free( (COMPLEX16FrequencySeries *) $1);
+  ClearFS($1);
 }
 
 %typemap(out) COMPLEX16FrequencySeries *NONEOUT_COMPLEX16FS{
