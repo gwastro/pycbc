@@ -1312,7 +1312,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(freearg) REAL4TimeSeries *INPUT_REAL4TS {
-  ClearTS($1);
+  ClearTS((GenericTS *) $1);
 }
 
 %typemap(out, fragment="MarshallOutputTS") REAL4TimeSeries *NEWOUT_REAL4TS{
@@ -1321,7 +1321,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(newfree) REAL4TimeSeries *NEWOUT_REAL4TS{
-  ClearTS($1);
+  ClearTS((GenericTS *) $1);
 }
 
 %typemap(out) REAL4TimeSeries *NONEOUT_REAL4TS{
@@ -1340,6 +1340,10 @@ YOU HAVE BEEN WARNED!
   if (!($result)) SWIG_fail;
 }
 
+%typemap(newfree) REAL4TimeSeries **ARGOUT_REAL4TS {
+  ClearTS((GenericTS *) *($1));
+}
+
 // Typemaps for REAL8 Time Series
 
 %typemap(in, fragment="MarshallInputTS") REAL8TimeSeries *INPUT_REAL8TS {
@@ -1352,7 +1356,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(freearg) REAL8TimeSeries *INPUT_REAL8TS {
-  ClearTS($1);
+  ClearTS((GenericTS *) $1);
 }
 
 %typemap(out, fragment="MarshallOutputTS") REAL8TimeSeries *NEWOUT_REAL8TS{
@@ -1361,7 +1365,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(newfree) REAL8TimeSeries *NEWOUT_REAL8TS{
-  ClearTS($1);
+  ClearTS((GenericTS *) $1);
 }
 
 %typemap(out) REAL8TimeSeries *NONEOUT_REAL8TS{
@@ -1380,6 +1384,10 @@ YOU HAVE BEEN WARNED!
   if (!($result)) SWIG_fail;
 }
 
+%typemap(newfree) REAL8TimeSeries **ARGOUT_REAL8TS {
+  ClearTS((GenericTS *) *($1));
+}
+
 
 // Typemaps for COMPLEX8 Time Series
 
@@ -1393,7 +1401,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(freearg) COMPLEX8TimeSeries *INPUT_COMPLEX8TS {
-  ClearTS($1);
+  ClearTS((GenericTS *) $1);
 }
 
 %typemap(out, fragment="MarshallOutputTS") COMPLEX8TimeSeries *NEWOUT_COMPLEX8TS{
@@ -1402,7 +1410,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(newfree) COMPLEX8TimeSeries *NEWOUT_COMPLEX8TS{
-  ClearTS($1);
+  ClearTS((GenericTS *) $1);
 }
 
 %typemap(out) COMPLEX8TimeSeries *NONEOUT_COMPLEX8TS{
@@ -1421,6 +1429,11 @@ YOU HAVE BEEN WARNED!
   if (!($result)) SWIG_fail;
 }
 
+%typemap(newfree) COMPLEX8TimeSeries **ARGOUT_COMPLEX8TS {
+  ClearTS((GenericTS *) *($1));
+}
+
+
 // Typemaps for COMPLEX16 Time Series
 
 %typemap(in, fragment="MarshallInputTS") COMPLEX16TimeSeries *INPUT_COMPLEX16TS {
@@ -1433,7 +1446,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(freearg) COMPLEX16TimeSeries *INPUT_COMPLEX16TS {
-  ClearTS($1);
+  ClearTS((GenericTS *) $1);
 }
 
 %typemap(out, fragment="MarshallOutputTS") COMPLEX16TimeSeries *NEWOUT_COMPLEX16TS{
@@ -1442,7 +1455,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(newfree) COMPLEX16TimeSeries *NEWOUT_COMPLEX16TS{
-  ClearTS($1);
+  ClearTS((GenericTS *) $1);
 }
 
 %typemap(out) COMPLEX16TimeSeries *NONEOUT_COMPLEX16TS{
@@ -1461,6 +1474,10 @@ YOU HAVE BEEN WARNED!
   if (!($result)) SWIG_fail;
 }
 
+%typemap(newfree) COMPLEX16TimeSeries **ARGOUT_COMPLEX16TS {
+  ClearTS((GenericTS *) *($1));
+}
+
 // Typemaps for REAL4 Frequency Series
 
 %typemap(in, fragment="MarshallInputFS") REAL4FrequencySeries *INPUT_REAL4FS {
@@ -1473,7 +1490,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(freearg) REAL4FrequencySeries *INPUT_REAL4FS {
-  ClearFS($1);
+  ClearFS((GenericFS *) $1);
 }
 
 %typemap(out, fragment="MarshallOutputFS") REAL4FrequencySeries *NEWOUT_REAL4FS{
@@ -1482,7 +1499,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(newfree) REAL4FrequencySeries *NEWOUT_REAL4FS{
-  ClearFS($1);
+  ClearFS((GenericFS *) $1);
 }
 
 %typemap(out) REAL4FrequencySeries *NONEOUT_REAL4FS{
@@ -1501,6 +1518,10 @@ YOU HAVE BEEN WARNED!
   if (!($result)) SWIG_fail;
 }
 
+%typemap(newfree) REAL4FrequencySeries **ARGOUT_REAL4FS {
+  ClearFS((GenericFS *) *($1));
+}
+
 // Typemaps for REAL8 Frequency Series
 
 %typemap(in, fragment="MarshallInputFS") REAL8FrequencySeries *INPUT_REAL8FS {
@@ -1513,7 +1534,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(freearg) REAL8FrequencySeries *INPUT_REAL8FS {
-  ClearFS($1);
+  ClearFS((GenericFS *) $1);
 }
 
 %typemap(out, fragment="MarshallOutputFS") REAL8FrequencySeries *NEWOUT_REAL8FS{
@@ -1522,7 +1543,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(newfree) REAL8FrequencySeries *NEWOUT_REAL8FS{
-  ClearFS($1);
+  ClearFS((GenericFS *) $1);
 }
 
 %typemap(out) REAL8FrequencySeries *NONEOUT_REAL8FS{
@@ -1541,6 +1562,10 @@ YOU HAVE BEEN WARNED!
   if (!($result)) SWIG_fail;
 }
 
+%typemap(newfree) REAL8FrequencySeries **ARGOUT_REAL8FS {
+  ClearFS((GenericFS *) *($1));
+}
+
 
 // Typemaps for COMPLEX8 Frequency Series
 
@@ -1554,7 +1579,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(freearg) COMPLEX8FrequencySeries *INPUT_COMPLEX8FS {
-  ClearFS($1);
+  ClearFS((GenericFS *) $1);
 }
 
 %typemap(out, fragment="MarshallOutputFS") COMPLEX8FrequencySeries *NEWOUT_COMPLEX8FS{
@@ -1563,7 +1588,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(newfree) COMPLEX8FrequencySeries *NEWOUT_COMPLEX8FS{
-  ClearFS($1);
+  ClearFS((GenericFS *) $1);
 }
 
 %typemap(out) COMPLEX8FrequencySeries *NONEOUT_COMPLEX8FS{
@@ -1582,6 +1607,10 @@ YOU HAVE BEEN WARNED!
   if (!($result)) SWIG_fail;
 }
 
+%typemap(newfree) COMPLEX8FrequencySeries **ARGOUT_COMPLEX8FS {
+  ClearFS((GenericFS *) *($1));
+}
+
 // Typemaps for COMPLEX16 Frequency Series
 
 %typemap(in, fragment="MarshallInputFS") COMPLEX16FrequencySeries *INPUT_COMPLEX16FS {
@@ -1594,7 +1623,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(freearg) COMPLEX16FrequencySeries *INPUT_COMPLEX16FS {
-  ClearFS($1);
+  ClearFS((GenericFS *) $1);
 }
 
 %typemap(out, fragment="MarshallOutputFS") COMPLEX16FrequencySeries *NEWOUT_COMPLEX16FS{
@@ -1603,7 +1632,7 @@ YOU HAVE BEEN WARNED!
 }
 
 %typemap(newfree) COMPLEX16FrequencySeries *NEWOUT_COMPLEX16FS{
-  ClearFS($1);
+  ClearFS((GenericFS *) $1);
 }
 
 %typemap(out) COMPLEX16FrequencySeries *NONEOUT_COMPLEX16FS{
@@ -1620,6 +1649,10 @@ YOU HAVE BEEN WARNED!
   $result = BuildReturnFromValue($result,
 				 MarshallOutputFS(self,(GenericFS *) *($1),NPY_COMPLEX128));
   if (!($result)) SWIG_fail;
+}
+
+%typemap(newfree) COMPLEX16FrequencySeries **ARGOUT_COMPLEX16FS {
+  ClearFS((GenericFS *) *($1));
 }
 
 // The following statment is more intuitive for developers to use than the direct
