@@ -301,6 +301,25 @@ typedef struct {
     GenericVector *returnptr;
     PyObject *tmpobj;
 
+    tmpobj = PyObject_GetAttrString(obj,"_swighelper");
+
+    // We explicitly access the '_swighelper' attribute of the argument, to force it onto
+    // the CPU (if it was on the GPU and the current scheme is CPU) or to raise an
+    // exception (if the current scheme is GPU).
+
+    // We should have a '_swighelper' attribute, and it should point back to our argument, or
+    // there's a problem.
+
+    if (tmpobj != obj) {
+      PyErr_Format(PyExc_TypeError,
+		   "Argument '%s' has no '_swighelper' attribute---it is not a PyCBC type",
+		   objname);
+      Py_XDECREF(tmpobj);
+      return NULL;
+    }
+
+    Py_DECREF(tmpobj);
+
     tmpobj = PyObject_GetAttrString(obj,"_data");
     if (!tmpobj){
       PyErr_Format(PyExc_TypeError,
@@ -469,28 +488,6 @@ typedef struct {
     GenericVector *returnptr;
     PyObject *tmpobj;
 
-    tmpobj = PyObject_GetAttrString(obj,"_swighelper");
-
-    // We explicitly access the '_swighelper' attribute of the argument, to force it onto
-    // the CPU (if it was on the GPU and the current scheme is CPU) or to raise an
-    // exception (if the current scheme is GPU).
-
-    // We should have a '_swighelper' attribute, and it should point back to our argument, or
-    // there's a problem.
-
-    if (tmpobj != obj) {
-      PyErr_Format(PyExc_TypeError,
-		   "Argument '%s' has no '_swighelper' attribute---it is not an instance of pycbc.types.Array",
-		   objname);
-      Py_XDECREF(tmpobj);
-      return NULL;
-    }
-
-    // If we get here, it means that the _swighelper property did behave as expected,
-    // so to avoid an ever-increasing refcount, we must now decrement it:
-
-    Py_DECREF(tmpobj);
-
     if (PyObject_IsInstance(obj,CBC_Arr) !=1){
       PyErr_Format(PyExc_TypeError,
 		   "Argument '%s' must be an instance of pycbc.types.Array or subclass", objname);
@@ -533,28 +530,6 @@ typedef struct {
     GenericTS *returnptr;
     PyObject *tmpobj;
     LIGOTimeGPS *epoch_ptr;
-
-    tmpobj = PyObject_GetAttrString(obj,"_swighelper");
-
-    // We explicitly access the '_swighelper' attribute of the argument, to force it onto
-    // the CPU (if it was on the GPU and the current scheme is CPU) or to raise an
-    // exception (if the current scheme is GPU).
-
-    // We should have a '_swighelper' attribute, and it should point back to our argument, or
-    // there's a problem.
-
-    if (tmpobj != obj) {
-      PyErr_Format(PyExc_TypeError,
-		   "Argument '%s' has wrong or missing '_swighelper' attribute---it is not an instance of pycbc.types.TimeSeries",
-		   objname);
-      Py_XDECREF(tmpobj);
-      return NULL;
-    }
-
-    // If we get here, it means that the lal property did behave as expected, so to avoid
-    // an ever-increasing refcount, we must now decrement it:
-
-    Py_DECREF(tmpobj);
 
     if (PyObject_IsInstance(obj,CBC_TS) !=1){
       PyErr_Format(PyExc_TypeError,
@@ -760,24 +735,6 @@ typedef struct {
     GenericFS *returnptr;
     PyObject *tmpobj;
     LIGOTimeGPS *epoch_ptr;
-
-    tmpobj = PyObject_GetAttrString(obj,"_swighelper");
-
-    // We explicitly access the '_swighelper' attribute of the argument, to force it onto
-    // the CPU (if it was on the GPU and the current scheme is CPU) or to raise an
-    // exception (if the current scheme is GPU).
-
-    // We should have a '_swighelper' attribute, and it should point back to our argument, or
-    // there's a problem.
-
-    if (tmpobj != obj) {
-      PyErr_Format(PyExc_TypeError,
-		   "Argument '%s' has wrong or missing '_swighelper' attribute---it is not an instance of pycbc.types.FrequencySeries",
-		   objname);
-      Py_XDECREF(tmpobj);
-      return NULL;
-    }
-    Py_DECREF(tmpobj);
 
     if (PyObject_IsInstance(obj,CBC_FS) !=1){
       PyErr_Format(PyExc_TypeError,
