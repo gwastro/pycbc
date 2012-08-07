@@ -704,14 +704,12 @@ typedef struct {
     if ( !(ts->data) ) {
       PyErr_Format(PyExc_ValueError,
 		   "Time series argument '%s' had empty data vector after return",objname);
-      ClearTS(ts);
       return 1;
     }
     if ( !(ts->data->data) &&  !(ts->data->length) ) {
       PyErr_Format(PyExc_ValueError,
 		   "Time series argument '%s' had null data pointer returned for non-zero length",
 		   objname);
-      ClearTS(ts);
       return 1;
     }
 
@@ -724,14 +722,12 @@ typedef struct {
 
     tmpobj = EpochFromLAL(parentself,ts->epoch);
     if (!tmpobj) {
-      ClearTS(ts);
       return 1;
     }
     if (PyObject_SetAttrString(argument,"_epoch",tmpobj) == -1) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not modify '%s._epoch'",objname);
       Py_DECREF(tmpobj);
-      ClearTS(ts);
       return 1;
     }
     Py_DECREF(tmpobj);
@@ -741,14 +737,12 @@ typedef struct {
     if (!tmpobj) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not create output delta_t object for argument '%s._delta_t'",objname);
-      ClearTS(ts);
       return 1;
     }
     if (PyObject_SetAttrString(argument,"_delta_t",tmpobj) == -1) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not modify '%s._delta_t'",objname);
       Py_DECREF(tmpobj);
-      ClearTS(ts);
       return 1;
     }
     Py_DECREF(tmpobj);
@@ -977,14 +971,12 @@ typedef struct {
     if ( !(fs->data) ) {
       PyErr_Format(PyExc_ValueError,
 		   "Frequency series argument '%s' had empty data vector after return",objname);
-      ClearFS(fs);
       return 1;
     }
     if ( !(fs->data->data) &&  !(fs->data->length) ) {
       PyErr_Format(PyExc_ValueError,
 		   "Frequency series argument '%s' had null data pointer returned for non-zero length",
 		   objname);
-      ClearFS(fs);
       return 1;
     }
 
@@ -996,14 +988,12 @@ typedef struct {
     // The _epoch attribute:
     tmpobj = EpochFromLAL(parentself,fs->epoch);
     if (!tmpobj) {
-      ClearFS(fs);
       return 1;
     }
     if (PyObject_SetAttrString(argument,"_epoch",tmpobj) == -1) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not modify '%s._epoch'",objname);
       Py_DECREF(tmpobj);
-      ClearFS(fs);
       return 1;
     }
     Py_DECREF(tmpobj);
@@ -1014,14 +1004,12 @@ typedef struct {
     if (!tmpobj) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not create output delta_f object for argument '%s._delta_f'",objname);
-      ClearFS(fs);
       return 1;
     }
     if (PyObject_SetAttrString(argument,"_delta_f",tmpobj) == -1) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not modify '%s._delta_f'",objname);
       Py_DECREF(tmpobj);
-      ClearFS(fs);
       return 1;
     }
     Py_DECREF(tmpobj);
@@ -1036,14 +1024,12 @@ typedef struct {
     if (!tmpobj) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not create output f0 object for argument '%s._f0'",objname);
-      ClearFS(fs);
       return 1;
     }
     if (PyObject_SetAttrString(argument,"_f0",tmpobj) == -1) {
       PyErr_Format(PyExc_RuntimeError,
 		   "Could not modify '%s._f0'",objname);
       Py_DECREF(tmpobj);
-      ClearFS(fs);
       return 1;
     }
     Py_DECREF(tmpobj);
