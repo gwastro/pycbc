@@ -486,7 +486,6 @@ typedef struct {
 %fragment("MarshallInputVector","header",fragment="VectFromPyCBCType") {
   GenericVector *MarshallInputVector(PyObject *obj, const int numpy_type, const char *objname) {
     GenericVector *returnptr;
-    PyObject *tmpobj;
 
     if (PyObject_IsInstance(obj,CBC_Arr) !=1){
       PyErr_Format(PyExc_TypeError,
