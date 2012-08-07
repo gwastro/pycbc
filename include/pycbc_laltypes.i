@@ -180,7 +180,7 @@ between C and Python.
 %fragment("SWIG_From_int");
 
 
-%fragment("GenericVector","header") {
+%fragment("GenericV","header") {
 // The following struct is just so we can
 // sanity check some output vectors without
 // knowing exactly what datatype they are.
@@ -190,11 +190,11 @@ between C and Python.
 typedef struct {
   UINT4 length;
   void *data;
-} GenericVector;
+} GenericV;
 
 }
 
-%fragment("GenericTS","header",fragment="GenericVector") {
+%fragment("GenericTS","header",fragment="GenericV") {
 // The following struct is just so we can
 // sanity check some output time series without
 // knowing exactly what datatype they are.
@@ -207,12 +207,12 @@ typedef struct {
   REAL8         deltaT;
   REAL8         f0;
   LALUnit       sampleUnits;
-  GenericVector *data;
+  GenericV *data;
 } GenericTS;
 
 }
 
-%fragment("GenericFS","header",fragment="GenericVector") {
+%fragment("GenericFS","header",fragment="GenericV") {
 // The following struct is just so we can
 // sanity check some output freq. series without
 // knowing exactly what datatype they are.
@@ -225,7 +225,7 @@ typedef struct {
   REAL8         f0;
   REAL8         deltaF;
   LALUnit       sampleUnits;
-  GenericVector *data;
+  GenericV *data;
 } GenericFS;
 
 }
@@ -236,8 +236,8 @@ typedef struct {
 // LAL struct created to hold the return; that cannot be done just
 // in the typemap.  So we create common functions to do that here:
 
-%fragment("ClearVect","header",fragment="GenericVector"){
-  void ClearVect(GenericVector *self) {
+%fragment("ClearV","header",fragment="GenericV"){
+  void ClearV(GenericV *self) {
     if (self) {
       free(self);
     }
@@ -245,20 +245,20 @@ typedef struct {
   }
 }
 
-%fragment("ClearTS","header",fragment="GenericTS",fragment="ClearVect"){
+%fragment("ClearTS","header",fragment="GenericTS",fragment="ClearV"){
   void ClearTS(GenericTS *self){
     if (self) {
-      ClearVect(self->data);
+      ClearV(self->data);
       free(self);
     }
     return;
   }
 }
 
-%fragment("ClearFS","header",fragment="GenericFS",fragment="ClearVect"){
+%fragment("ClearFS","header",fragment="GenericFS",fragment="ClearV"){
   void ClearFS(GenericFS *self){
     if (self) {
-      ClearVect(self->data);
+      ClearV(self->data);
       free(self);
     }
     return;
@@ -296,9 +296,9 @@ typedef struct {
 // that must be managed in the same way, we separate that handling into the following
 // function, called by all "MarshallInput" functions.
 
-%fragment("VectFromPyCBCType","header",fragment="GenericVector"){
-  GenericVector *VectFromPyCBCType(PyObject *obj, const int numpy_type, const char *objname){
-    GenericVector *returnptr;
+%fragment("VectFromPyCBCType","header",fragment="GenericV"){
+  GenericV *VectFromPyCBCType(PyObject *obj, const int numpy_type, const char *objname){
+    GenericV *returnptr;
     PyObject *tmpobj;
 
     tmpobj = PyObject_GetAttrString(obj,"_swighelper");
@@ -352,11 +352,11 @@ typedef struct {
       return NULL;
     }
 
-    // Assemble our return object, which is a GenericVector.  If LAL should ever change
+    // Assemble our return object, which is a GenericV.  If LAL should ever change
     // its definitions of Vectors so that different types change by more than underlying datatypes,
     // this would all have to be redone into a case statement based on the dtype.
 
-    returnptr = (GenericVector *) calloc(1,sizeof(GenericVector));
+    returnptr = (GenericV *) calloc(1,sizeof(GenericV));
     if (!returnptr) {
       PyErr_Format(PyExc_MemoryError,
 		   "Could not allocate temporary Vector for argument '%s'",objname);
@@ -379,8 +379,8 @@ typedef struct {
 // for pycbc.types.Array those are all that is needed.  Time and frequency
 // series will further append to this dict before calling the constructor.
 
-%fragment("ArrayDictFromVect","header",fragment="GenericVector",fragment="ClearVect"){
-  PyObject *ArrayDictFromVect(GenericVector *vect, int numpy_type){
+%fragment("ArrayDictFromVect","header",fragment="GenericV",fragment="ClearV"){
+  PyObject *ArrayDictFromVect(GenericV *vect, int numpy_type){
     PyObject *tmpobj, *constrdict;
     npy_intp dimensions[1];
 
@@ -390,14 +390,14 @@ typedef struct {
     }
     if ( (vect->length) &&  !(vect->data) ) {
       PyErr_SetString(PyExc_ValueError,"Null data pointer returned for non-zero length object");
-      ClearVect(vect);
+      ClearV(vect);
       return NULL;
     }
 
     constrdict = PyDict_New();
     if (!constrdict) {
       PyErr_SetString(PyExc_RuntimeError,"Could not create dictionary for return value constructor");
-      ClearVect(vect);
+      ClearV(vect);
       return NULL;
     }
 
@@ -406,14 +406,14 @@ typedef struct {
     if (!tmpobj) {
       PyErr_SetString(PyExc_RuntimeError,"Could not create output data object");
       Py_DECREF(constrdict); // Dict still empty, so just delete
-      ClearVect(vect);
+      ClearV(vect);
       return NULL;
     }
     if (PyDict_SetItemString(constrdict,"initial_array",tmpobj)) {
       PyErr_SetString(PyExc_RuntimeError,"Could not add data object to cosntructor dict");
       Py_DECREF(constrdict); // Dict still empty, so just delete
       Py_DECREF(tmpobj);
-      ClearVect(vect);
+      ClearV(vect);
       return NULL;
     }
     Py_DECREF(tmpobj);
@@ -423,7 +423,7 @@ typedef struct {
       PyErr_SetString(PyExc_RuntimeError,"Could not create output dtype object");
       PyDict_Clear(constrdict);
       Py_DECREF(constrdict);
-      ClearVect(vect);
+      ClearV(vect);
       return NULL;
     }
     if (PyDict_SetItemString(constrdict,"dtype",tmpobj)) {
@@ -431,7 +431,7 @@ typedef struct {
       PyDict_Clear(constrdict);
       Py_DECREF(constrdict);
       Py_DECREF(tmpobj);
-      ClearVect(vect);
+      ClearV(vect);
       return NULL;
     }
     Py_DECREF(tmpobj);
@@ -443,7 +443,7 @@ typedef struct {
       PyDict_Clear(constrdict);
       Py_DECREF(constrdict);
       Py_DECREF(tmpobj);
-      ClearVect(vect);
+      ClearV(vect);
       return NULL;
     }
     Py_DECREF(tmpobj);
@@ -483,9 +483,9 @@ typedef struct {
   }
 }
 
-%fragment("MarshallInputVector","header",fragment="VectFromPyCBCType") {
-  GenericVector *MarshallInputVector(PyObject *obj, const int numpy_type, const char *objname) {
-    GenericVector *returnptr;
+%fragment("MarshallInputV","header",fragment="VectFromPyCBCType") {
+  GenericV *MarshallInputV(PyObject *obj, const int numpy_type, const char *objname) {
+    GenericV *returnptr;
 
     if (PyObject_IsInstance(obj,CBC_Arr) !=1){
       PyErr_Format(PyExc_TypeError,
@@ -499,8 +499,13 @@ typedef struct {
   }
 }
 
-%fragment("MarshallOutputVector","header",fragment="ArrayDictFromVect") {
-  PyObject *MarshallOutputVector(GenericVector *vect, const int numpy_type) {
+// Note that the function below does not actually need parentself (it
+// makes no use of it) but it is declared so that we may have a uniform
+// calling sequence for our MarshallOutput functions, allowing the use
+// of macro templates for typemap creation
+%fragment("MarshallOutputV","header",fragment="ArrayDictFromVect") {
+  PyObject *MarshallOutputV(PyObject *parentself, GenericV *vect,
+				 const int numpy_type) {
     PyObject *result, *constrdict;
 
     constrdict = ArrayDictFromVect(vect,numpy_type);
@@ -511,7 +516,7 @@ typedef struct {
     result = PyObject_Call(CBC_Arr,EmptyTuple,constrdict);
     if (!result) {
       PyErr_SetString(PyExc_RuntimeError,"Could not create new instance of pycbc.types.Array");
-      ClearVect(vect);
+      ClearV(vect);
     }
 
     PyDict_Clear(constrdict);
@@ -521,8 +526,16 @@ typedef struct {
   }
  }
 
-%fragment("BuildArgoutVector","header",
-	  fragment="BuildReturnFromValue",fragment="MarshallOutputVector") {};
+// Note that the function below isn't really needed (it just returns 0)
+// but it exists so that we may have a uniform calling sequence for our
+// INPUT typemaps, allowing the use of macro templates for typemap creation
+
+%fragment("MarshallArgoutV","header") {
+  inline int MarshallArgoutV(PyObject *parentself, PyObject *argument,
+			     GenericV *vect, const char *objname) {
+    return 0;
+  }
+}
 
 %fragment("MarshallInputTS","header",fragment="GenericTS",fragment="VectFromPyCBCType") {
   GenericTS *MarshallInputTS(PyObject *obj, const int numpy_type, const char *objname) {
@@ -724,10 +737,6 @@ typedef struct {
     return 0;
   }
 }
-
-%fragment("BuildArgoutTS","header",
-	  fragment="BuildReturnFromValue",fragment="MarshallOutputTS") {};
-
 
 %fragment("MarshallInputFS","header",fragment="GenericFS",fragment="VectFromPyCBCType") {
   GenericFS *MarshallInputFS(PyObject *obj, const int numpy_type, const char *objname) {
@@ -996,13 +1005,12 @@ typedef struct {
   }
 }
 
-%fragment("BuildArgoutFS","header",
-	  fragment="BuildReturnFromValue",fragment="MarshallOutputFS") {};
-
 // Force inclusion of all of our marshalling functions, to help in debugging
 
-%fragment("MarshallInputVector");
-%fragment("MarshallOutputVector");
+%fragment("BuildReturnFromValue");
+%fragment("MarshallInputV");
+%fragment("MarshallOutputV");
+%fragment("MarshallArgoutV");
 %fragment("MarshallInputTS");
 %fragment("MarshallOutputTS");
 %fragment("MarshallArgoutTS");
@@ -1075,527 +1083,147 @@ YOU HAVE BEEN WARNED!
 */
 
 
-// Typemaps for REAL4Vectors:
 
-%typemap(in, fragment="MarshallInputVector") REAL4Vector *INPUT_REAL4V {
-  $1 =(REAL4Vector *) MarshallInputVector($input,NPY_FLOAT32,"$1_name");
+// SWIG macros to create our various typemaps.
+
+// For INPUT_SWTYPE
+// Note that those calling the functions MarshallOutput{V,TS,FS}
+// and MarshallArgout{V,TS,FS} have as their first argument "self".
+// This variable is defined in the wrapped function, and hence
+// will exist even though it is not a $special SWIG variable.
+
+%define MAKE_INPUT(SWTYPE,CTYPE,NPYINT,STUB)
+%typemap(in) CTYPE *INPUT_ ## SWTYPE {
+  $1 = (CTYPE *) MarshallInput ## STUB ($input,NPYINT,"$1_name");
   if (!($1)) SWIG_fail;
 }
 
-%typemap(freearg) REAL4Vector *INPUT_REAL4V {
-  ClearVect((GenericVector *) $1);
+%typemap(argout) CTYPE *INPUT_ ## SWTYPE {
+  if (MarshallArgout ## STUB (self,$input,(Generic ## STUB *) $1,"$1_name") ) SWIG_fail;
 }
 
-%typemap(out, fragment="MarshallOutputVector") REAL4Vector *NEWOUT_REAL4V{
-  $result = MarshallOutputVector((GenericVector *) $1,NPY_FLOAT32);
+%typemap(freearg) CTYPE *INPUT_ ##SWTYPE {
+  Clear ## STUB ((Generic ## STUB *) $1);
+}
+%enddef
+
+// For NEWOUT_SWTYPE
+
+%define MAKE_NEWOUT(SWTYPE,CTYPE,NPYINT,STUB)
+%typemap(out) CTYPE *NEWOUT_ ## SWTYPE {
+  $result = MarshallOutput ## STUB (self,(Generic ## STUB *) $1,NPYINT);
   if (!($result)) SWIG_fail;
 }
 
-%typemap(newfree) REAL4Vector *NEWOUT_REAL4V{
-  ClearVect((GenericVector *) $1);
+%typemap(newfree) CTYPE *NEWOUT_ ## SWTYPE{
+  Clear ## STUB ((Generic ## STUB *) $1);
 }
+%enddef
 
-%typemap(out) REAL4Vector *NONEOUT_REAL4V{
+// For NONEOUT_SWTYPE
+
+%define MAKE_NONEOUT(SWTYPE,CTYPE)
+%typemap(out) CTYPE *NONEOUT_ ## SWTYPE{
   Py_INCREF(Py_None);
   $result = Py_None;
 }
+%enddef
 
-%typemap(in,numinputs=0) REAL4Vector **ARGOUT_REAL4V (REAL4Vector *temp) {
+// For ARGOUT_SWTYPE
+
+%define MAKE_ARGOUT(SWTYPE,CTYPE,NPYINT,STUB)
+%typemap(in,numinputs=0) CTYPE **ARGOUT_ ## SWTYPE (CTYPE *temp) {
   temp = NULL;
   $1 = &temp;
 }
 
-%typemap(argout, fragment="BuildArgoutVector") REAL4Vector **ARGOUT_REAL4V {
+%typemap(argout) CTYPE **ARGOUT_ ## SWTYPE {
   $result = BuildReturnFromValue($result,
-				 MarshallOutputVector((GenericVector *) *($1),NPY_FLOAT32));
+				 MarshallOutput ## STUB(self,(Generic ## STUB *) *($1),NPYINT));
   if (!($result)) SWIG_fail;
 }
 
-%typemap(newfree) REAL4Vector **ARGOUT_REAL4V {
-  ClearVect((GenericVector *) *($1));
+%typemap(newfree) REAL4Vector **ARGOUT_ ## SWTYPE {
+  Clear ## STUB((Generic ## STUB *) *($1));
 }
+%enddef
 
+// Now, we begin the actual creation of typemaps
+
+// Typemaps for REAL4Vectors:
+MAKE_INPUT(REAL4V,REAL4Vector,NPY_FLOAT32,V)
+MAKE_NEWOUT(REAL4V,REAL4Vector,NPY_FLOAT32,V)
+MAKE_NONEOUT(REAL4V,REAL4Vector)
+MAKE_ARGOUT(REAL4V,REAL4Vector,NPY_FLOAT32,V)
 
 // Typemaps for REAL8Vectors:
-
-%typemap(in, fragment="MarshallInputVector") REAL8Vector *INPUT_REAL8V {
-  $1 =(REAL8Vector *) MarshallInputVector($input,NPY_FLOAT64,"$1_name");
-  if (!($1)) SWIG_fail;
-}
-
-%typemap(freearg) REAL8Vector *INPUT_REAL8V {
-  ClearVect((GenericVector *) $1);
-}
-
-%typemap(out, fragment="MarshallOutputVector") REAL8Vector *NEWOUT_REAL8V{
-  $result = MarshallOutputVector((GenericVector *) $1,NPY_FLOAT64);
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) REAL8Vector *NEWOUT_REAL8V{
-  ClearVect((GenericVector *) $1);
-}
-
-%typemap(out) REAL8Vector *NONEOUT_REAL8V{
-  Py_INCREF(Py_None);
-  $result = Py_None;
-}
-
-%typemap(in,numinputs=0) REAL8Vector **ARGOUT_REAL8V (REAL8Vector *temp) {
-  temp = NULL;
-  $1 = &temp;
-}
-
-%typemap(argout, fragment="BuildArgoutVector") REAL8Vector **ARGOUT_REAL8V {
-  $result = BuildReturnFromValue($result,
-				 MarshallOutputVector((GenericVector *) *($1),NPY_FLOAT64));
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) REAL8Vector **ARGOUT_REAL8V {
-  ClearVect((GenericVector *) *($1));
-}
+MAKE_INPUT(REAL8V,REAL8Vector,NPY_FLOAT64,V)
+MAKE_NEWOUT(REAL8V,REAL8Vector,NPY_FLOAT64,V)
+MAKE_NONEOUT(REAL8V,REAL8Vector)
+MAKE_ARGOUT(REAL8V,REAL8Vector,NPY_FLOAT64,V)
 
 // Typemaps for COMPLEX8Vectors:
-
-%typemap(in, fragment="MarshallInputVector") COMPLEX8Vector *INPUT_COMPLEX8V {
-  $1 =(COMPLEX8Vector *) MarshallInputVector($input,NPY_COMPLEX64,"$1_name");
-  if (!($1)) SWIG_fail;
-}
-
-%typemap(freearg) COMPLEX8Vector *INPUT_COMPLEX8V {
-  ClearVect((GenericVector *) $1);
-}
-
-%typemap(out, fragment="MarshallOutputVector") COMPLEX8Vector *NEWOUT_COMPLEX8V{
-  $result = MarshallOutputVector((GenericVector *) $1,NPY_COMPLEX64);
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) COMPLEX8Vector *NEWOUT_COMPLEX8V{
-  ClearVect((GenericVector *) $1);
-}
-
-%typemap(out) COMPLEX8Vector *NONEOUT_COMPLEX8V{
-  Py_INCREF(Py_None);
-  $result = Py_None;
-}
-
-%typemap(in,numinputs=0) COMPLEX8Vector **ARGOUT_COMPLEX8V (COMPLEX8Vector *temp) {
-  temp = NULL;
-  $1 = &temp;
-}
-
-%typemap(argout, fragment="BuildArgoutVector") COMPLEX8Vector **ARGOUT_COMPLEX8V {
-  $result = BuildReturnFromValue($result,
-				 MarshallOutputVector((GenericVector *) *($1),NPY_COMPLEX64));
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) COMPLEX8Vector **ARGOUT_COMPLEX8V {
-  ClearVect((GenericVector *) *($1));
-}
+MAKE_INPUT(COMPLEX8V,COMPLEX8Vector,NPY_COMPLEX64,V)
+MAKE_NEWOUT(COMPLEX8V,COMPLEX8Vector,NPY_COMPLEX64,V)
+MAKE_NONEOUT(COMPLEX8V,COMPLEX8Vector)
+MAKE_ARGOUT(COMPLEX8V,COMPLEX8Vector,NPY_COMPLEX64,V)
 
 // Typemaps for COMPLEX16Vectors:
+MAKE_INPUT(COMPLEX16V,COMPLEX16Vector,NPY_COMPLEX128,V)
+MAKE_NEWOUT(COMPLEX16V,COMPLEX16Vector,NPY_COMPLEX128,V)
+MAKE_NONEOUT(COMPLEX16V,COMPLEX16Vector)
+MAKE_ARGOUT(COMPLEX16V,COMPLEX16Vector,NPY_COMPLEX128,V)
+
+
+// Typemaps for REAL4TimeSeries:
+MAKE_INPUT(REAL4TS,REAL4TimeSeries,NPY_FLOAT32,TS)
+MAKE_NEWOUT(REAL4TS,REAL4TimeSeries,NPY_FLOAT32,TS)
+MAKE_NONEOUT(REAL4TS,REAL4TimeSeries)
+MAKE_ARGOUT(REAL4TS,REAL4TimeSeries,NPY_FLOAT32,TS)
+
+// Typemaps for REAL8TimeSeries:
+MAKE_INPUT(REAL8TS,REAL8TimeSeries,NPY_FLOAT64,TS)
+MAKE_NEWOUT(REAL8TS,REAL8TimeSeries,NPY_FLOAT64,TS)
+MAKE_NONEOUT(REAL8TS,REAL8TimeSeries)
+MAKE_ARGOUT(REAL8TS,REAL8TimeSeries,NPY_FLOAT64,TS)
+
+// Typemaps for COMPLEX8TimeSeries:
+MAKE_INPUT(COMPLEX8TS,COMPLEX8TimeSeries,NPY_COMPLEX64,TS)
+MAKE_NEWOUT(COMPLEX8TS,COMPLEX8TimeSeries,NPY_COMPLEX64,TS)
+MAKE_NONEOUT(COMPLEX8TS,COMPLEX8TimeSeries)
+MAKE_ARGOUT(COMPLEX8TS,COMPLEX8TimeSeries,NPY_COMPLEX64,TS)
+
+// Typemaps for COMPLEX16TimeSeries:
+MAKE_INPUT(COMPLEX16TS,COMPLEX16TimeSeries,NPY_COMPLEX128,TS)
+MAKE_NEWOUT(COMPLEX16TS,COMPLEX16TimeSeries,NPY_COMPLEX128,TS)
+MAKE_NONEOUT(COMPLEX16TS,COMPLEX16TimeSeries)
+MAKE_ARGOUT(COMPLEX16TS,COMPLEX16TimeSeries,NPY_COMPLEX128,TS)
+
+
+// Typemaps for REAL4FrequencySeries:
+MAKE_INPUT(REAL4FS,REAL4FrequencySeries,NPY_FLOAT32,FS)
+MAKE_NEWOUT(REAL4FS,REAL4FrequencySeries,NPY_FLOAT32,FS)
+MAKE_NONEOUT(REAL4FS,REAL4FrequencySeries)
+MAKE_ARGOUT(REAL4FS,REAL4FrequencySeries,NPY_FLOAT32,FS)
+
+// Typemaps for REAL8FrequencySeries:
+MAKE_INPUT(REAL8FS,REAL8FrequencySeries,NPY_FLOAT64,FS)
+MAKE_NEWOUT(REAL8FS,REAL8FrequencySeries,NPY_FLOAT64,FS)
+MAKE_NONEOUT(REAL8FS,REAL8FrequencySeries)
+MAKE_ARGOUT(REAL8FS,REAL8FrequencySeries,NPY_FLOAT64,FS)
+
+// Typemaps for COMPLEX8FrequencySeries:
+MAKE_INPUT(COMPLEX8FS,COMPLEX8FrequencySeries,NPY_COMPLEX64,FS)
+MAKE_NEWOUT(COMPLEX8FS,COMPLEX8FrequencySeries,NPY_COMPLEX64,FS)
+MAKE_NONEOUT(COMPLEX8FS,COMPLEX8FrequencySeries)
+MAKE_ARGOUT(COMPLEX8FS,COMPLEX8FrequencySeries,NPY_COMPLEX64,FS)
+
+// Typemaps for COMPLEX16FrequencySeries:
+MAKE_INPUT(COMPLEX16FS,COMPLEX16FrequencySeries,NPY_COMPLEX128,FS)
+MAKE_NEWOUT(COMPLEX16FS,COMPLEX16FrequencySeries,NPY_COMPLEX128,FS)
+MAKE_NONEOUT(COMPLEX16FS,COMPLEX16FrequencySeries)
+MAKE_ARGOUT(COMPLEX16FS,COMPLEX16FrequencySeries,NPY_COMPLEX128,FS)
 
-%typemap(in, fragment="MarshallInputVector") COMPLEX16Vector *INPUT_COMPLEX16V {
-  $1 =(COMPLEX16Vector *) MarshallInputVector($input,NPY_COMPLEX128,"$1_name");
-  if (!($1)) SWIG_fail;
-}
-
-%typemap(freearg) COMPLEX16Vector *INPUT_COMPLEX16V {
-  ClearVect((GenericVector *) $1);
-}
-
-%typemap(out, fragment="MarshallOutputVector") COMPLEX16Vector *NEWOUT_COMPLEX16V{
-  $result = MarshallOutputVector((GenericVector *) $1,NPY_COMPLEX128);
-  if (!($result)) SWIG_fail;
- }
-
-%typemap(newfree) COMPLEX16Vector *NEWOUT_COMPLEX16V{
-  ClearVect((GenericVector *) $1);
-}
-
-%typemap(out) COMPLEX16Vector *NONEOUT_COMPLEX16V{
-  Py_INCREF(Py_None);
-  $result = Py_None;
-}
-
-%typemap(in,numinputs=0) COMPLEX16Vector **ARGOUT_COMPLEX16V (COMPLEX16Vector *temp) {
-  temp = NULL;
-  $1 = &temp;
-}
-
-%typemap(argout, fragment="BuildArgoutVector") COMPLEX16Vector **ARGOUT_COMPLEX16V {
-  $result = BuildReturnFromValue($result,
-				 MarshallOutputVector((GenericVector *) *($1),NPY_COMPLEX128));
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) COMPLEX16Vector **ARGOUT_COMPLEX16V {
-  ClearVect((GenericVector *) *($1));
-}
-
-// Typemaps for time and frequency series.  Note that those calling the functions
-// MarshallOutput{T,F}S and MarshallArgout{T,F}S have as their first argument "self".
-// This variable is defined in the wrapped function, and hence will exist even though
-// it is not a $special SWIG variable.
-
-
-// Typemaps for REAL4 Time Series
-
-%typemap(in, fragment="MarshallInputTS") REAL4TimeSeries *INPUT_REAL4TS {
-  $1 =(REAL4TimeSeries *) MarshallInputTS($input,NPY_FLOAT32,"$1_name");
-  if (!($1)) SWIG_fail;
-}
-
-%typemap(argout, fragment="MarshallArgoutTS") REAL4TimeSeries *INPUT_REAL4TS {
-  if (MarshallArgoutTS(self,$input,$1,"$1_name") ) SWIG_fail;
-}
-
-%typemap(freearg) REAL4TimeSeries *INPUT_REAL4TS {
-  ClearTS((GenericTS *) $1);
-}
-
-%typemap(out, fragment="MarshallOutputTS") REAL4TimeSeries *NEWOUT_REAL4TS{
-  $result = MarshallOutputTS(self,(GenericTS *) $1,NPY_FLOAT32);
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) REAL4TimeSeries *NEWOUT_REAL4TS{
-  ClearTS((GenericTS *) $1);
-}
-
-%typemap(out) REAL4TimeSeries *NONEOUT_REAL4TS{
-  Py_INCREF(Py_None);
-  $result = Py_None;
-}
-
-%typemap(in,numinputs=0) REAL4TimeSeries **ARGOUT_REAL4TS (REAL4TimeSeries *temp) {
-  temp = NULL;
-  $1 = &temp;
-}
-
-%typemap(argout, fragment="BuildArgoutTS") REAL4TimeSeries **ARGOUT_REAL4TS {
-  $result = BuildReturnFromValue($result,
-				 MarshallOutputTS(self,(GenericTS *) *($1),NPY_FLOAT32));
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) REAL4TimeSeries **ARGOUT_REAL4TS {
-  ClearTS((GenericTS *) *($1));
-}
-
-// Typemaps for REAL8 Time Series
-
-%typemap(in, fragment="MarshallInputTS") REAL8TimeSeries *INPUT_REAL8TS {
-  $1 =(REAL8TimeSeries *) MarshallInputTS($input,NPY_FLOAT64,"$1_name");
-  if (!($1)) SWIG_fail;
-}
-
-%typemap(argout, fragment="MarshallArgoutTS") REAL8TimeSeries *INPUT_REAL8TS {
-  if (MarshallArgoutTS(self,$input,$1,"$1_name") ) SWIG_fail;
-}
-
-%typemap(freearg) REAL8TimeSeries *INPUT_REAL8TS {
-  ClearTS((GenericTS *) $1);
-}
-
-%typemap(out, fragment="MarshallOutputTS") REAL8TimeSeries *NEWOUT_REAL8TS{
-  $result = MarshallOutputTS(self,(GenericTS *) $1,NPY_FLOAT64);
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) REAL8TimeSeries *NEWOUT_REAL8TS{
-  ClearTS((GenericTS *) $1);
-}
-
-%typemap(out) REAL8TimeSeries *NONEOUT_REAL8TS{
-  Py_INCREF(Py_None);
-  $result = Py_None;
-}
-
-%typemap(in,numinputs=0) REAL8TimeSeries **ARGOUT_REAL8TS (REAL8TimeSeries *temp) {
-  temp = NULL;
-  $1 = &temp;
-}
-
-%typemap(argout, fragment="BuildArgoutTS") REAL8TimeSeries **ARGOUT_REAL8TS {
-  $result = BuildReturnFromValue($result,
-				 MarshallOutputTS(self,(GenericTS *) *($1),NPY_FLOAT64));
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) REAL8TimeSeries **ARGOUT_REAL8TS {
-  ClearTS((GenericTS *) *($1));
-}
-
-
-// Typemaps for COMPLEX8 Time Series
-
-%typemap(in, fragment="MarshallInputTS") COMPLEX8TimeSeries *INPUT_COMPLEX8TS {
-  $1 =(COMPLEX8TimeSeries *) MarshallInputTS($input,NPY_COMPLEX64,"$1_name");
-  if (!($1)) SWIG_fail;
-}
-
-%typemap(argout, fragment="MarshallArgoutTS") COMPLEX8TimeSeries *INPUT_COMPLEX8TS {
-  if (MarshallArgoutTS(self,$input,$1,"$1_name") ) SWIG_fail;
-}
-
-%typemap(freearg) COMPLEX8TimeSeries *INPUT_COMPLEX8TS {
-  ClearTS((GenericTS *) $1);
-}
-
-%typemap(out, fragment="MarshallOutputTS") COMPLEX8TimeSeries *NEWOUT_COMPLEX8TS{
-  $result = MarshallOutputTS(self,(GenericTS *) $1,NPY_COMPLEX64);
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) COMPLEX8TimeSeries *NEWOUT_COMPLEX8TS{
-  ClearTS((GenericTS *) $1);
-}
-
-%typemap(out) COMPLEX8TimeSeries *NONEOUT_COMPLEX8TS{
-  Py_INCREF(Py_None);
-  $result = Py_None;
-}
-
-%typemap(in,numinputs=0) COMPLEX8TimeSeries **ARGOUT_COMPLEX8TS (COMPLEX8TimeSeries *temp) {
-  temp = NULL;
-  $1 = &temp;
-}
-
-%typemap(argout, fragment="BuildArgoutTS") COMPLEX8TimeSeries **ARGOUT_COMPLEX8TS {
-  $result = BuildReturnFromValue($result,
-				 MarshallOutputTS(self,(GenericTS *) *($1),NPY_COMPLEX64));
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) COMPLEX8TimeSeries **ARGOUT_COMPLEX8TS {
-  ClearTS((GenericTS *) *($1));
-}
-
-
-// Typemaps for COMPLEX16 Time Series
-
-%typemap(in, fragment="MarshallInputTS") COMPLEX16TimeSeries *INPUT_COMPLEX16TS {
-  $1 =(COMPLEX16TimeSeries *) MarshallInputTS($input,NPY_COMPLEX128,"$1_name");
-  if (!($1)) SWIG_fail;
-}
-
-%typemap(argout, fragment="MarshallArgoutTS") COMPLEX16TimeSeries *INPUT_COMPLEX16TS {
-  if (MarshallArgoutTS(self,$input,$1,"$1_name") ) SWIG_fail;
-}
-
-%typemap(freearg) COMPLEX16TimeSeries *INPUT_COMPLEX16TS {
-  ClearTS((GenericTS *) $1);
-}
-
-%typemap(out, fragment="MarshallOutputTS") COMPLEX16TimeSeries *NEWOUT_COMPLEX16TS{
-  $result = MarshallOutputTS(self,(GenericTS *) $1,NPY_COMPLEX128);
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) COMPLEX16TimeSeries *NEWOUT_COMPLEX16TS{
-  ClearTS((GenericTS *) $1);
-}
-
-%typemap(out) COMPLEX16TimeSeries *NONEOUT_COMPLEX16TS{
-  Py_INCREF(Py_None);
-  $result = Py_None;
-}
-
-%typemap(in,numinputs=0) COMPLEX16TimeSeries **ARGOUT_COMPLEX16TS (COMPLEX16TimeSeries *temp) {
-  temp = NULL;
-  $1 = &temp;
-}
-
-%typemap(argout, fragment="BuildArgoutTS") COMPLEX16TimeSeries **ARGOUT_COMPLEX16TS {
-  $result = BuildReturnFromValue($result,
-				 MarshallOutputTS(self,(GenericTS *) *($1),NPY_COMPLEX128));
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) COMPLEX16TimeSeries **ARGOUT_COMPLEX16TS {
-  ClearTS((GenericTS *) *($1));
-}
-
-// Typemaps for REAL4 Frequency Series
-
-%typemap(in, fragment="MarshallInputFS") REAL4FrequencySeries *INPUT_REAL4FS {
-  $1 =(REAL4FrequencySeries *) MarshallInputFS($input,NPY_FLOAT32,"$1_name");
-  if (!($1)) SWIG_fail;
-}
-
-%typemap(argout, fragment="MarshallArgoutFS") REAL4FrequencySeries *INPUT_REAL4FS {
-  if (MarshallArgoutFS(self,$input,$1,"$1_name") ) SWIG_fail;
-}
-
-%typemap(freearg) REAL4FrequencySeries *INPUT_REAL4FS {
-  ClearFS((GenericFS *) $1);
-}
-
-%typemap(out, fragment="MarshallOutputFS") REAL4FrequencySeries *NEWOUT_REAL4FS{
-  $result = MarshallOutputFS(self,(GenericFS *) $1,NPY_FLOAT32);
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) REAL4FrequencySeries *NEWOUT_REAL4FS{
-  ClearFS((GenericFS *) $1);
-}
-
-%typemap(out) REAL4FrequencySeries *NONEOUT_REAL4FS{
-  Py_INCREF(Py_None);
-  $result = Py_None;
-}
-
-%typemap(in,numinputs=0) REAL4FrequencySeries **ARGOUT_REAL4FS (REAL4FrequencySeries *temp) {
-  temp = NULL;
-  $1 = &temp;
-}
-
-%typemap(argout, fragment="BuildArgoutFS") REAL4FrequencySeries **ARGOUT_REAL4FS {
-  $result = BuildReturnFromValue($result,
-				 MarshallOutputFS(self,(GenericFS *) *($1),NPY_FLOAT32));
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) REAL4FrequencySeries **ARGOUT_REAL4FS {
-  ClearFS((GenericFS *) *($1));
-}
-
-// Typemaps for REAL8 Frequency Series
-
-%typemap(in, fragment="MarshallInputFS") REAL8FrequencySeries *INPUT_REAL8FS {
-  $1 =(REAL8FrequencySeries *) MarshallInputFS($input,NPY_FLOAT64,"$1_name");
-  if (!($1)) SWIG_fail;
-}
-
-%typemap(argout, fragment="MarshallArgoutFS") REAL8FrequencySeries *INPUT_REAL8FS {
-  if (MarshallArgoutFS(self,$input,$1,"$1_name") ) SWIG_fail;
-}
-
-%typemap(freearg) REAL8FrequencySeries *INPUT_REAL8FS {
-  ClearFS((GenericFS *) $1);
-}
-
-%typemap(out, fragment="MarshallOutputFS") REAL8FrequencySeries *NEWOUT_REAL8FS{
-  $result = MarshallOutputFS(self,(GenericFS *) $1,NPY_FLOAT64);
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) REAL8FrequencySeries *NEWOUT_REAL8FS{
-  ClearFS((GenericFS *) $1);
-}
-
-%typemap(out) REAL8FrequencySeries *NONEOUT_REAL8FS{
-  Py_INCREF(Py_None);
-  $result = Py_None;
-}
-
-%typemap(in,numinputs=0) REAL8FrequencySeries **ARGOUT_REAL8FS (REAL8FrequencySeries *temp) {
-  temp = NULL;
-  $1 = &temp;
-}
-
-%typemap(argout, fragment="BuildArgoutFS") REAL8FrequencySeries **ARGOUT_REAL8FS {
-  $result = BuildReturnFromValue($result,
-				 MarshallOutputFS(self,(GenericFS *) *($1),NPY_FLOAT64));
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) REAL8FrequencySeries **ARGOUT_REAL8FS {
-  ClearFS((GenericFS *) *($1));
-}
-
-
-// Typemaps for COMPLEX8 Frequency Series
-
-%typemap(in, fragment="MarshallInputFS") COMPLEX8FrequencySeries *INPUT_COMPLEX8FS {
-  $1 =(COMPLEX8FrequencySeries *) MarshallInputFS($input,NPY_COMPLEX64,"$1_name");
-  if (!($1)) SWIG_fail;
-}
-
-%typemap(argout, fragment="MarshallArgoutFS") COMPLEX8FrequencySeries *INPUT_COMPLEX8FS {
-  if (MarshallArgoutFS(self,$input,$1,"$1_name") ) SWIG_fail;
-}
-
-%typemap(freearg) COMPLEX8FrequencySeries *INPUT_COMPLEX8FS {
-  ClearFS((GenericFS *) $1);
-}
-
-%typemap(out, fragment="MarshallOutputFS") COMPLEX8FrequencySeries *NEWOUT_COMPLEX8FS{
-  $result = MarshallOutputFS(self,(GenericFS *) $1,NPY_COMPLEX64);
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) COMPLEX8FrequencySeries *NEWOUT_COMPLEX8FS{
-  ClearFS((GenericFS *) $1);
-}
-
-%typemap(out) COMPLEX8FrequencySeries *NONEOUT_COMPLEX8FS{
-  Py_INCREF(Py_None);
-  $result = Py_None;
-}
-
-%typemap(in,numinputs=0) COMPLEX8FrequencySeries **ARGOUT_COMPLEX8FS (COMPLEX8FrequencySeries *temp) {
-  temp = NULL;
-  $1 = &temp;
-}
-
-%typemap(argout, fragment="BuildArgoutFS") COMPLEX8FrequencySeries **ARGOUT_COMPLEX8FS {
-  $result = BuildReturnFromValue($result,
-				 MarshallOutputFS(self,(GenericFS *) *($1),NPY_COMPLEX64));
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) COMPLEX8FrequencySeries **ARGOUT_COMPLEX8FS {
-  ClearFS((GenericFS *) *($1));
-}
-
-// Typemaps for COMPLEX16 Frequency Series
-
-%typemap(in, fragment="MarshallInputFS") COMPLEX16FrequencySeries *INPUT_COMPLEX16FS {
-  $1 =(COMPLEX16FrequencySeries *) MarshallInputFS($input,NPY_COMPLEX128,"$1_name");
-  if (!($1)) SWIG_fail;
-}
-
-%typemap(argout, fragment="MarshallArgoutFS") COMPLEX16FrequencySeries *INPUT_COMPLEX16FS {
-  if (MarshallArgoutFS(self,$input,$1,"$1_name") ) SWIG_fail;
-}
-
-%typemap(freearg) COMPLEX16FrequencySeries *INPUT_COMPLEX16FS {
-  ClearFS((GenericFS *) $1);
-}
-
-%typemap(out, fragment="MarshallOutputFS") COMPLEX16FrequencySeries *NEWOUT_COMPLEX16FS{
-  $result = MarshallOutputFS(self,(GenericFS *) $1,NPY_COMPLEX128);
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) COMPLEX16FrequencySeries *NEWOUT_COMPLEX16FS{
-  ClearFS((GenericFS *) $1);
-}
-
-%typemap(out) COMPLEX16FrequencySeries *NONEOUT_COMPLEX16FS{
-  Py_INCREF(Py_None);
-  $result = Py_None;
-}
-
-%typemap(in,numinputs=0) COMPLEX16FrequencySeries **ARGOUT_COMPLEX16FS (COMPLEX16FrequencySeries *temp) {
-  temp = NULL;
-  $1 = &temp;
-}
-
-%typemap(argout, fragment="BuildArgoutFS") COMPLEX16FrequencySeries **ARGOUT_COMPLEX16FS {
-  $result = BuildReturnFromValue($result,
-				 MarshallOutputFS(self,(GenericFS *) *($1),NPY_COMPLEX128));
-  if (!($result)) SWIG_fail;
-}
-
-%typemap(newfree) COMPLEX16FrequencySeries **ARGOUT_COMPLEX16FS {
-  ClearFS((GenericFS *) *($1));
-}
 
 // The following statment is more intuitive for developers to use than the direct
 // use of the %rename("%s") syntax of SWIG.
