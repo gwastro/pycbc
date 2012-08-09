@@ -65,7 +65,8 @@ def parsecs_to_meters(distance):
 
 default_args = {'spin1x':0,'spin1y':0,'spin1z':0,
                 'spin2x':0,'spin2y':0,'spin2z':0,
-                'inclination':0,'distance':10e8,'fmax':0,'phi0':0}
+                'inclination':0,'distance':10e8,'fmax':0,'phi0':0,
+                'amplitude_order':-1,'phase_order':-1}
 
 def _lalsim_td_waveform(p):
     try:
