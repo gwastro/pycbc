@@ -224,7 +224,7 @@ setup (
                  'build' : build},
     ext_modules = [lalwrap_module,testlalwrap_module],
     requires = ['lal'],
-    packages = ['pycbc','pycbc.fft','pycbc.types','pycbc.filter'],
+    packages = ['pycbc','pycbc.fft','pycbc.types','pycbc.filter','pycbc.psd'],
     scripts = [],
 )
 
