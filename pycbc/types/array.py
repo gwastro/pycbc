@@ -515,6 +515,11 @@ class Array(object):
                     raise RuntimeError("The arrays must the same length")
             elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
                 raise NotImplementedError
+        elif type(other) in _ALLOWED_SCALARS:
+            if isinstance(index,slice):          
+                self[index].fill(other)
+            else:
+                self[index:index+1].fill(other)
         else:
             raise TypeError('Can only copy data from another Array')
                 
