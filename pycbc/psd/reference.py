@@ -34,13 +34,16 @@ def psd_from_asd_file(filename,length,delta_f,lower_frequency_cutoff):
     psd_interp= interp1d(freq_data,psd_data) 
     N = (length-1) * 2  
 
-    psd = numpy.zeros(length)
-    for k in range(0,kmax,1):
+    kmin = int(lower_frequency_cutoff / delta_f) 
+    psd = numpy.zeros(length,dtype=numpy.float64)
+    for k in range(0,length-1):
         if (k<kmin):
             psd[k]=0
         else:
             psd[k]=float(psd_interp( k* delta_f ) )                   
    
+    psd[length-1] = 0
+
     return FrequencySeries(psd,delta_f=delta_f,copy=False)
 
 
@@ -89,11 +92,11 @@ def reference_psd(psd_name,length,delta_f,lower_frequency_cutoff):
     """ Return a FrequencySeries containing a reference psd
     """
     psd = FrequencySeries(zeros(length), delta_f=delta_f)
-    kmin = lower_frequency_cutoff / delta_f
-    for k in range(kmin,length):
-        psd[k] = _lalsim_psd_functions[psd_name]( k * delta_f)
-    # Set the last element to zero (assuming it is Nyquist)
-    psd[length] = 0 
+    kmin = int(lower_frequency_cutoff / delta_f)
+    fn = _lalsim_psd_functions[psd_name]
+    for k in range(kmin,length-1):
+        psd[k] = fn( k * delta_f)
+
     return psd
 
 
