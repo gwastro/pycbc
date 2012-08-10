@@ -57,7 +57,7 @@ def pkg_config(libraries=[],library_dirs=[],include_dirs=[],pkg_libraries=[]):
 
 # Now use the above function to set up our extension library's needs:
 
-ext_libraries, ext_library_dirs, ext_include_dirs = pkg_config(pkg_libraries=["lal"])
+ext_libraries, ext_library_dirs, ext_include_dirs = pkg_config(pkg_libraries=["lal","lalsimulation","lalinspiral"])
 
 # Setup our swig options. We need the first two to match with how the swiglal
 # wrappings are compiled, so that our module can talk to theirs.  Then we must
@@ -82,12 +82,23 @@ lalwrap_module = Extension('_lalwrap',
                            extra_compile_args=['-std=c99']
                            )
 
+testlalwrap_module = Extension('_testlalwrap',
+                               sources=['include/testlalwrap.i'],
+                               depends=['include/pycbc_laltypes.i'],
+                               swig_opts=ext_swig_opts,
+                               include_dirs=ext_include_dirs,
+                               library_dirs=ext_library_dirs,
+                               libraries=ext_libraries,
+                               extra_compile_args=['-std=c99']
+                               )
+
 # Add swig-generated files to the list of things to clean, so they
 # get regenerated each time.
 class clean(_clean):
     def finalize_options (self):
         _clean.finalize_options(self)
-        self.clean_files = ['pycbc/lalwrap.py','pycbc/lalwrap.pyc','include/lalwrap_wrap.c']
+        self.clean_files = ['pycbc/lalwrap.py','pycbc/lalwrap.pyc','include/lalwrap_wrap.c',
+                            'pycbc/testlalwrap.py','pycbc/testlalwrap.pyc','include/testlalwrap_wrap.c']
 
     def run(self):
         _clean.run(self)
@@ -211,7 +222,7 @@ setup (
                  'test_opencl':test_opencl,
                  'clean' : clean,
                  'build' : build},
-    ext_modules = [lalwrap_module],
+    ext_modules = [lalwrap_module,testlalwrap_module],
     requires = ['lal'],
     packages = ['pycbc','pycbc.fft','pycbc.types','pycbc.filter'],
     scripts = [],

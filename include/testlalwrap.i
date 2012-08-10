@@ -45,6 +45,7 @@ int TestInput ## CTYPE (CTYPE *invec) {
   return 0;
 }
 %}
+%unignore(TestInput ## CTYPE);
 %apply CTYPE *INPUT_ ## SWTYPE {CTYPE *};
 int TestInput ## CTYPE(CTYPE *invec);
 %enddef
@@ -80,6 +81,7 @@ int TestInput ## CTYPE (CTYPE *ints) {
   return 0;
 }
 %}
+%unignore(TestInput ## CTYPE);
 %apply CTYPE *INPUT_ ## SWTYPE {CTYPE *};
 int TestInput ## CTYPE(CTYPE *ints);
 %enddef
@@ -115,6 +117,7 @@ int TestInput ## CTYPE (CTYPE *infs) {
   return 0;
 }
 %}
+%unignore(TestInput ## CTYPE);
 %apply CTYPE *INPUT_ ## SWTYPE {CTYPE *};
 int TestInput ## CTYPE(CTYPE *infs);
 %enddef
@@ -128,6 +131,7 @@ int TestInput ## CTYPE(CTYPE *infs);
 %inline %{
   CTYPE *TestNoneout ## CTYPE (CTYPE *invec, CTYPE *outvec) {
   UINT4 i;
+
   if (invec->data == NULL) return NULL;
   if (outvec->data == NULL) return NULL;
   if (invec->length != outvec->length) return NULL;
@@ -138,6 +142,7 @@ int TestInput ## CTYPE(CTYPE *infs);
   return outvec;
 }
 %}
+%unignore(TestNoneout ## CTYPE);
 %apply CTYPE *INPUT_ ## SWTYPE {CTYPE *};
 %apply CTYPE *NONEOUT_ ## SWTYPE {CTYPE *TestNoneout ## CTYPE};
 CTYPE *TestNoneout ## CTYPE(CTYPE *invec, CTYPE *outvec);
@@ -147,29 +152,30 @@ CTYPE *TestNoneout ## CTYPE(CTYPE *invec, CTYPE *outvec);
 %inline %{
   CTYPE *TestNoneout ## CTYPE (CTYPE *ints, CTYPE *outts) {
   UINT4 i;
-  if (ints->data == NULL) return 1;
-  if (ints->data->data == NULL) return 1;
-  if (ints->data->length == 0) return 1;
-  if (outts->data == NULL) return 1;
-  if (outts->data->data == NULL) return 1;
-  if (outts->data->length == 0) return 1;
-  if (outts->data->length != intts->data->length) return 1;
+
+  if (ints->data == NULL) return NULL;
+  if (ints->data->data == NULL) return NULL;
+  if (ints->data->length == 0) return NULL;
+  if (outts->data == NULL) return NULL;
+  if (outts->data->data == NULL) return NULL;
+  if (outts->data->length == 0) return NULL;
+  if (outts->data->length != ints->data->length) return NULL;
 
   for (i=0; i < LALNameLength; i++){
-    if (ints->name[i] != '\0') return 1;
-    if (outts->name[i] != '\0') return 1;
+    if (ints->name[i] != '\0') return NULL;
+    if (outts->name[i] != '\0') return NULL;
   }
 
-  if (ints->f0 != 0.0) return 1;
-  if (outts->f0 != 0.0) return 1;
+  if (ints->f0 != 0.0) return NULL;
+  if (outts->f0 != 0.0) return NULL;
 
-  if ((ints->sampleUnits).powerOfTen != 0) return 1;
-  if ((outts->sampleUnits).powerOfTen != 0) return 1;
+  if ((ints->sampleUnits).powerOfTen != 0) return NULL;
+  if ((outts->sampleUnits).powerOfTen != 0) return NULL;
   for (i=0; i < LALNumUnits; i++){
-    if ( (ints->sampleUnits).unitNumerator[i] != 0) return 1;
-    if ( (ints->sampleUnits).unitDenominatorMinusOne[i] != 0) return 1;
-    if ( (outts->sampleUnits).unitNumerator[i] != 0) return 1;
-    if ( (outts->sampleUnits).unitDenominatorMinusOne[i] != 0) return 1;
+    if ( (ints->sampleUnits).unitNumerator[i] != 0) return NULL;
+    if ( (ints->sampleUnits).unitDenominatorMinusOne[i] != 0) return NULL;
+    if ( (outts->sampleUnits).unitNumerator[i] != 0) return NULL;
+    if ( (outts->sampleUnits).unitDenominatorMinusOne[i] != 0) return NULL;
   }
 
   for (i=0; i < ints->data->length; i++){
@@ -183,6 +189,7 @@ CTYPE *TestNoneout ## CTYPE(CTYPE *invec, CTYPE *outvec);
   return outts;
 }
 %}
+%unignore(TestNoneout ## CTYPE);
 %apply CTYPE *INPUT_ ## SWTYPE {CTYPE *};
 %apply CTYPE *NONEOUT_ ## SWTYPE {CTYPE *TestNoneout ## CTYPE};
 CTYPE *TestNoneout ## CTYPE(CTYPE *ints, CTYPE *outts);
@@ -192,29 +199,30 @@ CTYPE *TestNoneout ## CTYPE(CTYPE *ints, CTYPE *outts);
 %inline %{
   CTYPE *TestNoneout ## CTYPE (CTYPE *infs, CTYPE *outfs) {
   UINT4 i;
-  if (infs->data == NULL) return 1;
-  if (infs->data->data == NULL) return 1;
-  if (infs->data->length == 0) return 1;
-  if (outfs->data == NULL) return 1;
-  if (outfs->data->data == NULL) return 1;
-  if (outfs->data->length == 0) return 1;
-  if (outfs->data->length != intts->data->length) return 1;
+
+  if (infs->data == NULL) return NULL;
+  if (infs->data->data == NULL) return NULL;
+  if (infs->data->length == 0) return NULL;
+  if (outfs->data == NULL) return NULL;
+  if (outfs->data->data == NULL) return NULL;
+  if (outfs->data->length == 0) return NULL;
+  if (outfs->data->length != infs->data->length) return NULL;
 
   for (i=0; i < LALNameLength; i++){
-    if (infs->name[i] != '\0') return 1;
-    if (outfs->name[i] != '\0') return 1;
+    if (infs->name[i] != '\0') return NULL;
+    if (outfs->name[i] != '\0') return NULL;
   }
 
-  if (infs->f0 != 0.0) return 1;
-  if (outfs->f0 != 0.0) return 1;
+  if (infs->f0 != 0.0) return NULL;
+  if (outfs->f0 != 0.0) return NULL;
 
-  if ((infs->sampleUnits).powerOfTen != 0) return 1;
-  if ((outfs->sampleUnits).powerOfTen != 0) return 1;
+  if ((infs->sampleUnits).powerOfTen != 0) return NULL;
+  if ((outfs->sampleUnits).powerOfTen != 0) return NULL;
   for (i=0; i < LALNumUnits; i++){
-    if ( (infs->sampleUnits).unitNumerator[i] != 0) return 1;
-    if ( (infs->sampleUnits).unitDenominatorMinusOne[i] != 0) return 1;
-    if ( (outfs->sampleUnits).unitNumerator[i] != 0) return 1;
-    if ( (outfs->sampleUnits).unitDenominatorMinusOne[i] != 0) return 1;
+    if ( (infs->sampleUnits).unitNumerator[i] != 0) return NULL;
+    if ( (infs->sampleUnits).unitDenominatorMinusOne[i] != 0) return NULL;
+    if ( (outfs->sampleUnits).unitNumerator[i] != 0) return NULL;
+    if ( (outfs->sampleUnits).unitDenominatorMinusOne[i] != 0) return NULL;
   }
 
   for (i=0; i < infs->data->length; i++){
@@ -228,6 +236,7 @@ CTYPE *TestNoneout ## CTYPE(CTYPE *ints, CTYPE *outts);
   return outfs;
 }
 %}
+%unignore(TestNoneout ## CTYPE);
 %apply CTYPE *INPUT_ ## SWTYPE {CTYPE *};
 %apply CTYPE *NONEOUT_ ## SWTYPE {CTYPE *TestNoneout ## CTYPE};
 CTYPE *TestNoneout ## CTYPE(CTYPE *infs, CTYPE *outfs);
@@ -252,6 +261,7 @@ CTYPE *TestNewout ## CTYPE (UINT4 length, DTYPE value) {
   return retvec;
 }
 %}
+%unignore(TestNewout ## CTYPE);
 %apply CTYPE *NEWOUT_ ## SWTYPE {CTYPE *TestNewout ## CTYPE};
 CTYPE *TestNewout ## CTYPE(UINT4 length, DTYPE value);
 %enddef
@@ -260,27 +270,26 @@ CTYPE *TestNewout ## CTYPE(UINT4 length, DTYPE value);
 %inline %{
 CTYPE *TestNewout ## CTYPE (UINT4 length, DTYPE value, LIGOTimeGPS epoch, REAL8 deltaT) {
   UINT4 i;
-  VTYPE *retvec;
   CTYPE *retts;
 
   if (length == 0) return NULL;
   retts = calloc(1,sizeof(CTYPE));
   if (retts == NULL) return NULL;
-  retvec = XLALCreate ## VTYPE (length);
+  retts->data = XLALCreate ## VTYPE (length);
 
-  if (retvec == NULL) return NULL;
-  for (i=0; i < retvec->length; i++){
-    retvec->data[i] = value;
+  if (retts->data == NULL) return NULL;
+  for (i=0; i < retts->data->length; i++){
+    retts->data->data[i] = value;
   }
 
-  retts->data = retvec;
   retts->deltaT = deltaT;
   (retts->epoch).gpsSeconds = epoch.gpsSeconds;
   (retts->epoch).gpsNanoSeconds = epoch.gpsNanoSeconds;
 
-  return retfs;
+  return retts;
 }
 %}
+%unignore(TestNewout ## CTYPE);
 %apply CTYPE *NEWOUT_ ## SWTYPE {CTYPE *TestNewout ## CTYPE};
 CTYPE *TestNewout ## CTYPE(UINT4 length, DTYPE value, LIGOTimeGPS epoch, REAL8 deltaT);
 %enddef
@@ -289,20 +298,18 @@ CTYPE *TestNewout ## CTYPE(UINT4 length, DTYPE value, LIGOTimeGPS epoch, REAL8 d
 %inline %{
 CTYPE *TestNewout ## CTYPE (UINT4 length, DTYPE value, LIGOTimeGPS epoch, REAL8 deltaF) {
   UINT4 i;
-  VTYPE *retvec;
   CTYPE *retfs;
 
   if (length == 0) return NULL;
   retfs = calloc(1,sizeof(CTYPE));
   if (retfs == NULL) return NULL;
-  retvec = XLALCreate ## VTYPE (length);
+  retfs->data = XLALCreate ## VTYPE (length);
 
-  if (retvec == NULL) return NULL;
-  for (i=0; i < retvec->length; i++){
-    retvec->data[i] = value;
+  if (retfs->data == NULL) return NULL;
+  for (i=0; i < retfs->data->length; i++){
+    retfs->data->data[i] = value;
   }
 
-  retfs->data = retvec;
   retfs->deltaF = deltaF;
   (retfs->epoch).gpsSeconds = epoch.gpsSeconds;
   (retfs->epoch).gpsNanoSeconds = epoch.gpsNanoSeconds;
@@ -310,6 +317,7 @@ CTYPE *TestNewout ## CTYPE (UINT4 length, DTYPE value, LIGOTimeGPS epoch, REAL8 
   return retfs;
 }
 %}
+%unignore(TestNewout ## CTYPE);
 %apply CTYPE *NEWOUT_ ## SWTYPE {CTYPE *TestNewout ## CTYPE};
 CTYPE *TestArgout ## CTYPE(UINT4 length, DTYPE value, LIGOTimeGPS epoch, REAL8 deltaF);
 %enddef
@@ -322,7 +330,7 @@ CTYPE *TestArgout ## CTYPE(UINT4 length, DTYPE value, LIGOTimeGPS epoch, REAL8 d
 int TestArgout ## CTYPE (CTYPE **outvec, UINT4 length, DTYPE value) {
   UINT4 i;
 
-  if (*outvec != NULL) return 1
+  if (*outvec != NULL) return 1;
   if (length == 0) return 1;
   *outvec = XLALCreate ## CTYPE (length);
 
@@ -333,6 +341,7 @@ int TestArgout ## CTYPE (CTYPE **outvec, UINT4 length, DTYPE value) {
   return 0;
 }
 %}
+%unignore(TestArgout ## CTYPE);
 %apply CTYPE **ARGOUT_ ## SWTYPE {CTYPE **};
 int TestArgout ## CTYPE(CTYPE **outvec, UINT4 length, DTYPE value);
 %enddef
@@ -341,7 +350,6 @@ int TestArgout ## CTYPE(CTYPE **outvec, UINT4 length, DTYPE value);
 %inline %{
 int TestArgout ## CTYPE (CTYPE **outts, UINT4 length, DTYPE value, LIGOTimeGPS epoch, REAL8 deltaT) {
   UINT4 i;
-  CTYPE *outts;
 
   if (*outts != NULL) return 1;
   if (length == 0) return 1;
@@ -354,7 +362,6 @@ int TestArgout ## CTYPE (CTYPE **outts, UINT4 length, DTYPE value, LIGOTimeGPS e
     (*outts)->data->data[i] = value;
   }
 
-  (*outts)->data = retvec;
   (*outts)->deltaT = deltaT;
   ((*outts)->epoch).gpsSeconds = epoch.gpsSeconds;
   ((*outts)->epoch).gpsNanoSeconds = epoch.gpsNanoSeconds;
@@ -362,15 +369,15 @@ int TestArgout ## CTYPE (CTYPE **outts, UINT4 length, DTYPE value, LIGOTimeGPS e
   return 0;
 }
 %}
-%apply CTYPE *ARGOUT_ ## SWTYPE {CTYPE **};
+%unignore(TestArgout ## CTYPE);
+%apply CTYPE **ARGOUT_ ## SWTYPE {CTYPE **};
 int TestArgout ## CTYPE(CTYPE **outts, UINT4 length, DTYPE value, LIGOTimeGPS epoch, REAL8 deltaT);
 %enddef
 
 %define MAKE_TEST_ARGOUTFS(CTYPE,SWTYPE,VTYPE,DTYPE)
 %inline %{
-int TestArgout ## CTYPE (CTYPE **outts, UINT4 length, DTYPE value, LIGOTimeGPS epoch, REAL8 deltaF) {
+int TestArgout ## CTYPE (CTYPE **outfs, UINT4 length, DTYPE value, LIGOTimeGPS epoch, REAL8 deltaF) {
   UINT4 i;
-  CTYPE *outfs;
 
   if (*outfs != NULL) return 1;
   if (length == 0) return 1;
@@ -383,7 +390,6 @@ int TestArgout ## CTYPE (CTYPE **outts, UINT4 length, DTYPE value, LIGOTimeGPS e
     (*outfs)->data->data[i] = value;
   }
 
-  (*outfs)->data = retvec;
   (*outfs)->deltaF = deltaF;
   ((*outfs)->epoch).gpsSeconds = epoch.gpsSeconds;
   ((*outfs)->epoch).gpsNanoSeconds = epoch.gpsNanoSeconds;
@@ -391,7 +397,8 @@ int TestArgout ## CTYPE (CTYPE **outts, UINT4 length, DTYPE value, LIGOTimeGPS e
   return 0;
 }
 %}
-%apply CTYPE *ARGOUT_ ## SWTYPE {CTYPE **};
+%unignore(TestArgout ## CTYPE);
+%apply CTYPE **ARGOUT_ ## SWTYPE {CTYPE **};
 int TestArgout ## CTYPE(CTYPE **outfs, UINT4 length, DTYPE value, LIGOTimeGPS epoch, REAL8 deltaF);
 %enddef
 
