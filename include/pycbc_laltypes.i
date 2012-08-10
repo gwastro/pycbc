@@ -542,7 +542,6 @@ typedef struct {
     GenericTS *returnptr;
     PyObject *tmpobj;
     LIGOTimeGPS *epoch_ptr;
-    int retval;
 
     if (PyObject_IsInstance(obj,CBC_TS) !=1){
       PyErr_Format(PyExc_TypeError,
@@ -581,7 +580,7 @@ typedef struct {
 
     tmpobj = PyObject_GetAttrString(obj,"_epoch");
     if (!tmpobj ||
-	(SWIG_ConvertPtr(tmpobj,(void **) &epoch_ptr,SWIG_TypeQuery("LIGOTimeGPS *"),SWIG_POINTER_EXCEPTION) == -1){
+	(SWIG_ConvertPtr(tmpobj,(void **) &epoch_ptr,SWIG_TypeQuery("LIGOTimeGPS *"),SWIG_POINTER_EXCEPTION) == -1)){
       Py_XDECREF(tmpobj);
       PyErr_Format(PyExc_TypeError,
 		   "Argument '%s._epoch' does not exist or is not an instance of LIGOTimeGPS",objname);
@@ -787,7 +786,7 @@ typedef struct {
 
     tmpobj = PyObject_GetAttrString(obj,"_epoch");
     if (!tmpobj ||
-	(SWIG_ConvertPtr(tmpobj,(void **) &epoch_ptr,SWIG_TypeQuery("LIGOTimeGPS *"),SWIG_POINTER_EXCEPTION) == -1){
+	(SWIG_ConvertPtr(tmpobj,(void **) &epoch_ptr,SWIG_TypeQuery("LIGOTimeGPS *"),SWIG_POINTER_EXCEPTION) == -1)){
       Py_XDECREF(tmpobj);
       PyErr_Format(PyExc_TypeError,
 		   "Argument '%s._epoch' does not exist or is not an instance of LIGOTimeGPS",objname);
