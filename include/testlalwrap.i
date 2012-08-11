@@ -46,8 +46,8 @@ int TestInput ## CTYPE (CTYPE *invec1, CTYPE *invec2) {
   if (invec2->data == NULL) return 1;
   if (invec2->length == 0) return 1;
 
-  for (i=0; i < invec->length; i++){
-    invec->data[i] = 2.0*invec->data[i];
+  for (i=0; i < invec1->length; i++){
+    invec1->data[i] = 2.0*invec1->data[i];
   }
   return 0;
 }
