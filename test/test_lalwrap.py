@@ -37,7 +37,6 @@ from numpy import dtype, float32, float64, complex64, complex128
 import unittest
 import base_test
 import sys
-from sys import getrefcount as grc
 from lal import LIGOTimeGPS as LTG
 
 import pycbc.testlalwrap as tlw
@@ -115,38 +114,6 @@ def ourcopy(other):
                                       delta_f=other._delta_f,epoch=other._epoch,copy=True)
     if isinstance(other,pycbc.types.Array):
         return pycbc.types.Array(initial_array=other._data,dtype=other.dtype,copy=True)
-
-def saverefcnt(other):
-    """
-    A convenience function to save a copy of the reference count on all pertinent
-    properties of a PyCBC type.  Useful for debugging typemaps.
-    """
-    if not isinstance(other,pycbc.types.Array):
-        raise TypeError("saverefcnt() can only be used to monitor PyCBC types")
-    refdict = {}
-    refdict.update({'_data':grc(other._data)})
-    if isinstance(other,pycbc.types.TimeSeries):
-        refdict.update({'_epoch':grc(other._epoch)})
-        refdict.update({'_delta_t':grc(other._delta_t)})
-    if isinstance(other,pycbc.types.FrequencySeries):
-        refdict.update({'_epoch':grc(other._epoch)})
-        refdict.update({'_delta_f':grc(other._delta_f)})
-    return (grc(other),refdict)
-
-def cmprefcnt(cmptuple,other):
-    """
-    A convenience function to compare a saved copy of the reference counts of
-    pertinent properties of a PyCBC type with the current reference count of
-    the PyCBC type instance 'other'.  Useful for debugging typemaps.
-    """
-    if not isinstance(other,pycbc.types.Array):
-        raise TypeError("cmprefcnt() can only be used to monitor PyCBC types")
-    trutharray = [cmptuple[0]==grc(other)]
-    refdict = cmptuple[1]
-    keys = refdict.keys()
-    for key in keys:
-        trutharray.append(refdict[key]==grc(getattr(other,key)))
-    return bool(numpy.array(trutharray).all())
 
 def DoublePyCBCType(self):
     """
@@ -331,13 +298,13 @@ def GetPlaces(LALType):
     else:
         return 15
 
-#possible_laltypes = ["REAL4Vector"]
-possible_laltypes = ["REAL4Vector","REAL8Vector",
-                     "COMPLEX8Vector","COMPLEX16Vector",
-                     "REAL4TimeSeries","REAL8TimeSeries",
-                     "COMPLEX8TimeSeries","COMPLEX16TimeSeries",
-                     "REAL4FrequencySeries","REAL8FrequencySeries",
-                     "COMPLEX8FrequencySeries","COMPLEX16FrequencySeries"]
+possible_laltypes = ["REAL4TimeSeries","REAL4Vector"]
+#possible_laltypes = ["REAL4Vector","REAL8Vector",
+#                     "COMPLEX8Vector","COMPLEX16Vector",
+#                     "REAL4TimeSeries","REAL8TimeSeries",
+#                     "COMPLEX8TimeSeries","COMPLEX16TimeSeries",
+#                     "REAL4FrequencySeries","REAL8FrequencySeries",
+#                     "COMPLEX8FrequencySeries","COMPLEX16FrequencySeries"]
 
 def ValidLALType(LALType):
     return (LALType in possible_laltypes)
@@ -350,7 +317,6 @@ class _BaseTestTMClass(base_test.function_base):
     def setUp(self):
         # Various error messages
         self.tmfail = "SWIG-wrapped function indicated failure"
-        self.referror = "Reference count incorrectly changed after function call"
         self.outfail = "Wrapped function did not modify or generate PyCBC type correctly"
         self.infail = "Wrapped function modified read-only input"
 
@@ -399,12 +365,8 @@ class _BaseTestTMClass(base_test.function_base):
                 intuple=[self.input1,self.input2]
                 self.assertRaises(TypeError,self.fn,*intuple)
         else:
-            self.ref1 = saverefcnt(self.input1)
-            self.ref2 = saverefcnt(self.input2)
             self.retval=self.fn(self.input1,self.input2)
             self.assertEqual(self.retval,0,msg=self.tmfail)
-            self.assertTrue(cmprefcnt(self.ref1,self.input1),msg=self.referror)
-            self.assertTrue(cmprefcnt(self.ref2,self.input2),msg=self.referror)
             self.assertTrue(ourcmp(self.expectedout,self.input1),msg=self.outfail)
             self.assertTrue(ourcmp(self.copy2,self.input2),msg=self.infail)
 
@@ -464,12 +426,8 @@ class _BaseTestTMClass(base_test.function_base):
                 intuple=[self.input,self.output]
                 self.assertRaises(TypeError,self.fn,*intuple)
         else:
-            self.iref = saverefcnt(self.input)
-            self.oref = saverefcnt(self.output)
             self.retval=self.fn(self.input,self.output)
             self.assertEqual(self.retval,None,msg="Noneout typemap did not return 'None'")
-            self.assertTrue(cmprefcnt(self.iref,self.input),msg=self.referror)
-            self.assertTrue(cmprefcnt(self.oref,self.output),msg=self.referror)
             self.assertTrue(ourcmp(self.expectedout,self.output),msg=self.outfail)
             self.assertTrue(ourcmp(self.savedinput,self.input),msg=self.infail)
 
