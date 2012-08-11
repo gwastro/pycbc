@@ -35,10 +35,17 @@ include/pycbc_laltypes.i.
 // pycbc.types are initially zeroed out.
 %define MAKE_TEST_INPUTV(CTYPE,SWTYPE)
 %inline %{
-int TestInput ## CTYPE (CTYPE *invec) {
+int TestInput ## CTYPE (CTYPE *invec1, CTYPE *invec2) {
   UINT4 i;
-  if (invec->data == NULL) return 1;
-  if (invec->length == 0) return 1;
+
+  if (invec1 == NULL) return 1;
+  if (invec1->data == NULL) return 1;
+  if (invec1->length == 0) return 1;
+
+  if (invec2 == NULL) return 1;
+  if (invec2->data == NULL) return 1;
+  if (invec2->length == 0) return 1;
+
   for (i=0; i < invec->length; i++){
     invec->data[i] = 2.0*invec->data[i];
   }
@@ -47,79 +54,117 @@ int TestInput ## CTYPE (CTYPE *invec) {
 %}
 %unignore(TestInput ## CTYPE);
 %apply CTYPE *INPUT_ ## SWTYPE {CTYPE *};
-int TestInput ## CTYPE(CTYPE *invec);
+int TestInput ## CTYPE(CTYPE *invec1, CTYPE *invec2);
 %enddef
 
 %define MAKE_TEST_INPUTTS(CTYPE,SWTYPE)
 %inline %{
-int TestInput ## CTYPE (CTYPE *ints) {
+int TestInput ## CTYPE (CTYPE *ints1, CTYPE *ints2) {
   UINT4 i;
-  if (ints->data == NULL) return 1;
-  if (ints->data->data == NULL) return 1;
-  if (ints->data->length == 0) return 1;
+
+  if (ints1 == NULL) return 1;
+  if (ints1->data == NULL) return 1;
+  if (ints1->data->data == NULL) return 1;
+  if (ints1->data->length == 0) return 1;
 
   for (i=0; i < LALNameLength; i++){
-    if (ints->name[i] != '\0') return 1;
+    if (ints1->name[i] != '\0') return 1;
   }
 
-  if (ints->f0 != 0.0) return 1;
+  if (ints1->f0 != 0.0) return 1;
 
-  if ((ints->sampleUnits).powerOfTen != 0) return 1;
+  if ((ints1->sampleUnits).powerOfTen != 0) return 1;
   for (i=0; i < LALNumUnits; i++){
-    if ( (ints->sampleUnits).unitNumerator[i] != 0) return 1;
-    if ( (ints->sampleUnits).unitDenominatorMinusOne[i] != 0) return 1;
+    if ( (ints1->sampleUnits).unitNumerator[i] != 0) return 1;
+    if ( (ints1->sampleUnits).unitDenominatorMinusOne[i] != 0) return 1;
   }
 
-  for (i=0; i < ints->data->length; i++){
-    ints->data->data[i] = 2.0 * ints->data->data[i];
+  if (ints2 == NULL) return 1;
+  if (ints2->data == NULL) return 1;
+  if (ints2->data->data == NULL) return 1;
+  if (ints2->data->length == 0) return 1;
+
+  for (i=0; i < LALNameLength; i++){
+    if (ints2->name[i] != '\0') return 1;
   }
 
-  ints->deltaT = 2.0 * ints->deltaT;
-  (ints->epoch).gpsSeconds = 2 * (ints->epoch).gpsSeconds;
-  (ints->epoch).gpsNanoSeconds = 2 * (ints->epoch).gpsNanoSeconds;
+  if (ints2->f0 != 0.0) return 1;
+
+  if ((ints2->sampleUnits).powerOfTen != 0) return 1;
+  for (i=0; i < LALNumUnits; i++){
+    if ( (ints2->sampleUnits).unitNumerator[i] != 0) return 1;
+    if ( (ints2->sampleUnits).unitDenominatorMinusOne[i] != 0) return 1;
+  }
+
+  for (i=0; i < ints1->data->length; i++){
+    ints1->data->data[i] = 2.0 * ints1->data->data[i];
+  }
+
+  ints1->deltaT = 2.0 * ints1->deltaT;
+  (ints1->epoch).gpsSeconds = 2 * (ints1->epoch).gpsSeconds;
+  (ints1->epoch).gpsNanoSeconds = 2 * (ints1->epoch).gpsNanoSeconds;
 
   return 0;
 }
 %}
 %unignore(TestInput ## CTYPE);
 %apply CTYPE *INPUT_ ## SWTYPE {CTYPE *};
-int TestInput ## CTYPE(CTYPE *ints);
+int TestInput ## CTYPE(CTYPE *ints1, CTYPE *ints2);
 %enddef
 
 %define MAKE_TEST_INPUTFS(CTYPE,SWTYPE)
 %inline %{
-int TestInput ## CTYPE (CTYPE *infs) {
+int TestInput ## CTYPE (CTYPE *infs1, CTYPE *infs2) {
   UINT4 i;
-  if (infs->data == NULL) return 1;
-  if (infs->data->data == NULL) return 1;
-  if (infs->data->length == 0) return 1;
+
+  if (infs1 == NULL) return 1;
+  if (infs1->data == NULL) return 1;
+  if (infs1->data->data == NULL) return 1;
+  if (infs1->data->length == 0) return 1;
 
   for (i=0; i < LALNameLength; i++){
-    if (infs->name[i] != '\0') return 1;
+    if (infs1->name[i] != '\0') return 1;
   }
 
-  if (infs->f0 != 0.0) return 1;
+  if (infs1->f0 != 0.0) return 1;
 
-  if ((infs->sampleUnits).powerOfTen != 0) return 1;
+  if ((infs1->sampleUnits).powerOfTen != 0) return 1;
   for (i=0; i < LALNumUnits; i++){
-    if ( (infs->sampleUnits).unitNumerator[i] != 0) return 1;
-    if ( (infs->sampleUnits).unitDenominatorMinusOne[i] != 0) return 1;
+    if ( (infs1->sampleUnits).unitNumerator[i] != 0) return 1;
+    if ( (infs1->sampleUnits).unitDenominatorMinusOne[i] != 0) return 1;
   }
 
-  for (i=0; i < infs->data->length; i++){
-    infs->data->data[i] = 2.0 * infs->data->data[i];
+  if (infs2 == NULL) return 1;
+  if (infs2->data == NULL) return 1;
+  if (infs2->data->data == NULL) return 1;
+  if (infs2->data->length == 0) return 1;
+
+  for (i=0; i < LALNameLength; i++){
+    if (infs2->name[i] != '\0') return 1;
   }
 
-  infs->deltaF = 2.0 * infs->deltaF;
-  (infs->epoch).gpsSeconds = 2 * (infs->epoch).gpsSeconds;
-  (infs->epoch).gpsNanoSeconds = 2 * (infs->epoch).gpsNanoSeconds;
+  if (infs2->f0 != 0.0) return 1;
+
+  if ((infs2->sampleUnits).powerOfTen != 0) return 1;
+  for (i=0; i < LALNumUnits; i++){
+    if ( (infs2->sampleUnits).unitNumerator[i] != 0) return 1;
+    if ( (infs2->sampleUnits).unitDenominatorMinusOne[i] != 0) return 1;
+  }
+
+  for (i=0; i < infs1->data->length; i++){
+    infs1->data->data[i] = 2.0 * infs1->data->data[i];
+  }
+
+  infs1->deltaF = 2.0 * infs1->deltaF;
+  (infs1->epoch).gpsSeconds = 2 * (infs1->epoch).gpsSeconds;
+  (infs1->epoch).gpsNanoSeconds = 2 * (infs1->epoch).gpsNanoSeconds;
 
   return 0;
 }
 %}
 %unignore(TestInput ## CTYPE);
 %apply CTYPE *INPUT_ ## SWTYPE {CTYPE *};
-int TestInput ## CTYPE(CTYPE *infs);
+int TestInput ## CTYPE(CTYPE *infs1, CTYPE *infs2);
 %enddef
 
 // Next, NONEOUT tests.  They take two inputs: on return the
@@ -132,10 +177,15 @@ int TestInput ## CTYPE(CTYPE *infs);
   CTYPE *TestNoneout ## CTYPE (CTYPE *invec, CTYPE *outvec) {
   UINT4 i;
 
+  if (invec == NULL) return NULL;
   if (invec->data == NULL) return NULL;
+
+  if (outvec == NULL) return NULL;
   if (outvec->data == NULL) return NULL;
+
   if (invec->length != outvec->length) return NULL;
   if (invec->length == 0) return NULL;
+
   for (i=0; i < invec->length; i++){
     outvec->data[i] = 2.0*invec->data[i];
   }
@@ -153,12 +203,16 @@ CTYPE *TestNoneout ## CTYPE(CTYPE *invec, CTYPE *outvec);
   CTYPE *TestNoneout ## CTYPE (CTYPE *ints, CTYPE *outts) {
   UINT4 i;
 
+  if (ints == NULL) return NULL;
   if (ints->data == NULL) return NULL;
   if (ints->data->data == NULL) return NULL;
   if (ints->data->length == 0) return NULL;
+
+  if (outts == NULL) return NULL;
   if (outts->data == NULL) return NULL;
   if (outts->data->data == NULL) return NULL;
   if (outts->data->length == 0) return NULL;
+
   if (outts->data->length != ints->data->length) return NULL;
 
   for (i=0; i < LALNameLength; i++){
@@ -200,12 +254,16 @@ CTYPE *TestNoneout ## CTYPE(CTYPE *ints, CTYPE *outts);
   CTYPE *TestNoneout ## CTYPE (CTYPE *infs, CTYPE *outfs) {
   UINT4 i;
 
+  if (infs == NULL) return NULL;
   if (infs->data == NULL) return NULL;
   if (infs->data->data == NULL) return NULL;
   if (infs->data->length == 0) return NULL;
+
+  if (outfs == NULL) return NULL;
   if (outfs->data == NULL) return NULL;
   if (outfs->data->data == NULL) return NULL;
   if (outfs->data->length == 0) return NULL;
+
   if (outfs->data->length != infs->data->length) return NULL;
 
   for (i=0; i < LALNameLength; i++){
