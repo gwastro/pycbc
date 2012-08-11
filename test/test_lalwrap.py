@@ -514,7 +514,8 @@ class _BaseTestTMClass(base_test.function_base):
         if _options['scheme'] != 'cpu':
             pass
         else:
-            self.output=self.fn(**self.kwdict)
+            empty_args = []
+            self.output=self.fn(*empty_args,**self.kwdict)
             self.assertTrue(ourcmp(self.expectedout,self.output),msg=self.outfail)
 
     def test_Argout(self):
@@ -549,7 +550,8 @@ class _BaseTestTMClass(base_test.function_base):
         if _options['scheme'] != 'cpu':
             pass
         else:
-            self.output=self.fn(**self.kwdict)
+            empty_args = []
+            self.output=self.fn(*empty_args,**self.kwdict)
             self.assertEqual(len(self.output),2,msg="Argout typemap did not return a list of values")
             self.assertEqual(self.output[0],0,msg=self.tmfail)
             self.assertTrue(ourcmp(self.expectedout,self.output[1]),msg=self.outfail)
