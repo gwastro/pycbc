@@ -87,7 +87,8 @@ def ourcmp(inst1,inst2):
     like this a method of pycbc.types, but the numpy behavior might seem
     more natural to users, so we keep this here.
     """
-    if (type(inst1) != type(inst2)) return False
+    if (type(inst1) != type(inst2)):
+        return False
     if isinstance(inst1,pycbc.types.TimeSeries):
         return ( (inst1.dtype==inst2.dtype) and (inst1._delta_t == inst2._delta_t)
                  and (inst1._epoch == inst2._epoch) and
