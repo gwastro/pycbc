@@ -555,8 +555,8 @@ class Array(object):
     def  _swighelper(self):
         """ Used internally by SWIG typemaps to ensure @_convert is called and scheme is correct  """
 
-        if type(self._data) is not _numpy.ndarray:
-            raise NotImplementedError("Cannot call LAL function from the GPU")
+        if type(self._scheme) is not None:
+            raise TypeError("Cannot call LAL function from the GPU")
         else:
             return self;
 
