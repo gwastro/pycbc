@@ -55,7 +55,7 @@ def _check_scheme(option, opt_str, scheme, parser):
         raise optparse.OptionValueError("OpenCL not found")
     setattr (parser.values, option.dest, scheme)
 
-_parser.add_option('--scheme','-s', action='callback', type = 'choice', choices = ('cpu','cuda','opencl'), 
+_parser.add_option('--scheme','-s', action='callback', type = 'choice', choices = ('cpu','cuda','opencl'),
                     default = 'cpu', dest = 'scheme', callback = _check_scheme,
                     help = 'specifies processing scheme, can be cpu [default], cuda, or opencl')
 
@@ -98,6 +98,7 @@ def ourcmp(inst1,inst2):
                  and (inst1._epoch == inst2._epoch) and
                  bool((inst1._data == inst2._data).all()))
     if isinstance(inst1,pycbc.types.Array):
+        print bool((inst1._data == inst2._data).all())
         return ( (inst1.dtype==inst2.dtype) and
                  bool((inst1._data == inst2._data).all()))
 
@@ -150,18 +151,22 @@ def cmprefcnt(cmptuple,other):
 
 def DoublePyCBCType(self):
     """
-    A convenience function to double all relevant attributes of 
+    A convenience function to double all relevant attributes of
     a PyCBC type.  This is used in Input and Noneout typemap tests,
     which by design do the same.  So we do it also in Python, and
     compare.
     """
-    self *= 2
-    if isinstance(self,pycbc.types.TimeSeries):
-        self._delta_t *= 2
-        self._epoch *= 2
+
+    returnobj = ourcopy(self)
+    returnobj *= 2
+    if isinstance(returnobj,pycbc.types.TimeSeries):
+        returnobj._delta_t *= 2
+        returnobj._epoch *= 2
     if isinstance(self,pycbc.types.FrequencySeries):
-        self._delta_f *= 2
-        self._epoch *= 2
+        returnobj._delta_f *= 2
+        returnobj._epoch *= 2
+
+    return returnobj
 
 def baddata(self,pinst,fn,argtuple,kwdict,key):
     """
@@ -170,7 +175,7 @@ def baddata(self,pinst,fn,argtuple,kwdict,key):
     the '_data' attribute can be erroneous.
 
     self is an instance of the base test class, and provides
-    the 'assertRaises' functionality. 
+    the 'assertRaises' functionality.
 
     fn is the function to be tested.
 
@@ -181,11 +186,11 @@ def baddata(self,pinst,fn,argtuple,kwdict,key):
 
     pinst is the particular instance whose _data property will
     be (repeatedly) modified.
-    
+
     key is the key with which kwdict will be updated, i.e. a
     call of kwdict.update({key:pinst})
     """
-    
+
     if not isinstance(pinst,pycbc.types.Array):
         raise TypeError("pinst must be an instance of a PyCBC type")
 
@@ -199,15 +204,15 @@ def baddata(self,pinst,fn,argtuple,kwdict,key):
     kwdict.update({key:pinst})
     self.assertRaises(TypeError,fn,*argtuple,**kwdict)
 
-    pinst._data = numpy.array(saved_data,dtype=pinst.dtype,order='F')
+    pinst._data = numpy.array(saved_data,dtype=saved_data.dtype,order='F')
     kwdict.update({key:pinst})
     self.assertRaises(TypeError,fn,*argtuple,**kwdict)
 
-    pinst._data = numpy.array([saved_data,saved_data],dtype=pinst.dtype)
+    pinst._data = numpy.array([saved_data,saved_data],dtype=saved_data.dtype)
     kwdict.update({key:pinst})
     self.assertRaises(ValueError,fn,*argtuple,**kwdict)
 
-    pinst._data = numpy.array(saved_data,dtype=otypedict[pinst.dtype])
+    pinst._data = numpy.array(saved_data,dtype=otypedict[saved_data.dtype])
     kwdict.update({key:pinst})
     self.assertRaises(ValueError,fn,*argtuple,**kwdict)
 
@@ -220,7 +225,7 @@ def badepoch(self,pinst,fn,argtuple,kwdict,key):
     erroneous.
 
     self is an instance of the base test class, and provides
-    the 'assertRaises' functionality. 
+    the 'assertRaises' functionality.
 
     fn is the function to be tested.
 
@@ -231,11 +236,11 @@ def badepoch(self,pinst,fn,argtuple,kwdict,key):
 
     pinst is the particular instance whose _epoch property will
     be modified.
-    
+
     key is the key with which kwdict will be updated, i.e. a
     call of kwdict.update({key:pinst})
     """
-    
+
     if not isinstance(pinst,pycbc.types.Array):
         raise TypeError("pinst must be an instance of a PyCBC type")
 
@@ -252,7 +257,7 @@ def baddelta(self,pinst,fn,argtuple,kwdict,key):
     erroneous.
 
     self is an instance of the base test class, and provides
-    the 'assertRaises' functionality. 
+    the 'assertRaises' functionality.
 
     fn is the function to be tested.
 
@@ -263,11 +268,11 @@ def baddelta(self,pinst,fn,argtuple,kwdict,key):
 
     pinst is the particular instance whose _delta_{t,f} property will
     be modified.
-    
+
     key is the key with which kwdict will be updated, i.e. a
     call of kwdict.update({key:pinst})
     """
-    
+
     if isinstance(pinst,pycbc.types.TimeSeries):
         saved_dt = pinst._delta_t
         pinst._delta_t = "A string"
@@ -327,17 +332,16 @@ def GetPlaces(LALType):
     else:
         return 15
 
-possible_laltypes = ["REAL4Vector","REAL8Vector",
-                     "COMPLEX8Vector","COMPLEX16Vector",
-                     "REAL4TimeSeries","REAL8TimeSeries",
-                     "COMPLEX8TimeSeries","COMPLEX16TimeSeries",
-                     "REAL4FrequencySeries","REAL8FrequencySeries",
-                     "COMPLEX8FrequencySeries","COMPLEX16FrequencySeries"]
+possible_laltypes = ["REAL4Vector"]
+#possible_laltypes = ["REAL4Vector","REAL8Vector",
+#                     "COMPLEX8Vector","COMPLEX16Vector",
+#                     "REAL4TimeSeries","REAL8TimeSeries",
+#                     "COMPLEX8TimeSeries","COMPLEX16TimeSeries",
+#                     "REAL4FrequencySeries","REAL8FrequencySeries",
+#                     "COMPLEX8FrequencySeries","COMPLEX16FrequencySeries"]
 
 def ValidLALType(LALType):
     return (LALType in possible_laltypes)
-                       
-
 
 class _BaseTestTMClass(base_test.function_base):
     """
@@ -366,7 +370,7 @@ class _BaseTestTMClass(base_test.function_base):
         else:
             self.inbase1 = numpy.array([1,2],dtype=GetDtype(self.laltype))
             self.inbase2 = numpy.array([3,4],dtype=GetDtype(self.laltype))
-            
+
         if isV(self.laltype):
             self.input1 = pycbc.types.Array(self.inbase1)
             self.key1 = "invec1"
@@ -383,11 +387,11 @@ class _BaseTestTMClass(base_test.function_base):
             self.input2 = pycbc.types.FrequencySeries(self.inbase2,delta_f=2.0,epoch=LTG(3,4))
             self.key2 = "infs2"
 
-        self.expectedout = DoublePyCBCType(ourcopy(self.input1))
+        self.expectedout = DoublePyCBCType(self.input1)
         self.copy2 = ourcopy(self.input2)
         self.fn = GetTestFunc("Input",self.laltype)
 
-        # Now begin our testing.  If we're on the GPU, we only check that we 
+        # Now begin our testing.  If we're on the GPU, we only check that we
         # raise TypeError if we call these functions, and that they can
         # be moved back to the CPU and the correct values obtained.
         if _options['scheme'] != 'cpu':
@@ -446,12 +450,12 @@ class _BaseTestTMClass(base_test.function_base):
             self.output = pycbc.types.FrequencySeries(self.obase,delta_f=1.0,epoch=LTG(0,0))
             self.okey = "outfs"
 
-        self.expectedout = DoublePyCBCType(ourcopy(self.input))
+        self.expectedout = DoublePyCBCType(self.input)
         self.savedinput = ourcopy(self.input)
         self.fn = GetTestFunc("Noneout",self.laltype)
 
 
-        # Now begin our testing.  If we're on the GPU, we only check that we 
+        # Now begin our testing.  If we're on the GPU, we only check that we
         # raise TypeError if we call these functions, and that they can
         # be moved back to the CPU and the correct values obtained.
         if _options['scheme'] != 'cpu':
@@ -607,7 +611,7 @@ if __name__ == '__main__':
         for klass in OpenCLTestClasses:
             suiteOpenCL.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
         results = unittest.TextTestRunner(verbosity=2).run(suiteOpenCL)
-        
+
     NotImpErrors = 0
     for error in results.errors:
         for errormsg in error:
