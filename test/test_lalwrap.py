@@ -298,13 +298,12 @@ def GetPlaces(LALType):
     else:
         return 15
 
-possible_laltypes = ["REAL4TimeSeries","REAL4Vector"]
-#possible_laltypes = ["REAL4Vector","REAL8Vector",
-#                     "COMPLEX8Vector","COMPLEX16Vector",
-#                     "REAL4TimeSeries","REAL8TimeSeries",
-#                     "COMPLEX8TimeSeries","COMPLEX16TimeSeries",
-#                     "REAL4FrequencySeries","REAL8FrequencySeries",
-#                     "COMPLEX8FrequencySeries","COMPLEX16FrequencySeries"]
+possible_laltypes = ["REAL4Vector","REAL8Vector",
+                     "COMPLEX8Vector","COMPLEX16Vector",
+                     "REAL4TimeSeries","REAL8TimeSeries",
+                     "COMPLEX8TimeSeries","COMPLEX16TimeSeries",
+                     "REAL4FrequencySeries","REAL8FrequencySeries",
+                     "COMPLEX8FrequencySeries","COMPLEX16FrequencySeries"]
 
 def ValidLALType(LALType):
     return (LALType in possible_laltypes)
@@ -407,7 +406,7 @@ class _BaseTestTMClass(base_test.function_base):
             self.okey = "outts"
         if isFS(self.laltype):
             self.input = pycbc.types.FrequencySeries(self.ibase,delta_f=1.0,epoch=LTG(1,2))
-            self.key = "infs"
+            self.ikey = "infs"
             self.output = pycbc.types.FrequencySeries(self.obase,delta_f=1.0,epoch=LTG(0,0))
             self.okey = "outfs"
 
