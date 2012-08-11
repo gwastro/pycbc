@@ -377,7 +377,7 @@ CTYPE *TestNewout ## CTYPE (UINT4 length, DTYPE value, LIGOTimeGPS epoch, REAL8 
 %}
 %unignore(TestNewout ## CTYPE);
 %apply CTYPE *NEWOUT_ ## SWTYPE {CTYPE *TestNewout ## CTYPE};
-CTYPE *TestArgout ## CTYPE(UINT4 length, DTYPE value, LIGOTimeGPS epoch, REAL8 deltaF);
+CTYPE *TestNewout ## CTYPE(UINT4 length, DTYPE value, LIGOTimeGPS epoch, REAL8 deltaF);
 %enddef
 
 // Finally, ARGOUT tests.  They also take inputs specifying
