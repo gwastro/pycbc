@@ -98,7 +98,6 @@ def ourcmp(inst1,inst2):
                  and (inst1._epoch == inst2._epoch) and
                  bool((inst1._data == inst2._data).all()))
     if isinstance(inst1,pycbc.types.Array):
-        print bool((inst1._data == inst2._data).all())
         return ( (inst1.dtype==inst2.dtype) and
                  bool((inst1._data == inst2._data).all()))
 
@@ -194,17 +193,17 @@ def baddata(self,pinst,fn,argtuple,kwdict,key):
     if not isinstance(pinst,pycbc.types.Array):
         raise TypeError("pinst must be an instance of a PyCBC type")
 
-    otypedict = {float32: float64,
-                 float64: float32,
-                 complex64: complex128,
-                 complex128: complex64}
+    otypedict = {dtype('float32'): float64,
+                 dtype('float64'): float32,
+                 dtype('complex64'): complex128,
+                 dtype('complex128'): complex64}
 
     saved_data = pinst._data.copy()
     pinst._data = None
     kwdict.update({key:pinst})
     self.assertRaises(TypeError,fn,*argtuple,**kwdict)
 
-    pinst._data = numpy.array(saved_data,dtype=saved_data.dtype,order='F')
+    pinst._data = numpy.array([saved_data,saved_data],dtype=saved_data.dtype,order='F')
     kwdict.update({key:pinst})
     self.assertRaises(TypeError,fn,*argtuple,**kwdict)
 
@@ -332,13 +331,13 @@ def GetPlaces(LALType):
     else:
         return 15
 
-possible_laltypes = ["REAL4Vector"]
-#possible_laltypes = ["REAL4Vector","REAL8Vector",
-#                     "COMPLEX8Vector","COMPLEX16Vector",
-#                     "REAL4TimeSeries","REAL8TimeSeries",
-#                     "COMPLEX8TimeSeries","COMPLEX16TimeSeries",
-#                     "REAL4FrequencySeries","REAL8FrequencySeries",
-#                     "COMPLEX8FrequencySeries","COMPLEX16FrequencySeries"]
+#possible_laltypes = ["REAL4Vector"]
+possible_laltypes = ["REAL4Vector","REAL8Vector",
+                     "COMPLEX8Vector","COMPLEX16Vector",
+                     "REAL4TimeSeries","REAL8TimeSeries",
+                     "COMPLEX8TimeSeries","COMPLEX16TimeSeries",
+                     "REAL4FrequencySeries","REAL8FrequencySeries",
+                     "COMPLEX8FrequencySeries","COMPLEX16FrequencySeries"]
 
 def ValidLALType(LALType):
     return (LALType in possible_laltypes)

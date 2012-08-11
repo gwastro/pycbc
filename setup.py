@@ -62,7 +62,7 @@ ext_libraries, ext_library_dirs, ext_include_dirs = pkg_config(pkg_libraries=["l
 # Setup our swig options. We need the first two to match with how the swiglal
 # wrappings are compiled, so that our module can talk to theirs.  Then we must
 # reassemble the include_dirs to add the "-I" so swig can find things
-ext_swig_opts = ['-O','-builtin','-outdir','pycbc']
+ext_swig_opts = ['-O','-keyword','-builtin','-outdir','pycbc']
 for libpath in ext_include_dirs:
     ext_swig_opts.append('-I'+str(libpath))
 

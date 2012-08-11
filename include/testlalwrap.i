@@ -29,6 +29,26 @@ include/pycbc_laltypes.i.
 
 %include "pycbc_laltypes.i"
 
+%unignore(invec1);
+%unignore(invec2);
+%unignore(ints1);
+%unignore(ints2);
+%unignore(infs1);
+%unignore(infs2);
+
+%unignore(invec);
+%unignore(outvec);
+%unignore(ints);
+%unignore(outts);
+%unignore(infs);
+%unignore(outfs);
+
+%unignore(length);
+%unignore(value);
+%unignore(epoch);
+%unignore(deltaT);
+%unignore(deltaF);
+
 // First, our input tests.  They take a single input
 // and double everything. For time and frequency series
 // they also check that all members not shadowed in
