@@ -43,6 +43,8 @@ class FrequencySeries(Array):
             raise ValueError('delta_f must be a positive number')
         if epoch is not None and not isinstance(epoch, _lal.LIGOTimeGPS):
             raise TypeError('epoch must be either None or a lal.LIGOTimeGPS')
+        if epoch is None:
+            epoch = _lal.LIGOTimeGPS(0,0)
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
         self._delta_f = delta_f
         self._epoch = epoch
