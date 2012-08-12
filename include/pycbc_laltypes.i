@@ -37,10 +37,10 @@ developers are not expected to routinely need to modify this file.
 #include <numpy/arrayobject.h>
 %}
 
-// Ignore all of the names from the swiglal wrappings, so that they
+// Ignore all of the function names from the swiglal wrappings, so that they
 // do not override what we will wrap.
 
-%ignore "";
+%rename("$ignore", %$isfunction) "";
 
 // Seems we must manually include <exception.i> before importing
 // <lal/lalswig.i>.  Might be a bug in lalswig, or might just be

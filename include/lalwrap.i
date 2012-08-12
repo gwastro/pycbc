@@ -35,8 +35,7 @@ FrequencySeries.  To add a function do the following:
     have already been included.
 (2) In the section beneath the comment "Add wrappings here" add the
     following:
-    (a) %unignore(<name of function>), and if you want to call
-         the function using keyword arguments, %unignore(<each arg>).
+    (a) %unignore(<name of function>).
     (b) %newobject directives for each variable that will have a
          NEWOUT or ARGOUT typemap applied to it.  Unlike the typemaps
 	 themselves, these much each be specified by the name of the
@@ -80,8 +79,6 @@ then to wrap it we would in all likelihood do the following:
     to the header section of the file.
 (2) We add the following lines to the declaration section:
        %unignore(XLALSomeFunc);
-       %unignore(input);
-       %unignore(MyStart);
        %newobject hplus;
        %newobject hcross;
        %newobject XLALSomeFunc;
@@ -188,63 +185,39 @@ YOU HAVE BEEN WARNED!
 // An example of the usage of "NONEOUT": the vector returned by
 // the function is the same as the function argument "out"
 %unignore(XLALSSVectorMultiply);
-%unignore(out);
-%unignore(in1);
-%unignore(in2);
 %apply REAL4Vector *NONEOUT_REAL4V { REAL4Vector *XLALSSVectorMultiply };
 %apply REAL4Vector *INPUT_REAL4V {REAL4Vector *};
 extern REAL4Vector *XLALSSVectorMultiply(REAL4Vector *out, REAL4Vector *in1, REAL4Vector *in2);
 
 // Functions to perform FFTs:
 %unignore(XLALCOMPLEX8VectorFFT);
-%unignore(output);
-%unignore(input);
-%unignore(plan);
 %apply COMPLEX8Vector *INPUT_COMPLEX8V {COMPLEX8Vector *};
 extern int XLALCOMPLEX8VectorFFT(COMPLEX8Vector *output, COMPLEX8Vector *input, const COMPLEX8FFTPlan *plan );
 
 %unignore(XLALCOMPLEX16VectorFFT);
-%unignore(output);
-%unignore(input);
-%unignore(plan);
 %apply COMPLEX16Vector *INPUT_COMPLEX16V {COMPLEX16Vector *};
 extern int XLALCOMPLEX16VectorFFT(COMPLEX16Vector *output, COMPLEX16Vector *input, const COMPLEX16FFTPlan *plan );
 
 %unignore(XLALREAL4ForwardFFT);
-%unignore(output);
-%unignore(input);
-%unignore(plan);
 %apply COMPLEX8Vector *INPUT_COMPLEX8V {COMPLEX8Vector *};
 %apply REAL4Vector *INPUT_REAL4V {REAL4Vector *};
 extern int XLALREAL4ForwardFFT(COMPLEX8Vector *output, REAL4Vector *input, REAL4FFTPlan *plan );
 
 %unignore(XLALREAL4ReverseFFT);
-%unignore(output);
-%unignore(input);
-%unignore(plan);
 %apply COMPLEX8Vector *INPUT_COMPLEX8V {COMPLEX8Vector *};
 %apply REAL4Vector *INPUT_REAL4V {REAL4Vector *};
 extern int XLALREAL4ReverseFFT(REAL4Vector *output, COMPLEX8Vector *input, REAL4FFTPlan *plan );
 
 %unignore(XLALREAL4VectorFFT);
-%unignore(output);
-%unignore(input);
-%unignore(plan);
 %apply REAL4Vector *INPUT_REAL4V {REAL4Vector *};
 extern int XLALREAL4VectorFFT(REAL4Vector *output, REAL4Vector *input, REAL4FFTPlan *plan );
 
 %unignore(XLALREAL8ForwardFFT);
-%unignore(output);
-%unignore(input);
-%unignore(plan);
 %apply COMPLEX16Vector *INPUT_COMPLEX16V {COMPLEX16Vector *};
 %apply REAL8Vector *INPUT_REAL8V {REAL8Vector *};
 extern int XLALREAL8ForwardFFT(COMPLEX16Vector *output, REAL8Vector *input, REAL8FFTPlan *plan );
 
 %unignore(XLALREAL8ReverseFFT);
-%unignore(output);
-%unignore(input);
-%unignore(plan);
 %apply COMPLEX16Vector *INPUT_COMPLEX16V {COMPLEX16Vector *};
 %apply REAL8Vector *INPUT_REAL8V {REAL8Vector *};
 extern int XLALREAL8ReverseFFT(REAL8Vector *output, COMPLEX16Vector *input, REAL8FFTPlan *plan );
@@ -255,25 +228,21 @@ extern int XLALREAL8VectorFFT(REAL8Vector *output, REAL8Vector *input, REAL8FFTP
 
 // Constructors for all four basic Vector types:
 %unignore(XLALCreateREAL4Vector);
-%unignore(length);
 %newobject XLALCreateREAL4Vector;
 %apply REAL4Vector *NEWOUT_REAL4V {REAL4Vector *XLALCreateREAL4Vector};
 extern REAL4Vector *XLALCreateREAL4Vector(UINT4 length);
 
 %unignore(XLALCreateREAL8Vector);
-%unignore(length);
 %newobject XLALCreateREAL8Vector;
 %apply REAL8Vector *NEWOUT_REAL8V {REAL8Vector *XLALCreateREAL8Vector};
 extern REAL8Vector *XLALCreateREAL8Vector(UINT4 length);
 
 %unignore(XLALCreateCOMPLEX8Vector);
-%unignore(length);
 %newobject XLALCreateCOMPLEX8Vector;
 %apply COMPLEX8Vector *NEWOUT_COMPLEX8V {COMPLEX8Vector *XLALCreateCOMPLEX8Vector};
 extern COMPLEX8Vector *XLALCreateCOMPLEX8Vector(UINT4 length);
 
 %unignore(XLALCreateCOMPLEX16Vector);
-%unignore(length);
 %newobject XLALCreateCOMPLEX16Vector;
 %apply COMPLEX16Vector *NEWOUT_COMPLEX16V {COMPLEX16Vector *XLALCreateCOMPLEX16Vector};
 extern COMPLEX16Vector *XLALCreateCOMPLEX16Vector(UINT4 length);
