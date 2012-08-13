@@ -30,6 +30,7 @@ developers are not expected to routinely need to modify this file.
 %{
 #define SWIG_FILE_WITH_INIT
 #include <string.h>
+#include <stdbool.h> // Seems necessary on some platforms, even with -std=c99
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
