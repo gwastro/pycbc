@@ -41,7 +41,7 @@ def from_lalsimulation(func, length, delta_f, low_freq_cutoff):
     " Return a FrequencySeries containing the specified LALSimulation PSD. "
     psd = FrequencySeries(zeros(length), delta_f=delta_f)
     kmin = int(low_freq_cutoff / delta_f)
-    for k in xrange(kmin, length - 1):
+    for k in xrange(kmin, length):
         psd[k] = func(k * delta_f)
     return psd
 
