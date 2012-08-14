@@ -61,12 +61,19 @@ class FrequencySeries(Array):
             # consistency of _epoch is not required because we may want
             # to combine frequency series estimated at different times
             # (e.g. PSD estimation)
-    
+
     def get_delta_f(self):
         "Return frequency between consecutive samples in Hertz."
         return self._delta_f
     delta_f = property(get_delta_f)
-    
+
+    def get_epoch(self):
+        "Return frequency series epoch as a LIGOTimeGPS."
+        if self._epoch:
+            return self._epoch
+        else:
+            return None
+    epoch = property(get_epoch)
 
     def get_sample_frequencies(self):
         "Return an Array containing the sample frequencies."
