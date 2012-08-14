@@ -32,7 +32,7 @@ import numpy as _numpy
 
 class TimeSeries(Array):
     def __init__(self, initial_array, delta_t, epoch=None, dtype=None, copy=True):
-        """initial_array: array containing sampled data.        
+        """initial_array: array containing sampled data.
         delta_t: time between consecutive samples in seconds.
         epoch: time series start time in seconds. Must be a lal.LIGOTimeGPS object.
         """
@@ -49,10 +49,10 @@ class TimeSeries(Array):
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
         self._delta_t = delta_t
         self._epoch = epoch
-    
+
     def _return(self, ary):
         return TimeSeries(ary, self._delta_t, epoch=self._epoch, copy=False)
-    
+
     def _typecheck(self, other):
         if isinstance(other, TimeSeries):
             if other._delta_t != self._delta_t:
@@ -90,10 +90,7 @@ class TimeSeries(Array):
 
     def get_start_time(self):
         "Return time series start time as a LIGOTimeGPS."
-        if self._epoch:
-            return self._epoch
-        else:
-            return None
+        return self._epoch
     start_time = property(get_start_time)
 
     def get_end_time(self):

@@ -50,7 +50,7 @@ class FrequencySeries(Array):
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
         self._delta_f = delta_f
         self._epoch = epoch
-    
+
     def _return(self, ary):
         return FrequencySeries(ary, self._delta_f, epoch=self._epoch, copy=False)
 
@@ -69,10 +69,7 @@ class FrequencySeries(Array):
 
     def get_epoch(self):
         "Return frequency series epoch as a LIGOTimeGPS."
-        if self._epoch:
-            return self._epoch
-        else:
-            return None
+        return self._epoch
     epoch = property(get_epoch)
 
     def get_sample_frequencies(self):
