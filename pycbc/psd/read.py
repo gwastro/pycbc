@@ -29,10 +29,8 @@ def from_txt(filename, length, delta_f, low_freq_cutoff):
 
     kmin = int(low_freq_cutoff / delta_f)
     psd = numpy.zeros(length, dtype=numpy.float64)
-    for k in xrange(0, length - 1):
+    for k in xrange(kmin, length):
         psd[k] = float(psd_interp(k * delta_f))
-    psd[k < kmin] = 0
-    psd[length - 1] = 0
 
     return FrequencySeries(psd, delta_f=delta_f, copy=False)
 
