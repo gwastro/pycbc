@@ -29,7 +29,7 @@ import pycbc
 import unittest
 from pycbc.types import *
 from pycbc.scheme import *
-import numpy 
+import numpy
 import lal
 import base_test
 import sys
@@ -47,7 +47,7 @@ def _check_scheme(option, opt_str, scheme, parser):
         raise optparse.OptionValueError("OpenCL not found")
     setattr (parser.values, option.dest, scheme)
 
-_parser.add_option('--scheme','-s', action='callback', type = 'choice', choices = ('cpu','cuda','opencl'), 
+_parser.add_option('--scheme','-s', action='callback', type = 'choice', choices = ('cpu','cuda','opencl'),
                     default = 'cpu', dest = 'scheme', callback = _check_scheme,
                     help = 'specifies processing scheme, can be cpu [default], cuda, or opencl')
 
@@ -81,24 +81,24 @@ class TestFrequencySeriesBase(base_test.array_base):
                 self.assertEqual(a._epoch, self.epoch)
 
     def setUp(self):
-    
-        # We need to check for correct creation from all dtypes, 
-        # and errors from incorrect operations so the other precision of 
+
+        # We need to check for correct creation from all dtypes,
+        # and errors from incorrect operations so the other precision of
         # odtype needs to be available as well
         self.other_precision = {numpy.complex64 : numpy.complex128,
                             numpy.complex128 : numpy.complex64,
                             numpy.float32 : numpy.float64,
                             numpy.float64 : numpy.float32}
-        
+
         # Number of decimal places to compare for single precision
         if self.dtype == numpy.float32 or self.dtype == numpy.complex64:
             self.places = 5
         # Number of decimal places to compare for double precision
         else:
             self.places = 13
-            
+
         # We will also need to check whether dtype and odtype are real or complex,
-        # so that we can test non-zero imaginary parts. 
+        # so that we can test non-zero imaginary parts.
         if self.dtype == numpy.float32 or self.dtype == numpy.float64:
             self.kind = 'real'
         else:
@@ -107,11 +107,11 @@ class TestFrequencySeriesBase(base_test.array_base):
             self.okind = 'real'
         else:
             self.okind = 'complex'
-        
+
         # Now that the kinds are set, we need to call our parent method to set up all the
         # inputs and answers for our functions
         self.setNumbers()
-            
+
         # Here our test FrequencySeries are created.
         self.delta_f = 0.1
         self.a1 = FrequencySeries(self.alist, self.delta_f, epoch=self.epoch, dtype=self.dtype)
@@ -120,7 +120,7 @@ class TestFrequencySeriesBase(base_test.array_base):
 
         self.b1 = FrequencySeries(self.blist, self.delta_f, epoch=self.epoch, dtype=self.odtype)
         self.b2 = FrequencySeries(self.blist, self.delta_f, epoch=self.epoch, dtype=self.odtype)
-    
+
         # We will need to also test a non-zero imaginary part scalar.
         self.s = self.scalar
 
@@ -128,20 +128,20 @@ class TestFrequencySeriesBase(base_test.array_base):
         # because the precision is wrong, and one where the length is wrong.
         self.bad = FrequencySeries([1,1,1], 0.1, epoch=self.epoch, dtype = self.other_precision[self.odtype])
         self.bad2 = FrequencySeries([1,1,1,1], 0.1, epoch=self.epoch, dtype = self.dtype)
-        
+
         # These are FrequencySeries that have problems specific to FrequencySeries
         self.bad3 = FrequencySeries([1,1,1], 0.2, epoch=self.epoch, dtype = self.dtype)
         # This next one is actually okay for frequencyseries
-        if self.epoch is None:
+        if self.epoch == lal.LIGOTimeGPS(0,0):
             self.bad4 = FrequencySeries([1,1,1], 0.1, epoch = lal.LIGOTimeGPS(1000, 1000), dtype = self.dtype)
         else:
             self.bad4 = FrequencySeries([1,1,1], 0.1, epoch=None, dtype = self.dtype)
 
     def test_numpy_init(self):
-        with self.context:                                
+        with self.context:
             in1 = numpy.array([5,3,1],dtype=self.odtype)
             in2 = numpy.array([5,3,1],dtype=self.other_precision[self.odtype])
-            
+
             #We don't want to cast complex as real
             if not (self.kind == 'real' and self.okind == 'complex'):
                 #First we must check that the dtype is correct when specified
@@ -157,9 +157,9 @@ class TestFrequencySeriesBase(base_test.array_base):
                 self.assertEqual(out1[2],1)
                 self.assertTrue(out1.dtype==self.dtype)
                 self.assertEqual(out1.delta_f, 0.1)
-                self.assertEqual(out1._epoch, None)
-                
-                
+                self.assertEqual(out1._epoch, lal.LIGOTimeGPS(0,0))
+
+
                 self.assertTrue(type(out2._scheme) == self.scheme)
                 self.assertTrue(type(out2._data) is SchemeArray)
                 self.assertEqual(out2[0],5)
@@ -167,11 +167,11 @@ class TestFrequencySeriesBase(base_test.array_base):
                 self.assertEqual(out2[2],1)
                 self.assertTrue(out2.dtype==self.dtype)
                 self.assertEqual(out2.delta_f,0.1)
-                self.assertEqual(out2._epoch, None)
-                
+                self.assertEqual(out2._epoch, lal.LIGOTimeGPS(0,0))
+
                 in1-=1
                 in2-=1
-            
+
             # Also, when it is unspecified
             out3 = FrequencySeries(in1,0.1,epoch=self.epoch)
             in1 += 1
@@ -183,22 +183,22 @@ class TestFrequencySeriesBase(base_test.array_base):
             self.assertTrue(out3.dtype==self.odtype)
             self.assertEqual(out3.delta_f,0.1)
             self.assertEqual(out3._epoch, self.epoch)
-                        
+
             # Check for copy=false
             # On the CPU, this should be possible
             in3 = numpy.array([5,3,1],dtype=self.dtype)
             if _options['scheme'] == 'cpu':
                 out4 = FrequencySeries(in3,0.1,copy=False)
                 in3 += 1
-                
+
                 self.assertTrue(out4.dtype==self.dtype)
                 self.assertTrue(type(out4._scheme) == self.scheme)
                 self.assertEqual(out4[0],6)
                 self.assertEqual(out4[1],4)
                 self.assertEqual(out4[2],2)
                 self.assertEqual(out4.delta_f,0.1)
-                self.assertEqual(out4._epoch, None)
-                
+                self.assertEqual(out4._epoch, lal.LIGOTimeGPS(0,0))
+
             # If we're in different scheme, this should raise an error
             else:
                 self.assertRaises(TypeError, FrequencySeries, in3, 0.1, copy=False)
@@ -218,8 +218,8 @@ class TestFrequencySeriesBase(base_test.array_base):
                 self.assertEqual(out4[2],1)
                 self.assertTrue(out4.dtype==self.dtype)
                 self.assertEqual(out4.delta_f,0.1)
-                self.assertEqual(out4._epoch, None)
-                            
+                self.assertEqual(out4._epoch, lal.LIGOTimeGPS(0,0))
+
             # We should be able to create an array from the wrong dtype, and
             # it should be cast as float64
             in5 = numpy.array([1,2,3],dtype=numpy.int32)
@@ -232,26 +232,26 @@ class TestFrequencySeriesBase(base_test.array_base):
             self.assertEqual(out5[2],3)
             self.assertTrue(out5.dtype==numpy.float64)
             self.assertEqual(out5.delta_f,0.1)
-            self.assertEqual(out5._epoch, None)
-            
+            self.assertEqual(out5._epoch, lal.LIGOTimeGPS(0,0))
+
             # We shouldn't be able to copy it though
             self.assertRaises(TypeError,FrequencySeries,in5, 0.1, copy=False)
-            
+
             # Finally, just checking a few things specific to FrequencySeries
             inbad = numpy.array([],dtype=float64)
             self.assertRaises(ValueError, FrequencySeries, in1, -1)
             self.assertRaises(ValueError, FrequencySeries, inbad, .1)
             self.assertRaises(TypeError, FrequencySeries, in1, .1, epoch=5)
-            
+
         if _options['scheme'] != 'cpu':
             self.assertRaises(TypeError, FrequencySeries, in4, 0.1, copy=False)
         self.assertRaises(TypeError, FrequencySeries, in5,0.1, copy=False)
-                    
+
 
     def test_array_init(self):
         # this array is made outside the context so we can check that an error is raised when copy = false in a GPU scheme
         cpuarray = Array([1,2,3])
-        with self.context:      
+        with self.context:
             in1 = Array([5,3,1],dtype=self.odtype)
             in2 = Array([5,3,1],dtype=self.other_precision[self.odtype])
             self.assertTrue(type(in1._scheme) == self.scheme)
@@ -266,7 +266,7 @@ class TestFrequencySeriesBase(base_test.array_base):
                 # to be sure that it is copied
                 in1 += 1
                 in2 += 1
-                
+
                 self.assertTrue(type(out1._scheme) == self.scheme)
                 self.assertTrue(type(out1._data) is SchemeArray)
                 self.assertEqual(out1[0],5)
@@ -274,8 +274,8 @@ class TestFrequencySeriesBase(base_test.array_base):
                 self.assertEqual(out1[2],1)
                 self.assertTrue(out1.dtype==self.dtype)
                 self.assertEqual(out1.delta_f, 0.1)
-                self.assertEqual(out1._epoch, None)
-                                
+                self.assertEqual(out1._epoch, lal.LIGOTimeGPS(0,0))
+
                 if out1.dtype == numpy.float32:
                     self.assertTrue(out1.precision == 'single')
                     #self.assertTrue(out1.kind == 'real')
@@ -287,8 +287,8 @@ class TestFrequencySeriesBase(base_test.array_base):
                     #self.assertTrue(out1.kind == 'complex')
                 if out1.dtype == numpy.complex128:
                     self.assertTrue(out1.precision == 'double')
-                    #self.assertTrue(out1.kind == 'complex')                
-                
+                    #self.assertTrue(out1.kind == 'complex')
+
                 self.assertTrue(type(out2._scheme) == self.scheme)
                 self.assertTrue(type(out2._data) is SchemeArray)
                 self.assertEqual(out2[0],5)
@@ -296,19 +296,19 @@ class TestFrequencySeriesBase(base_test.array_base):
                 self.assertEqual(out2[2],1)
                 self.assertTrue(out2.dtype==self.dtype)
                 self.assertEqual(out2.delta_f, 0.1)
-                self.assertEqual(out2._epoch, None)
-                                
+                self.assertEqual(out2._epoch, lal.LIGOTimeGPS(0,0))
+
                 in1-=1
                 in2-=1
             # Giving complex input and specifying a real dtype should raise an error
             else:
                 self.assertRaises(TypeError, FrequencySeries, in1,0.1, dtype = self.dtype)
                 self.assertRaises(TypeError, FrequencySeries, in2,0.1, dtype = self.dtype)
-            
+
             # Also, when it is unspecified
             out3 = FrequencySeries(in1,0.1,epoch=self.epoch)
             in1 += 1
-            
+
             self.assertTrue(type(out3._scheme) == self.scheme)
             self.assertTrue(type(out3._data) is SchemeArray)
             self.assertEqual(out3[0],5)
@@ -317,10 +317,10 @@ class TestFrequencySeriesBase(base_test.array_base):
             self.assertTrue(out3.dtype==self.odtype)
             self.assertEqual(out3.delta_f, 0.1)
             self.assertEqual(out3._epoch, self.epoch)
-                        
+
             # We should also be able to create from a CPU Array
             out4 = FrequencySeries(cpuarray,0.1, dtype=self.dtype)
-            
+
             self.assertTrue(type(out4._scheme) == self.scheme)
             self.assertTrue(type(out4._data) is SchemeArray)
             self.assertEqual(out4[0],1)
@@ -328,15 +328,15 @@ class TestFrequencySeriesBase(base_test.array_base):
             self.assertEqual(out4[2],3)
             self.assertTrue(out4.dtype==self.dtype)
             self.assertEqual(out4.delta_f, 0.1)
-            self.assertEqual(out4._epoch, None)
-                        
+            self.assertEqual(out4._epoch, lal.LIGOTimeGPS(0,0))
+
             self.assertRaises(TypeError, FrequencySeries,in1,0.1, dtype=numpy.int32)
-            
+
             # Check for copy=false
             in3 = Array([5,3,1],dtype=self.dtype)
             out5 = FrequencySeries(in3,0.1,copy=False)
             in3 += 1
-            
+
             self.assertTrue(type(out5._scheme) == self.scheme)
             self.assertTrue(type(out5._data) is SchemeArray)
             self.assertEqual(out5[0],6)
@@ -344,8 +344,8 @@ class TestFrequencySeriesBase(base_test.array_base):
             self.assertEqual(out5[2],2)
             self.assertTrue(out5.dtype==self.dtype)
             self.assertEqual(out5.delta_f, 0.1)
-            self.assertEqual(out5._epoch, None)
-                        
+            self.assertEqual(out5._epoch, lal.LIGOTimeGPS(0,0))
+
             if _options['scheme'] != 'cpu':
                 self.assertRaises(TypeError,FrequencySeries,0.1,cpuarray,copy=False)
             # Things specific to FrequencySeries
@@ -353,7 +353,7 @@ class TestFrequencySeriesBase(base_test.array_base):
             self.assertRaises(ValueError, FrequencySeries, in1, -1)
             self.assertRaises(ValueError, FrequencySeries, inbad, .1)
             self.assertRaises(TypeError, FrequencySeries, in1, .1, epoch=5)
-            
+
         # Also checking that a cpu array can't be made out of another scheme without copying
         if _options['scheme'] != 'cpu':
             self.assertRaises(TypeError, FrequencySeries, out4, 0.1, copy=False)
@@ -365,13 +365,13 @@ class TestFrequencySeriesBase(base_test.array_base):
             self.assertEqual(out6[2],3)
             self.assertTrue(out6.dtype==self.dtype)
             self.assertEqual(out6.delta_f, 0.1)
-            self.assertEqual(out6._epoch, None)
-            
+            self.assertEqual(out6._epoch, lal.LIGOTimeGPS(0,0))
+
     def test_list_init(self):
         with self.context:
             # When specified
             out1 = FrequencySeries([5,3,1],0.1, dtype=self.dtype)
-            
+
             self.assertTrue(type(out1._scheme) == self.scheme)
             self.assertTrue(type(out1._data) is SchemeArray)
             self.assertEqual(out1[0],5)
@@ -379,8 +379,8 @@ class TestFrequencySeriesBase(base_test.array_base):
             self.assertEqual(out1[2],1)
             self.assertTrue(out1.dtype==self.dtype)
             self.assertEqual(out1.delta_f, 0.1)
-            self.assertEqual(out1._epoch, None)
-                        
+            self.assertEqual(out1._epoch, lal.LIGOTimeGPS(0,0))
+
             if out1.dtype == numpy.float32:
                 self.assertTrue(out1.precision == 'single')
                 #self.assertTrue(out1.kind == 'real')
@@ -392,11 +392,11 @@ class TestFrequencySeriesBase(base_test.array_base):
                 #self.assertTrue(out1.kind == 'complex')
             if out1.dtype == numpy.complex128:
                 self.assertTrue(out1.precision == 'double')
-                #self.assertTrue(out1.kind == 'complex')  
-            
+                #self.assertTrue(out1.kind == 'complex')
+
             if self.kind == 'complex':
                 out2 = FrequencySeries([5+0j,3+0j,1+0j], 0.1, dtype=self.dtype)
-            
+
                 self.assertTrue(type(out2._scheme) == self.scheme)
                 self.assertTrue(type(out2._data) is SchemeArray)
                 self.assertEqual(out2[0],5)
@@ -404,15 +404,15 @@ class TestFrequencySeriesBase(base_test.array_base):
                 self.assertEqual(out2[2],1)
                 self.assertTrue(out2.dtype==self.dtype)
                 self.assertEqual(out2.delta_f, 0.1)
-                self.assertEqual(out2._epoch, None)
-                                
+                self.assertEqual(out2._epoch, lal.LIGOTimeGPS(0,0))
+
             else:
                 self.assertRaises(TypeError, FrequencySeries,[5+0j, 3+0j, 1+0j], 0.1, dtype=self.dtype)
             self.assertRaises(TypeError, FrequencySeries,[1,2,3],0.1, dtype=numpy.int32)
-            
+
             #Also, when it is unspecified
             out3 = FrequencySeries([5,3,1],0.1,epoch=self.epoch)
-            
+
             self.assertTrue(type(out3._scheme) == self.scheme)
             self.assertTrue(type(out3._data) is SchemeArray)
             self.assertEqual(out3[0],5)
@@ -421,9 +421,9 @@ class TestFrequencySeriesBase(base_test.array_base):
             self.assertTrue(out3.dtype==numpy.float64)
             self.assertEqual(out3.delta_f, 0.1)
             self.assertEqual(out3._epoch, self.epoch)
-                        
+
             out4 = FrequencySeries([5+0j,3+0j,1+0j],0.1,epoch = self.epoch)
-            
+
             self.assertTrue(type(out4._scheme) == self.scheme)
             self.assertTrue(type(out4._data) is SchemeArray)
             self.assertEqual(out4[0],5)
@@ -432,9 +432,9 @@ class TestFrequencySeriesBase(base_test.array_base):
             self.assertTrue(out4.dtype==numpy.complex128)
             self.assertEqual(out4.delta_f, 0.1)
             self.assertEqual(out4._epoch, self.epoch)
-                        
+
             self.assertRaises(TypeError,FrequencySeries,[1,2,3],copy=False)
-            
+
             # Things specific to FrequencySeries
             self.assertRaises(ValueError, FrequencySeries, [1,2,3], -1)
             self.assertRaises(ValueError, FrequencySeries, [], .1)
@@ -445,73 +445,73 @@ class TestFrequencySeriesBase(base_test.array_base):
         self.assertRaises(ValueError, self.a1.__mul__,self.bad3)
         c = self.a1 * self.bad4
         self.assertTrue(c._epoch==self.epoch)
-        
+
     def test_rmul(self):
         super(TestFrequencySeriesBase,self).test_rmul()
         self.assertRaises(ValueError, self.a1.__rmul__,self.bad3)
         c = self.a1.__rmul__(self.bad4)
         self.assertTrue(c._epoch==self.epoch)
-        
+
     def test_imul(self):
         super(TestFrequencySeriesBase,self).test_imul()
         self.assertRaises(ValueError, self.a1.__imul__,self.bad3)
         self.a1 *= self.bad4
         self.assertTrue(self.a1._epoch==self.epoch)
-        
+
     def test_add(self):
         super(TestFrequencySeriesBase,self).test_add()
         self.assertRaises(ValueError, self.a1.__add__,self.bad3)
         c = self.a1 + self.bad4
         self.assertTrue(c._epoch==self.epoch)
-        
+
     def test_radd(self):
         super(TestFrequencySeriesBase,self).test_radd()
         self.assertRaises(ValueError, self.a1.__radd__,self.bad3)
         c = self.a1.__radd__(self.bad4)
         self.assertTrue(c._epoch==self.epoch)
-        
+
     def test_iadd(self):
         super(TestFrequencySeriesBase,self).test_iadd()
         self.assertRaises(ValueError, self.a1.__iadd__,self.bad3)
         self.a1 += self.bad4
         self.assertTrue(self.a1._epoch==self.epoch)
-        
+
     def test_sub(self):
         super(TestFrequencySeriesBase,self).test_sub()
         self.assertRaises(ValueError, self.a1.__sub__,self.bad3)
         c = self.a1 - self.bad4
         self.assertTrue(c._epoch==self.epoch)
-        
+
     def test_rsub(self):
         super(TestFrequencySeriesBase,self).test_rsub()
         self.assertRaises(ValueError, self.a1.__rsub__,self.bad3)
         c = self.a1.__rsub__(self.bad4)
         self.assertTrue(c._epoch==self.epoch)
-        
+
     def test_isub(self):
         super(TestFrequencySeriesBase,self).test_isub()
         self.assertRaises(ValueError, self.a1.__isub__,self.bad3)
         self.a1 -= self.bad4
         self.assertTrue(self.a1._epoch==self.epoch)
-        
+
     def test_div(self):
         super(TestFrequencySeriesBase,self).test_div()
         self.assertRaises(ValueError, self.a1.__div__,self.bad3)
         c = self.a1 / self.bad4
         self.assertTrue(c._epoch==self.epoch)
-        
+
     def test_rdiv(self):
         super(TestFrequencySeriesBase,self).test_rdiv()
         self.assertRaises(ValueError, self.a1.__rdiv__,self.bad3)
         c = self.a1.__rdiv__(self.bad4)
         self.assertTrue(c._epoch==self.epoch)
-        
+
     def test_idiv(self):
         super(TestFrequencySeriesBase,self).test_idiv()
         self.assertRaises(ValueError, self.a1.__idiv__,self.bad3)
         self.a1 /= self.bad4
         self.assertTrue(self.a1._epoch==self.epoch)
-        
+
     def test_dot(self):
         super(TestFrequencySeriesBase,self).test_dot()
         self.assertRaises(ValueError, self.a1.dot,self.bad3)
@@ -543,7 +543,10 @@ def test_maker(context, dtype, odtype, epoch):
                 self.scheme = pycbc.scheme.CUDAScheme
             else:
                 self.scheme = pycbc.scheme.OpenCLScheme
-            self.epoch = epoch
+            if epoch is None:
+                self.epoch = lal.LIGOTimeGPS(0,0)
+            else:
+                self.epoch = epoch
             unittest.TestCase.__init__(self, *args)
     TestFrequencySeries.__name__ = _options['scheme'] + " " + dtype.__name__ + " with " + odtype.__name__
     return TestFrequencySeries
@@ -577,7 +580,7 @@ for s in schemes:
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
-    
+
     NotImpErrors = 0
     for error in results.errors:
         for errormsg in error:
