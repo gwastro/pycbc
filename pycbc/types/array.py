@@ -49,7 +49,6 @@ _ALLOWED_DTYPES = [_numpy.float32,_numpy.float64,_numpy.complex64,
                    _numpy.complex128]
 _ALLOWED_SCALARS = [int,long, float, complex]+_ALLOWED_DTYPES
 
-
 def _convert_to_scheme(ary):
     if ary._scheme is not _scheme.mgr.state:
         converted_array = Array(ary,dtype=ary._data.dtype)
@@ -293,12 +292,7 @@ class Array(object):
         """ Multiply by an Array or a scalar and return an Array. """
         return self._data * other
 
-    @_returntype
-    @_convert
-    @_checkother
-    def __rmul__(self,other):
-        """ Multiply by an Array or a scalar and return an Array. """
-        return self._data * other
+    __rmul__ = __mul__
 
     @_convert
     @_icheckother
@@ -313,16 +307,11 @@ class Array(object):
     def __add__(self,other):
         """ Add Array to Array or scalar and return an Array. """
         return self._data + other
-        
+
+    __radd__ = __add__
+       
     def fill(self,value):
         self._data.fill(value)
-
-    @_returntype
-    @_convert
-    @_checkother
-    def __radd__(self,other):
-        """ Add Array to Array or scalar and return an Array. """
-        return self._data + other
 
     @_convert
     @_icheckother
