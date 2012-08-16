@@ -182,7 +182,7 @@ class Array(object):
                                              _openclarray.Array):
                     self._data = input_data.get().astype(dtype)
                 else:
-                    self._data = _numpy.array(input_data,dtype=dtype)
+                    self._data = _numpy.array(input_data,dtype=dtype,ndmin=1)
             elif _pycbc.HAVE_CUDA and (type(self._scheme) is
                                        _scheme.CUDAScheme):
                 if type(input_data) is _cudaarray.GPUArray:
@@ -195,7 +195,7 @@ class Array(object):
                         self._data = input_data.astype(dtype)
                 else:
                     self._data = _cudaarray.to_gpu(_numpy.array(input_data,
-                                                            dtype=dtype))
+                                                            dtype=dtype,ndmin=1))
             elif _pycbc.HAVE_OPENCL and (type(self._scheme) is
                                          _scheme.OpenCLScheme):
                 if type(input_data) is _openclarray.Array:
@@ -214,7 +214,7 @@ class Array(object):
                 else:
                     self._data = _openclarray.to_device(self._scheme.queue,
                                                     _numpy.array(input_data,
-                                                                 dtype=dtype))
+                                                                 dtype=dtype,ndmin=1))
             else:
                 raise TypeError('Invalid Processing scheme Type')
 
@@ -506,20 +506,41 @@ class Array(object):
     @_convert
     def __setitem__(self,index,other):
         if isinstance(other,Array):
+
+            if self.kind is 'real' and other.kind is 'complex':
+                raise ValueError('Cannot set real value with complex')
+
+            if isinstance(index,slice):          
+                self_ref = self._data[index]
+                other_ref = other._data
+            else:
+                self_ref = self._data[index:index+1]
+                other_ref = other._data
+
             if type(self._data) is _numpy.ndarray:
-                self._data[index]=other.data
+                self_ref[:] = other_ref[:]
+
             elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
-                if (other._data[index].nbytes <= self._data[index].nbytes) :
-                    _cudriver.memcpy_dtod_async(self[index].ptr,other.ptr,other._data.nbytes)
+                if (len(other_ref) <= len(self_ref)) :
+                    from pycuda.elementwise import get_copy_kernel
+                    func = get_copy_kernel(self.dtype, other.dtype)
+                    func.prepared_async_call(self_ref._grid, self_ref._block, None,
+                            self_ref.gpudata, other_ref.gpudata,
+                            self_ref.mem_size)
                 else:
                     raise RuntimeError("The arrays must the same length")
+
             elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
                 raise NotImplementedError
+
+
         elif type(other) in _ALLOWED_SCALARS:
             if isinstance(index,slice):          
                 self[index].fill(other)
             else:
                 self[index:index+1].fill(other)
+
+
         else:
             raise TypeError('Can only copy data from another Array')
                 

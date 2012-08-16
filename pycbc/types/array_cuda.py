@@ -25,6 +25,8 @@
 from pycuda.elementwise import ElementwiseKernel
 from pycuda.reduction import ReductionKernel
 from pycuda.tools import register_dtype
+from pycuda.tools import context_dependent_memoize
+from pycuda.tools import dtype_to_ctype
 import numpy as np
 
 
@@ -118,4 +120,7 @@ mld = ReductionKernel(maxloc_dtype_double, neutral = "maxloc_start()",
         arguments="double *x", preamble=maxloc_preamble_double)
         
 max_loc = {'single':mls,'double':mld}
+
+
+
 
