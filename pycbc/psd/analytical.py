@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright (C) 2012 Alex Nitz
+# Copyright (C) 2012 Alex Nitz, Tito Dal Canton
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -28,7 +28,7 @@ def get_list():
     for name in lalsimulation.__dict__:
         if name.startswith(_name_prefix) and name != _name_prefix:
             l.append(name[len(_name_prefix):])
-    return l
+    return sorted(l)
 
 for _name in get_list():
     exec("""
@@ -44,4 +44,12 @@ def from_lalsimulation(func, length, delta_f, low_freq_cutoff):
     for k in xrange(kmin, length):
         psd[k] = func(k * delta_f)
     return psd
+
+def from_string(psd_name, length, delta_f, low_freq_cutoff):
+    " Return a FrequencySeries containing a LALSimulation PSD specified by name. "
+    try:
+        func = lalsimulation.__dict__[_name_prefix + psd_name]
+    except KeyError:
+        raise ValueError(psd_name + ' not found among LALSimulation PSD functions.')
+    return from_lalsimulation(func, length, delta_f, low_freq_cutoff)
 

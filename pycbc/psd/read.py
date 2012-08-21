@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright (C) 2012 Alex Nitz
+# Copyright (C) 2012 Alex Nitz, Tito Dal Canton
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -25,6 +25,8 @@ def from_txt(filename, length, delta_f, low_freq_cutoff):
     frequency on the first column and ASD on the second.
     """
     asd_data = numpy.loadtxt(filename)
+    if (asd_data < 0).any() or numpy.not(numpy.isfinite(x)).any():
+        raise ValueError('Invalid ASD data in ' + filename)
     psd_interp = scipy.interpolate.interp1d(asd_data[:, 0], asd_data[:, 1] ** 2)
 
     kmin = int(low_freq_cutoff / delta_f)
