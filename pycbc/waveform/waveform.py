@@ -34,6 +34,7 @@ from pycbc.scheme import mgr
 import pycbc.scheme as _scheme
 import inspect
 from pycbc.fft import fft
+import pycbc
 
 #FIXME#################### REMOVE THESE WHEN FEATURES AVAILABLE IN LALSIMULATION 
 lalsim_approx = {'SpinTaylorT4':lalsimulation.SpinTaylorT4,
@@ -62,13 +63,12 @@ def parsecs_to_meters(distance):
 
 
 
-
 default_args = {'spin1x':0,'spin1y':0,'spin1z':0,
                 'spin2x':0,'spin2y':0,'spin2z':0,
                 'inclination':0,'distance':10e8,'fmax':0,'phi0':0,
                 'amplitude_order':-1,'phase_order':-1}
 
-def _lalsim_td_waveform(p):
+def _lalsim_td_waveform(**p):
     try:
         hp,hc = lalsimulation.SimInspiralChooseTDWaveform(float(p['phi0']),
                    float(p['delta_t']),
@@ -84,9 +84,13 @@ def _lalsim_td_waveform(p):
                    lalsim_approx[p['approximant']])
     except KeyError as e:
         raise type(e), type(e)("Missing value for " + e.message), sys.exc_info()[2]
+
+    hp = TimeSeries(hp.data.data,delta_t=hp.deltaT,epoch=hp.epoch)
+    hc = TimeSeries(hc.data.data,delta_t=hc.deltaT,epoch=hc.epoch)
+
     return hp,hc
 
-def _lalsim_fd_waveform(p):
+def _lalsim_fd_waveform(**p):
     try:
         htilde = lalsimulation.SimInspiralChooseFDWaveform(float(p['phi0']),
                    float(p['delta_f']),
@@ -102,24 +106,14 @@ def _lalsim_fd_waveform(p):
                    lalsim_fd_approx[p['approximant']])
     except KeyError as e:
         raise type(e), type(e)("Missing value for " + e.message), sys.exc_info()[2]
+
+    htilde = FrequencySeries(htilde.data.data,delta_f=htilde.deltaF,epoch=htilde.epoch)
     return htilde
 
 def _filter_td_waveform(p):
     raise NotImplementedError
 
 def _filter_fd_waveform(p):
-    raise NotImplementedError
-
-def _cuda_td_waveform(p):
-    raise NotImplementedError
-
-def _cuda_fd_waveform(p):
-    raise NotImplementedError
-
-def _opencl_td_waveform(p):
-    raise NotImplementedError
-
-def _opencl_fd_waveform(p):
     raise NotImplementedError
 
 
@@ -144,6 +138,10 @@ cpu_fd_filter =  dict(_lalsim_fd_approximants.items() + _filter_fd_approximants.
 # Waveforms written in CUDA
 _cuda_td_approximants = {}
 _cuda_fd_approximants = {}
+
+if pycbc.HAVE_CUDA:
+    from pycbc.waveform.TaylorF2 import taylorf2 as cuda_taylorf2
+    _cuda_fd_approximants['TaylorF2'] = cuda_taylorf2
 
 cuda_td = dict(_lalsim_td_approximants.items() + _cuda_td_approximants.items())
 cuda_fd = dict(_lalsim_fd_approximants.items() + _cuda_fd_approximants.items())
@@ -215,9 +213,7 @@ def get_td_waveform(template=None,**kwargs):
        overrides given by keyword argument
     """
     input_params = props(template,**kwargs)
-    hp,hc = td_wav[type(mgr.state)][input_params['approximant']](input_params)
-    hp = TimeSeries(hp.data.data,delta_t=hp.deltaT,epoch=hp.epoch)
-    hc = TimeSeries(hc.data.data,delta_t=hc.deltaT,epoch=hc.epoch)
+    hp,hc = td_wav[type(mgr.state)][input_params['approximant']](**input_params)
     return (hp,hc)
 
 def get_fd_waveform(template=None,**kwargs):
@@ -225,13 +221,13 @@ def get_fd_waveform(template=None,**kwargs):
        of the template with overrides given by keyword argument
     """
     input_params = props(template,**kwargs)
-    htilde = fd_wav[type(mgr.state)][input_params['approximant']](input_params)
-    htilde = FrequencySeries(htilde.data.data,delta_f=htilde.deltaF,epoch=htilde.epoch)
+    htilde = fd_wav[type(mgr.state)][input_params['approximant']](**input_params)
     return htilde
 
 def get_waveform_filter(length,template=None,**kwargs):
     """Return a frequency domain waveform filter for the specified approximant
     """
+    raise NotImplementedError
     input_params = props(template,**kwargs)
 
     n = length
