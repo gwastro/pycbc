@@ -45,10 +45,4 @@ except ImportError:
 
 DYN_RANGE_FAC =  5.9029581035870565e+20
 
-from pycbc.filter import *
-from pycbc.waveform import *
-from pycbc.fft import *
-from pycbc.types import *
-from pycbc.scheme import *
-from pycbc.frame import *
 

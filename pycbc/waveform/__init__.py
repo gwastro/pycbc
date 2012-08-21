@@ -1,1 +1,1 @@
-from pycbc.waveform import *
+from pycbc.waveform.waveform import *

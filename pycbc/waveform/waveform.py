@@ -36,6 +36,7 @@ import inspect
 from pycbc.fft import fft
 import pycbc
 
+
 #FIXME#################### REMOVE THESE WHEN FEATURES AVAILABLE IN LALSIMULATION 
 lalsim_approx = {'SpinTaylorT4':lalsimulation.SpinTaylorT4,
                 'TaylorT4':lalsimulation.TaylorT4,
@@ -49,7 +50,8 @@ lalsim_approx = {'SpinTaylorT4':lalsimulation.SpinTaylorT4,
 lalsim_approx_names = ['SpinTaylorT4','TaylorT1','TaylorT2',
                        'TaylorT3','TaylorT4','EOBNRv2','SEOBNRv1','IMRPhenomB']
                        
-lalsim_fd_approx = {'TaylorF2':lalsimulation.TaylorF2,'IMRPhenomB':lalsimulation.IMRPhenomB}
+lalsim_fd_approx = {'TaylorF2':lalsimulation.TaylorF2,
+                    'IMRPhenomB':lalsimulation.IMRPhenomB}
 lalsim_fd_names = ['TaylorF2','IMRPhenomB']
 
 
@@ -66,24 +68,25 @@ def parsecs_to_meters(distance):
 default_args = {'spin1x':0,'spin1y':0,'spin1z':0,
                 'spin2x':0,'spin2y':0,'spin2z':0,
                 'inclination':0,'distance':10e8,'fmax':0,'phi0':0,
-                'amplitude_order':-1,'phase_order':-1}
+                'amplitude_order':7,'phase_order':7}
+
+base_required_args = ['mass1','mass2','f_lower']
+td_required_args = base_required_args + ['delta_t']
+fd_required_args = base_required_args + ['delta_f']
 
 def _lalsim_td_waveform(**p):
-    try:
-        hp,hc = lalsimulation.SimInspiralChooseTDWaveform(float(p['phi0']),
-                   float(p['delta_t']),
-                   float(solar_mass_to_kg(p['mass1'])),
-                   float(solar_mass_to_kg(p['mass2'])),
-                   float(p['spin1x']),float(p['spin1y']),float(p['spin1z']),
-                   float(p['spin2x']),float(p['spin2y']),float(p['spin2z']),
-                   float(p['f_lower']),0,
-                   parsecs_to_meters(float(p['distance'])),
-                   float(p['inclination']),
-                   0,0,0,
-                   int(p['amplitude_order']),int(p['phase_order']),
-                   lalsim_approx[p['approximant']])
-    except KeyError as e:
-        raise type(e), type(e)("Missing value for " + e.message), sys.exc_info()[2]
+    hp,hc = lalsimulation.SimInspiralChooseTDWaveform(float(p['phi0']),
+               float(p['delta_t']),
+               float(solar_mass_to_kg(p['mass1'])),
+               float(solar_mass_to_kg(p['mass2'])),
+               float(p['spin1x']),float(p['spin1y']),float(p['spin1z']),
+               float(p['spin2x']),float(p['spin2y']),float(p['spin2z']),
+               float(p['f_lower']),0,
+               parsecs_to_meters(float(p['distance'])),
+               float(p['inclination']),
+               0,0,0,
+               int(p['amplitude_order']),int(p['phase_order']),
+               lalsim_approx[p['approximant']])
 
     hp = TimeSeries(hp.data.data,delta_t=hp.deltaT,epoch=hp.epoch)
     hc = TimeSeries(hc.data.data,delta_t=hc.deltaT,epoch=hc.epoch)
@@ -91,23 +94,21 @@ def _lalsim_td_waveform(**p):
     return hp,hc
 
 def _lalsim_fd_waveform(**p):
-    try:
-        htilde = lalsimulation.SimInspiralChooseFDWaveform(float(p['phi0']),
-                   float(p['delta_f']),
-                   float(solar_mass_to_kg(p['mass1'])),
-                   float(solar_mass_to_kg(p['mass2'])),
-                   float(p['spin1x']),float(p['spin1y']),float(p['spin1z']),
-                   float(p['spin2x']),float(p['spin2y']),float(p['spin2z']),
-                   float(p['f_lower']),0,
-                   parsecs_to_meters(float(p['distance'])),
-                   float(p['inclination']),
-                   0,0,0,
-                   int(p['amplitude_order']),int(p['phase_order']),
-                   lalsim_fd_approx[p['approximant']])
-    except KeyError as e:
-        raise type(e), type(e)("Missing value for " + e.message), sys.exc_info()[2]
+    htilde = lalsimulation.SimInspiralChooseFDWaveform(float(p['phi0']),
+               float(p['delta_f']),
+               float(solar_mass_to_kg(p['mass1'])),
+               float(solar_mass_to_kg(p['mass2'])),
+               float(p['spin1x']),float(p['spin1y']),float(p['spin1z']),
+               float(p['spin2x']),float(p['spin2y']),float(p['spin2z']),
+               float(p['f_lower']),0,
+               parsecs_to_meters(float(p['distance'])),
+               float(p['inclination']),
+               0,0,0,
+               int(p['amplitude_order']),int(p['phase_order']),
+               lalsim_fd_approx[p['approximant']])
 
-    htilde = FrequencySeries(htilde.data.data,delta_f=htilde.deltaF,epoch=htilde.epoch)
+    htilde = FrequencySeries(htilde.data.data,delta_f=htilde.deltaF,
+                            epoch=htilde.epoch)
     return htilde
 
 def _filter_td_waveform(p):
@@ -132,8 +133,10 @@ _filter_td_approximants = {}
 
 cpu_td = _lalsim_td_approximants
 cpu_fd = _lalsim_fd_approximants
-cpu_td_filter =  dict(_filter_td_approximants.items() + _filter_td_approximants.items() + _lalsim_td_approximants.items())
-cpu_fd_filter =  dict(_lalsim_fd_approximants.items() + _filter_fd_approximants.items())
+cpu_td_filter =  dict(_filter_td_approximants.items() + \
+              _filter_td_approximants.items() + _lalsim_td_approximants.items())
+cpu_fd_filter =  dict(_lalsim_fd_approximants.items() + \
+              _filter_fd_approximants.items())
 
 # Waveforms written in CUDA
 _cuda_td_approximants = {}
@@ -161,8 +164,12 @@ td_wav = {type(None):cpu_td,_scheme.CUDAScheme:cuda_td,_scheme.OpenCLScheme:open
 
 fd_wav = {type(None):cpu_fd,_scheme.CUDAScheme:cuda_fd,_scheme.OpenCLScheme:opencl_fd}
 
-td_filter = {type(None):cpu_td_filter,_scheme.CUDAScheme:cuda_td_filter,_scheme.OpenCLScheme:opencl_td_filter}
-fd_filter = {type(None):cpu_fd_filter,_scheme.CUDAScheme:cuda_fd_filter,_scheme.OpenCLScheme:opencl_fd_filter}
+td_filter = {type(None):cpu_td_filter,
+            _scheme.CUDAScheme:cuda_td_filter,
+            _scheme.OpenCLScheme:opencl_td_filter}
+fd_filter = {type(None):cpu_fd_filter,
+            _scheme.CUDAScheme:cuda_fd_filter,
+            _scheme.OpenCLScheme:opencl_fd_filter}
 
 def list_td_approximants():
     print("Lalsimulation Approximants")
@@ -202,7 +209,7 @@ def props(obj,**kwargs):
 
     # Get the parameters to generate the waveform
     # Note that keyword arguments override values in the template object
-    input_params = default_args
+    input_params = default_args.copy()
     input_params.update(pr)
     input_params.update(kwargs)
 
@@ -213,7 +220,20 @@ def get_td_waveform(template=None,**kwargs):
        overrides given by keyword argument
     """
     input_params = props(template,**kwargs)
-    hp,hc = td_wav[type(mgr.state)][input_params['approximant']](**input_params)
+    wav_gen = td_wav[type(mgr.state)] 
+
+    if 'approximant' not in input_params:
+        raise ValueError("Please provide an approximant name")
+    elif input_params['approximant'] not in wav_gen:
+        raise ValueError("Approximant not available")
+
+    for arg in td_required_args:
+        if arg in input_params:
+            pass
+        else:
+            raise ValueError("Please provide " + str(arg) )
+
+    hp,hc = wav_gen[input_params['approximant']](**input_params)
     return (hp,hc)
 
 def get_fd_waveform(template=None,**kwargs):
@@ -221,39 +241,34 @@ def get_fd_waveform(template=None,**kwargs):
        of the template with overrides given by keyword argument
     """
     input_params = props(template,**kwargs)
-    htilde = fd_wav[type(mgr.state)][input_params['approximant']](**input_params)
+    wav_gen = fd_wav[type(mgr.state)] 
+
+    if 'approximant' not in input_params:
+        raise ValueError("Please provide an approximant name")
+    elif input_params['approximant'] not in wav_gen:
+        raise ValueError("Approximant not available")
+
+    for arg in fd_required_args:
+        if arg in input_params:
+            pass
+        else:
+            raise ValueError("Please provide " + str(arg) )
+
+    htilde = wav_gen[input_params['approximant']](**input_params)
     return htilde
 
 def get_waveform_filter(length,template=None,**kwargs):
     """Return a frequency domain waveform filter for the specified approximant
     """
     raise NotImplementedError
-    input_params = props(template,**kwargs)
 
-    n = length
-    N = (n-1) * 2
-
-    if input_params['approximant'] in fd_filter[type(mgr.state)]:
-        htilde_lal = fd_filter[type(mgr.state)][input_params['approximant']](input_params)
-        htilde_array = Array(htilde_lal.data.data[:])
-        htilde = FrequencySeries(zeros(n),delta_f=htilde_lal.deltaF,epoch=htilde_lal.epoch,dtype=htilde_array.dtype)
-        htilde[0:len(htilde_array)] = htilde_array[:]
-    else:
-        hp,hc = td_filter[type(mgr.state)][input_params['approximant']](input_params)
-        h_plus =  TimeSeries(zeros(N),delta_t=hp.deltaT,epoch=hp.epoch)
-        hp_array = Array(hp.data.data[:])
-        h_plus[0:len(hp_array)] = hp_array[:]
-        delta_f = 1.0 / N / h_plus.delta_t
-        htilde = FrequencySeries(zeros(n),delta_f=delta_f, 
-                                   dtype=complex_same_precision_as(h_plus))
-        fft(h_plus,htilde) 
-
-    return htilde
     
 def precondition_data_for_filter(stilde,approximant):
     raise NotImplementedError
 
 
+__all__ = ["get_td_waveform","get_fd_waveform","list_td_approximants",
+           "list_fd_approximants"]
 
 
 
