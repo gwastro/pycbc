@@ -171,7 +171,7 @@ fd_filter = {type(None):cpu_fd_filter,
             _scheme.CUDAScheme:cuda_fd_filter,
             _scheme.OpenCLScheme:opencl_fd_filter}
 
-def list_td_approximants():
+def print_td_approximants():
     print("Lalsimulation Approximants")
     for approx in _lalsim_td_approximants.keys():
         print "  " + approx
@@ -182,7 +182,7 @@ def list_td_approximants():
     for approx in _opencl_td_approximants.keys():
         print "  " + approx
     
-def list_fd_approximants():
+def print_fd_approximants():
     print("Lalsimulation Approximants")
     for approx in _lalsim_fd_approximants.keys():
         print "  " + approx
@@ -192,7 +192,19 @@ def list_fd_approximants():
     print("OpenCL Approximants")
     for approx in _opencl_fd_approximants.keys():
         print "  " + approx
-    
+
+def td_approximants(scheme = None):
+    """Return a list containing the available time domain approximants for 
+       the given processing scheme.
+    """
+    return td_wav[type(scheme)].keys()
+
+def fd_approximants(scheme = None):
+    """Return a list containing the available fourier domain approximants for 
+       the given processing scheme.
+    """
+    return fd_wav[type(scheme)].keys()    
+
 def list_filter_approximants():
     pass
 
@@ -267,8 +279,8 @@ def precondition_data_for_filter(stilde,approximant):
     raise NotImplementedError
 
 
-__all__ = ["get_td_waveform","get_fd_waveform","list_td_approximants",
-           "list_fd_approximants"]
+__all__ = ["get_td_waveform","get_fd_waveform","print_td_approximants",
+           "print_fd_approximants","td_approximants","fd_approximants"]
 
 
 
