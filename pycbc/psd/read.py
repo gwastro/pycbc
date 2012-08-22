@@ -25,7 +25,7 @@ def from_txt(filename, length, delta_f, low_freq_cutoff):
     frequency on the first column and ASD on the second.
     """
     asd_data = numpy.loadtxt(filename)
-    if (asd_data < 0).any() or numpy.not(numpy.isfinite(x)).any():
+    if (asd_data < 0).any() or numpy.logical_not(numpy.isfinite(asd_data)).any():
         raise ValueError('Invalid ASD data in ' + filename)
     psd_interp = scipy.interpolate.interp1d(asd_data[:, 0], asd_data[:, 1] ** 2)
 
