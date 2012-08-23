@@ -68,7 +68,7 @@ def parsecs_to_meters(distance):
 default_args = {'spin1x':0,'spin1y':0,'spin1z':0,
                 'spin2x':0,'spin2y':0,'spin2z':0,
                 'inclination':0,'distance':10e8,'fmax':0,'phi0':0,
-                'amplitude_order':7,'phase_order':7}
+                'amplitude_order':-1,'phase_order':-1}
 
 base_required_args = ['mass1','mass2','f_lower']
 td_required_args = base_required_args + ['delta_t']
@@ -84,7 +84,7 @@ def _lalsim_td_waveform(**p):
                float(p['f_lower']),0,
                parsecs_to_meters(float(p['distance'])),
                float(p['inclination']),
-               0,0,0,
+               0,0,None,None,
                int(p['amplitude_order']),int(p['phase_order']),
                lalsim_approx[p['approximant']])
 
@@ -103,7 +103,7 @@ def _lalsim_fd_waveform(**p):
                float(p['f_lower']),0,
                parsecs_to_meters(float(p['distance'])),
                float(p['inclination']),
-               0,0,0,
+               0,0,None,None,
                int(p['amplitude_order']),int(p['phase_order']),
                lalsim_fd_approx[p['approximant']])
 
