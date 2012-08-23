@@ -20,22 +20,30 @@
 from pycbc.types import FrequencySeries, zeros
 import lalsimulation
 
+# build a list of usable PSD functions from lalsimulation
 _name_prefix = 'SimNoisePSD'
+_psd_list = []
+for _name in lalsimulation.__dict__:
+    if _name.startswith(_name_prefix) and _name != _name_prefix:
+        try:
+            eval('lalsimulation.' + _name + '(100.)')
+        except TypeError:
+            # ignore fancy PSDs taking extra args
+            continue
+        _psd_list.append(_name[len(_name_prefix):])
+_psd_list = sorted(_psd_list)
 
-def get_list():
-    " Return a list of available PSD functions. "
-    l = []
-    for name in lalsimulation.__dict__:
-        if name.startswith(_name_prefix) and name != _name_prefix:
-            l.append(name[len(_name_prefix):])
-    return sorted(l)
-
-for _name in get_list():
+# add functions wrapping lalsimulation PSDs
+for _name in _psd_list:
     exec("""
 def %s(length, delta_f, low_freq_cutoff):
     " Return a FrequencySeries containing the %s PSD from LALSimulation. "
     return from_lalsimulation(lalsimulation.%s, length, delta_f, low_freq_cutoff)
 """ % (_name, _name, _name_prefix + _name))
+
+def get_list():
+    " Return a list of available PSD functions. "
+    return _psd_list
 
 def from_lalsimulation(func, length, delta_f, low_freq_cutoff):
     " Return a FrequencySeries containing the specified LALSimulation PSD. "
