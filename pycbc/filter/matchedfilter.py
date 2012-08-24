@@ -71,7 +71,7 @@ def get_frequencyseries(vec):
     else:
         raise TypeError("Can only convert a TimeSeries to a FrequencySeries")
 
-def sigmasq(htilde,psd = None,low_frequency_cutoff=None,
+def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
             high_frequency_cutoff=None):
     """
     """
@@ -89,7 +89,7 @@ def sigmasq(htilde,psd = None,low_frequency_cutoff=None,
         
     return sq * norm
     
-def get_cutoff_indices(flow,fhigh,df,N):
+def get_cutoff_indices(flow, fhigh, df, N):
     if flow:
         kmin = int(flow / df)
     else:
@@ -105,8 +105,8 @@ def get_cutoff_indices(flow,fhigh,df,N):
 _q = None
 _qtilde = None
 
-def matchedfilter(template,data,psd=None,low_frequency_cutoff=None,
-                  high_frequency_cutoff=None,calculate_norm=True):
+def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
+                  high_frequency_cutoff=None, calculate_norm=True):
     """Return the complex SNR and normalization (SNR,norm) of the template 
        filtered against the data, where the normalized SNR is SNR' = SNR * norm.
     """
@@ -161,12 +161,12 @@ def matchedfilter(template,data,psd=None,low_frequency_cutoff=None,
     return _q,norm
     
     
-def match(vec1,vec2,psd=None,low_frequency_cutoff=None,high_frequency_cutoff=None):
+def match(vec1, vec2, psd=None, low_frequency_cutoff=None, high_frequency_cutoff=None):
     """ Return the match between the two TimeSeries or FrequencySeries.
     """
     htilde = get_frequencyseries(vec1)
     stilde = get_frequencyseries(vec2)
-    snr,norm = matchedfilter(htilde,stilde,psd,low_frequency_cutoff,
+    snr,norm = matched_filter(htilde,stilde,psd,low_frequency_cutoff,
                              high_frequency_cutoff)
     maxsnrsq, max_id = (snr.squared_norm()).max_loc()
     vec2_normsq = sigmasq(stilde,psd,low_frequency_cutoff,high_frequency_cutoff)

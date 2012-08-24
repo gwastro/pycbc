@@ -97,7 +97,7 @@ class TestMatchedFilter(base_test.function_base,unittest.TestCase):
             self.scheme_test(match,(self.filt_short,self.filt_short), 
                                             (self.filt_short,self.filt_short),7)
                                             
-            self.scheme_test(matchedfilter,(self.filt_short,self.filt_short), 
+            self.scheme_test(matched_filter,(self.filt_short,self.filt_short), 
                                             (self.filt_short,self.filt_short),7)
         else:
             pass
@@ -113,7 +113,7 @@ class TestMatchedFilter(base_test.function_base,unittest.TestCase):
             # Calculate a Faux psd for normalization, replace with better algorithm
             psd = (ntilde).squared_norm()  / float(len(nplus)) * nplus.delta_t *2.0
 
-            snr,norm = matchedfilter(self.filt,nplus,psd=psd)   
+            snr,norm = matched_filter(self.filt,nplus,psd=psd)   
             ave = snr.squared_norm().sum() * norm * norm /len(snr)
             self.assertAlmostEqual(2,ave,places=5)
             
@@ -124,7 +124,7 @@ class TestMatchedFilter(base_test.function_base,unittest.TestCase):
             # Calculate a Faux psd for normalization, replace with better algorithm
             psd = (ntilde).squared_norm()  / float(len(nplus)) * nplus.delta_t *2.0
 
-            snr,norm = matchedfilter(self.filtD,nplus,psd=psd)   
+            snr,norm = matched_filter(self.filtD,nplus,psd=psd)   
             ave = snr.squared_norm().sum() * norm * norm /len(snr)
             self.assertAlmostEqual(2,ave,places=5)
         
