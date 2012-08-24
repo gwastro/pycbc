@@ -37,24 +37,6 @@ from pycbc.fft import fft
 import pycbc
 
 
-#FIXME#################### REMOVE THESE WHEN FEATURES AVAILABLE IN LALSIMULATION 
-lalsim_approx = {'SpinTaylorT4':lalsimulation.SpinTaylorT4,
-                'TaylorT4':lalsimulation.TaylorT4,
-                'TaylorT3':lalsimulation.TaylorT3,
-                'TaylorT2':lalsimulation.TaylorT2,
-                'TaylorT1':lalsimulation.TaylorT1,
-                'EOBNRv2':lalsimulation.EOBNRv2,
-                'SEOBNRv1':lalsimulation.SEOBNRv1,
-                'IMRPhenomB':lalsimulation.IMRPhenomB}
-
-lalsim_approx_names = ['SpinTaylorT4','TaylorT1','TaylorT2',
-                       'TaylorT3','TaylorT4','EOBNRv2','SEOBNRv1','IMRPhenomB']
-                       
-lalsim_fd_approx = {'TaylorF2':lalsimulation.TaylorF2,
-                    'IMRPhenomB':lalsimulation.IMRPhenomB}
-lalsim_fd_names = ['TaylorF2','IMRPhenomB']
-
-
 #FIXME######################################### RELOCATE THIS TO ANOTHER MODULE
 
 def solar_mass_to_kg(solar_masses):
@@ -74,6 +56,11 @@ base_required_args = ['mass1','mass2','f_lower']
 td_required_args = base_required_args + ['delta_t']
 fd_required_args = base_required_args + ['delta_f']
 
+
+# td, fd, filter waveforms generated on the CPU
+_lalsim_td_approximants = {}
+_lalsim_enum = {}
+
 def _lalsim_td_waveform(**p):
     hp,hc = lalsimulation.SimInspiralChooseTDWaveform(float(p['phi0']),
                float(p['delta_t']),
@@ -86,7 +73,7 @@ def _lalsim_td_waveform(**p):
                float(p['inclination']),
                0,0,None,None,
                int(p['amplitude_order']),int(p['phase_order']),
-               lalsim_approx[p['approximant']])
+               _lalsim_enum[p['approximant']])
 
     hp = TimeSeries(hp.data.data,delta_t=hp.deltaT,epoch=hp.epoch)
     hc = TimeSeries(hc.data.data,delta_t=hc.deltaT,epoch=hc.epoch)
@@ -105,11 +92,24 @@ def _lalsim_fd_waveform(**p):
                float(p['inclination']),
                0,0,None,None,
                int(p['amplitude_order']),int(p['phase_order']),
-               lalsim_fd_approx[p['approximant']])
+               _lalsim_enum[p['approximant']])
 
     htilde = FrequencySeries(htilde.data.data,delta_f=htilde.deltaF,
                             epoch=htilde.epoch)
     return htilde
+
+for approx_enum in xrange(0,lalsimulation.NumApproximants):
+    if lalsimulation.SimInspiralImplementedTDApproximants(approx_enum):
+        approx_name =  lalsimulation.GetStringFromApproximant(approx_enum)
+        _lalsim_enum[approx_name] = approx_enum
+        _lalsim_td_approximants[approx_name] = _lalsim_td_waveform
+
+_lalsim_fd_approximants = {}
+for approx_enum in xrange(0,lalsimulation.NumApproximants):
+    if lalsimulation.SimInspiralImplementedFDApproximants(approx_enum):
+        approx_name =  lalsimulation.GetStringFromApproximant(approx_enum)
+        _lalsim_enum[approx_name] = approx_enum
+        _lalsim_fd_approximants[approx_name] = _lalsim_fd_waveform
 
 def _filter_td_waveform(p):
     raise NotImplementedError
@@ -117,15 +117,6 @@ def _filter_td_waveform(p):
 def _filter_fd_waveform(p):
     raise NotImplementedError
 
-
-# td, fd, filter waveforms generated on the CPU
-_lalsim_td_approximants = {}
-for approx in lalsim_approx:
-    _lalsim_td_approximants[approx] = _lalsim_td_waveform
-
-_lalsim_fd_approximants = {}
-for approx in lalsim_fd_approx:
-    _lalsim_fd_approximants[approx] = _lalsim_fd_waveform
 
 # Waveforms that are optimized to work as filters
 _filter_fd_approximants = {}
