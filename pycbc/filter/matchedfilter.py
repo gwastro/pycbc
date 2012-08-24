@@ -32,39 +32,17 @@ from pycbc.fft import fft,ifft
 import pycbc.scheme
 import pycbc
 
-def get_padded_frequencyseries(vec):
-    """Pad a TimeSeries with a length of zeros greater than its length, such
-    that the total length is the closest power of 2. This prevents the effects 
-    of wraparound.
-    """
-    if not isinstance(vec,TimeSeries):
-        raise TypeError("Input must be a Timeseries")
-    else:
-        power = ceil(log(len(vec),2))+1
-        N = 2 ** power
-        n = N/2+1
-        
-        vec_pad = TimeSeries(zeros(N),delta_t=vec.delta_t,
-                             dtype=real_same_precision_as(vec))
-        vec_pad[0:len(vec)] = vec
-        vectilde = FrequencySeries(zeros(n),delta_f=1, 
-                                   dtype=complex_same_precision_as(vec))
-        
-        fft(vec_pad,vectilde)
-        
-        return vectilde
-
-def get_frequencyseries(vec):
+def make_frequency_series(vec):
     """Convenience function that returns immediately if given a FrequencySeries,
     or ffts it and returns a frequency series.
     """
-    if isinstance(vec,FrequencySeries):
+    if isinstance(vec, FrequencySeries):
         return vec
-    if isinstance(vec,TimeSeries):
+    if isinstance(vec, TimeSeries):
         N = len(vec)
         n = N/2+1    
         delta_f = 1.0 / N / vec.delta_t
-        vectilde = FrequencySeries(zeros(n),delta_f=delta_f, 
+        vectilde = FrequencySeries(zeros(n), delta_f=delta_f, 
                                    dtype=complex_same_precision_as(vec))
         fft(vec,vectilde)   
         return vectilde
@@ -78,7 +56,7 @@ def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
     N = (len(htilde)-1) * 2 
     norm = 4.0 / (N * N * htilde.delta_f) 
     kmin,kmax = get_cutoff_indices(low_frequency_cutoff,
-                                   high_frequency_cutoff,htilde.delta_f,N)  
+                                   high_frequency_cutoff, htilde.delta_f, N)  
  
     moment = htilde.squared_norm()   
     
@@ -113,15 +91,15 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
     global _q
     global _qtilde
   
-    htilde = get_frequencyseries(template)
-    stilde = get_frequencyseries(data)
+    htilde = make_frequency_series(template)
+    stilde = make_frequency_series(data)
 
     if len(htilde) != len(stilde):
         raise ValueError("Length of template and data must match")
 
     N = (len(stilde)-1) * 2   
     kmin,kmax = get_cutoff_indices(low_frequency_cutoff,
-                                   high_frequency_cutoff,stilde.delta_f,N)   
+                                   high_frequency_cutoff, stilde.delta_f, N)   
 
     if (_q is None) or (len(_q) != N) or _q.dtype != data.dtype:
         _q = zeros(N,dtype=complex_same_precision_as(data))
@@ -139,7 +117,7 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
     # Only weight by the psd if it was explictly given.
     # In most cases, the expectation is to prewhiten the data 
     if psd is not None:
-        if isinstance(psd,FrequencySeries):
+        if isinstance(psd, FrequencySeries):
             if psd.delta_f == stilde.delta_f :
                 _qtilde[kmin:kmax] /= psd[kmin:kmax]
             else:
@@ -164,8 +142,8 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
 def match(vec1, vec2, psd=None, low_frequency_cutoff=None, high_frequency_cutoff=None):
     """ Return the match between the two TimeSeries or FrequencySeries.
     """
-    htilde = get_frequencyseries(vec1)
-    stilde = get_frequencyseries(vec2)
+    htilde = make_frequency_series(vec1)
+    stilde = make_frequency_series(vec2)
     snr,norm = matched_filter(htilde,stilde,psd,low_frequency_cutoff,
                              high_frequency_cutoff)
     maxsnrsq, max_id = (snr.squared_norm()).max_loc()

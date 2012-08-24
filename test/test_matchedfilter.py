@@ -109,7 +109,7 @@ class TestMatchedFilter(base_test.function_base,unittest.TestCase):
 
             noise = normal(0.0,2,4096*64)
             nplus= TimeSeries(noise,dtype=float32,delta_t=1.0/4096) 
-            ntilde = get_frequencyseries(nplus)
+            ntilde = make_frequency_series(nplus)
             # Calculate a Faux psd for normalization, replace with better algorithm
             psd = (ntilde).squared_norm()  / float(len(nplus)) * nplus.delta_t *2.0
 
@@ -120,7 +120,7 @@ class TestMatchedFilter(base_test.function_base,unittest.TestCase):
             
             noise = normal(0.0,2,4096*64)
             nplus= TimeSeries(noise,dtype=float64,delta_t=1.0/4096) 
-            ntilde = get_frequencyseries(nplus)
+            ntilde = make_frequency_series(nplus)
             # Calculate a Faux psd for normalization, replace with better algorithm
             psd = (ntilde).squared_norm()  / float(len(nplus)) * nplus.delta_t *2.0
 
@@ -149,13 +149,13 @@ class TestMatchedFilter(base_test.function_base,unittest.TestCase):
         
     def test_imperfect_match(self):
         with self.context:
-            f = get_frequencyseries(self.filt)
-            f2 = get_frequencyseries(self.filt2)
+            f = make_frequency_series(self.filt)
+            f2 = make_frequency_series(self.filt2)
             o,i = match(self.filt,self.filt2)
             self.assertAlmostEqual(sqrt(0.5),o,places=3)
 
-            f = get_frequencyseries(self.filtD)
-            f2 = get_frequencyseries(self.filt2D)
+            f = make_frequency_series(self.filtD)
+            f2 = make_frequency_series(self.filt2D)
             o,i = match(self.filtD,self.filt2D)
             self.assertAlmostEqual(sqrt(0.5),o,places=3)
 
