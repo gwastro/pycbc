@@ -34,5 +34,5 @@ def from_txt(filename, length, delta_f, low_freq_cutoff):
     for k in xrange(kmin, length):
         psd[k] = float(psd_interp(k * delta_f))
 
-    return FrequencySeries(psd, delta_f=delta_f, copy=False)
+    return FrequencySeries(psd, delta_f=delta_f)
 
