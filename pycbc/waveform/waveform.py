@@ -193,13 +193,13 @@ def print_fd_approximants():
     for approx in _opencl_fd_approximants.keys():
         print "  " + approx
 
-def td_approximants(scheme = None):
+def td_approximants(scheme=None):
     """Return a list containing the available time domain approximants for 
        the given processing scheme.
     """
     return td_wav[type(scheme)].keys()
 
-def fd_approximants(scheme = None):
+def fd_approximants(scheme=None):
     """Return a list containing the available fourier domain approximants for 
        the given processing scheme.
     """
@@ -208,7 +208,7 @@ def fd_approximants(scheme = None):
 def list_filter_approximants():
     pass
 
-def props(obj,**kwargs):
+def props(obj, **kwargs):
     pr = {}
     if obj is not None:
         for name in dir(obj):
@@ -227,7 +227,7 @@ def props(obj,**kwargs):
 
     return input_params
 
-def get_td_waveform(template=None,**kwargs):
+def get_td_waveform(template=None, **kwargs):
     """Return the waveform specified by the attributes of the template with 
        overrides given by keyword argument
     """
@@ -248,7 +248,7 @@ def get_td_waveform(template=None,**kwargs):
     hp,hc = wav_gen[input_params['approximant']](**input_params)
     return (hp,hc)
 
-def get_fd_waveform(template=None,**kwargs):
+def get_fd_waveform(template=None, **kwargs):
     """Return the frequency domain waveform specified by the attributes
        of the template with overrides given by keyword argument
     """
@@ -269,24 +269,15 @@ def get_fd_waveform(template=None,**kwargs):
     htilde = wav_gen[input_params['approximant']](**input_params)
     return htilde
 
-def get_waveform_filter(length,template=None,**kwargs):
+def get_waveform_filter(length, template=None, **kwargs):
     """Return a frequency domain waveform filter for the specified approximant
     """
     raise NotImplementedError
 
     
-def precondition_data_for_filter(stilde,approximant):
+def get_waveform_filter_precondition(approximant):
     raise NotImplementedError
 
 
 __all__ = ["get_td_waveform","get_fd_waveform","print_td_approximants",
            "print_fd_approximants","td_approximants","fd_approximants"]
-
-
-
-
-
-
-
-
-

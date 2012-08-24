@@ -100,13 +100,22 @@ class TestWaveform(base_test.function_base,unittest.TestCase):
             self.assertRaises(ValueError,func,approximant="IMRPhenomB",mass1=3,mass2=3,phase_order=7)
             self.assertRaises(ValueError,func,approximant="IMRPhenomB",mass1=3)
 
-    def test_taylorf2(self): 
-        for order in [0,7]:
-            h = get_fd_waveform(approximant= "TaylorF2", mass1=1,mass2=1,phase_order=7,amplitude_order=7,delta_f = 1.0/1024,f_lower=15.0) 
-            with self.context:
-                s = get_fd_waveform(approximant= "TaylorF2", mass1=1,mass2=1,phase_order=7,amplitude_order=7,delta_f = 1.0/1024,f_lower=15.0)
-                o,i = match(h,s)
-                self.assertAlmostEqual(1,o,places=4)
+    if _options['scheme'] == 'cuda':
+        def test_taylorf2(self): 
+            for order in [0,7]:
+                h = get_fd_waveform(approximant= "TaylorF2", mass1=1,mass2=1,phase_order=7,amplitude_order=7,delta_f = 1.0/1024,f_lower=15.0) 
+                with self.context:
+                    s = get_fd_waveform(approximant= "TaylorF2", mass1=1,mass2=1,phase_order=7,amplitude_order=7,delta_f = 1.0/1024,f_lower=15.0)
+                    o,i = match(h,s)
+                    self.assertAlmostEqual(1,o,places=4)
+
+            for p_order in [0,7]:
+                for a_order in [0,7]:
+                    h = get_fd_waveform(approximant= "TaylorF2", mass1=1,mass2=1,phase_order=7,amplitude_order=7,delta_f = 1.0/1024,f_lower=15.0) 
+                    with self.context:
+                        s = get_fd_waveform(approximant= "TaylorF2", mass1=1,mass2=1,phase_order=7,amplitude_order=7,delta_f = 1.0/1024,f_lower=15.0)     
+                        diff = ((h-s)).sum()
+                    self.assertTrue(diff<10e-32)
 
     
 suite = unittest.TestSuite()

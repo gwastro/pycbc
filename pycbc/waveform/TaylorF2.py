@@ -119,6 +119,7 @@ def get_taylorf2_pn_coefficients(mass1,mass2,distance,beta =0 , sigma = 0):
     return pn_coefficients
 
 preamble = """
+#include "stdio.h"
 #include <lal/LALConstants.h>
 
 struct pntype{
@@ -215,13 +216,10 @@ taylorf2_text = """
             flux += cf -> FTa2 * v2;
             dEnergy += cf -> dETa1 * v2;
         case 0:
-            flux += 1.;
+            flux += 1;
             dEnergy += 1.;
             break;
     }
-
-    flux+=1.0;
-    dEnergy+=1.0;
 
     phasing *= cf->pfaN / v5;
     flux *= cf->FTaN * v10;
@@ -229,6 +227,7 @@ taylorf2_text = """
 
     phasing += shft * f + phi0;
     amp = cf->amp0 * sqrt(-dEnergy/flux) * v;
+
     htilde[i]._M_re = amp * cos(phasing + LAL_PI_4) ;
     htilde[i]._M_im = - amp * sin(phasing + LAL_PI_4);
 
@@ -247,11 +246,13 @@ def ceilpow2(n):
 
 
 def taylorf2(tC = None, beta =0, sigma = 0,**kwds):
+    """ Return a TaylorF2 waveform using CUDA to generate the phase and amplitude
+    """
     pn_const = get_taylorf2_pn_coefficients(kwds['mass1'],kwds['mass2'],
                                     kwds['distance'],beta,sigma)
 
     pn_const['phase0'] = int(kwds['phase_order'])
-    pn_const['amplitudeO'] = int(kwds['phase_order'])
+    pn_const['amplitudeO'] = int(kwds['amplitude_order'])
     delta_f = kwds['delta_f']
     if tC is None:
         tC = -1.0 / delta_f 
