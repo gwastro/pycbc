@@ -77,4 +77,26 @@ class FrequencySeries(Array):
         return Array(range(len(self))) * self._delta_f
     sample_frequencies = property(get_sample_frequencies)
 
+    @property
+    @_convert
+    def  lal(self):
+        """ Returns a LAL Object that contains this data """
+
+        lal_data = None
+        if type(self._data) is not _numpy.ndarray:
+            raise TypeError("Cannot return lal type from the GPU")
+        elif self._data.dtype == _numpy.float32:
+            lal_data = _lal.CreateREAL4FrequencySeries("",self._epoch,0,self.delta_f,_lal.lalSecondUnit,len(self))
+        elif self._data.dtype == _numpy.float64:
+            lal_data = _lal.CreateREAL8FrequencySeries("",self._epoch,0,self.delta_f,_lal.lalSecondUnit,len(self))
+        elif self._data.dtype == _numpy.complex64:
+            lal_data = _lal.CreateCOMPLEX8FrequencySeries("",self._epoch,0,self.delta_f,_lal.lalSecondUnit,len(self))
+        elif self._data.dtype == _numpy.complex128:
+            lal_data = _lal.CreateCOMPLEX16FrequencySeries("",self._epoch,0,self.delta_f,_lal.lalSecondUnit,len(self))
+
+        lal_data.data.data[:] = self._data
+        self._data = lal_data.data.data
+
+        return lal_data
+
 
