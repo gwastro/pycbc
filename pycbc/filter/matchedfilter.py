@@ -31,6 +31,21 @@ from pycbc.types import complex_same_precision_as,real_same_precision_as
 from pycbc.fft import fft,ifft
 import pycbc.scheme
 import pycbc
+import numpy
+
+def correlate(x,y,z):
+    if pycbc.scheme.mgr.state is None:
+        z[:] = x
+        numpy.conjugate(z.data, out=z.data)
+        z *= y
+        return z
+    if type(pycbc.scheme.mgr.state) is pycbc.scheme.CUDAScheme:
+        from matchedfilter_cuda import correlate 
+        correlate(x.data,y.data,z.data)
+    if type(pycbc.scheme.mgr.state) is pycbc.scheme.OpenCLScheme:
+        raise NotImplementedError
+
+
 
 def make_frequency_series(vec):
     """Convenience function that returns immediately if given a FrequencySeries,
@@ -112,7 +127,7 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
         _qtilde.fill(0)         
     
     #REPLACE with in place operations once they are fixed in PyCUDA
-    _qtilde[kmin:kmax] = htilde[kmin:kmax].conj() * stilde[kmin:kmax]
+    correlate( htilde[kmin:kmax], stilde[kmin:kmax], _qtilde[kmin:kmax])
 
     # Only weight by the psd if it was explictly given.
     # In most cases, the expectation is to prewhiten the data 
