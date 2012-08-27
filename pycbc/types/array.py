@@ -604,7 +604,6 @@ class Array(object):
         else:
             return self;
 
-    @property
     @_convert
     def  lal(self):
         """ Returns a LAL Object that contains this data """
@@ -622,7 +621,6 @@ class Array(object):
             lal_data = _lal.CreateCOMPLEX16Vector(len(self))
 
         lal_data.data[:] = self._data
-        self._data = lal_data.data
 
         return lal_data
 

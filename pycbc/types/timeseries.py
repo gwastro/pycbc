@@ -109,7 +109,6 @@ class TimeSeries(Array):
             return Array(range(len(self))) * self._delta_t + float(self._epoch)
     sample_times = property(get_sample_times)
 
-    @property
     @_convert
     def  lal(self):
         """ Returns a LAL Object that contains this data """
@@ -127,7 +126,6 @@ class TimeSeries(Array):
             lal_data = _lal.CreateCOMPLEX16TimeSeries("",self._epoch,0,self.delta_t,_lal.lalSecondUnit,len(self))
 
         lal_data.data.data[:] = self._data
-        self._data = lal_data.data.data
 
         return lal_data
 

@@ -77,7 +77,6 @@ class FrequencySeries(Array):
         return Array(range(len(self))) * self._delta_f
     sample_frequencies = property(get_sample_frequencies)
 
-    @property
     @_convert
     def  lal(self):
         """ Returns a LAL Object that contains this data """
@@ -95,7 +94,6 @@ class FrequencySeries(Array):
             lal_data = _lal.CreateCOMPLEX16FrequencySeries("",self._epoch,0,self.delta_f,_lal.lalSecondUnit,len(self))
 
         lal_data.data.data[:] = self._data
-        self._data = lal_data.data.data
 
         return lal_data
 
