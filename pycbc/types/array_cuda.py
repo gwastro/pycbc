@@ -27,21 +27,25 @@ from pycuda.reduction import ReductionKernel
 from pycuda.tools import register_dtype
 from pycuda.tools import context_dependent_memoize
 from pycuda.tools import dtype_to_ctype
+from pytools import match_precision
 import numpy as np
 
+@context_dependent_memoize
+def get_norm_kernel(dtype_x, dtype_out):
+    return ElementwiseKernel(
+            "%(tp_x)s *x, %(tp_z)s *z" % {
+                "tp_x": dtype_to_ctype(dtype_x),
+                "tp_z": dtype_to_ctype(dtype_out),
+                },
+            "z[i] = norm(x[i])",
+            "norm")
 
-squared_norm_double = ElementwiseKernel(
-    "pycuda::complex<double> *x, double *z",
-    "z[i] = x[i].real() * x[i].real() + x[i].imag() * x[i].imag()",
-    "squared_norm_double")
-        
-squared_norm_single = ElementwiseKernel(
-    "pycuda::complex<float> *x, float *z",
-    "z[i] = x[i].real() * x[i].real() + x[i].imag() * x[i].imag()",
-    "squared_norm_single")
-        
-squared_norm = {'single':squared_norm_single,'double':squared_norm_double}        
-       
+def squared_norm(a):
+    dtype_out = match_precision(np.dtype('float64'),a.dtype)
+    out = a._new_like_me(dtype=dtype_out)
+    krnl = get_norm_kernel(a.dtype,dtype_out)
+    krnl(a,out)
+    return out     
  
 # Define PYCUDA MAXLOC for both single and double precission ################## 
        

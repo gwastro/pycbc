@@ -140,7 +140,6 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
         else:
             raise TypeError("PSD must be a FrequencySeries")
             
-
     ifft(_qtilde,_q)
     
     # Only calculate the normalization if needed. For SPA waveforms

@@ -408,9 +408,7 @@ class Array(object):
             return (self.data * self.data.conj()).real
         elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
             from array_cuda import squared_norm
-            tmp = zeros(len(self),dtype=real_same_precision_as(self))
-            squared_norm[self.precision](self.data,tmp.data)
-            return tmp
+            return squared_norm(self.data)
         elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
             raise NotImplementedError         
 
