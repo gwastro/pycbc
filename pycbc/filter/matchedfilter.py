@@ -145,8 +145,8 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
     # Only calculate the normalization if needed. For SPA waveforms
     # this can be done ahead of time.
     if calculate_norm:
-        s_norm = sigmasq(htilde,psd,low_frequency_cutoff,high_frequency_cutoff)
-        norm = (4.0 / (N * N * stilde.delta_f)) / sqrt( s_norm) 
+        h_norm = sigmasq(htilde,psd,low_frequency_cutoff,high_frequency_cutoff)       
+        norm = (4.0 / (N * N * stilde.delta_f)) / sqrt( h_norm) 
     else:
         norm = None
         
