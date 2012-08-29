@@ -63,6 +63,12 @@ def _convert(fn):
         return fn(self,*args)
     return converted
 
+def common_kind(*dtypes):
+    for dtype in dtypes:
+        if dtype.kind is 'c':
+            return dtype
+    return dtypes[0]
+
 class Array(object):
     """Array used to do numeric calculations on a various compute
     devices. It is a convience wrapper around _numpy, _pyopencl, and
@@ -234,23 +240,24 @@ class Array(object):
     def _checkother(fn):
         """ Checks the input to method functions """
         @_functools.wraps(fn)
-        def checked(self,other):
-            self._typecheck(other) 
-    
-            if type(other) in _ALLOWED_SCALARS:
-                pass
-            elif isinstance(other,Array):
-                if len(other) != len(self):
-                    raise ValueError('lengths do not match')
-                if other.precision == self.precision:
-                    _convert_to_scheme(other)
-                    other = other._data
+        def checked(self,*args):
+            nargs = ()
+            for other in args:
+                self._typecheck(other)  
+                if type(other) in _ALLOWED_SCALARS:
+                    nargs +=(other,)
+                elif isinstance(other,Array):
+                    if len(other) != len(self):
+                        raise ValueError('lengths do not match')
+                    if other.precision == self.precision:
+                        _convert_to_scheme(other)
+                        nargs += (other._data,)
+                    else:
+                        raise TypeError('precisions do not match')
                 else:
-                    raise TypeError('precisions do not match')
-            else:
-                return NotImplemented
+                    return NotImplemented
 
-            return fn(self,other)
+            return fn(self,*nargs)
         return checked
         
     def _icheckother(fn):
@@ -403,7 +410,7 @@ class Array(object):
     @_returntype
     @_convert
     def squared_norm(self):
-        """ Return the squared norm of the array """
+        """ Return the elementwise squared norm of the array """
         if type(self._data) is _numpy.ndarray:
             return (self.data * self.data.conj()).real
         elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
@@ -411,6 +418,44 @@ class Array(object):
             return squared_norm(self.data)
         elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
             raise NotImplementedError         
+
+    @_checkother
+    @_convert
+    def inner(self, other):
+        """ Return the inner product of the array with complex conjugation.
+        """
+        if self._scheme is None:
+            cdtype = common_kind(self.dtype,other.dtype)
+            if cdtype.kind == 'c':
+                acum_dtype = complex128
+            else:
+                acum_dtype = float64
+            return _numpy.sum(self.data.conj() * other, dtype=acum_dtype)
+        elif type(self._scheme) is _scheme.CUDAScheme:
+            from array_cuda import inner
+            return inner(self.data,other).get().max()
+        elif type(self._scheme) is _scheme.OpenCLScheme:
+            raise NotImplementedError    
+
+    @_checkother
+    @_convert
+    def weighted_inner(self, other, weight):
+        """ Return the inner product of the array with complex conjugation.
+        """
+        if weight is None:
+            return self.inner(other)
+        if self._scheme is None:
+            cdtype = common_kind(self.dtype, other.dtype)
+            if cdtype.kind == 'c':
+                acum_dtype = complex128
+            else:
+                acum_dtype = float64
+            return _numpy.sum(self.data.conj() * other / weight, dtype=acum_dtype)
+        elif type(self._scheme) is _scheme.CUDAScheme:
+            from array_cuda import weighted_inner
+            return weighted_inner(self.data,other,weight).get().max()
+        elif type(self._scheme) is _scheme.OpenCLScheme:
+            raise NotImplementedError    
 
     @_convert
     def sum(self):
@@ -423,16 +468,7 @@ class Array(object):
         elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
             return _pycuda.gpuarray.sum(self._data).get().max()
         elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-            return _pyopencl.array.sum(self._data).get().max()
-           
-    def max(self):
-        """ Return the maximum value in the array. """
-        if type(self._data) is _numpy.ndarray:
-            return self._data.max()
-        elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
-            return _pycuda.gpuarray.sum(self._data).get().max()
-        elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-            return _pyopencl.array.sum(self._data).get().max()        
+            return _pyopencl.array.sum(self._data).get().max()      
      
     @_convert
     def max(self):

@@ -28,6 +28,7 @@ from pycuda.tools import register_dtype
 from pycuda.tools import context_dependent_memoize
 from pycuda.tools import dtype_to_ctype
 from pytools import match_precision
+from pycuda.gpuarray import _get_common_dtype
 import numpy as np
 
 @context_dependent_memoize
@@ -47,6 +48,49 @@ def squared_norm(a):
     krnl(a,out)
     return out     
  
+@context_dependent_memoize
+def get_weighted_inner_kernel(dtype_x, dtype_y, dtype_w, dtype_out):
+    if (dtype_x == np.complex64) or (dtype_x == np.complex128):
+        inner_map="conj(x[i])*y[i]/w[i]"
+    else:
+        inner_map="x[i]*y[i]/w[i]"       
+    return ReductionKernel(dtype_out,
+            neutral="0",
+            arguments="%(tp_x)s *x, %(tp_y)s *y,  %(tp_w)s *w" % {
+                "tp_x": dtype_to_ctype(dtype_x),
+                "tp_y": dtype_to_ctype(dtype_y),
+                "tp_w": dtype_to_ctype(dtype_w),
+                },
+            reduce_expr="a+b",
+            map_expr=inner_map,
+            name="weighted_inner")
+
+@context_dependent_memoize
+def get_inner_kernel(dtype_x, dtype_y, dtype_out):
+    if (dtype_x == np.complex64) or (dtype_x == np.complex128):
+        inner_map="conj(x[i])*y[i]"
+    else:
+        inner_map="x[i]*y[i]"           
+    return ReductionKernel(dtype_out,
+            neutral="0",
+            arguments="%(tp_x)s *x, %(tp_y)s *y" % {
+                "tp_x": dtype_to_ctype(dtype_x),
+                "tp_y": dtype_to_ctype(dtype_y),
+                },
+            reduce_expr="a+b",
+            map_expr=inner_map,
+            name="inner")
+
+def inner(a, b):
+    dtype_out = _get_common_dtype(a,b)
+    krnl = get_inner_kernel(a.dtype, b.dtype, dtype_out)
+    return krnl(a, b)
+
+def weighted_inner(a, b, w):
+    dtype_out = _get_common_dtype(a,b)
+    krnl = get_weighted_inner_kernel(a.dtype, b.dtype, w.dtype, dtype_out)
+    return krnl(a, b, w)
+
 # Define PYCUDA MAXLOC for both single and double precission ################## 
        
 maxloc_preamble = """

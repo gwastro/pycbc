@@ -119,6 +119,8 @@ class TestTimeSeriesBase(base_test.array_base):
         self.a2 = TimeSeries(self.alist, self.delta_t, epoch=self.epoch, dtype=self.dtype)
         self.a3 = TimeSeries(self.alist, self.delta_t, epoch=self.epoch, dtype=self.dtype)
 
+        self.w = Array(self.wlist, dtype=self.dtype)
+
         self.b1 = TimeSeries(self.blist, self.delta_t, epoch=self.epoch, dtype=self.odtype)
         self.b2 = TimeSeries(self.blist, self.delta_t, epoch=self.epoch, dtype=self.odtype)
 

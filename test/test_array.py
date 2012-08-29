@@ -112,6 +112,8 @@ class ArrayTestBase(base_test.array_base):
         self.a2 = Array(self.alist, dtype=self.dtype)
         self.a3 = Array(self.alist, dtype=self.dtype)
 
+        self.w = Array(self.wlist, dtype=self.dtype)
+
         self.b1 = Array(self.blist, dtype=self.odtype)
         self.b2 = Array(self.blist, dtype=self.odtype)
         

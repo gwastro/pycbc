@@ -46,7 +46,6 @@ def correlate(x,y,z):
         raise NotImplementedError
 
 
-
 def make_frequency_series(vec):
     """Convenience function that returns immediately if given a FrequencySeries,
     or ffts it and returns a frequency series.
@@ -64,6 +63,7 @@ def make_frequency_series(vec):
     else:
         raise TypeError("Can only convert a TimeSeries to a FrequencySeries")
 
+
 def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
             high_frequency_cutoff=None):
     """
@@ -72,16 +72,17 @@ def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
     norm = 4.0 / (N * N * htilde.delta_f) 
     kmin,kmax = get_cutoff_indices(low_frequency_cutoff,
                                    high_frequency_cutoff, htilde.delta_f, N)  
- 
-    moment = htilde.squared_norm()   
-    
-    if psd is not None:
-        moment[kmin:kmax] /= psd[kmin:kmax] 
+
+    ht = htilde[kmin:kmax] 
+
+    if psd is None:
+        sq = ht.inner(ht)
+    else:
+        sq = ht.weighted_inner(ht, psd[kmin:kmax])
         
-    sq = moment[kmin:kmax].sum() 
-        
-    return sq * norm
+    return sq.real * norm
     
+
 def get_cutoff_indices(flow, fhigh, df, N):
     if flow:
         kmin = int(flow / df)
@@ -126,8 +127,7 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
     else:
         _qtilde.fill(0)         
     
-    #REPLACE with in place operations once they are fixed in PyCUDA
-    correlate( htilde[kmin:kmax], stilde[kmin:kmax], _qtilde[kmin:kmax])
+    correlate(htilde[kmin:kmax], stilde[kmin:kmax], _qtilde[kmin:kmax])
 
     # Only weight by the psd if it was explictly given.
     # In most cases, the expectation is to prewhiten the data 

@@ -118,6 +118,8 @@ class TestFrequencySeriesBase(base_test.array_base):
         self.a2 = FrequencySeries(self.alist, self.delta_f, epoch=self.epoch, dtype=self.dtype)
         self.a3 = FrequencySeries(self.alist, self.delta_f, epoch=self.epoch, dtype=self.dtype)
 
+        self.w = Array(self.wlist, dtype=self.dtype)
+
         self.b1 = FrequencySeries(self.blist, self.delta_f, epoch=self.epoch, dtype=self.odtype)
         self.b2 = FrequencySeries(self.blist, self.delta_f, epoch=self.epoch, dtype=self.odtype)
 

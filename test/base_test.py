@@ -120,6 +120,8 @@ class array_base(checks):
             self.scalar = 5
         else:
             self.scalar = 5+2j
+        
+        self.wlist = [1, 2, 1]
 
         # All the answers are stored here to make it easier to read in the actual tests.
         # Again, it makes a difference whether they are complex or real valued, so there
@@ -162,6 +164,8 @@ class array_base(checks):
             self.sum = 9
             
             self.dot = 80
+            self.inner = self.dot
+            self.weighted_inner = 68
                         
         if self.kind =='real' and self.okind == 'complex':
             
@@ -202,6 +206,8 @@ class array_base(checks):
             self.sum = 9
             
             self.dot = 80+44j
+            self.inner = self.dot
+            self.weighted_inner = 68 + 38j
             
         if self.kind == 'complex' and self.okind == 'real':
             
@@ -249,6 +255,8 @@ class array_base(checks):
             self.sum = 9+9j
             
             self.dot = 80+64j
+            self.inner = 80-64j
+            self.weighted_inner = 68- 52j
             
         if self.kind =='complex' and self.okind =='complex':
             
@@ -298,6 +306,8 @@ class array_base(checks):
             self.sum = 9+9j
             
             self.dot = 52+108j
+            self.inner = 108-20j
+            self.weighted_inner= 90 -14j 
         self.min = 1
         self.max = 5
             
@@ -1080,6 +1090,71 @@ class array_base(checks):
         # Current Scheme with CPU
         c = self.a2.dot(self.b1)
         self.checkCurrentState((self.a2, self.b1, c),(self.alist, self.blist, self.dot), self.places)
+
+    def test_inner(self):
+        with self.context:
+            # CPU with CPU
+            c = self.a1.inner(self.b1)
+            self.checkCurrentState((self.a1, self.b1, c),(self.alist, self.blist, self.inner), self.places)
+            # CPU with Current Scheme
+            c = self.a2.inner(self.b1)
+            self.checkCurrentState((self.a2, self.b1, c),(self.alist, self.blist, self.inner), self.places)
+            # Current Scheme with Current Scheme
+            c = self.a1.inner(self.b1)
+            self.checkCurrentState((self.a1, self.b1, c),(self.alist, self.blist, self.inner), self.places)
+            # Current Scheme with CPU
+            c = self.a1.inner(self.b2)
+            self.checkCurrentState((self.a1, self.b2, c),(self.alist, self.blist, self.inner), self.places)
+            
+            self.assertRaises(TypeError, self.a1.inner, self.bad)
+            self.assertRaises(ValueError, self.a1.inner, self.bad2)
+            
+        # Now taking Current Scheme Array and going back to the CPU
+        # Current Scheme with Current Scheme
+        c = self.a1.inner(self.b1)
+        self.checkCurrentState((self.a1, self.b1, c),(self.alist, self.blist, self.inner), self.places)
+        # CPU with Current Scheme
+        c = self.a1.inner(self.b2)
+        self.checkCurrentState((self.a1, self.b2, c),(self.alist, self.blist, self.inner), self.places)
+        # CPU with CPU
+        c = self.a1.inner(self.b1)
+        self.checkCurrentState((self.a1, self.b1, c),(self.alist, self.blist, self.inner), self.places)
+        # Current Scheme with CPU
+        c = self.a2.inner(self.b1)
+        self.checkCurrentState((self.a2, self.b1, c),(self.alist, self.blist, self.inner), self.places)
+
+
+    def test_weighted_inner(self):
+        with self.context:
+            # CPU with CPU
+            c = self.a1.weighted_inner(self.b1, self.w)
+            self.checkCurrentState((self.a1, self.b1, c),(self.alist, self.blist, self.weighted_inner), self.places)
+            # CPU with Current Scheme
+            c = self.a2.weighted_inner(self.b1, self.w)
+            self.checkCurrentState((self.a2, self.b1, c),(self.alist, self.blist, self.weighted_inner), self.places)
+            # Current Scheme with Current Scheme
+            c = self.a1.weighted_inner(self.b1, self.w)
+            self.checkCurrentState((self.a1, self.b1, c),(self.alist, self.blist, self.weighted_inner), self.places)
+            # Current Scheme with CPU
+            c = self.a1.weighted_inner(self.b2, self.w)
+            self.checkCurrentState((self.a1, self.b2, c),(self.alist, self.blist, self.weighted_inner), self.places)
+            
+            self.assertRaises(TypeError, self.a1.weighted_inner, self.bad)
+            self.assertRaises(ValueError, self.a1.weighted_inner, self.bad2)
+            
+        # Now taking Current Scheme Array and going back to the CPU
+        # Current Scheme with Current Scheme
+        c = self.a1.weighted_inner(self.b1, self.w)
+        self.checkCurrentState((self.a1, self.b1, c),(self.alist, self.blist, self.weighted_inner), self.places)
+        # CPU with Current Scheme
+        c = self.a1.weighted_inner(self.b2, self.w)
+        self.checkCurrentState((self.a1, self.b2, c),(self.alist, self.blist, self.weighted_inner), self.places)
+        # CPU with CPU
+        c = self.a1.weighted_inner(self.b1, self.w)
+        self.checkCurrentState((self.a1, self.b1, c),(self.alist, self.blist, self.weighted_inner), self.places)
+        # Current Scheme with CPU
+        c = self.a2.weighted_inner(self.b1, self.w)
+        self.checkCurrentState((self.a2, self.b1, c),(self.alist, self.blist, self.weighted_inner), self.places)
     
     def test_max(self):
         if self.kind == 'real':
