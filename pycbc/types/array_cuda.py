@@ -27,9 +27,75 @@ from pycuda.reduction import ReductionKernel
 from pycuda.tools import register_dtype
 from pycuda.tools import context_dependent_memoize
 from pycuda.tools import dtype_to_ctype
-from pytools import match_precision
-from pycuda.gpuarray import _get_common_dtype
+from pytools import match_precision, memoize_method
+from pycuda.gpuarray import _get_common_dtype, empty
 import numpy as np
+
+@context_dependent_memoize
+def call_prepare(self, sz, allocator):
+    MAX_BLOCK_COUNT = 1024
+    SMALL_SEQ_COUNT = 4        
+
+    if sz <= self.block_size*SMALL_SEQ_COUNT*MAX_BLOCK_COUNT:
+        total_block_size = SMALL_SEQ_COUNT*self.block_size
+        block_count = (sz + total_block_size - 1) // total_block_size
+        seq_count = SMALL_SEQ_COUNT
+    else:
+        block_count = MAX_BLOCK_COUNT
+        macroblock_size = block_count*self.block_size
+        seq_count = (sz + macroblock_size - 1) // macroblock_size
+
+    if block_count == 1:
+        result = empty((), self.dtype_out, allocator)
+    else:
+        result = empty((block_count,), self.dtype_out, allocator)
+
+    grid_size = (block_count, 1)
+    block_size =  (self.block_size, 1, 1)
+
+    return result, block_count, seq_count, grid_size, block_size
+
+class LowerLatencyReductionKernel(ReductionKernel):
+    def __init__(self, dtype_out,
+            neutral, reduce_expr, map_expr=None, arguments=None,
+            name="reduce_kernel", keep=False, options=None, preamble=""):
+            ReductionKernel.__init__(self, dtype_out,
+                neutral, reduce_expr, map_expr, arguments,
+                name, keep, options, preamble)
+
+            self.shared_size=self.block_size*self.dtype_out.itemsize
+
+
+    def __call__(self, *args, **kwargs):
+        f = self.stage1_func
+        arg_types = self.stage1_arg_types
+        stage1_args = args
+        s1_invocation_args = [] 
+        for arg in args:
+            s1_invocation_args.append(arg.gpudata)
+        sz = args[0].size
+
+        result, block_count, seq_count, grid_size, block_size = call_prepare(self, sz, args[0].allocator)
+
+        f(grid_size, block_size, None,
+                *([result.gpudata]+s1_invocation_args+[seq_count, sz]),
+                shared_size=self.shared_size)
+
+        while True:
+            f = self.stage2_func
+            arg_types = self.stage2_arg_types
+            sz = result.size
+            result2 = result
+            result, block_count, seq_count, grid_size, block_size = call_prepare(self, sz, args[0].allocator)
+
+            f(grid_size, block_size, None,
+                    *([result.gpudata, result2.gpudata]+s1_invocation_args+[seq_count, sz]),
+                    shared_size=self.shared_size)
+
+            if block_count == 1:
+                return result
+
+
 
 @context_dependent_memoize
 def get_norm_kernel(dtype_x, dtype_out):
@@ -54,7 +120,7 @@ def get_weighted_inner_kernel(dtype_x, dtype_y, dtype_w, dtype_out):
         inner_map="conj(x[i])*y[i]/w[i]"
     else:
         inner_map="x[i]*y[i]/w[i]"       
-    return ReductionKernel(dtype_out,
+    return LowerLatencyReductionKernel(dtype_out,
             neutral="0",
             arguments="%(tp_x)s *x, %(tp_y)s *y,  %(tp_w)s *w" % {
                 "tp_x": dtype_to_ctype(dtype_x),
@@ -71,7 +137,7 @@ def get_inner_kernel(dtype_x, dtype_y, dtype_out):
         inner_map="conj(x[i])*y[i]"
     else:
         inner_map="x[i]*y[i]"           
-    return ReductionKernel(dtype_out,
+    return LowerLatencyReductionKernel(dtype_out,
             neutral="0",
             arguments="%(tp_x)s *x, %(tp_y)s *y" % {
                 "tp_x": dtype_to_ctype(dtype_x),
@@ -159,11 +225,11 @@ maxloc_dtype_single = np.dtype([("max", np.float32), ("loc", np.int32)])
 register_dtype(maxloc_dtype_single, "maxlocs")
 register_dtype(maxloc_dtype_double, "maxlocd")
 
-mls = ReductionKernel(maxloc_dtype_single, neutral = "maxloc_start()",
+mls = LowerLatencyReductionKernel(maxloc_dtype_single, neutral = "maxloc_start()",
         reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(x[i], i)",
         arguments="float *x", preamble=maxloc_preamble_single)
 
-mld = ReductionKernel(maxloc_dtype_double, neutral = "maxloc_start()",
+mld = LowerLatencyReductionKernel(maxloc_dtype_double, neutral = "maxloc_start()",
         reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(x[i], i)",
         arguments="double *x", preamble=maxloc_preamble_double)
         

@@ -72,7 +72,6 @@ def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
     norm = 4.0 / (N * N * htilde.delta_f) 
     kmin,kmax = get_cutoff_indices(low_frequency_cutoff,
                                    high_frequency_cutoff, htilde.delta_f, N)  
-
     ht = htilde[kmin:kmax] 
 
     if psd is None:
@@ -158,9 +157,9 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None, high_frequency_cutoff
     """
     htilde = make_frequency_series(vec1)
     stilde = make_frequency_series(vec2)
-    snr,norm = matched_filter(htilde,stilde,psd,low_frequency_cutoff,
+    snr, snr_norm = matched_filter(htilde,stilde,psd,low_frequency_cutoff,
                              high_frequency_cutoff)
     maxsnr, max_id = (abs(snr)).max_loc()
-    vec2_normsq = sigmasq(stilde,psd,low_frequency_cutoff,high_frequency_cutoff)
-    return maxsnr * norm / sqrt(vec2_normsq), max_id
+    s_norm = sigmasq(stilde,psd,low_frequency_cutoff,high_frequency_cutoff)
+    return maxsnr * snr_norm / sqrt(s_norm), max_id
 
