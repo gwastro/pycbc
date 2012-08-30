@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 # Copyright (C) 2012  Alex Nitz
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -21,7 +22,7 @@
 #
 # =============================================================================
 #
-#! /usr/bin/env python
+from time import sleep
 
 import sys
 from numpy import loadtxt,complex64,float32
@@ -64,7 +65,11 @@ def make_padded_frequency_series(vec,filter_N=None):
     if isinstance(vec,FrequencySeries):
         vectilde = FrequencySeries(zeros(n, dtype=complex_same_precision_as(vec)),
                                    delta_f=1.0,copy=False)
-        vectilde[:] = vec[0:len(vectilde)]  
+	if len(vectilde) < len(vec):
+	    cplen = len(vectilde)
+        else:
+            cplen = len(vec)
+        vectilde[0:cplen] = vec[0:cplen]  
         delta_f = vec.delta_f
     
         
@@ -164,7 +169,7 @@ def outside_mchirp_window(template,signal,w):
     else :
         False
 
-filter_N = options.filter_signal_length * options.filter_sample_rate
+filter_N = int(options.filter_signal_length * options.filter_sample_rate)
 
 print("Number of Signal Waveforms: ",len(signal_table))
 print("Number of Templates       : ",len(template_table))
@@ -172,18 +177,18 @@ print("Number of Templates       : ",len(template_table))
 print("Pregenerating Signals")
 signals = []
 # Pregenerate the waveforms to simulate 
-with ctx:
-    index = 0 
-    for signal_params in signal_table:
-        index += 1
-        update_progress(index*100/len(signal_table))
-        stilde = get_waveform(options.signal_approximant, 
-                      options.signal_order, 
-                      signal_params, 
-                      options.signal_start_frequency, 
-                      options.filter_sample_rate, 
-                      filter_N)
-        signals.append((stilde,[],signal_params))
+
+index = 0 
+for signal_params in signal_table:
+    index += 1
+    update_progress(index*100/len(signal_table))
+    stilde = get_waveform(options.signal_approximant, 
+                  options.signal_order, 
+                  signal_params, 
+                  options.signal_start_frequency, 
+                  options.filter_sample_rate, 
+                  filter_N)
+    signals.append((stilde,[],signal_params))
 
 
 print("Reading and Interpolating PSD")
