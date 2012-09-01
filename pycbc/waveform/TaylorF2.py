@@ -250,7 +250,6 @@ def taylorf2(tC = None, beta =0, sigma = 0,**kwds):
     """
     pn_const = get_taylorf2_pn_coefficients(kwds['mass1'],kwds['mass2'],
                                     kwds['distance'],beta,sigma)
-
     pn_const['phase0'] = int(kwds['phase_order'])
     pn_const['amplitudeO'] = int(kwds['amplitude_order'])
     delta_f = kwds['delta_f']

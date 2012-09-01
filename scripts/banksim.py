@@ -108,32 +108,40 @@ def get_waveform(approximant, order, template_params, start_frequency, sample_ra
 
 print "STARTING THE BANKSIM"
 
-#File I/O Settings
+#File output Settings
 parser = OptionParser()
-parser.add_option("--signal-file", dest="sim_file", help="simulated waveform parameters", metavar="FILE")
-parser.add_option("--template-file", dest="bank_file", help="template bank parameters", metavar="FILE")
-parser.add_option("--asd-file", dest="asd_file",help="ASD data", metavar="FILE")
-parser.add_option("--match-file", dest="out_file",help="file to output match results", metavar="FILE")
+parser.add_option("--match-file", dest="out_file", help="file to output match results", metavar="FILE")
 
-#Waveform generation Settings
-parser.add_option("--template-approximant",help="Template Approximant Name")
+#PSD Settings
+parser.add_option("--asd-file", dest="asd_file", help="two-column ASCII file containing ASD data", metavar="FILE")
+parser.add_option("--psd", dest="psd", help="Analytic PSD model: " + str(pycbc.psd.get_list()))
+
+aprs = list(set(td_approximants() + fd_approximants()))
+#Template Settings
+parser.add_option("--template-file", dest="bank_file", help="SimInspiral or SnglInspiral XML file containing the template parameters.", metavar="FILE")
+parser.add_option("--template-approximant",help="Template Approximant Name: " + str(aprs))
 parser.add_option("--template-order",help="PN order to use for the aproximant",default=-1,type=int) 
 parser.add_option("--template-start-frequency",help="Starting frequency for injections",type=float) 
 
-parser.add_option("--signal-approximant",help="Singal Approximant Name"  "[SPA]")
+#Signal Settings
+parser.add_option("--signal-file", dest="sim_file", help="SimInspiral or SnglInspiral XML file containing the signal parameters.", metavar="FILE")
+parser.add_option("--signal-approximant",help="Singal Approximant Name: " + str(aprs))
 parser.add_option("--signal-order",help="PN order to use for the aproximant",default=-1,type=int)  
 parser.add_option("--signal-start-frequency",help="Starting frequency for templates",type=float)  
 
-#Filter Settings
+#Filtering Settings
 parser.add_option('--filter-low-frequency-cutoff', metavar='FREQ', help='low frequency cutoff of matched filter', type=float)
 parser.add_option("--filter-sample-rate",help="Filter Sample Rate [Hz]",type=float)
 parser.add_option("--filter-signal-length",help="Length of signal for filtering, shoud be longer than all waveforms and include some padding",type=int)
 
-parser.add_option("--cuda",action="store_true")
+#Hardware support
+parser.add_option("--use-cuda",action="store_true")
+
+#Restricted maximization
 parser.add_option("--mchirp-window",type=float)               
 (options, args) = parser.parse_args()   
 
-if options.cuda:
+if options.use_cuda:
     ctx = CUDAScheme()
 else:
     ctx = DefaultScheme()
@@ -159,8 +167,6 @@ try:
 except ValueError:
     signal_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName)
 
-
-
 def outside_mchirp_window(template,signal,w):
     template_mchirp,et = mass1_mass2_to_mchirp_eta(template.mass1,template.mass2)
     signal_mchirp ,et  = mass1_mass2_to_mchirp_eta(signal.mass1,signal.mass2)
@@ -173,7 +179,6 @@ filter_N = int(options.filter_signal_length * options.filter_sample_rate)
 
 print("Number of Signal Waveforms: ",len(signal_table))
 print("Number of Templates       : ",len(template_table))
-
 print("Pregenerating Signals")
 signals = []
 # Pregenerate the waveforms to simulate 
@@ -189,7 +194,6 @@ for signal_params in signal_table:
                   options.filter_sample_rate, 
                   filter_N)
     signals.append((stilde,[],signal_params))
-
 
 print("Reading and Interpolating PSD")
 # Load the asd file

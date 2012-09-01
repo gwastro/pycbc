@@ -99,7 +99,7 @@ _q = None
 _qtilde = None
 
 def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
-                  high_frequency_cutoff=None, calculate_norm=True):
+                  high_frequency_cutoff=None, h_norm=True):
     """Return the complex SNR and normalization (SNR,norm) of the template 
        filtered against the data, where the normalized SNR is SNR' = SNR * norm.
     """
@@ -143,23 +143,24 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
     
     # Only calculate the normalization if needed. For SPA waveforms
     # this can be done ahead of time.
-    if calculate_norm:
-        h_norm = sigmasq(htilde,psd,low_frequency_cutoff,high_frequency_cutoff)       
-        norm = (4.0 / (N * N * stilde.delta_f)) / sqrt( h_norm) 
-    else:
-        norm = None
+    if h_norm is None:
+        h_norm = sigmasq(htilde,psd,low_frequency_cutoff,high_frequency_cutoff)     
+  
+    norm = (4.0 / (N * N * stilde.delta_f)) / sqrt( h_norm) 
         
     return _q,norm
     
     
-def match(vec1, vec2, psd=None, low_frequency_cutoff=None, high_frequency_cutoff=None):
+def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
+          high_frequency_cutoff=None, s_norm=None, h_norm=None):
     """ Return the match between the two TimeSeries or FrequencySeries.
     """
     htilde = make_frequency_series(vec1)
     stilde = make_frequency_series(vec2)
     snr, snr_norm = matched_filter(htilde,stilde,psd,low_frequency_cutoff,
-                             high_frequency_cutoff)
+                             high_frequency_cutoff, h_norm)
     maxsnr, max_id = (abs(snr)).max_loc()
-    s_norm = sigmasq(stilde,psd,low_frequency_cutoff,high_frequency_cutoff)
+    if s_norm is None:
+        s_norm = sigmasq(stilde, psd, low_frequency_cutoff, high_frequency_cutoff)
     return maxsnr * snr_norm / sqrt(s_norm), max_id
 
