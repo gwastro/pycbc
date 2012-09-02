@@ -63,8 +63,18 @@ def _convert(fn):
         return fn(self,*args)
     return converted
 
-def force_precision_to_match(scalar, dtype):
-    pass
+def force_precision_to_match(scalar, precision):
+    if _numpy.iscomplex(scalar):
+        if precision is 'single':
+            return _numpy.complex64(scalar)
+        else:
+            return _numpy.complex128(scalar)
+    else:
+        if precision is 'single':
+            return _numpy.float32(scalar)
+        else:
+            return _numpy.float64(scalar)
+        
 
 def common_kind(*dtypes):
     for dtype in dtypes:
@@ -248,6 +258,7 @@ class Array(object):
             for other in args:
                 self._typecheck(other)  
                 if type(other) in _ALLOWED_SCALARS:
+                    other = force_precision_to_match(other, self.precision)
                     nargs +=(other,)
                 elif isinstance(other,Array):
                     if len(other) != len(self):
@@ -293,7 +304,7 @@ class Array(object):
             if type(other) in _ALLOWED_SCALARS:
                 if self.kind == 'real' and type(other) == complex:
                     raise TypeError('dtypes are incompatible')
-                pass
+                other = force_precision_to_match(other, self.precision)
             elif isinstance(other,Array):
                 if len(other) != len(self):
                     raise ValueError('lengths do not match')

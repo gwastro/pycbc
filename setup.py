@@ -26,7 +26,7 @@ import subprocess
 import commands
 from trace import fullmodname
 import unittest
-from ez_setup import use_setuptools
+from distribute_setup import use_setuptools
 use_setuptools()
 from setuptools import setup,Command,Extension,find_packages
 from distutils.command.clean import clean as _clean
@@ -210,6 +210,8 @@ class test_opencl(TestBase):
         TestBase.initialize_options(self)
         self.scheme = 'opencl'
 
+cuda_install_requires = ['pycuda', 'scikits.cuda']
+
 # do the actual work of building the package
 setup (
     name = 'PyCBC',
@@ -225,7 +227,7 @@ setup (
                  'clean' : clean,
                  'build' : build},
     ext_modules = [lalwrap_module,testlalwrap_module],
-    setup_requires = ['setuptools'],
+    install_requires = ['setuptools'],
     packages = find_packages(),
     scripts = [],
 )
