@@ -30,7 +30,7 @@ _resample_func = {numpy.dtype('float32'): lal.ResampleREAL4TimeSeries,
 
 def resample_to_delta_t(timeseries, delta_t):
     """Return a new time series that is resampled to the given delta_t. Only powers
-       of two are supported.
+       of two are currently supported.
     """
     if not isinstance(timeseries,TimeSeries):
         raise TypeError("Can only resample time series")
