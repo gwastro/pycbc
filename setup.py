@@ -31,6 +31,7 @@ use_setuptools()
 from setuptools import setup,Command,Extension,find_packages
 from distutils.command.clean import clean as _clean
 from distutils.command.build import build as _build
+from distutils.command.config import config as _config
 from numpy import get_include as np_get_include
 
 
@@ -72,7 +73,7 @@ for libpath in ext_include_dirs:
 ext_include_dirs += [np_get_include()]
 
 # Define our extension module
-
+pycbc_headers = []
 lalwrap_module = Extension('_lalwrap',
                            sources=['include/lalwrap.i'],
                            depends=['include/pycbc_laltypes.i'],
@@ -82,7 +83,8 @@ lalwrap_module = Extension('_lalwrap',
                            libraries=ext_libraries,
                            extra_compile_args=['-std=c99']
                            )
-
+pycbc_headers.append('include/lalwrap.i')
+pycbc_headers.append('include/pycbc_laltypes.i')
 testlalwrap_module = Extension('_testlalwrap',
                                sources=['include/testlalwrap.i'],
                                depends=['include/pycbc_laltypes.i'],
@@ -211,6 +213,18 @@ class test_opencl(TestBase):
         self.scheme = 'opencl'
 
 cuda_install_requires = ['pycuda', 'scikits.cuda']
+install_requires = ['setuptools']
+
+class config(_config):
+    user_options = [('with-cuda', None,"enable cuda support")]
+    def initialize_options(self):
+        _config.initialize_options(self)
+        self.with_cuda=False
+    def finalize_options(self):
+        _config.finalize_options(self)
+
+        if self.with_cuda:
+            self.distribution.install_requires += cuda_install_requires
 
 # do the actual work of building the package
 setup (
@@ -220,14 +234,15 @@ setup (
     description = 'Gravitational wave CBC analysis toolkit',
     author = 'Ligo Virgo Collaboration - PyCBC team',
     url = 'https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home',
-    cmdclass = { 'test'  : test,
+    cmdclass = { 'config': config, 
+                 'test'  : test,
                  'test_cpu':test_cpu,
                  'test_cuda':test_cuda,
                  'test_opencl':test_opencl,
                  'clean' : clean,
                  'build' : build},
     ext_modules = [lalwrap_module,testlalwrap_module],
-    install_requires = ['setuptools'],
+    install_requires = install_requires,
     packages = find_packages(),
     scripts = [],
 )
