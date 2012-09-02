@@ -63,6 +63,9 @@ def _convert(fn):
         return fn(self,*args)
     return converted
 
+def force_precision_to_match(scalar, dtype):
+    pass
+
 def common_kind(*dtypes):
     for dtype in dtypes:
         if dtype.kind is 'c':
@@ -259,9 +262,30 @@ class Array(object):
 
             return fn(self,*nargs)
         return checked
+
+    def _vcheckother(fn):
+        """ Checks the input to methods that only work with vector input """
+        @_functools.wraps(fn)
+        def checked(self,*args):
+            nargs = ()
+            for other in args:
+                self._typecheck(other)  
+                if isinstance(other,Array):
+                    if len(other) != len(self):
+                        raise ValueError('lengths do not match')
+                    if other.precision == self.precision:
+                        _convert_to_scheme(other)
+                        nargs += (other._data,)
+                    else:
+                        raise TypeError('precisions do not match')
+                else:
+                    raise TypeError('array argument required')                    
+
+            return fn(self,*nargs)
+        return checked
         
     def _icheckother(fn):
-        """ Checks the input to method functions """
+        """ Checks the input to in-place operations """
         @_functools.wraps(fn)
         def checked(self,other):
             self._typecheck(other) 
@@ -287,8 +311,8 @@ class Array(object):
         return checked
 
     def _typecheck(self,other):
-        """ Additional typechecking for other. Stops Array from avoiding
-        checks of derived types
+        """ Additional typechecking for other. Placeholder for use by derived
+        types. 
         """
         pass
 
@@ -419,7 +443,7 @@ class Array(object):
         elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
             raise NotImplementedError         
 
-    @_checkother
+    @_vcheckother
     @_convert
     def inner(self, other):
         """ Return the inner product of the array with complex conjugation.
@@ -437,7 +461,7 @@ class Array(object):
         elif type(self._scheme) is _scheme.OpenCLScheme:
             raise NotImplementedError    
 
-    @_checkother
+    @_vcheckother
     @_convert
     def weighted_inner(self, other, weight):
         """ Return the inner product of the array with complex conjugation.
@@ -504,7 +528,7 @@ class Array(object):
             return _pyopencl.array.min(self._data).get().max()         
 
     @_convert
-    @_checkother
+    @_vcheckother
     def dot(self,other):
         """ Return the dot product"""
         if type(self._data) is _numpy.ndarray:
