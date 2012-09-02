@@ -99,7 +99,7 @@ _q = None
 _qtilde = None
 
 def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
-                  high_frequency_cutoff=None, h_norm=True):
+                  high_frequency_cutoff=None, h_norm=None):
     """Return the complex SNR and normalization (SNR,norm) of the template 
        filtered against the data, where the normalized SNR is SNR' = SNR * norm.
     """
