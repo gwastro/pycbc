@@ -1,0 +1,2 @@
+include include/*.i
+include test/*test*py
