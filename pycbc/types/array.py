@@ -374,7 +374,7 @@ class Array(object):
     @_checkother
     def __rdiv__(self,other):
         """ Divide Array by Array or scalar and return an Array. """
-        return other / self._data
+        return self._data.__rdiv__(other)
 
     @_convert
     @_icheckother
@@ -395,7 +395,7 @@ class Array(object):
     @_checkother
     def __rsub__(self,other):
         """ Subtract Array or scalar from Array and return an Array. """
-        return other - self._data
+        return self._data.__rsub__(other)
 
     @_convert
     @_icheckother

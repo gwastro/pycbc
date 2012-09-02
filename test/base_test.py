@@ -665,18 +665,6 @@ class array_base(checks):
         
     def test_rdiv(self):
         with self.context:
-            # CPU with CPU
-            c = self.a1.__rdiv__(self.b1)
-            self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.rdiv), self.places)
-            # CPU with Current Scheme
-            c = self.a2.__rdiv__(self.b1)
-            self.checkCurrentState((self.a2, self.b1, c), (self.alist, self.blist, self.rdiv), self.places)
-            # Current Scheme with Current Scheme
-            c = self.a1.__rdiv__(self.b1)
-            self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.rdiv), self.places)
-            # Current Scheme with CPU
-            c = self.a1.__rdiv__(self.b2)
-            self.checkCurrentState((self.a1, self.b2, c), (self.alist, self.blist, self.rdiv), self.places)
             # CPU with scalar
             c = self.s / self.a3
             self.checkCurrentState((self.a3, self.s, c), (self.alist, self.scalar, self.rdiv_s), self.places)
@@ -687,19 +675,6 @@ class array_base(checks):
             self.assertRaises(TypeError, self.a1.__rdiv__, self.bad)
             self.assertRaises(ValueError, self.a1.__rdiv__, self.bad2)
             
-        # Now taking Current Scheme Array and going back to the CPU
-        # Current Scheme with Current Scheme
-        c = self.a1.__rdiv__(self.b1)
-        self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.rdiv), self.places)
-        # CPU with Current Scheme
-        c = self.a1.__rdiv__(self.b2)
-        self.checkCurrentState((self.a1, self.b2, c), (self.alist, self.blist, self.rdiv), self.places)
-        # CPU with CPU
-        c = self.a1.__rdiv__(self.b1)
-        self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.rdiv), self.places)
-        # Current Scheme with CPU
-        c = self.a2.__rdiv__(self.b1)
-        self.checkCurrentState((self.a2, self.b1, c), (self.alist, self.blist, self.rdiv), self.places)
         # Current Scheme with scalar
         c = self.s / self.a3
         self.checkCurrentState((self.a3, self.s, c), (self.alist, self.scalar, self.rdiv_s), self.places)
@@ -819,18 +794,6 @@ class array_base(checks):
         
     def test_rsub(self):
         with self.context:
-            # CPU with CPU
-            c = self.a1.__rsub__(self.b1)
-            self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.rsub), self.places)
-            # CPU with Current Scheme
-            c = self.a2.__rsub__(self.b1)
-            self.checkCurrentState((self.a2, self.b1, c), (self.alist, self.blist, self.rsub), self.places)
-            # Current Scheme with Current Scheme
-            c = self.a1.__rsub__(self.b1)
-            self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.rsub), self.places)
-            # Current Scheme with CPU
-            c = self.a1.__rsub__(self.b2)
-            self.checkCurrentState((self.a1, self.b2, c), (self.alist, self.blist, self.rsub), self.places)
             # CPU with scalar
             c = self.s - self.a3
             self.checkCurrentState((self.a3, self.s, c), (self.alist, self.scalar, self.rsub_s), self.places)
@@ -841,19 +804,6 @@ class array_base(checks):
             self.assertRaises(TypeError, self.a1.__rsub__, self.bad)
             self.assertRaises(ValueError, self.a1.__rsub__, self.bad2)
             
-        # Now taking Current Scheme Array and going back to the CPU
-        # Current Scheme with Current Scheme
-        c = self.a1.__rsub__(self.b1)
-        self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.rsub), self.places)
-        # CPU with Current Scheme
-        c = self.a1.__rsub__(self.b2)
-        self.checkCurrentState((self.a1, self.b2, c), (self.alist, self.blist, self.rsub), self.places)
-        # CPU with CPU
-        c = self.a1.__rsub__(self.b1)
-        self.checkCurrentState((self.a1, self.b1, c), (self.alist, self.blist, self.rsub), self.places)
-        # Current Scheme with CPU
-        c = self.a2.__rsub__(self.b1)
-        self.checkCurrentState((self.a2, self.b1, c), (self.alist, self.blist, self.rsub), self.places)
         # Current Scheme with scalar
         c = self.s - self.a3
         self.checkCurrentState((self.a3, self.s, c), (self.alist, self.scalar, self.rsub_s), self.places)
