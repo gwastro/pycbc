@@ -26,8 +26,9 @@ import subprocess
 import commands
 from trace import fullmodname
 import unittest
-from distutils import sysconfig,file_util
-from distutils.core import setup,Command,Extension
+from ez_setup import use_setuptools
+use_setuptools()
+from setuptools import setup,Command,Extension,find_packages
 from distutils.command.clean import clean as _clean
 from distutils.command.build import build as _build
 from numpy import get_include as np_get_include
@@ -212,7 +213,8 @@ class test_opencl(TestBase):
 # do the actual work of building the package
 setup (
     name = 'PyCBC',
-    version = '0.1',
+    version = '0.0.1',
+    py_modules = ['distribute_setup'],
     description = 'Gravitational wave CBC analysis toolkit',
     author = 'Ligo Virgo Collaboration - PyCBC team',
     url = 'https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home',
@@ -223,8 +225,8 @@ setup (
                  'clean' : clean,
                  'build' : build},
     ext_modules = [lalwrap_module,testlalwrap_module],
-    requires = ['lal'],
-    packages = ['pycbc','pycbc.fft','pycbc.types','pycbc.filter','pycbc.waveform','pycbc.psd'],
+    setup_requires = ['setuptools'],
+    packages = find_packages(),
     scripts = [],
 )
 

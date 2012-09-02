@@ -35,10 +35,8 @@ import numpy
 
 def correlate(x,y,z):
     if pycbc.scheme.mgr.state is None:
-        z[:] = x
-        numpy.conjugate(z.data, out=z.data)
+        z.data[:] = numpy.conjugate(x.data)[:]
         z *= y
-        return z
     if type(pycbc.scheme.mgr.state) is pycbc.scheme.CUDAScheme:
         from matchedfilter_cuda import correlate 
         correlate(x.data,y.data,z.data)
