@@ -213,7 +213,7 @@ class test_opencl(TestBase):
         self.scheme = 'opencl'
 
 cuda_install_requires = ['pycuda', 'scikits.cuda']
-install_requires = ['setuptools']
+install_requires = ['']
 
 class config(_config):
     user_options = [('with-cuda', None,"enable cuda support")]

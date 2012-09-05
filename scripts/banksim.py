@@ -106,7 +106,7 @@ def get_waveform(approximant, order, template_params, start_frequency, sample_ra
 ###############################################################################
 
 
-print "STARTING THE BANKSIM"
+
 
 #File output Settings
 parser = OptionParser()
@@ -141,10 +141,15 @@ parser.add_option("--use-cuda",action="store_true")
 parser.add_option("--mchirp-window",type=float)               
 (options, args) = parser.parse_args()   
 
+if options.psd and options.asd_file:
+    parser.error("PSD and asd file are mututally exclusive")
+
 if options.use_cuda:
     ctx = CUDAScheme()
 else:
     ctx = DefaultScheme()
+
+print "STARTING THE BANKSIM"
 
 # Load in the template bank file
 indoc = ligolw_utils.load_filename(options.bank_file, False)
@@ -197,7 +202,11 @@ for signal_params in signal_table:
 
 print("Reading and Interpolating PSD")
 # Load the asd file
-psd = pycbc.psd.from_txt(options.asd_file, len(stilde),  stilde.delta_f, options.filter_low_frequency_cutoff )
+if options.asd_file:
+    psd = pycbc.psd.from_txt(options.asd_file, len(stilde),  stilde.delta_f, options.filter_low_frequency_cutoff)
+elif options.psd:
+    psd = pycbc.psd.from_string(options.psd, len(stilde), stilde.delta_f, options.filter_low_frequency_cutoff) 
+
 psd *= DYN_RANGE_FAC **2
 psd = FrequencySeries(psd,delta_f=psd.delta_f,dtype=float32) 
 
@@ -211,7 +220,7 @@ with ctx:
         htilde = None
         for stilde,matches,signal_params in signals:
             # Check if we need to look at this template
-            if options.mchirp_window and outside_mchirp_window(template_params,signal_params,options.mchirp_window):
+            if options.mchirp_window and outside_mchirp_window(template_params, signal_params, options.mchirp_window):
                 matches.append(-1)
                 continue
 
