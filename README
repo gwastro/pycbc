@@ -1,14 +1,19 @@
 Welcome to PYCBC
 
-More information can be found at the website:
-https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home
+More information can be found at the website: 
+   https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home
 
 When installing pycbc:
-python setup.py install --prefix=/path/to/install/directory
+   python setup.py install --prefix=/path/to/install/directory
 
-To test pycbc:
-python setup.py test
+To run the unittests pycbc:
+   python setup.py test
 
 The most current development version is always available from our
 git repository:
-https://sugwg-git.phy.syr.edu/git/pycbc/
+
+   git clone git://ligo-vcs.phys.uwm.edu/pycbc.git
+
+To enable CUDA support, please install the following dependencies.
+   pycuda
+   scikits.cuda

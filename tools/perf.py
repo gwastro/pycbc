@@ -1,3 +1,4 @@
+#!/usr/bin/python
 from pycbc.scheme import *
 from pycbc.types import *
 from pycbc.filter import *
@@ -6,117 +7,91 @@ import pycbc
 from math import log
 import numpy
 import sys
-from numpy.random import normal
+from optparse import OptionParser
 from math import sin, log
 import gc
-ctx = CUDAScheme()
-print "SETUP"
+parser = OptionParser()
 
-for N in [2**18, 2**19, 2**20, 2**21, 2**22]:
-    print "         SIZE    ",  int(log(N,2))
-    n = N/2 +1
-    noise = normal(0.0,2,N) +5
-    nplus2 = TimeSeries(noise,delta_t=1.0/4096,dtype=float32)
-    ntilde2 = make_frequency_series(nplus2)
-    psd2 = ntilde2.squared_norm()    
+parser.add_option('--scheme','-s',  type = 'choice', 
+                    choices = ('cpu','cuda','opencl'), 
+                    default = 'cpu', dest = 'scheme', 
+                    help = 'specifies processing scheme, can be cpu [default], cuda, or opencl')
 
+parser.add_option('--device-num','-d', action='store', type = 'int', 
+                    dest = 'devicenum', default=0,
+                    help = 'specifies a GPU device to use for CUDA or OpenCL, 0 by default')
+
+parser.add_option('--size', type=int, help='fft size in log2')
+parser.add_option('--iterations', type=int, help='Number of iterations to perform')
+          
+(options, args) = parser.parse_args()   
+
+#Changing the optvalues to a dict makes them easier to read
+_options = vars(options)
+
+if _options['scheme'] == 'cpu':
+    ctx = DefaultScheme()
+if _options['scheme'] == 'cuda':
+    ctx = CUDAScheme(device_num=_options['devicenum'])
+if _options['scheme'] == 'opencl':
+    ctx = OpenCLScheme(device_num=_options['devicenum'])
+
+
+
+
+size = options.size
+niter = options.iterations
+
+
+if type(ctx) is CUDAScheme:
+    print "RUNNING ON ", ctx.device.name()
+else:
+    print "RUNNING ON CPU"
+
+N = 2**size
+print "         SIZE    ",  int(log(N,2))
+n = N/2 +1
+noise = numpy.arange(0,N,1)
+nplus2 = TimeSeries(noise,delta_t=1.0/4096,dtype=float32)
+ntilde2 = make_frequency_series(nplus2)
+psd2 = ntilde2.squared_norm()    
+
+o,ind = match(ntilde2,ntilde2,psd=psd2)
+with ctx:
     o,ind = match(ntilde2,ntilde2,psd=psd2)
+    o,ind = match(ntilde2,ntilde2,psd=None, h_norm=1, s_norm=1)
+    o,ind = matched_filter(ntilde2,ntilde2)
+
+def matcht():
     with ctx:
-        o,ind = match(ntilde2,ntilde2,psd=psd2)
-        o,ind = match(ntilde2,ntilde2,psd=None)
-
-    #o,ind = match(ntilde2,ntilde2,psd=psd2)
-
-    with ctx:
-        o,ind = matched_filter(ntilde2,ntilde2)
-
-    ngpu = 5000
-    ncpu = 50
-
-    def cpu_s():
-        for i in range(0,ncpu):
+        for i in range(0,niter):
             o,ind = match(ntilde2,ntilde2,psd=psd2)
 
-    def gpu_s():
-        with ctx:
-            for i in range(0,ngpu):
-                o,ind = match(ntilde2,ntilde2,psd=psd2)
-
-    def cpu_st():
-        for i in range(0,ncpu):
+def match_fast():
+    with ctx:
+        for i in range(0,niter):
             o,ind = match(ntilde2,ntilde2,psd=None,h_norm=1,s_norm=1)
 
-    def gpu_st():
-        with ctx:
-            for i in range(0,ngpu):
-                o,ind = match(ntilde2,ntilde2,psd=None,h_norm=1,s_norm=1)
-
-    def cpu_s2():
-        for i in range(0,ncpu):
+def filter_fast():
+    with ctx:
+        for i in range(0,niter):
             o,ind = matched_filter(ntilde2,ntilde2,psd=None,h_norm=1)
 
+import timeit
+gt = timeit.Timer(matcht)
+t = (1000 * gt.timeit(number=1)/niter)
+print "MATCH %.2f msec" % t, " %5.1f op/min " % (1000 *60 /t)
 
-    def gpu_s2():
-        with ctx:
-            for i in range(0,ngpu):
-                o,ind = matched_filter(ntilde2,ntilde2,psd=None,h_norm=1)
 
-    def sig():
-        with ctx:
-            for i in range(0,ngpu):
-                a = sigmasq(ntilde2)
+gt = timeit.Timer(match_fast)
+t = (1000 * gt.timeit(number=1)/niter)
+print "MATCH FAST %.2f msec" % t, " %5.1f op/min " % (1000 *60 /t)
 
-    def sq():
-        with ctx:
-            for i in range(0,ngpu):
-                ntilde2.squared_norm()
 
-    def sm():
-        with ctx:
-            for i in range(0,ngpu):
-                ntilde2.sum()
+gt = timeit.Timer(filter_fast)
+t = (1000 * gt.timeit(number=1)/niter)
+print "FILTER FAST %.2f msec" % t, " %5.1f op/min " % (1000 *60 /t)
 
-    import timeit
-    gt = timeit.Timer(sig)
-    t = (1000 * gt.timeit(number=1)/ngpu)
-    print "GPU sigma %.2f msec/op" % t, " %5.1f op/min " % (1000 *60 /t)
-
-    #import timeit
-    #gt = timeit.Timer(sq)
-    # = (1000 * gt.timeit(number=1)/ngpu)
-    #print "GPU square %.2f msec/op" % t, " %5.1f op/min " % (1000 *60 /t)
-
-    #import timeit
-    #gt = timeit.Timer(sm)
-    #t = (1000 * gt.timeit(number=1)/ngpu)
-    #print "GPU sum %.2f msec/op" % t, " %5.1f op/min " % (1000 *60 /t)
-
-    gt = timeit.Timer(gpu_s)
-    t = (1000 * gt.timeit(number=1)/ngpu)
-    print "GPU single %.2f msec/match" % t, " %5.1f matches/min " % (1000 *60 /t)
-    pt = t
-    gt = timeit.Timer(cpu_s)
-    t = (1000 * gt.timeit(number=1)/ncpu)
-    print "CPU single %.2f msec/match" % t, " %5.1f matches/min " % (1000 *60 /t)
-    print "          %3.0f X Speedup" % (t/pt)
-
-    gt = timeit.Timer(gpu_st)
-    t = (1000 * gt.timeit(number=1)/ngpu)
-    print "GPU single(nopsd) %.2f msec/match" % t, " %5.1f matches/min " % (1000 *60 /t)
-    pt = t
-    gt = timeit.Timer(cpu_st)
-    t = (1000 * gt.timeit(number=1)/ncpu)
-    print "CPU single(nopsd) %.2f msec/match" % t, " %5.1f matches/min " % (1000 *60 /t)
-    print "          %3.0f X Speedup" % (t/pt)
-
-    gt = timeit.Timer(gpu_s2)
-    t = (1000 * gt.timeit(number=1)/ngpu)
-    print "GPU single snrfast %.2f msec/op" % t, " %5.1f op/min " % (1000 *60 /t)
-    pt = t
-    gt = timeit.Timer(cpu_s2)
-    t = (1000 * gt.timeit(number=1)/ncpu)
-    print "CPU single snrfast %.2f msec/op" % t, " %5.1f op/min " % (1000 *60 /t)
-    print "          %3.0f X Speedup" % (t/pt)
 
 
 
