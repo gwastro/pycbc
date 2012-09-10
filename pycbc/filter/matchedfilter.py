@@ -143,7 +143,7 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
     # this can be done ahead of time.
     if h_norm is None:
         h_norm = sigmasq(htilde,psd,low_frequency_cutoff,high_frequency_cutoff)     
-  
+
     norm = (4.0 / (N * N * stilde.delta_f)) / sqrt( h_norm) 
         
     return _q,norm

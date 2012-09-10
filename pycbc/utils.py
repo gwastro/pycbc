@@ -80,6 +80,25 @@ def mass1_mass2_to_mchirp_eta(mass1, mass2):
     m_chirp = mu ** (3.0/5.0) * M ** (2.0/5.0)
     return m_chirp, eta
 
+def mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(mass1, mass2, spin1z, spin2z):
+    """ Calculate the spin corrections for TaylorF2 
+        reference -> <http://arxiv.org/pdf/0810.5336v3.pdf>
+    """
+    M, v = mass1_mass2_to_mtotal_eta(mass1, mass2)
+    d = (mass1 - mass2) / (mass1 + mass2)
+    xs = .5 * (spin1z+spin2z)
+    xa = .5 * (spin1z-spin2z)
+
+    beta = (113/12.0 - 19/3.0 * v) * xs + 113/12.0 * d * xa
+    
+    sigma = v * (721/48.0 * ((xs)**2 -(xa)**2)-247.0/48*(xs**2-xa**2))
+    sigma += (1-2*v)* (719/96.0 * ((xa)**2+(xs)**2) - 233/96.0 * (xs**2 +xa**2))
+    sigma += d * (719/48.0 * xs*xa - 233/48.0 * xs * xa)
+    
+    gamma = (732985/2268.0 - 24260/81.0 * v - 340/9.0 * v**2 ) * xs
+    gamma += (732985/2268.0 +140/9.0 * v) * xa * d
+    
+    return beta, sigma, gamma    
 
 def solar_mass_to_kg(solar_masses):
     return solar_masses * lal.LAL_MSUN_SI
