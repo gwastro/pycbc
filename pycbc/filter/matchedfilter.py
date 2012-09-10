@@ -162,3 +162,5 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
         s_norm = sigmasq(stilde, psd, low_frequency_cutoff, high_frequency_cutoff)
     return maxsnr * snr_norm / sqrt(s_norm), max_id
 
+__all__ = ['match', 'matched_filter', 'sigmasq', 'make_frequency_series']
+

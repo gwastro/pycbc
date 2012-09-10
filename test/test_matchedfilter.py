@@ -31,6 +31,7 @@ import unittest
 from pycbc.types import *
 from pycbc.scheme import *
 from pycbc.filter import *
+from math import sqrt
 import pycbc.fft
 import numpy 
 import base_test

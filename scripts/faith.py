@@ -63,7 +63,11 @@ def make_padded_frequency_series(vec,filter_N=None):
     if isinstance(vec,FrequencySeries):
         vectilde = FrequencySeries(zeros(n, dtype=complex_same_precision_as(vec)),
                                    delta_f=1.0,copy=False)
-        vectilde[:] = vec[0:len(vectilde)]  
+	if len(vectilde) < len(vec):
+	    cplen = len(vectilde)
+        else:
+            cplen = len(vec)
+        vectilde[0:cplen] = vec[0:cplen]  
         delta_f = vec.delta_f
     
         
@@ -82,7 +86,7 @@ def make_padded_frequency_series(vec,filter_N=None):
 def get_waveform(approximant, order, template_params, start_frequency, sample_rate, length):
 
     if approximant in fd_approximants():
-        delta_f = float(sample_rate) / length
+        delta_f = sample_rate / length
         hvec = get_fd_waveform(template_params, approximant=approximant,
                                phase_order=order, delta_f=delta_f,
                                f_lower=start_frequency, amplitude_order=order)     

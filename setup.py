@@ -224,6 +224,6 @@ setup (
                  'build' : build},
     ext_modules = [lalwrap_module,testlalwrap_module],
     requires = ['lal'],
+    scripts = ['scripts/banksim.py','scripts/faith.py'],
     packages = ['pycbc','pycbc.fft','pycbc.types','pycbc.filter','pycbc.psd','pycbc.waveform'],
-    scripts = [],
 )

@@ -56,7 +56,6 @@ nplus2 = TimeSeries(noise,delta_t=1.0/4096,dtype=float32)
 ntilde2 = make_frequency_series(nplus2)
 psd2 = ntilde2.squared_norm()    
 
-o,ind = match(ntilde2,ntilde2,psd=psd2)
 with ctx:
     o,ind = match(ntilde2,ntilde2,psd=psd2)
     o,ind = match(ntilde2,ntilde2,psd=None, h_norm=1, s_norm=1)
