@@ -37,9 +37,10 @@ from pycbc.utils import mass1_mass2_to_mchirp_eta
 from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd_approximants
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, TimeSeries, zeros, real_same_precision_as, complex_same_precision_as
-from pycbc.filter import get_cutoff_indices, match, sigmasq
+from pycbc.filter import match, sigmasq
 from pycbc.scheme import DefaultScheme, CUDAScheme, OpenCLScheme
 from pycbc.fft import fft
+from math import cos, sin
 import pycbc.psd 
 
 def update_progress(progress):
@@ -49,6 +50,28 @@ def update_progress(progress):
     sys.stdout.flush()
 
 ## Remove the need for these functions ########################################
+
+def generate_fplus_fcross(latitude,longitude,polarization):
+    f_plus = - (1.0/2.0) * (1.0 + cos(latitude)*cos(latitude)) * cos (2.0 * longitude) * cos (2.0 * polarization) - cos(latitude) * sin(2.0*longitude) * sin (2.0 * polarization)
+    f_cross=  (1.0/2.0) * (1.0 + cos(latitude)*cos(latitude)) * cos (2.0 * longitude) * sin (2.0* polarization) - cos (latitude) * sin(2.0*longitude) * cos (2.0 * polarization)
+    return f_plus, f_cross
+    
+def generate_detector_strain(template_params, h_plus, h_cross):
+    latitude = 0 
+    longitude = 0 
+    polarization = 0 
+
+    if hasattr(template_params, 'latitude'):
+        latitude = template_params.latitude
+    if hasattr(template_params, 'longitude'):
+        longitude = template_params.longitude
+    if hasattr(template_params, 'polarization'):
+        polarization = template_params.polarization
+
+    f_plus, f_cross = generate_fplus_fcross(latitude, longitude, polarization)
+
+    return (f_plus*h_plus+f_cross*h_cross)
+
 def make_padded_frequency_series(vec,filter_N=None):
     """Pad a TimeSeries with a length of zeros greater than its length, such
     that the total length is the closest power of 2. This prevents the effects 
@@ -87,17 +110,18 @@ def make_padded_frequency_series(vec,filter_N=None):
 
 def get_waveform(approximant, order, template_params, start_frequency, sample_rate, length):
 
-    if approximant in fd_approximants():
+    if approximant in td_approximants():
+        hplus,hcross = get_td_waveform(template_params, approximant=approximant,
+                                   phase_order=order, delta_t=1.0 / sample_rate,
+                                   f_lower=start_frequency, amplitude_order=order) 
+        hvec = generate_detector_strain(template_params, hplus, hcross)
+
+    elif approximant in fd_approximants():
         delta_f = sample_rate / length
         hvec = get_fd_waveform(template_params, approximant=approximant,
                                phase_order=order, delta_f=delta_f,
                                f_lower=start_frequency, amplitude_order=order)     
 
-    if approximant in td_approximants():
-        hplus,hcross = get_td_waveform(template_params, approximant=approximant,
-                                   phase_order=order, delta_t=1.0 / sample_rate,
-                                   f_lower=start_frequency, amplitude_order=order) 
-        hvec = hplus
 
     htilde = make_padded_frequency_series(hvec,filter_N)
 
@@ -114,18 +138,18 @@ parser.add_option("--match-file", dest="out_file", help="file to output match re
 
 #PSD Settings
 parser.add_option("--asd-file", dest="asd_file", help="two-column ASCII file containing ASD data", metavar="FILE")
-parser.add_option("--psd", dest="psd", help="Analytic PSD model: " + str(pycbc.psd.get_list()))
+parser.add_option("--psd", dest="psd", help="Analytic PSD model: " + str(pycbc.psd.get_list()), choices=pycbc.psd.get_list())
 
 aprs = list(set(td_approximants() + fd_approximants()))
 #Template Settings
 parser.add_option("--template-file", dest="bank_file", help="SimInspiral or SnglInspiral XML file containing the template parameters.", metavar="FILE")
-parser.add_option("--template-approximant",help="Template Approximant Name: " + str(aprs))
+parser.add_option("--template-approximant",help="Template Approximant Name: " + str(aprs), choices = aprs)
 parser.add_option("--template-order",help="PN order to use for the aproximant",default=-1,type=int) 
 parser.add_option("--template-start-frequency",help="Starting frequency for injections",type=float) 
 
 #Signal Settings
 parser.add_option("--signal-file", dest="sim_file", help="SimInspiral or SnglInspiral XML file containing the signal parameters.", metavar="FILE")
-parser.add_option("--signal-approximant",help="Singal Approximant Name: " + str(aprs))
+parser.add_option("--signal-approximant",help="Signal Approximant Name: " + str(aprs), choices = aprs)
 parser.add_option("--signal-order",help="PN order to use for the aproximant",default=-1,type=int)  
 parser.add_option("--signal-start-frequency",help="Starting frequency for templates",type=float)  
 
@@ -142,7 +166,7 @@ parser.add_option("--mchirp-window",type=float)
 (options, args) = parser.parse_args()   
 
 if options.psd and options.asd_file:
-    parser.error("PSD and asd file are mututally exclusive")
+    parser.error("PSD and asd-file options are mututally exclusive")
 
 if options.use_cuda:
     ctx = CUDAScheme()
@@ -203,9 +227,11 @@ for signal_params in signal_table:
 print("Reading and Interpolating PSD")
 # Load the asd file
 if options.asd_file:
-    psd = pycbc.psd.from_txt(options.asd_file, len(stilde),  stilde.delta_f, options.filter_low_frequency_cutoff)
+    psd = pycbc.psd.from_txt(options.asd_file, len(stilde),  
+                           stilde.delta_f, options.filter_low_frequency_cutoff)
 elif options.psd:
-    psd = pycbc.psd.from_string(options.psd, len(stilde), stilde.delta_f, options.filter_low_frequency_cutoff) 
+    psd = pycbc.psd.from_string(options.psd, len(stilde), stilde.delta_f, 
+                           options.filter_low_frequency_cutoff) 
 
 psd *= DYN_RANGE_FAC **2
 psd = FrequencySeries(psd,delta_f=psd.delta_f,dtype=float32) 
@@ -220,7 +246,8 @@ with ctx:
         htilde = None
         for stilde,matches,signal_params in signals:
             # Check if we need to look at this template
-            if options.mchirp_window and outside_mchirp_window(template_params, signal_params, options.mchirp_window):
+            if options.mchirp_window and outside_mchirp_window(template_params, 
+                                        signal_params, options.mchirp_window):
                 matches.append(-1)
                 continue
 
@@ -233,7 +260,8 @@ with ctx:
                                       options.filter_sample_rate, 
                                       filter_N)
 
-            o,i = match(htilde, stilde, psd=psd, low_frequency_cutoff=options.filter_low_frequency_cutoff)         
+            o,i = match(htilde, stilde, psd=psd, 
+                     low_frequency_cutoff=options.filter_low_frequency_cutoff)         
             matches.append(o)
          
 

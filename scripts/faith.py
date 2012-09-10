@@ -35,7 +35,7 @@ from pycbc.utils import mass1_mass2_to_mchirp_eta
 from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd_approximants
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, TimeSeries, zeros, real_same_precision_as, complex_same_precision_as
-from pycbc.filter import get_cutoff_indices, match
+from pycbc.filter import match
 from pycbc.scheme import DefaultScheme, CUDAScheme, OpenCLScheme
 from pycbc.fft import fft
 import pycbc.psd 
@@ -83,16 +83,16 @@ def make_padded_frequency_series(vec,filter_N=None):
     vectilde = FrequencySeries(vectilde * DYN_RANGE_FAC,delta_f=delta_f,dtype=complex64)
     return vectilde
 
-def get_waveform(approximant, order, template_params, start_frequency, sample_rate, length):
+def get_waveform(approximant, order, waveform1_params, start_frequency, sample_rate, length):
 
     if approximant in fd_approximants():
         delta_f = sample_rate / length
-        hvec = get_fd_waveform(template_params, approximant=approximant,
+        hvec = get_fd_waveform(waveform1_params, approximant=approximant,
                                phase_order=order, delta_f=delta_f,
                                f_lower=start_frequency, amplitude_order=order)     
 
     if approximant in td_approximants():
-        hplus,hcross = get_td_waveform(template_params, approximant=approximant,
+        hplus,hcross = get_td_waveform(waveform1_params, approximant=approximant,
                                    phase_order=order, delta_t=1.0 / sample_rate,
                                    f_lower=start_frequency, amplitude_order=order) 
         hvec = hplus
@@ -103,85 +103,102 @@ def get_waveform(approximant, order, template_params, start_frequency, sample_ra
 
 ###############################################################################
 
+aprs = list(set(td_approximants() + fd_approximants()))
+psd_names = pycbc.psd.get_list()
 
 print "STARTING THE BANKSIM"
 
 #File I/O Settings
 parser = OptionParser()
-parser.add_option("--template-file", dest="bank_file", help="template bank parameters", metavar="FILE")
-parser.add_option("--asd-file", dest="asd_file",help="ASD data", metavar="FILE")
+parser.add_option("--param-file", dest="bank_file", help="Sngl or Sim Inspiral Table containing waveform parameters", metavar="FILE")
 parser.add_option("--match-file", dest="out_file",help="file to output match results", metavar="FILE")
 
-#Waveform generation Settings
-parser.add_option("--template-approximant",help="Template Approximant Name")
-parser.add_option("--template-order",help="PN order to use for the aproximant",default=-1,type=int) 
-parser.add_option("--template-start-frequency",help="Starting frequency for injections",type=float) 
+parser.add_option("--asd-file", dest="asd_file",help="ASD data", metavar="FILE")
+parser.add_option("--psd", dest="psd", help="Analytic PSD model: " + str(psd_names), choices=psd_names)
 
-parser.add_option("--signal-approximant",help="Singal Approximant Name"  "[SPA]")
-parser.add_option("--signal-order",help="PN order to use for the aproximant",default=-1,type=int)  
-parser.add_option("--signal-start-frequency",help="Starting frequency for templates",type=float)  
+
+#Waveform generation Settings
+parser.add_option("--waveform1-approximant",help="waveform1  Approximant Name: " + str(aprs), choices = aprs)
+parser.add_option("--waveform1-order",help="PN order to use for the aproximant",default=-1,type=int) 
+parser.add_option("--waveform1-start-frequency",help="Starting frequency for injections",type=float) 
+
+parser.add_option("--waveform2-approximant",help="waveform2 Approximant Name: " + str(aprs), choices = aprs)
+parser.add_option("--waveform2-order",help="PN order to use for the aproximant",default=-1,type=int)  
+parser.add_option("--waveform2-start-frequency",help="Starting frequency for waveform1s",type=float)  
 
 #Filter Settings
 parser.add_option('--filter-low-frequency-cutoff', metavar='FREQ', help='low frequency cutoff of matched filter', type=float)
 parser.add_option("--filter-sample-rate",help="Filter Sample Rate [Hz]",type=int)
-parser.add_option("--filter-signal-length",help="Length of signal for filtering, shoud be longer than all waveforms and include some padding",type=int)
+parser.add_option("--filter-waveform-length",help="Length of waveform for filtering, shoud be longer than all waveforms and include some padding",type=int)
 
 parser.add_option("--cuda",action="store_true")            
 (options, args) = parser.parse_args()   
+
+if options.psd and options.asd_file:
+    parser.error("PSD and asd-file options are mututally exclusive")
+
 
 if options.cuda:
     ctx = CUDAScheme()
 else:
     ctx = DefaultScheme()
 
-# Load in the template bank file
+# Load in the waveform1 bank file
 indoc = ligolw_utils.load_filename(options.bank_file, False)
 try :
-    template_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName) 
+    waveform_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName) 
 except ValueError:
-    template_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
+    waveform_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
 
 # open the output file where the max overlaps over the bank are stored 
 fout = open(options.out_file, "w")
 print "Writing matches to " + options.out_file
 
-filter_N = options.filter_signal_length * options.filter_sample_rate
+filter_N = options.filter_waveform_length * options.filter_sample_rate
 filter_n = int(filter_N / 2) + 1
 delta_f = float(options.filter_sample_rate) / filter_N
 
-print("Number of Waveforms      : ",len(template_table))
+print("Number of Waveforms      : ",len(waveform_table))
 
 print("Reading and Interpolating PSD")
 # Load the asd file
-psd = pycbc.psd.from_txt(options.asd_file, filter_n, delta_f, options.filter_low_frequency_cutoff )
-psd *= DYN_RANGE_FAC**2
-psd = FrequencySeries(psd,delta_f=psd.delta_f,dtype=float32)
+
+if options.asd_file:
+    psd = pycbc.psd.from_txt(options.asd_file, filter_n,  
+                           delta_f, options.filter_low_frequency_cutoff)
+elif options.psd:
+    psd = pycbc.psd.from_string(options.psd, filter_n, delta_f, 
+                           options.filter_low_frequency_cutoff) 
+
+psd *= DYN_RANGE_FAC **2
+psd = FrequencySeries(psd,delta_f=psd.delta_f,dtype=float32) 
+
 
 matches = []
 print("Calculating Overlaps")
 with ctx:
     index = 0 
     # Calculate the overlaps
-    for template_params in template_table:
+    for waveform_params in waveform_table:
         index += 1
-        update_progress(index*100/len(template_table))
+        update_progress(index*100/len(waveform_table))
 
-        htilde1 = get_waveform(options.template_approximant, 
-                              options.template_order, 
-                              template_params, 
-                              options.template_start_frequency, 
+        htilde1 = get_waveform(options.waveform1_approximant, 
+                              options.waveform1_order, 
+                              waveform_params, 
+                              options.waveform1_start_frequency, 
                               options.filter_sample_rate, 
                               filter_N)
 
-        htilde2 = get_waveform(options.signal_approximant, 
-                              options.signal_order, 
-                              template_params, 
-                              options.signal_start_frequency, 
+        htilde2 = get_waveform(options.waveform2_approximant, 
+                              options.waveform2_order, 
+                              waveform_params, 
+                              options.waveform2_start_frequency, 
                               options.filter_sample_rate, 
                               filter_N)
 
-        o,i = match(htilde1, htilde2, psd=psd, low_frequency_cutoff=options.filter_low_frequency_cutoff)     
-        print o, i    
+        o,i = match(htilde1, htilde2, psd=psd, 
+                    low_frequency_cutoff=options.filter_low_frequency_cutoff)     
         matches.append(o)
 
 #Find the maximum overlap in the bank and output to a file
