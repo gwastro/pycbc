@@ -108,7 +108,7 @@ def get_waveform(approximant, order, waveform1_params, start_frequency, sample_r
 aprs = list(set(td_approximants() + fd_approximants()))
 psd_names = pycbc.psd.get_list()
 
-print "STARTING THE BANKSIM"
+print "STARTING"
 
 #File I/O Settings
 parser = OptionParser()
