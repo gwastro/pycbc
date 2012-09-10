@@ -1,2 +1,4 @@
 include include/*.i
 include test/*test*py
+include scripts
+include examples

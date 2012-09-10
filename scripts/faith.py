@@ -83,13 +83,15 @@ def make_padded_frequency_series(vec,filter_N=None):
     vectilde = FrequencySeries(vectilde * DYN_RANGE_FAC,delta_f=delta_f,dtype=complex64)
     return vectilde
 
-def get_waveform(approximant, order, waveform1_params, start_frequency, sample_rate, length):
-
+def get_waveform(approximant, order, waveform1_params, start_frequency, sample_rate, length):  
     if approximant in fd_approximants():
         delta_f = sample_rate / length
+
         hvec = get_fd_waveform(waveform1_params, approximant=approximant,
                                phase_order=order, delta_f=delta_f,
-                               f_lower=start_frequency, amplitude_order=order)     
+                               f_lower=start_frequency, amplitude_order=order) 
+
+ 
 
     if approximant in td_approximants():
         hplus,hcross = get_td_waveform(waveform1_params, approximant=approximant,
@@ -128,7 +130,7 @@ parser.add_option("--waveform2-start-frequency",help="Starting frequency for wav
 
 #Filter Settings
 parser.add_option('--filter-low-frequency-cutoff', metavar='FREQ', help='low frequency cutoff of matched filter', type=float)
-parser.add_option("--filter-sample-rate",help="Filter Sample Rate [Hz]",type=int)
+parser.add_option("--filter-sample-rate",help="Filter Sample Rate [Hz]",type=float)
 parser.add_option("--filter-waveform-length",help="Length of waveform for filtering, shoud be longer than all waveforms and include some padding",type=int)
 
 parser.add_option("--cuda",action="store_true")            
