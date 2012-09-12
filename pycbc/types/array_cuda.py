@@ -236,5 +236,30 @@ mld = LowerLatencyReductionKernel(maxloc_dtype_double, neutral = "maxloc_start()
 max_loc = {'single':mls,'double':mld}
 
 
+amls = LowerLatencyReductionKernel(maxloc_dtype_single, neutral = "maxloc_start()",
+        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
+        arguments="float *x", preamble=maxloc_preamble_single)
+
+amld = LowerLatencyReductionKernel(maxloc_dtype_double, neutral = "maxloc_start()",
+        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
+        arguments="double *x", preamble=maxloc_preamble_double)
+
+amlsc = LowerLatencyReductionKernel(maxloc_dtype_single, neutral = "maxloc_start()",
+        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
+        arguments="pycuda::complex<float> *x", preamble=maxloc_preamble_single)
+
+amldc = LowerLatencyReductionKernel(maxloc_dtype_double, neutral = "maxloc_start()",
+        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
+        arguments="pycuda::complex<double> *x", preamble=maxloc_preamble_double)
+
+abs_max_loc = {'single':{ 'real':amls, 'complex':amlsc }, 'double':{ 'real':amld, 'complex':amldc }}
+
+
+    
+
+
+
+
+    
 
 

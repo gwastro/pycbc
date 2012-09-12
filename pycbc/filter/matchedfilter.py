@@ -157,7 +157,7 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
     stilde = make_frequency_series(vec2)
     snr, snr_norm = matched_filter(htilde,stilde,psd,low_frequency_cutoff,
                              high_frequency_cutoff, h_norm)
-    maxsnr, max_id = (abs(snr)).max_loc()
+    maxsnr, max_id = snr.abs_max_loc()
     if s_norm is None:
         s_norm = sigmasq(stilde, psd, low_frequency_cutoff, high_frequency_cutoff)
     return maxsnr * snr_norm / sqrt(s_norm), max_id

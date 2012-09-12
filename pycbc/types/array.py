@@ -517,12 +517,26 @@ class Array(object):
             
     @_convert
     def max_loc(self):
-        """Return the maximum value in the array along with the. """
+        """Return the maximum value in the array along with the index location """
         if type(self._data) is _numpy.ndarray:
             return self._data.max(),_numpy.argmax(self._data)
         elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
             from array_cuda import max_loc
             maxloc = max_loc[self.precision](self._data)
+            maxloc = maxloc.get()
+            return float(maxloc['max']),int(maxloc['loc'])
+        elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
+            raise NotImplementedError 
+
+    @_convert
+    def abs_max_loc(self):
+        """Return the maximum elementwise norm in the array along with the index location"""
+        if type(self._data) is _numpy.ndarray:
+            ind = _numpy.argmax(abs(self._data))
+            return abs(self._data[ind]), ind
+        elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
+            from array_cuda import abs_max_loc
+            maxloc = abs_max_loc[self.precision][self.kind](self._data)
             maxloc = maxloc.get()
             return float(maxloc['max']),int(maxloc['loc'])
         elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
