@@ -503,7 +503,20 @@ class Array(object):
         elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
             return _pycuda.gpuarray.sum(self._data).get().max()
         elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-            return _pyopencl.array.sum(self._data).get().max()      
+            return _pyopencl.array.sum(self._data).get().max() 
+
+    @_returntype
+    @_convert
+    def cumsum(self):
+        """ Return the cumulative sum of the the array. """
+        if self._scheme is None:
+            return self.data.cumsum()
+        elif type(self._scheme) is _scheme.CUDAScheme:
+            from array_cuda import cumsum
+            tmp = self.data*1
+            return cumsum(tmp)
+        elif type(self._scheme) is _scheme.OpenCLScheme:
+            raise NotImplementedError        
      
     @_convert
     def max(self):

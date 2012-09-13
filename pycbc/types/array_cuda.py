@@ -29,7 +29,16 @@ from pycuda.tools import context_dependent_memoize
 from pycuda.tools import dtype_to_ctype
 from pytools import match_precision, memoize_method
 from pycuda.gpuarray import _get_common_dtype, empty
+from pycuda.scan import InclusiveScanKernel
 import numpy as np
+
+@context_dependent_memoize
+def get_cumsum_kernel(dtype):
+    return InclusiveScanKernel(dtype, "a+b")
+
+def cumsum(vec):
+    krnl = get_cumsum_kernel(vec.dtype)
+    return krnl(vec)
 
 @context_dependent_memoize
 def call_prepare(self, sz, allocator):
@@ -255,9 +264,7 @@ amldc = LowerLatencyReductionKernel(maxloc_dtype_double, neutral = "maxloc_start
 abs_max_loc = {'single':{ 'real':amls, 'complex':amlsc }, 'double':{ 'real':amld, 'complex':amldc }}
 
 
-    
-
-
+   
 
 
     

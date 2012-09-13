@@ -245,7 +245,7 @@ def ceilpow2(n):
     return (1) << exponent;
 
 
-def taylorf2(tC = None, beta =0, sigma = 0,**kwds):
+def taylorf2(tC = None, beta =0, sigma = 0, **kwds):
     """ Return a TaylorF2 waveform using CUDA to generate the phase and amplitude
     """
     pn_const = get_taylorf2_pn_coefficients(kwds['mass1'],kwds['mass2'],

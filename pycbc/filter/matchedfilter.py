@@ -61,11 +61,29 @@ def make_frequency_series(vec):
     else:
         raise TypeError("Can only convert a TimeSeries to a FrequencySeries")
 
+def sigmasq_series(htilde, psd=None, low_frequency_cutoff=None,
+            high_frequency_cutoff=None):
+    htilde = make_frequency_series(htilde)
+    N = (len(htilde)-1) * 2 
+    norm = 4.0 / (N * N * htilde.delta_f) 
+    kmin,kmax = get_cutoff_indices(low_frequency_cutoff,
+                                   high_frequency_cutoff, htilde.delta_f, N)  
+   
+    sigma_vec = FrequencySeries(zeros(len(htilde)), delta_f = htilde.delta_f, 
+                        dtype=real_same_precision_as(htilde), copy=False)
+    
+    mag = htilde.squared_norm()
+
+    sigma_vec[kmin:kmax] = mag[kmin:kmax].cumsum()
+        
+    return sigma_vec*norm
+    
 
 def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
             high_frequency_cutoff=None):
     """
     """
+    htilde = make_frequency_series(htilde)
     N = (len(htilde)-1) * 2 
     norm = 4.0 / (N * N * htilde.delta_f) 
     kmin,kmax = get_cutoff_indices(low_frequency_cutoff,
@@ -78,6 +96,12 @@ def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
         sq = ht.weighted_inner(ht, psd[kmin:kmax])
         
     return sq.real * norm
+
+def sigma(htilde, psd = None, low_frequency_cutoff=None,
+        high_frequency_cutoff=None):
+    """
+    """
+    return sqrt(sigmasq(htilde,psd,low_frequency_cutoff,high_frequency_cutoff))
     
 
 def get_cutoff_indices(flow, fhigh, df, N):
@@ -146,7 +170,7 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
 
     norm = (4.0 / (N * N * stilde.delta_f)) / sqrt( h_norm) 
         
-    return _q,norm
+    return _q*1,norm
     
     
 def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
@@ -162,5 +186,5 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
         s_norm = sigmasq(stilde, psd, low_frequency_cutoff, high_frequency_cutoff)
     return maxsnr * snr_norm / sqrt(s_norm), max_id
 
-__all__ = ['match', 'matched_filter', 'sigmasq', 'make_frequency_series']
+__all__ = ['match', 'matched_filter', 'sigmasq', 'sigmasq', 'sigmasq_series', 'make_frequency_series']
 
