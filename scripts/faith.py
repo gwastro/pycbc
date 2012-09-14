@@ -166,7 +166,7 @@ print("Reading and Interpolating PSD")
 # Load the asd file
 
 if options.asd_file:
-    psd = pycbc.psd.from_txt(options.asd_file, filter_n,  
+    psd = pycbc.psd.from_asd_txt(options.asd_file, filter_n,  
                            delta_f, options.filter_low_frequency_cutoff)
 elif options.psd:
     psd = pycbc.psd.from_string(options.psd, filter_n, delta_f, 
