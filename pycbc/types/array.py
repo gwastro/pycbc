@@ -545,8 +545,9 @@ class Array(object):
     def abs_max_loc(self):
         """Return the maximum elementwise norm in the array along with the index location"""
         if type(self._data) is _numpy.ndarray:
-            ind = _numpy.argmax(abs(self._data))
-            return abs(self._data[ind]), ind
+            tmp = abs(self.data)
+            ind = _numpy.argmax(data)
+            return tmp[ind], ind
         elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
             from array_cuda import abs_max_loc
             maxloc = abs_max_loc[self.precision][self.kind](self._data)
