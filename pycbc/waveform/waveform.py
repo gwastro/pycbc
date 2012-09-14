@@ -62,7 +62,6 @@ _lalsim_td_approximants = {}
 _lalsim_enum = {}
 
 def _lalsim_td_waveform(**p):
-    print p['lambda1'], p['lambda2']
     hp,hc = lalsimulation.SimInspiralChooseTDWaveform(float(p['phi0']),
                float(p['delta_t']),
                float(solar_mass_to_kg(p['mass1'])),
