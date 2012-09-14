@@ -83,21 +83,20 @@ def make_padded_frequency_series(vec,filter_N=None):
     vectilde = FrequencySeries(vectilde * DYN_RANGE_FAC,delta_f=delta_f,dtype=complex64)
     return vectilde
 
-def get_waveform(approximant, order, waveform1_params, start_frequency, sample_rate, length):  
-    if approximant in fd_approximants():
-        delta_f = sample_rate / length
-
-        hvec = get_fd_waveform(waveform1_params, approximant=approximant,
-                               phase_order=order, delta_f=delta_f,
-                               f_lower=start_frequency, amplitude_order=order) 
-
- 
+def get_waveform(approximant, phase_order, amplitude_order, template_params, start_frequency, sample_rate, length):
 
     if approximant in td_approximants():
-        hplus,hcross = get_td_waveform(waveform1_params, approximant=approximant,
-                                   phase_order=order, delta_t=1.0 / sample_rate,
-                                   f_lower=start_frequency, amplitude_order=order) 
+        hplus,hcross = get_td_waveform(template_params, approximant=approximant,
+                                   phase_order=phase_order, delta_t=1.0 / sample_rate,
+                                   f_lower=start_frequency, amplitude_order=amplitude_order) 
         hvec = hplus
+
+    elif approximant in fd_approximants():
+        delta_f = sample_rate / length
+        hvec = get_fd_waveform(template_params, approximant=approximant,
+                               phase_order=phase_order, delta_f=delta_f,
+                               f_lower=start_frequency, amplitude_order=amplitude_order)     
+
 
     htilde = make_padded_frequency_series(hvec,filter_N)
 
@@ -121,11 +120,13 @@ parser.add_option("--psd", dest="psd", help="Analytic PSD model: " + str(psd_nam
 
 #Waveform generation Settings
 parser.add_option("--waveform1-approximant",help="waveform1  Approximant Name: " + str(aprs), choices = aprs)
-parser.add_option("--waveform1-order",help="PN order to use for the aproximant",default=-1,type=int) 
+parser.add_option("--waveform1-phase-order",help="PN order to use for the phase",default=-1,type=int) 
+parser.add_option("--waveform1-amplitude-order",help="PN order to use for the phase",default=-1,type=int) 
 parser.add_option("--waveform1-start-frequency",help="Starting frequency for injections",type=float) 
 
 parser.add_option("--waveform2-approximant",help="waveform2 Approximant Name: " + str(aprs), choices = aprs)
-parser.add_option("--waveform2-order",help="PN order to use for the aproximant",default=-1,type=int)  
+parser.add_option("--waveform2-phase-order",help="PN order to use for the phase",default=-1,type=int) 
+parser.add_option("--waveform2-amplitude-order",help="PN order to use for the phase",default=-1,type=int) 
 parser.add_option("--waveform2-start-frequency",help="Starting frequency for waveform1s",type=float)  
 
 #Filter Settings
@@ -186,14 +187,16 @@ with ctx:
         update_progress(index*100/len(waveform_table))
 
         htilde1 = get_waveform(options.waveform1_approximant, 
-                              options.waveform1_order, 
+                              options.waveform1_phase_order, 
+                              options.waveform1_amplitude_order, 
                               waveform_params, 
                               options.waveform1_start_frequency, 
                               options.filter_sample_rate, 
                               filter_N)
 
         htilde2 = get_waveform(options.waveform2_approximant, 
-                              options.waveform2_order, 
+                              options.waveform2_phase_order, 
+                              options.waveform2_amplitude_order, 
                               waveform_params, 
                               options.waveform2_start_frequency, 
                               options.filter_sample_rate, 

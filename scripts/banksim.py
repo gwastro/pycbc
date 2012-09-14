@@ -108,19 +108,19 @@ def make_padded_frequency_series(vec,filter_N=None):
     vectilde = FrequencySeries(vectilde * DYN_RANGE_FAC,delta_f=delta_f,dtype=complex64)
     return vectilde
 
-def get_waveform(approximant, order, template_params, start_frequency, sample_rate, length):
+def get_waveform(approximant, phase_order, amplitude_order, template_params, start_frequency, sample_rate, length):
 
     if approximant in td_approximants():
         hplus,hcross = get_td_waveform(template_params, approximant=approximant,
-                                   phase_order=order, delta_t=1.0 / sample_rate,
-                                   f_lower=start_frequency, amplitude_order=order) 
+                                   phase_order=phase_order, delta_t=1.0 / sample_rate,
+                                   f_lower=start_frequency, amplitude_order=amplitude_order) 
         hvec = generate_detector_strain(template_params, hplus, hcross)
 
     elif approximant in fd_approximants():
         delta_f = sample_rate / length
         hvec = get_fd_waveform(template_params, approximant=approximant,
-                               phase_order=order, delta_f=delta_f,
-                               f_lower=start_frequency, amplitude_order=order)     
+                               phase_order=phase_order, delta_f=delta_f,
+                               f_lower=start_frequency, amplitude_order=amplitude_order)     
 
 
     htilde = make_padded_frequency_series(hvec,filter_N)
@@ -144,14 +144,16 @@ aprs = list(set(td_approximants() + fd_approximants()))
 #Template Settings
 parser.add_option("--template-file", dest="bank_file", help="SimInspiral or SnglInspiral XML file containing the template parameters.", metavar="FILE")
 parser.add_option("--template-approximant",help="Template Approximant Name: " + str(aprs), choices = aprs)
-parser.add_option("--template-order",help="PN order to use for the aproximant",default=-1,type=int) 
+parser.add_option("--template-phase-order",help="PN order to use for the phase",default=-1,type=int) 
+parser.add_option("--template-amplitude-order",help="PN order to use for the amplitude",default=-1,type=int) 
 parser.add_option("--template-start-frequency",help="Starting frequency for injections",type=float) 
 parser.add_option("--template-sample-rate",help="Starting frequency for injections",type=float) 
 
 #Signal Settings
 parser.add_option("--signal-file", dest="sim_file", help="SimInspiral or SnglInspiral XML file containing the signal parameters.", metavar="FILE")
 parser.add_option("--signal-approximant",help="Signal Approximant Name: " + str(aprs), choices = aprs)
-parser.add_option("--signal-order",help="PN order to use for the aproximant",default=-1,type=int)  
+parser.add_option("--signal-phase-order",help="PN order to use for the phase",default=-1,type=int) 
+parser.add_option("--signal-amplitude-order",help="PN order to use for the amplitude",default=-1,type=int) 
 parser.add_option("--signal-start-frequency",help="Starting frequency for templates",type=float)  
 parser.add_option("--signal-sample-rate",help="Starting frequency for templates",type=float)  
 
@@ -242,7 +244,8 @@ with ctx:
         index += 1
         update_progress(index/len(signal_table))
         stilde = get_waveform(options.signal_approximant, 
-                      options.signal_order, 
+                      options.signal_phase_order, 
+                      options.signal_amplitude_order, 
                       signal_params, 
                       options.signal_start_frequency, 
                       options.filter_sample_rate, 
@@ -269,7 +272,8 @@ with ctx:
             # Generate htilde if we haven't already done so 
             if htilde is None:
                 htilde = get_waveform(options.template_approximant, 
-                                      options.template_order, 
+                                      options.template_phase_order, 
+                                      options.template_amplitude_order, 
                                       template_params, 
                                       options.template_start_frequency, 
                                       options.filter_sample_rate, 
