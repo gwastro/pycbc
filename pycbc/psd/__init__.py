@@ -18,3 +18,4 @@
 
 from pycbc.psd.read import *
 from pycbc.psd.analytical import *
+from pycbc.psd.estimate import *
