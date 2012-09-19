@@ -260,7 +260,7 @@ class Array(object):
                 if type(other) in _ALLOWED_SCALARS:
                     other = force_precision_to_match(other, self.precision)
                     nargs +=(other,)
-                elif isinstance(other,Array):
+                elif isinstance(other, type(self)) or type(other) is Array:
                     if len(other) != len(self):
                         raise ValueError('lengths do not match')
                     if other.precision == self.precision:
@@ -281,7 +281,7 @@ class Array(object):
             nargs = ()
             for other in args:
                 self._typecheck(other)  
-                if isinstance(other,Array):
+                if isinstance(other, type(self)) or type(other) is Array:
                     if len(other) != len(self):
                         raise ValueError('lengths do not match')
                     if other.precision == self.precision:
@@ -305,7 +305,7 @@ class Array(object):
                 if self.kind == 'real' and type(other) == complex:
                     raise TypeError('dtypes are incompatible')
                 other = force_precision_to_match(other, self.precision)
-            elif isinstance(other,Array):
+            elif isinstance(other, type(self)) or type(other) is Array:
                 if len(other) != len(self):
                     raise ValueError('lengths do not match')
                 if self.kind == 'real' and other.kind == 'complex':
