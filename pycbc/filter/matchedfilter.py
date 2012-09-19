@@ -26,7 +26,7 @@ This modules provides matchedfiltering and related match and chisq calculations.
 """
 
 from math import log,ceil,sqrt
-from pycbc.types import TimeSeries,FrequencySeries,zeros
+from pycbc.types import TimeSeries,FrequencySeries,zeros, Array
 from pycbc.types import complex_same_precision_as,real_same_precision_as
 from pycbc.fft import fft,ifft
 import pycbc.scheme
@@ -117,15 +117,13 @@ def get_cutoff_indices(flow, fhigh, df, N):
     return kmin,kmax
     
 # Workspace Memory for the matchedfilter
-_q = None
 _qtilde = None
 
 def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
-                  high_frequency_cutoff=None, h_norm=None):
+                  high_frequency_cutoff=None, h_norm=None, out=None):
     """Return the complex SNR and normalization (SNR,norm) of the template 
        filtered against the data, where the normalized SNR is SNR' = SNR * norm.
     """
-    global _q
     global _qtilde
   
     htilde = make_frequency_series(template)
@@ -138,10 +136,12 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
     kmin,kmax = get_cutoff_indices(low_frequency_cutoff,
                                    high_frequency_cutoff, stilde.delta_f, N)   
 
-    if (_q is None) or (len(_q) != N) or _q.dtype != data.dtype:
+    if out is None:
         _q = zeros(N,dtype=complex_same_precision_as(data))
+    elif (len(out) == N) and type(out) is Array and out.kind =='complex':
+        _q = out
     else:
-        pass
+        raise TypeError('Invalid Output Vector')
         
     if (_qtilde is None) or (len(_qtilde) != N) or _qtilde.dtype != data.dtype:
         _qtilde = zeros(N,dtype=complex_same_precision_as(data))
@@ -170,17 +170,25 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
 
     norm = (4.0 / (N * N * stilde.delta_f)) / sqrt( h_norm) 
         
-    return _q*1,norm
+    delta_t = 1.0 / (N * stilde.delta_f)
+    return TimeSeries(_q, epoch=stilde._epoch, delta_t=delta_t, copy=False) ,norm
     
-    
+_snr = None 
 def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
           high_frequency_cutoff=None, s_norm=None, h_norm=None):
     """ Return the match between the two TimeSeries or FrequencySeries.
     """
+
     htilde = make_frequency_series(vec1)
     stilde = make_frequency_series(vec2)
+
+    N = (len(htilde)-1) * 2
+
+    global _snr
+    if _snr is None or _snr.dtype != htilde.dtype or len(_snr) != N:
+        _snr = zeros(N,dtype=complex_same_precision_as(vec1))
     snr, snr_norm = matched_filter(htilde,stilde,psd,low_frequency_cutoff,
-                             high_frequency_cutoff, h_norm)
+                             high_frequency_cutoff, h_norm, out=_snr)
     maxsnr, max_id = snr.abs_max_loc()
     if s_norm is None:
         s_norm = sigmasq(stilde, psd, low_frequency_cutoff, high_frequency_cutoff)
