@@ -17,7 +17,7 @@
 """ Utilites to estimate PSDs from data. """
 
 import numpy
-from pycbc.types import Array, FrequencySeries
+from pycbc.types import Array, FrequencySeries, TimeSeries
 from pycbc.fft import fft, ifft
 
 def median_bias(n):
@@ -54,6 +54,7 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
     w = Array(window_map[window](seg_len).astype(timeseries.dtype))
     # calculate psd of each segment
     delta_f = 1. / timeseries.delta_t / seg_len
+    # FIXME hardcoded type
     segment_tilde = FrequencySeries(numpy.zeros(seg_len / 2 + 1), \
         delta_f=delta_f, dtype=numpy.complex128)
     segment_psds = []
@@ -72,10 +73,31 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
     elif avg_method == 'median-mean':
         odd_psds = segment_psds[::2]
         even_psds = segment_psds[1::2]
-        odd = numpy.median(odd_psds, axis=0) / median_bias(len(odd_psds))
-        even = numpy.median(even_psds, axis=0) / median_bias(len(even_psds))
-        psd = numpy.mean([odd, even], axis=0)
+        odd_median = numpy.median(odd_psds, axis=0) / \
+            median_bias(len(odd_psds))
+        even_median = numpy.median(even_psds, axis=0) / \
+            median_bias(len(even_psds))
+        psd = (odd_median + even_median) / 2
     psd *= 2 * delta_f * seg_len / numpy.sum(numpy.square(w))
-    # TODO coarse graining
-    return FrequencySeries(psd, delta_f=delta_f, dtype=timeseries.dtype)
+    if max_filter_len is None:
+        return FrequencySeries(psd, delta_f=delta_f, dtype=timeseries.dtype)
+    else:
+        # smooth spectrum
+        # FIXME hardcoded type
+        inv_asd = FrequencySeries(numpy.sqrt(1. / psd), delta_f=delta_f, \
+            dtype=numpy.complex128)
+        inv_asd[0] = 0
+        inv_asd[seg_len / 2] = 0
+        q = TimeSeries(numpy.zeros(seg_len), delta_t=timeseries.delta_t, \
+            dtype=timeseries.dtype)
+        ifft(inv_asd, q)
+        trunc_start = max_filter_len / 2
+        trunc_end = seg_len - max_filter_len / 2
+        q[trunc_start:trunc_end] = 0
+        # FIXME hardcoded type
+        psd_trunc = FrequencySeries(numpy.zeros(seg_len / 2 + 1), \
+            delta_f=delta_f, dtype=numpy.complex128)
+        fft(q, psd_trunc)
+        psd_trunc *= psd_trunc.conj()
+        return 1. / abs(psd_trunc)
 
