@@ -140,29 +140,25 @@ class Array(object):
             else:
                 self.precision = 'double'
 
+            if dtype and dtype != self._data.dtype:
+                raise TypeError("Cannot set dtype when not copying")
+
 
         if copy:
             # First we will check the dtype that we are given
             initdtype = None
-            if hasattr(initial_array,'dtype'):
-                if initial_array.dtype in _ALLOWED_DTYPES:
-                    initdtype = initial_array.dtype
+            if not hasattr(initial_array,'dtype'):
+                initial_array = _numpy.array(initial_array)
+
+            if initial_array.dtype in _ALLOWED_DTYPES:
+                initdtype = initial_array.dtype
+            else:
+                if initial_array.dtype.kind == 'c':
+                    initdtype = complex128
                 else:
-                    if initial_array.dtype.kind == 'c':
-                        initdtype = complex128
-                    else:
-                        initdtype = float64
+                    initdtype = float64
                         
-            # If no dtype can be extracted, default to Double, or Double Complex.
-            # The list might just be empty, or it could also be a list of numpy values
-            if initdtype is None:
-                try:
-                    if type(initial_array[0]) == complex:
-                        initdtype = complex128
-                    else:
-                        initdtype = float64
-                except IndexError:
-                    initdtype = float64 
+
             # Now that we know the dtype of the data, we can determine whether the specified dtype
             # is valid. If the data is complex, and a real dtype has been specified, this should
             # raise an error.
