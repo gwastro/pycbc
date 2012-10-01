@@ -33,7 +33,7 @@ def median_bias(n):
     return ans
 
 def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
-                            avg_method='median', max_filter_len=None):
+        avg_method='median', max_filter_len=None, trunc_method=None):
     """
     Estimate the PSD of a timeseries using Welch's method.
     See arXiv:gr-qc/0509116 for details.
@@ -93,6 +93,10 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
         ifft(inv_asd, q)
         trunc_start = max_filter_len / 2
         trunc_end = seg_len - max_filter_len / 2
+        if trunc_method == 'hann':
+            trunc_window = Array(numpy.hanning(max_filter_len), dtype=q.dtype)
+            q[0:trunc_start] *= trunc_window[max_filter_len/2:max_filter_len]
+            q[trunc_end:seg_len] *= trunc_window[0:max_filter_len/2]
         q[trunc_start:trunc_end] = 0
         # FIXME hardcoded type
         psd_trunc = FrequencySeries(numpy.zeros(seg_len / 2 + 1), \
