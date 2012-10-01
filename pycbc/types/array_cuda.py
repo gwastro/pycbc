@@ -32,9 +32,13 @@ from pycuda.gpuarray import _get_common_dtype, empty
 from pycuda.scan import InclusiveScanKernel
 import numpy as np
 
+include_complex = """
+#include <pycuda-complex.hpp>
+"""
+
 @context_dependent_memoize
 def get_cumsum_kernel(dtype):
-    return InclusiveScanKernel(dtype, "a+b")
+    return InclusiveScanKernel(dtype, "a+b", preamble=include_complex)
 
 def cumsum(vec):
     krnl = get_cumsum_kernel(vec.dtype)
