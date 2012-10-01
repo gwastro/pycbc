@@ -45,6 +45,10 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
         raise ValueError('Invalid window')
     if not avg_method in ('mean', 'median', 'median-mean'):
         raise ValueError('Invalid averaging method')
+    if timeseries.precision == 'single':
+        fs_dtype = numpy.complex64
+    elif timeseries.precision == 'double':
+        fs_dtype = numpy.complex128
     num_samples = len(timeseries)
     num_segments = num_samples / seg_stride
     if (num_segments - 1) * seg_stride + seg_len > num_samples:
@@ -54,9 +58,8 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
     w = Array(window_map[window](seg_len).astype(timeseries.dtype))
     # calculate psd of each segment
     delta_f = 1. / timeseries.delta_t / seg_len
-    # FIXME hardcoded type
     segment_tilde = FrequencySeries(numpy.zeros(seg_len / 2 + 1), \
-        delta_f=delta_f, dtype=numpy.complex128)
+        delta_f=delta_f, dtype=fs_dtype)
     segment_psds = []
     for i in xrange(num_segments):
         segment_start = i * seg_stride
@@ -83,9 +86,8 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
         return FrequencySeries(psd, delta_f=delta_f, dtype=timeseries.dtype)
     else:
         # smooth spectrum
-        # FIXME hardcoded type
         inv_asd = FrequencySeries(numpy.sqrt(1. / psd), delta_f=delta_f, \
-            dtype=numpy.complex128)
+            dtype=fs_dtype)
         inv_asd[0] = 0
         inv_asd[seg_len / 2] = 0
         q = TimeSeries(numpy.zeros(seg_len), delta_t=timeseries.delta_t, \
@@ -98,9 +100,8 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
             q[0:trunc_start] *= trunc_window[max_filter_len/2:max_filter_len]
             q[trunc_end:seg_len] *= trunc_window[0:max_filter_len/2]
         q[trunc_start:trunc_end] = 0
-        # FIXME hardcoded type
         psd_trunc = FrequencySeries(numpy.zeros(seg_len / 2 + 1), \
-            delta_f=delta_f, dtype=numpy.complex128)
+            delta_f=delta_f, dtype=fs_dtype)
         fft(q, psd_trunc)
         psd_trunc *= psd_trunc.conj()
         return 1. / abs(psd_trunc)
