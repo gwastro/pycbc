@@ -76,10 +76,10 @@ class TestPSD(unittest.TestCase):
             1j * numpy.random.normal(loc=0, scale=1, size=noise_size/2+1)
         noise_model = 1. / numpy.linspace(1., 100., noise_size / 2 + 1)
         noise *= noise_model / numpy.sqrt(delta_f) / 2
+        noise[0] = noise[0].real
         noise_fs = FrequencySeries(noise, delta_f=delta_f)
         self.noise = TimeSeries(numpy.zeros(noise_size), delta_t=1./sample_freq)
-        # FIXME fails if backend is not set to numpy
-        ifft(noise_fs, self.noise, backend='numpy')
+        ifft(noise_fs, self.noise)
     
     def test_analytical(self):
         with _context:
