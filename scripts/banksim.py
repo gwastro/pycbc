@@ -260,7 +260,7 @@ with ctx:
     # Calculate the overlaps
     for template_params in template_table:
         index += 1
-        update_progress(float(index)/len(template_table))
+#       update_progress(float(index)/len(template_table))
         h_norm = htilde = None
         for stilde, s_norm, matches, signal_params in signals:
             # Check if we need to look at this template

@@ -448,7 +448,8 @@ class Array(object):
             from array_cuda import squared_norm
             return squared_norm(self.data)
         elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-            raise NotImplementedError         
+            from array_opencl import squared_norm
+            return squared_norm(self.data)     
 
     @_vcheckother
     @_convert
@@ -466,7 +467,8 @@ class Array(object):
             from array_cuda import inner
             return inner(self.data,other).get().max()
         elif type(self._scheme) is _scheme.OpenCLScheme:
-            raise NotImplementedError    
+            from array_opencl import inner
+            return inner(self.data,other).get().max()
 
     @_vcheckother
     @_convert
@@ -486,7 +488,8 @@ class Array(object):
             from array_cuda import weighted_inner
             return weighted_inner(self.data,other,weight).get().max()
         elif type(self._scheme) is _scheme.OpenCLScheme:
-            raise NotImplementedError    
+            from array_opencl import weighted_inner
+            return weighted_inner(self.data,other,weight).get().max()
 
     @_convert
     def sum(self):
@@ -512,7 +515,9 @@ class Array(object):
             tmp = self.data*1
             return cumsum(tmp)
         elif type(self._scheme) is _scheme.OpenCLScheme:
-            raise NotImplementedError        
+            from array_opencl import cumsum
+            tmp = self.data*1
+            return cumsum(tmp)   
      
     @_convert
     def max(self):
@@ -656,8 +661,9 @@ class Array(object):
     @property
     @_convert
     def  _swighelper(self):
-        """ Used internally by SWIG typemaps to ensure @_convert is called and scheme is correct  """
-
+        """ Used internally by SWIG typemaps to ensure @_convert 
+            is called and scheme is correct  
+        """
         if self._scheme is not None:
             raise TypeError("Cannot call LAL function from the GPU")
         else:
@@ -707,5 +713,6 @@ def zeros(length,dtype=None):
     if type(_scheme.mgr.state) is _scheme.CUDAScheme:
         return Array(_cudaarray.zeros(length,dtype),copy=False)
     if type(_scheme.mgr.state) is _scheme.OpenCLScheme:
-        return Array(_openclarray.zeros(_scheme.mgr.state.queue,length,dtype),copy=False)
+        return Array(_openclarray.zeros(_scheme.mgr.state.queue,length,dtype),
+                     copy=False)
 
