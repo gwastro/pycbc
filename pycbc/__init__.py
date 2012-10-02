@@ -35,7 +35,7 @@ except ImportError:
     HAVE_CUDA=False
     
 try:
-    import pyopencl.driver as _pyopencldrv
+    import pyopencl as _pyopencl
     HAVE_OPENCL=True
 except ImportError:
     HAVE_OPENCL=False

@@ -25,6 +25,7 @@ import lalsimulation
 import lal
 import numpy
 import pycuda.tools
+import pycbc.utils
 from pycuda.elementwise import ElementwiseKernel
 from pycbc.types import FrequencySeries,zeros
 from pycuda.gpuarray import to_gpu
@@ -62,7 +63,7 @@ pntype = numpy.dtype([('pfaN', numpy.float64),
                      ])
 pycuda.tools.register_dtype(pntype,"pntype")
 
-def get_taylorf2_pn_coefficients(mass1,mass2,distance,beta =0 , sigma = 0):
+def get_taylorf2_pn_coefficients(mass1,mass2,distance,beta =0 , sigma = 0, gamma=0):
     # FIXME when lalsimulation has all the coeffiecients wrapped    
 
     M = float(mass1) + float(mass2)
@@ -74,7 +75,7 @@ def get_taylorf2_pn_coefficients(mass1,mass2,distance,beta =0 , sigma = 0):
     pfa3 = -16.0*lal.LAL_PI + 4.0*beta;
     pfa4 = 5.0*(3058.673/7.056 + 5429.0/7.0 * eta + 617.0 * eta*eta)/72.0 - \
             10.0*sigma
-    pfa5 = 5.0/9.0 * (7729.0/84.0 - 13.0 * eta) * lal.LAL_PI
+    pfa5 = 5.0/9.0 * (7729.0/84.0 - 13.0 * eta) * lal.LAL_PI - gamma
     pfl5 = 5.0/3.0 * (7729.0/84.0 - 13.0 * eta) * lal.LAL_PI
     pfa6 = (11583.231236531/4.694215680 - 640.0/3.0 * lal.LAL_PI * lal.LAL_PI- \
             6848.0/21.0*lal.LAL_GAMMA) + \
@@ -245,11 +246,13 @@ def ceilpow2(n):
     return (1) << exponent;
 
 
-def taylorf2(tC = None, beta =0, sigma = 0, **kwds):
+def taylorf2(**kwds):
     """ Return a TaylorF2 waveform using CUDA to generate the phase and amplitude
     """
+    beta, sigma, gamma = pycbc.utils.mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(kwds['mass1'],kwds['mass2'], kwds['spin1z'], kwds['spin2z'])
+    tC = 0
     pn_const = get_taylorf2_pn_coefficients(kwds['mass1'],kwds['mass2'],
-                                    kwds['distance'],beta,sigma)
+                                    kwds['distance'],beta, sigma, gamma)
     pn_const['phase0'] = int(kwds['phase_order'])
     pn_const['amplitudeO'] = int(kwds['amplitude_order'])
     delta_f = kwds['delta_f']
