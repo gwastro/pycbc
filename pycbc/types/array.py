@@ -593,6 +593,7 @@ class Array(object):
     @_convert
     def __setitem__(self,index,other):
         if isinstance(other,Array):
+            _convert_to_scheme(other)
 
             if self.kind is 'real' and other.kind is 'complex':
                 raise ValueError('Cannot set real value with complex')

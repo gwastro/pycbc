@@ -76,7 +76,7 @@ def get_taylorf2_pn_coefficients(mass1,mass2,distance,beta =0 , sigma = 0, gamma
     pfa4 = 5.0*(3058.673/7.056 + 5429.0/7.0 * eta + 617.0 * eta*eta)/72.0 - \
             10.0*sigma
     pfa5 = 5.0/9.0 * (7729.0/84.0 - 13.0 * eta) * lal.LAL_PI - gamma
-    pfl5 = 5.0/3.0 * (7729.0/84.0 - 13.0 * eta) * lal.LAL_PI
+    pfl5 = 5.0/3.0 * (7729.0/84.0 - 13.0 * eta) * lal.LAL_PI - gamma * 3
     pfa6 = (11583.231236531/4.694215680 - 640.0/3.0 * lal.LAL_PI * lal.LAL_PI- \
             6848.0/21.0*lal.LAL_GAMMA) + \
             eta * (-15335.597827/3.048192 + 2255./12. * lal.LAL_PI * \
