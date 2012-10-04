@@ -128,6 +128,7 @@ class array_base(checks):
         # are four sets of possible answers, depending on the dtypes. The fourth value in
         # the list (True or False) lets the checker know whether to use Equal or AlmostEqual
         if self.kind == 'real' and self.okind == 'real':
+            self.cumsum=[5,8,9]
         
             self.mul = [50, 24, 6]
             self.mul_s = [25, 15, 5]
@@ -168,7 +169,7 @@ class array_base(checks):
             self.weighted_inner = 68
                         
         if self.kind =='real' and self.okind == 'complex':
-            
+            self.cumsum=[5,8,9]
             self.mul = [50+30j, 24+12j, 6+2j]
             self.mul_s = [25+10j, 15+6j, 5+2j]
             
@@ -210,7 +211,7 @@ class array_base(checks):
             self.weighted_inner = 68 + 38j
             
         if self.kind == 'complex' and self.okind == 'real':
-            
+            self.cumsum=[5+1j,8+4j,9+9j]
             self.mul = [50+10j, 24+24j, 6+30j]
             self.mul_s = [25+5j, 15+15j, 5+25j]
             
@@ -259,7 +260,7 @@ class array_base(checks):
             self.weighted_inner = 68- 52j
             
         if self.kind =='complex' and self.okind =='complex':
-            
+            self.cumsum=[5+1j,8+4j,9+9j]
             self.mul = [44+40j, 12+36j, -4+32j]
             self.mul_s = [23+15j, 9+21j, -5+27j]
             
@@ -992,6 +993,22 @@ class array_base(checks):
         # And finally CPU on the CPU
         c = self.a1.conj()
         self.checkCurrentState((self.a1, c),(self.alist,self.conj), self.places)
+
+    def test_cumsum(self):
+        with self.context:
+            # From CPU
+            c = self.a1.cumsum()
+            self.checkCurrentState((self.a1, c),(self.alist,self.cumsum), self.places)
+            
+            # From Current Scheme
+            c = self.a1.cumsum()
+            self.checkCurrentState((self.a1, c),(self.alist,self.cumsum), self.places)
+        # Now on the CPU, from Current Scheme
+        c = self.a1.cumsum()
+        self.checkCurrentState((self.a1, c),(self.alist,self.cumsum), self.places)
+        # And finally CPU on the CPU
+        c = self.a1.cumsum()
+        self.checkCurrentState((self.a1, c),(self.alist,self.cumsum), self.places)
             
     def test_sum(self):
         with self.context:

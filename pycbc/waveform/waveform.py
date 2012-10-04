@@ -48,7 +48,7 @@ def parsecs_to_meters(distance):
 
 
 default_args = {'spin1x':0,'spin1y':0,'spin1z':0,
-                'spin2x':0,'spin2y':0,'spin2z':0,
+                'spin2x':0,'spin2y':0,'spin2z':0,'lambda1':0, 'lambda2':0,
                 'inclination':0,'distance':10e8,'fmax':0,'phi0':0,
                 'amplitude_order':-1,'phase_order':-1}
 
@@ -66,13 +66,13 @@ def _lalsim_td_waveform(**p):
                float(p['delta_t']),
                float(solar_mass_to_kg(p['mass1'])),
                float(solar_mass_to_kg(p['mass2'])),
-               float(p['spin1x']),float(p['spin1y']),float(p['spin1z']),
-               float(p['spin2x']),float(p['spin2y']),float(p['spin2z']),
-               float(p['f_lower']),0,
+               float(p['spin1x']), float(p['spin1y']), float(p['spin1z']),
+               float(p['spin2x']), float(p['spin2y']), float(p['spin2z']),
+               float(p['f_lower']), 0,
                parsecs_to_meters(float(p['distance'])),
                float(p['inclination']),
-               0,0,None,None,
-               int(p['amplitude_order']),int(p['phase_order']),
+               float(p['lambda1']),  float(p['lambda2']), None, None,
+               int(p['amplitude_order']), int(p['phase_order']),
                _lalsim_enum[p['approximant']])
 
     hp = TimeSeries(hp.data.data,delta_t=hp.deltaT,epoch=hp.epoch)
@@ -90,7 +90,7 @@ def _lalsim_fd_waveform(**p):
                float(p['f_lower']),0,
                parsecs_to_meters(float(p['distance'])),
                float(p['inclination']),
-               0,0,None,None,
+               float(p['lambda1']),float(p['lambda2']),None,None,
                int(p['amplitude_order']),int(p['phase_order']),
                _lalsim_enum[p['approximant']])
 

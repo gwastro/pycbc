@@ -29,7 +29,7 @@
 # Check for optional components of the PyCBC Package
 
 try:
-    import pycuda as _pycuda
+    import pycuda.driver as _pycudadrv
     HAVE_CUDA=True
 except ImportError:
     HAVE_CUDA=False

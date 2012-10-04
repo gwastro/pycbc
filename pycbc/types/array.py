@@ -140,29 +140,25 @@ class Array(object):
             else:
                 self.precision = 'double'
 
+            if dtype and dtype != self._data.dtype:
+                raise TypeError("Cannot set dtype when not copying")
+
 
         if copy:
             # First we will check the dtype that we are given
             initdtype = None
-            if hasattr(initial_array,'dtype'):
-                if initial_array.dtype in _ALLOWED_DTYPES:
-                    initdtype = initial_array.dtype
+            if not hasattr(initial_array,'dtype'):
+                initial_array = _numpy.array(initial_array)
+
+            if initial_array.dtype in _ALLOWED_DTYPES:
+                initdtype = initial_array.dtype
+            else:
+                if initial_array.dtype.kind == 'c':
+                    initdtype = complex128
                 else:
-                    if initial_array.dtype.kind == 'c':
-                        initdtype = complex128
-                    else:
-                        initdtype = float64
+                    initdtype = float64
                         
-            # If no dtype can be extracted, default to Double, or Double Complex.
-            # The list might just be empty, or it could also be a list of numpy values
-            if initdtype is None:
-                try:
-                    if type(initial_array[0]) == complex:
-                        initdtype = complex128
-                    else:
-                        initdtype = float64
-                except IndexError:
-                    initdtype = float64 
+
             # Now that we know the dtype of the data, we can determine whether the specified dtype
             # is valid. If the data is complex, and a real dtype has been specified, this should
             # raise an error.
@@ -260,7 +256,7 @@ class Array(object):
                 if type(other) in _ALLOWED_SCALARS:
                     other = force_precision_to_match(other, self.precision)
                     nargs +=(other,)
-                elif isinstance(other,Array):
+                elif isinstance(other, type(self)) or type(other) is Array:
                     if len(other) != len(self):
                         raise ValueError('lengths do not match')
                     if other.precision == self.precision:
@@ -281,7 +277,7 @@ class Array(object):
             nargs = ()
             for other in args:
                 self._typecheck(other)  
-                if isinstance(other,Array):
+                if isinstance(other, type(self)) or type(other) is Array:
                     if len(other) != len(self):
                         raise ValueError('lengths do not match')
                     if other.precision == self.precision:
@@ -305,7 +301,7 @@ class Array(object):
                 if self.kind == 'real' and type(other) == complex:
                     raise TypeError('dtypes are incompatible')
                 other = force_precision_to_match(other, self.precision)
-            elif isinstance(other,Array):
+            elif isinstance(other, type(self)) or type(other) is Array:
                 if len(other) != len(self):
                     raise ValueError('lengths do not match')
                 if self.kind == 'real' and other.kind == 'complex':
@@ -452,7 +448,8 @@ class Array(object):
             from array_cuda import squared_norm
             return squared_norm(self.data)
         elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-            raise NotImplementedError         
+            from array_opencl import squared_norm
+            return squared_norm(self.data)     
 
     @_vcheckother
     @_convert
@@ -470,7 +467,8 @@ class Array(object):
             from array_cuda import inner
             return inner(self.data,other).get().max()
         elif type(self._scheme) is _scheme.OpenCLScheme:
-            raise NotImplementedError    
+            from array_opencl import inner
+            return inner(self.data,other).get().max()
 
     @_vcheckother
     @_convert
@@ -490,7 +488,8 @@ class Array(object):
             from array_cuda import weighted_inner
             return weighted_inner(self.data,other,weight).get().max()
         elif type(self._scheme) is _scheme.OpenCLScheme:
-            raise NotImplementedError    
+            from array_opencl import weighted_inner
+            return weighted_inner(self.data,other,weight).get().max()
 
     @_convert
     def sum(self):
@@ -503,7 +502,22 @@ class Array(object):
         elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
             return _pycuda.gpuarray.sum(self._data).get().max()
         elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-            return _pyopencl.array.sum(self._data).get().max()      
+            return _pyopencl.array.sum(self._data).get().max() 
+
+    @_returntype
+    @_convert
+    def cumsum(self):
+        """ Return the cumulative sum of the the array. """
+        if self._scheme is None:
+            return self.data.cumsum()
+        elif type(self._scheme) is _scheme.CUDAScheme:
+            from array_cuda import cumsum
+            tmp = self.data*1
+            return cumsum(tmp)
+        elif type(self._scheme) is _scheme.OpenCLScheme:
+            from array_opencl import cumsum
+            tmp = self.data*1
+            return cumsum(tmp)   
      
     @_convert
     def max(self):
@@ -517,12 +531,27 @@ class Array(object):
             
     @_convert
     def max_loc(self):
-        """Return the maximum value in the array along with the. """
+        """Return the maximum value in the array along with the index location """
         if type(self._data) is _numpy.ndarray:
             return self._data.max(),_numpy.argmax(self._data)
         elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
             from array_cuda import max_loc
             maxloc = max_loc[self.precision](self._data)
+            maxloc = maxloc.get()
+            return float(maxloc['max']),int(maxloc['loc'])
+        elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
+            raise NotImplementedError 
+
+    @_convert
+    def abs_max_loc(self):
+        """Return the maximum elementwise norm in the array along with the index location"""
+        if type(self._data) is _numpy.ndarray:
+            tmp = abs(self.data)
+            ind = _numpy.argmax(tmp)
+            return tmp[ind], ind
+        elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
+            from array_cuda import abs_max_loc
+            maxloc = abs_max_loc[self.precision][self.kind](self._data)
             maxloc = maxloc.get()
             return float(maxloc['max']),int(maxloc['loc'])
         elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
@@ -564,6 +593,7 @@ class Array(object):
     @_convert
     def __setitem__(self,index,other):
         if isinstance(other,Array):
+            _convert_to_scheme(other)
 
             if self.kind is 'real' and other.kind is 'complex':
                 raise ValueError('Cannot set real value with complex')
@@ -632,8 +662,9 @@ class Array(object):
     @property
     @_convert
     def  _swighelper(self):
-        """ Used internally by SWIG typemaps to ensure @_convert is called and scheme is correct  """
-
+        """ Used internally by SWIG typemaps to ensure @_convert 
+            is called and scheme is correct  
+        """
         if self._scheme is not None:
             raise TypeError("Cannot call LAL function from the GPU")
         else:
@@ -683,5 +714,6 @@ def zeros(length,dtype=None):
     if type(_scheme.mgr.state) is _scheme.CUDAScheme:
         return Array(_cudaarray.zeros(length,dtype),copy=False)
     if type(_scheme.mgr.state) is _scheme.OpenCLScheme:
-        return Array(_openclarray.zeros(_scheme.mgr.state.queue,length,dtype),copy=False)
+        return Array(_openclarray.zeros(_scheme.mgr.state.queue,length,dtype),
+                     copy=False)
 

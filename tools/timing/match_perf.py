@@ -60,6 +60,7 @@ with ctx:
     o,ind = match(ntilde2,ntilde2,psd=psd2)
     o,ind = match(ntilde2,ntilde2,psd=None, h_norm=1, s_norm=1)
     o,ind = matched_filter(ntilde2,ntilde2)
+    out=zeros(N,dtype=complex64)
 
 def matcht():
     with ctx:
@@ -74,7 +75,7 @@ def match_fast():
 def filter_fast():
     with ctx:
         for i in range(0,niter):
-            o,ind = matched_filter(ntilde2,ntilde2,psd=None,h_norm=1)
+            o,ind = matched_filter(ntilde2,ntilde2,psd=None,h_norm=1,out=out)
 
 import timeit
 gt = timeit.Timer(matcht)

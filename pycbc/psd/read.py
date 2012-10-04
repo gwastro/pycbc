@@ -20,19 +20,23 @@ import numpy
 import scipy.interpolate
 from pycbc.types import FrequencySeries
 
-def from_txt(filename, length, delta_f, low_freq_cutoff):
+def from_asd_txt(filename, length, delta_f, low_freq_cutoff):
     """Returns a PSD from a two-column ASCII file containing
     frequency on the first column and ASD on the second.
     """
     asd_data = numpy.loadtxt(filename)
     if (asd_data < 0).any() or numpy.logical_not(numpy.isfinite(asd_data)).any():
         raise ValueError('Invalid ASD data in ' + filename)
-    psd_interp = scipy.interpolate.interp1d(asd_data[:, 0], asd_data[:, 1] ** 2)
+
+    flog = numpy.log10(asd_data[:, 0])
+    slog = numpy.log10(asd_data[:, 1] ** 2)
+
+    psd_interp = scipy.interpolate.interp1d(flog, slog)
 
     kmin = int(low_freq_cutoff / delta_f)
     psd = numpy.zeros(length, dtype=numpy.float64)
     for k in xrange(kmin, length):
-        psd[k] = float(psd_interp(k * delta_f))
+        psd[k] = 10. ** float(psd_interp(numpy.log10(k * delta_f)))
 
     return FrequencySeries(psd, delta_f=delta_f)
 
