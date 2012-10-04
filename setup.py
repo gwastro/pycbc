@@ -168,7 +168,7 @@ class TestBase(Command):
 class test(Command):
     def has_cuda(self):
         try:
-            import pycuda
+            import pycuda.driver
             return True
         except:
             return False
