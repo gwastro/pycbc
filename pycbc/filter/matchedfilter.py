@@ -55,8 +55,8 @@ def make_frequency_series(vec):
         n = N/2+1    
         delta_f = 1.0 / N / vec.delta_t
         vectilde = zeros(n, dtype=complex_same_precision_as(vec))
-        fft(Array(vec, copy=False), vectilde)   
-        return  FrequencySeries(vectilde, delta_f=delta_f)
+        fft(Array(vec), vectilde)   
+        return  FrequencySeries(vectilde, delta_f=delta_f, copy=False)
     else:
         raise TypeError("Can only convert a TimeSeries to a FrequencySeries")
 
