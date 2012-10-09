@@ -54,10 +54,9 @@ def make_frequency_series(vec):
         N = len(vec)
         n = N/2+1    
         delta_f = 1.0 / N / vec.delta_t
-        vectilde = FrequencySeries(zeros(n), delta_f=delta_f, 
-                                   dtype=complex_same_precision_as(vec))
-        fft(vec,vectilde)   
-        return vectilde
+        vectilde = zeros(n, dtype=complex_same_precision_as(vec))
+        fft(Array(vec, copy=False), vectilde)   
+        return  FrequencySeries(vectilde, delta_f=delta_f)
     else:
         raise TypeError("Can only convert a TimeSeries to a FrequencySeries")
 
@@ -194,5 +193,5 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
         s_norm = sigmasq(stilde, psd, low_frequency_cutoff, high_frequency_cutoff)
     return maxsnr * snr_norm / sqrt(s_norm), max_id
 
-__all__ = ['match', 'matched_filter', 'sigmasq', 'sigmasq', 'sigmasq_series', 'make_frequency_series']
+__all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'sigmasq_series', 'make_frequency_series']
 
