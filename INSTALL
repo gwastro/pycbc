@@ -14,7 +14,8 @@ Prerequisites
 
 * LALSuite
   See https://www.lsc-group.phys.uwm.edu/daswg/docs/howto/lal-install.html
-  for installation instructions.
+  for installation instructions. LALSuite must be configured with the
+  --enable-swig-python option.
 
 For GPU acceleration through CUDA:
 
