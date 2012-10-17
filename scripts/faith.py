@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 ## Copyright (C) 2012  Alex Nitz
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -21,7 +22,6 @@
 #
 # =============================================================================
 #
-#! /usr/bin/env python
 import sys
 from numpy import loadtxt,complex64,float32
 from optparse import OptionParser

@@ -108,7 +108,7 @@ def make_padded_frequency_series(vec,filter_N=None):
     vectilde = FrequencySeries(vectilde * DYN_RANGE_FAC,delta_f=delta_f,dtype=complex64)
     return vectilde
 
-def get_waveform(approximant, phase_order, amplitude_order, template_params, start_frequency, sample_rate, length):
+def get_waveform(approximant, phase_order, amplitude_order, template_params, start_frequency, sample_rate, length, filter_rate):
 
     if approximant in td_approximants():
         hplus,hcross = get_td_waveform(template_params, approximant=approximant,
@@ -116,8 +116,12 @@ def get_waveform(approximant, phase_order, amplitude_order, template_params, sta
                                    f_lower=start_frequency, amplitude_order=amplitude_order) 
         hvec = generate_detector_strain(template_params, hplus, hcross)
 
+        if filter_rate != sample_rate:
+            delta_t = 1.0 / filter_rate
+            hvec = resample_to_delta_t(hvec, delta_t)
+
     elif approximant in fd_approximants():
-        delta_f = sample_rate / length
+        delta_f = filter_rate / length
         hvec = get_fd_waveform(template_params, approximant=approximant,
                                phase_order=phase_order, delta_f=delta_f,
                                f_lower=start_frequency, amplitude_order=amplitude_order)     
@@ -176,7 +180,7 @@ if options.template_sample_rate:
     template_sample_rate = options.template_sample_rate
 
 if options.signal_sample_rate:
-    template_sample_rate = options.signal_sample_rate
+    signal_sample_rate = options.signal_sample_rate
 
 if options.psd and options.asd_file:
     parser.error("PSD and asd-file options are mututally exclusive")
@@ -236,25 +240,25 @@ elif options.psd:
 psd *= DYN_RANGE_FAC **2
 psd = FrequencySeries(psd,delta_f=psd.delta_f,dtype=float32) 
 
-with ctx:
-    print("Pregenerating Signals")
-    signals = []
-    index = 0 
-    for signal_params in signal_table:
-        index += 1
-        update_progress(index/len(signal_table))
-        stilde = get_waveform(options.signal_approximant, 
-                      options.signal_phase_order, 
-                      options.signal_amplitude_order, 
-                      signal_params, 
-                      options.signal_start_frequency, 
-                      options.filter_sample_rate, 
-                      filter_N)
-        s_norm = sigmasq(stilde, psd=psd, 
-                          low_frequency_cutoff=options.filter_low_frequency_cutoff)
-        stilde /= psd
-        signals.append( (stilde, s_norm, [], signal_params) )
+print("Pregenerating Signals")
+signals = []
+index = 0 
+for signal_params in signal_table:
+    index += 1
+    update_progress(float(index)/len(signal_table))
+    stilde = get_waveform(options.signal_approximant, 
+                  options.signal_phase_order, 
+                  options.signal_amplitude_order, 
+                  signal_params, 
+                  options.signal_start_frequency, 
+                  signal_sample_rate, 
+                  filter_N, options.filter_sample_rate)
+    s_norm = sigmasq(stilde, psd=psd, 
+                      low_frequency_cutoff=options.filter_low_frequency_cutoff)
+    stilde /= psd
+    signals.append( (stilde, s_norm, [], signal_params) )
 
+with ctx:
     print("Calculating Overlaps")
     index = 0 
     # Calculate the overlaps
@@ -263,10 +267,13 @@ with ctx:
 #       update_progress(float(index)/len(template_table))
         h_norm = htilde = None
         for stilde, s_norm, matches, signal_params in signals:
-            # Check if we need to look at this template
-            if options.mchirp_window and outside_mchirp_window(template_params, 
+            # Check if we need to look at this
+            if stilde is None:
+                matches.append(0)
+                continue
+            elif options.mchirp_window and outside_mchirp_window(template_params, 
                                         signal_params, options.mchirp_window):
-                matches.append(-1)
+                matches.append(0)
                 continue
 
             # Generate htilde if we haven't already done so 
@@ -276,8 +283,8 @@ with ctx:
                                       options.template_amplitude_order, 
                                       template_params, 
                                       options.template_start_frequency, 
-                                      options.filter_sample_rate, 
-                                      filter_N)
+                                      template_sample_rate, 
+                                      filter_N, options.filter_sample_rate)
                 h_norm = sigmasq(htilde, psd=psd, 
                        low_frequency_cutoff=options.filter_low_frequency_cutoff)
 
