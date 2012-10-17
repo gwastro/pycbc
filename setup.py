@@ -15,7 +15,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
 """
 setup.py file for PyCBC package
 """
@@ -31,33 +30,11 @@ from distutils.core import setup,Command,Extension
 from distutils.command.clean import clean as _clean
 from distutils.command.build import build as _build
 from numpy import get_include as np_get_include
-
-
-# Below function copied from PyCBC v1 setup.py file.  Not sure whom to credit--Duncan?
-def pkg_config(libraries=[],library_dirs=[],include_dirs=[],pkg_libraries=[]):
-    # Check that we have the packages
-    for pkg in pkg_libraries:
-        if os.system('pkg-config --exists %s 2>/dev/null' % pkg) == 0:
-            pass
-        else:
-            print "Could not find library {0}".format(pkg)
-            sys.exit(1)
-
-    # Get the pck-config flags
-    if len(pkg_libraries)>0 :
-        for token in commands.getoutput("pkg-config --libs --cflags %s" % ' '.join(pkg_libraries)).split():
-            if token[:2]== "-l":
-                libraries.append(token[2:])
-            if token[:2]== "-L":
-                library_dirs.append(token[2:])
-            if token[:2] == "-I":
-                include_dirs.append(token[2:])
-
-    return libraries,library_dirs,include_dirs
+from pycbc.setuputils import pkg_config
 
 # Now use the above function to set up our extension library's needs:
 
-ext_libraries, ext_library_dirs, ext_include_dirs = pkg_config(pkg_libraries=["lal","lalsimulation","lalinspiral"])
+ext_libraries, ext_library_dirs, ext_include_dirs = pkg_config(["lal", "lalsimulation", "lalinspiral"])
 
 # Setup our swig options. We need the first two to match with how the swiglal
 # wrappings are compiled, so that our module can talk to theirs.  Then we must

@@ -1,3 +1,6 @@
+#  
+#  Apapted from code in LALSimInpspiralTaylorF2.c 
+# 
 #  Copyright (C) 2007 Jolien Creighton, B.S. Sathyaprakash, Thomas Cokelaer
 #  Copyright (C) 2012 Leo Singer, Alex Nitz
 #  Adapted from code found in:
@@ -17,20 +20,22 @@
 #  along with with program; see the file COPYING. If not, write to the
 #  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #  MA  02111-1307  USA
-#
-
 
 
 import lalsimulation
 import lal
 import numpy
-import pycuda.tools
-import pycbc.utils
-from pycuda.elementwise import ElementwiseKernel
-from pycbc.types import FrequencySeries,zeros
-from pycuda.gpuarray import to_gpu
 from numpy import sqrt
 from math import frexp
+
+import pycuda.tools
+from pycuda.elementwise import ElementwiseKernel
+from pycuda.gpuarray import to_gpu
+
+from pycbc.setuputils import pkg_config_header_strings
+from pycbc.types import FrequencySeries,zeros
+import pycbc.utils
+
 pntype = numpy.dtype([('pfaN', numpy.float64),
                     ('pfa2', numpy.float64),
                     ('pfa3', numpy.float64),
@@ -235,7 +240,8 @@ taylorf2_text = """
 """
 
 taylorf2_kernel = ElementwiseKernel("pycuda::complex<double> *htilde, pntype *cf",
-                    taylorf2_text, "taylorf2_kernel",preamble=preamble)
+                    taylorf2_text, "taylorf2_kernel",
+                    preamble=preamble, options=pkg_config_header_strings(['lal']))
 
 def ceilpow2(n):
     signif,exponent = frexp(n)
@@ -249,31 +255,28 @@ def ceilpow2(n):
 def taylorf2(**kwds):
     """ Return a TaylorF2 waveform using CUDA to generate the phase and amplitude
     """
-    beta, sigma, gamma = pycbc.utils.mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(kwds['mass1'],kwds['mass2'], kwds['spin1z'], kwds['spin2z'])
-    tC = 0
+    delta_f = kwds['delta_f']
+    beta, sigma, gamma = pycbc.utils.mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(
+                                    kwds['mass1'], kwds['mass2'], kwds['spin1z'], kwds['spin2z'])
     pn_const = get_taylorf2_pn_coefficients(kwds['mass1'],kwds['mass2'],
                                     kwds['distance'],beta, sigma, gamma)
+
     pn_const['phase0'] = int(kwds['phase_order'])
     pn_const['amplitudeO'] = int(kwds['amplitude_order'])
-    delta_f = kwds['delta_f']
-    if tC is None:
-        tC = -1.0 / delta_f 
     pn_const['delta_f'] = delta_f
     pn_const['phi0']=kwds['phi0']
-    pn_const['tC']= tC
+    pn_const['tC']= -1.0 / delta_f 
 
     kmin = int(kwds['f_lower'] / float(delta_f))
+    pn_const['kmin'] = kmin
 
-    piM = pn_const['piM']
     vISCO = 1. / sqrt(6.)
-    fISCO = vISCO * vISCO * vISCO / piM;
+    fISCO = vISCO * vISCO * vISCO / pn_const['piM'];
     kmax = int(fISCO / delta_f)
     f_max = ceilpow2(fISCO);
     n = int(f_max / delta_f) + 1;
-    pn_const['kmin'] = kmin
 
-    htilde = FrequencySeries(zeros(n,dtype=numpy.complex128),delta_f = delta_f, 
-                                                                    copy=False)
+    htilde = FrequencySeries(zeros(n,dtype=numpy.complex128), delta_f=delta_f, copy=False)
     taylorf2_kernel(htilde.data[kmin:kmax],to_gpu(pn_const))
     return htilde
     
