@@ -1,4 +1,4 @@
-python ../../scripts/banksim.py \
+pycbc_banksim \
 --signal-file ./injection0.xml \
 --template-file ./injection0.xml \
 --psd iLIGOModel \

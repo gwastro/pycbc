@@ -1,4 +1,4 @@
-python ../../scripts/faith.py \
+python pycbc_faithsim \
 --param-file injection0.xml \
 --psd iLIGOModel \
 --match-file match.dat \
