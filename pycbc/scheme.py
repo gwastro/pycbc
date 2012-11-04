@@ -75,7 +75,8 @@ class DefaultScheme(object):
         mgr.shift_to(None)
         
     def __del__(self):
-        DefaultScheme._single = None
+        if DefaultScheme:
+            DefaultScheme._single = None
 
 _cuda_cleanup_list=[]
 

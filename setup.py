@@ -201,6 +201,6 @@ setup (
                  'build' : build},
     ext_modules = [lalwrap_module,testlalwrap_module],
     requires = ['lal'],
-    scripts = ['bin/pycbc_banksim.py','bin/pycbc_matchsim.py'],
+    scripts = ['bin/pycbc_banksim','bin/pycbc_matchsim'],
     packages = ['pycbc','pycbc.fft','pycbc.types','pycbc.filter','pycbc.psd','pycbc.waveform'],
 )

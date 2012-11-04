@@ -33,7 +33,7 @@ from pycuda.elementwise import ElementwiseKernel
 from pycuda.gpuarray import to_gpu
 
 from pycbc.setuputils import pkg_config_header_strings
-from pycbc.types import FrequencySeries,zeros
+from pycbc.types import FrequencySeries, zeros, Array, complex64
 import pycbc.utils
 
 preamble = """
@@ -42,23 +42,21 @@ preamble = """
 """
  
 taylorf2_text = """
-    const double f = (i + kmin ) * delta_f;
-    const double v0 = cbrt(piM *  kmin * delta_f);
-    const double v = cbrt(piM*f);
-    const double v2 = v * v;
-    const double v3 = v * v2;
-    const double v4 = v * v3;
-    const double v5 = v * v4;
-    const double v6 = v * v5;
-    const double v7 = v * v6;
-    const double v8 = v * v7;
-    const double v9 = v * v8;
-    const double v10 = v * v9;
-    double phasing = 0.;
-    double dEnergy = 0.;
-    double flux = 0.;
-    double amp;
-    double shft = -LAL_TWOPI * tC;
+    const float f = (i + kmin ) * delta_f;
+    const float v0 = cbrtf(piM *  kmin * delta_f);
+    const float v = cbrtf(piM*f);
+    const float v2 = v * v;
+    const float v3 = v * v * v;
+    const float v4 = v2 * v2;
+    const float v5 = v2 * v3;
+    const float v6 = v3 * v3;
+    const float v7 = v3 * v4;
+    const float v10 = v5 * v5;
+    float phasing = 0.;
+    float dEnergy = 0.;
+    float flux = 0.;
+    float amp;
+    float shft = -LAL_TWOPI * tC;
 
     switch (phase_order)
     {
@@ -66,9 +64,9 @@ taylorf2_text = """
         case 7:
             phasing += pfa7 * v7;
         case 6:
-            phasing += (pfa6 + pfl6 * log(4.*v) ) * v6;
+            phasing += (pfa6 + pfl6 * __logf(4.*v) ) * v6;
         case 5:
-            phasing += (pfa5 + pfl5 * log(v/v0)) * v5;
+            phasing += (pfa5 + pfl5 * __logf(v/v0)) * v5;
         case 4:
             phasing += pfa4 * v4;
         case 3:
@@ -87,7 +85,7 @@ taylorf2_text = """
         case 7:
             flux +=  FTa7 * v7;
         case 6:
-            flux += ( FTa6 +  FTl6*log(16.*v2)) * v6;
+            flux += ( FTa6 +  FTl6*__logf(16.*v2)) * v6;
             dEnergy +=  dETa3 * v6;
         case 5:
             flux +=  FTa5 * v5;
@@ -112,8 +110,8 @@ taylorf2_text = """
     phasing += shft * f + phi0;
     amp = amp0 * sqrt(-dEnergy/flux) * v;
 
-    htilde[i]._M_re = amp * cos(phasing + LAL_PI_4) ;
-    htilde[i]._M_im = - amp * sin(phasing + LAL_PI_4);
+    htilde[i]._M_re = amp * __cosf(phasing + LAL_PI_4) ;
+    htilde[i]._M_im = - amp * __sinf(phasing + LAL_PI_4);
 
 """
 
@@ -125,17 +123,17 @@ def ceilpow2(n):
         exponent -= 1;
     return (1) << exponent;
 
-taylorf2_kernel = ElementwiseKernel("""pycuda::complex<double> *htilde, int kmin, int phase_order,
-                                       int amplitude_order, double delta_f, double piM, double pfaN, 
-                                       double pfa2, double pfa3, double pfa4, double pfa5, double pfl5,
-                                       double pfa6, double pfl6, double pfa7, double FTaN, double FTa2, 
-                                       double FTa3, double FTa4, double FTa5, double FTa6,
-                                       double FTl6, double FTa7, double dETaN, double dETa1, double dETa2, double dETa3,
-                                       double amp0, double tC, double phi0""",
+taylorf2_kernel = ElementwiseKernel("""pycuda::complex<float> *htilde, int kmin, int phase_order,
+                                       int amplitude_order, float delta_f, float piM, float pfaN, 
+                                       float pfa2, float pfa3, float pfa4, float pfa5, float pfl5,
+                                       float pfa6, float pfl6, float pfa7, float FTaN, float FTa2, 
+                                       float FTa3, float FTa4, float FTa5, float FTa6,
+                                       float FTl6, float FTa7, float dETaN, float dETa1, float dETa2, float dETa3,
+                                       float amp0, float tC, float phi0""",
                     taylorf2_text, "taylorf2_kernel",
                     preamble=preamble, options=pkg_config_header_strings(['lal']))
 
-def taylorf2(**kwds):
+def spa_tmplt(**kwds):
     """ Return a TaylorF2 waveform using CUDA to generate the phase and amplitude
     """
     # Pull out the input arguments
@@ -147,6 +145,11 @@ def taylorf2(**kwds):
     phase_order = int(kwds['phase_order'])
     amplitude_order = int(kwds['amplitude_order'])
     phi0 = kwds['phi0']
+
+    if 'out' in kwds:
+        out = kwds['out']
+    else:
+        out = None
 
     tC= -1.0 / delta_f 
 
@@ -201,7 +204,7 @@ def taylorf2(**kwds):
     m_sec = M * lal.LAL_MTSUN_SI;
     piM = lal.LAL_PI * m_sec; 
 
-    kmin = int(kwds['f_lower'] / float(delta_f))
+    kmin = int(f_lower / float(delta_f))
 
     vISCO = 1. / sqrt(6.)
     fISCO = vISCO * vISCO * vISCO / piM;
@@ -209,7 +212,17 @@ def taylorf2(**kwds):
     f_max = ceilpow2(fISCO);
     n = int(f_max / delta_f) + 1;
 
-    htilde = FrequencySeries(zeros(n,dtype=numpy.complex128), delta_f=delta_f, copy=False)
+    if not out:
+        htilde = FrequencySeries(zeros(n,dtype=numpy.complex64), delta_f=delta_f, copy=False)
+    else:
+        if type(out) is not Array:
+            raise TypeError("Output must be an instance of Array")
+        if len(out) < kmax:
+            raise TypeError("Output array is too small")
+        if out.dtype != complex64:
+            raise TypeError("Output array is the wrong dtype")
+        htilde = FrequencySeries(out, delta_f=delta_f, copy=False)
+
     taylorf2_kernel(htilde.data[kmin:kmax],  kmin,  phase_order,
                     amplitude_order,  delta_f,  piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
