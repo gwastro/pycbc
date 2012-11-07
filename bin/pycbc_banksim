@@ -22,7 +22,10 @@
 #
 # =============================================================================
 #
-from time import sleep
+from time import sleep,time
+
+start = time()
+elapsed_time = lambda: time()-start
 
 import sys
 from numpy import loadtxt,complex64,float32
@@ -139,6 +142,7 @@ def get_waveform(approximant, phase_order, amplitude_order, template_params, sta
 #File output Settings
 parser = OptionParser()
 parser.add_option("--match-file", dest="out_file", help="file to output match results", metavar="FILE")
+parser.add_option("--verbose",action='store_true', default=False, help="Print verbose statements")
 
 #PSD Settings
 parser.add_option("--asd-file", dest="asd_file", help="two-column ASCII file containing ASD data", metavar="FILE")
@@ -190,7 +194,8 @@ if options.use_cuda:
 else:
     ctx = DefaultScheme()
 
-print "STARTING THE BANKSIM"
+if options.verbose:
+  print "Options read and verified, beginning banksim at %fs" %(elapsed_time())
 
 # Load in the template bank file
 indoc = ligolw_utils.load_filename(options.bank_file, False)
@@ -203,15 +208,20 @@ except ValueError:
 fout = open(options.out_file, "w")
 fout2 = open(options.out_file+".found", "w")
 
-print "Writing matches to " + options.out_file
-print "Writing recovered template in " + options.out_file+".found"
-
 # Load in the simulation list
 indoc = ligolw_utils.load_filename(options.sim_file, False)
 try:
     signal_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName) 
 except ValueError:
     signal_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName)
+
+if options.verbose:
+  print "Bank and simulation files read at %fs" %(elapsed_time())
+  print "Number of Signal Waveforms: ",len(signal_table)
+  print "Number of Templates       : ",len(template_table)
+  print "Matches will be written to " + options.out_file
+  print "Recovered templates will be written to " + options.out_file+".found"
+
 
 def outside_mchirp_window(template,signal,w):
     template_mchirp,et = mass1_mass2_to_mchirp_eta(template.mass1,template.mass2)
@@ -225,11 +235,8 @@ filter_N = int(options.filter_signal_length * options.filter_sample_rate)
 filter_n = filter_N / 2 + 1
 filter_delta_f = 1.0 / float(options.filter_signal_length)
 
-print("Number of Signal Waveforms: ",len(signal_table))
-print("Number of Templates       : ",len(template_table))
-
-
-print("Reading and Interpolating PSD")
+if options.verbose:
+  print("Reading and Interpolating PSD")
 if options.asd_file:
     psd = pycbc.psd.from_asd_txt(options.asd_file, filter_n,  
                            filter_delta_f, options.filter_low_frequency_cutoff)
@@ -240,12 +247,15 @@ elif options.psd:
 psd *= DYN_RANGE_FAC **2
 psd = FrequencySeries(psd,delta_f=psd.delta_f,dtype=float32) 
 
-print("Pregenerating Signals")
+if options.verbose:
+  print("PSD interpolated at %fs" %(elapsed_time()))
+  print("Pregenerating Signals")
 signals = []
 index = 0 
 for signal_params in signal_table:
     index += 1
-    update_progress(float(index)/len(signal_table))
+    if options.verbose:
+      update_progress(float(index)/len(signal_table))
     stilde = get_waveform(options.signal_approximant, 
                   options.signal_phase_order, 
                   options.signal_amplitude_order, 
@@ -258,13 +268,18 @@ for signal_params in signal_table:
     stilde /= psd
     signals.append( (stilde, s_norm, [], signal_params) )
 
+if options.verbose:
+  print
+  print("Signals pregenerated at %fs" %(elapsed_time()))
+  print("Calculating Overlaps")
+
 with ctx:
-    print("Calculating Overlaps")
     index = 0 
     # Calculate the overlaps
     for template_params in template_table:
         index += 1
-#       update_progress(float(index)/len(template_table))
+        if options.verbose:
+          update_progress(float(index)/len(template_table))
         h_norm = htilde = None
         for stilde, s_norm, matches, signal_params in signals:
             # Check if we need to look at this
@@ -292,6 +307,10 @@ with ctx:
                      low_frequency_cutoff=options.filter_low_frequency_cutoff)         
             matches.append(o)
          
+if options.verbose:
+  print
+  print("Overlaps finished at %fs" %(elapsed_time()))
+  print("Determining maximum overlaps and outputting results")
 
 #Find the maximum overlap in the bank and output to a file
 for stilde, s_norm, matches, sim_template in signals:
