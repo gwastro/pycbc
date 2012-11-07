@@ -43,8 +43,7 @@ preamble = """
  
 taylorf2_text = """
     const float f = (i + kmin ) * delta_f;
-    const float v0 = cbrtf(piM *  kmin * delta_f);
-    const float v = cbrtf(piM*f);
+    const float v =  cbrtf(piM*f);
     const float v2 = v * v;
     const float v3 = v * v * v;
     const float v4 = v2 * v2;
@@ -107,11 +106,16 @@ taylorf2_text = """
     flux *= FTaN * v10;
     dEnergy *= dETaN * v;
 
-    phasing += shft * f + phi0;
+    phasing += shft * f + phi0 + LAL_PI_4;
     amp = amp0 * sqrt(-dEnergy/flux) * v;
 
-    htilde[i]._M_re = amp * __cosf(phasing + LAL_PI_4) ;
-    htilde[i]._M_im = - amp * __sinf(phasing + LAL_PI_4);
+    float pcos;
+    float psin;
+
+    __sincosf(phasing, &psin, &pcos);
+
+    htilde[i]._M_re = amp * pcos;
+    htilde[i]._M_im = - amp * psin;
 
 """
 
@@ -129,7 +133,7 @@ taylorf2_kernel = ElementwiseKernel("""pycuda::complex<float> *htilde, int kmin,
                                        float pfa6, float pfl6, float pfa7, float FTaN, float FTa2, 
                                        float FTa3, float FTa4, float FTa5, float FTa6,
                                        float FTl6, float FTa7, float dETaN, float dETa1, float dETa2, float dETa3,
-                                       float amp0, float tC, float phi0""",
+                                       float amp0, float tC, float phi0, float v0""",
                     taylorf2_text, "taylorf2_kernel",
                     preamble=preamble, options=pkg_config_header_strings(['lal']))
 
@@ -212,6 +216,8 @@ def spa_tmplt(**kwds):
     f_max = ceilpow2(fISCO);
     n = int(f_max / delta_f) + 1;
 
+    v0 = (piM *  kmin * delta_f) ** (1.0/3.0)
+
     if not out:
         htilde = FrequencySeries(zeros(n,dtype=numpy.complex64), delta_f=delta_f, copy=False)
     else:
@@ -229,7 +235,7 @@ def spa_tmplt(**kwds):
                     pfa6,  pfl6,  pfa7,  FTaN,  FTa2, 
                     FTa3,  FTa4,  FTa5,  FTa6,
                     FTl6,  FTa7,  dETaN, dETa1, dETa2,  dETa3,
-                    amp0,  tC,  phi0)
+                    amp0,  tC,  phi0, v0)
     return htilde
     
 
