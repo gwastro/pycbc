@@ -28,10 +28,27 @@ from pycbc.types import TimeSeries
 _resample_func = {numpy.dtype('float32'): lal.ResampleREAL4TimeSeries,
                  numpy.dtype('float64'): lal.ResampleREAL8TimeSeries}
 
-def resample_to_delta_t(timeseries, delta_t):
-    """Return a new time series that is resampled to the given delta_t. Only powers
-       of two are currently supported.
+def resample_to_delta_t(time_series, delta_t):
+    """Resmple the time_series to delta_t
+
+    Resamples the TimeSeries instance time_series to the given time step, 
+    delta_t. Only powers of two and real valued time series are supported 
+    at this time. 
+
+    Args:
+        time_series (TimeSeries) : The time series to be resampled
+        delta_t (float) : The desired time step 
+
+    Returns:
+        A TimeSeries that has been resampled to delta_t.
+
+    Raises:
+        TypeError: time_series is not an instance of TimeSeries.
+        TypeError: tmie_series is not real valued
+
+    >>> h_plus_sampled = resample_to_delta_t(h_plus, 1.0/2048)
     """
+
     if not isinstance(timeseries,TimeSeries):
         raise TypeError("Can only resample time series")
 
