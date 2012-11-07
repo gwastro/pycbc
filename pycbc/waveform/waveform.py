@@ -87,7 +87,7 @@ def _lalsim_fd_waveform(**p):
                float(solar_mass_to_kg(p['mass2'])),
                float(p['spin1x']),float(p['spin1y']),float(p['spin1z']),
                float(p['spin2x']),float(p['spin2y']),float(p['spin2z']),
-               float(p['f_lower']),float(['f_final']),
+               float(p['f_lower']),float(p['f_final']),
                parsecs_to_meters(float(p['distance'])),
                float(p['inclination']),
                float(p['lambda1']),float(p['lambda2']),None,None,
