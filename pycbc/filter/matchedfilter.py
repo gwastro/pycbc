@@ -145,7 +145,7 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
     if (_qtilde is None) or (len(_qtilde) != N) or _qtilde.dtype != data.dtype:
         _qtilde = zeros(N,dtype=complex_same_precision_as(data))
     else:
-        _qtilde.fill(0)         
+        _qtilde.clear()         
     
     correlate(htilde[kmin:kmax], stilde[kmin:kmax], _qtilde[kmin:kmax])
 
