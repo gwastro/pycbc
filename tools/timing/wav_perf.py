@@ -17,6 +17,7 @@ parser.add_option('--device-num','-d', action='store', type = 'int',
                     dest = 'devicenum', default=0,
                     help = 'specifies a GPU device to use for CUDA or OpenCL, 0 by default')
 
+parser.add_option('--approximant', type=str, default="TaylorF2")
 parser.add_option('--deltaf',type=float, help='frequency step')
 parser.add_option('--iterations', type=int, help='Number of iterations to perform')
           
@@ -44,19 +45,19 @@ else:
 
 with ctx:
     wf_taylor = get_fd_waveform(mass1=1, mass2=1, f_lower=14, 
-                                approximant='TaylorF2', delta_f=options.deltaf)
+                                approximant=options.approximant, delta_f=options.deltaf)
 
 def taylorf2():
     with ctx:
         for i in range(0,niter):
             wf_taylor = get_fd_waveform(mass1=1, mass2=1, f_lower=14, 
-                                        approximant='TaylorF2', delta_f=options.deltaf)
+                                        approximant=options.approximant, delta_f=options.deltaf)
 
 
 import timeit
 gt = timeit.Timer(taylorf2)
 t = (1000 * gt.timeit(number=1)/niter)
-print "TF2 %.2f msec" % t, " %5.1f gen/min " % (1000 *60 /t)
+print "Waveform Generation %.2f msec" % t, " %5.1f gen/min " % (1000 *60 /t)
 
 
 
