@@ -470,6 +470,17 @@ class Array(object):
             from array_opencl import inner
             return inner(self.data,other).get().max()
 
+    @_convert
+    def clear(self):
+        """ Clear out the values of the array. """
+        if self._scheme is None:
+            self[:] = 0 
+        if type(self._scheme) is _scheme.CUDAScheme:
+            n32 = self.data.nbytes / 4
+            _cudriver.memset_d32(self.data.gpudata, 0, n32)
+        if (self._scheme) is _scheme.OpenCLScheme:
+            raise NotImplementedEror
+
     @_vcheckother
     @_convert
     def weighted_inner(self, other, weight):
@@ -556,7 +567,7 @@ class Array(object):
             return float(maxloc['max']),int(maxloc['loc'])
         elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
             raise NotImplementedError 
-    
+
     @_convert
     def min(self):
         """ Return the maximum value in the array. """
@@ -708,12 +719,16 @@ def complex_same_precision_as(data):
     elif data.precision is 'double':
         return complex128
 
-def zeros(length,dtype=None):
+def zeros(length,dtype=float64):
     if _scheme.mgr.state is None:
         return Array(_numpy.zeros(length,dtype=dtype),copy=False)
     if type(_scheme.mgr.state) is _scheme.CUDAScheme:
-        return Array(_cudaarray.zeros(length,dtype),copy=False)
+        result = _cudaarray.GPUArray(length, dtype=dtype)
+        nwords = result.nbytes / 4
+        _cudriver.memset_d32(result.gpudata, 0, nwords)
+        return Array(result, copy=False)
     if type(_scheme.mgr.state) is _scheme.OpenCLScheme:
         return Array(_openclarray.zeros(_scheme.mgr.state.queue,length,dtype),
                      copy=False)
+
 
