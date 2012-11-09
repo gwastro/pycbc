@@ -47,6 +47,9 @@ N = 2**options.size
 vecin = zeros(N, dtype=complex64)
 vecout = vecin * 1
 
+vecdin = zeros(N, dtype=complex128)
+vecdout = vecdin * 1
+
 with ctx:
     fft(vecin, vecout)
     ifft(vecin, vecout)
@@ -60,6 +63,11 @@ def tifft():
 	for i in range(0, niter):
 	    ifft(vecin, vecout)
 
+def dtifft():
+    with ctx:
+        for i in range(0, niter):
+            ifft(vecdin, vecdout)
+
 
 import timeit
 gt = timeit.Timer(tfft)
@@ -70,7 +78,7 @@ gt = timeit.Timer(tifft)
 t = (1000 * gt.timeit(number=1)/niter)
 print "C2C iFFT %.2f msec" % t, " %5.1f /min " % (1000 *60 /t)
 
-
-
-
+gt = timeit.Timer(dtifft)
+t = (1000 * gt.timeit(number=1)/niter)
+print "C2C DOUBLE iFFT %.2f msec" % t, " %5.1f /min " % (1000 *60 /t)
 

@@ -23,10 +23,11 @@
 #
 # =============================================================================
 #
-"""
+"""This module provides utilities for calculating detector responses.
 """
 import lal
 import numpy
+from math import cos, sin
 
 # get the cached detector data
 _detectors = {}
@@ -35,22 +36,28 @@ for _detector in lal.lalCachedDetectors:
     _detectors[_detector.frDetector.name]=_detector
 
 def detectors():
+    """Return a list of detectors. 
+    """
     return _detectors.keys()
 
-def antenna_pattern(detector_name, right_ascension, declination, polarization, gmst):
+def get_detector(detector_name):
     """
     """
-    return tuple(lal.ComputeDetAMResponse(_detectors[detector_name].response, right_ascension, 
-                                    declination, polarization, gmst))
+    return _detectors[detector_name]
 
-def fiducial_antenna_pattern(right_ascension, declination, polarization):
+def detector_antenna_pattern(detector_name, right_ascension, declination, 
+                                 polarization, gmst):
+    """Return the detector response.
     """
+    return tuple(lal.ComputeDetAMResponse(_detectors[detector_name].response, 
+                 right_ascension, declination, polarization, gmst))
+
+def overhead_antenna_pattern(right_ascension, declination, polarization):
+    """Return the detector response. 
     """
-    no_detector = numpy.array([[1, 0, 0], [0, 1, 0], [0, 0, 0]], 
-                                             dtype=numpy.float32)
-    return tuple(lal.ComputeDetAMResponse(no_detector, right_ascension, 
-                                    declination, polarization, 0))
-    
+    f_plus = - (1.0/2.0) * (1.0 + cos(declination)*cos(declination)) * cos (2.0 * right_ascension) * cos (2.0 * polarization) - cos(declination) * sin(2.0*right_ascension) * sin (2.0 * polarization)
+    f_cross=  (1.0/2.0) * (1.0 + cos(declination)*cos(declination)) * cos (2.0 * right_ascension) * sin (2.0* polarization) - cos (declination) * sin(2.0*right_ascension) * cos (2.0 * polarization)
+    return f_plus, f_cross
 
 
 
