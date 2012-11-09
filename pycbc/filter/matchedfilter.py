@@ -22,7 +22,8 @@
 # =============================================================================
 #
 """
-This modules provides matchedfiltering and related match and chisq calculations.
+This modules provides functions for matched filtering along with associated 
+utilities. 
 """
 
 from math import log,ceil,sqrt
@@ -45,8 +46,7 @@ def correlate(x,y,z):
 
 
 def make_frequency_series(vec):
-    """Convenience function that returns immediately if given a FrequencySeries,
-    or ffts it and returns a frequency series.
+    """Returns a FrequencySeries from the input vector
     """
     if isinstance(vec, FrequencySeries):
         return vec
@@ -54,17 +54,19 @@ def make_frequency_series(vec):
         N = len(vec)
         n = N/2+1    
         delta_f = 1.0 / N / vec.delta_t
-        vectilde = zeros(n, dtype=complex_same_precision_as(vec))
-        fft(Array(vec), vectilde)   
-        return  FrequencySeries(vectilde, delta_f=delta_f, copy=False)
+        vectilde =  FrequencySeries(zeros(n, dtype=complex_same_precision_as(vec)), delta_f=delta_f, copy=False)
+        fft(vec, vectilde)   
+        return vectilde
     else:
         raise TypeError("Can only convert a TimeSeries to a FrequencySeries")
 
 def sigmasq_series(htilde, psd=None, low_frequency_cutoff=None,
             high_frequency_cutoff=None):
+    """Returns the accumulated loudness of the template over frequency bins. 
+    """
     htilde = make_frequency_series(htilde)
     N = (len(htilde)-1) * 2 
-    norm = 4.0 / (N * N * htilde.delta_f) 
+    norm = 4.0 * htilde.delta_f
     kmin,kmax = get_cutoff_indices(low_frequency_cutoff,
                                    high_frequency_cutoff, htilde.delta_f, N)  
    
@@ -80,11 +82,11 @@ def sigmasq_series(htilde, psd=None, low_frequency_cutoff=None,
 
 def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
             high_frequency_cutoff=None):
-    """
+    """Returns the loudness squared of the template.
     """
     htilde = make_frequency_series(htilde)
     N = (len(htilde)-1) * 2 
-    norm = 4.0 / (N * N * htilde.delta_f) 
+    norm = 4.0 * htilde.delta_f
     kmin,kmax = get_cutoff_indices(low_frequency_cutoff,
                                    high_frequency_cutoff, htilde.delta_f, N)  
     ht = htilde[kmin:kmax] 
@@ -98,7 +100,7 @@ def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
 
 def sigma(htilde, psd = None, low_frequency_cutoff=None,
         high_frequency_cutoff=None):
-    """
+    """Returns the loudness of the template.
     """
     return sqrt(sigmasq(htilde,psd,low_frequency_cutoff,high_frequency_cutoff))
     
@@ -120,8 +122,7 @@ _qtilde = None
 
 def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
                   high_frequency_cutoff=None, h_norm=None, out=None):
-    """Return the complex SNR and normalization (SNR,norm) of the template 
-       filtered against the data, where the normalized SNR is SNR' = SNR * norm.
+    """Return the complex SNR and normalization 
     """
     global _qtilde
   
@@ -150,7 +151,7 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
     correlate(htilde[kmin:kmax], stilde[kmin:kmax], _qtilde[kmin:kmax])
 
     # Only weight by the psd if it was explictly given.
-    # In most cases, the expectation is to prewhiten the data 
+    # In most cases, the expectation is to overwhiten the data 
     if psd is not None:
         if isinstance(psd, FrequencySeries):
             if psd.delta_f == stilde.delta_f :
@@ -165,12 +166,11 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
     # Only calculate the normalization if needed. For SPA waveforms
     # this can be done ahead of time.
     if h_norm is None:
-        h_norm = sigmasq(htilde,psd,low_frequency_cutoff,high_frequency_cutoff)     
+        h_norm = sigmasq(htilde, psd, low_frequency_cutoff, high_frequency_cutoff)     
 
-    norm = (4.0 / (N * N * stilde.delta_f)) / sqrt( h_norm) 
-        
+    norm = (4.0 * stilde.delta_f) / sqrt( h_norm)
     delta_t = 1.0 / (N * stilde.delta_f)
-    return TimeSeries(_q, epoch=stilde._epoch, delta_t=delta_t, copy=False) ,norm
+    return TimeSeries(_q, epoch=stilde._epoch, delta_t=delta_t, copy=False), norm
     
 _snr = None 
 def match(vec1, vec2, psd=None, low_frequency_cutoff=None,

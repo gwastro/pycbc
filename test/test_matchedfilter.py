@@ -110,7 +110,7 @@ class TestMatchedFilter(base_test.function_base,unittest.TestCase):
 
             noise = normal(0.0,2,4096*64)
             nplus= TimeSeries(noise,dtype=float32,delta_t=1.0/4096) 
-            ntilde = make_frequency_series(nplus)
+            ntilde = make_frequency_series(nplus) / nplus.delta_t
             # Calculate a Faux psd for normalization, replace with better algorithm
             psd = (ntilde).squared_norm()  / float(len(nplus)) * nplus.delta_t *2.0
 
@@ -121,7 +121,7 @@ class TestMatchedFilter(base_test.function_base,unittest.TestCase):
             
             noise = normal(0.0,2,4096*64)
             nplus= TimeSeries(noise,dtype=float64,delta_t=1.0/4096) 
-            ntilde = make_frequency_series(nplus)
+            ntilde = make_frequency_series(nplus) / nplus.delta_t
             # Calculate a Faux psd for normalization, replace with better algorithm
             psd = (ntilde).squared_norm()  / float(len(nplus)) * nplus.delta_t *2.0
 
