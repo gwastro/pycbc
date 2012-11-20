@@ -43,7 +43,7 @@ preamble = """
  
 taylorf2_text = """
     const float f = (i + kmin ) * delta_f;
-    const float v =  cbrtf(piM*f);
+    const float v =  __powf(piM*f, 1.0/3.0);
     const float v2 = v * v;
     const float v3 = v * v * v;
     const float v4 = v2 * v2;
@@ -107,7 +107,7 @@ taylorf2_text = """
     dEnergy *= dETaN * v;
 
     phasing += shft * f + phi0 + LAL_PI_4;
-    amp = amp0 * sqrt(-dEnergy/flux) * v;
+    amp = amp0 * __fsqrt_rd(-dEnergy/flux) * v;
 
     float pcos;
     float psin;
@@ -134,7 +134,7 @@ taylorf2_kernel = ElementwiseKernel("""pycuda::complex<float> *htilde, int kmin,
                                        float FTa3, float FTa4, float FTa5, float FTa6,
                                        float FTl6, float FTa7, float dETaN, float dETa1, float dETa2, float dETa3,
                                        float amp0, float tC, float phi0, float v0""",
-                    taylorf2_text, "taylorf2_kernel",
+                    taylorf2_text, "SPAtmplt",
                     preamble=preamble, options=pkg_config_header_strings(['lal']))
 
 def spa_tmplt(**kwds):
