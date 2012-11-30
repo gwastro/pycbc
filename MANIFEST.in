@@ -1,5 +1,5 @@
 include include/*.i
 include test/*test*py
-include scripts/*
+include bin/*
 recursive-include examples *py *sh *xml
 recursive-include tools *py

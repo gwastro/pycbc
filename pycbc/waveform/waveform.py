@@ -49,7 +49,7 @@ def parsecs_to_meters(distance):
 
 default_args = {'spin1x':0,'spin1y':0,'spin1z':0,
                 'spin2x':0,'spin2y':0,'spin2z':0,'lambda1':0, 'lambda2':0,
-                'inclination':0,'distance':1e6,'fmax':0,'phi0':0,
+                'inclination':0,'distance':1e6,'f_final':0,'phi0':0,
                 'amplitude_order':-1,'phase_order':-1}
 
 base_required_args = ['mass1','mass2','f_lower']
@@ -87,7 +87,7 @@ def _lalsim_fd_waveform(**p):
                float(solar_mass_to_kg(p['mass2'])),
                float(p['spin1x']),float(p['spin1y']),float(p['spin1z']),
                float(p['spin2x']),float(p['spin2y']),float(p['spin2z']),
-               float(p['f_lower']),0,
+               float(p['f_lower']),float(p['f_final']),
                parsecs_to_meters(float(p['distance'])),
                float(p['inclination']),
                float(p['lambda1']),float(p['lambda2']),None,None,
@@ -135,6 +135,8 @@ _cuda_fd_approximants = {}
 
 if pycbc.HAVE_CUDA:
     from pycbc.waveform.TaylorF2 import taylorf2 as cuda_taylorf2
+    from pycbc.waveform.pycbc_spa_tmplt import spa_tmplt
+    _cuda_fd_approximants["SPAtmplt"] = spa_tmplt
     _cuda_fd_approximants['TaylorF2'] = cuda_taylorf2
 
 cuda_td = dict(_lalsim_td_approximants.items() + _cuda_td_approximants.items())

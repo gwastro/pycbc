@@ -36,41 +36,125 @@ from pycbc.setuputils import pkg_config_header_strings
 from pycbc.types import FrequencySeries,zeros
 import pycbc.utils
 
-pntype = numpy.dtype([('pfaN', numpy.float64),
-                    ('pfa2', numpy.float64),
-                    ('pfa3', numpy.float64),
-                    ('pfa4', numpy.float64),
-                    ('pfa5', numpy.float64),
-                    ('pfl5', numpy.float64),
-                    ('pfa6', numpy.float64),
-                    ('pfl6', numpy.float64),
-                    ('pfa7', numpy.float64),
-                    ('delta_f',numpy.float64),
-                    ('FTaN',numpy.float64),
-                    ('FTa2',numpy.float64),
-                    ('FTa3',numpy.float64),
-                    ('FTa4',numpy.float64),
-                    ('FTa5',numpy.float64),
-                    ('FTa6',numpy.float64),
-                    ('FTl6',numpy.float64),
-                    ('FTa7',numpy.float64),
-                    ('piM',numpy.float64),
-                    ('amp0',numpy.float64),
-                    ('dEtaN',numpy.float64),
-                    ('dEta1',numpy.float64),
-                    ('dEta2',numpy.float64),
-                    ('dEta3',numpy.float64),
-                    ('kmin',numpy.float64),
-                    ('phi0',numpy.float64),
-                    ('tC',numpy.float64),
-                    ('phase0', numpy.int64),
-                    ('amplitudeO', numpy.int64),
-                     ])
-pycuda.tools.register_dtype(pntype,"pntype")
+preamble = """
+#include "stdio.h"
+#include <lal/LALConstants.h>
+"""
+ 
+taylorf2_text = """
+    const double f = (i + kmin ) * delta_f;
+    const double v0 = cbrt(piM *  kmin * delta_f);
+    const double v = cbrt(piM*f);
+    const double v2 = v * v;
+    const double v3 = v * v2;
+    const double v4 = v * v3;
+    const double v5 = v * v4;
+    const double v6 = v * v5;
+    const double v7 = v * v6;
+    const double v8 = v * v7;
+    const double v9 = v * v8;
+    const double v10 = v * v9;
+    double phasing = 0.;
+    double dEnergy = 0.;
+    double flux = 0.;
+    double amp;
+    double shft = -LAL_TWOPI * tC;
 
-def get_taylorf2_pn_coefficients(mass1,mass2,distance,beta =0 , sigma = 0, gamma=0):
-    # FIXME when lalsimulation has all the coeffiecients wrapped    
+    switch (phase_order)
+    {
+        case -1:
+        case 7:
+            phasing += pfa7 * v7;
+        case 6:
+            phasing += (pfa6 + pfl6 * log(4.*v) ) * v6;
+        case 5:
+            phasing += (pfa5 + pfl5 * log(v/v0)) * v5;
+        case 4:
+            phasing += pfa4 * v4;
+        case 3:
+            phasing += pfa3 * v3;
+        case 2:
+            phasing += pfa2 * v2;
+        case 0:
+            phasing += 1.;
+            break;
+        default:
+            break;
+    }
+    switch (amplitude_order)
+    {
+        case -1:
+        case 7:
+            flux +=  FTa7 * v7;
+        case 6:
+            flux += ( FTa6 +  FTl6*log(16.*v2)) * v6;
+            dEnergy +=  dETa3 * v6;
+        case 5:
+            flux +=  FTa5 * v5;
+        case 4:
+            flux +=  FTa4 * v4;
+            dEnergy +=  dETa2 * v4;
+        case 3:
+            flux +=  FTa3 * v3;
+        case 2:
+            flux +=  FTa2 * v2;
+            dEnergy +=  dETa1 * v2;
+        case 0:
+            flux += 1;
+            dEnergy += 1.;
+            break;
+    }
 
+    phasing *= pfaN / v5;
+    flux *= FTaN * v10;
+    dEnergy *= dETaN * v;
+
+    phasing += shft * f + phi0;
+    amp = amp0 * sqrt(-dEnergy/flux) * v;
+
+    htilde[i]._M_re = amp * cos(phasing + LAL_PI_4) ;
+    htilde[i]._M_im = - amp * sin(phasing + LAL_PI_4);
+
+"""
+
+def ceilpow2(n):
+    signif,exponent = frexp(n)
+    if (signif < 0):
+        return 1;
+    if (signif == 0.5):
+        exponent -= 1;
+    return (1) << exponent;
+
+taylorf2_kernel = ElementwiseKernel("""pycuda::complex<double> *htilde, int kmin, int phase_order,
+                                       int amplitude_order, double delta_f, double piM, double pfaN, 
+                                       double pfa2, double pfa3, double pfa4, double pfa5, double pfl5,
+                                       double pfa6, double pfl6, double pfa7, double FTaN, double FTa2, 
+                                       double FTa3, double FTa4, double FTa5, double FTa6,
+                                       double FTl6, double FTa7, double dETaN, double dETa1, double dETa2, double dETa3,
+                                       double amp0, double tC, double phi0""",
+                    taylorf2_text, "taylorf2_kernel",
+                    preamble=preamble, options=pkg_config_header_strings(['lal']))
+
+def taylorf2(**kwds):
+    """ Return a TaylorF2 waveform using CUDA to generate the phase and amplitude
+    """
+    # Pull out the input arguments
+    f_lower = kwds['f_lower']
+    delta_f = kwds['delta_f']
+    distance = kwds['distance']
+    mass1 = kwds['mass1']
+    mass2 = kwds['mass2']
+    phase_order = int(kwds['phase_order'])
+    amplitude_order = int(kwds['amplitude_order'])
+    phi0 = kwds['phi0']
+
+    tC= -1.0 / delta_f 
+
+    #Calculate the spin corrections
+    beta, sigma, gamma = pycbc.utils.mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(
+                                    mass1, mass2, kwds['spin1z'], kwds['spin2z'])
+
+    #Calculate teh PN terms #TODO: replace with functions in lalsimulation!###
     M = float(mass1) + float(mass2)
     eta = mass1 * mass2 / (M * M)
     theta = -11831./9240.;
@@ -117,167 +201,22 @@ def get_taylorf2_pn_coefficients(mass1,mass2,distance,beta =0 , sigma = 0, gamma
     m_sec = M * lal.LAL_MTSUN_SI;
     piM = lal.LAL_PI * m_sec; 
 
-    pn_coefficients = numpy.array((pfaN,pfa2,pfa3,pfa4,pfa5,pfl5,pfa6,pfl6,pfa7,
-                                    0,FTaN,FTa2,FTa3,FTa4,FTa5,FTa6,FTl6,FTa7,
-                                    piM,amp0,dETaN,dETa1,dETa2,dETa3,0,0,0,0,0),
-                                    dtype=pntype)
-
-    return pn_coefficients
-
-preamble = """
-#include "stdio.h"
-#include <lal/LALConstants.h>
-
-struct pntype{
-double pfaN;
-double pfa2;
-double pfa3;
-double pfa4;
-double pfa5;
-double pfl5;
-double pfa6;
-double pfl6;
-double pfa7;
-double delta_f;
-double FTaN;
-double FTa2;
-double FTa3;
-double FTa4;
-double FTa5;
-double FTa6;
-double FTl6;
-double FTa7;
-double piM;
-double amp0;
-double dETaN;
-double dETa1;
-double dETa2;
-double dETa3;
-double kmin;
-double phi0;
-double tC;
-long phaseO;
-long amplitudeO;
-};
-"""
- 
-taylorf2_text = """
-
-    const double f = (i + cf->kmin ) * cf->delta_f;
-    const double v0 = cbrt(cf->piM * cf-> kmin * cf->delta_f);
-    const double v = cbrt(cf->piM*f);
-    const double v2 = v * v;
-    const double v3 = v * v2;
-    const double v4 = v * v3;
-    const double v5 = v * v4;
-    const double v6 = v * v5;
-    const double v7 = v * v6;
-    const double v8 = v * v7;
-    const double v9 = v * v8;
-    const double v10 = v * v9;
-    double phasing = 0.;
-    double dEnergy = 0.;
-    double flux = 0.;
-    double amp;
-    double shft = -LAL_TWOPI * cf->tC;
-    double phi0 = cf->phi0;
-
-    switch (cf->phaseO)
-    {
-        case -1:
-        case 7:
-            phasing += cf->pfa7 * v7;
-        case 6:
-            phasing += (cf->pfa6 + cf->pfl6 * log(4.*v) ) * v6;
-        case 5:
-            phasing += (cf->pfa5 + cf->pfl5 * log(v/v0)) * v5;
-        case 4:
-            phasing += cf->pfa4 * v4;
-        case 3:
-            phasing += cf->pfa3 * v3;
-        case 2:
-            phasing += cf->pfa2 * v2;
-        case 0:
-            phasing += 1.;
-            break;
-        default:
-            break;
-    }
-    switch (cf -> amplitudeO)
-    {
-        case -1:
-        case 7:
-            flux += cf -> FTa7 * v7;
-        case 6:
-            flux += (cf -> FTa6 + cf -> FTl6*log(16.*v2)) * v6;
-            dEnergy += cf -> dETa3 * v6;
-        case 5:
-            flux += cf -> FTa5 * v5;
-        case 4:
-            flux += cf -> FTa4 * v4;
-            dEnergy += cf -> dETa2 * v4;
-        case 3:
-            flux += cf -> FTa3 * v3;
-        case 2:
-            flux += cf -> FTa2 * v2;
-            dEnergy += cf -> dETa1 * v2;
-        case 0:
-            flux += 1;
-            dEnergy += 1.;
-            break;
-    }
-
-    phasing *= cf->pfaN / v5;
-    flux *= cf->FTaN * v10;
-    dEnergy *= cf->dETaN * v;
-
-    phasing += shft * f + phi0;
-    amp = cf->amp0 * sqrt(-dEnergy/flux) * v;
-
-    htilde[i]._M_re = amp * cos(phasing + LAL_PI_4) ;
-    htilde[i]._M_im = - amp * sin(phasing + LAL_PI_4);
-
-"""
-
-taylorf2_kernel = ElementwiseKernel("pycuda::complex<double> *htilde, pntype *cf",
-                    taylorf2_text, "taylorf2_kernel",
-                    preamble=preamble, options=pkg_config_header_strings(['lal']))
-
-def ceilpow2(n):
-    signif,exponent = frexp(n)
-    if (signif < 0):
-        return 1;
-    if (signif == 0.5):
-        exponent -= 1;
-    return (1) << exponent;
-
-
-def taylorf2(**kwds):
-    """ Return a TaylorF2 waveform using CUDA to generate the phase and amplitude
-    """
-    delta_f = kwds['delta_f']
-    beta, sigma, gamma = pycbc.utils.mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(
-                                    kwds['mass1'], kwds['mass2'], kwds['spin1z'], kwds['spin2z'])
-    pn_const = get_taylorf2_pn_coefficients(kwds['mass1'],kwds['mass2'],
-                                    kwds['distance'],beta, sigma, gamma)
-
-    pn_const['phase0'] = int(kwds['phase_order'])
-    pn_const['amplitudeO'] = int(kwds['amplitude_order'])
-    pn_const['delta_f'] = delta_f
-    pn_const['phi0']=kwds['phi0']
-    pn_const['tC']= -1.0 / delta_f 
-
     kmin = int(kwds['f_lower'] / float(delta_f))
-    pn_const['kmin'] = kmin
 
     vISCO = 1. / sqrt(6.)
-    fISCO = vISCO * vISCO * vISCO / pn_const['piM'];
+    fISCO = vISCO * vISCO * vISCO / piM;
     kmax = int(fISCO / delta_f)
     f_max = ceilpow2(fISCO);
     n = int(f_max / delta_f) + 1;
 
     htilde = FrequencySeries(zeros(n,dtype=numpy.complex128), delta_f=delta_f, copy=False)
-    taylorf2_kernel(htilde.data[kmin:kmax],to_gpu(pn_const))
+    taylorf2_kernel(htilde.data[kmin:kmax],  kmin,  phase_order,
+                    amplitude_order,  delta_f,  piM,  pfaN, 
+                    pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
+                    pfa6,  pfl6,  pfa7,  FTaN,  FTa2, 
+                    FTa3,  FTa4,  FTa5,  FTa6,
+                    FTl6,  FTa7,  dETaN, dETa1, dETa2,  dETa3,
+                    amp0,  tC,  phi0)
     return htilde
     
 
