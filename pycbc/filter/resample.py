@@ -28,7 +28,7 @@ from pycbc.types import TimeSeries
 _resample_func = {numpy.dtype('float32'): lal.ResampleREAL4TimeSeries,
                  numpy.dtype('float64'): lal.ResampleREAL8TimeSeries}
 
-def resample_to_delta_t(time_series, delta_t):
+def resample_to_delta_t(timeseries, delta_t):
     """Resmple the time_series to delta_t
 
     Resamples the TimeSeries instance time_series to the given time step, 
