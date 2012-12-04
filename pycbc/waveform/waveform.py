@@ -136,6 +136,8 @@ _cuda_fd_approximants = {}
 if pycbc.HAVE_CUDA:
     from pycbc.waveform.TaylorF2 import taylorf2 as cuda_taylorf2
     from pycbc.waveform.pycbc_spa_tmplt import spa_tmplt
+    from pycbc.waveform.pycbc_phenomC_tmplt import imrphenomc_tmplt
+    _cuda_fd_approximants["IMRPhenomC"] = imrphenomc_tmplt
     _cuda_fd_approximants["SPAtmplt"] = spa_tmplt
     _cuda_fd_approximants['TaylorF2'] = cuda_taylorf2
 
