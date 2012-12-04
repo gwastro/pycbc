@@ -201,7 +201,12 @@ def imrphenomc_tmplt(**kwds):
 
     ## The units of distance given as input is taken to pe kpc. Converting to SI
     distance *= (1.0e3 * lal.LAL_PC_SI / (M * lal.LAL_MRSUN_SI * M * lal.LAL_MTSUN_SI))
-    
+   
+    # Check if the value of f_max is correctly given, else replace with the fCut
+    # used in the PhenomB code in lalsimulation.
+    if not f_max:
+      f_max = (1.7086 * eta * eta - 0.26592 * eta + 0.28236) / piM
+
     # Transform the eta, chi to Lambda parameters, using Eq 5.14, Table II of Main
     # paper.
     z101 = -2.417e-03
