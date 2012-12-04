@@ -19,7 +19,7 @@
 import lalsimulation
 import lal
 import numpy
-from numpy import sqrt, tanh, log
+from numpy import sqrt, tanh, log, float128
 from math import frexp
 
 import pycuda.tools
@@ -35,69 +35,79 @@ preamble = """
 """
  
 phenomC_text = """
-    const float f = (i + kmin ) * delta_f;
-    const float fd = m_sec * f;
-    const float v =  cbrtf(piM*f);
-    const float v2 = v * v;
-    const float v3 = v * v * v;
-    const float v4 = v2 * v2;
-    const float v5 = v2 * v3;
-    const float v6 = v3 * v3;
-    const float v7 = v3 * v4;
-    const float v10 = v5 * v5;
-    const float w = cbrtf( m_sec * f );
-    const float w2 = w*w;
-    const float w3 = w2*w;
-    const float w5 = w2*w3;
-    
-    /* *************** Phasing ****************** */
-    float phSPA = 1 + pfa2 * v2 + pfa3 * v3 + pfa4 * v4 + 
+    /* ********* Main paper : Phys Rev D82, 064016 (2010) ********* */
+
+    const double f = (double) (i + kmin ) * delta_f;
+    const double fd = (double) m_sec * f;
+    const double v = (double) cbrt(piM*f);
+    const double v2 = v * v;
+    const double v3 = v * v * v;
+    const double v4 = v2 * v2;
+    const double v5 = v2 * v3;
+    const double v6 = v3 * v3;
+    const double v7 = v3 * v4;
+    const double w = (double) cbrt( m_sec * f );
+    const double w3 = (double) w2 * w;
+   
+    /* ******************************************************* */
+    /* *********************** Phasing *********************** */
+    /* This is defined in Eq 5.1 - 5.9, 3.13 of the main paper */
+    /* ******************************************************* */
+
+    double phSPA = 1. + pfa2 * v2 + pfa3 * v3 + pfa4 * v4 + 
           (1. + log(v3)) * pfa5 * v5 + (pfa6  + pfa6log * log(v3))*v6 + 
           pfa7 * v7;
     phSPA *= (pfaN / v5);
     phSPA -= (LAL_PI/4.0);
 
-    float phPM = (a1/w5) + (a2/w3) + (a3/w) + a4 + (a5*w2) +(a6*w3);
+    double phPM = (a1/(w3 * w * w)) + (a2/w3) + (a3/w) + a4 + (a5 * w * w) +(a6 * w3);
     phPM /= eta;
 
-    float phRD = b1 + b2*fd;
+    double phRD = b1 + b2*fd;
 
-    float wPlusf1 = (0.5*(1. + tanh( 4*(fd - Mf1)/d1 )));
-    float wMinusf1 = (0.5*(1. - tanh( 4*(fd - Mf1)/d1 )));
-    float wPlusf2 = (0.5*(1. + tanh( 4*(fd - Mf2)/d2 )));
-    float wMinusf2 = (0.5*(1. - tanh( 4*(fd - Mf2)/d2 )));
+    float wPlusf1 = (float) 0.5*(1. + tanhf((float) (4*(fd - Mf1)/d1) ));
+    float wMinusf1 = (float) 0.5*(1. - tanhf((float) (4*(fd - Mf1)/d1) ));
+    float wPlusf2 = (float) 0.5*(1. + tanhf((float) (4*(fd - Mf2)/d2) ));
+    float wMinusf2 = (float) 0.5*(1. - tanhf((float) (4*(fd - Mf2)/d2) ));
 
-    float phasing = (phSPA * wMinusf1) + (phPM * wPlusf1 * wMinusf2) + 
-                  (phRD * wPlusf2);
+    double phasing = (phSPA * ((double) wMinusf1)) + (phPM * ((double) wPlusf1 * wMinusf2)) + 
+                  (phRD * ((double) wPlusf2));
 
-    /* ************** Amplitude **************** */
-    float xdot = 1. + xdota2*v2 + xdota3*v3 + xdota4*v4 + xdota5*v5 +
-        (xdota6 + xdota6log*log(v2))*v6 + xdota7 * v7;
-    xdot *= (xdotaN * v10);
-    float omgdot = 0.0, ampfac = 0.0;
-    float ampSPA = 0.0, ampSPAre = 0.0, ampSPAim = 0.0;
+    /* ******************************************************* */
+    /* ********************** Amplitude **************** */
+    /* *** This is defined in Eq 5.11 - 5.13, 3.10, 3.6 ****** */
+    /* ******************************************************* */
+
+    double xdot = 1. + xdota2 * v2 + xdota3 * v3 + xdota4 * v4 + xdota5 * v5 +
+        (xdota6 + xdota6log * log(v2)) * v6 + xdota7 * v7;
+    xdot *= (xdotaN * v5 * v5);
+    double omgdot = 0.0, ampfac = 0.0;
+    double ampSPA = 0.0, ampSPAre = 0.0, ampSPAim = 0.0;
+    
+    /* If xdot becomes negative, take ampSPA = 0.0 */
+    /* This is valid because it becomes negative much after ISCO */
+
     if( xdot > 0.0 )
     {
       omgdot = 1.5 * v * xdot;
       ampfac = sqrt( LAL_PI / omgdot );
-      ampSPAre = ampfac * AN * v2 * (1. + A2*v2 + A3*v3 + A4*v4 + 
-              A5*v5 + (A6 + A6log*log(v2))*v6);
+      ampSPAre = ampfac * AN * v2 * (1. + A2 * v2 + A3 * v3 + A4 * v4 + 
+              A5 * v5 + (A6 + A6log * log(v2)) * v6);
       ampSPAim = ampfac * AN * v2 * (A5imag * v5 + A6imag * v6);
       ampSPA = sqrt( ampSPAre * ampSPAre + ampSPAim * ampSPAim );
     }
 
-    float ampPM = g1 * powf(fd, 5./6.);
-    ampPM += ampSPA;
+    double ampPM = ampSPA + (g1 * pow(fd, 5./6.));
 
-    const float sig = fd * del2 / Q;
-    float sig2 = sig * sig;
-    float L = sig2 / ((fd - Mfrd) * (fd - Mfrd) + sig2/4.);
-    float ampRD = del1 * L * powf( fd, -7./6.);
+    const double sig = fd * del2 / Q;
+    double sig2 = sig * sig;
+    double L = sig2 / ((fd - Mfrd) * (fd - Mfrd) + sig2/4.);
+    double ampRD = del1 * L * powf( fd, -7./6.);
 
-    float wPlusf0 = (0.5*(1. + tanh( 4*(fd - Mf0)/d0 )));
-    float wMinusf0 = (0.5*(1. - tanh( 4*(fd - Mf0)/d0 )));
+    float wPlusf0 = 0.5*(1. + tanhf((float) (4*(fd - Mf0)/d0) ));
+    float wMinusf0 = 0.5*(1. - tanhf((float) (4*(fd - Mf0)/d0) ));
 
-    float amplitude = (ampPM * wMinusf0) + (ampRD * wPlusf0);
+    double amplitude = (ampPM * ((double) wMinusf0)) + (ampRD * ((double) wPlusf0));
     amplitude /= distance;
 
     /* ************** htilde **************** */
@@ -114,21 +124,21 @@ def ceilpow2(n):
         exponent -= 1;
     return (1) << exponent;
 
-phenomC_kernel = ElementwiseKernel("""pycuda::complex<float> *htilde, int kmin, float delta_f, 
-                                       float eta, float M, float Xi, float distance,
-                                       float m_sec, float piM, float Mfrd,
-                                       float pfaN, float pfa2, float pfa3, float pfa4, 
-                                       float pfa5, float pfa6, float pfa6log, float pfa7,
-                                       float a1, float a2, float a3, float a4,
-                                       float a5, float a6, float b1, float b2, 
-                                       float Mf1, float Mf2, float Mf0, 
-                                       float d1, float d2, float d0, 
-                                       float xdota2, float xdota3, float xdota4, 
-                                       float xdota5, float xdota6, float xdota6log, 
-                                       float xdota7, float xdotaN, float AN,
-                                       float A2, float A3, float A4, float A5,
-                                       float A5imag, float A6, float A6log, float A6imag,
-                                       float g1, float del1, float del2, float Q""",
+phenomC_kernel = ElementwiseKernel("""pycuda::complex<double> *htilde, int kmin, double delta_f, 
+                                       double eta, double M, double Xi, double distance,
+                                       double m_sec, double piM, double Mfrd,
+                                       double pfaN, double pfa2, double pfa3, double pfa4, 
+                                       double pfa5, double pfa6, double pfa6log, double pfa7,
+                                       double a1, double a2, double a3, double a4,
+                                       double a5, double a6, double b1, double b2, 
+                                       double Mf1, double Mf2, double Mf0, 
+                                       double d1, double d2, double d0, 
+                                       double xdota2, double xdota3, double xdota4, 
+                                       double xdota5, double xdota6, double xdota6log, 
+                                       double xdota7, double xdotaN, double AN,
+                                       double A2, double A3, double A4, double A5,
+                                       double A5imag, double A6, double A6log, double A6imag,
+                                       double g1, double del1, double del2, double Q""",
                     phenomC_text, "phenomC_kernel",
                     preamble=preamble, options=pkg_config_header_strings(['lal']))
 
@@ -160,17 +170,17 @@ def imrphenomc_tmplt(**kwds):
       Main Paper: arXiv:1005.3306
     """
     # Pull out the input arguments
-    f_min = float(kwds['f_lower'])
-    f_max = float(kwds['f_final'])
-    delta_f = float(kwds['delta_f'])
-    distance = float(kwds['distance'])
-    mass1 = float(kwds['mass1'])
-    mass2 = float(kwds['mass2'])
-    spin1z = float(kwds['spin1z'])
-    spin2z = float(kwds['spin2z'])
+    f_min = float128(kwds['f_lower'])
+    f_max = float128(kwds['f_final'])
+    delta_f = float128(kwds['delta_f'])
+    distance = float128(kwds['distance'])
+    mass1 = float128(kwds['mass1'])
+    mass2 = float128(kwds['mass2'])
+    spin1z = float128(kwds['spin1z'])
+    spin2z = float128(kwds['spin2z'])
 
     # phi0, tC are taken to be 0 in the paper, sec V-A, first paragraph.
-    psi0 = 0. #float(kwds['phi0'])
+    psi0 = 0. #float128(kwds['phi0'])
     tC= 0. #-1.0 / delta_f 
 
     if 'out' in kwds:
@@ -179,7 +189,7 @@ def imrphenomc_tmplt(**kwds):
         out = None
 
     # Calculate binary parameters
-    M = float(mass1) + float(mass2)
+    M = mass1 + mass2
     eta = mass1 * mass2 / (M * M)
     Xi = (mass1 * spin1z / M) + (mass2 * spin2z / M)
     Xisum = 2.*Xi
@@ -361,7 +371,7 @@ def imrphenomc_tmplt(**kwds):
     A6imag = 4.28*lal.LAL_PI/1.05
 
     ### Define other parameters ###
-    kmin = int(f_min / float(delta_f))
+    kmin = int(f_min / delta_f)
     kmax = int(f_max / delta_f)
     n = kmax + 1;
 
