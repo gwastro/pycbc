@@ -203,7 +203,9 @@ def imrphenomc_tmplt(**kwds):
     distance *= (1.0e3 * lal.LAL_PC_SI / (M * lal.LAL_MRSUN_SI * M * lal.LAL_MTSUN_SI))
    
     # Check if the value of f_max is correctly given, else replace with the fCut
-    # used in the PhenomB code in lalsimulation.
+    # used in the PhenomB code in lalsimulation. The various coefficients come
+    # from Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and 
+    # Table I of http://arxiv.org/pdf/0712.0343
     if not f_max:
       f_max = (1.7086 * eta * eta - 0.26592 * eta + 0.28236) / piM
 
