@@ -31,8 +31,6 @@ from pycbc.types import FrequencySeries, zeros, Array, complex64
 import pycbc.utils
 
 preamble = """
-#include "stdio.h"
-#include "math.h"
 #include <lal/LALConstants.h>
 """
  
@@ -88,13 +86,13 @@ phenomC_text = """
       ampSPA = sqrt( ampSPAre * ampSPAre + ampSPAim * ampSPAim );
     }
 
-    float ampPM = g1 * pow(fd, 5./6.);
+    float ampPM = g1 * powf(fd, 5./6.);
     ampPM += ampSPA;
 
     const float sig = fd * del2 / Q;
     float sig2 = sig * sig;
     float L = sig2 / ((fd - Mfrd) * (fd - Mfrd) + sig2/4.);
-    float ampRD = del1 * L * pow( fd, -7./6.);
+    float ampRD = del1 * L * powf( fd, -7./6.);
 
     float wPlusf0 = (0.5*(1. + tanh( 4*(fd - Mf0)/d0 )));
     float wMinusf0 = (0.5*(1. - tanh( 4*(fd - Mf0)/d0 )));
@@ -130,7 +128,7 @@ phenomC_kernel = ElementwiseKernel("""pycuda::complex<float> *htilde, int kmin, 
                                        float xdota7, float xdotaN, float AN,
                                        float A2, float A3, float A4, float A5,
                                        float A5imag, float A6, float A6log, float A6imag,
-                                       float g1, float del1, float del2, float Q, float Mfrd""",
+                                       float g1, float del1, float del2, float Q""",
                     phenomC_text, "phenomC_kernel",
                     preamble=preamble, options=pkg_config_header_strings(['lal']))
 
@@ -163,23 +161,22 @@ def imrphenomc_tmplt(**kwds):
     """
     # Pull out the input arguments
     f_min = float(kwds['f_lower'])
-    f_max = float(kwds['f_upper'])
+    f_max = float(kwds['f_final'])
     delta_f = float(kwds['delta_f'])
     distance = float(kwds['distance'])
     mass1 = float(kwds['mass1'])
     mass2 = float(kwds['mass2'])
     spin1z = float(kwds['spin1z'])
     spin2z = float(kwds['spin2z'])
-    phase_order = int(kwds['phase_order'])
-    amplitude_order = int(kwds['amplitude_order'])
-    phi0 = 0. #float(kwds['phi0'])
+
+    # phi0, tC are taken to be 0 in the paper, sec V-A, first paragraph.
+    psi0 = 0. #float(kwds['phi0'])
+    tC= 0. #-1.0 / delta_f 
 
     if 'out' in kwds:
         out = kwds['out']
     else:
         out = None
-
-    tC= 0. #-1.0 / delta_f 
 
     # Calculate binary parameters
     M = float(mass1) + float(mass2)
@@ -191,10 +188,9 @@ def imrphenomc_tmplt(**kwds):
     
     m_sec = M * lal.LAL_MTSUN_SI;
     piM = lal.LAL_PI * m_sec;
-    if distance is not None and distance is not 0.0:
-      distance *= (1.0e6 * LAL_PC_SI / (M * LAL_MRSUN_SI * M * LAL_MTSUN_SI))
-    else:
-      distance = (1.0e6 * LAL_PC_SI / (M * LAL_MRSUN_SI * M * LAL_MTSUN_SI))
+
+    ## The units of distance given as input is taken to pe kpc. Converting to SI
+    distance *= (1.0e3 * lal.LAL_PC_SI / (M * lal.LAL_MRSUN_SI * M * lal.LAL_MTSUN_SI))
     
     # Transform the eta, chi to Lambda parameters, using Table II of Main
     # paper.
@@ -388,7 +384,7 @@ def imrphenomc_tmplt(**kwds):
                                        xdota2,  xdota3,  xdota4, xdota5,  xdota6,  xdota6log, 
                                        xdota7,  xdotaN,  AN, A2,  A3,  A4,  A5,
                                        A5imag,  A6,  A6log,  A6imag,
-                                       g1,  del1,  del2,  Q,  Mfrd )
+                                       g1,  del1,  del2,  Q )
     return htilde
     
 
