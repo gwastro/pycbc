@@ -49,7 +49,7 @@ def parsecs_to_meters(distance):
 
 default_args = {'spin1x':0,'spin1y':0,'spin1z':0,
                 'spin2x':0,'spin2y':0,'spin2z':0,'lambda1':0, 'lambda2':0,
-                'inclination':0,'distance':1e6,'f_final':0,'phi0':0,
+                'inclination':0,'distance':1e3,'f_final':0,'phi0':0,
                 'amplitude_order':-1,'phase_order':-1}
 
 base_required_args = ['mass1','mass2','f_lower']
