@@ -202,7 +202,7 @@ def spa_tmplt(**kwds):
     dETa3 = 4 * -(67.5/6.4 - (344.45/5.76 - 20.5/9.6 * lal.LAL_PI*lal.LAL_PI) *
                              eta + 15.5/9.6 * eta*eta + 3.5/518.4 * eta*eta*eta)
   
-    amp0 = 4. * mass1 * mass2 / (float(distance) * lal.LAL_PC_SI )* \
+    amp0 = 4. * mass1 * mass2 / (1.0e+03 * float(distance) * lal.LAL_PC_SI )* \
                     lal.LAL_MRSUN_SI * lal.LAL_MTSUN_SI * sqrt(lal.LAL_PI/12.0)    
     
     m_sec = M * lal.LAL_MTSUN_SI;
