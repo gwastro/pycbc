@@ -125,7 +125,7 @@ def ceilpow2(n):
     return (1) << exponent;
 
 phenomC_kernel = ElementwiseKernel("""pycuda::complex<double> *htilde, int kmin, double delta_f, 
-                                       double eta, double M, double Xi, double distance,
+                                       double eta, double Xi, double distance,
                                        double m_sec, double piM, double Mfrd,
                                        double pfaN, double pfa2, double pfa3, double pfa4, 
                                        double pfa5, double pfa6, double pfa6log, double pfa7,
@@ -202,7 +202,7 @@ def imrphenomc_tmplt(**kwds):
     ## The units of distance given as input is taken to pe kpc. Converting to SI
     distance *= (1.0e3 * lal.LAL_PC_SI / (M * lal.LAL_MRSUN_SI * M * lal.LAL_MTSUN_SI))
     
-    # Transform the eta, chi to Lambda parameters, using Table II of Main
+    # Transform the eta, chi to Lambda parameters, using Eq 5.14, Table II of Main
     # paper.
     z101 = -2.417e-03
     z102 = -1.093e-03
@@ -274,7 +274,6 @@ def imrphenomc_tmplt(**kwds):
     del1 = z801 * Xi + z802 * Xi2 + z811 * eta * Xi + z810 * eta + z820 * eta2
     del2 = z901 * Xi + z902 * Xi2 + z911 * eta * Xi + z910 * eta + z920 * eta2
    
-    # Now, calculate beta1 and beta2, that appear in Eq 5.7 in the main paper.
     # Get the spin of the final BH
     afin = FinalSpin( Xi, eta )
     Q = Qa( afin )
@@ -295,6 +294,7 @@ def imrphenomc_tmplt(**kwds):
     d0 = 0.015
 
     # Now use this frequency for calculation of betas
+    # calculate beta1 and beta2, that appear in Eq 5.7 in the main paper.
     b2 = ((-5./3.)* a1 * pow(Mfrd,(-8./3.)) - a2/(Mfrd*Mfrd) - \
       (a3/3.)*pow(Mfrd,(-4./3.)) + (2./3.)* a5 * pow(Mfrd,(-1./3.)) + a6)/eta
 
@@ -302,7 +302,7 @@ def imrphenomc_tmplt(**kwds):
       a4 + a5 * pow(Mfrd,(2./3.)) + a6 * Mfrd)/eta
     b1 = psiPMrd - (b2 * Mfrd)
 
-    ### Calculate the PN coefficients ###
+    ### Calculate the PN coefficients, Eq A3 - A5 of main paper ###
     pfaN = 3.0/(128.0 * eta)
     pfa2 = (3715./756.) + (55.*eta/9.0)
     pfa3 = -16.0*lal.LAL_PI + (113./3.)*Xi - 38.*eta*Xisum/3.
@@ -370,7 +370,7 @@ def imrphenomc_tmplt(**kwds):
 
     A6imag = 4.28*lal.LAL_PI/1.05
 
-    ### Define other parameters ###
+    ### Define other parameters needed by waveform generation ###
     kmin = int(f_min / delta_f)
     kmax = int(f_max / delta_f)
     n = kmax + 1;
@@ -386,7 +386,7 @@ def imrphenomc_tmplt(**kwds):
             raise TypeError("Output array is the wrong dtype")
         htilde = FrequencySeries(out, delta_f=delta_f, copy=False)
 
-    phenomC_kernel(htilde.data[kmin:kmax], kmin, delta_f, eta, M, Xi, distance,
+    phenomC_kernel(htilde.data[kmin:kmax], kmin, delta_f, eta, Xi, distance,
                                        m_sec,  piM,  Mfrd,
                                        pfaN,  pfa2,  pfa3,  pfa4, pfa5,  pfa6,  pfa6log,  pfa7,
                                        a1,  a2,  a3,  a4, a5,  a6,  b1,  b2, 
