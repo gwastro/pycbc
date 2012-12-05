@@ -47,7 +47,7 @@ phenomC_text = """
     const double v6 = v3 * v3;
     const double v7 = v3 * v4;
     const double w = (double) cbrt( m_sec * f );
-    const double w3 = (double) w2 * w;
+    const double w3 = (double) w * w * w;
    
     /* ******************************************************* */
     /* *********************** Phasing *********************** */
