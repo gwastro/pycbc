@@ -383,7 +383,7 @@ def imrphenomc_tmplt(**kwds):
     n = kmax + 1;
 
     if not out:
-        htilde = FrequencySeries(zeros(n,dtype=numpy.complex64), delta_f=delta_f, copy=False)
+        htilde = FrequencySeries(zeros(n,dtype=numpy.complex128), delta_f=delta_f, copy=False)
     else:
         if type(out) is not Array:
             raise TypeError("Output must be an instance of Array")
