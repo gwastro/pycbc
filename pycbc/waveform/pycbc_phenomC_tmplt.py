@@ -152,8 +152,11 @@ def FinalSpin( Xi, eta ):
   t3 = 2.353
   etaXi = eta * Xi
   eta2 = eta*eta
-  return (Xi + s4*+Xi*etaXi + s5*etaXi*eta + t0*etaXi + 2.*(3.**0.5)*eta + t2*eta2 + t3*eta2*eta)
-
+  finspin = (Xi + s4*Xi*etaXi + s5*etaXi*eta + t0*etaXi + 2.*(3.**0.5)*eta + t2*eta2 + t3*eta2*eta)
+  if finspin > 1.0:
+    raise ValueError("Value of final spin > 1.0. Aborting")
+  else:
+    return finspin
 
 def fRD( a, M):
   """Calculate the ring-down frequency for the final Kerr BH. Using Eq. 5.5 of Main paper"""
