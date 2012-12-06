@@ -283,10 +283,10 @@ def imrphenomc_tmplt(**kwds):
    
     # Get the spin of the final BH
     afin = FinalSpin( Xi, eta )
-    Q = Qa( afin )
+    Q = Qa( abs(afin) )
 
     # Get the fRD
-    frd = fRD( afin, M)
+    frd = fRD( abs(afin), M)
     Mfrd = frd * m_sec
     
     # Define the frequencies where SPA->PM->RD
