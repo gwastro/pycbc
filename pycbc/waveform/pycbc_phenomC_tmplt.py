@@ -65,10 +65,10 @@ phenomC_text = """
 
     double phRD = b1 + b2*fd;
 
-    float wPlusf1 = (float) 0.5*(1. + tanhf((float) (4*(fd - Mf1)/d1) ));
-    float wMinusf1 = (float) 0.5*(1. - tanhf((float) (4*(fd - Mf1)/d1) ));
-    float wPlusf2 = (float) 0.5*(1. + tanhf((float) (4*(fd - Mf2)/d2) ));
-    float wMinusf2 = (float) 0.5*(1. - tanhf((float) (4*(fd - Mf2)/d2) ));
+    double wPlusf1 = 0.5*(1. + tanhf( (4*(fd - Mf1)/d1) ));
+    double wMinusf1 = 0.5*(1. - tanhf( (4*(fd - Mf1)/d1) ));
+    double wPlusf2 = 0.5*(1. + tanhf( (4*(fd - Mf2)/d2) ));
+    double wMinusf2 = 0.5*(1. - tanhf( (4*(fd - Mf2)/d2) ));
 
     double phasing = (phSPA * ((double) wMinusf1)) + (phPM * ((double) wPlusf1 * wMinusf2)) + 
                   (phRD * ((double) wPlusf2));
@@ -104,8 +104,8 @@ phenomC_text = """
     double L = sig2 / ((fd - Mfrd) * (fd - Mfrd) + sig2/4.);
     double ampRD = del1 * L * powf( fd, -7./6.);
 
-    float wPlusf0 = 0.5*(1. + tanhf((float) (4*(fd - Mf0)/d0) ));
-    float wMinusf0 = 0.5*(1. - tanhf((float) (4*(fd - Mf0)/d0) ));
+    double wPlusf0 = 0.5*(1. + tanhf( (4*(fd - Mf0)/d0) ));
+    double wMinusf0 = 0.5*(1. - tanhf( (4*(fd - Mf0)/d0) ));
 
     double amplitude = (ampPM * ((double) wMinusf0)) + (ampRD * ((double) wPlusf0));
     amplitude /= distance;
