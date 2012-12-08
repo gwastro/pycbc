@@ -112,7 +112,7 @@ phenomC_text = """
 
     /* ************** htilde **************** */
     htilde[i]._M_re = amplitude * cos( phasing );
-    htilde[i]._M_im = amplitude * sin( phasing );
+    htilde[i]._M_im = -1.0 * amplitude * sin( phasing );
 
 """
 
