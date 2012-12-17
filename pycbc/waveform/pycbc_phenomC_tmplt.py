@@ -65,10 +65,10 @@ phenomC_text = """
 
     double phRD = b1 + b2*fd;
 
-    float wPlusf1 = (float) 0.5*(1. + tanhf((float) (4*(fd - Mf1)/d1) ));
-    float wMinusf1 = (float) 0.5*(1. - tanhf((float) (4*(fd - Mf1)/d1) ));
-    float wPlusf2 = (float) 0.5*(1. + tanhf((float) (4*(fd - Mf2)/d2) ));
-    float wMinusf2 = (float) 0.5*(1. - tanhf((float) (4*(fd - Mf2)/d2) ));
+    double wPlusf1 = 0.5*(1. + tanh( (4*(fd - Mf1)/d1) ));
+    double wMinusf1 = 0.5*(1. - tanh( (4*(fd - Mf1)/d1) ));
+    double wPlusf2 = 0.5*(1. + tanh( (4*(fd - Mf2)/d2) ));
+    double wMinusf2 = 0.5*(1. - tanh( (4*(fd - Mf2)/d2) ));
 
     double phasing = (phSPA * ((double) wMinusf1)) + (phPM * ((double) wPlusf1 * wMinusf2)) + 
                   (phRD * ((double) wPlusf2));
@@ -99,20 +99,20 @@ phenomC_text = """
 
     double ampPM = ampSPA + (g1 * pow(fd, 5./6.));
 
-    const double sig = fd * del2 / Q;
+    const double sig = Mfrd * del2 / Q;
     double sig2 = sig * sig;
     double L = sig2 / ((fd - Mfrd) * (fd - Mfrd) + sig2/4.);
-    double ampRD = del1 * L * powf( fd, -7./6.);
+    double ampRD = del1 * L * pow( fd, -7./6.);
 
-    float wPlusf0 = 0.5*(1. + tanhf((float) (4*(fd - Mf0)/d0) ));
-    float wMinusf0 = 0.5*(1. - tanhf((float) (4*(fd - Mf0)/d0) ));
+    double wPlusf0 = 0.5*(1. + tanh( (4*(fd - Mf0)/d0) ));
+    double wMinusf0 = 0.5*(1. - tanh( (4*(fd - Mf0)/d0) ));
 
     double amplitude = (ampPM * ((double) wMinusf0)) + (ampRD * ((double) wPlusf0));
     amplitude /= distance;
 
     /* ************** htilde **************** */
     htilde[i]._M_re = amplitude * cos( phasing );
-    htilde[i]._M_im = amplitude * sin( phasing );
+    htilde[i]._M_im = -1.0 * amplitude * sin( phasing );
 
 """
 
@@ -152,8 +152,11 @@ def FinalSpin( Xi, eta ):
   t3 = 2.353
   etaXi = eta * Xi
   eta2 = eta*eta
-  return (Xi + s4*+Xi*etaXi + s5*etaXi*eta + t0*etaXi + 2.*(3.**0.5)*eta + t2*eta2 + t3*eta2*eta)
-
+  finspin = (Xi + s4*Xi*etaXi + s5*etaXi*eta + t0*etaXi + 2.*(3.**0.5)*eta + t2*eta2 + t3*eta2*eta)
+  if finspin > 1.0:
+    raise ValueError("Value of final spin > 1.0. Aborting")
+  else:
+    return finspin
 
 def fRD( a, M):
   """Calculate the ring-down frequency for the final Kerr BH. Using Eq. 5.5 of Main paper"""
@@ -283,10 +286,10 @@ def imrphenomc_tmplt(**kwds):
    
     # Get the spin of the final BH
     afin = FinalSpin( Xi, eta )
-    Q = Qa( afin )
+    Q = Qa( abs(afin) )
 
     # Get the fRD
-    frd = fRD( afin, M)
+    frd = fRD( abs(afin), M)
     Mfrd = frd * m_sec
     
     # Define the frequencies where SPA->PM->RD
