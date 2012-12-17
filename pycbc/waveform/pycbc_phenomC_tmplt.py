@@ -28,7 +28,7 @@ from pycuda.gpuarray import to_gpu
 
 from pycbc.setuputils import pkg_config_header_strings
 from pycbc.types import FrequencySeries, zeros, Array, complex64
-import pycbc.utils
+import pycbc.pnutils
 
 preamble = """
 #include <lal/LALConstants.h>

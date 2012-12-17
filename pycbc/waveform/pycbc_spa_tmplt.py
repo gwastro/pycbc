@@ -34,7 +34,7 @@ from pycuda.gpuarray import to_gpu
 
 from pycbc.setuputils import pkg_config_header_strings
 from pycbc.types import FrequencySeries, zeros, Array, complex64
-import pycbc.utils
+import pycbc.pnutils
 
 preamble = """
 #include "stdio.h"
@@ -157,7 +157,7 @@ def spa_tmplt(**kwds):
     tC= -1.0 / delta_f 
 
     #Calculate the spin corrections
-    beta, sigma, gamma = pycbc.utils.mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(
+    beta, sigma, gamma = pycbc.pnutils.mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(
                                     mass1, mass2, kwds['spin1z'], kwds['spin2z'])
 
     #Calculate teh PN terms #TODO: replace with functions in lalsimulation!###

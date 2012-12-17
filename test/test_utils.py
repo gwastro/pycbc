@@ -27,7 +27,7 @@ These are the unittests for the pycbc.filter.matchedfilter module
 """
 import sys
 import unittest
-from pycbc.utils import *
+from pycbc.pnutils import *
 from pycbc.scheme import *
 import optparse
 from optparse import OptionParser
