@@ -105,14 +105,13 @@ taylorf2_text = """
     phasing *= pfaN / v5;
     flux *= FTaN * v10;
     dEnergy *= dETaN * v;
-
     phasing += shft * f + phi0 + LAL_PI_4;
-    amp = amp0 * __fsqrt_rd(-dEnergy/flux) * v;
+    amp = amp0 * __powf(-dEnergy/flux, 0.5) * v;
 
     float pcos;
     float psin;
-
     __sincosf(phasing, &psin, &pcos);
+
 
     htilde[i]._M_re = amp * pcos;
     htilde[i]._M_im = - amp * psin;
