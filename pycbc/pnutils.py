@@ -37,22 +37,22 @@ def mass1_mass2_to_tau0_tau3(mass1, mass2, f_lower):
     m_total = mass1 + mass2
     mu = mass1 * mass2 / m_total
     eta = mu / m_total
-    tau3 = 1.0 / (8.0 * (lal.LAL_lal.LAL_PI * lal.LAL_lal.LAL_PI * f_lower**5)**(1.0/3.0) * m_total**(2.0/3.0) * eta)
-    tau0 = 5.0 / (256.0 * (lal.LAL_lal.LAL_PI * f_lower) ** (8.0/3.0) * m_total**(5.0/3.0) * eta)
+    tau3 = 1.0 / (8.0 * (lal.LAL_PI * lal.LAL_PI * f_lower**5)**(1.0/3.0) * m_total**(2.0/3.0) * eta)
+    tau0 = 5.0 / (256.0 * (lal.LAL_PI * f_lower) ** (8.0/3.0) * m_total**(5.0/3.0) * eta)
     return tau0,tau3
 
 
 def tau0_tau3_to_mtotal_eta(tau0, tau3, f_lower):
-    t0q = 5.0 / (256.0 * (lal.LAL_lal.LAL_PI * f_lower) ** (8.0/3.0) * tau0)
-    t3q = 1.0 / (8.0 * (lal.LAL_lal.LAL_PI * lal.LAL_lal.LAL_PI * f_lower**5) ** (1.0/3.0 ) * tau3)
+    t0q = 5.0 / (256.0 * (lal.LAL_PI * f_lower) ** (8.0/3.0) * tau0)
+    t3q = 1.0 / (8.0 * (lal.LAL_PI * lal.LAL_PI * f_lower**5) ** (1.0/3.0 ) * tau3)
     eta = t3q * ( t0q / t3q ) ** (-2.0/3.0) ;
     m_total = t0q / t3q;
     return m_total,eta
 
 
 def tau0_tau3_to_mass1_mass2(tau0, tau3, f_lower):
-    t0q = 5.0 / (256.0 * ( lal.LAL_lal.LAL_PI * f_lower)**( 8.0/3.0) * tau0)
-    t3q = 1.0 / (8.0 * (lal.LAL_lal.LAL_PI * lal.LAL_lal.LAL_PI * f_lower **5.0)**(1.0/3.0 ) * tau3)
+    t0q = 5.0 / (256.0 * ( lal.LAL_PI * f_lower)**( 8.0/3.0) * tau0)
+    t3q = 1.0 / (8.0 * (lal.LAL_PI * lal.LAL_PI * f_lower **5.0)**(1.0/3.0 ) * tau3)
     eta = t3q * (t0q/t3q)**( -2.0/3.0 )
     m_total = t0q / t3q
     mass1 = 0.5 * m_total * (1.0 + (1.0-4.0*eta)**( 0.5 ))
