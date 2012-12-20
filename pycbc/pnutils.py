@@ -84,14 +84,14 @@ def mass1_mass2_to_mchirp_eta(mass1, mass2):
     m_chirp = mu ** (3.0/5.0) * M ** (2.0/5.0)
     return m_chirp, eta
 
-def mass1_mass2_spin2z_to_beta_sigma_gamma(mass1, mass2, spin1z, spin2z):
+def mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(mass1, mass2, spin1z, spin2z):
     """ Calculate the slal.LAL_PIn corrections for TaylorF2 
         reference -> <http://arxiv.org/pdf/0810.5336v3.pdf>
     """
     M, v = mass1_mass2_to_mtotal_eta(mass1, mass2)
     d = (mass1 - mass2) / (mass1 + mass2)
-    xs = .5 * (slal.LAL_PIn1z+slal.LAL_PIn2z)
-    xa = .5 * (slal.LAL_PIn1z-slal.LAL_PIn2z)
+    xs = .5 * (spin1z+spin2z)
+    xa = .5 * (spin1z-spin2z)
 
     beta = (113/12.0 - 19/3.0 * v) * xs + 113/12.0 * d * xa
     
