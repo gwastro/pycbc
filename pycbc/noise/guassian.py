@@ -61,5 +61,5 @@ def noise_from_psd(length, delta_t, psd, seed=0):
         SimNoise(segment, stride, psd, randomness)
         
     return noise_ts
-    
-    
+   
+__all__ = ['noise_from_psd']
