@@ -600,6 +600,14 @@ class Array(object):
                 return self._data.get()[index]
             elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
                 return self._data.get()[index]
+
+    @_convert
+    def resize(self, new_size):
+        """Resize self to new_size
+        """
+        new_arr = zeros(new_size, dtype=self.dtype)
+        new_arr[0:len(self)] = self
+        self._data = new_arr._data
                 
     @_convert
     def __setitem__(self,index,other):
