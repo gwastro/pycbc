@@ -56,7 +56,7 @@ class Detector(object):
         return tuple(lal.ComputeDetAMResponse(self.response, 
                      right_ascension, declination, polarization, gmst))
                      
-    def time_delay_from_earth_center(self, ight_ascension, declination, t_gps):
+    def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
         """Return the time delay from the earth center
         """
         return lal.TimeDelayFromEarthCenter(self.location, right_ascension, declination, t_gps) 
