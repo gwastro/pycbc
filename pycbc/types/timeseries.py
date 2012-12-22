@@ -95,7 +95,7 @@ class TimeSeries(Array):
 
     def get_end_time(self):
         "Return time series end time as a LIGOTimeGPS."
-         return self._epoch + self.get_duration()
+        return self._epoch + self.get_duration()
     end_time = property(get_end_time)
 
     def get_sample_times(self):
