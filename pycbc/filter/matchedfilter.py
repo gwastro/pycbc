@@ -194,7 +194,7 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
     return maxsnr * snr_norm / sqrt(s_norm), max_id
     
 def overlap(vec1, vec2, psd=None, low_frequency_cutoff=None,
-          high_frequency_cutoff=None):
+          high_frequency_cutoff=None, normalized=True):
     """ Return the overlap between the two TimeSeries or FrequencySeries.
     """
     htilde = make_frequency_series(vec1)
@@ -204,11 +204,15 @@ def overlap(vec1, vec2, psd=None, low_frequency_cutoff=None,
         inner = htilde.weighted_inner(stilde, psd).real
     else:
         inner = htilde.inner(stilde).real
+     
+    if normalized:   
+        sig1 = sigma(vec1, psd=psd, low_frequency_cutoff=low_frequency_cutoff, high_frequency_cutoff=high_frequency_cutoff)
+        sig2 = sigma(vec2, psd=psd, low_frequency_cutoff=low_frequency_cutoff, high_frequency_cutoff=high_frequency_cutoff)
+        norm = 1 / sig1 / sig2
+    else:
+        norm = 1
         
-    sig1 = sigma(vec1, psd=psd, low_frequency_cutoff=low_frequency_cutoff, high_frequency_cutoff=high_frequency_cutoff)
-    sig2 = sigma(vec2, psd=psd, low_frequency_cutoff=low_frequency_cutoff, high_frequency_cutoff=high_frequency_cutoff)
-
-    return 4 * htilde.delta_f * inner / sig1 / sig2
+    return 4 * htilde.delta_f * inner * norm
       
 
 __all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'sigmasq_series', 'make_frequency_series', 'overlap']
