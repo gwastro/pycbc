@@ -115,7 +115,7 @@ def parsecs_to_meters(distance):
 def velocity_to_frequency(v, M):
     return v**(3.0) / (float(M) * lal.LAL_MTSUN_SI * lal.LAL_PI)
 
-def frequncy_to_velocity(f, M):
+def frequency_to_velocity(f, M):
     return (lal.LAL_PI * float(M) * lal.LAL_MTSUN_SI * float(f))**(1.0/3.0)
 
 def schwarzschild_isco(M):
