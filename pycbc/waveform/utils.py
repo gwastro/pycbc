@@ -55,7 +55,7 @@ def unwrap_phase(vec, discont, offset):
     -------
     
     Phase: TimeSeries
-        The unwrapped phase as a time series. 
+        The unwrapped phase as a time series.   
 
     """
     nvec = copy.deepcopy(vec)
@@ -97,6 +97,13 @@ def phase_from_polarizations(h_plus, h_cross):
     GWPhase: TimeSeries
         A TimeSeries containing the gravitational wave phase.
 
+    Examples
+    --------s
+    >>> from pycbc.waveform import get_td_waveform, phase_from_polarizations
+    >>> hp, hc = get_td_waveform(approximant="TaylorT4", mass1=10, mass2=10, 
+                         f_lower=30, delta_t=1.0/4096)
+    >>> phase = phase_from_polarizations(hp, hc)
+
     """
     p_wrapped = numpy.arctan(h_plus/h_cross)
     p = unwrap_phase(p_wrapped, 0.7*lal.LAL_PI, lal.LAL_PI)
@@ -122,6 +129,13 @@ def amplitude_from_polarizations(h_plus, h_cross):
     -------
     GWAmplitude: TimeSeries
         A TimeSeries containing the gravitational wave amplitude.
+
+    Examples
+    --------
+    >>> from pycbc.waveform import get_td_waveform, phase_from_polarizations
+    >>> hp, hc = get_td_waveform(approximant="TaylorT4", mass1=10, mass2=10, 
+                         f_lower=30, delta_t=1.0/4096)
+    >>> amp = amplitude_from_polarizations(hp, hc)
 
     """
     amp = (h_plus.squared_norm() + h_cross.squared_norm()) ** (0.5)
@@ -150,6 +164,13 @@ def frequency_from_polarizations(h_plus, h_cross):
     GWFrequency: TimeSeries
         A TimeSeries containing the gravitational wave frequency as a function
         of time. 
+
+    Examples
+    --------
+    >>> from pycbc.waveform import get_td_waveform, phase_from_polarizations
+    >>> hp, hc = get_td_waveform(approximant="TaylorT4", mass1=10, mass2=10, 
+                         f_lower=30, delta_t=1.0/4096)
+    >>> freq = frequency_from_polarizations(hp, hc)
 
     """
     phase = phase_from_polarizations(h_plus, h_cross)
