@@ -39,7 +39,7 @@ def unwrap_phase(vec, discont, offset):
     is intended to remove boundaries placed by using a cyclic funtion.
 
     Parameters
-    ---------
+    ----------
     vec: array_like
         Vectors that can be converted to an array as defined by numpy. 
         PyCBC types, numpy types, lists, etc can be provided. 
@@ -50,6 +50,12 @@ def unwrap_phase(vec, discont, offset):
     offset: float
         A float that increments the vector every place a discontinuity 
         is found. 
+
+    Returns
+    -------
+    
+    Phase: TimeSeries
+        The unwrapped phase as a time series. 
 
     """
     nvec = copy.deepcopy(vec)
