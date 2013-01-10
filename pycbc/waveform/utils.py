@@ -86,6 +86,11 @@ def phase_from_polarizations(h_plus, h_cross):
         A PyCBC TmeSeries vector that contains the cross polarization of the
         gravitational waveform.
 
+    Returns
+    -------
+    GWPhase: TimeSeries
+        A TimeSeries containing the gravitational wave phase.
+
     """
     p_wrapped = numpy.arctan(h_plus/h_cross)
     p = unwrap_phase(p_wrapped, 0.7*lal.LAL_PI, lal.LAL_PI)
@@ -96,8 +101,7 @@ def amplitude_from_polarizations(h_plus, h_cross):
     """Return gravitational wave amplitude
 
     Return the gravitation-wave amplitude from the h_plus and h_cross 
-    polarizations of the waveform. The returned phase is always
-    positive and increasing with an initial phase of 0.
+    polarizations of the waveform. 
 
     Parameters
     ----------
@@ -108,7 +112,45 @@ def amplitude_from_polarizations(h_plus, h_cross):
         A PyCBC TmeSeries vector that contains the cross polarization of the
         gravitational waveform.
 
+    Returns
+    -------
+    GWAmplitude: TimeSeries
+        A TimeSeries containing the gravitational wave amplitude.
+
     """
     amp = (h_plus.squared_norm() + h_cross.squared_norm()) ** (0.5)
     return TimeSeries(amp, delta_t=h_plus.delta_t, epoch=h_plus.start_time)
+
+
+def frequency_from_polarizations(h_plus, h_cross):
+    """Return gravitational wave frequency
+
+    Return the gravitation-wave frequency as a function of time
+    from the h_plus and h_cross polarizations of the waveform. 
+    It is 1 bin shorter than the input vectors and the sample times
+    are advanced half a bin.
+
+    Parameters
+    ----------
+    h_plus: TimeSeries
+        An PyCBC TmeSeries vector that contains the plus polarization of the
+        gravitational waveform.
+    h_cross: TimeSeries
+        A PyCBC TmeSeries vector that contains the cross polarization of the
+        gravitational waveform.
+
+    Returns
+    -------
+    GWFrequency: TimeSeries
+        A TimeSeries containing the gravitational wave frequency as a function
+        of time. 
+
+    """
+    phase = phase_from_polarizations(h_plus, h_cross)
+    freq = numpy.diff(phase) / ( 2 * lal.LAL_PI * phase.delta_t )
+    start_time = phase.start_time + phase.delta_t / 2
+    return TimeSeries(freq, delta_t=phase.delta_t, epoch=start_time)
+
+
+
 
