@@ -66,6 +66,7 @@ testlalwrap_module = Extension('_testlalwrap',
                                swig_opts=ext_swig_opts,
                                include_dirs=ext_include_dirs,
                                library_dirs=ext_library_dirs,
+                               runtime_library_dirs=ext_library_dirs,
                                libraries=ext_libraries,
                                extra_compile_args=['-std=c99']
                                )
