@@ -22,8 +22,34 @@ import scipy.interpolate
 from pycbc.types import FrequencySeries
 
 def from_asd_txt(filename, length, delta_f, low_freq_cutoff):
-    """Returns a PSD from a two-column ASCII file containing
-    frequency on the first column and ASD on the second.
+    """Read an ASCII file containing one-sided ASD data and generate
+    a frequency series with the corresponding PSD. The ASD data is
+    interpolated in order to match the desired resolution of the
+    generated frequency series.
+
+    Parameters
+    ----------
+    filename : string
+        Path to a two-column ASCII file. The first column must contain
+        the frequency (positive frequencies only) and the second column
+        must contain the amplitude density.
+    length : int
+        Length of the frequency series in samples.
+    delta_f : float
+        Frequency resolution of the frequency series in Herz.
+    low_freq_cutoff : float
+        Frequencies below this value are set to zero.
+
+    Returns
+    -------
+    psd : FrequencySeries
+        The generated frequency series.
+
+    Raises
+    ------
+    ValueError
+        If the ASCII file contains negative, infinite or NaN frequencies
+        or amplitude densities.
     """
     asd_data = numpy.loadtxt(filename)
     if (asd_data < 0).any() or numpy.logical_not(numpy.isfinite(asd_data)).any():
