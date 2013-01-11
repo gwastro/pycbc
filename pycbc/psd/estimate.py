@@ -14,15 +14,28 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Utilites to estimate PSDs from data. """
+"""Utilites to estimate PSDs from data.
+"""
 
 import numpy
 from pycbc.types import Array, FrequencySeries, TimeSeries
 from pycbc.fft import fft, ifft
 
 def median_bias(n):
-    """
-    Return the bias of the median average PSD computed from n segments.
+    """Calculate the bias of the median average PSD computed from `n` segments.
+
+    Parameters
+    ----------
+    n : int
+        Number of segments used in PSD estimation.
+    
+    Returns
+    -------
+    ans : float
+        Calculated bias.
+
+    Notes
+    -----
     See arXiv:gr-qc/0509116 appendix B for details.
     """
     if n >= 1000:
@@ -34,8 +47,39 @@ def median_bias(n):
 
 def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
         avg_method='median', max_filter_len=None, trunc_method=None):
-    """
-    Estimate the PSD of a timeseries using Welch's method.
+    """PSD estimator based on Welch's method.
+
+    Parameters
+    ----------
+    timeseries : TimeSeries
+        Time series for which the PSD is to be estimated.
+    seg_len : int
+        Segment length in samples.
+    seg_stride : int
+        Separation between consecutive segments, in samples.
+    window : {'hann'}
+        Function used to window segments before Fourier transforming.
+    avg_method : {'median', 'mean', 'median-mean'}
+        Method used for averaging individual segment PSDs.
+    max_filter_len : {None, int}
+        If not None, maximum length of the time-domain filter in samples.
+    trunc_method : {None, 'hann'}
+        Function used for truncating the time-domain filter.
+        None produces a hard truncation at `max_filter_len`.
+
+    Returns
+    -------
+    psd : FrequencySeries
+        Frequency series containing the estimated PSD.
+
+    Raises
+    ------
+    ValueError
+        For invalid choices of `window` or `avg_method` and for inconsistent
+        combinations of len(`timeseries`), `seg_len` and `seg_stride`.
+
+    Notes
+    -----
     See arXiv:gr-qc/0509116 for details.
     """
     window_map = {
