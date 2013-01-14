@@ -37,8 +37,6 @@ from pycbc.fft import fft
 import pycbc
 
 
-#FIXME######################################### RELOCATE THIS TO ANOTHER MODULE
-
 def solar_mass_to_kg(solar_masses):
     return solar_masses * lal.LAL_MSUN_SI
     
@@ -50,7 +48,8 @@ def kiloparsecs_to_meters(distance):
 default_args = {'spin1x':0,'spin1y':0,'spin1z':0,
                 'spin2x':0,'spin2y':0,'spin2z':0,'lambda1':0, 'lambda2':0,
                 'inclination':0,'distance':1e3,'f_final':0,'phi0':0,
-                'amplitude_order':-1,'phase_order':-1}
+                'amplitude_order':-1,'phase_order':-1,'spin_order':-1,
+                'tidal_order':-1}
 
 base_required_args = ['mass1','mass2','f_lower']
 td_required_args = base_required_args + ['delta_t']
@@ -62,6 +61,10 @@ _lalsim_td_approximants = {}
 _lalsim_enum = {}
 
 def _lalsim_td_waveform(**p):
+    flags = lalsimulation.SimInspiralCreateWaveformFlags()
+    lalsimulation.SimInspiralSetSpinOrder(flags, p['spin_order'])
+    lalsimulation.SimInspiralSetTidalOrder(flags, p['tidal_order'])
+
     hp,hc = lalsimulation.SimInspiralChooseTDWaveform(float(p['phi0']),
                float(p['delta_t']),
                float(solar_mass_to_kg(p['mass1'])),
@@ -71,7 +74,7 @@ def _lalsim_td_waveform(**p):
                float(p['f_lower']), 0,
                kiloparsecs_to_meters(float(p['distance'])),
                float(p['inclination']),
-               float(p['lambda1']),  float(p['lambda2']), None, None,
+               float(p['lambda1']),  float(p['lambda2']), flags, None,
                int(p['amplitude_order']), int(p['phase_order']),
                _lalsim_enum[p['approximant']])
 
@@ -81,17 +84,21 @@ def _lalsim_td_waveform(**p):
     return hp,hc
 
 def _lalsim_fd_waveform(**p):
+    flags = lalsimulation.SimInspiralCreateWaveformFlags()
+    lalsimulation.SimInspiralSetSpinOrder(flags, p['spin_order'])
+    lalsimulation.SimInspiralSetTidalOrder(flags, p['tidal_order'])
+
     htilde = lalsimulation.SimInspiralChooseFDWaveform(float(p['phi0']),
                float(p['delta_f']),
                float(solar_mass_to_kg(p['mass1'])),
                float(solar_mass_to_kg(p['mass2'])),
-               float(p['spin1x']),float(p['spin1y']),float(p['spin1z']),
-               float(p['spin2x']),float(p['spin2y']),float(p['spin2z']),
-               float(p['f_lower']),float(p['f_final']),
+               float(p['spin1x']), float(p['spin1y']), float(p['spin1z']),
+               float(p['spin2x']), float(p['spin2y']), float(p['spin2z']),
+               float(p['f_lower']), float(p['f_final']),
                kiloparsecs_to_meters(float(p['distance'])),
                float(p['inclination']),
-               float(p['lambda1']),float(p['lambda2']),None,None,
-               int(p['amplitude_order']),int(p['phase_order']),
+               float(p['lambda1']), float(p['lambda2']), flags, None,
+               int(p['amplitude_order']), int(p['phase_order']),
                _lalsim_enum[p['approximant']])
 
     htilde = FrequencySeries(htilde.data.data,delta_f=htilde.deltaF,
