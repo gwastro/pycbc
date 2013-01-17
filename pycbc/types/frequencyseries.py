@@ -14,16 +14,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
-#
-# =============================================================================
-#
-#                                   Preamble
-#
-# =============================================================================
-#
 """
-This module provides a class representing a frequency series.
+Provides a class representing a frequency series.
 """
 
 from pycbc.types.array import Array,_convert
@@ -31,12 +23,29 @@ import lal as _lal
 import numpy as _numpy
 
 class FrequencySeries(Array):
+    """Models a frequency series consisting of uniformly sampled scalar values.
+
+    Parameters
+    ----------
+    initial_array : array-like
+        Array containing sampled data.
+    delta_f : float
+        Frequency between consecutive samples in Hertz.
+    epoch : {None, lal.LIGOTimeGPS}, optional
+        Start time of the associated time domain data in seconds.
+    dtype : {None, data-type}, optional
+        Sample data type.
+    copy : boolean, optional
+        If True, samples are copied to a new array.
+
+    Attributes
+    ----------
+    delta_f
+    epoch
+    sample_frequencies
+    """
+
     def __init__(self, initial_array, delta_f, epoch=None, dtype=None, copy=True):
-        """initial_array: array containing sampled data.
-        delta_f: frequency between consecutive samples in Hertz.
-        epoch: start time of the associated time domain data, in seconds.
-               Must be a lal.LIGOTimeGPS object.
-        """
         if len(initial_array) < 1:
             raise ValueError('initial_array must contain at least one sample.')
         if not delta_f > 0:
@@ -63,23 +72,38 @@ class FrequencySeries(Array):
             # (e.g. PSD estimation)
 
     def get_delta_f(self):
-        "Return frequency between consecutive samples in Hertz."
+        """Return frequency between consecutive samples in Hertz.
+        """
         return self._delta_f
     delta_f = property(get_delta_f)
 
     def get_epoch(self):
-        "Return frequency series epoch as a LIGOTimeGPS."
+        """Return frequency series epoch as a LIGOTimeGPS.
+        """
         return self._epoch
     epoch = property(get_epoch)
 
     def get_sample_frequencies(self):
-        "Return an Array containing the sample frequencies."
+        """Return an Array containing the sample frequencies.
+        """
         return Array(range(len(self))) * self._delta_f
     sample_frequencies = property(get_sample_frequencies)
 
     @_convert
     def  lal(self):
-        """ Returns a LAL Object that contains this data """
+        """Produces a LAL frequency series object equivalent to self.
+
+        Returns
+        -------
+        lal_data : {lal.*FrequencySeries}
+            LAL frequency series object containing the same data as self.
+            The actual type depends on the sample's dtype.
+
+        Raises
+        ------
+        TypeError
+            If frequency series is stored in GPU memory.
+        """
 
         lal_data = None
         if type(self._data) is not _numpy.ndarray:
@@ -96,5 +120,4 @@ class FrequencySeries(Array):
         lal_data.data.data[:] = self._data
 
         return lal_data
-
 

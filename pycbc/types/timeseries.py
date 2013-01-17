@@ -14,16 +14,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
-#
-# =============================================================================
-#
-#                                   Preamble
-#
-# =============================================================================
-#
 """
-This module provides a class representing a time series.
+Provides a class representing a time series.
 """
 
 from pycbc.types.array import Array,_convert
@@ -31,11 +23,31 @@ import lal as _lal
 import numpy as _numpy
 
 class TimeSeries(Array):
+    """Models a time series consisting of uniformly sampled scalar values.
+
+    Parameters
+    ----------
+    initial_array : array-like
+        Array containing sampled data.
+    delta_t : float
+        Time between consecutive samples in seconds.
+    epoch : {None, lal.LIGOTimeGPS}, optional
+        Time of the first sample in seconds.
+    dtype : {None, data-type}, optional
+        Sample data type.
+    copy : boolean, optional
+        If True, samples are copied to a new array.
+
+    Attributes
+    ----------
+    delta_t
+    duration
+    start_time
+    end_time
+    sample_times
+    """
+
     def __init__(self, initial_array, delta_t, epoch=None, dtype=None, copy=True):
-        """initial_array: array containing sampled data.
-        delta_t: time between consecutive samples in seconds.
-        epoch: time series start time in seconds. Must be a lal.LIGOTimeGPS object.
-        """
         if len(initial_array) < 1:
             raise ValueError('initial_array must contain at least one sample.')
         if not delta_t > 0:
@@ -79,27 +91,32 @@ class TimeSeries(Array):
             return Array.__getitem__(self, index)
 
     def get_delta_t(self):
-        "Return time between consecutive samples in seconds."
+        """Return time between consecutive samples in seconds.
+        """
         return self._delta_t
     delta_t = property(get_delta_t)
 
     def get_duration(self):
-        "Return duration of time series in seconds."
+        """Return duration of time series in seconds.
+        """
         return len(self) * self._delta_t
     duration = property(get_duration)
 
     def get_start_time(self):
-        "Return time series start time as a LIGOTimeGPS."
+        """Return time series start time as a LIGOTimeGPS.
+        """
         return self._epoch
     start_time = property(get_start_time)
 
     def get_end_time(self):
-        "Return time series end time as a LIGOTimeGPS."
+        """Return time series end time as a LIGOTimeGPS.
+        """
         return self._epoch + self.get_duration()
     end_time = property(get_end_time)
 
     def get_sample_times(self):
-        "Return an Array containing the sample times."
+        """Return an Array containing the sample times.
+        """
         if self._epoch is None:
             return Array(range(len(self))) * self._delta_t
         else:
@@ -107,9 +124,20 @@ class TimeSeries(Array):
     sample_times = property(get_sample_times)
 
     @_convert
-    def  lal(self):
-        """ Returns a LAL Object that contains this data """
+    def lal(self):
+        """Produces a LAL time series object equivalent to self.
 
+        Returns
+        -------
+        lal_data : {lal.*TimeSeries}
+            LAL time series object containing the same data as self.
+            The actual type depends on the sample's dtype.
+
+        Raises
+        ------
+        TypeError
+            If time series is stored in GPU memory.
+        """
         lal_data = None
         if type(self._data) is not _numpy.ndarray:
             raise TypeError("Cannot return lal type from the GPU")
@@ -126,6 +154,3 @@ class TimeSeries(Array):
 
         return lal_data
 
-
-
-            
