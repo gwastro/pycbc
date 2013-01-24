@@ -7,21 +7,12 @@
 #
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Generals
 # Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-
-#
-# =============================================================================
-#
-#                                   Preamble
-#
-# =============================================================================
-#
 """
 This modules contains functions for reading in data from frame files or caches
 """
@@ -93,31 +84,32 @@ def read_frame(location, channels, start_time=None, end_time=None, duration=None
     else:
         raise TypeError("Invalid location name")
 
-    if end  and duration:
+    if end_time  and duration:
         raise ValueError("end time and duration are mutually exclusive")
 
-    if start is None:
-        start = stream.epoch*1
+    if start_time is None:
+        start_time = stream.epoch*1
 
-    if end is None:
+    if end_time is None:
         if type(channels) is list:
-            end = start + lalframe.FrGetVectorLength(channels[0], stream) / FRAME_SAMPLE_RATE
+            end_time = start_time + lalframe.FrGetVectorLength(channels[0], stream) / FRAME_SAMPLE_RATE
         else:
-            end = start + lalframe.FrGetVectorLength(channels, stream) / FRAME_SAMPLE_RATE
+            end_time = start_time + lalframe.FrGetVectorLength(channels, stream) / FRAME_SAMPLE_RATE
 
     if duration is None:
-        duration = float(end-start)
+        duration = float(end_time-start_time)
+    else:
+        duration = float(duration)
 
     if type(channels) is list: 
         all_data = []
         for channel in channels:
-            print float(stream.epoch), float(start)
-            channel_data = _read_channel(channel, stream, start, duration)
-            lalframe.FrSeek(stream, start)
+            channel_data = _read_channel(channel, stream, start_time, duration)
+            lalframe.FrSeek(stream, start_time)
             all_data.append(channel_data)
         return all_data
     else:
-        return _read_channel(channels, stream, start, duration)
+        return _read_channel(channels, stream, start_time, duration)
 
     
 

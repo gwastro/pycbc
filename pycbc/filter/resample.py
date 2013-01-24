@@ -35,16 +35,27 @@ def resample_to_delta_t(timeseries, delta_t):
     delta_t. Only powers of two and real valued time series are supported 
     at this time. 
 
-    Args:
-        time_series (TimeSeries) : The time series to be resampled
-        delta_t (float) : The desired time step 
+    Parameters
+    ----------
+    time_series: TimeSeries
+        The time series to be resampled
+    delta_t: float
+        The desired time step 
 
-    Returns:
+    Returns
+    -------
+    Time Series: TimeSeries
         A TimeSeries that has been resampled to delta_t.
 
-    Raises:
-        TypeError: time_series is not an instance of TimeSeries.
-        TypeError: tmie_series is not real valued
+    Raises
+    ------
+    TypeError: 
+        time_series is not an instance of TimeSeries.
+    TypeError: 
+        time_series is not real valued
+
+    Examples
+    --------
 
     >>> h_plus_sampled = resample_to_delta_t(h_plus, 1.0/2048)
     """
@@ -64,7 +75,52 @@ def resample_to_delta_t(timeseries, delta_t):
     return TimeSeries(lal_data.data.data, delta_t = lal_data.deltaT,
                       dtype=timeseries.dtype, epoch=timeseries._epoch)
 
+_highpass_func = {numpy.dtype('float32'): lal.HighPassREAL4TimeSeries,
+                 numpy.dtype('float64'): lal.HighPassREAL8TimeSeries}
+
+def highpass(timeseries, frequency, filter_order=8, attenuation=0.1):
+    """Return a new timeseries that is highpassed.
+
+    Return a new time series that is highpassed above the `frequency`. 
+
+    Parameters
+    ----------
+    Time Series: TimeSeries
+        The time series to be high-passed.
+    frequency: float
+        The frequency below which is suppressed. 
+    filter_order: {8, int}, optional
+        The order of the filter to use when high-passing the time series.
+    attenuation: {0.1, float}, optional
+        The attenuation of the filter. 
+
+    Returns
+    -------
+    Time Series: TimeSeries
+        A  new TimeSeries that has been high-passed. 
+
+    Raises
+    ------
+    TypeError: 
+        time_series is not an instance of TimeSeries.
+    TypeError: 
+        time_series is not real valued
+
+    """
+
+    if not isinstance(timeseries, TimeSeries):
+        raise TypeError("Can only resample time series")
+
+    if timeseries.kind is not 'real':
+        raise TypeError("Time series must be real")
+
+    lal_data = timeseries.lal()
+    _highpass_func[timeseries.dtype](lal_data, frequency, 1-attenuation, filter_order)
+
+    return TimeSeries(lal_data.data.data, delta_t = lal_data.deltaT,
+                      dtype=timeseries.dtype, epoch=timeseries._epoch)
+
     
 
-__all__ = ['resample_to_delta_t']
+__all__ = ['resample_to_delta_t', 'highpass']
 

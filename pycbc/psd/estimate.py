@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # Copyright (C) 2012 Tito Dal Canton
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -100,6 +99,7 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
     if num_samples != (num_segments - 1) * seg_stride + seg_len:
         raise ValueError('Incorrect choice of segmentation parameters')
     w = Array(window_map[window](seg_len).astype(timeseries.dtype))
+
     # calculate psd of each segment
     delta_f = 1. / timeseries.delta_t / seg_len
     segment_tilde = FrequencySeries(numpy.zeros(seg_len / 2 + 1), \
@@ -112,6 +112,7 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
         assert len(segment) == seg_len
         fft(segment * w, segment_tilde)
         segment_psds.append(abs(segment_tilde * segment_tilde.conj()))
+
     # calculate average psd
     if avg_method == 'mean':
         psd = numpy.mean(segment_psds, axis=0)
@@ -125,7 +126,9 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
         even_median = numpy.median(even_psds, axis=0) / \
             median_bias(len(even_psds))
         psd = (odd_median + even_median) / 2
+
     psd *= 2 * delta_f * seg_len / numpy.sum(numpy.square(w))
+
     if max_filter_len is None:
         return FrequencySeries(psd, delta_f=delta_f, dtype=timeseries.dtype)
     else:
@@ -139,10 +142,12 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
         ifft(inv_asd, q)
         trunc_start = max_filter_len / 2
         trunc_end = seg_len - max_filter_len / 2
+
         if trunc_method == 'hann':
             trunc_window = Array(numpy.hanning(max_filter_len), dtype=q.dtype)
             q[0:trunc_start] *= trunc_window[max_filter_len/2:max_filter_len]
             q[trunc_end:seg_len] *= trunc_window[0:max_filter_len/2]
+
         q[trunc_start:trunc_end] = 0
         psd_trunc = FrequencySeries(numpy.zeros(seg_len / 2 + 1), \
             delta_f=delta_f, dtype=fs_dtype)
