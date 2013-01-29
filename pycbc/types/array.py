@@ -609,7 +609,7 @@ class Array(object):
         if len(self) <= new_size:
             new_arr[0:len(self)] = self
         else:
-            new_arr[:] = self[0:len(new_size)]
+            new_arr[:] = self[0:new_size]
             
         self._data = new_arr._data
 
