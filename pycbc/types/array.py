@@ -606,8 +606,36 @@ class Array(object):
         """Resize self to new_size
         """
         new_arr = zeros(new_size, dtype=self.dtype)
-        new_arr[0:len(self)] = self
+        if len(self) <= new_size:
+            new_arr[0:len(self)] = self
+        else:
+            new_arr[:] = self[0:len(new_size)]
+            
         self._data = new_arr._data
+
+    @_convert
+    def roll(self, shift):
+        """shift vector
+        """
+        new_arr = zeros(len(self), dtype=self.dtype)
+
+        if shift == 0:
+            return
+        if shift < 0:
+            shift=len(self) + shift
+
+        new_arr[0:shift] = self[len(self)-shift: len(self)]
+        new_arr[shift:len(self)] = self[0:len(self)-shift]
+            
+        self._data = new_arr._data
+
+    @_returntype
+    @_convert
+    def astype(self, dtype):
+        if type(self.dtype) is type(dtype):
+            return self
+        else:
+            return self._data.astype(dtype)
                 
     @_convert
     def __setitem__(self,index,other):
@@ -650,7 +678,6 @@ class Array(object):
 
         else:
             raise TypeError('Can only copy data from another Array')
-                
 
     @property
     @_convert

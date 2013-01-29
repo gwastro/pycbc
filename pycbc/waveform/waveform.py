@@ -305,8 +305,8 @@ def get_td_waveform(template=None, **kwargs):
         else:
             raise ValueError("Please provide " + str(arg) )
 
-    hp,hc = wav_gen[input_params['approximant']](**input_params)
-    return (hp,hc)
+    hp, hc = wav_gen[input_params['approximant']](**input_params)
+    return (hp, hc)
 
 def get_fd_waveform(template=None, **kwargs):
     """Return a frequency domain gravitational waveform.
@@ -392,7 +392,29 @@ def get_fd_waveform(template=None, **kwargs):
 def get_waveform_filter(length, template=None, **kwargs):
     """Return a frequency domain waveform filter for the specified approximant
     """
-    raise NotImplementedError
+    n = length
+    N = (n-1)*2
+
+    input_params = props(template,**kwargs)
+
+    if input_params['approximant'] in fd_approximants(mgr.state):
+        wav_gen = fd_wav[type(mgr.state)] 
+        htilde = wav_gen[input_params['approximant']](**input_params)
+        htilde.resize(n)
+        return htilde
+    elif input_params['approximant'] in td_approximants(mgr.state):
+        delta_f = 1.0 / (N * input_params['delta_t'])
+        wav_gen = td_wav[type(mgr.state)] 
+        hp, hc = wav_gen[input_params['approximant']](**input_params)
+        hp.resize(N)
+        k_zero = int(hp.start_time / hp.delta_t)
+        hp.roll(k_zero)
+        htilde = FrequencySeries(zeros(n), delta_f=delta_f,
+                                            dtype=complex_same_precision_as(hp))
+        fft(hp, htilde)
+        return htilde
+    else:
+        raise ValueError("Approximant Not Available")
 
     
 def get_waveform_filter_precondition(approximant):
@@ -400,4 +422,4 @@ def get_waveform_filter_precondition(approximant):
 
 
 __all__ = ["get_td_waveform","get_fd_waveform","print_td_approximants",
-           "print_fd_approximants","td_approximants","fd_approximants"]
+           "print_fd_approximants","td_approximants","fd_approximants", "get_waveform_filter"]
