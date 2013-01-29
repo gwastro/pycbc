@@ -230,8 +230,66 @@ def props(obj, **kwargs):
     return input_params
 
 def get_td_waveform(template=None, **kwargs):
-    """Return the waveform specified by the attributes of the template with 
-       overrides given by keyword argument
+    """Return the plus and cross polarizations of a time domain waveform. 
+
+    Parameters
+    ----------
+    template: object
+        An object that has attached properties. This can be used to subsitute
+    for keyword arguments. A common example would be a row in an xml table. 
+    approximant : string
+        A string that indicates the chosen approximant. See `td_approximants` 
+    for available options. 
+    mass1 : float
+        The mass of the first component object in the binary. 
+    mass2 : 
+        The mass of teh second component object in the binary.
+    delta_t :
+        The time step used to generate the waveform. 
+    f_lower :
+        The starting frequency of the waveform.
+    distance : {1e3, float}, optional
+        The distance from the observer to the source in kiloparsecs.
+    inclination : {0, float}, optional
+        The inclination angle of the source. 
+    phi0 : {0, float}, optional
+        The final phase or phase at the peak of the wavform. See documentation on
+    specific approximants for exact usage. 
+    spin1x : {0, float}, optional
+        The x component of the first component objects spin vector. 
+    spin1y : {0, float}, optional
+        The y component of the first component objects spin vector. 
+    spin1z : {0, float}, optional
+        The z component of the first component objects spin vector. 
+    spin2x : {0, float}, optional
+        The x component of the second component objects spin vector. 
+    spin2y : {0, float}, optional
+        The y component of the second component objects spin vector. 
+    spin2z : {0, float}, optional
+        The z component of the second component objects spin vector. 
+    lambda1: {0, float}, optional
+        The tidal deformability parameter of object 1. 
+    lambda2: {0, flaot}, optional
+        The tidal deformability parameter of object 2.
+    phase_order: {-1, int}, optional
+        The pN order of the orbital phase. The default of -1 indicates that 
+    all implemented orders are used.
+    spin_order: {-1, int}, optional
+        The pN order of the spin corrections. The default of -1 indicates that 
+    all implemented orders are used.
+    tidal_order: {-1, int}, optional
+        The pN order of the tidal corrections. The default of -1 indicates that 
+    all implemented orders are used.
+    amplitude_order: {-1, int}, optional
+        The pN order of the amplitude. The default of -1 indicates that 
+    all implemented orders are used.
+
+    Returns
+    -------
+    hplus: TimeSeries
+        The plus polarization of the waveform.
+    hcross: TimeSeries
+        The cross polarization of the waveform.    
     """
     input_params = props(template,**kwargs)
     wav_gen = td_wav[type(mgr.state)] 
@@ -251,9 +309,69 @@ def get_td_waveform(template=None, **kwargs):
     return (hp,hc)
 
 def get_fd_waveform(template=None, **kwargs):
-    """Return the frequency domain waveform specified by the attributes
-       of the template with overrides given by keyword argument
+    """Return a frequency domain gravitational waveform.
+
+    Parameters
+    ----------
+    template: object
+        An object that has attached properties. This can be used to subsitute
+    for keyword arguments. A common example would be a row in an xml table. 
+    approximant : string
+        A string that indicates the chosen approximant. See `fd_approximants` 
+    for available options. 
+    mass1 : float
+        The mass of the first component object in the binary. 
+    mass2 : 
+        The mass of teh second component object in the binary.
+    delta_f :
+        The frequency step used to generate the waveform. 
+    f_lower :
+        The starting frequency of the waveform.
+    f_final : {-1, float}, optional
+        The ending frequency of the waveform. The default indicates that the
+    choice is made by the respective approximant. 
+    distance : {1e3, float}, optional
+        The distance from the observer to the source in kiloparsecs.
+    inclination : {0, float}, optional
+        The inclination angle of the source. 
+    phi0 : {0, float}, optional
+        The final phase or phase at the peak of the wavform. See documentation on
+    specific approximants for exact usage. 
+    spin1x : {0, float}, optional
+        The x component of the first component objects spin vector. 
+    spin1y : {0, float}, optional
+        The y component of the first component objects spin vector. 
+    spin1z : {0, float}, optional
+        The z component of the first component objects spin vector. 
+    spin2x : {0, float}, optional
+        The x component of the second component objects spin vector. 
+    spin2y : {0, float}, optional
+        The y component of the second component objects spin vector. 
+    spin2z : {0, float}, optional
+        The z component of the second component objects spin vector. 
+    lambda1: {0, float}, optional
+        The tidal deformability parameter of object 1. 
+    lambda2: {0, flaot}, optional
+        The tidal deformability parameter of object 2.
+    phase_order: {-1, int}, optional
+        The pN order of the orbital phase. The default of -1 indicates that 
+    all implemented orders are used.
+    spin_order: {-1, int}, optional
+        The pN order of the spin corrections. The default of -1 indicates that 
+    all implemented orders are used.
+    tidal_order: {-1, int}, optional
+        The pN order of the tidal corrections. The default of -1 indicates that 
+    all implemented orders are used.
+    amplitude_order: {-1, int}, optional
+        The pN order of the amplitude. The default of -1 indicates that 
+    all implemented orders are used.
+   
+    Returns
+    -------
+    htilde: FrequencySeries
+        The cosine phase of the waveform in frequency domain.
     """
+
     input_params = props(template,**kwargs)
     wav_gen = fd_wav[type(mgr.state)] 
 

@@ -40,20 +40,19 @@ def unwrap_phase(vec, discont, offset):
 
     Parameters
     ----------
-    vec: array_like
+    vec : array_like
         Vectors that can be converted to an array as defined by numpy. 
         PyCBC types, numpy types, lists, etc can be provided. 
-    discont: float
+    discont : float
         A float that indicates the size of discontinuity to require to 
         trigger an offset in the data. Due to precision on many 
         functions consider a value smaller than the maximum.
-    offset: float
+    offset : float
         A float that increments the vector every place a discontinuity 
         is found. 
 
     Returns
     -------
-    
     Phase: TimeSeries
         The unwrapped phase as a time series.   
 
@@ -85,16 +84,16 @@ def phase_from_polarizations(h_plus, h_cross):
 
     Parameters
     ----------
-    h_plus: TimeSeries
+    h_plus : TimeSeries
         An PyCBC TmeSeries vector that contains the plus polarization of the
         gravitational waveform.
-    h_cross: TimeSeries
+    h_cross : TimeSeries
         A PyCBC TmeSeries vector that contains the cross polarization of the
         gravitational waveform.
 
     Returns
     -------
-    GWPhase: TimeSeries
+    GWPhase : TimeSeries
         A TimeSeries containing the gravitational wave phase.
 
     Examples
@@ -118,16 +117,16 @@ def amplitude_from_polarizations(h_plus, h_cross):
 
     Parameters
     ----------
-    h_plus: TimeSeries
+    h_plus : TimeSeries
         An PyCBC TmeSeries vector that contains the plus polarization of the
         gravitational waveform.
-    h_cross: TimeSeries
+    h_cross : TimeSeries
         A PyCBC TmeSeries vector that contains the cross polarization of the
         gravitational waveform.
 
     Returns
     -------
-    GWAmplitude: TimeSeries
+    GWAmplitude : TimeSeries
         A TimeSeries containing the gravitational wave amplitude.
 
     Examples
@@ -152,16 +151,16 @@ def frequency_from_polarizations(h_plus, h_cross):
 
     Parameters
     ----------
-    h_plus: TimeSeries
+    h_plus : TimeSeries
         An PyCBC TmeSeries vector that contains the plus polarization of the
         gravitational waveform.
-    h_cross: TimeSeries
+    h_cross : TimeSeries
         A PyCBC TmeSeries vector that contains the cross polarization of the
         gravitational waveform.
 
     Returns
     -------
-    GWFrequency: TimeSeries
+    GWFrequency : TimeSeries
         A TimeSeries containing the gravitational wave frequency as a function
         of time. 
 
