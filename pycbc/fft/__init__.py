@@ -107,7 +107,7 @@ if pycbc.HAVE_OPENCL:
 
 # Now create a dict-of-dicts of backends
 
-_fft_backends = {None.__class__: _cpu_backends}
+_fft_backends = {pycbc.scheme.CPUScheme: _cpu_backends}
 if pycbc.HAVE_CUDA:
     _fft_backends.update({pycbc.scheme.CUDAScheme:
                           _cuda_backends})

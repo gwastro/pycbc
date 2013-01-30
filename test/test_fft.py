@@ -654,7 +654,7 @@ class _BaseTestFFTClass(base_test.function_base):
 
 if _options['scheme']=='cpu':
     CPUTestClasses = []
-    context = pycbc.scheme.DefaultScheme()
+    context = pycbc.scheme.CPUScheme()
     for backend in pycbc.fft.cpu_backends:
         klass = type('CPU_{0}Test'.format(backend),
                      (_BaseTestFFTClass,unittest.TestCase),

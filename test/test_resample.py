@@ -58,7 +58,7 @@ _parser.add_option('--device-num','-d', action='store', type = 'int',
 _options = vars(_opt_list)
 
 if _options['scheme'] == 'cpu':
-    context = DefaultScheme()
+    context = CPUScheme()
 if _options['scheme'] == 'cuda':
     context = CUDAScheme(device_num=_options['devicenum'])
 if _options['scheme'] == 'opencl':
@@ -74,7 +74,7 @@ class TestUtils(unittest.TestCase):
         self.c = TimeSeries([1,2,3,4], delta_t=self.delta_t, dtype=complex64)
         self.d = Array([1,2,3,4], dtype=float32)          
 
-    if type(context) is DefaultScheme:
+    if type(context) is CPUScheme:
         def test_resample_float32(self):
             ra = resample_to_delta_t(self.a, self.target_delta_t)
             self.assertAlmostEqual(ra[0], 0.00696246)

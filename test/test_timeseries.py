@@ -536,12 +536,7 @@ def test_maker(context, dtype, odtype, epoch):
             self.context = context
             self.dtype = dtype
             self.odtype = odtype
-            if _options['scheme'] == 'cpu':
-                self.scheme = type(None)
-            elif _options['scheme'] == 'cuda':
-                self.scheme = pycbc.scheme.CUDAScheme
-            else:
-                self.scheme = pycbc.scheme.OpenCLScheme
+            self.scheme = type(context)
             if (epoch is None):
                 self.epoch = lal.LIGOTimeGPS(0,0)
             else:
@@ -561,7 +556,7 @@ epochs = [lal.LIGOTimeGPS(1000, 1000),None]
 schemes = []
 
 if _options['scheme'] == 'cpu':
-    schemes.append(DefaultScheme())
+    schemes.append(CPUScheme())
 if _options['scheme'] == 'cuda':
     schemes.append(CUDAScheme(device_num=_options['devicenum']))
 if _options['scheme'] == 'opencl':

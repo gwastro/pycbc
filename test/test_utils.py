@@ -57,7 +57,7 @@ _parser.add_option('--device-num','-d', action='store', type = 'int',
 _options = vars(_opt_list)
 
 if _options['scheme'] == 'cpu':
-    context = DefaultScheme()
+    context = CPUScheme()
 if _options['scheme'] == 'cuda':
     context = CUDAScheme(device_num=_options['devicenum'])
 if _options['scheme'] == 'opencl':

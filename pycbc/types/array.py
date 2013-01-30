@@ -31,7 +31,7 @@ import functools as _functools
 
 import lal as _lal
 import numpy as _numpy
-from numpy import float32,float64,complex64,complex128
+from numpy import float32, float64, complex64, complex128
 
 import pycbc as _pycbc
 import pycbc.scheme as _scheme
@@ -51,7 +51,7 @@ _ALLOWED_SCALARS = [int,long, float, complex]+_ALLOWED_DTYPES
 
 def _convert_to_scheme(ary):
     if ary._scheme is not _scheme.mgr.state:
-        converted_array = Array(ary,dtype=ary._data.dtype)
+        converted_array = Array(ary, dtype=ary._data.dtype)
         ary._data = converted_array._data
         ary._scheme = _scheme.mgr.state
         
@@ -106,12 +106,12 @@ class Array(object):
         self._data = None
 
         if not copy:
-            if isinstance(initial_array,Array):
+            if isinstance(initial_array, Array):
                 if self._scheme is not initial_array._scheme:
                     raise TypeError("Cannot avoid a copy of this Array")
                 self._data = initial_array._data
             elif type(initial_array) is _numpy.ndarray:
-                if self._scheme is not None:
+                if type(self._scheme) is not _scheme.CPUScheme:
                     raise TypeError("Cannot avoid a copy of this Array")
                 else:
                     self._data = initial_array
@@ -188,7 +188,7 @@ class Array(object):
                 input_data = initial_array
 
             #Create new instance with input_data as initialization.
-            if self._scheme is None:
+            if type(self._scheme) is _scheme.CPUScheme:
                 if _pycbc.HAVE_CUDA and (type(input_data) is
                                          _cudaarray.GPUArray):
                     self._data = input_data.get().astype(dtype)
@@ -456,7 +456,7 @@ class Array(object):
     def inner(self, other):
         """ Return the inner product of the array with complex conjugation.
         """
-        if self._scheme is None:
+        if type(self._scheme) is _scheme.CPUScheme:
             cdtype = common_kind(self.dtype,other.dtype)
             if cdtype.kind == 'c':
                 acum_dtype = complex128
@@ -473,7 +473,7 @@ class Array(object):
     @_convert
     def clear(self):
         """ Clear out the values of the array. """
-        if self._scheme is None:
+        if type(self._scheme) is _scheme.CPUScheme:
             self[:] = 0 
         if type(self._scheme) is _scheme.CUDAScheme:
             n32 = self.data.nbytes / 4
@@ -488,7 +488,7 @@ class Array(object):
         """
         if weight is None:
             return self.inner(other)
-        if self._scheme is None:
+        if type(self._scheme) is _scheme.CPUScheme:
             cdtype = common_kind(self.dtype, other.dtype)
             if cdtype.kind == 'c':
                 acum_dtype = complex128
@@ -519,7 +519,7 @@ class Array(object):
     @_convert
     def cumsum(self):
         """ Return the cumulative sum of the the array. """
-        if self._scheme is None:
+        if type(self._scheme) is _scheme.CPUScheme:
             return self.data.cumsum()
         elif type(self._scheme) is _scheme.CUDAScheme:
             from array_cuda import cumsum
@@ -711,7 +711,7 @@ class Array(object):
         """ Used internally by SWIG typemaps to ensure @_convert 
             is called and scheme is correct  
         """
-        if self._scheme is not None:
+        if type(self._scheme) is not _scheme.CPUScheme:
             raise TypeError("Cannot call LAL function from the GPU")
         else:
             return self;
@@ -754,10 +754,12 @@ def complex_same_precision_as(data):
     elif data.precision is 'double':
         return complex128
 
+
+
 def zeros(length,dtype=float64):
     """ Return an Array filled with zeros.
     """
-    if _scheme.mgr.state is None:
+    if type(_scheme.mgr.state) is _scheme.CPUScheme: 
         return Array(_numpy.zeros(length,dtype=dtype),copy=False)
     if type(_scheme.mgr.state) is _scheme.CUDAScheme:
         result = _cudaarray.GPUArray(length, dtype=dtype)

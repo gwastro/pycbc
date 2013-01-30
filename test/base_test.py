@@ -51,10 +51,8 @@ class checks(object):
             if isinstance(val,pycbc.types.Array):
                 # We will need to check the scheme, and data type
                 self.assertTrue(type(val.data)==SchemeArray)
-                if type(pycbc.scheme.mgr.state) != pycbc.scheme.DefaultScheme:
+                if type(pycbc.scheme.mgr.state) != pycbc.scheme.CPUScheme:
                     self.assertTrue(type(val._scheme)==type(pycbc.scheme.mgr.state))
-                else:
-                    self.assertTrue(val._scheme==None)
                 
                 self.assertEqual(len(val), len(trueval))
                 for i in range(len(trueval)):

@@ -42,9 +42,9 @@ def get_correlate_kernel(dtype_x, dtype_y,dtype_out):
             "z[i] = conj(x[i]) * y[i]",
             "correlate")
 
-def correlate(a,b,out,stream=None):
+def correlate(a, b, out, stream=None):
     dtype_out = _get_common_dtype(a,b)
-    krnl = get_correlate_kernel(a.dtype,b.dtype,dtype_out)
+    krnl = get_correlate_kernel(a.dtype, b.dtype, dtype_out)
     krnl(a,b,out)
 
 

@@ -55,28 +55,31 @@ class _SchemeManager(object):
 
 # Create the global processing scheme manager
 mgr = _SchemeManager()
+DefaultScheme = None
 
 
-class DefaultScheme(object):
+class Scheme(object):
     """Context that sets PyCBC objects to use CPU processing. """
     _single = None
-    def __init__(self):
-        if DefaultScheme._single is not None:
-            raise RuntimeError("Only one processing scheme can be used")
-        DefaultScheme._single = True
-    def __enter__(self):
-        if type(self) is DefaultScheme:
-            mgr.shift_to(None)
+    def __new__(cls, *args, **kwds):
+        if cls is type(DefaultScheme):
+            return DefaultScheme
         else:
-            mgr.shift_to(self)
+            return object.__new__(cls)
+    def __init__(self):
+        if DefaultScheme is self or DefaultScheme is None:
+            return
+        if Scheme._single is not None:
+            raise RuntimeError("Only one processing scheme can be used")
+        Scheme._single = True
+    def __enter__(self):
+        mgr.shift_to(self)
         mgr.lock()
-    def __exit__(self,type,value,traceback):
+    def __exit__(self, type, value, traceback):
         mgr.unlock()
-        mgr.shift_to(None)
-        
+        mgr.shift_to(DefaultScheme)   
     def __del__(self):
-        if DefaultScheme:
-            DefaultScheme._single = None
+        Scheme._single = None
 
 _cuda_cleanup_list=[]
 
@@ -95,10 +98,10 @@ def clean_cuda(context):
     from pycuda.tools import clear_context_caches
     clear_context_caches()
 
-class CUDAScheme(DefaultScheme):
+class CUDAScheme(Scheme):
     """Context that sets PyCBC objects to use a CUDA processing scheme. """
-    def __init__(self,device_num=0):
-        DefaultScheme.__init__(self)
+    def __init__(self, device_num=0):
+        Scheme.__init__(self)
         if not pycbc.HAVE_CUDA:
             raise RuntimeError("Install PyCUDA to use CUDA processing")    
         import pycuda.driver   
@@ -110,10 +113,10 @@ class CUDAScheme(DefaultScheme):
         
 
 
-class OpenCLScheme(DefaultScheme):
+class OpenCLScheme(Scheme):
     """Context that sets PyCBC objects to use a OpenCL processing scheme. """
     def __init__(self,platform_name=None,device_num=0):
-        DefaultScheme.__init__(self)
+        Scheme.__init__(self)
         if not pycbc.HAVE_OPENCL:
             raise RuntimeError("Install PyOpenCL to use OpenCL processing")   
         import pyopencl  
@@ -129,7 +132,37 @@ class OpenCLScheme(DefaultScheme):
         self.platform = pyopencl.get_platforms()[platform_id]
         self.device =  self.platform.get_devices()[device_num]
         self.context = pyopencl.Context([self.device])
-        self.queue = pyopencl.CommandQueue(self.context)     
+        self.queue = pyopencl.CommandQueue(self.context)    
+
+CPUScheme = Scheme 
+
+DefaultScheme = CPUScheme()
+mgr.state = DefaultScheme
+
+scheme_prefix = {CUDAScheme: "cuda", OpenCLScheme: "opencl", CPUScheme: "cpu"}
+
+def current_prefix():
+    return scheme_prefix[type(mgr.state)]
+
+def schemed(prefix):
+    def schemed_function(fn):
+        backend = __import__(prefix + _scheme.current_prefix())
+        schemed_fn = getattr(backend, fn.__name__)
+        schemed_fn.__doc__ = fn.__doc__
+        return schemed_fn
+    return prefix
+        
+
+
+
+
+
+
+
+
+
+
+
 
 
 

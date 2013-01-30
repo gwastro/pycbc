@@ -61,7 +61,7 @@ if _options.scheme == 'cuda':
 elif _options.scheme == 'opencl':
     _context = pycbc.scheme.OpenCLScheme(device_num=_options.devicenum)
 elif _options.scheme == 'cpu':
-    _context = pycbc.scheme.DefaultScheme()
+    _context = pycbc.scheme.CPUScheme()
 
 class TestPSD(unittest.TestCase):
     def setUp(self):

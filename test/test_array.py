@@ -457,15 +457,10 @@ class ArrayTestBase(base_test.array_base):
 def array_test_maker(context,dtype,odtype):
     class tests(ArrayTestBase,unittest.TestCase):
         def __init__(self,*args):
-            self.context=context
-            self.dtype=dtype
-            self.odtype=odtype
-            if _options['scheme'] == 'cpu':
-                self.scheme = type(None)
-            elif _options['scheme'] == 'cuda':
-                self.scheme = pycbc.scheme.CUDAScheme
-            else:
-                self.scheme = pycbc.scheme.OpenCLScheme            
+            self.context = context
+            self.dtype = dtype
+            self.odtype = odtype
+            self.scheme = type(context)
             unittest.TestCase.__init__(self,*args)
     tests.__name__ = _options['scheme'] + " " + dtype.__name__ + " with " + odtype.__name__
     return tests
@@ -477,7 +472,7 @@ suite = unittest.TestSuite()
 
 scs =[]
 if _options['scheme'] == 'cpu':
-    scs.append(DefaultScheme())
+    scs.append(CPUScheme())
 if _options['scheme'] == 'cuda':
     scs.append(CUDAScheme(device_num=_options['devicenum']))
 if _options['scheme'] == 'opencl':

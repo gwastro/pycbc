@@ -34,8 +34,8 @@ import pycbc.scheme
 import pycbc
 import numpy
 
-def correlate(x,y,z):
-    if pycbc.scheme.mgr.state is None:
+def correlate(x, y, z):
+    if type(pycbc.scheme.mgr.state) is pycbc.scheme.CPUScheme:
         z.data[:] = numpy.conjugate(x.data)[:]
         z *= y
     if type(pycbc.scheme.mgr.state) is pycbc.scheme.CUDAScheme:

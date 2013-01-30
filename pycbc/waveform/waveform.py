@@ -118,13 +118,6 @@ for approx_enum in xrange(0,lalsimulation.NumApproximants):
         _lalsim_enum[approx_name] = approx_enum
         _lalsim_fd_approximants[approx_name] = _lalsim_fd_waveform
 
-def _filter_td_waveform(p):
-    raise NotImplementedError
-
-def _filter_fd_waveform(p):
-    raise NotImplementedError
-
-
 # Waveforms that are optimized to work as filters
 _filter_fd_approximants = {}
 _filter_td_approximants = {}
@@ -162,16 +155,9 @@ opencl_fd = dict(_lalsim_fd_approximants.items() + _opencl_fd_approximants.items
 opencl_td_filter = dict(cpu_td_filter.items() + opencl_td.items())
 opencl_fd_filter = dict(cpu_fd_filter.items() + opencl_fd.items())
 
-td_wav = {type(None):cpu_td,_scheme.CUDAScheme:cuda_td,_scheme.OpenCLScheme:opencl_td}
+td_wav = {_scheme.CPUScheme:cpu_td,_scheme.CUDAScheme:cuda_td,_scheme.OpenCLScheme:opencl_td}
 
-fd_wav = {type(None):cpu_fd,_scheme.CUDAScheme:cuda_fd,_scheme.OpenCLScheme:opencl_fd}
-
-td_filter = {type(None):cpu_td_filter,
-            _scheme.CUDAScheme:cuda_td_filter,
-            _scheme.OpenCLScheme:opencl_td_filter}
-fd_filter = {type(None):cpu_fd_filter,
-            _scheme.CUDAScheme:cuda_fd_filter,
-            _scheme.OpenCLScheme:opencl_fd_filter}
+fd_wav = {_scheme.CPUScheme:cpu_fd,_scheme.CUDAScheme:cuda_fd,_scheme.OpenCLScheme:opencl_fd}
 
 def print_td_approximants():
     print("Lalsimulation Approximants")
@@ -195,13 +181,13 @@ def print_fd_approximants():
     for approx in _opencl_fd_approximants.keys():
         print "  " + approx
 
-def td_approximants(scheme=None):
+def td_approximants(scheme=_scheme.mgr.state):
     """Return a list containing the available time domain approximants for 
        the given processing scheme.
     """
     return td_wav[type(scheme)].keys()
 
-def fd_approximants(scheme=None):
+def fd_approximants(scheme=_scheme.mgr.state):
     """Return a list containing the available fourier domain approximants for 
        the given processing scheme.
     """

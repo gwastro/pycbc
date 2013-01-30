@@ -21,6 +21,8 @@
 #
 # =============================================================================
 #
+"""PyOpenCL based backend for pycbc array
+"""
 
 from pyopencl.tools import context_dependent_memoize
 from pyopencl.scan import InclusiveScanKernel

@@ -425,6 +425,7 @@ class _BaseTestTMClass(base_test.function_base):
                 intuple=[self.input,self.output]
                 self.assertRaises(TypeError,self.fn,*intuple)
         else:
+            print "AAAAAAAAAAAAAAAAAAAAAA", type(self.input), self.input, type(self.output), self.output
             self.retval=self.fn(self.input,self.output)
             self.assertEqual(self.retval,None,msg="Noneout typemap did not return 'None'")
             self.assertTrue(ourcmp(self.expectedout,self.output),msg=self.outfail)
@@ -523,7 +524,7 @@ class _BaseTestTMClass(base_test.function_base):
 
 if _options['scheme']=='cpu':
     CPUTestClasses = []
-    context = pycbc.scheme.DefaultScheme()
+    context = pycbc.scheme.CPUScheme()
     for laltype in possible_laltypes:
         klass = type('CPU_{0}Test'.format(laltype),
                      (_BaseTestTMClass,unittest.TestCase),

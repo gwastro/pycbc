@@ -302,7 +302,7 @@ class FrameTestBase(base_test.function_base):
                                     start=float(self.epoch),end=float(badtime))
 
 if _options['scheme']=='cpu':
-    context = pycbc.scheme.DefaultScheme()
+    context = pycbc.scheme.CPUScheme()
 elif _options['scheme']=='cuda':
     context = pycbc.scheme.CUDAScheme(device_num=_options['devicenum'])
 elif _options['scheme']=='opencl':
