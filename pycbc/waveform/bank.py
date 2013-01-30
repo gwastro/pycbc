@@ -27,21 +27,36 @@ This module provides classes that describe banks of waveforms
 """
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import table, lsctables
-from pycbc.waveform import get_waveform_filter
+from pycbc.waveform import get_waveform_filter, get_waveform_filter_precondition
 from pycbc import DYN_RANGE_FAC
 
 class TemplateBank(object):
-    def __init__(self, filename, length, **kwds):
+    def __init__(self, filename, filter_length, approximant, **kwds):
+        self.approximant = approximant
         self.filename = filename
-        self.length = length
+        self.filter_length = filter_length
         self.indoc = ligolw_utils.load_filename(filename, False)
         try :
             self.table = table.get_table(self.indoc, lsctables.SnglInspiralTable.tableName) 
         except ValueError:
             self.table = table.get_table(self.indoc, lsctables.SimInspiralTable.tableName)
 
-        self.index = 0
+        self.index = -1
         self.extra_args = kwds
+    
+    def precondition(self, stilde):
+        """ Return the fourier domain strain preconditioned for the approximant
+            used in the template bank.
+        """ 
+        precondition_factor = get_waveform_filter_precondition(self.approximant, self.filter_length)
+        if precondition_factor is not None:
+            return precondition_factor * stilde
+        else:
+            return strain
+        
+
+    def __len__(self):
+        return len(self.table)
             
     def __iter__(self):
         return self
@@ -52,6 +67,7 @@ class TemplateBank(object):
             raise StopIteration
         else:
             return get_waveform_filter(self.length, self.table[self.index], **self.extra_args)
+
         
     
 

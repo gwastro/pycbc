@@ -416,10 +416,16 @@ def get_waveform_filter(length, template=None, **kwargs):
     else:
         raise ValueError("Approximant Not Available")
 
+_filter_preconditions = {}
     
-def get_waveform_filter_precondition(approximant):
-    raise NotImplementedError
-
+def get_waveform_filter_precondition(approximant, length):
+    """Return the data preconditioning factor for this approximant.
+    """
+    if approximant in _filter_preconditions:
+        pass
+    else:
+        return None
 
 __all__ = ["get_td_waveform","get_fd_waveform","print_td_approximants",
-           "print_fd_approximants","td_approximants","fd_approximants", "get_waveform_filter"]
+           "print_fd_approximants","td_approximants","fd_approximants", 
+           "get_waveform_filter", "get_waveform_filter_precondition"]

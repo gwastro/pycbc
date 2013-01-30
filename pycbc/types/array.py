@@ -755,6 +755,8 @@ def complex_same_precision_as(data):
         return complex128
 
 def zeros(length,dtype=float64):
+    """ Return an Array filled with zeros.
+    """
     if _scheme.mgr.state is None:
         return Array(_numpy.zeros(length,dtype=dtype),copy=False)
     if type(_scheme.mgr.state) is _scheme.CUDAScheme:
@@ -765,5 +767,6 @@ def zeros(length,dtype=float64):
     if type(_scheme.mgr.state) is _scheme.OpenCLScheme:
         return Array(_openclarray.zeros(_scheme.mgr.state.queue,length,dtype),
                      copy=False)
+
 
 
