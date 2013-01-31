@@ -360,7 +360,7 @@ class TestTimeSeriesBase(base_test.array_base):
         if _options['scheme'] != 'cpu':
             self.assertRaises(TypeError, TimeSeries, out4, 0.1, copy=False)
             out6 = TimeSeries(out4, 0.1, dtype=self.dtype)
-            self.assertTrue(type(out6._scheme) == type(None))
+            self.assertTrue(type(out6._scheme) == CPUScheme)
             self.assertTrue(type(out6._data) is numpy.ndarray)
             self.assertEqual(out6[0],1)
             self.assertEqual(out6[1],2)
