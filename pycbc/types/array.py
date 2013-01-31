@@ -27,7 +27,10 @@ This modules provides a device independent Array class based on PyCUDA,
 PyOpenCL, and Numpy.
 """
 
+BACKEND_PREFIX="pycbc.types.array_"
+
 import functools as _functools
+from decorator import decorator
 
 import lal as _lal
 import numpy as _numpy
@@ -35,6 +38,7 @@ from numpy import float32, float64, complex64, complex128
 
 import pycbc as _pycbc
 import pycbc.scheme as _scheme
+from pycbc.scheme import schemed, cpuonly
 
 if _pycbc.HAVE_CUDA:
     import pycuda as _pycuda
@@ -232,64 +236,56 @@ class Array(object):
             else:
                 raise TypeError('Invalid Processing scheme Type')
 
-    def _returntype(fn):
-        """ Wrapper for method functions to return a PyCBC Array class """
-        @_functools.wraps(fn)
-        def wrapped(self,*args):
-            ary = fn(self,*args)
-            if ary is NotImplemented:
-                return NotImplemented
-            return self._return(ary)
-        return wrapped
-
+    @decorator
+    def _returntype(fn, self, *args):
+        ary = fn(self,*args)
+        if ary is NotImplemented:
+            return NotImplemented
+        return self._return(ary)
+        
     def _return(self,ary):
         """Wrap the ary to return an Array type """
         return Array(ary, copy=False)
 
-    def _checkother(fn):
-        """ Checks the input to method functions """
-        @_functools.wraps(fn)
-        def checked(self,*args):
-            nargs = ()
-            for other in args:
-                self._typecheck(other)  
-                if type(other) in _ALLOWED_SCALARS:
-                    other = force_precision_to_match(other, self.precision)
-                    nargs +=(other,)
-                elif isinstance(other, type(self)) or type(other) is Array:
-                    if len(other) != len(self):
-                        raise ValueError('lengths do not match')
-                    if other.precision == self.precision:
-                        _convert_to_scheme(other)
-                        nargs += (other._data,)
-                    else:
-                        raise TypeError('precisions do not match')
+    @decorator
+    def _checkother(fn, self,*args):
+        nargs = ()
+        for other in args:
+            self._typecheck(other)  
+            if type(other) in _ALLOWED_SCALARS:
+                other = force_precision_to_match(other, self.precision)
+                nargs +=(other,)
+            elif isinstance(other, type(self)) or type(other) is Array:
+                if len(other) != len(self):
+                    raise ValueError('lengths do not match')
+                if other.precision == self.precision:
+                    _convert_to_scheme(other)
+                    nargs += (other._data,)
                 else:
-                    return NotImplemented
+                    raise TypeError('precisions do not match')
+            else:
+                return NotImplemented
 
-            return fn(self,*nargs)
-        return checked
-
-    def _vcheckother(fn):
-        """ Checks the input to methods that only work with vector input """
-        @_functools.wraps(fn)
-        def checked(self,*args):
-            nargs = ()
-            for other in args:
-                self._typecheck(other)  
-                if isinstance(other, type(self)) or type(other) is Array:
-                    if len(other) != len(self):
-                        raise ValueError('lengths do not match')
-                    if other.precision == self.precision:
-                        _convert_to_scheme(other)
-                        nargs += (other._data,)
-                    else:
-                        raise TypeError('precisions do not match')
+        return fn(self,*nargs)
+    
+    @decorator  
+    def _vcheckother(fn, self,*args):
+        nargs = ()
+        for other in args:
+            self._typecheck(other)  
+            if isinstance(other, type(self)) or type(other) is Array:
+                if len(other) != len(self):
+                    raise ValueError('lengths do not match')
+                if other.precision == self.precision:
+                    _convert_to_scheme(other)
+                    nargs += (other._data,)
                 else:
-                    raise TypeError('array argument required')                    
+                    raise TypeError('precisions do not match')
+            else:
+                raise TypeError('array argument required')                    
 
-            return fn(self,*nargs)
-        return checked
+        return fn(self,*nargs)
+
         
     def _icheckother(fn):
         """ Checks the input to in-place operations """
@@ -715,7 +711,8 @@ class Array(object):
             raise TypeError("Cannot call LAL function from the GPU")
         else:
             return self;
-
+    
+    @cpuonly
     @_convert
     def  lal(self):
         """ Returns a LAL Object that contains this data """
@@ -754,21 +751,17 @@ def complex_same_precision_as(data):
     elif data.precision is 'double':
         return complex128
 
+@decorator
+def _return_array(fn, *args, **kwds):
+    return Array(fn(*args, **kwds), copy=False)
 
 
-def zeros(length,dtype=float64):
+@_return_array
+@schemed(BACKEND_PREFIX)
+def zeros(length, dtype=float64):
     """ Return an Array filled with zeros.
     """
-    if type(_scheme.mgr.state) is _scheme.CPUScheme: 
-        return Array(_numpy.zeros(length,dtype=dtype),copy=False)
-    if type(_scheme.mgr.state) is _scheme.CUDAScheme:
-        result = _cudaarray.GPUArray(length, dtype=dtype)
-        nwords = result.nbytes / 4
-        _cudriver.memset_d32(result.gpudata, 0, nwords)
-        return Array(result, copy=False)
-    if type(_scheme.mgr.state) is _scheme.OpenCLScheme:
-        return Array(_openclarray.zeros(_scheme.mgr.state.queue,length,dtype),
-                     copy=False)
+    pass
 
 
 

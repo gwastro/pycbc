@@ -23,12 +23,11 @@
 #
 """PyOpenCL based backend for pycbc array
 """
-
 from pyopencl.tools import context_dependent_memoize
 from pyopencl.scan import InclusiveScanKernel
 from pyopencl.reduction import ReductionKernel
 from pytools import match_precision, memoize_method
-from pyopencl.array import _get_common_dtype
+from pyopencl.array import _get_common_dtype, clzeros
 from pyopencl.elementwise import ElementwiseKernel, complex_dtype_to_name
 from pyopencl.tools import dtype_to_ctype
 from pycbc.scheme import mgr 
@@ -83,12 +82,12 @@ def get_inner_kernel(dtype_x, dtype_y, dtype_out):
             name="inner")
 
 def inner(a, b):
-    dtype_out = _get_common_dtype(a,b, mgr.state.queue)
+    dtype_out = _get_common_dtype(a, b, mgr.state.queue)
     krnl = get_inner_kernel(a.dtype, b.dtype, dtype_out)
     return krnl(a, b)
 
 def weighted_inner(a, b, w):
-    dtype_out = _get_common_dtype(a,b, mgr.state.queue)
+    dtype_out = _get_common_dtype(a, b, mgr.state.queue)
     krnl = get_weighted_inner_kernel(a.dtype, b.dtype, w.dtype, dtype_out)
     return krnl(a, b, w)
 
@@ -104,10 +103,14 @@ def get_norm_kernel(dtype_x, dtype_out):
             "norm")
 
 def squared_norm(a):
-    dtype_out = match_precision(np.dtype('float64'),a.dtype)
+    dtype_out = match_precision(np.dtype('float64'), a.dtype)
     out = a._new_like_me(dtype=dtype_out)
     krnl = get_norm_kernel(a.dtype,dtype_out)
     krnl(a,out)
     return out 
+
+def zeros(length, dtype=np.float64):
+    return clzeros(mgr.state.queue, length, dtype)
+                   
 
 

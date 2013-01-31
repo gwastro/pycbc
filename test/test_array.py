@@ -363,7 +363,7 @@ class ArrayTestBase(base_test.array_base):
         if _options['scheme'] != 'cpu':
             self.assertRaises(TypeError, Array, out4, copy=False)
             out6 = Array(out4, dtype=self.dtype)
-            self.assertTrue(type(out6._scheme) == type(None))
+            self.assertTrue(type(out6._scheme) == CPUScheme)
             self.assertTrue(type(out6._data) is numpy.ndarray)
             self.assertEqual(out6[0],1)
             self.assertEqual(out6[1],2)

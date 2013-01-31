@@ -145,12 +145,18 @@ def current_prefix():
     return scheme_prefix[type(mgr.state)]
 
 def schemed(prefix):
-    def schemed_function(fn):
-        backend = __import__(prefix + _scheme.current_prefix())
+    def scheming_function(fn):
+        backend = __import__(prefix + current_prefix(), fromlist=[fn.__name__])
         schemed_fn = getattr(backend, fn.__name__)
         schemed_fn.__doc__ = fn.__doc__
         return schemed_fn
-    return prefix
+    return scheming_function
+
+def cpuonly(fn):
+    if type(mgr.state) != CPUScheme:
+        raise TypeError(fn.__name__ + " can only be called from a CPU processing scheme.")
+    else:
+        return fn
         
 
 

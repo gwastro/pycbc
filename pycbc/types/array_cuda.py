@@ -23,14 +23,14 @@
 #
 """Pycuda based 
 """
-
+import pycuda.driver
 from pycuda.elementwise import ElementwiseKernel
 from pycuda.reduction import ReductionKernel
 from pycuda.tools import register_dtype
 from pycuda.tools import context_dependent_memoize
 from pycuda.tools import dtype_to_ctype
 from pytools import match_precision, memoize_method
-from pycuda.gpuarray import _get_common_dtype, empty
+from pycuda.gpuarray import _get_common_dtype, empty, GPUArray
 from pycuda.scan import InclusiveScanKernel
 import numpy as np
 
@@ -269,8 +269,11 @@ amldc = LowerLatencyReductionKernel(maxloc_dtype_double, neutral = "maxloc_start
 
 abs_max_loc = {'single':{ 'real':amls, 'complex':amlsc }, 'double':{ 'real':amld, 'complex':amldc }}
 
-
-   
+def zeros(length, dtype=np.float64):
+    result = GPUArray(length, dtype=dtype)
+    nwords = result.nbytes / 4
+    pycuda.driver.memset_d32(result.gpudata, 0, nwords)
+    return result
 
 
     
