@@ -31,6 +31,7 @@ from pycuda.tools import context_dependent_memoize
 from pycuda.tools import dtype_to_ctype
 from pytools import match_precision, memoize_method
 from pycuda.gpuarray import _get_common_dtype, empty, GPUArray
+import pycuda.gpuarray
 from pycuda.scan import InclusiveScanKernel
 import numpy as np
 
@@ -42,7 +43,7 @@ include_complex = """
 def get_cumsum_kernel(dtype):
     return InclusiveScanKernel(dtype, "a+b", preamble=include_complex)
 
-def cumsum(vec):
+def icumsum(vec):
     krnl = get_cumsum_kernel(vec.dtype)
     return krnl(vec)
 
@@ -248,7 +249,7 @@ mld = LowerLatencyReductionKernel(maxloc_dtype_double, neutral = "maxloc_start()
         reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(x[i], i)",
         arguments="double *x", preamble=maxloc_preamble_double)
         
-max_loc = {'single':mls,'double':mld}
+max_loc_map = {'single':mls,'double':mld}
 
 
 amls = LowerLatencyReductionKernel(maxloc_dtype_single, neutral = "maxloc_start()",
@@ -267,13 +268,42 @@ amldc = LowerLatencyReductionKernel(maxloc_dtype_double, neutral = "maxloc_start
         reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
         arguments="pycuda::complex<double> *x", preamble=maxloc_preamble_double)
 
-abs_max_loc = {'single':{ 'real':amls, 'complex':amlsc }, 'double':{ 'real':amld, 'complex':amldc }}
+abs_max_loc_map = {'single':{ 'real':amls, 'complex':amlsc }, 'double':{ 'real':amld, 'complex':amldc }}
 
 def zeros(length, dtype=np.float64):
     result = GPUArray(length, dtype=dtype)
     nwords = result.nbytes / 4
     pycuda.driver.memset_d32(result.gpudata, 0, nwords)
     return result
+
+def ptr(self):
+    return self._data.ptr
+
+def dot(self, other):
+    return pycuda.gpuarray.dot(self._data,other).get().max()
+
+def min(self):
+    return pycuda.gpuarray.min(self._data).get().max()
+
+def abs_max_loc(self):
+    maxloc = abs_max_loc_map[self.precision][self.kind](self._data)
+    maxloc = maxloc.get()
+    return float(maxloc['max']),int(maxloc['loc'])
+
+def cumsum(self):
+    tmp = self.data*1
+    return icumsum(tmp)
+
+def max(self):
+    return pycuda.gpuarray.max(self._data).get().max()
+
+def max_loc(self):
+    maxloc = max_loc_map[self.precision](self._data)
+    maxloc = maxloc.get()
+    return float(maxloc['max']),int(maxloc['loc'])
+    
+    
+    
 
 
     

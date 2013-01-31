@@ -513,78 +513,36 @@ class Array(object):
 
     @_returntype
     @_convert
+    @schemed(BACKEND_PREFIX)
     def cumsum(self):
         """ Return the cumulative sum of the the array. """
-        if type(self._scheme) is _scheme.CPUScheme:
-            return self.data.cumsum()
-        elif type(self._scheme) is _scheme.CUDAScheme:
-            from array_cuda import cumsum
-            tmp = self.data*1
-            return cumsum(tmp)
-        elif type(self._scheme) is _scheme.OpenCLScheme:
-            from array_opencl import cumsum
-            tmp = self.data*1
-            return cumsum(tmp)   
      
     @_convert
+    @schemed(BACKEND_PREFIX)
     def max(self):
         """ Return the maximum value in the array. """
-        if type(self._data) is _numpy.ndarray:
-            return self._data.max()
-        elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
-            return _pycuda.gpuarray.max(self._data).get().max()
-        elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-            return _pyopencl.array.max(self._data).get().max()  
             
     @_convert
+    @schemed(BACKEND_PREFIX)
     def max_loc(self):
         """Return the maximum value in the array along with the index location """
-        if type(self._data) is _numpy.ndarray:
-            return self._data.max(),_numpy.argmax(self._data)
-        elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
-            from array_cuda import max_loc
-            maxloc = max_loc[self.precision](self._data)
-            maxloc = maxloc.get()
-            return float(maxloc['max']),int(maxloc['loc'])
-        elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-            raise NotImplementedError 
 
     @_convert
+    @schemed(BACKEND_PREFIX)
     def abs_max_loc(self):
         """Return the maximum elementwise norm in the array along with the index location"""
-        if type(self._data) is _numpy.ndarray:
-            tmp = abs(self.data)
-            ind = _numpy.argmax(tmp)
-            return tmp[ind], ind
-        elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
-            from array_cuda import abs_max_loc
-            maxloc = abs_max_loc[self.precision][self.kind](self._data)
-            maxloc = maxloc.get()
-            return float(maxloc['max']),int(maxloc['loc'])
-        elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-            raise NotImplementedError 
 
     @_convert
+    @schemed(BACKEND_PREFIX)
     def min(self):
-        """ Return the maximum value in the array. """
-        if type(self._data) is _numpy.ndarray:
-            return self._data.min()
-        elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
-            return _pycuda.gpuarray.min(self._data).get().max()
-        elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-            return _pyopencl.array.min(self._data).get().max()         
+        """ Return the maximum value in the array. """                             
 
     @_convert
     @_vcheckother
-    def dot(self,other):
+    @schemed(BACKEND_PREFIX)
+    def dot(self, other):
         """ Return the dot product"""
-        if type(self._data) is _numpy.ndarray:
-            return _numpy.dot(self._data,other)
-        elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
-            return _pycuda.gpuarray.dot(self._data,other).get().max()
-        elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-            return _pyopencl.array.dot(self._data,other).get().max()
-
+            
     @_convert
     def __getitem__(self, index):
         if isinstance(index, slice):
@@ -670,8 +628,6 @@ class Array(object):
                 self[index].fill(other)
             else:
                 self[index:index+1].fill(other)
-
-
         else:
             raise TypeError('Can only copy data from another Array')
 
@@ -689,28 +645,20 @@ class Array(object):
         temp = Array(other,dtype=dtype)
         self._data = temp._data
 
-
     @property
     @_convert
+    @schemed(BACKEND_PREFIX)
     def ptr(self):
-        """ Returns a pointer to the memory of this array """
-        if type(self._data) is _numpy.ndarray:
-            raise TypeError("Please use lal for CPU objects")
-        if _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
-            return self._data.ptr
-        if _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-            return self._data.data
+        """ Returns a pointer to the memory of this array """        
 
     @property
+    @cpuonly
     @_convert
     def  _swighelper(self):
         """ Used internally by SWIG typemaps to ensure @_convert 
             is called and scheme is correct  
         """
-        if type(self._scheme) is not _scheme.CPUScheme:
-            raise TypeError("Cannot call LAL function from the GPU")
-        else:
-            return self;
+        return self;
     
     @cpuonly
     @_convert
@@ -718,9 +666,7 @@ class Array(object):
         """ Returns a LAL Object that contains this data """
 
         lal_data = None
-        if type(self._data) is not _numpy.ndarray:
-            raise TypeError("Cannot return lal type from the GPU")
-        elif self._data.dtype == float32:
+        if self._data.dtype == float32:
             lal_data = _lal.CreateREAL4Vector(len(self))
         elif self._data.dtype == float64:
             lal_data = _lal.CreateREAL8Vector(len(self))

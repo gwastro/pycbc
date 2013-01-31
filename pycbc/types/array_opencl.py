@@ -27,7 +27,8 @@ from pyopencl.tools import context_dependent_memoize
 from pyopencl.scan import InclusiveScanKernel
 from pyopencl.reduction import ReductionKernel
 from pytools import match_precision, memoize_method
-from pyopencl.array import _get_common_dtype, clzeros
+from pyopencl.array import _get_common_dtype
+import pyopencl.array
 from pyopencl.elementwise import ElementwiseKernel, complex_dtype_to_name
 from pyopencl.tools import dtype_to_ctype
 from pycbc.scheme import mgr 
@@ -43,7 +44,7 @@ def get_cumsum_kernel(dtype):
     return InclusiveScanKernel(mgr.state.context, dtype, "a+b", 
                                           neutral="0", preamble=complex_headers)
 
-def cumsum(vec):
+def icumsum(vec):
     krnl = get_cumsum_kernel(vec.dtype)
     return krnl(vec)
 
@@ -110,7 +111,23 @@ def squared_norm(a):
     return out 
 
 def zeros(length, dtype=np.float64):
-    return clzeros(mgr.state.queue, length, dtype)
+    return pyopencl.array.zeros(mgr.state.queue, length, dtype)
+
+def ptr(self):
+    return self._data.data
+
+def dot(self, other):
+    return pyopencl.array.dot(self._data,other).get().max()
+    
+def min(self):
+    return pyopencl.array.min(self._data).get().max()  
+
+def cumsum(self):
+    tmp = self.data*1
+    return icumsum(tmp)
+
+def max(self):
+    return pyopencl.array.max(self._data).get().max()
                    
 
 

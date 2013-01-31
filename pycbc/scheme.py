@@ -154,11 +154,12 @@ def schemed(prefix):
         return schemed_fn(*args, **kwds)
     return scheming_function
 
-def cpuonly(fn):
+@decorator
+def cpuonly(fn, *args, **kwds):
     if type(mgr.state) != CPUScheme:
         raise TypeError(fn.__name__ + " can only be called from a CPU processing scheme.")
     else:
-        return fn
+        return fn(*args, **kwds)
         
 
 
