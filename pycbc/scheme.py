@@ -27,6 +27,7 @@ This modules provides python contexts that set the default behavior for PyCBC
 objects. 
 """
 import pycbc
+from decorator import decorator
 
 class _SchemeManager(object):
 
@@ -145,11 +146,12 @@ def current_prefix():
     return scheme_prefix[type(mgr.state)]
 
 def schemed(prefix):
-    def scheming_function(fn):
+    @decorator
+    def scheming_function(fn, *args, **kwds):
         backend = __import__(prefix + current_prefix(), fromlist=[fn.__name__])
         schemed_fn = getattr(backend, fn.__name__)
         schemed_fn.__doc__ = fn.__doc__
-        return schemed_fn
+        return schemed_fn(*args, **kwds)
     return scheming_function
 
 def cpuonly(fn):
