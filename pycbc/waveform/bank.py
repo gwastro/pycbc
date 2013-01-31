@@ -52,9 +52,8 @@ class TemplateBank(object):
         if precondition_factor is not None:
             return precondition_factor * stilde
         else:
-            return strain
+            return stilde
         
-
     def __len__(self):
         return len(self.table)
             
@@ -66,7 +65,8 @@ class TemplateBank(object):
         if self.index == len(self.table):
             raise StopIteration
         else:
-            return get_waveform_filter(self.length, self.table[self.index], **self.extra_args)
+            return get_waveform_filter(self.filter_length, self.table[self.index], \
+                                       approximant=self.approximant, **self.extra_args)
 
         
     
