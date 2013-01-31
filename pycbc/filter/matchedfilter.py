@@ -34,15 +34,11 @@ import pycbc.scheme
 import pycbc
 import numpy
 
+BACKEND_PREFIX="pycbc.filter.matchedfilter_"
+
+@pycbc.scheme.schemed(BACKEND_PREFIX)
 def correlate(x, y, z):
-    if type(pycbc.scheme.mgr.state) is pycbc.scheme.CPUScheme:
-        z.data[:] = numpy.conjugate(x.data)[:]
-        z *= y
-    if type(pycbc.scheme.mgr.state) is pycbc.scheme.CUDAScheme:
-        from matchedfilter_cuda import correlate 
-        correlate(x.data,y.data,z.data)
-    if type(pycbc.scheme.mgr.state) is pycbc.scheme.OpenCLScheme:
-        raise NotImplementedError
+    pass
 
 
 def make_frequency_series(vec):

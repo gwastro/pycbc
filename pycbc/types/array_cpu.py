@@ -35,20 +35,20 @@ def dot(self, other):
     return numpy.dot(self._data,other)     
 
 def min(self):
-    return self._data.min()  
+    return self.data.min()  
 
 def abs_max_loc(self):
     tmp = abs(self.data)
-    ind = _numpy.argmax(tmp)
+    ind = numpy.argmax(tmp)
     return tmp[ind], ind
 
 def cumsum(self):
     return self.data.cumsum()
 
 def max(self):
-    return self._data.max()
+    return self.data.max()
 
 def max_loc(self):
-    return self._data.max(),_numpy.argmax(self._data)
+    return self.data.max(), numpy.argmax(self._data)
     
     

@@ -45,7 +45,7 @@ def get_correlate_kernel(dtype_x, dtype_y,dtype_out):
 def correlate(a, b, out, stream=None):
     dtype_out = _get_common_dtype(a,b)
     krnl = get_correlate_kernel(a.dtype, b.dtype, dtype_out)
-    krnl(a,b,out)
+    krnl(a.data,b.data,out.data)
 
 
 
