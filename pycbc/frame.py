@@ -17,6 +17,7 @@
 This modules contains functions for reading in data from frame files or caches
 """
 import lalframe
+import lal
 import numpy
 import os.path
 from pycbc.types import TimeSeries
@@ -95,6 +96,12 @@ def read_frame(location, channels, start_time=None, end_time=None, duration=None
             end_time = start_time + lalframe.FrGetVectorLength(channels[0], stream) / FRAME_SAMPLE_RATE
         else:
             end_time = start_time + lalframe.FrGetVectorLength(channels, stream) / FRAME_SAMPLE_RATE
+
+    if start_time is not lal.LIGOTimeGPS:
+        start_time = lal.LIGOTimeGPS(start_time)
+
+    if end_time is not lal.LIGOTimeGPS:
+        end_time = lal.LIGOTimeGPS(end_time)
 
     if duration is None:
         duration = float(end_time-start_time)

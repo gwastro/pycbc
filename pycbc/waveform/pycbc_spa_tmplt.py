@@ -227,7 +227,8 @@ def spa_tmplt(**kwds):
         if out.dtype != complex64:
             raise TypeError("Output array is the wrong dtype")
         htilde = FrequencySeries(out, delta_f=delta_f, copy=False)
-
+        htilde.clear()
+    
     taylorf2_kernel(htilde.data[kmin:kmax],  kmin,  phase_order,
                     amplitude_order,  delta_f,  piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,

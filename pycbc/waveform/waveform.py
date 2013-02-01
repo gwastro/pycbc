@@ -375,17 +375,17 @@ def get_fd_waveform(template=None, **kwargs):
     htilde = wav_gen[input_params['approximant']](**input_params)
     return htilde
 
-def get_waveform_filter(length, template=None, **kwargs):
+def get_waveform_filter(out, template=None, **kwargs):
     """Return a frequency domain waveform filter for the specified approximant
     """
-    n = length
+    n = len(out)
     N = (n-1)*2
 
     input_params = props(template,**kwargs)
 
     if input_params['approximant'] in fd_approximants(mgr.state):
         wav_gen = fd_wav[type(mgr.state)] 
-        htilde = wav_gen[input_params['approximant']](**input_params)
+        htilde = wav_gen[input_params['approximant']](out=out, **input_params)
         htilde.resize(n)
         return htilde
     elif input_params['approximant'] in td_approximants(mgr.state):
@@ -395,8 +395,7 @@ def get_waveform_filter(length, template=None, **kwargs):
         hp.resize(N)
         k_zero = int(hp.start_time / hp.delta_t)
         hp.roll(k_zero)
-        htilde = FrequencySeries(zeros(n), delta_f=delta_f,
-                                            dtype=complex_same_precision_as(hp))
+        htilde = FrequencySeries(out, delta_f=delta_f, copy=False)
         fft(hp, htilde)
         return htilde
     else:

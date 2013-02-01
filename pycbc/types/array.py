@@ -559,13 +559,16 @@ class Array(object):
     def resize(self, new_size):
         """Resize self to new_size
         """
-        new_arr = zeros(new_size, dtype=self.dtype)
-        if len(self) <= new_size:
-            new_arr[0:len(self)] = self
+        if new_size == len(self):
+            return
         else:
-            new_arr[:] = self[0:new_size]
-            
-        self._data = new_arr._data
+            new_arr = zeros(new_size, dtype=self.dtype)
+            if len(self) <= new_size:
+                new_arr[0:len(self)] = self
+            else:
+                new_arr[:] = self[0:new_size]
+                
+            self._data = new_arr._data
 
     @_convert
     def roll(self, shift):

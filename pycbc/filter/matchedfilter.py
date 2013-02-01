@@ -98,7 +98,7 @@ def sigma(htilde, psd = None, low_frequency_cutoff=None,
         high_frequency_cutoff=None):
     """Returns the loudness of the template.
     """
-    return sqrt(sigmasq(htilde,psd,low_frequency_cutoff,high_frequency_cutoff))
+    return sqrt(sigmasq(htilde, psd, low_frequency_cutoff, high_frequency_cutoff))
     
 
 def get_cutoff_indices(flow, fhigh, df, N):
@@ -129,18 +129,18 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
         raise ValueError("Length of template and data must match")
 
     N = (len(stilde)-1) * 2   
-    kmin,kmax = get_cutoff_indices(low_frequency_cutoff,
+    kmin, kmax = get_cutoff_indices(low_frequency_cutoff,
                                    high_frequency_cutoff, stilde.delta_f, N)   
 
     if out is None:
-        _q = zeros(N,dtype=complex_same_precision_as(data))
+        _q = zeros(N, dtype=complex_same_precision_as(data))
     elif (len(out) == N) and type(out) is Array and out.kind =='complex':
         _q = out
     else:
         raise TypeError('Invalid Output Vector')
         
     if (_qtilde is None) or (len(_qtilde) != N) or _qtilde.dtype != data.dtype:
-        _qtilde = zeros(N,dtype=complex_same_precision_as(data))
+        _qtilde = zeros(N, dtype=complex_same_precision_as(data))
     else:
         _qtilde.clear()         
     

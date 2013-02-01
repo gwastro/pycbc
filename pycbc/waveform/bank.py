@@ -25,13 +25,15 @@
 """
 This module provides classes that describe banks of waveforms
 """
+from pycbc.types import zeros, complex64
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import table, lsctables
 from pycbc.waveform import get_waveform_filter, get_waveform_filter_precondition
 from pycbc import DYN_RANGE_FAC
 
 class TemplateBank(object):
-    def __init__(self, filename, filter_length, approximant, **kwds):
+    def __init__(self, filename, filter_length, approximant, dtype=complex64, **kwds):
+        self.out = zeros(filter_length, dtype=dtype)
         self.approximant = approximant
         self.filename = filename
         self.filter_length = filter_length
@@ -65,8 +67,10 @@ class TemplateBank(object):
         if self.index == len(self.table):
             raise StopIteration
         else:
-            return get_waveform_filter(self.filter_length, self.table[self.index], \
+            poke  = self.out.data
+            htilde = get_waveform_filter(self.out, self.table[self.index], \
                                        approximant=self.approximant, **self.extra_args)
+            return htilde
 
         
     
