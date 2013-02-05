@@ -56,6 +56,9 @@ class TemplateBank(object):
             
     def __iter__(self):
         return self
+        
+    def current_f_end(self):
+        return pycbc.waveform.get_waveform_end_frequency(self.table[self.index], approximant=self.approximant, **self.extra_args) 
 
     def next(self):
         self.index +=1
@@ -65,8 +68,6 @@ class TemplateBank(object):
             poke  = self.out.data
             htilde = pycbc.waveform.get_waveform_filter(self.out, self.table[self.index], 
                                     approximant=self.approximant, f_lower=self.f_lower, delta_f=self.delta_f, **self.extra_args)
-            if pycbc.waveform.waveform_norm_exists(self.approximant): 
-                htilde.f_end = get_waveform_end_frequency(self.table[self.index], approximant=self.approximant, **self.extra_args)   
             return htilde.astype(self.dtype) 
 
         

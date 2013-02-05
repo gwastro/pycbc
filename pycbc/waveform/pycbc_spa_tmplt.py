@@ -195,7 +195,7 @@ def spa_tmplt_norm(psd, length, delta_f, f_lower):
     k_min = int(f_lower / delta_f)
     sigma = (amp.numpy() ** 2.0 / psd.numpy())
     norm_vec = sigma * 0 
-    norm_vec[k_min:length] = sigma[k_min:length].cumsum()
+    norm_vec[k_min:length] = sigma[k_min:length].cumsum() * 4 * delta_f
     return norm_vec
 
 def spa_tmplt_end(**kwds):
