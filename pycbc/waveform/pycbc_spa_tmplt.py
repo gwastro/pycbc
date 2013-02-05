@@ -35,6 +35,7 @@ from pycuda.gpuarray import to_gpu
 from pycbc.setuputils import pkg_config_header_strings
 from pycbc.types import FrequencySeries, zeros, Array, complex64
 import pycbc.pnutils
+from pycbc.filter import sigmasq_series
 
 preamble = """
 #include "stdio.h"
@@ -52,9 +53,6 @@ taylorf2_text = """
     const float v7 = v3 * v4;
     const float v10 = v5 * v5;
     float phasing = 0.;
-    float dEnergy = 0.;
-    float flux = 0.;
-    float amp;
     float shft = -LAL_TWOPI * tC;
 
     switch (phase_order)
@@ -78,43 +76,17 @@ taylorf2_text = """
         default:
             break;
     }
-    switch (amplitude_order)
-    {
-        case -1:
-        case 7:
-            flux +=  FTa7 * v7;
-        case 6:
-            flux += ( FTa6 +  FTl6*__logf(16.*v2)) * v6;
-            dEnergy +=  dETa3 * v6;
-        case 5:
-            flux +=  FTa5 * v5;
-        case 4:
-            flux +=  FTa4 * v4;
-            dEnergy +=  dETa2 * v4;
-        case 3:
-            flux +=  FTa3 * v3;
-        case 2:
-            flux +=  FTa2 * v2;
-            dEnergy +=  dETa1 * v2;
-        case 0:
-            flux += 1;
-            dEnergy += 1.;
-            break;
-    }
 
     phasing *= pfaN / v5;
-    flux *= FTaN * v10;
-    dEnergy *= dETaN * v;
     phasing += shft * f + phi0 + LAL_PI_4;
-    amp = amp0 * __powf(-dEnergy/flux, 0.5) * v;
 
     float pcos;
     float psin;
     __sincosf(phasing, &psin, &pcos);
 
 
-    htilde[i]._M_re = amp * pcos;
-    htilde[i]._M_im = - amp * psin;
+    htilde[i]._M_re = pcos;
+    htilde[i]._M_im = - psin;
 
 """
 
@@ -127,12 +99,9 @@ def ceilpow2(n):
     return (1) << exponent;
 
 taylorf2_kernel = ElementwiseKernel("""pycuda::complex<float> *htilde, int kmin, int phase_order,
-                                       int amplitude_order, float delta_f, float piM, float pfaN, 
+                                       float delta_f, float piM, float pfaN, 
                                        float pfa2, float pfa3, float pfa4, float pfa5, float pfl5,
-                                       float pfa6, float pfl6, float pfa7, float FTaN, float FTa2, 
-                                       float FTa3, float FTa4, float FTa5, float FTa6,
-                                       float FTl6, float FTa7, float dETaN, float dETa1, float dETa2, float dETa3,
-                                       float amp0, float tC, float phi0, float v0""",
+                                       float pfa6, float pfl6, float pfa7, float tC, float phi0, float v0""",
                     taylorf2_text, "SPAtmplt",
                     preamble=preamble, options=pkg_config_header_strings(['lal']))
 
@@ -160,7 +129,7 @@ def spa_tmplt(**kwds):
     beta, sigma, gamma = pycbc.pnutils.mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(
                                     mass1, mass2, kwds['spin1z'], kwds['spin2z'])
 
-    #Calculate teh PN terms #TODO: replace with functions in lalsimulation!###
+    #Calculate the PN terms #TODO: replace with functions in lalsimulation!###
     M = float(mass1) + float(mass2)
     eta = mass1 * mass2 / (M * M)
     theta = -11831./9240.;
@@ -181,28 +150,6 @@ def spa_tmplt(**kwds):
     pfl6 = -6848.0/21.0;
     pfa7 = lal.LAL_PI * 5.0/756.0 * ( 15419335.0/336.0 + 75703.0/2.0 * eta - \
             14809.0 * eta*eta)
-
-    FTaN = 32.0 * eta*eta / 5.0;
-    FTa2 = -(12.47/3.36 + 3.5/1.2 * eta)
-    FTa3 = 4.0 * lal.LAL_PI
-    FTa4 = -(44.711/9.072 - 92.71/5.04 * eta - 6.5/1.8 * eta*eta)
-    FTa5 = -(81.91/6.72 + 58.3/2.4 * eta) * lal.LAL_PI
-    FTa6 = (664.3739519/6.9854400 + 16.0/3.0 * lal.LAL_PI*lal.LAL_PI - 
-            17.12/1.05 * lal.LAL_GAMMA + 
-		 (4.1/4.8 * lal.LAL_PI*lal.LAL_PI - 134.543/7.776) * eta -
-		 94.403/3.024 * eta*eta - 7.75/3.24 * eta*eta*eta)
-    FTl6 = -8.56/1.05
-    FTa7 = -(162.85/5.04 - 214.745/1.728 * eta - 193.385/3.024 * eta*eta) \
-            * lal.LAL_PI
-
-    dETaN = 2 * -eta/2.0;
-    dETa1 = 2 * -(3.0/4.0 + 1.0/12.0 * eta)
-    dETa2 = 3 * -(27.0/8.0 - 19.0/8.0 * eta + 1./24.0 * eta*eta)
-    dETa3 = 4 * -(67.5/6.4 - (344.45/5.76 - 20.5/9.6 * lal.LAL_PI*lal.LAL_PI) *
-                             eta + 15.5/9.6 * eta*eta + 3.5/518.4 * eta*eta*eta)
-  
-    amp0 = 4. * mass1 * mass2 / (1.0e+03 * float(distance) * lal.LAL_PC_SI )* \
-                    lal.LAL_MRSUN_SI * lal.LAL_MTSUN_SI * sqrt(lal.LAL_PI/12.0)    
     
     m_sec = M * lal.LAL_MTSUN_SI;
     piM = lal.LAL_PI * m_sec; 
@@ -230,13 +177,29 @@ def spa_tmplt(**kwds):
         htilde.clear()
     
     taylorf2_kernel(htilde.data[kmin:kmax],  kmin,  phase_order,
-                    amplitude_order,  delta_f,  piM,  pfaN, 
+                    delta_f,  piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7,  FTaN,  FTa2, 
-                    FTa3,  FTa4,  FTa5,  FTa6,
-                    FTl6,  FTa7,  dETaN, dETa1, dETa2,  dETa3,
-                    amp0,  tC,  phi0, v0)
+                    pfa6,  pfl6,  pfa7, tC,  phi0, v0)
     return htilde
+    
+def spa_tmplt_precondition(length, delta_f):
+    """Return the amplitude portion of the TaylorF2 approximant, used to precondition
+    the strian data.
+    """
+    v = numpy.arange(0, length+1, 1) * delta_f
+    v = v[1:len(v)]**(-7.0/6.0)
+    return FrequencySeries(v, delta_f=delta_f)
+    
+def spa_tmplt_norm(psd, length, delta_f, f_lower):
+    amp = spa_tmplt_precondition(length, delta_f)
+    k_min = int(f_lower / delta_f)
+    sigma = (amp.numpy() ** 2.0 / psd.numpy())
+    norm_vec = sigma * 0 
+    norm_vec[k_min:length] = sigma[k_min:length].cumsum()
+    return norm_vec
+
+def spa_tmplt_end(**kwds):
+    return pycbc.pnutils.schwarzschild_isco(kwds['mass1']+kwds['mass2'])
     
 
 

@@ -63,7 +63,7 @@ def sigmasq_series(htilde, psd=None, low_frequency_cutoff=None,
     htilde = make_frequency_series(htilde)
     N = (len(htilde)-1) * 2 
     norm = 4.0 * htilde.delta_f
-    kmin,kmax = get_cutoff_indices(low_frequency_cutoff,
+    kmin, kmax = get_cutoff_indices(low_frequency_cutoff,
                                    high_frequency_cutoff, htilde.delta_f, N)  
    
     sigma_vec = FrequencySeries(zeros(len(htilde)), delta_f = htilde.delta_f, 

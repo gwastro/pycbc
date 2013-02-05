@@ -55,9 +55,15 @@ base_required_args = ['mass1','mass2','f_lower']
 td_required_args = base_required_args + ['delta_t']
 fd_required_args = base_required_args + ['delta_f']
 
+_filter_norms = {}
+_filter_ends = {}
+_filter_preconditions = {}
+
 
 # td, fd, filter waveforms generated on the CPU
 _lalsim_td_approximants = {}
+_lalsim_fd_approximants = {}
+_inspiral_fd_filters = {}
 _lalsim_enum = {}
 
 def _lalsim_td_waveform(**p):
@@ -111,40 +117,36 @@ for approx_enum in xrange(0,lalsimulation.NumApproximants):
         _lalsim_enum[approx_name] = approx_enum
         _lalsim_td_approximants[approx_name] = _lalsim_td_waveform
 
-_lalsim_fd_approximants = {}
 for approx_enum in xrange(0,lalsimulation.NumApproximants):
     if lalsimulation.SimInspiralImplementedFDApproximants(approx_enum):
         approx_name =  lalsimulation.GetStringFromApproximant(approx_enum)
         _lalsim_enum[approx_name] = approx_enum
         _lalsim_fd_approximants[approx_name] = _lalsim_fd_waveform
 
-# Waveforms that are optimized to work as filters
-_filter_fd_approximants = {}
-_filter_td_approximants = {}
-
 cpu_td = _lalsim_td_approximants
 cpu_fd = _lalsim_fd_approximants
-cpu_td_filter =  dict(_filter_td_approximants.items() + \
-              _filter_td_approximants.items() + _lalsim_td_approximants.items())
-cpu_fd_filter =  dict(_lalsim_fd_approximants.items() + \
-              _filter_fd_approximants.items())
+cpu_fd_filter = dict(cpu_fd.items() + _inspiral_fd_filters.items()) 
 
 # Waveforms written in CUDA
 _cuda_td_approximants = {}
 _cuda_fd_approximants = {}
+_cuda_fd_filters = {}
 
 if pycbc.HAVE_CUDA:
     from pycbc.waveform.TaylorF2 import taylorf2 as cuda_taylorf2
-    from pycbc.waveform.pycbc_spa_tmplt import spa_tmplt
     from pycbc.waveform.pycbc_phenomC_tmplt import imrphenomc_tmplt
+    from pycbc.waveform.pycbc_spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, spa_tmplt_precondition
     _cuda_fd_approximants["IMRPhenomC"] = imrphenomc_tmplt
-    _cuda_fd_approximants["SPAtmplt"] = spa_tmplt
     _cuda_fd_approximants['TaylorF2'] = cuda_taylorf2
+    
+    _cuda_fd_filters["SPAtmplt"] = spa_tmplt
+    _filter_norms["SPAtmplt"] = spa_tmplt_norm
+    _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
+    _filter_ends["SPAtmplt"] = spa_tmplt_end
 
 cuda_td = dict(_lalsim_td_approximants.items() + _cuda_td_approximants.items())
 cuda_fd = dict(_lalsim_fd_approximants.items() + _cuda_fd_approximants.items())
-cuda_td_filter = dict(cpu_td_filter.items() + cuda_td.items())
-cuda_fd_filter = dict(cpu_fd_filter.items() + cuda_fd.items())
+cuda_fd_filter = dict(cuda_fd.items() + _cuda_fd_filters.items()) 
 
 # Waveforms written in OpenCL
 _opencl_td_approximants = {}
@@ -152,12 +154,13 @@ _opencl_fd_approximants = {}
 
 opencl_td = dict(_lalsim_td_approximants.items() + _opencl_td_approximants.items())
 opencl_fd = dict(_lalsim_fd_approximants.items() + _opencl_fd_approximants.items())
-opencl_td_filter = dict(cpu_td_filter.items() + opencl_td.items())
-opencl_fd_filter = dict(cpu_fd_filter.items() + opencl_fd.items())
+opencl_fd_filter = {}
 
 td_wav = {_scheme.CPUScheme:cpu_td,_scheme.CUDAScheme:cuda_td,_scheme.OpenCLScheme:opencl_td}
-
 fd_wav = {_scheme.CPUScheme:cpu_fd,_scheme.CUDAScheme:cuda_fd,_scheme.OpenCLScheme:opencl_fd}
+filter_wav = {_scheme.CPUScheme:cpu_fd_filter, _scheme.CUDAScheme:cuda_fd_filter, _scheme.OpenCLScheme:opencl_fd_filter}
+
+# List the various available approximants ####################################
 
 def print_td_approximants():
     print("Lalsimulation Approximants")
@@ -193,8 +196,13 @@ def fd_approximants(scheme=_scheme.mgr.state):
     """
     return fd_wav[type(scheme)].keys()    
 
-def list_filter_approximants():
-    pass
+def filter_approximants(scheme=_scheme.mgr.state):
+    """Return a list of fourier domain approximants including those
+       written specifically as templates.
+    """
+    return filter_wav[type(scheme)].keys()
+
+# Input parameter handling ###################################################
 
 def props(obj, **kwargs):
     pr = {}
@@ -214,6 +222,8 @@ def props(obj, **kwargs):
     input_params.update(kwargs)
 
     return input_params
+    
+# Waveform generation ########################################################
 
 def get_td_waveform(template=None, **kwargs):
     """Return the plus and cross polarizations of a time domain waveform. 
@@ -222,10 +232,10 @@ def get_td_waveform(template=None, **kwargs):
     ----------
     template: object
         An object that has attached properties. This can be used to subsitute
-    for keyword arguments. A common example would be a row in an xml table. 
+        for keyword arguments. A common example would be a row in an xml table. 
     approximant : string
         A string that indicates the chosen approximant. See `td_approximants` 
-    for available options. 
+        for available options. 
     mass1 : float
         The mass of the first component object in the binary. 
     mass2 : 
@@ -240,7 +250,7 @@ def get_td_waveform(template=None, **kwargs):
         The inclination angle of the source. 
     phi0 : {0, float}, optional
         The final phase or phase at the peak of the wavform. See documentation on
-    specific approximants for exact usage. 
+        specific approximants for exact usage. 
     spin1x : {0, float}, optional
         The x component of the first component objects spin vector. 
     spin1y : {0, float}, optional
@@ -262,13 +272,13 @@ def get_td_waveform(template=None, **kwargs):
     all implemented orders are used.
     spin_order: {-1, int}, optional
         The pN order of the spin corrections. The default of -1 indicates that 
-    all implemented orders are used.
+        all implemented orders are used.
     tidal_order: {-1, int}, optional
         The pN order of the tidal corrections. The default of -1 indicates that 
-    all implemented orders are used.
+        all implemented orders are used.
     amplitude_order: {-1, int}, optional
         The pN order of the amplitude. The default of -1 indicates that 
-    all implemented orders are used.
+        all implemented orders are used.
 
     Returns
     -------
@@ -301,10 +311,10 @@ def get_fd_waveform(template=None, **kwargs):
     ----------
     template: object
         An object that has attached properties. This can be used to subsitute
-    for keyword arguments. A common example would be a row in an xml table. 
+        for keyword arguments. A common example would be a row in an xml table. 
     approximant : string
         A string that indicates the chosen approximant. See `fd_approximants` 
-    for available options. 
+        for available options. 
     mass1 : float
         The mass of the first component object in the binary. 
     mass2 : 
@@ -315,14 +325,14 @@ def get_fd_waveform(template=None, **kwargs):
         The starting frequency of the waveform.
     f_final : {-1, float}, optional
         The ending frequency of the waveform. The default indicates that the
-    choice is made by the respective approximant. 
+        choice is made by the respective approximant. 
     distance : {1e3, float}, optional
         The distance from the observer to the source in kiloparsecs.
     inclination : {0, float}, optional
         The inclination angle of the source. 
     phi0 : {0, float}, optional
         The final phase or phase at the peak of the wavform. See documentation on
-    specific approximants for exact usage. 
+        specific approximants for exact usage. 
     spin1x : {0, float}, optional
         The x component of the first component objects spin vector. 
     spin1y : {0, float}, optional
@@ -347,7 +357,7 @@ def get_fd_waveform(template=None, **kwargs):
     all implemented orders are used.
     tidal_order: {-1, int}, optional
         The pN order of the tidal corrections. The default of -1 indicates that 
-    all implemented orders are used.
+        all implemented orders are used.
     amplitude_order: {-1, int}, optional
         The pN order of the amplitude. The default of -1 indicates that 
     all implemented orders are used.
@@ -374,6 +384,8 @@ def get_fd_waveform(template=None, **kwargs):
 
     htilde = wav_gen[input_params['approximant']](**input_params)
     return htilde
+    
+# Waveform filter routines ###################################################
 
 def get_waveform_filter(out, template=None, **kwargs):
     """Return a frequency domain waveform filter for the specified approximant
@@ -383,8 +395,8 @@ def get_waveform_filter(out, template=None, **kwargs):
 
     input_params = props(template,**kwargs)
 
-    if input_params['approximant'] in fd_approximants(mgr.state):
-        wav_gen = fd_wav[type(mgr.state)] 
+    if input_params['approximant'] in filter_approximants(mgr.state):
+        wav_gen = filter_wav[type(mgr.state)] 
         htilde = wav_gen[input_params['approximant']](out=out, **input_params)
         htilde.resize(n)
         return htilde
@@ -401,16 +413,49 @@ def get_waveform_filter(out, template=None, **kwargs):
     else:
         raise ValueError("Approximant Not Available")
 
-_filter_preconditions = {}
-    
-def get_waveform_filter_precondition(approximant, length):
+def waveform_precondition_exists(approximant):
+    if approximant in _filter_preconditions:
+        return True
+    else:
+        return False
+        
+def waveform_norm_exists(approximant):
+    if approximant in _filter_norms:
+        return True
+    else:
+        return False
+  
+def get_waveform_filter_precondition(approximant, length, delta_f):
     """Return the data preconditioning factor for this approximant.
     """
+    
     if approximant in _filter_preconditions:
-        pass
+        return _filter_preconditions[approximant](length, delta_f)
     else:
         return None
+        
+def get_waveform_filter_norm(approximant, psd, length, delta_f, f_lower):
+    """ Return the normalization vector for the approximant 
+    """
+    
+    if approximant in _filter_norms:
+        return _filter_norms[approximant](psd, length, delta_f, f_lower)
+    else:
+        return None
+        
+def get_waveform_end_frequency(template=None, **kwargs):
+   """Return the length of a template.
+   """ 
+   input_params = props(template,**kwargs)
+   approximant = kwargs['approximant']
+   
+   if approximant in _filter_ends:
+        return _filter_ends[approximant](**input_params)
+   else:
+        return None 
 
 __all__ = ["get_td_waveform","get_fd_waveform","print_td_approximants",
            "print_fd_approximants","td_approximants","fd_approximants", 
-           "get_waveform_filter", "get_waveform_filter_precondition"]
+           "get_waveform_filter", "get_waveform_filter_precondition",
+           "filter_approximants", "get_waveform_filter_norm", "get_waveform_end_frequency",
+           "waveform_precondition_exists", "waveform_norm_exists"]

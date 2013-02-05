@@ -107,9 +107,11 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
         segment = timeseries[segment_start:segment_end]
         assert len(segment) == seg_len
         fft(segment * w, segment_tilde)
-        segment_psds.append(abs(segment_tilde * segment_tilde.conj()))
+        seg_psd = abs(segment_tilde * segment_tilde.conj()).numpy()
+        segment_psds.append(seg_psd)
+        
+    segment_psds = numpy.array(segment_psds)   
 
-    # calculate average psd
     if avg_method == 'mean':
         psd = numpy.mean(segment_psds, axis=0)
     elif avg_method == 'median':
@@ -123,7 +125,8 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
             median_bias(len(even_psds))
         psd = (odd_median + even_median) / 2
 
-    psd *= 2 * delta_f * seg_len / numpy.sum(numpy.square(w))
+    w = w.numpy()
+    psd *= 2 * delta_f * seg_len / (numpy.square(w).sum())
 
     return FrequencySeries(psd, delta_f=delta_f, dtype=timeseries.dtype)
 
@@ -156,16 +159,18 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
 
     inv_asd = FrequencySeries((1. / psd)**0.5, delta_f=psd.delta_f, \
         dtype=complex_same_precision_as(psd))
+        
     inv_asd[0] = 0
     inv_asd[N/2] = 0
     q = TimeSeries(numpy.zeros(N), delta_t=(N / psd.delta_f), \
         dtype=real_same_precision_as(psd))
 
     if low_frequency_cutoff:
-        kmin = low_frequency_cutoff / psd.delta_f
+        kmin = int(low_frequency_cutoff / psd.delta_f)
         inv_asd[0:kmin] = 0
 
     ifft(inv_asd, q)
+    
     trunc_start = max_filter_len / 2
     trunc_end = N - max_filter_len / 2
 
@@ -182,7 +187,7 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
     psd_out = 1. / abs(psd_trunc)
 
     if low_frequency_cutoff:
-        kmin = low_frequency_cutoff / psd.delta_f
+        kmin = int(low_frequency_cutoff / psd.delta_f)
         psd_out[0:kmin] = 0
 
     return psd_out
@@ -204,7 +209,7 @@ def interpolate(series, delta_f):
     """
     new_n = (len(series)-1) * series.delta_f / delta_f + 1
     samples = numpy.arange(0, new_n) * delta_f
-    interpolated_series = numpy.interp(samples, series.sample_frequencies.data, series.data)
+    interpolated_series = numpy.interp(samples, series.sample_frequencies.numpy(), series.numpy())
     return FrequencySeries(interpolated_series, epoch=series.epoch, 
                            delta_f=delta_f, dtype=series.dtype)
 

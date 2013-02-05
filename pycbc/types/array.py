@@ -535,7 +535,7 @@ class Array(object):
     @_convert
     @schemed(BACKEND_PREFIX)
     def min(self):
-        """ Return the maximum value in the array. """                             
+        """ Return the maximum value in the array. """                            
 
     @_convert
     @_vcheckother
@@ -595,7 +595,7 @@ class Array(object):
             return self._data.astype(dtype)
                 
     @_convert
-    def __setitem__(self,index,other):
+    def __setitem__(self, index, other):
         if isinstance(other,Array):
             _convert_to_scheme(other)
 
@@ -625,9 +625,9 @@ class Array(object):
             elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
                 raise NotImplementedError
 
-
+        
         elif type(other) in _ALLOWED_SCALARS:
-            if isinstance(index,slice):          
+            if isinstance(index, slice):
                 self[index].fill(other)
             else:
                 self[index:index+1].fill(other)
@@ -662,6 +662,15 @@ class Array(object):
             is called and scheme is correct  
         """
         return self;
+
+    def  numpy(self):
+        """ Returns a Numpy Array that contains this data """
+        if type(self._data) is _numpy.ndarray:
+            return self._data
+        elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
+            return self._data.get()
+        elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
+            return self._data.get()       
     
     @cpuonly
     @_convert

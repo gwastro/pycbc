@@ -26,7 +26,7 @@
 import pycuda.driver
 from pycuda.elementwise import ElementwiseKernel
 from pycuda.reduction import ReductionKernel
-from pycuda.tools import register_dtype
+from pycuda.tools import get_or_register_dtype
 from pycuda.tools import context_dependent_memoize
 from pycuda.tools import dtype_to_ctype
 from pytools import match_precision, memoize_method
@@ -124,10 +124,10 @@ def get_norm_kernel(dtype_x, dtype_out):
             "norm")
 
 def squared_norm(a):
-    dtype_out = match_precision(np.dtype('float64'),a.dtype)
+    dtype_out = match_precision(np.dtype('float64'), a.dtype)
     out = a._new_like_me(dtype=dtype_out)
-    krnl = get_norm_kernel(a.dtype,dtype_out)
-    krnl(a,out)
+    krnl = get_norm_kernel(a.dtype, dtype_out)
+    krnl(a, out)
     return out     
  
 @context_dependent_memoize
@@ -238,8 +238,8 @@ maxloc_preamble_double = """
 maxloc_dtype_double = np.dtype([("max", np.float64), ("loc", np.int64)])
 maxloc_dtype_single = np.dtype([("max", np.float32), ("loc", np.int32)])
 
-register_dtype(maxloc_dtype_single, "maxlocs")
-register_dtype(maxloc_dtype_double, "maxlocd")
+maxloc_dtype_single = get_or_register_dtype("maxlocs", dtype=maxloc_dtype_single)
+maxloc_dtype_double = get_or_register_dtype("maxlocd", dtype=maxloc_dtype_double)
 
 mls = LowerLatencyReductionKernel(maxloc_dtype_single, neutral = "maxloc_start()",
         reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(x[i], i)",

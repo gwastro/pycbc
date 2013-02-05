@@ -28,16 +28,21 @@ This module provides classes that describe banks of waveforms
 from pycbc.types import zeros, complex64
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import table, lsctables
-from pycbc.waveform import get_waveform_filter, get_waveform_filter_precondition
+import pycbc.waveform
 from pycbc import DYN_RANGE_FAC
 
 class TemplateBank(object):
-    def __init__(self, filename, filter_length, approximant, dtype=complex64, **kwds):
+    def __init__(self, filename, approximant, filter_length, delta_f, f_lower,  dtype, **kwds):
         self.out = zeros(filter_length, dtype=dtype)
+        self.dtype = dtype
+        self.f_lower = f_lower
         self.approximant = approximant
         self.filename = filename
+        self.delta_f = delta_f
         self.filter_length = filter_length
+        
         self.indoc = ligolw_utils.load_filename(filename, False)
+        
         try :
             self.table = table.get_table(self.indoc, lsctables.SnglInspiralTable.tableName) 
         except ValueError:
@@ -45,16 +50,6 @@ class TemplateBank(object):
 
         self.index = -1
         self.extra_args = kwds
-    
-    def precondition(self, stilde):
-        """ Return the fourier domain strain preconditioned for the approximant
-            used in the template bank.
-        """ 
-        precondition_factor = get_waveform_filter_precondition(self.approximant, self.filter_length)
-        if precondition_factor is not None:
-            return precondition_factor * stilde
-        else:
-            return stilde
         
     def __len__(self):
         return len(self.table)
@@ -68,9 +63,11 @@ class TemplateBank(object):
             raise StopIteration
         else:
             poke  = self.out.data
-            htilde = get_waveform_filter(self.out, self.table[self.index], \
-                                       approximant=self.approximant, **self.extra_args)
-            return htilde
+            htilde = pycbc.waveform.get_waveform_filter(self.out, self.table[self.index], 
+                                    approximant=self.approximant, f_lower=self.f_lower, delta_f=self.delta_f, **self.extra_args)
+            if pycbc.waveform.waveform_norm_exists(self.approximant): 
+                htilde.f_end = get_waveform_end_frequency(self.table[self.index], approximant=self.approximant, **self.extra_args)   
+            return htilde.astype(self.dtype) 
 
         
     
