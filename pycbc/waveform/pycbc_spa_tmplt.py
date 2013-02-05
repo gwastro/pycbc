@@ -170,7 +170,7 @@ def spa_tmplt(**kwds):
         if type(out) is not Array:
             raise TypeError("Output must be an instance of Array")
         if len(out) < kmax:
-            raise TypeError("Output array is too small")
+            kmax = len(out)
         if out.dtype != complex64:
             raise TypeError("Output array is the wrong dtype")
         htilde = FrequencySeries(out, delta_f=delta_f, copy=False)
