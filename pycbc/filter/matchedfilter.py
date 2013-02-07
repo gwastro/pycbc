@@ -117,10 +117,13 @@ def get_cutoff_indices(flow, fhigh, df, N):
 _qtilde = None
 
 def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
-                  high_frequency_cutoff=None, h_norm=None, out=None):
+                  high_frequency_cutoff=None, h_norm=None, out=None, corr_out=None):
     """Return the complex SNR and normalization 
     """
-    global _qtilde
+    if corr_out:
+        _qtilde = corr_out
+    else:
+        global _qtilde
   
     htilde = make_frequency_series(template)
     stilde = make_frequency_series(data)
@@ -139,15 +142,15 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
     else:
         raise TypeError('Invalid Output Vector: wrong length or dtype')
         
-    if (_qtilde is None) or (len(_qtilde) != N) or _qtilde.dtype != data.dtype:
+    if corr_out:
+        pass
+    elif (_qtilde is None) or (len(_qtilde) != N) or _qtilde.dtype != data.dtype:
         _qtilde = zeros(N, dtype=complex_same_precision_as(data))
     else:
         _qtilde.clear()         
     
     correlate(htilde[kmin:kmax], stilde[kmin:kmax], _qtilde[kmin:kmax])
 
-    # Only weight by the psd if it was explictly given.
-    # In most cases, the expectation is to overwhiten the data 
     if psd is not None:
         if isinstance(psd, FrequencySeries):
             if psd.delta_f == stilde.delta_f :
@@ -159,8 +162,6 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
             
     ifft(_qtilde,_q)
     
-    # Only calculate the normalization if needed. For SPA waveforms
-    # this can be done ahead of time.
     if h_norm is None:
         h_norm = sigmasq(htilde, psd, low_frequency_cutoff, high_frequency_cutoff)     
 

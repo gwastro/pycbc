@@ -32,8 +32,11 @@ import pycbc.waveform
 from pycbc import DYN_RANGE_FAC
 
 class TemplateBank(object):
-    def __init__(self, filename, approximant, filter_length, delta_f, f_lower,  dtype, **kwds):
-        self.out = zeros(filter_length, dtype=dtype)
+    def __init__(self, filename, approximant, filter_length, delta_f, f_lower,  dtype, out=None, **kwds):
+        if out:
+            self.out = out
+        else:
+            self.out = zeros(filter_length, dtype=dtype)
         self.dtype = dtype
         self.f_lower = f_lower
         self.approximant = approximant
@@ -71,7 +74,8 @@ class TemplateBank(object):
             raise StopIteration
         else:
             poke  = self.out.data
-            htilde = pycbc.waveform.get_waveform_filter(self.out, self.table[self.index], 
+            self.out.clear()
+            htilde = pycbc.waveform.get_waveform_filter(self.out[0:self.filter_length], self.table[self.index], 
                                     approximant=self.approximant, f_lower=self.f_lower, delta_f=self.delta_f, **self.extra_args)
             return htilde.astype(self.dtype) 
 
