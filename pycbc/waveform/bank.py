@@ -58,7 +58,12 @@ class TemplateBank(object):
         return self
         
     def current_f_end(self):
-        return pycbc.waveform.get_waveform_end_frequency(self.table[self.index], approximant=self.approximant, **self.extra_args) 
+        f_end = pycbc.waveform.get_waveform_end_frequency(self.table[self.index], approximant=self.approximant, **self.extra_args) 
+        
+        if f_end > self.filter_length * self.delta_f:
+            return (self.filter_length-1) * self.delta_f
+        else:
+            return f_end
 
     def next(self):
         self.index +=1

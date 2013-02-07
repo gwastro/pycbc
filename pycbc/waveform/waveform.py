@@ -55,15 +55,10 @@ base_required_args = ['mass1','mass2','f_lower']
 td_required_args = base_required_args + ['delta_t']
 fd_required_args = base_required_args + ['delta_f']
 
-_filter_norms = {}
-_filter_ends = {}
-_filter_preconditions = {}
-
 
 # td, fd, filter waveforms generated on the CPU
 _lalsim_td_approximants = {}
 _lalsim_fd_approximants = {}
-_inspiral_fd_filters = {}
 _lalsim_enum = {}
 
 def _lalsim_td_waveform(**p):
@@ -125,28 +120,20 @@ for approx_enum in xrange(0,lalsimulation.NumApproximants):
 
 cpu_td = _lalsim_td_approximants
 cpu_fd = _lalsim_fd_approximants
-cpu_fd_filter = dict(cpu_fd.items() + _inspiral_fd_filters.items()) 
 
 # Waveforms written in CUDA
 _cuda_td_approximants = {}
 _cuda_fd_approximants = {}
-_cuda_fd_filters = {}
 
 if pycbc.HAVE_CUDA:
     from pycbc.waveform.TaylorF2 import taylorf2 as cuda_taylorf2
     from pycbc.waveform.pycbc_phenomC_tmplt import imrphenomc_tmplt
-    from pycbc.waveform.pycbc_spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, spa_tmplt_precondition
+    from pycbc.waveform.spa_tmplt_cuda import spa_tmplt
     _cuda_fd_approximants["IMRPhenomC"] = imrphenomc_tmplt
     _cuda_fd_approximants['TaylorF2'] = cuda_taylorf2
     
-    _cuda_fd_filters["SPAtmplt"] = spa_tmplt
-    _filter_norms["SPAtmplt"] = spa_tmplt_norm
-    _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
-    _filter_ends["SPAtmplt"] = spa_tmplt_end
-
 cuda_td = dict(_lalsim_td_approximants.items() + _cuda_td_approximants.items())
 cuda_fd = dict(_lalsim_fd_approximants.items() + _cuda_fd_approximants.items())
-cuda_fd_filter = dict(cuda_fd.items() + _cuda_fd_filters.items()) 
 
 # Waveforms written in OpenCL
 _opencl_td_approximants = {}
@@ -154,11 +141,10 @@ _opencl_fd_approximants = {}
 
 opencl_td = dict(_lalsim_td_approximants.items() + _opencl_td_approximants.items())
 opencl_fd = dict(_lalsim_fd_approximants.items() + _opencl_fd_approximants.items())
-opencl_fd_filter = {}
+
 
 td_wav = {_scheme.CPUScheme:cpu_td,_scheme.CUDAScheme:cuda_td,_scheme.OpenCLScheme:opencl_td}
 fd_wav = {_scheme.CPUScheme:cpu_fd,_scheme.CUDAScheme:cuda_fd,_scheme.OpenCLScheme:opencl_fd}
-filter_wav = {_scheme.CPUScheme:cpu_fd_filter, _scheme.CUDAScheme:cuda_fd_filter, _scheme.OpenCLScheme:opencl_fd_filter}
 
 # List the various available approximants ####################################
 
@@ -386,6 +372,31 @@ def get_fd_waveform(template=None, **kwargs):
     return htilde
     
 # Waveform filter routines ###################################################
+
+# Organize Filter Generators
+_inspiral_fd_filters = {}
+_cuda_fd_filters = {}
+
+if pycbc.HAVE_CUDA:
+    from spa_tmplt_cuda import spa_tmplt
+    _cuda_fd_filters['SPAtmplt'] = spa_tmplt
+
+opencl_fd_filter = {}
+cpu_fd_filter = dict(cpu_fd.items() + _inspiral_fd_filters.items()) 
+cuda_fd_filter = dict(cuda_fd.items() + _cuda_fd_filters.items()) 
+
+filter_wav = {_scheme.CPUScheme:cpu_fd_filter, _scheme.CUDAScheme:cuda_fd_filter, _scheme.OpenCLScheme:opencl_fd_filter}
+
+# Organize functions for function conditioning/precalculated values 
+_filter_norms = {}
+_filter_ends = {}
+_filter_preconditions = {}
+
+from spa_tmplt import spa_tmplt_norm, spa_tmplt_end, spa_tmplt_precondition
+_filter_norms["SPAtmplt"] = spa_tmplt_norm
+_filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
+_filter_ends["SPAtmplt"] = spa_tmplt_end
+
 
 def get_waveform_filter(out, template=None, **kwargs):
     """Return a frequency domain waveform filter for the specified approximant

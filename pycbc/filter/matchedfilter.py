@@ -137,7 +137,7 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
     elif (len(out) == N) and type(out) is Array and out.kind =='complex':
         _q = out
     else:
-        raise TypeError('Invalid Output Vector')
+        raise TypeError('Invalid Output Vector: wrong length or dtype')
         
     if (_qtilde is None) or (len(_qtilde) != N) or _qtilde.dtype != data.dtype:
         _qtilde = zeros(N, dtype=complex_same_precision_as(data))
