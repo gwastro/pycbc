@@ -84,6 +84,9 @@ def read_frame(location, channels, start_time=None, end_time=None, duration=None
         stream = lalframe.FrOpen(dir_name, file_name)
     else:
         raise TypeError("Invalid location name")
+        
+    stream.mode = lalframe.LAL_FR_VERBOSE_MODE
+    lalframe.FrSetMode(stream, stream.mode | lalframe.LAL_FR_CHECKSUM_MODE)
 
     if end_time  and duration:
         raise ValueError("end time and duration are mutually exclusive")
@@ -107,7 +110,7 @@ def read_frame(location, channels, start_time=None, end_time=None, duration=None
         duration = float(end_time-start_time)
     else:
         duration = float(duration)
-
+        
     if type(channels) is list: 
         all_data = []
         for channel in channels:
