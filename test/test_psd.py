@@ -113,40 +113,34 @@ class TestPSD(unittest.TestCase):
         for seg_len in (2048, 4096, 8192):
             noise_model = (numpy.linspace(1., 100., seg_len/2 + 1)) ** (-2)
             for seg_stride in (seg_len, seg_len/2):
-                for max_filter_len in (None, 256):
-                    psd = pycbc.psd.welch(self.noise, seg_len=seg_len, \
-                        seg_stride=seg_stride, avg_method='mean', \
-                        max_filter_len=max_filter_len)
-                    error = (psd - noise_model) / noise_model
-                    error /= numpy.std(error)
-                    self.assertTrue(abs(numpy.mean(error)) < 4,
-                        msg='seg_len=%d seg_stride=%d' % (seg_len, seg_stride))
+                psd = pycbc.psd.welch(self.noise, seg_len=seg_len, \
+                    seg_stride=seg_stride, avg_method='mean')
+                error = (psd - noise_model) / noise_model
+                error /= numpy.std(error)
+                self.assertTrue(abs(numpy.mean(error)) < 4,
+                    msg='seg_len=%d seg_stride=%d' % (seg_len, seg_stride))
 
     def test_estimate_welch_median(self):
         for seg_len in (2048, 4096, 8192):
             noise_model = (numpy.linspace(1., 100., seg_len/2 + 1)) ** (-2)
             for seg_stride in (seg_len, seg_len/2):
-                for max_filter_len in (None, 256):
-                    psd = pycbc.psd.welch(self.noise, seg_len=seg_len, \
-                        seg_stride=seg_stride, avg_method='median', \
-                        max_filter_len=max_filter_len)
-                    error = (psd - noise_model) / noise_model
-                    error /= numpy.std(error)
-                    self.assertTrue(abs(numpy.mean(error)) < 4,
-                        msg='seg_len=%d seg_stride=%d' % (seg_len, seg_stride))
+                psd = pycbc.psd.welch(self.noise, seg_len=seg_len, \
+                    seg_stride=seg_stride, avg_method='median')
+                error = (psd - noise_model) / noise_model
+                error /= numpy.std(error)
+                self.assertTrue(abs(numpy.mean(error)) < 4,
+                    msg='seg_len=%d seg_stride=%d' % (seg_len, seg_stride))
 
     def test_estimate_welch_medianmean(self):
         for seg_len in (2048, 4096, 8192):
             noise_model = (numpy.linspace(1., 100., seg_len/2 + 1)) ** (-2)
             for seg_stride in (seg_len, seg_len/2):
-                for max_filter_len in (None, 256):
-                    psd = pycbc.psd.welch(self.noise, seg_len=seg_len, \
-                        seg_stride=seg_stride, avg_method='median-mean', \
-                        max_filter_len=max_filter_len)
-                    error = (psd - noise_model) / noise_model
-                    error /= numpy.std(error)
-                    self.assertTrue(abs(numpy.mean(error)) < 4,
-                        msg='seg_len=%d seg_stride=%d' % (seg_len, seg_stride))
+                psd = pycbc.psd.welch(self.noise, seg_len=seg_len, \
+                    seg_stride=seg_stride, avg_method='median-mean')
+                error = (psd - noise_model) / noise_model
+                error /= numpy.std(error)
+                self.assertTrue(abs(numpy.mean(error)) < 4,
+                    msg='seg_len=%d seg_stride=%d' % (seg_len, seg_stride))
         
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestPSD))
