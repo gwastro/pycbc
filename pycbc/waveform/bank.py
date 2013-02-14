@@ -51,13 +51,13 @@ class TemplateBank(object):
         except ValueError:
             self.table = table.get_table(self.indoc, lsctables.SimInspiralTable.tableName)
 
-        self.index = -1
         self.extra_args = kwds
         
     def __len__(self):
         return len(self.table)
             
     def __iter__(self):
+        self.index=-1
         return self
         
     def current_f_end(self):
