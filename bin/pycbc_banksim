@@ -125,9 +125,11 @@ def get_waveform(approximant, phase_order, amplitude_order, template_params, sta
 
     elif approximant in fd_approximants():
         delta_f = filter_rate / length
-        hvec = get_fd_waveform(template_params, approximant=approximant,
+        hp, hc = get_fd_waveform(template_params, approximant=approximant,
                                phase_order=phase_order, delta_f=delta_f,
-                               f_lower=start_frequency, amplitude_order=amplitude_order)     
+                               f_lower=start_frequency, amplitude_order=amplitude_order) 
+        hvec = generate_detector_strain(template_params, hp, hc)
+                                   
 
 
     htilde = make_padded_frequency_series(hvec,filter_N)

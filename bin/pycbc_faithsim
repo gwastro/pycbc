@@ -89,14 +89,15 @@ def get_waveform(approximant, phase_order, amplitude_order, template_params, sta
         hplus,hcross = get_td_waveform(template_params, approximant=approximant,
                                    phase_order=phase_order, delta_t=1.0 / sample_rate,
                                    f_lower=start_frequency, amplitude_order=amplitude_order) 
-        hvec = hplus
+        
 
     elif approximant in fd_approximants():
         delta_f = sample_rate / length
-        hvec = get_fd_waveform(template_params, approximant=approximant,
+        hplus, hcross = get_fd_waveform(template_params, approximant=approximant,
                                phase_order=phase_order, delta_f=delta_f,
                                f_lower=start_frequency, amplitude_order=amplitude_order)     
 
+    hvec = hplus
 
     htilde = make_padded_frequency_series(hvec,filter_N)
 

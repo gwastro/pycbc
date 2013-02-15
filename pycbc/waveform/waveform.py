@@ -89,7 +89,7 @@ def _lalsim_fd_waveform(**p):
     lalsimulation.SimInspiralSetSpinOrder(flags, p['spin_order'])
     lalsimulation.SimInspiralSetTidalOrder(flags, p['tidal_order'])
 
-    htilde = lalsimulation.SimInspiralChooseFDWaveform(float(p['phi0']),
+    hp, hc = lalsimulation.SimInspiralChooseFDWaveform(float(p['phi0']),
                float(p['delta_f']),
                float(solar_mass_to_kg(p['mass1'])),
                float(solar_mass_to_kg(p['mass2'])),
@@ -102,9 +102,12 @@ def _lalsim_fd_waveform(**p):
                int(p['amplitude_order']), int(p['phase_order']),
                _lalsim_enum[p['approximant']])
 
-    htilde = FrequencySeries(htilde.data.data,delta_f=htilde.deltaF,
-                            epoch=htilde.epoch)
-    return htilde
+    hp = FrequencySeries(hp.data.data,delta_f=hp.deltaF,
+                            epoch=hp.epoch)
+    hc = FrequencySeries(hc.data.data,delta_f=hc.deltaF,
+                            epoch=hc.epoch)                        
+    
+    return hp, hc
 
 for approx_enum in xrange(0,lalsimulation.NumApproximants):
     if lalsimulation.SimInspiralImplementedTDApproximants(approx_enum):
@@ -125,12 +128,11 @@ cpu_fd = _lalsim_fd_approximants
 _cuda_td_approximants = {}
 _cuda_fd_approximants = {}
 
-if pycbc.HAVE_CUDA:
-    from pycbc.waveform.TaylorF2 import taylorf2 as cuda_taylorf2
-    from pycbc.waveform.pycbc_phenomC_tmplt import imrphenomc_tmplt
-    from pycbc.waveform.spa_tmplt_cuda import spa_tmplt
-    _cuda_fd_approximants["IMRPhenomC"] = imrphenomc_tmplt
-    _cuda_fd_approximants['TaylorF2'] = cuda_taylorf2
+#if pycbc.HAVE_CUDA:
+    #from pycbc.waveform.TaylorF2 import taylorf2 as cuda_taylorf2
+    #from pycbc.waveform.pycbc_phenomC_tmplt import imrphenomc_tmplt
+    #_cuda_fd_approximants["IMRPhenomC"] = imrphenomc_tmplt
+    #_cuda_fd_approximants['TaylorF2'] = cuda_taylorf2
     
 cuda_td = dict(_lalsim_td_approximants.items() + _cuda_td_approximants.items())
 cuda_fd = dict(_lalsim_fd_approximants.items() + _cuda_fd_approximants.items())
@@ -287,8 +289,7 @@ def get_td_waveform(template=None, **kwargs):
         else:
             raise ValueError("Please provide " + str(arg) )
 
-    hp, hc = wav_gen[input_params['approximant']](**input_params)
-    return (hp, hc)
+    return wav_gen[input_params['approximant']](**input_params)
 
 def get_fd_waveform(template=None, **kwargs):
     """Return a frequency domain gravitational waveform.
@@ -368,8 +369,8 @@ def get_fd_waveform(template=None, **kwargs):
         else:
             raise ValueError("Please provide " + str(arg) )
 
-    htilde = wav_gen[input_params['approximant']](**input_params)
-    return htilde
+    return wav_gen[input_params['approximant']](**input_params)
+
     
 # Waveform filter routines ###################################################
 
@@ -377,15 +378,13 @@ def get_fd_waveform(template=None, **kwargs):
 _inspiral_fd_filters = {}
 _cuda_fd_filters = {}
 
-if pycbc.HAVE_CUDA:
-    from spa_tmplt_cuda import spa_tmplt
-    _cuda_fd_filters['SPAtmplt'] = spa_tmplt
+from spa_tmplt import spa_tmplt
+_inspiral_fd_filters['SPAtmplt'] = spa_tmplt
+_cuda_fd_filters['SPAtmplt'] = spa_tmplt
 
 opencl_fd_filter = {}
-cpu_fd_filter = dict(cpu_fd.items() + _inspiral_fd_filters.items()) 
-cuda_fd_filter = dict(cuda_fd.items() + _cuda_fd_filters.items()) 
 
-filter_wav = {_scheme.CPUScheme:cpu_fd_filter, _scheme.CUDAScheme:cuda_fd_filter, _scheme.OpenCLScheme:opencl_fd_filter}
+filter_wav = {_scheme.CPUScheme:_inspiral_fd_filters, _scheme.CUDAScheme:_cuda_fd_filters, _scheme.OpenCLScheme:opencl_fd_filter}
 
 # Organize functions for function conditioning/precalculated values 
 _filter_norms = {}
@@ -411,6 +410,11 @@ def get_waveform_filter(out, template=None, **kwargs):
         htilde = wav_gen[input_params['approximant']](out=out, **input_params)
         htilde.resize(n)
         return htilde
+    if input_params['approximant'] in fd_approximants(mgr.state):
+        wav_gen = fd_wav[type(mgr.state)] 
+        hp, hc = wav_gen[input_params['approximant']](**input_params)
+        hp.resize(n)
+        return hp
     elif input_params['approximant'] in td_approximants(mgr.state):
         delta_f = 1.0 / (N * input_params['delta_t'])
         wav_gen = td_wav[type(mgr.state)] 

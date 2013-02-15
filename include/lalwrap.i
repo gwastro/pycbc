@@ -175,6 +175,7 @@ YOU HAVE BEEN WARNED!
 #include <lal/VectorOps.h>
 #include <lal/ComplexFFT.h>
 #include <lal/RealFFT.h>
+#include <lal/pycbc.h>
 %}
 
 // DO NOT! change the following:
@@ -188,6 +189,13 @@ YOU HAVE BEEN WARNED!
 %apply REAL4Vector *NONEOUT_REAL4V { REAL4Vector *XLALSSVectorMultiply };
 %apply REAL4Vector *INPUT_REAL4V {REAL4Vector *};
 extern REAL4Vector *XLALSSVectorMultiply(REAL4Vector *out, REAL4Vector *in1, REAL4Vector *in2);
+
+%unignore(spa_tmplt_engine);
+%apply COMPLEX8Vector *INPUT_COMPLEX8V {COMPLEX8Vector *};
+extern int spa_tmplt_engine(COMPLEX8Vector* htilde, int kmin, int  phase_order,
+                    float delta_f, float piM, float pfaN, 
+                    float pfa2, float pfa3, float pfa4, float pfa5, float pfl5,
+                    float pfa6, float pfl6, float pfa7, float tC, float v0);
 
 // Functions to perform FFTs:
 %unignore(XLALCOMPLEX8VectorFFT);
