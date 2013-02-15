@@ -405,6 +405,8 @@ def imrphenomc_tmplt(**kwds):
                                        xdota7,  xdotaN,  AN, A2,  A3,  A4,  A5,
                                        A5imag,  A6,  A6log,  A6imag,
                                        g1,  del1,  del2,  Q )
-    return htilde
+    hp = htilde 
+    hc = htilde * 1j
+    return hp, hc
     
 

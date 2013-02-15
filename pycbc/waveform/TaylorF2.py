@@ -217,7 +217,10 @@ def taylorf2(**kwds):
                     FTa3,  FTa4,  FTa5,  FTa6,
                     FTl6,  FTa7,  dETaN, dETa1, dETa2,  dETa3,
                     amp0,  tC,  phi0)
-    return htilde
+                    
+    hp = htilde 
+    hc = htilde * 1j
+    return hp, hc
     
 
 

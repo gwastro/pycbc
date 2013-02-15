@@ -128,11 +128,11 @@ cpu_fd = _lalsim_fd_approximants
 _cuda_td_approximants = {}
 _cuda_fd_approximants = {}
 
-#if pycbc.HAVE_CUDA:
-    #from pycbc.waveform.TaylorF2 import taylorf2 as cuda_taylorf2
-    #from pycbc.waveform.pycbc_phenomC_tmplt import imrphenomc_tmplt
-    #_cuda_fd_approximants["IMRPhenomC"] = imrphenomc_tmplt
-    #_cuda_fd_approximants['TaylorF2'] = cuda_taylorf2
+if pycbc.HAVE_CUDA:
+    from pycbc.waveform.TaylorF2 import taylorf2 as cuda_taylorf2
+    from pycbc.waveform.pycbc_phenomC_tmplt import imrphenomc_tmplt
+    _cuda_fd_approximants["IMRPhenomC"] = imrphenomc_tmplt
+    _cuda_fd_approximants['TaylorF2'] = cuda_taylorf2
     
 cuda_td = dict(_lalsim_td_approximants.items() + _cuda_td_approximants.items())
 cuda_fd = dict(_lalsim_fd_approximants.items() + _cuda_fd_approximants.items())
