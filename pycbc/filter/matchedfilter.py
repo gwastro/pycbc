@@ -66,10 +66,13 @@ def sigmasq_series(htilde, psd=None, low_frequency_cutoff=None,
     kmin, kmax = get_cutoff_indices(low_frequency_cutoff,
                                    high_frequency_cutoff, htilde.delta_f, N)  
    
-    sigma_vec = FrequencySeries(zeros(len(htilde)), delta_f = htilde.delta_f, 
-                        dtype=real_same_precision_as(htilde), copy=False)
+    sigma_vec = FrequencySeries(zeros(len(htilde), dtype=real_same_precision_as(htilde)), 
+                                delta_f = htilde.delta_f, copy=False)
     
     mag = htilde.squared_norm()
+    
+    if psd is not None:
+        mag /= psd
 
     sigma_vec[kmin:kmax] = mag[kmin:kmax].cumsum()
         
@@ -120,7 +123,7 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
                   high_frequency_cutoff=None, h_norm=None, out=None, corr_out=None):
     """Return the complex SNR and normalization 
     """
-    if corr_out:
+    if corr_out is not None:
         _qtilde = corr_out
     else:
         global _qtilde
