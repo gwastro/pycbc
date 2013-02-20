@@ -47,7 +47,7 @@ threshold_op = """
     event nv;
     if ( abs(val) > threshold){
         nv.val = val;
-        nv.loc = i;
+        nv.loc = i + offset;
         int n_w = atomicAdd(bn, 1) ;
         out[n_w] = nv;
     }
@@ -69,7 +69,7 @@ threshold_cluster_op = """
 """
 
 threshold_kernel = ElementwiseKernel(
-            " %(tp_in)s *in, %(tp_out)s *out, %(tp_th)s threshold, %(tp_n)s *bn" % {
+            " %(tp_in)s *in, %(tp_out)s *out, %(tp_th)s threshold, %(tp_n)s *bn, int offset" % {
                 "tp_in": dtype_to_ctype(numpy.complex64),
                 "tp_out": dtype_to_ctype(subset_dtype),
                 "tp_th": dtype_to_ctype(numpy.float32),
@@ -93,8 +93,8 @@ n_events = to_gpu(n_events)
 buffer_vec = numpy.zeros(4096*2048, dtype=subset_dtype)
 buffer_vec = to_gpu(buffer_vec)
             
-def threshold(series, value):
-    threshold_kernel(series.data, buffer_vec, value, n_events)
+def threshold(series, value, offset=0):
+    threshold_kernel(series.data, buffer_vec, value, n_events, offset)
     n = n_events.get()[0]
     return numpy.sort(buffer_vec[0:n].get(), order='loc')
     

@@ -33,7 +33,7 @@ import numpy
 subset_dtype = numpy.dtype([('val', numpy.complex64), ('loc', numpy.int64),])
 
 @schemed("pycbc.events.threshold_")
-def threshold(series, value):
+def threshold(series, value, offset=0):
     """Return list of values and indices values over threshold in series. 
     """ 
     
@@ -143,14 +143,20 @@ def write_events(outname, all_events, bank, filter_params, opt):
             row.Gamma7 =0 
             row.Gamma8 =0 
             row.Gamma9 =0 
-            row.event_id=""          
+            row.event_id=""   
+            row.spin1x = 0 
+            row.spin1y = 0
+            row.spin1z = 0
+            row.spin2x = 0
+            row.spin2y = 0
+            row.spin2z = 0        
             sngl_table.append(row)
         ind += 1
             
     glue.ligolw.utils.write_filename(outdoc, outname)             
 
 __all__ = ['threshold_and_centered_window_cluster', 
-           'findchirp_cluster_over_window', 'threshold', 'write_events']
+           'findchirp_cluster_over_window', 'threshold', 'write_events', 'subset_dtype']
 
 
 

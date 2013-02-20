@@ -24,13 +24,13 @@
 import numpy
 from events import subset_dtype
 
-def threshold(series, value):
+def threshold(series, value, offset=0):
     arr = series.numpy()
     mask = abs(arr) > value
     vals = arr[mask]
     locs = mask.nonzero()[0]
     peaks = numpy.array(numpy.zeros(len(vals),), dtype=subset_dtype)
-    peaks['loc'] = locs
+    peaks['loc'] = locs + offset
     peaks['val'] = vals
     return peaks
 
