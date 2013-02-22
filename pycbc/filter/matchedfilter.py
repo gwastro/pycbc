@@ -42,7 +42,20 @@ def correlate(x, y, z):
 
 
 def make_frequency_series(vec):
-    """Returns a FrequencySeries from the input vector
+    """Return a frequency series of the input vector.
+
+    If the input is a frequency series it is returned, else if the input
+    vector is a real time series it is fourier transformed and returned as a 
+    frequency series. 
+    
+    Parameters
+    ----------
+    vector : TimeSeries or FrequencySeries  
+
+    Returns
+    -------
+    Frequency Series: FrequencySeries
+        A frequency domain version of the input vector.
     """
     if isinstance(vec, FrequencySeries):
         return vec
@@ -50,7 +63,8 @@ def make_frequency_series(vec):
         N = len(vec)
         n = N/2+1    
         delta_f = 1.0 / N / vec.delta_t
-        vectilde =  FrequencySeries(zeros(n, dtype=complex_same_precision_as(vec)), delta_f=delta_f, copy=False)
+        vectilde =  FrequencySeries(zeros(n, dtype=complex_same_precision_as(vec)), 
+                                    delta_f=delta_f, copy=False)
         fft(vec, vectilde)   
         return vectilde
     else:
@@ -58,7 +72,28 @@ def make_frequency_series(vec):
 
 def sigmasq_series(htilde, psd=None, low_frequency_cutoff=None,
             high_frequency_cutoff=None):
-    """Returns the accumulated loudness of the template over frequency bins. 
+    """Return a cumulative sigmasq frequency series. 
+
+    Return a frequency series containing the accumulated power in the input 
+    up to that frequency. 
+    
+    Parameters
+    ----------
+    htilde : TimeSeries or FrequencySeries 
+        The input vector 
+    psd : {None, FrequencySeries}, optional
+        The psd used to weight the accumulated power.
+    low_frequency_cutoff : {None, float}, optional
+        The frequency to begin accumulating power. If None, start at the beginning
+        of the vector.
+    high_frequency_cutoff : {None, float}, optional
+        The frequency to stop considering accumulated power. If None, continue 
+        until the end of the input vector.
+
+    Returns
+    -------
+    Frequency Series: FrequencySeries
+        A frequency series containing the cumulative sigmasq.
     """
     htilde = make_frequency_series(htilde)
     N = (len(htilde)-1) * 2 
@@ -81,7 +116,22 @@ def sigmasq_series(htilde, psd=None, low_frequency_cutoff=None,
 
 def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
             high_frequency_cutoff=None):
-    """Returns the loudness squared of the template.
+    """Return the power of the waveform. 
+
+    Parameters
+    ----------
+    htilde : TimeSeries or FrequencySeries 
+        The input vector containing a waveform.
+    psd : {None, FrequencySeries}, optional
+        The psd used to weight the accumulated power.
+    low_frequency_cutoff : {None, float}, optional
+        The frequency to begin considering waveform power.
+    high_frequency_cutoff : {None, float}, optional
+        The frequency to stop considering waveform power.
+
+    Returns
+    -------
+    sigmasq: float
     """
     htilde = make_frequency_series(htilde)
     N = (len(htilde)-1) * 2 
@@ -99,7 +149,22 @@ def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
 
 def sigma(htilde, psd = None, low_frequency_cutoff=None,
         high_frequency_cutoff=None):
-    """Returns the loudness of the template.
+    """Return the loudness of the waveform.
+
+    Parameters
+    ----------
+    htilde : TimeSeries or FrequencySeries 
+        The input vector containing a waveform.
+    psd : {None, FrequencySeries}, optional
+        The psd used to weight the accumulated power.
+    low_frequency_cutoff : {None, float}, optional
+        The frequency to begin considering waveform power.
+    high_frequency_cutoff : {None, float}, optional
+        The frequency to stop considering waveform power.
+
+    Returns
+    -------
+    sigmasq: float
     """
     return sqrt(sigmasq(htilde, psd, low_frequency_cutoff, high_frequency_cutoff))
     
@@ -117,7 +182,7 @@ def get_cutoff_indices(flow, fhigh, df, N):
     return kmin,kmax
     
 # Workspace Memory for the matchedfilter
-_qtilde = None
+_qtilde_t = None
 
 def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
                   high_frequency_cutoff=None, h_norm=None, out=None, corr_out=None):
@@ -126,7 +191,8 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
     if corr_out is not None:
         _qtilde = corr_out
     else:
-        global _qtilde
+        global _qtilde_t
+        _qtilde = _qtilde_t
   
     htilde = make_frequency_series(template)
     stilde = make_frequency_series(data)
@@ -196,6 +262,25 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
 def overlap(vec1, vec2, psd=None, low_frequency_cutoff=None,
           high_frequency_cutoff=None, normalized=True):
     """ Return the overlap between the two TimeSeries or FrequencySeries.
+
+    Parameters
+    ----------
+    vec1 : TimeSeries or FrequencySeries 
+        The input vector containing a waveform.
+    vec2 : TimeSeries or FrequencySeries 
+        The input vector containing a waveform.
+    psd : Frequency Series
+        A power spectral density to weight the overlap.
+    low_frequency_cutoff : {None, float}, optional
+        The frequency to begin the overlap
+    high_frequency_cutoff : {None, float}, optional
+        The frequency to stop the overlap
+    normalized : {True, boolean}, optional
+        Set if the overlap is normalized. If true, it will range from 0 to 1. 
+
+    Returns
+    -------
+    overlap: float
     """
     htilde = make_frequency_series(vec1)
     stilde = make_frequency_series(vec2)
