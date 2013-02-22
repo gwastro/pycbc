@@ -1,4 +1,3 @@
-
 # Copyright (C) 2012  Alex Nitz
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -80,7 +79,7 @@ class TestWaveform(base_test.function_base,unittest.TestCase):
                 hc,hp = get_td_waveform(approximant=waveform,mass1=20,mass2=20,delta_t=1.0/4096,f_lower=40)
                 self.assertTrue(len(hc)> 0)    
             for waveform in fd_approximants():
-                htilde = get_fd_waveform(approximant=waveform,mass1=20,mass2=20,delta_f=1.0/256,f_lower=40)     
+                htilde, g = get_fd_waveform(approximant=waveform,mass1=20,mass2=20,delta_f=1.0/256,f_lower=40)     
                 self.assertTrue(len(htilde)> 0)                                                         
 
     def test_errors(self):
@@ -103,16 +102,16 @@ class TestWaveform(base_test.function_base,unittest.TestCase):
     if _options['scheme'] == 'cuda':
         def test_taylorf2(self): 
             for order in [7,7]:
-                h = get_fd_waveform(approximant= "TaylorF2", mass1=1,mass2=1, spin1z=1, spin2z=1, phase_order=order, amplitude_order=order,delta_f = 1.0/1024,f_lower=15.0) 
+                h, g = get_fd_waveform(approximant= "TaylorF2", mass1=1,mass2=1, spin1z=1, spin2z=1, phase_order=order, amplitude_order=order,delta_f = 1.0/1024,f_lower=15.0) 
                 with self.context:
-                    s = get_fd_waveform(approximant= "TaylorF2", mass1=1,mass2=1, spin1z=1, spin2z=1, phase_order=order, amplitude_order=order,delta_f = 1.0/1024,f_lower=15.0)
+                    s, g = get_fd_waveform(approximant= "TaylorF2", mass1=1,mass2=1, spin1z=1, spin2z=1, phase_order=order, amplitude_order=order,delta_f = 1.0/1024,f_lower=15.0)
                     o,i = match(h,s)
                     self.assertAlmostEqual(1,o,places=4)
 
 
-            h = get_fd_waveform(approximant= "TaylorF2", mass1=1,mass2=1,phase_order=7,amplitude_order=7,delta_f = 1.0/1024,f_lower=15.0) 
+            h, g = get_fd_waveform(approximant= "TaylorF2", mass1=1,mass2=1,phase_order=7,amplitude_order=7,delta_f = 1.0/1024,f_lower=15.0) 
             with self.context:
-                s = get_fd_waveform(approximant= "TaylorF2", mass1=1,mass2=1,phase_order=7,amplitude_order=7,delta_f = 1.0/1024,f_lower=15.0)     
+                s, g = get_fd_waveform(approximant= "TaylorF2", mass1=1,mass2=1,phase_order=7,amplitude_order=7,delta_f = 1.0/1024,f_lower=15.0)     
                 diff = ((h-s)).sum()
             self.assertTrue(diff<10e-32)
 
