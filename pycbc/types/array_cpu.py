@@ -51,4 +51,7 @@ def max(self):
 def max_loc(self):
     return self.data.max(), numpy.argmax(self._data)
     
+def take(self, indices):
+    return self.data.take(indices)
+    
     

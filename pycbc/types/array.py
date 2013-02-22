@@ -237,6 +237,10 @@ class Array(object):
                 raise TypeError('Invalid Processing scheme Type')
 
     @decorator
+    def _returnarray(fn, self, *args):
+        return Array(fn(self, *args), copy=False)
+
+    @decorator
     def _returntype(fn, self, *args):
         ary = fn(self,*args)
         if ary is NotImplemented:
@@ -535,7 +539,13 @@ class Array(object):
     @_convert
     @schemed(BACKEND_PREFIX)
     def min(self):
-        """ Return the maximum value in the array. """                            
+        """ Return the maximum value in the array. """ 
+        
+    @_returnarray
+    @_convert
+    @schemed(BACKEND_PREFIX)
+    def take(self, indices):
+        """ Return the values at the given indices. """                           
 
     @_convert
     @_vcheckother

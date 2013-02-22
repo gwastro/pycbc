@@ -26,11 +26,23 @@ produces event triggers
 """
 import glue.ligolw.utils.process
 import lal
+import numpy
 
 from pycbc.scheme import schemed
 import numpy
 
-subset_dtype = numpy.dtype([('val', numpy.complex64), ('loc', numpy.int64),])
+complex64_subset = numpy.dtype([('val', numpy.complex64), ('loc', numpy.int64),])
+complex128_subset = numpy.dtype([('val', numpy.complex128), ('loc', numpy.int64),])
+float32_subset = numpy.dtype([('val', numpy.float32), ('loc', numpy.int64),])
+float64_subset = numpy.dtype([('val', numpy.float64), ('loc', numpy.int64),])
+
+_dmap = {numpy.dtype('float32'): float32_subset,
+         numpy.dtype('float64'): float64_subset,
+         numpy.dtype('complex64'): complex64_subset,
+         numpy.dtype('complex128'): complex128_subset}
+
+def subset_dtype(dtype):
+    return _dmap[dtype]
 
 @schemed("pycbc.events.threshold_")
 def threshold(series, value, offset=0):
@@ -43,7 +55,7 @@ def threshold_and_centered_window_cluster(series, threshold, window):
     """ 
 
 def findchirp_cluster_over_window(events, window_length):
-    clustered_events = numpy.zeros(len(events), dtype=subset_dtype)
+    clustered_events = numpy.zeros(len(events), dtype=events.dtype)
     j = 0 
     for i in range(len(events)):
         if i==0:
@@ -80,7 +92,7 @@ def write_events(outname, all_events, bank, filter_params, opt):
         sigmasq = filter_params['sigmasq'][ind]
         
         for event in events:
-            row = glue.ligolw.lsctables.SnglInspiral()
+            row = tmplt
             snr = event['val']
             idx = event['loc']
             end_time = start_time + float(idx) / opt.sample_rate
@@ -93,70 +105,23 @@ def write_events(outname, all_events, bank, filter_params, opt):
             row.process_id = proc_id
             row.coa_phase = numpy.angle(snr)
             row.sigmasq = sigmasq
-            
-            row.ifo=""
-            row.end_time_gmst = 0
-            row.mchirp = 0 
-            row.mtotal = 0    
-            row.search = ""
-            row.channel = ""
-            row.impulse_time = 0
-            row.impulse_time_ns = 0
-            row.template_duration = 0 
-            row.event_duration = 0 
-            row.amplitude = 0 
-            row.eff_distance = 0 
-            row.eta = 0 
-            row.kappa = 0
-            row.chi = 0 
-            row.tau0 = 0
-            row.tau2 = 0
-            row.tau3 = 0 
-            row.tau4 = 0 
-            row.tau5 = 0 
-            row.ttotal = 0
-            row.psi0 = 0
-            row.psi3 = 0
-            row.alpha = 0
-            row.alpha1 = 0
-            row.alpha2 = 0
-            row.alpha3 = 0
-            row.alpha4 = 0
-            row.alpha5 = 0
-            row.alpha6 = 0
-            row.beta = 0
-            row.f_final = 0
-            row.chisq = 0
-            row.chisq_dof =0
-            row.bank_chisq = 0
-            row.bank_chisq_dof = 0
-            row.cont_chisq = 0
-            row.cont_chisq_dof =0
-            row.rsqveto_duration =0
-            row.Gamma0 =0
-            row.Gamma1 =0
-            row.Gamma2 =0 
-            row.Gamma3 =0 
-            row.Gamma4 =0 
-            row.Gamma5 =0 
-            row.Gamma6 =0 
-            row.Gamma7 =0 
-            row.Gamma8 =0 
-            row.Gamma9 =0 
-            row.event_id=""   
-            row.spin1x = 0 
-            row.spin1y = 0
+            row.spin1x = 0
+            row.spin1y = 0 
             row.spin1z = 0
-            row.spin2x = 0
+            row.spin2x = 0 
             row.spin2y = 0
-            row.spin2z = 0        
+            row.spin2z = 0    
+                  
+     
             sngl_table.append(row)
         ind += 1
             
     glue.ligolw.utils.write_filename(outdoc, outname)             
 
 __all__ = ['threshold_and_centered_window_cluster', 
-           'findchirp_cluster_over_window', 'threshold', 'write_events', 'subset_dtype']
+           'findchirp_cluster_over_window', 'threshold', 
+           'write_events', 'float32_subset', 'float64_subset',
+           'complex64_subset', 'complex128_subset', 'subset_dtype']
 
 
 

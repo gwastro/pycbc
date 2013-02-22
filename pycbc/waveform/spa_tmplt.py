@@ -50,7 +50,7 @@ def spa_tmplt_norm(psd, length, delta_f, f_lower):
     amp = spa_tmplt_precondition(length, delta_f)
     k_min = int(f_lower / delta_f)
     sigma = (amp.numpy() ** 2.0 / psd.numpy())
-    norm_vec = sigma * 0 
+    norm_vec = numpy.zeros(length)
     norm_vec[k_min:length] = sigma[k_min:length].cumsum() * 4 * delta_f
     return norm_vec
 

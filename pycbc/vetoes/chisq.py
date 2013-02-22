@@ -21,27 +21,49 @@
 #
 # =============================================================================
 #
-from pycbc.types import zeros, real_same_precision_as, TimeSeries
+from pycbc.types import zeros, real_same_precision_as, TimeSeries, complex_same_precision_as
 from pycbc.filter import sigmasq_series, make_frequency_series, sigmasq, matched_filter
 import numpy
+import pycbc.fft
 
-def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff=None, 
-    high_frequency_cutoff=None):
+def power_chisq_bins_from_sigmasq_series(sigmasq_series, num_bins, kmin, kmax):
+    """Returns bins of equal power for use with the chisq functions
+    """
+    sigmasq = sigmasq_series[kmax]                        
+    edge_vec = numpy.arange(0, sigmasq, sigmasq/num_bins)
+    bins = numpy.searchsorted(sigmasq_series[kmin:kmax], edge_vec, side='right')
+    bins += kmin
+    return numpy.append(bins, kmax)
+
+def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff):
     """Returns bins of equal power for use with the chisq functions
     """
     sigma_vec = sigmasq_series(htilde, psd, low_frequency_cutoff, 
-                               high_frequency_cutoff).numpy()
-     
-    sigmasq = max(sigma_vec)                          
-     
-    edge_vec = numpy.arange(0, sigmasq, sigmasq/num_bins)
-    bins = numpy.searchsorted(sigma_vec, edge_vec)
+                               high_frequency_cutoff).numpy() 
+    kmin = int(low_frequency_cutoff / htilde.delta_f)
+    kmax = len(sigma_vec) 
+    return power_chisq_bins_from_sigmasq_series(sigma_vec, num_bins, kmin, kmax)
     
-    if low_frequency_cutoff:
-        bins[0] = low_frequency_cutoff / htilde.delta_f
+def power_chisq_from_precomputed(corr, snr, bins, h_norm):
+    """ Returns the chisq time series
+    """
+    q = zeros(len(snr), dtype=complex_same_precision_as(snr))
+    qtilde = zeros(len(snr), dtype=complex_same_precision_as(snr))
+    chisq = TimeSeries(zeros(len(snr), dtype=real_same_precision_as(snr)), 
+                       delta_t=snr.delta_t, epoch=snr.start_time, copy=False)
     
-    return bins
+    chisq_norm = 16 * corr.delta_f * corr.delta_f / h_norm
+    num_bins = len(bins) - 1
     
+    for j in range(len(bins)-1): 
+        k_min = bins[j]
+        k_max = bins[j+1]
+        qtilde.clear()
+        qtilde[k_min:k_max] = corr[k_min:k_max]
+        pycbc.fft.ifft(qtilde, q) 
+        chisq += (snr / num_bins - q).squared_norm()
+        
+    return chisq * num_bins * chisq_norm
 
 def power_chisq(template, data, num_bins, psd=None, low_frequency_cutoff=None, 
           high_frequency_cutoff=None):
