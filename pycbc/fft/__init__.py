@@ -156,6 +156,18 @@ def _check_fft_args(invec,outvec):
     return [iprec,itype,otype]
 
 def fft(invec,outvec,backend='Default'):
+    """ Fourier transform from invec to outvec.
+    
+    Perform a fourier transform. The type of transform is determined
+    by the dtype of invec and outvec. 
+
+    Parameters
+    ----------
+    invec : TimeSeries or FrequencySeries 
+        The input vector.
+    outvec : TimeSeries or FrequencySeries 
+        The output.
+    """
     [prec,itype,otype] = _check_fft_args(invec,outvec)
     if itype == 'complex' and otype == 'complex':
         if len(invec) != len(outvec):
@@ -181,7 +193,19 @@ def fft(invec,outvec,backend='Default'):
         outvec._delta_t = 1.0/(invec._delta_f*len(invec))
         outvec *= invec._delta_f
 
-def ifft(invec,outvec,backend='Default'):
+def ifft(invec, outvec, backend='Default'):
+    """ Inverse fourier transform from invec to outvec.
+    
+    Perform an inverse fourier transform. The type of transform is determined
+    by the dtype of invec and outvec. 
+
+    Parameters
+    ----------
+    invec : TimeSeries or FrequencySeries 
+        The input vector.
+    outvec : TimeSeries or FrequencySeries 
+        The output.
+    """
     [prec,itype,otype] = _check_fft_args(invec,outvec)
     if itype == 'complex' and otype == 'complex':
         if len(invec) != len(outvec):

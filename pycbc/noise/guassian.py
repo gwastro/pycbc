@@ -31,7 +31,26 @@ from lalsimulation import SimNoise
 import lal
 
 def noise_from_psd(length, delta_t, psd, seed=0):
-    """Produce noise colored by a psd.
+    """ Create noise with a given psd.
+    
+    Return noise with a given psd. Note that if unique noise is desired a seed
+    should be provided.
+
+    Parameters
+    ----------
+    length : int
+        The length of noise to generate in samples.
+    delta_t : float
+        The time step of the noise. 
+    psd : FrequencySeries
+        The noise weighting to color the noise.
+    seeed : {0, int}
+        The seed to generate the noise. 
+        
+    Return
+    ------
+    noise : TimeSeries
+        A TimeSeries containing guassian noise colored by the given psd. 
     """
     noise_ts = TimeSeries(zeros(length), delta_t=delta_t)
     

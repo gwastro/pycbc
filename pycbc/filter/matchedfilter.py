@@ -168,7 +168,6 @@ def sigma(htilde, psd = None, low_frequency_cutoff=None,
     """
     return sqrt(sigmasq(htilde, psd, low_frequency_cutoff, high_frequency_cutoff))
     
-
 def get_cutoff_indices(flow, fhigh, df, N):
     if flow:
         kmin = int(flow / df)
@@ -186,7 +185,40 @@ _qtilde_t = None
 
 def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
                   high_frequency_cutoff=None, h_norm=None, out=None, corr_out=None):
-    """Return the complex SNR and normalization 
+    """ Return the complex snr and normalization. 
+    
+    Return the complex snr, along with its associated normalization of the template,
+    matched filtered against the data. 
+
+    Parameters
+    ----------
+    template : TimeSeries or FrequencySeries 
+        The template waveform
+    data : TimeSeries or FrequencySeries 
+        The strain data to be filtered.
+    psd : {FrequencySeries}, optional
+        The noise weighting of the filter.
+    low_frequency_cutoff : {None, float}, optional
+        The frequency to begin the filter calculation. If None, begin at the
+        first frequency after DC.
+    high_frequency_cutoff : {None, float}, optional
+        The frequency to stop the filter calculation. If None, continue to the 
+        the nyquist frequency.
+    h_norm : {None, float}, optional
+        The template normalization. If none, this value is calculated internally.
+    out : {None, Array}, optional
+        An array to use as memory for snr storage. If None, memory is allocated 
+        internally.
+    corr_out : {None, Array}, optional
+        An array to use as memory for correlation storage. If None, memory is allocated 
+        internally.
+
+    Returns
+    -------
+    snr : TimeSeries
+        A time series containing the complex snr. 
+    norm : float
+        The normalization of the complex snr.  
     """
     if corr_out is not None:
         _qtilde = corr_out
@@ -240,8 +272,33 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
     
 _snr = None 
 def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
-          high_frequency_cutoff=None, s_norm=None, h_norm=None):
+          high_frequency_cutoff=None, v1_norm=None, v2_norm=None):
     """ Return the match between the two TimeSeries or FrequencySeries.
+    
+    Return the match between two waveforms. This is equivelant to the overlap 
+    maximized over time and phase. 
+
+    Parameters
+    ----------
+    vec1 : TimeSeries or FrequencySeries 
+        The input vector containing a waveform.
+    vec2 : TimeSeries or FrequencySeries 
+        The input vector containing a waveform.
+    psd : Frequency Series
+        A power spectral density to weight the overlap.
+    low_frequency_cutoff : {None, float}, optional
+        The frequency to begin the match.
+    high_frequency_cutoff : {None, float}, optional
+        The frequency to stop the match.
+    v1_norm : {None, float}, optional
+        The normalization of the first waveform. This is equivalent to its
+        sigmasq value. If None, it is internally calculated. 
+    v2_norm : {None, float}, optional
+        The normalization of the second waveform. This is equivalent to its
+        sigmasq value. If None, it is internally calculated. 
+    Returns
+    -------
+    match: float
     """
 
     htilde = make_frequency_series(vec1)
@@ -253,11 +310,11 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
     if _snr is None or _snr.dtype != htilde.dtype or len(_snr) != N:
         _snr = zeros(N,dtype=complex_same_precision_as(vec1))
     snr, snr_norm = matched_filter(htilde,stilde,psd,low_frequency_cutoff,
-                             high_frequency_cutoff, h_norm, out=_snr)
+                             high_frequency_cutoff, v1_norm, out=_snr)
     maxsnr, max_id = snr.abs_max_loc()
-    if s_norm is None:
-        s_norm = sigmasq(stilde, psd, low_frequency_cutoff, high_frequency_cutoff)
-    return maxsnr * snr_norm / sqrt(s_norm), max_id
+    if v2_norm is None:
+        v2_norm = sigmasq(stilde, psd, low_frequency_cutoff, high_frequency_cutoff)
+    return maxsnr * snr_norm / sqrt(v2_norm), max_id
     
 def overlap(vec1, vec2, psd=None, low_frequency_cutoff=None,
           high_frequency_cutoff=None, normalized=True):
@@ -272,9 +329,9 @@ def overlap(vec1, vec2, psd=None, low_frequency_cutoff=None,
     psd : Frequency Series
         A power spectral density to weight the overlap.
     low_frequency_cutoff : {None, float}, optional
-        The frequency to begin the overlap
+        The frequency to begin the overlap.
     high_frequency_cutoff : {None, float}, optional
-        The frequency to stop the overlap
+        The frequency to stop the overlap.
     normalized : {True, boolean}, optional
         Set if the overlap is normalized. If true, it will range from 0 to 1. 
 
