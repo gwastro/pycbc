@@ -114,8 +114,8 @@ class TestMatchedFilter(base_test.function_base,unittest.TestCase):
             # Calculate a Faux psd for normalization, replace with better algorithm
             psd = (ntilde).squared_norm()  / float(len(nplus)) * nplus.delta_t *2.0
 
-            snr,norm = matched_filter(self.filt,nplus,psd=psd)   
-            ave = snr.squared_norm().sum() * norm * norm /len(snr)
+            snr = matched_filter(self.filt,nplus,psd=psd)   
+            ave = snr.squared_norm().sum() /len(snr)
             self.assertAlmostEqual(2,ave,places=5)
             
             
@@ -125,8 +125,8 @@ class TestMatchedFilter(base_test.function_base,unittest.TestCase):
             # Calculate a Faux psd for normalization, replace with better algorithm
             psd = (ntilde).squared_norm()  / float(len(nplus)) * nplus.delta_t *2.0
 
-            snr,norm = matched_filter(self.filtD,nplus,psd=psd)   
-            ave = snr.squared_norm().sum() * norm * norm /len(snr)
+            snr = matched_filter(self.filtD,nplus,psd=psd)   
+            ave = snr.squared_norm().sum() /len(snr)
             self.assertAlmostEqual(2,ave,places=5)
         
     def test_perfect_match(self):
