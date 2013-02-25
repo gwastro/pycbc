@@ -183,7 +183,7 @@ def get_cutoff_indices(flow, fhigh, df, N):
 # Workspace Memory for the matchedfilter
 _qtilde_t = None
 
-def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
+def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
                   high_frequency_cutoff=None, h_norm=None, out=None, corr_out=None):
     """ Return the complex snr and normalization. 
     
@@ -217,6 +217,8 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
     -------
     snr : TimeSeries
         A time series containing the complex snr. 
+    corrrelation: FrequencySeries
+        A frequency series containing the correlation vector. 
     norm : float
         The normalization of the complex snr.  
     """
@@ -268,7 +270,39 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
 
     norm = (4.0 * stilde.delta_f) / sqrt( h_norm)
     delta_t = 1.0 / (N * stilde.delta_f)
-    return TimeSeries(_q, epoch=stilde._epoch, delta_t=delta_t, copy=False), norm
+    return (TimeSeries(_q, epoch=stilde._epoch, delta_t=delta_t, copy=False), 
+           FrequencySeries(corr_out, epoch=stilde._epoch, delta_f=htilde.delta_f), 
+           norm)
+           
+def matched_filter(template, data, psd, low_frequency_cutoff=None,
+                  high_frequency_cutoff=None):
+    """ Return the complex snr and normalization. 
+    
+    Return the complex snr, along with its associated normalization of the template,
+    matched filtered against the data. 
+
+    Parameters
+    ----------
+    template : TimeSeries or FrequencySeries 
+        The template waveform
+    data : TimeSeries or FrequencySeries 
+        The strain data to be filtered.
+    psd : FrequencySeries
+        The noise weighting of the filter.
+    low_frequency_cutoff : {None, float}, optional
+        The frequency to begin the filter calculation. If None, begin at the
+        first frequency after DC.
+    high_frequency_cutoff : {None, float}, optional
+        The frequency to stop the filter calculation. If None, continue to the 
+        the nyquist frequency.
+
+    Returns
+    -------
+    snr : TimeSeries
+        A time series containing the complex snr. 
+    """
+    snr, corr, norm = matched_filter_core(template, data, psd, low_frequency_cutoff, high_frequency_cutoff)
+    return snr * norm
     
 _snr = None 
 def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
@@ -309,7 +343,7 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
     global _snr
     if _snr is None or _snr.dtype != htilde.dtype or len(_snr) != N:
         _snr = zeros(N,dtype=complex_same_precision_as(vec1))
-    snr, snr_norm = matched_filter(htilde,stilde,psd,low_frequency_cutoff,
+    snr, corr, snr_norm = matched_filter_core(htilde,stilde,psd,low_frequency_cutoff,
                              high_frequency_cutoff, v1_norm, out=_snr)
     maxsnr, max_id = snr.abs_max_loc()
     if v2_norm is None:
@@ -360,5 +394,6 @@ def overlap(vec1, vec2, psd=None, low_frequency_cutoff=None,
       
 
 __all__ = ['match', 'matched_filter', 'sigmasq', 'sigma',
-           'sigmasq_series', 'make_frequency_series', 'overlap']
+           'sigmasq_series', 'make_frequency_series', 'overlap',
+           'matched_filter_core']
 

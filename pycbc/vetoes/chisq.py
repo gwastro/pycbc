@@ -21,8 +21,8 @@
 #
 # =============================================================================
 #
-from pycbc.types import zeros, real_same_precision_as, TimeSeries, complex_same_precision_as
-from pycbc.filter import sigmasq_series, make_frequency_series, sigmasq, matched_filter
+from pycbc.types import zeros, real_same_precision_as, TimeSeries, complex_same_precision_as, FrequencySeries
+from pycbc.filter import sigmasq_series, make_frequency_series, sigmasq, matched_filter_core
 import numpy
 import pycbc.fft
 
@@ -44,7 +44,7 @@ def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff):
     kmax = len(sigma_vec) 
     return power_chisq_bins_from_sigmasq_series(sigma_vec, num_bins, kmin, kmax)
     
-def power_chisq_from_precomputed(corr, snr, bins, h_norm):
+def power_chisq_from_precomputed(corr, snr, bins, snr_norm):
     """ Returns the chisq time series
     """
     q = zeros(len(snr), dtype=complex_same_precision_as(snr))
@@ -52,20 +52,22 @@ def power_chisq_from_precomputed(corr, snr, bins, h_norm):
     chisq = TimeSeries(zeros(len(snr), dtype=real_same_precision_as(snr)), 
                        delta_t=snr.delta_t, epoch=snr.start_time, copy=False)
     
-    chisq_norm = 16 * corr.delta_f * corr.delta_f / h_norm
+    chisq_norm = snr_norm ** 2.0
     num_bins = len(bins) - 1
     
+    snrp = snr/num_bins
+    
     for j in range(len(bins)-1): 
-        k_min = bins[j]
-        k_max = bins[j+1]
-        qtilde.clear()
+        k_min = int(bins[j])
+        k_max = int(bins[j+1])
         qtilde[k_min:k_max] = corr[k_min:k_max]
         pycbc.fft.ifft(qtilde, q) 
-        chisq += (snr / num_bins - q).squared_norm()
+        qtilde[k_min:k_max].clear()
+        chisq += (snrp - q).squared_norm()
         
-    return chisq * num_bins * chisq_norm
+    return chisq * (num_bins * chisq_norm)
 
-def power_chisq(template, data, num_bins, psd=None, low_frequency_cutoff=None, 
+def power_chisq(template, data, num_bins, psds, low_frequency_cutoff=None, 
           high_frequency_cutoff=None):
     """ Return the chisq time series.
     """  
@@ -74,33 +76,12 @@ def power_chisq(template, data, num_bins, psd=None, low_frequency_cutoff=None,
     
     bins = power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff, high_frequency_cutoff)
     
-    total_snr, tnorm = matched_filter(htilde, stilde, psd,
-                           low_frequency_cutoff, high_frequency_cutoff)
-    print tnorm                       
-   # print sigmasq(htilde, psd=psd, low_frequency_cutoff=low_frequency_cutoff, high_frequency_cutoff=high_frequency_cutoff)
-
-    chisq_vec = zeros(len(total_snr), dtype=real_same_precision_as(htilde))
+    corra = zeros((len(htilde)-1)*2, dtype=htilde.dtype)
     
-    for i in range(len(bins)):
-        f_min = bins[i] * template.delta_f
-        
-        if (i+1) < len(bins):
-            f_max = bins[i+1] * template.delta_f
-        else:
-            f_max = high_frequency_cutoff
+    total_snr, corr, tnorm = matched_filter_core(htilde, stilde, psd,
+                           low_frequency_cutoff, high_frequency_cutoff, corr_out=corra)
 
-        snr_part, pnorm = matched_filter(htilde, stilde, psd, f_min, f_max)
-       # print sigmasq(htilde, psd=psd, low_frequency_cutoff=f_min, high_frequency_cutoff=f_max)
-        
-        chisq_vec += (total_snr*tnorm/15 - snr_part*tnorm).squared_norm()*15
-        print pnorm, snr_part[100000], f_min, f_max
-    
-   # print chisq_vec[100000]
-    #chisq_vec *= num_bins
-   # print chisq_vec[100000], total_snr.squared_norm()[100000], tnorm, tnorm*tnorm
-    #chisq_vec = (chisq_vec - total_snr.squared_norm()) * tnorm * tnorm
-
-    return TimeSeries(chisq_vec, delta_t=total_snr.delta_t, epoch=total_snr.start_time, copy=False)
+    return power_chisq_from_precomputed(corr, total_snr, bins, tnorm)
 
     
                 

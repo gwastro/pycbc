@@ -26,9 +26,9 @@ from pycbc.types import zeros, Array
 from pycuda.gpuarray import to_gpu
 from pycuda.tools import get_or_register_dtype, dtype_to_ctype
 from pycuda.elementwise import ElementwiseKernel
-from events import subset_dtype
+from events import complex64_subset
 
-subset_dtype = get_or_register_dtype("event", dtype=subset_dtype)
+complex64_subset = get_or_register_dtype("event", dtype=complex64_subset)
 
 preamble = """
     #include <stdio.h>
@@ -47,7 +47,7 @@ threshold_op = """
     event nv;
     if ( abs(val) > threshold){
         nv.val = val;
-        nv.loc = i + offset;
+        nv.loc = i;
         int n_w = atomicAdd(bn, 1) ;
         out[n_w] = nv;
     }
@@ -69,9 +69,9 @@ threshold_cluster_op = """
 """
 
 threshold_kernel = ElementwiseKernel(
-            " %(tp_in)s *in, %(tp_out)s *out, %(tp_th)s threshold, %(tp_n)s *bn, int offset" % {
+            " %(tp_in)s *in, %(tp_out)s *out, %(tp_th)s threshold, %(tp_n)s *bn" % {
                 "tp_in": dtype_to_ctype(numpy.complex64),
-                "tp_out": dtype_to_ctype(subset_dtype),
+                "tp_out": dtype_to_ctype(complex64_subset),
                 "tp_th": dtype_to_ctype(numpy.float32),
                 "tp_n": dtype_to_ctype(numpy.int32),
                 },
@@ -81,7 +81,7 @@ threshold_kernel = ElementwiseKernel(
 threshold_cluster_kernel = ElementwiseKernel(
             " %(tp_in)s *in, %(tp_out)s *out, %(tp_th)s threshold, %(tp_n)s *bn" % {
                 "tp_in": dtype_to_ctype(numpy.complex64),
-                "tp_out": dtype_to_ctype(subset_dtype),
+                "tp_out": dtype_to_ctype(complex64_subset),
                 "tp_th": dtype_to_ctype(numpy.float32),
                 "tp_n": dtype_to_ctype(numpy.int32),
                 },
@@ -90,13 +90,13 @@ threshold_cluster_kernel = ElementwiseKernel(
  
 n_events = numpy.zeros(1, dtype=numpy.int64)
 n_events = to_gpu(n_events)
-buffer_vec = numpy.zeros(4096*2048, dtype=subset_dtype)
+buffer_vec = numpy.zeros(4096*2048, dtype=complex64_subset)
 buffer_vec = to_gpu(buffer_vec)
             
-def threshold(series, value, offset=0):
-    threshold_kernel(series.data, buffer_vec, value, n_events, offset)
+def threshold(series, value):
+    threshold_kernel(series.data, buffer_vec, value, n_events)
     n = n_events.get()[0]
-    return numpy.sort(buffer_vec[0:n].get(), order='loc')
+    return buffer_vec[0:n].get()
     
 def threshold_and_centered_window_cluster(series, value, window):
     threshold_cluster_kernel(series.data, buffer_vec, value, n_events)

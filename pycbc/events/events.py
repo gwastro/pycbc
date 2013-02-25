@@ -45,7 +45,7 @@ def subset_dtype(dtype):
     return _dmap[dtype]
 
 @schemed("pycbc.events.threshold_")
-def threshold(series, value, offset=0):
+def threshold(series, value):
     """Return list of values and indices values over threshold in series. 
     """ 
     

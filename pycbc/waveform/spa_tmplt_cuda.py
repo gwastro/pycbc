@@ -23,7 +23,7 @@
 
 import lal
 import numpy
-from numpy import sqrt
+from numpy import sqrt, log
 from math import frexp
 
 import pycuda.tools
@@ -42,13 +42,16 @@ taylorf2_text = """
     const float f = (i + kmin ) * delta_f;
     const float v =  __powf(piM*f, 1.0/3.0);
     const float v2 = v * v;
-    const float v3 = v * v * v;
+    const float v3 = v2 * v;
     const float v4 = v2 * v2;
     const float v5 = v2 * v3;
     const float v6 = v3 * v3;
     const float v7 = v3 * v4;
     float phasing = 0.;
     float shft = -LAL_TWOPI * tC;
+    
+    float log4 = 1.386294361;
+    float logv = __logf(v);
 
     switch (phase_order)
     {
@@ -56,9 +59,9 @@ taylorf2_text = """
         case 7:
             phasing += pfa7 * v7;
         case 6:
-            phasing += (pfa6 + pfl6 * __logf(4.*v) ) * v6;
+            phasing += (pfa6 + pfl6 * (logv + log4) ) * v6;
         case 5:
-            phasing += (pfa5 + pfl5 * __logf(v/v0)) * v5;
+            phasing += (pfa5 + pfl5 * (logv - lv0) ) * v5;
         case 4:
             phasing += pfa4 * v4;
         case 3:
@@ -87,7 +90,7 @@ taylorf2_text = """
 taylorf2_kernel = ElementwiseKernel("""pycuda::complex<float> *htilde, int kmin, int phase_order,
                                        float delta_f, float piM, float pfaN, 
                                        float pfa2, float pfa3, float pfa4, float pfa5, float pfl5,
-                                       float pfa6, float pfl6, float pfa7, float tC, float v0""",
+                                       float pfa6, float pfl6, float pfa7, float tC, float lv0""",
                     taylorf2_text, "SPAtmplt",
                     preamble=preamble, options=pkg_config_header_strings(['lal']))
 
@@ -100,4 +103,4 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order,
     taylorf2_kernel(htilde.data,  kmin,  phase_order,
                     delta_f,  piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, tC, v0)
+                    pfa6,  pfl6,  pfa7, tC, log(v0))
