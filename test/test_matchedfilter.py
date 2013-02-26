@@ -90,7 +90,7 @@ class TestMatchedFilter(base_test.function_base,unittest.TestCase):
         self.filt2D[0:len(self.filt2D)/2].fill(0)  
         self.filt_offsetD = TimeSeries(numpy.roll(data,4096*32), dtype=float64,
                                       delta_t=1.0/4096)         
-                                      
+
         self.filt_short =TimeSeries([0,1,2,3,4],dtype=float32,delta_t=1.0/4096) 
                                       
     def test_scheme_change(self):
@@ -98,8 +98,8 @@ class TestMatchedFilter(base_test.function_base,unittest.TestCase):
             self.scheme_test(match,(self.filt_short,self.filt_short), 
                                             (self.filt_short,self.filt_short),7)
                                             
-            self.scheme_test(matched_filter,(self.filt_short,self.filt_short), 
-                                            (self.filt_short,self.filt_short),7)
+            self.scheme_test(matched_filter_core,(self.filt_short,self.filt_short ), 
+                                            (self.filt_short,self.filt_short, ),7)
         else:
             pass
             
