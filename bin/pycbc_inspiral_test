@@ -1,0 +1,170 @@
+import resource
+from time import time
+from optparse import OptionParser
+
+import numpy
+from pycbc.scheme import CUDAScheme, CPUScheme, OpenCLScheme
+from pycbc.types import TimeSeries, float32, complex64, zeros, FrequencySeries
+from pycbc.frame import read_frame
+import pycbc.vetoes
+import pycbc.psd
+import pycbc.waveform
+import pycbc.events
+from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series, matched_filter_core, sigmasq
+
+start = time()
+elapsed_time = lambda: "%fs"%(time()-start)
+mem = lambda: "%5.0fMB"%(int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)/1000)
+
+parser = OptionParser(
+    usage   = "%prog [OPTIONS]",
+    description = "Find single detector gravitational-wave triggers." )
+
+parser.add_option("-V", "--verbose", action="store_true", help="print extra debugging information", default=False )
+parser.add_option("--bank-file", type=str)
+parser.add_option("--injection-file", type=str)
+parser.add_option("--trig-start-time", type=int)
+parser.add_option("--trig-end-time", type=int)
+parser.add_option("--ifo-tag", type=str)
+parser.add_option("--approximant", help="Approximant to use for filtering.", type=str)
+parser.add_option("--order", type=int)
+
+parser.add_option("--gps-start-time", help="The gps start time of the data", type=int)
+parser.add_option("--gps-end-time", help="The gps end time of the data", type=int)
+
+parser.add_option("--channel-name", help="The channel that contains the gravitational strain data", type=str)
+parser.add_option("--frame-cache", help="Either a set of frame files or a cache file that points to the frame file locations.", type=str)
+
+parser.add_option("--snr-threshold", help="The the minimum snr threshold", type=float)
+
+parser.add_option("--enable-high-pass", type=float)
+parser.add_option("--high-pass-attenuation", type=float)
+
+parser.add_option("--chisq-bins", type=int)
+parser.add_option("--chisq-threshold", type=float)
+
+parser.add_option("--low-frequency-cutoff", help="The low frequency cutoff to use for filtering (Hz)", type=float)
+parser.add_option("--pad-data", help="Extra padding to remove highpass corruption (s)", type=int)
+parser.add_option("--sample-rate", help="The sample rate to use for filtering (Hz)", type=int)
+
+parser.add_option("--segment-overlap", type=int)
+parser.add_option("--number-of-segments", help="Number of segments to split the data into", type=int)
+parser.add_option("--segment-length", type=int)
+
+parser.add_option("--spectrum-type", type=str)
+parser.add_option("--inverse-spec-length", type=int)
+
+parser.add_option("--cluster-method", type=str)
+parser.add_option("--maximization-interval", type=float)
+parser.add_option("--user-tag", type=str)
+
+parser.add_option("--processing-scheme", help="The processing scheme to use", choices=["cpu", "cuda"], default="cpu")
+parser.add_option("--gpu-device-id", help="ID of gpu to use for accelerated processing", default=0, type=int)
+
+opt, argv = parser.parse_args()
+
+if opt.processing_scheme == "cuda":
+    print elapsed_time(), mem(), "Running with CUDA support"
+    ctx = CUDAScheme(opt.gpu_device_id)
+else:
+    print elapsed_time(), mem(), "Running with CPU support only"
+    ctx = CPUScheme()
+
+cluster_window = 4096 * 20
+duration = opt.gps_end_time - opt.gps_start_time
+
+print elapsed_time(), mem(), "Reading Frames"
+strain = read_frame(opt.frame_cache, opt.channel_name, start_time=opt.gps_start_time-opt.pad_data, duration=duration+opt.pad_data*2)
+
+print elapsed_time(), mem(), "Highpass Filtering"
+strain = highpass(strain, frequency=opt.enable_high_pass)
+
+print elapsed_time(), mem(), "Converting to float32"
+strain *= pycbc.DYN_RANGE_FAC
+strain = TimeSeries(strain, delta_t=strain.delta_t, epoch=strain.start_time, dtype=float32)
+
+print elapsed_time(), mem(), "Resampling data"
+strain = resample_to_delta_t(strain, 1.0/opt.sample_rate)
+strain = strain[opt.pad_data*opt.sample_rate:len(strain)-opt.sample_rate*opt.pad_data]
+
+with ctx:
+    print elapsed_time(), mem(), "Estimating PSD"
+    psd = pycbc.psd.welch(strain, seg_len=opt.segment_length, 
+                          seg_stride=(opt.segment_length - opt.segment_overlap))
+
+    print elapsed_time(), mem(), "Interpolating PSD"
+    psd = pycbc.psd.interpolate(psd, float(opt.sample_rate)/opt.segment_length)
+
+    print elapsed_time(), mem(), "Truncating Inverse PSD spectrum"
+    psd = pycbc.psd.inverse_spectrum_truncation(psd, opt.sample_rate*opt.inverse_spec_length,  low_frequency_cutoff=opt.low_frequency_cutoff)
+
+    print elapsed_time(), mem(), "Strain to stilde"
+    segments = []
+    for j in range(opt.number_of_segments):
+        seg_start = j * (opt.segment_length - opt.segment_overlap) 
+        seg_end = seg_start + opt.segment_length
+        segments.append(make_frequency_series(strain[seg_start:seg_end]))
+    
+    print elapsed_time(), mem(), "overwhiten stilde"
+    for seg in segments:
+        seg /= psd
+    
+    if pycbc.waveform.waveform_precondition_exists(opt.approximant):
+        print elapsed_time(), mem(), "Preconditioning Stilde for template"
+        prec_fac = pycbc.waveform.get_waveform_filter_precondition(opt.approximant,  len(segments[0]), segments[0].delta_f)
+        for seg in segments:
+            seg *= prec_fac.astype(complex64)          
+
+    work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
+    snr_work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
+
+    print elapsed_time(), mem(), "Read in template bank"
+    bank = pycbc.waveform.TemplateBank(opt.bank_file, opt.approximant, len(segments[0]),  
+                                       segments[0].delta_f, opt.low_frequency_cutoff, dtype=complex64, out=work_mem)
+    
+    hnorm_vec = None
+    if pycbc.waveform.waveform_norm_exists(opt.approximant):
+        print elapsed_time(), mem(), "Precalculating template normalizations"
+        hnorm_vec = pycbc.waveform.get_waveform_filter_norm(opt.approximant, psd, len(segments[0]), 
+                                                            segments[0].delta_f, opt.low_frequency_cutoff)
+        
+    i = 0    
+    event_mgr = pycbc.events.EventManager(["snr", "chisq"], opt)
+    for template in bank:   
+        if hnorm_vec is not None:
+            k_end = int(bank.current_f_end() / template.delta_f)
+            h_norm = hnorm_vec[k_end]
+            chisq_bins = pycbc.vetoes.power_chisq_bins_from_sigmasq_series(hnorm_vec, opt.chisq_bins,
+                                 int(opt.low_frequency_cutoff * template.delta_f), k_end)
+        else:
+            h_norm = sigmasq(template, psd, low_frequency_cutoff=opt.low_frequency_cutoff)
+            chisq_bins = pycbc.vetoes.power_chisq_bins(template, opt.chisq_bins, psd, opt.low_frequency_cutoff)
+      
+        print elapsed_time(), mem(), "Filtering " + str(i+1)+"/"+str(len(bank))        
+        c_off = opt.segment_length / 4
+        event_mgr.new_template(tmplt=bank.current_tmplt_params(), sigmasq=h_norm)        
+        for stilde in segments:
+            snr, corr, norm = matched_filter_core(template, stilde, h_norm=h_norm, 
+                                       low_frequency_cutoff=opt.low_frequency_cutoff, 
+                                       out=snr_work_mem, corr_out=work_mem)
+                             
+            snr_start = opt.segment_length / 4
+            snr_end  =  opt.segment_length * 3 / 4   
+
+            segment_events = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm)  
+
+            if len(segment_events) > 0:
+                chisq = pycbc.vetoes.power_chisq_from_precomputed(corr, snr, chisq_bins, norm)
+                chisqv = chisq.take(segment_events['loc']+snr_start)
+                segment_events['loc'] += c_off
+                event_mgr.add_template_events(["snr", "chisq"], [segment_events, chisqv])
+       
+            c_off += (snr_end - snr_start)  
+        event_mgr.add_template_params(snr_norm=norm)
+        event_mgr.cluster_template_events("snr", cluster_window) 
+        i+=1
+    
+print elapsed_time(), mem(), "Writing out triggers" 
+event_mgr.write_events()
+
+print elapsed_time(), mem(), "Finished" 
