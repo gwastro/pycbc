@@ -60,6 +60,9 @@ class TemplateBank(object):
         self.index=-1
         return self
         
+    def current_tmplt_params(self):
+        return self.table[self.index]
+        
     def current_f_end(self):
         f_end = pycbc.waveform.get_waveform_end_frequency(self.table[self.index], approximant=self.approximant, **self.extra_args) 
         
