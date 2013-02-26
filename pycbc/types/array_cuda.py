@@ -302,6 +302,10 @@ def max_loc(self):
     maxloc = maxloc.get()
     return float(maxloc['max']),int(maxloc['loc'])
     
+def take(self, indices):
+    indices = pycuda.gpuarray.to_gpu(indices)
+    pycuda.gpuarray.take(self.data, indices)
+    
     
     
 
