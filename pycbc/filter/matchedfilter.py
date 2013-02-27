@@ -271,7 +271,7 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
     norm = (4.0 * stilde.delta_f) / sqrt( h_norm)
     delta_t = 1.0 / (N * stilde.delta_f)
     return (TimeSeries(_q, epoch=stilde._epoch, delta_t=delta_t, copy=False), 
-           FrequencySeries(_qtilde, epoch=stilde._epoch, delta_f=htilde.delta_f), 
+           FrequencySeries(_qtilde, epoch=stilde._epoch, delta_f=htilde.delta_f, copy=False), 
            norm)
            
 def matched_filter(template, data, psd, low_frequency_cutoff=None,

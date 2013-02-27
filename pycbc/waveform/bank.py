@@ -43,6 +43,7 @@ class TemplateBank(object):
         self.filename = filename
         self.delta_f = delta_f
         self.filter_length = filter_length
+        self.kmin = int(f_lower / delta_f)
         
         self.indoc = ligolw_utils.load_filename(filename, False)
         
@@ -72,12 +73,13 @@ class TemplateBank(object):
             return f_end
 
     def next(self):
+        kmax = int(self.current_f_end() / self.delta_f)
         self.index +=1
         if self.index == len(self.table):
             raise StopIteration
         else:
             poke  = self.out.data
-            self.out.clear()
+            self.out[self.kmin:kmax].clear()
             htilde = pycbc.waveform.get_waveform_filter(self.out[0:self.filter_length], self.table[self.index], 
                                     approximant=self.approximant, f_lower=self.f_lower, delta_f=self.delta_f, **self.extra_args)
             return htilde.astype(self.dtype) 

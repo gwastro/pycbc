@@ -24,7 +24,10 @@
 from pycbc.types import zeros, real_same_precision_as, TimeSeries, complex_same_precision_as, FrequencySeries
 from pycbc.filter import sigmasq_series, make_frequency_series, sigmasq, matched_filter_core
 import numpy
+from pycbc.scheme import schemed
 import pycbc.fft
+
+BACKEND_PREFIX="pycbc.vetoes.chisq_"
 
 def power_chisq_bins_from_sigmasq_series(sigmasq_series, num_bins, kmin, kmax):
     """Returns bins of equal power for use with the chisq functions
@@ -43,6 +46,10 @@ def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff):
     kmin = int(low_frequency_cutoff / htilde.delta_f)
     kmax = len(sigma_vec) 
     return power_chisq_bins_from_sigmasq_series(sigma_vec, num_bins, kmin, kmax)
+    
+@schemed(BACKEND_PREFIX)
+def chisq_accum_bin(chisq, snrp, q):
+    pass
     
 def power_chisq_from_precomputed(corr, snr, bins, snr_norm):
     """ Returns the chisq time series
@@ -63,7 +70,7 @@ def power_chisq_from_precomputed(corr, snr, bins, snr_norm):
         qtilde[k_min:k_max] = corr[k_min:k_max]
         pycbc.fft.ifft(qtilde, q) 
         qtilde[k_min:k_max].clear()
-        chisq += (snrp - q).squared_norm()
+        chisq_accum_bin(chisq, snrp, q)
         
     return chisq * (num_bins * chisq_norm)
 
