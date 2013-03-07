@@ -148,16 +148,22 @@ with ctx:
                                                             segments[0].delta_f, opt.low_frequency_cutoff)
         
     i = 0    
-    event_mgr = pycbc.events.EventManager(["snr", "chisq"], opt)
+    columns = ["snr"]
+    if opt.chisq_bins:
+        columns.append("chisq")
+    event_mgr = pycbc.events.EventManager(columns, opt)
+    
     for template in bank:   
         if hnorm_vec is not None:
             k_end = int(bank.current_f_end() / template.delta_f)
             h_norm = hnorm_vec[k_end]
-            chisq_bins = pycbc.vetoes.power_chisq_bins_from_sigmasq_series(hnorm_vec, opt.chisq_bins,
+            if opt.chisq_bins != 0:
+                chisq_bins = pycbc.vetoes.power_chisq_bins_from_sigmasq_series(hnorm_vec, opt.chisq_bins,
                                  int(opt.low_frequency_cutoff * template.delta_f), k_end)
         else:
             h_norm = sigmasq(template, psd, low_frequency_cutoff=opt.low_frequency_cutoff)
-            chisq_bins = pycbc.vetoes.power_chisq_bins(template, opt.chisq_bins, psd, opt.low_frequency_cutoff)
+            if opt.chisq_bins != 0:
+                chisq_bins = pycbc.vetoes.power_chisq_bins(template, opt.chisq_bins, psd, opt.low_frequency_cutoff)
       
         logging.info("Filtering " + str(i+1)+"/"+str(len(bank)) )       
         c_off = opt.segment_length / 4
@@ -184,11 +190,13 @@ with ctx:
                     
             if snr_start < snr_end:
                 segment_events = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm)  
+                
+                if (len(segment_events) > 0):
+                    segment_events['loc'] += c_off
 
                 if (len(segment_events) > 0) and (opt.chisq_bins != 0):
                     chisq = pycbc.vetoes.power_chisq_from_precomputed(corr, snr, chisq_bins, norm)
                     chisqv = chisq.take(segment_events['loc']+snr_start)
-                    segment_events['loc'] += c_off
                     event_mgr.add_template_events(["chisq"], [chisqv])
                     
                 event_mgr.add_template_events(["snr"], [segment_events])
