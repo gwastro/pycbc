@@ -1,8 +1,8 @@
 #!/bin/python
 
 import resource
-from time import time
 from optparse import OptionParser
+import logging
 
 import numpy
 from pycbc.scheme import CUDAScheme, CPUScheme, OpenCLScheme
@@ -14,10 +14,6 @@ import pycbc.waveform
 import pycbc.events
 from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series, matched_filter_core, sigmasq
 
-start = time()
-elapsed_time = lambda: "%fs"%(time()-start)
-mem = lambda: "%5.0fMB"%(int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)/1000)
-
 parser = OptionParser(
     usage   = "%prog [OPTIONS]",
     description = "Find single detector gravitational-wave triggers." )
@@ -25,8 +21,8 @@ parser = OptionParser(
 parser.add_option("-V", "--verbose", action="store_true", help="print extra debugging information", default=False )
 parser.add_option("--bank-file", type=str)
 parser.add_option("--injection-file", type=str)
-parser.add_option("--trig-start-time", type=int)
-parser.add_option("--trig-end-time", type=int)
+parser.add_option("--trig-start-time", type=int, default=0)
+parser.add_option("--trig-end-time", type=int, default=0)
 parser.add_option("--ifo-tag", type=str)
 parser.add_option("--approximant", help="Approximant to use for filtering.", type=str)
 parser.add_option("--order", type=str)
@@ -79,54 +75,61 @@ parser.add_option("--gpu-device-id", help="ID of gpu to use for accelerated proc
 
 opt, argv = parser.parse_args()
 
+if opt.verbose:
+    log_level = logging.INFO
+else:
+    log_level = logging.WARN
+    
+logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+
 if opt.processing_scheme == "cuda":
-    print elapsed_time(), mem(), "Running with CUDA support"
+    logging.info("Running with CUDA support")
     ctx = CUDAScheme(opt.gpu_device_id)
 else:
-    print elapsed_time(), mem(), "Running with CPU support only"
+    logging.info("Running with CPU support only")
     ctx = CPUScheme()
 
 cluster_window = 4096 * 20
 duration = opt.gps_end_time - opt.gps_start_time
 
-print elapsed_time(), mem(), "Reading Frames"
+logging.info("Reading Frames")
 strain = read_frame(opt.frame_cache, opt.channel_name, start_time=opt.gps_start_time-opt.pad_data, duration=duration+opt.pad_data*2)
 
-print elapsed_time(), mem(), "Highpass Filtering"
+logging.info("Highpass Filtering")
 strain = highpass(strain, frequency=opt.enable_high_pass)
 
-print elapsed_time(), mem(), "Converting to float32"
+logging.info("Converting to float32")
 strain *= pycbc.DYN_RANGE_FAC
 strain = TimeSeries(strain, delta_t=strain.delta_t, epoch=strain.start_time, dtype=float32)
 
-print elapsed_time(), mem(), "Resampling data"
+logging.info("Resampling data")
 strain = resample_to_delta_t(strain, 1.0/opt.sample_rate)
 strain = strain[opt.pad_data*opt.sample_rate:len(strain)-opt.sample_rate*opt.pad_data]
 
 with ctx:
-    print elapsed_time(), mem(), "Estimating PSD"
+    logging.info("Estimating PSD")
     psd = pycbc.psd.welch(strain, seg_len=opt.segment_length, 
                           seg_stride=(opt.segment_length - opt.segment_overlap))
 
-    print elapsed_time(), mem(), "Interpolating PSD"
+    logging.info("Interpolating PSD")
     psd = pycbc.psd.interpolate(psd, float(opt.sample_rate)/opt.segment_length)
 
-    print elapsed_time(), mem(), "Truncating Inverse PSD spectrum"
+    logging.info("Truncating Inverse PSD spectrum")
     psd = pycbc.psd.inverse_spectrum_truncation(psd, opt.sample_rate*opt.inverse_spec_length,  low_frequency_cutoff=opt.low_frequency_cutoff)
 
-    print elapsed_time(), mem(), "Strain to stilde"
+    logging.info("Strain to stilde")
     segments = []
     for j in range(opt.number_of_segments):
         seg_start = j * (opt.segment_length - opt.segment_overlap) 
         seg_end = seg_start + opt.segment_length
         segments.append(make_frequency_series(strain[seg_start:seg_end]))
     
-    print elapsed_time(), mem(), "overwhiten stilde"
+    logging.info("overwhiten stilde")
     for seg in segments:
         seg /= psd
     
     if pycbc.waveform.waveform_precondition_exists(opt.approximant):
-        print elapsed_time(), mem(), "Preconditioning Stilde for template"
+        logging.info("Preconditioning Stilde for template")
         prec_fac = pycbc.waveform.get_waveform_filter_precondition(opt.approximant,  len(segments[0]), segments[0].delta_f)
         for seg in segments:
             seg *= prec_fac.astype(complex64)          
@@ -134,13 +137,13 @@ with ctx:
     work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
     snr_work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
 
-    print elapsed_time(), mem(), "Read in template bank"
+    logging.info("Read in template bank")
     bank = pycbc.waveform.TemplateBank(opt.bank_file, opt.approximant, len(segments[0]),  
                                        segments[0].delta_f, opt.low_frequency_cutoff, dtype=complex64, out=work_mem)
     
     hnorm_vec = None
     if pycbc.waveform.waveform_norm_exists(opt.approximant):
-        print elapsed_time(), mem(), "Precalculating template normalizations"
+        logging.info("Precalculating template normalizations")
         hnorm_vec = pycbc.waveform.get_waveform_filter_norm(opt.approximant, psd, len(segments[0]), 
                                                             segments[0].delta_f, opt.low_frequency_cutoff)
         
@@ -156,7 +159,7 @@ with ctx:
             h_norm = sigmasq(template, psd, low_frequency_cutoff=opt.low_frequency_cutoff)
             chisq_bins = pycbc.vetoes.power_chisq_bins(template, opt.chisq_bins, psd, opt.low_frequency_cutoff)
       
-        print elapsed_time(), mem(), "Filtering " + str(i+1)+"/"+str(len(bank))        
+        logging.info("Filtering " + str(i+1)+"/"+str(len(bank)) )       
         c_off = opt.segment_length / 4
         event_mgr.new_template(tmplt=bank.current_tmplt_params(), sigmasq=h_norm)        
         for stilde in segments:
@@ -166,23 +169,36 @@ with ctx:
                              
             snr_start = opt.segment_length / 4
             snr_end  =  opt.segment_length * 3 / 4   
+            
+            if opt.trig_start_time:
+                seg_start = c_off/opt.sample_rate + opt.gps_start_time
+                print seg_start, opt.trig_start_time
+                if seg_start < opt.trig_start_time:
+                    snr_start = (opt.trig_start_time - seg_start) + snr_start
+            
+            if opt.trig_end_time:
+                seg_end = (c_off + snr_end)/opt.sample_rate + opt.gps_start_time
+                if seg_end > opt.trig_end_time:
+                    snr_end = snr_end - (seg_end - opt.trig_end_time) 
+                print seg_end, opt.trig_end_time, snr_end
+                    
+            if snr_start < snr_end:
+                segment_events = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm)  
 
-            segment_events = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm)  
-
-            if (len(segment_events) > 0) and (opt.chisq_bins != 0):
-                chisq = pycbc.vetoes.power_chisq_from_precomputed(corr, snr, chisq_bins, norm)
-                chisqv = chisq.take(segment_events['loc']+snr_start)
-                segment_events['loc'] += c_off
-                event_mgr.add_template_events(["chisq"], [chisqv])
-                
-            event_mgr.add_template_events(["snr"], [segment_events])
+                if (len(segment_events) > 0) and (opt.chisq_bins != 0):
+                    chisq = pycbc.vetoes.power_chisq_from_precomputed(corr, snr, chisq_bins, norm)
+                    chisqv = chisq.take(segment_events['loc']+snr_start)
+                    segment_events['loc'] += c_off
+                    event_mgr.add_template_events(["chisq"], [chisqv])
+                    
+                event_mgr.add_template_events(["snr"], [segment_events])
        
             c_off += (snr_end - snr_start)  
         event_mgr.add_template_params(snr_norm=norm)
         event_mgr.cluster_template_events("snr", cluster_window) 
         i+=1
     
-print elapsed_time(), mem(), "Writing out triggers" 
+logging.info("Writing out triggers")
 event_mgr.write_events()
 
-print elapsed_time(), mem(), "Finished" 
+logging.info("Finished")
