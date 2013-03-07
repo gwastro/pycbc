@@ -39,4 +39,11 @@ def inject_td_waveform_into_data(data, hp, hc, detector, ra, dec, pol):
     XLALSimAddInjectionREAL8TimeSeries(laldata, signal, NULL);
     data.data[:]=laldata.data.data[:]    
     
+class InjectionSet(object):
+    def __init__(self, sim_file):
+        pass
+    
+    def inject_into_data(strain):
+        strain_with_injections = strain.
+        return strain_with_injections
 
