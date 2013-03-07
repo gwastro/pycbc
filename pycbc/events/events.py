@@ -98,7 +98,10 @@ class EventManager(object):
     def cluster_template_events(self, name, window_size):
         """ Cluster the internal events over the named column
         """
-        cevents, indices = findchirp_cluster_over_window(self.events[name][-1], window_size)
+        if self.events[name][-1] is not None:
+            cevents, indices = findchirp_cluster_over_window(self.events[name][-1], window_size)
+        else:
+            return
         
         for column in self.events:
             self.events[column][-1] = numpy.take(self.events[column][-1], indices)
