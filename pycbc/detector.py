@@ -25,27 +25,20 @@
 #
 """This module provides utilities for calculating detector responses.
 """
-import lal
+import lalsimulation
 import numpy
+import lal
 from math import cos, sin
 
 # get the cached detector data
-_detectors = {}
 
-for _detector in lal.lalCachedDetectors:
-    _detectors[_detector.frDetector.name]=_detector
 
-def list_detectors():
-    """Return a list of detectors. 
-    """
-    return _detectors.keys()
-    
 class Detector(object):
     """A gravitaional wave detector
     """
     def __init__(self, detector_name):
-        self.name=detector_name
-        self.frDetector=_detectors[detector_name]
+        self.name = detector_name
+        self.frDetector =  lalsimulation.DetectorPrefixToLALDetector(detector_name)
         self.response = self.frDetector.response
         self.location = self.frDetector.location
 

@@ -157,7 +157,6 @@ class EventManager(object):
                 
                 sngl_table.append(row)
         
-        # Create 
         duration = str(int(self.opt.gps_end_time - self.opt.gps_start_time))
         out_name = ifo + "-" + "INSPIRAL_" + self.opt.ifo_tag + "_" + self.opt.user_tag + "-" + str(self.opt.gps_start_time) + "-" + duration + ".xml.gz"
                 

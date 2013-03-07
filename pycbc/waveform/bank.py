@@ -45,13 +45,8 @@ class TemplateBank(object):
         self.filter_length = filter_length
         self.kmin = int(f_lower / delta_f)
         
-        self.indoc = ligolw_utils.load_filename(filename, False)
-        
-        try :
-            self.table = table.get_table(self.indoc, lsctables.SnglInspiralTable.tableName) 
-        except ValueError:
-            self.table = table.get_table(self.indoc, lsctables.SimInspiralTable.tableName)
-
+        self.indoc = ligolw_utils.load_filename(filename, False)     
+        self.table = table.get_table(self.indoc, lsctables.SnglInspiralTable.tableName) 
         self.extra_args = kwds
         
     def __len__(self):
