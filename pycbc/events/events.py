@@ -83,7 +83,6 @@ class EventManager(object):
         self.template_params = []
         for column in columns:
             self.events[column] = []
-        self.output_file = "out.xml"
         
     def add_template_events(self, columns, vectors):
         """ Add a vector indexed values
@@ -117,16 +116,18 @@ class EventManager(object):
         """
         outdoc = glue.ligolw.ligolw.Document()
         outdoc.appendChild(glue.ligolw.ligolw.LIGO_LW())
-
+        
         proc_id = glue.ligolw.utils.process.register_to_xmldoc(outdoc, 
                         "pycbc_inspiral", self.opt.__dict__, comment="", ifos=[""],
                         version=glue.git_version.id, cvs_repository=glue.git_version.branch,
                         cvs_entry_time=glue.git_version.date).process_id
         
+        # Create sngl_inspiral table ###########################################
         sngl_table = glue.ligolw.lsctables.New(glue.ligolw.lsctables.SnglInspiralTable)
         outdoc.childNodes[0].appendChild(sngl_table)
         
         start_time = lal.LIGOTimeGPS(self.opt.gps_start_time)
+        ifo = self.opt.channel_name[0:2]
         
         for tind in range(len(self.template_params)):
             tmplt = self.template_params[tind]['tmplt']
@@ -134,14 +135,19 @@ class EventManager(object):
             sigmasq = self.template_params[tind]['sigmasq']
             
             for eind in range(len(self.events['snr'][tind])):
-                print type(tmplt), "HUH?", len(self.template_params), len(self.events['snr'][tind])
                 row = copy.deepcopy(tmplt)
                     
                 snr = self.events['snr'][tind][eind]['val']
                 idx = self.events['snr'][tind][eind]['loc']
                 end_time = start_time + float(idx) / self.opt.sample_rate
                         
-                row.chisq = self.events['chisq'][tind][eind]
+                row.channel = self.opt.channel_name[3:]
+                row.ifo = ifo
+                
+                if self.opt.chisq_bins != 0:
+                    row.chisq_dof = self.opt.chisq_bins
+                    row.chisq = self.events['chisq'][tind][eind]
+                
                 row.snr = abs(snr) * snr_norm
                 row.end_time = int(end_time.gpsSeconds)
                 row.end_time_ns = int(end_time.gpsNanoSeconds)
@@ -150,8 +156,12 @@ class EventManager(object):
                 row.sigmasq = sigmasq
                 
                 sngl_table.append(row)
+        
+        # Create 
+        duration = str(int(self.opt.gps_end_time - self.opt.gps_start_time))
+        out_name = ifo + "-" + "INSPIRAL_" + self.opt.ifo_tag + "_" + self.opt.user_tag + "-" + str(self.opt.gps_start_time) + "-" + duration + ".xml.gz"
                 
-        glue.ligolw.utils.write_filename(outdoc, self.output_file)     
+        glue.ligolw.utils.write_filename(outdoc, out_name, gz=True)     
 
 __all__ = ['threshold_and_centered_window_cluster', 
            'findchirp_cluster_over_window', 'threshold', 

@@ -1,3 +1,5 @@
+#!/bin/python
+
 import resource
 from time import time
 from optparse import OptionParser
@@ -27,7 +29,21 @@ parser.add_option("--trig-start-time", type=int)
 parser.add_option("--trig-end-time", type=int)
 parser.add_option("--ifo-tag", type=str)
 parser.add_option("--approximant", help="Approximant to use for filtering.", type=str)
-parser.add_option("--order", type=int)
+parser.add_option("--order", type=str)
+
+parser.add_option("--enable-output", type=str)
+
+parser.add_option("--strain-high-pass-freq")
+parser.add_option("--strain-high-pass-atten")
+parser.add_option("--strain-high-pass-order")
+parser.add_option("--high-pass-order")
+parser.add_option("--calibrated-data")
+parser.add_option("--enable-filter-inj-only")
+parser.add_option("--resample-filter")
+parser.add_option("--write-compress")
+parser.add_option("--disable-rsq-veto")
+parser.add_option("--dynamic-range-exponent", type=str)
+
 
 parser.add_option("--gps-start-time", help="The gps start time of the data", type=int)
 parser.add_option("--gps-end-time", help="The gps end time of the data", type=int)
@@ -40,7 +56,7 @@ parser.add_option("--snr-threshold", help="The the minimum snr threshold", type=
 parser.add_option("--enable-high-pass", type=float)
 parser.add_option("--high-pass-attenuation", type=float)
 
-parser.add_option("--chisq-bins", type=int)
+parser.add_option("--chisq-bins", type=int, default=0)
 parser.add_option("--chisq-threshold", type=float)
 
 parser.add_option("--low-frequency-cutoff", help="The low frequency cutoff to use for filtering (Hz)", type=float)
@@ -153,11 +169,13 @@ with ctx:
 
             segment_events = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm)  
 
-            if len(segment_events) > 0:
+            if (len(segment_events) > 0) and (opt.chisq_bins != 0):
                 chisq = pycbc.vetoes.power_chisq_from_precomputed(corr, snr, chisq_bins, norm)
                 chisqv = chisq.take(segment_events['loc']+snr_start)
                 segment_events['loc'] += c_off
-                event_mgr.add_template_events(["snr", "chisq"], [segment_events, chisqv])
+                event_mgr.add_template_events(["chisq"], [chisqv])
+                
+            event_mgr.add_template_events(["snr"], [segment_events])
        
             c_off += (snr_end - snr_start)  
         event_mgr.add_template_params(snr_norm=norm)
