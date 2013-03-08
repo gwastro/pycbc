@@ -183,42 +183,7 @@ class EventManager(object):
         row.nnodes = 1
         
         search_summary_table.append(row)
-        
-        # Create Filter Table ########################################
-        filter_table = glue.ligolw.lsctables.New(glue.ligolw.lsctables.FilterTable)
-        outdoc.childNodes[0].appendChild(filter_table)
-        
-        row = glue.ligolw.lsctables.Filter()
-        row.process_id = proc_id
-        row.program = "PyCBC_INSPIRAL"
-        row.start_time = self.opt.gps_start_time
-        row.filter_name = self.opt.approximant
-        row.comment = ""
-        row.filter_id = glue.ligolw.lsctables.FilterID()
-        
-        filter_table.append(row)
-        
-        # SumVars Table ########################################
-        search_summvars_table = glue.ligolw.lsctables.New(glue.ligolw.lsctables.SearchSummVarsTable)
-        outdoc.childNodes[0].appendChild(search_summvars_table)
-        
-        row = glue.ligolw.lsctables.SearchSummVars()
-        row.process_id = proc_id
-        row.name = "raw data sample rate"
-        row.string = ""
-        row.value = 0
-        row.search_summvar_id = glue.ligolw.lsctables.SearchSummVarsID(0)       
-        search_summvars_table.append(row)
-        
-        row = glue.ligolw.lsctables.SearchSummVars()
-        row.process_id = proc_id
-        row.name = "filter data sample rate"
-        row.string = ""
-        row.value = 1.0 / self.opt.sample_rate
-        row.search_summvar_id = glue.ligolw.lsctables.SearchSummVarsID(1)       
-        search_summvars_table.append(row)
-        
-        
+               
         # Write out file #####################################################
         duration = str(int(self.opt.gps_end_time - self.opt.gps_start_time))
         out_name = ifo + "-" + "INSPIRAL_" + self.opt.ifo_tag + "_" + self.opt.user_tag + "-" + str(self.opt.gps_start_time) + "-" + duration + ".xml.gz"
