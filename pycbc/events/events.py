@@ -159,7 +159,32 @@ class EventManager(object):
                 row.sigmasq = sigmasq
                 
                 sngl_table.append(row)
+                
+        # Create Search Summary Table ########################################
+        search_summary_table = glue.ligolw.lsctables.New(glue.ligolw.lsctables.SearchSummaryTable)
+        outdoc.childNodes[0].appendChild(search_table)
         
+        row = glue.ligolw.lsctables.SearchSummary()
+        row.nevents = len(sngl_table)
+        row.process_id = proc_id
+        row.shared_object = ""
+        row.lalwrapper_cbc_tag = ""
+        row.comment = ""
+        row.ifos = ifo
+        row.in_start_time = opt.gps_start_time - opt.pad_data
+        row.in_start_time_ns = 0
+        row.in_end_time = opt.gps_end_time + opt.pad_data
+        row.in_end_time_ns = 0
+        row.out_start_time = opt.gps_start_time + 64
+        row.out_start_time_ns = 0
+        row.out_end_time = opt.gps_end_time - 64
+        row.out_end_time_ns = 0
+        row.nnodes = 1
+        
+        
+        search_summary_table.append(row)
+        
+        # Write out file #####################################################
         duration = str(int(self.opt.gps_end_time - self.opt.gps_start_time))
         out_name = ifo + "-" + "INSPIRAL_" + self.opt.ifo_tag + "_" + self.opt.user_tag + "-" + str(self.opt.gps_start_time) + "-" + duration + ".xml.gz"
                 

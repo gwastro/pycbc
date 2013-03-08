@@ -34,10 +34,10 @@ parser.add_option("--strain-high-pass-atten")
 parser.add_option("--strain-high-pass-order")
 parser.add_option("--high-pass-order")
 parser.add_option("--calibrated-data")
-parser.add_option("--enable-filter-inj-only")
+parser.add_option("--enable-filter-inj-only", action="store_true")
 parser.add_option("--resample-filter")
 parser.add_option("--write-compress")
-parser.add_option("--disable-rsq-veto")
+parser.add_option("--disable-rsq-veto", action="store_true")
 parser.add_option("--dynamic-range-exponent", type=str)
 
 
@@ -181,7 +181,6 @@ with ctx:
                 seg_start = c_off/opt.sample_rate + opt.gps_start_time
                 if seg_start < opt.trig_start_time:
                     snr_start = (opt.trig_start_time - seg_start) * opt.sample_rate + snr_start
-                print seg_start, opt.trig_start_time, snr_start
             
             if opt.trig_end_time:
                 seg_end = (c_off + seg_width)/opt.sample_rate +  opt.gps_start_time
