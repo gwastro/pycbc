@@ -2,7 +2,7 @@
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
-# option) any later version.
+# self.option) any later version.
 #
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -162,27 +162,62 @@ class EventManager(object):
                 
         # Create Search Summary Table ########################################
         search_summary_table = glue.ligolw.lsctables.New(glue.ligolw.lsctables.SearchSummaryTable)
-        outdoc.childNodes[0].appendChild(search_table)
+        outdoc.childNodes[0].appendChild(search_summary_table)
         
         row = glue.ligolw.lsctables.SearchSummary()
         row.nevents = len(sngl_table)
         row.process_id = proc_id
         row.shared_object = ""
-        row.lalwrapper_cbc_tag = ""
+        row.lalwrapper_cvs_tag = ""
+        row.lal_cvs_tag = ""
         row.comment = ""
         row.ifos = ifo
-        row.in_start_time = opt.gps_start_time - opt.pad_data
+        row.in_start_time = self.opt.gps_start_time - self.opt.pad_data
         row.in_start_time_ns = 0
-        row.in_end_time = opt.gps_end_time + opt.pad_data
+        row.in_end_time = self.opt.gps_end_time + self.opt.pad_data
         row.in_end_time_ns = 0
-        row.out_start_time = opt.gps_start_time + 64
+        row.out_start_time = self.opt.gps_start_time + 64
         row.out_start_time_ns = 0
-        row.out_end_time = opt.gps_end_time - 64
+        row.out_end_time = self.opt.gps_end_time - 64
         row.out_end_time_ns = 0
         row.nnodes = 1
         
-        
         search_summary_table.append(row)
+        
+        # Create Filter Table ########################################
+        filter_table = glue.ligolw.lsctables.New(glue.ligolw.lsctables.FilterTable)
+        outdoc.childNodes[0].appendChild(filter_table)
+        
+        row = glue.ligolw.lsctables.Filter()
+        row.process_id = proc_id
+        row.program = "PyCBC_INSPIRAL"
+        row.start_time = self.opt.gps_start_time
+        row.filter_name = self.opt.approximant
+        row.comment = ""
+        row.filter_id = glue.ligolw.lsctables.FilterID()
+        
+        filter_table.append(row)
+        
+        # SumVars Table ########################################
+        search_summvars_table = glue.ligolw.lsctables.New(glue.ligolw.lsctables.SearchSummVarsTable)
+        outdoc.childNodes[0].appendChild(search_summvars_table)
+        
+        row = glue.ligolw.lsctables.SearchSummVars()
+        row.process_id = proc_id
+        row.name = "raw data sample rate"
+        row.string = ""
+        row.value = 0
+        row.search_summvar_id = glue.ligolw.lsctables.SearchSummVarsID(0)       
+        search_summvars_table.append(row)
+        
+        row = glue.ligolw.lsctables.SearchSummVars()
+        row.process_id = proc_id
+        row.name = "filter data sample rate"
+        row.string = ""
+        row.value = 1.0 / self.opt.sample_rate
+        row.search_summvar_id = glue.ligolw.lsctables.SearchSummVarsID(1)       
+        search_summvars_table.append(row)
+        
         
         # Write out file #####################################################
         duration = str(int(self.opt.gps_end_time - self.opt.gps_start_time))
