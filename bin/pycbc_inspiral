@@ -66,7 +66,8 @@ parser.add_option("--segment-length", type=int)
 parser.add_option("--spectrum-type", type=str)
 parser.add_option("--inverse-spec-length", type=int)
 
-parser.add_option("--cluster-method", type=str)
+parser.add_option("--cluster-method", choices=["template", "window"])
+parser.add_option("--cluster-window", type=int, help="Length of clustering window in seconds")
 parser.add_option("--maximization-interval", type=float)
 parser.add_option("--user-tag", type=str)
 
@@ -89,7 +90,6 @@ else:
     logging.info("Running with CPU support only")
     ctx = CPUScheme()
 
-cluster_window = 4096 * 20
 duration = opt.gps_end_time - opt.gps_start_time
 
 logging.info("Reading Frames")
@@ -147,14 +147,11 @@ with ctx:
         hnorm_vec = pycbc.waveform.get_waveform_filter_norm(opt.approximant, psd, len(segments[0]), 
                                                             segments[0].delta_f, opt.low_frequency_cutoff)      
     i = 0    
-    columns = ["snr"]
-    if opt.chisq_bins:
-        columns.append("chisq")
-    event_mgr = pycbc.events.EventManager(columns, opt)
+    event_mgr = pycbc.events.EventManager(opt, ['time_index', 'snr', 'chisq'], [int, complex64, float32])
     
     for template in bank:   
         if hnorm_vec is not None:
-            k_end = int(bank.current_f_end() / template.delta_f)
+            k_end = int(template.end_frequency / template.delta_f)
             h_norm = hnorm_vec[k_end]
             if opt.chisq_bins != 0:
                 chisq_bins = pycbc.vetoes.power_chisq_bins_from_sigmasq_series(hnorm_vec, opt.chisq_bins,
@@ -165,8 +162,8 @@ with ctx:
                 chisq_bins = pycbc.vetoes.power_chisq_bins(template, opt.chisq_bins, psd, opt.low_frequency_cutoff)
       
         logging.info("Filtering " + str(i+1)+"/"+str(len(bank)) )       
-        c_off = opt.segment_length / 4
-        event_mgr.new_template(tmplt=bank.current_tmplt_params(), sigmasq=h_norm)        
+        cumulative_index = opt.segment_length / 4
+        event_mgr.new_template(tmplt=template.params, sigmasq=h_norm)        
         for stilde in segments:
             snr, corr, norm = matched_filter_core(template, stilde, h_norm=h_norm, 
                                        low_frequency_cutoff=opt.low_frequency_cutoff, 
@@ -177,32 +174,45 @@ with ctx:
             seg_width = snr_end - snr_start 
 
             if opt.trig_start_time:
-                seg_start = c_off/opt.sample_rate + opt.gps_start_time
+                seg_start = cumulative_index/opt.sample_rate + opt.gps_start_time
                 if seg_start < opt.trig_start_time:
                     snr_start = (opt.trig_start_time - seg_start) * opt.sample_rate + snr_start
             
             if opt.trig_end_time:
-                seg_end = (c_off + seg_width)/opt.sample_rate +  opt.gps_start_time
+                seg_end = (cumulative_index + seg_width)/opt.sample_rate +  opt.gps_start_time
                 if seg_end > opt.trig_end_time:
                     snr_end = snr_end - (seg_end - opt.trig_end_time) * opt.sample_rate 
                     
             if snr_start < snr_end:
                 segment_events = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm)                 
 
+                chisqv = None
                 if (len(segment_events) > 0) and (opt.chisq_bins != 0):
                     chisq = pycbc.vetoes.power_chisq_from_precomputed(corr, snr, chisq_bins, norm)
-                    chisqv = chisq.take(segment_events['loc']+snr_start)
-                    event_mgr.add_template_events(["chisq"], [chisqv.numpy()])
+                    chisqv = chisq.take(segment_events['loc']+snr_start).numpy()
                     
                 if (len(segment_events) > 0):
-                    segment_events['loc'] += c_off
-                    event_mgr.add_template_events(["snr"], [segment_events])
+                    idx = segment_events['loc']
+                    snrv = segment_events['val']
+                    idx += cumulative_index
+                    event_mgr.add_template_events(["snr", "time_index", "chisq"], [snrv, idx, chisqv])
        
-            c_off += seg_width
+            cumulative_index += seg_width
         event_mgr.add_template_params(snr_norm=norm)
         
-        event_mgr.cluster_template_events("snr", cluster_window) 
+        if opt.cluster_method == "window":
+            cluster_window = opt.cluster_window * opt.sample_rate
+        elif opt.cluster_method == "template":
+            cluster_window = template.length_in_time * opt.sample_rate
+        
+        event_mgr.cluster_template_events("time_index", "snr", cluster_window) 
+        event_mgr.finalize_template_events()
         i+=1
+        
+if opt.maximization_interval:
+    window_size = int(opt.maximization_interval * opt.sample_rate / 1000)
+    event_mgr.maximize_over_bank("time_index", "snr", window_size)
+    
     
 logging.info("Writing out triggers")
 event_mgr.write_events()

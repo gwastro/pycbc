@@ -77,7 +77,11 @@ class TemplateBank(object):
             self.out[self.kmin:kmax].clear()
             htilde = pycbc.waveform.get_waveform_filter(self.out[0:self.filter_length], self.table[self.index], 
                                     approximant=self.approximant, f_lower=self.f_lower, delta_f=self.delta_f, **self.extra_args)
-            return htilde.astype(self.dtype) 
+                                    
+            htilde = htilde.astype(self.dtype)
+            htilde.end_frequency = self.current_f_end()
+            htilde.params = self.table[self.index]
+            return htilde
 
         
     

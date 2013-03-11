@@ -419,11 +419,13 @@ def get_waveform_filter(out, template=None, **kwargs):
         delta_f = 1.0 / (N * input_params['delta_t'])
         wav_gen = td_wav[type(mgr.state)] 
         hp, hc = wav_gen[input_params['approximant']](**input_params)
+        tmplt_length = len(hp)
         hp.resize(N)
         k_zero = int(hp.start_time / hp.delta_t)
         hp.roll(k_zero)
         htilde = FrequencySeries(out, delta_f=delta_f, copy=False)
         fft(hp, htilde)
+        htilde.length_in_time = tmplt_length
         return htilde
     else:
         raise ValueError("Approximant Not Available")

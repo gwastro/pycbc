@@ -56,63 +56,71 @@ def threshold_and_centered_window_cluster(series, threshold, window):
     """Return list of values and indices values over threshold in series. 
     """ 
 
-def findchirp_cluster_over_window(events, window_length):
-    clustered_events = numpy.zeros(len(events), dtype=events.dtype)
-    indices = numpy.zeros(len(events), dtype=int)
+def findchirp_cluster_over_window(times, values, window_length):
+    indices = numpy.zeros(len(times), dtype=int)
     j = 0 
-    for i in range(len(events)):
+    for i in range(len(times)):
         if i==0:
-            clustered_events[0] = events[0]
-        if events[i]['loc'] - clustered_events[j]['loc'] > window_length:
+            indices[0] = 0
+        if times[i] - times[indices[j]] > window_length:
             j += 1
-            clustered_events[j] = events[i]
             indices[j] = i
         else:
-            if abs(events[i]['val']) > abs(clustered_events[j]['val']):
-                clustered_events[j] = events[i]
+            if abs(values[i]) > abs(values[indices[j]]):
                 indices[j] = i
             else:
                 continue
-    return clustered_events[0:j+1], indices[0:j+1]
+    return indices[0:j+1]
     
 class EventManager(object):
-    def __init__(self, columns, opt, **kwds):
+    def __init__(self, opt, column, column_types, **kwds):
         self.opt = opt
         self.global_params = kwds
-        self.events = {}
+
+        self.event_dtype = [ ('template_id', int) ]
+        for column, coltype in zip (column, column_types):
+            self.event_dtype.append( (column, coltype) )
+        
+        self.events = numpy.events = numpy.array([], dtype=self.event_dtype)
         self.template_params = []
-        for column in columns:
-            self.events[column] = []
+        self.template_index = -1
+        self.template_events = numpy.array([], dtype=self.event_dtype)
+            
+    def maximize_over_bank(self, tcolumn, column, window):
+        self.events.sort(order=[tcolumn])
+        indices = []
+        for event in self.events:
+            pass
+        
         
     def add_template_events(self, columns, vectors):
-        """ Add a vector indexed values
-        """
-        for column, vector in zip(columns, vectors):
-            data = self.events[column][-1]
-            if self.events[column][-1] is not None:
-                self.events[column][-1] = numpy.append(data, vector)
-            else:
-                self.events[column][-1] = vector
-                
+        """ Add a vector indexed """
+        new_events = numpy.zeros(len(vectors[0]), dtype=self.event_dtype)
+        new_events['template_id'] = self.template_index
+        for c, v in zip(columns, vectors):
+            if v is not None:
+                new_events[c] = v  
+        self.template_events = numpy.append(self.template_events, new_events)                     
      
-    def cluster_template_events(self, name, window_size):
+    def cluster_template_events(self, tcolumn, column, window_size):
         """ Cluster the internal events over the named column
         """
-        if self.events[name][-1] is not None:
-            cevents, indices = findchirp_cluster_over_window(self.events[name][-1], window_size)
-        else:
-            return
+        cvec = self.template_events[column]
+        tvec = self.template_events[tcolumn]
+        indices = findchirp_cluster_over_window(tvec, cvec, window_size)
+        self.template_events = numpy.take(self.template_events, indices)
         
-        for column in self.events:
-            self.events[column][-1] = numpy.take(self.events[column][-1], indices)
         
     def new_template(self, **kwds):
         self.template_params.append(kwds)
-        for column in self.events:
-            self.events[column].append(None)
+        self.template_index += 1
     
     def add_template_params(self, **kwds):
-            self.template_params[-1].update(kwds)           
+        self.template_params[-1].update(kwds)  
+            
+    def finalize_template_events(self):
+        self.events = numpy.append(self.events, self.template_events)
+        self.template_events = numpy.array([], dtype=self.event_dtype)        
         
     def write_events(self):
         """ Write the found events to a sngl inspiral table 
@@ -141,35 +149,37 @@ class EventManager(object):
             tend_time = self.opt.trig_end_time
         else:
             tend_time = self.opt.gps_end_time - 64
-             
+                 
+        for event in self.events:
+            tind = event['template_id']
+            
+            print "TIND", tind
         
-        for tind in range(len(self.template_params)):
             tmplt = self.template_params[tind]['tmplt']
             snr_norm = self.template_params[tind]['snr_norm']
             sigmasq = self.template_params[tind]['sigmasq']
             
-            for eind in range(len(self.events['snr'][tind])):
-                row = copy.deepcopy(tmplt)
+            row = copy.deepcopy(tmplt)
+                
+            snr = event['snr']
+            idx = event['time_index']
+            end_time = start_time + float(idx) / self.opt.sample_rate
                     
-                snr = self.events['snr'][tind][eind]['val']
-                idx = self.events['snr'][tind][eind]['loc']
-                end_time = start_time + float(idx) / self.opt.sample_rate
-                        
-                row.channel = self.opt.channel_name[3:]
-                row.ifo = ifo
-                
-                if self.opt.chisq_bins != 0:
-                    row.chisq_dof = self.opt.chisq_bins
-                    row.chisq = self.events['chisq'][tind][eind]
-                
-                row.snr = abs(snr) * snr_norm
-                row.end_time = int(end_time.gpsSeconds)
-                row.end_time_ns = int(end_time.gpsNanoSeconds)
-                row.process_id = proc_id
-                row.coa_phase = numpy.angle(snr)
-                row.sigmasq = sigmasq
-                
-                sngl_table.append(row)
+            row.channel = self.opt.channel_name[3:]
+            row.ifo = ifo
+            
+            if self.opt.chisq_bins != 0:
+                row.chisq_dof = self.opt.chisq_bins
+                row.chisq = event['chisq']
+            
+            row.snr = abs(snr) * snr_norm
+            row.end_time = int(end_time.gpsSeconds)
+            row.end_time_ns = int(end_time.gpsNanoSeconds)
+            row.process_id = proc_id
+            row.coa_phase = numpy.angle(snr)
+            row.sigmasq = sigmasq
+            
+            sngl_table.append(row)
                 
         # Create Search Summary Table ########################################
         search_summary_table = glue.ligolw.lsctables.New(glue.ligolw.lsctables.SearchSummaryTable)
