@@ -152,8 +152,6 @@ class EventManager(object):
                  
         for event in self.events:
             tind = event['template_id']
-            
-            print "TIND", tind
         
             tmplt = self.template_params[tind]['tmplt']
             snr_norm = self.template_params[tind]['snr_norm']
