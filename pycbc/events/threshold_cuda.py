@@ -96,7 +96,7 @@ buffer_vec = to_gpu(buffer_vec)
 def threshold(series, value):
     threshold_kernel(series.data, buffer_vec, value, n_events)
     n = n_events.get()[0]
-    return buffer_vec[0:n].get()
+    return numpy.sort(buffer_vec[0:n].get(), order='loc')
     
 def threshold_and_centered_window_cluster(series, value, window):
     threshold_cluster_kernel(series.data, buffer_vec, value, n_events)

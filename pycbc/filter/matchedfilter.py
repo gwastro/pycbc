@@ -263,7 +263,7 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
         else:
             raise TypeError("PSD must be a FrequencySeries")
             
-    ifft(_qtilde,_q)
+    ifft(_qtilde, _q)
     
     if h_norm is None:
         h_norm = sigmasq(htilde, psd, low_frequency_cutoff, high_frequency_cutoff)     

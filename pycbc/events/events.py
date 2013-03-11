@@ -132,6 +132,17 @@ class EventManager(object):
         start_time = lal.LIGOTimeGPS(self.opt.gps_start_time)
         ifo = self.opt.channel_name[0:2]
         
+        if self.opt.trig_start_time:
+            tstart_time = self.opt.trig_start_time
+        else:
+            tstart_time = self.opt.gps_start_time + 64
+            
+        if self.opt.trig_end_time:
+            tend_time = self.opt.trig_end_time
+        else:
+            tend_time = self.opt.gps_end_time - 64
+             
+        
         for tind in range(len(self.template_params)):
             tmplt = self.template_params[tind]['tmplt']
             snr_norm = self.template_params[tind]['snr_norm']
@@ -176,14 +187,92 @@ class EventManager(object):
         row.in_start_time_ns = 0
         row.in_end_time = self.opt.gps_end_time + self.opt.pad_data
         row.in_end_time_ns = 0
-        row.out_start_time = self.opt.gps_start_time + 64
+        row.out_start_time = tstart_time
         row.out_start_time_ns = 0
-        row.out_end_time = self.opt.gps_end_time - 64
+        row.out_end_time = tend_time
         row.out_end_time_ns = 0
         row.nnodes = 1
         
         search_summary_table.append(row)
-               
+        
+        # Create Filter Table ########################################
+        filter_table = glue.ligolw.lsctables.New(glue.ligolw.lsctables.FilterTable)
+        outdoc.childNodes[0].appendChild(filter_table)
+        
+        row = glue.ligolw.lsctables.Filter()
+        row.process_id = proc_id
+        row.program = "PyCBC_INSPIRAL"
+        row.start_time = self.opt.gps_start_time
+        row.filter_name = self.opt.approximant
+        row.param_set = 0
+        row.comment = ""
+        row.filter_id = str(glue.ligolw.lsctables.FilterID(0))
+        
+        filter_table.append(row)
+        
+        # SumVars Table ########################################
+        search_summvars_table = glue.ligolw.lsctables.New(glue.ligolw.lsctables.SearchSummVarsTable)
+        outdoc.childNodes[0].appendChild(search_summvars_table)
+        
+        row = glue.ligolw.lsctables.SearchSummVars()
+        row.process_id = proc_id
+        row.name = "raw data sample rate"
+        row.string = ""
+        row.value = 1.0 /16384
+        row.search_summvar_id = str(glue.ligolw.lsctables.SearchSummVarsID(0))       
+        search_summvars_table.append(row)
+        
+        row = glue.ligolw.lsctables.SearchSummVars()
+        row.process_id = proc_id
+        row.name = "filter data sample rate"
+        row.string = ""
+        row.value = 1.0 / self.opt.sample_rate
+        row.search_summvar_id = str(glue.ligolw.lsctables.SearchSummVarsID(1))       
+        search_summvars_table.append(row)
+        
+        # SumValue Table ########################################
+        summ_val_columns = ['program', 'process_id', 'start_time', 'start_time_ns',
+                           'end_time', 'end_time_ns', 'ifo', 'name', 'value', 'comment',
+                           'summ_value_id']
+        summ_value_table = glue.ligolw.lsctables.New(glue.ligolw.lsctables.SummValueTable, columns = summ_val_columns)
+        outdoc.childNodes[0].appendChild(summ_value_table)
+        
+        row = glue.ligolw.lsctables.SummValue()
+        row.process_id = proc_id
+        row.start_time = tstart_time
+        row.start_time_ns = 0
+        row.end_time = tend_time
+        row.end_time_ns = 0
+        row.ifo = ifo
+        row.frameset_group = ""
+        row.program = "PyCBC-INSPIRAL"
+        row.error = 0
+        row.intvalue = 0
+        
+        
+        row1 = copy.deepcopy(row)
+        row2 = copy.deepcopy(row)
+        row3 = copy.deepcopy(row)
+        row1.name = "inspiral_effective_distance"
+        row1.value = 400
+        row1.comment = "1.4_1.4_8"
+        row1.summ_value_id = str(glue.ligolw.lsctables.SummValueID(0))       
+        summ_value_table.append(row1)
+        
+        row2.name = "calibration alpha"
+        row2.value = 0
+        row2.comment = "analysis"
+        row2.summ_value_id = str(glue.ligolw.lsctables.SummValueID(1))       
+        summ_value_table.append(row2)
+        
+        row3.name = "calibration alphabeta"
+        row3.value = 0
+        row3.comment = "analysis"
+        row3.summ_value_id = str(glue.ligolw.lsctables.SummValueID(2))       
+        summ_value_table.append(row3)
+        
+        
+        
         # Write out file #####################################################
         duration = str(int(self.opt.gps_end_time - self.opt.gps_start_time))
         out_name = ifo + "-" + "INSPIRAL_" + self.opt.ifo_tag + "_" + self.opt.user_tag + "-" + str(self.opt.gps_start_time) + "-" + duration + ".xml.gz"

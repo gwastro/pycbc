@@ -76,7 +76,7 @@ parser.add_option("--gpu-device-id", help="ID of gpu to use for accelerated proc
 opt, argv = parser.parse_args()
 
 if opt.verbose:
-    log_level = logging.INFO
+    log_level = logging.DEBUG
 else:
     log_level = logging.WARN
     
@@ -133,20 +133,19 @@ with ctx:
         prec_fac = pycbc.waveform.get_waveform_filter_precondition(opt.approximant,  len(segments[0]), segments[0].delta_f)
         for seg in segments:
             seg *= prec_fac.astype(complex64)          
-
-    work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
+            
+    template_work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
     snr_work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
+    corr_work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
 
     logging.info("Read in template bank")
     bank = pycbc.waveform.TemplateBank(opt.bank_file, opt.approximant, len(segments[0]),  
-                                       segments[0].delta_f, opt.low_frequency_cutoff, dtype=complex64, out=work_mem)
-    
+                                       segments[0].delta_f, opt.low_frequency_cutoff, dtype=complex64, out=template_work_mem)  
     hnorm_vec = None
     if pycbc.waveform.waveform_norm_exists(opt.approximant):
         logging.info("Precalculating template normalizations")
         hnorm_vec = pycbc.waveform.get_waveform_filter_norm(opt.approximant, psd, len(segments[0]), 
-                                                            segments[0].delta_f, opt.low_frequency_cutoff)
-        
+                                                            segments[0].delta_f, opt.low_frequency_cutoff)      
     i = 0    
     columns = ["snr"]
     if opt.chisq_bins:
@@ -171,12 +170,12 @@ with ctx:
         for stilde in segments:
             snr, corr, norm = matched_filter_core(template, stilde, h_norm=h_norm, 
                                        low_frequency_cutoff=opt.low_frequency_cutoff, 
-                                       out=snr_work_mem, corr_out=work_mem)
-                             
+                                       out=snr_work_mem, corr_out=corr_work_mem)
+                                       
             snr_start = opt.segment_length / 4
             snr_end  =  opt.segment_length * 3 / 4 
-            seg_width = snr_end - snr_start  
-            
+            seg_width = snr_end - snr_start 
+
             if opt.trig_start_time:
                 seg_start = c_off/opt.sample_rate + opt.gps_start_time
                 if seg_start < opt.trig_start_time:
@@ -188,20 +187,20 @@ with ctx:
                     snr_end = snr_end - (seg_end - opt.trig_end_time) * opt.sample_rate 
                     
             if snr_start < snr_end:
-                segment_events = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm)  
-                
-                if (len(segment_events) > 0):
-                    segment_events['loc'] += c_off
+                segment_events = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm)                 
 
                 if (len(segment_events) > 0) and (opt.chisq_bins != 0):
                     chisq = pycbc.vetoes.power_chisq_from_precomputed(corr, snr, chisq_bins, norm)
                     chisqv = chisq.take(segment_events['loc']+snr_start)
-                    event_mgr.add_template_events(["chisq"], [chisqv])
+                    event_mgr.add_template_events(["chisq"], [chisqv.numpy()])
                     
-                event_mgr.add_template_events(["snr"], [segment_events])
+                if (len(segment_events) > 0):
+                    segment_events['loc'] += c_off
+                    event_mgr.add_template_events(["snr"], [segment_events])
        
             c_off += seg_width
         event_mgr.add_template_params(snr_norm=norm)
+        
         event_mgr.cluster_template_events("snr", cluster_window) 
         i+=1
     
