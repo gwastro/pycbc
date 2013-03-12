@@ -28,6 +28,7 @@ import glue.ligolw.utils.process
 import lal
 import numpy
 import copy
+import pycbc
 
 from pycbc.scheme import schemed
 import numpy
@@ -85,7 +86,11 @@ class EventManager(object):
         self.template_params = []
         self.template_index = -1
         self.template_events = numpy.array([], dtype=self.event_dtype)
-            
+                  
+ #   def chisq_threshold(value, num_bins, delta=0):
+  #      vals = self.events[chisq] < value * (num_bins + delta * snrsq)
+   #     self.events[vals]
+   
     def maximize_over_bank(self, tcolumn, column, window):
         self.events.sort(order=[tcolumn])
         indices = []
@@ -108,8 +113,7 @@ class EventManager(object):
         cvec = self.template_events[column]
         tvec = self.template_events[tcolumn]
         indices = findchirp_cluster_over_window(tvec, cvec, window_size)
-        self.template_events = numpy.take(self.template_events, indices)
-        
+        self.template_events = numpy.take(self.template_events, indices)       
         
     def new_template(self, **kwds):
         self.template_params.append(kwds)
@@ -156,6 +160,7 @@ class EventManager(object):
             tmplt = self.template_params[tind]['tmplt']
             snr_norm = self.template_params[tind]['snr_norm']
             sigmasq = self.template_params[tind]['sigmasq']
+            template_amp = self.template_params[tind]['template_amplitude_norm']
             
             row = copy.deepcopy(tmplt)
                 
@@ -170,6 +175,7 @@ class EventManager(object):
                 row.chisq_dof = self.opt.chisq_bins
                 row.chisq = event['chisq']
             
+            row.eff_distance = sigmasq ** (0.5) / abs(snr * snr_norm) * pycbc.DYN_RANGE_FAC * template_amp
             row.snr = abs(snr) * snr_norm
             row.end_time = int(end_time.gpsSeconds)
             row.end_time_ns = int(end_time.gpsNanoSeconds)
@@ -286,6 +292,7 @@ class EventManager(object):
         out_name = ifo + "-" + "INSPIRAL_" + self.opt.ifo_tag + "_" + self.opt.user_tag + "-" + str(self.opt.gps_start_time) + "-" + duration + ".xml.gz"
                 
         glue.ligolw.utils.write_filename(outdoc, out_name, gz=True)     
+
 
 __all__ = ['threshold_and_centered_window_cluster', 
            'findchirp_cluster_over_window', 'threshold', 

@@ -59,8 +59,20 @@ class TemplateBank(object):
     def current_tmplt_params(self):
         return self.table[self.index]
         
+    def current_amplitude_norm(self):
+        amp_norm = pycbc.waveform.get_template_amplitude_norm(self.table[self.index], 
+                              approximant=self.approximant, **self.extra_args)
+        if amp_norm:
+            return amp_norm
+        else:
+            return 1
+
     def current_f_end(self):
-        f_end = pycbc.waveform.get_waveform_end_frequency(self.table[self.index], approximant=self.approximant, **self.extra_args) 
+        f_end = pycbc.waveform.get_waveform_end_frequency(self.table[self.index], 
+                              approximant=self.approximant, **self.extra_args) 
+        
+        if f_end is None:
+            return self.filter_length * self.delta_f
         
         if f_end > self.filter_length * self.delta_f:
             return (self.filter_length-1) * self.delta_f
@@ -79,8 +91,11 @@ class TemplateBank(object):
                                     approximant=self.approximant, f_lower=self.f_lower, delta_f=self.delta_f, **self.extra_args)
                                     
             htilde = htilde.astype(self.dtype)
+            
             htilde.end_frequency = self.current_f_end()
             htilde.params = self.table[self.index]
+            htilde.amplitude_norm = self.current_amplitude_norm()
+            
             return htilde
 
         

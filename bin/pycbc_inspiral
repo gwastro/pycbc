@@ -54,6 +54,7 @@ parser.add_option("--high-pass-attenuation", type=float)
 
 parser.add_option("--chisq-bins", type=int, default=0)
 parser.add_option("--chisq-threshold", type=float)
+parser.add_option("--chisq-delta", type=float, default=0)
 
 parser.add_option("--low-frequency-cutoff", help="The low frequency cutoff to use for filtering (Hz)", type=float)
 parser.add_option("--pad-data", help="Extra padding to remove highpass corruption (s)", type=int)
@@ -163,7 +164,11 @@ with ctx:
       
         logging.info("Filtering " + str(i+1)+"/"+str(len(bank)) )       
         cumulative_index = opt.segment_length / 4
-        event_mgr.new_template(tmplt=template.params, sigmasq=h_norm)        
+        
+        event_mgr.new_template(tmplt=template.params, 
+                               sigmasq=h_norm, 
+                               template_amplitude_norm=template.amplitude_norm)
+                                       
         for stilde in segments:
             snr, corr, norm = matched_filter_core(template, stilde, h_norm=h_norm, 
                                        low_frequency_cutoff=opt.low_frequency_cutoff, 
@@ -213,6 +218,8 @@ if opt.maximization_interval:
     window_size = int(opt.maximization_interval * opt.sample_rate / 1000)
     event_mgr.maximize_over_bank("time_index", "snr", window_size)
     
+if opt.chisq_threshold:
+    pass
     
 logging.info("Writing out triggers")
 event_mgr.write_events()

@@ -390,11 +390,13 @@ filter_wav = {_scheme.CPUScheme:_inspiral_fd_filters, _scheme.CUDAScheme:_cuda_f
 _filter_norms = {}
 _filter_ends = {}
 _filter_preconditions = {}
+_template_amplitude_norms = {}
 
-from spa_tmplt import spa_tmplt_norm, spa_tmplt_end, spa_tmplt_precondition
+from spa_tmplt import spa_tmplt_norm, spa_tmplt_end, spa_tmplt_precondition, spa_amplitude_factor
 _filter_norms["SPAtmplt"] = spa_tmplt_norm
 _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
 _filter_ends["SPAtmplt"] = spa_tmplt_end
+_template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
 
 
 def get_waveform_filter(out, template=None, **kwargs):
@@ -441,6 +443,20 @@ def waveform_norm_exists(approximant):
         return True
     else:
         return False
+        
+def get_template_amplitude_norm(template=None, **kwargs):
+    """ Return additional constant template normalization. This only affects
+        the effective distance calculation. Returns None for all templates with a
+        physically meaningful amplitude. 
+    """
+    input_params = props(template,**kwargs)
+    approximant = kwargs['approximant']
+    
+    if approximant in _template_amplitude_norms:
+        return _template_amplitude_norms[approximant](**input_params)
+    else:
+        return None
+        
   
 def get_waveform_filter_precondition(approximant, length, delta_f):
     """Return the data preconditioning factor for this approximant.
@@ -475,4 +491,4 @@ __all__ = ["get_td_waveform","get_fd_waveform","print_td_approximants",
            "print_fd_approximants","td_approximants","fd_approximants", 
            "get_waveform_filter", "get_waveform_filter_precondition",
            "filter_approximants", "get_waveform_filter_norm", "get_waveform_end_frequency",
-           "waveform_precondition_exists", "waveform_norm_exists"]
+           "waveform_precondition_exists", "waveform_norm_exists", "get_template_amplitude_norm"]

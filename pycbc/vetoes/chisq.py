@@ -38,7 +38,7 @@ def power_chisq_bins_from_sigmasq_series(sigmasq_series, num_bins, kmin, kmax):
     bins += kmin
     return numpy.append(bins, kmax)
 
-def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff):
+def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff=None, high_frequency_cutoff=None):
     """Returns bins of equal power for use with the chisq functions
     """
     sigma_vec = sigmasq_series(htilde, psd, low_frequency_cutoff, 

@@ -46,6 +46,28 @@ def spa_tmplt_precondition(length, delta_f):
     v = v[1:len(v)]**(-7.0/6.0)
     return FrequencySeries(v, delta_f=delta_f)
     
+def spa_amplitude_factor(**kwds):
+    m1 = kwds['mass1']
+    m2 = kwds['mass2']
+    
+    dist = 10e6 * lal.LAL_PC_SI
+    
+    mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
+    
+    FTaN = 32.0 * eta*eta / 5.0
+    dETaN = 2 * -eta/2.0;
+    
+    M = m1 + m2
+    
+    m_sec = M * lal.LAL_MTSUN_SI;
+    piM = lal.LAL_PI * m_sec;
+    
+    amp0 = 4. * m1 * m2 / (1e6 * lal.LAL_PC_SI ) * lal.LAL_MRSUN_SI * lal.LAL_MTSUN_SI * sqrt(lal.LAL_PI/12.0)  
+
+    fac = sqrt( -dETaN / FTaN) * amp0 * (piM ** (-7.0/6.0))
+    print fac
+    return fac
+    
 def spa_tmplt_norm(psd, length, delta_f, f_lower):
     amp = spa_tmplt_precondition(length, delta_f)
     k_min = int(f_lower / delta_f)
@@ -76,7 +98,6 @@ def spa_tmplt(**kwds):
     mass2 = kwds['mass2']
     phase_order = int(kwds['phase_order'])
     amplitude_order = int(kwds['amplitude_order'])
-    phi0 = kwds['phi0']
 
     if 'out' in kwds:
         out = kwds['out']
