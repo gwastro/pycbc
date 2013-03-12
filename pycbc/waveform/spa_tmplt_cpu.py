@@ -56,20 +56,18 @@ def sin_cos_lookup():
 _sin_cos = sin_cos_lookup()
 
 
-def spa_tmplt_engine(htilde,  kmin,  phase_order,
-                    delta_f,  piM,  pfaN, 
+def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, tC, v0):
+                    pfa6,  pfl6,  pfa7, v0):
     """ Calculate the spa tmplt phase 
     """
     
     cbrt_vec = get_cbrt(len(htilde)*delta_f + kmin, delta_f)
     logv_vec = get_log(len(htilde)*delta_f + kmin, delta_f)
     
-    spa_engine(htilde, _sin_cos, cbrt_vec, logv_vec, kmin,  phase_order,
-                    delta_f,  piM,  pfaN, 
+    spa_engine(htilde, _sin_cos, cbrt_vec, logv_vec, kmin,  phase_order, piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, tC, v0)
+                    pfa6,  pfl6,  pfa7, v0)
 
 
 

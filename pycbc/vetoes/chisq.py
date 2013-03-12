@@ -32,19 +32,19 @@ BACKEND_PREFIX="pycbc.vetoes.chisq_"
 def power_chisq_bins_from_sigmasq_series(sigmasq_series, num_bins, kmin, kmax):
     """Returns bins of equal power for use with the chisq functions
     """
-    sigmasq = sigmasq_series[kmax]                        
+    sigmasq = sigmasq_series[kmax - 1]                        
     edge_vec = numpy.arange(0, sigmasq, sigmasq/num_bins)
     bins = numpy.searchsorted(sigmasq_series[kmin:kmax], edge_vec, side='right')
     bins += kmin
     return numpy.append(bins, kmax)
 
-def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff=None, high_frequency_cutoff=None):
+def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff=None):
     """Returns bins of equal power for use with the chisq functions
     """
     sigma_vec = sigmasq_series(htilde, psd, low_frequency_cutoff, 
-                               high_frequency_cutoff).numpy() 
+                               high_frequency_cutoff = None).numpy() 
     kmin = int(low_frequency_cutoff / htilde.delta_f)
-    kmax = len(sigma_vec) 
+    kmax = len(sigma_vec)
     return power_chisq_bins_from_sigmasq_series(sigma_vec, num_bins, kmin, kmax)
     
 @schemed(BACKEND_PREFIX)

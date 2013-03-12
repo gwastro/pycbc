@@ -64,8 +64,7 @@ def spa_amplitude_factor(**kwds):
     
     amp0 = 4. * m1 * m2 / (1e6 * lal.LAL_PC_SI ) * lal.LAL_MRSUN_SI * lal.LAL_MTSUN_SI * sqrt(lal.LAL_PI/12.0)  
 
-    fac = sqrt( -dETaN / FTaN) * amp0 * (piM ** (-7.0/6.0))
-    print fac
+    fac = sqrt( -dETaN / FTaN) * amp0 * (piM ** (-7.0/6.0)) 
     return fac
     
 def spa_tmplt_norm(psd, length, delta_f, f_lower):
@@ -80,10 +79,9 @@ def spa_tmplt_end(**kwds):
     return pycbc.pnutils.schwarzschild_isco(kwds['mass1']+kwds['mass2'])
  
 @schemed("pycbc.waveform.spa_tmplt_")  
-def spa_tmplt_engine(htilde,  kmin,  phase_order,
-                    delta_f,  piM,  pfaN, 
+def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, tC, v0):
+                    pfa6,  pfl6,  pfa7, v0):
     """ Calculate the spa tmplt phase 
     """
  
@@ -156,10 +154,9 @@ def spa_tmplt(**kwds):
             raise TypeError("Output array is the wrong dtype")
         htilde = FrequencySeries(out, delta_f=delta_f, copy=False)
     
-    spa_tmplt_engine(htilde[kmin:kmax],  kmin,  phase_order,
-                    delta_f,  piM,  pfaN, 
+    spa_tmplt_engine(htilde[kmin:kmax],  kmin,  phase_order, delta_f, piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, tC, v0)          
+                    pfa6,  pfl6,  pfa7, v0)          
     return htilde
     
 
