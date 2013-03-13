@@ -33,7 +33,7 @@ def power_chisq_bins_from_sigmasq_series(sigmasq_series, num_bins, kmin, kmax):
     """Returns bins of equal power for use with the chisq functions
     """
     sigmasq = sigmasq_series[kmax - 1]                        
-    edge_vec = numpy.arange(0, sigmasq, sigmasq/num_bins)
+    edge_vec = numpy.arange(0, num_bins) * sigmasq / num_bins
     bins = numpy.searchsorted(sigmasq_series[kmin:kmax], edge_vec, side='right')
     bins += kmin
     return numpy.append(bins, kmax)
@@ -67,6 +67,7 @@ def power_chisq_from_precomputed(corr, snr, bins, snr_norm):
     for j in range(len(bins)-1): 
         k_min = int(bins[j])
         k_max = int(bins[j+1])
+        
         qtilde[k_min:k_max] = corr[k_min:k_max]
         pycbc.fft.ifft(qtilde, q) 
         qtilde[k_min:k_max].clear()

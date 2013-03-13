@@ -73,7 +73,7 @@ parser.add_option("--maximization-interval", type=float)
 parser.add_option("--user-tag", type=str)
 
 parser.add_option("--processing-scheme", help="The processing scheme to use", choices=["cpu", "cuda"], default="cpu")
-parser.add_option("--gpu-device-id", help="ID of gpu to use for accelerated processing", default=0, type=int)
+parser.add_option("--processing-device-id", help="ID of gpu to use for accelerated processing", default=0, type=int)
 
 opt, argv = parser.parse_args()
 
@@ -86,7 +86,7 @@ logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 if opt.processing_scheme == "cuda":
     logging.info("Running with CUDA support")
-    ctx = CUDAScheme(opt.gpu_device_id)
+    ctx = CUDAScheme(opt.processing_device_id)
 else:
     logging.info("Running with CPU support only")
     ctx = CPUScheme()
@@ -141,7 +141,10 @@ with ctx:
 
     logging.info("Read in template bank")
     bank = pycbc.waveform.TemplateBank(opt.bank_file, opt.approximant, len(segments[0]),  
-                                       segments[0].delta_f, opt.low_frequency_cutoff, dtype=complex64, out=template_work_mem)  
+                                       segments[0].delta_f, opt.low_frequency_cutoff, 
+                                       dtype=complex64, 
+                                       phase_order=opt.order,
+                                       out=template_work_mem)  
     hnorm_vec = None
     if pycbc.waveform.waveform_norm_exists(opt.approximant):
         logging.info("Precalculating template normalizations")

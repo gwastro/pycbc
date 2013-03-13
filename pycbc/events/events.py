@@ -153,7 +153,8 @@ class EventManager(object):
             tend_time = self.opt.trig_end_time
         else:
             tend_time = self.opt.gps_end_time - 64
-                 
+            
+        event_num = 0      
         for event in self.events:
             tind = event['template_id']
         
@@ -182,6 +183,9 @@ class EventManager(object):
             row.process_id = proc_id
             row.coa_phase = numpy.angle(snr)
             row.sigmasq = sigmasq
+            
+            row.event_id = glue.ligolw.lsctables.SnglInspiralID(event_num)
+            event_num += 1
             
             sngl_table.append(row)
                 
