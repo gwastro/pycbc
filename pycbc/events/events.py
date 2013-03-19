@@ -53,7 +53,7 @@ def threshold(series, value):
     """ 
     
 @schemed("pycbc.events.threshold_")
-def threshold_and_centered_window_cluster(series, threshold, window):
+def threshold_and_cluster(series, threshold, window):
     """Return list of values and indices values over threshold in series. 
     """ 
 
@@ -298,7 +298,7 @@ class EventManager(object):
         glue.ligolw.utils.write_filename(outdoc, out_name, gz=True)     
 
 
-__all__ = ['threshold_and_centered_window_cluster', 
+__all__ = ['threshold_and_cluster', 
            'findchirp_cluster_over_window', 'threshold', 
            'EventManager', 'float32_subset', 'float64_subset',
            'complex64_subset', 'complex128_subset', 'subset_dtype']

@@ -203,6 +203,6 @@ setup (
                  'build' : build},
     ext_modules = [lalwrap_module, testlalwrap_module],
     requires = ['lal'],
-    scripts = ['bin/pycbc_banksim', 'bin/pycbc_faithsim', 'bin/pycbc_inspiral'],
+    scripts = ['bin/pycbc_banksim', 'bin/pycbc_faithsim', 'bin/pycbc_inspiral', 'bin/pycbc_make_banksim', 'bin/pycbc_split_table'],
     packages = ['pycbc','pycbc.fft','pycbc.types','pycbc.filter','pycbc.psd','pycbc.waveform','pycbc.events','pycbc.noise','pycbc.vetoes'],
 )

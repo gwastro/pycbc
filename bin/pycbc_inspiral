@@ -1,18 +1,21 @@
-#!/bin/python
+#!/usr/bin/env /usr/bin/python
 
-import resource
+# Imports #####################################################################
 from optparse import OptionParser
 import logging
 
 import numpy
-from pycbc.scheme import CUDAScheme, CPUScheme, OpenCLScheme
-from pycbc.types import TimeSeries, float32, complex64, zeros, FrequencySeries
-from pycbc.frame import read_frame
 import pycbc.vetoes
 import pycbc.psd
 import pycbc.waveform
 import pycbc.events
-from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series, matched_filter_core, sigmasq
+from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series
+from pycbc.filter import  matched_filter_core, sigmasq
+from pycbc.scheme import CUDAScheme, CPUScheme, OpenCLScheme
+from pycbc.types import TimeSeries, float32, complex64, zeros, FrequencySeries
+from pycbc.frame import read_frame
+
+# Option Parsing ##############################################################
 
 parser = OptionParser(
     usage   = "%prog [OPTIONS]",
@@ -26,9 +29,7 @@ parser.add_option("--trig-end-time", type=int, default=0)
 parser.add_option("--ifo-tag", type=str)
 parser.add_option("--approximant", help="Approximant to use for filtering.", type=str)
 parser.add_option("--order", type=str)
-
 parser.add_option("--enable-output", type=str)
-
 parser.add_option("--strain-high-pass-freq")
 parser.add_option("--strain-high-pass-atten")
 parser.add_option("--strain-high-pass-order")
@@ -39,42 +40,30 @@ parser.add_option("--resample-filter")
 parser.add_option("--write-compress")
 parser.add_option("--disable-rsq-veto", action="store_true")
 parser.add_option("--dynamic-range-exponent", type=str)
-
-
 parser.add_option("--gps-start-time", help="The gps start time of the data", type=int)
 parser.add_option("--gps-end-time", help="The gps end time of the data", type=int)
-
 parser.add_option("--channel-name", help="The channel that contains the gravitational strain data", type=str)
 parser.add_option("--frame-cache", help="Either a set of frame files or a cache file that points to the frame file locations.", type=str)
-
 parser.add_option("--snr-threshold", help="The the minimum snr threshold", type=float)
-
 parser.add_option("--enable-high-pass", type=float)
 parser.add_option("--high-pass-attenuation", type=float)
-
 parser.add_option("--chisq-bins", type=int, default=0)
 parser.add_option("--chisq-threshold", type=float)
 parser.add_option("--chisq-delta", type=float, default=0)
-
 parser.add_option("--low-frequency-cutoff", help="The low frequency cutoff to use for filtering (Hz)", type=float)
 parser.add_option("--pad-data", help="Extra padding to remove highpass corruption (s)", type=int)
 parser.add_option("--sample-rate", help="The sample rate to use for filtering (Hz)", type=int)
-
 parser.add_option("--segment-overlap", type=int)
 parser.add_option("--number-of-segments", help="Number of segments to split the data into", type=int)
 parser.add_option("--segment-length", type=int)
-
 parser.add_option("--spectrum-type", type=str)
 parser.add_option("--inverse-spec-length", type=int)
-
 parser.add_option("--cluster-method", choices=["template", "window"])
 parser.add_option("--cluster-window", type=int, help="Length of clustering window in seconds")
 parser.add_option("--maximization-interval", type=float)
 parser.add_option("--user-tag", type=str)
-
 parser.add_option("--processing-scheme", help="The processing scheme to use", choices=["cpu", "cuda"], default="cpu")
 parser.add_option("--processing-device-id", help="ID of gpu to use for accelerated processing", default=0, type=int)
-
 opt, argv = parser.parse_args()
 
 if opt.verbose:
@@ -92,6 +81,8 @@ else:
     ctx = CPUScheme()
 
 duration = opt.gps_end_time - opt.gps_start_time
+
+# Data Preconditioning ########################################################
 
 logging.info("Reading Frames")
 strain = read_frame(opt.frame_cache, opt.channel_name, start_time=opt.gps_start_time-opt.pad_data, duration=duration+opt.pad_data*2)

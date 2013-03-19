@@ -1,0 +1,95 @@
+#! /usr/bin/env python
+
+import os
+from optparse import OptionParser
+import subprocess
+
+parser = OptionParser()
+
+parser.add_option('--number-of-injections', type=int) 
+parser.add_option('--number-of-templates', type=int) 
+parser.add_option('--injection-file', type=str) 
+parser.add_option('--bank-file', type=str)   
+parser.add_option('--log-path', type=str)             
+(options, args) = parser.parse_args()   
+
+
+def ensure_dir(f):
+    d = os.path.dirname(f)
+    if not os.path.exists(d):
+        os.makedirs(d)
+        
+f = open("match_combine.submit", "w")
+f.write("""
+universe = local
+getenv = True
+executable = /home/ahnitz/local/pycbc/bin/pycbc_banksim_match_combine
+arguments = --inj-num=$(JOB_NUM) -o ../match/match$(JOB_NUM).dat \
+output = ../out/com-out$(JOB_NUM)
+error = ../err/com-err$(JOB_NUM)
+log = """ + options.log_path + """mc
+initialdir=match-part
+transfer_executable = false
+queue 1
+""")
+f.close()
+
+f = open("banksim.submit", "w")
+f.write("""
+universe = Vanilla
+getenv = True
+executable = /home/ahnitz/local/pycbc/bin/pycbc_banksim
+arguments = \
+--asd-file ./ZERO_DET_high_P.txt \
+--signal-file injection/injection$(JOB_NUM).xml \
+--template-file bank/bank$(PART_NUM).xml \
+--match-file match-part/match$(JOB_NUM)part$(PART_NUM).dat.$(PROCESS) \
+--template-approximant=SpinTaylorT4 \
+--template-phase-order=7 \
+--template-amplitude-order=0 \
+--template-start-frequency=15 \
+--signal-approximant=SpinTaylorT4 \
+--signal-phase-order=7 \
+--signal-amplitude-order=0 \
+--signal-start-frequency=14 \
+--filter-low-frequency=15 \
+--filter-sample-rate=4096 \
+--filter-signal-length=256 \
+--mchirp-window 0.10 
+output = out/out$(JOB_NUM)part$(PART_NUM)
+error = err/err$(JOB_NUM)part$(PART_NUM)
+transfer_executable = false
+log = """ + options.log_path + """bs
+queue 1
+""")
+f.close()
+
+
+subprocess.call(['mkdir', '-p', 'bank'])
+subprocess.call(['mkdir', '-p', 'match'])
+subprocess.call(['mkdir', '-p', 'injection'])
+subprocess.call(['mkdir', '-p', 'match-part'])  
+subprocess.call(['mkdir', '-p', 'out'])  
+subprocess.call(['mkdir', '-p', 'err'])  
+
+num_banks = subprocess.call(['pycbc_split_table', '-n', str(options.number_of_templates), '-t', options.bank_file, '-e', 'bank/bank'])
+num_injs = subprocess.call(['pycbc_split_table', '-n', str(options.number_of_injections), '-t', options.injection_file,  '-e', 'injection/injection'])
+
+f = open("banksim.dag", "w")
+
+for inj_num in range(num_injs):
+    num = str(inj_num)
+    f.write("Job COM" + num + " match_combine.submit\n")
+    f.write("VARS COM" + num + ' JOB_NUM="' + num + '"\n')
+    f.write("PRIORITY COM" + num + ' 10000\n')
+    for bank_num in range(num_banks):
+        part_num = str(bank_num)
+        f.write('Job JOB' + num + '-' + part_num + ' banksim.submit\n')
+        f.write('VARS JOB' + num + "-" + part_num + ' JOB_NUM="' + num + '"\n') 
+        f.write('VARS JOB' + num+ "-" + part_num + ' PART_NUM="' + part_num + '"\n') 
+        f.write('PARENT JOB' + num + "-" + part_num + " CHILD COM" + num + '\n')
+        f.write('PRIORITY JOB' + num + "-" + part_num + ' ' + num + '\n')
+        
+f.close()
+
+
