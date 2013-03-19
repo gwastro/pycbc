@@ -2,64 +2,61 @@
 
 import os
 from optparse import OptionParser
+import ConfigParser
 import subprocess
 
 parser = OptionParser()
-
-parser.add_option('--number-of-injections', type=int) 
-parser.add_option('--number-of-templates', type=int) 
-parser.add_option('--injection-file', type=str) 
-parser.add_option('--bank-file', type=str)   
-parser.add_option('--log-path', type=str)             
+parser.add_option('--config', type=str)          
 (options, args) = parser.parse_args()   
 
+confs = ConfigParser.ConfigParser()
+confs.read(options.config)
 
-def ensure_dir(f):
-    d = os.path.dirname(f)
-    if not os.path.exists(d):
-        os.makedirs(d)
+banksim_prog = confs.get("executables", "banksim")
+combine_prog = confs.get("executables", "combine")
+
+log_file = confs.get("workflow", "log-file")
+injection_file = confs.get("workflow", "injection-file")
+bank_file = confs.get("workflow", "bank-file")
+
+injections_per_job = confs.get("workflow", "injections-per-job")
+templates_per_job = confs.get("workflow", "templates-per-job")
         
 f = open("match_combine.submit", "w")
 f.write("""
 universe = local
 getenv = True
-executable = /home/ahnitz/local/pycbc/bin/pycbc_banksim_match_combine
+executable = """ + combine_prog + """
 arguments = --inj-num=$(JOB_NUM) -o ../match/match$(JOB_NUM).dat \
 output = ../out/com-out$(JOB_NUM)
 error = ../err/com-err$(JOB_NUM)
-log = """ + options.log_path + """mc
+log = """ + log_file + """ 
 initialdir=match-part
 transfer_executable = false
 queue 1
 """)
 f.close()
 
+bs_options = ""
+for opt in confs.options("banksim"):
+    val = confs.get("banksim", opt)
+    bs_options += "--" + opt + " " + val + " \\" + "\n"
+
 f = open("banksim.submit", "w")
 f.write("""
 universe = Vanilla
 getenv = True
-executable = /home/ahnitz/local/pycbc/bin/pycbc_banksim
+executable = """ + banksim_prog + """
 arguments = \
---asd-file ./ZERO_DET_high_P.txt \
 --signal-file injection/injection$(JOB_NUM).xml \
 --template-file bank/bank$(PART_NUM).xml \
 --match-file match-part/match$(JOB_NUM)part$(PART_NUM).dat.$(PROCESS) \
---template-approximant=SpinTaylorT4 \
---template-phase-order=7 \
---template-amplitude-order=0 \
---template-start-frequency=15 \
---signal-approximant=SpinTaylorT4 \
---signal-phase-order=7 \
---signal-amplitude-order=0 \
---signal-start-frequency=14 \
---filter-low-frequency=15 \
---filter-sample-rate=4096 \
---filter-signal-length=256 \
---mchirp-window 0.10 
+--asd-file ./ZERO_DET_high_P.txt \ 
+""" + bs_options + """
 output = out/out$(JOB_NUM)part$(PART_NUM)
 error = err/err$(JOB_NUM)part$(PART_NUM)
 transfer_executable = false
-log = """ + options.log_path + """bs
+log = """ + log_file + """ 
 queue 1
 """)
 f.close()
@@ -72,8 +69,8 @@ subprocess.call(['mkdir', '-p', 'match-part'])
 subprocess.call(['mkdir', '-p', 'out'])  
 subprocess.call(['mkdir', '-p', 'err'])  
 
-num_banks = subprocess.call(['pycbc_split_table', '-n', str(options.number_of_templates), '-t', options.bank_file, '-e', 'bank/bank'])
-num_injs = subprocess.call(['pycbc_split_table', '-n', str(options.number_of_injections), '-t', options.injection_file,  '-e', 'injection/injection'])
+num_banks = subprocess.call(['pycbc_split_table', '-n', str(templates_per_job), '-t', bank_file, '-e', 'bank/bank'])
+num_injs = subprocess.call(['pycbc_split_table', '-n', str(injections_per_job), '-t', injection_file,  '-e', 'injection/injection'])
 
 f = open("banksim.dag", "w")
 

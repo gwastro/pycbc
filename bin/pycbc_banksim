@@ -305,7 +305,7 @@ with ctx:
                 h_norm = sigmasq(htilde, psd=psd, 
                        low_frequency_cutoff=options.filter_low_frequency_cutoff)
 
-            o,i = match(htilde, stilde, h_norm=h_norm, s_norm=s_norm, 
+            o,i = match(htilde, stilde, v1_norm=h_norm, v2_norm=s_norm, 
                      low_frequency_cutoff=options.filter_low_frequency_cutoff)         
             matches.append(o)
          
