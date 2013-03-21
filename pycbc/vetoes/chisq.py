@@ -38,11 +38,12 @@ def power_chisq_bins_from_sigmasq_series(sigmasq_series, num_bins, kmin, kmax):
     bins += kmin
     return numpy.append(bins, kmax)
 
-def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff=None):
+def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff=None, 
+                     high_frequency_cutoff=None):
     """Returns bins of equal power for use with the chisq functions
     """
     sigma_vec = sigmasq_series(htilde, psd, low_frequency_cutoff, 
-                               high_frequency_cutoff = None).numpy() 
+                               high_frequency_cutoff).numpy() 
     kmin = int(low_frequency_cutoff / htilde.delta_f)
     kmax = len(sigma_vec)
     return power_chisq_bins_from_sigmasq_series(sigma_vec, num_bins, kmin, kmax)
@@ -75,13 +76,13 @@ def power_chisq_from_precomputed(corr, snr, bins, snr_norm):
         
     return chisq * (num_bins * chisq_norm)
 
-def power_chisq(template, data, num_bins, psd, low_frequency_cutoff=None):
+def power_chisq(template, data, num_bins, psd, low_frequency_cutoff=None, high_frequency_cutoff=None):
     """ Return the chisq time series.
     """  
     htilde = make_frequency_series(template)
     stilde = make_frequency_series(data)
     
-    bins = power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff)
+    bins = power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff, high_frequency_cutoff)
     
     corra = zeros((len(htilde)-1)*2, dtype=htilde.dtype)
     
