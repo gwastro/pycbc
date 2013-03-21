@@ -77,7 +77,7 @@ def _lalsim_td_waveform(**p):
                float(p['inclination']),
                float(p['lambda1']),  float(p['lambda2']), flags, None,
                int(p['amplitude_order']), int(p['phase_order']),
-               _lalsim_enum[p['approximant']])
+               _lalsim_enum[p['approximant']], None)
 
     hp = TimeSeries(hp.data.data,delta_t=hp.deltaT,epoch=hp.epoch)
     hc = TimeSeries(hc.data.data,delta_t=hc.deltaT,epoch=hc.epoch)
@@ -100,7 +100,7 @@ def _lalsim_fd_waveform(**p):
                float(p['inclination']),
                float(p['lambda1']), float(p['lambda2']), flags, None,
                int(p['amplitude_order']), int(p['phase_order']),
-               _lalsim_enum[p['approximant']])
+               _lalsim_enum[p['approximant']], None)
 
     hp = FrequencySeries(hp.data.data,delta_f=hp.deltaF,
                             epoch=hp.epoch)
