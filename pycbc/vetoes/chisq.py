@@ -75,7 +75,7 @@ def power_chisq_from_precomputed(corr, snr, bins, snr_norm):
         
     return chisq * (num_bins * chisq_norm)
 
-def power_chisq(template, data, num_bins, psds, low_frequency_cutoff=None, 
+def power_chisq(template, data, num_bins, psd, low_frequency_cutoff=None, 
           high_frequency_cutoff=None):
     """ Return the chisq time series.
     """  
