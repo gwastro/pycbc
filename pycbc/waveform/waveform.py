@@ -40,10 +40,8 @@ import pycbc
 def solar_mass_to_kg(solar_masses):
     return solar_masses * lal.LAL_MSUN_SI
     
-def kiloparsecs_to_meters(distance):
-    return distance * lal.LAL_PC_SI * 1000
-
-
+def megaparsecs_to_meters(distance):
+    return distance * lal.LAL_PC_SI * 1e6
 
 default_args = {'spin1x':0,'spin1y':0,'spin1z':0,
                 'spin2x':0,'spin2y':0,'spin2z':0,'lambda1':0, 'lambda2':0,
@@ -73,7 +71,7 @@ def _lalsim_td_waveform(**p):
                float(p['spin1x']), float(p['spin1y']), float(p['spin1z']),
                float(p['spin2x']), float(p['spin2y']), float(p['spin2z']),
                float(p['f_lower']), 0,
-               kiloparsecs_to_meters(float(p['distance'])),
+               megaparsecs_to_meters(float(p['distance'])),
                float(p['inclination']),
                float(p['lambda1']),  float(p['lambda2']), flags, None,
                int(p['amplitude_order']), int(p['phase_order']),
@@ -96,7 +94,7 @@ def _lalsim_fd_waveform(**p):
                float(p['spin1x']), float(p['spin1y']), float(p['spin1z']),
                float(p['spin2x']), float(p['spin2y']), float(p['spin2z']),
                float(p['f_lower']), float(p['f_final']),
-               kiloparsecs_to_meters(float(p['distance'])),
+               megaparsecs_to_meters(float(p['distance'])),
                float(p['inclination']),
                float(p['lambda1']), float(p['lambda2']), flags, None,
                int(p['amplitude_order']), int(p['phase_order']),
@@ -351,8 +349,10 @@ def get_fd_waveform(template=None, **kwargs):
    
     Returns
     -------
-    htilde: FrequencySeries
-        The cosine phase of the waveform in frequency domain.
+    hplustilde: FrequencySeries
+        The plus phase of the waveform in frequency domain.
+    hcrosstilde: FrequencySeries
+        The cross phase of the waveform in frequency domain.
     """
 
     input_params = props(template,**kwargs)
