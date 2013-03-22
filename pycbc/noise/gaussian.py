@@ -23,7 +23,7 @@
 #
 # =============================================================================
 #
-"""This module contains functions to generate guassian noise colored with a 
+"""This module contains functions to generate gaussian noise colored with a 
 noise spectrum. 
 """
 from pycbc.types import TimeSeries, zeros
@@ -50,7 +50,7 @@ def noise_from_psd(length, delta_t, psd, seed=0):
     Return
     ------
     noise : TimeSeries
-        A TimeSeries containing guassian noise colored by the given psd. 
+        A TimeSeries containing gaussian noise colored by the given psd. 
     """
     noise_ts = TimeSeries(zeros(length), delta_t=delta_t)
     
