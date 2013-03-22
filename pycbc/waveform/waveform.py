@@ -45,7 +45,7 @@ def megaparsecs_to_meters(distance):
 
 default_args = {'spin1x':0,'spin1y':0,'spin1z':0,
                 'spin2x':0,'spin2y':0,'spin2z':0,'lambda1':0, 'lambda2':0,
-                'inclination':0,'distance':1e3,'f_final':0,'phi0':0,
+                'inclination':0,'distance':1,'f_final':0,'phi0':0,
                 'amplitude_order':-1,'phase_order':-1,'spin_order':-1,
                 'tidal_order':-1}
 
@@ -223,15 +223,15 @@ def get_td_waveform(template=None, **kwargs):
         A string that indicates the chosen approximant. See `td_approximants` 
         for available options. 
     mass1 : float
-        The mass of the first component object in the binary. 
+        The mass of the first component object in the binary in solar masses.
     mass2 : 
-        The mass of teh second component object in the binary.
+        The mass of teh second component object in the binary in solar masses.
     delta_t :
         The time step used to generate the waveform. 
     f_lower :
         The starting frequency of the waveform.
     distance : {1e3, float}, optional
-        The distance from the observer to the source in kiloparsecs.
+        The distance from the observer to the source in megaparsecs.
     inclination : {0, float}, optional
         The inclination angle of the source. 
     phi0 : {0, float}, optional
@@ -301,9 +301,9 @@ def get_fd_waveform(template=None, **kwargs):
         A string that indicates the chosen approximant. See `fd_approximants` 
         for available options. 
     mass1 : float
-        The mass of the first component object in the binary. 
+        The mass of the first component object in the binary in solar masses.
     mass2 : 
-        The mass of teh second component object in the binary.
+        The mass of teh second component object in the binary in solar masses.
     delta_f :
         The frequency step used to generate the waveform. 
     f_lower :
@@ -312,7 +312,7 @@ def get_fd_waveform(template=None, **kwargs):
         The ending frequency of the waveform. The default indicates that the
         choice is made by the respective approximant. 
     distance : {1e3, float}, optional
-        The distance from the observer to the source in kiloparsecs.
+        The distance from the observer to the source in megaparsecs.
     inclination : {0, float}, optional
         The inclination angle of the source. 
     phi0 : {0, float}, optional
@@ -477,7 +477,7 @@ def get_waveform_filter_norm(approximant, psd, length, delta_f, f_lower):
         return None
         
 def get_waveform_end_frequency(template=None, **kwargs):
-   """Return the length of a template.
+   """Return the stop frequency of a template
    """ 
    input_params = props(template,**kwargs)
    approximant = kwargs['approximant']
