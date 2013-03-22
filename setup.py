@@ -28,9 +28,11 @@ import unittest
 from distutils import sysconfig,file_util
 from distutils.core import setup,Command,Extension
 from distutils.command.clean import clean as _clean
+from distutils.command.install import install as _install
 from distutils.command.build import build as _build
 from numpy import get_include as np_get_include
 from pycbc.setuputils import pkg_config
+from distutils.file_util import write_file
 
 # Now use the above function to set up our extension library's needs:
 
@@ -87,6 +89,26 @@ class clean(_clean):
                 print 'removed {0}'.format(f)
             except:
                 pass
+                
+class install(_install):
+    def run(self):  
+    
+        etcdirectory = os.path.join(self.install_base, 'etc')  
+        if not os.path.exists(etcdirectory):
+            os.makedirs(etcdirectory)
+    
+        filename = os.path.join(self.install_base, 'etc', 'pycbc-user-env.sh')
+        self.execute(write_file,
+                     (filename, [self.extra_dirs]),
+                     "creating %s" % filename)
+        
+        env_file = open(filename, 'w')
+        print >> env_file, "# Source this file to access PyCBC"
+        print >> env_file, "PATH=" + self.install_scripts + ":$PATH"
+        print >> env_file, "PYTHONPATH=" + self.install_libbase + ":$PYTHONPATH"
+        env_file.close()
+        _install.run(self)
+
 
 # Override build order, so swig is handled first.
 class build(_build):
@@ -196,6 +218,7 @@ setup (
     author = 'Ligo Virgo Collaboration - PyCBC team',
     url = 'https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home',
     cmdclass = { 'test'  : test,
+                 'install' : install,
                  'test_cpu':test_cpu,
                  'test_cuda':test_cuda,
                  'test_opencl':test_opencl,
