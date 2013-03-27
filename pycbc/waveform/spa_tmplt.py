@@ -42,8 +42,8 @@ def spa_tmplt_precondition(length, delta_f):
     """Return the amplitude portion of the TaylorF2 approximant, used to precondition
     the strian data.
     """
-    v = numpy.arange(0, length+1, 1) * delta_f
-    v = v[1:len(v)]**(-7.0/6.0)
+    v = numpy.arange(0, length+1, 1.0) * delta_f
+    v = numpy.power(v[1:len(v)], -7.0/6.0)
     return FrequencySeries(v, delta_f=delta_f)
     
 def spa_amplitude_factor(**kwds):

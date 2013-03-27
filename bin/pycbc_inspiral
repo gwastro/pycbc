@@ -150,7 +150,7 @@ with ctx:
             h_norm = hnorm_vec[k_end]
             if opt.chisq_bins != 0:
                 chisq_bins = pycbc.vetoes.power_chisq_bins_from_sigmasq_series(hnorm_vec, opt.chisq_bins,
-                                 int(opt.low_frequency_cutoff * template.delta_f), k_end)
+                                 int(opt.low_frequency_cutoff / template.delta_f), k_end)
         else:
             h_norm = sigmasq(template, psd, low_frequency_cutoff=opt.low_frequency_cutoff)
             if opt.chisq_bins != 0:
