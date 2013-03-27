@@ -203,7 +203,7 @@ def imrphenomc_tmplt(**kwds):
     piM = lal.LAL_PI * m_sec;
 
     ## The units of distance given as input is taken to pe Mpc. Converting to SI
-    distance *= (1.0e6 * lal.LAL_PC_SI / (M * lal.LAL_MRSUN_SI * M * lal.LAL_MTSUN_SI))
+    distance *= (1.0e6 * lal.LAL_PC_SI / (2. * sqrt(5. / (64.*lal.LAL_PI)) * M * lal.LAL_MRSUN_SI * M * lal.LAL_MTSUN_SI))
    
     # Check if the value of f_max is correctly given, else replace with the fCut
     # used in the PhenomB code in lalsimulation. The various coefficients come
