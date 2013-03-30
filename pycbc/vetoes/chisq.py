@@ -49,7 +49,7 @@ def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff=None,
     return power_chisq_bins_from_sigmasq_series(sigma_vec, num_bins, kmin, kmax)
     
 @schemed(BACKEND_PREFIX)
-def chisq_accum_bin(chisq, snrp, q):
+def chisq_accum_bin(chisq, q):
     pass
     
 def power_chisq_from_precomputed(corr, snr, bins, snr_norm):
@@ -63,8 +63,6 @@ def power_chisq_from_precomputed(corr, snr, bins, snr_norm):
     chisq_norm = snr_norm ** 2.0
     num_bins = len(bins) - 1
     
-    snrp = snr/num_bins
-    
     for j in range(len(bins)-1): 
         k_min = int(bins[j])
         k_max = int(bins[j+1])
@@ -72,9 +70,9 @@ def power_chisq_from_precomputed(corr, snr, bins, snr_norm):
         qtilde[k_min:k_max] = corr[k_min:k_max]
         pycbc.fft.ifft(qtilde, q) 
         qtilde[k_min:k_max].clear()
-        chisq_accum_bin(chisq, snrp, q)
+        chisq_accum_bin(chisq, q)
         
-    return chisq * (num_bins * chisq_norm)
+    return (chisq * num_bins - snr.squared_norm()) * chisq_norm
 
 def power_chisq(template, data, num_bins, psd, low_frequency_cutoff=None, high_frequency_cutoff=None):
     """ Return the chisq time series.

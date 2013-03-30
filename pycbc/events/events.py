@@ -87,15 +87,44 @@ class EventManager(object):
         self.template_index = -1
         self.template_events = numpy.array([], dtype=self.event_dtype)
                   
- #   def chisq_threshold(value, num_bins, delta=0):
-  #      vals = self.events[chisq] < value * (num_bins + delta * snrsq)
-   #     self.events[vals]
+    def chisq_threshold(self, value, num_bins, delta=0):
+        remove = []
+        for i in range(len(self.events)):
+            event = self.events[i]
+            tind = event['template_id']
+            norm = self.template_params[tind]['snr_norm'] ** 2.0
+            xi = event['chisq'] / (num_bins + delta * event['snr'].conj() * event['snr'] * norm)
+            if xi > value:
+                remove.append(i)
+        self.events = numpy.delete(self.events, remove)          
    
     def maximize_over_bank(self, tcolumn, column, window):
-        self.events.sort(order=[tcolumn])
-        indices = []
-        for event in self.events:
-            pass
+        pass
+#        self.events.sort(order=[tcolumn])
+##        nbins = numpy.ceil(self.events[-1][tcolumn]/float(window))
+#        edges = numpy.arange(0, nbins, 1) * float(window)
+#        indices = numpy.searchsorted(self.events[tcolumn], edges)
+#        indices = numpy.append(indices, len(self.events))
+#        
+#        maxes = []
+#        locs = []
+#        row = []
+#        remove = []
+##        #print nbins, edges, indices, self.events[-1][tcolumn], window
+#        for i in range(len(indices)-1):
+#            l = indices[i]
+#            r = indices[i+1]
+#            if l == r:
+#                continue
+#            maxid = abs(self.events[l:r][column]).argmax()
+#            maxes.append(self.events[l:r][column][maxid])
+#            locs.append(self.events[l:r][tcolumn][maxid])
+##            rows.append(self.events[l:r][maxid])
+#
+#        for i in range(len(maxes)):
+#            if i == 0:
+#                lm = 0;
+               
         
         
     def add_template_events(self, columns, vectors):

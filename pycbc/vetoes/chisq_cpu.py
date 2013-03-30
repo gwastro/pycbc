@@ -22,5 +22,5 @@
 # =============================================================================
 #
 
-def chisq_accum_bin(chisq, snrp, q):
-    chisq += (snrp - q).squared_norm()
+def chisq_accum_bin(chisq, q):
+    chisq += q.squared_norm()

@@ -34,19 +34,18 @@ from pycuda.scan import InclusiveScanKernel
 import numpy as np
 
 @context_dependent_memoize
-def get_accum_diff_sq_kernel(dtype_x, dtype_y, dtype_z):
+def get_accum_diff_sq_kernel(dtype_x, dtype_z):
     return ElementwiseKernel(
-            "%(tp_a)s *x, %(tp_b)s *y, %(tp_c)s *z" % {
+            "%(tp_a)s *x,  %(tp_c)s *z" % {
                 "tp_a": dtype_to_ctype(dtype_x),
-                "tp_b": dtype_to_ctype(dtype_y),
                 "tp_c": dtype_to_ctype(dtype_z),
                 },
-            "x[i] += norm(y[i] - z[i]) ",
+            "x[i] += norm(z[i]) ",
             "chisq_accum")    
  
-def chisq_accum_bin(chisq, snrp, q):
-    krnl = get_accum_diff_sq_kernel(chisq.dtype, snrp.dtype, q.dtype)
-    krnl(chisq.data, snrp.data, q.data)
+def chisq_accum_bin(chisq, q):
+    krnl = get_accum_diff_sq_kernel(chisq.dtype, q.dtype)
+    krnl(chisq.data, q.data)
    
     
     

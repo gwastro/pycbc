@@ -213,7 +213,7 @@ if opt.maximization_interval:
     event_mgr.maximize_over_bank("time_index", "snr", window_size)
     
 if opt.chisq_threshold:
-    pass
+    event_mgr.chisq_threshold(opt.chisq_threshold, opt.chisq_bins, opt.chisq_delta)
     
 logging.info("Writing out triggers")
 event_mgr.write_events()
