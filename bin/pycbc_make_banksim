@@ -50,7 +50,7 @@ executable = """ + banksim_prog + """
 arguments = \
 --signal-file injection/injection$(JOB_NUM).xml \
 --template-file bank/bank$(PART_NUM).xml \
---match-file match-part/match$(JOB_NUM)part$(PART_NUM).dat.$(PROCESS) \
+--match-file match-part/match$(JOB_NUM)part$(PART_NUM).dat \
 --asd-file ./ZERO_DET_high_P.txt \ 
 """ + bs_options + """
 output = out/out$(JOB_NUM)part$(PART_NUM)
