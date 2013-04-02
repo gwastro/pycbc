@@ -36,7 +36,7 @@ from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, TimeSeries, zeros, real_same_precision_as, complex_same_precision_as
 from pycbc.filter import match
-from pycbc.scheme import DefaultScheme, CUDAScheme, OpenCLScheme
+from pycbc.scheme import CPUScheme, CUDAScheme, OpenCLScheme
 from pycbc.fft import fft
 import pycbc.psd 
 
@@ -145,7 +145,7 @@ if options.psd and options.asd_file:
 if options.cuda:
     ctx = CUDAScheme()
 else:
-    ctx = DefaultScheme()
+    ctx = CPUScheme()
 
 # Load in the waveform1 bank file
 indoc = ligolw_utils.load_filename(options.bank_file, False)
