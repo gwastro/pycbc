@@ -5,6 +5,14 @@ from optparse import OptionParser
 import ConfigParser
 import subprocess
 
+def get_ini_opts(confs, section):
+    op_str = ""
+    for opt in confs.options(section):
+        val = confs.get(section, opt)
+        op_str += "--" + opt + " " + val + " \\" + "\n"
+    return op_str
+
+
 parser = OptionParser()
 parser.add_option('--config', type=str)          
 (options, args) = parser.parse_args()   
@@ -16,7 +24,6 @@ banksim_prog = confs.get("executables", "banksim")
 combine_prog = confs.get("executables", "combine")
 
 log_file = confs.get("workflow", "log-file")
-injection_file = confs.get("workflow", "injection-file")
 bank_file = confs.get("workflow", "bank-file")
 
 injections_per_job = confs.get("workflow", "injections-per-job")
@@ -38,11 +45,7 @@ queue 1
 """)
 f.close()
 
-bs_options = ""
-for opt in confs.options("banksim"):
-    val = confs.get("banksim", opt)
-    bs_options += "--" + opt + " " + val + " \\" + "\n"
-
+bs_options = get_ini_opts(confs, "banksim")
 f = open("banksim.submit", "w")
 f.write("""
 universe = Vanilla
@@ -70,10 +73,14 @@ subprocess.call(['mkdir', '-p', 'match-part'])
 subprocess.call(['mkdir', '-p', 'out'])  
 subprocess.call(['mkdir', '-p', 'err'])  
 
+print "Creating Injection File"
+inj_str = "lalapps_inspinj " + get_ini_opts(confs, "inspinj") + "--output inj.xml"
+os.system(inj_str)
+
 print "Splitting template bank..."
 num_banks = subprocess.call(['pycbc_split_table', '-n', str(templates_per_job), '-t', bank_file, '-e', 'bank/bank'])
 print "Splitting injection file..."
-num_injs = subprocess.call(['pycbc_split_table', '-n', str(injections_per_job), '-t', injection_file,  '-e', 'injection/injection'])
+num_injs = subprocess.call(['pycbc_split_table', '-n', str(injections_per_job), '-t', "inj.xml",  '-e', 'injection/injection'])
 
 print "Creating Dag..."
 f = open("banksim.dag", "w")
