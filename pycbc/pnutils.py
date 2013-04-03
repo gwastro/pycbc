@@ -220,4 +220,4 @@ def t2_cutoff_frequency(m1, m2, chi1, chi2):
     return velocity_to_frequency(t2_cutoff_velocity(m1, m2, chi1, chi2), m1 + m2)
 
 t4_cutoff_velocity = meco_velocity
-t4_cutoff_freqeuncy = meco_frequency
+t4_cutoff_frequency = meco_frequency

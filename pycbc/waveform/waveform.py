@@ -64,7 +64,7 @@ def _lalsim_td_waveform(**p):
     lalsimulation.SimInspiralSetSpinOrder(flags, p['spin_order'])
     lalsimulation.SimInspiralSetTidalOrder(flags, p['tidal_order'])
 
-    hp,hc = lalsimulation.SimInspiralChooseTDWaveform(float(p['phi0']),
+    hp, hc = lalsimulation.SimInspiralChooseTDWaveform(float(p['phi0']),
                float(p['delta_t']),
                float(solar_mass_to_kg(p['mass1'])),
                float(solar_mass_to_kg(p['mass2'])),
@@ -77,10 +77,10 @@ def _lalsim_td_waveform(**p):
                int(p['amplitude_order']), int(p['phase_order']),
                _lalsim_enum[p['approximant']])
 
-    hp = TimeSeries(hp.data.data,delta_t=hp.deltaT,epoch=hp.epoch)
-    hc = TimeSeries(hc.data.data,delta_t=hc.deltaT,epoch=hc.epoch)
+    hp = TimeSeries(hp.data.data[:], delta_t=hp.deltaT, epoch=hp.epoch)
+    hc = TimeSeries(hc.data.data[:], delta_t=hc.deltaT, epoch=hc.epoch)
 
-    return hp,hc
+    return hp, hc
 
 def _lalsim_fd_waveform(**p):
     flags = lalsimulation.SimInspiralCreateWaveformFlags()
@@ -100,9 +100,9 @@ def _lalsim_fd_waveform(**p):
                int(p['amplitude_order']), int(p['phase_order']),
                _lalsim_enum[p['approximant']])
 
-    hp = FrequencySeries(hp.data.data,delta_f=hp.deltaF,
+    hp = FrequencySeries(hp.data.data[:], delta_f=hp.deltaF,
                             epoch=hp.epoch)
-    hc = FrequencySeries(hc.data.data,delta_f=hc.deltaF,
+    hc = FrequencySeries(hc.data.data[:], delta_f=hc.deltaF,
                             epoch=hc.epoch)                        
     
     return hp, hc

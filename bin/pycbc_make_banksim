@@ -21,7 +21,8 @@ bank_file = confs.get("workflow", "bank-file")
 
 injections_per_job = confs.get("workflow", "injections-per-job")
 templates_per_job = confs.get("workflow", "templates-per-job")
-        
+     
+print "Creating submit files"   
 f = open("match_combine.submit", "w")
 f.write("""
 universe = local
@@ -61,7 +62,7 @@ queue 1
 """)
 f.close()
 
-
+print "Making workspace directories..."
 subprocess.call(['mkdir', '-p', 'bank'])
 subprocess.call(['mkdir', '-p', 'match'])
 subprocess.call(['mkdir', '-p', 'injection'])
@@ -69,9 +70,12 @@ subprocess.call(['mkdir', '-p', 'match-part'])
 subprocess.call(['mkdir', '-p', 'out'])  
 subprocess.call(['mkdir', '-p', 'err'])  
 
+print "Splitting template bank..."
 num_banks = subprocess.call(['pycbc_split_table', '-n', str(templates_per_job), '-t', bank_file, '-e', 'bank/bank'])
+print "Splitting injection file..."
 num_injs = subprocess.call(['pycbc_split_table', '-n', str(injections_per_job), '-t', injection_file,  '-e', 'injection/injection'])
 
+print "Creating Dag..."
 f = open("banksim.dag", "w")
 
 for inj_num in range(num_injs):
@@ -88,5 +92,5 @@ for inj_num in range(num_injs):
         f.write('PRIORITY JOB' + num + "-" + part_num + ' ' + num + '\n')
         
 f.close()
-
+print "Done"
 

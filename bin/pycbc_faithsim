@@ -83,17 +83,17 @@ def make_padded_frequency_series(vec,filter_N=None):
     vectilde = FrequencySeries(vectilde * DYN_RANGE_FAC,delta_f=delta_f,dtype=complex64)
     return vectilde
 
-def get_waveform(approximant, phase_order, amplitude_order, template_params, start_frequency, sample_rate, length):
+def get_waveform(approximant, phase_order, amplitude_order, spin_order, template_params, start_frequency, sample_rate, length):
 
     if approximant in td_approximants():
-        hplus,hcross = get_td_waveform(template_params, approximant=approximant,
+        hplus,hcross = get_td_waveform(template_params, approximant=approximant, spin_order=spin_order,
                                    phase_order=phase_order, delta_t=1.0 / sample_rate,
                                    f_lower=start_frequency, amplitude_order=amplitude_order) 
         
 
     elif approximant in fd_approximants():
         delta_f = sample_rate / length
-        hplus, hcross = get_fd_waveform(template_params, approximant=approximant,
+        hplus, hcross = get_fd_waveform(template_params, approximant=approximant, spin_order=spin_order,
                                phase_order=phase_order, delta_f=delta_f,
                                f_lower=start_frequency, amplitude_order=amplitude_order)     
 
@@ -123,11 +123,13 @@ parser.add_option("--psd", dest="psd", help="Analytic PSD model: " + str(psd_nam
 parser.add_option("--waveform1-approximant",help="waveform1  Approximant Name: " + str(aprs), choices = aprs)
 parser.add_option("--waveform1-phase-order",help="PN order to use for the phase",default=-1,type=int) 
 parser.add_option("--waveform1-amplitude-order",help="PN order to use for the phase",default=-1,type=int) 
+parser.add_option("--waveform1-spin-order",help="Spin terms up to the given pN order are included",default=-1,type=int) 
 parser.add_option("--waveform1-start-frequency",help="Starting frequency for injections",type=float) 
 
 parser.add_option("--waveform2-approximant",help="waveform2 Approximant Name: " + str(aprs), choices = aprs)
 parser.add_option("--waveform2-phase-order",help="PN order to use for the phase",default=-1,type=int) 
 parser.add_option("--waveform2-amplitude-order",help="PN order to use for the phase",default=-1,type=int) 
+parser.add_option("--waveform2-spin-order",help="Spin terms up to the given pN order are included",default=-1,type=int) 
 parser.add_option("--waveform2-start-frequency",help="Starting frequency for waveform1s",type=float)  
 
 #Filter Settings
@@ -189,7 +191,8 @@ with ctx:
 
         htilde1 = get_waveform(options.waveform1_approximant, 
                               options.waveform1_phase_order, 
-                              options.waveform1_amplitude_order, 
+                              options.waveform1_amplitude_order,
+                              options.waveform1_spin_order, 
                               waveform_params, 
                               options.waveform1_start_frequency, 
                               options.filter_sample_rate, 
@@ -197,7 +200,8 @@ with ctx:
 
         htilde2 = get_waveform(options.waveform2_approximant, 
                               options.waveform2_phase_order, 
-                              options.waveform2_amplitude_order, 
+                              options.waveform2_amplitude_order,
+                              options.waveform2_spin_order, 
                               waveform_params, 
                               options.waveform2_start_frequency, 
                               options.filter_sample_rate, 

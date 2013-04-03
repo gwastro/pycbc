@@ -111,11 +111,11 @@ def make_padded_frequency_series(vec,filter_N=None):
     vectilde = FrequencySeries(vectilde * DYN_RANGE_FAC,delta_f=delta_f,dtype=complex64)
     return vectilde
 
-def get_waveform(approximant, phase_order, amplitude_order, template_params, start_frequency, sample_rate, length, filter_rate):
+def get_waveform(approximant, phase_order, amplitude_order, spin_order, template_params, start_frequency, sample_rate, length, filter_rate):
 
     if approximant in td_approximants():
-        hplus,hcross = get_td_waveform(template_params, approximant=approximant,
-                                   phase_order=phase_order, delta_t=1.0 / sample_rate,
+        hplus, hcross = get_td_waveform(template_params, approximant=approximant,
+                                   phase_order=phase_order, spin_order=spin_order, delta_t=1.0 / sample_rate,
                                    f_lower=start_frequency, amplitude_order=amplitude_order) 
         hvec = generate_detector_strain(template_params, hplus, hcross)
 
@@ -126,7 +126,7 @@ def get_waveform(approximant, phase_order, amplitude_order, template_params, sta
     elif approximant in fd_approximants():
         delta_f = filter_rate / length
         hp, hc = get_fd_waveform(template_params, approximant=approximant,
-                               phase_order=phase_order, delta_f=delta_f,
+                               phase_order=phase_order, delta_f=delta_f, spin_order=spin_order,
                                f_lower=start_frequency, amplitude_order=amplitude_order) 
         hvec = generate_detector_strain(template_params, hp, hc)
                                    
@@ -151,11 +151,13 @@ parser.add_option("--asd-file", dest="asd_file", help="two-column ASCII file con
 parser.add_option("--psd", dest="psd", help="Analytic PSD model: " + str(pycbc.psd.get_list()), choices=pycbc.psd.get_list())
 
 aprs = list(set(td_approximants() + fd_approximants()))
+
 #Template Settings
 parser.add_option("--template-file", dest="bank_file", help="SimInspiral or SnglInspiral XML file containing the template parameters.", metavar="FILE")
 parser.add_option("--template-approximant",help="Template Approximant Name: " + str(aprs), choices = aprs)
 parser.add_option("--template-phase-order",help="PN order to use for the phase",default=-1,type=int) 
 parser.add_option("--template-amplitude-order",help="PN order to use for the amplitude",default=-1,type=int) 
+parser.add_option("--template-spin-order",help="PN order to use for the spin terms",default=-1,type=int) 
 parser.add_option("--template-start-frequency",help="Starting frequency for injections",type=float) 
 parser.add_option("--template-sample-rate",help="Starting frequency for injections",type=float) 
 
@@ -163,6 +165,7 @@ parser.add_option("--template-sample-rate",help="Starting frequency for injectio
 parser.add_option("--signal-file", dest="sim_file", help="SimInspiral or SnglInspiral XML file containing the signal parameters.", metavar="FILE")
 parser.add_option("--signal-approximant",help="Signal Approximant Name: " + str(aprs), choices = aprs)
 parser.add_option("--signal-phase-order",help="PN order to use for the phase",default=-1,type=int) 
+parser.add_option("--signal-spin-order",help="PN order to use for the spin terms",default=-1,type=int) 
 parser.add_option("--signal-amplitude-order",help="PN order to use for the amplitude",default=-1,type=int) 
 parser.add_option("--signal-start-frequency",help="Starting frequency for templates",type=float)  
 parser.add_option("--signal-sample-rate",help="Starting frequency for templates",type=float)  
@@ -261,6 +264,7 @@ for signal_params in signal_table:
     stilde = get_waveform(options.signal_approximant, 
                   options.signal_phase_order, 
                   options.signal_amplitude_order, 
+                  options.signal_spin_order,
                   signal_params, 
                   options.signal_start_frequency, 
                   signal_sample_rate, 
@@ -297,7 +301,8 @@ with ctx:
             if htilde is None:
                 htilde = get_waveform(options.template_approximant, 
                                       options.template_phase_order, 
-                                      options.template_amplitude_order, 
+                                      options.template_amplitude_order,
+                                      options.template_spin_order,
                                       template_params, 
                                       options.template_start_frequency, 
                                       template_sample_rate, 
