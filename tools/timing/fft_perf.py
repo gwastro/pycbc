@@ -27,7 +27,7 @@ parser.add_option('--iterations', type=int, help='Number of iterations to perfor
 _options = vars(options)
 
 if _options['scheme'] == 'cpu':
-    ctx = DefaultScheme()
+    ctx = CPUScheme()
 if _options['scheme'] == 'cuda':
     ctx = CUDAScheme(device_num=_options['devicenum'])
 if _options['scheme'] == 'opencl':
