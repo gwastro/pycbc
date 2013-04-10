@@ -29,6 +29,7 @@ between quantities.
 from __future__ import division
 import lal
 from numpy import log
+import numpy
 from scipy.optimize import bisect
 
 
@@ -145,6 +146,7 @@ def _energy_coeffs(m1, m2, chi1, chi2):
                 + eta*(59.80034722222222 - (205*pow(lal.LAL_PI,2))/96.)
 
     energy3 += (32*beta)/113. + (52*chisym*eta)/113.
+    
     energy4 += (-16*sigma12)/79. - (16*sigmaqm)/81.
     energy5 += (96*beta)/113. + ((-124*beta)/339. - (522*chisym)/113.)*eta \
                 - (710*chisym*pow(eta,2))/339.
@@ -212,6 +214,106 @@ def _dtdv_cutoff_velocity(m1, m2, chi1, chi2):
         return bisect(dtdv_func, 0.05, 1.0)
     else:
         return 1.0
+        
+def energy_coefficients(m1, m2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
+    """ Return the energy coefficients. This assumes that the system has aligned spins only. 
+    """
+    implemented_phase_order = 7
+    implemented_spin_order = 7
+    if phase_order > implemented_phase_order:
+        raise ValueError("pN coeffiecients of that order have not been implemented")
+    elif phase_order == -1:
+        phase_order = implemented_phase_order
+        
+    if spin_order > implemented_spin_order:
+        raise ValueError("pN coeffiecients of that order have not been implemented")
+    elif spin_order == -1:
+        spin_order = implemented_spin_order
+     
+    
+    qmdef1 = 1.0
+    qmdef2 = 1.0  
+    
+    M = m1 + m2
+    dm = (m1-m2)/M
+    m1M = m1 / M
+    m2M = m2 / M
+    
+    s1z = s1z * m1M * m1M
+    s2z = s2z * m2M * m2M
+      
+    mchirp, eta = mass1_mass2_to_mchirp_eta(m1, m2)
+
+    ecof = numpy.zeros(phase_order+1)
+    # Orbital terms
+    if phase_order >= 0:
+        ecof[0] = 1.0
+    if phase_order >= 1:
+        ecof[1] = 0
+    if phase_order >= 2:
+        ecof[2] = -(1.0/12.0) * (9.0 + eta)
+    if phase_order >= 3:
+        ecof[3] = 0
+    if phase_order >= 4:
+        ecof[4] = (-81.0 + 57.0*eta - eta*eta) / 24.0
+    if phase_order >= 5:
+        ecof[5] = 0
+    if phase_order >= 6:
+        ecof[6] = - 675.0/64.0 + ( 34445.0/576.0    \
+              - 205.0/96.0 * lal.LAL_PI * lal.LAL_PI ) * eta  \
+              - (155.0/96.0) *eta * eta - 35.0/5184.0 * eta * eta
+    # Spin terms
+ 
+    ESO15s1 = 8.0/3.0 + 2.0*m2/m1
+    ESO15s2 = 8.0/3.0 + 2.0*m1/m2
+    
+    ESS2 = 1.0 / eta
+    EQM2s1 = qmdef1/2.0/m1M/m1M
+    EQM2s1L = -qmdef1*3.0/2.0/m1M/m1M
+    EQM2s2 = qmdef2/2.0/m2M/m2M
+    EQM2s2L = -qmdef2*3.0/2.0/m2M/m2M
+    
+    ESO25s1 = 11.0 - 61.0*eta/9.0 + (dm/m1M) * (-3.0 + 10.*eta/3.0)
+    ESO25s2 = 11.0 - 61.0*eta/9.0 + (dm/m2M) * (3.0 - 10.*eta/3.0)
+    
+    ESO35s1 = 135.0/4.0 - 367.0*eta/4.0 + 29.0*eta*eta/12.0 + (dm/m1M) * (-27.0/4.0 + 39.0*eta - 5.0*eta*eta/4.0)
+    ESO35s2 = 135.0/4.0 - 367.0*eta/4.0 + 29.0*eta*eta/12.0 - (dm/m2M) * (-27.0/4.0 + 39.0*eta - 5.0*eta*eta/4.0)
+    
+    if spin_order >=3:
+        ecof[3] += ESO15s1 * s1z + ESO15s2 * s2z 
+    if spin_order >=4:   
+        ecof[4] += ESS2 * (s1z*s2z - 3.0*s1z*s2z)
+        ecof[4] += EQM2s1*s1z*s1z + EQM2s1*s2z*s2z + EQM2s1L*s1z*s1z + EQM2s2L*s2z*s2z
+    if spin_order >=5:
+        ecof[5] = ESO25s1*s1z + ESO25s2*s2z
+    if spin_order >=7:
+        ecof[7] += ESO35s1*s1z + ESO35s2*s2z 
+        
+    return ecof
+    
+def energy(v, mass1, mass2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
+    ecof = energy_coefficients(mass1, mass2, s1z, s2z, phase_order, spin_order)
+    mchirp, eta = mass1_mass2_to_mchirp_eta(mass1, mass2)
+    amp = - (1.0/2.0) * eta
+    e = 0.0
+    for i in numpy.arange(0, len(ecof), 1):
+            e += float(v)**(i+2.0)* ecof[i]  
+            
+    return e * amp
+    
+def meco2(m1, m2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
+    ecof = energy_coefficients(m1, m2, s1z, s2z, phase_order, spin_order)
+    
+    def test(v):
+        v = float(v)
+        de = 0
+        for i in numpy.arange(0, len(ecof), 1):
+            de += v**(i+1.0)* ecof[i] * (i + 2)  
+ 
+        return de
+
+    return bisect(test, 0.001, 1.0)
+    
 
 def t2_cutoff_velocity(m1, m2, chi1, chi2):
     return min(meco_velocity(m1,m2,chi1,chi2), _dtdv_cutoff_velocity(m1,m2,chi1,chi2))
