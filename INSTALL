@@ -7,6 +7,9 @@ Prerequisites
 * Python 2.6 or 2.7
   Should be provided by the distribution.
 
+* python-decorator >= 3.3
+  Should be available in the distribution.
+
 * Numpy >= 1.4.1 and Scipy >= 0.7.2
   Should be installable either via the distribution packaging system,
   pip or easy_install. Numpy >= 1.5.1 is required for GPU acceleration
