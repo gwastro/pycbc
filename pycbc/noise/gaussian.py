@@ -32,7 +32,7 @@ from lalsimulation import SimNoise
 import lal
 import numpy.random
 
-def frequency_noise_from_psd(psd, seed=0):
+def frequency_noise_from_psd(psd, seed = None):
     """ Create noise with a given psd.
     
     Return noise coloured with the given psd. The returned noise FrequencySeries
@@ -42,8 +42,9 @@ def frequency_noise_from_psd(psd, seed=0):
     ----------
     psd : FrequencySeries
         The noise weighting to color the noise.
-    seed : {0, int}
-        The seed to generate the noise. 
+    seed : {0, int} or None
+        The seed to generate the noise. If None specified,
+        the seed will not be reset.
         
     Return
     ------
@@ -51,7 +52,8 @@ def frequency_noise_from_psd(psd, seed=0):
         A FrequencySeries containing gaussian noise colored by the given psd. 
     """
     sigma = 0.5 * (psd / psd.delta_f) ** (0.5) 
-    numpy.random.seed(seed)
+    if seed is not None:
+        numpy.random.seed(seed)
     sigma = sigma.numpy()
     dtype = complex_same_precision_as(psd)
     
