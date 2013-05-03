@@ -1,4 +1,4 @@
 
 
 
-from guassian import *
+from gaussian import *
