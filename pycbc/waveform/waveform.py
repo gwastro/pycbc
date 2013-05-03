@@ -230,7 +230,7 @@ def get_td_waveform(template=None, **kwargs):
         The time step used to generate the waveform. 
     f_lower :
         The starting frequency of the waveform.
-    distance : {1e3, float}, optional
+    distance : {1, float}, optional
         The distance from the observer to the source in megaparsecs.
     inclination : {0, float}, optional
         The inclination angle of the source. 
@@ -311,7 +311,7 @@ def get_fd_waveform(template=None, **kwargs):
     f_final : {-1, float}, optional
         The ending frequency of the waveform. The default indicates that the
         choice is made by the respective approximant. 
-    distance : {1e3, float}, optional
+    distance : {1, float}, optional
         The distance from the observer to the source in megaparsecs.
     inclination : {0, float}, optional
         The inclination angle of the source. 

@@ -26,15 +26,56 @@
 """This module contains functions to generate gaussian noise colored with a 
 noise spectrum. 
 """
-from pycbc.types import TimeSeries, zeros
+from pycbc.types import TimeSeries, zeros, Array
+from pycbc.types import complex_same_precision_as, FrequencySeries
 from lalsimulation import SimNoise
 import lal
+import numpy.random
+
+def frequency_noise_from_psd(psd, seed=0):
+    """ Create noise with a given psd.
+    
+    Return noise coloured with the given psd. The returned noise FrequencySeries
+    has the same length and frequency step as the given psd. Note that if unique noise is desired a unique seed should be provided.
+
+    Parameters
+    ----------
+    psd : FrequencySeries
+        The noise weighting to color the noise.
+    seed : {0, int}
+        The seed to generate the noise. 
+        
+    Return
+    ------
+    noise : FrequencySeriesSeries
+        A FrequencySeries containing gaussian noise colored by the given psd. 
+    """
+    sigma = 0.5 * (psd / psd.delta_f) ** (0.5) 
+    numpy.random.seed(seed)
+    sigma = sigma.numpy()
+    dtype = complex_same_precision_as(psd)
+    
+    not_zero = (sigma != 0)
+    
+    sigma_red = sigma[not_zero]
+    noise_re = numpy.random.normal(0, sigma_red)
+    noise_co = numpy.random.normal(0, sigma_red)
+    noise_red = noise_re + 1j * noise_co
+    
+    noise = numpy.zeros(len(sigma), dtype=dtype)
+    noise[not_zero] = noise_red
+    
+    return FrequencySeries(noise,
+                           delta_f=psd.delta_f,
+                           dtype=dtype)
+    
+    
+   
 
 def noise_from_psd(length, delta_t, psd, seed=0):
     """ Create noise with a given psd.
     
-    Return noise with a given psd. Note that if unique noise is desired a seed
-    should be provided.
+    Return noise with a given psd. Note that if unique noise is desired a unique seed should be provided.
 
     Parameters
     ----------
@@ -44,7 +85,7 @@ def noise_from_psd(length, delta_t, psd, seed=0):
         The time step of the noise. 
     psd : FrequencySeries
         The noise weighting to color the noise.
-    seeed : {0, int}
+    seed : {0, int}
         The seed to generate the noise. 
         
     Return
@@ -81,4 +122,4 @@ def noise_from_psd(length, delta_t, psd, seed=0):
         
     return noise_ts
    
-__all__ = ['noise_from_psd']
+__all__ = ['noise_from_psd', 'frequency_noise_from_psd']
