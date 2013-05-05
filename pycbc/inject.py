@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Alex Nitz
+# Copyright (C) 2012  Alex Nitz, Tito Dal Canton
 #
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 #
 # =============================================================================
 #
-"""This module provides utilities for injection signals into data
+"""This module provides utilities for injecting signals into data
 """
 
 import lal
@@ -34,45 +34,81 @@ from glue.ligolw import table, lsctables
 from pycbc.types import float64, float32, TimeSeries
 from pycbc.detector import Detector
 
-def inject_td_waveform_into_data(data, hp, hc, detector, ra, dec, pol):
-    """ Inject waveform into the data for a given detector.
+
+class InjectionSet(object):
+    """Manages sets of injections: reads injections from LIGOLW XML files
+    and injects them into time series.
+
+    Parameters
+    ----------
+    sim_file : string
+        Path to a LIGOLW XML file containing a SimInspiralTable
+        with injection definitions.
+
+    Attributes
+    ----------
+    indoc
+    table
     """
 
-    signal = sim.XLALSimDetectorStrainREAL8TimeSeries(hp.lal(), hc.lal(), ra, 
-                                             dec, spi, detector.FrDetector)
-                                             
-    laldata = data.lal()                                             
-    XLALSimAddInjectionREAL8TimeSeries(laldata, signal, NULL);
-    data.data[:]=laldata.data.data[:]    
-    
-class InjectionSet(object):
     def __init__(self, sim_file, **kwds):
         self.indoc = ligolw_utils.load_filename(sim_file, False)
         self.table = table.get_table(self.indoc, lsctables.SimInspiralTable.tableName)
         self.extra_args = kwds
-        
-    def get_injections_within_time_window(self, start_time, end_time):
-        return []
-    
-    def inject_into_data(self, strain, detector_name):
+
+    def apply(self, strain, detector_name, f_lower=None):
+        """Add injections (as seen by a particular detector) to a time series.
+
+        Parameters
+        ----------
+        strain : TimeSeries
+            Time series to inject signals into, of type float32 or float64.
+        detector_name : string
+            Name of the detector used for projecting injections.
+        f_lower : {None, float}, optional
+            Low-frequency cutoff for injected signals. If None, use value
+            provided by each injection.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        TypeError
+            For invalid types of `strain`.
+        """
+
         lalstrain = strain.lal()    
-        injections = self.get_injections_within_time_window(strain.start_time, strain.end_time)  
         detector = Detector(detector_name)
-        
-        for injection in injections:
-            end_time = lal.LIGOTimeGPS(injection.geocent_end_time, injection.geocent_end_time_ns)
-            hp, hc = get_td_waveform(injection, **self.extra_args)
-            hp._epoch = end_time
-            hc._epoch = end_time
-            signal =  sim.XLALSimDetectorStrainREAL8TimeSeries(hp.astype(float64).lal(), hc.astype(float64).lal(), injection.longitude, 
-                                             injection.latitude, injection.polarizations, detector.FrDetector)  
-                                             
-            if strain.dtype is float64:                                  
-                XLALSimAddInjectionREAL8TimeSeries(lalstrain, signal.astype(float64), NULL)
-            elif strain.dtype is float32:                                  
-                XLALSimAddInjectionREAL4TimeSeries(lalstrain, signal.astype(float32), NULL)
+        earth_travel_time = lal.LAL_REARTH_SI / lal.LAL_C_SI
+        t0 = float(strain.start_time) - earth_travel_time
+        t1 = float(strain.end_time) + earth_travel_time
+        for inj in self.table:
+            end_time = inj.get_time_geocent()
+            if end_time < t0:
+                continue
+            if f_lower is None:
+                f_l = inj.f_lower
             else:
-                raise TypeError("Invalid strain dtype: Must be float32, or float64")              
-                    
-        return TimeSeries(lalstrain, epoch=strain.epoch, delta_t=strain.delta_t, copy=False)
+                f_l = f_lower
+            hp, hc = get_td_waveform(
+                    inj, approximant=inj.waveform, delta_t=strain.delta_t,
+                    f_lower=f_l, **self.extra_args)
+            hp._epoch += float(end_time)
+            hc._epoch += float(end_time)
+            if float(hp.start_time) > t1:
+                continue
+            signal = detector.project_wave(
+                    hp, hc, inj.longitude, inj.latitude, inj.polarization)
+            if strain.dtype == float64:
+                sim.SimAddInjectionREAL8TimeSeries(
+                        lalstrain, signal.astype(float64).lal(), None)
+            elif strain.dtype == float32:
+                sim.SimAddInjectionREAL4TimeSeries(
+                        lalstrain, signal.astype(float32).lal(), None)
+            else:
+                raise TypeError("Strain dtype must be float32 or float64,"
+                        " not " + str(strain.dtype))
+        strain.data[:] = lalstrain.data.data[:]
 

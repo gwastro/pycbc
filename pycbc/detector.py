@@ -26,11 +26,10 @@
 """This module provides utilities for calculating detector responses.
 """
 import lalsimulation
-import numpy
+import numpy as np
 import lal
 from math import cos, sin
-
-# get the cached detector data
+from pycbc.types import TimeSeries
 
 
 class Detector(object):
@@ -53,7 +52,18 @@ class Detector(object):
         """Return the time delay from the earth center
         """
         return lal.TimeDelayFromEarthCenter(self.location, right_ascension, declination, t_gps) 
-        
+
+    def project_wave(self, hp, hc, longitude, latitude, polarization):
+        """Return the strain of a wave with given amplitudes and angles as
+        measured by the detector.
+        """
+        h_lal = lalsimulation.SimDetectorStrainREAL8TimeSeries(
+                hp.astype(np.float64).lal(), hc.astype(np.float64).lal(),
+                longitude, latitude, polarization, self.frDetector)
+        return TimeSeries(
+                h_lal.data.data, delta_t=h_lal.deltaT, epoch=h_lal.epoch,
+                dtype=np.float64, copy=False)
+
 
 def overhead_antenna_pattern(right_ascension, declination, polarization):
     """Return the detector response where (0, 0) indicates an overhead source
