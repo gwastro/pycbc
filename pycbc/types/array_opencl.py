@@ -52,9 +52,19 @@ def icumsum(vec):
 @context_dependent_memoize
 def get_weighted_inner_kernel(dtype_x, dtype_y, dtype_w, dtype_out):
     if (dtype_x == np.complex64) or (dtype_x == np.complex128):
-        inner_map="%s_conj(x[i])*y[i]/w[i]" % complex_dtype_to_name(dtype_x)
+        if (dtype_y == np.float64) or (dtype_y == np.float32):
+            ys = "%s_fromreal(y[i])" % complex_dtype_to_name(dtype_x)
+        else:
+            ys = "y[i]"
+        inner_map="%s_mul(%s_conj(x[i]), %s)" % (complex_dtype_to_name(dtype_x), complex_dtype_to_name(dtype_x), ys)
     else:
-        inner_map="x[i]*y[i]/w[i]"       
+        inner_map="x[i]*y[i]"  
+        
+    if (dtype_w == np.float64) or (dtype_w == np.float32):
+        inner_map = inner_map + "/w[i]"  
+    else:
+        inner_map = "%s_divide(%s, %s)" % (complex_dtype_to_name(dtype_x), inner_map, "w[i]")
+               
     return ReductionKernel(mgr.state.context, dtype_out,
             neutral="0",
             arguments="__global const %(tp_x)s *x, __global const %(tp_y)s *y, __global const %(tp_w)s *w" % {
@@ -69,9 +79,14 @@ def get_weighted_inner_kernel(dtype_x, dtype_y, dtype_w, dtype_out):
 @context_dependent_memoize
 def get_inner_kernel(dtype_x, dtype_y, dtype_out):
     if (dtype_x == np.complex64) or (dtype_x == np.complex128):
-        inner_map="%s_conj(x[i])*y[i]" % complex_dtype_to_name(dtype_x)
+        if (dtype_y == np.float64) or (dtype_y == np.float32):
+            ys = "%s_fromreal(y[i])" % complex_dtype_to_name(dtype_x)
+        else:
+            ys = "y[i]"
+        inner_map="%s_mul(%s_conj(x[i]), %s)" % (complex_dtype_to_name(dtype_x), complex_dtype_to_name(dtype_x), ys)
     else:
-        inner_map="x[i]*y[i]"           
+        inner_map="x[i]*y[i]"    
+               
     return ReductionKernel(mgr.state.context, dtype_out,
             neutral="0",
             arguments="__global const %(tp_x)s *x, __global const %(tp_y)s *y" % {
@@ -104,11 +119,12 @@ def get_norm_kernel(dtype_x, dtype_out):
             "norm")
 
 def squared_norm(a):
-    dtype_out = match_precision(np.dtype('float64'), a.dtype)
-    out = a._new_like_me(dtype=dtype_out)
-    krnl = get_norm_kernel(a.dtype,dtype_out)
-    krnl(a,out)
-    return out 
+#    dtype_out = match_precision(np.dtype('float64'), a.dtype)
+#    out = a._new_like_me(dtype=dtype_out)
+#    krnl = get_norm_kernel(a.dtype,dtype_out)
+#    krnl(a,out)
+#    return out 
+    return a.conj() * a
 
 def zeros(length, dtype=np.float64):
     return pyopencl.array.zeros(mgr.state.queue, length, dtype)

@@ -41,6 +41,7 @@ if type(ctx) is CUDAScheme:
     print "RUNNING ON ", ctx.device.name()
 else:
     print "RUNNING ON CPU"
+print type(ctx)
 
 N = 2**options.size
 
