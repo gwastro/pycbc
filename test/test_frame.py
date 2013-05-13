@@ -148,10 +148,13 @@ class FrameTestBase(base_test.function_base):
                 endind = int(50/self.delta_t)
                 
                 # Now reading in a specific segment with an integer
-                ts3 = pycbc.frame.read_frame(filename, 'channel1', start=int(start), end=int(end))
+                ts3 = pycbc.frame.read_frame(filename, 'channel1',
+                                             start_time=int(start),
+                                             end_time=int(end))
                 
                 # The same, but with a LIGOTimeGPS for the start and end times
-                ts4 = pycbc.frame.read_frame(filename, 'channel1', start=start, end=end)
+                ts4 = pycbc.frame.read_frame(filename, 'channel1',
+                                             start_time=start, end_time=end)
 
                 # Now we will check those two TimeSeries
                 self.checkCurrentState((ts3,ts4), (self.data1[startind:endind],self.data1[startind:endind]), self.places)
@@ -164,18 +167,22 @@ class FrameTestBase(base_test.function_base):
                 # And now some cases that should raise errors
 
                 # There must be a span grater than 0
-                self.assertRaises(ValueError, pycbc.frame.read_frame,filename,'channel1',
-                                    start=self.epoch,end=self.epoch)
+                self.assertRaises(ValueError, pycbc.frame.read_frame, filename,
+                                  'channel1', start_time=self.epoch,
+                                  end_time=self.epoch)
                 # The start must be before the end
-                self.assertRaises(ValueError, pycbc.frame.read_frame,filename,'channel1',
-                                    start=self.epoch+1,end=self.epoch)
+                self.assertRaises(ValueError, pycbc.frame.read_frame, filename,
+                                  'channel1', start_time=self.epoch+1,
+                                  end_time=self.epoch)
                 # Non integer times should also raise an error
                 badtime = lal.LIGOTimeGPS(int(self.epoch)+5,1000)
                 
-                self.assertRaises(ValueError, pycbc.frame.read_frame,filename,'channel1',
-                                    start=self.epoch,end=badtime)
-                self.assertRaises(ValueError, pycbc.frame.read_frame,filename,'channel1',
-                                    start=float(self.epoch),end=float(badtime))
+                self.assertRaises(ValueError, pycbc.frame.read_frame, filename,
+                                  'channel1', start_time=self.epoch,
+                                  end_time=badtime)
+                self.assertRaises(ValueError, pycbc.frame.read_frame, filename,
+                                  'channel1', start_time=float(self.epoch),
+                                  end_time=float(badtime))
     
 
 if _options['scheme']=='cpu':

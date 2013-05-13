@@ -1,4 +1,4 @@
-# Copyright (C) 2012 Andrew Miller, Alex Nitz
+# Copyright (C) 2012 Andrew Miller, Alex Nitz, Tito Dal Canton
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -23,23 +23,50 @@ import os.path
 from pycbc.types import TimeSeries
 import copy
 
-FrMap = {                                                  
-lalframe.LAL_FRAMEU_FR_VECT_2S:[lalframe.FrReadINT2TimeSeries, numpy.int16],                                                   
-lalframe.LAL_FRAMEU_FR_VECT_4S:[lalframe.FrReadINT4TimeSeries, numpy.int32],  
-lalframe.LAL_FRAMEU_FR_VECT_8S:[lalframe.FrReadINT8TimeSeries, numpy.int64],                       
-lalframe.LAL_FRAMEU_FR_VECT_4U:[lalframe.FrReadREAL4TimeSeries, numpy.float32], 
-lalframe.LAL_FRAMEU_FR_VECT_8U:[lalframe.FrReadREAL8TimeSeries, numpy.float64],                   
-lalframe.LAL_FRAMEU_FR_VECT_8C:[lalframe.FrReadCOMPLEX8TimeSeries, numpy.complex64],    
-lalframe.LAL_FRAMEU_FR_VECT_16C:[lalframe.FrReadCOMPLEX16TimeSeries, numpy.complex128],                                                           
+
+# map frame vector types to corresponding functions and Numpy types
+_fr_type_map = {
+    lalframe.LAL_FRAMEU_FR_VECT_2S: [
+        lalframe.FrReadINT2TimeSeries, numpy.int16,
+        lal.CreateINT2TimeSeries,
+        lalframe.FrGetINT2TimeSeriesMetadata
+    ],
+    lalframe.LAL_FRAMEU_FR_VECT_4S: [
+        lalframe.FrReadINT4TimeSeries, numpy.int32,
+        lal.CreateINT4TimeSeries,
+        lalframe.FrGetINT4TimeSeriesMetadata
+    ],
+    lalframe.LAL_FRAMEU_FR_VECT_8S: [
+        lalframe.FrReadINT8TimeSeries, numpy.int64,
+        lal.CreateINT8TimeSeries,
+        lalframe.FrGetINT8TimeSeriesMetadata
+    ],
+    lalframe.LAL_FRAMEU_FR_VECT_4U: [
+        lalframe.FrReadREAL4TimeSeries, numpy.float32,
+        lal.CreateREAL4TimeSeries,
+        lalframe.FrGetREAL4TimeSeriesMetadata
+    ],
+    lalframe.LAL_FRAMEU_FR_VECT_8U: [
+        lalframe.FrReadREAL8TimeSeries, numpy.float64,
+        lal.CreateREAL8TimeSeries,
+        lalframe.FrGetREAL8TimeSeriesMetadata
+    ],
+    lalframe.LAL_FRAMEU_FR_VECT_8C: [
+        lalframe.FrReadCOMPLEX8TimeSeries, numpy.complex64,
+        lal.CreateCOMPLEX8TimeSeries,
+        lalframe.FrGetCOMPLEX8TimeSeriesMetadata
+    ],
+    lalframe.LAL_FRAMEU_FR_VECT_16C: [
+        lalframe.FrReadCOMPLEX16TimeSeries, numpy.complex128,
+        lal.CreateCOMPLEX16TimeSeries,
+        lalframe.FrGetCOMPLEX16TimeSeriesMetadata
+    ],
 }
-
-FRAME_SAMPLE_RATE = 16384
-
 
 def _read_channel(channel, stream, start, duration):
     channel_type = lalframe.FrGetTimeSeriesType(channel, stream)
-    read_func = FrMap[channel_type][0]
-    d_type = FrMap[channel_type][1]
+    read_func = _fr_type_map[channel_type][0]
+    d_type = _fr_type_map[channel_type][1]
     data = read_func(stream, channel, start, duration, 0)
     return TimeSeries(data.data.data, delta_t=data.deltaT, epoch=start, dtype=d_type)
 
@@ -74,6 +101,9 @@ def read_frame(location, channels, start_time=None, end_time=None, duration=None
         frame file/cache for a given channel or channels. 
     """
 
+    if end_time and duration:
+        raise ValueError("end time and duration are mutually exclusive")
+
     dir_name, file_name = os.path.split(location)
     base_name, file_extension = os.path.splitext(file_name)
 
@@ -88,30 +118,42 @@ def read_frame(location, channels, start_time=None, end_time=None, duration=None
     stream.mode = lalframe.LAL_FR_VERBOSE_MODE
     lalframe.FrSetMode(stream, stream.mode | lalframe.LAL_FR_CHECKSUM_MODE)
 
-    if end_time  and duration:
-        raise ValueError("end time and duration are mutually exclusive")
+    # determine duration of data
+    if type(channels) is list:
+        first_channel = channels[0]
+    else:
+        first_channel = channels
+    data_length = lalframe.FrGetVectorLength(first_channel, stream)
+    channel_type = lalframe.FrGetTimeSeriesType(first_channel, stream)
+    create_series_func = _fr_type_map[channel_type][2]
+    get_series_metadata_func = _fr_type_map[channel_type][3]
+    series = create_series_func(first_channel, stream.epoch, 0, 0,
+                                lal.lalADCCountUnit, 0)
+    get_series_metadata_func(series, stream)
+    data_duration = data_length * series.deltaT
 
     if start_time is None:
         start_time = stream.epoch*1
-
     if end_time is None:
-        if type(channels) is list:
-            end_time = start_time + lalframe.FrGetVectorLength(channels[0], stream) / FRAME_SAMPLE_RATE
-        else:
-            end_time = start_time + lalframe.FrGetVectorLength(channels, stream) / FRAME_SAMPLE_RATE
+        end_time = start_time + data_duration
 
     if start_time is not lal.LIGOTimeGPS:
         start_time = lal.LIGOTimeGPS(start_time)
-
     if end_time is not lal.LIGOTimeGPS:
         end_time = lal.LIGOTimeGPS(end_time)
 
     if duration is None:
-        duration = float(end_time-start_time)
+        duration = float(end_time - start_time)
     else:
         duration = float(duration)
-        
-    if type(channels) is list: 
+
+    # lalframe behaves dangerously with invalid duration so catch it here
+    if duration <= 0:
+        raise ValueError("Negative or null duration")
+    if duration > data_duration:
+        raise ValueError("Requested duration longer than available data")
+
+    if type(channels) is list:
         all_data = []
         for channel in channels:
             channel_data = _read_channel(channel, stream, start_time, duration)
@@ -120,8 +162,3 @@ def read_frame(location, channels, start_time=None, end_time=None, duration=None
         return all_data
     else:
         return _read_channel(channels, stream, start_time, duration)
-
-    
-
-        
-    
