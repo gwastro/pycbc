@@ -76,7 +76,7 @@ class FrameTestBase(base_test.function_base):
         for a in inputs:
             if isinstance(a,pycbc.types.Array):
                 self.assertEqual(a.delta_t, self.delta_t)
-                self.assertTrue(a.dtype == self.dtype)
+                self.assertEqual(a.dtype, self.dtype)
 
     def setUp(self):
         if _options['scheme'] == 'cpu':
@@ -111,6 +111,7 @@ class FrameTestBase(base_test.function_base):
         self.epoch = lal.LIGOTimeGPS(123456,0)
         
     def test_frame(self):
+        # TODO also test reading a cache
         
         # This is a file in the temp directory that will be deleted when it is garbage collected
         frmfile = tempfile.NamedTemporaryFile()  
@@ -127,19 +128,22 @@ class FrameTestBase(base_test.function_base):
                 # Chacking all values
                 self.checkCurrentState((ts1,),(self.data1,),self.places)
                 # Now checking the start time
-                self.assertTrue(ts1.start_time == self.epoch)
+                self.assertEqual(ts1.start_time, self.epoch)
                 # And the duration
-                self.assertTrue(ts1.end_time-ts1.start_time == self.size*self.delta_t)
+                self.assertEqual(ts1.end_time - ts1.start_time,
+                                 self.size * self.delta_t)
                 
                 # Now reading multiple channels
                 ts2 = pycbc.frame.read_frame(filename,['channel1','channel2'])
                 # We should get back a list
                 self.assertTrue(type(ts2) is list)
                 self.checkCurrentState(ts2, (self.data1,self.data2), self.places)
-                self.assertTrue(ts2[0].start_time == self.epoch)
-                self.assertTrue(ts2[1].start_time == self.epoch)
-                self.assertTrue(ts2[0].end_time-ts2[0].start_time == self.size*self.delta_t)
-                self.assertTrue(ts2[1].end_time-ts2[1].start_time == self.size*self.delta_t)
+                self.assertEqual(ts2[0].start_time, self.epoch)
+                self.assertEqual(ts2[1].start_time, self.epoch)
+                self.assertEqual(ts2[0].end_time - ts2[0].start_time,
+                                 self.size * self.delta_t)
+                self.assertEqual(ts2[1].end_time - ts2[1].start_time,
+                                 self.size * self.delta_t)
                 
                 # These are the times and indices for the segment we will try to read
                 start = self.epoch+10
@@ -159,10 +163,10 @@ class FrameTestBase(base_test.function_base):
                 # Now we will check those two TimeSeries
                 self.checkCurrentState((ts3,ts4), (self.data1[startind:endind],self.data1[startind:endind]), self.places)
                 self.assertTrue(40 - (float(ts3.end_time)-float(ts3.start_time)) < self.delta_t)
-                self.assertTrue(ts3.start_time == start)
+                self.assertEqual(ts3.start_time, start)
                 
                 self.assertTrue(40 - (float(ts4.end_time)-float(ts4.start_time)) < self.delta_t)
-                self.assertTrue(ts4.start_time == start)
+                self.assertEqual(ts4.start_time, start)
 
                 # And now some cases that should raise errors
 
@@ -174,16 +178,6 @@ class FrameTestBase(base_test.function_base):
                 self.assertRaises(ValueError, pycbc.frame.read_frame, filename,
                                   'channel1', start_time=self.epoch+1,
                                   end_time=self.epoch)
-                # Non integer times should also raise an error
-                badtime = lal.LIGOTimeGPS(int(self.epoch)+5,1000)
-                
-                self.assertRaises(ValueError, pycbc.frame.read_frame, filename,
-                                  'channel1', start_time=self.epoch,
-                                  end_time=badtime)
-                self.assertRaises(ValueError, pycbc.frame.read_frame, filename,
-                                  'channel1', start_time=float(self.epoch),
-                                  end_time=float(badtime))
-    
 
 if _options['scheme']=='cpu':
     context = pycbc.scheme.CPUScheme()

@@ -24,39 +24,24 @@ from pycbc.types import TimeSeries
 import copy
 
 
-# map frame vector types to corresponding functions and Numpy types
+# map LAL series types to corresponding functions and Numpy types
 _fr_type_map = {
-    lalframe.LAL_FRAMEU_FR_VECT_2S: [
-        lalframe.FrReadINT2TimeSeries, numpy.int16,
-        lal.CreateINT2TimeSeries,
-        lalframe.FrGetINT2TimeSeriesMetadata
-    ],
-    lalframe.LAL_FRAMEU_FR_VECT_4S: [
-        lalframe.FrReadINT4TimeSeries, numpy.int32,
-        lal.CreateINT4TimeSeries,
-        lalframe.FrGetINT4TimeSeriesMetadata
-    ],
-    lalframe.LAL_FRAMEU_FR_VECT_8S: [
-        lalframe.FrReadINT8TimeSeries, numpy.int64,
-        lal.CreateINT8TimeSeries,
-        lalframe.FrGetINT8TimeSeriesMetadata
-    ],
-    lalframe.LAL_FRAMEU_FR_VECT_4U: [
+    lal.LAL_S_TYPE_CODE: [
         lalframe.FrReadREAL4TimeSeries, numpy.float32,
         lal.CreateREAL4TimeSeries,
         lalframe.FrGetREAL4TimeSeriesMetadata
     ],
-    lalframe.LAL_FRAMEU_FR_VECT_8U: [
+    lal.LAL_D_TYPE_CODE: [
         lalframe.FrReadREAL8TimeSeries, numpy.float64,
         lal.CreateREAL8TimeSeries,
         lalframe.FrGetREAL8TimeSeriesMetadata
     ],
-    lalframe.LAL_FRAMEU_FR_VECT_8C: [
+    lal.LAL_C_TYPE_CODE: [
         lalframe.FrReadCOMPLEX8TimeSeries, numpy.complex64,
         lal.CreateCOMPLEX8TimeSeries,
         lalframe.FrGetCOMPLEX8TimeSeriesMetadata
     ],
-    lalframe.LAL_FRAMEU_FR_VECT_16C: [
+    lal.LAL_Z_TYPE_CODE: [
         lalframe.FrReadCOMPLEX16TimeSeries, numpy.complex128,
         lal.CreateCOMPLEX16TimeSeries,
         lalframe.FrGetCOMPLEX16TimeSeriesMetadata
