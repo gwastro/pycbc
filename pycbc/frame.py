@@ -92,7 +92,7 @@ def read_frame(location, channels, start_time=None, end_time=None, duration=None
     dir_name, file_name = os.path.split(location)
     base_name, file_extension = os.path.splitext(file_name)
 
-    if file_extension == ".lcf":
+    if file_extension == ".lcf" or file_extension == ".cache":
         cache = lalframe.FrImportCache(location)
         stream = lalframe.FrCacheOpen(cache)
     elif file_extension == ".gwf": 
