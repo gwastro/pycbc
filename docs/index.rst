@@ -3,10 +3,19 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+###################
 PyCBC documentation
-===================
+###################
 
-Contents:
+PyCBC is a python toolkit for analysis of data from gravitational-wave laser interferometer detectors with the goal of detecting and studing signals from compact binary coalescences (CBCs).
+
+The goals of the PyCBC project are to
+
+- Create a flexible, extensible sw production code for CBC analysis that can be released for the public
+- Enable simple, easy and transparent access for various many-core architectures like GPUs
+- Ultimately become the data analysis tool of the 'advanced era'
+
+Documentation contents:
 
 .. toctree::
    :maxdepth: 1
