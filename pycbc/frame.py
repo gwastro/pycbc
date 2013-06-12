@@ -131,7 +131,7 @@ def read_frame(location, channels, start_time=None, end_time=None, duration=None
         duration = float(end_time - start_time)
     else:
         duration = float(duration)
-    print "DATA DURATION", data_duration
+
     # lalframe behaves dangerously with invalid duration so catch it here
     if duration <= 0:
         raise ValueError("Negative or null duration")

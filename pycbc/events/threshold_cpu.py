@@ -29,7 +29,7 @@ def threshold(series, value):
     mask = abs(arr) > value
     vals = arr[mask]
     locs = mask.nonzero()[0]
-    peaks = numpy.array(numpy.zeros(len(vals),), dtype=events.subset_dtype(series.dtype))
+    peaks = numpy.zeros(len(vals), dtype=events.subset_dtype(series.dtype))
     peaks['loc'] = locs
     peaks['val'] = vals
     return peaks
