@@ -126,6 +126,9 @@ with ctx:
         prec_fac = pycbc.waveform.get_waveform_filter_precondition(opt.approximant,  len(segments[0]), segments[0].delta_f)
         for seg in segments:
             seg *= prec_fac.astype(complex64)          
+        bank_psd = psd / prec_fac.astype(complex64)
+    else:
+        bank_psd = psd
             
     template_work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
     snr_work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
@@ -159,6 +162,8 @@ with ctx:
         bank_veto_gen_templates = []
         for bank_template in bank_veto_bank:
           bank_veto_gen_templates.append(bank_template)
+    else:
+        num_bank_veto_templates = 0
 
     hnorm_vec = None
     if pycbc.waveform.waveform_norm_exists(opt.approximant):
@@ -166,19 +171,26 @@ with ctx:
         hnorm_vec = pycbc.waveform.get_waveform_filter_norm(opt.approximant, psd, len(segments[0]), 
                                                             segments[0].delta_f, opt.low_frequency_cutoff)      
     i = 0    
-    event_mgr = pycbc.events.EventManager(opt, ['time_index', 'snr', 'chisq'], [int, complex64, float32])
+    event_mgr = pycbc.events.EventManager(opt, ['time_index', 'snr', 'chisq','bank_chisq'], [int, complex64, float32, float32],num_bank_templates=num_bank_veto_templates)
 
-    for stilde in segments:
+    cumulative_index = opt.segment_length / 4
+    for segNum,stilde in enumerate(segments):
         # First we want to generate the overlaps between the bank veto templates
         # and the current segment
         if opt.bank_veto_bank_file:
+            bank_snrs = []
+            bank_norms = []
             for kk,bank_template in enumerate(bank_veto_bank):
                 # For every bank veto template compute overlap between template
                 # and the data
-                bank_snrs = []
-                bank_norms = []
+                if hnorm_vec is not None:
+                    k_end = int(bank_template.end_frequency / bank_template.delta_f)
+                    bank_hnorm = hnorm_vec[k_end]
+                else:
+                    bank_hnorm = sigmasq(bank_template, psd, \
+                            low_frequency_cutoff=opt.low_frequency_cutoff)
                 curr_bank_snr,_,curr_bank_norm = matched_filter_core(\
-                        bank_template,stilde,\
+                        bank_template,stilde,h_norm=bank_hnorm,\
                         low_frequency_cutoff=opt.low_frequency_cutoff,\
                         out=bank_veto_snr_work_mem[kk], corr_out=corr_work_mem)
                 # SNR time series stored here
@@ -189,11 +201,11 @@ with ctx:
         for template in bank:   
             # We need to calculate the overlap between the search template
             # and every bank_veto_template
-            bank_veto_curr_overlaps = []
             if opt.bank_veto_bank_file:
+                bank_veto_curr_overlaps = []
                 for bank_template in bank_veto_bank:
                     bank_veto_curr_overlaps.append(pycbc.filter.overlap_cplx(\
-                            template,bank_template,psd=psd,\
+                            template,bank_template,psd=bank_psd,\
                             low_frequency_cutoff=opt.low_frequency_cutoff))
                         
             if hnorm_vec is not None:
@@ -207,16 +219,20 @@ with ctx:
                 if opt.chisq_bins != 0:
                     chisq_bins = pycbc.vetoes.power_chisq_bins(template, opt.chisq_bins, psd, opt.low_frequency_cutoff)
        
-            logging.info("Filtering " + str(i+1)+"/"+str(len(bank)) )       
-            cumulative_index = opt.segment_length / 4
+            logging.info("Filtering " + str(i+1)+"/"+str(len(bank)*len(segments)) )       
         
-            event_mgr.new_template(tmplt=template.params, 
-                                   sigmasq=h_norm, 
-                                   template_amplitude_norm=template.amplitude_norm)
-                                       
             snr, corr, norm = matched_filter_core(template, stilde, h_norm=h_norm, 
                                        low_frequency_cutoff=opt.low_frequency_cutoff, 
                                        out=snr_work_mem, corr_out=corr_work_mem)
+
+            # This only needs to be added once
+            # FIXME: Alex to rethink this around the new ordering and add
+            # details of what this actually is doing
+            event_mgr.new_template(tmplt=template.params,
+                                 sigmasq=h_norm,
+                                 template_amplitude_norm=template.amplitude_norm)
+            event_mgr.add_template_params(snr_norm=norm)
+
                                        
             snr_start = opt.segment_length / 4
             snr_end  =  opt.segment_length * 3 / 4 
@@ -238,8 +254,10 @@ with ctx:
                 if (len(segment_events) > 0) and (opt.bank_veto_bank_file):
                     bank_veto = pycbc.vetoes.bank_chisq_from_filters(snr,norm,\
                             bank_snrs,bank_norms,bank_veto_curr_overlaps)
+                    bank_vetov = bank_veto.take(segment_events['loc']+snr_start).numpy()
 
-                    numpy.savetxt('bank_veto.txt',bank_veto)
+                else:
+                    bank_vetov = None
 
                 chisqv = None
                 if (len(segment_events) > 0) and (opt.chisq_bins != 0):
@@ -250,19 +268,17 @@ with ctx:
                     idx = segment_events['loc']
                     snrv = segment_events['val']
                     idx += cumulative_index
-                    event_mgr.add_template_events(["snr", "time_index", "chisq"], [snrv, idx, chisqv])
+                    event_mgr.add_template_events(["snr", "time_index", "chisq", "bank_chisq"], [snrv, idx, chisqv, bank_vetov])
        
-            cumulative_index += seg_width
-        event_mgr.add_template_params(snr_norm=norm)
+            if opt.cluster_method == "window":
+                cluster_window = opt.cluster_window * opt.sample_rate
+            elif opt.cluster_method == "template":
+                cluster_window = template.length_in_time * opt.sample_rate
         
-        if opt.cluster_method == "window":
-            cluster_window = opt.cluster_window * opt.sample_rate
-        elif opt.cluster_method == "template":
-            cluster_window = template.length_in_time * opt.sample_rate
-        
-        event_mgr.cluster_template_events("time_index", "snr", cluster_window) 
-        event_mgr.finalize_template_events()
-        i+=1
+            event_mgr.cluster_template_events("time_index", "snr", cluster_window) 
+            event_mgr.finalize_template_events()
+            i+=1
+        cumulative_index += seg_width
         
 if opt.maximization_interval:
     window_size = int(opt.maximization_interval * opt.sample_rate / 1000)

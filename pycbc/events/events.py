@@ -202,8 +202,13 @@ class EventManager(object):
             row.ifo = ifo
             
             if self.opt.chisq_bins != 0:
+                # FIXME: This is *not* the dof!!!
                 row.chisq_dof = self.opt.chisq_bins
                 row.chisq = event['chisq']
+
+            if self.opt.bank_veto_bank_file:
+                row.bank_chisq_dof = self.global_params['num_bank_templates']
+                row.bank_chisq = event['bank_chisq']
             
             row.eff_distance = sigmasq ** (0.5) / abs(snr * snr_norm) * pycbc.DYN_RANGE_FAC * template_amp
             row.snr = abs(snr) * snr_norm
