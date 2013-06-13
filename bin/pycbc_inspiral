@@ -23,6 +23,7 @@ parser = OptionParser(
 
 parser.add_option("-V", "--verbose", action="store_true", help="print extra debugging information", default=False )
 parser.add_option("--bank-file", type=str)
+parser.add_option("--bank-veto-bank-file", type=str)
 parser.add_option("--injection-file", type=str)
 parser.add_option("--trig-start-time", type=int, default=0)
 parser.add_option("--trig-end-time", type=int, default=0)
@@ -136,6 +137,29 @@ with ctx:
                                        dtype=complex64, 
                                        phase_order=opt.order,
                                        out=template_work_mem)  
+    if opt.bank_veto_bank_file:
+        # Create memory to store bank veto templates
+        bank_veto_work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
+        # Read in the bank veto bank
+        bank_veto_bank = pycbc.waveform.TemplateBank(opt.bank_veto_bank_file,\
+                opt.approximant, len(segments[0]),segments[0].delta_f,\
+                opt.low_frequency_cutoff,dtype=complex64,phase_order=opt.order,\
+                out=bank_veto_work_mem)
+        # The following command actually generates all the templates and 
+        # stores them as a list of frequency series
+        bank_veto_bank = list(bank_veto_bank)
+        # Count the templates
+        num_bank_veto_templates = len(bank_veto_bank)
+        # Create memory for storing the bank veto filter time series
+        bank_veto_snr_work_mem = []
+        for i in range(num_bank_veto_templates):
+            bank_veto_snr_work_mem.append(\
+                    zeros((len(segments[0])-1)*2, dtype=complex64))
+        # Actually generate the templates
+        bank_veto_gen_templates = []
+        for bank_template in bank_veto_bank:
+          bank_veto_gen_templates.append(bank_template)
+
     hnorm_vec = None
     if pycbc.waveform.waveform_norm_exists(opt.approximant):
         logging.info("Precalculating template normalizations")
@@ -143,27 +167,53 @@ with ctx:
                                                             segments[0].delta_f, opt.low_frequency_cutoff)      
     i = 0    
     event_mgr = pycbc.events.EventManager(opt, ['time_index', 'snr', 'chisq'], [int, complex64, float32])
-    
-    for template in bank:   
-        if hnorm_vec is not None:
-            k_end = int(template.end_frequency / template.delta_f)
-            h_norm = hnorm_vec[k_end]
-            if opt.chisq_bins != 0:
-                chisq_bins = pycbc.vetoes.power_chisq_bins_from_sigmasq_series(hnorm_vec, opt.chisq_bins,
-                                 int(opt.low_frequency_cutoff / template.delta_f), k_end)
-        else:
-            h_norm = sigmasq(template, psd, low_frequency_cutoff=opt.low_frequency_cutoff)
-            if opt.chisq_bins != 0:
-                chisq_bins = pycbc.vetoes.power_chisq_bins(template, opt.chisq_bins, psd, opt.low_frequency_cutoff)
-      
-        logging.info("Filtering " + str(i+1)+"/"+str(len(bank)) )       
-        cumulative_index = opt.segment_length / 4
+
+    for stilde in segments:
+        # First we want to generate the overlaps between the bank veto templates
+        # and the current segment
+        if opt.bank_veto_bank_file:
+            for kk,bank_template in enumerate(bank_veto_bank):
+                # For every bank veto template compute overlap between template
+                # and the data
+                bank_snrs = []
+                bank_norms = []
+                curr_bank_snr,_,curr_bank_norm = matched_filter_core(\
+                        bank_template,stilde,\
+                        low_frequency_cutoff=opt.low_frequency_cutoff,\
+                        out=bank_veto_snr_work_mem[kk], corr_out=corr_work_mem)
+                # SNR time series stored here
+                bank_snrs.append(curr_bank_snr)
+                # Template normalization factor stored here
+                bank_norms.append(curr_bank_norm)
+ 
+        for template in bank:   
+            # We need to calculate the overlap between the search template
+            # and every bank_veto_template
+            bank_veto_curr_overlaps = []
+            if opt.bank_veto_bank_file:
+                for bank_template in bank_veto_bank:
+                    bank_veto_curr_overlaps.append(pycbc.filter.overlap_cplx(\
+                            template,bank_template,psd=psd,\
+                            low_frequency_cutoff=opt.low_frequency_cutoff))
+                        
+            if hnorm_vec is not None:
+                k_end = int(template.end_frequency / template.delta_f)
+                h_norm = hnorm_vec[k_end]
+                if opt.chisq_bins != 0:
+                    chisq_bins = pycbc.vetoes.power_chisq_bins_from_sigmasq_series(hnorm_vec, opt.chisq_bins,
+                                     int(opt.low_frequency_cutoff / template.delta_f), k_end)
+            else:
+                h_norm = sigmasq(template, psd, low_frequency_cutoff=opt.low_frequency_cutoff)
+                if opt.chisq_bins != 0:
+                    chisq_bins = pycbc.vetoes.power_chisq_bins(template, opt.chisq_bins, psd, opt.low_frequency_cutoff)
+       
+            logging.info("Filtering " + str(i+1)+"/"+str(len(bank)) )       
+            cumulative_index = opt.segment_length / 4
         
-        event_mgr.new_template(tmplt=template.params, 
-                               sigmasq=h_norm, 
-                               template_amplitude_norm=template.amplitude_norm)
+            event_mgr.new_template(tmplt=template.params, 
+                                   sigmasq=h_norm, 
+                                   template_amplitude_norm=template.amplitude_norm)
                                        
-        for stilde in segments:
             snr, corr, norm = matched_filter_core(template, stilde, h_norm=h_norm, 
                                        low_frequency_cutoff=opt.low_frequency_cutoff, 
                                        out=snr_work_mem, corr_out=corr_work_mem)
@@ -184,6 +234,12 @@ with ctx:
                     
             if snr_start < snr_end:
                 segment_events = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm)                 
+
+                if (len(segment_events) > 0) and (opt.bank_veto_bank_file):
+                    bank_veto = pycbc.vetoes.bank_chisq_from_filters(snr,norm,\
+                            bank_snrs,bank_norms,bank_veto_curr_overlaps)
+
+                    numpy.savetxt('bank_veto.txt',bank_veto)
 
                 chisqv = None
                 if (len(segment_events) > 0) and (opt.chisq_bins != 0):

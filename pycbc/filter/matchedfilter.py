@@ -374,27 +374,60 @@ def overlap(vec1, vec2, psd=None, low_frequency_cutoff=None,
     -------
     overlap: float
     """
+        
+    return overlap_cplx(vec1, vec2, psd=psd, \
+            low_frequency_cutoff=low_frequency_cutoff,\
+            high_frequency_cutoff=high_frequency_cutoff,\
+            normalized=normalized).real
+
+def overlap_cplx(vec1, vec2, psd=None, low_frequency_cutoff=None,
+          high_frequency_cutoff=None, normalized=True):
+    """Return the complex overlap between the two TimeSeries or FrequencySeries.
+
+    Parameters
+    ----------
+    vec1 : TimeSeries or FrequencySeries 
+        The input vector containing a waveform.
+    vec2 : TimeSeries or FrequencySeries 
+        The input vector containing a waveform.
+    psd : Frequency Series
+        A power spectral density to weight the overlap.
+    low_frequency_cutoff : {None, float}, optional
+        The frequency to begin the overlap.
+    high_frequency_cutoff : {None, float}, optional
+        The frequency to stop the overlap.
+    normalized : {True, boolean}, optional
+        Set if the overlap is normalized. If true, it will range from 0 to 1. 
+
+    Returns
+    -------
+    overlap: complex
+    """
     htilde = make_frequency_series(vec1)
     stilde = make_frequency_series(vec2)
 
+    kmin, kmax = get_cutoff_indices(low_frequency_cutoff,
+            high_frequency_cutoff, stilde.delta_f, (len(stilde)-1) * 2)
+
     if psd:
-        inner = htilde.weighted_inner(stilde, psd).real
+        inner = (htilde[kmin:kmax]).weighted_inner(stilde[kmin:kmax], psd[kmin:kmax])
     else:
-        inner = htilde.inner(stilde).real
-     
-    if normalized:   
-        sig1 = sigma(vec1, psd=psd, low_frequency_cutoff=low_frequency_cutoff, 
+        inner = (htilde[kmin:kmax]).inner(stilde[kmin:kmax])
+
+    if normalized:
+        sig1 = sigma(vec1, psd=psd, low_frequency_cutoff=low_frequency_cutoff,
                      high_frequency_cutoff=high_frequency_cutoff)
-        sig2 = sigma(vec2, psd=psd, low_frequency_cutoff=low_frequency_cutoff, 
+        sig2 = sigma(vec2, psd=psd, low_frequency_cutoff=low_frequency_cutoff,
                      high_frequency_cutoff=high_frequency_cutoff)
         norm = 1 / sig1 / sig2
     else:
         norm = 1
-        
+
     return 4 * htilde.delta_f * inner * norm
+
       
 
 __all__ = ['match', 'matched_filter', 'sigmasq', 'sigma',
-           'sigmasq_series', 'make_frequency_series', 'overlap',
+           'sigmasq_series', 'make_frequency_series', 'overlap', 'overlap_cplx',
            'matched_filter_core']
 
