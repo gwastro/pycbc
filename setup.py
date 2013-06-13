@@ -165,6 +165,16 @@ class TestBase(Command):
         for test in test_results:
             print test
 
+class build_docs(Command):
+    user_options = []
+    description = "Build the documenation pages"
+    def initialize_options(self):
+        pass
+    def finalize_options(self):
+        pass
+    def run(self):
+        subprocess.check_output("cd docs; sphinx-apidoc -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html", 
+                            stderr=subprocess.STDOUT, shell=True)
 
 class test(Command):
     def has_cuda(self):
@@ -218,6 +228,7 @@ setup (
     author = 'Ligo Virgo Collaboration - PyCBC team',
     url = 'https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home',
     cmdclass = { 'test'  : test,
+                 'build_docs' : build_docs,
                  'install' : install,
                  'test_cpu':test_cpu,
                  'test_cuda':test_cuda,
