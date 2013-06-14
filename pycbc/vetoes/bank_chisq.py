@@ -23,6 +23,8 @@
 #
 
 from pycbc.types import zeros, real_same_precision_as, TimeSeries
+from pycbc.filter import overlap_cplx, matched_filter_core
+from pycbc.waveform import TemplateBank
 
 def bank_chisq_from_filters(tmplt_snr, tmplt_norm, bank_snrs, bank_norms,\
         tmplt_bank_matchs):
@@ -72,3 +74,61 @@ def bank_chisq_from_filters(tmplt_snr, tmplt_norm, bank_snrs, bank_norms,\
                 (1 - bank_match*bank_match.conjugate()).real
 
     return bank_chisq
+    
+class BankVeto(object):
+    """This class reads in a template bank file for a bank veto, handles the
+       memory management of its filters internally, and calculates the bank
+       veto TimeSeries.
+    """
+    def __init__(self, bank_file, approximant, seg_len_freq, delta_f, f_low, dtype, **kwds):
+        self.filters = []
+        self.snrs_work_mem = []
+        
+        self.dtype = dtype
+        self.delta_f = delta_f
+        self.f_low = f_low
+        self.seg_len_freq = seg_len_freq
+        self.seg_len_time = (seg_len_freq-1)*2
+    
+        # Read in the bank veto bank
+        bank_veto_bank = TemplateBank(bank_file,
+                approximant, self.seg_len_freq, 
+                delta_f, f_low, dtype=dtype, **kwds)
+                
+        # The following command actually generates all the filters
+        self.filters = list(bank_veto_bank)
+        
+        # Create memory for storing the bank veto filter time series
+        for i in range(len(self)):
+            self.snrs_work_mem.append(zeros(self.seg_len_time, dtype=dtype))
+        
+    def __len__(self):
+        return len(self.filters)
+        
+    def segment_snrs(self, stilde, psd=None):
+        """ Return the snrs for each bank filter against stilde.
+        """
+        snrs = []
+        norms = []
+        
+        for i, bank_template in enumerate(self.filters):
+            # For every template compute the snr against the stilde segment
+            snr, corr, norm = matched_filter_core(
+                    bank_template, stilde, psd,
+                    low_frequency_cutoff=self.f_low,
+                    out=self.snrs_work_mem[i])
+            # SNR time series stored here
+            snrs.append(snr)
+            # Template normalization factor stored here
+            norms.append(norm)
+            
+        return snrs, norms
+        
+    def template_overlaps(self, template, psd=None):
+        overlaps = []
+        for bank_template in self.filters:
+            overlap = overlap_cplx(template, bank_template, psd=psd,
+                    low_frequency_cutoff=self.f_low)
+            overlaps.append(overlap)
+        return overlaps
+
