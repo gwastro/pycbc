@@ -35,6 +35,11 @@ from pycbc.types import FrequencySeries as _FrequencySeries
 
 from numpy import dtype
 
+# Package initialization: loop over *possible* backends, trying to
+# import them, and adding to the list of available backends. Also set
+# the default backend for each of the three schemes, and it is an error
+# if we cannot import that.
+
 # Helper function to import a possible module and update available.
 
 def _backend_update(key,possible,available):
@@ -42,79 +47,94 @@ def _backend_update(key,possible,available):
                      fromlist=['pycbc.fft'])
     available.update({key:mod})
 
-# Package initialization: loop over *possible* backends, trying to
-# import them, and adding to the list of available backends. Also set
-# the default backend for each of the three schemes, and it is an error
-# if we cannot import that.
-
-# CPU backends:
-
-import lalfft as _cpu_default
-
 # The next part is a little tricky.  There are two issues:
 #  (1) The logical name for what the user specifies as the backend
 #      may not be something we can call the module (e.g., 'numpy')
 #  (2) We envision a scenario in which several backends supported
 #      in principle may not be available on all platforms (even
 #      all CPU platforms)
-_cpu_possible_backends = {'numpy':'npfft',
-                          'lal':'lalfft'}
-_cpu_backends = {'Default': _cpu_default}
-cpu_backends = ['Default']
+#
+# We also define a module-level function, call that, and delete
+# it, so that we don't pollute the module-level namespace with all
+# of the variables and functions used in setting this up.
 
-# NOTE: Syntax below for iteration over dict keys should change in
-# Python 3!
-for backend in _cpu_possible_backends.iterkeys():
-    try:
-        _backend_update(backend,_cpu_possible_backends,_cpu_backends)
-        cpu_backends.append(backend)
-    except ImportError:
-        pass
+# The global lists, intended for users to check which backends are
+# available.  They should be empty if the corresponding scheme
+# is not available
+cpu_backends = []
+cuda_backends = []
+opencl_backends = []
 
-# CUDA backends;
-if pycbc.HAVE_CUDA:
-    import cufft as _cuda_default
-    _cuda_possible_backends = {'cuda' : 'cufft',
-                               'pyfft':'cuda_pyfft'}
-    _cuda_backends = {'Default' : _cuda_default}
-    cuda_backends = ['Default']
+# This is a private global variable, a dict of dicts indexed
+# by scheme and then by backend
+_fft_backends = {}
 
-    # NOTE: Syntax below for iteration over dict keys should change in
-    # Python 3!
-    for backend in _cuda_possible_backends.iterkeys():
-        try:
-            _backend_update(backend,_cuda_possible_backends,_cuda_backends)
-            cuda_backends.append(backend)
-        except ImportError:
-            pass
-
-# OpenCL backends; blank for now
-if pycbc.HAVE_OPENCL:
-    import cl_pyfft as _opencl_default
-    _opencl_possible_backends = {'pyfft' : 'cl_pyfft'}
-    _opencl_backends = {'Default': _opencl_default}
-    opencl_backends = ['Default']
+def _setup_fft():
+    # CPU backends; PyCBC requires LAL so it's an error if the following
+    # fails:
+    import lalfft as _cpu_default
+    _cpu_possible_backends = {'numpy':'npfft',
+                              'lal':'lalfft'}
+    _cpu_backends = {'Default': _cpu_default}
+    cpu_backends.append('Default')
 
     # NOTE: Syntax below for iteration over dict keys should change in
     # Python 3!
-    for backend in _opencl_possible_backends.iterkeys():
+    for backend in _cpu_possible_backends.iterkeys():
         try:
-            _backend_update(backend,_opencl_possible_backends,
-                            _opencl_backends)
-            opencl_backends.append(backend)
+            _backend_update(backend,_cpu_possible_backends,_cpu_backends)
+            cpu_backends.append(backend)
         except ImportError:
             pass
 
-# Now create a dict-of-dicts of backends
+    # CUDA backends;
+    if pycbc.HAVE_CUDA:
+        import cufft as _cuda_default
+        _cuda_possible_backends = {'cuda' : 'cufft',
+                                   'pyfft':'cuda_pyfft'}
+        _cuda_backends = {'Default' : _cuda_default}
+        cuda_backends.append('Default')
 
-_fft_backends = {pycbc.scheme.CPUScheme: _cpu_backends}
-if pycbc.HAVE_CUDA:
-    _fft_backends.update({pycbc.scheme.CUDAScheme:
-                          _cuda_backends})
-if pycbc.HAVE_OPENCL:
-    _fft_backends.update({pycbc.scheme.OpenCLScheme:
-                              _opencl_backends})
+        # NOTE: Syntax below for iteration over dict keys should change in
+        # Python 3!
+        for backend in _cuda_possible_backends.iterkeys():
+            try:
+                _backend_update(backend,_cuda_possible_backends,_cuda_backends)
+                cuda_backends.append(backend)
+            except ImportError:
+                pass
 
+    # OpenCL backends; blank for now
+    if pycbc.HAVE_OPENCL:
+        import cl_pyfft as _opencl_default
+        _opencl_possible_backends = {'pyfft' : 'cl_pyfft'}
+        _opencl_backends = {'Default': _opencl_default}
+        opencl_backends.append('Default')
+
+        # NOTE: Syntax below for iteration over dict keys should change in
+        # Python 3!
+        for backend in _opencl_possible_backends.iterkeys():
+            try:
+                _backend_update(backend,_opencl_possible_backends,
+                                _opencl_backends)
+                opencl_backends.append(backend)
+            except ImportError:
+                pass
+
+    # Finally, we update our global dict-of-dicts:
+    _fft_backends.update({pycbc.scheme.CPUScheme: _cpu_backends})
+
+    if pycbc.HAVE_CUDA:
+        _fft_backends.update({pycbc.scheme.CUDAScheme:
+                                  _cuda_backends})
+    if pycbc.HAVE_OPENCL:
+        _fft_backends.update({pycbc.scheme.OpenCLScheme:
+                                  _opencl_backends})
+
+# We're finally at the end of setup_fft(), so call it and delete it:
+_setup_fft()
+del _setup_fft
+del _backend_update
 
 # The main purpose of the top-level module is to present a
 # uniform interface for a forward and reverse FFT, independent of
@@ -150,22 +170,22 @@ def _check_fft_args(invec,outvec):
     oprec = outvec.precision
     if iprec != oprec:
         raise ValueError("Input and output precisions must agree")
-        
+
     itype = invec.kind
     otype = outvec.kind
     return [iprec,itype,otype]
 
 def fft(invec,outvec,backend='Default'):
     """ Fourier transform from invec to outvec.
-    
+
     Perform a fourier transform. The type of transform is determined
-    by the dtype of invec and outvec. 
+    by the dtype of invec and outvec.
 
     Parameters
     ----------
-    invec : TimeSeries or FrequencySeries 
+    invec : TimeSeries or FrequencySeries
         The input vector.
-    outvec : TimeSeries or FrequencySeries 
+    outvec : TimeSeries or FrequencySeries
         The output.
     """
     [prec,itype,otype] = _check_fft_args(invec,outvec)
@@ -195,15 +215,15 @@ def fft(invec,outvec,backend='Default'):
 
 def ifft(invec, outvec, backend='Default'):
     """ Inverse fourier transform from invec to outvec.
-    
+
     Perform an inverse fourier transform. The type of transform is determined
-    by the dtype of invec and outvec. 
+    by the dtype of invec and outvec.
 
     Parameters
     ----------
-    invec : TimeSeries or FrequencySeries 
+    invec : TimeSeries or FrequencySeries
         The input vector.
-    outvec : TimeSeries or FrequencySeries 
+    outvec : TimeSeries or FrequencySeries
         The output.
     """
     [prec,itype,otype] = _check_fft_args(invec,outvec)
