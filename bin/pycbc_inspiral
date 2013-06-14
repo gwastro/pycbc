@@ -126,7 +126,7 @@ with ctx:
         prec_fac = pycbc.waveform.get_waveform_filter_precondition(opt.approximant,  len(segments[0]), segments[0].delta_f)
         for seg in segments:
             seg *= prec_fac.astype(complex64)          
-        bank_psd = psd / prec_fac.astype(complex64)
+        bank_psd = psd / (prec_fac.astype(complex64) ** 2.0) 
     else:
         bank_psd = psd
             
@@ -141,13 +141,10 @@ with ctx:
                                        phase_order=opt.order,
                                        out=template_work_mem)  
     if opt.bank_veto_bank_file:
-        # Create memory to store bank veto templates
-        bank_veto_work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
         # Read in the bank veto bank
         bank_veto_bank = pycbc.waveform.TemplateBank(opt.bank_veto_bank_file,\
                 opt.approximant, len(segments[0]),segments[0].delta_f,\
-                opt.low_frequency_cutoff,dtype=complex64,phase_order=opt.order,\
-                out=bank_veto_work_mem)
+                opt.low_frequency_cutoff,dtype=complex64,phase_order=opt.order)
         # The following command actually generates all the templates and 
         # stores them as a list of frequency series
         bank_veto_bank = list(bank_veto_bank)
@@ -232,7 +229,6 @@ with ctx:
                                  sigmasq=h_norm,
                                  template_amplitude_norm=template.amplitude_norm)
             event_mgr.add_template_params(snr_norm=norm)
-
                                        
             snr_start = opt.segment_length / 4
             snr_end  =  opt.segment_length * 3 / 4 
@@ -251,13 +247,11 @@ with ctx:
             if snr_start < snr_end:
                 segment_events = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm)                 
 
+                bank_vetov = None
                 if (len(segment_events) > 0) and (opt.bank_veto_bank_file):
                     bank_veto = pycbc.vetoes.bank_chisq_from_filters(snr,norm,\
                             bank_snrs,bank_norms,bank_veto_curr_overlaps)
                     bank_vetov = bank_veto.take(segment_events['loc']+snr_start).numpy()
-
-                else:
-                    bank_vetov = None
 
                 chisqv = None
                 if (len(segment_events) > 0) and (opt.chisq_bins != 0):
