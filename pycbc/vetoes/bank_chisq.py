@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Alex Nitz
+# Copyright (C) 2012  Ian Harry
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -23,49 +23,52 @@
 #
 
 from pycbc.types import zeros, real_same_precision_as, TimeSeries
-#from pycbc.filter import sigmasq_series, make_frequency_series, sigmasq, matched_filter_core
-#import numpy
-#from pycbc.scheme import schemed
-#import pycbc.fft
 
-def bank_chisq_from_filters(tmplt_snr,tmplt_norm,bank_snrs,bank_norms,\
+def bank_chisq_from_filters(tmplt_snr, tmplt_norm, bank_snrs, bank_norms,\
         tmplt_bank_matchs):
-    """ 
-    This function calculates and returns a TimeSeries object containing the
-    bank veto calcuated over a segment. As input it takes:
-    tmplt_snr: The SNR time series from filtering the segment against the               current search template
-    tmplt_norm: The normalization factor for the search template
-    bank_snrs: The precomputed list of SNR time series between each of the bank         veto templates and the segment
-    bank_norms: The normalization factors for the list of bank veto templates
+    """ This function calculates and returns a TimeSeries object containing the
+    bank veto calcuated over a segment.
+    
+    Parameters
+    ----------
+    tmplt_snr: TimeSeries
+        The SNR time series from filtering the segment against the current 
+        search template
+    tmplt_norm: float 
+        The normalization factor for the search template
+    bank_snrs: list of TimeSeries
+        The precomputed list of SNR time series between each of the bank veto 
+        templates and the segment
+    bank_norms: list of floats
+        The normalization factors for the list of bank veto templates
         (usually this will be the same for all bank veto templates)
-    tmplt_bank_matchs: The complex overlap between the search template and each          of the bank templates
+    tmplt_bank_matchs: list of floats
+        The complex overlap between the search template and each 
+        of the bank templates
 
+    Returns
+    -------
     The function returns the bank_veto TimeSeries object.
     """
     
     # Initialise bank_chisq as 0s everywhere
     bank_chisq = TimeSeries(zeros(len(tmplt_snr),\
-            dtype=real_same_precision_as(tmplt_snr)),delta_t=tmplt_snr.delta_t,\
+            dtype=real_same_precision_as(tmplt_snr)), delta_t=tmplt_snr.delta_t,\
             epoch=tmplt_snr.start_time, copy=False)
 
     # Get normalized real and imaginary components of the SNR as numpy arrays
-    tmplt_SNR = tmplt_snr*tmplt_norm
+    tmplt_SNR = tmplt_snr * tmplt_norm
 
     # Loop over all the bank templates
     for i in range(len(bank_snrs)):
         # Get normalized real and imaginary components of the bank template SNRs
-        bank_SNR = bank_snrs[i]*bank_norms[i]
-        # Get the overlap between the search template and the current bank veto
-        # template.
-        bank_match = tmplt_bank_matchs[i]
-      
-        # Calculate components of bank veto, using complex operations!
-        # CHECK CONVENTIONS TO GET THE .conj IN THE RIGHT PLACE!!
+        bank_SNR = bank_snrs[i] * bank_norms[i]       
+        # Get the overlap between the search template and the bank veto tmplt
+        bank_match = tmplt_bank_matchs[i]  
+        # Calculate components of bank veto
         numerator = bank_SNR - tmplt_SNR * bank_match.conj()
-
         bank_chisq_tmp = numerator.squared_norm()
         bank_chisq += bank_chisq_tmp / \
                 (1 - bank_match*bank_match.conjugate()).real
 
     return bank_chisq
-
