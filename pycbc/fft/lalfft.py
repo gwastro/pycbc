@@ -78,18 +78,28 @@ _reverse_fft_fn_dict = {('double','complex','complex') : _COMPLEX16VectorFFT,
 
 def _get_fwd_plan(prec,itype,otype,inlen):
     try:
-        theplan = _forward_plans[(prec,itype,otype,inlen)]
+        theplan, mlvl = _forward_plans[(prec,itype,otype,inlen)]
+        # If the measure level at which we created the plan is less than the current
+        # global measure level, we must regenerate the plan:
+        if (mlvl < _default_measurelvl):
+            theplan = _forward_plan_fn_dict[(prec,itype,otype)](inlen,_default_measurelvl)
+            _forward_plans.update({(prec,itype,otype,inlen) : (theplan,_default_measurelvl)})
     except KeyError:
         theplan = _forward_plan_fn_dict[(prec,itype,otype)](inlen,_default_measurelvl)
-        _forward_plans.update({(prec,itype,otype,inlen) : theplan})
+        _forward_plans.update({(prec,itype,otype,inlen) : (theplan,_default_measurelvl)})
     return theplan
 
 def _get_inv_plan(prec,itype,otype,outlen):
     try:
-        theplan = _reverse_plans[(prec,itype,otype,outlen)]
+        theplan, mlvl = _reverse_plans[(prec,itype,otype,outlen)]
+        # If the measure level at which we created the plan is less than the current
+        # global measure level, we must regenerate the plan:
+        if (mlvl < _default_measurelvl):
+            theplan = _reverse_plan_fn_dict[(prec,itype,otype)](outlen,_default_measurelvl)
+            _reverse_plans.update({(prec,itype,otype,outlen) : (theplan,_default_measurelvl)})
     except KeyError:
         theplan = _reverse_plan_fn_dict[(prec,itype,otype)](outlen,_default_measurelvl)
-        _reverse_plans.update({(prec,itype,otype,outlen) : theplan})
+        _reverse_plans.update({(prec,itype,otype,outlen) : (theplan,_default_measurelvl)})
     return theplan
 
 
