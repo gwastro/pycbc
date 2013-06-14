@@ -44,7 +44,18 @@ from pycbc.lalwrap import XLALREAL4ForwardFFT as _REAL4ForwardFFT
 from pycbc.lalwrap import XLALREAL8ReverseFFT as _REAL8ReverseFFT
 from pycbc.lalwrap import XLALREAL4ReverseFFT as _REAL4ReverseFFT
 
+# Measure level.  By default 1, which does some but not much planning,
+# but we provide functions to read and set it
+
 _default_measurelvl = 1
+def get_measure_level():
+    return _default_measurelvl
+
+def set_measure_level(mlvl):
+    if mlvl not in (0,1,2,3):
+        raise ValueError("Measure level can only be one of 0, 1, 2, or 3")
+    _default_measurelvl = mlvl
+
 _forward_plans = {}
 _reverse_plans = {}
 _forward_plan_fn_dict = {('double','complex','complex') : _CreateForwardCOMPLEX16FFTPlan,
