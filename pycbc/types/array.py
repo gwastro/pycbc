@@ -162,7 +162,6 @@ class Array(object):
                 else:
                     initdtype = float64
                         
-
             # Now that we know the dtype of the data, we can determine whether the specified dtype
             # is valid. If the data is complex, and a real dtype has been specified, this should
             # raise an error.
@@ -172,9 +171,7 @@ class Array(object):
                 if _numpy.dtype(dtype).kind != 'c' and _numpy.dtype(initdtype).kind == 'c':
                     raise TypeError(str(initdtype) + ' cannot be cast as ' + str(dtype))
             else:
-                dtype = initdtype
-                
-            
+                dtype = initdtype  
                        
             if dtype == float32 or dtype == float64:
                 self.kind = 'real'
@@ -483,6 +480,7 @@ class Array(object):
 
     @_vcheckother
     @_convert
+    @schemed(BACKEND_PREFIX)
     def weighted_inner(self, other, weight):
         """ Return the inner product of the array with complex conjugation.
         """
@@ -494,7 +492,11 @@ class Array(object):
                 acum_dtype = complex128
             else:
                 acum_dtype = float64
-            return _numpy.sum(self.data.conj() * other / weight, dtype=acum_dtype)
+            tmp = self.data.conj()
+            tmp *= other
+            tmp /= weight
+            return _numpy.sum(tmp, dtype=acum_dtype)
+            
         elif type(self._scheme) is _scheme.CUDAScheme:
             from array_cuda import weighted_inner
             return weighted_inner(self.data,other,weight).get().max()

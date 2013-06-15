@@ -168,10 +168,13 @@ def inner(a, b):
     krnl = get_inner_kernel(a.dtype, b.dtype, dtype_out)
     return krnl(a, b)
 
-def weighted_inner(a, b, w):
-    dtype_out = _get_common_dtype(a,b)
+def weighted_inner(self, b, w):
+    if weight is None:
+        return self.inner(other)  
+    a = self.data
+    dtype_out = _get_common_dtype(a, b)
     krnl = get_weighted_inner_kernel(a.dtype, b.dtype, w.dtype, dtype_out)
-    return krnl(a, b, w)
+    return krnl(a, b, w).get().max()
 
 # Define PYCUDA MAXLOC for both single and double precission ################## 
        

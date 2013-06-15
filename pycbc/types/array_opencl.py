@@ -102,11 +102,14 @@ def inner(a, b):
     krnl = get_inner_kernel(a.dtype, b.dtype, dtype_out)
     return krnl(a, b)
 
-def weighted_inner(a, b, w):
+def weighted_inner(self, b, w):
+    if weight is None:
+        return self.inner(other) 
+    a = self.data
     dtype_out = _get_common_dtype(a, b, mgr.state.queue)
     krnl = get_weighted_inner_kernel(a.dtype, b.dtype, w.dtype, dtype_out)
-    return krnl(a, b, w)
-
+    return krnl(a, b, w).get().max()
+ 
 
 @context_dependent_memoize
 def get_norm_kernel(dtype_x, dtype_out):

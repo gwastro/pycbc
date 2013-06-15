@@ -29,10 +29,11 @@ from pycbc.types import zeros, complex64
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import table, lsctables
 import pycbc.waveform
-from pycbc import DYN_RANGE_FAC
+from pycbc.types import FrequencySeries
+from pycbc import DYN_RANGE_FAC        
 
 class TemplateBank(object):
-    def __init__(self, filename, approximant, filter_length, delta_f, f_lower,  dtype, out=None, **kwds):
+    def __init__(self, filename, approximant, filter_length, delta_f, f_lower,  dtype, psd=None, out=None, **kwds):
         if out:
             self.out = out
         else:
@@ -48,6 +49,14 @@ class TemplateBank(object):
         self.indoc = ligolw_utils.load_filename(filename, False)     
         self.table = table.get_table(self.indoc, lsctables.SnglInspiralTable.tableName) 
         self.extra_args = kwds
+        self.psd = psd
+        
+        #If we can for this template pregenerate the sigmasq vector 
+        self.sigmasq_vec = None
+        if (psd is not None) and pycbc.waveform.waveform_norm_exists(approximant):
+                self.sigmasq_vec = pycbc.waveform.get_waveform_filter_norm(
+                                     approximant, self.psd, filter_length, 
+                                     self.delta_f, self.f_lower)             
         
     def __len__(self):
         return len(self.table)
@@ -55,9 +64,6 @@ class TemplateBank(object):
     def __iter__(self):
         self.index=-1
         return self
-        
-    def current_tmplt_params(self):
-        return self.table[self.index]
         
     def current_amplitude_norm(self):
         amp_norm = pycbc.waveform.get_template_amplitude_norm(self.table[self.index], 
@@ -93,9 +99,17 @@ class TemplateBank(object):
             htilde = htilde.astype(self.dtype)
             
             htilde.end_frequency = self.current_f_end()
+            htilde.end_idx = int(htilde.end_frequency / htilde.delta_f) 
             htilde.params = self.table[self.index]
             htilde.amplitude_norm = self.current_amplitude_norm()
             
+            if self.psd is not None:
+                if self.sigmasq_vec is not None:
+                    
+                    htilde.sigmasq = self.sigmasq_vec[htilde.end_idx]
+                else:
+                    htilde.sigmasq = sigmasq(htilde, self.psd, low_frequency_cutoff=self.f_low) 
+ 
             return htilde
 
         

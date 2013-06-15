@@ -16,7 +16,6 @@ from pycbc.types import TimeSeries, float32, complex64, zeros, FrequencySeries
 from pycbc.frame import read_frame
 
 # Option Parsing ##############################################################
-
 parser = OptionParser(
     usage   = "%prog [OPTIONS]",
     description = "Find single detector gravitational-wave triggers." )
@@ -84,7 +83,6 @@ else:
 duration = opt.gps_end_time - opt.gps_start_time
 
 # Data Preconditioning ########################################################
-
 logging.info("Reading Frames")
 strain = read_frame(opt.frame_cache, opt.channel_name, 
                     start_time=opt.gps_start_time-opt.pad_data, 
@@ -144,6 +142,7 @@ with ctx:
     bank = pycbc.waveform.TemplateBank(opt.bank_file, 
            opt.approximant, len(segments[0]), segments[0].delta_f, 
            opt.low_frequency_cutoff, dtype=complex64, phase_order=opt.order,
+           psd = psd,
            out=template_work_mem)  
                            
     if opt.bank_veto_bank_file:
@@ -153,13 +152,6 @@ with ctx:
             opt.approximant, len(segments[0]), segments[0].delta_f, 
             opt.low_frequency_cutoff, dtype=complex64, phase_order=opt.order)
 
-    hnorm_vec = None
-    if pycbc.waveform.waveform_norm_exists(opt.approximant):
-        logging.info("Precalculating template normalizations")
-        hnorm_vec = pycbc.waveform.get_waveform_filter_norm(
-                                 opt.approximant, psd, len(segments[0]), 
-                                 segments[0].delta_f, opt.low_frequency_cutoff)      
- 
     event_mgr = pycbc.events.EventManager(opt, 
                         ['time_index', 'snr', 'chisq','bank_chisq'], 
                          [int, complex64, float32, float32], 
@@ -167,34 +159,15 @@ with ctx:
 
     cumulative_index = opt.segment_length / 4
     for stilde in segments:
-    
-        #stilde is overwhitened FIXME
         if opt.bank_veto_bank_file:
             bank_veto_snrs, bank_veto_norms = bank_veto.segment_snrs(stilde*psd/prec_fac/prec_fac, psd/prec_fac/prec_fac)
  
-        for template in bank:   
-            # We need to calculate the overlap between the search template
-            # and every bank_veto_template
-            if opt.bank_veto_bank_file:
-                bank_veto_overlaps = bank_veto.template_overlaps(template, psd/prec_fac/prec_fac)
-                        
-            if hnorm_vec is not None:
-                k_end = int(template.end_frequency / template.delta_f)
-                h_norm = hnorm_vec[k_end]
-                if opt.chisq_bins != 0:
-                    chisq_bins = pycbc.vetoes.power_chisq_bins_from_sigmasq_series(hnorm_vec, opt.chisq_bins,
-                                     int(opt.low_frequency_cutoff / template.delta_f), k_end)
-            else:
-                h_norm = sigmasq(template, psd, low_frequency_cutoff=opt.low_frequency_cutoff)
-                if opt.chisq_bins != 0:
-                    chisq_bins = pycbc.vetoes.power_chisq_bins(template, opt.chisq_bins, psd, opt.low_frequency_cutoff)      
-        
-            snr, corr, norm = matched_filter_core(template, stilde, h_norm=h_norm, 
+        for template in bank:     
+            snr, corr, norm = matched_filter_core(template, stilde, h_norm=template.sigmasq, 
                                        low_frequency_cutoff=opt.low_frequency_cutoff, 
                                        out=snr_work_mem, corr_out=corr_work_mem)
 
-            # FIXME: Alex to rethink this around the new ordering 
-            event_mgr.new_template(tmplt=template.params, sigmasq=h_norm,
+            event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq,
                                  template_amplitude_norm=template.amplitude_norm)
             event_mgr.add_template_params(snr_norm=norm)
                                        
@@ -217,12 +190,18 @@ with ctx:
 
                 bank_vetov = None
                 if (len(segment_events) > 0) and (opt.bank_veto_bank_file):
+                    bank_veto_overlaps = bank_veto.template_overlaps(template, psd/prec_fac/prec_fac)
                     bank_veto_series = pycbc.vetoes.bank_chisq_from_filters(snr, norm,
                             bank_veto_snrs, bank_veto_norms, bank_veto_overlaps)
                     bank_vetov = bank_veto_series.take(segment_events['loc']+snr_start).numpy()
 
                 chisqv = None
-                if (len(segment_events) > 0) and (opt.chisq_bins != 0):
+                if (len(segment_events) > 0) and (opt.chisq_bins != 0):                           
+                    if bank.sigmasq_vec is not None:
+                        chisq_bins = pycbc.vetoes.power_chisq_bins_from_sigmasq_series(bank.sigmasq_vec, opt.chisq_bins,
+                                     int(opt.low_frequency_cutoff / template.delta_f), template.end_idx)
+                    else:
+                        chisq_bins = pycbc.vetoes.power_chisq_bins(template, opt.chisq_bins, psd, opt.low_frequency_cutoff) 
                     chisq = pycbc.vetoes.power_chisq_from_precomputed(corr, snr, chisq_bins, norm)
                     chisqv = chisq.take(segment_events['loc']+snr_start).numpy()
                     

@@ -24,6 +24,7 @@
 """Numpy based CPU backend for PyCBC Array
 """
 import numpy
+from array import common_kind, complex128, float64
 
 def zeros(length, dtype=numpy.float64):
     return numpy.zeros(length, dtype=dtype)
@@ -54,4 +55,18 @@ def max_loc(self):
 def take(self, indices):
     return self.data.take(indices)
     
+def weighted_inner(self, other, weight):
+    """ Return the inner product of the array with complex conjugation.
+    """
+    if weight is None:
+        return self.inner(other)
+        
+    cdtype = common_kind(self.dtype, other.dtype)
+    if cdtype.kind == 'c':
+        acum_dtype = complex128
+    else:
+        acum_dtype = float64
+
+    return numpy.sum(self.data.conj() * other / weight, dtype=acum_dtype)
+
     
