@@ -69,4 +69,7 @@ def weighted_inner(self, other, weight):
 
     return numpy.sum(self.data.conj() * other / weight, dtype=acum_dtype)
 
+def squared_norm(self):
+    """ Return the elementwise squared norm of the array """
+    return (self.data.real**2 + self.data.imag**2)
     

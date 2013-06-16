@@ -121,12 +121,13 @@ def get_norm_kernel(dtype_x, dtype_out):
             "z[i] = norm(x[i])",
             "norm")
 
-def squared_norm(a):
+def squared_norm(self):
 #    dtype_out = match_precision(np.dtype('float64'), a.dtype)
 #    out = a._new_like_me(dtype=dtype_out)
 #    krnl = get_norm_kernel(a.dtype,dtype_out)
 #    krnl(a,out)
 #    return out 
+    a = self.data
     return a.conj() * a
 
 def zeros(length, dtype=np.float64):

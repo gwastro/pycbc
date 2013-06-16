@@ -22,9 +22,10 @@
 # =============================================================================
 #
 
-from pycbc.types import zeros, real_same_precision_as, TimeSeries
+from pycbc.types import zeros, real_same_precision_as, TimeSeries, complex_same_precision_as
 from pycbc.filter import overlap_cplx, matched_filter_core
 from pycbc.waveform import TemplateBank
+from math import sqrt
 
 def bank_chisq_from_filters(tmplt_snr, tmplt_norm, bank_snrs, bank_norms,\
         tmplt_bank_matchs):
@@ -58,20 +59,16 @@ def bank_chisq_from_filters(tmplt_snr, tmplt_norm, bank_snrs, bank_norms,\
             dtype=real_same_precision_as(tmplt_snr)), delta_t=tmplt_snr.delta_t,\
             epoch=tmplt_snr.start_time, copy=False)
 
-    # Get normalized real and imaginary components of the SNR as numpy arrays
-    tmplt_SNR = tmplt_snr * tmplt_norm
-
     # Loop over all the bank templates
     for i in range(len(bank_snrs)):
-        # Get normalized real and imaginary components of the bank template SNRs
-        bank_SNR = bank_snrs[i] * bank_norms[i]       
-        # Get the overlap between the search template and the bank veto tmplt
-        bank_match = tmplt_bank_matchs[i]  
-        # Calculate components of bank veto
-        numerator = bank_SNR - tmplt_SNR * bank_match.conj()
-        bank_chisq_tmp = numerator.squared_norm()
-        bank_chisq += bank_chisq_tmp / \
-                (1 - bank_match*bank_match.conjugate()).real
+        bank_match = tmplt_bank_matchs[i]
+        
+        bank_norm = sqrt((1 - bank_match*bank_match.conj()).real)
+        
+        bank_SNR = bank_snrs[i] * (bank_norms[i] / bank_norm)     
+        tmplt_SNR = tmplt_snr * (bank_match.conj() * tmplt_norm / bank_norm)
+        
+        bank_chisq += (bank_SNR - tmplt_SNR).squared_norm()
 
     return bank_chisq
     
@@ -80,27 +77,27 @@ class BankVeto(object):
        memory management of its filters internally, and calculates the bank
        veto TimeSeries.
     """
-    def __init__(self, bank_file, approximant, seg_len_freq, delta_f, f_low, dtype, **kwds):
+    def __init__(self, bank_file, approximant, psd, f_low, **kwds):
         self.filters = []
         self.snrs_work_mem = []
-        
-        self.dtype = dtype
-        self.delta_f = delta_f
+
+        self.cdtype = complex_same_precision_as(psd)
+        self.delta_f = psd.delta_f
         self.f_low = f_low
-        self.seg_len_freq = seg_len_freq
-        self.seg_len_time = (seg_len_freq-1)*2
+        self.seg_len_freq = len(psd)
+        self.seg_len_time = (self.seg_len_freq-1)*2
     
         # Read in the bank veto bank
         bank_veto_bank = TemplateBank(bank_file,
                 approximant, self.seg_len_freq, 
-                delta_f, f_low, dtype=dtype, **kwds)
+                self.delta_f, f_low, dtype=self.cdtype, psd=psd, **kwds)
                 
         # The following command actually generates all the filters
         self.filters = list(bank_veto_bank)
         
         # Create memory for storing the bank veto filter time series
         for i in range(len(self)):
-            self.snrs_work_mem.append(zeros(self.seg_len_time, dtype=dtype))
+            self.snrs_work_mem.append(zeros(self.seg_len_time, dtype=self.cdtype))
         
     def __len__(self):
         return len(self.filters)
@@ -124,11 +121,12 @@ class BankVeto(object):
             
         return snrs, norms
         
-    def template_overlaps(self, template, psd=None):
+    def template_overlaps(self, template, template_sigmasq, psd=None):
         overlaps = []
-        for bank_template in self.filters:
+        for bank_template in self.filters:            
             overlap = overlap_cplx(template, bank_template, psd=psd,
-                    low_frequency_cutoff=self.f_low)
-            overlaps.append(overlap)
+                    low_frequency_cutoff=self.f_low, normalized=False)
+            norm = 1 / template_sigmasq / bank_template.sigmasq
+            overlaps.append(overlap * norm)
         return overlaps
 

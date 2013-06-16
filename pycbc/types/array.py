@@ -421,13 +421,13 @@ class Array(object):
     @_convert
     def real(self):
         """ Return real part of Array """
-        return Array(self._data.real,copy=True)
+        return Array(self._data.real, copy=True)
 
     @_returntype
     @_convert
     def imag(self):
         """ Return imaginary part of Array """
-        return Array(self._data.imag,copy=True)
+        return Array(self._data.imag, copy=True)
 
     @_returntype
     @_convert
@@ -437,16 +437,9 @@ class Array(object):
         
     @_returntype
     @_convert
+    @schemed(BACKEND_PREFIX)
     def squared_norm(self):
         """ Return the elementwise squared norm of the array """
-        if type(self._data) is _numpy.ndarray:
-            return (self.data * self.data.conj()).real
-        elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
-            from array_cuda import squared_norm
-            return squared_norm(self.data)
-        elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-            from array_opencl import squared_norm
-            return squared_norm(self.data)     
 
     @_vcheckother
     @_convert
@@ -454,7 +447,7 @@ class Array(object):
         """ Return the inner product of the array with complex conjugation.
         """
         if type(self._scheme) is _scheme.CPUScheme:
-            cdtype = common_kind(self.dtype,other.dtype)
+            cdtype = common_kind(self.dtype, other.dtype)
             if cdtype.kind == 'c':
                 acum_dtype = complex128
             else:
@@ -484,25 +477,6 @@ class Array(object):
     def weighted_inner(self, other, weight):
         """ Return the inner product of the array with complex conjugation.
         """
-        if weight is None:
-            return self.inner(other)
-        if type(self._scheme) is _scheme.CPUScheme:
-            cdtype = common_kind(self.dtype, other.dtype)
-            if cdtype.kind == 'c':
-                acum_dtype = complex128
-            else:
-                acum_dtype = float64
-            tmp = self.data.conj()
-            tmp *= other
-            tmp /= weight
-            return _numpy.sum(tmp, dtype=acum_dtype)
-            
-        elif type(self._scheme) is _scheme.CUDAScheme:
-            from array_cuda import weighted_inner
-            return weighted_inner(self.data,other,weight).get().max()
-        elif type(self._scheme) is _scheme.OpenCLScheme:
-            from array_opencl import weighted_inner
-            return weighted_inner(self.data,other,weight).get().max()
 
     @_convert
     def sum(self):

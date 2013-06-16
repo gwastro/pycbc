@@ -125,7 +125,8 @@ with ctx:
     logging.info("overwhiten stilde")
     for seg in segments:
         seg /= psd
-    
+
+    prec_fac = 1
     if pycbc.waveform.waveform_precondition_exists(opt.approximant):
         logging.info("Preconditioning Stilde for template")
         prec_fac = pycbc.waveform.get_waveform_filter_precondition(
@@ -144,13 +145,15 @@ with ctx:
            opt.low_frequency_cutoff, dtype=complex64, phase_order=opt.order,
            psd = psd,
            out=template_work_mem)  
-                           
+                       
+    bank_veto = []    
     if opt.bank_veto_bank_file:
         logging.info("Bank veto is enabled")
         logging.info("Read in bank veto template bank")
         bank_veto = pycbc.vetoes.BankVeto(opt.bank_veto_bank_file, 
-            opt.approximant, len(segments[0]), segments[0].delta_f, 
-            opt.low_frequency_cutoff, dtype=complex64, phase_order=opt.order)
+                                          opt.approximant, psd, 
+                                          opt.low_frequency_cutoff, 
+                                          phase_order=opt.order)
 
     event_mgr = pycbc.events.EventManager(opt, 
                         ['time_index', 'snr', 'chisq','bank_chisq'], 
@@ -158,11 +161,13 @@ with ctx:
                         num_bank_templates=len(bank_veto))
 
     cumulative_index = opt.segment_length / 4
-    for stilde in segments:
+    for s_num, stilde in enumerate(segments):
         if opt.bank_veto_bank_file:
             bank_veto_snrs, bank_veto_norms = bank_veto.segment_snrs(stilde*psd/prec_fac/prec_fac, psd/prec_fac/prec_fac)
  
-        for template in bank:     
+        for t_num, template in enumerate(bank):    
+            logging.info("Filtering segment: " + str(s_num+1) + "/" + str(len(segments)) + "  template: " + str(t_num+1) + "/" + str(len(bank)))
+         
             snr, corr, norm = matched_filter_core(template, stilde, h_norm=template.sigmasq, 
                                        low_frequency_cutoff=opt.low_frequency_cutoff, 
                                        out=snr_work_mem, corr_out=corr_work_mem)
@@ -190,13 +195,15 @@ with ctx:
 
                 bank_vetov = None
                 if (len(segment_events) > 0) and (opt.bank_veto_bank_file):
-                    bank_veto_overlaps = bank_veto.template_overlaps(template, psd/prec_fac/prec_fac)
+                    logging.info("...Doing Bank Chisq")
+                    bank_veto_overlaps = bank_veto.template_overlaps(template * prec_fac * prec_fac / psd, template.sigmasq)
                     bank_veto_series = pycbc.vetoes.bank_chisq_from_filters(snr, norm,
                             bank_veto_snrs, bank_veto_norms, bank_veto_overlaps)
                     bank_vetov = bank_veto_series.take(segment_events['loc']+snr_start).numpy()
 
                 chisqv = None
-                if (len(segment_events) > 0) and (opt.chisq_bins != 0):                           
+                if (len(segment_events) > 0) and (opt.chisq_bins != 0):
+                    logging.info("...Doing Chisq")                           
                     if bank.sigmasq_vec is not None:
                         chisq_bins = pycbc.vetoes.power_chisq_bins_from_sigmasq_series(bank.sigmasq_vec, opt.chisq_bins,
                                      int(opt.low_frequency_cutoff / template.delta_f), template.end_idx)

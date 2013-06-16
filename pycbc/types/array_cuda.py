@@ -123,7 +123,8 @@ def get_norm_kernel(dtype_x, dtype_out):
             "z[i] = norm(x[i])",
             "norm")
 
-def squared_norm(a):
+def squared_norm(self):
+    a = self.data
     dtype_out = match_precision(np.dtype('float64'), a.dtype)
     out = a._new_like_me(dtype=dtype_out)
     krnl = get_norm_kernel(a.dtype, dtype_out)
@@ -308,9 +309,6 @@ def max_loc(self):
 def take(self, indices):
     indices = pycuda.gpuarray.to_gpu(indices)
     return pycuda.gpuarray.take(self.data, indices)
-    
-    
-    
 
 
     
