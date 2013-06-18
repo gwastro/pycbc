@@ -14,6 +14,7 @@ from pycbc.filter import  matched_filter_core, sigmasq
 from pycbc.scheme import CUDAScheme, CPUScheme, OpenCLScheme
 from pycbc.types import TimeSeries, float32, complex64, zeros, FrequencySeries
 from pycbc.frame import read_frame
+from pycbc.inject import InjectionSet
 
 # Option Parsing ##############################################################
 parser = OptionParser(
@@ -87,6 +88,12 @@ logging.info("Reading Frames")
 strain = read_frame(opt.frame_cache, opt.channel_name, 
                     start_time=opt.gps_start_time-opt.pad_data, 
                     duration=duration+opt.pad_data*2)
+
+if opt.injection_file:
+    logging.info("Applying injections")
+    injections = InjectionSet(opt.injection_file)
+    injections.apply(strain, opt.channel_name[0:2],
+                     f_lower=opt.low_frequency_cutoff)
 
 logging.info("Highpass Filtering")
 strain = highpass(strain, frequency=opt.enable_high_pass)
