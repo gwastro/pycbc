@@ -279,7 +279,8 @@ def get_td_waveform(template=None, **kwargs):
     if 'approximant' not in input_params:
         raise ValueError("Please provide an approximant name")
     elif input_params['approximant'] not in wav_gen:
-        raise ValueError("Approximant not available")
+        raise ValueError("Approximant %s not available" % \
+                         (input_params['approximant']))
 
     for arg in td_required_args:
         if arg in input_params:
@@ -361,7 +362,8 @@ def get_fd_waveform(template=None, **kwargs):
     if 'approximant' not in input_params:
         raise ValueError("Please provide an approximant name")
     elif input_params['approximant'] not in wav_gen:
-        raise ValueError("Approximant not available")
+        raise ValueError("Approximant %s not available" % \
+                         (input_params['approximant']))
 
     for arg in fd_required_args:
         if arg in input_params:
@@ -430,7 +432,8 @@ def get_waveform_filter(out, template=None, **kwargs):
         htilde.length_in_time = tmplt_length
         return htilde
     else:
-        raise ValueError("Approximant Not Available")
+        raise ValueError("Approximant %s not available" % \
+                         (input_params['approximant']))
 
 def waveform_precondition_exists(approximant):
     if approximant in _filter_preconditions:
