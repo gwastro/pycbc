@@ -173,7 +173,7 @@ class build_docs(Command):
     def finalize_options(self):
         pass
     def run(self):
-        subprocess.check_output("cd docs; sphinx-apidoc -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html", 
+        subprocess.check_call("cd docs; sphinx-apidoc -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html", 
                             stderr=subprocess.STDOUT, shell=True)
 
 class test(Command):
