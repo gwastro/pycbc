@@ -170,7 +170,7 @@ def inner(a, b):
     return krnl(a, b)
 
 def weighted_inner(self, b, w):
-    if weight is None:
+    if w is None:
         return self.inner(other)  
     a = self.data
     dtype_out = _get_common_dtype(a, b)
