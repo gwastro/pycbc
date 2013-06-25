@@ -56,61 +56,59 @@ class TemplateBank(object):
         if (psd is not None) and pycbc.waveform.waveform_norm_exists(approximant):
                 self.sigmasq_vec = pycbc.waveform.get_waveform_filter_norm(
                                      approximant, self.psd, filter_length, 
-                                     self.delta_f, self.f_lower)             
+                                     self.delta_f, self.f_lower)        
+                                     
+        self.prec_fac = pycbc.waveform.get_waveform_filter_precondition(
+                        opt.approximant, 
+                        len(segments[0]), 
+                        segments[0].delta_f).astype(complex64)     
         
     def __len__(self):
         return len(self.table)
-            
-    def __iter__(self):
-        self.index=-1
-        return self
-        
-    def current_amplitude_norm(self):
-        amp_norm = pycbc.waveform.get_template_amplitude_norm(self.table[self.index], 
-                              approximant=self.approximant, **self.extra_args)
-        if amp_norm:
-            return amp_norm
-        else:
-            return 1
-
-    def current_f_end(self):
-        f_end = pycbc.waveform.get_waveform_end_frequency(self.table[self.index], 
+    
+    def __getitem__(self, index):
+        # Get the end of the waveform if applicable (only for SPAtmplt atm)
+        f_end = pycbc.waveform.get_waveform_end_frequency(self.table[index], 
                               approximant=self.approximant, **self.extra_args) 
         
-        if f_end is None:
-            return self.filter_length * self.delta_f
+        if f_end is None or f_end >= (self.filter_length * self.delta_f):
+            f_end = (self.filter_length-1) * self.delta_f
         
-        if f_end > self.filter_length * self.delta_f:
-            return (self.filter_length-1) * self.delta_f
-        else:
-            return f_end
 
-    def next(self):
-        kmax = int(self.current_f_end() / self.delta_f)
-        self.index +=1
-        if self.index == len(self.table):
-            raise StopIteration
-        else:
-            poke  = self.out.data
-            self.out[self.kmin:kmax].clear()
-            htilde = pycbc.waveform.get_waveform_filter(self.out[0:self.filter_length], self.table[self.index], 
-                                    approximant=self.approximant, f_lower=self.f_lower, delta_f=self.delta_f, **self.extra_args)
-                                    
-            htilde = htilde.astype(self.dtype)
-            
-            htilde.end_frequency = self.current_f_end()
-            htilde.end_idx = int(htilde.end_frequency / htilde.delta_f) 
-            htilde.params = self.table[self.index]
-            htilde.amplitude_norm = self.current_amplitude_norm()
-            
-            if self.psd is not None:
-                if self.sigmasq_vec is not None:
-                    
-                    htilde.sigmasq = self.sigmasq_vec[htilde.end_idx]
-                else:
-                    htilde.sigmasq = sigmasq(htilde, self.psd, low_frequency_cutoff=self.f_low) 
- 
-            return htilde
+        poke  = self.out.data
+        # Clear the storage memory
+        self.out.clear()
+        
+        # Get the waveform filter
+        htilde = pycbc.waveform.get_waveform_filter(self.out[0:self.filter_length], self.table[index], 
+                                approximant=self.approximant, f_lower=self.f_lower, delta_f=self.delta_f, **self.extra_args)
+                                
+        # Make sure it is the desired type
+        htilde = htilde.astype(self.dtype)
+        
+        # Get an amplitude normalization (mass dependant constant norm)
+        amp_norm = pycbc.waveform.get_template_amplitude_norm(self.table[index], 
+                          approximant=self.approximant, **self.extra_args)
+                          
+        # Create the full waveform from the precalculated normalizations
+        if self.prec_fac is not None:
+            htilde *= prec_fac                  
+                          
+        if amp_norm is not None:
+            htilde *= amp_norm
+                 
+        htilde.end_frequency = f_end
+        htilde.end_idx = int(htilde.end_frequency / htilde.delta_f) 
+        htilde.params = self.table[index]
+        
+        # If we were given a psd, calculate sigmasq so we have it for later
+        if self.psd is not None:
+            if self.sigmasq_vec is not None:  
+                htilde.sigmasq = self.sigmasq_vec[htilde.end_idx] * amp_norm
+            else:
+                htilde.sigmasq = sigmasq(htilde, self.psd, low_frequency_cutoff=self.f_low) 
+
+        return htilde
 
         
     

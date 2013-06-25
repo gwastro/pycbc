@@ -79,7 +79,6 @@ class BankVeto(object):
     """
     def __init__(self, bank_file, approximant, psd, f_low, **kwds):
         self.filters = []
-        self.snrs_work_mem = []
 
         self.cdtype = complex_same_precision_as(psd)
         self.delta_f = psd.delta_f
@@ -95,10 +94,6 @@ class BankVeto(object):
         # The following command actually generates all the filters
         self.filters = list(bank_veto_bank)
         
-        # Create memory for storing the bank veto filter time series
-        for i in range(len(self)):
-            self.snrs_work_mem.append(zeros(self.seg_len_time, dtype=self.cdtype))
-        
     def __len__(self):
         return len(self.filters)
         
@@ -112,8 +107,7 @@ class BankVeto(object):
             # For every template compute the snr against the stilde segment
             snr, corr, norm = matched_filter_core(
                     bank_template, stilde, psd,
-                    low_frequency_cutoff=self.f_low,
-                    out=self.snrs_work_mem[i])
+                    low_frequency_cutoff=self.f_low)
             # SNR time series stored here
             snrs.append(snr)
             # Template normalization factor stored here

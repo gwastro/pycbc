@@ -190,7 +190,6 @@ class EventManager(object):
             tmplt = self.template_params[tind]['tmplt']
             snr_norm = self.template_params[tind]['snr_norm']
             sigmasq = self.template_params[tind]['sigmasq']
-            template_amp = self.template_params[tind]['template_amplitude_norm']
             
             row = copy.deepcopy(tmplt)
                 
@@ -210,7 +209,7 @@ class EventManager(object):
                 row.bank_chisq_dof = self.global_params['num_bank_templates']
                 row.bank_chisq = event['bank_chisq']
             
-            row.eff_distance = sigmasq ** (0.5) / abs(snr * snr_norm) * pycbc.DYN_RANGE_FAC * template_amp
+            row.eff_distance = sigmasq ** (0.5) / abs(snr * snr_norm) * pycbc.DYN_RANGE_FAC
             row.snr = abs(snr) * snr_norm
             row.end_time = int(end_time.gpsSeconds)
             row.end_time_ns = int(end_time.gpsNanoSeconds)
