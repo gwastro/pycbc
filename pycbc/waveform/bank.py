@@ -59,9 +59,9 @@ class TemplateBank(object):
                                      self.delta_f, self.f_lower)        
                                      
         self.prec_fac = pycbc.waveform.get_waveform_filter_precondition(
-                        opt.approximant, 
+                        self.approximant, 
                         len(segments[0]), 
-                        segments[0].delta_f).astype(complex64)     
+                        segments[0].delta_f).astype(self.dtype)     
         
     def __len__(self):
         return len(self.table)
