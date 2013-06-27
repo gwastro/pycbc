@@ -128,7 +128,7 @@ with ctx:
         segments.append(seg)
         seg_start_idx += seg_width_idx    
         if opt.bank_veto_bank_file:
-            bank_veto_pre.append(bank_veto.segment_snrs(seg, psd))
+            bank_veto_pre.append(bank_veto.segment_snrs(seg))
   
     logging.info("overwhiten stilde")
     for seg in segments:
@@ -152,7 +152,8 @@ with ctx:
     for t_num, template in enumerate(bank):  
         event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)  
         if opt.bank_veto_bank_file:                            
-            bank_veto_overlaps = bank_veto.template_overlaps(template / psd, template.sigmasq)                                         
+            bank_veto_overlaps = bank_veto.template_overlaps(template, template.sigmasq) 
+            print bank_veto_overlaps                                        
         cumulative_index = opt.segment_start_pad  
         
         for s_num, stilde in enumerate(segments):          
@@ -181,7 +182,7 @@ with ctx:
                                                       h_norm=template.sigmasq, 
                                                       low_frequency_cutoff=opt.low_frequency_cutoff, 
                                                       out=snr_work_mem, corr_out=corr_work_mem)
-
+                
                 event_mgr.add_template_params(snr_norm=norm)
                 segment_events = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm)                 
 

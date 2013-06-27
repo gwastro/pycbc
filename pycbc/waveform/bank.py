@@ -60,8 +60,8 @@ class TemplateBank(object):
                                      
         self.prec_fac = pycbc.waveform.get_waveform_filter_precondition(
                         self.approximant, 
-                        len(segments[0]), 
-                        segments[0].delta_f).astype(self.dtype)     
+                        self.filter_length, 
+                        self.delta_f).astype(self.dtype)     
         
     def __len__(self):
         return len(self.table)
@@ -92,7 +92,7 @@ class TemplateBank(object):
                           
         # Create the full waveform from the precalculated normalizations
         if self.prec_fac is not None:
-            htilde *= prec_fac                  
+            htilde *= self.prec_fac                  
                           
         if amp_norm is not None:
             htilde *= amp_norm
@@ -104,7 +104,7 @@ class TemplateBank(object):
         # If we were given a psd, calculate sigmasq so we have it for later
         if self.psd is not None:
             if self.sigmasq_vec is not None:  
-                htilde.sigmasq = self.sigmasq_vec[htilde.end_idx] * amp_norm
+                htilde.sigmasq = self.sigmasq_vec[htilde.end_idx] * amp_norm * amp_norm
             else:
                 htilde.sigmasq = sigmasq(htilde, self.psd, low_frequency_cutoff=self.f_low) 
 

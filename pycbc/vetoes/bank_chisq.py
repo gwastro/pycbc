@@ -79,7 +79,7 @@ class BankVeto(object):
     """
     def __init__(self, bank_file, approximant, psd, f_low, **kwds):
         self.filters = []
-
+        self.psd = psd    
         self.cdtype = complex_same_precision_as(psd)
         self.delta_f = psd.delta_f
         self.f_low = f_low
@@ -89,7 +89,7 @@ class BankVeto(object):
         # Read in the bank veto bank
         bank_veto_bank = TemplateBank(bank_file,
                 approximant, self.seg_len_freq, 
-                self.delta_f, f_low, dtype=self.cdtype, psd=psd, **kwds)
+                self.delta_f, f_low, dtype=self.cdtype, psd=self.psd, **kwds)
                 
         # The following command actually generates all the filters
         self.filters = list(bank_veto_bank)
@@ -97,7 +97,7 @@ class BankVeto(object):
     def __len__(self):
         return len(self.filters)
         
-    def segment_snrs(self, stilde, psd=None):
+    def segment_snrs(self, stilde):
         """ Return the snrs for each bank filter against stilde.
         """
         snrs = []
@@ -106,7 +106,7 @@ class BankVeto(object):
         for i, bank_template in enumerate(self.filters):
             # For every template compute the snr against the stilde segment
             snr, corr, norm = matched_filter_core(
-                    bank_template, stilde, psd,
+                    bank_template, stilde, self.psd,
                     low_frequency_cutoff=self.f_low)
             # SNR time series stored here
             snrs.append(snr)
@@ -115,12 +115,12 @@ class BankVeto(object):
             
         return snrs, norms
         
-    def template_overlaps(self, template, template_sigmasq, psd=None):
+    def template_overlaps(self, template, template_sigmasq):
         overlaps = []
         for bank_template in self.filters:            
-            overlap = overlap_cplx(template, bank_template, psd=psd,
+            overlap = overlap_cplx(template, bank_template, psd=self.psd,
                     low_frequency_cutoff=self.f_low, normalized=False)
-            norm = 1 / template_sigmasq / bank_template.sigmasq
+            norm = sqrt(1 / template_sigmasq / bank_template.sigmasq)
             overlaps.append(overlap * norm)
         return overlaps
 
