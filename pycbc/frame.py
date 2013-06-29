@@ -27,24 +27,24 @@ import copy
 # map LAL series types to corresponding functions and Numpy types
 _fr_type_map = {
     lal.LAL_S_TYPE_CODE: [
-        lalframe.FrReadREAL4TimeSeries, numpy.float32,
+        lalframe.FrStreamReadREAL4TimeSeries, numpy.float32,
         lal.CreateREAL4TimeSeries,
-        lalframe.FrGetREAL4TimeSeriesMetadata
+        lalframe.FrStreamGetREAL4TimeSeriesMetadata
     ],
     lal.LAL_D_TYPE_CODE: [
-        lalframe.FrReadREAL8TimeSeries, numpy.float64,
+        lalframe.FrStreamReadREAL8TimeSeries, numpy.float64,
         lal.CreateREAL8TimeSeries,
-        lalframe.FrGetREAL8TimeSeriesMetadata
+        lalframe.FrStreamGetREAL8TimeSeriesMetadata
     ],
     lal.LAL_C_TYPE_CODE: [
-        lalframe.FrReadCOMPLEX8TimeSeries, numpy.complex64,
+        lalframe.FrStreamReadCOMPLEX8TimeSeries, numpy.complex64,
         lal.CreateCOMPLEX8TimeSeries,
-        lalframe.FrGetCOMPLEX8TimeSeriesMetadata
+        lalframe.FrStreamGetCOMPLEX8TimeSeriesMetadata
     ],
     lal.LAL_Z_TYPE_CODE: [
-        lalframe.FrReadCOMPLEX16TimeSeries, numpy.complex128,
+        lalframe.FrStreamReadCOMPLEX16TimeSeries, numpy.complex128,
         lal.CreateCOMPLEX16TimeSeries,
-        lalframe.FrGetCOMPLEX16TimeSeriesMetadata
+        lalframe.FrStreamGetCOMPLEX16TimeSeriesMetadata
     ],
 }
 
