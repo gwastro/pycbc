@@ -8,6 +8,7 @@ import pycbc.vetoes
 import pycbc.psd
 import pycbc.waveform
 import pycbc.events
+import pycbc.noise
 
 from pycbc.waveform import TemplateBank
 from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series
@@ -51,7 +52,8 @@ parser.add_option("--psd-inverse-length", type=int, help="The desired length of 
 parser.add_option("--psd-segment-length", type=int, help="The length of segment for psd estimation (s)")
 parser.add_option("--channel-name", help="The channel containing the gravitational strain data", type=str)
 parser.add_option("--frame-cache",help="Cache file containing the frame locations.", type=str)
-parser.add_option("--fake-data", help="")
+parser.add_option("--fake-strain", help="Name of psd for generating fake gaussain noise", type=str)
+parser.add_option("--fake-strain-seed", help="Seed value for the generation of fake colored gaussian noise", type=int, default=0)
 opt, argv = parser.parse_args()
 
 if opt.verbose:
@@ -68,24 +70,41 @@ else:
     ctx = CPUScheme()
 
 # Data Preconditioning ########################################################
-logging.info("Reading Frames")
-strain = read_frame(opt.frame_cache, opt.channel_name, 
-                    start_time=opt.gps_start_time-opt.pad_data, 
-                    end_time=opt.gps_end_time+opt.pad_data)
+if opt.frame_cache:
+    logging.info("Reading Frames")
+    strain = read_frame(opt.frame_cache, opt.channel_name, 
+                        start_time=opt.gps_start_time-opt.pad_data, 
+                        end_time=opt.gps_end_time+opt.pad_data)
 
-logging.info("Highpass Filtering")
-strain = highpass(strain, frequency=opt.strain_high_pass)
+    logging.info("Highpass Filtering")
+    strain = highpass(strain, frequency=opt.strain_high_pass)
 
-logging.info("Converting to float32")
-strain = (strain * pycbc.DYN_RANGE_FAC).astype(float32)
+    logging.info("Converting to float32")
+    strain = (strain * pycbc.DYN_RANGE_FAC).astype(float32)
 
-logging.info("Resampling data")
-strain = resample_to_delta_t(strain, 1.0/opt.sample_rate)
+    logging.info("Resampling data")
+    strain = resample_to_delta_t(strain, 1.0/opt.sample_rate)
 
-logging.info("Remove Padding")
-start = opt.pad_data*opt.sample_rate
-end = len(strain)-opt.sample_rate*opt.pad_data
-strain = strain[start:end]
+    logging.info("Remove Padding")
+    start = opt.pad_data*opt.sample_rate
+    end = len(strain)-opt.sample_rate*opt.pad_data
+    strain = strain[start:end]
+    
+if opt.fake_strain:
+    logging.info("Generating Fake Strain")
+    duration = opt.gps_end_time - opt.gps_start_time
+    tlen = duration * opt.sample_rate
+    pdf = 1.0/128
+    plen = int(opt.sample_rate / pdf) / 2 + 1
+
+    logging.info("Making PSD for strain")
+    strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, pdf, opt.low_frequency_cutoff)
+    
+    logging.info("Making colored noise")
+    strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate, strain_psd, seed=opt.fake_strain_seed)
+    
+    logging.info("Converting to float32")
+    strain = (pycbc.DYN_RANGE_FAC * strain).astype(float32)
 
 if opt.injection_file:
     logging.info("Applying injections")
@@ -150,11 +169,10 @@ with ctx:
                          num_bank_templates=len(bank_veto))
 
     for t_num, template in enumerate(bank):  
-        event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)  
-        if opt.bank_veto_bank_file:                            
-            bank_veto_overlaps = bank_veto.template_overlaps(template, template.sigmasq) 
-            print bank_veto_overlaps                                        
+        event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)                                                                     
         cumulative_index = opt.segment_start_pad  
+        bank_veto_overlaps = None
+        chisq_bins = None
         
         for s_num, stilde in enumerate(segments):          
             logging.info("Filtering" + "  Template: " + str(t_num+1) + "/" + \
@@ -176,7 +194,6 @@ with ctx:
                 if seg_end > opt.trig_end_time:
                     snr_end = snr_end - (seg_end - opt.trig_end_time) * opt.sample_rate 
                     
-
             if snr_start < snr_end:
                 snr, corr, norm = matched_filter_core(template, stilde, 
                                                       h_norm=template.sigmasq, 
@@ -189,6 +206,8 @@ with ctx:
                 bank_vetov = None
                 if (len(segment_events) > 0) and (opt.bank_veto_bank_file):
                     logging.info("...Doing Bank Chisq")
+                    if bank_veto_overlaps is None:
+                        bank_veto_overlaps = bank_veto.template_overlaps(template, template.sigmasq)
                     bank_veto_snrs, bank_veto_norms = bank_veto_pre[s_num]
                     bank_veto_series = pycbc.vetoes.bank_chisq_from_filters(snr, norm,
                             bank_veto_snrs, bank_veto_norms, bank_veto_overlaps)
@@ -196,13 +215,14 @@ with ctx:
 
                 chisqv = None;
                 if (len(segment_events) > 0) and (opt.chisq_bins != 0):
-                    logging.info("...Doing Chisq")                           
-                    if bank.sigmasq_vec is not None:
-                        chisq_bins = pycbc.vetoes.power_chisq_bins_from_sigmasq_series(bank.sigmasq_vec, 
-                                        opt.chisq_bins, int(opt.low_frequency_cutoff / template.delta_f), 
-                                        template.end_idx)
-                    else:
-                        chisq_bins = pycbc.vetoes.power_chisq_bins(template, opt.chisq_bins, psd, opt.low_frequency_cutoff) 
+                    logging.info("...Doing Chisq") 
+                    if chisq_bins is None:                          
+                        if bank.sigmasq_vec is not None:
+                            chisq_bins = pycbc.vetoes.power_chisq_bins_from_sigmasq_series(bank.sigmasq_vec, 
+                                            opt.chisq_bins, int(opt.low_frequency_cutoff / template.delta_f), 
+                                            template.end_idx)
+                        else:
+                            chisq_bins = pycbc.vetoes.power_chisq_bins(template, opt.chisq_bins, psd, opt.low_frequency_cutoff) 
                     chisq = pycbc.vetoes.power_chisq_from_precomputed(corr, snr, chisq_bins, norm)
                     chisqv = chisq.take(segment_events['loc']+snr_start).numpy()
                     

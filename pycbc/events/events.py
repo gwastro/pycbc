@@ -171,6 +171,7 @@ class EventManager(object):
         outdoc.childNodes[0].appendChild(sngl_table)
         
         start_time = lal.LIGOTimeGPS(self.opt.gps_start_time)
+        
         ifo = self.opt.channel_name[0:2]
         
         if self.opt.trig_start_time:
@@ -202,6 +203,7 @@ class EventManager(object):
             
             if self.opt.chisq_bins != 0:
                 # FIXME: This is *not* the dof!!!
+                # but is needed for later programs not to fail
                 row.chisq_dof = self.opt.chisq_bins
                 row.chisq = event['chisq']
 
