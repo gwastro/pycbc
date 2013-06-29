@@ -68,6 +68,16 @@ def weighted_inner(self, other, weight):
         acum_dtype = float64
 
     return numpy.sum(self.data.conj() * other / weight, dtype=acum_dtype)
+    
+def inner(self, other):
+    """ Return the inner product of the array with complex conjugation.
+    """
+    cdtype = common_kind(self.dtype, other.dtype)
+    if cdtype.kind == 'c':
+        acum_dtype = complex128
+    else:
+        acum_dtype = float64
+    return numpy.sum(self.data.conj() * other, dtype=acum_dtype)
 
 def squared_norm(self):
     """ Return the elementwise squared norm of the array """

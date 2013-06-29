@@ -164,10 +164,11 @@ def get_inner_kernel(dtype_x, dtype_y, dtype_out):
             map_expr=inner_map,
             name="inner")
 
-def inner(a, b):
+def inner(self, b):
+    a = self.data
     dtype_out = _get_common_dtype(a,b)
     krnl = get_inner_kernel(a.dtype, b.dtype, dtype_out)
-    return krnl(a, b)
+    return krnl(a, b).get().max()
 
 def weighted_inner(self, b, w):
     if w is None:
@@ -309,8 +310,5 @@ def max_loc(self):
 def take(self, indices):
     indices = pycuda.gpuarray.to_gpu(indices)
     return pycuda.gpuarray.take(self.data, indices)
-
-
-    
 
 

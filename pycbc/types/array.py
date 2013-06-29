@@ -443,22 +443,10 @@ class Array(object):
 
     @_vcheckother
     @_convert
+    @schemed(BACKEND_PREFIX)
     def inner(self, other):
         """ Return the inner product of the array with complex conjugation.
         """
-        if type(self._scheme) is _scheme.CPUScheme:
-            cdtype = common_kind(self.dtype, other.dtype)
-            if cdtype.kind == 'c':
-                acum_dtype = complex128
-            else:
-                acum_dtype = float64
-            return _numpy.sum(self.data.conj() * other, dtype=acum_dtype)
-        elif type(self._scheme) is _scheme.CUDAScheme:
-            from array_cuda import inner
-            return inner(self.data,other).get().max()
-        elif type(self._scheme) is _scheme.OpenCLScheme:
-            from array_opencl import inner
-            return inner(self.data,other).get().max()
 
     @_convert
     def clear(self):
