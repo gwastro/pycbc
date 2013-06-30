@@ -27,7 +27,7 @@ from pyopencl.tools import context_dependent_memoize
 from pyopencl.scan import InclusiveScanKernel
 from pyopencl.reduction import ReductionKernel
 from pytools import match_precision, memoize_method
-from pyopencl.array import _get_common_dtype
+from pyopencl.array import _get_common_dtype, vdot
 import pyopencl.array
 from pyopencl.elementwise import ElementwiseKernel, complex_dtype_to_name
 from pyopencl.tools import dtype_to_ctype
@@ -98,18 +98,20 @@ def get_inner_kernel(dtype_x, dtype_y, dtype_out):
             name="inner")
 
 def inner(self, b):
-    a = self.data
-    dtype_out = _get_common_dtype(a, b, mgr.state.queue)
-    krnl = get_inner_kernel(a.dtype, b.dtype, dtype_out)
-    return krnl(a, b).get().max()
+   # a = self.data
+   # dtype_out = _get_common_dtype(a, b, mgr.state.queue)
+   # krnl = get_inner_kernel(a.dtype, b.dtype, dtype_out)
+   # return krnl(a, b).get().max()
+   return vdot(self.data, b).get().max()
 
 def weighted_inner(self, b, w):
-    if w is None:
-        return self.inner(other) 
-    a = self.data
-    dtype_out = _get_common_dtype(a, b, mgr.state.queue)
-    krnl = get_weighted_inner_kernel(a.dtype, b.dtype, w.dtype, dtype_out)
-    return krnl(a, b, w).get().max()
+  #  if w is None:
+  #      return self.inner(other) 
+  #  a = self.data
+  #  dtype_out = _get_common_dtype(a, b, mgr.state.queue)
+  #  krnl = get_weighted_inner_kernel(a.dtype, b.dtype, w.dtype, dtype_out)
+  #  return krnl(a, b, w).get().max()
+    return vdot(self.data, b/w).get().max()
  
 
 @context_dependent_memoize

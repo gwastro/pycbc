@@ -30,6 +30,11 @@ from pyfft.cl import Plan
 import numpy
 from pycbc.types import zeros
 
+def near_two(length):
+    n = numpy.log2(length)
+    n = numpy.ceil(n)
+    return 2**n
+
 _plans = {}
 
 
@@ -44,19 +49,21 @@ def _get_plan(itype,otype,inlen):
     return theplan
 
 def fft(invec,outvec,prec,itype,otype):
-    if itype =='complex' and otype == 'complex':
-        pyplan=_get_plan(invec.dtype,outvec.dtype,len(invec))
-        pyplan.execute(invec.data.data,outvec.data.data)
+# This has been hacked horrible to make it work more generally
+    N = int(near_two(len(outvec)))
+    N2 = int (near_two(len(invec)))
+    if N2 > N:
+        N = N2
 
-#    elif itype=='real' and otype=='complex':
-#        raise NotImplementedError("Only Complex to Complex FFTs for pyfft currently.")
-    # This is a horrible HACK
-    elif itype =='real' and otype == 'complex':
-        pyplan=_get_plan(invec.dtype, outvec.dtype,len(invec))
-        invec = invec.astype(outvec.dtype)
-        outr = zeros(len(invec), dtype=outvec.dtype)   
-        pyplan.execute(invec.data.data, outvec.data.data)
-        outvec = outr[0:len(outvec)]
+    i = zeros(N, dtype = outvec.dtype)
+    o = zeros(N, dtype = outvec.dtype)    
+    
+    i[0:len(invec)] = invec
+
+    pyplan=_get_plan(i.dtype, o.dtype, N)
+    pyplan.execute(i.data.data, o.data.data)
+    
+    outvec.data = o[0:len(outvec)]
 
 def ifft(invec,outvec,prec,itype,otype):
     if itype =='complex' and otype == 'complex':

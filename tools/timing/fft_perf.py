@@ -45,10 +45,10 @@ print type(ctx)
 
 N = 2**options.size
 
-vecin = zeros(N, dtype=complex64)
+vecin = zeros(N, dtype=complex64) + 1
 vecout = vecin * 1
 
-vecdin = zeros(N, dtype=complex128)
+vecdin = zeros(N, dtype=complex128) + 1
 vecdout = vecdin * 1
 
 with ctx:

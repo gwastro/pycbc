@@ -457,7 +457,7 @@ class Array(object):
             n32 = self.data.nbytes / 4
             _cudriver.memset_d32(self.data.gpudata, 0, n32)
         if (self._scheme) is _scheme.OpenCLScheme:
-            raise NotImplementedEror
+            self[:] = 0
 
     @_vcheckother
     @_convert
@@ -563,7 +563,7 @@ class Array(object):
     @_returntype
     @_convert
     def astype(self, dtype):
-        if type(self.dtype) is type(dtype):
+        if self.dtype is dtype:
             return self
         else:
             return self._data.astype(dtype)
@@ -597,7 +597,10 @@ class Array(object):
                     raise RuntimeError("The arrays must the same length")
 
             elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-                self_ref[:] = other_ref[:]
+                if (len(other_ref) <= len(self_ref)) :
+                    self_ref._copy(self_ref, other_ref)
+                else:
+                    raise RuntimeError("The arrays must the same length")
 
         
         elif type(other) in _ALLOWED_SCALARS:
