@@ -110,7 +110,7 @@ if opt.injection_file:
     logging.info("Applying injections")
     injections = InjectionSet(opt.injection_file)
     injections.apply(strain, opt.channel_name[0:2])
-
+    
 with ctx:
     logging.info("Estimating PSD")
     psd = pycbc.psd.welch(strain, 

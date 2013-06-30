@@ -597,7 +597,7 @@ class Array(object):
                     raise RuntimeError("The arrays must the same length")
 
             elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-                raise NotImplementedError
+                self_ref[:] = other_ref[:]
 
         
         elif type(other) in _ALLOWED_SCALARS:

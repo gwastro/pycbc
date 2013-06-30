@@ -28,6 +28,7 @@ for the PyCBC package.
 import pycbc
 from pyfft.cl import Plan
 import numpy
+from pycbc.types import zeros
 
 _plans = {}
 
@@ -47,8 +48,15 @@ def fft(invec,outvec,prec,itype,otype):
         pyplan=_get_plan(invec.dtype,outvec.dtype,len(invec))
         pyplan.execute(invec.data.data,outvec.data.data)
 
-    elif itype=='real' and otype=='complex':
-        raise NotImplementedError("Only Complex to Complex FFTs for pyfft currently.")
+#    elif itype=='real' and otype=='complex':
+#        raise NotImplementedError("Only Complex to Complex FFTs for pyfft currently.")
+    # This is a horrible HACK
+    elif itype =='real' and otype == 'complex':
+        pyplan=_get_plan(invec.dtype, outvec.dtype,len(invec))
+        invec = invec.astype(outvec.dtype)
+        outr = zeros(len(invec), dtype=outvec.dtype)   
+        pyplan.execute(invec.data.data, outvec.data.data)
+        outvec = outr[0:len(outvec)]
 
 def ifft(invec,outvec,prec,itype,otype):
     if itype =='complex' and otype == 'complex':
