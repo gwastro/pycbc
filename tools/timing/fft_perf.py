@@ -20,6 +20,7 @@ parser.add_option('--device-num','-d', action='store', type = 'int',
 
 parser.add_option('--size',type=float, help='FFT size')
 parser.add_option('--iterations', type=int, help='Number of iterations to perform')
+parser.add_option('--measure-level', type=int, help='Set the measure level (only applies to FFTW- cpu scheme)')
           
 (options, args) = parser.parse_args()   
 
@@ -28,6 +29,8 @@ _options = vars(options)
 
 if _options['scheme'] == 'cpu':
     ctx = CPUScheme()
+    from pycbc.fft.lalfft import set_measure_level
+    set_measure_level(options.measure_level)
 if _options['scheme'] == 'cuda':
     ctx = CUDAScheme(device_num=_options['devicenum'])
 if _options['scheme'] == 'opencl':
@@ -59,16 +62,18 @@ def tfft():
     with ctx:
 	for i in range(0, niter):
 	    fft(vecin, vecout)
+            b = vecout[9]
 def tifft():
     with ctx:
 	for i in range(0, niter):
 	    ifft(vecin, vecout)
+            b = vecout[9]
 
 def dtifft():
     with ctx:
         for i in range(0, niter):
             ifft(vecdin, vecdout)
-
+            b = vecout[9]
 
 import timeit
 gt = timeit.Timer(tfft)
