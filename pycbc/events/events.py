@@ -207,9 +207,12 @@ class EventManager(object):
                 row.chisq_dof = self.opt.chisq_bins
                 row.chisq = event['chisq']
 
-            if self.opt.bank_veto_bank_file:
+            if hasattr(self.opt, 'bank_veto_bank_file') and self.opt.bank_veto_bank_file:
                 row.bank_chisq_dof = self.global_params['num_bank_templates']
                 row.bank_chisq = event['bank_chisq']
+            else:
+                row.bank_chisq_dof = 0
+                row.bank_chisq = 0
             
             row.eff_distance = sigmasq ** (0.5) / abs(snr * snr_norm) * pycbc.DYN_RANGE_FAC
             row.snr = abs(snr) * snr_norm

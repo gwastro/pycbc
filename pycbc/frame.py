@@ -49,7 +49,7 @@ _fr_type_map = {
 }
 
 def _read_channel(channel, stream, start, duration):
-    channel_type = lalframe.FrGetTimeSeriesType(channel, stream)
+    channel_type = lalframe.FrStreamGetTimeSeriesType(channel, stream)
     read_func = _fr_type_map[channel_type][0]
     d_type = _fr_type_map[channel_type][1]
     data = read_func(stream, channel, start, duration, 0)
@@ -93,23 +93,23 @@ def read_frame(location, channels, start_time=None, end_time=None, duration=None
     base_name, file_extension = os.path.splitext(file_name)
 
     if file_extension == ".lcf" or file_extension == ".cache":
-        cache = lalframe.FrImportCache(location)
-        stream = lalframe.FrCacheOpen(cache)
+        cache = lal.CacheImport(location)
+        stream = lalframe.FrStreamCacheOpen(cache)
     elif file_extension == ".gwf": 
         stream = lalframe.FrOpen(dir_name, file_name)
     else:
         raise TypeError("Invalid location name")
         
-    stream.mode = lalframe.LAL_FR_VERBOSE_MODE
-    lalframe.FrSetMode(stream, stream.mode | lalframe.LAL_FR_CHECKSUM_MODE)
+    stream.mode = lalframe.LAL_FR_STREAM_VERBOSE_MODE
+    lalframe.FrSetMode(stream.mode | lalframe.LAL_FR_STREAM_CHECKSUM_MODE, stream)
 
     # determine duration of data
     if type(channels) is list:
         first_channel = channels[0]
     else:
         first_channel = channels
-    data_length = lalframe.FrGetVectorLength(first_channel, stream)
-    channel_type = lalframe.FrGetTimeSeriesType(first_channel, stream)
+    data_length = lalframe.FrStreamGetVectorLength(first_channel, stream)
+    channel_type = lalframe.FrStreamGetTimeSeriesType(first_channel, stream)
     create_series_func = _fr_type_map[channel_type][2]
     get_series_metadata_func = _fr_type_map[channel_type][3]
     series = create_series_func(first_channel, stream.epoch, 0, 0,
@@ -142,7 +142,7 @@ def read_frame(location, channels, start_time=None, end_time=None, duration=None
         all_data = []
         for channel in channels:
             channel_data = _read_channel(channel, stream, start_time, duration)
-            lalframe.FrSeek(stream, start_time)
+            lalframe.FrStreamSeek(stream, start_time)
             all_data.append(channel_data)
         return all_data
     else:
