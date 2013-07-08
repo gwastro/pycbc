@@ -214,7 +214,7 @@ class EventManager(object):
                 row.bank_chisq_dof = 0
                 row.bank_chisq = 0
             
-            row.eff_distance = sigmasq ** (0.5) / abs(snr * snr_norm) * pycbc.DYN_RANGE_FAC
+            row.eff_distance = sigmasq ** (0.5) / abs(snr * snr_norm)
             row.snr = abs(snr) * snr_norm
             row.end_time = int(end_time.gpsSeconds)
             row.end_time_ns = int(end_time.gpsNanoSeconds)

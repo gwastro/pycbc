@@ -118,7 +118,7 @@ class BankVeto(object):
     def template_overlaps(self, template, template_sigmasq):
         overlaps = []
         template_ow = template / self.psd
-        for bank_template in self.filters:            
+        for bank_template in self.filters:        
             overlap = overlap_cplx(template_ow, bank_template,
                     low_frequency_cutoff=self.f_low, normalized=False)
             norm = sqrt(1 / template_sigmasq / bank_template.sigmasq)

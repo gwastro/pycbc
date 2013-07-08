@@ -101,13 +101,16 @@ class TemplateBank(object):
         htilde.end_idx = int(htilde.end_frequency / htilde.delta_f) 
         htilde.params = self.table[index]
         
+        htilde *= DYN_RANGE_FAC
+        
         # If we were given a psd, calculate sigmasq so we have it for later
         if self.psd is not None:
             if self.sigmasq_vec is not None:  
-                htilde.sigmasq = self.sigmasq_vec[htilde.end_idx] * amp_norm * amp_norm
+                htilde.sigmasq = self.sigmasq_vec[htilde.end_idx] * (amp_norm *  DYN_RANGE_FAC) **2
             else:
                 htilde.sigmasq = sigmasq(htilde, self.psd, low_frequency_cutoff=self.f_low) 
 
+       
         return htilde
 
         

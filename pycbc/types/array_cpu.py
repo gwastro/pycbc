@@ -78,7 +78,7 @@ def inner(self, other):
     else:
         acum_dtype = float64
     return numpy.sum(self.data.conj() * other, dtype=acum_dtype)
-#    return numpy.vdot(self.data, other)
+    #return numpy.vdot(self.data, other)
 
 def squared_norm(self):
     """ Return the elementwise squared norm of the array """

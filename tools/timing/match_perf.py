@@ -6,11 +6,15 @@ from pycbc.psd import *
 import pycbc
 from math import log
 import numpy
+import numpy.random
 import sys
 from optparse import OptionParser
 from math import sin, log
 import gc
 parser = OptionParser()
+
+import logging 
+logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.DEBUG)
 
 parser.add_option('--scheme','-s',  type = 'choice', 
                     choices = ('cpu','cuda','opencl'), 
@@ -51,16 +55,19 @@ else:
 N = 2**size
 print "         SIZE    ",  int(log(N,2))
 n = N/2 +1
-noise = numpy.arange(0,N,1)
+a = numpy.zeros(N) + 1000
+noise = numpy.random.normal(a).astype(numpy.float32)
 
 with ctx:
     nplus2 = TimeSeries(noise,delta_t=1.0/4096,dtype=float32) 
     ntilde2 = make_frequency_series(nplus2)
     psd2 = ntilde2.squared_norm()    
-    o,ind = match(ntilde2,ntilde2,psd=psd2)
-    o,ind = match(ntilde2,ntilde2,psd=None, h_norm=1, s_norm=1)
-    o,ind = matched_filter(ntilde2,ntilde2)
+    o = match(ntilde2,ntilde2,psd=psd2)
+    o = match(ntilde2,ntilde2,psd=None, v1_norm=1, v2_norm=1)
+    o = matched_filter_core(ntilde2, ntilde2)
     out=zeros(N,dtype=complex64)
+    o = overlap_cplx(ntilde2, ntilde2, normalized=False)
+    ntilde3 = ntilde2 +10j
 
 def matcht():
     with ctx:
@@ -70,14 +77,23 @@ def matcht():
 def match_fast():
     with ctx:
         for i in range(0,niter):
-            o,ind = match(ntilde2,ntilde2,psd=None,h_norm=1,s_norm=1)
+            o,ind = match(ntilde2,ntilde2,psd=None,v1_norm=1,v2_norm=1)
+
+def ovlp():
+    with ctx:
+        for i in range(0,niter):
+            o = overlap_cplx(ntilde2,ntilde3, normalized=False)
 
 def filter_fast():
     with ctx:
         for i in range(0,niter):
-            o,ind = matched_filter(ntilde2,ntilde2,psd=None,h_norm=1,out=out)
+            snr, corr, norm = matched_filter_core(ntilde2, ntilde2, psd=None, h_norm=1, out=out)
 
 import timeit
+gt = timeit.Timer(ovlp)
+t = (1000 * gt.timeit(number=1)/niter)
+print "Foverlap %.2f msec" % t, " %5.1f op/min " % (1000 *60 /t)
+
 gt = timeit.Timer(matcht)
 t = (1000 * gt.timeit(number=1)/niter)
 print "MATCH %.2f msec" % t, " %5.1f op/min " % (1000 *60 /t)

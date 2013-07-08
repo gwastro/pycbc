@@ -103,6 +103,16 @@ class TestMatchedFilter(base_test.function_base,unittest.TestCase):
         else:
             pass
             
+    def test_correlate (self):
+        from pycbc.filter.matchedfilter import correlate
+        with self.context:
+            a = Array([1j], dtype=complex64)
+            b = Array([1j], dtype=complex64)
+            c = zeros(0, dtype=complex64)
+            correlate (a, b, c)
+            self.assertEqual(1, c[0])
+            
+            
     def test_ave_snr_noise(self):
         with self.context:
             #Test that the average snr in noise is 2
@@ -114,7 +124,8 @@ class TestMatchedFilter(base_test.function_base,unittest.TestCase):
             # Calculate a Faux psd for normalization, replace with better algorithm
             psd = (ntilde).squared_norm()  / float(len(nplus)) * nplus.delta_t *2.0
 
-            snr = matched_filter(self.filt,nplus,psd=psd)   
+            snr = matched_filter(self.filt, nplus, psd=psd)   
+            
             ave = snr.squared_norm().sum() /len(snr)
             self.assertAlmostEqual(2,ave,places=5)
             
