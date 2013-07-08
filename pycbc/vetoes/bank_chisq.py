@@ -27,8 +27,8 @@ from pycbc.filter import overlap_cplx, matched_filter_core
 from pycbc.waveform import TemplateBank
 from math import sqrt
 
-def bank_chisq_from_filters(tmplt_snr, tmplt_norm, bank_snrs, bank_norms,\
-        tmplt_bank_matchs):
+def bank_chisq_from_filters(tmplt_snr, tmplt_norm, bank_snrs, bank_norms,
+        tmplt_bank_matchs, indices=None):
     """ This function calculates and returns a TimeSeries object containing the
     bank veto calcuated over a segment.
     
@@ -48,16 +48,23 @@ def bank_chisq_from_filters(tmplt_snr, tmplt_norm, bank_snrs, bank_norms,\
     tmplt_bank_matchs: list of floats
         The complex overlap between the search template and each 
         of the bank templates
+    indices: {None, Array}, optional
+        Array of indices. If given, the bank chisq will only calculate point at
+        these values.
 
     Returns
     -------
-    The function returns the bank_veto TimeSeries object.
+    bank_chisq: TimeSeries of the bank vetos
     """
+    if indices is not None: 
+        tmplt_snr = tmplt_snr.take(indices)
+        bank_snrs_tmp = []
+        for bank_snr in bank_snrs:
+            bank_snrs_tmp.append(bank_snr.take(indices))
+        bank_snrs=bank_snrs_tmp
     
     # Initialise bank_chisq as 0s everywhere
-    bank_chisq = TimeSeries(zeros(len(tmplt_snr),\
-            dtype=real_same_precision_as(tmplt_snr)), delta_t=tmplt_snr.delta_t,\
-            epoch=tmplt_snr.start_time, copy=False)
+    bank_chisq = zeros(len(tmplt_snr), dtype=real_same_precision_as(tmplt_snr))
 
     # Loop over all the bank templates
     for i in range(len(bank_snrs)):
@@ -70,7 +77,11 @@ def bank_chisq_from_filters(tmplt_snr, tmplt_norm, bank_snrs, bank_norms,\
         
         bank_chisq += (bank_SNR - tmplt_SNR).squared_norm()
 
-    return bank_chisq
+    if indices is not None:
+        return bank_chisq
+    else:
+        return TimeSeries(bank_chisq, delta_t=tmplt_snr.delta_t, 
+               epoch=tmplt_snr.start_time, copy=False)
     
 class BankVeto(object):
     """This class reads in a template bank file for a bank veto, handles the
@@ -98,7 +109,20 @@ class BankVeto(object):
         return len(self.filters)
         
     def segment_snrs(self, stilde):
-        """ Return the snrs for each bank filter against stilde.
+        """ This functions calculates the snr of each bank veto template against
+        the segment
+        
+        Parameters
+        ----------
+        segment: FrequencySeriess
+            The SNR time series from filtering the segment against the current 
+            search template
+
+
+        Returns
+        -------
+        snr (list): List of snr time series.
+        norm (list): List of normalizations factors for the snr time series.
         """
         snrs = []
         norms = []
@@ -116,6 +140,17 @@ class BankVeto(object):
         return snrs, norms
         
     def template_overlaps(self, template, template_sigmasq):
+        """ This functions calculates the overlaps between the template and the
+        bank veto templates.
+        
+        Parameters
+        ----------
+        template: FrequencySeries
+
+        Returns
+        -------
+        overlaps: List of complex overlap values.
+        """
         overlaps = []
         template_ow = template / self.psd
         for bank_template in self.filters:        
