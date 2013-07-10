@@ -15,7 +15,7 @@ The goals of the PyCBC project are to
 - Enable simple, easy and transparent access for various many-core architectures like GPUs
 - Ultimately become the data analysis tool of the 'advanced era'
 
-Documentation contents:
+Documentation overview:
 
 .. toctree::
    :maxdepth: 1
@@ -23,6 +23,12 @@ Documentation contents:
    install
    documentation
 
+Package documentation:
+
+.. toctree::
+   :maxdepth: 1
+
+   frame
 
 
 Indices and tables
