@@ -12,16 +12,16 @@ Ihope's .ini files were used in every analysis. However, it has been noted that 
 
 In this page we describe the layout of the ahope .ini configuration file and what the various sections mean, how they are used, and how an ini file should be set out. 
 
-===================
+===========================================
 Features to fit somewhere else on the page
-===================
+===========================================
 
 - aHope should be provided a nicely formatted ini file as input. After parsing the .ini file, aHope will dump the parsed .ini file (unordered and free of comments) back to the analysis directory. This file would be more useful for an expert to sanity check the workflow than the input file is.
 - The ability to supply secondary ini files (as many as needed) within the ini file should be given. When parsing the ini file, aHope would begin by reading these in and concatenating them with the original configuration file.
 
-===================
+=====================================
 Global options - the [ahope] section
-===================
+=====================================
 
 The [ahope] section of the configuration file should be used to store options that are used when constructing an ahope workflow that are not supplied on the command line.
 
@@ -70,9 +70,9 @@ Here is an example of the [ahope] section of a .ini file::
   tmplt-bank = /PATH/TO/TEMPLATE/BANK/template_bank.xml
   ; EXAMPLE TO BE IMPROVED WHEN AN INI FILE ACTUALLY EXISTS!
 
-===================
+=================================================
 Executable locations - the [executables] section
-===================
+=================================================
 
 This section should contain the names of each of the executables that will be used in the ahope workflow and their locations. 
 
@@ -114,9 +114,9 @@ If a particular code (let's say inspiral) wants to use an option supplied in the
 
 Similar macros can be added as needed, but these should be limited to avoid namespace confusion. This also means that no value supplied to an option can begin with MACRO (unless we add some functionality to allow this to be overridden (value = MACRO_MACRO(MACRO_SPOTTY_WOT) might be interpreted to value = MACRO_SPOTTY_WOT ). '''Any feature like this must be clearly documented'''
 
----------------------
+---------------------------------
 Example complete ahope .ini file
----------------------
+---------------------------------
 
 Provided here is an example of a complete ahope.ini file. ''File to be added once we start putting one together.''
 
