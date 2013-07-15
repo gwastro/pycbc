@@ -1,6 +1,6 @@
-###################################################
+##################################################################
 Ahope: the inspiral analysis workflow generator (``pycbc.ahope``)
-###################################################
+##################################################################
 
 ============
 Introduction
@@ -12,7 +12,7 @@ The ahope workflow runs through a number of stages, which are designed to be as 
 
 Documentation of the ahope executable and how to run it can be found here.
 
-Each of the sections is described in detail below. Also refer to the `Link page here <https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/InspiralPipelineDevelopment/130627093845InspiralPipelineDocumentationAhope_development_plan>`_ for details. Also see the `Link page here <https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/InspiralPipelineDevelopment/130614025403InspiralPipelineDevelopmentThe%20evolution%20of%20ihope%20and%20inspiral>`_ for descriptions of what ahope should be and motivation for making ahope in the first place. **NOTE: REMOVE THESE LINKS ONCE AHOPE DOCUMENTATION IS SUFFICIENT THAT THIS IS NOT LONGER NEEDED**
+Each of the sections is described in detail below. Also refer to the `page here <https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/InspiralPipelineDevelopment/130627093845InspiralPipelineDocumentationAhope_development_plan>`_ for details. Also see the `link here <https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/InspiralPipelineDevelopment/130614025403InspiralPipelineDevelopmentThe%20evolution%20of%20ihope%20and%20inspiral>`_ for descriptions of what ahope should be and motivation for making ahope in the first place. **NOTE: REMOVE THESE LINKS ONCE AHOPE DOCUMENTATION IS SUFFICIENT THAT THIS IS NOT LONGER NEEDED**
 
 The sections are 
 
@@ -46,6 +46,7 @@ Construct a template bank, or banks, of CBC waveforms that will be used to match
 
 .. toctree::
    :maxdepth: 1 
+
    ahope/template_bank
 
 ====================
@@ -55,6 +56,7 @@ Matched-filtering
 Perform the matched-filters and calculate any signal-based consistency tests that should be calculated.
 
 .. toctree::   :maxdepth: 1 
+
    ahope/matched_filter
 
 ====================
@@ -64,6 +66,7 @@ Coincidence
 Determine if "triggers" seen in one detector are also seen in other detectors. Also check for coincidence between time-slid triggers for background evaluation
 
 .. toctree::   :maxdepth: 1 
+
    ahope/coincidence
 
 ====================
@@ -73,6 +76,7 @@ Post-processing
 Interpret the results, calculating false-alarm probabilities and rate limits.
 
 .. toctree::   :maxdepth: 1 
+
    ahope/post_processing
 
 ====================
@@ -82,6 +86,7 @@ Plotting
 Create plots of the various outputs through the pipeline to easily enable the user to view results
 
 .. toctree::   :maxdepth: 1
+
     ahope/plotting
 
 
@@ -89,9 +94,11 @@ Create plots of the various outputs through the pipeline to easily enable the us
 Generate html pages
 ====================
 
+
 Tie the plots together in one html page, where *all* desired information should be available
 
 .. toctree::   :maxdepth: 1
+
     ahope/web_pages
 
 
