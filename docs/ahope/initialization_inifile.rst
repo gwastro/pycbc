@@ -12,16 +12,16 @@ Ihope's .ini files were used in every analysis. However, it has been noted that 
 
 In this page we describe the layout of the ahope .ini configuration file and what the various sections mean, how they are used, and how an ini file should be set out. 
 
-###################
+===================
 Features to fit somewhere else on the page
-###################
+===================
 
 - aHope should be provided a nicely formatted ini file as input. After parsing the .ini file, aHope will dump the parsed .ini file (unordered and free of comments) back to the analysis directory. This file would be more useful for an expert to sanity check the workflow than the input file is.
 - The ability to supply secondary ini files (as many as needed) within the ini file should be given. When parsing the ini file, aHope would begin by reading these in and concatenating them with the original configuration file.
 
-###################
+===================
 Global options - the [ahope] section
-###################
+===================
 
 The [ahope] section of the configuration file should be used to store options that are used when constructing an ahope workflow that are not supplied on the command line.
 
@@ -70,9 +70,9 @@ Here is an example of the [ahope] section of a .ini file::
   tmplt-bank = /PATH/TO/TEMPLATE/BANK/template_bank.xml
   ; EXAMPLE TO BE IMPROVED WHEN AN INI FILE ACTUALLY EXISTS!
 
-###################
+===================
 Executable locations - the [executables] section
-###################
+===================
 
 This section should contain the names of each of the executables that will be used in the ahope workflow and their locations. 
 
@@ -87,9 +87,9 @@ Here is an example of the [executables] section of an ahope .ini file::
   inspiral          = /home/cbc/opt/s6b/ab577e4e5dad14e46fce511cffdb04917836ba36/bin/lalapps_inspiral
   inspinj           = /home/cbc/opt/s6b/ab577e4e5dad14e46fce511cffdb04917836ba36/bin/lalapps_inspinj
 
-###################
+===================
 Executable options
-###################
+===================
 
 For each of the executables in the [executables] section, options for that executable should be listed under the section corresponding to that executable. Options in the [tmpltbank] section are sent to lalapps_tmpltbank, options in the [inspiral] section are sent to lalapps_inspiral etc.
 
@@ -120,9 +120,9 @@ Example complete ahope .ini file
 
 Provided here is an example of a complete ahope.ini file. ''File to be added once we start putting one together.''
 
-#####################
+=====================
 Code documentation
-#####################
+=====================
 
 The parsing of ahope .ini files is done from within the pycbc.ahope.configparserutils module. The functions in this module are documented below
 

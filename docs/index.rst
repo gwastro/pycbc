@@ -28,6 +28,7 @@ Package documentation:
 .. toctree::
    :maxdepth: 1
 
+   ahope
    frame
    tmpltbank
 

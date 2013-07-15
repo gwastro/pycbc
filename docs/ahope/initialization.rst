@@ -18,11 +18,11 @@ The command line options that can be provided to ihope is given here:
 .. toctree::
    :maxdepth: 1
 
-   ahope/initialization_commandline
+   initialization_commandline
 
 The ahope configuration file and it's options are described here:
 
 .. toctree::
    :maxdepth: 1
 
-   ahope/initialization_inifile
+   initialization_inifile
