@@ -108,4 +108,5 @@ Method documentation
 
 The documentation for all functions/modules within pycbc.ahope follows, unless you are looking for a specific function, it might be easier to navigate through the section links above.
 
-.. autofunction:: pycbc.ahope
+.. toctree::
+    pycbc.ahope
