@@ -25,10 +25,9 @@ import numpy
 import events
 
 def threshold(series, value):
-    arr = series.numpy()
-    mask = abs(arr) > value
-    vals = arr[mask]
-    locs = mask.nonzero()[0]
+    arr = series.data
+    locs = numpy.where(arr.real**2 + arr.imag**2 > value**2)[0]
+    vals = arr[locs]
     peaks = numpy.zeros(len(vals), dtype=events.subset_dtype(series.dtype))
     peaks['loc'] = locs
     peaks['val'] = vals

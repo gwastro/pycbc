@@ -118,18 +118,34 @@ class PowerTChisq(object):
         vals = []
         for i, snr in zip(indices, snrs):
             # Move the whitened h(t) to the right time
-            dat = self.segs[seg_idx] * 1
-            dat.roll(-i)
+            dat = self.segs[seg_idx]
+            #dat.roll(-i)
             
             #Calculate the chisq for that point in time
             chisq = 0
             for j in range(len(bins)-1): 
                 b = int(bins[j])
                 e = int(bins[j+1])  
-                         
-                tmplt._epoch = dat._epoch       
-                #m = tmplt[b:e].inner(dat[b:e]) 
-                m = numpy.vdot(tmplt[b:e].data, dat[b:e].data)
+                
+                bh = b + i
+                eh = e + i
+                tmplt._epoch = dat._epoch
+                if bh >= len(dat):
+                    bh -= len(dat)
+                    
+                if eh > len(dat):
+                    eh -= len(dat)
+                        
+                if eh > bh:      
+                    #m = tmplt[b:e].inner(dat[b:e]) 
+                    m = numpy.vdot(tmplt[b:e].data, dat[bh:eh].data)
+
+                else:
+                    c = b + (len(dat) - bh)
+
+                    m = numpy.vdot(tmplt[b:c].data, dat[bh:len(dat)].data)
+                    m += numpy.vdot(tmplt[c:e].data, dat[0:eh].data)
+                    
                 chisq += (m.conj() * m).real
                 
             chisq *= self.nbins * norm     

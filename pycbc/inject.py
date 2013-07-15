@@ -56,7 +56,7 @@ class InjectionSet(object):
         self.table = table.get_table(self.indoc, lsctables.SimInspiralTable.tableName)
         self.extra_args = kwds
 
-    def apply(self, strain, detector_name, f_lower=None):
+    def apply(self, strain, detector_name, f_lower=None, distance_scale=1):
         """Add injections (as seen by a particular detector) to a time series.
 
         Parameters
@@ -103,7 +103,7 @@ class InjectionSet(object):
             # compute the waveform time series
             hp, hc = get_td_waveform(
                     inj, approximant=inj.waveform, delta_t=strain.delta_t,
-                    f_lower=f_l, **self.extra_args)
+                    f_lower=f_l, distance=inj.distance * distance_scale, **self.extra_args)
             hp._epoch += float(end_time)
             hc._epoch += float(end_time)
             if float(hp.start_time) > t1:

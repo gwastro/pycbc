@@ -215,35 +215,34 @@ with ctx:
                                                       out=snr_work_mem, corr_out=corr_work_mem)
                 
                 event_mgr.add_template_params(snr_norm=norm)
-                segment_events = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm)       
-                
-                if len(segment_events) > 0:          
+                segment_events = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm)                 
+
+                bank_vetov = None
+                if (len(segment_events) > 0) and (opt.bank_veto_bank_file):
+                    logging.info("...Doing Bank Chisq")
+                    if bank_veto_overlaps is None:
+                        bank_veto_overlaps = bank_veto.template_overlaps(template, template.sigmasq)
+                    bank_veto_snrs, bank_veto_norms = bank_veto_pre[s_num]
+                    bank_veto_series = pycbc.vetoes.bank_chisq_from_filters(snr, norm,
+                            bank_veto_snrs, bank_veto_norms, bank_veto_overlaps)
+                    bank_vetov = bank_veto_series.take(segment_events['loc']+snr_start).numpy()
+
+                chisqv = None;
+                if (len(segment_events) > 0) and (opt.chisq_bins != 0):
+                    logging.info("...Doing Chisq") 
+                    if chisq_bins is None:                          
+                        if bank.sigmasq_vec is not None:
+                            chisq_bins = pycbc.vetoes.power_chisq_bins_from_sigmasq_series(bank.sigmasq_vec, 
+                                            opt.chisq_bins, int(opt.low_frequency_cutoff / template.delta_f), 
+                                            template.end_idx)
+                        else:
+                            chisq_bins = pycbc.vetoes.power_chisq_bins(template, opt.chisq_bins, psd, opt.low_frequency_cutoff) 
+                    chisq = pycbc.vetoes.power_chisq_from_precomputed(corr, snr, chisq_bins, norm)
+                    chisqv = chisq.take(segment_events['loc']+snr_start).numpy()
+                    
+                if (len(segment_events) > 0):
                     idx = segment_events['loc']
                     snrv = segment_events['val']
-
-                    bank_vetov = None
-                    if (opt.bank_veto_bank_file):
-                        logging.info("...Doing Bank Chisq")
-                        if bank_veto_overlaps is None:
-                            bank_veto_overlaps = bank_veto.template_overlaps(template, template.sigmasq)
-                        bank_veto_snrs, bank_veto_norms = bank_veto_pre[s_num]
-                        bank_vetov = pycbc.vetoes.bank_chisq_from_filters(snr, norm,
-                                bank_veto_snrs, bank_veto_norms, bank_veto_overlaps, indices=idx).numpy()
-                      
-
-                    chisqv = None;
-                    if (opt.chisq_bins != 0):
-                        logging.info("...Doing Chisq") 
-                        if chisq_bins is None:                          
-                            if bank.sigmasq_vec is not None:
-                                chisq_bins = pycbc.vetoes.power_chisq_bins_from_sigmasq_series(bank.sigmasq_vec, 
-                                                opt.chisq_bins, int(opt.low_frequency_cutoff / template.delta_f), 
-                                                template.end_idx)
-                            else:
-                                chisq_bins = pycbc.vetoes.power_chisq_bins(template, opt.chisq_bins, psd, opt.low_frequency_cutoff) 
-                        chisq = pycbc.vetoes.power_chisq_from_precomputed(corr, snr, chisq_bins, norm)
-                        chisqv = chisq.take(segment_events['loc']+snr_start).numpy()
-                        
                     idx += cumulative_index
                     event_mgr.add_template_events( ["snr", "time_index", "chisq", "bank_chisq"], [snrv, idx, chisqv, bank_vetov])
        
