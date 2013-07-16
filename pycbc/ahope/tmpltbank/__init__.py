@@ -22,10 +22,8 @@
 # =============================================================================
 #
 """
-This package provides the utilities to construct an inspiral workflow for
-performing a coincident CBC matched-filter analysis on gravitational-wave
-interferometer data
+This package provides the utilities to construct the template bank section of an
+ahope workflow
 """
 
-import tmpltbank
-from configparserutils import *
+from tmpltbank_class import *
