@@ -162,7 +162,7 @@ class EventManager(object):
         outdoc.appendChild(glue.ligolw.ligolw.LIGO_LW())
         
         proc_id = glue.ligolw.utils.process.register_to_xmldoc(outdoc, 
-                        "pycbc_inspiral", self.opt.__dict__, comment="", ifos=[""],
+                        "inspiral", self.opt.__dict__, comment="", ifos=[""],
                         version=glue.git_version.id, cvs_repository=glue.git_version.branch,
                         cvs_entry_time=glue.git_version.date).process_id
         
