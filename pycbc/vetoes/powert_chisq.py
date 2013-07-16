@@ -21,61 +21,9 @@
 #
 # =============================================================================
 #
-from pycbc.fft import ifft
-from pycbc.fft.lalfft import set_measure_level, get_measure_level
-from pycbc.types import zeros, float32, complex64, TimeSeries
-from math import sqrt
 import numpy
-
-def time_matched_filter(template, psd, data, snrs, indices, num_bins, fmin):
-    n = len(data)
-    N = (n-1)*2
-    dt = 1.0 / (N * data.delta_f)
-    
-    time_data = TimeSeries(zeros(N), delta_t=dt, dtype=float32)
-    time_template = TimeSeries(zeros(N), delta_t=dt, dtype=complex64)
-    
-    asd = psd ** 0.5  
-    kmin = fmin / template.delta_f  
-    # Separately whiten the template and the data
-    tmp = template / asd
-    tmp[0:kmin] = 0 
-    
-    data = data / asd
-    data[0:kmin] = 0
-    
-    tmp.resize(N)
-    
-    # Convert them to the time domain so we can do the filtering there
-    ifft(data, time_data)
-    ifft(tmp, time_template)
-    
-    # Calculate where the bins should be
-    power = time_template.squared_norm().cumsum() * 4 * dt
-    sigmasq = power[-1]
-    edge_vec = numpy.arange(0, num_bins) * sigmasq / num_bins
-    bins = numpy.searchsorted(power.numpy(), edge_vec, side='right')
-    bins = numpy.append(bins, len(time_template))
-    
-    norm = (4 * dt / sqrt(sigmasq)) ** 2
-    vals = []
-    # Calculate the chisq for only the given points in the snr time series
-    
-    for i, snr in zip(indices, snrs):
-        dat = time_data * 1
-        dat.roll(-i)
-        chisq = 0
-        for j in range(len(bins)-1): 
-            b = int(bins[j])
-            e = int(bins[j+1])           
-            time_template._epoch = dat._epoch       
-            m = time_template[b:e].inner(dat[b:e]) 
-            chisq += (m.conj() * m).real
-        chisq *= num_bins * norm     
-        chisq -=  (snr.conj() * snr).real
-        
-        vals.append(chisq) 
-    return vals
+from pycbc.fft import ifft
+from pycbc.types import zeros, TimeSeries, real_same_precision_as
 
 class PowerTChisq(object):
     def __init__ (self, num_bins, segs, psd, fmin):
@@ -89,7 +37,7 @@ class PowerTChisq(object):
          
         # Pregenerate the whitened h(t) segments 
         for stilde in segs:
-            ht = TimeSeries(zeros(self.N), delta_t=self.dt, dtype=float32)    
+            ht = TimeSeries(zeros(self.N), delta_t=self.dt, dtype=self.asd.dtype)    
             stilde = stilde / self.asd
             stilde[0:self.kmin] = 0     
             ifft(stilde, ht)
@@ -100,7 +48,7 @@ class PowerTChisq(object):
         tmp = template / self.asd
         tmp[0:self.kmin] = 0 
         tmp.resize(self.N)
-        tmplt = TimeSeries(zeros(self.N), delta_t=self.dt, dtype=complex64)
+        tmplt = TimeSeries(zeros(self.N), delta_t=self.dt, dtype=template.dtype)
         ifft(tmp, tmplt)
         
         # Calculate the location of the bins (equal power in each bin)
@@ -119,8 +67,7 @@ class PowerTChisq(object):
         for i, snr in zip(indices, snrs):
             # Move the whitened h(t) to the right time
             dat = self.segs[seg_idx]
-            #dat.roll(-i)
-            
+
             #Calculate the chisq for that point in time
             chisq = 0
             for j in range(len(bins)-1): 
@@ -129,7 +76,7 @@ class PowerTChisq(object):
                 
                 bh = b + i
                 eh = e + i
-                tmplt._epoch = dat._epoch
+                
                 if bh >= len(dat):
                     bh -= len(dat)
                     
@@ -137,14 +84,11 @@ class PowerTChisq(object):
                     eh -= len(dat)
                         
                 if eh > bh:      
-                    #m = tmplt[b:e].inner(dat[b:e]) 
-                    m = numpy.vdot(tmplt[b:e].data, dat[bh:eh].data)
-
+                    m = tmplt[b:e].inner(dat[bh:eh])
                 else:
                     c = b + (len(dat) - bh)
-
-                    m = numpy.vdot(tmplt[b:c].data, dat[bh:len(dat)].data)
-                    m += numpy.vdot(tmplt[c:e].data, dat[0:eh].data)
+                    m = tmplt[b:c].inner(dat[bh:len(dat)])
+                    m += tmplt[c:e].inner(dat[0:eh])
                     
                 chisq += (m.conj() * m).real
                 
@@ -153,3 +97,4 @@ class PowerTChisq(object):
             vals.append(chisq) 
         return vals
 
+from math import sqrt

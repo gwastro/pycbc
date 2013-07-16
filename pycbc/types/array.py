@@ -289,6 +289,23 @@ class Array(object):
                 raise TypeError('array argument required')                    
 
         return fn(self,*nargs)
+        
+    @decorator  
+    def _vrcheckother(fn, self,*args):
+        nargs = ()
+        for other in args:
+            if isinstance(other, type(self)) or type(other) is Array:
+                if len(other) != len(self):
+                    raise ValueError('lengths do not match')
+                if other.precision == self.precision:
+                    _convert_to_scheme(other)
+                    nargs += (other._data,)
+                else:
+                    raise TypeError('precisions do not match')
+            else:
+                raise TypeError('array argument required')                    
+
+        return fn(self,*nargs)
 
         
     def _icheckother(fn):
@@ -626,7 +643,7 @@ class Array(object):
     def squared_norm(self):
         """ Return the elementwise squared norm of the array """
 
-    @_vcheckother
+    @_vrcheckother
     @_convert
     @schemed(BACKEND_PREFIX)
     def inner(self, other):
@@ -644,7 +661,7 @@ class Array(object):
         if (self._scheme) is _scheme.OpenCLScheme:
             self[:] = 0
 
-    @_vcheckother
+    @_vrcheckother
     @_convert
     @schemed(BACKEND_PREFIX)
     def weighted_inner(self, other, weight):
