@@ -1,6 +1,7 @@
 #!/usr/bin/env /usr/bin/python
 
 import logging
+import sys
 import numpy
 from optparse import OptionParser
 
@@ -172,6 +173,14 @@ with ctx:
                          ['time_index', 'snr', 'chisq', 'bank_chisq'], 
                          [int, complex64, float32, float32, float32], 
                          num_bank_templates=len(bank_veto))
+
+    # Our bank might have had no templates in it, in which case we shouldn't
+    # analyze anything but should write our output and exit.
+
+    if len(bank) == 0:
+        logging.info("No templates found in template bank, so writing process table and exiing.")
+        event_mgr.write_events()
+        sys.exit(0)
 
     for t_num, template in enumerate(bank):  
         event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)                                                                     
