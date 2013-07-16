@@ -12,6 +12,16 @@ Ihope's .ini files were used in every analysis. However, it has been noted that 
 
 In this page we describe the layout of the ahope .ini configuration file and what the various sections mean, how they are used, and how an ini file should be set out. 
 
+**NOTE: A number of features that have been put in here, are available in the python 3.X version of ConfigParser. In addition this version also has a duplicate option check. In python 2.X if I do::
+
+    [inspiral]
+    detect-gravitational-waves = True
+    LOTS OF GARBAGE
+    detect-gravitational-waves = False
+
+it will set the value to False, and proceed happily. THERE IS NO WAY TO CATCH THIS! There is a python 2.X backport of this new version, it is available in pypi, but not in macports. Can we swap to this?**
+
+
 ===========================================
 Features to fit somewhere else on the page
 ===========================================
