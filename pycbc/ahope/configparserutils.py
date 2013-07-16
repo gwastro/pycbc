@@ -36,14 +36,16 @@ def parse_ahope_ini_file(cpFile,parsed_filepath=None):
 
     Parameters
     ----------
-    cpFile : The path to a .ini file to be read in
-    parsed_filepath: Boolean, optional
+    cpFile : string 
+        The path to a .ini file to be read in
+    parsed_filepath : Boolean, optional
         If provided, the .ini file, after parsing, will be written to this
         location   
 
     Returns
     -------
-    cp: The parsed ConfigParser class containing the read in .ini file
+    cp : ConfigParser
+        The parsed ConfigParser class containing the read in .ini file
     """    
     # First read the .ini file
     cp = read_ini_file(cpFile)
@@ -78,11 +80,13 @@ def read_ini_file(cpFile):
 
     Parameters
     ----------
-    cpFile : The path to a .ini file to be read in
+    cpFile : String
+        The path to a .ini file to be read in
 
     Returns
     -------
-    cp: The ConfigParser class containing the read in .ini file
+    cp : ConfigParser
+        The ConfigParser class containing the read in .ini file
     """    
 
     # Initialise ConfigParser class
@@ -106,15 +110,17 @@ def perform_extended_interpolation(cp,preserve_orig_file=False):
 
     Parameters
     ----------
-    cp: ConfigParser object
-    preserve_orig_file: Boolean, optional
+    cp : ConfigParser
+        The ConfigParser object
+    preserve_orig_file : Boolean, optional
         By default the input ConfigParser object will be modified in place. If
         this is set deepcopy will be used and the input will be preserved.
         Default = False
 
     Returns
     -------
-    cp: parsed ConfigParser object
+    cp : ConfigParser
+         parsed ConfigParser object
     """
     # Deepcopy the cp object if needed
     if preserve_orig_file:
@@ -151,16 +157,16 @@ def interpolate_string(testString,cp,section):
 
     Parameters
     ----------
-    testString: String
+    testString : String
         The string to parse and interpolate
-    cp: ConfigParser
+    cp : ConfigParser
         The ConfigParser object to look for the interpolation strings within
-    section: String
+    section : String
         The current section of the ConfigParser object
 
     Returns
     ----------
-    testString: String
+    testString : String
         Interpolated string
     """
 
@@ -199,15 +205,17 @@ def split_multi_sections(cp,preserve_orig_file=False):
    
     Parameters
     ----------
-    cp: The ConfigParser class
-    preserve_orig_file: Boolean, optional
+    cp : ConfigParser
+        The ConfigParser class
+    preserve_orig_file : Boolean, optional
         By default the input ConfigParser object will be modified in place. If
         this is set deepcopy will be used and the input will be preserved.
         Default = False
 
     Returns
     ----------
-    cp: The ConfigParser class 
+    cp : ConfigParser
+        The ConfigParser class 
     """
     # Deepcopy the cp object if needed
     if preserve_orig_file:
@@ -235,7 +243,8 @@ def sanity_check_subsections(cp):
 
     Parameters
     ----------
-    cp: The ConfigParser class
+    cp : ConfigParser
+        The ConfigParser class
 
     Returns
     ----------
@@ -259,25 +268,29 @@ def add_options_to_section(cp,section,items,preserve_orig_file=False,\
 
     Parameters
     ----------
-    cp: The ConfigParser class
-    section: string
+    cp : ConfigParser
+        The ConfigParser class
+    section : string
         The name of the section to add options+values to
-    items: list of tuples
+    items : list of tuples
         Each tuple contains (at [0]) the option and (at [1]) the value to add
         to the section of the ini file
-    preserve_orig_file: Boolean, optional
+    preserve_orig_file : Boolean, optional
         By default the input ConfigParser object will be modified in place. If
         this is set deepcopy will be used and the input will be preserved.
         Default = False
-    overwrite_options: Boolean, optional
+    overwrite_options : Boolean, optional
         By default this function will throw a ValueError if an option exists in
         both the original section in the ConfigParser *and* in the provided
-        items. This will override so that the options+values given in items
+        items.
+        This will override so that the options+values given in items
         will replace the original values if the value is set to True.
         Default = True 
+
     Returns
     ----------
-    cp: The ConfigParser class 
+    cp : ConfigParser
+        The ConfigParser class 
     """
     # Sanity checking
     if not cp.has_section(section):
@@ -304,18 +317,19 @@ def check_duplicate_options(cp,section1,section2,raise_error=False):
 
     Parameters
     ----------
-    cp: The ConfigParser class
-    section1: string
+    cp : ConfigParser
+        The ConfigParser class 
+    section1 : string
         The name of the first section to compare
-    section2: string
+    section2 : string
         The name of the second section to compare
-    raise_error: Boolean, optional
+    raise_error : Boolean, optional
         If True, raise an error if duplicates are present.
         Default = False
 
     Returns
     ----------
-    duplicate: List
+    duplicate : List
         List of duplicate options
     """
     # Sanity checking
