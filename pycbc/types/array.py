@@ -831,7 +831,7 @@ class Array(object):
     @_convert
     @schemed(BACKEND_PREFIX)
     def ptr(self):
-        """ Returns a pointer to the memory of this array """        
+        """ Returns a pointer to the memory of this array """   
 
     @property
     @cpuonly

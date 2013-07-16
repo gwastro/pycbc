@@ -148,9 +148,12 @@ def current_prefix():
 def schemed(prefix):
     @decorator
     def scheming_function(fn, *args, **kwds):
-        backend = __import__(prefix + current_prefix(), fromlist=[fn.__name__])
-        schemed_fn = getattr(backend, fn.__name__)
-        schemed_fn.__doc__ = fn.__doc__
+        try:
+            backend = __import__(prefix + current_prefix(), fromlist=[fn.__name__])
+            schemed_fn = getattr(backend, fn.__name__)
+            schemed_fn.__doc__ = fn.__doc__
+        except:
+            raise RuntimeError(("Failed to find implementaiton of (%s) for %s scheme.") % (str(fn), current_prefix()))
         return schemed_fn(*args, **kwds)
     return scheming_function
 
