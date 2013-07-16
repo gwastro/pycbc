@@ -881,6 +881,13 @@ class Array(object):
     @property
     def dtype(self):
         return self._data.dtype
+    
+    def dump(self, filename):
+        """ Dump this Array to a pickle file
+        """
+        import cPickle
+        f = open(filename, "w")
+        cPickle.dump(self, f)
 
     def save(self, path):
         """
@@ -937,5 +944,11 @@ def zeros(length, dtype=float64):
     """
     pass
 
+def load(filename):
+    """ Load an Array from a pickle file
+    """
+    import cPickle
+    f = open(filename)
+    return cPickle.load(f)
 
 

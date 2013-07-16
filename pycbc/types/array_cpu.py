@@ -30,8 +30,8 @@ def zeros(length, dtype=numpy.float64):
     return numpy.zeros(length, dtype=dtype)
 
 def ptr(self):
-    raise TypeError("Please use lal for CPU objects")
-
+    return self.data.ctypes.data
+    
 def dot(self, other):
     return numpy.dot(self._data,other)     
 

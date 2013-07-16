@@ -108,7 +108,7 @@ class TestMatchedFilter(base_test.function_base,unittest.TestCase):
         with self.context:
             a = Array([1j], dtype=complex64)
             b = Array([1j], dtype=complex64)
-            c = zeros(0, dtype=complex64)
+            c = zeros(1, dtype=complex64)
             correlate (a, b, c)
             self.assertEqual(1, c[0])
             

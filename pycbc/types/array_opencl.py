@@ -151,9 +151,6 @@ def cumsum(self):
 
 def max(self):
     return pyopencl.array.max(self._data).get().max()
-    
-def abs_max_loc(self):
-    pass
                    
 
 
