@@ -29,6 +29,7 @@ class TmpltbankList:
            If a tuple of two values is given, return the bank that is **most
            appropriate** for the time range given. This calls
            self.find_bank_in_range
+
         Returns
         --------
         bank : Tmpltbank class
@@ -59,6 +60,7 @@ class TmpltbankList:
            Return the bank that covers the supplied time. If no bank covers
            the time this will return None. If more than one bank covers the
            time a ValueError will be raised. Banks must cover exclusive times.
+
         Returns
         --------
         bank : Tmpltbank class
@@ -91,6 +93,7 @@ class TmpltbankList:
            The start of the time range of interest.
         end : int/float/LIGOGPStime
            The end of the time range of interest
+
         Returns
         --------
         bank : Tmpltbank class
