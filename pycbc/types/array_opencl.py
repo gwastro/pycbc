@@ -31,7 +31,7 @@ from pyopencl.array import _get_common_dtype
 from pyopencl.array import vdot as pvdot
 import pyopencl.array
 from pyopencl.elementwise import ElementwiseKernel, complex_dtype_to_name
-from pyopencl.tools import dtype_to_ctype
+from pyopencl.tools import dtype_to_ctype, get_or_register_dtype
 from pycbc.scheme import mgr 
 import numpy as np
 
@@ -39,6 +39,89 @@ complex_headers = """
 #define PYOPENCL_DEFINE_CDOUBLE
 #include <pyopencl-complex.h>
 """
+
+# Define pyopencl MAXLOC for both single and double precission ################## 
+       
+maxloc_preamble = """
+
+    typedef struct {
+        TTYPE max;
+        LTYPE   loc;
+    }MAXLOCN;
+    
+    __global
+    MAXLOCN maxloc_red(MAXLOCN a, MAXLOCN b){
+        if (a.max > b.max)
+            return a;
+        else 
+            return b;  
+    }
+    
+    __global
+    MAXLOCN maxloc_start(){
+        MAXLOCN t;
+        t.max=0;
+        t.loc=0;
+        return t;
+    }
+    
+    __global
+    MAXLOCN maxloc_map(TTYPE val, LTYPE loc){
+        MAXLOCN t;
+        t.max = val;
+        t.loc = loc;
+        return t;
+    }
+
+    """
+    
+maxloc_preamble_single = """
+    #define MAXLOCN maxlocs
+    #define TTYPE float
+    #define LTYPE int
+""" + maxloc_preamble
+
+maxloc_preamble_double = """
+    #define MAXLOCN maxlocd
+    #define TTYPE double
+    #define LTYPE long
+""" + maxloc_preamble
+    
+maxloc_dtype_double = np.dtype([("max", np.float64), ("loc", np.int64)])
+maxloc_dtype_single = np.dtype([("max", np.float32), ("loc", np.int32)])
+
+maxloc_dtype_single = get_or_register_dtype("maxlocs", dtype=maxloc_dtype_single)
+maxloc_dtype_double = get_or_register_dtype("maxlocd", dtype=maxloc_dtype_double)
+
+mls = ReductionKernel(mgr.state.context, maxloc_dtype_single, neutral = "maxloc_start()",
+        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(x[i], i)",
+        arguments="float *x", preamble=maxloc_preamble_single)
+
+mld = ReductionKernel(mgr.state.context, maxloc_dtype_double, neutral = "maxloc_start()",
+        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(x[i], i)",
+        arguments="double *x", preamble=maxloc_preamble_double)
+        
+max_loc_map = {'single':mls,'double':mld}
+
+
+#amls = ReductionKernel(mgr.state.context, maxloc_dtype_single, neutral = "maxloc_start()",
+#        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
+#        arguments="float *x", preamble=maxloc_preamble_single)
+
+#amld = ReductionKernel(mgr.state.context, maxloc_dtype_double, neutral = "maxloc_start()",
+#        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
+#        arguments="double *x", preamble=maxloc_preamble_double)
+
+#amlsc = ReductionKernel(mgr.state.context, maxloc_dtype_single, neutral = "maxloc_start()",
+##        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
+#       arguments="cfloat2 *x", preamble=maxloc_preamble_single)
+
+#amldc = ReductionKernel(mgr.state.context, maxloc_dtype_double, neutral = "maxloc_start()",
+#        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
+#        arguments="cdouble2 *x", preamble=maxloc_preamble_double)
+
+#abs_max_loc_map = {'single':{ 'real':amls, 'complex':amlsc }, 'double':{ 'real':amld, 'complex':amldc }}
+
 
 @context_dependent_memoize
 def get_cumsum_kernel(dtype):
@@ -134,7 +217,7 @@ def squared_norm(self):
 #    krnl(a,out)
 #    return out 
     a = self.data
-    return a.conj() * a
+    return (a.conj() * a).real
 
 def zeros(length, dtype=np.float64):
     return pyopencl.array.zeros(mgr.state.queue, length, dtype)
@@ -161,4 +244,14 @@ def numpy(self):
 def take(self, indices):
     indices = pyopencl.array.to_device(mgr.state.queue, indices)
     return pyopencl.array.take(self.data, indices)
+    
+#def abs_max_loc(self):
+#    maxloc = abs_max_loc_map[self.precision][self.kind](self._data)
+#    maxloc = maxloc.get()
+#    return float(maxloc['max']),int(maxloc['loc'])
 
+def max_loc(self):
+    maxloc = max_loc_map[self.precision](self._data)
+    maxloc = maxloc.get()
+    return float(maxloc['max']),int(maxloc['loc'])
+    

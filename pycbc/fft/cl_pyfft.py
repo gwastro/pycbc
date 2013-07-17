@@ -48,13 +48,13 @@ def _get_plan(itype,otype,inlen):
 
     return theplan
 
-def fft(invec,outvec,prec,itype,otype):
-# This has been hacked horrible to make it work more generally
+def fft(invec, outvec, prec, itype, otype):
+    # This has been hacked horrible to make it work more generally
     N = int(near_two(len(outvec)))
     N2 = int (near_two(len(invec)))
     if N2 > N:
         N = N2
-
+ 
     i = zeros(N, dtype = outvec.dtype)
     o = zeros(N, dtype = outvec.dtype)    
     
@@ -65,11 +65,23 @@ def fft(invec,outvec,prec,itype,otype):
     
     outvec.data = o[0:len(outvec)]
 
-def ifft(invec,outvec,prec,itype,otype):
-    if itype =='complex' and otype == 'complex':
-        pyplan=_get_plan(invec.dtype,outvec.dtype,len(invec))
-        pyplan.execute(invec.data.data,outvec.data.data,inverse=True)
+def ifft(invec, outvec, prec, itype, otype):
+    # This has been hacked horrible to make it work more generally
+    N = int(near_two(len(outvec)))
+    N2 = int (near_two(len(invec)))
+    if N2 > N:
+        N = N2
+ 
+    i = zeros(N, dtype = invec.dtype)
+    o = zeros(N, dtype = invec.dtype)    
+    
+    i[0:len(invec)] = invec
 
-    elif itype=='complex' and otype=='real':
-        raise NotImplementedError("Only Complex to Complex IFFTs for pyfft currently.")
+    pyplan=_get_plan(i.dtype, o.dtype, N)
+    pyplan.execute(i.data.data, o.data.data, inverse=True)
+    
+    if otype == 'complex':
+        outvec.data = o[0:len(outvec)]
+    elif otype == 'real':
+        outvec.data = o[0:len(outvec)].real()*2
 

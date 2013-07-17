@@ -67,7 +67,7 @@ def threshold_and_cluster(series, threshold, window):
         
         tp = tmp[b:e]
         m, l = tp.max_loc()
-        
+       
         if m > threshold**2:
             i = b + l
             ms.append(series[i])

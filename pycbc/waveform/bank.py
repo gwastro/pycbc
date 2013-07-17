@@ -30,6 +30,7 @@ from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import table, lsctables
 import pycbc.waveform
 from pycbc.types import FrequencySeries
+from pycbc.filter import sigmasq
 from pycbc import DYN_RANGE_FAC        
 
 class TemplateBank(object):
@@ -61,7 +62,9 @@ class TemplateBank(object):
         self.prec_fac = pycbc.waveform.get_waveform_filter_precondition(
                         self.approximant, 
                         self.filter_length, 
-                        self.delta_f).astype(self.dtype)     
+                        self.delta_f)
+        if self.prec_fac is not None:
+            self.prec_fac = self.prec_fac.astype(self.dtype)     
         
     def __len__(self):
         return len(self.table)
@@ -108,7 +111,7 @@ class TemplateBank(object):
             if self.sigmasq_vec is not None:  
                 htilde.sigmasq = self.sigmasq_vec[htilde.end_idx] * (amp_norm *  DYN_RANGE_FAC) **2
             else:
-                htilde.sigmasq = sigmasq(htilde, self.psd, low_frequency_cutoff=self.f_low) 
+                htilde.sigmasq = sigmasq(htilde, self.psd, low_frequency_cutoff=self.f_lower) 
 
        
         return htilde

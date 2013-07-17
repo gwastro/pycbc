@@ -365,7 +365,7 @@ class Array(object):
 
     __radd__ = __add__
        
-    def fill(self,value):
+    def fill(self, value):
         self._data.fill(value)
 
     @_convert
@@ -666,7 +666,7 @@ class Array(object):
             n32 = self.data.nbytes / 4
             _cudriver.memset_d32(self.data.gpudata, 0, n32)
         if (self._scheme) is _scheme.OpenCLScheme:
-            self[:] = 0
+            self.fill(0)
 
     @_vrcheckother
     @_convert
