@@ -84,14 +84,23 @@ class InjectionSet(object):
         earth_travel_time = lal.LAL_REARTH_SI / lal.LAL_C_SI
         t0 = float(strain.start_time) - earth_travel_time
         t1 = float(strain.end_time) + earth_travel_time
+
         for inj in self.table:
-            end_time = inj.get_time_geocent()
-            if end_time < t0:
-                continue
             if f_lower is None:
                 f_l = inj.f_lower
             else:
                 f_l = f_lower
+
+            # roughly estimate if the injection may overlap with the segment
+            end_time = inj.get_time_geocent()
+            inj_length = sim.SimInspiralTaylorLength(
+                    strain.delta_t, inj.mass1 * lal.LAL_MSUN_SI,
+                    inj.mass2 * lal.LAL_MSUN_SI, f_l, 0)
+            start_time = end_time - 2 * inj_length
+            if end_time < t0 or start_time > t1:
+                continue
+
+            # compute the waveform time series
             hp, hc = get_td_waveform(
                     inj, approximant=inj.waveform, delta_t=strain.delta_t,
                     f_lower=f_l, **self.extra_args)
@@ -99,6 +108,8 @@ class InjectionSet(object):
             hc._epoch += float(end_time)
             if float(hp.start_time) > t1:
                 continue
+
+            # compute the detector response and add it to the strain
             signal = detector.project_wave(
                     hp, hc, inj.longitude, inj.latitude, inj.polarization)
             if strain.dtype == float64:

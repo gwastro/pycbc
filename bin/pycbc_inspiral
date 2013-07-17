@@ -76,6 +76,11 @@ if opt.frame_cache:
                         start_time=opt.gps_start_time-opt.pad_data, 
                         end_time=opt.gps_end_time+opt.pad_data)
 
+    if opt.injection_file:
+        logging.info("Applying injections")
+        injections = InjectionSet(opt.injection_file)
+        injections.apply(strain, opt.channel_name[0:2])
+
     logging.info("Highpass Filtering")
     strain = highpass(strain, frequency=opt.strain_high_pass)
 
@@ -102,15 +107,15 @@ if opt.fake_strain:
     
     logging.info("Making colored noise")
     strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate, strain_psd, seed=opt.fake_strain_seed)
+
+    if opt.injection_file:
+        logging.info("Applying injections")
+        injections = InjectionSet(opt.injection_file)
+        injections.apply(strain, opt.channel_name[0:2])
     
     logging.info("Converting to float32")
     strain = (pycbc.DYN_RANGE_FAC * strain).astype(float32)
 
-if opt.injection_file:
-    logging.info("Applying injections")
-    injections = InjectionSet(opt.injection_file)
-    injections.apply(strain, opt.channel_name[0:2])
-    
 with ctx:
     logging.info("Estimating PSD")
     psd = pycbc.psd.welch(strain, 
