@@ -68,6 +68,9 @@ class InjectionSet(object):
         f_lower : {None, float}, optional
             Low-frequency cutoff for injected signals. If None, use value
             provided by each injection.
+        distance_scale: {1, foat}, optional
+            Factor to scale the distance of an injection with. The default is 
+            no scaling. 
 
         Returns
         -------

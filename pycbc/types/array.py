@@ -650,6 +650,13 @@ class Array(object):
         """ Return the inner product of the array with complex conjugation.
         """
 
+    @_vrcheckother
+    @_convert
+    @schemed(BACKEND_PREFIX)
+    def vdot(self, other):
+        """ Return the inner product of the array with complex conjugation.
+        """
+
     @_convert
     def clear(self):
         """ Clear out the values of the array. """
@@ -850,14 +857,9 @@ class Array(object):
         """
         return self;
 
+    @schemed(BACKEND_PREFIX)
     def  numpy(self):
-        """ Returns a Numpy Array that contains this data """
-        if type(self._data) is _numpy.ndarray:
-            return self._data
-        elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
-            return self._data.get()
-        elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-            return self._data.get()       
+        """ Returns a Numpy Array that contains this data """     
     
     @cpuonly
     @_convert

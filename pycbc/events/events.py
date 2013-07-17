@@ -52,10 +52,31 @@ def threshold(series, value):
     """Return list of values and indices values over threshold in series. 
     """ 
     
-@schemed("pycbc.events.threshold_")
 def threshold_and_cluster(series, threshold, window):
     """Return list of values and indices values over threshold in series. 
     """ 
+    b = 0
+    e = window
+    ms = []
+    lcs = []
+    tmp = series.squared_norm()
+    
+    while b < len(series):
+        if e > len(series):
+            e = len(series)
+        
+        tp = tmp[b:e]
+        m, l = tp.max_loc()
+        
+        if m > threshold**2:
+            i = b + l
+            ms.append(series[i])
+            lcs.append(i)
+        
+        b += window
+        e += window
+        
+    return numpy.array(ms), numpy.array(lcs)    
 
 def findchirp_cluster_over_window(times, values, window_length):
     indices = numpy.zeros(len(times), dtype=int)

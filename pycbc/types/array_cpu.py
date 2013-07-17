@@ -23,24 +23,24 @@
 #
 """Numpy based CPU backend for PyCBC Array
 """
-import numpy
+import numpy as np
 from array import common_kind, complex128, float64
 
-def zeros(length, dtype=numpy.float64):
-    return numpy.zeros(length, dtype=dtype)
+def zeros(length, dtype=np.float64):
+    return np.zeros(length, dtype=dtype)
 
 def ptr(self):
     return self.data.ctypes.data
     
 def dot(self, other):
-    return numpy.dot(self._data,other)     
+    return np.dot(self._data,other)     
 
 def min(self):
     return self.data.min()  
 
 def abs_max_loc(self):
     tmp = abs(self.data)
-    ind = numpy.argmax(tmp)
+    ind = np.argmax(tmp)
     return tmp[ind], ind
 
 def cumsum(self):
@@ -50,7 +50,8 @@ def max(self):
     return self.data.max()
 
 def max_loc(self):
-    return self.data.max(), numpy.argmax(self._data)
+    ind = np.argmax(self.data)
+    return self.data[ind], ind
     
 def take(self, indices):
     return self.data.take(indices)
@@ -67,7 +68,7 @@ def weighted_inner(self, other, weight):
     else:
         acum_dtype = float64
 
-    return numpy.sum(self.data.conj() * other / weight, dtype=acum_dtype)
+    return np.sum(self.data.conj() * other / weight, dtype=acum_dtype)
     
 def inner(self, other):
     """ Return the inner product of the array with complex conjugation.
@@ -77,10 +78,19 @@ def inner(self, other):
         acum_dtype = complex128
     else:
         acum_dtype = float64
-    return numpy.sum(self.data.conj() * other, dtype=acum_dtype)
-    #return numpy.vdot(self.data, other)
+    return np.sum(self.data.conj() * other, dtype=acum_dtype)
+    #return np.vdot(self.data, other)
+
+def vdot(self, other):
+    """ Return the inner product of the array with complex conjugation.
+    """
+    return np.vdot(self.data, other)
 
 def squared_norm(self):
     """ Return the elementwise squared norm of the array """
     return (self.data.real**2 + self.data.imag**2)
+    
+def  numpy(self):
+    return self._data
+    
     

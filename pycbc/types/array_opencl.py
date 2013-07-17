@@ -27,7 +27,8 @@ from pyopencl.tools import context_dependent_memoize
 from pyopencl.scan import InclusiveScanKernel
 from pyopencl.reduction import ReductionKernel
 from pytools import match_precision, memoize_method
-from pyopencl.array import _get_common_dtype, vdot
+from pyopencl.array import _get_common_dtype
+from pyopencl.array import vdot as pvdot
 import pyopencl.array
 from pyopencl.elementwise import ElementwiseKernel, complex_dtype_to_name
 from pyopencl.tools import dtype_to_ctype
@@ -102,7 +103,9 @@ def inner(self, b):
    # dtype_out = _get_common_dtype(a, b, mgr.state.queue)
    # krnl = get_inner_kernel(a.dtype, b.dtype, dtype_out)
    # return krnl(a, b).get().max()
-   return vdot(self.data, b).get().max()
+   return pvdot(self.data, b).get().max()
+
+vdot = inner   
 
 def weighted_inner(self, b, w):
   #  if w is None:
@@ -111,7 +114,7 @@ def weighted_inner(self, b, w):
   #  dtype_out = _get_common_dtype(a, b, mgr.state.queue)
   #  krnl = get_weighted_inner_kernel(a.dtype, b.dtype, w.dtype, dtype_out)
   #  return krnl(a, b, w).get().max()
-    return vdot(self.data, b/w).get().max()
+    return pvdot(self.data, b/w).get().max()
  
 
 @context_dependent_memoize
@@ -152,5 +155,6 @@ def cumsum(self):
 def max(self):
     return pyopencl.array.max(self._data).get().max()
                    
-
+def  numpy(self):
+    return self._data.get()       
 

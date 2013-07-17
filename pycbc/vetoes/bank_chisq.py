@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Ian Harry
+# Copyright (C) 2013  Ian Harry, Alex Nitz
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -49,8 +49,8 @@ def bank_chisq_from_filters(tmplt_snr, tmplt_norm, bank_snrs, bank_norms,
         The complex overlap between the search template and each 
         of the bank templates
     indices: {None, Array}, optional
-        Array of indices. If given, the bank chisq will only calculate point at
-        these values.
+        Array of indices into the snr time series. If given, the bank chisq 
+        will only be calculated at these values.
 
     Returns
     -------

@@ -39,7 +39,7 @@ class PowerTChisq(object):
         for stilde in segs:
             ht = TimeSeries(zeros(self.N), delta_t=self.dt, dtype=self.asd.dtype)    
             stilde = stilde / self.asd
-            stilde[0:self.kmin] = 0     
+            stilde[0:self.kmin].clear()     
             ifft(stilde, ht)
             self.segs.append(ht)
            
@@ -58,7 +58,7 @@ class PowerTChisq(object):
         bins = numpy.searchsorted(power.numpy(), edge_vec, side='right')
         bins = numpy.append(bins, len(tmplt))
     
-        norm = (4 * self.dt / sqrt(sigmasq)) ** 2
+        norm = (4 * self.dt / numpy.sqrt(sigmasq)) ** 2
         return tmplt, bins, norm     
         
     def chisq(self, tmplt, bins, norm, seg_idx, snrs, indices): 
@@ -71,24 +71,29 @@ class PowerTChisq(object):
             #Calculate the chisq for that point in time
             chisq = 0
             for j in range(len(bins)-1): 
+                # Get the bin (b)eginning and (e)nd
                 b = int(bins[j])
                 e = int(bins[j+1])  
                 
+                # Get the time shifted bin to index the whitened h(t)
                 bh = b + i
                 eh = e + i
                 
+                # If the end is beyond a boundary shift it back
                 if bh >= len(dat):
                     bh -= len(dat)
                     
                 if eh > len(dat):
                     eh -= len(dat)
                         
+                # If bin is within the segment go ahead and calculate it
+                # else, calculate it as two separate pieces.
                 if eh > bh:      
-                    m = tmplt[b:e].inner(dat[bh:eh])
+                    m = tmplt[b:e].vdot(dat[bh:eh])
                 else:
                     c = b + (len(dat) - bh)
-                    m = tmplt[b:c].inner(dat[bh:len(dat)])
-                    m += tmplt[c:e].inner(dat[0:eh])
+                    m = tmplt[b:c].vdot(dat[bh:len(dat)])
+                    m += tmplt[c:e].vdot(dat[0:eh])
                     
                 chisq += (m.conj() * m).real
                 
@@ -96,5 +101,3 @@ class PowerTChisq(object):
             chisq -=  (snr.conj() * snr).real      
             vals.append(chisq) 
         return vals
-
-from math import sqrt
