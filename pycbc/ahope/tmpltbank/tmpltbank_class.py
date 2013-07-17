@@ -7,12 +7,33 @@ class TmpltbankList:
     '''
 
     def __init__(self,*args):
+        '''
+        Initialize the list. Any kwargs are sent directly to
+        list.__init__().
+        '''
+ 
         list.__init__(self, *args)
 
     def find_bank(self,ifo,time):
-        '''Return template bank at given time, or time range.
-        
-        n'''
+        '''Return template bank that covers the given time, or is most
+        appropriate for the supplied time range.
+
+        Parameters
+        -----------
+        ifo : string
+           Name of the ifo that the bank should correspond to
+        time : int/float/LIGOGPStime or tuple containing two values
+           If int/float/LIGOGPStime (or similar may of specifying one time) is
+           given, return the bank corresponding to the time. This calls
+           self.find_bank_at_time(ifo,time).
+           If a tuple of two values is given, return the bank that is **most
+           appropriate** for the time range given. This calls
+           self.find_bank_in_range
+        Returns
+        --------
+        bank : Tmpltbank class
+           The bank that corresponds to the time/time range
+        '''
         # Determine whether I have a specific time, or a range of times
         try:
             # This is if I have a range of times
@@ -28,12 +49,26 @@ class TmpltbankList:
         return bank
 
     def find_bank_at_time(self,ifo,time):
-       '''FIXME: Add documentation'''
+       '''Return template bank that covers the given time.
+
+        Parameters
+        -----------
+        ifo : string
+           Name of the ifo that the bank should correspond to
+        time : int/float/LIGOGPStime
+           Return the bank that covers the supplied time. If no bank covers
+           the time this will return None. If more than one bank covers the
+           time a ValueError will be raised. Banks must cover exclusive times.
+        Returns
+        --------
+        bank : Tmpltbank class
+           The bank that corresponds to the time.
+        '''
        # Get list of banks that overlap time, for given ifo
        banks = [i for i in self if ifo == i.get_ifo() and time in i.get_time()] 
        if len(banks == 0):
            # No bank at this time
-           return 0
+           return None
        elif len(banks == 1):
            # 1 bank at this time (good!)
            return banks
@@ -42,7 +77,24 @@ class TmpltbankList:
                             "to cover exclusive times.")
 
     def find_bank_in_range(self,ifo,start,end):
-        '''FIXME: Add documentation'''
+        '''Return template bank that is most appropriate for the supplied
+        time range. That is, the bank whose coverage time has the largest
+        overlap with the supplied time range. If no banks overlap the supplied
+        time window, will return None. Banks should cover exclusive times,
+        although this function does not check for that.
+
+        Parameters
+        -----------
+        ifo : string
+           Name of the ifo that the bank should correspond to
+        start : int/float/LIGOGPStime 
+           The start of the time range of interest.
+        end : int/float/LIGOGPStime
+           The end of the time range of interest
+        Returns
+        --------
+        bank : Tmpltbank class
+           The bank that is most appropriate for the time range'''
         # First filter banks corresponding to ifo
         banks = [i for i in self if ifo == i.get_ifo()] 
         if len(banks == 0):
