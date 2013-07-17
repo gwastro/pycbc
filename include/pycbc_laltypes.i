@@ -50,6 +50,13 @@ developers are not expected to routinely need to modify this file.
 %include <exception.i>
 %import <lal/lalswig.i>
 
+// Turn off swiglal's handling of functions returning ints, which
+// confuses our wrapping.  Code from Karl Wette.
+%typemap(out, noblock=1, fragment=SWIG_From_frag(int)) int {
+  %set_output(SWIG_From(int)($1));
+ }
+%typemap(newfree, noblock=1) int "";
+
 %begin %{
 #define SWIG_TYPE_TABLE swiglal
 %}
