@@ -155,6 +155,10 @@ def cumsum(self):
 def max(self):
     return pyopencl.array.max(self._data).get().max()
                    
-def  numpy(self):
-    return self._data.get()       
+def numpy(self):
+    return self._data.get()     
+ 
+def take(self, indices):
+    indices = pyopencl.array.to_device(mgr.state.queue, indices)
+    return pyopencl.array.take(self.data, indices)
 
