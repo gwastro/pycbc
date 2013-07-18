@@ -39,7 +39,7 @@ class PowerTChisq(object):
         for stilde in segs:
             ht = TimeSeries(zeros(self.N), delta_t=self.dt, dtype=self.asd.dtype)    
             stilde = stilde / self.asd
-            stilde[0:self.kmin].clear()     
+            stilde[0:self.kmin].clear()  
             ifft(stilde, ht)
             self.segs.append(ht)
            
@@ -96,7 +96,6 @@ class PowerTChisq(object):
                     m += tmplt[c:e].vdot(dat[0:eh])
                     
                 chisq += (m.conj() * m).real
-                
             chisq *= self.nbins * norm     
             chisq -=  (snr.conj() * snr).real      
             vals.append(chisq) 

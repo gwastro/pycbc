@@ -665,7 +665,7 @@ class Array(object):
         if type(self._scheme) is _scheme.CUDAScheme:
             n32 = self.data.nbytes / 4
             _cudriver.memset_d32(self.data.gpudata, 0, n32)
-        if (self._scheme) is _scheme.OpenCLScheme:
+        if type(self._scheme) is _scheme.OpenCLScheme:
             self.fill(0)
 
     @_vrcheckother
