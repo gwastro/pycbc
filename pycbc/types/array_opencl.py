@@ -209,7 +209,7 @@ def weighted_inner(self, b, w):
 def get_norm_kernel(dtype_x, dtype_out):
     if dtype_x == np.float32 or dtype_x == np.float64:
         op = "z[i] = x[i] * x[i]"
-    if dtype_x == np.complex64:
+    if dtype_x == np.complex64 or dtype_x == np.complex128:
         op = "z[i] = x[i].x*x[i].x + x[i].y*x[i].y"
     return ElementwiseKernel(mgr.state.context, 
             "%(tp_x)s *x, %(tp_z)s *z" % {

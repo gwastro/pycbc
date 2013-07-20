@@ -395,7 +395,7 @@ class ArrayTestBase(base_test.array_base):
                 v = abs(-6+7j)
             
             m, l = a.abs_max_loc()
-            self.assertAlmostEqual(m, v, places=6)
+            self.assertAlmostEqual(m, v, places=5)
             self.assertEqual(l, 5)
             
     def test_clear(self):
