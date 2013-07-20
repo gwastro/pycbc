@@ -103,24 +103,29 @@ mld = ReductionKernel(mgr.state.context, maxloc_dtype_double, neutral = "maxloc_
         
 max_loc_map = {'single':mls,'double':mld}
 
+cfloat  = complex_dtype_to_name(np.complex64)
+cdouble = complex_dtype_to_name(np.complex128)
 
-#amls = ReductionKernel(mgr.state.context, maxloc_dtype_single, neutral = "maxloc_start()",
-#        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
-#        arguments="float *x", preamble=maxloc_preamble_single)
+get_or_register_dtype('cfloat', np.complex64)
+get_or_register_dtype('cdouble', np.complex128)
 
-#amld = ReductionKernel(mgr.state.context, maxloc_dtype_double, neutral = "maxloc_start()",
-#        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
-#        arguments="double *x", preamble=maxloc_preamble_double)
+amls = ReductionKernel(mgr.state.context, maxloc_dtype_single, neutral = "maxloc_start()",
+        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(fabs(x[i]), i)",
+        arguments="float *x", preamble=maxloc_preamble_single)
 
-#amlsc = ReductionKernel(mgr.state.context, maxloc_dtype_single, neutral = "maxloc_start()",
-##        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
-#       arguments="cfloat2 *x", preamble=maxloc_preamble_single)
+amld = ReductionKernel(mgr.state.context, maxloc_dtype_double, neutral = "maxloc_start()",
+        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(fabs(x[i]), i)",
+        arguments="double *x", preamble=maxloc_preamble_double)
 
-#amldc = ReductionKernel(mgr.state.context, maxloc_dtype_double, neutral = "maxloc_start()",
-#        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(abs(x[i]), i)",
-#        arguments="cdouble2 *x", preamble=maxloc_preamble_double)
+amlsc = ReductionKernel(mgr.state.context, maxloc_dtype_single, neutral = "maxloc_start()",
+        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(%s_abs(x[i]), i)" % cfloat,
+       arguments="%s *x" % cfloat, preamble=maxloc_preamble_single)
 
-#abs_max_loc_map = {'single':{ 'real':amls, 'complex':amlsc }, 'double':{ 'real':amld, 'complex':amldc }}
+amldc = ReductionKernel(mgr.state.context, maxloc_dtype_double, neutral = "maxloc_start()",
+        reduce_expr="maxloc_red(a, b)", map_expr="maxloc_map(%s_abs(x[i]), i)" % cdouble,
+        arguments="%s *x" % cdouble, preamble=maxloc_preamble_double)
+
+abs_max_loc_map = {'single':{ 'real':amls, 'complex':amlsc }, 'double':{ 'real':amld, 'complex':amldc }}
 
 
 @context_dependent_memoize
@@ -245,10 +250,10 @@ def take(self, indices):
     indices = pyopencl.array.to_device(mgr.state.queue, indices)
     return pyopencl.array.take(self.data, indices)
     
-#def abs_max_loc(self):
-#    maxloc = abs_max_loc_map[self.precision][self.kind](self._data)
-#    maxloc = maxloc.get()
-#    return float(maxloc['max']),int(maxloc['loc'])
+def abs_max_loc(self):
+    maxloc = abs_max_loc_map[self.precision][self.kind](self._data)
+    maxloc = maxloc.get()
+    return float(maxloc['max']),int(maxloc['loc'])
 
 def max_loc(self):
     maxloc = max_loc_map[self.precision](self._data)
