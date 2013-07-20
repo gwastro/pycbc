@@ -207,22 +207,24 @@ def weighted_inner(self, b, w):
 
 @context_dependent_memoize
 def get_norm_kernel(dtype_x, dtype_out):
+    if dtype_x == np.float32 or dtype_x == np.float64:
+        op = "z[i] = x[i] * x[i]"
+    if dtype_x == np.complex64:
+        op = "z[i] = x[i].x*x[i].x + x[i].y*x[i].y"
     return ElementwiseKernel(mgr.state.context, 
             "%(tp_x)s *x, %(tp_z)s *z" % {
                 "tp_x": dtype_to_ctype(dtype_x),
                 "tp_z": dtype_to_ctype(dtype_out),
                 },
-            "z[i] = norm(x[i])",
-            "norm")
+            op,
+            "normsq")
 
 def squared_norm(self):
-#    dtype_out = match_precision(np.dtype('float64'), a.dtype)
-#    out = a._new_like_me(dtype=dtype_out)
-#    krnl = get_norm_kernel(a.dtype,dtype_out)
-#    krnl(a,out)
-#    return out 
-    a = self.data
-    return (a.conj() * a).real
+    dtype_out = match_precision(np.dtype('float64'), self.dtype)
+    out = self.data._new_like_me(dtype=dtype_out)
+    krnl = get_norm_kernel(self.dtype, dtype_out)
+    krnl(self.data, out)
+    return out 
 
 def zeros(length, dtype=np.float64):
     return pyopencl.array.zeros(mgr.state.queue, length, dtype)

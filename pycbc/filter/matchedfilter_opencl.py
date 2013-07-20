@@ -22,6 +22,33 @@
 # =============================================================================
 #
 
-def correlate(x, y, z):
-    z.data[:] = (x.conj() * y).data
+from pyopencl.elementwise import ElementwiseKernel
+from pytools import match_precision
+from pyopencl.tools import context_dependent_memoize, dtype_to_ctype
+from pyopencl.array import _get_common_dtype
+from pycbc.scheme import mgr
+import numpy
+
+@context_dependent_memoize
+def get_correlate_kernel(dtype_x, dtype_y,dtype_out):
+    if dtype_x == numpy.complex64:
+        op = "z[i] = cfloat_mul(cfloat_conj(x[i]), y[i])"
+    elif dtype_x == numpy.complex128:
+        op = "z[i] = cdouble_mul(cdouble_conj(x[i]), y[i])"
+    return ElementwiseKernel(mgr.state.context,
+            "%(tp_x)s *x, %(tp_y)s *y, %(tp_z)s *z" % {
+                "tp_x": dtype_to_ctype(dtype_x),
+                "tp_y": dtype_to_ctype(dtype_y),
+                "tp_z": dtype_to_ctype(dtype_out),
+                },
+            op,
+            "correlate")
+
+def correlate(a, b, out, stream=None):
+    dtype_out = _get_common_dtype(a, b, mgr.state.queue)
+    krnl = get_correlate_kernel(a.dtype, b.dtype, dtype_out)
+    krnl(a.data, b.data, out.data)
+
+
+
 

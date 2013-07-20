@@ -52,10 +52,6 @@ with ctx:
     v+v
     v*v
     v.squared_norm()
-def clust():
-    with ctx:
-        for i in range(0, niter):
-            threshold_and_cluster(v, 0.5, 4096) 
 
 def addc():
     with ctx:
@@ -82,9 +78,6 @@ def sqnm():
 	v[0]
 
 import timeit
-gt = timeit.Timer(clust)
-t = (1000 * gt.timeit(number=1)/niter)
-print "CLUSTER  %.2f msec" % t, " %5.1f /min " % (1000 *60 /t)
 
 gt = timeit.Timer(addc)
 t = (1000 * gt.timeit(number=1)/niter)
