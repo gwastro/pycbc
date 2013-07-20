@@ -94,6 +94,8 @@ class Array(object):
     devices. It is a convience wrapper around _numpy, _pyopencl, and
     _pycuda.
     """
+    
+    __array_priority__ = 1000
 
     def __init__(self,initial_array, dtype=None, copy=True):
         """ initial_array: An array-like object as specified by NumPy, this
@@ -239,6 +241,13 @@ class Array(object):
     @decorator
     def _returnarray(fn, self, *args):
         return Array(fn(self, *args), copy=False)
+
+    @decorator
+    def _nocomplex(fn, self, *args):
+        if self.kind == 'real':
+            return fn(self, *args)
+        else:
+            raise TypeError( fn.__name__ + " does not support complex types")
 
     @decorator
     def _returntype(fn, self, *args):
@@ -695,11 +704,13 @@ class Array(object):
         """ Return the cumulative sum of the the array. """
      
     @_convert
+    @_nocomplex
     @schemed(BACKEND_PREFIX)
     def max(self):
         """ Return the maximum value in the array. """
             
     @_convert
+    @_nocomplex
     @schemed(BACKEND_PREFIX)
     def max_loc(self):
         """Return the maximum value in the array along with the index location """
@@ -710,6 +721,7 @@ class Array(object):
         """Return the maximum elementwise norm in the array along with the index location"""
 
     @_convert
+    @_nocomplex
     @schemed(BACKEND_PREFIX)
     def min(self):
         """ Return the maximum value in the array. """ 

@@ -370,6 +370,55 @@ class ArrayTestBase(base_test.array_base):
             self.assertEqual(out6[2],3)
             self.assertTrue(out6.dtype==self.dtype)
             
+    def test_take(self):
+        with self.context:
+            if self.kind == 'real':
+                a = Array([1,2,3,4,5,6], dtype=self.dtype)
+            
+            if self.kind == 'complex':
+                a = Array([1+2j, 2+3j, 3+4j, 4+5j, 5+6j, 6+7j], dtype=self.dtype)
+            
+            i = numpy.array([0,4,2], dtype=numpy.int64)
+            b = a.take(i)
+            self.assertEqual(b[0], a[0])
+            self.assertEqual(b[1], a[4])
+            self.assertEqual(b[2], a[2])
+            
+    def test_abs_max_loc(self):
+        with self.context:
+            if self.kind == 'real':
+                a = Array([-1,2,3,4,5,-6], dtype=self.dtype)
+                v = abs(-6)
+            
+            if self.kind == 'complex':
+                a = Array([1+2j, 2+3j, -3+4j, 4+5j, 5+6j, -6+7j], dtype=self.dtype)
+                v = abs(-6+7j)
+            
+            m, l = a.abs_max_loc()
+            self.assertAlmostEqual(m, v, places=6)
+            self.assertEqual(l, 5)
+            
+    def test_clear(self):
+        with self.context:
+            if self.kind == 'real':
+                a = Array([1,2,3,4,5,6], dtype=self.dtype)
+            
+            if self.kind == 'complex':
+                a = Array([1+2j, 2+3j, 3+4j, 4+5j, 5+6j, 6+7j], dtype=self.dtype)
+                
+            a.clear()
+            for i in range(len(a)):
+                self.assertEqual(a[i], 0) 
+            
+        
+    def test_max_loc(self):
+        with self.context:
+            if self.kind == 'real':
+                a = Array([1,2,3,4,5,6], dtype=self.dtype)
+            
+                m, l = a.max_loc()
+                self.assertEqual(m, 6)
+                self.assertEqual(l, 5)
             
     def test_list_init(self):
         with self.context:
