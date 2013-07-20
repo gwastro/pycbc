@@ -62,18 +62,18 @@ def tfft():
     with ctx:
 	for i in range(0, niter):
 	    fft(vecin, vecout)
-            b = vecout[9]
+        b = vecout[9]
 def tifft():
     with ctx:
 	for i in range(0, niter):
 	    ifft(vecin, vecout)
-            b = vecout[9]
+        b = vecout[9]
 
 def dtifft():
     with ctx:
         for i in range(0, niter):
             ifft(vecdin, vecdout)
-            b = vecout[9]
+        b = vecout[9]
 
 import timeit
 gt = timeit.Timer(tfft)

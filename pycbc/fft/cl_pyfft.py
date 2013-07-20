@@ -66,6 +66,11 @@ def fft(invec, outvec, prec, itype, otype):
     outvec.data = o[0:len(outvec)]
 
 def ifft(invec, outvec, prec, itype, otype):
+    if otype == 'complex':
+        pyplan=_get_plan(invec.dtype, outvec.dtype, len(outvec))
+        pyplan.execute(invec.data.data, outvec.data.data, inverse=True)    
+        return
+
     # This has been hacked horrible to make it work more generally
     N = int(near_two(len(outvec)))
     N2 = int (near_two(len(invec)))
