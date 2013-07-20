@@ -379,12 +379,14 @@ def get_fd_waveform(template=None, **kwargs):
 # Organize Filter Generators
 _inspiral_fd_filters = {}
 _cuda_fd_filters = {}
+opencl_fd_filter = {}
 
 from spa_tmplt import spa_tmplt
 _inspiral_fd_filters['SPAtmplt'] = spa_tmplt
 _cuda_fd_filters['SPAtmplt'] = spa_tmplt
+opencl_fd_filter['SPAtmplt'] = spa_tmplt
 
-opencl_fd_filter = {}
+
 
 filter_wav = {_scheme.CPUScheme:_inspiral_fd_filters, _scheme.CUDAScheme:_cuda_fd_filters, _scheme.OpenCLScheme:opencl_fd_filter}
 
