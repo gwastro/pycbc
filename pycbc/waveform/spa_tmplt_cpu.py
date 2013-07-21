@@ -50,11 +50,11 @@ def get_log(vmax, delta):
 
 # Precompute the sine function #################################################
 def sin_cos_lookup():
-    vec = numpy.arange(0, lal.LAL_TWOPI*2, lal.LAL_TWOPI/10000)
+    vec = numpy.arange(0, lal.LAL_TWOPI*3, lal.LAL_TWOPI/10000)
     return Array(numpy.sin(vec)).astype(float32)
     
 _sin_cosf = sin_cos_lookup()
-_sin_cos = _sin_cosf[0:10000]
+_sin_cos = _sin_cosf[10000:20000]
 
 def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
