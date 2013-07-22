@@ -108,8 +108,6 @@ def parse_args_all_schemes(feature_str):
 
     return [_scheme,_context]
 
-del _check_scheme_all
-
 def _check_scheme_cpu(option, opt_str, scheme, parser):
     if scheme=='cuda':
         exit(0)
@@ -138,9 +136,3 @@ def parse_args_cpu_only(feature_str):
     print "Running {0} unit tests for {1}:".format('CPU',feature_str)
 
     return
-
-del _check_scheme_cpu
-
-# Clean up our namespace
-
-del exit, CPUScheme, CUDAScheme, OpenCLScheme, pycbc, OptionParser, OptionValueError
