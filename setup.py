@@ -90,19 +90,19 @@ class clean(_clean):
                 print 'removed {0}'.format(f)
             except:
                 pass
-                
+
 class install(_install):
-    def run(self):  
-    
-        etcdirectory = os.path.join(self.install_base, 'etc')  
+    def run(self):
+
+        etcdirectory = os.path.join(self.install_base, 'etc')
         if not os.path.exists(etcdirectory):
             os.makedirs(etcdirectory)
-    
+
         filename = os.path.join(self.install_base, 'etc', 'pycbc-user-env.sh')
         self.execute(write_file,
                      (filename, [self.extra_dirs]),
                      "creating %s" % filename)
-        
+
         env_file = open(filename, 'w')
         print >> env_file, "# Source this file to access PyCBC"
         print >> env_file, "PATH=" + self.install_scripts + ":$PATH"
@@ -174,7 +174,7 @@ class build_docs(Command):
     def finalize_options(self):
         pass
     def run(self):
-        subprocess.check_call("cd docs; sphinx-apidoc -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html", 
+        subprocess.check_call("cd docs; sphinx-apidoc -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
                             stderr=subprocess.STDOUT, shell=True)
 
 class test(Command):
@@ -270,7 +270,7 @@ setup (
                  'build' : build},
     ext_modules = [lalwrap_module, testlalwrap_module],
     requires = ['lal'],
-    scripts = ['bin/pycbc_banksim', 'bin/pycbc_faithsim', 'bin/pycbc_inspiral', 
+    scripts = ['bin/pycbc_banksim', 'bin/pycbc_faithsim', 'bin/pycbc_inspiral',
                'bin/pycbc_make_banksim', 'bin/pycbc_split_table', 'bin/pycbc_legacy_inspiral'],
     packages = ['pycbc','pycbc.fft','pycbc.types','pycbc.filter','pycbc.psd','pycbc.waveform','pycbc.events','pycbc.noise','pycbc.vetoes'],
 )
