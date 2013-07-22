@@ -166,17 +166,6 @@ class TestBase(Command):
         for test in test_results:
             print test
 
-class build_docs(Command):
-    user_options = []
-    description = "Build the documenation pages"
-    def initialize_options(self):
-        pass
-    def finalize_options(self):
-        pass
-    def run(self):
-        subprocess.check_call("cd docs; sphinx-apidoc -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
-                            stderr=subprocess.STDOUT, shell=True)
-
 class test(Command):
     def has_cuda(self):
         try:
@@ -221,7 +210,6 @@ class test_opencl(TestBase):
         TestBase.initialize_options(self)
         self.scheme = 'opencl'
 
-
 # write versioning info
 def generate_version_info():
     """Get VCS info and write version info to version.py
@@ -250,7 +238,16 @@ def generate_version_info():
         f.write('git_build_date = \'%s\'\n' % vcs_info.build_date)
     return vcs_info.version
 
-
+class build_docs(Command):
+    user_options = []
+    description = "Build the documenation pages"
+    def initialize_options(self):
+        pass
+    def finalize_options(self):
+        pass
+    def run(self):
+        subprocess.check_call("cd docs; sphinx-apidoc -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
+                            stderr=subprocess.STDOUT, shell=True)
 # do the actual work of building the package
 VERSION = generate_version_info()
 
