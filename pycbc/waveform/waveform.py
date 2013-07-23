@@ -505,4 +505,5 @@ __all__ = ["get_td_waveform","get_fd_waveform","print_td_approximants",
            "print_fd_approximants","td_approximants","fd_approximants", 
            "get_waveform_filter", "get_waveform_filter_precondition",
            "filter_approximants", "get_waveform_filter_norm", "get_waveform_end_frequency",
-           "waveform_precondition_exists", "waveform_norm_exists", "get_template_amplitude_norm"]
+           "waveform_precondition_exists", "waveform_norm_exists", "get_template_amplitude_norm",
+           "get_waveform_filter_length_in_time"]
