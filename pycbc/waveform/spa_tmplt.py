@@ -25,6 +25,7 @@
 """ 
 from math import sqrt, frexp
 import lal
+from lalinspiral import FindChirpChirpTime
 from pycbc.scheme import schemed
 import numpy
 import pycbc.pnutils
@@ -45,7 +46,22 @@ def spa_tmplt_precondition(length, delta_f):
     v = numpy.arange(0, length+1, 1.0) * delta_f
     v = numpy.power(v[1:len(v)], -7.0/6.0)
     return FrequencySeries(v, delta_f=delta_f)
-    
+
+def spa_length_in_time(**kwds):
+    """
+    Returns the length in time of the template,
+    based on the masses, PN order, and low-frequency
+    cut-off.
+    """
+    m1 = kwds['mass1']
+    m2 = kwds['mass2']
+    flow = kwds['f_lower']
+    porder = kwds['phase_order']
+    # For now, we call the swig-wrapped function below in
+    # lalinspiral.  Eventually would be nice to replace this
+    # with a function using PN coeffs from lalsimulation.
+    return FindChirpChirpTime(m1,m2,flow,porder)
+
 def spa_amplitude_factor(**kwds):
     m1 = kwds['mass1']
     m2 = kwds['mass2']

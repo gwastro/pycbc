@@ -393,13 +393,14 @@ _filter_norms = {}
 _filter_ends = {}
 _filter_preconditions = {}
 _template_amplitude_norms = {}
+_filter_time_lengths = {}
 
-from spa_tmplt import spa_tmplt_norm, spa_tmplt_end, spa_tmplt_precondition, spa_amplitude_factor
+from spa_tmplt import spa_tmplt_norm, spa_tmplt_end, spa_tmplt_precondition, spa_amplitude_factor, spa_length_in_time
 _filter_norms["SPAtmplt"] = spa_tmplt_norm
 _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
 _filter_ends["SPAtmplt"] = spa_tmplt_end
 _template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
-
+_filter_time_lengths["SPAtmplt"] = spa_length_in_time
 
 def get_waveform_filter(out, template=None, **kwargs):
     """Return a frequency domain waveform filter for the specified approximant
@@ -413,6 +414,8 @@ def get_waveform_filter(out, template=None, **kwargs):
         wav_gen = filter_wav[type(mgr.state)] 
         htilde = wav_gen[input_params['approximant']](out=out, **input_params)
         htilde.resize(n)
+        htilde.length_in_time = get_waveform_filter_length_in_time(input_params['approximant'],
+                                                                   **input_params)
         return htilde
     if input_params['approximant'] in fd_approximants(mgr.state):
         wav_gen = fd_wav[type(mgr.state)] 
@@ -489,6 +492,14 @@ def get_waveform_end_frequency(template=None, **kwargs):
         return _filter_ends[approximant](**input_params)
    else:
         return None 
+
+def get_waveform_filter_length_in_time(approximant,**kwargs):
+    """For filter templates, return the length in time of the template.
+    """
+    if approximant in _filter_time_lengths:
+        return _filter_time_lengths[approximant](**kwargs)
+    else:
+        return None
 
 __all__ = ["get_td_waveform","get_fd_waveform","print_td_approximants",
            "print_fd_approximants","td_approximants","fd_approximants", 
