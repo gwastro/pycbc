@@ -34,7 +34,7 @@ from decorator import decorator
 
 import lal as _lal
 import numpy as _numpy
-from numpy import float32, float64, complex64, complex128
+from numpy import float32, float64, complex64, complex128, ones
 
 import pycbc as _pycbc
 import pycbc.scheme as _scheme
@@ -477,6 +477,70 @@ class Array(object):
         # method of that array returns 'True' only if every element
         # of that array of booleans is True.
         return (sary == oary).all()
+
+    def almost_equal_elem(self,other,tol,relative=True):
+        """
+        Compare whether two array types are almost equal, element
+        by element.
+
+        If the 'relative' parameter is 'True' (the default) then the
+        'tol' parameter (which must be positive) is interpreted as a
+        relative tolerance, and the comparison returns 'True' only if
+             abs(self[i]-other[i]) <= tol*abs(self[i])
+        for all elements of the array.
+
+        If 'relative' is 'False', then 'tol' is an absolute tolerance,
+        and the comparison is true only if
+             abs(self[i]-other[i]) <= tol
+        for all elements of the array.
+
+        Other meta-data (type, dtype, and length) must be exactly equal.
+        If either object's memory lives on the GPU it will be copied to
+        the CPU for the comparison, which may be slow.  But the original
+        object itself will not have its memory relocated nor scheme
+        changed.
+
+        Parameters
+        ----------
+        other: another Python object, that should be tested for
+            almost-equality with 'self', element-by-element.
+        tol: a non-negative number, the tolerance, which is interpreted
+            as either a relative tolerance (the default) or an absolute
+            tolerance.
+        relative: A boolean, indicating whether 'tol' should be interpreted
+            as a relative tolerance (if True, the default if this argument
+            is omitted) or as an absolute tolerance (if tol is False).
+
+        Returns
+        -------
+        boolean: 'True' if the data agree within the tolerance, as
+            interpreted by the 'relative' keyword, and if the types,
+            lengths, and dtypes are exactly the same.
+        """
+        # Check that the tolerance is non-negative and raise an
+        # exception otherwise.
+        if (tol<0):
+            raise ValueError("Tolerance cannot be negative")
+        # Check that the meta-data agree; the type check is written in
+        # this way so that this method may be safely called from
+        # subclasses as well.
+        if type(other) != type(self):
+            return False
+        if self.dtype != other.dtype:
+            return False
+        if len(self) != len(other):
+            return False
+
+        # The numpy() method will move any GPU memory onto the CPU.
+        # Slow, but the user was warned.
+
+        diff = abs(self.numpy()-other.numpy())
+        if relative:
+            cmpary = tol*abs(self.numpy())
+        else:
+            cmpary = tol*ones(len(self),dtype=self.dtype)
+
+        return (diff<=cmpary).all()
 
     @_returntype
     @_convert
