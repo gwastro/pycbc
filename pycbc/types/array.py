@@ -476,7 +476,7 @@ class Array(object):
         # '==' statement returns an array of booleans, and the all()
         # method of that array returns 'True' only if every element
         # of that array of booleans is True.
-        return bool((sary == oary).all())
+        return (sary == oary).all()
 
     @_returntype
     @_convert
