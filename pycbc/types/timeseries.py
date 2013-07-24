@@ -123,6 +123,34 @@ class TimeSeries(Array):
             return Array(range(len(self))) * self._delta_t + float(self._epoch)
     sample_times = property(get_sample_times)
 
+    def __eq__(self,other):
+        """
+        This special method is invoked by the '==' operator
+        in Python.  The time series method overrides that
+        in the superclass (which it also calls) by further
+        enforcing that the additional meta-data (_epoch and
+        _delta_t) also agree between the two time series.
+
+        As with the superclass method, the comparison is always
+        done on the CPU, wherever the series itself resides, and
+        may therefore be slow for GPU arrays.  But it should not
+        move the arrays onto the CPU, nor change their scheme.
+
+        Parameters
+        ----------
+        other: another Python object, that should be tested for
+            equality with 'self'.
+
+        Returns
+        -------
+        boolean: 'True' if the types, data, and meta-data (except
+            scheme) of the two objects are each identical.
+        """
+        if super(TimeSeries,self).__eq__(other):
+            return (self._epoch == other._epoch and self._delta_t == other._delta_t)
+        else:
+            return False
+
     @_convert
     def lal(self):
         """Produces a LAL time series object equivalent to self.

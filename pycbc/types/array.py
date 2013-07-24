@@ -417,6 +417,67 @@ class Array(object):
     def __str__(self):
         return str(self._data)
 
+    def __eq__(self,other):
+        """
+        This is the Python special method invoked whenever the '=='
+        comparison is used.  We want it to return true if the data
+        of our PyCBC array-like type are identical, and all of the
+        numeric meta-data are identical, irrespective of whether or
+        not the two instances live in the same memory (for that
+        comparison, the Python statement 'a is b' should be used
+        instead).
+
+        Thus, this method returns 'True' if the types of both 'self'
+        and 'other' are identical, as well as their dtypes and the
+        data in the arrays, element by element.  It will always do
+        the comparison on the CPU, but will *not* move either object
+        to the CPU if it is not already there.  This may make it
+        slower than best-possible when both objects live on the GPU.
+        If this is an issue the implementation of this method may be
+        revisited later, but for now we do not see many use cases
+        beyond unit-testing, where speed is not such a concern.
+        Element-by-element comparisons will always be slow when done
+        on a GPU, even in a reduction kernel.
+
+        Note in particular that this function returns a single boolean,
+        and not an array of booleans as Numpy does.  If the numpy
+        behavior is desired it can be obtained using the numpy() method
+        of the PyCBC type.
+
+        Parameters
+        ----------
+        other: another Python object, that should be tested for
+            equality with 'self'.
+
+        Returns
+        -------
+        boolean: 'True' if the types, data, and meta-data (except
+            scheme) of the two objects are each identical.
+        """
+
+        # Writing the first test as below allows this method to be safely
+        # called from subclasses.
+        if type(self) != type(other):
+            return False
+        if self.dtype != other.dtype:
+            return False
+        if len(self) != len(other):
+            return False
+
+        # Now we've checked meta-data, so look at the actual data itself:
+        # The numpy() method call will put a copy of GPU data onto a CPU
+        # array, and could therefore be slow.  As noted in the help for
+        # this function we don't worry about that.
+
+        sary = self.numpy()
+        oary = other.numpy()
+
+        # Now we know that both sary and oary are numpy arrays. The
+        # '==' statement returns an array of booleans, and the all()
+        # method of that array returns 'True' only if every element
+        # of that array of booleans is True.
+        return bool((sary == oary).all())
+
     @_returntype
     @_convert
     def real(self):
