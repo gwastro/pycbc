@@ -195,6 +195,47 @@ class TimeSeries(Array):
         else:
             return False
 
+    def almost_equal_norm(self,other,tol,relative=True):
+        """
+        Compare whether two time series are almost equal, normwise.
+
+        If the 'relative' parameter is 'True' (the default) then the
+        'tol' parameter (which must be positive) is interpreted as a
+        relative tolerance, and the comparison returns 'True' only if
+             abs(norm(self-other)) <= tol*abs(norm(self)).
+
+        If 'relative' is 'False', then 'tol' is an absolute tolerance,
+        and the comparison is true only if
+             abs(norm(self-other)) <= tol
+
+        Other meta-data (type, dtype, length, epoch, and delta_t) must
+        be exactly equal.  If either object's memory lives on the GPU it
+        will be copied to the CPU for the comparison, which may be slow.
+        But the original object itself will not have its memory relocated
+        nor scheme changed.
+
+        Parameters
+        ----------
+        other: another Python object, that should be tested for
+            almost-equality with 'self', based on their norms.
+        tol: a non-negative number, the tolerance, which is interpreted
+            as either a relative tolerance (the default) or an absolute
+            tolerance.
+        relative: A boolean, indicating whether 'tol' should be interpreted
+            as a relative tolerance (if True, the default if this argument
+            is omitted) or as an absolute tolerance (if tol is False).
+
+        Returns
+        -------
+        boolean: 'True' if the data agree within the tolerance, as
+            interpreted by the 'relative' keyword, and if the types,
+            lengths, dtypes, epochs, and delta_ts are exactly the same.
+        """
+        if super(TimeSeries,self).almost_equal_norm(other):
+            return (self._epoch == other._epoch and self._delta_t == other._delta_t)
+        else:
+            return False
+
     @_convert
     def lal(self):
         """Produces a LAL time series object equivalent to self.
