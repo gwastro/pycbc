@@ -38,27 +38,18 @@ from utils import parse_args_all_schemes
 
 _scheme, _context = parse_args_all_schemes("FFT")
 
-# We will need these imported in order to check that things are in the current scheme
-if _scheme == 'cuda':
-    import pycuda
-    import pycuda.gpuarray
-elif _scheme == 'opencl':
-    import pyopencl
-    import pyopencl.array
-
-
-class _BaseTestFFTClass(base_test.function_base):
+class _BaseTestFFTClass(unittest.TestCase):
     """
     This is the base class from which unit tests for all FFT backends
     are derived.
     """
     def setUp(self):
-        # Number of decimal places to compare for single precision
-        self.splaces = 6
-        self.smsg = 'FFT output differs by more than {0} digits from expected'.format(self.splaces)
-        # Number of decimal places to compare for double precision
-        self.dplaces = 14
-        self.dmsg = 'FFT output differs by more than {0} digits from expected'.format(self.dplaces)
+        # Relative tolerance for single precision
+        self.stol = 1e-6
+        self.smsg = 'FFT output differs by more than a factor of {0} from expected'.format(self.stol)
+        # Relative for double precision
+        self.dtol = 1e-14
+        self.dmsg = 'FFT output differs by more than a factor of {0} from expected'.format(self.dtol)
         # Message if overwrote input
         self.omsg = 'FFT overwrote input array'
         self.scheme = _scheme
@@ -74,65 +65,33 @@ class _BaseTestFFTClass(base_test.function_base):
                                           dtype=dtype('complex64'))
         self.out_even_test = pycbc.types.zeros(3,dtype=dtype('complex64'))
 
-        if self.scheme != 'cpu':
-            self.scheme_test(pycbc.fft.fft,(self.in_even,self.out_even_test),
-                                            (self.in_pristine,self.out_even),self.splaces,backend=self.backend)
-            for back in pycbc.fft.cpu_backends:
-                self.cpu_test(pycbc.fft.fft,(self.in_even,self.out_even_test),
-                                            (self.in_pristine,self.out_even),self.splaces,backend=back)
         with self.context:
             pycbc.fft.fft(self.in_even,self.out_even_test,backend=self.backend)
             # First, check that we have not overwritten the input array
-            self.assertEqual(self.in_even[0],self.in_pristine[0],msg=self.omsg)
-            self.assertEqual(self.in_even[1],self.in_pristine[1],msg=self.omsg)
-            self.assertEqual(self.in_even[2],self.in_pristine[2],msg=self.omsg)
-            self.assertEqual(self.in_even[3],self.in_pristine[3],msg=self.omsg)
+            self.assertEqual(self.in_even,self.in_pristine,msg=self.omsg)
             # Check that output is correct. Note that we compare most
             # entries to be AlmostEqual, but the imaginary parts of DC and
             # Nyquist to be exactly equal to zero.
-            self.assertAlmostEqual(self.out_even[0].real,
-                              self.out_even_test[0].real,
-                              places=self.splaces,msg=self.smsg)
             self.assertEqual(self.out_even[0].imag,self.out_even_test[0].imag,
                         msg="Imaginary part of DC was not exactly zero")
-            self.assertAlmostEqual(self.out_even[1].real,
-                              self.out_even_test[1].real,
-                              places=self.splaces,msg=self.smsg)
-            self.assertAlmostEqual(self.out_even[1].imag,
-                              self.out_even_test[1].imag,
-                              places=self.splaces,msg=self.smsg)
-            self.assertAlmostEqual(self.out_even[2].real,
-                              self.out_even_test[2].real,
-                              places=self.splaces,msg=self.smsg)
             self.assertEqual(self.out_even[2].imag,self.out_even_test[2].imag,
                         msg="Imaginary part of Nyquist was not exactly zero")
+            self.assertTrue(self.out_even.almost_equal_elem(self.out_even_test,tol=self.stol),
+                            msg=self.smsg)
         # Now, another test case when input array length is odd
         self.in_odd = pycbc.types.Array([1.0,2.0,2.0],
                                         dtype=dtype('float32'))
         self.out_odd = pycbc.types.Array([5.0+0.0j,-1.0+0.0j],
                                          dtype=dtype('complex64'))
         self.out_odd_test = pycbc.types.zeros(2,dtype=dtype('complex64'))
-        if self.scheme != 'cpu':
-            self.scheme_test(pycbc.fft.fft,(self.in_odd,self.out_odd_test), 
-                                            (self.in_odd,self.out_odd),self.splaces,backend=self.backend)
-            for back in pycbc.fft.cpu_backends:
-                self.cpu_test(pycbc.fft.fft,(self.in_odd,self.out_odd_test), 
-                                            (self.in_odd,self.out_odd),self.splaces,backend=back)
         with self.context:
             pycbc.fft.fft(self.in_odd,self.out_odd_test,backend=self.backend)
             # Compare again.  Now only imaginary part of DC is strictly compared
             # with zero.
-            self.assertAlmostEqual(self.out_odd[0].real,
-                              self.out_odd_test[0].real,
-                              places=self.splaces,msg=self.smsg)
             self.assertEqual(self.out_odd[0].imag,self.out_odd_test[0].imag,
-                        msg="Imaginary part of DC was not exactly zero")
-            self.assertAlmostEqual(self.out_odd[1].real,
-                              self.out_odd_test[1].real,
-                              places=self.splaces,msg=self.smsg)
-            self.assertAlmostEqual(self.out_odd[1].imag,
-                              self.out_odd_test[1].imag,
-                              places=self.splaces,msg=self.smsg)
+                             msg="Imaginary part of DC was not exactly zero")
+            self.assertTrue(self.out_odd.almost_equal_elem(self.out_odd_test,tol=self.stol),
+                            msg=self.smsg)
             # Now test that the proper exceptions are raised when we give
             # erroneous arguments
             self.out_badlen = pycbc.types.zeros(3,dtype=dtype('complex64'))
@@ -161,65 +120,33 @@ class _BaseTestFFTClass(base_test.function_base):
         self.out_even = pycbc.types.Array([0.0+0.0j,-1.0-1.0j,6.0+0.0j],
                                           dtype=dtype('complex128'))
         self.out_even_test = pycbc.types.zeros(3,dtype=dtype('complex128'))
-        if self.scheme != 'cpu':
-            self.scheme_test(pycbc.fft.fft,(self.in_even,self.out_even_test),
-                                            (self.in_pristine,self.out_even),self.dplaces,backend=self.backend)
-            for back in pycbc.fft.cpu_backends:
-                self.cpu_test(pycbc.fft.fft,(self.in_even,self.out_even_test),
-                                            (self.in_pristine,self.out_even),self.dplaces,backend=back)
         with self.context:
             pycbc.fft.fft(self.in_even,self.out_even_test,backend=self.backend)
             # First, check that we have not overwritten the input array
-            self.assertEqual(self.in_even[0],self.in_pristine[0],msg=self.omsg)
-            self.assertEqual(self.in_even[1],self.in_pristine[1],msg=self.omsg)
-            self.assertEqual(self.in_even[2],self.in_pristine[2],msg=self.omsg)
-            self.assertEqual(self.in_even[3],self.in_pristine[3],msg=self.omsg)
+            self.assertEqual(self.in_even,self.in_pristine,msg=self.omsg)
             # Check that output is correct. Note that we compare most
             # entries to be AlmostEqual, but the imaginary parts of DC and
             # Nyquist to be exactly equal to zero.
-            self.assertAlmostEqual(self.out_even[0].real,
-                              self.out_even_test[0].real,
-                              places=self.dplaces,msg=self.dmsg)
             self.assertEqual(self.out_even[0].imag,self.out_even_test[0].imag,
                         msg="Imaginary part of DC was not exactly zero")
-            self.assertAlmostEqual(self.out_even[1].real,
-                              self.out_even_test[1].real,
-                              places=self.dplaces,msg=self.dmsg)
-            self.assertAlmostEqual(self.out_even[1].imag,
-                              self.out_even_test[1].imag,
-                              places=self.dplaces,msg=self.dmsg)
-            self.assertAlmostEqual(self.out_even[2].real,
-                              self.out_even_test[2].real,
-                              places=self.dplaces,msg=self.dmsg)
             self.assertEqual(self.out_even[2].imag,self.out_even_test[2].imag,
                         msg="Imaginary part of Nyquist was not exactly zero")
+            self.assertTrue(self.out_even.almost_equal_elem(self.out_even_test,tol=self.dtol),
+                            msg=self.dmsg)
         # Now, another test case when input array length is odd
         self.in_odd = pycbc.types.Array([1.0,2.0,2.0],
                                         dtype=dtype('float64'))
         self.out_odd = pycbc.types.Array([5.0+0.0j,-1.0+0.0j],
                                          dtype=dtype('complex128'))
         self.out_odd_test = pycbc.types.zeros(2,dtype=dtype('complex128'))
-        if self.scheme != 'cpu':
-            self.scheme_test(pycbc.fft.fft,(self.in_odd,self.out_odd_test),
-                                            (self.in_odd,self.out_odd),self.dplaces,backend=self.backend)
-            for back in pycbc.fft.cpu_backends:
-                self.cpu_test(pycbc.fft.fft,(self.in_odd,self.out_odd_test),
-                                            (self.in_odd,self.out_odd),self.dplaces,backend=back)
         with self.context:
             pycbc.fft.fft(self.in_odd,self.out_odd_test,backend=self.backend)
             # Compare again.  Now only imaginary part of DC is strictly compared
             # with zero.
-            self.assertAlmostEqual(self.out_odd[0].real,
-                              self.out_odd_test[0].real,
-                              places=self.dplaces,msg=self.dmsg)
             self.assertEqual(self.out_odd[0].imag,self.out_odd_test[0].imag,
                         msg="Imaginary part of DC was not exactly zero")
-            self.assertAlmostEqual(self.out_odd[1].real,
-                              self.out_odd_test[1].real,
-                              places=self.dplaces,msg=self.dmsg)
-            self.assertAlmostEqual(self.out_odd[1].imag,
-                              self.out_odd_test[1].imag,
-                              places=self.dplaces,msg=self.dmsg)
+            self.assertTrue(self.out_odd.almost_equal_elem(self.out_odd_test,tol=self.dtol),
+                            msg=self.dmsg)
             # Now test that the proper exceptions are raised when we give
             # erroneous arguments
             self.out_badlen = pycbc.types.zeros(3,dtype=dtype('complex128'))
@@ -248,30 +175,13 @@ class _BaseTestFFTClass(base_test.function_base):
         self.out_even = pycbc.types.Array([4.0,-4.0,8.0,-8.0],
                                          dtype=dtype('float32'))
         self.out_even_test = pycbc.types.zeros(4,dtype=dtype('float32'))
-        if self.scheme != 'cpu':
-            self.scheme_test(pycbc.fft.ifft,(self.in_even,self.out_even_test),
-                                            (self.in_pristine,self.out_even),self.splaces,backend=self.backend)
-            for back in pycbc.fft.cpu_backends:
-                self.cpu_test(pycbc.fft.ifft,(self.in_even,self.out_even_test),
-                                            (self.in_pristine,self.out_even),self.splaces,backend=back)
         with self.context:
             pycbc.fft.ifft(self.in_even,self.out_even_test,backend=self.backend)
             # First, check that we have not overwritten the input array
-            self.assertEqual(self.in_even[0].real,self.in_pristine[0].real,msg=self.omsg)
-            self.assertEqual(self.in_even[0].imag,self.in_pristine[0].imag,msg=self.omsg)
-            self.assertEqual(self.in_even[1].real,self.in_pristine[1].real,msg=self.omsg)
-            self.assertEqual(self.in_even[1].imag,self.in_pristine[1].imag,msg=self.omsg)
-            self.assertEqual(self.in_even[2].real,self.in_pristine[2].real,msg=self.omsg)
-            self.assertEqual(self.in_even[2].imag,self.in_pristine[2].imag,msg=self.omsg)
+            self.assertEqual(self.in_even,self.in_pristine,msg=self.omsg)
             # Check that output is correct.
-            self.assertAlmostEqual(self.out_even[0],self.out_even_test[0],
-                              places=self.splaces,msg=self.smsg)
-            self.assertAlmostEqual(self.out_even[1],self.out_even_test[1],
-                              places=self.splaces,msg=self.smsg)
-            self.assertAlmostEqual(self.out_even[2],self.out_even_test[2],
-                              places=self.splaces,msg=self.smsg)
-            self.assertAlmostEqual(self.out_even[3],self.out_even_test[3],
-                              places=self.splaces,msg=self.smsg)
+            self.assertTrue(self.out_even.almost_equal_elem(self.out_even_test,tol=self.stol),
+                            msg=self.smsg)
 
         # Now, another test case when output array length is odd
         self.in_odd = pycbc.types.Array([5.0+0.0j,-1.0+0.0j],
@@ -279,21 +189,11 @@ class _BaseTestFFTClass(base_test.function_base):
         self.out_odd = pycbc.types.Array([3.0,6.0,6.0],
                                         dtype=dtype('float32'))
         self.out_odd_test = pycbc.types.zeros(3,dtype=dtype('float32'))
-        if self.scheme != 'cpu':
-            self.scheme_test(pycbc.fft.ifft,(self.in_odd,self.out_odd_test),
-                                            (self.in_odd,self.out_odd),self.splaces,backend=self.backend)
-            for back in pycbc.fft.cpu_backends:
-                self.cpu_test(pycbc.fft.ifft,(self.in_odd,self.out_odd_test),
-                                            (self.in_odd,self.out_odd),self.splaces,backend=back)
         with self.context:
             pycbc.fft.ifft(self.in_odd,self.out_odd_test,backend=self.backend)
             # Compare again.
-            self.assertAlmostEqual(self.out_odd[0],self.out_odd_test[0],
-                              places=self.splaces,msg=self.smsg)
-            self.assertAlmostEqual(self.out_odd[1],self.out_odd_test[1],
-                              places=self.splaces,msg=self.smsg)
-            self.assertAlmostEqual(self.out_odd[2],self.out_odd_test[2],
-                              places=self.splaces,msg=self.smsg)
+            self.assertTrue(self.out_odd.almost_equal_elem(self.out_odd_test,tol=self.stol),
+                            msg=self.smsg)
             # Now test that the proper exceptions are raised when we give
             # erroneous arguments
             self.out_badlen = pycbc.types.zeros(5,dtype=dtype('float32'))
@@ -321,51 +221,24 @@ class _BaseTestFFTClass(base_test.function_base):
         self.out_even = pycbc.types.Array([4.0,-4.0,8.0,-8.0],
                                          dtype=dtype('float64'))
         self.out_even_test = pycbc.types.zeros(4,dtype=dtype('float64'))
-        if self.scheme != 'cpu':
-            self.scheme_test(pycbc.fft.ifft,(self.in_even,self.out_even_test),
-                                            (self.in_pristine,self.out_even),self.dplaces,backend=self.backend)
-            for back in pycbc.fft.cpu_backends:
-                self.cpu_test(pycbc.fft.ifft,(self.in_even,self.out_even_test),
-                                            (self.in_pristine,self.out_even),self.dplaces,backend=back)
         with self.context:
             pycbc.fft.ifft(self.in_even,self.out_even_test,backend=self.backend)
             # First, check that we have not overwritten the input array
-            self.assertEqual(self.in_even[0].real,self.in_pristine[0].real,msg=self.omsg)
-            self.assertEqual(self.in_even[0].imag,self.in_pristine[0].imag,msg=self.omsg)
-            self.assertEqual(self.in_even[1].real,self.in_pristine[1].real,msg=self.omsg)
-            self.assertEqual(self.in_even[1].imag,self.in_pristine[1].imag,msg=self.omsg)
-            self.assertEqual(self.in_even[2].real,self.in_pristine[2].real,msg=self.omsg)
-            self.assertEqual(self.in_even[2].imag,self.in_pristine[2].imag,msg=self.omsg)
+            self.assertEqual(self.in_even,self.in_pristine,msg=self.omsg)
             # Check that output is correct.
-            self.assertAlmostEqual(self.out_even[0],self.out_even_test[0],
-                              places=self.dplaces,msg=self.dmsg)
-            self.assertAlmostEqual(self.out_even[1],self.out_even_test[1],
-                              places=self.dplaces,msg=self.dmsg)
-            self.assertAlmostEqual(self.out_even[2],self.out_even_test[2],
-                              places=self.dplaces,msg=self.dmsg)
-            self.assertAlmostEqual(self.out_even[3],self.out_even_test[3],
-                              places=self.dplaces,msg=self.dmsg)
+            self.assertTrue(self.out_even.almost_equal_elem(self.out_even_test,tol=self.dtol),
+                            msg=self.dmsg)
         # Now, another test case when output array length is odd
         self.in_odd = pycbc.types.Array([5.0+0.0j,-1.0+0.0j],
                                          dtype=dtype('complex128'))
         self.out_odd = pycbc.types.Array([3.0,6.0,6.0],
                                         dtype=dtype('float64'))
         self.out_odd_test = pycbc.types.zeros(3,dtype=dtype('float64'))
-        if self.scheme != 'cpu':
-            self.scheme_test(pycbc.fft.ifft,(self.in_odd,self.out_odd_test),
-                                            (self.in_odd,self.out_odd),self.dplaces,backend=self.backend)
-            for back in pycbc.fft.cpu_backends:
-                self.cpu_test(pycbc.fft.ifft,(self.in_odd,self.out_odd_test),
-                                            (self.in_odd,self.out_odd),self.dplaces,backend=back)
         with self.context:
             pycbc.fft.ifft(self.in_odd,self.out_odd_test,backend=self.backend)
             # Compare again.
-            self.assertAlmostEqual(self.out_odd[0],self.out_odd_test[0],
-                              places=self.dplaces,msg=self.dmsg)
-            self.assertAlmostEqual(self.out_odd[1],self.out_odd_test[1],
-                              places=self.dplaces,msg=self.dmsg)
-            self.assertAlmostEqual(self.out_odd[2],self.out_odd_test[2],
-                              places=self.dplaces,msg=self.dmsg)
+            self.assertTrue(self.out_odd.almost_equal_elem(self.out_odd_test,tol=self.dtol),
+                            msg=self.dmsg)
             # Now test that the proper exceptions are raised when we give
             # erroneous arguments
             self.out_badlen = pycbc.types.zeros(5,dtype=dtype('float64'))
@@ -393,28 +266,13 @@ class _BaseTestFFTClass(base_test.function_base):
         self.out_cmplx = pycbc.types.Array([3.0-1.0j,-1.0+3.0j],
                                            dtype=dtype('complex64'))
         self.out_cmplx_test = pycbc.types.zeros(2,dtype=dtype('complex64'))
-        if self.scheme != 'cpu':
-            self.scheme_test(pycbc.fft.fft,(self.in_cmplx,self.out_cmplx_test),
-                                            (self.in_pristine,self.out_cmplx),self.splaces,backend=self.backend)
-            for back in pycbc.fft.cpu_backends:
-                self.cpu_test(pycbc.fft.fft,(self.in_cmplx,self.out_cmplx_test),
-                                            (self.in_pristine,self.out_cmplx),self.splaces,backend=back)
         with self.context:
             pycbc.fft.fft(self.in_cmplx,self.out_cmplx_test,backend=self.backend)
             # First, check that we have not overwritten the input array
-            self.assertEqual(self.in_cmplx[0].real,self.in_pristine[0].real,msg=self.omsg)
-            self.assertEqual(self.in_cmplx[0].imag,self.in_pristine[0].imag,msg=self.omsg)
-            self.assertEqual(self.in_cmplx[1].real,self.in_pristine[1].real,msg=self.omsg)
-            self.assertEqual(self.in_cmplx[1].imag,self.in_pristine[1].imag,msg=self.omsg)
+            self.assertEqual(self.in_cmplx,self.in_pristine,msg=self.omsg)
             # Check that output is correct.
-            self.assertAlmostEqual(self.out_cmplx[0].real,self.out_cmplx_test[0].real,
-                              places=self.splaces,msg=self.smsg)
-            self.assertAlmostEqual(self.out_cmplx[0].imag,self.out_cmplx_test[0].imag,
-                              places=self.splaces,msg=self.smsg)
-            self.assertAlmostEqual(self.out_cmplx[1].real,self.out_cmplx_test[1].real,
-                              places=self.splaces,msg=self.smsg)
-            self.assertAlmostEqual(self.out_cmplx[1].imag,self.out_cmplx_test[1].imag,
-                              places=self.splaces,msg=self.smsg)
+            self.assertTrue(self.out_cmplx.almost_equal_elem(self.out_cmplx_test,tol=self.stol),
+                            msg=self.smsg)
             # Now test that the proper exceptions are raised when we give
             # erroneous arguments
             self.out_badlen = pycbc.types.zeros(3,dtype=dtype('complex64'))
@@ -439,28 +297,13 @@ class _BaseTestFFTClass(base_test.function_base):
         self.out_cmplx = pycbc.types.Array([3.0-1.0j,-1.0+3.0j],
                                            dtype=dtype('complex128'))
         self.out_cmplx_test = pycbc.types.zeros(2,dtype=dtype('complex128'))
-        if self.scheme != 'cpu':
-            self.scheme_test(pycbc.fft.fft,(self.in_cmplx,self.out_cmplx_test),
-                                            (self.in_pristine,self.out_cmplx),self.dplaces,backend=self.backend)
-            for back in pycbc.fft.cpu_backends:
-                self.cpu_test(pycbc.fft.fft,(self.in_cmplx,self.out_cmplx_test),
-                                            (self.in_pristine,self.out_cmplx),self.dplaces,backend=back)
         with self.context:
             pycbc.fft.fft(self.in_cmplx,self.out_cmplx_test,backend=self.backend)
             # First, check that we have not overwritten the input array
-            self.assertEqual(self.in_cmplx[0].real,self.in_pristine[0].real,msg=self.omsg)
-            self.assertEqual(self.in_cmplx[0].imag,self.in_pristine[0].imag,msg=self.omsg)
-            self.assertEqual(self.in_cmplx[1].real,self.in_pristine[1].real,msg=self.omsg)
-            self.assertEqual(self.in_cmplx[1].imag,self.in_pristine[1].imag,msg=self.omsg)
+            self.assertEqual(self.in_cmplx,self.in_pristine,msg=self.omsg)
             # Check that output is correct.
-            self.assertAlmostEqual(self.out_cmplx[0].real,self.out_cmplx_test[0].real,
-                              places=self.dplaces,msg=self.dmsg)
-            self.assertAlmostEqual(self.out_cmplx[0].imag,self.out_cmplx_test[0].imag,
-                              places=self.dplaces,msg=self.dmsg)
-            self.assertAlmostEqual(self.out_cmplx[1].real,self.out_cmplx_test[1].real,
-                              places=self.dplaces,msg=self.dmsg)
-            self.assertAlmostEqual(self.out_cmplx[1].imag,self.out_cmplx_test[1].imag,
-                              places=self.dplaces,msg=self.dmsg)
+            self.assertTrue(self.out_cmplx.almost_equal_elem(self.out_cmplx_test,tol=self.dtol),
+                            msg=self.dmsg)
             # Now test that the proper exceptions are raised when we give
             # erroneous arguments
             self.out_badlen = pycbc.types.zeros(3,dtype=dtype('complex128'))
@@ -485,28 +328,13 @@ class _BaseTestFFTClass(base_test.function_base):
         self.out_cmplx = pycbc.types.Array([2.0+2.0j,4.0-4.0j],
                                           dtype=dtype('complex64'))
         self.out_cmplx_test = pycbc.types.zeros(2,dtype=dtype('complex64'))
-        if self.scheme != 'cpu':
-            self.scheme_test(pycbc.fft.ifft,(self.in_cmplx,self.out_cmplx_test),
-                                            (self.in_pristine,self.out_cmplx),self.splaces,backend=self.backend)
-            for back in pycbc.fft.cpu_backends:
-                self.cpu_test(pycbc.fft.ifft,(self.in_cmplx,self.out_cmplx_test),
-                                            (self.in_pristine,self.out_cmplx),self.splaces,backend=back)
         with self.context:
             pycbc.fft.ifft(self.in_cmplx,self.out_cmplx_test,backend=self.backend)
             # First, check that we have not overwritten the input array
-            self.assertEqual(self.in_cmplx[0].real,self.in_pristine[0].real,msg=self.omsg)
-            self.assertEqual(self.in_cmplx[0].imag,self.in_pristine[0].imag,msg=self.omsg)
-            self.assertEqual(self.in_cmplx[1].real,self.in_pristine[1].real,msg=self.omsg)
-            self.assertEqual(self.in_cmplx[1].imag,self.in_pristine[1].imag,msg=self.omsg)
+            self.assertEqual(self.in_cmplx,self.in_pristine,msg=self.omsg)
             # Check that output is correct.
-            self.assertAlmostEqual(self.out_cmplx[0].real,self.out_cmplx_test[0].real,
-                              places=self.splaces,msg=self.smsg)
-            self.assertAlmostEqual(self.out_cmplx[0].imag,self.out_cmplx_test[0].imag,
-                              places=self.splaces,msg=self.smsg)
-            self.assertAlmostEqual(self.out_cmplx[1].real,self.out_cmplx_test[1].real,
-                              places=self.splaces,msg=self.smsg)
-            self.assertAlmostEqual(self.out_cmplx[1].imag,self.out_cmplx_test[1].imag,
-                              places=self.splaces,msg=self.smsg)
+            self.assertTrue(self.out_cmplx.almost_equal_elem(self.out_cmplx_test,tol=self.stol),
+                            msg=self.smsg)
             # Now test that the proper exceptions are raised when we give
             # erroneous arguments
             self.out_badlen = pycbc.types.zeros(3,dtype=dtype('complex64'))
@@ -531,28 +359,13 @@ class _BaseTestFFTClass(base_test.function_base):
         self.out_cmplx = pycbc.types.Array([2.0+2.0j,4.0-4.0j],
                                           dtype=dtype('complex128'))
         self.out_cmplx_test = pycbc.types.zeros(2,dtype=dtype('complex128'))
-        if self.scheme != 'cpu':
-            self.scheme_test(pycbc.fft.ifft,(self.in_cmplx,self.out_cmplx_test),
-                                            (self.in_pristine,self.out_cmplx),self.dplaces,backend=self.backend)
-            for back in pycbc.fft.cpu_backends:
-                self.cpu_test(pycbc.fft.ifft,(self.in_cmplx,self.out_cmplx_test),
-                                            (self.in_pristine,self.out_cmplx),self.dplaces,backend=back)
         with self.context:
             pycbc.fft.ifft(self.in_cmplx,self.out_cmplx_test,backend=self.backend)
             # First, check that we have not overwritten the input array
-            self.assertEqual(self.in_cmplx[0].real,self.in_pristine[0].real,msg=self.omsg)
-            self.assertEqual(self.in_cmplx[0].imag,self.in_pristine[0].imag,msg=self.omsg)
-            self.assertEqual(self.in_cmplx[1].real,self.in_pristine[1].real,msg=self.omsg)
-            self.assertEqual(self.in_cmplx[1].imag,self.in_pristine[1].imag,msg=self.omsg)
+            self.assertEqual(self.in_cmplx,self.in_pristine,msg=self.omsg)
             # Check that output is correct.
-            self.assertAlmostEqual(self.out_cmplx[0].real,self.out_cmplx_test[0].real,
-                              places=self.dplaces,msg=self.dmsg)
-            self.assertAlmostEqual(self.out_cmplx[0].imag,self.out_cmplx_test[0].imag,
-                              places=self.dplaces,msg=self.dmsg)
-            self.assertAlmostEqual(self.out_cmplx[1].real,self.out_cmplx_test[1].real,
-                              places=self.dplaces,msg=self.dmsg)
-            self.assertAlmostEqual(self.out_cmplx[1].imag,self.out_cmplx_test[1].imag,
-                              places=self.dplaces,msg=self.dmsg)
+            self.assertTrue(self.out_cmplx.almost_equal_elem(self.out_cmplx_test,tol=self.dtol),
+                            msg=self.dmsg)
             # Now test that the proper exceptions are raised when we give
             # erroneous arguments
             self.out_badlen = pycbc.types.zeros(3,dtype=dtype('complex128'))
@@ -616,17 +429,11 @@ class _BaseTestFFTClass(base_test.function_base):
             # testing both forward and backward, we check that ifft(fft(input))
             # is input, and that the intermediate delta_f is set correctly.
             pycbc.fft.fft(self.in_ts,self.out_fs_test,backend=self.backend)
-            self.assertAlmostEqual(self.out_fs_test._delta_f,self.fs_deltaf,
-                                   places=self.splaces,msg=self.smsg)
+            self.assertTrue(abs(self.out_fs_test._delta_f-self.fs_deltaf)<=self.stol*self.fs_deltaf,
+                            msg=self.smsg)
             pycbc.fft.ifft(self.out_fs_test,self.out_ts_test,backend=self.backend)
-            self.assertAlmostEqual(self.out_ts_test[0],self.out_ts[0],
-                                   places=self.splaces,msg=self.smsg)
-            self.assertAlmostEqual(self.out_ts_test[1],self.out_ts[1],
-                                   places=self.splaces,msg=self.smsg)
-            self.assertAlmostEqual(self.out_ts_test[2],self.out_ts[2],
-                                   places=self.splaces,msg=self.smsg)
-            self.assertAlmostEqual(self.out_ts_test._delta_t,self.out_ts._delta_t,
-                                   places=self.splaces,msg=self.smsg)
+            self.assertTrue(self.out_ts_test.almost_equal_elem(self.out_ts,tol=self.stol),
+                            msg=self.smsg)
 
 # Now, factories to create test cases for each available backend.
 # The automation means that the default for each scheme will get created
@@ -648,7 +455,7 @@ for backend in backends:
     # of backend.  One such class for each backend is appended
     # to the list
     klass = type('{0}_{1}_test'.format(_scheme,backend),
-                 (_BaseTestFFTClass,unittest.TestCase),
+                 (_BaseTestFFTClass,),
                  {'backend': backend})
     FFTTestClasses.append(klass)
 
