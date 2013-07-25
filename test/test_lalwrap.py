@@ -568,16 +568,3 @@ if __name__ == '__main__':
             suiteOpenCL.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
         results = unittest.TextTestRunner(verbosity=2).run(suiteOpenCL)
 
-    NotImpErrors = 0
-    for error in results.errors:
-        for errormsg in error:
-            if type(errormsg) is str:
-                if 'NotImplemented' in errormsg:
-                    NotImpErrors +=1
-                    break
-    if results.wasSuccessful():
-        sys.exit(0)
-    elif len(results.failures)==0 and len(results.errors)==NotImpErrors:
-        sys.exit(1)
-    else:
-        sys.exit(2)
