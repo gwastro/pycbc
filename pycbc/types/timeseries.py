@@ -201,7 +201,7 @@ class TimeSeries(Array):
             interpreted by the 'relative' keyword, and if the types,
             lengths, dtypes, epochs, and delta_ts are exactly the same.
         """
-        if super(TimeSeries,self).almost_equal_elem(other):
+        if super(TimeSeries,self).almost_equal_elem(other,tol=tol,relative=relative):
             return (self._epoch == other._epoch and self._delta_t == other._delta_t)
         else:
             return False
@@ -242,7 +242,7 @@ class TimeSeries(Array):
             interpreted by the 'relative' keyword, and if the types,
             lengths, dtypes, epochs, and delta_ts are exactly the same.
         """
-        if super(TimeSeries,self).almost_equal_norm(other):
+        if super(TimeSeries,self).almost_equal_norm(other,tol=tol,relative=relative):
             return (self._epoch == other._epoch and self._delta_t == other._delta_t)
         else:
             return False

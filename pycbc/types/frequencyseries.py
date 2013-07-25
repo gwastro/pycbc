@@ -167,7 +167,7 @@ class FrequencySeries(Array):
             interpreted by the 'relative' keyword, and if the types,
             lengths, dtypes, epochs, and delta_fs are exactly the same.
         """
-        if super(FrequencySeries,self).almost_equal_elem(other):
+        if super(FrequencySeries,self).almost_equal_elem(other,tol=tol,relative=relative):
             return (self._epoch == other._epoch and self._delta_f == other._delta_f)
         else:
             return False
@@ -208,7 +208,7 @@ class FrequencySeries(Array):
             interpreted by the 'relative' keyword, and if the types,
             lengths, dtypes, epochs, and delta_fs are exactly the same.
         """
-        if super(FrequencySeries,self).almost_equal_norm(other):
+        if super(FrequencySeries,self).almost_equal_norm(other,tol=tol,relative=relative):
             return (self._epoch == other._epoch and self._delta_f == other._delta_f)
         else:
             return False
