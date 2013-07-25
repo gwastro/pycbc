@@ -76,14 +76,19 @@ class TimeSeries(Array):
         if isinstance(index, slice):
             if index.start > index.stop:
                 raise ValueError('start index must be smaller than stop index')
+            # Set the new delta_t: index.step may be None or negative; we don't
+            # support the latter even though Python allows it.
             if index.step is None:
                 new_delta_t = self._delta_t
             elif index.step < 0:
                 raise ValueError('negative step is not supported')
             else:
                 new_delta_t = index.step * self._delta_t
+            # Set the new epoch---note that index.start may also be None
             if self._epoch is None:
                 new_epoch = None
+            elif index.start is None:
+                new_epoch = self._epoch
             else:
                 new_epoch = self._epoch + index.start * self._delta_t
             return TimeSeries(Array.__getitem__(self, index), new_delta_t, new_epoch, copy=False)
