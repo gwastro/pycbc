@@ -136,3 +136,34 @@ def parse_args_cpu_only(feature_str):
     print "Running {0} unit tests for {1}:".format('CPU',feature_str)
 
     return
+
+def exit_based_on_results(results):
+    """
+    A probably-obsolete function to exit from a unit test-script with a status that depends
+    on whether or not the only errors or failures were NotImplemented errors.  Specifically,
+    if the unit-test suite execution encoded in results was:
+       All tests successful:                               Exit 0
+       All tests successful or only NotImplemented errors: Exit 1
+       Some tests either failed or had other errors:       Exit 2
+    The intent was that failures due to missing features be treated differently (especially
+    when that happens on one of the GPU schemes) and that these exit statuses could then be
+    interpreted by NMI or some other automatic build/test system accordingly.
+
+    Parameters
+    ----------
+    results: an instance of unittest.TestResult, returned (for instance) from a call such as
+        results = unittest.TextTestRunner(verbosity=2).run(suite)
+    """
+    NotImpErrors = 0
+    for error in results.errors:
+        for errormsg in error:
+            if type(errormsg) is str:
+                if 'NotImplemented' in errormsg:
+                    NotImpErrors +=1
+                    break
+    if results.wasSuccessful():
+        sys.exit(0)
+    elif len(results.failures)==0 and len(results.errors)==NotImpErrors:
+        sys.exit(1)
+    else:
+        sys.exit(2)
