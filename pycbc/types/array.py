@@ -35,7 +35,7 @@ from decorator import decorator
 import lal as _lal
 import numpy as _numpy
 from numpy import float32, float64, complex64, complex128, ones
-from math import sqrt
+from numpy.linalg import norm
 
 import pycbc as _pycbc
 import pycbc.scheme as _scheme
@@ -594,9 +594,9 @@ class Array(object):
         # Slow, but the user was warned.
 
         diff = self.numpy()-other.numpy()
-        dnorm = sqrt(diff.inner(diff))
+        dnorm = norm(diff)
         if relative:
-            return (dnorm <= tol*sqrt(self.inner(self)))
+            return (dnorm <= tol*norm(self))
         else:
             return (dnorm <= tol)
 
