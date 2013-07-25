@@ -91,26 +91,37 @@ class FrequencySeries(Array):
 
     def __eq__(self,other):
         """
-        This special method is invoked by the '==' operator
-        in Python.  The frequency series method overrides that
-        in the superclass (which it also calls) by further
-        enforcing that the additional meta-data (_epoch and
-        _delta_f) also agree between the two frequency series.
+        This is the Python special method invoked whenever the '=='
+        comparison is used.  It will return true if the data of two
+        frequency series are identical, and all of the numeric meta-data
+        are identical, irrespective of whether or not the two
+        instances live in the same memory (for that comparison, the
+        Python statement 'a is b' should be used instead).
 
-        As with the superclass method, the comparison is always
-        done on the CPU, wherever the series itself resides, and
-        may therefore be slow for GPU arrays.  But it should not
-        move the arrays onto the CPU, nor change their scheme.
+        Thus, this method returns 'True' if the types of both 'self'
+        and 'other' are identical, as well as their lengths, dtypes,
+        epochs, delta_fs and the data in the arrays, element by element.
+        It will always do the comparison on the CPU, but will *not* move
+        either object to the CPU if it is not already there, nor change
+        the scheme of either object. It is possible to compare a CPU
+        object to a GPU object, and the comparison should be true if the
+        data and meta-data of the two objects are the same.
+
+        Note in particular that this function returns a single boolean,
+        and not an array of booleans as Numpy does.  If the numpy
+        behavior is instead desired it can be obtained using the numpy()
+        method of the PyCBC type to get a numpy instance from each
+        object, and invoking '==' on those two instances.
 
         Parameters
         ----------
-        other: another Python object, that should be tested for
-            equality with 'self'.
+        other: another Python object, that should be tested for equality
+            with 'self'.
 
         Returns
         -------
-        boolean: 'True' if the types, data, and meta-data (except
-            scheme) of the two objects are each identical.
+        boolean: 'True' if the types, dtypes, lengths, epochs, delta_fs
+            and data of the two objects are each identical.
         """
         if super(FrequencySeries,self).__eq__(other):
             return (self._epoch == other._epoch and self._delta_f == other._delta_f)

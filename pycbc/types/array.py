@@ -421,39 +421,36 @@ class Array(object):
     def __eq__(self,other):
         """
         This is the Python special method invoked whenever the '=='
-        comparison is used.  We want it to return true if the data
-        of our PyCBC array-like type are identical, and all of the
-        numeric meta-data are identical, irrespective of whether or
-        not the two instances live in the same memory (for that
-        comparison, the Python statement 'a is b' should be used
-        instead).
+        comparison is used.  It will return true if the data of two
+        PyCBC arrays are identical, and all of the numeric meta-data
+        are identical, irrespective of whether or not the two
+        instances live in the same memory (for that comparison, the
+        Python statement 'a is b' should be used instead).
 
         Thus, this method returns 'True' if the types of both 'self'
-        and 'other' are identical, as well as their dtypes and the
-        data in the arrays, element by element.  It will always do
-        the comparison on the CPU, but will *not* move either object
-        to the CPU if it is not already there.  This may make it
-        slower than best-possible when both objects live on the GPU.
-        If this is an issue the implementation of this method may be
-        revisited later, but for now we do not see many use cases
-        beyond unit-testing, where speed is not such a concern.
-        Element-by-element comparisons will always be slow when done
-        on a GPU, even in a reduction kernel.
+        and 'other' are identical, as well as their lengths, dtypes
+        and the data in the arrays, element by element.  It will always
+        do the comparison on the CPU, but will *not* move either object
+        to the CPU if it is not already there, nor change the scheme of
+        either object. It is possible to compare a CPU object to a GPU
+        object, and the comparison should be true if the data and
+        meta-data of the two objects are the same.
 
         Note in particular that this function returns a single boolean,
         and not an array of booleans as Numpy does.  If the numpy
-        behavior is desired it can be obtained using the numpy() method
-        of the PyCBC type.
+        behavior is instead desired it can be obtained using the numpy()
+        method of the PyCBC type to get a numpy instance from each
+        object, and invoking '==' on those two instances.
 
         Parameters
         ----------
-        other: another Python object, that should be tested for
-            equality with 'self'.
+        other: another Python object, that should be tested for equality
+            with 'self'.
 
         Returns
         -------
-        boolean: 'True' if the types, data, and meta-data (except
-            scheme) of the two objects are each identical.
+        boolean: 'True' if the types, dtypes, lengths, and data of the
+            two objects are each identical.
         """
 
         # Writing the first test as below allows this method to be safely
