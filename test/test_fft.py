@@ -140,9 +140,9 @@ def _test_random(test_case,inarr,outarr,tol):
     # First test IFFT(FFT(random))
     # The numpy randn(n) provides an array of n numbers drawn from standard normal
     if dtype(indarr).kind is 'c':
-        inarr(:) = randn(inlen) +1j*randn(inlen)
+        inarr[:] = randn(inlen) +1j*randn(inlen)
     else:
-        inarr(:) = randn(inlen)
+        inarr[:] = randn(inlen)
     incopy = type(inarr)(inarr)
     # An FFT followed by IFFT gives Array scaled by len(Array), but for
     # Time/FrequencySeries there should be no scaling.
@@ -155,9 +155,9 @@ def _test_random(test_case,inarr,outarr,tol):
                       msg="IFFT(FFT(random)) did not reproduce original array to within tolerance {0}".format(tol))
     # Now the same for FFT(IFFT(random))
     if dtype(outarr).kind is 'c':
-        outarr(:) = randn(outlen)+1j*randn(outlen)
+        outarr[:] = randn(outlen)+1j*randn(outlen)
     else:
-        outarr(:) = randn(outlen)
+        outarr[:] = randn(outlen)
     inarr.clear()
     outcopy = type(outarr)(outarr)
     if type(outarr) == pycbc.types.Array:
