@@ -145,8 +145,7 @@ def _test_random(test_case,inarr,outarr,tol):
     tc = test_case
     # Test that applying a transform and its inverse to reasonably long, random
     # input gives back the (appropriately scaled) input. We must allow for numerical
-    # error, and we use 100*tol for the relative error on an element-by-element
-    # comparison, but just tol for the norm comparison.
+    # error, and it seems more reliable to check using normwise error (than elementwise).
     #
     # First test IFFT(FFT(random))
     # The numpy randn(n) provides an array of n numbers drawn from standard normal
@@ -165,13 +164,9 @@ def _test_random(test_case,inarr,outarr,tol):
         pycbc.fft.ifft(outarr,inarr,tc.backend)
         emsg="IFFT(FFT(random)) did not reproduce original array to within tolerance {0}".format(tol)
         if isinstance(incopy,ts) or isinstance(incopy,fs):
-            tc.assertTrue(incopy.almost_equal_elem(inarr,tol=100*tol,dtol=tol),
-                          msg=emsg)
             tc.assertTrue(incopy.almost_equal_norm(inarr,tol=tol,dtol=tol),
                           msg=emsg)
         else:
-            tc.assertTrue(incopy.almost_equal_elem(inarr,tol=100*tol),
-                          msg=emsg)
             tc.assertTrue(incopy.almost_equal_norm(inarr,tol=tol),
                           msg=emsg)
     # Now the same for FFT(IFFT(random))
@@ -188,13 +183,9 @@ def _test_random(test_case,inarr,outarr,tol):
         pycbc.fft.fft(inarr,outarr,tc.backend)
         emsg="FFT(IFFT(random)) did not reproduce original array to within tolerance {0}".format(tol)
         if isinstance(outcopy,ts) or isinstance(outcopy,fs):
-            tc.assertTrue(outcopy.almost_equal_elem(outarr,tol=100*tol,dtol=tol),
-                          msg=emsg)
             tc.assertTrue(outcopy.almost_equal_norm(outarr,tol=tol,dtol=tol),
                           msg=emsg)
         else:
-            tc.assertTrue(outcopy.almost_equal_elem(outarr,tol=100*tol),
-                          msg=emsg)
             tc.assertTrue(outcopy.almost_equal_norm(outarr,tol=tol),
                           msg=emsg)
 
