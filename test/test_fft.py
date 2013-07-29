@@ -105,7 +105,10 @@ def _test_fft(test_case,inarr,expec,tol):
         # Next, check that the output is correct to within tolerance.
         # That will require exact equality of all other meta-data
         emsg = 'FFT output differs by more than a factor of {0} from expected'.format(tol)
-        tc.assertTrue(outarr.almost_equal_elem(expec,tol=tol,dtol=tol),msg=emsg)
+        if isinstance(outarr,ts) or isinstance(outarr,fs):
+            tc.assertTrue(outarr.almost_equal_elem(expec,tol=tol,dtol=tol),msg=emsg)
+        else:
+            tc.assertTrue(outarr.almost_equal_elem(expec,tol=tol),msg=emsg)
 
 def _test_ifft(test_case,inarr,expec,tol):
     # Basic test to see that the reverse FFT doesn't
@@ -133,7 +136,10 @@ def _test_ifft(test_case,inarr,expec,tol):
         # Next, check that the output is correct to within tolerance.
         # That will require exact equality of all other meta-data
         emsg = 'Inverse FFT output differs by more than a factor of {0} from expected'.format(tol)
-        tc.assertTrue(outarr.almost_equal_elem(expec,tol=tol,dtol=tol),msg=emsg)
+        if isinstance(outarr,ts) or isinstance(outarr,fs):
+            tc.assertTrue(outarr.almost_equal_elem(expec,tol=tol,dtol=tol),msg=emsg)
+        else:
+            tc.assertTrue(outarr.almost_equal_elem(expec,tol=tol),msg=emsg)
 
 def _test_random(test_case,inarr,outarr,tol):
     tc = test_case
@@ -151,8 +157,12 @@ def _test_random(test_case,inarr,outarr,tol):
     with tc.context:
         pycbc.fft.fft(inarr,outarr,tc.backend)
         pycbc.fft.ifft(outarr,inarr,tc.backend)
-        tc.assertTrue(incopy.almost_equal_elem(inarr,tol=tol,dtol=tol),
-                      msg="IFFT(FFT(random)) did not reproduce original array to within tolerance {0}".format(tol))
+        if isinstance(incopy,ts) or isinstance(incopy,fs):
+            tc.assertTrue(incopy.almost_equal_elem(inarr,tol=tol,dtol=tol),
+                          msg="IFFT(FFT(random)) did not reproduce original array to within tolerance {0}".format(tol))
+        else:
+            tc.assertTrue(incopy.almost_equal_elem(inarr,tol=tol),
+                          msg="IFFT(FFT(random)) did not reproduce original array to within tolerance {0}".format(tol))
     # Now the same for FFT(IFFT(random))
     if dtype(outarr).kind is 'c':
         outarr._data[:] = randn(len(outarr))+1j*randn(len(outarr))
@@ -165,9 +175,12 @@ def _test_random(test_case,inarr,outarr,tol):
     with tc.context:
         pycbc.fft.ifft(outarr,inarr,tc.backend)
         pycbc.fft.fft(inarr,outarr,tc.backend)
-        tc.assertTrue(outcopy.almost_equal_elem(outarr,tol=tol,dtol=tol),
-                      msg="FFT(IFFT(random)) did not reproduce original array to within tolerance {0}".format(tol))
-
+        if isinstance(outcopy,ts) or isinstance(outcopy,fs):
+            tc.assertTrue(outcopy.almost_equal_elem(outarr,tol=tol,dtol=tol),
+                          msg="FFT(IFFT(random)) did not reproduce original array to within tolerance {0}".format(tol))
+        else:
+            tc.assertTrue(outcopy.almost_equal_elem(outarr,tol=tol),
+                          msg="FFT(IFFT(random)) did not reproduce original array to within tolerance {0}".format(tol))
 def _test_raise_excep_fft(test_case,inarr,outarr,other_args={}):
     # As far as can be told from the unittest module documentation, the
     # 'assertRaises' tests do not permit a custom message.  So more
