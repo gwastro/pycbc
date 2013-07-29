@@ -141,7 +141,7 @@ class FrequencySeries(Array):
         else:
             return False
 
-    def almost_equal_elem(self,other,tol,relative=True):
+    def almost_equal_elem(self,other,tol,relative=True,dtol=0.0):
         """
         Compare whether two frequency series are almost equal, element
         by element.
@@ -202,7 +202,7 @@ class FrequencySeries(Array):
         else:
             return False
 
-    def almost_equal_norm(self,other,tol,relative=True):
+    def almost_equal_norm(self,other,tol,relative=True,dtol=0.0):
         """
         Compare whether two frequency series are almost equal, normwise.
 

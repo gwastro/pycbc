@@ -241,7 +241,7 @@ class TimeSeries(Array):
         else:
             return False
 
-    def almost_equal_norm(self,other,tol,relative=True):
+    def almost_equal_norm(self,other,tol,relative=True,dtol=0.0):
         """
         Compare whether two time series are almost equal, normwise.
 
