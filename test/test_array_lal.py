@@ -31,6 +31,7 @@ from pycbc.types import *
 from pycbc.scheme import *
 import optparse
 from optparse import OptionParser
+from lal import LIGOTimeGPS as LTG
 
 _parser = OptionParser()
 
@@ -64,25 +65,26 @@ if _options['scheme'] == 'opencl':
     context = OpenCLScheme(device_num=_options['devicenum'])
 
 class TestUtils(unittest.TestCase):
-    def setUp(self,*args): 
+    def setUp(self,*args):
         self.context = context
         self.delta_t = 1.0 / 4096
+        self.epoch = LTG(0,0)
 
-        self.at = TimeSeries([1], delta_t=self.delta_t, dtype=float32)
-        self.bt = TimeSeries([1], delta_t=self.delta_t, dtype=float64)
-        self.ct = TimeSeries([1], delta_t=self.delta_t, dtype=complex64)
-        self.dt = TimeSeries([1], delta_t=self.delta_t, dtype=complex128)      
+        self.at = TimeSeries([1], delta_t=self.delta_t, dtype=float32,epoch=self.epoch)
+        self.bt = TimeSeries([1], delta_t=self.delta_t, dtype=float64,epoch=self.epoch)
+        self.ct = TimeSeries([1], delta_t=self.delta_t, dtype=complex64,epoch=self.epoch)
+        self.dt = TimeSeries([1], delta_t=self.delta_t, dtype=complex128,epoch=self.epoch)
 
         self.a = Array([1], dtype=float32)
         self.b = Array([1], dtype=float64)
         self.c = Array([1], dtype=complex64)
-        self.d = Array([1], dtype=complex128)          
+        self.d = Array([1], dtype=complex128)
 
-        self.af = FrequencySeries([1], delta_f=self.delta_t, dtype=float32)
-        self.bf = FrequencySeries([1], delta_f=self.delta_t, dtype=float64)
-        self.cf = FrequencySeries([1], delta_f=self.delta_t, dtype=complex64)
-        self.df = FrequencySeries([1], delta_f=self.delta_t, dtype=complex128)          
-    
+        self.af = FrequencySeries([1], delta_f=self.delta_t, dtype=float32,epoch=self.epoch)
+        self.bf = FrequencySeries([1], delta_f=self.delta_t, dtype=float64,epoch=self.epoch)
+        self.cf = FrequencySeries([1], delta_f=self.delta_t, dtype=complex64,epoch=self.epoch)
+        self.df = FrequencySeries([1], delta_f=self.delta_t, dtype=complex128,epoch=self.epoch)
+
 
     if type(context) is CPUScheme:
         def test_array_to_lal(self):

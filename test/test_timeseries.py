@@ -134,7 +134,7 @@ class TestTimeSeriesBase(base_test.array_base):
 
         # These are timeseries that have problems specific to timeseries
         self.bad3 = TimeSeries([1,1,1], 0.2, epoch=self.epoch, dtype = self.dtype)
-        if self.epoch == lal.LIGOTimeGPS(0,0):
+        if self.epoch == None:
             self.bad4 = TimeSeries([1,1,1], self.delta_t, epoch = lal.LIGOTimeGPS(1000, 1000), dtype = self.dtype)
         else:
             self.bad4 = TimeSeries([1,1,1], self.delta_t, epoch=None, dtype = self.dtype)
@@ -147,8 +147,8 @@ class TestTimeSeriesBase(base_test.array_base):
             #We don't want to cast complex as real
             if not (self.kind == 'real' and self.okind == 'complex'):
                 #First we must check that the dtype is correct when specified
-                out1 = TimeSeries(in1,0.1, dtype=self.dtype)
-                out2 = TimeSeries(in2,0.1, dtype=self.dtype)
+                out1 = TimeSeries(in1,0.1, dtype=self.dtype, epoch=self.epoch)
+                out2 = TimeSeries(in2,0.1, dtype=self.dtype, epoch=self.epoch)
                 #to be sure that it is copied
                 in1 += 1
                 in2 += 1
@@ -159,7 +159,7 @@ class TestTimeSeriesBase(base_test.array_base):
                 self.assertEqual(out1[2],1)
                 self.assertTrue(out1.dtype==self.dtype)
                 self.assertEqual(out1.delta_t, 0.1)
-                self.assertEqual(out1.start_time, lal.LIGOTimeGPS(0,0))
+                self.assertEqual(out1.start_time, self.epoch)
 
 
                 self.assertTrue(type(out2._scheme) == self.scheme)
@@ -169,7 +169,7 @@ class TestTimeSeriesBase(base_test.array_base):
                 self.assertEqual(out2[2],1)
                 self.assertTrue(out2.dtype==self.dtype)
                 self.assertEqual(out2.delta_t,0.1)
-                self.assertEqual(out2.start_time, lal.LIGOTimeGPS(0,0))
+                self.assertEqual(out2.start_time, self.epoch)
 
                 in1-=1
                 in2-=1
@@ -190,7 +190,7 @@ class TestTimeSeriesBase(base_test.array_base):
             # On the CPU, this should be possible
             in3 = numpy.array([5,3,1],dtype=self.dtype)
             if _options['scheme'] == 'cpu':
-                out4 = TimeSeries(in3,0.1,copy=False)
+                out4 = TimeSeries(in3,0.1,epoch=self.epoch,copy=False)
                 in3 += 1
 
                 self.assertTrue(out4.dtype==self.dtype)
@@ -199,7 +199,7 @@ class TestTimeSeriesBase(base_test.array_base):
                 self.assertEqual(out4[1],4)
                 self.assertEqual(out4[2],2)
                 self.assertEqual(out4.delta_t,0.1)
-                self.assertEqual(out4.start_time, lal.LIGOTimeGPS(0,0))
+                self.assertEqual(out4.start_time, self.epoch)
 
             # If we're in different scheme, this should raise an error
             else:
@@ -211,7 +211,7 @@ class TestTimeSeriesBase(base_test.array_base):
             elif _options['scheme'] == 'opencl':
                 in4 = pyopencl.array.zeros(pycbc.scheme.mgr.state.queue,3, self.dtype)
             if _options['scheme'] != 'cpu':
-                out4 = TimeSeries(in4,0.1, copy=False)
+                out4 = TimeSeries(in4,0.1, copy=False, epoch=self.epoch)
                 in4 += 1
                 self.assertTrue(type(out4._scheme) == self.scheme)
                 self.assertTrue(type(out4._data) is SchemeArray)
@@ -220,12 +220,12 @@ class TestTimeSeriesBase(base_test.array_base):
                 self.assertEqual(out4[2],1)
                 self.assertTrue(out4.dtype==self.dtype)
                 self.assertEqual(out4.delta_t,0.1)
-                self.assertEqual(out4.start_time, lal.LIGOTimeGPS(0,0))
+                self.assertEqual(out4.start_time, self.epoch)
 
             # We should be able to create an array from the wrong dtype, and
             # it should be cast as float64
             in5 = numpy.array([1,2,3],dtype=numpy.int32)
-            out5 = TimeSeries(in5,0.1)
+            out5 = TimeSeries(in5,0.1,epoch=self.epoch)
             in5 += 1
             self.assertTrue(type(out5._scheme) == self.scheme)
             self.assertTrue(type(out5._data) is SchemeArray)
@@ -234,7 +234,7 @@ class TestTimeSeriesBase(base_test.array_base):
             self.assertEqual(out5[2],3)
             self.assertTrue(out5.dtype==numpy.float64)
             self.assertEqual(out5.delta_t,0.1)
-            self.assertEqual(out5.start_time, lal.LIGOTimeGPS(0,0))
+            self.assertEqual(out5.start_time, self.epoch)
 
             # We shouldn't be able to copy it though
             self.assertRaises(TypeError,TimeSeries,in5, 0.1, copy=False)
@@ -263,8 +263,8 @@ class TestTimeSeriesBase(base_test.array_base):
             # We don't want to cast complex as real
             if not (self.kind=='real' and self.okind == 'complex'):
                 # First we must check that the dtype is correct when specified
-                out1 = TimeSeries(in1, 0.1, epoch=None, dtype=self.dtype)
-                out2 = TimeSeries(in2, 0.1, epoch=None, dtype=self.dtype)
+                out1 = TimeSeries(in1, 0.1, epoch=self.epoch, dtype=self.dtype)
+                out2 = TimeSeries(in2, 0.1, epoch=self.epoch, dtype=self.dtype)
                 # to be sure that it is copied
                 in1 += 1
                 in2 += 1
@@ -276,7 +276,7 @@ class TestTimeSeriesBase(base_test.array_base):
                 self.assertEqual(out1[2],1)
                 self.assertTrue(out1.dtype==self.dtype)
                 self.assertEqual(out1.delta_t, 0.1)
-                self.assertEqual(out1.start_time, lal.LIGOTimeGPS(0,0))
+                self.assertEqual(out1.start_time, self.epoch)
 
                 if out1.dtype == numpy.float32:
                     self.assertTrue(out1.precision == 'single')
@@ -298,7 +298,7 @@ class TestTimeSeriesBase(base_test.array_base):
                 self.assertEqual(out2[2],1)
                 self.assertTrue(out2.dtype==self.dtype)
                 self.assertEqual(out2.delta_t, 0.1)
-                self.assertEqual(out2.start_time, lal.LIGOTimeGPS(0,0))
+                self.assertEqual(out2.start_time, self.epoch)
 
                 in1-=1
                 in2-=1
@@ -321,7 +321,7 @@ class TestTimeSeriesBase(base_test.array_base):
             self.assertEqual(out3.start_time, self.epoch)
 
             # We should also be able to create from a CPU Array
-            out4 = TimeSeries(cpuarray,0.1, dtype=self.dtype)
+            out4 = TimeSeries(cpuarray,0.1, dtype=self.dtype, epoch=self.epoch)
 
             self.assertTrue(type(out4._scheme) == self.scheme)
             self.assertTrue(type(out4._data) is SchemeArray)
@@ -330,13 +330,13 @@ class TestTimeSeriesBase(base_test.array_base):
             self.assertEqual(out4[2],3)
             self.assertTrue(out4.dtype==self.dtype)
             self.assertEqual(out4.delta_t, 0.1)
-            self.assertEqual(out4.start_time, lal.LIGOTimeGPS(0,0))
+            self.assertEqual(out4.start_time, self.epoch)
 
             self.assertRaises(TypeError, TimeSeries,in1,0.1, dtype=numpy.int32)
 
             # Check for copy=false
             in3 = Array([5,3,1],dtype=self.dtype)
-            out5 = TimeSeries(in3,0.1,copy=False)
+            out5 = TimeSeries(in3,0.1,copy=False,epoch=self.epoch)
             in3 += 1
 
             self.assertTrue(type(out5._scheme) == self.scheme)
@@ -346,7 +346,7 @@ class TestTimeSeriesBase(base_test.array_base):
             self.assertEqual(out5[2],2)
             self.assertTrue(out5.dtype==self.dtype)
             self.assertEqual(out5.delta_t, 0.1)
-            self.assertEqual(out5.start_time, lal.LIGOTimeGPS(0,0))
+            self.assertEqual(out5.start_time, self.epoch)
 
             if _options['scheme'] != 'cpu':
                 self.assertRaises(TypeError,TimeSeries,0.1,cpuarray,copy=False)
@@ -358,7 +358,7 @@ class TestTimeSeriesBase(base_test.array_base):
 
         # Also checking that a cpu array can't be made out of another scheme without copying
         if _options['scheme'] != 'cpu':
-            self.assertRaises(TypeError, TimeSeries, out4, 0.1, copy=False)
+            self.assertRaises(TypeError, TimeSeries, out4, 0.1, copy=False, epoch=self.epoch)
             out6 = TimeSeries(out4, 0.1, dtype=self.dtype)
             self.assertTrue(type(out6._scheme) == CPUScheme)
             self.assertTrue(type(out6._data) is numpy.ndarray)
@@ -367,12 +367,12 @@ class TestTimeSeriesBase(base_test.array_base):
             self.assertEqual(out6[2],3)
             self.assertTrue(out6.dtype==self.dtype)
             self.assertEqual(out6.delta_t, 0.1)
-            self.assertEqual(out6.start_time, lal.LIGOTimeGPS(0,0))
+            self.assertEqual(out6.start_time, self.epoch)
 
     def test_list_init(self):
         with self.context:
             # When specified
-            out1 = TimeSeries([5,3,1],0.1, dtype=self.dtype)
+            out1 = TimeSeries([5,3,1],0.1, dtype=self.dtype, epoch=self.epoch)
 
             self.assertTrue(type(out1._scheme) == self.scheme)
             self.assertTrue(type(out1._data) is SchemeArray)
@@ -381,7 +381,7 @@ class TestTimeSeriesBase(base_test.array_base):
             self.assertEqual(out1[2],1)
             self.assertTrue(out1.dtype==self.dtype)
             self.assertEqual(out1.delta_t, 0.1)
-            self.assertEqual(out1.start_time, lal.LIGOTimeGPS(0,0))
+            self.assertEqual(out1.start_time, self.epoch)
 
             if out1.dtype == numpy.float32:
                 self.assertTrue(out1.precision == 'single')
@@ -397,7 +397,7 @@ class TestTimeSeriesBase(base_test.array_base):
                 #self.assertTrue(out1.kind == 'complex')
 
             if self.kind == 'complex':
-                out2 = TimeSeries([5+0j,3+0j,1+0j], 0.1, dtype=self.dtype)
+                out2 = TimeSeries([5+0j,3+0j,1+0j], 0.1, dtype=self.dtype, epoch=self.epoch)
 
                 self.assertTrue(type(out2._scheme) == self.scheme)
                 self.assertTrue(type(out2._data) is SchemeArray)
@@ -406,7 +406,7 @@ class TestTimeSeriesBase(base_test.array_base):
                 self.assertEqual(out2[2],1)
                 self.assertTrue(out2.dtype==self.dtype)
                 self.assertEqual(out2.delta_t, 0.1)
-                self.assertEqual(out2.start_time, lal.LIGOTimeGPS(0,0))
+                self.assertEqual(out2.start_time, self.epoch)
 
             else:
                 self.assertRaises(TypeError, TimeSeries,[5+0j, 3+0j, 1+0j], 0.1, dtype=self.dtype)
@@ -537,10 +537,7 @@ def test_maker(context, dtype, odtype, epoch):
             self.dtype = dtype
             self.odtype = odtype
             self.scheme = type(context)
-            if (epoch is None):
-                self.epoch = lal.LIGOTimeGPS(0,0)
-            else:
-                self.epoch = epoch
+            self.epoch = epoch
             unittest.TestCase.__init__(self, *args)
     TestTimeSeries.__name__ = _options['scheme'] + " " + dtype.__name__ + " with " + odtype.__name__
     return TestTimeSeries
