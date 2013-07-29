@@ -139,7 +139,7 @@ def _test_random(test_case,inarr,outarr,tol):
     tc = test_case
     # First test IFFT(FFT(random))
     # The numpy randn(n) provides an array of n numbers drawn from standard normal
-    if dtype(indarr).kind is 'c':
+    if dtype(inarr).kind is 'c':
         inarr[:] = randn(inlen) +1j*randn(inlen)
     else:
         inarr[:] = randn(inlen)
@@ -429,7 +429,7 @@ class _BaseTestFFTClass(unittest.TestCase):
         for fwd_dtype in [complex64,complex128]:
             # Don't do separate even/odd tests for complex
             inarr = ar(self.in_c2c_fwd,dtype=fwd_dtype)
-            outexp = ar(self.out_r2c_fwd,dtype=fwd_dtype)
+            outexp = ar(self.out_c2c_fwd,dtype=fwd_dtype)
             _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
             # Random
             rand_inarr = ar(zeros(self.rand_len_c,dtype=fwd_dtype))
@@ -449,7 +449,7 @@ class _BaseTestFFTClass(unittest.TestCase):
             # Don't do separate even/odd tests for complex
             inarr = ts(self.in_c2c_fwd,dtype=fwd_dtype,delta_t=delta_t,epoch=self.epoch)
             delta_f = 1.0/(delta_t * len(inarr))
-            outexp = fs(self.out_r2c_fwd,dtype=fwd_dtype,delta_f=delta_f,epoch=self.epoch)
+            outexp = fs(self.out_c2c_fwd,dtype=fwd_dtype,delta_f=delta_f,epoch=self.epoch)
             _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
             # Random
             rand_inarr = ts(zeros(self.rand_len_c,dtype=fwd_dtype),delta_t=delta_t,epoch=self.epoch)
@@ -471,7 +471,7 @@ class _BaseTestFFTClass(unittest.TestCase):
             # Don't do separate even/odd tests for complex
             inarr = fs(self.in_c2c_fwd,dtype=fwd_dtype,delta_f=delta_f,epoch=self.epoch)
             delta_t = 1.0/(delta_t * len(inarr))
-            outexp = ts(self.out_r2c_fwd,dtype=fwd_dtype,delta_t=delta_t,epoch=self.epoch)
+            outexp = ts(self.out_c2c_fwd,dtype=fwd_dtype,delta_t=delta_t,epoch=self.epoch)
             _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
             # Random
             rand_inarr = fs(zeros(self.rand_len_c,dtype=fwd_dtype),delta_f=delta_f,epoch=self.epoch)
