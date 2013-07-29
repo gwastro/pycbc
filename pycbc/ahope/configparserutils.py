@@ -30,6 +30,50 @@ import re
 import copy
 import ConfigParser
 
+def get_opt_ifo(self,section,option,ifo):
+    """Supplement to ConfigParser.ConfigParser.get(). This will search for an
+    option in [section] and if it doesn't find it will also try in
+    [section-ifo]. This is appended to the ConfigParser class. Will raise a
+    NoSectionError if [section] doesn't exist. Will raise NoOptionError if
+    option is not found in [section] and [section-ifo] doesn't exist or does
+    not have the option.
+
+    Parameters
+    -----------
+    self : ConfigParser object
+        The ConfigParser object (automatically passed when this is appended
+        to the ConfigParser class)
+    section : string
+        The section of the ConfigParser object to read
+    option : string
+        The ConfigParser option to look for
+    ifo : string
+        The name of the subsection to look in, if not found in [section]
+ 
+    Returns
+    --------
+    string
+        The value of the options being searched for
+    """
+
+    try:
+        return self.get(section,option)
+    except ConfigParser.Error:
+        errString = "No option '%s' in section '%s' " %(option,section)
+        if self.has_section('%s-%s' %(section,ifo)):
+            if self.has_option('%s-%s' %(section,ifo),option):
+                return self.get('%s-%s' %(section,ifo),option)
+            else:
+               errString+= "or in section '%s-%s'." %(section,ifo)
+               raise ConfigParser.Error(errString)
+        else:
+            errString+= "and section '%s-%s' does not exist." %(section,ifo)
+            raise ConfigParser.Error(errString)
+
+# FIXME: This is probably not "pythonic" and I might want a new class
+# that inherits from ConfigParser.ConfigParser
+ConfigParser.ConfigParser.get_opt_ifo = get_opt_ifo
+
 def parse_ahope_ini_file(cpFile,parsed_filepath=None):
     """Read a .ini file in, parse it as described in the documentation linked
     to above, and return the parsed ini file.
@@ -257,7 +301,6 @@ def sanity_check_subsections(cp):
             # Check if any are subsections of section
             if section2.startswith(section + '-'):
                 # Check for duplicate options whenever this exists
-                print "checking",section,section2
                 check_duplicate_options(cp,section,section2,raise_error=True)
 
 def add_options_to_section(cp,section,items,preserve_orig_file=False,\
@@ -343,7 +386,6 @@ def check_duplicate_options(cp,section1,section2,raise_error=False):
 
     # The list comprehension here creates a list of all duplicate items
     duplicates = [x for x in items1 if x in items2]
-    print duplicates
 
     if duplicates and raise_error:
         raise ValueError('The following options appear in both section ' +\

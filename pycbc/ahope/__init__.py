@@ -27,5 +27,8 @@ performing a coincident CBC matched-filter analysis on gravitational-wave
 interferometer data
 """
 
-import tmpltbank
 from configparserutils import *
+from ahope_utils import *
+from jobsetup_utils import *
+from tmpltbank_utils import *
+from matchedfltr_utils import *
