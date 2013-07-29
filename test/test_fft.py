@@ -22,21 +22,221 @@
 # =============================================================================
 #
 """
-These are the unittests for the pycbc.fft subpackage
+These are the unit-tests for the pycbc.fft subpackage
+
+For both forward and reverse complex FFT, and forward R2C and reverse C2R FFT,
+these tests validate that the FFT produces the correct output and does not
+overwrite its input on small test cases where the answer may be hand-computed.
+They also verify that an FFT of (larger sized) random data followed by the
+reverse FFT gives back the original input (modulo the scaling factor of the
+length of the array, when testing just the basic Array class; that factor is
+not present for Time/FrequencySeries transformations).  Finally, it also checks
+that the correct exceptions are raised when several different kinds of erroneous
+inputs are given.
+
+For the R2C (resp. C2R), the tests are run with input arrays (resp. output arrays)
+that are both even and odd in length, since the length of those output arrays is
+not the same as that of the input.  However these unit tests no longer check that
+the imaginary parts of DC (and for even-length also Nyquist) outputs are exactly
+zero, both because that complicates the testing framework considerably, and because
+it will not in general hold for GPU algorithms (and those cannot be made to enforce
+that, without unacceptable computational overhead).
+
+All of these tests are performed for inputs from each of the three basic types
+(Array, TimeSeries, and FrequencySeries) and for each precision (single and double).
+They are also checked for each possible backend of the current scheme, which means
+in particular that whichever backend is the default will be tested twice, once as
+'Default' and once under its own name.
 """
 
 import pycbc
 import pycbc.scheme
 import pycbc.types
+from pycbc.types import Array as ar, TimeSeries as ts, FrequencySeries as fs
 import numpy
-from numpy import dtype
+from numpy import dtype, float32, float64, complex64, complex128, zeros
+from numpy.random import randn
 import pycbc.fft
 import unittest
-import base_test
 import sys
 from utils import parse_args_all_schemes
+from lal import LIGOTimeGPS as LTG
 
 _scheme, _context = parse_args_all_schemes("FFT")
+
+# Because we run many similar tests where we only vary dtypes, precisions,
+# or Array/TimeSeries/FrequencySeries, it is helpful to define the following
+# dictionarys and functions and then call those from within the actual tests.
+
+# Map the same kind (real or complex) to the other precision
+_other_prec = {float32:float64, float64:float32,
+               complex64:complex128, complex128:complex64}
+# Map the same precision to the other kind
+_other_kind = {float32:complex64, float64:complex128,
+                complex64:float32, complex128:float64}
+
+# Our actual helper functions.  Note that these perform the necessary operations
+# within the appropriate context, so they should not themselves be called inside
+# of a context block.
+
+def _test_fft(test_case,inarr,expec,tol):
+    # Basic test to see that the forward FFT doesn't
+    # overwrite its input and computes its output to
+    # within the required accuracy.
+    tc = test_case
+    inty = type(inarr)
+    in_pristine = inty(inarr)
+    outty = type(expec)
+    # Make a copy...
+    outarr = outty(expec)
+    # Clear it and change values (so we test something meaningful):
+    outarr.clear()
+    if hasattr(outarr,'_epoch'):
+        outarr._epoch *= 5*tol
+    if hasattr(outarr,'delta_t'):
+        outarr._delta_t *= 5*tol
+    if hasattr(outarr,'delta_f'):
+        outarr._delta_f *= 5*tol
+    with tc.context:
+        pycbc.fft.fft(inarr,outarr,tc.backend)
+        # First, verify that the input hasn't been overwritten
+        emsg = 'FFT overwrote input array'
+        tc.assertEqual(inarr,in_pristine,emsg)
+        # Next, check that the output is correct to within tolerance.
+        # That will require exact equality of all other meta-data
+        emsg = 'FFT output differs by more than a factor of {0} from expected'.format(tol)
+        tc.assertTrue(outarr.almost_equal_elem(expec,tol=tol),msg=emsg)
+
+def _test_ifft(test_case,inarr,expec,tol):
+    # Basic test to see that the reverse FFT doesn't
+    # overwrite its input and computes its output to
+    # within the required accuracy.
+    tc = test_case
+    inty = type(inarr)
+    in_pristine = inty(inarr)
+    outty = type(expec)
+    # Make a copy...
+    outarr = outty(expec)
+    # Clear it and change values (so we test something meaningful):
+    outarr.clear()
+    if hasattr(outarr,'_epoch'):
+        outarr._epoch *= 5*tol
+    if hasattr(outarr,'delta_t'):
+        outarr._delta_t *= 5*tol
+    if hasattr(outarr,'delta_f'):
+        outarr._delta_f *= 5*tol
+    with tc.context:
+        pycbc.fft.ifft(inarr,outarr,tc.backend)
+        # First, verify that the input hasn't been overwritten
+        emsg = 'Inverse FFT overwrote input array'
+        tc.assertEqual(inarr,in_pristine,emsg)
+        # Next, check that the output is correct to within tolerance.
+        # That will require exact equality of all other meta-data
+        emsg = 'Inverse FFT output differs by more than a factor of {0} from expected'.format(tol)
+        tc.assertTrue(outarr.almost_equal_elem(expec,tol=tol),msg=emsg)
+
+def _test_random(test_case,inarr,outarr,tol):
+    tc = test_case
+    # First test IFFT(FFT(random))
+    # The numpy randn(n) provides an array of n numbers drawn from standard normal
+    if dtype(indarr).kind is 'c':
+        inarr(:) = randn(inlen) +1j*randn(inlen)
+    else:
+        inarr(:) = randn(inlen)
+    incopy = type(inarr)(inarr)
+    # An FFT followed by IFFT gives Array scaled by len(Array), but for
+    # Time/FrequencySeries there should be no scaling.
+    if type(inarr) == pycbc.types.Array:
+        incopy *= len(inarr)
+    with tc.context:
+        fft(inarr,outarr,tc.backend)
+        ifft(outarr,inarr,tc.backend)
+        tc.assertTrue(incopy.almost_equal_elem(inarr,tol=tol),
+                      msg="IFFT(FFT(random)) did not reproduce original array to within tolerance {0}".format(tol))
+    # Now the same for FFT(IFFT(random))
+    if dtype(outarr).kind is 'c':
+        outarr(:) = randn(outlen)+1j*randn(outlen)
+    else:
+        outarr(:) = randn(outlen)
+    inarr.clear()
+    outcopy = type(outarr)(outarr)
+    if type(outarr) == pycbc.types.Array:
+        outcopy *= len(outarr)
+    with tc.context:
+        ifft(outarr,inarr,tc.backend)
+        fft(inarr,outarr,tc.backend)
+        tc.assertTrue(outcopy.almost_equal_elem(outarr,tol=tol),
+                      msg="FFT(IFFT(random)) did not reproduce original array to within tolerance {0}".format(tol))
+
+def _test_raise_excep_fft(test_case,inarr,outarr,other_args={}):
+    # As far as can be told from the unittest module documentation, the
+    # 'assertRaises' tests do not permit a custom message.  So more
+    # comments than usual here, to help diagnose and test failures.
+    #
+    # The 'other_args' argument is needed to pass additional keywords to
+    # the constructors of some types (T/F series); we cannot simply copy since
+    # the whole point is to vary the input/output in some way that should cause
+    # an exception.
+    tc = test_case
+    with tc.context:
+        outty = type(outarr)
+        outzer = pycbc.types.zeros(len(outarr))
+        # If we give an output array that is wrong only in length, raise ValueError:
+        out_badlen = outty(pycbc.types.zeros(len(outarr)+1),dtype=outarr.dtype,**other_args)
+        args = [inarr,out_badlen,tc.backend]
+        tc.assertRaises(ValueError,pycbc.fft.fft,*args)
+        # If we give an output array that has the wrong precision, raise ValueError:
+        out_badprec = outty(outzer,dtype=_other_prec[outarr.dtype],**other_args)
+        args = [inarr,out_badprec,tc.backend]
+        tc.assertRaises(ValueError,pycbc.fft.fft,*args)
+        # If we give an output array that has the wrong kind (real or complex) but
+        # correct precision, then raise a ValueError:
+        out_badkind = outty(outzer,dtype=_other_kind[outarr.dtype],**other_args)
+        args = [inarr,out_badkind,tc.backend]
+        tc.assertRaises(ValueError,pycbc.fft.fft,*args)
+        # If we give an output array that isn't a PyCBC type, raise TypeError:
+        out_badtype = numpy.zeros(len(outarr),dtype=outarr.dtype)
+        args = [inarr,out_badtype,tc.backend]
+        tc.assertRaises(TypeError,pycbc.fft.fft,*args)
+        # If we give an input array that isn't a PyCBC type, raise TypeError:
+        in_badtype = numpy.zeros(len(inarr),dtype=inarr.dtype)
+        args = [in_badtype,outarr,tc.backend]
+        tc.assertRaises(TypeError,pycbc.fft.fft,*args)
+
+def _test_raise_excep_ifft(test_case,inarr,outarr,other_args={}):
+    # As far as can be told from the unittest module documentation, the
+    # 'assertRaises' tests do not permit a custom message.  So more
+    # comments than usual here, to help diagnose and test failures.
+    #
+    # The 'other_args' argument is needed to pass additional keywords to
+    # the constructors of some types (T/F series); we cannot simply copy since
+    # the whole point is to vary the input/output in some way that should cause
+    # an exception.
+    tc = test_case
+    with tc.context:
+        outty = type(outarr)
+        outzer = pycbc.types.zeros(len(outarr))
+        # If we give an output array that is wrong only in length, raise ValueError:
+        out_badlen = outty(pycbc.types.zeros(len(outarr)+1),dtype=outarr.dtype,**other_args)
+        args = [inarr,out_badlen,tc.backend]
+        tc.assertRaises(ValueError,pycbc.fft.ifft,*args)
+        # If we give an output array that has the wrong precision, raise ValueError:
+        out_badprec = outty(outzer,dtype=_other_prec[outarr.dtype],**other_args)
+        args = [inarr,out_badprec,tc.backend]
+        tc.assertRaises(ValueError,pycbc.fft.ifft,*args)
+        # If we give an output array that has the wrong kind (real or complex) but
+        # correct precision, then raise a ValueError:
+        out_badkind = outty(outzer,dtype=_other_kind[outarr.dtype],**other_args)
+        args = [inarr,out_badkind,tc.backend]
+        tc.assertRaises(ValueError,pycbc.fft.ifft,*args)
+        # If we give an output array that isn't a PyCBC type, raise TypeError:
+        out_badtype = numpy.zeros(len(outarr),dtype=outarr.dtype)
+        args = [inarr,out_badtype,tc.backend]
+        tc.assertRaises(TypeError,pycbc.fft.ifft,*args)
+        # If we give an input array that isn't a PyCBC type, raise TypeError:
+        in_badtype = numpy.zeros(len(inarr),dtype=inarr.dtype)
+        args = [in_badtype,outarr,tc.backend]
+        tc.assertRaises(TypeError,pycbc.fft.ifft,*args)
 
 class _BaseTestFFTClass(unittest.TestCase):
     """
@@ -44,396 +244,299 @@ class _BaseTestFFTClass(unittest.TestCase):
     are derived.
     """
     def setUp(self):
-        # Relative tolerance for single precision
-        self.stol = 1e-6
-        self.smsg = 'FFT output differs by more than a factor of {0} from expected'.format(self.stol)
-        # Relative for double precision
-        self.dtol = 1e-14
-        self.dmsg = 'FFT output differs by more than a factor of {0} from expected'.format(self.dtol)
-        # Message if overwrote input
-        self.omsg = 'FFT overwrote input array'
+        # Dictionary to convert a dtype to a relative precision to test
+        self.tdict = { float32: 1e-6, float64: 1e-14,
+                       complex64: 1e-6, complex128: 1e-14}
+        # Save our scheme and context
         self.scheme = _scheme
         self.context = _context
+        # Next we set up various lists that are used to build our 'known'
+        # test, which are repeated for a variety of different precisions
+        # and basic types. All of the lists should be consistent with a
+        # direct calculation in the formulas of the "What FFTW actually
+        # computes" section of the FFTW manual.
 
-    def test_forward_real_single(self):
-        # First, test case when input array length is even
-        self.in_even = pycbc.types.Array([1.0,-1.0,2.0,-2.0],
-                                         dtype=dtype('float32'))
-        self.in_pristine = pycbc.types.Array([1.0,-1.0,2.0,-2.0],
-                                             dtype=dtype('float32'))
-        self.out_even = pycbc.types.Array([0.0+0.0j,-1.0-1.0j,6.0+0.0j],
-                                          dtype=dtype('complex64'))
-        self.out_even_test = pycbc.types.zeros(3,dtype=dtype('complex64'))
+        # First, R2C transforms.  We have both even and odd length inputs,
+        # since the appropriate values for the output lengths vary.
+        self.in_r2c_e = [1.0,-1.0,2.0,-2.0]
+        self.out_r2c_e = [0.0+0.0j,-1.0-1.0j,6.0+0.0j]
+        self.in_r2c_o = [1.0,2.0,2.0]
+        self.out_r2c_o = [5.0+0.0j,-1.0+0.0j]
+        # Next, C2R transforms, again for both even and odd lengths
+        self.in_c2r_e = [0.0+0.0j,-1.0-1.0j,6.0+0.0j]
+        self.out_c2r_e = [4.0, -4.0, 8.0, -8.0]
+        self.in_c2r_o = [5.0+0.0j,-1.0+0.0j]
+        self.out_c2r_o = [3.0,6.0,6.0]
+        # Finally, C2C transforms, where we don't do both even and odd,
+        # but do have different lists for fwd and rev (i.e., fft and ifft)
+        self.in_c2c_fwd = [1.0+1.0j,2.0-2.0j]
+        self.out_c2c_fwd = [3.0-1.0j,-1.0+3.0j]
+        self.in_c2c_rev = [3.0-1.0j,-1.0+3.0j]
+        self.out_c2c_rev = [2.0+2.0j,4.0-4.0j]
+        # For Time/FrequencySeries, we want to test with a non-trivial epoch
+        self.epoch = LTG(3,4)
+        # When we need a delta_t or delta_f for input, use this.
+        # Output-appropriate variable is computed.
+        self.delta = 1.0/4096.0
+        # Length of our random arrays, for both real and complex arrays.
+        self.rand_len_r = 2046
+        self.rand_len_c = 1024
 
-        with self.context:
-            pycbc.fft.fft(self.in_even,self.out_even_test,backend=self.backend)
-            # First, check that we have not overwritten the input array
-            self.assertEqual(self.in_even,self.in_pristine,msg=self.omsg)
-            # Check that output is correct. Note that we compare most
-            # entries to be AlmostEqual, but the imaginary parts of DC and
-            # Nyquist to be exactly equal to zero.
-            self.assertEqual(self.out_even[0].imag,self.out_even_test[0].imag,
-                        msg="Imaginary part of DC was not exactly zero")
-            self.assertEqual(self.out_even[2].imag,self.out_even_test[2].imag,
-                        msg="Imaginary part of Nyquist was not exactly zero")
-            self.assertTrue(self.out_even.almost_equal_elem(self.out_even_test,tol=self.stol),
-                            msg=self.smsg)
-        # Now, another test case when input array length is odd
-        self.in_odd = pycbc.types.Array([1.0,2.0,2.0],
-                                        dtype=dtype('float32'))
-        self.out_odd = pycbc.types.Array([5.0+0.0j,-1.0+0.0j],
-                                         dtype=dtype('complex64'))
-        self.out_odd_test = pycbc.types.zeros(2,dtype=dtype('complex64'))
-        with self.context:
-            pycbc.fft.fft(self.in_odd,self.out_odd_test,backend=self.backend)
-            # Compare again.  Now only imaginary part of DC is strictly compared
-            # with zero.
-            self.assertEqual(self.out_odd[0].imag,self.out_odd_test[0].imag,
-                             msg="Imaginary part of DC was not exactly zero")
-            self.assertTrue(self.out_odd.almost_equal_elem(self.out_odd_test,tol=self.stol),
-                            msg=self.smsg)
-            # Now test that the proper exceptions are raised when we give
-            # erroneous arguments
-            self.out_badlen = pycbc.types.zeros(3,dtype=dtype('complex64'))
-            args = [self.in_odd,self.out_badlen,self.backend]
-            self.assertRaises(ValueError,pycbc.fft.fft,*args)
-            self.out_badprec = pycbc.types.zeros(2,dtype=dtype('complex128'))
-            args = [self.in_odd,self.out_badprec,self.backend]
-            self.assertRaises(ValueError,pycbc.fft.fft,*args)
-            self.out_baddtype = pycbc.types.zeros(2,dtype=dtype('float32'))
-            args = [self.in_odd,self.out_baddtype,self.backend]
-            self.assertRaises(ValueError,pycbc.fft.fft,*args)
-            self.out_badarray = numpy.zeros(2,dtype=dtype('complex64'))
-            args = [self.in_odd,self.out_badarray,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.fft,*args)
-            self.in_badarray = numpy.zeros(3,dtype=dtype('float32'))
-            args = [self.in_badarray,self.out_odd_test,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.fft,*args)
+    def test_fwd_real_arr(self):
+        for fwd_dtype in [float32,float64]:
+            # Even input
+            inarr = ar(self.in_r2c_e,dtype=fwd_dtype)
+            outexp = ar(self.out_r2c_e,dtype=_other_kind[fwd_dtype])
+            _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
+            # Odd input
+            inarr = ar(self.in_r2c_o,dtype=fwd_dtype)
+            outexp = ar(self.out_r2c_o,dtype=_other_kind[fwd_dtype])
+            _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
+            # Random
+            rand_inarr = ar(zeros(self.rand_len_r,dtype=fwd_dtype))
+            rand_outarr = ar(zeros(self.rand_len_c,dtype=_other_kind[fwd_dtype]))
+            _test_random(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
+            # Clean these up since they could be big:
+            del rand_inarr
+            del rand_outarr
+            # Check that exceptions are raised.  Need input and
+            # output arrays; just reuse inarr and outexp (values won't
+            # matter, we're just checking exceptions).
+            _test_raise_excep_fft(self,inarr,outexp)
 
+    def test_fwd_real_ts(self):
+        for fwd_dtype in [float32,float64]:
+            delta_t = self.delta
+            # Even input
+            inarr = ts(self.in_r2c_e,dtype=fwd_dtype,delta_t=delta_t,epoch=self.epoch)
+            delta_f = 1.0/(inarr.delta_t * len(inarr))
+            outexp = fs(self.out_r2c_e,dtype=_other_kind[fwd_dtype],delta_f=delta_f,epoch=self.epoch)
+            _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
+            # Odd input
+            inarr = ts(self.in_r2c_o,dtype=fwd_dtype,delta_t=delta_t,epoch=self.epoch)
+            delta_f = 1.0/(inarr.delta_t * len(inarr))
+            outexp = fs(self.out_r2c_o,dtype=_other_kind[fwd_dtype],delta_f=delta_f,epoch=self.epoch)
+            _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
+            # Random
+            rand_inarr = ts(zeros(self.rand_len_r,dtype=fwd_dtype),epoch=self.epoch,delta_t=delta_t)
+            delta_f = 1.0/(rand_inarr.delta_t * len(rand_inarr))
+            rand_outarr = fs(zeros(self.rand_len_c,dtype=_other_kind[fwd_dtype]),epoch=self.epoch,
+                             delta_f=delta_f)
+            _test_random(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
+            # Clean these up since they could be big:
+            del rand_inarr
+            del rand_outarr
+            # Check that exceptions are raised.  Need input and
+            # output arrays; just reuse inarr and outexp (values won't
+            # matter, we're just checking exceptions).
+            output_args = {"delta_f": self.delta, "epoch": self.epoch}
+            _test_raise_excep_fft(self,inarr,outexp,output_args)
 
-    def test_forward_real_double(self):
-        # First, test case when input array length is even
-        self.in_even = pycbc.types.Array([1.0,-1.0,2.0,-2.0],
-                                         dtype=dtype('float64'))
-        self.in_pristine = pycbc.types.Array([1.0,-1.0,2.0,-2.0],
-                                             dtype=dtype('float64'))
-        self.out_even = pycbc.types.Array([0.0+0.0j,-1.0-1.0j,6.0+0.0j],
-                                          dtype=dtype('complex128'))
-        self.out_even_test = pycbc.types.zeros(3,dtype=dtype('complex128'))
-        with self.context:
-            pycbc.fft.fft(self.in_even,self.out_even_test,backend=self.backend)
-            # First, check that we have not overwritten the input array
-            self.assertEqual(self.in_even,self.in_pristine,msg=self.omsg)
-            # Check that output is correct. Note that we compare most
-            # entries to be AlmostEqual, but the imaginary parts of DC and
-            # Nyquist to be exactly equal to zero.
-            self.assertEqual(self.out_even[0].imag,self.out_even_test[0].imag,
-                        msg="Imaginary part of DC was not exactly zero")
-            self.assertEqual(self.out_even[2].imag,self.out_even_test[2].imag,
-                        msg="Imaginary part of Nyquist was not exactly zero")
-            self.assertTrue(self.out_even.almost_equal_elem(self.out_even_test,tol=self.dtol),
-                            msg=self.dmsg)
-        # Now, another test case when input array length is odd
-        self.in_odd = pycbc.types.Array([1.0,2.0,2.0],
-                                        dtype=dtype('float64'))
-        self.out_odd = pycbc.types.Array([5.0+0.0j,-1.0+0.0j],
-                                         dtype=dtype('complex128'))
-        self.out_odd_test = pycbc.types.zeros(2,dtype=dtype('complex128'))
-        with self.context:
-            pycbc.fft.fft(self.in_odd,self.out_odd_test,backend=self.backend)
-            # Compare again.  Now only imaginary part of DC is strictly compared
-            # with zero.
-            self.assertEqual(self.out_odd[0].imag,self.out_odd_test[0].imag,
-                        msg="Imaginary part of DC was not exactly zero")
-            self.assertTrue(self.out_odd.almost_equal_elem(self.out_odd_test,tol=self.dtol),
-                            msg=self.dmsg)
-            # Now test that the proper exceptions are raised when we give
-            # erroneous arguments
-            self.out_badlen = pycbc.types.zeros(3,dtype=dtype('complex128'))
-            args = [self.in_odd,self.out_badlen,self.backend]
-            self.assertRaises(ValueError,pycbc.fft.fft,*args)
-            self.out_badprec = pycbc.types.zeros(2,dtype=dtype('complex64'))
-            args = [self.in_odd,self.out_badprec,self.backend]
-            self.assertRaises(ValueError,pycbc.fft.fft,*args)
-            self.out_baddtype = pycbc.types.zeros(2,dtype=dtype('float64'))
-            args = [self.in_odd,self.out_baddtype,self.backend]
-            self.assertRaises(ValueError,pycbc.fft.fft,*args)
-            self.out_badarray = numpy.zeros(2,dtype=dtype('complex128'))
-            args = [self.in_odd,self.out_badarray,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.fft,*args)
-            self.in_badarray = numpy.zeros(3,dtype=dtype('float64'))
-            args = [self.in_badarray,self.out_odd_test,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.fft,*args)
+    def test_fwd_real_fs(self):
+        for fwd_dtype in [float32,float64]:
+            delta_f = self.delta
+            # Even input
+            inarr = fs(self.in_r2c_e,dtype=fwd_dtype,delta_f=delta_f,epoch=self.epoch)
+            delta_t = 1.0/(inarr.delta_f * len(inarr))
+            outexp = ts(self.out_r2c_e,dtype=_other_kind[fwd_dtype],delta_t=delta_t,epoch=self.epoch)
+            _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
+            # Odd input
+            inarr = fs(self.in_r2c_o,dtype=fwd_dtype,delta_f=delta_f,epoch=self.epoch)
+            delta_t = 1.0/(inarr.delta_f * len(inarr))
+            outexp = ts(self.out_r2c_o,dtype=_other_kind[fwd_dtype],delta_t=delta_t,epoch=self.epoch)
+            _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
+            # Random
+            rand_inarr = fs(zeros(self.rand_len_r,dtype=fwd_dtype),epoch=self.epoch,delta_f=delta_f)
+            delta_t = 1.0/(rand_inarr.delta_f * len(rand_inarr))
+            rand_outarr = fs(zeros(self.rand_len_c,dtype=_other_kind[fwd_dtype]),epoch=self.epoch,
+                             delta_t=delta_t)
+            _test_random(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
+            # Clean these up since they could be big:
+            del rand_inarr
+            del rand_outarr
+            # Check that exceptions are raised.  Need input and
+            # output arrays; just reuse inarr and outexp (values won't
+            # matter, we're just checking exceptions).
+            output_args = {"delta_t": self.delta, "epoch": self.epoch}
+            _test_raise_excep_fft(self,inarr,outexp,output_args)
 
+    def test_rev_real_arr(self):
+        for rev_dtype in [float32,float64]:
+            # Even input
+            inarr = ar(self.in_c2r_e,dtype=_other_kind[rev_dtype])
+            outexp = ar(self.out_c2r_e,dtype=rev_dtype)
+            _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
+            # Odd input
+            inarr = ar(self.in_c2r_o,dtype=_other_kind[rev_dtype])
+            outexp = ar(self.out_c2r_o,dtype=rev_dtype)
+            _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
+            # Random---we don't do that in 'reverse' tests, since both
+            # directions are already tested in forward, and if we just passed
+            # in arrays in the other order we'd only get exceptions
+            #
+            # Check that exceptions are raised.  Need input and
+            # output arrays; just reuse inarr and outexp (values won't
+            # matter, we're just checking exceptions).
+            _test_raise_excep_ifft(self,inarr,outexp)
 
-    def test_inverse_real_single(self):
-        # First, test case when output array length is even
-        self.in_even = pycbc.types.Array([0.0+0.0j,-1.0-1.0j,6.0+0.0j],
-                                          dtype=dtype('complex64'))
-        self.in_pristine = pycbc.types.Array([0.0+0.0j,-1.0-1.0j,6.0+0.0j],
-                                          dtype=dtype('complex64'))
-        self.out_even = pycbc.types.Array([4.0,-4.0,8.0,-8.0],
-                                         dtype=dtype('float32'))
-        self.out_even_test = pycbc.types.zeros(4,dtype=dtype('float32'))
-        with self.context:
-            pycbc.fft.ifft(self.in_even,self.out_even_test,backend=self.backend)
-            # First, check that we have not overwritten the input array
-            self.assertEqual(self.in_even,self.in_pristine,msg=self.omsg)
-            # Check that output is correct.
-            self.assertTrue(self.out_even.almost_equal_elem(self.out_even_test,tol=self.stol),
-                            msg=self.smsg)
+    def test_rev_real_ts(self):
+        for rev_dtype in [float32,float64]:
+            delta_t = self.delta
+            # Even input
+            inarr = ts(self.in_c2r_e,dtype=_other_kind[rev_dtype],delta_t=delta_t,epoch=self.epoch)
+            delta_f = 1.0/(delta_t*len(self.out_c2r_e))
+            outexp = fs(self.out_c2r_e,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
+            _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
+            # Odd input
+            inarr = ts(self.in_c2r_o,dtype=_other_kind[rev_dtype])
+            delta_f = 1.0/(delta_t*len(self.out_c2r_o))
+            outexp = fs(self.out_c2r_o,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
+            _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
+            # Random---we don't do that in 'reverse' tests, since both
+            # directions are already tested in forward, and if we just passed
+            # in arrays in the other order we'd only get exceptions
+            #
+            # Check that exceptions are raised.  Need input and
+            # output arrays; just reuse inarr and outexp (values won't
+            # matter, we're just checking exceptions).
+            output_args = {"delta_f": self.delta, "epoch": self.epoch}
+            _test_raise_excep_ifft(self,inarr,outexp)
 
-        # Now, another test case when output array length is odd
-        self.in_odd = pycbc.types.Array([5.0+0.0j,-1.0+0.0j],
-                                         dtype=dtype('complex64'))
-        self.out_odd = pycbc.types.Array([3.0,6.0,6.0],
-                                        dtype=dtype('float32'))
-        self.out_odd_test = pycbc.types.zeros(3,dtype=dtype('float32'))
-        with self.context:
-            pycbc.fft.ifft(self.in_odd,self.out_odd_test,backend=self.backend)
-            # Compare again.
-            self.assertTrue(self.out_odd.almost_equal_elem(self.out_odd_test,tol=self.stol),
-                            msg=self.smsg)
-            # Now test that the proper exceptions are raised when we give
-            # erroneous arguments
-            self.out_badlen = pycbc.types.zeros(5,dtype=dtype('float32'))
-            args = [self.in_odd,self.out_badlen,self.backend]
-            self.assertRaises(ValueError,pycbc.fft.ifft,*args)
-            self.out_badprec = pycbc.types.zeros(3,dtype=dtype('float64'))
-            args = [self.in_odd,self.out_badprec,self.backend]
-            self.assertRaises(ValueError,pycbc.fft.ifft,*args)
-            self.in_baddtype = pycbc.types.zeros(3,dtype=dtype('float32'))
-            args = [self.in_baddtype,self.out_odd,self.backend]
-            self.assertRaises(ValueError,pycbc.fft.ifft,*args)
-            self.out_badarray = numpy.zeros(3,dtype=dtype('float32'))
-            args = [self.in_odd,self.out_badarray,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.ifft,*args)
-            self.in_badarray = numpy.zeros(2,dtype=dtype('complex64'))
-            args = [self.in_badarray,self.out_odd_test,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.ifft,*args)
+    def test_rev_real_fs(self):
+        for rev_dtype in [float32,float64]:
+            delta_f = self.delta
+            # Even input
+            inarr = fs(self.in_c2r_e,dtype=_other_kind[rev_dtype],delta_f=delta_f,epoch=self.epoch)
+            delta_t = 1.0/(delta_f*len(self.out_c2r_e))
+            outexp = ts(self.out_c2r_e,dtype=rev_dtype,delta_t=delta_t,epoch=self.epoch)
+            _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
+            # Odd input
+            inarr = fs(self.in_c2r_o,dtype=_other_kind[rev_dtype])
+            delta_t = 1.0/(delta_f*len(self.out_c2r_o))
+            outexp = ts(self.out_c2r_o,dtype=rev_dtype,delta_t=delta_t,epoch=self.epoch)
+            _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
+            # Random---we don't do that in 'reverse' tests, since both
+            # directions are already tested in forward, and if we just passed
+            # in arrays in the other order we'd only get exceptions
+            #
+            # Check that exceptions are raised.  Need input and
+            # output arrays; just reuse inarr and outexp (values won't
+            # matter, we're just checking exceptions).
+            output_args = {"delta_t": self.delta, "epoch": self.epoch}
+            _test_raise_excep_ifft(self,inarr,outexp)
 
-    def test_inverse_real_double(self):
-        # First, test case when output array length is even
-        self.in_even = pycbc.types.Array([0.0+0.0j,-1.0-1.0j,6.0+0.0j],
-                                          dtype=dtype('complex128'))
-        self.in_pristine = pycbc.types.Array([0.0+0.0j,-1.0-1.0j,6.0+0.0j],
-                                          dtype=dtype('complex128'))
-        self.out_even = pycbc.types.Array([4.0,-4.0,8.0,-8.0],
-                                         dtype=dtype('float64'))
-        self.out_even_test = pycbc.types.zeros(4,dtype=dtype('float64'))
-        with self.context:
-            pycbc.fft.ifft(self.in_even,self.out_even_test,backend=self.backend)
-            # First, check that we have not overwritten the input array
-            self.assertEqual(self.in_even,self.in_pristine,msg=self.omsg)
-            # Check that output is correct.
-            self.assertTrue(self.out_even.almost_equal_elem(self.out_even_test,tol=self.dtol),
-                            msg=self.dmsg)
-        # Now, another test case when output array length is odd
-        self.in_odd = pycbc.types.Array([5.0+0.0j,-1.0+0.0j],
-                                         dtype=dtype('complex128'))
-        self.out_odd = pycbc.types.Array([3.0,6.0,6.0],
-                                        dtype=dtype('float64'))
-        self.out_odd_test = pycbc.types.zeros(3,dtype=dtype('float64'))
-        with self.context:
-            pycbc.fft.ifft(self.in_odd,self.out_odd_test,backend=self.backend)
-            # Compare again.
-            self.assertTrue(self.out_odd.almost_equal_elem(self.out_odd_test,tol=self.dtol),
-                            msg=self.dmsg)
-            # Now test that the proper exceptions are raised when we give
-            # erroneous arguments
-            self.out_badlen = pycbc.types.zeros(5,dtype=dtype('float64'))
-            args = [self.in_odd,self.out_badlen,self.backend]
-            self.assertRaises(ValueError,pycbc.fft.ifft,*args)
-            self.out_badprec = pycbc.types.zeros(3,dtype=dtype('float32'))
-            args = [self.in_odd,self.out_badprec,self.backend]
-            self.assertRaises(ValueError,pycbc.fft.ifft,*args)
-            self.in_baddtype = pycbc.types.zeros(3,dtype=dtype('float64'))
-            args = [self.in_baddtype,self.out_odd,self.backend]
-            self.assertRaises(ValueError,pycbc.fft.ifft,*args)
-            self.out_badarray = numpy.zeros(3,dtype=dtype('float64'))
-            args = [self.in_odd,self.out_badarray,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.ifft,*args)
-            self.in_badarray = numpy.zeros(2,dtype=dtype('complex128'))
-            args = [self.in_badarray,self.out_odd_test,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.ifft,*args)
+    def test_fwd_complex_arr(self):
+        for fwd_dtype in [complex64,complex128]:
+            # Don't do separate even/odd tests for complex
+            inarr = ar(self.in_c2c_fwd,dtype=fwd_dtype)
+            outexp = ar(self.out_r2c_fwd,dtype=fwd_dtype)
+            _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
+            # Random
+            rand_inarr = ar(zeros(self.rand_len_c,dtype=fwd_dtype))
+            rand_outarr = ar(zeros(self.rand_len_c,dtype=fwd_dtype))
+            _test_random(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
+            # Clean these up since they could be big:
+            del rand_inarr
+            del rand_outarr
+            # Check that exceptions are raised.  Need input and
+            # output arrays; just reuse inarr and outexp (values won't
+            # matter, we're just checking exceptions).
+            _test_raise_excep_fft(self,inarr,outexp)
 
-    def test_forward_complex_single(self):
-        # A forward complex test case
-        self.in_cmplx = pycbc.types.Array([1.0+1.0j,2.0-2.0j],
-                                          dtype=dtype('complex64'))
-        self.in_pristine = pycbc.types.Array([1.0+1.0j,2.0-2.0j],
-                                             dtype=dtype('complex64'))
-        self.out_cmplx = pycbc.types.Array([3.0-1.0j,-1.0+3.0j],
-                                           dtype=dtype('complex64'))
-        self.out_cmplx_test = pycbc.types.zeros(2,dtype=dtype('complex64'))
-        with self.context:
-            pycbc.fft.fft(self.in_cmplx,self.out_cmplx_test,backend=self.backend)
-            # First, check that we have not overwritten the input array
-            self.assertEqual(self.in_cmplx,self.in_pristine,msg=self.omsg)
-            # Check that output is correct.
-            self.assertTrue(self.out_cmplx.almost_equal_elem(self.out_cmplx_test,tol=self.stol),
-                            msg=self.smsg)
-            # Now test that the proper exceptions are raised when we give
-            # erroneous arguments
-            self.out_badlen = pycbc.types.zeros(3,dtype=dtype('complex64'))
-            args = [self.in_cmplx,self.out_badlen,self.backend]
-            self.assertRaises(ValueError,pycbc.fft.fft,*args)
-            self.out_badprec = pycbc.types.zeros(2,dtype=dtype('complex128'))
-            args = [self.in_cmplx,self.out_badprec,self.backend]
-            self.assertRaises(ValueError,pycbc.fft.fft,*args)
-            self.out_badarray = numpy.zeros(2,dtype=dtype('complex64'))
-            args = [self.in_cmplx,self.out_badarray,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.fft,*args)
-            self.in_badarray = numpy.zeros(2,dtype=dtype('complex64'))
-            args = [self.in_badarray,self.out_cmplx_test,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.fft,*args)
+    def test_fwd_complex_ts(self):
+        for fwd_dtype in [complex64,complex128]:
+            delta_t = self.delta
+            # Don't do separate even/odd tests for complex
+            inarr = ts(self.in_c2c_fwd,dtype=fwd_dtype,delta_t=delta_t,epoch=self.epoch)
+            delta_f = 1.0/(delta_t * len(inarr))
+            outexp = fs(self.out_r2c_fwd,dtype=fwd_dtype,delta_f=delta_f,epoch=self.epoch)
+            _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
+            # Random
+            rand_inarr = ts(zeros(self.rand_len_c,dtype=fwd_dtype),delta_t=delta_t,epoch=self.epoch)
+            delta_f = 1.0/(delta_t*len(rand_inarr))
+            rand_outarr = fs(zeros(self.rand_len_c,dtype=fwd_dtype),delta_f=delta_f,epoch=self.epoch)
+            _test_random(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
+            # Clean these up since they could be big:
+            del rand_inarr
+            del rand_outarr
+            # Check that exceptions are raised.  Need input and
+            # output arrays; just reuse inarr and outexp (values won't
+            # matter, we're just checking exceptions).
+            output_args = {"delta_f": self.delta, "epoch": self.epoch}
+            _test_raise_excep_fft(self,inarr,outexp,output_args)
 
-    def test_forward_complex_double(self):
-        # A forward complex test case
-        self.in_cmplx = pycbc.types.Array([1.0+1.0j,2.0-2.0j],
-                                          dtype=dtype('complex128'))
-        self.in_pristine = pycbc.types.Array([1.0+1.0j,2.0-2.0j],
-                                             dtype=dtype('complex128'))
-        self.out_cmplx = pycbc.types.Array([3.0-1.0j,-1.0+3.0j],
-                                           dtype=dtype('complex128'))
-        self.out_cmplx_test = pycbc.types.zeros(2,dtype=dtype('complex128'))
-        with self.context:
-            pycbc.fft.fft(self.in_cmplx,self.out_cmplx_test,backend=self.backend)
-            # First, check that we have not overwritten the input array
-            self.assertEqual(self.in_cmplx,self.in_pristine,msg=self.omsg)
-            # Check that output is correct.
-            self.assertTrue(self.out_cmplx.almost_equal_elem(self.out_cmplx_test,tol=self.dtol),
-                            msg=self.dmsg)
-            # Now test that the proper exceptions are raised when we give
-            # erroneous arguments
-            self.out_badlen = pycbc.types.zeros(3,dtype=dtype('complex128'))
-            args = [self.in_cmplx,self.out_badlen,self.backend]
-            self.assertRaises(ValueError,pycbc.fft.fft,*args)
-            self.out_badprec = pycbc.types.zeros(2,dtype=dtype('complex64'))
-            args = [self.in_cmplx,self.out_badprec,self.backend]
-            self.assertRaises(ValueError,pycbc.fft.fft,*args)
-            self.out_badarray = numpy.zeros(2,dtype=dtype('complex128'))
-            args = [self.in_cmplx,self.out_badarray,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.fft,*args)
-            self.in_badarray = numpy.zeros(2,dtype=dtype('complex128'))
-            args = [self.in_badarray,self.out_cmplx_test,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.fft,*args)
+    def test_fwd_complex_fs(self):
+        for fwd_dtype in [complex64,complex128]:
+            delta_f = self.delta
+            # Don't do separate even/odd tests for complex
+            inarr = fs(self.in_c2c_fwd,dtype=fwd_dtype,delta_f=delta_f,epoch=self.epoch)
+            delta_t = 1.0/(delta_t * len(inarr))
+            outexp = ts(self.out_r2c_fwd,dtype=fwd_dtype,delta_t=delta_t,epoch=self.epoch)
+            _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
+            # Random
+            rand_inarr = fs(zeros(self.rand_len_c,dtype=fwd_dtype),delta_f=delta_f,epoch=self.epoch)
+            delta_t = 1.0/(delta_t*len(rand_inarr))
+            rand_outarr = ts(zeros(self.rand_len_c,dtype=fwd_dtype),delta_t=delta_t,epoch=self.epoch)
+            _test_random(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
+            # Clean these up since they could be big:
+            del rand_inarr
+            del rand_outarr
+            # Check that exceptions are raised.  Need input and
+            # output arrays; just reuse inarr and outexp (values won't
+            # matter, we're just checking exceptions).
+            output_args = {"delta_t": self.delta, "epoch": self.epoch}
+            _test_raise_excep_fft(self,inarr,outexp,output_args)
 
-    def test_inverse_complex_single(self):
-        # A reverse complex test case
-        self.in_cmplx = pycbc.types.Array([3.0-1.0j,-1.0+3.0j],
-                                         dtype=dtype('complex64'))
-        self.in_pristine = pycbc.types.Array([3.0-1.0j,-1.0+3.0j],
-                                         dtype=dtype('complex64'))
-        self.out_cmplx = pycbc.types.Array([2.0+2.0j,4.0-4.0j],
-                                          dtype=dtype('complex64'))
-        self.out_cmplx_test = pycbc.types.zeros(2,dtype=dtype('complex64'))
-        with self.context:
-            pycbc.fft.ifft(self.in_cmplx,self.out_cmplx_test,backend=self.backend)
-            # First, check that we have not overwritten the input array
-            self.assertEqual(self.in_cmplx,self.in_pristine,msg=self.omsg)
-            # Check that output is correct.
-            self.assertTrue(self.out_cmplx.almost_equal_elem(self.out_cmplx_test,tol=self.stol),
-                            msg=self.smsg)
-            # Now test that the proper exceptions are raised when we give
-            # erroneous arguments
-            self.out_badlen = pycbc.types.zeros(3,dtype=dtype('complex64'))
-            args = [self.in_cmplx,self.out_badlen,self.backend]
-            self.assertRaises(ValueError,pycbc.fft.ifft,*args)
-            self.out_badprec = pycbc.types.zeros(2,dtype=dtype('complex128'))
-            args = [self.in_cmplx,self.out_badprec,self.backend]
-            self.assertRaises(ValueError,pycbc.fft.ifft,*args)
-            self.out_badarray = numpy.zeros(2,dtype=dtype('complex64'))
-            args = [self.in_cmplx,self.out_badarray,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.ifft,*args)
-            self.in_badarray = numpy.zeros(2,dtype=dtype('complex64'))
-            args = [self.in_badarray,self.out_cmplx_test,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.ifft,*args)
+    def test_rev_complex_arr(self):
+        for rev_dtype in [complex64,complex128]:
+            # Don't do separate even/odd tests for complex
+            inarr = ar(self.in_c2c_rev,dtype=rev_dtype)
+            outexp = ar(self.out_r2c_rev,dtype=rev_dtype)
+            _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
+            # Random---we don't do that in 'reverse' tests, since both
+            # directions are already tested in forward, and if we just passed
+            # in arrays in the other order we'd only get exceptions
+            #
+            # Check that exceptions are raised.  Need input and
+            # output arrays; just reuse inarr and outexp (values won't
+            # matter, we're just checking exceptions).
+            _test_raise_excep_ifft(self,inarr,outexp)
 
-    def test_inverse_complex_double(self):
-        # A reverse complex test case
-        self.in_cmplx = pycbc.types.Array([3.0-1.0j,-1.0+3.0j],
-                                         dtype=dtype('complex128'))
-        self.in_pristine = pycbc.types.Array([3.0-1.0j,-1.0+3.0j],
-                                         dtype=dtype('complex128'))
-        self.out_cmplx = pycbc.types.Array([2.0+2.0j,4.0-4.0j],
-                                          dtype=dtype('complex128'))
-        self.out_cmplx_test = pycbc.types.zeros(2,dtype=dtype('complex128'))
-        with self.context:
-            pycbc.fft.ifft(self.in_cmplx,self.out_cmplx_test,backend=self.backend)
-            # First, check that we have not overwritten the input array
-            self.assertEqual(self.in_cmplx,self.in_pristine,msg=self.omsg)
-            # Check that output is correct.
-            self.assertTrue(self.out_cmplx.almost_equal_elem(self.out_cmplx_test,tol=self.dtol),
-                            msg=self.dmsg)
-            # Now test that the proper exceptions are raised when we give
-            # erroneous arguments
-            self.out_badlen = pycbc.types.zeros(3,dtype=dtype('complex128'))
-            args = [self.in_cmplx,self.out_badlen,self.backend]
-            self.assertRaises(ValueError,pycbc.fft.ifft,*args)
-            self.out_badprec = pycbc.types.zeros(2,dtype=dtype('complex64'))
-            args = [self.in_cmplx,self.out_badprec,self.backend]
-            self.assertRaises(ValueError,pycbc.fft.ifft,*args)
-            self.out_badarray = numpy.zeros(2,dtype=dtype('complex128'))
-            args = [self.in_cmplx,self.out_badarray,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.ifft,*args)
-            self.in_badarray = numpy.zeros(2,dtype=dtype('complex128'))
-            args = [self.in_badarray,self.out_cmplx_test,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.ifft,*args)
+    def test_rev_complex_ts(self):
+        for rev_dtype in [complex64,complex128]:
+            delta_t = self.delta
+            # Don't do separate even/odd tests for complex
+            inarr = ts(self.in_c2c_rev,dtype=rev_dtype,delta_t=delta_t,epoch=self.epoch))
+            delta_f = 1.0/(delta_t*len(self.out_c2c_rev))
+            outexp = fs(self.out_r2c_rev,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
+            _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
+            # Random---we don't do that in 'reverse' tests, since both
+            # directions are already tested in forward, and if we just passed
+            # in arrays in the other order we'd only get exceptions
+            #
+            # Check that exceptions are raised.  Need input and
+            # output arrays; just reuse inarr and outexp (values won't
+            # matter, we're just checking exceptions).
+            output_args = {"delta_f": self.delta, "epoch": self.epoch}
+            _test_raise_excep_ifft(self,inarr,outexp,output_args)
 
-    def test_time_frequency(self):
-        with self.context:
-            # In these tests we look only at exceptions, metadata, and scaling
-            self.in_ts = pycbc.types.TimeSeries([1.0,2.0,3.0],
-                                dtype=dtype('float32'),delta_t=1.0/4096.0)
-            self.out_ts = pycbc.types.TimeSeries([1.0,2.0,3.0],
-                                dtype=dtype('float32'),delta_t=1.0/4096.0)
-            self.fs_deltaf = 4096.0/3.0
-            self.out_ts_test = pycbc.types.TimeSeries([0.0,0.0,0.0],
-                                dtype=dtype('float32'),delta_t=0.01)
-            self.out_fs_test = pycbc.types.FrequencySeries([0.0,0.0],
-                                dtype=dtype('complex64'),delta_f = 0.01)
-            # First, check for appropriate exceptions to be raised by forward fft:
-            self.out_ts_badtype = pycbc.types.TimeSeries([0.0,0.0],
-                                   dtype=dtype('complex64'),delta_t=0.01)
-            args = [self.in_ts,self.out_ts_badtype,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.fft,*args)
-            self.out_fs_badtype = pycbc.types.FrequencySeries([0.0,0.0],
-                                   dtype=dtype('complex64'),delta_f=0.01)
-            args = [self.out_fs_test,self.out_fs_badtype,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.fft,*args)
-
-            self.out_badarray = pycbc.types.zeros(2,dtype=dtype('complex64'))
-            args = [self.in_ts,self.out_badarray,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.fft,*args)
-            args = [self.out_fs_test,self.out_badarray,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.fft,*args)
-
-            # Next, check for appropriate exceptions to be raised by inverse fft:
-            self.in_ts_badtype = pycbc.types.TimeSeries([0.0,0.0],
-                                   dtype=dtype('complex64'),delta_t=0.01)
-            args = [self.in_ts_badtype,self.out_ts_test,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.ifft,*args)
-            self.in_fs_badtype = pycbc.types.FrequencySeries([0.0,0.0],
-                                   dtype=dtype('complex64'),delta_f=0.01)
-            args = [self.in_fs_badtype,self.out_fs_test,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.ifft,*args)
-
-            self.in_badarray = pycbc.types.zeros(2,dtype=dtype('complex64'))
-            args = [self.in_badarray,self.out_ts_test,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.ifft,*args)
-            args = [self.in_badarray,self.out_fs_test,self.backend]
-            self.assertRaises(TypeError,pycbc.fft.ifft,*args)
-
-            # Finally, check that we get the correct scaled values.  Since we're
-            # testing both forward and backward, we check that ifft(fft(input))
-            # is input, and that the intermediate delta_f is set correctly.
-            pycbc.fft.fft(self.in_ts,self.out_fs_test,backend=self.backend)
-            self.assertTrue(abs(self.out_fs_test._delta_f-self.fs_deltaf)<=self.stol*self.fs_deltaf,
-                            msg=self.smsg)
-            pycbc.fft.ifft(self.out_fs_test,self.out_ts_test,backend=self.backend)
-            self.assertTrue(self.out_ts_test.almost_equal_elem(self.out_ts,tol=self.stol),
-                            msg=self.smsg)
+    def test_rev_complex_fs(self):
+        for rev_dtype in [complex64,complex128]:
+            delta_f = self.delta
+            # Don't do separate even/odd tests for complex
+            inarr = fs(self.in_c2c_rev,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch))
+            delta_t = 1.0/(delta_t*len(self.out_c2c_rev))
+            outexp = ts(self.out_r2c_rev,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
+            _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
+            # Random---we don't do that in 'reverse' tests, since both
+            # directions are already tested in forward, and if we just passed
+            # in arrays in the other order we'd only get exceptions
+            #
+            # Check that exceptions are raised.  Need input and
+            # output arrays; just reuse inarr and outexp (values won't
+            # matter, we're just checking exceptions).
+            output_args = {"delta_t": self.delta, "epoch": self.epoch}
+            _test_raise_excep_ifft(self,inarr,outexp,output_args)
 
 # Now, factories to create test cases for each available backend.
 # The automation means that the default for each scheme will get created
