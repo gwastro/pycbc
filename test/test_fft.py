@@ -155,9 +155,9 @@ def _test_random(test_case,inarr,outarr,tol):
                       msg="IFFT(FFT(random)) did not reproduce original array to within tolerance {0}".format(tol))
     # Now the same for FFT(IFFT(random))
     if dtype(outarr).kind is 'c':
-        outarr._data[:] = randn(outlen)+1j*randn(outlen)
+        outarr._data[:] = randn(len(outarr))+1j*randn(len(outarr))
     else:
-        outarr._data[:] = randn(outlen)
+        outarr._data[:] = randn(len(outarr))
     inarr.clear()
     outcopy = type(outarr)(outarr)
     if type(outarr) == pycbc.types.Array:
