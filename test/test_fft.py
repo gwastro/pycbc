@@ -491,7 +491,7 @@ class _BaseTestFFTClass(unittest.TestCase):
         for rev_dtype in [complex64,complex128]:
             # Don't do separate even/odd tests for complex
             inarr = ar(self.in_c2c_rev,dtype=rev_dtype)
-            outexp = ar(self.out_r2c_rev,dtype=rev_dtype)
+            outexp = ar(self.out_c2c_rev,dtype=rev_dtype)
             _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
             # Random---we don't do that in 'reverse' tests, since both
             # directions are already tested in forward, and if we just passed
@@ -506,9 +506,9 @@ class _BaseTestFFTClass(unittest.TestCase):
         for rev_dtype in [complex64,complex128]:
             delta_t = self.delta
             # Don't do separate even/odd tests for complex
-            inarr = ts(self.in_c2c_rev,dtype=rev_dtype,delta_t=delta_t,epoch=self.epoch))
+            inarr = ts(self.in_c2c_rev,dtype=rev_dtype,delta_t=delta_t,epoch=self.epoch)
             delta_f = 1.0/(delta_t*len(self.out_c2c_rev))
-            outexp = fs(self.out_r2c_rev,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
+            outexp = fs(self.out_c2c_rev,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
             _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
             # Random---we don't do that in 'reverse' tests, since both
             # directions are already tested in forward, and if we just passed
@@ -524,9 +524,9 @@ class _BaseTestFFTClass(unittest.TestCase):
         for rev_dtype in [complex64,complex128]:
             delta_f = self.delta
             # Don't do separate even/odd tests for complex
-            inarr = fs(self.in_c2c_rev,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch))
+            inarr = fs(self.in_c2c_rev,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
             delta_t = 1.0/(delta_t*len(self.out_c2c_rev))
-            outexp = ts(self.out_r2c_rev,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
+            outexp = ts(self.out_c2c_rev,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
             _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
             # Random---we don't do that in 'reverse' tests, since both
             # directions are already tested in forward, and if we just passed
