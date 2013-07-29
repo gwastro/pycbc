@@ -157,11 +157,15 @@ class FrequencySeries(Array):
              abs(self[i]-other[i]) <= tol
         for all elements of the series.
 
-        Other meta-data (type, dtype, length, epoch, and delta_f) must
-        be exactly equal.  If either object's memory lives on the GPU it
-        will be copied to the CPU for the comparison, which may be slow.
-        But the original object itself will not have its memory relocated
-        nor scheme changed.
+        The method also checks that self.delta_f is within 'dtol' of
+        other.delta_f; if 'dtol' has its default value of 0 then exact
+        equality between the two is required.
+
+        Other meta-data (type, dtype, length, and epoch) must be exactly
+        equal.  If either object's memory lives on the GPU it will be
+        copied to the CPU for the comparison, which may be slow. But the
+        original object itself will not have its memory relocated nor
+        scheme changed.
 
         Parameters
         ----------
@@ -173,15 +177,28 @@ class FrequencySeries(Array):
         relative: A boolean, indicating whether 'tol' should be interpreted
             as a relative tolerance (if True, the default if this argument
             is omitted) or as an absolute tolerance (if tol is False).
+        dtol: a non-negative number, the tolerance for delta_f. Like 'tol',
+            it is interpreted as relative or absolute based on the value of
+            'relative'.  This parameter defaults to zero, enforcing exact
+            equality between the delta_f values of the two FrequencySeries.
 
         Returns
         -------
-        boolean: 'True' if the data agree within the tolerance, as
-            interpreted by the 'relative' keyword, and if the types,
-            lengths, dtypes, epochs, and delta_fs are exactly the same.
+        boolean: 'True' if the data and delta_fs agree within the tolerance,
+            as interpreted by the 'relative' keyword, and if the types,
+            lengths, dtypes, and epochs are exactly the same.
         """
+        # Check that the delta_f tolerance is non-negative; raise an exception
+        # if needed.
+        if (dtol < 0.0):
+            raise ValueError("Tolerance in delta_f cannot be negative")
         if super(FrequencySeries,self).almost_equal_elem(other,tol=tol,relative=relative):
-            return (self._epoch == other._epoch and self._delta_f == other._delta_f)
+            if relative:
+                return (self._epoch == other._epoch and
+                        abs(self._delta_f-other._delta_f) <= dtol*self._delta_f)
+            else:
+                return (self._epoch == other._epoch and
+                        abs(self._delta_f-other._delta_f) <= dtol)
         else:
             return False
 
@@ -198,11 +215,15 @@ class FrequencySeries(Array):
         and the comparison is true only if
              abs(norm(self-other)) <= tol
 
-        Other meta-data (type, dtype, length, epoch, and delta_f) must
-        be exactly equal.  If either object's memory lives on the GPU it
-        will be copied to the CPU for the comparison, which may be slow.
-        But the original object itself will not have its memory relocated
-        nor scheme changed.
+        The method also checks that self.delta_f is within 'dtol' of
+        other.delta_f; if 'dtol' has its default value of 0 then exact
+        equality between the two is required.
+
+        Other meta-data (type, dtype, length, and epoch) must be exactly
+        equal.  If either object's memory lives on the GPU it will be
+        copied to the CPU for the comparison, which may be slow. But the
+        original object itself will not have its memory relocated nor
+        scheme changed.
 
         Parameters
         ----------
@@ -214,15 +235,28 @@ class FrequencySeries(Array):
         relative: A boolean, indicating whether 'tol' should be interpreted
             as a relative tolerance (if True, the default if this argument
             is omitted) or as an absolute tolerance (if tol is False).
+        dtol: a non-negative number, the tolerance for delta_f. Like 'tol',
+            it is interpreted as relative or absolute based on the value of
+            'relative'.  This parameter defaults to zero, enforcing exact
+            equality between the delta_f values of the two FrequencySeries.
 
         Returns
         -------
-        boolean: 'True' if the data agree within the tolerance, as
-            interpreted by the 'relative' keyword, and if the types,
-            lengths, dtypes, epochs, and delta_fs are exactly the same.
+        boolean: 'True' if the data and delta_fs agree within the tolerance,
+            as interpreted by the 'relative' keyword, and if the types,
+            lengths, dtypes, and epochs are exactly the same.
         """
+        # Check that the delta_f tolerance is non-negative; raise an exception
+        # if needed.
+        if (dtol < 0.0):
+            raise ValueError("Tolerance in delta_f cannot be negative")
         if super(FrequencySeries,self).almost_equal_norm(other,tol=tol,relative=relative):
-            return (self._epoch == other._epoch and self._delta_f == other._delta_f)
+            if relative:
+                return (self._epoch == other._epoch and
+                        abs(self._delta_f-other._delta_f) <= dtol*self._delta_f)
+            else:
+                return (self._epoch == other._epoch and
+                        abs(self._delta_f-other._delta_f) <= dtol)
         else:
             return False
 

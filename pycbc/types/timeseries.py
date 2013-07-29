@@ -180,7 +180,7 @@ class TimeSeries(Array):
         else:
             return False
 
-    def almost_equal_elem(self,other,tol,relative=True):
+    def almost_equal_elem(self,other,tol,relative=True,dtol=0.0):
         """
         Compare whether two time series are almost equal, element
         by element.
@@ -196,11 +196,15 @@ class TimeSeries(Array):
              abs(self[i]-other[i]) <= tol
         for all elements of the series.
 
-        Other meta-data (type, dtype, length, epoch, and delta_t) must
-        be exactly equal.  If either object's memory lives on the GPU it
-        will be copied to the CPU for the comparison, which may be slow.
-        But the original object itself will not have its memory relocated
-        nor scheme changed.
+        The method also checks that self.delta_t is within 'dtol' of
+        other.delta_t; if 'dtol' has its default value of 0 then exact
+        equality between the two is required.
+
+        Other meta-data (type, dtype, length, and epoch) must be exactly
+        equal.  If either object's memory lives on the GPU it will be
+        copied to the CPU for the comparison, which may be slow. But the
+        original object itself will not have its memory relocated nor
+        scheme changed.
 
         Parameters
         ----------
@@ -212,15 +216,28 @@ class TimeSeries(Array):
         relative: A boolean, indicating whether 'tol' should be interpreted
             as a relative tolerance (if True, the default if this argument
             is omitted) or as an absolute tolerance (if tol is False).
+        dtol: a non-negative number, the tolerance for delta_t. Like 'tol',
+            it is interpreted as relative or absolute based on the value of
+            'relative'.  This parameter defaults to zero, enforcing exact
+            equality between the delta_t values of the two TimeSeries.
 
         Returns
         -------
-        boolean: 'True' if the data agree within the tolerance, as
-            interpreted by the 'relative' keyword, and if the types,
-            lengths, dtypes, epochs, and delta_ts are exactly the same.
+        boolean: 'True' if the data and delta_ts agree within the tolerance,
+            as interpreted by the 'relative' keyword, and if the types,
+            lengths, dtypes, and epochs are exactly the same.
         """
+        # Check that the delta_t tolerance is non-negative; raise an exception
+        # if needed.
+        if (dtol < 0.0):
+            raise ValueError("Tolerance in delta_t cannot be negative")
         if super(TimeSeries,self).almost_equal_elem(other,tol=tol,relative=relative):
-            return (self._epoch == other._epoch and self._delta_t == other._delta_t)
+            if relative:
+                return (self._epoch == other._epoch and
+                        abs(self._delta_t-other._delta_t) <= dtol*self._delta_t)
+            else:
+                return (self._epoch == other._epoch and
+                        abs(self._delta_t-other._delta_t) <= dtol)
         else:
             return False
 
@@ -237,11 +254,15 @@ class TimeSeries(Array):
         and the comparison is true only if
              abs(norm(self-other)) <= tol
 
-        Other meta-data (type, dtype, length, epoch, and delta_t) must
-        be exactly equal.  If either object's memory lives on the GPU it
-        will be copied to the CPU for the comparison, which may be slow.
-        But the original object itself will not have its memory relocated
-        nor scheme changed.
+        The method also checks that self.delta_t is within 'dtol' of
+        other.delta_t; if 'dtol' has its default value of 0 then exact
+        equality between the two is required.
+
+        Other meta-data (type, dtype, length, and epoch) must be exactly
+        equal.  If either object's memory lives on the GPU it will be
+        copied to the CPU for the comparison, which may be slow. But the
+        original object itself will not have its memory relocated nor
+        scheme changed.
 
         Parameters
         ----------
@@ -253,15 +274,28 @@ class TimeSeries(Array):
         relative: A boolean, indicating whether 'tol' should be interpreted
             as a relative tolerance (if True, the default if this argument
             is omitted) or as an absolute tolerance (if tol is False).
+        dtol: a non-negative number, the tolerance for delta_t. Like 'tol',
+            it is interpreted as relative or absolute based on the value of
+            'relative'.  This parameter defaults to zero, enforcing exact
+            equality between the delta_t values of the two TimeSeries.
 
         Returns
         -------
-        boolean: 'True' if the data agree within the tolerance, as
-            interpreted by the 'relative' keyword, and if the types,
-            lengths, dtypes, epochs, and delta_ts are exactly the same.
+        boolean: 'True' if the data and delta_ts agree within the tolerance,
+            as interpreted by the 'relative' keyword, and if the types,
+            lengths, dtypes, and epochs are exactly the same.
         """
+        # Check that the delta_t tolerance is non-negative; raise an exception
+        # if needed.
+        if (dtol < 0.0):
+            raise ValueError("Tolerance in delta_t cannot be negative")
         if super(TimeSeries,self).almost_equal_norm(other,tol=tol,relative=relative):
-            return (self._epoch == other._epoch and self._delta_t == other._delta_t)
+            if relative:
+                return (self._epoch == other._epoch and
+                        abs(self._delta_t-other._delta_t) <= dtol*self._delta_t)
+            else:
+                return (self._epoch == other._epoch and
+                        abs(self._delta_t-other._delta_t) <= dtol)
         else:
             return False
 
@@ -274,7 +308,7 @@ class TimeSeries(Array):
         lal_data : {lal.*TimeSeries}
             LAL time series object containing the same data as self.
             The actual type depends on the sample's dtype.  If the epoch of
-            self was 'None', the epoch of the returned LAL object will be
+            self is 'None', the epoch of the returned LAL object will be
             LIGOTimeGPS(0,0); otherwise, the same as that of self.
 
         Raises
