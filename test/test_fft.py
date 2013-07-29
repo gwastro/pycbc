@@ -143,6 +143,11 @@ def _test_ifft(test_case,inarr,expec,tol):
 
 def _test_random(test_case,inarr,outarr,tol):
     tc = test_case
+    # Test that applying a transform and its inverse to reasonably long, random
+    # input gives back the (appropriately scaled) input. We must allow for numerical
+    # error, and we use 100*tol for the relative error on an element-by-element
+    # comparison, but just tol for the norm comparison.
+    #
     # First test IFFT(FFT(random))
     # The numpy randn(n) provides an array of n numbers drawn from standard normal
     if dtype(inarr).kind is 'c':
@@ -160,10 +165,14 @@ def _test_random(test_case,inarr,outarr,tol):
         pycbc.fft.ifft(outarr,inarr,tc.backend)
         emsg="IFFT(FFT(random)) did not reproduce original array to within tolerance {0}".format(tol)
         if isinstance(incopy,ts) or isinstance(incopy,fs):
-            tc.assertTrue(incopy.almost_equal_elem(inarr,tol=tol,dtol=tol),
+            tc.assertTrue(incopy.almost_equal_elem(inarr,tol=100*tol,dtol=tol),
+                          msg=emsg)
+            tc.assertTrue(incopy.almost_equal_norm(inarr,tol=tol,dtol=tol),
                           msg=emsg)
         else:
-            tc.assertTrue(incopy.almost_equal_elem(inarr,tol=tol),
+            tc.assertTrue(incopy.almost_equal_elem(inarr,tol=100*tol),
+                          msg=emsg)
+            tc.assertTrue(incopy.almost_equal_norm(inarr,tol=tol),
                           msg=emsg)
     # Now the same for FFT(IFFT(random))
     if dtype(outarr).kind is 'c':
@@ -179,11 +188,16 @@ def _test_random(test_case,inarr,outarr,tol):
         pycbc.fft.fft(inarr,outarr,tc.backend)
         emsg="FFT(IFFT(random)) did not reproduce original array to within tolerance {0}".format(tol)
         if isinstance(outcopy,ts) or isinstance(outcopy,fs):
-            tc.assertTrue(outcopy.almost_equal_elem(outarr,tol=tol,dtol=tol),
+            tc.assertTrue(outcopy.almost_equal_elem(outarr,tol=100*tol,dtol=tol),
+                          msg=emsg)
+            tc.assertTrue(outcopy.almost_equal_norm(outarr,tol=tol,dtol=tol),
                           msg=emsg)
         else:
-            tc.assertTrue(outcopy.almost_equal_elem(outarr,tol=tol),
+            tc.assertTrue(outcopy.almost_equal_elem(outarr,tol=100*tol),
                           msg=emsg)
+            tc.assertTrue(outcopy.almost_equal_norm(outarr,tol=tol),
+                          msg=emsg)
+
 def _test_raise_excep_fft(test_case,inarr,outarr,other_args={}):
     # As far as can be told from the unittest module documentation, the
     # 'assertRaises' tests do not permit a custom message.  So more
@@ -261,8 +275,8 @@ class _BaseTestFFTClass(unittest.TestCase):
     """
     def setUp(self):
         # Dictionary to convert a dtype to a relative precision to test
-        self.tdict = { float32: 1e-5, float64: 1e-14,
-                       complex64: 1e-5, complex128: 1e-14}
+        self.tdict = { float32: 1e-6, float64: 1e-14,
+                       complex64: 1e-6, complex128: 1e-14}
         # Save our scheme and context
         self.scheme = _scheme
         self.context = _context
