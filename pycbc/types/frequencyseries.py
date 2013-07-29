@@ -64,10 +64,10 @@ class FrequencySeries(Array):
         if not isinstance(epoch,_lal.LIGOTimeGPS):
             if epoch == "":
                 if isinstance(initial_array,FrequencySeries):
-                    epoch = initial_array.epoch
+                    epoch = initial_array._epoch
                 else:
                     epoch = None
-            if epoch is not None:
+            elif epoch is not None:
                 raise TypeError('epoch must be either None or a lal.LIGOTimeGPS')
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
         self._delta_f = delta_f
