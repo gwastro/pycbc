@@ -63,13 +63,14 @@ class TimeSeries(Array):
         # But if the user passed in a value---even 'None'---that will take precedence over
         # anything set in initial_array.  Finally, if the user passes in something without
         # an epoch attribute *and* doesn't pass in a value of epoch, it becomes 'None'
-        if epoch == "":
-            try:
-                epoch = initial_array.epoch
-            except AttributeError:
-                epoch = None
-        if epoch is not None and not isinstance(epoch, _lal.LIGOTimeGPS):
-            raise TypeError('epoch must be either None or a lal.LIGOTimeGPS')
+        if not isinstance(epoch,_lal.LIGOTimeGPS):
+            if epoch == "":
+                if isinstance(initial_array,TimeSeries):
+                    epoch = initial_array.epoch
+                else:
+                    epoch = None
+            if epoch is not None:
+                raise TypeError('epoch must be either None or a lal.LIGOTimeGPS')
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
         self._delta_t = delta_t
         self._epoch = epoch
