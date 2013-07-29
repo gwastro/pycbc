@@ -140,31 +140,31 @@ def _test_random(test_case,inarr,outarr,tol):
     # First test IFFT(FFT(random))
     # The numpy randn(n) provides an array of n numbers drawn from standard normal
     if dtype(inarr).kind is 'c':
-        inarr[:] = randn(len(inarr)) +1j*randn(len(inarr))
+        inarr._data[:] = randn(len(inarr)) +1j*randn(len(inarr))
     else:
-        inarr[:] = randn(len(inarr))
+        inarr._data[:] = randn(len(inarr))
     incopy = type(inarr)(inarr)
     # An FFT followed by IFFT gives Array scaled by len(Array), but for
     # Time/FrequencySeries there should be no scaling.
     if type(inarr) == pycbc.types.Array:
         incopy *= len(inarr)
     with tc.context:
-        fft(inarr,outarr,tc.backend)
-        ifft(outarr,inarr,tc.backend)
+        pycbc.fft.fft(inarr,outarr,tc.backend)
+        pycbc.fft.ifft(outarr,inarr,tc.backend)
         tc.assertTrue(incopy.almost_equal_elem(inarr,tol=tol),
                       msg="IFFT(FFT(random)) did not reproduce original array to within tolerance {0}".format(tol))
     # Now the same for FFT(IFFT(random))
     if dtype(outarr).kind is 'c':
-        outarr[:] = randn(outlen)+1j*randn(outlen)
+        outarr._data[:] = randn(outlen)+1j*randn(outlen)
     else:
-        outarr[:] = randn(outlen)
+        outarr._data[:] = randn(outlen)
     inarr.clear()
     outcopy = type(outarr)(outarr)
     if type(outarr) == pycbc.types.Array:
         outcopy *= len(outarr)
     with tc.context:
-        ifft(outarr,inarr,tc.backend)
-        fft(inarr,outarr,tc.backend)
+        pycbc.fft.ifft(outarr,inarr,tc.backend)
+        pycbc.fft.fft(inarr,outarr,tc.backend)
         tc.assertTrue(outcopy.almost_equal_elem(outarr,tol=tol),
                       msg="FFT(IFFT(random)) did not reproduce original array to within tolerance {0}".format(tol))
 
@@ -186,12 +186,12 @@ def _test_raise_excep_fft(test_case,inarr,outarr,other_args={}):
         args = [inarr,out_badlen,tc.backend]
         tc.assertRaises(ValueError,pycbc.fft.fft,*args)
         # If we give an output array that has the wrong precision, raise ValueError:
-        out_badprec = outty(outzer,dtype=_other_prec[outarr.dtype],**other_args)
+        out_badprec = outty(outzer,dtype=_other_prec[dtype(outarr).type],**other_args)
         args = [inarr,out_badprec,tc.backend]
         tc.assertRaises(ValueError,pycbc.fft.fft,*args)
         # If we give an output array that has the wrong kind (real or complex) but
         # correct precision, then raise a ValueError:
-        out_badkind = outty(outzer,dtype=_other_kind[outarr.dtype],**other_args)
+        out_badkind = outty(outzer,dtype=_other_kind[dtype(outarr).type],**other_args)
         args = [inarr,out_badkind,tc.backend]
         tc.assertRaises(ValueError,pycbc.fft.fft,*args)
         # If we give an output array that isn't a PyCBC type, raise TypeError:
@@ -221,12 +221,12 @@ def _test_raise_excep_ifft(test_case,inarr,outarr,other_args={}):
         args = [inarr,out_badlen,tc.backend]
         tc.assertRaises(ValueError,pycbc.fft.ifft,*args)
         # If we give an output array that has the wrong precision, raise ValueError:
-        out_badprec = outty(outzer,dtype=_other_prec[outarr.dtype],**other_args)
+        out_badprec = outty(outzer,dtype=_other_prec[dtype(outarr).type],**other_args)
         args = [inarr,out_badprec,tc.backend]
         tc.assertRaises(ValueError,pycbc.fft.ifft,*args)
         # If we give an output array that has the wrong kind (real or complex) but
         # correct precision, then raise a ValueError:
-        out_badkind = outty(outzer,dtype=_other_kind[outarr.dtype],**other_args)
+        out_badkind = outty(outzer,dtype=_other_kind[dtype(outarr).type],**other_args)
         args = [inarr,out_badkind,tc.backend]
         tc.assertRaises(ValueError,pycbc.fft.ifft,*args)
         # If we give an output array that isn't a PyCBC type, raise TypeError:
@@ -470,7 +470,7 @@ class _BaseTestFFTClass(unittest.TestCase):
             delta_f = self.delta
             # Don't do separate even/odd tests for complex
             inarr = fs(self.in_c2c_fwd,dtype=fwd_dtype,delta_f=delta_f,epoch=self.epoch)
-            delta_t = 1.0/(delta_t * len(inarr))
+            delta_t = 1.0/(delta_f * len(inarr))
             outexp = ts(self.out_c2c_fwd,dtype=fwd_dtype,delta_t=delta_t,epoch=self.epoch)
             _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
             # Random
@@ -526,7 +526,7 @@ class _BaseTestFFTClass(unittest.TestCase):
             # Don't do separate even/odd tests for complex
             inarr = fs(self.in_c2c_rev,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
             delta_t = 1.0/(delta_f*len(self.out_c2c_rev))
-            outexp = ts(self.out_c2c_rev,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
+            outexp = ts(self.out_c2c_rev,dtype=rev_dtype,delta_t=delta_t,epoch=self.epoch)
             _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
             # Random---we don't do that in 'reverse' tests, since both
             # directions are already tested in forward, and if we just passed
