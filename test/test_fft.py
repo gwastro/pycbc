@@ -140,9 +140,9 @@ def _test_random(test_case,inarr,outarr,tol):
     # First test IFFT(FFT(random))
     # The numpy randn(n) provides an array of n numbers drawn from standard normal
     if dtype(inarr).kind is 'c':
-        inarr[:] = randn(inlen) +1j*randn(inlen)
+        inarr[:] = randn(len(inarr)) +1j*randn(len(inarr))
     else:
-        inarr[:] = randn(inlen)
+        inarr[:] = randn(len(inarr))
     incopy = type(inarr)(inarr)
     # An FFT followed by IFFT gives Array scaled by len(Array), but for
     # Time/FrequencySeries there should be no scaling.
@@ -525,7 +525,7 @@ class _BaseTestFFTClass(unittest.TestCase):
             delta_f = self.delta
             # Don't do separate even/odd tests for complex
             inarr = fs(self.in_c2c_rev,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
-            delta_t = 1.0/(delta_t*len(self.out_c2c_rev))
+            delta_t = 1.0/(delta_f*len(self.out_c2c_rev))
             outexp = ts(self.out_c2c_rev,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
             _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
             # Random---we don't do that in 'reverse' tests, since both
