@@ -105,7 +105,7 @@ def _test_fft(test_case,inarr,expec,tol):
         # Next, check that the output is correct to within tolerance.
         # That will require exact equality of all other meta-data
         emsg = 'FFT output differs by more than a factor of {0} from expected'.format(tol)
-        tc.assertTrue(outarr.almost_equal_elem(expec,tol=tol),msg=emsg)
+        tc.assertTrue(outarr.almost_equal_elem(expec,tol=tol,dtol=tol),msg=emsg)
 
 def _test_ifft(test_case,inarr,expec,tol):
     # Basic test to see that the reverse FFT doesn't
@@ -133,7 +133,7 @@ def _test_ifft(test_case,inarr,expec,tol):
         # Next, check that the output is correct to within tolerance.
         # That will require exact equality of all other meta-data
         emsg = 'Inverse FFT output differs by more than a factor of {0} from expected'.format(tol)
-        tc.assertTrue(outarr.almost_equal_elem(expec,tol=tol),msg=emsg)
+        tc.assertTrue(outarr.almost_equal_elem(expec,tol=tol,dtol=tol),msg=emsg)
 
 def _test_random(test_case,inarr,outarr,tol):
     tc = test_case
@@ -151,7 +151,7 @@ def _test_random(test_case,inarr,outarr,tol):
     with tc.context:
         pycbc.fft.fft(inarr,outarr,tc.backend)
         pycbc.fft.ifft(outarr,inarr,tc.backend)
-        tc.assertTrue(incopy.almost_equal_elem(inarr,tol=tol),
+        tc.assertTrue(incopy.almost_equal_elem(inarr,tol=tol,dtol=tol),
                       msg="IFFT(FFT(random)) did not reproduce original array to within tolerance {0}".format(tol))
     # Now the same for FFT(IFFT(random))
     if dtype(outarr).kind is 'c':
@@ -165,7 +165,7 @@ def _test_random(test_case,inarr,outarr,tol):
     with tc.context:
         pycbc.fft.ifft(outarr,inarr,tc.backend)
         pycbc.fft.fft(inarr,outarr,tc.backend)
-        tc.assertTrue(outcopy.almost_equal_elem(outarr,tol=tol),
+        tc.assertTrue(outcopy.almost_equal_elem(outarr,tol=tol,dtol=tol),
                       msg="FFT(IFFT(random)) did not reproduce original array to within tolerance {0}".format(tol))
 
 def _test_raise_excep_fft(test_case,inarr,outarr,other_args={}):
