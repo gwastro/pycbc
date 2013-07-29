@@ -150,6 +150,7 @@ def _test_random(test_case,inarr,outarr,tol):
     else:
         inarr._data[:] = randn(len(inarr))
     incopy = type(inarr)(inarr)
+    outarr.clear()
     # An FFT followed by IFFT gives Array scaled by len(Array), but for
     # Time/FrequencySeries there should be no scaling.
     if type(inarr) == pycbc.types.Array:
@@ -157,12 +158,13 @@ def _test_random(test_case,inarr,outarr,tol):
     with tc.context:
         pycbc.fft.fft(inarr,outarr,tc.backend)
         pycbc.fft.ifft(outarr,inarr,tc.backend)
+        emsg="IFFT(FFT(random)) did not reproduce original array to within tolerance {0}".format(tol)
         if isinstance(incopy,ts) or isinstance(incopy,fs):
             tc.assertTrue(incopy.almost_equal_elem(inarr,tol=tol,dtol=tol),
-                          msg="IFFT(FFT(random)) did not reproduce original array to within tolerance {0}".format(tol))
+                          msg=emsg)
         else:
             tc.assertTrue(incopy.almost_equal_elem(inarr,tol=tol),
-                          msg="IFFT(FFT(random)) did not reproduce original array to within tolerance {0}".format(tol))
+                          msg=emsg)
     # Now the same for FFT(IFFT(random))
     if dtype(outarr).kind is 'c':
         outarr._data[:] = randn(len(outarr))+1j*randn(len(outarr))
@@ -175,12 +177,13 @@ def _test_random(test_case,inarr,outarr,tol):
     with tc.context:
         pycbc.fft.ifft(outarr,inarr,tc.backend)
         pycbc.fft.fft(inarr,outarr,tc.backend)
+        emsg="FFT(IFFT(random)) did not reproduce original array to within tolerance {0}".format(tol)
         if isinstance(outcopy,ts) or isinstance(outcopy,fs):
             tc.assertTrue(outcopy.almost_equal_elem(outarr,tol=tol,dtol=tol),
-                          msg="FFT(IFFT(random)) did not reproduce original array to within tolerance {0}".format(tol))
+                          msg=emsg)
         else:
             tc.assertTrue(outcopy.almost_equal_elem(outarr,tol=tol),
-                          msg="FFT(IFFT(random)) did not reproduce original array to within tolerance {0}".format(tol))
+                          msg=emsg)
 def _test_raise_excep_fft(test_case,inarr,outarr,other_args={}):
     # As far as can be told from the unittest module documentation, the
     # 'assertRaises' tests do not permit a custom message.  So more
@@ -258,8 +261,8 @@ class _BaseTestFFTClass(unittest.TestCase):
     """
     def setUp(self):
         # Dictionary to convert a dtype to a relative precision to test
-        self.tdict = { float32: 1e-6, float64: 1e-14,
-                       complex64: 1e-6, complex128: 1e-14}
+        self.tdict = { float32: 1e-5, float64: 1e-14,
+                       complex64: 1e-5, complex128: 1e-14}
         # Save our scheme and context
         self.scheme = _scheme
         self.context = _context
