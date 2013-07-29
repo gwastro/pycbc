@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Tito Dal Canton
+# Copyright (C) 2012  Tito Dal Canton, Josh Willis
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -47,11 +47,27 @@ class TimeSeries(Array):
     sample_times
     """
 
-    def __init__(self, initial_array, delta_t, epoch=None, dtype=None, copy=True):
+    def __init__(self, initial_array, delta_t=None, epoch="", dtype=None, copy=True):
         if len(initial_array) < 1:
             raise ValueError('initial_array must contain at least one sample.')
+        if delta_t == None:
+            try:
+                delta_t = initial_array.delta_t
+            except AttributeError:
+                raise TypeError('must provide either an initial_array with a delta_t attribute, or a value for delta_t')
         if not delta_t > 0:
             raise ValueError('delta_t must be a positive number')
+        # We gave a nonsensical default value to epoch so we can test if it's been set.
+        # If the user passes in an initial_array that has an 'epoch' attribute and doesn't
+        # pass in a value of epoch, then our new object's epoch comes from initial_array.
+        # But if the user passed in a value---even 'None'---that will take precedence over
+        # anything set in initial_array.  Finally, if the user passes in something without
+        # an epoch attribute *and* doesn't pass in a value of epoch, it becomes 'None'
+        if epoch == "":
+            try:
+                epoch = initial_array.epoch
+            except AttributeError:
+                epoch = None
         if epoch is not None and not isinstance(epoch, _lal.LIGOTimeGPS):
             raise TypeError('epoch must be either None or a lal.LIGOTimeGPS')
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
