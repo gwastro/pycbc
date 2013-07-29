@@ -234,7 +234,9 @@ class FrequencySeries(Array):
         -------
         lal_data : {lal.*FrequencySeries}
             LAL frequency series object containing the same data as self.
-            The actual type depends on the sample's dtype.
+            The actual type depends on the sample's dtype. If the epoch of
+            self was 'None', the epoch of the returned LAL object will be
+            LIGOTimeGPS(0,0); otherwise, the same as that of self.
 
         Raises
         ------
@@ -243,16 +245,20 @@ class FrequencySeries(Array):
         """
 
         lal_data = None
+        if self._epoch is None:
+            ep = _lal.LIGOTimeGPS(0,0)
+        else:
+            ep = self._epoch
         if type(self._data) is not _numpy.ndarray:
             raise TypeError("Cannot return lal type from the GPU")
         elif self._data.dtype == _numpy.float32:
-            lal_data = _lal.CreateREAL4FrequencySeries("",self._epoch,0,self.delta_f,_lal.lalSecondUnit,len(self))
+            lal_data = _lal.CreateREAL4FrequencySeries("",ep,0,self.delta_f,_lal.lalSecondUnit,len(self))
         elif self._data.dtype == _numpy.float64:
-            lal_data = _lal.CreateREAL8FrequencySeries("",self._epoch,0,self.delta_f,_lal.lalSecondUnit,len(self))
+            lal_data = _lal.CreateREAL8FrequencySeries("",ep,0,self.delta_f,_lal.lalSecondUnit,len(self))
         elif self._data.dtype == _numpy.complex64:
-            lal_data = _lal.CreateCOMPLEX8FrequencySeries("",self._epoch,0,self.delta_f,_lal.lalSecondUnit,len(self))
+            lal_data = _lal.CreateCOMPLEX8FrequencySeries("",ep,0,self.delta_f,_lal.lalSecondUnit,len(self))
         elif self._data.dtype == _numpy.complex128:
-            lal_data = _lal.CreateCOMPLEX16FrequencySeries("",self._epoch,0,self.delta_f,_lal.lalSecondUnit,len(self))
+            lal_data = _lal.CreateCOMPLEX16FrequencySeries("",ep,0,self.delta_f,_lal.lalSecondUnit,len(self))
 
         lal_data.data.data[:] = self._data
 
