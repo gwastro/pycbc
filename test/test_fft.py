@@ -448,7 +448,7 @@ class _BaseTestFFTClass(unittest.TestCase):
             # output arrays; just reuse inarr and outexp (values won't
             # matter, we're just checking exceptions).
             output_args = {"delta_f": self.delta, "epoch": self.epoch}
-            _test_raise_excep_ifft(self,inarr,outexp)
+            _test_raise_excep_ifft(self,inarr,outexp,output_args)
 
     def test_rev_real_fs(self):
         for rev_dtype in [float32,float64]:
@@ -473,7 +473,7 @@ class _BaseTestFFTClass(unittest.TestCase):
             # output arrays; just reuse inarr and outexp (values won't
             # matter, we're just checking exceptions).
             output_args = {"delta_t": self.delta, "epoch": self.epoch}
-            _test_raise_excep_ifft(self,inarr,outexp)
+            _test_raise_excep_ifft(self,inarr,outexp,output_args)
 
     def test_fwd_complex_arr(self):
         for fwd_dtype in [complex64,complex128]:
