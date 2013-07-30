@@ -149,10 +149,10 @@ def _test_random(test_case,inarr,outarr,tol):
     #
     # First test IFFT(FFT(random))
     # The numpy randn(n) provides an array of n numbers drawn from standard normal
-    if dtype(inarr).kind is 'c':
+    if dtype(inarr).kind == 'c':
         inarr._data[:] = randn(len(inarr)) +1j*randn(len(inarr))
         # If we're going to do a HC2R transform we must worry about DC/Nyquist imaginary
-        if dtype(outarr).kind is 'r':
+        if dtype(outarr).kind == 'f':
             inarr._data[0] = real(inarr[0])
             if (len(inarr)%2)==0:
                 inarr._data[len(inarr)-1] = real(inarr[len(inarr)-1])
@@ -175,10 +175,10 @@ def _test_random(test_case,inarr,outarr,tol):
             tc.assertTrue(incopy.almost_equal_norm(inarr,tol=tol),
                           msg=emsg)
     # Now the same for FFT(IFFT(random))
-    if dtype(outarr).kind is 'c':
+    if dtype(outarr).kind == 'c':
         outarr._data[:] = randn(len(outarr))+1j*randn(len(outarr))
         # If we're going to do a HC2R transform we must worry about DC/Nyquist imaginary
-        if dtype(inarr).kind is 'r':
+        if dtype(inarr).kind == 'f':
             outarr._data[0] = real(outarr[0])
             if (len(outarr)%2)==0:
                 outarr._data[len(outarr)-1] = real(outarr[len(outarr)-1])
