@@ -187,7 +187,7 @@ def _test_random(test_case,inarr,outarr,tol):
     inarr.clear()
     outcopy = type(outarr)(outarr)
     if type(outarr) == pycbc.types.Array:
-        outcopy *= len(outarr)
+        outcopy *= len(inarr)
     with tc.context:
         pycbc.fft.ifft(outarr,inarr,tc.backend)
         pycbc.fft.fft(inarr,outarr,tc.backend)
