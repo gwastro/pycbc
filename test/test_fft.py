@@ -54,7 +54,7 @@ import pycbc.scheme
 import pycbc.types
 from pycbc.types import Array as ar, TimeSeries as ts, FrequencySeries as fs
 import numpy
-from numpy import dtype, float32, float64, complex64, complex128, zeros
+from numpy import dtype, float32, float64, complex64, complex128, zeros, real
 from numpy.random import randn
 import pycbc.fft
 import unittest
@@ -151,6 +151,11 @@ def _test_random(test_case,inarr,outarr,tol):
     # The numpy randn(n) provides an array of n numbers drawn from standard normal
     if dtype(inarr).kind is 'c':
         inarr._data[:] = randn(len(inarr)) +1j*randn(len(inarr))
+        # If we're going to do a HC2R transform we must worry about DC/Nyquist imaginary
+        if dtype(outarr).kind is 'r':
+            inarr._data[0] = real(inarr[0])
+            if (len(inarr)%2)==0:
+                inarr._data[len(inarr)-1] = real(inarr[len(inarr)-1])
     else:
         inarr._data[:] = randn(len(inarr))
     incopy = type(inarr)(inarr)
@@ -172,6 +177,11 @@ def _test_random(test_case,inarr,outarr,tol):
     # Now the same for FFT(IFFT(random))
     if dtype(outarr).kind is 'c':
         outarr._data[:] = randn(len(outarr))+1j*randn(len(outarr))
+        # If we're going to do a HC2R transform we must worry about DC/Nyquist imaginary
+        if dtype(inarr).kind is 'r':
+            outarr._data[0] = real(outarr[0])
+            if (len(outarr)%2)==0:
+                outarr._data[len(outarr)-1] = real(outarr[len(outarr)-1])
     else:
         outarr._data[:] = randn(len(outarr))
     inarr.clear()
