@@ -353,11 +353,13 @@ class _BaseTestFFTClass(unittest.TestCase):
             inarr = ts(self.in_r2c_e,dtype=fwd_dtype,delta_t=delta_t,epoch=self.epoch)
             delta_f = 1.0/(inarr.delta_t * len(inarr))
             outexp = fs(self.out_r2c_e,dtype=_other_kind[fwd_dtype],delta_f=delta_f,epoch=self.epoch)
+            outexp *= delta_t
             _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
             # Odd input
             inarr = ts(self.in_r2c_o,dtype=fwd_dtype,delta_t=delta_t,epoch=self.epoch)
             delta_f = 1.0/(inarr.delta_t * len(inarr))
             outexp = fs(self.out_r2c_o,dtype=_other_kind[fwd_dtype],delta_f=delta_f,epoch=self.epoch)
+            outexp *= delta_t
             _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
             # Random
             rand_inarr = ts(zeros(self.rand_len_r,dtype=fwd_dtype),epoch=self.epoch,delta_t=delta_t)
@@ -381,11 +383,13 @@ class _BaseTestFFTClass(unittest.TestCase):
             inarr = fs(self.in_r2c_e,dtype=fwd_dtype,delta_f=delta_f,epoch=self.epoch)
             delta_t = 1.0/(inarr.delta_f * len(inarr))
             outexp = ts(self.out_r2c_e,dtype=_other_kind[fwd_dtype],delta_t=delta_t,epoch=self.epoch)
+            outexp *= delta_f
             _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
             # Odd input
             inarr = fs(self.in_r2c_o,dtype=fwd_dtype,delta_f=delta_f,epoch=self.epoch)
             delta_t = 1.0/(inarr.delta_f * len(inarr))
             outexp = ts(self.out_r2c_o,dtype=_other_kind[fwd_dtype],delta_t=delta_t,epoch=self.epoch)
+            outexp *= delta_f
             _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
             # Random
             rand_inarr = fs(zeros(self.rand_len_r,dtype=fwd_dtype),epoch=self.epoch,delta_f=delta_f)
@@ -428,11 +432,13 @@ class _BaseTestFFTClass(unittest.TestCase):
             inarr = ts(self.in_c2r_e,dtype=_other_kind[rev_dtype],delta_t=delta_t,epoch=self.epoch)
             delta_f = 1.0/(delta_t*len(self.out_c2r_e))
             outexp = fs(self.out_c2r_e,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
+            outexp *= delta_t
             _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
             # Odd input
             inarr = ts(self.in_c2r_o,dtype=_other_kind[rev_dtype])
             delta_f = 1.0/(delta_t*len(self.out_c2r_o))
             outexp = fs(self.out_c2r_o,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
+            outexp *= delta_t
             _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
             # Random---we don't do that in 'reverse' tests, since both
             # directions are already tested in forward, and if we just passed
@@ -451,11 +457,13 @@ class _BaseTestFFTClass(unittest.TestCase):
             inarr = fs(self.in_c2r_e,dtype=_other_kind[rev_dtype],delta_f=delta_f,epoch=self.epoch)
             delta_t = 1.0/(delta_f*len(self.out_c2r_e))
             outexp = ts(self.out_c2r_e,dtype=rev_dtype,delta_t=delta_t,epoch=self.epoch)
+            outexp *= delta_f
             _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
             # Odd input
             inarr = fs(self.in_c2r_o,dtype=_other_kind[rev_dtype])
             delta_t = 1.0/(delta_f*len(self.out_c2r_o))
             outexp = ts(self.out_c2r_o,dtype=rev_dtype,delta_t=delta_t,epoch=self.epoch)
+            outexp *= delta_f
             _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
             # Random---we don't do that in 'reverse' tests, since both
             # directions are already tested in forward, and if we just passed
@@ -492,6 +500,7 @@ class _BaseTestFFTClass(unittest.TestCase):
             inarr = ts(self.in_c2c_fwd,dtype=fwd_dtype,delta_t=delta_t,epoch=self.epoch)
             delta_f = 1.0/(delta_t * len(inarr))
             outexp = fs(self.out_c2c_fwd,dtype=fwd_dtype,delta_f=delta_f,epoch=self.epoch)
+            outexp *= delta_t
             _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
             # Random
             rand_inarr = ts(zeros(self.rand_len_c,dtype=fwd_dtype),delta_t=delta_t,epoch=self.epoch)
@@ -514,6 +523,7 @@ class _BaseTestFFTClass(unittest.TestCase):
             inarr = fs(self.in_c2c_fwd,dtype=fwd_dtype,delta_f=delta_f,epoch=self.epoch)
             delta_t = 1.0/(delta_f * len(inarr))
             outexp = ts(self.out_c2c_fwd,dtype=fwd_dtype,delta_t=delta_t,epoch=self.epoch)
+            outexp *= delta_f
             _test_fft(self,inarr,outexp,self.tdict[fwd_dtype])
             # Random
             rand_inarr = fs(zeros(self.rand_len_c,dtype=fwd_dtype),delta_f=delta_f,epoch=self.epoch)
@@ -551,6 +561,7 @@ class _BaseTestFFTClass(unittest.TestCase):
             inarr = ts(self.in_c2c_rev,dtype=rev_dtype,delta_t=delta_t,epoch=self.epoch)
             delta_f = 1.0/(delta_t*len(self.out_c2c_rev))
             outexp = fs(self.out_c2c_rev,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
+            outexp *= delta_t
             _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
             # Random---we don't do that in 'reverse' tests, since both
             # directions are already tested in forward, and if we just passed
@@ -569,6 +580,7 @@ class _BaseTestFFTClass(unittest.TestCase):
             inarr = fs(self.in_c2c_rev,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
             delta_t = 1.0/(delta_f*len(self.out_c2c_rev))
             outexp = ts(self.out_c2c_rev,dtype=rev_dtype,delta_t=delta_t,epoch=self.epoch)
+            outexp *= delta_f
             _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
             # Random---we don't do that in 'reverse' tests, since both
             # directions are already tested in forward, and if we just passed
