@@ -58,12 +58,13 @@ def threshold_and_cluster(series, threshold, window):
     b = 0
     e = window
     lcs = []
+    mcs = []
     
     while b < len(series):
         if e > len(series):
             e = len(series)
         
-        tp = tmp[b:e]
+        tp = series[b:e]
         m, l = tp.abs_max_loc()
        
         if abs(m) > threshold:
@@ -92,85 +93,35 @@ def findchirp_cluster_over_window(times, values, window_length):
     return indices[0:j+1]
     
 class EventManager(object):
-    def __init__(self, opt, column, column_types, **kwds):
+    def __init__(self, opt, **kwds):
         self.opt = opt
         self.global_params = kwds
 
+        self.events = None
         self.event_dtype = [ ('template_id', int) ]
-        for column, coltype in zip (column, column_types):
-            self.event_dtype.append( (column, coltype) )
         
-        self.events = numpy.events = numpy.array([], dtype=self.event_dtype)
         self.template_params = []
-        self.template_index = -1
-        self.template_events = numpy.array([], dtype=self.event_dtype)
-                  
-    def chisq_threshold(self, value, num_bins, delta=0):
-        remove = []
-        for i in range(len(self.events)):
-            event = self.events[i]
-            tind = event['template_id']
-            xi = event['chisq'] / (num_bins + delta * event['snr'].conj() * event['snr'])
-            if xi > value:
-                remove.append(i)
-        self.events = numpy.delete(self.events, remove)          
-   
-    def maximize_over_bank(self, tcolumn, column, window):
-        pass
-#        self.events.sort(order=[tcolumn])
-##        nbins = numpy.ceil(self.events[-1][tcolumn]/float(window))
-#        edges = numpy.arange(0, nbins, 1) * float(window)
-#        indices = numpy.searchsorted(self.events[tcolumn], edges)
-#        indices = numpy.append(indices, len(self.events))
-#        
-#        maxes = []
-#        locs = []
-#        row = []
-#        remove = []
-##        #print nbins, edges, indices, self.events[-1][tcolumn], window
-#        for i in range(len(indices)-1):
-#            l = indices[i]
-#            r = indices[i+1]
-#            if l == r:
-#                continue
-#            maxid = abs(self.events[l:r][column]).argmax()
-#            maxes.append(self.events[l:r][column][maxid])
-#            locs.append(self.events[l:r][tcolumn][maxid])
-##            rows.append(self.events[l:r][maxid])
-#
-#        for i in range(len(maxes)):
-#            if i == 0:
-#                lm = 0;
-               
-        
-        
-    def add_template_events(self, columns, vectors):
+        self.template_index = 0   
+                      
+    def add_triggers(self, columns, vectors, **kwds):
         """ Add a vector indexed """
+        if self.events is None:
+            for column, vec in zip(columns, vectors):
+                if vec is not None:
+                    coltype = vec.dtype
+                    self.event_dtype.append( (column, coltype) )
+                
+            self.events = numpy.array([], dtype=self.event_dtype)
+    
+        self.template_params.append(kwds)
+
         new_events = numpy.zeros(len(vectors[0]), dtype=self.event_dtype)
         new_events['template_id'] = self.template_index
         for c, v in zip(columns, vectors):
             if v is not None:
-                new_events[c] = v  
-        self.template_events = numpy.append(self.template_events, new_events)                     
-     
-    def cluster_template_events(self, tcolumn, column, window_size):
-        """ Cluster the internal events over the named column
-        """
-        cvec = self.template_events[column]
-        tvec = self.template_events[tcolumn]
-        indices = findchirp_cluster_over_window(tvec, cvec, window_size)
-        self.template_events = numpy.take(self.template_events, indices)       
-        
-    def new_template(self, **kwds):
-        self.template_params.append(kwds)
-        self.template_index += 1
-    
-    def add_template_params(self, **kwds):
-        self.template_params[-1].update(kwds)  
-            
-    def finalize_template_events(self):
-        self.events = numpy.append(self.events, self.template_events)
-        self.template_events = numpy.array([], dtype=self.event_dtype)        
+                new_events[c] = v    
+        self.events = numpy.append(self.events, new_events)  
+        self.template_index += 1                     
         
     def write_events(self):
         """ Write the found events to a sngl inspiral table 
@@ -194,12 +145,12 @@ class EventManager(object):
         if self.opt.trig_start_time:
             tstart_time = self.opt.trig_start_time
         else:
-            tstart_time = self.opt.gps_start_time + 64
+            tstart_time = self.opt.gps_start_time + self.opt.segment_start_pad
             
         if self.opt.trig_end_time:
             tend_time = self.opt.trig_end_time
         else:
-            tend_time = self.opt.gps_end_time - 64
+            tend_time = self.opt.gps_end_time - self.opt.segment_end_pad
             
         event_num = 0      
         for event in self.events:
