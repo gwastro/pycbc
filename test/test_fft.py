@@ -61,6 +61,7 @@ import unittest
 import sys
 from utils import parse_args_all_schemes
 from lal import LIGOTimeGPS as LTG
+import lal as _lal
 
 _scheme, _context = parse_args_all_schemes("FFT")
 
@@ -82,6 +83,28 @@ _other_kind = {float32:complex64, float64:complex128,
 # a R2R or R2C transform.
 _bad_dtype = {float32: float32, float64: float64,
               complex64: float32, complex128: float64}
+
+# Several dicts for our direct comparisons with LAL's Time/Freq FFT routines.
+
+_fwd_plan_dict = {float32: _lal.CreateForwardREAL4FFTPlan,
+                  float64: _lal.CreateForwardREAL8FFTPlan,
+                  complex64: _lal.CreateForwardCOMPLEX8FFTPlan,
+                  complex128: _lal.CreateForwardCOMPLEX16FFTPlan}
+
+_rev_plan_dict = {float32: _lal.CreateReverseREAL4FFTPlan,
+                  float64: _lal.CreateReverseREAL8FFTPlan,
+                  complex64: _lal.CreateReverseCOMPLEX8FFTPlan,
+                  complex128: _lal.CreateReverseCOMPLEX16FFTPlan}
+
+_fwd_lalfft_dict = {float32: _lal.REAL4TimeFreqFFT,
+                    float64: _lal.REAL8TimeFreqFFT,
+                    complex64: _lal.COMPLEX8TimeFreqFFT,
+                    complex128: _lal.COMPLEX16TimeFreqFFT}
+
+_rev_lalfft_dict = {float32: _lal.REAL4FreqTimeFFT,
+                    float64: _lal.REAL8FreqTimeFFT,
+                    complex64: _lal.COMPLEX8FreqTimeFFT,
+                    complex128: _lal.COMPLEX16FreqTimeFFT}
 
 # Our actual helper functions.  Note that these perform the necessary operations
 # within the appropriate context, so they should not themselves be called inside
@@ -162,7 +185,7 @@ def _test_random(test_case,inarr,outarr,tol):
         # If we're going to do a HC2R transform we must worry about DC/Nyquist imaginary
         if dtype(outarr).kind == 'f':
             inarr._data[0] = real(inarr[0])
-            if (len(inarr)%2)==0:
+            if (len(outarr)%2)==0:
                 inarr._data[len(inarr)-1] = real(inarr[len(inarr)-1])
     else:
         inarr._data[:] = randn(len(inarr))
@@ -188,7 +211,7 @@ def _test_random(test_case,inarr,outarr,tol):
         # If we're going to do a HC2R transform we must worry about DC/Nyquist imaginary
         if dtype(inarr).kind == 'f':
             outarr._data[0] = real(outarr[0])
-            if (len(outarr)%2)==0:
+            if (len(inarr)%2)==0:
                 outarr._data[len(outarr)-1] = real(outarr[len(outarr)-1])
     else:
         outarr._data[:] = randn(len(outarr))
@@ -206,6 +229,63 @@ def _test_random(test_case,inarr,outarr,tol):
         else:
             tc.assertTrue(outcopy.almost_equal_norm(outarr,tol=tol),
                           msg=emsg)
+
+def _test_lal_tf_fft(test_case,inarr,outarr,tol):
+    tc = test_case
+    # Fill input array with random, clear output, and get lal handles for each.
+    if dtype(inarr).kind == 'c':
+        inarr._data[:] = randn(len(inarr)) +1j*randn(len(inarr))
+    else:
+        inarr._data[:] = randn(len(inarr))
+    outarr.clear()
+    inlal = inarr.lal()
+    outlal = outarr.lal()
+    # Calculate the pycbc fft:
+    with tc.context:
+        fft(inarr,outarr)
+    fwdplan = _fwd_plan_dict[dtype(inarr).type](len(inarr),0)
+    # Call the lal function directly (see above for dict).  Note that
+    # lal functions want *output* given first.
+    _fwd_lalfft_dict[dtype(inarr).type](outlal,inlal,fwdplan)
+    # Make a pycbc type from outlal.  Some hackiness because we don't know the
+    # type of outlal.
+    if hasattr(outlal,'deltaT'):
+        cmparr = ts(outlal.data.data,epoch=outlal.epoch,delta_t=outlal.deltaT)
+    else:
+        cmparr = fs(outlal.data.data,epoch=outlal.epoch,delta_f=outlal.deltaF)
+    emsg = "Direct call to LAL TimeFreqFFT() did not agree with fft() to within precision {0}".format(tol)
+    tc.assertTrue(outarr.almost_equal_norm(cmparr,tol=tol),msg=emsg)
+
+def _test_lal_tf_ifft(test_case,inarr,outarr,tol):
+    tc = test_case
+    # Fill input array with random, clear output, and get lal handles for each.
+    if dtype(inarr).kind == 'c':
+        inarr._data[:] = randn(len(inarr)) +1j*randn(len(inarr))
+        # We must worry about DC/Nyquist imag parts if this is HC2R transform:
+        if dtype(outarr).kind == 'f':
+            inarr._data[0] = real(inarr._data[0])
+            if (len(outarr)%2)==0:
+                inarr._data[0] = real(inarr._data[0])
+    else:
+        inarr._data[:] = randn(len(inarr))
+    outarr.clear()
+    inlal = inarr.lal()
+    outlal = outarr.lal()
+    # Calculate the pycbc fft:
+    with tc.context:
+        ifft(inarr,outarr)
+    revplan = _rev_plan_dict[dtype(outarr).type](len(outarr),0)
+    # Call the lal function directly (see above for dict).  Note that
+    # lal functions want *output* given first.
+    _rev_lalfft_dict[dtype(outarr).type](outlal,inlal,revplan)
+    # Make a pycbc type from outlal.  Some hackiness because we don't know the
+    # type of outlal.
+    if hasattr(outlal,'deltaT'):
+        cmparr = ts(outlal.data.data,epoch=outlal.epoch,delta_t=outlal.deltaT)
+    else:
+        cmparr = fs(outlal.data.data,epoch=outlal.epoch,delta_f=outlal.deltaF)
+    emsg = "Direct call to LAL TimeFreqFFT() did not agree with fft() to within precision {0}".format(tol)
+    tc.assertTrue(outarr.almost_equal_norm(cmparr,tol=tol),msg=emsg)
 
 def _test_raise_excep_fft(test_case,inarr,outarr,other_args={}):
     # As far as can be told from the unittest module documentation, the
