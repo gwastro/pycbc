@@ -73,7 +73,15 @@ _other_prec = {float32:float64, float64:float32,
                complex64:complex128, complex128:complex64}
 # Map the same precision to the other kind
 _other_kind = {float32:complex64, float64:complex128,
-                complex64:float32, complex128:float64}
+               complex64:float32, complex128:float64}
+
+# Map the dtype of a valid *forward* fft *input* array to the wrong kind,
+# but correct precision, dtype of the *output* array. This is either R2R or C2R.
+# The same mapping also send the dtype of a valid *output* array for an inverse
+# fft to the wrong kind but correct precision *input* array, corresponding to
+# a R2R or R2C transform.
+_bad_dtype = {float32: float32, float64: float64,
+              complex64: float32, complex128: float64}
 
 # Our actual helper functions.  Note that these perform the necessary operations
 # within the appropriate context, so they should not themselves be called inside
@@ -221,8 +229,9 @@ def _test_raise_excep_fft(test_case,inarr,outarr,other_args={}):
         args = [inarr,out_badprec,tc.backend]
         tc.assertRaises(ValueError,pycbc.fft.fft,*args)
         # If we give an output array that has the wrong kind (real or complex) but
-        # correct precision, then raise a ValueError:
-        out_badkind = outty(outzer,dtype=_other_kind[dtype(outarr).type],**other_args)
+        # correct precision, then raise a ValueError.  This only makes sense if we try
+        # to do either C2R or R2R.
+        out_badkind = outty(outzer,dtype=_bad_dtype[dtype(inarr).type],**other_args)
         args = [inarr,out_badkind,tc.backend]
         tc.assertRaises(ValueError,pycbc.fft.fft,*args)
         # If we give an output array that isn't a PyCBC type, raise TypeError:
@@ -256,9 +265,11 @@ def _test_raise_excep_ifft(test_case,inarr,outarr,other_args={}):
         args = [inarr,out_badprec,tc.backend]
         tc.assertRaises(ValueError,pycbc.fft.ifft,*args)
         # If we give an output array that has the wrong kind (real or complex) but
-        # correct precision, then raise a ValueError:
-        out_badkind = outty(outzer,dtype=_other_kind[dtype(outarr).type],**other_args)
-        args = [inarr,out_badkind,tc.backend]
+        # correct precision, then raise a ValueError.  Here we must adjust the kind
+        # of the *input* array, not output:
+        in_badkind = type(inarr)(pycbc.types.zeros(len(inarr)),dtype=_bad_dtype[dtype(outarr).type],
+                                 **other_args)
+        args = [in_badkind,outarr,tc.backend]
         tc.assertRaises(ValueError,pycbc.fft.ifft,*args)
         # If we give an output array that isn't a PyCBC type, raise TypeError:
         out_badtype = numpy.zeros(len(outarr),dtype=outarr.dtype)
