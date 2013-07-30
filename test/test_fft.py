@@ -394,7 +394,7 @@ class _BaseTestFFTClass(unittest.TestCase):
             # Random
             rand_inarr = fs(zeros(self.rand_len_r,dtype=fwd_dtype),epoch=self.epoch,delta_f=delta_f)
             delta_t = 1.0/(rand_inarr.delta_f * len(rand_inarr))
-            rand_outarr = fs(zeros(self.rand_len_c,dtype=_other_kind[fwd_dtype]),epoch=self.epoch,
+            rand_outarr = ts(zeros(self.rand_len_c,dtype=_other_kind[fwd_dtype]),epoch=self.epoch,
                              delta_t=delta_t)
             _test_random(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
             # Clean these up since they could be big:
@@ -435,7 +435,7 @@ class _BaseTestFFTClass(unittest.TestCase):
             outexp *= delta_t
             _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
             # Odd input
-            inarr = ts(self.in_c2r_o,dtype=_other_kind[rev_dtype])
+            inarr = ts(self.in_c2r_o,dtype=_other_kind[rev_dtype],delta_t=delta_t,epoch=self.epoch)
             delta_f = 1.0/(delta_t*len(self.out_c2r_o))
             outexp = fs(self.out_c2r_o,dtype=rev_dtype,delta_f=delta_f,epoch=self.epoch)
             outexp *= delta_t
@@ -460,7 +460,7 @@ class _BaseTestFFTClass(unittest.TestCase):
             outexp *= delta_f
             _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
             # Odd input
-            inarr = fs(self.in_c2r_o,dtype=_other_kind[rev_dtype])
+            inarr = fs(self.in_c2r_o,dtype=_other_kind[rev_dtype],delta_f=delta_f,epoch=self.epoch)
             delta_t = 1.0/(delta_f*len(self.out_c2r_o))
             outexp = ts(self.out_c2r_o,dtype=rev_dtype,delta_t=delta_t,epoch=self.epoch)
             outexp *= delta_f
