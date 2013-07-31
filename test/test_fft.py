@@ -495,8 +495,7 @@ class _BaseTestFFTClass(unittest.TestCase):
             rand_outarr = ts(zeros(self.rand_len_c,dtype=_other_kind[fwd_dtype]),epoch=self.epoch,
                              delta_t=delta_t)
             _test_random(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
-            # Reuse random arrays for the LAL tests:
-            _test_lal_tf_fft(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
+            # LAL doesn't have forward FFT funcs starting from a FS, so skip _test_lal
             # Clean these up since they could be big:
             del rand_inarr
             del rand_outarr
@@ -544,15 +543,9 @@ class _BaseTestFFTClass(unittest.TestCase):
             # directions are already tested in forward, and if we just passed
             # in arrays in the other order we'd only get exceptions
             #
-            # However, we do still generate the arrays for T/F series, so that we may
-            # do the LAL comparison test.  As usual, we then delete those arrays.
-            rand_inarr = ts(zeros(self.rand_len_c,dtype=_other_kind[rev_dtype]),epoch=self.epoch,
-                            delta_t=self.delta)
-            rand_outarr = fs(zeros(self.rand_len_r,dtype=rev_dtype),epoch=self.epoch,
-                             delta_f=self.delta)
-            _test_lal_tf_ifft(self,rand_inarr,rand_outarr,self.tdict[rev_dtype])
-            del rand_inarr
-            del rand_outarr
+            # LAL doesn't have reverse FFT funcs starting from a TimeSeries, so
+            # we skip those tests as well.
+            #
             # Check that exceptions are raised.  Need input and
             # output arrays; just reuse inarr and outexp (values won't
             # matter, we're just checking exceptions).
@@ -650,8 +643,7 @@ class _BaseTestFFTClass(unittest.TestCase):
             delta_t = 1.0/(delta_t*len(rand_inarr))
             rand_outarr = ts(zeros(self.rand_len_c,dtype=fwd_dtype),delta_t=delta_t,epoch=self.epoch)
             _test_random(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
-            # Reuse random arrays for the LAL tests:
-            _test_lal_tf_fft(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
+            # LAL doesn't have forward FFT funcs starting from a FS, so skip _test_lal
             # Clean these up since they could be big:
             del rand_inarr
             del rand_outarr
@@ -689,15 +681,9 @@ class _BaseTestFFTClass(unittest.TestCase):
             # directions are already tested in forward, and if we just passed
             # in arrays in the other order we'd only get exceptions
             #
-            # However, we do still generate the arrays for T/F series, so that we may
-            # do the LAL comparison test.  As usual, we then delete those arrays.
-            rand_inarr = ts(zeros(self.rand_len_c,dtype=rev_dtype),epoch=self.epoch,
-                            delta_t=self.delta)
-            rand_outarr = fs(zeros(self.rand_len_c,dtype=rev_dtype),epoch=self.epoch,
-                             delta_f=self.delta)
-            _test_lal_tf_ifft(self,rand_inarr,rand_outarr,self.tdict[rev_dtype])
-            del rand_inarr
-            del rand_outarr
+            # LAL doesn't have reverse FFT funcs starting from a TimeSeries, so
+            # we skip those tests as well.
+            #
             # Check that exceptions are raised.  Need input and
             # output arrays; just reuse inarr and outexp (values won't
             # matter, we're just checking exceptions).
