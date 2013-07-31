@@ -1,16 +1,7 @@
 #!/usr/bin/env python
-# $Id: tmplt_bank.py,v 1.6 2006/07/03 23:26:06 duncan Exp $
-
-import time
-import os
 from os.path import isfile
-import sys
-
 from optparse import OptionParser
-
 from numpy import *
-### option parsing ###
-
 parser = OptionParser()
 
 parser.add_option('--inj-num',help="index of the injection set for the match files",type=int)

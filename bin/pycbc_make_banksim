@@ -21,24 +21,29 @@ confs = ConfigParser.ConfigParser()
 confs.read(options.config)
 
 banksim_prog = confs.get("executables", "banksim")
-combine_prog = confs.get("executables", "combine")
 
-log_file = confs.get("workflow", "log-file")
 bank_file = confs.get("workflow", "bank-file")
 
 injections_per_job = confs.get("workflow", "injections-per-job")
 templates_per_job = confs.get("workflow", "templates-per-job")
+
+gpu = False
+try:
+    gpu = confs.get("workflow", "use-spice-gpus")
+    if gpu is not None:
+        gpu = True
+except:
+    pass
      
 print "Creating submit files"   
 f = open("match_combine.submit", "w")
 f.write("""
 universe = local
 getenv = True
-executable = """ + combine_prog + """
+executable = scripts/pycbc_banksim_match_combine
 arguments = --inj-num=$(JOB_NUM) -o ../match/match$(JOB_NUM).dat \
 output = ../out/com-out$(JOB_NUM)
 error = ../err/com-err$(JOB_NUM)
-log = """ + log_file + """ 
 initialdir=match-part
 transfer_executable = false
 queue 1
@@ -46,32 +51,58 @@ queue 1
 f.close()
 
 bs_options = get_ini_opts(confs, "banksim")
-f = open("banksim.submit", "w")
-f.write("""
+
+if gpu:
+    f = open("banksim.submit", "w")
+    f.write("""
 universe = Vanilla
 getenv = True
-executable = """ + banksim_prog + """
-arguments = \
---signal-file injection/injection$(JOB_NUM).xml \
---template-file bank/bank$(PART_NUM).xml \
---match-file match-part/match$(JOB_NUM)part$(PART_NUM).dat \
---asd-file ./ZERO_DET_high_P.txt \ 
-""" + bs_options + """
+executable = scripts/pycbc_banksim
+arguments = \\
+--signal-file injection/injection$(JOB_NUM).xml \\
+--template-file bank/bank$(PART_NUM).xml \\
+""" + bs_options + """ \\
+--use-cuda \\
+--match-file match-part/match$(JOB_NUM)part$(PART_NUM).dat.$(Process)
 output = out/out$(JOB_NUM)part$(PART_NUM)
 error = err/err$(JOB_NUM)part$(PART_NUM)
 transfer_executable = false
-log = """ + log_file + """ 
-queue 1
+requirements = (HasGPU =?= "gtx580")
++WantsGPU = True
+queue 2
 """)
-f.close()
+    f.close()
+else:
+    f = open("banksim.submit", "w")
+    f.write("""
+universe = Vanilla
+getenv = True
+executable = scripts/pycbc_banksim
+arguments = \\
+--signal-file injection/injection$(JOB_NUM).xml \\
+--template-file bank/bank$(PART_NUM).xml \\
+""" + bs_options + """ \\
+--match-file match-part/match$(JOB_NUM)part$(PART_NUM).dat
+output = out/out$(JOB_NUM)part$(PART_NUM)
+error = err/err$(JOB_NUM)part$(PART_NUM)
+transfer_executable = false
+queue 1
+    """)
+    f.close()
+
 
 print "Making workspace directories..."
+subprocess.call(['mkdir', '-p', 'scripts'])
 subprocess.call(['mkdir', '-p', 'bank'])
 subprocess.call(['mkdir', '-p', 'match'])
 subprocess.call(['mkdir', '-p', 'injection'])
 subprocess.call(['mkdir', '-p', 'match-part'])  
 subprocess.call(['mkdir', '-p', 'out'])  
 subprocess.call(['mkdir', '-p', 'err'])  
+
+print "Copying scripts"
+subprocess.call(['cp', banksim_prog, 'scripts/pycbc_banksim'])
+subprocess.call(['chmod', '755', 'scripts/pycbc_banksim']) 
 
 print "Creating Injection File"
 inj_str = "lalapps_inspinj " + get_ini_opts(confs, "inspinj") + "--output inj.xml"
@@ -96,8 +127,117 @@ for inj_num in range(num_injs):
         f.write('VARS JOB' + num + "-" + part_num + ' JOB_NUM="' + num + '"\n') 
         f.write('VARS JOB' + num+ "-" + part_num + ' PART_NUM="' + part_num + '"\n') 
         f.write('PARENT JOB' + num + "-" + part_num + " CHILD COM" + num + '\n')
+        if gpu:
+            f.write('Script POST JOB' +  num +'-' + part_num +' scripts/diff_match.sh match-part/match' + num +'part' + part_num + '.dat.0  match-part/match' + num + 'part' + part_num + '.dat.1 .0001  match-part/match' + num + 'part' + part_num + '.dat ' + str(injections_per_job) + '\n')
+            f.write('Retry JOB' + num + '-' +  part_num + ' 5 \n')
         f.write('PRIORITY JOB' + num + "-" + part_num + ' ' + num + '\n')
         
 f.close()
+
+f = open("scripts/pycbc_banksim_match_combine", "w")
+f.write("""#!/usr/bin/env python
+from os.path import isfile
+from optparse import OptionParser
+from numpy import *
+parser = OptionParser()
+
+parser.add_option('--inj-num',help="index of the injection set for the match files",type=int)
+parser.add_option('-o','--out-file',help="output file with the maximized values")
+options, argv_frame_files = parser.parse_args()
+
+index = 0
+matches=[]
+while isfile("match"+str(options.inj_num)+"part"+str(index)+".dat"):
+    matches.append(loadtxt("match"+str(options.inj_num)+"part"+str(index)+".dat"))
+    index = index +1
+    
+maxmatch=atleast_1d(array(matches).max(0))
+
+found_index=atleast_1d(array(matches).argmax(axis=0))
+found=[]
+
+
+fout = open(options.out_file+".found", "w")
+for index in range(0,len(found_index)):
+    num=found_index[index]
+    fp = open("match"+str(options.inj_num)+"part"+str(num)+".dat.found")
+    for i, line in enumerate(fp):
+        if i == index:
+          found.append(line)
+          fout.write(line)  
+    index+=1
+""")
+subprocess.call(['chmod', '755', 'scripts/pycbc_banksim_match_combine']) 
+
+if gpu:
+    f = open("cconfig", "w")
+    f.write("""
+    DAGMAN_PROHIBIT_MULTI_JOBS = False
+    """)
+
+    f = open("scripts/diff_match.sh", "w")
+    f.write("""#!/bin/bash
+
+    len=`cat $1 | wc -l`
+    len2=`cat $2 | wc -l`
+
+
+    if [ "$len" == "$5" ] & [ "$len2" == "$5" ]  ; then
+       echo "correct length"
+    else
+       echo "wrong length file"
+        exit 1
+    fi  
+
+    function fuzzy_diff {
+       echo  " ($3>($1-$2)) && ($3>($2-$1)) " | bc  
+    }
+
+    exec 3<$1
+    exec 4<$2
+
+    while IFS= read -r line1 <&3
+    IFS= read -r line2 <&4
+    do
+        line1=`echo "$line1" | cut --delimiter=' ' -f 1`
+        line2=`echo "$line2" | cut --delimiter=' ' -f 1` 
+
+        if ! [[ "$line1" =~ ^[0-9]+([.][0-9]+)?$ ]] ; then
+           exec >&2; echo "error: Not a number"; exit 1
+        fi
+        
+        if ! [[ "$line2" =~ ^[0-9]+([.][0-9]+)?$ ]] ; then
+           exec >&2; echo "error: Not a number"; exit 1
+        fi
+
+        ok=`fuzzy_diff $line1 $line2 $3`
+
+        if  [ $ok -eq 0 ] ; then
+           echo "Files do not match"
+           exit 1
+        fi 
+       
+    done
+
+
+    cp $1 $4
+    cp $1.found $4.found
+    echo "The files are close enough"
+
+    exit 0
+    """)
+    subprocess.call(['chmod', '755', 'scripts/diff_match.sh']) 
+    
+print "Creating submit script"
+f = open("submit.sh","w")
+if gpu:
+    f.write("""#!/bin/bash
+    condor_submit_dag -config cconfig banksim.dag
+    """)
+else:
+    f.write("""#!/bin/bash
+    condor_submit_dag banksim.dag
+    """)
+
 print "Done"
 
