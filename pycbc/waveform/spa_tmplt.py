@@ -56,7 +56,7 @@ def spa_length_in_time(**kwds):
     m1 = kwds['mass1']
     m2 = kwds['mass2']
     flow = kwds['f_lower']
-    porder = kwds['phase_order']
+    porder = int(kwds['phase_order'])
     # For now, we call the swig-wrapped function below in
     # lalinspiral.  Eventually would be nice to replace this
     # with a function using PN coeffs from lalsimulation.
