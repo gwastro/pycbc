@@ -71,8 +71,9 @@ length = len(template_bank_table)
 num_files = int(ceil(length / float(options.num)))
 
 def mchirp_sort(x,y):
-    mc1,e1 = pycbc.mass1_mass2_to_mchirp_eta(x.mass1,x.mass2)
-    mc2,e2 = pycbc.mass1_mass2_to_mchirp_eta(y.mass1,y.mass2)
+    import pycbc.pnutils
+    mc1,e1 = pycbc.pnutils.mass1_mass2_to_mchirp_eta(x.mass1,x.mass2)
+    mc2,e2 = pycbc.pnutils.mass1_mass2_to_mchirp_eta(y.mass1,y.mass2)
     return cmp(mc1,mc2)
 
 tt = template_bank_table

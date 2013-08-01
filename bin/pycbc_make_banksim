@@ -4,6 +4,7 @@ import os
 from optparse import OptionParser
 import ConfigParser
 import subprocess
+import glob
 
 def get_ini_opts(confs, section):
     op_str = ""
@@ -109,9 +110,12 @@ inj_str = "lalapps_inspinj " + get_ini_opts(confs, "inspinj") + "--output inj.xm
 os.system(inj_str)
 
 print "Splitting template bank..."
-num_banks = subprocess.call(['pycbc_split_table', '-n', str(templates_per_job), '-t', bank_file, '-e', 'bank/bank'])
+subprocess.call(['pycbc_split_table', '-n', str(templates_per_job), '-t', bank_file, '-e', 'bank/bank', '--sort-mchirp'])
 print "Splitting injection file..."
-num_injs = subprocess.call(['pycbc_split_table', '-n', str(injections_per_job), '-t', "inj.xml",  '-e', 'injection/injection'])
+subprocess.call(['pycbc_split_table', '-n', str(injections_per_job), '-t', "inj.xml",  '-e', 'injection/injection', '--sort-mchirp'])
+
+num_banks = len(glob.glob("bank/bank*"))
+num_injs = len(glob.glob("injection/injection*"))
 
 print "Creating Dag..."
 f = open("banksim.dag", "w")
@@ -188,8 +192,7 @@ if gpu:
     len=`cat $1 | wc -l`
     len2=`cat $2 | wc -l`
 
-
-    if [ "$len" == "$len2" ] & [ "$len" > 0 ]; then
+    if [ $len -eq $len2 ] && [ $len -ne 0 ] ; then
        echo "correct length"
     else
        echo "wrong length file"
