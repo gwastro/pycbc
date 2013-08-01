@@ -1,10 +1,10 @@
 #! /usr/bin/env python
-
 import os
-from optparse import OptionParser
+import shutil
 import ConfigParser
 import subprocess
 import glob
+from optparse import OptionParser
 
 def get_ini_opts(confs, section):
     op_str = ""
@@ -12,19 +12,25 @@ def get_ini_opts(confs, section):
         val = confs.get(section, opt)
         op_str += "--" + opt + " " + val + " \\" + "\n"
     return op_str
-
+    
+def mkdir(dir_name):
+    try :
+        os.mkdir(dir_name)
+    except OSError
+        pass
 
 parser = OptionParser()
 parser.add_option('--config', type=str)          
-(options, args) = parser.parse_args()   
+(options, args) = parser.parse_args() 
+
+if !options.config:
+    raise ValueError("Config file is required")  
 
 confs = ConfigParser.ConfigParser()
 confs.read(options.config)
 
 banksim_prog = confs.get("executables", "banksim")
-
 bank_file = confs.get("workflow", "bank-file")
-
 injections_per_job = confs.get("workflow", "injections-per-job")
 templates_per_job = confs.get("workflow", "templates-per-job")
 
@@ -91,19 +97,18 @@ queue 1
     """)
     f.close()
 
-
 print "Making workspace directories..."
-subprocess.call(['mkdir', '-p', 'scripts'])
-subprocess.call(['mkdir', '-p', 'bank'])
-subprocess.call(['mkdir', '-p', 'match'])
-subprocess.call(['mkdir', '-p', 'injection'])
-subprocess.call(['mkdir', '-p', 'match-part'])  
-subprocess.call(['mkdir', '-p', 'out'])  
-subprocess.call(['mkdir', '-p', 'err'])  
+mkdir('scripts')
+mkdir('bank')
+mkdir('match')
+mkdir('injection')
+mkdir('match-part')
+mkdir('out')
+mkdir('err')
 
 print "Copying scripts"
-subprocess.call(['cp', banksim_prog, 'scripts/pycbc_banksim'])
-subprocess.call(['chmod', '755', 'scripts/pycbc_banksim']) 
+shutil.copy(banksim_prog, 'scripts/pycbc_banksim')
+os.fchmod('scripts/pycbc_banksim', 755)
 
 print "Creating Injection File"
 inj_str = "lalapps_inspinj " + get_ini_opts(confs, "inspinj") + "--output inj.xml"
@@ -178,7 +183,7 @@ savetxt(options.out_file,maxmatch,fmt='%5.5f')
 print "Max over "+str(index)+" files"
 
 """)
-subprocess.call(['chmod', '755', 'scripts/pycbc_banksim_match_combine']) 
+os.fchmod('scripts/pycbc_banksim_match_combine', 755)
 
 if gpu:
     f = open("cconfig", "w")
@@ -236,7 +241,7 @@ if gpu:
 
     exit 0
     """)
-    subprocess.call(['chmod', '755', 'scripts/diff_match.sh']) 
+    os.fchmod('scripts/diff_match.sh', 755)
     
 print "Creating submit script"
 f = open("submit.sh","w")

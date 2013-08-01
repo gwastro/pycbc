@@ -1,39 +1,22 @@
 #!/usr/bin/env python
-# $Id: tmplt_bank.py,v 1.6 2006/07/03 23:26:06 duncan Exp $
-
 import time
 import os
 import sys
- 
 from optparse import OptionParser
-
-from glue import lal
-from glue import segments
-from glue import segmentsUtils
 from glue import gpstime
-
-import glue.pipeline
-import glue.utils
-
 from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
-from glue.segmentdb import segmentdb_utils
 from glue import pidfile as pidfile
 from glue import git_version
-from scipy.interpolate import interp1d
 from numpy import loadtxt
 from numpy import random, ceil
  
 __author__  = "Alex Nitz"
 
 PROGRAM_NAME = os.path.abspath(sys.argv[0])
-
-params =  {'text.usetex': True }
- 
-### option parsing ###
 
 parser = OptionParser(
     version = git_version.verbose_msg,
@@ -52,10 +35,6 @@ options, argv_frame_files = parser.parse_args()
 if options.sort_mchirp and options.random_sort:
   print "You can't sort by Mchirp *and* randomly, dumbass!"
 
-#print options.named
-
-
-#print options.named
 indoc = ligolw_utils.load_filename(options.tmplt_bank, options.verbose)
 
 try:
@@ -77,6 +56,7 @@ def mchirp_sort(x,y):
     return cmp(mc1,mc2)
 
 tt = template_bank_table
+
 if options.sort_mchirp:
     print " SORTING"
     tt = sorted(template_bank_table,cmp=mchirp_sort)
@@ -110,6 +90,3 @@ for num in range(num_files):
 
     outname = options.prefix + str(num) + '.xml'
     ligolw_utils.write_filename(outdoc, outname)
-
-print num_files    
-sys.exit(int(num_files))
