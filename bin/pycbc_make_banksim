@@ -166,6 +166,13 @@ for index in range(0,len(found_index)):
           found.append(line)
           fout.write(line)  
     index+=1
+
+print found
+print maxmatch
+savetxt(options.out_file,maxmatch,fmt='%5.5f')
+
+print "Max over "+str(index)+" files"
+
 """)
 subprocess.call(['chmod', '755', 'scripts/pycbc_banksim_match_combine']) 
 
@@ -182,7 +189,7 @@ if gpu:
     len2=`cat $2 | wc -l`
 
 
-    if [ "$len" == "$len2" ]; then
+    if [ "$len" == "$len2" ] & [ "$len" > 0 ]; then
        echo "correct length"
     else
        echo "wrong length file"
