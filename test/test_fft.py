@@ -376,6 +376,27 @@ def _test_raise_excep_ifft(test_case,inarr,outarr,other_args={}):
         args = [in_badtype,outarr,tc.backend]
         tc.assertRaises(TypeError,pycbc.fft.ifft,*args)
 
+# The following isn't a helper function, called by several test functions, but it only applies
+# to the 'lalfft' backend, so we only add it to that TestCase class, rather than putting it in
+# the main class definition
+def _test_lalfft(test_case):
+    import pycbc.fft.lalfft as lfft
+    tc = test_case
+    tc.assertEquals(lfft._default_measurelvl,1,
+                    msg="Default lalfft measure level not initialized to 1")
+    tc.assertRaises(ValueError,lfft.set_measure_level,5)
+    tc.assertEquals(lfft.get_measure_level(),1,
+                    msg="lalfft.get_measure_level() did not return _default_measurelvl")
+    plan1 = lfft._get_fwd_plan('single','complex','complex',4)
+    lfft.set_measure_level(2)
+    plan2 = lfft._get_fwd_plan('single','complex','complex',4)
+    tc.assertTrue(plan1 is not plan2,msg="Increasing measure level did not result in new plan")
+    lfft.set_measure_level(0)
+    plan0 = lfft._get_fwd_plan('single','complex','complex',4)
+    tc.assertTrue(plan2 is plan0,msg="Decreasing measure level *did* result in new plan")
+    # Restore default
+    lfft.set_measure_level(1)
+
 class _BaseTestFFTClass(unittest.TestCase):
     """
     This is the base class from which unit tests for all FFT backends
@@ -745,11 +766,12 @@ for backend in backends:
     # the additional property 'self.backend' set to the value
     # of backend.  One such class for each backend is appended
     # to the list
+    kdict = {'backend' : backend}
+    if _scheme == 'cpu' and backend == 'lal':
+        kdict.update({"test_lalfft" : _test_lalfft})
     klass = type('{0}_{1}_test'.format(_scheme,backend),
-                 (_BaseTestFFTClass,),
-                 {'backend': backend})
+                 (_BaseTestFFTClass,),kdict)
     FFTTestClasses.append(klass)
-
 
 # Finally, we create suites and run them
 
