@@ -16,14 +16,46 @@ def get_ini_opts(confs, section):
 def mkdir(dir_name):
     try :
         os.mkdir(dir_name)
-    except OSError
+    except OSError:
         pass
+        
+def mc_min_max_from_sorted_file(fname):
+    from glue.ligolw.utils import load_filename
+    from glue.ligolw.table import get_table
+    from pycbc.pnutils import mass1_mass2_to_mchirp_eta
+    try:
+        t = get_table(load_filename(fname, False), "sngl_inspiral")
+    except:
+        t = get_table(load_filename(fname, False), "sim_inspiral")
+    mc_max, et = mass1_mass2_to_mchirp_eta(t[0].mass1, t[0].mass2)
+    mc_min, et = mass1_mass2_to_mchirp_eta(t[-1].mass1, t[-1].mass2)
+    return mc_min, mc_max
+    
+        
+bf_mchirps = {}
+sf_mchirps = {}
+def check_outside_mchirp(bf, sf, w):
+    if bf not in bf_mchirps:
+        bf_mchirps[bf] = mc_min_max_from_sorted_file(bf)    
+    if sf not in sf_mchirps:
+        sf_mchirps[sf] = mc_min_max_from_sorted_file(sf) 
+         
+    mc_min, mc_max = bf_mchirps[bf]
+    mc2_min, mc2_max =  sf_mchirps[sf]
+    
+    print mc_min, mc_max, mc2_min, mc2_max, (( mc_min  <= mc2_max * (1+w) ) and (mc_max * (1+w) >= mc2_min))
+    if (mc_min  <= mc2_max * (1+w) ) and (mc_max * (1+w) >= mc2_min):
+        return False
+    else:
+        return True
+ 
+
 
 parser = OptionParser()
 parser.add_option('--config', type=str)          
 (options, args) = parser.parse_args() 
 
-if !options.config:
+if options.config is None:
     raise ValueError("Config file is required")  
 
 confs = ConfigParser.ConfigParser()
@@ -33,6 +65,10 @@ banksim_prog = confs.get("executables", "banksim")
 bank_file = confs.get("workflow", "bank-file")
 injections_per_job = confs.get("workflow", "injections-per-job")
 templates_per_job = confs.get("workflow", "templates-per-job")
+
+mchirp_window = None
+if confs.has_option("banksim", "mchirp-window"):
+    mchirp_window = float(confs.get("banksim", "mchirp-window"))
 
 gpu = False
 try:
@@ -108,7 +144,7 @@ mkdir('err')
 
 print "Copying scripts"
 shutil.copy(banksim_prog, 'scripts/pycbc_banksim')
-os.fchmod('scripts/pycbc_banksim', 755)
+os.chmod('scripts/pycbc_banksim', 755)
 
 print "Creating Injection File"
 inj_str = "lalapps_inspinj " + get_ini_opts(confs, "inspinj") + "--output inj.xml"
@@ -125,12 +161,22 @@ num_injs = len(glob.glob("injection/injection*"))
 print "Creating Dag..."
 f = open("banksim.dag", "w")
 
+do_count = 0
+skip_count = 0
 for inj_num in range(num_injs):
     num = str(inj_num)
     f.write("Job COM" + num + " match_combine.submit\n")
     f.write("VARS COM" + num + ' JOB_NUM="' + num + '"\n')
     f.write("PRIORITY COM" + num + ' 10000\n')
     for bank_num in range(num_banks):
+        if mchirp_window is not None:
+            bank_part = "bank/bank" + str(bank_num) + ".xml"
+            sim_part =  "injection/injection" + str(inj_num) + ".xml"
+            if check_outside_mchirp(bank_part, sim_part, mchirp_window):
+                skip_count += 1
+                continue
+            else:
+                do_count += 1
         part_num = str(bank_num)
         f.write('Job JOB' + num + '-' + part_num + ' banksim.submit\n')
         f.write('VARS JOB' + num + "-" + part_num + ' JOB_NUM="' + num + '"\n') 
@@ -141,6 +187,7 @@ for inj_num in range(num_injs):
             f.write('Retry JOB' + num + '-' +  part_num + ' 5 \n')
         f.write('PRIORITY JOB' + num + "-" + part_num + ' ' + num + '\n')
         
+print "DO : ", do_count, "SKIP: ", skip_count
 f.close()
 
 f = open("scripts/pycbc_banksim_match_combine", "w")
@@ -148,6 +195,7 @@ f.write("""#!/usr/bin/env python
 from os.path import isfile
 from optparse import OptionParser
 from numpy import *
+import glob
 parser = OptionParser()
 
 parser.add_option('--inj-num',help="index of the injection set for the match files",type=int)
@@ -155,9 +203,14 @@ parser.add_option('-o','--out-file',help="output file with the maximized values"
 options, argv_frame_files = parser.parse_args()
 
 index = 0
+
+fils = glob.glob("match*dat")
+
+matchname=[]
 matches=[]
-while isfile("match"+str(options.inj_num)+"part"+str(index)+".dat"):
-    matches.append(loadtxt("match"+str(options.inj_num)+"part"+str(index)+".dat"))
+for fil in fils:
+    matches.append(loadtxt(fil))
+    matchname.append(fil)
     index = index +1
     
 maxmatch=atleast_1d(array(matches).max(0))
@@ -165,11 +218,11 @@ maxmatch=atleast_1d(array(matches).max(0))
 found_index=atleast_1d(array(matches).argmax(axis=0))
 found=[]
 
-
 fout = open(options.out_file+".found", "w")
 for index in range(0,len(found_index)):
     num=found_index[index]
-    fp = open("match"+str(options.inj_num)+"part"+str(num)+".dat.found")
+    fil = matchname[num] + ".found"
+    fp = open(fil)
     for i, line in enumerate(fp):
         if i == index:
           found.append(line)
@@ -183,7 +236,7 @@ savetxt(options.out_file,maxmatch,fmt='%5.5f')
 print "Max over "+str(index)+" files"
 
 """)
-os.fchmod('scripts/pycbc_banksim_match_combine', 755)
+os.chmod('scripts/pycbc_banksim_match_combine', 755)
 
 if gpu:
     f = open("cconfig", "w")
@@ -241,7 +294,7 @@ if gpu:
 
     exit 0
     """)
-    os.fchmod('scripts/diff_match.sh', 755)
+    os.chmod('scripts/diff_match.sh', 755)
     
 print "Creating submit script"
 f = open("submit.sh","w")
