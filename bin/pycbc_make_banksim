@@ -40,8 +40,8 @@ f = open("match_combine.submit", "w")
 f.write("""
 universe = local
 getenv = True
-executable = scripts/pycbc_banksim_match_combine
-arguments = --inj-num=$(JOB_NUM) -o ../match/match$(JOB_NUM).dat \
+executable = ../scripts/pycbc_banksim_match_combine
+arguments = --inj-num=$(JOB_NUM) -o ../match/match$(JOB_NUM).dat 
 output = ../out/com-out$(JOB_NUM)
 error = ../err/com-err$(JOB_NUM)
 initialdir=match-part
@@ -182,7 +182,7 @@ if gpu:
     len2=`cat $2 | wc -l`
 
 
-    if [ "$len" == "$5" ] & [ "$len2" == "$5" ]  ; then
+    if [ "$len" == "$len2" ]; then
        echo "correct length"
     else
        echo "wrong length file"

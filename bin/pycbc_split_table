@@ -25,7 +25,7 @@ from glue import pidfile as pidfile
 from glue import git_version
 from scipy.interpolate import interp1d
 from numpy import loadtxt
-from numpy import random
+from numpy import random, ceil
  
 __author__  = "Alex Nitz"
 
@@ -68,7 +68,7 @@ except:
 
 #print tabletype
 length = len(template_bank_table)
-num_files = int(round(length/options.num+.5))
+num_files = int(ceil(length / float(options.num)))
 
 def mchirp_sort(x,y):
     mc1,e1 = pycbc.mass1_mass2_to_mchirp_eta(x.mass1,x.mass2)
@@ -84,7 +84,6 @@ if options.random_sort:
     random.shuffle(template_bank_table)
 
 for num in range(num_files):
-
     # create a blank xml document and add the process id
     outdoc = ligolw.Document()
     outdoc.appendChild(ligolw.LIGO_LW())
