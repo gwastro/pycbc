@@ -448,13 +448,6 @@ for laltype in possible_laltypes:
                  {'laltype': laltype})
     LALWrapTestClasses.append(klass)
 
-    suite = unittest.TestSuite()
-    for klass in LALWrapTestClasses:
-        suite.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
-
-    results = unittest.TextTestRunner(verbosity=2).run(suite)
-
-
 # Finally, we create suites and run them:
 
 if __name__ == '__main__':
