@@ -144,7 +144,7 @@ mkdir('err')
 
 print "Copying scripts"
 shutil.copy(banksim_prog, 'scripts/pycbc_banksim')
-os.chmod('scripts/pycbc_banksim', 755)
+os.chmod('scripts/pycbc_banksim', 0777)
 
 print "Creating Injection File"
 inj_str = "lalapps_inspinj " + get_ini_opts(confs, "inspinj") + "--output inj.xml"
@@ -204,7 +204,7 @@ options, argv_frame_files = parser.parse_args()
 
 index = 0
 
-fils = glob.glob("match*dat")
+fils = glob.glob("match"+str(options.inj_num)+"part*.dat")
 
 matchname=[]
 matches=[]
@@ -236,7 +236,7 @@ savetxt(options.out_file,maxmatch,fmt='%5.5f')
 print "Max over "+str(index)+" files"
 
 """)
-os.chmod('scripts/pycbc_banksim_match_combine', 755)
+os.chmod('scripts/pycbc_banksim_match_combine', 0777)
 
 if gpu:
     f = open("cconfig", "w")
@@ -294,7 +294,7 @@ if gpu:
 
     exit 0
     """)
-    os.chmod('scripts/diff_match.sh', 755)
+    os.chmod('scripts/diff_match.sh', 0777)
     
 print "Creating submit script"
 f = open("submit.sh","w")
@@ -306,6 +306,7 @@ else:
     f.write("""#!/bin/bash
     condor_submit_dag banksim.dag
     """)
+os.chmod('submit.sh', 0777)
 
 print "Done"
 
