@@ -248,7 +248,7 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
     if corr_out:
         pass
     elif (_qtilde is None) or (len(_qtilde) != N) or _qtilde.dtype != data.dtype:
-        _qtilde = zeros(N, dtype=complex_same_precision_as(data))
+        _qtilde_t = _qtilde = zeros(N, dtype=complex_same_precision_as(data))
     else:
         _qtilde.clear()         
     
