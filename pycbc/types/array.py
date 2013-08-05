@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Alex Nitz, Josh Willis, Andrew Miller
+# Copyright (C) 2012  Alex Nitz, Josh Willis, Andrew Miller, Tito Dal Canton
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -28,6 +28,8 @@ PyOpenCL, and Numpy.
 """
 
 BACKEND_PREFIX="pycbc.types.array_"
+
+import os as _os
 
 import functools as _functools
 from decorator import decorator
@@ -854,6 +856,35 @@ class Array(object):
     @property
     def dtype(self):
         return self._data.dtype
+
+    def save(self, path):
+        """
+        Save array to a Numpy .npy or text file. When saving a complex array as
+        text, the real and imaginary parts are saved as the first and second
+        column respectively.
+
+        Parameters
+        ----------
+        path : string
+            Destination file path. Must end with either .npy or .txt.
+
+        Raises
+        ------
+        ValueError
+            If path does not end in .npy or .txt.
+        """
+
+        ext = _os.path.splitext(path)[1]
+        if ext == '.npy':
+            _numpy.save(path, self.numpy())
+        elif ext == '.txt':
+            fmt = {
+                'real': '%.18e',
+                'complex': '%.18e %.18e'
+            }
+            _numpy.savetxt(path, self.numpy(), fmt=fmt[self.kind])
+        else:
+            raise ValueError('Path must end with .npy or .txt')
 
 # Convenience functions for determining dtypes
 

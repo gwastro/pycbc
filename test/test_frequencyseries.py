@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Alex Nitz, Andrew Miller
+# Copyright (C) 2012  Alex Nitz, Andrew Miller, Tito Dal Canton
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -33,11 +33,11 @@ import numpy
 import lal
 import base_test
 import sys
-
+import os
+import tempfile
 import optparse
-from optparse import OptionParser
 
-_parser = OptionParser()
+_parser = optparse.OptionParser()
 
 def _check_scheme(option, opt_str, scheme, parser):
     if scheme=='cuda' and not pycbc.HAVE_CUDA:
@@ -532,6 +532,34 @@ class TestFrequencySeriesBase(base_test.array_base):
             self.assertAlmostEqual(self.b1.sample_frequencies[-1] - self.b1.sample_frequencies[0], 0.2)
             self.assertEqual(len(self.bad3.sample_frequencies), 3)
             self.assertAlmostEqual(self.bad3.sample_frequencies[-1] - self.bad3.sample_frequencies[0], 0.4)
+
+    def test_save(self):
+        with self.context:
+            # make temporary file paths
+            temp_file = tempfile.NamedTemporaryFile()
+            temp_path_npy = temp_file.name + '.npy'
+            temp_path_txt = temp_file.name + '.txt'
+            # make a test frequency series
+            a_numpy = numpy.arange(100, dtype=self.dtype)
+            a = FrequencySeries(a_numpy, delta_f=0.1)
+            # test saving to Numpy array
+            a.save(temp_path_npy)
+            b = numpy.load(temp_path_npy)
+            self.assertEqual(b.shape, (a_numpy.shape[0], 2))
+            self.assertEqual(numpy.abs(b[:,0] - a.sample_frequencies.numpy()).max(), 0)
+            self.assertEqual(numpy.abs(b[:,1] - a_numpy).max(), 0)
+            os.remove(temp_path_npy)
+            # test saving to text file
+            a.save(temp_path_txt)
+            b = numpy.loadtxt(temp_path_txt)
+            if a.kind == 'complex':
+                self.assertEqual(b.shape, (a_numpy.shape[0], 3))
+                b = numpy.vstack((b[:,0], b[:,1] + 1j * b[:,2])).T
+            elif a.kind == 'real':
+                self.assertEqual(b.shape, (a_numpy.shape[0], 2))
+            self.assertEqual(numpy.abs(b[:,0] - a.sample_frequencies.numpy()).max(), 0)
+            self.assertEqual(numpy.abs(b[:,1] - a_numpy).max(), 0)
+            os.remove(temp_path_txt)
 
 def test_maker(context, dtype, odtype, epoch):
     class TestFrequencySeries(TestFrequencySeriesBase, unittest.TestCase):

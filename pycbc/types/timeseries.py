@@ -18,6 +18,7 @@
 Provides a class representing a time series.
 """
 
+import os as _os
 from pycbc.types.array import Array,_convert
 import lal as _lal
 import numpy as _numpy
@@ -336,3 +337,36 @@ class TimeSeries(Array):
 
         return lal_data
 
+    def save(self, path):
+        """
+        Save time series to a Numpy .npy or text file. The first column
+        contains the sample times, the second contains the values.
+        In the case of a complex time series saved as text, the imaginary
+        part is written as a third column.
+
+        Parameters
+        ----------
+        path : string
+            Destination file path. Must end with either .npy or .txt.
+
+        Raises
+        ------
+        ValueError
+            If path does not end in .npy or .txt.
+        """
+
+        ext = _os.path.splitext(path)[1]
+        if ext == '.npy':
+            output = _numpy.vstack((self.sample_times.numpy(), self.numpy())).T
+            _numpy.save(path, output)
+        elif ext == '.txt':
+            if self.kind is 'real':
+                output = _numpy.vstack((self.sample_times.numpy(),
+                                        self.numpy())).T
+            elif self.kind is 'complex':
+                output = _numpy.vstack((self.sample_times.numpy(),
+                                        self.numpy().real,
+                                        self.numpy().imag)).T
+            _numpy.savetxt(path, output)
+        else:
+            raise ValueError('Path must end with .npy or .txt')
