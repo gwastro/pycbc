@@ -52,29 +52,10 @@ def threshold(series, value):
     """Return list of values and indices values over threshold in series. 
     """ 
     
+@schemed("pycbc.events.threshold_")
 def threshold_and_cluster(series, threshold, window):
     """Return list of values and indices values over threshold in series. 
     """ 
-    b = 0
-    e = window
-    lcs = []
-    mcs = []
-    
-    while b < len(series):
-        if e > len(series):
-            e = len(series)
-        
-        tp = series[b:e]
-        m, l = tp.abs_max_loc()
-       
-        if abs(m) > threshold:
-            i = b + l
-            lcs.append(i)
-            mcs.append(m)
-        
-        b += window
-        e += window
-    return numpy.array(mcs), numpy.array(lcs)
 
 def findchirp_cluster_over_window(times, values, window_length):
     indices = numpy.zeros(len(times), dtype=int)
@@ -93,35 +74,86 @@ def findchirp_cluster_over_window(times, values, window_length):
     return indices[0:j+1]
     
 class EventManager(object):
-    def __init__(self, opt, **kwds):
+    def __init__(self, opt, column, column_types, **kwds):
         self.opt = opt
         self.global_params = kwds
 
-        self.events = None
         self.event_dtype = [ ('template_id', int) ]
+        for column, coltype in zip (column, column_types):
+            self.event_dtype.append( (column, coltype) )
         
+        self.events = numpy.events = numpy.array([], dtype=self.event_dtype)
         self.template_params = []
-        self.template_index = 0   
-                      
-    def add_triggers(self, columns, vectors, **kwds):
+        self.template_index = -1
+        self.template_events = numpy.array([], dtype=self.event_dtype)
+                  
+    def chisq_threshold(self, value, num_bins, delta=0):
+        remove = []
+        for i in range(len(self.events)):
+            event = self.events[i]
+            tind = event['template_id']
+            norm = self.template_params[tind]['snr_norm'] ** 2.0
+            xi = event['chisq'] / (num_bins + delta * event['snr'].conj() * event['snr'] * norm)
+            if xi > value:
+                remove.append(i)
+        self.events = numpy.delete(self.events, remove)          
+   
+    def maximize_over_bank(self, tcolumn, column, window):
+        pass
+#        self.events.sort(order=[tcolumn])
+##        nbins = numpy.ceil(self.events[-1][tcolumn]/float(window))
+#        edges = numpy.arange(0, nbins, 1) * float(window)
+#        indices = numpy.searchsorted(self.events[tcolumn], edges)
+#        indices = numpy.append(indices, len(self.events))
+#        
+#        maxes = []
+#        locs = []
+#        row = []
+#        remove = []
+##        #print nbins, edges, indices, self.events[-1][tcolumn], window
+#        for i in range(len(indices)-1):
+#            l = indices[i]
+#            r = indices[i+1]
+#            if l == r:
+#                continue
+#            maxid = abs(self.events[l:r][column]).argmax()
+#            maxes.append(self.events[l:r][column][maxid])
+#            locs.append(self.events[l:r][tcolumn][maxid])
+##            rows.append(self.events[l:r][maxid])
+#
+#        for i in range(len(maxes)):
+#            if i == 0:
+#                lm = 0;
+               
+        
+        
+    def add_template_events(self, columns, vectors):
         """ Add a vector indexed """
-        if self.events is None:
-            for column, vec in zip(columns, vectors):
-                if vec is not None:
-                    coltype = vec.dtype
-                    self.event_dtype.append( (column, coltype) )
-                
-            self.events = numpy.array([], dtype=self.event_dtype)
-    
-        self.template_params.append(kwds)
-
         new_events = numpy.zeros(len(vectors[0]), dtype=self.event_dtype)
         new_events['template_id'] = self.template_index
         for c, v in zip(columns, vectors):
             if v is not None:
-                new_events[c] = v    
-        self.events = numpy.append(self.events, new_events)  
-        self.template_index += 1                     
+                new_events[c] = v  
+        self.template_events = numpy.append(self.template_events, new_events)                     
+     
+    def cluster_template_events(self, tcolumn, column, window_size):
+        """ Cluster the internal events over the named column
+        """
+        cvec = self.template_events[column]
+        tvec = self.template_events[tcolumn]
+        indices = findchirp_cluster_over_window(tvec, cvec, window_size)
+        self.template_events = numpy.take(self.template_events, indices)       
+        
+    def new_template(self, **kwds):
+        self.template_params.append(kwds)
+        self.template_index += 1
+    
+    def add_template_params(self, **kwds):
+        self.template_params[-1].update(kwds)  
+            
+    def finalize_template_events(self):
+        self.events = numpy.append(self.events, self.template_events)
+        self.template_events = numpy.array([], dtype=self.event_dtype)        
         
     def write_events(self):
         """ Write the found events to a sngl inspiral table 
@@ -145,18 +177,19 @@ class EventManager(object):
         if self.opt.trig_start_time:
             tstart_time = self.opt.trig_start_time
         else:
-            tstart_time = self.opt.gps_start_time + self.opt.segment_start_pad
+            tstart_time = self.opt.gps_start_time + 64
             
         if self.opt.trig_end_time:
             tend_time = self.opt.trig_end_time
         else:
-            tend_time = self.opt.gps_end_time - self.opt.segment_end_pad
+            tend_time = self.opt.gps_end_time - 64
             
         event_num = 0      
         for event in self.events:
             tind = event['template_id']
         
             tmplt = self.template_params[tind]['tmplt']
+            snr_norm = self.template_params[tind]['snr_norm']
             sigmasq = self.template_params[tind]['sigmasq']
             
             row = copy.deepcopy(tmplt)
@@ -181,8 +214,8 @@ class EventManager(object):
                 row.bank_chisq_dof = 0
                 row.bank_chisq = 0
             
-            row.eff_distance = sigmasq ** (0.5) / abs(snr)
-            row.snr = abs(snr)
+            row.eff_distance = sigmasq ** (0.5) / abs(snr * snr_norm) * pycbc.DYN_RANGE_FAC
+            row.snr = abs(snr) * snr_norm
             row.end_time = int(end_time.gpsSeconds)
             row.end_time_ns = int(end_time.gpsNanoSeconds)
             row.process_id = proc_id
