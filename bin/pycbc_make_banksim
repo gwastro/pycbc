@@ -4,7 +4,66 @@ import shutil
 import ConfigParser
 import subprocess
 import glob
+import tempfile
 from optparse import OptionParser
+from glue.pipeline import CondorDAGJob, CondorDAGNode, CondorDAG, CondorJob
+
+class BaseJob(CondorDAGJob, CondorJob):
+    def __init__(self, log_dir, executable, cp, section, gpu=False):
+        CondorDAGJob.__init__(self, "vanilla", executable)
+        
+        if gpu:
+            CondorJob.__init__(self, "vanilla", executable, 2)
+        # These are all python jobs so need to pull in the env
+        self.add_condor_cmd('getenv', 'True')       
+        self.set_stderr_file(os.path.join(log_dir, os.path.basename(executable) + '-$(cluster)-$(process).err'))
+        self.set_stdout_file(os.path.join(log_dir, os.path.basename(executable) + '-$(cluster)-$(process).out'))
+        self.set_sub_file(os.path.basename(executable)+".sub")   
+        
+        if cp is not None: 
+            self.add_ini_opts(cp, section)         
+       
+class BanksimNode(CondorDAGNode):
+    def __init__(self, job, inj_file, tmplt_file, match_file, gpu=True, gpu_postscript=False, inj_per_job=None):
+        CondorDAGNode.__init__(self, job)
+        
+        self.add_file_opt("signal-file", inj_file)
+        self.add_file_opt("template-file", tmplt_file)
+        
+        if gpu:
+            self.add_var_opt("use-cuda", None)
+            
+        if gpu and gpu_postscript:
+                self.set_retry(5)
+                mf = match_file+".$(Process)"
+                mf1 = match_file+".0"
+                mf2 = match_file+".1"
+                self.add_file_opt("match-file", match_file+".$(Process)", file_is_output_file=True)
+                self.job().__queue =2
+                
+                # Needed to satisfy the requirements for both running on atlas and spice
+                job.add_condor_cmd('+WantsGPU', 'true')
+                job.add_condor_cmd('+WantGPU', 'true')
+                job.add_condor_cmd('Requirements', '( GPU_PRESENT =?= true) || (HasGPU =?= "gtx580")')
+                                
+                self.set_post_script(gpu_postscript)
+                self.add_post_script_arg(mf1)
+                self.add_post_script_arg(mf2)
+                self.add_post_script_arg(".0001")
+                self.add_post_script_arg(match_file)
+                self.add_post_script_arg(str(inj_per_job))
+        else:
+            self.add_file_opt("match-file", match_file, file_is_output_file=True)
+        
+class CombineNode(CondorDAGNode):
+    def __init__(self, job, inj_num):
+        CondorDAGNode.__init__(self, job)
+        
+        self.add_var_opt("inj-num", inj_num)
+        
+        outf = "match/match" + str(inj_num) + ".dat"
+        
+        self.add_file_opt("output-file", outf)    
 
 def get_ini_opts(confs, section):
     op_str = ""
@@ -66,81 +125,31 @@ bank_file = confs.get("workflow", "bank-file")
 injections_per_job = confs.get("workflow", "injections-per-job")
 templates_per_job = confs.get("workflow", "templates-per-job")
 
+log_path = confs.get("workflow", 'log-path')
+
+tempfile.tempdir = log_path
+tempfile.template='banksim.dag.log.'
+logfile = tempfile.mktemp()
+
 mchirp_window = None
 if confs.has_option("banksim", "mchirp-window"):
     mchirp_window = float(confs.get("banksim", "mchirp-window"))
 
 gpu = False
 try:
-    gpu = confs.get("workflow", "use-spice-gpus")
+    gpu = confs.get("workflow", "use-gpus")
     if gpu is not None:
         gpu = True
 except:
     pass
      
-print "Creating submit files"   
-f = open("match_combine.submit", "w")
-f.write("""
-universe = local
-getenv = True
-executable = ../scripts/pycbc_banksim_match_combine
-arguments = --inj-num=$(JOB_NUM) -o ../match/match$(JOB_NUM).dat 
-output = ../out/com-out$(JOB_NUM)
-error = ../err/com-err$(JOB_NUM)
-initialdir=match-part
-transfer_executable = false
-queue 1
-""")
-f.close()
-
-bs_options = get_ini_opts(confs, "banksim")
-
-if gpu:
-    f = open("banksim.submit", "w")
-    f.write("""
-universe = Vanilla
-getenv = True
-executable = scripts/pycbc_banksim
-arguments = \\
---signal-file injection/injection$(JOB_NUM).xml \\
---template-file bank/bank$(PART_NUM).xml \\
-""" + bs_options + """ \\
---use-cuda \\
---match-file match-part/match$(JOB_NUM)part$(PART_NUM).dat.$(Process)
-output = out/out$(JOB_NUM)part$(PART_NUM)
-error = err/err$(JOB_NUM)part$(PART_NUM)
-transfer_executable = false
-requirements = (HasGPU =?= "gtx580")
-+WantsGPU = True
-queue 2
-""")
-    f.close()
-else:
-    f = open("banksim.submit", "w")
-    f.write("""
-universe = Vanilla
-getenv = True
-executable = scripts/pycbc_banksim
-arguments = \\
---signal-file injection/injection$(JOB_NUM).xml \\
---template-file bank/bank$(PART_NUM).xml \\
-""" + bs_options + """ \\
---match-file match-part/match$(JOB_NUM)part$(PART_NUM).dat
-output = out/out$(JOB_NUM)part$(PART_NUM)
-error = err/err$(JOB_NUM)part$(PART_NUM)
-transfer_executable = false
-queue 1
-    """)
-    f.close()
-
 print "Making workspace directories..."
 mkdir('scripts')
 mkdir('bank')
 mkdir('match')
 mkdir('injection')
 mkdir('match-part')
-mkdir('out')
-mkdir('err')
+mkdir('log')
 
 print "Copying scripts"
 shutil.copy(banksim_prog, 'scripts/pycbc_banksim')
@@ -163,11 +172,17 @@ f = open("banksim.dag", "w")
 
 do_count = 0
 skip_count = 0
+
+dag = CondorDAG(logfile)
+dag.set_dag_file("banksim")
+dag.set_dax_file("banksim")
+
+bsjob = BaseJob("log", "scripts/pycbc_banksim", confs, "banksim", gpu=gpu)
+cjob = BaseJob("log", "scripts/pycbc_banksim_match_combine", None, None)
+
 for inj_num in range(num_injs):
     num = str(inj_num)
-    f.write("Job COM" + num + " match_combine.submit\n")
-    f.write("VARS COM" + num + ' JOB_NUM="' + num + '"\n')
-    f.write("PRIORITY COM" + num + ' 10000\n')
+    cnode = CombineNode(cjob, inj_num)
     for bank_num in range(num_banks):
         if mchirp_window is not None:
             bank_part = "bank/bank" + str(bank_num) + ".xml"
@@ -178,15 +193,15 @@ for inj_num in range(num_injs):
             else:
                 do_count += 1
         part_num = str(bank_num)
-        f.write('Job JOB' + num + '-' + part_num + ' banksim.submit\n')
-        f.write('VARS JOB' + num + "-" + part_num + ' JOB_NUM="' + num + '"\n') 
-        f.write('VARS JOB' + num+ "-" + part_num + ' PART_NUM="' + part_num + '"\n') 
-        f.write('PARENT JOB' + num + "-" + part_num + " CHILD COM" + num + '\n')
-        if gpu:
-            f.write('Script POST JOB' +  num +'-' + part_num +' scripts/diff_match.sh match-part/match' + num +'part' + part_num + '.dat.0  match-part/match' + num + 'part' + part_num + '.dat.1 .0001  match-part/match' + num + 'part' + part_num + '.dat ' + str(injections_per_job) + '\n')
-            f.write('Retry JOB' + num + '-' +  part_num + ' 5 \n')
-        f.write('PRIORITY JOB' + num + "-" + part_num + ' ' + num + '\n')
+        mfn = 'match-part/match' + num +'part' + part_num + '.dat'
+        sn = 'injection/injection' + num + '.xml'
+        bn = 'bank/bank' + part_num + '.xml'
+        bsnode = BanksimNode(bsjob, sn, bn, mfn, gpu=gpu, gpu_postscript="scripts/diff_match.sh", inj_per_job=injections_per_job)
+        cnode.add_parent(bsnode)
+        dag.add_node(bsnode)
+    dag.add_node(cnode)
         
+
 print "DO : ", do_count, "SKIP: ", skip_count
 f.close()
 
@@ -199,44 +214,55 @@ import glob
 parser = OptionParser()
 
 parser.add_option('--inj-num',help="index of the injection set for the match files",type=int)
-parser.add_option('-o','--out-file',help="output file with the maximized values")
+parser.add_option('-o','--output-file',help="output file with the maximized values")
 options, argv_frame_files = parser.parse_args()
 
-index = 0
+fils = glob.glob("match-part/match"+str(options.inj_num)+"part*.dat")
 
-fils = glob.glob("match"+str(options.inj_num)+"part*.dat")
+dtypef={'names': ('match', 'bank', 'bank_i', 'sim', 'sim_i', 'sigmasq'), 'formats': ('f8', 'S256', 'i4', 'S256', 'i4', 'f8')}
 
-matchname=[]
 matches=[]
+maxmatch = []
 for fil in fils:
-    matches.append(loadtxt(fil))
-    matchname.append(fil)
-    index = index +1
+    matches.append(loadtxt(fil, dtype=dtypef))
+   
+indices = array(matches, dtype=dtypef)['match'].argmax(0)
+for i, j in enumerate(indices):
+    maxmatch.append(matches[j][i])
     
-maxmatch=atleast_1d(array(matches).max(0))
-
-found_index=atleast_1d(array(matches).argmax(axis=0))
-found=[]
-
-fout = open(options.out_file+".found", "w")
-for index in range(0,len(found_index)):
-    num=found_index[index]
-    fil = matchname[num] + ".found"
-    fp = open(fil)
-    for i, line in enumerate(fp):
-        if i == index:
-          found.append(line)
-          fout.write(line)  
-    index+=1
-
-print found
-print maxmatch
-savetxt(options.out_file,maxmatch,fmt='%5.5f')
-
-print "Max over "+str(index)+" files"
-
+maxmatch=array(maxmatch, dtype =dtypef)
+savetxt(options.output_file, maxmatch,fmt=('%5.5f', '%s', '%i', '%s', '%i', '%5.5f'), delimiter=' ')
 """)
 os.chmod('scripts/pycbc_banksim_match_combine', 0777)
+
+f = open("scripts/pycbc_banksim_collect_results", "w")
+f.write("""#!/usr/bin/env python
+from os.path import isfile
+from optparse import OptionParser
+from numpy import *
+import glob
+parser = OptionParser()
+
+parser.add_option('-o','--output-file',help="output file with the maximized values")
+options, argv_frame_files = parser.parse_args()
+
+fils = glob.glob("match/match*.dat")
+
+dtypem={'names': ('match', 'bank', 'bank_i', 'sim', 'sigmasq'), 'formats': ('f8', 'S256', 'i4', 'S256', 'i4', 'f8')}
+
+matches=[]
+maxmatch = []
+for fil in fils:
+    matches.append(loadtxt(fil, dtype=dtypef))
+   
+indices = array(matches, dtype=dtypef)['match'].argmax(0)
+for i, j in enumerate(indices):
+    maxmatch.append(matches[j][i])
+    
+maxmatch=array(maxmatch, dtype =dtypef)
+savetxt(options.output_file, maxmatch,fmt=('%5.5f', '%s', '%i', '%s', '%5.5f'), delimiter=' ')
+""")
+os.chmod('scripts/pycbc_banksim_collect_results', 0777)
 
 if gpu:
     f = open("cconfig", "w")
@@ -309,4 +335,7 @@ else:
 os.chmod('submit.sh', 0777)
 
 print "Done"
+dag.write_sub_files()
+dag.write_script()
+dag.write_dag()
 

@@ -211,7 +211,6 @@ except ValueError:
 
 # open the output file where the max overlaps over the bank are stored 
 fout = open(options.out_file, "w")
-fout2 = open(options.out_file+".found", "w")
 
 # Load in the simulation list
 indoc = ligolw_utils.load_filename(options.sim_file, False)
@@ -320,9 +319,15 @@ if options.verbose:
   print("Determining maximum overlaps and outputting results")
 
 #Find the maximum overlap in the bank and output to a file
+index = 0
 for stilde, s_norm, matches, sim_template in signals:
-    match_str= "%5.5f \n" % (max(matches))
-    match_str2="  "+options.bank_file+" "+str(matches.index(max(matches)))+"\n"
+    match_str = "%5.5f " % (max(matches))
+    match_str += " " + options.bank_file 
+    match_str += " " + str(matches.index(max(matches)))
+    match_str += " " + options.sim_file
+    match_str += " " + str(index)
+    match_str += " %5.5f \n" % s_norm
     fout.write(match_str)
-    fout2.write(match_str2)
+    index += 1
+
 

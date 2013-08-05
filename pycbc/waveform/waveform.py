@@ -45,7 +45,7 @@ def megaparsecs_to_meters(distance):
 
 default_args = {'spin1x':0,'spin1y':0,'spin1z':0,
                 'spin2x':0,'spin2y':0,'spin2z':0,'lambda1':0, 'lambda2':0,
-                'inclination':0,'distance':1,'f_final':0,'phi0':0,
+                'inclination':0,'distance':1,'f_final':0,'coa_phase':0,
                 'amplitude_order':-1,'phase_order':-1,'spin_order':-1,
                 'tidal_order':-1}
 
@@ -64,7 +64,7 @@ def _lalsim_td_waveform(**p):
     lalsimulation.SimInspiralSetSpinOrder(flags, p['spin_order'])
     lalsimulation.SimInspiralSetTidalOrder(flags, p['tidal_order'])
 
-    hp, hc = lalsimulation.SimInspiralChooseTDWaveform(float(p['phi0']),
+    hp, hc = lalsimulation.SimInspiralChooseTDWaveform(float(p['coa_phase']),
                float(p['delta_t']),
                float(solar_mass_to_kg(p['mass1'])),
                float(solar_mass_to_kg(p['mass2'])),
@@ -87,7 +87,7 @@ def _lalsim_fd_waveform(**p):
     lalsimulation.SimInspiralSetSpinOrder(flags, p['spin_order'])
     lalsimulation.SimInspiralSetTidalOrder(flags, p['tidal_order'])
 
-    hp, hc = lalsimulation.SimInspiralChooseFDWaveform(float(p['phi0']),
+    hp, hc = lalsimulation.SimInspiralChooseFDWaveform(float(p['coa_phase']),
                float(p['delta_f']),
                float(solar_mass_to_kg(p['mass1'])),
                float(solar_mass_to_kg(p['mass2'])),
@@ -233,7 +233,7 @@ def get_td_waveform(template=None, **kwargs):
         The distance from the observer to the source in megaparsecs.
     inclination : {0, float}, optional
         The inclination angle of the source. 
-    phi0 : {0, float}, optional
+    coa_phase : {0, float}, optional
         The final phase or phase at the peak of the wavform. See documentation on
         specific approximants for exact usage. 
     spin1x : {0, float}, optional
@@ -315,7 +315,7 @@ def get_fd_waveform(template=None, **kwargs):
         The distance from the observer to the source in megaparsecs.
     inclination : {0, float}, optional
         The inclination angle of the source. 
-    phi0 : {0, float}, optional
+    coa_phase : {0, float}, optional
         The final phase or phase at the peak of the wavform. See documentation on
         specific approximants for exact usage. 
     spin1x : {0, float}, optional
