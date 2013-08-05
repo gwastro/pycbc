@@ -200,8 +200,8 @@ for inj_num in range(num_injs):
         bn = 'bank/bank' + part_num + '.xml'
         bsnode = BanksimNode(bsjob, sn, bn, mfn, gpu=gpu, gpu_postscript="scripts/diff_match.sh", inj_per_job=injections_per_job)
         cnode.add_parent(bsnode)
-        rnode.add_parent(cnode)
         dag.add_node(bsnode)
+    rnode.add_parent(cnode)
     dag.add_node(cnode)      
 dag.add_node(rnode)
 
@@ -300,7 +300,7 @@ for row in res:
     
     outstr += str(row['sigmasq']) + " "
                 
-    outstr += "\n"
+    outstr += "\\n"
     
     f.write(outstr)
 """)
