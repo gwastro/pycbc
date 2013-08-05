@@ -179,6 +179,8 @@ dag.set_dax_file("banksim")
 
 bsjob = BaseJob("log", "scripts/pycbc_banksim", confs, "banksim", gpu=gpu)
 cjob = BaseJob("log", "scripts/pycbc_banksim_match_combine", None, None)
+rjob = BaseJob("log", "scripts/pycbc_banksim_collect_results", None, None)
+rnode = CondorDAGNode(rjob)
 
 for inj_num in range(num_injs):
     num = str(inj_num)
@@ -198,9 +200,10 @@ for inj_num in range(num_injs):
         bn = 'bank/bank' + part_num + '.xml'
         bsnode = BanksimNode(bsjob, sn, bn, mfn, gpu=gpu, gpu_postscript="scripts/diff_match.sh", inj_per_job=injections_per_job)
         cnode.add_parent(bsnode)
+        rnode.add_parent(cnode)
         dag.add_node(bsnode)
-    dag.add_node(cnode)
-        
+    dag.add_node(cnode)      
+dag.add_node(rnode)
 
 print "DO : ", do_count, "SKIP: ", skip_count
 f.close()
@@ -238,29 +241,68 @@ os.chmod('scripts/pycbc_banksim_match_combine', 0777)
 f = open("scripts/pycbc_banksim_collect_results", "w")
 f.write("""#!/usr/bin/env python
 from os.path import isfile
-from optparse import OptionParser
 from numpy import *
+from glue.ligolw import utils, table
 import glob
-parser = OptionParser()
-
-parser.add_option('-o','--output-file',help="output file with the maximized values")
-options, argv_frame_files = parser.parse_args()
 
 fils = glob.glob("match/match*.dat")
 
-dtypem={'names': ('match', 'bank', 'bank_i', 'sim', 'sigmasq'), 'formats': ('f8', 'S256', 'i4', 'S256', 'i4', 'f8')}
+dtypem={'names': ('match', 'bank', 'bank_i', 'sim', 'sim_i', 'sigmasq'), 'formats': ('f8', 'S256', 'i4', 'S256', 'i4', 'f8')}
 
-matches=[]
-maxmatch = []
+# Collect the results
+res = None
 for fil in fils:
-    matches.append(loadtxt(fil, dtype=dtypef))
-   
-indices = array(matches, dtype=dtypef)['match'].argmax(0)
-for i, j in enumerate(indices):
-    maxmatch.append(matches[j][i])
+    if res is not None:
+        res = append(res, loadtxt(fil, dtype=dtypem))
+    else:
+        res = loadtxt(fil, dtype=dtypem)
+ 
+btables = {}
+itables = {}     
+
+f = open("results.dat", "w")
+for row in res: 
+    outstr = ""
+    if row['bank'] not in btables:
+        indoc = utils.load_filename(row['bank'], False)
+        btables[row['bank']] = table.get_table(indoc, "sngl_inspiral") 
+
+    if row['sim'] not in itables:
+        indoc = utils.load_filename(row['sim'], False)
+        itables[row['sim']] = table.get_table(indoc, "sim_inspiral") 
     
-maxmatch=array(maxmatch, dtype =dtypef)
-savetxt(options.output_file, maxmatch,fmt=('%5.5f', '%s', '%i', '%s', '%5.5f'), delimiter=' ')
+    bt = btables[row['bank']][row['bank_i']]     
+    it = itables[row['sim']][row['sim_i']]
+ 
+    outstr += str(bt.mass1) + " "
+    outstr += str(bt.mass2) + " "
+    outstr += str(bt.spin1x) + " "
+    outstr += str(bt.spin1y) + " "
+    outstr += str(bt.spin1z) + " "
+    outstr += str(bt.spin2x) + " "
+    outstr += str(bt.spin2y) + " " 
+    outstr += str(bt.spin2z) + " "
+    
+    outstr += str(it.mass1) + " "
+    outstr += str(it.mass2) + " "
+    outstr += str(it.spin1x) + " "
+    outstr += str(it.spin1y) + " "
+    outstr += str(it.spin1z) + " "
+    outstr += str(it.spin2x) + " "
+    outstr += str(it.spin2y) + " " 
+    outstr += str(it.spin2z) + " "
+    
+    outstr += str(it.coa_phase) + " "
+    outstr += str(it.inclination) + " "
+    outstr += str(it.latitude) + " " 
+    outstr += str(it.longitude) + " "
+    outstr += str(it.polarization) + " "
+    
+    outstr += str(row['sigmasq']) + " "
+                
+    outstr += "\n"
+    
+    f.write(outstr)
 """)
 os.chmod('scripts/pycbc_banksim_collect_results', 0777)
 
