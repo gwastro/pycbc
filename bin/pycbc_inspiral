@@ -1,8 +1,8 @@
 #!/usr/bin/env /usr/bin/python
 
 import logging
+import sys
 import numpy
-import lal
 from optparse import OptionParser
 
 import pycbc.vetoes
@@ -26,7 +26,7 @@ parser = OptionParser(
 
 parser.add_option("-V", "--verbose", action="store_true", help="print extra debugging information", default=False )
 parser.add_option("--bank-file", type=str)
-
+parser.add_option("--bank-veto-bank-file", type=str)
 parser.add_option("--injection-file", type=str)
 parser.add_option("--trig-start-time", type=int, default=0)
 parser.add_option("--trig-end-time", type=int, default=0)
@@ -38,17 +38,13 @@ parser.add_option("--gps-start-time", help="The gps start time of the data", typ
 parser.add_option("--gps-end-time", help="The gps end time of the data", type=int)
 parser.add_option("--snr-threshold", help="The the minimum snr threshold", type=float)
 parser.add_option("--strain-high-pass", type=float)
-
 parser.add_option("--chisq-bins", type=int, default=0)
-parser.add_option("--bank-veto-bank-file", type=str)
-parser.add_option("--powert-chisq-bins", type=int, default=0)
-
 parser.add_option("--low-frequency-cutoff", help="The low frequency cutoff to use for filtering (Hz)", type=float)
 parser.add_option("--pad-data", help="Extra padding to remove highpass corruption (s)", type=int)
 parser.add_option("--sample-rate", help="The sample rate to use for filtering (Hz)", type=int)
 parser.add_option("--cluster-method", choices=["template", "window"])
 parser.add_option("--cluster-window", type=int, help="Length of clustering window in seconds")
-parser.add_option("--processing-scheme", help="The processing scheme to use", choices=["cpu", "cuda", "opencl"], default="cpu")
+parser.add_option("--processing-scheme", help="The processing scheme to use", choices=["cpu", "cuda"], default="cpu")
 parser.add_option("--processing-device-id", help="ID of gpu to use for accelerated processineg", default=0, type=int)
 parser.add_option("--segment-length", type=int, help="The length of a segment (s)")
 parser.add_option("--segment-start-pad", type=int, help="Length of corruption at the beginning of a segment(s)")
@@ -70,9 +66,6 @@ logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 if opt.processing_scheme == "cuda":
     logging.info("Running with CUDA support")
     ctx = CUDAScheme(opt.processing_device_id)
-elif opt.processing_scheme == "opencl":
-    logging.info("Running with OpenCL support")
-    ctx = OpenCLScheme()
 else:
     logging.info("Running with CPU support only")
     ctx = CPUScheme()
@@ -80,7 +73,14 @@ else:
 # Data Preconditioning ########################################################
 if opt.frame_cache:
     logging.info("Reading Frames")
-    strain = read_frame(opt.frame_cache, opt.channel_name, start_time=opt.gps_start_time-opt.pad_data, end_time=opt.gps_end_time+opt.pad_data)
+    strain = read_frame(opt.frame_cache, opt.channel_name, 
+                        start_time=opt.gps_start_time-opt.pad_data, 
+                        end_time=opt.gps_end_time+opt.pad_data)
+
+    if opt.injection_file:
+        logging.info("Applying injections")
+        injections = InjectionSet(opt.injection_file)
+        injections.apply(strain, opt.channel_name[0:2])
 
     logging.info("Highpass Filtering")
     strain = highpass(strain, frequency=opt.strain_high_pass)
@@ -108,38 +108,37 @@ if opt.fake_strain:
     
     logging.info("Making colored noise")
     strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate, strain_psd, seed=opt.fake_strain_seed)
-    strain._epoch = lal.LIGOTimeGPS(opt.gps_start_time)
+
+    if opt.injection_file:
+        logging.info("Applying injections")
+        injections = InjectionSet(opt.injection_file)
+        injections.apply(strain, opt.channel_name[0:2])
     
     logging.info("Converting to float32")
     strain = (pycbc.DYN_RANGE_FAC * strain).astype(float32)
-    
-if opt.injection_file:
-    logging.info("Applying injections")
-    injections = InjectionSet(opt.injection_file)
-    injections.apply(strain, opt.channel_name[0:2], distance_scale = 1.0 / pycbc.DYN_RANGE_FAC)
-    
-with ctx:    
+
+with ctx:
     logging.info("Estimating PSD")
-    psd = pycbc.psd.welch(strain, seg_len=opt.psd_segment_length * opt.sample_rate, seg_stride=(opt.psd_segment_length * opt.sample_rate) / 2)
+    psd = pycbc.psd.welch(strain, 
+                seg_len=opt.psd_segment_length * opt.sample_rate, 
+                seg_stride=(opt.psd_segment_length * opt.sample_rate) / 2)
                     
     logging.info("Interpolating PSD")
     psd = pycbc.psd.interpolate(psd, 1.0/opt.segment_length)
 
     logging.info("Truncating Inverse PSD spectrum")
-    psd = pycbc.psd.inverse_spectrum_truncation(psd, opt.sample_rate*opt.psd_inverse_length, low_frequency_cutoff=opt.low_frequency_cutoff)
-    
-    template_work_mem = zeros((len(psd)-1)*2, dtype=complex64)
-    snr_work_mem = zeros((len(psd)-1)*2, dtype=complex64)
-    corr_work_mem = zeros((len(psd)-1)*2, dtype=complex64)
+    psd = pycbc.psd.inverse_spectrum_truncation(psd, 
+                opt.sample_rate*opt.psd_inverse_length,  
+                low_frequency_cutoff=opt.low_frequency_cutoff)
      
     bank_veto = [] 
     if opt.bank_veto_bank_file:
         logging.info("Bank veto is enabled")
         logging.info("Read in bank veto template bank")
-        bank_veto = pycbc.vetoes.BankVeto(opt.bank_veto_bank_file, opt.approximant, psd, opt.low_frequency_cutoff, phase_order=opt.order)
-                                                                                    
-    logging.info("Read in template bank")
-    bank = TemplateBank(opt.bank_file, opt.approximant, len(psd), psd.delta_f, opt.low_frequency_cutoff, dtype=complex64, phase_order=opt.order, psd = psd, out=template_work_mem)  
+        bank_veto = pycbc.vetoes.BankVeto(opt.bank_veto_bank_file, 
+                                          opt.approximant, psd, 
+                                          opt.low_frequency_cutoff, 
+                                          phase_order=opt.order)
 
     logging.info("Making FFT'd segments")
     segments = []
@@ -151,50 +150,52 @@ with ctx:
     while seg_start_idx + seg_width_idx < len(strain):
         seg_end_idx = seg_start_idx + seg_len_idx
         seg = make_frequency_series(strain[seg_start_idx:seg_end_idx])
-        
         segments.append(seg)
         seg_start_idx += seg_width_idx    
         if opt.bank_veto_bank_file:
-            s_idx = opt.segment_start_pad*opt.sample_rate
-            
-            # Memory reduction step
-            bsnrs, bnorms = bank_veto.segment_snrs(seg)
-            bsnrrs = []
-            
-            for bsnr in bsnrs:    
-                bsnrr = bsnr[s_idx:s_idx+seg_width_idx]*1   
-                del bsnr
-                bsnrrs.append(bsnrr)
-            del bsnrs
-            bank_veto_pre.append((bsnrrs, bnorms))
- 
-    if opt.powert_chisq_bins:
-        powert_chisq = pycbc.vetoes.PowerTChisq(opt.powert_chisq_bins, segments, psd, opt.low_frequency_cutoff)
+            bank_veto_pre.append(bank_veto.segment_snrs(seg))
   
     logging.info("overwhiten stilde")
     for seg in segments:
-        kmin = int(opt.low_frequency_cutoff / seg.delta_f)
         seg /= psd     
-        seg[0:kmin].clear()
-                       
-    event_mgr = pycbc.events.EventManager(opt, num_bank_templates=len(bank_veto))
+            
+    template_work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
+    snr_work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
+    corr_work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
 
-    for t_num, template in enumerate(bank):                                                                 
-        cumulative_index = opt.segment_start_pad * opt.sample_rate
-        
+    logging.info("Read in template bank")
+    bank = TemplateBank(opt.bank_file, opt.approximant, len(segments[0]), 
+                        segments[0].delta_f, opt.low_frequency_cutoff, 
+                        dtype=complex64, phase_order=opt.order,
+                        psd = psd, out=template_work_mem)  
+                       
+    event_mgr = pycbc.events.EventManager(opt, 
+                         ['time_index', 'snr', 'chisq', 'bank_chisq'], 
+                         [int, complex64, float32, float32, float32], 
+                         num_bank_templates=len(bank_veto))
+
+    # Our bank might have had no templates in it, in which case we shouldn't
+    # analyze anything but should write our output and exit.
+
+    if len(bank) == 0:
+        logging.info("No templates found in template bank, so writing process table and exiing.")
+        event_mgr.write_events()
+        sys.exit(0)
+
+    for t_num, template in enumerate(bank):  
+        event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)                                                                     
+        cumulative_index = opt.segment_start_pad  
         bank_veto_overlaps = None
-        ptv_tmplt = None
         chisq_bins = None
         
-        if opt.cluster_method == "window":
-            cluster_window = opt.cluster_window * opt.sample_rate
-        elif opt.cluster_method == "template":
-            cluster_window = template.length_in_time * opt.sample_rate
-
-        logging.info("Filtering" + "  Template: " + str(t_num+1) + "/" + str(len(bank)) )           
-        for s_num, stilde in enumerate(segments):                                                      
+        for s_num, stilde in enumerate(segments):          
+            logging.info("Filtering" + "  Template: " + str(t_num+1) + "/" + \
+                        str(len(bank)) + " Segment: " + str(s_num+1) + "/" + \
+                         str(len(segments)) )       
+                                                   
             snr_start = (opt.segment_start_pad) * opt.sample_rate
-            snr_end  =  (opt.segment_length - opt.segment_end_pad) * opt.sample_rate
+            snr_end  =  (opt.segment_length - 
+                         opt.segment_end_pad) * opt.sample_rate
             seg_width = (snr_end - snr_start)
 
             if opt.trig_start_time:
@@ -208,56 +209,52 @@ with ctx:
                     snr_end = snr_end - (seg_end - opt.trig_end_time) * opt.sample_rate 
                     
             if snr_start < snr_end:
-                snr, corr, norm = matched_filter_core(template, stilde, h_norm=template.sigmasq, low_frequency_cutoff=opt.low_frequency_cutoff, out=snr_work_mem, corr_out=corr_work_mem)                                                     
-                                                                      
-                snrv, idx = pycbc.events.threshold_and_cluster(snr[snr_start:snr_end], opt.snr_threshold / norm, cluster_window)
-                snrv *= norm
+                snr, corr, norm = matched_filter_core(template, stilde, 
+                                                      h_norm=template.sigmasq, 
+                                                      low_frequency_cutoff=opt.low_frequency_cutoff, 
+                                                      out=snr_work_mem, corr_out=corr_work_mem)
                 
-                if len(snrv) > 0:                       
-                    powert_chisqv = None
-                    if (opt.powert_chisq_bins !=0): 
-                        logging.info("...Doing Time Power Chisq") 
-                        if ptv_tmplt is None:
-                            ptv_tmplt, ptv_bins, pvt_norm = powert_chisq.template(template)
-                        powert_chisqv = powert_chisq.chisq(ptv_tmplt, ptv_bins, pvt_norm, s_num, snrv, idx + snr_start)
-                        
-                    bank_vetov = None
-                    if (opt.bank_veto_bank_file):
-                        logging.info("...Doing Bank Chisq")
-                        if bank_veto_overlaps is None:
-                            bank_veto_overlaps = bank_veto.template_overlaps(template, template.sigmasq)
-                        bank_veto_snrs, bank_veto_norms = bank_veto_pre[s_num]
-                        bank_vetov = pycbc.vetoes.bank_chisq_from_filters(snr, norm, bank_veto_snrs, bank_veto_norms, bank_veto_overlaps, indices=idx).numpy()
-                                
-                    chisqv = None
-                    if (opt.chisq_bins != 0):
-                        logging.info("...Doing Chisq") 
-                        if chisq_bins is None:                          
-                            if bank.sigmasq_vec is not None:
-                                chisq_bins = pycbc.vetoes.power_chisq_bins_from_sigmasq_series(bank.sigmasq_vec, opt.chisq_bins, int(opt.low_frequency_cutoff / template.delta_f), template.end_idx)
-                            else:
-                                chisq_bins = pycbc.vetoes.power_chisq_bins(template, opt.chisq_bins, psd, opt.low_frequency_cutoff) 
-                        chisq = pycbc.vetoes.power_chisq_from_precomputed(corr, snr, chisq_bins, norm)
-                        chisqv = chisq.take(idx+snr_start).numpy()
-                                               
-                    idx += cumulative_index
-                    cnames = ["snr", "time_index", "chisq", "bank_chisq", "powert_chisq"]
-                    evecs =  [snrv, idx, chisqv, bank_vetov, numpy.array(powert_chisqv)]
-                    event_mgr.add_triggers(cnames, evecs, tmplt=template.params, sigmasq=template.sigmasq)
+                event_mgr.add_template_params(snr_norm=norm)
+                segment_events = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm)                 
+
+                bank_vetov = None
+                if (len(segment_events) > 0) and (opt.bank_veto_bank_file):
+                    logging.info("...Doing Bank Chisq")
+                    if bank_veto_overlaps is None:
+                        bank_veto_overlaps = bank_veto.template_overlaps(template, template.sigmasq)
+                    bank_veto_snrs, bank_veto_norms = bank_veto_pre[s_num]
+                    bank_veto_series = pycbc.vetoes.bank_chisq_from_filters(snr, norm,
+                            bank_veto_snrs, bank_veto_norms, bank_veto_overlaps)
+                    bank_vetov = bank_veto_series.take(segment_events['loc']+snr_start).numpy()
+
+                chisqv = None;
+                if (len(segment_events) > 0) and (opt.chisq_bins != 0):
+                    logging.info("...Doing Chisq") 
+                    if chisq_bins is None:                          
+                        if bank.sigmasq_vec is not None:
+                            chisq_bins = pycbc.vetoes.power_chisq_bins_from_sigmasq_series(bank.sigmasq_vec, 
+                                            opt.chisq_bins, int(opt.low_frequency_cutoff / template.delta_f), 
+                                            template.end_idx)
+                        else:
+                            chisq_bins = pycbc.vetoes.power_chisq_bins(template, opt.chisq_bins, psd, opt.low_frequency_cutoff) 
+                    chisq = pycbc.vetoes.power_chisq_from_precomputed(corr, snr, chisq_bins, norm)
+                    chisqv = chisq.take(segment_events['loc']+snr_start).numpy()
                     
-                    for name in cnames:
-                        print name,
-                    print " "
-                    for i in range(len(snrv)):
-                        for j in range(len(cnames)):
-                            if evecs[j] is not None:
-                                print evecs[j][i], 
-                            else:
-                                print "None", 
-                        print " "
-                                    
+                if (len(segment_events) > 0):
+                    idx = segment_events['loc']
+                    snrv = segment_events['val']
+                    idx += cumulative_index
+                    event_mgr.add_template_events( ["snr", "time_index", "chisq", "bank_chisq"], [snrv, idx, chisqv, bank_vetov])
+       
+                if opt.cluster_method == "window":
+                    cluster_window = opt.cluster_window * opt.sample_rate
+                elif opt.cluster_method == "template":
+                    cluster_window = template.length_in_time * opt.sample_rate
                 
-            cumulative_index += seg_width             
+            cumulative_index += seg_width
+        
+        event_mgr.cluster_template_events("time_index", "snr", cluster_window) 
+        event_mgr.finalize_template_events()                 
         
 logging.info("Writing out triggers")
 event_mgr.write_events()
