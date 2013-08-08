@@ -28,9 +28,13 @@ To do this I propose that the return from the template bank section of ahope is 
 
 This will be the **only** thing that will be passed from the template bank section to the future sections (including the matched filter section).
 
-More details
+More details of the code can be found below:
 
-.. automodule:: pycbc.ahope.tmpltbank.tmpltbank_class
+:mod:`pycbc.ahope.tmpltbank_utils` Module
+-----------------------------
+
+.. automodule:: pycbc.ahope.tmpltbank_utils
+    :noindex:
     :members:
     :undoc-members:
     :show-inheritance:

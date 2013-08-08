@@ -156,16 +156,20 @@ class legacy_sngl_job_utils(legacy_ihope_job_utils):
         the part of that data that the template bank is valid for. In the case
         of lalapps_tmpltbank the following options are needed to set this up
         and will be used by the executable to figure this out:
+
         * --pad-data (seconds, amount of data used to pad the analysis region.
-            This is needed as some data will be corrupted from the data
-            conditioning process)
+          This is needed as some data will be corrupted from the data
+          conditioning process)
+
         * --segment-length (sample points, length of each analysis segment)
+
         * --sample-rate (Hz, number of sample points per second. The data will
-            be resampled to this value if necessary
+          be resampled to this value if necessary
+
         * --number-of-segments (Number of analysis segments, note that
-            overlapping segments are used for PSD estimation, so every data
-            point will appear in two segments, except the first
-            segment-length/4 and last segment-length/4 points.)
+          overlapping segments are used for PSD estimation, so every data
+          point will appear in two segments, except the first
+          segment-length/4 and last segment-length/4 points.)
 
         Parameters
         ----------

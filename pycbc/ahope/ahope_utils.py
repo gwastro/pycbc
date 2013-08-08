@@ -15,7 +15,7 @@ class AhopeOutFileList(list):
         Parameters
         -----------
         ifo : string
-           Name of the ifo that the AhopeOutFile should correspond to
+           Name of the ifo that the 
         time : int/float/LIGOGPStime or tuple containing two values
            If int/float/LIGOGPStime (or similar may of specifying one time) is
            given, return the AhopeOutFile corresponding to the time. This calls
@@ -132,8 +132,8 @@ class AhopeOutFile:
     * The ifo that the AhopeOutFile is valid for
     * The time span that the AhopeOutFile is valid for
     * The dax job that will generate the output file (if appropriate). If the
-    file is generated within the workflow the dax job object will hold all the
-    job-specific information that may be relevant for later stages.
+      file is generated within the workflow the dax job object will hold all
+      the job-specific information that may be relevant for later stages.
     '''
 
     def __init__(self,outFile=None,ifo=None,time=None,job=None):

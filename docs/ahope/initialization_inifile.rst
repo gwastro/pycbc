@@ -12,22 +12,29 @@ Ihope's .ini files were used in every analysis. However, it has been noted that 
 
 In this page we describe the layout of the ahope .ini configuration file and what the various sections mean, how they are used, and how an ini file should be set out. 
 
-**NOTE: A number of features that have been put in here, are available in the python 3.X version of ConfigParser. In addition this version also has a duplicate option check. In python 2.X if I do::
+**NOTE**: A number of features that have been put in here, are available in the python 3.X version of ConfigParser. In addition this version also has a duplicate option check. In python 2.X if I do::
 
     [inspiral]
     detect-gravitational-waves = True
     LOTS OF GARBAGE
     detect-gravitational-waves = False
 
-it will set the value to False, and proceed happily. THERE IS NO WAY TO CATCH THIS! There is a python 2.X backport of this new version, it is available in pypi, but not in macports. Can we swap to this?**
+it will set the value to False, and proceed happily. THERE IS NO WAY TO CATCH THIS! There is a python 2.X backport of this new version, it is available in pypi, but not in macports. Can we swap to this?
 
 
 ===========================================
-Features to fit somewhere else on the page
+Stuff to fit somewhere else on the page
 ===========================================
 
 - aHope should be provided a nicely formatted ini file as input. After parsing the .ini file, aHope will dump the parsed .ini file (unordered and free of comments) back to the analysis directory. This file would be more useful for an expert to sanity check the workflow than the input file is.
 - The ability to supply secondary ini files (as many as needed) within the ini file should be given. When parsing the ini file, aHope would begin by reading these in and concatenating them with the original configuration file.
+
+====================================
+Features to add
+====================================
+
+* There should be the ability to use multiple .ini files, and have them contatenated together when being read in.
+* When specifying executable locations, can we use a macro to replace the executable with which(executable). Ie. the first occurence in the PATH variable
 
 =====================================
 Global options - the [ahope] section
@@ -134,6 +141,15 @@ Provided here is an example of a complete ahope.ini file. ''File to be added onc
 Code documentation
 =====================
 
-The parsing of ahope .ini files is done from within the pycbc.ahope.configparserutils module. The functions in this module are documented below
+The parsing of ahope .ini files is done from within the pycbc.ahope.configparserutils module. The functions in this module are shown below
 
-.. autofunction:: pycbc.ahope.configparserutils
+--------------------------------------------
+:mod:`pycbc.ahope.configparserutils` Module
+--------------------------------------------
+
+.. automodule:: pycbc.ahope.configparserutils
+    :noindex:
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
