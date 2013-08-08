@@ -92,8 +92,7 @@ class EventManager(object):
         for i in range(len(self.events)):
             event = self.events[i]
             tind = event['template_id']
-            norm = self.template_params[tind]['snr_norm'] ** 2.0
-            xi = event['chisq'] / (num_bins + delta * event['snr'].conj() * event['snr'] * norm)
+            xi = event['chisq'] / (num_bins + delta * event['snr'].conj() * event['snr'])
             if xi > value:
                 remove.append(i)
         self.events = numpy.delete(self.events, remove)          
@@ -189,7 +188,6 @@ class EventManager(object):
             tind = event['template_id']
         
             tmplt = self.template_params[tind]['tmplt']
-            snr_norm = self.template_params[tind]['snr_norm']
             sigmasq = self.template_params[tind]['sigmasq']
             
             row = copy.deepcopy(tmplt)
@@ -214,8 +212,8 @@ class EventManager(object):
                 row.bank_chisq_dof = 0
                 row.bank_chisq = 0
             
-            row.eff_distance = sigmasq ** (0.5) / abs(snr * snr_norm) * pycbc.DYN_RANGE_FAC
-            row.snr = abs(snr) * snr_norm
+            row.eff_distance = sigmasq ** (0.5) / abs(snr)
+            row.snr = abs(snr)
             row.end_time = int(end_time.gpsSeconds)
             row.end_time_ns = int(end_time.gpsNanoSeconds)
             row.process_id = proc_id
