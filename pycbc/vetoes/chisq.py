@@ -21,7 +21,7 @@
 #
 # =============================================================================
 #
-from pycbc.types import zeros, real_same_precision_as, TimeSeries, complex_same_precision_as, FrequencySeries
+from pycbc.types import Array, zeros, real_same_precision_as, TimeSeries, complex_same_precision_as, FrequencySeries
 from pycbc.filter import sigmasq_series, make_frequency_series, sigmasq, matched_filter_core
 import numpy
 from pycbc.scheme import schemed
@@ -51,6 +51,83 @@ def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff=None,
 @schemed(BACKEND_PREFIX)
 def chisq_accum_bin(chisq, q):
     pass
+
+def shift_sum(v1, shifts):
+    v1 = v1.data
+
+    from scipy.weave import inline
+    import numpy
+
+    pre = "float out0i=0, out0r=0, p0i=0, p0r=1, vs0r = vs[0].real(), vs0i = vs[0].imag();"
+
+    op = """
+            out0r += vr * p0r - vi * p0i;
+            out0i += vr * p0i + vi * p0r;
+            t1 = p0r;
+            t2 = p0i;
+            p0r = t1 * vs0r - t2 * vs0i;
+            p0i = t1 * vs0i + t2 * vs0r; 
+    """
+
+    outstr = "out[0] = std::complex<float> (out0r, out0i);"
+        
+    outline = """
+        std::complex<float> v;
+        float t1, t2;
+        
+        %s;
+        
+        for (int j=0; j<vlen; j++){
+            v = v1[j];
+            float vr = v.real();
+            float vi = v.imag();
+             
+             %s;          
+                             
+        }
+        
+        %s;
+    """
+
+    vs = numpy.zeros(len(shifts), dtype=numpy.complex64)
+    out = numpy.zeros(len(shifts), dtype=numpy.complex64)
+    n = int(len(out))
+    vlen = int(len(v1))
+    
+    pre_u = ""
+    outstr_u =""
+    op_u = ""
+    
+    for i in range(len(shifts)):
+        vs[i] = numpy.exp(1.0 * numpy.pi * 2j * float(shifts[i])/len(v1) )
+        pre_u += pre.replace('0', str(i))
+        outstr_u += outstr.replace('0', str(i))
+        op_u += op.replace('0', str(i))
+        
+     
+    code = outline % (pre_u, op_u, outstr_u)   
+
+    inline(code, ['v1', 'vs', 'out', 'n', 'vlen'], )
+    return Array(out, dtype=numpy.complex64)
+    
+def power_chisq_at_points_from_precomputed(corr, snr, h_norm, bins, indices):
+    """ Returns the chisq time series
+    """
+    snr = Array(snr, copy=False)
+    
+    chisq = zeros(len(indices), dtype=real_same_precision_as(corr))     
+    num_bins = len(bins) - 1
+    
+    norm = 4 * corr.delta_f / numpy.sqrt(h_norm)
+    
+    for j in range(len(bins)-1):
+        k_min = int(bins[j]) - bins[0]
+        k_max = int(bins[j+1]) - bins[0]           
+        qi = shift_sum(corr[k_min:k_max], indices) * norm
+        chisq += qi.squared_norm()
+
+    return (chisq * num_bins - snr.squared_norm())
+
     
 def power_chisq_from_precomputed(corr, snr, bins, snr_norm):
     """ Returns the chisq time series

@@ -15,7 +15,7 @@ from pycbc.waveform import TemplateBank
 from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series
 from pycbc.filter import  matched_filter_core, sigmasq
 from pycbc.scheme import CUDAScheme, CPUScheme, OpenCLScheme
-from pycbc.types import TimeSeries, FrequencySeries, float32, complex64, zeros
+from pycbc.types import TimeSeries, FrequencySeries, float32, complex64, zeros, Array
 from pycbc.frame import read_frame
 from pycbc.inject import InjectionSet
 
@@ -220,8 +220,6 @@ with ctx:
                     idx = segment_events['loc']
                     snrv = segment_events['val'] * norm
                     
-                    print snrv
-                    
                     bank_vetov = None
                     if  (opt.bank_veto_bank_file):
                         logging.info("...Doing Bank Chisq")
@@ -240,10 +238,9 @@ with ctx:
                                                 opt.chisq_bins, int(opt.low_frequency_cutoff / template.delta_f), 
                                                 template.end_idx)
                             else:
-                                chisq_bins = pycbc.vetoes.power_chisq_bins(template, opt.chisq_bins, psd, opt.low_frequency_cutoff) 
-                        chisq = pycbc.vetoes.power_chisq_from_precomputed(corr, snr, chisq_bins, norm)
-                        chisqv = chisq.take(idx+snr_start).numpy()
-                    
+                                chisq_bins = pycbc.vetoes.power_chisq_bins(template, opt.chisq_bins, psd, opt.low_frequency_cutoff)                                
+                        chisqv = pycbc.vetoes.power_chisq_at_points_from_precomputed(corr, snrv, template.sigmasq, chisq_bins, indices = idx+snr_start).numpy()
+                        print "NCHISQ", len(chisqv)
 
                     idx += cumulative_index
                     event_mgr.add_template_events( ["snr", "time_index", "chisq", "bank_chisq"], [snrv, idx, chisqv, bank_vetov])
