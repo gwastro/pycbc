@@ -184,7 +184,7 @@ with ctx:
 
     for t_num, template in enumerate(bank):  
         event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)                                                                     
-        cumulative_index = opt.segment_start_pad  
+        cumulative_index = opt.segment_start_pad * opt.sample_rate
         bank_veto_overlaps = None
         chisq_bins = None
         
@@ -245,14 +245,13 @@ with ctx:
                     snrv = segment_events['val']
                     idx += cumulative_index
                     event_mgr.add_template_events( ["snr", "time_index", "chisq", "bank_chisq"], [snrv, idx, chisqv, bank_vetov])
-       
-                if opt.cluster_method == "window":
-                    cluster_window = opt.cluster_window * opt.sample_rate
-                elif opt.cluster_method == "template":
-                    cluster_window = template.length_in_time * opt.sample_rate
-                
+
             cumulative_index += seg_width
-        
+
+        if opt.cluster_method == "window":
+            cluster_window = opt.cluster_window * opt.sample_rate
+        elif opt.cluster_method == "template":
+            cluster_window = template.length_in_time * opt.sample_rate
         event_mgr.cluster_template_events("time_index", "snr", cluster_window) 
         event_mgr.finalize_template_events()                 
         
