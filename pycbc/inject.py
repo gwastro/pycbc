@@ -26,6 +26,7 @@
 """This module provides utilities for injecting signals into data
 """
 
+import numpy as np
 import lal
 import lalsimulation as sim
 from pycbc.waveform import get_td_waveform
@@ -82,11 +83,38 @@ class InjectionSet(object):
             For invalid types of `strain`.
         """
 
+        if not strain.dtype in (float32, float64):
+            raise TypeError("Strain dtype must be float32 or float64, not " \
+                    + str(strain.dtype))
+
         lalstrain = strain.lal()    
         detector = Detector(detector_name)
         earth_travel_time = lal.LAL_REARTH_SI / lal.LAL_C_SI
         t0 = float(strain.start_time) - earth_travel_time
         t1 = float(strain.end_time) + earth_travel_time
+
+        # pick lalsimulation tapering function
+        taper_func_map = {
+            np.dtype(float32): sim.SimInspiralREAL4WaveTaper,
+            np.dtype(float64): sim.SimInspiralREAL8WaveTaper
+        }
+        taper = taper_func_map[strain.dtype]
+
+        # map between tapering string in sim_inspiral
+        # table and lalsimulation constants
+        taper_map = {
+            'TAPER_NONE': None,
+            'TAPER_START': sim.LAL_SIM_INSPIRAL_TAPER_START,
+            'TAPER_END': sim.LAL_SIM_INSPIRAL_TAPER_END,
+            'TAPER_STARTEND': sim.LAL_SIM_INSPIRAL_TAPER_STARTEND
+        }
+
+        # pick lalsimulation injection function
+        injection_func_map = {
+            np.dtype(float32): sim.SimAddInjectionREAL4TimeSeries,
+            np.dtype(float64): sim.SimAddInjectionREAL8TimeSeries
+        }
+        add_injection = injection_func_map[strain.dtype]
 
         for inj in self.table:
             if f_lower is None:
@@ -112,17 +140,14 @@ class InjectionSet(object):
             if float(hp.start_time) > t1:
                 continue
 
-            # compute the detector response and add it to the strain
+            # compute the detector response, taper it if requested
+            # and add it to the strain
             signal = detector.project_wave(
                     hp, hc, inj.longitude, inj.latitude, inj.polarization)
-            if strain.dtype == float64:
-                sim.SimAddInjectionREAL8TimeSeries(
-                        lalstrain, signal.astype(float64).lal(), None)
-            elif strain.dtype == float32:
-                sim.SimAddInjectionREAL4TimeSeries(
-                        lalstrain, signal.astype(float32).lal(), None)
-            else:
-                raise TypeError("Strain dtype must be float32 or float64,"
-                        " not " + str(strain.dtype))
+            signal_lal = signal.astype(strain.dtype).lal()
+            if taper_map[inj.taper] is not None:
+                taper(signal_lal.data, taper_map[inj.taper])
+            add_injection(lalstrain, signal_lal, None)
+
         strain.data[:] = lalstrain.data.data[:]
 

@@ -18,16 +18,15 @@
 Unit test for PyCBC's injection module.
 """
 
-import sys
 import tempfile
 import lal
-import lalsimulation
 import pycbc
 from pycbc.types import TimeSeries
 from pycbc.detector import Detector
 from pycbc.inject import InjectionSet
 import unittest
 import numpy
+import itertools
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import utils
@@ -78,7 +77,7 @@ class MyInjection(object):
         row.amp_order = 0
         row.coa_phase = 0
         row.bandpass = 0
-        row.taper = lalsimulation.LAL_SIM_INSPIRAL_TAPER_NONE
+        row.taper = self.taper
         row.numrel_mode_min = 0
         row.numrel_mode_max = 0
         row.numrel_data = 0
@@ -93,7 +92,8 @@ class TestInjection(unittest.TestCase):
         # create a few random injections
         self.injections = []
         start_time = float(lal.GPSTimeNow())
-        for i in xrange(10):
+        taper_choices = ('TAPER_NONE', 'TAPER_START', 'TAPER_END', 'TAPER_STARTEND')
+        for i, taper in zip(xrange(20), itertools.cycle(taper_choices)):
             inj = MyInjection()
             inj.end_time = start_time + 40000 * i + \
                     numpy.random.normal(scale=3600)
@@ -105,6 +105,7 @@ class TestInjection(unittest.TestCase):
             inj.longitude = random(low=0, high=2 * lal.LAL_PI)
             inj.inclination = numpy.arccos(random(low=-1, high=1))
             inj.polarization = random(low=0, high=2 * lal.LAL_PI)
+            inj.taper = taper
             self.injections.append(inj)
 
         # create LIGOLW document
