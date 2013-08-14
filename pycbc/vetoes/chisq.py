@@ -51,64 +51,53 @@ def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff=None,
 @schemed(BACKEND_PREFIX)
 def chisq_accum_bin(chisq, q):
     pass
-
-def shift_sum(v1, shifts):
-    v1 = v1.data
-
-    from scipy.weave import inline
-    import numpy
-
-    pre = "float out0i=0, out0r=0, p0i=0, p0r=1, vs0r = vs[0].real(), vs0i = vs[0].imag();"
-
-    op = """
-            out0r += vr * p0r - vi * p0i;
-            out0i += vr * p0i + vi * p0r;
-            t1 = p0r;
-            t2 = p0i;
-            p0r = t1 * vs0r - t2 * vs0i;
-            p0i = t1 * vs0i + t2 * vs0r; 
+    
+def shift_sum(v1, shifts, slen=None, offset=0):
+    """ Calculate the time shifted sum of the FrequencySeries
     """
-
-    outstr = "out[0] = std::complex<float> (out0r, out0i);"
+    from scipy.weave import inline
+    v1 = v1.data
+    shifts = numpy.array(shifts, dtype=numpy.float32)
+    vlen = len(v1)
+    if slen is None:
+        slen = vlen
         
-    outline = """
-        std::complex<float> v;
-        float t1, t2;
-        
-        %s;
+    code = """
+        float t1, t2;         
         
         for (int j=0; j<vlen; j++){
-            v = v1[j];
+            std::complex<float> v = v1[j];
             float vr = v.real();
-            float vi = v.imag();
-             
-             %s;          
-                             
-        }
-        
-        %s;
+            float vi = v.imag();  
+                       
+            for (int i=0; i<n; i++){
+                outr[i] += vr * pr[i] - vi * pi[i];
+                outi[i] += vr * pi[i] + vi * pr[i];
+                t1 = pr[i];
+                t2 = pi[i];
+                pr[i] = t1 * vsr[i] - t2 * vsi[i];
+                pi[i] = t1 * vsi[i] + t2 * vsr[i]; 
+            }                                              
+        }            
     """
-
-    vs = numpy.zeros(len(shifts), dtype=numpy.complex64)
-    out = numpy.zeros(len(shifts), dtype=numpy.complex64)
-    n = int(len(out))
-    vlen = int(len(v1))
+    n = int(len(shifts))
     
-    pre_u = ""
-    outstr_u =""
-    op_u = ""
+    #Calculate the incremental rotation for each time shift
+    vs = numpy.exp(numpy.pi * 2j * shifts / slen )
+    vsr = vs.real*1
+    vsi = vs.imag*1
     
-    for i in range(len(shifts)):
-        vs[i] = numpy.exp(1.0 * numpy.pi * 2j * float(shifts[i])/len(v1) )
-        pre_u += pre.replace('0', str(i))
-        outstr_u += outstr.replace('0', str(i))
-        op_u += op.replace('0', str(i))
-        
-     
-    code = outline % (pre_u, op_u, outstr_u)   
+    # Create some output memory
+    outr =  numpy.zeros(n, dtype=numpy.float32)
+    outi =  numpy.zeros(n, dtype=numpy.float32)
+    
+    # Create memory for storing the cumulative rotation for each time shift
+    p = numpy.exp(numpy.pi * 2j *  offset * shifts / slen)
+    pi = numpy.zeros(n, dtype=numpy.float32) + p.imag
+    pr = numpy.zeros(n, dtype=numpy.float32) + p.real
 
-    inline(code, ['v1', 'vs', 'out', 'n', 'vlen'], )
-    return Array(out, dtype=numpy.complex64)
+    inline(code, ['v1', 'n', 'vlen', 'pr', 'pi', 'outi', 'outr', 'vsr', 'vsi'], )
+    return  Array(outr + 1.0j * outi, dtype=numpy.complex64)
     
 def power_chisq_at_points_from_precomputed(corr, snr, h_norm, bins, indices):
     """ Returns the chisq time series
@@ -121,17 +110,15 @@ def power_chisq_at_points_from_precomputed(corr, snr, h_norm, bins, indices):
     norm = 4 * corr.delta_f / numpy.sqrt(h_norm)
     
     for j in range(len(bins)-1):
-        k_min = int(bins[j]) - bins[0]
-        k_max = int(bins[j+1]) - bins[0]           
-        qi = shift_sum(corr[k_min:k_max], indices) * norm
-        chisq += qi.squared_norm()
-
+        k_min = int(bins[j])
+        k_max = int(bins[j+1])    
+             
+        qi = shift_sum(corr[k_min:k_max], indices, slen=len(corr), offset=k_min) * norm
+        chisq += qi.squared_norm()  
+        
     return (chisq * num_bins - snr.squared_norm())
-
     
 def power_chisq_from_precomputed(corr, snr, bins, snr_norm):
-    """ Returns the chisq time series
-    """
     q = zeros(len(snr), dtype=complex_same_precision_as(snr))
     qtilde = zeros(len(snr), dtype=complex_same_precision_as(snr))
     chisq = TimeSeries(zeros(len(snr), dtype=real_same_precision_as(snr)), 
@@ -152,8 +139,31 @@ def power_chisq_from_precomputed(corr, snr, bins, snr_norm):
     return (chisq * num_bins - snr.squared_norm()) * chisq_norm
 
 def power_chisq(template, data, num_bins, psd, low_frequency_cutoff=None, high_frequency_cutoff=None):
-    """ Return the chisq time series.
-    """  
+    """
+    Calculate the chisq timeseries 
+
+    Parameters
+    ----------
+    template: FrequencySeries or TimeSeries
+        A time or frequency series that contains the filter template. The length
+        must be commensurate with the data. 
+    data: FrequencySeries or TimeSeries
+        A time ore frequency series that contains the data to filter. The length
+        must be commensurate with the template.
+    num_bins: int
+        The number of bins in the chisq. Note that the dof goes as 2*num_bin-2. 
+    psd: FrequencySeries
+        The psd of the data. 
+    low_frequency_cutoff: {None, float}
+        The low frequency cutoff to apply.
+    high_frequency_cutoff: {None, float}
+        The high frequency cutoff to apply. 
+
+    Returns
+    -------
+    chisq: TimeSeries
+        TimeSeries containing the chisq values for all times. 
+    """
     htilde = make_frequency_series(template)
     stilde = make_frequency_series(data)
     

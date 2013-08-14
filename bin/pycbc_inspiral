@@ -240,7 +240,6 @@ with ctx:
                             else:
                                 chisq_bins = pycbc.vetoes.power_chisq_bins(template, opt.chisq_bins, psd, opt.low_frequency_cutoff)                                
                         chisqv = pycbc.vetoes.power_chisq_at_points_from_precomputed(corr, snrv, template.sigmasq, chisq_bins, indices = idx+snr_start).numpy()
-                        print "NCHISQ", len(chisqv)
 
                     idx += cumulative_index
                     event_mgr.add_template_events( ["snr", "time_index", "chisq", "bank_chisq"], [snrv, idx, chisqv, bank_vetov])
@@ -251,6 +250,7 @@ with ctx:
             cluster_window = opt.cluster_window * opt.sample_rate
         elif opt.cluster_method == "template":
             cluster_window = template.length_in_time * opt.sample_rate
+            
         event_mgr.cluster_template_events("time_index", "snr", cluster_window) 
         event_mgr.finalize_template_events()                 
         
