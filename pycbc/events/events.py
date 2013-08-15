@@ -206,7 +206,7 @@ class EventManager(object):
                 row.chisq = event['chisq']
 
             if hasattr(self.opt, 'bank_veto_bank_file') and self.opt.bank_veto_bank_file:
-                row.bank_chisq_dof = self.global_params['num_bank_templates']
+                row.bank_chisq_dof = 10
                 row.bank_chisq = event['bank_chisq']
             else:
                 row.bank_chisq_dof = 0

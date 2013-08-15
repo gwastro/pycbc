@@ -21,11 +21,69 @@
 #
 # =============================================================================
 #
-
+import logging
 from pycbc.types import zeros, real_same_precision_as, TimeSeries, complex_same_precision_as
 from pycbc.filter import overlap_cplx, matched_filter_core
 from pycbc.waveform import TemplateBank
 from math import sqrt
+
+def segment_snrs(filters, stilde, psd, low_frequency_cutoff):
+    """ This functions calculates the snr of each bank veto template against
+    the segment
+    
+    Parameters
+    ----------
+    filters: list of FrequencySeries
+        The list of bank veto templates filters.
+    stilde: FrequencySeries
+        The current segment of data.
+    psd: FrequencySeries
+    low_frequency_cutoff: float
+    
+    Returns
+    -------
+    snr (list): List of snr time series.
+    norm (list): List of normalizations factors for the snr time series.
+    """
+    snrs = []
+    norms = []
+    
+    for i, bank_template in enumerate(filters):
+        # For every template compute the snr against the stilde segment
+        snr, corr, norm = matched_filter_core(
+                bank_template, stilde, psd,
+                low_frequency_cutoff=low_frequency_cutoff)
+        # SNR time series stored here
+        snrs.append(snr)
+        # Template normalization factor stored here
+        norms.append(norm)
+        
+    return snrs, norms
+
+def template_overlaps(bank_filters, template, template_sigmasq, psd, low_frequency_cutoff):
+    """ This functions calculates the overlaps between the template and the
+    bank veto templates.
+    
+    Parameters
+    ----------
+    bank_filters: List of FrequencySeries
+    template: FrequencySeries
+    template_sigmasq: float
+    psd: FrequencySeries
+    low_frequency_cutoff: float   
+
+    Returns
+    -------
+    overlaps: List of complex overlap values.
+    """
+    overlaps = []
+    template_ow = template / psd
+    for bank_template in bank_filters:        
+        overlap = overlap_cplx(template_ow, bank_template,
+                low_frequency_cutoff=low_frequency_cutoff, normalized=False)
+        norm = sqrt(1 / template_sigmasq / bank_template.sigmasq)
+        overlaps.append(overlap * norm)
+    return overlaps
 
 def bank_chisq_from_filters(tmplt_snr, tmplt_norm, bank_snrs, bank_norms,
         tmplt_bank_matchs, indices=None):
@@ -83,13 +141,15 @@ def bank_chisq_from_filters(tmplt_snr, tmplt_norm, bank_snrs, bank_norms,
         return TimeSeries(bank_chisq, delta_t=tmplt_snr.delta_t, 
                epoch=tmplt_snr.start_time, copy=False)
     
-class BankVeto(object):
+class SingleDetBankVeto(object):
     """This class reads in a template bank file for a bank veto, handles the
        memory management of its filters internally, and calculates the bank
        veto TimeSeries.
     """
-    def __init__(self, bank_file, approximant, psd, f_low, **kwds):
-        self.filters = []
+    def __init__(self, bank_file, approximant, psd, segments, f_low, **kwds):
+        self.column_name = "bank_chisq"
+        self.table_dof_name = "bank_chisq_dof"
+    
         self.psd = psd    
         self.cdtype = complex_same_precision_as(psd)
         self.delta_f = psd.delta_f
@@ -97,66 +157,39 @@ class BankVeto(object):
         self.seg_len_freq = len(psd)
         self.seg_len_time = (self.seg_len_freq-1)*2
     
-        # Read in the bank veto bank
+        logging.info("Read in bank veto template bank")
         bank_veto_bank = TemplateBank(bank_file,
                 approximant, self.seg_len_freq, 
                 self.delta_f, f_low, dtype=self.cdtype, psd=self.psd, **kwds)
-                
-        # The following command actually generates all the filters
+
         self.filters = list(bank_veto_bank)
+       
+        if len(self.filters) > 0:
+            self.do = True
+        else:
+            self.do = False
         
-    def __len__(self):
-        return len(self.filters)
-        
-    def segment_snrs(self, stilde):
-        """ This functions calculates the snr of each bank veto template against
-        the segment
-        
-        Parameters
-        ----------
-        segment: FrequencySeriess
-            The SNR time series from filtering the segment against the current 
-            search template
+        logging.info("Precalculate the bank veto template snrs")
+        self.snr_data = []
+        for seg in segments:
+            self.snr_data.append(segment_snrs(self.filters, seg, psd, f_low))
+              
 
-
-        Returns
-        -------
-        snr (list): List of snr time series.
-        norm (list): List of normalizations factors for the snr time series.
-        """
-        snrs = []
-        norms = []
+        self.dof = len(bank_veto_bank) * 2 - 2
         
-        for i, bank_template in enumerate(self.filters):
-            # For every template compute the snr against the stilde segment
-            snr, corr, norm = matched_filter_core(
-                    bank_template, stilde, self.psd,
-                    low_frequency_cutoff=self.f_low)
-            # SNR time series stored here
-            snrs.append(snr)
-            # Template normalization factor stored here
-            norms.append(norm)
+        self._overlaps = None
+        self._template = None
+        
+    def values(self, template, s_num, snr, norm, indices):
+        if self.do:
+            logging.info("...Doing Bank Chisq")
             
-        return snrs, norms
-        
-    def template_overlaps(self, template, template_sigmasq):
-        """ This functions calculates the overlaps between the template and the
-        bank veto templates.
-        
-        Parameters
-        ----------
-        template: FrequencySeries
+            #Only calculate the overlaps if I haven't already and the template hasn't changed
+            if self._overlaps is None or self._template != template:
+                self._overlaps = template_overlaps(self.filters, template, template.sigmasq, self.psd, self.f_low)
+                self._template = template
+                         
+            bank_veto_snrs, bank_veto_norms = self.snr_data[s_num]
+            return bank_chisq_from_filters(snr, norm, bank_veto_snrs, bank_veto_norms, self._overlaps, indices)
 
-        Returns
-        -------
-        overlaps: List of complex overlap values.
-        """
-        overlaps = []
-        template_ow = template / self.psd
-        for bank_template in self.filters:        
-            overlap = overlap_cplx(template_ow, bank_template,
-                    low_frequency_cutoff=self.f_low, normalized=False)
-            norm = sqrt(1 / template_sigmasq / bank_template.sigmasq)
-            overlaps.append(overlap * norm)
-        return overlaps
         

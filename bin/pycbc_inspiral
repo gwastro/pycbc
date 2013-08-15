@@ -1,5 +1,4 @@
 #!/usr/bin/env /usr/bin/python
-
 import logging
 import sys
 import numpy
@@ -130,19 +129,9 @@ with ctx:
     psd = pycbc.psd.inverse_spectrum_truncation(psd, 
                 opt.sample_rate*opt.psd_inverse_length,  
                 low_frequency_cutoff=opt.low_frequency_cutoff)
-     
-    bank_veto = [] 
-    if opt.bank_veto_bank_file:
-        logging.info("Bank veto is enabled")
-        logging.info("Read in bank veto template bank")
-        bank_veto = pycbc.vetoes.BankVeto(opt.bank_veto_bank_file, 
-                                          opt.approximant, psd, 
-                                          opt.low_frequency_cutoff, 
-                                          phase_order=opt.order)
 
     logging.info("Making FFT'd segments")
     segments = []
-    bank_veto_pre = []
     seg_width_idx = (opt.segment_length - opt.segment_start_pad - 
                      opt.segment_end_pad) * opt.sample_rate
     seg_len_idx = opt.segment_length * opt.sample_rate
@@ -152,8 +141,12 @@ with ctx:
         seg = make_frequency_series(strain[seg_start_idx:seg_end_idx])
         segments.append(seg)
         seg_start_idx += seg_width_idx    
-        if opt.bank_veto_bank_file:
-            bank_veto_pre.append(bank_veto.segment_snrs(seg))
+  
+    bank_chisq = pycbc.vetoes.SingleDetBankVeto(opt.bank_veto_bank_file, 
+                                          opt.approximant, psd, segments,
+                                          opt.low_frequency_cutoff, 
+                                          phase_order=opt.order)                                       
+    power_chisq = pycbc.vetoes.SingleDetPowerChisq(opt.chisq_bins)
   
     logging.info("overwhiten stilde")
     for seg in segments:
@@ -171,8 +164,7 @@ with ctx:
                        
     event_mgr = pycbc.events.EventManager(opt, 
                          ['time_index', 'snr', 'chisq', 'bank_chisq'], 
-                         [int, complex64, float32, float32, float32], 
-                         num_bank_templates=len(bank_veto))
+                         [int, complex64, float32, float32, float32])
 
     # Our bank might have had no templates in it, in which case we shouldn't
     # analyze anything but should write our output and exit.
@@ -180,8 +172,6 @@ with ctx:
         logging.info("No templates found in template bank, so writing process table and exiting.")
         event_mgr.write_events()
         sys.exit(0)
-        
-    power_chisq = pycbc.vetoes.SingleDetPowerChisq(opt.chisq_bins)
 
     for t_num, template in enumerate(bank):  
         event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)                                                                     
@@ -220,20 +210,11 @@ with ctx:
                     idx = segment_events['loc']
                     snrv = segment_events['val'] * norm
                     
-                    bank_vetov = None
-                    if  opt.bank_veto_bank_file:
-                        logging.info("...Doing Bank Chisq")
-                        if bank_veto_overlaps is None:
-                            bank_veto_overlaps = bank_veto.template_overlaps(template, template.sigmasq)
-                        bank_veto_snrs, bank_veto_norms = bank_veto_pre[s_num]
-                        bank_vetov = pycbc.vetoes.bank_chisq_from_filters(snr, norm,
-                                bank_veto_snrs, bank_veto_norms, bank_veto_overlaps, indices=idx+snr_start).numpy()
-
-                    logging.info("...Doing Chisq")                            
-                    chisqv = power_chisq.values(corr, snr, norm, psd, idx+snr_start, template, bank, opt.low_frequency_cutoff)
+                    bank_chisqv = bank_chisq.values(template, s_num, snr, norm, idx+snr_start)
+                    power_chisqv = power_chisq.values(corr, snr, norm, psd, idx+snr_start, template, bank, opt.low_frequency_cutoff)
                     
                     idx += cumulative_index
-                    event_mgr.add_template_events( ["snr", "time_index", "chisq", "bank_chisq"], [snrv, idx, chisqv, bank_vetov])
+                    event_mgr.add_template_events( ["snr", "time_index", "chisq", "bank_chisq"], [snrv, idx, power_chisqv, bank_chisqv])
 
             cumulative_index += seg_width
 

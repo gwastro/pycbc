@@ -21,11 +21,13 @@
 #
 # =============================================================================
 #
+import numpy
+import logging
+import pycbc.fft
+
 from pycbc.types import Array, zeros, real_same_precision_as, TimeSeries, complex_same_precision_as, FrequencySeries
 from pycbc.filter import sigmasq_series, make_frequency_series, sigmasq, matched_filter_core
-import numpy
 from pycbc.scheme import schemed
-import pycbc.fft
 
 BACKEND_PREFIX="pycbc.vetoes.chisq_"
 
@@ -297,6 +299,11 @@ class SingleDetPowerChisq(object):
     running the power chisq in a single detector inspiral analysis.
     """
     def __init__(self, num_bins):
+        if num_bins > 0:
+            self.do = True
+        else:
+            self.do = False
+            
         self.column_name = "chisq"
         self.table_dof_name = "chisq_dof"
         self.dof = num_bins * 2 - 2
@@ -306,27 +313,21 @@ class SingleDetPowerChisq(object):
         self._template = None
 
     def values(self, corr, snr, snr_norm, psd, indices, template, bank, low_frequency_cutoff):
-        if self._num_bins > 0:
+        if self.do:
+            logging.info("...Doing power chisq")
+            
             # Compute the chisq bins if we haven't already
             # Only recompute the bins if the template changes
-            if self._template is None or self._template != template:
+            
+            if self._template is None or self._template != template:        
+                logging.info("...Calculating power chisq bins")
                 if bank.sigmasq_vec is not None:
                     kmin = int(low_frequency_cutoff / corr.delta_f)
                     kmax = template.end_idx
                     bins = power_chisq_bins_from_sigmasq_series(bank.sigmasq_vec, self._num_bins, kmin, kmax)
                 else:  
                     bins = power_chisq_bins(template, self._num_bins, psd, low_frequency_cutoff) 
+                self._template = template
+                self._bins = bins
             
-            return fastest_power_chisq_at_points(corr, snr, snr_norm, bins, indices)
-        else:
-            return None
-
-
-
-
-
-
-
-
-
-
+            return fastest_power_chisq_at_points(corr, snr, snr_norm, self._bins, indices)
