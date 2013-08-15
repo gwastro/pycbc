@@ -39,8 +39,8 @@ def power_chisq_bins_from_sigmasq_series(sigmasq_series, num_bins, kmin, kmax):
         A frequency series containing the cumulative power of a filter template
         preweighted by a psd.
     num_bins: int
-        The number of chisq bins to calculate.
     kmin: int
+        The number of chisq bins to calculate.
     kmax: int    
         
     Returns
@@ -137,20 +137,22 @@ def shift_sum(v1, shifts, slen=None, offset=0):
 
     inline(code, ['v1', 'n', 'vlen', 'pr', 'pi', 'outi', 'outr', 'vsr', 'vsi'], )
     return  Array(outr + 1.0j * outi, dtype=numpy.complex64)
-    
-def power_chisq_at_points_from_precomputed(corr, snr, h_norm, bins, indices):
+ 
+def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
     """Calculate the chisq timeseries from precomputed values for only select
     points.
     
-    Parameters
-    ----------
+    This function calculates the chisq at each point by explicitly time shifting
+    and summing each bin. No FFT is involved.
     
+    Parameters
+    ----------  
     corr: FrequencySeries
         The product of the template and data in the frequency domain.
     snr: Array
-        The normalized array of snr values at only the selected points in `indices`.
-    h_norm: float
-        The sigmasq of the template
+        The unnormalized array of snr values at only the selected points in `indices`.
+    norm: float
+        The normalization of the snr
     bins: List of integers
         The edges of the equal power bins
     indices: Array
@@ -166,20 +168,22 @@ def power_chisq_at_points_from_precomputed(corr, snr, h_norm, bins, indices):
     
     chisq = zeros(len(indices), dtype=real_same_precision_as(corr))     
     num_bins = len(bins) - 1
-    
-    norm = 4 * corr.delta_f / numpy.sqrt(h_norm)
+    chisq_norm = snr_norm ** 2.0
     
     for j in range(len(bins)-1):
         k_min = int(bins[j])
         k_max = int(bins[j+1])    
              
-        qi = shift_sum(corr[k_min:k_max], indices, slen=len(corr), offset=k_min) * norm
+        qi = shift_sum(corr[k_min:k_max], indices, slen=len(corr), offset=k_min)
         chisq += qi.squared_norm()  
         
-    return (chisq * num_bins - snr.squared_norm())
+    return (chisq * num_bins - snr.squared_norm()) * chisq_norm
     
-def power_chisq_from_precomputed(corr, snr, bins, snr_norm):
+def power_chisq_from_precomputed(corr, snr, snr_norm, bins):
     """Calculate the chisq timeseries from precomputed values
+    
+    This function calculates the chisq at all times by performing an 
+    inverse FFT of each bin.
     
     Parameters
     ----------
@@ -188,17 +192,15 @@ def power_chisq_from_precomputed(corr, snr, bins, snr_norm):
         The produce of the template and data in the frequency domain.
     snr: TimeSeries
         The unnormalized snr time series.
-    bins: List of integers
-        The edges of the chisq bins.
     snr_norm:
         The snr normalization factor. (true snr = snr * snr_norm)
-    
+    bins: List of integers
+        The edges of the chisq bins.   
     
     Returns
     -------
     chisq: TimeSeries
-    """
-       
+    """      
     q = zeros(len(snr), dtype=complex_same_precision_as(snr))
     qtilde = zeros(len(snr), dtype=complex_same_precision_as(snr))
     chisq = TimeSeries(zeros(len(snr), dtype=real_same_precision_as(snr)), 
@@ -217,6 +219,43 @@ def power_chisq_from_precomputed(corr, snr, bins, snr_norm):
         chisq_accum_bin(chisq, q)
         
     return (chisq * num_bins - snr.squared_norm()) * chisq_norm
+    
+def fastest_power_chisq_at_points(corr, snr, snr_norm, bins, indices):
+    """Calculate the chisq values for only select points.
+    
+    This function looks at the number of point that need to evaluated and
+    selects the fastest method (FFT, or direct time shift and sum). In either
+    case, only the selected points are returned.
+    
+    Parameters
+    ----------
+    
+    corr: FrequencySeries
+        The product of the template and data in the frequency domain.
+    snr: Array
+        The unnormalized snr
+    snr_norm: float
+        The snr normalization factor
+    bins: List of integers
+        The edges of the equal power bins
+    indices: Array
+        The indices where we will calculate the chisq. These must be relative 
+        to the given `snr` series.           
+    
+    Returns
+    -------
+    chisq: Array
+        An array containing only the chisq at the selected points.
+    """ 
+    # This is empirically chosen from tests on SUGAR. It may not be correct
+    # into the future. Replace with better estimate or auto-tuning.
+    POINT_THRESHOLD = 200
+    if len(indices) < POINT_THRESHOLD:
+        # We don't have that many points so do the direct time shift.
+        return power_chisq_at_points_from_precomputed(corr, snr.take(indices), snr_norm, bins, indices)
+    else:
+        # We have a lot of points so it is faster to use the fourier transform
+        return power_chisq_from_precomputed(corr, snr, snr_norm, bins).take(indices)    
 
 def power_chisq(template, data, num_bins, psd, low_frequency_cutoff=None, high_frequency_cutoff=None):
     """Calculate the chisq timeseries 
@@ -244,19 +283,50 @@ def power_chisq(template, data, num_bins, psd, low_frequency_cutoff=None, high_f
         TimeSeries containing the chisq values for all times. 
     """
     htilde = make_frequency_series(template)
-    stilde = make_frequency_series(data)
-    
-    bins = power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff, high_frequency_cutoff)
-    
-    corra = zeros((len(htilde)-1)*2, dtype=htilde.dtype)
-    
+    stilde = make_frequency_series(data)   
+     
+    bins = power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff, high_frequency_cutoff)   
+    corra = zeros((len(htilde)-1)*2, dtype=htilde.dtype)   
     total_snr, corr, tnorm = matched_filter_core(htilde, stilde, psd,
                            low_frequency_cutoff, high_frequency_cutoff, corr_out=corra)
 
     return power_chisq_from_precomputed(corr, total_snr, bins, tnorm)
 
-    
-                
+class SingleDetPowerChisq(object):
+    """Class that handles precomputation and memory management for efficiently
+    running the power chisq in a single detector inspiral analysis.
+    """
+    def __init__(self, num_bins):
+        self.column_name = "chisq"
+        self.table_dof_name = "chisq_dof"
+        self.dof = num_bins * 2 - 2
         
+        self._num_bins = num_bins
+        self._bins = None
+        self._template = None
+
+    def values(self, corr, snr, snr_norm, psd, indices, template, bank, low_frequency_cutoff):
+        if self._num_bins > 0:
+            # Compute the chisq bins if we haven't already
+            # Only recompute the bins if the template changes
+            if self._template is None or self._template != template:
+                if bank.sigmasq_vec is not None:
+                    kmin = int(low_frequency_cutoff / corr.delta_f)
+                    kmax = template.end_idx
+                    bins = power_chisq_bins_from_sigmasq_series(bank.sigmasq_vec, self._num_bins, kmin, kmax)
+                else:  
+                    bins = power_chisq_bins(template, self._num_bins, psd, low_frequency_cutoff) 
+            
+            return fastest_power_chisq_at_points(corr, snr, snr_norm, bins, indices)
+        else:
+            return None
+
+
+
+
+
+
+
+
 
 

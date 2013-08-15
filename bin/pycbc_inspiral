@@ -176,17 +176,17 @@ with ctx:
 
     # Our bank might have had no templates in it, in which case we shouldn't
     # analyze anything but should write our output and exit.
-
     if len(bank) == 0:
-        logging.info("No templates found in template bank, so writing process table and exiing.")
+        logging.info("No templates found in template bank, so writing process table and exiting.")
         event_mgr.write_events()
         sys.exit(0)
+        
+    power_chisq = pycbc.vetoes.SingleDetPowerChisq(opt.chisq_bins)
 
     for t_num, template in enumerate(bank):  
         event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)                                                                     
         cumulative_index = opt.segment_start_pad * opt.sample_rate
         bank_veto_overlaps = None
-        chisq_bins = None
         
         for s_num, stilde in enumerate(segments):          
             logging.info("Filtering" + "  Template: " + str(t_num+1) + "/" + \
@@ -216,12 +216,12 @@ with ctx:
                 
                 segment_events = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm)                 
 
-                if (len(segment_events) > 0):
+                if len(segment_events) > 0:
                     idx = segment_events['loc']
                     snrv = segment_events['val'] * norm
                     
                     bank_vetov = None
-                    if  (opt.bank_veto_bank_file):
+                    if  opt.bank_veto_bank_file:
                         logging.info("...Doing Bank Chisq")
                         if bank_veto_overlaps is None:
                             bank_veto_overlaps = bank_veto.template_overlaps(template, template.sigmasq)
@@ -229,18 +229,9 @@ with ctx:
                         bank_vetov = pycbc.vetoes.bank_chisq_from_filters(snr, norm,
                                 bank_veto_snrs, bank_veto_norms, bank_veto_overlaps, indices=idx+snr_start).numpy()
 
-                    chisqv = None;
-                    if  (opt.chisq_bins != 0):
-                        logging.info("...Doing Chisq") 
-                        if chisq_bins is None:                          
-                            if bank.sigmasq_vec is not None:
-                                chisq_bins = pycbc.vetoes.power_chisq_bins_from_sigmasq_series(bank.sigmasq_vec, 
-                                                opt.chisq_bins, int(opt.low_frequency_cutoff / template.delta_f), 
-                                                template.end_idx)
-                            else:
-                                chisq_bins = pycbc.vetoes.power_chisq_bins(template, opt.chisq_bins, psd, opt.low_frequency_cutoff)                                
-                        chisqv = pycbc.vetoes.power_chisq_at_points_from_precomputed(corr, snrv, template.sigmasq, chisq_bins, indices = idx+snr_start).numpy()
-
+                    logging.info("...Doing Chisq")                            
+                    chisqv = power_chisq.values(corr, snr, norm, psd, idx+snr_start, template, bank, opt.low_frequency_cutoff)
+                    
                     idx += cumulative_index
                     event_mgr.add_template_events( ["snr", "time_index", "chisq", "bank_chisq"], [snrv, idx, chisqv, bank_vetov])
 
