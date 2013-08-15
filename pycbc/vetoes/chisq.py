@@ -31,6 +31,24 @@ BACKEND_PREFIX="pycbc.vetoes.chisq_"
 
 def power_chisq_bins_from_sigmasq_series(sigmasq_series, num_bins, kmin, kmax):
     """Returns bins of equal power for use with the chisq functions
+    
+    Parameters
+    ----------
+    
+    sigmasq_series: FrequencySeries
+        A frequency series containing the cumulative power of a filter template
+        preweighted by a psd.
+    num_bins: int
+        The number of chisq bins to calculate.
+    kmin: int
+    kmax: int    
+        
+    Returns
+    -------
+    
+    bins: List of ints
+        A list of the edges of the chisq bins is returned. 
+    
     """
     sigmasq = sigmasq_series[kmax - 1]                        
     edge_vec = numpy.arange(0, num_bins) * sigmasq / num_bins
@@ -41,6 +59,27 @@ def power_chisq_bins_from_sigmasq_series(sigmasq_series, num_bins, kmin, kmax):
 def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff=None, 
                      high_frequency_cutoff=None):
     """Returns bins of equal power for use with the chisq functions
+    
+    Parameters
+    ----------
+    
+    htilde: FrequencySeries
+        A frequency series containing the template waveform
+    num_bins: int
+        The number of chisq bins to calculate.
+    psd: FrequencySeries
+        A frequency series containing the psd. Its length must be commensurate
+        with the template waveform.
+    low_frequency_cutoff: {None, float}, optional
+        The low frequency cutoff to apply
+    high_frequency_cutoff: {None, float}, optional
+        The high frequency cutoff to apply
+    
+    Returns
+    -------
+    
+    bins: List of ints
+        A list of the edges of the chisq bins is returned. 
     """
     sigma_vec = sigmasq_series(htilde, psd, low_frequency_cutoff, 
                                high_frequency_cutoff).numpy() 
@@ -100,7 +139,28 @@ def shift_sum(v1, shifts, slen=None, offset=0):
     return  Array(outr + 1.0j * outi, dtype=numpy.complex64)
     
 def power_chisq_at_points_from_precomputed(corr, snr, h_norm, bins, indices):
-    """ Returns the chisq time series
+    """Calculate the chisq timeseries from precomputed values for only select
+    points.
+    
+    Parameters
+    ----------
+    
+    corr: FrequencySeries
+        The product of the template and data in the frequency domain.
+    snr: Array
+        The normalized array of snr values at only the selected points in `indices`.
+    h_norm: float
+        The sigmasq of the template
+    bins: List of integers
+        The edges of the equal power bins
+    indices: Array
+        The indices where we will calculate the chisq. These must be relative 
+        to the given `corr` series.           
+    
+    Returns
+    -------
+    chisq: Array
+        An array containing only the chisq at the selected points.
     """
     snr = Array(snr, copy=False)
     
@@ -119,6 +179,26 @@ def power_chisq_at_points_from_precomputed(corr, snr, h_norm, bins, indices):
     return (chisq * num_bins - snr.squared_norm())
     
 def power_chisq_from_precomputed(corr, snr, bins, snr_norm):
+    """Calculate the chisq timeseries from precomputed values
+    
+    Parameters
+    ----------
+    
+    corr: FrequencySeries
+        The produce of the template and data in the frequency domain.
+    snr: TimeSeries
+        The unnormalized snr time series.
+    bins: List of integers
+        The edges of the chisq bins.
+    snr_norm:
+        The snr normalization factor. (true snr = snr * snr_norm)
+    
+    
+    Returns
+    -------
+    chisq: TimeSeries
+    """
+       
     q = zeros(len(snr), dtype=complex_same_precision_as(snr))
     qtilde = zeros(len(snr), dtype=complex_same_precision_as(snr))
     chisq = TimeSeries(zeros(len(snr), dtype=real_same_precision_as(snr)), 
@@ -139,8 +219,7 @@ def power_chisq_from_precomputed(corr, snr, bins, snr_norm):
     return (chisq * num_bins - snr.squared_norm()) * chisq_norm
 
 def power_chisq(template, data, num_bins, psd, low_frequency_cutoff=None, high_frequency_cutoff=None):
-    """
-    Calculate the chisq timeseries 
+    """Calculate the chisq timeseries 
 
     Parameters
     ----------
@@ -154,9 +233,9 @@ def power_chisq(template, data, num_bins, psd, low_frequency_cutoff=None, high_f
         The number of bins in the chisq. Note that the dof goes as 2*num_bin-2. 
     psd: FrequencySeries
         The psd of the data. 
-    low_frequency_cutoff: {None, float}
+    low_frequency_cutoff: {None, float}, optional
         The low frequency cutoff to apply.
-    high_frequency_cutoff: {None, float}
+    high_frequency_cutoff: {None, float}, optional
         The high frequency cutoff to apply. 
 
     Returns
