@@ -183,8 +183,7 @@ with ctx:
                          str(len(segments)) )       
                                                    
             snr_start = (opt.segment_start_pad) * opt.sample_rate
-            snr_end  =  (opt.segment_length - 
-                         opt.segment_end_pad) * opt.sample_rate
+            snr_end  =  (opt.segment_length - opt.segment_end_pad) * opt.sample_rate
             seg_width = (snr_end - snr_start)
 
             if opt.trig_start_time:
@@ -208,7 +207,7 @@ with ctx:
                     idx = segment_events['loc']
                     snrv = segment_events['val'] * norm
                     
-                    bank_chisqv = bank_chisq.values(template, s_num, snr, norm, idx+snr_start)           
+                    bank_chisqv = bank_chisq.values(template, s_num, snr, norm, idx+snr_start)
                     power_chisqv = power_chisq.values(corr, snr, norm, psd, idx+snr_start, template, bank, opt.low_frequency_cutoff)
                     
                     idx += cumulative_index

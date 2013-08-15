@@ -46,6 +46,8 @@ def get_accum_diff_sq_kernel(dtype_x, dtype_z):
 def chisq_accum_bin(chisq, q):
     krnl = get_accum_diff_sq_kernel(chisq.dtype, q.dtype)
     krnl(chisq.data, q.data)
+    
+
    
     
     

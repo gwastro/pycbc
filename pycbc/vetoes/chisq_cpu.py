@@ -21,6 +21,53 @@
 #
 # =============================================================================
 #
+import numpy
+from pycbc.types import Array
 
 def chisq_accum_bin(chisq, q):
     chisq += q.squared_norm()
+
+def shift_sum(v1, shifts, slen=None, offset=0):
+    from scipy.weave import inline
+    v1 = v1.data
+    shifts = numpy.array(shifts, dtype=numpy.float32)
+    vlen = len(v1)
+    if slen is None:
+        slen = vlen
+        
+    code = """
+        float t1, t2;         
+        
+        for (int j=0; j<vlen; j++){
+            std::complex<float> v = v1[j];
+            float vr = v.real();
+            float vi = v.imag();  
+                       
+            for (int i=0; i<n; i++){
+                outr[i] += vr * pr[i] - vi * pi[i];
+                outi[i] += vr * pi[i] + vi * pr[i];
+                t1 = pr[i];
+                t2 = pi[i];
+                pr[i] = t1 * vsr[i] - t2 * vsi[i];
+                pi[i] = t1 * vsi[i] + t2 * vsr[i]; 
+            }                                              
+        }            
+    """
+    n = int(len(shifts))
+    
+    #Calculate the incremental rotation for each time shift
+    vs = numpy.exp(numpy.pi * 2j * shifts / slen )
+    vsr = vs.real*1
+    vsi = vs.imag*1
+    
+    # Create some output memory
+    outr =  numpy.zeros(n, dtype=numpy.float32)
+    outi =  numpy.zeros(n, dtype=numpy.float32)
+    
+    # Create memory for storing the cumulative rotation for each time shift
+    p = numpy.exp(numpy.pi * 2j *  offset * shifts / slen)
+    pi = numpy.zeros(n, dtype=numpy.float32) + p.imag
+    pr = numpy.zeros(n, dtype=numpy.float32) + p.real
+
+    inline(code, ['v1', 'n', 'vlen', 'pr', 'pi', 'outi', 'outr', 'vsr', 'vsi'], )
+    return  Array(outr + 1.0j * outi, dtype=numpy.complex64)
