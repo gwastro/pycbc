@@ -301,16 +301,15 @@ class SingleDetPowerChisq(object):
     def __init__(self, num_bins):
         if num_bins > 0:
             self.do = True
-        else:
-            self.do = False
+            self.column_name = "chisq"
+            self.table_dof_name = "chisq_dof"
+            self.dof = num_bins * 2 - 2
             
-        self.column_name = "chisq"
-        self.table_dof_name = "chisq_dof"
-        self.dof = num_bins * 2 - 2
-        
-        self._num_bins = num_bins
-        self._bins = None
-        self._template = None
+            self._num_bins = num_bins
+            self._bins = None
+            self._template = None
+        else:
+            self.do = False           
 
     def values(self, corr, snr, snr_norm, psd, indices, template, bank, low_frequency_cutoff):
         if self.do:

@@ -147,37 +147,38 @@ class SingleDetBankVeto(object):
        veto TimeSeries.
     """
     def __init__(self, bank_file, approximant, psd, segments, f_low, **kwds):
-        self.column_name = "bank_chisq"
-        self.table_dof_name = "bank_chisq_dof"
-    
-        self.psd = psd    
-        self.cdtype = complex_same_precision_as(psd)
-        self.delta_f = psd.delta_f
-        self.f_low = f_low
-        self.seg_len_freq = len(psd)
-        self.seg_len_time = (self.seg_len_freq-1)*2
-    
-        logging.info("Read in bank veto template bank")
-        bank_veto_bank = TemplateBank(bank_file,
-                approximant, self.seg_len_freq, 
-                self.delta_f, f_low, dtype=self.cdtype, psd=self.psd, **kwds)
-
-        self.filters = list(bank_veto_bank)
-       
-        if len(self.filters) > 0:
+        if bank_file is not None:
+            print bank_file
             self.do = True
+            
+            self.column_name = "bank_chisq"
+            self.table_dof_name = "bank_chisq_dof"
+
+            self.psd = psd    
+            self.cdtype = complex_same_precision_as(psd)
+            self.delta_f = psd.delta_f
+            self.f_low = f_low
+            self.seg_len_freq = len(psd)
+            self.seg_len_time = (self.seg_len_freq-1)*2
+
+            logging.info("Read in bank veto template bank")
+            bank_veto_bank = TemplateBank(bank_file,
+                    approximant, self.seg_len_freq, 
+                    self.delta_f, f_low, dtype=self.cdtype, psd=self.psd, **kwds)
+
+            self.filters = list(bank_veto_bank)
+
+            logging.info("Precalculate the bank veto template snrs")
+            self.snr_data = []
+            for seg in segments:
+                self.snr_data.append(segment_snrs(self.filters, seg, psd, f_low))
+                  
+            self.dof = len(bank_veto_bank) * 2 - 2
+
+            self._overlaps = None
+            self._template = None
         else:
             self.do = False
-        
-        logging.info("Precalculate the bank veto template snrs")
-        self.snr_data = []
-        for seg in segments:
-            self.snr_data.append(segment_snrs(self.filters, seg, psd, f_low))
-              
-        self.dof = len(bank_veto_bank) * 2 - 2
-        
-        self._overlaps = None
-        self._template = None
         
     def values(self, template, s_num, snr, norm, indices):
         if self.do:
