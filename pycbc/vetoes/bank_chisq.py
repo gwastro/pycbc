@@ -174,7 +174,6 @@ class SingleDetBankVeto(object):
         for seg in segments:
             self.snr_data.append(segment_snrs(self.filters, seg, psd, f_low))
               
-
         self.dof = len(bank_veto_bank) * 2 - 2
         
         self._overlaps = None
@@ -186,6 +185,7 @@ class SingleDetBankVeto(object):
             
             #Only calculate the overlaps if I haven't already and the template hasn't changed
             if self._overlaps is None or self._template != template:
+                logging.info("...Calculate Bank Chisq Overlaps")
                 self._overlaps = template_overlaps(self.filters, template, template.sigmasq, self.psd, self.f_low)
                 self._template = template
                          

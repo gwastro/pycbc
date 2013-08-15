@@ -176,7 +176,6 @@ with ctx:
     for t_num, template in enumerate(bank):  
         event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)                                                                     
         cumulative_index = opt.segment_start_pad * opt.sample_rate
-        bank_veto_overlaps = None
         
         for s_num, stilde in enumerate(segments):          
             logging.info("Filtering" + "  Template: " + str(t_num+1) + "/" + \
@@ -199,8 +198,7 @@ with ctx:
                     snr_end = snr_end - (seg_end - opt.trig_end_time) * opt.sample_rate 
                     
             if snr_start < snr_end:
-                snr, corr, norm = matched_filter_core(template, stilde, 
-                                                      h_norm=template.sigmasq, 
+                snr, corr, norm = matched_filter_core(template, stilde, h_norm=template.sigmasq, 
                                                       low_frequency_cutoff=opt.low_frequency_cutoff, 
                                                       out=snr_work_mem, corr_out=corr_work_mem)
                 
@@ -210,7 +208,7 @@ with ctx:
                     idx = segment_events['loc']
                     snrv = segment_events['val'] * norm
                     
-                    bank_chisqv = bank_chisq.values(template, s_num, snr, norm, idx+snr_start)
+                    bank_chisqv = bank_chisq.values(template, s_num, snr, norm, idx+snr_start)           
                     power_chisqv = power_chisq.values(corr, snr, norm, psd, idx+snr_start, template, bank, opt.low_frequency_cutoff)
                     
                     idx += cumulative_index

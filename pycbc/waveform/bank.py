@@ -35,10 +35,7 @@ from pycbc import DYN_RANGE_FAC
 
 class TemplateBank(object):
     def __init__(self, filename, approximant, filter_length, delta_f, f_lower,  dtype, psd=None, out=None, **kwds):
-        if out:
-            self.out = out
-        else:
-            self.out = zeros(filter_length, dtype=dtype)
+        self.out = out
         self.dtype = dtype
         self.f_lower = f_lower
         self.approximant = approximant
@@ -70,6 +67,10 @@ class TemplateBank(object):
         return len(self.table)
     
     def __getitem__(self, index):
+        # Make new memory for templates if we aren't given output memory
+        if self.out is None:
+            self.out = zeros(self.filter_length, dtype=self.dtype)
+    
         # Get the end of the waveform if applicable (only for SPAtmplt atm)
         f_end = pycbc.waveform.get_waveform_end_frequency(self.table[index], 
                               approximant=self.approximant, **self.extra_args) 
