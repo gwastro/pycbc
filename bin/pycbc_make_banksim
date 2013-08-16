@@ -274,6 +274,7 @@ for row in res:
     bt = btables[row['bank']][row['bank_i']]     
     it = itables[row['sim']][row['sim_i']]
  
+    outstr += str(row['match']) + " "
     outstr += str(bt.mass1) + " "
     outstr += str(bt.mass2) + " "
     outstr += str(bt.spin1x) + " "
