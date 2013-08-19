@@ -35,65 +35,34 @@ import base_test
 import sys
 import os
 import tempfile
-import optparse
 
-_parser = optparse.OptionParser()
+from utils import parse_args_all_schemes
 
-def _check_scheme(option, opt_str, scheme, parser):
-    if scheme=='cuda' and not pycbc.HAVE_CUDA:
-        raise optparse.OptionValueError("CUDA not found")
-
-    if scheme=='opencl' and not pycbc.HAVE_OPENCL:
-        raise optparse.OptionValueError("OpenCL not found")
-    setattr (parser.values, option.dest, scheme)
-
-_parser.add_option('--scheme','-s', action='callback', type = 'choice', choices = ('cpu','cuda','opencl'), 
-                    default = 'cpu', dest = 'scheme', callback = _check_scheme,
-                    help = 'specifies processing scheme, can be cpu [default], cuda, or opencl')
-
-_parser.add_option('--device-num','-d', action='store', type = 'int', dest = 'devicenum', default=0,
-                    help = 'specifies a GPU device to use for CUDA or OpenCL, 0 by default')
-
-(_opt_list, _args) = _parser.parse_args()
-
-#Changing the optvalues to a dict makes them easier to read
-_options = vars(_opt_list)
+_scheme, _context = parse_args_all_schemes("Array")
 
 # ********************GENERIC ARRAY TESTS ***********************
 
-# By importing the current schemes array type, it will make it easier to check the  array types later
-if _options['scheme'] == 'cuda':
-    import pycuda
-    import pycuda.gpuarray
-    from pycuda.gpuarray import GPUArray as SchemeArray
-elif _options['scheme'] == 'opencl':
-    import pyopencl
-    import pyopencl.array
-    from pyopencl.array import Array as SchemeArray
-elif _options['scheme'] == 'cpu':
-    from numpy import ndarray as SchemeArray
-
-
 class ArrayTestBase(base_test.array_base):
     def setUp(self):
-    
-        # We need to check for correct creation from all dtypes, 
-        # and errors from incorrect operations so the other precision of 
+        self.scheme = _scheme
+        self.context = _context
+        # We need to check for correct creation from all dtypes,
+        # and errors from incorrect operations so the other precision of
         # odtype needs to be available as well
         self.other_precision = {numpy.complex64 : numpy.complex128,
                             numpy.complex128 : numpy.complex64,
                             numpy.float32 : numpy.float64,
                             numpy.float64 : numpy.float32}
-        
+
         # Number of decimal places to compare for single precision
         if self.dtype == numpy.float32 or self.dtype == numpy.complex64:
             self.places = 5
         # Number of decimal places to compare for double precision
         else:
             self.places = 13
-            
+
         # We will also need to check whether dtype and odtype are real or complex,
-        # so that we can test non-zero imaginary parts. 
+        # so that we can test non-zero imaginary parts.
         if self.dtype == numpy.float32 or self.dtype == numpy.float64:
             self.kind = 'real'
         else:
@@ -105,7 +74,7 @@ class ArrayTestBase(base_test.array_base):
         # Now that the kinds are set, we need to call our parent method to set up all the
         # inputs and answers for our functions
         self.setNumbers()
-        
+
         # Here two test arrays are created.
         # We will use multiples of each to check things are on the cpu/gpu when they should be.
         self.a1 = Array(self.alist, dtype=self.dtype)
@@ -116,7 +85,7 @@ class ArrayTestBase(base_test.array_base):
 
         self.b1 = Array(self.blist, dtype=self.odtype)
         self.b2 = Array(self.blist, dtype=self.odtype)
-        
+
         # And now we'll make a copy of the scalar. We make a copy so we can still check it later.
         self.s = self.scalar
 
@@ -143,8 +112,8 @@ class ArrayTestBase(base_test.array_base):
             self.assertTrue(self.a1[-1:][0] == self.alist[2])
             self.assertRaises(IndexError, self.a1.__getitem__, 3)
             self.assertRaises(IndexError, self.a1.__getitem__, -4)
-                            
-        if not (self.kind == 'real' and self.okind == 'complex'):   
+
+        if not (self.kind == 'real' and self.okind == 'complex'):
             with self.context:
                 # We will check setting from arrays on multiple contexts
                 self.b1 *= 1
@@ -158,16 +127,16 @@ class ArrayTestBase(base_test.array_base):
             c[1] = Array(self.b2[1])
             c[2] = Array(self.b1[2])
             self.checkCurrentState((self.b1, self.b2, c),(self.blist,self.blist,self.blist), self.places)
-                
+
         else:
             with self.context:
                 self.assertRaises(ValueError, self.a1.__setitem__, 0, Array(self.b1[0]))
 
     def test_numpy_init(self):
-        with self.context:                                
+        with self.context:
             in1 = numpy.array([5,3,1],dtype=self.odtype)
             in2 = numpy.array([5,3,1],dtype=self.other_precision[self.odtype])
-            
+
             #We don't want to cast complex as real
             if not (self.kind == 'real' and self.okind == 'complex'):
                 #First we must check that the dtype is correct when specified
@@ -182,18 +151,17 @@ class ArrayTestBase(base_test.array_base):
                 self.assertEqual(out1[1],3)
                 self.assertEqual(out1[2],1)
                 self.assertTrue(out1.dtype==self.dtype)
-                
-                
+
                 self.assertTrue(type(out2._scheme) == self.scheme)
                 self.assertTrue(type(out2._data) is SchemeArray)
                 self.assertEqual(out2[0],5)
                 self.assertEqual(out2[1],3)
                 self.assertEqual(out2[2],1)
                 self.assertTrue(out2.dtype==self.dtype)
-                
+
                 in1-=1
                 in2-=1
-            
+
             # Also, when it is unspecified
             out3 = Array(in1)
             in1 += 1
@@ -203,20 +171,20 @@ class ArrayTestBase(base_test.array_base):
             self.assertEqual(out3[1],3)
             self.assertEqual(out3[2],1)
             self.assertTrue(out3.dtype==self.odtype)
-                        
+
             # Check for copy=false
             # On the CPU, this should be possible
             in3 = numpy.array([5,3,1],dtype=self.dtype)
             if _options['scheme'] == 'cpu':
                 out4 = Array(in3,copy=False)
                 in3 += 1
-                
+
                 self.assertTrue(out4.dtype==self.dtype)
                 self.assertTrue(type(out4._scheme) == self.scheme)
                 self.assertEqual(out4[0],6)
                 self.assertEqual(out4[1],4)
                 self.assertEqual(out4[2],2)
-                
+
             # If we're in different scheme, this should raise an error
             else:
                 self.assertRaises(TypeError, Array, in3, copy=False)
@@ -235,7 +203,7 @@ class ArrayTestBase(base_test.array_base):
                 self.assertEqual(out4[1],1)
                 self.assertEqual(out4[2],1)
                 self.assertTrue(out4.dtype==self.dtype)
-                            
+
             # We should be able to create an array from the wrong dtype, and
             # it should be cast as float64
             in5 = numpy.array([1,2,3],dtype=numpy.int32)
@@ -247,25 +215,25 @@ class ArrayTestBase(base_test.array_base):
             self.assertEqual(out5[1],2)
             self.assertEqual(out5[2],3)
             self.assertTrue(out5.dtype==numpy.float64)
-            
+
             # We shouldn't be able to copy it though
             self.assertRaises(TypeError,Array,in5, copy=False)
-            
+
             # Just checking that we can make an empty array correctly
             empty = numpy.array([])
             out6 = Array(empty)
             self.assertTrue(out6.dtype==numpy.float64)
             self.assertRaises(IndexError, out6.__getitem__,0)
-            
+
         if _options['scheme'] != 'cpu':
             self.assertRaises(TypeError, Array, in4, copy=False)
         self.assertRaises(TypeError, Array, in5, copy=False)
-                    
+
 
     def test_array_init(self):
         # this array is made outside the context so we can check that an error is raised when copy = false in a GPU scheme
         cpuarray = Array([1,2,3])
-        with self.context:      
+        with self.context:
             in1 = Array([5,3,1],dtype=self.odtype)
             in2 = Array([5,3,1],dtype=self.other_precision[self.odtype])
             self.assertTrue(type(in1._scheme) == self.scheme)
@@ -280,14 +248,14 @@ class ArrayTestBase(base_test.array_base):
                 # to be sure that it is copied
                 in1 += 1
                 in2 += 1
-                
+
                 self.assertTrue(type(out1._scheme) == self.scheme)
                 self.assertTrue(type(out1._data) is SchemeArray)
                 self.assertEqual(out1[0],5)
                 self.assertEqual(out1[1],3)
                 self.assertEqual(out1[2],1)
                 self.assertTrue(out1.dtype==self.dtype)
-                                
+
                 if out1.dtype == numpy.float32:
                     self.assertTrue(out1.precision == 'single')
                     #self.assertTrue(out1.kind == 'real')
@@ -299,66 +267,66 @@ class ArrayTestBase(base_test.array_base):
                     #self.assertTrue(out1.kind == 'complex')
                 if out1.dtype == numpy.complex128:
                     self.assertTrue(out1.precision == 'double')
-                    #self.assertTrue(out1.kind == 'complex')                
-                
+                    #self.assertTrue(out1.kind == 'complex')
+
                 self.assertTrue(type(out2._scheme) == self.scheme)
                 self.assertTrue(type(out2._data) is SchemeArray)
                 self.assertEqual(out2[0],5)
                 self.assertEqual(out2[1],3)
                 self.assertEqual(out2[2],1)
                 self.assertTrue(out2.dtype==self.dtype)
-                                
+
                 in1-=1
                 in2-=1
             # Giving complex input and specifying a real dtype should raise an error
             else:
                 self.assertRaises(TypeError, Array, in1, dtype = self.dtype)
                 self.assertRaises(TypeError, Array, in2, dtype = self.dtype)
-            
+
             # Also, when it is unspecified
             out3 = Array(in1)
             in1 += 1
-            
+
             self.assertTrue(type(out3._scheme) == self.scheme)
             self.assertTrue(type(out3._data) is SchemeArray)
             self.assertEqual(out3[0],5)
             self.assertEqual(out3[1],3)
             self.assertEqual(out3[2],1)
             self.assertTrue(out3.dtype==self.odtype)
-                        
+
             # We should also be able to create from a CPU Array
             out4 = Array(cpuarray, dtype=self.dtype)
-            
+
             self.assertTrue(type(out4._scheme) == self.scheme)
             self.assertTrue(type(out4._data) is SchemeArray)
             self.assertEqual(out4[0],1)
             self.assertEqual(out4[1],2)
             self.assertEqual(out4[2],3)
             self.assertTrue(out4.dtype==self.dtype)
-                        
+
             self.assertRaises(TypeError, Array,in1, dtype=numpy.int32)
-            
+
             # Check for copy=false
             in3 = Array([5,3,1],dtype=self.dtype)
             out5 = Array(in3,copy=False)
             in3 += 1
-            
+
             self.assertTrue(type(out5._scheme) == self.scheme)
             self.assertTrue(type(out5._data) is SchemeArray)
             self.assertEqual(out5[0],6)
             self.assertEqual(out5[1],4)
             self.assertEqual(out5[2],2)
             self.assertTrue(out5.dtype==self.dtype)
-                        
+
             if _options['scheme'] != 'cpu':
                 self.assertRaises(TypeError,Array,cpuarray,copy=False)
-                
+
             # Just checking that we can make an empty array correctly
             empty = Array(numpy.array([]))
             out7 = Array(empty)
             self.assertTrue(out7.dtype==numpy.float64)
             self.assertRaises(IndexError, out7.__getitem__,0)
-            
+
         # Also checking that a cpu array can't be made out of another scheme without copying
         if _options['scheme'] != 'cpu':
             self.assertRaises(TypeError, Array, out4, copy=False)
@@ -369,69 +337,69 @@ class ArrayTestBase(base_test.array_base):
             self.assertEqual(out6[1],2)
             self.assertEqual(out6[2],3)
             self.assertTrue(out6.dtype==self.dtype)
-            
+
     def test_take(self):
         with self.context:
             if self.kind == 'real':
                 a = Array([1,2,3,4,5,6], dtype=self.dtype)
-            
+
             if self.kind == 'complex':
                 a = Array([1+2j, 2+3j, 3+4j, 4+5j, 5+6j, 6+7j], dtype=self.dtype)
-            
+
             i = numpy.array([0,4,2], dtype=numpy.int64)
             b = a.take(i)
             self.assertEqual(b[0], a[0])
             self.assertEqual(b[1], a[4])
             self.assertEqual(b[2], a[2])
-            
+
     def test_abs_max_loc(self):
         with self.context:
             if self.kind == 'real':
                 a = Array([-1,2,3,4,5,-6], dtype=self.dtype)
                 v = abs(-6)
-            
+
             if self.kind == 'complex':
                 a = Array([1+2j, 2+3j, -3+4j, 4+5j, 5+6j, -6+7j], dtype=self.dtype)
                 v = abs(-6+7j)
-            
+
             m, l = a.abs_max_loc()
             self.assertAlmostEqual(m, v, places=5)
             self.assertEqual(l, 5)
-            
+
     def test_clear(self):
         with self.context:
             if self.kind == 'real':
                 a = Array([1,2,3,4,5,6], dtype=self.dtype)
-            
+
             if self.kind == 'complex':
                 a = Array([1+2j, 2+3j, 3+4j, 4+5j, 5+6j, 6+7j], dtype=self.dtype)
-                
+
             a.clear()
             for i in range(len(a)):
-                self.assertEqual(a[i], 0) 
-            
-        
+                self.assertEqual(a[i], 0)
+
+
     def test_max_loc(self):
         with self.context:
             if self.kind == 'real':
                 a = Array([1,2,3,4,5,6], dtype=self.dtype)
-            
+
                 m, l = a.max_loc()
                 self.assertEqual(m, 6)
                 self.assertEqual(l, 5)
-            
+
     def test_list_init(self):
         with self.context:
             # When specified
             out1 = Array([5,3,1], dtype=self.dtype)
-            
+
             self.assertTrue(type(out1._scheme) == self.scheme)
             self.assertTrue(type(out1._data) is SchemeArray)
             self.assertEqual(out1[0],5)
             self.assertEqual(out1[1],3)
             self.assertEqual(out1[2],1)
             self.assertTrue(out1.dtype==self.dtype)
-                        
+
             if out1.dtype == numpy.float32:
                 self.assertTrue(out1.precision == 'single')
                 #self.assertTrue(out1.kind == 'real')
@@ -443,64 +411,64 @@ class ArrayTestBase(base_test.array_base):
                 #self.assertTrue(out1.kind == 'complex')
             if out1.dtype == numpy.complex128:
                 self.assertTrue(out1.precision == 'double')
-                #self.assertTrue(out1.kind == 'complex')  
-            
+                #self.assertTrue(out1.kind == 'complex')
+
             if self.kind == 'complex':
                 out2 = Array([5+0j,3+0j,1+0j], dtype=self.dtype)
-            
+
                 self.assertTrue(type(out2._scheme) == self.scheme)
                 self.assertTrue(type(out2._data) is SchemeArray)
                 self.assertEqual(out2[0],5)
                 self.assertEqual(out2[1],3)
                 self.assertEqual(out2[2],1)
                 self.assertTrue(out2.dtype==self.dtype)
-                                
+
             else:
                 self.assertRaises(TypeError, Array,[5+0j, 3+0j, 1+0j],dtype=self.dtype)
             self.assertRaises(TypeError, Array,[1,2,3], dtype=numpy.int32)
-            
+
             #Also, when it is unspecified
             out3 = Array([5,3,1])
-            
+
             self.assertTrue(type(out3._scheme) == self.scheme)
             self.assertTrue(type(out3._data) is SchemeArray)
             self.assertEqual(out3[0],5)
             self.assertEqual(out3[1],3)
             self.assertEqual(out3[2],1)
             self.assertTrue(out3.dtype==numpy.float64)
-                        
+
             out4 = Array([5+0j,3+0j,1+0j])
-            
+
             self.assertTrue(type(out4._scheme) == self.scheme)
             self.assertTrue(type(out4._data) is SchemeArray)
             self.assertEqual(out4[0],5)
             self.assertEqual(out4[1],3)
             self.assertEqual(out4[2],1)
             self.assertTrue(out4.dtype==numpy.complex128)
-            
+
             # Just checking that we can make an empty array correctly
             out7 = Array([])
             self.assertTrue(out7.dtype==numpy.float64)
             self.assertRaises(IndexError, out7.__getitem__,0)
-                        
+
             #We also need to check the zero function
             out5 = zeros(3,dtype=self.dtype)
             out6 = zeros(3)
-            
+
             self.assertTrue(type(out5._scheme) == self.scheme)
             self.assertTrue(type(out5._data) is SchemeArray)
             self.assertEqual(out5[0],0)
             self.assertEqual(out5[1],0)
             self.assertEqual(out5[2],0)
             self.assertTrue(out5.dtype == self.dtype)
-                        
+
             self.assertTrue(type(out6._scheme) == self.scheme)
             self.assertTrue(type(out6._data) is SchemeArray)
-            self.assertEqual(out6[0],0)               
+            self.assertEqual(out6[0],0)
             self.assertEqual(out6[1],0)
             self.assertEqual(out6[2],0)
             self.assertTrue(out6.dtype == numpy.float64)
-                        
+
             self.assertRaises(TypeError,Array,[1,2,3],copy=False)
 
     def test_save(self):
@@ -528,7 +496,7 @@ class ArrayTestBase(base_test.array_base):
                 self.assertEqual(b.shape, a_numpy.shape)
             self.assertEqual(numpy.abs(b - a_numpy).max(), 0)
             os.remove(temp_path_txt)
-            
+
 def array_test_maker(context,dtype,odtype):
     class tests(ArrayTestBase,unittest.TestCase):
         def __init__(self,*args):
@@ -545,28 +513,19 @@ types = [ (float32,[float32,complex64]), (float64,[float64,complex128]),
 
 suite = unittest.TestSuite()
 
-scs =[]
-if _options['scheme'] == 'cpu':
-    scs.append(CPUScheme())
-if _options['scheme'] == 'cuda':
-    scs.append(CUDAScheme(device_num=_options['devicenum']))
-if _options['scheme'] == 'opencl':
-    scs.append(OpenCLScheme(device_num=_options['devicenum']))
-
 ind = 0
-for sc in scs:
-    for ty,oktype in types:
-        for ot in oktype:
-            na = 'test' + str(ind)
-            vars()[na] = array_test_maker(sc,ty,ot)
-            suite.addTest(unittest.TestLoader().loadTestsFromTestCase(vars()[na]))
-            ind += 1
+for ty,oktype in types:
+    for ot in oktype:
+        na = 'test' + str(ind)
+        vars()[na] = array_test_maker(sc,ty,ot)
+        suite.addTest(unittest.TestLoader().loadTestsFromTestCase(vars()[na]))
+        ind += 1
 
 
 
 # TODO More specific array tests (instatiation, failure modes, type conversion, etc)
-        
-        
+
+
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
 
