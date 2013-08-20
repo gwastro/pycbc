@@ -62,5 +62,5 @@ loc = pzeros(mgr.state.queue, 4096*256, numpy.uint32)
 def threshold(series, value):
     threshold_kernel(series.data, val, loc, value, n)
     n0 = n.get()[0]
-    return loc[0:n0].get(), valn[0:n0].get()
+    return loc[0:n0].get(), val[0:n0].get()
 
