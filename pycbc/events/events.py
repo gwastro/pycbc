@@ -33,20 +33,6 @@ import pycbc
 from pycbc.scheme import schemed
 import numpy
 
-complex64_subset = numpy.dtype([('val', numpy.complex64), ('loc', numpy.int64),])
-complex128_subset = numpy.dtype([('val', numpy.complex128), ('loc', numpy.int64),])
-float32_subset = numpy.dtype([('val', numpy.float32), ('loc', numpy.int64),])
-float64_subset = numpy.dtype([('val', numpy.float64), ('loc', numpy.int64),])
-
-_dmap = {numpy.dtype('float32'): float32_subset,
-         numpy.dtype('float64'): float64_subset,
-         numpy.dtype('complex64'): complex64_subset,
-         numpy.dtype('complex128'): complex128_subset}
-         
-
-def subset_dtype(dtype):
-    return _dmap[dtype]
-
 @schemed("pycbc.events.threshold_")
 def threshold(series, value):
     """Return list of values and indices values over threshold in series. 
@@ -132,7 +118,7 @@ class EventManager(object):
         new_events['template_id'] = self.template_index
         for c, v in zip(columns, vectors):
             if v is not None:
-                new_events[c] = v  
+                new_events[c] = v
         self.template_events = numpy.append(self.template_events, new_events)                     
      
     def cluster_template_events(self, tcolumn, column, window_size):
@@ -336,8 +322,7 @@ class EventManager(object):
 
 __all__ = ['threshold_and_cluster', 
            'findchirp_cluster_over_window', 'threshold', 
-           'EventManager', 'float32_subset', 'float64_subset',
-           'complex64_subset', 'complex128_subset', 'subset_dtype']
+           'EventManager']
 
 
 

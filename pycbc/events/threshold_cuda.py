@@ -26,56 +26,58 @@ from pycbc.types import zeros, Array
 from pycuda.gpuarray import to_gpu
 from pycuda.tools import get_or_register_dtype, dtype_to_ctype
 from pycuda.elementwise import ElementwiseKernel
-from events import complex64_subset
 from pycuda.compiler import SourceModule
-
-complex64_subset = get_or_register_dtype("event", dtype=complex64_subset)
-
-preamble = """
-    #include <stdio.h>
-    struct event{
-        pycuda::complex<float> val;
-        long loc;
-    };
-    
-    """
 
 threshold_op = """
     if (i == 0)
         bn[0] = 0;
 
     pycuda::complex<float> val = in[i];
-    event nv;
     if ( abs(val) > threshold){
-        nv.val = val;
-        nv.loc = i;
-        int n_w = atomicAdd(bn, 1) ;
-        out[n_w] = nv;
+        int n_w = atomicAdd(bn, 1);
+        outv[n_w] = val;
+        outl[n_w] = i;
     }
 
 """
 
 threshold_kernel = ElementwiseKernel(
-            " %(tp_in)s *in, %(tp_out)s *out, %(tp_th)s threshold, %(tp_n)s *bn" % {
+            " %(tp_in)s *in, %(tp_out1)s *outv, %(tp_out2)s *outl, %(tp_th)s threshold, %(tp_n)s *bn" % {
                 "tp_in": dtype_to_ctype(numpy.complex64),
-                "tp_out": dtype_to_ctype(complex64_subset),
+                "tp_out1": dtype_to_ctype(numpy.complex64),
+                "tp_out2": dtype_to_ctype(numpy.uint32),
                 "tp_th": dtype_to_ctype(numpy.float32),
-                "tp_n": dtype_to_ctype(numpy.int32),
+                "tp_n": dtype_to_ctype(numpy.uint32),
                 },
             threshold_op,
-            "getstuff", preamble=preamble)
+            "getstuff")
             
-n_events = numpy.zeros(1, dtype=numpy.int64)
-n_events = to_gpu(n_events)
-buffer_vec = numpy.zeros(4096*2048, dtype=complex64_subset)
-buffer_vec = to_gpu(buffer_vec)
-            
-def threshold(series, value):
-    threshold_kernel(series.data, buffer_vec, value, n_events)
-    n = n_events.get()[0]
-    return numpy.sort(buffer_vec[0:n].get(), order='loc')
-  
+import pycuda.driver as drv
+n = drv.pagelocked_empty((1), numpy.uint32, mem_flags=drv.host_alloc_flags.DEVICEMAP)
+nptr = numpy.intp(n.base.get_device_pointer())
 
+val = drv.pagelocked_empty((4096*256), numpy.complex64, mem_flags=drv.host_alloc_flags.DEVICEMAP)
+vptr = numpy.intp(val.base.get_device_pointer())
+
+loc = drv.pagelocked_empty((4096*256), numpy.int32, mem_flags=drv.host_alloc_flags.DEVICEMAP)
+lptr = numpy.intp(loc.base.get_device_pointer())
+            
+class T():
+    pass
+
+tn = T()
+tv = T()
+tl = T()
+tn.gpudata = nptr
+tv.gpudata = vptr
+tl.gpudata = lptr
+tn.flags = tv.flags = tl.flags = n.flags
+
+def threshold(series, value):
+    threshold_kernel(series.data, tv, tl, value, tn)
+    n0 = n[0]
+    return loc[0:n0], val[0:n0]
+  
 
 threshold_cluster_mod = SourceModule("""
 #include<pycuda-complex.hpp>

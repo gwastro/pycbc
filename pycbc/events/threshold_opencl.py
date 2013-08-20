@@ -22,55 +22,45 @@
 # =============================================================================
 #
 import numpy
+import pyopencl
 from pycbc.types import zeros, Array
 from pyopencl.array import to_device
+from pyopencl.array import zeros as pzeros
 from pyopencl.tools import get_or_register_dtype, dtype_to_ctype
 from pyopencl.elementwise import ElementwiseKernel
-from events import complex64_subset
 from pycbc.scheme import mgr
-
-complex64_subset = get_or_register_dtype("event", dtype=complex64_subset)
-
-preamble = """
-    typedef struct{
-        cfloat_t val;
-        long loc;
-    } event;
-    
-    """
 
 threshold_op = """
     if (i == 0)
         bn[0] = 0;
 
     cfloat_t val = in[i];
-    event nv;
     if ( cfloat_abs(val) > threshold){
-        nv.val = val;
-        nv.loc = i;
         int n_w = atomic_add(bn, 1);
-        out[n_w] = nv;
+        outv[n_w] = val;
+        outl[n_w] = i;
     }
 
 """
 
 threshold_kernel = ElementwiseKernel(mgr.state.context,
-            " %(tp_in)s *in, %(tp_out)s *out, %(tp_th)s threshold, %(tp_n)s *bn" % {
+            " %(tp_in)s *in, %(tp_out1)s *outv, %(tp_out2)s *outl, %(tp_th)s threshold, %(tp_n)s *bn" % {
                 "tp_in": dtype_to_ctype(numpy.complex64),
-                "tp_out": dtype_to_ctype(complex64_subset),
+                "tp_out1": dtype_to_ctype(numpy.complex64),
+                "tp_out2": dtype_to_ctype(numpy.uint32),
                 "tp_th": dtype_to_ctype(numpy.float32),
-                "tp_n": dtype_to_ctype(numpy.int32),
+                "tp_n": dtype_to_ctype(numpy.uint32),
                 },
             threshold_op,
-            "getstuff", preamble=preamble)
-            
-n_events = numpy.zeros(1, dtype=numpy.int64)
-n_events = to_device(mgr.state.queue, n_events)
-buffer_vec = numpy.zeros(4096*2048, dtype=complex64_subset)
-buffer_vec = to_device(mgr.state.queue, buffer_vec)
-            
+            "getstuff")
+
+n = pzeros(mgr.state.queue, 1, numpy.uint32)
+val = pzeros(mgr.state.queue, 4096*256, numpy.complex64)
+loc = pzeros(mgr.state.queue, 4096*256, numpy.uint32)
+
+
 def threshold(series, value):
-    threshold_kernel(series.data, buffer_vec, value, n_events)
-    n = n_events.get()[0]
-    return numpy.sort(buffer_vec[0:n].get(), order='loc')
+    threshold_kernel(series.data, val, loc, value, n)
+    n0 = n.get()[0]
+    return loc[0:n0].get(), valn[0:n0].get()
 
