@@ -43,7 +43,7 @@ parser.add_option("--pad-data", help="Extra padding to remove highpass corruptio
 parser.add_option("--sample-rate", help="The sample rate to use for filtering (Hz)", type=int)
 parser.add_option("--cluster-method", choices=["template", "window"])
 parser.add_option("--cluster-window", type=int, help="Length of clustering window in seconds")
-parser.add_option("--processing-scheme", help="The processing scheme to use", choices=["cpu", "cuda"], default="cpu")
+parser.add_option("--processing-scheme", help="The processing scheme to use", choices=["cpu", "cuda", "opencl"], default="cpu")
 parser.add_option("--processing-device-id", help="ID of gpu to use for accelerated processineg", default=0, type=int)
 parser.add_option("--segment-length", type=int, help="The length of a segment (s)")
 parser.add_option("--segment-start-pad", type=int, help="Length of corruption at the beginning of a segment(s)")
@@ -65,6 +65,9 @@ logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 if opt.processing_scheme == "cuda":
     logging.info("Running with CUDA support")
     ctx = CUDAScheme(opt.processing_device_id)
+if opt.processing_scheme == "opencl":
+    logging.info("Running with OpenCL support")
+    ctx = OpenCLScheme()
 else:
     logging.info("Running with CPU support only")
     ctx = CPUScheme()
@@ -200,7 +203,7 @@ with ctx:
                 snr, corr, norm = matched_filter_core(template, stilde, h_norm=template.sigmasq, 
                                                       low_frequency_cutoff=opt.low_frequency_cutoff, 
                                                       out=snr_work_mem, corr_out=corr_work_mem)               
-                idx, snrv = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm)                 
+                idx, snrv = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm)    
                 if len(idx) > 0:   
                     bank_chisqv = bank_chisq.values(template, s_num, snr, norm, idx+snr_start)
                     power_chisqv = power_chisq.values(corr, snr, norm, psd, idx+snr_start, template, bank, opt.low_frequency_cutoff)
@@ -216,7 +219,7 @@ with ctx:
         elif opt.cluster_method == "template":
             cluster_window = template.length_in_time * opt.sample_rate
             
-        #event_mgr.cluster_template_events("time_index", "snr", cluster_window) 
+        event_mgr.cluster_template_events("time_index", "snr", cluster_window) 
         event_mgr.finalize_template_events()                 
         
 logging.info("Writing out triggers")
