@@ -208,9 +208,13 @@ def fastest_power_chisq_at_points(corr, snr, snr_norm, bins, indices):
     chisq: Array
         An array containing only the chisq at the selected points.
     """ 
+    # Time per fft (ms)
+    FFT_T = 50
+    # Time per single point calculation
+    P_T = 3
     # This is empirically chosen from tests on SUGAR. It may not be correct
     # into the future. Replace with better estimate or auto-tuning.
-    POINT_THRESHOLD = 200
+    POINT_THRESHOLD = (len(bins)-1)*FFT_T / P_T
     if len(indices) < POINT_THRESHOLD:
         # We don't have that many points so do the direct time shift.
         return power_chisq_at_points_from_precomputed(corr, snr.take(indices), snr_norm, bins, indices)

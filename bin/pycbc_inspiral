@@ -65,7 +65,7 @@ logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 if opt.processing_scheme == "cuda":
     logging.info("Running with CUDA support")
     ctx = CUDAScheme(opt.processing_device_id)
-if opt.processing_scheme == "opencl":
+elif opt.processing_scheme == "opencl":
     logging.info("Running with OpenCL support")
     ctx = OpenCLScheme()
 else:
@@ -205,6 +205,7 @@ with ctx:
                                                       out=snr_work_mem, corr_out=corr_work_mem)               
                 idx, snrv = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm)    
                 if len(idx) > 0:   
+                    print len(idx)
                     bank_chisqv = bank_chisq.values(template, s_num, snr, norm, idx+snr_start)
                     power_chisqv = power_chisq.values(corr, snr, norm, psd, idx+snr_start, template, bank, opt.low_frequency_cutoff)
                     

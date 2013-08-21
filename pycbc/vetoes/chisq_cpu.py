@@ -35,9 +35,8 @@ def shift_sum(v1, shifts, slen=None, offset=0):
     if slen is None:
         slen = vlen
         
-    code = """
-        float t1, t2;         
-        
+    code1 = """
+        float t1, t2;
         for (int j=0; j<vlen; j++){
             std::complex<float> v = v1[j];
             float vr = v.real();
@@ -48,6 +47,33 @@ def shift_sum(v1, shifts, slen=None, offset=0):
                 outi[i] += vr * pi[i] + vi * pr[i];
                 t1 = pr[i];
                 t2 = pi[i];
+                pr[i] = t1 * vsr[i] - t2 * vsi[i];
+                pi[i] = t1 * vsi[i] + t2 * vsr[i]; 
+            }                                              
+        }            
+    """
+    code = """
+        float t1, t2, k1, k2, k3, vs, va;
+        for (int j=0; j<vlen; j++){
+            std::complex<float> v = v1[j];
+            float vr = v.real();
+            float vi = v.imag();  
+            vs = vr + vi;
+            va = vi - vr;
+            
+            for (int i=0; i<n; i++){
+                t1 = pr[i];
+                t2 = pi[i];
+                
+                // Complex multiply pr[i] * v
+                k1 = vr * (t1 + t2);
+                k2 = t1 * va;
+                k3 = t2 * vs;
+                            
+                outr[i] += k1 - k3;
+                outi[i] += k1 + k2;
+                
+                // phase shift for the next time point
                 pr[i] = t1 * vsr[i] - t2 * vsi[i];
                 pi[i] = t1 * vsi[i] + t2 * vsr[i]; 
             }                                              
@@ -69,5 +95,5 @@ def shift_sum(v1, shifts, slen=None, offset=0):
     pi = numpy.zeros(n, dtype=numpy.float32) + p.imag
     pr = numpy.zeros(n, dtype=numpy.float32) + p.real
 
-    inline(code, ['v1', 'n', 'vlen', 'pr', 'pi', 'outi', 'outr', 'vsr', 'vsi'], )
+    inline(code, ['v1', 'n', 'vlen', 'pr', 'pi', 'outi', 'outr', 'vsr', 'vsi'] )
     return  Array(outr + 1.0j * outi, dtype=numpy.complex64)
