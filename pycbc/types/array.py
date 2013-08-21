@@ -65,9 +65,9 @@ def _convert_to_scheme(ary):
 def _convert(fn):
     # Convert this array to the current processing scheme
     @_functools.wraps(fn)
-    def converted(self,*args):
+    def converted(self, *args):
         _convert_to_scheme(self)
-        return fn(self,*args)
+        return fn(self, *args)
     return converted
 
 def force_precision_to_match(scalar, precision):
@@ -258,6 +258,8 @@ class Array(object):
         
     def _return(self,ary):
         """Wrap the ary to return an Array type """
+        if isinstance(ary, Array):
+            return ary
         return Array(ary, copy=False)
 
     @decorator

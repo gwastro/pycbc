@@ -86,11 +86,14 @@ class TemplateBank(object):
         # Get the waveform filter
         htilde = pycbc.waveform.get_waveform_filter(self.out[0:self.filter_length], self.table[index], 
                                 approximant=self.approximant, f_lower=self.f_lower, delta_f=self.delta_f, **self.extra_args)
-                  
-        print htilde.length_in_time              
+            
+        length_in_time = None      
+        if hasattr(htilde, 'length_in_time'):
+            length_in_time = htilde.length_in_time      
+            
         # Make sure it is the desired type
         htilde = htilde.astype(self.dtype)
-        print htilde.length_in_time
+
         # Get an amplitude normalization (mass dependant constant norm)
         amp_norm = pycbc.waveform.get_template_amplitude_norm(self.table[index], 
                           approximant=self.approximant, **self.extra_args)
@@ -101,7 +104,7 @@ class TemplateBank(object):
                           
         if amp_norm is not None:
             htilde *= amp_norm
-        print htilde.length_in_time  
+
         htilde.end_frequency = f_end
         htilde.end_idx = int(htilde.end_frequency / htilde.delta_f) 
         htilde.params = self.table[index]
@@ -115,6 +118,8 @@ class TemplateBank(object):
             else:
                 htilde.sigmasq = sigmasq(htilde, self.psd, low_frequency_cutoff=self.f_lower) 
 
+        if length_in_time is not None:
+            htilde.length_in_time = length_in_time  
        
         return htilde
 
