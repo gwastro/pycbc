@@ -1,0 +1,212 @@
+#!/usr/bin/env /usr/bin/python
+"""This program provides a legacy interface that emulates the lalapps_inspiral
+arguments. Many (most) options are not implemented and may not ever be. They
+are still eaten but are noted as such in the arguments section.
+
+"""
+from optparse import OptionParser, OptionGroup
+from subprocess import call
+
+def argify(parser, args):
+    for arg in args:
+        parser.add_option(arg, type=str)
+
+parser = OptionParser(
+    usage   = "%prog [OPTIONS]",
+    description = """Legacy interface to find single detector gravitational-wave triggers. 
+                     See lalapps_inspiral for information on the arguments themselves.
+                  """ )
+
+args = ['--user-tag',
+        '--ifo-tag',
+        '--gps-start-time',
+        '--gps-end-time',
+        '--pad-data',
+        '--frame-cache',
+        '--channel-name',
+        '--injection-file',
+        '--bank-file',
+        '--sample-rate',
+        '--segment-length',
+        '--segment-overlap',
+        '--low-frequency-cutoff',
+        '--inverse-spec-length',
+        '--approximant',
+        '--order',
+        '--snr-threshold',
+        '--chisq-bins',
+        '--cluster-method',
+        '--cluster-window',
+        '--trig-start-time',
+        '--trig-end-time',
+        '--strain-high-pass-freq',
+        ]
+             
+unused_args = ['--verbose',
+                '--number-of-segments',
+               '--version',
+               '--gpu-device-id',
+               '--comment',
+               '--gps-start-time-ns',
+               '--gps-end-time-ns',
+               '--slide-time',
+               '--slide-time-ns',
+               '--glob-frame-data',
+               '--frame-type',
+               '--calibration-cache',
+               '--glob-calibration-cache',
+               '--calibrated-data',
+               '--strain-high-pass-order',
+               '--strain-high-pass-atten',
+               '--point-calibration',
+               '--fast',
+               '--inject-overhead',
+               '--enable-filter-inj-only',
+               '--disable-filter-inj-only',
+               '--hardware-injection',
+               '--td-follow-up',
+               '--start-template',
+               '--stop-template',
+               '--resample-filter',
+               '--disable-high-pass',
+               '--enable-high-pass',
+               '--high-pass-order',
+               '--high-pass-attenuation',
+               '--spectrum-type',
+               '--reverse-chirp-bank',
+               '--enable-dynamic-tmplt-flow',
+               '--dynamic-range-exponent',
+               '--chisq-delta',
+               '--chisq-threshold',
+               '--enable-rsq-veto',
+               '--disable-rsq-veto',
+               '--rsq-veto-window',
+               '--rsq-veto-threshold',
+               '--do-rsq-veto',
+               '--rsq-veto-time-thresh',
+               '--rsq-veto-max-snr',
+               '--rsq-veto-coeff',
+               '--rsq-veto-pow',
+               '--bank-veto-subbank-size',
+               '--autochisq-stride',
+               '--autochisq-length',
+               '--autochisq-two-sided',
+               '--bank-veto-time-freq',
+               '--maximization-interval',
+               '--ts-cluster',
+               '--ts-endtime-interval',
+               '--ts-metric-scaling',
+               '--bank-pass-template',
+               '--taper-template',
+               '--cdata-length',
+               '--enable-output',
+               '--output-mask',
+               '--write-compress',
+               '--disable-output',
+               '--white-gaussian',
+               '--gaussian-noise',
+               '--colored-gaussian',
+               '--random-seed',
+               '--bank-simulation',
+               '--enable-bank-sim-max',
+               '--disable-bank-sim-max',
+               '--sim-approximant',
+               '--sim-frame',
+               '--sim-frame-channel',
+               '--sim-minimum-mass',
+               '--sim-maximum-mass',
+               '--bank-sim-flower',
+               '--data-checkpoint',
+               '--checkpoint-path',
+               '--output-path',
+               '--username',
+               '--comput-node-dir',
+               '--write-raw-data',
+               '--write-filter-data',
+               '--write-response',
+               '--write-spectrum',
+               '--write-snrsq',
+               '--write-chisq',
+               '--write-coh-trigs',
+               '--write-cdata',
+               '--write-template',
+               ]
+
+group = OptionGroup(parser, "Used",
+                    "These options are translated to pycbc_inspiral options.")
+argify(group, args)
+parser.add_option_group(group)
+
+group = OptionGroup(parser, "Unused Options",
+                    "Caution: These arguments are eaten but ignored.")
+argify(group, unused_args)
+parser.add_option_group(group)
+
+opt, argv = parser.parse_args()
+
+def pass_arg(old, new, args, opt):
+    for a1, a1 in zip(old, new):
+        args.append(a2)
+        args.append(opt[a1])
+        
+real_args = []
+
+old = ['--user-tag',
+        '--ifo-tag',
+        '--gps-start-time',
+        '--gps-end-time',
+        '--pad-data',
+        '--frame-cache',
+        '--channel-name',
+        '--injection-file',
+        '--bank-file',
+        '--sample-rate',
+        '--low-frequency-cutoff',
+        '--approximant',
+        '--snr-threshold',
+        '--chisq-bins',
+        '--cluster-method',
+        '--cluster-window',
+        '--trig-start-time',
+        '--trig-end-time',
+        '--strain-high-pass-freq',
+        '--inverse-spec-length',]
+new = ['--user-tag',
+        '--ifo-tag',
+        '--gps-start-time',
+        '--gps-end-time',
+        '--pad-data',
+        '--frame-cache',
+        '--channel-name',
+        '--injection-file',
+        '--bank-file',
+        '--sample-rate',
+        '--low-frequency-cutoff',
+        '--approximant',
+        '--snr-threshold',
+        '--chisq-bins',
+        '--cluster-method',
+        '--cluster-window',
+        '--trig-start-time',
+        '--trig-end-time',
+        '--strain-high-pass',
+        '--psd-inverse-length',]        
+        
+pass_arg(old, new, real_args, opt)
+
+sr = int(opt.sample_rate)
+sl = int(opt.segment_length)     
+ov = int(opt.segment_overlap)
+o = opt.order
+
+seg_pad = opt.segment_overlap / sr / 2
+seg_len = opt.segment_length / sr
+
+real_args += ['--order', str(lalsimulation.GetOrderFromString(o))]        
+real_args += ['--segment-length', str(seg_len)]
+real_args += ['--segment-start-pad', str(seg_pad)]
+real_args += ['--segment-end-pad', str(seg_pad)]
+
+call('pycbc_inspiral', real_args)
+
+
