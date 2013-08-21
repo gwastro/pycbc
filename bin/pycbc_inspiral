@@ -42,7 +42,7 @@ parser.add_option("--low-frequency-cutoff", help="The low frequency cutoff to us
 parser.add_option("--pad-data", help="Extra padding to remove highpass corruption (s)", type=int)
 parser.add_option("--sample-rate", help="The sample rate to use for filtering (Hz)", type=int)
 parser.add_option("--cluster-method", choices=["template", "window"])
-parser.add_option("--cluster-window", type=int, help="Length of clustering window in seconds")
+parser.add_option("--cluster-window", type=int, help="Length of clustering window in seconds", default = -1)
 parser.add_option("--processing-scheme", help="The processing scheme to use", choices=["cpu", "cuda", "opencl"], default="cpu")
 parser.add_option("--processing-device-id", help="ID of gpu to use for accelerated processineg", default=0, type=int)
 parser.add_option("--segment-length", type=int, help="The length of a segment (s)")

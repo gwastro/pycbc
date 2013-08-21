@@ -430,7 +430,7 @@ class Array(object):
     @_convert
     @_checkother
     def __pow__(self,other):
-        """ Exponentiate Arrary by scalar """
+        """ Exponentiate Array by scalar """
         return self._data ** other
 
     @_returntype
@@ -784,7 +784,7 @@ class Array(object):
     @_returntype
     @_convert
     def astype(self, dtype):
-        if self.dtype is dtype:
+        if _numpy.dtype(self.dtype) == _numpy.dtype(dtype):
             return self
         else:
             return self._data.astype(dtype)
