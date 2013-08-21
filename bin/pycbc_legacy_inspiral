@@ -177,7 +177,6 @@ old = [ '--verbose',
         '--bank-file', 
         '--sample-rate', 
         '--low-frequency-cutoff', 
-        '--approximant', 
         '--snr-threshold', 
         '--chisq-bins', 
         '--cluster-method', 
@@ -198,7 +197,6 @@ new = [ '--verbose',
         '--bank-file', 
         '--sample-rate', 
         '--low-frequency-cutoff', 
-        '--approximant', 
         '--snr-threshold', 
         '--chisq-bins', 
         '--cluster-method', 
@@ -218,6 +216,12 @@ o = opt.order
 seg_pad = ov / sr / 2
 seg_len = sl / sr
 
+if opt.approximant == 'FindChirpSP':
+    apx = 'SPAtmplt'
+else:
+    apx = opt.approximant
+
+real_args += ['--approximant', apx]
 real_args += ['--order', str(lalsimulation.GetOrderFromString(o))]        
 real_args += ['--segment-length', str(seg_len)]
 real_args += ['--segment-start-pad', str(seg_pad)]

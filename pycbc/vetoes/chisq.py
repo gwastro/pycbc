@@ -125,20 +125,17 @@ def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
     chisq: Array
         An array containing only the chisq at the selected points.
     """
-    snr = Array(snr, copy=False)
-    
+    snr = Array(snr, copy=False)   
     chisq = zeros(len(indices), dtype=real_same_precision_as(corr))     
     num_bins = len(bins) - 1
-    chisq_norm = snr_norm ** 2.0
     
     for j in range(len(bins)-1):
         k_min = int(bins[j])
-        k_max = int(bins[j+1])    
-             
+        k_max = int(bins[j+1])                 
         qi = shift_sum(corr[k_min:k_max], indices, slen=len(corr), offset=k_min)
         chisq += qi.squared_norm()  
         
-    return (chisq * num_bins - snr.squared_norm()) * chisq_norm
+    return (chisq * num_bins - snr.squared_norm()) * (snr_norm ** 2.0)
     
 def power_chisq_from_precomputed(corr, snr, snr_norm, bins):
     """Calculate the chisq timeseries from precomputed values
@@ -215,7 +212,10 @@ def fastest_power_chisq_at_points(corr, snr, snr_norm, bins, indices):
     # This is empirically chosen from tests on SUGAR. It may not be correct
     # into the future. Replace with better estimate or auto-tuning.
     POINT_THRESHOLD = (len(bins)-1)*FFT_T / P_T
-    if len(indices) < POINT_THRESHOLD:
+    
+    # This is a temporary hack, standard gpu support is intended and should be forthcoming
+    import pycbc.scheme
+    if (len(indices) < POINT_THRESHOLD) and type(pycbc.scheme.mgr.state) is pycbc.scheme.CPUScheme:
         # We don't have that many points so do the direct time shift.
         return power_chisq_at_points_from_precomputed(corr, snr.take(indices), snr_norm, bins, indices)
     else:
