@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Alex Nitz
+# Copyright (C) 2012  Alex Nitz, Josh Willis
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -22,7 +22,7 @@
 # =============================================================================
 #
 """
-These are the unittests for the pycbc.filter.matchedfilter module
+These are the unittests for the pycbc.waveform module
 """
 import sys
 import pycbc
@@ -32,60 +32,29 @@ from pycbc.scheme import *
 from pycbc.filter import *
 from pycbc.waveform import *
 import pycbc.fft
-import numpy 
-import base_test
+import numpy
+from utils import parse_args_all_schemes
 
-import optparse
-from optparse import OptionParser
+_scheme, _context = parse_args_all_schemes("Waveform")
 
-_parser = OptionParser()
-
-def _check_scheme(option, opt_str, scheme, parser):
-    if scheme=='cuda' and not pycbc.HAVE_CUDA:
-        raise optparse.OptionValueError("CUDA not found")
-
-    if scheme=='opencl' and not pycbc.HAVE_OPENCL:
-        raise optparse.OptionValueError("OpenCL not found")
-    setattr (parser.values, option.dest, scheme)
-
-_parser.add_option('--scheme','-s', action='callback', type = 'choice', 
-                    choices = ('cpu','cuda','opencl'), 
-                    default = 'cpu', dest = 'scheme', callback = _check_scheme,
-                    help = 'specifies processing scheme, can be cpu [default], cuda, or opencl')
-
-_parser.add_option('--device-num','-d', action='store', type = 'int', 
-                    dest = 'devicenum', default=0,
-                    help = 'specifies a GPU device to use for CUDA or OpenCL, 0 by default')
-
-(_opt_list, _args) = _parser.parse_args()
-
-#Changing the optvalues to a dict makes them easier to read
-_options = vars(_opt_list)
-
-if _options['scheme'] == 'cpu':
-    context = CPUScheme()
-if _options['scheme'] == 'cuda':
-    context = CUDAScheme(device_num=_options['devicenum'])
-if _options['scheme'] == 'opencl':
-    context = OpenCLScheme(device_num=_options['devicenum'])
-
-class TestWaveform(base_test.function_base,unittest.TestCase):
-    def setUp(self,*args): 
-        self.context = context 
+class TestWaveform(unittest.TestCase):
+    def setUp(self,*args):
+        self.context = _context
+        self.scheme = _scheme
 
     def test_generation(self):
         with self.context:
             for waveform in td_approximants():
                 hc,hp = get_td_waveform(approximant=waveform,mass1=20,mass2=20,delta_t=1.0/4096,f_lower=40)
-                self.assertTrue(len(hc)> 0)    
+                self.assertTrue(len(hc)> 0)
             for waveform in fd_approximants():
-                htilde, g = get_fd_waveform(approximant=waveform,mass1=20,mass2=20,delta_f=1.0/256,f_lower=40)     
-                self.assertTrue(len(htilde)> 0)         
-                
+                htilde, g = get_fd_waveform(approximant=waveform,mass1=20,mass2=20,delta_f=1.0/256,f_lower=40)
+                self.assertTrue(len(htilde)> 0)
+
     def test_spatmplt(self):
         fl = 25
         delta_f = 1.0 / 256
-        
+
         for m1 in [1, 1.4, 20]:
             for m2 in [1.4, 20]:
                 for s1 in [-1, -.5, 0, 0.5, 1.0, 10]:
@@ -102,18 +71,18 @@ class TestWaveform(base_test.function_base,unittest.TestCase):
                             #import pylab
                             #pylab.plot(hp.numpy())
                             #pylab.plot(hpr.numpy())
-                            #pylab.show()                           
+                            #pylab.show()
                             mag = abs(hpr).sum()
-                            
+
                             # Check the diff is sane
                             diff = abs(hp - hpr).sum() / mag
                             self.assertTrue(diff < 0.0013)
-                            
+
                             # Point to point overlap (no phase or time maximization)
-                            o =  overlap(hp, hpr)    
-                            self.assertAlmostEqual(1.0, o, places=4)  
-                            
-                            print "..checked m1: %s m2:: %s s1z: %s s2z: %s" % (m1, m2, s1, s2)                                         
+                            o =  overlap(hp, hpr)
+                            self.assertAlmostEqual(1.0, o, places=4)
+
+                            print "..checked m1: %s m2:: %s s1z: %s s2z: %s" % (m1, m2, s1, s2)
 
     def test_errors(self):
         func = get_fd_waveform
@@ -132,7 +101,7 @@ class TestWaveform(base_test.function_base,unittest.TestCase):
             self.assertRaises(ValueError,func,approximant="IMRPhenomB",mass1=3,mass2=3,phase_order=7)
             self.assertRaises(ValueError,func,approximant="IMRPhenomB",mass1=3)
 
-    
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestWaveform))
 
