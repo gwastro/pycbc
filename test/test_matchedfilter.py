@@ -1,5 +1,4 @@
-
-# Copyright (C) 2012  Alex Nitz
+# Copyright (C) 2012  Alex Nitz, Josh Willis
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -33,76 +32,32 @@ from pycbc.scheme import *
 from pycbc.filter import *
 from math import sqrt
 import pycbc.fft
-import numpy 
-import base_test
+import numpy
+from utils import array_base, parse_args_all_schemes
 
-import optparse
-from optparse import OptionParser
+_scheme, _context = parse_args_all_schemes("Matched Filter")
 
-_parser = OptionParser()
-
-def _check_scheme(option, opt_str, scheme, parser):
-    if scheme=='cuda' and not pycbc.HAVE_CUDA:
-        raise optparse.OptionValueError("CUDA not found")
-
-    if scheme=='opencl' and not pycbc.HAVE_OPENCL:
-        raise optparse.OptionValueError("OpenCL not found")
-    setattr (parser.values, option.dest, scheme)
-
-_parser.add_option('--scheme','-s', action='callback', type = 'choice', 
-                    choices = ('cpu','cuda','opencl'), 
-                    default = 'cpu', dest = 'scheme', callback = _check_scheme,
-                    help = 'specifies processing scheme, can be cpu [default], cuda, or opencl')
-
-_parser.add_option('--device-num','-d', action='store', type = 'int', 
-                    dest = 'devicenum', default=0,
-                    help = 'specifies a GPU device to use for CUDA or OpenCL, 0 by default')
-
-(_opt_list, _args) = _parser.parse_args()
-
-#Changing the optvalues to a dict makes them easier to read
-_options = vars(_opt_list)
-
-if _options['scheme'] == 'cpu':
-    context = CPUScheme()
-if _options['scheme'] == 'cuda':
-    context = CUDAScheme(device_num=_options['devicenum'])
-if _options['scheme'] == 'opencl':
-    context = OpenCLScheme(device_num=_options['devicenum'])
-
-
-
-
-class TestMatchedFilter(base_test.function_base,unittest.TestCase):
-    def setUp(self,*args): 
-        self.context = context
+class TestMatchedFilter(unittest.TestCase):
+    def setUp(self,*args):
+        self.context = _context
+        self.scheme = _scheme
         from math import sin
         # Use sine wave as test signal
         data = numpy.sin(numpy.arange(0,100,100/(4096.0*64)))
         self.filt = TimeSeries(data,dtype=float32,delta_t=1.0/4096)
         self.filt2 = (self.filt*1)
-        self.filt2[0:len(self.filt2)/2].fill(0)  
+        self.filt2[0:len(self.filt2)/2].fill(0)
         self.filt_offset = TimeSeries(numpy.roll(data,4096*32), dtype=float32,
                                       delta_t=1.0/4096)
-                                      
+
         self.filtD = TimeSeries(data,dtype=float64,delta_t=1.0/4096)
         self.filt2D = (self.filtD*1)
-        self.filt2D[0:len(self.filt2D)/2].fill(0)  
+        self.filt2D[0:len(self.filt2D)/2].fill(0)
         self.filt_offsetD = TimeSeries(numpy.roll(data,4096*32), dtype=float64,
-                                      delta_t=1.0/4096)         
+                                      delta_t=1.0/4096)
 
-        self.filt_short =TimeSeries([0,1,2,3,4],dtype=float32,delta_t=1.0/4096) 
-                                      
-    def test_scheme_change(self):
-        if _options['scheme'] != 'cpu':
-            self.scheme_test(match,(self.filt_short,self.filt_short), 
-                                            (self.filt_short,self.filt_short),7)
-                                            
-            self.scheme_test(matched_filter_core,(self.filt_short,self.filt_short ), 
-                                            (self.filt_short,self.filt_short, ),7)
-        else:
-            pass
-            
+        self.filt_short =TimeSeries([0,1,2,3,4],dtype=float32,delta_t=1.0/4096)
+
     def test_correlate (self):
         from pycbc.filter.matchedfilter import correlate
         with self.context:
@@ -111,35 +66,33 @@ class TestMatchedFilter(base_test.function_base,unittest.TestCase):
             c = zeros(1, dtype=complex64)
             correlate (a, b, c)
             self.assertEqual(1, c[0])
-            
-            
+
     def test_ave_snr_noise(self):
         with self.context:
             #Test that the average snr in noise is 2
             from numpy.random import normal
 
             noise = normal(0.0,2,4096*64)
-            nplus= TimeSeries(noise,dtype=float32,delta_t=1.0/4096) 
+            nplus= TimeSeries(noise,dtype=float32,delta_t=1.0/4096)
             ntilde = make_frequency_series(nplus) / nplus.delta_t
             # Calculate a Faux psd for normalization, replace with better algorithm
             psd = (ntilde).squared_norm()  / float(len(nplus)) * nplus.delta_t *2.0
 
-            snr = matched_filter(self.filt, nplus, psd=psd)   
-            
+            snr = matched_filter(self.filt, nplus, psd=psd)
+
             ave = snr.squared_norm().sum() /len(snr)
             self.assertAlmostEqual(2,ave,places=5)
-            
-            
+
             noise = normal(0.0,2,4096*64)
-            nplus= TimeSeries(noise,dtype=float64,delta_t=1.0/4096) 
+            nplus= TimeSeries(noise,dtype=float64,delta_t=1.0/4096)
             ntilde = make_frequency_series(nplus) / nplus.delta_t
             # Calculate a Faux psd for normalization, replace with better algorithm
             psd = (ntilde).squared_norm()  / float(len(nplus)) * nplus.delta_t *2.0
 
-            snr = matched_filter(self.filtD,nplus,psd=psd)   
+            snr = matched_filter(self.filtD,nplus,psd=psd)
             ave = snr.squared_norm().sum() /len(snr)
             self.assertAlmostEqual(2,ave,places=5)
-        
+
     def test_perfect_match(self):
         with self.context:
             o,i = match(self.filt,self.filt)
@@ -148,17 +101,17 @@ class TestMatchedFilter(base_test.function_base,unittest.TestCase):
             o,i = match(self.filtD,self.filtD)
             self.assertAlmostEqual(1,o,places=4)
             self.assertEqual(0,i)
-        
+
     def test_perfect_match_offset(self):
         with self.context:
             o,i = match(self.filt,self.filt_offset)
             self.assertAlmostEqual(1,o,places=4)
             self.assertEqual(4096*32,i)
-            
+
             o,i = match(self.filtD,self.filt_offsetD)
             self.assertAlmostEqual(1,o,places=4)
             self.assertEqual(4096*32,i)
-        
+
     def test_imperfect_match(self):
         with self.context:
             f = make_frequency_series(self.filt)
@@ -175,18 +128,18 @@ class TestMatchedFilter(base_test.function_base,unittest.TestCase):
         with self.context:
             #Check that an incompatible data and filter produce an error
             self.assertRaises(ValueError,match,self.filt,self.filt[0:5])
-            
+
             #Check that an incompatible psd produces an error
-            self.assertRaises(TypeError,match,self.filt,self.filt,psd=self.filt) 
+            self.assertRaises(TypeError,match,self.filt,self.filt,psd=self.filt)
             psd = FrequencySeries(zeros(len(self.filt)/2+1),delta_f=100000)
             self.assertRaises(TypeError,match,self.filt,self.filt,psd=psd)
-            
+
             #Check that only TimeSeries or FrequencySeries are accepted
             self.assertRaises(TypeError,match,zeros(10),zeros(10))
 
             self.assertRaises(ValueError,match,self.filt,self.filt[0:len(self.filt)-1])
 
-    
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestMatchedFilter))
 
