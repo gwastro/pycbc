@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Tito Dal Canton
+# Copyright (C) 2012  Tito Dal Canton, Josh Willis
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -34,37 +34,14 @@ from pycbc.types import TimeSeries, FrequencySeries
 from pycbc.fft import ifft
 import unittest
 import numpy
-import optparse
+from utils import parse_args_all_schemes
 
-_parser = optparse.OptionParser()
-
-def _check_scheme(option, opt_str, scheme, parser):
-    if scheme == 'cuda' and not pycbc.HAVE_CUDA:
-        raise optparse.OptionValueError("CUDA not found")
-    if scheme == 'opencl' and not pycbc.HAVE_OPENCL:
-        raise optparse.OptionValueError("OpenCL not found")
-    setattr(parser.values, option.dest, scheme)
-
-_parser.add_option('--scheme', '-s', action='callback', type='choice',
-    choices=('cpu', 'cuda', 'opencl'), default='cpu', dest='scheme',
-    callback=_check_scheme,
-    help='specifies processing scheme, can be cpu [default], cuda, or opencl')
-
-_parser.add_option('--device-num', '-d', action='store', type='int',
-    dest='devicenum', default=0,
-    help='specifies a GPU device to use for CUDA or OpenCL, 0 by default')
-
-(_options, _args) = _parser.parse_args()
-
-if _options.scheme == 'cuda':
-    _context = pycbc.scheme.CUDAScheme(device_num=_options.devicenum)
-elif _options.scheme == 'opencl':
-    _context = pycbc.scheme.OpenCLScheme(device_num=_options.devicenum)
-elif _options.scheme == 'cpu':
-    _context = pycbc.scheme.CPUScheme()
+_scheme, _context = parse_args_all_schemes("PSD")
 
 class TestPSD(unittest.TestCase):
     def setUp(self):
+        self.scheme = _scheme
+        self.context = _context
         self.psd_len = 1024
         self.psd_delta_f = 0.1
         self.psd_low_freq_cutoff = 10.
@@ -81,7 +58,7 @@ class TestPSD(unittest.TestCase):
         noise_fs = FrequencySeries(noise, delta_f=delta_f)
         self.noise = TimeSeries(numpy.zeros(noise_size), delta_t=1./sample_freq)
         ifft(noise_fs, self.noise)
-    
+
     def test_analytical(self):
         """Basic test of lalsimulation's analytical noise PSDs"""
         with _context:
@@ -145,6 +122,17 @@ class TestPSD(unittest.TestCase):
                 self.assertTrue(err_rms < 0.1,
                                 msg='seg_len=%d max_len=%d -> rms=%.3f' \
                                 % (seg_len, max_len, err_rms))
+
+    def test_estimate_welch_medianmean(self):
+        for seg_len in (2048, 4096, 8192):
+            noise_model = (numpy.linspace(1., 100., seg_len/2 + 1)) ** (-2)
+            for seg_stride in (seg_len, seg_len/2):
+                psd = pycbc.psd.welch(self.noise, seg_len=seg_len, \
+                    seg_stride=seg_stride, avg_method='median-mean')
+                error = (psd - noise_model) / noise_model
+                error /= numpy.std(error)
+                self.assertTrue(abs(numpy.mean(error)) < 4,
+                    msg='seg_len=%d seg_stride=%d' % (seg_len, seg_stride))
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestPSD))
