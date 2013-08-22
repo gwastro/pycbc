@@ -1,0 +1,5 @@
+This directory is for data files to be used for the unit-tests themselves
+in the directory above this.  Useful things to place here are files that
+contain either input to be tested, or output from some known source (e.g.
+an older lalapps executable) that will serve as a comparison to the output
+of a PyCBC unit test.
