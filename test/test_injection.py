@@ -1,4 +1,4 @@
-# Copyright (C) 2013 Tito Dal Canton
+# Copyright (C) 2013 Tito Dal Canton, Josh Willis
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -28,11 +28,13 @@ from pycbc.detector import Detector
 from pycbc.inject import InjectionSet
 import unittest
 import numpy
-import optparse
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import utils
+from utils import parse_args_cpu_only
 
+# Injection tests only need to happen on the CPU
+parse_args_cpu_only("Injections")
 
 class MyInjection(object):
     def fill_sim_inspiral_row(self, row):
@@ -82,33 +84,6 @@ class MyInjection(object):
         row.numrel_data = 0
         row.source = 'ANTANI'
 
-_parser = optparse.OptionParser()
-
-def _check_scheme(option, opt_str, scheme, parser):
-    if scheme == 'cuda' and not pycbc.HAVE_CUDA:
-        raise optparse.OptionValueError("CUDA not found")
-    if scheme == 'opencl' and not pycbc.HAVE_OPENCL:
-        raise optparse.OptionValueError("OpenCL not found")
-    setattr(parser.values, option.dest, scheme)
-
-_parser.add_option('--scheme', '-s', action='callback', type='choice',
-    choices=('cpu', 'cuda', 'opencl'), default='cpu', dest='scheme',
-    callback=_check_scheme,
-    help='specifies processing scheme, can be cpu [default], cuda, or opencl')
-
-_parser.add_option('--device-num', '-d', action='store', type='int',
-    dest='devicenum', default=0,
-    help='specifies a GPU device to use for CUDA or OpenCL, 0 by default')
-
-(_options, _args) = _parser.parse_args()
-
-if _options.scheme == 'cuda':
-    _context = pycbc.scheme.CUDAScheme(device_num=_options.devicenum)
-elif _options.scheme == 'opencl':
-    _context = pycbc.scheme.OpenCLScheme(device_num=_options.devicenum)
-elif _options.scheme == 'cpu':
-    _context = pycbc.scheme.CPUScheme()
-
 class TestInjection(unittest.TestCase):
     def setUp(self):
         self.detectors = [Detector(d) for d in ['H1', 'L1', 'V1']]
@@ -149,7 +124,7 @@ class TestInjection(unittest.TestCase):
         # write document to temp file
         self.inj_file = tempfile.NamedTemporaryFile(suffix='.xml')
         utils.write_fileobj(xmldoc, self.inj_file)
-    
+
     def test_injection_presence(self):
         """Verify presence of signals at expected times"""
         injections = InjectionSet(self.inj_file.name)
