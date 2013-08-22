@@ -33,7 +33,7 @@ from pycbc.filter import *
 from math import sqrt
 import pycbc.fft
 import numpy
-from utils import array_base, parse_args_all_schemes
+from utils import parse_args_all_schemes
 
 _scheme, _context = parse_args_all_schemes("Matched Filter")
 
