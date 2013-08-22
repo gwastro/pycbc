@@ -1,5 +1,4 @@
-
-# Copyright (C) 2012  Alex Nitz
+# Copyright (C) 2012  Alex Nitz, Josh Willis
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -29,44 +28,14 @@ import sys
 import unittest
 from pycbc.types import *
 from pycbc.scheme import *
-import optparse
-from optparse import OptionParser
 from lal import LIGOTimeGPS as LTG
+from utils import array_base, parse_args_all_schemes
 
-_parser = OptionParser()
-
-def _check_scheme(option, opt_str, scheme, parser):
-    if scheme=='cuda' and not pycbc.HAVE_CUDA:
-        raise optparse.OptionValueError("CUDA not found")
-
-    if scheme=='opencl' and not pycbc.HAVE_OPENCL:
-        raise optparse.OptionValueError("OpenCL not found")
-    setattr (parser.values, option.dest, scheme)
-
-_parser.add_option('--scheme','-s', action='callback', type = 'choice', 
-                    choices = ('cpu','cuda','opencl'), 
-                    default = 'cpu', dest = 'scheme', callback = _check_scheme,
-                    help = 'specifies processing scheme, can be cpu [default], cuda, or opencl')
-
-_parser.add_option('--device-num','-d', action='store', type = 'int', 
-                    dest = 'devicenum', default=0,
-                    help = 'specifies a GPU device to use for CUDA or OpenCL, 0 by default')
-
-(_opt_list, _args) = _parser.parse_args()
-
-#Changing the optvalues to a dict makes them easier to read
-_options = vars(_opt_list)
-
-if _options['scheme'] == 'cpu':
-    context = CPUScheme()
-if _options['scheme'] == 'cuda':
-    context = CUDAScheme(device_num=_options['devicenum'])
-if _options['scheme'] == 'opencl':
-    context = OpenCLScheme(device_num=_options['devicenum'])
+_scheme, _context = parse_args_all_schemes("lal() method")
 
 class TestUtils(unittest.TestCase):
     def setUp(self,*args):
-        self.context = context
+        self.context = _context
         self.delta_t = 1.0 / 4096
         self.epoch = LTG(0,0)
 
@@ -86,7 +55,7 @@ class TestUtils(unittest.TestCase):
         self.df = FrequencySeries([1], delta_f=self.delta_t, dtype=complex128,epoch=self.epoch)
 
 
-    if type(context) is CPUScheme:
+    if _scheme == 'cpu':
         def test_array_to_lal(self):
             al = self.a.lal()
             self.assertEqual(al.data.dtype, self.a.dtype)
@@ -142,10 +111,6 @@ class TestUtils(unittest.TestCase):
             with self.context:
                 self.assertRaises(TypeError, self.a.lal)
 
-
-
-                                                      
-    
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestUtils))
 
