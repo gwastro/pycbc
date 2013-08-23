@@ -60,6 +60,7 @@ if opt.verbose:
     log_level = logging.DEBUG
 else:
     log_level = logging.WARN
+
 logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 if opt.processing_scheme == "cuda":
