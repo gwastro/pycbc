@@ -360,10 +360,10 @@ class TimeSeries(Array):
             output = _numpy.vstack((self.sample_times.numpy(), self.numpy())).T
             _numpy.save(path, output)
         elif ext == '.txt':
-            if self.kind is 'real':
+            if self.kind == 'real':
                 output = _numpy.vstack((self.sample_times.numpy(),
                                         self.numpy())).T
-            elif self.kind is 'complex':
+            elif self.kind == 'complex':
                 output = _numpy.vstack((self.sample_times.numpy(),
                                         self.numpy().real,
                                         self.numpy().imag)).T

@@ -917,11 +917,12 @@ class Array(object):
         if ext == '.npy':
             _numpy.save(path, self.numpy())
         elif ext == '.txt':
-            fmt = {
-                'real': '%.18e',
-                'complex': '%.18e %.18e'
-            }
-            _numpy.savetxt(path, self.numpy(), fmt=fmt[self.kind])
+            if self.kind == 'real':
+                _numpy.savetxt(path, self.numpy())
+            elif self.kind == 'complex':
+                output = _numpy.vstack((self.numpy().real,
+                                        self.numpy().imag)).T
+                _numpy.savetxt(path, output)
         else:
             raise ValueError('Path must end with .npy or .txt')
 
