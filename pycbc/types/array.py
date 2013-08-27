@@ -43,18 +43,9 @@ import pycbc as _pycbc
 import pycbc.scheme as _scheme
 from pycbc.scheme import schemed, cpuonly
 
-if _pycbc.HAVE_CUDA:
-    import pycuda as _pycuda
-    import pycuda.driver as _cudriver
-    import pycuda.gpuarray as _cudaarray    
-    
-if _pycbc.HAVE_OPENCL:
-    import pyopencl as _pyopencl
-    import pyopencl.array as _openclarray
-
-_ALLOWED_DTYPES = [_numpy.float32,_numpy.float64,_numpy.complex64,
+_ALLOWED_DTYPES = [_numpy.float32, _numpy.float64, _numpy.complex64,
                    _numpy.complex128]
-_ALLOWED_SCALARS = [int,long, float, complex]+_ALLOWED_DTYPES
+_ALLOWED_SCALARS = [int, long, float, complex] + _ALLOWED_DTYPES
 
 def _convert_to_scheme(ary):
     if ary._scheme is not _scheme.mgr.state:
@@ -94,8 +85,8 @@ def _to_device(array):
     """ Move input to device """
     
 @schemed(BACKEND_PREFIX)
-def _from_device(array):
-    """ Get input from device """
+def _copy_base_array(array):
+    """ Copy a backend array"""
 
 @schemed(BACKEND_PREFIX)
 def _scheme_matches_base_array(array):
@@ -109,7 +100,7 @@ class Array(object):
     
     __array_priority__ = 1000
 
-    def __init__(self,initial_array, dtype=None, copy=True):
+    def __init__(self, initial_array, dtype=None, copy=True):
         """ initial_array: An array-like object as specified by NumPy, this
         also includes instances of an underlying data type as described in
         section 3 or an instance of the PYCBC Array class itself. This
@@ -125,30 +116,17 @@ class Array(object):
         """
         self._scheme=_scheme.mgr.state
         self._data = None
+        
+        #Unwrap initial_array
+        if isinstance(initial_array, Array):
+            initial_array = initial_array._data
 
         if not copy:
-            if isinstance(initial_array, Array):
-                if self._scheme is not initial_array._scheme:
-                    raise TypeError("Cannot avoid a copy of this Array")
-                self._data = initial_array._data
-            elif type(initial_array) is _numpy.ndarray:
-                if type(self._scheme) is not _scheme.CPUScheme:
-                    raise TypeError("Cannot avoid a copy of this Array")
-                else:
-                    self._data = initial_array
-            elif _pycbc.HAVE_CUDA and type(initial_array) is _cudaarray.GPUArray:
-                if type(self._scheme) is not _scheme.CUDAScheme:
-                    raise TypeError("Cannot avoid a copy of this Array")
-                else:
-                    self._data = initial_array
-            elif _pycbc.HAVE_OPENCL and type(initial_array) is _openclarray.Array:
-                if type(self._scheme) is not _scheme.OpenCLScheme:
-                    raise TypeError("Cannot avoid a copy of this Array")
-                else:
-                    self._data = initial_array
+            if not _scheme_matches_base_array(initial_array):
+                raise TypeError("Cannot avoid a copy of this array")
             else:
-                raise TypeError(str(type(initial_array))+' is not supported')
-
+                  self._data = initial_array
+ 
             # Check that the dtype is supported.
             if self._data.dtype not in _ALLOWED_DTYPES:
                 raise TypeError(str(self._data.dtype) + ' is not supported')
@@ -158,81 +136,40 @@ class Array(object):
 
         if copy:
             # First we will check the dtype that we are given
-            initdtype = None
-            if not hasattr(initial_array,'dtype'):
+            if not hasattr(initial_array, 'dtype'):
                 initial_array = _numpy.array(initial_array)
 
-            if initial_array.dtype in _ALLOWED_DTYPES:
-                initdtype = initial_array.dtype
-            else:
-                if initial_array.dtype.kind == 'c':
-                    initdtype = complex128
-                else:
-                    initdtype = float64
-                        
-            # Now that we know the dtype of the data, we can determine whether the specified dtype
-            # is valid. If the data is complex, and a real dtype has been specified, this should
-            # raise an error.
-            if dtype is not None:
+            # Determine the dtype to use
+            if dtype is not None:  
+                dtype = _numpy.dtype(dtype)
                 if dtype not in _ALLOWED_DTYPES:
                     raise TypeError(str(dtype) + ' is not supported')
-                if _numpy.dtype(dtype).kind != 'c' and _numpy.dtype(initdtype).kind == 'c':
-                    raise TypeError(str(initdtype) + ' cannot be cast as ' + str(dtype))
+                if dtype.kind != 'c' and initial_array.dtype.kind == 'c':
+                    raise TypeError(str(initial_array.dtype) + ' cannot be cast as ' + str(dtype))          
+            elif initial_array.dtype in _ALLOWED_DTYPES:
+                dtype = initial_array.dtype
             else:
-                dtype = initdtype  
-                
-            #Unwrap initial_array
-            input_data = None
-            if isinstance(initial_array,Array):
-                input_data = initial_array._data
-            else:
-                input_data = initial_array
-
-            #Create new instance with input_data as initialization.
+                if initial_array.dtype.kind == 'c':
+                    dtype = complex128
+                else:
+                    dtype = float64
+                     
+            # Cast to the final dtype if needed
+            if initial_array.dtype != dtype:
+                initial_array = initial_array.astype(dtype)
+                                              
+            #Create new instance with initial_array as initialization.
             if type(self._scheme) is _scheme.CPUScheme:
-                if _pycbc.HAVE_CUDA and (type(input_data) is
-                                         _cudaarray.GPUArray):
-                    self._data = input_data.get().astype(dtype)
-                elif _pycbc.HAVE_OPENCL and (type(input_data) is
-                                             _openclarray.Array):
-                    self._data = input_data.get().astype(dtype)
+                if hasattr(initial_array, 'get'):
+                    self._data = initial_array.get()
                 else:
-                    self._data = _numpy.array(input_data,dtype=dtype,ndmin=1)
-            elif _pycbc.HAVE_CUDA and (type(self._scheme) is
-                                       _scheme.CUDAScheme):
-                if type(input_data) is _cudaarray.GPUArray:
-                    if input_data.dtype == dtype:
-                        self._data = _cudaarray.GPUArray((input_data.size),dtype)
-                        if len(input_data) > 0:
-                            _cudriver.memcpy_dtod(self._data.gpudata,input_data.gpudata,
-                                                    input_data.nbytes)
-                    else:
-                        self._data = input_data.astype(dtype)
-                else:
-                    self._data = _cudaarray.to_gpu(_numpy.array(input_data,
-                                                            dtype=dtype,ndmin=1))
-            elif _pycbc.HAVE_OPENCL and (type(self._scheme) is
-                                         _scheme.OpenCLScheme):
-                if type(input_data) is _openclarray.Array:
-                    if input_data.dtype == dtype:
-                    #Unsure how to copy memory directly with OpenCL, these two lines are 
-                    #a temporary workaround, still probably better than going to the host and back though
-                        # This function doesn't behave nicely when the array is empty
-                        # because it tries to fill it with zeros
-                        if len(input_data) > 0:
-                            self._data = _openclarray.zeros_like(input_data)
-                            self._data += input_data
-                        else:
-                            self._data = _openclarray.Array(self._scheme.queue,(0,),dtype)
-                    else:
-                        self._data = input_data.astype(dtype)
-                else:
-                    self._data = _openclarray.to_device(self._scheme.queue,
-                                                    _numpy.array(input_data,
-                                                                 dtype=dtype,ndmin=1))
+                    self._data = _numpy.array(initial_array, dtype=dtype, ndmin=1)
+            elif _scheme_matches_base_array(initial_array):
+                self._data = _copy_base_array(initial_array)
             else:
-                raise TypeError('Invalid Processing scheme Type')
-
+                initial_array = _numpy.array(initial_array, dtype=dtype, ndmin=1)
+                self._data = _to_device(initial_array)
+                   
     @decorator
     def _returnarray(fn, self, *args):
         return Array(fn(self, *args), copy=False)
@@ -933,7 +870,6 @@ def complex_same_precision_as(data):
 @decorator
 def _return_array(fn, *args, **kwds):
     return Array(fn(*args, **kwds), copy=False)
-
 
 @_return_array
 @schemed(BACKEND_PREFIX)

@@ -282,3 +282,18 @@ def _scheme_matches_base_array(array):
         return True
     else:
         return False
+        
+def _copy_base_array(array):
+    #Unsure how to copy memory directly with OpenCL, these two lines are 
+    #a temporary workaround, still probably better than going to the host and back though
+    # This function doesn't behave nicely when the array is empty
+    # because it tries to fill it with zeros
+    if len(array) > 0:
+        data = pyopencl.array.zeros_like(array)
+        data += array
+    else:
+        data = pyopencl.array.Array(mgr.state.queue,(0,), array.dtype)
+    return data
+    
+def _to_device(array):
+    return pyopencl.array.to_device(mgr.state.queue, array)

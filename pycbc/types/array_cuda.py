@@ -341,3 +341,15 @@ def _scheme_matches_base_array(array):
         return True
     else:
         return False
+
+def _copy_base_array(array):
+    data = pycuda.gpuarray.GPUArray((array.size), array.dtype)
+    if len(array) > 0:
+        pycuda.driver.memcpy_dtod(data.gpudata, array.gpudata, array.nbytes)
+    return data
+
+def _to_device(array):
+    return pycuda.gpuarray.to_gpu(array)
+    
+   
+   
