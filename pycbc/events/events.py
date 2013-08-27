@@ -29,7 +29,7 @@ import lal
 import numpy
 import copy
 import pycbc
-
+from pycbc.types import Array
 from pycbc.scheme import schemed
 import numpy
 
@@ -117,8 +117,11 @@ class EventManager(object):
         new_events = numpy.zeros(len(vectors[0]), dtype=self.event_dtype)
         new_events['template_id'] = self.template_index
         for c, v in zip(columns, vectors):
-            if v is not None:
-                new_events[c] = v
+            if v is not None:   
+                if isinstance(v, Array):
+                    new_events[c] = v.numpy()
+                else:
+                    new_events[c] = v
         self.template_events = numpy.append(self.template_events, new_events)                     
      
     def cluster_template_events(self, tcolumn, column, window_size):

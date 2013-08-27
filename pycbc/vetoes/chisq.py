@@ -133,7 +133,7 @@ def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
         k_min = int(bins[j])
         k_max = int(bins[j+1])                 
         qi = shift_sum(corr[k_min:k_max], indices, slen=len(corr), offset=k_min)
-        chisq += qi.squared_norm()  
+        chisq_accum_bin(chisq, qi)
         
     return (chisq * num_bins - snr.squared_norm()) * (snr_norm ** 2.0)
     
@@ -214,8 +214,10 @@ def fastest_power_chisq_at_points(corr, snr, snr_norm, bins, indices):
     POINT_THRESHOLD = (len(bins)-1)*FFT_T / P_T
     
     # This is a temporary hack, standard gpu support is intended and should be forthcoming
+    # Note, the code for gpu support is in place but atm very slow, optimization required
+    # before turning it on by default
     import pycbc.scheme
-    if (len(indices) < POINT_THRESHOLD):
+    if (len(indices) < POINT_THRESHOLD and pycbc.scheme.mgr.state is pycbc.scheme.CPUScheme) :
         # We don't have that many points so do the direct time shift.
         return power_chisq_at_points_from_precomputed(corr, snr.take(indices), snr_norm, bins, indices)
     else:
@@ -276,8 +278,6 @@ class SingleDetPowerChisq(object):
 
     def values(self, corr, snr, snr_norm, psd, indices, template, bank, low_frequency_cutoff):
         if self.do:
-            logging.info("...Doing power chisq")
-            
             # Compute the chisq bins if we haven't already
             # Only recompute the bins if the template changes
             
@@ -292,5 +292,6 @@ class SingleDetPowerChisq(object):
                     bins = power_chisq_bins(template, self._num_bins, psd, low_frequency_cutoff) 
                 self._template = template
                 self._bins = bins
-            
+                
+            logging.info("...Doing power chisq")     
             return fastest_power_chisq_at_points(corr, snr, snr_norm, self._bins, indices)

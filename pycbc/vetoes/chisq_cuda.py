@@ -222,19 +222,21 @@ def get_shift_kernel(num_shifts):
                 
     return shift_krnl
 
+chisq_buf = pycbc.types.zeros(4096*256, dtype=np.complex64)
 
 def shift_sum(v1, shifts, slen=None, offset=0):
+    global chisq_buf
     vlen = len(v1)
     shifts = list(shifts)
     if slen is None:
         slen = vlen
     
     n = len(shifts)
-    group_size = 10000
+    group_size = 10
     
     num_full_pass =  n // group_size
     remainder = n - group_size * num_full_pass
-    result = pycbc.types.zeros(n, dtype=np.complex64)
+    result = chisq_buf
 
     for i in range(num_full_pass):
         f = result[i*group_size:(i+1)*group_size]
@@ -248,7 +250,7 @@ def shift_sum(v1, shifts, slen=None, offset=0):
         args = [v1.data] + shifts[group_size*num_full_pass:n] + [offset, slen]
         shift_krnl(*args, result=f.data)
         
-    return Array(result, copy=False)
+    return Array(result[0:n], copy=False)
    
     
     
