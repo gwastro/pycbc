@@ -133,7 +133,7 @@ def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
         k_min = int(bins[j])
         k_max = int(bins[j+1])                 
         qi = shift_sum(corr[k_min:k_max], indices, slen=len(corr), offset=k_min)
-        chisq += qi.squared_norm()  
+        chisq_accum_bin(chisq, qi)
         
     return (chisq * num_bins - snr.squared_norm()) * (snr_norm ** 2.0)
     
@@ -215,7 +215,7 @@ def fastest_power_chisq_at_points(corr, snr, snr_norm, bins, indices):
     
     # This is a temporary hack, standard gpu support is intended and should be forthcoming
     import pycbc.scheme
-    if (len(indices) < POINT_THRESHOLD) and type(pycbc.scheme.mgr.state) is pycbc.scheme.CPUScheme:
+    if (len(indices) < POINT_THRESHOLD):
         # We don't have that many points so do the direct time shift.
         return power_chisq_at_points_from_precomputed(corr, snr.take(indices), snr_norm, bins, indices)
     else:

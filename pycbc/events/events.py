@@ -124,6 +124,7 @@ class EventManager(object):
     def cluster_template_events(self, tcolumn, column, window_size):
         """ Cluster the internal events over the named column
         """
+        self.template_events = numpy.sort(self.template_events, order=tcolumn)
         cvec = self.template_events[column]
         tvec = self.template_events[tcolumn]
         indices = findchirp_cluster_over_window(tvec, cvec, window_size)
