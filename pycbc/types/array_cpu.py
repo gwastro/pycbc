@@ -93,4 +93,17 @@ def squared_norm(self):
 def  numpy(self):
     return self._data
     
+def _copy(self, self_ref, other_ref):
+    self_ref[:] = other_ref[:]
     
+def _getvalue(self, index):
+    return self._data[index]
+
+def sum(self):
+    if self.kind == 'real':
+        return np.sum(self._data,dtype=float64)
+    else:
+        return np.sum(self._data,dtype=complex128)   
+        
+def clear(self): 
+    self[:] = 0 

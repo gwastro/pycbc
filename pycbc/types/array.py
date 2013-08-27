@@ -91,8 +91,8 @@ def common_kind(*dtypes):
 
 class Array(object):
     """Array used to do numeric calculations on a various compute
-    devices. It is a convience wrapper around _numpy, _pyopencl, and
-    _pycuda.
+    devices. It is a convience wrapper around numpy, pyopencl, and
+    pycuda.
     """
     
     __array_priority__ = 1000
@@ -669,15 +669,9 @@ class Array(object):
         """
 
     @_convert
-    def clear(self):
+    @schemed(BACKEND_PREFIX)
+    def clear(self): 
         """ Clear out the values of the array. """
-        if type(self._scheme) is _scheme.CPUScheme:
-            self[:] = 0 
-        if type(self._scheme) is _scheme.CUDAScheme:
-            n32 = self.data.nbytes / 4
-            _cudriver.memset_d32(self.data.gpudata, 0, n32)
-        if type(self._scheme) is _scheme.OpenCLScheme:
-            self.fill(0)
 
     @_vrcheckother
     @_convert
@@ -687,17 +681,9 @@ class Array(object):
         """
 
     @_convert
+    @schemed(BACKEND_PREFIX)
     def sum(self):
         """ Return the sum of the the array. """
-        if type(self._data) is _numpy.ndarray:
-            if self.kind == 'real':
-                return _numpy.sum(self._data,dtype=float64)
-            else:
-                return _numpy.sum(self._data,dtype=complex128)
-        elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
-            return _pycuda.gpuarray.sum(self._data).get().max()
-        elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-            return _pyopencl.array.sum(self._data).get().max() 
 
     @_returntype
     @_convert
@@ -739,18 +725,22 @@ class Array(object):
     @schemed(BACKEND_PREFIX)
     def dot(self, other):
         """ Return the dot product"""
+    
+    @schemed(BACKEND_PREFIX)
+    def _getvalue(self, index):
+        """Helper function to return a single value from an array. May be very
+           slow if the memory is on a gpu.
+        """
             
     @_convert
     def __getitem__(self, index):
+        """ Return items from the Array. This not guaranteed to be fast for
+            returning single values. 
+        """
         if isinstance(index, slice):
             return self._return(self._data[index])
         else:
-            if type(self._data) is _numpy.ndarray:
-                return self._data[index]
-            elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
-                return self._data.get()[index]
-            elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-                return self._data.get()[index]
+            return self._getvalue(index)
 
     @_convert
     def resize(self, new_size):
@@ -790,6 +780,12 @@ class Array(object):
             return self
         else:
             return self._data.astype(dtype)
+    
+    @schemed(BACKEND_PREFIX)
+    def _copy(self, self_ref, other_ref):
+        """Helper function to copy between two arrays. The arrays references
+           should be bare array types and not `Array` class instances. 
+        """
                 
     @_convert
     def __setitem__(self, index, other):
@@ -806,26 +802,8 @@ class Array(object):
                 self_ref = self._data[index:index+1]
                 other_ref = other._data
 
-            if type(self._data) is _numpy.ndarray:
-                self_ref[:] = other_ref[:]
+            self._copy(self_ref, other_ref)
 
-            elif _pycbc.HAVE_CUDA and type(self._data) is _cudaarray.GPUArray:
-                if (len(other_ref) <= len(self_ref)) :
-                    from pycuda.elementwise import get_copy_kernel
-                    func = get_copy_kernel(self.dtype, other.dtype)
-                    func.prepared_async_call(self_ref._grid, self_ref._block, None,
-                            self_ref.gpudata, other_ref.gpudata,
-                            self_ref.mem_size)
-                else:
-                    raise RuntimeError("The arrays must the same length")
-
-            elif _pycbc.HAVE_OPENCL and type(self._data) is _openclarray.Array:
-                if (len(other_ref) <= len(self_ref)) :
-                    self_ref._copy(self_ref, other_ref)
-                else:
-                    raise RuntimeError("The arrays must the same length")
-
-        
         elif type(other) in _ALLOWED_SCALARS:
             if isinstance(index, slice):
                 self[index].fill(other)

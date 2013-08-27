@@ -261,4 +261,18 @@ def max_loc(self):
     maxloc = max_loc_map[self.precision](self._data)
     maxloc = maxloc.get()
     return float(maxloc['max']),int(maxloc['loc'])
+
+def _copy(self, self_ref, other_ref):
+    if (len(other_ref) <= len(self_ref)) :
+        self_ref._copy(self_ref, other_ref)
+    else:
+        raise RuntimeError("The arrays must the same length")
+
+def _getvalue(self, index):
+    return self._data.get()[index]
     
+def sum(self):
+    return pyopencl.array.sum(self._data).get().max() 
+
+def clear(self):
+    self.fill(0)

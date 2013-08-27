@@ -316,5 +316,22 @@ def take(self, indices):
 def  numpy(self):
     return self._data.get()
      
+def _copy(self, self_ref, other_ref):
+    if (len(other_ref) <= len(self_ref)) :
+        from pycuda.elementwise import get_copy_kernel
+        func = get_copy_kernel(self.dtype, other_ref.dtype)
+        func.prepared_async_call(self_ref._grid, self_ref._block, None,
+                self_ref.gpudata, other_ref.gpudata,
+                self_ref.mem_size)
+    else:
+        raise RuntimeError("The arrays must the same length")
 
-
+def _getvalue(self, index):
+    return self._data.get()[index]
+    
+def sum(self):
+    return pycuda.gpuarray.sum(self._data).get().max()
+    
+def clear(self):
+    n32 = self.data.nbytes / 4
+    pycuda.driver.memset_d32(self.data.gpudata, 0, n32)
