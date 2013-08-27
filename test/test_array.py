@@ -142,9 +142,6 @@ class ArrayTestBase(array_base,unittest.TestCase):
                 self.assertEqual(out1[2],1)
                 self.assertTrue(out1.dtype==self.dtype)
 
-                print "Debugging info:"
-                print "out2._scheme = {0}".format(out2._scheme)
-                print "self.context = {0}".format(self.context)
                 self.assertTrue(type(out2._scheme) == type(self.context))
                 self.assertTrue(type(out2._data) is SchemeArray)
                 self.assertEqual(out2[0],5)
