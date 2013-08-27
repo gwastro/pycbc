@@ -204,8 +204,9 @@ with ctx:
                 snr, corr, norm = matched_filter_core(template, stilde, h_norm=template.sigmasq, 
                                                       low_frequency_cutoff=opt.low_frequency_cutoff, 
                                                       out=snr_work_mem, corr_out=corr_work_mem)     
-                                                          
-                idx, snrv = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm)    
+                                         
+                idx, snrv = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm) 
+                
                 if len(idx) > 0:   
                     logging.info("%s points above threshold" % str(len(idx)))
                     bank_chisqv = bank_chisq.values(template, s_num, snr, norm, idx+snr_start)

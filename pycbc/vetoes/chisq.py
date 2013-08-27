@@ -133,7 +133,7 @@ def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
         k_min = int(bins[j])
         k_max = int(bins[j+1])                 
         qi = shift_sum(corr[k_min:k_max], indices, slen=len(corr), offset=k_min)
-        chisq_accum_bin(chisq, qi)
+        chisq += qi.squared_norm()  
         
     return (chisq * num_bins - snr.squared_norm()) * (snr_norm ** 2.0)
     
