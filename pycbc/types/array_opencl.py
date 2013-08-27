@@ -276,3 +276,9 @@ def sum(self):
 
 def clear(self):
     self.fill(0)
+    
+def _scheme_matches_base_array(array):
+    if isinstance(array, pyopencl.array.Array):
+        return True
+    else:
+        return False

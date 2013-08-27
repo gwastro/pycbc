@@ -88,6 +88,18 @@ def common_kind(*dtypes):
         if dtype.kind is 'c':
             return dtype
     return dtypes[0]
+   
+@schemed(BACKEND_PREFIX) 
+def _to_device(array):
+    """ Move input to device """
+    
+@schemed(BACKEND_PREFIX)
+def _from_device(array):
+    """ Get input from device """
+
+@schemed(BACKEND_PREFIX)
+def _scheme_matches_base_array(array):
+    """ Check that input matches array type for scheme """
 
 class Array(object):
     """Array used to do numeric calculations on a various compute
@@ -140,18 +152,9 @@ class Array(object):
             # Check that the dtype is supported.
             if self._data.dtype not in _ALLOWED_DTYPES:
                 raise TypeError(str(self._data.dtype) + ' is not supported')
-            if self._data.dtype == float32 or self._data.dtype == float64:
-                self.kind = 'real'
-            else:
-                self.kind = 'complex'
-            if self._data.dtype == float32 or self._data.dtype == complex64:
-                self.precision = 'single'
-            else:
-                self.precision = 'double'
 
             if dtype and dtype != self._data.dtype:
-                raise TypeError("Cannot set dtype when not copying")
-
+                raise TypeError("Can only set dtype when allowed to copy data")
 
         if copy:
             # First we will check the dtype that we are given
@@ -177,15 +180,7 @@ class Array(object):
                     raise TypeError(str(initdtype) + ' cannot be cast as ' + str(dtype))
             else:
                 dtype = initdtype  
-                       
-            if dtype == float32 or dtype == float64:
-                self.kind = 'real'
-            else:
-                self.kind = 'complex'
-            if dtype == float32 or dtype == complex64:
-                self.precision = 'single'
-            else:
-                self.precision = 'double'                        
+                
             #Unwrap initial_array
             input_data = None
             if isinstance(initial_array,Array):
@@ -813,6 +808,20 @@ class Array(object):
             raise TypeError('Can only copy data from another Array')
 
     @property
+    def precision(self):
+        if self.dtype == float32 or self.dtype == complex64:
+            return 'single'
+        else:
+            return 'double'        
+                
+    @property
+    def kind(self):
+        if self.dtype == float32 or self.dtype == float64:
+            return 'real'
+        else:
+            return 'complex'    
+
+    @property
     @_convert
     def data(self):
         """Returns the internal python array """
@@ -849,8 +858,9 @@ class Array(object):
         """
         return self;
 
+    @_convert
     @schemed(BACKEND_PREFIX)
-    def  numpy(self):
+    def numpy(self):
         """ Returns a Numpy Array that contains this data """     
     
     @cpuonly

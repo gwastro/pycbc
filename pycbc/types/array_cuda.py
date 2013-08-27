@@ -335,3 +335,9 @@ def sum(self):
 def clear(self):
     n32 = self.data.nbytes / 4
     pycuda.driver.memset_d32(self.data.gpudata, 0, n32)
+    
+def _scheme_matches_base_array(array):
+    if isinstance(array, pycuda.gpuarray.GPUArray):
+        return True
+    else:
+        return False

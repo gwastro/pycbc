@@ -107,3 +107,9 @@ def sum(self):
         
 def clear(self): 
     self[:] = 0 
+    
+def _scheme_matches_base_array(array):
+    if isinstance(array, np.ndarray):
+        return True
+    else:
+        return False
