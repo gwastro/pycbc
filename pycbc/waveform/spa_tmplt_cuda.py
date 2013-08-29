@@ -40,6 +40,7 @@ preamble = """
  
 taylorf2_text = """
     const float f = (i + kmin ) * delta_f;
+    const float amp2 = amp * __powf(f, -7.0/6.0);
     const float v =  __powf(piM*f, 1.0/3.0);
     const float v2 = v * v;
     const float v3 = v2 * v;
@@ -81,25 +82,24 @@ taylorf2_text = """
     float psin;
     __sincosf(phasing, &psin, &pcos);
 
-    htilde[i]._M_re = pcos;
-    htilde[i]._M_im = - psin;
-
+    htilde[i]._M_re = pcos * amp2;
+    htilde[i]._M_im = - psin * amp2;
 """
 
 taylorf2_kernel = ElementwiseKernel("""pycuda::complex<float> *htilde, int kmin, int phase_order,
                                        float delta_f, float piM, float pfaN, 
                                        float pfa2, float pfa3, float pfa4, float pfa5, float pfl5,
-                                       float pfa6, float pfl6, float pfa7, float lv0""",
+                                       float pfa6, float pfl6, float pfa7, float lv0, float amp""",
                     taylorf2_text, "SPAtmplt",
                     preamble=preamble, options=pkg_config_header_strings(['lal']))
 
 def spa_tmplt_engine(htilde,  kmin,  phase_order,
                     delta_f,  piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, v0):
+                    pfa6,  pfl6,  pfa7, v0, amp_factor):
     """ Calculate the spa tmplt phase 
     """
     taylorf2_kernel(htilde.data,  kmin,  phase_order,
                     delta_f,  piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, log(v0))
+                    pfa6,  pfl6,  pfa7, log(v0), amp_factor)

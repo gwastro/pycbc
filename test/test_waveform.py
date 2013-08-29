@@ -97,12 +97,12 @@ class TestWaveform(base_test.function_base,unittest.TestCase):
 
                         with self.context:
                             # Generate the spatmplt waveform
-                            amp = spa_tmplt.spa_tmplt_precondition(len(hpr), delta_f).astype(float32)
-                            am2 = spa_tmplt.spa_amplitude_factor(mass1=m1, mass2=m2, spin1z=s1, spin2z=s2)
                             out = zeros(len(hpr), dtype=complex64)
                             hp = get_waveform_filter(out, mass1=m1, mass2=m2, spin1z=s1, spin2z=s2, delta_f=delta_f, f_lower=fl, approximant="SPAtmplt", amplitude_order=0, spin_order=5, phase_order=7)
-                            hp *= amp[0:len(hp)] * am2 * -1
-                            
+                            #import pylab
+                            #pylab.plot(hp.numpy())
+                            #pylab.plot(hpr.numpy())
+                            #pylab.show()                           
                             mag = abs(hpr).sum()
                             
                             # Check the diff is sane

@@ -192,13 +192,20 @@ def filter_approximants(scheme=_scheme.mgr.state):
 def props(obj, **kwargs):
     pr = {}
     if obj is not None:
-        for name in dir(obj):
-            try:
-                value = getattr(obj, name)
-                if not name.startswith('__') and not inspect.ismethod(value):
-                    pr[name] = value
-            except:
-                continue
+        if hasattr(obj, '__dict__'):
+            pr = obj.__dict__
+        elif hasattr(obj, '__slots__'):
+            for slot in obj.__slots__:
+                if hasattr(obj, slot):
+                    pr[slot] = getattr(obj, slot)
+        else:
+            for name in dir(obj):
+                try:
+                    value = getattr(obj, name)
+                    if not name.startswith('__') and not inspect.ismethod(value):
+                        pr[name] = value
+                except:
+                    continue
 
     # Get the parameters to generate the waveform
     # Note that keyword arguments override values in the template object
@@ -437,12 +444,6 @@ def get_waveform_filter(out, template=None, **kwargs):
     else:
         raise ValueError("Approximant %s not available" % \
                          (input_params['approximant']))
-
-def waveform_precondition_exists(approximant):
-    if approximant in _filter_preconditions:
-        return True
-    else:
-        return False
         
 def waveform_norm_exists(approximant):
     if approximant in _filter_norms:
@@ -503,7 +504,7 @@ def get_waveform_filter_length_in_time(approximant,**kwargs):
 
 __all__ = ["get_td_waveform","get_fd_waveform","print_td_approximants",
            "print_fd_approximants","td_approximants","fd_approximants", 
-           "get_waveform_filter", "get_waveform_filter_precondition",
+           "get_waveform_filter", 
            "filter_approximants", "get_waveform_filter_norm", "get_waveform_end_frequency",
-           "waveform_precondition_exists", "waveform_norm_exists", "get_template_amplitude_norm",
+            "waveform_norm_exists", "get_template_amplitude_norm",
            "get_waveform_filter_length_in_time"]

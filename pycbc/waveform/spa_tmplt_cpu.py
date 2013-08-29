@@ -18,6 +18,7 @@ from pycbc.lalwrap import XLALInspiralPyCBCTemplatePhase as spa_engine
 import numpy
 import lal
 from pycbc.types import Array, float32, FrequencySeries
+from pycbc.waveform.spa_tmplt import spa_tmplt_precondition
 
 # Precompute cbrt(f) ###########################################################
 
@@ -58,9 +59,10 @@ _sin_cos = _sin_cosf[10000:20000]
 
 def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, v0):
+                    pfa6,  pfl6,  pfa7, v0, amp_factor):
     """ Calculate the spa tmplt phase 
     """
+    kfac = spa_tmplt_precondition(len(htilde), delta_f, kmin)
     
     cbrt_vec = get_cbrt(len(htilde)*delta_f + kmin, delta_f)
     logv_vec = get_log(len(htilde)*delta_f + kmin, delta_f)
@@ -68,7 +70,4 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
     spa_engine(htilde, _sin_cos, cbrt_vec, logv_vec, kmin,  phase_order, piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
                     pfa6,  pfl6,  pfa7, v0)
-
-
-
-
+    htilde *= (amp_factor * kfac)

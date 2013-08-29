@@ -29,7 +29,7 @@ from lalinspiral import FindChirpChirpTime
 from pycbc.scheme import schemed
 import numpy
 import pycbc.pnutils
-from pycbc.types import FrequencySeries, Array, complex64
+from pycbc.types import FrequencySeries, Array, complex64, float32
 
 def ceilpow2(n):
     signif,exponent = frexp(n)
@@ -38,14 +38,6 @@ def ceilpow2(n):
     if (signif == 0.5):
         exponent -= 1;
     return (1) << exponent;
-
-def spa_tmplt_precondition(length, delta_f):
-    """Return the amplitude portion of the TaylorF2 approximant, used to precondition
-    the strian data.
-    """
-    v = numpy.arange(0, length+1, 1.0) * delta_f
-    v = numpy.power(v[1:len(v)], -7.0/6.0)
-    return FrequencySeries(v, delta_f=delta_f)
 
 def spa_length_in_time(**kwds):
     """
@@ -81,8 +73,20 @@ def spa_amplitude_factor(**kwds):
     amp0 = 4. * m1 * m2 / (1e6 * lal.LAL_PC_SI ) * lal.LAL_MRSUN_SI * lal.LAL_MTSUN_SI * sqrt(lal.LAL_PI/12.0)  
 
     fac = sqrt( -dETaN / FTaN) * amp0 * (piM ** (-7.0/6.0)) 
-    return fac
-    
+    return -fac
+   
+_prec = None
+def spa_tmplt_precondition(length, delta_f, kmin=0):
+    """Return the amplitude portion of the TaylorF2 approximant, used to precondition
+    the strian data. The result is cached, and so should not be modified only read.
+    """
+    global _prec
+    if _prec is None or _prec.delta_f != delta_f or len(_prec) < length:       
+        v = numpy.arange(0, (kmin+length*2), 1.0) * delta_f
+        v = numpy.power(v[1:len(v)], -7.0/6.0)
+        _prec = FrequencySeries(v, delta_f=delta_f, dtype=float32)
+    return _prec[kmin:kmin + length]
+   
 def spa_tmplt_norm(psd, length, delta_f, f_lower):
     amp = spa_tmplt_precondition(length, delta_f)
     k_min = int(f_lower / delta_f)
@@ -97,7 +101,7 @@ def spa_tmplt_end(**kwds):
 @schemed("pycbc.waveform.spa_tmplt_")  
 def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, v0):
+                    pfa6,  pfl6,  pfa7, v0, amp_factor):
     """ Calculate the spa tmplt phase 
     """
  
@@ -119,6 +123,8 @@ def spa_tmplt(**kwds):
         out = None
 
     tC= -1.0 / delta_f 
+    
+    amp_factor = spa_amplitude_factor(mass1=mass1, mass2=mass2) / distance
 
     #Calculate the spin corrections
     beta, sigma, gamma = pycbc.pnutils.mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(
@@ -170,9 +176,9 @@ def spa_tmplt(**kwds):
             raise TypeError("Output array is the wrong dtype")
         htilde = FrequencySeries(out, delta_f=delta_f, copy=False)
     
-    spa_tmplt_engine(htilde[kmin:kmax],  kmin,  phase_order, delta_f, piM,  pfaN, 
+    spa_tmplt_engine(htilde[kmin:kmax],  kmin, phase_order, delta_f, piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, v0)          
+                    pfa6,  pfl6,  pfa7, v0, amp_factor)          
     return htilde
     
 

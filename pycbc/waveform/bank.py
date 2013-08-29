@@ -54,14 +54,7 @@ class TemplateBank(object):
         if (psd is not None) and pycbc.waveform.waveform_norm_exists(approximant):
                 self.sigmasq_vec = pycbc.waveform.get_waveform_filter_norm(
                                      approximant, self.psd, filter_length, 
-                                     self.delta_f, self.f_lower)        
-                                     
-        self.prec_fac = pycbc.waveform.get_waveform_filter_precondition(
-                        self.approximant, 
-                        self.filter_length, 
-                        self.delta_f)
-        if self.prec_fac is not None:
-            self.prec_fac = self.prec_fac.astype(self.dtype)     
+                                     self.delta_f, self.f_lower)          
         
     def __len__(self):
         return len(self.table)
@@ -78,43 +71,40 @@ class TemplateBank(object):
         if f_end is None or f_end >= (self.filter_length * self.delta_f):
             f_end = (self.filter_length-1) * self.delta_f
         
-
         poke  = self.out.data
         # Clear the storage memory
-        self.out.clear()
+        self.out.clear()        
         
         # Get the waveform filter
-        htilde = pycbc.waveform.get_waveform_filter(self.out[0:self.filter_length], self.table[index], 
-                                approximant=self.approximant, f_lower=self.f_lower, delta_f=self.delta_f, **self.extra_args)
+        distance = 1.0 / DYN_RANGE_FAC
+        htilde = pycbc.waveform.get_waveform_filter(self.out[0:self.filter_length], 
+                            self.table[index], approximant=self.approximant, 
+                            f_lower=self.f_lower, delta_f=self.delta_f, 
+                            distance=distance, **self.extra_args)
             
         length_in_time = None      
         if hasattr(htilde, 'length_in_time'):
             length_in_time = htilde.length_in_time      
             
         # Make sure it is the desired type
-        htilde = htilde.astype(self.dtype)
-
-        # Get an amplitude normalization (mass dependant constant norm)
-        amp_norm = pycbc.waveform.get_template_amplitude_norm(self.table[index], 
-                          approximant=self.approximant, **self.extra_args)
-                          
-        # Create the full waveform from the precalculated normalizations
-        if self.prec_fac is not None:
-            htilde *= self.prec_fac                  
-                          
-        if amp_norm is not None:
-            htilde *= amp_norm
+        htilde = htilde.astype(self.dtype)                   
 
         htilde.end_frequency = f_end
         htilde.end_idx = int(htilde.end_frequency / htilde.delta_f) 
         htilde.params = self.table[index]
         
-        htilde *= DYN_RANGE_FAC
-        
         # If we were given a psd, calculate sigmasq so we have it for later
         if self.psd is not None:
-            if self.sigmasq_vec is not None:  
-                htilde.sigmasq = self.sigmasq_vec[htilde.end_idx] * (amp_norm *  DYN_RANGE_FAC) **2
+            if self.sigmasq_vec is not None: 
+                
+                # Get an amplitude normalization (mass dependant constant norm)
+                amp_norm = pycbc.waveform.get_template_amplitude_norm(self.table[index], 
+                                  approximant=self.approximant, **self.extra_args)    
+                if amp_norm is None:
+                    amp_norm = 1
+                scale = DYN_RANGE_FAC * amp_norm
+                
+                htilde.sigmasq = self.sigmasq_vec[htilde.end_idx] * (scale) **2
             else:
                 htilde.sigmasq = sigmasq(htilde, self.psd, low_frequency_cutoff=self.f_lower) 
 
@@ -122,11 +112,3 @@ class TemplateBank(object):
             htilde.length_in_time = length_in_time  
        
         return htilde
-
-        
-    
-
-
-
-
-
