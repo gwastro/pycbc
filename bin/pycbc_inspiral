@@ -107,10 +107,12 @@ if opt.fake_strain:
     plen = int(opt.sample_rate / pdf) / 2 + 1
 
     logging.info("Making PSD for strain")
-    strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, pdf, opt.low_frequency_cutoff)
+    strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, 
+                                       pdf, opt.low_frequency_cutoff)
     
     logging.info("Making colored noise")
-    strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate, strain_psd, seed=opt.fake_strain_seed)
+    strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate, strain_psd, 
+                                        seed=opt.fake_strain_seed)
 
     if opt.injection_file:
         logging.info("Applying injections")
@@ -145,6 +147,9 @@ with ctx:
         seg = make_frequency_series(strain[seg_start_idx:seg_end_idx])
         segments.append(seg)
         seg_start_idx += seg_width_idx    
+        
+    snr_start = (opt.segment_start_pad) * opt.sample_rate
+    snr_end  =  (opt.segment_length - opt.segment_end_pad) * opt.sample_rate
   
     bank_chisq = pycbc.vetoes.SingleDetBankVeto(opt.bank_veto_bank_file, 
                                           opt.approximant, psd, segments,
@@ -184,39 +189,35 @@ with ctx:
         for s_num, stilde in enumerate(segments):          
             logging.info("Filtering" + "  Template: " + str(t_num+1) + "/" + \
                         str(len(bank)) + " Segment: " + str(s_num+1) + "/" + \
-                         str(len(segments)) )       
-                                                   
-            snr_start = (opt.segment_start_pad) * opt.sample_rate
-            snr_end  =  (opt.segment_length - opt.segment_end_pad) * opt.sample_rate
-            seg_width = (snr_end - snr_start)
+                         str(len(segments)) )                                                         
 
             if opt.trig_start_time:
                 seg_start = cumulative_index/opt.sample_rate + opt.gps_start_time
                 if seg_start < opt.trig_start_time:
-                    snr_start = (opt.trig_start_time - seg_start) * opt.sample_rate + snr_start
-            
+                    snr_start = (opt.trig_start_time - seg_start) * opt.sample_rate + snr_start         
             if opt.trig_end_time:
-                seg_end = (cumulative_index + seg_width)/opt.sample_rate +  opt.gps_start_time
+                seg_end = (cumulative_index + seg_width_idx)/opt.sample_rate +  opt.gps_start_time
                 if seg_end > opt.trig_end_time:
-                    snr_end = snr_end - (seg_end - opt.trig_end_time) * opt.sample_rate 
-                    
-            if snr_start < snr_end:
-                snr, corr, norm = matched_filter_core(template, stilde, h_norm=template.sigmasq, 
-                                                      low_frequency_cutoff=opt.low_frequency_cutoff, 
-                                                      out=snr_work_mem, corr_out=corr_work_mem)     
-                                         
-                idx, snrv = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm) 
+                    snr_end = snr_end - (seg_end - opt.trig_end_time) * opt.sample_rate                   
+            if snr_start >= snr_end:
+                break
                 
-                if len(idx) > 0:   
-                    logging.info("%s points above threshold" % str(len(idx)))
-                    bank_chisqv = bank_chisq.values(template, s_num, snr, norm, idx+snr_start)
-                    power_chisqv = power_chisq.values(corr, snr, norm, psd, idx+snr_start, template, bank, opt.low_frequency_cutoff)
-                    
-                    snrv *= norm
-                    idx += cumulative_index
-                    event_mgr.add_template_events( ["snr", "time_index", "chisq", "bank_chisq"], [snrv, idx, power_chisqv, bank_chisqv])
+            snr, corr, norm = matched_filter_core(template, stilde, h_norm=template.sigmasq, 
+                                                  low_frequency_cutoff=opt.low_frequency_cutoff, 
+                                                  out=snr_work_mem, corr_out=corr_work_mem)                                         
+            idx, snrv = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm) 
+            if len(idx) == 0:
+                continue                 
+             
+            logging.info("%s points above threshold" % str(len(idx)))
+            bank_chisqv = bank_chisq.values(template, s_num, snr, norm, idx+snr_start)
+            power_chisqv = power_chisq.values(corr, snr, norm, psd, idx+snr_start, template, bank, opt.low_frequency_cutoff)
+            
+            snrv *= norm
+            idx += cumulative_index
+            event_mgr.add_template_events( ["snr", "time_index", "chisq", "bank_chisq"], [snrv, idx, power_chisqv, bank_chisqv])
 
-            cumulative_index += seg_width
+            cumulative_index += seg_width_idx
 
         if opt.cluster_method == "window":
             cluster_window = opt.cluster_window * opt.sample_rate

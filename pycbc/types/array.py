@@ -72,7 +72,6 @@ def force_precision_to_match(scalar, precision):
             return _numpy.float32(scalar)
         else:
             return _numpy.float64(scalar)
-        
 
 def common_kind(*dtypes):
     for dtype in dtypes:
@@ -115,7 +114,7 @@ class Array(object):
         The default is to copy the given object.
         """
         self._scheme=_scheme.mgr.state
-        self._data = None
+        self._saved = {}
         
         #Unwrap initial_array
         if isinstance(initial_array, Array):
@@ -169,6 +168,17 @@ class Array(object):
             else:
                 initial_array = _numpy.array(initial_array, dtype=dtype, ndmin=1)
                 self._data = _to_device(initial_array)
+     
+    @decorator
+    def _memoize_single(fn, self, arg):
+        badh = str(arg)
+        
+        if badh in self._saved:
+            return self._saved[badh]
+
+        res = fn(self, arg)
+        self._saved[badh] = res      
+        return res
                    
     @decorator
     def _returnarray(fn, self, *args):
@@ -188,14 +198,14 @@ class Array(object):
             return NotImplemented
         return self._return(ary)
         
-    def _return(self,ary):
+    def _return(self, ary):
         """Wrap the ary to return an Array type """
         if isinstance(ary, Array):
             return ary
         return Array(ary, copy=False)
 
     @decorator
-    def _checkother(fn, self,*args):
+    def _checkother(fn, self, *args):
         nargs = ()
         for other in args:
             self._typecheck(other)  
@@ -216,7 +226,7 @@ class Array(object):
         return fn(self,*nargs)
     
     @decorator  
-    def _vcheckother(fn, self,*args):
+    def _vcheckother(fn, self, *args):
         nargs = ()
         for other in args:
             self._typecheck(other)  
@@ -663,14 +673,19 @@ class Array(object):
         """Helper function to return a single value from an array. May be very
            slow if the memory is on a gpu.
         """
-            
+
+    @_memoize_single            
+    @_returntype
+    def _getslice(self, index):
+        return self._return(self._data[index])
+    
     @_convert
     def __getitem__(self, index):
         """ Return items from the Array. This not guaranteed to be fast for
             returning single values. 
         """
         if isinstance(index, slice):
-            return self._return(self._data[index])
+            return self._getslice(index)
         else:
             return self._getvalue(index)
 
@@ -769,7 +784,7 @@ class Array(object):
         dtype = None
         if hasattr(other,'dtype'):
             dtype = other.dtype
-        temp = Array(other,dtype=dtype)
+        temp = Array(other, dtype=dtype)
         self._data = temp._data
 
     @property
