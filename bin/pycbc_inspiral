@@ -54,7 +54,6 @@ parser.add_option("--channel-name", help="The channel containing the gravitation
 parser.add_option("--frame-cache",help="Cache file containing the frame locations.", type=str)
 parser.add_option("--fake-strain", help="Name of psd for generating fake gaussain noise", type=str)
 parser.add_option("--fake-strain-seed", help="Seed value for the generation of fake colored gaussian noise", type=int, default=0)
-parser.add_option("--maximization-interval", help="Interval in ms to maximize triggers over, irespective of template", type=int, default=0)
 opt, argv = parser.parse_args()
 
 if opt.verbose:
@@ -227,10 +226,6 @@ with ctx:
             
         event_mgr.cluster_template_events("time_index", "snr", cluster_window) 
         event_mgr.finalize_template_events()                 
-
-if opt.maximization_interval:       
-    logging.info("Maximizing triggers over %s ms window" % opt.maximization_interval)
-    event_mgr.maximize_over_bank("time_index", "snr", opt.maximization_interval * opt.sample_rate / 1000)
         
 logging.info("Writing out triggers")
 event_mgr.write_events()
