@@ -2,7 +2,7 @@
 import logging
 import sys
 import numpy
-from optparse import OptionParser
+from optparse import OptionParser, OptionGroup
 
 import pycbc.vetoes
 import pycbc.psd
@@ -48,12 +48,21 @@ parser.add_option("--processing-device-id", help="ID of gpu to use for accelerat
 parser.add_option("--segment-length", type=int, help="The length of a segment (s)")
 parser.add_option("--segment-start-pad", type=int, help="Length of corruption at the beginning of a segment(s)")
 parser.add_option("--segment-end-pad", type=int, help="Length of corruption at the end of a segment (s)")
-parser.add_option("--psd-inverse-length", type=int, help="The desired length of the inverse psd in time (s)")
-parser.add_option("--psd-segment-length", type=int, help="The length of segment for psd estimation (s)")
 parser.add_option("--channel-name", help="The channel containing the gravitational strain data", type=str)
 parser.add_option("--frame-cache",help="Cache file containing the frame locations.", type=str)
 parser.add_option("--fake-strain", help="Name of psd for generating fake gaussain noise", type=str)
 parser.add_option("--fake-strain-seed", help="Seed value for the generation of fake colored gaussian noise", type=int, default=0)
+
+psd_options = OptionGroup(parser, "Options related to the noise PSD for matched filtering")
+psd_options.add_option("--psd-model", help="Get PSD from given analytical model")
+psd_options.add_option("--psd-file", help="Get PSD from given ASD text file")
+psd_options.add_option("--psd-estimation", help="Measure PSD from the data, using given average method", choices=["mean", "median", "median-mean"])
+psd_options.add_option("--psd-segment-length", type=float, help="The segment length for PSD estimation (s)")
+psd_options.add_option("--psd-segment-stride", type=float, help="The segment stride for PSD estimation (s)")
+psd_options.add_option("--psd-inverse-length", type=float, help="The maximum length of the impulse response of the overwhitening filter (s)")
+psd_options.add_option("--psd-output", help="Write PSD to specified file")
+parser.add_option_group(psd_options)
+
 opt, argv = parser.parse_args()
 
 if opt.verbose:
@@ -123,20 +132,13 @@ if opt.fake_strain:
     strain = (pycbc.DYN_RANGE_FAC * strain).astype(float32)
 
 with ctx:
-    logging.info("Estimating PSD")
-    psd = pycbc.psd.welch(strain, 
-                seg_len=opt.psd_segment_length * opt.sample_rate, 
-                seg_stride=(opt.psd_segment_length * opt.sample_rate) / 2)
-                    
-    logging.info("Interpolating PSD")
-    psd = pycbc.psd.interpolate(psd, 1.0/opt.segment_length)
+    logging.info("Computing noise PSD")
+    psd = pycbc.psd.from_cli(opt, parser, strain,
+                             pycbc.DYN_RANGE_FAC).astype(float32)
+    if opt.psd_output:
+        psd.save(opt.psd_output)
 
-    logging.info("Truncating Inverse PSD spectrum")
-    psd = pycbc.psd.inverse_spectrum_truncation(psd, 
-                opt.sample_rate*opt.psd_inverse_length,  
-                low_frequency_cutoff=opt.low_frequency_cutoff)
-
-    logging.info("Making FFT'd segments")
+    logging.info("Making frequency-domain data segments")
     segments = []
     seg_width_idx = (opt.segment_length - opt.segment_start_pad - 
                      opt.segment_end_pad) * opt.sample_rate
@@ -157,9 +159,9 @@ with ctx:
                                           phase_order=opt.order)                                       
     power_chisq = pycbc.vetoes.SingleDetPowerChisq(opt.chisq_bins)
   
-    logging.info("overwhiten stilde")
+    logging.info("Overwhitening frequency-domain data segments")
     for seg in segments:
-        seg /= psd     
+        seg /= psd
             
     template_work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
     snr_work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
@@ -178,7 +180,8 @@ with ctx:
     # Our bank might have had no templates in it, in which case we shouldn't
     # analyze anything but should write our output and exit.
     if len(bank) == 0:
-        logging.info("No templates found in template bank, so writing process table and exiting.")
+        logging.info("No templates found in template bank, so writing process "
+                     "table and exiting.")
         event_mgr.write_events()
         sys.exit(0)
 
@@ -187,9 +190,8 @@ with ctx:
         cumulative_index = opt.segment_start_pad * opt.sample_rate
         
         for s_num, stilde in enumerate(segments):          
-            logging.info("Filtering" + "  Template: " + str(t_num+1) + "/" + \
-                        str(len(bank)) + " Segment: " + str(s_num+1) + "/" + \
-                         str(len(segments)) )                                                         
+            logging.info("Filtering template %d/%d segment %d/%d" % \
+                         (t_num + 1, len(bank), s_num + 1, len(segments)))
 
             if opt.trig_start_time:
                 seg_start = cumulative_index/opt.sample_rate + opt.gps_start_time
