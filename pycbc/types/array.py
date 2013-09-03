@@ -673,8 +673,7 @@ class Array(object):
         """Helper function to return a single value from an array. May be very
            slow if the memory is on a gpu.
         """
-
-    @_memoize_single            
+           
     @_returntype
     def _getslice(self, index):
         return self._return(self._data[index])

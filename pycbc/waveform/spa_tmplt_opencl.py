@@ -39,6 +39,8 @@ taylorf2_text = """
     const float f = (i + kmin ) * delta_f;
     float e = 1.0/3.0;
     const float v =  native_powr(piM*f, e);
+    float e2 = -7.0/6.0;
+    const float amp2 = amp * native_powr(f, e2);
     const float v2 = v * v;
     const float v3 = v2 * v;
     const float v4 = v2 * v2;
@@ -79,25 +81,25 @@ taylorf2_text = """
     float psin;
     psin = sincos(phasing, &pcos);
 
-    htilde[i].x = pcos;
-    htilde[i].y = - psin;
+    htilde[i].x = pcos * amp2;
+    htilde[i].y = - psin * amp2;
 
 """
 
 taylorf2_kernel = ElementwiseKernel(mgr.state.context, """cfloat_t *htilde, int kmin, int phase_order,
                                        float delta_f, float piM, float pfaN, 
                                        float pfa2, float pfa3, float pfa4, float pfa5, float pfl5,
-                                       float pfa6, float pfl6, float pfa7, float lv0""",
+                                       float pfa6, float pfl6, float pfa7, float lv0, float amp""",
                     taylorf2_text, "SPAtmplt",
                     preamble=preamble, options=pkg_config_header_strings(['lal']))
 
 def spa_tmplt_engine(htilde,  kmin,  phase_order,
                     delta_f,  piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, v0):
+                    pfa6,  pfl6,  pfa7, v0, amp_factor):
     """ Calculate the spa tmplt phase 
     """
     taylorf2_kernel(htilde.data,  kmin,  phase_order,
                     delta_f,  piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, log(v0))
+                    pfa6,  pfl6,  pfa7, log(v0), amp_factor)
