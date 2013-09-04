@@ -217,7 +217,7 @@ def fastest_power_chisq_at_points(corr, snr, snr_norm, bins, indices):
     # Note, the code for gpu support is in place but atm very slow, optimization required
     # before turning it on by default
     import pycbc.scheme
-    if (len(indices) < POINT_THRESHOLD and pycbc.scheme.mgr.state is pycbc.scheme.CPUScheme) :
+    if (len(indices) < POINT_THRESHOLD and type(pycbc.scheme.mgr.state) is pycbc.scheme.CPUScheme) :
         # We don't have that many points so do the direct time shift.
         return power_chisq_at_points_from_precomputed(corr, snr.take(indices), snr_norm, bins, indices)
     else:

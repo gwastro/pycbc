@@ -49,6 +49,7 @@ args = [('--verbose', NO_ARG),
         ('--trig-start-time', TAKES_ARG),
         ('--trig-end-time', TAKES_ARG),
         ('--strain-high-pass-freq', TAKES_ARG),
+        ('--maximization-interval', TAKES_ARG),
         ]
              
 unused_args = [('--number-of-segments', TAKES_ARG),
@@ -100,7 +101,6 @@ unused_args = [('--number-of-segments', TAKES_ARG),
                ('--autochisq-length', TAKES_ARG),
                ('--autochisq-two-sided', TAKES_ARG),
                ('--bank-veto-time-freq', TAKES_ARG),
-               ('--maximization-interval', TAKES_ARG),
                ('--ts-cluster', TAKES_ARG),
                ('--ts-endtime-interval', TAKES_ARG),
                ('--ts-metric-scaling', TAKES_ARG),
@@ -184,8 +184,9 @@ old = [ '--verbose',
         '--trig-start-time', 
         '--trig-end-time', 
         '--strain-high-pass-freq', 
-        '--inverse-spec-length', ]
-new = [ '--verbose', 
+        '--inverse-spec-length',
+        '--maximization-interval']
+new = [ '--verbose',
         '--user-tag', 
         '--ifo-tag', 
         '--gps-start-time', 
@@ -204,7 +205,8 @@ new = [ '--verbose',
         '--trig-start-time', 
         '--trig-end-time', 
         '--strain-high-pass', 
-        '--psd-inverse-length',]        
+        '--psd-inverse-length',
+        '--maximization-interval']        
         
 pass_arg(old, new, real_args, vars(opt))
 

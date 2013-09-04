@@ -84,33 +84,11 @@ class EventManager(object):
         self.events = numpy.delete(self.events, remove)          
    
     def maximize_over_bank(self, tcolumn, column, window):
-        pass
-#        self.events.sort(order=[tcolumn])
-##        nbins = numpy.ceil(self.events[-1][tcolumn]/float(window))
-#        edges = numpy.arange(0, nbins, 1) * float(window)
-#        indices = numpy.searchsorted(self.events[tcolumn], edges)
-#        indices = numpy.append(indices, len(self.events))
-#        
-#        maxes = []
-#        locs = []
-#        row = []
-#        remove = []
-##        #print nbins, edges, indices, self.events[-1][tcolumn], window
-#        for i in range(len(indices)-1):
-#            l = indices[i]
-#            r = indices[i+1]
-#            if l == r:
-#                continue
-#            maxid = abs(self.events[l:r][column]).argmax()
-#            maxes.append(self.events[l:r][column][maxid])
-#            locs.append(self.events[l:r][tcolumn][maxid])
-##            rows.append(self.events[l:r][maxid])
-#
-#        for i in range(len(maxes)):
-#            if i == 0:
-#                lm = 0;
-               
-        
+        self.events = numpy.sort(self.events, order=tcolumn)
+        cvec = self.events[column]
+        tvec = self.events[tcolumn]
+        indices = findchirp_cluster_over_window(tvec, cvec, window)
+        self.events = numpy.take(self.events, indices)         
         
     def add_template_events(self, columns, vectors):
         """ Add a vector indexed """
@@ -166,12 +144,12 @@ class EventManager(object):
         if self.opt.trig_start_time:
             tstart_time = self.opt.trig_start_time
         else:
-            tstart_time = self.opt.gps_start_time + 64
+            tstart_time = self.opt.gps_start_time + self.opt.segment_start_pad
             
         if self.opt.trig_end_time:
             tend_time = self.opt.trig_end_time
         else:
-            tend_time = self.opt.gps_end_time - 64
+            tend_time = self.opt.gps_end_time - self.opt.segment_end_pad
             
         event_num = 0      
         for event in self.events:
