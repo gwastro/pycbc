@@ -18,7 +18,7 @@ If you would like to use GPU acceleration of PyCBC through CUDA you will require
 
 * `NumPy <http://www.numpy.org>`_ >= 1.5.1
 * `Nvidia CUDA <http://www.nvidia.com/object/cuda_home_new.html>`_ >= 4.0 (driver and libraries)
-* `PyCUDA <http://mathema.tician.de/software/pycuda>`_ >= 2012.1
+* `PyCUDA <http://mathema.tician.de/software/pycuda>`_ >= 2013.1.1
 * `SciKits.cuda <http://scikits.appspot.com/cuda>`_ >= 0.041
 * `Mako <http://www.makotemplates.org/>`_ >= 0.7.2
 
@@ -47,7 +47,7 @@ PyCUDA should be installed from source, so that the latest updates are applied:
     python setup.py build
     python setup.py install --user
 
-If your CUDA installation is in a non-standard location X, pass ``–cuda-root=X`` to ``configure.py``.
+If your CUDA installation is in a non-standard location X, pass ``-–cuda-root=X`` to ``configure.py``.
 
 ------------
 SciKits.cuda

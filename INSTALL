@@ -24,7 +24,7 @@ For GPU acceleration through CUDA:
 
 * Nvidia CUDA >= 4.0 (driver and libraries).
 
-* PyCUDA >= 2012.1 - http://mathema.tician.de/software/pycuda
+* PyCUDA >= 2013.1.1 - http://mathema.tician.de/software/pycuda
   See next section for instructions.
 
 * SciKits.cuda >= 0.041 - http://scikits.appspot.com/cuda
