@@ -34,10 +34,17 @@ def median_bias(n):
     ans : float
         Calculated bias.
 
+    Raises
+    ------
+    ValueError
+        For non-integer or non-positive `n`.
+
     Notes
     -----
     See arXiv:gr-qc/0509116 appendix B for details.
     """
+    if type(n) is not int or n <= 0:
+        raise ValueError('n must be a positive integer')
     if n >= 1000:
         return numpy.log(2)
     ans = 1
@@ -70,8 +77,9 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
     Raises
     ------
     ValueError
-        For invalid choices of `window` or `avg_method` and for inconsistent
-        combinations of len(`timeseries`), `seg_len` and `seg_stride`.
+        For invalid choices of `seg_len`, `seg_stride` `window` and
+        `avg_method` and for inconsistent combinations of len(`timeseries`),
+        `seg_len` and `seg_stride`.
 
     Notes
     -----
@@ -80,10 +88,16 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
     window_map = {
         'hann': numpy.hanning
     }
+
+    # sanity checks
     if not window in window_map:
         raise ValueError('Invalid window')
     if not avg_method in ('mean', 'median', 'median-mean'):
         raise ValueError('Invalid averaging method')
+    if type(seg_len) is not int or type(seg_stride) is not int \
+        or seg_len <= 0 or seg_stride <= 0:
+        raise ValueError('Segment length and stride must be positive integers')
+
     if timeseries.precision == 'single':
         fs_dtype = numpy.complex64
     elif timeseries.precision == 'double':
@@ -131,16 +145,18 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
     return FrequencySeries(psd, delta_f=delta_f, dtype=timeseries.dtype)
 
 def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, trunc_method=None):
-    """Return a new PSD that has its inverse spectrum truncated.
+    """Modify a PSD such that the impulse response associated with its inverse
+    square root is no longer than `max_filter_len` time samples. In practice
+    this corresponds to a coarse graining or smoothing of the PSD.
 
     Parameters
     ----------
     psd : FrequencySeries
-        Time series for which the PSD is to be estimated.
-    max_filter_len : {None, int}
-        If not None, maximum length of the time-domain filter in samples.
+        PSD whose inverse spectrum is to be truncated.
+    max_filter_len : int
+        Maximum length of the time-domain filter in samples.
     low_frequency_cutoff : {None, int}
-        Frequencies below this are not included.
+        Frequencies below `low_frequency_cutoff` are zeroed in the output.
     trunc_method : {None, 'hann'}
         Function used for truncating the time-domain filter.
         None produces a hard truncation at `max_filter_len`.
@@ -148,13 +164,24 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
     Returns
     -------
     psd : FrequencySeries
-        Frequency series containing the estimated PSD whose inverse spectrum is 
-        truncated.
+        PSD whose inverse spectrum has been truncated.
+
+    Raises
+    ------
+    ValueError
+        For invalid types or values of `max_filter_len` and `low_frequency_cutoff`.
 
     Notes
     -----
     See arXiv:gr-qc/0509116 for details.
     """
+    # sanity checks
+    if type(max_filter_len) is not int or max_filter_len <= 0:
+        raise ValueError('max_filter_len must be a positive integer')
+    if low_frequency_cutoff is not None and low_frequency_cutoff < 0 \
+        or low_frequency_cutoff > psd.sample_frequencies[-1]:
+        raise ValueError('low_frequency_cutoff must be within the bandwidth of the PSD')
+
     N = (len(psd)-1)*2
 
     inv_asd = FrequencySeries((1. / psd)**0.5, delta_f=psd.delta_f, \
