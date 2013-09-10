@@ -243,7 +243,7 @@ class TestTimeSeriesBase(base_test.array_base):
             inbad = numpy.array([],dtype=float64)
             self.assertRaises(ValueError, TimeSeries, in1, -1)
             self.assertRaises(ValueError, TimeSeries, inbad, .1)
-            self.assertRaises(TypeError, TimeSeries, in1, .1, epoch=5)
+            self.assertRaises(TypeError, TimeSeries, in1, .1, epoch=(5,1))
 
         if _options['scheme'] != 'cpu':
             self.assertRaises(TypeError, TimeSeries, in4, 0.1, copy=False)
@@ -354,7 +354,7 @@ class TestTimeSeriesBase(base_test.array_base):
             inbad = Array(numpy.array([],dtype=float64))
             self.assertRaises(ValueError, TimeSeries, in1, -1)
             self.assertRaises(ValueError, TimeSeries, inbad, .1)
-            self.assertRaises(TypeError, TimeSeries, in1, .1, epoch=5)
+            self.assertRaises(TypeError, TimeSeries, in1, .1, epoch=(5,1))
 
         # Also checking that a cpu array can't be made out of another scheme without copying
         if _options['scheme'] != 'cpu':
@@ -440,7 +440,7 @@ class TestTimeSeriesBase(base_test.array_base):
             # Things specific to timeseries
             self.assertRaises(ValueError, TimeSeries, [1,2,3], -1)
             self.assertRaises(ValueError, TimeSeries, [], .1)
-            self.assertRaises(TypeError, TimeSeries, [1,2,3], .1, epoch=5)
+            self.assertRaises(TypeError, TimeSeries, [1,2,3], .1, epoch=(5,1))
 
     def test_mul(self):
         super(TestTimeSeriesBase,self).test_mul()

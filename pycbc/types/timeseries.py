@@ -66,12 +66,15 @@ class TimeSeries(Array):
         # an epoch attribute *and* doesn't pass in a value of epoch, it becomes 'None'
         if not isinstance(epoch,_lal.LIGOTimeGPS):
             if epoch == "":
-                if isinstance(initial_array,TimeSeries):
+                if isinstance(initial_array, TimeSeries):
                     epoch = initial_array._epoch
                 else:
                     epoch = None
             elif epoch is not None:
-                raise TypeError('epoch must be either None or a lal.LIGOTimeGPS')
+                try: 
+                    epoch = _lal.LIGOTimeGPS(epoch)
+                except:
+                    raise TypeError('epoch must be either None or a lal.LIGOTimeGPS')
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
         self._delta_t = delta_t
         self._epoch = epoch
@@ -88,24 +91,16 @@ class TimeSeries(Array):
 
     def __getitem__(self, index):
         if isinstance(index, slice):
-            if index.start > index.stop:
-                raise ValueError('start index must be smaller than stop index')
-            # Set the new delta_t: index.step may be None or negative; we don't
-            # support the latter even though Python allows it.
-            if index.step is None:
-                new_delta_t = self._delta_t
-            elif index.step < 0:
-                raise ValueError('negative step is not supported')
-            else:
-                new_delta_t = index.step * self._delta_t
             # Set the new epoch---note that index.start may also be None
             if self._epoch is None:
                 new_epoch = None
             elif index.start is None:
                 new_epoch = self._epoch
             else:
+                if index.start < 0:
+                    index.start += len(self)
                 new_epoch = self._epoch + index.start * self._delta_t
-            return TimeSeries(Array.__getitem__(self, index), new_delta_t, new_epoch, copy=False)
+            return TimeSeries(Array.__getitem__(self, index), self._delta_t, new_epoch, copy=False)
         else:
             return Array.__getitem__(self, index)
 

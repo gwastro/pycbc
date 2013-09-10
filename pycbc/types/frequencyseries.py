@@ -69,7 +69,10 @@ class FrequencySeries(Array):
                 else:
                     epoch = None
             elif epoch is not None:
-                raise TypeError('epoch must be either None or a lal.LIGOTimeGPS')
+                try: 
+                    epoch = _lal.LIGOTimeGPS(epoch)
+                except:
+                    raise TypeError('epoch must be either None or a lal.LIGOTimeGPS')
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
         self._delta_f = delta_f
         self._epoch = epoch
