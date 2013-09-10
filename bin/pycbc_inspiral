@@ -52,6 +52,7 @@ parser.add_option("--channel-name", help="The channel containing the gravitation
 parser.add_option("--frame-cache",help="Cache file containing the frame locations.", type=str)
 parser.add_option("--fake-strain", help="Name of psd for generating fake gaussain noise", type=str)
 parser.add_option("--fake-strain-seed", help="Seed value for the generation of fake colored gaussian noise", type=int, default=0)
+parser.add_option("--maximization-interval", help="Maximize triggers over the template bank (ms)", type=int, default=0)
 
 psd_options = OptionGroup(parser, "Options related to the noise PSD for matched filtering")
 psd_options.add_option("--psd-model", help="Get PSD from given analytical model")

@@ -218,11 +218,15 @@ o = opt.order
 seg_pad = ov / sr / 2
 seg_len = sl / sr
 
+stride = seg_len / 2
+
 if opt.approximant == 'FindChirpSP':
     apx = 'SPAtmplt'
 else:
     apx = opt.approximant
 
+real_args += ['--psd-estimation', 'median']
+real_args += ['--psd-segment-stride', str(stride)]
 real_args += ['--approximant', apx]
 real_args += ['--order', str(lalsimulation.GetOrderFromString(o))]        
 real_args += ['--segment-length', str(seg_len)]
