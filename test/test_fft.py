@@ -755,9 +755,9 @@ class _BaseTestFFTClass(unittest.TestCase):
 if _scheme == 'cpu':
     backends = pycbc.fft.cpu_backends
 elif _scheme == 'cuda':
-    backends == pycbc.fft.cuda_backends
+    backends = pycbc.fft.cuda_backends
 elif _scheme == 'opencl':
-    backends == pycbc.fft.opencl_backends
+    backends = pycbc.fft.opencl_backends
 
 FFTTestClasses = []
 for backend in backends:
