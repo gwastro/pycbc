@@ -34,7 +34,7 @@ import lal
 import sys
 import os
 import tempfile
-from utils import array_base, parse_args_all_schemes
+from utils import array_base, parse_args_all_schemes, simple_exit
 
 _scheme, _context = parse_args_all_schemes("FrequencySeries")
 
@@ -562,3 +562,4 @@ for t,otypes in types:
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
+    simple_exit(results)

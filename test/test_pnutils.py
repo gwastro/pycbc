@@ -28,7 +28,7 @@ import sys
 import unittest
 from pycbc.pnutils import *
 from pycbc.scheme import *
-from utils import parse_args_cpu_only
+from utils import parse_args_cpu_only, simple_exit
 
 # We only need CPU tests
 parse_args_cpu_only("PN Utilities")
@@ -69,3 +69,4 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestUtils))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
+    simple_exit(results)

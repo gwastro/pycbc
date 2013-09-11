@@ -31,7 +31,7 @@ from pycbc.types import *
 from pycbc.scheme import *
 import numpy
 import lal
-from utils import array_base, parse_args_all_schemes
+from utils import array_base, parse_args_all_schemes, simple_exit
 import sys
 import os
 import tempfile
@@ -559,3 +559,4 @@ for t,otypes in types:
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
+    simple_exit(results)

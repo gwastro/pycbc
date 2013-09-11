@@ -33,7 +33,7 @@ from pycbc.filter import *
 from pycbc.waveform import *
 import pycbc.fft
 import numpy
-from utils import parse_args_all_schemes
+from utils import parse_args_all_schemes, simple_exit
 
 _scheme, _context = parse_args_all_schemes("Waveform")
 
@@ -107,3 +107,4 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestWaveform))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
+    simple_exit(results)

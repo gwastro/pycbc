@@ -38,7 +38,7 @@ from pylal import frutils, Fr
 import os
 import subprocess
 import sys
-from utils import parse_args_cpu_only
+from utils import parse_args_cpu_only, simple_exit
 
 # Frame tests only need to happen on the CPU
 parse_args_cpu_only("Frame I/O")
@@ -138,3 +138,4 @@ if __name__ == '__main__':
     for klass in TestClasses:
         suite.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
     results = unittest.TextTestRunner(verbosity=2).run(suite)
+    simple_exit(results)

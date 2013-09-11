@@ -66,7 +66,7 @@ from numpy.random import randn
 import pycbc.fft
 import unittest
 import sys
-from utils import parse_args_all_schemes
+from utils import parse_args_all_schemes, simple_exit
 from lal import LIGOTimeGPS as LTG
 import lal as _lal
 
@@ -782,3 +782,4 @@ if __name__ == '__main__':
         suite.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
 
     results = unittest.TextTestRunner(verbosity=2).run(suite)
+    simple_exit(results)

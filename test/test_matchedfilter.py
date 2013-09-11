@@ -33,7 +33,7 @@ from pycbc.filter import *
 from math import sqrt
 import pycbc.fft
 import numpy
-from utils import parse_args_all_schemes
+from utils import parse_args_all_schemes, simple_exit
 
 _scheme, _context = parse_args_all_schemes("Matched Filter")
 
@@ -145,3 +145,4 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestMatchedFilter))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
+    simple_exit(results)

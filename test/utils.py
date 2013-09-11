@@ -65,7 +65,7 @@ once.
 """
 
 import pycbc
-from sys import exit
+from sys import exit as _exit
 from optparse import OptionParser, OptionValueError
 from pycbc.scheme import CPUScheme, CUDAScheme, OpenCLScheme
 from numpy import dtype, float32, float64, complex64, complex128
@@ -139,6 +139,24 @@ def parse_args_cpu_only(feature_str):
 
     return
 
+def simple_exit(results):
+    """
+    A simpler version of exit_based_on_results(); this function causes the script
+    to exit normally with return value of zero if and only if all tests within the
+    script passed and had no errors. Otherwise it returns the number of failures
+    plus the number of errors
+
+    Parameters
+    ----------
+    results: an instance of unittest.TestResult, returned (for instance) from a call such as
+        results = unittest.TextTestRunner(verbosity=2).run(suite)
+    """
+    if results.wasSuccessful():
+        _exit(0)
+    else:
+        nfail = len(results.errors)+len(results.failures)
+        _exit(nfail)
+
 def exit_based_on_results(results):
     """
     A probably-obsolete function to exit from a unit test-script with a status that depends
@@ -164,11 +182,11 @@ def exit_based_on_results(results):
                     NotImpErrors +=1
                     break
     if results.wasSuccessful():
-        sys.exit(0)
+        _exit(0)
     elif len(results.failures)==0 and len(results.errors)==NotImpErrors:
-        sys.exit(1)
+        _exit(1)
     else:
-        sys.exit(2)
+        _exit(2)
 
 # Copied over from base_array.py so we can refactor it to remove
 # the scheme shuffling and take advantage of the new equality/almost

@@ -29,7 +29,7 @@ import unittest
 from pycbc.types import *
 from pycbc.scheme import *
 from lal import LIGOTimeGPS as LTG
-from utils import array_base, parse_args_all_schemes
+from utils import array_base, parse_args_all_schemes, simple_exit
 
 _scheme, _context = parse_args_all_schemes("lal() method")
 
@@ -116,3 +116,4 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestUtils))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
+    simple_exit(results)

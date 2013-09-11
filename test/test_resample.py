@@ -29,7 +29,7 @@ import unittest
 from pycbc.types import *
 from pycbc.filter import *
 from pycbc.scheme import *
-from utils import parse_args_all_schemes
+from utils import parse_args_all_schemes, simple_exit
 
 _scheme, _context = parse_args_all_schemes("Resampling")
 
@@ -70,3 +70,4 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestUtils))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
+    simple_exit(results)

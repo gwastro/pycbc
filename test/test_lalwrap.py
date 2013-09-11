@@ -44,7 +44,7 @@ import pycbc.types
 import numpy
 from numpy import dtype, float32, float64, complex64, complex128
 import unittest
-from utils import parse_args_all_schemes
+from utils import parse_args_all_schemes, simple_exit
 import sys
 from lal import LIGOTimeGPS as LTG
 
@@ -457,3 +457,4 @@ if __name__ == '__main__':
             suite.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
 
     results = unittest.TextTestRunner(verbosity=2).run(suite)
+    simple_exit(results)

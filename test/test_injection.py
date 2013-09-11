@@ -31,7 +31,7 @@ import numpy
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import utils
-from utils import parse_args_cpu_only
+from utils import parse_args_cpu_only, simple_exit
 
 # Injection tests only need to happen on the CPU
 parse_args_cpu_only("Injections")
@@ -163,3 +163,4 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestInjection))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
+    simple_exit(results)
