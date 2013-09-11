@@ -736,10 +736,12 @@ class array_base(object):
             c3 = abs(t3)
             c4 = abs(t4)
             self.assertEqual(self.a,acopy)
-            self.assertEqual(self.abs,c1)
-            self.assertEqual(self.abs,c2)
-            self.assertEqual(self.abs,c3)
-            self.assertEqual(self.abs,c4)
+            # Because complex arrays can involve floating-point math, we
+            # must use almost-equal comparisons, esp. on the GPU
+            self.assertTrue(self.abs.almost_equal_norm(c1,tol=self.tol))
+            self.assertTrue(self.abs.almost_equal_norm(c2,tol=self.tol))
+            self.assertTrue(self.abs.almost_equal_norm(c3,tol=self.tol))
+            self.assertTrue(self.abs.almost_equal_norm(c4,tol=self.tol))
 
     def test_real(self):
         # Make copy to see we don't overwrite
