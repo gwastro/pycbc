@@ -144,9 +144,9 @@ def _test_fft(test_case,inarr,expec,tol):
         # That will require exact equality of all other meta-data
         emsg = 'FFT output differs by more than a factor of {0} from expected'.format(tol)
         if isinstance(outarr,ts) or isinstance(outarr,fs):
-            tc.assertTrue(outarr.almost_equal_elem(expec,tol=tol,dtol=tol),msg=emsg)
+            tc.assertTrue(outarr.almost_equal_norm(expec,tol=tol,dtol=tol),msg=emsg)
         else:
-            tc.assertTrue(outarr.almost_equal_elem(expec,tol=tol),msg=emsg)
+            tc.assertTrue(outarr.almost_equal_norm(expec,tol=tol),msg=emsg)
 
 def _test_ifft(test_case,inarr,expec,tol):
     # Basic test to see that the reverse FFT doesn't
@@ -175,9 +175,9 @@ def _test_ifft(test_case,inarr,expec,tol):
         # That will require exact equality of all other meta-data
         emsg = 'Inverse FFT output differs by more than a factor of {0} from expected'.format(tol)
         if isinstance(outarr,ts) or isinstance(outarr,fs):
-            tc.assertTrue(outarr.almost_equal_elem(expec,tol=tol,dtol=tol),msg=emsg)
+            tc.assertTrue(outarr.almost_equal_norm(expec,tol=tol,dtol=tol),msg=emsg)
         else:
-            tc.assertTrue(outarr.almost_equal_elem(expec,tol=tol),msg=emsg)
+            tc.assertTrue(outarr.almost_equal_norm(expec,tol=tol),msg=emsg)
 
 def _test_random(test_case,inarr,outarr,tol):
     tc = test_case
@@ -242,6 +242,9 @@ def _test_random(test_case,inarr,outarr,tol):
 
 def _test_lal_tf_fft(test_case,inarr,outarr,tol):
     tc = test_case
+    # Make sure input and output have been moved back to CPU if needed
+    inarr *= 1.0
+    outarr *=1.0
     # Fill input array with random, clear output, and get lal handles for each.
     if dtype(inarr).kind == 'c':
         inarr._data[:] = randn(len(inarr)) +1j*randn(len(inarr))
@@ -275,7 +278,7 @@ def _test_lal_tf_ifft(test_case,inarr,outarr,tol):
         if dtype(outarr).kind == 'f':
             inarr._data[0] = real(inarr._data[0])
             if (len(outarr)%2)==0:
-                inarr._data[0] = real(inarr._data[0])
+                inarr._data[len(inarr)-1] = real(inarr[len(inarr)-1])
     else:
         inarr._data[:] = randn(len(outarr))
     outarr.clear()
