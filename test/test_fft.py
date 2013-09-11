@@ -212,6 +212,9 @@ def _test_random(test_case,inarr,outarr,tol):
         else:
             tc.assertTrue(incopy.almost_equal_norm(inarr,tol=tol),
                           msg=emsg)
+    # Perform arithmetic on outarr and inarr to pull them off of the GPU:
+    outarr *= 1.0
+    inarr *= 1.0
     # Now the same for FFT(IFFT(random))
     if dtype(outarr).kind == 'c':
         outarr._data[:] = randn(len(outarr))+1j*randn(len(outarr))
