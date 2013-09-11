@@ -102,22 +102,22 @@ class SchemeTestBase(unittest.TestCase):
             # The following should move both of a1 and b1 onto the GPU (if self.context
             # isn't CPU)
             c = a1 * b1
+            # Check that the data types are correct
+            self.assertEqual(type(a1._data),SchemeArray)
+            self.assertEqual(type(b1._data),SchemeArray)
+            self.assertEqual(type(c._data),SchemeArray)
             # Check that schemes are correct
             self.assertEqual(type(a1._scheme),type(self.context))
             self.assertEqual(type(b1._scheme),type(self.context))
             self.assertEqual(type(c._scheme),type(self.context))
-            # Check that the data types are correct
-            self.assertEqual(type(a1.data),SchemeArray)
-            self.assertEqual(type(b1.data),SchemeArray)
-            self.assertEqual(type(c.data),SchemeArray)
             # And finally check that the values are correct
             self.assertEqual(a1,self.a)
             self.assertEqual(b1,self.b)
             self.assertEqual(c,self.answer)
             # Now check that nothing about a2 has changed, since it wasn't involved
             # in the computation
+            self.assertEqual(type(a2._data),numpy.ndarray)
             self.assertEqual(type(a2._scheme),CPUScheme)
-            self.assertEqual(type(a2.data),numpy.ndarray)
             self.assertEqual(a2,self.a)
 
         # Now move back to the CPU, and check that everything is correctly
