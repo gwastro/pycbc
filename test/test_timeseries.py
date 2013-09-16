@@ -31,57 +31,31 @@ from pycbc.types import *
 from pycbc.scheme import *
 import numpy
 import lal
-import base_test
+from utils import array_base, parse_args_all_schemes, simple_exit
 import sys
 import os
 import tempfile
-import optparse
 
-_parser = optparse.OptionParser()
+_scheme, _context = parse_args_all_schemes("TimeSeries")
 
-def _check_scheme(option, opt_str, scheme, parser):
-    if scheme=='cuda' and not pycbc.HAVE_CUDA:
-        raise optparse.OptionValueError("CUDA not found")
-
-    if scheme=='opencl' and not pycbc.HAVE_OPENCL:
-        raise optparse.OptionValueError("OpenCL not found")
-    setattr (parser.values, option.dest, scheme)
-
-_parser.add_option('--scheme','-s', action='callback', type = 'choice', choices = ('cpu','cuda','opencl'),
-                    default = 'cpu', dest = 'scheme', callback = _check_scheme,
-                    help = 'specifies processing scheme, can be cpu [default], cuda, or opencl')
-
-_parser.add_option('--device-num','-d', action='store', type = 'int', dest = 'devicenum', default=0,
-                    help = 'specifies a GPU device to use for CUDA or OpenCL, 0 by default')
-
-(_opt_list, _args) = _parser.parse_args()
-
-#Changing the optvalues to a dict makes them easier to read
-_options = vars(_opt_list)
-
-# By importing the current schemes array type, it will make it easier to check the  array types later
-if _options['scheme'] == 'cuda':
+# By importing the current schemes array type, it will make it
+# easier to check the  array types later
+if _scheme == 'cuda':
     import pycuda
     import pycuda.gpuarray
     from pycuda.gpuarray import GPUArray as SchemeArray
-elif _options['scheme'] == 'opencl':
+elif _scheme == 'opencl':
     import pyopencl
     import pyopencl.array
     from pyopencl.array import Array as SchemeArray
-elif _options['scheme'] == 'cpu':
+elif _scheme == 'cpu':
     from numpy import ndarray as SchemeArray
 
-class TestTimeSeriesBase(base_test.array_base):
 
-    def checkCurrentState(self, inputs, results, places):
-        super(TestTimeSeriesBase,self).checkCurrentState(inputs, results, places)
-        for a in inputs:
-            if isinstance(a,pycbc.types.Array):
-                self.assertEqual(a.delta_t, self.delta_t)
-                self.assertEqual(a.start_time, self.epoch)
-
+class TestTimeSeriesBase(array_base,unittest.TestCase):
     def setUp(self):
-
+        self.scheme = _scheme
+        self.context = _context
         # We need to check for correct creation from all dtypes,
         # and errors from incorrect operations so the other precision of
         # odtype needs to be available as well
@@ -93,9 +67,11 @@ class TestTimeSeriesBase(base_test.array_base):
         # Number of decimal places to compare for single precision
         if self.dtype == numpy.float32 or self.dtype == numpy.complex64:
             self.places = 5
+            self.tol = 1e-5
         # Number of decimal places to compare for double precision
         else:
             self.places = 13
+            self.tol = 1e-13
 
         # We will also need to check whether dtype and odtype are real or complex,
         # so that we can test non-zero imaginary parts.
@@ -108,23 +84,19 @@ class TestTimeSeriesBase(base_test.array_base):
         else:
             self.okind = 'complex'
 
+        # Note that self.epoch is set in the factory class constructor at the end;
+        # we need only set self.delta_t here.
+        self.delta_t = 0.1
+        # We need to tell the arithmetic test functions what our type is:
+        self.type = TimeSeries
+        # and the extra keyword arguments the constructors will need:
+        self.kwds = {'epoch': self.epoch, 'delta_t': self.delta_t}
         # Now that the kinds are set, we need to call our parent method to set up all the
         # inputs and answers for our functions
         self.setNumbers()
 
-        # Here our test timeseries are created.
-        self.delta_t = 0.1
-
-        self.a1 = TimeSeries(self.alist, self.delta_t, epoch=self.epoch, dtype=self.dtype)
-        self.a2 = TimeSeries(self.alist, self.delta_t, epoch=self.epoch, dtype=self.dtype)
-        self.a3 = TimeSeries(self.alist, self.delta_t, epoch=self.epoch, dtype=self.dtype)
-
-        self.w = Array(self.wlist, dtype=self.dtype)
-
-        self.b1 = TimeSeries(self.blist, self.delta_t, epoch=self.epoch, dtype=self.odtype)
-        self.b2 = TimeSeries(self.blist, self.delta_t, epoch=self.epoch, dtype=self.odtype)
-
-        # We will need to also test a non-zero imaginary part scalar.
+        # The above call created instances for all of our inputs and various correct
+        # outputs.  But we make a copy of the scalar to check later.
         self.s = self.scalar
 
         # Finally, we want to have an array that we shouldn't be able to operate on,
@@ -152,7 +124,7 @@ class TestTimeSeriesBase(base_test.array_base):
                 #to be sure that it is copied
                 in1 += 1
                 in2 += 1
-                self.assertTrue(type(out1._scheme) == self.scheme)
+                self.assertTrue(type(out1._scheme) == type(self.context))
                 self.assertTrue(type(out1._data) is SchemeArray)
                 self.assertEqual(out1[0],5)
                 self.assertEqual(out1[1],3)
@@ -162,7 +134,7 @@ class TestTimeSeriesBase(base_test.array_base):
                 self.assertEqual(out1.start_time, self.epoch)
 
 
-                self.assertTrue(type(out2._scheme) == self.scheme)
+                self.assertTrue(type(out2._scheme) == type(self.context))
                 self.assertTrue(type(out2._data) is SchemeArray)
                 self.assertEqual(out2[0],5)
                 self.assertEqual(out2[1],3)
@@ -177,7 +149,7 @@ class TestTimeSeriesBase(base_test.array_base):
             # Also, when it is unspecified
             out3 = TimeSeries(in1,0.1,epoch=self.epoch)
             in1 += 1
-            self.assertTrue(type(out3._scheme) == self.scheme)
+            self.assertTrue(type(out3._scheme) == type(self.context))
             self.assertTrue(type(out3._data) is SchemeArray)
             self.assertEqual(out3[0],5)
             self.assertEqual(out3[1],3)
@@ -189,12 +161,12 @@ class TestTimeSeriesBase(base_test.array_base):
             # Check for copy=false
             # On the CPU, this should be possible
             in3 = numpy.array([5,3,1],dtype=self.dtype)
-            if _options['scheme'] == 'cpu':
+            if self.scheme == 'cpu':
                 out4 = TimeSeries(in3,0.1,epoch=self.epoch,copy=False)
                 in3 += 1
 
                 self.assertTrue(out4.dtype==self.dtype)
-                self.assertTrue(type(out4._scheme) == self.scheme)
+                self.assertTrue(type(out4._scheme) == type(self.context))
                 self.assertEqual(out4[0],6)
                 self.assertEqual(out4[1],4)
                 self.assertEqual(out4[2],2)
@@ -206,14 +178,14 @@ class TestTimeSeriesBase(base_test.array_base):
                 self.assertRaises(TypeError, TimeSeries, in3, 0.1, copy=False)
 
             # We also need to check initialization using GPU arrays
-            if _options['scheme'] == 'cuda':
+            if self.scheme == 'cuda':
                 in4 = pycuda.gpuarray.zeros(3,self.dtype)
-            elif _options['scheme'] == 'opencl':
+            elif self.scheme == 'opencl':
                 in4 = pyopencl.array.zeros(pycbc.scheme.mgr.state.queue,3, self.dtype)
-            if _options['scheme'] != 'cpu':
+            if self.scheme != 'cpu':
                 out4 = TimeSeries(in4,0.1, copy=False, epoch=self.epoch)
                 in4 += 1
-                self.assertTrue(type(out4._scheme) == self.scheme)
+                self.assertTrue(type(out4._scheme) == type(self.context))
                 self.assertTrue(type(out4._data) is SchemeArray)
                 self.assertEqual(out4[0],1)
                 self.assertEqual(out4[1],1)
@@ -227,7 +199,7 @@ class TestTimeSeriesBase(base_test.array_base):
             in5 = numpy.array([1,2,3],dtype=numpy.int32)
             out5 = TimeSeries(in5,0.1,epoch=self.epoch)
             in5 += 1
-            self.assertTrue(type(out5._scheme) == self.scheme)
+            self.assertTrue(type(out5._scheme) == type(self.context))
             self.assertTrue(type(out5._data) is SchemeArray)
             self.assertEqual(out5[0],1)
             self.assertEqual(out5[1],2)
@@ -245,7 +217,7 @@ class TestTimeSeriesBase(base_test.array_base):
             self.assertRaises(ValueError, TimeSeries, inbad, .1)
             self.assertRaises(TypeError, TimeSeries, in1, .1, epoch=(5,1))
 
-        if _options['scheme'] != 'cpu':
+        if self.scheme != 'cpu':
             self.assertRaises(TypeError, TimeSeries, in4, 0.1, copy=False)
         self.assertRaises(TypeError, TimeSeries, in5,0.1, copy=False)
 
@@ -256,9 +228,9 @@ class TestTimeSeriesBase(base_test.array_base):
         with self.context:
             in1 = Array([5,3,1],dtype=self.odtype)
             in2 = Array([5,3,1],dtype=self.other_precision[self.odtype])
-            self.assertTrue(type(in1._scheme) == self.scheme)
+            self.assertTrue(type(in1._scheme) == type(self.context))
             self.assertTrue(type(in1._data) is SchemeArray)
-            self.assertTrue(type(in2._scheme) == self.scheme)
+            self.assertTrue(type(in2._scheme) == type(self.context))
             self.assertTrue(type(in2._data) is SchemeArray)
             # We don't want to cast complex as real
             if not (self.kind=='real' and self.okind == 'complex'):
@@ -269,7 +241,7 @@ class TestTimeSeriesBase(base_test.array_base):
                 in1 += 1
                 in2 += 1
 
-                self.assertTrue(type(out1._scheme) == self.scheme)
+                self.assertTrue(type(out1._scheme) == type(self.context))
                 self.assertTrue(type(out1._data) is SchemeArray)
                 self.assertEqual(out1[0],5)
                 self.assertEqual(out1[1],3)
@@ -291,7 +263,7 @@ class TestTimeSeriesBase(base_test.array_base):
                     self.assertTrue(out1.precision == 'double')
                     #self.assertTrue(out1.kind == 'complex')
 
-                self.assertTrue(type(out2._scheme) == self.scheme)
+                self.assertTrue(type(out2._scheme) == type(self.context))
                 self.assertTrue(type(out2._data) is SchemeArray)
                 self.assertEqual(out2[0],5)
                 self.assertEqual(out2[1],3)
@@ -311,7 +283,7 @@ class TestTimeSeriesBase(base_test.array_base):
             out3 = TimeSeries(in1,0.1,epoch=self.epoch)
             in1 += 1
 
-            self.assertTrue(type(out3._scheme) == self.scheme)
+            self.assertTrue(type(out3._scheme) == type(self.context))
             self.assertTrue(type(out3._data) is SchemeArray)
             self.assertEqual(out3[0],5)
             self.assertEqual(out3[1],3)
@@ -323,7 +295,7 @@ class TestTimeSeriesBase(base_test.array_base):
             # We should also be able to create from a CPU Array
             out4 = TimeSeries(cpuarray,0.1, dtype=self.dtype, epoch=self.epoch)
 
-            self.assertTrue(type(out4._scheme) == self.scheme)
+            self.assertTrue(type(out4._scheme) == type(self.context))
             self.assertTrue(type(out4._data) is SchemeArray)
             self.assertEqual(out4[0],1)
             self.assertEqual(out4[1],2)
@@ -339,7 +311,7 @@ class TestTimeSeriesBase(base_test.array_base):
             out5 = TimeSeries(in3,0.1,copy=False,epoch=self.epoch)
             in3 += 1
 
-            self.assertTrue(type(out5._scheme) == self.scheme)
+            self.assertTrue(type(out5._scheme) == type(self.context))
             self.assertTrue(type(out5._data) is SchemeArray)
             self.assertEqual(out5[0],6)
             self.assertEqual(out5[1],4)
@@ -348,7 +320,7 @@ class TestTimeSeriesBase(base_test.array_base):
             self.assertEqual(out5.delta_t, 0.1)
             self.assertEqual(out5.start_time, self.epoch)
 
-            if _options['scheme'] != 'cpu':
+            if self.scheme != 'cpu':
                 self.assertRaises(TypeError,TimeSeries,0.1,cpuarray,copy=False)
             # Things specific to timeseries
             inbad = Array(numpy.array([],dtype=float64))
@@ -357,7 +329,7 @@ class TestTimeSeriesBase(base_test.array_base):
             self.assertRaises(TypeError, TimeSeries, in1, .1, epoch=(5,1))
 
         # Also checking that a cpu array can't be made out of another scheme without copying
-        if _options['scheme'] != 'cpu':
+        if self.scheme != 'cpu':
             self.assertRaises(TypeError, TimeSeries, out4, 0.1, copy=False, epoch=self.epoch)
             out6 = TimeSeries(out4, 0.1, dtype=self.dtype)
             self.assertTrue(type(out6._scheme) == CPUScheme)
@@ -374,7 +346,7 @@ class TestTimeSeriesBase(base_test.array_base):
             # When specified
             out1 = TimeSeries([5,3,1],0.1, dtype=self.dtype, epoch=self.epoch)
 
-            self.assertTrue(type(out1._scheme) == self.scheme)
+            self.assertTrue(type(out1._scheme) == type(self.context))
             self.assertTrue(type(out1._data) is SchemeArray)
             self.assertEqual(out1[0],5)
             self.assertEqual(out1[1],3)
@@ -399,7 +371,7 @@ class TestTimeSeriesBase(base_test.array_base):
             if self.kind == 'complex':
                 out2 = TimeSeries([5+0j,3+0j,1+0j], 0.1, dtype=self.dtype, epoch=self.epoch)
 
-                self.assertTrue(type(out2._scheme) == self.scheme)
+                self.assertTrue(type(out2._scheme) == type(self.context))
                 self.assertTrue(type(out2._data) is SchemeArray)
                 self.assertEqual(out2[0],5)
                 self.assertEqual(out2[1],3)
@@ -415,7 +387,7 @@ class TestTimeSeriesBase(base_test.array_base):
             #Also, when it is unspecified
             out3 = TimeSeries([5,3,1],0.1,epoch=self.epoch)
 
-            self.assertTrue(type(out3._scheme) == self.scheme)
+            self.assertTrue(type(out3._scheme) == type(self.context))
             self.assertTrue(type(out3._data) is SchemeArray)
             self.assertEqual(out3[0],5)
             self.assertEqual(out3[1],3)
@@ -426,7 +398,7 @@ class TestTimeSeriesBase(base_test.array_base):
 
             out4 = TimeSeries([5+0j,3+0j,1+0j],0.1,epoch = self.epoch)
 
-            self.assertTrue(type(out4._scheme) == self.scheme)
+            self.assertTrue(type(out4._scheme) == type(self.context))
             self.assertTrue(type(out4._data) is SchemeArray)
             self.assertEqual(out4[0],5)
             self.assertEqual(out4[1],3)
@@ -444,89 +416,89 @@ class TestTimeSeriesBase(base_test.array_base):
 
     def test_mul(self):
         super(TestTimeSeriesBase,self).test_mul()
-        self.assertRaises(ValueError, self.a1.__mul__,self.bad3)
-        self.assertRaises(ValueError, self.a1.__mul__,self.bad4)
+        self.assertRaises(ValueError, self.a.__mul__,self.bad3)
+        self.assertRaises(ValueError, self.a.__mul__,self.bad4)
 
     def test_rmul(self):
         super(TestTimeSeriesBase,self).test_rmul()
-        self.assertRaises(ValueError, self.a1.__rmul__,self.bad3)
-        self.assertRaises(ValueError, self.a1.__rmul__,self.bad4)
+        self.assertRaises(ValueError, self.a.__rmul__,self.bad3)
+        self.assertRaises(ValueError, self.a.__rmul__,self.bad4)
 
     def test_imul(self):
         super(TestTimeSeriesBase,self).test_imul()
-        self.assertRaises(ValueError, self.a1.__imul__,self.bad3)
-        self.assertRaises(ValueError, self.a1.__imul__,self.bad4)
+        self.assertRaises(ValueError, self.a.__imul__,self.bad3)
+        self.assertRaises(ValueError, self.a.__imul__,self.bad4)
 
     def test_add(self):
         super(TestTimeSeriesBase,self).test_add()
-        self.assertRaises(ValueError, self.a1.__add__,self.bad3)
-        self.assertRaises(ValueError, self.a1.__add__,self.bad4)
+        self.assertRaises(ValueError, self.a.__add__,self.bad3)
+        self.assertRaises(ValueError, self.a.__add__,self.bad4)
 
     def test_radd(self):
         super(TestTimeSeriesBase,self).test_radd()
-        self.assertRaises(ValueError, self.a1.__radd__,self.bad3)
-        self.assertRaises(ValueError, self.a1.__radd__,self.bad4)
+        self.assertRaises(ValueError, self.a.__radd__,self.bad3)
+        self.assertRaises(ValueError, self.a.__radd__,self.bad4)
 
     def test_iadd(self):
         super(TestTimeSeriesBase,self).test_iadd()
-        self.assertRaises(ValueError, self.a1.__iadd__,self.bad3)
-        self.assertRaises(ValueError, self.a1.__iadd__,self.bad4)
+        self.assertRaises(ValueError, self.a.__iadd__,self.bad3)
+        self.assertRaises(ValueError, self.a.__iadd__,self.bad4)
 
     def test_sub(self):
         super(TestTimeSeriesBase,self).test_sub()
-        self.assertRaises(ValueError, self.a1.__sub__,self.bad3)
-        self.assertRaises(ValueError, self.a1.__sub__,self.bad4)
+        self.assertRaises(ValueError, self.a.__sub__,self.bad3)
+        self.assertRaises(ValueError, self.a.__sub__,self.bad4)
 
     def test_rsub(self):
         super(TestTimeSeriesBase,self).test_rsub()
-        self.assertRaises(ValueError, self.a1.__rsub__,self.bad3)
-        self.assertRaises(ValueError, self.a1.__rsub__,self.bad4)
+        self.assertRaises(ValueError, self.a.__rsub__,self.bad3)
+        self.assertRaises(ValueError, self.a.__rsub__,self.bad4)
 
     def test_isub(self):
         super(TestTimeSeriesBase,self).test_isub()
-        self.assertRaises(ValueError, self.a1.__isub__,self.bad3)
-        self.assertRaises(ValueError, self.a1.__isub__,self.bad4)
+        self.assertRaises(ValueError, self.a.__isub__,self.bad3)
+        self.assertRaises(ValueError, self.a.__isub__,self.bad4)
 
     def test_div(self):
         super(TestTimeSeriesBase,self).test_div()
-        self.assertRaises(ValueError, self.a1.__div__,self.bad3)
-        self.assertRaises(ValueError, self.a1.__div__,self.bad4)
+        self.assertRaises(ValueError, self.a.__div__,self.bad3)
+        self.assertRaises(ValueError, self.a.__div__,self.bad4)
 
     def test_rdiv(self):
         super(TestTimeSeriesBase,self).test_rdiv()
-        self.assertRaises(ValueError, self.a1.__rdiv__,self.bad3)
-        self.assertRaises(ValueError, self.a1.__rdiv__,self.bad4)
+        self.assertRaises(ValueError, self.a.__rdiv__,self.bad3)
+        self.assertRaises(ValueError, self.a.__rdiv__,self.bad4)
 
     def test_idiv(self):
         super(TestTimeSeriesBase,self).test_idiv()
-        self.assertRaises(ValueError, self.a1.__idiv__,self.bad3)
-        self.assertRaises(ValueError, self.a1.__idiv__,self.bad4)
+        self.assertRaises(ValueError, self.a.__idiv__,self.bad3)
+        self.assertRaises(ValueError, self.a.__idiv__,self.bad4)
 
     def test_dot(self):
         super(TestTimeSeriesBase,self).test_dot()
-        self.assertRaises(ValueError, self.a1.dot,self.bad3)
-        self.assertRaises(ValueError, self.a1.dot,self.bad4)
+        self.assertRaises(ValueError, self.a.dot,self.bad3)
+        self.assertRaises(ValueError, self.a.dot,self.bad4)
 
     def test_duration(self):
         with self.context:
             # Moving these to the current scheme
-            self.a1*=1
-            self.b1*=1
+            self.a*=1
+            self.b*=1
             self.bad3*=1
-            self.assertAlmostEqual(self.a1.duration, 0.3)
-            self.assertAlmostEqual(self.b1.duration, 0.3)
+            self.assertAlmostEqual(self.a.duration, 0.3)
+            self.assertAlmostEqual(self.b.duration, 0.3)
             self.assertAlmostEqual(self.bad3.duration, 0.6)
 
     def test_sample_times(self):
         with self.context:
             # Moving these to the current scheme
-            self.a1*=1
-            self.b1*=1
+            self.a*=1
+            self.b*=1
             self.bad3*=1
-            self.assertEqual(len(self.a1.sample_times), 3)
-            self.assertAlmostEqual(self.a1.sample_times[-1] - self.a1.sample_times[0], 0.2)
-            self.assertEqual(len(self.b1.sample_times), 3)
-            self.assertAlmostEqual(self.b1.sample_times[-1] - self.b1.sample_times[0], 0.2)
+            self.assertEqual(len(self.a.sample_times), 3)
+            self.assertAlmostEqual(self.a.sample_times[-1] - self.a.sample_times[0], 0.2)
+            self.assertEqual(len(self.b.sample_times), 3)
+            self.assertAlmostEqual(self.b.sample_times[-1] - self.b.sample_times[0], 0.2)
             self.assertEqual(len(self.bad3.sample_times), 3)
             self.assertAlmostEqual(self.bad3.sample_times[-1] - self.bad3.sample_times[0], 0.4)
 
@@ -558,16 +530,14 @@ class TestTimeSeriesBase(base_test.array_base):
             self.assertEqual(numpy.abs(b[:,1] - a_numpy).max(), 0)
             os.remove(temp_path_txt)
 
-def test_maker(context, dtype, odtype, epoch):
-    class TestTimeSeries(TestTimeSeriesBase, unittest.TestCase):
+def test_maker(dtype, odtype, epoch):
+    class TestTimeSeries(TestTimeSeriesBase):
         def __init__(self, *args):
-            self.context = context
             self.dtype = dtype
             self.odtype = odtype
-            self.scheme = type(context)
             self.epoch = epoch
             unittest.TestCase.__init__(self, *args)
-    TestTimeSeries.__name__ = _options['scheme'] + " " + dtype.__name__ + " with " + odtype.__name__
+    TestTimeSeries.__name__ = _scheme + " " + dtype.__name__ + " with " + odtype.__name__
     return TestTimeSeries
 
 types = [ (float32,[float32,complex64]), (float64,[float64,complex128]),
@@ -578,38 +548,15 @@ suite = unittest.TestSuite()
 # Unlike the regular array tests, we will need to test with an epoch, and with none
 epochs = [lal.LIGOTimeGPS(1000, 1000),None]
 
-schemes = []
-
-if _options['scheme'] == 'cpu':
-    schemes.append(CPUScheme())
-if _options['scheme'] == 'cuda':
-    schemes.append(CUDAScheme(device_num=_options['devicenum']))
-if _options['scheme'] == 'opencl':
-    schemes.append(OpenCLScheme(device_num=_options['devicenum']))
-
 i = 0
-for s in schemes:
-    for t,otypes in types:
-        for ot in otypes:
-            for epoch in epochs:
-                na = 'test' + str(i)
-                vars()[na] = test_maker(s, t, ot, epoch)
-                suite.addTest(unittest.TestLoader().loadTestsFromTestCase(vars()[na]))
-                i += 1
+for t,otypes in types:
+    for ot in otypes:
+        for epoch in epochs:
+            na = 'test' + str(i)
+            vars()[na] = test_maker(t, ot, epoch)
+            suite.addTest(unittest.TestLoader().loadTestsFromTestCase(vars()[na]))
+            i += 1
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
-
-    NotImpErrors = 0
-    for error in results.errors:
-        for errormsg in error:
-            if type(errormsg) is str:
-                if 'NotImplemented' in errormsg:
-                    NotImpErrors +=1
-                    break
-    if results.wasSuccessful():
-        sys.exit(0)
-    elif len(results.failures)==0 and len(results.errors)==NotImpErrors:
-        sys.exit(1)
-    else:
-        sys.exit(2)
+    simple_exit(results)

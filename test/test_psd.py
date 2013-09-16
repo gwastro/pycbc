@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Tito Dal Canton
+# Copyright (C) 2012  Tito Dal Canton, Josh Willis
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -34,37 +34,14 @@ from pycbc.types import TimeSeries, FrequencySeries
 from pycbc.fft import ifft
 import unittest
 import numpy
-import optparse
+from utils import parse_args_all_schemes, simple_exit
 
-_parser = optparse.OptionParser()
-
-def _check_scheme(option, opt_str, scheme, parser):
-    if scheme == 'cuda' and not pycbc.HAVE_CUDA:
-        raise optparse.OptionValueError("CUDA not found")
-    if scheme == 'opencl' and not pycbc.HAVE_OPENCL:
-        raise optparse.OptionValueError("OpenCL not found")
-    setattr(parser.values, option.dest, scheme)
-
-_parser.add_option('--scheme', '-s', action='callback', type='choice',
-    choices=('cpu', 'cuda', 'opencl'), default='cpu', dest='scheme',
-    callback=_check_scheme,
-    help='specifies processing scheme, can be cpu [default], cuda, or opencl')
-
-_parser.add_option('--device-num', '-d', action='store', type='int',
-    dest='devicenum', default=0,
-    help='specifies a GPU device to use for CUDA or OpenCL, 0 by default')
-
-(_options, _args) = _parser.parse_args()
-
-if _options.scheme == 'cuda':
-    _context = pycbc.scheme.CUDAScheme(device_num=_options.devicenum)
-elif _options.scheme == 'opencl':
-    _context = pycbc.scheme.OpenCLScheme(device_num=_options.devicenum)
-elif _options.scheme == 'cpu':
-    _context = pycbc.scheme.CPUScheme()
+_scheme, _context = parse_args_all_schemes("PSD")
 
 class TestPSD(unittest.TestCase):
     def setUp(self):
+        self.scheme = _scheme
+        self.context = _context
         self.psd_len = 1024
         self.psd_delta_f = 0.1
         self.psd_low_freq_cutoff = 10.
@@ -81,10 +58,10 @@ class TestPSD(unittest.TestCase):
         noise_fs = FrequencySeries(noise, delta_f=delta_f)
         self.noise = TimeSeries(numpy.zeros(noise_size), delta_t=1./sample_freq)
         ifft(noise_fs, self.noise)
-    
+
     def test_analytical(self):
         """Basic test of lalsimulation's analytical noise PSDs"""
-        with _context:
+        with self.context:
             psd_list = pycbc.psd.analytical.get_list()
             self.assertTrue(psd_list)
             for psd_name in psd_list:
@@ -106,7 +83,7 @@ class TestPSD(unittest.TestCase):
         os.close(file_desc)
         numpy.savetxt(file_name, test_data)
         test_data[test_data[:, 0] < self.psd_low_freq_cutoff, 1] = 0.
-        with _context:
+        with self.context:
             psd = pycbc.psd.read.from_asd_txt(file_name, self.psd_len,
                                     self.psd_delta_f, self.psd_low_freq_cutoff)
             self.assertAlmostEqual(abs(psd - test_data[:, 1] ** 2).max(), 0)
@@ -118,7 +95,7 @@ class TestPSD(unittest.TestCase):
             noise_model = (numpy.linspace(1., 100., seg_len/2 + 1)) ** (-2)
             for seg_stride in (seg_len, seg_len/2):
                 for method in ('mean', 'median', 'median-mean'):
-                    with _context:
+                    with self.context:
                         psd = pycbc.psd.welch(self.noise, seg_len=seg_len, \
                             seg_stride=seg_stride, avg_method=method)
                         error = (psd.numpy() - noise_model) / noise_model
@@ -132,7 +109,7 @@ class TestPSD(unittest.TestCase):
         for seg_len in (2048, 4096, 8192):
             noise_model = (numpy.linspace(1., 100., seg_len/2 + 1)) ** (-2)
             for max_len in (1024, 512, 256):
-                with _context:
+                with self.context:
                     psd = pycbc.psd.welch(self.noise, seg_len=seg_len, \
                                           seg_stride=seg_len/2, avg_method='mean')
                     psd_trunc = pycbc.psd.inverse_spectrum_truncation(
@@ -151,17 +128,4 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestPSD))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
-    
-    NotImpErrors = 0
-    for error in results.errors:
-        for errormsg in error:
-            if type(errormsg) is str:
-                if 'NotImplemented' in errormsg:
-                    NotImpErrors +=1
-                    break
-    if results.wasSuccessful():
-        sys.exit(0)
-    elif len(results.failures)==0 and len(results.errors)==NotImpErrors:
-        sys.exit(1)
-    else:
-        sys.exit(2)
+    simple_exit(results)

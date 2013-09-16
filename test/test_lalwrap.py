@@ -27,6 +27,15 @@ Note that these unit tests do not attempt to check any of the functions
 actually wrapped in lalwrap (those should be tested through unit tests of
 the subpackages that call them) but rather test that the SWIG typemaps used
 in lalwrap behave as expected and documented.
+
+The only way to do this is to write functions which are specifically designed
+for this testing; these are all in the module testlalwrap.  Look in the source
+for that module for the definitions of those functions.
+
+Because of the wide variety of possible inputs, outputs, and ways each can be
+malformed, there is extensive use in this unittest of automatic creation of
+classes and functions using Python's introspection capabilities.  As a result, the
+unittests in this script are not necessarily all that easy to read.
 """
 
 import pycbc
@@ -35,85 +44,17 @@ import pycbc.types
 import numpy
 from numpy import dtype, float32, float64, complex64, complex128
 import unittest
-import base_test
+from utils import parse_args_all_schemes, simple_exit
 import sys
 from lal import LIGOTimeGPS as LTG
 
 import pycbc.testlalwrap as tlw
 
-import optparse
-from optparse import OptionParser
-
-_parser = OptionParser()
-
-def _check_scheme(option, opt_str, scheme, parser):
-    if scheme=='cuda' and not pycbc.HAVE_CUDA:
-        raise optparse.OptionValueError("CUDA not found")
-
-    if scheme=='opencl' and not pycbc.HAVE_OPENCL:
-        raise optparse.OptionValueError("OpenCL not found")
-    setattr (parser.values, option.dest, scheme)
-
-_parser.add_option('--scheme','-s', action='callback', type = 'choice', choices = ('cpu','cuda','opencl'),
-                    default = 'cpu', dest = 'scheme', callback = _check_scheme,
-                    help = 'specifies processing scheme, can be cpu [default], cuda, or opencl')
-
-_parser.add_option('--device-num','-d', action='store', type = 'int', dest = 'devicenum', default=0,
-                    help = 'specifies a GPU device to use for CUDA or OpenCL, 0 by default')
-
-(_opt_list, _args) = _parser.parse_args()
-
-#Changing the optvalues to a dict makes them easier to read
-_options = vars(_opt_list)
-
-# We will need these imported in order to check that things are in the current scheme
-if _options['scheme'] == 'cuda':
-    import pycuda
-    import pycuda.gpuarray
-elif _options['scheme'] == 'opencl':
-    import pyopencl
-    import pyopencl.array
+_scheme, _context = parse_args_all_schemes("LALWrap")
 
 # First we define several utility functions that the base typemap tests
 # will share.
 
-def ourcmp(inst1,inst2):
-    """
-    A utility function to compare two pycbc.types.  The usual numpy ==
-    statement returns an array of booleans, which is not what we want,
-    and also does not complain if dtypes do not match.  It is of course
-    unaware of the Time/FrequencySeries metadata.  We could make something
-    like this a method of pycbc.types, but the numpy behavior might seem
-    more natural to users, so we keep this here.
-    """
-    if (type(inst1) != type(inst2)):
-        return False
-    if isinstance(inst1,pycbc.types.TimeSeries):
-        return ( (inst1.dtype==inst2.dtype) and (inst1._delta_t == inst2._delta_t)
-                 and (inst1._epoch == inst2._epoch) and
-                 bool((inst1._data == inst2._data).all()))
-    if isinstance(inst1,pycbc.types.FrequencySeries):
-        return ( (inst1.dtype==inst2.dtype) and (inst1._delta_f == inst2._delta_f)
-                 and (inst1._epoch == inst2._epoch) and
-                 bool((inst1._data == inst2._data).all()))
-    if isinstance(inst1,pycbc.types.Array):
-        return ( (inst1.dtype==inst2.dtype) and
-                 bool((inst1._data == inst2._data).all()))
-
-def ourcopy(other):
-    """
-    A convenience function to return an exact copy of a pycbc.type instance.
-    """
-    if not isinstance(other,pycbc.types.Array):
-        raise TypeError("ourcopy() can only be used to duplicate PyCBC types")
-    if isinstance(other,pycbc.types.TimeSeries):
-        return pycbc.types.TimeSeries(initial_array=other._data,dtype=other.dtype,
-                                      delta_t=other._delta_t,epoch=other._epoch,copy=True)
-    if isinstance(other,pycbc.types.FrequencySeries):
-        return pycbc.types.FrequencySeries(initial_array=other._data,dtype=other.dtype,
-                                      delta_f=other._delta_f,epoch=other._epoch,copy=True)
-    if isinstance(other,pycbc.types.Array):
-        return pycbc.types.Array(initial_array=other._data,dtype=other.dtype,copy=True)
 
 def DoublePyCBCType(self):
     """
@@ -123,7 +64,7 @@ def DoublePyCBCType(self):
     compare.
     """
 
-    returnobj = ourcopy(self)
+    returnobj = type(self)(self)
     returnobj *= 2
     if isinstance(returnobj,pycbc.types.TimeSeries):
         returnobj._delta_t *= 2
@@ -292,11 +233,6 @@ def isFS(LALType):
 def isC(LALType):
     return ("COMPLEX" in LALType)
 
-def GetPlaces(LALType):
-    if GetDtype(LALType) in [float32,complex64]:
-        return 7
-    else:
-        return 15
 
 possible_laltypes = ["REAL4Vector","REAL8Vector",
                      "COMPLEX8Vector","COMPLEX16Vector",
@@ -308,7 +244,7 @@ possible_laltypes = ["REAL4Vector","REAL8Vector",
 def ValidLALType(LALType):
     return (LALType in possible_laltypes)
 
-class _BaseTestTMClass(base_test.function_base):
+class _BaseTestTMClass(unittest.TestCase):
     """
     This is the base class from which unit tests for all FFT backends
     are derived.
@@ -318,15 +254,14 @@ class _BaseTestTMClass(base_test.function_base):
         self.tmfail = "SWIG-wrapped function indicated failure"
         self.outfail = "Wrapped function did not modify or generate PyCBC type correctly"
         self.infail = "Wrapped function modified read-only input"
+        self.scheme = _scheme
+        self.context = _context
 
     # Now the four typemap tests themselves
 
     def test_Input(self):
         if not ValidLALType(self.laltype):
             raise ValueError
-
-        # Only used for GPU checks:
-        self.places = GetPlaces(self.laltype)
 
         if isC(self.laltype):
             self.inbase1 = numpy.array([1+1j,2+2j],dtype=GetDtype(self.laltype))
@@ -352,22 +287,21 @@ class _BaseTestTMClass(base_test.function_base):
             self.key2 = "infs2"
 
         self.expectedout = DoublePyCBCType(self.input1)
-        self.copy2 = ourcopy(self.input2)
+        self.copy2 = type(self.input2)(self.input2)
         self.fn = GetTestFunc("Input",self.laltype)
 
         # Now begin our testing.  If we're on the GPU, we only check that we
         # raise TypeError if we call these functions, and that they can
         # be moved back to the CPU and the correct values obtained.
-        if _options['scheme'] != 'cpu':
-            self.cpu_test(self.fn,(self.input1,self.input2),(self.expectedout,self.copy2),self.places)
+        if self.scheme != 'cpu':
             with self.context:
                 intuple=[self.input1,self.input2]
                 self.assertRaises(TypeError,self.fn,*intuple)
         else:
             self.retval=self.fn(self.input1,self.input2)
             self.assertEqual(self.retval,0,msg=self.tmfail)
-            self.assertTrue(ourcmp(self.expectedout,self.input1),msg=self.outfail)
-            self.assertTrue(ourcmp(self.copy2,self.input2),msg=self.infail)
+            self.assertEqual(self.expectedout,self.input1,msg=self.outfail)
+            self.assertEqual(self.copy2,self.input2,msg=self.infail)
 
             # Now test that the correct errors are raised when we
             # give erroneous input.  First save a copy so that we
@@ -384,9 +318,6 @@ class _BaseTestTMClass(base_test.function_base):
     def test_Noneout(self):
         if not ValidLALType(self.laltype):
             raise ValueError
-
-        # Only used for GPU checks:
-        self.places = GetPlaces(self.laltype)
 
         if isC(self.laltype):
             self.ibase = numpy.array([1+1j,2+2j],dtype=GetDtype(self.laltype))
@@ -411,24 +342,21 @@ class _BaseTestTMClass(base_test.function_base):
             self.okey = "outfs"
 
         self.expectedout = DoublePyCBCType(self.input)
-        self.savedinput = ourcopy(self.input)
+        self.savedinput = type(self.input)(self.input)
         self.fn = GetTestFunc("Noneout",self.laltype)
-
 
         # Now begin our testing.  If we're on the GPU, we only check that we
         # raise TypeError if we call these functions, and that they can
         # be moved back to the CPU and the correct values obtained.
-        if _options['scheme'] != 'cpu':
-            self.cpu_test(self.fn,(self.input,self.output),
-                          (self.savedinput,self.expectedout),self.places)
+        if self.scheme != 'cpu':
             with self.context:
                 intuple=[self.input,self.output]
                 self.assertRaises(TypeError,self.fn,*intuple)
         else:
             self.retval=self.fn(self.input,self.output)
             self.assertEqual(self.retval,None,msg="Noneout typemap did not return 'None'")
-            self.assertTrue(ourcmp(self.expectedout,self.output),msg=self.outfail)
-            self.assertTrue(ourcmp(self.savedinput,self.input),msg=self.infail)
+            self.assertEqual(self.expectedout,self.output,msg=self.outfail)
+            self.assertEqual(self.savedinput,self.input,msg=self.infail)
 
             # Now test that the correct errors are raised when we
             # give erroneous input.  First save a copy so that we
@@ -445,9 +373,6 @@ class _BaseTestTMClass(base_test.function_base):
     def test_Newout(self):
         if not ValidLALType(self.laltype):
             raise ValueError
-
-        # Only used for GPU checks:
-        self.places = GetPlaces(self.laltype)
 
         if isC(self.laltype):
             self.value = 1.2+3.4j
@@ -471,19 +396,16 @@ class _BaseTestTMClass(base_test.function_base):
         self.fn = GetTestFunc("Newout",self.laltype)
 
         # Now begin our testing.  On the GPU, there's nothing to check
-        if _options['scheme'] != 'cpu':
+        if self.scheme != 'cpu':
             pass
         else:
             empty_args = []
             self.output=self.fn(*empty_args,**self.kwdict)
-            self.assertTrue(ourcmp(self.expectedout,self.output),msg=self.outfail)
+            self.assertEqual(self.expectedout,self.output,msg=self.outfail)
 
     def test_Argout(self):
         if not ValidLALType(self.laltype):
             raise ValueError
-
-        # Only used for GPU checks:
-        self.places = GetPlaces(self.laltype)
 
         if isC(self.laltype):
             self.value = 1.2+3.4j
@@ -507,77 +429,32 @@ class _BaseTestTMClass(base_test.function_base):
         self.fn = GetTestFunc("Argout",self.laltype)
 
         # Now begin our testing.  On the GPU, there's nothing to check
-        if _options['scheme'] != 'cpu':
+        if self.scheme != 'cpu':
             pass
         else:
             empty_args = []
             self.output=self.fn(*empty_args,**self.kwdict)
             self.assertEqual(len(self.output),2,msg="Argout typemap did not return a list of values")
             self.assertEqual(self.output[0],0,msg=self.tmfail)
-            self.assertTrue(ourcmp(self.expectedout,self.output[1]),msg=self.outfail)
+            self.assertEqual(self.expectedout,self.output[1],msg=self.outfail)
 
 
-# Now, factories to create test cases for each available backend.
-# The automation means that the default for each scheme will get created
-# and run twice, once as 'Default' and once under its own name.
+# Now, factories to create test cases.
 
-if _options['scheme']=='cpu':
-    CPUTestClasses = []
-    context = pycbc.scheme.CPUScheme()
-    for laltype in possible_laltypes:
-        klass = type('CPU_{0}Test'.format(laltype),
-                     (_BaseTestTMClass,unittest.TestCase),
-                     {'laltype': laltype,'context' : context})
-        CPUTestClasses.append(klass)
-
-if _options['scheme']=='cuda':
-    CUDATestClasses = []
-    context = pycbc.scheme.CUDAScheme(device_num=_options['devicenum'])
-    for laltype in possible_laltypes:
-        CUDATestClasses.append(type('CUDA_{0}Test'.format(laltype),
-                                    (_BaseTestTMClass,unittest.TestCase),
-                                    {'laltype': laltype,'context' : context}))
-
-if _options['scheme']=='opencl':
-    OpenCLTestClasses = []
-    context = pycbc.scheme.OpenCLScheme(device_num=_options['devicenum'])
-    for laltype in possible_laltypes:
-        OpenCLTestClasses.append(type('OpenCL_{0}Test'.format(laltype),
-                                      (_BaseTestTMClass,unittest.TestCase),
-                                      {'laltype': laltype,'context' : context}))
+LALWrapTestClasses = []
+for laltype in possible_laltypes:
+    klass = type('{0}_{1}Test'.format(_scheme,laltype),
+                 (_BaseTestTMClass,),
+                 {'laltype': laltype})
+    LALWrapTestClasses.append(klass)
 
 # Finally, we create suites and run them:
 
 if __name__ == '__main__':
 
-    if _options['scheme']=='cpu':
-        suiteCPU = unittest.TestSuite()
-        for klass in CPUTestClasses:
-            suiteCPU.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
-        results = unittest.TextTestRunner(verbosity=2).run(suiteCPU)
+    suite = unittest.TestSuite()
+    for klass in LALWrapTestClasses:
+            suite.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
 
-    if _options['scheme']=='cuda':
-        suiteCUDA = unittest.TestSuite()
-        for klass in CUDATestClasses:
-            suiteCUDA.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
-        results = unittest.TextTestRunner(verbosity=2).run(suiteCUDA)
-
-    if _options['scheme']=='opencl':
-        suiteOpenCL = unittest.TestSuite()
-        for klass in OpenCLTestClasses:
-            suiteOpenCL.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
-        results = unittest.TextTestRunner(verbosity=2).run(suiteOpenCL)
-
-    NotImpErrors = 0
-    for error in results.errors:
-        for errormsg in error:
-            if type(errormsg) is str:
-                if 'NotImplemented' in errormsg:
-                    NotImpErrors +=1
-                    break
-    if results.wasSuccessful():
-        sys.exit(0)
-    elif len(results.failures)==0 and len(results.errors)==NotImpErrors:
-        sys.exit(1)
-    else:
-        sys.exit(2)
+    results = unittest.TextTestRunner(verbosity=2).run(suite)
+    simple_exit(results)
