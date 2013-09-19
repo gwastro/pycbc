@@ -169,6 +169,26 @@ def sigma(htilde, psd = None, low_frequency_cutoff=None,
     return sqrt(sigmasq(htilde, psd, low_frequency_cutoff, high_frequency_cutoff))
     
 def get_cutoff_indices(flow, fhigh, df, N):
+    """
+    Gets the indices of a frequency series at which to stop an overlap calculation.
+
+    Parameters
+    ----------
+    flow: float
+        The frequency (in Hz) of the lower index.
+    fhigh: float
+        The frequency (in Hz) of the upper index.
+    df: float
+        The frequency step (in Hz) of the frequency series.
+    N: int
+        The number of points in the **time** series. Can be odd
+        or even.
+
+    Returns
+    -------
+    kmin: int
+    kmax: int
+    """
     if flow:
         kmin = int(flow / df)
     else:
@@ -176,7 +196,9 @@ def get_cutoff_indices(flow, fhigh, df, N):
     if fhigh:
         kmax = int(fhigh / df )
     else:
-        kmax = N/2 + 1
+        # int() truncates towards 0, so this is
+        # equivalent to the floor of the float
+        kmax = int((N + 1)/2.)
         
     return kmin,kmax
     
