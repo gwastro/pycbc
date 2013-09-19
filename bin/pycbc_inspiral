@@ -170,19 +170,17 @@ with ctx:
     snr_work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
     corr_work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
 
-    logging.info("Read in template bank")
-    bank = TemplateBank(opt.bank_file, opt.approximant, len(segments[0]), 
-                        segments[0].delta_f, opt.low_frequency_cutoff, 
-                        dtype=complex64, phase_order=opt.order,
-                        psd = psd, out=template_work_mem)  
-                       
     event_mgr = pycbc.events.EventManager(opt, 
                          ['time_index', 'snr', 'chisq', 'bank_chisq'], 
                          [int, complex64, float32, float32, float32])
 
-    # Our bank might have had no templates in it, in which case we shouldn't
-    # analyze anything but should write our output and exit.
-    if len(bank) == 0:
+    logging.info("Read in template bank")
+    try:
+        bank = TemplateBank(opt.bank_file, opt.approximant, len(segments[0]), 
+                        segments[0].delta_f, opt.low_frequency_cutoff, 
+                        dtype=complex64, phase_order=opt.order,
+                        psd = psd, out=template_work_mem)  
+    except:
         logging.info("No templates found in template bank, so writing process "
                      "table and exiting.")
         event_mgr.write_events()
