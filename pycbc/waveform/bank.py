@@ -41,6 +41,8 @@ class TemplateBank(object):
         self.approximant = approximant
         self.filename = filename
         self.delta_f = delta_f
+        self.N = (filter_length - 1 ) * 2
+        self.delta_t = 1.0 / (self.N * self.delta_f)
         self.filter_length = filter_length
         self.kmin = int(f_lower / delta_f)
         
@@ -79,7 +81,7 @@ class TemplateBank(object):
         distance = 1.0 / DYN_RANGE_FAC
         htilde = pycbc.waveform.get_waveform_filter(self.out[0:self.filter_length], 
                             self.table[index], approximant=self.approximant, 
-                            f_lower=self.f_lower, delta_f=self.delta_f, 
+                            f_lower=self.f_lower, delta_f=self.delta_f, delta_t=self.delta_t, 
                             distance=distance, **self.extra_args)
             
         length_in_time = None      

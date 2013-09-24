@@ -31,6 +31,7 @@ import lalsimulation
 from pycbc.types import TimeSeries,FrequencySeries,zeros,Array,complex_same_precision_as
 from pycbc import HAVE_CUDA,HAVE_OPENCL
 from pycbc.scheme import mgr
+from pycbc.types import real_same_precision_as
 import pycbc.scheme as _scheme
 import inspect
 from pycbc.fft import fft
@@ -415,7 +416,7 @@ def get_waveform_filter(out, template=None, **kwargs):
     """
     n = len(out)
     N = (n-1)*2
-
+    
     input_params = props(template,**kwargs)
 
     if input_params['approximant'] in filter_approximants(mgr.state):
@@ -438,7 +439,7 @@ def get_waveform_filter(out, template=None, **kwargs):
         k_zero = int(hp.start_time / hp.delta_t)
         hp.roll(k_zero)
         htilde = FrequencySeries(out, delta_f=delta_f, copy=False)
-        fft(hp, htilde)
+        fft(hp.astype(real_same_precision_as(htilde)), htilde)
         htilde.length_in_time = tmplt_length
         return htilde
     else:
