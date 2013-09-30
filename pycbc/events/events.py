@@ -276,7 +276,12 @@ class EventManager(object):
         row2 = copy.deepcopy(row)
         row3 = copy.deepcopy(row)
         row1.name = "inspiral_effective_distance"
-        row1.value = 400
+        
+        
+        psd = self.global_params['psd'] 
+        from pycbc.waveform.spa_tmplt import spa_distance
+        from pycbc import DYN_RANGE_FAC
+        row1.value = spa_distance(psd, 1.4, 1.4, self.opt.low_frequency_cutoff, snr=8) * DYN_RANGE_FAC
         row1.comment = "1.4_1.4_8"
         row1.summ_value_id = str(glue.ligolw.lsctables.SummValueID(0))       
         summ_value_table.append(row1)

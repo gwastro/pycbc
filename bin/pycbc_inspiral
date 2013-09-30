@@ -169,7 +169,7 @@ with ctx:
 
     event_mgr = pycbc.events.EventManager(opt, 
                          ['time_index', 'snr', 'chisq', 'bank_chisq'], 
-                         [int, complex64, float32, float32, float32])
+                         [int, complex64, float32, float32, float32], psd=psd)
 
     logging.info("Read in template bank")
     try:
