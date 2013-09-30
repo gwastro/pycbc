@@ -153,9 +153,6 @@ with ctx:
         segments.append(seg)
         seg_start_idx += seg_width_idx    
         
-    snr_start = (opt.segment_start_pad) * opt.sample_rate
-    snr_end  =  (opt.segment_length - opt.segment_end_pad) * opt.sample_rate
-  
     bank_chisq = pycbc.vetoes.SingleDetBankVeto(opt.bank_veto_bank_file, 
                                           opt.approximant, psd, segments,
                                           opt.low_frequency_cutoff, 
@@ -190,20 +187,25 @@ with ctx:
         event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)                                                                     
         cumulative_index = opt.segment_start_pad * opt.sample_rate
         
-        for s_num, stilde in enumerate(segments):          
+        for s_num, stilde in enumerate(segments):    
+            cumulative_index += seg_width_idx
+              
             logging.info("Filtering template %d/%d segment %d/%d" % \
                          (t_num + 1, len(bank), s_num + 1, len(segments)))
 
+            snr_start = (opt.segment_start_pad) * opt.sample_rate
+            snr_end  =  (opt.segment_length - opt.segment_end_pad) * opt.sample_rate
+
             if opt.trig_start_time:
-                seg_start = cumulative_index/opt.sample_rate + opt.gps_start_time
+                seg_start =(cumulative_index - seg_width_idx)/opt.sample_rate + opt.gps_start_time
                 if seg_start < opt.trig_start_time:
                     snr_start = (opt.trig_start_time - seg_start) * opt.sample_rate + snr_start         
             if opt.trig_end_time:
-                seg_end = (cumulative_index + seg_width_idx)/opt.sample_rate +  opt.gps_start_time
+                seg_end = (cumulative_index)/opt.sample_rate +  opt.gps_start_time
                 if seg_end > opt.trig_end_time:
                     snr_end = snr_end - (seg_end - opt.trig_end_time) * opt.sample_rate                   
             if snr_start >= snr_end:
-                break
+                continue
                 
             snr, corr, norm = matched_filter_core(template, stilde, h_norm=template.sigmasq, 
                                                   low_frequency_cutoff=opt.low_frequency_cutoff, 
@@ -211,7 +213,6 @@ with ctx:
             idx, snrv = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm) 
             
             if len(idx) == 0:
-                cumulative_index += seg_width_idx
                 continue                 
              
             logging.info("%s points above threshold" % str(len(idx)))
@@ -219,10 +220,8 @@ with ctx:
             power_chisqv = power_chisq.values(corr, snr, norm, psd, idx+snr_start, template, bank, opt.low_frequency_cutoff)
             
             snrv *= norm
-            idx += cumulative_index
+            idx += (cumulative_index - seg_width_idx)
             event_mgr.add_template_events( ["snr", "time_index", "chisq", "bank_chisq"], [snrv, idx, power_chisqv, bank_chisqv])
-
-            cumulative_index += seg_width_idx
 
         if opt.cluster_method == "window":
             cluster_window = opt.cluster_window * opt.sample_rate
@@ -235,7 +234,7 @@ with ctx:
 num_events = len(event_mgr.events)
 logging.info("Found %s triggers" % str(num_events))
 
-if opt.chisq_threshold:
+if opt.chisq_threshold and opt.chisq_bins:
     logging.info("Removing triggers with poor chisq")
     event_mgr.chisq_threshold(opt.chisq_threshold, opt.chisq_bins, opt.chisq_delta)
     logging.info("%s remaining triggers" % str(len(event_mgr.events)))

@@ -112,5 +112,6 @@ class TemplateBank(object):
 
         if length_in_time is not None:
             htilde.length_in_time = length_in_time  
+            self.table[index].template_duration = length_in_time
        
         return htilde
