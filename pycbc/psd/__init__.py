@@ -42,8 +42,6 @@ def required_opts(opt, parser, opt_list, required_by=None):
                 err_str += ", required by %s" % required_by
             parser.error(err_str)
     
-    
-    
 
 def ensure_one_opt(opt, parser, opt_list):
     """  Check that one and only one in the opt_list is defined in opt
@@ -189,5 +187,3 @@ def verify_psd_options(opt, parser):
         required_opts(opt, parser, 
                       ['--psd-segment-stride', '--psd-segment-length' ],
                       required_by = "--psd-estimation")
-        
-    
