@@ -21,8 +21,58 @@ from pycbc.psd.read import *
 from pycbc.psd.analytical import *
 from pycbc.psd.estimate import *
 
+def required_opts(opt, parser, opt_list, required_by=None):
+    """Check that all the opts are defined 
+    
+    Parameters
+    ----------
+    opt : object
+        Result of option parsing
+    parser : object
+        OptionParser instance.
+    opt_list : list of strings
+    required_by : string, optional
+        the option that requires these options (if applicable)
+    """
+    for name in opt_list:
+        attr = name[2:].replace('-', '_')
+        if not hasattr(opt, attr) or (getattr(opt, attr) is None):
+            err_str = "%s is missing " % name
+            if required_by is not None:
+                err_str += ", required by %s" % required_by
+            parser.error(err_str)
+    
+    
+    
 
-def from_cli(opt, parser, length, delta_f, low_frequency_cutoff, 
+def ensure_one_opt(opt, parser, opt_list):
+    """  Check that one and only one in the opt_list is defined in opt
+    
+    Parameters
+    ----------
+    opt : object
+        Result of option parsing
+    parser : object
+        OptionParser instance.
+    opt_list : list of strings
+    """
+    
+    the_one = None
+    for name in opt_list:
+        attr = name[2:].replace('-', '_')
+        if hasattr(opt, attr) and (getattr(opt, attr) is not None):
+            if the_one is None:
+                the_one = name
+            else:
+                parser.error("%s and %s are mutually exculsive" \
+                              % (the_one, name))
+    
+    if the_one is None:
+        parser.error("you must supply one of the following %s" \
+                      % (', '.join(opt_list)))
+            
+
+def from_cli(opt, length, delta_f, low_frequency_cutoff, 
              strain=None, dyn_range_factor=1):
     """Parses the CLI options related to the noise PSD and returns a
     FrequencySeries with the corresponding PSD. If necessary, the PSD is
@@ -34,8 +84,6 @@ def from_cli(opt, parser, length, delta_f, low_frequency_cutoff,
         Result of parsing the CLI with OptionParser, or any object with the
         required attributes (psd_model, psd_file, asd_file, psd_estimation,
         psd_segment_length, psd_segment_stride, psd_inverse_length, psd_output).
-    parser : object
-        OptionParser instance.
     length : int
         The length in samples of the output PSD.
     delta_f : float
@@ -72,18 +120,12 @@ def from_cli(opt, parser, length, delta_f, low_frequency_cutoff,
            
     elif opt.psd_estimation and not (opt.psd_model or opt.psd_file):
         # estimate PSD from data
-        if not opt.psd_segment_length or not opt.psd_segment_stride:
-            parser.error('PSD estimation requires --psd-segment-length '
-                         'and --psd-segment-stride')
         psd = welch(strain, avg_method=opt.psd_estimation,
                     seg_len=int(opt.psd_segment_length * sample_rate),
                     seg_stride=int(opt.psd_segment_stride * sample_rate))
                     
         if delta_f != psd.delta_f:
             psd = interpolate(psd, delta_f) 
-    else:
-        parser.error('Please specify either --psd-model, --psd-file or '
-                     '--psd-estimation')
                     
     if opt.psd_inverse_length:
         psd = inverse_spectrum_truncation(psd, 
@@ -126,3 +168,26 @@ def insert_psd_option_group(parser):
                           "of the overwhitening filter (s)")
     psd_options.add_option("--psd-output", help="Write PSD to specified file")
     parser.add_option_group(psd_options)
+    
+def verify_psd_options(opt, parser):
+    """Parses the CLI options and verifies that they are consistent and 
+    reasonable.
+    
+    Parameters
+    ----------
+    opt : object
+        Result of parsing the CLI with OptionParser, or any object with the
+        required attributes (psd_model, psd_file, asd_file, psd_estimation,
+        psd_segment_length, psd_segment_stride, psd_inverse_length, psd_output).
+    parser : object
+        OptionParser instance.
+    """
+    ensure_one_opt(opt, parser, ['--psd-file', '--psd-model', 
+                                '--psd-estimation', '--asd-file'])
+                                
+    if opt.psd_estimation:
+        required_opts(opt, parser, 
+                      ['--psd-segment-stride', '--psd-segment-length' ],
+                      required_by = "--psd-estimation")
+        
+    

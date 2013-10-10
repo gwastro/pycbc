@@ -56,17 +56,13 @@ parser.add_option("--fake-strain", help="Name of psd for generating fake gaussai
 parser.add_option("--fake-strain-seed", help="Seed value for the generation of fake colored gaussian noise", type=int, default=0)
 parser.add_option("--maximization-interval", help="Maximize triggers over the template bank (ms)", type=int, default=0)
 
-psd_options = OptionGroup(parser, "Options related to the noise PSD for matched filtering")
-psd_options.add_option("--psd-model", help="Get PSD from given analytical model")
-psd_options.add_option("--psd-file", help="Get PSD from given ASD text file")
-psd_options.add_option("--psd-estimation", help="Measure PSD from the data, using given average method", choices=["mean", "median", "median-mean"])
-psd_options.add_option("--psd-segment-length", type=float, help="The segment length for PSD estimation (s)")
-psd_options.add_option("--psd-segment-stride", type=float, help="The segment stride for PSD estimation (s)")
-psd_options.add_option("--psd-inverse-length", type=float, help="The maximum length of the impulse response of the overwhitening filter (s)")
-psd_options.add_option("--psd-output", help="Write PSD to specified file")
-parser.add_option_group(psd_options)
+# Add options for PSD generation
+pycbc.psd.insert_psd_option_group(parser)
 
 opt, argv = parser.parse_args()
+
+# Check that the PSD options make sense
+pycbc.psd.verify_psd_options(opt, parser)
 
 if opt.verbose:
     log_level = logging.DEBUG
@@ -149,8 +145,7 @@ with ctx:
         seg_start_idx += seg_width_idx    
 
     logging.info("Computing noise PSD")
-    psd = pycbc.psd.from_cli(opt, parser, len(segments[0]),
-                             segments[0].delta_f,
+    psd = pycbc.psd.from_cli(opt, len(segments[0]), segments[0].delta_f,
                              opt.low_frequency_cutoff, strain,
                              pycbc.DYN_RANGE_FAC).astype(float32)
         
