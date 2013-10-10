@@ -26,35 +26,43 @@ parser = OptionParser(
 parser.add_option("-V", "--verbose", action="store_true", help="print extra debugging information", default=False )
 parser.add_option("--bank-file", type=str)
 parser.add_option("--bank-veto-bank-file", type=str)
-parser.add_option("--injection-file", type=str)
-parser.add_option("--trig-start-time", type=int, default=0)
-parser.add_option("--trig-end-time", type=int, default=0)
-parser.add_option("--ifo-tag", type=str)
-parser.add_option("--user-tag", type=str)
-parser.add_option("--approximant", help="Approximant to use for filtering.", type=str)
-parser.add_option("--order", type=str)
-parser.add_option("--gps-start-time", help="The gps start time of the data", type=int)
-parser.add_option("--gps-end-time", help="The gps end time of the data", type=int)
-parser.add_option("--snr-threshold", help="The the minimum snr threshold", type=float)
-parser.add_option("--strain-high-pass", type=float)
+
 parser.add_option("--chisq-bins", type=int, default=0)
 parser.add_option("--chisq-threshold", type=float, default=0)
 parser.add_option("--chisq-delta", type=float, default=0)
-parser.add_option("--low-frequency-cutoff", help="The low frequency cutoff to use for filtering (Hz)", type=float)
-parser.add_option("--pad-data", help="Extra padding to remove highpass corruption (s)", type=int)
-parser.add_option("--sample-rate", help="The sample rate to use for filtering (Hz)", type=int)
-parser.add_option("--cluster-method", choices=["template", "window"])
-parser.add_option("--cluster-window", type=int, help="Length of clustering window in seconds", default = -1)
-parser.add_option("--processing-scheme", help="The processing scheme to use", choices=["cpu", "cuda", "opencl"], default="cpu")
-parser.add_option("--processing-device-id", help="ID of gpu to use for accelerated processineg", default=0, type=int)
+
+parser.add_option("--trig-start-time", type=int, default=0)
+parser.add_option("--trig-end-time", type=int, default=0)
 parser.add_option("--segment-length", type=int, help="The length of a segment (s)")
 parser.add_option("--segment-start-pad", type=int, help="Length of corruption at the beginning of a segment(s)")
 parser.add_option("--segment-end-pad", type=int, help="Length of corruption at the end of a segment (s)")
+
+parser.add_option("--ifo-tag", type=str)
+parser.add_option("--user-tag", type=str)
+
+parser.add_option("--approximant", help="Approximant to use for filtering.", type=str)
+parser.add_option("--order", type=str)
+
+parser.add_option("--gps-start-time", help="The gps start time of the data", type=int)
+parser.add_option("--gps-end-time", help="The gps end time of the data", type=int)
+parser.add_option("--pad-data", help="Extra padding to remove highpass corruption (s)", type=int)
+parser.add_option("--strain-high-pass", type=float)
 parser.add_option("--channel-name", help="The channel containing the gravitational strain data", type=str)
 parser.add_option("--frame-cache",help="Cache file containing the frame locations.", type=str)
 parser.add_option("--fake-strain", help="Name of psd for generating fake gaussain noise", type=str)
 parser.add_option("--fake-strain-seed", help="Seed value for the generation of fake colored gaussian noise", type=int, default=0)
+parser.add_option("--injection-file", type=str)
+
+parser.add_option("--snr-threshold", help="The the minimum snr threshold", type=float)
+parser.add_option("--low-frequency-cutoff", help="The low frequency cutoff to use for filtering (Hz)", type=float)
+parser.add_option("--sample-rate", help="The sample rate to use for filtering (Hz)", type=int)
+
+parser.add_option("--cluster-method", choices=["template", "window"])
+parser.add_option("--cluster-window", type=int, help="Length of clustering window in seconds", default = -1)
 parser.add_option("--maximization-interval", help="Maximize triggers over the template bank (ms)", type=int, default=0)
+
+parser.add_option("--processing-scheme", help="The processing scheme to use", choices=["cpu", "cuda", "opencl"], default="cpu")
+parser.add_option("--processing-device-id", help="ID of gpu to use for accelerated processineg", default=0, type=int)
 
 pycbc.psd.insert_psd_option_group(parser)
 
@@ -77,7 +85,33 @@ else:
     logging.info("Running with CPU support only")
     ctx = CPUScheme()
 
-# Data Preconditioning ########################################################
+class FilterSegments(object):
+    def __init__(self, strain, seg_len, seg_start_pad, seg_end_pad,
+                 trig_start=None, trig_stop=None):
+        self.segments = []
+        
+        seg_width = (seg_len - seg_start_pad - seg_end_pad)
+        
+        seg_start = 0
+        while seg_start + seg_len <= strain.duration:
+        
+            seg_start_idx = seg_start * strain.sample_rate
+            seg_end_idx = (seg_start + seg_len) * strain.sample_rate           
+            seg = make_frequency_series(strain[seg_start_idx:seg_end_idx])    
+            
+            seg.start_idx = seg_start_pad * strain.sample_rate
+            seg.end_idx = seg.start_idx + seg_width * strain.sample_rate
+            seg.global_start_idx = seg_start_idx + seg.start_idx
+                   
+            self.segments.append(seg)
+            seg_start += seg_width  
+
+    def __getitem__(self, index):
+        return self.segments[index]
+        
+    def __len__(self):
+        return len(self.segments)
+
 if opt.frame_cache:
     logging.info("Reading Frames")
     strain = read_frame(opt.frame_cache, opt.channel_name, 
@@ -128,19 +162,9 @@ if opt.fake_strain:
 
 with ctx:
     logging.info("Making frequency-domain data segments")
-    segments = []
-    seg_width_idx = (opt.segment_length - opt.segment_start_pad - 
-                     opt.segment_end_pad) * opt.sample_rate
-    seg_len_idx = opt.segment_length * opt.sample_rate
-    seg_start_idx = 0
-    while seg_start_idx + seg_width_idx < len(strain):
-        seg_end_idx = seg_start_idx + seg_len_idx
-        seg = make_frequency_series(strain[seg_start_idx:seg_end_idx])
-        segments.append(seg)
-        seg_start_idx += seg_width_idx    
-        
-    snr_start = (opt.segment_start_pad) * opt.sample_rate
-    snr_end  =  (opt.segment_length - opt.segment_end_pad) * opt.sample_rate
+    segments = FilterSegments(strain, opt.segment_length, 
+                          opt.segment_start_pad, opt.segment_end_pad, 
+                          opt.trig_start_time, opt.trig_end_time)
     
     logging.info("Computing noise PSD")
     psd = pycbc.psd.from_cli(opt, parser, len(segments[0]),
@@ -185,36 +209,25 @@ with ctx:
         for s_num, stilde in enumerate(segments):          
             logging.info("Filtering template %d/%d segment %d/%d" % \
                          (t_num + 1, len(bank), s_num + 1, len(segments)))
-
-            if opt.trig_start_time:
-                seg_start = cumulative_index/opt.sample_rate + opt.gps_start_time
-                if seg_start < opt.trig_start_time:
-                    snr_start = (opt.trig_start_time - seg_start) * opt.sample_rate + snr_start         
-            if opt.trig_end_time:
-                seg_end = (cumulative_index + seg_width_idx)/opt.sample_rate +  opt.gps_start_time
-                if seg_end > opt.trig_end_time:
-                    snr_end = snr_end - (seg_end - opt.trig_end_time) * opt.sample_rate                   
-            if snr_start >= snr_end:
-                break
+            start_idx = stilde.start_idx
+            end_idx = stilde.end_idx
                 
             snr, corr, norm = matched_filter_core(template, stilde, h_norm=template.sigmasq, 
                                                   low_frequency_cutoff=opt.low_frequency_cutoff, 
                                                   out=snr_work_mem, corr_out=corr_work_mem)                                         
-            idx, snrv = pycbc.events.threshold(snr[snr_start:snr_end], opt.snr_threshold / norm) 
+            idx, snrv = pycbc.events.threshold(snr[start_idx:end_idx], opt.snr_threshold / norm) 
             
+            print stilde.global_start_idx
             if len(idx) == 0:
-                cumulative_index += seg_width_idx
                 continue                 
              
             logging.info("%s points above threshold" % str(len(idx)))
-            bank_chisqv = bank_chisq.values(template, s_num, snr, norm, idx+snr_start)
-            power_chisqv = power_chisq.values(corr, snr, norm, psd, idx+snr_start, template, bank, opt.low_frequency_cutoff)
+            bank_chisqv = bank_chisq.values(template, s_num, snr, norm, idx+start_idx)
+            power_chisqv = power_chisq.values(corr, snr, norm, psd, idx+start_idx, template, bank, opt.low_frequency_cutoff)
             
             snrv *= norm
-            idx += cumulative_index
+            idx += stilde.global_start_idx
             event_mgr.add_template_events( ["snr", "time_index", "chisq", "bank_chisq"], [snrv, idx, power_chisqv, bank_chisqv])
-
-            cumulative_index += seg_width_idx
 
         if opt.cluster_method == "window":
             cluster_window = opt.cluster_window * opt.sample_rate
