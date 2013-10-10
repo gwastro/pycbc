@@ -203,7 +203,7 @@ with ctx:
             if opt.trig_end_time:
                 seg_end = (cumulative_index)/opt.sample_rate +  opt.gps_start_time
                 if seg_end > opt.trig_end_time:
-                    snr_end = snr_end - (seg_end - opt.trig_end_time) * opt.sample_rate                   
+                    snr_end = snr_end - (seg_end - opt.trig_end_time) * opt.sample_rate                
             if snr_start >= snr_end:
                 continue
                 
@@ -220,7 +220,7 @@ with ctx:
             power_chisqv = power_chisq.values(corr, snr, norm, psd, idx+snr_start, template, bank, opt.low_frequency_cutoff)
             
             snrv *= norm
-            idx += (cumulative_index - seg_width_idx)
+            idx += (cumulative_index - seg_width_idx + (snr_start - opt.segment_start_pad * opt.sample_rate))
             event_mgr.add_template_events( ["snr", "time_index", "chisq", "bank_chisq"], [snrv, idx, power_chisqv, bank_chisqv])
 
         if opt.cluster_method == "window":

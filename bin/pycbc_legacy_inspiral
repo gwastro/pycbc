@@ -52,11 +52,11 @@ args = [('--verbose', NO_ARG),
         ('--trig-end-time', TAKES_ARG),
         ('--strain-high-pass-freq', TAKES_ARG),
         ('--maximization-interval', TAKES_ARG),
+        ('--gpu-device-id', TAKES_ARG),
         ]
              
 unused_args = [('--number-of-segments', TAKES_ARG),
                ('--version', NO_ARG),
-               ('--gpu-device-id', TAKES_ARG),
                ('--comment', TAKES_ARG),
                ('--gps-start-time-ns', TAKES_ARG),
                ('--gps-end-time-ns', TAKES_ARG),
@@ -228,6 +228,10 @@ if opt.approximant == 'FindChirpSP':
     apx = 'SPAtmplt'
 else:
     apx = opt.approximant
+    
+if opt.gpu_device_id:
+    real_args += ['--processing-scheme', 'cuda']
+    real_args += ['--processing-device-id', opt.gpu_device_id]
 
 real_args += ['--psd-estimation', 'median']
 real_args += ['--psd-segment-stride', str(stride)]
