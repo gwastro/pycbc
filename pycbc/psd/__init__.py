@@ -140,6 +140,11 @@ def insert_psd_option_group(parser):
     Adds the options used to call the pycbc.psd.from_cli function to an
     optparser OptionGroup, which is the returned. This should be used if you
     want to use these options in your code.
+ 
+    Parameters
+    -----------
+    parser : object
+        OptionParser instance.
 
     Returns
     --------
