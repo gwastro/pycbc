@@ -21,7 +21,7 @@ import numpy
 import scipy.interpolate
 from pycbc.types import FrequencySeries
 
-def from_asd_txt(filename, length, delta_f, low_freq_cutoff):
+def from_txt(filename, length, delta_f, low_freq_cutoff,is_asd_file=True):
     """Read an ASCII file containing one-sided ASD data and generate
     a frequency series with the corresponding PSD. The ASD data is
     interpolated in order to match the desired resolution of the
@@ -32,13 +32,17 @@ def from_asd_txt(filename, length, delta_f, low_freq_cutoff):
     filename : string
         Path to a two-column ASCII file. The first column must contain
         the frequency (positive frequencies only) and the second column
-        must contain the amplitude density.
+        must contain the amplitude density OR power spectral density.
     length : int
         Length of the frequency series in samples.
     delta_f : float
         Frequency resolution of the frequency series in Herz.
     low_freq_cutoff : float
         Frequencies below this value are set to zero.
+    is_asd_file : Boolean
+        If false assume that the second column holds power spectral density.
+        If true assume that the second column holds amplitude spectral density.
+        Default: True
 
     Returns
     -------
@@ -51,19 +55,31 @@ def from_asd_txt(filename, length, delta_f, low_freq_cutoff):
         If the ASCII file contains negative, infinite or NaN frequencies
         or amplitude densities.
     """
-    asd_data = numpy.loadtxt(filename)
-    if (asd_data < 0).any() or numpy.logical_not(numpy.isfinite(asd_data)).any():
-        raise ValueError('Invalid ASD data in ' + filename)
+    file_data = numpy.loadtxt(filename)
+    if (file_data < 0).any() or \
+                            numpy.logical_not(numpy.isfinite(file_data)).any():
+        raise ValueError('Invalid data in ' + filename)
 
-    flog = numpy.log10(asd_data[:, 0])
-    slog = numpy.log10(asd_data[:, 1] ** 2)
+    freq_data = file_data[:, 0]
+    noise_data = file_data[:, 1]
+    
+    # Only include points above the low frequency cutoff
+    data_start = numpy.searchsorted(freq_data, low_freq_cutoff)
+    freq_data = freq_data[data_start:]
+    noise_data = noise_data[data_start:]    
+
+    flog = numpy.log(freq_data)
+    if is_asd_file:
+        slog = numpy.log(noise_data ** 2)
+    else:
+        slog = numpy.log(noise_data)
 
     psd_interp = scipy.interpolate.interp1d(flog, slog)
 
     kmin = int(low_freq_cutoff / delta_f)
     psd = numpy.zeros(length, dtype=numpy.float64)
-    for k in xrange(kmin, length):
-        psd[k] = 10. ** float(psd_interp(numpy.log10(k * delta_f)))
+
+    vals = numpy.log(numpy.arange(kmin, length) * delta_f) 
+    psd[kmin:] =  numpy.exp(psd_interp(vals))
 
     return FrequencySeries(psd, delta_f=delta_f)
-

@@ -46,6 +46,7 @@ class TimeSeries(Array):
     start_time
     end_time
     sample_times
+    sample_rate
     """
 
     def __init__(self, initial_array, delta_t=None, epoch="", dtype=None, copy=True):
@@ -115,6 +116,12 @@ class TimeSeries(Array):
         """
         return len(self) * self._delta_t
     duration = property(get_duration)
+    
+    def get_sample_rate(self):
+        """Return the sample rate of the time series.
+        """
+        return int(1.0/self.delta_t)
+    sample_rate = property(get_sample_rate)
 
     def get_start_time(self):
         """Return time series start time as a LIGOTimeGPS.

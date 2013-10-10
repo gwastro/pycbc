@@ -135,11 +135,6 @@ if opt.fake_strain:
     strain = (pycbc.DYN_RANGE_FAC * strain).astype(float32)
 
 with ctx:
-    logging.info("Computing noise PSD")
-    psd = pycbc.psd.from_cli(opt, parser, strain,
-                             pycbc.DYN_RANGE_FAC).astype(float32)
-    if opt.psd_output:
-        psd.save(opt.psd_output)
 
     logging.info("Making frequency-domain data segments")
     segments = []
@@ -152,6 +147,12 @@ with ctx:
         seg = make_frequency_series(strain[seg_start_idx:seg_end_idx])
         segments.append(seg)
         seg_start_idx += seg_width_idx    
+
+    logging.info("Computing noise PSD")
+    psd = pycbc.psd.from_cli(opt, parser, len(segments[0]),
+                             segments[0].delta_f,
+                             opt.low_frequency_cutoff, strain,
+                             pycbc.DYN_RANGE_FAC).astype(float32)
         
     bank_chisq = pycbc.vetoes.SingleDetBankVeto(opt.bank_veto_bank_file, 
                                           opt.approximant, psd, segments,
