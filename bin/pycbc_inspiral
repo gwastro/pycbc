@@ -56,15 +56,7 @@ parser.add_option("--fake-strain", help="Name of psd for generating fake gaussai
 parser.add_option("--fake-strain-seed", help="Seed value for the generation of fake colored gaussian noise", type=int, default=0)
 parser.add_option("--maximization-interval", help="Maximize triggers over the template bank (ms)", type=int, default=0)
 
-psd_options = OptionGroup(parser, "Options related to the noise PSD for matched filtering")
-psd_options.add_option("--psd-model", help="Get PSD from given analytical model")
-psd_options.add_option("--psd-file", help="Get PSD from given ASD text file")
-psd_options.add_option("--psd-estimation", help="Measure PSD from the data, using given average method", choices=["mean", "median", "median-mean"])
-psd_options.add_option("--psd-segment-length", type=float, help="The segment length for PSD estimation (s)")
-psd_options.add_option("--psd-segment-stride", type=float, help="The segment stride for PSD estimation (s)")
-psd_options.add_option("--psd-inverse-length", type=float, help="The maximum length of the impulse response of the overwhitening filter (s)")
-psd_options.add_option("--psd-output", help="Write PSD to specified file")
-parser.add_option_group(psd_options)
+pycbc.psd.insert_psd_option_group(parser)
 
 opt, argv = parser.parse_args()
 
@@ -135,12 +127,6 @@ if opt.fake_strain:
     strain = (pycbc.DYN_RANGE_FAC * strain).astype(float32)
 
 with ctx:
-    logging.info("Computing noise PSD")
-    psd = pycbc.psd.from_cli(opt, parser, strain,
-                             pycbc.DYN_RANGE_FAC).astype(float32)
-    if opt.psd_output:
-        psd.save(opt.psd_output)
-
     logging.info("Making frequency-domain data segments")
     segments = []
     seg_width_idx = (opt.segment_length - opt.segment_start_pad - 
@@ -155,6 +141,12 @@ with ctx:
         
     snr_start = (opt.segment_start_pad) * opt.sample_rate
     snr_end  =  (opt.segment_length - opt.segment_end_pad) * opt.sample_rate
+    
+    logging.info("Computing noise PSD")
+    psd = pycbc.psd.from_cli(opt, parser, len(segments[0]),
+                             segments[0].delta_f,
+                             opt.low_frequency_cutoff, strain,
+                             pycbc.DYN_RANGE_FAC).astype(float32)
   
     bank_chisq = pycbc.vetoes.SingleDetBankVeto(opt.bank_veto_bank_file, 
                                           opt.approximant, psd, segments,
