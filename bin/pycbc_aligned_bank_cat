@@ -1,0 +1,116 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2013 Ian W. Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Programe for contatenating the output of the geometric aligned bank dagman.
+This will gather all the meta-output files and create a valid template bank
+xml file.
+"""
+
+import copy
+import time
+import os
+import sys
+import fileinput
+import glob
+
+from optparse import OptionParser
+
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue.ligolw import ilwd
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw.utils import process as ligolw_process
+from glue.segmentdb import segmentdb_utils
+from glue import pidfile as pidfile
+from glue import git_version
+from scipy.interpolate import interp1d
+import matplotlib
+matplotlib.use('Agg')
+import pylab
+from pylab import arange,pi,sin,cos,sqrt
+from pylal.xlal.constants import LAL_PI, LAL_MTSUN_SI
+from numpy import loadtxt
+
+def return_empty_sngl():
+  sngl = lsctables.SnglInspiral()  
+  cols = lsctables.SnglInspiralTable.validcolumns
+  for entry in cols.keys():
+    if cols[entry] in ['real_4', 'real_8']:
+      setattr(sngl, entry, 0.)
+    elif cols[entry] == 'int_4s':
+      setattr(sngl, entry, 0)
+    elif cols[entry] == 'lstring':
+      setattr(sngl, entry, '')
+    elif entry == 'process_id':
+      sngl.process_id = ilwd.ilwdchar("sngl_inspiral:process_id:0")
+    elif entry == 'event_id':
+      sngl.event_id = ilwd.ilwdchar("sngl_inspiral:event_id:0")
+    else:
+      print >> sys.stderr, "Column %s not recognized" %(entry)
+      raise ValueError
+  return sngl
+
+parser = OptionParser(
+    version = git_version.verbose_msg,
+    usage   = "%prog [OPTIONS]",
+    description = "Creates a template bank and writes it to XML." )
+
+parser.add_option("-i", "--input-glob",  help="file glob the list of paramters")
+parser.add_option("-o", "--output-file",  help="Output file name")
+parser.add_option("--type")
+
+options, argv_frame_files = parser.parse_args()
+
+outdoc = ligolw.Document()
+outdoc.appendChild(ligolw.LIGO_LW())
+
+proc_id = ligolw_process.register_to_xmldoc(outdoc, 
+                "params_to_table.py", options.__dict__, comment="", ifos=[""],
+                version=git_version.id, cvs_repository=git_version.branch,
+                cvs_entry_time=git_version.date).process_id
+                
+params = loadtxt(fileinput.input(glob.glob(options.input_glob)))
+
+col_names = ['mass1', 'mass2', 'spin1z', 'spin2z']
+
+sngl_inspiral_table = lsctables.New(lsctables.SnglInspiralTable)
+
+outdoc.childNodes[0].appendChild(sngl_inspiral_table)
+
+for values in params:
+    tmplt = return_empty_sngl()
+
+    tmplt.process_id = proc_id
+    index = 0 
+    for value in values[0:4]:
+        setattr(tmplt, col_names[index], value)
+        index += 1
+    tmplt.mtotal = tmplt.mass1 + tmplt.mass2
+    tmplt.eta = tmplt.mass1 * tmplt.mass2 / (tmplt.mtotal * tmplt.mtotal)
+    tmplt.mchirp = tmplt.mtotal * tmplt.eta**(3./5.)
+    # Currently using ISCO frequency for termination
+    tmplt.f_final = (1/6.)**(3./2.) / (LAL_PI * tmplt.mtotal * LAL_MTSUN_SI)
+    tmplt.template_duration = 0 # FIXME
+    # FIXME: Add gamma values
+    sngl_inspiral_table.append(tmplt)
+
+# write the xml doc to disk
+proctable = table.get_table(outdoc, lsctables.ProcessTable.tableName)
+ligolw_utils.write_filename(outdoc, options.output_file)
