@@ -84,8 +84,8 @@ class TestPSD(unittest.TestCase):
         numpy.savetxt(file_name, test_data)
         test_data[test_data[:, 0] < self.psd_low_freq_cutoff, 1] = 0.
         with self.context:
-            psd = pycbc.psd.read.from_asd_txt(file_name, self.psd_len,
-                                    self.psd_delta_f, self.psd_low_freq_cutoff)
+            psd = pycbc.psd.read.from_txt(file_name, self.psd_len,
+                                    self.psd_delta_f, self.psd_low_freq_cutoff, is_asd_file=True)
             self.assertAlmostEqual(abs(psd - test_data[:, 1] ** 2).max(), 0)
         os.unlink(file_name)
 
