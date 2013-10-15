@@ -37,6 +37,13 @@ Examples:
 
    waveform
 
+Misc:
+
+.. toctree::
+   :maxdepth: 1
+  
+   ihope
+
 Indices and tables
 ==================
 
