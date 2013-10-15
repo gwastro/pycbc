@@ -11,7 +11,7 @@ In order to install PyCBC, you need to have installed the following prerequisite
 * Python 2.6 or 2.7
 * `NumPy <http://www.numpy.org>`_ >= 1.4.1 and `SciPy <http://www.scipy.org>`_ >= 0.7.2
 * `decorator <https://pypi.python.org/pypi/decorator>`_
-* `LAL <https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html>`_
+* `LALSuite <https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html>`_ (with swig bindings enabled)
 * `GLUE <https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html>`_
 
 If you would like to use GPU acceleration of PyCBC through CUDA you will require these additional packages:

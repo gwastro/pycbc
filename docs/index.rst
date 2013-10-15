@@ -30,6 +30,12 @@ Package documentation:
 
    frame
 
+Examples:
+
+.. toctree::
+   :maxdepth: 1
+
+   waveform
 
 Indices and tables
 ==================
