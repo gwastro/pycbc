@@ -61,9 +61,25 @@ while on Mac OS this is
 
 where ``X.Y`` is the python major and minor version numbers, e.g. ``2.7``. In either case, python will autmatically know about these directories, so you don't have to fiddle with any environment variables.
 
-==============================
-Installing CUDA Python modules
-==============================
+Alternatively, you can specify the install path directory, using the ``--prefix`` option as follows.
+
+.. code-block:: bash
+
+    python setup.py install --prefix=/location/to/install/pycbc
+
+===============================
+Setting up the user environment
+===============================
+
+Add the following to your ``.bash_profile``
+
+.. code-block:: bash
+
+   source /path/to/pycbc/install/directory/etc/pycbc-user-env.sh
+
+=========================================
+Installing CUDA Python modules (optional!)
+=========================================
 
 These packages may not be available via the distribution packaging system, at least in the required versions. As described below, most of these packages are available via the python package installer `pip <http://www.pip-installer.org>`_, however custom installation instructions are given where required.
 
