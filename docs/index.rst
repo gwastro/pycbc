@@ -30,6 +30,19 @@ Package documentation:
 
    frame
 
+Examples:
+
+.. toctree::
+   :maxdepth: 1
+
+   waveform
+
+Misc:
+
+.. toctree::
+   :maxdepth: 1
+  
+   ihope
 
 Indices and tables
 ==================
