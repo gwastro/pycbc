@@ -1045,3 +1045,58 @@ def calculate_ethinca_metric_comps(temp_params,moments,f0):
     gammaVals[5] = g[1,1] + gammaVals[2] * gammaVals[2] / gammaVals[0]
 
     return gammaVals
+
+def output_sngl_inspiral_table(outputFile,tempBank,moments,f0,proc_id,\
+                               calculate_ethinca_comps=False):
+    """
+    Function that converts the information produced by the various pyCBC bank
+    generation codes into a valid LIGOLW xml file, containing a sngl_inspiral
+    table and output this to file.
+ 
+    Parameters
+    -----------
+    outputFile : string
+        Name of the file that the bank will be written to
+    tempBank : list of tuples
+        Each entry in the tempBank list should be a tuple/list/numpy array
+        whose entries contain [mass1,mass2,spin1z,spin2z]
+    moments : Dictionary
+        This must be the moments returned by the function 
+        pycbc.tmpltbank.determine_eigen_directions
+    f0 : float
+        The value of f0 used in the moments calculation
+    proc_id : ILWD char
+        The process ID of this job, to be added to various tables
+    calculate_ethinca_comps : Boolean
+        If set to True, this will calculate the ethinca metric components that
+        are needed when doing lalapps/ligolw_thinca coincidence. NOTE: These
+        moments are only valid for non-spinning systems and are currently only
+        calculated to 2PN order.
+    """
+    outdoc = ligolw.Document()
+    outdoc.appendChild(ligolw.LIGO_LW())
+    sngl_inspiral_table = \
+        pycbc.tmpltbank.convert_to_sngl_inspiral_table(tempBank, proc_id)
+    # Calculate Gamma components if needed
+    if opts.calculate_ethinca_metric:
+        # Temporarily reemove this one as we will want to cast to floats
+        mJ4fixed = moments['J4']['fixed']
+        moments['J4'].pop('fixed')
+        for sngl in sngl_inspiral_table:
+            temp_params = (sngl.mass1, sngl.mass2)
+            GammaVals = pycbc.tmpltbank.calculate_ethinca_metric_comps(\
+                        temp_params, moments, opts.f0)
+            sngl.Gamma0 = GammaVals[0]
+            sngl.Gamma1 = GammaVals[1]
+            sngl.Gamma2 = GammaVals[2]
+            sngl.Gamma3 = GammaVals[3]
+            sngl.Gamma4 = GammaVals[4]
+            sngl.Gamma5 = GammaVals[5]
+        # Put it back
+        moments['J4']['fixed'] = mJ4fixed
+
+    outdoc.childNodes[0].appendChild(sngl_inspiral_table)
+
+    # write the xml doc to disk
+    proctable = table.get_table(outdoc, lsctables.ProcessTable.tableName)
+    ligolw_utils.write_filename(outdoc, outputFile)

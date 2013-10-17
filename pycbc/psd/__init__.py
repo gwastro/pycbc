@@ -103,7 +103,8 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
     f_low = low_frequency_cutoff
     sample_rate = int((length -1) * 2 * delta_f)
 
-    if (opt.psd_model or opt.psd_file) and not opt.psd_estimation:
+    if (opt.psd_model or opt.psd_file or opt.asd_file)\
+                      and not opt.psd_estimation:
         # PSD from lalsimulation or file
         if opt.psd_model:
             psd = from_string(opt.psd_model, length, delta_f, f_low)           

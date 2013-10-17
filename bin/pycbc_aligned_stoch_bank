@@ -25,8 +25,8 @@ import matplotlib
 matplotlib.use('Agg')
 import pylab
 import time
-start = int(time.time()*10**6)
-elapsed_time = lambda: int(time.time()*10**6-start)
+startET = int(time.time())
+elapsed_time = lambda: int(time.time() - startET)
 
 import os,sys,optparse,copy
 import tempfile
@@ -35,6 +35,10 @@ import numpy
 # FIXME: Replace with pyCBC version
 from pylal import git_version
 import pycbc.tmpltbank
+import pycbc.psd
+import pycbc.frame
+import pycbc.filter
+import pycbc.types
 from glue import pipeline
 from pylal.xlal.constants import LAL_PI, LAL_MTSUN_SI
 
@@ -48,6 +52,7 @@ _desc = __doc__[1:]
 parser = optparse.OptionParser(usage, version=__version__, description=_desc)
 parser.add_option("-v", "--verbose", action="store_true", default=False,\
                     help="verbose output, default: %default")
+parser.add_option("-O", "--output-file",  help="Output file name")
 parser.add_option("-o", "--pn-order", action="store", type="string",\
                    default=None,\
                    help="""Determines the PN order to use, choices are:
@@ -131,15 +136,26 @@ dataReadingGroup.add_option("--channel-name", type=str, \
                    help="The channel containing the gravitational strain data")
 parser.add_option_group(dataReadingGroup)
 
+ethincaGroup = optparse.OptionGroup(parser, "Ethinca metric options",
+                    "These options are used in the calculation of the gamma  "
+                    "components for ethinca calculations if needed.")
+ethincaGroup.add_option("","--calculate-ethinca-metric", action="store_true",\
+                        default=False, help="If given the ethinca metric "+\
+                        "will be calculated and stored in the Gamma entried "+\
+                        "in the sngl_inspiral table.")
+ethincaGroup.add_option("","--ethinca-calc-density", action="store",\
+                        default=10, help="The ethinca metric is calculated "+\
+                        "using a given value for f_max. Tmpltbank uses the "+\
+                        "ISCO frequency for every template and recomputes "+\
+                        "the metric components every time it does this. "+\
+                        "This code generates the metric for discrete values "+\
+                        "f_max and uses the closest one to each template's "+\
+                        "ISCO frequency. This value sets the spacing between "+\
+                        "these discrete values of frequency cutoff. "+\
+                        "default: %default")
+parser.add_option_group(ethincaGroup)
+
 (opts,args) = parser.parse_args()
-if opts.psd_file and opts.asd_file:
-    parser.error("Why have you given me an ASD *and* a PSD file??")
-if opts.psd_file:
-    opts.sens_file = opts.psd_file
-    opts.file_is_asd = False
-if opts.asd_file:
-    opts.sens_file = opts.asd_file
-    opts.file_is_asd = True
 
 # This can be used to replicate behaviour of sBANK
 opts.num_failed_cutoff = 10000000
@@ -149,7 +165,7 @@ if opts.vary_fupper:
 
 opts.min_total_mass = opts.min_mass1 + opts.min_mass2
 if not opts.max_total_mass:
-  opts.max_total_mass = opts.max_mass1 + opts.max_mass2
+    opts.max_total_mass = opts.max_mass1 + opts.max_mass2
 opts.min_comp_mass = opts.min_mass2
 opts.max_comp_mass = opts.max_mass2
 opts.split_bank_num = 100
@@ -159,47 +175,113 @@ opts.low_frequency_cutoff = opts.f_low
 opts.segment_length = 1. / opts.delta_f
 
 # This could be altered to do an exact match if desired
-def dist(vsA,entryA,MMdistA):
-  val = (vsA[0] - entryA[0])**2
-  for i in range(1,len(vsA)):
-    val += (vsA[i] - entryA[i])**2
-  return (numpy.sqrt(val) < MMdistA)
+def dist(vsA, entryA, MMdistA):
+    """
+    This function is used to determine if the distance between two points is
+    less than that stated by the minimal match.
+
+    Parameters
+    ----------
+    vsA : list or numpy.array or similar
+        An array of point 1's position in the \chi_i coordinate system
+    entryA : list or numpy.array or similar
+        An array of point 2's position in the \chi_i coordinate system
+    MMdistA : float
+        The minimal mismatch allowed between the points
+
+    Returns
+    --------
+    Boolean
+        True if the points have a mismatch < MMdistA
+        False if the points have a mismatch > MMdistA
+    """
+    val = (vsA[0] - entryA[0])**2
+    for i in range(1,len(vsA)):
+        val += (vsA[i] - entryA[i])**2
+    return (numpy.sqrt(val) < MMdistA)
 
 # If varying f_upper we want to test the metric distances properly
-def dist_vary(mus1,fUpper1,masses2,fMap,MMdistA):
-  mus2 = masses2[5]
-  idx1 = fMap[fUpper1]
-  vecs1 = mus1[idx1]
-  vecs2 = mus2[idx1]
-  val = (vecs1[0] - vecs2[0])**2
-  for i in range(1,len(vecs1)):
-    val += (vecs1[i] - vecs2[i])**2
-  if (numpy.sqrt(val) > MMdistA):  
-    return False
-  fUpper2 = masses2[4]
-  idx2 = fMap[fUpper2]
-  vecs1 = mus1[idx2]
-  vecs2 = mus2[idx2]
-  val = (vecs1[0] - vecs2[0])**2
-  for i in range(1,len(vecs1)):
-    val += (vecs1[i] - vecs2[i])**2
-  return (numpy.sqrt(val) < MMdistA)
+def dist_vary(mus1, fUpper1, mus2, fupper2, fMap, MMdistA):
+    """
+    Function to determine if two points, with differing upper frequency cutoffs
+    have a mismatch < MMdistA for *both* upper frequency cutoffs.
 
-def return_nearest_isco(totmass,freqs):
-  fISCO = (1/6.)**(3./2.) / (LAL_PI * totmass * LAL_MTSUN_SI)
-  refEv = numpy.zeros(len(fISCO),dtype=float)
-  for i in range(len(freqs)):
-    if (i == 0):
-      logicArr = fISCO < ((freqs[0] + freqs[1])/2.)
-    if (i == (len(freqs)-1)):
-      logicArr = fISCO > ((freqs[-2] + freqs[-1])/2.)
-    else:
-      logicArrA = fISCO > ((freqs[i-1] + freqs[i])/2.)
-      logicArrB = fISCO < ((freqs[i] + freqs[i+1])/2.)
-      logicArr = numpy.logical_and(logicArrA,logicArrB)
-    if logicArr.any():
-      refEv[logicArr] = freqs[i]
-  return refEv
+    Parameters
+    ----------
+    mus1 : List of numpy arrays
+        mus1[i] will give the array of point 1's position in the \chi_j
+        coordinate system. The i element corresponds to varying values of the
+        upper frequency cutoff. fMap is used to map between i and actual
+        frequencies
+    fUpper1 : float
+        The upper frequency cutoff (ISCO) of point 1.
+    mus2 : List of numpy arrays
+        mus2[i] will give the array of point 2's position in the \chi_j
+        coordinate system. The i element corresponds to varying values of the
+        upper frequency cutoff. fMap is used to map between i and actual
+        frequencies
+    fUpper2 : float
+        The upper frequency cutoff (ISCO) of point 2.
+    fMap : dictionary
+        fMap[fUpper] will give the index needed to get the \chi_j coordinates
+        in the two sets of mus
+    MMdistA
+        The minimal mismatch allowed between the points
+
+    Returns
+    --------
+    Boolean
+        True if the points have a mismatch < MMdistA
+        False if the points have a mismatch > MMdistA
+    """
+    idx1 = fMap[fUpper1]
+    vecs1 = mus1[idx1]
+    vecs2 = mus2[idx1]
+    val = (vecs1[0] - vecs2[0])**2
+    for i in range(1,len(vecs1)):
+        val += (vecs1[i] - vecs2[i])**2
+    if (numpy.sqrt(val) > MMdistA):  
+        return False
+    idx2 = fMap[fUpper2]
+    vecs1 = mus1[idx2]
+    vecs2 = mus2[idx2]
+    val = (vecs1[0] - vecs2[0])**2
+    for i in range(1,len(vecs1)):
+        val += (vecs1[i] - vecs2[i])**2
+    return (numpy.sqrt(val) < MMdistA)
+
+def return_nearest_isco(totmass, freqs):
+    """
+    Given a value for total mass and a list of discrete frequencies, this will
+    return the frequency in the list closest to the ISCO.
+
+    Parameters
+    ----------
+    totmass : float
+        The total mass of the system
+    freqs : list of floats
+        A list of frequencies
+
+    Returns
+    -------
+    float
+        The frequency closest to the ISCO frequency corresponding to totmass. 
+    """
+
+    fISCO = (1/6.)**(3./2.) / (LAL_PI * totmass * LAL_MTSUN_SI)
+    refEv = numpy.zeros(len(fISCO),dtype=float)
+    for i in range(len(freqs)):
+        if (i == 0):
+            logicArr = fISCO < ((freqs[0] + freqs[1])/2.)
+        elif (i == (len(freqs)-1)):
+            logicArr = fISCO > ((freqs[-2] + freqs[-1])/2.)
+        else:
+            logicArrA = fISCO > ((freqs[i-1] + freqs[i])/2.)
+            logicArrB = fISCO < ((freqs[i] + freqs[i+1])/2.)
+            logicArr = numpy.logical_and(logicArrA,logicArrB)
+        if logicArr.any():
+            refEv[logicArr] = freqs[i]
+    return refEv
 
 # If we are going to use h(t) to estimate a PSD we need h(t)
 if opts.psd_estimation:
@@ -234,53 +316,61 @@ if opts.verbose:
 psd = pycbc.psd.from_cli(opts, parser, strain=strain)
 
 # Begin by calculating a metric
-evals,evecs = pycbc.tmpltbank.determine_eigen_directions(\
-    psd,opts.pn_order,opts.f0,opts.f_low,opts.f_upper,opts.delta_f,\
-    verbose=opts.verbose,elapsed_time=elapsed_time,vary_fmax=opts.vary_fupper,\
-    file_is_asd=opts.file_is_asd)
+evals, evecs, moments = pycbc.tmpltbank.determine_eigen_directions(\
+    psd, opts.pn_order, opts.f0, opts.f_low, opts.f_upper, opts.delta_f,\
+    verbose=opts.verbose, elapsed_time=elapsed_time, \
+    vary_fmax=(opts.vary_fupper or opts.calculate_ethinca_metric),\
+    vary_density=opts.ethinca_calc_density, return_moments=True)
 
-if not opts.vary_fupper:
-  evalsSngl = evals['fixed']
-  evecsSngl = evecs['fixed']
+# Choose the discrete values of frequencies to use if --vary-fupper is used
+if not (opts.vary_fupper or opts.calculate_ethinca_metric):
+    evalsSngl = evals['fixed']
+    evecsSngl = evecs['fixed']
+elif opts.calculate_ethinca_metric and not opts.vary_fupper:
+    fs = numpy.array(evals.keys(), dtype=float)
+    fs.sort()
+    evalsSngl = evals[fs.max()]
+    evecsSngl = evecs[fs.max()]
 else:
-  fs = numpy.array(evals.keys(),dtype=float)
-  fs.sort()
-  maxTMass = opts.max_total_mass
-  minTMass = opts.min_total_mass
-  lowEve = return_nearest_isco(numpy.array([maxTMass]),fs)[0]
-  highEve = return_nearest_isco(numpy.array([minTMass]),fs)[0]
-  print lowEve,highEve
-  evalsSngl = evals[lowEve]
-  evecsSngl = evecs[lowEve]
+    fs = numpy.array(evals.keys(), dtype=float)
+    fs.sort()
+    maxTMass = opts.max_total_mass
+    minTMass = opts.min_total_mass
+    lowEve = return_nearest_isco(numpy.array([maxTMass]), fs)[0]
+    highEve = return_nearest_isco(numpy.array([minTMass]), fs)[0]
+    evalsSngl = evals[lowEve]
+    evecsSngl = evecs[lowEve]
 
+# Calculate evecsCV which describes the rotation to the dominant basis frame
 if opts.covary:
-  if opts.verbose:
-    print >>sys.stdout, "Calculating covariance matrix at %d." %(elapsed_time())
+    if opts.verbose:
+        print >>sys.stdout, "Calculating covariance matrix at %f." \
+                            %(elapsed_time())
 
-  vals = pycbc.tmpltbank.estimate_mass_range_slimline(1000000,\
-         opts.pn_order,evalsSngl,evecsSngl,opts.max_mass1,\
-         opts.min_mass1,opts.max_mass2,opts.min_mass2,\
-         opts.max_ns_spin_mag,opts.f0,maxmass=opts.max_total_mass,\
-         covary=False,maxBHspin=opts.max_bh_spin_mag)
-  cov = numpy.cov(vals)
-  evalsCV,evecsCV = numpy.linalg.eig(cov)
+    vals = pycbc.tmpltbank.estimate_mass_range_slimline(1000000,\
+           opts.pn_order, evalsSngl, evecsSngl, opts.max_mass1,\
+           opts.min_mass1, opts.max_mass2, opts.min_mass2,\
+           opts.max_ns_spin_mag, opts.f0,maxmass=opts.max_total_mass,\
+           covary=False, maxBHspin=opts.max_bh_spin_mag)
+    cov = numpy.cov(vals)
+    evalsCV,evecsCV = numpy.linalg.eig(cov)
 
-  if opts.verbose:
-    print>> sys.stdout, "Covariance matrix calculated at %d." %(elapsed_time())
+    if opts.verbose:
+        print>> sys.stdout, "Covariance matrix calculated at %f." \
+                            %(elapsed_time())
 else:
-  evecsCV = None
+    evecsCV = None
 
+# Estimate the largest values of \chi_1 and \chi_2 to optimise what follows
 if opts.verbose:
-  print>> sys.stdout, "Determining parameter space extent %d." %(elapsed_time())
+    print>> sys.stdout, "Determining parameter space extent %f."\
+                        %(elapsed_time())
 
 vals = pycbc.tmpltbank.estimate_mass_range_slimline(1000000,\
-       opts.pn_order,evalsSngl,evecsSngl,opts.max_mass1,\
-       opts.min_mass1,opts.max_mass2,opts.min_mass2,\
-       opts.max_ns_spin_mag,opts.f0,maxmass=opts.max_total_mass,\
-       covary=opts.covary,evecsCV=evecsCV,maxBHspin=opts.max_bh_spin_mag)
-
-pylab.plot(vals[0],vals[1],'b.')
-pylab.savefig('testing.png')
+       opts.pn_order, evalsSngl, evecsSngl, opts.max_mass1,\
+       opts.min_mass1, opts.max_mass2, opts.min_mass2,\
+       opts.max_ns_spin_mag, opts.f0, maxmass=opts.max_total_mass,\
+       covary=opts.covary, evecsCV=evecsCV, maxBHspin=opts.max_bh_spin_mag)
 
 chi1Max = vals[0].max()
 chi1Min = vals[0].min()
@@ -294,12 +384,13 @@ chi2Min = chi2Min - 0.1*chi2Diff
 chi2Max = chi2Max + 0.1*chi2Diff
 
 if opts.verbose:
-  print>> sys.stdout, "Determined parameter space extent %d." %(elapsed_time())
-  print chi1Min,chi1Max,chi2Min,chi2Max
+    print>> sys.stdout, "Determined parameter space extent %f."\
+                        %(elapsed_time())
+    print chi1Min,chi1Max,chi2Min,chi2Max
 
 
 if opts.verbose:
-  print>> sys.stdout, "Initializing bank set up at %d." %(elapsed_time())
+    print>> sys.stdout, "Initializing bank set up at %f." %(elapsed_time())
 
 vals = None
 
@@ -308,11 +399,11 @@ massbank = {}
 bank = {}
 MMdist = (opts.min_match)**0.5
 for i in range(int((chi1Max - chi1Min) // MMdist)):
-  bank[i] = {}
-  massbank[i] = {}
-  for j in range(int((chi2Max - chi2Min) // MMdist)):
-    bank[i][j] = []
-    massbank[i][j] = []
+    bank[i] = {}
+    massbank[i] = {}
+    for j in range(int((chi2Max - chi2Min) // MMdist)):
+        bank[i][j] = []
+        massbank[i][j] = []
 
 maxi = int((chi1Max - chi1Min) // MMdist)
 maxj = int((chi2Max - chi2Min) // MMdist)
@@ -322,112 +413,128 @@ Np = 0
 Ns = 0
 Nr = 0
 
+# Map the frequency values to idx if --vary-fupper is used
 if opts.vary_fupper:
-  freqMap = {}
-  idx = 0
-  for freq in fs:
-    if freq >= lowEve and freq <= highEve:
-      freqMap[freq] = idx
-      idx += 1
-      print freq
+    freqMap = {}
+    idx = 0
+    for freq in fs:
+        if freq >= lowEve and freq <= highEve:
+            freqMap[freq] = idx
+            idx += 1
+            print freq
 
 if opts.verbose:
-  print>> sys.stdout, "Initialized bank and starting at %d." %(elapsed_time())
+    print>> sys.stdout, "Initialized bank and starting at %f." %(elapsed_time())
 
 # Begin making the thing
 outbins = [[0,0],[0,1],[1,0],[0,-1],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]]
 while(1):
-  if not (Ns % 100000):
-    rTotmass,rEta,rBeta,rSigma,rGamma,rSpin1z,rSpin2z =\
-        pycbc.tmpltbank.get_random_mass_slimline(\
-        100000,opts.min_mass1,opts.max_mass1,opts.min_mass2,opts.max_mass2,\
-        opts.max_ns_spin_mag,maxBHspin = opts.max_bh_spin_mag,\
-        return_spins=True,maxmass=opts.max_total_mass)
-    diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
-    rMass1 = (rTotmass + diff)/2.
-    rMass2 = (rTotmass - diff)/2.
-    rChis = (rSpin1z + rSpin2z)/2.
-    if opts.vary_fupper:
-      refEve = return_nearest_isco(rTotmass,fs)
-      lambdas =  pycbc.tmpltbank.get_chirp_params(rTotmass,rEta,rBeta,\
-          rSigma,rGamma,rChis,opts.f0,opts.pn_order)
-#      lambdas = numpy.array(lambdas)
-#      lambdas = lambdas.T
-      mus = []
-      idx = 0
-      for freq in fs:
-        if freq >= lowEve and freq <= highEve: 
-          mus.append(pycbc.tmpltbank.get_chi_params(lambdas,opts.f0,evecs[freq],evals[freq],opts.pn_order))
-          if freqMap[freq] != idx:
-            raise BrokenError
-          idx += 1
-      mus = numpy.array(mus)
-    else:
-      refEve = numpy.zeros(100000)
-      mus = numpy.zeros([1,1,100000])
-    if opts.covary:
-      vecs = pycbc.tmpltbank.get_cov_params(rTotmass,rEta,rBeta,rSigma,\
-        rGamma,rChis,opts.f0,evecsSngl,evalsSngl,evecsCV,\
-        opts.pn_order)
-    else:
-      vecs = pycbc.tmpltbank.get_conv_params(rTotmass,rEta,rBeta,\
-        rSigma,rGamma,rChis,opts.f0,evecsSngl,evalsSngl,opts.pn_order)
+    if not (Ns % 100000):
+        # For optimization we generate points in sets of 100000
+        rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z =\
+            pycbc.tmpltbank.get_random_mass_slimline(\
+            100000, opts.min_mass1, opts.max_mass1, opts.min_mass2,\
+            opts.max_mass2, opts.max_ns_spin_mag,\
+            maxBHspin=opts.max_bh_spin_mag, return_spins=True,\
+            maxmass=opts.max_total_mass)
+        diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
+        rMass1 = (rTotmass + diff)/2.
+        rMass2 = (rTotmass - diff)/2.
+        rChis = (rSpin1z + rSpin2z)/2.
+        if opts.vary_fupper:
+            refEve = return_nearest_isco(rTotmass, fs)
+            lambdas = pycbc.tmpltbank.get_chirp_params(rTotmass, rEta, rBeta,\
+                      rSigma, rGamma, rChis, opts.f0, opts.pn_order)
+            mus = []
+            idx = 0
+            for freq in fs:
+                if freq >= lowEve and freq <= highEve: 
+                    mus.append(pycbc.tmpltbank.get_chi_params(lambdas,\
+                               opts.f0, evecs[freq], evals[freq],\
+                               opts.pn_order))
+                    if freqMap[freq] != idx:
+                        raise BrokenError
+                    idx += 1
+            mus = numpy.array(mus)
+        else:
+            refEve = numpy.zeros(100000)
+            mus = numpy.zeros([1,1,100000])
+        if opts.covary:
+            vecs = pycbc.tmpltbank.get_cov_params(rTotmass, rEta, rBeta,\
+                       rSigma, rGamma, rChis, opts.f0, evecsSngl, evalsSngl,\
+                       evecsCV, opts.pn_order)
+        else:
+            vecs = pycbc.tmpltbank.get_conv_params(rTotmass, rEta, rBeta,\
+                       rSigma, rGamma, rChis, opts.f0, evecsSngl, evalsSngl,\
+                       opts.pn_order)
       
     vecs = numpy.array(vecs)
     Ns = 0
-  if not (Np % 10000) and opts.verbose:
-    print "Seeds",Np
-  vs = vecs[:,Ns]
-  v1Bin = int((vs[0] - chi1Min) // MMdist)
-  v2Bin = int((vs[1] - chi2Min) // MMdist)
-  store = True
-  Np = Np + 1
-  if opts.vary_fupper:
-    for i,j in outbins:
-      if store:
-        for entry in massbank[v1Bin+i][v2Bin+j]:
-          if dist_vary(mus[:,:,Ns],refEve[Ns],entry,freqMap,MMdist):
-            store = False
+    if not (Np % 10000) and opts.verbose:
+        print "Seeds",Np
+    vs = vecs[:,Ns]
+    v1Bin = int((vs[0] - chi1Min) // MMdist)
+    v2Bin = int((vs[1] - chi2Min) // MMdist)
+    store = True
+    Np = Np + 1
+    if opts.vary_fupper:
+        for i,j in outbins:
+            if store:
+                for entry in massbank[v1Bin+i][v2Bin+j]:
+                    if dist_vary(mus[:,:,Ns], refEve[Ns], entry[5], entry[4],\
+                                 freqMap,MMdist):
+                        store = False
+                        break
+    else:
+        for i,j in outbins:
+            if store:
+                for entry in bank[v1Bin+i][v2Bin+j]:
+                    if dist(vs,entry,MMdist):
+                        store = False
+                        break
+    if not store:
+        Ns = Ns + 1
+        Nr = Nr + 1
+        if Nr > opts.num_failed_cutoff:
             break
-  else:
-    for i,j in outbins:
-      if store:
-        for entry in bank[v1Bin+i][v2Bin+j]:
-          if dist(vs,entry,MMdist):
-            store = False
-            break
-  if not store:
-    Ns = Ns + 1
-    Nr = Nr + 1
-    if Nr > opts.num_failed_cutoff:
-      break
-    continue
-  Nr = 0
-  bank[v1Bin][v2Bin].append([copy.deepcopy(vs[0]),copy.deepcopy(vs[1]),copy.deepcopy(vs[2]),copy.deepcopy(vs[3]),copy.deepcopy(vs[4]),copy.deepcopy(vs[5]),copy.deepcopy(vs[6]),copy.deepcopy(vs[7])])
-  massbank[v1Bin][v2Bin].append([copy.deepcopy(rMass1[Ns]),copy.deepcopy(rMass2[Ns]),copy.deepcopy(rSpin1z[Ns]),copy.deepcopy(rSpin2z[Ns]),copy.deepcopy(refEve[Ns]),copy.deepcopy(mus[:,:,Ns])])
-  N = N + 1
-  if opts.verbose and not (N % 100000):
-    print "Templates %d at %d" %(N,elapsed_time())
-  if Np > opts.num_seeds:
-    break
-  Ns = Ns + 1  
+        continue
+    Nr = 0
+    bank[v1Bin][v2Bin].append([copy.deepcopy(vs[0]),copy.deepcopy(vs[1]),copy.deepcopy(vs[2]),copy.deepcopy(vs[3]),copy.deepcopy(vs[4]),copy.deepcopy(vs[5]),copy.deepcopy(vs[6]),copy.deepcopy(vs[7])])
+    massbank[v1Bin][v2Bin].append([copy.deepcopy(rMass1[Ns]),copy.deepcopy(rMass2[Ns]),copy.deepcopy(rSpin1z[Ns]),copy.deepcopy(rSpin2z[Ns]),copy.deepcopy(refEve[Ns]),copy.deepcopy(mus[:,:,Ns])])
+    N = N + 1
+    if opts.verbose and not (N % 100000):
+        print "Templates %d at %f" %(N,elapsed_time())
+    if Np > opts.num_seeds:
+        break
+    Ns = Ns + 1  
 
 if opts.verbose:
-  print "Outputting at %d." %(elapsed_time())
+    print "Outputting at %f." %(elapsed_time())
 
-outfile=open('stochastic_bank_mass.dat','w')
-outfile2=open('stochastic_bank_evs.dat','w')
-
+# Put the whole template bank in one list
+tempBank = []
 for i in range(int((chi1Max - chi1Min) // MMdist)):
-  for j in range(int((chi2Max - chi2Min) // MMdist)):
-    for entry in bank[i][j]:
-      outfile2.write('%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n' %(entry[0],entry[1],entry[2],entry[3],entry[4],entry[5],entry[6],entry[7]))
-outfile2.close()
+    for j in range(int((chi2Max - chi2Min) // MMdist)):
+        for masses in massbank[i][j]:
+            tempBank.append([masses[0],masses[1],masses[2],masses[3]])
 
-for i in range(int((chi1Max - chi1Min) // MMdist)):
-  for j in range(int((chi2Max - chi2Min) // MMdist)):
-    for masses in massbank[i][j]:
-      outfile.write('%.16e %.16e %.16e %.16e\n' %(masses[0],masses[1],masses[2],masses[3]))
-outfile.close()
 
-  
+# Output to file
+pycbc.tmpltbank.output_sngl_inspiral_table(opts.output_file,tempBank,moments,\
+                  opts.f0,calculate_ethinca_comps=opts.calculate_ethinca_comps)
+
+# All this is useful for debugging
+#outfile=open('stochastic_bank_mass.dat','w')
+#outfile2=open('stochastic_bank_evs.dat','w')
+
+#for i in range(int((chi1Max - chi1Min) // MMdist)):
+#    for j in range(int((chi2Max - chi2Min) // MMdist)):
+#        for entry in bank[i][j]:
+#            outfile2.write('%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n' %(entry[0],entry[1],entry[2],entry[3],entry[4],entry[5],entry[6],entry[7]))
+#outfile2.close()
+
+#for i in range(int((chi1Max - chi1Min) // MMdist)):
+#    for j in range(int((chi2Max - chi2Min) // MMdist)):
+#        for masses in massbank[i][j]:
+#            outfile.write('%.16e %.16e %.16e %.16e\n' %(masses[0],masses[1],masses[2],masses[3]))
+#outfile.close()
