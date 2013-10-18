@@ -22,8 +22,8 @@ import scipy.interpolate
 from pycbc.types import FrequencySeries
 
 def from_txt(filename, length, delta_f, low_freq_cutoff,is_asd_file=True):
-    """Read an ASCII file containing one-sided ASD data and generate
-    a frequency series with the corresponding PSD. The ASD data is
+    """Read an ASCII file containing one-sided ASD or PSD  data and generate
+    a frequency series with the corresponding PSD. The ASD or PSD data is
     interpolated in order to match the desired resolution of the
     generated frequency series.
 

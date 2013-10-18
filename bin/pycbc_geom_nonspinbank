@@ -24,8 +24,7 @@ Template bank generator for placing a bank of non-spinning templates.
 from __future__ import division
 import os,sys,optparse,math,copy
 import numpy
-# MOVE THIS TO pycbc
-from pylal import git_version
+import pycbc.version
 from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables
@@ -41,8 +40,8 @@ startET = time.time()
 elapsed_time = lambda: time.time()-startET
 
 __author__  = "Ian Harry <ian.harry@ligo.org>"
-__version__ = "git id %s" % git_version.id
-__date__    = git_version.date
+__version__ = "git id %s" % pycbc.version.git_hash
+__date__    = pycbc.version.date
 
 # Read command line options
 usage = """usage: %prog [options]"""
@@ -145,6 +144,8 @@ if not opts.max_mass1:
     parser.error("Must supply --max-mass1")
 if not opts.max_mass2:
     parser.error("Must supply --max-mass2")
+if not opts.output_file:
+    parser.error("Must supply --output-file")
 
 opts.min_total_mass = opts.min_mass1 + opts.min_mass2
 opts.max_total_mass = opts.max_mass1 + opts.max_mass2
@@ -472,41 +473,13 @@ if opts.verbose:
 
 # Currently this is hardcoded to dump as a sngl_inspiral table. But this is
 # easily changed.
-# FIXME: This should become a dump_to_sngl_inspiral function
 
-outdoc = ligolw.Document()
-outdoc.appendChild(ligolw.LIGO_LW())
-
-proc_id = ligolw_process.register_to_xmldoc(outdoc, "pycbc_geom_nonspinbank",\
-                opts.__dict__, comment="", ifos=[""],
-                version=git_version.id, cvs_repository=git_version.branch,
-                cvs_entry_time=git_version.date).process_id
-
-sngl_inspiral_table = \
-    pycbc.tmpltbank.convert_to_sngl_inspiral_table(tempBank, proc_id)
-
-# Calculate Gamma components if needed
-if opts.calculate_ethinca_metric:
-    if opts.verbose:
-        print>> sys.stdout, "Calculating ethinca comps at %f." %(elapsed_time())
-    # Remove this one as we will want to cast to floats
-    moments['J4'].pop('fixed')
-    for sngl in sngl_inspiral_table:
-        temp_params = (sngl.mass1, sngl.mass2)
-        GammaVals = pycbc.tmpltbank.calculate_ethinca_metric_comps(\
-                    temp_params, moments, opts.f0)
-        sngl.Gamma0 = GammaVals[0]
-        sngl.Gamma1 = GammaVals[1]
-        sngl.Gamma2 = GammaVals[2]
-        sngl.Gamma3 = GammaVals[3]
-        sngl.Gamma4 = GammaVals[4]
-        sngl.Gamma5 = GammaVals[5]
-
-outdoc.childNodes[0].appendChild(sngl_inspiral_table)
-
-# write the xml doc to disk
-proctable = table.get_table(outdoc, lsctables.ProcessTable.tableName)
-ligolw_utils.write_filename(outdoc, opts.output_file)
+pycbc.tmpltbank.output_sngl_inspiral_table(opts.output_file,tempBank,moments,\
+         opts.f0,calculate_ethinca_comps=opts.calculate_ethinca_metric,\
+         programName="pycbc_geom_nonspinbank",optDict=opts.__dict__,\
+         comment="", ifos=[""], version=pycbc.version.git_hash,\
+         cvs_repository='pycbc/'+pycbc.version.git_branch,\
+         cvs_entry_time=pycbc.version.date)
 
 if opts.verbose:
     print>> sys.stdout, "Done at %f." %(elapsed_time())

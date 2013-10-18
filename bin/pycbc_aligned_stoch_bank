@@ -32,19 +32,21 @@ import os,sys,optparse,copy
 import tempfile
 import ConfigParser
 import numpy
-# FIXME: Replace with pyCBC version
-from pylal import git_version
+import pycbc.version
 import pycbc.tmpltbank
 import pycbc.psd
 import pycbc.frame
 import pycbc.filter
 import pycbc.types
 from glue import pipeline
-from pylal.xlal.constants import LAL_PI, LAL_MTSUN_SI
+from glue.ligolw.utils import process as ligolw_process
+import lal
+LAL_PI = lal.LAL_PI
+LAL_MTSUN_SI = lal.LAL_MTSUN_SI
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
-__version__ = "git id %s" % git_version.id
-__date__    = git_version.date
+__version__ = "git id %s" % pycbc.version.git_hash
+__date__    = pycbc.version.date
 
 # Read command line options
 usage = """usage: %prog [options]"""
@@ -157,6 +159,20 @@ parser.add_option_group(ethincaGroup)
 
 (opts,args) = parser.parse_args()
 
+# Sanity check options
+if not opts.pn_order:
+    parser.error("Must supply --pn-order")
+if not opts.min_mass1:
+    parser.error("Must supply --min-mass1")
+if not opts.min_mass2:
+    parser.error("Must supply --min-mass2")
+if not opts.max_mass1:
+    parser.error("Must supply --max-mass1")
+if not opts.max_mass2:
+    parser.error("Must supply --max-mass2")
+if not opts.output_file:
+    parser.error("Must supply --output-file")
+
 # This can be used to replicate behaviour of sBANK
 opts.num_failed_cutoff = 10000000
 
@@ -198,10 +214,10 @@ def dist(vsA, entryA, MMdistA):
     val = (vsA[0] - entryA[0])**2
     for i in range(1,len(vsA)):
         val += (vsA[i] - entryA[i])**2
-    return (numpy.sqrt(val) < MMdistA)
+    return (val < MMdistA)
 
 # If varying f_upper we want to test the metric distances properly
-def dist_vary(mus1, fUpper1, mus2, fupper2, fMap, MMdistA):
+def dist_vary(mus1, fUpper1, mus2, fUpper2, fMap, MMdistA):
     """
     Function to determine if two points, with differing upper frequency cutoffs
     have a mismatch < MMdistA for *both* upper frequency cutoffs.
@@ -240,7 +256,7 @@ def dist_vary(mus1, fUpper1, mus2, fupper2, fMap, MMdistA):
     val = (vecs1[0] - vecs2[0])**2
     for i in range(1,len(vecs1)):
         val += (vecs1[i] - vecs2[i])**2
-    if (numpy.sqrt(val) > MMdistA):  
+    if (val > MMdistA):  
         return False
     idx2 = fMap[fUpper2]
     vecs1 = mus1[idx2]
@@ -248,7 +264,7 @@ def dist_vary(mus1, fUpper1, mus2, fupper2, fMap, MMdistA):
     val = (vecs1[0] - vecs2[0])**2
     for i in range(1,len(vecs1)):
         val += (vecs1[i] - vecs2[i])**2
-    return (numpy.sqrt(val) < MMdistA)
+    return (val < MMdistA)
 
 def return_nearest_isco(totmass, freqs):
     """
@@ -468,8 +484,8 @@ while(1):
                        rSigma, rGamma, rChis, opts.f0, evecsSngl, evalsSngl,\
                        opts.pn_order)
       
-    vecs = numpy.array(vecs)
-    Ns = 0
+        vecs = numpy.array(vecs)
+        Ns = 0
     if not (Np % 10000) and opts.verbose:
         print "Seeds",Np
     vs = vecs[:,Ns]
@@ -477,19 +493,21 @@ while(1):
     v2Bin = int((vs[1] - chi2Min) // MMdist)
     store = True
     Np = Np + 1
+    if Np > opts.num_seeds:
+        break
     if opts.vary_fupper:
         for i,j in outbins:
             if store:
                 for entry in massbank[v1Bin+i][v2Bin+j]:
                     if dist_vary(mus[:,:,Ns], refEve[Ns], entry[5], entry[4],\
-                                 freqMap,MMdist):
+                                 freqMap,opts.min_match):
                         store = False
                         break
     else:
         for i,j in outbins:
             if store:
                 for entry in bank[v1Bin+i][v2Bin+j]:
-                    if dist(vs,entry,MMdist):
+                    if dist(vs,entry,opts.min_match):
                         store = False
                         break
     if not store:
@@ -504,8 +522,6 @@ while(1):
     N = N + 1
     if opts.verbose and not (N % 100000):
         print "Templates %d at %f" %(N,elapsed_time())
-    if Np > opts.num_seeds:
-        break
     Ns = Ns + 1  
 
 if opts.verbose:
@@ -521,7 +537,11 @@ for i in range(int((chi1Max - chi1Min) // MMdist)):
 
 # Output to file
 pycbc.tmpltbank.output_sngl_inspiral_table(opts.output_file,tempBank,moments,\
-                  opts.f0,calculate_ethinca_comps=opts.calculate_ethinca_comps)
+         opts.f0,calculate_ethinca_comps=opts.calculate_ethinca_metric,\
+         programName="pycbc_aligned_stoch_bank",optDict=opts.__dict__,\
+         comment="", ifos=[""], version=pycbc.version.git_hash,\
+         cvs_repository='pycbc/'+pycbc.version.git_branch,\
+         cvs_entry_time=pycbc.version.date)
 
 # All this is useful for debugging
 #outfile=open('stochastic_bank_mass.dat','w')
