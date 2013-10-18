@@ -45,7 +45,7 @@ LAL_PI = lal.LAL_PI
 LAL_MTSUN_SI = lal.LAL_MTSUN_SI
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
-__version__ = "git id %s" % pycbc.version.git_hash
+__version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
 
 # Read command line options

@@ -45,7 +45,7 @@ import matplotlib
 matplotlib.use('Agg')
 import pylab
 from pylab import arange,pi,sin,cos,sqrt
-from pylal.xlal.constants import LAL_PI, LAL_MTSUN_SI
+from lal import LAL_PI, LAL_MTSUN_SI
 from numpy import loadtxt
 
 def return_empty_sngl():
