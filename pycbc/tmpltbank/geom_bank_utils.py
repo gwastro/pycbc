@@ -5,7 +5,7 @@ import matplotlib
 import optparse
 matplotlib.use('Agg')
 import pylab
-from pylal.xlal.constants import LAL_PI, LAL_MTSUN_SI,LAL_TWOPI
+from lal import LAL_PI, LAL_MTSUN_SI,LAL_TWOPI,LAL_GAMMA
 from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables
@@ -15,13 +15,25 @@ from glue.ligolw.utils import process as ligolw_process
 from glue.segmentdb import segmentdb_utils
 from glue import pidfile as pidfile
 
-# FIXME: Use lal/pylals own variables here
-mtsun = LAL_MTSUN_SI
-LAL_GAMMA = 0.5772156649015328606065120900824024
-
 # This function is taken from Stackoverflow:
 # http://stackoverflow.com/questions/377017/test-if-executable-exists-in-python/377028#377028
 def which(program):
+    """
+    This function will return the full location of the provided program name.
+    This is effectively a python implementation of the bash which command.
+    Function taken from StackOverflow:
+    http://stackoverflow.com/questions/377017/test-if-executable-exists-in-python/377028#377028
+
+    Parameters
+    -----------
+    program : string
+        Name of the program to search for
+    Returns
+    --------
+    string
+        Full location to the file. Will return None if no program exists in the
+        path
+    """
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
@@ -427,7 +439,7 @@ def get_covaried_params(lambdas,evecsCV):
 
 def get_chirp_params(totmass,eta,beta,sigma,gamma,chis,f0,order):
   # Convert mass to seconds
-  totmass = totmass * mtsun
+  totmass = totmass * LAL_MTSUN_SI
   pi = numpy.pi
   lambda0 = 3 / (128 * eta * (pi * totmass * f0)**(5/3))
   lambda2 = 5 / (96 * pi * eta * totmass * f0) * (743/336 + 11/4 * eta)
@@ -752,8 +764,13 @@ def stack_xi_direction_brute(xis,bestMasses,bestXis,f0,temp_number,direction_num
     for j in range(1,xi_size):
       cDist += (new_xis[j] - xis[j])**2
     redCDist = cDist[cDist < req_match]
-    redXis = (new_xis[direction_num])[cDist < req_match]
-
+    try:
+      redXis = (new_xis[direction_num])[cDist < req_match]
+    except:
+      print direction_num
+      print new_xis
+      print new_xis[direction_num]
+      print (new_xis[direction_num])[cDist < req_match]
     if len(redCDist):
       new_xis[direction_num][cDist > req_match] = -10000000
       maxXi3 = (new_xis[direction_num]).max()
