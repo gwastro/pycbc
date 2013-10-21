@@ -17,25 +17,29 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
-Aligned spin bank sub-program.
+This program takes a list of potential points in the xi parameter space, and
+the files that define the parameter space, and then:
+1) Removes points that are too far away from the physical region of interest
+2) Identifies the closest physical point to the desired position for all
+remaining points.
+3) Dumps these physical coordinates back to file
+It also prints information about the discarded points for debugging.
 """
 
 from __future__ import division
-import matplotlib
-matplotlib.use('Agg')
-import pylab
 import time
 start = int(time.time()*10**6)
 elapsed_time = lambda: int(time.time()*10**6-start)
 
 import os,sys,optparse,copy
 import numpy
-from pylal import geom_aligned_bank_utils,git_version
+import pycbc.tmpltbank
+import pycbc.version
 
-__author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
-__version__ = "git id %s" % git_version.id
-__date__    = git_version.date
-
+__author__  = "Ian Harry <ian.harry@ligo.org>"
+__version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
+__program__ = "pycbc_geom_aligned_2dstack"
 
 # Feed in command line options
 usage = """usage: %prog [options]"""
@@ -97,35 +101,44 @@ parser.add_option("-s", "--stack-distance", action="store", type="float",\
 parser.add_option("-3", "--threed-lattice", action="store_true", default=False,\
                     help="Set this to use a 3D lattice, default: %default")
 parser.add_option("-a", "--skip-vec4-depth",action="store_true", default=False,\
-                    help="Set this if running with NSBH, default: %default")
+    help="Assume the 4th direction to have negligible depth, default: %default")
 parser.add_option("-F", "--skip-vec5-depth",action="store_true", default=False,\
-                    help="Set this if running with NSBH, default: %default")
-
+    help="Assume the 5th direction to have negligible depth, default: %default")
 
 
 (opts,args) = parser.parse_args()
 opts.eval_vec4_depth = not opts.skip_vec4_depth
 opts.eval_vec5_depth = not opts.skip_vec5_depth
 
+# If we only have 4 directions, do not try to evaluate the fifth!
+if opts.pn_order == 'twoPN':
+    opts.eval_vec5_depth = False
+
+# Load the list of points from file
 tempBank = numpy.loadtxt(opts.input_bank_file)
 
+# Load the files giving the information needed to define the xi_i
+# parameter space
 evals = numpy.loadtxt(opts.metric_evals_file)
 evecs = numpy.matrix(numpy.loadtxt(opts.metric_evecs_file))
 evecsCV = numpy.matrix(numpy.loadtxt(opts.cov_evecs_file))
 
-rTotmass,rEta,rBeta,rSigma,rGamma,rSpin1z,rSpin2z = \
-    geom_aligned_bank_utils.get_random_mass_slimline(\
-    2000000,opts.min_mass1,opts.max_mass1,opts.min_mass2,opts.max_mass2,\
-    opts.max_ns_spin_mag,maxBHspin = opts.max_bh_spin_mag,return_spins=True)
+# Create a large set of points and map to xi_i to give a starting point when
+# mapping from xi_i to masses and spins
+rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
+      pycbc.tmpltbank.get_random_mass_slimline(
+      2000000, opts.min_mass1, opts.max_mass1, opts.min_mass2, opts.max_mass2,\
+      opts.max_ns_spin_mag, maxBHspin=opts.max_bh_spin_mag, return_spins=True)
 diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
 rMass1 = (rTotmass + diff)/2.
 rMass2 = (rTotmass - diff)/2.
 rChis = (rSpin1z + rSpin2z)/2.
 
-rXis = geom_aligned_bank_utils.get_cov_params(rTotmass,rEta,rBeta,rSigma,rGamma,rChis,opts.f0,evecs,evals,evecsCV,opts.pn_order)
+rXis = pycbc.tmpltbank.get_cov_params(rTotmass, rEta, rBeta, rSigma, rGamma,\
+           rChis, opts.f0, evecs, evals, evecsCV, opts.pn_order)
 
 xis = (numpy.array(rXis)).T
-physMasses = numpy.array([rTotmass,rEta,rSpin1z,rSpin2z])
+physMasses = numpy.array([rTotmass, rEta, rSpin1z, rSpin2z])
 physMasses = physMasses.T
 f0 = opts.f0
 order = opts.pn_order
@@ -136,7 +149,7 @@ minmass2 = opts.min_mass2
 maxNSspin = opts.max_ns_spin_mag
 maxBHspin = opts.max_bh_spin_mag
 
-# Here we would start looping over bank
+# Here we start looping over bank
 temp_number = 0
 outFile = opts.output_bank_file
 outPointer = open(outFile,'w')
@@ -144,125 +157,203 @@ outPointer2 = open(outFile+'.reject','w')
 outPointer3 = open(outFile+'.depths','w')
 numtemps = len(tempBank)
 for entry in tempBank:
-  temp_number += 1
-  if opts.verbose:
-    print "Analysing template %d" %(temp_number)
-  xi1_des = entry[0]
-  xi2_des = entry[1]
-  xis_des = [xi1_des,xi2_des]
-  if opts.threed_lattice:
-    xi3_des = entry[2]
-    xis_des.append(xi3_des)
-  req_match = 0.0001
-  dist = (xi1_des - xis[:,0])**2 + (xi2_des - xis[:,1])**2
-  if opts.threed_lattice:
-    dist += (xi3_des - xis[:,2])**2
-  xis_close = xis[dist < 0.03]
-  masses_close = physMasses[dist < 0.03]
-  bestMasses = physMasses[dist.argmin()]
-  bestXis = xis[dist.argmin()]
-  if opts.verbose:
-    print "Template %d has initial distance of %e" %(temp_number,dist.min())
-  # First find a point within MM of the desired xi position
-  if dist.min() > 2.:
-    # Reject point, it is too far away
+    temp_number += 1
     if opts.verbose:
-      print "Template %d rejected as too far away" %(temp_number)
+        print "Analysing template %d" %(temp_number)
+    # First find the closest point in our set of 2000000 defined above 
+    # This is used as the starting point
+    xi1_des = entry[0]
+    xi2_des = entry[1]
+    xis_des = [xi1_des,xi2_des]
     if opts.threed_lattice:
-      print >> outPointer2, "%e %e %e %e %e %e %e %e" %(xi1_des,xi2_des,xi3_des,0,0,0,0,dist.min())
-    else:
-      print >> outPointer2, "%e %e %e %e %e %e %e" %(xi1_des,xi2_des,0,0,0,0,dist.min())
-    continue
-  masses = geom_aligned_bank_utils.get_physical_covaried_masses(xis_des,copy.deepcopy(bestMasses),copy.deepcopy(bestXis),f0,temp_number,req_match,order,evecs,evals,evecsCV,maxmass1,minmass1,maxmass2,minmass2,maxNSspin,maxBHspin,return_smaller=True,nsbh_flag=opts.nsbh_flag)
-  if opts.verbose:
-    print "Template %d has corrected distance of %e" %(temp_number,masses[5])
-  if masses[5] > 0.05:
-    # Reject point, it is too far away
-    if opts.verbose:
-      print "Template %d rejected as too far away" %(temp_number)
+        xi3_des = entry[2]
+        xis_des.append(xi3_des)
+    req_match = 0.0001
+    dist = (xi1_des - xis[:,0])**2 + (xi2_des - xis[:,1])**2
     if opts.threed_lattice:
-      print >> outPointer2, "%e %e %e %e %e %e %e %e" %(xi1_des,xi2_des,xi3_des,masses[0],masses[1],masses[2],masses[3],masses[5])
-    else:
-      print >> outPointer2, "%e %e %e %e %e %e %e" %(xi1_des,xi2_des,masses[0],masses[1],masses[2],masses[3],masses[5])
-    continue
-  tmpTotMass = masses[0] + masses[1]
-  tmpEta = masses[0] * masses[1] / (tmpTotMass*tmpTotMass)
-  if not opts.threed_lattice:
-    # If point is close enough, determine depth of xi3 direction
-    vec3_min,vec3_max,vec3_depth=geom_aligned_bank_utils.stack_xi_direction_brute([masses[6],masses[7]],[tmpTotMass,tmpEta,masses[2],masses[3]],copy.deepcopy(bestXis),f0,temp_number,2,opts.min_match,order,evecs,evals,evecsCV,maxmass1,minmass1,maxmass2,minmass2,maxNSspin,maxBHspin,nsbh_flag=opts.nsbh_flag)
-    # Double check that there are no points with depth outside what was above
-    if len(xis_close):
-      if vec3_min > xis_close[:,2].min():
-        print "WARNING: Numerical placement fails, trying again"
-        temp_idx = xis_close[:,2].argmin()
-        temmpBestMasses = masses_close[temp_idx]
-        temmpBestXis = xis_close[temp_idx]
-        temmpvec3_min,temmpvec3_max,temmpvec3_depth=geom_aligned_bank_utils.stack_xi_direction_brute([xi1_des,xi2_des],copy.deepcopy(temmpBestMasses),copy.deepcopy(temmpBestXis),f0,temp_number,2,opts.min_match,order,evecs,evals,evecsCV,maxmass1,minmass1,maxmass2,minmass2,maxNSspin,maxBHspin,nsbh_flag=opts.nsbh_flag)
-        if temmpvec3_min < vec3_min:
-          vec3_min = temmpvec3_min
-          vec3_depth = vec3_max - vec3_min
-        if temmpvec3_max > vec3_max:
-          vec3_max = temmpvec3_max
-          vec3_depth = vec3_max - vec3_min
-      if vec3_max < xis_close[:,2].max():
-        print "WARNING: Numerical placement fails, trying again"
-        temp_idx = xis_close[:,2].argmax()
-        temmpBestMasses = physMasses[temp_idx]
-        temmpBestXis = xis[temp_idx]
-        temmpvec3_min,temmpvec3_max,temmpvec3_depth=geom_aligned_bank_utils.stack_xi_direction_brute([xi1_des,xi2_des],copy.deepcopy(temmpBestMasses),copy.deepcopy(temmpBestXis),f0,temp_number,2,opts.min_match,order,evecs,evals,evecsCV,maxmass1,minmass1,maxmass2,minmass2,maxNSspin,maxBHspin,nsbh_flag=opts.nsbh_flag)
-        if temmpvec3_max > vec3_max:
-          vec3_max = temmpvec3_max
-          vec3_depth = vec3_max - vec3_min
-        if temmpvec3_min < vec3_min:
-          vec3_min = temmpvec3_min
-          vec3_depth = vec3_max - vec3_min
-  # Determine depth of xi4 direction 
-  if opts.eval_vec4_depth:
-    vec4_min,vec4_max,vec4_depth=geom_aligned_bank_utils.stack_xi_direction_brute([masses[6],masses[7]],[tmpTotMass,tmpEta,masses[2],masses[3]],copy.deepcopy(bestXis),f0,temp_number,3,opts.min_match,order,evecs,evals,evecsCV,maxmass1,minmass1,maxmass2,minmass2,maxNSspin,maxBHspin,nsbh_flag=opts.nsbh_flag)
-  else:
-    vec4_min = vec4_max = vec4_depth = 0
-  # Determine depth of xi5 direction 
-  if opts.eval_vec5_depth:
-    vec5_min,vec5_max,vec5_depth=geom_aligned_bank_utils.stack_xi_direction_brute([masses[6],masses[7]],[tmpTotMass,tmpEta,masses[2],masses[3]],copy.deepcopy(bestXis),f0,temp_number,4,opts.min_match,order,evecs,evals,evecsCV,maxmass1,minmass1,maxmass2,minmass2,maxNSspin,maxBHspin,nsbh_flag=opts.nsbh_flag)
-  else:
-    vec5_min = vec5_max = vec5_depth = 0
-  # Output depths
-  if opts.threed_lattice:
-    print >> outPointer3, "%e %e %e %e %e" %(xi1_des,xi2_des,xi3_des,vec4_depth,vec5_depth)
-  else:
-    print >> outPointer3, "%e %e %e %e %e" %(xi1_des,xi2_des,vec3_depth,vec4_depth,vec5_depth)
-  # Figure out how many templates we need to stack in 3rd direction
-  vec3DepthVal = opts.stack_distance
-  if opts.threed_lattice:
-    numV3Temps = 1
-  else:
-    numV3Temps = int(round(vec3_depth // vec3DepthVal)) + 1
-  for ite in range(numV3Temps):
-    if not opts.threed_lattice:
-      xi3_des = vec3_min + (vec3_depth) * (2 * ite + 1) / (2. * (numV3Temps))
-    dist = (xi1_des - xis[:,0])**2 + (xi2_des - xis[:,1])**2 + (xi3_des - xis[:,2])**2
+        dist += (xi3_des - xis[:,2])**2
+    xis_close = xis[dist < 0.03]
+    masses_close = physMasses[dist < 0.03]
     bestMasses = physMasses[dist.argmin()]
     bestXis = xis[dist.argmin()]
-    # Find close point to this 3d position
-    masses = geom_aligned_bank_utils.get_physical_covaried_masses([xi1_des,xi2_des,xi3_des],copy.deepcopy(bestMasses),copy.deepcopy(bestXis),f0,temp_number,req_match,order,evecs,evals,evecsCV,maxmass1,minmass1,maxmass2,minmass2,maxNSspin,maxBHspin,return_smaller=True,nsbh_flag=opts.nsbh_flag) 
-    # If vec4 depth is negligible or we didn't get close, stop here
-    if vec4_depth < vec3DepthVal or masses[5] > 0.03:
-      if masses[5]:
-        print >> outPointer, "%e %e %e %e %e" %(masses[0],masses[1],masses[2],masses[3],masses[5])
+    if opts.verbose:
+        print "Template %d has initial distance of %e" \
+              %(temp_number, dist.min())
+    # Reject point if it is too far away from *any* of these points
+    if dist.min() > 2.:
+        if opts.verbose:
+            print "Template %d rejected as too far away" %(temp_number)
+        # Print info to the rejected points file
+        if opts.threed_lattice:
+            print >> outPointer2, "%e %e %e %e %e %e %e %e" \
+                     %(xi1_des, xi2_des, xi3_des, 0, 0, 0, 0, dist.min())
+        else:
+            print >> outPointer2, "%e %e %e %e %e %e %e" \
+                     %(xi1_des, xi2_des, 0, 0, 0, 0, dist.min())
+        continue
+    # This function will use the starting point and iteratively find a
+    # physical point has a mismatch < 0.0001 with the desired one
+    masses = pycbc.tmpltbank.get_physical_covaried_masses(xis_des,\
+               copy.deepcopy(bestMasses), copy.deepcopy(bestXis), f0,\
+               temp_number, req_match, order, evecs, evals, evecsCV,\
+               maxmass1, minmass1, maxmass2, minmass2, maxNSspin, maxBHspin,\
+               return_smaller=True, nsbh_flag=opts.nsbh_flag)
+    # Now how close is it?
+    if opts.verbose:
+        print "Template %d has corrected distance of %e"\
+              %(temp_number, masses[5])
+    if masses[5] > 0.05:
+        # Reject point, it is too far away
+        if opts.verbose:
+            print "Template %d rejected as too far away" %(temp_number)
+        if opts.threed_lattice:
+            print >> outPointer2, "%e %e %e %e %e %e %e %e" \
+                     %(xi1_des, xi2_des, xi3_des, masses[0], masses[1],\
+                       masses[2], masses[3], masses[5])
+        else:
+            print >> outPointer2, "%e %e %e %e %e %e %e" \
+                     %(xi1_des, xi2_des, masses[0], masses[1], masses[2],\
+                       masses[3], masses[5])
+        continue
+    # If we got this far the point will be accepted.
+    # Now we figure out if the depth of the *other* directions are wide enough
+    # that we need to stack points
+    # We begin by evaluating the depth of the third direction, this is not
+    # needed if a 3D lattice is being employed
+    tmpTotMass = masses[0] + masses[1]
+    tmpEta = masses[0] * masses[1] / (tmpTotMass*tmpTotMass)
+    if not opts.threed_lattice:
+        # If point is close enough, determine depth of xi3 direction
+        vec3_min, vec3_max, vec3_depth=\
+                pycbc.tmpltbank.stack_xi_direction_brute([masses[6],masses[7]],\
+                  [tmpTotMass,tmpEta,masses[2],masses[3]],\
+                  copy.deepcopy(bestXis), f0, temp_number, 2, opts.min_match,\
+                  order, evecs, evals, evecsCV, maxmass1, minmass1, maxmass2,\
+                  minmass2, maxNSspin, maxBHspin, nsbh_flag=opts.nsbh_flag)
+        # Double check that no points appear outside what was calculated above
+        if len(xis_close):
+            if vec3_min > xis_close[:,2].min():
+                print "WARNING: Numerical placement fails, trying again"
+                temp_idx = xis_close[:,2].argmin()
+                temmpBestMasses = masses_close[temp_idx]
+                temmpBestXis = xis_close[temp_idx]
+                temmpvec3_min, temmpvec3_max, temmpvec3_depth=\
+                    pycbc.tmpltbank.stack_xi_direction_brute([xi1_des,xi2_des],\
+                      copy.deepcopy(temmpBestMasses),\
+                      copy.deepcopy(temmpBestXis), f0, temp_number, 2,\
+                      opts.min_match, order, evecs, evals, evecsCV, maxmass1,\
+                      minmass1, maxmass2, minmass2, maxNSspin, maxBHspin,\
+                      nsbh_flag=opts.nsbh_flag)
+                if temmpvec3_min < vec3_min:
+                    vec3_min = temmpvec3_min
+                    vec3_depth = vec3_max - vec3_min
+                if temmpvec3_max > vec3_max:
+                    vec3_max = temmpvec3_max
+                    vec3_depth = vec3_max - vec3_min
+            if vec3_max < xis_close[:,2].max():
+                print "WARNING: Numerical placement fails, trying again"
+                temp_idx = xis_close[:,2].argmax()
+                temmpBestMasses = physMasses[temp_idx]
+                temmpBestXis = xis[temp_idx]
+                temmpvec3_min, temmpvec3_max, temmpvec3_depth=\
+                    pycbc.tmpltbank.stack_xi_direction_brute([xi1_des,xi2_des],\
+                      copy.deepcopy(temmpBestMasses),\
+                      copy.deepcopy(temmpBestXis), f0, temp_number, 2,\
+                      opts.min_match, order, evecs, evals, evecsCV, maxmass1,\
+                      minmass1, maxmass2, minmass2, maxNSspin, maxBHspin,\
+                      nsbh_flag=opts.nsbh_flag)
+                if temmpvec3_max > vec3_max:
+                    vec3_max = temmpvec3_max
+                    vec3_depth = vec3_max - vec3_min
+                if temmpvec3_min < vec3_min:
+                    vec3_min = temmpvec3_min
+                    vec3_depth = vec3_max - vec3_min
+  # Determine depth of xi4 direction (is this needed is xi3 depth is found to
+  # be small?)
+    if opts.eval_vec4_depth:
+        vec4_min, vec4_max, vec4_depth=\
+              pycbc.tmpltbank.stack_xi_direction_brute([masses[6],masses[7]],\
+                [tmpTotMass,tmpEta,masses[2],masses[3]],\
+                copy.deepcopy(bestXis), f0, temp_number, 3, opts.min_match,\
+                order, evecs, evals, evecsCV, maxmass1, minmass1, maxmass2,\
+                minmass2, maxNSspin, maxBHspin, nsbh_flag=opts.nsbh_flag)
     else:
-      # OR we need to estimate the depth in the 4th direction at this 3d point
-      tmpTotMass = masses[0] + masses[1]
-      tmpEta = masses[0] * masses[1] / (tmpTotMass*tmpTotMass)
-      vec4_minT,vec4_maxT,vec4_depthT=geom_aligned_bank_utils.stack_xi_direction_brute([masses[6],masses[7],masses[8]],[tmpTotMass,tmpEta,masses[2],masses[3]],copy.deepcopy(bestXis),f0,temp_number,3,opts.min_match,order,evecs,evals,evecsCV,maxmass1,minmass1,maxmass2,minmass2,maxNSspin,maxBHspin,nsbh_flag=opts.nsbh_flag)
-      # Then loop over necessary templates in 4th direction
-      numV4Temps = int(round(vec4_depthT // vec3DepthVal)) + 1
-      for ite in range(numV4Temps):
-        xi4_des = vec4_minT + (vec4_depthT) * (2 * ite + 1) / (2. * (numV4Temps))
-        dist = (xi1_des - xis[:,0])**2 + (xi2_des - xis[:,1])**2 + (xi3_des - xis[:,2])**2 + (xi4_des - xis[:,3])**2
+        vec4_min = vec4_max = vec4_depth = 0
+    # Determine depth of xi5 direction 
+    if opts.eval_vec5_depth:
+        vec5_min, vec5_max, vec5_depth =\
+              pycbc.tmpltbank.stack_xi_direction_brute([masses[6],masses[7]],\
+                [tmpTotMass,tmpEta,masses[2],masses[3]],\
+                copy.deepcopy(bestXis), f0, temp_number, 4, opts.min_match,\
+                order, evecs, evals, evecsCV, maxmass1, minmass1, maxmass2,\
+                minmass2, maxNSspin, maxBHspin, nsbh_flag=opts.nsbh_flag)
+    else:
+        vec5_min = vec5_max = vec5_depth = 0
+    # Output depths
+    if opts.threed_lattice:
+        print >> outPointer3, "%e %e %e %e %e"\
+                 %(xi1_des, xi2_des, xi3_des, vec4_depth, vec5_depth)
+    else:
+        print >> outPointer3, "%e %e %e %e %e"\
+                 %(xi1_des, xi2_des, vec3_depth, vec4_depth, vec5_depth)
+   # Figure out how many templates we need to stack in 3rd direction
+    vec3DepthVal = opts.stack_distance
+    if opts.threed_lattice:
+        numV3Temps = 1
+    else:
+        numV3Temps = int(round(vec3_depth // vec3DepthVal)) + 1
+    for ite in range(numV3Temps):
+        if not opts.threed_lattice:
+            xi3_des = vec3_min + \
+                      (vec3_depth) * (2 * ite + 1) / (2. * (numV3Temps))
+        dist = (xi1_des - xis[:,0])**2 + (xi2_des - xis[:,1])**2 + \
+                (xi3_des - xis[:,2])**2
         bestMasses = physMasses[dist.argmin()]
         bestXis = xis[dist.argmin()]
-        masses = geom_aligned_bank_utils.get_physical_covaried_masses([xi1_des,xi2_des,xi3_des,xi4_des],copy.deepcopy(bestMasses),copy.deepcopy(bestXis),f0,temp_number,req_match,order,evecs,evals,evecsCV,maxmass1,minmass1,maxmass2,minmass2,maxNSspin,maxBHspin,return_smaller=True,nsbh_flag=opts.nsbh_flag)
-        if masses[5]:
-          print >> outPointer, "%e %e %e %e %e" %(masses[0],masses[1],masses[2],masses[3],masses[5])
+        # Find close point to this 3d position
+        masses = pycbc.tmpltbank.get_physical_covaried_masses(\
+              [xi1_des,xi2_des,xi3_des], copy.deepcopy(bestMasses),\
+              copy.deepcopy(bestXis), f0, temp_number, req_match, order,\
+              evecs, evals, evecsCV, maxmass1, minmass1, maxmass2, minmass2,\
+              maxNSspin, maxBHspin, return_smaller=True,\
+              nsbh_flag=opts.nsbh_flag) 
+        # If vec4 depth is negligible or we didn't get close, stop here
+        if vec4_depth < vec3DepthVal or masses[5] > 0.03:
+            if masses[5]:
+                # Write point to file
+                print >> outPointer, "%e %e %e %e %e" \
+                      %(masses[0], masses[1], masses[2], masses[3], masses[5])
+        else:
+            # OR we need to estimate the depth in the 4th direction at this
+            # 3d point
+            tmpTotMass = masses[0] + masses[1]
+            tmpEta = masses[0] * masses[1] / (tmpTotMass*tmpTotMass)
+            vec4_minT, vec4_maxT, vec4_depthT = \
+                  pycbc.tmpltbank.stack_xi_direction_brute(\
+                    [masses[6],masses[7],masses[8]],\
+                    [tmpTotMass,tmpEta,masses[2],masses[3]],\
+                    copy.deepcopy(bestXis), f0, temp_number, 3, opts.min_match,\
+                    order, evecs, evals, evecsCV, maxmass1, minmass1, maxmass2,\
+                    minmass2, maxNSspin, maxBHspin, nsbh_flag=opts.nsbh_flag)
+            # Then loop over necessary templates in 4th direction
+            numV4Temps = int(round(vec4_depthT // vec3DepthVal)) + 1
+            for ite in range(numV4Temps):
+                xi4_des = vec4_minT + \
+                          (vec4_depthT) * (2 * ite + 1) / (2. * (numV4Temps))
+                dist = (xi1_des - xis[:,0])**2 + (xi2_des - xis[:,1])**2 + \
+                       (xi3_des - xis[:,2])**2 + (xi4_des - xis[:,3])**2
+                bestMasses = physMasses[dist.argmin()]
+                bestXis = xis[dist.argmin()]
+                masses = pycbc.tmpltbank.get_physical_covaried_masses(\
+                      [xi1_des,xi2_des,xi3_des,xi4_des],\
+                      copy.deepcopy(bestMasses), copy.deepcopy(bestXis), f0,\
+                      temp_number, req_match, order, evecs, evals, evecsCV,\
+                      maxmass1, minmass1, maxmass2, minmass2, maxNSspin,\
+                      maxBHspin, return_smaller=True, nsbh_flag=opts.nsbh_flag)
+                if masses[5]:
+                    # Write point to file
+                    print >> outPointer, "%e %e %e %e %e"\
+                          %(masses[0], masses[1], masses[2], masses[3],\
+                            masses[5])
 
 outPointer.close()

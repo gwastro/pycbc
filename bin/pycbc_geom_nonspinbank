@@ -42,6 +42,7 @@ elapsed_time = lambda: time.time()-startET
 __author__  = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
+__program__ = "pycbc_geom_nonspinbank"
 
 # Read command line options
 usage = """usage: %prog [options]"""
@@ -190,16 +191,10 @@ if opts.verbose:
     print >>sys.stdout, "Calculating metric at %f." %(elapsed_time())
 
 # Begin by calculating a metric
-evals, evecs, moments = pycbc.tmpltbank.determine_eigen_directions(\
+evals, evecs, _, moments = pycbc.tmpltbank.determine_eigen_directions(\
     psd, opts.pn_order, opts.f0, opts.f_low, opts.f_upper, opts.delta_f,\
-    verbose=opts.verbose, elapsed_time=elapsed_time,\
     vary_fmax=opts.calculate_ethinca_metric,\
-    vary_density=opts.ethinca_calc_density, return_moments=True)
-# This effectively ensures that the Nyquist frequency is used for bank creation
-if opts.calculate_ethinca_metric:
-    eDirecsKey = max(evals.keys())
-else:
-    eDirecsKey = 'fixed'
+    vary_density=opts.ethinca_calc_density)
 
 # This is used to calculate evalsCV and evecsCV with describe the rotations
 # needed to move into the principal component directions. evalsCV will be 1s.
@@ -207,7 +202,7 @@ if opts.verbose:
     print >>sys.stdout, "Calculating covariance matrix at %f." %(elapsed_time())
 
 vals = pycbc.tmpltbank.estimate_mass_range_slimline(1000000,\
-       opts.pn_order, evals[eDirecsKey], evecs[eDirecsKey], opts.max_mass1,\
+       opts.pn_order, evals[opts.f_upper], evecs[opts.f_upper], opts.max_mass1,\
        opts.min_mass1, opts.max_mass2, opts.min_mass2,\
        maxSpinMag, opts.f0, covary=False, maxBHspin=maxSpinMag)
 cov = numpy.cov(vals)
@@ -218,7 +213,7 @@ if opts.verbose:
 
 # This is to get an estimate of the largest values of \chi1 and \chi2
 vals = pycbc.tmpltbank.estimate_mass_range_slimline(5000000,\
-       opts.pn_order, evals[eDirecsKey], evecs[eDirecsKey], opts.max_mass1,\
+       opts.pn_order, evals[opts.f_upper], evecs[opts.f_upper], opts.max_mass1,\
        opts.min_mass1, opts.max_mass2, opts.min_mass2,\
        maxSpinMag, opts.f0, covary=True, evecsCV=evecsCV, maxBHspin=maxSpinMag)
 
@@ -362,8 +357,8 @@ rMass2 = (rTotmass - diff)/2.
 rChis = (rSpin1z + rSpin2z)/2.
 # Here we have a set of m1s,m2s and mapped to Xis below
 rXis = pycbc.tmpltbank.get_cov_params(rTotmass, rEta, rBeta, rSigma,\
-        rGamma, rChis, opts.f0, evecs[eDirecsKey], evals[eDirecsKey], evecsCV,\
-        opts.pn_order)
+        rGamma, rChis, opts.f0, evecs[opts.f_upper], evals[opts.f_upper], \
+        evecsCV, opts.pn_order)
 
 xis = (numpy.array(rXis)).T
 physMasses = numpy.array([rTotmass, rEta, rSpin1z, rSpin2z])
@@ -450,10 +445,10 @@ for iter, (v1, v2) in enumerate(zip(v1s, v2s)):
         continue
     masses = pycbc.tmpltbank.get_physical_covaried_masses([v1,v2],\
                copy.deepcopy(bestMasses), copy.deepcopy(bestXis), opts.f0, 0,\
-               req_match, opts.pn_order, evecs[eDirecsKey], evals[eDirecsKey],\
-               evecsCV, opts.max_mass1, opts.min_mass1, opts.max_mass2,\
-               opts.min_mass2, maxSpinMag, maxSpinMag, return_smaller=True,\
-               giveUpThresh = 10)
+               req_match, opts.pn_order, evecs[opts.f_upper], \
+               evals[opts.f_upper], evecsCV, opts.max_mass1, opts.min_mass1, \
+               opts.max_mass2, opts.min_mass2, maxSpinMag, maxSpinMag, \
+               return_smaller=True, giveUpThresh = 10)
     
     # If point is still not close enough to desired space, remove it
     if masses[5] > des_match * 1.1:
@@ -474,9 +469,9 @@ if opts.verbose:
 # Currently this is hardcoded to dump as a sngl_inspiral table. But this is
 # easily changed.
 
-pycbc.tmpltbank.output_sngl_inspiral_table(opts.output_file,tempBank,moments,\
-         opts.f0,calculate_ethinca_comps=opts.calculate_ethinca_metric,\
-         programName="pycbc_geom_nonspinbank",optDict=opts.__dict__,\
+pycbc.tmpltbank.output_sngl_inspiral_table(opts.output_file, tempBank, moments,\
+         opts.f0, calculate_ethinca_comps=opts.calculate_ethinca_metric,\
+         programName=__program__,optDict=opts.__dict__,\
          comment="", ifos=[""], version=pycbc.version.git_hash,\
          cvs_repository='pycbc/'+pycbc.version.git_branch,\
          cvs_entry_time=pycbc.version.date)

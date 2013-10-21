@@ -26,20 +26,24 @@ import matplotlib
 matplotlib.use('Agg')
 import pylab
 import time
-start = int(time.time()*10**6)
-elapsed_time = lambda: int(time.time()*10**6-start)
+startTS = time.time()
+elapsed_time = lambda: time.time()-startTS
 
 import os,sys,optparse
 import tempfile
 import ConfigParser
 import numpy
-from pylal import geom_aligned_bank_utils,git_version
 from glue import pipeline
+import pycbc.frame
+import pycbc.psd
+import pycbc.version
+import pycbc.tmpltbank
+import pycbc.filter
 
-__author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
-__version__ = "git id %s" % git_version.id
-__date__    = git_version.date
-
+__author__  = "Ian Harry <ian.harry@ligo.org>"
+__version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
+__program__ = "pycbc_geom_aligned_bank"
 
 # Read command line options
 usage = """usage: %prog [options]"""
@@ -47,14 +51,10 @@ _desc = __doc__[1:]
 parser = optparse.OptionParser(usage, version=__version__, description=_desc)
 parser.add_option("-v", "--verbose", action="store_true", default=False,\
                     help="verbose output, default: %default")
+parser.add_option("-O", "--output-file",  help="Output file name")
 parser.add_option("-L", "--log-path", action="store", type="string",\
                    default=None,\
                    help="Directory to store condor logs.")
-parser.add_option("-a", "--psd-file", action="store", type="string",\
-                   default=None,\
-                   help="ASCII file containing the PSD.")
-parser.add_option("-A", "--asd-file", action="store", type="string",\
-                   default=None, help="ASCII file containing the ASD.")
 parser.add_option("-o", "--pn-order", action="store", type="string",\
                    default=None,\
                    help="""Determines the PN order to use, choices are:
@@ -107,47 +107,113 @@ parser.add_option("-S", "--split-bank-num", action="store", type="int",\
                     default=100,\
                     help="Number of points per job in dag, default: %default")
 
+psdOptGroup = pycbc.psd.create_psd_option_group(parser)
+parser.add_option_group(psdOptGroup)
+
+dataReadingGroup = optparse.OptionGroup(parser, "Options for obtaining h(t)",
+                  "These options are used for generating h(t) either by "
+                  "reading from file or by generating it. This is only needed "
+                  "if the PSD is to be estimated from the data, ie. if the "
+                  "--psd-estimation option is given.")
+
+dataReadingGroup.add_option("--gps-start-time", \
+                            help="The gps start time of the data", type=int)
+dataReadingGroup.add_option("--gps-end-time", \
+                            help="The gps end time of the data", type=int)
+dataReadingGroup.add_option("--strain-high-pass", type=float, \
+                            help="High pass frequency")
+dataReadingGroup.add_option("--pad-data", \
+              help="Extra padding to remove highpass corruption (s)", type=int)
+dataReadingGroup.add_option("--sample-rate", type=int, \
+                            help="The sample rate to use for h(t) generation.")
+dataReadingGroup.add_option("--frame-cache", type=str, \
+                            help="Cache file containing the frame locations.")
+dataReadingGroup.add_option("--channel-name", type=str, \
+                   help="The channel containing the gravitational strain data")
+parser.add_option_group(dataReadingGroup)
 
 (opts,args) = parser.parse_args()
-if opts.psd_file and opts.asd_file:
-    parser.error("Why have you given me an ASD *and* a PSD file??")
-if opts.psd_file:
-    opts.sens_file = opts.psd_file
-    opts.file_is_asd = False
-if opts.asd_file:
-    opts.sens_file = opts.asd_file
-    opts.file_is_asd = True
-
+if not opts.pn_order:
+    parser.error("Must supply --pn-order")
+if not opts.min_mass1:
+    parser.error("Must supply --min-mass1")
+if not opts.min_mass2:
+    parser.error("Must supply --min-mass2")
+if not opts.max_mass1:
+    parser.error("Must supply --max-mass1")
+if not opts.max_mass2:
+    parser.error("Must supply --max-mass2")
+if not opts.output_file:
+    parser.error("Must supply --output-file")
 
 opts.min_total_mass = opts.min_mass1 + opts.min_mass2
 opts.max_total_mass = opts.max_mass1 + opts.max_mass2
 opts.min_comp_mass = opts.min_mass2
 opts.max_comp_mass = opts.max_mass2
+# These two options are needed to run the from_cli PSD stuff.
+opts.low_frequency_cutoff = opts.f_low
+opts.segment_length = 1. / opts.delta_f
 
-# Begin by calculating a metric
-evals,evecs = geom_aligned_bank_utils.determine_eigen_directions(\
-    opts.sens_file,opts.pn_order,opts.f0,opts.f_low,opts.f_upper,opts.delta_f,\
-    verbose=opts.verbose,elapsed_time=elapsed_time,file_is_asd=opts.file_is_asd)
+# If we are going to use h(t) to estimate a PSD we need h(t)
+if opts.psd_estimation:
+    # FIXME: It would be nice if this was similar to psd.from_cli()
+    if opts.verbose:
+        print >>sys.stdout, "Obtaining h(t) for PSD generation at %.3f" \
+                            %(elapsed_time())
+    # Actually read in the frame
+    strain = pycbc.frame.read_frame(opts.frame_cache, opts.channel_name,
+                        start_time=opts.gps_start_time-opts.pad_data,
+                        end_time=opts.gps_end_time+opts.pad_data)
+
+    # Applying a high pass filter
+    strain = pycbc.filter.highpass(strain, frequency=opts.strain_high_pass)
+
+    # Change the dynamic range and convert from double to single
+    strain = (strain * pycbc.DYN_RANGE_FAC).astype(pycbc.types.float32)
+
+    # Resample the data (from 16384 -> 4096Hz)
+    strain = pycbc.filter.resample_to_delta_t(strain, 1.0/opts.sample_rate)
+
+    # Removing padding
+    start = opts.pad_data*opts.sample_rate
+    end = len(strain)-opts.sample_rate*opts.pad_data
+    strain = strain[start:end]
+else:
+    strain = None
+
+# Get the PSD using the pycbc interface
+if opts.verbose:
+    print >>sys.stdout, "Obtaining PSD at %.3f." %(elapsed_time())
+psd = pycbc.psd.from_cli(opts, parser, strain=strain)
 
 if opts.verbose:
-  print >>sys.stdout, "Calculating covariance matrix at %d." %(elapsed_time())
+    print >>sys.stdout, "Calculating metric at %.3f." %(elapsed_time())
 
-vals = geom_aligned_bank_utils.estimate_mass_range_slimline(1000000,\
-       opts.pn_order,evals['fixed'],evecs['fixed'],opts.max_mass1,\
-       opts.min_mass1,opts.max_mass2,opts.min_mass2,\
-       opts.max_ns_spin_mag,opts.f0,\
-       covary=False,maxBHspin=opts.max_bh_spin_mag)
+# Begin by calculating a metric
+evals, evecs, _, moments = pycbc.tmpltbank.determine_eigen_directions(\
+    psd, opts.pn_order, opts.f0, opts.f_low, opts.f_upper, opts.delta_f)
+
+if opts.verbose:
+    print >>sys.stdout, "Calculating covariance matrix at %.3f."\
+                        %(elapsed_time())
+
+vals = pycbc.tmpltbank.estimate_mass_range_slimline(1000000,\
+       opts.pn_order, evals[opts.f_upper], evecs[opts.f_upper], opts.max_mass1,\
+       opts.min_mass1, opts.max_mass2, opts.min_mass2,\
+       opts.max_ns_spin_mag, opts.f0,\
+       covary=False, maxBHspin=opts.max_bh_spin_mag)
 cov = numpy.cov(vals)
 evalsCV,evecsCV = numpy.linalg.eig(cov)
 
 if opts.verbose:
-  print>> sys.stdout, "Covariance matrix calculated at %d." %(elapsed_time())
+    print>> sys.stdout, "Covariance matrix calculated at %.3f."\
+                        %(elapsed_time())
 
-vals = geom_aligned_bank_utils.estimate_mass_range_slimline(1000000,\
-       opts.pn_order,evals['fixed'],evecs['fixed'],opts.max_mass1,\
-       opts.min_mass1,opts.max_mass2,opts.min_mass2,\
-       opts.max_ns_spin_mag,opts.f0,\
-       covary=True,evecsCV=evecsCV,maxBHspin=opts.max_bh_spin_mag)
+vals = pycbc.tmpltbank.estimate_mass_range_slimline(1000000,\
+       opts.pn_order, evals[opts.f_upper], evecs[opts.f_upper], opts.max_mass1,\
+       opts.min_mass1, opts.max_mass2, opts.min_mass2,\
+       opts.max_ns_spin_mag, opts.f0,\
+       covary=True, evecsCV=evecsCV, maxBHspin=opts.max_bh_spin_mag)
 
 chi1Max = vals[0].max()
 chi1Min = vals[0].min()
@@ -157,74 +223,72 @@ chi2Min = vals[1].min()
 chi2Diff = chi2Max - chi2Min
 
 if opts.verbose:
-  print>> sys.stdout, "Calculating lattice at %d." %(elapsed_time())
+    print>> sys.stdout, "Calculating lattice at %.3f."\
+                        %(elapsed_time())
 
 if not opts.threed_lattice:
-  v1s,v2s = geom_aligned_bank_utils.generate_hexagonal_lattice(chi1Max + 0.02*chi1Diff,chi1Min - 0.02*chi1Diff,chi2Max + 0.02*chi2Diff,chi2Min - 0.02*chi2Diff,opts.min_match)
+    v1s,v2s = pycbc.tmpltbank.generate_hexagonal_lattice(\
+              chi1Max+(0.02*chi1Diff), chi1Min-(0.02*chi1Diff),\
+              chi2Max+(0.02*chi2Diff), chi2Min-(0.02*chi2Diff), opts.min_match)
 else:
-  chi3Max = vals[2].max()
-  chi3Min = vals[2].min()
-  chi3Diff = chi3Max - chi3Min
-  v1s,v2s,v3s = geom_aligned_bank_utils.generate_anstar_3d_lattice(chi1Max + 0.02*chi1Diff,chi1Min - 0.02*chi1Diff,chi2Max + 0.02*chi2Diff,chi2Min - 0.02*chi2Diff,chi3Max + 0.02*chi3Diff,chi3Min - 0.02*chi3Diff,opts.min_match)
-  chi3Max = vals[2].max()
-  chi3Min = vals[2].min()
-  chi3Diff = chi3Max - chi3Min
+    chi3Max = vals[2].max()
+    chi3Min = vals[2].min()
+    chi3Diff = chi3Max - chi3Min
+    v1s, v2s, v3s = pycbc.tmpltbank.generate_anstar_3d_lattice(\
+          chi1Max+(0.02*chi1Diff), chi1Min-(0.02*chi1Diff),\
+          chi2Max+(0.02*chi2Diff), chi2Min-(0.02*chi2Diff),\
+          chi3Max+(0.02*chi3Diff), chi3Min-(0.02*chi3Diff), opts.min_match)
+    chi3Max = vals[2].max()
+    chi3Min = vals[2].min()
+    chi3Diff = chi3Max - chi3Min
 
 if opts.verbose:
-  print>> sys.stdout, "Lattice calculated at %d." %(elapsed_time())
-  print>> sys.stdout, "Lattice contains %d points." %(len(v1s))
+    print>> sys.stdout, "Lattice calculated at %.3f." %(elapsed_time())
+    print>> sys.stdout, "Lattice contains %d points." %(len(v1s))
 
-# Dump necessary information and make a few plots
-geom_aligned_bank_utils.make_plots(vals[0],vals[1],vals[2],vals[3],'chi 1','chi 2','chi 3','chi 4')
-
-pylab.figure(10)
-pylab.plot(v1s,v2s,'b.')
-pylab.grid()
-pylab.xlabel('chi 1')
-pylab.ylabel('chi 2')
-pylab.savefig('plots/bank.png')
-
-numpy.savetxt('metric_evecs.dat',evecs['fixed'])
-numpy.savetxt('metric_evals.dat',evals['fixed'])
+# Dump the files needed to define the xi_i parameter space
+numpy.savetxt('metric_evecs.dat',evecs[opts.f_upper])
+numpy.savetxt('metric_evals.dat',evals[opts.f_upper])
 numpy.savetxt('covariance_evecs.dat',evecsCV)
 
+# Dump the full bank in \xi_i coordinates
 bankFile = open('bank_chis.dat','w')
 if opts.threed_lattice:
-  for i in xrange(len(v1s)):
-    print >> bankFile, "%e %e %e" %(v1s[i],v2s[i],v3s[i])
+    for i in xrange(len(v1s)):
+        print >> bankFile, "%e %e %e" %(v1s[i],v2s[i],v3s[i])
 else:
-  for i in xrange(len(v1s)):
-    print >> bankFile, "%e %e" %(v1s[i],v2s[i])
+    for i in xrange(len(v1s)):
+        print >> bankFile, "%e %e" %(v1s[i],v2s[i])
 bankFile.close()
 
 # Now begin to generate the dag
 # First split the bank
 if not os.path.isdir('split_banks'):
-  os.makedirs('split_banks')
+    os.makedirs('split_banks')
 if not os.path.isdir('output_banks'):
-  os.makedirs('output_banks')
+    os.makedirs('output_banks')
 if not os.path.isdir('logs'):
-  os.makedirs('logs')
+    os.makedirs('logs')
 
 bankNum = 0
 bankFile = open('split_banks/split_bank_%05d.dat'%(bankNum),'w')
 
 if opts.verbose:
-  print>> sys.stdout, "Printing split banks at %d." %(elapsed_time())
+    print>> sys.stdout, "Printing split banks at %.3f." %(elapsed_time())
 
 for i in xrange(len(v1s)):
-  if opts.threed_lattice:
-    print >> bankFile, "%e %e %e" %(v1s[i],v2s[i],v3s[i])
-  else:
-    print >> bankFile, "%e %e" %(v1s[i],v2s[i])
-  if not (i+1) % opts.split_bank_num:
-    bankFile.close()
-    bankNum = bankNum + 1
-    if not i == (len(v1s)-1):
-      bankFile = open('split_banks/split_bank_%05d.dat'%(bankNum),'w')
+    if opts.threed_lattice:
+        print >> bankFile, "%e %e %e" %(v1s[i],v2s[i],v3s[i])
+    else:
+        print >> bankFile, "%e %e" %(v1s[i],v2s[i])
+    if not (i+1) % opts.split_bank_num:
+        bankFile.close()
+        bankNum = bankNum + 1
+        if not i == (len(v1s)-1):
+            bankFile = open('split_banks/split_bank_%05d.dat'%(bankNum),'w')
   
 if len(v1s) % opts.split_bank_num:
-  bankFile.close()
+    bankFile.close()
 
 # And begin dag generation
 tempfile.tempdir = opts.log_path
@@ -234,7 +298,7 @@ fh = open( logfile, "w" )
 fh.close()
 dag = pipeline.CondorDAG(logfile, False)
 dag.set_dag_file('bank_generation')
-exe_path = geom_aligned_bank_utils.which('pylal_geom_aligned_2dstack')
+exe_path = pycbc.tmpltbank.which('pycbc_geom_aligned_2dstack')
 job = pipeline.CondorDAGJob('vanilla',exe_path)
 #pipeline.AnalysisJob.__init__(job,cp,False)
 job.set_stdout_file('logs/bank_gen-$(cluster)-$(process).out')
@@ -257,16 +321,16 @@ cp.set('bank','max-bh-spin-mag',str(opts.max_bh_spin_mag))
 cp.set('bank','min-match',str(opts.min_match))
 cp.set('bank','stack-distance',str(opts.stack_distance))
 if opts.nsbh_flag:
-  cp.set('bank','nsbh-flag','')
+    cp.set('bank','nsbh-flag','')
 if opts.threed_lattice:
-  cp.set('bank','threed-lattice','')
+    cp.set('bank','threed-lattice','')
 job.add_ini_opts(cp,'bank')
 job.add_condor_cmd('Requirements', 'Memory >= 1390')
 job.add_condor_cmd('request_memory', '1400')
 job.add_condor_cmd('getenv','True')
 # Make the output job
-cat_path = geom_aligned_bank_utils.which('pylal_aligned_bank_cat')
-job_cat = pipeline.CondorDAGJob('vanilla',cat_path)
+cat_path = pycbc.tmpltbank.which('pycbc_aligned_bank_cat')
+job_cat = pipeline.CondorDAGJob('vanilla', cat_path)
 job_cat.set_stdout_file('logs/bank_cat-$(cluster)-$(process).out')
 job_cat.set_stderr_file('logs/bank_cat-$(cluster)-$(process).err')
 job_cat.set_sub_file('bank_cat.sub')
@@ -274,17 +338,17 @@ job_cat.add_condor_cmd('getenv','True')
 
 # Make the output node
 cat_node = pipeline.CondorDAGNode(job_cat)
-cat_node.add_var_opt('input-glob','output_banks/output_bank_*.dat')
-cat_node.add_var_opt('output-file','aligned_bank.xml')
+cat_node.add_var_opt('input-glob', 'output_banks/output_bank_*.dat')
+cat_node.add_var_opt('output-file', opts.output_file)
 
 # Make the nodes
 numBanks = int((len(v1s) - 0.5)//opts.split_bank_num) + 1
 for i in xrange(numBanks):
-  node = pipeline.CondorDAGNode(job)
-  node.add_var_opt('input-bank-file','split_banks/split_bank_%05d.dat'%(i))
-  node.add_var_opt('output-bank-file','output_banks/output_bank_%05d.dat'%(i))
-  cat_node.add_parent(node)
-  dag.add_node(node)
+    node = pipeline.CondorDAGNode(job)
+    node.add_var_opt('input-bank-file','split_banks/split_bank_%05d.dat'%(i))
+    node.add_var_opt('output-bank-file','output_banks/output_bank_%05d.dat'%(i))
+    cat_node.add_parent(node)
+    dag.add_node(node)
 
 dag.add_node(cat_node)
 dag.write_sub_files()

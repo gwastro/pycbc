@@ -47,6 +47,7 @@ LAL_MTSUN_SI = lal.LAL_MTSUN_SI
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
+__program__ = "pycbc_aligned_stoch_bank"
 
 # Read command line options
 usage = """usage: %prog [options]"""
@@ -332,16 +333,15 @@ if opts.verbose:
 psd = pycbc.psd.from_cli(opts, parser, strain=strain)
 
 # Begin by calculating a metric
-evals, evecs, moments = pycbc.tmpltbank.determine_eigen_directions(\
+evals, evecs, _, moments = pycbc.tmpltbank.determine_eigen_directions(\
     psd, opts.pn_order, opts.f0, opts.f_low, opts.f_upper, opts.delta_f,\
-    verbose=opts.verbose, elapsed_time=elapsed_time, \
     vary_fmax=(opts.vary_fupper or opts.calculate_ethinca_metric),\
-    vary_density=opts.ethinca_calc_density, return_moments=True)
+    vary_density=opts.ethinca_calc_density)
 
 # Choose the discrete values of frequencies to use if --vary-fupper is used
 if not (opts.vary_fupper or opts.calculate_ethinca_metric):
-    evalsSngl = evals['fixed']
-    evecsSngl = evecs['fixed']
+    evalsSngl = evals[opts.f_upper]
+    evecsSngl = evecs[opts.f_upper]
 elif opts.calculate_ethinca_metric and not opts.vary_fupper:
     fs = numpy.array(evals.keys(), dtype=float)
     fs.sort()
@@ -536,9 +536,9 @@ for i in range(int((chi1Max - chi1Min) // MMdist)):
 
 
 # Output to file
-pycbc.tmpltbank.output_sngl_inspiral_table(opts.output_file,tempBank,moments,\
+pycbc.tmpltbank.output_sngl_inspiral_table(opts.output_file, tempBank, moments,\
          opts.f0,calculate_ethinca_comps=opts.calculate_ethinca_metric,\
-         programName="pycbc_aligned_stoch_bank",optDict=opts.__dict__,\
+         programName=__program__,optDict=opts.__dict__,\
          comment="", ifos=[""], version=pycbc.version.git_hash,\
          cvs_repository='pycbc/'+pycbc.version.git_branch,\
          cvs_entry_time=pycbc.version.date)
