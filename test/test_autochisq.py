@@ -11,7 +11,7 @@ from math import cos, sin, sqrt, pi, atan2, exp
 import unittest
 from utils import parse_args_all_schemes, simple_exit
 
-_scheme, _context = parse_args_all_schemes("Waveform")
+_scheme, _context = parse_args_all_schemes("Auto Chi-squared Veto")
 
 
 class TestAutochisquare(unittest.TestCase):
@@ -96,11 +96,12 @@ class TestAutochisquare(unittest.TestCase):
         del_f = sig_tilde.get_delta_f()
         psd = FrequencySeries(self.Psd, del_f)
 	flow = self.low_frequency_cutoff
-   
-        hautocor, hacorfr, hnrm = matched_filter_core(self.htilde, self.htilde, psd=psd, \
+  
+        with _context: 
+           hautocor, hacorfr, hnrm = matched_filter_core(self.htilde, self.htilde, psd=psd, \
 			low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
  
-        snr, cor, nrm = matched_filter_core(self.htilde, sig_tilde, psd=psd, \
+           snr, cor, nrm = matched_filter_core(self.htilde, sig_tilde, psd=psd, \
 			low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
   
         hacor = Array(hautocor.real(), copy=True)
@@ -108,7 +109,8 @@ class TestAutochisquare(unittest.TestCase):
         indx = Array(np.array([352250, 352256, 352260]))
 
         snr = snr*nrm
-        dof, achi_list = autochisq_from_precomputed(snr, cor,  hacor, stride=3, num_points=20, \
+        with _context:
+           dof, achi_list = autochisq_from_precomputed(snr, cor,  hacor, stride=3, num_points=20, \
 	 	 indices=indx)
 	obt_snr = achi_list[1,1]
 	obt_ach = achi_list[1,2]
@@ -116,8 +118,9 @@ class TestAutochisquare(unittest.TestCase):
 	self.assertTrue(obt_ach < 1.e-3)
 	self.assertTrue(achi_list[0,2] > 20.0)
 	self.assertTrue(achi_list[2,2] > 20.0)
-
-        dof, achi_list = autochisq(self.htilde, sig_tilde, psd,  stride=3,  num_points=20, \
+        
+	with _context:
+           dof, achi_list = autochisq(self.htilde, sig_tilde, psd,  stride=3,  num_points=20, \
 	 	 low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax, max_snr=True)
 
 	self.assertTrue(obt_snr == achi_list[0, 1])
@@ -136,10 +139,11 @@ class TestAutochisquare(unittest.TestCase):
         psd = FrequencySeries(self.Psd, del_f)
 	flow = self.low_frequency_cutoff
    
-        hautocor, hacorfr, hnrm = matched_filter_core(self.htilde, self.htilde, psd=psd, \
+        with _context: 
+            hautocor, hacorfr, hnrm = matched_filter_core(self.htilde, self.htilde, psd=psd, \
 			low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
  
-        snr, cor, nrm = matched_filter_core(self.htilde, sig_tilde, psd=psd, \
+            snr, cor, nrm = matched_filter_core(self.htilde, sig_tilde, psd=psd, \
 			low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
         
 
@@ -149,7 +153,8 @@ class TestAutochisquare(unittest.TestCase):
         indx = Array(np.array([301440, 301450, 301460])) 
 
         snr = snr*nrm
-        dof, achi_list = autochisq_from_precomputed(snr, cor,  hacor, stride=3, num_points=20, \
+        with _context:
+            dof, achi_list = autochisq_from_precomputed(snr, cor,  hacor, stride=3, num_points=20, \
 	 	 indices=indx)
 	obt_snr = achi_list[1,1]
 	obt_ach = achi_list[1,2]
@@ -158,7 +163,8 @@ class TestAutochisquare(unittest.TestCase):
 	self.assertTrue(achi_list[0,2] > 6.8e3)
 	self.assertTrue(achi_list[2,2] > 6.8e3)
 
-	dof, achi_list = autochisq(self.htilde, sig_tilde, psd,  stride=3,  num_points=20, \
+        with _context:
+	    dof, achi_list = autochisq(self.htilde, sig_tilde, psd,  stride=3,  num_points=20, \
 	 	 low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax, max_snr=True)
 	
 	self.assertTrue(obt_snr == achi_list[0, 1])
