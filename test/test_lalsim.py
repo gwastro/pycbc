@@ -33,6 +33,7 @@ from pycbc.filter import *
 from pycbc.waveform import *
 import pycbc.fft
 import matplotlib
+matplotlib.use('Agg')
 import pylab
 import numpy
 import lal
