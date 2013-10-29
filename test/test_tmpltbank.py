@@ -66,17 +66,185 @@ class TmpltbankTestClass(unittest.TestCase):
                     self.psd, 'taylorF4_45PN', 70, self.f_low, self.f_upper, \
                     self.deltaF)
 
+        vals=pycbc.tmpltbank.estimate_mass_range(100000, 'taylorF4_45PN', \
+               self.evals[self.f_upper], self.evecs[self.f_upper], 5, 1, 5, 1,\
+               0.4, 70, covary=False, maxBHspin=0.9, minTotalMass=2.5, \
+               maxTotalMass=6.0)
+
+        cov = numpy.cov(vals)
+        _,self.evecsCV = numpy.linalg.eig(cov)
+
+        vals=pycbc.tmpltbank.estimate_mass_range(100000, 'taylorF4_45PN', \
+               self.evals[self.f_upper], self.evecs[self.f_upper], 5, 1, 5, 1,\
+               0.4, 70, covary=True, maxBHspin=0.9, minTotalMass=2.5, \
+               maxTotalMass=6.0, evecsCV=self.evecsCV)
+
     def test_eigen_directions(self):
         evalsStock = Array(numpy.loadtxt('%sstockEvals.dat'%(self.dataDir)))
         evecsStock = Array(numpy.loadtxt('%sstockEvecs.dat'%(self.dataDir)))
+        maxEval = max(evalsStock)
         evalsCurr = Array(self.evals[self.f_upper])
         evecsCurr = Array(self.evecs[self.f_upper])
         errMsg = "pycbc.tmpltbank.determine_eigen_directions has failed "
         errMsg += "sanity check."
-        self.assertTrue(evalsStock.almost_equal_elem(evalsCurr, tol=1E-4),\
-                        msg=errMsg)
-        self.assertTrue(evecsStock.almost_equal_elem(evecsCurr, tol=1E-4),\
-                        msg=errMsg)
+        evalsDiff = abs(evalsCurr - evalsStock)/maxEval
+        self.assertTrue(not (evalsDiff.data > 1E-5).any(), msg=errMsg)
+        for stock,test in zip(evecsStock.data,evecsCurr.data):
+            stockScaled = stock * evalsCurr.data**0.5
+            testScaled = test * evalsCurr.data**0.5
+            diff = stockScaled - testScaled
+            self.assertTrue(not (diff > 1E-4).any(), msg=errMsg)
+
+    def test_get_random_mass(self):
+       mass,eta,beta,sigma,gamma,spin1z,spin2z = \
+             pycbc.tmpltbank.get_random_mass(1000000, 1, 5, 1, 4, 0.4, \
+                   maxBHspin=0.9, minTotalMass=2.5, maxTotalMass=6.0)
+       errMsg = "pycbc.tmpltbank.get_random_mass returns invalid ranges."
+       self.assertTrue(not (mass < 2.5).any(),msg=errMsg)
+       self.assertTrue(not (mass > 6.0).any(),msg=errMsg)
+       # Get individual masses
+       diff = (mass*mass * (1-4*eta))**0.5
+       mass1 = (mass + diff)/2.
+       mass2 = (mass - diff)/2.
+       self.assertTrue(not (mass1 > 5 * 1.001).any(),msg=errMsg)
+       self.assertTrue(not (mass1 < 1 * 0.999).any(),msg=errMsg)
+       self.assertTrue(not (mass2 > 5 * 1.001).any(),msg=errMsg)
+       self.assertTrue(not (mass2 < 1 * 0.999).any(),msg=errMsg)
+       self.assertTrue(not (mass1 < mass2).any(),msg=errMsg)
+       nsSpin1 = spin1z[mass1 < 3.0]
+       nsSpin2 = spin2z[mass2 < 3.0]
+       bhSpin1 = spin1z[mass1 > 3.0]
+       bhSpin2 = spin2z[mass2 > 3.0]
+       self.assertTrue(not (abs(nsSpin1) > 0.4).any(), msg=errMsg)
+       self.assertTrue(not (abs(nsSpin2) > 0.4).any(), msg=errMsg) 
+       self.assertTrue(not (abs(bhSpin1) > 0.9).any(), msg=errMsg)
+       self.assertTrue(not (abs(bhSpin2) > 0.9).any(), msg=errMsg)
+
+    def test_chirp_params(self):
+        chirps=pycbc.tmpltbank.get_chirp_params(4, 0.24 ,0.2 ,0.2 ,0.2 ,0.1, \
+                                                70, 'taylorF4_45PN')
+        stockChirps = numpy.loadtxt('%sstockChirps.dat'%(self.dataDir))
+        diff = (chirps - stockChirps) / stockChirps
+        errMsg = "Calculated chirp params differ from that expected."
+        self.assertTrue( not (diff > 1E-4).any(), msg=errMsg)
+
+    def test_hexagonal_placement(self):
+        arrz = pycbc.tmpltbank.generate_hexagonal_lattice(10, 0, 10, 0, 0.03)
+        arrz = numpy.array(arrz)
+        stockGrid = numpy.loadtxt("%sstockHexagonal.dat"%(self.dataDir))
+        diff = arrz - stockGrid
+        errMsg = "Calculated lattice differs from that expected."
+        self.assertTrue( not (diff > 1E-4).any(), msg=errMsg)
+
+    def test_anstar_placement(self):
+        arrz = pycbc.tmpltbank.generate_anstar_3d_lattice(0, 10, 0, 10, 0, \
+                                                          10, 0.03)
+        arrz = numpy.array(arrz)
+        stockGrid = numpy.loadtxt("%sstockAnstar3D.dat"%(self.dataDir))
+        diff = arrz - stockGrid
+        errMsg = "Calculated lattice differs from that expected."
+        self.assertTrue( not (diff > 1E-4).any(), msg=errMsg)
+
+    def test_get_mass_distribution(self):
+        # Just run the function, no checking output
+        pycbc.tmpltbank.get_mass_distribution([1.35,0.25,0.4,-0.2], 2, \
+                          'taylorF4_45PN', \
+                          self.evecs[self.f_upper], self.evals[self.f_upper], \
+                          self.evecs[self.f_upper], 2, 1, 2, 1, 0.9, 0.95, 70,\
+                          nsbh_flag=False, maxTotalMass=3.5, minTotalMass=1.5,\
+                          numJumpPoints=123, chirpMassJumpFac=0.0002, \
+                          etaJumpFac=0.009, spin1zJumpFac=0.1, \
+                          spin2zJumpFac=0.2)
+
+    def test_get_phys_cov_masses(self):
+        evecs = self.evecs[self.f_upper]
+        evals = self.evals[self.f_upper]
+        masses1 = [4,0.25,0.4,0.6]
+        masses2 = [4.01,0.249,0.41,0.59]
+        spinSet1 = pycbc.tmpltbank.get_beta_sigma_from_aligned_spins(\
+                     masses1[0], masses1[1], masses1[2], masses1[3])
+        spinSet2 = pycbc.tmpltbank.get_beta_sigma_from_aligned_spins(\
+                     masses2[0], masses2[1], masses2[2], masses2[3])
+        xis1 = pycbc.tmpltbank.get_cov_params(masses1[0], masses1[1], \
+                 spinSet1[0], spinSet1[1], spinSet1[2], spinSet1[3], 70, \
+                 evecs, evals, self.evecsCV, 'taylorF4_45PN')
+        xis2 = pycbc.tmpltbank.get_cov_params(masses2[0], masses2[1], \
+                 spinSet2[0], spinSet2[1], spinSet2[2], spinSet2[3], 70, \
+                 evecs, evals, self.evecsCV, 'taylorF4_45PN')
+
+        testXis = [xis1[0],xis1[1]]
+        bestMasses = masses2
+        bestXis = xis2
+        output = pycbc.tmpltbank.get_physical_covaried_masses(testXis, \
+                   bestMasses, bestXis, 70, 0.0001, 'taylorF4_45PN', \
+                   evecs, evals, self.evecsCV, 5, 1, 5, 1, 1, 1, \
+                   minTotalMass=3.5, maxTotalMass=4.5)
+        # Test that returned xis are close enough
+        diff = (output[6] - testXis[0])**2
+        diff += (output[7] - testXis[1])**2
+        errMsg = 'pycbc.tmpltbank.get_physical_covaried_masses '
+        errMsg += 'failed to find a point within the desired limits.'
+        self.assertTrue( diff < 1E-4,msg=errMsg)
+        # Test that returned masses and xis agree
+        massT = output[0] + output[1]
+        etaT = output[0]*output[1] / (massT*massT)
+        spinSetT = pycbc.tmpltbank.get_beta_sigma_from_aligned_spins(\
+                     massT, etaT, output[2], output[3])
+        xisT = pycbc.tmpltbank.get_cov_params(massT, etaT, \
+                 spinSetT[0], spinSetT[1], spinSetT[2], spinSetT[3], 70, \
+                 evecs, evals, self.evecsCV, 'taylorF4_45PN')
+        errMsg = "Recovered xis do not agree with those expected."
+        self.assertTrue( abs(xisT[0] - output[6]) < 1E-5, msg=errMsg)
+        self.assertTrue( abs(xisT[1] - output[7]) < 1E-5, msg=errMsg)
+        self.assertTrue( abs(xisT[2] - output[8]) < 1E-5, msg=errMsg)
+        self.assertTrue( abs(xisT[3] - output[9]) < 1E-5, msg=errMsg)
+
+    def test_stack_xi_direction(self):
+        # Just run the function, no checking output
+        evecs = self.evecs[self.f_upper]
+        evals = self.evals[self.f_upper]
+        masses1 = [4,0.25,0.4,0.6]
+        masses2 = [4.01,0.249,0.41,0.59]
+        spinSet1 = pycbc.tmpltbank.get_beta_sigma_from_aligned_spins(\
+                     masses1[0], masses1[1], masses1[2], masses1[3])
+        spinSet2 = pycbc.tmpltbank.get_beta_sigma_from_aligned_spins(\
+                     masses2[0], masses2[1], masses2[2], masses2[3])
+        xis1 = pycbc.tmpltbank.get_cov_params(masses1[0], masses1[1], \
+                 spinSet1[0], spinSet1[1], spinSet1[2], spinSet1[3], 70, \
+                 evecs, evals, self.evecsCV, 'taylorF4_45PN')
+        xis2 = pycbc.tmpltbank.get_cov_params(masses2[0], masses2[1], \
+                 spinSet2[0], spinSet2[1], spinSet2[2], spinSet2[3], 70, \
+                 evecs, evals, self.evecsCV, 'taylorF4_45PN')
+        testXis = [xis1[0],xis1[1]]
+        bestMasses = masses2
+        bestXis = xis2
+
+        depths = pycbc.tmpltbank.stack_xi_direction_brute(testXis, \
+              bestMasses, bestXis, 70, 3, 0.03, 'taylorF4_45PN', evecs, evals, \
+              self.evecsCV, 5, 1, 5, 1, 1, 1, minTotalMass=3.98, \
+              maxTotalMass=4.02,numIterations=50)
+
+    def test_point_distance(self):
+        masses1 = [2,2,0.4,0.6]
+        masses2 = [2.02,1.97,0.41,0.59]
+        dist, xis1, xis2 = pycbc.tmpltbank.get_point_distance(masses1, masses2,\
+              self.evals[self.f_upper], self.evecs[self.f_upper], self.evecsCV,\
+              'taylorF4_45PN', 70)
+        diff = abs((dist - 23.4019262742) / dist)
+  
+        errMsg = "Obtained distance does not agree with expected value."
+        self.assertTrue( diff < 1E-5, msg=errMsg)
+
+    def test_conv_to_sngl(self):
+        # Just run the function, no checking output
+        masses1 = [(2,2,0.4,0.6),(4.01,0.249,0.41,0.59)]
+        pycbc.tmpltbank.convert_to_sngl_inspiral_table(masses1, "a")
+
+    def test_ethinca_calc(self):
+        # Just run the function, no checking output
+        masses1 = (2.,2.)
+        pycbc.tmpltbank.calculate_ethinca_metric_comps(masses1, self.moments,\
+        70)
 
     def tearDown(self):
         pass
