@@ -1,3 +1,6 @@
-from pycbc.tmpltbank.geom_bank_utils import *
 from pycbc.tmpltbank.calc_moments import *
 from pycbc.tmpltbank.lambda_mapping import *
+from pycbc.tmpltbank.coord_utils import *
+from pycbc.tmpltbank.lattice_utils import *
+from pycbc.tmpltbank.brute_force_methods import *
+from pycbc.tmpltbank.bank_output_utils import *

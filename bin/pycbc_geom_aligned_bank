@@ -96,6 +96,12 @@ parser.add_option("-x", "--max-ns-spin-mag", action="store", type="float",\
 parser.add_option("-X", "--max-bh-spin-mag", action="store", type="float",\
                   default=0.03, help="Maximum black hole spin magnitude"+\
                                       "default: %default")
+parser.add_option("", "--max-total-mass", action="store", type="float",\
+                  default=None, help="Minimum total mass to generate bank "+\
+                                      "with default: %default")
+parser.add_option("", "--min-total-mass", action="store", type="float",\
+                  default=None, help="Maximum total mass to generate bank "+\
+                                      "with default: %default")
 parser.add_option("-n", "--nsbh-flag", action="store_true", default=False,\
                     help="Set this if running with NSBH, default: %default")
 parser.add_option("-s", "--stack-distance", action="store", type="float",\
@@ -107,8 +113,7 @@ parser.add_option("-S", "--split-bank-num", action="store", type="int",\
                     default=100,\
                     help="Number of points per job in dag, default: %default")
 
-psdOptGroup = pycbc.psd.create_psd_option_group(parser)
-parser.add_option_group(psdOptGroup)
+pycbc.psd.insert_psd_option_group(parser)
 
 dataReadingGroup = optparse.OptionGroup(parser, "Options for obtaining h(t)",
                   "These options are used for generating h(t) either by "
@@ -150,9 +155,6 @@ opts.min_total_mass = opts.min_mass1 + opts.min_mass2
 opts.max_total_mass = opts.max_mass1 + opts.max_mass2
 opts.min_comp_mass = opts.min_mass2
 opts.max_comp_mass = opts.max_mass2
-# These two options are needed to run the from_cli PSD stuff.
-opts.low_frequency_cutoff = opts.f_low
-opts.segment_length = 1. / opts.delta_f
 
 # If we are going to use h(t) to estimate a PSD we need h(t)
 if opts.psd_estimation:
@@ -184,7 +186,13 @@ else:
 # Get the PSD using the pycbc interface
 if opts.verbose:
     print >>sys.stdout, "Obtaining PSD at %.3f." %(elapsed_time())
-psd = pycbc.psd.from_cli(opts, parser, strain=strain)
+# Want the number of samples to be a binary number and Nyquist must be above
+# opts.f_upper. All this assumes that 1 / deltaF is a binary number
+nyquistFreq = 2**numpy.ceil(numpy.log2(opts.f_upper))
+numSamples = int(round(nyquistFreq / opts.delta_f)) + 1
+
+psd = pycbc.psd.from_cli(opts, length=numSamples, delta_f=opts.delta_f, \
+                         low_frequency_cutoff=opts.f_low, strain=strain)
 
 if opts.verbose:
     print >>sys.stdout, "Calculating metric at %.3f." %(elapsed_time())
@@ -197,11 +205,12 @@ if opts.verbose:
     print >>sys.stdout, "Calculating covariance matrix at %.3f."\
                         %(elapsed_time())
 
-vals = pycbc.tmpltbank.estimate_mass_range_slimline(1000000,\
+vals = pycbc.tmpltbank.estimate_mass_range(1000000,\
        opts.pn_order, evals[opts.f_upper], evecs[opts.f_upper], opts.max_mass1,\
        opts.min_mass1, opts.max_mass2, opts.min_mass2,\
        opts.max_ns_spin_mag, opts.f0,\
-       covary=False, maxBHspin=opts.max_bh_spin_mag)
+       covary=False, maxBHspin=opts.max_bh_spin_mag,\
+       minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass)
 cov = numpy.cov(vals)
 evalsCV,evecsCV = numpy.linalg.eig(cov)
 
@@ -209,11 +218,12 @@ if opts.verbose:
     print>> sys.stdout, "Covariance matrix calculated at %.3f."\
                         %(elapsed_time())
 
-vals = pycbc.tmpltbank.estimate_mass_range_slimline(1000000,\
+vals = pycbc.tmpltbank.estimate_mass_range(1000000,\
        opts.pn_order, evals[opts.f_upper], evecs[opts.f_upper], opts.max_mass1,\
        opts.min_mass1, opts.max_mass2, opts.min_mass2,\
        opts.max_ns_spin_mag, opts.f0,\
-       covary=True, evecsCV=evecsCV, maxBHspin=opts.max_bh_spin_mag)
+       covary=True, evecsCV=evecsCV, maxBHspin=opts.max_bh_spin_mag,\
+       minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass)
 
 chi1Max = vals[0].max()
 chi1Min = vals[0].min()
@@ -316,6 +326,8 @@ cp.set('bank','max-mass1',str(opts.max_mass1))
 cp.set('bank','min-mass1',str(opts.min_mass1))
 cp.set('bank','max-mass2',str(opts.max_mass2))
 cp.set('bank','min-mass2',str(opts.min_mass2))
+cp.set('bank','max-total-mass',str(opts.max_total_mass))
+cp.set('bank','min-total-mass',str(opts.min_total_mass))
 cp.set('bank','max-ns-spin-mag',str(opts.max_ns_spin_mag))
 cp.set('bank','max-bh-spin-mag',str(opts.max_bh_spin_mag))
 cp.set('bank','min-match',str(opts.min_match))

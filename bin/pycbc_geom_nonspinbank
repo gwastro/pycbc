@@ -85,10 +85,15 @@ parser.add_option("-z", "--min-mass2", action="store", type="float",\
 parser.add_option("-Z", "--max-mass2", action="store", type="float",\
                   default=None, help="Maximum mass2 to generate bank with"+\
                                       "default: %default")
+parser.add_option("", "--max-total-mass", action="store", type="float",\
+                  default=None, help="Minimum total mass to generate bank "+\
+                                      "with default: %default")
+parser.add_option("", "--min-total-mass", action="store", type="float",\
+                  default=None, help="Maximum total mass to generate bank "+\
+                                      "with default: %default")
 parser.add_option("-O", "--output-file",  help="Output file name")
 
-psdOptGroup = pycbc.psd.create_psd_option_group(parser)
-parser.add_option_group(psdOptGroup)
+pycbc.psd.insert_psd_option_group(parser)
 
 dataReadingGroup = optparse.OptionGroup(parser, "Options for obtaining h(t)",
                   "These options are used for generating h(t) either by "
@@ -148,11 +153,14 @@ if not opts.max_mass2:
 if not opts.output_file:
     parser.error("Must supply --output-file")
 
-opts.min_total_mass = opts.min_mass1 + opts.min_mass2
-opts.max_total_mass = opts.max_mass1 + opts.max_mass2
-# These two options are needed to run the from_cli PSD stuff.
-opts.low_frequency_cutoff = opts.f_low
-opts.segment_length = 1. / opts.delta_f
+if (not opts.min_total_mass) or \
+        ((opts.min_mass1 + opts.min_mass2) > opts.min_total_mass):
+    opts.min_total_mass = opts.min_mass1 + opts.min_mass2
+if (not opts.max_total_mass) or \
+        ((opts.max_mass1 + opts.max_mass2) < opts.max_total_mass):
+    opts.max_total_mass = opts.max_mass1 + opts.max_mass2
+
+
 maxSpinMag = 0
 
 # If we are going to use h(t) to estimate a PSD we need h(t)
@@ -185,7 +193,13 @@ else:
 # Get the PSD using the pycbc interface
 if opts.verbose:
     print >>sys.stdout, "Obtaining PSD at %f." %(elapsed_time())
-psd = pycbc.psd.from_cli(opts, parser, strain=strain)
+# Want the number of samples to be a binary number and Nyquist must be above
+# opts.f_upper. All this assumes that 1 / deltaF is a binary number
+nyquistFreq = 2**numpy.ceil(numpy.log2(opts.f_upper))
+numSamples = int(round(nyquistFreq / opts.delta_f)) + 1
+
+psd = pycbc.psd.from_cli(opts, length=numSamples, delta_f=opts.delta_f, \
+                         low_frequency_cutoff=opts.f_low, strain=strain)
 
 if opts.verbose:
     print >>sys.stdout, "Calculating metric at %f." %(elapsed_time())
@@ -201,10 +215,11 @@ evals, evecs, _, moments = pycbc.tmpltbank.determine_eigen_directions(\
 if opts.verbose:
     print >>sys.stdout, "Calculating covariance matrix at %f." %(elapsed_time())
 
-vals = pycbc.tmpltbank.estimate_mass_range_slimline(1000000,\
+vals = pycbc.tmpltbank.estimate_mass_range(1000000,\
        opts.pn_order, evals[opts.f_upper], evecs[opts.f_upper], opts.max_mass1,\
        opts.min_mass1, opts.max_mass2, opts.min_mass2,\
-       maxSpinMag, opts.f0, covary=False, maxBHspin=maxSpinMag)
+       maxSpinMag, opts.f0, covary=False, maxBHspin=maxSpinMag,\
+       minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass)
 cov = numpy.cov(vals)
 evalsCV, evecsCV = numpy.linalg.eig(cov)
 
@@ -212,10 +227,12 @@ if opts.verbose:
     print>> sys.stdout, "Covariance matrix calculated at %f." %(elapsed_time())
 
 # This is to get an estimate of the largest values of \chi1 and \chi2
-vals = pycbc.tmpltbank.estimate_mass_range_slimline(5000000,\
+vals = pycbc.tmpltbank.estimate_mass_range(5000000,\
        opts.pn_order, evals[opts.f_upper], evecs[opts.f_upper], opts.max_mass1,\
        opts.min_mass1, opts.max_mass2, opts.min_mass2,\
-       maxSpinMag, opts.f0, covary=True, evecsCV=evecsCV, maxBHspin=maxSpinMag)
+       maxSpinMag, opts.f0, covary=True, evecsCV=evecsCV, \
+       maxBHspin=maxSpinMag, \
+       minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass)
 
 chi1Max = vals[0].max()
 chi1Min = vals[0].min()
@@ -348,9 +365,10 @@ if opts.verbose:
 
 # Choose an initial set of points to begin comparing points to physical space
 rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
-        pycbc.tmpltbank.get_random_mass_slimline(\
+        pycbc.tmpltbank.get_random_mass(\
         2000000, opts.min_mass1, opts.max_mass1, opts.min_mass2,\
-        opts.max_mass2,maxSpinMag, maxBHspin = maxSpinMag, return_spins=True)
+        opts.max_mass2,maxSpinMag, maxBHspin = maxSpinMag, \
+        minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass)
 diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
 rMass1 = (rTotmass + diff)/2.
 rMass2 = (rTotmass - diff)/2.
@@ -444,12 +462,13 @@ for iter, (v1, v2) in enumerate(zip(v1s, v2s)):
     if dist.min() > temp_match:
         continue
     masses = pycbc.tmpltbank.get_physical_covaried_masses([v1,v2],\
-               copy.deepcopy(bestMasses), copy.deepcopy(bestXis), opts.f0, 0,\
+               copy.deepcopy(bestMasses), copy.deepcopy(bestXis), opts.f0,\
                req_match, opts.pn_order, evecs[opts.f_upper], \
                evals[opts.f_upper], evecsCV, opts.max_mass1, opts.min_mass1, \
                opts.max_mass2, opts.min_mass2, maxSpinMag, maxSpinMag, \
-               return_smaller=True, giveUpThresh = 10)
-    
+               giveUpThresh = 10, minTotalMass=opts.min_total_mass, \
+               maxTotalMass=opts.max_total_mass)
+
     # If point is still not close enough to desired space, remove it
     if masses[5] > des_match * 1.1:
         continue

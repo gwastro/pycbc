@@ -187,8 +187,8 @@ def determine_eigen_directions(psd, order, f0, f_low, f_upper, deltaF, \
         # Numerical error can lead to small negative eigenvalues.
         for i in range(len(evals[item])):
             if evals[item][i] < 0:
-                print "WARNING: Negative eigenvalue %e. Setting as positive." \
-                      %(evals[item][i])
+#                print "WARNING: Negative eigenvalue %e. Setting as positive." \
+#                      %(evals[item][i])
                 evals[item][i] = -evals[item][i]
             if evecs[item][i,i] < 0:
                 # We demand a convention that all diagonal terms in the matrix

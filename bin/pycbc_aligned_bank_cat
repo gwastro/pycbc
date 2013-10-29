@@ -21,31 +21,9 @@ Programe for contatenating the output of the geometric aligned bank dagman.
 This will gather all the meta-output files and create a valid template bank
 xml file.
 """
-
-import copy
-import time
-import os
-import sys
 import fileinput
 import glob
 import optparse
-
-from glue.ligolw import ligolw
-from glue.ligolw import table
-from glue.ligolw import lsctables
-from glue.ligolw import ilwd
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
-from glue.segmentdb import segmentdb_utils
-from glue import pidfile as pidfile
-from glue import git_version
-from scipy.interpolate import interp1d
-import matplotlib
-matplotlib.use('Agg')
-import pylab
-from pylab import arange,pi,sin,cos,sqrt
-from lal import LAL_PI, LAL_MTSUN_SI
-from numpy import loadtxt
 import pycbc.version
 import pycbc.tmpltbank
 
@@ -53,25 +31,6 @@ __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
 __program__ = "pycbc_aligned_bank_cat"
-
-def return_empty_sngl():
-  sngl = lsctables.SnglInspiral()  
-  cols = lsctables.SnglInspiralTable.validcolumns
-  for entry in cols.keys():
-    if cols[entry] in ['real_4', 'real_8']:
-      setattr(sngl, entry, 0.)
-    elif cols[entry] == 'int_4s':
-      setattr(sngl, entry, 0)
-    elif cols[entry] == 'lstring':
-      setattr(sngl, entry, '')
-    elif entry == 'process_id':
-      sngl.process_id = ilwd.ilwdchar("sngl_inspiral:process_id:0")
-    elif entry == 'event_id':
-      sngl.event_id = ilwd.ilwdchar("sngl_inspiral:event_id:0")
-    else:
-      print >> sys.stderr, "Column %s not recognized" %(entry)
-      raise ValueError
-  return sngl
 
 # Read command line options
 usage = """usage: %prog [options]"""

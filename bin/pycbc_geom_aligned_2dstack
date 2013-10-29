@@ -84,6 +84,12 @@ parser.add_option("-z", "--min-mass2", action="store", type="float",\
 parser.add_option("-Z", "--max-mass2", action="store", type="float",\
                   default=0.03, help="Maximum mass2 to generate bank with"+\
                                       "default: %default")
+parser.add_option("", "--max-total-mass", action="store", type="float",\
+                  default=None, help="Minimum total mass to generate bank "+\
+                                      "with default: %default")
+parser.add_option("", "--min-total-mass", action="store", type="float",\
+                  default=None, help="Maximum total mass to generate bank "+\
+                                      "with default: %default")
 parser.add_option("-x", "--max-ns-spin-mag", action="store", type="float",\
                   default=0.03, help="Maximum neutron star spin magnitude"+\
                                       "default: %default")
@@ -126,9 +132,10 @@ evecsCV = numpy.matrix(numpy.loadtxt(opts.cov_evecs_file))
 # Create a large set of points and map to xi_i to give a starting point when
 # mapping from xi_i to masses and spins
 rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
-      pycbc.tmpltbank.get_random_mass_slimline(
+      pycbc.tmpltbank.get_random_mass(
       2000000, opts.min_mass1, opts.max_mass1, opts.min_mass2, opts.max_mass2,\
-      opts.max_ns_spin_mag, maxBHspin=opts.max_bh_spin_mag, return_spins=True)
+      opts.max_ns_spin_mag, maxBHspin=opts.max_bh_spin_mag, \
+      minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass)
 diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
 rMass1 = (rTotmass + diff)/2.
 rMass2 = (rTotmass - diff)/2.
@@ -195,9 +202,10 @@ for entry in tempBank:
     # physical point has a mismatch < 0.0001 with the desired one
     masses = pycbc.tmpltbank.get_physical_covaried_masses(xis_des,\
                copy.deepcopy(bestMasses), copy.deepcopy(bestXis), f0,\
-               temp_number, req_match, order, evecs, evals, evecsCV,\
+               req_match, order, evecs, evals, evecsCV,\
                maxmass1, minmass1, maxmass2, minmass2, maxNSspin, maxBHspin,\
-               return_smaller=True, nsbh_flag=opts.nsbh_flag)
+               nsbh_flag=opts.nsbh_flag, minTotalMass=opts.min_total_mass, \
+               maxTotalMass=opts.max_total_mass)
     # Now how close is it?
     if opts.verbose:
         print "Template %d has corrected distance of %e"\
@@ -224,12 +232,15 @@ for entry in tempBank:
     tmpEta = masses[0] * masses[1] / (tmpTotMass*tmpTotMass)
     if not opts.threed_lattice:
         # If point is close enough, determine depth of xi3 direction
-        vec3_min, vec3_max, vec3_depth=\
+        vec3_min, vec3_max=\
                 pycbc.tmpltbank.stack_xi_direction_brute([masses[6],masses[7]],\
                   [tmpTotMass,tmpEta,masses[2],masses[3]],\
-                  copy.deepcopy(bestXis), f0, temp_number, 2, opts.min_match,\
+                  copy.deepcopy(bestXis), f0, 2, opts.min_match,\
                   order, evecs, evals, evecsCV, maxmass1, minmass1, maxmass2,\
-                  minmass2, maxNSspin, maxBHspin, nsbh_flag=opts.nsbh_flag)
+                  minmass2, maxNSspin, maxBHspin, nsbh_flag=opts.nsbh_flag, \
+                  minTotalMass=opts.min_total_mass, \
+                  maxTotalMass=opts.max_total_mass)
+        vec3_depth = vec3_max - vec3_min
         # Double check that no points appear outside what was calculated above
         if len(xis_close):
             if vec3_min > xis_close[:,2].min():
@@ -237,13 +248,16 @@ for entry in tempBank:
                 temp_idx = xis_close[:,2].argmin()
                 temmpBestMasses = masses_close[temp_idx]
                 temmpBestXis = xis_close[temp_idx]
-                temmpvec3_min, temmpvec3_max, temmpvec3_depth=\
+                temmpvec3_min, temmpvec3_max =\
                     pycbc.tmpltbank.stack_xi_direction_brute([xi1_des,xi2_des],\
                       copy.deepcopy(temmpBestMasses),\
-                      copy.deepcopy(temmpBestXis), f0, temp_number, 2,\
+                      copy.deepcopy(temmpBestXis), f0, 2,\
                       opts.min_match, order, evecs, evals, evecsCV, maxmass1,\
                       minmass1, maxmass2, minmass2, maxNSspin, maxBHspin,\
-                      nsbh_flag=opts.nsbh_flag)
+                      nsbh_flag=opts.nsbh_flag,\
+                      minTotalMass=opts.min_total_mass, \
+                      maxTotalMass=opts.max_total_mass)
+                temmpvec3_depth = temmpvec3_max - temmpvec3_min
                 if temmpvec3_min < vec3_min:
                     vec3_min = temmpvec3_min
                     vec3_depth = vec3_max - vec3_min
@@ -255,13 +269,16 @@ for entry in tempBank:
                 temp_idx = xis_close[:,2].argmax()
                 temmpBestMasses = physMasses[temp_idx]
                 temmpBestXis = xis[temp_idx]
-                temmpvec3_min, temmpvec3_max, temmpvec3_depth=\
+                temmpvec3_min, temmpvec3_max =\
                     pycbc.tmpltbank.stack_xi_direction_brute([xi1_des,xi2_des],\
                       copy.deepcopy(temmpBestMasses),\
-                      copy.deepcopy(temmpBestXis), f0, temp_number, 2,\
+                      copy.deepcopy(temmpBestXis), f0, 2,\
                       opts.min_match, order, evecs, evals, evecsCV, maxmass1,\
                       minmass1, maxmass2, minmass2, maxNSspin, maxBHspin,\
-                      nsbh_flag=opts.nsbh_flag)
+                      nsbh_flag=opts.nsbh_flag,\
+                      minTotalMass=opts.min_total_mass, \
+                      maxTotalMass=opts.max_total_mass)
+                temmpvec3_depth = temmpvec3_max - temmpvec3_min
                 if temmpvec3_max > vec3_max:
                     vec3_max = temmpvec3_max
                     vec3_depth = vec3_max - vec3_min
@@ -271,22 +288,28 @@ for entry in tempBank:
   # Determine depth of xi4 direction (is this needed is xi3 depth is found to
   # be small?)
     if opts.eval_vec4_depth:
-        vec4_min, vec4_max, vec4_depth=\
+        vec4_min, vec4_max =\
               pycbc.tmpltbank.stack_xi_direction_brute([masses[6],masses[7]],\
                 [tmpTotMass,tmpEta,masses[2],masses[3]],\
-                copy.deepcopy(bestXis), f0, temp_number, 3, opts.min_match,\
+                copy.deepcopy(bestXis), f0, 3, opts.min_match,\
                 order, evecs, evals, evecsCV, maxmass1, minmass1, maxmass2,\
-                minmass2, maxNSspin, maxBHspin, nsbh_flag=opts.nsbh_flag)
+                minmass2, maxNSspin, maxBHspin, nsbh_flag=opts.nsbh_flag, \
+                minTotalMass=opts.min_total_mass, \
+                maxTotalMass=opts.max_total_mass)
+        vec4_depth = vec4_max - vec4_min
     else:
         vec4_min = vec4_max = vec4_depth = 0
     # Determine depth of xi5 direction 
     if opts.eval_vec5_depth:
-        vec5_min, vec5_max, vec5_depth =\
+        vec5_min, vec5_max =\
               pycbc.tmpltbank.stack_xi_direction_brute([masses[6],masses[7]],\
                 [tmpTotMass,tmpEta,masses[2],masses[3]],\
-                copy.deepcopy(bestXis), f0, temp_number, 4, opts.min_match,\
+                copy.deepcopy(bestXis), f0, 4, opts.min_match,\
                 order, evecs, evals, evecsCV, maxmass1, minmass1, maxmass2,\
-                minmass2, maxNSspin, maxBHspin, nsbh_flag=opts.nsbh_flag)
+                minmass2, maxNSspin, maxBHspin, nsbh_flag=opts.nsbh_flag, \
+                minTotalMass=opts.min_total_mass, \
+                maxTotalMass=opts.max_total_mass)
+        vec5_depth = vec5_max - vec5_min
     else:
         vec5_min = vec5_max = vec5_depth = 0
     # Output depths
@@ -313,10 +336,11 @@ for entry in tempBank:
         # Find close point to this 3d position
         masses = pycbc.tmpltbank.get_physical_covaried_masses(\
               [xi1_des,xi2_des,xi3_des], copy.deepcopy(bestMasses),\
-              copy.deepcopy(bestXis), f0, temp_number, req_match, order,\
+              copy.deepcopy(bestXis), f0, req_match, order,\
               evecs, evals, evecsCV, maxmass1, minmass1, maxmass2, minmass2,\
-              maxNSspin, maxBHspin, return_smaller=True,\
-              nsbh_flag=opts.nsbh_flag) 
+              maxNSspin, maxBHspin, nsbh_flag=opts.nsbh_flag, \
+              minTotalMass=opts.min_total_mass, \
+              maxTotalMass=opts.max_total_mass)
         # If vec4 depth is negligible or we didn't get close, stop here
         if vec4_depth < vec3DepthVal or masses[5] > 0.03:
             if masses[5]:
@@ -328,13 +352,16 @@ for entry in tempBank:
             # 3d point
             tmpTotMass = masses[0] + masses[1]
             tmpEta = masses[0] * masses[1] / (tmpTotMass*tmpTotMass)
-            vec4_minT, vec4_maxT, vec4_depthT = \
+            vec4_minT, vec4_maxT = \
                   pycbc.tmpltbank.stack_xi_direction_brute(\
                     [masses[6],masses[7],masses[8]],\
                     [tmpTotMass,tmpEta,masses[2],masses[3]],\
-                    copy.deepcopy(bestXis), f0, temp_number, 3, opts.min_match,\
+                    copy.deepcopy(bestXis), f0, 3, opts.min_match,\
                     order, evecs, evals, evecsCV, maxmass1, minmass1, maxmass2,\
-                    minmass2, maxNSspin, maxBHspin, nsbh_flag=opts.nsbh_flag)
+                    minmass2, maxNSspin, maxBHspin, nsbh_flag=opts.nsbh_flag, \
+                    minTotalMass=opts.min_total_mass, \
+                    maxTotalMass=opts.max_total_mass)
+            vec4_depthT = vec4_maxT - vec4_minT
             # Then loop over necessary templates in 4th direction
             numV4Temps = int(round(vec4_depthT // vec3DepthVal)) + 1
             for ite in range(numV4Temps):
@@ -347,9 +374,11 @@ for entry in tempBank:
                 masses = pycbc.tmpltbank.get_physical_covaried_masses(\
                       [xi1_des,xi2_des,xi3_des,xi4_des],\
                       copy.deepcopy(bestMasses), copy.deepcopy(bestXis), f0,\
-                      temp_number, req_match, order, evecs, evals, evecsCV,\
+                      req_match, order, evecs, evals, evecsCV,\
                       maxmass1, minmass1, maxmass2, minmass2, maxNSspin,\
-                      maxBHspin, return_smaller=True, nsbh_flag=opts.nsbh_flag)
+                      maxBHspin, nsbh_flag=opts.nsbh_flag,\
+                      minTotalMass=opts.min_total_mass, \
+                      maxTotalMass=opts.max_total_mass)
                 if masses[5]:
                     # Write point to file
                     print >> outPointer, "%e %e %e %e %e"\
