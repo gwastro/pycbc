@@ -119,7 +119,7 @@ def _get_waveform_from_inspiral(**p):
     epoch = lal.LIGOTimeGPS(0, 0)
     N = bufferl * sample_rate
     n = N / 2 + 1
-    print params.mass1, params.mass2, params.spin1z, params.spin2z
+    
     resp = pycbc.types.FrequencySeries(zeros(n), delta_f = df, 
                                        epoch=epoch, dtype=complex64) + 1
     out = pycbc.types.TimeSeries(zeros(N), delta_t = dt, 
@@ -209,7 +209,7 @@ for approx_enum in xrange(0,lalsimulation.NumApproximants):
 
 #Add lalinspiral approximants
 insp_td = {}
-for apx in ['IMRPhenomB', 'SpinTaylor', 'EOB', 'EOBNR']:
+for apx in ['IMRPhenomB', 'EOB', 'EOBNR']:
     name = 'Inspiral-' + apx
     insp_td[name] = _get_waveform_from_inspiral
 

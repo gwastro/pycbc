@@ -98,7 +98,8 @@ for inj_num in range(num_banks):
     bn = 'bank/bank' + str(inj_num) + '.xml'
     mf = 'match/match' + str(inj_num) + '.dat'
     fsnode = FaithsimNode(fsjob, bn, mf, inj_per_job=templates_per_job)
-    dag.add_node(fsnode)    
+    dag.add_node(fsnode)
+    rnode.add_parent(fsnode) 
 dag.add_node(rnode)
 
 f = open("scripts/pycbc_faithsim_collect_results", "w")
