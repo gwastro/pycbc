@@ -112,7 +112,7 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
             psd = from_txt(opt.psd_file, length, 
                            delta_f, f_low, is_asd_file=False)                          
         elif opt.asd_file:
-            psd = from_txt(opt.psd_file, length, 
+            psd = from_txt(opt.asd_file, length, 
                            delta_f, f_low, is_asd_file=True)
         
         psd *= dyn_range_factor ** 2
