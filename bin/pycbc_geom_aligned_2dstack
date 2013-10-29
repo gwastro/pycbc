@@ -122,6 +122,11 @@ if opts.pn_order == 'twoPN':
 
 # Load the list of points from file
 tempBank = numpy.loadtxt(opts.input_bank_file)
+# If only one template numpy only outputs a 1D array: make 2D
+try:
+    len(tempBank[0])
+except TypeError:
+    tempBank = [tempBank]
 
 # Load the files giving the information needed to define the xi_i
 # parameter space
