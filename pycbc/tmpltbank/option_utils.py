@@ -29,6 +29,9 @@ class IndentedHelpFormatterWithNL(optparse.IndentedHelpFormatter):
     This function is (C) Tim Chase
     """
     def format_description(self, description):
+        """
+        No documentation
+        """
         if not description: return ""
         desc_width = self.width - self.current_indent
         indent = " "*self.current_indent
@@ -44,6 +47,9 @@ class IndentedHelpFormatterWithNL(optparse.IndentedHelpFormatter):
         return result
 
     def format_option(self, option):
+        """
+        No documentation
+        """
         # The help for each option consists of two parts:
         #   * the opt strings and metavars
         #   eg. ("-x", or "-fFILENAME, --file=FILENAME")

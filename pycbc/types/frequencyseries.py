@@ -153,12 +153,12 @@ class FrequencySeries(Array):
         If the 'relative' parameter is 'True' (the default) then the
         'tol' parameter (which must be positive) is interpreted as a
         relative tolerance, and the comparison returns 'True' only if
-             abs(self[i]-other[i]) <= tol*abs(self[i])
+        abs(self[i]-other[i]) <= tol*abs(self[i])
         for all elements of the series.
 
         If 'relative' is 'False', then 'tol' is an absolute tolerance,
         and the comparison is true only if
-             abs(self[i]-other[i]) <= tol
+        abs(self[i]-other[i]) <= tol
         for all elements of the series.
 
         The method also checks that self.delta_f is within 'dtol' of
@@ -213,11 +213,11 @@ class FrequencySeries(Array):
         If the 'relative' parameter is 'True' (the default) then the
         'tol' parameter (which must be positive) is interpreted as a
         relative tolerance, and the comparison returns 'True' only if
-             abs(norm(self-other)) <= tol*abs(norm(self)).
+        abs(norm(self-other)) <= tol*abs(norm(self)).
 
         If 'relative' is 'False', then 'tol' is an absolute tolerance,
         and the comparison is true only if
-             abs(norm(self-other)) <= tol
+        abs(norm(self-other)) <= tol
 
         The method also checks that self.delta_f is within 'dtol' of
         other.delta_f; if 'dtol' has its default value of 0 then exact

@@ -456,12 +456,12 @@ class Array(object):
         If the 'relative' parameter is 'True' (the default) then the
         'tol' parameter (which must be positive) is interpreted as a
         relative tolerance, and the comparison returns 'True' only if
-             abs(self[i]-other[i]) <= tol*abs(self[i])
+        abs(self[i]-other[i]) <= tol*abs(self[i])
         for all elements of the array.
 
         If 'relative' is 'False', then 'tol' is an absolute tolerance,
         and the comparison is true only if
-             abs(self[i]-other[i]) <= tol
+        abs(self[i]-other[i]) <= tol
         for all elements of the array.
 
         Other meta-data (type, dtype, and length) must be exactly equal.
@@ -472,18 +472,22 @@ class Array(object):
 
         Parameters
         ----------
-        other: another Python object, that should be tested for
+        other
+            Another Python object, that should be tested for
             almost-equality with 'self', element-by-element.
-        tol: a non-negative number, the tolerance, which is interpreted
+        tol
+            A non-negative number, the tolerance, which is interpreted
             as either a relative tolerance (the default) or an absolute
             tolerance.
-        relative: A boolean, indicating whether 'tol' should be interpreted
+        relative
+            A boolean, indicating whether 'tol' should be interpreted
             as a relative tolerance (if True, the default if this argument
             is omitted) or as an absolute tolerance (if tol is False).
 
         Returns
         -------
-        boolean: 'True' if the data agree within the tolerance, as
+        boolean 
+            'True' if the data agree within the tolerance, as
             interpreted by the 'relative' keyword, and if the types,
             lengths, and dtypes are exactly the same.
         """
@@ -519,11 +523,11 @@ class Array(object):
         If the 'relative' parameter is 'True' (the default) then the
         'tol' parameter (which must be positive) is interpreted as a
         relative tolerance, and the comparison returns 'True' only if
-             abs(norm(self-other)) <= tol*abs(norm(self)).
+        abs(norm(self-other)) <= tol*abs(norm(self)).
 
         If 'relative' is 'False', then 'tol' is an absolute tolerance,
         and the comparison is true only if
-             abs(norm(self-other)) <= tol
+        abs(norm(self-other)) <= tol
 
         Other meta-data (type, dtype, and length) must be exactly equal.
         If either object's memory lives on the GPU it will be copied to
@@ -533,18 +537,22 @@ class Array(object):
 
         Parameters
         ----------
-        other: another Python object, that should be tested for
+        other
+            another Python object, that should be tested for
             almost-equality with 'self', based on their norms.
-        tol: a non-negative number, the tolerance, which is interpreted
+        tol 
+            a non-negative number, the tolerance, which is interpreted
             as either a relative tolerance (the default) or an absolute
             tolerance.
-        relative: A boolean, indicating whether 'tol' should be interpreted
+        relative
+            A boolean, indicating whether 'tol' should be interpreted
             as a relative tolerance (if True, the default if this argument
             is omitted) or as an absolute tolerance (if tol is False).
 
         Returns
         -------
-        boolean: 'True' if the data agree within the tolerance, as
+        boolean
+            'True' if the data agree within the tolerance, as
             interpreted by the 'relative' keyword, and if the types,
             lengths, and dtypes are exactly the same.
         """

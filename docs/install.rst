@@ -77,9 +77,9 @@ Add the following to your ``.bash_profile``
 
    source /path/to/pycbc/install/directory/etc/pycbc-user-env.sh
 
-=========================================
+============================================
 Installing CUDA Python modules (optional!)
-=========================================
+============================================
 
 These packages may not be available via the distribution packaging system, at least in the required versions. As described below, most of these packages are available via the python package installer `pip <http://www.pip-installer.org>`_, however custom installation instructions are given where required.
 
