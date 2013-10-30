@@ -139,18 +139,13 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
 def insert_psd_option_group(parser):
     """
     Adds the options used to call the pycbc.psd.from_cli function to an
-    optparser OptionGroup, which is the returned. This should be used if you
+    optparser as an OptionGroup. This should be used if you
     want to use these options in your code.
  
     Parameters
     -----------
     parser : object
         OptionParser instance.
-
-    Returns
-    --------
-    psd_options : optparser.OptionGroup
-        The optparser.OptionGroup containing all the necessary psd options.
     """
     psd_options = OptionGroup(parser,
                    "Options related to the noise PSD generation")
