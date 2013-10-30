@@ -332,7 +332,7 @@ def get_mass_distribution(bestMasses, scaleFactor, order, evecs, evals, \
     totmass[mass2 > maxmass2] = 0.0001
     # There is some numerical error which can push this a bit higher. We do
     # *not* want to reject the initial guide point. This error comes from
-    # Masses -> totmass, eta -> masses conversion, we will have points pushing
+    # Masses -> totmass, eta -> masses conversion, we will have points pushing
     # onto the boudaries of the space.
     if maxTotalMass:
         totmass[totmass > maxTotalMass*1.0001] = 0.0001
