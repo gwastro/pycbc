@@ -15,10 +15,26 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
 from __future__ import division
 import numpy
 from lal import LAL_MTSUN_SI, LAL_GAMMA
+
+# PLEASE ENSURE THESE ARE KEPT UP TO DATE WITH THE REST OF THIS FILE
+pycbcValidTmpltbankOrders = ['zeroPN','onePN','onePointFivePN','twoPN',\
+      'twoPointFivePN','threePN','threePointFivePN','taylorF4_45PN']
+
+pycbcValidOrdersHelpDescriptions="""
+* zeroPN: Will only include the dominant term (proportional to chirp mass)
+* onePN: Will only the leading orbit term and first correction at 1PN
+* onePointFivePN: Will include orbit and spin terms to 1.5PN.
+* twoPN: Will include orbit and spin terms to 2PN.
+* twoPointFivePN: Will include orbit and spin terms to 2.5PN.
+* threePN: Will include orbit terms to 3PN and spin terms to 2.5PN.
+* threePointFivePN: Include orbit terms to 3.5PN and spin terms to 2.5PN
+* taylorF4_45PN: Will use the R2F4 metric to 4.5PN. This includes partial
+spin terms from 3 to 4.5PN and partial orbit terms from 4 to 4.5PN.
+"""
+
 
 def generate_mapping(order):
     """
@@ -28,25 +44,17 @@ def generate_mapping(order):
     transforming to/from the xi_i coordinates to the lambda_i coordinates.
 
     NOTE: This is not a great way of doing this. It would be nice to clean
-    this up. Hence pulling this function out.
+    this up. Hence pulling this function out. The valid PN orders are: %s
 
     Parameters
     ----------
     order : string
-        A string containing a PN order. Valid values are
-        'zeroPN'
-        'onePN'
-        'onePointFivePN'
-        'twoPN'
-        'twoPointFivePN'
-        'threePN'
-        'threePointFivePN'
-        'taylorF4_45PN'
+        A string containing a PN order. Valid values are given above.
     Returns
     --------
     mapping: dictionary
         A mapping between the active Lambda terms and index in the metric
-    """
+    """ %(pycbcValidOrdersHelpDescriptions)
     mapping = {}
     if order == 'taylorF4_45PN':
         mapping['Lambda0'] = 0
@@ -94,25 +102,18 @@ def generate_inverse_mapping(order):
     dict[key] = item
     This will give
     dict[item] = key
+    Valid PN orders are: %s
     
     Parameters
     ----------
     order : string
-        A string containing a PN order. Valid values are
-        'zeroPN'
-        'onePN'
-        'onePointFivePN'
-        'twoPN'
-        'twoPointFivePN'
-        'threePN'
-        'threePointFivePN'
-        'taylorF4_45PN'
+        A string containing a PN order. Valid values are given above.
     Returns
     --------
     mapping: dictionary
         An inverse mapping between the active Lambda terms and index in the
         metric
-    """
+    """ %(pycbcValidOrdersHelpDescriptions)
     mapping = generate_mapping(order)
     inv_mapping = {}
     for key,value in mapping.items():
@@ -124,7 +125,7 @@ def generate_inverse_mapping(order):
 def get_chirp_params(totmass, eta, beta, sigma, gamma, chis, f0, order):
     """
     Take a set of masses and spins and convert to the various lambda
-    coordinates that describe the orbital phase.
+    coordinates that describe the orbital phase. Accepted PN orders are: %s
  
     Parameters
     ----------
@@ -149,13 +150,13 @@ def get_chirp_params(totmass, eta, beta, sigma, gamma, chis, f0, order):
         when calling different functions!).
     order : string
         The Post-Newtonian order that is used to translate from masses and
-        spins to the lambda_i coordinate system.
+        spins to the lambda_i coordinate system. Valid orders given above.
 
     Returns
     --------
     lambdas : list of floats or numpy.arrays
         The lambda coordinates for the input system(s)
-    """
+    """ %(pycbcValidOrdersHelpDescriptions)
 
     # Convert mass to seconds
     totmass = totmass * LAL_MTSUN_SI

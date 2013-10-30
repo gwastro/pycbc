@@ -47,119 +47,43 @@ __program__ = "pycbc_geom_nonspinbank"
 # Read command line options
 usage = """usage: %prog [options]"""
 _desc = __doc__[1:]
-parser = optparse.OptionParser(usage, version=__version__, description=_desc)
+parser = optparse.OptionParser(usage, version=__version__, description=_desc,\
+           formatter=pycbc.tmpltbank.IndentedHelpFormatterWithNL())
+
+# Begin with code specific options
 parser.add_option("-v", "--verbose", action="store_true", default=False,\
                     help="verbose output, default: %default")
-parser.add_option("-o", "--pn-order", action="store", type="string",\
-                   default=None,\
-                   help="""Determines the PN order to use, choices are:
-    * "twoPN": will include terms up to 2PN in phase
-    * "threePointFivePN": will include terms to 3.5PN
-    * "taylorF4_45PN": use the R2F4 metric with partial terms to 4.5PN""")
-parser.add_option("-f", "--f0", action="store", type="float",\
-                  default=70., help="f0 for use in metric calculation," +\
-                                    "default: %default")
-parser.add_option("-l", "--f-low", action="store", type="float",\
-                  default=15., help="f_low for use in metric calculation," +\
-                                    "default: %default")
-parser.add_option("-u", "--f-upper", action="store", type="float",\
-                  default=2000., help="f_up for use in metric calculation," +\
-                                      "default: %default")
-parser.add_option("-d", "--delta-f", action="store", type="float",\
-                  default=0.001, help="delta_f for use in metric calculation,"+\
-                                      "linear interpolation used to get this,"+\
-                                      "default: %default")
 parser.add_option("-m", "--min-match", action="store", type="float",\
                   default=0.03, help="Minimum match to generate bank with"+\
-                                      "default: %default")
-parser.add_option("-y", "--min-mass1", action="store", type="float",\
-                  default=None, help="Minimum mass1 to generate bank with"+\
-                                     ", mass1 *must* be larger than mass2" +\
-                                      "default: %default")
-parser.add_option("-Y", "--max-mass1", action="store", type="float",\
-                  default=None, help="Maximum mass1 to generate bank with"+\
-                                      "default: %default")
-parser.add_option("-z", "--min-mass2", action="store", type="float",\
-                  default=None, help="Minimum mass2 to generate bank with"+\
-                                      "default: %default")
-parser.add_option("-Z", "--max-mass2", action="store", type="float",\
-                  default=None, help="Maximum mass2 to generate bank with"+\
-                                      "default: %default")
-parser.add_option("", "--max-total-mass", action="store", type="float",\
-                  default=None, help="Minimum total mass to generate bank "+\
-                                      "with default: %default")
-parser.add_option("", "--min-total-mass", action="store", type="float",\
-                  default=None, help="Maximum total mass to generate bank "+\
-                                      "with default: %default")
-parser.add_option("-O", "--output-file",  help="Output file name")
+                                     "OPTIONAL: default=%default")
+parser.add_option("-O", "--output-file",  help="Output file name. "+\
+                                               "REQUIRED OPTION.")
 
+# Insert the metric calculation options
+pycbc.tmpltbank.insert_metric_calculation_options(parser)
+
+# Insert the mass range options
+pycbc.tmpltbank.insert_mass_range_option_group(parser, nonSpin=True)
+
+# Insert the PSD options
 pycbc.psd.insert_psd_option_group(parser)
 
-dataReadingGroup = optparse.OptionGroup(parser, "Options for obtaining h(t)",
-                  "These options are used for generating h(t) either by "
-                  "reading from file or by generating it. This is only needed "
-                  "if the PSD is to be estimated from the data, ie. if the "
-                  "--psd-estimation option is given.")
+# Insert the data reading options
+pycbc.tmpltbank.insert_data_reading_options(parser)
 
-dataReadingGroup.add_option("--gps-start-time", \
-                            help="The gps start time of the data", type=int)
-dataReadingGroup.add_option("--gps-end-time", \
-                            help="The gps end time of the data", type=int)
-dataReadingGroup.add_option("--strain-high-pass", type=float, \
-                            help="High pass frequency")
-dataReadingGroup.add_option("--pad-data", \
-              help="Extra padding to remove highpass corruption (s)", type=int)
-dataReadingGroup.add_option("--sample-rate", type=int, \
-                            help="The sample rate to use for h(t) generation.")
-dataReadingGroup.add_option("--frame-cache", type=str, \
-                            help="Cache file containing the frame locations.")
-dataReadingGroup.add_option("--channel-name", type=str, \
-                   help="The channel containing the gravitational strain data")
-parser.add_option_group(dataReadingGroup)
-
-ethincaGroup = optparse.OptionGroup(parser, "Ethinca metric options",
-                    "These options are used in the calculation of the gamma  "
-                    "components for ethinca calculations if needed.")
-ethincaGroup.add_option("","--calculate-ethinca-metric", action="store_true",\
-                        default=False, help="If given the ethinca metric "+\
-                        "will be calculated and stored in the Gamma entried "+\
-                        "in the sngl_inspiral table.")
-ethincaGroup.add_option("","--ethinca-calc-density", action="store",\
-                        default=10, help="The ethinca metric is calculated "+\
-                        "using a given value for f_max. Tmpltbank uses the "+\
-                        "ISCO frequency for every template and recomputes "+\
-                        "the metric components every time it does this. "+\
-                        "This code generates the metric for discrete values "+\
-                        "f_max and uses the closest one to each template's "+\
-                        "ISCO frequency. This value sets the spacing between "+\
-                        "these discrete values of frequency cutoff. "+\
-                        "default: %default")
-parser.add_option_group(ethincaGroup)
-
+# Add the ethinca calculation options
+pycbc.tmpltbank.insert_ethinca_calculation_option_group(parser)
 
 (opts,args) = parser.parse_args()
 
 # Sanity check options
-if not opts.pn_order:
-    parser.error("Must supply --pn-order")
-if not opts.min_mass1:
-    parser.error("Must supply --min-mass1")
-if not opts.min_mass2:
-    parser.error("Must supply --min-mass2")
-if not opts.max_mass1:
-    parser.error("Must supply --max-mass1")
-if not opts.max_mass2:
-    parser.error("Must supply --max-mass2")
 if not opts.output_file:
     parser.error("Must supply --output-file")
-
-if (not opts.min_total_mass) or \
-        ((opts.min_mass1 + opts.min_mass2) > opts.min_total_mass):
-    opts.min_total_mass = opts.min_mass1 + opts.min_mass2
-if (not opts.max_total_mass) or \
-        ((opts.max_mass1 + opts.max_mass2) < opts.max_total_mass):
-    opts.max_total_mass = opts.max_mass1 + opts.max_mass2
-
+pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
+pycbc.tmpltbank.verify_mass_range_options(opts, parser, nonSpin=True)
+pycbc.psd.verify_psd_options(opts, parser)
+pycbc.tmpltbank.verify_data_reading_options(opts, parser)
+pycbc.tmpltbank.verify_ethinca_calculation_options(opts, parser)
 
 maxSpinMag = 0
 

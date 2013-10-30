@@ -48,113 +48,53 @@ __program__ = "pycbc_geom_aligned_bank"
 # Read command line options
 usage = """usage: %prog [options]"""
 _desc = __doc__[1:]
-parser = optparse.OptionParser(usage, version=__version__, description=_desc)
+parser = optparse.OptionParser(usage, version=__version__, description=_desc,\
+           formatter=pycbc.tmpltbank.IndentedHelpFormatterWithNL())
+
+# Begin with code specific options
 parser.add_option("-v", "--verbose", action="store_true", default=False,\
                     help="verbose output, default: %default")
-parser.add_option("-O", "--output-file",  help="Output file name")
+parser.add_option("-O", "--output-file",  help="Output file name. "+\
+                                               "REQUIRED ARGUMENT.")
 parser.add_option("-L", "--log-path", action="store", type="string",\
                    default=None,\
-                   help="Directory to store condor logs.")
-parser.add_option("-o", "--pn-order", action="store", type="string",\
-                   default=None,\
-                   help="""Determines the PN order to use, choices are:
-    * "twoPN": will include spin and non-spin terms up to 2PN in phase
-    * "threePointFivePN": will include non-spin terms to 3.5PN, spin to 2.5PN
-    * "taylorF4_45PN": use the R2D2 metric with partial terms to 4.5PN""")
-parser.add_option("-f", "--f0", action="store", type="float",\
-                  default=70., help="f0 for use in metric calculation," +\
-                                    "default: %default")
-parser.add_option("-l", "--f-low", action="store", type="float",\
-                  default=15., help="f_low for use in metric calculation," +\
-                                    "default: %default")
-parser.add_option("-u", "--f-upper", action="store", type="float",\
-                  default=2000., help="f_up for use in metric calculation," +\
-                                      "default: %default")
-parser.add_option("-d", "--delta-f", action="store", type="float",\
-                  default=0.001, help="delta_f for use in metric calculation,"+\
-                                      "linear interpolation used to get this,"+\
-                                      "default: %default")
+                   help="Directory to store condor logs. REQUIRED ARGUMENT")
 parser.add_option("-m", "--min-match", action="store", type="float",\
                   default=0.03, help="Minimum match to generate bank with"+\
-                                      "default: %default")
-parser.add_option("-y", "--min-mass1", action="store", type="float",\
-                  default=0.03, help="Minimum mass1 to generate bank with"+\
-                                     ", mass1 *must* be larger than mass2" +\
-                                      "default: %default")
-parser.add_option("-Y", "--max-mass1", action="store", type="float",\
-                  default=0.03, help="Maximum mass1 to generate bank with"+\
-                                      "default: %default")
-parser.add_option("-z", "--min-mass2", action="store", type="float",\
-                  default=0.03, help="Minimum mass2 to generate bank with"+\
-                                      "default: %default")
-parser.add_option("-Z", "--max-mass2", action="store", type="float",\
-                  default=0.03, help="Maximum mass2 to generate bank with"+\
-                                      "default: %default")
-parser.add_option("-x", "--max-ns-spin-mag", action="store", type="float",\
-                  default=0.03, help="Maximum neutron star spin magnitude"+\
-                                      "default: %default")
-parser.add_option("-X", "--max-bh-spin-mag", action="store", type="float",\
-                  default=0.03, help="Maximum black hole spin magnitude"+\
-                                      "default: %default")
-parser.add_option("", "--max-total-mass", action="store", type="float",\
-                  default=None, help="Minimum total mass to generate bank "+\
-                                      "with default: %default")
-parser.add_option("", "--min-total-mass", action="store", type="float",\
-                  default=None, help="Maximum total mass to generate bank "+\
-                                      "with default: %default")
-parser.add_option("-n", "--nsbh-flag", action="store_true", default=False,\
-                    help="Set this if running with NSBH, default: %default")
+                                      "OPTIONAL: default= %default")
 parser.add_option("-s", "--stack-distance", action="store", type="float",\
-                  default=0.2, help="Minimum metric spacing before we stack"+\
-                                      "default: %default")
+                  default=0.2, help="Minimum metric spacing before we "+\
+                               "stack. OPTIONAL: default= %default")
 parser.add_option("-3", "--threed-lattice", action="store_true", default=False,\
-                    help="Set this to use a 3D lattice, default: %default")
+                    help="Set this to use a 3D lattice. "+\
+                         "OPTIONAL: default= %default")
 parser.add_option("-S", "--split-bank-num", action="store", type="int",\
                     default=100,\
-                    help="Number of points per job in dag, default: %default")
+                    help="Number of points per job in dag. "+\
+                         "OPTIONAL: default= %default")
 
+# Insert the metric calculation options
+pycbc.tmpltbank.insert_metric_calculation_options(parser)
+
+# Insert the mass range options
+pycbc.tmpltbank.insert_mass_range_option_group(parser)
+
+# Insert the PSD options
 pycbc.psd.insert_psd_option_group(parser)
 
-dataReadingGroup = optparse.OptionGroup(parser, "Options for obtaining h(t)",
-                  "These options are used for generating h(t) either by "
-                  "reading from file or by generating it. This is only needed "
-                  "if the PSD is to be estimated from the data, ie. if the "
-                  "--psd-estimation option is given.")
-
-dataReadingGroup.add_option("--gps-start-time", \
-                            help="The gps start time of the data", type=int)
-dataReadingGroup.add_option("--gps-end-time", \
-                            help="The gps end time of the data", type=int)
-dataReadingGroup.add_option("--strain-high-pass", type=float, \
-                            help="High pass frequency")
-dataReadingGroup.add_option("--pad-data", \
-              help="Extra padding to remove highpass corruption (s)", type=int)
-dataReadingGroup.add_option("--sample-rate", type=int, \
-                            help="The sample rate to use for h(t) generation.")
-dataReadingGroup.add_option("--frame-cache", type=str, \
-                            help="Cache file containing the frame locations.")
-dataReadingGroup.add_option("--channel-name", type=str, \
-                   help="The channel containing the gravitational strain data")
-parser.add_option_group(dataReadingGroup)
+# Insert the data reading options
+pycbc.tmpltbank.insert_data_reading_options(parser)
 
 (opts,args) = parser.parse_args()
-if not opts.pn_order:
-    parser.error("Must supply --pn-order")
-if not opts.min_mass1:
-    parser.error("Must supply --min-mass1")
-if not opts.min_mass2:
-    parser.error("Must supply --min-mass2")
-if not opts.max_mass1:
-    parser.error("Must supply --max-mass1")
-if not opts.max_mass2:
-    parser.error("Must supply --max-mass2")
+# Sanity check options
 if not opts.output_file:
     parser.error("Must supply --output-file")
-
-opts.min_total_mass = opts.min_mass1 + opts.min_mass2
-opts.max_total_mass = opts.max_mass1 + opts.max_mass2
-opts.min_comp_mass = opts.min_mass2
-opts.max_comp_mass = opts.max_mass2
+if not opts.log_path:
+    parser.error("Must supply --log-path")
+pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
+pycbc.tmpltbank.verify_mass_range_options(opts, parser)
+pycbc.psd.verify_psd_options(opts, parser)
+pycbc.tmpltbank.verify_data_reading_options(opts, parser)
 
 # If we are going to use h(t) to estimate a PSD we need h(t)
 if opts.psd_estimation:
@@ -190,7 +130,6 @@ if opts.verbose:
 # opts.f_upper. All this assumes that 1 / deltaF is a binary number
 nyquistFreq = 2**numpy.ceil(numpy.log2(opts.f_upper))
 numSamples = int(round(nyquistFreq / opts.delta_f)) + 1
-
 psd = pycbc.psd.from_cli(opts, length=numSamples, delta_f=opts.delta_f, \
                          low_frequency_cutoff=opts.f_low, strain=strain)
 
@@ -366,3 +305,6 @@ dag.add_node(cat_node)
 dag.write_sub_files()
 dag.write_dag()
 dag.write_script()
+
+print "Now submit bank_generation.dag to generate your template bank."
+print "This may take a while, go make a cup of tea!"

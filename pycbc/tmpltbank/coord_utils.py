@@ -18,6 +18,7 @@
 
 from __future__ import division
 import numpy
+from lal import LAL_PI, LAL_MTSUN_SI
 from pycbc.tmpltbank.lambda_mapping import get_chirp_params
 from pycbc.tmpltbank.lambda_mapping import get_beta_sigma_from_aligned_spins
 
@@ -525,4 +526,112 @@ def get_point_distance(point1, point2, evals, evecs, evecsCV, order, f0):
         dist += (aXis[i] - bXis[i])**2
 
     return dist, aXis, bXis
+
+def calc_point_dist(vsA, entryA, MMdistA):
+    """
+    This function is used to determine if the distance between two points is
+    less than that stated by the minimal match.
+
+    Parameters
+    ----------
+    vsA : list or numpy.array or similar
+        An array of point 1's position in the \chi_i coordinate system
+    entryA : list or numpy.array or similar
+        An array of point 2's position in the \chi_i coordinate system
+    MMdistA : float
+        The minimal mismatch allowed between the points
+
+    Returns
+    --------
+    Boolean
+        True if the points have a mismatch < MMdistA
+        False if the points have a mismatch > MMdistA
+    """
+    val = (vsA[0] - entryA[0])**2
+    for i in range(1,len(vsA)):
+        val += (vsA[i] - entryA[i])**2
+    return (val < MMdistA)
+
+def calc_point_dist_vary(mus1, fUpper1, mus2, fUpper2, fMap, MMdistA):
+    """
+    Function to determine if two points, with differing upper frequency cutoffs
+    have a mismatch < MMdistA for *both* upper frequency cutoffs.
+
+    Parameters
+    ----------
+    mus1 : List of numpy arrays
+        mus1[i] will give the array of point 1's position in the \chi_j
+        coordinate system. The i element corresponds to varying values of the
+        upper frequency cutoff. fMap is used to map between i and actual
+        frequencies
+    fUpper1 : float
+        The upper frequency cutoff (ISCO) of point 1.
+    mus2 : List of numpy arrays
+        mus2[i] will give the array of point 2's position in the \chi_j
+        coordinate system. The i element corresponds to varying values of the
+        upper frequency cutoff. fMap is used to map between i and actual
+        frequencies
+    fUpper2 : float
+        The upper frequency cutoff (ISCO) of point 2.
+    fMap : dictionary
+        fMap[fUpper] will give the index needed to get the \chi_j coordinates
+        in the two sets of mus
+    MMdistA
+        The minimal mismatch allowed between the points
+
+    Returns
+    --------
+    Boolean
+        True if the points have a mismatch < MMdistA
+        False if the points have a mismatch > MMdistA
+    """
+    idx1 = fMap[fUpper1]
+    vecs1 = mus1[idx1]
+    vecs2 = mus2[idx1]
+    val = (vecs1[0] - vecs2[0])**2
+    for i in range(1,len(vecs1)):
+        val += (vecs1[i] - vecs2[i])**2
+    if (val > MMdistA):
+        return False
+    idx2 = fMap[fUpper2]
+    vecs1 = mus1[idx2]
+    vecs2 = mus2[idx2]
+    val = (vecs1[0] - vecs2[0])**2
+    for i in range(1,len(vecs1)):
+        val += (vecs1[i] - vecs2[i])**2
+    return (val < MMdistA)
+
+def return_nearest_isco(totmass, freqs):
+    """
+    Given a value for total mass and a list of discrete frequencies, this will
+    return the frequency in the list closest to the ISCO.
+
+    Parameters
+    ----------
+    totmass : numpy.array
+        The total mass of the input systems
+    freqs : list of floats
+        A list of frequencies
+
+    Returns
+    -------
+    numpy.array
+        The frequencies closest to the ISCO frequency corresponding to each
+        value of totmass. 
+    """
+    # FIXME: I'm not entirely sure how this works! Documentation may be wrong.
+    fISCO = (1/6.)**(3./2.) / (LAL_PI * totmass * LAL_MTSUN_SI)
+    refEv = numpy.zeros(len(fISCO),dtype=float)
+    for i in range(len(freqs)):
+        if (i == 0):
+            logicArr = fISCO < ((freqs[0] + freqs[1])/2.)
+        elif (i == (len(freqs)-1)):
+            logicArr = fISCO > ((freqs[-2] + freqs[-1])/2.)
+        else:
+            logicArrA = fISCO > ((freqs[i-1] + freqs[i])/2.)
+            logicArrB = fISCO < ((freqs[i] + freqs[i+1])/2.)
+            logicArr = numpy.logical_and(logicArrA,logicArrB)
+        if logicArr.any():
+            refEv[logicArr] = freqs[i]
+    return refEv
 
