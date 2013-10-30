@@ -272,6 +272,7 @@ setup (
                'bin/pycbc_make_banksim', 'bin/pycbc_split_table',
                'bin/pycbc_legacy_inspiral','bin/pycbc_geom_aligned_2dstack',
                'bin/pycbc_geom_aligned_bank','bin/pycbc_geom_nonspinbank',
-               'bin/pycbc_aligned_bank_cat','bin/pycbc_aligned_stoch_bank'],
+               'bin/pycbc_aligned_bank_cat','bin/pycbc_aligned_stoch_bank',
+               'bin/pycbc_make_faithsim',],
     packages = ['pycbc','pycbc.fft','pycbc.types','pycbc.filter','pycbc.psd','pycbc.waveform','pycbc.events','pycbc.noise','pycbc.vetoes','pycbc.tmpltbank'],
 )

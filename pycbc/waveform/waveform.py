@@ -29,6 +29,7 @@ import sys
 import lal
 import lalsimulation
 from pycbc.types import TimeSeries,FrequencySeries,zeros,Array,complex_same_precision_as
+from pycbc.types import complex64, float32
 from pycbc import HAVE_CUDA,HAVE_OPENCL
 from pycbc.scheme import mgr
 from pycbc.types import real_same_precision_as
@@ -59,6 +60,92 @@ fd_required_args = base_required_args + ['delta_f']
 _lalsim_td_approximants = {}
 _lalsim_fd_approximants = {}
 _lalsim_enum = {}
+
+def _get_waveform_from_inspiral(**p):
+    def get_string_from_order(order):
+        if order == 0:
+            return 'newtonian'
+        if order == 1:
+            return 'oneHalfPN'
+        if order == 2:
+            return 'onePN'
+        if order == 3:
+            return 'onePointFivePN'
+        if order == 4:
+            return 'twoPN'
+        if order == 5:
+            return 'twoPointFivePN'
+        if order == 6:
+            return 'threePN'
+        if (order == 7) or (order == -1):
+            return 'threePointFivePN'
+        if order == -8:
+            return 'pseudoFourPN'
+
+    import lalmetaio
+    import lal
+    import lalinspiral
+    # prefix with 'Inspiral-'
+    name = p['approximant'][9:]
+    
+    if name.startswith('EOB'):
+        p['phase_order'] = -8
+
+    params = lalmetaio.SimInspiralTable()
+    params.waveform = name + get_string_from_order(p['phase_order'])
+    params.mass1= p['mass1']
+    params.mass2= p['mass2']
+    params.f_lower = p['f_lower']
+    params.spin1x = p['spin1x']
+    params.spin1y = p['spin1y']
+    params.spin1z = p['spin1z']
+    params.spin2x = p['spin2x']
+    params.spin2y = p['spin2y']
+    params.spin2z = p['spin2z']
+    params.inclination = p['inclination']
+    params.distance = p['distance']
+    params.coa_phase = p['coa_phase']
+    
+    guess_length =  lalinspiral.FindChirpChirpTime(params.mass1, params.mass2, 
+                                                        params.f_lower, 7)
+    guess_length = max(guess_length, 3)
+   
+    params.geocent_end_time = guess_length * 1.5
+    params.taper = 'TAPER_NONE'
+    bufferl = guess_length * 2
+    dt = p['delta_t']
+    df = 1.0 / bufferl
+    sample_rate = int(1.0 / dt)
+    epoch = lal.LIGOTimeGPS(0, 0)
+    N = bufferl * sample_rate
+    n = N / 2 + 1
+    
+    resp = pycbc.types.FrequencySeries(zeros(n), delta_f = df, 
+                                       epoch=epoch, dtype=complex64) + 1
+    out = pycbc.types.TimeSeries(zeros(N), delta_t = dt, 
+                                 epoch=epoch, dtype=float32)
+    outl = out.lal()
+    outl.sampleUnits = lal.lalADCCountUnit
+    
+    out2 = pycbc.types.TimeSeries(zeros(N), delta_t = dt, 
+                                 epoch=epoch, dtype=float32)
+    outl2 = out.lal()
+    outl2.sampleUnits = lal.lalADCCountUnit
+    
+    respl = resp.lal()
+    respl.sampleUnites = lal.lalDimensionlessUnit
+
+    lalinspiral.FindChirpInjectSignals(outl, params, respl)  
+    
+    params.coa_phase -= lal.LAL_PI / 4
+    lalinspiral.FindChirpInjectSignals(outl2, params, respl)
+    seriesp = TimeSeries(outl.data.data, delta_t=dt, 
+                         epoch=epoch - params.geocent_end_time)
+                         
+    seriesc = TimeSeries(outl2.data.data, delta_t=dt,
+                         epoch=epoch - params.geocent_end_time)
+    
+    return seriesp, seriesc
 
 def _lalsim_td_waveform(**p):
     flags = lalsimulation.SimInspiralCreateWaveformFlags()
@@ -120,7 +207,13 @@ for approx_enum in xrange(0,lalsimulation.NumApproximants):
         _lalsim_enum[approx_name] = approx_enum
         _lalsim_fd_approximants[approx_name] = _lalsim_fd_waveform
 
-cpu_td = _lalsim_td_approximants
+#Add lalinspiral approximants
+insp_td = {}
+for apx in ['IMRPhenomB', 'EOB', 'EOBNR']:
+    name = 'Inspiral-' + apx
+    insp_td[name] = _get_waveform_from_inspiral
+
+cpu_td = dict(_lalsim_td_approximants.items() + insp_td.items())
 cpu_fd = _lalsim_fd_approximants
 
 # Waveforms written in CUDA
@@ -285,6 +378,8 @@ def get_td_waveform(template=None, **kwargs):
 
     if 'approximant' not in input_params:
         raise ValueError("Please provide an approximant name")
+    elif input_params['approximant'].startswith('Inspiral-'):
+        pass
     elif input_params['approximant'] not in wav_gen:
         raise ValueError("Approximant %s not available" % \
                          (input_params['approximant']))

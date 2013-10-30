@@ -1,0 +1,186 @@
+#! /usr/bin/env python
+import os
+import shutil
+import ConfigParser
+import subprocess
+import glob
+import tempfile
+from optparse import OptionParser
+from glue.pipeline import CondorDAGJob, CondorDAGNode, CondorDAG, CondorJob
+
+class BaseJob(CondorDAGJob, CondorJob):
+    def __init__(self, log_dir, executable, cp, section, gpu=False):
+        CondorDAGJob.__init__(self, "vanilla", executable)
+        
+        if gpu:
+            CondorJob.__init__(self, "vanilla", executable, 2)
+        # These are all python jobs so need to pull in the env
+        self.add_condor_cmd('getenv', 'True')       
+        self.set_stderr_file(os.path.join(log_dir, os.path.basename(executable) + '-$(cluster)-$(process).err'))
+        self.set_stdout_file(os.path.join(log_dir, os.path.basename(executable) + '-$(cluster)-$(process).out'))
+        self.set_sub_file(os.path.basename(executable)+".sub")   
+        
+        if cp is not None: 
+            self.add_ini_opts(cp, section)         
+       
+class FaithsimNode(CondorDAGNode):
+    def __init__(self, job, tmplt_file, match_file, inj_per_job=None):
+        CondorDAGNode.__init__(self, job)    
+        self.add_file_opt("param-file", tmplt_file)
+        self.add_file_opt("match-file", match_file, file_is_output_file=True) 
+
+def get_ini_opts(confs, section):
+    op_str = ""
+    for opt in confs.options(section):
+        val = confs.get(section, opt)
+        op_str += "--" + opt + " " + val + " \\" + "\n"
+    return op_str
+    
+def mkdir(dir_name):
+    try :
+        os.mkdir(dir_name)
+    except OSError:
+        pass
+        
+parser = OptionParser()
+parser.add_option('--config', type=str)          
+(options, args) = parser.parse_args() 
+
+if options.config is None:
+    raise ValueError("Config file is required")  
+
+confs = ConfigParser.ConfigParser()
+confs.read(options.config)
+
+banksim_prog = confs.get("executables", "faithsim")
+templates_per_job = confs.get("workflow", "templates-per-job")
+
+try:
+    log_path = confs.get("workflow", 'log-path')
+except:
+    log_path = './'
+
+tempfile.tempdir = log_path
+tempfile.template='banksim.dag.log.'
+logfile = tempfile.mktemp()
+     
+print "Making workspace directories..."
+mkdir('scripts')
+mkdir('match')
+mkdir('bank')
+mkdir('log')
+
+print "Copying scripts"
+shutil.copy(banksim_prog, 'scripts/pycbc_faithsim')
+os.chmod('scripts/pycbc_faithsim', 0777)
+
+print "Creating Injection File"
+inj_str = "lalapps_inspinj " + get_ini_opts(confs, "inspinj") + "--output inj.xml"
+os.system(inj_str)
+
+print "Splitting template bank..."
+subprocess.call(['pycbc_split_table', '-n', str(templates_per_job), '-t', 'inj.xml', '-e', 'bank/bank'])
+
+num_banks = len(glob.glob("bank/bank*"))
+
+print "Creating Dag..."
+f = open("banksim.dag", "w")
+
+dag = CondorDAG(logfile)
+dag.set_dag_file("faithsim")
+dag.set_dax_file("faithsim")
+
+fsjob = BaseJob("log", "scripts/pycbc_faithsim", confs, "faithsim")
+rjob = BaseJob("log", "scripts/pycbc_faithsim_collect_results", None, None)
+rnode = CondorDAGNode(rjob)
+
+for inj_num in range(num_banks):
+    bn = 'bank/bank' + str(inj_num) + '.xml'
+    mf = 'match/match' + str(inj_num) + '.dat'
+    fsnode = FaithsimNode(fsjob, bn, mf, inj_per_job=templates_per_job)
+    dag.add_node(fsnode)
+    rnode.add_parent(fsnode) 
+dag.add_node(rnode)
+
+f = open("scripts/pycbc_faithsim_collect_results", "w")
+f.write("""#!/usr/bin/env python
+from os.path import isfile
+from numpy import *
+from glue.ligolw import utils, table
+import glob
+
+fils = glob.glob("match/match*.dat")
+
+dtypem={'names': ('match', 'bank', 'bank_i', 'sim', 'sim_i', 'sigmasq'), 'formats': ('f8', 'S256', 'i4', 'S256', 'i4', 'f8')}
+
+# Collect the results
+res = None
+for fil in fils:
+    if res is not None:
+        res = append(res, loadtxt(fil, dtype=dtypem))
+    else:
+        res = loadtxt(fil, dtype=dtypem)
+ 
+btables = {}
+itables = {}     
+
+f = open("results.dat", "w")
+for row in res: 
+    outstr = ""
+    if row['bank'] not in btables:
+        indoc = utils.load_filename(row['bank'], False)
+        btables[row['bank']] = table.get_table(indoc, "sngl_inspiral") 
+
+    if row['sim'] not in itables:
+        indoc = utils.load_filename(row['sim'], False)
+        itables[row['sim']] = table.get_table(indoc, "sim_inspiral") 
+    
+    bt = btables[row['bank']][row['bank_i']]     
+    it = itables[row['sim']][row['sim_i']]
+ 
+    outstr += str(row['match']) + " "
+    outstr += str(bt.mass1) + " "
+    outstr += str(bt.mass2) + " "
+    outstr += str(bt.spin1x) + " "
+    outstr += str(bt.spin1y) + " "
+    outstr += str(bt.spin1z) + " "
+    outstr += str(bt.spin2x) + " "
+    outstr += str(bt.spin2y) + " " 
+    outstr += str(bt.spin2z) + " "
+    
+    outstr += str(it.mass1) + " "
+    outstr += str(it.mass2) + " "
+    outstr += str(it.spin1x) + " "
+    outstr += str(it.spin1y) + " "
+    outstr += str(it.spin1z) + " "
+    outstr += str(it.spin2x) + " "
+    outstr += str(it.spin2y) + " " 
+    outstr += str(it.spin2z) + " "
+    
+    outstr += str(it.coa_phase) + " "
+    outstr += str(it.inclination) + " "
+    outstr += str(it.latitude) + " " 
+    outstr += str(it.longitude) + " "
+    outstr += str(it.polarization) + " "
+    
+    outstr += str(row['sigmasq']) + " "
+                
+    outstr += "\\n"
+    
+    f.write(outstr)
+""")
+os.chmod('scripts/pycbc_faithsim_collect_results', 0777)
+
+    
+print "Creating submit script"
+f = open("submit.sh", 'w')
+f.write("""#!/bin/bash
+condor_submit_dag faithsim.dag
+""")
+os.chmod('submit.sh', 0777)
+
+print "Done"
+dag.write_sub_files()
+dag.write_script()
+dag.write_dag()
+
