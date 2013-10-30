@@ -25,54 +25,92 @@
 These are simple unit tests for lalsimulation
 """
 import sys
-import pycbc
 import unittest
-from pycbc.types import *
-from pycbc.scheme import *
-from pycbc.filter import *
-from pycbc.waveform import *
-import pycbc.fft
-import matplotlib
-matplotlib.use('Agg')
-import pylab
-import numpy
-import lal, lalsimulation
 import copy
 
-from utils import parse_args_cpu_only, simple_exit
+import numpy
+
+import lal, lalsimulation
+import pycbc
+from pycbc.types import *
+from pycbc.filter import *
+from pycbc.waveform import *
+
+import optparse
+from optparse import OptionParser
+from utils import simple_exit, _check_scheme_cpu
+
+parser = OptionParser()
+parser.add_option('--scheme','-s', action='callback', type = 'choice',
+                   choices = ('cpu','cuda','opencl'),
+                   default = 'cpu', dest = 'scheme', callback = _check_scheme_cpu,
+                   help = optparse.SUPPRESS_HELP)
+parser.add_option('--device-num','-d', action='store', type = 'int',
+                   dest = 'devicenum', default=0,
+                   help = optparse.SUPPRESS_HELP)
+                   
+parser.add_option('--show-plots', action='store_true',
+                   help = 'show the plots generated in this test suite')
+parser.add_option('--save-plots', action='store_true',
+                   help = 'save the plots generated in this test suite')  
+ 
+parser.add_option('--approximant', type = 'choice', choices = td_approximants(),
+                  help = "[default: %default]")      
+                                   
+parser.add_option('--mass1', type = float, default=10, help = "[default: %default]")    
+parser.add_option('--mass2', type = float, default=10, help = "[default: %default]")   
+parser.add_option('--spin1x', type = float, default=0, help = "[default: %default]")   
+parser.add_option('--spin1y', type = float, default=0, help = "[default: %default]")   
+parser.add_option('--spin1z', type = float, default=0, help = "[default: %default]")   
+parser.add_option('--spin2x', type = float, default=0, help = "[default: %default]")   
+parser.add_option('--spin2y', type = float, default=0, help = "[default: %default]")   
+parser.add_option('--spin2z', type = float, default=0, help = "[default: %default]")  
+ 
+parser.add_option('--coa-phase', type = float, default=0, help = "[default: %default]") 
+parser.add_option('--inclination', type = float, default=0, help = "[default: %default]") 
+
+parser.add_option('--delta-t', type = float, default=1.0/8192,  help = "[default: %default]") 
+parser.add_option('--f-lower', type = float, default=30, help = "[default: %default]")   
+
+parser.add_option('--phase-order', type = int, default=-1, help = "[default: %default]") 
+parser.add_option('--amplitude-order', type = int, default=-1, help = "[default: %default]") 
+parser.add_option('--spin-order', type = int, default=-1, help = "[default: %default]") 
+parser.add_option('--tidal-order', type = int, default=-1, help = "[default: %default]")  
+                
+(opt, args) = parser.parse_args()
+
+print 72*'='
+print "Running {0} unit tests for {1}:".format('CPU', "Lalsimulation Waveforms")
+
+import matplotlib
+if not opt.show_plots:
+    matplotlib.use('Agg')
+import pylab
 matplotlib.rc('text', usetex=True)
-parse_args_cpu_only("Lalsimulation Waveforms")
 
 class TestLALSimulation(unittest.TestCase):
     def setUp(self,*args):
-        self.save_plots = True
-        self.show_plots = False
-        self.plot_dir = "plots/"
+        self.save_plots = opt.save_plots
+        self.show_plots = opt.show_plots
+        self.plot_dir = "./"
         
         class params(object):
             pass
-        self.p = params()
         
-        self.p.mass1 = 10
-        self.p.mass2 = 10
-        self.p.spin1x = 0
-        self.p.spin1y = 0
-        self.p.spin1z = 0
-        self.p.spin2x = 0
-        self.p.spin2y = 0
-        self.p.spin2z = 0
-        self.p.inclination = 0
-        self.p.coa_phase = 0
-        self.p.delta_t=1.0/4096
-        self.p.f_lower=30
-        self.p.approximant= self.kwds['approximant']
+        self.p = params()
+      
+        # Overide my parameters with the program input arguments
+        self.p.__dict__.update(vars(opt))
+        
+        if 'approximant' in self.kwds:
+            self.p.approximant = self.kwds['approximant']
         
         from pycbc import version
         self.version_txt = "pycbc: %s  %s\n" % (version.git_hash, version.date) + \
                            "lalsimulation: %s  %s" % (lalsimulation.lalSimulationVCSId, lalsimulation.lalSimulationVCSDate)
         
-    def test_orbital_phase(self):
-        #""" Check that the waveform is consistent under phase changes
+    def test_varying_orbital_phase(self):
+        #"""Check that the waveform is consistent under phase changes
         #"""
         mass1 = 10 
         mass2 = 10
@@ -118,7 +156,7 @@ class TestLALSimulation(unittest.TestCase):
             pname = self.plot_dir + "/%s-vary-phase.png" % self.p.approximant
             pylab.savefig(pname)
         
-    def test_distance_scale(self):   
+    def test_distance_scaling(self):   
         #""" Check that the waveform is consistent under distance changes
         #"""     
         distance = 1e6
@@ -163,7 +201,7 @@ class TestLALSimulation(unittest.TestCase):
         self.assertTrue(hpc.almost_equal_elem(hpf * fac * fac, tolerance, relative=True))
         self.assertTrue(hpc.almost_equal_elem(hpn / fac, tolerance, relative=True))
             
-    def test_param_jitter(self):
+    def test_nearby_waveform_agreement(self):
         #""" Check that the overlaps are consistent for nearby waveforms
         #"""
         def nearby(params):
@@ -195,22 +233,40 @@ class TestLALSimulation(unittest.TestCase):
             o = overlap(hp, hpn)
             self.assertAlmostEqual(1, o, places=5)
             
-    #def test_inclination(self):
-    #    """ Test that the waveform is consistent for changes in inclination
-    #    """
-    #    pass
+    def test_varying_inclination(self):
+        #""" Test that the waveform is consistent for changes in inclination
+        #"""
+        sigmas = []
+        incs = numpy.arange(0, 21) * lal.LAL_PI / 10
         
-    #def test_ref_freq(self):
-    #    """ Test that the waveform is consistent for changes in the reference
-    #    frequency
-    #    """
-    #    pass
+        for inc in incs:
+            # WARNING: This does not properly handle the case of SpinTaylor*
+            # where the spin orientation is not relative to the inclination
+            hp, hc = get_td_waveform(self.p, inclination=inc)
+            s = sigma(hp, low_frequency_cutoff=self.p.f_lower)        
+            sigmas.append(s)
+
+        self.assertAlmostEqual(sigmas[-1], sigmas[0], places=7)
+        self.assertAlmostEqual(max(sigmas), sigmas[0], places=7)
+        self.assertTrue(sigmas[0] > sigmas[5])
+         
+        pylab.figure()
+        pylab.axes([.1, .2, 0.8, 0.70])   
+        pylab.plot(incs, sigmas)
+        pylab.title("Vary %s inclination, $\\tilde{h}$+" % self.p.approximant)
+        pylab.xlabel("Inclination (radians)")
+        pylab.ylabel("sigma (flat PSD)")
         
-    #def test_stability(self):
-    #    """ Test that the waveform is robust against changing the intitial
-    #    frequency
-    #    """
-    #    pass
+        info = self.version_txt
+        pylab.figtext(0, 0, info)
+        
+        if self.show_plots:
+            pylab.show()
+            
+        if self.save_plots:
+            pname = self.plot_dir + "/%s-vary-inclination.png" % self.p.approximant
+            pylab.savefig(pname)
+
     
 def test_maker(class_name, name, **kwds):
     class Test(class_name):
@@ -222,9 +278,16 @@ def test_maker(class_name, name, **kwds):
     return Test
  
 suite = unittest.TestSuite()   
-for apx in td_approximants():
+
+if opt.approximant:
+    apxs = [opt.approximant]
+else:
+    apxs = td_approximants()
+
+for apx in apxs:
     # The inspiral wrapper is only single precision we won't bother checking
     # it here. It may need different tolerances and some special care.
+    
     if apx.startswith("Inspiral-"):
         continue
     vars()[apx] = test_maker(TestLALSimulation, apx, approximant=apx)
