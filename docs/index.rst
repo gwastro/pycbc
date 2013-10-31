@@ -29,6 +29,7 @@ Package documentation:
    :maxdepth: 1
 
    frame
+   tmpltbank
 
 Examples:
 
