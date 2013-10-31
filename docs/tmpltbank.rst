@@ -1,5 +1,5 @@
 ###############################################################
-PyCBC template bank generation documentation (pycbc.tmpltbank)
+PyCBC template bank generation documentation (``pycbc.tmpltbank``)
 ###############################################################
 
 ===================
@@ -285,11 +285,18 @@ Some notes on these options:
 The module's source code
 ==========================
 
--------------------------
-:mod:`tmpltbank` Package
--------------------------
+Follow the following link to view the documentation (and through that the source code) of the pycbc.tmpltbank module:
 
-.. automodule:: pycbc.tmpltbank
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. toctree::
+    pycbc.tmpltbank
+
+The code also calls into the PSD module whose documentation is here:
+
+.. toctree::
+    pycbc.psd
+
+and the data generation/reading routines, which are here:
+
+.. toctree::
+    pycbc.noise
+
