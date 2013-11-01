@@ -241,7 +241,7 @@ def generate_version_info():
 
 class build_docs(Command):
     user_options = []
-    description = "Build the documenation pages"
+    description = "Build the documentation pages"
     def initialize_options(self):
         pass
     def finalize_options(self):
