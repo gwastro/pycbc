@@ -27,6 +27,13 @@ We may need to write a patch for Sphinx to add this functionality.
 import os,sys
 import glob
 
+
+def check_module_name_line(currLine):
+    if (':mod:' in currLine) and ('Module' in currLine):
+        return True
+    elif 'module' in currLine:
+        return True
+
 # Can these be named somewhat more obviously!
 excludes=['cuda', 'opencl', 'cufft', 'cuda_pyfft', 'cl_pyfft',\
           'pycbc_phenomC_tmplt', 'TaylorF2']
@@ -38,7 +45,7 @@ for file in fileList:
     fp = open(file,'r')
     addLine = True
     for line in fp:
-        if (':mod:' in line) and ('Module' in line):
+        if check_module_name_line(line):
             for excludeNam in excludes:
                 if excludeNam in line:
                     addLine=False
