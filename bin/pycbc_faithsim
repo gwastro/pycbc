@@ -35,7 +35,7 @@ from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd_approximants
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, TimeSeries, zeros, real_same_precision_as, complex_same_precision_as
-from pycbc.filter import match, overlap
+from pycbc.filter import match, overlap, sigma
 from pycbc.scheme import CPUScheme, CUDAScheme, OpenCLScheme
 from pycbc.fft import fft
 import pycbc.psd 
@@ -171,16 +171,20 @@ print("Reading and Interpolating PSD")
 if options.asd_file:
     psd = pycbc.psd.from_asd_txt(options.asd_file, filter_n,  
                            delta_f, options.filter_low_frequency_cutoff)
+    psd *= DYN_RANGE_FAC **2
+    psd = FrequencySeries(psd,delta_f=psd.delta_f,dtype=float32)
 elif options.psd:
     psd = pycbc.psd.from_string(options.psd, filter_n, delta_f, 
                            options.filter_low_frequency_cutoff) 
-
-psd *= DYN_RANGE_FAC **2
-psd = FrequencySeries(psd,delta_f=psd.delta_f,dtype=float32) 
-
+    psd *= DYN_RANGE_FAC **2
+    psd = FrequencySeries(psd,delta_f=psd.delta_f,dtype=float32) 
+else:
+    psd = None
 
 matches = []
 overlaps = []
+s1s = []
+s2s = []
 print("Calculating Overlaps")
 with ctx:
     index = 0 
@@ -197,7 +201,7 @@ with ctx:
                               options.waveform1_start_frequency, 
                               options.filter_sample_rate, 
                               filter_N)
-
+         
         htilde2 = get_waveform(options.waveform2_approximant, 
                               options.waveform2_phase_order, 
                               options.waveform2_amplitude_order,
@@ -214,12 +218,18 @@ with ctx:
         o = overlap(htilde1, htilde2, psd=psd, 
                     low_frequency_cutoff=options.filter_low_frequency_cutoff)   
         
+        s1 = sigma(htilde1, psd=psd, 
+                    low_frequency_cutoff=options.filter_low_frequency_cutoff)   
+        s2 = sigma(htilde2, psd=psd, 
+                    low_frequency_cutoff=options.filter_low_frequency_cutoff)   
         matches.append(m)
         overlaps.append(o)
+        s1s.append(s1)
+        s2s.append(s2)
 
 #Output the overlaps toa  file
-for m, o in zip(matches, overlaps):
-    match_str= "%5.5f %5.5f\n" % (m, o)
+for m, o, s1, s2 in zip(matches, overlaps, s1s, s2s):
+    match_str= "%5.5f %5.5f %5.5f %5.5f\n" % (m, o, s1, s2)
     fout.write(match_str)
 
 

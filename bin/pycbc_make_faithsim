@@ -16,6 +16,7 @@ class BaseJob(CondorDAGJob, CondorJob):
             CondorJob.__init__(self, "vanilla", executable, 2)
         # These are all python jobs so need to pull in the env
         self.add_condor_cmd('getenv', 'True')       
+        self.add_condor_cmd('+Allow_OGrid', 'True')
         self.set_stderr_file(os.path.join(log_dir, os.path.basename(executable) + '-$(cluster)-$(process).err'))
         self.set_stdout_file(os.path.join(log_dir, os.path.basename(executable) + '-$(cluster)-$(process).out'))
         self.set_sub_file(os.path.basename(executable)+".sub")   
