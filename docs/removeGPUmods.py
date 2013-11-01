@@ -33,6 +33,8 @@ def check_module_name_line(currLine):
         return True
     elif 'module' in currLine:
         return True
+    else:
+        return False
 
 # Can these be named somewhat more obviously!
 excludes=['cuda', 'opencl', 'cufft', 'cuda_pyfft', 'cl_pyfft',\
