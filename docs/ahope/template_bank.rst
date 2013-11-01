@@ -31,7 +31,7 @@ This will be the **only** thing that will be passed from the template bank secti
 More details of the code can be found below:
 
 :mod:`pycbc.ahope.tmpltbank_utils` Module
------------------------------
+------------------------------------------
 
 .. automodule:: pycbc.ahope.tmpltbank_utils
     :noindex:
