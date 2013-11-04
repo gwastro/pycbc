@@ -28,7 +28,7 @@ import sys, os
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 
           'sphinx.ext.intersphinx', 'sphinx.ext.coverage', 
               'sphinx.ext.mathjax', 'sphinx.ext.viewcode', 
-            'sphinxcontrib.programoutput', 
+            'sphinxcontrib.programoutput', 'sphinx.ext.autosummary',
          'numpydoc',           'matplotlib.sphinxext.mathmpl',
           'matplotlib.sphinxext.only_directives',
           'matplotlib.sphinxext.plot_directive']
