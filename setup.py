@@ -82,6 +82,7 @@ class clean(_clean):
         self.clean_files = ['pycbc/lalwrap.py','pycbc/lalwrap.pyc','include/lalwrap_wrap.c',
                             'pycbc/testlalwrap.py','pycbc/testlalwrap.pyc','include/testlalwrap_wrap.c']
 
+        self.clean_folders = ['docs/_build']
     def run(self):
         _clean.run(self)
         for f in self.clean_files:
@@ -90,6 +91,12 @@ class clean(_clean):
                 print 'removed {0}'.format(f)
             except:
                 pass
+              
+        import shutil
+
+        for fol in self.clean_folders:
+            shutil.rmtree(fol)
+            print 'removed {0}'.format(fol)
 
 class install(_install):
     def run(self):
@@ -247,8 +254,20 @@ class build_docs(Command):
     def finalize_options(self):
         pass
     def run(self):
-        subprocess.check_call("cd docs; sphinx-apidoc -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
+        subprocess.check_call("cd docs; cp conf_std.py conf.py; sphinx-apidoc -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
                             stderr=subprocess.STDOUT, shell=True)
+
+class build_docs_test(Command):
+    user_options = []
+    description = "Build the documentation pages in testing mode"
+    def initialize_options(self):
+        pass
+    def finalize_options(self):
+        pass
+    def run(self):
+        subprocess.check_call("cd docs; cp conf_test.py conf.py; sphinx-apidoc -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
+                            stderr=subprocess.STDOUT, shell=True)                            
+                            
 # do the actual work of building the package
 VERSION = generate_version_info()
 
@@ -260,6 +279,7 @@ setup (
     url = 'https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home',
     cmdclass = { 'test'  : test,
                  'build_docs' : build_docs,
+                 'build_docs_test' : build_docs_test,
                  'install' : install,
                  'test_cpu':test_cpu,
                  'test_cuda':test_cuda,
