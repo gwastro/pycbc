@@ -20,3 +20,4 @@ Method documentation
 ====================
 
 .. autofunction:: pycbc.frame.read_frame
+    :noindex:
