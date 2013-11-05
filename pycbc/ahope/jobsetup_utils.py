@@ -1,9 +1,9 @@
 from glue import pipeline
 from glue import segments
 
-def select_job_instance(currExe,currSection):
+def select_tmpltbankjob_instance(currExe,currSection):
     """This function returns an instance of the class that is appropriate for
-    the given executable provided to the function.
+    creating a template bank within ihope.
     
     Parameters
     ----------
@@ -18,13 +18,12 @@ def select_job_instance(currExe,currSection):
         An instance of the class that holds the utility functions appropriate
         for the given executable. This class **must** contain
         * exeClass.get_valid_times()
-        * exeClass.add_job()
-        * exeClass.add_node()
-        See lalapps_tmpltbank_utils for an example of how to set this up.
+        * exeClass.create_condorjob()
+        * exeClass.create_condornode()
     """
 
     # This is basically a list of if statements
-    if currExe == 'lalapps_tmpltbank' or currExe == 'lalapps_inspiral':
+    if currExe == 'lalapps_tmpltbank':
         exeClass = legacy_sngl_job_utils(currSection)
     # Some elif statements
     else:
@@ -33,6 +32,70 @@ def select_job_instance(currExe,currSection):
         raise NotImplementedError(errString)
 
     return exeClass
+
+def select_matchedfilterjob_instance(currExe,currSection):
+    """This function returns an instance of the class that is appropriate for
+    matched-filtering within ahope.
+    
+    Parameters
+    ----------
+    currExe : string
+        The name of the executable that is being used.
+    currSection : string
+        The name of the section storing options for this executble
+
+    Returns
+    --------
+    Instanced class : exeClass
+        An instance of the class that holds the utility functions appropriate
+        for the given executable. This class **must** contain
+        * exeClass.get_valid_times()
+        * exeClass.create_condorjob()
+        * exeClass.create_condornode()
+    """
+
+    # This is basically a list of if statements
+    if currExe == 'lalapps_inspiral':
+        exeClass = legacy_sngl_job_utils(currSection)
+    # Some elif statements
+    else:
+        # Should we try some sort of default class??
+        errString = "No class exists for executable %s" %(currExe,)
+        raise NotImplementedError(errString)
+
+    return exeClass
+
+def select_splitfilejob_instance(currExe, currSection):
+    """This function returns an instance of the class that is appropriate for
+    splitting an output file up within ahope (for e.g. splitbank).
+    
+    Parameters
+    ----------
+    currExe : string
+        The name of the executable that is being used.
+    currSection : string
+        The name of the section storing options for this executble
+
+    Returns
+    --------
+    Instanced class : exeClass
+        An instance of the class that holds the utility functions appropriate
+        for the given executable. This class **must** contain
+        * exeClass.create_condorjob()
+        * exeClass.create_condornode()
+    """
+
+    # This is basically a list of if statements
+    if currExe == 'lalapps_splitbank':
+        exeClass = splitbank_job_utils(currSection)
+    # Some elif statements
+    else:
+        # Should we try some sort of default class??
+        errString = "No class exists for executable %s" %(currExe,)
+        raise NotImplementedError(errString)
+
+    return exeClass
+
 
 class default_tmpltbank_utils:
     """
@@ -79,7 +142,7 @@ class legacy_ihope_job_utils:
 
     def create_condorjob(self,cp,ifo):
         '''
-        Set up a CondorDagmanJob class appropriate for lalapps_tmpltbank.
+        Set up a CondorDagmanJob class appropriate for legacy lalapps C codes
 
         Parameters
         ----------
@@ -95,7 +158,8 @@ class legacy_ihope_job_utils:
             The lalapps_tmpltbank CondorDagmanJob class.
         '''
         sections = [self.exeName]
-        if cp.has_section('%s-%s' %(self.exeName,ifo.lower())):
+           
+        if ifo and cp.has_section('%s-%s' %(self.exeName,ifo.lower())):
              sections.append('%s-%s' %(self.exeName,ifo.lower()) )
 
         currJob = LegacyInspiralAnalysisJob(cp,sections,\
@@ -106,7 +170,7 @@ class legacy_ihope_job_utils:
 
     def create_condornode(self,ahopeDax,currJob,bankDataSeg,parent=None):
         """
-        Set up a CondorDagmanNode class to run a lalapps_tmpltbank instance.
+        Set up a CondorDagmanNode class to run legacy lalapps C codes.
 
         Parameters
         ----------
@@ -209,9 +273,66 @@ class legacy_sngl_job_utils(legacy_ihope_job_utils):
         dataLength = analysisDur + 2*padData
         validStart = padData
         validEnd = analysisDur + padData
+        # If this is inspiral we lose segment-length/4 on start and end
+        if self.exeName == 'inspiral':
+            # Don't think inspiral will do well if segmentLength/4 is not
+            # an integer
+            validStart = validStart + int(segmentLength/(sampleRate * 4))
+            validEnd = validEnd - int(segmentLength / (sampleRate * 4))
+
         validChunk = segments.segment([validStart,validEnd])
 
         return dataLength,validChunk
+
+class splitbank_job_utils(legacy_ihope_job_utils):
+    """This class holds the function for lalapps_splitbank 
+    usage following the old ihope specifications.
+    """
+    def __init__(self,exeName):
+        self.exeName = exeName
+
+    def create_condornode(self, ahopeDax, currJob, numBanks, parent):
+        """
+        Set up a CondorDagmanNode class to run lalapps_splitbank code
+
+        Parameters
+        ----------
+        ahopeDax : pipeline.CondorDAG instance
+            The workflow to hold of the ahope jobs.
+        currJob : pipeline.CondorDagmanJob
+            The CondorDagmanJob to use when setting up the individual nodes.
+        numBanks : int
+            Number of parts to split template bank into.
+        parent : AhopeOutFile (optional, kwarg, default=None)
+            The AhopeOutFile containing the job that is parent to the one being
+            set up.
+
+        Returns
+        --------
+        tmpltBankNode : pipeline.CondorDagmanNode
+            The node to run the job
+        list of strings
+            The output files
+        """
+        currNode = LegacyInspiralAnalysisNode(currJob)
+        currNode.set_category(self.exeName)
+        # Does this need setting?: currNode.set_priority(?)
+        currNode.set_bank(parent.get_output())
+        # Set the number of banks
+        currNode.add_var_opt('number-of-banks',numBanks)
+        # Get the output (taken from inspiral.py)
+        outFileList = []
+        x = parent.get_output().split('-')
+        for i in range( 0, numBanks ):
+            outFileList.append("%s-%s_%2.2d-%s-%s" \
+                               %(x[0], x[1], i, x[2], x[3]))
+        parentJob = parent.get_job()
+        if parentJob:
+            currNode.add_parent(parentJob)
+        currNode.finalize()
+        ahopeDax.add_node(currNode)
+
+        return currNode, outFileList
 
 class LegacyInspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
     """
@@ -368,7 +489,13 @@ class LegacyInspiralAnalysisNode(pipeline.AnalysisNode,\
         """
         self.add_var_opt('bank-file', bank)
         self.add_input_file(bank)
+        self.__bankfile = bank
 
+    def get_bank(self):
+        """
+        Returns the input file in self.__bankfile
+        """
+        return self.__bankfile
 
     def finalize(self):
         """

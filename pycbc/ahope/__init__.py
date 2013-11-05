@@ -32,3 +32,4 @@ from ahope_utils import *
 from jobsetup_utils import *
 from tmpltbank_utils import *
 from matchedfltr_utils import *
+from splittable_utils import *

@@ -2,8 +2,9 @@ from __future__ import division
 
 import os
 from glue import segments
-from pycbc.ahope import select_job_instance,sngl_ifo_job_setup,AhopeOutFileList
-from pycbc.ahope import AhopeOutFile
+from pycbc.ahope import sngl_ifo_job_setup, AhopeOutFileList
+from pycbc.ahope import AhopeOutFile, select_tmpltbankjob_instance
+from pycbc.ahope import select_matchedfilterjob_instance
 
 def setup_tmpltbank_workflow(cp,scienceSegs,ahopeDax):
     '''
@@ -49,7 +50,8 @@ def setup_tmpltbank_workflow(cp,scienceSegs,ahopeDax):
     
     return tmpltBanks
 
-def setup_tmpltbank_dax_generated(cp,scienceSegs,ahopeDax):
+def setup_tmpltbank_dax_generated(cp, scienceSegs, ahopeDax,\
+                                  link_to_matchedfltr=True):
     '''
     Setup template bank jobs that are generated as part of the ahope workflow.
     This function will add numerous jobs to the ahope workflow using
@@ -84,7 +86,22 @@ def setup_tmpltbank_dax_generated(cp,scienceSegs,ahopeDax):
     ifos = scienceSegs.keys()
     tmpltBankExe = os.path.basename(cp.get('executables','tmpltbank'))
     # Select the appropriate class
-    exeInstance = select_job_instance(tmpltBankExe,'tmpltbank')
+    exeInstance = select_tmpltbankjob_instance(tmpltBankExe,'tmpltbank')
+
+    if link_to_matchedfltr:
+        # Use this to ensure that inspiral and tmpltbank jobs overlap. This
+        # means that there will be 1 inspiral job for every 1 tmpltbank and
+        # the data read in by both will overlap as much as possible. (If you
+        # ask the template bank jobs to use 2000s of data for PSD estimation
+        # and the matched-filter jobs to use 4000s, you will end up with
+        # twice as many matched-filter jobs that still use 4000s to estimate a
+        # PSD but then only generate triggers in the 2000s of data that the
+        # template bank jobs ran on.
+        tmpltbankExe = os.path.basename(cp.get('executables', 'inspiral'))
+        linkExeInstance = select_matchedfilterjob_instance(tmpltbankExe, \
+                                                           'inspiral')
+    else:
+        linkExeInstance = None
 
     # Set up class for holding the banks
     tmpltBanks = AhopeOutFileList([])
@@ -92,8 +109,8 @@ def setup_tmpltbank_dax_generated(cp,scienceSegs,ahopeDax):
     # Template banks are independent for different ifos, but might not be!
     # Begin with independent case and add after FIXME
     for ifo in ifos:
-        sngl_ifo_job_setup(cp,ifo,tmpltBanks,exeInstance,scienceSegs[ifo],\
-                           ahopeDax)
+        sngl_ifo_job_setup(cp, ifo, tmpltBanks, exeInstance, scienceSegs[ifo],\
+                           ahopeDax, linkExeInstance=linkExeInstance)
 
     return tmpltBanks
 

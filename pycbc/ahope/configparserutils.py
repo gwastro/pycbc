@@ -227,14 +227,14 @@ def interpolate_string(testString,cp,section):
                 testString = testString.replace('${'+repString+'}',\
                                         cp.get(section,splitString[0]))
             except ConfigParser.NoOptionError:
-                print "Substition failed" 
+                print "Substitution failed" 
                 raise
         if len(splitString) == 2:
             try:
                 testString = testString.replace('${'+repString+'}',\
                                         cp.get(splitString[0],splitString[1]))
             except ConfigParser.NoOptionError:
-                print "Substition failed" 
+                print "Substitution failed" 
                 raise
         reObj = re.search(r"\$\{.*?\}", testString)
 
