@@ -25,7 +25,8 @@ from pycbc.tmpltbank.lambda_mapping import get_beta_sigma_from_aligned_spins
 def estimate_mass_range(numPoints, order, evals, evecs, maxmass1, minmass1, \
                         maxmass2, minmass2, maxspin, f0, covary=True, \
                         evecsCV=None, maxBHspin=None, \
-                        minTotalMass=None, maxTotalMass=None):
+                        minTotalMass=None, maxTotalMass=None, maxEta=None, \
+                        minEta=None):
     """
     This function will generate a large set of points with random masses and
     spins (using pycbc.tmpltbank.get_random_mass) and translate these points
@@ -81,6 +82,12 @@ def estimate_mass_range(numPoints, order, evals, evecs, maxmass1, minmass1, \
     maxTotalMass : float, optional (default = None)
         If this float is given the total mass of the generated systems must be
         smaller than this number.
+    maxEta : float, optional (default = None)
+        If given points will not be chosen with symmetric mass ratio greater
+        than this.
+    minEta : float, optional (default = None)
+        If given points will not be chosen with symmetric mass ratio smaller
+        than this.
 
     Return
     -------
@@ -89,7 +96,7 @@ def estimate_mass_range(numPoints, order, evals, evecs, maxmass1, minmass1, \
     """
     valsF = get_random_mass(numPoints, minmass1, maxmass1, minmass2, \
           maxmass2, maxspin, maxBHspin=maxBHspin, minTotalMass=minTotalMass, \
-          maxTotalMass=maxTotalMass)
+          maxTotalMass=maxTotalMass, maxEta=maxEta, minEta=minEta)
     valsF = numpy.array(valsF)
     mass = valsF[0]
     eta = valsF[1]
@@ -108,7 +115,8 @@ def estimate_mass_range(numPoints, order, evals, evecs, maxmass1, minmass1, \
 
 def get_random_mass(numPoints, minmass1, maxmass1, minmass2, \
                     maxmass2, maxspin, maxBHspin=None, \
-                    minTotalMass=None, maxTotalMass=None, qm_scalar_fac=1):
+                    minTotalMass=None, maxTotalMass=None, maxEta=None, \
+                    minEta=None,  qm_scalar_fac=1):
     """
     This function will generate a large set of points within the chosen mass
     and spin space. It will also return the corresponding PN spin coefficients
@@ -140,6 +148,12 @@ def get_random_mass(numPoints, minmass1, maxmass1, minmass2, \
     maxTotalMass : float, optional (default = None)
         If this float is given the total mass of the generated systems must be
         smaller than this number.
+    maxEta : float, optional (default = None)
+        If given points will not be chosen with symmetric mass ratio greater
+        than this.
+    minEta : float, optional (default = None)
+        If given points will not be chosen with symmetric mass ratio smaller
+        than this.
     qm_scalar_fac : float, optional (default = 1)
         The 2PN sigma spin coefficient has an equation-of-state dependent term.
         For black holes this value is equal to 1, for NS this value is larger,
@@ -202,8 +216,12 @@ def get_random_mass(numPoints, minmass1, maxmass1, minmass2, \
     minmass1 = numpy.maximum(minmass1,mass/2.)
     mineta = numpy.maximum(mincompmass * (mass-mincompmass)/(mass*mass),\
                            maxcompmass*(mass-maxcompmass)/(mass*mass))
+    if minEta:
+        mineta = numpy.maximum(minEta, mineta)
     maxeta = numpy.minimum(0.25,maxmass2 * (mass - maxmass2) / (mass*mass))
     maxeta = numpy.minimum(maxeta,minmass1 * (mass - minmass1) / (mass*mass))
+    if maxEta:
+        maxeta = numpy.minimum(maxEta, maxeta)
     if (maxeta < mineta).any():
         errMsg = "WARNING: Max eta is smaller than min eta!!"
         raise ValueError(errMsg)     

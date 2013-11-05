@@ -149,7 +149,8 @@ vals = pycbc.tmpltbank.estimate_mass_range(1000000,\
        opts.min_mass1, opts.max_mass2, opts.min_mass2,\
        opts.max_ns_spin_mag, opts.f0,\
        covary=False, maxBHspin=opts.max_bh_spin_mag,\
-       minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass)
+       minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass,\
+       maxEta=opts.max_eta, minEta=opts.min_eta)
 cov = numpy.cov(vals)
 evalsCV,evecsCV = numpy.linalg.eig(cov)
 
@@ -162,7 +163,8 @@ vals = pycbc.tmpltbank.estimate_mass_range(1000000,\
        opts.min_mass1, opts.max_mass2, opts.min_mass2,\
        opts.max_ns_spin_mag, opts.f0,\
        covary=True, evecsCV=evecsCV, maxBHspin=opts.max_bh_spin_mag,\
-       minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass)
+       minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass,\
+       maxEta=opts.max_eta, minEta=opts.min_eta)
 
 chi1Max = vals[0].max()
 chi1Min = vals[0].min()
@@ -265,8 +267,14 @@ cp.set('bank','max-mass1',str(opts.max_mass1))
 cp.set('bank','min-mass1',str(opts.min_mass1))
 cp.set('bank','max-mass2',str(opts.max_mass2))
 cp.set('bank','min-mass2',str(opts.min_mass2))
-cp.set('bank','max-total-mass',str(opts.max_total_mass))
-cp.set('bank','min-total-mass',str(opts.min_total_mass))
+if opts.max_total_mass:
+    cp.set('bank','max-total-mass',str(opts.max_total_mass))
+if opts.min_total_mass:
+    cp.set('bank','min-total-mass',str(opts.min_total_mass))
+if opts.max_eta:
+    cp.set('bank','max-eta',str(opts.max_eta))
+if opts.min_eta:
+    cp.set('bank','min-eta',str(opts.min_eta))
 cp.set('bank','max-ns-spin-mag',str(opts.max_ns_spin_mag))
 cp.set('bank','max-bh-spin-mag',str(opts.max_bh_spin_mag))
 cp.set('bank','min-match',str(opts.min_match))

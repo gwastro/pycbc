@@ -7,7 +7,7 @@ from pycbc.tmpltbank.lambda_mapping import get_beta_sigma_from_aligned_spins
 def get_physical_covaried_masses(xis, bestMasses, bestXis, f0, \
       req_match, order, evecs, evals, evecsCV, maxmass1, minmass1, maxmass2, \
       minmass2, maxNSspin, maxBHspin, maxTotalMass=None, minTotalMass=None, \
-      nsbh_flag=False, giveUpThresh = 5000):
+      maxEta=None, minEta=None, nsbh_flag=False, giveUpThresh = 5000):
     """
     This function takes the position of a point in the xi parameter space and
     iteratively finds a close point in the physical coordinate space (masses
@@ -64,7 +64,13 @@ def get_physical_covaried_masses(xis, bestMasses, bestXis, f0, \
         If given points will not be chosen with total mass greater than this.
     minTotalMass : float, optional (default = None)
         If given points will not be chosen with total mass less than this
-    nsbh_flag : boolean, optional
+    maxEta : float, optional (default = None)
+        If given points will not be chosen with symmetric mass ratio greater
+        than this.
+    minEta : float, optional (default = None)
+        If given points will not be chosen with symmetric mass ratio smaller
+        than this.
+    nsbh_flag : boolean, optional (default = False)
         If given, this indicates that a NSBH parameter space is being used.
         The reason for this is that otherwise we end up with the parameter
         space being full of X>3,3 systems, where the "neutron star", which
@@ -73,6 +79,9 @@ def get_physical_covaried_masses(xis, bestMasses, bestXis, f0, \
         spin up to the maxBHspin *only* if its mass is > 2.9. The second mass
         will have spin up to the maxNSspin *only* if its mass is < 3.1. All
         other cases will result in *both* spins being set to 0.
+    giveUpThresh : int, optional (default = 5000)
+        The program will try this many iterations. If no close matching point
+        has been found after this it will give up.
 
     Returns
     --------
@@ -120,7 +129,8 @@ def get_physical_covaried_masses(xis, bestMasses, bestXis, f0, \
                     scaleFactor, order, evecs, evals, evecsCV,\
                     maxmass1, minmass1, maxmass2, minmass2, maxNSspin,\
                     maxBHspin, f0, maxTotalMass=maxTotalMass, \
-                    minTotalMass=minTotalMass, nsbh_flag=nsbh_flag)
+                    minTotalMass=minTotalMass, maxEta=maxEta, minEta=minEta, \
+                    nsbh_flag=nsbh_flag)
         cDist = (new_xis[0] - xis[0])**2
         for j in range(1,xi_size):
             cDist += (new_xis[j] - xis[j])**2
@@ -161,6 +171,7 @@ def get_mass_distribution(bestMasses, scaleFactor, order, evecs, evals, \
                           evecsCV, maxmass1, minmass1, maxmass2, minmass2, \
                           maxNSspin, maxBHspin, f0, nsbh_flag=False,\
                           maxTotalMass=None, minTotalMass=None, \
+                          maxEta=None, minEta=None, \
                           numJumpPoints=100, chirpMassJumpFac=0.0001, \
                           etaJumpFac=0.01, spin1zJumpFac=0.01, \
                           spin2zJumpFac=0.01):
@@ -220,6 +231,12 @@ def get_mass_distribution(bestMasses, scaleFactor, order, evecs, evals, \
         If given points will not be chosen with total mass greater than this.
     minTotalMass : float, optional (default = None)
         If given points will not be chosen with total mass less than this
+    maxEta : float, optional (default = None)
+        If given points will not be chosen with symmetric mass ratio greater
+        than this.
+    minEta : float, optional (default = None)
+        If given points will not be chosen with symmetric mass ratio smaller
+        than this.
     numJumpPoints : int, optional (default = 100)
         The number of points that will be generated every iteration
     chirpMassJumpFac : float, optional (default=0.0001)
@@ -289,6 +306,10 @@ def get_mass_distribution(bestMasses, scaleFactor, order, evecs, evals, \
     # Remove points where eta becomes unphysical
     eta[eta > 0.25] = 0.25
     eta[eta < 0.0001] = 0.0001
+    if maxEta:
+        eta[eta > maxEta] = maxEta
+    if minEta:
+        eta[eta < minEta] = minEta
 
     # Total mass, masses and mass diff
     totmass = chirpmass / (eta**(3./5.))
@@ -352,6 +373,7 @@ def stack_xi_direction_brute(xis, bestMasses, bestXis, f0,  \
                              direction_num, req_match, order, evecs, evals, \
                              evecsCV, maxmass1, minmass1, maxmass2, minmass2, \
                              maxNSspin, maxBHspin, maxTotalMass=None, \
+                             maxEta=None, minEta=None, \
                              minTotalMass=None, nsbh_flag=False, \
                              scaleFactor=0.8, numIterations=3000):
     """
@@ -411,6 +433,12 @@ def stack_xi_direction_brute(xis, bestMasses, bestXis, f0,  \
         If given points will not be chosen with total mass greater than this.
     minTotalMass : float, optional (default = None)
         If given points will not be chosen with total mass less than this
+    maxEta : float, optional (default = None)
+        If given points will not be chosen with symmetric mass ratio greater
+        than this.
+    minEta : float, optional (default = None)
+        If given points will not be chosen with symmetric mass ratio smaller
+        than this.
     nsbh_flag : boolean, optional
         If given, this indicates that a NSBH parameter space is being used.
         The reason for this is that otherwise we end up with the parameter
@@ -445,8 +473,8 @@ def stack_xi_direction_brute(xis, bestMasses, bestXis, f0,  \
                              evecsCV, maxmass1, minmass1, maxmass2, minmass2, \
                              maxNSspin, maxBHspin, nsbh_flag=False, \
                              find_minimum=True, maxTotalMass=maxTotalMass, \
-                             minTotalMass=minTotalMass, \
-                             scaleFactor=scaleFactor, \
+                             minTotalMass=minTotalMass, maxEta=maxEta, \
+                             minEta=minEta, scaleFactor=scaleFactor, \
                              numIterations=numIterations)
  
     # Find maximum
@@ -455,8 +483,8 @@ def stack_xi_direction_brute(xis, bestMasses, bestXis, f0,  \
                              evecsCV, maxmass1, minmass1, maxmass2, minmass2, \
                              maxNSspin, maxBHspin, nsbh_flag=False, \
                              find_minimum=False, maxTotalMass=maxTotalMass, \
-                             minTotalMass=minTotalMass, \
-                             scaleFactor=scaleFactor, \
+                             minTotalMass=minTotalMass, maxEta=maxEta, \
+                             minEta=minEta, scaleFactor=scaleFactor, \
                              numIterations=numIterations)
 
     return ximin, ximax
@@ -465,9 +493,9 @@ def find_xi_extrema_brute(xis, bestMasses, bestXis, f0,  \
                           direction_num, req_match, order, evecs, evals, \
                           evecsCV, maxmass1, minmass1, maxmass2, minmass2, \
                           maxNSspin, maxBHspin, maxTotalMass=None, \
-                          minTotalMass=None, nsbh_flag=False, \
-                          find_minimum=False, scaleFactor=0.8, \
-                          numIterations=3000):   
+                          minTotalMass=None, maxEta=None, minEta=None, \
+                          nsbh_flag=False, find_minimum=False, \
+                          scaleFactor=0.8, numIterations=3000):   
     """
     This function is used to find the largest or smallest value of the xi
     space in a specified
@@ -526,6 +554,12 @@ def find_xi_extrema_brute(xis, bestMasses, bestXis, f0,  \
         If given points will not be chosen with total mass greater than this.
     minTotalMass : float, optional (default = None)
         If given points will not be chosen with total mass less than this
+    maxEta : float, optional (default = None)
+        If given points will not be chosen with symmetric mass ratio greater
+        than this.
+    minEta : float, optional (default = None)
+        If given points will not be chosen with symmetric mass ratio smaller
+        than this.
     nsbh_flag : boolean, optional (default = False)
         If given, this indicates that a NSBH parameter space is being used.
         The reason for this is that otherwise we end up with the parameter
@@ -570,7 +604,7 @@ def find_xi_extrema_brute(xis, bestMasses, bestXis, f0,  \
                scaleFactor, order, evecs, evals, evecsCV, maxmass1, minmass1, \
                maxmass2, minmass2, maxNSspin, maxBHspin, f0,\
                maxTotalMass=maxTotalMass, minTotalMass=minTotalMass, \
-               nsbh_flag=nsbh_flag)
+               maxEta=maxEta, minEta=minEta, nsbh_flag=nsbh_flag)
         cDist = (new_xis[0] - xis[0])**2
         for j in range(1, xi_size):
             cDist += (new_xis[j] - xis[j])**2

@@ -178,6 +178,17 @@ def insert_mass_range_option_group(parser,nonSpin=False):
                   default=None, help="Maximum total mass to generate bank "+\
                                       "with. OPTIONAL, no limit on min total "+\
                                       "mass if not provided.")
+    massOpts.add_option("", "--max-eta", action="store", type="float",\
+                  default=None, help="Minimum symmetric mass ratio to "+\
+                                      "generate bank "+\
+                                      "with. OPTIONAL, no limit on maximum "+\
+                                      "symmetric mass ratio if not provided.")
+    massOpts.add_option("", "--min-eta", action="store", type="float",\
+                  default=None, help="Maximum symmetric mass ratio to "+\
+                                      "generate bank "+\
+                                      "with. OPTIONAL, no limit on minimum "+\
+                                      "symmetric mass ratio if not provided.")
+
     if nonSpin:
         parser.add_option_group(massOpts)
         return
@@ -234,6 +245,9 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
     if (not opts.max_total_mass) or \
             ((opts.max_mass1 + opts.max_mass2) < opts.max_total_mass):
         opts.max_total_mass = opts.max_mass1 + opts.max_mass2
+    if opts.maxEta and opts.minEta:
+        if opts.maxEta < opts.minEta:
+            parser.error("If given --max-eta must be larger than --min-eta.")
     if nonSpin:
         return
     if not opts.max_ns_spin_mag:

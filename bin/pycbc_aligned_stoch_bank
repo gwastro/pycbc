@@ -200,7 +200,8 @@ if opts.covary:
            opts.min_mass1, opts.max_mass2, opts.min_mass2,\
            opts.max_ns_spin_mag, opts.f0,\
            covary=False, maxBHspin=opts.max_bh_spin_mag,\
-           minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass)
+           minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass,\
+           maxEta=opts.max_eta, minEta=opts.min_eta)
     cov = numpy.cov(vals)
     evalsCV,evecsCV = numpy.linalg.eig(cov)
 
@@ -220,7 +221,8 @@ vals = pycbc.tmpltbank.estimate_mass_range(1000000,\
        opts.min_mass1, opts.max_mass2, opts.min_mass2,\
        opts.max_ns_spin_mag, opts.f0,\
        covary=opts.covary, evecsCV=evecsCV, maxBHspin=opts.max_bh_spin_mag,\
-       minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass)
+       minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass,\
+       maxEta=opts.max_eta, minEta=opts.min_eta)
 
 chi1Max = vals[0].max()
 chi1Min = vals[0].min()
@@ -284,7 +286,8 @@ while(1):
             100000, opts.min_mass1, opts.max_mass1, opts.min_mass2,\
             opts.max_mass2, opts.max_ns_spin_mag,\
             maxBHspin=opts.max_bh_spin_mag,\
-            minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass)
+            minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass,\
+            maxEta=opts.max_eta, minEta=opts.min_eta)
         diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
         rMass1 = (rTotmass + diff)/2.
         rMass2 = (rTotmass - diff)/2.
