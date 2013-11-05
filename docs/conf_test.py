@@ -28,10 +28,10 @@ import sys, os
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 
           'sphinx.ext.intersphinx', 'sphinx.ext.coverage', 
               'sphinx.ext.mathjax', 'sphinx.ext.viewcode', 
-            'sphinxcontrib.programoutput', 'sphinx.ext.autosummary',
+            'sphinxcontrib.programoutput',
          'numpydoc',           'matplotlib.sphinxext.mathmpl',
           'matplotlib.sphinxext.only_directives',
-          'matplotlib.sphinxext.plot_directive']
+          'matplotlib.sphinxext.plot_directive', 'sphinx.ext.autosummary']
 
 numpydoc_show_class_members = False
 # Add any paths that contain templates here, relative to this directory.
