@@ -22,11 +22,8 @@ import os
 import fnmatch
 import sys
 import subprocess
-import commands
-import time
+import shutil
 from trace import fullmodname
-import unittest
-from distutils import sysconfig,file_util
 from distutils.core import setup,Command,Extension
 from distutils.command.clean import clean as _clean
 from distutils.command.install import install as _install
@@ -91,11 +88,9 @@ class clean(_clean):
                 print 'removed {0}'.format(f)
             except:
                 pass
-              
-        import shutil
 
         for fol in self.clean_folders:
-            shutil.rmtree(fol)
+            shutil.rmtree(fol, ignore_errors=True)
             print 'removed {0}'.format(fol)
 
 class install(_install):
