@@ -60,6 +60,6 @@ def setup_matchedfltr_dax_generated(cp, scienceSegs, ahopeDax, tmpltBanks,\
     for ifo in ifos:
         sngl_ifo_job_setup(cp, ifo, inspiralOuts, exeInstance, \
                            scienceSegs[ifo], ahopeDax, parents=tmpltBanks, \
-                           linkExeInstance=linkExeInstance)
+                           linkExeInstance=linkExeInstance, allowOverlap=False)
 
     return inspiralOuts

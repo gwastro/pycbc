@@ -1,12 +1,40 @@
 import math
 import numpy
+from glue import lal
 from glue import segments
 
-class AhopeOutFileList(list):
+class AhopeOutFile(lal.CacheEntry):
+    '''This class holds the details of an individual output file in the ahope
+    workflow. This file may be pre-supplied, generated from within the ahope
+    command line script, or generated within the workflow. This class inherits
+    from the glue.lal.CacheEntry class and has all attributes/methods of that
+    class. It also adds some additional stuff for ahope. The important stuff
+    from both is:
+
+    * The location of the output file (which may not yet exist)
+    * The ifo that the AhopeOutFile is valid for
+    * The time span that the AhopeOutFile is valid for
+    * A short description of what the file is
+    * The dax job that will generate the output file (if appropriate). If the
+      file is generated within the workflow the dax job object will hold all
+      the job-specific information that may be relevant for later stages.
+
+    An example of initiating this class:
+    
+    c = AhopeOutFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902177.5), "file://localhost/home/kipp/tmp/1/H1-815901601-576.xml", job=CondorDagNodeInstance)
+    '''
+
+    def __init__(self, ifo, description, timeSeg, fileUrl, job=None, **kwargs):
+        lal.CacheEntry.__init__(self, ifo, description, timeSeg, fileUrl,\
+                                **kwargs)
+        self.job = job
+
+class AhopeOutFileList(lal.Cache):
     '''This class holds a list of AhopeOutFile objects. It inherits from the
     built-in list class, but also allows a number of features. ONLY
     AhopeOutFile instances should be within a AhopeOutFileList instance.
     '''
+    entry_class = AhopeOutFile
 
     def find_output(self,ifo,time):
         '''Return AhopeOutFile that covers the given time, or is most
@@ -31,13 +59,14 @@ class AhopeOutFileList(list):
         '''
         # Determine whether I have a specific time, or a range of times
         try:
-            # This is if I have a range of times
-            if len(time) == 2:
-                outFile = self.find_output_in_range(ifo,time[0],time[1])
+            lenTime = len(time)
         except TypeError:
             # This is if I have a single time
             outFile = self.find_output_at_time(ifo,time)                
         else:
+            # This is if I have a range of times
+            if lenTime == 2:
+                outFile = self.find_output_in_range(ifo,time[0],time[1])
             # This is if I got a list that had more (or less) than 2 entries
             if len(time) != 2:
                 raise TypeError("I do not understand the input variable time")
@@ -59,9 +88,10 @@ class AhopeOutFileList(list):
         list of AhopeOutFile classes
            The AhopeOutFiles that corresponds to the time.
         '''
+       print "Actually I'm here!"
        # Get list of AhopeOutFiles that overlap time, for given ifo
-       outFiles = [i for i in self if ifo == i.get_ifo() \
-                                   and time in i.get_time()] 
+       outFiles = [i for i in self if ifo == i.observatory \
+                                   and time in i.segment] 
        if len(outFiles) == 0:
            # No AhopeOutFile at this time
            return None
@@ -95,37 +125,48 @@ class AhopeOutFileList(list):
            The AhopeOutFile that is most appropriate for the time range
         '''
         # First filter AhopeOutFiles corresponding to ifo
-        outFiles = [i for i in self if ifo == i.get_ifo()] 
+        outFiles = [i for i in self if ifo == i.observatory] 
+        print outFiles
         if len(outFiles) == 0:
             # No AhopeOutFiles correspond to that ifo
             return None
         # Filter AhopeOutFiles to those overlapping the given window
         currSeg = segments.segment([start,end])
-        currSegList = segments.segmentlist([currSeg])
         outFiles = [i for i in outFiles if \
-                               i.get_time().intersects(currSegList)]
+                               i.segment.intersects(currSeg)]
+        print outFiles
+        print "Within job what now?"
         if len(outFiles) == 0:
+            print "Failed"
             # No AhopeOutFile overlap that time period
             return None
         elif len(outFiles) == 1:
             # One AhopeOutFile overlaps that period
+            print "Returning single file"
+            print outFiles[0]
+            print outFiles[0].__class__
             return outFiles[0]
         else:
+            print "Multiple overlaps"
             # More than one AhopeOutFile overlaps period. Find lengths of
             # overlap between time window and AhopeOutFile window
-            overlapWindows = [abs(i.get_time() & currSegList) \
+            overlapWindows = [abs(i.segment & currSeg) \
                                   for i in outFiles]
             # Return the AhopeOutFile with the biggest overlap
             # Note if two AhopeOutFile have identical overlap, this will return
             # the first AhopeOutFile in the list
             overlapWindows = numpy.array(overlapWindows,dtype = int)
+            print outFiles[overlapWindows.argmax()]
             return outFiles[overlapWindows.argmax()]
 
 class AhopeOutGroupList(AhopeOutFileList):
     '''
     This class holds a list of AhopeOutGroup objects. It inerits from the
     built-in list class, but also allows a number of additional features. ONLY
-    AhopeOutFile instances should be within a AhopeOutFileList instance.
+    AhopeOutGroup instances should be within a AhopeOutGroupList instance.
+
+    NOTE: This class should not use some of the stuff in the underlying
+    lal.Cache class
     '''
     # For now this is simply an AhopeOutFileList, but we may want to diverge
     # the two classes in the future.
@@ -146,20 +187,13 @@ class AhopeOutGroup:
     * The time span that the AhopeOutGroup is valid for
     * A AhopeOutFileList storing the files and associated jobs in the group
     """
-    def __init__(self, outFileList=None, ifo=None, time=None):
+    def __init__(self, ifo, description, time):
         # Set everything to None to start
         self.__outFileList = None
-        self.__ifo = None
-        self.__time = None
+        self.observatory = ifo
+        self.segment = time
+        self.description = description
         
-        # Parse and set kwargs if given
-        if ifo:
-            self.set_ifo(ifo)
-        if time:
-            self.set_time(time)
-        if outFileList:
-            self.set_output(outFileList)
-
     def get_output(self):
         '''Return self.__outFileList if it has been set, fail if not.
 
@@ -184,7 +218,7 @@ class AhopeOutGroup:
         Parameters
         ----------
         outFiles : list of strings
-            Path to the list of output files
+            URL paths to the list of output files
         outFileJobs : pipeline.CondorDagNode(s)
             This is the list of jobs used to generate the outFiles.
             If len(outFiles) == len(outFileJobs) then assume that these
@@ -196,7 +230,7 @@ class AhopeOutGroup:
         ----------
         None
         '''
-        if (not self.__ifo) or (not self.__time):
+        if (not self.observatory) or (not self.segment):
             errMsg = "Ifo and time must be set before setting the output for " 
             errMsg += "AhopeOutGroup instances."
             raise ValueError(errMsg)
@@ -207,7 +241,7 @@ class AhopeOutGroup:
             outFiles = [outFiles]
 
         outputList = AhopeOutFileList([])
-        for i, filePath in enumerate(outFiles):
+        for i, fileUrl in enumerate(outFiles):
             if len(outFileJobs) == 1:
                 currJob = outFileJobs[0]
             elif len(outFileJobs) == len(outFiles):
@@ -216,269 +250,15 @@ class AhopeOutGroup:
                 errMsg = "The number of jobs given to .set_output must be "
                 errMsg += "equal to the length of files or equal to 1."
                 raise ValueError(errMsg)
-            currFile = AhopeOutFile(outFile=filePath ,ifo=self.get_ifo(),\
-                       time=self.get_time(), job=currJob)
+            # Add the number to discriminate each job. This will be used later
+            currDesc = self.description + "_%d" %(i)
+            currFile = AhopeOutFile(self.observatory, self.description, \
+                                    self.segment, fileUrl, job=currJob)
             outputList.append(currFile)
         self.__outFileList = outputList
         
-
-    def get_ifo(self):
-        '''Return self.__ifo if it has been set, Fail if not.
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        ----------
-        ifo : string
-           The ifo that the AhopeOutGroup is intended to be used
-           for. If an output (such as a pregenerated file) is intended for
-           **all** ifos then you should create multiple
-           AhopeOutGroup classes, each with a different
-           ifo. Will fail if the ifo has not yet been set.
-        '''
-        if self.__ifo:
-            return self.__ifo
-        else:
-            raise ValueError("ifo has not been set for this instance.")
-
-    def set_ifo(self,ifo):
-        '''Set self.__ifo to ifo.
-
-        Parameters
-        ----------
-        ifo : string
-           Sets the ifo used for this AhopeOutGroup
-
-        Returns
-        ----------
-        None
-        '''
-        self.__ifo = ifo
-
-    def get_time(self):
-        '''Return self.__time if it has been set, fail if not.
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        ----------
-        time : glue.ligolw segmentlist
-           This is the time for
-           which the AhopeOutGroup should be valid.
-           The output files may be generated using data that covers
-           part of this time, or even a completely
-           different time. This simply says
-           that during the times given in the segmentlist,
-           this output file is the preferred one to use.
-           Will fail if the time has not yet been set.
-        '''
-        if self.__time:
-            return self.__time
-        else:
-            raise ValueError("ifo has not been set for this instance.")
-
-    def set_time(self,time):
-        '''Set self.__time to time.
-
-        Parameters
-        ----------
-        time : glue.ligolw segmentlist
-           Sets the time for which the output file is valid.
-
-        Returns
-        ----------
-        None
-        '''
-        if type(time) != segments.segmentlist:
-            raise TypeError("Variable supplied to AhopeOutGroup.set_time() "+\
-                            "must be a glue.segment.segmentlist class.")
-        self.__time = time
-
-
-class AhopeOutFile:
-    '''This class holds the details of an individual output file in the ahope
-    workflow. This file may be pre-supplied, generated from within the ahope
-    command line script, or generated within the workflow. This stores 4 pieces
-    of information, which will be used in later stages of the workflow. The 4
-    values this class holds are:
-
-    * The location of the output file (which may not yet exist)
-    * The ifo that the AhopeOutFile is valid for
-    * The time span that the AhopeOutFile is valid for
-    * The dax job that will generate the output file (if appropriate). If the
-      file is generated within the workflow the dax job object will hold all
-      the job-specific information that may be relevant for later stages.
-    '''
-
-    def __init__(self,outFile=None,ifo=None,time=None,job=None):
-        # Set everything to None to start
-        self.__outFile = None
-        self.__ifo = None
-        self.__time = None
-        self.__job = None
-        
-        # Parse and set kwargs if given
-        if outFile:
-            self.set_output(outFile)
-        if ifo:
-            self.set_ifo(ifo)
-        if time:
-            self.set_time(time)
-        if job:
-            self.set_job(job)
-
-    def get_output(self):
-        '''Return self.__outFile if it has been set, fail if not.
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        ----------
-        outFile : string
-          The location of the output file, this may not
-          exist yet if the output file will be
-          generated by the workflow. In that case
-          this gives the location that the output file will be written to.
-          Will fail if the output file has not yet been set.
-        '''
-        if self.__outFile:
-            return self.__outFile
-        else:
-            raise ValueError("Bank has not been set for this instance.")
-
-    def set_output(self,outFile):
-        '''Set self.__outFile to outFile.
-
-        Parameters
-        ----------
-        outFile : string
-           The location of the output file, this may not
-           exist yet if the outFile will be generated by the workflow.
-
-        Returns
-        ----------
-        None
-        '''
-        self.__outFile = outFile
-
-    def get_ifo(self):
-        '''Return self.__ifo if it has been set, Fail if not.
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        ----------
-        ifo : string
-           The ifo that the outFile is intended to be used
-           for. If an output (such as a pregenerated file) is intended for
-           **all** ifos then you should create multiple
-           AhopeOutFile classes, each with a different
-           ifo. Will fail if the ifo has not yet been set.
-        '''
-        if self.__ifo:
-            return self.__ifo
-        else:
-            raise ValueError("ifo has not been set for this instance.")
-
-    def set_ifo(self,ifo):
-        '''Set self.__ifo to ifo.
-
-        Parameters
-        ----------
-        ifo : string
-           Sets the ifo used for this output file
-
-        Returns
-        ----------
-        None
-        '''
-        self.__ifo = ifo
-
-    def get_time(self):
-        '''Return self.__time if it has been set, fail if not.
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        ----------
-        time : glue.ligolw segmentlist
-           This is the time for
-           which the output file should be valid.
-           The output file may be generated using data that covers
-           part of this time, or even a completely
-           different time. This simply says
-           that during the times given in the segmentlist,
-           this output file is the preferred one to use.
-           Will fail if the time has not yet been set.
-        '''
-        if self.__time:
-            return self.__time
-        else:
-            raise ValueError("ifo has not been set for this instance.")
-
-    def set_time(self,time):
-        '''Set self.__time to time.
-
-        Parameters
-        ----------
-        time : glue.ligolw segmentlist
-           Sets the time for which the output file is valid.
-
-        Returns
-        ----------
-        None
-        '''
-        if type(time) != segments.segmentlist:
-            raise TypeError("Variable supplied to AhopeOutFile.set_time() "+\
-                            "must be a glue.segment.segmentlist class.")
-        self.__time = time
-
-    def get_job(self):
-        '''Return self.__job if it has been set, Fail if not.
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        ----------
-        job : Condor job
-           This is the the condor job that will generate the output file.
-           If no job has been set, this
-           will return None. For the case where
-           the output file will not be generated from
-           within the workflow, this should not be set.
-        '''
-        return self.__job
-
-    def set_job(self,job):
-        '''Set self.__job to job.
-
-        Parameters
-        ----------
-        job : Condor job
-           Sets the condor job that will generate the output file.
-
-        Returns
-        ----------
-        None
-
-        '''
-        # FIXME: What sanity check is appropriate here?
-        self.__job = job
-
 def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, ahopeDax,\
-                       parents=None, linkExeInstance=False):
+                       parents=None, linkExeInstance=False, allowOverlap=True):
     """
     This function sets up a set of single ifo jobs.
 
@@ -501,12 +281,18 @@ def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, ahopeDax,\
     parents : AhopeOutFileList (optional, kwarg, default=None)
         The AhopeOutFileList containing the list of jobs that are parents to
         the one being set up.
+    allowOverlap : boolean (optional, kwarg, default = True)
+        If this is set the times that jobs are valid for will be allowed to
+        overlap. This may be desired for template banks which may have some
+        overlap in the times they cover. This may not be desired for inspiral
+        jobs, where you probably want triggers recorded by jobs to not overlap
+        at all.
     """
     # Begin by getting analysis start and end, and start and end of time
     # that the output file is valid for
     dataLength,validChunk = exeInstance.get_valid_times(cp, ifo)
     dataChunk = segments.segment([0, dataLength])
-    print validChunk, dataLength
+    jobTag = exeInstance.exeName.upper()
 
     if linkExeInstance:
         _, linkValidChunk = linkExeInstance.get_valid_times(cp, ifo)
@@ -519,7 +305,6 @@ def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, ahopeDax,\
     currExeJob = exeInstance.create_condorjob(cp,ifo)
 
     dataLoss = dataLength - abs(validChunk)
-    print validChunk, dataLength
     if dataLoss < 0:
         raise ValueError("Ahope needs fixing! Please contact a developer")
     # Loop over science segments and set up jobs
@@ -540,13 +325,23 @@ def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, ahopeDax,\
             jobDataSeg = dataChunk.shift(shiftDur)
             jobValidSeg = validChunk.shift(shiftDur)
             # If we need to recalculate the valid times to avoid overlap
-            if 0:
+            if not allowOverlap:
                 dataPerJob = (currSegLength - dataLoss) / float(numJobs)
-                lowerBoundary = jobNum*dataPerJob + validChunk[0]
-                upperBoundary = dataPerJob + lowerBoundary
+                lowerBoundary = int(jobNum*dataPerJob \
+                                    + validChunk[0] + currSeg[0])
+                upperBoundary = int(dataPerJob + lowerBoundary)
+                if lowerBoundary < jobValidSeg[0] or \
+                        upperBoundary > jobValidSeg[1]:
+                    errMsg = "Ahope is attempting to generate output "
+                    errMsg += "from a job at times where it is not valid."
+                    print jobNum*dataPerJob + validChunk[0]
+                    print lowerBoundary, upperBoundary, jobValidSeg
+                    raise ValueError(errMsg)
                 jobValidSeg = segments.segment([lowerBoundary, upperBoundary])
+            print ifo, exeInstance.exeName, jobDataSeg, jobValidSeg
             # Get the parent job if necessary
             if parents:
+                print jobValidSeg, jobValidSeg.__class__,len(jobValidSeg)
                 currParent = parents.find_output(ifo, jobValidSeg)
                 if not currParent:
                     errString = "No parent jobs found overlapping %d to %d." \
@@ -558,31 +353,31 @@ def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, ahopeDax,\
 
             # If the parent produces a group of output files, such as
             # lalapps_splitbank, a number of condor jobs are needed
+            if currParent:
+                print currParent
+                print currParent.__class__
+                print currParent.__class__.__name__
             if currParent.__class__.__name__ == 'AhopeOutGroup':
                 # Set up the global outputs
-                currFiles = AhopeOutGroup()
-                currFiles.set_ifo(ifo)
-                currFiles.set_time(segments.segmentlist([jobValidSeg]))
+                currFiles = AhopeOutGroup(ifo, jobTag, jobValidSeg)
                 nodeList = []
-                fileList = []
+                urlList = []
                 for parentJob in currParent.get_output():
-                    currExeNode, outFile = exeInstance.create_condornode(\
+                    currExeNode, fileUrl = exeInstance.create_condornode(\
                                      ahopeDax, currExeJob, jobDataSeg,\
-                                     parent=parentJob)
+                                     jobValidSeg, parent=parentJob)
                     nodeList.append(currExeNode)
-                    fileList.append(outFile)
-                currFiles.set_output(fileList, nodeList) 
+                    urlList.append(fileUrl)
+                currFiles.set_output(urlList, nodeList) 
                 outFiles.append(currFiles)
             else:
-                currExeNode,outFile = exeInstance.create_condornode(\
+                print currParent
+                currExeNode, fileUrl = exeInstance.create_condornode(\
                                          ahopeDax, currExeJob, jobDataSeg,\
-                                         parent=currParent)
+                                         jobValidSeg, parent=currParent)
                 # Make the AhopeOutFile instance
-                currFile = AhopeOutFile()
-                currFile.set_output(outFile)
-                currFile.set_ifo(ifo)
-                currFile.set_time(segments.segmentlist([jobValidSeg]))
-                currFile.set_job(currExeNode)
+                currFile = AhopeOutFile(ifo, jobTag, jobValidSeg, fileUrl,\
+                                        job=currExeNode )
                 outFiles.append(currFile)
     return outFiles
 
@@ -597,11 +392,10 @@ def split_outfiles(cp, inputFileList, exeInstance, numBanks, ahopeDax):
     currExeJob = exeInstance.create_condorjob(cp, None)
 
     for input in inputFileList:
-        currExeNode, outFileList = exeInstance.create_condornode(\
+        jobTag = input.description + "_" + exeInstance.exeName.upper()
+        currExeNode, outUrlList = exeInstance.create_condornode(\
                                       ahopeDax, currExeJob, numBanks, input)
-        outFileGroup = AhopeOutGroup()
-        outFileGroup.set_time(input.get_time())
-        outFileGroup.set_ifo(input.get_ifo())
-        outFileGroup.set_output(outFileList, [currExeNode])
+        outFileGroup = AhopeOutGroup(input.observatory, jobTag, input.segment)
+        outFileGroup.set_output(outUrlList, [currExeNode])
         outFileGroups.append(outFileGroup)
     return outFileGroups

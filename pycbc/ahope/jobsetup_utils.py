@@ -1,3 +1,4 @@
+import urlparse, urllib
 from glue import pipeline
 from glue import segments
 
@@ -168,7 +169,8 @@ class legacy_ihope_job_utils:
 
         return currJob
 
-    def create_condornode(self,ahopeDax,currJob,bankDataSeg,parent=None):
+    def create_condornode(self, ahopeDax, currJob, bankDataSeg, jobValidSeg, \
+                          parent=None):
         """
         Set up a CondorDagmanNode class to run legacy lalapps C codes.
 
@@ -180,6 +182,9 @@ class legacy_ihope_job_utils:
             The CondorDagmanJob to use when setting up the individual nodes
         bankDataSeg : glue.segments.segment
             Segment holding the data that needs to be used for this node
+        jobValidSeg : glue.segment.segment
+            Only used for inspiral jobs. This is the time window in which
+            triggers should be recorded for each job.
         parent : AhopeOutFile (optional, kwarg, default=None)
             The AhopeOutFile containing the job that is parent to the one being
             set up.
@@ -198,14 +203,20 @@ class legacy_ihope_job_utils:
         currNode.set_end(bankDataSeg[1])
         currNode.set_ifo(currJob.ifo)
         if parent:
-            currNode.set_bank(parent.get_output())
-            parentJob = parent.get_job()
+            currNode.set_bank(parent.path)
+            parentJob = parent.job
             if parentJob:
                 currNode.add_parent(parentJob)
+        if self.exeName == 'inspiral':
+            # Add trig start/end time options
+            currNode.set_trig_start(jobValidSeg[0])
+            currNode.set_trig_end(jobValidSeg[1])
         currNode.finalize()
         ahopeDax.add_node(currNode)
+        outUrl = urlparse.urljoin('file:', \
+                                  urllib.pathname2url(currNode.get_output()))
 
-        return currNode,currNode.get_output()
+        return currNode, outUrl
 
 class legacy_sngl_job_utils(legacy_ihope_job_utils):
     """This class holds the function for lalapps_inspiral and 
@@ -317,22 +328,23 @@ class splitbank_job_utils(legacy_ihope_job_utils):
         currNode = LegacyInspiralAnalysisNode(currJob)
         currNode.set_category(self.exeName)
         # Does this need setting?: currNode.set_priority(?)
-        currNode.set_bank(parent.get_output())
+        currNode.set_bank(parent.path)
         # Set the number of banks
         currNode.add_var_opt('number-of-banks',numBanks)
         # Get the output (taken from inspiral.py)
-        outFileList = []
-        x = parent.get_output().split('-')
+        outUrlList = []
+        x = parent.path.split('-')
         for i in range( 0, numBanks ):
-            outFileList.append("%s-%s_%2.2d-%s-%s" \
-                               %(x[0], x[1], i, x[2], x[3]))
-        parentJob = parent.get_job()
+            outFile = "%s-%s_%2.2d-%s-%s" %(x[0], x[1], i, x[2], x[3])
+            outUrl = urlparse.urljoin('file:', urllib.pathname2url(outFile))
+            outUrlList.append(outUrl)
+        parentJob = parent.job
         if parentJob:
             currNode.add_parent(parentJob)
         currNode.finalize()
         ahopeDax.add_node(currNode)
 
-        return currNode, outFileList
+        return currNode, outUrlList
 
 class LegacyInspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
     """

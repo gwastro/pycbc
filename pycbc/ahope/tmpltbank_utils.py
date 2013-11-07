@@ -1,6 +1,7 @@
 from __future__ import division
 
 import os
+import urlparse, urllib
 from glue import segments
 from pycbc.ahope import sngl_ifo_job_setup, AhopeOutFileList
 from pycbc.ahope import AhopeOutFile, select_tmpltbankjob_instance
@@ -110,7 +111,8 @@ def setup_tmpltbank_dax_generated(cp, scienceSegs, ahopeDax,\
     # Begin with independent case and add after FIXME
     for ifo in ifos:
         sngl_ifo_job_setup(cp, ifo, tmpltBanks, exeInstance, scienceSegs[ifo],\
-                           ahopeDax, linkExeInstance=linkExeInstance)
+                           ahopeDax, linkExeInstance=linkExeInstance, \
+                           allowOverlap=True)
 
     return tmpltBanks
 
@@ -145,10 +147,9 @@ def setup_tmpltbank_pregenerated(cp,ifos):
 
     for ifo in ifos:
         # Add bank for that ifo
-        currFile = AhopeOutFile()
-        currFile.set_output(preGenBank)
-        currFile.set_ifo(ifo)
-        currFile.set_time(segments.segmentlist([globalSeg]))
+        userTag = "PREGEN_TMPLTBANK"
+        fileUrl = urlparse.urljoin('file:', urllib.pathname2url(preGenBank))
+        currFile = AhopeOutFile(ifo, userTag, globalSeg, fileUrl)
         tmpltBanks.append(currFile)
 
     return tmpltBanks
