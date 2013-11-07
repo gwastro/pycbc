@@ -245,8 +245,8 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
     if (not opts.max_total_mass) or \
             ((opts.max_mass1 + opts.max_mass2) < opts.max_total_mass):
         opts.max_total_mass = opts.max_mass1 + opts.max_mass2
-    if opts.maxEta and opts.minEta:
-        if opts.maxEta < opts.minEta:
+    if opts.max_eta and opts.min_eta:
+        if opts.max_eta < opts.min_eta:
             parser.error("If given --max-eta must be larger than --min-eta.")
     if nonSpin:
         return
