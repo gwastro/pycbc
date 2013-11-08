@@ -7,7 +7,8 @@ from pycbc.ahope import sngl_ifo_job_setup, AhopeOutFileList
 from pycbc.ahope import AhopeOutFile, select_tmpltbankjob_instance
 from pycbc.ahope import select_matchedfilterjob_instance
 
-def setup_tmpltbank_workflow(cp,scienceSegs,ahopeDax):
+def setup_tmpltbank_workflow(cp, scienceSegs, datafindOuts, ahopeDax,\
+                             outputDir):
     '''
     Setup template bank section of ahope workflow. This function is responsible
     for deciding which of the various template bank workflow generation
@@ -44,15 +45,16 @@ def setup_tmpltbank_workflow(cp,scienceSegs,ahopeDax):
     
     # First thing is to check if a pre-generated bank is supplied:
     if (cp.has_option('ahope','pregenerated-template-bank')):
-        tmpltBanks = setup_tmpltbank_pregenerated(cp,scienceSegs.keys())
+        tmpltBanks = setup_tmpltbank_pregenerated(cp, scienceSegs.keys())
     # Else we assume template banks will be generated in the workflow
     else:
-        tmpltBanks = setup_tmpltbank_dax_generated(cp,scienceSegs,ahopeDax)
+        tmpltBanks = setup_tmpltbank_dax_generated(cp, scienceSegs, \
+                       datafindOuts, ahopeDax, outputDir)
     
     return tmpltBanks
 
-def setup_tmpltbank_dax_generated(cp, scienceSegs, ahopeDax,\
-                                  link_to_matchedfltr=True):
+def setup_tmpltbank_dax_generated(cp, scienceSegs, datafindOuts, ahopeDax,\
+                                  outputDir, link_to_matchedfltr=True):
     '''
     Setup template bank jobs that are generated as part of the ahope workflow.
     This function will add numerous jobs to the ahope workflow using
@@ -111,8 +113,8 @@ def setup_tmpltbank_dax_generated(cp, scienceSegs, ahopeDax,\
     # Begin with independent case and add after FIXME
     for ifo in ifos:
         sngl_ifo_job_setup(cp, ifo, tmpltBanks, exeInstance, scienceSegs[ifo],\
-                           ahopeDax, linkExeInstance=linkExeInstance, \
-                           allowOverlap=True)
+                           datafindOuts, ahopeDax, outputDir, \
+                           linkExeInstance=linkExeInstance, allowOverlap=True)
 
     return tmpltBanks
 

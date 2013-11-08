@@ -88,7 +88,6 @@ class AhopeOutFileList(lal.Cache):
         list of AhopeOutFile classes
            The AhopeOutFiles that corresponds to the time.
         '''
-       print "Actually I'm here!"
        # Get list of AhopeOutFiles that overlap time, for given ifo
        outFiles = [i for i in self if ifo == i.observatory \
                                    and time in i.segment] 
@@ -126,7 +125,6 @@ class AhopeOutFileList(lal.Cache):
         '''
         # First filter AhopeOutFiles corresponding to ifo
         outFiles = [i for i in self if ifo == i.observatory] 
-        print outFiles
         if len(outFiles) == 0:
             # No AhopeOutFiles correspond to that ifo
             return None
@@ -134,20 +132,13 @@ class AhopeOutFileList(lal.Cache):
         currSeg = segments.segment([start,end])
         outFiles = [i for i in outFiles if \
                                i.segment.intersects(currSeg)]
-        print outFiles
-        print "Within job what now?"
         if len(outFiles) == 0:
-            print "Failed"
             # No AhopeOutFile overlap that time period
             return None
         elif len(outFiles) == 1:
             # One AhopeOutFile overlaps that period
-            print "Returning single file"
-            print outFiles[0]
-            print outFiles[0].__class__
             return outFiles[0]
         else:
-            print "Multiple overlaps"
             # More than one AhopeOutFile overlaps period. Find lengths of
             # overlap between time window and AhopeOutFile window
             overlapWindows = [abs(i.segment & currSeg) \
@@ -156,8 +147,16 @@ class AhopeOutFileList(lal.Cache):
             # Note if two AhopeOutFile have identical overlap, this will return
             # the first AhopeOutFile in the list
             overlapWindows = numpy.array(overlapWindows,dtype = int)
-            print outFiles[overlapWindows.argmax()]
             return outFiles[overlapWindows.argmax()]
+
+    def find_all_output_in_range(self, ifo, currSeg):
+        """
+        Return all files that overlap the specified segment.
+        """
+        outFiles = [i for i in self if ifo == i.observatory]
+        outFiles = [i for i in outFiles if \
+                               i.segment.intersects(currSeg)]
+        return self.__class__(outFiles)
 
 class AhopeOutGroupList(AhopeOutFileList):
     '''
@@ -181,18 +180,28 @@ class AhopeOutGroup:
     number of components and analysed separately there will be a number of
     files (the split template banks and the split matched-filter output)
     that will cover that time region. This allows these files to be grouped
-    together. This class holds
+    together. This group may also have a single file that holds information
+    about the group. An example of this is datafind, where a group of frame
+    files covers the desired region, but codes generally read in a frame cache
+    file which points to the locations of these. This class holds
 
     * The ifo that the AhopeOutGroup is valid for 
     * The time span that the AhopeOutGroup is valid for
     * A AhopeOutFileList storing the files and associated jobs in the group
+    * A URL to the group summary file (for e.g. a frame-cache for datafind)
+      if appropriate for the group (OPTIONAL)
+    * A job that generated the URL group summary file, if that file exists
+      and if it was generated from within the pegasus workflow
     """
-    def __init__(self, ifo, description, time):
+    def __init__(self, ifo, description, time, summaryUrl=None, \
+                 summaryJob=None):
         # Set everything to None to start
         self.__outFileList = None
         self.observatory = ifo
         self.segment = time
         self.description = description
+        self.summaryUrl = summaryUrl
+        self.summaryJob = summaryJob
         
     def get_output(self):
         '''Return self.__outFileList if it has been set, fail if not.
@@ -242,7 +251,9 @@ class AhopeOutGroup:
 
         outputList = AhopeOutFileList([])
         for i, fileUrl in enumerate(outFiles):
-            if len(outFileJobs) == 1:
+            if not outFileJobs:
+                currJob = None
+            elif len(outFileJobs) == 1:
                 currJob = outFileJobs[0]
             elif len(outFileJobs) == len(outFiles):
                 currJob = outFileJobs[i]
@@ -256,8 +267,26 @@ class AhopeOutGroup:
                                     self.segment, fileUrl, job=currJob)
             outputList.append(currFile)
         self.__outFileList = outputList
+
+    @property
+    def summaryUrl(self):
+        """
+        The summary file's URL.  The URL is constructed from the
+        values of the scheme, host, and path attributes.  Assigning
+        a value to the URL attribute causes the value to be parsed
+        and the scheme, host and path attributes updated.
+        Stolen shamelessly from Kipp's glue.lal module.
+        """
+        return urlparse.urlunparse((self.summaryScheme, self.summaryHost, \
+                                    self.summaryPath, None, None, None))
+
+    @summaryUrl.setter
+    def summaryUrl(self, url):
+        self.scheme, self.host, self.path = urlparse.urlparse(url)[:3]
+
         
-def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, ahopeDax,\
+def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, \
+                       datafindOuts, ahopeDax, outputDir,\
                        parents=None, linkExeInstance=False, allowOverlap=True):
     """
     This function sets up a set of single ifo jobs.
@@ -302,7 +331,7 @@ def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, ahopeDax,\
     
 
     # Set up the condorJob class for the current executable
-    currExeJob = exeInstance.create_condorjob(cp,ifo)
+    currExeJob = exeInstance.create_condorjob(cp, ifo, outputDir)
 
     dataLoss = dataLength - abs(validChunk)
     if dataLoss < 0:
@@ -334,14 +363,10 @@ def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, ahopeDax,\
                         upperBoundary > jobValidSeg[1]:
                     errMsg = "Ahope is attempting to generate output "
                     errMsg += "from a job at times where it is not valid."
-                    print jobNum*dataPerJob + validChunk[0]
-                    print lowerBoundary, upperBoundary, jobValidSeg
                     raise ValueError(errMsg)
                 jobValidSeg = segments.segment([lowerBoundary, upperBoundary])
-            print ifo, exeInstance.exeName, jobDataSeg, jobValidSeg
             # Get the parent job if necessary
             if parents:
-                print jobValidSeg, jobValidSeg.__class__,len(jobValidSeg)
                 currParent = parents.find_output(ifo, jobValidSeg)
                 if not currParent:
                     errString = "No parent jobs found overlapping %d to %d." \
@@ -351,12 +376,17 @@ def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, ahopeDax,\
             else:
                 currParent = None
 
+            if datafindOuts:
+                currDfOuts = datafindOuts.find_all_output_in_range(ifo, \
+                                                                   jobDataSeg)
+                if not currDfOuts:
+                    errString = "No datafind jobs found overlapping %d to %d."\
+                                %(jobDataSeg[0],jobDataSeg[1])
+                    errString += "\nThis shouldn't happen. Contact a developer."
+                    raise ValueError(errString)
+
             # If the parent produces a group of output files, such as
             # lalapps_splitbank, a number of condor jobs are needed
-            if currParent:
-                print currParent
-                print currParent.__class__
-                print currParent.__class__.__name__
             if currParent.__class__.__name__ == 'AhopeOutGroup':
                 # Set up the global outputs
                 currFiles = AhopeOutGroup(ifo, jobTag, jobValidSeg)
@@ -365,13 +395,13 @@ def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, ahopeDax,\
                 for parentJob in currParent.get_output():
                     currExeNode, fileUrl = exeInstance.create_condornode(\
                                      ahopeDax, currExeJob, jobDataSeg,\
-                                     jobValidSeg, parent=parentJob)
+                                     jobValidSeg, parent=parentJob,\
+                                     dfParents=currDfOuts)
                     nodeList.append(currExeNode)
                     urlList.append(fileUrl)
                 currFiles.set_output(urlList, nodeList) 
                 outFiles.append(currFiles)
             else:
-                print currParent
                 currExeNode, fileUrl = exeInstance.create_condornode(\
                                          ahopeDax, currExeJob, jobDataSeg,\
                                          jobValidSeg, parent=currParent)

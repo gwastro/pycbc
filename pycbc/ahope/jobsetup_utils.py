@@ -141,7 +141,7 @@ class legacy_ihope_job_utils:
     exeName = None
     condorUniverse = 'standard'
 
-    def create_condorjob(self,cp,ifo):
+    def create_condorjob(self, cp, ifo, outputDir):
         '''
         Set up a CondorDagmanJob class appropriate for legacy lalapps C codes
 
@@ -165,12 +165,17 @@ class legacy_ihope_job_utils:
 
         currJob = LegacyInspiralAnalysisJob(cp,sections,\
                                              self.exeName,self.condorUniverse)
+        # FIXME: Need to ensure that the files get written to the specified
+        # directory. Tmpltbank doesn't even *have* an output-path option, and
+        # I'm not convinced that pipeline.py understands this anyway!
+        # Maybe use the Initialdir condor variable??
+        currJob.add_opt("output-path",outputDir)
         currJob.ifo = ifo
 
         return currJob
 
     def create_condornode(self, ahopeDax, currJob, bankDataSeg, jobValidSeg, \
-                          parent=None):
+                          parent=None, dfParents=None):
         """
         Set up a CondorDagmanNode class to run legacy lalapps C codes.
 
@@ -207,6 +212,14 @@ class legacy_ihope_job_utils:
             parentJob = parent.job
             if parentJob:
                 currNode.add_parent(parentJob)
+        if dfParents:
+            if len(dfParents) != 1:
+                errMsg = "%s cannot take more than one frame cache file."\
+                         %(self.exeName)
+                raise ValueError(errMsg)
+            currNode.set_cache(dfParents[0].summaryPath)
+            if dfParents[0].summaryJob:
+                currNode.add_parent(dfParents[0].summaryJob)
         if self.exeName == 'inspiral':
             # Add trig start/end time options
             currNode.set_trig_start(jobValidSeg[0])

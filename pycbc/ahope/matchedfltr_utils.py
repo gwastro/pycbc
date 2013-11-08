@@ -6,7 +6,8 @@ from pycbc.ahope import select_matchedfilterjob_instance
 from pycbc.ahope import select_tmpltbankjob_instance
 
 
-def setup_matchedfltr_workflow(cp, scienceSegs, ahopeDax, tmpltBanks):
+def setup_matchedfltr_workflow(cp, scienceSegs, datafindOuts, ahopeDax,\
+                               tmpltBanks, outputDir):
     '''
     Setup matched filter section of ahope workflow.
     FIXME: ADD MORE DOCUMENTATION
@@ -14,12 +15,13 @@ def setup_matchedfltr_workflow(cp, scienceSegs, ahopeDax, tmpltBanks):
 
     # There should be a number of different options here, for e.g. to set
     # up fixed bank, or maybe something else
-    inspiralOuts = setup_matchedfltr_dax_generated(cp,scienceSegs,ahopeDax,\
-                                                 tmpltBanks)
+    inspiralOuts = setup_matchedfltr_dax_generated(cp, scienceSegs, \
+                       datafindOutsahopeDax, tmpltBanks, outputDir)
     
     return inspiralOuts
 
-def setup_matchedfltr_dax_generated(cp, scienceSegs, ahopeDax, tmpltBanks,\
+def setup_matchedfltr_dax_generated(cp, scienceSegs, datafindOuts, ahopeDax,\
+                                    tmpltBanks, outputDir,\
                                     link_to_tmpltbank=True):
     '''
     Setup matched-filter jobs that are generated as part of the ahope workflow.
@@ -59,7 +61,8 @@ def setup_matchedfltr_dax_generated(cp, scienceSegs, ahopeDax, tmpltBanks,\
     # Begin with independent case and add after FIXME
     for ifo in ifos:
         sngl_ifo_job_setup(cp, ifo, inspiralOuts, exeInstance, \
-                           scienceSegs[ifo], ahopeDax, parents=tmpltBanks, \
-                           linkExeInstance=linkExeInstance, allowOverlap=False)
+                           scienceSegs[ifo], datafindOuts, ahopeDax, outputDir,\
+                           parents=tmpltBanks, linkExeInstance=linkExeInstance,\
+                           allowOverlap=False)
 
     return inspiralOuts
