@@ -16,7 +16,7 @@ def setup_matchedfltr_workflow(cp, scienceSegs, datafindOuts, ahopeDax,\
     # There should be a number of different options here, for e.g. to set
     # up fixed bank, or maybe something else
     inspiralOuts = setup_matchedfltr_dax_generated(cp, scienceSegs, \
-                       datafindOutsahopeDax, tmpltBanks, outputDir)
+                       datafindOuts, ahopeDax, tmpltBanks, outputDir)
     
     return inspiralOuts
 

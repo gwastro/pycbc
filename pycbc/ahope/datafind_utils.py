@@ -1,6 +1,8 @@
 import os,sys,optparse
+import urlparse,urllib
 from glue import datafind
 from glue import segments,segmentsUtils,git_version
+from pycbc.ahope import AhopeOutGroupList, AhopeOutFileList, AhopeOutGroup
 
 def setup_datafind_workflow(cp, scienceSegs, ahopeDax, outputDir, \
                             checkFramesExist=True, checkSegmentGaps=True, \
@@ -60,18 +62,20 @@ def setup_datafind_workflow(cp, scienceSegs, ahopeDax, outputDir, \
     # If we don't have frame files covering all times we can update the science
     # segments.
     if updateSegmentTimes or checkSegmentGaps:
-        newScienceSegs = update_science_segs(scienceSegs, datafindOuts)
+        newScienceSegs = get_science_segs_from_datafind_outs(datafindOuts)
         missingData = False
         for ifo in scienceSegs.keys():
             if not newScienceSegs.has_key(ifo):
                 msg = "IFO %s's science segments " %(ifo)
                 msg += "are completely missing."
                 print >> sys.stderr, msg
+                missingData = True
                 continue
             missing = scienceSegs[ifo] - newScienceSegs[ifo]
             if abs(missing):
                 msg = "From ifo %s we are missing segments:" %(ifo)
                 msg = "\n%s" % "\n".join(map(str, missing))
+                missingData = True
                 print >> sys.stderr, msg
         if checkSegmentGaps and missingData:
             raise ValueError("Ahope cannot find needed data, exiting.")
@@ -79,11 +83,9 @@ def setup_datafind_workflow(cp, scienceSegs, ahopeDax, outputDir, \
 
     # Do all of the frame files that were returned actually exist?
     if checkFramesExist:
-        for ifo,segList in scienceSegs.items():
-            for dfGroup in segList:
-                # Setting on_missing to "warn" will cause ahope to continue if
-                # frames are missing.
-                _,missingFrames = dfCache.checkfilesexist(on_missing=error)
+        for dfGroup in datafindOuts:
+            _,missingFrames = dfGroup.get_output().checkfilesexist(\
+                                                            on_missing="error")
 
     return datafindOuts, scienceSegs
     
@@ -115,9 +117,9 @@ def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):
     """
     # First job is to do setup for the datafind jobs
     # First get the server name
-    if 0:
-        # FIXME: Placeholder for getting server name from the config file
-        pass
+    if cp.has_option("ahope-datafind", "datafind-ligo-datafind-server"):
+        datafindServer = cp.get("ahope-datafind",\
+                                "datafind-ligo-datafind-server")
     else:
         # Get the server name from the environment
         if os.environ.has_key("LIGO_DATAFIND_SERVER"):
@@ -127,6 +129,8 @@ def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):
             errMsg += "the environment, ${LIGO_DATAFIND_SERVER}, but that "
             errMsg += "variable is not populated."
             raise ValueError(errMsg)
+
+    print datafindServer
 
     # verify authentication options
     if not datafindServer.endswith("80"):
@@ -157,28 +161,36 @@ def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):
     ifos = scienceSegs.keys()
     jobTag = "DATAFIND"
 
-    for ifo, scienceSegsIfo in scienceSegmentsAllIfos.items():
+    for ifo, scienceSegsIfo in scienceSegs.items():
         observatory = ifo[0].upper()
-        # Get the type from the config file
-        frameType = 'BLOOPY'
+        frameType = cp.get("ahope-datafind", "datafind-%s-frame-type"%(ifo))
         for seg in scienceSegsIfo:
             # WARNING: For now ahope will expect times to be in integer seconds
             startTime = int(seg[0])
             endTime = int(seg[1])
-            # FIXME: Take KWargs from config
+            # Take the datafind KWargs from config (usually urltype=file is
+            # given).
+            dfKwargs = {}
+            for item, value in cp.items("datafind"):
+                dfKwargs[item] = value
+            print frameType
             dfCache = connection.find_frame_urls(observatory, frameType, \
-                        start_time, end_time, urltype="file")
+                        startTime, endTime, **dfKwargs)
             dfCacheFileName = "%s-%s-%d-%d.lcf" \
-                              %(ifo, jobTag, start_time, end_time-start_time)
-            dfCachePath = os.path.join(outputDir,dfCacheFileName)
+                              %(ifo, jobTag, startTime, endTime-startTime)
+            dfCachePath = os.path.join(outputDir, dfCacheFileName)
+            # Dump output to file
+            fP = open(dfCachePath, "w")
+            dfCache.tofile(fP)
+            fP.close()
             dfCacheUrl = urlparse.urljoin('file:', \
                                           urllib.pathname2url(dfCachePath))
- 
             # Convert to ahope format
             dfCache = AhopeOutFileList(dfCache)
+            urlList = [e.url for e in dfCache] 
             dfCacheGroup = AhopeOutGroup(ifo, jobTag, seg, \
                                          summaryUrl=dfCacheUrl)
-            dfCacheGroup.set_output(dfCache, None)
+            dfCacheGroup.set_output(urlList, None)
             datafindOuts.append(dfCacheGroup)
 
     return datafindOuts
@@ -202,8 +214,11 @@ def get_science_segs_from_datafind_outs(datafindOuts):
     """
     newScienceSegs = {}
     for group in datafindOuts:
-        groupSegs = segments.segmentlist(e.segment for e \
+        if group.get_output():
+            groupSegs = segments.segmentlist(e.segment for e \
                                              in group.get_output()).coalesce()
+        else:
+            continue
         if not newScienceSegs.has_key(group.observatory):
             newScienceSegs[group.observatory] = groupSegs
         else:

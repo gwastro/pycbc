@@ -1,5 +1,6 @@
 import math
 import numpy
+import urlparse
 from glue import lal
 from glue import segments
 
@@ -172,7 +173,7 @@ class AhopeOutGroupList(AhopeOutFileList):
     pass
 
 
-class AhopeOutGroup:
+class AhopeOutGroup(object):
     """
     This calls holds the details of a group of files that collectively cover
     a specified stretch of time in the ahope workflow. An example of where
@@ -216,7 +217,7 @@ class AhopeOutGroup:
             The AhopeOutFileList containing the list of files and jobs that
             will run them.
         '''
-        if self.__outFileList:
+        if self.__outFileList is not None:
             return self.__outFileList
         else:
             raise ValueError("Output file list has not been set.")
@@ -277,12 +278,22 @@ class AhopeOutGroup:
         and the scheme, host and path attributes updated.
         Stolen shamelessly from Kipp's glue.lal module.
         """
-        return urlparse.urlunparse((self.summaryScheme, self.summaryHost, \
+        if self.summaryScheme and self.summaryHost and self.summaryPath:
+            return urlparse.urlunparse((self.summaryScheme, self.summaryHost, \
                                     self.summaryPath, None, None, None))
+        else:
+            return None
 
     @summaryUrl.setter
-    def summaryUrl(self, url):
-        self.scheme, self.host, self.path = urlparse.urlparse(url)[:3]
+    def summaryUrl(self, summaryUrl):
+        """
+        WRITE THIS
+        """
+        if summaryUrl is None:
+            self.summaryScheme = self.summaryHost = self.summaryPath = None
+        else:
+            self.summaryScheme, self.summaryHost, self.summaryPath = \
+                                             urlparse.urlparse(summaryUrl)[:3]
 
         
 def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, \
@@ -411,7 +422,7 @@ def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, \
                 outFiles.append(currFile)
     return outFiles
 
-def split_outfiles(cp, inputFileList, exeInstance, numBanks, ahopeDax):
+def split_outfiles(cp, inputFileList, exeInstance, numBanks, ahopeDax, outDir):
     """
     Add documentation
     """
@@ -419,7 +430,7 @@ def split_outfiles(cp, inputFileList, exeInstance, numBanks, ahopeDax):
     outFileGroups = AhopeOutGroupList([])
 
     # Set up the condorJob class for the current executable
-    currExeJob = exeInstance.create_condorjob(cp, None)
+    currExeJob = exeInstance.create_condorjob(cp, None, outDir)
 
     for input in inputFileList:
         jobTag = input.description + "_" + exeInstance.exeName.upper()
