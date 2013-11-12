@@ -167,7 +167,7 @@ class legacy_ihope_job_utils:
         currJob = LegacyInspiralAnalysisJob(cp,sections,\
                                              self.exeName,self.condorUniverse)
         # These jobs mostly don't have an output-dir option, so this seems
-        # the best way to get the correct output dir. This means that the jobs
+        # the best way to get the correct output dir. This means that the jobs
         # run with outputDir as the CWD.
         currJob.add_condor_cmd("initialdir", outputDir)
         currJob.add_opt("output-path",outputDir)
