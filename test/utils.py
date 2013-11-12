@@ -65,11 +65,13 @@ once.
 """
 
 import pycbc
+import optparse
 from sys import exit as _exit
 from optparse import OptionParser, OptionValueError
 from pycbc.scheme import CPUScheme, CUDAScheme, OpenCLScheme
 from numpy import dtype, float32, float64, complex64, complex128
 from pycbc.types import Array
+
 
 def _check_scheme_all(option, opt_str, scheme, parser):
     if scheme=='cuda' and not pycbc.HAVE_CUDA:
