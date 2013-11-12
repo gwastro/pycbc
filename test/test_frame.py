@@ -65,6 +65,11 @@ class FrameTestBase(unittest.TestCase):
         # This is a file in the temp directory that will be deleted when it is garbage collected
         filename = "data/frametest" + str(self.data1.dtype) + ".gwf"
 
+        # Make sure we can run from one directory higher as well
+        import os.path
+        if not os.path.exists(filename):
+            filename =  "test/" + filename
+
         # Now we will create a frame file, specifiying that it is a timeseries
         #Fr.frputvect(filename,
         #             [{'name':'channel1', 'data':self.data1, 'start':int(self.epoch),
