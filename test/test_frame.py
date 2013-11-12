@@ -32,12 +32,8 @@ from pycbc.types import *
 from pycbc.scheme import *
 import pycbc.frame
 import numpy
-import tempfile
 import lal
-from pylal import frutils, Fr
-import os
-import subprocess
-import sys
+#from pylal import Fr
 from utils import parse_args_cpu_only, simple_exit
 
 # Frame tests only need to happen on the CPU
@@ -45,6 +41,7 @@ parse_args_cpu_only("Frame I/O")
 
 class FrameTestBase(unittest.TestCase):
     def setUp(self):
+        numpy.random.seed(1023)
         self.size = pow(2,12)
 
         self.data1 = numpy.array(numpy.random.rand(self.size), dtype=self.dtype)
@@ -66,15 +63,14 @@ class FrameTestBase(unittest.TestCase):
         # TODO also test reading a cache
 
         # This is a file in the temp directory that will be deleted when it is garbage collected
-        frmfile = tempfile.NamedTemporaryFile()
-        filename = frmfile.name + ".gwf"
+        filename = "frametest" + str(self.data1.dtype) + ".gwf"
 
         # Now we will create a frame file, specifiying that it is a timeseries
-        Fr.frputvect(filename,
-                     [{'name':'channel1', 'data':self.data1, 'start':int(self.epoch),
-                       'dx':self.delta_t,'type':1},
-                      {'name':'channel2', 'data':self.data2, 'start':int(self.epoch),
-                       'dx':self.delta_t,'type':1}])
+        #Fr.frputvect(filename,
+        #             [{'name':'channel1', 'data':self.data1, 'start':int(self.epoch),
+        #               'dx':self.delta_t,'type':1},
+        #              {'name':'channel2', 'data':self.data2, 'start':int(self.epoch),
+        #               'dx':self.delta_t,'type':1}])
 
         # Reading just one channel first
         ts1 = pycbc.frame.read_frame(filename,'channel1')
