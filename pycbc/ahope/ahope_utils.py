@@ -415,7 +415,8 @@ def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, \
             else:
                 currExeNode, fileUrl = exeInstance.create_condornode(\
                                          ahopeDax, currExeJob, jobDataSeg,\
-                                         jobValidSeg, parent=currParent)
+                                         jobValidSeg, parent=currParent,\
+                                         dfParents=currDfOuts)
                 # Make the AhopeOutFile instance
                 currFile = AhopeOutFile(ifo, jobTag, jobValidSeg, fileUrl,\
                                         job=currExeNode )

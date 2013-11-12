@@ -130,8 +130,6 @@ def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):
             errMsg += "variable is not populated."
             raise ValueError(errMsg)
 
-    print datafindServer
-
     # verify authentication options
     if not datafindServer.endswith("80"):
         cert_file, key_file = datafind.find_credential()
@@ -173,7 +171,6 @@ def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):
             dfKwargs = {}
             for item, value in cp.items("datafind"):
                 dfKwargs[item] = value
-            print frameType
             dfCache = connection.find_frame_urls(observatory, frameType, \
                         startTime, endTime, **dfKwargs)
             dfCacheFileName = "%s-%s-%d-%d.lcf" \
@@ -183,8 +180,9 @@ def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):
             fP = open(dfCachePath, "w")
             dfCache.tofile(fP)
             fP.close()
-            dfCacheUrl = urlparse.urljoin('file:', \
-                                          urllib.pathname2url(dfCachePath))
+            dfCacheUrl = urlparse.urlunparse(['file', 'localhost',\
+                                             urllib.pathname2url(dfCachePath),\
+                                             None, None, None])
             # Convert to ahope format
             dfCache = AhopeOutFileList(dfCache)
             urlList = [e.url for e in dfCache] 

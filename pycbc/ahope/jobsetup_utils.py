@@ -1,3 +1,4 @@
+import os
 import urlparse, urllib
 from glue import pipeline
 from glue import segments
@@ -164,13 +165,14 @@ class legacy_ihope_job_utils:
         if ifo and cp.has_section('%s-%s' %(self.exeName,ifo.lower())):
              sections.append('%s-%s' %(self.exeName,ifo.lower()) )
 
-        currJob = LegacyInspiralAnalysisJob(cp,sections,\
-                                             self.exeName,self.condorUniverse)
+        currJob = LegacyInspiralAnalysisJob(cp, sections, self.exeName,\
+                                            self.condorUniverse, ifo=ifo)
         # These jobs mostly don't have an output-dir option, so this seems
         # the best way to get the correct output dir. This means that the jobs
         # run with outputDir as the CWD.
         currJob.add_condor_cmd("initialdir", outputDir)
-        currJob.add_opt("output-path",outputDir)
+#        currJob.add_opt("output-path",outputDir)
+        self.outDir = outputDir
         currJob.ifo = ifo
 
         return currJob
@@ -206,7 +208,12 @@ class legacy_ihope_job_utils:
         currNode.set_category(self.exeName)
         # Does this need setting?: tmpltBankNode.set_priority(?)
         currNode.set_start(bankDataSeg[0])
-        currNode.set_end(bankDataSeg[1])
+        if self.padData:
+            currNode.set_start(bankDataSeg[0] + self.padData)
+            currNode.set_end(bankDataSeg[1] - self.padData)
+        else:
+            currNode.set_start(bankDataSeg[0])
+            currNode.set_end(bankDataSeg[1])
         currNode.set_ifo(currJob.ifo)
         if parent:
             currNode.set_bank(parent.path)
@@ -227,8 +234,10 @@ class legacy_ihope_job_utils:
             currNode.set_trig_end(jobValidSeg[1])
         currNode.finalize()
         ahopeDax.add_node(currNode)
-        outUrl = urlparse.urljoin('file:', \
-                                  urllib.pathname2url(currNode.get_output()))
+        outUrl = urlparse.urlunparse(['file', 'localhost',\
+                          os.path.join(self.outDir,\
+                                 urllib.pathname2url(currNode.get_output())),\
+                          None, None, None])
 
         return currNode, outUrl
 
@@ -236,6 +245,8 @@ class legacy_sngl_job_utils(legacy_ihope_job_utils):
     """This class holds the function for lalapps_inspiral and 
     lalapps_tmpltbank data usage following the old ihope specifications.
     """
+    padData = None
+    exeName = None
     def __init__(self,exeName):
         self.exeName = exeName
     
@@ -283,6 +294,7 @@ class legacy_sngl_job_utils(legacy_ihope_job_utils):
         # It will search relevant sub-sections for the option, so this can be
         # set differently for each ifo.
         padData = int(cp.get_opt_ifo(self.exeName,'pad-data',ifo))
+        self.padData = 8
         segmentLength = float(cp.get_opt_ifo(self.exeName,\
                                              'segment-length',ifo))
         sampleRate = float(cp.get_opt_ifo(self.exeName,'sample-rate',ifo))
@@ -350,7 +362,9 @@ class splitbank_job_utils(legacy_ihope_job_utils):
         x = parent.path.split('-')
         for i in range( 0, numBanks ):
             outFile = "%s-%s_%2.2d-%s-%s" %(x[0], x[1], i, x[2], x[3])
-            outUrl = urlparse.urljoin('file:', urllib.pathname2url(outFile))
+            outUrl = urlparse.urlunparse(['file', 'localhost',\
+                                          os.path.join(self.outDir, outFile),\
+                                          None, None, None])
             outUrlList.append(outUrl)
         parentJob = parent.job
         if parentJob:
@@ -370,7 +384,8 @@ class LegacyInspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
     executable is determined from the ini file.
     """
 
-    def __init__(self,cp,sections,exec_name,universe,extension='xml'):
+    def __init__(self, cp, sections, exec_name, universe,\
+                 extension='xml', ifo=None):
         """
         Initialize the LegacyInspiralAnalysisJob class.
    
@@ -408,7 +423,10 @@ class LegacyInspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
 
         self.set_stdout_file('%s.out' %(logBaseNam,) )
         self.set_stderr_file('%s.err' %(logBaseNam,) )
-        self.set_sub_file('%s.sub' %(exec_name,) )
+        if ifo:
+            self.set_sub_file('%s-%s.sub' %(ifo, exec_name,) )
+        else:
+            self.set_sub_file('%s.sub' %(exec_name,) )
 
     def set_exec_name(self,exec_name):
         """
