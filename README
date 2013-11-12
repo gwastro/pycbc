@@ -1,7 +1,7 @@
 Welcome to PYCBC
 
 More information can be found at the website: 
-   https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home
+   https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/
 
 When installing pycbc:
    python setup.py install --prefix=/path/to/install/directory
