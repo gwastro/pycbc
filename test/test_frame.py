@@ -63,7 +63,7 @@ class FrameTestBase(unittest.TestCase):
         # TODO also test reading a cache
 
         # This is a file in the temp directory that will be deleted when it is garbage collected
-        filename = "frametest" + str(self.data1.dtype) + ".gwf"
+        filename = "data/frametest" + str(self.data1.dtype) + ".gwf"
 
         # Now we will create a frame file, specifiying that it is a timeseries
         #Fr.frputvect(filename,
