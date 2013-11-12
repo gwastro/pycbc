@@ -25,16 +25,34 @@
 """PyCBC contains a toolkit for CBC gravitational wave analysis
 
 """
+import subprocess, os
 
 # Check for optional components of the PyCBC Package
-
 try:
+    # This is a crude check to make sure that the driver is installed
+    try:
+        err = subprocess.call(["nvidia-smi"], stdout=open(os.devnull, 'wb'), stderr=open(os.devnull, 'wb'))
+        if err != 0:
+            raise ImportError("Cannot access 'nvidia-smi', driver may not be installed correctly")
+    except OSError:
+        pass
+
+    # Check that pycuda is installed and can talk to the driver
     import pycuda.driver as _pycudadrv
-    HAVE_CUDA=True
+
+    HAVE_CUDA=True 
 except ImportError:
     HAVE_CUDA=False
     
 try:
+    # This is a crude check to make sure that the driver is installed
+    try:
+        err = subprocess.call(["nvidia-smi"], stdout=open(os.devnull, 'wb'), stderr=open(os.devnull, 'wb'))
+        if err != 0:
+            raise ImportError("Cannot access 'nvidia-smi', driver may not be installed correctly")
+    except OSError:
+        pass
+
     import pyopencl as _pyopencl
     HAVE_OPENCL=True
 except ImportError:

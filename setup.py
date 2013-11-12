@@ -152,6 +152,7 @@ class TestBase(Command):
         self.run_command('build')
         # Get the list of cpu test modules
         self.test_modules = self.find_test_modules("test*.py")
+
         # Run from the build directory
         os.environ['PYTHONPATH'] = self.build_dir + ":" + os.environ['PYTHONPATH']
 
@@ -170,18 +171,11 @@ class TestBase(Command):
 
 class test(Command):
     def has_cuda(self):
-        try:
-            import pycuda.driver
-            return True
-        except:
-            return False
-
+        import pycbc
+        return pycbc.HAVE_CUDA
     def has_opencl(self):
-        try:
-            import pyopencl
-            return True
-        except:
-            return False
+        import pycbc
+        return pycbc.HAVE_OPENCL
 
     sub_commands = [('test_cpu',None),('test_cuda',has_cuda),('test_opencl',has_opencl)]
     user_options = []
