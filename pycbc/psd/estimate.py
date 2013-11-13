@@ -102,18 +102,22 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
         fs_dtype = numpy.complex64
     elif timeseries.precision == 'double':
         fs_dtype = numpy.complex128
+        
     num_samples = len(timeseries)
     num_segments = num_samples / seg_stride
+    
     if (num_segments - 1) * seg_stride + seg_len > num_samples:
         num_segments -= 1
     if num_samples != (num_segments - 1) * seg_stride + seg_len:
         raise ValueError('Incorrect choice of segmentation parameters')
+        
     w = Array(window_map[window](seg_len).astype(timeseries.dtype))
 
     # calculate psd of each segment
     delta_f = 1. / timeseries.delta_t / seg_len
     segment_tilde = FrequencySeries(numpy.zeros(seg_len / 2 + 1), \
         delta_f=delta_f, dtype=fs_dtype)
+        
     segment_psds = []
     for i in xrange(num_segments):
         segment_start = i * seg_stride
@@ -122,6 +126,11 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
         assert len(segment) == seg_len
         fft(segment * w, segment_tilde)
         seg_psd = abs(segment_tilde * segment_tilde.conj()).numpy()
+      
+        #halve the DC and Nyquist components to be consistent with TO10095
+        seg_psd[0] /= 2
+        seg_psd[-1] /= 2
+        
         segment_psds.append(seg_psd)
         
     segment_psds = numpy.array(segment_psds)   
@@ -139,8 +148,7 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
             median_bias(len(even_psds))
         psd = (odd_median + even_median) / 2
 
-    w = w.numpy()
-    psd *= 2 * delta_f * seg_len / (numpy.square(w).sum())
+    psd *= 2 * delta_f * seg_len / (w.squared_norm().sum())
 
     return FrequencySeries(psd, delta_f=delta_f, dtype=timeseries.dtype)
 
