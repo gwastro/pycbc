@@ -54,8 +54,8 @@ parser = optparse.OptionParser(usage, version=__version__, description=_desc,\
 parser.add_option("-v", "--verbose", action="store_true", default=False,\
                     help="verbose output, default: %default")
 parser.add_option("-m", "--min-match", action="store", type="float",\
-                  default=0.03, help="Minimum match to generate bank with"+\
-                                     "OPTIONAL: default=%default")
+                  default=None, help="Minimum match to generate bank with."+\
+                                     "REQUIRED OPTION.")
 parser.add_option("-O", "--output-file",  help="Output file name. "+\
                                                "REQUIRED OPTION.")
 
@@ -79,6 +79,8 @@ pycbc.tmpltbank.insert_ethinca_calculation_option_group(parser)
 # Sanity check options
 if not opts.output_file:
     parser.error("Must supply --output-file")
+if not opts.min_match:
+    parser.error("Must supply --min-match")
 pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
 pycbc.tmpltbank.verify_mass_range_options(opts, parser, nonSpin=True)
 pycbc.psd.verify_psd_options(opts, parser)

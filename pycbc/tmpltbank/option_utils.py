@@ -100,23 +100,36 @@ def insert_metric_calculation_options(parser):
                    "metric.")
     metricOpts.add_option("", "--pn-order", action="store", type="string",\
                    default=None,\
-                   help="Determines the PN order to use. REQUIRED ARGUMENT: "+\
+                   help="Determines the PN order to use. Note that if you ",\
+                        "placing a bank of non-spinning templates, any ",\
+                        "spin-related terms in the metric will always ",\
+                        "be zero. REQUIRED ARGUMENT: "+\
                         "choices are: %s" %(pycbcValidOrdersHelpDescriptions))
     metricOpts.add_option("", "--f0", action="store", type="float",\
-                  default=70., help="f0 for use in metric calculation." +\
-                                    "If using ethinca calculation this "+\
-                                    "must be equal to f-low."
-                                    "OPTIONAL: default= %default")
+                  default=70.,\
+                  help="f0 is used as a dynamic rescaling factor when "+\
+                       "calculating the integrals used in metric "+\
+                       "construction. IE. instead of integrating F(f) we "+\
+                       "integrate F(f/f0) and then remove f0 after the fact."+\
+                       "The default option should be fine here for most "+\
+                       "applications. OPTIONAL: default= %default."+\
+                       "WARNING: If using ethinca calculation this must be "+\
+                       "equal to f-low. UNITS=Hz")
     metricOpts.add_option("", "--f-low", action="store", type="float",\
-                  default=15., help="f_low for use in metric calculation," +\
-                                    "OPTIONAL: default= %default")
+                  default=None, help="The lower frequency cutoff to use "+\
+                       "when computing the components of the parameter "+\
+                       "space metric. REQUIRED ARGUMENT. UNITS=Hz")
     metricOpts.add_option("", "--f-upper", action="store", type="float",\
-                  default=2000., help="Upper cutoff frequency when "+\
-                  "generating the metric. OPTIONAL: default= %default")
+                  default=None., help="The upper frequency cutoff to use "+\
+                       "when computing the components of the parameter "+\
+                       "space metric. REQUIRED ARGUMENT. UNITS=Hz")
     metricOpts.add_option("", "--delta-f", action="store", type="float",\
-                  default=0.001, help="delta_f for use in metric calculation,"+\
-                                      "linear interpolation used to get this,"+\
-                                      "OPTIONAL: default= %default")
+                  default=None, help="The frequency spacing to use when "+\
+                       "computing the components of the parameter space "+\
+                       "metric. IE. the various integrals should be "+\
+                       "\int F(f) df, however we only approximate this as "+\
+                       "\sum F(f) delta_f. This sets delta_f."+\
+                       "OPTIONAL: default= %default UNITS=Hz")
     parser.add_option_group(metricOpts)
 
 def verify_metric_calculation_options(opts, parser):
@@ -133,6 +146,10 @@ def verify_metric_calculation_options(opts, parser):
     """
     if not opts.pn_order:
         parser.error("Must supply --pn-order")
+    if not opts.f_low:
+        parser.error("Must supply --f-low")
+    if not opts.f_upper:
+        parser.error("Must supply --f-upper")
     try:
         if opts.calculate_ethinca_metric:
             if opts.f_low != opts.f0:
@@ -160,34 +177,36 @@ def insert_mass_range_option_group(parser,nonSpin=False):
     massOpts.add_option("", "--min-mass1", action="store", type="float",\
                   default=None, help="Minimum mass1 to generate bank with"+\
                                      ", mass1 *must* be larger than mass2." +\
-                                      "REQUIRED ARGUMENT")
+                                      "REQUIRED ARGUMENT. UNITS=Solar mass.")
     massOpts.add_option("", "--max-mass1", action="store", type="float",\
                   default=None, help="Maximum mass1 to generate bank with."+\
-                                      "REQUIRED ARGUMENT.")
+                                      "REQUIRED ARGUMENT. UNITS=Solar mass.")
     massOpts.add_option("", "--min-mass2", action="store", type="float",\
                   default=None, help="Minimum mass2 to generate bank with."+\
-                                      "REQUIRED ARGUMENT.")
+                                      "REQUIRED ARGUMENT. UNITS=Solar mass.")
     massOpts.add_option("", "--max-mass2", action="store", type="float",\
                   default=None, help="Maximum mass2 to generate bank with."+\
-                                      "REQUIRED ARGUMENT.")
+                                      "REQUIRED ARGUMENT. UNITS=Solar mass.")
     massOpts.add_option("", "--max-total-mass", action="store", type="float",\
                   default=None, help="Minimum total mass to generate bank "+\
                                       "with. OPTIONAL, no limit on max total "+\
-                                      "mass if not provided.")
+                                      "mass if not provided. UNITS=Solar mass.")
     massOpts.add_option("", "--min-total-mass", action="store", type="float",\
                   default=None, help="Maximum total mass to generate bank "+\
                                       "with. OPTIONAL, no limit on min total "+\
-                                      "mass if not provided.")
+                                      "mass if not provided. UNITS=Solar mass.")
     massOpts.add_option("", "--max-eta", action="store", type="float",\
                   default=None, help="Minimum symmetric mass ratio to "+\
                                       "generate bank "+\
                                       "with. OPTIONAL, no limit on maximum "+\
-                                      "symmetric mass ratio if not provided.")
+                                      "symmetric mass ratio if not provided."+\
+                                      "UNITS=Solar mass.")
     massOpts.add_option("", "--min-eta", action="store", type="float",\
                   default=None, help="Maximum symmetric mass ratio to "+\
                                       "generate bank "+\
                                       "with. OPTIONAL, no limit on minimum "+\
-                                      "symmetric mass ratio if not provided.")
+                                      "symmetric mass ratio if not provided."+\
+                                      "UNITS=Solar mass.")
 
     if nonSpin:
         parser.add_option_group(massOpts)
@@ -292,7 +311,7 @@ def insert_ethinca_calculation_option_group(parser):
                         "f_max and uses the closest one to each template's "+\
                         "ISCO frequency. This value sets the spacing between "+\
                         "these discrete values of frequency cutoff. "+\
-                        "OPTIONAL: default= %default")
+                        "OPTIONAL: default= %default, UNITS=Hz.")
     parser.add_option_group(ethincaGroup)
 
 def verify_ethinca_calculation_options(opts, parser):

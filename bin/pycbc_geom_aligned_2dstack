@@ -70,8 +70,8 @@ parser.add_option("", "--cov-evecs-file", action="store", type="string",\
                    help="ASCII file containing the covariance eigenvectors. "+\
                         "REQUIRED ARGUMENT.")
 parser.add_option("", "--min-match", action="store", type="float",\
-                  default=0.03, help="Minimum match to generate bank with"+\
-                                     "OPTIONAL: default= %default")
+                  default=None, help="Minimum match to generate bank with."+\
+                                     "REQUIRED ARGUMENT.")
 parser.add_option("", "--stack-distance", action="store", type="float",\
                   default=0.2, help="Minimum metric spacing before we stack"+\
                                     "OPTIONAL: default= %default")
@@ -98,6 +98,8 @@ opts.eval_vec5_depth = not opts.skip_vec5_depth
 # Sanity check options
 if not opts.input_bank_file:
     parser.error("Must supply --input-bank-file")
+if not opts.min_match:
+    parser.error("Must supply --min-match")
 if not opts.output_bank_file:
     parser.error("Must supply --output-bank-file")
 if not opts.metric_evals_file:
