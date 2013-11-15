@@ -100,9 +100,9 @@ def insert_metric_calculation_options(parser):
                    "metric.")
     metricOpts.add_option("", "--pn-order", action="store", type="string",\
                    default=None,\
-                   help="Determines the PN order to use. Note that if you ",\
-                        "placing a bank of non-spinning templates, any ",\
-                        "spin-related terms in the metric will always ",\
+                   help="Determines the PN order to use. Note that if you "+\
+                        "placing a bank of non-spinning templates, any "+\
+                        "spin-related terms in the metric will always "+\
                         "be zero. REQUIRED ARGUMENT: "+\
                         "choices are: %s" %(pycbcValidOrdersHelpDescriptions))
     metricOpts.add_option("", "--f0", action="store", type="float",\
@@ -120,7 +120,7 @@ def insert_metric_calculation_options(parser):
                        "when computing the components of the parameter "+\
                        "space metric. REQUIRED ARGUMENT. UNITS=Hz")
     metricOpts.add_option("", "--f-upper", action="store", type="float",\
-                  default=None., help="The upper frequency cutoff to use "+\
+                  default=None, help="The upper frequency cutoff to use "+\
                        "when computing the components of the parameter "+\
                        "space metric. REQUIRED ARGUMENT. UNITS=Hz")
     metricOpts.add_option("", "--delta-f", action="store", type="float",\
