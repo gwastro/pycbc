@@ -27,12 +27,12 @@ performing a coincident CBC matched-filter analysis on gravitational-wave
 interferometer data
 """
 
-from configparserutils import *
 from ahope_utils import *
+from configparserutils import *
 from jobsetup_utils import *
+from datafind_utils import *
+from segment_utils import *
 from tmpltbank_utils import *
 from matchedfltr_utils import *
 from splittable_utils import *
-from datafind_utils import *
 from legacy_ihope import *
-from segment_utils import *
