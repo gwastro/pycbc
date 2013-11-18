@@ -1,552 +1,130 @@
-import os
-import urlparse, urllib
-from glue import pipeline
 from glue import segments
+from pycbc.ahope import AhopeOutGroup, AhopeOutFile
 
-def select_tmpltbankjob_instance(currExe,currSection):
-    """This function returns an instance of the class that is appropriate for
-    creating a template bank within ihope.
-    
+def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, \
+                       datafindOuts, ahopeDax, outputDir,\
+                       parents=None, linkExeInstance=False, allowOverlap=True):
+    """
+    This function sets up a set of single ifo jobs.
+
     Parameters
-    ----------
-    currExe : string
-        The name of the executable that is being used.
-    currSection : string
-        The name of the section storing options for this executble
-
-    Returns
-    --------
-    Instanced class : exeClass
-        An instance of the class that holds the utility functions appropriate
-        for the given executable. This class **must** contain
-        * exeClass.get_valid_times()
-        * exeClass.create_condorjob()
-        * exeClass.create_condornode()
+    -----------
+    cp : ConfigParser
+        The ConfigParser object holding the parameters of the ahope workflow.
+    ifo : string
+        The name of the ifo to set up the jobs for
+    outFiles : AhopeOutFileList or AhopeOutGroupList
+        The AhopeOutFileList containing the list of jobs. Jobs will be appended
+        to this list, and it does not need to be empty when supplied.
+    exeInstance : Instanced class
+        An instanced class that contains the functions needed to set up things
+        that are specific to the executable being run.
+    scienceSegs : segments.segmentlist
+        The list of times that the jobs should cover
+    ahopeDax : CondorDAG object
+        The condorDAG object holding the ahope workflow being constructed.
+    parents : AhopeOutFileList (optional, kwarg, default=None)
+        The AhopeOutFileList containing the list of jobs that are parents to
+        the one being set up.
+    allowOverlap : boolean (optional, kwarg, default = True)
+        If this is set the times that jobs are valid for will be allowed to
+        overlap. This may be desired for template banks which may have some
+        overlap in the times they cover. This may not be desired for inspiral
+        jobs, where you probably want triggers recorded by jobs to not overlap
+        at all.
     """
+    # Begin by getting analysis start and end, and start and end of time
+    # that the output file is valid for
+    dataLength,validChunk = exeInstance.get_valid_times(cp, ifo)
+    dataChunk = segments.segment([0, dataLength])
+    jobTag = exeInstance.exeName.upper()
 
-    # This is basically a list of if statements
-    if currExe == 'lalapps_tmpltbank':
-        exeClass = legacy_sngl_job_utils(currSection)
-    # Some elif statements
-    else:
-        # Should we try some sort of default class??
-        errString = "No class exists for executable %s" %(currExe,)
-        raise NotImplementedError(errString)
-
-    return exeClass
-
-def select_matchedfilterjob_instance(currExe,currSection):
-    """This function returns an instance of the class that is appropriate for
-    matched-filtering within ahope.
-    
-    Parameters
-    ----------
-    currExe : string
-        The name of the executable that is being used.
-    currSection : string
-        The name of the section storing options for this executble
-
-    Returns
-    --------
-    Instanced class : exeClass
-        An instance of the class that holds the utility functions appropriate
-        for the given executable. This class **must** contain
-        * exeClass.get_valid_times()
-        * exeClass.create_condorjob()
-        * exeClass.create_condornode()
-    """
-
-    # This is basically a list of if statements
-    if currExe == 'lalapps_inspiral':
-        exeClass = legacy_sngl_job_utils(currSection)
-    # Some elif statements
-    else:
-        # Should we try some sort of default class??
-        errString = "No class exists for executable %s" %(currExe,)
-        raise NotImplementedError(errString)
-
-    return exeClass
-
-def select_splitfilejob_instance(currExe, currSection):
-    """This function returns an instance of the class that is appropriate for
-    splitting an output file up within ahope (for e.g. splitbank).
-    
-    Parameters
-    ----------
-    currExe : string
-        The name of the executable that is being used.
-    currSection : string
-        The name of the section storing options for this executble
-
-    Returns
-    --------
-    Instanced class : exeClass
-        An instance of the class that holds the utility functions appropriate
-        for the given executable. This class **must** contain
-        * exeClass.create_condorjob()
-        * exeClass.create_condornode()
-    """
-
-    # This is basically a list of if statements
-    if currExe == 'lalapps_splitbank':
-        exeClass = splitbank_job_utils(currSection)
-    # Some elif statements
-    else:
-        # Should we try some sort of default class??
-        errString = "No class exists for executable %s" %(currExe,)
-        raise NotImplementedError(errString)
-
-    return exeClass
+    if linkExeInstance:
+        _, linkValidChunk = linkExeInstance.get_valid_times(cp, ifo)
+        validChunkStart = max(validChunk[0], linkValidChunk[0])
+        validChunkEnd = min(validChunk[1], linkValidChunk[1])
+        validChunk = segments.segment([validChunkStart, validChunkEnd])
 
 
-class default_tmpltbank_utils:
-    """
-    STUB: This is the start of code to try to run using default settings.
-    """
-    def get_valid_times(self,cp,ifo):
-        """
-        Return the length of data that the tmpltbank job will need to read and
-        the part of that data that the template bank is valid for.
+    # Set up the condorJob class for the current executable
+    currExeJob = exeInstance.create_condorjob(cp, ifo, outputDir)
 
-        Parameters
-        ----------
-        cp : ConfigParser object
-            The ConfigParser object holding the ahope configuration settings
-        ifo : string
-            The interferometer being setup. It is possible to use different
-            configuration settings for each ifo.
-
-        Returns
-        -------
-        dataLength : float (seconds)
-            The length of data that the job will need
-        validChunk : glue.glue.segments.segment
-            The start and end of the dataLength that is valid for the template
-            bank.
-        """
-        # Take default option from .ini file
-        dataDuration = cp.get('ahope','tmpltbank-data-duration')
-        validStart = cp.get('ahope','tmpltbank-valid-start')
-        validEnd = cp.get('ahope','tmpltbank-valid-end')
-        validChunk = segments.segment([validStart,validEnd])
-
-        return dataDuration,validChunk
-
-
-class legacy_ihope_job_utils:
-    """This class holds all the utility functions to set up jobs that follow
-    the old ihope specifications. This class should not be used directly, but
-    is inherited by a number of the individual job classes.
-    """
-    # Note this value should be set before using any of the functions!
-    exeName = None
-    condorUniverse = 'standard'
-    outDir = None
-
-    def create_condorjob(self, cp, ifo, outputDir):
-        '''
-        Set up a CondorDagmanJob class appropriate for legacy lalapps C codes
-
-        Parameters
-        ----------
-        cp : ConfigParser object
-            The ConfigParser object holding the ahope configuration settings
-        ifo : string
-            The interferometer being setup. It is possible to use different
-            configuration settings for each ifo.
-
-        Returns
-        -------
-        pipeline.CondorDagmanJob
-            The lalapps_tmpltbank CondorDagmanJob class.
-        '''
-        sections = [self.exeName]
-           
-        if ifo and cp.has_section('%s-%s' %(self.exeName,ifo.lower())):
-             sections.append('%s-%s' %(self.exeName,ifo.lower()) )
-
-        currJob = LegacyInspiralAnalysisJob(cp, sections, self.exeName,\
-                                            self.condorUniverse, ifo=ifo)
-        # These jobs mostly don't have an output-dir option, so this seems
-        # the best way to get the correct output dir. This means that the jobs
-        # run with outputDir as the CWD.
-        currJob.add_condor_cmd("initialdir", outputDir)
-#        currJob.add_opt("output-path",outputDir)
-        self.outDir = outputDir
-        currJob.ifo = ifo
-
-        return currJob
-
-    def create_condornode(self, ahopeDax, currJob, bankDataSeg, jobValidSeg, \
-                          parent=None, dfParents=None):
-        """
-        Set up a CondorDagmanNode class to run legacy lalapps C codes.
-
-        Parameters
-        ----------
-        ahopeDax : pipeline.CondorDAG instance
-            The workflow to hold of the ahope jobs
-        currJob : pipeline.CondorDagmanJob
-            The CondorDagmanJob to use when setting up the individual nodes
-        bankDataSeg : glue.segments.segment
-            Segment holding the data that needs to be used for this node
-        jobValidSeg : glue.segment.segment
-            Only used for inspiral jobs. This is the time window in which
-            triggers should be recorded for each job.
-        parent : AhopeOutFile (optional, kwarg, default=None)
-            The AhopeOutFile containing the job that is parent to the one being
-            set up.
-
-        Returns
-        --------
-        tmpltBankNode : pipeline.CondorDagmanNode
-            The node to run the job
-        string
-            The output file
-        """
-        currNode = LegacyInspiralAnalysisNode(currJob)
-        currNode.set_category(self.exeName)
-        # Does this need setting?: tmpltBankNode.set_priority(?)
-        currNode.set_start(bankDataSeg[0])
-        if self.padData:
-            currNode.set_start(bankDataSeg[0] + self.padData)
-            currNode.set_end(bankDataSeg[1] - self.padData)
-        else:
-            currNode.set_start(bankDataSeg[0])
-            currNode.set_end(bankDataSeg[1])
-        currNode.set_ifo(currJob.ifo)
-        if parent:
-            currNode.set_bank(parent.path)
-            parentJob = parent.job
-            if parentJob:
-                currNode.add_parent(parentJob)
-        if dfParents:
-            if len(dfParents) != 1:
-                errMsg = "%s cannot take more than one frame cache file."\
-                         %(self.exeName)
-                raise ValueError(errMsg)
-            currNode.set_cache(dfParents[0].summaryPath)
-            if dfParents[0].summaryJob:
-                currNode.add_parent(dfParents[0].summaryJob)
-        if self.exeName == 'inspiral':
-            # Add trig start/end time options
-            currNode.set_trig_start(jobValidSeg[0])
-            currNode.set_trig_end(jobValidSeg[1])
-        currNode.finalize()
-        ahopeDax.add_node(currNode)
-        outUrl = urlparse.urlunparse(['file', 'localhost',\
-                          os.path.join(self.outDir,\
-                                 urllib.pathname2url(currNode.get_output())),\
-                          None, None, None])
-
-        return currNode, outUrl
-
-class legacy_sngl_job_utils(legacy_ihope_job_utils):
-    """This class holds the function for lalapps_inspiral and 
-    lalapps_tmpltbank data usage following the old ihope specifications.
-    """
-    padData = None
-    exeName = None
-    def __init__(self,exeName):
-        self.exeName = exeName
-    
-    def get_valid_times(self,cp,ifo):
-        """
-        Return the length of data that the tmpltbank job will need to read and
-        the part of that data that the template bank is valid for. In the case
-        of lalapps_tmpltbank the following options are needed to set this up
-        and will be used by the executable to figure this out:
-
-        * --pad-data (seconds, amount of data used to pad the analysis region.
-          This is needed as some data will be corrupted from the data
-          conditioning process)
-
-        * --segment-length (sample points, length of each analysis segment)
-
-        * --sample-rate (Hz, number of sample points per second. The data will
-          be resampled to this value if necessary
-
-        * --number-of-segments (Number of analysis segments, note that
-          overlapping segments are used for PSD estimation, so every data
-          point will appear in two segments, except the first
-          segment-length/4 and last segment-length/4 points.)
-
-        Parameters
-        ----------
-        cp : ConfigParser object
-            The ConfigParser object holding the ahope configuration settings
-        ifo : string
-            The interferometer being setup. It is possible to use different
-            configuration settings for each ifo.
-
-        Returns
-        -------
-        dataLength : float (seconds)
-            The length of data that the job will need
-        validChunk : glue.glue.segments.segment
-            The start and end of the dataLength that is valid for the template
-            bank.
-        """
-        # FIXME: This is only valid for templateBank not inspiral!
-        # FIXME: Suggest making a separate inspiral function.
-
-        # Read in needed options. This will fail if options not present
-        # It will search relevant sub-sections for the option, so this can be
-        # set differently for each ifo.
-        padData = int(cp.get_opt_ifo(self.exeName,'pad-data',ifo))
-        self.padData = 8
-        segmentLength = float(cp.get_opt_ifo(self.exeName,\
-                                             'segment-length',ifo))
-        sampleRate = float(cp.get_opt_ifo(self.exeName,'sample-rate',ifo))
-        numSegments = int(cp.get_opt_ifo(self.exeName,\
-                                         'number-of-segments',ifo))
-        # Calculate total valid duration
-        analysisDur = int(segmentLength/sampleRate) * (numSegments + 1)/2
-        if (segmentLength % sampleRate):
-            errString = "In tmpltbank, when running lalapps_tmpltbank "
-            errString += "segment-length must be a multiple of sample-rate."
-            raise ValueError(errString)
-        # Set the segments
-        dataLength = analysisDur + 2*padData
-        validStart = padData
-        validEnd = analysisDur + padData
-        # If this is inspiral we lose segment-length/4 on start and end
-        if self.exeName == 'inspiral':
-            # Don't think inspiral will do well if segmentLength/4 is not
-            # an integer
-            validStart = validStart + int(segmentLength/(sampleRate * 4))
-            validEnd = validEnd - int(segmentLength / (sampleRate * 4))
-
-        validChunk = segments.segment([validStart,validEnd])
-
-        return dataLength,validChunk
-
-class splitbank_job_utils(legacy_ihope_job_utils):
-    """This class holds the function for lalapps_splitbank 
-    usage following the old ihope specifications.
-    """
-    def __init__(self,exeName):
-        self.exeName = exeName
-
-    def create_condornode(self, ahopeDax, currJob, numBanks, parent):
-        """
-        Set up a CondorDagmanNode class to run lalapps_splitbank code
-
-        Parameters
-        ----------
-        ahopeDax : pipeline.CondorDAG instance
-            The workflow to hold of the ahope jobs.
-        currJob : pipeline.CondorDagmanJob
-            The CondorDagmanJob to use when setting up the individual nodes.
-        numBanks : int
-            Number of parts to split template bank into.
-        parent : AhopeOutFile (optional, kwarg, default=None)
-            The AhopeOutFile containing the job that is parent to the one being
-            set up.
-
-        Returns
-        --------
-        tmpltBankNode : pipeline.CondorDagmanNode
-            The node to run the job
-        list of strings
-            The output files
-        """
-        currNode = LegacyInspiralAnalysisNode(currJob)
-        currNode.set_category(self.exeName)
-        # Does this need setting?: currNode.set_priority(?)
-        currNode.set_bank(parent.path)
-        # Set the number of banks
-        currNode.add_var_opt('number-of-banks',numBanks)
-        # Get the output (taken from inspiral.py)
-        outUrlList = []
-        x = parent.path.split('-')
-        for i in range( 0, numBanks ):
-            outFile = "%s-%s_%2.2d-%s-%s" %(x[0], x[1], i, x[2], x[3])
-            outUrl = urlparse.urlunparse(['file', 'localhost',\
-                                          os.path.join(self.outDir, outFile),\
-                                          None, None, None])
-            outUrlList.append(outUrl)
-        parentJob = parent.job
-        if parentJob:
-            currNode.add_parent(parentJob)
-        currNode.finalize()
-        ahopeDax.add_node(currNode)
-
-        return currNode, outUrlList
-
-class LegacyInspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
-    """
-    This class inherits from the CondorDAGJob class and adds methods that are
-    used for C-codes that used to run in ihope. The LegacyInspiralAnalysisJob
-    captures some of the common features of the specific inspiral jobs that
-    appear below.  Specifically, the universe and exec_name are set, the stdout
-    and stderr from the job are directed to the logs directory. The path to the
-    executable is determined from the ini file.
-    """
-
-    def __init__(self, cp, sections, exec_name, universe,\
-                 extension='xml', ifo=None):
-        """
-        Initialize the LegacyInspiralAnalysisJob class.
-   
-        Parameters
-        -----------
-        cp : ConfigParser object
-            The ConfigParser object holding the ahope configuration settings
-        sections : list of strings
-            sections of the ConfigParser that get added to the opts
-        exec_name : string
-            Executable name
-        universe : string
-            Condor universe to run the job in
-        extension : string
-            Extension of the output file. Used to figure out the output file
-            name.
-        """
-        self.__exec_name = exec_name
-        self.__extension = extension
-        executable = cp.get('executables',exec_name)
-        pipeline.CondorDAGJob.__init__(self,universe,executable)
-        pipeline.AnalysisJob.__init__(self,cp,dax=True)
-        self.add_condor_cmd('copy_to_spool','False')
-
-        for sec in sections:
-            if cp.has_section(sec):
-                self.add_ini_opts(cp, sec)
+    dataLoss = dataLength - abs(validChunk)
+    if dataLoss < 0:
+        raise ValueError("Ahope needs fixing! Please contact a developer")
+    # Loop over science segments and set up jobs
+    for currSeg in scienceSegs:
+        # Is there enough data to analyse?
+        currSegLength = abs(currSeg)
+        if currSegLength < dataLength:
+            continue
+        # How many jobs do we need
+        currSegLength = abs(currSeg)
+        numJobs = int( math.ceil( \
+                 (currSegLength - dataLoss) / float(abs(validChunk)) ))
+        # What is the incremental shift between jobs
+        timeShift = (abs(currSeg) - dataLength) / float(numJobs - 1)
+        for jobNum in range(numJobs):
+            # Get the science segment for this job
+            shiftDur = currSeg[0] + int(timeShift * jobNum)
+            jobDataSeg = dataChunk.shift(shiftDur)
+            jobValidSeg = validChunk.shift(shiftDur)
+            # If we need to recalculate the valid times to avoid overlap
+            if not allowOverlap:
+                dataPerJob = (currSegLength - dataLoss) / float(numJobs)
+                lowerBoundary = int(jobNum*dataPerJob \
+                                    + validChunk[0] + currSeg[0])
+                upperBoundary = int(dataPerJob + lowerBoundary)
+                if lowerBoundary < jobValidSeg[0] or \
+                        upperBoundary > jobValidSeg[1]:
+                    errMsg = "Ahope is attempting to generate output "
+                    errMsg += "from a job at times where it is not valid."
+                    raise ValueError(errMsg)
+                jobValidSeg = segments.segment([lowerBoundary, upperBoundary])
+            # Get the parent job if necessary
+            if parents:
+                currParent = parents.find_output(ifo, jobValidSeg)
+                if not currParent:
+                    errString = "No parent jobs found overlapping %d to %d." \
+                                %(jobValidSeg[0],jobValidSeg[1])
+                    errString += "\nThis is a bad error! Contact a developer."
+                    raise ValueError(errString)
             else:
-                warnString = "warning: config file is missing section [%s]"\
-                             %(sec,)
-                print >>sys.stderr, warnString
+                currParent = None
 
-        logBaseNam = 'logs/%s-$(macrogpsstarttime)' %(exec_name,)
-        logBaseNam += '-$(macrogpsendtime)-$(cluster)-$(process)'
+            if datafindOuts:
+                currDfOuts = datafindOuts.find_all_output_in_range(ifo, \
+                                                                   jobDataSeg)
+                if not currDfOuts:
+                    errString = "No datafind jobs found overlapping %d to %d."\
+                                %(jobDataSeg[0],jobDataSeg[1])
+                    errString += "\nThis shouldn't happen. Contact a developer."
+                    raise ValueError(errString)
 
-        self.set_stdout_file('%s.out' %(logBaseNam,) )
-        self.set_stderr_file('%s.err' %(logBaseNam,) )
-        if ifo:
-            self.set_sub_file('%s-%s.sub' %(ifo, exec_name,) )
-        else:
-            self.set_sub_file('%s.sub' %(exec_name,) )
+            # If the parent produces a group of output files, such as
+            # lalapps_splitbank, a number of condor jobs are needed
+            if currParent.__class__.__name__ == 'AhopeOutGroup':
+                # Set up the global outputs
+                currFiles = AhopeOutGroup(ifo, jobTag, jobValidSeg)
+                nodeList = []
+                urlList = []
+                for parentJob in currParent.get_output():
+                    currExeNode, fileUrl = exeInstance.create_condornode(\
+                                     ahopeDax, currExeJob, jobDataSeg,\
+                                     jobValidSeg, parent=parentJob,\
+                                     dfParents=currDfOuts)
+                    nodeList.append(currExeNode)
+                    urlList.append(fileUrl)
+                currFiles.set_output(urlList, nodeList)
+                outFiles.append(currFiles)
+            else:
+                currExeNode, fileUrl = exeInstance.create_condornode(\
+                                         ahopeDax, currExeJob, jobDataSeg,\
+                                         jobValidSeg, parent=currParent,\
+                                         dfParents=currDfOuts)
+                # Make the AhopeOutFile instance
+                currFile = AhopeOutFile(ifo, jobTag, jobValidSeg, fileUrl,\
+                                        job=currExeNode )
+                outFiles.append(currFile)
+    return outFiles
 
-    def set_exec_name(self,exec_name):
-        """
-        Set the exec_name name 
-        """
-        self.__exec_name = exec_name
-
-    def get_exec_name(self):
-        """
-        Get the exec_name name
-        """
-        return self.__exec_name
-
-    def set_extension(self,extension):
-        """
-        Set the file extension
-        """
-        self.__extension = extension
-
-    def get_extension(self):
-        """
-        Get the extension for the file name
-        """
-        return self.__extension
-
-class LegacyInspiralAnalysisNode(pipeline.AnalysisNode,\
-                                 pipeline.CondorDAGNode):
-    """
-    A LegacyInspiralAnalysisNode instance runs an example of legacy ihope code
-    in a Condor DAX.
-    """
-    def __init__(self,job):
-        """
-        Initialize the LegacyInspiralAnalysisNode.
-    
-        Parameters
-        -----------
-        job : pipeline.CondorDAGJob
-            A CondorDAGJob that can run an instance of the particular
-            executable.
-        """
-        pipeline.CondorDAGNode.__init__(self,job)
-        pipeline.AnalysisNode.__init__(self)
-        opts = job.get_opts()
-
-        if ("pad-data" in opts) and int(opts['pad-data']):
-            self.set_pad_data(int(opts['pad-data']))
-
-        self.__zip_output = ("write-compress" in opts)
-
-    def set_zip_output(self,zip):
-        """
-        Set the zip output flag
-        """
-        self.__zip_output = zip
-
-    def get_zip_output(self):
-        """
-        Set the zip output flag
-        """
-        return self.__zip_output
-
-    def get_output_base(self):
-        """
-        Returns the base file name of output from the inspiral code. This is 
-        assumed to follow the standard naming convention:
-
-        IFO-EXECUTABLE_IFOTAG_USERTAG-GPS_START-DURATION
-        """
-        if not self.get_start() or not self.get_end() or not self.get_ifo():
-            raise ValueError, "Start time, end time or ifo has not been set"
-
-        filebase = self.get_ifo() + '-' + self.job().get_exec_name().upper()
-
-        if self.get_ifo_tag():
-            filebase += '_' + self.get_ifo_tag()
-        if self.get_user_tag():
-            filebase += '_' + self.get_user_tag()
-
-        filebase +=  '-' + str(self.get_start()) + '-' + \
-                     str(self.get_end() - self.get_start())
-
-        return(filebase)
-
-    def get_output(self):
-        """
-        Returns the file name of output from the inspiral code. This is
-        obtained from the get_output_base() method, with the correct extension
-        added.
-        """
-        filename = self.get_output_base()
-        filename += '.' + self.job().get_extension()
-
-        if self.get_zip_output():
-            filename += '.gz'
-
-        self.add_output_file(filename)
-
-        return filename
-
-    def set_bank(self,bank):
-        """
-        Adds a template bank file as input to the job.
-        """
-        self.add_var_opt('bank-file', bank)
-        self.add_input_file(bank)
-        self.__bankfile = bank
-
-    def get_bank(self):
-        """
-        Returns the input file in self.__bankfile
-        """
-        return self.__bankfile
-
-    def finalize(self):
-        """
-        set the data_start_time and data_end_time
-        """
-        if self.get_pad_data():
-            self.set_data_start(self.get_start() - \
-                                self.get_pad_data())
-            self.set_data_end(self.get_end() + \
-                              self.get_pad_data())

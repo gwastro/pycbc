@@ -4,8 +4,7 @@ import os
 import urlparse, urllib
 from glue import segments
 from pycbc.ahope import sngl_ifo_job_setup, AhopeOutFileList
-from pycbc.ahope import AhopeOutFile, select_tmpltbankjob_instance
-from pycbc.ahope import select_matchedfilterjob_instance
+from pycbc.ahope import AhopeOutFile, select_matchedfilterjob_instance
 
 def setup_tmpltbank_workflow(cp, scienceSegs, datafindOuts, ahopeDax,\
                              outputDir):
@@ -155,3 +154,35 @@ def setup_tmpltbank_pregenerated(cp,ifos):
         tmpltBanks.append(currFile)
 
     return tmpltBanks
+
+def select_tmpltbankjob_instance(currExe,currSection):
+    """This function returns an instance of the class that is appropriate for
+    creating a template bank within ihope.
+    
+    Parameters
+    ----------
+    currExe : string
+        The name of the executable that is being used.
+    currSection : string
+        The name of the section storing options for this executble
+
+    Returns
+    --------
+    Instanced class : exeClass
+        An instance of the class that holds the utility functions appropriate
+        for the given executable. This class **must** contain
+        * exeClass.get_valid_times()
+        * exeClass.create_condorjob()
+        * exeClass.create_condornode()
+    """
+
+    # This is basically a list of if statements
+    if currExe == 'lalapps_tmpltbank':
+        exeClass = legacy_sngl_job_utils(currSection)
+    # Some elif statements
+    else:
+        # Should we try some sort of default class??
+        errString = "No class exists for executable %s" %(currExe,)
+        raise NotImplementedError(errString)
+
+    return exeClass
