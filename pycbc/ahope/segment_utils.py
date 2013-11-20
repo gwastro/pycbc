@@ -1,9 +1,141 @@
-import os
+import os,sys
 import subprocess
-from glue import segments
-from glue.ligolw import utils,table,lsctables
+from glue import segments, pipeline
+from glue.ligolw import utils, table, lsctables, ligolw
+from pycbc.ahope.ahope_utils import *
+from pylal.dq.dqSegmentUtils import tosegmentxml
+
+def setup_segment_generation(cp, ifos, start_time, end_time,\
+                             ahopeDax, out_dir):
+    """
+    Setup the segment generation needed in an ahope workflow
+    FIXME: Add more DOCUMENTATION
+    """
+    veto_categories = [1,2,3,4,5]
+
+    segFilesDict = setup_segment_gen_mixed(cp, ifos, veto_categories, \
+                                       start_time, end_time, out_dir, ahopeDax)
+
+    segsToAnalyse = {}
+    for ifo in ifos:
+        if segFilesDict[ifo]['ANALYSED'].segmentList:
+            segsToAnalyse[ifo] = segFilesDict[ifo]['ANALYSED'].segmentList
+        else:
+            msg = "No science segments found for ifo %s. " %(ifo)
+            msg += "If this is unexpected check the files that were dumped "
+            msg += "in the %s directory. Also the " %(out_dir)
+            msg += "commands that can be used to reproduce some of these "
+            msg += "in %s/*.sh" %(os.path.join(out_dir,'logs'))
+            print >> sys.stderr, msg
+            
+    return segsToAnalyse, segFilesDict
 
 
+def setup_segment_gen_runtime(cp, ifos, veto_categories, start_time,\
+                              end_time, out_dir):
+    """
+    ADD DOCUMENTATION
+    """
+    segFilesDict = {}
+    segValidSeg = segments.segment([start_time,end_time])
+    baseTag='SEGS'
+    for ifo in ifos:
+        ifoTag=baseTag + "_%s" %(ifo.upper())
+        segFilesDict[ifo] = {}
+        currSciSegs, currSciXmlFile = get_science_segments(ifo, cp, \
+                                          start_time, end_time, out_dir)
+        currTag = 'SCIENCE'
+        currUrl = urlparse.urlunparse(['file', 'localhost', currSciXmlFile,\
+                          None, None, None])
+        segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, \
+                                 '%s_%s' %(ifoTag, currTag), \
+                                 segValidSeg, currUrl, segList=currSciSegs)
+
+        vetoSegs = {}
+        vetoXmlFiles = {} 
+        for category in veto_categories:
+            vetoSegs[category],vetoXmlFiles[category] = \
+                get_veto_segs_at_runtime(ifo, category, cp, start_time, \
+                                         end_time, out_dir)
+            currTag='VETO_CAT%d' %(category)
+            currUrl = urlparse.urlunparse(['file', 'localhost',\
+                          vetoXmlFiles[category], None, None, None])
+            segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, \
+                                 '%s_%s' %(ifoTag, currTag), \
+                                 segValidSeg, currUrl, \
+                                 segList=vetoSegs[category])
+        analysedSegs = currSciSegs - vetoSegs[1]
+        analysedSegs.coalesce()
+        analysedXmlFile = sciXmlFile = os.path.join(out_dir,\
+                             "%s-ANALYSED_SEGMENTS.xml" %(ifo.upper()) ) 
+        currUrl = urlparse.urlunparse(['file', 'localhost', analysedXmlFile,\
+                          None, None, None])
+        analysedXmlFP = open(analysedXmlFile, "w")
+        tosegmentxml(analysedXmlFP, analysedSegs)
+        analysedXmlFP.close()
+        currTag='ANALYSED'
+        segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, \
+                                 '%s_%s' %(ifoTag, currTag), \
+                                 segValidSeg, currUrl, segList=analysedSegs)
+    return segFilesDict
+
+def setup_segment_gen_mixed(cp, ifos, veto_categories, start_time,\
+                            end_time, out_dir, ahopeDax):
+    """
+    ADD DOCUMENTATION
+    """
+    segFilesDict = {}
+    segValidSeg = segments.segment([start_time,end_time])
+    baseTag='SEGS'
+    vetoGenJob = create_segs_from_cats_job(cp, out_dir)
+    for ifo in ifos:
+        ifoTag=baseTag + "_%s" %(ifo.upper())
+        segFilesDict[ifo] = {}
+        currSciSegs, currSciXmlFile = get_science_segments(ifo, cp, \
+                                          start_time, end_time, out_dir)
+        currTag = 'SCIENCE'
+        currUrl = urlparse.urlunparse(['file', 'localhost', currSciXmlFile,\
+                          None, None, None])
+        segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, \
+                                 '%s_%s' %(ifoTag, currTag), \
+                                 segValidSeg, currUrl, segList=currSciSegs)
+
+        vetoSegs = {}
+        vetoXmlFiles = {}
+        for category in veto_categories:
+            currTag='VETO_CAT%d' %(category)
+            if category <= 3:
+                vetoSegs[category],vetoXmlFiles[category] = \
+                    get_veto_segs_at_runtime(ifo, category, cp, start_time, \
+                                             end_time, out_dir)
+            else:
+                vetoXmlFiles[category] = get_veto_segs_in_workflow(ifo, \
+                                  category, start_time, end_time, out_dir,
+                                  ahopeDax, vetoGenJob)        
+                # Don't know what the segments are as they haven't been
+                # calculated yet!
+                vetoSegs[category] = None
+            currUrl = urlparse.urlunparse(['file', 'localhost',\
+                              vetoXmlFiles[category], None, None, None])
+            segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, \
+                                 '%s_%s' %(ifoTag, currTag), \
+                                 segValidSeg, currUrl, \
+                                 segList=vetoSegs[category])
+                
+        analysedSegs = currSciSegs - vetoSegs[1]
+        analysedSegs.coalesce()
+        analysedXmlFile = sciXmlFile = os.path.join(out_dir,\
+                             "%s-ANALYSED_SEGMENTS.xml" %(ifo.upper()) )
+        currUrl = urlparse.urlunparse(['file', 'localhost', analysedXmlFile,\
+                          None, None, None])
+        analysedXmlFP = open(analysedXmlFile, "w")
+        tosegmentxml(analysedXmlFP, analysedSegs)
+        analysedXmlFP.close()
+        currTag='ANALYSED'
+        segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, \
+                                 '%s_%s' %(ifoTag, currTag), \
+                                 segValidSeg, currUrl, segList=analysedSegs)
+    return segFilesDict
 
 #FIXME: Everything below here uses the S6 segment architecture. This is going
 # to be replaced in aLIGO with a new architecture. When this is done all of
@@ -21,25 +153,101 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir):
 
     segFindCall = [ "ligolw_segment_query",
         "--query-segments",
-        "--segment-url", config.get("segfind", "segment-url"),
-        "--gps-start-time", start,
-        "--gps-end-time", end,
+        "--segment-url", sciSegUrl,
+        "--gps-start-time", str(start_time),
+        "--gps-end-time", str(end_time),
         "--include-segments", sciSegName,
-        "--output-file", segFindXML ]
+        "--output-file", sciXmlFile ]
    
-    errCode = make_external_call(segFindCall, outDir=os.path.join(out_dir, \
-                       'logs'), outBaseName='%s-science-call' %(ifo.lower()) )
-    if errCode:
-        raise subprocess.CalledProcessError(errCode, ' '.join(segFindCall))
+    make_external_call(segFindCall, \
+                            outDir=os.path.join(out_dir,'logs'),\
+                            outBaseName='%s-science-call' %(ifo.lower()) )
 
     # Yes its yucky to generate a file and then read it back in. This will be
-    # fixed when the new API for segment generation is ready.
-    sciSegs = fromsegmentxml(sciXmlFile)
+    # fixed when the new API for segment generation is ready.
+    sciXmlFP = open(sciXmlFile,'r')
+    sciSegs = fromsegmentxml(sciXmlFP)
+    sciXmlFP.close()
 
     return sciSegs, sciXmlFile
 
-# Function to load segments from an xml file taken from pylal/dq
+def get_veto_segs_at_runtime(ifo, category, cp, start_time, end_time, out_dir):
+    """
+    Obtain veto segments for the selected ifo and veto category
+    """
+    segServerUrl = cp.get("ahope-segments", "segments-database-url")
+    vetoDefFile = cp.get("ahope-segments", "segments-veto-definer-file")
 
+    segFromCatsCall = [ "ligolw_segments_from_cats",
+        "--separate-categories", 
+        "--segment-url", segServerUrl,
+        "--veto-file", vetoDefFile,
+        "--output-dir", out_dir,
+        "--veto-categories", str(category),
+        "--ifo-list", ifo,
+        "--gps-start-time", str(start_time),
+        "--gps-end-time", str(end_time)]
+
+    make_external_call(segFromCatsCall,\
+              outDir=os.path.join(out_dir,'logs'),\
+              outBaseName='%s-veto-cats-%d-call' %(ifo.lower(),category) )
+
+    vetoDefXmlFileName = "%s-VETOTIME_CAT%d-%d-%d.xml" \
+                         %(ifo, category, start_time, end_time-start_time)
+
+    vetoDefXmlFile = os.path.join(out_dir, vetoDefXmlFileName)
+
+    # Yes its yucky to generate a file and then read it back in. This will be
+    # fixed when the new API for segment generation is ready.
+    vetoDefXmlFP = open(vetoDefXmlFile,'r')
+    vetoSegs = fromsegmentxml(vetoDefXmlFP)
+    vetoDefXmlFP.close()
+
+    return vetoSegs, vetoDefXmlFile
+
+def get_veto_segs_in_workflow(ifo, category, start_time, end_time, out_dir, \
+                              ahopeDax, vetoGenJob):
+    """
+    Obtain veto segments for the selected ifo and veto category and add the job
+    to generate this to the workflow.
+    """
+    node = pipeline.CondorDAGNode(vetoGenJob)
+    node.add_var_opt('veto-categories', str(category))
+    node.add_var_opt('ifo-list', ifo)
+    node.add_var_opt('gps-start-time', str(start_time))
+    node.add_var_opt('--gps-end-time', str(end_time))
+    ahopeDax.add_node(node)
+    vetoDefXmlFileName = "%s-VETOTIME_CAT%d-%d-%d.xml" \
+                         %(ifo, category, start_time, end_time-start_time)
+    vetoDefXmlFile = os.path.join(out_dir, vetoDefXmlFileName)
+    return vetoDefXmlFile
+
+def create_segs_from_cats_job(cp, out_dir):
+    """
+    This function creates the CondorDAGJob that will be used to run 
+    ligolw_segments_from_cats as part of the workflow
+    """
+    segServerUrl = cp.get("ahope-segments", "segments-database-url")
+    vetoDefFile = cp.get("ahope-segments", "segments-veto-definer-file")
+    exeName = "ligolw_segments_from_cats"
+    tag = "vetogen"
+    logtag = '$(cluster)-$(process)'
+    job = pipeline.CondorDAGJob("vanilla",exeName)
+    job.set_sub_file(os.path.join(out_dir,'%s.sub' %(tag)))
+    job.set_stderr_file(os.path.join(out_dir,'logs','%s-%s.err' %(tag,logtag)))
+    job.set_stdout_file(os.path.join(out_dir,'logs','%s-%s.out' %(tag,logtag)))
+    job.add_condor_cmd('getenv','True')
+    job.add_arg('separate-categories')
+    job.add_opt('output-dir', out_dir)
+    job.add_opt('segment-url', segServerUrl)
+    job.add_opt('veto-file', vetoDefFile)
+
+    return job
+
+
+# Function to load segments from an xml file taken from pylal/dq
+# FIXME: Use the pylal/pylal/dq function.
+# NEed to understand the load_fileobj warning first
 def fromsegmentxml(file, dict=False, id=None):
 
     """
@@ -64,10 +272,15 @@ def fromsegmentxml(file, dict=False, id=None):
     """
 
     # load xmldocument and SegmentDefTable and SegmentTables
-    xmldoc, digest = utils.load_fileobj(file, gz=file.name.endswith(".gz"))
+    xmldoc, digest = utils.load_fileobj(file, gz=file.name.endswith(".gz"),\
+                             contenthandler=ligolw.DefaultLIGOLWContentHandler)
+
     seg_def_table  = table.get_table(xmldoc, \
                                      lsctables.SegmentDefTable.tableName)
     seg_table      = table.get_table(xmldoc, lsctables.SegmentTable.tableName)
+
+    for seg in seg_table:
+        pass
 
     if dict:
         segs = segments.segmentlistdict()

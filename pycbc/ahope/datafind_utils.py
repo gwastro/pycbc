@@ -65,6 +65,13 @@ def setup_datafind_workflow(cp, scienceSegs, ahopeDax, outputDir, \
         newScienceSegs = get_science_segs_from_datafind_outs(datafindOuts)
         missingData = False
         for ifo in scienceSegs.keys():
+            # If no data in the input then do nothing
+            if not scienceSegs[ifo]:
+                msg = "No input science segments for ifo %s " %(ifo)
+                msg += "so, surprisingly, no data has been found. "
+                msg += "Was this expected?"
+                print >> sys.stderr, msg
+                continue
             if not newScienceSegs.has_key(ifo):
                 msg = "IFO %s's science segments " %(ifo)
                 msg += "are completely missing."
@@ -83,9 +90,19 @@ def setup_datafind_workflow(cp, scienceSegs, ahopeDax, outputDir, \
 
     # Do all of the frame files that were returned actually exist?
     if checkFramesExist:
+        missingFlag = False
         for dfGroup in datafindOuts:
             _,missingFrames = dfGroup.get_output().checkfilesexist(\
-                                                            on_missing="error")
+                                                     on_missing="warn")
+            if missingFrames:
+                missingFlag = True
+                print >>sys.stderr, "Files missing from cache %s." \
+                                    %(dfGroup.summaryUrl)
+                msg = "Full file of files inaccessible from this cache:\n"
+                msg +='\n'.join([a.url for a in missingFrames])
+                print >> sys.stderr, msg
+        if missingFlag:
+            raise ValueError("Some frames cannot be found on disk.")
 
     return datafindOuts, scienceSegs
     
@@ -171,6 +188,10 @@ def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):
             dfKwargs = {}
             for item, value in cp.items("datafind"):
                 dfKwargs[item] = value
+            # It is useful to print the corresponding command to the logs
+            # directory to check if this was expected.
+            log_datafind_command(observatory, frameType, startTime, endTime,\
+                                 os.path.join(outputDir,'logs'), **dfKwargs)
             dfCache = connection.find_frame_urls(observatory, frameType, \
                         startTime, endTime, **dfKwargs)
             dfCacheFileName = "%s-%s-%d-%d.lcf" \
@@ -226,3 +247,24 @@ def get_science_segs_from_datafind_outs(datafindOuts):
             newScienceSegs[group.observatory].coalesce()
     return newScienceSegs
     
+def log_datafind_command(observatory, frameType, startTime, endTime, \
+                         outputDir, **dfKwargs):
+    """
+    This command will print an equivalent gw_data_find command to disk that
+    can be used to debug why the internal datafind module is not working.
+    """
+    gw_command = ['gw_data_find', '--observatory', observatory,\
+                  '--type', frameType, \
+                  '--gps-start-time', str(startTime), \
+                  '--gps-end-time', str(endTime)]
+
+    for name, value in dfKwargs.items():
+        gw_command.append("--" + name)
+        gw_command.append(str(value))
+  
+    fileName = "%s-%s-%d-%d.lcf" \
+               %(observatory, frameType, startTime, endTime-startTime)
+    filePath = os.path.join(outputDir, fileName)
+    fP = open(filePath, 'w')
+    fP.write(' '.join(gw_command))
+    fP.close()

@@ -1,3 +1,4 @@
+import os, sys
 import subprocess
 import math
 import numpy
@@ -31,6 +32,22 @@ class AhopeOutFile(lal.CacheEntry):
                                 **kwargs)
         self.job = job
 
+class AhopeOutSegFile(AhopeOutFile):
+    '''
+    This class inherits from the AhopeOutFile class, and is designed to store
+    ahope output files containing a segment list. This is identical in
+    usage to AhopeOutFile except for an additional kwarg for holding the
+    segment list, if it is known at ahope run time.
+    '''
+    def __init__(self, ifo, description, timeSeg, fileUrl,\
+                 segList=None, **kwargs):
+        """
+        ADD DOCUMENTATION
+        """
+        AhopeOutFile.__init__(self, ifo, description, timeSeg, fileUrl,\
+                              **kwargs)
+        self.segmentList = segList
+
 class AhopeOutFileList(lal.Cache):
     '''This class holds a list of AhopeOutFile objects. It inherits from the
     built-in list class, but also allows a number of features. ONLY
@@ -39,7 +56,8 @@ class AhopeOutFileList(lal.Cache):
     entry_class = AhopeOutFile
 
     def find_output(self,ifo,time):
-        '''Return AhopeOutFile that covers the given time, or is most
+        '''
+        Return AhopeOutFile that covers the given time, or is most
         appropriate for the supplied time range.
 
         Parameters
@@ -298,7 +316,7 @@ class AhopeOutGroup(object):
 
 
 def make_external_call(cmdList, outDir=None, outBaseName='external_call',\
-                       shell=False):
+                       shell=False, fail_on_error=True):
     """
     Use this to make an external call using the python subprocess module.
     See the subprocess documentation for more details of how this works.
@@ -316,11 +334,16 @@ def make_external_call(cmdList, outDir=None, outBaseName='external_call',\
     outBaseName : string
         The value of outBaseName used to construct the file names used to
         store stderr and stdout. See outDir for more information.
-    shell : boolean
+    shell : boolean, default=False
         This value will be given as the shell kwarg to the subprocess call.
         **WARNING** See the subprocess documentation for details on this
         Kwarg including a warning about a serious security exploit. Do not
         use this unless you are sure it is necessary **and** safe.
+    fail_on_error : boolean, default=True
+        If set to true an exception will be raised if the external command does
+        not return a code of 0. If set to false such failures will be ignored.
+        Stderr and Stdout can be stored in either case using the outDir
+        and outBaseName options.
 
     Returns
     --------
@@ -329,14 +352,52 @@ def make_external_call(cmdList, outDir=None, outBaseName='external_call',\
     """
     if outDir:
         outBase = os.path.join(outDir,outBaseName)
-        errFile = open(outBase + '.err', 'w')
-        outFile = open(outBase + '.out', 'w')
+        errFile = outBase + '.err'
+        errFP = open(errFile, 'w')
+        outFile = outBase + '.out'
+        outFP = open(outFile, 'w')
+        cmdFile = outBase + '.sh'
+        cmdFP = open(cmdFile, 'w')
+        cmdFP.write(' '.join(cmdList))
+        cmdFP.close()
     else:
         errFile = None
         outFile = None
-    errCode = subprocess.call(cmdList, stderr=errFile, stdout=outFile,\
+        cmdFile = None
+        errFP = None
+        outFP = None
+
+    errCode = subprocess.call(cmdList, stderr=errFP, stdout=outFP,\
                               shell=shell)
-    return errCode
+    if errFP:
+        errFP.close()
+    if outFP:
+        outFP.close()
 
+    if errCode and fail_on_error:
+        raise CalledProcessErrorMod(errCode, ' '.join(cmdList), \
+                errFile=errFile, outFile=outFile, cmdFile=cmdFile)
 
-
+class CalledProcessErrorMod(Exception):
+    """
+    This exception is raised when subprocess.call returns a non-zero exit code
+    and checking has been requested
+    """
+    def __init__(self, returncode, cmd, errFile=None, outFile=None, \
+                 cmdFile=None):
+        self.returncode = returncode
+        self.cmd = cmd
+        self.errFile = errFile
+        self.outFile = outFile
+        self.cmdFile = cmdFile
+    def __str__(self):
+        msg = "Command '%s' returned non-zero exit status %d.\n" \
+              %(self.cmd, self.returncode)
+        if self.errFile:
+            msg += "Stderr can be found in %s.\n" %(self.errFile)
+        if self.outFile:
+            msg += "Stdout can be found in %s.\n" %(self.outFile)
+        if self.cmdFile:
+            msg += "The failed command has been printed in %s." %(self.cmdFile)
+        return msg
+              
