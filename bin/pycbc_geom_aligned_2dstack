@@ -35,6 +35,7 @@ import os,sys,optparse,copy
 import numpy
 import pycbc.tmpltbank
 import pycbc.version
+from pycbc.tmpltbank.lambda_mapping import pycbcValidOrdersHelpDescriptions
 
 __author__  = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -49,6 +50,23 @@ parser = optparse.OptionParser(usage, version=__version__, description=_desc,\
 # Code specific options
 parser.add_option("-v", "--verbose", action="store_true", default=False,\
                     help="verbose output, default: %default")
+parser.add_option("", "--pn-order", action="store", type="string",\
+                  default=None,\
+                  help="Determines the PN order to use. Note that if you "+\
+                       "placing a bank of non-spinning templates, any "+\
+                       "spin-related terms in the metric will always "+\
+                       "be zero. REQUIRED ARGUMENT: "+\
+                       "choices are: %s" %(pycbcValidOrdersHelpDescriptions))
+parser.add_option("", "--f0", action="store", type="float",\
+                  default=70.,\
+                  help="f0 is used as a dynamic rescaling factor when "+\
+                       "calculating the integrals used in metric "+\
+                       "construction. IE. instead of integrating F(f) we "+\
+                       "integrate F(f/f0) and then remove f0 after the fact."+\
+                       "The default option should be fine here for most "+\
+                       "applications. OPTIONAL: default= %default."+\
+                       "WARNING: If using ethinca calculation this must be "+\
+                       "equal to f-low. UNITS=Hz")
 parser.add_option("-I", "--input-bank-file", action="store", type="string",\
                    default=None,\
                    help="ASCII file containing the input bank. "+\
@@ -88,14 +106,13 @@ parser.add_option("", "--skip-vec5-depth",action="store_true", default=False,\
 # Insert the mass range options
 pycbc.tmpltbank.insert_mass_range_option_group(parser)
 
-# We load the metric calculation options but only pn-order and f0 are used.
-pycbc.tmpltbank.insert_metric_calculation_options(parser)
-
 (opts,args) = parser.parse_args()
 opts.eval_vec4_depth = not opts.skip_vec4_depth
 opts.eval_vec5_depth = not opts.skip_vec5_depth
 
 # Sanity check options
+if not opts.pn_order:
+    parser.error("Must supply --pn-order")
 if not opts.input_bank_file:
     parser.error("Must supply --input-bank-file")
 if not opts.min_match:
@@ -108,12 +125,7 @@ if not opts.metric_evecs_file:
     parser.error("Must supply --metric-evecs-file")
 if not opts.cov_evecs_file:
     parser.error("Must supply --cov-evecs-file")
-pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
 pycbc.tmpltbank.verify_mass_range_options(opts, parser)
-
-# If we only have 4 directions, do not try to evaluate the fifth!
-if opts.pn_order == 'twoPN':
-    opts.eval_vec5_depth = False
 
 # Load the list of points from file
 tempBank = numpy.loadtxt(opts.input_bank_file)
@@ -128,6 +140,13 @@ except TypeError:
 evals = numpy.loadtxt(opts.metric_evals_file)
 evecs = numpy.matrix(numpy.loadtxt(opts.metric_evecs_file))
 evecsCV = numpy.matrix(numpy.loadtxt(opts.cov_evecs_file))
+
+# If we only have N directions, do not try to evaluate the N+x!
+if len(evals) < 4:
+    opts.eval_vec4_depth = False
+if len(evals) < 5:
+    opts.eval_vec5_depth = False
+
 
 # Create a large set of points and map to xi_i to give a starting point when
 # mapping from xi_i to masses and spins
@@ -235,7 +254,8 @@ for entry in tempBank:
     if not opts.threed_lattice:
         # If point is close enough, determine depth of xi3 direction
         vec3_min, vec3_max=\
-                pycbc.tmpltbank.stack_xi_direction_brute([masses[6],masses[7]],\
+                pycbc.tmpltbank.stack_xi_direction_brute(\
+                  [masses[6][0],masses[6][1]],\
                   [tmpTotMass,tmpEta,masses[2],masses[3]],\
                   copy.deepcopy(bestXis), f0, 2, opts.min_match,\
                   order, evecs, evals, evecsCV, maxmass1, minmass1, maxmass2,\
@@ -294,7 +314,8 @@ for entry in tempBank:
   # be small?)
     if opts.eval_vec4_depth:
         vec4_min, vec4_max =\
-              pycbc.tmpltbank.stack_xi_direction_brute([masses[6],masses[7]],\
+              pycbc.tmpltbank.stack_xi_direction_brute(\
+                [masses[6][0],masses[6][1]],\
                 [tmpTotMass,tmpEta,masses[2],masses[3]],\
                 copy.deepcopy(bestXis), f0, 3, opts.min_match,\
                 order, evecs, evals, evecsCV, maxmass1, minmass1, maxmass2,\
@@ -308,7 +329,8 @@ for entry in tempBank:
     # Determine depth of xi5 direction 
     if opts.eval_vec5_depth:
         vec5_min, vec5_max =\
-              pycbc.tmpltbank.stack_xi_direction_brute([masses[6],masses[7]],\
+              pycbc.tmpltbank.stack_xi_direction_brute(\
+                [masses[6][0],masses[6][1]],\
                 [tmpTotMass,tmpEta,masses[2],masses[3]],\
                 copy.deepcopy(bestXis), f0, 4, opts.min_match,\
                 order, evecs, evals, evecsCV, maxmass1, minmass1, maxmass2,\
@@ -362,7 +384,7 @@ for entry in tempBank:
             tmpEta = masses[0] * masses[1] / (tmpTotMass*tmpTotMass)
             vec4_minT, vec4_maxT = \
                   pycbc.tmpltbank.stack_xi_direction_brute(\
-                    [masses[6],masses[7],masses[8]],\
+                    [masses[6][0],masses[6][1],masses[6][2]],\
                     [tmpTotMass,tmpEta,masses[2],masses[3]],\
                     copy.deepcopy(bestXis), f0, 3, opts.min_match,\
                     order, evecs, evals, evecsCV, maxmass1, minmass1, maxmass2,\

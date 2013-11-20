@@ -97,14 +97,8 @@ def get_physical_covaried_masses(xis, bestMasses, bestXis, f0, \
         How many iterations it took to find the point. For debugging.
     mismatch : float
         The mismatch between the obtained point and the input xis.
-    new_xis_1 : float
-        The position of the point in the first direction in the xi space
-    new_xis_2 : float
-        The position of the point in the second direction in the xi space
-    new_xis_3 : float
-        The position of the point in the third direction in the xi space
-    new_xis_4 : float
-        The position of the point in the fourth direction in the xi space
+    new_xis : list
+        The position of the point in the xi space
     """
     # TUNABLE PARAMETERS GO HERE!
     # This states how far apart to scatter test points in the first proposal
@@ -137,9 +131,9 @@ def get_physical_covaried_masses(xis, bestMasses, bestXis, f0, \
         if (cDist.min() < req_match):
             idx = cDist.argmin()
             scaleFactor = origScaleFactor
+            new_xis_list = [new_xis[ldx][idx] for ldx in range(len(new_xis))]
             return mass1[idx], mass2[idx], spin1z[idx], spin2z[idx], count, \
-                   cDist.min(), new_xis[0][idx], new_xis[1][idx], \
-                   new_xis[2][idx], new_xis[3][idx]
+                   cDist.min(), new_xis_list
         if (cDist.min() < currDist):
             idx = cDist.argmin()
             bestMasses[0] = totmass[idx]
@@ -157,9 +151,9 @@ def get_physical_covaried_masses(xis, bestMasses, bestXis, f0, \
             diff = (bestMasses[0]*bestMasses[0] * (1-4*bestMasses[1]))**0.5
             mass1 = (bestMasses[0] + diff)/2.
             mass2 = (bestMasses[0] - diff)/2.
+            new_xis_list = [new_xis[ldx][0] for ldx in range(len(new_xis))]
             return mass1, mass2, bestMasses[2], bestMasses[3], count, \
-                   currDist, new_xis[0][0], new_xis[1][0], new_xis[2][0], \
-                   new_xis[3][0]
+                   currDist, new_xis_list
         if not unFixedCount % 100:
             scaleFactor *= 2
         if scaleFactor > 64:
