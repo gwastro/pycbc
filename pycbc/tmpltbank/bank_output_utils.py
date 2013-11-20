@@ -248,4 +248,4 @@ def output_sngl_inspiral_table(outputFile, tempBank, moments, f0,\
 
     # write the xml doc to disk
     proctable = table.get_table(outdoc, lsctables.ProcessTable.tableName)
-    ligolw_utils.write_filename(outdoc, outputFile)
+    ligolw_utils.write_filename(outdoc, outputFile, gz=outputFile.endswith('.gz'))
