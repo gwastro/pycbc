@@ -128,8 +128,8 @@ def insert_metric_calculation_options(parser):
                        "computing the components of the parameter space "+\
                        "metric. IE. the various integrals should be "+\
                        "\int F(f) df, however we only approximate this as "+\
-                       "\sum F(f) delta_f. This sets delta_f."+\
-                       "OPTIONAL: default= %default UNITS=Hz")
+                       "\sum F(f) delta_f. This sets delta_f. "+\
+                       "REQUIRED ARGUMENT. UNITS=Hz")
     parser.add_option_group(metricOpts)
 
 def verify_metric_calculation_options(opts, parser):
@@ -150,6 +150,8 @@ def verify_metric_calculation_options(opts, parser):
         parser.error("Must supply --f-low")
     if not opts.f_upper:
         parser.error("Must supply --f-upper")
+    if not opts.delta_f:
+        parser.error("Must supply --delta-f")
     try:
         if opts.calculate_ethinca_metric:
             if opts.f_low != opts.f0:
