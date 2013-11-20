@@ -75,6 +75,7 @@ def convert_to_sngl_inspiral_table(params, proc_id):
         # Currently using ISCO frequency for termination
         tmplt.f_final = (1/6.)**(3./2.) / (LAL_PI * tmplt.mtotal * LAL_MTSUN_SI)
         tmplt.template_duration = 0 # FIXME
+        tmplt.event_id = sngl_inspiral_table.get_next_id()
         # FIXME: Add gamma values
         sngl_inspiral_table.append(tmplt)
 
