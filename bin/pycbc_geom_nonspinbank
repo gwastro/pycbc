@@ -356,8 +356,6 @@ if opts.verbose:
 tempBank = []
 temp_number = 0
 req_match = 0.0001
-temp_match = (opts.min_match)**0.5 * 3.
-des_match = (opts.min_match)**0.5
 # This can be used for debugging
 #fileP = open('bank_file.dat','w')
 for iter, (v1, v2) in enumerate(zip(v1s, v2s)):
@@ -388,7 +386,7 @@ for iter, (v1, v2) in enumerate(zip(v1s, v2s)):
     bestMasses = physMasses[points[dist.argmin(),0]]
     
     # Reject point if it is too far from physical space
-    if dist.min() > temp_match:
+    if dist.min() > opts.min_match * 5:
         continue
     masses = pycbc.tmpltbank.get_physical_covaried_masses([v1,v2],\
                copy.deepcopy(bestMasses), copy.deepcopy(bestXis), opts.f0,\
@@ -400,7 +398,7 @@ for iter, (v1, v2) in enumerate(zip(v1s, v2s)):
                maxEta=opts.max_eta, minEta=opts.min_eta)
 
     # If point is still not close enough to desired space, remove it
-    if masses[5] > des_match * 1.1:
+    if masses[5] > opts.min_match:
         continue
     # Add the two masses (masses[0],masses[1]) to the list. For consistency
     # we also add spin1z and spin2z (masses[2] and masses[3]) but here these
