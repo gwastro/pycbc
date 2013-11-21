@@ -1,5 +1,6 @@
 import os,sys,optparse
 import urlparse,urllib
+import logging
 from glue import datafind
 from glue import segments,segmentsUtils,git_version
 from pycbc.ahope import AhopeOutGroupList, AhopeOutFileList, AhopeOutGroup
@@ -56,13 +57,17 @@ def setup_datafind_workflow(cp, scienceSegs, ahopeDax, outputDir, \
         updateSegmentTimes kwarg is given this will be updated to reflect any
         instances of missing data.
     """
+    logging.info("Entering datafind module")
 
+    logging.info("Starting datafind with setup_datafind_runtime_generated")
     datafindOuts = setup_datafind_runtime_generated(cp, scienceSegs, outputDir)
-
+    logging.info("setup_datafind_runtime_generated completed")
     # If we don't have frame files covering all times we can update the science
     # segments.
     if updateSegmentTimes or checkSegmentGaps:
+        logging.info("Checking science segments against datafind output....")
         newScienceSegs = get_science_segs_from_datafind_outs(datafindOuts)
+        logging.info("Datafind segments calculated.....")
         missingData = False
         for ifo in scienceSegs.keys():
             # If no data in the input then do nothing
@@ -70,40 +75,44 @@ def setup_datafind_workflow(cp, scienceSegs, ahopeDax, outputDir, \
                 msg = "No input science segments for ifo %s " %(ifo)
                 msg += "so, surprisingly, no data has been found. "
                 msg += "Was this expected?"
-                print >> sys.stderr, msg
+                logging.warning(msg)
                 continue
             if not newScienceSegs.has_key(ifo):
                 msg = "IFO %s's science segments " %(ifo)
                 msg += "are completely missing."
-                print >> sys.stderr, msg
+                logging.error(msg)
                 missingData = True
                 continue
             missing = scienceSegs[ifo] - newScienceSegs[ifo]
             if abs(missing):
                 msg = "From ifo %s we are missing segments:" %(ifo)
-                msg = "\n%s" % "\n".join(map(str, missing))
+                msg += "\n%s" % "\n".join(map(str, missing))
                 missingData = True
-                print >> sys.stderr, msg
+                logging.error(msg)
         if checkSegmentGaps and missingData:
             raise ValueError("Ahope cannot find needed data, exiting.")
+        logging.info("Done checking, any discrepancies are reported above.")
         scienceSegs = newScienceSegs
 
     # Do all of the frame files that were returned actually exist?
     if checkFramesExist:
+        logging.info("Verifying that all frames exist on disk.")
         missingFlag = False
         for dfGroup in datafindOuts:
             _,missingFrames = dfGroup.get_output().checkfilesexist(\
                                                      on_missing="warn")
             if missingFrames:
                 missingFlag = True
-                print >>sys.stderr, "Files missing from cache %s." \
-                                    %(dfGroup.summaryUrl)
+                logging.error("Files missing from cache %s." \
+                              %(dfGroup.summaryUrl))
                 msg = "Full file of files inaccessible from this cache:\n"
                 msg +='\n'.join([a.url for a in missingFrames])
-                print >> sys.stderr, msg
+                logging.error(msg)
         if missingFlag:
             raise ValueError("Some frames cannot be found on disk.")
+        logging.info("All frames found successfully")
 
+    logging.info("Leaving datafind module")
     return datafindOuts, scienceSegs
     
 
@@ -134,6 +143,7 @@ def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):
     """
     # First job is to do setup for the datafind jobs
     # First get the server name
+    logging.info("Setting up connection to datafind server.")
     if cp.has_option("ahope-datafind", "datafind-ligo-datafind-server"):
         datafindServer = cp.get("ahope-datafind",\
                                 "datafind-ligo-datafind-server")
@@ -175,11 +185,14 @@ def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):
     datafindOuts = AhopeOutGroupList([])
     ifos = scienceSegs.keys()
     jobTag = "DATAFIND"
-
+    logging.info("Querying datafind server for all science segments.")
     for ifo, scienceSegsIfo in scienceSegs.items():
         observatory = ifo[0].upper()
         frameType = cp.get("ahope-datafind", "datafind-%s-frame-type"%(ifo))
         for seg in scienceSegsIfo:
+            msg = "Finding data between %d and %d " %(seg[0],seg[1])
+            msg += "for ifo %s" %(ifo)
+            logging.debug(msg)
             # WARNING: For now ahope will expect times to be in integer seconds
             startTime = int(seg[0])
             endTime = int(seg[1])
@@ -192,8 +205,10 @@ def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):
             # directory to check if this was expected.
             log_datafind_command(observatory, frameType, startTime, endTime,\
                                  os.path.join(outputDir,'logs'), **dfKwargs)
+            logging.debug("Asking datafind server for frames.")
             dfCache = connection.find_frame_urls(observatory, frameType, \
                         startTime, endTime, **dfKwargs)
+            logging.debug("Frames returned")
             dfCacheFileName = "%s-%s-%d-%d.lcf" \
                               %(ifo, jobTag, startTime, endTime-startTime)
             dfCachePath = os.path.join(outputDir, dfCacheFileName)
@@ -207,9 +222,10 @@ def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):
             # Convert to ahope format
             dfCache = AhopeOutFileList(dfCache)
             urlList = [e.url for e in dfCache] 
+            jobSegs = [e.segment for e in dfCache]
             dfCacheGroup = AhopeOutGroup(ifo, jobTag, seg, \
                                          summaryUrl=dfCacheUrl)
-            dfCacheGroup.set_output(urlList, None)
+            dfCacheGroup.set_output(urlList, None, outSegs=jobSegs)
             datafindOuts.append(dfCacheGroup)
 
     return datafindOuts

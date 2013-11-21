@@ -1,5 +1,6 @@
 import os,sys
 import subprocess
+import logging
 from glue import segments, pipeline
 from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.ahope.ahope_utils import *
@@ -11,10 +12,22 @@ def setup_segment_generation(cp, ifos, start_time, end_time,\
     Setup the segment generation needed in an ahope workflow
     FIXME: Add more DOCUMENTATION
     """
+    logging.info("Entering segment generation module")
     veto_categories = [1,2,3,4,5]
 
-    segFilesDict = setup_segment_gen_mixed(cp, ifos, veto_categories, \
+    if cp.get("ahope-segments","segments-method") == "AT_RUNTIME":
+        logging.info("Generating segments with setup_segment_gen_runtime")
+        segFilesDict = setup_segment_gen_runtime(cp, ifos, veto_categories, \
+                                  start_time, end_time, out_dir)
+    elif cp.get("ahope-segments","segments-method") == "CAT4_PLUS_DAG":
+        logging.info("Generating segments with setup_segment_gen_mixed")
+        segFilesDict = setup_segment_gen_mixed(cp, ifos, veto_categories, \
                                        start_time, end_time, out_dir, ahopeDax)
+    else:
+        msg = "Entry segments-method in [ahope-segments] does not have "
+        msg += "expected value. Valid values are AT_RUNTIME, CAT4_PLUS_DAG."
+        raise ValueError(msg)
+    logging.info("Segments obtained")
 
     segsToAnalyse = {}
     for ifo in ifos:
@@ -26,8 +39,9 @@ def setup_segment_generation(cp, ifos, start_time, end_time,\
             msg += "in the %s directory. Also the " %(out_dir)
             msg += "commands that can be used to reproduce some of these "
             msg += "in %s/*.sh" %(os.path.join(out_dir,'logs'))
-            print >> sys.stderr, msg
+            logging.warn(msg)
             
+    logging.info("Leaving segment generation module")
     return segsToAnalyse, segFilesDict
 
 
@@ -40,6 +54,7 @@ def setup_segment_gen_runtime(cp, ifos, veto_categories, start_time,\
     segValidSeg = segments.segment([start_time,end_time])
     baseTag='SEGS'
     for ifo in ifos:
+        logging.info("Generating science segments for ifo %s" %(ifo))
         ifoTag=baseTag + "_%s" %(ifo.upper())
         segFilesDict[ifo] = {}
         currSciSegs, currSciXmlFile = get_science_segments(ifo, cp, \
@@ -54,6 +69,8 @@ def setup_segment_gen_runtime(cp, ifos, veto_categories, start_time,\
         vetoSegs = {}
         vetoXmlFiles = {} 
         for category in veto_categories:
+            logging.info("Generating CAT_%d segments for ifo %s." \
+                         %(category,ifo))
             vetoSegs[category],vetoXmlFiles[category] = \
                 get_veto_segs_at_runtime(ifo, category, cp, start_time, \
                                          end_time, out_dir)
@@ -89,6 +106,7 @@ def setup_segment_gen_mixed(cp, ifos, veto_categories, start_time,\
     baseTag='SEGS'
     vetoGenJob = create_segs_from_cats_job(cp, out_dir)
     for ifo in ifos:
+        logging.info("Generating science segments for ifo %s" %(ifo))
         ifoTag=baseTag + "_%s" %(ifo.upper())
         segFilesDict[ifo] = {}
         currSciSegs, currSciXmlFile = get_science_segments(ifo, cp, \
@@ -105,10 +123,15 @@ def setup_segment_gen_mixed(cp, ifos, veto_categories, start_time,\
         for category in veto_categories:
             currTag='VETO_CAT%d' %(category)
             if category <= 3:
+                logging.info("Generating CAT_%d segments for ifo %s." \
+                             %(category,ifo))
                 vetoSegs[category],vetoXmlFiles[category] = \
                     get_veto_segs_at_runtime(ifo, category, cp, start_time, \
                                              end_time, out_dir)
             else:
+                msg = "Adding creation of CAT_%d segments " %(category)
+                msg += "for ifo %s to workflow." %(ifo)
+                logging.info(msg)
                 vetoXmlFiles[category] = get_veto_segs_in_workflow(ifo, \
                                   category, start_time, end_time, out_dir,
                                   ahopeDax, vetoGenJob)        
@@ -151,7 +174,7 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir):
     sciXmlFile = os.path.join(out_dir, "%s-SCIENCE_SEGMENTS.xml" \
                                        %(ifo.upper()) )
 
-    segFindCall = [ "ligolw_segment_query",
+    segFindCall = [ cp.get("executables","segment_query"),
         "--query-segments",
         "--segment-url", sciSegUrl,
         "--gps-start-time", str(start_time),
@@ -178,7 +201,7 @@ def get_veto_segs_at_runtime(ifo, category, cp, start_time, end_time, out_dir):
     segServerUrl = cp.get("ahope-segments", "segments-database-url")
     vetoDefFile = cp.get("ahope-segments", "segments-veto-definer-file")
 
-    segFromCatsCall = [ "ligolw_segments_from_cats",
+    segFromCatsCall = [ cp.get("executables","segments_from_cats"),
         "--separate-categories", 
         "--segment-url", segServerUrl,
         "--veto-file", vetoDefFile,
@@ -215,7 +238,7 @@ def get_veto_segs_in_workflow(ifo, category, start_time, end_time, out_dir, \
     node.add_var_opt('veto-categories', str(category))
     node.add_var_opt('ifo-list', ifo)
     node.add_var_opt('gps-start-time', str(start_time))
-    node.add_var_opt('--gps-end-time', str(end_time))
+    node.add_var_opt('gps-end-time', str(end_time))
     ahopeDax.add_node(node)
     vetoDefXmlFileName = "%s-VETOTIME_CAT%d-%d-%d.xml" \
                          %(ifo, category, start_time, end_time-start_time)
@@ -229,15 +252,15 @@ def create_segs_from_cats_job(cp, out_dir):
     """
     segServerUrl = cp.get("ahope-segments", "segments-database-url")
     vetoDefFile = cp.get("ahope-segments", "segments-veto-definer-file")
-    exeName = "ligolw_segments_from_cats"
+    exeName = cp.get("executables","segments_from_cats")
     tag = "vetogen"
     logtag = '$(cluster)-$(process)'
-    job = pipeline.CondorDAGJob("vanilla",exeName)
-    job.set_sub_file(os.path.join(out_dir,'%s.sub' %(tag)))
+    job = pipeline.CondorDAGJob("vanilla", exeName)
+    job.set_sub_file('%s.sub' %(tag))
     job.set_stderr_file(os.path.join(out_dir,'logs','%s-%s.err' %(tag,logtag)))
     job.set_stdout_file(os.path.join(out_dir,'logs','%s-%s.out' %(tag,logtag)))
     job.add_condor_cmd('getenv','True')
-    job.add_arg('separate-categories')
+    job.add_opt('separate-categories', '')
     job.add_opt('output-dir', out_dir)
     job.add_opt('segment-url', segServerUrl)
     job.add_opt('veto-file', vetoDefFile)

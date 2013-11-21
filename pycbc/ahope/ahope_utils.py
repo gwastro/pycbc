@@ -1,5 +1,6 @@
 import os, sys
 import subprocess
+import logging
 import math
 import numpy
 import urlparse
@@ -241,7 +242,7 @@ class AhopeOutGroup(object):
         else:
             raise ValueError("Output file list has not been set.")
 
-    def set_output(self, outFiles, outFileJobs):
+    def set_output(self, outFiles, outFileJobs, outSegs=None):
         '''Set self.__outFile to outFile.
 
         Parameters
@@ -254,6 +255,10 @@ class AhopeOutGroup(object):
             correspond so that outFileJobs[i] will generate outFiles[i].
             If len(outFiles) == 1 assume that one object generated all output.
             If outFileJobs == None then assume these files already exist.
+        outSegs : List of glue.segments.segment objects
+            If given len(outSegs) must equal len(outFiles). This is the
+            segment that each individual outFile covers. If not given then
+            assume that the segment for each job is self.segment.
 
         Returns
         ----------
@@ -281,10 +286,14 @@ class AhopeOutGroup(object):
                 errMsg = "The number of jobs given to .set_output must be "
                 errMsg += "equal to the length of files or equal to 1."
                 raise ValueError(errMsg)
+            if outSegs:
+                currSeg = outSegs[i]
+            else:
+                currSeg = self.segment
             # Add the number to discriminate each job. This will be used later
             currDesc = self.description + "_%d" %(i)
             currFile = AhopeOutFile(self.observatory, self.description, \
-                                    self.segment, fileUrl, job=currJob)
+                                    currSeg, fileUrl, job=currJob)
             outputList.append(currFile)
         self.__outFileList = outputList
 
@@ -367,6 +376,8 @@ def make_external_call(cmdList, outDir=None, outBaseName='external_call',\
         errFP = None
         outFP = None
 
+    msg = "Making external call %s" %(' '.join(cmdList))
+    logging.debug(msg)
     errCode = subprocess.call(cmdList, stderr=errFP, stdout=outFP,\
                               shell=shell)
     if errFP:
@@ -377,6 +388,7 @@ def make_external_call(cmdList, outDir=None, outBaseName='external_call',\
     if errCode and fail_on_error:
         raise CalledProcessErrorMod(errCode, ' '.join(cmdList), \
                 errFile=errFile, outFile=outFile, cmdFile=cmdFile)
+    logging.debug("Call successful, or error checking disabled.")
 
 class CalledProcessErrorMod(Exception):
     """
