@@ -230,6 +230,7 @@ chi1Diff = chi1Max - chi1Min
 chi2Max = vals[1].max()
 chi2Min = vals[1].min()
 chi2Diff = chi2Max - chi2Min
+# FIXME: Maybe better to use the numerical code to find maxima here?
 chi1Min = chi1Min - 0.1*chi1Diff
 chi1Max = chi1Max + 0.1*chi1Diff
 chi2Min = chi2Min - 0.1*chi2Diff
@@ -249,15 +250,13 @@ vals = None
 massbank = {}
 bank = {}
 MMdist = (opts.min_match)**0.5
-for i in range(int((chi1Max - chi1Min) // MMdist + 1)):
+for i in range(-2,int((chi1Max - chi1Min) // MMdist + 2)):
     bank[i] = {}
     massbank[i] = {}
-    for j in range(int((chi2Max - chi2Min) // MMdist + 1)):
+    for j in range(-2,int((chi2Max - chi2Min) // MMdist + 2)):
         bank[i][j] = []
         massbank[i][j] = []
 
-maxi = int((chi1Max - chi1Min) // MMdist)
-maxj = int((chi2Max - chi2Min) // MMdist)
 # Initialise counters
 N = 0
 Np = 0
