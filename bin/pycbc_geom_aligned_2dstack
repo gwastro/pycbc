@@ -231,7 +231,7 @@ for entry in tempBank:
     if opts.verbose:
         print "Template %d has corrected distance of %e"\
               %(temp_number, masses[5])
-    if masses[5] > 0.05:
+    if masses[5] > opts.min_match:
         # Reject point, it is too far away
         if opts.verbose:
             print "Template %d rejected as too far away" %(temp_number)
@@ -372,7 +372,7 @@ for entry in tempBank:
               maxTotalMass=opts.max_total_mass, maxEta=opts.max_eta, \
               minEta=opts.min_eta)
         # If vec4 depth is negligible or we didn't get close, stop here
-        if vec4_depth < vec3DepthVal or masses[5] > 0.03:
+        if vec4_depth < vec3DepthVal or masses[5] > opts.min_match:
             if masses[5]:
                 # Write point to file
                 print >> outPointer, "%e %e %e %e %e" \
