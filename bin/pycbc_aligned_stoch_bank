@@ -115,8 +115,6 @@ if not opts.output_file:
     parser.error("Must supply --output-file")
 if not opts.min_match:
     parser.error("Must supply --min-match")
-if opts.covary and opts.vary_fupper:
-    parser.error("Cannot use --covary with --vary-fupper")
 pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
 pycbc.tmpltbank.verify_mass_range_options(opts, parser)
 pycbc.psd.verify_psd_options(opts, parser)
@@ -187,13 +185,9 @@ else:
     evalsSngl = evals[lowEve]
     evecsSngl = evecs[lowEve]
 
-# Calculate evecsCV which describes the rotation to the dominant basis frame
-# FIXME: Not sure why we cannot use --covary with --vary-fupper?
-# covary should then not be an option at all.
-if opts.covary:
-    if opts.verbose:
-        print >>sys.stdout, "Calculating covariance matrix at %f." \
-                            %(elapsed_time())
+if opts.verbose:
+    print >>sys.stdout, "Calculating covariance matrix at %f." \
+                        %(elapsed_time())
 
     vals = pycbc.tmpltbank.estimate_mass_range(1000000,\
            opts.pn_order, evalsSngl, evecsSngl, opts.max_mass1,\
@@ -220,7 +214,7 @@ vals = pycbc.tmpltbank.estimate_mass_range(1000000,\
        opts.pn_order, evalsSngl, evecsSngl, opts.max_mass1,\
        opts.min_mass1, opts.max_mass2, opts.min_mass2,\
        opts.max_ns_spin_mag, opts.f0,\
-       covary=opts.covary, evecsCV=evecsCV, maxBHspin=opts.max_bh_spin_mag,\
+       covary=True, evecsCV=evecsCV, maxBHspin=opts.max_bh_spin_mag,\
        minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass,\
        maxEta=opts.max_eta, minEta=opts.min_eta)
 
@@ -235,6 +229,7 @@ chi1Min = chi1Min - 0.1*chi1Diff
 chi1Max = chi1Max + 0.1*chi1Diff
 chi2Min = chi2Min - 0.1*chi2Diff
 chi2Max = chi2Max + 0.1*chi2Diff
+
 
 if opts.verbose:
     print>> sys.stdout, "Determined parameter space extent %f."\
@@ -308,14 +303,9 @@ while(1):
         else:
             refEve = numpy.zeros(100000)
             mus = numpy.zeros([1,1,100000])
-        if opts.covary:
-            vecs = pycbc.tmpltbank.get_cov_params(rTotmass, rEta, rBeta,\
-                       rSigma, rGamma, rChis, opts.f0, evecsSngl, evalsSngl,\
-                       evecsCV, opts.pn_order)
-        else:
-            vecs = pycbc.tmpltbank.get_conv_params(rTotmass, rEta, rBeta,\
-                       rSigma, rGamma, rChis, opts.f0, evecsSngl, evalsSngl,\
-                       opts.pn_order)
+        vecs = pycbc.tmpltbank.get_cov_params(rTotmass, rEta, rBeta,\
+                   rSigma, rGamma, rChis, opts.f0, evecsSngl, evalsSngl,\
+                   evecsCV, opts.pn_order)
       
         vecs = numpy.array(vecs)
         Ns = 0
