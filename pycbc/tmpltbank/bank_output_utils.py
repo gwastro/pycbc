@@ -93,13 +93,13 @@ def calculate_ethinca_metric_comps(temp_params, moments, f0):
     Parameters
     -----------
     temp_params : Tuple
-        A tuple containing (mass1,mass2). 
+        A tuple containing (mass1,mass2). # FIX: Just make m1 and m2 params
     moments : dictionary
         This dictionary contains all the moments at various cutoff frequencies.
         See the get_moments function for information on this.
-    f0 : float
+    f0 : float # FIX: The moments should just store f0
         The fiducial frequency used to scale the metric calculations. The value
-        is irrelevant, but most stay the same.
+        is irrelevant, but must stay the same.
 
     Returns
     --------
@@ -116,6 +116,8 @@ def calculate_ethinca_metric_comps(temp_params, moments, f0):
     tau3 = LAL_PI/(8.0*eta*(totalMass**(2./3.))*(piFl**(5./3.)))
     t1 = LAL_TWOPI * f0 * tau0
     t2 = LAL_TWOPI * f0 * tau3
+    v0cube = totalMass*piFl
+    v0 = v0cube**(1./3.)
 
     # Figure out appropriate f_max
     tempFMax = (1/6.)**(3./2.) / (LAL_PI * totalMass)
@@ -123,74 +125,77 @@ def calculate_ethinca_metric_comps(temp_params, moments, f0):
     fMaxIdx = abs(numpy.array(fMaxes,dtype=float) -  tempFMax).argmin()
     fMax = fMaxes[fMaxIdx]
 
-    # Calculate the t0/t3 moment components
-    t0t3Moms = {}
-    t0t3Moms['a01'] = 3./5.
-    t0t3Moms['a21'] = 11. * LAL_PI/12.
-    t0t3Moms['a22'] = 743./2016. * (25./(2.*LAL_PI*LAL_PI))**(1./3.)
-    t0t3Moms['a31'] = -3./2.
-    t0t3Moms['a41'] = 617. * LAL_PI * LAL_PI / 384.
-    t0t3Moms['a42'] = 5429./5376. * (25.*LAL_PI/2.)**(1./3.)
-    t0t3Moms['a43'] = 1.5293365/1.0838016 * \
-                      (5./(4.*LAL_PI*LAL_PI*LAL_PI*LAL_PI))**(1./3.)
+    # 3pN is a mess, so split it into pieces
+    a0 = 11583231236531/200286535680 - 5*LAL_PI*LAL_PI - 107*LAL_GAMMA/14
+    a1 = (-15737765635/130056192 + 2255*LAL_PI*LAL_PI/512)*eta
+    a2 = (76055/73728)*eta*eta
+    a3 = (-127825/55296)*eta*eta*eta
+    alog = numpy.log(4*v0) # Log terms are tricky - be careful
 
     # Get the Psi coefficients
-    Psi = numpy.zeros([2,5],dtype=float)
-    Psi[0][0] = t0t3Moms['a01']
-    Psi[0][1] = 0.
-    Psi[0][2] = t0t3Moms['a21']/t2 + t0t3Moms['a22']/3. * \
-                (t2 * t2 / (t1 * t1))**(1./3.)
-    Psi[0][3] = 0.
-    Psi[0][4] = t0t3Moms['a41']/(t2*t2) \
-              + t0t3Moms['a42']/(3.* (t1*t1*t2)**(1./3.)) \
-              - t0t3Moms['a43']/3. * t2 / t1 * (t2 / t1)**(1./3.)
-    Psi[1][0] = 0.
-    Psi[1][1] = 0.
-    Psi[1][2] = - t0t3Moms['a21']*t1/(t2*t2) + \
-                2. * t0t3Moms['a22']/3. * (t1/t2)**(1./3.)
-    Psi[1][3] = t0t3Moms['a31']
-    Psi[1][4] = - 2. * t0t3Moms['a41']*t1 / (t2*t2*t2) - \
-                t0t3Moms['a42']/3. * (t1/(t2*t2*t2*t2))**(1./3.) + \
-                4. * t0t3Moms['a43']/3. * (t2/t1)**(1./3.)
+    Psi = [{},{}] #Psi = numpy.zeros([2,8,2],dtype=float)
+    Psi[0][0,0] = 3/5
+    Psi[0][2,0] = (743/756 + 11*eta/3)*v0*v0
+    Psi[0][3,0] = 0.
+    Psi[0][4,0] = (-3058673/508032 + 5429*eta/504 + 617*eta*eta/24)\
+                    *v0cube*v0
+    Psi[0][5,1] = (-7729*LAL_PI/126)*v0cube*v0*v0/3
+    Psi[0][6,0] = (128/15)*(-3*a0 - a1 + a2 + 3*a3 + 107*(1+3*alog)/14)\
+                    *v0cube*v0cube
+    Psi[0][6,1] = (6848/35)*v0cube*v0cube/3
+    Psi[0][7,0] = (-15419335/63504 - 75703*eta/756)*LAL_PI*v0cube*v0cube*v0
+
+    Psi[1][0,0] = 0.
+    Psi[1][2,0] = (3715/12096 - 55*eta/96)/LAL_PI/v0;
+    Psi[1][3,0] = -3/2
+    Psi[1][4,0] = (15293365/4064256 - 27145*eta/16128 - 3085*eta*eta/384)\
+                    *v0/LAL_PI
+    Psi[1][5,1] = (193225/8064)*v0*v0/3
+    Psi[1][6,0] = (4/LAL_PI)*(2*a0 + a1/3 - 4*a2/3 - 3*a3 -107*(1+6*alog)/42)\
+                    *v0cube
+    Psi[1][6,1] = (-428/LAL_PI/7)*v0cube/3
+    Psi[1][7,0] = (77096675/1161216 + 378515*eta/24192 + 74045*eta*eta/8064)\
+                    *v0cube*v0
+
 
     # Set the appropriate moments
-    Js = []
+    Js = numpy.zeros([18,3],dtype=float)
     for i in range(18):
-        Js.append(moments['J%d'%(i)][fMax])
-    Js.append(moments['J%d'%(-1)][fMax])
-    # The log moments are in here as well and will be needed for higher order
-    # terms.
+        Js[i,0] = moments['J%d'%(i)][fMax]
+        Js[i,1] = moments['log%d'%(i)][fMax]
+        Js[i,2] = moments['loglog%d'%(i)][fMax]
   
     # Calculate the g matrix
-    PNorder = 5
-    g = numpy.zeros([2,2],dtype=float)
+    PNterms = [(0,0),(2,0),(3,0),(4,0),(5,1),(6,0),(6,1),(7,0)]
+    PNorder = 4
+    PNterms = [term for term in PNterms if term[0] <= PNorder]
     two_pi_flower_sq = LAL_TWOPI * f0 * LAL_TWOPI * f0
-    for (m,n) in [(0,0),(0,1),(1,0),(1,1)]:
-        for k in range(PNorder):
-            for l in range(PNorder):
-                g[m,n] += Psi[m][k] * Psi[n][l] * (\
-                        Js[17-k-l] - Js[12-k] * Js[12-l] \
-                        - ( Js[9-k] - Js[4] * Js[12-k] ) \
-                        * ( Js[9-l] - Js[4] * Js[12-l] ) \
-                        / ( Js[1] - Js[4] * Js[4] ) )
-        g[m,n] = 0.5 * two_pi_flower_sq * g[m,n]
 
     # Now can compute the gamma values
     gammaVals = numpy.zeros([6],dtype=float)
     gammaVals[0] = 0.5 * two_pi_flower_sq * \
-                  ( Js[1] - (Js[4]*Js[4]) )
-    gammaVals[1] = 0.5 * two_pi_flower_sq * \
-                  ( Psi[0][0]*(Js[9] - (Js[4]*Js[12]) ) \
-                  + Psi[0][2]*(Js[7] - (Js[4]*Js[10]) ) \
-                  + Psi[0][4]*(Js[5] - (Js[4]*Js[8]) ))
-    gammaVals[2] = 0.5 * two_pi_flower_sq * \
-                  ( Psi[1][2]*(Js[7] - (Js[4]*Js[10]) ) \
-                  + Psi[1][3]*(Js[6] - (Js[4]*Js[9]) ) \
-                  + Psi[1][4]*(Js[5] - (Js[4]*Js[8]) ))
-    gammaVals[3] = g[0,0] + gammaVals[1] * gammaVals[1] / gammaVals[0]
-    gammaVals[4] = g[0,1] + gammaVals[1] * gammaVals[2] / gammaVals[0]
-    gammaVals[5] = g[1,1] + gammaVals[2] * gammaVals[2] / gammaVals[0]
+                    ( Js[(1,0)] - (Js[(4,0)]*Js[(4,0)]) )
+    
+    for m in [0, 1]:
+        for k in PNterms:
+            gammaVals[1+m] += 0.5 * two_pi_flower_sq * Psi[m][k] * \
+                                ( Js[(9-k[0],k[1])]
+                                - Js[(12-k[0],k[1])] * Js[(4,0)] )
 
+    g = numpy.zeros([2,2],dtype=float)
+    for (m,n) in [(0,0),(0,1),(1,1)]:
+        for k in PNterms:
+            for l in PNterms:
+                g[m,n] += Psi[m][k] * Psi[n][l] * \
+                        ( Js[(17-k[0]-l[0], k[1]+l[1])]
+                        - Js[(12-k[0],k[1])] * Js[(12-l[0],l[1])] )
+        g[m,n] = 0.5 * two_pi_flower_sq * g[m,n]
+        g[n,m] = g[m,n]
+
+    gammaVals[3] = g[0,0]
+    gammaVals[4] = g[0,1]
+    gammaVals[5] = g[1,1]
+	
     return gammaVals
 
 def output_sngl_inspiral_table(outputFile, tempBank, moments, f0,\
