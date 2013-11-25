@@ -28,7 +28,7 @@ from pycbc.types import TimeSeries
 _resample_func = {numpy.dtype('float32'): lal.ResampleREAL4TimeSeries,
                  numpy.dtype('float64'): lal.ResampleREAL8TimeSeries}
 
-def resample_to_delta_t(timeseries, delta_t):
+def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
     """Resmple the time_series to delta_t
 
     Resamples the TimeSeries instance time_series to the given time step, 
@@ -69,11 +69,36 @@ def resample_to_delta_t(timeseries, delta_t):
     if timeseries.delta_t == delta_t:
         return timeseries * 1
 
-    lal_data = timeseries.lal()
-    _resample_func[timeseries.dtype](lal_data, delta_t)
-
-    return TimeSeries(lal_data.data.data, delta_t = lal_data.deltaT,
-                      dtype=timeseries.dtype, epoch=timeseries._epoch)
+    if method == 'butterworth':
+        lal_data = timeseries.lal()
+        _resample_func[timeseries.dtype](lal_data, delta_t)
+        data = lal_data.data.data 
+    elif method == 'ldas':
+        pass
+    elif method == 'broken_butterworth':    
+        # Do a low pass filter to remove power at frequencies above the
+        # new nyquist frequency
+        
+        #Yep this doesn't make sense, but is what the code does here
+        # http://www.lsc-group.phys.uwm.edu/cgit/lalsuite/tree/lal/packages/tools/src/ResampleTimeSeries.c#n408
+        lowpass_params = lal.PassBandParamStruc()
+        lowpass_params.nMax = 20
+        lowpass_params.f1 = 0.5 / delta_t
+        lowpass_params.a1 = 0.1
+        lowpass_params.f2 = lal.LAL_REAL4_MAX
+        lowpass_params.a1 = 0
+        
+        lal_data = timeseries.lal()
+        lal.DButterworthREAL4TimeSeries(lal_data, lowpass_params)       
+        
+        # Decimate the time series
+        factor = int(delta_t / timeseries.delta_t)
+        data = lal_data.data.data[::factor] * 1
+        
+    return TimeSeries(data, delta_t = delta_t,
+                      dtype=timeseries.dtype, 
+                      epoch=timeseries._epoch)
+       
 
 _highpass_func = {numpy.dtype('float32'): lal.HighPassREAL4TimeSeries,
                  numpy.dtype('float64'): lal.HighPassREAL8TimeSeries}
