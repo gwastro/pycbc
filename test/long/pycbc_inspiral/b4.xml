@@ -1,0 +1,197 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt"><LIGO_LW>
+   <Table Name="processgroup:process:table">
+      <Column Name="processgroup:process:program" Type="lstring"/>
+      <Column Name="processgroup:process:version" Type="lstring"/>
+      <Column Name="processgroup:process:cvs_repository" Type="lstring"/>
+      <Column Name="processgroup:process:cvs_entry_time" Type="int_4s"/>
+      <Column Name="processgroup:process:comment" Type="lstring"/>
+      <Column Name="processgroup:process:is_online" Type="int_4s"/>
+      <Column Name="processgroup:process:node" Type="lstring"/>
+      <Column Name="processgroup:process:username" Type="lstring"/>
+      <Column Name="processgroup:process:unix_procid" Type="int_4s"/>
+      <Column Name="processgroup:process:start_time" Type="int_4s"/>
+      <Column Name="processgroup:process:end_time" Type="int_4s"/>
+      <Column Name="processgroup:process:jobid" Type="int_4s"/>
+      <Column Name="processgroup:process:domain" Type="lstring"/>
+      <Column Name="processgroup:process:ifos" Type="lstring"/>
+      <Column Name="processgroup:process:process_id" Type="ilwd:char"/>
+      <Stream Name="processgroup:process:table" Type="Local" Delimiter=",">
+         "tmpltbank","d6e8de916df00cf32b88808103c9f2dc7f0a3584","UNCLEAN: Modified working tree",1065297746," ",0,"spice012.sugar.phy.syr.edu","706",1,1065487257,1065489033,0,"lalapps","H1","process:process_id:0"
+      </Stream>
+   </Table>
+   <Table Name="process_paramsgroup:process_params:table">
+      <Column Name="process_paramsgroup:process_params:program" Type="lstring"/>
+      <Column Name="process_paramsgroup:process_params:process_id" Type="ilwd:char"/>
+      <Column Name="process_paramsgroup:process_params:param" Type="lstring"/>
+      <Column Name="process_paramsgroup:process_params:type" Type="lstring"/>
+      <Column Name="process_paramsgroup:process_params:value" Type="lstring"/>
+      <Stream Name="process_paramsgroup:process_params:table" Type="Local" Delimiter=",">
+         "tmpltbank","process:process_id:0","--grid-spacing","string","Hexagonal",
+         "tmpltbank","process:process_id:0","--dynamic-range-exponent","float","6.900000e+01",
+         "tmpltbank","process:process_id:0","--enable-high-pass","float","3.000000e+01",
+         "tmpltbank","process:process_id:0","--high-pass-order","int","8",
+         "tmpltbank","process:process_id:0","--strain-high-pass-order","int","8",
+         "tmpltbank","process:process_id:0","--candle-minmass","float","1.000000e+00",
+         "tmpltbank","process:process_id:0","--maximum-mass","float","2.500000e+01",
+         "tmpltbank","process:process_id:0","--gps-end-time","int","968586071",
+         "tmpltbank","process:process_id:0","--calibrated-data","string","real_8",
+         "tmpltbank","process:process_id:0","--candle-maxmass","float","1.200000e+01",
+         "tmpltbank","process:process_id:0","--channel-name","string","H1:LDAS-STRAIN",
+         "tmpltbank","process:process_id:0","--space","string","Tau0Tau3",
+         "tmpltbank","process:process_id:0","--number-of-segments","int","15",
+         "tmpltbank","process:process_id:0","--minimal-match","float","9.700000e-01",
+         "tmpltbank","process:process_id:0","--candle-snr","float","8.000000e+00",
+         "tmpltbank","process:process_id:0","--gps-start-time","int","968584023",
+         "tmpltbank","process:process_id:0","--high-pass-attenuation","float","1.000000e-01",
+         "tmpltbank","process:process_id:0","--min-high-freq-cutoff","string","SchwarzISCO",
+         "tmpltbank","process:process_id:0","--segment-length","int","1048576",
+         "tmpltbank","process:process_id:0","--low-frequency-cutoff","float","4.000000e+01",
+         "tmpltbank","process:process_id:0","--pad-data","int","8",
+         "tmpltbank","process:process_id:0","--num-freq-cutoffs","int","1",
+         "tmpltbank","process:process_id:0","--sample-rate","int","4096",
+         "tmpltbank","process:process_id:0","--high-frequency-cutoff","float","2.048000e+03",
+         "tmpltbank","process:process_id:0","--resample-filter","string","ldas",
+         "tmpltbank","process:process_id:0","--strain-high-pass-atten","float","1.000000e-01",
+         "tmpltbank","process:process_id:0","--strain-high-pass-freq","float","3.000000e+01",
+         "tmpltbank","process:process_id:0","--max-total-mass","float","2.500000e+01",
+         "tmpltbank","process:process_id:0","--frame-cache","string","H-H1_LDAS_C02_L2_CACHE-968584015-13617.lcf",
+         "tmpltbank","process:process_id:0","--max-high-freq-cutoff","string","SchwarzISCO",
+         "tmpltbank","process:process_id:0","--approximant","string","TaylorF2",
+         "tmpltbank","process:process_id:0","--minimum-mass","float","1.000000e+00",
+         "tmpltbank","process:process_id:0","--order","string","twoPN",
+         "tmpltbank","process:process_id:0","--spectrum-type","string","median",
+         "tmpltbank","process:process_id:0","--write-compress","string"," ",
+         "tmpltbank","process:process_id:0","--standard-candle","string"," "
+      </Stream>
+   </Table>
+   <Table Name="search_summarygroup:search_summary:table">
+      <Column Name="search_summarygroup:search_summary:process_id" Type="ilwd:char"/>
+      <Column Name="search_summarygroup:search_summary:shared_object" Type="lstring"/>
+      <Column Name="search_summarygroup:search_summary:lalwrapper_cvs_tag" Type="lstring"/>
+      <Column Name="search_summarygroup:search_summary:lal_cvs_tag" Type="lstring"/>
+      <Column Name="search_summarygroup:search_summary:comment" Type="lstring"/>
+      <Column Name="search_summarygroup:search_summary:ifos" Type="lstring"/>
+      <Column Name="search_summarygroup:search_summary:in_start_time" Type="int_4s"/>
+      <Column Name="search_summarygroup:search_summary:in_start_time_ns" Type="int_4s"/>
+      <Column Name="search_summarygroup:search_summary:in_end_time" Type="int_4s"/>
+      <Column Name="search_summarygroup:search_summary:in_end_time_ns" Type="int_4s"/>
+      <Column Name="search_summarygroup:search_summary:out_start_time" Type="int_4s"/>
+      <Column Name="search_summarygroup:search_summary:out_start_time_ns" Type="int_4s"/>
+      <Column Name="search_summarygroup:search_summary:out_end_time" Type="int_4s"/>
+      <Column Name="search_summarygroup:search_summary:out_end_time_ns" Type="int_4s"/>
+      <Column Name="search_summarygroup:search_summary:nevents" Type="int_4s"/>
+      <Column Name="search_summarygroup:search_summary:nnodes" Type="int_4s"/>
+      <Stream Name="search_summarygroup:search_summary:table" Type="Local" Delimiter=",">
+         "process:process_id:0","standalone","","None"," ","",968584015,0,968586079,0,968584023,0,968586071,0,4969,1
+      </Stream>
+   </Table>
+   <Table Name="search_summvarsgroup:search_summvars:table">
+      <Column Name="search_summvarsgroup:search_summvars:process_id" Type="ilwd:char"/>
+      <Column Name="search_summvarsgroup:search_summvars:name" Type="lstring"/>
+      <Column Name="search_summvarsgroup:search_summvars:string" Type="lstring"/>
+      <Column Name="search_summvarsgroup:search_summvars:value" Type="real_8"/>
+      <Column Name="search_summvarsgroup:search_summvars:search_summvar_id" Type="ilwd:char"/>
+      <Stream Name="search_summvarsgroup:search_summvars:table" Type="Local" Delimiter=",">
+         "process:process_id:0","raw data sample rate","",6.1035156250000000e-05,"search_summvars:search_summvar_id:0",
+         "process:process_id:0","filter data sample rate","",2.4414062500000000e-04,"search_summvars:search_summvar_id:1",
+         "process:process_id:0","standard candle sample rate","",2.4414062500000000e-04,"search_summvars:search_summvar_id:2"
+      </Stream>
+   </Table>
+   <Table Name="summ_valuegroup:summ_value:table">
+      <Column Name="summ_valuegroup:summ_value:program" Type="lstring"/>
+      <Column Name="summ_valuegroup:summ_value:process_id" Type="ilwd:char"/>
+      <Column Name="summ_valuegroup:summ_value:start_time" Type="int_4s"/>
+      <Column Name="summ_valuegroup:summ_value:start_time_ns" Type="int_4s"/>
+      <Column Name="summ_valuegroup:summ_value:end_time" Type="int_4s"/>
+      <Column Name="summ_valuegroup:summ_value:end_time_ns" Type="int_4s"/>
+      <Column Name="summ_valuegroup:summ_value:ifo" Type="lstring"/>
+      <Column Name="summ_valuegroup:summ_value:name" Type="lstring"/>
+      <Column Name="summ_valuegroup:summ_value:value" Type="real_4"/>
+      <Column Name="summ_valuegroup:summ_value:comment" Type="lstring"/>
+      <Column Name="summ_valuegroup:summ_value:summ_value_id" Type="ilwd:char"/>
+      <Stream Name="summ_valuegroup:summ_value:table" Type="Local" Delimiter=",">
+         "tmpltbank","process:process_id:0",968584023,0,968586071,0,"H1","inspiral_effective_distance",3.379769e+01,"1.00_1.00_8.00","summ_value:summ_value_id:0",
+         "tmpltbank","process:process_id:0",968584023,0,968586071,0,"H1","inspiral_effective_distance",6.018279e+01,"2.00_2.00_8.00","summ_value:summ_value_id:1",
+         "tmpltbank","process:process_id:0",968584023,0,968586071,0,"H1","inspiral_effective_distance",8.419537e+01,"3.00_3.00_8.00","summ_value:summ_value_id:2",
+         "tmpltbank","process:process_id:0",968584023,0,968586071,0,"H1","inspiral_effective_distance",1.065343e+02,"4.00_4.00_8.00","summ_value:summ_value_id:3",
+         "tmpltbank","process:process_id:0",968584023,0,968586071,0,"H1","inspiral_effective_distance",1.273471e+02,"5.00_5.00_8.00","summ_value:summ_value_id:4",
+         "tmpltbank","process:process_id:0",968584023,0,968586071,0,"H1","inspiral_effective_distance",1.467427e+02,"6.00_6.00_8.00","summ_value:summ_value_id:5",
+         "tmpltbank","process:process_id:0",968584023,0,968586071,0,"H1","inspiral_effective_distance",1.655711e+02,"7.00_7.00_8.00","summ_value:summ_value_id:6",
+         "tmpltbank","process:process_id:0",968584023,0,968586071,0,"H1","inspiral_effective_distance",1.811747e+02,"8.00_8.00_8.00","summ_value:summ_value_id:7",
+         "tmpltbank","process:process_id:0",968584023,0,968586071,0,"H1","inspiral_effective_distance",1.942078e+02,"9.00_9.00_8.00","summ_value:summ_value_id:8",
+         "tmpltbank","process:process_id:0",968584023,0,968586071,0,"H1","inspiral_effective_distance",2.045477e+02,"10.00_10.00_8.00","summ_value:summ_value_id:9",
+         "tmpltbank","process:process_id:0",968584023,0,968586071,0,"H1","inspiral_effective_distance",2.135370e+02,"11.00_11.00_8.00","summ_value:summ_value_id:10",
+         "tmpltbank","process:process_id:0",968584023,0,968586071,0,"H1","inspiral_effective_distance",2.214563e+02,"12.00_12.00_8.00","summ_value:summ_value_id:11"
+      </Stream>
+   </Table>
+   <Table Name="sngl_inspiralgroup:sngl_inspiral:table">
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:process_id" Type="ilwd:char"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:ifo" Type="lstring"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:search" Type="lstring"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:channel" Type="lstring"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:end_time" Type="int_4s"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:end_time_ns" Type="int_4s"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:end_time_gmst" Type="real_8"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:impulse_time" Type="int_4s"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:impulse_time_ns" Type="int_4s"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:template_duration" Type="real_8"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:event_duration" Type="real_8"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:amplitude" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:eff_distance" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:coa_phase" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:mass1" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:mass2" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:mchirp" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:mtotal" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:eta" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:kappa" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:chi" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:tau0" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:tau2" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:tau3" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:tau4" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:tau5" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:ttotal" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:psi0" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:psi3" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:alpha" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:alpha1" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:alpha2" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:alpha3" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:alpha4" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:alpha5" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:alpha6" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:beta" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:f_final" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:snr" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:chisq" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:chisq_dof" Type="int_4s"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:bank_chisq" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:bank_chisq_dof" Type="int_4s"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:cont_chisq" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:cont_chisq_dof" Type="int_4s"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:sigmasq" Type="real_8"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:rsqveto_duration" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:Gamma0" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:Gamma1" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:Gamma2" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:Gamma3" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:Gamma4" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:Gamma5" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:Gamma6" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:Gamma7" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:Gamma8" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:Gamma9" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:spin1x" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:spin1y" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:spin1z" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:spin2x" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:spin2y" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:spin2z" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:event_id" Type="ilwd:char"/>
+      <Stream Name="sngl_inspiralgroup:sngl_inspiral:table" Type="Local" Delimiter=",">
+         "process:process_id:0","H1","tmpltbank","LDAS-STRAIN",0,0,0.0000000000000000e+00,0,0,0.0000000000000000e+00,0.0000000000000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,2.400000e+01,1.000000e+00,3.536216e+00,2.500000e+01,3.840001e-02,0.000000e+00,0.000000e+00,4.212337e+00,8.080481e-01,1.310546e+00,1.047145e-01,0.000000e+00,3.814553e+00,2.971763e+05,-5.778612e+03,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,1.758870e+02,0.000000e+00,0.000000e+00,0,0.000000e+00,0,0.000000e+00,0,0.0000000000000000e+00,0.000000e+00,1.86782656e+04,-1.42043298e+03,2.00618994e+03,1.28564987e+02,-1.71387650e+02,2.33075516e+02,0.00000000e+00,0.00000000e+00,0.00000000e+00,0.00000000e+00,0.00000000e+00,0.00000000e+00,0.00000000e+00,0.00000000e+00,0.00000000e+00,0.00000000e+00,"sngl_inspiral:event_id:0",
+     </Stream>
+   </Table>
+</LIGO_LW>
