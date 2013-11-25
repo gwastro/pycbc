@@ -1,0 +1,41 @@
+lalapps_inspiral \
+--trig-end-time 0 \
+--cluster-method template \
+--dynamic-range-exponent 69.0 \
+--autochisq-stride 2 \
+--disable-rsq-veto \
+--bank-file b4.xml \
+--high-pass-order 8 \
+--strain-high-pass-order 8 \
+--ifo-tag lalsuite \
+--approximant FindChirpSP \
+--gps-end-time 968607048 \
+--calibrated-data real_8 \
+--channel-name H1:LDAS-STRAIN \
+--snr-threshold 5.5 \
+--number-of-segments 15 \
+--trig-start-time 0  \
+--enable-high-pass 30.0 \
+--gps-start-time 968605000  \
+--high-pass-attenuation 0.1 \
+--chisq-bins 16 \
+--inverse-spec-length 16 \
+--segment-length 1048576 \
+--low-frequency-cutoff 40.0 \
+--pad-data 8 \
+--sample-rate 4096 \
+--chisq-threshold 1000000.0 \
+--resample-filter butterworth \
+--strain-high-pass-atten 0.1 \
+--strain-high-pass-freq 30 \
+--segment-overlap 524288 \
+--frame-cache LER2.lcf \
+--chisq-delta 0.2 \
+--bank-veto-subbank-size 1 \
+--user-tag FULL_DATA \
+--write-compress \
+--enable-output \
+--order threePointFivePN \
+--spectrum-type median \
+--maximization-interval 30 \
+--verbose 
