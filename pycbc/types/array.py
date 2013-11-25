@@ -903,5 +903,38 @@ def zeros(length, dtype=float64):
     """
     pass
 
+def load_array(path):
+    """
+    Load an Array from a .txt or .npy file. The
+    default data types will be double precision floating point.
 
+    Parameters
+    ----------
+    path : string
+        source file path. Must end with either .npy or .txt.
+
+    Raises
+    ------
+    ValueError
+        If path does not end in .npy or .txt.
+    """
+    import numpy
+    import os
+    
+    ext = os.path.splitext(path)[1]
+    if ext == '.npy':
+        data = numpy.load(path)    
+    elif ext == '.txt':
+        data = numpy.loadtxt(path)
+    else:
+        raise ValueError('Path must end with .npy or .txt')
+        
+    if data.ndim == 1:
+        return Array(data)
+    elif data.ndim == 2:
+        return Array(data[:,0] + 1j*data[:,1])
+    else:
+        raise ValueError('File has %s dimensions, cannot convert to Array, \
+                          must be 1 (real) or 2 (complex)' % data.ndim)
+    
 

@@ -336,3 +336,43 @@ class FrequencySeries(Array):
             _numpy.savetxt(path, output)
         else:
             raise ValueError('Path must end with .npy or .txt')
+            
+
+def load_frequencyseries(path):
+    """
+    Load a FrequencySeries from a .txt or .npy file. The
+    default data types will be double precision floating point.
+
+    Parameters
+    ----------
+    path : string
+        source file path. Must end with either .npy or .txt.
+
+    Raises
+    ------
+    ValueError
+        If path does not end in .npy or .txt.
+    """
+    import numpy
+    import os
+    import lal
+    
+    ext = os.path.splitext(path)[1]
+    if ext == '.npy':
+        data = numpy.load(path)    
+    elif ext == '.txt':
+        data = numpy.loadtxt(path)
+    else:
+        raise ValueError('Path must end with .npy or .txt')
+        
+    if data.ndim == 2:
+        delta_f = (data[-1][0] - data[0][0]) / (len(data)-1)
+        epoch = lal.LIGOTimeGPS(data[0][0])
+        return FrequencySeries(data[:,1], delta_f=delta_f)
+    elif data.ndim == 3:
+        delta_f = (data[-1][0] - data[0][0]) / (len(data)-1)
+        epoch = lal.LIGOTimeGPS(data[0][0])
+        return FrequencySeries(data[:,1] + 1j*data[:,2], delta_f=delta_f)
+    else:
+        raise ValueError('File has %s dimensions, cannot convert to Array, \
+                          must be 2 (real) or 3 (complex)' % data.ndim)
