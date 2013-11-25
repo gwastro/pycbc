@@ -9,17 +9,15 @@ from optparse import OptionParser
 from glue.pipeline import CondorDAGJob, CondorDAGNode, CondorDAG, CondorJob
 
 class BaseJob(CondorDAGJob, CondorJob):
-    def __init__(self, log_dir, executable, cp, section, gpu=False):
+    def __init__(self, log_dir, executable, cp, section):
         CondorDAGJob.__init__(self, "vanilla", executable)
-        
-        if gpu:
-            CondorJob.__init__(self, "vanilla", executable, 2)
+
         # These are all python jobs so need to pull in the env
         self.add_condor_cmd('getenv', 'True')       
         self.add_condor_cmd('+Allow_OGrid', 'True')
         self.set_stderr_file(os.path.join(log_dir, os.path.basename(executable) + '-$(cluster)-$(process).err'))
         self.set_stdout_file(os.path.join(log_dir, os.path.basename(executable) + '-$(cluster)-$(process).out'))
-        self.set_sub_file(os.path.basename(executable)+".sub")   
+        self.set_sub_file(section + ".sub")   
         
         if cp is not None: 
             self.add_ini_opts(cp, section)         
@@ -42,7 +40,15 @@ def mkdir(dir_name):
         os.mkdir(dir_name)
     except OSError:
         pass
-        
+
+def matches_in_list(slist, match):
+    import re
+    matches = []
+    for st in slist:
+        if st.startswith(match):
+            matches.append(st)
+    return matches
+
 parser = OptionParser()
 parser.add_option('--config', type=str)          
 (options, args) = parser.parse_args() 
@@ -62,7 +68,7 @@ except:
     log_path = './'
 
 tempfile.tempdir = log_path
-tempfile.template='banksim.dag.log.'
+tempfile.template='faithsim.dag.log.'
 logfile = tempfile.mktemp()
      
 print "Making workspace directories..."
@@ -85,22 +91,28 @@ subprocess.call(['pycbc_split_table', '-n', str(templates_per_job), '-t', 'inj.x
 num_banks = len(glob.glob("bank/bank*"))
 
 print "Creating Dag..."
-f = open("banksim.dag", "w")
 
 dag = CondorDAG(logfile)
 dag.set_dag_file("faithsim")
 dag.set_dax_file("faithsim")
 
-fsjob = BaseJob("log", "scripts/pycbc_faithsim", confs, "faithsim")
-rjob = BaseJob("log", "scripts/pycbc_faithsim_collect_results", None, None)
+fs_secs = matches_in_list(confs.sections(), 'faithsim')
+fsjobs = []
+for sec in fs_secs:
+    fsjobs.append(BaseJob("log", "scripts/pycbc_faithsim", confs, sec))
+
+rjob = BaseJob("log", "scripts/pycbc_faithsim_collect_results", None, 'collect_results')
 rnode = CondorDAGNode(rjob)
 
 for inj_num in range(num_banks):
     bn = 'bank/bank' + str(inj_num) + '.xml'
-    mf = 'match/match' + str(inj_num) + '.dat'
-    fsnode = FaithsimNode(fsjob, bn, mf, inj_per_job=templates_per_job)
-    dag.add_node(fsnode)
-    rnode.add_parent(fsnode) 
+    
+    for fsjob, sec in zip(fsjobs, fs_secs):
+        sec_sub = str(sec[len('faithsim'):])
+        mf = 'match/match' + sec_sub + '-' +  str(inj_num) + '.dat'
+        fsnode = FaithsimNode(fsjob, bn, mf, inj_per_job=templates_per_job)
+        dag.add_node(fsnode)
+        rnode.add_parent(fsnode) 
 dag.add_node(rnode)
 
 f = open("scripts/pycbc_faithsim_collect_results", "w")

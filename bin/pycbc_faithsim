@@ -193,41 +193,48 @@ with ctx:
         index += 1
         update_progress(index*100/len(waveform_table))
 
-        htilde1 = get_waveform(options.waveform1_approximant, 
-                              options.waveform1_phase_order, 
-                              options.waveform1_amplitude_order,
-                              options.waveform1_spin_order, 
-                              waveform_params, 
-                              options.waveform1_start_frequency, 
-                              options.filter_sample_rate, 
-                              filter_N)
-         
-        htilde2 = get_waveform(options.waveform2_approximant, 
-                              options.waveform2_phase_order, 
-                              options.waveform2_amplitude_order,
-                              options.waveform2_spin_order, 
-                              waveform_params, 
-                              options.waveform2_start_frequency, 
-                              options.filter_sample_rate, 
-                              filter_N)
+        try:
+            htilde1 = get_waveform(options.waveform1_approximant, 
+                                  options.waveform1_phase_order, 
+                                  options.waveform1_amplitude_order,
+                                  options.waveform1_spin_order, 
+                                  waveform_params, 
+                                  options.waveform1_start_frequency, 
+                                  options.filter_sample_rate, 
+                                  filter_N)
+             
+            htilde2 = get_waveform(options.waveform2_approximant, 
+                                  options.waveform2_phase_order, 
+                                  options.waveform2_amplitude_order,
+                                  options.waveform2_spin_order, 
+                                  waveform_params, 
+                                  options.waveform2_start_frequency, 
+                                  options.filter_sample_rate, 
+                                  filter_N)
 
-        m,i = match(htilde1, htilde2, psd=psd, 
-                    low_frequency_cutoff=options.filter_low_frequency_cutoff) 
-                    
-                    
-        o = overlap(htilde1, htilde2, psd=psd, 
-                    low_frequency_cutoff=options.filter_low_frequency_cutoff)   
-        
-        s1 = sigma(htilde1, psd=psd, 
-                    low_frequency_cutoff=options.filter_low_frequency_cutoff)   
-        s2 = sigma(htilde2, psd=psd, 
-                    low_frequency_cutoff=options.filter_low_frequency_cutoff)   
-        matches.append(m)
-        overlaps.append(o)
-        s1s.append(s1)
-        s2s.append(s2)
+            m,i = match(htilde1, htilde2, psd=psd, 
+                        low_frequency_cutoff=options.filter_low_frequency_cutoff) 
+                        
+                        
+            o = overlap(htilde1, htilde2, psd=psd, 
+                        low_frequency_cutoff=options.filter_low_frequency_cutoff)   
+            
+            s1 = sigma(htilde1, psd=psd, 
+                        low_frequency_cutoff=options.filter_low_frequency_cutoff)   
+            s2 = sigma(htilde2, psd=psd, 
+                        low_frequency_cutoff=options.filter_low_frequency_cutoff)   
+            matches.append(m)
+            overlaps.append(o)
+            s1s.append(s1)
+            s2s.append(s2)
+        except:
+            print "Unable to generate waveforms"
+            matches.append(-1)
+            overlaps.append(-1)
+            s1s.append(-1)
+            s2s.append(-1)
 
-#Output the overlaps toa  file
+#Output the overlaps to  a file
 for m, o, s1, s2 in zip(matches, overlaps, s1s, s2s):
     match_str= "%5.5f %5.5f %5.5f %5.5f\n" % (m, o, s1, s2)
     fout.write(match_str)
