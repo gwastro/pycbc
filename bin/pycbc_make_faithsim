@@ -119,68 +119,48 @@ f = open("scripts/pycbc_faithsim_collect_results", "w")
 f.write("""#!/usr/bin/env python
 from os.path import isfile
 from numpy import *
-from glue.ligolw import utils, table
+from glue.ligolw import utils, table, lsctables
 import glob
 
 fils = glob.glob("match/match*.dat")
-
-dtypem={'names': ('match', 'bank', 'bank_i', 'sim', 'sim_i', 'sigmasq'), 'formats': ('f8', 'S256', 'i4', 'S256', 'i4', 'f8')}
-
-# Collect the results
-res = None
-for fil in fils:
-    if res is not None:
-        res = append(res, loadtxt(fil, dtype=dtypem))
-    else:
-        res = loadtxt(fil, dtype=dtypem)
- 
-btables = {}
-itables = {}     
-
-f = open("results.dat", "w")
-for row in res: 
-    outstr = ""
-    if row['bank'] not in btables:
-        indoc = utils.load_filename(row['bank'], False)
-        btables[row['bank']] = table.get_table(indoc, "sngl_inspiral") 
-
-    if row['sim'] not in itables:
-        indoc = utils.load_filename(row['sim'], False)
-        itables[row['sim']] = table.get_table(indoc, "sim_inspiral") 
-    
-    bt = btables[row['bank']][row['bank_i']]     
-    it = itables[row['sim']][row['sim_i']]
- 
-    outstr += str(row['match']) + " "
-    outstr += str(bt.mass1) + " "
-    outstr += str(bt.mass2) + " "
-    outstr += str(bt.spin1x) + " "
-    outstr += str(bt.spin1y) + " "
-    outstr += str(bt.spin1z) + " "
-    outstr += str(bt.spin2x) + " "
-    outstr += str(bt.spin2y) + " " 
-    outstr += str(bt.spin2z) + " "
-    
-    outstr += str(it.mass1) + " "
-    outstr += str(it.mass2) + " "
-    outstr += str(it.spin1x) + " "
-    outstr += str(it.spin1y) + " "
-    outstr += str(it.spin1z) + " "
-    outstr += str(it.spin2x) + " "
-    outstr += str(it.spin2y) + " " 
-    outstr += str(it.spin2z) + " "
-    
-    outstr += str(it.coa_phase) + " "
-    outstr += str(it.inclination) + " "
-    outstr += str(it.latitude) + " " 
-    outstr += str(it.longitude) + " "
-    outstr += str(it.polarization) + " "
-    
-    outstr += str(row['sigmasq']) + " "
+mfields = ('match', 'overlap', 'sigma1', 'sigma2')
+bfields = ('match', 'overlap', 'sigma1', 'sigma2', 'mass1', 'mass2', 
+                  'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z',
+                  'inclination', 'latitude', 'longitude', 'polarization', 'coa_phase')
+dtypem={'names': mfields, 'formats': ('f8', 'f8', 'f8', 'f8')}
+dtypeo={'names': bfields,
+        'formats': ('f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 
+                    'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8')}
+                    
+if __name__ == "__main__":
+    fils = glob.glob("match/match*.dat")
+    tags = []
+    for fil in fils:
+        tags.append(fil.split('-')[1])
+    tags = list(set(tags))
+    btables = {}
+    for tag in tags:
+        parts = glob.glob("match/match-" + tag + "-*.dat")
+        data = zeros(0, dtype=dtypeo)   
+        for part in parts:
+            btag = part.split('-')[2].split('.')[0]
+            bname = "bank/bank" + btag + ".xml"
+            if bname not in btables:
+                indoc = utils.load_filename(bname, False)
+                btables[bname] = table.get_table(indoc, lsctables.SimInspiralTable.tableName) 
+            bt = btables[bname]      
+            md = loadtxt(part, dtype=dtypem)  
+            pdata = zeros(len(bt), dtype=dtypeo)
+            
+            for field in mfields: 
+                pdata[field] = md[field]
                 
-    outstr += "\\n"
-    
-    f.write(outstr)
+            for field in bfields:
+                if field not in mfields:
+                    pdata[field] = bt.get_column(field)
+            
+            data = append(data, pdata)
+        savetxt('result-' + tag + '.dat', data)
 """)
 os.chmod('scripts/pycbc_faithsim_collect_results', 0777)
 
