@@ -9,14 +9,14 @@ lalapps_inspiral \
 --strain-high-pass-order 8 \
 --ifo-tag lalsuite \
 --approximant FindChirpSP \
---gps-end-time 1026021620 \
+--gps-end-time 968607048 \
 --calibrated-data real_8 \
---channel-name H1:FAKE-STRAIN \
+--channel-name H1:LDAS-STRAIN \
 --snr-threshold 5.5 \
 --number-of-segments 15 \
 --trig-start-time 0  \
 --enable-high-pass 30.0 \
---gps-start-time 1026019572  \
+--gps-start-time 968605000  \
 --high-pass-attenuation 0.1 \
 --chisq-bins 16 \
 --inverse-spec-length 16 \

@@ -26,7 +26,7 @@ def lal_psd_estimate(numPoints, chan):
 pad_data = 8
 sample_rate=4096
 duration=2048
-start_time=1026019572
+start_time=968605000
 seg_len = 256*4096
 stride = 128*4096
 nsegs = 15
@@ -47,7 +47,7 @@ print "BIAS lal", lal.RngMedBias(nsegs)
 print "PYCBC psd norm", 2.0 / float(sample_rate) / (w_pycbc.squared_norm().sum()) / pycbc.psd.median_bias(nsegs)
 
 # Same strain preparation for lal and pycbc psd estimation
-strain = read_frame("LER2.lcf", "H1:FAKE-STRAIN", start_time=start_time-pad_data, duration=duration+pad_data*2)
+strain = read_frame("LER2.lcf", "H1:LDAS-STRAIN", start_time=start_time-pad_data, duration=duration+pad_data*2)
 strain = highpass(strain, frequency=30)
 strain *= pycbc.DYN_RANGE_FAC
 strain = TimeSeries(strain, delta_t=strain.delta_t, epoch=strain.start_time, dtype=float32)

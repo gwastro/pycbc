@@ -3,12 +3,12 @@ import numpy
 from pycbc.frame import read_frame
 from pycbc.types import load_timeseries
 
-lal_out_file = "H1-INSPIRAL_lalsuite_FULL_DATA-1026019572-2048.gwf"
+lal_out_file = "H1-INSPIRAL_lalsuite_FULL_DATA-968605000-2048.gwf"
 
 # Take only the first 16 seconds to use as a small comparison
-lal_raw = read_frame(lal_out_file, 'H1:FAKE-STRAIN_RAW', start_time=1026019572, duration="16")
-lal_resample = read_frame(lal_out_file, 'H1:FAKE-STRAIN_RAW_RESAMP', start_time=1026019572, duration="16")
-lal_conditioned = read_frame(lal_out_file, 'H1:FAKE-STRAIN_FILTER', start_time=1026019572, duration="16")
+lal_raw = read_frame(lal_out_file, 'H1:LDAS-STRAIN_RAW', start_time=968605000, duration="16")
+lal_resample = read_frame(lal_out_file, 'H1:LDAS-STRAIN_RAW_RESAMP', start_time=968605000, duration="16")
+lal_conditioned = read_frame(lal_out_file, 'H1:LDAS-STRAIN_FILTER', start_time=968605000, duration="16")
 
 # Take only the first 16 seconds to use as a small comparison
 start_offset = 8 # This is the offest between the output that PyCBC gives and lalapps_inspiral 

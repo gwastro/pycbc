@@ -1,6 +1,9 @@
 #set path to here
 PATH=$PWD:$PATH
 
+#get frames
+sh df.sh
+
 #run pycbc_inspiral
 sh prun.sh
 
