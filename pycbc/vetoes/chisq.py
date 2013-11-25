@@ -55,7 +55,6 @@ def power_chisq_bins_from_sigmasq_series(sigmasq_series, num_bins, kmin, kmax):
     sigmasq = sigmasq_series[kmax - 1]                 
     edge_vec = numpy.arange(0, num_bins) * sigmasq / num_bins
     bins = numpy.searchsorted(sigmasq_series[kmin:kmax], edge_vec, side='right')
-    print sigmasq, kmin, kmax, num_bins, edge_vec, bins   
     bins += kmin
     return numpy.append(bins, kmax)
 
