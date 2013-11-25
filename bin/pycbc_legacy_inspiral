@@ -224,10 +224,7 @@ seg_len = sl / sr
 
 stride = seg_len / 2
 
-if opt.approximant == 'FindChirpSP':
-    apx = 'SPAtmplt'
-else:
-    apx = opt.approximant
+apx = opt.approximant
     
 if opt.gpu_device_id:
     real_args += ['--processing-scheme', 'cuda']

@@ -29,7 +29,7 @@ from lalinspiral import FindChirpChirpTime
 from pycbc.scheme import schemed
 import numpy
 import pycbc.pnutils
-from pycbc.types import FrequencySeries, Array, complex64, float32
+from pycbc.types import FrequencySeries, Array, complex64, float32, zeros
 
 def ceilpow2(n):
     signif,exponent = frexp(n)
@@ -176,7 +176,7 @@ def spa_tmplt(**kwds):
     v0 = (piM *  kmin * delta_f) ** (1.0/3.0)
 
     if not out:
-        htilde = FrequencySeries(zeros(n,dtype=numpy.complex64), delta_f=delta_f, copy=False)
+        htilde = FrequencySeries(zeros(n, dtype=numpy.complex64), delta_f=delta_f, copy=False)
     else:
         if type(out) is not Array:
             raise TypeError("Output must be an instance of Array")

@@ -52,9 +52,10 @@ def power_chisq_bins_from_sigmasq_series(sigmasq_series, num_bins, kmin, kmax):
         A list of the edges of the chisq bins is returned. 
     
     """
-    sigmasq = sigmasq_series[kmax - 1]                        
+    sigmasq = sigmasq_series[kmax - 1]                 
     edge_vec = numpy.arange(0, num_bins) * sigmasq / num_bins
     bins = numpy.searchsorted(sigmasq_series[kmin:kmax], edge_vec, side='right')
+    print sigmasq, kmin, kmax, num_bins, edge_vec, bins   
     bins += kmin
     return numpy.append(bins, kmax)
 
@@ -86,7 +87,7 @@ def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff=None,
     sigma_vec = sigmasq_series(htilde, psd, low_frequency_cutoff, 
                                high_frequency_cutoff).numpy() 
     kmin = int(low_frequency_cutoff / htilde.delta_f)
-    kmax = len(sigma_vec)
+    kmax = len(sigma_vec) - 1
     return power_chisq_bins_from_sigmasq_series(sigma_vec, num_bins, kmin, kmax)
     
 @schemed(BACKEND_PREFIX)
@@ -289,7 +290,7 @@ class SingleDetPowerChisq(object):
                     bins = power_chisq_bins_from_sigmasq_series(bank.sigmasq_vec, self._num_bins, kmin, kmax)
                 else:  
                     logging.info("...Calculating power chisq bins")
-                    bins = power_chisq_bins(template, self._num_bins, psd, low_frequency_cutoff) 
+                    bins = power_chisq_bins(template, self._num_bins, psd, low_frequency_cutoff)
                 self._template = template
                 self._bins = bins
                 
