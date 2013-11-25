@@ -48,19 +48,29 @@ def p(a, b, an, bn):
     pylab.ylim(ymin, ymax)
     pylab.title("fraction difference %s %s" % (an, bn))
     pylab.savefig("cond-frac_diff" + an + '-' + bn + ".png")
-    
-    pylab.figure()   
-    bins=[-1e-5, -1e-6, -1e-7, -1e-8, 1e-8, 1e-8, 1e-7, 1e-6, 1e-5]   
-    pylab.hist(rdif,  bins=bins)
-    pylab.gca().set_xscale('symlog', linthreshx=1e-8)
-    pylab.title("Fractional Difference %s - %s" % (an, bn))
-    pylab.savefig("cond-hist-frac_diff" + an + '-' +  bn + ".png")
-    
+
     pylab.figure()
-    pylab.hist(a-b, bins=bins)
-    pylab.gca().set_xscale('symlog', linthreshx=1e-8)
-    pylab.title("Absolute Difference (%s - %s)" % (an, bn))
-    pylab.savefig("cond-hist-abs_diff" + an + '-' + bn + ".png")
+    absr = (a - b) / abs(max(a))
+    pylab.scatter(t, absr)
+    ymin = min( min(absr), -1 * mindif)
+    ymax = max( max(absr), 1 * mindif)
+    pylab.ylim(ymin, ymax)
+    pylab.title("absolute difference / max value %s %s" % (an, bn))
+    pylab.savefig("cond-abs_diff_over_max" + an + '-' + bn + ".png")
+    
+    
+#    pylab.figure()   
+#    bins=[-1e-5, -1e-6, -1e-7, -1e-8, 1e-8, 1e-8, 1e-7, 1e-6, 1e-5]   
+#    pylab.hist(rdif,  bins=bins)
+#    pylab.gca().set_xscale('symlog', linthreshx=1e-8)
+#    pylab.title("Fractional Difference %s - %s" % (an, bn))
+#    pylab.savefig("cond-hist-frac_diff" + an + '-' +  bn + ".png")
+    
+#    pylab.figure()
+#    pylab.hist(a-b, bins=bins)
+#    pylab.gca().set_xscale('symlog', linthreshx=1e-8)
+#    pylab.title("Absolute Difference (%s - %s)" % (an, bn))
+#    pylab.savefig("cond-hist-abs_diff" + an + '-' + bn + ".png")
 
 p(lal_raw, pycbc_raw, "lal-raw", "pycbc-raw")
 p(lal_resample, pycbc_resample, "lal-resampled", "pycbc-resampled")
