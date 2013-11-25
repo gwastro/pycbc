@@ -42,6 +42,32 @@ def threshold(series, value):
 def threshold_and_cluster(series, threshold, window):
     """Return list of values and indices values over threshold in series. 
     """ 
+    
+def fc_cluster(times, values, window_length):
+    from scipy.weave import inline
+    indices = numpy.zeros(len(times), dtype=int)
+    tlen = len(times)
+    j = 0
+    k = numpy.zeros(1, dtype=int)
+    values = abs(values)
+    times = times.astype(int)
+    code = """
+        for (int i=0; i < tlen; i++){
+            if (i == 0){
+                indices[0] = 0;
+            }
+            if ((times[i] - times[indices[j]]) > window_length){
+                j += 1;
+                indices[j] = i;
+            }
+            else if (values[i] > values[indices[j]]){
+                indices[j] = i;
+            }
+        }
+        k[0] = j;
+    """
+    inline(code, ['times', 'values', 'window_length', 'indices', 'tlen', 'j', 'k'])
+    return indices[0:k[0]+1]
 
 def findchirp_cluster_over_window(times, values, window_length):
     indices = numpy.zeros(len(times), dtype=int)
@@ -87,7 +113,41 @@ class EventManager(object):
         self.events = numpy.sort(self.events, order=tcolumn)
         cvec = self.events[column]
         tvec = self.events[tcolumn]
-        indices = findchirp_cluster_over_window(tvec, cvec, window)
+        
+        indices = []
+#        mint = tvec.min()
+#        maxt = tvec.max()
+#        edges = numpy.arange(mint, maxt, window)
+        
+#        # Get the location of each time bin 
+#        bins = numpy.searchsorted(tvec, edges)
+#        bins = numpy.append(bins, len(tvec))
+#        for i in range(len(bins)-1):
+#            kmin = bins[i]
+#            kmax = bins[i+1]
+#            if kmin == kmax:
+#                continue
+#            event_idx = numpy.argmax(cvec[kmin:kmax]) + kmin
+#            indices.append(event_idx)
+
+        # This algorithm is confusing, but it is what lalapps_inspiral does
+        # REMOVE ME!!!!!!!!!!!
+        gps = tvec.astype(numpy.float64) / self.opt.sample_rate + self.opt.gps_start_time
+        gps_sec  = numpy.floor(gps)
+        gps_nsec = (gps - gps_sec) * 1e9
+        
+        wnsec = int(window * 1e9 / self.opt.sample_rate)
+        win = gps_nsec.astype(int) / wnsec
+
+        print gps_sec, win
+        indices.append(0)
+        for i in range(len(tvec)):
+            if gps_sec[i] == gps_sec[indices[-1]] and  win[i] == win[indices[-1]]:
+                    if abs(cvec[i]) > abs(cvec[indices[-1]]):
+                        indices[-1] = i
+            else:
+                indices.append(i)
+
         self.events = numpy.take(self.events, indices)         
         
     def add_template_events(self, columns, vectors):
@@ -109,6 +169,7 @@ class EventManager(object):
         cvec = self.template_events[column]
         tvec = self.template_events[tcolumn]
         indices = findchirp_cluster_over_window(tvec, cvec, window_size)
+        #indices = fc_cluster(tvec, cvec, window_size)
         self.template_events = numpy.take(self.template_events, indices)       
         
     def new_template(self, **kwds):
