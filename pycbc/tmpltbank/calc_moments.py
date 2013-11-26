@@ -292,7 +292,7 @@ def get_moments(psd, f0, f_low, f_high, deltaF, vary_fmax=False,\
                           vary_fmax=vary_fmax, vary_density=vary_density)
 
     # Do all the J moments
-    moments = {}
+    moments = {'f0': f0} # Store f0 with the moments
     for i in range(-1,18):
         funct = lambda x: x**((-i+7)/3.)
         moments['J%d' %(i)] = calculate_moment(new_f, new_amp, f_low, f_high, \

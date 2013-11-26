@@ -81,14 +81,12 @@ def convert_to_sngl_inspiral_table(params, proc_id):
 
     return sngl_inspiral_table
 
-def calculate_ethinca_metric_comps(temp_params, moments, f0):
+def calculate_ethinca_metric_comps(temp_params, moments, twicePNorder):
     """
     Calculate the Gamma components that are needed to do an ethinca metric.
-    Note that while the rest of the bank can use 3.5PN or R2F4, this will only
-    use 2PN F2 metric (feel free to update this!) The reason for this is that
-    it might be better to use the \chi coordinates for metric distance instead
-    of \tau_0 and \tau_3.
-    NOTE: Large parts of this are stolen shamelessly from lalinspiral
+    Note that this only does the standard TaylorF2 metric (feel free to update
+    this!) The reason for this is that it might be better to use the \chi
+    coordinates for metric distance instead of \tau_0 and \tau_3.
 
     Parameters
     -----------
@@ -97,9 +95,9 @@ def calculate_ethinca_metric_comps(temp_params, moments, f0):
     moments : dictionary
         This dictionary contains all the moments at various cutoff frequencies.
         See the get_moments function for information on this.
-    f0 : float # FIX: The moments should just store f0
-        The fiducial frequency used to scale the metric calculations. The value
-        is irrelevant, but must stay the same.
+    twicePNorder : int
+        Twice the pN order desired for ethinca calculation.
+        4 = 2 pN, 7 = 3.5 pN
 
     Returns
     --------
@@ -108,14 +106,15 @@ def calculate_ethinca_metric_comps(temp_params, moments, f0):
         in the sngl_inspiral table.
     """
     # Get \tau_0 - \tau_3 coordinates of template
+    f0 = moments['f0']
     piFl = LAL_PI * f0
     totalMass = (temp_params[0] + temp_params[1])
     eta = temp_params[0]*temp_params[1] / (totalMass*totalMass)
     totalMass = totalMass * LAL_MTSUN_SI
-    tau0 = 5.0/(256.0*eta*(totalMass**(5./3.))*(piFl**(8./3.)))
-    tau3 = LAL_PI/(8.0*eta*(totalMass**(2./3.))*(piFl**(5./3.)))
-    t1 = LAL_TWOPI * f0 * tau0
-    t2 = LAL_TWOPI * f0 * tau3
+    # tau0 = 5.0/(256.0*eta*(totalMass**(5./3.))*(piFl**(8./3.)))
+    # tau3 = LAL_PI/(8.0*eta*(totalMass**(2./3.))*(piFl**(5./3.)))
+    # t1 = LAL_TWOPI * f0 * tau0
+    # t2 = LAL_TWOPI * f0 * tau3
     v0cube = totalMass*piFl
     v0 = v0cube**(1./3.)
 
@@ -167,8 +166,7 @@ def calculate_ethinca_metric_comps(temp_params, moments, f0):
   
     # Calculate the g matrix
     PNterms = [(0,0),(2,0),(3,0),(4,0),(5,1),(6,0),(6,1),(7,0)]
-    PNorder = 4
-    PNterms = [term for term in PNterms if term[0] <= PNorder]
+    PNterms = [term for term in PNterms if term[0] <= twicePNorder]
     two_pi_flower_sq = LAL_TWOPI * f0 * LAL_TWOPI * f0
 
     # Now can compute the gamma values
@@ -242,7 +240,7 @@ def output_sngl_inspiral_table(outputFile, tempBank, moments, f0,\
         for sngl in sngl_inspiral_table:
             temp_params = (sngl.mass1, sngl.mass2)
             GammaVals = calculate_ethinca_metric_comps(\
-                        temp_params, moments, f0)
+                        temp_params, moments, twicePNorder=4)
             sngl.Gamma0 = GammaVals[0]
             sngl.Gamma1 = GammaVals[1]
             sngl.Gamma2 = GammaVals[2]
