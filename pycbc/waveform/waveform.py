@@ -29,7 +29,7 @@ import sys
 import lal
 import lalsimulation
 from pycbc.types import TimeSeries,FrequencySeries,zeros,Array,complex_same_precision_as
-from pycbc.types import complex64, float32
+from pycbc.types import complex64, float32, complex128
 from pycbc import HAVE_CUDA,HAVE_OPENCL
 from pycbc.scheme import mgr
 from pycbc.types import real_same_precision_as
@@ -60,6 +60,48 @@ fd_required_args = base_required_args + ['delta_f']
 _lalsim_td_approximants = {}
 _lalsim_fd_approximants = {}
 _lalsim_enum = {}
+
+def _imrphenombfreq(**p):
+    import lal, lalinspiral, lalsimulation
+    from pycbc import pnutils
+    params = lalinspiral.InspiralTemplate()
+    m1 = p['mass1']
+    m2 = p['mass2']
+    
+    mc, et = pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
+    params.approximant = lalsimulation.IMRPhenomB
+    params.fLower = p['f_lower']
+    params.eta = et
+    params.distance = p['distance'] * lal.LAL_PC_SI * 1e6
+    params.mass1 = m1
+    params.mass2 = m2
+    params.spin1[2] = p['spin1z']
+    params.spin2[2] = p['spin2z']
+    params.startPhase = p['coa_phase']*2 - 3.141592653
+    params.startTime = 0
+    
+    params.tSampling = 8192
+    N = int(params.tSampling / p['delta_f'])
+    n = N / 2
+    
+    # Create temporary memory to hold the results and call the generator
+    hpt = zeros(N, dtype=float32)
+    hct = zeros(N, dtype=float32)    
+    hpt=hpt.lal()
+    hct=hct.lal()    
+    lalinspiral.BBHPhenWaveBFreqDomTemplates(hpt, hct, params)
+    
+    # Copy the results to a complex frequencyseries format 
+    hctc = FrequencySeries(zeros(n, dtype=complex64), delta_f=p['delta_f'])
+    hptc = FrequencySeries(zeros(n, dtype=complex64), delta_f=p['delta_f'])
+       
+    hptc.data += hpt.data[0:n]
+    hptc.data[1:n] += hpt.data[N:N-n:-1] * 1j
+    
+    hctc.data += hct.data[0:n]
+    hctc.data[1:n] += hct.data[N:N-n:-1] * 1j
+    
+    return hptc.astype(complex128),  hctc.astype(complex128)
 
 def _get_waveform_from_inspiral(**p):
     def get_string_from_order(order):
@@ -209,12 +251,14 @@ for approx_enum in xrange(0,lalsimulation.NumApproximants):
 
 #Add lalinspiral approximants
 insp_td = {}
-for apx in ['IMRPhenomB', 'EOB', 'EOBNR']:
+for apx in ['EOB', 'EOBNR']:
     name = 'Inspiral-' + apx
     insp_td[name] = _get_waveform_from_inspiral
 
+
 cpu_td = dict(_lalsim_td_approximants.items() + insp_td.items())
 cpu_fd = _lalsim_fd_approximants
+cpu_fd['Inspiral-IMRPhenomB'] = _imrphenombfreq
 
 # Waveforms written in CUDA
 _cuda_td_approximants = {}
