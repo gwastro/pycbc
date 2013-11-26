@@ -370,7 +370,8 @@ for i in range(int((chi1Max - chi1Min) // MMdist)):
 
 # Output to file
 pycbc.tmpltbank.output_sngl_inspiral_table(opts.output_file, tempBank, moments,\
-         opts.f0,calculate_ethinca_comps=opts.calculate_ethinca_metric,\
+         opts.f0, opts.pn_order,\
+         calculate_ethinca_comps=opts.calculate_ethinca_metric,\
          programName=__program__,optDict=opts.__dict__,\
          comment="", ifos=[""], version=pycbc.version.git_hash,\
          cvs_repository='pycbc/'+pycbc.version.git_branch,\

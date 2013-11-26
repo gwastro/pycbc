@@ -121,6 +121,40 @@ def generate_inverse_mapping(order):
 
     return inv_mapping
 
+def get_ethinca_order_from_string(order):
+    """
+    This function will return the integer corresponding to twice the Post-
+    Newtonian order that the ethinca calculation should be calculated up to.
+    Currently is only valid for TaylorF2 metric.
+    
+    Effectively this returns for given values of order:
+
+    'zeroPN' -> Return 0
+    'onePN' -> Return 2
+    'onePointFivePN' -> Return 3
+    'twoPN' -> Return 4
+    'twoPointFivePN' -> Return 5
+    'threePN' -> Return 6
+    'threePointFivePN' -> Return 7
+    Anythign else -> raise ValueError
+    """
+    if order=='zeroPN':
+        return 0
+    elif order == 'onePN':
+        return 2
+    elif order == 'onePointFivePN':
+        return 3
+    elif order == 'twoPN':
+        return 4
+    elif order == 'twoPointFivePN':
+        return 5
+    elif order == 'threePN':
+        return 6
+    elif order == 'threePointFivePN':
+        return 7
+    else:
+        msg = "Order %s not valid for ethinca calculation." %(order)
+        raise ValueError(order)
 
 def get_chirp_params(totmass, eta, beta, sigma, gamma, chis, f0, order):
     """

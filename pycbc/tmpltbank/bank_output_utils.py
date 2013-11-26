@@ -7,6 +7,7 @@ from glue.ligolw import lsctables
 from glue.ligolw import ilwd
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
+from pycbc.tmpltbank.lambda_mapping import *
 
 def return_empty_sngl():
     """
@@ -81,7 +82,7 @@ def convert_to_sngl_inspiral_table(params, proc_id):
 
     return sngl_inspiral_table
 
-def calculate_ethinca_metric_comps(temp_params, moments, twicePNorder):
+def calculate_ethinca_metric_comps(temp_params, moments, pnOrder):
     """
     Calculate the Gamma components that are needed to do an ethinca metric.
     Note that this only does the standard TaylorF2 metric (feel free to update
@@ -105,6 +106,9 @@ def calculate_ethinca_metric_comps(temp_params, moments, twicePNorder):
         A numpy array holding the 6 values to go into the various Gamma entries
         in the sngl_inspiral table.
     """
+    # Get twicePNOrder
+    twicePNOrder = get_ethinca_order_from_string(pnOrder)
+
     # Get \tau_0 - \tau_3 coordinates of template
     f0 = moments['f0']
     piFl = LAL_PI * f0
@@ -166,7 +170,7 @@ def calculate_ethinca_metric_comps(temp_params, moments, twicePNorder):
   
     # Calculate the g matrix
     PNterms = [(0,0),(2,0),(3,0),(4,0),(5,1),(6,0),(6,1),(7,0)]
-    PNterms = [term for term in PNterms if term[0] <= twicePNorder]
+    PNterms = [term for term in PNterms if term[0] <= twicePNOrder]
     two_pi_flower_sq = LAL_TWOPI * f0 * LAL_TWOPI * f0
 
     # Now can compute the gamma values
@@ -197,7 +201,7 @@ def calculate_ethinca_metric_comps(temp_params, moments, twicePNorder):
     return gammaVals
 
 def output_sngl_inspiral_table(outputFile, tempBank, moments, f0,\
-                               calculate_ethinca_comps=False,
+                               pnOrder, calculate_ethinca_comps=False,
                                programName="", optDict = {}, **kwargs):
     """
     Function that converts the information produced by the various pyCBC bank
@@ -240,7 +244,7 @@ def output_sngl_inspiral_table(outputFile, tempBank, moments, f0,\
         for sngl in sngl_inspiral_table:
             temp_params = (sngl.mass1, sngl.mass2)
             GammaVals = calculate_ethinca_metric_comps(\
-                        temp_params, moments, twicePNorder=4)
+                        temp_params, moments, pnOrder)
             sngl.Gamma0 = GammaVals[0]
             sngl.Gamma1 = GammaVals[1]
             sngl.Gamma2 = GammaVals[2]
