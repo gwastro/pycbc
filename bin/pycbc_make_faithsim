@@ -76,6 +76,7 @@ mkdir('scripts')
 mkdir('match')
 mkdir('bank')
 mkdir('log')
+mkdir('plot')
 
 print "Copying scripts"
 shutil.copy(banksim_prog, 'scripts/pycbc_faithsim')
@@ -148,8 +149,11 @@ if __name__ == "__main__":
             if bname not in btables:
                 indoc = utils.load_filename(bname, False)
                 btables[bname] = table.get_table(indoc, lsctables.SimInspiralTable.tableName) 
-            bt = btables[bname]      
-            md = loadtxt(part, dtype=dtypem)  
+            bt = btables[bname]
+            try:      
+                md = loadtxt(part, dtype=dtypem)  
+            except IOError:
+                continue
             pdata = zeros(len(bt), dtype=dtypeo)
             
             for field in mfields: 
