@@ -161,6 +161,72 @@ def verify_metric_calculation_options(opts, parser):
         pass
 
 
+class metricParameters:
+    """
+    This class holds all of the options that are parsed in the function
+    insert_metric_calculation_options
+    and all products produced using these options. It can also be initialized
+    from the __init__ function providing directly the options normally
+    provided on the command line
+    """
+    def __init__(self, pnOrder, fLow, fUpper, deltaF, f0=70):
+        """
+        Initialize an instance of the metricParameters by providing all
+        options directly. See the help message associated with any code
+        that uses the metric options for more details of how to set each of
+        these. For e.g. pycbc_aligned_stoch_bank --help
+        """
+        self.pnOrder=pnOrder
+        self.fLow=fLow
+        self.fUpper=fUpper
+        self.deltaF=deltaF
+        self.f0=f0
+        self._moments=None
+
+    @classmethod
+    def from_optparse(cls, opts):
+        """
+        Initialize an instance of the metricParameters class from an
+        optparse.OptionParser instance. This assumes that
+        insert_metric_calculation_options
+        and
+        verify_metric_calculation_options
+        have already been called before initializing the class.
+        """
+        return cls(opts.pn_order, opts.f_low, opts.f_upper, opts.delta_f,\
+                   f0=opts.f0)
+
+    @property
+    def psd(self):
+        """
+        Return the PSD used in the metric calculation.
+        """
+        return self._psd
+
+    @psd.setter
+    def psd(self, inPsd):
+        """
+        Use this to set the PSD to the inputted psd
+
+        Parameters
+        -----------
+        psd : pyCBC.FrequencySeries
+            A pyCBC FrequencySeries holding the appropriate PSD.
+        """a
+        self._psd = inPsd
+
+    @property
+    def moments(self):
+        """
+        Return the moments structure 
+        """
+        return self._moments
+  
+    @moments.setter
+    def moments(self, inMoments):
+        self._moments=inMoments
+
+
 def insert_mass_range_option_group(parser,nonSpin=False):
     """
     Adds the options used to specify mass ranges in the bank generation codes
@@ -284,6 +350,57 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
         else:
             opts.max_bh_spin_mag = opts.max_ns_spin_mag
 
+class massRangeParameters(object):
+    """
+    This class holds all of the options that are parsed in the function
+    insert_mass_range_option_group
+    and all products produced using these options. It can also be initialized
+    from the __init__ function providing directly the options normally
+    provided on the command line
+    """
+    def __init__(self, minMass1, maxMass1, minMass2, maxMass2,
+                 maxNSSpinMag=0, maxBHSpinMag=0, maxTotMass=None,
+                 minTotMass=None, maxEta=None, minEta=None, nsbhFlag=False):
+        """
+        Initialize an instance of the massRangeParameters by providing all
+        options directly. See the help message associated with any code
+        that uses the metric options for more details of how to set each of
+        these. For e.g. pycbc_aligned_stoch_bank --help
+        """
+        self.minMass1=minMass1
+        self.maxMass1=maxMass1
+        self.minMass2=minMass2
+        self.maxMass2=maxMass2
+        self.maxNSSpinMag=maxNSSpinMag
+        self.maxBHSpinMag=maxBHSpinMag
+        self.maxTotMass=maxTotMass
+        self.minTotMass=minTotMass
+        self.maxEta=maxEta
+        self.minEta=minEta
+        self.nsbhFlag=nsbhFlag
+
+    @classmethod
+    def from_optparse(cls, opts, nonSpin=False):
+        """
+        Initialize an instance of the massRangeParameters class from an
+        optparse.OptionParser instance. This assumes that
+        insert_mass_range_option_group
+        and
+        verify_mass_range_options
+        have already been called before initializing the class.
+        """
+        if nonSpin:
+            return cls(opts.min_mass1, opts.max_mass1, opts.min_mass2,\
+                       opts.max_mass2, maxTotMass=opts.max_total_mass,\
+                       minTotMass=opts.min_total_mass, maxEta=opts.max_eta,\
+                       minEta=opts.min_eta)
+        else:
+            return cls(opts.min_mass1, opts.max_mass1, opts.min_mass2,\
+                       opts.max_mass2, maxTotMass=opts.max_total_mass,\
+                       minTotMass=opts.min_total_mass, maxEta=opts.max_eta,\
+                       minEta=opts.min_eta, maxNSSpinMag=opts.max_ns_spin_mag,\
+                       maxBHSpinMag=opts.max_bh_spin_mag, \
+                       nsbhFlag=opts.nsbh_flag)
 
 def insert_ethinca_calculation_option_group(parser):
     """

@@ -57,8 +57,8 @@ def which(program):
 
     return None
 
-def determine_eigen_directions(psd, order, f0, f_low, f_upper, deltaF, \
-                               moments=None, vary_fmax=False, vary_density=25):
+def determine_eigen_directions(metricParams, preserveMoments=False,\
+                               vary_fmax=False, vary_density=25):
     """
     This function will calculate the coordinate transfomations that are needed
     to rotate from a coordinate system described by the various Lambda
@@ -67,37 +67,14 @@ def determine_eigen_directions(psd, order, f0, f_low, f_upper, deltaF, \
 
     Parameters
     -----------
-    psd : pyCBC.FrequencySeries
-        A pyCBC FrequencySeries holding the appropriate PSD. The value of
-        deltaF here will be used when computing the integrals needed to obtain
-        the metric.
-    order : string
-        This dictates what terms are used determine the frequency evolution of
-        the system. See pycbc.tmpltbank.get_order_mapping and
-        pycbc.tmpltbank.????? for more information on the valid choices here
-    f0 : float
-        This is an arbitrary scaling factor introduced to avoid the potential
-        for numerical overflow when calculating this. Generally the default
-        value (70) is safe here. **IMPORTANT, if you want to calculate the
-        ethinca metric components later this MUST be set equal to f_low.**
-    f_low : float
-        The lower frequency cutoff used in the calculation of the integrals
-        used to obtain the metric.
-    f_upper : float
-        The upper frequency cutoff used in the calculation of the integrals
-        used to obtain the metric. This can be varied (see the vary_fmax
-        option below).
-    deltaF : float
-        The deltaF to use when computing the integrals. If this does not
-        correspond to the values in the psd array then it will be obtained with
-        linear interpolation.
-    moments : Moments structure, optional (default False)
+    metricParams : metricParameters instance
+        Structure holding all the options for construction of the metric.
+    preserveMoments : boolean, optional (default False)
         Currently only used for debugging.
-        If this is given (see pycbc.tmpltbank.get_moments for info of how to
-        obtain this structure) then this structure will not be calculated
-        within this function. NOTE: If this is used then the options psd, f0,
-        f_low, f_upper, delta_f, vary_fmax and vary_density must correspond to
-        the values used when generating this structure.
+        If this is given then if the moments structure is already set
+        within metricParams then they will not be recalculated.
+        obtain this structure) then the structure will not be calculated
+        within this function. 
     vary_fmax : boolean, optional (default False)
         If set to False the metric and rotations are calculate once, for the
         full range of frequencies [f_low,f_upper).
@@ -112,7 +89,11 @@ def determine_eigen_directions(psd, order, f0, f_low, f_upper, deltaF, \
 
     Returns
     --------
-    evals : Dictionary of numpy.array
+    metricParams : metricParameters instance
+        Structure holding all the options for construction of the metric.
+        **THIS FUNCTION ONLY RETURNS THE CLASS**
+        The following will be **added** to this structure
+    metricParams.evals : Dictionary of numpy.array
         Each entry in the dictionary corresponds to the different frequency
         ranges described in vary_fmax. If vary_fmax = False, the only entry
         will be f_upper, this corresponds to integrals in [f_low,f_upper). This
@@ -122,16 +103,16 @@ def determine_eigen_directions(psd, order, f0, f_low, f_upper, deltaF, \
         Each numpy.array contains the eigenvalues which, with the eigenvectors
         in evecs, are needed to rotate the
         coordinate system to one in which the metric is the identity matrix. 
-    evecs : Dictionary of numpy.matrix
+    metricParams.evecs : Dictionary of numpy.matrix
         Each entry in the dictionary is as described under evals.
         Each numpy.matrix contains the eigenvectors which, with the eigenvalues
         in evals, are needed to rotate the
         coordinate system to one in which the metric is the identity matrix.
-    metric : Dictionary of numpy.matrix
+    metricParams.metric : Dictionary of numpy.matrix
         Each entry in the dictionary is as described under evals.
         Each numpy.matrix contains the metric of the parameter space in the
         Lambda_i coordinate system.
-    moments : Moments structure
+    metricParams.moments : Moments structure
         See pycbc.tmpltbank.get_moments for a description of this. This
         contains the result of all the integrals used in computing the metrics
         above. It can be used for the ethinca components calculation, or other
@@ -143,13 +124,15 @@ def determine_eigen_directions(psd, order, f0, f_low, f_upper, deltaF, \
     metric = {}
   
     # First step is to get the moments needed to calculate the metric
-    if not moments:
-        moments = get_moments(psd, f0, f_low, f_upper, deltaF, \
+    if not (self.moments and preserveMoments):
+        get_moments(psd, f0, f_low, f_upper, deltaF, \
                               vary_fmax=vary_fmax, vary_density=vary_density)
 
     # What values are going to be in the moments
     # J7 is the normalization factor so it *MUST* be present
-    list = moments['J7'].keys()
+    list = metricParams.moments['J7'].keys()
+
+    #FIXME: GOT TO HERE!!!!
 
     # We start looping over every item in the list of metrics
     for item in list:
@@ -199,8 +182,7 @@ def determine_eigen_directions(psd, order, f0, f_low, f_upper, deltaF, \
 
     return evals,evecs,gs,moments
 
-def get_moments(psd, f0, f_low, f_high, deltaF, vary_fmax=False,\
-                vary_density=25):
+def get_moments(metricParams, vary_fmax=False, vary_density=25):
     """
     This function will calculate the various integrals (moments) that are
     needed to compute the metric used in template bank placement and
@@ -208,26 +190,8 @@ def get_moments(psd, f0, f_low, f_high, deltaF, vary_fmax=False,\
 
     Parameters
     -----------
-    psd : pyCBC.FrequencySeries
-        A pyCBC FrequencySeries holding the appropriate PSD. The value of
-        deltaF here will be used when computing the integrals needed to obtain
-        the metric.
-    f0 : float
-        This is an arbitrary scaling factor introduced to avoid the potential
-        for numerical overflow when calculating this. Generally the default
-        value (70) is safe here. **IMPORTANT, if you want to calculate the
-        ethinca metric components later this MUST be set equal to f_low.**
-    f_low : float
-        The lower frequency cutoff used in the calculation of the integrals
-        used to obtain the metric.
-    f_high : float
-        The upper frequency cutoff used in the calculation of the integrals
-        used to obtain the metric. This can be varied (see the vary_fmax
-        option below).
-    deltaF : float
-        The deltaF to use when computing the integrals. If this does not
-        correspond to the values in the psd array then it will be obtained with
-        linear interpolation.
+    metricParams : metricParameters instance
+        Structure holding all the options for construction of the metric.
     vary_fmax : boolean, optional (default False)
         If set to False the metric and rotations are calculate once, for the
         full range of frequencies [f_low,f_upper).
@@ -242,7 +206,10 @@ def get_moments(psd, f0, f_low, f_high, deltaF, vary_fmax=False,\
 
     Returns
     --------
-    moments : Moments structure
+    None : None
+        **THIS FUNCTION RETURNS NOTHING**
+        The following will be **added** to the metricParams structure
+    metricParams.moments : Moments structure
         This contains the result of all the integrals used in computing the
         metrics above. It can be used for the ethinca components calculation,
         or other similar calculations. This is composed of two compound
@@ -282,52 +249,57 @@ def get_moments(psd, f0, f_low, f_high, deltaF, vary_fmax=False,\
     # not needed. As this calculation is not too slow compared to bank
     # placement we just do this anyway.
 
-    psd_amp = psd.data
-    psd_f = numpy.arange(len(psd_amp),dtype=float) * deltaF 
-    new_f,new_amp = interpolate_psd(psd_f,psd_amp,deltaF)
+    psd_amp = metricParams.psd.data
+    psd_f = numpy.arange(len(psd_amp), dtype=float) * metricParams.deltaF 
+    new_f, new_amp = interpolate_psd(psd_f, psd_amp, metricParams.deltaF)
 
     # Need I7 first as this is the normalization factor
     funct = lambda x: 1
-    I7 = calculate_moment(new_f, new_amp, f_low, f_high, f0, funct,\
+    I7 = calculate_moment(new_f, new_amp, metricParams.f_low, \
+                          metricParams.f_high, metricParams.f0, funct,\
                           vary_fmax=vary_fmax, vary_density=vary_density)
 
     # Do all the J moments
-    moments = {'f0': f0} # Store f0 with the moments
     for i in range(-1,18):
         funct = lambda x: x**((-i+7)/3.)
-        moments['J%d' %(i)] = calculate_moment(new_f, new_amp, f_low, f_high, \
-                                f0, funct, norm=I7, vary_fmax=vary_fmax, \
-                                vary_density=vary_density)
+        moments['J%d' %(i)] = calculate_moment(new_f, new_amp, \
+                                metricParams.f_low, metricParams.f_high, \
+                                metricParams.f0, funct, norm=I7, \
+                                vary_fmax=vary_fmax, vary_density=vary_density)
 
     # Do the logx multiplied by some power terms
     for i in range(-1,18):
         funct = lambda x: (numpy.log(x**(1./3.))) * x**((-i+7)/3.)
-        moments['log%d' %(i)] = calculate_moment(new_f, new_amp, f_low, \
-                                f_high, f0, funct, norm=I7, \
+        moments['log%d' %(i)] = calculate_moment(new_f, new_amp, \
+                                metricParams.f_low, metricParams.f_high, \
+                                metricParams.f0, funct, norm=I7, \
                                 vary_fmax=vary_fmax, vary_density=vary_density)
 
     # Do the loglog term
     for i in range(-1,18):
         funct = lambda x: (numpy.log(x**(1./3.)))**2 * x**((-i+7)/3.)
-        moments['loglog%d' %(i)] = calculate_moment(new_f, new_amp, f_low, \
-                                f_high, f0, funct, norm=I7, \
+        moments['loglog%d' %(i)] = calculate_moment(new_f, new_amp, \
+                                metricParams.f_low, metricParams.f_high, \
+                                metricParams.f0, funct, norm=I7, \
                                 vary_fmax=vary_fmax, vary_density=vary_density)
 
     # Do the logloglog term
     for i in range(-1,18):
         funct = lambda x: (numpy.log(x**(1./3.)))**3 * x**((-i+7)/3.)
-        moments['logloglog%d' %(i)] = calculate_moment(new_f, new_amp, f_low, \
-                                f_high, f0, funct, norm=I7, \
+        moments['logloglog%d' %(i)] = calculate_moment(new_f, new_amp, \
+                                metricParams.f_low, metricParams.f_high, \
+                                metricParams.f0, funct, norm=I7, \
                                 vary_fmax=vary_fmax, vary_density=vary_density)
 
     # Do the logloglog term
     for i in range(-1,18):
         funct = lambda x: (numpy.log(x**(1./3.)))**4 * x**((-i+7)/3.)
         moments['loglogloglog%d' %(i)] = calculate_moment(new_f, new_amp, \
-                                f_low, f_high, f0, funct, norm=I7, \
+                                metricParams.f_low, metricParams.f_high, \
+                                metricParams.f0, funct, norm=I7, \
                                 vary_fmax=vary_fmax, vary_density=vary_density)
 
-    return moments
+    metricParams.moments = moments
 
 def interpolate_psd(psd_f, psd_amp, deltaF):
     """
