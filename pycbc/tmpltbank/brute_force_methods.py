@@ -4,10 +4,9 @@ import numpy
 from pycbc.tmpltbank.coord_utils import get_cov_params
 from pycbc.tmpltbank.lambda_mapping import get_beta_sigma_from_aligned_spins
 
-def get_physical_covaried_masses(xis, bestMasses, bestXis, f0, \
-      req_match, order, evecs, evals, evecsCV, maxmass1, minmass1, maxmass2, \
-      minmass2, maxNSspin, maxBHspin, maxTotalMass=None, minTotalMass=None, \
-      maxEta=None, minEta=None, nsbh_flag=False, giveUpThresh = 5000):
+def get_physical_covaried_masses(xis, bestMasses, bestXis, req_match, \
+                                 massRangeParams, metricParams, fUpper, \
+                                 giveUpThresh = 5000):
     """
     This function takes the position of a point in the xi parameter space and
     iteratively finds a close point in the physical coordinate space (masses
@@ -25,60 +24,23 @@ def get_physical_covaried_masses(xis, bestMasses, bestXis, f0, \
         This is aimed to give the code a starting point.
     bestXis : list
         Contains the position of bestMasses in the xi coordinate system.
-    f0 : float
-        This is an arbitrary scaling factor introduced to avoid the potential
-        for numerical overflow when calculating this. Generally the default
-        value (70) is safe here. **IMPORTANT, if you want to calculate the
-        ethinca metric components later this MUST be set equal to f_low.**
-        This value must also be used consistently (ie. don't change its value
-        when calling different functions!).
     req_match : float
         Desired maximum mismatch between xis and the obtained point. If a point
         is found with mismatch < req_match immediately stop and return that
         point. A point with this mismatch will not always be found.
-    order : string
-        The Post-Newtonian order that is used to translate from masses and
-        spins to the lambda_i coordinate system.
-    evecs : numpy.matrix
-        Matrix of the eigenvectors of the metric in lambda_i coordinates. Used
-        to rotate to a Cartesian coordinate system (the mu system).
-    evals : numpy.array
-        Array of the eigenvalues of the metric in lambda_i coordinates. Used
-        to rotate to a Cartesian coordinate system (mus).
-    evecsCV : numpy.matrix
-        This matrix is used to perform the rotation to the xi_i
-        coordinate system from the mu coordinate system.
-    maxmass1 : float
-        Maximum allowed mass of the first body.
-    minmass1 : float
-        Minimum allowed mass of the first body.
-    maxmass2 : float
-        Maximum allowed mass of the second body.
-    minmass2 : float
-        Minimum allowed mass of the second body.
-    maxNSspin : float
-        Maximum spin allowed on "neutron stars" (Mass < 3 solar masses).
-    maxBHspin : float
-        Maximum spin allowed on "black holes" (Mass > 3 solar masses).
-    maxTotalMass : float, optional (default = None)
-        If given points will not be chosen with total mass greater than this.
-    minTotalMass : float, optional (default = None)
-        If given points will not be chosen with total mass less than this
-    maxEta : float, optional (default = None)
-        If given points will not be chosen with symmetric mass ratio greater
-        than this.
-    minEta : float, optional (default = None)
-        If given points will not be chosen with symmetric mass ratio smaller
-        than this.
-    nsbh_flag : boolean, optional (default = False)
-        If given, this indicates that a NSBH parameter space is being used.
-        The reason for this is that otherwise we end up with the parameter
-        space being full of X>3,3 systems, where the "neutron star", which
-        has a mass at the limit of the parameter space has spin dictated by
-        the maximum black hole spin. In this case, the first mass will have
-        spin up to the maxBHspin *only* if its mass is > 2.9. The second mass
-        will have spin up to the maxNSspin *only* if its mass is < 3.1. All
-        other cases will result in *both* spins being set to 0.
+    massRangeParams : massRangeParameters instance
+        Instance holding all the details of mass ranges and spin ranges.
+    metricParams : metricParameters instance
+        Structure holding all the options for construction of the metric
+        and the eigenvalues, eigenvectors and covariance matrix
+        needed to manipulate the space.
+    fUpper : float
+        The value of fUpper that was used when obtaining the xi_i
+        coordinates. This lets us know how to rotate potential physical points
+        into the correct xi_i space. This must be a key in metricParams.evals,
+        metricParams.evecs and metricParams.evecsCV
+        (ie. we must know how to do the transformation for
+        the given value of fUpper)
     giveUpThresh : int, optional (default = 5000)
         The program will try this many iterations. If no close matching point
         has been found after this it will give up.
@@ -120,11 +82,7 @@ def get_physical_covaried_masses(xis, bestMasses, bestXis, f0, \
         chirpmass, totmass, eta, spin1z, spin2z, diff, mass1, mass2, beta, \
               sigma, gamma, chis, new_xis = get_mass_distribution(\
                     [bestChirpmass,bestMasses[1],bestMasses[2],bestMasses[3]],\
-                    scaleFactor, order, evecs, evals, evecsCV,\
-                    maxmass1, minmass1, maxmass2, minmass2, maxNSspin,\
-                    maxBHspin, f0, maxTotalMass=maxTotalMass, \
-                    minTotalMass=minTotalMass, maxEta=maxEta, minEta=minEta, \
-                    nsbh_flag=nsbh_flag)
+                    scaleFactor, massRangeParams, metricParams, fUpper)
         cDist = (new_xis[0] - xis[0])**2
         for j in range(1,xi_size):
             cDist += (new_xis[j] - xis[j])**2
@@ -161,11 +119,8 @@ def get_physical_covaried_masses(xis, bestMasses, bestXis, f0, \
     # Shouldn't be here!
     raise BrokenError
 
-def get_mass_distribution(bestMasses, scaleFactor, order, evecs, evals, \
-                          evecsCV, maxmass1, minmass1, maxmass2, minmass2, \
-                          maxNSspin, maxBHspin, f0, nsbh_flag=False,\
-                          maxTotalMass=None, minTotalMass=None, \
-                          maxEta=None, minEta=None, \
+def get_mass_distribution(bestMasses, scaleFactor, massRangeParams, \
+                          metricParams, fUpper, \
                           numJumpPoints=100, chirpMassJumpFac=0.0001, \
                           etaJumpFac=0.01, spin1zJumpFac=0.01, \
                           spin2zJumpFac=0.01):
@@ -181,56 +136,19 @@ def get_mass_distribution(bestMasses, scaleFactor, order, evecs, evals, \
     scaleFactor : float
         This parameter describes the radius away from bestMasses that points
         will be placed in.
-    order : string
-        The Post-Newtonian order that is used to translate from masses and
-        spins to the lambda_i coordinate system.
-    evals : numpy.array
-        Array of the eigenvalues of the metric in lambda_i coordinates. Used
-        to rotate to a Cartesian coordinate system (mus).
-    evecs : numpy.matrix
-        Matrix of the eigenvectors of the metric in lambda_i coordinates. Used
-        to rotate to a Cartesian coordinate system (the mu system).
-    evecsCV : numpy.matrix
-        This matrix is used to perform the rotation to the xi_i
-        coordinate system from the mu coordinate system.
-    maxmass1 : float
-        Maximum allowed mass of the first body.
-    minmass1 : float
-        Minimum allowed mass of the first body.
-    maxmass2 : float
-        Maximum allowed mass of the second body.
-    minmass2 : float
-        Minimum allowed mass of the second body.
-    maxNSspin : float
-        Maximum spin allowed on "neutron stars" (Mass < 3 solar masses).
-    maxBHspin : float
-        Maximum spin allowed on "black holes" (Mass > 3 solar masses).
-    f0 : float
-        This is an arbitrary scaling factor introduced to avoid the potential
-        for numerical overflow when calculating this. Generally the default
-        value (70) is safe here. **IMPORTANT, if you want to calculate the
-        ethinca metric components later this MUST be set equal to f_low.**
-        This value must also be used consistently (ie. don't change its value
-        when calling different functions!).
-    nsbh_flag : boolean, optional (default = False)
-        If given, this indicates that a NSBH parameter space is being used.
-        The reason for this is that otherwise we end up with the parameter
-        space being full of X>3,3 systems, where the "neutron star", which
-        has a mass at the limit of the parameter space has spin dictated by
-        the maximum black hole spin. In this case, the first mass will have
-        spin up to the maxBHspin *only* if its mass is > 2.9. The second mass
-        will have spin up to the maxNSspin *only* if its mass is < 3.1. All
-        other cases will result in *both* spins being set to 0.
-    maxTotalMass : float, optional (default = None)
-        If given points will not be chosen with total mass greater than this.
-    minTotalMass : float, optional (default = None)
-        If given points will not be chosen with total mass less than this
-    maxEta : float, optional (default = None)
-        If given points will not be chosen with symmetric mass ratio greater
-        than this.
-    minEta : float, optional (default = None)
-        If given points will not be chosen with symmetric mass ratio smaller
-        than this.
+    massRangeParams : massRangeParameters instance
+        Instance holding all the details of mass ranges and spin ranges.
+    metricParams : metricParameters instance
+        Structure holding all the options for construction of the metric
+        and the eigenvalues, eigenvectors and covariance matrix
+        needed to manipulate the space.
+    fUpper : float
+        The value of fUpper that was used when obtaining the xi_i
+        coordinates. This lets us know how to rotate potential physical points
+        into the correct xi_i space. This must be a key in metricParams.evals,
+        metricParams.evecs and metricParams.evecsCV
+        (ie. we must know how to do the transformation for
+        the given value of fUpper)
     numJumpPoints : int, optional (default = 100)
         The number of points that will be generated every iteration
     chirpMassJumpFac : float, optional (default=0.0001)
@@ -298,12 +216,11 @@ def get_mass_distribution(bestMasses, scaleFactor, order, evecs, evals, \
     spin2z[0] = bestSpin2z
 
     # Remove points where eta becomes unphysical
-    eta[eta > 0.25] = 0.25
-    eta[eta < 0.0001] = 0.0001
-    if maxEta:
-        eta[eta > maxEta] = maxEta
-    if minEta:
-        eta[eta < minEta] = minEta
+    eta[eta > massRangeParams.maxEta] = massRangeParams.maxEta
+    if massRangeParams.minEta:
+        eta[eta > massRangeParams.minEta] = massRangeParams.minEta
+    else:
+        eta[eta < 0.0001] = 0.0001
 
     # Total mass, masses and mass diff
     totmass = chirpmass / (eta**(3./5.))
@@ -316,17 +233,21 @@ def get_mass_distribution(bestMasses, scaleFactor, order, evecs, evals, \
           totmass, eta, spin1z, spin2z)
 
     # Remove points where spins are outside of physical range
-    numploga1 = numpy.logical_and(abs(spin1z) <= maxBHspin,mass1 > 2.99)
+    numploga1 = numpy.logical_and(mass1 > 2,99,\
+                                  abs(spin1z) <= massRangeParams.maxBHspin)
     if nsbh_flag:
         numploga = numploga1
     else:
-        numploga2 = numpy.logical_and(abs(spin1z) <= maxNSspin,mass1 < 3.01)
+        numploga2 = numpy.logical_and(mass1 < 3.01, \
+                                      abs(spin1z) <= massRangeParams.maxNSspin)
         numploga = numpy.logical_or(numploga1,numploga2)
-    numplogb2 = numpy.logical_and(abs(spin2z) <= maxNSspin,mass2 < 3.01)
+    numplogb2 = numpy.logical_and(abs(spin2z) <= massRangeParams.maxNSspin, \
+                                  mass2 < 3.01)
     if nsbh_flag:
         numplogb = numplogb2
     else:
-        numplogb1 = numpy.logical_and(abs(spin2z) <= maxBHspin,mass2 > 2.99)
+        numplogb1 = numpy.logical_and(mass2 > 2.99, \
+                                      abs(spin2z) <= massRangeParams.maxBHspin)
         numplogb = numpy.logical_or(numplogb1,numplogb2)
     numplog1 = numpy.logical_and(numploga,numplogb)
     numplog = numpy.logical_not(numplog1)
@@ -341,34 +262,28 @@ def get_mass_distribution(bestMasses, scaleFactor, order, evecs, evals, \
 
     # And remove points where the individual masses are outside of the physical
     # range. Or the total masses are.
-    totmass[mass1 < minmass1] = 0.0001
-    totmass[mass1 > maxmass1] = 0.0001
-    totmass[mass2 < minmass2] = 0.0001
-    totmass[mass2 > maxmass2] = 0.0001
+    totmass[mass1 < massRangeParams.minMass1] = 0.0001
+    totmass[mass1 > massRangeParams.maxMass1] = 0.0001
+    totmass[mass2 < massRangeParams.minMass2] = 0.0001
+    totmass[mass2 > massRangeParams.maxMass2] = 0.0001
     # There is some numerical error which can push this a bit higher. We do
     # *not* want to reject the initial guide point. This error comes from
     # Masses -> totmass, eta -> masses conversion, we will have points pushing
     # onto the boudaries of the space.
-    if maxTotalMass:
-        totmass[totmass > maxTotalMass*1.0001] = 0.0001
-    if minTotalMass:
-        totmass[totmass < minTotalMass*0.9999] = 0.0001
+    totmass[totmass > massRangeParams.maxTotalMass*1.0001] = 0.0001
+    totmass[totmass < massRangeParams.minTotalMass*0.9999] = 0.0001
 
     if totmass[0] < 0.00011:
         raise ValueError("Cannot remove the guide point!")
 
     # Then map to xis
-    new_xis = get_cov_params(totmass, eta, beta, sigma, gamma, chis, f0, \
-                             evecs, evals, evecsCV, order)
+    new_xis = get_cov_params(totmass, eta, beta, sigma, gamma, chis, \
+                             metricParams, fUpper)
     return chirpmass, totmass, eta, spin1z, spin2z, diff, mass1, mass2, beta, \
            sigma, gamma, chis, new_xis
 
-def stack_xi_direction_brute(xis, bestMasses, bestXis, f0,  \
-                             direction_num, req_match, order, evecs, evals, \
-                             evecsCV, maxmass1, minmass1, maxmass2, minmass2, \
-                             maxNSspin, maxBHspin, maxTotalMass=None, \
-                             maxEta=None, minEta=None, \
-                             minTotalMass=None, nsbh_flag=False, \
+def stack_xi_direction_brute(xis, bestMasses, bestXis, directionNum,
+                             req_match, massRangeParams, metricParams, fUpper,\
                              scaleFactor=0.8, numIterations=3000):
     """
     This function is used to assess the depth of the xi_space in a specified
@@ -387,61 +302,24 @@ def stack_xi_direction_brute(xis, bestMasses, bestXis, f0,  \
         This is aimed to give the code a starting point.
     bestXis : list
         Contains the position of bestMasses in the xi coordinate system.
-    f0 : float
-        This is an arbitrary scaling factor introduced to avoid the potential
-        for numerical overflow when calculating this. Generally the default
-        value (70) is safe here. **IMPORTANT, if you want to calculate the
-        ethinca metric components later this MUST be set equal to f_low.**
-        This value must also be used consistently (ie. don't change its value
-        when calling different functions!).
     direction_num : int
         The dimension that you want to assess the depth of (0 = 1, 1 = 2 ...)
     req_match : float
         When considering points to assess the depth with, only consider points
         with a mismatch that is smaller than this with xis.
-    order : string
-        The Post-Newtonian order that is used to translate from masses and
-        spins to the lambda_i coordinate system.
-    evecs : numpy.matrix
-        Matrix of the eigenvectors of the metric in lambda_i coordinates. Used
-        to rotate to a Cartesian coordinate system (the mu system).
-    evals : numpy.array
-        Array of the eigenvalues of the metric in lambda_i coordinates. Used
-        to rotate to a Cartesian coordinate system (mus).
-    evecsCV : numpy.matrix
-        This matrix is used to perform the rotation to the xi_i
-        coordinate system from the mu coordinate system.
-    maxmass1 : float
-        Maximum allowed mass of the first body.
-    minmass1 : float
-        Minimum allowed mass of the first body.
-    maxmass2 : float
-        Maximum allowed mass of the second body.
-    minmass2 : float
-        Minimum allowed mass of the second body.
-    maxNSspin : float
-        Maximum spin allowed on "neutron stars" (Mass < 3 solar masses).
-    maxBHspin : float
-        Maximum spin allowed on "black holes" (Mass > 3 solar masses).
-    maxTotalMass : float, optional (default = None)
-        If given points will not be chosen with total mass greater than this.
-    minTotalMass : float, optional (default = None)
-        If given points will not be chosen with total mass less than this
-    maxEta : float, optional (default = None)
-        If given points will not be chosen with symmetric mass ratio greater
-        than this.
-    minEta : float, optional (default = None)
-        If given points will not be chosen with symmetric mass ratio smaller
-        than this.
-    nsbh_flag : boolean, optional
-        If given, this indicates that a NSBH parameter space is being used.
-        The reason for this is that otherwise we end up with the parameter
-        space being full of X>3,3 systems, where the "neutron star", which
-        has a mass at the limit of the parameter space has spin dictated by
-        the maximum black hole spin. In this case, the first mass will have
-        spin up to the maxBHspin *only* if its mass is > 2.9. The second mass
-        will have spin up to the maxNSspin *only* if its mass is < 3.1. All
-        other cases will result in *both* spins being set to 0.
+    massRangeParams : massRangeParameters instance
+        Instance holding all the details of mass ranges and spin ranges.
+    metricParams : metricParameters instance
+        Structure holding all the options for construction of the metric
+        and the eigenvalues, eigenvectors and covariance matrix
+        needed to manipulate the space.
+    fUpper : float
+        The value of fUpper that was used when obtaining the xi_i
+        coordinates. This lets us know how to rotate potential physical points
+        into the correct xi_i space. This must be a key in metricParams.evals,
+        metricParams.evecs and metricParams.evecsCV
+        (ie. we must know how to do the transformation for
+        the given value of fUpper)
     scaleFactor : float, optional (default = 0.8)
         The value of the scale factor that is used when calling
         pycbc.tmpltbank.get_mass_distribution.
@@ -449,7 +327,6 @@ def stack_xi_direction_brute(xis, bestMasses, bestXis, f0,  \
         The number of times to make calls to get_mass_distribution when
         assessing the maximum/minimum of this parameter space. Making this
         smaller makes the code faster, but at the cost of accuracy.   
-
  
     Returns
     --------
@@ -462,34 +339,25 @@ def stack_xi_direction_brute(xis, bestMasses, bestXis, f0,  \
     """
 
     # Find minimum
-    ximin = find_xi_extrema_brute(xis, bestMasses, bestXis, f0,  \
-                             direction_num, req_match, order, evecs, evals, \
-                             evecsCV, maxmass1, minmass1, maxmass2, minmass2, \
-                             maxNSspin, maxBHspin, nsbh_flag=False, \
-                             find_minimum=True, maxTotalMass=maxTotalMass, \
-                             minTotalMass=minTotalMass, maxEta=maxEta, \
-                             minEta=minEta, scaleFactor=scaleFactor, \
-                             numIterations=numIterations)
+    ximin = find_xi_extrema_brute(xis, bestMasses, bestXis, direction_num, \
+                                  req_match, massRangeParams, metricParams, \
+                                  fUpper, find_minimum=True, \
+                                  scaleFactor=scaleFactor, \
+                                  numIterations=numIterations)
  
     # Find maximum
-    ximax = find_xi_extrema_brute(xis, bestMasses, bestXis, f0,  \
-                             direction_num, req_match, order, evecs, evals, \
-                             evecsCV, maxmass1, minmass1, maxmass2, minmass2, \
-                             maxNSspin, maxBHspin, nsbh_flag=False, \
-                             find_minimum=False, maxTotalMass=maxTotalMass, \
-                             minTotalMass=minTotalMass, maxEta=maxEta, \
-                             minEta=minEta, scaleFactor=scaleFactor, \
-                             numIterations=numIterations)
+    ximax = find_xi_extrema_brute(xis, bestMasses, bestXis, direction_num, \
+                                  req_match, massRangeParams, metricParams, \
+                                  fUpper, find_minimum=False, \
+                                  scaleFactor=scaleFactor, \
+                                  numIterations=numIterations)
 
     return ximin, ximax
 
-def find_xi_extrema_brute(xis, bestMasses, bestXis, f0,  \
-                          direction_num, req_match, order, evecs, evals, \
-                          evecsCV, maxmass1, minmass1, maxmass2, minmass2, \
-                          maxNSspin, maxBHspin, maxTotalMass=None, \
-                          minTotalMass=None, maxEta=None, minEta=None, \
-                          nsbh_flag=False, find_minimum=False, \
-                          scaleFactor=0.8, numIterations=3000):   
+def find_xi_extrema_brute(xis, bestMasses, bestXis, direction_num, req_match, \
+                          massRangeParams, metricParams, fUpper, \
+                          find_minimum=False, scaleFactor=0.8, \
+                          numIterations=3000):   
     """
     This function is used to find the largest or smallest value of the xi
     space in a specified
@@ -508,61 +376,24 @@ def find_xi_extrema_brute(xis, bestMasses, bestXis, f0,  \
         This is aimed to give the code a starting point.
     bestXis : list
         Contains the position of bestMasses in the xi coordinate system.
-    f0 : float
-        This is an arbitrary scaling factor introduced to avoid the potential
-        for numerical overflow when calculating this. Generally the default
-        value (70) is safe here. **IMPORTANT, if you want to calculate the
-        ethinca metric components later this MUST be set equal to f_low.**
-        This value must also be used consistently (ie. don't change its value
-        when calling different functions!).
     direction_num : int
         The dimension that you want to assess the depth of (0 = 1, 1 = 2 ...)
     req_match : float
         When considering points to assess the depth with, only consider points
         with a mismatch that is smaller than this with xis.
-    order : string
-        The Post-Newtonian order that is used to translate from masses and
-        spins to the lambda_i coordinate system.
-    evals : numpy.array
-        Array of the eigenvalues of the metric in lambda_i coordinates. Used
-        to rotate to a Cartesian coordinate system (mus).
-    evecs : numpy.matrix
-        Matrix of the eigenvectors of the metric in lambda_i coordinates. Used
-        to rotate to a Cartesian coordinate system (the mu system).
-    evecsCV : numpy.matrix
-        This matrix is used to perform the rotation to the xi_i
-        coordinate system from the mu coordinate system.
-    maxmass1 : float
-        Maximum allowed mass of the first body.
-    minmass1 : float
-        Minimum allowed mass of the first body.
-    maxmass2 : float
-        Maximum allowed mass of the second body.
-    minmass2 : float
-        Minimum allowed mass of the second body.
-    maxNSspin : float
-        Maximum spin allowed on "neutron stars" (Mass < 3 solar masses).
-    maxBHspin : float
-        Maximum spin allowed on "black holes" (Mass > 3 solar masses).
-    maxTotalMass : float, optional (default = None)
-        If given points will not be chosen with total mass greater than this.
-    minTotalMass : float, optional (default = None)
-        If given points will not be chosen with total mass less than this
-    maxEta : float, optional (default = None)
-        If given points will not be chosen with symmetric mass ratio greater
-        than this.
-    minEta : float, optional (default = None)
-        If given points will not be chosen with symmetric mass ratio smaller
-        than this.
-    nsbh_flag : boolean, optional (default = False)
-        If given, this indicates that a NSBH parameter space is being used.
-        The reason for this is that otherwise we end up with the parameter
-        space being full of X>3,3 systems, where the "neutron star", which
-        has a mass at the limit of the parameter space has spin dictated by
-        the maximum black hole spin. In this case, the first mass will have
-        spin up to the maxBHspin *only* if its mass is > 2.9. The second mass
-        will have spin up to the maxNSspin *only* if its mass is < 3.1. All
-        other cases will result in *both* spins being set to 0.
+    massRangeParams : massRangeParameters instance
+        Instance holding all the details of mass ranges and spin ranges.
+    metricParams : metricParameters instance
+        Structure holding all the options for construction of the metric
+        and the eigenvalues, eigenvectors and covariance matrix
+        needed to manipulate the space.
+    fUpper : float
+        The value of fUpper that was used when obtaining the xi_i
+        coordinates. This lets us know how to rotate potential physical points
+        into the correct xi_i space. This must be a key in metricParams.evals,
+        metricParams.evecs and metricParams.evecsCV
+        (ie. we must know how to do the transformation for
+        the given value of fUpper)
     find_minimum : boolean, optional (default = False)
         If True, find the minimum value of the xi direction. If False find the
         maximum value.
@@ -577,7 +408,7 @@ def find_xi_extrema_brute(xis, bestMasses, bestXis, f0,  \
     Returns
     --------
     xi_extent : float
-        The extremmal value of the specified dimension at the specified point in
+        The extremal value of the specified dimension at the specified point in
         parameter space.
     """
 
@@ -595,10 +426,7 @@ def find_xi_extrema_brute(xis, bestMasses, bestXis, f0,  \
         chirpmass, totmass, eta, spin1z, spin2z, diff, mass1, mass2, beta, \
           sigma, gamma, chis, new_xis = get_mass_distribution(\
                [bestChirpmass,bestMasses[1],bestMasses[2],bestMasses[3]], \
-               scaleFactor, order, evecs, evals, evecsCV, maxmass1, minmass1, \
-               maxmass2, minmass2, maxNSspin, maxBHspin, f0,\
-               maxTotalMass=maxTotalMass, minTotalMass=minTotalMass, \
-               maxEta=maxEta, minEta=minEta, nsbh_flag=nsbh_flag)
+               scaleFactor, massRangeParams, metricParams, fUpper)
         cDist = (new_xis[0] - xis[0])**2
         for j in range(1, xi_size):
             cDist += (new_xis[j] - xis[j])**2

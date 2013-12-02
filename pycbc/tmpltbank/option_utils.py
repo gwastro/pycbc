@@ -18,7 +18,7 @@
 
 import optparse
 import textwrap
-from pycbc.tmpltbank.lambda_mapping import pycbcValidOrdersHelpDescriptions
+from pycbc.tmpltbank.lambda_mapping import *
 
 class IndentedHelpFormatterWithNL(optparse.IndentedHelpFormatter):
     """
@@ -199,32 +199,147 @@ class metricParameters:
     @property
     def psd(self):
         """
+        A pyCBC FrequencySeries holding the appropriate PSD.
         Return the PSD used in the metric calculation.
         """
+        if not self._psd:
+            errMsg = "The PSD has not been set in the metricParameters "
+            errMsg += "instance."
+            raise ValueError(errMsg)
         return self._psd
 
     @psd.setter
     def psd(self, inPsd):
-        """
-        Use this to set the PSD to the inputted psd
-
-        Parameters
-        -----------
-        psd : pyCBC.FrequencySeries
-            A pyCBC FrequencySeries holding the appropriate PSD.
-        """a
         self._psd = inPsd
 
     @property
     def moments(self):
         """
-        Return the moments structure 
+        Moments structure
+        This contains the result of all the integrals used in computing the
+        metrics above. It can be used for the ethinca components calculation,
+        or other similar calculations. This is composed of two compound
+        dictionaries. The first entry indicates which moment is being
+        calculated and the second entry indicates the upper frequency cutoff
+        that was used.
+
+        In all cases x = f/f0.
+
+        For the first entries the options are:
+        
+        moments['J%d' %(i)][f_cutoff]
+        This stores the integral of 
+        x**((-i)/3.) * delta X / PSD(x)
+        
+        moments['log%d' %(i)][f_cutoff]
+        This stores the integral of 
+        (numpy.log(x**(1./3.))) x**((-i)/3.) * delta X / PSD(x)
+
+        moments['loglog%d' %(i)][f_cutoff]
+        This stores the integral of 
+        (numpy.log(x**(1./3.)))**2 x**((-i)/3.) * delta X / PSD(x)
+
+        moments['loglog%d' %(i)][f_cutoff]
+        This stores the integral of 
+        (numpy.log(x**(1./3.)))**3 x**((-i)/3.) * delta X / PSD(x)
+
+        moments['loglog%d' %(i)][f_cutoff]
+        This stores the integral of 
+        (numpy.log(x**(1./3.)))**4 x**((-i)/3.) * delta X / PSD(x)
+
+        The second entry stores the frequency cutoff that was used when
+        computing the integral.
         """
         return self._moments
   
     @moments.setter
     def moments(self, inMoments):
         self._moments=inMoments
+
+    @property
+    def evals(self):
+        """
+        The eigenvalues of the parameter space.
+        This is a Dictionary of numpy.array
+        Each entry in the dictionary corresponds to the different frequency
+        ranges described in vary_fmax. If vary_fmax = False, the only entry
+        will be f_upper, this corresponds to integrals in [f_low,f_upper). This
+        entry is always present. Each other entry will use floats as keys to
+        the dictionary. These floats give the upper frequency cutoff when it is
+        varying.
+        Each numpy.array contains the eigenvalues which, with the eigenvectors
+        in evecs, are needed to rotate the
+        coordinate system to one in which the metric is the identity matrix.
+        """
+        if not self._evals:
+            errMsg = "The metric eigenvalues have not been set in the "
+            errMsg += "metricParameters instance."
+            raise ValueError(errMsg)
+        return self._evals
+
+    @evals.setter
+    def evals(self, inEvals):
+        self._evals = inEvals
+
+    @property
+    def evecs(self):
+        """
+        The eigenvectors of the parameter space.
+        This is a Dictionary of numpy.matrix
+        Each entry in the dictionary is as described under evals.
+        Each numpy.matrix contains the eigenvectors which, with the eigenvalues
+        in evals, are needed to rotate the
+        coordinate system to one in which the metric is the identity matrix.
+        """
+        if not self._evecs:
+            errMsg = "The metric eigenvectors have not been set in the "
+            errMsg += "metricParameters instance."
+            raise ValueError(errMsg)
+        return self._evecs
+
+    @evecs.setter
+    def evecs(self, inEvecs):
+        self._evecs = inEvecs
+
+    @property
+    def metric(self):
+        """
+        The eigenvectors of the parameter space.
+        This is a Dictionary of numpy.matrix
+        Each entry in the dictionary is as described under evals.
+        Each numpy.matrix contains the metric of the parameter space in the
+        Lambda_i coordinate system.
+        """
+        if not self._metric:
+            errMsg = "The metric eigenvectors have not been set in the "
+            errMsg += "metricParameters instance."
+            raise ValueError(errMsg)
+        return self._metric
+
+    @metric.setter
+    def metric(self, inMetric):
+        self._metric = inMetric
+
+    @property
+    def evecsCV(self):
+        """
+        The eigenvectors of the principal directions of the mu space.
+        This is a Dictionary of numpy.matrix
+        Each entry in the dictionary is as described under evals.
+        Each numpy.matrix contains the eigenvectors which, with the eigenvalues
+        in evals, are needed to rotate the
+        coordinate system to one in which the metric is the identity matrix.
+        """
+        if not self._evecsCV:
+            errMsg = "The covariance eigenvectors have not been set in the "
+            errMsg += "metricParameters instance."
+            raise ValueError(errMsg)
+        return self._evecsCV
+
+    @evecsCV.setter
+    def evecsCV(self, inEvecs):
+        self._evecsCV = inEvecs
+
 
 
 def insert_mass_range_option_group(parser,nonSpin=False):
@@ -373,11 +488,39 @@ class massRangeParameters(object):
         self.maxMass2=maxMass2
         self.maxNSSpinMag=maxNSSpinMag
         self.maxBHSpinMag=maxBHSpinMag
+        self.minTotMass = minMass1 + minMass2
+        if minTotalMass and (minTotalMass > self.minTotMass):
+            self.minTotMass = minTotMass
+        self.maxTotMass = maxMass1 + maxMass2
+        if maxTotalMass and (maxTotalMass < self.maxTotMass):
+            self.maxTotMass = maxTotMass
         self.maxTotMass=maxTotMass
         self.minTotMass=minTotMass
-        self.maxEta=maxEta
+        if maxEta:
+            self.maxEta=maxEta
+        else:
+            self.maxEta=0.25
         self.minEta=minEta
+        # FIXME: Check you have NSBHs if this is set.
+        # In fact, why not set automatically if you *have* only NSBHs?
         self.nsbhFlag=nsbhFlag
+
+        # FIXME: This may be inaccurate if Eta limits are given
+        # This will not cause any problems, but maybe could be fixed.
+        self.minCompMass = self.minMass2
+        self.maxCompMass = self.maxMass1
+
+        # WARNING: We expect mass1 > mass2 ALWAYS
+        # Check input:
+        if (minMass2 > minMass1) or (maxMass2 > maxMass1):
+            errMsg = "Mass1 must be larger than mass2. Check input options."
+            raise ValueError(errMsg)
+
+        if (minMass2 > maxMass2) or (minMass1 > maxMass1):
+            errMsg = "Minimum masses cannot be larger than maximum masses."
+            errMsg += "Check input options."
+            raise ValueError(errMsg)
+
 
     @classmethod
     def from_optparse(cls, opts, nonSpin=False):

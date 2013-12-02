@@ -19,7 +19,7 @@
 from __future__ import division
 import os
 import numpy
-from pycbc.tmpltbank.lambda_mapping import generate_mapping
+from pycbc.tmpltbank.lambda_mapping import *
         
 
 # This function is taken from Stackoverflow:
@@ -113,7 +113,7 @@ def determine_eigen_directions(metricParams, preserveMoments=False,\
         Each numpy.matrix contains the metric of the parameter space in the
         Lambda_i coordinate system.
     metricParams.moments : Moments structure
-        See pycbc.tmpltbank.get_moments for a description of this. This
+        See the structure documentation for a description of this. This
         contains the result of all the integrals used in computing the metrics
         above. It can be used for the ethinca components calculation, or other
         similar calculations.
@@ -131,8 +131,6 @@ def determine_eigen_directions(metricParams, preserveMoments=False,\
     # What values are going to be in the moments
     # J7 is the normalization factor so it *MUST* be present
     list = metricParams.moments['J7'].keys()
-
-    #FIXME: GOT TO HERE!!!!
 
     # We start looping over every item in the list of metrics
     for item in list:
@@ -180,7 +178,11 @@ def determine_eigen_directions(metricParams, preserveMoments=False,\
                 # mchirp always goes the same way)
                 evecs[item][:,i] = - evecs[item][:,i]
 
-    return evals,evecs,gs,moments
+    metricParams.evals = evals
+    metricParams.evecs = evecs
+    metricParams.metric = metric
+
+    return metricParams
 
 def get_moments(metricParams, vary_fmax=False, vary_density=25):
     """

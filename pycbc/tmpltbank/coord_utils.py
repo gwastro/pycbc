@@ -22,82 +22,42 @@ from lal import LAL_PI, LAL_MTSUN_SI
 from pycbc.tmpltbank.lambda_mapping import get_chirp_params
 from pycbc.tmpltbank.lambda_mapping import get_beta_sigma_from_aligned_spins
 
-def estimate_mass_range(numPoints, order, evals, evecs, maxmass1, minmass1, \
-                        maxmass2, minmass2, maxspin, f0, covary=True, \
-                        evecsCV=None, maxBHspin=None, \
-                        minTotalMass=None, maxTotalMass=None, maxEta=None, \
-                        minEta=None):
+def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper,\
+                        covary=True):
     """
     This function will generate a large set of points with random masses and
     spins (using pycbc.tmpltbank.get_random_mass) and translate these points
-    into the xi_i coordinate system.
+    into the xi_i coordinate system for the given upper frequency cutoff.
 
     Parameters
     ----------
     numPoints : int
         Number of systems to simulate
-    order : string
-        The Post-Newtonian order that is used to translate from masses and
-        spins to the lambda_i coordinate system.
-    evals : numpy.array
-        Array of the eigenvalues of the metric in lambda_i coordinates. Used
-        to rotate to a Cartesian coordinate system.
-    evecs : numpy.matrix
-        Matrix of the eigenvectors of the metric in lambda_i coordinates. Used
-        to rotate to a Cartesian coordinate system.
-    maxmass1 : float
-        Maximum allowed mass of the first body.
-    minmass1 : float
-        Minimum allowed mass of the first body.
-    maxmass2 : float
-        Maximum allowed mass of the second body.
-    minmass2 : float
-        Minimum allowed mass of the second body.
-    maxspin : float
-        Maximum spin allowed on both bodies if maxBHspin is not given. If
-        maxBHspin is given, this will be the maximum allowed spin for neutron
-        stars only (mass < 3 solar masses).
-    f0 : float
-        This is an arbitrary scaling factor introduced to avoid the potential
-        for numerical overflow when calculating this. Generally the default
-        value (70) is safe here. **IMPORTANT, if you want to calculate the
-        ethinca metric components later this MUST be set equal to f_low.**
-        This value must also be used consistently (ie. don't change its value
-        when calling different functions!).
+    massRangeParams : massRangeParameters instance
+        Instance holding all the details of mass ranges and spin ranges.
+    metricParams : metricParameters instance
+        Structure holding all the options for construction of the metric
+        and the eigenvalues, eigenvectors and covariance matrix
+        needed to manipulate the space.
+    fUpper : float
+        The value of fUpper to use when getting the mu coordinates from the
+        lambda coordinates. This must be a key in metricParams.evals and
+        metricParams.evecs (ie. we must know how to do the transformation for
+        the given value of fUpper). It also must be a key in
+        metricParams.evecsCV if covary=True.
     covary : boolean, optional (default = True)
         If this is given then evecsCV will be used to rotate from the Cartesian
         coordinate system into the principal coordinate direction (xi_i). If
         not given then points in the original Caretesian coordinates are 
         returned.
-    evecsCV : numpy.matrix, optional (default = None)
-        If covary=True this matrix is used to perform the rotation to the xi_i
-        coordinate system.
-    maxBHspin : float, optional (default = None)
-        If this is given it will be the maximum allowed spin for black holes
-        (mass > 3 solar masses). If not given maxspin will be used for both
-        black hole and neutron star spin.
-    minTotalMass : float, optional (default = None)
-        If this float is given the total mass of the generated systems must be
-        larger than this number.
-    maxTotalMass : float, optional (default = None)
-        If this float is given the total mass of the generated systems must be
-        smaller than this number.
-    maxEta : float, optional (default = None)
-        If given points will not be chosen with symmetric mass ratio greater
-        than this.
-    minEta : float, optional (default = None)
-        If given points will not be chosen with symmetric mass ratio smaller
-        than this.
+
 
     Return
     -------
     xis : numpy.array
         A list of the positions of each point in the xi_i coordinate system.
     """
-    valsF = get_random_mass(numPoints, minmass1, maxmass1, minmass2, \
-          maxmass2, maxspin, maxBHspin=maxBHspin, minTotalMass=minTotalMass, \
-          maxTotalMass=maxTotalMass, maxEta=maxEta, minEta=minEta)
-    valsF = numpy.array(valsF)
+    valsF = get_random_mass(numPoints, massRangeParams)
     mass = valsF[0]
     eta = valsF[1]
     beta = valsF[2]
@@ -105,18 +65,15 @@ def estimate_mass_range(numPoints, order, evals, evecs, maxmass1, minmass1, \
     gamma = valsF[4]
     chis = 0.5*(valsF[5] + valsF[6])
     if covary:
-        lambdas = get_cov_params(mass, eta, beta, sigma, gamma, chis, f0, \
-                                 evecs, evals, evecsCV, order)
+        lambdas = get_cov_params(mass, eta, beta, sigma, gamma, chis, \
+                                 metricParams, fUpper)
     else:
-        lambdas = get_conv_params(mass, eta, beta, sigma, gamma, chis, f0, \
-                                  evecs, evals, order)
+        lambdas = get_conv_params(mass, eta, beta, sigma, gamma, chis, \
+                                  metricParams, fUpper)
 
     return numpy.array(lambdas)
 
-def get_random_mass(numPoints, minmass1, maxmass1, minmass2, \
-                    maxmass2, maxspin, maxBHspin=None, \
-                    minTotalMass=None, maxTotalMass=None, maxEta=None, \
-                    minEta=None,  qm_scalar_fac=1):
+def get_random_mass(numPoints, massRangeParams):
     """
     This function will generate a large set of points within the chosen mass
     and spin space. It will also return the corresponding PN spin coefficients
@@ -126,42 +83,8 @@ def get_random_mass(numPoints, minmass1, maxmass1, minmass2, \
     ----------
     numPoints : int
         Number of systems to simulate
-    minmass1 : float
-        Maximum allowed mass of the first body.
-    maxmass1 : float
-        Minimum allowed mass of the first body.
-    minmass2 : float
-        Maximum allowed mass of the second body.
-    maxmass2 : float
-        Minimum allowed mass of the second body.
-    maxspin : float
-        Maximum spin allowed on both bodies if maxBHspin is not given. If
-        maxBHspin is given, this will be the maximum allowed spin for neutron
-        stars only (mass < 3 solar masses).
-    maxBHspin : float, optional (default = None)
-        If this is given it will be the maximum allowed spin for black holes
-        (mass > 3 solar masses). If not given maxspin will be used for both
-        black hole and neutron star spin.
-    minTotalMass : float, optional (default = None)
-        If this float is given the total mass of the generated systems must be
-        larger than this number.
-    maxTotalMass : float, optional (default = None)
-        If this float is given the total mass of the generated systems must be
-        smaller than this number.
-    maxEta : float, optional (default = None)
-        If given points will not be chosen with symmetric mass ratio greater
-        than this.
-    minEta : float, optional (default = None)
-        If given points will not be chosen with symmetric mass ratio smaller
-        than this.
-    qm_scalar_fac : float, optional (default = 1)
-        The 2PN sigma spin coefficient has an equation-of-state dependent term.
-        For black holes this value is equal to 1, for NS this value is larger,
-        will depend on masses and is not known. If this value is given then
-        it will be used when computing the sigma coefficient to model NS EOS
-        effects on this 2PN coefficient.
-        NOTE: This is currently a placeholder and does nothing. It needs to
-        be implemented in pycbc.tmpltbank.get_beta_sigma_from_aligned_spins().
+    massRangeParams : massRangeParameters instance
+        Instance holding all the details of mass ranges and spin ranges.
 
     Returns
     --------
@@ -184,46 +107,33 @@ def get_random_mass(numPoints, minmass1, maxmass1, minmass2, \
     """
 
     # WARNING: We expect mass1 > mass2 ALWAYS
-    # Check inputs, and set the minimum/maximum total masses
-    minmass = minmass1 + minmass2
-    maxmass = maxmass1 + maxmass2
-    if minTotalMass and (minTotalMass > minmass):
-        minmass = minTotalMass
-    if maxTotalMass and (maxTotalMass < maxmass):
-        maxmass = maxTotalMass
-
-    if (minmass2 > minmass1) or (maxmass2 > maxmass1):
-        errMsg = "Mass1 must be larger than mass2. Check input options."
-        raise ValueError(errMsg)
-
-    if (minmass2 > maxmass2) or (minmass1 > maxmass1):
-        errMsg = "Minimum masses cannot be larger than maximum masses."
-        errMsg += "Check input options."
-        raise ValueError(errMsd)
-
-    mincompmass = minmass2
-    maxcompmass = maxmass1
 
     # First we choose the total masses from a unifrom distribution in mass
     # to the -5/3. power.
     mass = numpy.random.random(numPoints) * \
-          (minmass**(-5./3.)-maxmass**(-5./3.)) + maxmass**(-5./3.)
+           (massRangeParams.minTotMass**(-5./3.) \
+            - massRangeParams.maxTotMass**(-5./3.)) \
+           + massRangeParams.maxTotMass**(-5./3.)
     mass = mass**(-3./5.)
 
     # Next we choose the mass ratios, this will take different limits based on
     # the value of total mass
-    maxmass2 = numpy.minimum(mass/2.,maxmass2)
-    minmass1 = numpy.maximum(minmass1,mass/2.)
-    mineta = numpy.maximum(mincompmass * (mass-mincompmass)/(mass*mass),\
-                           maxcompmass*(mass-maxcompmass)/(mass*mass))
-    if minEta:
-        mineta = numpy.maximum(minEta, mineta)
-    maxeta = numpy.minimum(0.25,maxmass2 * (mass - maxmass2) / (mass*mass))
-    maxeta = numpy.minimum(maxeta,minmass1 * (mass - minmass1) / (mass*mass))
-    if maxEta:
-        maxeta = numpy.minimum(maxEta, maxeta)
+    maxmass2 = numpy.minimum(mass/2., massRangeParams.maxMass2)
+    minmass1 = numpy.maximum(massRangeParams.minMass1, mass/2.)
+    mineta = numpy.maximum(massRangeParams.minCompMass \
+                            * (mass-massRangeParams.minCompMass)/(mass*mass), \
+                           massRangeParams.maxCompMass \
+                            * (mass-massRangeParams.maxCompMass)/(mass*mass))
+    # Note that mineta is a numpy.array because mineta depends on the chirp
+    # mass. Therefore this is not precomputed in the massRangeParams instance
+    if massRangeParams.minEta:
+        mineta = numpy.maximum(massRangeParams.minEta, mineta)
+    maxeta = numpy.minimum(massRangeParams.maxEta, massRangeParams.maxMass2 \
+                             * (mass - massRangeParams.maxmass2) / (mass*mass))
+    maxeta = numpy.minimum(maxeta, massRangeParams.minMass1 \
+                             * (mass - massRangeParams.minMass1) / (mass*mass))
     if (maxeta < mineta).any():
-        errMsg = "WARNING: Max eta is smaller than min eta!!"
+        errMsg = "ERROR: Maximum eta is smaller than minimum eta!!"
         raise ValueError(errMsg)     
     eta = numpy.random.random(numPoints) * (maxeta - mineta) + mineta
 
@@ -233,41 +143,46 @@ def get_random_mass(numPoints, minmass1, maxmass1, minmass2, \
     mass2 = (mass - diff)/2.
     # Check the masses are where we want them to be (allowing some floating
     # point rounding error).
-    if (mass1 > maxmass1*1.001).any() or (mass1 < minmass1*0.999).any():
+    if (mass1 > massRangeParams.maxMass1*1.001).any() \
+          or (mass1 < massRangeParams.minMass1*0.999).any():
         errMsg = "Mass1 is not within the specified mass range."
         raise ValueError(errMsg)
-    if (mass2 > maxmass2*1.001).any() or (mass2 < minmass2*0.999).any():
+    if (mass2 > massRangeParams.maxMass2*1.001).any() \
+          or (mass2 < massRangeParams.minMass2*0.999).any():
         errMsg = "Mass2 is not within the specified mass range."
         raise ValueError(errMsg)
 
     # Next up is the spins. First check if we have non-zero spins
-    if maxspin == 0 and not maxBHspin:
+    if maxNSSpinMag == 0 and maxBHSpinMag == 0:
         spinspin = numpy.zeros(numPoints,dtype=float)
+        spin1z = numpy.zeros(numPoints,dtype=float)
+        spin2z = numpy.zeros(numPoints,dtype=float)
+        beta = numpy.zeros(numPoints,dtype=float)
+        sigma = numpy.zeros(numPoints,dtype=float)
+        gamma = numpy.zeros(numPoints,dtype=float)
         spin1z = numpy.zeros(numPoints,dtype=float)
         spin2z = numpy.zeros(numPoints,dtype=float)
     else:
         # Spin 1 first
         mspin = numpy.zeros(len(mass1))
-        mspin += maxspin
-        if maxBHspin:
-            mspin[mass1 > 3] = maxBHspin
+        mspin += massRangeParams.maxNSSpinMag
+        mspin[mass1 > 3] = massRangeParams.maxBHspinMag
         spin1z = (2*numpy.random.random(numPoints) - 1) * mspin
         # Then spin 2
         mspin = numpy.zeros(len(mass2))
-        mspin += maxspin
-        if maxBHspin:
-            mspin[mass2 > 3] = maxBHspin
+        mspin += massRangeParams.maxNSSpinMag
+        mspin[mass2 > 3] = massRangeParams.maxBHspinMag
         spin2z = (2*numpy.random.random(numPoints) - 1) * mspin
         spinspin = spin1z*spin2z
 
-    # And compute the PN components that come out of this
-    beta, sigma, gamma, chiS = get_beta_sigma_from_aligned_spins(\
-                                 mass, eta, spin1z, spin2z)
+        # And compute the PN components that come out of this
+        beta, sigma, gamma, chiS = get_beta_sigma_from_aligned_spins(\
+                                     mass, eta, spin1z, spin2z)
 
     return mass,eta,beta,sigma,gamma,spin1z,spin2z
 
-def get_cov_params(totmass, eta, beta, sigma, gamma, chis, f0, evecs, evals, \
-                   evecsCV, order):
+def get_cov_params(totmass, eta, beta, sigma, gamma, chis, metricParams, \
+                   fUpper):
     """
     Function to convert between masses and spins and locations in the xi
     parameter space. Xi = Cartesian metric and rotated to principal components.
@@ -279,32 +194,23 @@ def get_cov_params(totmass, eta, beta, sigma, gamma, chis, f0, evecs, evals, \
     eta : float or numpy.array
         Symmetric mass ratio(s) of the system(s)
     beta : float or numpy.array
-        1.5PN spin coefficienct(s) of the system(s)
+        1.5PN spin coefficient(s) of the system(s)
     sigma: float or numpy.array
-        2PN spin coefficienct(s) of the system(s)
+        2PN spin coefficient(s) of the system(s)
     gamma : float or numpy.array
-        2.5PN spin coefficienct(s) of the system(s)
+        2.5PN spin coefficient(s) of the system(s)
     chis : float or numpy.array
         0.5 * (spin1z + spin2z) for the system(s)
-    f0 : float
-        This is an arbitrary scaling factor introduced to avoid the potential
-        for numerical overflow when calculating this. Generally the default
-        value (70) is safe here. **IMPORTANT, if you want to calculate the
-        ethinca metric components later this MUST be set equal to f_low.**
-        This value must also be used consistently (ie. don't change its value
-        when calling different functions!).
-    order : string
-        The Post-Newtonian order that is used to translate from masses and
-        spins to the lambda_i coordinate system.
-    evals : numpy.array
-        Array of the eigenvalues of the metric in lambda_i coordinates. Used
-        to rotate to a Cartesian coordinate system.
-    evecs : numpy.matrix
-        Matrix of the eigenvectors of the metric in lambda_i coordinates. Used
-        to rotate to a Cartesian coordinate system.
-    evecsCV : numpy.matrix, optional (default = None)
-        If covary=True this matrix is used to perform the rotation to the xi_i
-        coordinate system.
+    metricParams : metricParameters instance
+        Structure holding all the options for construction of the metric
+        and the eigenvalues, eigenvectors and covariance matrix
+        needed to manipulate the space.
+    fUpper : float
+        The value of fUpper to use when getting the mu coordinates from the
+        lambda coordinates. This must be a key in metricParams.evals,
+        metricParams.evecs and metricParams.evecsCV
+        (ie. we must know how to do the transformation for
+        the given value of fUpper)
 
     Returns
     --------
@@ -313,14 +219,14 @@ def get_cov_params(totmass, eta, beta, sigma, gamma, chis, f0, evecs, evals, \
     """
 
     # Do this by doing masses - > lambdas -> mus
-    mus = get_conv_params(totmass, eta, beta, sigma, gamma, chis, f0, evecs, \
-                          evals, order)
+    mus = get_conv_params(totmass, eta, beta, sigma, gamma, chis, \
+                          metricParams, fUpper)
     # and then mus -> xis
-    xis = get_covaried_params(mus, evecsCV)
+    xis = get_covaried_params(mus, metricParams.evecsCV[fUpper])
     return xis
 
-def get_conv_params(totmass, eta, beta, sigma, gamma,chis, f0, evecs, evals, \
-                    order):
+def get_conv_params(totmass, eta, beta, sigma, gamma, chis, metricParams, \
+                    fUpper):
     """
     Function to convert between masses and spins and locations in the mu
     parameter space. Mu = Cartesian metric, but not principal components.
@@ -332,32 +238,22 @@ def get_conv_params(totmass, eta, beta, sigma, gamma,chis, f0, evecs, evals, \
     eta : float or numpy.array
         Symmetric mass ratio(s) of the system(s)
     beta : float or numpy.array
-        1.5PN spin coefficienct(s) of the system(s)
+        1.5PN spin coefficient(s) of the system(s)
     sigma: float or numpy.array
-        2PN spin coefficienct(s) of the system(s)
+        2PN spin coefficient(s) of the system(s)
     gamma : float or numpy.array
-        2.5PN spin coefficienct(s) of the system(s)
+        2.5PN spin coefficient(s) of the system(s)
     chis : float or numpy.array
         0.5 * (spin1z + spin2z) for the system(s)
-    f0 : float
-        This is an arbitrary scaling factor introduced to avoid the potential
-        for numerical overflow when calculating this. Generally the default
-        value (70) is safe here. **IMPORTANT, if you want to calculate the
-        ethinca metric components later this MUST be set equal to f_low.**
-        This value must also be used consistently (ie. don't change its value
-        when calling different functions!).
-    order : string
-        The Post-Newtonian order that is used to translate from masses and
-        spins to the lambda_i coordinate system.
-    evals : numpy.array
-        Array of the eigenvalues of the metric in lambda_i coordinates. Used
-        to rotate to a Cartesian coordinate system.
-    evecs : numpy.matrix
-        Matrix of the eigenvectors of the metric in lambda_i coordinates. Used
-        to rotate to a Cartesian coordinate system.
-    evecsCV : numpy.matrix
-        This matrix is used to perform the rotation to the xi_i
-        coordinate system.
+    metricParams : metricParameters instance
+        Structure holding all the options for construction of the metric
+        and the eigenvalues, eigenvectors and covariance matrix
+        needed to manipulate the space.
+    fUpper : float
+        The value of fUpper to use when getting the mu coordinates from the
+        lambda coordinates. This must be a key in metricParams.evals and
+        metricParams.evecs (ie. we must know how to do the transformation for
+        the given value of fUpper)
 
     Returns
     --------
@@ -366,12 +262,13 @@ def get_conv_params(totmass, eta, beta, sigma, gamma,chis, f0, evecs, evals, \
     """
 
     # Do this by masses -> lambdas
-    lambdas = get_chirp_params(totmass,eta,beta,sigma,gamma,chis,f0,order)
+    lambdas = get_chirp_params(totmass, eta, beta, sigma, gamma, chis, \
+                               metricParams.f0, metricParams.pnOrder)
     # and lambdas -> mus
-    mus = get_mu_params(lambdas, f0, evecs, evals)
+    mus = get_mu_params(lambdas, metricParams, fUpper)
     return mus
 
-def get_mu_params(lambdas, f0, evecs, evals):
+def get_mu_params(lambdas, metricParams, fUpper):
     """
     Function to rotate from the lambda coefficients into position in the mu
     coordinate system. Mu = Cartesian metric, but not principal components.
@@ -380,32 +277,30 @@ def get_mu_params(lambdas, f0, evecs, evals):
     -----------
     lambdas : list of floats or numpy.arrays
         Position of the system(s) in the lambda coefficients
-    f0 : float
-        This is an arbitrary scaling factor introduced to avoid the potential
-        for numerical overflow when calculating this. Generally the default
-        value (70) is safe here. **IMPORTANT, if you want to calculate the
-        ethinca metric components later this MUST be set equal to f_low.**
-        This value must also be used consistently (ie. don't change its value
-        when calling different functions!).
-    evals : numpy.array
-        Array of the eigenvalues of the metric in lambda_i coordinates. Used
-        to rotate to a Cartesian coordinate system.
-    evecs : numpy.matrix
-        Matrix of the eigenvectors of the metric in lambda_i coordinates. Used
-        to rotate to a Cartesian coordinate system.
+    metricParams : metricParameters instance
+        Structure holding all the options for construction of the metric
+        and the eigenvalues, eigenvectors and covariance matrix
+        needed to manipulate the space.
+    fUpper : float
+        The value of fUpper to use when getting the mu coordinates from the
+        lambda coordinates. This must be a key in metricParams.evals and
+        metricParams.evecs (ie. we must know how to do the transformation for
+        the given value of fUpper)
 
     Returns
     --------
     mus : list of floats or numpy.arrays
         Position of the system(s) in the mu coordinate system
     """
+    evecs = metricParams.evecs[fUpper]
+    evals = metricParams.evals[fUpper]
 
     mus = []
     for i in range(len(evals)):
         mus.append(rotate_vector(evecs,lambdas,numpy.sqrt(evals[i]),i))
     return mus
 
-def get_covaried_params(mus,evecsCV):
+def get_covaried_params(mus, evecsCV):
     """
     Function to rotate from position(s) in the mu_i coordinate system into the
     position(s) in the xi_i coordinate system
@@ -428,7 +323,7 @@ def get_covaried_params(mus,evecsCV):
         xis.append(rotate_vector(evecsCV,mus,1.,i))
     return xis
 
-def rotate_vector(evecs,old_vector,rescale_factor,index):
+def rotate_vector(evecs, old_vector, rescale_factor, index):
     """
     Function to find the position of the system(s) in one of the xi_i or mu_i
     directions. 
@@ -457,7 +352,7 @@ def rotate_vector(evecs,old_vector,rescale_factor,index):
     temp *= rescale_factor
     return temp
 
-def get_point_distance(point1, point2, evals, evecs, evecsCV, order, f0):
+def get_point_distance(point1, point2, metricParams, fUpper):
     """
     Function to calculate the mismatch between two points, supplied in terms
     of the masses and spins, using the xi_i parameter space metric to
@@ -475,25 +370,16 @@ def get_point_distance(point1, point2, evals, evecs, evecsCV, order, f0):
         point2[1] contains the mass of the smallest body.
         point2[2] contains the spin of the heaviest body.
         point2[3] contains the spin of the smallest body.
-    evals : numpy.array
-        Array of the eigenvalues of the metric in lambda_i coordinates. Used
-        to rotate to a Cartesian coordinate system.
-    evecs : numpy.matrix
-        Matrix of the eigenvectors of the metric in lambda_i coordinates. Used
-        to rotate to a Cartesian coordinate system.
-    evecsCV : numpy.matrix, optional (default = None)
-        If covary=True this matrix is used to perform the rotation to the xi_i
-        coordinate system.
-    order : string
-        The Post-Newtonian order that is used to translate from masses and
-        spins to the lambda_i coordinate system.
-    f0 : float
-        This is an arbitrary scaling factor introduced to avoid the potential
-        for numerical overflow when calculating this. Generally the default
-        value (70) is safe here. **IMPORTANT, if you want to calculate the
-        ethinca metric components later this MUST be set equal to f_low.**
-        This value must also be used consistently (ie. don't change its value
-        when calling different functions!).
+    metricParams : metricParameters instance
+        Structure holding all the options for construction of the metric
+        and the eigenvalues, eigenvectors and covariance matrix
+        needed to manipulate the space.
+    fUpper : float
+        The value of fUpper to use when getting the mu coordinates from the
+        lambda coordinates. This must be a key in metricParams.evals,
+        metricParams.evecs and metricParams.evecsCV
+        (ie. we must know how to do the transformation for
+        the given value of fUpper)
 
     Returns
     --------
@@ -533,11 +419,11 @@ def get_point_distance(point1, point2, evals, evecs, evecsCV, order, f0):
     bbeta, bsigma, bgamma, bchis = get_beta_sigma_from_aligned_spins(bTotMass,\
                                      bEta, bSpin1, bSpin2)
 
-    aXis = get_cov_params(aTotMass, aEta, abeta, asigma, agamma, achis, f0,\
-                          evecs, evals, evecsCV, order)
+    aXis = get_cov_params(aTotMass, aEta, abeta, asigma, agamma, achis, \
+                          metricParams, fUpper)
 
-    bXis = get_cov_params(bTotMass, bEta, bbeta, bsigma, bgamma, bchis, f0,\
-                          evecs, evals, evecsCV, order)
+    bXis = get_cov_params(bTotMass, bEta, bbeta, bsigma, bgamma, bchis, \
+                          metricParams, fUpper)
 
     dist = (aXis[0] - bXis[0])**2
     for i in range(1,len(aXis)):
