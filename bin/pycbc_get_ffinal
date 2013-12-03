@@ -1,0 +1,279 @@
+#! /usr/bin/env python
+
+__prog__ = 'pycbc_get_ffinal'
+__author__ = 'Collin Capano <collin.capano@ligo.org>'
+__description__ = """
+Finds the maximum frequency of waveforms by generating them. Will also report
+the duration of time domain waveforms.
+"""
+
+import os, sys
+import numpy
+import optparse
+
+from pycbc import waveform
+
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+from glue.ligolw import table
+from glue.ligolw.utils import process
+
+def fstr(input):
+    """
+    Helper function that automatically strips new line characters from a
+    string. This is so that you can input multi-line strings to optparse
+    without having to worry about the formatting being messed up in the help
+    message.
+
+    Parameters
+    ----------
+    input: string
+        The input string to strip new line characters from.
+    """
+    return ' '.join(map(str.strip, input.split('\n'))).strip()
+
+def getOmegaT(sinx, cosx):
+    """
+    Gets the phase evolution of a time series from the series' sine and
+    cosine components. This is mostly a wrapper around numpy.arctan2, but it
+    keeps track of the increasing phase; i.e., it adds 2pi to the phase at each
+    new cycle.
+
+    Parameters
+    ----------
+    sinx: numpy array
+        The sine phase of the time series.
+    cosx: numpy array
+        The cosine phase of the time series.
+
+    Returns
+    -------
+    Numpy array giving the phase evolution.
+    """
+
+    arctanx = numpy.arctan2(sinx, cosx)
+    globalPi = []
+    count = 0
+    for thisdiff in numpy.diff(arctanx):
+        globalPi.append(count*numpy.pi)
+        if thisdiff < 0:
+            count += 2
+    globalPi.append(count*numpy.pi)
+
+    return arctanx + numpy.array(globalPi)
+
+def getAmpFreqfromTS(hplus, hcross):
+    """
+    Gets the amplitude and frequency evolution of a waveform time series
+    using the plus and cross polarizations of the waveform.
+
+    Parameters
+    -----------
+    hplus: pycbc TimeSeries
+       The plus polarization of the time series. 
+    hcross: pycbc TimeSeries
+        The cross polarization of the time series.
+
+    Returns
+    -------
+    A tuple of two pycbc TimeSeries. The first element is the amplitude
+    evolution, the second is the frequency evolution, in Hz.
+    """
+    # consistency checks
+    if hplus.delta_t != hcross.delta_t:
+        raise ValueError, "deltaT mismatch: got %f for hplus, %f for hcross" %(
+            hplus.delta_t, hcross.delta_t)
+    if len(hplus) != len(hcross):
+        raise ValueError, "lenght mismatch: got %i for hplus, %i for hcross" %(
+            len(hplus), len(hcross))
+    deltaT = hplus.delta_t
+    # get amplitude evolution
+    amp = numpy.sqrt(hplus**2. + hcross**2.)
+    # strip off trailing zeros
+    endPt = numpy.nonzero(amp)[0][-1]
+    amp = amp[:endPt]
+
+    # get frequency evolution using hplus, hcross and amplitude
+    # because numpy.arctan2 doesn't take into account the number
+    # of cycles, we have to correct for this manually
+    cos_h = hplus[:endPt] / amp
+    sin_h = hcross[:endPt] / amp
+    omegaT = getOmegaT(sin_h, cos_h)
+    omega = numpy.diff(omegaT)/deltaT
+
+    return amp, omega/(2*numpy.pi)
+
+
+parser = optparse.OptionParser(description = fstr(__description__))
+parser.add_option("-i", "--input", help=fstr("""
+    Input file. If specified, any single waveform parameters given by the below
+    options will be ignored.
+    """))
+parser.add_option("-o", "--output", help=fstr("""
+    Output file. Required if specifying an input file."""))
+parser.add_option("-a", "--approximant",  help=fstr("""
+    What approximant to use to genrate the waveform(s). Options are:
+    TD approximants: %s.""" %(', '.join(waveform.td_approximants())) + """ 
+    FD approximants: %s.""" %(', '.join(waveform.fd_approximants()))))
+parser.add_option('-f', '--f-min', type='float', help=fstr("""
+    Frequency at which to start the waveform generation (in Hz)."""))
+parser.add_option('-r', '--sample-rate', type='int', help = fstr("""
+    Sample rate to use (in Hz). Required for TD approximants."""))
+parser.add_option('-s', '--segment-length', type='int', help = fstr("""
+    The inverse of deltaF (in s). Required for FD approximants."""))
+parser.add_option('-m', '--max-sample-rate', type='int', help = fstr("""
+    Optional. Maximum sample rate to use (in Hz). If the Nyquist frequency of
+    the given sample rate is lower than the ringdown frequency, an error will
+    occur for some waveform approximants. If max-sample-rate is specified,
+    the code will try increasing the sample-rate by a factor of 2 until it
+    finds a frequency that works or until it exceeds the specified maximum
+    rate."""))
+parser.add_option('-v', '--verbose', action='store_true', help='Be verbose.')
+waveformOpts = optparse.OptionGroup(parser, fstr("""
+    Optional arguments for specifying a single waveform. These will be ignored
+    if an input file is given."""))
+waveformOpts.add_option('', '--mass1', type='float', help=fstr("""
+    Specify mass1 of a single waveform."""))
+waveformOpts.add_option('', '--mass2', type='float', help=fstr("""
+    Specify mass2 of a single waveform."""))
+waveformOpts.add_option('', '--spin1x', type='float', default=0,
+    help='Specify spin1x of a single waveform.')
+waveformOpts.add_option('', '--spin1y', type='float', default=0,
+    help='Specify spin1y of a single waveform.')
+waveformOpts.add_option('', '--spin1z', type='float', default=0,
+    help='Specify spin1z of a single waveform.')
+waveformOpts.add_option('', '--spin2x', type='float', default=0,
+    help='Specify spin2x of a single waveform.')
+waveformOpts.add_option('', '--spin2y', type='float', default=0,
+    help='Specify spin2y of a single waveform.')
+waveformOpts.add_option('', '--spin2z', type='float', default=0,
+    help='Specify spin2z of a single waveform.')
+waveformOpts.add_option('', '--lambda1', type='float', default=0,
+    help='Specify lambda1 of a single waveform.')
+waveformOpts.add_option('', '--lambda2', type='float', default=0,
+    help='Specify lambda2 of a single waveform.')
+waveformOpts.add_option('', '--phase-order', type='int', default=-1,
+    help='Specify phase-order of a single waveform.')
+waveformOpts.add_option('', '--spin-order', type='int', default=-1,
+    help='Specify spin-order of a single waveform.')
+waveformOpts.add_option('', '--tidal-order', type = 'int', default=-1,
+    help='Specify tidal-order of a single waveform.')
+waveformOpts.add_option('', '--amplitude-order', type = 'int', default=-1,
+    help='Specify amplitude-order of a single waveform.')
+parser.add_option_group(waveformOpts)
+
+opts, _ = parser.parse_args()
+
+# check options
+if opts.input is None and (opts.mass1 is None or opts.mass2 is None):
+    raise ValueError, fstr("""must specify input file or at least mass1,mass2
+        of a single waveform""")
+infile = opts.input
+if opts.input is not None and opts.output is None:
+    raise ValueError, "must specify output if giving input file"
+outfile = opts.output
+if opts.approximant is None:
+    raise ValueError, "must specify an approximant"
+fd_approx = opts.approximant in waveform.fd_approximants()
+if not fd_approx and opts.approximant not in waveform.td_approximants():
+    raise ValueError, "unrecognized approximant %s" % opts.approximant
+if not fd_approx and opts.sample_rate is None:
+    raise ValueError, "TD approximants require a sample-rate"
+min_sample_rate = opts.sample_rate
+if opts.max_sample_rate is not None:
+    max_sample_rate = opts.max_sample_rate
+else:
+    max_sample_rate = min_sample_rate
+if fd_approx and opts.segment_length is None:
+    raise ValueError, "FD approximants require a segment-length"
+seg_length = opts.segment_length
+wFmin = opts.f_min
+if not fd_approx and wFmin >= min_sample_rate / 2.:
+    raise ValueError, "f-min must be < half the sample-rate"
+phi0 = 0.
+
+# load the xml file
+if infile is not None:
+    xmldoc = utils.load_filename(infile, gz=infile.endswith('.gz'),
+        verbose=opts.verbose)
+    this_process = process.register_to_xmldoc(xmldoc, __prog__, opts.__dict__)
+    sngl_insp_table = table.get_table(xmldoc, 'sngl_inspiral')
+else:
+    # FIXME: try to get this from the waveformOpts group
+    tmplt_args = ['mass1', 'mass2', 'spin1x', 'spin1y', 'spin1z', 'spin2x',
+        'spin2y', 'spin2z', 'lambda1', 'lambda2', 'phase_order', 'spin_order',
+        'tidal_order', 'amplitude_order']
+    tmplt = dict([ [arg, getattr(opts, arg)] for arg in tmplt_args])
+    sngl_insp_table = [tmplt]
+
+if opts.verbose and infile is not None:
+    print >> sys.stdout, "Cycling over templates..."
+
+for cache_id, tmplt in enumerate(sngl_insp_table):
+    if opts.verbose and infile is not None:
+        print >> sys.stdout, "Template %i/%i\r" %(cache_id+1,
+            len(sngl_insp_table)),
+        sys.stdout.flush()
+
+
+    if fd_approx:
+        if infile is None:
+            hplus, hcross = waveform.get_fd_waveform(
+                approximant=opts.approximant, delta_f=1./seg_length,
+                f_lower=wFmin, **tmplt)
+        else:
+            hplus, hcross = waveform.get_fd_waveform(
+                template=tmplt, approximant=opts.approximant,
+                delta_f=1./seg_length, f_lower=wFmin)
+        
+        freq = hplus.delta_f * numpy.nonzero(abs(hplus.data))[0][-1]
+
+    else:
+        # cycle over the sample rates finding the lowest one that works
+        sample_rate = min_sample_rate
+        success = False
+        while not success:
+            try:
+                if infile is None:
+                    hplus, hcross = waveform.get_td_waveform(
+                        approximant=opts.approximant, delta_t=1./sample_rate,
+                        f_lower=wFmin, **tmplt)
+                else:
+                    hplus, hcross = waveform.get_td_waveform(
+                        template=tmplt, approximant=opts.approximant,
+                        delta_t=1./sample_rate, f_lower=wFmin)
+                # success break
+                success = True
+            except:
+                sample_rate *= 2
+                if sample_rate > max_sample_rate:
+                    raise ValueError, "unable to generate template %i;" %(
+                        cache_id) + " try increasing max sample rate"
+
+       
+        # find f_final
+        _, freq = getAmpFreqfromTS(hplus, hcross)
+        freq = freq.max()
+
+
+    if infile is None:
+        print >> sys.stdout, "f Final: %f Hz" %(freq)
+        if not fd_approx:
+            print >> sys.stdout, "Duration: %f s" %(hplus.duration)
+    else:
+        sngl_insp_table[cache_id].f_final = freq
+
+        if not fd_approx:
+            sngl_insp_table[cache_id].template_duration = hplus.duration
+
+if infile is not None:
+    if opts.verbose:
+        print >> sys.stdout, "\nWriting output file..."
+        sys.stdout.flush()
+
+    # write the xml file
+    utils.write_filename(xmldoc, outfile, gz = outfile.endswith('.gz'))
+
+    if opts.verbose:
+        print >> sys.stdout, "Finished!"
+sys.exit(0)
