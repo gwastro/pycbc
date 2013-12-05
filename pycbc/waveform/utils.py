@@ -56,7 +56,7 @@ def unwrap_phase(vec, discont, offset):
     Phase: TimeSeries
         The unwrapped phase as a time series.   
 
-    """
+    """  
     nvec = copy.deepcopy(vec)
     total_offset = 0
     pval = None
@@ -104,8 +104,8 @@ def phase_from_polarizations(h_plus, h_cross):
     >>> phase = phase_from_polarizations(hp, hc)
 
     """
-    p_wrapped = numpy.arctan(h_plus/h_cross)
-    p = unwrap_phase(p_wrapped, 0.7*lal.LAL_PI, lal.LAL_PI)
+    p_wrapped = numpy.arctan2(h_plus, h_cross)
+    p = unwrap_phase(p_wrapped, 2*lal.LAL_PI*0.7, lal.LAL_PI*2)
     p += -p[0]
     return TimeSeries(abs(p), delta_t=h_plus.delta_t, epoch=h_plus.start_time)
 
