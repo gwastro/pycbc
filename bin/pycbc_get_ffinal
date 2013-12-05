@@ -32,77 +32,6 @@ def fstr(input):
     """
     return ' '.join(map(str.strip, input.split('\n'))).strip()
 
-def getOmegaT(sinx, cosx):
-    """
-    Gets the phase evolution of a time series from the series' sine and
-    cosine components. This is mostly a wrapper around numpy.arctan2, but it
-    keeps track of the increasing phase; i.e., it adds 2pi to the phase at each
-    new cycle.
-
-    Parameters
-    ----------
-    sinx: numpy array
-        The sine phase of the time series.
-    cosx: numpy array
-        The cosine phase of the time series.
-
-    Returns
-    -------
-    Numpy array giving the phase evolution.
-    """
-
-    arctanx = numpy.arctan2(sinx, cosx)
-    globalPi = []
-    count = 0
-    for thisdiff in numpy.diff(arctanx):
-        globalPi.append(count*numpy.pi)
-        if thisdiff < 0:
-            count += 2
-    globalPi.append(count*numpy.pi)
-
-    return arctanx + numpy.array(globalPi)
-
-def getAmpFreqfromTS(hplus, hcross):
-    """
-    Gets the amplitude and frequency evolution of a waveform time series
-    using the plus and cross polarizations of the waveform.
-
-    Parameters
-    -----------
-    hplus: pycbc TimeSeries
-       The plus polarization of the time series. 
-    hcross: pycbc TimeSeries
-        The cross polarization of the time series.
-
-    Returns
-    -------
-    A tuple of two pycbc TimeSeries. The first element is the amplitude
-    evolution, the second is the frequency evolution, in Hz.
-    """
-    # consistency checks
-    if hplus.delta_t != hcross.delta_t:
-        raise ValueError, "deltaT mismatch: got %f for hplus, %f for hcross" %(
-            hplus.delta_t, hcross.delta_t)
-    if len(hplus) != len(hcross):
-        raise ValueError, "lenght mismatch: got %i for hplus, %i for hcross" %(
-            len(hplus), len(hcross))
-    deltaT = hplus.delta_t
-    # get amplitude evolution
-    amp = numpy.sqrt(hplus**2. + hcross**2.)
-    # strip off trailing zeros
-    endPt = numpy.nonzero(amp)[0][-1]
-    amp = amp[:endPt]
-
-    # get frequency evolution using hplus, hcross and amplitude
-    # because numpy.arctan2 doesn't take into account the number
-    # of cycles, we have to correct for this manually
-    cos_h = hplus[:endPt] / amp
-    sin_h = hcross[:endPt] / amp
-    omegaT = getOmegaT(sin_h, cos_h)
-    omega = numpy.diff(omegaT)/deltaT
-
-    return amp, omega/(2*numpy.pi)
-
 
 parser = optparse.OptionParser(description = fstr(__description__))
 parser.add_option("-i", "--input", help=fstr("""
@@ -249,12 +178,10 @@ for cache_id, tmplt in enumerate(sngl_insp_table):
                 if sample_rate > max_sample_rate:
                     raise ValueError, "unable to generate template %i;" %(
                         cache_id) + " try increasing max sample rate"
-
-       
+      
         # find f_final
-        _, freq = getAmpFreqfromTS(hplus, hcross)
+        freq = waveform.frequency_from_polarizations(hplus, hcross)
         freq = freq.max()
-
 
     if infile is None:
         print >> sys.stdout, "f Final: %f Hz" %(freq)
