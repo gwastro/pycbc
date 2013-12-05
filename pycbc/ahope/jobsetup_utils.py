@@ -156,11 +156,11 @@ def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, \
         if currSegLength < dataLength:
             continue
         # How many jobs do we need
-        currSegLength = abs(currSeg)
+        currSegLength = float(abs(currSeg))
         numJobs = int( math.ceil( \
                  (currSegLength - dataLoss) / float(abs(validChunk)) ))
         # What is the incremental shift between jobs
-        timeShift = (abs(currSeg) - dataLength) / float(numJobs - 1)
+        timeShift = (currSegLength - dataLength) / float(numJobs - 1)
         for jobNum in range(numJobs):
             # Get the science segment for this job
             shiftDur = currSeg[0] + int(timeShift * jobNum)
