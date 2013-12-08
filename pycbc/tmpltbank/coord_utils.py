@@ -128,12 +128,14 @@ def get_random_mass(numPoints, massRangeParams):
     # mass. Therefore this is not precomputed in the massRangeParams instance
     if massRangeParams.minEta:
         mineta = numpy.maximum(massRangeParams.minEta, mineta)
-    maxeta = numpy.minimum(massRangeParams.maxEta, massRangeParams.maxMass2 \
-                             * (mass - massRangeParams.maxmass2) / (mass*mass))
-    maxeta = numpy.minimum(maxeta, massRangeParams.minMass1 \
-                             * (mass - massRangeParams.minMass1) / (mass*mass))
+    maxeta = numpy.minimum(massRangeParams.maxEta, maxmass2 \
+                             * (mass - maxmass2) / (mass*mass))
+    maxeta = numpy.minimum(maxeta, minmass1 \
+                             * (mass - minmass1) / (mass*mass))
     if (maxeta < mineta).any():
         errMsg = "ERROR: Maximum eta is smaller than minimum eta!!"
+        print maxeta
+        print mineta
         raise ValueError(errMsg)     
     eta = numpy.random.random(numPoints) * (maxeta - mineta) + mineta
 
@@ -153,7 +155,7 @@ def get_random_mass(numPoints, massRangeParams):
         raise ValueError(errMsg)
 
     # Next up is the spins. First check if we have non-zero spins
-    if maxNSSpinMag == 0 and maxBHSpinMag == 0:
+    if massRangeParams.maxNSSpinMag == 0 and massRangeParams.maxBHSpinMag == 0:
         spinspin = numpy.zeros(numPoints,dtype=float)
         spin1z = numpy.zeros(numPoints,dtype=float)
         spin2z = numpy.zeros(numPoints,dtype=float)
@@ -166,12 +168,12 @@ def get_random_mass(numPoints, massRangeParams):
         # Spin 1 first
         mspin = numpy.zeros(len(mass1))
         mspin += massRangeParams.maxNSSpinMag
-        mspin[mass1 > 3] = massRangeParams.maxBHspinMag
+        mspin[mass1 > 3] = massRangeParams.maxBHSpinMag
         spin1z = (2*numpy.random.random(numPoints) - 1) * mspin
         # Then spin 2
         mspin = numpy.zeros(len(mass2))
         mspin += massRangeParams.maxNSSpinMag
-        mspin[mass2 > 3] = massRangeParams.maxBHspinMag
+        mspin[mass2 > 3] = massRangeParams.maxBHSpinMag
         spin2z = (2*numpy.random.random(numPoints) - 1) * mspin
         spinspin = spin1z*spin2z
 

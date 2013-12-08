@@ -116,7 +116,9 @@ if not opts.output_file:
 if not opts.min_match:
     parser.error("Must supply --min-match")
 pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
+metricParams=pycbc.tmpltbank.metricParameters.from_optparse(opts)
 pycbc.tmpltbank.verify_mass_range_options(opts, parser)
+massRangeParams=pycbc.tmpltbank.massRangeParameters.from_optparse(opts)
 pycbc.psd.verify_psd_options(opts, parser)
 pycbc.tmpltbank.verify_data_reading_options(opts, parser)
 pycbc.tmpltbank.verify_ethinca_calculation_options(opts, parser)
@@ -157,24 +159,23 @@ nyquistFreq = 2**numpy.ceil(numpy.log2(opts.f_upper))
 numSamples = int(round(nyquistFreq / opts.delta_f)) + 1
 psd = pycbc.psd.from_cli(opts, length=numSamples, delta_f=opts.delta_f, \
                          low_frequency_cutoff=opts.f_low, strain=strain)
+metricParams.psd = psd
 
 # Begin by calculating a metric
-evals, evecs, _, moments = pycbc.tmpltbank.determine_eigen_directions(\
-    psd, opts.pn_order, opts.f0, opts.f_low, opts.f_upper, opts.delta_f,\
+metricParams = pycbc.tmpltbank.determine_eigen_directions(\
+    metricParams, \
     vary_fmax=(opts.vary_fupper or opts.calculate_ethinca_metric),\
     vary_density=opts.ethinca_calc_density)
 
 # Choose the discrete values of frequencies to use if --vary-fupper is used
 if not (opts.vary_fupper or opts.calculate_ethinca_metric):
-    evalsSngl = evals[opts.f_upper]
-    evecsSngl = evecs[opts.f_upper]
+    refFreq = metricParams.fUpper
 elif opts.calculate_ethinca_metric and not opts.vary_fupper:
-    fs = numpy.array(evals.keys(), dtype=float)
+    fs = numpy.array(metricParams.evals.keys(), dtype=float)
     fs.sort()
-    evalsSngl = evals[fs.max()]
-    evecsSngl = evecs[fs.max()]
+    refFreq = fs.max()
 else:
-    fs = numpy.array(evals.keys(), dtype=float)
+    fs = numpy.array(metricParams.evals.keys(), dtype=float)
     fs.sort()
     maxTMass = opts.max_total_mass
     minTMass = opts.min_total_mass
@@ -182,28 +183,22 @@ else:
                numpy.array([maxTMass]), fs)[0]
     highEve = pycbc.tmpltbank.return_nearest_isco(\
                 numpy.array([minTMass]), fs)[0]
-    evalsSngl = evals[lowEve]
-    evecsSngl = evecs[lowEve]
+    refFreq = lowEve
 
 if opts.verbose:
     print >>sys.stdout, "Calculating covariance matrix at %f." \
                         %(elapsed_time())
 
-    vals = pycbc.tmpltbank.estimate_mass_range(1000000,\
-           opts.pn_order, evalsSngl, evecsSngl, opts.max_mass1,\
-           opts.min_mass1, opts.max_mass2, opts.min_mass2,\
-           opts.max_ns_spin_mag, opts.f0,\
-           covary=False, maxBHspin=opts.max_bh_spin_mag,\
-           minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass,\
-           maxEta=opts.max_eta, minEta=opts.min_eta)
-    cov = numpy.cov(vals)
-    evalsCV,evecsCV = numpy.linalg.eig(cov)
+vals = pycbc.tmpltbank.estimate_mass_range(1000000,\
+       massRangeParams, metricParams, refFreq, covary=False)
+cov = numpy.cov(vals)
+evalsCV,evecsCV = numpy.linalg.eig(cov)
+metricParams.evecsCV = {}
+metricParams.evecsCV[refFreq] = evecsCV    
 
-    if opts.verbose:
-        print>> sys.stdout, "Covariance matrix calculated at %f." \
-                            %(elapsed_time())
-else:
-    evecsCV = None
+if opts.verbose:
+    print>> sys.stdout, "Covariance matrix calculated at %f." \
+                        %(elapsed_time())
 
 # Estimate the largest values of \chi_1 and \chi_2 to optimise what follows
 if opts.verbose:
@@ -211,12 +206,7 @@ if opts.verbose:
                         %(elapsed_time())
 
 vals = pycbc.tmpltbank.estimate_mass_range(1000000,\
-       opts.pn_order, evalsSngl, evecsSngl, opts.max_mass1,\
-       opts.min_mass1, opts.max_mass2, opts.min_mass2,\
-       opts.max_ns_spin_mag, opts.f0,\
-       covary=True, evecsCV=evecsCV, maxBHspin=opts.max_bh_spin_mag,\
-       minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass,\
-       maxEta=opts.max_eta, minEta=opts.min_eta)
+       massRangeParams, metricParams, refFreq, covary=True)
 
 chi1Max = vals[0].max()
 chi1Min = vals[0].min()
@@ -276,12 +266,7 @@ while(1):
     if not (Ns % 100000):
         # For optimization we generate points in sets of 100000
         rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z =\
-            pycbc.tmpltbank.get_random_mass(\
-            100000, opts.min_mass1, opts.max_mass1, opts.min_mass2,\
-            opts.max_mass2, opts.max_ns_spin_mag,\
-            maxBHspin=opts.max_bh_spin_mag,\
-            minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass,\
-            maxEta=opts.max_eta, minEta=opts.min_eta)
+            pycbc.tmpltbank.get_random_mass(100000, massRangeParams)
         diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
         rMass1 = (rTotmass + diff)/2.
         rMass2 = (rTotmass - diff)/2.
@@ -289,13 +274,14 @@ while(1):
         if opts.vary_fupper:
             refEve = pycbc.tmpltbank.return_nearest_isco(rTotmass, fs)
             lambdas = pycbc.tmpltbank.get_chirp_params(rTotmass, rEta, rBeta,\
-                      rSigma, rGamma, rChis, opts.f0, opts.pn_order)
+                      rSigma, rGamma, rChis, metricParams.f0, \
+                      metricParams.pnOrder)
             mus = []
             idx = 0
             for freq in fs:
                 if freq >= lowEve and freq <= highEve: 
                     mus.append(pycbc.tmpltbank.get_mu_params(lambdas,\
-                               opts.f0, evecs[freq], evals[freq]))
+                                                          metricParams, freq))
                     if freqMap[freq] != idx:
                         raise BrokenError
                     idx += 1
@@ -304,9 +290,7 @@ while(1):
             refEve = numpy.zeros(100000)
             mus = numpy.zeros([1,1,100000])
         vecs = pycbc.tmpltbank.get_cov_params(rTotmass, rEta, rBeta,\
-                   rSigma, rGamma, rChis, opts.f0, evecsSngl, evalsSngl,\
-                   evecsCV, opts.pn_order)
-      
+                   rSigma, rGamma, rChis, metricParams, refFreq)
         vecs = numpy.array(vecs)
         Ns = 0
     # Then we check each point for acceptance
@@ -328,7 +312,7 @@ while(1):
                 for entry in massbank[v1Bin+i][v2Bin+j]:
                     if pycbc.tmpltbank.calc_point_dist_vary(\
                                  mus[:,:,Ns], refEve[Ns], entry[5], entry[4],\
-                                 freqMap,opts.min_match):
+                                 freqMap, opts.min_match):
                         store = False
                         break
     else:
@@ -362,16 +346,15 @@ if opts.verbose:
 
 # Put the whole template bank in one list
 tempBank = []
-for i in range(int((chi1Max - chi1Min) // MMdist)):
-    for j in range(int((chi2Max - chi2Min) // MMdist)):
+for i in range(-2,int((chi1Max - chi1Min) // MMdist + 2)):
+    for j in range(-2,int((chi2Max - chi2Min) // MMdist + 2)):
         for masses in massbank[i][j]:
             tempBank.append([masses[0],masses[1],masses[2],masses[3]])
 
 
 # Output to file
-pycbc.tmpltbank.output_sngl_inspiral_table(opts.output_file, tempBank, moments,\
-         opts.f0, opts.pn_order,\
-         calculate_ethinca_comps=opts.calculate_ethinca_metric,\
+pycbc.tmpltbank.output_sngl_inspiral_table(opts.output_file, tempBank, 
+         metricParams, calculate_ethinca_comps=opts.calculate_ethinca_metric,\
          programName=__program__,optDict=opts.__dict__,\
          comment="", ifos=[""], version=pycbc.version.git_hash,\
          cvs_repository='pycbc/'+pycbc.version.git_branch,\

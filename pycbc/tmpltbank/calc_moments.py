@@ -124,9 +124,9 @@ def determine_eigen_directions(metricParams, preserveMoments=False,\
     metric = {}
   
     # First step is to get the moments needed to calculate the metric
-    if not (self.moments and preserveMoments):
-        get_moments(psd, f0, f_low, f_upper, deltaF, \
-                              vary_fmax=vary_fmax, vary_density=vary_density)
+    if not (metricParams.moments and preserveMoments):
+        get_moments(metricParams, vary_fmax=vary_fmax, \
+                    vary_density=vary_density)
 
     # What values are going to be in the moments
     # J7 is the normalization factor so it *MUST* be present
@@ -137,25 +137,25 @@ def determine_eigen_directions(metricParams, preserveMoments=False,\
         # Here we convert the moments into a form easier to use here
         Js = {}
         for i in range(-1,18):
-            Js[i] = moments['J%d'%(i)][item]
+            Js[i] = metricParams.moments['J%d'%(i)][item]
 
         logJs = {}
         for i in range(-1,18):
-            logJs[i] = moments['log%d'%(i)][item]
+            logJs[i] = metricParams.moments['log%d'%(i)][item]
 
         loglogJs = {}
         for i in range(-1,18):
-            loglogJs[i] = moments['loglog%d'%(i)][item]
+            loglogJs[i] = metricParams.moments['loglog%d'%(i)][item]
 
         logloglogJs = {}
         for i in range(-1,18):
-            logloglogJs[i] = moments['logloglog%d'%(i)][item]
+            logloglogJs[i] = metricParams.moments['logloglog%d'%(i)][item]
 
         loglogloglogJs = {}
         for i in range(-1,18):
-            loglogloglogJs[i] = moments['loglogloglog%d'%(i)][item]
+            loglogloglogJs[i] = metricParams.moments['loglogloglog%d'%(i)][item]
 
-        mapping = generate_mapping(order)
+        mapping = generate_mapping(metricParams.pnOrder)
  
         # Calculate the metric
         gs = calculate_metric(Js, logJs, loglogJs, logloglogJs, \
@@ -257,15 +257,16 @@ def get_moments(metricParams, vary_fmax=False, vary_density=25):
 
     # Need I7 first as this is the normalization factor
     funct = lambda x: 1
-    I7 = calculate_moment(new_f, new_amp, metricParams.f_low, \
-                          metricParams.f_high, metricParams.f0, funct,\
+    I7 = calculate_moment(new_f, new_amp, metricParams.fLow, \
+                          metricParams.fUpper, metricParams.f0, funct,\
                           vary_fmax=vary_fmax, vary_density=vary_density)
 
     # Do all the J moments
+    moments = {}
     for i in range(-1,18):
         funct = lambda x: x**((-i+7)/3.)
         moments['J%d' %(i)] = calculate_moment(new_f, new_amp, \
-                                metricParams.f_low, metricParams.f_high, \
+                                metricParams.fLow, metricParams.fUpper, \
                                 metricParams.f0, funct, norm=I7, \
                                 vary_fmax=vary_fmax, vary_density=vary_density)
 
@@ -273,7 +274,7 @@ def get_moments(metricParams, vary_fmax=False, vary_density=25):
     for i in range(-1,18):
         funct = lambda x: (numpy.log(x**(1./3.))) * x**((-i+7)/3.)
         moments['log%d' %(i)] = calculate_moment(new_f, new_amp, \
-                                metricParams.f_low, metricParams.f_high, \
+                                metricParams.fLow, metricParams.fUpper, \
                                 metricParams.f0, funct, norm=I7, \
                                 vary_fmax=vary_fmax, vary_density=vary_density)
 
@@ -281,7 +282,7 @@ def get_moments(metricParams, vary_fmax=False, vary_density=25):
     for i in range(-1,18):
         funct = lambda x: (numpy.log(x**(1./3.)))**2 * x**((-i+7)/3.)
         moments['loglog%d' %(i)] = calculate_moment(new_f, new_amp, \
-                                metricParams.f_low, metricParams.f_high, \
+                                metricParams.fLow, metricParams.fUpper, \
                                 metricParams.f0, funct, norm=I7, \
                                 vary_fmax=vary_fmax, vary_density=vary_density)
 
@@ -289,7 +290,7 @@ def get_moments(metricParams, vary_fmax=False, vary_density=25):
     for i in range(-1,18):
         funct = lambda x: (numpy.log(x**(1./3.)))**3 * x**((-i+7)/3.)
         moments['logloglog%d' %(i)] = calculate_moment(new_f, new_amp, \
-                                metricParams.f_low, metricParams.f_high, \
+                                metricParams.fLow, metricParams.fUpper, \
                                 metricParams.f0, funct, norm=I7, \
                                 vary_fmax=vary_fmax, vary_density=vary_density)
 
@@ -297,7 +298,7 @@ def get_moments(metricParams, vary_fmax=False, vary_density=25):
     for i in range(-1,18):
         funct = lambda x: (numpy.log(x**(1./3.)))**4 * x**((-i+7)/3.)
         moments['loglogloglog%d' %(i)] = calculate_moment(new_f, new_amp, \
-                                metricParams.f_low, metricParams.f_high, \
+                                metricParams.fLow, metricParams.fUpper, \
                                 metricParams.f0, funct, norm=I7, \
                                 vary_fmax=vary_fmax, vary_density=vary_density)
 

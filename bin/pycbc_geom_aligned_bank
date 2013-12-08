@@ -94,7 +94,9 @@ if not opts.min_match:
 if not opts.log_path:
     parser.error("Must supply --log-path")
 pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
+metricParams=pycbc.tmpltbank.metricParameters.from_optparse(opts)
 pycbc.tmpltbank.verify_mass_range_options(opts, parser)
+massRangeParams=pycbc.tmpltbank.massRangeParameters.from_optparse(opts)
 pycbc.psd.verify_psd_options(opts, parser)
 pycbc.tmpltbank.verify_data_reading_options(opts, parser)
 
@@ -134,39 +136,31 @@ nyquistFreq = 2**numpy.ceil(numpy.log2(opts.f_upper))
 numSamples = int(round(nyquistFreq / opts.delta_f)) + 1
 psd = pycbc.psd.from_cli(opts, length=numSamples, delta_f=opts.delta_f, \
                          low_frequency_cutoff=opts.f_low, strain=strain)
+metricParams.psd = psd
 
 if opts.verbose:
     print >>sys.stdout, "Calculating metric at %.3f." %(elapsed_time())
 
 # Begin by calculating a metric
-evals, evecs, _, moments = pycbc.tmpltbank.determine_eigen_directions(\
-    psd, opts.pn_order, opts.f0, opts.f_low, opts.f_upper, opts.delta_f)
+metricParams = pycbc.tmpltbank.determine_eigen_directions(metricParams)
 
 if opts.verbose:
     print >>sys.stdout, "Calculating covariance matrix at %.3f."\
                         %(elapsed_time())
 
-vals = pycbc.tmpltbank.estimate_mass_range(1000000,\
-       opts.pn_order, evals[opts.f_upper], evecs[opts.f_upper], opts.max_mass1,\
-       opts.min_mass1, opts.max_mass2, opts.min_mass2,\
-       opts.max_ns_spin_mag, opts.f0,\
-       covary=False, maxBHspin=opts.max_bh_spin_mag,\
-       minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass,\
-       maxEta=opts.max_eta, minEta=opts.min_eta)
+vals = pycbc.tmpltbank.estimate_mass_range(1000000, massRangeParams, \
+       metricParams, metricParams.fUpper, covary=False) 
 cov = numpy.cov(vals)
 evalsCV,evecsCV = numpy.linalg.eig(cov)
+metricParams.evecsCV = {}
+metricParams.evecsCV[metricParams.fUpper] = evecsCV
 
 if opts.verbose:
     print>> sys.stdout, "Covariance matrix calculated at %.3f."\
                         %(elapsed_time())
 
-vals = pycbc.tmpltbank.estimate_mass_range(1000000,\
-       opts.pn_order, evals[opts.f_upper], evecs[opts.f_upper], opts.max_mass1,\
-       opts.min_mass1, opts.max_mass2, opts.min_mass2,\
-       opts.max_ns_spin_mag, opts.f0,\
-       covary=True, evecsCV=evecsCV, maxBHspin=opts.max_bh_spin_mag,\
-       minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass,\
-       maxEta=opts.max_eta, minEta=opts.min_eta)
+vals = pycbc.tmpltbank.estimate_mass_range(1000000, massRangeParams, \
+       metricParams, metricParams.fUpper, covary=True)
 
 chi1Max = vals[0].max()
 chi1Min = vals[0].min()
@@ -200,9 +194,9 @@ if opts.verbose:
     print>> sys.stdout, "Lattice contains %d points." %(len(v1s))
 
 # Dump the files needed to define the xi_i parameter space
-numpy.savetxt('metric_evecs.dat',evecs[opts.f_upper])
-numpy.savetxt('metric_evals.dat',evals[opts.f_upper])
-numpy.savetxt('covariance_evecs.dat',evecsCV)
+numpy.savetxt('metric_evecs.dat', metricParams.evecs[opts.f_upper])
+numpy.savetxt('metric_evals.dat', metricParams.evals[opts.f_upper])
+numpy.savetxt('covariance_evecs.dat', metricParams.evecsCV[opts.f_upper])
 
 # Dump the full bank in \xi_i coordinates
 bankFile = open('bank_chis.dat','w')

@@ -126,6 +126,14 @@ if not opts.metric_evecs_file:
 if not opts.cov_evecs_file:
     parser.error("Must supply --cov-evecs-file")
 pycbc.tmpltbank.verify_mass_range_options(opts, parser)
+massRangeParams=pycbc.tmpltbank.massRangeParameters.from_optparse(opts)
+
+# FIXME: Note that a bunch of the options to set this are not passed to this
+# function and are not used. f0 is used in place of fUpper, but this is only
+# used as a key so doesn't matter. We have, however, removed information
+# that might be needed for something like ethinca. Maybe restore this?
+metricParams = pycbc.tmpltbank.metricParameters(opts.pn_order, 0, opts.f0, \
+                                                0, f0=opts.f0)
 
 # Load the list of points from file
 tempBank = numpy.loadtxt(opts.input_bank_file)
@@ -141,6 +149,13 @@ evals = numpy.loadtxt(opts.metric_evals_file)
 evecs = numpy.matrix(numpy.loadtxt(opts.metric_evecs_file))
 evecsCV = numpy.matrix(numpy.loadtxt(opts.cov_evecs_file))
 
+metricParams.evals = {}
+metricParams.evecs = {}
+metricParams.evecsCV = {}
+metricParams.evals[opts.f0] = evals
+metricParams.evecs[opts.f0] = evecs
+metricParams.evecsCV[opts.f0] = evecsCV
+
 # If we only have N directions, do not try to evaluate the N+x!
 if len(evals) < 4:
     opts.eval_vec4_depth = False
@@ -151,18 +166,14 @@ if len(evals) < 5:
 # Create a large set of points and map to xi_i to give a starting point when
 # mapping from xi_i to masses and spins
 rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
-      pycbc.tmpltbank.get_random_mass(
-      2000000, opts.min_mass1, opts.max_mass1, opts.min_mass2, opts.max_mass2,\
-      opts.max_ns_spin_mag, maxBHspin=opts.max_bh_spin_mag, \
-      minTotalMass=opts.min_total_mass, maxTotalMass=opts.max_total_mass,\
-      maxEta=opts.max_eta, minEta=opts.min_eta)
+      pycbc.tmpltbank.get_random_mass(2000000, massRangeParams)
 diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
 rMass1 = (rTotmass + diff)/2.
 rMass2 = (rTotmass - diff)/2.
 rChis = (rSpin1z + rSpin2z)/2.
 
 rXis = pycbc.tmpltbank.get_cov_params(rTotmass, rEta, rBeta, rSigma, rGamma,\
-           rChis, opts.f0, evecs, evals, evecsCV, opts.pn_order)
+           rChis, metricParams, opts.f0)
 
 xis = (numpy.array(rXis)).T
 physMasses = numpy.array([rTotmass, rEta, rSpin1z, rSpin2z])
@@ -221,12 +232,9 @@ for entry in tempBank:
     # This function will use the starting point and iteratively find a
     # physical point has a mismatch < 0.0001 with the desired one
     masses = pycbc.tmpltbank.get_physical_covaried_masses(xis_des,\
-               copy.deepcopy(bestMasses), copy.deepcopy(bestXis), f0,\
-               req_match, order, evecs, evals, evecsCV,\
-               maxmass1, minmass1, maxmass2, minmass2, maxNSspin, maxBHspin,\
-               nsbh_flag=opts.nsbh_flag, minTotalMass=opts.min_total_mass, \
-               maxTotalMass=opts.max_total_mass,\
-               maxEta=opts.max_eta, minEta=opts.min_eta)
+               copy.deepcopy(bestMasses), copy.deepcopy(bestXis), req_match,\
+               massRangeParams, metricParams, opts.f0)
+
     # Now how close is it?
     if opts.verbose:
         print "Template %d has corrected distance of %e"\
@@ -257,12 +265,8 @@ for entry in tempBank:
                 pycbc.tmpltbank.stack_xi_direction_brute(\
                   [masses[6][0],masses[6][1]],\
                   [tmpTotMass,tmpEta,masses[2],masses[3]],\
-                  copy.deepcopy(bestXis), f0, 2, opts.min_match,\
-                  order, evecs, evals, evecsCV, maxmass1, minmass1, maxmass2,\
-                  minmass2, maxNSspin, maxBHspin, nsbh_flag=opts.nsbh_flag, \
-                  minTotalMass=opts.min_total_mass, \
-                  maxTotalMass=opts.max_total_mass, maxEta=opts.max_eta, \
-                  minEta=opts.min_eta)
+                  copy.deepcopy(bestXis), 2, opts.min_match,\
+                  massRangeParams, metricParams, opts.f0)
         vec3_depth = vec3_max - vec3_min
         # Double check that no points appear outside what was calculated above
         if len(xis_close):
@@ -274,13 +278,8 @@ for entry in tempBank:
                 temmpvec3_min, temmpvec3_max =\
                     pycbc.tmpltbank.stack_xi_direction_brute([xi1_des,xi2_des],\
                       copy.deepcopy(temmpBestMasses),\
-                      copy.deepcopy(temmpBestXis), f0, 2,\
-                      opts.min_match, order, evecs, evals, evecsCV, maxmass1,\
-                      minmass1, maxmass2, minmass2, maxNSspin, maxBHspin,\
-                      nsbh_flag=opts.nsbh_flag,\
-                      minTotalMass=opts.min_total_mass, \
-                      maxTotalMass=opts.max_total_mass, maxEta=opts.max_eta, \
-                      minEta=opts.min_eta)
+                      copy.deepcopy(temmpBestXis), 2, opts.min_match, \
+                      massRangeParams, metricParams, opts.f0)
                 temmpvec3_depth = temmpvec3_max - temmpvec3_min
                 if temmpvec3_min < vec3_min:
                     vec3_min = temmpvec3_min
@@ -296,13 +295,8 @@ for entry in tempBank:
                 temmpvec3_min, temmpvec3_max =\
                     pycbc.tmpltbank.stack_xi_direction_brute([xi1_des,xi2_des],\
                       copy.deepcopy(temmpBestMasses),\
-                      copy.deepcopy(temmpBestXis), f0, 2,\
-                      opts.min_match, order, evecs, evals, evecsCV, maxmass1,\
-                      minmass1, maxmass2, minmass2, maxNSspin, maxBHspin,\
-                      nsbh_flag=opts.nsbh_flag,\
-                      minTotalMass=opts.min_total_mass, \
-                      maxTotalMass=opts.max_total_mass, maxEta=opts.max_eta, \
-                      minEta=opts.min_eta)
+                      copy.deepcopy(temmpBestXis), 2, opts.min_match, \
+                      massRangeParams, metricParams, opts.f0)
                 temmpvec3_depth = temmpvec3_max - temmpvec3_min
                 if temmpvec3_max > vec3_max:
                     vec3_max = temmpvec3_max
@@ -317,12 +311,8 @@ for entry in tempBank:
               pycbc.tmpltbank.stack_xi_direction_brute(\
                 [masses[6][0],masses[6][1]],\
                 [tmpTotMass,tmpEta,masses[2],masses[3]],\
-                copy.deepcopy(bestXis), f0, 3, opts.min_match,\
-                order, evecs, evals, evecsCV, maxmass1, minmass1, maxmass2,\
-                minmass2, maxNSspin, maxBHspin, nsbh_flag=opts.nsbh_flag, \
-                minTotalMass=opts.min_total_mass, \
-                maxTotalMass=opts.max_total_mass, maxEta=opts.max_eta, \
-                minEta=opts.min_eta)
+                copy.deepcopy(bestXis), 3, opts.min_match,\
+                massRangeParams, metricParams, opts.f0)
         vec4_depth = vec4_max - vec4_min
     else:
         vec4_min = vec4_max = vec4_depth = 0
@@ -332,12 +322,8 @@ for entry in tempBank:
               pycbc.tmpltbank.stack_xi_direction_brute(\
                 [masses[6][0],masses[6][1]],\
                 [tmpTotMass,tmpEta,masses[2],masses[3]],\
-                copy.deepcopy(bestXis), f0, 4, opts.min_match,\
-                order, evecs, evals, evecsCV, maxmass1, minmass1, maxmass2,\
-                minmass2, maxNSspin, maxBHspin, nsbh_flag=opts.nsbh_flag, \
-                minTotalMass=opts.min_total_mass, \
-                maxTotalMass=opts.max_total_mass, maxEta=opts.max_eta, \
-                minEta=opts.min_eta)
+                copy.deepcopy(bestXis), 4, opts.min_match,\
+                massRangeParams, metricParams, opts.f0)
         vec5_depth = vec5_max - vec5_min
     else:
         vec5_min = vec5_max = vec5_depth = 0
@@ -364,13 +350,9 @@ for entry in tempBank:
         bestXis = xis[dist.argmin()]
         # Find close point to this 3d position
         masses = pycbc.tmpltbank.get_physical_covaried_masses(\
-              [xi1_des,xi2_des,xi3_des], copy.deepcopy(bestMasses),\
-              copy.deepcopy(bestXis), f0, req_match, order,\
-              evecs, evals, evecsCV, maxmass1, minmass1, maxmass2, minmass2,\
-              maxNSspin, maxBHspin, nsbh_flag=opts.nsbh_flag, \
-              minTotalMass=opts.min_total_mass, \
-              maxTotalMass=opts.max_total_mass, maxEta=opts.max_eta, \
-              minEta=opts.min_eta)
+                   [xi1_des,xi2_des,xi3_des], copy.deepcopy(bestMasses),\
+                   copy.deepcopy(bestXis), req_match,\
+                   massRangeParams, metricParams, opts.f0)
         # If vec4 depth is negligible or we didn't get close, stop here
         if vec4_depth < vec3DepthVal or masses[5] > opts.min_match:
             if masses[5]:
@@ -386,12 +368,8 @@ for entry in tempBank:
                   pycbc.tmpltbank.stack_xi_direction_brute(\
                     [masses[6][0],masses[6][1],masses[6][2]],\
                     [tmpTotMass,tmpEta,masses[2],masses[3]],\
-                    copy.deepcopy(bestXis), f0, 3, opts.min_match,\
-                    order, evecs, evals, evecsCV, maxmass1, minmass1, maxmass2,\
-                    minmass2, maxNSspin, maxBHspin, nsbh_flag=opts.nsbh_flag, \
-                    minTotalMass=opts.min_total_mass, \
-                    maxTotalMass=opts.max_total_mass, maxEta=opts.max_eta, \
-                    minEta=opts.min_eta)
+                    copy.deepcopy(bestXis), 3, opts.min_match,\
+                    massRangeParams, metricParams, opts.f0)
             vec4_depthT = vec4_maxT - vec4_minT
             # Then loop over necessary templates in 4th direction
             numV4Temps = int(round(vec4_depthT // vec3DepthVal)) + 1
@@ -403,14 +381,9 @@ for entry in tempBank:
                 bestMasses = physMasses[dist.argmin()]
                 bestXis = xis[dist.argmin()]
                 masses = pycbc.tmpltbank.get_physical_covaried_masses(\
-                      [xi1_des,xi2_des,xi3_des,xi4_des],\
-                      copy.deepcopy(bestMasses), copy.deepcopy(bestXis), f0,\
-                      req_match, order, evecs, evals, evecsCV,\
-                      maxmass1, minmass1, maxmass2, minmass2, maxNSspin,\
-                      maxBHspin, nsbh_flag=opts.nsbh_flag,\
-                      minTotalMass=opts.min_total_mass, \
-                      maxTotalMass=opts.max_total_mass, maxEta=opts.max_eta, \
-                      minEta=opts.min_eta)
+                           [xi1_des,xi2_des,xi3_des,xi4_des],\
+                           copy.deepcopy(bestMasses), copy.deepcopy(bestXis), \
+                           req_match, massRangeParams, metricParams, opts.f0)
                 if masses[5]:
                     # Write point to file
                     print >> outPointer, "%e %e %e %e %e"\

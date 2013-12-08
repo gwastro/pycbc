@@ -234,20 +234,20 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams, \
 
     # Remove points where spins are outside of physical range
     numploga1 = numpy.logical_and(mass1 > 2,99,\
-                                  abs(spin1z) <= massRangeParams.maxBHspin)
-    if nsbh_flag:
+                                  abs(spin1z) <= massRangeParams.maxBHSpinMag)
+    if massRangeParams.nsbhFlag:
         numploga = numploga1
     else:
         numploga2 = numpy.logical_and(mass1 < 3.01, \
-                                      abs(spin1z) <= massRangeParams.maxNSspin)
+                                   abs(spin1z) <= massRangeParams.maxNSSpinMag)
         numploga = numpy.logical_or(numploga1,numploga2)
-    numplogb2 = numpy.logical_and(abs(spin2z) <= massRangeParams.maxNSspin, \
+    numplogb2 = numpy.logical_and(abs(spin2z) <= massRangeParams.maxNSSpinMag,\
                                   mass2 < 3.01)
-    if nsbh_flag:
+    if massRangeParams.nsbhFlag:
         numplogb = numplogb2
     else:
         numplogb1 = numpy.logical_and(mass2 > 2.99, \
-                                      abs(spin2z) <= massRangeParams.maxBHspin)
+                                   abs(spin2z) <= massRangeParams.maxBHSpinMag)
         numplogb = numpy.logical_or(numplogb1,numplogb2)
     numplog1 = numpy.logical_and(numploga,numplogb)
     numplog = numpy.logical_not(numplog1)
@@ -270,8 +270,8 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams, \
     # *not* want to reject the initial guide point. This error comes from
     # Masses -> totmass, eta -> masses conversion, we will have points pushing
     # onto the boudaries of the space.
-    totmass[totmass > massRangeParams.maxTotalMass*1.0001] = 0.0001
-    totmass[totmass < massRangeParams.minTotalMass*0.9999] = 0.0001
+    totmass[totmass > massRangeParams.maxTotMass*1.0001] = 0.0001
+    totmass[totmass < massRangeParams.minTotMass*0.9999] = 0.0001
 
     if totmass[0] < 0.00011:
         raise ValueError("Cannot remove the guide point!")
@@ -282,7 +282,7 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams, \
     return chirpmass, totmass, eta, spin1z, spin2z, diff, mass1, mass2, beta, \
            sigma, gamma, chis, new_xis
 
-def stack_xi_direction_brute(xis, bestMasses, bestXis, directionNum,
+def stack_xi_direction_brute(xis, bestMasses, bestXis, direction_num,
                              req_match, massRangeParams, metricParams, fUpper,\
                              scaleFactor=0.8, numIterations=3000):
     """

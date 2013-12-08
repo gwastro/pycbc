@@ -169,6 +169,11 @@ class metricParameters:
     from the __init__ function providing directly the options normally
     provided on the command line
     """
+    _psd = None
+    _metric = None
+    _evals = None
+    _evecs = None
+    _evecsCV = None
     def __init__(self, pnOrder, fLow, fUpper, deltaF, f0=70):
         """
         Initialize an instance of the metricParameters by providing all
@@ -489,10 +494,10 @@ class massRangeParameters(object):
         self.maxNSSpinMag=maxNSSpinMag
         self.maxBHSpinMag=maxBHSpinMag
         self.minTotMass = minMass1 + minMass2
-        if minTotalMass and (minTotalMass > self.minTotMass):
+        if minTotMass and (minTotMass > self.minTotMass):
             self.minTotMass = minTotMass
         self.maxTotMass = maxMass1 + maxMass2
-        if maxTotalMass and (maxTotalMass < self.maxTotMass):
+        if maxTotMass and (maxTotMass < self.maxTotMass):
             self.maxTotMass = maxTotMass
         self.maxTotMass=maxTotMass
         self.minTotMass=minTotMass
