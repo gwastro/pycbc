@@ -4,10 +4,9 @@ import logging
 from glue import segments, pipeline
 from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.ahope.ahope_utils import *
-from pylal.dq.dqSegmentUtils import tosegmentxml
 
 def setup_segment_generation(cp, ifos, start_time, end_time,\
-                             ahopeDax, out_dir):
+                             ahopeDax, out_dir, minSegLength=0):
     """
     Setup the segment generation needed in an ahope workflow
     FIXME: Add more DOCUMENTATION
@@ -32,6 +31,8 @@ def setup_segment_generation(cp, ifos, start_time, end_time,\
     segsToAnalyse = {}
     for ifo in ifos:
         if segFilesDict[ifo]['ANALYSED'].segmentList:
+            if minSegLength:
+                segFilesDict[ifo]['ANALYSED'].removeShortSciSegs(minSegLength)
             segsToAnalyse[ifo] = segFilesDict[ifo]['ANALYSED'].segmentList
         else:
             msg = "No science segments found for ifo %s. " %(ifo)
@@ -87,13 +88,11 @@ def setup_segment_gen_runtime(cp, ifos, veto_categories, start_time,\
                              "%s-ANALYSED_SEGMENTS.xml" %(ifo.upper()) ) 
         currUrl = urlparse.urlunparse(['file', 'localhost', analysedXmlFile,\
                           None, None, None])
-        analysedXmlFP = open(analysedXmlFile, "w")
-        tosegmentxml(analysedXmlFP, analysedSegs)
-        analysedXmlFP.close()
         currTag='ANALYSED'
         segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, \
                                  '%s_%s' %(ifoTag, currTag), \
                                  segValidSeg, currUrl, segList=analysedSegs)
+        segFilesDict[ifo][currTag].toSegmentXml()
     return segFilesDict
 
 def setup_segment_gen_mixed(cp, ifos, veto_categories, start_time,\
@@ -136,7 +135,7 @@ def setup_segment_gen_mixed(cp, ifos, veto_categories, start_time,\
                                   category, start_time, end_time, out_dir,
                                   ahopeDax, vetoGenJob)        
                 # Don't know what the segments are as they haven't been
-                # calculated yet!
+                # calculated yet!
                 vetoSegs[category] = None
             currUrl = urlparse.urlunparse(['file', 'localhost',\
                               vetoXmlFiles[category], None, None, None])
@@ -151,13 +150,11 @@ def setup_segment_gen_mixed(cp, ifos, veto_categories, start_time,\
                              "%s-ANALYSED_SEGMENTS.xml" %(ifo.upper()) )
         currUrl = urlparse.urlunparse(['file', 'localhost', analysedXmlFile,\
                           None, None, None])
-        analysedXmlFP = open(analysedXmlFile, "w")
-        tosegmentxml(analysedXmlFP, analysedSegs)
-        analysedXmlFP.close()
         currTag='ANALYSED'
         segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, \
                                  '%s_%s' %(ifoTag, currTag), \
                                  segValidSeg, currUrl, segList=analysedSegs)
+        segFilesDict[ifo][currTag].toSegmentXml()
     return segFilesDict
 
 #FIXME: Everything below here uses the S6 segment architecture. This is going
@@ -270,7 +267,7 @@ def create_segs_from_cats_job(cp, out_dir):
 
 # Function to load segments from an xml file taken from pylal/dq
 # FIXME: Use the pylal/pylal/dq function.
-# NEed to understand the load_fileobj warning first
+# Need to understand the load_fileobj warning first
 def fromsegmentxml(file, dict=False, id=None):
 
     """
@@ -335,4 +332,3 @@ def fromsegmentxml(file, dict=False, id=None):
     xmldoc.unlink()
 
     return segs
-

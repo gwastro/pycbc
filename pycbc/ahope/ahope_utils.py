@@ -6,6 +6,7 @@ import numpy
 import urlparse
 from glue import lal
 from glue import segments
+import pylal.dq.dqSegmentUtils as dqUtils
 
 class AhopeOutFile(lal.CacheEntry):
     '''This class holds the details of an individual output file in the ahope
@@ -48,6 +49,36 @@ class AhopeOutSegFile(AhopeOutFile):
         AhopeOutFile.__init__(self, ifo, description, timeSeg, fileUrl,\
                               **kwargs)
         self.segmentList = segList
+
+    def removeShortSciSegs(self, minSegLength):
+        """
+        Function to remove all science segments
+        shorter than a specific length. Also updates the file on disk to remove
+        these segments.
+
+        Parameters
+        -----------
+        minSegLength : int
+            Maximum length of science segments. Segments shorter than this will
+            be removed.
+        """
+        newSegList = segments.segmentlist()
+        for seg in self.segmentList:
+            if abs(seg) > minSegLength:
+                newSegList.append(seg)
+        newSegList.coalesce()
+        self.segmentlist = newSegList
+        self.toSegmentXml()
+
+    def toSegmentXml(self):
+        """
+        Write the segment list in self.segmentList to the url in self.url.
+        """
+        filePointer = open(self.path, 'w')
+        dqUtils.tosegmentxml(filePointer, self.segmentList)
+        filePointer.close()
+        
+
 
 class AhopeOutFileList(lal.Cache):
     '''This class holds a list of AhopeOutFile objects. It inherits from the

@@ -42,7 +42,7 @@ dag.set_dag_file(basename)
 
 # Get segments
 scienceSegs, segsDict = ahope.setup_segment_generation(cp, ifos, start_time,\
-                               end_time, None, segDir)
+                               end_time, None, segDir, minSegLength=2000)
 
 # Get frames, this can be slow, as we ping every frame to check it exists,
 # the second option shows how to turn this off
