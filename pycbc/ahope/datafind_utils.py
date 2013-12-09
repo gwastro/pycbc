@@ -89,10 +89,11 @@ def setup_datafind_workflow(cp, scienceSegs, ahopeDax, outputDir, \
                 msg += "\n%s" % "\n".join(map(str, missing))
                 missingData = True
                 logging.error(msg)
+            # Remove missing time, so that we can carry on if desired
+            scienceSegs[ifo] = scienceSegs[ifo] - missing
         if checkSegmentGaps and missingData:
             raise ValueError("Ahope cannot find needed data, exiting.")
         logging.info("Done checking, any discrepancies are reported above.")
-        scienceSegs = newScienceSegs
 
     # Do all of the frame files that were returned actually exist?
     if checkFramesExist:

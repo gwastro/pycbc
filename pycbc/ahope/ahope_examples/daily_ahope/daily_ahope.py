@@ -41,15 +41,15 @@ dag.set_dax_file(basename)
 dag.set_dag_file(basename)
 
 # Get segments
-#scienceSegs, segsDict = ahope.setup_segment_generation(cp, ifos, start_time,\
-#                               end_time, None, segDir)
+scienceSegs, segsDict = ahope.setup_segment_generation(cp, ifos, start_time,\
+                               end_time, None, segDir)
 # FIXME: Currently there is an issue with the segments function. This is
 # temporarily bypassed.
-seg = segments.segment([start_time, end_time])
-scienceSeg = segments.segmentlist([seg])
-scienceSegs = {}
-scienceSegs['H1'] = scienceSeg
-scienceSegs['L1'] = scienceSeg
+#seg = segments.segment([start_time, end_time])
+#scienceSeg = segments.segmentlist([seg])
+#scienceSegs = {}
+#scienceSegs['H1'] = scienceSeg
+#scienceSegs['L1'] = scienceSeg
 
 # Get frames, this can be slow, as we ping every frame to check it exists,
 # the commented out option shows how to turn this off
@@ -57,7 +57,7 @@ scienceSegs['L1'] = scienceSeg
 #                       dfDir)
 # This second case will also update the segment list on missing data, not fail
 datafinds, scienceSegs = ahope.setup_datafind_workflow(cp, scienceSegs, dag,\
-                       dfDir, checkSegmentGaps=False, checkFramesExist=False,\
+                       dfDir, checkSegmentGaps=True, checkFramesExist=False,\
                        updateSegmentTimes=True)
 
 # Template bank stuff
