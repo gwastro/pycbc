@@ -384,13 +384,13 @@ def insert_mass_range_option_group(parser,nonSpin=False):
                                       "with. OPTIONAL, no limit on min total "+\
                                       "mass if not provided. UNITS=Solar mass.")
     massOpts.add_option("", "--max-eta", action="store", type="float",\
-                  default=None, help="Minimum symmetric mass ratio to "+\
+                  default=0.25, help="Minimum symmetric mass ratio to "+\
                                       "generate bank "+\
                                       "with. OPTIONAL, no limit on maximum "+\
                                       "symmetric mass ratio if not provided."+\
                                       "UNITS=Solar mass.")
     massOpts.add_option("", "--min-eta", action="store", type="float",\
-                  default=None, help="Maximum symmetric mass ratio to "+\
+                  default=0., help="Maximum symmetric mass ratio to "+\
                                       "generate bank "+\
                                       "with. OPTIONAL, no limit on minimum "+\
                                       "symmetric mass ratio if not provided."+\
@@ -457,13 +457,13 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
             parser.error("If given --max-eta must be larger than --min-eta.")
     if nonSpin:
         return
-    if not opts.max_ns_spin_mag:
+    if opts.max_ns_spin_mag is None:
         # Can ignore this if no NSs will be generated
         if opts.min_mass2 < 3:
             parser.error("Must supply --max-ns-spin-mag")
         else:
             opts.max_ns_spin_mag = opts.max_bh_spin_mag
-    if not opts.max_bh_spin_mag:
+    if opts.max_bh_spin_mag is None:
         # Can ignore this if no BHs will be generated
         if opts.max_mass1 > 3:
             parser.error("Must supply --max-bh-spin-mag")
@@ -480,7 +480,7 @@ class massRangeParameters(object):
     """
     def __init__(self, minMass1, maxMass1, minMass2, maxMass2,
                  maxNSSpinMag=0, maxBHSpinMag=0, maxTotMass=None,
-                 minTotMass=None, maxEta=None, minEta=None, nsbhFlag=False):
+                 minTotMass=None, maxEta=None, minEta=0, nsbhFlag=False):
         """
         Initialize an instance of the massRangeParameters by providing all
         options directly. See the help message associated with any code

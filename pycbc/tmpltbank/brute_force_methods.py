@@ -193,6 +193,9 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams, \
     new_xis : list of numpy.array
         Position of points in the xi coordinates
     """
+    # FIXME: It would be better if rejected values could be drawn from the 
+    # full possible mass/spin distribution. However speed in this function is
+    # a major factor and must be considered.
     bestChirpmass = bestMasses[0]
     bestEta = bestMasses[1]
     bestSpin1z = bestMasses[2]
@@ -201,13 +204,31 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams, \
     # Firstly choose a set of values for masses and spins
     chirpmass = bestChirpmass * (1 - (numpy.random.random(numJumpPoints)-0.5) \
                                        * chirpMassJumpFac * scaleFactor )
+    etaRange = massRangeParams.maxEta - massRangeParams.minEta
+    currJumpFac = etaJumpFac * scaleFactor
+    if currJumpFac > etaRange:
+        currJumpFac = etaRange
     eta = bestEta * ( 1 - (numpy.random.random(numJumpPoints) - 0.5) \
-                           * etaJumpFac * scaleFactor)
-    # Note that these two are changed by spinxzFac, *not* spinxzFac/spinxz
+                           * currJumpFac)
+
+    maxSpinMag = max(massRangeParams.maxNSSpinMag, massRangeParams.maxBHSpinMag)
+    minSpinMag = min(massRangeParams.maxNSSpinMag, massRangeParams.maxBHSpinMag)
+    # Note that these two are cranged by spinxzFac, *not* spinxzFac/spinxz
+    currJumpFac = spin1zJumpFac * scaleFactor
+    if (not massRangeParams.nsbhFlag) and currJumpFac > maxSpinMag:
+        currJumpFac = maxSpinMag
+    elif currJumpFac > massRangeParams.maxBHSpinMag:
+        currJumpFac = massRangeParams.maxBHSpinMag
+        
     spin1z = bestSpin1z + ( (numpy.random.random(numJumpPoints) - 0.5) \
-                            * spin1zJumpFac * scaleFactor)
+                            * currJumpFac)
+    currJumpFac = spin2zJumpFac * scaleFactor
+    if (not massRangeParams.nsbhFlag) and currJumpFac > maxSpinMag:
+        currJumpFac = maxSpinMag
+    elif currJumpFac > massRangeParams.maxNSSpinMag:
+        currJumpFac = massRangeParams.maxNSSpinMag
     spin2z = bestSpin2z + ( (numpy.random.random(numJumpPoints) - 0.5) \
-                            * spin2zJumpFac * scaleFactor)
+                            * currJumpFac)
 
     # Point[0] is always set to the original point
     chirpmass[0] = bestChirpmass
@@ -228,37 +249,37 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams, \
     mass1 = (totmass + diff)/2.
     mass2 = (totmass - diff)/2.
 
-    # Get the various spin-derived quantities
-    beta, sigma, gamma, chis = get_beta_sigma_from_aligned_spins(\
-          totmass, eta, spin1z, spin2z)
-
-    # Remove points where spins are outside of physical range
+    # Check the validity of the spin values
+    # Do the first spin
     numploga1 = numpy.logical_and(mass1 > 2,99,\
                                   abs(spin1z) <= massRangeParams.maxBHSpinMag)
     if massRangeParams.nsbhFlag:
-        numploga = numploga1
+        numploga = numpy.logical_not(numploga1)
     else:
         numploga2 = numpy.logical_and(mass1 < 3.01, \
                                    abs(spin1z) <= massRangeParams.maxNSSpinMag)
         numploga = numpy.logical_or(numploga1,numploga2)
+        numploga = numpy.logical_not(numploga)
+    spin1z[numploga] = 0
+
+    # Do the second spin
     numplogb2 = numpy.logical_and(abs(spin2z) <= massRangeParams.maxNSSpinMag,\
                                   mass2 < 3.01)
     if massRangeParams.nsbhFlag:
-        numplogb = numplogb2
+        numplogb = numpy.logical_not(numplogb2)
     else:
         numplogb1 = numpy.logical_and(mass2 > 2.99, \
                                    abs(spin2z) <= massRangeParams.maxBHSpinMag)
         numplogb = numpy.logical_or(numplogb1,numplogb2)
-    numplog1 = numpy.logical_and(numploga,numplogb)
-    numplog = numpy.logical_not(numplog1)
-    if numplog[0] == True:
+        numplogb = numpy.logical_not(numplogb)
+    spin2z[numplogb] = 0
+
+    # Get the various spin-derived quantities
+    beta, sigma, gamma, chis = get_beta_sigma_from_aligned_spins(\
+          totmass, eta, spin1z, spin2z)
+
+    if (numploga[0] or numplogb[0]):
         raise ValueError("Cannot remove the guide point!")
-    beta[numplog] = 0
-    sigma[numplog] = 0
-    gamma[numplog] = 0
-    chis[numplog] = 0
-    spin1z[numplog] = 0
-    spin2z[numplog] = 0
 
     # And remove points where the individual masses are outside of the physical
     # range. Or the total masses are.
