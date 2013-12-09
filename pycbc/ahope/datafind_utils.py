@@ -279,7 +279,7 @@ def log_datafind_command(observatory, frameType, startTime, endTime, \
         gw_command.append("--" + name)
         gw_command.append(str(value))
   
-    fileName = "%s-%s-%d-%d.lcf" \
+    fileName = "%s-%s-%d-%d.sh" \
                %(observatory, frameType, startTime, endTime-startTime)
     filePath = os.path.join(outputDir, fileName)
     fP = open(filePath, 'w')

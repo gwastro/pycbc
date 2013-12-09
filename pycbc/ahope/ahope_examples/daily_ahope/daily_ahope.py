@@ -42,12 +42,13 @@ dag.set_dag_file(basename)
 
 # Get segments
 scienceSegs, segsDict = ahope.setup_segment_generation(cp, ifos, start_time,\
-                               end_time, None, segDir, minSegLength=2000)
+                               end_time, dag, segDir, maxVetoCat=5,\
+                               minSegLength=2000)
 
 # Get frames, this can be slow, as we ping every frame to check it exists,
 # the second option shows how to turn this off
-#datafinds, scienceSegs = ahope.setup_datafind_workflow(cp, scienceSegs, dag,\
-#                       dfDir)
+datafinds, scienceSegs = ahope.setup_datafind_workflow(cp, scienceSegs, dag,\
+                         dfDir)
 # This second case will also update the segment list on missing data, not fail
 datafinds, scienceSegs = ahope.setup_datafind_workflow(cp, scienceSegs, dag,\
                        dfDir, checkSegmentGaps=False, checkFramesExist=False,\

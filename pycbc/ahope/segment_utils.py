@@ -1,4 +1,4 @@
-import os,sys
+import os,sys,shutil
 import subprocess
 import logging
 from glue import segments, pipeline
@@ -6,22 +6,30 @@ from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.ahope.ahope_utils import *
 
 def setup_segment_generation(cp, ifos, start_time, end_time,\
-                             ahopeDax, out_dir, minSegLength=0):
+                             ahopeDax, out_dir, maxVetoCat = 5, minSegLength=0):
     """
     Setup the segment generation needed in an ahope workflow
     FIXME: Add more DOCUMENTATION
     """
     logging.info("Entering segment generation module")
-    veto_categories = [1,2,3,4,5]
+    veto_categories = range(1,maxVetoCat)
 
     if cp.get("ahope-segments","segments-method") == "AT_RUNTIME":
         logging.info("Generating segments with setup_segment_gen_runtime")
         segFilesDict = setup_segment_gen_runtime(cp, ifos, veto_categories, \
                                   start_time, end_time, out_dir)
+    elif cp.get("ahope-segments","segments-method") == "CAT2_PLUS_DAG":
+        logging.info("Generating segments with setup_segment_gen_mixed")
+        segFilesDict = setup_segment_gen_mixed(cp, ifos, veto_categories, \
+                                 start_time, end_time, out_dir, ahopeDax, 1)
+    elif cp.get("ahope-segments","segments-method") == "CAT3_PLUS_DAG":
+        logging.info("Generating segments with setup_segment_gen_mixed")
+        segFilesDict = setup_segment_gen_mixed(cp, ifos, veto_categories, \
+                                 start_time, end_time, out_dir, ahopeDax, 2)
     elif cp.get("ahope-segments","segments-method") == "CAT4_PLUS_DAG":
         logging.info("Generating segments with setup_segment_gen_mixed")
         segFilesDict = setup_segment_gen_mixed(cp, ifos, veto_categories, \
-                                       start_time, end_time, out_dir, ahopeDax)
+                                 start_time, end_time, out_dir, ahopeDax, 3)
     else:
         msg = "Entry segments-method in [ahope-segments] does not have "
         msg += "expected value. Valid values are AT_RUNTIME, CAT4_PLUS_DAG."
@@ -96,7 +104,7 @@ def setup_segment_gen_runtime(cp, ifos, veto_categories, start_time,\
     return segFilesDict
 
 def setup_segment_gen_mixed(cp, ifos, veto_categories, start_time,\
-                            end_time, out_dir, ahopeDax):
+                            end_time, out_dir, ahopeDax, maxVetoAtRunTime):
     """
     ADD DOCUMENTATION
     """
@@ -121,7 +129,7 @@ def setup_segment_gen_mixed(cp, ifos, veto_categories, start_time,\
         vetoXmlFiles = {}
         for category in veto_categories:
             currTag='VETO_CAT%d' %(category)
-            if category <= 3:
+            if category <= maxVetoAtRunTime:
                 logging.info("Generating CAT_%d segments for ifo %s." \
                              %(category,ifo))
                 vetoSegs[category],vetoXmlFiles[category] = \
@@ -261,6 +269,19 @@ def create_segs_from_cats_job(cp, out_dir):
     job.add_opt('output-dir', out_dir)
     job.add_opt('segment-url', segServerUrl)
     job.add_opt('veto-file', vetoDefFile)
+    # set up proxy to be accessible in a NFS location
+    proxy = os.getenv('X509_USER_PROXY')
+#    if os.path.exists(proxy):
+    # FIXME: For now this falls back to local universe as some clusters do not
+    # allow nodes to have access to the WWW.
+    if 0:
+        proxyfile = os.path.join(out_dir, 'x509up.file')
+        shutil.copyfile(proxy, proxyfile)
+        job.add_condor_cmd('environment',\
+                              'USER=$ENV(USER);X509_USER_PROXY=%s' % proxyfile)
+    else:
+        # Fall back is to run in local universe
+        job.set_universe('local')
 
     return job
 
