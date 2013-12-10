@@ -60,7 +60,18 @@ def setup_datafind_workflow(cp, scienceSegs, ahopeDax, outputDir, \
     logging.info("Entering datafind module")
 
     logging.info("Starting datafind with setup_datafind_runtime_generated")
-    datafindOuts = setup_datafind_runtime_generated(cp, scienceSegs, outputDir)
+    if cp.get("ahope-datafind","datafind-method") == "AT_RUNTIME_MULTIPLE":
+        datafindOuts = setup_datafind_runtime_generated(cp, scienceSegs,\
+                                                                    outputDir)
+    elif cp.get("ahope-datafind","datafind-method") == "AT_RUNTIME_SINGLE":
+        datafindOuts = setup_datafind_runtime_single_call_perifo(cp, \
+                                                       scienceSegs, outputDir)
+    else:
+        msg = "Entry datafind-method in [ahope-datafind] does not have "
+        msg += "expected value. Valid values are AT_RUNTIME_MULTIPLE, "
+        msg += "AT_RUNTIME_SINGLE.."
+        raise ValueError(msg)
+
     logging.info("setup_datafind_runtime_generated completed")
     # If we don't have frame files covering all times we can update the science
     # segments.
@@ -100,6 +111,7 @@ def setup_datafind_workflow(cp, scienceSegs, ahopeDax, outputDir, \
         logging.info("Verifying that all frames exist on disk.")
         missingFlag = False
         for dfGroup in datafindOuts:
+            logging.info("Checking frames in %s." %(dfGroup.summaryUrl))
             _,missingFrames = dfGroup.get_output().checkfilesexist(\
                                                      on_missing="warn")
             if missingFrames:
@@ -123,7 +135,9 @@ def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):
     the frame files that will be needed to cover the analysis of the data
     given in scienceSegs. This function will not check if the returned frames
     cover the whole time requested, such sanity checks are done in the
-    pycbc.ahope.setup_datafind_workflow entry function.
+    pycbc.ahope.setup_datafind_workflow entry function. As opposed to
+    setup_datafind_runtime_single_call_perifo this call will one call to the
+    datafind server for every science segment.
 
     Parameters
     -----------
@@ -145,6 +159,122 @@ def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):
     # First job is to do setup for the datafind jobs
     # First get the server name
     logging.info("Setting up connection to datafind server.")
+    connection = setup_datafind_server_connection(cp)
+
+    # Now ready to loop over the input segments
+    datafindOuts = AhopeOutGroupList([])
+    ifos = scienceSegs.keys()
+    jobTag = "DATAFIND"
+    logging.info("Querying datafind server for all science segments.")
+    for ifo, scienceSegsIfo in scienceSegs.items():
+        observatory = ifo[0].upper()
+        frameType = cp.get("ahope-datafind", "datafind-%s-frame-type"%(ifo))
+        for seg in scienceSegsIfo:
+            msg = "Finding data between %d and %d " %(seg[0],seg[1])
+            msg += "for ifo %s" %(ifo)
+            logging.debug(msg)
+            # WARNING: For now ahope will expect times to be in integer seconds
+            startTime = int(seg[0])
+            endTime = int(seg[1])
+            dfCacheGroup = run_datafind_instance(cp, outputDir, connection,\
+                                           observatory, frameType, startTime,\
+                                           endTime, ifo, jobTag)
+            datafindOuts.append(dfCacheGroup)
+
+    return datafindOuts
+
+def setup_datafind_runtime_single_call_perifo(cp, scienceSegs, outputDir):
+    """
+    This function uses the glue.datafind library to obtain the location of all
+    the frame files that will be needed to cover the analysis of the data
+    given in scienceSegs. This function will not check if the returned frames
+    cover the whole time requested, such sanity checks are done in the
+    pycbc.ahope.setup_datafind_workflow entry function. As opposed to 
+    setup_datafind_runtime_generated this call will only run one call to
+    datafind per ifo, spanning the whole time.
+
+    Parameters
+    -----------
+    cp : ConfigParser.ConfigParser instance
+        This contains a representation of the information stored within the
+        ahope configuration files
+    scienceSegs : Dictionary of ifo keyed glue.segment.segmentlist instances
+        This contains the times that ahope is expected to analyse.
+    outputDir : path
+        All output files written by datafind processes will be written to this
+        directory.
+
+    Returns
+    --------
+    datafindOuts : AhopeOutGroupList
+        List of all the datafind output files for use later in the pipeline.
+
+    """
+    # First job is to do setup for the datafind jobs
+    # First get the server name
+    logging.info("Setting up connection to datafind server.")
+    connection = setup_datafind_server_connection(cp)
+
+    # We want to ignore gaps as the detectors go up and down and calling this
+    # way will give gaps. See the setup_datafind_runtime_generated function
+    # for datafind calls that only query for data that will exist
+    cp.set("datafind","on_gaps","ignore")
+
+    # Now ready to loop over the input segments
+    datafindOuts = AhopeOutGroupList([])
+    ifos = scienceSegs.keys()
+    jobTag = "DATAFIND"
+    logging.info("Querying datafind server for all science segments.")
+    for ifo, scienceSegsIfo in scienceSegs.items():
+        observatory = ifo[0].upper()
+        frameType = cp.get("ahope-datafind", "datafind-%s-frame-type"%(ifo))
+        # This REQUIRES a coalesced segment list to work
+        startTime = int(scienceSegsIfo[0][0])
+        endTime = int(scienceSegsIfo[-1][1])
+        dfCacheGroup = run_datafind_instance(cp, outputDir, connection,\
+                                           observatory, frameType, startTime,\
+                                           endTime, ifo, jobTag)
+        datafindOuts.append(dfCacheGroup)
+    return datafindOuts
+
+def get_science_segs_from_datafind_outs(datafindOuts):
+    """
+    This function will calculate the science segments that are covered in
+    the AhopeOutGroupList containing the frame files returned by various
+    calls to the datafind server. This can then be used to check whether this
+    list covers what it is expected to cover.
+
+    Parameters
+    ----------
+    datafindOuts : AhopeOutGroupList
+        List of all the datafind output files.
+
+    Returns
+    --------
+    newScienceSegs : Dictionary of ifo keyed glue.segment.segmentlist instances
+        The times covered by the frames found in datafindOuts.
+    """
+    newScienceSegs = {}
+    for group in datafindOuts:
+        if group.get_output():
+            groupSegs = segments.segmentlist(e.segment for e \
+                                             in group.get_output()).coalesce()
+        else:
+            continue
+        if not newScienceSegs.has_key(group.observatory):
+            newScienceSegs[group.observatory] = groupSegs
+        else:
+            newScienceSegs[group.observatory].extend(groupSegs)
+            # NOTE: This .coalesce probably isn't needed as the segments should
+            # be disjoint. If speed becomes an issue maybe remove it?
+            newScienceSegs[group.observatory].coalesce()
+    return newScienceSegs
+
+def setup_datafind_server_connection(cp):
+    """
+    This function is resposible for setting up the connection with the datafind
+    server.
+    """
     if cp.has_option("ahope-datafind", "datafind-ligo-datafind-server"):
         datafindServer = cp.get("ahope-datafind",\
                                 "datafind-ligo-datafind-server")
@@ -181,88 +311,76 @@ def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):
         # HTTP connection
         connection =\
             datafind.GWDataFindHTTPConnection(host=server, port=port)
+    return connection
 
-    # Now ready to loop over the input segments
-    datafindOuts = AhopeOutGroupList([])
-    ifos = scienceSegs.keys()
-    jobTag = "DATAFIND"
-    logging.info("Querying datafind server for all science segments.")
-    for ifo, scienceSegsIfo in scienceSegs.items():
-        observatory = ifo[0].upper()
-        frameType = cp.get("ahope-datafind", "datafind-%s-frame-type"%(ifo))
-        for seg in scienceSegsIfo:
-            msg = "Finding data between %d and %d " %(seg[0],seg[1])
-            msg += "for ifo %s" %(ifo)
-            logging.debug(msg)
-            # WARNING: For now ahope will expect times to be in integer seconds
-            startTime = int(seg[0])
-            endTime = int(seg[1])
-            # Take the datafind KWargs from config (usually urltype=file is
-            # given).
-            dfKwargs = {}
-            for item, value in cp.items("datafind"):
-                dfKwargs[item] = value
-            # It is useful to print the corresponding command to the logs
-            # directory to check if this was expected.
-            log_datafind_command(observatory, frameType, startTime, endTime,\
-                                 os.path.join(outputDir,'logs'), **dfKwargs)
-            logging.debug("Asking datafind server for frames.")
-            dfCache = connection.find_frame_urls(observatory, frameType, \
-                        startTime, endTime, **dfKwargs)
-            logging.debug("Frames returned")
-            dfCacheFileName = "%s-%s-%d-%d.lcf" \
-                              %(ifo, jobTag, startTime, endTime-startTime)
-            dfCachePath = os.path.join(outputDir, dfCacheFileName)
-            # Dump output to file
-            fP = open(dfCachePath, "w")
-            dfCache.tofile(fP)
-            fP.close()
-            dfCacheUrl = urlparse.urlunparse(['file', 'localhost',\
-                                             urllib.pathname2url(dfCachePath),\
-                                             None, None, None])
-            # Convert to ahope format
-            dfCache = AhopeOutFileList(dfCache)
-            urlList = [e.url for e in dfCache] 
-            jobSegs = [e.segment for e in dfCache]
-            dfCacheGroup = AhopeOutGroup(ifo, jobTag, seg, \
-                                         summaryUrl=dfCacheUrl)
-            dfCacheGroup.set_output(urlList, None, outSegs=jobSegs)
-            datafindOuts.append(dfCacheGroup)
-
-    return datafindOuts
-
-def get_science_segs_from_datafind_outs(datafindOuts):
+def run_datafind_instance(cp, outputDir, connection, observatory, frameType,\
+                          startTime, endTime, ifo, jobTag):
     """
-    This function will calculate the science segments that are covered in
-    the AhopeOutGroupList containing the frame files returned by various
-    calls to the datafind server. This can then be used to check whether this
-    list covers what it is expected to cover.
+    This function will query the datafind server once to find frames between
+    the specified times for the specified frame type and observatory.
 
-    Parameters
+    Properties
     ----------
-    datafindOuts : AhopeOutGroupList
-        List of all the datafind output files.
-
-    Returns
-    --------
-    newScienceSegs : Dictionary of ifo keyed glue.segment.segmentlist instances
-        The times covered by the frames found in datafindOuts.
+    cp : ConfigParser instance
+        This is used to find any kwArgs that should be sent to the datafind
+        module.
+    outputDir : Output cache files will be written here. We also write the
+        commands for reproducing what is done in this function to this
+        directory.
+    connection : datafind connection object
+        Initialized through the glue.datafind module, this is the open
+        connection to the datafind server.
+    observatory : string
+        The observatory to query frames for. This is 'H', 'L' or 'V' and not
+        the usual 'H1', 'L1', 'V1' ... because.
+    frameType : string
+        The frame type to query for.
+    startTime : int
+        Integer start time to query the datafind server for frames.
+    endTime : int
+        Integer end time to query the datafind server for frames.
+    ifo : string
+        The interferometer to use for naming output. This is 'H1', 'L1', 'V1',
+        etc. Maybe this could be merged with the observatory string, but this
+        could cause issues if running on old 'H2' and 'H1' data.
+    jobTag : string
+        Used in the naming of the output files.
     """
-    newScienceSegs = {}
-    for group in datafindOuts:
-        if group.get_output():
-            groupSegs = segments.segmentlist(e.segment for e \
-                                             in group.get_output()).coalesce()
-        else:
-            continue
-        if not newScienceSegs.has_key(group.observatory):
-            newScienceSegs[group.observatory] = groupSegs
-        else:
-            newScienceSegs[group.observatory].extend(groupSegs)
-            # NOTE: This .coalesce probably isn't needed as the segments should
-            # be disjoint. If speed becomes an issue maybe remove it?
-            newScienceSegs[group.observatory].coalesce()
-    return newScienceSegs
+    seg = segments.segment([startTime, endTime])
+    # Take the datafind KWargs from config (usually urltype=file is
+    # given).
+    dfKwargs = {}
+    for item, value in cp.items("datafind"):
+        dfKwargs[item] = value
+    # It is useful to print the corresponding command to the logs
+    # directory to check if this was expected.
+    log_datafind_command(observatory, frameType, startTime, endTime,\
+                         os.path.join(outputDir,'logs'), **dfKwargs)
+    logging.debug("Asking datafind server for frames.")
+    dfCache = connection.find_frame_urls(observatory, frameType, \
+                                        startTime, endTime, **dfKwargs)
+    logging.debug("Frames returned")
+    dfCacheFileName = "%s-%s-%d-%d.lcf" \
+                       %(ifo, jobTag, startTime, endTime-startTime)
+    dfCachePath = os.path.join(outputDir, dfCacheFileName)
+    # Dump output to file
+    fP = open(dfCachePath, "w")
+    dfCache.tofile(fP)
+    fP.close()
+    dfCacheUrl = urlparse.urlunparse(['file', 'localhost',\
+                                     urllib.pathname2url(dfCachePath),\
+                                     None, None, None])
+    # Convert to ahope format
+    dfCache = AhopeOutFileList(dfCache)
+    urlList = [e.url for e in dfCache]
+    jobSegs = [e.segment for e in dfCache]
+    dfCacheGroup = AhopeOutGroup(ifo, jobTag, seg, \
+                                 summaryUrl=dfCacheUrl)
+    dfCacheGroup.set_output(urlList, None, outSegs=jobSegs)
+
+    return dfCacheGroup
+
+
     
 def log_datafind_command(observatory, frameType, startTime, endTime, \
                          outputDir, **dfKwargs):
