@@ -1,6 +1,7 @@
 from __future__ import division
 
 import os
+import logging
 from pycbc.ahope.ahope_utils import * 
 from pycbc.ahope.jobsetup_utils import *
 
@@ -9,9 +10,12 @@ def setup_splittable_workflow(cp, ahopeDax, tmpltBanks, outDir):
     Setup matched filter section of ahope workflow.
     FIXME: ADD MORE DOCUMENTATION
     '''
+    logging.info("Entering split output files module.")
     # Scope here for choosing different options
+    logging.info("Adding split output file jobs to workflow.")
     splitTableOuts = setup_splittable_dax_generated(cp, ahopeDax, tmpltBanks,\
                                                     outDir)
+    logging.info("Leaving split output files module.")
     
     return splitTableOuts
 

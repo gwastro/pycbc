@@ -10,11 +10,15 @@ def setup_matchedfltr_workflow(cp, scienceSegs, datafindOuts, ahopeDax,\
     Setup matched filter section of ahope workflow.
     FIXME: ADD MORE DOCUMENTATION
     '''
+    logging.info("Entering matched-filtering setup module.")
+    # Scope here for choosing different options
+    logging.info("Adding matched-filtering jobs to workflow.")
 
     # There should be a number of different options here, for e.g. to set
     # up fixed bank, or maybe something else
     inspiralOuts = setup_matchedfltr_dax_generated(cp, scienceSegs, \
                        datafindOuts, ahopeDax, tmpltBanks, outputDir)
+    logging.info("Leaving matched-filtering setup module.")
     
     return inspiralOuts
 

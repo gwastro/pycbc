@@ -2,6 +2,7 @@ from __future__ import division
 
 import os
 import urlparse, urllib
+import logging
 from glue import segments
 from pycbc.ahope.ahope_utils import *
 from pycbc.ahope.jobsetup_utils import *
@@ -38,18 +39,22 @@ def setup_tmpltbank_workflow(cp, scienceSegs, datafindOuts, ahopeDax,\
     AhopeOutFileList
         The AhopeOutFileList holding the details of all the template bank jobs.
     '''
+    logging.info("Entering template bank generation module.")
 
     # There should be a number of different options here, for e.g. to set
     # up fixed bank, or maybe something else
     
     # First thing is to check if a pre-generated bank is supplied:
     if (cp.has_option('ahope','pregenerated-template-bank')):
+        logging.info("Setting template bank from pre-generated bank(s).")
         tmpltBanks = setup_tmpltbank_pregenerated(cp, scienceSegs.keys())
     # Else we assume template banks will be generated in the workflow
     else:
+        logging.info("Adding template bank jobs to workflow.")
         tmpltBanks = setup_tmpltbank_dax_generated(cp, scienceSegs, \
                        datafindOuts, ahopeDax, outputDir)
     
+    logging.info("Leaving template bank generation module.")
     return tmpltBanks
 
 def setup_tmpltbank_dax_generated(cp, scienceSegs, datafindOuts, ahopeDax,\
