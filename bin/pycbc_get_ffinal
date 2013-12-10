@@ -178,10 +178,15 @@ for cache_id, tmplt in enumerate(sngl_insp_table):
                 if sample_rate > max_sample_rate:
                     raise ValueError, "unable to generate template %i;" %(
                         cache_id) + " try increasing max sample rate"
-      
+                
+        # Remove possible zero padding at the end of the waveforms
+        amp = hplus**2 + hcross**2 
+        end_pnt = numpy.nonzero(amp.data)[0][-1] + 1
+        hplus = hplus[:end_pnt]
+        hcross = hcross[:end_pnt]
+        
         # find f_final
-        freq = waveform.frequency_from_polarizations(hplus, hcross)
-        freq = freq.max()
+        freq = waveform.frequency_from_polarizations(hplus, hcross).max()
 
     if infile is None:
         print >> sys.stdout, "f Final: %f Hz" %(freq)
