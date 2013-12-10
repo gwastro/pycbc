@@ -7,7 +7,7 @@ import pycbc.ahope as ahope
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \
                     level=logging.DEBUG,datefmt='%I:%M:%S')
 
-start_time = 1057881616
+start_time = 1060881616
 end_time = 1061856016
 
 cp = ahope.parse_ahope_ini_file('./daily_er4.ini')
