@@ -26,8 +26,16 @@ if not os.path.exists(inspiralDir+'/logs'):
     os.makedirs(inspiralDir+'/logs')
 
 # Set start and end times
+
+# These are Chris' example S6 day of data
 start_time = 961545543
 end_time = 961594487
+
+# This is S6D chunk 3, an example full-scale ihope analysis time-frame
+start_time = 968543943
+end_time = 971622087
+
+# Set the ifos to analyse
 ifos = ['H1','L1']
 # ALEX: please add V1 to this and commit to repo!
 
@@ -47,8 +55,8 @@ scienceSegs, segsDict = ahope.setup_segment_generation(cp, ifos, start_time,\
 
 # Get frames, this can be slow, as we ping every frame to check it exists,
 # the second option shows how to turn this off
-datafinds, scienceSegs = ahope.setup_datafind_workflow(cp, scienceSegs, dag,\
-                         dfDir)
+#datafinds, scienceSegs = ahope.setup_datafind_workflow(cp, scienceSegs, dag,\
+#                         dfDir)
 # This second case will also update the segment list on missing data, not fail
 datafinds, scienceSegs = ahope.setup_datafind_workflow(cp, scienceSegs, dag,\
                        dfDir, checkSegmentGaps=False, checkFramesExist=False,\
@@ -67,3 +75,5 @@ dag.write_sub_files()
 dag.write_dag()
 #dag.write_abstract_dag()
 dag.write_script()
+
+logging.info("Finished.")
