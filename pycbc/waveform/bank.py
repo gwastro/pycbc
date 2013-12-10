@@ -33,7 +33,7 @@ from pycbc.types import FrequencySeries
 from pycbc.filter import sigmasq
 from pycbc import DYN_RANGE_FAC        
 
-class TemplateBank(object):
+class FilterBank(object):
     def __init__(self, filename, approximant, filter_length, delta_f, f_lower,  dtype, psd=None, out=None, **kwds):
         self.out = out
         self.dtype = dtype

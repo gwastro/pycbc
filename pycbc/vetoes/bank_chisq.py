@@ -24,7 +24,7 @@
 import logging
 from pycbc.types import zeros, real_same_precision_as, TimeSeries, complex_same_precision_as
 from pycbc.filter import overlap_cplx, matched_filter_core
-from pycbc.waveform import TemplateBank
+from pycbc.waveform import FilterBank
 from math import sqrt
 
 def segment_snrs(filters, stilde, psd, low_frequency_cutoff):
@@ -162,7 +162,7 @@ class SingleDetBankVeto(object):
             self.seg_len_time = (self.seg_len_freq-1)*2
 
             logging.info("Read in bank veto template bank")
-            bank_veto_bank = TemplateBank(bank_file,
+            bank_veto_bank = FilterBank(bank_file,
                     approximant, self.seg_len_freq, 
                     self.delta_f, f_low, dtype=self.cdtype, psd=self.psd, **kwds)
 
