@@ -81,7 +81,8 @@ def from_cli(opt):
     opt : object
         Result of parsing the CLI with OptionParser, or any object with the
         required attributes  (gps-start-time, gps-end-time, strain-high-pass, 
-        pad-data, sample-rate, frame-cache, channel-name, fake-strain, fake-strain-seed).
+        pad-data, sample-rate, frame-cache, channel-name, fake-strain, 
+        fake-strain-seed).
 
     Returns
     -------
@@ -125,7 +126,8 @@ def from_cli(opt):
                                            pdf, opt.low_frequency_cutoff)
         
         logging.info("Making colored noise")
-        strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate, strain_psd, 
+        strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate, 
+                                            strain_psd, 
                                             seed=opt.fake_strain_seed)
 
         if opt.injection_file:
@@ -175,13 +177,17 @@ def insert_strain_option_group(parser):
     
     #Generate gaussian noise with given psd           
     data_reading_group.add_option("--fake-strain", 
-                help="Name of model PSD for generating fake gaussian nois Choices are " + str(psd.get_list()) , choices=psd.get_list())
+                help="Name of model PSD for generating fake gaussian noise." +\
+                     " Choices are " + str(psd.get_list()) , 
+                     choices=psd.get_list())
     data_reading_group.add_option("--fake-strain-seed", type=int, default=0,
-                help="Seed value for the generation of fake colored gaussian noise")
+                help="Seed value for the generation of fake colored" + \
+                     " gaussian noise")
                                 
     #optional       
     data_reading_group.add_option("--injection-file", type=str, 
-                      help="(optional) Injection file used to add waveforms into the strain")                 
+                      help="(optional) Injection file used to add " + \
+                           "waveforms into the strain")                 
                    
     parser.add_option_group(data_reading_group)
 
@@ -194,7 +200,8 @@ def verify_strain_options(opts, parser):
     opt : object
         Result of parsing the CLI with OptionParser, or any object with the
         required attributes (gps-start-time, gps-end-time, strain-high-pass, 
-        pad-data, sample-rate, frame-cache, channel-name, fake-strain, fake-strain-seed).
+        pad-data, sample-rate, frame-cache, channel-name, fake-strain, 
+        fake-strain-seed).
     parser : object
         OptionParser instance.
     """
