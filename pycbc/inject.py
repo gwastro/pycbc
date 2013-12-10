@@ -35,6 +35,24 @@ from glue.ligolw import table, lsctables
 from pycbc.types import float64, float32, TimeSeries
 from pycbc.detector import Detector
 
+# map between tapering string in sim_inspiral
+# table and lalsimulation constants
+taper_map = {
+    'TAPER_NONE': None,
+    'TAPER_START': sim.LAL_SIM_INSPIRAL_TAPER_START,
+    'TAPER_END': sim.LAL_SIM_INSPIRAL_TAPER_END,
+    'TAPER_STARTEND': sim.LAL_SIM_INSPIRAL_TAPER_STARTEND
+}
+
+taper_func_map = {
+    np.dtype(float32): sim.SimInspiralREAL4WaveTaper,
+    np.dtype(float64): sim.SimInspiralREAL8WaveTaper
+}
+
+injection_func_map = {
+    np.dtype(float32): sim.SimAddInjectionREAL4TimeSeries,
+    np.dtype(float64): sim.SimAddInjectionREAL8TimeSeries
+}
 
 class InjectionSet(object):
     """Manages sets of injections: reads injections from LIGOLW XML files
@@ -94,26 +112,9 @@ class InjectionSet(object):
         t1 = float(strain.end_time) + earth_travel_time
 
         # pick lalsimulation tapering function
-        taper_func_map = {
-            np.dtype(float32): sim.SimInspiralREAL4WaveTaper,
-            np.dtype(float64): sim.SimInspiralREAL8WaveTaper
-        }
         taper = taper_func_map[strain.dtype]
 
-        # map between tapering string in sim_inspiral
-        # table and lalsimulation constants
-        taper_map = {
-            'TAPER_NONE': None,
-            'TAPER_START': sim.LAL_SIM_INSPIRAL_TAPER_START,
-            'TAPER_END': sim.LAL_SIM_INSPIRAL_TAPER_END,
-            'TAPER_STARTEND': sim.LAL_SIM_INSPIRAL_TAPER_STARTEND
-        }
-
         # pick lalsimulation injection function
-        injection_func_map = {
-            np.dtype(float32): sim.SimAddInjectionREAL4TimeSeries,
-            np.dtype(float64): sim.SimAddInjectionREAL8TimeSeries
-        }
         add_injection = injection_func_map[strain.dtype]
 
         for inj in self.table:
@@ -150,4 +151,36 @@ class InjectionSet(object):
             add_injection(lalstrain, signal_lal, None)
 
         strain.data[:] = lalstrain.data.data[:]
+        
+    def maximum_snrs(self, psd):
+        """ Calculate the maximum SNR (without noise), for each signal in the
+        injection set, using the given PSD.        
+
+        Parameters
+        ----------
+
+
+        Returns
+        -------
+        None
+
+        """
+        raise NotImplementedError("This is not yet implemented")
+        
+    def expected_snrs(self, template, psd):
+        """ Calculate the expected SNR (without noise), for each signal in the
+        injection set, using the given PSD, when matched with the given template.       
+
+        Parameters
+        ----------
+
+
+        Returns
+        -------
+        None
+
+        """
+        raise NotImplementedError("This is not yet implemented")
+    
+    
 
