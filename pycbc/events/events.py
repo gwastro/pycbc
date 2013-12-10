@@ -183,7 +183,7 @@ class EventManager(object):
         self.events = numpy.append(self.events, self.template_events)
         self.template_events = numpy.array([], dtype=self.event_dtype)        
         
-    def write_events(self):
+    def write_events(self, outname):
         """ Write the found events to a sngl inspiral table 
         """
         outdoc = glue.ligolw.ligolw.Document()
@@ -361,11 +361,8 @@ class EventManager(object):
         
         
         
-        # Write out file #####################################################
-        duration = str(int(self.opt.gps_end_time - self.opt.gps_start_time))
-        out_name = ifo + "-" + "INSPIRAL_" + self.opt.ifo_tag + "_" + self.opt.user_tag + "-" + str(self.opt.gps_start_time) + "-" + duration + ".xml.gz"
-                
-        glue.ligolw.utils.write_filename(outdoc, out_name, gz=True)     
+        # Write out file #####################################################     
+        glue.ligolw.utils.write_filename(outdoc, outname, gz=outname.endswith('gz'))    
 
 
 __all__ = ['threshold_and_cluster', 
