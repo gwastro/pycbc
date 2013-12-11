@@ -251,8 +251,8 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams, \
 
     # Check the validity of the spin values
     # Do the first spin
-    numploga1 = numpy.logical_and(mass1 > 2,99,\
-                                  abs(spin1z) <= massRangeParams.maxBHSpinMag)
+    numploga1 = numpy.logical_and(mass1 > 2.99,\
+                                  (abs(spin1z) <= massRangeParams.maxBHSpinMag))
     if massRangeParams.nsbhFlag:
         numploga = numpy.logical_not(numploga1)
     else:
