@@ -14,7 +14,47 @@ Documentation of the ahope executable and how to run it can be found here.
 
 Each of the sections is described in detail below. Also refer to the `page here <https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/InspiralPipelineDevelopment/130627093845InspiralPipelineDocumentationAhope_development_plan>`_ for details. Also see the `link here <https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/InspiralPipelineDevelopment/130614025403InspiralPipelineDevelopmentThe%20evolution%20of%20ihope%20and%20inspiral>`_ for descriptions of what ahope should be and motivation for making ahope in the first place. **NOTE: REMOVE THESE LINKS ONCE AHOPE DOCUMENTATION IS SUFFICIENT THAT THIS IS NOT LONGER NEEDED**
 
-The sections are 
+====================
+Examples
+====================
+
+Some examples of how to run ahope in different configurations can be found
+in the source tree under::
+
+    pycbc/ahope/ahope_examples
+
+These examples are described in each section below
+
+---------------------
+data_checker
+---------------------
+
+This is an example of using only the segment query and datafind query modules
+of ahope, with all checking options enabled. This will do the following
+
+* Use the supplied information in the veto-definer file query for science times
+* Using the veto-definer file query for CAT1,2,3,4,5 times
+* Connect to the datafind server and query for frames at the times given in science - CAT1 (frame types provided in .ini file)
+* Check that frames have been returned at all times that are given as science (-CAT1) by the segment server. Fail if not (this can be changed to update the science times, but here we want to fail if data is not present)
+* Run os.path.is_file() on every frame file that was returned by datafind. This can be slow if run on long periods of time and if the fileservers are slow. Not recommended for a full ahope run at present, but useful for daily [a,i]hope runs.
+
+This example can be edited for any time you are interested in and can be used to identify missing data before submitting a workflow. 
+
+-------------------
+daily_ahope
+-------------------
+
+This is an example of how to run an ahope workflow as far as it is coded. This
+will:
+
+* Get segments from the server, calculating CAT3 and above in the workflow for speed.
+* Query the datafind server for frames.
+* Create the template bank jobs needed to cover the times
+* Split the template banks (into 2). This step could be easily removed, just delete this module in the python file and send the matched-filtering code the template bank input directly.
+* Run the matched-filtering code on the split template banks
+* Write a dax to file that can be submitted to run the workflow
+
+This currently matches Chris' S6 test and works. Note that running this example (ie. time for the python code to do all of these steps and exit) takes approximately 1 minute to setup a workflow to analyse all of S6D. This is with the ping all frames step turned off, with this on we are seeing run times considerably longer.
 
 ====================
 Initialization
