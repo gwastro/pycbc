@@ -67,7 +67,7 @@ class AhopeOutSegFile(AhopeOutFile):
             if abs(seg) > minSegLength:
                 newSegList.append(seg)
         newSegList.coalesce()
-        self.segmentlist = newSegList
+        self.segmentList = newSegList
         self.toSegmentXml()
 
     def toSegmentXml(self):
