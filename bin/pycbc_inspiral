@@ -4,9 +4,9 @@ import sys
 import numpy
 from optparse import OptionParser, OptionGroup
 from pycbc import vetoes, psd, waveform, events, noise, strain, DYN_RANGE_FAC
+from pycbc import scheme
 from pycbc.waveform import FilterBank
 from pycbc.filter import  matched_filter_core, sigmasq
-from pycbc.scheme import CUDAScheme, CPUScheme, OpenCLScheme
 from pycbc.filter import make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, float32, complex64, zeros, Array
 
@@ -35,24 +35,23 @@ parser.add_option("--cluster-method", choices=["template", "window"])
 parser.add_option("--cluster-window", type=int, help="Length of clustering window in seconds", default = -1)
 parser.add_option("--maximization-interval", help="Maximize triggers over the template bank (ms)", type=int, default=0)
 
-parser.add_option("--processing-scheme", help="The processing scheme to use", choices=["cpu", "cuda", "opencl"], default="cpu")
-parser.add_option("--processing-device-id", help="ID of gpu to use for accelerated processineg", default=0, type=int)
-
 parser.add_option("--trig-start-time", type=int, default=0)
 parser.add_option("--trig-end-time", type=int, default=0)
 parser.add_option("--segment-length", type=int, help="The length of a segment (s)")
 parser.add_option("--segment-start-pad", type=int, help="Length of corruption at the beginning of a segment(s)")
 parser.add_option("--segment-end-pad", type=int, help="Length of corruption at the end of a segment (s)")
 
-# Add options groups for strain preconditition and PSD estimation
+# Add options groups
 psd.insert_psd_option_group(parser)
 strain.insert_strain_option_group(parser)
+scheme.insert_processing_option_group(parser)
 
 opt, argv = parser.parse_args()
 
 # Check that the values returned for the options make sense
 psd.verify_psd_options(opt, parser)
 strain.verify_strain_options(opt, parser)
+scheme.verify_processing_options(opt, parser)
 
 if opt.verbose:
     log_level = logging.DEBUG
@@ -61,16 +60,7 @@ else:
 
 logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
-if opt.processing_scheme == "cuda":
-    logging.info("Running with CUDA support")
-    ctx = CUDAScheme(opt.processing_device_id)
-elif opt.processing_scheme == "opencl":
-    logging.info("Running with OpenCL support")
-    ctx = OpenCLScheme()
-else:
-    logging.info("Running with CPU support only")
-    ctx = CPUScheme()
-
+ctx = scheme.from_cli(opt)
 strain = strain.from_cli(opt)
 sample_rate = int(1.0/strain.delta_t)
 

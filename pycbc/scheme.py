@@ -28,6 +28,8 @@ objects.
 """
 import pycbc
 from decorator import decorator
+from optparse import OptionGroup
+import logging
 
 class _SchemeManager(object):
 
@@ -164,12 +166,71 @@ def cpuonly(fn, *args, **kwds):
     else:
         return fn(*args, **kwds)
         
+def insert_processing_option_group(parser):
+    """
+    Adds the options used to choose a processing scheme. This should be used
+    if your program supports the ability to select the processing scheme.
+    
+    Parameters
+    ----------
+    parser : object
+        OptionParser instance
+    """
+    processing_group = OptionGroup(parser, "Options for selecting the"
+                                   "processing scheme in this program.")   
+    processing_group.add_option("--processing-scheme", 
+                      help="The choice of processing scheme. "
+                           "Choices are " + str(scheme_prefix.values()), 
+                      choices=scheme_prefix.values(), 
+                      default="cpu")                                                          
+    processing_group.add_option("--processing-device-id", 
+                      help="ID of GPU to use for accelerated processing", 
+                      default=0, type=int)
+    parser.add_option_group(processing_group)
 
-
-
-
-
-
+def from_cli(opt):
+    """Parses the command line options and returns a precessing scheme.
+    
+    Parameters
+    ----------
+    opt: object
+        Result of parsing the CLI with OptionParser, or any object with
+        the required attributes.
+        
+    Returns
+    -------
+    ctx: Scheme
+        Returns the requested processing scheme.
+    """
+    if opt.processing_scheme == "cuda":
+        logging.info("Running with CUDA support")
+        ctx = CUDAScheme(opt.processing_device_id)
+    elif opt.processing_scheme == "opencl":
+        logging.info("Running with OpenCL support")
+        ctx = OpenCLScheme()
+    else:
+        logging.info("Running with CPU support only")
+        ctx = CPUScheme()
+        
+    return ctx
+    
+def verify_processing_options(opt, parser):
+    """Parses the  processing scheme options and verifies that they are 
+       reasonable. 
+       
+  
+    Parameters
+    ----------
+    opt : object
+        Result of parsing the CLI with OptionParser, or any object with the
+        required attributes.
+    parser : object
+        OptionParser instance.
+    """
+    scheme_types = scheme_prefix.values()
+    if opt.processing_scheme not in scheme_types:
+        parser.error("(%s) is not a valid scheme type."
+                     "Choices are " + str(scheme_prefix.values()))
 
 
 

@@ -153,7 +153,7 @@ def insert_strain_option_group(parser):
     
     data_reading_group = OptionGroup(parser, "Options for obtaining h(t)",
                   "These options are used for generating h(t) either by "
-                  "reading from file or by generating it. This is only needed "
+                  "reading from a file or by generating it. This is only needed "
                   "if the PSD is to be estimated from the data, ie. if the "
                   "--psd-estimation option is given.")
 
@@ -210,4 +210,7 @@ def verify_strain_options(opts, parser):
     required_opts(opts, parser, 
                   ['--gps-start-time', '--gps-end-time', '--strain-high-pass',
                    '--pad-data', '--sample-rate', '--channel-name',
-                   ])                       
+                   ])               
+                   
+def StrainData(object):
+    pass        
