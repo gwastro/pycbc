@@ -16,14 +16,14 @@
 """
 This modules contains functions reading, generating, and segmenting strain data
 """
-import logging
+import logging, numpy
 
 from optparse import OptionGroup
 from pycbc import psd, DYN_RANGE_FAC
 from pycbc.types import float32
 from pycbc.frame import read_frame
 from pycbc.inject import InjectionSet
-from pycbc.filter import resample_to_delta_t, highpass
+from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series
 
 def required_opts(opt, parser, opt_list, required_by=None):
     """Check that all the opts are defined 
@@ -212,13 +212,117 @@ def verify_strain_options(opts, parser):
                    '--pad-data', '--sample-rate', '--channel-name',
                    ])               
                    
-def StrainData(object):
+class StrainSegments(object):
     """ Class for managing manipulation of strain data for the purpose of 
         matched filtering. This includes methods for segmenting and 
         conditioning.
     """
-    def __init__(self):
-        pass
+    def __init__(self, strain, segment_length=None, segment_start_pad=0, 
+                 segment_end_pad=0, trigger_start=None, trigger_end=None):
+        """ Determine how to chop up the strain data into smaller segents
+            for analysis.
+        """
+        self._fourier_segments = None
+        self.strain = strain
         
-    def fourier_segments():
-        pass
+        self.delta_t = strain.delta_t
+        self.sample_rate = strain.sample_rate
+        
+        if segment_length:
+            seg_len = segment_length
+        else:
+            seg_len = strain.duration
+            
+        self.delta_f = 1.0 / segment_length
+        self.time_len = seg_len * self.sample_rate
+        self.freq_len = self.time_len / 2 + 1
+            
+        seg_end_pad = segment_end_pad
+        seg_start_pad = segment_start_pad
+        
+        if not trigger_start:
+            trigger_start = int(strain.start_time)
+            
+        if not trigger_end:
+            trigger_end = int(strain.end_time)
+        
+        throwaway_size = seg_start_pad + seg_end_pad    
+        seg_width = seg_len - throwaway_size   
+        
+        # The amount of time we can actually analyze given the
+        # amount of padding that is needed       
+        analyzable = strain.duration - throwaway_size
+          
+        #number of segments we need to analyze this data                    
+        num_segs = int(numpy.ceil(float(analyzable) / float(seg_width)))
+
+        # The offset we will use between segments
+        seg_offset = int(numpy.ceil(analyzable / float(num_segs)))
+        self.segment_slices = []
+        self.analyze_slices = []
+        
+        # Determine how to chop up the strain into smaller segments
+        for nseg in range(num_segs-1):
+            # boundaries for time slices into the strain
+            seg_start = (nseg*seg_offset) * strain.sample_rate
+            seg_end = seg_start + seg_len * strain.sample_rate 
+            seg_slice = slice(seg_start, seg_end)
+            self.segment_slices.append(seg_slice)
+            
+            # boundaries for the analyzable portion of the segment
+            ana_start = seg_start_pad * strain.sample_rate
+            ana_end = ana_start + seg_offset * strain.sample_rate
+            ana_slice = slice(ana_start, ana_end)
+            self.analyze_slices.append(ana_slice)
+        
+        # The last segment takes up any integer boundary slop 
+        seg_end = len(strain)
+        seg_start = seg_end - seg_len * strain.sample_rate   
+        seg_slice = slice(seg_start, seg_end)
+        self.segment_slices.append(seg_slice)
+
+        remaining = (strain.duration - ((num_segs - 1) * seg_offset + seg_start_pad))
+        ana_star = (seg_len - remaining) * strain.sample_rate
+        ana_end = (seg_len - seg_end_pad) * strain.sample_rate
+        ana_slice = slice(ana_start, ana_end)
+        self.analyze_slices.append(ana_slice)
+        
+        #Remove segments that are outside trig start and end
+        segment_slices_red = []
+        analyze_slices_red = []
+        trig_start_idx = (trigger_start - int(strain.start_time)) * strain.sample_rate
+        trig_end_idx = (trigger_end - int(strain.start_time)) * strain.sample_rate
+
+        for seg, ana in zip(self.segment_slices, self.analyze_slices):
+            start = ana.start
+            stop = ana.stop
+            cum_start = start + seg.start
+            cum_end = stop + seg.start 
+
+            print trig_start_idx, cum_start, trig_end_idx, cum_end
+            # adjust first segment
+            if trig_start_idx > cum_start:
+                start += (trig_start_idx - cum_start)   
+            
+            # adjust last segment
+            if trig_end_idx < cum_end:
+                stop -= (cum_end - trig_end_idx)
+
+            if start < stop:
+                segment_slices_red.append(seg)  
+                analyze_slices_red.append(slice(start, stop))       
+                
+        self.segment_slices = segment_slices_red
+        self.analyze_slices = analyze_slices_red               
+        
+    def fourier_segments(self):
+        if not self._fourier_segments:
+            self._fourier_segments = []
+            for seg_slice, ana in zip(self.segment_slices, self.analyze_slices):
+                print seg_slice, ana
+                freq_seg = make_frequency_series(self.strain[seg_slice])
+                freq_seg.analyze = ana
+                freq_seg.cumulative_index = seg_slice.start + ana.start
+                self._fourier_segments.append(freq_seg)  
+   
+        return self._fourier_segments
