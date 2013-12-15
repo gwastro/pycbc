@@ -1,14 +1,10 @@
 #!/usr/bin/env /usr/bin/python
-import logging
-import sys
-import numpy
+import logging, sys, numpy 
 from optparse import OptionParser, OptionGroup
-from pycbc import vetoes, psd, waveform, events, noise, strain, DYN_RANGE_FAC
-from pycbc import scheme
-from pycbc.waveform import FilterBank
-from pycbc.filter import  matched_filter_core, sigmasq
-from pycbc.filter import make_frequency_series
-from pycbc.types import TimeSeries, FrequencySeries, float32, complex64, zeros, Array
+from pycbc import vetoes, psd, waveform, events, strain, scheme, DYN_RANGE_FAC
+from pycbc.filter import  matched_filter_core, sigmasq, make_frequency_series
+from pycbc.types import TimeSeries, FrequencySeries, zeros, Array
+from pycbc.types import float32, complex64
 
 # Option Parsing ##############################################################
 parser = OptionParser(
@@ -99,16 +95,10 @@ with ctx:
                          [int, complex64, float32, float32, float32], psd=psd)
 
     logging.info("Read in template bank")
-    try:
-        bank = FilterBank(opt.bank_file, opt.approximant, len(segments[0]), 
-                        segments[0].delta_f, opt.low_frequency_cutoff, 
-                        dtype=complex64, phase_order=opt.order,
-                        psd = psd, out=template_work_mem)  
-    except:
-        logging.info("No templates found in template bank, so writing process "
-                     "table and exiting.")
-        event_mgr.write_events()
-        sys.exit(0)
+    bank = waveform.FilterBank(opt.bank_file, opt.approximant, 
+                    len(segments[0]), segments[0].delta_f, 
+                    opt.low_frequency_cutoff, dtype=complex64, 
+                    phase_order=opt.order, psd = psd, out=template_work_mem)  
 
     for t_num, template in enumerate(bank):  
         event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)                                                                     

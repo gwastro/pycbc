@@ -46,8 +46,12 @@ class FilterBank(object):
         self.filter_length = filter_length
         self.kmin = int(f_lower / delta_f)
         
-        self.indoc = ligolw_utils.load_filename(filename, False)     
-        self.table = table.get_table(self.indoc, lsctables.SnglInspiralTable.tableName) 
+        try:
+            self.indoc = ligolw_utils.load_filename(filename, False)     
+            self.table = table.get_table(self.indoc, lsctables.SnglInspiralTable.tableName) 
+        except:
+            self.table = []
+        
         self.extra_args = kwds
         self.psd = psd
         

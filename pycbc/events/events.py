@@ -110,6 +110,9 @@ class EventManager(object):
         self.events = numpy.delete(self.events, remove)          
    
     def maximize_over_bank(self, tcolumn, column, window):
+        if len(self.events) == 0:
+            return
+    
         self.events = numpy.sort(self.events, order=tcolumn)
         cvec = self.events[column]
         tvec = self.events[tcolumn]
@@ -139,7 +142,6 @@ class EventManager(object):
         wnsec = int(window * 1e9 / self.opt.sample_rate)
         win = gps_nsec.astype(int) / wnsec
 
-        print gps_sec, win
         indices.append(0)
         for i in range(len(tvec)):
             if gps_sec[i] == gps_sec[indices[-1]] and  win[i] == win[indices[-1]]:

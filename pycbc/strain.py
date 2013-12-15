@@ -213,4 +213,12 @@ def verify_strain_options(opts, parser):
                    ])               
                    
 def StrainData(object):
-    pass        
+    """ Class for managing manipulation of strain data for the purpose of 
+        matched filtering. This includes methods for segmenting and 
+        conditioning.
+    """
+    def __init__(self):
+        pass
+        
+    def fourier_segments():
+        pass
