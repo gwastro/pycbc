@@ -299,7 +299,6 @@ class StrainSegments(object):
             cum_start = start + seg.start
             cum_end = stop + seg.start 
 
-            print trig_start_idx, cum_start, trig_end_idx, cum_end
             # adjust first segment
             if trig_start_idx > cum_start:
                 start += (trig_start_idx - cum_start)   
@@ -319,7 +318,6 @@ class StrainSegments(object):
         if not self._fourier_segments:
             self._fourier_segments = []
             for seg_slice, ana in zip(self.segment_slices, self.analyze_slices):
-                print seg_slice, ana
                 freq_seg = make_frequency_series(self.strain[seg_slice])
                 freq_seg.analyze = ana
                 freq_seg.cumulative_index = seg_slice.start + ana.start

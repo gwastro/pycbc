@@ -68,6 +68,9 @@ with ctx:
                                             trigger_start=opt.trig_start_time,
                                             trigger_end=opt.trig_end_time)                                                              
     segments = strain_segments.fourier_segments()
+    flen = strain_segments.freq_len
+    tlen = strain_segments.time_len
+    delta_f = strain_segments.delta_f
 
     logging.info("Computing noise PSD")
     psd = psd.from_cli(opt, len(segments[0]), segments[0].delta_f,
@@ -82,9 +85,9 @@ with ctx:
     for seg in segments:
         seg /= psd
             
-    template_work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
-    snr_work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
-    corr_work_mem = zeros((len(segments[0])-1)*2, dtype=complex64)
+    template_work_mem = zeros(tlen, dtype=complex64)
+    snr_work_mem = zeros(tlen, dtype=complex64)
+    corr_work_mem = zeros(tlen, dtype=complex64)
 
     event_mgr = events.EventManager(opt, 
                          ['time_index', 'snr', 'chisq', 'bank_chisq'], 
@@ -92,8 +95,7 @@ with ctx:
 
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, opt.approximant, 
-                    len(segments[0]), segments[0].delta_f, 
-                    opt.low_frequency_cutoff, dtype=complex64, 
+                    flen, delta_f, opt.low_frequency_cutoff, dtype=complex64, 
                     phase_order=opt.order, psd=psd, out=template_work_mem)  
 
     for t_num, template in enumerate(bank):  
