@@ -148,7 +148,7 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
             median_bias(len(even_psds))
         psd = (odd_median + even_median) / 2
 
-    psd *= 2 * delta_f * seg_len / (w.squared_norm().sum())
+    psd *= 2 * delta_f * seg_len / (w*w).sum()
 
     return FrequencySeries(psd, delta_f=delta_f, dtype=timeseries.dtype)
 
