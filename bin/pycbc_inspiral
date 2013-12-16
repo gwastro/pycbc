@@ -119,7 +119,7 @@ with ctx:
                                             template, bank, flow)         
             snrv *= norm
             idx += stilde.cumulative_index           
-            vals = [snrv, idx, power_chisqv, bank_chisqv]
+            vals = [idx, snrv, power_chisqv, bank_chisqv]
             event_mgr.add_template_events(names, vals)
 
         if opt.cluster_method == "window":
