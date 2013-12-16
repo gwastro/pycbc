@@ -233,7 +233,7 @@ class StrainSegments(object):
         else:
             seg_len = strain.duration
             
-        self.delta_f = 1.0 / segment_length
+        self.delta_f = 1.0 / seg_len
         self.time_len = seg_len * self.sample_rate
         self.freq_len = self.time_len / 2 + 1
             
@@ -264,26 +264,26 @@ class StrainSegments(object):
         # Determine how to chop up the strain into smaller segments
         for nseg in range(num_segs-1):
             # boundaries for time slices into the strain
-            seg_start = (nseg*seg_offset) * strain.sample_rate
-            seg_end = seg_start + seg_len * strain.sample_rate 
+            seg_start = int((nseg*seg_offset) * strain.sample_rate)
+            seg_end = int(seg_start + seg_len * strain.sample_rate)
             seg_slice = slice(seg_start, seg_end)
             self.segment_slices.append(seg_slice)
             
             # boundaries for the analyzable portion of the segment
-            ana_start = seg_start_pad * strain.sample_rate
-            ana_end = ana_start + seg_offset * strain.sample_rate
+            ana_start = int(seg_start_pad * strain.sample_rate)
+            ana_end = int(ana_start + seg_offset * strain.sample_rate)
             ana_slice = slice(ana_start, ana_end)
             self.analyze_slices.append(ana_slice)
         
         # The last segment takes up any integer boundary slop 
         seg_end = len(strain)
-        seg_start = seg_end - seg_len * strain.sample_rate   
+        seg_start = int(seg_end - seg_len * strain.sample_rate)
         seg_slice = slice(seg_start, seg_end)
         self.segment_slices.append(seg_slice)
 
         remaining = (strain.duration - ((num_segs - 1) * seg_offset + seg_start_pad))
-        ana_star = (seg_len - remaining) * strain.sample_rate
-        ana_end = (seg_len - seg_end_pad) * strain.sample_rate
+        ana_start = int((seg_len - remaining) * strain.sample_rate)
+        ana_end = int((seg_len - seg_end_pad) * strain.sample_rate)
         ana_slice = slice(ana_start, ana_end)
         self.analyze_slices.append(ana_slice)
         
@@ -312,9 +312,17 @@ class StrainSegments(object):
                 analyze_slices_red.append(slice(start, stop))       
                 
         self.segment_slices = segment_slices_red
-        self.analyze_slices = analyze_slices_red               
-        
+        self.analyze_slices = analyze_slices_red                   
+    
     def fourier_segments(self):
+        """ Return a list of the FFT'd segments.
+        
+        Return the list of FrequencySeries. Additional properties are
+        added that describe the strain segment. The property 'analyze' is a slice
+        corresponding to the portion of the time domain equivelant of the segment
+        to analyze for triggers. The value 'cumulative_index' indexes from the beginning
+        of the original strain series. 
+        """
         if not self._fourier_segments:
             self._fourier_segments = []
             for seg_slice, ana in zip(self.segment_slices, self.analyze_slices):
@@ -324,3 +332,43 @@ class StrainSegments(object):
                 self._fourier_segments.append(freq_seg)  
    
         return self._fourier_segments
+        
+    @classmethod
+    def from_cli(cls, opt, strain):
+        """Calculate the segmentation of the strain data for analysis from
+        the command line options.
+        """
+        return cls(strain, segment_length=opt.segment_length, 
+                   segment_start_pad=opt.segment_start_pad,
+                   segment_end_pad=opt.segment_end_pad,
+                   trigger_start=opt.trig_start_time,
+                   trigger_end=opt.trig_end_time)
+        
+    @classmethod
+    def insert_segment_option_group(cls, parser):
+        segment_group = OptionGroup(parser, "Options for segmenting the strain",
+                                  "These options are used to determine how to "
+                                  "segment the strain into smaller chunks, "
+                                  "and for determining the portion of each to "
+                                  "analyze for triggers. ")
+        segment_group.add_option("--trig-start-time", type=int, default=0, 
+                    help="(optional) The gps time to start recording triggers")
+        segment_group.add_option("--trig-end-time", type=int, default=0,
+                    help="(optional) The gps time to stop recording triggers")
+        segment_group.add_option("--segment-length", type=int, 
+                          help="The length of each strain segment in seconds.")
+        segment_group.add_option("--segment-start-pad", type=int, 
+                          help="The time in seconds to ignore of the "
+                               "beginning of each segment in seconds. ")
+        segment_group.add_option("--segment-end-pad", type=int, 
+                          help="The time in seconds to ignore at the "
+                               "end of each segment in seconds. ")
+        parser.add_option_group(segment_group)
+        
+    @classmethod
+    def verify_segment_options(cls, opt, parser):
+        required_opts(opt, parser, 
+                  ['--segment-length', '--segment-start-pad', '--segment-end-pad',
+                   ])  
+        
+        
