@@ -1,0 +1,242 @@
+#!/usr/bin/env /usr/bin/python
+
+# Copyright (C) 2013  Alex Nitz, Josh Willis
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""This program provides a legacy interface that emulates the lalapps_tmpltbank
+options. Many (most) options are not implemented and may not ever be. They
+are still eaten but are noted as such in the options section.
+
+"""
+
+from optparse import OptionParser, OptionGroup
+from subprocess import check_call
+             
+TAKES_ARG = 1
+NO_ARG = 0
+
+def argify(parser, args):
+    for arg, t in args:
+        if t == TAKES_ARG:
+            parser.add_option(arg, type=str)
+        if t == NO_ARG:
+            parser.add_option(arg, action='store_true', default=None)
+
+parser = OptionParser(
+    usage   = "%prog [OPTIONS]",
+    description = """Legacy interface to generate a non-spinning template bank.
+                     See lalapps_tmpltbank for information on the arguments themselves.
+                  """ )
+
+# These are the options in lalapps_tmpltbank syntax that we will accept
+# and pass on, possibly renamed:
+
+args = [('--verbose', NO_ARG),
+        ('--gps-start-time', TAKES_ARG),
+        ('--gps-end-time', TAKES_ARG),
+        ('--pad-data', TAKES_ARG),
+        ('--frame-cache', TAKES_ARG),
+        ('--channel-name',TAKES_ARG),
+        ('--strain-high-pass-freq', TAKES_ARG),
+        ('--sample-rate', TAKES_ARG),
+        ('--spectrum-type', TAKES_ARG),
+        ('--segment-length',TAKES_ARG),
+        ('--number-of-segments',TAKES_ARG),
+        ('--low-frequency-cutoff', TAKES_ARG),
+        ('--high-frequency-cutoff', TAKES_ARG),
+        ('--disable-compute-moments', NO_ARG),
+        ('--minimum-mass', TAKES_ARG),
+        ('--maximum-mass', TAKES_ARG),
+        ('--max-total-mass', TAKES_ARG),
+        ('--min-total-mass', TAKES_ARG),
+        ('--max-eta',TAKES_ARG),
+        ('--min-eta',TAKES_ARG),
+        ('--minimal-match',TAKES_ARG),
+        ('--order',TAKES_ARG)
+        ]
+             
+# These are the options to lalapps_tmpltbank that we will accept,
+# but not transform or otherwise pass through.
+
+unused_args = [('--version', NO_ARG),
+               ('--user-tag', TAKES_ARG),
+               ('--ifo-tag', TAKES_ARG),
+               ('--comment', TAKES_ARG),
+               ('--write-compress', NO_ARG),
+               ('--glob-frame-data', NO_ARG),
+               ('--frame-type', TAKES_ARG),
+               ('--calibration-cache', TAKES_ARG),
+               ('--glob-calibration-data', NO_ARG),
+               ('--calibrated-data', TAKES_ARG),
+               ('--strain-high-pass-order', TAKES_ARG),
+               ('--strain-high-pass-atten', TAKES_ARG),
+               ('--point-calibration', TAKES_ARG),
+               ('--resample-filter', TAKES_ARG),
+               ('--disable-high-pass', NO_ARG),
+               ('--enable-high-pass', TAKES_ARG),
+               ('--high-pass-order', TAKES_ARG),
+               ('--high-pass-attenuation', TAKES_ARG),
+               ('--dynamic-range-exponent', TAKES_ARG),
+               ('--td-follow-up', TAKES_ARG),
+               ('--standard-candle',NO_ARG),
+               ('--candle-snr',TAKES_ARG),
+               ('--candle-minmass',TAKES_ARG),
+               ('--candle-maxmass',TAKES_ARG),
+               ('--chirp-mass-cutoff', TAKES_ARG),
+               ('--minimum-psi0',TAKES_ARG),
+               ('--maximum-psi0',TAKES_ARG),
+               ('--minimum-psi3',TAKES_ARG),
+               ('--maximum-psi3',TAKES_ARG),
+               ('--maximum-fcut-tmplts',TAKES_ARG),
+               ('--disable-polygon-fit',NO_ARG),
+               ('--alpha',TAKES_ARG),
+               ('--minimum-beta',TAKES_ARG),
+               ('--maximum-beta',TAKES_ARG),
+               ('--minimum-spin1',TAKES_ARG),
+               ('--maximum-spin1',TAKES_ARG),
+               ('--minimum-kappa1',TAKES_ARG),
+               ('--maximum-kappa1',TAKES_ARG),
+               ('--npoints-chi',TAKES_ARG),
+               ('--npoints-kappa',TAKES_ARG),
+               ('--approximant', TAKES_ARG),
+               ('--num-freq-cutoffs',TAKES_ARG),
+               ('--max-high-freq-cutoff',TAKES_ARG),
+               ('--min-high-freq-cutoff',TAKES_ARG),
+               ('--space',TAKES_ARG),
+               ('--grid-spacing',TAKES_ARG),
+               ('--write-response',NO_ARG),
+               ('--write-spectrum',NO_ARG),
+               ('--write-strain-spectrum',NO_ARG),
+# Our current ihope hack will generate the following, which we ignore:
+               ('--pycbc',NO_ARG)
+               ]
+
+group = OptionGroup(parser, "Used",
+                    "These options are translated to pycbc_geom_nonspinbank options.")
+argify(group, args)
+parser.add_option_group(group)
+
+group = OptionGroup(parser, "Unused Options",
+                    "Caution: These arguments are eaten but ignored.")
+argify(group, unused_args)
+parser.add_option_group(group)
+
+opt, argv = parser.parse_args()
+
+# A function to take a dictionary defining a mapping between
+# arguments of lalapps_tmpltbank and those of pycbc_geom_nonspinbank,
+# and append the mapped arguments to the list 'args' if they
+# are present in the dict opt. If the opt dict indicates
+# an argument to the option, that is appended as well, after
+# the mapped option.
+
+def pass_arg(old_new, args, opt):
+    for mapped_opt in old_new.keys():
+        val = opt[mapped_opt]
+        if val is True:
+            args.append(old_new[mapped_opt])
+        elif val is not None:
+            args.append(old_new[mapped_opt])
+            args.append(str(val))
+        
+# The real_args list will be the actual options and arguments
+# passed through.  It starts empty, then we largely fill it
+# by remapping options via the 'old_new' dict, and then
+# handling a few special cases.
+ 
+real_args = []
+
+# The dict old_new has keys that are (parsed) arguments that
+# we accept and pass on or map to a new argument.  There are
+# other arguments which we do not ignore but where the
+# the transformation is more complex than can be handled
+# easily in a dictionary mapping; those are handled
+# separately below.
+
+old_new = {'verbose':'--verbose',
+       'gps_start_time': '--gps-start-time',
+       'gps_end_time' : '--gps-end-time',
+       'pad_data' : '--pad-data',
+       'frame_cache' : '--frame-cache',
+       'channel_name' : '--channel-name',
+       'strain_high_pass_freq' : '--strain-high-pass',
+       'high_frequency_cutoff' : '--f-upper',
+       'max_total_mass' : '--max-total-mass',
+       'min_total_mass' : '--min-total-mass',
+       'max_eta' : '--max-eta',
+       'min_eta' : '--min-eta',
+       'minimal_match' : '--min-match',
+       'order' : '--pn-order',
+       'sample_rate' : '--sample-rate',
+       'spectrum_type' : '--psd-estimation'
+}
+        
+pass_arg(old_new, real_args, vars(opt))
+
+# Must specify output file name (this is
+# derived in lalapps_tmpltbank).
+
+ifo = opt.channel_name[:2]
+outfn = "{0}-TMPLTBANK-{1}-{2}.xml.gz".format(ifo,
+            opt.gps_start_time,
+            str(int(opt.gps_end_time)-int(opt.gps_start_time)))
+
+real_args += ['--output-file', outfn]    
+
+# If *not* given the --disable-compute-moments option,
+# we give calculate-ethinca-metric
+
+if opt.disable_compute_moments is None:
+    real_args += ['--calculate-ethinca-metric']
+
+# We need to map the argument for --low-frequency-cutoff
+# to both of f-low and f0:
+
+real_args += ['--f-low',opt.low_frequency_cutoff,
+              '--f0',opt.low_frequency_cutoff]
+
+# We must specify min/max masses for both m1 and m2
+
+real_args += ['--min-mass1',opt.minimum_mass]
+real_args += ['--max-mass1',opt.maximum_mass]
+real_args += ['--min-mass2',opt.minimum_mass]
+real_args += ['--max-mass2',opt.maximum_mass]
+
+# Now calculate the other PSD arguments
+
+# lalapps_tmpltbank takes the length of a data segment
+# as a number of points, but the PSD module wants it
+# in seconds
+sr = int(opt.sample_rate)
+sl = int(opt.segment_length)     
+seg_len = sl/sr
+
+# lalapps_tmpltbank assumes a segment overlap
+# of half the segment length.
+stride = seg_len / 2
+
+real_args += ['--psd-segment-stride', str(stride)]
+real_args += ['--psd-segment-length', str(seg_len)]
+
+# The pycbc bank program requires delta_f be given:
+delta_f = float(sr)/float(sl)
+real_args += ['--delta-f',str(delta_f)]
+
+# Call the pycbc executable
+print real_args
+check_call(['pycbc_geom_nonspinbank'] + real_args)
+
+
