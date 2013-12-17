@@ -47,7 +47,7 @@ class legacy_ihope_job_utils:
 
         return currJob
 
-    def create_condornode(self, ahopeDax, currJob, bankDataSeg, jobValidSeg, \
+    def create_condornode(self, ahopeDax, currJob, bankDataSeg, jobValidSeg, 
                           parent=None, dfParents=None):
         """
         Set up a CondorDagmanNode class to run legacy lalapps C codes.

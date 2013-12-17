@@ -42,17 +42,11 @@ class Node(pipeline.CondorDADNode):
     def add_output(self, files, opts=None):
         for file in files:
             self.output_files.append(file)
-            self.add_input_file(file.filename)
-            self.add_parent(file.node)
+            self.add_output_file(file.filename)
+            file.node = self
         if opt:
             for file, opt in zip(files, opts):
                 self.add_var_opt(opt, file.filename)
-           
-    def get_output(self):
-        pass
-        
-    def get_input(self):
-        pass
     
 
 class Workflow(object):
@@ -115,20 +109,22 @@ class AhopeFile(lal.CacheEntry):
     c = AhopeFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902177.5), "file://localhost/home/kipp/tmp/1/H1-815901601-576.xml", job=CondorDagNodeInstance)
     '''
     def __init__(self, description, extension, directory, ifo='N', 
-                 time_seg=segments.segment(0, 99999999999), **kwargs):
-        
+                 time_seg=segments.segment(0, 99999999999), **kwargs):       
         self.node=None
         self.kwargs = kwargs         
         self.filename = self._filename(ifo, description, extension, time_seg)
-        self.path = os.path.join(directory, filename)
-        file_url = urlparse.urlunparse(['file', 'localhost', self.path, None, None, None])
-
+        path = os.path.join(directory, filename)
+        file_url = urlparse.urlunparse(['file', 'localhost', path, None, None, None])
         lal.CacheEntry.__init__(self, ifo, description, time_seg, file_url)
 
         
     @classmethod
-    def from_url(self, ifo, description, time_seg, file_url, node=None, **kwargs):
-        pass
+    def unmatched_url(cls, ifo, description, time_seg, file_url, **kwargs):
+        entry =  lal.CacheEntry(ifo, description, time_seg, file_url)
+        entry.node = None
+        entry.kwargs = kwargs
+        entry.filename = basename(entry.path)
+        return entry
         
     def _filename(self, ifo, description, extension, time_seg, part=None):
         """ Construct the standard output filename
