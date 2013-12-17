@@ -244,11 +244,12 @@ def get_veto_segs_in_workflow(ifo, category, start_time, end_time, out_dir,
     node.add_var_opt('ifo-list', ifo)
     node.add_var_opt('gps-start-time', str(start_time))
     node.add_var_opt('gps-end-time', str(end_time))
+    veto_def_file = AhopeFile('VETOTIME_CAT%d', '.xml', out_dir, 
+                              ifo=ifo, 
+                              time_seg=segments.segment(start_time, end_time))
+    node.add_output(veto_def_files)
     workflow.add_node(node)
-    vetoDefXmlFileName = "%s-VETOTIME_CAT%d-%d-%d.xml" \
-                         %(ifo, category, start_time, end_time-start_time)
-    vetoDefXmlFile = os.path.join(out_dir, vetoDefXmlFileName)
-    return vetoDefXmlFile
+    return veto_def_file.path
 
 def create_segs_from_cats_job(cp, out_dir):
     """

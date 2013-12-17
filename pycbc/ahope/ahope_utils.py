@@ -22,14 +22,36 @@ class Job(object):
     def create_node(self):
         pass
 
-class Node(object):
-    def __init__(self):
-        pass
-    def add_input(self, opt, files):
+class Node(pipeline.CondorDADNode):
+    def __init__(self, job):
+        pipeline.CondorDAGNode.__init__(self, job)
+        self.input_files = []
+        self.output_files = []
+        
+    def add_input(self, files, opts=None):
         """files can be an AhopeFile or an AhopeFileGroup
         """
-        pass
+        for file in files:
+            self.input_files.append(file)
+            self.add_input_file(file.filename)
+            self.add_parent(file.node)
+        if opt:
+            for file, opt in zip(files, opts):
+                self.add_var_opt(opt, file.filename)
+            
+    def add_output(self, files, opts=None):
+        for file in files:
+            self.output_files.append(file)
+            self.add_input_file(file.filename)
+            self.add_parent(file.node)
+        if opt:
+            for file, opt in zip(files, opts):
+                self.add_var_opt(opt, file.filename)
+           
     def get_output(self):
+        pass
+        
+    def get_input(self):
         pass
     
 
@@ -63,11 +85,8 @@ class Workflow(object):
     def find_files(self, desc, time=None, ifo=None, **kwds):
         pass
         
-    def add_node(self):
-        pass
-        
-    def get_dag(self):
-        pass
+    def add_node(self, node):
+        self.dag.add_node(node)
         
     def write_plans():
         self.dag.write_sub_files()
@@ -96,10 +115,9 @@ class AhopeFile(lal.CacheEntry):
     c = AhopeFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902177.5), "file://localhost/home/kipp/tmp/1/H1-815901601-576.xml", job=CondorDagNodeInstance)
     '''
     def __init__(self, description, extension, directory, ifo='N', 
-                 time_seg=segments.segment(0, 99999999999), 
-                 node=None, **kwargs):
+                 time_seg=segments.segment(0, 99999999999), **kwargs):
         
-        self.node = node
+        self.node=None
         self.kwargs = kwargs         
         self.filename = self._filename(ifo, description, extension, time_seg)
         self.path = os.path.join(directory, filename)
