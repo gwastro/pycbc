@@ -5,31 +5,33 @@ from glue import segments, pipeline
 from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.ahope.ahope_utils import *
 
-def setup_segment_generation(cp, ifos, start_time, end_time,\
-                             ahopeDax, out_dir, maxVetoCat = 5, minSegLength=0):
+def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir, 
+                             maxVetoCat = 5, minSegLength=0):
     """
     Setup the segment generation needed in an ahope workflow
     FIXME: Add more DOCUMENTATION
     """
     logging.info("Entering segment generation module")
     veto_categories = range(1,maxVetoCat)
+    
+    cp = workflow.cp
 
     if cp.get("ahope-segments","segments-method") == "AT_RUNTIME":
         logging.info("Generating segments with setup_segment_gen_runtime")
-        segFilesDict = setup_segment_gen_runtime(cp, ifos, veto_categories, \
-                                  start_time, end_time, out_dir)
+        segFilesDict = setup_segment_gen_runtime(cp, ifos, veto_categories, 
+                                 start_time, end_time, out_dir)
     elif cp.get("ahope-segments","segments-method") == "CAT2_PLUS_DAG":
         logging.info("Generating segments with setup_segment_gen_mixed")
-        segFilesDict = setup_segment_gen_mixed(cp, ifos, veto_categories, \
-                                 start_time, end_time, out_dir, ahopeDax, 1)
+        segFilesDict = setup_segment_gen_mixed(cp, ifos, veto_categories, 
+                                 start_time, end_time, out_dir, workflow, 1)
     elif cp.get("ahope-segments","segments-method") == "CAT3_PLUS_DAG":
         logging.info("Generating segments with setup_segment_gen_mixed")
-        segFilesDict = setup_segment_gen_mixed(cp, ifos, veto_categories, \
-                                 start_time, end_time, out_dir, ahopeDax, 2)
+        segFilesDict = setup_segment_gen_mixed(cp, ifos, veto_categories, 
+                                 start_time, end_time, out_dir, workflow, 2)
     elif cp.get("ahope-segments","segments-method") == "CAT4_PLUS_DAG":
         logging.info("Generating segments with setup_segment_gen_mixed")
-        segFilesDict = setup_segment_gen_mixed(cp, ifos, veto_categories, \
-                                 start_time, end_time, out_dir, ahopeDax, 3)
+        segFilesDict = setup_segment_gen_mixed(cp, ifos, veto_categories, 
+                                 start_time, end_time, out_dir, workflow, 3)
     else:
         msg = "Entry segments-method in [ahope-segments] does not have "
         msg += "expected value. Valid values are AT_RUNTIME, CAT4_PLUS_DAG."
@@ -54,7 +56,7 @@ def setup_segment_generation(cp, ifos, start_time, end_time,\
     return segsToAnalyse, segFilesDict
 
 
-def setup_segment_gen_runtime(cp, ifos, veto_categories, start_time,\
+def setup_segment_gen_runtime(cp, ifos, veto_categories, start_time,
                               end_time, out_dir):
     """
     ADD DOCUMENTATION
@@ -66,13 +68,13 @@ def setup_segment_gen_runtime(cp, ifos, veto_categories, start_time,\
         logging.info("Generating science segments for ifo %s" %(ifo))
         ifoTag=baseTag + "_%s" %(ifo.upper())
         segFilesDict[ifo] = {}
-        currSciSegs, currSciXmlFile = get_science_segments(ifo, cp, \
+        currSciSegs, currSciXmlFile = get_science_segments(ifo, cp, 
                                           start_time, end_time, out_dir)
         currTag = 'SCIENCE'
-        currUrl = urlparse.urlunparse(['file', 'localhost', currSciXmlFile,\
+        currUrl = urlparse.urlunparse(['file', 'localhost', currSciXmlFile,
                           None, None, None])
-        segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, \
-                                 '%s_%s' %(ifoTag, currTag), \
+        segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, 
+                                 '%s_%s' %(ifoTag, currTag), 
                                  segValidSeg, currUrl, segList=currSciSegs)
 
         vetoSegs = {}
@@ -81,30 +83,30 @@ def setup_segment_gen_runtime(cp, ifos, veto_categories, start_time,\
             logging.info("Generating CAT_%d segments for ifo %s." \
                          %(category,ifo))
             vetoSegs[category],vetoXmlFiles[category] = \
-                get_veto_segs_at_runtime(ifo, category, cp, start_time, \
+                get_veto_segs_at_runtime(ifo, category, cp, start_time, 
                                          end_time, out_dir)
             currTag='VETO_CAT%d' %(category)
-            currUrl = urlparse.urlunparse(['file', 'localhost',\
+            currUrl = urlparse.urlunparse(['file', 'localhost',
                           vetoXmlFiles[category], None, None, None])
-            segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, \
-                                 '%s_%s' %(ifoTag, currTag), \
+            segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, 
+                                 '%s_%s' %(ifoTag, currTag), 
                                  segValidSeg, currUrl, \
                                  segList=vetoSegs[category])
         analysedSegs = currSciSegs - vetoSegs[1]
         analysedSegs.coalesce()
-        analysedXmlFile = sciXmlFile = os.path.join(out_dir,\
+        analysedXmlFile = sciXmlFile = os.path.join(out_dir,
                              "%s-ANALYSED_SEGMENTS.xml" %(ifo.upper()) ) 
-        currUrl = urlparse.urlunparse(['file', 'localhost', analysedXmlFile,\
+        currUrl = urlparse.urlunparse(['file', 'localhost', analysedXmlFile,
                           None, None, None])
         currTag='ANALYSED'
-        segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, \
-                                 '%s_%s' %(ifoTag, currTag), \
+        segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, 
+                                 '%s_%s' %(ifoTag, currTag), 
                                  segValidSeg, currUrl, segList=analysedSegs)
         segFilesDict[ifo][currTag].toSegmentXml()
     return segFilesDict
 
-def setup_segment_gen_mixed(cp, ifos, veto_categories, start_time,\
-                            end_time, out_dir, ahopeDax, maxVetoAtRunTime):
+def setup_segment_gen_mixed(cp, ifos, veto_categories, start_time,
+                            end_time, out_dir, workflow, maxVetoAtRunTime):
     """
     ADD DOCUMENTATION
     """
@@ -116,13 +118,13 @@ def setup_segment_gen_mixed(cp, ifos, veto_categories, start_time,\
         logging.info("Generating science segments for ifo %s" %(ifo))
         ifoTag=baseTag + "_%s" %(ifo.upper())
         segFilesDict[ifo] = {}
-        currSciSegs, currSciXmlFile = get_science_segments(ifo, cp, \
+        currSciSegs, currSciXmlFile = get_science_segments(ifo, cp, 
                                           start_time, end_time, out_dir)
         currTag = 'SCIENCE'
-        currUrl = urlparse.urlunparse(['file', 'localhost', currSciXmlFile,\
+        currUrl = urlparse.urlunparse(['file', 'localhost', currSciXmlFile,
                           None, None, None])
-        segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, \
-                                 '%s_%s' %(ifoTag, currTag), \
+        segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, 
+                                 '%s_%s' %(ifoTag, currTag), 
                                  segValidSeg, currUrl, segList=currSciSegs)
 
         vetoSegs = {}
@@ -133,34 +135,34 @@ def setup_segment_gen_mixed(cp, ifos, veto_categories, start_time,\
                 logging.info("Generating CAT_%d segments for ifo %s." \
                              %(category,ifo))
                 vetoSegs[category],vetoXmlFiles[category] = \
-                    get_veto_segs_at_runtime(ifo, category, cp, start_time, \
+                    get_veto_segs_at_runtime(ifo, category, cp, start_time, 
                                              end_time, out_dir)
             else:
                 msg = "Adding creation of CAT_%d segments " %(category)
                 msg += "for ifo %s to workflow." %(ifo)
                 logging.info(msg)
-                vetoXmlFiles[category] = get_veto_segs_in_workflow(ifo, \
+                vetoXmlFiles[category] = get_veto_segs_in_workflow(ifo, 
                                   category, start_time, end_time, out_dir,
-                                  ahopeDax, vetoGenJob)        
+                                  workflow, vetoGenJob)        
                 # Don't know what the segments are as they haven't been
                 # calculated yet!
                 vetoSegs[category] = None
-            currUrl = urlparse.urlunparse(['file', 'localhost',\
+            currUrl = urlparse.urlunparse(['file', 'localhost',
                               vetoXmlFiles[category], None, None, None])
-            segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, \
-                                 '%s_%s' %(ifoTag, currTag), \
-                                 segValidSeg, currUrl, \
+            segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, 
+                                 '%s_%s' %(ifoTag, currTag), 
+                                 segValidSeg, currUrl,
                                  segList=vetoSegs[category])
                 
         analysedSegs = currSciSegs - vetoSegs[1]
         analysedSegs.coalesce()
-        analysedXmlFile = sciXmlFile = os.path.join(out_dir,\
+        analysedXmlFile = sciXmlFile = os.path.join(out_dir,
                              "%s-ANALYSED_SEGMENTS.xml" %(ifo.upper()) )
-        currUrl = urlparse.urlunparse(['file', 'localhost', analysedXmlFile,\
+        currUrl = urlparse.urlunparse(['file', 'localhost', analysedXmlFile,
                           None, None, None])
         currTag='ANALYSED'
-        segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, \
-                                 '%s_%s' %(ifoTag, currTag), \
+        segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, 
+                                 '%s_%s' %(ifoTag, currTag), 
                                  segValidSeg, currUrl, segList=analysedSegs)
         segFilesDict[ifo][currTag].toSegmentXml()
     return segFilesDict
@@ -187,8 +189,7 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir):
         "--include-segments", sciSegName,
         "--output-file", sciXmlFile ]
    
-    make_external_call(segFindCall, \
-                            outDir=os.path.join(out_dir,'logs'),\
+    make_external_call(segFindCall, outDir=os.path.join(out_dir,'logs'),
                             outBaseName='%s-science-call' %(ifo.lower()) )
 
     # Yes its yucky to generate a file and then read it back in. This will be
@@ -216,8 +217,7 @@ def get_veto_segs_at_runtime(ifo, category, cp, start_time, end_time, out_dir):
         "--gps-start-time", str(start_time),
         "--gps-end-time", str(end_time)]
 
-    make_external_call(segFromCatsCall,\
-              outDir=os.path.join(out_dir,'logs'),\
+    make_external_call(segFromCatsCall, outDir=os.path.join(out_dir,'logs'),
               outBaseName='%s-veto-cats-%d-call' %(ifo.lower(),category) )
 
     vetoDefXmlFileName = "%s-VETOTIME_CAT%d-%d-%d.xml" \
@@ -233,8 +233,8 @@ def get_veto_segs_at_runtime(ifo, category, cp, start_time, end_time, out_dir):
 
     return vetoSegs, vetoDefXmlFile
 
-def get_veto_segs_in_workflow(ifo, category, start_time, end_time, out_dir, \
-                              ahopeDax, vetoGenJob):
+def get_veto_segs_in_workflow(ifo, category, start_time, end_time, out_dir,
+                              workflow, vetoGenJob):
     """
     Obtain veto segments for the selected ifo and veto category and add the job
     to generate this to the workflow.
@@ -244,7 +244,7 @@ def get_veto_segs_in_workflow(ifo, category, start_time, end_time, out_dir, \
     node.add_var_opt('ifo-list', ifo)
     node.add_var_opt('gps-start-time', str(start_time))
     node.add_var_opt('gps-end-time', str(end_time))
-    ahopeDax.add_node(node)
+    workflow.add_node(node)
     vetoDefXmlFileName = "%s-VETOTIME_CAT%d-%d-%d.xml" \
                          %(ifo, category, start_time, end_time-start_time)
     vetoDefXmlFile = os.path.join(out_dir, vetoDefXmlFileName)
@@ -313,10 +313,10 @@ def fromsegmentxml(file, dict=False, id=None):
     """
 
     # load xmldocument and SegmentDefTable and SegmentTables
-    xmldoc, digest = utils.load_fileobj(file, gz=file.name.endswith(".gz"),\
+    xmldoc, digest = utils.load_fileobj(file, gz=file.name.endswith(".gz"),
                              contenthandler=ligolw.DefaultLIGOLWContentHandler)
 
-    seg_def_table  = table.get_table(xmldoc, \
+    seg_def_table  = table.get_table(xmldoc,
                                      lsctables.SegmentDefTable.tableName)
     seg_table      = table.get_table(xmldoc, lsctables.SegmentTable.tableName)
 

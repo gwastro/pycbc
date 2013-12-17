@@ -7,8 +7,7 @@ import pycbc.ahope as ahope
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \
                     level=logging.INFO,datefmt='%I:%M:%S')
 
-# Parse ini file
-cp = ahope.parse_ahope_ini_file('./daily_ahope.ini')
+workflow = ahope.Workflow('./daily_ahope.ini')
 
 # Make directories for output
 currDir = os.getcwd()
@@ -39,15 +38,6 @@ end_time = 971622087
 ifos = ['H1','L1']
 # ALEX: please add V1 to this and commit to repo!
 
-# Initialize the dag
-basename = 'ahope_test'
-logfile = 'asdtwe.log'
-fh = open( logfile, "w" )
-fh.close()
-dag = pipeline.CondorDAG(logfile,dax=False)
-dag.set_dax_file(basename)
-dag.set_dag_file(basename)
-
 # Get segments
 scienceSegs, segsDict = ahope.setup_segment_generation(cp, ifos, start_time,\
                                end_time, dag, segDir, maxVetoCat=5,\
@@ -71,9 +61,6 @@ splitBanks = ahope.setup_splittable_workflow(cp, dag, banks, tmpltbankDir)
 insps = ahope.setup_matchedfltr_workflow(cp, scienceSegs, datafinds, dag, \
                                          splitBanks, inspiralDir)
 
-dag.write_sub_files()
-dag.write_dag()
-#dag.write_abstract_dag()
-dag.write_script()
+
 
 logging.info("Finished.")

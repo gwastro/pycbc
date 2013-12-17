@@ -4,8 +4,10 @@ import logging
 import math
 import numpy
 import urlparse
+from os.path import splitext, basename
 from glue import lal
-from glue import segments
+from glue import segments, pipeline
+import pycbc.ahope as ahope
 import pylal.dq.dqSegmentUtils as dqUtils
 
 class Executable(object):
@@ -36,11 +38,22 @@ class Workflow(object):
     functions for finding input files using time and keywords. It can also
     generate cache files from the inputs.
     """
-    def __init__(self):
+    def __init__(self, config):
         """Create an aHOPE workflow
         """
+        # Parse ini file
+        self.cp = ahope.parse_ahope_ini_file(config)
+        self.basename = basename(splitext(config)[0])
         
-    def add_files(self, filenames):
+        # Initialize the dag
+        logfile = self.basename + '.log'
+        fh = open( logfile, "w" )
+        fh.close()
+        self.dag = pipeline.CondorDAG(logfile, dax=False)
+        self.dag.set_dax_file(self.basename)
+        self.dag.set_dag_file(self.basename)
+        
+    def add_files(self, files):
         """Add files to the workflow file collection. These can later be 
         used for input to nodes and may be queried for. File names must satisfy
         the lal cache name standard. 
@@ -57,10 +70,10 @@ class Workflow(object):
         pass
         
     def write_plans():
-        pass
-        
-class AhopeFileGroup(object):
-    pass
+        self.dag.write_sub_files()
+        self.dag.write_dag()
+        #self.dag.write_abstract_dag()
+        self.dag.write_script()
 
 class AhopeFile(lal.CacheEntry):
     '''This class holds the details of an individual output file in the ahope
@@ -109,7 +122,9 @@ class AhopeFile(lal.CacheEntry):
         start = time_seg[0]
         
         filename = ifo + '-' + description.upper() + '-' + start + '-' + duration + extension
-        
+
+class AhopeFileGroup(list):
+    pass        
 
 
 class AhopeOutSegFile(AhopeOutFile):
