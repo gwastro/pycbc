@@ -39,8 +39,8 @@ ifos = ['H1','L1']
 # ALEX: please add V1 to this and commit to repo!
 
 # Get segments
-scienceSegs, segsDict = ahope.setup_segment_generation(cp, ifos, start_time,\
-                               end_time, dag, segDir, maxVetoCat=5,\
+scienceSegs, segsDict = ahope.setup_segment_generation(workflow, ifos, start_time,
+                               end_time, segDir, maxVetoCat=5,
                                minSegLength=2000)
 
 # Get frames, this can be slow, as we ping every frame to check it exists,
@@ -48,17 +48,17 @@ scienceSegs, segsDict = ahope.setup_segment_generation(cp, ifos, start_time,\
 #datafinds, scienceSegs = ahope.setup_datafind_workflow(cp, scienceSegs, dag,\
 #                         dfDir)
 # This second case will also update the segment list on missing data, not fail
-datafinds, scienceSegs = ahope.setup_datafind_workflow(cp, scienceSegs, dag,\
-                       dfDir, checkSegmentGaps=False, checkFramesExist=False,\
+datafinds, scienceSegs = ahope.setup_datafind_workflow(cp, scienceSegs, dag,
+                       dfDir, checkSegmentGaps=False, checkFramesExist=False,
                        updateSegmentTimes=True)
 
 # Template bank stuff
-banks = ahope.setup_tmpltbank_workflow(cp, scienceSegs, datafinds, dag, \
+banks = ahope.setup_tmpltbank_workflow(cp, scienceSegs, datafinds, dag, 
                                        tmpltbankDir)
 # Split bank up
 splitBanks = ahope.setup_splittable_workflow(cp, dag, banks, tmpltbankDir)
 # Do matched-filtering
-insps = ahope.setup_matchedfltr_workflow(cp, scienceSegs, datafinds, dag, \
+insps = ahope.setup_matchedfltr_workflow(cp, scienceSegs, datafinds, dag, 
                                          splitBanks, inspiralDir)
 
 
