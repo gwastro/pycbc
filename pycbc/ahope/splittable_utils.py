@@ -32,8 +32,9 @@ def setup_splittable_dax_generated(cp, ahopeDax, tmpltBanks, outDir):
     # Template banks are independent for different ifos, but might not be!
     # Begin with independent case and add after FIXME
     # FIXME: Do not hardcode value of 2
-    numBanks = cp.get("ahope-splittable","num-outputs")
-    return split_outfiles(cp, tmpltBanks, exeInstance, 2, ahopeDax, outDir)
+    numBanks = int(cp.get("ahope-splittable","num-outputs"))
+    return split_outfiles(cp, tmpltBanks, exeInstance, numBanks, ahopeDax,\
+                          outDir)
 
 def split_outfiles(cp, inputFileList, exeInstance, numBanks, ahopeDax, outDir):
     """
