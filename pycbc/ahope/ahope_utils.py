@@ -93,12 +93,12 @@ class Node(pipeline.CondorDAGNode):
         
         for file in files:
             self.input_files.append(file)
-            self.add_input_file(file.paths[0])        
+            self.add_input_file(file.path)        
             if file.node:
                 self.add_parent(file.node)
         if opts:
             for file, opt in zip(files, opts):
-                self.add_var_opt(opt, file.paths[0])
+                self.add_var_opt(opt, file.path)
             
     def add_output(self, files, opts=None):
     
@@ -112,7 +112,8 @@ class Node(pipeline.CondorDAGNode):
             
         for file in files:
             self.output_files.append(file)
-            self.add_output_file(file.path)
+            for path in file.paths:
+                self.add_output_file(path)
             file.node = self
         if opts:
             for file, opt in zip(files, opts):

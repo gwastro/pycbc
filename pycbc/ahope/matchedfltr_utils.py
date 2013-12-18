@@ -4,7 +4,7 @@ import os
 from pycbc.ahope.ahope_utils import * 
 from pycbc.ahope.jobsetup_utils import *
 
-def setup_matchedfltr_workflow(cp, scienceSegs, datafindOuts, ahopeDax,
+def setup_matchedfltr_workflow(workflow, scienceSegs, datafindOuts,
                                tmpltBanks, outputDir):
     '''
     Setup matched filter section of ahope workflow.
@@ -16,13 +16,13 @@ def setup_matchedfltr_workflow(cp, scienceSegs, datafindOuts, ahopeDax,
 
     # There should be a number of different options here, for e.g. to set
     # up fixed bank, or maybe something else
-    inspiralOuts = setup_matchedfltr_dax_generated(cp, scienceSegs, 
-                       datafindOuts, ahopeDax, tmpltBanks, outputDir)
+    inspiralOuts = setup_matchedfltr_dax_generated(workflow, scienceSegs, 
+                       datafindOuts, tmpltBanks, outputDir)
     logging.info("Leaving matched-filtering setup module.")
     
     return inspiralOuts
 
-def setup_matchedfltr_dax_generated(cp, scienceSegs, datafindOuts, ahopeDax,
+def setup_matchedfltr_dax_generated(workflow, scienceSegs, datafindOuts,
                                     tmpltBanks, outputDir,
                                     link_to_tmpltbank=True):
     '''
@@ -36,6 +36,7 @@ def setup_matchedfltr_dax_generated(cp, scienceSegs, datafindOuts, ahopeDax,
     # There is also a stub for a default class using values given in the .ini
     # file.
 
+    cp = workflow.cp
     ifos = scienceSegs.keys()
     matchFltrExe = os.path.basename(cp.get('executables','inspiral'))
     # Select the appropriate class
@@ -57,13 +58,13 @@ def setup_matchedfltr_dax_generated(cp, scienceSegs, datafindOuts, ahopeDax,
         linkExeInstance = None
 
     # Set up class for holding the banks
-    inspiralOuts = AhopeOutFileList([])
+    inspiralOuts = AhopeFileList([])
 
     # Template banks are independent for different ifos, but might not be!
     # Begin with independent case and add after FIXME
     for ifo in ifos:
-        sngl_ifo_job_setup(cp, ifo, inspiralOuts, exeInstance, 
-                           scienceSegs[ifo], datafindOuts, ahopeDax, outputDir,
+        sngl_ifo_job_setup(workflow, ifo, inspiralOuts, exeInstance, 
+                           scienceSegs[ifo], datafindOuts, outputDir,
                            parents=tmpltBanks, linkExeInstance=linkExeInstance,
                            allowOverlap=False)
 

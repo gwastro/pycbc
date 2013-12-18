@@ -110,9 +110,10 @@ class LegacyAnalysisJob(Job):
         
 class LegacyInspiralJob(LegacyAnalysisJob):
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
-        node = LegacyAnalysisJob.create_node(self, data_seg, valid_seg, parents, dfParents)
-        self.set_trig_start(valid_seg[0])
-        self.set_trig_end(valid_seg[1])        
+        node = LegacyAnalysisJob.create_node(self, data_seg, valid_seg, parent, dfParents)
+        node.set_trig_start(valid_seg[0])
+        node.set_trig_end(valid_seg[1])  
+        node.add_input(parent, opts='bank-file')    
         return node
 
 
@@ -138,8 +139,6 @@ class LegacyInspiralExec(Executable, LegacyValidTimes):
     def create_job(self, cp, ifo, out_dir=None):
         return LegacyInspiralJob(cp, self.exe_name, self.condor_universe, ifo=ifo, 
                                  out_dir=out_dir)
-
-
 
 class LegacySplitBankExec(Executable):
     """This class holds the function for lalapps_splitbank 
@@ -183,6 +182,6 @@ class LegacySplitBankJob(Job):
         
         job_tag = bank.description + "_" + self.exe_name.upper()
         outFileGroup = AhopeFile(bank.ifo, job_tag, bank.segment, file_url=outUrlList)
-
+        node.add_output(outFileGroup)
         return node
 
