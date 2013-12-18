@@ -51,13 +51,13 @@ def setup_tmpltbank_workflow(workflow, scienceSegs, datafindOuts, outputDir):
     # Else we assume template banks will be generated in the workflow
     else:
         logging.info("Adding template bank jobs to workflow.")
-        tmpltBanks = setup_tmpltbank_dax_generated(workflow, scienceSegs, \
-                       datafindOuts, ahopeDax, outputDir)
+        tmpltBanks = setup_tmpltbank_dax_generated(workflow, scienceSegs,
+                       datafindOuts, outputDir)
     
     logging.info("Leaving template bank generation module.")
     return tmpltBanks
 
-def setup_tmpltbank_dax_generated(workflow, scienceSegs, datafindOuts, ahopeDax,
+def setup_tmpltbank_dax_generated(workflow, scienceSegs, datafindOuts,
                                   outputDir, link_to_matchedfltr=True):
     '''
     Setup template bank jobs that are generated as part of the ahope workflow.
@@ -111,7 +111,7 @@ def setup_tmpltbank_dax_generated(workflow, scienceSegs, datafindOuts, ahopeDax,
         linkExeInstance = None
 
     # Set up class for holding the banks
-    tmpltBanks = AhopeOutFileList([])
+    tmpltBanks = AhopeFileList([])
 
     # Template banks are independent for different ifos, but might not be!
     # Begin with independent case and add after FIXME
@@ -122,7 +122,7 @@ def setup_tmpltbank_dax_generated(workflow, scienceSegs, datafindOuts, ahopeDax,
 
     return tmpltBanks
 
-def setup_tmpltbank_pregenerated(cp,ifos):
+def setup_tmpltbank_pregenerated(cp, ifos):
     '''
     Setup ahope workflow to use a pregenerated template bank.
     The bank given in cp.get('ahope','pregenerated-template-bank') will be used
@@ -146,7 +146,7 @@ def setup_tmpltbank_pregenerated(cp,ifos):
     # Maybe we want to add capability to analyse separate banks in all ifos?
     
     # Set up class for holding the banks
-    tmpltBanks = AhopeOutFileList([])
+    tmpltBanks = AhopeFileList([])
 
     preGenBank = cp.get('ahope','pregenerated-template-bank')
     globalSeg = segments.segment([0, 9999999999])
@@ -155,7 +155,7 @@ def setup_tmpltbank_pregenerated(cp,ifos):
         # Add bank for that ifo
         userTag = "PREGEN_TMPLTBANK"
         fileUrl = urlparse.urljoin('file:', urllib.pathname2url(preGenBank))
-        currFile = AhopeOutFile(ifo, userTag, globalSeg, fileUrl)
+        currFile = AhopeFile(ifo, userTag, globalSeg, fileUrl)
         tmpltBanks.append(currFile)
 
     return tmpltBanks

@@ -1,6 +1,6 @@
 import math
 from glue import segments
-from pycbc.ahope import AhopeOutGroup, AhopeOutFile
+from pycbc.ahope import AhopeFile
 from pycbc.ahope.legacy_ihope import *
 
 def select_tmpltbankjob_instance(currExe,currSection):
@@ -26,7 +26,7 @@ def select_tmpltbankjob_instance(currExe,currSection):
 
     # This is basically a list of if statements
     if currExe == 'lalapps_tmpltbank':
-        exeClass = legacy_sngl_job_utils(currSection)
+        exeClass = SnglDetExec(currSection)
     # Some elif statements
     else:
         # Should we try some sort of default class??
@@ -98,8 +98,8 @@ def select_splitfilejob_instance(currExe, currSection):
 
     return exeClass
 
-def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, \
-                       datafindOuts, ahopeDax, outputDir,\
+def sngl_ifo_job_setup(workflow, ifo, outFiles, exeInstance, scienceSegs, 
+                       datafindOuts, outputDir,
                        parents=None, linkExeInstance=False, allowOverlap=True):
     """
     This function sets up a set of single ifo jobs.
@@ -130,9 +130,11 @@ def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, \
         jobs, where you probably want triggers recorded by jobs to not overlap
         at all.
     """
+    cp = workflow.cp
+    
     # Begin by getting analysis start and end, and start and end of time
     # that the output file is valid for
-    dataLength,validChunk = exeInstance.get_valid_times(cp, ifo)
+    dataLength, validChunk = exeInstance.get_valid_times(cp, ifo)
     dataChunk = segments.segment([0, dataLength])
     jobTag = exeInstance.exeName.upper()
 
@@ -178,7 +180,7 @@ def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, \
                     errMsg += "from a job at times where it is not valid."
                     raise ValueError(errMsg)
                 jobValidSeg = segments.segment([lowerBoundary, upperBoundary])
-            # Get the parent job if necessary
+                
             if parents:
                 currParent = parents.find_output(ifo, jobValidSeg)
                 if not currParent:
@@ -190,7 +192,7 @@ def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, \
                 currParent = None
 
             if datafindOuts:
-                currDfOuts = datafindOuts.find_all_output_in_range(ifo, \
+                currDfOuts = datafindOuts.find_all_output_in_range(ifo, 
                                                                    jobDataSeg)
                 if not currDfOuts:
                     errString = "No datafind jobs found overlapping %d to %d."\
@@ -198,30 +200,10 @@ def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, \
                     errString += "\nThis shouldn't happen. Contact a developer."
                     raise ValueError(errString)
 
-            # If the parent produces a group of output files, such as
-            # lalapps_splitbank, a number of condor jobs are needed
-            if currParent.__class__.__name__ == 'AhopeOutGroup':
-                # Set up the global outputs
-                currFiles = AhopeOutGroup(ifo, jobTag, jobValidSeg)
-                nodeList = []
-                urlList = []
-                for parentJob in currParent.get_output():
-                    currExeNode, fileUrl = exeInstance.create_condornode(\
-                                     ahopeDax, currExeJob, jobDataSeg,\
-                                     jobValidSeg, parent=parentJob,\
+            currExeNode = currExeJob.create_condornode(jobDataSeg,
+                                     jobValidSeg, parent=currParent,
                                      dfParents=currDfOuts)
-                    nodeList.append(currExeNode)
-                    urlList.append(fileUrl)
-                currFiles.set_output(urlList, nodeList)
-                outFiles.append(currFiles)
-            else:
-                currExeNode, fileUrl = exeInstance.create_condornode(\
-                                         ahopeDax, currExeJob, jobDataSeg,\
-                                         jobValidSeg, parent=currParent,\
-                                         dfParents=currDfOuts)
-                # Make the AhopeOutFile instance
-                currFile = AhopeOutFile(ifo, jobTag, jobValidSeg, fileUrl,\
-                                        job=currExeNode )
-                outFiles.append(currFile)
+            workflow.append(currExeNode)
+            outFiles += currExeNode.output_files
     return outFiles
 

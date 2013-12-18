@@ -4,7 +4,7 @@ import os
 from pycbc.ahope.ahope_utils import * 
 from pycbc.ahope.jobsetup_utils import *
 
-def setup_matchedfltr_workflow(cp, scienceSegs, datafindOuts, ahopeDax,\
+def setup_matchedfltr_workflow(cp, scienceSegs, datafindOuts, ahopeDax,
                                tmpltBanks, outputDir):
     '''
     Setup matched filter section of ahope workflow.
@@ -16,14 +16,14 @@ def setup_matchedfltr_workflow(cp, scienceSegs, datafindOuts, ahopeDax,\
 
     # There should be a number of different options here, for e.g. to set
     # up fixed bank, or maybe something else
-    inspiralOuts = setup_matchedfltr_dax_generated(cp, scienceSegs, \
+    inspiralOuts = setup_matchedfltr_dax_generated(cp, scienceSegs, 
                        datafindOuts, ahopeDax, tmpltBanks, outputDir)
     logging.info("Leaving matched-filtering setup module.")
     
     return inspiralOuts
 
-def setup_matchedfltr_dax_generated(cp, scienceSegs, datafindOuts, ahopeDax,\
-                                    tmpltBanks, outputDir,\
+def setup_matchedfltr_dax_generated(cp, scienceSegs, datafindOuts, ahopeDax,
+                                    tmpltBanks, outputDir,
                                     link_to_tmpltbank=True):
     '''
     Setup matched-filter jobs that are generated as part of the ahope workflow.
@@ -51,7 +51,7 @@ def setup_matchedfltr_dax_generated(cp, scienceSegs, datafindOuts, ahopeDax,\
         # PSD but then only generate triggers in the 2000s of data that the
         # template bank jobs ran on.
         tmpltbankExe = os.path.basename(cp.get('executables', 'tmpltbank'))
-        linkExeInstance = select_tmpltbankjob_instance(tmpltbankExe, \
+        linkExeInstance = select_tmpltbankjob_instance(tmpltbankExe, 
                                                        'tmpltbank')
     else:
         linkExeInstance = None
@@ -62,9 +62,9 @@ def setup_matchedfltr_dax_generated(cp, scienceSegs, datafindOuts, ahopeDax,\
     # Template banks are independent for different ifos, but might not be!
     # Begin with independent case and add after FIXME
     for ifo in ifos:
-        sngl_ifo_job_setup(cp, ifo, inspiralOuts, exeInstance, \
-                           scienceSegs[ifo], datafindOuts, ahopeDax, outputDir,\
-                           parents=tmpltBanks, linkExeInstance=linkExeInstance,\
+        sngl_ifo_job_setup(cp, ifo, inspiralOuts, exeInstance, 
+                           scienceSegs[ifo], datafindOuts, ahopeDax, outputDir,
+                           parents=tmpltBanks, linkExeInstance=linkExeInstance,
                            allowOverlap=False)
 
     return inspiralOuts

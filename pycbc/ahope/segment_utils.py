@@ -272,7 +272,7 @@ def create_segs_from_cats_job(cp, out_dir):
     job.add_opt('veto-file', vetoDefFile)
     # set up proxy to be accessible in a NFS location
     proxy = os.getenv('X509_USER_PROXY')
-#    if os.path.exists(proxy):
+    #  if os.path.exists(proxy):
     # FIXME: For now this falls back to local universe as some clusters do not
     # allow nodes to have access to the WWW.
     if 0:

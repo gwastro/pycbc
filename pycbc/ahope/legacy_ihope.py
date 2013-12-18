@@ -2,6 +2,41 @@ import os
 import urlparse
 from glue import pipeline
 from glue import segments
+from ahope_utils import Job, Node, Executable, AhopeFile
+
+class LegacyAnalysisNode(Node, pipeline.AnalysisNode):
+    def get_legacy_output():
+        pass
+
+class LegacyTmpltbankJob(Job):
+    def create_node(self, data_seg, valid_seg, parents=None, dfparents=None):
+        node = LegacyAnalysisNode(self)
+        
+        pad_data = int(self.get_opt('pad-data'))
+        if pad_data is None:
+            raise ValueError("The option pad-data is a required option of "
+                             "%s. Please check the ini file." % self.exe_name)
+                
+        currNode.set_start(bankDataSeg[0] + pad_data)
+        currNode.set_end(bankDataSeg[1] - pad_data)
+        
+        if dfParents:
+            if len(dfParents) != 1:
+                errMsg = "%s cannot take more than one frame cache file."\
+                         %(self.exe_name)       
+        
+        bank = AhopeFile()
+        node.add_output(bank)
+        node.add_input(cache_file, opt='cache-file')
+           
+        return node
+
+class LegacyTmpltbankExec(Executable):
+    def __init__(self):
+        Executable.__init__('lalapps_tmpltbank', 'standard')
+
+    def create_job(self, cp, sections, ifo=None):
+        return LegacyAnalysisJob(cp, self.exe_name, self.condor_universe, ifo=ifo)
 
 class legacy_ihope_job_utils:
     """This class holds all the utility functions to set up jobs that follow
@@ -321,7 +356,7 @@ class LegacyInspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         """
         return self.__extension
 
-class LegacyInspiralAnalysisNode(pipeline.AnalysisNode,\
+class LegacyInspiralAnalysisNode(pipeline.AnalysisNode,
                                  pipeline.CondorDAGNode):
     """
     A LegacyInspiralAnalysisNode instance runs an example of legacy ihope code

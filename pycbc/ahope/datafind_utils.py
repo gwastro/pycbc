@@ -3,7 +3,7 @@ import urlparse,urllib
 import logging
 from glue import datafind
 from glue import segments,segmentsUtils,git_version
-from pycbc.ahope import AhopeFile
+from pycbc.ahope import AhopeFile, AhopeFileList
 
 def setup_datafind_workflow(workflow, scienceSegs,  outputDir, 
                             checkFramesExist=True, checkSegmentGaps=True, 
@@ -126,7 +126,7 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir,
         logging.info("All frames found successfully")
 
     logging.info("Leaving datafind module")
-    return datafindouts, scienceSegs
+    return AhopeFileList(datafindouts), scienceSegs
     
 
 def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):

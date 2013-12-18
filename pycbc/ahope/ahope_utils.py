@@ -10,23 +10,74 @@ from glue import segments, pipeline
 from configparserutils import parse_ahope_ini_file
 import pylal.dq.dqSegmentUtils as dqUtils
 
-class Executable(object):
-    """
-    """
-    def __init__(self):
-        pass
+class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
+    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
+        """
+        Initialize the LegacyInspiralAnalysisJob class.
+   
+        Parameters
+        -----------
+        cp : ConfigParser object
+            The ConfigParser object holding the ahope configuration settings
+        sections : list of strings
+            sections of the ConfigParser that get added to the opts
+        exec_name : string
+            Executable name
+        universe : string
+            Condor universe to run the job in
+        extension : string
+            Extension of the output file. Used to figure out the output file
+            name.
+        """
+        self.exe_name = exe_name
+        self.cp = cp
+        self.ifo = ifo
+        
+        executable = cp.get('executables', exec_name)
+        
+        pipeline.CondorDAGJob.__init__(self, universe, executable)
+        pipeline.AnalysisJob.__init__(self, cp, dax=True)       
+        
+        if universe = 'vanilla':
+            self.add_condor_cmd('getenv', 'True')
+        self.add_condor_cmd('copy_to_spool','False')
+        
+        sections = [self.exe_name]
+        if ifo and cp.has_section('%s-%s' %(self.exe_name, ifo.lower())):
+             sections.append('%s-%s' %(self.exe_name, ifo.lower()) )
+             
+        for sec in sections:
+            if cp.has_section(sec):
+                self.add_ini_opts(cp, sec)
+            else:
+                warnString = "warning: config file is missing section [%s]"\
+                             %(sec,)
+                print >>sys.stderr, warnString
 
-class Job(object):
-    def __init__(self):
-        pass
+        # What would be a better more general logname ?
+        logBaseNam = 'logs/%s-$(macrogpsstarttime)' %(exec_name,)
+        logBaseNam += '-$(macrogpsendtime)-$(cluster)-$(process)'
+        
+        if out_dir:
+            self.add_condor_cmd("initialdir", outputDir)
+
+        self.set_stdout_file('%s.out' %(logBaseNam,) )
+        self.set_stderr_file('%s.err' %(logBaseNam,) )
+        if ifo:
+            self.set_sub_file('%s-%s.sub' %(ifo, exec_name,) )
+        else:
+            self.set_sub_file('%s.sub' %(exec_name,) )
+
     def create_node(self):
-        pass
+        return Node(self)
+        
 
 class Node(pipeline.CondorDAGNode):
     def __init__(self, job):
         pipeline.CondorDAGNode.__init__(self, job)
-        self.input_files = []
-        self.output_files = []
+        self.input_files = AhopeFileList([])
+        self.output_files = AhopeFileList([])
+        self.set_category(job.exename)
         
     def add_input(self, files, opts=None):
         """files can be an AhopeFile or an AhopeFileGroup
@@ -63,8 +114,17 @@ class Node(pipeline.CondorDAGNode):
             file.node = self
         if opts:
             for file, opt in zip(files, opts):
-                self.add_var_opt(opt, file.filename)
-    
+                self.add_var_opt(opt, file.filename)   
+
+class Executable(object):
+    """
+    """
+    def __init__(self, exe_name, universe):
+        self.exe_name = exe_name
+        self.condor_universe = universe
+        
+    def create_job(self, cp, ifo=None, out_dir=None):
+        return Job(cp, self.exe_name, self.condor_universe, ifo=ifo, out_dir=out_dir)
 
 class Workflow(object):
     """This class manages an aHOPE style workflow. It provides convenience 
@@ -152,10 +212,137 @@ class AhopeFile(lal.CacheEntry):
         duration = str(int(time_seg[1] - time_seg[0]))
         start = str(time_seg[0])
         
-        return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start, duration, extension)
+        return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start, duration, extension)     
+    
+class AhopeFileList(list):
+    '''This class holds a list of AhopeOutFile objects. It inherits from the
+    built-in list class, but also allows a number of features. ONLY
+    AhopeOutFile instances should be within a AhopeOutFileList instance.
+    '''
+    entry_class = AhopeFile
 
-class AhopeFileGroup(list):
-    pass        
+    def find_output(self, ifo, time):
+        '''
+        Return AhopeOutFile that covers the given time, or is most
+        appropriate for the supplied time range.
+
+        Parameters
+        -----------
+        ifo : string
+           Name of the ifo that the 
+        time : int/float/LIGOGPStime or tuple containing two values
+           If int/float/LIGOGPStime (or similar may of specifying one time) is
+           given, return the AhopeOutFile corresponding to the time. This calls
+           self.find_output_at_time(ifo,time).
+           If a tuple of two values is given, return the AhopeOutFile that is
+           **most appropriate** for the time range given. This calls
+           self.find_output_in_range
+
+        Returns
+        --------
+        AhopeOutFile class
+           The AhopeOutFile that corresponds to the time/time range
+        '''
+        # Determine whether I have a specific time, or a range of times
+        try:
+            lenTime = len(time)
+        except TypeError:
+            # This is if I have a single time
+            outFile = self.find_output_at_time(ifo,time)                
+        else:
+            # This is if I have a range of times
+            if lenTime == 2:
+                outFile = self.find_output_in_range(ifo,time[0],time[1])
+            # This is if I got a list that had more (or less) than 2 entries
+            if len(time) != 2:
+                raise TypeError("I do not understand the input variable time")
+        return outFile
+
+    def find_output_at_time(self, ifo, time):
+       '''Return AhopeOutFile that covers the given time.
+
+        Parameters
+        -----------
+        ifo : string
+           Name of the ifo that the AhopeOutFile should correspond to
+        time : int/float/LIGOGPStime
+           Return the AhopeOutFiles that covers the supplied time. If no
+           AhopeOutFile covers the time this will return None.
+
+        Returns
+        --------
+        list of AhopeOutFile classes
+           The AhopeOutFiles that corresponds to the time.
+        '''
+       # Get list of AhopeOutFiles that overlap time, for given ifo
+       outFiles = [i for i in self if ifo == i.observatory \
+                                   and time in i.segment] 
+       if len(outFiles) == 0:
+           # No AhopeOutFile at this time
+           return None
+       elif len(outFiles) == 1:
+           # 1 AhopeOutFile at this time (good!)
+           return outFiles
+       else:
+           # Multiple output files. Currently this is valid, but we may want
+           # to demand exclusivity later, or in certain cases. Hence the
+           # separation.
+           return outFiles
+
+    def find_output_in_range(self,ifo,start,end):
+        '''Return the AhopeOutFile that is most appropriate for the supplied
+        time range. That is, the AhopeOutFile whose coverage time has the
+        largest overlap with the supplied time range. If no AhopeOutFiles
+        overlap the supplied time window, will return None.
+
+        Parameters
+        -----------
+        ifo : string
+           Name of the ifo that the AhopeOutFile should correspond to
+        start : int/float/LIGOGPStime 
+           The start of the time range of interest.
+        end : int/float/LIGOGPStime
+           The end of the time range of interest
+
+        Returns
+        --------
+        AhopeOutFile class
+           The AhopeOutFile that is most appropriate for the time range
+        '''
+        # First filter AhopeOutFiles corresponding to ifo
+        outFiles = [i for i in self if ifo == i.observatory] 
+        if len(outFiles) == 0:
+            # No AhopeOutFiles correspond to that ifo
+            return None
+        # Filter AhopeOutFiles to those overlapping the given window
+        currSeg = segments.segment([start,end])
+        outFiles = [i for i in outFiles if \
+                               i.segment.intersects(currSeg)]
+        if len(outFiles) == 0:
+            # No AhopeOutFile overlap that time period
+            return None
+        elif len(outFiles) == 1:
+            # One AhopeOutFile overlaps that period
+            return outFiles[0]
+        else:
+            # More than one AhopeOutFile overlaps period. Find lengths of
+            # overlap between time window and AhopeOutFile window
+            overlapWindows = [abs(i.segment & currSeg) \
+                                  for i in outFiles]
+            # Return the AhopeOutFile with the biggest overlap
+            # Note if two AhopeOutFile have identical overlap, this will return
+            # the first AhopeOutFile in the list
+            overlapWindows = numpy.array(overlapWindows,dtype = int)
+            return outFiles[overlapWindows.argmax()]
+
+    def find_all_output_in_range(self, ifo, currSeg):
+        """
+        Return all files that overlap the specified segment.
+        """
+        outFiles = [i for i in self if ifo == i.observatory]
+        outFiles = [i for i in outFiles if \
+                               i.segment.intersects(currSeg)]
+        return self.__class__(outFiles)
 
 
 class AhopeOutSegFile(AhopeFile):
