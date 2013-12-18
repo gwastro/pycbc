@@ -3,7 +3,7 @@ from glue import segments
 from pycbc.ahope import AhopeFile
 from pycbc.ahope.legacy_ihope import *
 
-def select_tmpltbankjob_instance(currExe,currSection):
+def select_tmpltbankjob_instance(currExe, currSection):
     """This function returns an instance of the class that is appropriate for
     creating a template bank within ihope.
     
@@ -26,7 +26,7 @@ def select_tmpltbankjob_instance(currExe,currSection):
 
     # This is basically a list of if statements
     if currExe == 'lalapps_tmpltbank':
-        exeClass = SnglDetExec(currSection)
+        exeClass = LegacyTmpltbankExec(currSection)
     # Some elif statements
     else:
         # Should we try some sort of default class??
@@ -35,7 +35,7 @@ def select_tmpltbankjob_instance(currExe,currSection):
 
     return exeClass
 
-def select_matchedfilterjob_instance(currExe,currSection):
+def select_matchedfilterjob_instance(currExe, currSection):
     """This function returns an instance of the class that is appropriate for
     matched-filtering within ahope.
     
@@ -58,7 +58,7 @@ def select_matchedfilterjob_instance(currExe,currSection):
 
     # This is basically a list of if statements
     if currExe == 'lalapps_inspiral':
-        exeClass = legacy_sngl_job_utils(currSection)
+        exeClass = LegacyInspiralExec(currSection)
     # Some elif statements
     else:
         # Should we try some sort of default class??
