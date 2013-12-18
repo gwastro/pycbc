@@ -99,7 +99,7 @@ class Workflow(object):
     def add_node(self, node):
         self.dag.add_node(node)
         
-    def write_plans():
+    def write_plans(self):
         self.dag.write_sub_files()
         self.dag.write_dag()
         #self.dag.write_abstract_dag()
