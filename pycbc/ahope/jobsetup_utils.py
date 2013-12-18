@@ -136,7 +136,7 @@ def sngl_ifo_job_setup(workflow, ifo, outFiles, exeInstance, scienceSegs,
     # that the output file is valid for
     dataLength, validChunk = exeInstance.get_valid_times(cp, ifo)
     dataChunk = segments.segment([0, dataLength])
-    jobTag = exeInstance.exeName.upper()
+    jobTag = exeInstance.exe_name.upper()
 
     if linkExeInstance:
         _, linkValidChunk = linkExeInstance.get_valid_times(cp, ifo)
@@ -146,7 +146,7 @@ def sngl_ifo_job_setup(workflow, ifo, outFiles, exeInstance, scienceSegs,
 
 
     # Set up the condorJob class for the current executable
-    currExeJob = exeInstance.create_condorjob(cp, ifo, outputDir)
+    currExeJob = exeInstance.create_job(cp, ifo, outputDir)
 
     dataLoss = dataLength - abs(validChunk)
     if dataLoss < 0:
@@ -200,10 +200,10 @@ def sngl_ifo_job_setup(workflow, ifo, outFiles, exeInstance, scienceSegs,
                     errString += "\nThis shouldn't happen. Contact a developer."
                     raise ValueError(errString)
 
-            currExeNode = currExeJob.create_condornode(jobDataSeg,
+            currExeNode = currExeJob.create_node(jobDataSeg,
                                      jobValidSeg, parent=currParent,
                                      dfParents=currDfOuts)
-            workflow.append(currExeNode)
+            workflow.add_node(currExeNode)
             outFiles += currExeNode.output_files
     return outFiles
 

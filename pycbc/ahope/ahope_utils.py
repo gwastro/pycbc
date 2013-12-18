@@ -32,8 +32,9 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         self.exe_name = exe_name
         self.cp = cp
         self.ifo = ifo
+        self.out_dir = out_dir
         
-        executable = cp.get('executables', exec_name)
+        executable = cp.get('executables', exe_name)
         
         pipeline.CondorDAGJob.__init__(self, universe, executable)
         pipeline.AnalysisJob.__init__(self, cp, dax=True)       
@@ -55,18 +56,18 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
                 print >>sys.stderr, warnString
 
         # What would be a better more general logname ?
-        logBaseNam = 'logs/%s-$(macrogpsstarttime)' %(exec_name,)
+        logBaseNam = 'logs/%s-$(macrogpsstarttime)' %(exe_name,)
         logBaseNam += '-$(macrogpsendtime)-$(cluster)-$(process)'
         
         if out_dir:
-            self.add_condor_cmd("initialdir", outputDir)
+            self.add_condor_cmd("initialdir", out_dir)
 
         self.set_stdout_file('%s.out' %(logBaseNam,) )
         self.set_stderr_file('%s.err' %(logBaseNam,) )
         if ifo:
-            self.set_sub_file('%s-%s.sub' %(ifo, exec_name,) )
+            self.set_sub_file('%s-%s.sub' %(ifo, exe_name,) )
         else:
-            self.set_sub_file('%s.sub' %(exec_name,) )
+            self.set_sub_file('%s.sub' %(exe_name,) )
 
     def create_node(self):
         return Node(self)
@@ -77,7 +78,7 @@ class Node(pipeline.CondorDAGNode):
         pipeline.CondorDAGNode.__init__(self, job)
         self.input_files = AhopeFileList([])
         self.output_files = AhopeFileList([])
-        self.set_category(job.exename)
+        self.set_category(job.exe_name)
         
     def add_input(self, files, opts=None):
         """files can be an AhopeFile or an AhopeFileGroup
@@ -92,11 +93,12 @@ class Node(pipeline.CondorDAGNode):
         
         for file in files:
             self.input_files.append(file)
-            self.add_input_file(file.filename)
-            self.add_parent(file.node)
+            self.add_input_file(file.path)        
+            if file.node:
+                self.add_parent(file.node)
         if opts:
             for file, opt in zip(files, opts):
-                self.add_var_opt(opt, file.filename)
+                self.add_var_opt(opt, file.path)
             
     def add_output(self, files, opts=None):
     
@@ -110,11 +112,11 @@ class Node(pipeline.CondorDAGNode):
             
         for file in files:
             self.output_files.append(file)
-            self.add_output_file(file.filename)
+            self.add_output_file(file.path)
             file.node = self
         if opts:
             for file, opt in zip(files, opts):
-                self.add_var_opt(opt, file.filename)   
+                self.add_var_opt(opt, file.path)   
 
 class Executable(object):
     """

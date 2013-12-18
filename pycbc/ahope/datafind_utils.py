@@ -269,7 +269,7 @@ def get_science_segs_from_datafind_outs(datafindcaches):
     for cache in datafindcaches:
         if len(cache) > 0:
             groupSegs = segments.segmentlist(e.segment for e in cache).coalesce()
-            ifo = cache[0].observatory
+            ifo = cache.ifo
             if not newScienceSegs.has_key(ifo):
                 newScienceSegs[ifo] = groupSegs
             else:
@@ -372,7 +372,7 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
     # ahope format output file
     cache_file = AhopeFile(ifo, jobTag, seg, 
                            extension='lcf', directory=outputDir)
-    
+    dfCache.ifo = ifo
     # Dump output to file
     fP = open(cache_file.path, "w")
     dfCache.tofile(fP)

@@ -4,70 +4,8 @@ from glue import pipeline
 from glue import segments
 from ahope_utils import Job, Node, Executable, AhopeFile
 
-class LegacyAnalysisNode(Node, pipeline.AnalysisNode):
-    pass
-        
-class LegacyAnalysisJob(Job):
-    def create_node(self, data_seg, valid_seg, parents=None, dfparents=None):
-        node = LegacyAnalysisNode(self)
-        
-        pad_data = int(self.get_opt('pad-data'))
-        if pad_data is None:
-            raise ValueError("The option pad-data is a required option of "
-                             "%s. Please check the ini file." % self.exe_name)
-                
-        currNode.set_start(bankDataSeg[0] + pad_data)
-        currNode.set_end(bankDataSeg[1] - pad_data)
-        
-        if not dfparents or len(dfparents) != 1: 
-            raise ValueError("%s must be supplied with a single cache file" 
-                              %(self.exe_name))   
-                              
-        extension = '.xml'
-        gzipped = self.get_opt('write-compress')
-        if gzipped:
-            extension += '.gz'
-              
-        bank = AhopeFile(self.ifo, self.exe_name, 
-                         extension=extension,
-                         directory=self.out_dir)
-        node.add_output(bank)
-        node.add_input(cache_file, opt='cache-file')         
-        return node
-        
-class LegacyInspiralJob(LegacyAnalysisJob):
-    def create_node(self, data_seg, valid_seg, parents=None, dfparents=None):
-        node = LegacyAnalysisJob.create_node(self, data_seg, valid_seg, parents, dfparents)
-        self.set_trig_start(jobValidSeg[0])
-        self.set_trig_end(jobValidSeg[1])        
-        return node
-
-
-class LegacyTmpltbankExec(Executable, LegacyValidTimes):
-    def __init__(self, exe_name):
-        if exe_name != 'tmpltbank':
-            raise ValueError('lalapps_tmpltbank does not support setting '
-                             'the exe_name to anything but "tmpltbank"')
-                           
-        Executable.__init__('tmpltbank', 'standard')
-
-    def create_job(self, cp, ifo, out_dir=None):
-        return LegacyAnalysisJob(cp, self.exe_name, self.condor_universe,
-                                 ifo=ifo, out_dir=out_dir)
-        
-class LegacyInspiralExec(Executable, LegacyValidTimes):
-    def __init__(self, exe_name):
-        if exe_name != 'inspiral':
-            raise ValueError('lalapps_tmpltbank does not support setting '
-                             'the exe_name to anything but "inspiral"')
-        Executable.__init__('inspiral', 'standard')
-
-    def create_job(self, cp, ifo, out_dir=None):
-        return LegacyInspiralJob(cp, self.exe_name, self.condor_universe, ifo=ifo, 
-                                 out_dir=out_dir)
-
 class LegacyValidTimes(object):
-    def legacy_valid_times(cp, ifo):
+    def get_valid_times(self, cp, ifo):
         """
         Return the length of data that the tmpltbank job will need to read and
         the part of that data that the template bank is valid for. In the case
@@ -110,12 +48,12 @@ class LegacyValidTimes(object):
         # Read in needed options. This will fail if options not present
         # It will search relevant sub-sections for the option, so this can be
         # set differently for each ifo.
-        padData = int(cp.get_opt_ifo(self.exename, 'pad-data', ifo))
+        padData = int(cp.get_opt_ifo(self.exe_name, 'pad-data', ifo))
         self.padData = 8
-        segmentLength = float(cp.get_opt_ifo(self.exename,
+        segmentLength = float(cp.get_opt_ifo(self.exe_name,
                                              'segment-length', ifo))
-        sampleRate = float(cp.get_opt_ifo(self.exename,'sample-rate', ifo))
-        numSegments = int(cp.get_opt_ifo(self.exename,
+        sampleRate = float(cp.get_opt_ifo(self.exe_name,'sample-rate', ifo))
+        numSegments = int(cp.get_opt_ifo(self.exe_name,
                                          'number-of-segments', ifo))
         # Calculate total valid duration
         analysisDur = int(segmentLength/sampleRate) * (numSegments + 1)/2
@@ -128,7 +66,7 @@ class LegacyValidTimes(object):
         validStart = padData
         validEnd = analysisDur + padData
         # If this is inspiral we lose segment-length/4 on start and end
-        if self.exename == 'inspiral':
+        if self.exe_name == 'inspiral':
             # Don't think inspiral will do well if segmentLength/4 is not
             # an integer
             validStart = validStart + int(segmentLength/(sampleRate * 4))
@@ -136,6 +74,72 @@ class LegacyValidTimes(object):
         validChunk = segments.segment([validStart,validEnd])
 
         return dataLength, validChunk
+
+class LegacyAnalysisNode(Node, pipeline.AnalysisNode):
+    pass
+        
+class LegacyAnalysisJob(Job):
+    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
+        node = LegacyAnalysisNode(self)
+        
+        pad_data = int(self.get_opt('pad-data'))
+        if pad_data is None:
+            raise ValueError("The option pad-data is a required option of "
+                             "%s. Please check the ini file." % self.exe_name)
+                
+        node.set_start(data_seg[0] + pad_data)
+        node.set_end(data_seg[1] - pad_data)
+        
+        if not dfParents or len(dfParents) != 1: 
+            raise ValueError("%s must be supplied with a single cache file" 
+                              %(self.exe_name))   
+        cache_file = dfParents[0]    
+                              
+        extension = '.xml'
+        gzipped = self.get_opt('write-compress')
+        if gzipped:
+            extension += '.gz'
+              
+        bank = AhopeFile(self.ifo, self.exe_name, 
+                         extension=extension,
+                         time_seg=valid_seg,
+                         directory=self.out_dir)
+        node.add_output(bank)
+        node.add_input(cache_file, opts='frame-cache')         
+        return node
+        
+class LegacyInspiralJob(LegacyAnalysisJob):
+    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
+        node = LegacyAnalysisJob.create_node(self, data_seg, valid_seg, parents, dfParents)
+        self.set_trig_start(valid_seg[0])
+        self.set_trig_end(valid_seg[1])        
+        return node
+
+
+class LegacyTmpltbankExec(Executable, LegacyValidTimes):
+    def __init__(self, exe_name):
+        if exe_name != 'tmpltbank':
+            raise ValueError('lalapps_tmpltbank does not support setting '
+                             'the exe_name to anything but "tmpltbank"')
+                           
+        Executable.__init__(self, 'tmpltbank', 'standard')
+
+    def create_job(self, cp, ifo, out_dir=None):
+        return LegacyAnalysisJob(cp, self.exe_name, self.condor_universe,
+                                 ifo=ifo, out_dir=out_dir)
+        
+class LegacyInspiralExec(Executable, LegacyValidTimes):
+    def __init__(self, exe_name):
+        if exe_name != 'inspiral':
+            raise ValueError('lalapps_tmpltbank does not support setting '
+                             'the exe_name to anything but "inspiral"')
+        Executable.__init__(self, 'inspiral', 'standard')
+
+    def create_job(self, cp, ifo, out_dir=None):
+        return LegacyInspiralJob(cp, self.exe_name, self.condor_universe, ifo=ifo, 
+                                 out_dir=out_dir)
+
+
 
 class legacy_splitbank_job_utils(Executable):
     """This class holds the function for lalapps_splitbank 

@@ -270,6 +270,7 @@ def create_segs_from_cats_job(cp, out_dir):
     job.add_opt('output-dir', out_dir)
     job.add_opt('segment-url', segServerUrl)
     job.add_opt('veto-file', vetoDefFile)
+    job.exe_name = exeName 
     # set up proxy to be accessible in a NFS location
     proxy = os.getenv('X509_USER_PROXY')
     #  if os.path.exists(proxy):
@@ -278,8 +279,8 @@ def create_segs_from_cats_job(cp, out_dir):
     if 0:
         proxyfile = os.path.join(out_dir, 'x509up.file')
         shutil.copyfile(proxy, proxyfile)
-        job.add_condor_cmd('environment',\
-                              'USER=$ENV(USER);X509_USER_PROXY=%s' % proxyfile)
+        job.add_condor_cmd('environment',
+                           'USER=$ENV(USER);X509_USER_PROXY=%s' % proxyfile)
     else:
         # Fall back is to run in local universe
         job.set_universe('local')
