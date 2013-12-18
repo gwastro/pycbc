@@ -56,6 +56,15 @@ will:
 
 This currently matches Chris' S6 test and works. Note that running this example (ie. time for the python code to do all of these steps and exit) takes approximately 1 minute to setup a workflow to analyse all of S6D. This is with the ping all frames step turned off, with this on we are seeing run times considerably longer.
 
+-----------------------
+er_daily_ahope
+-----------------------
+
+This is a more detailed example of daily_ahope. This will do the same things
+as the daily_ahope example but then call into the remaining jobs, including
+the daily_page dag generation, to set up a *complete* daily_ahope workflow.
+This will also automatically generate the webpage at the end of the analysis.
+
 ====================
 Initialization
 ====================
