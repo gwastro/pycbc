@@ -4,6 +4,10 @@ from glue import pipeline
 from glue import segments
 from ahope_utils import Job, Node, Executable, AhopeFile
 
+class LegacyPartitionOut(object):
+    def set_part(self, part_num):
+        pass
+
 class LegacyValidTimes(object):
     def get_valid_times(self, cp, ifo):
         """

@@ -9,6 +9,7 @@ from glue import lal
 from glue import segments, pipeline
 from configparserutils import parse_ahope_ini_file
 import pylal.dq.dqSegmentUtils as dqUtils
+import copy
 
 class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
@@ -77,6 +78,7 @@ class Node(pipeline.CondorDAGNode):
     def __init__(self, job):
         pipeline.CondorDAGNode.__init__(self, job)
         self.input_files = AhopeFileList([])
+        self.partitioned_input_files = AhopeFileList([])
         self.output_files = AhopeFileList([])
         self.set_category(job.exe_name)
         
@@ -91,14 +93,28 @@ class Node(pipeline.CondorDAGNode):
         if opts and len(opts) != len(files):
             raise TypeError('An opt must be provided for each file in the list')
         
-        for file in files:
-            self.input_files.append(file)
-            self.add_input_file(file.path)        
+        for file in files:         
+            self.input_files.append(file) 
+            if len(file.paths) == 1:
+                self.add_input_file(file.path)  
+            elif len(file.paths) > 1:
+                self.partitioned_input_files.append(file)
+                if not opts:
+                    raise TypeError('Cannot accept paritioned ahope file as '
+                                'input without a corresponding option string.')
             if file.node:
-                self.add_parent(file.node)
+                if isinstance(file.node, list):
+                    for n in file.node:
+                        self.add_parent(n)
+                else:
+                    self.add_parent(file.node)
+
         if opts:
             for file, opt in zip(files, opts):
-                self.add_var_opt(opt, file.path)
+                if len(file.paths) > 1:
+                    file.opt = opt
+                elif len(file.paths) == 1:
+                    self.add_var_opt(opt, file.path)
             
     def add_output(self, files, opts=None):
     
@@ -112,12 +128,10 @@ class Node(pipeline.CondorDAGNode):
             
         for file in files:
             self.output_files.append(file)
-            for path in file.paths:
-                self.add_output_file(path)
             file.node = self
         if opts:
             for file, opt in zip(files, opts):
-                self.add_var_opt(opt, file.path)   
+                file.opt = opt   
 
 class Executable(object):
     """
@@ -149,8 +163,56 @@ class Workflow(object):
         self.dag.set_dax_file(self.basename)
         self.dag.set_dag_file(self.basename)
         
+    def partition_node(self, node, partitioned_file):
+        import time, random, hashlib
+    
+        opt = partitioned_file.opt
+        nodes = []
+        for path in partitioned_file.paths:
+            new_node = copy.copy(node)
+            new_node.add_var_opt(opt, path)
+            new_node.__parents = node._CondorDAGNode__parents[:]
+            new_node.__opts = node.get_opts().copy()
+            new_node.__input_files = node.get_input_files()[:]
+            
+            # generate the md5 node name
+            t = str( long( time.time() * 1000 ) )
+            r = str( long( random.random() * 100000000000000000L ) )
+            a = str( self.__class__ )
+            new_node._CondorDAGNode__name = hashlib.md5(t + r + a).hexdigest()
+            new_node._CondorDAGNode__md5name = new_node._CondorDAGNode__name
+            
+            new_node.add_input_file(path) 
+            nodes.append(new_node)     
+            print node.get_opts(), node
+        return nodes     
+        
     def add_node(self, node):
-        self.dag.add_node(node)
+        # copy the node as many times as necessary so all combinations
+        # of the input files are exhausted
+        part_files = node.partitioned_input_files
+        nodes = [node]
+        for file in part_files:
+            for n in nodes:
+                nodes = self.partition_node(n, file)
+            
+        if len(nodes) > 1:
+            for n in nodes:      
+                for file in node.output_files:
+                    for path in file.paths:
+                        n.add_output_file(path)
+                        if hasattr(file, 'opt'):
+                            self.add_var_opt(file.opt, path)           
+                self.dag.add_node(n)
+            for file in node.output_files:
+                file.node = nodes
+                
+        elif len(nodes) == 1:
+            for file in node.output_files:
+                for path in file.paths:
+                    node.add_output_file(path)
+                    if hasattr(file, 'opt'):
+                        self.add_var_opt(file.opt, path)       
         
     def write_plans(self):
         self.dag.write_sub_files()
@@ -204,16 +266,30 @@ class AhopeFile(object):
         for url in file_url:
             cache_entry = lal.CacheEntry(ifo, description, segment, url)
             self.cache_entries.append(cache_entry)
-           
-        self.paths = [cache.path for cache in self.cache_entries]
-        self.filenames = [basename(path) for path in self.paths]
-        
+
+    @property
+    def paths(self):
+        return [cache.path for cache in self.cache_entries]
+    
+    @property
+    def filenames(self):
+        return [basename(path) for path in self.paths]
+       
     @property
     def path(self):
         if len(self.paths) != 1:
             raise TypeError('A single path cannot be returned. This AhopeFile '
                             'is partitioned into multiple physical files.')
         return self.paths[0]
+    
+    def partition_self(num_parts):
+        new_entries = []
+        for num in range(0, num_parts):
+            for entry in self.cache_entries:
+                new_entry = lal.CacheEntry(entry.ifo, entry.description, 
+                                           entry.segment, entry.url)
+                new_entries.append(new_entry)
+        self.cache_entries = new_entries
         
     @property
     def filename(self):
