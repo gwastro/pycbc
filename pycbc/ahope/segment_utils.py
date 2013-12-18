@@ -239,15 +239,15 @@ def get_veto_segs_in_workflow(ifo, category, start_time, end_time, out_dir,
     Obtain veto segments for the selected ifo and veto category and add the job
     to generate this to the workflow.
     """
-    node = pipeline.CondorDAGNode(vetoGenJob)
+    node = Node(vetoGenJob)
     node.add_var_opt('veto-categories', str(category))
     node.add_var_opt('ifo-list', ifo)
     node.add_var_opt('gps-start-time', str(start_time))
     node.add_var_opt('gps-end-time', str(end_time))
-    veto_def_file = AhopeFile('VETOTIME_CAT%d', '.xml', out_dir, 
-                              ifo=ifo, 
-                              time_seg=segments.segment(start_time, end_time))
-    node.add_output(veto_def_files)
+    veto_def_file = AhopeFile(ifo, 'VETOTIME_CAT%d' % category, 
+                              segments.segment(start_time, end_time),
+                              extension='.xml', directory=out_dir)
+    node.add_output(veto_def_file)
     workflow.add_node(node)
     return veto_def_file.path
 

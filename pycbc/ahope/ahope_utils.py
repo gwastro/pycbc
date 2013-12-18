@@ -7,7 +7,7 @@ import urlparse
 from os.path import splitext, basename
 from glue import lal
 from glue import segments, pipeline
-import pycbc.ahope as ahope
+from configparserutils import parse_ahope_ini_file
 import pylal.dq.dqSegmentUtils as dqUtils
 
 class Executable(object):
@@ -22,7 +22,7 @@ class Job(object):
     def create_node(self):
         pass
 
-class Node(pipeline.CondorDADNode):
+class Node(pipeline.CondorDAGNode):
     def __init__(self, job):
         pipeline.CondorDAGNode.__init__(self, job)
         self.input_files = []
@@ -31,20 +31,37 @@ class Node(pipeline.CondorDADNode):
     def add_input(self, files, opts=None):
         """files can be an AhopeFile or an AhopeFileGroup
         """
+        if not isinstance(files, list):
+            files = [files]
+            if opts:
+                opts = [opts]
+            
+        if opts and len(opts) != len(files):
+            raise TypeError('An opt must be provided for each file in the list')
+        
         for file in files:
             self.input_files.append(file)
             self.add_input_file(file.filename)
             self.add_parent(file.node)
-        if opt:
+        if opts:
             for file, opt in zip(files, opts):
                 self.add_var_opt(opt, file.filename)
             
     def add_output(self, files, opts=None):
+    
+        if not isinstance(files, list):
+            files = [files]
+            if opts:
+                opts = [opts]
+    
+        if opts and len(opts) != len(files):
+            raise TypeError('An opt must be provided for each file in the list')
+            
         for file in files:
             self.output_files.append(file)
             self.add_output_file(file.filename)
             file.node = self
-        if opt:
+        if opts:
             for file, opt in zip(files, opts):
                 self.add_var_opt(opt, file.filename)
     
@@ -58,7 +75,7 @@ class Workflow(object):
         """Create an aHOPE workflow
         """
         # Parse ini file
-        self.cp = ahope.parse_ahope_ini_file(config)
+        self.cp = parse_ahope_ini_file(config)
         self.basename = basename(splitext(config)[0])
         
         # Initialize the dag
@@ -108,23 +125,22 @@ class AhopeFile(lal.CacheEntry):
     
     c = AhopeFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902177.5), "file://localhost/home/kipp/tmp/1/H1-815901601-576.xml", job=CondorDagNodeInstance)
     '''
-    def __init__(self, description, extension, directory, ifo='N', 
-                 time_seg=segments.segment(0, 99999999999), **kwargs):       
+    def __init__(self, ifo, description, time_seg, file_url=None, extension=None, directory=None, **kwargs):       
         self.node=None
-        self.kwargs = kwargs         
-        self.filename = self._filename(ifo, description, extension, time_seg)
-        path = os.path.join(directory, filename)
-        file_url = urlparse.urlunparse(['file', 'localhost', path, None, None, None])
-        lal.CacheEntry.__init__(self, ifo, description, time_seg, file_url)
-
+        self.kwargs = kwargs  
         
-    @classmethod
-    def unmatched_url(cls, ifo, description, time_seg, file_url, **kwargs):
-        entry =  lal.CacheEntry(ifo, description, time_seg, file_url)
-        entry.node = None
-        entry.kwargs = kwargs
-        entry.filename = basename(entry.path)
-        return entry
+        if not file_url:
+            if not extension:
+                raise TypeError("a file extension required if a file_url is not provided")
+            if not directory:
+                raise TypeError("a directory is required if a file_url is not provided")
+         
+            filename = self._filename(ifo, description, extension, time_seg)
+            path = os.path.join(directory, filename)
+            file_url = urlparse.urlunparse(['file', 'localhost', path, None, None, None])
+            
+        lal.CacheEntry.__init__(self, ifo, description, time_seg, file_url)       
+        self.filename = basename(self.path)
         
     def _filename(self, ifo, description, extension, time_seg, part=None):
         """ Construct the standard output filename
@@ -132,28 +148,29 @@ class AhopeFile(lal.CacheEntry):
         if part:
             description += '_' + str(part)
          
-        duration = int(time_seg[1] - time_seg[0])
-        start = time_seg[0]
+        extension = extension.replace('.', '')
+        duration = str(int(time_seg[1] - time_seg[0]))
+        start = str(time_seg[0])
         
-        filename = ifo + '-' + description.upper() + '-' + start + '-' + duration + extension
+        return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start, duration, extension)
 
 class AhopeFileGroup(list):
     pass        
 
 
-class AhopeOutSegFile(AhopeOutFile):
+class AhopeOutSegFile(AhopeFile):
     '''
     This class inherits from the AhopeOutFile class, and is designed to store
     ahope output files containing a segment list. This is identical in
     usage to AhopeOutFile except for an additional kwarg for holding the
     segment list, if it is known at ahope run time.
     '''
-    def __init__(self, ifo, description, timeSeg, fileUrl,\
+    def __init__(self, ifo, description, timeSeg, fileUrl,
                  segList=None, **kwargs):
         """
         ADD DOCUMENTATION
         """
-        AhopeOutFile.__init__(self, ifo, description, timeSeg, fileUrl,\
+        AhopeFile.__init__(self, ifo, description, timeSeg, fileUrl,
                               **kwargs)
         self.segmentList = segList
 
