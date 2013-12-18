@@ -5,7 +5,7 @@ from glue import segments
 import pycbc.ahope as ahope
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \
-                    level=logging.DEBUG,datefmt='%I:%M:%S')
+                    level=logging.INFO,datefmt='%I:%M:%S')
 
 start_time = 1060881616
 end_time = 1061856016
