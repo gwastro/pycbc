@@ -205,6 +205,51 @@ class PyCBCInspiralExec(Executable):
         start = pad_data + start_pad
         end = data_length - pad_data - end_pad
         return data_length, segments.segment(start, end)
+        
+class PyCBCTmpltbankJob(Job):
+    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
+        node = LegacyAnalysisNode(self)
+        
+        pad_data = int(self.get_opt('pad-data'))
+        if pad_data is None:
+            raise ValueError("The option pad-data is a required option of "
+                             "%s. Please check the ini file." % self.exe_name)
+              
+        node.set_start(data_seg[0] + pad_data)
+        node.set_end(data_seg[1] - pad_data)       
+        
+        if not dfParents or len(dfParents) != 1: 
+            raise ValueError("%s must be supplied with a single cache file" 
+                              %(self.exe_name))   
+        cache_file = dfParents[0]
+        node.add_input(cache_file, opts='frame-cache')    
+                            
+        # FIXME add control from output type  
+        extension = '.xml.gz'                     
+        insp = AhopeFile(self.ifo, self.exe_name, 
+                         extension=extension,
+                         segment=segments(self.get_start(), self.get_end()),
+                         directory=self.out_dir)
+        node.add_output(insp, opts='output-file')
+                
+        return node
+
+class PyCBCTmpltbankExec(Executable):
+    def __init__(self, exe_name):
+        Executable.__init__(self, exe_name, 'vanilla')
+    
+    def create_job(self, cp, ifo, out_dir=None):
+        return PyCBCTmpltbankJob(cp, self.exe_name, self.condor_universe, ifo=ifo, 
+                                out_dir=out_dir)  
+                                
+    def get_valid_times(self, cp, ifo):
+        pad_data = int(cp.get_opt_ifo(self.exe_name, 'pad-data', ifo))
+        
+        #FIXME this should not be hard coded 
+        data_length = 2048 + pad_data * 2
+        start = pad_data 
+        end = data_length - pad_data
+        return data_length, segments.segment(start, end)
     
 class LegacySplitBankJob(Job):    
     def create_node(self, bank):

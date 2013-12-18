@@ -27,6 +27,8 @@ def select_tmpltbankjob_instance(currExe, currSection):
     # This is basically a list of if statements
     if currExe == 'lalapps_tmpltbank':
         exeClass = LegacyTmpltbankExec(currSection)
+    if currExe == 'lalapps_tmpltbank':
+        exeClass = PyCBCTmpltbankExec(currSection)
     # Some elif statements
     else:
         # Should we try some sort of default class??
@@ -152,7 +154,6 @@ def sngl_ifo_job_setup(workflow, ifo, outFiles, exeInstance, scienceSegs,
     currExeJob = exeInstance.create_job(cp, ifo, outputDir)
     
     dataLoss = dataLength - abs(validChunk)
-    print exeInstance.exe_name, dataLoss, dataLength, validChunk
     
     if dataLoss < 0:
         raise ValueError("Ahope needs fixing! Please contact a developer")
