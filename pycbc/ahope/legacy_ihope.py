@@ -108,6 +108,8 @@ class LegacyAnalysisJob(Job):
                          extension=extension,
                          segment=segments.segment([node.get_start(), node.get_end()]),
                          directory=self.out_dir)
+        #FIXME the legacy filenames do not match what is in the file
+        bank.segment = valid_seg
         node.add_output(bank)
         node.add_input(cache_file, opts='frame-cache')         
         return node
@@ -179,9 +181,9 @@ class PyCBCInspiralJob(Job):
         extension = '.xml.gz'
                       
         insp = AhopeFile(self.ifo, self.exe_name, 
-                         extension=extension,
-                         segment=segments(node.get_start(), node.get_end()),
-                         directory=self.out_dir)
+                 extension=extension,
+                 segment=segments.segment([node.get_start(), node.get_end()]),
+                 directory=self.out_dir)
         node.add_output(insp, opts='output')
                 
         return node
@@ -227,9 +229,9 @@ class PyCBCTmpltbankJob(Job):
         # FIXME add control from output type  
         extension = '.xml.gz'                     
         insp = AhopeFile(self.ifo, self.exe_name, 
-                         extension=extension,
-                         segment=segments(node.get_start(), node.get_end()),
-                         directory=self.out_dir)
+                 extension=extension,
+                 segment=segments.segment([node.get_start(), node.get_end()]),
+                 directory=self.out_dir)
         node.add_output(insp, opts='output-file')
                 
         return node

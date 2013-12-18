@@ -191,7 +191,7 @@ def sngl_ifo_job_setup(workflow, ifo, outFiles, exeInstance, scienceSegs,
                 currParent = parents.find_output(ifo, jobValidSeg)
                 if not currParent:
                     errString = "No parent jobs found overlapping %d to %d." \
-                                %(jobValidSeg[0],jobValidSeg[1])
+                                %(jobValidSeg[0], jobValidSeg[1])
                     errString += "\nThis is a bad error! Contact a developer."
                     raise ValueError(errString)
             else:

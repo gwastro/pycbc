@@ -410,6 +410,7 @@ class AhopeFileList(list):
         # Filter AhopeOutFiles to those overlapping the given window
         currSeg = segments.segment([start,end])
         outFiles = [i for i in outFiles if i.segment.intersects(currSeg)]
+        
         if len(outFiles) == 0:
             # No AhopeOutFile overlap that time period
             return None
@@ -419,7 +420,7 @@ class AhopeFileList(list):
         else:
             # More than one AhopeOutFile overlaps period. Find lengths of
             # overlap between time window and AhopeOutFile window
-            overlapWindows = [abs(i.segment & currSeg) for i in outFiles]
+            overlapWindows = [abs(i.segment & currSeg) for i in outFiles]           
             # Return the AhopeOutFile with the biggest overlap
             # Note if two AhopeOutFile have identical overlap, this will return
             # the first AhopeOutFile in the list
