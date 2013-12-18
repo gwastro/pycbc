@@ -24,10 +24,11 @@ class LegacyAnalysisJob(Job):
                               %(self.exe_name))   
                               
         extension = '.xml'
-        if gzipped = self.get_opt('write-compress'):
+        gzipped = self.get_opt('write-compress')
+        if gzipped:
             extension += '.gz'
               
-        bank = AhopeFile(self.ifo, %self.exe_name.upper, 
+        bank = AhopeFile(self.ifo, self.exe_name, 
                          extension=extension,
                          directory=self.out_dir)
         node.add_output(bank)
@@ -43,7 +44,7 @@ class LegacyInspiralJob(LegacyAnalysisJob):
 
 
 class LegacyTmpltbankExec(Executable, LegacyValidTimes):
-    def __init__(self, exe_name=):
+    def __init__(self, exe_name):
         if exe_name != 'tmpltbank':
             raise ValueError('lalapps_tmpltbank does not support setting '
                              'the exe_name to anything but "tmpltbank"')

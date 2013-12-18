@@ -38,7 +38,7 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         pipeline.CondorDAGJob.__init__(self, universe, executable)
         pipeline.AnalysisJob.__init__(self, cp, dax=True)       
         
-        if universe = 'vanilla':
+        if universe == 'vanilla':
             self.add_condor_cmd('getenv', 'True')
         self.add_condor_cmd('copy_to_spool','False')
         
