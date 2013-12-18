@@ -80,6 +80,7 @@ class LegacyValidTimes(object):
 
 class LegacyAnalysisNode(Node, pipeline.AnalysisNode):
     pass
+    
         
 class LegacyAnalysisJob(Job):
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
@@ -89,7 +90,7 @@ class LegacyAnalysisJob(Job):
         if pad_data is None:
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.exe_name)
-                
+              
         node.set_start(data_seg[0] + pad_data)
         node.set_end(data_seg[1] - pad_data)
         
@@ -105,7 +106,7 @@ class LegacyAnalysisJob(Job):
               
         bank = AhopeFile(self.ifo, self.exe_name, 
                          extension=extension,
-                         segment=valid_seg,
+                         segment=segments.segment([node.get_start(), node.get_end()]),
                          directory=self.out_dir)
         node.add_output(bank)
         node.add_input(cache_file, opts='frame-cache')         
@@ -153,6 +154,57 @@ class LegacySplitBankExec(Executable):
     def create_job(self, cp, ifo, out_dir=None):
         return LegacySplitBankJob(cp, self.exe_name, self.condor_universe, ifo=ifo,
                                   out_dir=out_dir)
+
+class PyCBCInspiralJob(Job):
+    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
+        node = LegacyAnalysisNode(self)
+        
+        pad_data = int(self.get_opt('pad-data'))
+        if pad_data is None:
+            raise ValueError("The option pad-data is a required option of "
+                             "%s. Please check the ini file." % self.exe_name)
+              
+        node.set_start(data_seg[0] + pad_data)
+        node.set_end(data_seg[1] - pad_data)       
+        node.set_trig_start(valid_seg[0])
+        node.set_trig_end(valid_seg[1])   
+        
+        if not dfParents or len(dfParents) != 1: 
+            raise ValueError("%s must be supplied with a single cache file" 
+                              %(self.exe_name))   
+        cache_file = dfParents[0]
+        node.add_input(cache_file, opts='frame-cache')    
+                            
+        # FIXME add control from output type  
+        extension = '.xml.gz'
+                      
+        insp = AhopeFile(self.ifo, self.exe_name, 
+                         extension=extension,
+                         segment=segments(self.get_start(), self.get_end()),
+                         directory=self.out_dir)
+        node.add_output(insp, opts='output')
+                
+        return node
+
+class PyCBCInspiralExec(Executable):
+    def __init__(self, exe_name):
+        Executable.__init__(self, exe_name, 'vanilla')
+    
+    def create_job(self, cp, ifo, out_dir=None):
+        return PyCBCInspiralJob(cp, self.exe_name, self.condor_universe, ifo=ifo, 
+                                out_dir=out_dir)  
+                                
+    def get_valid_times(self, cp, ifo):
+        pad_data = int(cp.get_opt_ifo(self.exe_name, 'pad-data', ifo))
+        start_pad = int(cp.get_opt_ifo(self.exe_name, 'segment-start-pad', ifo))
+        end_pad = int(cp.get_opt_ifo(self.exe_name, 'segment-end-pad', ifo))
+        
+        #FIXME this should not be hard coded (can be any integer > 
+        #segment_length with pycbc_inspiral)
+        data_length = 2048 + pad_data * 2
+        start = pad_data + start_pad
+        end = data_length - pad_data - end_pad
+        return data_length, segments.segment(start, end)
     
 class LegacySplitBankJob(Job):    
     def create_node(self, bank):

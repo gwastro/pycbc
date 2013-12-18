@@ -59,6 +59,8 @@ def select_matchedfilterjob_instance(currExe, currSection):
     # This is basically a list of if statements
     if currExe == 'lalapps_inspiral':
         exeClass = LegacyInspiralExec(currSection)
+    elif currExe == 'pycbc_inspiral':
+        exeClass = PyCBCInspiralExec(currSection)
     # Some elif statements
     else:
         # Should we try some sort of default class??
@@ -138,7 +140,7 @@ def sngl_ifo_job_setup(workflow, ifo, outFiles, exeInstance, scienceSegs,
 
     dataChunk = segments.segment([0, dataLength])
     jobTag = exeInstance.exe_name.upper()
-
+    
     if linkExeInstance:
         _, linkValidChunk = linkExeInstance.get_valid_times(cp, ifo)
         validChunkStart = max(validChunk[0], linkValidChunk[0])
