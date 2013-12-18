@@ -135,6 +135,7 @@ def sngl_ifo_job_setup(workflow, ifo, outFiles, exeInstance, scienceSegs,
     # Begin by getting analysis start and end, and start and end of time
     # that the output file is valid for
     dataLength, validChunk = exeInstance.get_valid_times(cp, ifo)
+
     dataChunk = segments.segment([0, dataLength])
     jobTag = exeInstance.exe_name.upper()
 
@@ -147,8 +148,10 @@ def sngl_ifo_job_setup(workflow, ifo, outFiles, exeInstance, scienceSegs,
 
     # Set up the condorJob class for the current executable
     currExeJob = exeInstance.create_job(cp, ifo, outputDir)
-
+    
     dataLoss = dataLength - abs(validChunk)
+    print exeInstance.exe_name, dataLoss, dataLength, validChunk
+    
     if dataLoss < 0:
         raise ValueError("Ahope needs fixing! Please contact a developer")
     # Loop over science segments and set up jobs

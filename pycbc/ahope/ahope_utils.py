@@ -170,11 +170,10 @@ class Workflow(object):
         nodes = []
         for path in partitioned_file.paths:
             new_node = copy.copy(node)
-            new_node.add_var_opt(opt, path)
-            new_node.__parents = node._CondorDAGNode__parents[:]
-            new_node.__opts = node.get_opts().copy()
-            new_node.__input_files = node.get_input_files()[:]
-            
+            new_node._CondorDAGNode__parents = node._CondorDAGNode__parents[:]
+            new_node._CondorDAGNode__opts = node.get_opts().copy()
+            new_node._CondorDAGNode__input_files = node.get_input_files()[:]  
+            new_node._CondorDAGNode__output_files = node.get_output_files()[:]          
             # generate the md5 node name
             t = str( long( time.time() * 1000 ) )
             r = str( long( random.random() * 100000000000000000L ) )
@@ -182,9 +181,9 @@ class Workflow(object):
             new_node._CondorDAGNode__name = hashlib.md5(t + r + a).hexdigest()
             new_node._CondorDAGNode__md5name = new_node._CondorDAGNode__name
             
+            new_node.add_var_opt(opt, path)
             new_node.add_input_file(path) 
             nodes.append(new_node)     
-            print node.get_opts(), node
         return nodes     
         
     def add_node(self, node):
@@ -198,11 +197,11 @@ class Workflow(object):
             
         if len(nodes) > 1:
             for n in nodes:      
-                for file in node.output_files:
-                    for path in file.paths:
-                        n.add_output_file(path)
-                        if hasattr(file, 'opt'):
-                            self.add_var_opt(file.opt, path)           
+                #for file in node.output_files:
+                #    for path in file.paths:
+                #        n.add_output_file(path)
+                #        if hasattr(file, 'opt'):
+                #            self.add_var_opt(file.opt, path)           
                 self.dag.add_node(n)
             for file in node.output_files:
                 file.node = nodes
@@ -212,13 +211,14 @@ class Workflow(object):
                 for path in file.paths:
                     node.add_output_file(path)
                     if hasattr(file, 'opt'):
-                        self.add_var_opt(file.opt, path)       
+                        self.add_var_opt(file.opt, path)  
+            self.dag.add_node(node)     
         
     def write_plans(self):
         self.dag.write_sub_files()
+        self.dag.write_script()
         self.dag.write_dag()
         #self.dag.write_abstract_dag()
-        self.dag.write_script()
 
 class AhopeFile(object):
     '''This class holds the details of an individual output file in the ahope

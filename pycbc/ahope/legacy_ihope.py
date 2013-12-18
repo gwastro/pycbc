@@ -53,7 +53,6 @@ class LegacyValidTimes(object):
         # It will search relevant sub-sections for the option, so this can be
         # set differently for each ifo.
         padData = int(cp.get_opt_ifo(self.exe_name, 'pad-data', ifo))
-        self.padData = 8
         segmentLength = float(cp.get_opt_ifo(self.exe_name,
                                              'segment-length', ifo))
         sampleRate = float(cp.get_opt_ifo(self.exe_name,'sample-rate', ifo))
