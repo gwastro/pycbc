@@ -267,17 +267,16 @@ def get_science_segs_from_datafind_outs(datafindcaches):
     """
     newScienceSegs = {}
     for cache in datafindcaches:
-        if group.get_output():
+        if len(cache) > 0:
             groupSegs = segments.segmentlist(e.segment for e in cache).coalesce()
-        else:
-            continue
-        if not newScienceSegs.has_key(group.observatory):
-            newScienceSegs[group.observatory] = groupSegs
-        else:
-            newScienceSegs[group.observatory].extend(groupSegs)
-            # NOTE: This .coalesce probably isn't needed as the segments should
-            # be disjoint. If speed becomes an issue maybe remove it?
-            newScienceSegs[group.observatory].coalesce()
+            ifo = cache[0].observatory
+            if not newScienceSegs.has_key(ifo):
+                newScienceSegs[ifo] = groupSegs
+            else:
+                newScienceSegs[ifo].extend(groupSegs)
+                # NOTE: This .coalesce probably isn't needed as the segments should
+                # be disjoint. If speed becomes an issue maybe remove it?
+                newScienceSegs[ifo].coalesce()
     return newScienceSegs
 
 def setup_datafind_server_connection(cp):
@@ -371,7 +370,8 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
                                         startTime, endTime, **dfKwargs)
     logging.debug("Frames returned")
     # ahope format output file
-    cache_file = AhopeFile(jobTag, '.lcf', outputDir, time_seg=seg, ifo=ifo)
+    cache_file = AhopeFile(ifo, jobTag, seg, 
+                           extension='lcf', directory=outputDir)
     
     # Dump output to file
     fP = open(cache_file.path, "w")
