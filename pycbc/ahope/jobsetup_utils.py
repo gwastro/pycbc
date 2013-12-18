@@ -89,7 +89,7 @@ def select_splitfilejob_instance(currExe, currSection):
 
     # This is basically a list of if statements
     if currExe == 'lalapps_splitbank':
-        exeClass = legacy_splitbank_job_utils(currSection)
+        exeClass = LegacySplitBankExec(currSection)
     # Some elif statements
     else:
         # Should we try some sort of default class??

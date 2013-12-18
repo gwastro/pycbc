@@ -81,7 +81,7 @@ class Node(pipeline.CondorDAGNode):
         self.set_category(job.exe_name)
         
     def add_input(self, files, opts=None):
-        """files can be an AhopeFile or an AhopeFileGroup
+        """File must be ahope file
         """
         if not isinstance(files, list):
             files = [files]
@@ -93,12 +93,12 @@ class Node(pipeline.CondorDAGNode):
         
         for file in files:
             self.input_files.append(file)
-            self.add_input_file(file.path)        
+            self.add_input_file(file.paths[0])        
             if file.node:
                 self.add_parent(file.node)
         if opts:
             for file, opt in zip(files, opts):
-                self.add_var_opt(opt, file.path)
+                self.add_var_opt(opt, file.paths[0])
             
     def add_output(self, files, opts=None):
     
@@ -148,16 +148,6 @@ class Workflow(object):
         self.dag.set_dax_file(self.basename)
         self.dag.set_dag_file(self.basename)
         
-    def add_files(self, files):
-        """Add files to the workflow file collection. These can later be 
-        used for input to nodes and may be queried for. File names must satisfy
-        the lal cache name standard. 
-        """
-        pass
-        
-    def find_files(self, desc, time=None, ifo=None, **kwds):
-        pass
-        
     def add_node(self, node):
         self.dag.add_node(node)
         
@@ -167,7 +157,7 @@ class Workflow(object):
         #self.dag.write_abstract_dag()
         self.dag.write_script()
 
-class AhopeFile(lal.CacheEntry):
+class AhopeFile(object):
     '''This class holds the details of an individual output file in the ahope
     workflow. This file may be pre-supplied, generated from within the ahope
     command line script, or generated within the workflow. This class inherits
@@ -187,32 +177,57 @@ class AhopeFile(lal.CacheEntry):
     
     c = AhopeFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902177.5), "file://localhost/home/kipp/tmp/1/H1-815901601-576.xml", job=CondorDagNodeInstance)
     '''
-    def __init__(self, ifo, description, time_seg, file_url=None, extension=None, directory=None, **kwargs):       
+    def __init__(self, ifo, description, segment, file_url=None, extension=None, directory=None, **kwargs):       
         self.node=None
+        self.ifo = ifo
+        self.description = description
+        self.segment = segment
         self.kwargs = kwargs  
-        
+      
         if not file_url:
             if not extension:
-                raise TypeError("a file extension required if a file_url is not provided")
+                raise TypeError("a file extension required if a file_url "
+                                "is not provided")
             if not directory:
-                raise TypeError("a directory is required if a file_url is not provided")
-         
-            filename = self._filename(ifo, description, extension, time_seg)
+                raise TypeError("a directory is required if a file_url is "
+                                "not provided")
+                                        
+            filename = self._filename(ifo, description, extension, segment)
             path = os.path.join(directory, filename)
             file_url = urlparse.urlunparse(['file', 'localhost', path, None, None, None])
-            
-        lal.CacheEntry.__init__(self, ifo, description, time_seg, file_url)       
-        self.filename = basename(self.path)
+       
+        if not isinstance(file_url, list):
+            file_url = [file_url]
+       
+        self.cache_entries = []
+        for url in file_url:
+            cache_entry = lal.CacheEntry(ifo, description, segment, url)
+            self.cache_entries.append(cache_entry)
+           
+        self.paths = [cache.path for cache in self.cache_entries]
+        self.filenames = [basename(path) for path in self.paths]
         
-    def _filename(self, ifo, description, extension, time_seg, part=None):
+    @property
+    def path(self):
+        if len(self.paths) != 1:
+            raise TypeError('A single path cannot be returned. This AhopeFile '
+                            'is partitioned into multiple physical files.')
+        return self.paths[0]
+        
+    @property
+    def filename(self):
+        if len(self.paths) != 1:
+            raise TypeError('A single filename cannot be returned. This '
+                            'file is partitioned into multiple physical files.')
+        return self.filenames[0]
+        
+    def _filename(self, ifo, description, extension, segment):
         """ Construct the standard output filename
-        """
-        if part:
-            description += '_' + str(part)
-         
-        extension = extension.replace('.', '')
-        duration = str(int(time_seg[1] - time_seg[0]))
-        start = str(time_seg[0])
+        """        
+        if extension.startswith('.'):
+            extension = extension[1:]
+        duration = str(int(segment[1] - segment[0]))
+        start = str(segment[0])
         
         return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start, duration, extension)     
     
@@ -277,8 +292,7 @@ class AhopeFileList(list):
            The AhopeOutFiles that corresponds to the time.
         '''
        # Get list of AhopeOutFiles that overlap time, for given ifo
-       outFiles = [i for i in self if ifo == i.observatory \
-                                   and time in i.segment] 
+       outFiles = [i for i in self if ifo == i.ifo and time in i.segment] 
        if len(outFiles) == 0:
            # No AhopeOutFile at this time
            return None
@@ -312,14 +326,13 @@ class AhopeFileList(list):
            The AhopeOutFile that is most appropriate for the time range
         '''
         # First filter AhopeOutFiles corresponding to ifo
-        outFiles = [i for i in self if ifo == i.observatory] 
+        outFiles = [i for i in self if ifo == i.ifo] 
         if len(outFiles) == 0:
             # No AhopeOutFiles correspond to that ifo
             return None
         # Filter AhopeOutFiles to those overlapping the given window
         currSeg = segments.segment([start,end])
-        outFiles = [i for i in outFiles if \
-                               i.segment.intersects(currSeg)]
+        outFiles = [i for i in outFiles if i.segment.intersects(currSeg)]
         if len(outFiles) == 0:
             # No AhopeOutFile overlap that time period
             return None
@@ -329,8 +342,7 @@ class AhopeFileList(list):
         else:
             # More than one AhopeOutFile overlaps period. Find lengths of
             # overlap between time window and AhopeOutFile window
-            overlapWindows = [abs(i.segment & currSeg) \
-                                  for i in outFiles]
+            overlapWindows = [abs(i.segment & currSeg) for i in outFiles]
             # Return the AhopeOutFile with the biggest overlap
             # Note if two AhopeOutFile have identical overlap, this will return
             # the first AhopeOutFile in the list
@@ -341,9 +353,8 @@ class AhopeFileList(list):
         """
         Return all files that overlap the specified segment.
         """
-        outFiles = [i for i in self if ifo == i.observatory]
-        outFiles = [i for i in outFiles if \
-                               i.segment.intersects(currSeg)]
+        outFiles = [i for i in self if ifo == i.ifo]
+        outFiles = [i for i in outFiles if i.segment.intersects(currSeg)]
         return self.__class__(outFiles)
 
 

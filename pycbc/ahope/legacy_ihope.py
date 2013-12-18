@@ -102,7 +102,7 @@ class LegacyAnalysisJob(Job):
               
         bank = AhopeFile(self.ifo, self.exe_name, 
                          extension=extension,
-                         time_seg=valid_seg,
+                         segment=valid_seg,
                          directory=self.out_dir)
         node.add_output(bank)
         node.add_input(cache_file, opts='frame-cache')         
@@ -141,56 +141,48 @@ class LegacyInspiralExec(Executable, LegacyValidTimes):
 
 
 
-class legacy_splitbank_job_utils(Executable):
+class LegacySplitBankExec(Executable):
     """This class holds the function for lalapps_splitbank 
     usage following the old ihope specifications.
     """
-    def __init__(self,exeName):
-        self.exeName = exeName
-
-    def create_condornode(self, ahopeDax, currJob, numBanks, parent):
+    def __init__(self, exe_name):
+        Executable.__init__(self, exe_name, 'standard')
+    
+    def create_job(self, cp, ifo, out_dir=None):
+        return LegacySplitBankJob(cp, self.exe_name, self.condor_universe, ifo=ifo,
+                                  out_dir=out_dir)
+    
+class LegacySplitBankJob(Job):    
+    def create_node(self, bank):
         """
         Set up a CondorDagmanNode class to run lalapps_splitbank code
 
         Parameters
         ----------
-        ahopeDax : pipeline.CondorDAG instance
-            The workflow to hold of the ahope jobs.
-        currJob : pipeline.CondorDagmanJob
-            The CondorDagmanJob to use when setting up the individual nodes.
-        numBanks : int
-            Number of parts to split template bank into.
-        parent : AhopeOutFile (optional, kwarg, default=None)
-            The AhopeOutFile containing the job that is parent to the one being
-            set up.
+        bank : AhopeOutFile 
+            The AhopeOutFile containing the template bank to be split
 
         Returns
         --------
         tmpltBankNode : pipeline.CondorDagmanNode
             The node to run the job
-        list of strings
-            The output files
         """
-        currNode = LegacyInspiralAnalysisNode(currJob)
-        currNode.set_category(self.exeName)
-        # Does this need setting?: currNode.set_priority(?)
-        currNode.set_bank(parent.path)
-        # Set the number of banks
-        currNode.add_var_opt('number-of-banks',numBanks)
+        node = Node(self)
+        node.add_input(bank, opts='bank-file')
+        
         # Get the output (taken from inspiral.py)
         outUrlList = []
-        x = parent.path.split('-')
-        for i in range( 0, numBanks ):
+        x = bank.path.split('-')
+        num_banks = int(self.get_opt('number-of-banks'))
+        for i in range( 0, num_banks):
             outFile = "%s-%s_%2.2d-%s-%s" %(x[0], x[1], i, x[2], x[3])
-            outUrl = urlparse.urlunparse(['file', 'localhost',\
-                                          os.path.join(self.outDir, outFile),\
+            outUrl = urlparse.urlunparse(['file', 'localhost',
+                                          os.path.join(self.out_dir, outFile),
                                           None, None, None])
             outUrlList.append(outUrl)
-        parentJob = parent.job
-        if parentJob:
-            currNode.add_parent(parentJob)
-        currNode.finalize()
-        ahopeDax.add_node(currNode)
+        
+        job_tag = bank.description + "_" + self.exe_name.upper()
+        outFileGroup = AhopeFile(bank.ifo, job_tag, bank.segment, file_url=outUrlList)
 
-        return currNode, outUrlList
+        return node
 
