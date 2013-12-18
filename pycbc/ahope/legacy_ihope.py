@@ -180,7 +180,7 @@ class PyCBCInspiralJob(Job):
                       
         insp = AhopeFile(self.ifo, self.exe_name, 
                          extension=extension,
-                         segment=segments(self.get_start(), self.get_end()),
+                         segment=segments(node.get_start(), node.get_end()),
                          directory=self.out_dir)
         node.add_output(insp, opts='output')
                 
@@ -228,7 +228,7 @@ class PyCBCTmpltbankJob(Job):
         extension = '.xml.gz'                     
         insp = AhopeFile(self.ifo, self.exe_name, 
                          extension=extension,
-                         segment=segments(self.get_start(), self.get_end()),
+                         segment=segments(node.get_start(), node.get_end()),
                          directory=self.out_dir)
         node.add_output(insp, opts='output-file')
                 

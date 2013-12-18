@@ -27,7 +27,7 @@ def select_tmpltbankjob_instance(currExe, currSection):
     # This is basically a list of if statements
     if currExe == 'lalapps_tmpltbank':
         exeClass = LegacyTmpltbankExec(currSection)
-    if currExe == 'lalapps_tmpltbank':
+    elif currExe == 'pycbc_geom_nonspin':
         exeClass = PyCBCTmpltbankExec(currSection)
     # Some elif statements
     else:
