@@ -79,7 +79,7 @@ class LegacyValidTimes(object):
         return dataLength, validChunk
 
 class LegacyAnalysisNode(Node, pipeline.AnalysisNode):
-    pass
+    set_jobnum_tag = pipeline.AnalysisNode.set_user_tag
     
         
 class LegacyAnalysisJob(Job):
@@ -176,6 +176,7 @@ class PyCBCInspiralJob(Job):
                               %(self.exe_name))   
         cache_file = dfParents[0]
         node.add_input(cache_file, opts='frame-cache')    
+        node.add_input(parent, opts='bank-file')                      
                             
         # FIXME add control from output type  
         extension = '.xml.gz'
@@ -268,7 +269,7 @@ class LegacySplitBankJob(Job):
         tmpltBankNode : pipeline.CondorDagmanNode
             The node to run the job
         """
-        node = Node(self)
+        node = LegacyAnalysisNode(self)
         node.add_input(bank, opts='bank-file')
         
         # Get the output (taken from inspiral.py)

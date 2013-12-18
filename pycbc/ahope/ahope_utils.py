@@ -100,7 +100,7 @@ class Node(pipeline.CondorDAGNode):
             elif len(file.paths) > 1:
                 self.partitioned_input_files.append(file)
                 if not opts:
-                    raise TypeError('Cannot accept paritioned ahope file as '
+                    raise TypeError('Cannot accept partitioned ahope file as '
                                 'input without a corresponding option string.')
             if file.node:
                 if isinstance(file.node, list):
@@ -196,12 +196,18 @@ class Workflow(object):
                 nodes = self.partition_node(n, file)
             
         if len(nodes) > 1:
-            for n in nodes:      
-                #for file in node.output_files:
-                #    for path in file.paths:
-                #        n.add_output_file(path)
-                #        if hasattr(file, 'opt'):
-                #            self.add_var_opt(file.opt, path)           
+            for file in node.output_files:
+                path_groups, job_num_tags = file.partition_self(len(nodes))
+                for n , paths, tag in zip(nodes, path_groups, job_num_tags):  
+                    for path in paths:       
+                        n.add_output_file(path)                     
+                        if hasattr(file, 'opt'):
+                            n.add_var_opt(file.opt, path) 
+                        elif hasattr(n, 'set_jobnum_tag'):
+                            n.set_jobnum_tag(tag)
+                        else:
+                            raise ValueError('This node does not support'
+                                             'partitioned files as input')                                 
                 self.dag.add_node(n)
             for file in node.output_files:
                 file.node = nodes
@@ -211,8 +217,8 @@ class Workflow(object):
                 for path in file.paths:
                     node.add_output_file(path)
                     if hasattr(file, 'opt'):
-                        self.add_var_opt(file.opt, path)  
-            self.dag.add_node(node)     
+                        node.add_var_opt(file.opt, path)  
+            self.dag.add_node(node)   
         
     def write_plans(self):
         self.dag.write_sub_files()
@@ -282,14 +288,27 @@ class AhopeFile(object):
                             'is partitioned into multiple physical files.')
         return self.paths[0]
     
-    def partition_self(num_parts):
+    def partition_self(self, num_parts):
         new_entries = []
+        path_group = []
+        job_tags = []
         for num in range(0, num_parts):
+            paths = []
+            tag = str(num)
             for entry in self.cache_entries:
-                new_entry = lal.CacheEntry(entry.ifo, entry.description, 
-                                           entry.segment, entry.url)
+                fol, base = os.path.split(entry.path)
+                ifo, descr, time, duration = base.split('-')
+                path = '%s-%s_%s-%s-%s' % (ifo, descr, tag, time, duration) 
+                path = os.path.join(fol, path)                          
+                new_entry = lal.CacheEntry(self.ifo, self.description, 
+                                           self.segment, entry.url)
+                new_entry.path = path                                            
+                paths.append(path)
                 new_entries.append(new_entry)
+            path_group.append(paths)
+            job_tags.append(tag)
         self.cache_entries = new_entries
+        return path_group, job_tags
         
     @property
     def filename(self):
