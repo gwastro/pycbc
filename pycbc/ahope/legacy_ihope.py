@@ -3,7 +3,6 @@ import urlparse
 from glue import pipeline
 from glue import segments
 
-
 class legacy_ihope_job_utils:
     """This class holds all the utility functions to set up jobs that follow
     the old ihope specifications. This class should not be used directly, but
@@ -42,11 +41,6 @@ class legacy_ihope_job_utils:
         # the best way to get the correct output dir. This means that the jobs
         # run with outputDir as the CWD.
         currJob.add_condor_cmd("initialdir", outputDir)
-        # Not actually sure what does this, so use both commands
-        ramValue = 1000
-        currJob.add_condor_cmd('Requirements', 'Memory >= %d' %(ramValue))
-        currJob.add_condor_cmd('request_memory', '%d' %(ramValue))
-
 #        currJob.add_opt("output-path",outputDir)
         self.outDir = outputDir
         currJob.ifo = ifo
@@ -54,7 +48,7 @@ class legacy_ihope_job_utils:
         return currJob
 
     def create_condornode(self, ahopeDax, currJob, bankDataSeg, jobValidSeg, \
-                          parent=None, dfParents=None, jobNum=None):
+                          parent=None, dfParents=None):
         """
         Set up a CondorDagmanNode class to run legacy lalapps C codes.
 
@@ -108,8 +102,6 @@ class legacy_ihope_job_utils:
             # Add trig start/end time options
             currNode.set_trig_start(jobValidSeg[0])
             currNode.set_trig_end(jobValidSeg[1])
-        if jobNum is not None:
-            currNode.set_user_tag(str(jobNum))
         currNode.finalize()
         ahopeDax.add_node(currNode)
         outUrl = urlparse.urlunparse(['file', 'localhost',\

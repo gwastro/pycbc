@@ -3,7 +3,7 @@ from glue import segments
 from pycbc.ahope import AhopeOutGroup, AhopeOutFile
 from pycbc.ahope.legacy_ihope import *
 
-def select_tmpltbankjob_instance(currExe, currSection):
+def select_tmpltbankjob_instance(currExe,currSection):
     """This function returns an instance of the class that is appropriate for
     creating a template bank within ihope.
     
@@ -205,11 +205,11 @@ def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, \
                 currFiles = AhopeOutGroup(ifo, jobTag, jobValidSeg)
                 nodeList = []
                 urlList = []
-                for jobNum,parentJob in enumerate(currParent.get_output()):
+                for parentJob in currParent.get_output():
                     currExeNode, fileUrl = exeInstance.create_condornode(\
                                      ahopeDax, currExeJob, jobDataSeg,\
                                      jobValidSeg, parent=parentJob,\
-                                     dfParents=currDfOuts, jobNum=jobNum)
+                                     dfParents=currDfOuts)
                     nodeList.append(currExeNode)
                     urlList.append(fileUrl)
                 currFiles.set_output(urlList, nodeList)

@@ -323,7 +323,7 @@ class AhopeOutGroup(object):
                 currSeg = self.segment
             # Add the number to discriminate each job. This will be used later
             currDesc = self.description + "_%d" %(i)
-            currFile = AhopeOutFile(self.observatory, currDesc, \
+            currFile = AhopeOutFile(self.observatory, self.description, \
                                     currSeg, fileUrl, job=currJob)
             outputList.append(currFile)
         self.__outFileList = outputList
