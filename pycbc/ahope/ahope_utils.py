@@ -69,6 +69,17 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
             self.set_sub_file('%s-%s.sub' %(ifo, exe_name,) )
         else:
             self.set_sub_file('%s.sub' %(exe_name,) )
+    
+    def set_ram(self, ram_value):
+        """Set the amount of the RAM that this job requires.
+        
+        Parameters
+        ----------
+        ram_value: int
+              The amount of ram that this job requires in MB.
+        """
+        self.add_condor_cmd('Requirements', 'Memory >= %d' %(ram_value))
+        self.add_condor_cmd('request_memory', '%d' %(ram_value))
 
     def create_node(self):
         return Node(self)

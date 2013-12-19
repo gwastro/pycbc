@@ -78,6 +78,10 @@ class LegacyAnalysisNode(Node, pipeline.AnalysisNode):
     
         
 class LegacyAnalysisJob(Job):
+    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
+        Job.__init__(self, cp, exe_name, universe, ifo, out_dir)
+        self.set_ram(1000)
+
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
         node = LegacyAnalysisNode(self)
         
@@ -162,6 +166,10 @@ class LegacySplitBankExec(Executable):
                                   out_dir=out_dir)
 
 class PyCBCInspiralJob(Job):
+    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
+        Job.__init__(self, cp, exe_name, universe, ifo, out_dir)
+        self.set_ram(1000)
+        
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
         node = LegacyAnalysisNode(self)
         
@@ -214,6 +222,10 @@ class PyCBCInspiralExec(Executable):
         return data_length, segments.segment(start, end)
         
 class PyCBCTmpltbankJob(Job):
+    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
+        Job.__init__(self, cp, exe_name, universe, ifo, out_dir)
+        self.set_ram(1000)
+        
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
         node = LegacyAnalysisNode(self)
                
