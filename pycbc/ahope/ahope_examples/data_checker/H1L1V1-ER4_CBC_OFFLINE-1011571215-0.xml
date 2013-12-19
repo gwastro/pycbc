@@ -85,8 +85,8 @@
 		<Column Type="lstring" Name="veto_definer:comment"/>
 		<Stream Name="veto_definer:table" Type="Local" Delimiter=",">
 	    "process:process_id:1","H1","DCH-MISSING_H1_ER_C00_L1",1,1,1011571215,0,0,0,"ER4 VETO FOR H1-MISSING DATA",
-            "process:process_id:2","V1","DCH-MISSING_V1Online",2,1,1011571215,0,0,0,"ER4 VETO FOR V1-MISSING DATA",
-	    "process:process_id:3","L1","DCH-MISSING_L1_ER_C00_L1",2,1,1011571215,0,0,0,"ER4 VETO FOR L1-MISSING DATA",
+            "process:process_id:2","V1","DCH-MISSING_V1Online",1,1,1011571215,0,0,0,"ER4 VETO FOR V1-MISSING DATA",
+	    "process:process_id:3","L1","DCH-MISSING_L1_ER_C00_L1",1,1,1011571215,0,0,0,"ER4 VETO FOR L1-MISSING DATA",
 		</Stream>
 	</Table>
 </LIGO_LW>
