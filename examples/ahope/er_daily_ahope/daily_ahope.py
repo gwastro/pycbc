@@ -140,20 +140,18 @@ cp_job.set_stderr_file('logs/cp-$(cluster)-$(process).err')
 cp_job.set_stdout_file('logs/cp-$(cluster)-$(process).out')
 cp_job.set_sub_file('cp.sub')
 
-si_job_coarse = ahope.Job(cp, ['siclustercoarse'],\
-                  'siclustercoarse', 'vanilla')
+si_job_coarse = ahope.Job(cp, 'siclustercoarse', 'vanilla')
 si_job_coarse.add_condor_cmd('getenv','True')
 
-si_job_fine = ahope.Job(cp, ['siclusterfine'],\
-                'siclusterfine', 'vanilla')
+si_job_fine = ahope.Job(cp, 'siclusterfine', 'vanilla')
 si_job_fine.add_condor_cmd('getenv','True')
 
 inspstr = 'INSPIRAL'
 pageDagParents = []
 for inspOutGroup in insps:
-    ifo = inspOutGroup.observatory
+    ifo = inspOutGroup.ifo
     analysis_seg = inspOutGroup.segment
-    fileList = inspOutGroup.get_output()
+    fileList = inspOutGroup.paths
     jobList = [f.job for f in fileList]
 
     # Create a cache file to hole the input to ligolw_add

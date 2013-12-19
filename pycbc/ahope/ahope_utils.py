@@ -218,6 +218,7 @@ class Workflow(object):
         opt = partitioned_file.opt
         nodes = []
         for path in partitioned_file.paths:
+            # Create a valid blank copy of the node
             new_node = copy.copy(node)
             new_node._CondorDAGNode__parents = node._CondorDAGNode__parents[:]
             new_node._CondorDAGNode__opts = node.get_opts().copy()
@@ -230,21 +231,25 @@ class Workflow(object):
             new_node._CondorDAGNode__name = hashlib.md5(t + r + a).hexdigest()
             new_node._CondorDAGNode__md5name = new_node._CondorDAGNode__name
             
+            # Add the now disambiguated input argument
             new_node.add_var_opt(opt, path)
             new_node.add_input_file(path) 
             nodes.append(new_node)     
         return nodes     
         
     def add_node(self, node):
-        # copy the node as many times as necessary so all combinations
-        # of the input files are exhausted
+        # For input files that come in pieces, create a new node for each
+        # and set the input argument to the individual physical file
         part_files = node.partitioned_input_files
         nodes = [node]
         for file in part_files:
             for n in nodes:
                 nodes = self.partition_node(n, file)
             
+        # Handle the case where we now have many nodes
         if len(nodes) > 1:
+            # For each input file, append the filename with a tag to make
+            # it unique
             for file in node.output_files:
                 path_groups, job_num_tags = file.partition_self(len(nodes))
                 for n , paths, tag in zip(nodes, path_groups, job_num_tags):  
@@ -252,6 +257,8 @@ class Workflow(object):
                         n.add_output_file(path)                     
                         if hasattr(file, 'opt'):
                             n.add_var_opt(file.opt, path) 
+                        # For legacy jobs, allow a function to set the tag, 
+                        # as it cannot be done directly
                         elif hasattr(n, 'set_jobnum_tag'):
                             n.set_jobnum_tag(tag)
                         else:
@@ -259,7 +266,8 @@ class Workflow(object):
                                              'partitioned files as input')                                 
                     self.dag.add_node(n)
                 file.node = nodes
-                
+        
+        #Standard input files, so nothing special needed    
         elif len(nodes) == 1:
             for file in node.output_files:
                 for path in file.paths:
@@ -277,24 +285,21 @@ class Workflow(object):
 class AhopeFile(object):
     '''This class holds the details of an individual output file in the ahope
     workflow. This file may be pre-supplied, generated from within the ahope
-    command line script, or generated within the workflow. This class inherits
-    from the glue.lal.CacheEntry class and has all attributes/methods of that
-    class. It also adds some additional stuff for ahope. The important stuff
-    from both is:
+    command line script, or generated within the workflow. The important stuff
+    is:
 
-    * The location of the output file (which may not yet exist)
     * The ifo that the AhopeFile is valid for
     * The time span that the AhopeOutFile is valid for
     * A short description of what the file is
-    * The dax node that will generate the output file (if appropriate). If the
-      file is generated within the workflow the dax job object will hold all
-      the job-specific information that may be relevant for later stages.
+    * The extension that the file should have
+    * The directory where the file should be located
 
     An example of initiating this class:
     
-    c = AhopeFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902177.5), "file://localhost/home/kipp/tmp/1/H1-815901601-576.xml", job=CondorDagNodeInstance)
+    c = AhopeFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902177.5), )
     '''
-    def __init__(self, ifo, description, segment, file_url=None, extension=None, directory=None, **kwargs):       
+    def __init__(self, ifo, description, segment, file_url=None, 
+                 extension=None, directory=None, **kwargs):       
         self.node=None
         self.ifo = ifo
         self.description = description
@@ -337,6 +342,8 @@ class AhopeFile(object):
         return self.paths[0]
     
     def partition_self(self, num_parts):
+        """ Parition this AhopeFile into multiple sub-files.
+        """
         new_entries = []
         path_group = []
         job_tags = []
@@ -344,6 +351,7 @@ class AhopeFile(object):
             paths = []
             tag = str(num)
             for entry in self.cache_entries:
+                # create a unique pathname for each subfile
                 fol, base = os.path.split(entry.path)
                 ifo, descr, time, duration = base.split('-')
                 path = '%s-%s_%s-%s-%s' % (ifo, descr, tag, time, duration) 
