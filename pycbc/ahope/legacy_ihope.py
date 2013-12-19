@@ -101,9 +101,8 @@ class LegacyAnalysisJob(Job):
                               
         extension = '.xml'
         gzipped = self.get_opt('write-compress')
-        if gzipped:
+        if gzipped is not None:
             extension += '.gz'
-              
         bank = AhopeFile(self.ifo, self.exe_name, 
                          extension=extension,
                          segment=segments.segment([node.get_start(), node.get_end()]),

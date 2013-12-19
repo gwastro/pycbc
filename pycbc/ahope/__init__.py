@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Josh Willis, Andrew Miller
+# Copyright (C) 2013 Ian Harry
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
