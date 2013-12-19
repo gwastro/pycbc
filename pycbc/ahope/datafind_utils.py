@@ -176,9 +176,16 @@ def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):
             # WARNING: For now ahope will expect times to be in integer seconds
             startTime = int(seg[0])
             endTime = int(seg[1])
-            dfCacheGroup = run_datafind_instance(cp, outputDir, connection,\
-                                           observatory, frameType, startTime,\
-                                           endTime, ifo, jobTag)
+            # Sometimes the connection can drop, so try a backup here
+            try:
+                dfCacheGroup = run_datafind_instance(cp, outputDir, connection,\
+                                            observatory, frameType, startTime,\
+                                            endTime, ifo, jobTag)
+            except:
+                connection = setup_datafind_server_connection(cp)
+                dfCacheGroup = run_datafind_instance(cp, outputDir, connection,\
+                                            observatory, frameType, startTime,\
+                                            endTime, ifo, jobTag)
             datafindOuts.append(dfCacheGroup)
 
     return datafindOuts
