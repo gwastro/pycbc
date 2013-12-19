@@ -234,7 +234,7 @@ class PyCBCTmpltbankJob(Job):
                             
         # FIXME add control for output type                       
         insp = AhopeFile(self.ifo, self.exe_name, extension='.xml.gz',
-                         segment=valid_seg,
+                         segment=data_seg,
                          directory=self.out_dir)
         
         # set the input and output files      
