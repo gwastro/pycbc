@@ -13,8 +13,7 @@ import copy
 
 class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
-        """
-        Initialize the LegacyInspiralAnalysisJob class.
+        """Initialize the LegacyInspiralAnalysisJob class.
    
         Parameters
         -----------
@@ -82,6 +81,8 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         self.add_condor_cmd('request_memory', '%d' %(ram_value))
 
     def create_node(self):
+        """Create a condor node from this job.
+        """
         return Node(self)
         
 
@@ -94,25 +95,44 @@ class Node(pipeline.CondorDAGNode):
         self.set_category(job.exe_name)
         
     def add_input(self, files, opts=None):
-        """File must be ahope file
+        """Add a file(s) as input to this node. 
+        
+        Parameters
+        ----------
+        file : AhopeFile or list of AhopeFiles
+            The files that this node needs to run
+        opts : string or list of strings, optional
+            The command line options that the executable needs
+            in order to set the associated file as input.
         """
+        # make the input arguments lists
         if not isinstance(files, list):
             files = [files]
             if opts:
                 opts = [opts]
-            
+        
+        # check that the arguments are sane   
         if opts and len(opts) != len(files):
             raise TypeError('An opt must be provided for each file in the list')
         
+        # Add the files to the nodes internal lists of input
         for file in files:         
             self.input_files.append(file) 
+            # If possible record in the dag the input
             if len(file.paths) == 1:
                 self.add_input_file(file.path)  
+            # If not, defer untill we can resolve what the actual inputs
+            # will be 
             elif len(file.paths) > 1:
                 self.partitioned_input_files.append(file)
                 if not opts:
+                    # What does it mean to get a file group as input?
+                    # How would the program know what the files are?
                     raise TypeError('Cannot accept partitioned ahope file as '
                                 'input without a corresponding option string.')
+                                
+            # If the file was created by another node, then make that
+            # node a parent of this one
             if file.node:
                 if isinstance(file.node, list):
                     for n in file.node:
@@ -122,21 +142,34 @@ class Node(pipeline.CondorDAGNode):
 
         if opts:
             for file, opt in zip(files, opts):
+                # The argument has to be resolved later
                 if len(file.paths) > 1:
                     file.opt = opt
                 elif len(file.paths) == 1:
                     self.add_var_opt(opt, file.path)
             
-    def add_output(self, files, opts=None):
-    
+    def add_output(self, files, opts=None): 
+        """Add a file(s) as an output to this node. 
+        
+        Parameters
+        ----------
+        file : AhopeFile or list of AhopeFiles
+            The files that this node generates
+        opts : string or list of strings, optional
+            The command line options that the executable needs
+            in order to set the names of this file.
+        """  
+        # make input lists 
         if not isinstance(files, list):
             files = [files]
             if opts:
                 opts = [opts]
-    
+        
+        # check sanity of input
         if opts and len(opts) != len(files):
             raise TypeError('An opt must be provided for each file in the list')
-            
+         
+        # make sure the files know which node creates them   
         for file in files:
             self.output_files.append(file)
             file.node = self
@@ -145,7 +178,7 @@ class Node(pipeline.CondorDAGNode):
                 file.opt = opt   
 
 class Executable(object):
-    """
+    """This class is a reprentation of an executable and its capabilities
     """
     def __init__(self, exe_name, universe):
         self.exe_name = exe_name
@@ -161,6 +194,11 @@ class Workflow(object):
     """
     def __init__(self, config):
         """Create an aHOPE workflow
+        
+        Parameters
+        ----------
+        config : str
+             The path of the ahope configuration file.
         """
         # Parse ini file
         self.cp = parse_ahope_ini_file(config)

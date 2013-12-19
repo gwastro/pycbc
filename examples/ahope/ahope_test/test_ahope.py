@@ -7,7 +7,7 @@ import pycbc.ahope as ahope
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \
                     level=logging.INFO,datefmt='%I:%M:%S')
 
-workflow = ahope.Workflow('./daily_ahope.ini')
+workflow = ahope.Workflow('./test_ahope.ini')
 
 # Make directories for output
 currDir = os.getcwd()
@@ -27,12 +27,12 @@ if not os.path.exists(inspiralDir+'/logs'):
 # Set start and end times
 
 # These are Chris' example S6 day of data
-start_time = 961545543
+start_time = 961585543
 end_time = 961594487
 
 # This is S6D chunk 3, an example full-scale ihope analysis time-frame
-start_time = 968543943
-end_time = 971622087
+##start_time = 968543943
+#end_time = 971622087
 
 # Set the ifos to analyse
 ifos = ['H1','L1']
@@ -56,11 +56,12 @@ datafind_files, scienceSegs = ahope.setup_datafind_workflow(workflow, scienceSeg
 bank_files = ahope.setup_tmpltbank_workflow(workflow, scienceSegs, datafind_files, 
                                        tmpltbankDir)
 # Split bank up
-splitbank_files = ahope.setup_splittable_workflow(workflow, banks, tmpltbankDir)
+splitbank_files = ahope.setup_splittable_workflow(workflow, bank_files, tmpltbankDir)
 # Do matched-filtering
+
 insps = ahope.setup_matchedfltr_workflow(workflow, scienceSegs, datafind_files, 
                                                    splitbank_files, inspiralDir)
 
 
-
+workflow.write_plans()
 logging.info("Finished.")

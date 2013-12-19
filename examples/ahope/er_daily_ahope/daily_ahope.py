@@ -125,7 +125,7 @@ insps = ahope.setup_matchedfltr_workflow(workflow, scienceSegs, datafinds,
 
 
 # Now I start doing things not supported by ahope at present.
-
+basename = 'daily_ahope'
 # Set up condor jobs for this stuff
 cp.add_section('condor')
 # Hack to avoid hardcoding in glue
@@ -140,12 +140,12 @@ cp_job.set_stderr_file('logs/cp-$(cluster)-$(process).err')
 cp_job.set_stdout_file('logs/cp-$(cluster)-$(process).out')
 cp_job.set_sub_file('cp.sub')
 
-si_job_coarse = ahope.LegacyInspiralAnalysisJob(cp, ['siclustercoarse'],\
-                  'siclustercoarse', 'vanilla', extension='xml')
+si_job_coarse = ahope.Job(cp, ['siclustercoarse'],\
+                  'siclustercoarse', 'vanilla')
 si_job_coarse.add_condor_cmd('getenv','True')
 
-si_job_fine = ahope.LegacyInspiralAnalysisJob(cp, ['siclusterfine'],\
-                'siclusterfine', 'vanilla', extension='xml')
+si_job_fine = ahope.Job(cp, ['siclusterfine'],\
+                'siclusterfine', 'vanilla')
 si_job_fine.add_condor_cmd('getenv','True')
 
 inspstr = 'INSPIRAL'
@@ -190,9 +190,9 @@ for inspOutGroup in insps:
         dag.add_node(cpnode)
 
         if cname == clustered_16s_name:
-            sinode = ahope.LegacyInspiralAnalysisNode(si_job_coarse)
+            sinode = ahope.Node(si_job_coarse)
         else:
-            sinode = ahope.LegacyInspiralAnalysisNode(si_job_fine)
+            sinode = ahope.Node(si_job_fine)
 
         sinode.add_file_arg(cname)
         sinode.add_parent(cpnode)
