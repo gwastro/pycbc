@@ -24,15 +24,15 @@ def select_tmpltbankjob_instance(curr_exe, curr_section):
         * exe_class.create_node()
     """
     # This is basically a list of if statements
+
     if curr_exe == 'lalapps_tmpltbank':
         exe_class = LegacyTmpltbankExec(curr_section)
-    elif curr_exe == 'pycbc_geom_nonspin':
+    elif curr_exe == 'pycbc_geom_nonspinbank':
         exe_class = PyCBCTmpltbankExec(curr_section)
     else:
         # Should we try some sort of default class??
         err_string = "No class exists for executable %s" %(curr_exe,)
         raise NotImplementedError(err_string)
-
     return exe_class
 
 def select_matchedfilterjob_instance(curr_exe, curr_section):

@@ -121,7 +121,7 @@ class LegacyInspiralJob(LegacyAnalysisJob):
         node.add_input(parent, opts='bank-file')    
         return node
 
-class LegacyTmpltbankExec(Executable, LegacyValidTimes):
+class LegacyTmpltbankExec(Executable):
     def __init__(self, exe_name):
         if exe_name != 'tmpltbank':
             raise ValueError('lalapps_tmpltbank does not support setting '
@@ -135,7 +135,7 @@ class LegacyTmpltbankExec(Executable, LegacyValidTimes):
     
     get_valid_times = legacy_get_valid_times
         
-class LegacyInspiralExec(Executable, LegacyValidTimes):
+class LegacyInspiralExec(Executable):
     def __init__(self, exe_name):
         if exe_name != 'inspiral':
             raise ValueError('lalapps_tmpltbank does not support setting '
@@ -290,7 +290,7 @@ class LegacySplitBankJob(Job):
         
         job_tag = bank.description + "_" + self.exe_name.upper()
         out_file_group = AhopeFile(bank.ifo, job_tag, bank.segment, 
-                                   file_url=out_url_list)
+                                   file_url=url_list)
         node.add_output(out_file_group)
         return node
 
