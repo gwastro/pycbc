@@ -23,15 +23,10 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir,
 
     Parameters
     ----------
-    cp : ConfigParser.ConfigParser instance
-        This contains a representation of the information stored within the
-        ahope configuration files
+    workflow: Workflow
+        The ahope workflow class that stores the jobs that will be run.
     scienceSegs : Dictionary of ifo keyed glue.segment.segmentlist instances
         This contains the times that ahope is expected to analyse.
-    ahopeDax : glue.pipeline.CondorDagman instance
-        This stores the worklow to be run under condor. Currently this is not
-        used within this module, but is here to allow the possibility to run
-        datafind jobs under condor in ahope.
     outputDir : path
         All output files written by datafind processes will be written to this
         directory.
