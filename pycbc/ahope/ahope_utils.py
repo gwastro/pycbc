@@ -208,8 +208,7 @@ class Workflow(object):
                         else:
                             raise ValueError('This node does not support'
                                              'partitioned files as input')                                 
-                self.dag.add_node(n)
-            for file in node.output_files:
+                    self.dag.add_node(n)
                 file.node = nodes
                 
         elif len(nodes) == 1:
@@ -499,7 +498,7 @@ class AhopeOutSegFile(AhopeFile):
         dqUtils.tosegmentxml(filePointer, self.segmentList)
         filePointer.close()
 
-def make_external_call(cmdList, outDir=None, outBaseName='external_call',\
+def make_external_call(cmdList, outDir=None, outBaseName='external_call',
                        shell=False, fail_on_error=True):
     """
     Use this to make an external call using the python subprocess module.
@@ -561,7 +560,7 @@ def make_external_call(cmdList, outDir=None, outBaseName='external_call',\
         outFP.close()
 
     if errCode and fail_on_error:
-        raise CalledProcessErrorMod(errCode, ' '.join(cmdList), \
+        raise CalledProcessErrorMod(errCode, ' '.join(cmdList), 
                 errFile=errFile, outFile=outFile, cmdFile=cmdFile)
     logging.debug("Call successful, or error checking disabled.")
 
@@ -570,7 +569,7 @@ class CalledProcessErrorMod(Exception):
     This exception is raised when subprocess.call returns a non-zero exit code
     and checking has been requested
     """
-    def __init__(self, returncode, cmd, errFile=None, outFile=None, \
+    def __init__(self, returncode, cmd, errFile=None, outFile=None, 
                  cmdFile=None):
         self.returncode = returncode
         self.cmd = cmd
