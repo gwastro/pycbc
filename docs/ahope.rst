@@ -64,6 +64,13 @@ This is a more detailed example of daily_ahope. This will do the same things
 as the daily_ahope example but then call into the remaining jobs, including
 the daily_page dag generation, to set up a *complete* daily_ahope workflow.
 This will also automatically generate the webpage at the end of the analysis.
+More details of how to run this is found in the following link:
+
+.. toctree::
+      :maxdepth: 1
+
+   ahope/daily_ahope
+
 
 ====================
 Initialization
