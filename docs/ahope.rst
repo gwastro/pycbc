@@ -71,7 +71,6 @@ More details of how to run this is found in the following link:
 
    ahope/daily_ahope
 
-
 ====================
 Initialization
 ====================
