@@ -22,6 +22,7 @@ This is designed to mimic the current behaviour of dail_ihope.
 """
 import pycbc
 import pycbc.version
+from glue.lal import Cache
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
@@ -151,15 +152,19 @@ pageDagParents = []
 for inspOutGroup in insps:
     ifo = inspOutGroup.ifo
     analysis_seg = inspOutGroup.segment
-    fileList = inspOutGroup.paths
-    jobList = [f.job for f in fileList]
+    fileList = inspOutGroup.cache_entries
+
+    if isinstance(inspOutGroup.node, list):
+        jobList = inspOutGroup.node
+    else:
+        JOBlIST = [inspOutGroup.node] 
 
     # Create a cache file to hole the input to ligolw_add
     out_basename = ifo + '-' + inspstr + '-' + str(analysis_seg[0]) + '-' 
     out_basename += str(abs(analysis_seg))
     insp_cache_file_name = out_basename + '.cache'
     insp_cache_file = open(insp_cache_file_name, 'w')
-    fileList.tofile(insp_cache_file)
+    Cache(fileList).tofile(insp_cache_file)
     insp_cache_file.close()
 
     # use ligolw_add to join everything back together
@@ -272,6 +277,6 @@ summNode.add_var_opt('ifos', ','.join(ifos))
 summNode.add_parent(dailyPageNode)
 dag.add_node(summNode)
 
-workflow.write_plan()
+workflow.write_plans()
 
 logging.info("Finished.")
