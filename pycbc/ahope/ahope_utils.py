@@ -93,6 +93,14 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
               The amount of storage that this job requires in MB.
         """
         self.add_condor_cmd('request_disk', '%dM' %(storage_value))
+    
+    def needs_gpu(self):
+        # Satisfy the requirements to use GPUs on cit, sugar
+        # FIXME add in the ATLAS support
+        job.add_condor_cmd('+WantsGPU', 'true')
+        job.add_condor_cmd('+WantGPU', 'true')
+        job.add_condor_cmd('+HAS_GPU', 'true')
+        job.add_condor_cmd('Requirements', '( GPU_PRESENT =?= true) || (HasGPU =?= "gtx580") || (Target.HAS_GPU =?= True)')
 
     def create_node(self):
         """Create a condor node from this job.
@@ -190,6 +198,27 @@ class Node(pipeline.CondorDAGNode):
         if opts:
             for file, opt in zip(files, opts):
                 file.opt = opt   
+                
+    def is_unreliable(script):
+        """Make this job run two instances of itself and check the results using
+           the given script. 
+        """
+        raise NotImplementedError
+        
+        #FIXME this mode breaks script output
+        
+        # Make two instances 
+        self.job().__queue = 2
+        
+        # change the output files so that they are unique
+        self.unreliable = True
+        
+        # Call a script on the output of both 
+        self.set_post_script(script)
+        
+    def finalize():
+        pass
+
 
 class Executable(object):
     """This class is a reprentation of an executable and its capabilities
