@@ -39,11 +39,11 @@ The scripts to run daily ahope currently reside within the pycbc source tree.
 These will be moved to be installed executables at some point. For now this
 can be found in::
 
-    pycbc/ahope/ahope_examples/er_daily_ahope
+    pycbc/examples/ahope/er_daily_ahope
 
 CD to this directory::
 
-    cd ${SRC_DIR}/pycbc/ahope/ahope_examples/er_daily_ahope
+    cd ${SRC_DIR}/pycbc/examples/ahope/er_daily_ahope
 
 -----------------------------
 Edit the configuration file
@@ -64,7 +64,7 @@ Some things that *will* need to be changed for each used::
     ahope-html-basedir = /home/spxiwh/public_html/ER4/test
 
     [ahope-segments]
-    segments-veto-definer-file = /home/spxiwh/lscsoft_git/src/pycbc/pycbc/ahope/ahope_examples/er_daily_ahope/H1L1V1-ER3_CBC_OFFLINE-1011571215-0.xml
+    segments-veto-definer-file = /home/spxiwh/lscsoft_git/src/pycbc/pycbc/examples/ahope/er_daily_ahope/H1L1V1-ER3_CBC_OFFLINE-1011571215-0.xml
 
     [ahope-omega]
     omega-conf-file = /home/spxiwh/ERs/ER4/daily_ihope_test/old_conf_omega.txt

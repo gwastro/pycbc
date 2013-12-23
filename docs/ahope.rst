@@ -21,7 +21,7 @@ Examples
 Some examples of how to run ahope in different configurations can be found
 in the source tree under::
 
-    pycbc/ahope/ahope_examples
+    pycbc/examples/ahope
 
 These examples are described in each section below
 
