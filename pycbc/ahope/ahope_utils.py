@@ -68,8 +68,13 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
             self.set_sub_file('%s-%s.sub' %(ifo, exe_name,) )
         else:
             self.set_sub_file('%s.sub' %(exe_name,) )
+            
+        # Set default requirements for a JOB, these can be changed
+        # through methods of this class
+        self.set_memory(1000)
+        self.set_storage(100)
     
-    def set_ram(self, ram_value):
+    def set_memory(self, ram_value):
         """Set the amount of the RAM that this job requires.
         
         Parameters
@@ -77,8 +82,17 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         ram_value: int
               The amount of ram that this job requires in MB.
         """
-        self.add_condor_cmd('Requirements', 'Memory >= %d' %(ram_value))
         self.add_condor_cmd('request_memory', '%d' %(ram_value))
+        
+    def set_storage(self, storage_value):
+        """Set the amount of storage that this job requires.
+        
+        Parameters
+        ----------
+        ram_value: int
+              The amount of storage that this job requires in MB.
+        """
+        self.add_condor_cmd('request_disk', '%dM' %(storage_value))
 
     def create_node(self):
         """Create a condor node from this job.
@@ -280,7 +294,6 @@ class Workflow(object):
         self.dag.write_sub_files()
         self.dag.write_script()
         self.dag.write_dag()
-        #self.dag.write_abstract_dag()
 
 class AhopeFile(object):
     '''This class holds the details of an individual output file in the ahope
@@ -384,15 +397,15 @@ class AhopeFile(object):
         return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start, duration, extension)     
     
 class AhopeFileList(list):
-    '''This class holds a list of AhopeOutFile objects. It inherits from the
+    '''This class holds a list of AhopeFile objects. It inherits from the
     built-in list class, but also allows a number of features. ONLY
-    AhopeOutFile instances should be within a AhopeOutFileList instance.
+    AhopeFile instances should be within a AhopeFileList instance.
     '''
     entry_class = AhopeFile
 
     def find_output(self, ifo, time):
         '''
-        Return AhopeOutFile that covers the given time, or is most
+        Return AhopeFile that covers the given time, or is most
         appropriate for the supplied time range.
 
         Parameters
@@ -401,16 +414,16 @@ class AhopeFileList(list):
            Name of the ifo that the 
         time : int/float/LIGOGPStime or tuple containing two values
            If int/float/LIGOGPStime (or similar may of specifying one time) is
-           given, return the AhopeOutFile corresponding to the time. This calls
+           given, return the AhopeFile corresponding to the time. This calls
            self.find_output_at_time(ifo,time).
-           If a tuple of two values is given, return the AhopeOutFile that is
+           If a tuple of two values is given, return the AhopeFile that is
            **most appropriate** for the time range given. This calls
            self.find_output_in_range
 
         Returns
         --------
-        AhopeOutFile class
-           The AhopeOutFile that corresponds to the time/time range
+        AhopeFile class
+           The AhopeFile that corresponds to the time/time range
         '''
         # Determine whether I have a specific time, or a range of times
         try:
@@ -428,22 +441,22 @@ class AhopeFileList(list):
         return outFile
 
     def find_output_at_time(self, ifo, time):
-       '''Return AhopeOutFile that covers the given time.
+       '''Return AhopeFile that covers the given time.
 
         Parameters
         -----------
         ifo : string
-           Name of the ifo that the AhopeOutFile should correspond to
+           Name of the ifo that the AhopeFile should correspond to
         time : int/float/LIGOGPStime
-           Return the AhopeOutFiles that covers the supplied time. If no
-           AhopeOutFile covers the time this will return None.
+           Return the AhopeFiles that covers the supplied time. If no
+           AhopeFile covers the time this will return None.
 
         Returns
         --------
-        list of AhopeOutFile classes
-           The AhopeOutFiles that corresponds to the time.
+        list of AhopeFile classes
+           The AhopeFiles that corresponds to the time.
         '''
-       # Get list of AhopeOutFiles that overlap time, for given ifo
+       # Get list of AhopeFiles that overlap time, for given ifo
        outFiles = [i for i in self if ifo == i.ifo and time in i.segment] 
        if len(outFiles) == 0:
            # No AhopeOutFile at this time
@@ -458,15 +471,15 @@ class AhopeFileList(list):
            return outFiles
 
     def find_output_in_range(self,ifo,start,end):
-        '''Return the AhopeOutFile that is most appropriate for the supplied
-        time range. That is, the AhopeOutFile whose coverage time has the
-        largest overlap with the supplied time range. If no AhopeOutFiles
+        '''Return the AhopeFile that is most appropriate for the supplied
+        time range. That is, the AhopeFile whose coverage time has the
+        largest overlap with the supplied time range. If no AhopeFiles
         overlap the supplied time window, will return None.
 
         Parameters
         -----------
         ifo : string
-           Name of the ifo that the AhopeOutFile should correspond to
+           Name of the ifo that the AhopeFile should correspond to
         start : int/float/LIGOGPStime 
            The start of the time range of interest.
         end : int/float/LIGOGPStime
@@ -474,10 +487,10 @@ class AhopeFileList(list):
 
         Returns
         --------
-        AhopeOutFile class
-           The AhopeOutFile that is most appropriate for the time range
+        AhopeFile class
+           The AhopeFile that is most appropriate for the time range
         '''
-        # First filter AhopeOutFiles corresponding to ifo
+        # First filter AhopeFiles corresponding to ifo
         outFiles = [i for i in self if ifo == i.ifo] 
         if len(outFiles) == 0:
             # No AhopeOutFiles correspond to that ifo
@@ -493,12 +506,12 @@ class AhopeFileList(list):
             # One AhopeOutFile overlaps that period
             return outFiles[0]
         else:
-            # More than one AhopeOutFile overlaps period. Find lengths of
-            # overlap between time window and AhopeOutFile window
+            # More than one AhopeFile overlaps period. Find lengths of
+            # overlap between time window and AhopeFile window
             overlapWindows = [abs(i.segment & currSeg) for i in outFiles]           
-            # Return the AhopeOutFile with the biggest overlap
-            # Note if two AhopeOutFile have identical overlap, this will return
-            # the first AhopeOutFile in the list
+            # Return the AhopeFile with the biggest overlap
+            # Note if two AhopeFile have identical overlap, this will return
+            # the first AhopeFile in the list
             overlapWindows = numpy.array(overlapWindows,dtype = int)
             return outFiles[overlapWindows.argmax()]
 
@@ -513,9 +526,9 @@ class AhopeFileList(list):
 
 class AhopeOutSegFile(AhopeFile):
     '''
-    This class inherits from the AhopeOutFile class, and is designed to store
+    This class inherits from the AhopeFile class, and is designed to store
     ahope output files containing a segment list. This is identical in
-    usage to AhopeOutFile except for an additional kwarg for holding the
+    usage to AhopeFile except for an additional kwarg for holding the
     segment list, if it is known at ahope run time.
     '''
     def __init__(self, ifo, description, timeSeg, fileUrl,
