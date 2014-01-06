@@ -354,6 +354,8 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
     # Take the datafind KWargs from config (usually urltype=file is
     # given).
     dfKwargs = {}
+    # By default ignore missing frames, this case is dealt with outside of here
+    dfKwargs['on_gaps'] = 'ignore'
     for item, value in cp.items("datafind"):
         dfKwargs[item] = value
     # It is useful to print the corresponding command to the logs
