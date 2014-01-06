@@ -13,7 +13,7 @@ df = 1.0/bl
 N = sr * bl
 n = N/2 + 1
 
-psd = pycbc.psd.from_asd_txt("ZERO_DET_high_P.txt", n, df, 14)
+psd = pycbc.psd.from_txt("ZERO_DET_high_P.txt", n, df, 14)
 strain = noise_from_psd(N, dt, psd, seed=0)
 
 htildep, htildec = get_fd_waveform(approximant="TaylorF2", mass1=10, mass2=10, f_lower=15, delta_f=df)
