@@ -97,10 +97,10 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
     def needs_gpu(self):
         # Satisfy the requirements to use GPUs on cit, sugar
         # FIXME add in the ATLAS support
-        job.add_condor_cmd('+WantsGPU', 'true')
-        job.add_condor_cmd('+WantGPU', 'true')
-        job.add_condor_cmd('+HAS_GPU', 'true')
-        job.add_condor_cmd('Requirements', '( GPU_PRESENT =?= true) || (HasGPU =?= "gtx580") || (Target.HAS_GPU =?= True)')
+        self.add_condor_cmd('+WantsGPU', 'true')
+        self.add_condor_cmd('+WantGPU', 'true')
+        self.add_condor_cmd('+HAS_GPU', 'true')
+        self.add_condor_cmd('Requirements', '( GPU_PRESENT =?= true) || (HasGPU =?= "gtx580") || (Target.HAS_GPU =?= True)')
 
     def create_node(self):
         """Create a condor node from this job.
@@ -216,9 +216,12 @@ class Node(pipeline.CondorDAGNode):
         # Call a script on the output of both 
         self.set_post_script(script)
         
-    def finalize():
-        pass
-
+    def finalize(self):
+        # If the job needs to be run twice and checked, change the output 
+        # name format accordingly (the postscript will produce a file of the
+        # original name
+        if hasattr(self, 'unreliable'):
+            pass
 
 class Executable(object):
     """This class is a reprentation of an executable and its capabilities
