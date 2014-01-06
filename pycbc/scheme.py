@@ -82,7 +82,8 @@ class Scheme(object):
         mgr.unlock()
         mgr.shift_to(DefaultScheme)   
     def __del__(self):
-        Scheme._single = None
+        if Scheme is not None:
+            Scheme._single = None
 
 _cuda_cleanup_list=[]
 
