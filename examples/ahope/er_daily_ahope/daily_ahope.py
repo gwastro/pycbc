@@ -38,7 +38,9 @@ from glue import segments
 import pycbc.ahope as ahope
 
 # Force vanilla universe in legacy code
-#ahope.legacy_ihope_job_utils.condorUniverse='vanilla'
+ahope.LegacyTmpltbankExec.universe = 'vanilla'
+ahope.LegacyInspiralExec.universe = 'vanilla'
+ahope.LegacySplitBankExec.universe = 'vanilla'
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \
                     level=logging.INFO,datefmt='%I:%M:%S')
@@ -62,8 +64,6 @@ if not opts.output_dir:
     parser.error("Must supply --output-dir")
 
 workflow = ahope.Workflow(opts.config_file)
-dag = workflow.dag
-cp = workflow.cp
 # Get dates and stuff
 # This feels hacky!
 yestDate = lal.GPSToUTC(opts.start_time)
@@ -98,7 +98,7 @@ end_time = start_time + 60*60*24 + 2*pad_time
 
 # Set the ifos to analyse
 ifos = []
-for ifo in cp.options('ahope-ifos'):
+for ifo in workflow.cp.options('ahope-ifos'):
     ifos.append(ifo.upper())
 
 # Get segments
@@ -126,6 +126,11 @@ insps = ahope.setup_matchedfltr_workflow(workflow, scienceSegs, datafinds,
 
 
 # Now I start doing things not supported by ahope at present.
+
+# First we need direct access to the dag and cp objects
+dag = workflow.dag
+cp = workflow.cp
+
 basename = 'daily_ahope'
 # Set up condor jobs for this stuff
 cp.add_section('condor')
