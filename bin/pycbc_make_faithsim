@@ -76,7 +76,7 @@ mkdir('scripts')
 mkdir('match')
 mkdir('bank')
 mkdir('log')
-mkdir('plot')
+mkdir('plots')
 
 print "Copying scripts"
 shutil.copy(banksim_prog, 'scripts/pycbc_faithsim')
@@ -104,6 +104,8 @@ for sec in fs_secs:
 
 rjob = BaseJob("log", "scripts/pycbc_faithsim_collect_results", None, 'collect_results')
 rnode = CondorDAGNode(rjob)
+pjob = BaseJob("log", "scripts/pycbc_faithsim_plots", None, 'faithsim_plots')
+pnode = CondorDAGNode(pjob)
 
 for inj_num in range(num_banks):
     bn = 'bank/bank' + str(inj_num) + '.xml'
@@ -115,6 +117,8 @@ for inj_num in range(num_banks):
         dag.add_node(fsnode)
         rnode.add_parent(fsnode) 
 dag.add_node(rnode)
+pnode.add_parent(rnode)
+dag.add_node(pnode)
 
 f = open("scripts/pycbc_faithsim_collect_results", "w")
 f.write("""#!/usr/bin/env python
@@ -181,3 +185,184 @@ dag.write_sub_files()
 dag.write_script()
 dag.write_dag()
 
+f = open('scripts/pycbc_faithsim_plots', "w")
+f.write("""#!/usr/bin/env python
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.cm
+import pylab
+from os.path import isfile
+from numpy import *
+from glue.ligolw import utils, table, lsctables
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+import glob
+
+from pycbc import pnutils
+
+bfields = ('match', 'overlap', 'sigma1', 'sigma2', 'mass1', 'mass2', 
+                  'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z',
+                  'inclination', 'latitude', 'longitude', 'polarization', 'coa_phase')
+dtypeo={'names': bfields,
+        'formats': ('f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 
+                    'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8')}
+                    
+def basic_scatter(out_name, xname, yname, title, xval, yval,  
+                  cval=None, cname="", vmin=0, vmax=1, xmin=None, 
+                  ymin=None, majorL=None, minorL=None):
+    cmap = matplotlib.cm.jet
+    cmap.set_under(color='gray')
+    fig = pylab.figure(num=None, figsize=(10, 5))
+    pylab.scatter(xval, yval, c=cval, linewidths=0, s=3, vmin=vmin, vmax=vmax, cmap=cmap, alpha=0.7)
+    if cval is not None:
+        bar = pylab.colorbar()
+        bar.set_label(cname)
+        
+    pylab.xlabel(xname)
+    pylab.ylabel(yname)
+    
+    if xmin is None:
+        xmin = min(xval)
+        
+    if ymin is None:
+        ymin = min(yval)
+        
+    pylab.xlim(xmin, max(xval))
+    pylab.ylim(ymin, max(yval))
+    
+    ax = fig.gca()
+    if majorL:
+        ax.xaxis.set_major_locator(MultipleLocator(majorL))
+        ax.yaxis.set_major_locator(MultipleLocator(majorL))
+
+    if minorL:
+        ax.xaxis.set_minor_locator(MultipleLocator(minorL))
+        ax.yaxis.set_minor_locator(MultipleLocator(minorL))
+    
+    fol = 'plots/' 
+    
+    pylab.grid()
+    pylab.title(title)
+    pylab.savefig(fol + 'THUMB-' + out_name, dpi=50)
+    pylab.savefig(fol + out_name, dpi=500)
+
+fils = glob.glob("result*.dat")
+for fil in fils:
+    tag = fil.split('-')[1].split('.')[0]
+    data = loadtxt(fil, dtype=dtypeo)
+
+    mmass1 = maximum(data['mass1'], data['mass2'])
+    mmass2 = minimum(data['mass1'], data['mass2'])
+    mchirp, eta = pnutils.mass1_mass2_to_mchirp_eta(mmass1, mmass2)
+
+    M = data['mass1'] + data['mass2']    
+    q = maximum(data['mass1'] / data['mass2'], data['mass2'] / data['mass1'])
+    s1 = (data['spin1x']**2 + data['spin1y']**2 + data['spin1z']**2)**0.5
+    s2 = (data['spin2x']**2 + data['spin2y']**2 + data['spin2z']**2)**0.5
+    
+    s81 = data['sigma1'] / 8
+    s82 = data['sigma2'] / 8
+    
+    pname = tag + '-'
+    
+    combs =  [('mass1', 'mass2', 'match'),
+             ]            
+    for v1, v2, v3 in combs:
+        name = pname + 'scatter' + v1 + '-' + v2 + '-' + v3
+        title = tag
+        basic_scatter(name, v1, v2, title, data[v1], data[v2], data[v3], v3, xmin=0, ymin=0)
+        
+    v1 = 'mass ratio'
+    v1d = q
+    v2 = 'spin 1 magnitude' 
+    v2d = s1
+    v3 = 'match'
+    v3d = data['match']
+    name = pname + 'scatter' + v1 + '-' + v2 + '-' + v3
+    basic_scatter(name, v1, v2, tag, v1d, v2d, v3d, v3)
+
+
+    v1 = 'mass ratio'
+    v1d = q
+    v2 = 'spin 1 z' 
+    v2d = data['spin1z']
+    v3 = 'match'
+    v3d = data['match']
+    name = pname + 'scatter' + v1 + '-' + v2 + '-' + v3
+    basic_scatter(name, v1, v2, tag, v1d, v2d, v3d, v3)
+    
+    v1 = 'mass ratio'
+    v1d = q
+    v2 = 'spin 2 magnitude' 
+    v2d = s2
+    v3 = 'match'
+    v3d = data['match']
+    name = pname + 'scatter' + v1 + '-' + v2 + '-' + v3
+    basic_scatter(name, v1, v2, tag, v1d, v2d, v3d, v3)
+
+
+    v1 = 'mass ratio'
+    v1d = q
+    v2 = 'spin 2 z' 
+    v2d = data['spin2z']
+    v3 = 'match'
+    v3d = data['match']
+    name = pname + 'scatter' + v1 + '-' + v2 + '-' + v3
+    basic_scatter(name, v1, v2, tag, v1d, v2d, v3d, v3)
+
+    v1 = 'mass ratio'
+    v1d = q
+    v2 = 'total mass' 
+    v2d = M
+    v3 = 'match'
+    v3d = data['match']
+    name = pname + 'scatter' + v1 + '-' + v2 + '-' + v3
+    basic_scatter(name, v1, v2, tag, v1d, v2d, v3d, v3)
+
+    v1 = 'mass 1'
+    v1d = mmass1
+    v2 = 'mass 2' 
+    v2d = mmass2
+    v3 = 'match'
+    v3d = data['match']
+    name = pname + 'scatter' + v1 + '-' + v2 + '-' + v3
+    basic_scatter(name, v1, v2, tag, v1d, v2d, v3d, v3, xmin=0, ymin=0, majorL=5, minorL=1)
+    
+    v1 = 'Coalescence Phase'
+    v1d = data['coa_phase']
+    v2 = 'Match' 
+    v2d = data['match']
+    v3 = 'Mchirp'
+    v3d = mchirp
+    name = pname + 'scatter' + v1 + '-' + v2 + '-' + v3
+    basic_scatter(name, v1, v2, tag, v1d, v2d, v3d, v3, vmin=None, vmax=None, ymin=0)
+    
+    v1 = 'Inclination'
+    v1d = data['inclination']
+    v2 = 'Match' 
+    v2d = data['match']
+    v3 = 'Mchirp'
+    v3d = mchirp
+    name = pname + 'scatter' + v1 + '-' + v2 + '-' + v3
+    basic_scatter(name, v1, v2, tag, v1d, v2d, v3d, v3, vmin=None, vmax=None)
+    
+    v1 = 'Inclination'
+    v1d = data['inclination']
+    v2 = 'Sigma2' 
+    v2d = data['sigma2']
+    v3 = 'Mchirp'
+    v3d = mchirp
+    name = pname + 'scatter' + v1 + '-' + v2 + '-' + v3
+    basic_scatter(name, v1, v2, tag, v1d, v2d, v3d, v3, vmin=None, vmax=None)
+         
+    v1 = 'Inclination'
+    v1d = data['inclination']
+    v2 = 'Sigma1' 
+    v2d = data['sigma1']
+    v3 = 'Mchirp'
+    v3d = mchirp
+    name = pname + 'scatter' + v1 + '-' + v2 + '-' + v3
+    basic_scatter(name, v1, v2, tag, v1d, v2d, v3d, v3, vmin=None, vmax=None)     
+ """)
+os.chmod('scripts/pycbc_faithsim_plots', 0777)
+
+    
