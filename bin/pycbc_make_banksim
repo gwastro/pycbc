@@ -150,6 +150,7 @@ mkdir('match')
 mkdir('injection')
 mkdir('match-part')
 mkdir('log')
+mkdir('plots')
 
 print "Copying scripts"
 shutil.copy(banksim_prog, 'scripts/pycbc_banksim')
@@ -180,10 +181,13 @@ dag.set_dax_file("banksim")
 bsjob = BaseJob("log", "scripts/pycbc_banksim", confs, "banksim", gpu=gpu)
 cjob = BaseJob("log", "scripts/pycbc_banksim_match_combine", None, None)
 rjob = BaseJob("log", "scripts/pycbc_banksim_collect_results", None, None)
+pjob = BaseJob("log", "scripts/pycbc_banksim_plots", None, None)
 rnode = CondorDAGNode(rjob)
+pnode = CondorDAGNode(pjob)
 
 for inj_num in range(num_injs):
     num = str(inj_num)
+    combine_has_jobs = False
     cnode = CombineNode(cjob, inj_num)
     for bank_num in range(num_banks):
         if mchirp_window is not None:
@@ -201,9 +205,13 @@ for inj_num in range(num_injs):
         bsnode = BanksimNode(bsjob, sn, bn, mfn, gpu=gpu, gpu_postscript="scripts/diff_match.sh", inj_per_job=injections_per_job)
         cnode.add_parent(bsnode)
         dag.add_node(bsnode)
-    rnode.add_parent(cnode)
-    dag.add_node(cnode)      
+        combine_has_jobs = True
+    if combine_has_jobs:
+        rnode.add_parent(cnode)
+        dag.add_node(cnode)      
 dag.add_node(rnode)
+pnode.add_parent(rnode)
+dag.add_node(pnode)
 
 print "DO : ", do_count, "SKIP: ", skip_count
 f.close()
@@ -377,8 +385,137 @@ else:
     """)
 os.chmod('submit.sh', 0777)
 
+f = open("partial_results.sh", "w")
+f.write("""#!/bin/bash
+scripts/pycbc_banksim_collect_results
+""")
+os.chmod('partial_results.sh', 0777)
+
 print "Done"
 dag.write_sub_files()
 dag.write_script()
 dag.write_dag()
 
+f = open("scripts/pycbc_banksim_plots", "w")
+f.write("""#!/usr/bin/env python
+import matplotlib
+matplotlib.use('agg')
+from matplotlib import pyplot
+from pycbc import pnutils
+import numpy
+import pylab
+
+goldenratio = 2 / (1 + 5**.5)
+#matplotlib.rcParams.update({
+#        "font.size": 8.0,
+#        "axes.titlesize": 8.0,
+#        "axes.labelsize": 8.0,
+#        "xtick.labelsize": 8.0,
+#        "ytick.labelsize": 8.0,
+#        "legend.fontsize": 8.0,
+#	"figure.figsize": (3.3,3.3*goldenratio),
+#        "figure.dpi": 200,
+#	"subplots.left": 0.2, 
+#	"subplots.right": 0.75, 
+#	"subplots.bottom": 0.15,
+#	"subplots.top": 0.75,
+#        "savefig.dpi": 600,
+#        "text.verticalalignment": "center",
+#        "text.usetex": True     # render all text with TeX
+#})
+
+
+
+res = numpy.loadtxt("results.dat")
+match = res[:,0]
+
+tmass1 = res[:,1]
+tmass2 = res[:,2]
+tspin1x = res[:,3] 
+tspin1y = res[:,4]
+tspin1z = res[:,5]
+tspin2x = res[:,6]
+tspin2y = res[:,7]
+tspin2z = res[:,8]
+tmchirp, teta = pnutils.mass1_mass2_to_mchirp_eta(tmass1, tmass2)
+
+imass1 = res[:,9]
+imass2 = res[:,10]
+ispin1x = res[:,11]
+ispin1y = res[:,12]
+ispin1z = res[:,13]
+ispin2x = res[:,14]
+ispin2y = res[:,15]
+ispin2z = res[:,16]
+imchirp, ieta = pnutils.mass1_mass2_to_mchirp_eta(imass1, imass2)
+
+coa_phase = res[:,17]
+inclination = res[:,18]
+latitude  = res[:,19]
+longitude = res[:,20]
+polarization = res[:,21]
+
+sigmasq = res[:,22]
+
+q = numpy.maximum(imass1/imass2, imass2/imass1)
+s1m = (ispin1x**2+ispin1y**2+ispin1z**2)**0.5
+s2m = (ispin2x**2+ispin2y**2+ispin2z**2)**0.5
+
+def mhist(c1, name, cum=False, normed=True, log=False, bins=100, xl="", yl=""):
+    print name
+    pylab.figure()
+    pylab.xlabel(xl)
+    pylab.ylabel(yl)
+    if log:
+        pylab.yscale('log')
+    pylab.hist(c1, bins=bins, normed=normed, histtype='step', cumulative=cum)
+    pylab.savefig(name)
+
+def mplot(c1, c2, c, name, xl="", yl="", vmin=None, vmax=None):
+    print name
+    pylab.figure()
+    pylab.axes((0.15, 0.15, 0.8, 0.8))
+    pylab.scatter(c1, c2, c=c, linewidth=0, s=1, vmin=vmin, vmax=vmax)
+    pylab.colorbar()
+    pylab.xlim(min(c1), max(c1))
+    pylab.ylim(min(c2), max(c2))
+    pylab.xlabel(xl)
+    pylab.ylabel(yl)
+    pylab.savefig(name)
+
+mhist(imchirp-tmchirp, "plots/hist-mchirp-diff.png")
+mhist((imchirp-tmchirp)/imchirp, "plots/hist-mchirp-reldiff.png")
+mhist(match, "plots/hist-match.png")
+mhist(match, "plots/hist-match-cum.png", cum=1, log=True, bins=10000, xl = "Match", yl="Fraction of injections < Match")
+    
+pylab.figure(102)
+pylab.ylabel('Fraction of Injections')
+pylab.xlabel('Fitting factor')
+pylab.yscale('log') 
+pylab.xlim(0.95, 1.0)
+pylab.ylim(1e-4, 1)
+hBins = pylab.arange(0.,1.,0.0005,dtype=float)
+n, bins,patches=pylab.hist(match,cumulative=1,bins=hBins,normed=True)
+pylab.grid()
+pylab.savefig("plots/cum_hist.png")
+    
+mplot(imass1, imass2, match, "plots/m1-m2-match.png")
+mplot(tmass1, tmass2, match, "plots/tm1-tm2-match.png")
+mplot(q, s1m, match, "plots/q-s1m-match.png")
+mplot(q, s2m, match, "plots/q-s2m-match.png")
+mplot(q, ispin1z, match, "plots/q-s1z-match.png")  
+mplot(q, ispin2z, match, "plots/q-s2z-match.png", "Mass Ratio", "Spin2z") 
+mplot(q, ispin2z, match, "plots/q-s2z-match97.png", "Mass Ratio", "Spin2z", vmin=0.97)
+mplot(q, ispin2z, match, "plots/q-s2z-match90.png", "Mass Ratio", "Spin2z", vmin=0.90)
+mplot(inclination, match, match, "plots/inc-match.png")   
+
+mplot(imass1, imass2, imchirp-tmchirp, "plots/m1-m2-mchirpdiff.png")
+mplot(q, ispin1z, imchirp-tmchirp, "plots/q-s1z-mchirpdiff.png", "Mass Ratio", "Spin1z")
+mplot(q, ispin2z, imchirp-tmchirp, "plots/q-s2z-mchirpdiff.png", "Mass Ratio", "Spin2z")
+
+mplot(imass1, imass2, (imchirp-tmchirp)/imchirp, "plots/m1-m2-mchirpreldiff.png")
+mplot(q, ispin1z, (imchirp-tmchirp)/imchirp, "plots/q-s1z-mchirpreldiff.png")
+mplot(q, ispin2z, (imchirp-tmchirp)/imchirp, "plots/q-s2z-mchirpreldiff.png")
+
+""")
+os.chmod("scripts/pycbc_banksim_plots", 0777)
