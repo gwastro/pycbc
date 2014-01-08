@@ -227,7 +227,7 @@ print("Number of Templates       : ",len(template_table))
 
 print("Reading and Interpolating PSD")
 if options.asd_file:
-    psd = pycbc.psd.from_asd_txt(options.asd_file, filter_n,  
+    psd = pycbc.psd.from_txt(options.asd_file, filter_n,  
                            filter_delta_f, options.filter_low_frequency_cutoff)
 elif options.psd:
     psd = pycbc.psd.from_string(options.psd, filter_n, filter_delta_f, 

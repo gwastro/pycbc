@@ -5,7 +5,7 @@ import logging
 from pycbc.ahope.ahope_utils import * 
 from pycbc.ahope.jobsetup_utils import *
 
-def setup_splittable_workflow(cp, ahopeDax, tmpltBanks, outDir):
+def setup_splittable_workflow(workflow, tmplt_banks, out_dir):
     '''
     Setup matched filter section of ahope workflow.
     FIXME: ADD MORE DOCUMENTATION
@@ -13,45 +13,38 @@ def setup_splittable_workflow(cp, ahopeDax, tmpltBanks, outDir):
     logging.info("Entering split output files module.")
     # Scope here for choosing different options
     logging.info("Adding split output file jobs to workflow.")
-    splitTableOuts = setup_splittable_dax_generated(cp, ahopeDax, tmpltBanks,\
-                                                    outDir)
-    logging.info("Leaving split output files module.")
-    
-    return splitTableOuts
+    split_table_outs = setup_splittable_dax_generated(workflow, tmplt_banks,
+                                                    out_dir)
+    logging.info("Leaving split output files module.")  
+    return split_table_outs
 
-def setup_splittable_dax_generated(cp, ahopeDax, tmpltBanks, outDir):
+def setup_splittable_dax_generated(workflow, tmplt_banks, out_dir):
     '''
     Setup matched-filter jobs that are generated as part of the ahope workflow.
     FIXME: ADD MORE DOCUMENTATION
     '''
-    
-    splittableExe = os.path.basename(cp.get('executables', 'splittable'))
+    cp = workflow.cp
+    splittable_exe = os.path.basename(cp.get('executables', 'splittable'))
     # Select the appropriate class
-    exeInstance = select_splitfilejob_instance(splittableExe, 'splittable')
+    exe_instance = select_splitfilejob_instance(splittable_exe, 'splittable')
 
     # Template banks are independent for different ifos, but might not be!
     # Begin with independent case and add after FIXME
-    # FIXME: Do not hardcode value of 2
-    numBanks = int(cp.get("ahope-splittable","num-outputs"))
-    return split_outfiles(cp, tmpltBanks, exeInstance, numBanks, ahopeDax,\
-                          outDir)
+    return split_outfiles(workflow, tmplt_banks, exe_instance, out_dir)
 
-def split_outfiles(cp, inputFileList, exeInstance, numBanks, ahopeDax, outDir):
+def split_outfiles(workflow, input_file_list, exe_instance, out_dir):
     """
     Add documentation
     """
     # Set up output structure
-    outFileGroups = AhopeOutGroupList([])
+    out_file_groups = AhopeFileList([])
 
     # Set up the condorJob class for the current executable
-    currExeJob = exeInstance.create_condorjob(cp, None, outDir)
+    curr_exe_job = exe_instance.create_job(workflow.cp, None, out_dir)
 
-    for input in inputFileList:
-        jobTag = input.description + "_" + exeInstance.exeName.upper()
-        currExeNode, outUrlList = exeInstance.create_condornode(\
-                                      ahopeDax, currExeJob, numBanks, input)
-        outFileGroup = AhopeOutGroup(input.observatory, jobTag, input.segment)
-        outFileGroup.set_output(outUrlList, [currExeNode])
-        outFileGroups.append(outFileGroup)
-    return outFileGroups
+    for input in input_file_list:
+        node = curr_exe_job.create_node(input)
+        workflow.add_node(node)
+        out_file_groups += node.output_files
+    return out_file_groups
 

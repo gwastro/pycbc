@@ -22,10 +22,11 @@ This is designed to mimic the current behaviour of dail_ihope.
 """
 import pycbc
 import pycbc.version
+from glue.lal import Cache
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
-__program__ = "daily_ahope"
+__program__ = "daily_ahope_mk2"
 
 import os
 import copy
@@ -36,8 +37,10 @@ from glue import pipeline
 from glue import segments
 import pycbc.ahope as ahope
 
-# Force vanilla univers in legacy code
-ahope.legacy_ihope_job_utils.condorUniverse='vanilla'
+# Force vanilla universe in legacy code
+ahope.LegacyTmpltbankExec.universe = 'vanilla'
+ahope.LegacyInspiralExec.universe = 'vanilla'
+ahope.LegacySplitBankExec.universe = 'vanilla'
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \
                     level=logging.INFO,datefmt='%I:%M:%S')
@@ -60,9 +63,7 @@ if not opts.config_file:
 if not opts.output_dir:
     parser.error("Must supply --output-dir")
 
-# Parse ini file
-cp = ahope.parse_ahope_ini_file(opts.config_file)
-
+workflow = ahope.Workflow(opts.config_file)
 # Get dates and stuff
 # This feels hacky!
 yestDate = lal.GPSToUTC(opts.start_time)
@@ -75,7 +76,7 @@ yestMnightGPS = lal.UTCToGPS(yestMnight)
 monthName = '%04d%02d' %(yestMnight[0], yestMnight[1])
 dayName = '%04d%02d%02d' %(yestMnight[0], yestMnight[1], yestMnight[2])
 
-workingDir = os.path.join(opts.output_dir, monthName, dayName)
+workingDir = os.path.join(opts.output_dir, monthName + '_mk2', dayName)
 
 if not os.path.exists(workingDir):
     os.makedirs(workingDir)
@@ -97,21 +98,12 @@ end_time = start_time + 60*60*24 + 2*pad_time
 
 # Set the ifos to analyse
 ifos = []
-for ifo in cp.options('ahope-ifos'):
+for ifo in workflow.cp.options('ahope-ifos'):
     ifos.append(ifo.upper())
 
-# Initialize the dag
-basename = 'daily_ahope'
-logfile = 'daily_ahope.log'
-fh = open( logfile, "w" )
-fh.close()
-dag = pipeline.CondorDAG(logfile,dax=False)
-dag.set_dax_file(basename)
-dag.set_dag_file(basename)
-
 # Get segments
-scienceSegs, segsDict = ahope.setup_segment_generation(cp, ifos, start_time,\
-                               end_time, dag, workingDir, maxVetoCat=4,\
+scienceSegs, segsDict = ahope.setup_segment_generation(workflow, ifos, start_time,
+                               end_time, workingDir, maxVetoCat=4,
                                minSegLength=2000)
 
 # Get frames, this can be slow, as we ping every frame to check it exists,
@@ -119,21 +111,27 @@ scienceSegs, segsDict = ahope.setup_segment_generation(cp, ifos, start_time,\
 #datafinds, scienceSegs = ahope.setup_datafind_workflow(cp, scienceSegs, dag,\
 #                         dfDir)
 # This second case will also update the segment list on missing data, not fail
-datafinds, scienceSegs = ahope.setup_datafind_workflow(cp, scienceSegs, dag,\
-                           workingDir, updateSegmentTimes=True,\
+datafinds, scienceSegs = ahope.setup_datafind_workflow(workflow, scienceSegs,
+                           workingDir, updateSegmentTimes=True,
                            checkFramesExist=True, checkSegmentGaps=False)
 
 # Template bank stuff
-banks = ahope.setup_tmpltbank_workflow(cp, scienceSegs, datafinds, dag, \
+banks = ahope.setup_tmpltbank_workflow(workflow, scienceSegs, datafinds, 
                                        workingDir)
 # Split bank up
-splitBanks = ahope.setup_splittable_workflow(cp, dag, banks, workingDir)
+splitBanks = ahope.setup_splittable_workflow(workflow, banks, workingDir)
 # Do matched-filtering
-insps = ahope.setup_matchedfltr_workflow(cp, scienceSegs, datafinds, dag, \
+insps = ahope.setup_matchedfltr_workflow(workflow, scienceSegs, datafinds,
                                          splitBanks, workingDir)
+
 
 # Now I start doing things not supported by ahope at present.
 
+# First we need direct access to the dag and cp objects
+dag = workflow.dag
+cp = workflow.cp
+
+basename = 'daily_ahope'
 # Set up condor jobs for this stuff
 cp.add_section('condor')
 # Hack to avoid hardcoding in glue
@@ -148,28 +146,30 @@ cp_job.set_stderr_file('logs/cp-$(cluster)-$(process).err')
 cp_job.set_stdout_file('logs/cp-$(cluster)-$(process).out')
 cp_job.set_sub_file('cp.sub')
 
-si_job_coarse = ahope.LegacyInspiralAnalysisJob(cp, ['siclustercoarse'],\
-                  'siclustercoarse', 'vanilla', extension='xml')
+si_job_coarse = ahope.Job(cp, 'siclustercoarse', 'vanilla')
 si_job_coarse.add_condor_cmd('getenv','True')
 
-si_job_fine = ahope.LegacyInspiralAnalysisJob(cp, ['siclusterfine'],\
-                'siclusterfine', 'vanilla', extension='xml')
+si_job_fine = ahope.Job(cp, 'siclusterfine', 'vanilla')
 si_job_fine.add_condor_cmd('getenv','True')
 
 inspstr = 'INSPIRAL'
 pageDagParents = []
 for inspOutGroup in insps:
-    ifo = inspOutGroup.observatory
+    ifo = inspOutGroup.ifo
     analysis_seg = inspOutGroup.segment
-    fileList = inspOutGroup.get_output()
-    jobList = [f.job for f in fileList]
+    fileList = inspOutGroup.cache_entries
+
+    if isinstance(inspOutGroup.node, list):
+        jobList = inspOutGroup.node
+    else:
+        JOBlIST = [inspOutGroup.node] 
 
     # Create a cache file to hole the input to ligolw_add
     out_basename = ifo + '-' + inspstr + '-' + str(analysis_seg[0]) + '-' 
     out_basename += str(abs(analysis_seg))
     insp_cache_file_name = out_basename + '.cache'
     insp_cache_file = open(insp_cache_file_name, 'w')
-    fileList.tofile(insp_cache_file)
+    Cache(fileList).tofile(insp_cache_file)
     insp_cache_file.close()
 
     # use ligolw_add to join everything back together
@@ -198,9 +198,9 @@ for inspOutGroup in insps:
         dag.add_node(cpnode)
 
         if cname == clustered_16s_name:
-            sinode = ahope.LegacyInspiralAnalysisNode(si_job_coarse)
+            sinode = ahope.Node(si_job_coarse)
         else:
-            sinode = ahope.LegacyInspiralAnalysisNode(si_job_fine)
+            sinode = ahope.Node(si_job_fine)
 
         sinode.add_file_arg(cname)
         sinode.add_parent(cpnode)
@@ -282,9 +282,6 @@ summNode.add_var_opt('ifos', ','.join(ifos))
 summNode.add_parent(dailyPageNode)
 dag.add_node(summNode)
 
-dag.write_sub_files()
-dag.write_dag()
-#dag.write_abstract_dag()
-dag.write_script()
+workflow.write_plans()
 
 logging.info("Finished.")

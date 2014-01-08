@@ -4,8 +4,8 @@ import os
 from pycbc.ahope.ahope_utils import * 
 from pycbc.ahope.jobsetup_utils import *
 
-def setup_matchedfltr_workflow(cp, scienceSegs, datafindOuts, ahopeDax,\
-                               tmpltBanks, outputDir):
+def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
+                               tmplt_banks, output_dir):
     '''
     Setup matched filter section of ahope workflow.
     FIXME: ADD MORE DOCUMENTATION
@@ -16,14 +16,13 @@ def setup_matchedfltr_workflow(cp, scienceSegs, datafindOuts, ahopeDax,\
 
     # There should be a number of different options here, for e.g. to set
     # up fixed bank, or maybe something else
-    inspiralOuts = setup_matchedfltr_dax_generated(cp, scienceSegs, \
-                       datafindOuts, ahopeDax, tmpltBanks, outputDir)
-    logging.info("Leaving matched-filtering setup module.")
-    
-    return inspiralOuts
+    inspiral_outs = setup_matchedfltr_dax_generated(workflow, science_segs, 
+                                     datafind_outs, tmplt_banks, output_dir)
+    logging.info("Leaving matched-filtering setup module.")    
+    return inspiral_outs
 
-def setup_matchedfltr_dax_generated(cp, scienceSegs, datafindOuts, ahopeDax,\
-                                    tmpltBanks, outputDir,\
+def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
+                                    tmplt_banks, output_dir, 
                                     link_to_tmpltbank=True):
     '''
     Setup matched-filter jobs that are generated as part of the ahope workflow.
@@ -36,10 +35,11 @@ def setup_matchedfltr_dax_generated(cp, scienceSegs, datafindOuts, ahopeDax,\
     # There is also a stub for a default class using values given in the .ini
     # file.
 
-    ifos = scienceSegs.keys()
-    matchFltrExe = os.path.basename(cp.get('executables','inspiral'))
+    cp = workflow.cp
+    ifos = science_segs.keys()
+    match_fltr_exe = os.path.basename(cp.get('executables','inspiral'))
     # Select the appropriate class
-    exeInstance = select_matchedfilterjob_instance(matchFltrExe,'inspiral')
+    exe_instance = select_matchedfilterjob_instance(match_fltr_exe,'inspiral')
 
     if link_to_tmpltbank:
         # Use this to ensure that inspiral and tmpltbank jobs overlap. This
@@ -50,21 +50,21 @@ def setup_matchedfltr_dax_generated(cp, scienceSegs, datafindOuts, ahopeDax,\
         # twice as many matched-filter jobs that still use 4000s to estimate a
         # PSD but then only generate triggers in the 2000s of data that the
         # template bank jobs ran on.
-        tmpltbankExe = os.path.basename(cp.get('executables', 'tmpltbank'))
-        linkExeInstance = select_tmpltbankjob_instance(tmpltbankExe, \
-                                                       'tmpltbank')
+        tmpltbank_exe = os.path.basename(cp.get('executables', 'tmpltbank'))
+        link_exe_instance = select_tmpltbankjob_instance(tmpltbank_exe, 
+                                                        'tmpltbank')
     else:
-        linkExeInstance = None
+        link_exe_instance = None
 
     # Set up class for holding the banks
-    inspiralOuts = AhopeOutFileList([])
+    inspiral_outs = AhopeFileList([])
 
     # Template banks are independent for different ifos, but might not be!
     # Begin with independent case and add after FIXME
     for ifo in ifos:
-        sngl_ifo_job_setup(cp, ifo, inspiralOuts, exeInstance, \
-                           scienceSegs[ifo], datafindOuts, ahopeDax, outputDir,\
-                           parents=tmpltBanks, linkExeInstance=linkExeInstance,\
-                           allowOverlap=False)
-
-    return inspiralOuts
+        sngl_ifo_job_setup(workflow, ifo, inspiral_outs, exe_instance, 
+                           science_segs[ifo], datafind_outs, output_dir,
+                           parents=tmplt_banks, 
+                           link_exe_instance=link_exe_instance,
+                           allow_overlap=False)
+    return inspiral_outs

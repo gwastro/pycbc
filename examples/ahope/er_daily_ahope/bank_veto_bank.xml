@@ -1,0 +1,177 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
+<LIGO_LW>
+	<Table Name="processgroup:process:table">
+		<Column Type="lstring" Name="processgroup:process:program"/>
+		<Column Type="lstring" Name="processgroup:process:version"/>
+		<Column Type="lstring" Name="processgroup:process:cvs_repository"/>
+		<Column Type="int_4s" Name="processgroup:process:cvs_entry_time"/>
+		<Column Type="lstring" Name="processgroup:process:comment"/>
+		<Column Type="int_4s" Name="processgroup:process:is_online"/>
+		<Column Type="lstring" Name="processgroup:process:node"/>
+		<Column Type="lstring" Name="processgroup:process:username"/>
+		<Column Type="int_4s" Name="processgroup:process:unix_procid"/>
+		<Column Type="int_4s" Name="processgroup:process:start_time"/>
+		<Column Type="int_4s" Name="processgroup:process:end_time"/>
+		<Column Type="int_4s" Name="processgroup:process:jobid"/>
+		<Column Type="lstring" Name="processgroup:process:domain"/>
+		<Column Type="lstring" Name="processgroup:process:ifos"/>
+		<Column Type="ilwd:char" Name="processgroup:process:process_id"/>
+		<Stream Name="processgroup:process:table" Type="Local" Delimiter=",">
+			"tmpltbank","645a41a2fa3df783221bd9988f70b0cee1861d56","UNCLEAN: some modifications were not commited!",946819435," ",0,"titan1.atlas.aei.uni-hannover.de","spxiwh",16799,956049146,956049411,0,"lalapps","H1","process:process_id:0"
+		</Stream>
+	</Table>
+	<Table Name="process_paramsgroup:process_params:table">
+		<Column Type="lstring" Name="process_paramsgroup:process_params:program"/>
+		<Column Type="ilwd:char" Name="process_paramsgroup:process_params:process_id"/>
+		<Column Type="lstring" Name="process_paramsgroup:process_params:param"/>
+		<Column Type="lstring" Name="process_paramsgroup:process_params:type"/>
+		<Column Type="lstring" Name="process_paramsgroup:process_params:value"/>
+		<Stream Name="process_paramsgroup:process_params:table" Type="Local" Delimiter=",">
+			"tmpltbank","process:process_id:0","--grid-spacing","string","Hexagonal",
+			"tmpltbank","process:process_id:0","--dynamic-range-exponent","float","6.900000e+01",
+			"tmpltbank","process:process_id:0","--enable-high-pass","float","3.000000e+01",
+			"tmpltbank","process:process_id:0","--high-pass-order","int","8",
+			"tmpltbank","process:process_id:0","--strain-high-pass-order","int","8",
+			"tmpltbank","process:process_id:0","--maximum-mass","float","4.000000e+01",
+			"tmpltbank","process:process_id:0","--approximant","string","TaylorF2",
+			"tmpltbank","process:process_id:0","--gps-end-time","int","874611096",
+			"tmpltbank","process:process_id:0","--calibrated-data","string","real_8",
+			"tmpltbank","process:process_id:0","--channel-name","string","H1:LSC-STRAIN",
+			"tmpltbank","process:process_id:0","--space","string","Tau0Tau3",
+			"tmpltbank","process:process_id:0","--number-of-segments","int","15",
+			"tmpltbank","process:process_id:0","--minimal-match","float","1.000000e-05",
+			"tmpltbank","process:process_id:0","--debug-level","string","33",
+			"tmpltbank","process:process_id:0","--gps-start-time","int","874609048",
+			"tmpltbank","process:process_id:0","--high-pass-attenuation","float","1.000000e-01",
+			"tmpltbank","process:process_id:0","--min-high-freq-cutoff","string","SchwarzISCO",
+			"tmpltbank","process:process_id:0","--segment-length","int","1048576",
+			"tmpltbank","process:process_id:0","--low-frequency-cutoff","float","4.000000e+01",
+			"tmpltbank","process:process_id:0","--pad-data","int","8",
+			"tmpltbank","process:process_id:0","--num-freq-cutoffs","int","1",
+			"tmpltbank","process:process_id:0","--sample-rate","int","4096",
+			"tmpltbank","process:process_id:0","--high-frequency-cutoff","float","2.048000e+03",
+			"tmpltbank","process:process_id:0","--resample-filter","string","ldas",
+			"tmpltbank","process:process_id:0","--strain-high-pass-atten","float","1.000000e-01",
+			"tmpltbank","process:process_id:0","--strain-high-pass-freq","float","3.000000e+01",
+			"tmpltbank","process:process_id:0","--max-total-mass","float","4.000000e+01",
+			"tmpltbank","process:process_id:0","--frame-cache","string","cache/H-H1_RDS_C03_L2-874609040-874611230.cache",
+			"tmpltbank","process:process_id:0","--max-high-freq-cutoff","string","SchwarzISCO",
+			"tmpltbank","process:process_id:0","--user-tag","string","GRB070923_OFFSOURCE_CATEGORY_1",
+			"tmpltbank","process:process_id:0","--minimum-mass","float","1.000000e+00",
+			"tmpltbank","process:process_id:0","--order","string","twoPN",
+			"tmpltbank","process:process_id:0","--spectrum-type","string","median",
+			"tmpltbank","process:process_id:0","--verbose","string"," "
+		</Stream>
+	</Table>
+	<Table Name="search_summarygroup:search_summary:table">
+		<Column Type="ilwd:char" Name="search_summarygroup:search_summary:process_id"/>
+		<Column Type="lstring" Name="search_summarygroup:search_summary:shared_object"/>
+		<Column Type="lstring" Name="search_summarygroup:search_summary:lalwrapper_cvs_tag"/>
+		<Column Type="lstring" Name="search_summarygroup:search_summary:lal_cvs_tag"/>
+		<Column Type="lstring" Name="search_summarygroup:search_summary:comment"/>
+		<Column Type="lstring" Name="search_summarygroup:search_summary:ifos"/>
+		<Column Type="int_4s" Name="search_summarygroup:search_summary:in_start_time"/>
+		<Column Type="int_4s" Name="search_summarygroup:search_summary:in_start_time_ns"/>
+		<Column Type="int_4s" Name="search_summarygroup:search_summary:in_end_time"/>
+		<Column Type="int_4s" Name="search_summarygroup:search_summary:in_end_time_ns"/>
+		<Column Type="int_4s" Name="search_summarygroup:search_summary:out_start_time"/>
+		<Column Type="int_4s" Name="search_summarygroup:search_summary:out_start_time_ns"/>
+		<Column Type="int_4s" Name="search_summarygroup:search_summary:out_end_time"/>
+		<Column Type="int_4s" Name="search_summarygroup:search_summary:out_end_time_ns"/>
+		<Column Type="int_4s" Name="search_summarygroup:search_summary:nevents"/>
+		<Column Type="int_4s" Name="search_summarygroup:search_summary:nnodes"/>
+		<Stream Name="search_summarygroup:search_summary:table" Type="Local" Delimiter=",">
+			"process:process_id:0","standalone","","None"," ","",874609040,0,874611104,0,874609048,0,874611096,0,404,1
+		</Stream>
+	</Table>
+	<Table Name="search_summvarsgroup:search_summvars:table">
+		<Column Type="ilwd:char" Name="search_summvarsgroup:search_summvars:process_id"/>
+		<Column Type="lstring" Name="search_summvarsgroup:search_summvars:name"/>
+		<Column Type="lstring" Name="search_summvarsgroup:search_summvars:string"/>
+		<Column Type="real_8" Name="search_summvarsgroup:search_summvars:value"/>
+		<Column Type="ilwd:char" Name="search_summvarsgroup:search_summvars:search_summvar_id"/>
+		<Stream Name="search_summvarsgroup:search_summvars:table" Type="Local" Delimiter=",">
+			"process:process_id:0","raw data sample rate","",6.103515625e-05,"search_summvars:search_summvar_id:0",
+			"process:process_id:0","filter data sample rate","",0.000244140625,"search_summvars:search_summvar_id:1"
+		</Stream>
+	</Table>
+	<Table Name="sngl_inspiralgroup:sngl_inspiral:table">
+		<Column Type="ilwd:char" Name="sngl_inspiralgroup:sngl_inspiral:process_id"/>
+		<Column Type="lstring" Name="sngl_inspiralgroup:sngl_inspiral:ifo"/>
+		<Column Type="lstring" Name="sngl_inspiralgroup:sngl_inspiral:search"/>
+		<Column Type="lstring" Name="sngl_inspiralgroup:sngl_inspiral:channel"/>
+		<Column Type="int_4s" Name="sngl_inspiralgroup:sngl_inspiral:end_time"/>
+		<Column Type="int_4s" Name="sngl_inspiralgroup:sngl_inspiral:end_time_ns"/>
+		<Column Type="real_8" Name="sngl_inspiralgroup:sngl_inspiral:end_time_gmst"/>
+		<Column Type="int_4s" Name="sngl_inspiralgroup:sngl_inspiral:impulse_time"/>
+		<Column Type="int_4s" Name="sngl_inspiralgroup:sngl_inspiral:impulse_time_ns"/>
+		<Column Type="real_8" Name="sngl_inspiralgroup:sngl_inspiral:template_duration"/>
+		<Column Type="real_8" Name="sngl_inspiralgroup:sngl_inspiral:event_duration"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:amplitude"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:eff_distance"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:coa_phase"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:mass1"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:mass2"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:mchirp"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:mtotal"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:eta"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:kappa"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:chi"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:tau0"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:tau2"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:tau3"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:tau4"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:tau5"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:ttotal"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:psi0"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:psi3"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:alpha"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:alpha1"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:alpha2"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:alpha3"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:alpha4"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:alpha5"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:alpha6"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:beta"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:f_final"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:snr"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:chisq"/>
+		<Column Type="int_4s" Name="sngl_inspiralgroup:sngl_inspiral:chisq_dof"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:bank_chisq"/>
+		<Column Type="int_4s" Name="sngl_inspiralgroup:sngl_inspiral:bank_chisq_dof"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:cont_chisq"/>
+		<Column Type="int_4s" Name="sngl_inspiralgroup:sngl_inspiral:cont_chisq_dof"/>
+		<Column Type="real_8" Name="sngl_inspiralgroup:sngl_inspiral:sigmasq"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:rsqveto_duration"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:Gamma0"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:Gamma1"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:Gamma2"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:Gamma3"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:Gamma4"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:Gamma5"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:Gamma6"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:Gamma7"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:Gamma8"/>
+		<Column Type="real_4" Name="sngl_inspiralgroup:sngl_inspiral:Gamma9"/>
+		<Column Type="ilwd:char" Name="sngl_inspiralgroup:sngl_inspiral:event_id"/>
+		<Column Type="real_4" Name="sngl_inspiral:spin1y"/>
+		<Column Type="real_4" Name="sngl_inspiral:spin1x"/>
+		<Column Type="real_4" Name="sngl_inspiral:spin2y"/>
+		<Column Type="real_4" Name="sngl_inspiral:spin1z"/>
+		<Column Type="real_4" Name="sngl_inspiral:spin2x"/>
+		<Column Type="real_4" Name="sngl_inspiral:spin2z"/>
+		<Stream Name="sngl_inspiralgroup:sngl_inspiral:table" Type="Local" Delimiter=",">
+			"process:process_id:0","H1","tmpltbank","LSC-STRAIN",0,0,0,0,0,0,0,0,0,0,38.90368,1.096319,4.545111,40,0.02665677,0,0,2.772344,0.7173733,1.380055,0.1263091,0,2.235971,195586.2,-6085.095,0,0,0,0,0,0,0,0,109.9294,0,0,0,0,0,0,0,0,0,4984.4634,-957.83942,968.61456,207.52106,-202.01762,199.09012,0,0,0,0,"sngl_inspiral:event_id:0",0,0,0,0,0,0,
+			"process:process_id:0","H1","tmpltbank","LSC-STRAIN",0,0,0,0,0,0,0,0,0,0,22.81872,2.742237,6.256369,25.56096,0.09577275,0,0,1.627611,0.3384545,0.5177463,0.04609734,0,1.494416,114826.4,-2282.906,0,0,0,0,0,0,0,0,172.027,0,0,0,0,0,0,0,0,0,17997.615,-1670.9282,2259.0703,195.27899,-244.36563,314.07715,0,0,0,0,"sngl_inspiral:event_id:0",0,0,0,0,0,0,
+			"process:process_id:0","H1","tmpltbank","LSC-STRAIN",0,0,0,0,0,0,0,0,0,0,8.731536,6.84678,6.721127,15.57832,0.2463406,0,0,1.44439,0.2520301,0.2800232,0.02725448,0,1.443651,101900.3,-1234.711,0,0,0,0,0,0,0,0,282.2625,0,0,0,0,0,0,0,0,0,47310.816,-2595.3252,4654.9478,208.11319,-329.26825,543.95502,0,0,0,0,"sngl_inspiral:event_id:0",0,0,0,0,0,0,
+			"process:process_id:0","H1","tmpltbank","LSC-STRAIN",0,0,0,0,0,0,0,0,0,0,14.69368,1.830566,4.113441,16.52424,0.09850828,0,0,3.274004,0.5105559,0.6732711,0.05207917,0,3.163368,230977.8,-2968.664,0,0,0,0,0,0,0,0,266.1044,0,0,0,0,0,0,0,0,0,42750.492,-2374.9558,3745.5847,190.89722,-266.04324,387.32864,0,0,0,0,"sngl_inspiral:event_id:0",0,0,0,0,0,0,
+			"process:process_id:0","H1","tmpltbank","LSC-STRAIN",0,0,0,0,0,0,0,0,0,0,7.590476,2.035709,3.286246,9.626185,0.166754,0,0,4.75979,0.5568795,0.5702053,0.04141399,0,4.787879,335798.6,-2514.215,0,0,0,0,0,0,0,0,456.7931,0,0,0,0,0,0,0,0,0,81378.555,-2992.2805,5527.2002,191.4445,-296.09515,487.19131,0,0,0,0,"sngl_inspiral:event_id:0",0,0,0,0,0,0,
+			"process:process_id:0","H1","tmpltbank","LSC-STRAIN",0,0,0,0,0,0,0,0,0,0,1.879101,1.710776,1.560523,3.589877,0.2494504,0,0,16.46788,1.083251,0.7357098,0.04412359,0,16.85955,1161793,-3243.976,0,0,0,0,0,0,0,0,1224.882,0,0,0,0,0,0,0,0,0,139853.31,-3323.0977,7054.9917,181.55185,-300.55713,542.18518,0,0,0,0,"sngl_inspiral:event_id:0",0,0,0,0,0,0,
+			"process:process_id:0","H1","tmpltbank","LSC-STRAIN",0,0,0,0,0,0,0,0,0,0,1.241829,1.143552,1.03724,2.385381,0.2495756,0,0,32.5304,1.629613,0.965687,0.05054932,0,33.24488,2294989,-4258.018,0,0,0,0,0,0,0,0,1843.385,0,0,0,0,0,0,0,0,0,153303.58,-3313.229,6894.3154,176.83069,-281.18842,491.90857,0,0,0,0,"sngl_inspiral:event_id:0",0,0,0,0,0,0,
+			"process:process_id:0","H1","tmpltbank","LSC-STRAIN",0,0,0,0,0,0,0,0,0,0,6.530058,5.697643,5.307602,12.2277,0.2488414,0,0,2.140871,0.3186208,0.3257801,0.02936837,0,2.16308,151036.4,-1436.467,0,0,0,0,0,0,0,0,359.6077,0,0,0,0,0,0,0,0,0,62095.594,-2836.4263,5384.8813,203.20738,-332.7204,573.32172,0,0,0,0,"sngl_inspiral:event_id:0",0,0,0,0,0,0,
+			"process:process_id:0","H1","tmpltbank","LSC-STRAIN",0,0,0,0,0,0,0,0,0,0,35.17096,4.829035,10.41393,40,0.1061511,0,0,0.6961934,0.1973853,0.3465605,0.03647513,0,0.5834933,49115.77,-1528.094,0,0,0,0,0,0,0,0,109.9294,0,0,0,0,0,0,0,0,0,4984.4634,-995.6167,1047.136,223.48377,-226.60886,232.46515,0,0,0,0,"sngl_inspiral:event_id:0",0,0,0,0,0,0,
+			"process:process_id:0","H1","tmpltbank","LSC-STRAIN",0,0,0,0,0,0,0,0,0,0,7.515576,1.034991,2.229155,8.550567,0.106392,0,0,9.089095,0.921532,0.9671744,0.06089042,0,9.104343,641226.9,-4264.577,0,0,0,0,0,0,0,0,514.2554,0,0,0,0,0,0,0,0,0,90854.898,-3032.4578,5334.3999,185.10672,-268.33975,416.74393,0,0,0,0,"sngl_inspiral:event_id:0",0,0,0,0,0,0
+		</Stream>
+	</Table>
+</LIGO_LW>

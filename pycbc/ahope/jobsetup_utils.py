@@ -1,227 +1,215 @@
 import math
 from glue import segments
-from pycbc.ahope import AhopeOutGroup, AhopeOutFile
+from pycbc.ahope import AhopeFile
 from pycbc.ahope.legacy_ihope import *
 
-def select_tmpltbankjob_instance(currExe, currSection):
+def select_tmpltbankjob_instance(curr_exe, curr_section):
     """This function returns an instance of the class that is appropriate for
     creating a template bank within ihope.
     
     Parameters
     ----------
-    currExe : string
+    curr_exe : string
         The name of the executable that is being used.
-    currSection : string
+    curr_section : string
         The name of the section storing options for this executble
 
     Returns
     --------
-    Instanced class : exeClass
+    Instanced class : exe_class
         An instance of the class that holds the utility functions appropriate
         for the given executable. This class **must** contain
-        * exeClass.get_valid_times()
-        * exeClass.create_condorjob()
-        * exeClass.create_condornode()
+        * exe_class.get_valid_times(ifo, )
+        * exe_class.create_job()
+        * exe_class.create_node()
     """
-
     # This is basically a list of if statements
-    if currExe == 'lalapps_tmpltbank':
-        exeClass = legacy_sngl_job_utils(currSection)
-    # Some elif statements
+
+    if curr_exe == 'lalapps_tmpltbank':
+        exe_class = LegacyTmpltbankExec(curr_section)
+    elif curr_exe == 'pycbc_geom_nonspinbank':
+        exe_class = PyCBCTmpltbankExec(curr_section)
     else:
         # Should we try some sort of default class??
-        errString = "No class exists for executable %s" %(currExe,)
-        raise NotImplementedError(errString)
+        err_string = "No class exists for executable %s" %(curr_exe,)
+        raise NotImplementedError(err_string)
+    return exe_class
 
-    return exeClass
-
-def select_matchedfilterjob_instance(currExe,currSection):
+def select_matchedfilterjob_instance(curr_exe, curr_section):
     """This function returns an instance of the class that is appropriate for
     matched-filtering within ahope.
     
     Parameters
     ----------
-    currExe : string
+    curr_exe : string
         The name of the executable that is being used.
-    currSection : string
+    curr_section : string
         The name of the section storing options for this executble
 
     Returns
     --------
-    Instanced class : exeClass
+    Instanced class : exe_class
         An instance of the class that holds the utility functions appropriate
         for the given executable. This class **must** contain
-        * exeClass.get_valid_times()
-        * exeClass.create_condorjob()
-        * exeClass.create_condornode()
+        * exe_class.get_valid_times()
+        * exe_class.create_condorjob()
+        * exe_class.create_condornode()
     """
-
     # This is basically a list of if statements
-    if currExe == 'lalapps_inspiral':
-        exeClass = legacy_sngl_job_utils(currSection)
-    # Some elif statements
+    if curr_exe == 'lalapps_inspiral':
+        exe_class = LegacyInspiralExec(curr_section)
+    elif curr_exe == 'pycbc_inspiral':
+        exe_class = PyCBCInspiralExec(curr_section)
     else:
         # Should we try some sort of default class??
-        errString = "No class exists for executable %s" %(currExe,)
-        raise NotImplementedError(errString)
+        err_string = "No class exists for executable %s" %(curr_exe,)
+        raise NotImplementedError(err_string)
+        
+    return exe_class
 
-    return exeClass
-
-def select_splitfilejob_instance(currExe, currSection):
+def select_splitfilejob_instance(curr_exe, curr_section):
     """This function returns an instance of the class that is appropriate for
     splitting an output file up within ahope (for e.g. splitbank).
     
     Parameters
     ----------
-    currExe : string
+    curr_exe : string
         The name of the executable that is being used.
-    currSection : string
+    curr_section : string
         The name of the section storing options for this executble
 
     Returns
     --------
-    Instanced class : exeClass
+    Instanced class : exe_class
         An instance of the class that holds the utility functions appropriate
         for the given executable. This class **must** contain
-        * exeClass.create_condorjob()
-        * exeClass.create_condornode()
+        * exe_class.create_job()
+        * exe_class.create_node()
     """
-
     # This is basically a list of if statements
-    if currExe == 'lalapps_splitbank':
-        exeClass = legacy_splitbank_job_utils(currSection)
+    if curr_exe == 'lalapps_splitbank':
+        exe_class = LegacySplitBankExec(curr_section)
     # Some elif statements
     else:
         # Should we try some sort of default class??
-        errString = "No class exists for executable %s" %(currExe,)
+        err_string = "No class exists for executable %s" %(curr_exe,)
         raise NotImplementedError(errString)
 
-    return exeClass
+    return exe_class
 
-def sngl_ifo_job_setup(cp, ifo, outFiles, exeInstance, scienceSegs, \
-                       datafindOuts, ahopeDax, outputDir,\
-                       parents=None, linkExeInstance=False, allowOverlap=True):
+def sngl_ifo_job_setup(workflow, ifo, out_files, exe_instance, science_segs, 
+                       datafind_outs, output_dir, parents=None, 
+                       link_exe_instance=False, allow_overlap=True):
     """
     This function sets up a set of single ifo jobs.
 
     Parameters
     -----------
-    cp : ConfigParser
-        The ConfigParser object holding the parameters of the ahope workflow.
+    workflow: Workflow
+        An instanced class that manages the constructed workflow.
     ifo : string
         The name of the ifo to set up the jobs for
-    outFiles : AhopeOutFileList or AhopeOutGroupList
+    out_files : AhopeOutFileList or AhopeOutGroupList
         The AhopeOutFileList containing the list of jobs. Jobs will be appended
         to this list, and it does not need to be empty when supplied.
-    exeInstance : Instanced class
+    exe_instance : Instanced class
         An instanced class that contains the functions needed to set up things
         that are specific to the executable being run.
-    scienceSegs : segments.segmentlist
+    science_segs : segments.segmentlist
         The list of times that the jobs should cover
-    ahopeDax : CondorDAG object
-        The condorDAG object holding the ahope workflow being constructed.
-    parents : AhopeOutFileList (optional, kwarg, default=None)
+    datafind_outs : AhopeFileList
+        The file list containing the datafind files.
+    output_dir : path string
+        The directory where data products will be placed.
+    parents : AhopeFileList (optional, kwarg, default=None)
         The AhopeOutFileList containing the list of jobs that are parents to
         the one being set up.
-    allowOverlap : boolean (optional, kwarg, default = True)
+    link_exe_instance : Executable instance (optional),
+        Coordinate the valid times with another executable.
+    allow_overlap : boolean (optional, kwarg, default = True)
         If this is set the times that jobs are valid for will be allowed to
         overlap. This may be desired for template banks which may have some
         overlap in the times they cover. This may not be desired for inspiral
         jobs, where you probably want triggers recorded by jobs to not overlap
         at all.
     """
+    cp = workflow.cp
+    
     # Begin by getting analysis start and end, and start and end of time
     # that the output file is valid for
-    dataLength,validChunk = exeInstance.get_valid_times(cp, ifo)
-    dataChunk = segments.segment([0, dataLength])
-    jobTag = exeInstance.exeName.upper()
+    data_length, valid_chunk = exe_instance.get_valid_times(cp, ifo)
 
-    if linkExeInstance:
-        _, linkValidChunk = linkExeInstance.get_valid_times(cp, ifo)
-        validChunkStart = max(validChunk[0], linkValidChunk[0])
-        validChunkEnd = min(validChunk[1], linkValidChunk[1])
-        validChunk = segments.segment([validChunkStart, validChunkEnd])
-
+    data_chunk = segments.segment([0, data_length])
+    job_tag = exe_instance.exe_name.upper()
+    
+    if link_exe_instance:
+        _, link_valid_chunk = link_exe_instance.get_valid_times(cp, ifo)
+        valid_chunk_start = max(valid_chunk[0], link_valid_chunk[0])
+        valid_chunk_end = min(valid_chunk[1], link_valid_chunk[1])
+        valid_chunk = segments.segment([valid_chunk_start, valid_chunk_end])
 
     # Set up the condorJob class for the current executable
-    currExeJob = exeInstance.create_condorjob(cp, ifo, outputDir)
-
-    dataLoss = dataLength - abs(validChunk)
-    if dataLoss < 0:
+    curr_exe_job = exe_instance.create_job(cp, ifo, output_dir)
+    
+    data_loss = data_length - abs(valid_chunk)
+    
+    if data_loss < 0:
         raise ValueError("Ahope needs fixing! Please contact a developer")
+        
     # Loop over science segments and set up jobs
-    for currSeg in scienceSegs:
+    for curr_seg in science_segs:
         # Is there enough data to analyse?
-        currSegLength = abs(currSeg)
-        if currSegLength < dataLength:
+        curr_seg_length = abs(curr_seg)
+        if curr_seg_length < data_length:
             continue
         # How many jobs do we need
-        currSegLength = float(abs(currSeg))
-        numJobs = int( math.ceil( \
-                 (currSegLength - dataLoss) / float(abs(validChunk)) ))
+        curr_seg_length = float(abs(curr_seg))
+        num_jobs = int( math.ceil( \
+                 (curr_seg_length - data_loss) / float(abs(valid_chunk)) ))
         # What is the incremental shift between jobs
-        timeShift = (currSegLength - dataLength) / float(numJobs - 1)
-        for jobNum in range(numJobs):
+        time_shift = (curr_seg_length - data_length) / float(num_jobs - 1)
+        for job_num in range(num_jobs):
             # Get the science segment for this job
-            shiftDur = currSeg[0] + int(timeShift * jobNum)
-            jobDataSeg = dataChunk.shift(shiftDur)
-            jobValidSeg = validChunk.shift(shiftDur)
+            shift_dur = curr_seg[0] + int(time_shift * job_num)
+            job_data_seg = data_chunk.shift(shift_dur)
+            job_valid_seg = valid_chunk.shift(shift_dur)
             # If we need to recalculate the valid times to avoid overlap
-            if not allowOverlap:
-                dataPerJob = (currSegLength - dataLoss) / float(numJobs)
-                lowerBoundary = int(jobNum*dataPerJob \
-                                    + validChunk[0] + currSeg[0])
-                upperBoundary = int(dataPerJob + lowerBoundary)
-                if lowerBoundary < jobValidSeg[0] or \
-                        upperBoundary > jobValidSeg[1]:
-                    errMsg = "Ahope is attempting to generate output "
-                    errMsg += "from a job at times where it is not valid."
-                    raise ValueError(errMsg)
-                jobValidSeg = segments.segment([lowerBoundary, upperBoundary])
-            # Get the parent job if necessary
+            if not allow_overlap:
+                data_per_job = (curr_seg_length - data_loss) / float(num_jobs)
+                lower_boundary = int(job_num*data_per_job +
+                                     valid_chunk[0] + curr_seg[0])
+                upper_boundary = int(data_per_job + lower_boundary)
+                if lower_boundary < job_valid_seg[0] or \
+                        upper_boundary > job_valid_seg[1]:
+                    err_msg = ("Ahope is attempting to generate output "
+                              "from a job at times where it is not valid.")
+                    raise ValueError(err_msg)
+                job_valid_seg = segments.segment([lower_boundary, 
+                                                  upper_boundary])
+                
             if parents:
-                currParent = parents.find_output(ifo, jobValidSeg)
-                if not currParent:
-                    errString = "No parent jobs found overlapping %d to %d." \
-                                %(jobValidSeg[0],jobValidSeg[1])
-                    errString += "\nThis is a bad error! Contact a developer."
-                    raise ValueError(errString)
+                curr_parent = parents.find_output(ifo, job_valid_seg)
+                if not curr_parent:
+                    err_string = ("No parent jobs found overlapping %d to %d." 
+                                  %(job_valid_seg[0], job_valid_seg[1]))
+                    err_string += "\nThis is a bad error! Contact a developer."
+                    raise ValueError(err_string)
             else:
-                currParent = None
+                curr_parent = None
 
-            if datafindOuts:
-                currDfOuts = datafindOuts.find_all_output_in_range(ifo, \
-                                                                   jobDataSeg)
-                if not currDfOuts:
-                    errString = "No datafind jobs found overlapping %d to %d."\
-                                %(jobDataSeg[0],jobDataSeg[1])
-                    errString += "\nThis shouldn't happen. Contact a developer."
-                    raise ValueError(errString)
+            if datafind_outs:
+                curr_dfouts = datafind_outs.find_all_output_in_range(ifo, 
+                                                                  job_data_seg)
+                if not curr_dfouts:
+                    err_str = ("No datafind jobs found overlapping %d to %d."
+                                %(job_data_seg[0],job_data_seg[1]))
+                    err_str += "\nThis shouldn't happen. Contact a developer."
+                    raise ValueError(err_str)
 
-            # If the parent produces a group of output files, such as
-            # lalapps_splitbank, a number of condor jobs are needed
-            if currParent.__class__.__name__ == 'AhopeOutGroup':
-                # Set up the global outputs
-                currFiles = AhopeOutGroup(ifo, jobTag, jobValidSeg)
-                nodeList = []
-                urlList = []
-                for jobNum,parentJob in enumerate(currParent.get_output()):
-                    currExeNode, fileUrl = exeInstance.create_condornode(\
-                                     ahopeDax, currExeJob, jobDataSeg,\
-                                     jobValidSeg, parent=parentJob,\
-                                     dfParents=currDfOuts, jobNum=jobNum)
-                    nodeList.append(currExeNode)
-                    urlList.append(fileUrl)
-                currFiles.set_output(urlList, nodeList)
-                outFiles.append(currFiles)
-            else:
-                currExeNode, fileUrl = exeInstance.create_condornode(\
-                                         ahopeDax, currExeJob, jobDataSeg,\
-                                         jobValidSeg, parent=currParent,\
-                                         dfParents=currDfOuts)
-                # Make the AhopeOutFile instance
-                currFile = AhopeOutFile(ifo, jobTag, jobValidSeg, fileUrl,\
-                                        job=currExeNode )
-                outFiles.append(currFile)
-    return outFiles
+            node = curr_exe_job.create_node(job_data_seg, job_valid_seg, 
+                                            parent=curr_parent,
+                                            dfParents=curr_dfouts)
+            workflow.add_node(node)
+            out_files += node.output_files
+    return out_files
 

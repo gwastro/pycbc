@@ -7,8 +7,7 @@ import pycbc.ahope as ahope
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \
                     level=logging.INFO,datefmt='%I:%M:%S')
 
-# Parse ini file
-cp = ahope.parse_ahope_ini_file('./daily_ahope.ini')
+workflow = ahope.Workflow('./test_ahope.ini')
 
 # Make directories for output
 currDir = os.getcwd()
@@ -28,29 +27,20 @@ if not os.path.exists(inspiralDir+'/logs'):
 # Set start and end times
 
 # These are Chris' example S6 day of data
-start_time = 961545543
+start_time = 961585543
 end_time = 961594487
 
 # This is S6D chunk 3, an example full-scale ihope analysis time-frame
-start_time = 968543943
-end_time = 971622087
+##start_time = 968543943
+#end_time = 971622087
 
 # Set the ifos to analyse
 ifos = ['H1','L1']
 # ALEX: please add V1 to this and commit to repo!
 
-# Initialize the dag
-basename = 'ahope_test'
-logfile = 'asdtwe.log'
-fh = open( logfile, "w" )
-fh.close()
-dag = pipeline.CondorDAG(logfile,dax=False)
-dag.set_dax_file(basename)
-dag.set_dag_file(basename)
-
 # Get segments
-scienceSegs, segsDict = ahope.setup_segment_generation(cp, ifos, start_time,\
-                               end_time, dag, segDir, maxVetoCat=5,\
+scienceSegs, segsDict = ahope.setup_segment_generation(workflow, ifos, start_time,
+                               end_time, segDir, maxVetoCat=5,
                                minSegLength=2000)
 
 # Get frames, this can be slow, as we ping every frame to check it exists,
@@ -58,22 +48,20 @@ scienceSegs, segsDict = ahope.setup_segment_generation(cp, ifos, start_time,\
 #datafinds, scienceSegs = ahope.setup_datafind_workflow(cp, scienceSegs, dag,\
 #                         dfDir)
 # This second case will also update the segment list on missing data, not fail
-datafinds, scienceSegs = ahope.setup_datafind_workflow(cp, scienceSegs, dag,\
-                       dfDir, checkSegmentGaps=False, checkFramesExist=False,\
+datafind_files, scienceSegs = ahope.setup_datafind_workflow(workflow, scienceSegs,
+                       dfDir, checkSegmentGaps=False, checkFramesExist=False,
                        updateSegmentTimes=True)
 
 # Template bank stuff
-banks = ahope.setup_tmpltbank_workflow(cp, scienceSegs, datafinds, dag, \
+bank_files = ahope.setup_tmpltbank_workflow(workflow, scienceSegs, datafind_files, 
                                        tmpltbankDir)
 # Split bank up
-splitBanks = ahope.setup_splittable_workflow(cp, dag, banks, tmpltbankDir)
+splitbank_files = ahope.setup_splittable_workflow(workflow, bank_files, tmpltbankDir)
 # Do matched-filtering
-insps = ahope.setup_matchedfltr_workflow(cp, scienceSegs, datafinds, dag, \
-                                         splitBanks, inspiralDir)
 
-dag.write_sub_files()
-dag.write_dag()
-#dag.write_abstract_dag()
-dag.write_script()
+insps = ahope.setup_matchedfltr_workflow(workflow, scienceSegs, datafind_files, 
+                                                   splitbank_files, inspiralDir)
 
+
+workflow.write_plans()
 logging.info("Finished.")
