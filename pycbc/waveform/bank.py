@@ -68,7 +68,9 @@ class FilterBank(object):
     def __getitem__(self, index):
         # Make new memory for templates if we aren't given output memory
         if self.out is None:
-            self.out = zeros(self.filter_length, dtype=self.dtype)
+            tempout = zeros(self.filter_length, dtype=self.dtype)
+        else:
+            tempout = self.out
     
         # Get the end of the waveform if applicable (only for SPAtmplt atm)
         f_end = pycbc.waveform.get_waveform_end_frequency(self.table[index], 
@@ -77,13 +79,13 @@ class FilterBank(object):
         if f_end is None or f_end >= (self.filter_length * self.delta_f):
             f_end = (self.filter_length-1) * self.delta_f
         
-        poke  = self.out.data
+        poke  = tempout.data
         # Clear the storage memory
-        self.out.clear()        
+        tempout.clear()        
         
         # Get the waveform filter
         distance = 1.0 / DYN_RANGE_FAC
-        htilde = pycbc.waveform.get_waveform_filter(self.out[0:self.filter_length], 
+        htilde = pycbc.waveform.get_waveform_filter(tempout[0:self.filter_length], 
                             self.table[index], approximant=self.approximant, 
                             f_lower=self.f_lower, delta_f=self.delta_f, delta_t=self.delta_t, 
                             distance=distance, **self.extra_args)
