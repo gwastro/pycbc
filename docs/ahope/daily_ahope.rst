@@ -39,11 +39,11 @@ The scripts to run daily ahope currently reside within the pycbc source tree.
 These will be moved to be installed executables at some point. For now this
 can be found in::
 
-    pycbc/examples/ahope/er_daily_ahope
+    examples/ahope/er_daily_ahope
 
 CD to this directory::
 
-    cd ${SRC_DIR}/pycbc/examples/ahope/er_daily_ahope
+    cd ${SRC_DIR}/examples/ahope/er_daily_ahope
 
 -----------------------------
 Edit the configuration file
