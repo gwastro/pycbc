@@ -251,7 +251,7 @@ for approx_enum in xrange(0,lalsimulation.NumApproximants):
 
 #Add lalinspiral approximants
 insp_td = {}
-for apx in ['EOB', 'EOBNR']:
+for apx in ['EOB']:
     name = 'Inspiral-' + apx
     insp_td[name] = _get_waveform_from_inspiral
 
