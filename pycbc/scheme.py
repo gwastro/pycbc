@@ -178,7 +178,7 @@ def insert_processing_option_group(parser):
         OptionParser instance
     """
     processing_group = OptionGroup(parser, "Options for selecting the"
-                                   "processing scheme in this program.")   
+                                   " processing scheme in this program.")   
     processing_group.add_option("--processing-scheme", 
                       help="The choice of processing scheme. "
                            "Choices are " + str(scheme_prefix.values()), 

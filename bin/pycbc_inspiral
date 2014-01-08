@@ -21,8 +21,9 @@ parser.add_option("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for filtering (Hz)")
                   
 parser.add_option("--approximant", type=str,
-                  help="Approximant to use for filtering.")
-parser.add_option("--order", type=str)
+                  help="The name of the approximant use for filtering")
+parser.add_option("--order", type=str,
+                  help="The integer half-PN order at which to generate the approximant.")
 
 parser.add_option("--cluster-method", choices=["template", "window"])
 parser.add_option("--cluster-window", type=int, default = -1,
