@@ -60,7 +60,7 @@ def segment_snrs(filters, stilde, psd, low_frequency_cutoff):
         
     return snrs, norms
 
-def template_overlaps(bank_filters, template, template_sigmasq, psd, low_frequency_cutoff):
+def template_overlaps(bank_filters, template, psd, low_frequency_cutoff):
     """ This functions calculates the overlaps between the template and the
     bank veto templates.
     
@@ -68,7 +68,6 @@ def template_overlaps(bank_filters, template, template_sigmasq, psd, low_frequen
     ----------
     bank_filters: List of FrequencySeries
     template: FrequencySeries
-    template_sigmasq: float
     psd: FrequencySeries
     low_frequency_cutoff: float   
 
@@ -81,7 +80,7 @@ def template_overlaps(bank_filters, template, template_sigmasq, psd, low_frequen
     for bank_template in bank_filters:        
         overlap = overlap_cplx(template_ow, bank_template,
                 low_frequency_cutoff=low_frequency_cutoff, normalized=False)
-        norm = sqrt(1 / template_sigmasq / bank_template.sigmasq)
+        norm = sqrt(1 / template.sigmasq / bank_template.sigmasq)
         overlaps.append(overlap * norm)
     return overlaps
 
@@ -148,7 +147,6 @@ class SingleDetBankVeto(object):
     """
     def __init__(self, bank_file, approximant, psd, segments, f_low, **kwds):
         if bank_file is not None:
-            print bank_file
             self.do = True
             
             self.column_name = "bank_chisq"
@@ -173,7 +171,7 @@ class SingleDetBankVeto(object):
             for seg in segments:
                 self.snr_data.append(segment_snrs(self.filters, seg, psd, f_low))
                   
-            self.dof = len(bank_veto_bank) * 2 - 2
+            self.dof = len(bank_veto_bank) * 2
 
             self._overlaps = None
             self._template = None
@@ -187,7 +185,7 @@ class SingleDetBankVeto(object):
             #Only calculate the overlaps if I haven't already and the template hasn't changed
             if self._overlaps is None or self._template != template:
                 logging.info("...Calculate Bank Chisq Overlaps")
-                self._overlaps = template_overlaps(self.filters, template, template.sigmasq, self.psd, self.f_low)
+                self._overlaps = template_overlaps(self.filters, template, self.psd, self.f_low)
                 self._template = template
                          
             bank_veto_snrs, bank_veto_norms = self.snr_data[s_num]
