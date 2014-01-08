@@ -32,6 +32,7 @@ Package/Executable documentation:
    frame
    tmpltbank
    banksim
+   faithsim
 
 Examples:
 

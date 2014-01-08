@@ -1,5 +1,5 @@
 ###################################################################
-PyCBC Banksim Documentation
+Running a Banksim
 ###################################################################
 
 ===================
@@ -30,7 +30,7 @@ Below is an example.
 
 .. literalinclude:: ../examples/banksim/banksim_simple.ini
 
-There are foure sections that must be present [inspinj], [executables], [workflow],
+There are four sections that must be present [inspinj], [executables], [workflow],
 and [banksim].
 
  #. inspinj
