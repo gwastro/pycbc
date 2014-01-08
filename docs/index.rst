@@ -23,7 +23,7 @@ Documentation overview:
    install
    documentation
 
-Package documentation:
+Package/Executable documentation:
 
 .. toctree::
    :maxdepth: 1
@@ -31,6 +31,7 @@ Package documentation:
    ahope
    frame
    tmpltbank
+   banksim
 
 Examples:
 
