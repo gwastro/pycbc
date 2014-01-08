@@ -55,6 +55,8 @@ def get_opt_ifo(self,section,option,ifo):
     string
         The value of the options being searched for
     """
+    # Need lower case ifo name
+    ifo = ifo.lower()
 
     try:
         return self.get(section,option)
