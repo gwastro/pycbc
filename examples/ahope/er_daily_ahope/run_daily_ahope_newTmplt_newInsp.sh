@@ -1,1 +1,1 @@
-python daily_ahope_mk2.py  -s 1059436816 -i daily_ahope_mk2.ini -d ${PWD}
+python daily_ahope.py -s 1059436816 -i daily_ahope_newTmplt_newInsp.ini -d ${PWD}/newTmplt_newInsp
