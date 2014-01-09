@@ -57,7 +57,7 @@ contains all the details needed to run daily_ahope::
 
     LOOK THROUGH THIS FILE
 
-Some things that *will* need to be changed for each used::
+Some things that *will* need to be changed for each user::
 
     [ahope]
     ahope-asset-dir = /home/spxiwh/lscsoft_git/src/lalsuite/lalapps/src/inspiral
@@ -131,7 +131,7 @@ When you are ready, you can generate the workflow. First we need to choose a tim
 
 This time should be a gps time during the *same day* that you want to analyse. Daily ahope will analyse from 00:00:00 to 23:59:59 of that day. Then you can generate the workflow::
 
-    python daily_ahope.py -s ${START_TIME} -i daily_ahope.ini -d ${PWD}
+    python daily_ahope.py -s ${GPS_START_TIME} -i daily_ahope.ini -d ${PWD}
 
 Then CD into the directory where the dag was generated::
 
@@ -142,3 +142,22 @@ where the directory naming is constructed from the year, month and day that is b
     condor_submit_dag daily_ahope.dag
 
 If the dag runs successfully you will find the output under your html directory some time later.
+
+---------------------
+Monitor the dagman
+---------------------
+
+One can follow the process of the dagman by running::
+
+    tail -f daily_ahope.dag.dagman.out
+
+in the run directory to watch the progress of the dag. If jobs fail you should
+look in the::
+
+    logs
+
+directory to see all the stderr and stdout files from each job. You can match these files with the condor process numbers given in the dagman.out to figure out which file corresponds to the failing jobs. You can also use::
+
+    daily_ahope.sh
+
+to find the command line for each job in the ahope dag if you want to run by hand to debug any job.
