@@ -16,8 +16,9 @@
 """
 This modules contains functions reading, generating, and segmenting strain data
 """
-import logging, numpy
-
+import logging, numpy, lal
+import pycbc.noise
+import pycbc.psd
 from optparse import OptionGroup
 from pycbc import psd, DYN_RANGE_FAC
 from pycbc.types import float32
@@ -129,7 +130,6 @@ def from_cli(opt):
         strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate, 
                                             strain_psd, 
                                             seed=opt.fake_strain_seed)
-
         if opt.injection_file:
             logging.info("Applying injections")
             injections = InjectionSet(opt.injection_file)
@@ -137,7 +137,8 @@ def from_cli(opt):
         
         logging.info("Converting to float32")
         strain = (DYN_RANGE_FAC * strain).astype(float32)    
-    return strain
+        strain._epoch = lal.LIGOTimeGPS(opt.gps_start_time)
+        return strain
 
 def insert_strain_option_group(parser):
     """
