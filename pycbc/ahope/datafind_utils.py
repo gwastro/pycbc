@@ -113,7 +113,7 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir,
                 missingFlag = True
                 logging.error("Files missing from cache %s." \
                               %(file.filename))
-                msg = "Full file of files inaccessible from this cache:\n"
+                msg = "Full list of files inaccessible from this cache:\n"
                 msg +='\n'.join([a.url for a in missingFrames])
                 logging.error(msg)
         if missingFlag:
