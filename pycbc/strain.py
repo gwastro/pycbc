@@ -138,7 +138,7 @@ def from_cli(opt):
         logging.info("Converting to float32")
         strain = (DYN_RANGE_FAC * strain).astype(float32)    
         strain._epoch = lal.LIGOTimeGPS(opt.gps_start_time)
-        return strain
+    return strain
 
 def insert_strain_option_group(parser):
     """
