@@ -115,6 +115,7 @@ if not opts.output_file:
     parser.error("Must supply --output-file")
 if not opts.min_match:
     parser.error("Must supply --min-match")
+opts.max_mismatch = 1 - opts.min_match
 pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
 metricParams=pycbc.tmpltbank.metricParameters.from_optparse(opts)
 pycbc.tmpltbank.verify_mass_range_options(opts, parser)
@@ -234,7 +235,7 @@ vals = None
 # Set up the bank into sections
 massbank = {}
 bank = {}
-MMdist = (opts.min_match)**0.5
+MMdist = (opts.max_mismatch)**0.5
 for i in range(-2,int((chi1Max - chi1Min) // MMdist + 2)):
     bank[i] = {}
     massbank[i] = {}
@@ -312,14 +313,15 @@ while(1):
                 for entry in massbank[v1Bin+i][v2Bin+j]:
                     if pycbc.tmpltbank.calc_point_dist_vary(\
                                  mus[:,:,Ns], refEve[Ns], entry[5], entry[4],\
-                                 freqMap, opts.min_match):
+                                 freqMap, opts.max_mismatch):
                         store = False
                         break
     else:
         for i,j in outbins:
             if store:
                 for entry in bank[v1Bin+i][v2Bin+j]:
-                    if pycbc.tmpltbank.calc_point_dist(vs,entry,opts.min_match):
+                    if pycbc.tmpltbank.calc_point_dist(vs, entry,\
+                                                       opts.max_mismatch):
                         store = False
                         break
     # Increment counters, check for break condition and continue if rejected

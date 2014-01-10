@@ -117,6 +117,7 @@ if not opts.input_bank_file:
     parser.error("Must supply --input-bank-file")
 if not opts.min_match:
     parser.error("Must supply --min-match")
+opts.max_mismatch = 1 - opts.min_match
 if not opts.output_bank_file:
     parser.error("Must supply --output-bank-file")
 if not opts.metric_evals_file:
@@ -239,7 +240,7 @@ for entry in tempBank:
     if opts.verbose:
         print "Template %d has corrected distance of %e"\
               %(temp_number, masses[5])
-    if masses[5] > opts.min_match:
+    if masses[5] > opts.max_mismatch:
         # Reject point, it is too far away
         if opts.verbose:
             print "Template %d rejected as too far away" %(temp_number)
@@ -265,7 +266,7 @@ for entry in tempBank:
                 pycbc.tmpltbank.stack_xi_direction_brute(\
                   [masses[6][0],masses[6][1]],\
                   [tmpTotMass,tmpEta,masses[2],masses[3]],\
-                  copy.deepcopy(bestXis), 2, opts.min_match,\
+                  copy.deepcopy(bestXis), 2, opts.max_mismatch,\
                   massRangeParams, metricParams, opts.f0)
         vec3_depth = vec3_max - vec3_min
         # Double check that no points appear outside what was calculated above
@@ -278,7 +279,7 @@ for entry in tempBank:
                 temmpvec3_min, temmpvec3_max =\
                     pycbc.tmpltbank.stack_xi_direction_brute([xi1_des,xi2_des],\
                       copy.deepcopy(temmpBestMasses),\
-                      copy.deepcopy(temmpBestXis), 2, opts.min_match, \
+                      copy.deepcopy(temmpBestXis), 2, opts.max_mismatch, \
                       massRangeParams, metricParams, opts.f0)
                 temmpvec3_depth = temmpvec3_max - temmpvec3_min
                 if temmpvec3_min < vec3_min:
@@ -295,7 +296,7 @@ for entry in tempBank:
                 temmpvec3_min, temmpvec3_max =\
                     pycbc.tmpltbank.stack_xi_direction_brute([xi1_des,xi2_des],\
                       copy.deepcopy(temmpBestMasses),\
-                      copy.deepcopy(temmpBestXis), 2, opts.min_match, \
+                      copy.deepcopy(temmpBestXis), 2, opts.max_mismatch, \
                       massRangeParams, metricParams, opts.f0)
                 temmpvec3_depth = temmpvec3_max - temmpvec3_min
                 if temmpvec3_max > vec3_max:
@@ -311,7 +312,7 @@ for entry in tempBank:
               pycbc.tmpltbank.stack_xi_direction_brute(\
                 [masses[6][0],masses[6][1]],\
                 [tmpTotMass,tmpEta,masses[2],masses[3]],\
-                copy.deepcopy(bestXis), 3, opts.min_match,\
+                copy.deepcopy(bestXis), 3, opts.max_mismatch,\
                 massRangeParams, metricParams, opts.f0)
         vec4_depth = vec4_max - vec4_min
     else:
@@ -322,7 +323,7 @@ for entry in tempBank:
               pycbc.tmpltbank.stack_xi_direction_brute(\
                 [masses[6][0],masses[6][1]],\
                 [tmpTotMass,tmpEta,masses[2],masses[3]],\
-                copy.deepcopy(bestXis), 4, opts.min_match,\
+                copy.deepcopy(bestXis), 4, opts.max_mismatch,\
                 massRangeParams, metricParams, opts.f0)
         vec5_depth = vec5_max - vec5_min
     else:
@@ -354,7 +355,7 @@ for entry in tempBank:
                    copy.deepcopy(bestXis), req_match,\
                    massRangeParams, metricParams, opts.f0)
         # If vec4 depth is negligible or we didn't get close, stop here
-        if vec4_depth < vec3DepthVal or masses[5] > opts.min_match:
+        if vec4_depth < vec3DepthVal or masses[5] > opts.max_mismatch:
             if masses[5]:
                 # Write point to file
                 print >> outPointer, "%e %e %e %e %e" \
@@ -368,7 +369,7 @@ for entry in tempBank:
                   pycbc.tmpltbank.stack_xi_direction_brute(\
                     [masses[6][0],masses[6][1],masses[6][2]],\
                     [tmpTotMass,tmpEta,masses[2],masses[3]],\
-                    copy.deepcopy(bestXis), 3, opts.min_match,\
+                    copy.deepcopy(bestXis), 3, opts.max_mismatch,\
                     massRangeParams, metricParams, opts.f0)
             vec4_depthT = vec4_maxT - vec4_minT
             # Then loop over necessary templates in 4th direction

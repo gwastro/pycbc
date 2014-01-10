@@ -91,6 +91,7 @@ if not opts.output_file:
     parser.error("Must supply --output-file")
 if not opts.min_match:
     parser.error("Must supply --min-match")
+opts.max_mismatch = 1 - opts.min_match
 if not opts.log_path:
     parser.error("Must supply --log-path")
 pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
@@ -176,7 +177,8 @@ if opts.verbose:
 if not opts.threed_lattice:
     v1s,v2s = pycbc.tmpltbank.generate_hexagonal_lattice(\
               chi1Max+(0.02*chi1Diff), chi1Min-(0.02*chi1Diff),\
-              chi2Max+(0.02*chi2Diff), chi2Min-(0.02*chi2Diff), opts.min_match)
+              chi2Max+(0.02*chi2Diff), chi2Min-(0.02*chi2Diff),\
+              opts.max_mismatch)
 else:
     chi3Max = vals[2].max()
     chi3Min = vals[2].min()
@@ -184,7 +186,7 @@ else:
     v1s, v2s, v3s = pycbc.tmpltbank.generate_anstar_3d_lattice(\
           chi1Max+(0.02*chi1Diff), chi1Min-(0.02*chi1Diff),\
           chi2Max+(0.02*chi2Diff), chi2Min-(0.02*chi2Diff),\
-          chi3Max+(0.02*chi3Diff), chi3Min-(0.02*chi3Diff), opts.min_match)
+          chi3Max+(0.02*chi3Diff), chi3Min-(0.02*chi3Diff), opts.max_mismatch)
     chi3Max = vals[2].max()
     chi3Min = vals[2].min()
     chi3Diff = chi3Max - chi3Min

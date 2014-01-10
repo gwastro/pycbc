@@ -81,6 +81,7 @@ if not opts.output_file:
     parser.error("Must supply --output-file")
 if not opts.min_match:
     parser.error("Must supply --min-match")
+opts.max_mismatch = 1 - opts.min_match
 pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
 metricParams=pycbc.tmpltbank.metricParameters.from_optparse(opts)
 pycbc.tmpltbank.verify_mass_range_options(opts, parser, nonSpin=True)
@@ -179,7 +180,7 @@ if opts.verbose:
 # Start from the start going forward.
 
 lower1DBoundary = None
-spacing1D = opts.min_match**0.5 * 2
+spacing1D = opts.max_mismatch**0.5 * 2
 v1s = []
 v2s = []
 for i in range(100):
@@ -267,7 +268,7 @@ if lower1DBoundary is not None:
         upperChi1 = chi1Min + upper1DBoundary*chi1Diff/100.
     tempv1s, tempv2s = pycbc.tmpltbank.generate_hexagonal_lattice(upperChi1,\
                       lowerChi1, chi2Max + 0.02*chi2Diff,\
-                      chi2Min - 0.02*chi2Diff, opts.min_match)
+                      chi2Min - 0.02*chi2Diff, opts.max_mismatch)
     v1s.extend(tempv1s)
     v2s.extend(tempv2s)
 
@@ -323,7 +324,7 @@ sortedBins = {}
 if opts.verbose:
     print>> sys.stdout, "Sorting guide points at %f." %(elapsed_time())
 
-bin_size = (opts.min_match)**0.5 * 3.
+bin_size = (opts.max_mismatch)**0.5 * 3.
 
 for iter, currXi in enumerate(xis):
     xi1 = currXi[0]
@@ -377,7 +378,7 @@ for iter, (v1, v2) in enumerate(zip(v1s, v2s)):
     bestMasses = physMasses[points[dist.argmin(),0]]
     
     # Reject point if it is too far from physical space
-    if dist.min() > opts.min_match * 5:
+    if dist.min() > opts.max_mismatch * 5:
         continue
     masses = pycbc.tmpltbank.get_physical_covaried_masses([v1,v2],\
                copy.deepcopy(bestMasses), copy.deepcopy(bestXis), req_match, \
@@ -385,7 +386,7 @@ for iter, (v1, v2) in enumerate(zip(v1s, v2s)):
                giveUpThresh=20)
 
     # If point is still not close enough to desired space, remove it
-    if masses[5] > opts.min_match:
+    if masses[5] > opts.max_mismatch:
         continue
     # Add the two masses (masses[0],masses[1]) to the list. For consistency
     # we also add spin1z and spin2z (masses[2] and masses[3]) but here these
