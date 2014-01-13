@@ -82,6 +82,18 @@ def template_overlaps(bank_filters, template, psd, low_frequency_cutoff):
                 low_frequency_cutoff=low_frequency_cutoff, normalized=False)
         norm = sqrt(1 / template.sigmasq / bank_template.sigmasq)
         overlaps.append(overlap * norm)
+        if (abs(overlaps[-1]) > 0.99):
+            errMsg = "Overlap > 0.99 between bank template and filter. "
+            errMsg += "This bank template will not be used to calculate "
+            errMsg += "bank chisq for this filter template. The expected "
+            errMsg += "value will be added to the chisq to account for "
+            errMsg += "the removal of this template.\n"
+            errMsg += "Masses of filter template: %e %e\n" \
+                      %(template.params.mass1, template.params.mass2)
+            errMsg += "Masses of bank filter template: %e %e\n" \
+                      %(bank_template.params.mass1, bank_template.params.mass2)
+            errMsg += "Overlap: %e" %(abs(overlaps[-1]))
+            logging.debug(errMsg)
     return overlaps
 
 def bank_chisq_from_filters(tmplt_snr, tmplt_norm, bank_snrs, bank_norms,
@@ -126,7 +138,14 @@ def bank_chisq_from_filters(tmplt_snr, tmplt_norm, bank_snrs, bank_norms,
     # Loop over all the bank templates
     for i in range(len(bank_snrs)):
         bank_match = tmplt_bank_matchs[i]
-        
+        if (abs(bank_match) > 0.99):
+            # Not much point calculating bank_chisquared if the bank template
+            # is very close to the filter template. Can also hit numerical
+            # error due to approximations made in this calculation.
+            # The value of 2 is the expected addition to the chisq for this
+            # template
+            bank_chisq += 2.
+            continue
         bank_norm = sqrt((1 - bank_match*bank_match.conj()).real)
         
         bank_SNR = bank_snrs[i] * (bank_norms[i] / bank_norm)     
