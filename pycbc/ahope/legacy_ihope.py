@@ -170,6 +170,7 @@ class LegacySplitBankExec(Executable):
 class PyCBCInspiralJob(Job):
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir)
+        self.set_memory(2000)
         if self.get_opt('processing-scheme') == 'cuda':
             self.needs_gpu()
         
@@ -227,6 +228,7 @@ class PyCBCInspiralExec(Executable):
 class PyCBCTmpltbankJob(Job):
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir)
+        self.set_memory(2000)
         
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
         node = LegacyAnalysisNode(self)
