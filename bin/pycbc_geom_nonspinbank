@@ -33,6 +33,7 @@ from glue.ligolw.utils import process as ligolw_process
 import pycbc.psd
 import pycbc.frame
 import pycbc.filter
+import pycbc.strain
 import pycbc.types
 import pycbc.tmpltbank
 import time
@@ -69,7 +70,7 @@ pycbc.tmpltbank.insert_mass_range_option_group(parser, nonSpin=True)
 pycbc.psd.insert_psd_option_group(parser)
 
 # Insert the data reading options
-pycbc.tmpltbank.insert_data_reading_options(parser)
+pycbc.strain.insert_strain_option_group(parser)
 
 # Add the ethinca calculation options
 pycbc.tmpltbank.insert_ethinca_calculation_option_group(parser)
@@ -88,41 +89,25 @@ pycbc.tmpltbank.verify_mass_range_options(opts, parser, nonSpin=True)
 massRangeParams=pycbc.tmpltbank.massRangeParameters.from_optparse(\
                                                     opts,nonSpin=True)
 pycbc.psd.verify_psd_options(opts, parser)
-pycbc.tmpltbank.verify_data_reading_options(opts, parser)
+if opts.psd_estimation:
+    pycbc.strain.verify_strain_options(opts, parser)
 pycbc.tmpltbank.verify_ethinca_calculation_options(opts, parser)
 
 maxSpinMag = 0
 
 # If we are going to use h(t) to estimate a PSD we need h(t)
 if opts.psd_estimation:
-    # FIXME: It would be nice if this was similar to psd.from_cli()
     if opts.verbose:
         print >>sys.stdout, "Obtaining h(t) for PSD generation at %f" \
                             %(elapsed_time())
-    # Actually read in the frame
-    strain = pycbc.frame.read_frame(opts.frame_cache, opts.channel_name, 
-                        start_time=opts.gps_start_time-opts.pad_data, 
-                        end_time=opts.gps_end_time+opts.pad_data)
-
-    # Applying a high pass filter
-    strain = pycbc.filter.highpass(strain, frequency=opts.strain_high_pass)
-
-    # Change the dynamic range and convert from double to single
-    strain = (strain * pycbc.DYN_RANGE_FAC).astype(pycbc.types.float32)
-
-    # Resample the data (from 16384 -> 4096Hz)
-    strain = pycbc.filter.resample_to_delta_t(strain, 1.0/opts.sample_rate)
-
-    # Removing padding
-    start = opts.pad_data*opts.sample_rate
-    end = len(strain)-opts.sample_rate*opts.pad_data
-    strain = strain[start:end]
+    strain = pycbc.strain.from_cli(opts)
 else:
     strain = None
 
 # Get the PSD using the pycbc interface
 if opts.verbose:
     print >>sys.stdout, "Obtaining PSD at %f." %(elapsed_time())
+# FIXME: Revisit the following!
 # Want the number of samples to be a binary number and Nyquist must be above
 # opts.f_upper. All this assumes that 1 / deltaF is a binary number
 nyquistFreq = 2**numpy.ceil(numpy.log2(opts.f_upper))

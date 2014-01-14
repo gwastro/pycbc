@@ -36,6 +36,7 @@ import numpy
 from glue import pipeline
 import pycbc.frame
 import pycbc.psd
+import pycbc.strain
 import pycbc.version
 import pycbc.tmpltbank
 import pycbc.filter
@@ -83,7 +84,7 @@ pycbc.tmpltbank.insert_mass_range_option_group(parser)
 pycbc.psd.insert_psd_option_group(parser)
 
 # Insert the data reading options
-pycbc.tmpltbank.insert_data_reading_options(parser)
+pycbc.strain.insert_strain_option_group(parser)
 
 (opts,args) = parser.parse_args()
 # Sanity check options
@@ -99,7 +100,8 @@ metricParams=pycbc.tmpltbank.metricParameters.from_optparse(opts)
 pycbc.tmpltbank.verify_mass_range_options(opts, parser)
 massRangeParams=pycbc.tmpltbank.massRangeParameters.from_optparse(opts)
 pycbc.psd.verify_psd_options(opts, parser)
-pycbc.tmpltbank.verify_data_reading_options(opts, parser)
+if opts.psd_estimation:
+    pycbc.strain.verify_strain_options(opts, parser)
 
 # If we are going to use h(t) to estimate a PSD we need h(t)
 if opts.psd_estimation:
@@ -107,24 +109,7 @@ if opts.psd_estimation:
     if opts.verbose:
         print >>sys.stdout, "Obtaining h(t) for PSD generation at %.3f" \
                             %(elapsed_time())
-    # Actually read in the frame
-    strain = pycbc.frame.read_frame(opts.frame_cache, opts.channel_name,
-                        start_time=opts.gps_start_time-opts.pad_data,
-                        end_time=opts.gps_end_time+opts.pad_data)
-
-    # Applying a high pass filter
-    strain = pycbc.filter.highpass(strain, frequency=opts.strain_high_pass)
-
-    # Change the dynamic range and convert from double to single
-    strain = (strain * pycbc.DYN_RANGE_FAC).astype(pycbc.types.float32)
-
-    # Resample the data (from 16384 -> 4096Hz)
-    strain = pycbc.filter.resample_to_delta_t(strain, 1.0/opts.sample_rate)
-
-    # Removing padding
-    start = opts.pad_data*opts.sample_rate
-    end = len(strain)-opts.sample_rate*opts.pad_data
-    strain = strain[start:end]
+    strain = pycbc.strain.from_cli(opts)
 else:
     strain = None
 
