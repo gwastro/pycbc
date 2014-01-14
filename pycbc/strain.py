@@ -114,6 +114,14 @@ def from_cli(opt, dyn_range_fac=1):
         logging.info("Converting to float32")
         strain = (strain * dyn_range_fac).astype(float32)
 
+        if opt.gating_file:
+            logging.info("Gating glitches")
+            gate_params = numpy.loadtxt(opt.gating_file)
+            if len(gate_params.shape) == 1:
+                gate_params = [gate_params]
+            strain = gate_data(strain, gate_params,
+                            data_start_time=opt.gps_start_time-opt.pad_data)
+
         logging.info("Resampling data")
         strain = resample_to_delta_t(strain, 1.0/opt.sample_rate)
 
@@ -228,7 +236,32 @@ def verify_strain_options(opts, parser):
                   ['--gps-start-time', '--gps-end-time', '--strain-high-pass',
                    '--pad-data', '--sample-rate', '--channel-name',
                    ])               
-                   
+
+def gate_data(data, gate_params, data_start_time):
+    def inverted_tukey(M, n_pad):
+        midlen = M - 2*n_pad
+        if midlen < 1:
+            raise ValueError("No zeros left after applying padding.")
+        padarr = 0.5*(1.+numpy.cos(numpy.pi*numpy.arange(n_pad)/n_pad))
+        return numpy.concatenate((padarr,numpy.zeros(midlen),padarr[::-1]))
+
+    sample_rate = 1./data.delta_t
+    temp = data.data
+    for glitch_time, glitch_width, pad_width in gate_params:
+        t_start = glitch_time - glitch_width - pad_width - data_start_time
+        t_end = glitch_time + glitch_width + pad_width - data_start_time
+        if t_start > data.duration or t_end < 0.: 
+            continue # Skip gate segments that don't overlap
+        win_samples = int(2*sample_rate*(glitch_width+pad_width))
+        pad_samples = int(sample_rate*pad_width)
+        window = inverted_tukey(win_samples, pad_samples)
+        offset = int(t_start * sample_rate)
+        idx1 = max(0, -offset)
+        idx2 = min(len(window), len(data)-offset)
+        temp[idx1+offset:idx2+offset] *= window[idx1:idx2]
+
+    return data
+
 class StrainSegments(object):
     """ Class for managing manipulation of strain data for the purpose of 
         matched filtering. This includes methods for segmenting and 

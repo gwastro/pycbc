@@ -56,6 +56,9 @@ parser.add_argument("--user-tag", type=str, metavar="TAG",
                           job. It will be removed at some point, but for now is
                           needed for pycbc/pipedown compatibility""")
 
+parser.add_option("--gating-file", type=str,
+                    help="Text file of gating segments to apply")
+
 # Add options groups
 psd.insert_psd_option_group(parser)
 strain.insert_strain_option_group(parser)
