@@ -96,11 +96,11 @@ class clean(_clean):
 class install(_install):
     def run(self):
 
-        etcdirectory = os.path.join(self.install_base, 'etc')
+        etcdirectory = os.path.join(self.install_data, 'etc')
         if not os.path.exists(etcdirectory):
             os.makedirs(etcdirectory)
 
-        filename = os.path.join(self.install_base, 'etc', 'pycbc-user-env.sh')
+        filename = os.path.join(etcdirectory, 'pycbc-user-env.sh')
         self.execute(write_file,
                      (filename, [self.extra_dirs]),
                      "creating %s" % filename)
