@@ -64,7 +64,10 @@ def from_txt(filename, length, delta_f, low_freq_cutoff,is_asd_file=True):
     noise_data = file_data[:, 1]
     
     # Only include points above the low frequency cutoff
-    data_start = numpy.searchsorted(freq_data, low_freq_cutoff) - 1
+    if freq_data[0] > low_freq_cutoff:
+        raise ValueError('Lowest frequency in input file ' + filename + \
+          ' is higher than requested low-frequency cutoff ' + str(low_freq_cutoff))
+    data_start = (0 if freq_data[0]==low_freq_cutoff else numpy.searchsorted(freq_data, low_freq_cutoff) - 1)
     freq_data = freq_data[data_start:]
     noise_data = noise_data[data_start:]    
 
