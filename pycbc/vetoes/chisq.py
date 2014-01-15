@@ -257,7 +257,7 @@ def power_chisq(template, data, num_bins, psd, low_frequency_cutoff=None, high_f
     total_snr, corr, tnorm = matched_filter_core(htilde, stilde, psd,
                            low_frequency_cutoff, high_frequency_cutoff, corr_out=corra)
 
-    return power_chisq_from_precomputed(corr, total_snr, bins, tnorm)
+    return power_chisq_from_precomputed(corr, total_snr, tnorm, bins)
 
 class SingleDetPowerChisq(object):
     """Class that handles precomputation and memory management for efficiently
