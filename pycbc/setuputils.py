@@ -42,12 +42,14 @@ def pkg_config(pkg_libraries):
 
     # Get the pck-config flags
     if len(pkg_libraries)>0 :
-        for token in commands.getoutput("pkg-config --libs --cflags %s" % ' '.join(pkg_libraries)).split():
-            if token[:2]== "-l":
+        # PKG_CONFIG_ALLOW_SYSTEM_CFLAGS explicitly lists system paths.
+        # On system-wide LAL installs, this is needed for swig to find lalswig.i
+        for token in commands.getoutput("PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 pkg-config --libs --cflags %s" % ' '.join(pkg_libraries)).split():
+            if token.startswith("-l"):
                 libraries.append(token[2:])
-            if token[:2]== "-L":
+            elif token.startswith("-L"):
                 library_dirs.append(token[2:])
-            if token[:2] == "-I":
+            elif token.startswith("-I"):
                 include_dirs.append(token[2:])
 
     return libraries, library_dirs, include_dirs
