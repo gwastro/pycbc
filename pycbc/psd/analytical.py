@@ -19,6 +19,7 @@
 
 from pycbc.types import FrequencySeries, zeros
 import lalsimulation
+import numpy
 
 # build a list of usable PSD functions from lalsimulation
 _name_prefix = 'SimNoisePSD'
@@ -68,8 +69,7 @@ def from_lalsimulation(func, length, delta_f, low_freq_cutoff):
     """
     psd = FrequencySeries(zeros(length), delta_f=delta_f)
     kmin = int(low_freq_cutoff / delta_f)
-    for k in xrange(kmin, length):
-        psd[k] = func(k * delta_f)
+    psd.data[kmin:] = map(func, numpy.arange(length)[kmin:] * delta_f)
     return psd
 
 def from_string(psd_name, length, delta_f, low_freq_cutoff):
