@@ -112,7 +112,7 @@ scienceSegs, segsDict = ahope.setup_segment_generation(workflow, ifos, start_tim
 #                         dfDir)
 # This second case will also update the segment list on missing data, not fail
 datafinds, scienceSegs = ahope.setup_datafind_workflow(workflow, scienceSegs,
-                           workingDir, checkFramesExist='no_test',\
+                           workingDir, checkFramesExist='update_times',\
                            checkSegmentGaps='update_times')
 
 # Template bank stuff
