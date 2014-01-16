@@ -273,17 +273,13 @@ def create_segs_from_cats_job(cp, out_dir):
     job.exe_name = exeName 
     # set up proxy to be accessible in a NFS location
     proxy = os.getenv('X509_USER_PROXY')
-    #  if os.path.exists(proxy):
-    # FIXME: For now this falls back to local universe as some clusters do not
+    proxyfile = os.path.join(out_dir, 'x509up.file')
+    shutil.copyfile(proxy, proxyfile)
+    job.add_condor_cmd('environment',
+                       'USER=$ENV(USER);X509_USER_PROXY=%s' % proxyfile)
+    # For now this falls back to local universe as some clusters do not
     # allow nodes to have access to the WWW.
-    if 0:
-        proxyfile = os.path.join(out_dir, 'x509up.file')
-        shutil.copyfile(proxy, proxyfile)
-        job.add_condor_cmd('environment',
-                           'USER=$ENV(USER);X509_USER_PROXY=%s' % proxyfile)
-    else:
-        # Fall back is to run in local universe
-        job.set_universe('local')
+    job.set_universe('local')
 
     return job
 
