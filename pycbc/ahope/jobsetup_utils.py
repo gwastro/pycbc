@@ -1,6 +1,6 @@
 import math
 from glue import segments
-from pycbc.ahope import AhopeFile
+from pycbc.ahope.ahope_utils import *
 from pycbc.ahope.legacy_ihope import *
 
 def select_tmpltbankjob_instance(curr_exe, curr_section):
@@ -138,20 +138,43 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, exe_instance, science_segs,
     # Begin by getting analysis start and end, and start and end of time
     # that the output file is valid for
     data_length, valid_chunk = exe_instance.get_valid_times(cp, ifo)
+    valid_length = abs(valid_chunk)
 
     data_chunk = segments.segment([0, data_length])
     job_tag = exe_instance.exe_name.upper()
     
     if link_exe_instance:
-        _, link_valid_chunk = link_exe_instance.get_valid_times(cp, ifo)
-        valid_chunk_start = max(valid_chunk[0], link_valid_chunk[0])
-        valid_chunk_end = min(valid_chunk[1], link_valid_chunk[1])
-        valid_chunk = segments.segment([valid_chunk_start, valid_chunk_end])
+        # EURGHH! What we are trying to do here is, if this option is given,
+        # line up the template bank and inspiral jobs so that there is one
+        # template bank for each inspiral job. This is proving a little messy
+        # and probably still isn't perfect.
+
+        # What data does the linked exe use?
+        link_data_length, link_valid_chunk = \
+                             link_exe_instance.get_valid_times(cp, ifo)
+        # What data is lost at start and end from either job?
+        start_data_loss = max(valid_chunk[0], link_valid_chunk[0])
+        end_data_loss = max(data_length - valid_chunk[1],\
+                            link_data_length - link_valid_chunk[1])
+        # Correct the data for both jobs
+        valid_chunk = segments.segment(start_data_loss, \
+                                       data_length - end_data_loss)
+        link_valid_chunk = segments.segment(start_data_loss, \
+                                       link_data_length - end_data_loss)
+        valid_length = abs(valid_chunk)
+        link_valid_length = abs(link_valid_chunk)
+
+        # Which one is now longer? Use this is valid_length
+        if link_valid_length < valid_length:
+            valid_length = link_valid_length
+
+    # DO NOT! use valid length here, as valid_length and abs(valid_chunk)
+    # may be different by this point if using link_exe_instance
+    data_loss = data_length - abs(valid_chunk)
+
 
     # Set up the condorJob class for the current executable
     curr_exe_job = exe_instance.create_job(cp, ifo, output_dir)
-    
-    data_loss = data_length - abs(valid_chunk)
     
     if data_loss < 0:
         raise ValueError("Ahope needs fixing! Please contact a developer")
@@ -165,7 +188,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, exe_instance, science_segs,
         # How many jobs do we need
         curr_seg_length = float(abs(curr_seg))
         num_jobs = int( math.ceil( \
-                 (curr_seg_length - data_loss) / float(abs(valid_chunk)) ))
+                 (curr_seg_length - data_loss) / float(valid_length) ))
         # What is the incremental shift between jobs
         time_shift = (curr_seg_length - data_length) / float(num_jobs - 1)
         for job_num in range(num_jobs):
@@ -176,9 +199,14 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, exe_instance, science_segs,
             # If we need to recalculate the valid times to avoid overlap
             if not allow_overlap:
                 data_per_job = (curr_seg_length - data_loss) / float(num_jobs)
-                lower_boundary = int(job_num*data_per_job +
-                                     valid_chunk[0] + curr_seg[0])
-                upper_boundary = int(data_per_job + lower_boundary)
+                lower_boundary = job_num*data_per_job + \
+                                     valid_chunk[0] + curr_seg[0]
+                upper_boundary = data_per_job + lower_boundary
+                # NOTE: Convert to int after calculating both boundaries
+                # small factor of 0.0001 to avoid float round offs causing us to
+                # miss a second at end of segments.
+                lower_boundary = int(lower_boundary)
+                upper_boundary = int(upper_boundary + 0.0001)
                 if lower_boundary < job_valid_seg[0] or \
                         upper_boundary > job_valid_seg[1]:
                     err_msg = ("Ahope is attempting to generate output "
@@ -212,4 +240,146 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, exe_instance, science_segs,
             workflow.add_node(node)
             out_files += node.output_files
     return out_files
+
+class PyCBCInspiralJob(Job):
+    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
+        Job.__init__(self, cp, exe_name, universe, ifo, out_dir)
+        self.set_memory(2000)
+        if self.get_opt('processing-scheme') == 'cuda':
+            self.needs_gpu()
+
+    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
+        node = LegacyAnalysisNode(self)
+
+        pad_data = int(self.get_opt('pad-data'))
+        if pad_data is None:
+            raise ValueError("The option pad-data is a required option of "
+                             "%s. Please check the ini file." % self.exe_name)
+
+        if not dfParents or len(dfParents) != 1:
+            raise ValueError("%s must be supplied with a single cache file"
+                              %(self.exe_name))
+
+        # set remaining options flags   
+        node.set_start(data_seg[0] + pad_data)
+        node.set_end(data_seg[1] - pad_data)
+        node.set_trig_start(valid_seg[0])
+        node.set_trig_end(valid_seg[1])
+
+        cache_file = dfParents[0]
+
+        # FIXME add control for output type         
+        insp = AhopeFile(self.ifo, self.exe_name, extension='.xml.gz',
+                         segment=valid_seg,
+                         directory=self.out_dir)
+
+        # set the input and output files        
+        node.add_output(insp, opts='output')
+        node.add_input(cache_file, opts='frame-cache')
+        node.add_input(parent, opts='bank-file')
+        return node
+
+class PyCBCInspiralExec(Executable):
+    def __init__(self, exe_name):
+        Executable.__init__(self, exe_name, 'vanilla')
+
+    def create_job(self, cp, ifo, out_dir=None):
+        return PyCBCInspiralJob(cp, self.exe_name, self.condor_universe,
+                                ifo=ifo, out_dir=out_dir)
+
+    def get_valid_times(self, cp, ifo):
+        pad_data = int(cp.get_opt_ifo(self.exe_name, 'pad-data', ifo))
+        start_pad = int(cp.get_opt_ifo(self.exe_name, 'segment-start-pad', ifo))
+        end_pad = int(cp.get_opt_ifo(self.exe_name, 'segment-end-pad', ifo))
+
+        #FIXME this should not be hard coded (can be any integer > 
+        #segment_length with pycbc_inspiral)
+        data_length = 2560 + pad_data * 2
+        start = pad_data + start_pad
+        end = data_length - pad_data - end_pad
+        return data_length, segments.segment(start, end)
+
+class PyCBCTmpltbankJob(Job):
+    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
+        Job.__init__(self, cp, exe_name, universe, ifo, out_dir)
+        self.set_memory(2000)
+
+    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
+        node = LegacyAnalysisNode(self)
+
+        if not dfParents or len(dfParents) != 1:
+            raise ValueError("%s must be supplied with a single cache file"
+                              %(self.exe_name))
+
+        pad_data = int(self.get_opt('pad-data'))
+        if pad_data is None:
+            raise ValueError("The option pad-data is a required option of "
+                             "%s. Please check the ini file." % self.exe_name)
+
+        # set the remaining option flags
+        node.set_start(data_seg[0] + pad_data)
+        node.set_end(data_seg[1] - pad_data)
+
+        cache_file = dfParents[0]
+
+        # FIXME add control for output type                       
+        insp = AhopeFile(self.ifo, self.exe_name, extension='.xml.gz',
+                         segment=valid_seg,
+                         directory=self.out_dir)
+
+        # set the input and output files      
+        node.add_output(insp, opts='output-file')
+        node.add_input(cache_file, opts='frame-cache')
+        return node
+
+class PyCBCTmpltbankExec(Executable):
+    def __init__(self, exe_name):
+        Executable.__init__(self, exe_name, 'vanilla')
+
+    def create_job(self, cp, ifo, out_dir=None):
+        return PyCBCTmpltbankJob(cp, self.exe_name, self.condor_universe,
+                                 ifo=ifo, out_dir=out_dir)
+
+    def get_valid_times(self, cp, ifo):
+        pad_data = int(cp.get_opt_ifo(self.exe_name, 'pad-data', ifo))
+
+        #FIXME this should not be hard coded 
+        data_length = 2560 + pad_data * 2
+        start = pad_data
+        end = data_length - pad_data
+        return data_length, segments.segment(start, end)
+
+class LigolwAddJob(Job):
+    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
+        Job.__init__(self, cp, exe_name, universe, ifo, out_dir)
+        self.set_memory(2000)
+
+    def create_node(self, FIXME_INPUTS):
+        # NOT WRITTEN YET!
+        pass
+
+class LigolwAddExec(Executable):
+    def __init__(self, exe_name):
+        Executable.__init__(self, exe_name, 'vanilla')
+
+    def create_job(self, cp, ifo, out_dir=None):
+        return LigolwAddJob(cp, self.exe_name, self.condor_universe,
+                            ifo=ifo, out_dir=out_dir)
+
+class LigolwThincaJob(Job):
+    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
+        Job.__init__(self, cp, exe_name, universe, ifo, out_dir)
+        self.set_memory(2000)
+
+    def create_node(self, FIXME_INPUTS):
+        # NOT WRITTEN YET!
+        pass
+
+class LigolwThincaExec(Executable):
+    def __init__(self, exe_name):
+        Executable.__init__(self, exe_name, 'vanilla')
+
+    def create_job(self, cp, ifo, out_dir=None):
+        return LigolwThincaJob(cp, self.exe_name, self.condor_universe,
+                            ifo=ifo, out_dir=out_dir)
 
