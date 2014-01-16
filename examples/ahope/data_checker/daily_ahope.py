@@ -23,4 +23,5 @@ if not os.path.exists(dfDir+'/logs'):
 scienceSegs, segsDict = ahope.setup_segment_generation(workflow, ifos, 
                                      start_time, end_time, segDir)
 datafinds, scienceSegs = ahope.setup_datafind_workflow(workflow, scienceSegs, 
-                        dfDir, updateSegmentTimes=True, checkSegmentGaps=False)
+                           dfDir, checkSegmentGaps='warn',\
+                           checkFramesExist='raise_error')
