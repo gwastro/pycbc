@@ -1,0 +1,94 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
+<?xml-stylesheet type="text/xsl" href="ligolw.xsl" ?>
+<LIGO_LW>
+	<Table Name="process:table">
+		<Column Type="lstring" Name="process:comment"/>
+		<Column Type="lstring" Name="process:node"/>
+		<Column Type="int_4s" Name="process:unix_procid"/>
+		<Column Type="lstring" Name="process:version"/>
+		<Column Type="ilwd:char" Name="process:process_id"/>
+		<Column Type="int_4s" Name="process:start_time"/>
+		<Column Type="lstring" Name="process:username"/>
+		<Column Type="lstring" Name="process:program"/>
+		<Column Type="int_4s" Name="process:end_time"/>
+		<Column Type="lstring" Name="process:ifos"/>
+		<Column Type="lstring" Name="process:cvs_repository"/>
+		<Column Type="int_4s" Name="process:cvs_entry_time"/>
+		<Stream Name="process:table" Type="Local" Delimiter=",">
+			"$Id: H1L1V1-S6_CBC_LOWMASS_D_OFFLINE-961545543-0.xml,v 1.70 2011/05/19 19:56:27 lundgren Exp $","olnode04",18175,"$Revision: 1.70 $","process:process_id:1",989656002,"marion","merge_veto_definers",,"H1,L1,V1","$Source: /usr/local/cvs/ligovirgo/cbc/public/segments/S6/H1L1V1-S6_CBC_LOWMASS_D_OFFLINE-961545543-0.xml,v $",,
+			"Id: H1L1V1-S6_CBC_LOWMASS_D_PSEUDO_ONLINE.xml,v 1.25 2011/02/17 16:16:47 marionf Exp ","ldas-grid.ligo.caltech.edu",16830,"Revision: 1.25 ","process:process_id:2",964908000,"Author: marionf ","ligolw_veto_file",0,"H1L1V1","Source: /usr/local/cvs/ligovirgo/cbc/public/segments/S6/S6D/H1L1V1-S6_CBC_LOWMASS_D_PSEUDO_ONLINE.xml,v ",,
+			"Id: H1L1V1-S6_CBC_LOWMASS_D_MANUAL.xml,v 1.31 2011/04/13 13:33:17 duncan.macleod Exp ","ldas-grid.ligo.caltech.edu",16830,"Revision: 1.31 ","process:process_id:3",964908000,"Author: duncan.macleod ","ligolw_veto_file",0,"H1L1V1","Source: /usr/local/cvs/ligovirgo/cbc/public/segments/S6/S6D/H1L1V1-S6_CBC_LOWMASS_D_MANUAL.xml,v ",964908000,
+			"Id: H1L1V1-S6_CBC_LOWMASS_D_AUTOMATED.xml,v 1.19 2010/11/15 19:41:22 lundgren Exp ","ldas-grid.ligo.caltech.edu",16830,"Revision: 1.19 ","process:process_id:4",964908000,"Author: lundgren ","ligolw_veto_file",0,"H1L1V1","Source: /usr/local/cvs/ligovirgo/cbc/public/segments/S6/S6D/H1L1V1-S6_CBC_LOWMASS_D_AUTOMATED.xml,v ",964908000,
+			,"ldas-grid",29338,,"process:process_id:5",962259307,"detchar",,,,,,
+			,"ldas-pcdev1",6170,,"process:process_id:6",963083752,"detchar",,,,,,
+			,"ldas-grid",30204,,"process:process_id:7",962247497,"detchar",,,,,,
+			,"ldas-pcdev1.ligo-la.caltech.edu",21857,,"process:process_id:8",963082186,"detchar",,,,,,
+			,"ldas-grid",19550,,"process:process_id:9",963462552,"detchar",,,,,,
+			,"ldas-grid",3224,,"process:process_id:10",964063648,"detchar",,,,,,
+			,"ldas-pcdev1.ligo-la.caltech.edu",16623,,"process:process_id:11",963774580,"detchar",,,,,,
+			,"ldas-grid",10013,,"process:process_id:12",964053807,"detchar",,,,,,
+			,"ldas-grid",28131,,"process:process_id:13",965876228,"detchar",,,,,,
+			,"ldas-grid",18400,,"process:process_id:14",966480859,"detchar",,,,,,
+			,"ldas-grid",31891,,"process:process_id:15",965879074,"detchar",,,,,,
+			,"ldas-grid",22667,,"process:process_id:16",966474333,"detchar",,,,,,
+			,"ldas-pcdev1",6121,,"process:process_id:17",966017009,"detchar",,,,,,
+			,"ldas-pcdev1",18040,,"process:process_id:18",966792691,"detchar",,,,,,
+			,"ldas-pcdev1",21115,,"process:process_id:19",967174379,"detchar",,,,,,
+			,"ldas-pcdev1",14223,,"process:process_id:20",967840560,"detchar",,,,,,
+			,"ldas-pcdev1",17876,,"process:process_id:21",965587962,"detchar",,,,,,
+			,"ldas-pcdev1",14223,,"process:process_id:22",967840560,"detchar",,,,,,
+			,"ldas-grid",17189,,"process:process_id:23",964666664,"detchar",,,,,,
+			,"ldas-grid",29070,,"process:process_id:24",965265236,"detchar",,,,,,
+			,"ldas-pcdev1",27573,,"process:process_id:25",967733016,"detchar",,,,,,
+			,"ldas-pcdev1",18251,,"process:process_id:26",967923641,"detchar",,,,,,
+			,"ldas-pcdev1",14936,,"process:process_id:27",967656177,"detchar",,,,,,
+			,"ldas-pcdev1",14223,,"process:process_id:28",967840560,"detchar",,,,,,
+			,"ldas-pcdev1",841,,"process:process_id:29",968221080,"detchar",,,,,,
+			,"ldas-pcdev1",24562,,"process:process_id:30",968252251,"detchar",,,,,,
+			,"ldas-pcdev1",32339,,"process:process_id:31",968381836,"detchar",,,,,,
+			,"ldas-grid",12745,,"process:process_id:32",968295722,"detchar",,,,,,
+			,"ldas-pcdev1",31527,,"process:process_id:33",969003764,"detchar",,,,,,
+			,"ldas-grid",22744,,"process:process_id:34",968289673,"detchar",,,,,,
+			,"ldas-pcdev1.ligo-la.caltech.edu",18096,,"process:process_id:35",969005073,"detchar",,,,,,
+			,"ldas-pcdev1",3204,,"process:process_id:36",970202469,"detchar",,,,,,
+			,"ldas-grid",31474,,"process:process_id:37",969505700,"detchar",,,,,,
+			,"ldas-grid",22668,,"process:process_id:38",970110166,"detchar",,,,,,
+			,"ldas-grid",3972,,"process:process_id:39",969497720,"detchar",,,,,,
+			,"ldas-grid",3733,,"process:process_id:40",970103603,"detchar",,,,,,
+			,"ldas-pcdev1",20292,,"process:process_id:41",971716235,"detchar",,,,,,
+			,"ldas-pcdev1",24701,,"process:process_id:42",969984506,"detchar",,,,,,
+			,"ldas-pcdev1",7348,,"process:process_id:43",972011054,"detchar",,,,,,
+			,"ldas-pcdev1",3349,,"process:process_id:44",972181919,"detchar",,,,,,
+			,"ldas-grid",1206,,"process:process_id:45",970714959,"detchar",,,,,,
+			,"ldas-grid",9099,,"process:process_id:46",971320855,"detchar",,,,,,
+			,"ldas-grid",15433,,"process:process_id:47",971925466,"detchar",,,,,,
+			,"ldas-grid",16585,,"process:process_id:48",970707983,"detchar",,,,,,
+			,"ldas-grid",8674,,"process:process_id:49",971313095,"detchar",,,,,,
+			,"ldas-grid",6275,,"process:process_id:50",967085935,"detchar",,,,,,
+			,"ldas-grid",22787,,"process:process_id:51",967689282,"detchar",,,,,,
+			,"ldas-grid",21617,,"process:process_id:52",967079219,"detchar",,,,,,
+			,"ldas-grid",21489,,"process:process_id:53",967682735,"detchar",,,,,,
+			,"ldas-pcdev1.ligo-la.caltech.edu",3195,,"process:process_id:54",973841744,"detchar",,,,,,
+		</Stream>
+	</Table>
+	<Table Name="veto_definer:table">
+		<Column Type="ilwd:char" Name="veto_definer:process_id"/>
+		<Column Type="lstring" Name="veto_definer:ifo"/>
+		<Column Type="lstring" Name="veto_definer:name"/>
+		<Column Type="int_4s" Name="veto_definer:version"/>
+		<Column Type="int_4s" Name="veto_definer:category"/>
+		<Column Type="int_4s" Name="veto_definer:start_time"/>
+		<Column Type="int_4s" Name="veto_definer:end_time"/>
+		<Column Type="int_4s" Name="veto_definer:start_pad"/>
+		<Column Type="int_4s" Name="veto_definer:end_pad"/>
+		<Column Type="lstring" Name="veto_definer:comment"/>
+		<Stream Name="veto_definer:table" Type="Local" Delimiter=",">
+	    "process:process_id:1","H1","DCH-MISSING_H1_ER_C00_L1",1,1,1073779216,0,0,0,"ER4 VETO FOR H1-MISSING DATA",
+            "process:process_id:2","V1","DCH-MISSING_V1Online",1,1,1073779216,0,0,0,"ER4 VETO FOR V1-MISSING DATA",
+	    "process:process_id:3","L1","DCH-MISSING_L1_ER_C00_L1",1,1,1073779216,0,0,0,"ER4 VETO FOR L1-MISSING DATA",
+	    "process:process_id:4","V1","VDQ_CAT1",1,1,1073779216,0,0,0,"ER5 data from recoloured VSR3 injections.",
+            "process:process_id:5","V1","HI_CBC_Unblind_status",1,3,1073779216,0,0,0,"ER5 UNBLIND HARDWARE INJECTIONS",
+		</Stream>
+	</Table>
+</LIGO_LW>
