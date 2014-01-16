@@ -2,12 +2,13 @@ import os,sys,optparse
 import urlparse,urllib
 import logging
 from glue import datafind
+from glue import lal
 from glue import segments,segmentsUtils,git_version
 from pycbc.ahope import AhopeFile, AhopeFileList
 
 def setup_datafind_workflow(workflow, scienceSegs,  outputDir, 
-                            checkFramesExist=True, checkSegmentGaps=True, 
-                            updateSegmentTimes=False):
+                            checkSegmentGaps='no_test',
+                            checkFramesExist='no_test'):
     """
     Setup datafind section of ahope workflow. This section is responsible for
     generating, or setting up the workflow to generate, a list of files that
@@ -30,18 +31,34 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir,
     outputDir : path
         All output files written by datafind processes will be written to this
         directory.
+    checkSegmentGaps : boolean (string, default='no_test')
+        If this option takes any value other than 'no_test' ahope will check
+        that the local datafind server has returned frames covering all of the
+        listed science times. Its behaviour is then as follows
+        * 'no_test': Do not perform this test. Any discrepancies will cause
+          later failures.
+        * 'warn': Perform the test, print warnings covering any discrepancies
+          but do nothing about them. Discrepancies will cause failures later in
+          the workflow.
+        * 'update_times': Perform the test, print warnings covering any
+          discrepancies and update the input science times to remove times that
+          are not present on the host cluster.
+        * 'raise_error': Perform the test. If any discrepancies occur, raise a
+          ValueError.
     checkFramesExist : boolean (optional, default=True)
-        If this option is given ahope will check if all of the returned frame
-        files are accessible from the machine that is running ahope. It will
-        raise a ValueError if frames cannot be found.
-    checkSegmentGaps : boolean (optional, default=True)
-        If this option is given ahope will check that the local datafind server
-        has returned frames covering all of the listed science times. It will
-        raise a ValueError if there are gaps.
-    updateSegmentTimes : boolean (optional, default=True)
-        If this option is given ahope will check that the local datafind server
-        has returned frames covering all of the listed science times. If there
-        are gaps ahope will remove these times from the scienceSegs lists.
+        If this options takes any value other than 'no_test' ahope will check
+        that the frames returned by the local datafind server are accessible
+        from the machine that is running ahope. Its behaviour is then as follows
+        * 'no_test': Do not perform this test. Any discrepancies will cause
+          later failures.
+        * 'warn': Perform the test, print warnings covering any discrepancies
+          but do nothing about them. Discrepancies will cause failures later in
+          the workflow.
+        * 'update_times': Perform the test, print warnings covering any
+          discrepancies and update the input science times to remove times that
+          are not present on the host cluster.
+        * 'raise_error': Perform the test. If any discrepancies occur, raise a
+          ValueError.
 
     Returns
     --------
@@ -71,11 +88,15 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir,
     logging.info("setup_datafind_runtime_generated completed")
     # If we don't have frame files covering all times we can update the science
     # segments.
-    if updateSegmentTimes or checkSegmentGaps:
+    if checkSegmentGaps in ['warn','update_times','raise_error']:
         logging.info("Checking science segments against datafind output....")
         newScienceSegs = get_science_segs_from_datafind_outs(datafindcaches)
         logging.info("Datafind segments calculated.....")
         missingData = False
+        msg = "Any errors directly following this message refer to times that"
+        msg += " the segment server says are science, but datafind cannot find"
+        msg += "frames for:"
+        logging.info(msg)
         for ifo in scienceSegs.keys():
             # If no data in the input then do nothing
             if not scienceSegs[ifo]:
@@ -89,6 +110,8 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir,
                 msg += "are completely missing."
                 logging.error(msg)
                 missingData = True
+                if checkSegmentGaps == 'update_times':
+                    scienceSegs[ifo] = segments.segmentlist()
                 continue
             missing = scienceSegs[ifo] - newScienceSegs[ifo]
             if abs(missing):
@@ -96,29 +119,50 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir,
                 msg += "\n%s" % "\n".join(map(str, missing))
                 missingData = True
                 logging.error(msg)
-            # Remove missing time, so that we can carry on if desired
-            scienceSegs[ifo] = scienceSegs[ifo] - missing
-        if checkSegmentGaps and missingData:
+            if checkSegmentGaps == 'update_times':
+                # Remove missing time, so that we can carry on if desired
+                logging.info("Updating science times for ifo %s." %(ifo))
+                scienceSegs[ifo] = scienceSegs[ifo] - missing
+        if checkSegmentGaps == 'raise_error' and missingData:
             raise ValueError("Ahope cannot find needed data, exiting.")
         logging.info("Done checking, any discrepancies are reported above.")
+    elif checkSegmentGaps == 'no_test':
+        # Do nothing
+        pass
+    else:
+        errMsg = "checkSegmentGaps kwArg must take a value from 'no_test', "
+        errMsg += "'warn', 'update_times' or 'raise_error'."
+        raise ValueError(errMsg)
 
     # Do all of the frame files that were returned actually exist?
-    if checkFramesExist:
+    if checkFramesExist in ['warn','update_times','raise_error']:
         logging.info("Verifying that all frames exist on disk.")
+        missingFrSegs, missingFrames = \
+                          get_missing_segs_from_frame_file_cache(datafindcaches)
         missingFlag = False
-        for cache, file in zip(datafindcaches, datafindouts):
-            logging.info("Checking frames in %s." %(file.filename))
-            _,missingFrames = cache.checkfilesexist(on_missing="warn")
-            if missingFrames:
-                missingFlag = True
-                logging.error("Files missing from cache %s." \
-                              %(file.filename))
-                msg = "Full list of files inaccessible from this cache:\n"
+        for ifo in scienceSegs.keys():
+            # If no data in the input then do nothing
+            if not scienceSegs[ifo]:
+                continue
+            if missingFrames[ifo]:
+                msg = "From ifo %s we are missing the following frames:" %(ifo)
                 msg +='\n'.join([a.url for a in missingFrames])
+                missingFlag = True
                 logging.error(msg)
-        if missingFlag:
-            raise ValueError("Some frames cannot be found on disk.")
-        logging.info("All frames found successfully")
+            if checkFramesExist == 'update_times':
+                # Remove missing times, so that we can carry on if desired
+                logging.info("Updating science times for ifo %s." %(ifo))
+                scienceSegs[ifo] = scienceSegs[ifo] - missingFrSegs[ifo]
+        if checkFramesExist == 'raise_error' and missingFlag:
+            raise ValueError("Ahope cannot find all frames, exiting.")
+        logging.info("Finished checking frames.")
+    elif checkFramesExist == 'no_test':
+        # Do nothing
+        pass
+    else:
+        errMsg = "checkFramesExist kwArg must take a value from 'no_test', "
+        errMsg += "'warn', 'update_times' or 'raise_error'."
+        raise ValueError(errMsg)
 
     logging.info("Leaving datafind module")
     return AhopeFileList(datafindouts), scienceSegs
@@ -273,6 +317,45 @@ def get_science_segs_from_datafind_outs(datafindcaches):
                 # be disjoint. If speed becomes an issue maybe remove it?
                 newScienceSegs[ifo].coalesce()
     return newScienceSegs
+
+def get_missing_segs_from_frame_file_cache(datafindcaches):
+    """
+    This function will use os.path.isfile to determine if all the frame files
+    returned by the local datafind server actually exist on the disk. This can
+    then be used to update the science times if needed.
+   
+    Parameters
+    -----------
+    datafindOuts : AhopeOutGroupList
+        List of all the datafind output files.
+
+    Returns
+    --------
+    missingFrameSegs : Dict. of ifo keyed glue.segment.segmentlist instances
+        The times corresponding to missing frames found in datafindOuts.
+    missingFrames: Dict. of ifo keyed lal.Cache instances
+        The list of missing frames
+    """
+    missingFrameSegs = {}
+    missingFrames = {}
+    for cache in datafindcaches:
+        if len(cache) > 0:
+            _,currMissingFrames = cache.checkfilesexist(on_missing="warn")
+            missingSegs = segments.segmentlist(e.segment \
+                                               for e in cache).coalesce()
+            ifo = cache.ifo
+            if not missingFrameSegs.has_key(ifo):
+                missingFrameSegs[ifo] = missingSegs
+                missingFrames[ifo] = lal.Cache(currMissingFrames)
+            else:
+                missingFrameSegs[ifo].extend(missingSegs)
+                # NOTE: This .coalesce probably isn't needed as the segments
+                # should be disjoint. If speed becomes an issue maybe remove it?
+                missingFrameSegs[ifo].coalesce()
+                missingFrames[ifo].extend(currMissingFrames)
+    return missingFrameSegs, missingFrames
+
+
 
 def setup_datafind_server_connection(cp):
     """
