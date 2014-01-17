@@ -125,13 +125,11 @@ class LegacyInspiralJob(LegacyAnalysisJob):
         return node
 
 class LegacyTmpltbankExec(Executable):
-    universe = 'standard'
     def __init__(self, exe_name):
         if exe_name != 'tmpltbank':
             raise ValueError('lalapps_tmpltbank does not support setting '
-                             'the exe_name to anything but "tmpltbank"')
-                           
-        Executable.__init__(self, 'tmpltbank', self.universe)
+                             'the exe_name to anything but "tmpltbank"')                           
+        Executable.__init__(self, 'tmpltbank')
 
     def create_job(self, cp, ifo, out_dir=None):
         return LegacyAnalysisJob(cp, self.exe_name, self.condor_universe,
@@ -140,12 +138,11 @@ class LegacyTmpltbankExec(Executable):
     get_valid_times = legacy_get_valid_times
         
 class LegacyInspiralExec(Executable):
-    universe = 'standard'
     def __init__(self, exe_name):
         if exe_name != 'inspiral':
             raise ValueError('lalapps_tmpltbank does not support setting '
                              'the exe_name to anything but "inspiral"')
-        Executable.__init__(self, 'inspiral', self.universe)
+        Executable.__init__(self, 'inspiral')
 
     def create_job(self, cp, ifo, out_dir=None):
         return LegacyInspiralJob(cp, self.exe_name, self.condor_universe, 
@@ -158,10 +155,6 @@ class LegacySplitBankExec(Executable):
     """This class holds the function for lalapps_splitbank 
     usage following the old ihope specifications.
     """
-    universe = 'standard'
-    def __init__(self, exe_name):
-        Executable.__init__(self, exe_name, self.universe)
-    
     def create_job(self, cp, ifo, out_dir=None):
         return LegacySplitBankJob(cp, self.exe_name, self.condor_universe, 
                                   ifo=ifo,

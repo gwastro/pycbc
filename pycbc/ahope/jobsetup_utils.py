@@ -280,9 +280,6 @@ class PyCBCInspiralJob(Job):
         return node
 
 class PyCBCInspiralExec(Executable):
-    def __init__(self, exe_name):
-        Executable.__init__(self, exe_name, 'vanilla')
-
     def create_job(self, cp, ifo, out_dir=None):
         return PyCBCInspiralJob(cp, self.exe_name, self.condor_universe,
                                 ifo=ifo, out_dir=out_dir)
@@ -333,9 +330,6 @@ class PyCBCTmpltbankJob(Job):
         return node
 
 class PyCBCTmpltbankExec(Executable):
-    def __init__(self, exe_name):
-        Executable.__init__(self, exe_name, 'vanilla')
-
     def create_job(self, cp, ifo, out_dir=None):
         return PyCBCTmpltbankJob(cp, self.exe_name, self.condor_universe,
                                  ifo=ifo, out_dir=out_dir)
