@@ -4,12 +4,43 @@ import logging
 import math
 import numpy
 import urlparse
-from os.path import splitext, basename
+from os.path import splitext, basename, isfile
 from glue import lal
 from glue import segments, pipeline
 from configparserutils import parse_ahope_ini_file
 import pylal.dq.dqSegmentUtils as dqUtils
 import copy
+
+#REMOVE THESE FUNCTIONS  FOR PYTHON >= 2.7 ####################################
+def check_output(*popenargs, **kwargs):
+    if 'stdout' in kwargs:
+        raise ValueError('stdout argument not allowed, it will be overridden.')
+    process = subprocess.Popen(stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               *popenargs, **kwargs)
+    output, unused_err = process.communicate()
+    retcode = process.poll()
+    return output
+
+###############################################################################
+
+def is_condor_exec(exe_path):
+    """ Determine if an executable is condor-compiled
+
+    Parameters
+    ----------
+    exe_path : str
+          The executable path
+
+    Returns
+    -------
+    truth_value  : boolean
+        Return True if the exe is condor compiled, False otherwise.
+    """
+    if check_output(['nm', '-a', exe_path]).find('condor') != -1:
+        return True
+    else:
+        return False
 
 class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
@@ -34,9 +65,29 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         self.ifo = ifo
         self.out_dir = out_dir
         
-        executable = cp.get('executables', exe_name)
+        exe_path = cp.get('executables', exe_name)
         
-        pipeline.CondorDAGJob.__init__(self, universe, executable)
+        # Check that the executable actually exists
+        if os.path.isfile(exe_path):
+	    logging.info("Using %s executable "
+                         "at %s." % (exe_name, exe_path))
+        else:
+            raise TypeError("Failed to find %s executable " 
+                             "at %s" % (exe_name, exe_path))
+
+        # Determine the condor universe if we aren't given one 
+        # Default is vanilla unless the executable is condor-compiled
+        # in which case we detect this and use standard universe
+        if universe is None:
+            if is_condor_exec(exe_path):
+                universe = 'standard'
+            else:
+                universe = 'vanilla'
+
+        logging.info("%s executable will run as %s universe"
+                     % (exe_name, universe))
+        
+        pipeline.CondorDAGJob.__init__(self, universe, exe_path)
         pipeline.AnalysisJob.__init__(self, cp, dax=True)       
         
         if universe == 'vanilla':
@@ -226,10 +277,10 @@ class Node(pipeline.CondorDAGNode):
 class Executable(object):
     """This class is a reprentation of an executable and its capabilities
     """
-    def __init__(self, exe_name, universe):
+    def __init__(self, exe_name, universe=None):
         self.exe_name = exe_name
         self.condor_universe = universe
-        
+
     def create_job(self, cp, ifo=None, out_dir=None):
         return Job(cp, self.exe_name, self.condor_universe, ifo=ifo, out_dir=out_dir)
 
