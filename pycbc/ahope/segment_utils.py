@@ -12,14 +12,14 @@ def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir,
     FIXME: Add more DOCUMENTATION
     """
     logging.info("Entering segment generation module")
-    veto_categories = range(1,maxVetoCat)
+    veto_categories = range(1,maxVetoCat+1)
     
     cp = workflow.cp
 
     if cp.get("ahope-segments","segments-method") == "AT_RUNTIME":
         logging.info("Generating segments with setup_segment_gen_runtime")
-        segFilesDict = setup_segment_gen_runtime(cp, ifos, veto_categories, 
-                                 start_time, end_time, out_dir)
+        segFilesDict = setup_segment_gen_mixed(cp, ifos, veto_categories, 
+                                 start_time, end_time, out_dir, workflow, 100)
     elif cp.get("ahope-segments","segments-method") == "CAT2_PLUS_DAG":
         logging.info("Generating segments with setup_segment_gen_mixed")
         segFilesDict = setup_segment_gen_mixed(cp, ifos, veto_categories, 
@@ -55,56 +55,6 @@ def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir,
     logging.info("Leaving segment generation module")
     return segsToAnalyse, segFilesDict
 
-
-def setup_segment_gen_runtime(cp, ifos, veto_categories, start_time,
-                              end_time, out_dir):
-    """
-    ADD DOCUMENTATION
-    """
-    segFilesDict = {}
-    segValidSeg = segments.segment([start_time,end_time])
-    baseTag='SEGS'
-    for ifo in ifos:
-        logging.info("Generating science segments for ifo %s" %(ifo))
-        ifoTag=baseTag + "_%s" %(ifo.upper())
-        segFilesDict[ifo] = {}
-        currSciSegs, currSciXmlFile = get_science_segments(ifo, cp, 
-                                          start_time, end_time, out_dir)
-        currTag = 'SCIENCE'
-        currUrl = urlparse.urlunparse(['file', 'localhost', currSciXmlFile,
-                          None, None, None])
-        segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, 
-                                 '%s_%s' %(ifoTag, currTag), 
-                                 segValidSeg, currUrl, segList=currSciSegs)
-
-        vetoSegs = {}
-        vetoXmlFiles = {} 
-        for category in veto_categories:
-            logging.info("Generating CAT_%d segments for ifo %s." \
-                         %(category,ifo))
-            vetoSegs[category],vetoXmlFiles[category] = \
-                get_veto_segs_at_runtime(ifo, category, cp, start_time, 
-                                         end_time, out_dir)
-            currTag='VETO_CAT%d' %(category)
-            currUrl = urlparse.urlunparse(['file', 'localhost',
-                          vetoXmlFiles[category], None, None, None])
-            segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, 
-                                 '%s_%s' %(ifoTag, currTag), 
-                                 segValidSeg, currUrl, \
-                                 segList=vetoSegs[category])
-        analysedSegs = currSciSegs - vetoSegs[1]
-        analysedSegs.coalesce()
-        analysedXmlFile = sciXmlFile = os.path.join(out_dir,
-                             "%s-ANALYSED_SEGMENTS.xml" %(ifo.upper()) ) 
-        currUrl = urlparse.urlunparse(['file', 'localhost', analysedXmlFile,
-                          None, None, None])
-        currTag='ANALYSED'
-        segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, 
-                                 '%s_%s' %(ifoTag, currTag), 
-                                 segValidSeg, currUrl, segList=analysedSegs)
-        segFilesDict[ifo][currTag].toSegmentXml()
-    return segFilesDict
-
 def setup_segment_gen_mixed(cp, ifos, veto_categories, start_time,
                             end_time, out_dir, workflow, maxVetoAtRunTime):
     """
@@ -113,7 +63,9 @@ def setup_segment_gen_mixed(cp, ifos, veto_categories, start_time,
     segFilesDict = {}
     segValidSeg = segments.segment([start_time,end_time])
     baseTag='SEGS'
-    vetoGenJob = create_segs_from_cats_job(cp, out_dir)
+    # Will I need to add some jobs to the workflow?
+    if max(veto_categories) > maxVetoAtRunTime:
+        vetoGenJob = create_segs_from_cats_job(cp, out_dir)
     for ifo in ifos:
         logging.info("Generating science segments for ifo %s" %(ifo))
         ifoTag=baseTag + "_%s" %(ifo.upper())
@@ -165,6 +117,35 @@ def setup_segment_gen_mixed(cp, ifos, veto_categories, start_time,
                                  '%s_%s' %(ifoTag, currTag), 
                                  segValidSeg, currUrl, segList=analysedSegs)
         segFilesDict[ifo][currTag].toSegmentXml()
+
+
+    # Need to make some combined category veto files to use when vetoing
+    # segments and triggers.
+    ifoString = ''.join(ifos)
+    segFilesDict[ifoString] = {}
+    for category in veto_categories:
+        # Set file name in ahope standard
+        cumulativeVetoFile = os.path.join(out_dir,
+                                   '%s-CUMULATIVE_CAT_%d_VETO_SEGMENTS.xml' \
+                                   %(ifoString, category) )
+        currUrl = urlparse.urlunparse(['file', 'localhost', cumulativeVetoFile,
+                          None, None, None])
+        currTag='CUMULATIVE_CAT_%d' %(category)
+        currSegFile = AhopeOutSegFile(ifo, '%s_%s' %('SEGS',currTag),
+                                   segValidSeg, currUrl, segList=analysedSegs)
+        # And actually make the file (or queue it in the workflow)
+        if category <= maxVetoAtRunTime:
+            logging.info("Generating combined, cumulative CAT_%d segments." \
+                             %(category))
+            get_cumulative_segs_at_runtime(ifos, currSegFile, category, cp,
+                                           segFilesDict, out_dir)
+        else:
+            errMsg = "Generating segments in the workflow is temporarily "
+            errMsg += "disabled as ligolw_segments_compat cannot be added to "
+            errMsg += "the ahope workflow without breaking pegasus."
+            raise NotImplementedError(errMsg)
+        segFilesDict[ifoString][currTag] = currSegFile
+
     return segFilesDict
 
 #FIXME: Everything below here uses the S6 segment architecture. This is going
@@ -208,7 +189,11 @@ def get_veto_segs_at_runtime(ifo, category, cp, start_time, end_time, out_dir):
     vetoDefFile = cp.get("ahope-segments", "segments-veto-definer-file")
 
     segFromCatsCall = [ cp.get("executables","segments_from_cats"),
-        "--separate-categories", 
+#       FIXME: I want to use separate categories here, but to do so needs some
+#       extra code added to create the cumulative files in the format thinca
+#       and pipedown expect
+#        "--separate-categories", 
+        "--cumulative-categories",
         "--segment-url", segServerUrl,
         "--veto-file", vetoDefFile,
         "--output-dir", out_dir,
@@ -283,6 +268,49 @@ def create_segs_from_cats_job(cp, out_dir):
 
     return job
 
+def get_cumulative_segs_at_runtime(ifos, currSegFile, category, cp,
+                                   segFilesDict, out_dir):
+    """
+    ADD DOCUMENTATION
+    """
+    ifoString = ''.join(ifos)
+    # First need to determine the input files
+    inputs = get_cumulative_segs_input_files(ifos, segFilesDict, category)
+
+    # Construct the call to ligolw_add
+    ligolwAddCall = [ cp.get("executables","llwadd"),
+        "--output",
+        currSegFile.path]
+    ligolwAddCall.extend([inp.path for inp in inputs])
+
+    make_external_call(ligolwAddCall, outDir=os.path.join(out_dir,'logs'),
+              outBaseName='%s-gen-cum-cats-%d-call' %(ifoString, category) )
+
+    # FIXME: I want this removed. It cannot go into the workflow as it modifies
+    # files in place. It also shouldn't be needed!
+    compatVetoCall = [ cp.get("executables","ligolw_segments_compat"),
+        currSegFile.path]
+
+    make_external_call(compatVetoCall, outDir=os.path.join(out_dir,'logs'),
+              outBaseName='%s-compat-veto-cats-%d-call' %(ifoString, category) )
+
+    
+
+def get_cumulative_segs_input_files(ifos, segFilesDict, category):
+    """
+    ADD DOCUMENTATION
+    """
+    ifoString = ''.join(ifos)
+    fileList = AhopeFileList([])
+    for ifo in ifos:
+        currTag='VETO_CAT%d' %(category)
+        fileList.append(segFilesDict[ifo][currTag])
+    # FIXME: Add this back in when not using cumulative categories
+    #if category > 1:
+    #    currTag = 'CUMULATIVE_CAT_%d' %(category - 1)
+    #    fileList.append(segFilesDict[ifoString][currTag])
+    return fileList
+    
 
 # Function to load segments from an xml file taken from pylal/dq
 # FIXME: Use the pylal/pylal/dq function.
