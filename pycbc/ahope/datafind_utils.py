@@ -340,9 +340,9 @@ def get_missing_segs_from_frame_file_cache(datafindcaches):
     missingFrames = {}
     for cache in datafindcaches:
         if len(cache) > 0:
-            _,currMissingFrames = cache.checkfilesexist(on_missing="warn")
+            _, currMissingFrames = cache.checkfilesexist(on_missing="warn")
             missingSegs = segments.segmentlist(e.segment \
-                                               for e in cache).coalesce()
+                                         for e in currMissingFrames).coalesce()
             ifo = cache.ifo
             if not missingFrameSegs.has_key(ifo):
                 missingFrameSegs[ifo] = missingSegs
