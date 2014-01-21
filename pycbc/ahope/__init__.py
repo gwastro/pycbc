@@ -35,4 +35,5 @@ from tmpltbank_utils import *
 from jobsetup_utils import *
 from matchedfltr_utils import *
 from splittable_utils import *
+from coincidence_utils import *
 from legacy_ihope import *
