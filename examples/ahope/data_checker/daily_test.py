@@ -10,10 +10,12 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \
 
 #start_time = 1073779216
 # This is the "official" start according to Stuart
-# start_time = 1073822416
+start_time = 1073822416
 # Use the time below as a separator and run twice, before and after, on Monday
-start_time=1073946414
-end_time=1074192463
+#start_time=1073946414
+#end_time=1074192463
+start_time=1074282178
+end_time=1074375376
 
 workflow = ahope.Workflow('./daily_er5.ini')
 ifos = ['H1','L1','V1']
@@ -67,7 +69,6 @@ print
 # Start with SYR comparison
 scienceSegsS = copy.deepcopy(scienceSegs)
 print "RUNNING DATAFIND FOR SYR"
-os.environ["LIGO_DATAFIND_SERVER"] = """nemo-dataserver2.phys.uwm.edu:443"""
 datafinds, scienceSegsS = ahope.setup_datafind_workflow(workflow, scienceSegsS,
                        dfDirSYR,checkSegmentGaps='update_times',\
                        checkFramesExist='no_test')
@@ -170,7 +171,7 @@ for ifo in scienceSegsC.keys():
 
 print
 print "RUNNING DATAFIND FOR UWM"
-os.environ["LIGO_DATAFIND_SERVER"] = """nemo-dataserver2.phys.uwm.edu"""
+os.environ["LIGO_DATAFIND_SERVER"] = """nemo-dataserver2.phys.uwm.edu:443"""
 scienceSegsS = copy.deepcopy(scienceSegs)
 datafinds, scienceSegsS = ahope.setup_datafind_workflow(workflow, scienceSegsS,
                        dfDirLLO,checkSegmentGaps='update_times',\
