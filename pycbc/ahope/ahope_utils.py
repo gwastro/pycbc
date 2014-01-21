@@ -167,7 +167,7 @@ class Node(pipeline.CondorDAGNode):
         self.output_files = AhopeFileList([])
         self.set_category(job.exe_name)
         
-    def add_input(self, files, opts=None):
+    def add_input(self, files, opts=None, argument=False, recombine=False):
         """Add a file(s) as input to this node. 
         
         Parameters
@@ -177,7 +177,19 @@ class Node(pipeline.CondorDAGNode):
         opts : string or list of strings, optional
             The command line options that the executable needs
             in order to set the associated file as input.
+        argument : Boolean, optional
+            If present this indicates that the file should be supplied as an
+            argument to the job (ie. file name with no option at the end of
+            the command line call). Using argument=True and opts != None will
+            result in a failure.
+        recombine : Boolean, optional
+            If present this indicates 
         """
+        if argument and opts != None:
+            errMsg = "You cannot supply an option and tell the code that this "
+            errMsg += "is an argument. Choose one or the other."
+            raise ValueError(errMsg)
+
         # make the input arguments lists
         if not isinstance(files, list):
             files = [files]
@@ -196,9 +208,12 @@ class Node(pipeline.CondorDAGNode):
                 self.add_input_file(file.path)  
             # If not, defer untill we can resolve what the actual inputs
             # will be 
+            elif len(file.paths) > 1 and recombine:
+                for path in file.paths:
+                    self.add_input_file(path)
             elif len(file.paths) > 1:
                 self.partitioned_input_files.append(file)
-                if not opts:
+                if not (opts or argument):
                     # What does it mean to get a file group as input?
                     # How would the program know what the files are?
                     raise TypeError('Cannot accept partitioned ahope file as '
@@ -220,6 +235,21 @@ class Node(pipeline.CondorDAGNode):
                     file.opt = opt
                 elif len(file.paths) == 1:
                     self.add_var_opt(opt, file.path)
+
+        if argument:
+            for file in files:
+                # The argument has to be resolved later
+                if len(file.paths) > 1 and recombine:
+                    # Then *all* files are given as arguments
+                    for path in file.paths:
+                        self.add_var_arg(path)
+                elif len(file.paths) > 1:
+                    errMsg = "Do not yet have support for taking partitioned "
+                    errMsg += "input files as arguments. Ask for this feature "
+                    errMsg += "to be added."
+                    raise NotImplementedError(errMsg)
+                elif len(file.paths) == 1:
+                    self.add_var_arg(file.path)
             
     def add_output(self, files, opts=None): 
         """Add a file(s) as an output to this node. 
@@ -605,6 +635,15 @@ class AhopeFileList(list):
         outFiles = [i for i in self if ifo == i.ifo]
         outFiles = [i for i in outFiles if i.segment.intersects(currSeg)]
         return self.__class__(outFiles)
+
+    def convert_to_lal_cache(self):
+        """
+        Return all files in this object as a lal.Cache object
+        """
+        lalCache = lal.Cache([])
+        for entry in self:
+            lalCache.extend(entry.cache_entries)
+        return lalCache
 
 
 class AhopeOutSegFile(AhopeFile):

@@ -74,6 +74,8 @@ def legacy_get_valid_times(self, cp, ifo):
     return dataLength, validChunk
 
 class LegacyAnalysisNode(Node, pipeline.AnalysisNode):
+    # FIXME: This should probably be pulled into the Node class. It is not
+    # specific to the Legacy analysis codes
     set_jobnum_tag = pipeline.AnalysisNode.set_user_tag
     
         

@@ -1,5 +1,5 @@
 import math
-from glue import segments
+from glue import segments, pipeline
 from pycbc.ahope.ahope_utils import *
 from pycbc.ahope.legacy_ihope import *
 
@@ -193,8 +193,21 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, exe_instance, science_segs,
         time_shift = (curr_seg_length - data_length) / float(num_jobs - 1)
         for job_num in range(num_jobs):
             # Get the science segment for this job
-            shift_dur = curr_seg[0] + int(time_shift * job_num)
+            # small factor of 0.0001 to avoid float round offs causing us to
+            # miss a second at end of segments.
+            shift_dur = curr_seg[0] + int(time_shift * job_num + 0.0001)
             job_data_seg = data_chunk.shift(shift_dur)
+            # Sanity check that all data is used
+            if job_num == 0:
+               if job_data_seg[0] != curr_seg[0]:
+                   errMsg = "Job is not using data from the start of the "
+                   errMsg += "science segment. It should be using all data."
+                   raise ValueError(errMsg)
+            if job_num == (num_jobs - 1):
+                if job_data_seg[1] != curr_seg[1]:
+                    errMsg = "Job is not using data from the end of the "
+                    errMsg += "science segment. It should be using all data."
+                    raise ValueError(errMsg)
             job_valid_seg = valid_chunk.shift(shift_dur)
             # If we need to recalculate the valid times to avoid overlap
             if not allow_overlap:
@@ -348,32 +361,83 @@ class LigolwAddJob(Job):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir)
         self.set_memory(2000)
 
-    def create_node(self, FIXME_INPUTS):
-        # NOT WRITTEN YET!
-        pass
+    def create_node(self, jobSegment, inputTrigFiles, timeSlideFile,\
+                    dqSegFile=None):
+        node = LegacyAnalysisNode(self)
+
+        # Very few options to ligolw_add, all input files are given as a long
+        # argument list. If this becomes unwieldy we could dump all these files
+        # to a cache file and read that in. ALL INPUT FILES MUST BE LISTED AS
+        # INPUTS (with .add_input_file) IF THIS IS DONE THOUGH!
+
+        node.add_input(timeSlideFile, argument=True)
+        if dqSegFile:
+            node.add_input(dqSegFile, argument=True)
+        for trigFile in inputTrigFiles:
+            node.add_input(trigFile, argument=True, recombine=True)
+
+        # Currently we set the output file using the name of *all* active ifos,
+        # even if one or more of these ifos is not active within jobSegment.
+        # In ihope, these files were named with only participating ifos. Not
+        # sure this is worth doing, can can be done with replacing self.ifo
+        # here if desired
+
+        outFile = AhopeFile(self.ifo, self.exe_name, extension='.xml.gz',
+                         segment=jobSegment,
+                         directory=self.out_dir)
+
+        node.add_output(outFile, opts='output')
+
+        return node
+
 
 class LigolwAddExec(Executable):
     def __init__(self, exe_name):
+        if exe_name != 'llwadd':
+            raise ValueError('ligolw_add does not support setting '
+                             'the exe_name to anything but "llwadd"')
+
         Executable.__init__(self, exe_name, 'vanilla')
 
     def create_job(self, cp, ifo, out_dir=None):
         return LigolwAddJob(cp, self.exe_name, self.condor_universe,
                             ifo=ifo, out_dir=out_dir)
 
-class LigolwThincaJob(Job):
-    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
+class LigolwSSthincaJob(Job):
+    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None,
+                 dqVetoName=None):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir)
         self.set_memory(2000)
+        if dqVetoName:
+            self.add_opt("vetoes-name", dqVetoName)
 
-    def create_node(self, FIXME_INPUTS):
-        # NOT WRITTEN YET!
-        pass
+    def create_node(self, jobSegment, inputFile):
+        node = LegacyAnalysisNode(self)
+        node.add_input(inputFile, argument=True)
 
-class LigolwThincaExec(Executable):
+        # Add the start/end times
+        segString = "%f:%f" %(jobSegment[0], jobSegment[1]) 
+        node.add_var_opt('coinc-end-time-segment', segString)
+
+        # FIXME: This must match the *actual* output name!
+        outFile = AhopeFile(self.ifo, self.exe_name, extension='.xml.gz',
+                         segment=jobSegment,
+                         directory=self.out_dir)
+
+        node.add_output(outFile)
+
+        return node
+
+
+class LigolwSSthincaExec(Executable):
     def __init__(self, exe_name):
+        if exe_name != 'thinca':
+            raise ValueError('ligolw_sstinca does not support setting '
+                             'the exe_name to anything but "thinca"')
+
         Executable.__init__(self, exe_name, 'vanilla')
 
-    def create_job(self, cp, ifo, out_dir=None):
-        return LigolwThincaJob(cp, self.exe_name, self.condor_universe,
-                            ifo=ifo, out_dir=out_dir)
+    def create_job(self, cp, ifo, out_dir=None, dqVetoName=None):
+        return LigolwSSthincaJob(cp, self.exe_name, self.condor_universe,
+                            ifo=ifo, out_dir=out_dir, dqVetoName=dqVetoName)
 
