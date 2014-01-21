@@ -119,10 +119,10 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir,
                 msg += "\n%s" % "\n".join(map(str, missing))
                 missingData = True
                 logging.error(msg)
-            if checkSegmentGaps == 'update_times':
-                # Remove missing time, so that we can carry on if desired
-                logging.info("Updating science times for ifo %s." %(ifo))
-                scienceSegs[ifo] = scienceSegs[ifo] - missing
+                if checkSegmentGaps == 'update_times':
+                    # Remove missing time, so that we can carry on if desired
+                    logging.info("Updating science times for ifo %s." %(ifo))
+                    scienceSegs[ifo] = scienceSegs[ifo] - missing
         if checkSegmentGaps == 'raise_error' and missingData:
             raise ValueError("Ahope cannot find needed data, exiting.")
         logging.info("Done checking, any discrepancies are reported above.")
