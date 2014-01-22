@@ -35,6 +35,10 @@ if not os.path.exists(dfDirLHO+'/logs'):
 dfDirLLO = os.path.join(currDir,"datafindLLO")
 if not os.path.exists(dfDirLLO+'/logs'):
     os.makedirs(dfDirLLO+'/logs')
+dfDirUWM = os.path.join(currDir,"datafindUWM")
+if not os.path.exists(dfDirUWM+'/logs'):
+    os.makedirs(dfDirUWM+'/logs')
+
 
 print "BEGIN BY GENERATING SCIENCE AND CAT_X VETOES"
 
@@ -174,7 +178,7 @@ print "RUNNING DATAFIND FOR UWM"
 os.environ["LIGO_DATAFIND_SERVER"] = """nemo-dataserver2.phys.uwm.edu:443"""
 scienceSegsS = copy.deepcopy(scienceSegs)
 datafinds, scienceSegsS = ahope.setup_datafind_workflow(workflow, scienceSegsS,
-                       dfDirLLO,checkSegmentGaps='update_times',\
+                       dfDirUWM,checkSegmentGaps='update_times',\
                        checkFramesExist='no_test')
 
 segment_report(scienceSegsS)

@@ -21,6 +21,7 @@ Ahope to do list
 * Want to have the ability to run ligolw_segments_from_cats in separate-categories mode (and have this be the *only* mode). This requires some additions to ligolw_segments_compat so that vetoes called VETO_CAT_1, VETO_CAT_2 are merged into one list called CUMULATIVE_VETO_CAT_3. (Names are probably wrong, but you get the idea).
 * Adding ligolw_segments_compat breaks pegasus support and therefore I have temporarily disabled the ability to generate vetoes within the workflow (instead of at runtime). This is because it's input and output files are the *same name*, which pegasus cannot support. This needs fixing.
 * Dependant on above, once fixed we need to add some code for running ligolw_add and ligolw_segments_compat in the workflow if desired.
+* Enable the dax functionality (at the moment a dax is written, but we don't know what to do with it!) and ensure that codes are pegasus-compliant. (DUNCAN B + ALEX/IAN).
 
 ----------------------------
 Longer term/lower priority
