@@ -114,7 +114,7 @@ class LegacyAnalysisJob(Job):
                              directory=self.out_dir)
         out_file.segment = valid_seg
         node.add_output(out_file)
-        node.add_input(cache_file, opts='frame-cache')         
+        node.add_input(cache_file, opt='frame-cache')         
         return node
         
 class LegacyInspiralJob(LegacyAnalysisJob):
@@ -123,7 +123,7 @@ class LegacyInspiralJob(LegacyAnalysisJob):
                                                    parent, dfParents)
         node.set_trig_start(valid_seg[0])
         node.set_trig_end(valid_seg[1])  
-        node.add_input(parent, opts='bank-file')    
+        node.add_input(parent, opt='bank-file')    
         return node
 
 class LegacyTmpltbankExec(Executable):
@@ -178,7 +178,7 @@ class LegacySplitBankJob(Job):
             The node to run the job
         """
         node = LegacyAnalysisNode(self)
-        node.add_input(bank, opts='bank-file')
+        node.add_input(bank, opt='bank-file')
         
         # Get the output (taken from inspiral.py)
         url_list = []

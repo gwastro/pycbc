@@ -167,25 +167,25 @@ class Node(pipeline.CondorDAGNode):
         self.output_files = AhopeFileList([])
         self.set_category(job.exe_name)
         
-    def add_input(self, file, opts=None, argument=False, recombine=False):
+    def add_input(self, file, opt=None, argument=False, recombine=False):
         """Add a file(s) as input to this node. 
         
         Parameters
         ----------
         file : AhopeFile or list of one AhopeFile
             The AhopeFile that this node needs to run
-        opts : string, optional
+        opt : string, optional
             The command line option that the executable needs
             in order to set the associated file as input.
         argument : Boolean, optional
             If present this indicates that the file should be supplied as an
             argument to the job (ie. file name with no option at the end of
-            the command line call). Using argument=True and opts != None will
+            the command line call). Using argument=True and opt != None will
             result in a failure.
         recombine : Boolean, optional
             If present this indicates 
         """
-        if argument and opts != None:
+        if argument and opt != None:
             errMsg = "You cannot supply an option and tell the code that this "
             errMsg += "is an argument. Choose one or the other."
             raise ValueError(errMsg)
@@ -206,7 +206,7 @@ class Node(pipeline.CondorDAGNode):
                 self.add_input_file(path)
         elif len(file.paths) > 1:
             self.partitioned_input_files.append(file)
-            if not (opts or argument):
+            if not (opt or argument):
                 # What does it mean to get a file group as input?
                 # How would the program know what the files are?
                 raise TypeError('Cannot accept partitioned ahope file as '
@@ -221,14 +221,14 @@ class Node(pipeline.CondorDAGNode):
             else:
                 self.add_parent(file.node)
 
-        if opts:
+        if opt:
             # The argument has to be resolved later
             if len(file.paths) > 1:
-                if not opts.recombine:
+                if not recombine:
                     file.opt = opt
                 else:
                     errMsg = "Do not know how to recombine a set of input files"
-                    errMsg += " using an option string. Therefore the opts and"
+                    errMsg += " using an option string. Therefore the opt and"
                     errMsg += " recombine kwargs cannot be used together for "
                     errMsg += "partitioned input files."
                     raise NotImplementedError(errMsg)

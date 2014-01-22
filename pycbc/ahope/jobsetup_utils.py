@@ -288,8 +288,8 @@ class PyCBCInspiralJob(Job):
 
         # set the input and output files        
         node.add_output(insp, opts='output')
-        node.add_input(cache_file, opts='frame-cache')
-        node.add_input(parent, opts='bank-file')
+        node.add_input(cache_file, opt='frame-cache')
+        node.add_input(parent, opt='bank-file')
         return node
 
 class PyCBCInspiralExec(Executable):
@@ -339,7 +339,7 @@ class PyCBCTmpltbankJob(Job):
 
         # set the input and output files      
         node.add_output(insp, opts='output-file')
-        node.add_input(cache_file, opts='frame-cache')
+        node.add_input(cache_file, opt='frame-cache')
         return node
 
 class PyCBCTmpltbankExec(Executable):
@@ -361,7 +361,7 @@ class LigolwAddJob(Job):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir)
         self.set_memory(2000)
 
-    def create_node(self, jobSegment, inputTrigFiles, timeSlideFile,\
+    def create_node(self, jobSegment, inputTrigFiles, timeSlideFile=None,\
                     dqSegFile=None):
         node = LegacyAnalysisNode(self)
 
@@ -370,7 +370,8 @@ class LigolwAddJob(Job):
         # to a cache file and read that in. ALL INPUT FILES MUST BE LISTED AS
         # INPUTS (with .add_input_file) IF THIS IS DONE THOUGH!
 
-        node.add_input(timeSlideFile, argument=True)
+        if timeSlideFile:
+            node.add_input(timeSlideFile, argument=True)
         if dqSegFile:
             node.add_input(dqSegFile, argument=True)
         for trigFile in inputTrigFiles:
