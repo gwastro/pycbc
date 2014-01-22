@@ -167,15 +167,15 @@ class Node(pipeline.CondorDAGNode):
         self.output_files = AhopeFileList([])
         self.set_category(job.exe_name)
         
-    def add_input(self, files, opts=None, argument=False, recombine=False):
+    def add_input(self, file, opts=None, argument=False, recombine=False):
         """Add a file(s) as input to this node. 
         
         Parameters
         ----------
-        file : AhopeFile or list of AhopeFiles
-            The files that this node needs to run
-        opts : string or list of strings, optional
-            The command line options that the executable needs
+        file : AhopeFile or list of one AhopeFile
+            The AhopeFile that this node needs to run
+        opts : string, optional
+            The command line option that the executable needs
             in order to set the associated file as input.
         argument : Boolean, optional
             If present this indicates that the file should be supplied as an
@@ -190,66 +190,64 @@ class Node(pipeline.CondorDAGNode):
             errMsg += "is an argument. Choose one or the other."
             raise ValueError(errMsg)
 
-        # make the input arguments lists
-        if not isinstance(files, list):
-            files = [files]
-            if opts:
-                opts = [opts]
-        
-        # check that the arguments are sane   
-        if opts and len(opts) != len(files):
-            raise TypeError('An opt must be provided for each file in the list')
+        # Allow input where the file is a list of one AhopeFile
+        if isinstance(file, list):
+            file = file[0]
         
         # Add the files to the nodes internal lists of input
-        for file in files:         
-            self.input_files.append(file) 
-            # If possible record in the dag the input
-            if len(file.paths) == 1:
-                self.add_input_file(file.path)  
-            # If not, defer untill we can resolve what the actual inputs
-            # will be 
-            elif len(file.paths) > 1 and recombine:
-                for path in file.paths:
-                    self.add_input_file(path)
-            elif len(file.paths) > 1:
-                self.partitioned_input_files.append(file)
-                if not (opts or argument):
-                    # What does it mean to get a file group as input?
-                    # How would the program know what the files are?
-                    raise TypeError('Cannot accept partitioned ahope file as '
+        self.input_files.append(file) 
+        # If possible record in the dag the input
+        if len(file.paths) == 1:
+            self.add_input_file(file.path)  
+        # If not, defer untill we can resolve what the actual inputs
+        # will be 
+        elif len(file.paths) > 1 and recombine:
+            for path in file.paths:
+                self.add_input_file(path)
+        elif len(file.paths) > 1:
+            self.partitioned_input_files.append(file)
+            if not (opts or argument):
+                # What does it mean to get a file group as input?
+                # How would the program know what the files are?
+                raise TypeError('Cannot accept partitioned ahope file as '
                                 'input without a corresponding option string.')
                                 
-            # If the file was created by another node, then make that
-            # node a parent of this one
-            if file.node:
-                if isinstance(file.node, list):
-                    for n in file.node:
-                        self.add_parent(n)
-                else:
-                    self.add_parent(file.node)
+        # If the file was created by another node, then make that
+        # node a parent of this one
+        if file.node:
+            if isinstance(file.node, list):
+                for n in file.node:
+                    self.add_parent(n)
+            else:
+                self.add_parent(file.node)
 
         if opts:
-            for file, opt in zip(files, opts):
-                # The argument has to be resolved later
-                if len(file.paths) > 1:
+            # The argument has to be resolved later
+            if len(file.paths) > 1:
+                if not opts.recombine:
                     file.opt = opt
-                elif len(file.paths) == 1:
-                    self.add_var_opt(opt, file.path)
+                else:
+                    errMsg = "Do not know how to recombine a set of input files"
+                    errMsg += " using an option string. Therefore the opts and"
+                    errMsg += " recombine kwargs cannot be used together for "
+                    errMsg += "partitioned input files."
+                    raise NotImplementedError(errMsg)
+            elif len(file.paths) == 1:
+                self.add_var_opt(opt, file.path)
 
         if argument:
-            for file in files:
-                # The argument has to be resolved later
-                if len(file.paths) > 1 and recombine:
-                    # Then *all* files are given as arguments
-                    for path in file.paths:
-                        self.add_var_arg(path)
-                elif len(file.paths) > 1:
-                    errMsg = "Do not yet have support for taking partitioned "
-                    errMsg += "input files as arguments. Ask for this feature "
-                    errMsg += "to be added."
-                    raise NotImplementedError(errMsg)
-                elif len(file.paths) == 1:
-                    self.add_var_arg(file.path)
+            # The argument has to be resolved later
+            if len(file.paths) > 1 and recombine:
+                # Then *all* files are given as arguments
+                for path in file.paths:
+                    self.add_var_arg(path)
+            elif len(file.paths) > 1:
+                errMsg = "Do not yet have support for taking partitioned "
+                errMsg += "input files as arguments. Ask for this feature "
+                errMsg += "to be added."
+                raise NotImplementedError(errMsg)
+            elif len(file.paths) == 1:
+                self.add_var_arg(file.path)
             
     def add_output(self, files, opts=None): 
         """Add a file(s) as an output to this node. 
@@ -504,8 +502,12 @@ class AhopeFile(object):
         """        
         if extension.startswith('.'):
             extension = extension[1:]
-        duration = str(int(segment[1] - segment[0]))
-        start = str(segment[0])
+        # Follow the frame convention of using integer filenames, but stretching
+        # to cover partially covered seconds.
+        start = int(segment[0])
+        end = int(math.ceil(segment[1]))
+        duration = str(end-start)
+        start = str(start)
         
         return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start, duration, extension)     
     

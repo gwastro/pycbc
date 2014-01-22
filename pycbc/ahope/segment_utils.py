@@ -6,7 +6,8 @@ from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.ahope.ahope_utils import *
 
 def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir, 
-                             maxVetoCat = 5, minSegLength=0):
+                             maxVetoCat = 5, minSegLength=0,
+                             generate_coincident_segs=True):
     """
     Setup the segment generation needed in an ahope workflow
     FIXME: Add more DOCUMENTATION
@@ -17,24 +18,29 @@ def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir,
     cp = workflow.cp
 
     if cp.get("ahope-segments","segments-method") == "AT_RUNTIME":
-        logging.info("Generating segments with setup_segment_gen_runtime")
+        logging.info("Generating segments with setup_segment_gen_mixed")
         segFilesDict = setup_segment_gen_mixed(cp, ifos, veto_categories, 
-                                 start_time, end_time, out_dir, workflow, 100)
+                             start_time, end_time, out_dir, workflow, 100,
+                             generate_coincident_segs=generate_coincident_segs)
     elif cp.get("ahope-segments","segments-method") == "CAT2_PLUS_DAG":
         logging.info("Generating segments with setup_segment_gen_mixed")
         segFilesDict = setup_segment_gen_mixed(cp, ifos, veto_categories, 
-                                 start_time, end_time, out_dir, workflow, 1)
+                             start_time, end_time, out_dir, workflow, 1,
+                             generate_coincident_segs=generate_coincident_segs)
     elif cp.get("ahope-segments","segments-method") == "CAT3_PLUS_DAG":
         logging.info("Generating segments with setup_segment_gen_mixed")
         segFilesDict = setup_segment_gen_mixed(cp, ifos, veto_categories, 
-                                 start_time, end_time, out_dir, workflow, 2)
+                             start_time, end_time, out_dir, workflow, 2,
+                             generate_coincident_segs=generate_coincident_segs)
     elif cp.get("ahope-segments","segments-method") == "CAT4_PLUS_DAG":
         logging.info("Generating segments with setup_segment_gen_mixed")
         segFilesDict = setup_segment_gen_mixed(cp, ifos, veto_categories, 
-                                 start_time, end_time, out_dir, workflow, 3)
+                             start_time, end_time, out_dir, workflow, 3,
+                             generate_coincident_segs=generate_coincident_segs)
     else:
         msg = "Entry segments-method in [ahope-segments] does not have "
-        msg += "expected value. Valid values are AT_RUNTIME, CAT4_PLUS_DAG."
+        msg += "expected value. Valid values are AT_RUNTIME, CAT4_PLUS_DAG, "
+        msg += "CAT2_PLUS_DAG or CAT3_PLUS_DAG."
         raise ValueError(msg)
     logging.info("Segments obtained")
 
@@ -56,7 +62,8 @@ def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir,
     return segsToAnalyse, segFilesDict
 
 def setup_segment_gen_mixed(cp, ifos, veto_categories, start_time,
-                            end_time, out_dir, workflow, maxVetoAtRunTime):
+                            end_time, out_dir, workflow, maxVetoAtRunTime,
+                            generate_coincident_segs=True):
     """
     ADD DOCUMENTATION
     """
@@ -119,32 +126,33 @@ def setup_segment_gen_mixed(cp, ifos, veto_categories, start_time,
         segFilesDict[ifo][currTag].toSegmentXml()
 
 
-    # Need to make some combined category veto files to use when vetoing
-    # segments and triggers.
-    ifoString = ''.join(ifos)
-    segFilesDict[ifoString] = {}
-    for category in veto_categories:
-        # Set file name in ahope standard
-        cumulativeVetoFile = os.path.join(out_dir,
+    if generate_coincident_segs:
+        # Need to make some combined category veto files to use when vetoing
+        # segments and triggers.
+        ifoString = ''.join(ifos)
+        segFilesDict[ifoString] = {}
+        for category in veto_categories:
+            # Set file name in ahope standard
+            cumulativeVetoFile = os.path.join(out_dir,
                                    '%s-CUMULATIVE_CAT_%d_VETO_SEGMENTS.xml' \
                                    %(ifoString, category) )
-        currUrl = urlparse.urlunparse(['file', 'localhost', cumulativeVetoFile,
-                          None, None, None])
-        currTag='CUMULATIVE_CAT_%d' %(category)
-        currSegFile = AhopeOutSegFile(ifo, '%s_%s' %('SEGS',currTag),
+            currUrl = urlparse.urlunparse(['file', 'localhost',
+                                         cumulativeVetoFile, None, None, None])
+            currTag='CUMULATIVE_CAT_%d' %(category)
+            currSegFile = AhopeOutSegFile(ifo, '%s_%s' %('SEGS',currTag),
                                    segValidSeg, currUrl, segList=analysedSegs)
-        # And actually make the file (or queue it in the workflow)
-        if category <= maxVetoAtRunTime:
-            logging.info("Generating combined, cumulative CAT_%d segments." \
+            # And actually make the file (or queue it in the workflow)
+            if category <= maxVetoAtRunTime:
+                logging.info("Generating combined, cumulative CAT_%d segments."\
                              %(category))
-            get_cumulative_segs_at_runtime(ifos, currSegFile, category, cp,
-                                           segFilesDict, out_dir)
-        else:
-            errMsg = "Generating segments in the workflow is temporarily "
-            errMsg += "disabled as ligolw_segments_compat cannot be added to "
-            errMsg += "the ahope workflow without breaking pegasus."
-            raise NotImplementedError(errMsg)
-        segFilesDict[ifoString][currTag] = currSegFile
+                get_cumulative_segs_at_runtime(ifos, currSegFile, category, cp,
+                                               segFilesDict, out_dir)
+            else:
+                errMsg = "Generating segments in the workflow is temporarily "
+                errMsg += "disabled as ligolw_segments_compat cannot be added "
+                errMsg += "to the ahope workflow without breaking pegasus."
+                raise NotImplementedError(errMsg)
+            segFilesDict[ifoString][currTag] = currSegFile
 
     return segFilesDict
 
@@ -197,7 +205,8 @@ def get_veto_segs_at_runtime(ifo, category, cp, start_time, end_time, out_dir):
         "--segment-url", segServerUrl,
         "--veto-file", vetoDefFile,
         "--output-dir", out_dir,
-        "--veto-categories", str(category),
+        # FIXME: And set this to just str(category) when not using cumulative
+        "--veto-categories", ','.join([str(i+1) for i in range(category)]),
         "--ifo-list", ifo,
         "--gps-start-time", str(start_time),
         "--gps-end-time", str(end_time)]
@@ -256,8 +265,14 @@ def create_segs_from_cats_job(cp, out_dir):
     job.add_opt('segment-url', segServerUrl)
     job.add_opt('veto-file', vetoDefFile)
     job.exe_name = exeName 
-    # set up proxy to be accessible in a NFS location
-    proxy = os.getenv('X509_USER_PROXY')
+    # Set up proxy to be accessible in a NFS location
+    # If the user has logged in with gsissh then X509_USER_PROXY will be set
+    # However, certain users log in with an ssh key and then ligo-proxy-init
+    # This route does not set X509_USER_PROXY, so use the default file location
+    if os.environ.has_key('X509_USER_PROXY'):
+        proxy = os.getenv('X509_USER_PROXY')
+    else:
+        proxy = "/tmp/x509up_u%d" % os.getuid()
     proxyfile = os.path.join(out_dir, 'x509up.file')
     shutil.copyfile(proxy, proxyfile)
     job.add_condor_cmd('environment',

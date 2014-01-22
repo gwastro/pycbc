@@ -4,11 +4,13 @@ import logging
 from glue import datafind
 from glue import lal
 from glue import segments,segmentsUtils,git_version
+from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.ahope import AhopeFile, AhopeFileList
 
 def setup_datafind_workflow(workflow, scienceSegs,  outputDir, 
                             checkSegmentGaps='no_test',
-                            checkFramesExist='no_test'):
+                            checkFramesExist='no_test', 
+                            checkSegmentSummary='no_test', segFileDict=None):
     """
     Setup datafind section of ahope workflow. This section is responsible for
     generating, or setting up the workflow to generate, a list of files that
@@ -31,7 +33,7 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir,
     outputDir : path
         All output files written by datafind processes will be written to this
         directory.
-    checkSegmentGaps : boolean (string, default='no_test')
+    checkSegmentGaps : string (optional, default='no_test')
         If this option takes any value other than 'no_test' ahope will check
         that the local datafind server has returned frames covering all of the
         listed science times. Its behaviour is then as follows
@@ -45,7 +47,7 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir,
           are not present on the host cluster.
         * 'raise_error': Perform the test. If any discrepancies occur, raise a
           ValueError.
-    checkFramesExist : boolean (optional, default=True)
+    checkFramesExist : string (optional, default='no_test')
         If this options takes any value other than 'no_test' ahope will check
         that the frames returned by the local datafind server are accessible
         from the machine that is running ahope. Its behaviour is then as follows
@@ -59,6 +61,17 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir,
           are not present on the host cluster.
         * 'raise_error': Perform the test. If any discrepancies occur, raise a
           ValueError.
+    checkSegmentSummary: string (optional, default='no_test')
+        If this option takes any value other than 'no_test' ahope will check
+        that all frames returned by datafind are covered by the segment_summary
+        table (for the science flag). Its behaviour is then as follows:
+        * 'no_test': Do not perform this test. 
+        * 'warn': Perform the test, print warnings covering any discrepancies
+          but do nothing about them.
+        * 'raise_error': Perform the test. If any discrepancies occur, raise a
+          ValueError.
+
+    
 
     Returns
     --------
@@ -163,6 +176,41 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir,
         errMsg = "checkFramesExist kwArg must take a value from 'no_test', "
         errMsg += "'warn', 'update_times' or 'raise_error'."
         raise ValueError(errMsg)
+
+    # Check if there are cases where frames exist, but no entry in the segment
+    # summary table are present.
+    if checkSegmentSummary in ['warn', 'raise_error']:
+        logging.info("Checking the segment summary table against frames.")
+        if not cp.get("ahope-datafind", "datafind-method")\
+                == "AT_RUNTIME_SINGLE":
+            logging.info("This is much more meaningful if using "
+                         "datafind-method = AT_RUNTIME_SINGLE.")
+        dfScienceSegs = get_science_segs_from_datafind_outs(datafindcaches)
+        missingFlag = False
+        for ifo in dfScienceSegs.keys():
+            scienceFile = segFileDict[ifo]['SCIENCE']
+            scienceChannel = cp.get('ahope-segments',\
+                                'segments-%s-science-name'%(ifo.lower()))
+            segSummaryTimes = get_segment_summary_times(scienceFile,
+                                                        scienceChannel)
+            missing = dfScienceSegs[ifo] - segSummaryTimes
+            if abs(missing):
+                msg = "From ifo %s the following times have frames, " %(ifo)
+                msg += "but are not covered in the segment summary table."
+                msg += "\n%s" % "\n".join(map(str, missing))
+                logging.error(msg)
+                missingFlag = True
+        if checkSegmentSummary == 'raise_error' and missingFlag:
+            errMsg = "Segment_summary discrepancy detected, exiting."
+            raise ValueError(errMsg)
+    elif checkSegmentSummary == 'no_test':
+        # Do nothing
+        pass
+    else:
+        errMsg = "checkSegmentSummary kwArg must take a value from 'no_test', "
+        errMsg += "'warn', or 'raise_error'."
+        raise ValueError(errMsg)
+
 
     logging.info("Leaving datafind module")
     return AhopeFileList(datafindouts), scienceSegs
@@ -399,6 +447,47 @@ def setup_datafind_server_connection(cp):
         connection =\
             datafind.GWDataFindHTTPConnection(host=server, port=port)
     return connection
+
+def get_segment_summary_times(scienceFile, segmentName):
+    """
+    ADD DOCUMENTATION
+    """
+    # Parse the segmentName
+    segmentName = segmentName.split(':')
+    if not len(segmentName) in [2,3]:
+        raise ValueError("Invalid channel name %s." %(segmentName))
+    ifo = segmentName[0]
+    channel = segmentName[1]
+    version = ''
+    if len(segmentName) == 3:
+        version = int(segmentName[2])
+
+    # Load the filename
+    xmldoc = utils.load_filename(scienceFile.path,
+                             gz=scienceFile.path.endswith("gz"),
+                             contenthandler=ligolw.DefaultLIGOLWContentHandler)
+
+    # Get the segment_def_id for the segmentName
+    segmentDefTable = table.get_table(xmldoc, "segment_definer")
+    for entry in segmentDefTable:
+        if (entry.ifos == ifo) and (entry.name == channel):
+            if len(segmentName) == 2 or (entry.version==version):
+                segDefID = entry.segment_def_id
+                break
+    else:
+        raise ValueError("Cannot find channel %s in segment_definer table."\
+                         %(segmentName))
+
+    # Get the segmentlist corresponding to this segmentName in segment_summary
+    segmentSummTable = table.get_table(xmldoc, "segment_summary")
+    summSegList = segments.segmentlist([])
+    for entry in segmentSummTable:
+        if entry.segment_def_id == segDefID:
+            segment = segments.segment(entry.start_time, entry.end_time)
+            summSegList.append(segment)
+    summSegList.coalesce()
+   
+    return summSegList
 
 def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
                           startTime, endTime, ifo, jobTag):
