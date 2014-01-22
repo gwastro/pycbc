@@ -14,6 +14,29 @@ Documentation of the ahope executable and how to run it can be found here.
 
 Each of the sections is described in detail below. Also refer to the `page here <https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/InspiralPipelineDevelopment/130627093845InspiralPipelineDocumentationAhope_development_plan>`_ for details. Also see the `link here <https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/InspiralPipelineDevelopment/130614025403InspiralPipelineDevelopmentThe%20evolution%20of%20ihope%20and%20inspiral>`_ for descriptions of what ahope should be and motivation for making ahope in the first place. **NOTE: REMOVE THESE LINKS ONCE AHOPE DOCUMENTATION IS SUFFICIENT THAT THIS IS NOT LONGER NEEDED**
 
+=======================
+Ahope to do list
+=======================
+
+* Want to have the ability to run ligolw_segments_from_cats in separate-categories mode (and have this be the *only* mode). This requires some additions to ligolw_segments_compat so that vetoes called VETO_CAT_1, VETO_CAT_2 are merged into one list called CUMULATIVE_VETO_CAT_3. (Names are probably wrong, but you get the idea).
+* Adding ligolw_segments_compat breaks pegasus support and therefore I have temporarily disabled the ability to generate vetoes within the workflow (instead of at runtime). This is because it's input and output files are the *same name*, which pegasus cannot support. This needs fixing.
+* Dependant on above, once fixed we need to add some code for running ligolw_add and ligolw_segments_compat in the workflow if desired.
+
+----------------------------
+Longer term/lower priority
+----------------------------
+
+* If we want to move to having a variable number of segments for analysis (ie. if we only have 1000s use say 4 analysis segments, but if we have 5000s use 20), then we need to fix the issues of bias in the inverse PSD causing a bias (from the expected chi-squared distribution) in the output SNR time series, *which will vary based on the number of segments used to analyse the PSD*.
+
+------------------
+Questions
+------------------
+
+* IHOPE: Using .from_url() on the ihope filenames and then using the resulting segment as the time that file is valid from is incorrect as ihope does not analyse the first/last 64s of each file. Is this a problem?
+* IHOPE: When setting start/end for thinca it basically sets them to cover *all* triggers in the input files. Sometimes, when segments are > 10000s this should be split over multiple jobs, so you might only want to read in *some* triggers from files at the end of the job. Would this cause duplicate triggers? Is this a problem at all?
+* AHOPE: Sstinca doesn't work unless it is given a veto file. I think this is because it is using it to get the ifos. This is potentially dangerous with ahope, which is *not* guaranteed to have entries for all ifos!
+* BOTH: Why are we removing the veto information in sstinca? Is pipedown then putting it all back in again?
+
 ====================
 Examples
 ====================
