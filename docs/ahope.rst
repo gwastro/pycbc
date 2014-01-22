@@ -22,6 +22,7 @@ Ahope to do list
 * Adding ligolw_segments_compat breaks pegasus support and therefore I have temporarily disabled the ability to generate vetoes within the workflow (instead of at runtime). This is because it's input and output files are the *same name*, which pegasus cannot support. This needs fixing.
 * Dependant on above, once fixed we need to add some code for running ligolw_add and ligolw_segments_compat in the workflow if desired.
 * Enable the dax functionality (at the moment a dax is written, but we don't know what to do with it!) and ensure that codes are pegasus-compliant. (DUNCAN B + ALEX/IAN).
+* The documentation, both in code and on this page, is woefully out of date. This needs fixing ... anyone/everyone should feel free to edit and improve the existing documentation!
 
 ----------------------------
 Longer term/lower priority
