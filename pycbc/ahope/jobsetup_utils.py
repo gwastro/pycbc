@@ -298,13 +298,12 @@ class PyCBCInspiralExec(Executable):
                                 ifo=ifo, out_dir=out_dir)
 
     def get_valid_times(self, cp, ifo):
+        analysis_length = int(cp.get('ahope-inspiral', 'analysis-length'))
         pad_data = int(cp.get_opt_ifo(self.exe_name, 'pad-data', ifo))
         start_pad = int(cp.get_opt_ifo(self.exe_name, 'segment-start-pad', ifo))
         end_pad = int(cp.get_opt_ifo(self.exe_name, 'segment-end-pad', ifo))
 
-        #FIXME this should not be hard coded (can be any integer > 
-        #segment_length with pycbc_inspiral)
-        data_length = 2560 + pad_data * 2
+        data_length = analysis_length + pad_data * 2
         start = pad_data + start_pad
         end = data_length - pad_data - end_pad
         return data_length, segments.segment(start, end)
@@ -349,9 +348,10 @@ class PyCBCTmpltbankExec(Executable):
 
     def get_valid_times(self, cp, ifo):
         pad_data = int(cp.get_opt_ifo(self.exe_name, 'pad-data', ifo))
-
+        analysis_length = int(cp.get('ahope-inspiral', 'analysis-length'))
+        
         #FIXME this should not be hard coded 
-        data_length = 2560 + pad_data * 2
+        data_length = analysis_length + pad_data * 2
         start = pad_data
         end = data_length - pad_data
         return data_length, segments.segment(start, end)
