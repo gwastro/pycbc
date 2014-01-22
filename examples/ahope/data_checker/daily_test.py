@@ -13,9 +13,8 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \
 start_time = 1073822416
 # Use the time below as a separator and run twice, before and after, on Monday
 #start_time=1073946414
-#end_time=1074192463
-start_time=1074282178
-end_time=1074375376
+#start_time=1074192463
+end_time=1074363242
 
 workflow = ahope.Workflow('./daily_er5.ini')
 ifos = ['H1','L1','V1']
@@ -63,7 +62,8 @@ def segment_report(sSegs):
 
 
 scienceSegs, segsDict = ahope.setup_segment_generation(workflow, ifos,
-                                start_time, end_time, segDir)
+                                start_time, end_time, segDir,
+                                generate_coincident_segs=False, maxVetoCat=1)
 
 segment_report(scienceSegs)
 
@@ -74,8 +74,9 @@ print
 scienceSegsS = copy.deepcopy(scienceSegs)
 print "RUNNING DATAFIND FOR SYR"
 datafinds, scienceSegsS = ahope.setup_datafind_workflow(workflow, scienceSegsS,
-                       dfDirSYR,checkSegmentGaps='update_times',\
-                       checkFramesExist='no_test')
+                     dfDirSYR,checkSegmentGaps='update_times',\
+                     checkFramesExist='no_test', checkSegmentSummary='warn',
+                     segFileDict=segsDict)
 
 segment_report(scienceSegsS)
 

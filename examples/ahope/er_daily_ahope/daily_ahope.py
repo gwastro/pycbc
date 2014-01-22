@@ -102,9 +102,10 @@ for ifo in workflow.cp.options('ahope-ifos'):
     ifos.append(ifo.upper())
 
 # Get segments
-scienceSegs, segsDict = ahope.setup_segment_generation(workflow, ifos, start_time,
-                               end_time, workingDir, maxVetoCat=4,
-                               minSegLength=2000)
+scienceSegs, segsDict = ahope.setup_segment_generation(workflow, ifos,
+                               start_time, end_time, workingDir, maxVetoCat=4,
+                               minSegLength=2000, 
+                               generate_coincident_segs=False)
 
 # Get frames, this can be slow, as we ping every frame to check it exists,
 # the second option shows how to turn this off
