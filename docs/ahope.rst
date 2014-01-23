@@ -19,8 +19,8 @@ Ahope to do list
 =======================
 
 * Want to have the ability to run ligolw_segments_from_cats in separate-categories mode (and have this be the *only* mode). This requires some additions to ligolw_segments_compat so that vetoes called VETO_CAT_1, VETO_CAT_2 are merged into one list called CUMULATIVE_VETO_CAT_3. (Names are probably wrong, but you get the idea).
-* Adding ligolw_segments_compat breaks pegasus support and therefore I have temporarily disabled the ability to generate vetoes within the workflow (instead of at runtime). This is because it's input and output files are the *same name*, which pegasus cannot support. This needs fixing.
-* Dependant on above, once fixed we need to add some code for running ligolw_add and ligolw_segments_compat in the workflow if desired.
+* Adding ligolw_segments_compat breaks pegasus support and therefore I (who?) have temporarily disabled the ability to generate vetoes within the workflow (instead of at runtime). This is because its input and output files are the *same name*, which pegasus cannot support. This needs fixing.
+* Dependent on above, once fixed we need to add some code for running ligolw_add and ligolw_segments_compat in the workflow if desired.
 * Enable the dax functionality (at the moment a dax is written, but we don't know what to do with it!) and ensure that codes are pegasus-compliant. (DUNCAN B + ALEX/IAN).
 * The documentation, both in code and on this page, is woefully out of date. This needs fixing ... anyone/everyone should feel free to edit and improve the existing documentation!
 
@@ -28,16 +28,18 @@ Ahope to do list
 Longer term/lower priority
 ----------------------------
 
+* Merge functionality of ligolw_add into ligolw_sstinca to produce a single coincidence code that takes multiple inputs, ideally either from the command line or from a cache file. 
 * If we want to move to having a variable number of segments for analysis (ie. if we only have 1000s use say 4 analysis segments, but if we have 5000s use 20), then we need to fix the issues of bias in the inverse PSD causing a bias (from the expected chi-squared distribution) in the output SNR time series, *which will vary based on the number of segments used to analyse the PSD*.
 
 ------------------
-Questions
+Questions concerning the coincidence stage ligolw_sstinca
 ------------------
 
-* IHOPE: Using .from_url() on the ihope filenames and then using the resulting segment as the time that file is valid from is incorrect as ihope does not analyse the first/last 64s of each file. Is this a problem?
+* IHOPE: Using .from_url() on the ihope filenames and then using the resulting segment as the time that file is valid from is incorrect as ihope does not analyse the first/last 64s of each file (sometimes even less than that if trig-start-time or trig-end-time are specified). Is this a problem?
 * IHOPE: When setting start/end for thinca it basically sets them to cover *all* triggers in the input files. Sometimes, when segments are > 10000s this should be split over multiple jobs, so you might only want to read in *some* triggers from files at the end of the job. Would this cause duplicate triggers? Is this a problem at all?
 * AHOPE: Sstinca doesn't work unless it is given a veto file. I think this is because it is using it to get the ifos. This is potentially dangerous with ahope, which is *not* guaranteed to have entries for all ifos!
-* BOTH: Why are we removing the veto information in sstinca? Is pipedown then putting it all back in again?
+* BOTH: Handling of veto information in sstinca : the job takes the veto segments as input, then removes them from the output xml.  This is in order to avoid massive duplication of the veto definer and segment tables in thinca output files, which causes pipedown to choke when creating and simplifying databases.  Pipedown puts the veto/segment tables back in again in a single step. 
+
 
 ====================
 Examples
