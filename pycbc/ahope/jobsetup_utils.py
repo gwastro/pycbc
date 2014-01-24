@@ -287,7 +287,7 @@ class PyCBCInspiralJob(Job):
                          directory=self.out_dir)
 
         # set the input and output files        
-        node.add_output(insp, opts='output')
+        node.add_output(insp, opt='output')
         node.add_input(cache_file, opt='frame-cache')
         node.add_input(parent, opt='bank-file')
         return node
@@ -338,7 +338,7 @@ class PyCBCTmpltbankJob(Job):
                          directory=self.out_dir)
 
         # set the input and output files      
-        node.add_output(insp, opts='output-file')
+        node.add_output(insp, opt='output-file')
         node.add_input(cache_file, opt='frame-cache')
         return node
 
@@ -387,7 +387,7 @@ class LigolwAddJob(Job):
                          segment=jobSegment,
                          directory=self.out_dir)
 
-        node.add_output(outFile, opts='output')
+        node.add_output(outFile, opt='output')
 
         return node
 
