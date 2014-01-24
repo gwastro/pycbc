@@ -22,7 +22,6 @@ This is designed to mimic the current behaviour of dail_ihope.
 """
 import pycbc
 import pycbc.version
-from glue.lal import Cache
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
@@ -31,16 +30,12 @@ __program__ = "daily_ahope"
 import os
 import copy
 import logging
+import urlparse
 import optparse
 import lal
 from glue import pipeline
 from glue import segments
 import pycbc.ahope as ahope
-
-# Force vanilla universe in legacy code
-ahope.LegacyTmpltbankExec.universe = 'vanilla'
-ahope.LegacyInspiralExec.universe = 'vanilla'
-ahope.LegacySplitBankExec.universe = 'vanilla'
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \
                     level=logging.INFO,datefmt='%I:%M:%S')
@@ -127,6 +122,7 @@ insps = ahope.setup_matchedfltr_workflow(workflow, scienceSegs, datafinds,
 
 
 # Now I start doing things not supported by ahope at present.
+# NOTE: llwadd was moved over to ahope functionality
 
 # First we need direct access to the dag and cp objects
 dag = workflow.dag
@@ -134,78 +130,74 @@ cp = workflow.cp
 
 basename = 'daily_ahope'
 # Set up condor jobs for this stuff
-cp.add_section('condor')
-# Hack to avoid hardcoding in glue
-cp.set('condor','ligolw_add', cp.get('executables', 'ligolw_add'))
-lwadd_job = pipeline.LigolwAddJob('logs',cp)
-lwadd_job.add_condor_cmd('priority', '20')
-lwadd_job.add_opt('add-lfn-table','')
-lwadd_job.set_sub_file( basename + '_' + ifo + '.ligolwadd.sub' )
+llwadd_exe = ahope.LigolwAddExec('llwadd')
+llwadd_job = llwadd_exe.create_job(cp, ''.join(scienceSegs.keys()),
+                                   out_dir=workingDir)
 
-cp_job = pipeline.CondorDAGJob('vanilla','/bin/cp')
-cp_job.set_stderr_file('logs/cp-$(cluster)-$(process).err')
-cp_job.set_stdout_file('logs/cp-$(cluster)-$(process).out')
-cp_job.set_sub_file('cp.sub')
+cp_exec = ahope.Executable('cp')
+cp_job = cp_exec.create_job(cp, out_dir=workingDir)
 
-si_job_coarse = ahope.Job(cp, 'siclustercoarse', 'vanilla')
-si_job_coarse.add_condor_cmd('getenv','True')
-
-si_job_fine = ahope.Job(cp, 'siclusterfine', 'vanilla')
-si_job_fine.add_condor_cmd('getenv','True')
+# Hopefully with tags, I would need only one exec and two jobs
+si_exec_coarse = ahope.Executable('siclustercoarse')
+si_exec_fine = ahope.Executable('siclusterfine')
+si_job_coarse = si_exec_coarse.create_job(cp, out_dir=workingDir)
+si_job_fine = si_exec_fine.create_job(cp, out_dir=workingDir)
 
 inspstr = 'INSPIRAL'
 pageDagParents = []
 for inspOutGroup in insps:
     ifo = inspOutGroup.ifo
     analysis_seg = inspOutGroup.segment
-    fileList = inspOutGroup.cache_entries
-
-    if isinstance(inspOutGroup.node, list):
-        jobList = inspOutGroup.node
-    else:
-        JOBlIST = [inspOutGroup.node] 
 
     # Create a cache file to hole the input to ligolw_add
-    out_basename = ifo + '-' + inspstr + '-' + str(analysis_seg[0]) + '-' 
-    out_basename += str(abs(analysis_seg))
-    insp_cache_file_name = out_basename + '.cache'
-    insp_cache_file = open(insp_cache_file_name, 'w')
-    Cache(fileList).tofile(insp_cache_file)
-    insp_cache_file.close()
-
-    # use ligolw_add to join everything back together
+    llwadd_node = llwadd_job.create_node(analysis_seg, [inspOutGroup]) 
+    # HACK TO OVERWRITE FILE NAMING
+    llwadd_node.output_files = ahope.AhopeFileList([])
     output_name = '%s-INSPIRAL_UNCLUSTERED-%d-%d.xml.gz'\
                    %(ifo, analysis_seg[0], abs(analysis_seg))
-    lwadd = pipeline.LigolwAddNode(lwadd_job)
-    lwadd.add_var_opt('input-cache',insp_cache_file_name)
-    lwadd.set_output(output_name)
-    lwadd.add_var_opt('lfn-start-time',analysis_seg[0])
-    lwadd.add_var_opt('lfn-end-time',analysis_seg[1])
-    for job in jobList:
-        lwadd.add_parent(job)
-    output_file = lwadd.get_output()
-    dag.add_node(lwadd)
+    output_url = urlparse.urlunparse(['file', 'localhost', 
+                                      os.path.join(workingDir,output_name),
+                                      None, None, None])
+    llwaddFile = ahope.AhopeFile(ifo, 'LLWADD_UNCLUSTERED', analysis_seg,
+                              file_url=output_url)
+    llwaddFile.node = llwadd_node
+    llwadd_node.add_output(llwaddFile, opt='output')
+    llwadd_node.add_var_opt('lfn-start-time', analysis_seg[0])
+    llwadd_node.add_var_opt('lfn-end-time',analysis_seg[1])
+    workflow.add_node(llwadd_node)
 
     # Finally run 30ms and 16s clustering on the combined files
     clustered_30ms_name = output_name.replace('UNCLUSTERED',\
                                               '30MILLISEC_CLUSTERED')
+    clustered_30ms_url = urlparse.urlunparse(['file', 'localhost',
+                                 os.path.join(workingDir, clustered_30ms_name),
+                                 None, None, None])
+    clustered_30ms_file = ahope.AhopeFile(ifo, 'LLWADD_30MS_CLUSTERED',
+                            analysis_seg, file_url=clustered_30ms_url)
     clustered_16s_name  = output_name.replace('UNCLUSTERED', '16SEC_CLUSTERED')
+    clustered_16s_url = urlparse.urlunparse(['file', 'localhost',
+                                 os.path.join(workingDir, clustered_16s_name),
+                                 None, None, None])
+    clustered_16s_file = ahope.AhopeFile(ifo, 'LLWADD_16S_CLUSTERED',
+                            analysis_seg, file_url=clustered_16s_url)
+ 
 
-    for cname in [clustered_30ms_name, clustered_16s_name]:
-        cpnode = pipeline.CondorDAGNode(cp_job)
-        cpnode.add_file_arg(output_name)
-        cpnode.add_file_arg(cname)
-        cpnode.add_parent(lwadd)
-        dag.add_node(cpnode)
+    for cfile in [clustered_30ms_file, clustered_16s_file]:
+        cpnode = cp_job.create_node()
+        cpnode.add_input(llwaddFile, argument=True)
+        cpnode.add_output(cfile, argument=True)
+        workflow.add_node(cpnode)
 
-        if cname == clustered_16s_name:
-            sinode = ahope.Node(si_job_coarse)
+        if cfile == clustered_16s_file:
+            sinode = si_job_coarse.create_node()
         else:
-            sinode = ahope.Node(si_job_fine)
+            sinode = si_job_fine.create_node()
 
-        sinode.add_file_arg(cname)
-        sinode.add_parent(cpnode)
-        dag.add_node(sinode)
+        # FIXME: this node overwrites the input file. Better
+        # that this take command line options, remove the cp job and write to
+        # a different file
+        sinode.add_input(cfile, argument=True)
+        workflow.add_node(sinode)
         pageDagParents.append(sinode)
 
 # Now we construct the page_conf.txt for the daily_ihope_page code
