@@ -249,34 +249,44 @@ class Node(pipeline.CondorDAGNode):
             elif len(file.paths) == 1:
                 self.add_var_arg(file.path)
             
-    def add_output(self, files, opts=None): 
+    def add_output(self, file, opt=None, argument=False): 
         """Add a file(s) as an output to this node. 
         
         Parameters
         ----------
-        file : AhopeFile or list of AhopeFiles
-            The files that this node generates
-        opts : string or list of strings, optional
+        file : AhopeFile or list of one AhopeFile
+            A file object that this node generates
+        opt : string or list of strings, optional
             The command line options that the executable needs
             in order to set the names of this file.
+        argument : Boolean, optional
+            If present this indicates that the file should be supplied as an
+            argument to the job (ie. file name with no option at the end of
+            the command line call). Using argument=True and opt != None will
+            result in a failure.
         """  
-        # make input lists 
-        if not isinstance(files, list):
-            files = [files]
-            if opts:
-                opts = [opts]
-        
-        # check sanity of input
-        if opts and len(opts) != len(files):
-            raise TypeError('An opt must be provided for each file in the list')
-         
+        if argument and opt != None:
+            errMsg = "You cannot supply an option and tell the code that this "
+            errMsg += "is an argument. Choose one or the other."
+            raise ValueError(errMsg)
+
+        # Allow input where the file is a list of one AhopeFile
+        if isinstance(file, list):
+            file = file[0]
+
         # make sure the files know which node creates them   
-        for file in files:
-            self.output_files.append(file)
-            file.node = self
-        if opts:
-            for file, opt in zip(files, opts):
-                file.opt = opt   
+        self.output_files.append(file)
+        file.node = self
+        if opt:
+            file.opt = opt
+        if argument:
+            if (len(file.paths) == 1):
+                self.add_var_arg(file.path)
+            else:
+                errMsg = "Do not yet have support for taking partitioned "
+                errMsg += "output files as arguments. Ask for this feature "
+                errMsg += "to be added."
+
                 
     def is_unreliable(script):
         """Make this job run two instances of itself and check the results using
