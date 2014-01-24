@@ -159,7 +159,7 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir,
                 continue
             if missingFrames[ifo]:
                 msg = "From ifo %s we are missing the following frames:" %(ifo)
-                msg +='\n'.join([a.url for a in missingFrames])
+                msg +='\n'.join([a.url for a in missingFrames[ifo]])
                 missingFlag = True
                 logging.error(msg)
             if checkFramesExist == 'update_times':
