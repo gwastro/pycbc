@@ -23,5 +23,9 @@ if not os.path.exists(dfDir+'/logs'):
 scienceSegs, segsDict = ahope.setup_segment_generation(workflow, ifos, 
                                      start_time, end_time, segDir)
 datafinds, scienceSegs = ahope.setup_datafind_workflow(workflow, scienceSegs, 
-                           dfDir, checkSegmentGaps='warn',\
-                           checkFramesExist='raise_error')
+                           dfDir, checkSegmentGaps='update_times',\
+                           checkFramesExist='update_times')
+
+# scienceSegs is a glue.segmentlist of the times you should analyse.
+# It contains science times, that are present on disk, with CAT_1 times
+# removed.
