@@ -30,7 +30,7 @@ import re
 import copy
 import ConfigParser
 
-def get_opt_ifo(self,section,option,ifo):
+def get_opt_ifo(self, section, option, ifo):
     """Supplement to ConfigParser.ConfigParser.get(). This will search for an
     option in [section] and if it doesn't find it will also try in
     [section-ifo]. This is appended to the ConfigParser class. Will raise a
@@ -74,9 +74,9 @@ def get_opt_ifo(self,section,option,ifo):
 
 # FIXME: This is probably not "pythonic" and I might want a new class
 # that inherits from ConfigParser.ConfigParser
-ConfigParser.ConfigParser.get_opt_ifo = get_opt_ifo
+#ConfigParser.ConfigParser.get_opt_ifo = get_opt_ifo
 
-def parse_ahope_ini_file(cpFile,parsed_filepath=None):
+def parse_ahope_ini_file(cpFile, parsed_filepath=None):
     """Read a .ini file in, parse it as described in the documentation linked
     to above, and return the parsed ini file.
 
