@@ -1,7 +1,4 @@
-import os, sys
-import subprocess
-import logging
-import math
+import os, sys, subprocess, logging, math
 import numpy
 import urlparse
 from os.path import splitext, basename, isfile
@@ -23,6 +20,10 @@ def check_output(*popenargs, **kwargs):
     return output
 
 ###############################################################################
+
+def makedir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 def is_condor_exec(exe_path):
     """
@@ -57,7 +58,7 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
     run time and setting the stderr, stdout and log files to ahope standards.
     """
 
-    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
+    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, tags=[]):
         """
         Initialize the pycbc.ahope.Job class.
    
@@ -74,11 +75,35 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         extension : string
             Extension of the output file. Used to figure out the output file
             name.
+        tags : list of strings
+            A list of strings that is used to indentify this job.
         """
         self.exe_name = exe_name
         self.cp = cp
         self.ifo = ifo
-        self.out_dir = out_dir
+        self.tags = tags
+        
+        if self.ifo:
+            tags = tags + [self.ifo]
+        tags = [tag.upper() for tag in tags]
+        self.tag_desc = '_'.join(tags)
+        
+        if len(tags) != 0:
+            self.tagged_name = "%s-%s" % (exe_name, self.tag_desc)
+        else:
+            self.tagged_name = self.exe_name
+        
+        if out_dir is not None:
+            self.out_dir = out_dir
+        elif len(tags) == 0:
+            self.out_dir = self.exe_name
+        else:
+            self.out_dir = self.tagged_name
+            
+        if not os.path.isabs(self.out_dir):
+            self.out_dir = os.path.join(os.getcwd(), self.out_dir) 
+            
+        self.base_dir = os.path.basename(self.out_dir)
         
         exe_path = cp.get('executables', exe_name)
         
@@ -110,8 +135,10 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         self.add_condor_cmd('copy_to_spool','False')
         
         sections = [self.exe_name]
-        if ifo and cp.has_section('%s-%s' %(self.exe_name, ifo.lower())):
-             sections.append('%s-%s' %(self.exe_name, ifo.lower()) )
+        for tag in tags:
+             section = '%s-%s' %(self.exe_name, tag.lower())
+             if cp.has_section(section):
+                sections.append(section)
              
         for sec in sections:
             if cp.has_section(sec):
@@ -125,20 +152,19 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         logBaseNam = 'logs/%s-$(macrogpsstarttime)' %(exe_name,)
         logBaseNam += '-$(macrogpsendtime)-$(cluster)-$(process)'
         
-        if out_dir:
-            self.add_condor_cmd("initialdir", out_dir)
-
-        self.set_stdout_file('%s.out' %(logBaseNam,) )
-        self.set_stderr_file('%s.err' %(logBaseNam,) )
-        if ifo:
-            self.set_sub_file('%s-%s.sub' %(ifo, exe_name,) )
-        else:
-            self.set_sub_file('%s.sub' %(exe_name,) )
-            
+        self.add_condor_cmd("initialdir", self.out_dir)
+        self.set_stdout_file('%s.out' % (logBaseNam,) )
+        self.set_stderr_file('%s.err' % (logBaseNam,) )
+        self.set_sub_file('%s.sub' % (self.tagged_name) )
+          
         # Set default requirements for a JOB, these can be changed
         # through methods of this class
         self.set_memory(1000)
         self.set_storage(100)
+        
+        # Make sure that the directories for this jobs output exist
+        makedir(self.out_dir)
+        makedir(os.path.join(self.out_dir, 'logs'))
     
     def set_memory(self, ram_value):
         """
@@ -338,6 +364,20 @@ class Node(pipeline.CondorDAGNode):
                 errMsg = "Do not yet have support for taking partitioned "
                 errMsg += "output files as arguments. Ask for this feature "
                 errMsg += "to be added."
+                
+    def make_and_add_output(self, valid_seg, extension, option_name, 
+                                 description=None):
+        job = self.job()
+        if description is not None:
+            descr = '_'.join([job.exe_name, description])
+        else:
+            descr = job.exe_name
+
+        insp = AhopeFile(job.ifo, job.exe_name, extension=extension,
+                         segment=valid_seg,
+                         directory=job.out_dir,
+                         tags=job.tags)    
+        self.add_output(insp, opt=option_name)
 
                 
     def is_unreliable(script):
@@ -398,7 +438,7 @@ class Executable(object):
         self.exe_name = exe_name
         self.condor_universe = universe
 
-    def create_job(self, cp, ifo=None, out_dir=None):
+    def create_job(self, cp, ifo=None, out_dir=None, tags=[]):
         """
         Create an pycbc.ahope.Job instance for this Executable.
 
@@ -419,7 +459,8 @@ class Executable(object):
         pycbc.ahope.Job instance
             The pycbc.ahope.Job instance requested.
         """
-        return Job(cp, self.exe_name, self.condor_universe, ifo=ifo, out_dir=out_dir)
+        return Job(cp, self.exe_name, self.condor_universe, ifo=ifo, 
+                   out_dir=out_dir, tags=tags)
 
 class Workflow(object):
     """
@@ -440,7 +481,11 @@ class Workflow(object):
         """
         # Parse ini file
         self.cp = parse_ahope_ini_file(config)
-        self.basename = basename(splitext(config)[0])
+        
+        if type(config) is list:
+            self.basename = basename(splitext(config[0])[0])
+        else:
+            self.basename = basename(splitext(config)[0])
         
         # Initialize the dag
         logfile = self.basename + '.log'
@@ -564,7 +609,7 @@ class AhopeFile(object):
     c = AhopeFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), directory="/home/spxiwh", extension="xml.gz" )
     '''
     def __init__(self, ifo, description, segment, file_url=None, 
-                 extension=None, directory=None, **kwargs):       
+                 extension=None, directory=None, tags=None, **kwargs):       
         """
         Create an AhopeFile instance
         
@@ -596,12 +641,12 @@ class AhopeFile(object):
             full file name will be inferred from the other arguments
             following the ahope standard.
         """
-
         self.node=None
         self.ifo = ifo
         self.description = description
         self.segment = segment
-        self.kwargs = kwargs  
+        self.kwargs = kwargs 
+        self.tags = tags 
       
         if not file_url:
             if not extension:
@@ -610,9 +655,16 @@ class AhopeFile(object):
             if not directory:
                 raise TypeError("a directory is required if a file_url is "
                                 "not provided")
+            
+            if tags is not None:
+                tagged_description = '_'.join([description] + tags)
+            else:
+                tagged_description = description
                                         
-            filename = self._filename(ifo, description, extension, segment)
+            filename = self._filename(ifo, tagged_description, extension, segment)
             path = os.path.join(directory, filename)
+            if not os.path.isabs(path):
+                path = os.path.join(os.getcwd(), path) 
             file_url = urlparse.urlunparse(['file', 'localhost', path, None, None, None])
        
         if not isinstance(file_url, list):
