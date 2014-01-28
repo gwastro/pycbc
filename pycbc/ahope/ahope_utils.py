@@ -288,7 +288,6 @@ class Node(pipeline.CondorDAGNode):
                 self.add_var_opt(opt, file.path)
 
         if argument:
-            # The argument has to be resolved later
             if len(file.paths) > 1 and recombine:
                 # Then *all* files are given as arguments
                 for path in file.paths:
@@ -351,7 +350,7 @@ class Node(pipeline.CondorDAGNode):
         
         #FIXME this mode breaks script output
         # FIXME: Does pegasus know how to deal with this? Two jobs writing the
-        # same output file sound dangerous to me!
+        # same output file sounds dangerous to me.
         
         # Make two instances 
         self.job().__queue = 2
@@ -560,20 +559,42 @@ class AhopeFile(object):
     
     c = AhopeFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001),file_url="file://localhost/home/spxiwh/H1-INSPIRAL_S6LOWMASS-815901601-400.xml.gz" )
 
-    another where the file name is assumed from the kwargs:
+    another where the file url is generated from the inputs:
 
     c = AhopeFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), directory="/home/spxiwh", extension="xml.gz" )
     '''
     def __init__(self, ifo, description, segment, file_url=None, 
                  extension=None, directory=None, **kwargs):       
         """
-        Create an AhopeFilew
+        Create an AhopeFile instance
         
         Parameters
         ----------
-        config : str
-             The path of the ahope configuration file. This is read in and
-             stored under self.cp as a ConfigParser.ConfigParser instance.
+        ifo : string
+            The ifo that the AhopeFile is valid for. If this is more than one
+            ifo then this can be supplied as, for e.g. "H1L1V1".
+        description: string
+            A short description of what the file is, normally used in naming of
+            the output files.
+        segment : glue.segment
+            The time span that the AhopeOutFile is valid for. Note that this is
+            *not* the same as the data that the job that made the file reads in.
+            Lalapps_inspiral jobs do not analyse the first an last 72s of the
+            data that is read, and are therefore not valid at those times.
+        file_url : url (optional, default=None)
+            If this is *not* supplied, extension and directory must be given.
+            If specified this explicitly points to the url of the file, or the
+            url where the file will be generated when made in the workflow.
+        directory : string (optional, default=None)
+            Either supply this *and* extension *or* supply only file_url.
+            If given this gives the directory in which the file exists, or will
+            exists. The file name will be inferred from the other arguments
+            following the ahope standard.
+        extension : string (optional, default=None)
+            Either supply this *and* directory *or* supply only file_url.
+            If given this gives the extension at the end of the file name. The
+            full file name will be inferred from the other arguments
+            following the ahope standard.
         """
 
         self.node=None
@@ -604,21 +625,34 @@ class AhopeFile(object):
 
     @property
     def paths(self):
+        """
+        A list of paths for all files contained in this instance.
+        """
         return [cache.path for cache in self.cache_entries]
     
     @property
     def filenames(self):
+        """
+        A list of file names for all files contained in this instance.
+        """
         return [basename(path) for path in self.paths]
        
     @property
     def path(self):
+        """
+        If only one file is contained in this instance this will be that path.
+        Otherwise a TypeError is raised.
+        """
         if len(self.paths) != 1:
             raise TypeError('A single path cannot be returned. This AhopeFile '
                             'is partitioned into multiple physical files.')
         return self.paths[0]
     
     def partition_self(self, num_parts):
-        """ Parition this AhopeFile into multiple sub-files.
+        """
+        Function for partitioning this AhopeFile into multiple sub-files.
+        This will be called by the ahope workflow manager and does not need to
+        be called by the user.
         """
         new_entries = []
         path_group = []
@@ -644,13 +678,19 @@ class AhopeFile(object):
         
     @property
     def filename(self):
+        """
+        If only one file is contained in this instance this will be that
+        file's name. Otherwise a TypeError is raised.
+        """
         if len(self.paths) != 1:
             raise TypeError('A single filename cannot be returned. This '
                             'file is partitioned into multiple physical files.')
         return self.filenames[0]
         
     def _filename(self, ifo, description, extension, segment):
-        """ Construct the standard output filename
+        """
+        Construct the standard output filename. Should only be used internally
+        of the AhopeFile class.
         """        
         if extension.startswith('.'):
             extension = extension[1:]
@@ -664,15 +704,16 @@ class AhopeFile(object):
         return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start, duration, extension)     
     
 class AhopeFileList(list):
-    '''This class holds a list of AhopeFile objects. It inherits from the
+    '''
+    This class holds a list of AhopeFile objects. It inherits from the
     built-in list class, but also allows a number of features. ONLY
-    AhopeFile instances should be within a AhopeFileList instance.
+    AhopeFile instances should be within an AhopeFileList instance.
     '''
     entry_class = AhopeFile
 
     def find_output(self, ifo, time):
         '''
-        Return AhopeFile that covers the given time, or is most
+        Return one AhopeFile that covers the given time, or is most
         appropriate for the supplied time range.
 
         Parameters
