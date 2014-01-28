@@ -194,10 +194,20 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir,
             segSummaryTimes = get_segment_summary_times(scienceFile,
                                                         scienceChannel)
             missing = dfScienceSegs[ifo] - segSummaryTimes
+            scienceButNotFrame = scienceSegs[ifo] - dfScienceSegs[ifo]
+            missing2 = scienceSegs[ifo] - scienceButNotFrame
+            missing2 = missing2 - segSummaryTimes
             if abs(missing):
                 msg = "From ifo %s the following times have frames, " %(ifo)
                 msg += "but are not covered in the segment summary table."
                 msg += "\n%s" % "\n".join(map(str, missing))
+                logging.error(msg)
+                missingFlag = True
+            if abs(missing2):
+                msg = "From ifo %s the following times have frames, " %(ifo)
+                msg += "are science, and are not covered in the segment "
+                msg += "summary table."
+                msg += "\n%s" % "\n".join(map(str, missing2))
                 logging.error(msg)
                 missingFlag = True
         if checkSegmentSummary == 'raise_error' and missingFlag:
@@ -328,9 +338,16 @@ def setup_datafind_runtime_single_call_perifo(cp, scienceSegs, outputDir):
         # This REQUIRES a coalesced segment list to work
         startTime = int(scienceSegsIfo[0][0])
         endTime = int(scienceSegsIfo[-1][1])
-        cache, cache_file = run_datafind_instance(cp, outputDir, connection,
+        try:
+            cache, cache_file = run_datafind_instance(cp, outputDir, connection,
                                        observatory, frameType, startTime,
                                        endTime, ifo, jobTag)
+        except:
+            connection = setup_datafind_server_connection(cp)
+            cache, cache_file = run_datafind_instance(cp, outputDir, connection,
+                                       observatory, frameType, startTime,
+                                       endTime, ifo, jobTag)
+
         datafindouts.append(cache_file)
         datafindcaches.append(cache)
     return datafindcaches, datafindouts
