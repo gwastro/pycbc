@@ -82,18 +82,19 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         self.exe_name = exe_name
         self.cp = cp
         self.ifo = ifo
+        
+        tags = [tag.upper() for tag in tags]
         self.tags = tags
         
         # some some legacy string descriptors
         self.leg_descr = self.exe_name
         if len(self.tags) != 0:
-            self.leg_tag_name = '_'.join(self.tags)
-            self.leg_descr += '_' + self.leg_tag_name
+            self.leg_tag_name = ('_'.join(self.tags))
+            self.leg_descr += ('_' + self.leg_tag_name)
         
         # Determine the sub file name      
         if self.ifo:
-            tags = tags + [self.ifo]
-        tags = [tag.upper() for tag in tags]
+            tags = tags + [self.ifo.upper()]
         self.tag_desc = '_'.join(tags)
         
         if len(tags) != 0:
