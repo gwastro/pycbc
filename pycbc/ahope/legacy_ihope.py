@@ -79,11 +79,14 @@ class LegacyAnalysisNode(Node, pipeline.AnalysisNode):
     
         
 class LegacyAnalysisJob(Job):
-    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
-        Job.__init__(self, cp, exe_name, universe, ifo, out_dir)
+    def __init__(self, cp, exe_name, universe, ifo=None, tags=[], out_dir=None):
+        Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
         node = LegacyAnalysisNode(self)
+        
+        if len(self.tags) != 0:
+            node.set_ifo_tag(self.leg_tag_name)
         
         if not dfParents or len(dfParents) != 1: 
             raise ValueError("%s must be supplied with a single cache file" 
@@ -105,12 +108,16 @@ class LegacyAnalysisJob(Job):
         if gzipped is not None:
             extension += '.gz'
         
-        #create the ouptut file for this job
+        #create the ouptut file for this job 
+        # Note that this doesn't enforce that the program creates a file with this
+        # name. This must match the the expected output of the program.
         name_segment = segments.segment([node.get_start(), node.get_end()])
         out_file = AhopeFile(self.ifo, self.exe_name, 
                              extension=extension,
                              segment=name_segment,
-                             directory=self.out_dir)
+                             directory=self.out_dir,
+                             tags=self.tags)
+        print out_file.paths
         out_file.segment = valid_seg
         node.add_output(out_file)
         node.add_input(cache_file, opt='frame-cache')         
@@ -120,8 +127,9 @@ class LegacyAnalysisJob(Job):
         
 class LegacyInspiralJob(LegacyAnalysisJob):
     def __init__(self, cp, exe_name, universe, ifo=None, injection_file=None, 
-                       out_dir=None):
-        LegacyAnalysisJob.__init__(cp, exe_name, universe, ifo, out_dir)
+                       out_dir=None, tags=[]):
+        LegacyAnalysisJob.__init__(self, cp, exe_name, universe, ifo, 
+                                    out_dir=out_dir, tags=tags)
         self.injection_file = injection_file 
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
@@ -153,10 +161,10 @@ class LegacyInspiralExec(Executable):
                              'the exe_name to anything but "inspiral"')
         Executable.__init__(self, 'inspiral')
 
-    def create_job(self, cp, ifo, out_dir=None):
+    def create_job(self, cp, ifo, out_dir=None, injection_file=None, tags=[]):
         return LegacyInspiralJob(cp, self.exe_name, self.condor_universe, 
-                                 ifo=ifo, 
-                                 out_dir=out_dir)
+                                 ifo=ifo, injection_file=injection_file,
+                                 out_dir=out_dir, tags=tags)
 
 class LegacySplitBankExec(Executable):
     """This class holds the function for lalapps_splitbank 
