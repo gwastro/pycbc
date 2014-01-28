@@ -393,8 +393,8 @@ class LigolwAddExec(Executable):
 
 class LigolwSSthincaJob(Job):
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None,
-                 dqVetoName=None):
-        Job.__init__(self, cp, exe_name, universe, ifo, out_dir)
+                 dqVetoName=None, tags=[]):
+        Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
         if dqVetoName:
             self.add_opt("vetoes-name", dqVetoName)
@@ -410,7 +410,8 @@ class LigolwSSthincaJob(Job):
         # FIXME: This must match the *actual* output name!
         outFile = AhopeFile(self.ifo, self.exe_name, extension='.xml.gz',
                          segment=jobSegment,
-                         directory=self.out_dir)
+                         directory=self.out_dir,
+                         tags=self.tags)
 
         node.add_output(outFile)
 
@@ -425,9 +426,10 @@ class LigolwSSthincaExec(Executable):
 
         Executable.__init__(self, exe_name, 'vanilla')
 
-    def create_job(self, cp, ifo, out_dir=None, dqVetoName=None):
+    def create_job(self, cp, ifo, out_dir=None, dqVetoName=None, tags=[]):
         return LigolwSSthincaJob(cp, self.exe_name, self.condor_universe,
-                            ifo=ifo, out_dir=out_dir, dqVetoName=dqVetoName)
+                            ifo=ifo, out_dir=out_dir, 
+                            dqVetoName=dqVetoName, tags=tags)
                             
 class LalappsInspinjJob(Job):
     def create_node(self, segment):

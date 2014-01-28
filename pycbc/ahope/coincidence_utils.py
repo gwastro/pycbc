@@ -54,7 +54,7 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, science_segs, segsDict,
               setup_snglveto_workflow_ligolw_thinca(workflow, 
                                         science_segs, dqSegFile,
                                         dqVetoName, inspiral_outs, output_dir,
-                                        tags=tags)
+                                        tags=tags + [dqVetoName])
         ligolwAddOuts.extend(currLigolwAddOuts)
         ligolwThincaOuts.extend(currLigolwThincaOuts)
     return ligolwThincaOuts, ligolwAddOuts
@@ -111,9 +111,11 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, science_segs, dqSegFile,
     # Set up jobs for ligolw_add and ligolw_thinca
     ligolwadd_exe = LigolwAddExec('llwadd')
     ligolwthinca_exe = LigolwSSthincaExec('thinca')
-    ligolwadd_job = ligolwadd_exe.create_job(cp, ifoString, out_dir=output_dir, tags=tags)
+    ligolwadd_job = ligolwadd_exe.create_job(cp, ifoString, 
+                                     out_dir=output_dir, tags=tags)
     ligolwthinca_job = ligolwthinca_exe.create_job(cp, ifoString, 
-                                     out_dir=output_dir, dqVetoName=dqVetoName)
+                                     out_dir=output_dir, 
+                                     dqVetoName=dqVetoName, tags=tags)
 
     # Set up the nodes to do the coincidence analysis
     ligolwAddOuts = AhopeFileList([])
