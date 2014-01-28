@@ -25,7 +25,8 @@ def check_output(*popenargs, **kwargs):
 ###############################################################################
 
 def is_condor_exec(exe_path):
-    """ Determine if an executable is condor-compiled
+    """
+    Determine if an executable is condor-compiled
 
     Parameters
     ----------
@@ -43,8 +44,22 @@ def is_condor_exec(exe_path):
         return False
 
 class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
+    """
+    The pyCBC Job class is an extension of the pipeline.AnalysisJob class.
+    From the Dagman perspective a single AnalysisJob instance corresponds to
+    a single condor submit file, which may be called by several condor nodes.
+    In the DAX perspective it can be used to add several nodes to a workflow
+    which have a number of common arguments.
+
+    The specific pyCBC implementation adds a number of helper functions as
+    documented below and allows for some extra functionality when initializing
+    the instance, including checking if the executable is condor_compiled at
+    run time and setting the stderr, stdout and log files to ahope standards.
+    """
+
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
-        """Initialize the LegacyInspiralAnalysisJob class.
+        """
+        Initialize the pycbc.ahope.Job class.
    
         Parameters
         -----------
@@ -126,7 +141,8 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         self.set_storage(100)
     
     def set_memory(self, ram_value):
-        """Set the amount of the RAM that this job requires.
+        """
+        Set the amount of the RAM that this job requires.
         
         Parameters
         ----------
@@ -136,7 +152,8 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         self.add_condor_cmd('request_memory', '%d' %(ram_value))
         
     def set_storage(self, storage_value):
-        """Set the amount of storage that this job requires.
+        """
+        Set the amount of harddrive storage that this job requires.
         
         Parameters
         ----------
@@ -154,13 +171,43 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         self.add_condor_cmd('Requirements', '( GPU_PRESENT =?= true) || (HasGPU =?= "gtx580") || (Target.HAS_GPU =?= True)')
 
     def create_node(self):
-        """Create a condor node from this job.
+        """
+        Create a condor node from this job. This provides a basic interface to
+        the Node class. Most jobs in an ahope workflow will subclass the 
+        pycbc.ahope.Job class and overwrite this to give more details when
+        initializing the node.
         """
         return Node(self)
         
 
 class Node(pipeline.CondorDAGNode):
+    """
+    The pyCBC Node class is an extension of the pipeline.CondorDAGNode class.
+    A single Node instance corresponds to a single command that will be run
+    within the workflow. *Every* command/node in the workflow will have a Node
+    instance.
+
+    The specific pyCBC implementation adds a number of helper functions as
+    documented below and allows for some extra functionality when initializing
+    the instance, including allowing us to deal with cases where a set of
+    partitioned input files are given. For e.g. if I have run lalapps_splitbank
+    I now have a set of files corresponding to *one* template bank. With this
+    function I can just feed the Node that AhopeFile pointing to the complete
+    template bank (ie. the list of files making up that template bank) and this
+    will automatically create a job for each file in the template bank.
+    """
+
     def __init__(self, job):
+        """
+        Initialize the pycbc.ahope.Node class. This is often overridden in
+        subclassed instances.
+        
+        Parameters
+        -----------
+        Job : pycbc.ahope.Job instance
+            The pycbc.ahope.Job instance to create a Node from
+        """
+
         pipeline.CondorDAGNode.__init__(self, job)
         self.input_files = AhopeFileList([])
         self.partitioned_input_files = AhopeFileList([])
@@ -168,7 +215,8 @@ class Node(pipeline.CondorDAGNode):
         self.set_category(job.exe_name)
         
     def add_input(self, file, opt=None, argument=False, recombine=False):
-        """Add a file(s) as input to this node. 
+        """
+        Add a file, or partitioned file, as input to this node. 
         
         Parameters
         ----------
@@ -183,7 +231,11 @@ class Node(pipeline.CondorDAGNode):
             the command line call). Using argument=True and opt != None will
             result in a failure.
         recombine : Boolean, optional
-            If present this indicates 
+            If present this indicates that the partitioned input file will be
+            recombined in this Node. So only one Node is needed and all the
+            partitioned input files will be parents. It is possible to
+            sequentially add partitioned files to be recombined and other 
+            partitioned files that are *not* to be recombined. 
         """
         if argument and opt != None:
             errMsg = "You cannot supply an option and tell the code that this "
@@ -250,7 +302,8 @@ class Node(pipeline.CondorDAGNode):
                 self.add_var_arg(file.path)
             
     def add_output(self, file, opt=None, argument=False): 
-        """Add a file(s) as an output to this node. 
+        """
+        Add a file(s) as an output to this node. 
         
         Parameters
         ----------
@@ -289,12 +342,16 @@ class Node(pipeline.CondorDAGNode):
 
                 
     def is_unreliable(script):
-        """Make this job run two instances of itself and check the results using
-           the given script. 
+        """
+        Make this job run two instances of itself and check the results using
+        the given script. This is primarily used for GPU jobs where GPUs can
+        produce unreliable results some of the time.
         """
         raise NotImplementedError
         
         #FIXME this mode breaks script output
+        # FIXME: Does pegasus know how to deal with this? Two jobs writing the
+        # same output file sound dangerous to me!
         
         # Make two instances 
         self.job().__queue = 2
@@ -306,6 +363,9 @@ class Node(pipeline.CondorDAGNode):
         self.set_post_script(script)
         
     def finalize(self):
+        """
+        This is a stub, it does nothing at the moment, do not call it.
+        """
         # If the job needs to be run twice and checked, change the output 
         # name format accordingly (the postscript will produce a file of the
         # original name
@@ -313,27 +373,71 @@ class Node(pipeline.CondorDAGNode):
             pass
 
 class Executable(object):
-    """This class is a reprentation of an executable and its capabilities
+    """
+    This class is a reprentation of an executable and its capabilities.
+    It can be used to create condor job(s) for this executable and is normally
+    sub-classed, hence the lack of stuff in the stock instance.
     """
     def __init__(self, exe_name, universe=None):
+        """
+        Initialize the Executable class.
+
+        Parameters
+        -----------
+        exe_name: string
+            The string corresponding to the executable. We demand that this tag
+            points to the executable path in the [executables] section of the
+            config file and that any options in the [exe_name] section will be
+            sent to the nodes resulting in the workflow.
+        universe=None: string, (optional, default=None)
+            The condor universe to run the job in. If not given the condor
+            universe will be automatically checked by determining if condor
+            libraries are present in the executable. We recommend that the
+            auto-detect feature is used.
+        """
+
         self.exe_name = exe_name
         self.condor_universe = universe
 
     def create_job(self, cp, ifo=None, out_dir=None):
+        """
+        Create an pycbc.ahope.Job instance for this Executable.
+
+        Parameters
+        -----------
+        cp : ConfigParser.ConfigParser instance
+            An in-memory representation of the configuration file
+        ifo : string, (optional, default=None)
+            The ifo string appropriate for the job. This is used in naming the
+            output files for some executables and is necessary in some cases.
+            This is normally reflected in the sub-classes of this class.
+        out_dir : string, (optional, default=None)
+            The path to the output directory for this job. This is used in a lot
+            of cases to determine the location of the output files. Again this
+            is normally reflected in the sub-classes of this class.
+        Returns
+        --------
+        pycbc.ahope.Job instance
+            The pycbc.ahope.Job instance requested.
+        """
         return Job(cp, self.exe_name, self.condor_universe, ifo=ifo, out_dir=out_dir)
 
 class Workflow(object):
-    """This class manages an aHOPE style workflow. It provides convenience 
+    """
+    This class manages an aHOPE style workflow. It provides convenience 
     functions for finding input files using time and keywords. It can also
-    generate cache files from the inputs.
+    generate cache files from the inputs. It makes heavy use of the
+    pipeline.CondorDAG class, which is instantiated under self.dag.
     """
     def __init__(self, config):
-        """Create an aHOPE workflow
+        """
+        Create an aHOPE workflow
         
         Parameters
         ----------
         config : str
-             The path of the ahope configuration file.
+             The path of the ahope configuration file. This is read in and
+             stored under self.cp as a ConfigParser.ConfigParser instance.
         """
         # Parse ini file
         self.cp = parse_ahope_ini_file(config)
@@ -348,6 +452,13 @@ class Workflow(object):
         self.dag.set_dag_file(self.basename)
         
     def partition_node(self, node, partitioned_file):
+        """
+        Do not call this function directly. It is called from within add_node.
+        It is responsible for dealing with cases where I have been given
+        partitioned input files and I need to create multiple condorDAGNodes
+        to run on each of the partitioned inputs.
+        """
+
         import time, random, hashlib
     
         opt = partitioned_file.opt
@@ -373,6 +484,14 @@ class Workflow(object):
         return nodes     
         
     def add_node(self, node):
+        """
+        Use this function to add a pycbc.ahope.Node instance to the workflow.
+
+        Parameters
+        -----------
+        node : pycbc.ahope.Node instance
+            The pyCBC Node instance to be added.
+        """
         # For input files that come in pieces, create a new node for each
         # and set the input argument to the individual physical file
         part_files = node.partitioned_input_files
@@ -412,13 +531,22 @@ class Workflow(object):
             self.dag.add_node(node)   
         
     def write_plans(self):
+        """
+        This will create the workflow and write it out to disk, only call this
+        after the workflow has been completely created.
+        """
         self.dag.write_sub_files()
         self.dag.write_script()
         self.dag.write_dag()
 
 class AhopeFile(object):
-    '''This class holds the details of an individual output file in the ahope
-    workflow. This file may be pre-supplied, generated from within the ahope
+    '''
+    This class holds the details of an individual output file *or* a group
+    of partitioned output files in the output workflow.
+    An example of partitioned output is a template bank file split up with
+    splitbank, or the matched-filter outputs from running on each of these
+    split template banks in turn.
+    This file(s) may be pre-supplied, generated from within the ahope
     command line script, or generated within the workflow. The important stuff
     is:
 
@@ -426,14 +554,28 @@ class AhopeFile(object):
     * The time span that the AhopeOutFile is valid for
     * A short description of what the file is
     * The extension that the file should have
-    * The directory where the file should be located
+    * The url where the file should be located
 
     An example of initiating this class:
     
-    c = AhopeFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902177.5), )
+    c = AhopeFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001),file_url="file://localhost/home/spxiwh/H1-INSPIRAL_S6LOWMASS-815901601-400.xml.gz" )
+
+    another where the file name is assumed from the kwargs:
+
+    c = AhopeFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), directory="/home/spxiwh", extension="xml.gz" )
     '''
     def __init__(self, ifo, description, segment, file_url=None, 
                  extension=None, directory=None, **kwargs):       
+        """
+        Create an AhopeFilew
+        
+        Parameters
+        ----------
+        config : str
+             The path of the ahope configuration file. This is read in and
+             stored under self.cp as a ConfigParser.ConfigParser instance.
+        """
+
         self.node=None
         self.ifo = ifo
         self.description = description
