@@ -4,7 +4,7 @@ from glue import pipeline
 from glue import segments
 from ahope_utils import Job, Node, Executable, AhopeFile
 
-def legacy_get_valid_times(self, cp, ifo):
+def legacy_get_valid_times(self):
     """
     Return the length of data that the tmpltbank job will need to read and
     the part of that data that the template bank is valid for. In the case
@@ -47,12 +47,11 @@ def legacy_get_valid_times(self, cp, ifo):
     # Read in needed options. This will fail if options not present
     # It will search relevant sub-sections for the option, so this can be
     # set differently for each ifo.
-    padData = int(cp.get_opt_ifo(self.exe_name, 'pad-data', ifo))
-    segmentLength = float(cp.get_opt_ifo(self.exe_name,
-                                         'segment-length', ifo))
-    sampleRate = float(cp.get_opt_ifo(self.exe_name,'sample-rate', ifo))
-    numSegments = int(cp.get_opt_ifo(self.exe_name,
-                                     'number-of-segments', ifo))
+    padData = int(self.get_opt('pad-data'))
+    segmentLength = float(self.get_opt('segment-length'))
+    sampleRate = float(self.get_opt('sample-rate'))
+    numSegments = int(self.get_opt('number-of-segments'))
+    
     # Calculate total valid duration
     analysisDur = int(segmentLength/sampleRate) * (numSegments + 1)/2
     if (segmentLength % sampleRate):
@@ -116,14 +115,24 @@ class LegacyAnalysisJob(Job):
         node.add_output(out_file)
         node.add_input(cache_file, opt='frame-cache')         
         return node
+
+    get_valid_times = legacy_get_valid_times
         
 class LegacyInspiralJob(LegacyAnalysisJob):
+    def __init__(self, cp, exe_name, universe, ifo=None, injection_file=None, 
+                       out_dir=None):
+        LegacyAnalysisJob.__init__(cp, exe_name, universe, ifo, out_dir)
+        self.injection_file = injection_file 
+
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
         node = LegacyAnalysisJob.create_node(self, data_seg, valid_seg, 
                                                    parent, dfParents)
         node.set_trig_start(valid_seg[0])
         node.set_trig_end(valid_seg[1])  
         node.add_input(parent, opt='bank-file')    
+        
+        if self.injection_file is not None:
+            node.add_input(self.injection_file, 'injection-file')
         return node
 
 class LegacyTmpltbankExec(Executable):
@@ -135,9 +144,7 @@ class LegacyTmpltbankExec(Executable):
 
     def create_job(self, cp, ifo, out_dir=None):
         return LegacyAnalysisJob(cp, self.exe_name, self.condor_universe,
-                                 ifo=ifo, out_dir=out_dir)
-    
-    get_valid_times = legacy_get_valid_times
+                                 ifo=ifo, out_dir=out_dir)   
         
 class LegacyInspiralExec(Executable):
     def __init__(self, exe_name):
@@ -150,8 +157,6 @@ class LegacyInspiralExec(Executable):
         return LegacyInspiralJob(cp, self.exe_name, self.condor_universe, 
                                  ifo=ifo, 
                                  out_dir=out_dir)
-
-    get_valid_times = legacy_get_valid_times
 
 class LegacySplitBankExec(Executable):
     """This class holds the function for lalapps_splitbank 
@@ -174,7 +179,7 @@ class LegacySplitBankJob(Job):
 
         Returns
         --------
-        ode : Node
+        node : Node
             The node to run the job
         """
         node = LegacyAnalysisNode(self)
@@ -182,7 +187,7 @@ class LegacySplitBankJob(Job):
         
         # Get the output (taken from inspiral.py)
         url_list = []
-        x = bank.path.split('-')
+        x = bank.filename.split('-')
         num_banks = int(self.get_opt('number-of-banks'))
         for i in range( 0, num_banks):
             out_file = "%s-%s_%2.2d-%s-%s" %(x[0], x[1], i, x[2], x[3])
@@ -190,7 +195,7 @@ class LegacySplitBankJob(Job):
                                           os.path.join(self.out_dir, out_file),
                                           None, None, None])
             url_list.append(out_url)
-        
+                
         job_tag = bank.description + "_" + self.exe_name.upper()
         out_file_group = AhopeFile(bank.ifo, job_tag, bank.segment, 
                                    file_url=url_list)
