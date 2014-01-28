@@ -151,7 +151,6 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
              
         # Do some basic sanity checking on the options
         for sec1, sec2 in combinations(sections, 2):
-            print sec1, sec2, sections
             check_duplicate_options(cp, sec1, sec2, raise_error=True)
              
         for sec in sections:

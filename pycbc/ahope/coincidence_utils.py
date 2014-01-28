@@ -1,18 +1,22 @@
 from __future__ import division
 
 import os
+import os.path
 from glue import segments
 from pycbc.ahope.ahope_utils import *
 from pycbc.ahope.jobsetup_utils import *
 from pylal import ligolw_cafe, ligolw_tisi
 
 def setup_coincidence_workflow(workflow, science_segs, segsDict, inspiral_outs,
-                               output_dir, maxVetoCat=5):
+                               output_dir, maxVetoCat=5, tags=[]):
     '''
     Setup coincidence stage of ahope workflow.
     FIXME: ADD MORE DOCUMENTATION
     '''
     logging.info('Entering coincidence setup module.')
+    
+    if not os.path.isabs(output_dir):
+        output_dir = os.path.join(os.getcwd(), output_dir) 
     
     # Scope here for adding different options/methods here. For now we only
     # have the single_stage ihope method which consists of using ligolw_add
@@ -22,14 +26,15 @@ def setup_coincidence_workflow(workflow, science_segs, segsDict, inspiral_outs,
     # If you want the ligolw_add outputs, call this function directly
     coinc_outs, _ = setup_coincidence_workflow_ligolw_thinca(workflow,
                      science_segs, segsDict, inspiral_outs, output_dir,
-                     maxVetoCat=maxVetoCat)
+                     maxVetoCat=maxVetoCat, tags=tags)
 
     logging.info('Leaving coincidence setup module.')
 
     return coinc_outs
 
 def setup_coincidence_workflow_ligolw_thinca(workflow, science_segs, segsDict,
-                                     inspiral_outs, output_dir, maxVetoCat=5):
+                                     inspiral_outs, output_dir, tags=[],
+                                     maxVetoCat=5):
     """
     ADD DOCUMENTATION
     """
@@ -48,13 +53,14 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, science_segs, segsDict,
         currLigolwThincaOuts, currLigolwAddOuts = \
               setup_snglveto_workflow_ligolw_thinca(workflow, 
                                         science_segs, dqSegFile,
-                                        dqVetoName, inspiral_outs, output_dir)
+                                        dqVetoName, inspiral_outs, output_dir,
+                                        tags=tags)
         ligolwAddOuts.extend(currLigolwAddOuts)
         ligolwThincaOuts.extend(currLigolwThincaOuts)
     return ligolwThincaOuts, ligolwAddOuts
 
 def setup_snglveto_workflow_ligolw_thinca(workflow, science_segs, dqSegFile,
-                                dqVetoName, inspiral_outs, output_dir):
+                                dqVetoName, inspiral_outs, output_dir, tags=[]):
     '''
     ADD DOCUMENTATION
     '''
@@ -105,7 +111,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, science_segs, dqSegFile,
     # Set up jobs for ligolw_add and ligolw_thinca
     ligolwadd_exe = LigolwAddExec('llwadd')
     ligolwthinca_exe = LigolwSSthincaExec('thinca')
-    ligolwadd_job = ligolwadd_exe.create_job(cp, ifoString, out_dir=output_dir)
+    ligolwadd_job = ligolwadd_exe.create_job(cp, ifoString, out_dir=output_dir, tags=tags)
     ligolwthinca_job = ligolwthinca_exe.create_job(cp, ifoString, 
                                      out_dir=output_dir, dqVetoName=dqVetoName)
 

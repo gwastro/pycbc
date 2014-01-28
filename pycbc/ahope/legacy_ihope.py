@@ -117,7 +117,6 @@ class LegacyAnalysisJob(Job):
                              segment=name_segment,
                              directory=self.out_dir,
                              tags=self.tags)
-        print out_file.paths
         out_file.segment = valid_seg
         node.add_output(out_file)
         node.add_input(cache_file, opt='frame-cache')         

@@ -352,11 +352,11 @@ class PyCBCTmpltbankExec(Executable):
                                  ifo=ifo, out_dir=out_dir)
 
 class LigolwAddJob(Job):
-    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
-        Job.__init__(self, cp, exe_name, universe, ifo, out_dir)
+    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, tags=[]):
+        Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
 
-    def create_node(self, jobSegment, inputTrigFiles, timeSlideFile=None,\
+    def create_node(self, jobSegment, inputTrigFiles, timeSlideFile=None,
                     dqSegFile=None):
         node = LegacyAnalysisNode(self)
 
@@ -364,7 +364,6 @@ class LigolwAddJob(Job):
         # argument list. If this becomes unwieldy we could dump all these files
         # to a cache file and read that in. ALL INPUT FILES MUST BE LISTED AS
         # INPUTS (with .add_input_file) IF THIS IS DONE THOUGH!
-
         if timeSlideFile:
             node.add_input(timeSlideFile, argument=True)
         if dqSegFile:
@@ -377,11 +376,7 @@ class LigolwAddJob(Job):
         # In ihope, these files were named with only participating ifos. Not
         # sure this is worth doing, can can be done with replacing self.ifo
         # here if desired
-        outFile = AhopeFile(self.ifo, self.exe_name, extension='.xml.gz',
-                         segment=jobSegment,
-                         directory=self.out_dir)
-
-        node.add_output(outFile, opt='output')
+        node.make_and_add_output(jobSegment, '.xml.gz', 'output')
         return node
 
 class LigolwAddExec(Executable):
@@ -392,9 +387,9 @@ class LigolwAddExec(Executable):
 
         Executable.__init__(self, exe_name, 'vanilla')
 
-    def create_job(self, cp, ifo, out_dir=None):
+    def create_job(self, cp, ifo, out_dir=None, tags=[]):
         return LigolwAddJob(cp, self.exe_name, self.condor_universe,
-                            ifo=ifo, out_dir=out_dir)
+                            ifo=ifo, out_dir=out_dir, tags=tags)
 
 class LigolwSSthincaJob(Job):
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None,

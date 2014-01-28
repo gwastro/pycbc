@@ -16,6 +16,7 @@ def setup_injection_workflow(workflow, science_segs, datafind_outs,
     all_sec = workflow.cp.sections()
     sections = [sec for sec in all_sec if sec.startswith('injection-')]
     insp_sets = []
+    insp_tags = []
     for sec in sections:  
         segment = segments.segment(start_time, end_time)
         inj_tag = sec.split('-')[1]
@@ -25,8 +26,9 @@ def setup_injection_workflow(workflow, science_segs, datafind_outs,
         injection_file = node.output_files[0]
         insp_files = setup_matchedfltr_workflow(workflow, science_segs, datafind_outs, 
                                          tmplt_banks, injection_file=injection_file, 
-                                         tags=[inj_tag])
+                                         tags=[inj_tag], output_dir=output_dir)
         insp_sets.append(insp_files)
+        insp_tags.append(inj_tag)
     logging.info("Leaving injection module.")  
-    return insp_sets
+    return insp_sets, insp_tags
 
