@@ -8,7 +8,7 @@ from pycbc.ahope.ahope_utils import *
 from pycbc.ahope.jobsetup_utils import *
 
 def setup_tmpltbank_workflow(workflow, science_segs, 
-                             datafind_outs, output_dir):
+                             datafind_outs, output_dir=None):
     '''
     Setup template bank section of ahope workflow. This function is responsible
     for deciding which of the various template bank workflow generation
@@ -118,7 +118,8 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
     # Template banks are independent for different ifos, but might not be!
     # Begin with independent case and add after FIXME
     for ifo in ifos:
-        sngl_ifo_job_setup(workflow, ifo, tmplt_banks, exe_instance, 
+        job_instance = exe_instance.create_job(workflow.cp, ifo, output_dir)
+        sngl_ifo_job_setup(workflow, ifo, tmplt_banks, job_instance, 
                            science_segs[ifo], datafind_outs, output_dir,
                            link_exe_instance=link_exe_instance, 
                            allow_overlap=True)

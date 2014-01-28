@@ -5,7 +5,8 @@ from pycbc.ahope.ahope_utils import *
 from pycbc.ahope.jobsetup_utils import *
 
 def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
-                               tmplt_banks, output_dir):
+                               tmplt_banks, output_dir=None, injection_file=None,
+                               tags=[]):
     '''
     Setup matched filter section of ahope workflow.
     FIXME: ADD MORE DOCUMENTATION
@@ -17,13 +18,14 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
     # There should be a number of different options here, for e.g. to set
     # up fixed bank, or maybe something else
     inspiral_outs = setup_matchedfltr_dax_generated(workflow, science_segs, 
-                                     datafind_outs, tmplt_banks, output_dir)
+                                     datafind_outs, tmplt_banks, output_dir,
+                                     injection_file, tags)
     logging.info("Leaving matched-filtering setup module.")    
     return inspiral_outs
 
 def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
-                                    tmplt_banks, output_dir, 
-                                    link_to_tmpltbank=True):
+                                    tmplt_banks, output_dir, injection_file=None,
+                                    tags=[], link_to_tmpltbank=True):
     '''
     Setup matched-filter jobs that are generated as part of the ahope workflow.
     FIXME: ADD MORE DOCUMENTATION
@@ -39,7 +41,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
     ifos = science_segs.keys()
     match_fltr_exe = os.path.basename(cp.get('executables','inspiral'))
     # Select the appropriate class
-    exe_instance = select_matchedfilterjob_instance(match_fltr_exe,'inspiral')
+    exe_instance = select_matchedfilterjob_instance(match_fltr_exe, 'inspiral')
 
     if link_to_tmpltbank:
         # Use this to ensure that inspiral and tmpltbank jobs overlap. This
@@ -62,7 +64,10 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
     # Template banks are independent for different ifos, but might not be!
     # Begin with independent case and add after FIXME
     for ifo in ifos:
-        sngl_ifo_job_setup(workflow, ifo, inspiral_outs, exe_instance, 
+        job_instance = exe_instance.create_job(workflow.cp, ifo, output_dir, 
+                                               injection_file=injection_file, 
+                                               tags=tags)
+        sngl_ifo_job_setup(workflow, ifo, inspiral_outs, job_instance, 
                            science_segs[ifo], datafind_outs, output_dir,
                            parents=tmplt_banks, 
                            link_exe_instance=link_exe_instance,
