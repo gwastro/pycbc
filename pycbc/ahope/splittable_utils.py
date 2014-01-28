@@ -5,7 +5,7 @@ import logging
 from pycbc.ahope.ahope_utils import * 
 from pycbc.ahope.jobsetup_utils import *
 
-def setup_splittable_workflow(workflow, tmplt_banks, out_dir):
+def setup_splittable_workflow(workflow, tmplt_banks, out_dir=None):
     '''
     Setup matched filter section of ahope workflow.
     FIXME: ADD MORE DOCUMENTATION
