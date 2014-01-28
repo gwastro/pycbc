@@ -97,7 +97,7 @@ def select_splitfilejob_instance(curr_exe, curr_section):
 
     return exe_class
 
-def sngl_ifo_job_setup(workflow, ifo, out_files, exe_instance, science_segs, 
+def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs, 
                        datafind_outs, output_dir, parents=None, 
                        link_exe_instance=False, allow_overlap=True):
     """
@@ -112,7 +112,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, exe_instance, science_segs,
     out_files : AhopeOutFileList or AhopeOutGroupList
         The AhopeOutFileList containing the list of jobs. Jobs will be appended
         to this list, and it does not need to be empty when supplied.
-    exe_instance : Instanced class
+    curr_exe_job : Instanced class
         An instanced class that contains the functions needed to set up things
         that are specific to the executable being run.
     science_segs : segments.segmentlist
@@ -135,13 +135,15 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, exe_instance, science_segs,
     """
     cp = workflow.cp
     
+    # Set up the condorJob class for the current executable
+    data_length, valid_chunk = curr_exe_job.get_valid_times()
+    
     # Begin by getting analysis start and end, and start and end of time
     # that the output file is valid for
-    data_length, valid_chunk = exe_instance.get_valid_times(cp, ifo)
     valid_length = abs(valid_chunk)
 
     data_chunk = segments.segment([0, data_length])
-    job_tag = exe_instance.exe_name.upper()
+    job_tag = curr_exe_job.exe_name.upper()
     
     if link_exe_instance:
         # EURGHH! What we are trying to do here is, if this option is given,
@@ -151,7 +153,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, exe_instance, science_segs,
 
         # What data does the linked exe use?
         link_data_length, link_valid_chunk = \
-                             link_exe_instance.get_valid_times(cp, ifo)
+                    link_exe_instance.create_job(cp, ifo, curr_exe_job.out_dir).get_valid_times()
         # What data is lost at start and end from either job?
         start_data_loss = max(valid_chunk[0], link_valid_chunk[0])
         end_data_loss = max(data_length - valid_chunk[1],\
@@ -172,9 +174,6 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, exe_instance, science_segs,
     # may be different by this point if using link_exe_instance
     data_loss = data_length - abs(valid_chunk)
 
-
-    # Set up the condorJob class for the current executable
-    curr_exe_job = exe_instance.create_job(cp, ifo, output_dir)
     
     if data_loss < 0:
         raise ValueError("Ahope needs fixing! Please contact a developer")
@@ -255,15 +254,17 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, exe_instance, science_segs,
     return out_files
 
 class PyCBCInspiralJob(Job):
-    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
-        Job.__init__(self, cp, exe_name, universe, ifo, out_dir)
+    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, injection_file=None, tags=[]):
+        Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        self.cp = cp
         self.set_memory(2000)
+        self.injection_file = injection_file
+
         if self.get_opt('processing-scheme') == 'cuda':
             self.needs_gpu()
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
         node = LegacyAnalysisNode(self)
-
         pad_data = int(self.get_opt('pad-data'))
         if pad_data is None:
             raise ValueError("The option pad-data is a required option of "
@@ -280,37 +281,36 @@ class PyCBCInspiralJob(Job):
         node.set_trig_end(valid_seg[1])
 
         cache_file = dfParents[0]
-
-        # FIXME add control for output type         
-        insp = AhopeFile(self.ifo, self.exe_name, extension='.xml.gz',
-                         segment=valid_seg,
-                         directory=self.out_dir)
+        
+        if self.injection_file is not None:
+            node.add_input(self.injection_file, 'injection-file')
 
         # set the input and output files        
-        node.add_output(insp, opt='output')
+        node.make_and_add_output(valid_seg, '.xml.gz', 'output')
         node.add_input(cache_file, opt='frame-cache')
         node.add_input(parent, opt='bank-file')
         return node
-
-class PyCBCInspiralExec(Executable):
-    def create_job(self, cp, ifo, out_dir=None):
-        return PyCBCInspiralJob(cp, self.exe_name, self.condor_universe,
-                                ifo=ifo, out_dir=out_dir)
-
-    def get_valid_times(self, cp, ifo):
-        analysis_length = int(cp.get('ahope-inspiral', 'analysis-length'))
-        pad_data = int(cp.get_opt_ifo(self.exe_name, 'pad-data', ifo))
-        start_pad = int(cp.get_opt_ifo(self.exe_name, 'segment-start-pad', ifo))
-        end_pad = int(cp.get_opt_ifo(self.exe_name, 'segment-end-pad', ifo))
+        
+    def get_valid_times(self):
+        analysis_length = int(self.cp.get('ahope-inspiral', 'analysis-length'))
+        pad_data = int(self.get_opt( 'pad-data'))
+        start_pad = int(self.get_opt( 'segment-start-pad'))
+        end_pad = int(self.get_opt('segment-end-pad'))
 
         data_length = analysis_length + pad_data * 2
         start = pad_data + start_pad
         end = data_length - pad_data - end_pad
         return data_length, segments.segment(start, end)
 
+class PyCBCInspiralExec(Executable):
+    def create_job(self, cp, ifo, out_dir=None, injection_file=None, tags=[]):
+        return PyCBCInspiralJob(cp, self.exe_name, self.condor_universe,
+                                ifo=ifo, out_dir=out_dir, injection_file=injection_file, tags=tags)
+
 class PyCBCTmpltbankJob(Job):
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir)
+        self.cp = cp
         self.set_memory(2000)
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
@@ -331,30 +331,25 @@ class PyCBCTmpltbankJob(Job):
 
         cache_file = dfParents[0]
 
-        # FIXME add control for output type                       
-        insp = AhopeFile(self.ifo, self.exe_name, extension='.xml.gz',
-                         segment=valid_seg,
-                         directory=self.out_dir)
-
         # set the input and output files      
-        node.add_output(insp, opt='output-file')
+        node.make_and_add_output(valid_seg, '.xml.gz', 'output-file')
         node.add_input(cache_file, opt='frame-cache')
         return node
-
-class PyCBCTmpltbankExec(Executable):
-    def create_job(self, cp, ifo, out_dir=None):
-        return PyCBCTmpltbankJob(cp, self.exe_name, self.condor_universe,
-                                 ifo=ifo, out_dir=out_dir)
-
-    def get_valid_times(self, cp, ifo):
-        pad_data = int(cp.get_opt_ifo(self.exe_name, 'pad-data', ifo))
-        analysis_length = int(cp.get('ahope-inspiral', 'analysis-length'))
+        
+    def get_valid_times(self):
+        pad_data = int(self.get_opt( 'pad-data'))
+        analysis_length = int(self.cp.get('ahope-inspiral', 'analysis-length'))
         
         #FIXME this should not be hard coded 
         data_length = analysis_length + pad_data * 2
         start = pad_data
         end = data_length - pad_data
         return data_length, segments.segment(start, end)
+
+class PyCBCTmpltbankExec(Executable):
+    def create_job(self, cp, ifo, out_dir=None):
+        return PyCBCTmpltbankJob(cp, self.exe_name, self.condor_universe,
+                                 ifo=ifo, out_dir=out_dir)
 
 class LigolwAddJob(Job):
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
@@ -382,15 +377,12 @@ class LigolwAddJob(Job):
         # In ihope, these files were named with only participating ifos. Not
         # sure this is worth doing, can can be done with replacing self.ifo
         # here if desired
-
         outFile = AhopeFile(self.ifo, self.exe_name, extension='.xml.gz',
                          segment=jobSegment,
                          directory=self.out_dir)
 
         node.add_output(outFile, opt='output')
-
         return node
-
 
 class LigolwAddExec(Executable):
     def __init__(self, exe_name):
@@ -441,4 +433,23 @@ class LigolwSSthincaExec(Executable):
     def create_job(self, cp, ifo, out_dir=None, dqVetoName=None):
         return LigolwSSthincaJob(cp, self.exe_name, self.condor_universe,
                             ifo=ifo, out_dir=out_dir, dqVetoName=dqVetoName)
+                            
+class LalappsInspinjJob(Job):
+    def create_node(self, segment):
+        node = LegacyAnalysisNode(self)
+        
+        if self.get_opt('write-compress') is not None:
+            ext = '.xml.gz'
+        else:
+            ext = '.xml'
+        
+        node.add_var_opt('gps-start-time', segment[0])
+        node.add_var_opt('gps-end-time', segment[1])    
+        node.make_and_add_output(segment, '.xml', 'output')
+        return node
+
+class LalappsInspinjExec(Executable):
+    def create_job(self, cp, out_dir=None, tags=[]):
+        return LalappsInspinjJob(cp, self.exe_name, self.condor_universe,
+                                 ifo=None, out_dir=out_dir, tags=tags)
 
