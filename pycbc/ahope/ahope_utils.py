@@ -1,10 +1,11 @@
 import os, sys, subprocess, logging, math
 import numpy
 import urlparse
+from itertools import combinations
 from os.path import splitext, basename, isfile
 from glue import lal
 from glue import segments, pipeline
-from configparserutils import parse_ahope_ini_file
+from configparserutils import parse_ahope_ini_file, check_duplicate_options
 import pylal.dq.dqSegmentUtils as dqUtils
 import copy
 
@@ -83,6 +84,7 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         self.ifo = ifo
         self.tags = tags
         
+        # Determine the sub file name      
         if self.ifo:
             tags = tags + [self.ifo]
         tags = [tag.upper() for tag in tags]
@@ -93,6 +95,7 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         else:
             self.tagged_name = self.exe_name
         
+        # Determine the output directory
         if out_dir is not None:
             self.out_dir = out_dir
         elif len(tags) == 0:
@@ -139,6 +142,11 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
              section = '%s-%s' %(self.exe_name, tag.lower())
              if cp.has_section(section):
                 sections.append(section)
+             
+        # Do some basic sanity checking on the options
+        for sec1, sec2 in combinations(sections, 2):
+            print sec1, sec2, sections
+            check_duplicate_options(cp, sec1, sec2, raise_error=True)
              
         for sec in sections:
             if cp.has_section(sec):
