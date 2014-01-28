@@ -112,9 +112,8 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
     out_files : AhopeOutFileList or AhopeOutGroupList
         The AhopeOutFileList containing the list of jobs. Jobs will be appended
         to this list, and it does not need to be empty when supplied.
-    curr_exe_job : Instanced class
-        An instanced class that contains the functions needed to set up things
-        that are specific to the executable being run.
+    curr_exe_job : Job
+        An instanced of the PyCBC Job class that has a get_valid times method.
     science_segs : segments.segmentlist
         The list of times that the jobs should cover
     datafind_outs : AhopeFileList
