@@ -20,6 +20,7 @@ from optparse import OptionParser, OptionGroup
 from pycbc.psd.read import *
 from pycbc.psd.analytical import *
 from pycbc.psd.estimate import *
+from pycbc.types import float64
 
 def required_opts(opt, parser, opt_list, required_by=None):
     """Check that all the opts are defined 
@@ -117,7 +118,7 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         
         psd *= dyn_range_factor ** 2
            
-    elif opt.psd_estimation and not (opt.psd_model or opt.psd_file):
+    elif opt.psd_estimation and not (opt.psd_model or opt.psd_file or opt.asd_file):
         # estimate PSD from data
         psd = welch(strain, avg_method=opt.psd_estimation,
                     seg_len=int(opt.psd_segment_length * sample_rate),
@@ -132,7 +133,7 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
             low_frequency_cutoff=f_low)
             
     if opt.psd_output:
-        (psd / (dyn_range_factor ** 2)).save(opt.psd_output)
+        (psd.astype(float64) / (dyn_range_factor ** 2)).save(opt.psd_output)
 
     return psd
 
