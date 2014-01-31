@@ -14,7 +14,7 @@ start_time = 1073822416
 # Use the time below as a separator and run twice, before and after, on Monday
 #start_time=1073946414
 #start_time=1074192463
-end_time=1074793881
+end_time=1075145542
 
 workflow = ahope.Workflow('./daily_er5.ini')
 ifos = ['H1','L1','V1']
