@@ -119,7 +119,7 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         
         # Check that the executable actually exists
         if os.path.isfile(exe_path):
-	    logging.info("Using %s executable "
+	    logging.debug("Using %s executable "
                          "at %s." % (exe_name, exe_path))
         else:
             raise TypeError("Failed to find %s executable " 
@@ -134,7 +134,7 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
             else:
                 universe = 'vanilla'
 
-        logging.info("%s executable will run as %s universe"
+        logging.debug("%s executable will run as %s universe"
                      % (exe_name, universe))
         
         pipeline.CondorDAGJob.__init__(self, universe, exe_path)
@@ -661,6 +661,12 @@ class AhopeFile(object):
         self.segment = segment
         self.kwargs = kwargs 
         self.tags = tags 
+        if tags is not None:
+            tagged_description = '_'.join([description] + tags)
+        else:
+            tagged_description = description
+        # Follow the capitals-for-naming convention
+        self.tagged_description = tagged_description.upper()
       
         if not file_url:
             if not extension:
@@ -670,23 +676,20 @@ class AhopeFile(object):
                 raise TypeError("a directory is required if a file_url is "
                                 "not provided")
             
-            if tags is not None:
-                tagged_description = '_'.join([description] + tags)
-            else:
-                tagged_description = description
-                                        
-            filename = self._filename(ifo, tagged_description, extension, segment)
+            filename = self._filename(ifo, self.tagged_description, extension,
+                                      segment)
             path = os.path.join(directory, filename)
             if not os.path.isabs(path):
                 path = os.path.join(os.getcwd(), path) 
-            file_url = urlparse.urlunparse(['file', 'localhost', path, None, None, None])
+            file_url = urlparse.urlunparse(['file', 'localhost', path, None,
+                                            None, None])
        
         if not isinstance(file_url, list):
             file_url = [file_url]
        
         self.cache_entries = []
         for url in file_url:
-            cache_entry = lal.CacheEntry(ifo, description, segment, url)
+            cache_entry = lal.CacheEntry(ifo, self.tagged_description, segment, url)
             self.cache_entries.append(cache_entry)
 
     @property
@@ -732,7 +735,7 @@ class AhopeFile(object):
                 ifo, descr, time, duration = base.split('-')
                 path = '%s-%s_%s-%s-%s' % (ifo, descr, tag, time, duration) 
                 path = os.path.join(fol, path)                          
-                new_entry = lal.CacheEntry(self.ifo, self.description, 
+                new_entry = lal.CacheEntry(self.ifo, self.tagged_description, 
                                            self.segment, entry.url)
                 new_entry.path = path                                            
                 paths.append(path)
@@ -896,6 +899,12 @@ class AhopeFileList(list):
         outFiles = [i for i in self if ifo == i.ifo]
         outFiles = [i for i in outFiles if i.segment.intersects(currSeg)]
         return self.__class__(outFiles)
+
+    def find_output_with_tag(self, tag):
+        """
+        Find all files who have tag in self.tags
+        """
+        return [i for i in self if tag in i.tags]
 
     def convert_to_lal_cache(self):
         """
