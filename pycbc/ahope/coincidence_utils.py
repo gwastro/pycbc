@@ -7,8 +7,9 @@ from pycbc.ahope.ahope_utils import *
 from pycbc.ahope.jobsetup_utils import *
 from pylal import ligolw_cafe, ligolw_tisi
 
-def setup_coincidence_workflow(workflow, science_segs, segsDict, inspiral_outs,
-                               output_dir, maxVetoCat=5, tags=[]):
+def setup_coincidence_workflow(workflow, science_segs, segsDict, timeSlideFiles,
+                               inspiral_outs, output_dir, maxVetoCat=5,
+                               tags=[], timeSlideTags=None):
     '''
     Setup coincidence stage of ahope workflow.
     FIXME: ADD MORE DOCUMENTATION
@@ -25,73 +26,75 @@ def setup_coincidence_workflow(workflow, science_segs, segsDict, inspiral_outs,
 
     # If you want the ligolw_add outputs, call this function directly
     coinc_outs, _ = setup_coincidence_workflow_ligolw_thinca(workflow,
-                     science_segs, segsDict, inspiral_outs, output_dir,
-                     maxVetoCat=maxVetoCat, tags=tags)
+                     science_segs, segsDict, timeSlideFiles, inspiral_outs,
+                     output_dir, maxVetoCat=maxVetoCat, tags=tags,
+                     timeSlideTags=timeSlideTags)
 
     logging.info('Leaving coincidence setup module.')
 
     return coinc_outs
 
 def setup_coincidence_workflow_ligolw_thinca(workflow, science_segs, segsDict,
-                                     inspiral_outs, output_dir, tags=[],
-                                     maxVetoCat=5):
+                                             timeSlideFiles, inspiral_outs, 
+                                             output_dir, tags=[], maxVetoCat=5,
+                                             timeSlideTags=None):
     """
     ADD DOCUMENTATION
     """
-    ifoString = ''.join(science_segs.keys())
+    ifoList = science_segs.keys()
+    ifoString = ''.join(ifoList)
     veto_categories = range(1,maxVetoCat+1)
 
     # setup code for each veto_category
-    # FIXME: Needs tag feature to avoid overwriting output!
 
     ligolwThincaOuts = AhopeFileList([])
     ligolwAddOuts = AhopeFileList([])
 
-    for category in veto_categories:
-        dqSegFile = segsDict[ifoString]['CUMULATIVE_CAT_%d' %(category)]
-        dqVetoName = 'VETO_CAT%d_CUMULATIVE' %(category)
-        currLigolwThincaOuts, currLigolwAddOuts = \
-              setup_snglveto_workflow_ligolw_thinca(workflow, 
-                                        science_segs, dqSegFile,
+    if not timeSlideTags:
+        # Get all sections by looking in ini file, use all time slide files.
+        timeSlideTags = [sec.split('-')[-1] for sec in workflow.cp.sections() \
+                                  if sec.startswith('tisi-')]
+
+    for timeSlideTag in timeSlideTags:
+        # Get the time slide file from the inputs
+        tisiOutFile = timeSlideFiles.find_output_with_tag(timeSlideTag)
+        if not len(tisiOutFile) == 1:
+            errMsg = "If you are seeing this, something batshit is going on!"
+            if len(tisiOutFile) == 0:
+                errMsg = "No time slide files found matching %s." %(tag)
+            if len(tisiOutFile) > 1:
+                errMsg = "More than one time slide files match %s." %(tag)
+            raise ValueError(errMsg)
+        tisiOutFile = tisiOutFile[0]
+
+        # Now loop over vetoes
+        for category in veto_categories:
+            dqSegFile = segsDict[ifoString]['CUMULATIVE_CAT_%d' %(category)]
+            dqVetoName = 'VETO_CAT%d_CUMULATIVE' %(category)
+            # FIXME: Here we set the dqVetoName to be compatible with pipedown
+            # FIXME: Yes pipedown has a trailing "_", yes I know its stoopid
+            pipedownDQVetoName = 'CAT_%d_VETO_' %(category)
+            # FIXME: For pipedown must put the slide identifier first and
+            # dqVetoName last.
+            curr_thinca_job_tags = [timeSlideTag] + tags + [pipedownDQVetoName]
+
+            currLigolwThincaOuts, currLigolwAddOuts = \
+                  setup_snglveto_workflow_ligolw_thinca(workflow, 
+                                        science_segs, dqSegFile, tisiOutFile,
                                         dqVetoName, inspiral_outs, output_dir,
-                                        tags=tags + [dqVetoName])
-        ligolwAddOuts.extend(currLigolwAddOuts)
-        ligolwThincaOuts.extend(currLigolwThincaOuts)
+                                        tags=curr_thinca_job_tags)
+            ligolwAddOuts.extend(currLigolwAddOuts)
+            ligolwThincaOuts.extend(currLigolwThincaOuts)
     return ligolwThincaOuts, ligolwAddOuts
 
 def setup_snglveto_workflow_ligolw_thinca(workflow, science_segs, dqSegFile,
-                                dqVetoName, inspiral_outs, output_dir, tags=[]):
+                                          tisiOutFile, dqVetoName, inspiral_outs,
+                                          output_dir, tags=[]):
     '''
     ADD DOCUMENTATION
     '''
     cp = workflow.cp
     ifoString = ''.join(science_segs.keys())
-
-    # Get full analysis segment
-    extents = [science_segs[ifo].extent() for ifo in science_segs.keys()]
-    min, max = extents[0]
-    for lo, hi in extents:
-        if min > lo:
-            min = lo
-        if max < hi:
-            max = hi
-    fullSegment = segments.segment(min, max)
-
-    # First we need to run ligolw_tisi to make the necessary time slide input
-    # xml files
-    tisiOutPath = "%s/TISI_ZEROLAG.xml.gz" %(output_dir)
-    tisiOutUrl = urlparse.urlunparse(['file', 'localhost', tisiOutPath,
-                                       None, None, None])
-    tisiOutFile = AhopeFile(ifoString, 'TIMESLIDES_ZEROLAG', fullSegment,
-                            file_url=tisiOutUrl)
-    ligolw_tisi_call = ['ligolw_tisi',
-        "-v",
-        "-i", "H1=0:0:0",
-        "-i", "L1=0:100:5",
-        "-i", "V1=0:100:10",
-        tisiOutFile.path]
-    make_external_call(ligolw_tisi_call, outDir=os.path.join(output_dir,'logs'),
-                           outBaseName='%s-ligolw_tisi-call' %('ZEROLAG') )
 
     # Next we run ligolw_cafe. This is responsible for
     # identifying what times will be used for the ligolw_thinca jobs and what
