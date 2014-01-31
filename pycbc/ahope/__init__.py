@@ -38,3 +38,4 @@ from splittable_utils import *
 from coincidence_utils import *
 from legacy_ihope import *
 from injection_utils import *
+from timeslides_utils import *
