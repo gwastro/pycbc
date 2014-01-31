@@ -446,6 +446,9 @@ class LalappsInspinjJob(Job):
 
 class LalappsInspinjExec(Executable):
     def create_job(self, cp, out_dir=None, tags=[]):
+        # FIXME: It is convention to name injection files with a 'HL' prefix
+        # therefore I have hardcoded ifo=HL here. Maybe not a FIXME, but just
+        # noting this.
         return LalappsInspinjJob(cp, self.exe_name, self.condor_universe,
-                                 ifo=None, out_dir=out_dir, tags=tags)
+                                 ifo='HL', out_dir=out_dir, tags=tags)
 
