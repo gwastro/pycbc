@@ -11,14 +11,14 @@ workflow = ahope.Workflow(['./test_ahope.ini', 'inj.ini'])
 
 # Make directories for output
 currDir = os.getcwd()
-segDir = os.path.join(currDir, "segments")
+segDir = os.path.join(currDir, "datafind")
 if not os.path.exists(segDir+'/logs'):
     os.makedirs(segDir+'/logs')
 dfDir = os.path.join(currDir,"datafind")
 if not os.path.exists(dfDir+'/logs'):
     os.makedirs(dfDir+'/logs')
-if not os.path.exists('coincidence/logs'):
-    os.makedirs('coincidence/logs')
+if not os.path.exists('full_data/logs'):
+    os.makedirs('full_data/logs')
 
 # Set start and end times
 
@@ -45,24 +45,24 @@ datafind_files, scienceSegs = ahope.setup_datafind_workflow(workflow,
 
 # Template bank stuff
 bank_files = ahope.setup_tmpltbank_workflow(workflow, scienceSegs, 
-                                            datafind_files, 'tmpltbank')
+                                            datafind_files, 'datafind')
 splitbank_files = ahope.setup_splittable_workflow(workflow, bank_files, 
-                                                            'tmpltbank')
+                                                            'datafind')
 
 # setup the injection files
 inj_files, inj_tags = ahope.setup_injection_workflow(workflow, scienceSegs, 
                                            datafind_files, splitbank_files, 
-                                           start_time, end_time, 'inspiral')
-tags = ["zero"] + inj_tags
+                                           start_time, end_time, 'inj_files')
+tags = ["full_data"] + inj_tags
 inj_files = [None] + inj_files
 all_coincs = []
 for inj_file, tag in zip(inj_files, tags):
     insps = ahope.setup_matchedfltr_workflow(workflow, scienceSegs, 
                                            datafind_files, splitbank_files, 
-                                           'inspiral', injection_file=inj_file,
+                                           tag, injection_file=inj_file,
                                            tags = [tag])
     coincs = ahope.setup_coincidence_workflow(workflow, scienceSegs, segsDict, 
-                                              insps, 'coincidence', tags=[tag],
+                                              insps, tag, tags=[tag],
                                               maxVetoCat = 5)
     all_coincs.append(coincs)
     
