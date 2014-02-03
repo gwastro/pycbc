@@ -34,6 +34,7 @@ Ahope to do list
 * When above is completed, move segment calls in segment_utils to this and remove duplicate code paths. Also do same with ligolw_tisi call when tisi item above is also completed.
 * Begin moving pipedown codes into ahope.
 * Add fixes to pipedown in cases where pipedown looks for information based on very specific command line calls made to earlier code, which are not made either in ahope or when using pycbc code in ihope.
+* There is some not-https element in the pycbc docs homepage, which won't load by default on most browsers. Not sure what it is, but it should be fixed.
 
 ----------------------------
 Longer term/lower priority
