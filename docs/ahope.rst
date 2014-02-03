@@ -18,20 +18,20 @@ Each of the sections is described in detail below. Also refer to the `page here 
 Ahope to do list
 =======================
 
-* Want to have the ability to run ligolw_segments_from_cats in separate-categories mode (and have this be the *only* mode that ahope will use). This requires some additions to ligolw_segments_compat so that vetoes called VETO_CAT_1, VETO_CAT_2 are merged into one list called CUMULATIVE_VETO_CAT_3. (Names are probably wrong, but you get the idea).
-* Adding ligolw_segments_compat breaks pegasus support and therefore the ability to generate vetoes within the workflow (instead of at runtime) has been temporarily disabled. This is because its input and output files are the *same name*, which pegasus cannot support. This needs fixing. This to-do item probably needs to done in parallel with the above item, and may need a new code, ligolw_make_cumulative_coincident_segments, or similar.
-* Dependent on above, once fixed we need to add some code for running ligolw_add and ligolw_segments_compat in the workflow if desired.
+* Want to have the ability to run ligolw_segments_from_cats in separate-categories mode (and have this be the *only* mode that ahope will use). This requires some additions to ligolw_segments_compat so that vetoes called VETO_CAT_1, VETO_CAT_2 are merged into one list called CUMULATIVE_VETO_CAT_3. (Names are probably wrong, but you get the idea). - ALEX DOING?
+* Adding ligolw_segments_compat breaks pegasus support and therefore the ability to generate vetoes within the workflow (instead of at runtime) has been temporarily disabled. This is because its input and output files are the *same name*, which pegasus cannot support. This needs fixing. This to-do item probably needs to done in parallel with the above item, and may need a new code, ligolw_make_cumulative_coincident_segments, or similar. - ALEX DOING?
+* Dependent on above, once fixed we need to add some code for running ligolw_add and ligolw_segments_compat in the workflow if desired. - ALEX DOING?
 * Enable the dax functionality (at the moment a dax is written, but we don't know what to do with it!) and ensure that codes are pegasus-compliant. (DUNCAN B + ALEX/IAN).
 * The documentation, both in code and on this page, is woefully out of date. This needs fixing ... anyone/everyone should feel free to edit and improve the existing documentation!
 * Merge functionality of ligolw_add into ligolw_sstinca to produce a single coincidence code that takes multiple inputs, ideally either from the command line or from a cache file.
 * Ligolw_tisi takes repeated (and somewhat opaque) command line input e.g. ligolw_tisi -i H1:0,0,0 -i L1:0,100,5. This is not supported in pipeline.py. Edit ligolw_tisi so that it can be run within pipeline.py, or edit pipeline.py so that this is possible.
 * Add options to CondorDAGJob so that condor commands can be provided as macro arguments (this would allow a number of features in the nodes).
-* Add a function to CondorDAGNode to create_node from CondorDAGJob ... this would then allow us to use pipeline.py in the same way as ahope creates nodes from jobs. *BUT* does not break backwards compatibility.
+* Add a function to CondorDAGNode to create_node from CondorDAGJob ... this would then allow us to use pipeline.py in the same way as ahope creates nodes from jobs. *BUT* does not break backwards compatibility. - IAN DOING
 * Add in needed pipedown plots to ahope ... *There are no plans to tie plot_hipe into ahope*. This may require rewriting parts of a number of these codes, (especially to use the SQL where possible). The codes should also be moved away from pylal. The output format of the plots should be considered, do we still want to use the ihope plotting conventions or do we need something better.
-* Edit ahope modules so that output directories are automatically created if they don't exist.
-* Add write_ihope_page to weekly ahope example.
-* Add ability to create a node as usual, but instead of adding it to the workflow have it run at ahope runtime. This should fail and refuse to run if it requires input files that are made within the workflow. This should probably be added at the pipeline.py level.
-* When above is completed, move segment calls in segment_utils to this and remove duplicate code paths. Also do same with ligolw_tisi call when tisi item above is also completed.
+* Edit ahope modules so that output directories are automatically created if they don't exist. - IAN DOING
+* Add write_ihope_page to weekly ahope example. - IAN DOING
+* Add ability to create a node as usual, but instead of adding it to the workflow have it run at ahope runtime. This should fail and refuse to run if it requires input files that are made within the workflow. This should probably be added at the pipeline.py level. - ALEX DOING?
+* When above is completed, move segment calls in segment_utils to this and remove duplicate code paths. Also do same with ligolw_tisi call when tisi item above is also completed. - ALEX DOING?
 * Begin moving pipedown codes into ahope.
 * Add fixes to pipedown in cases where pipedown looks for information based on very specific command line calls made to earlier code, which are not made either in ahope or when using pycbc code in ihope.
 * There is some not-https element in the pycbc docs homepage, which won't load by default on most browsers. Not sure what it is, but it should be fixed.
