@@ -22,6 +22,9 @@ def check_output(*popenargs, **kwargs):
 
 ###############################################################################
 
+def make_analysis_dir(path):
+    makedir(os.path.join(path,'logs'))
+
 def makedir(path):
     if not os.path.exists(path):
         os.makedirs(path)

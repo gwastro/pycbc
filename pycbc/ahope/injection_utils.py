@@ -13,6 +13,7 @@ def setup_injection_workflow(workflow, science_segs, datafind_outs,
     FIXME: ADD MORE DOCUMENTATION
     '''
     logging.info("Entering injection module.")
+    make_analysis_dir(output_dir)
     # FIXME: Add ability to specify different exes
     inj_exe = LalappsInspinjExec(injSectionName)
     all_sec = workflow.cp.sections()

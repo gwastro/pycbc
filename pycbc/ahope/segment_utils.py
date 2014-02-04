@@ -13,6 +13,7 @@ def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir,
     FIXME: Add more DOCUMENTATION
     """
     logging.info("Entering segment generation module")
+    make_analysis_dir(out_dir)
     veto_categories = range(1,maxVetoCat+1)
     
     cp = workflow.cp

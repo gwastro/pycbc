@@ -5,7 +5,7 @@ from glue import datafind
 from glue import lal
 from glue import segments,segmentsUtils,git_version
 from glue.ligolw import utils, table, lsctables, ligolw
-from pycbc.ahope import AhopeFile, AhopeFileList
+from pycbc.ahope import AhopeFile, AhopeFileList, make_analysis_dir
 
 def setup_datafind_workflow(workflow, scienceSegs,  outputDir, 
                             checkSegmentGaps='no_test',
@@ -83,6 +83,7 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir,
         instances of missing data.
     """
     logging.info("Entering datafind module")
+    make_analysis_dir(outputDir)
     cp = workflow.cp
     
     logging.info("Starting datafind with setup_datafind_runtime_generated")

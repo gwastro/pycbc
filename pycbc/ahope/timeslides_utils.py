@@ -12,6 +12,7 @@ def setup_timeslides_workflow(workflow, science_segs, output_dir=None, tags=[],
     performed in each time slide job.
     '''
     logging.info("Entering time slides setup module.")
+    make_analysis_dir(output_dir)
     ifoList = science_segs.keys()
     ifoString = ''.join(ifoList)
 

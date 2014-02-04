@@ -12,6 +12,7 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
     FIXME: ADD MORE DOCUMENTATION
     '''
     logging.info("Entering matched-filtering setup module.")
+    make_analysis_dir(output_dir)
     # Scope here for choosing different options
     logging.info("Adding matched-filtering jobs to workflow.")
 

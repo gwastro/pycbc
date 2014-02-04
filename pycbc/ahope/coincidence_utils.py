@@ -15,6 +15,7 @@ def setup_coincidence_workflow(workflow, science_segs, segsDict, timeSlideFiles,
     FIXME: ADD MORE DOCUMENTATION
     '''
     logging.info('Entering coincidence setup module.')
+    make_analysis_dir(output_dir)
     
     if not os.path.isabs(output_dir):
         output_dir = os.path.join(os.getcwd(), output_dir) 

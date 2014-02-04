@@ -11,6 +11,7 @@ def setup_splittable_workflow(workflow, tmplt_banks, out_dir=None):
     FIXME: ADD MORE DOCUMENTATION
     '''
     logging.info("Entering split output files module.")
+    make_analysis_dir(out_dir)
     # Scope here for choosing different options
     logging.info("Adding split output file jobs to workflow.")
     split_table_outs = setup_splittable_dax_generated(workflow, tmplt_banks,

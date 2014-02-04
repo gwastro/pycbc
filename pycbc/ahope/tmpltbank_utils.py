@@ -41,6 +41,7 @@ def setup_tmpltbank_workflow(workflow, science_segs,
         The AhopeOutFileList holding the details of all the template bank jobs.
     '''
     logging.info("Entering template bank generation module.")
+    make_analysis_dir(output_dir)
     cp = workflow.cp
     
     # There should be a number of different options here, for e.g. to set
