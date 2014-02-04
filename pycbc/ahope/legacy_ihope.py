@@ -190,7 +190,14 @@ class LegacySplitBankJob(Job):
             The node to run the job
         """
         node = LegacyAnalysisNode(self)
+        # FIXME: This is a hack because SplitBank fails if given an input file
+        # whose path contains the character '-' or if the input file is not in
+        # the same directory as the output. Therefore we just set the path to
+        # be the local path
+        fullPath = bank.cache_entries[0].path
+        bank.cache_entries[0].path = os.path.basename(fullPath)
         node.add_input(bank, opt='bank-file')
+        bank.cache_entries[0].path = fullPath
         
         # Get the output (taken from inspiral.py)
         url_list = []
