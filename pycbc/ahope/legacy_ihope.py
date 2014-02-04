@@ -1,3 +1,34 @@
+# Copyright (C) 2013  Ian Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+"""
+This library code contains functions and classes that are used to set up
+and add jobs/nodes from legacy lalapps C-code to an ahope workflow.
+For details about ahope see here:
+https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
+"""
+
 import os
 import urlparse
 from glue import pipeline
@@ -25,14 +56,6 @@ def legacy_get_valid_times(self):
       point will appear in two segments, except the first
       segment-length/4 and last segment-length/4 points.)
 
-    Parameters
-    ----------
-    cp : ConfigParser object
-        The ConfigParser object holding the ahope configuration settings
-    ifo : string
-        The interferometer being setup. It is possible to use different
-        configuration settings for each ifo.
-
     Returns
     -------
     dataLength : float (seconds)
@@ -41,9 +64,6 @@ def legacy_get_valid_times(self):
         The start and end of the dataLength that is valid for the template
         bank.
     """
-    # FIXME: This is only valid for templateBank not inspiral!
-    # FIXME: Suggest making a separate inspiral function.
-
     # Read in needed options. This will fail if options not present
     # It will search relevant sub-sections for the option, so this can be
     # set differently for each ifo.
@@ -72,18 +92,17 @@ def legacy_get_valid_times(self):
 
     return dataLength, validChunk
 
-class LegacyAnalysisNode(Node, pipeline.AnalysisNode):
-    # FIXME: This should probably be pulled into the Node class. It is not
-    # specific to the Legacy analysis codes
-    set_jobnum_tag = pipeline.AnalysisNode.set_user_tag
-    
         
 class LegacyAnalysisJob(Job):
+    """
+    The class responsible for setting up jobs for legacy lalapps C-code
+    executables.
+    """
     def __init__(self, cp, exe_name, universe, ifo=None, tags=[], out_dir=None):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
-        node = LegacyAnalysisNode(self)
+        node = Node(self)
         
         if len(self.tags) != 0:
             node.set_ifo_tag(self.leg_tag_name)
@@ -125,6 +144,10 @@ class LegacyAnalysisJob(Job):
     get_valid_times = legacy_get_valid_times
         
 class LegacyInspiralJob(LegacyAnalysisJob):
+    """
+    The class responsible for setting up jobs for legacy lalapps_inspiral
+    executable.
+    """
     def __init__(self, cp, exe_name, universe, ifo=None, injection_file=None, 
                        out_dir=None, tags=[]):
         LegacyAnalysisJob.__init__(self, cp, exe_name, universe, ifo, 
@@ -143,6 +166,9 @@ class LegacyInspiralJob(LegacyAnalysisJob):
         return node
 
 class LegacyTmpltbankExec(Executable):
+    """
+    The class corresponding to the lalapps_tmpltbank executable.
+    """
     def __init__(self, exe_name):
         if exe_name != 'tmpltbank':
             raise ValueError('lalapps_tmpltbank does not support setting '
@@ -154,6 +180,9 @@ class LegacyTmpltbankExec(Executable):
                                  ifo=ifo, out_dir=out_dir)   
         
 class LegacyInspiralExec(Executable):
+    """
+    The class corresponding to the lalapps_inspiral executable.
+    """
     def __init__(self, exe_name):
         if exe_name != 'inspiral':
             raise ValueError('lalapps_tmpltbank does not support setting '
@@ -166,8 +195,8 @@ class LegacyInspiralExec(Executable):
                                  out_dir=out_dir, tags=tags)
 
 class LegacySplitBankExec(Executable):
-    """This class holds the function for lalapps_splitbank 
-    usage following the old ihope specifications.
+    """
+    The class corresponding to the lalapps_splitbank executable
     """
     def create_job(self, cp, ifo, out_dir=None):
         return LegacySplitBankJob(cp, self.exe_name, self.condor_universe, 
@@ -175,6 +204,9 @@ class LegacySplitBankExec(Executable):
                                   out_dir=out_dir)
 
 class LegacySplitBankJob(Job):    
+    """
+    The class responsible for creating jobs for lalapps_splitbank.
+    """
     def create_node(self, bank):
         """
         Set up a CondorDagmanNode class to run lalapps_splitbank code
@@ -189,7 +221,7 @@ class LegacySplitBankJob(Job):
         node : Node
             The node to run the job
         """
-        node = LegacyAnalysisNode(self)
+        node = Node(self)
         # FIXME: This is a hack because SplitBank fails if given an input file
         # whose path contains the character '-' or if the input file is not in
         # the same directory as the output. Therefore we just set the path to

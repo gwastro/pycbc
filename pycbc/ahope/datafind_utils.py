@@ -1,3 +1,36 @@
+# Copyright (C) 2013  Ian Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+"""
+This module is responsible for querying a datafind server to determine the
+availability of the data that the code is attempting to run on. It also
+performs a number of tests and can act on these as described below. Full
+documentation for this function can be found here:
+https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
+"""
+
+
+
 import os,sys,optparse
 import urlparse,urllib
 import logging
@@ -70,8 +103,6 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir,
           but do nothing about them.
         * 'raise_error': Perform the test. If any discrepancies occur, raise a
           ValueError.
-
-    
 
     Returns
     --------
@@ -250,6 +281,9 @@ def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):
 
     Returns
     --------
+    datafindcaches : list of glue.lal.Cache instances
+       The glue.lal.Cache representations of the various calls to the datafind
+       server and the returned frame files.
     datafindOuts : AhopeOutGroupList
         List of all the datafind output files for use later in the pipeline.
 
@@ -313,6 +347,9 @@ def setup_datafind_runtime_single_call_perifo(cp, scienceSegs, outputDir):
 
     Returns
     --------
+    datafindcaches : list of glue.lal.Cache instances
+       The glue.lal.Cache representations of the various calls to the datafind
+       server and the returned frame files.
     datafindOuts : AhopeOutGroupList
         List of all the datafind output files for use later in the pipeline.
 
@@ -427,6 +464,15 @@ def setup_datafind_server_connection(cp):
     """
     This function is resposible for setting up the connection with the datafind
     server.
+
+    Parameters
+    -----------
+    cp : ahope.AhopeConfigParser
+        The memory representation of the ConfigParser
+    Returns
+    --------
+    connection
+        The open connection to the datafind server.
     """
     if cp.has_option("ahope-datafind", "datafind-ligo-datafind-server"):
         datafindServer = cp.get("ahope-datafind",
@@ -468,7 +514,20 @@ def setup_datafind_server_connection(cp):
 
 def get_segment_summary_times(scienceFile, segmentName):
     """
-    ADD DOCUMENTATION
+    This function will find the times for which the segment_summary is set
+    for the flag given by segmentName.
+
+    Parameters
+    -----------
+    scienceFile : ahope.AhopeSegFile
+        The segment file that we want to use to determine this.
+    segmentName : string
+        The DQ flag to search for times in the segment_summary table.
+
+    Returns
+    ---------
+    summSegList : glue.segments.segmentlist
+        The times that are covered in the segment summary table.
     """
     # Parse the segmentName
     segmentName = segmentName.split(':')
@@ -513,7 +572,7 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
     This function will query the datafind server once to find frames between
     the specified times for the specified frame type and observatory.
 
-    Properties
+    Parameters
     ----------
     cp : ConfigParser instance
         This is used to find any kwArgs that should be sent to the datafind
@@ -539,6 +598,15 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
         could cause issues if running on old 'H2' and 'H1' data.
     jobTag : string
         Used in the naming of the output files.
+
+    Returns
+    --------
+    dfCache : glue.lal.Cache instance
+       The glue.lal.Cache representation of the call to the datafind
+       server and the returned frame files.
+    cacheFile : AhopeFile
+        List of all the datafind output files for use later in the pipeline.
+
     """
     seg = segments.segment([startTime, endTime])
     # Take the datafind KWargs from config (usually urltype=file is
@@ -575,6 +643,9 @@ def log_datafind_command(observatory, frameType, startTime, endTime,
     This command will print an equivalent gw_data_find command to disk that
     can be used to debug why the internal datafind module is not working.
     """
+    # FIXME: This does not accurately reproduce the call as assuming the
+    # kwargs will be the same is wrong, so some things need to be converted
+    # "properly" to the command line equivalent.
     gw_command = ['gw_data_find', '--observatory', observatory,
                   '--type', frameType,
                   '--gps-start-time', str(startTime),

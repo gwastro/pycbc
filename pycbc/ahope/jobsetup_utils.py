@@ -1,10 +1,41 @@
+# Copyright (C) 2013  Ian Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+"""
+This library code contains functions and classes that are used to set up
+and add jobs/nodes to an ahope workflow. For details about ahope see here:
+https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
+"""
+
 import math
 from glue import segments, pipeline
 from pycbc.ahope.ahope_utils import *
 from pycbc.ahope.legacy_ihope import *
 
 def select_tmpltbankjob_instance(curr_exe, curr_section):
-    """This function returns an instance of the class that is appropriate for
+    """
+    This function returns an instance of the class that is appropriate for
     creating a template bank within ihope.
     
     Parameters
@@ -19,9 +50,10 @@ def select_tmpltbankjob_instance(curr_exe, curr_section):
     Instanced class : exe_class
         An instance of the class that holds the utility functions appropriate
         for the given executable. This class **must** contain
-        * exe_class.get_valid_times(ifo, )
         * exe_class.create_job()
-        * exe_class.create_node()
+        and the job returned by this **must** contain
+        * job.get_valid_times(ifo, )
+        * job.create_node()
     """
     # This is basically a list of if statements
 
@@ -36,7 +68,8 @@ def select_tmpltbankjob_instance(curr_exe, curr_section):
     return exe_class
 
 def select_matchedfilterjob_instance(curr_exe, curr_section):
-    """This function returns an instance of the class that is appropriate for
+    """
+    This function returns an instance of the class that is appropriate for
     matched-filtering within ahope.
     
     Parameters
@@ -51,9 +84,10 @@ def select_matchedfilterjob_instance(curr_exe, curr_section):
     Instanced class : exe_class
         An instance of the class that holds the utility functions appropriate
         for the given executable. This class **must** contain
-        * exe_class.get_valid_times()
-        * exe_class.create_condorjob()
-        * exe_class.create_condornode()
+        * exe_class.create_job()
+        and the job returned by this **must** contain
+        * job.get_valid_times(ifo, )
+        * job.create_node()
     """
     # This is basically a list of if statements
     if curr_exe == 'lalapps_inspiral':
@@ -68,7 +102,8 @@ def select_matchedfilterjob_instance(curr_exe, curr_section):
     return exe_class
 
 def select_splitfilejob_instance(curr_exe, curr_section):
-    """This function returns an instance of the class that is appropriate for
+    """
+    This function returns an instance of the class that is appropriate for
     splitting an output file up within ahope (for e.g. splitbank).
     
     Parameters
@@ -84,7 +119,8 @@ def select_splitfilejob_instance(curr_exe, curr_section):
         An instance of the class that holds the utility functions appropriate
         for the given executable. This class **must** contain
         * exe_class.create_job()
-        * exe_class.create_node()
+        and the job returned by this **must** contain
+        * job.create_node()
     """
     # This is basically a list of if statements
     if curr_exe == 'lalapps_splitbank':
@@ -105,23 +141,23 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
 
     Parameters
     -----------
-    workflow: Workflow
+    workflow: ahope.Workflow
         An instanced class that manages the constructed workflow.
     ifo : string
         The name of the ifo to set up the jobs for
-    out_files : AhopeOutFileList or AhopeOutGroupList
-        The AhopeOutFileList containing the list of jobs. Jobs will be appended
+    out_files : ahope.AhopeFileList
+        The AhopeFileList containing the list of jobs. Jobs will be appended
         to this list, and it does not need to be empty when supplied.
-    curr_exe_job : Job
+    curr_exe_job : ahope.Job
         An instanced of the PyCBC Job class that has a get_valid times method.
-    science_segs : segments.segmentlist
+    science_segs : glue.segments.segmentlist
         The list of times that the jobs should cover
-    datafind_outs : AhopeFileList
+    datafind_outs : ahope.AhopeFileList
         The file list containing the datafind files.
     output_dir : path string
         The directory where data products will be placed.
-    parents : AhopeFileList (optional, kwarg, default=None)
-        The AhopeOutFileList containing the list of jobs that are parents to
+    parents : ahope.AhopeFileList (optional, kwarg, default=None)
+        The AhopeFileList containing the list of jobs that are parents to
         the one being set up.
     link_exe_instance : Executable instance (optional),
         Coordinate the valid times with another executable.
@@ -131,6 +167,12 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
         overlap in the times they cover. This may not be desired for inspiral
         jobs, where you probably want triggers recorded by jobs to not overlap
         at all.
+
+    Returns
+    --------
+    out_files : ahope.AhopeFileList
+        A list of the files that will be generated by this step in the
+        ahope workflow.
     """
     cp = workflow.cp
     
@@ -152,7 +194,8 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
 
         # What data does the linked exe use?
         link_data_length, link_valid_chunk = \
-                    link_exe_instance.create_job(cp, ifo, curr_exe_job.out_dir).get_valid_times()
+                link_exe_instance.create_job(cp, ifo, \
+                        curr_exe_job.out_dir).get_valid_times()
         # What data is lost at start and end from either job?
         start_data_loss = max(valid_chunk[0], link_valid_chunk[0])
         end_data_loss = max(data_length - valid_chunk[1],\
@@ -253,6 +296,9 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
     return out_files
 
 class PyCBCInspiralJob(Job):
+    """
+    The class used to create jobs for pycbc_inspiral executable.
+    """
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, injection_file=None, tags=[]):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.cp = cp
@@ -263,7 +309,7 @@ class PyCBCInspiralJob(Job):
             self.needs_gpu()
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
-        node = LegacyAnalysisNode(self)
+        node = Node(self)
         pad_data = int(self.get_opt('pad-data'))
         if pad_data is None:
             raise ValueError("The option pad-data is a required option of "
@@ -302,18 +348,27 @@ class PyCBCInspiralJob(Job):
         return data_length, segments.segment(start, end)
 
 class PyCBCInspiralExec(Executable):
+    """
+    The class corresponding to the pycbc_inspiral executable. It can be used
+    to create jobs and from that create nodes
+    """
     def create_job(self, cp, ifo, out_dir=None, injection_file=None, tags=[]):
         return PyCBCInspiralJob(cp, self.exe_name, self.condor_universe,
-                                ifo=ifo, out_dir=out_dir, injection_file=injection_file, tags=tags)
+                                ifo=ifo, out_dir=out_dir,
+                                injection_file=injection_file, tags=tags)
 
 class PyCBCTmpltbankJob(Job):
+    """
+    The class used to create jobs for pycbc_geom_nonspin_bank executable and
+    any other executables using the same command line option groups.
+    """
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir)
         self.cp = cp
         self.set_memory(2000)
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
-        node = LegacyAnalysisNode(self)
+        node = Node(self)
 
         if not dfParents or len(dfParents) != 1:
             raise ValueError("%s must be supplied with a single cache file"
@@ -346,18 +401,25 @@ class PyCBCTmpltbankJob(Job):
         return data_length, segments.segment(start, end)
 
 class PyCBCTmpltbankExec(Executable):
+    """
+    The class corresponding to pycbc_geom_nonspin_bank executable, and any
+    other executables using the same command line option groups.
+    """
     def create_job(self, cp, ifo, out_dir=None):
         return PyCBCTmpltbankJob(cp, self.exe_name, self.condor_universe,
                                  ifo=ifo, out_dir=out_dir)
 
 class LigolwAddJob(Job):
+    """
+    The class used to create nodes for the ligolw_add executable.
+    """
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, tags=[]):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
 
     def create_node(self, jobSegment, inputTrigFiles, timeSlideFile=None,
                     dqSegFile=None):
-        node = LegacyAnalysisNode(self)
+        node = Node(self)
 
         # Very few options to ligolw_add, all input files are given as a long
         # argument list. If this becomes unwieldy we could dump all these files
@@ -379,6 +441,9 @@ class LigolwAddJob(Job):
         return node
 
 class LigolwAddExec(Executable):
+    """
+    The class corresponding to the ligolw_add executable.
+    """
     def __init__(self, exe_name):
         if exe_name != 'llwadd':
             raise ValueError('ligolw_add does not support setting '
@@ -391,6 +456,9 @@ class LigolwAddExec(Executable):
                             ifo=ifo, out_dir=out_dir, tags=tags)
 
 class LigolwSSthincaJob(Job):
+    """
+    The class responsible for making jobs for ligolw_sstinca.
+    """
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None,
                  dqVetoName=None, tags=[]):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
@@ -399,7 +467,7 @@ class LigolwSSthincaJob(Job):
             self.add_opt("vetoes-name", dqVetoName)
 
     def create_node(self, jobSegment, inputFile):
-        node = LegacyAnalysisNode(self)
+        node = Node(self)
         node.add_input(inputFile, argument=True)
 
         # Add the start/end times
@@ -418,6 +486,9 @@ class LigolwSSthincaJob(Job):
 
 
 class LigolwSSthincaExec(Executable):
+    """
+    The class corresponding to the ligolw_sstinca executable.
+    """
     def __init__(self, exe_name):
         if exe_name != 'thinca':
             raise ValueError('ligolw_sstinca does not support setting '
@@ -431,8 +502,11 @@ class LigolwSSthincaExec(Executable):
                             dqVetoName=dqVetoName, tags=tags)
                             
 class LalappsInspinjJob(Job):
+    """
+    The class used to create jobs for the lalapps_inspinj executable.
+    """
     def create_node(self, segment):
-        node = LegacyAnalysisNode(self)
+        node = Node(self)
         
         if self.get_opt('write-compress') is not None:
             ext = '.xml.gz'
@@ -445,10 +519,12 @@ class LalappsInspinjJob(Job):
         return node
 
 class LalappsInspinjExec(Executable):
+    """
+    The class corresponding to the lalapps_inspinj executable.
+    """
     def create_job(self, cp, out_dir=None, tags=[]):
         # FIXME: It is convention to name injection files with a 'HL' prefix
         # therefore I have hardcoded ifo=HL here. Maybe not a FIXME, but just
         # noting this.
         return LalappsInspinjJob(cp, self.exe_name, self.condor_universe,
                                  ifo='HL', out_dir=out_dir, tags=tags)
-

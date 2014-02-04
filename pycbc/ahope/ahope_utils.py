@@ -1,3 +1,32 @@
+# Copyright (C) 2013  Ian Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+"""
+This module provides the worker functions and classes that are used when
+creating an ahope workflow. For details about ahope see here:
+https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
+"""
+
 import os, sys, subprocess, logging, math
 import numpy
 import urlparse
@@ -11,6 +40,11 @@ import copy
 
 #REMOVE THESE FUNCTIONS  FOR PYTHON >= 2.7 ####################################
 def check_output(*popenargs, **kwargs):
+    """
+    This function is used to obtain the stdout of a command. It is only used
+    internally, recommend using the make_external_call command if you want
+    to call external executables.
+    """
     if 'stdout' in kwargs:
         raise ValueError('stdout argument not allowed, it will be overridden.')
     process = subprocess.Popen(stdout=subprocess.PIPE,
@@ -23,9 +57,17 @@ def check_output(*popenargs, **kwargs):
 ###############################################################################
 
 def make_analysis_dir(path):
+    """
+    Make the analysis directory path, any parent directories that don't already
+    exist, and the 'logs' subdirectory of path.
+    """
     makedir(os.path.join(path,'logs'))
 
 def makedir(path):
+    """
+    Make the analysis directory path and any parent directories that don't
+    already exist. Will do nothing if path already exists.
+    """
     if not os.path.exists(path):
         os.makedirs(path)
 
@@ -206,6 +248,10 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         self.add_condor_cmd('request_disk', '%dM' %(storage_value))
     
     def needs_gpu(self):
+        """
+        Call this function to indicate that this job wants to run on a GPU.
+        FIXME: THIS IS NOT PROPERLY SUPPORTED YET!
+        """
         # Satisfy the requirements to use GPUs on cit, sugar
         # FIXME add in the ATLAS support
         self.add_condor_cmd('+WantsGPU', 'true')
@@ -239,6 +285,7 @@ class Node(pipeline.CondorDAGNode):
     template bank (ie. the list of files making up that template bank) and this
     will automatically create a job for each file in the template bank.
     """
+    set_jobnum_tag = pipeline.AnalysisNode.set_user_tag
 
     def __init__(self, job):
         """
@@ -345,7 +392,7 @@ class Node(pipeline.CondorDAGNode):
             
     def add_output(self, file, opt=None, argument=False): 
         """
-        Add a file(s) as an output to this node. 
+        Add a file, or partitioned file, as an output to this node. 
         
         Parameters
         ----------
@@ -384,6 +431,28 @@ class Node(pipeline.CondorDAGNode):
                 
     def make_and_add_output(self, valid_seg, extension, option_name, 
                                  description=None):
+        """
+        This function will create a AhopeFile corresponding to the given
+        information and then add that file as output of this node.
+
+        Parameters
+        -----------
+        valid_seg : glue.segments.segment
+            The time span over which the job is valid for.
+        extension : string
+            The extension to be used at the end of the filename. E.g. '.xml' or             '.sqlite'.
+        option_name : string
+            The option that is used when setting this job as output. For e.g.
+            'output-name' or 'output-file', whatever is appropriate for the
+            current executable.
+        description : string, (optional, default=None)
+            If given, this will be used in the name of the output file after
+            the job.exe_name. The jobs tags should be present in this
+            description.
+            FIXME: The job tags *must* be present in this description, so
+            can we not have them added automatically? Is this kwarg needed at
+            all?
+        """
         job = self.job()
         if description is not None:
             descr = '_'.join([job.exe_name, description])
@@ -402,6 +471,9 @@ class Node(pipeline.CondorDAGNode):
         Make this job run two instances of itself and check the results using
         the given script. This is primarily used for GPU jobs where GPUs can
         produce unreliable results some of the time.
+        FIXME: This has not been fully implemented yet. This mode breaks script
+        output. Does pegasus know how to deal with this? Two jobs writing the
+        same output file sounds dangerous.
         """
         raise NotImplementedError
         
@@ -421,6 +493,7 @@ class Node(pipeline.CondorDAGNode):
     def finalize(self):
         """
         This is a stub, it does nothing at the moment, do not call it.
+        FIXME: This is part of the GPU support, needs implementing.
         """
         # If the job needs to be run twice and checked, change the output 
         # name format accordingly (the postscript will produce a file of the
@@ -638,6 +711,9 @@ class AhopeFile(object):
         description: string
             A short description of what the file is, normally used in naming of
             the output files.
+            FIXME: I think that this is now executable description, tagging
+            only the program that ran this job. Can we change the name
+            accordingly?
         segment : glue.segment
             The time span that the AhopeOutFile is valid for. Note that this is
             *not* the same as the data that the job that made the file reads in.
@@ -647,16 +723,20 @@ class AhopeFile(object):
             If this is *not* supplied, extension and directory must be given.
             If specified this explicitly points to the url of the file, or the
             url where the file will be generated when made in the workflow.
-        directory : string (optional, default=None)
-            Either supply this *and* extension *or* supply only file_url.
-            If given this gives the directory in which the file exists, or will
-            exists. The file name will be inferred from the other arguments
-            following the ahope standard.
         extension : string (optional, default=None)
             Either supply this *and* directory *or* supply only file_url.
             If given this gives the extension at the end of the file name. The
             full file name will be inferred from the other arguments
             following the ahope standard.
+        directory : string (optional, default=None)
+            Either supply this *and* extension *or* supply only file_url.
+            If given this gives the directory in which the file exists, or will
+            exists. The file name will be inferred from the other arguments
+            following the ahope standard.
+        tags : list of strings (optional, default=None)
+            This is a list of descriptors describing what this file is. For
+            e.g. this might be ["BNSINJECTIONS" ,"LOWMASS","CAT_2_VETO"].
+            These are used in file naming.
         """
         self.node=None
         self.ifo = ifo
@@ -821,7 +901,8 @@ class AhopeFileList(list):
         return outFile
 
     def find_output_at_time(self, ifo, time):
-       '''Return AhopeFile that covers the given time.
+       '''
+       Return AhopeFile that covers the given time.
 
         Parameters
         -----------
@@ -851,7 +932,8 @@ class AhopeFileList(list):
            return outFiles
 
     def find_output_in_range(self,ifo,start,end):
-        '''Return the AhopeFile that is most appropriate for the supplied
+        '''
+        Return the AhopeFile that is most appropriate for the supplied
         time range. That is, the AhopeFile whose coverage time has the
         largest overlap with the supplied time range. If no AhopeFiles
         overlap the supplied time window, will return None.
@@ -926,12 +1008,35 @@ class AhopeOutSegFile(AhopeFile):
     usage to AhopeFile except for an additional kwarg for holding the
     segment list, if it is known at ahope run time.
     '''
-    def __init__(self, ifo, description, timeSeg, fileUrl,
+    def __init__(self, ifo, description, segment, fileUrl,
                  segList=None, **kwargs):
         """
-        ADD DOCUMENTATION
+        See AhopeFile.__init__ for a full set of documentation for how to
+        call this class. The only thing unique and added to this class is
+        the required option timeSeg, as described below:
+
+        Parameters:
+        ------------
+        ifo : string (required)
+            See AhopeFile.__init__
+        description : string (required)
+            See AhopeFile.__init__
+        segment : glue.segments.segment
+            See AhopeFile.__init__
+        fileUrl : string (required)
+            See AhopeFile.__init__
+            FIXME: This is a kwarg in AhopeFile and should be here as well,
+            if this is removed from the explicit arguments it would allow for
+            either fileUrls or constructed file names to be used in AhopeFile.
+        segList : glue.segments.segmentlist (optional, default=None)
+            A glue.segments.segmentlist covering the times covered by the
+            segmentlist associated with this file. If this is the science time
+            or CAT_1 file this will be used to determine analysis time. Can
+            be added by setting self.segList after initializing an instance of
+            the class.
+
         """
-        AhopeFile.__init__(self, ifo, description, timeSeg, fileUrl,
+        AhopeFile.__init__(self, ifo, description, segment, fileUrl,
                               **kwargs)
         self.segmentList = segList
 
@@ -1032,7 +1137,8 @@ def make_external_call(cmdList, outDir=None, outBaseName='external_call',
 class CalledProcessErrorMod(Exception):
     """
     This exception is raised when subprocess.call returns a non-zero exit code
-    and checking has been requested
+    and checking has been requested. This should not be accessed by the user
+    it is used only within make_external_call.
     """
     def __init__(self, returncode, cmd, errFile=None, outFile=None, 
                  cmdFile=None):
@@ -1052,3 +1158,27 @@ class CalledProcessErrorMod(Exception):
             msg += "The failed command has been printed in %s." %(self.cmdFile)
         return msg
               
+def get_full_analysis_chunk(science_segs):
+    """
+    Function to find the first and last time point contained in the science segments
+    and return a single segment spanning that full time.
+
+    Parameters
+    -----------
+    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
+        The list of times that are being analysed in this workflow.
+    Returns
+    --------
+    fullSegment : glue.segments.segment
+        The segment spanning the first and last time point contained in science_segs.
+    """
+    extents = [science_segs[ifo].extent() for ifo in science_segs.keys()]
+    min, max = extents[0]
+    for lo, hi in extents:
+        if min > lo:
+            min = lo
+        if max < hi:
+            max = hi
+    fullSegment = segments.segment(min, max)
+    return fullSegment
+        

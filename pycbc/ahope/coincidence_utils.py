@@ -1,3 +1,33 @@
+# Copyright (C) 2013  Ian Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+"""
+This module is responsible for setting up the coincidence stage of ahope
+workflows. For details about this module and its capabilities see here:
+https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
+"""
+
+
 from __future__ import division
 
 import os
@@ -11,8 +41,54 @@ def setup_coincidence_workflow(workflow, science_segs, segsDict, timeSlideFiles,
                                inspiral_outs, output_dir, maxVetoCat=5,
                                tags=[], timeSlideTags=None):
     '''
-    Setup coincidence stage of ahope workflow.
-    FIXME: ADD MORE DOCUMENTATION
+    This function aims to be the gateway for setting up a set of coincidence
+    jobs in an ahope workflow. The goal is that this function can support a
+    number of different ways/codes that could be used for doing this.
+    For now it only supports ligolw_sstinca.
+
+    Parameters
+    -----------
+    Workflow : hope.Workflow
+        The ahope workflow instance that the coincidence jobs will be added to.
+    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
+        The list of times that are being analysed in this workflow. 
+    segsDict : dictionary
+        The dictionary returned by ahope's segment module that contains
+        pointers to all the segment files generated in the workflow. If the
+        coincidence code will be applying the data quality vetoes, then this
+        will be used to ensure that the codes get the necessary input to do
+        this.
+    timeSlideFiles : ahope.AhopeFileList
+        An AhopeFileList of the timeSlide input files that are needed to
+        determine what time sliding needs to be done if the coincidence code
+        will be running time slides to facilitate background computations later
+        in the workflow.
+    inspiral_outs : ahope.AhopeFileList
+        An AhopeFileList of the matched-filter module output that is used as
+        input to the coincidence codes running at this stage.
+    output_dir : path
+        The directory in which coincidence output will be stored.
+    maxVetoCat : int (optional, default=5)
+        The maximum veto category that will be applied. If this takes the
+        default value the code will run data quality at cumulative categories
+        1, 2, 3, 4 and 5. Note that if we change the flag definitions to be
+        non-cumulative then this option will need to be revisited,
+    tags : list of strings (optional, default = [])
+        A list of the tagging strings that will be used for all jobs created
+        by this call to the workflow. An example might be ['BNSINJECTIONS'] or
+        ['NOINJECTIONANALYSIS']. This will be used in output names.
+    timeSlideTags : list of strings (optional, default = [])
+        A list of the tags corresponding to the timeSlideFiles that are to be
+        used in this call to the module. This can be used to ensure that the
+        injection runs do no time sliding, but the no-injection runs do perform
+        time slides (or vice-versa if you prefer!)
+    Returns
+    --------
+    coinc_outs : ahope.AhopeFileList
+        A list of the *final* outputs of the coincident stage. This *does not*
+        include any intermediate products produced within the workflow. If you
+        require access to intermediate products call the various sub-functions
+        in this module directly.
     '''
     logging.info('Entering coincidence setup module.')
     make_analysis_dir(output_dir)
@@ -37,10 +113,54 @@ def setup_coincidence_workflow(workflow, science_segs, segsDict, timeSlideFiles,
 
 def setup_coincidence_workflow_ligolw_thinca(workflow, science_segs, segsDict,
                                              timeSlideFiles, inspiral_outs, 
-                                             output_dir, tags=[], maxVetoCat=5,
+                                             output_dir, maxVetoCat=5, tags=[],
                                              timeSlideTags=None):
     """
-    ADD DOCUMENTATION
+    This function is used to setup a single-stage ihope style coincidence stage
+    of the workflow using ligolw_sstinca (or compatible code!).
+
+    Parameters
+    -----------
+    Workflow : ahope.Workflow
+        The ahope workflow instance that the coincidence jobs will be added to.
+    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
+        The list of times that are being analysed in this workflow. 
+    segsDict : dictionary
+        The dictionary returned by ahope's segment module that contains
+        pointers to all the segment files generated in the workflow. This
+        will be used to set the input files that the code needs to perform
+        data quality vetoes within the workflow.
+    timeSlideFiles : ahope.AhopeFileList
+        An AhopeFileList of the timeSlide input files that are needed to
+        determine what time sliding needs to be done. One of the timeSlideFiles
+        will normally be "zero-lag only", the others containing time slides
+        used to facilitate background computations later
+        in the workflow.
+    inspiral_outs : ahope.AhopeFileList
+        An AhopeFileList of the matched-filter module output that is used as
+        input to the coincidence codes running at this stage.
+    output_dir : path
+        The directory in which coincidence output will be stored.
+    maxVetoCat : int (optional, default=5)
+        The maximum veto category that will be applied. If this takes the
+        default value the code will run data quality at cumulative categories
+        1, 2, 3, 4 and 5. Note that if we change the flag definitions to be
+        non-cumulative then this option will need to be revisited,
+    tags : list of strings (optional, default = [])
+        A list of the tagging strings that will be used for all jobs created
+        by this call to the workflow. An example might be ['BNSINJECTIONS'] or
+        ['NOINJECTIONANALYSIS']. This will be used in output names.
+    timeSlideTags : list of strings (optional, default = [])
+        A list of the tags corresponding to the timeSlideFiles that are to be
+        used in this call to the module. This can be used to ensure that the
+        injection runs do no time sliding, but the no-injection runs do perform
+        time slides (or vice-versa if you prefer!)
+    Returns
+    --------
+    ligolwThincaOuts : ahope.AhopeFileList
+        A list of the output files generated from ligolw_sstinca.
+    ligolwAddOuts : ahope.AhopeFileList
+        A list of the output files generated from ligolw_add.
     """
     ifoList = science_segs.keys()
     ifoString = ''.join(ifoList)
@@ -89,10 +209,44 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, science_segs, segsDict,
     return ligolwThincaOuts, ligolwAddOuts
 
 def setup_snglveto_workflow_ligolw_thinca(workflow, science_segs, dqSegFile,
-                                          tisiOutFile, dqVetoName, inspiral_outs,
-                                          output_dir, tags=[]):
+                                          tisiOutFile, dqVetoName,
+                                          inspiral_outs, output_dir, tags=[]):
     '''
-    ADD DOCUMENTATION
+    This function is used to setup a single-stage ihope style coincidence stage
+    of the workflow for a given dq category and for a given timeslide file
+    using ligolw_sstinca (or compatible code!).
+
+    Parameters
+    -----------
+    Workflow : ahope.Workflow
+        The ahope workflow instance that the coincidence jobs will be added to.
+    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
+        The list of times that are being analysed in this workflow. 
+    dqSegFile : ahope.AhopeSegFile
+        The file that contains the data-quality segments to be applied to jobs
+        setup by this call to this function.
+    tisiOutFile : ahope.AhopeFile
+        The file that contains the time-slides that will be performed in jobs
+        setup by this call to this function. A file containing only one,
+        zero-lag, time slide is still a valid "time slide" file.
+    inspiral_outs : ahope.AhopeFileList
+        An AhopeFileList of the matched-filter module output that is used as
+        input to the coincidence codes running at this stage.
+    output_dir : path
+        The directory in which coincidence output will be stored.
+    tags : list of strings (optional, default = [])
+        A list of the tagging strings that will be used for all jobs created
+        by this call to the workflow. An example might be ['BNSINJECTIONS'] or
+        ['NOINJECTIONANALYSIS']. This will be used in output names. At this
+        stage a tag describing the time slide file, and a tag describing the
+        data quality veto should be included.
+    Returns
+    --------
+    ligolwThincaOuts : ahope.AhopeFileList
+        A list of the output files generated from ligolw_sstinca.
+    ligolwAddOuts : ahope.AhopeFileList
+        A list of the output files generated from ligolw_add.
+
     '''
     cp = workflow.cp
     ifoString = ''.join(science_segs.keys())

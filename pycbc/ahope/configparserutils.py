@@ -23,62 +23,68 @@
 #
 """
 This module provides a wrapper to the ConfigParser utilities for ahope
-workflow construction
+workflow construction. This module is described in the page here:
+https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.html
 """
 
 import re
 import copy
 import ConfigParser
 
-def get_opt_ifo(self, section, option, ifo):
-    """Supplement to ConfigParser.ConfigParser.get(). This will search for an
-    option in [section] and if it doesn't find it will also try in
-    [section-ifo]. This is appended to the ConfigParser class. Will raise a
-    NoSectionError if [section] doesn't exist. Will raise NoOptionError if
-    option is not found in [section] and [section-ifo] doesn't exist or does
-    not have the option.
-
-    Parameters
-    -----------
-    self : ConfigParser object
-        The ConfigParser object (automatically passed when this is appended
-        to the ConfigParser class)
-    section : string
-        The section of the ConfigParser object to read
-    option : string
-        The ConfigParser option to look for
-    ifo : string
-        The name of the subsection to look in, if not found in [section]
- 
-    Returns
-    --------
-    string
-        The value of the options being searched for
+class AhopeConfigParser(ConfigParser.ConfigParser):
     """
-    # Need lower case ifo name
-    ifo = ifo.lower()
+    This is a sub-class of ConfigParser.ConfigParser, which lets us add a few
+    additional helper features that are useful in ahope.
+    """
+    def get_opt_tag(self, section, option, tag):
+        """
+        Supplement to ConfigParser.ConfigParser.get(). This will search for an
+        option in [section] and if it doesn't find it will also try in
+        [section-tag]. This is appended to the ConfigParser class. Will raise a
+        NoSectionError if [section] doesn't exist. Will raise NoOptionError if
+        option is not found in [section] and [section-ifo] doesn't exist or does
+        not have the option.
 
-    try:
-        return self.get(section,option)
-    except ConfigParser.Error:
-        errString = "No option '%s' in section '%s' " %(option,section)
-        if self.has_section('%s-%s' %(section,ifo)):
-            if self.has_option('%s-%s' %(section,ifo),option):
-                return self.get('%s-%s' %(section,ifo),option)
+        Parameters
+        -----------
+        self : ConfigParser object
+            The ConfigParser object (automatically passed when this is appended
+            to the ConfigParser class)
+        section : string
+            The section of the ConfigParser object to read
+        option : string
+            The ConfigParser option to look for
+        tag : string
+            The name of the subsection to look in, if not found in [section]
+ 
+        Returns
+        --------
+        string
+            The value of the options being searched for
+        """
+        # Need lower case tag name
+        tag = tag.lower()
+
+        try:
+            return self.get(section,option)
+        except ConfigParser.Error:
+            errString = "No option '%s' in section '%s' " %(option,section)
+            if self.has_section('%s-%s' %(section, tag)):
+                if self.has_option('%s-%s' %(section, tag),option):
+                    return self.get('%s-%s' %(section, tag),option)
+                else:
+                    errString+= "or in section '%s-%s'." %(section, tag)
+                    raise ConfigParser.Error(errString)
             else:
-               errString+= "or in section '%s-%s'." %(section,ifo)
-               raise ConfigParser.Error(errString)
-        else:
-            errString+= "and section '%s-%s' does not exist." %(section,ifo)
-            raise ConfigParser.Error(errString)
-
-# FIXME: This is probably not "pythonic" and I might want a new class
-# that inherits from ConfigParser.ConfigParser
-#ConfigParser.ConfigParser.get_opt_ifo = get_opt_ifo
+                errString += "and section '%s-%s' does not exist."\
+                             %(section, tag)
+                raise ConfigParser.Error(errString)
 
 def parse_ahope_ini_file(cpFile, parsed_filepath=None):
-    """Read a .ini file in, parse it as described in the documentation linked
-    to above, and return the parsed ini file.
+    """
+    Read a .ini file in and return the parsed ini file.
+    The parsing is described in the documentation page here:
+    https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.html
 
     Parameters
     ----------

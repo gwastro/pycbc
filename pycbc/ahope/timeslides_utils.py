@@ -2,7 +2,6 @@ import os
 import logging
 from glue import segments
 from pycbc.ahope.ahope_utils import *
-from pycbc.ahope.configparserutils import get_opt_ifo
 
 def setup_timeslides_workflow(workflow, science_segs, output_dir=None, tags=[],
                               timeSlideSectionName='ligolw_tisi'):
@@ -16,15 +15,7 @@ def setup_timeslides_workflow(workflow, science_segs, output_dir=None, tags=[],
     ifoList = science_segs.keys()
     ifoString = ''.join(ifoList)
 
-    # Get full analysis segment for output file naming
-    extents = [science_segs[ifo].extent() for ifo in science_segs.keys()]
-    min, max = extents[0]
-    for lo, hi in extents:
-        if min > lo:
-            min = lo
-        if max < hi:
-            max = hi
-    fullSegment = segments.segment(min, max)
+    fullSegment = get_full_analysis_chunk(science_segs)    
 
     timeSlideOuts = AhopeFileList([])
 
@@ -57,11 +48,11 @@ def setup_timeslides_workflow(workflow, science_segs, output_dir=None, tags=[],
                     workflow.cp.get(subString, 'inspiral-num-slides'))
         else:
             for ifo in ifoList:
-                ifoSlideStart = get_opt_ifo(workflow.cp, 'tisi',
+                ifoSlideStart = workflow.cp.get_opt_tag('tisi',
                                         '%s-slide-start' %(ifo), timeSlideTag)
-                ifoSlideEnd = get_opt_ifo(workflow.cp, 'tisi',
+                ifoSlideEnd = workflow.cp.get_opt_tag('tisi',
                                         '%s-slide-end' %(ifo), timeSlideTag)
-                ifoSlideStep = get_opt_ifo(workflow.cp, 'tisi',
+                ifoSlideStep = workflow.cp.get_opt_tag('tisi',
                                         '%s-slide-step' %(ifo), timeSlideTag)
                 ligolw_tisi_call.append("-i")
                 optionString = ':'.join([ifoSlideStart,ifoSlideEnd,ifoSlideStep])
