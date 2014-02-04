@@ -1,4 +1,5 @@
 import os, copy, shutil
+import ConfigParser
 import logging
 from glue import pipeline
 from glue import segments
@@ -6,11 +7,24 @@ import pycbc.ahope as ahope
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
                     level=logging.INFO,datefmt='%I:%M:%S')
+# Set start and end times
 
-workflow = ahope.Workflow(['./test_ahope.ini', 'inj.ini', 'pipedown.ini'])
+# These are Chris' example S6 day of data
+start_time = 961585543
+end_time = start_time + 86400
 
-# Make directories for output
+# Needed later for WIP
+baseDir = os.getcwd()
+runDir = '%d-%d' %(start_time,end_time)
+if not os.path.exists(runDir):
+    os.makedirs(runDir)
+os.chdir(runDir)
+
 currDir = os.getcwd()
+
+workflow = ahope.Workflow(['../weekly_ahope.ini', '../inj.ini',
+                           '../pipedown.ini'])
+
 segDir = os.path.join(currDir, "segments")
 if not os.path.exists(segDir+'/logs'):
     os.makedirs(segDir+'/logs')
@@ -23,10 +37,6 @@ if not os.path.exists('time_slide_files/logs'):
     os.makedirs('time_slide_files/logs')
 
 # Set start and end times
-
-# These are Chris' example S6 day of data
-start_time = 961585543
-end_time = 961588487
 
 log_directory = "/usr1/spxiwh/logs"
 
@@ -162,7 +172,7 @@ ahope.make_external_call(pipeCommand, outDir=pipedownDir + "/logs",
 # make pipedown job/node
 pipeDag = iniFile.rstrip("ini") + "dag"
 pipeJob = pipeline.CondorDAGManJob(pipeDag, pipedownDir)
-pipeNode = pipeline.CondorDAGManNode(pipeJob)
+pipeNode = pipeJob.create_node()
 workflow.dag.add_node(pipeNode)
 if pipedownParents:
     for thisDag in pipedownParents:
@@ -170,6 +180,61 @@ if pipedownParents:
 
 # return to the original directory
 os.chdir("..")
+
+# Setup for write_ihope_page
+
+# Need to make an altered .ini file, start with the pipedown .ini as its closer
+wipCp = copy.deepcopy(pipeCp)
+# We hardcoded vetocat to 5 above, so do so again here until fixed
+wipCp.add_section('segments')
+wipCp.set('segments','veto-categories','2,3,4,5')
+# Put the veto-definer in the expected location
+vetoFile = wipCp.get('ahope-segments', 'segments-veto-definer-file')
+vetoFileBase = os.path.basename(vetoFile)
+shutil.copyfile(vetoFile, os.path.join(currDir,'segments',vetoFileBase))
+wipCp.set('segments', 'veto-def-file', vetoFileBase)
+# Set the injection information
+wipCp.remove_section('injections')
+wipCp.add_section('injections')
+for tag in inj_tags:
+    wipCp.set('injections', tag.lower(), '')
+# Write this ini file out
+wipCp.write(file('ahope_config_wip.ini', 'w'))
+
+# Need a second ini file with wip commands
+wipConf = ConfigParser.ConfigParser()
+wipConf.add_section('main')
+wipConf.set('main', 'gps-start-time', start_time)
+wipConf.set('main', 'gps-end-time', end_time)
+wipConf.set('main', 'lead', 'Dotty Wot')
+wipConf.set('main', 'second', 'Spotty Wot')
+wipConf.set('main', 'title', 'Ahope coincidence analysis')
+wipConf.set('main', 'notes', '')
+wipConf.set('main', 'ihope-ini-file', 'ahope_config_wip.ini')
+wipConf.set('main', 'ihope-directory', baseDir)
+htmlOutDir = workflow.cp.get('ahope', 'ahope-html-basedir')
+wipConf.set('main', 'html-directory', htmlOutDir)
+# Here, for now, use installed version
+wipConf.set('main', 'style', '/usr/share/lalapps/write_ihope_style.css')
+wipConf.set('main', 'output', 'index.html')
+wipConf.write(file('wip.ini', 'w'))
+
+# Now add command to workflow
+wipJob = pipeline.CondorDAGJob('vanilla', \
+                           workflow.cp.get('executables', 'write_ihope_page'))
+if not os.path.exists('wip/logs'):
+    os.makedirs('wip/logs')
+wipJob.set_stderr_file('wip/logs/ihope-page-$(cluster)-$(process).err')
+wipJob.set_stdout_file('wip/logs/ihope-page-$(cluster)-$(process).out')
+wipJob.set_sub_file('write_ihope_page.sub')
+wipJob.add_condor_cmd('getenv', 'True')
+wipJob.add_opt('config-file', 'wip.ini')
+wipJob.add_opt('open-the-box', '')
+wipJob.add_opt('skip-followup', '')
+
+wipNode = wipJob.create_node()
+wipNode.add_parent(pipeNode)
+workflow.dag.add_node(wipNode)
 
 workflow.write_plans()
 logging.info("Finished.")
