@@ -35,6 +35,8 @@ Ahope to do list
 * There is some not-https element in the pycbc docs homepage, which won't load by default on most browsers. Not sure what it is, but it should be fixed. - VOLUNTEER?
 * Identify and correct deprecation warnings that are now present in almost the entire python code base.
 * Fix minifollowups in ahope.
+* Some stubs for GPU support have been added, but I don't believe it is complete and there is no example of using this. Does this need adding? How does this conflict with pegasus?
+* lalapps_splitbank has issues. Can this be replaced with a cleaner python implementation?
 
 ----------------------------
 Longer term/lower priority
