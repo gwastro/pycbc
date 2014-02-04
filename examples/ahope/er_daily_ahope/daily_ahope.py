@@ -253,7 +253,7 @@ ahope.make_external_call(ihopePageCmd, outDir=os.path.join(workingDir,'logs'),\
 # Add this to the workflow and make it a child of all cluster jobs
 dailyPageJob = pipeline.CondorDAGManJob('daily_page.dag', workingDir,\
                                         'daily_page.dax') 
-dailyPageNode = pipeline.CondorDAGManNode(dailyPageJob)
+dailyPageNode = dailyPageJob.create_node()
 for job in pageDagParents:
     dailyPageNode.add_parent(job)
 dag.add_node(dailyPageNode)
@@ -267,7 +267,7 @@ summJob.set_stdout_file('logs/summ-page-$(cluster)-$(process).out')
 summJob.set_sub_file('summary_page.sub')
 summJob.add_condor_cmd('getenv', 'True')
 
-summNode = pipeline.CondorDAGNode(summJob)
+summNode = summJob.create_node()
 summNode.add_var_opt('action', 'make_index_page')
 summNode.add_var_opt('config', pageConfFile)
 summNode.add_var_opt('gps-start-time', start_time)
