@@ -18,6 +18,7 @@ Each of the sections is described in detail below. Also refer to the `page here 
 Ahope to do list
 =======================
 
+* lalapps_splitbank has issues. Can this be replaced with a cleaner python implementation? - VOLUNTEER?
 * Want to have the ability to run ligolw_segments_from_cats in separate-categories mode (and have this be the *only* mode that ahope will use). This requires some additions to ligolw_segments_compat so that vetoes called VETO_CAT_1, VETO_CAT_2 are merged into one list called CUMULATIVE_VETO_CAT_3. (Names are probably wrong, but you get the idea). - ALEX DOING?
 * Adding ligolw_segments_compat breaks pegasus support and therefore the ability to generate vetoes within the workflow (instead of at runtime) has been temporarily disabled. This is because its input and output files are the *same name*, which pegasus cannot support. This needs fixing. This to-do item probably needs to done in parallel with the above item, and may need a new code, ligolw_make_cumulative_coincident_segments, or similar. - ALEX DOING?
 * Dependent on above, once fixed we need to add some code for running ligolw_add and ligolw_segments_compat in the workflow if desired. - ALEX DOING?
@@ -36,7 +37,6 @@ Ahope to do list
 * Identify and correct deprecation warnings that are now present in almost the entire python code base.
 * Fix minifollowups in ahope.
 * Some stubs for GPU support have been added, but I don't believe it is complete and there is no example of using this. Does this need adding? How does this conflict with pegasus?
-* lalapps_splitbank has issues. Can this be replaced with a cleaner python implementation?
 
 ----------------------------
 Longer term/lower priority
