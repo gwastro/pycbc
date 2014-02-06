@@ -392,7 +392,7 @@ class PyCBCTmpltbankJob(Job):
         
     def get_valid_times(self):
         pad_data = int(self.get_opt( 'pad-data'))
-        analysis_length = int(self.cp.get('ahope-inspiral', 'analysis-length'))
+        analysis_length = int(self.cp.get('ahope-tmpltbank', 'analysis-length'))
         
         #FIXME this should not be hard coded 
         data_length = analysis_length + pad_data * 2
