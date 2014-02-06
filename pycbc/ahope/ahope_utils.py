@@ -285,6 +285,8 @@ class Node(pipeline.CondorDAGNode):
     template bank (ie. the list of files making up that template bank) and this
     will automatically create a job for each file in the template bank.
     """
+    # This is *ONLY* used by legacy codes where ahope cannot directly
+    # set the output name. Do not use elsewhere!
     set_jobnum_tag = pipeline.AnalysisNode.set_user_tag
 
     def __init__(self, job):
@@ -447,11 +449,7 @@ class Node(pipeline.CondorDAGNode):
             current executable.
         description : string, (optional, default=None)
             If given, this will be used in the name of the output file after
-            the job.exe_name. The jobs tags should be present in this
-            description.
-            FIXME: The job tags *must* be present in this description, so
-            can we not have them added automatically? Is this kwarg needed at
-            all?
+            the job.exe_name. 
         """
         job = self.job()
         if description is not None:
