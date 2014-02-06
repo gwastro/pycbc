@@ -17,24 +17,11 @@ workflow = ahope.Workflow('./daily_er5.ini')
 ifos = ['H1','L1','V1']
 currDir = os.getcwd()
 segDir = os.path.join(currDir,"segments")
-if not os.path.exists(segDir+'/logs'):
-    os.makedirs(segDir+'/logs')
 dfDirSYR = os.path.join(currDir,"datafindSYR")
-if not os.path.exists(dfDirSYR+'/logs'):
-    os.makedirs(dfDirSYR+'/logs')
 dfDirCIT = os.path.join(currDir,"datafindCIT")
-if not os.path.exists(dfDirCIT+'/logs'):
-    os.makedirs(dfDirCIT+'/logs')
 dfDirLHO = os.path.join(currDir,"datafindLHO")
-if not os.path.exists(dfDirLHO+'/logs'):
-    os.makedirs(dfDirLHO+'/logs')
 dfDirLLO = os.path.join(currDir,"datafindLLO")
-if not os.path.exists(dfDirLLO+'/logs'):
-    os.makedirs(dfDirLLO+'/logs')
 dfDirUWM = os.path.join(currDir,"datafindUWM")
-if not os.path.exists(dfDirUWM+'/logs'):
-    os.makedirs(dfDirUWM+'/logs')
-
 
 print "BEGIN BY GENERATING SCIENCE AND CAT_X VETOES"
 
@@ -59,8 +46,7 @@ def segment_report(sSegs):
 
 
 scienceSegs, segsDict = ahope.setup_segment_generation(workflow, ifos,
-                                start_time, end_time, segDir,
-                                generate_coincident_segs=False, maxVetoCat=1)
+                                start_time, end_time, segDir)
 
 segment_report(scienceSegs)
 
