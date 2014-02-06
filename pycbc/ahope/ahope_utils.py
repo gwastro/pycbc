@@ -427,7 +427,7 @@ class Node(pipeline.CondorDAGNode):
                 errMsg += "to be added."
                 
     def make_and_add_output(self, valid_seg, extension, option_name, 
-                                 description=None):
+                                 extra_tags=[]):
         """
         This function will create a AhopeFile corresponding to the given
         information and then add that file as output of this node.
@@ -437,25 +437,23 @@ class Node(pipeline.CondorDAGNode):
         valid_seg : glue.segments.segment
             The time span over which the job is valid for.
         extension : string
-            The extension to be used at the end of the filename. E.g. '.xml' or             '.sqlite'.
+            The extension to be used at the end of the filename. 
+            E.g. '.xml' or '.sqlite'.
         option_name : string
             The option that is used when setting this job as output. For e.g.
             'output-name' or 'output-file', whatever is appropriate for the
             current executable.
-        description : string, (optional, default=None)
-            If given, this will be used in the name of the output file after
-            the job.exe_name. 
+        extra_tags : list of strings, (optional, default=[])
+            These tags will be added to the list of tags already associated with
+            the job. They can be used to uniquely identify this output file.
         """
         job = self.job()
-        if description is not None:
-            descr = '_'.join([job.exe_name, description])
-        else:
-            descr = job.exe_name
+        tags = list(set(job.tags + extra_tags))
 
         insp = AhopeFile(job.ifo, job.exe_name, extension=extension,
                          segment=valid_seg,
                          directory=job.out_dir,
-                         tags=job.tags)    
+                         tags=tags)    
         self.add_output(insp, opt=option_name)
 
                 
