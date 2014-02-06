@@ -35,11 +35,45 @@ from pycbc.ahope.ahope_utils import *
 from pycbc.ahope.jobsetup_utils import *
 
 def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
-                               tmplt_banks, output_dir=None, injection_file=None,
-                               tags=[]):
+                               tmplt_banks, output_dir=None,
+                               injection_file=None, tags=[]):
     '''
-    Setup matched filter section of ahope workflow.
-    FIXME: ADD MORE DOCUMENTATION
+    This function aims to be the gateway for setting up a set of matched-filter
+    jobs in an ahope workflow. This function is intended to support multiple
+    different ways/codes that could be used for doing this. For now the only
+    supported sub-module is one that runs the matched-filtering by setting up
+    a serious of matched-filtering jobs, from one executable, to create
+    matched-filter triggers covering the full range of science times for which
+    there is data and a template bank file.
+
+    Parameters
+    -----------
+    Workflow : ahope.Workflow
+        The ahope workflow instance that the coincidence jobs will be added to.
+    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
+        The list of times that are being analysed in this workflow. 
+    datafind_outs : ahope.AhopeFileList
+        An AhopeFileList of the datafind files that are needed to obtain the
+        data used in the analysis.
+    tmplt_banks : ahope.AhopeFileList
+        An AhopeFileList of the template bank files that will serve as input
+        in this stage.
+    output_dir : path
+        The directory in which output will be stored.
+    injection_file : ahope.AhopeFile, optional (default=None)
+        If given the file containing the simulation file to be sent to these
+        jobs on the command line. If not given no file will be sent.
+    tags : list of strings (optional, default = [])
+        A list of the tagging strings that will be used for all jobs created
+        by this call to the workflow. An example might be ['BNSINJECTIONS'] or
+        ['NOINJECTIONANALYSIS']. This will be used in output names.
+    Returns
+    -------
+    inspiral_outs : ahope.AhopeFileList
+        A list of output files written by this stage. This *will not* contain
+        any intermediate products produced within this stage of the workflow.
+        If you require access to any intermediate products produced at this
+        stage you can call the various sub-functions directly.
     '''
     logging.info("Entering matched-filtering setup module.")
     make_analysis_dir(output_dir)
@@ -48,25 +82,61 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
 
     # There should be a number of different options here, for e.g. to set
     # up fixed bank, or maybe something else
+    # FIXME: link_to_tmpltbank needs to be supplied from ini file.
     inspiral_outs = setup_matchedfltr_dax_generated(workflow, science_segs, 
                                      datafind_outs, tmplt_banks, output_dir,
-                                     injection_file, tags)
+                                     injection_file=injection_file, tags=tags,
+                                     link_to_tmpltbank=True)
     logging.info("Leaving matched-filtering setup module.")    
     return inspiral_outs
 
 def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
-                                    tmplt_banks, output_dir, injection_file=None,
+                                    tmplt_banks, output_dir,
+                                     injection_file=None,
                                     tags=[], link_to_tmpltbank=True):
     '''
-    Setup matched-filter jobs that are generated as part of the ahope workflow.
-    FIXME: ADD MORE DOCUMENTATION
-    '''
+    Setup matched-filter jobs that are generated as part of the ahope workflow. This
+    module can support any matched-filter code that is similar in principle to
+    lalapps_inspiral, but for new codes some additions are needed to define
+    Executable and Job sub-classes (see jobutils.py).
 
+    Parameters
+    -----------
+    Workflow : hope.Workflow
+        The ahope workflow instance that the coincidence jobs will be added to.
+    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
+        The list of times that are being analysed in this workflow. 
+    datafind_outs : ahope.AhopeFileList
+        An AhopeFileList of the datafind files that are needed to obtain the
+        data used in the analysis.
+    tmplt_banks : ahope.AhopeFileList
+        An AhopeFileList of the template bank files that will serve as input
+        in this stage.
+    output_dir : path
+        The directory in which output will be stored.
+    injection_file : ahope.AhopeFile, optional (default=None)
+        If given the file containing the simulation file to be sent to these
+        jobs on the command line. If not given no file will be sent.
+    tags : list of strings (optional, default = [])
+        A list of the tagging strings that will be used for all jobs created
+        by this call to the workflow. An example might be ['BNSINJECTIONS'] or
+        ['NOINJECTIONANALYSIS']. This will be used in output names.
+    link_to_tmpltbank : boolean, optional (default=True)
+        If this option is given, the job valid_times will be altered so that there
+        will be one inspiral file for every template bank and they will cover the
+        same time span. Note that this option must also be given during template
+        bank generation to be meaningful.
+    Returns
+    -------
+    inspiral_outs : ahope.AhopeFileList
+        A list of output files written by this stage. This *will not* contain
+        any intermediate products produced within this stage of the workflow.
+        If you require access to any intermediate products produced at this
+        stage you can call the various sub-functions directly.
+    '''
     # Need to get the exe to figure out what sections are analysed, what is
     # discarded etc. This should *not* be hardcoded, so using a new executable
     # will require a bit of effort here .... 
-    # There is also a stub for a default class using values given in the .ini
-    # file.
 
     cp = workflow.cp
     ifos = science_segs.keys()
@@ -92,8 +162,9 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
     # Set up class for holding the banks
     inspiral_outs = AhopeFileList([])
 
-    # Template banks are independent for different ifos, but might not be!
-    # Begin with independent case and add after FIXME
+    # Matched-filtering is done independently for different ifos, but might not be!
+    # If we want to use multi-detector matched-filtering or something similar to this
+    # it would probably require a new module
     for ifo in ifos:
         job_instance = exe_instance.create_job(workflow.cp, ifo, output_dir, 
                                                injection_file=injection_file, 
