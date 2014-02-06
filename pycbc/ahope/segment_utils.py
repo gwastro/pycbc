@@ -24,20 +24,19 @@
 """
 This module is responsible for setting up the segment generation stage of ahope
 workflows. For details about this module and its capabilities see here:
-https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
+https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html
 """
 
 
 import os,sys,shutil
 import subprocess
 import logging
+import pycurl
 from glue import segments, pipeline
 from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.ahope.ahope_utils import *
 
-def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir, 
-                             maxVetoCat = 5, minSegLength=0,
-                             generate_coincident_segs=True):
+def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir):
     """
     This function is the gateway for setting up the segment generation steps in an
     ahope workflow. It is designed to be able to support multiple ways of obtaining
@@ -82,26 +81,60 @@ def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir,
     """
     logging.info("Entering segment generation module")
     make_analysis_dir(out_dir)
-    veto_categories = range(1,maxVetoCat+1)
     
     cp = workflow.cp
 
-    if cp.get("ahope-segments","segments-method") == "AT_RUNTIME":
+    # Parse for options in ini file
+    segmentsMethod = cp.get("ahope-segments","segments-method")
+    # These only needed if calling setup_segment_gen_mixed
+    if segmentsMethod in ['AT_RUNTIME','CAT2_PLUS_DAG','CAT3_PLUS_DAG',
+                          'CAT4_PLUS_DAG']:
+        maxVetoCat = cp.get("ahope-segments", "segments-maximum-veto-category")
+        maxVetoCat = int(maxVetoCat)
+        veto_categories = range(1,maxVetoCat+1)
+        if cp.has_option("ahope-segments",
+                         "segments-generate-coincident-segments"):
+            generate_coincident_segs = True
+        else:
+            generate_coincident_segs = False
+        # Need to curl the veto-definer file
+        vetoDefUrl = cp.get("ahope-segments", "segments-veto-definer-url")
+        vetoDefBaseName = os.path.basename(vetoDefUrl)
+        vetoDefNewPath = os.path.join(out_dir, vetoDefBaseName)
+        fp = open(vetoDefNewPath, "wb")
+        curl = pycurl.Curl()
+        curl.setopt(pycurl.URL, vetoDefUrl)
+        curl.setopt(pycurl.WRITEDATA, fp)
+        curl.perform()
+        curl.close()
+        fp.close()
+        # and update location
+        cp.set("ahope-segments", "segments-veto-definer-file", vetoDefNewPath)
+
+    
+    if cp.has_option("ahope-segments", "segments-minimum-segment-length"):
+        minSegLength = cp.get("ahope-segments", 
+                              "segments-minimum-segment-length")
+        minSegLength = int(minSegLength)
+    else:
+        minSegLength = 0
+
+    if segmentsMethod == "AT_RUNTIME":
         logging.info("Generating segments with setup_segment_gen_mixed")
         segFilesDict = setup_segment_gen_mixed(workflow, ifos, veto_categories, 
-                             start_time, end_time, out_dir, 100,
+                             start_time, end_time, out_dir, 1000,
                              generate_coincident_segs=generate_coincident_segs)
-    elif cp.get("ahope-segments","segments-method") == "CAT2_PLUS_DAG":
+    elif segmentsMethod == "CAT2_PLUS_DAG":
         logging.info("Generating segments with setup_segment_gen_mixed")
         segFilesDict = setup_segment_gen_mixed(workflow, ifos, veto_categories, 
                              start_time, end_time, out_dir, 1,
                              generate_coincident_segs=generate_coincident_segs)
-    elif cp.get("ahope-segments","segments-method") == "CAT3_PLUS_DAG":
+    elif segmentsMethod == "CAT3_PLUS_DAG":
         logging.info("Generating segments with setup_segment_gen_mixed")
         segFilesDict = setup_segment_gen_mixed(workflow, ifos, veto_categories, 
                              start_time, end_time, out_dir, 2,
                              generate_coincident_segs=generate_coincident_segs)
-    elif cp.get("ahope-segments","segments-method") == "CAT4_PLUS_DAG":
+    elif segmentsMethod == "CAT4_PLUS_DAG":
         logging.info("Generating segments with setup_segment_gen_mixed")
         segFilesDict = setup_segment_gen_mixed(workflow, ifos, veto_categories, 
                              start_time, end_time, out_dir, 3,
@@ -122,6 +155,7 @@ def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir,
         if segFilesDict[ifo]['ANALYSED'].segmentList:
             if minSegLength:
                 segFilesDict[ifo]['ANALYSED'].removeShortSciSegs(minSegLength)
+                segFilesDict[ifo]['ANALYSED'].toSegmentXml()
             segsToAnalyse[ifo] = segFilesDict[ifo]['ANALYSED'].segmentList
         else:
             msg = "No science segments found for ifo %s. " %(ifo)
