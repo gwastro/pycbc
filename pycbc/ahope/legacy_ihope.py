@@ -29,7 +29,7 @@ For details about ahope see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 
-import os
+import os, types
 import urlparse
 from glue import pipeline
 from glue import segments
@@ -93,6 +93,12 @@ def legacy_get_valid_times(self):
     return dataLength, validChunk
 
         
+class LegacyAnalysisNode(Node):
+    # This is *ONLY* used by legacy codes where ahope cannot directly
+    # set the output name. Do not use elsewhere!
+    def  set_jobnum_tag(self, num):
+        self.add_var_opt('user-tag', num)
+        
 class LegacyAnalysisJob(Job):
     """
     The class responsible for setting up jobs for legacy lalapps C-code
@@ -102,7 +108,7 @@ class LegacyAnalysisJob(Job):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
-        node = Node(self)
+        node = LegacyAnalysisNode(self)
         
         if len(self.tags) != 0:
             node.add_var_opt('ifo-tag', self.leg_tag_name)

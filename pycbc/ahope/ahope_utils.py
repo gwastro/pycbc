@@ -61,7 +61,7 @@ def make_analysis_dir(path):
     Make the analysis directory path, any parent directories that don't already
     exist, and the 'logs' subdirectory of path.
     """
-    makedir(os.path.join(path,'logs'))
+    makedir(os.path.join(path, 'logs'))
 
 def makedir(path):
     """
@@ -104,7 +104,8 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
     run time and setting the stderr, stdout and log files to ahope standards.
     """
 
-    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, tags=[]):
+    def __init__(self, cp, exe_name, universe=None, ifo=None, 
+                                     out_dir=None, tags=[]):
         """
         Initialize the pycbc.ahope.Job class.
    
@@ -112,15 +113,13 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         -----------
         cp : ConfigParser object
             The ConfigParser object holding the ahope configuration settings
-        sections : list of strings
-            sections of the ConfigParser that get added to the opts
         exec_name : string
             Executable name
-        universe : string
+        universe : string, optional
             Condor universe to run the job in
-        extension : string
-            Extension of the output file. Used to figure out the output file
-            name.
+        ifo: string, optional
+        out_dir: path, optional
+            The folder to store output files of this job. 
         tags : list of strings
             A list of strings that is used to indentify this job.
         """
@@ -285,10 +284,6 @@ class Node(pipeline.CondorDAGNode):
     template bank (ie. the list of files making up that template bank) and this
     will automatically create a job for each file in the template bank.
     """
-    # This is *ONLY* used by legacy codes where ahope cannot directly
-    # set the output name. Do not use elsewhere!
-    set_jobnum_tag = pipeline.AnalysisNode.set_user_tag
-
     def __init__(self, job):
         """
         Initialize the pycbc.ahope.Node class. This is often overridden in
@@ -648,7 +643,7 @@ class Workflow(object):
                         elif hasattr(n, 'set_jobnum_tag'):
                             n.set_jobnum_tag(tag)
                         else:
-                            raise ValueError('This node does not support'
+                            raise ValueError('This node does not support '
                                              'partitioned files as input')                                 
                     self.dag.add_node(n)
                 file.node = nodes
