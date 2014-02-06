@@ -320,10 +320,10 @@ class PyCBCInspiralJob(Job):
                               %(self.exe_name))
 
         # set remaining options flags   
-        node.set_start(data_seg[0] + pad_data)
-        node.set_end(data_seg[1] - pad_data)
-        node.set_trig_start(valid_seg[0])
-        node.set_trig_end(valid_seg[1])
+        node.add_var_opt('gps-start-time', data_seg[0] + pad_data)
+        node.add_var_opt('gps-end-time', data_seg[1] - pad_data)
+        node.add_var_opt('trig-start-time', valid_seg[0])
+        node.add_var_opt('trig-end-time', valid_seg[1])
 
         cache_file = dfParents[0]
         
@@ -380,8 +380,8 @@ class PyCBCTmpltbankJob(Job):
                              "%s. Please check the ini file." % self.exe_name)
 
         # set the remaining option flags
-        node.set_start(data_seg[0] + pad_data)
-        node.set_end(data_seg[1] - pad_data)
+        node.add_var_opt('gps-start-time', data_seg[0] + pad_data)
+        node.add_var_opt('gps-end-time', data_seg[1] - pad_data)
 
         cache_file = dfParents[0]
 

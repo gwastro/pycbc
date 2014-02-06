@@ -105,7 +105,7 @@ class LegacyAnalysisJob(Job):
         node = Node(self)
         
         if len(self.tags) != 0:
-            node.set_ifo_tag(self.leg_tag_name)
+            node.add_var_opt('ifo-tag', self.leg_tag_name)
         
         if not dfParents or len(dfParents) != 1: 
             raise ValueError("%s must be supplied with a single cache file" 
@@ -116,8 +116,10 @@ class LegacyAnalysisJob(Job):
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.exe_name)                           
               
-        node.set_start(data_seg[0] + pad_data)
-        node.set_end(data_seg[1] - pad_data)
+            
+          
+        node.add_var_opt('gps-start-time', data_seg[0] + pad_data)
+        node.add_var_opt('gps-end-time', data_seg[1] - pad_data)   
          
         cache_file = dfParents[0]       
         
@@ -130,7 +132,8 @@ class LegacyAnalysisJob(Job):
         #create the ouptut file for this job 
         # Note that this doesn't enforce that the program creates a file with this
         # name. This must match the the expected output of the program.
-        name_segment = segments.segment([node.get_start(), node.get_end()])
+        name_segment = segments.segment([data_seg[0] + pad_data, 
+                                         data_seg[1] - pad_data])
         out_file = AhopeFile(self.ifo, self.exe_name, 
                              extension=extension,
                              segment=name_segment,
@@ -157,8 +160,8 @@ class LegacyInspiralJob(LegacyAnalysisJob):
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
         node = LegacyAnalysisJob.create_node(self, data_seg, valid_seg, 
                                                    parent, dfParents)
-        node.set_trig_start(valid_seg[0])
-        node.set_trig_end(valid_seg[1])  
+        node.add_var_opt('trig-start-time', valid_seg[0])
+        node.add_var_opt('trig-end-time', valid_seg[1])  
         node.add_input(parent, opt='bank-file')    
         
         if self.injection_file is not None:
