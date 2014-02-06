@@ -43,9 +43,7 @@ Longer term/lower priority
 ----------------------------
 
 * If we want to move to having a variable number of segments for analysis (ie. if we only have 1000s use say 4 analysis segments, but if we have 5000s use 20), then we need to fix the issues of bias in the inverse PSD causing a bias (from the expected chi-squared distribution) in the output SNR time series, *which will vary based on the number of segments used to analyse the PSD*.
-* Some stubs for GPU support have been added. A method of the standard job class adds the needed environment variables and requirements to select
-a GPU node on SUGAR and ATLAS. Support for the CIT and MIT clusters is not yet implemented. The ability to run GPU jobs in an unreliability mode 
-where each job is run twice and the results are checked for consistency is not yet implemented. It is not yet certain if this will work within Pegasus. Scripts to check GPU enabled output results against each other also are not yet written. 
+* Some stubs for GPU support have been added. A method of the standard job class adds the needed environment variables and requirements to select a GPU node on SUGAR and ATLAS. Support for the CIT and MIT clusters is not yet implemented. The ability to run GPU jobs in an unreliability mode where each job is run twice and the results are checked for consistency is not yet implemented. It is not yet certain if this will work within Pegasus. Scripts to check GPU enabled output results against each other also are not yet written. 
 
 ------------------
 Questions concerning the coincidence stage ligolw_sstinca
