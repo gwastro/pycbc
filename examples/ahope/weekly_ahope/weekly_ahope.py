@@ -51,9 +51,7 @@ ifos = ['H1','L1']
 # NOTE: not all files are returned to top level, so all_files has some gaps
 all_files = ahope.AhopeFileList([])
 scienceSegs, segsDict = ahope.setup_segment_generation(workflow, ifos, 
-                                            start_time, end_time, segDir, 
-                                            maxVetoCat=5,
-                                            minSegLength=2000)
+                                            start_time, end_time, segDir)
 datafind_files, scienceSegs = ahope.setup_datafind_workflow(workflow, 
                                             scienceSegs, dfDir, 
                                             checkSegmentGaps='update_times',
@@ -189,7 +187,8 @@ wipCp.set('segments','veto-categories','2,3,4,5')
 # Put the veto-definer in the expected location
 vetoFile = wipCp.get('ahope-segments', 'segments-veto-definer-file')
 vetoFileBase = os.path.basename(vetoFile)
-shutil.copyfile(vetoFile, os.path.join(currDir,'segments',vetoFileBase))
+# This line no longer needed as segment file is already there
+#shutil.copyfile(vetoFile, os.path.join(currDir,'segments',vetoFileBase))
 wipCp.set('segments', 'veto-def-file', vetoFileBase)
 # Set the injection information
 wipCp.remove_section('injections')
