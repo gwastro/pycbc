@@ -73,8 +73,6 @@ all_files.extend(splitbank_files)
 # FIXME: Pipedown expects the injections to have the random seed as a tag,
 # here we just add that tag.
 inj_files, inj_tags = ahope.setup_injection_workflow(workflow, scienceSegs, 
-                                           datafind_files, splitbank_files, 
-                                           start_time, end_time, 
                                            output_dir='inj_files', tags=['2134'])
 timeSlideFiles = ahope.setup_timeslides_workflow(workflow, scienceSegs,
                                            output_dir='time_slide_files',
