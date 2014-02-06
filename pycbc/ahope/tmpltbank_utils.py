@@ -84,7 +84,7 @@ def setup_tmpltbank_workflow(workflow, science_segs,
     # Else we assume template banks will be generated in the workflow
     else:
         logging.info("Adding template bank jobs to workflow.")
-        # FIXME: link_to_tmpltbank needs to be supplied from ini file.
+        # FIXME: Link to template bank needs to supplied from ini file
         tmplt_banks = setup_tmpltbank_dax_generated(workflow, science_segs,
                                                     datafind_outs, output_dir)
     
