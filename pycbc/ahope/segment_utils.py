@@ -225,10 +225,10 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
                              "%s-ANALYSED_SEGMENTS.xml" %(ifo.upper()) )
         currUrl = urlparse.urlunparse(['file', 'localhost', analysedXmlFile,
                           None, None, None])
-        segFilesDict[ifo][currTag] = AhopeOutSegFile(ifo, 'SEGMENTS',
+        segFilesDict[ifo]['ANALYSED'] = AhopeOutSegFile(ifo, 'SEGMENTS',
                                  segValidSeg, currUrl, segList=analysedSegs,
                                  tags = ['ANALYSED'])
-        segFilesDict[ifo][currTag].toSegmentXml()
+        segFilesDict[ifo]['ANALYSED'].toSegmentXml()
 
 
     if generate_coincident_segs:
@@ -257,7 +257,8 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
                 errMsg += "disabled as ligolw_segments_compat cannot be added "
                 errMsg += "to the ahope workflow without breaking pegasus."
                 raise NotImplementedError(errMsg)
-            segFilesDict[ifoString][currTag] = currSegFile
+            segFilesDict[ifoString]['CUMULATIVE_CAT_%d' %(category)]\
+                                                                 = currSegFile
 
     return segFilesDict
 
@@ -311,10 +312,10 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir):
     sciXmlFP = open(sciXmlFilePath,'r')
     sciSegs = fromsegmentxml(sciXmlFP)
     sciXmlFP.close()
-    currUrl = urlparse.urlunparse(['file', 'localhost', currSciXmlFilePath,
+    currUrl = urlparse.urlunparse(['file', 'localhost', sciXmlFilePath,
                                    None, None, None])
     sciXmlFile = AhopeOutSegFile(ifo, 'SEGMENTS',
-                                  segValidSeg, currUrl, segList=currSciSegs,
+                                  segValidSeg, currUrl, segList=sciSegs,
                                   tags = ['SCIENCE'])
 
     return sciSegs, sciXmlFile
@@ -345,6 +346,7 @@ def get_veto_segs_at_runtime(ifo, category, cp, start_time, end_time, out_dir, t
     vetoXmlFile : ahope.AhopeSegFile
         The ahope File object corresponding to this DQ veto file.
     """
+    segValidSeg = segments.segment([start_time,end_time])
     segServerUrl = cp.get("ahope-segments", "segments-database-url")
     vetoDefFile = cp.get("ahope-segments", "segments-veto-definer-file")
 
@@ -413,6 +415,7 @@ def get_veto_segs_in_workflow(ifo, category, start_time, end_time, out_dir,
     veto_def_file : ahope.AhopeSegFile
         The ahope File object corresponding to this DQ veto file.
     """
+    segValidSeg = segments.segment([start_time,end_time])
     node = Node(vetoGenJob)
     node.add_var_opt('veto-categories', str(category))
     node.add_var_opt('ifo-list', ifo)

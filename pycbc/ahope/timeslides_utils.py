@@ -36,9 +36,31 @@ from pycbc.ahope.ahope_utils import *
 def setup_timeslides_workflow(workflow, science_segs, output_dir=None, tags=[],
                               timeSlideSectionName='ligolw_tisi'):
     '''
-    Setup generation of time_slide input files in the ahope workflow. Currently used
+    Setup generation of time_slide input files in the ahope workflow.
+    Currently used
     only with ligolw_tisi to generate files containing the list of slides to be
     performed in each time slide job.
+
+    Parameters
+    -----------
+    Workflow : ahope.Workflow
+        The ahope workflow instance that the coincidence jobs will be added to.
+    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
+        The list of times that are being analysed in this workflow. 
+    output_dir : path
+        The directory in which output files will be stored.
+    tags : list of strings (optional, default = [])
+        A list of the tagging strings that will be used for all jobs created
+        by this call to the workflow. This will be used in output names.
+    timeSlideSectionName : string (optional, default='injections')
+        The string that corresponds to the option describing the exe location
+        in the [executables] section of the .ini file and that corresponds to
+        the section (and sub-sections) giving the options that will be given to
+        the code at run time.
+    Returns
+    --------
+    timeSlideOuts : ahope.AhopeFileList
+        The list of time slide files created by this call.
     '''
     logging.info("Entering time slides setup module.")
     make_analysis_dir(output_dir)
@@ -51,8 +73,8 @@ def setup_timeslides_workflow(workflow, science_segs, output_dir=None, tags=[],
 
     # FIXME: Add ability to specify different exes
 
-    # FIXME: Here I think I would prefer to setup a node, like normal, and then either
-    # FIXME: add it to the workflow, *or* generate it at runtime.
+    # FIXME: Here I think I would prefer to setup a node, like normal, and then
+    #        either add it to the workflow, *or* generate it at runtime.
 
     # Get all sections by looking in ini file
     timeSlideTags = [sec.split('-')[-1] for sec in workflow.cp.sections() \
@@ -85,7 +107,8 @@ def setup_timeslides_workflow(workflow, science_segs, output_dir=None, tags=[],
                 ifoSlideStep = workflow.cp.get_opt_tag('tisi',
                                         '%s-slide-step' %(ifo), timeSlideTag)
                 ligolw_tisi_call.append("-i")
-                optionString = ':'.join([ifoSlideStart,ifoSlideEnd,ifoSlideStep])
+                optionString = ':'.join([ifoSlideStart, ifoSlideEnd, \
+                                         ifoSlideStep])
                 optionString = '%s=%s' %(ifo.upper(), optionString)
                 ligolw_tisi_call.append(optionString)
         if workflow.cp.has_option('tisi', 'remove-zero-lag') or\

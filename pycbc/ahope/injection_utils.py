@@ -54,10 +54,10 @@ def setup_injection_workflow(workflow, science_segs, output_dir=None,
     output_dir : path
         The directory in which injection files will be stored.
     injSectionName : string (optional, default='injections')
-        The string that corresponds to the option describing the exe location in the
-        [executables] section of the .ini file and that corresponds to the section
-        (and sub-sections) giving the options that will be given to the code at
-        run time.
+        The string that corresponds to the option describing the exe location
+        in the [executables] section of the .ini file and that corresponds to
+        the section (and sub-sections) giving the options that will be given to
+        the code at run time.
     tags : list of strings (optional, default = [])
         A list of the tagging strings that will be used for all jobs created
         by this call to the workflow. This will be used in output names.
@@ -67,8 +67,9 @@ def setup_injection_workflow(workflow, science_segs, output_dir=None,
     inj_files : ahope.AhopeFileList
         The list of injection files created by this call.
     inj_tags : list of strings
-        The tag corresponding to each injection file and used to uniquely identify
-        them. The AhopeFileList class contains functions to search based on tags.
+        The tag corresponding to each injection file and used to uniquely
+        identify them. The AhopeFileList class contains functions to search
+        based on tags.
     '''
     logging.info("Entering injection module.")
     make_analysis_dir(output_dir)

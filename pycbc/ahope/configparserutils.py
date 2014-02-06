@@ -31,7 +31,7 @@ import re
 import copy
 import ConfigParser
 
-class AhopeConfigParser(ConfigParser.ConfigParser):
+class AhopeConfigParser(ConfigParser.SafeConfigParser):
     """
     This is a sub-class of ConfigParser.ConfigParser, which lets us add a few
     additional helper features that are useful in ahope.
@@ -142,7 +142,7 @@ def read_ini_file(cpFile):
     """    
 
     # Initialise ConfigParser class
-    cp = ConfigParser.SafeConfigParser()
+    cp = AhopeConfigParser()
     # Read the file
     cp.read(cpFile)
     return cp

@@ -1,3 +1,33 @@
+# Copyright (C) 2013  Ian Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+"""
+This module is responsible for setting up the template bank stage of ahope
+workflows. For details about this module and its capabilities see here:
+https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
+"""
+
 from __future__ import division
 
 import os
@@ -54,6 +84,7 @@ def setup_tmpltbank_workflow(workflow, science_segs,
     # Else we assume template banks will be generated in the workflow
     else:
         logging.info("Adding template bank jobs to workflow.")
+        # FIXME: link_to_tmpltbank needs to be supplied from ini file.
         tmplt_banks = setup_tmpltbank_dax_generated(workflow, science_segs,
                                                     datafind_outs, output_dir)
     
@@ -69,17 +100,24 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
     currently supported:
 
     * lalapps_tmpltbank
+    * pycbc_geom_nonspin_bank
 
     Parameters
     ----------
-    cp : ConfigParser
-        The ConfigParser holding all the options used by the ahope workflow.
-    scienceSegs : Keyed dictionary of glue.segmentlist objects
+    workflow: Workflow
+        An instanced class that manages the constructed workflow.
+    science_segs : Keyed dictionary of glue.segmentlist objects
         scienceSegs[ifo] holds the science segments to be analysed for each
         ifo. 
-    ahopeDax : Instanced CondorDag class
-        The CondorDag class that will hold all the jobs that the ahope workflow
-        needs to run.
+    datafind_outs : AhopeFileList
+        The file list containing the datafind files.
+    output_dir : path string
+        The directory where data products will be placed. 
+    link_to_matchedfltr : boolean, optional (default=True)
+        If this option is given, the job valid_times will be altered so that
+        there will be one inspiral file for every template bank and they will
+        cover the same time span. Note that this option must also be given
+        during matched-filter generation to be meaningful.
 
     Returns
     --------
@@ -126,7 +164,7 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
                            allow_overlap=True)
     return tmplt_banks
 
-def setup_tmpltbank_pregenerated(cp, ifos):
+def setup_tmpltbank_pregenerated(workflow, science_segs):
     '''
     Setup ahope workflow to use a pregenerated template bank.
     The bank given in cp.get('ahope','pregenerated-template-bank') will be used
@@ -136,10 +174,18 @@ def setup_tmpltbank_pregenerated(cp, ifos):
 
     Parameters
     ----------
-    cp : ConfigParser
-        The ConfigParser holding all the options used by the ahope workflow.
-    ifos : list of strings
-        The list of ifos that are used in this analysis.
+    workflow: Workflow
+        An instanced class that manages the constructed workflow.
+    science_segs : Keyed dictionary of glue.segmentlist objects
+        scienceSegs[ifo] holds the science segments to be analysed for each
+        ifo. This is used here to get the active ifos, and the full range of
+        time over which to declare the input file valid.
+
+    Returns
+    --------
+    AhopeOutFileList
+        The AhopeOutFileList holding the details of all the template bank jobs.
+
 
     Returns
     --------
@@ -153,7 +199,8 @@ def setup_tmpltbank_pregenerated(cp, ifos):
     tmpltBanks = AhopeFileList([])
 
     pre_gen_bank = cp.get('ahope','pregenerated-template-bank')
-    global_seg = segments.segment([0, 9999999999])
+    ifos = science_segs.keys()
+    global_seg = get_full_analysis_chunk(science_segs)
 
     for ifo in ifos:
         # Add bank for that ifo
