@@ -195,6 +195,7 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
         segFilesDict[ifo] = {}
         currSciSegs, currSciXmlFile = get_science_segments(ifo, cp, 
                                           start_time, end_time, out_dir)
+        segFilesDict[ifo]['SCIENCE'] = currSciXmlFile
 
         # FIXME: Do I really need these?
         vetoSegs = {}
