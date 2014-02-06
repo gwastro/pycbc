@@ -162,7 +162,10 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, science_segs, segsDict,
     ligolwAddOuts : ahope.AhopeFileList
         A list of the output files generated from ligolw_add.
     """
+    # FIXME: Order of ifoList is not necessarily H1L1V1
+    # FIXME: eg. full analysis segment of 968976015-969062415 gives "V1H1L1"
     ifoList = science_segs.keys()
+    ifoList.sort(key=str.lower)
     ifoString = ''.join(ifoList)
     veto_categories = range(1,maxVetoCat+1)
 
