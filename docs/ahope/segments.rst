@@ -26,7 +26,7 @@ these can be added on request.
 Usage
 =======
 
-Using this module requires a number of things::
+Using this module requires a number of things
 
 * A configuration file (or files) containing the information needed to tell this module how to generate the segments (described below).
 * An initialized instance of the ahope workflow class, containing the ConfigParser.
@@ -53,23 +53,19 @@ and provide is
 
 segments-method = VALUE
 
-The choices here and their description are as described below::
+The choices here and their description are as described below
 
 * AT_RUNTIME - Use the setup_segment_gen_mixed to generate segments and generate all segment files at runtime
 * CAT2_PLUS_DAG - Use the setup_segment_gen_mixed to generate segments, generate all veto files up to CATEGORY_1 at runtime, and add jobs to produce the remaining files to the workflow.
-* CAT3_PLUS_DAG - Use the setup_segment_gen_mixed to generate segments, generate
- all veto files up to CATEGORY_2 at runtime, and add jobs to produce the remaini
-ng files to the workflow.
-* CAT4_PLUS_DAG - Use the setup_segment_gen_mixed to generate segments, generate
- all veto files up to CATEGORY_3 at runtime, and add jobs to produce the remaini
-ng files to the workflow.
+* CAT3_PLUS_DAG - Use the setup_segment_gen_mixed to generate segments, generate all veto files up to CATEGORY_2 at runtime, and add jobs to produce the remaining files to the workflow.
+* CAT4_PLUS_DAG - Use the setup_segment_gen_mixed to generate segments, generate all veto files up to CATEGORY_3 at runtime, and add jobs to produce the remaining files to the workflow.
 
 Each of these options will describe which subfunction to use. These are described here
 
 .. autofunction:: pycbc.ahope.setup_segment_gen_mixed
           :noindex:
 
-When using the setup_segment_gen_mixed function the following additional options apply::
+When using the setup_segment_gen_mixed function the following additional options apply
 
 * segments-X1-science-name = NAME - REQUIRED. Where X1 is replaced by the ifo name for each ifo. The NAME should be the full channel name corresponding to analysable times for e.g. H1:DMT-SCIENCE:4
 * segments-database-url = URL - REQUIRED. The URL to the segment databse that will be used to obtain this information
