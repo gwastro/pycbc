@@ -82,7 +82,7 @@ This first example computes a non-spinning template bank using a supplied ASD te
 
 .. code-block:: bash
 
-    pycbc_geom_nonspinbank --pn-order twoPN --f0 40 --f-low 40 --f-upper 2048 --delta-f 0.01 --min-match 0.03 --min-mass1 2.0 --min-mass2 2.0 --max-mass1 3. --max-mass2 3. --verbose --output-file testNonSpin.xml --calculate-ethinca-metric --asd-file ZERO_DET_high_P.txt
+    pycbc_geom_nonspinbank --pn-order twoPN --f0 40 --f-low 40 --f-upper 2048 --delta-f 0.01 --min-match 0.97 --min-mass1 2.0 --min-mass2 2.0 --max-mass1 3. --max-mass2 3. --verbose --output-file testNonSpin.xml --calculate-ethinca-metric --asd-file ZERO_DET_high_P.txt
 
 Here is a second example that computes a non-spinning template bank from a frame
 cache file. This needs a bunch more options to read data and estimate the PSD
@@ -90,7 +90,7 @@ from that.
 
 .. code-block:: bash
 
-    pycbc_geom_nonspinbank --pn-order twoPN --f0 40 --f-low 40 --f-upper 2048 --delta-f 0.01 --min-match 0.03 --min-mass1 2.0 --min-mass2 2.0 --max-mass1 3. --max-mass2 3. --verbose --output-file testNonSpin.xml --calculate-ethinca-metric --psd-estimation median --psd-segment-length 256 --psd-segment-stride 128 --psd-inverse-length 8 --gps-start-time 900000033 --gps-end-time 900002081 --strain-high-pass 30 --pad-data 8 --sample-rate 4096 --frame-cache cache/H-H1_NINJA2_G1000176_EARLY_RECOLORED_CACHE-900000024-10653.lcf --channel-name H1:LDAS-STRAIN --max-total-mass 5.5 --min-total-mass 4.5
+    pycbc_geom_nonspinbank --pn-order twoPN --f0 40 --f-low 40 --f-upper 2048 --delta-f 0.01 --min-match 0.97 --min-mass1 2.0 --min-mass2 2.0 --max-mass1 3. --max-mass2 3. --verbose --output-file testNonSpin.xml --calculate-ethinca-metric --psd-estimation median --psd-segment-length 256 --psd-segment-stride 128 --psd-inverse-length 8 --gps-start-time 900000033 --gps-end-time 900002081 --strain-high-pass 30 --pad-data 8 --sample-rate 4096 --frame-cache cache/H-H1_NINJA2_G1000176_EARLY_RECOLORED_CACHE-900000024-10653.lcf --channel-name H1:LDAS-STRAIN --max-total-mass 5.5 --min-total-mass 4.5
 
 --------------------------
 Command line options
@@ -159,7 +159,7 @@ Here is one example for making an aligned-spin template bank using a pre-generat
 
 .. code-block:: bash
 
-    pycbc_geom_aligned_bank --pn-order threePointFivePN --f0 70 --f-low 15 --f-upper 1000 --delta-f 0.01 --min-match 0.03 --min-mass1 2.5 --min-mass2 2.5 --max-mass1 3. --max-mass2 3. --verbose --log-path /usr1/spxiwh/logs --max-ns-spin-mag 0.05 --max-bh-spin-mag 0.05 --output-file testAligned.xml --split-bank-num 5 --asd-file ZERO_DET_high_P.txt
+    pycbc_geom_aligned_bank --pn-order threePointFivePN --f0 70 --f-low 15 --f-upper 1000 --delta-f 0.01 --min-match 0.97 --min-mass1 2.5 --min-mass2 2.5 --max-mass1 3. --max-mass2 3. --verbose --log-path /usr1/spxiwh/logs --max-ns-spin-mag 0.05 --max-bh-spin-mag 0.05 --output-file testAligned.xml --split-bank-num 5 --asd-file ZERO_DET_high_P.txt
 
 --------------------------
 Command line options
@@ -245,19 +245,19 @@ Here is one example reading data from a frame cache, as in the non-spinnin examp
 
 .. code-block:: bash
 
-    pycbc_aligned_stoch_bank -v --pn-order threePointFivePN --f0 60 --f-low 30 -V --delta-f 0.01 --min-match 0.03 --min-mass1 2.5 --max-mass1 3 --min-mass2 2.5 --max-mass2 3 --max-ns-spin-mag 0.05 --max-bh-spin-mag 0.05 --nsbh-flag --psd-estimation median --psd-segment-length 256 --psd-segment-stride 128 --psd-inverse-length 8 --gps-start-time 900000033 --gps-end-time 900002081 --strain-high-pass 30 --pad-data 8 --sample-rate 4096 --frame-cache cache/H-H1_NINJA2_G1000176_EARLY_RECOLORED_CACHE-900000024-10653.lcf --channel-name H1:LDAS-STRAIN --verbose --output-file testStoch.xml --num-seeds 2000000
+    pycbc_aligned_stoch_bank -v --pn-order threePointFivePN --f0 60 --f-low 30 -V --delta-f 0.01 --min-match 0.97 --min-mass1 2.5 --max-mass1 3 --min-mass2 2.5 --max-mass2 3 --max-ns-spin-mag 0.05 --max-bh-spin-mag 0.05 --nsbh-flag --psd-estimation median --psd-segment-length 256 --psd-segment-stride 128 --psd-inverse-length 8 --gps-start-time 900000033 --gps-end-time 900002081 --strain-high-pass 30 --pad-data 8 --sample-rate 4096 --frame-cache cache/H-H1_NINJA2_G1000176_EARLY_RECOLORED_CACHE-900000024-10653.lcf --channel-name H1:LDAS-STRAIN --verbose --output-file testStoch.xml --num-seeds 2000000
 
 Another example where we read the PSD from a supplied ASD file:
 
 .. code-block:: bash
 
-    pycbc_aligned_stoch_bank -v --pn-order threePointFivePN --f0 60 --f-low 30 --delta-f 0.1 --min-match 0.03 --min-mass1 2.5 --max-mass1 3 --min-mass2 2.5 --max-mass2 3 --max-ns-spin-mag 0.05 --max-bh-spin-mag 0.05 --nsbh-flag --verbose --asd-file ZERO_DET_high_P.txt --num-seeds 10000 --output-file "testStoch.xml"
+    pycbc_aligned_stoch_bank -v --pn-order threePointFivePN --f0 60 --f-low 30 --delta-f 0.1 --min-match 0.97 --min-mass1 2.5 --max-mass1 3 --min-mass2 2.5 --max-mass2 3 --max-ns-spin-mag 0.05 --max-bh-spin-mag 0.05 --nsbh-flag --verbose --asd-file ZERO_DET_high_P.txt --num-seeds 10000 --output-file "testStoch.xml"
 
 And a third example where we use a batshit PN order.
 
 .. code-block:: bash
 
-    pycbc_aligned_stoch_bank -v --pn-order onePN --f0 60 --f-low 30 --delta-f 0.1 --min-match 0.03 --min-mass1 2.5 --max-mass1 3 --min-mass2 2.5 --max-mass2 3 --max-ns-spin-mag 0.05 --max-bh-spin-mag 0.05 --nsbh-flag --verbose --asd-file ZERO_DET_high_P.txt --num-seeds 10000 --output-file "testStoch.xml"
+    pycbc_aligned_stoch_bank -v --pn-order onePN --f0 60 --f-low 30 --delta-f 0.1 --min-match 0.97 --min-mass1 2.5 --max-mass1 3 --min-mass2 2.5 --max-mass2 3 --max-ns-spin-mag 0.05 --max-bh-spin-mag 0.05 --nsbh-flag --verbose --asd-file ZERO_DET_high_P.txt --num-seeds 10000 --output-file "testStoch.xml"
 
 --------------------------
 Command line options
