@@ -1,3 +1,4 @@
+.. _ahopesegmentsmod:
 #####################################
 The ahope segment generation module
 #####################################
