@@ -26,10 +26,8 @@ This module is responsible for querying a datafind server to determine the
 availability of the data that the code is attempting to run on. It also
 performs a number of tests and can act on these as described below. Full
 documentation for this function can be found here:
-https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
+https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/datafind.html
 """
-
-
 
 import os,sys,optparse
 import urlparse,urllib
@@ -40,10 +38,7 @@ from glue import segments,segmentsUtils,git_version
 from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.ahope import AhopeFile, AhopeFileList, make_analysis_dir
 
-def setup_datafind_workflow(workflow, scienceSegs,  outputDir, 
-                            checkSegmentGaps='no_test',
-                            checkFramesExist='no_test', 
-                            checkSegmentSummary='no_test', segFileDict=None):
+def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFileDict):
     """
     Setup datafind section of ahope workflow. This section is responsible for
     generating, or setting up the workflow to generate, a list of files that
@@ -66,43 +61,11 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir,
     outputDir : path
         All output files written by datafind processes will be written to this
         directory.
-    checkSegmentGaps : string (optional, default='no_test')
-        If this option takes any value other than 'no_test' ahope will check
-        that the local datafind server has returned frames covering all of the
-        listed science times. Its behaviour is then as follows
-        * 'no_test': Do not perform this test. Any discrepancies will cause
-          later failures.
-        * 'warn': Perform the test, print warnings covering any discrepancies
-          but do nothing about them. Discrepancies will cause failures later in
-          the workflow.
-        * 'update_times': Perform the test, print warnings covering any
-          discrepancies and update the input science times to remove times that
-          are not present on the host cluster.
-        * 'raise_error': Perform the test. If any discrepancies occur, raise a
-          ValueError.
-    checkFramesExist : string (optional, default='no_test')
-        If this options takes any value other than 'no_test' ahope will check
-        that the frames returned by the local datafind server are accessible
-        from the machine that is running ahope. Its behaviour is then as follows
-        * 'no_test': Do not perform this test. Any discrepancies will cause
-          later failures.
-        * 'warn': Perform the test, print warnings covering any discrepancies
-          but do nothing about them. Discrepancies will cause failures later in
-          the workflow.
-        * 'update_times': Perform the test, print warnings covering any
-          discrepancies and update the input science times to remove times that
-          are not present on the host cluster.
-        * 'raise_error': Perform the test. If any discrepancies occur, raise a
-          ValueError.
-    checkSegmentSummary: string (optional, default='no_test')
-        If this option takes any value other than 'no_test' ahope will check
-        that all frames returned by datafind are covered by the segment_summary
-        table (for the science flag). Its behaviour is then as follows:
-        * 'no_test': Do not perform this test. 
-        * 'warn': Perform the test, print warnings covering any discrepancies
-          but do nothing about them.
-        * 'raise_error': Perform the test. If any discrepancies occur, raise a
-          ValueError.
+    segFilesDict : dictionary of ahope.AhopeSegFile instances
+        This contains representations of the various segment files that were
+        constructed at the segment generation stage of the workflow. This will
+        be used for the segment_summary test, or if any of the other tests are
+        given "update_times" (and can be given a value of None otherwise).
 
     Returns
     --------
@@ -116,18 +79,36 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir,
     logging.info("Entering datafind module")
     make_analysis_dir(outputDir)
     cp = workflow.cp
+
+    # Parse for options in ini file
+    datafindMethod = cp.get("ahope-datafind", "datafind-method")
+    if cp.has_option("ahope-datafind", "datafind-check-segment-gaps"):
+        checkSegmentGaps = cp.get("ahope-datafind", 
+                                  "datafind-check-segment-gaps")
+    else:
+        checkSegmentGaps = "no_test"
+    if cp.has_option("ahope-datafind", "datafind-check-frames-exist"):
+        checkFramesExist = cp.get("ahope-datafind",
+                                  "datafind-check-frames-exist")
+    else:
+        checkFramesExist = "no_test"
+    if cp.has_option("ahope-datafind", "datafind-check-segment-summary"):
+        checkSegmentSummary = cp.get("ahope-datafind",
+                                     "datafind-check-segment-summary")
+    else:
+        checkSegmentSummary = "no_test"
     
     logging.info("Starting datafind with setup_datafind_runtime_generated")
-    if cp.get("ahope-datafind","datafind-method") == "AT_RUNTIME_MULTIPLE":
+    if datafindMethod == "AT_RUNTIME_MULTIPLE":
         datafindcaches, datafindouts = setup_datafind_runtime_generated(cp, scienceSegs,
                                                                     outputDir)
-    elif cp.get("ahope-datafind","datafind-method") == "AT_RUNTIME_SINGLE":
+    elif datafindMethod == "AT_RUNTIME_SINGLE":
         datafindcaches, datafindouts = setup_datafind_runtime_single_call_perifo(cp, 
                                                        scienceSegs, outputDir)
     else:
         msg = "Entry datafind-method in [ahope-datafind] does not have "
         msg += "expected value. Valid values are AT_RUNTIME_MULTIPLE, "
-        msg += "AT_RUNTIME_SINGLE.."
+        msg += "AT_RUNTIME_SINGLE. Consult the documentation for more info."
         raise ValueError(msg)
 
     logging.info("setup_datafind_runtime_generated completed")
@@ -213,8 +194,7 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir,
     # summary table are present.
     if checkSegmentSummary in ['warn', 'raise_error']:
         logging.info("Checking the segment summary table against frames.")
-        if not cp.get("ahope-datafind", "datafind-method")\
-                == "AT_RUNTIME_SINGLE":
+        if not datafindMethod == "AT_RUNTIME_SINGLE":
             logging.info("This is much more meaningful if using "
                          "datafind-method = AT_RUNTIME_SINGLE.")
         dfScienceSegs = get_science_segs_from_datafind_outs(datafindcaches)
