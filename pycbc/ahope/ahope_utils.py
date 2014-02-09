@@ -61,14 +61,15 @@ def make_analysis_dir(path):
     Make the analysis directory path, any parent directories that don't already
     exist, and the 'logs' subdirectory of path.
     """
-    makedir(os.path.join(path, 'logs'))
+    if path is not None:
+        makedir(os.path.join(path, 'logs'))
 
 def makedir(path):
     """
     Make the analysis directory path and any parent directories that don't
     already exist. Will do nothing if path already exists.
     """
-    if not os.path.exists(path):
+    if not os.path.exists(path) and path is not None:
         os.makedirs(path)
 
 def is_condor_exec(exe_path):
