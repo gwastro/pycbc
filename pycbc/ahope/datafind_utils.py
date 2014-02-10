@@ -231,15 +231,12 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
     # summary table are present.
     if checkSegmentSummary in ['warn', 'raise_error']:
         logging.info("Checking the segment summary table against frames.")
-        if not datafindMethod == "AT_RUNTIME_SINGLE":
-            logging.info("This is much more meaningful if using "
-                         "datafind-method = AT_RUNTIME_SINGLE.")
         dfScienceSegs = get_science_segs_from_datafind_outs(datafindcaches)
         missingFlag = False
         for ifo in dfScienceSegs.keys():
-            scienceFile = segFileList.find_output_with_ifo(ifo)
+            scienceFile = segFilesList.find_output_with_ifo(ifo)
             scienceFile = scienceFile.find_output_with_tag('SCIENCE')
-            if not len(scienceFile == 1):
+            if not len(scienceFile) == 1:
                 errMsg = "Did not find exactly 1 science file."
                 raise ValueError(errMsg)
             scienceFile = scienceFile[0]
