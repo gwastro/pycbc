@@ -38,7 +38,8 @@ from glue import segments,segmentsUtils,git_version
 from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.ahope import AhopeFile, AhopeFileList, make_analysis_dir
 
-def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFileDict):
+def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
+                            tag=None):
     """
     Setup datafind section of ahope workflow. This section is responsible for
     generating, or setting up the workflow to generate, a list of files that
@@ -61,11 +62,18 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFileDict):
     outputDir : path
         All output files written by datafind processes will be written to this
         directory.
-    segFilesDict : dictionary of ahope.AhopeSegFile instances
+    segFilesList : List of the files returned by segment_utils
         This contains representations of the various segment files that were
         constructed at the segment generation stage of the workflow. This will
         be used for the segment_summary test, or if any of the other tests are
         given "update_times" (and can be given a value of None otherwise).
+    tag : string, optional (default=None)
+        Use this to specify a tag. This can be used if this module is being
+        called more than once to give call specific configuration (by setting
+        options in [ahope-datafind-${TAG}] rather than [ahope-datafind]). This
+        is also used to tag the AhopeFiles returned by the class to uniqueify
+        the AhopeFiles and uniqueify the actual filename.
+        FIXME: Filenames may not be unique with current codes!
 
     Returns
     --------
@@ -81,34 +89,47 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFileDict):
     cp = workflow.cp
 
     # Parse for options in ini file
-    datafindMethod = cp.get("ahope-datafind", "datafind-method")
-    if cp.has_option("ahope-datafind", "datafind-check-segment-gaps"):
-        checkSegmentGaps = cp.get("ahope-datafind", 
-                                  "datafind-check-segment-gaps")
+    datafindMethod = cp.get_opt_tag("ahope-datafind", "datafind-method", tag)
+    if cp.has_option_tag("ahope-datafind", "datafind-check-segment-gaps", tag):
+        checkSegmentGaps = cp.get_opt_tag("ahope-datafind", 
+                                  "datafind-check-segment-gaps", tag)
     else:
         checkSegmentGaps = "no_test"
-    if cp.has_option("ahope-datafind", "datafind-check-frames-exist"):
-        checkFramesExist = cp.get("ahope-datafind",
-                                  "datafind-check-frames-exist")
+    if cp.has_option_tag("ahope-datafind", "datafind-check-frames-exist", tag):
+        checkFramesExist = cp.get_opt_tag("ahope-datafind",
+                                  "datafind-check-frames-exist", tag)
     else:
         checkFramesExist = "no_test"
-    if cp.has_option("ahope-datafind", "datafind-check-segment-summary"):
-        checkSegmentSummary = cp.get("ahope-datafind",
-                                     "datafind-check-segment-summary")
+    if cp.has_option_tag("ahope-datafind", "datafind-check-segment-summary",
+                                           tag):
+        checkSegmentSummary = cp.get_opt_tag("ahope-datafind",
+                                     "datafind-check-segment-summary", tag)
     else:
         checkSegmentSummary = "no_test"
     
     logging.info("Starting datafind with setup_datafind_runtime_generated")
-    if datafindMethod == "AT_RUNTIME_MULTIPLE":
-        datafindcaches, datafindouts = setup_datafind_runtime_generated(cp, scienceSegs,
-                                                                    outputDir)
-    elif datafindMethod == "AT_RUNTIME_SINGLE":
-        datafindcaches, datafindouts = setup_datafind_runtime_single_call_perifo(cp, 
-                                                       scienceSegs, outputDir)
+    if datafindMethod == "AT_RUNTIME_MULTIPLE_CACHES":
+        datafindcaches, datafindouts = \
+            setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
+                                                            outputDir, tag=tag)
+    elif datafindMethod == "AT_RUNTIME_SINGLE_CACHES":
+        datafindcaches, datafindouts = \
+            setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, 
+                                                            outputDir, tag=tag)
+    elif datafindMethod == "AT_RUNTIME_MULTIPLE_FRAMES":
+        datafindcaches, datafindouts = \
+            setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
+                                                            outputDir, tag=tag)
+    elif datafindMethod == "AT_RUNTIME_SINGLE_FRAMES":
+        datafindcaches, datafindouts = \
+            setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
+                                                            outputDir, tag=tag)
     else:
         msg = "Entry datafind-method in [ahope-datafind] does not have "
-        msg += "expected value. Valid values are AT_RUNTIME_MULTIPLE, "
-        msg += "AT_RUNTIME_SINGLE. Consult the documentation for more info."
+        msg += "expected value. Valid values are "
+        msg += "AT_RUNTIME_MULTIPLE_FRAMES, AT_RUNTIME_SINGLE_FRAMES "
+        msg += "AT_RUNTIME_MULTIPLE_CACHES or AT_RUNTIME_SINGLE_CACHES. "
+        msg += "Consult the documentation for more info."
         raise ValueError(msg)
 
     logging.info("setup_datafind_runtime_generated completed")
@@ -149,6 +170,14 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFileDict):
                     # Remove missing time, so that we can carry on if desired
                     logging.info("Updating science times for ifo %s." %(ifo))
                     scienceSegs[ifo] = scienceSegs[ifo] - missing
+                    # Find the analysed file
+                    analSegs = segFilesList.find_output_with_ifo(ifo)
+                    analSegs = analSegs.find_output_with_tag('ANALYSED')
+                    analSegs = analSegs[0]
+                    # And update it
+                    analSegs.segmentList = scienceSegs[ifo]
+                    analSegs.toSegmentXml()
+
         if checkSegmentGaps == 'raise_error' and missingData:
             raise ValueError("Ahope cannot find needed data, exiting.")
         logging.info("Done checking, any discrepancies are reported above.")
@@ -179,6 +208,14 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFileDict):
                 # Remove missing times, so that we can carry on if desired
                 logging.info("Updating science times for ifo %s." %(ifo))
                 scienceSegs[ifo] = scienceSegs[ifo] - missingFrSegs[ifo]
+                # Find the analysed file
+                analSegs = segFilesList.find_output_with_ifo(ifo)
+                analSegs = analSegs.find_output_with_tag('ANALYSED')
+                analSegs = analSegs[0]
+                # And update it
+                analSegs.segmentList = scienceSegs[ifo]
+                analSegs.toSegmentXml()
+                
         if checkFramesExist == 'raise_error' and missingFlag:
             raise ValueError("Ahope cannot find all frames, exiting.")
         logging.info("Finished checking frames.")
@@ -200,7 +237,13 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFileDict):
         dfScienceSegs = get_science_segs_from_datafind_outs(datafindcaches)
         missingFlag = False
         for ifo in dfScienceSegs.keys():
-            scienceFile = segFileDict[ifo]['SCIENCE']
+            scienceFile = segFileList.find_output_with_ifo(ifo)
+            scienceFile = scienceFile.find_output_with_tag('SCIENCE')
+            if not len(scienceFile == 1):
+                errMsg = "Did not find exactly 1 science file."
+                raise ValueError(errMsg)
+            scienceFile = scienceFile[0]
+
             scienceChannel = cp.get('ahope-segments',\
                                 'segments-%s-science-name'%(ifo.lower()))
             segSummaryTimes = get_segment_summary_times(scienceFile,
@@ -238,7 +281,8 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFileDict):
     return AhopeFileList(datafindouts), scienceSegs
     
 
-def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):
+def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs, 
+                                                     outputDir, tag=None):
     """
     This function uses the glue.datafind library to obtain the location of all
     the frame files that will be needed to cover the analysis of the data
@@ -246,7 +290,11 @@ def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):
     cover the whole time requested, such sanity checks are done in the
     pycbc.ahope.setup_datafind_workflow entry function. As opposed to
     setup_datafind_runtime_single_call_perifo this call will one call to the
-    datafind server for every science segment.
+    datafind server for every science segment. This function will return a list
+    of output files that correspond to the cache .lcf files that are produced,
+    which list the locations of all frame files. This will cause problems with
+    pegasus, which expects to know about all input files (ie. the frame files
+    themselves.)
 
     Parameters
     -----------
@@ -258,30 +306,37 @@ def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):
     outputDir : path
         All output files written by datafind processes will be written to this
         directory.
+    tag : string, optional (default=None)
+        Use this to specify a tag. This can be used if this module is being
+        called more than once to give call specific configuration (by setting
+        options in [ahope-datafind-${TAG}] rather than [ahope-datafind]). This
+        is also used to tag the AhopeFiles returned by the class to uniqueify
+        the AhopeFiles and uniqueify the actual filename.
+        FIXME: Filenames may not be unique with current codes!
 
     Returns
     --------
     datafindcaches : list of glue.lal.Cache instances
        The glue.lal.Cache representations of the various calls to the datafind
        server and the returned frame files.
-    datafindOuts : AhopeOutGroupList
+    datafindOuts : AhopeFileList
         List of all the datafind output files for use later in the pipeline.
 
     """
     # First job is to do setup for the datafind jobs
     # First get the server name
     logging.info("Setting up connection to datafind server.")
-    connection = setup_datafind_server_connection(cp)
+    connection = setup_datafind_server_connection(cp, tag=tag)
 
     # Now ready to loop over the input segments
     datafindouts = []
     datafindcaches = []
     ifos = scienceSegs.keys()
-    jobTag = "DATAFIND"
     logging.info("Querying datafind server for all science segments.")
     for ifo, scienceSegsIfo in scienceSegs.items():
         observatory = ifo[0].upper()
-        frameType = cp.get("ahope-datafind", "datafind-%s-frame-type"%(ifo))
+        frameType = cp.get_opt_tag("ahope-datafind", 
+                                   "datafind-%s-frame-type"%(ifo), tag=tag)
         for seg in scienceSegsIfo:
             msg = "Finding data between %d and %d " %(seg[0],seg[1])
             msg += "for ifo %s" %(ifo)
@@ -292,19 +347,20 @@ def setup_datafind_runtime_generated(cp, scienceSegs, outputDir):
 
             # Sometimes the connection can drop, so try a backup here
             try:
-                cache, cache_file = run_datafind_instance(cp, outputDir, connection,
-                                           observatory, frameType, startTime,
-                                           endTime, ifo, jobTag)
+                cache, cache_file = run_datafind_instance(cp, outputDir,
+                                           connection, observatory, frameType,
+                                           startTime, endTime, ifo, tag=tag)
             except:
-                connection = setup_datafind_server_connection(cp)
-                cache, cache_file = run_datafind_instance(cp, outputDir, connection,
-                                           observatory, frameType, startTime,
-                                           endTime, ifo, jobTag)
+                connection = setup_datafind_server_connection(cp, tag=tag)
+                cache, cache_file = run_datafind_instance(cp, outputDir,
+                                           connection, observatory, frameType,
+                                           startTime, endTime, ifo, tag=tag)
             datafindouts.append(cache_file)
             datafindcaches.append(cache)
     return datafindcaches, datafindouts
 
-def setup_datafind_runtime_single_call_perifo(cp, scienceSegs, outputDir):
+def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
+                                              tag=None):
     """
     This function uses the glue.datafind library to obtain the location of all
     the frame files that will be needed to cover the analysis of the data
@@ -312,7 +368,11 @@ def setup_datafind_runtime_single_call_perifo(cp, scienceSegs, outputDir):
     cover the whole time requested, such sanity checks are done in the
     pycbc.ahope.setup_datafind_workflow entry function. As opposed to 
     setup_datafind_runtime_generated this call will only run one call to
-    datafind per ifo, spanning the whole time.
+    datafind per ifo, spanning the whole time. This function will return a list
+    of output files that correspond to the cache .lcf files that are produced,
+    which list the locations of all frame files. This will cause problems with
+    pegasus, which expects to know about all input files (ie. the frame files
+    themselves.)
 
     Parameters
     -----------
@@ -324,20 +384,27 @@ def setup_datafind_runtime_single_call_perifo(cp, scienceSegs, outputDir):
     outputDir : path
         All output files written by datafind processes will be written to this
         directory.
+    tag : string, optional (default=None)
+        Use this to specify a tag. This can be used if this module is being
+        called more than once to give call specific configuration (by setting
+        options in [ahope-datafind-${TAG}] rather than [ahope-datafind]). This
+        is also used to tag the AhopeFiles returned by the class to uniqueify
+        the AhopeFiles and uniqueify the actual filename.
+        FIXME: Filenames may not be unique with current codes!
 
     Returns
     --------
     datafindcaches : list of glue.lal.Cache instances
        The glue.lal.Cache representations of the various calls to the datafind
        server and the returned frame files.
-    datafindOuts : AhopeOutGroupList
+    datafindOuts : AhopeFileList
         List of all the datafind output files for use later in the pipeline.
 
     """
     # First job is to do setup for the datafind jobs
     # First get the server name
     logging.info("Setting up connection to datafind server.")
-    connection = setup_datafind_server_connection(cp)
+    connection = setup_datafind_server_connection(cp, tag=tag)
 
     # We want to ignore gaps as the detectors go up and down and calling this
     # way will give gaps. See the setup_datafind_runtime_generated function
@@ -348,27 +415,142 @@ def setup_datafind_runtime_single_call_perifo(cp, scienceSegs, outputDir):
     datafindouts = []
     datafindcaches = []
     ifos = scienceSegs.keys()
-    jobTag = "DATAFIND"
     logging.info("Querying datafind server for all science segments.")
     for ifo, scienceSegsIfo in scienceSegs.items():
         observatory = ifo[0].upper()
-        frameType = cp.get("ahope-datafind", "datafind-%s-frame-type"%(ifo))
+        frameType = cp.get_opt_tag("ahope-datafind",
+                                   "datafind-%s-frame-type"%(ifo), tag=tag)
         # This REQUIRES a coalesced segment list to work
         startTime = int(scienceSegsIfo[0][0])
         endTime = int(scienceSegsIfo[-1][1])
         try:
             cache, cache_file = run_datafind_instance(cp, outputDir, connection,
                                        observatory, frameType, startTime,
-                                       endTime, ifo, jobTag)
+                                       endTime, ifo, tag=tag)
         except:
-            connection = setup_datafind_server_connection(cp)
+            connection = setup_datafind_server_connection(cp, tag=tag)
             cache, cache_file = run_datafind_instance(cp, outputDir, connection,
                                        observatory, frameType, startTime,
-                                       endTime, ifo, jobTag)
+                                       endTime, ifo, tag=tag)
 
         datafindouts.append(cache_file)
         datafindcaches.append(cache)
     return datafindcaches, datafindouts
+
+def setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
+                                              outputDir, tag=None):
+    """
+    This function uses the glue.datafind library to obtain the location of all
+    the frame files that will be needed to cover the analysis of the data
+    given in scienceSegs. This function will not check if the returned frames
+    cover the whole time requested, such sanity checks are done in the
+    pycbc.ahope.setup_datafind_workflow entry function. As opposed to 
+    setup_datafind_runtime_generated this call will only run one call to
+    datafind per ifo, spanning the whole time. This function will return a list
+    of files corresponding to the individual frames returned by the datafind
+    query. This will allow pegasus to more easily identify all the files used
+    as input, but may cause problems for codes that need to take frame cache
+    files as input.
+
+    Parameters
+    -----------
+    cp : ConfigParser.ConfigParser instance
+        This contains a representation of the information stored within the
+        ahope configuration files
+    scienceSegs : Dictionary of ifo keyed glue.segment.segmentlist instances
+        This contains the times that ahope is expected to analyse.
+    outputDir : path
+        All output files written by datafind processes will be written to this
+        directory.
+    tag : string, optional (default=None)
+        Use this to specify a tag. This can be used if this module is being
+        called more than once to give call specific configuration (by setting
+        options in [ahope-datafind-${TAG}] rather than [ahope-datafind]). This
+        is also used to tag the AhopeFiles returned by the class to uniqueify
+        the AhopeFiles and uniqueify the actual filename.
+        FIXME: Filenames may not be unique with current codes!
+
+    Returns
+    --------
+    datafindcaches : list of glue.lal.Cache instances
+       The glue.lal.Cache representations of the various calls to the datafind
+       server and the returned frame files.
+    datafindOuts : AhopeFileList
+        List of all the datafind output files for use later in the pipeline.
+
+    """
+    datafindcaches, _ = \
+        setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs,
+                                                        outputDir, tag=tag)
+    datafindouts = []
+
+    # Now need to convert each frame file into an AhopeFile
+    for cache in datafindcaches:
+        for frame in cache:
+            currFile = AhopeFile(frame.ifo, frame.description, frame.segment,
+                                 file_url=frame.url)
+            datafindouts.append(currFile)
+
+        datafindFiles.append(cache)
+    return datafindcaches, datafindouts
+
+def setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
+                                                     outputDir, tag=None):
+    """
+    This function uses the glue.datafind library to obtain the location of all
+    the frame files that will be needed to cover the analysis of the data
+    given in scienceSegs. This function will not check if the returned frames
+    cover the whole time requested, such sanity checks are done in the
+    pycbc.ahope.setup_datafind_workflow entry function. As opposed to
+    setup_datafind_runtime_single_call_perifo this call will one call to the
+    datafind server for every science segment. This function will return a list
+    of files corresponding to the individual frames returned by the datafind
+    query. This will allow pegasus to more easily identify all the files used
+    as input, but may cause problems for codes that need to take frame cache
+    files as input.
+
+    Parameters
+    -----------
+    cp : ConfigParser.ConfigParser instance
+        This contains a representation of the information stored within the
+        ahope configuration files
+    scienceSegs : Dictionary of ifo keyed glue.segment.segmentlist instances
+        This contains the times that ahope is expected to analyse.
+    outputDir : path
+        All output files written by datafind processes will be written to this
+        directory.
+    tag : string, optional (default=None)
+        Use this to specify a tag. This can be used if this module is being
+        called more than once to give call specific configuration (by setting
+        options in [ahope-datafind-${TAG}] rather than [ahope-datafind]). This
+        is also used to tag the AhopeFiles returned by the class to uniqueify
+        the AhopeFiles and uniqueify the actual filename.
+        FIXME: Filenames may not be unique with current codes!
+
+    Returns
+    --------
+    datafindcaches : list of glue.lal.Cache instances
+       The glue.lal.Cache representations of the various calls to the datafind
+       server and the returned frame files.
+    datafindOuts : AhopeFileList
+        List of all the datafind output files for use later in the pipeline.
+
+    """
+    datafindcaches, _ = \
+        setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
+                                                        outputDir, tag=tag)
+    datafindouts = []
+
+    # Now need to convert each frame file into an AhopeFile
+    for cache in datafindcaches:
+        for frame in cache:
+            currFile = AhopeFile(frame.ifo, frame.description, frame.segment,
+                                 file_url=frame.url)
+            datafindouts.append(currFile)
+
+        datafindFiles.append(cache)
+    return datafindcaches, datafindouts
+
 
 def get_science_segs_from_datafind_outs(datafindcaches):
     """
@@ -440,7 +622,7 @@ def get_missing_segs_from_frame_file_cache(datafindcaches):
 
 
 
-def setup_datafind_server_connection(cp):
+def setup_datafind_server_connection(cp, tag=None):
     """
     This function is resposible for setting up the connection with the datafind
     server.
@@ -454,9 +636,10 @@ def setup_datafind_server_connection(cp):
     connection
         The open connection to the datafind server.
     """
-    if cp.has_option("ahope-datafind", "datafind-ligo-datafind-server"):
-        datafindServer = cp.get("ahope-datafind",
-                                "datafind-ligo-datafind-server")
+    if cp.has_option_tag("ahope-datafind", "datafind-ligo-datafind-server",
+                                           tag=tag):
+        datafindServer = cp.get_opt_tag("ahope-datafind",
+                                "datafind-ligo-datafind-server", tag=tag)
     else:
         # Get the server name from the environment
         if os.environ.has_key("LIGO_DATAFIND_SERVER"):
@@ -547,7 +730,7 @@ def get_segment_summary_times(scienceFile, segmentName):
     return summSegList
 
 def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
-                          startTime, endTime, ifo, jobTag):
+                          startTime, endTime, ifo, tag=None):
     """
     This function will query the datafind server once to find frames between
     the specified times for the specified frame type and observatory.
@@ -576,8 +759,14 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
         The interferometer to use for naming output. This is 'H1', 'L1', 'V1',
         etc. Maybe this could be merged with the observatory string, but this
         could cause issues if running on old 'H2' and 'H1' data.
-    jobTag : string
-        Used in the naming of the output files.
+    tag : string, optional (default=None)
+        Use this to specify a tag. This can be used if this module is being
+        called more than once to give call specific configuration (by setting
+        options in [ahope-datafind-${TAG}] rather than [ahope-datafind]). This
+        is also used to tag the AhopeFiles returned by the class to uniqueify
+        the AhopeFiles and uniqueify the actual filename.
+        FIXME: Filenames may not be unique with current codes!
+
 
     Returns
     --------
@@ -589,13 +778,23 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
 
     """
     seg = segments.segment([startTime, endTime])
+    if tag:
+        currTags = [tag]
+    else:
+        currTags = []
     # Take the datafind KWargs from config (usually urltype=file is
     # given).
     dfKwargs = {}
     # By default ignore missing frames, this case is dealt with outside of here
     dfKwargs['on_gaps'] = 'ignore'
-    for item, value in cp.items("datafind"):
-        dfKwargs[item] = value
+    if cp.has_section("datafind"):
+        for item, value in cp.items("datafind"):
+            dfKwargs[item] = value
+    if tag:
+        if cp.has_section('datafind-%s' %(tag)):
+            for item, value in cp.items("datafind-%s" %(tag)):
+                dfKwargs[item] = value
+
     # It is useful to print the corresponding command to the logs
     # directory to check if this was expected.
     log_datafind_command(observatory, frameType, startTime, endTime,
@@ -605,8 +804,8 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
                                         startTime, endTime, **dfKwargs)
     logging.debug("Frames returned")
     # ahope format output file
-    cache_file = AhopeFile(ifo, jobTag, seg, 
-                           extension='lcf', directory=outputDir)
+    cache_file = AhopeFile(ifo, 'DATAFIND', seg, extension='lcf',
+                           directory=outputDir, tags=currTags)
     dfCache.ifo = ifo
     # Dump output to file
     fP = open(cache_file.path, "w")
@@ -616,7 +815,6 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
     return dfCache, cache_file
 
 
-    
 def log_datafind_command(observatory, frameType, startTime, endTime,
                          outputDir, **dfKwargs):
     """
@@ -632,8 +830,18 @@ def log_datafind_command(observatory, frameType, startTime, endTime,
                   '--gps-end-time', str(endTime)]
 
     for name, value in dfKwargs.items():
-        gw_command.append("--" + name)
-        gw_command.append(str(value))
+        if name == 'match':
+            gw_command.append("--match")
+            gw_command.append(str(value))
+        elif name == 'urltype':
+            gw_command.append("--url-type")
+            gw_command.append(str(value))
+        elif name == 'on_gaps':
+            pass
+        else:
+            errMsg = "Unknown datafind kwarg given: %s. " %(name)
+            errMsg+= "This argument is stripped in the logged .sh command."
+            logging.warn(errMsg)
   
     fileName = "%s-%s-%d-%d.sh" \
                %(observatory, frameType, startTime, endTime-startTime)

@@ -63,12 +63,15 @@ class AhopeConfigParser(ConfigParser.SafeConfigParser):
             The value of the options being searched for
         """
         # Need lower case tag name
-        tag = tag.lower()
+        if tag:
+            tag = tag.lower()
 
         try:
             return self.get(section,option)
         except ConfigParser.Error:
             errString = "No option '%s' in section '%s' " %(option,section)
+            if not tag:
+                raise ConfigParser.Error(errString + ".")
             if self.has_section('%s-%s' %(section, tag)):
                 if self.has_option('%s-%s' %(section, tag),option):
                     return self.get('%s-%s' %(section, tag),option)
@@ -79,6 +82,39 @@ class AhopeConfigParser(ConfigParser.SafeConfigParser):
                 errString += "and section '%s-%s' does not exist."\
                              %(section, tag)
                 raise ConfigParser.Error(errString)
+
+    def has_option_tag(self, section, option, tag):
+        """
+        Supplement to ConfigParser.ConfigParser.has_option().
+        This will search for an
+        option in [section] and if it doesn't find it will also try in
+        [section-tag]. Will return True if it finds the option and false if
+        not.
+
+        Parameters
+        -----------
+        self : ConfigParser object
+            The ConfigParser object (automatically passed when this is appended
+            to the ConfigParser class)
+        section : string
+            The section of the ConfigParser object to read
+        option : string
+            The ConfigParser option to look for
+        tag : string
+            The name of the subsection to look in, if not found in [section]
+ 
+        Returns
+        --------
+        Boolean
+            Is the option in the section or [section-tag]
+        """
+        try:
+            self.get_opt_tag(section, option, tag)
+            return True
+        except ConfigParser.Error:
+            return False
+        
+
 
 def parse_ahope_ini_file(cpFile, parsed_filepath=None):
     """

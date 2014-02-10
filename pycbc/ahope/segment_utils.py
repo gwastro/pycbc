@@ -36,7 +36,8 @@ from glue import segments, pipeline
 from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.ahope.ahope_utils import *
 
-def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir):
+def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir,
+                             tag=None):
     """
     This function is the gateway for setting up the segment generation steps in an
     ahope workflow. It is designed to be able to support multiple ways of obtaining
@@ -56,22 +57,20 @@ def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir):
         The time at which to stop searching for segments.
     out_dir : path
         The directory in which output will be stored.    
-    maxVetoCat : int, optional (default = 5)
-        Generate veto files up to this category. If we move to a model where veto
-        categories are not explicitly cumulative, this will be removed.
-    minSegLength : int, optional (default = 0)
-        This specifies the minimum length of science data to consider. If data
-        segments are shorter than this length they will be discarded at this stage.
-    generate_coincident_segs : boolean, optional (default = True)
-        If given this module will generate a set of coincident, cumulative veto
-        files that can be used with ligolw_thinca and pipedown.
+    tag : string, optional (default=None)
+        Use this to specify a tag. This can be used if this module is being
+        called more than once to give call specific configuration (by setting
+        options in [ahope-datafind-${TAG}] rather than [ahope-datafind]). This
+        is also used to tag the AhopeFiles returned by the class to uniqueify
+        the AhopeFiles and uniqueify the actual filename.
+        FIXME: Filenames may not be unique with current codes!
 
     Returns
     -------
     segsToAnalyse : dictionay of ifo-keyed glue.segment.segmentlist instances
         This will contain the times that your code should analyse. By default this
         is science time - CAT_1 vetoes. (This default could be changed if desired)
-    segFilesDict : dictionary of ahope.AhopeSegFile instances
+    segFilesList : ahope.AhopeFileList of ahope.AhopeSegFile instances
         These are representations of the various segment files that were constructed
         at this stage of the workflow and may be needed at later stages of the
         analysis (e.g. for performing DQ vetoes). If the file was generated at
@@ -85,20 +84,22 @@ def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir):
     cp = workflow.cp
 
     # Parse for options in ini file
-    segmentsMethod = cp.get("ahope-segments","segments-method")
+    segmentsMethod = cp.get_opt_tag("ahope-segments", "segments-method", tag)
     # These only needed if calling setup_segment_gen_mixed
     if segmentsMethod in ['AT_RUNTIME','CAT2_PLUS_DAG','CAT3_PLUS_DAG',
                           'CAT4_PLUS_DAG']:
-        maxVetoCat = cp.get("ahope-segments", "segments-maximum-veto-category")
+        maxVetoCat = cp.get_opt_tag("ahope-segments",
+                                    "segments-maximum-veto-category", tag)
         maxVetoCat = int(maxVetoCat)
         veto_categories = range(1,maxVetoCat+1)
-        if cp.has_option("ahope-segments",
-                         "segments-generate-coincident-segments"):
+        if cp.has_option_tag("ahope-segments",
+                         "segments-generate-coincident-segments", tag):
             generate_coincident_segs = True
         else:
             generate_coincident_segs = False
         # Need to curl the veto-definer file
-        vetoDefUrl = cp.get("ahope-segments", "segments-veto-definer-url")
+        vetoDefUrl = cp.get_opt_tag("ahope-segments",
+                                    "segments-veto-definer-url", tag)
         vetoDefBaseName = os.path.basename(vetoDefUrl)
         vetoDefNewPath = os.path.join(out_dir, vetoDefBaseName)
         fp = open(vetoDefNewPath, "wb")
@@ -112,32 +113,33 @@ def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir):
         cp.set("ahope-segments", "segments-veto-definer-file", vetoDefNewPath)
 
     
-    if cp.has_option("ahope-segments", "segments-minimum-segment-length"):
-        minSegLength = cp.get("ahope-segments", 
-                              "segments-minimum-segment-length")
+    if cp.has_option_tag("ahope-segments", "segments-minimum-segment-length",
+                         tag):
+        minSegLength = cp.get_opt_tag("ahope-segments", 
+                              "segments-minimum-segment-length", tag)
         minSegLength = int(minSegLength)
     else:
         minSegLength = 0
 
     if segmentsMethod == "AT_RUNTIME":
         logging.info("Generating segments with setup_segment_gen_mixed")
-        segFilesDict = setup_segment_gen_mixed(workflow, ifos, veto_categories, 
-                             start_time, end_time, out_dir, 1000,
+        segFilesList = setup_segment_gen_mixed(workflow, ifos, veto_categories, 
+                             start_time, end_time, out_dir, 1000, tag=tag,
                              generate_coincident_segs=generate_coincident_segs)
     elif segmentsMethod == "CAT2_PLUS_DAG":
         logging.info("Generating segments with setup_segment_gen_mixed")
-        segFilesDict = setup_segment_gen_mixed(workflow, ifos, veto_categories, 
-                             start_time, end_time, out_dir, 1,
+        segFilesList = setup_segment_gen_mixed(workflow, ifos, veto_categories, 
+                             start_time, end_time, out_dir, 1, tag=tag,
                              generate_coincident_segs=generate_coincident_segs)
     elif segmentsMethod == "CAT3_PLUS_DAG":
         logging.info("Generating segments with setup_segment_gen_mixed")
-        segFilesDict = setup_segment_gen_mixed(workflow, ifos, veto_categories, 
-                             start_time, end_time, out_dir, 2,
+        segFilesList = setup_segment_gen_mixed(workflow, ifos, veto_categories, 
+                             start_time, end_time, out_dir, 2, tag=tag,
                              generate_coincident_segs=generate_coincident_segs)
     elif segmentsMethod == "CAT4_PLUS_DAG":
         logging.info("Generating segments with setup_segment_gen_mixed")
-        segFilesDict = setup_segment_gen_mixed(workflow, ifos, veto_categories, 
-                             start_time, end_time, out_dir, 3,
+        segFilesList = setup_segment_gen_mixed(workflow, ifos, veto_categories, 
+                             start_time, end_time, out_dir, 3, tag=tag,
                              generate_coincident_segs=generate_coincident_segs)
     else:
         msg = "Entry segments-method in [ahope-segments] does not have "
@@ -146,17 +148,21 @@ def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir):
         raise ValueError(msg)
     logging.info("Segments obtained")
 
-    # This creates the segsToAnalyse from the segFilesDict. Currently it uses
-    # the 'ANALYSED' segFilesDict, which is science - CAT_1 in
+    # This creates the segsToAnalyse from the segFilesList. Currently it uses
+    # the 'ANALYSED' segFilesList, which is science - CAT_1 in
     # setup_segment_gen_mixed.
     # This also applies the minimum science length
     segsToAnalyse = {}
     for ifo in ifos:
-        if segFilesDict[ifo]['ANALYSED'].segmentList:
+        analSegs = segFilesList.find_output_with_ifo(ifo)
+        analSegs = analSegs.find_output_with_tag('ANALYSED')
+        assert len(analSegs) == 1
+        analSegs = analSegs[0]
+        if analSegs.segmentList:
             if minSegLength:
-                segFilesDict[ifo]['ANALYSED'].removeShortSciSegs(minSegLength)
-                segFilesDict[ifo]['ANALYSED'].toSegmentXml()
-            segsToAnalyse[ifo] = segFilesDict[ifo]['ANALYSED'].segmentList
+                analSegs.removeShortSciSegs(minSegLength)
+                analSegs.toSegmentXml()
+            segsToAnalyse[ifo] = analSegs.segmentList
         else:
             msg = "No science segments found for ifo %s. " %(ifo)
             msg += "If this is unexpected check the files that were dumped "
@@ -166,20 +172,21 @@ def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir):
             logging.warn(msg)
             
     logging.info("Leaving segment generation module")
-    return segsToAnalyse, segFilesDict
+    return segsToAnalyse, segFilesList
 
 def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
-                            end_time, out_dir, maxVetoAtRunTime,
+                            end_time, out_dir, maxVetoAtRunTime, tag=None,
                             generate_coincident_segs=True):
     """
-    This function will generate veto files for each ifo and for each veto category.
+    This function will generate veto files for each ifo and for each veto
+    category.
     It can generate these vetoes at run-time or in the workflow (or do some at
-    run-time and some in the workflow). However, the CAT_1 vetoes and science time
-    must be generated at run time as they are needed to plan the workflow. CATs 2
-    and higher *may* be needed for other workflow construction.
-    It can also combine these files to create a set of cumulative, multi-detector
-    veto files, which can be used in ligolw_thinca and in pipedown. Again these can
-    be created at run time or within the workflow.
+    run-time and some in the workflow). However, the CAT_1 vetoes and science
+    time must be generated at run time as they are needed to plan the workflow.
+    CATs 2 and higher *may* be needed for other workflow construction.
+    It can also combine these files to create a set of cumulative,
+    multi-detector veto files, which can be used in ligolw_thinca and in
+     pipedown. Again these can be created at run time or within the workflow.
 
     Parameters
     -----------
@@ -197,82 +204,99 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
     out_dir : path
         The directory in which output will be stored.    
     maxVetoAtRunTime : int
-        Generate veto files at run time up to this category. Veto categories beyond
-        this in veto_categories will be generated in the workflow.
+        Generate veto files at run time up to this category. Veto categories
+        beyond this in veto_categories will be generated in the workflow.
         If we move to a model where veto
         categories are not explicitly cumulative, this will be rethought.
+    tag : string, optional (default=None)
+        Use this to specify a tag. This can be used if this module is being
+        called more than once to give call specific configuration (by setting
+        options in [ahope-datafind-${TAG}] rather than [ahope-datafind]). This
+        is also used to tag the AhopeFiles returned by the class to uniqueify
+        the AhopeFiles and uniqueify the actual filename.
+        FIXME: Filenames may not be unique with current codes!
     generate_coincident_segs : boolean, optional (default = True)
         If given this module will generate a set of coincident, cumulative veto
         files that can be used with ligolw_thinca and pipedown.
 
     Returns
     -------
-    segFilesDict : dictionary of ahope.AhopeSegFile instances
-        These are representations of the various segment files that were constructed
+    segFilesList : dictionary of ahope.AhopeSegFile instances
+        These are representations of the various segment files that were
+        constructed
         at this stage of the workflow and may be needed at later stages of the
         analysis (e.g. for performing DQ vetoes). If the file was generated at
-        run-time the segment lists contained within these files will be an attribute
+        run-time the segment lists contained within these files will be an
+        attribute
         of the instance. (If it will be generated in the workflow it will not be
         because I am not psychic).
 
     """
-    # FIXME: With the tags structures added to the AhopeFile class, I see no reason
-    # why segFilesDict cannot be a standard AhopeFileList
+    # FIXME: Would like to avoid this by having ifos listed in the Workflow
+    # Put in alphabetical order
+    ifos.sort(key=str.lower)
     cp = workflow.cp
-    segFilesDict = {}
+    segFilesList = AhopeFileList([])
     segValidSeg = segments.segment([start_time,end_time])
     # Will I need to add some jobs to the workflow?
     if max(veto_categories) > maxVetoAtRunTime:
-        vetoGenJob = create_segs_from_cats_job(cp, out_dir)
+        vetoGenJob = create_segs_from_cats_job(cp, out_dir, ''.join(ifos))
     for ifo in ifos:
         logging.info("Generating science segments for ifo %s" %(ifo))
-        segFilesDict[ifo] = {}
-        currSciSegs, currSciXmlFile = get_science_segments(ifo, cp, 
-                                          start_time, end_time, out_dir)
-        segFilesDict[ifo]['SCIENCE'] = currSciXmlFile
+        currSciSegs, currSciXmlFile = get_science_segments(ifo, cp, start_time,
+                                                    end_time, out_dir, tag=tag)
+        segFilesList.append(currSciXmlFile)
 
-        # FIXME: Do I really need these?
-        vetoSegs = {}
-        vetoXmlFiles = {}
         for category in veto_categories:
-            currTags=['VETO_CAT%d' %(category)]
             if category <= maxVetoAtRunTime:
                 logging.info("Generating CAT_%d segments for ifo %s." \
                              %(category,ifo))
-                vetoSegs[category],vetoXmlFiles[category] = \
+                currVetoSegs, currVetoXmlFiles = \
                     get_veto_segs_at_runtime(ifo, category, cp, start_time, 
-                                             end_time, out_dir, currTags)
+                                             end_time, out_dir, tag=tag)
             else:
                 msg = "Adding creation of CAT_%d segments " %(category)
                 msg += "for ifo %s to workflow." %(ifo)
                 logging.info(msg)
-                vetoXmlFiles[category] = get_veto_segs_in_workflow(ifo, 
+                currVetoXmlFiles = get_veto_segs_in_workflow(ifo, 
                                   category, start_time, end_time, out_dir,
                                   workflow, vetoGenJob)        
                 # Don't know what the segments are as they haven't been
                 # calculated yet!
                 vetoSegs[category] = None
-            segFilesDict[ifo][currTags[0]] = vetoXmlFiles[category] 
+            segFilesList.append(currVetoXmlFiles) 
+            # Store the CAT_1 veto segs for use below
+            if category == 1:
+                cat1Segs = currVetoSegs
                 
-        analysedSegs = currSciSegs - vetoSegs[1]
+        analysedSegs = currSciSegs - cat1Segs
         analysedSegs.coalesce()
         analysedXmlFile = sciXmlFile = os.path.join(out_dir,
                              "%s-ANALYSED_SEGMENTS.xml" %(ifo.upper()) )
         currUrl = urlparse.urlunparse(['file', 'localhost', analysedXmlFile,
                           None, None, None])
-        segFilesDict[ifo]['ANALYSED'] = AhopeOutSegFile(ifo, 'SEGMENTS',
-                                 segValidSeg, currUrl, segList=analysedSegs,
-                                 tags = ['ANALYSED'])
-        segFilesDict[ifo]['ANALYSED'].toSegmentXml()
+        if tag:
+            currTags = [tag, 'ANALYSED']
+        else:
+            currTags = ['ANALYSED']
+        currFile = AhopeOutSegFile(ifo, 'SEGMENTS',
+                                   segValidSeg, currUrl, segList=analysedSegs,
+                                   tags = ['ANALYSED'])
+        segFilesList.append(currFile)
+        currFile.toSegmentXml()
 
 
     if generate_coincident_segs:
         # Need to make some combined category veto files to use when vetoing
         # segments and triggers.
         ifoString = ''.join(ifos)
-        segFilesDict[ifoString] = {}
         for category in veto_categories:
             # Set file name in ahope standard
+            if tag:
+                currTags = [tag, 'CUMULATIVE_CAT_%d' %(category)]
+            else:
+                currTags = ['CUMULATIVE_CAT_%d' %(category)]
+
             cumulativeVetoFile = os.path.join(out_dir,
                                    '%s-CUMULATIVE_CAT_%d_VETO_SEGMENTS.xml' \
                                    %(ifoString, category) )
@@ -280,28 +304,27 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
                                          cumulativeVetoFile, None, None, None])
             currSegFile = AhopeOutSegFile(ifoString, 'SEGMENTS',
                                    segValidSeg, currUrl, segList=analysedSegs,
-                                   tags=['CUMULATIVE_CAT_%d' %(category)])
+                                   tags=currTags)
             # And actually make the file (or queue it in the workflow)
             if category <= maxVetoAtRunTime:
                 logging.info("Generating combined, cumulative CAT_%d segments."\
                              %(category))
                 get_cumulative_segs_at_runtime(ifos, currSegFile, category, cp,
-                                               segFilesDict, out_dir)
+                                               segFilesList, out_dir)
             else:
                 errMsg = "Generating segments in the workflow is temporarily "
                 errMsg += "disabled as ligolw_segments_compat cannot be added "
                 errMsg += "to the ahope workflow without breaking pegasus."
                 raise NotImplementedError(errMsg)
-            segFilesDict[ifoString]['CUMULATIVE_CAT_%d' %(category)]\
-                                                                 = currSegFile
+            segFilesList.append(currSegFile)
 
-    return segFilesDict
+    return segFilesList
 
 #FIXME: Everything below here uses the S6 segment architecture. This is going
 # to be replaced in aLIGO with a new architecture. When this is done all of
 # the code that follows will need to be replaced with the new version.
 
-def get_science_segments(ifo, cp, start_time, end_time, out_dir):
+def get_science_segments(ifo, cp, start_time, end_time, out_dir, tag=None):
     """
     Obtain science segments for the selected ifo
 
@@ -315,6 +338,12 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir):
         The time at which to stop searching for segments.
     out_dir : path
         The directory in which output will be stored.    
+    tag : string, optional (default=None)
+        Use this to specify a tag. This can be used if this module is being
+        called more than once to give call specific configuration (by setting
+        options in [ahope-datafind-${TAG}] rather than [ahope-datafind]). This
+        is also used to tag the AhopeFiles returned by the class to uniqueify
+        the AhopeFiles and uniqueify the actual filename.
 
     Returns
     --------
@@ -325,11 +354,17 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir):
 
     """
     segValidSeg = segments.segment([start_time,end_time])
-    sciSegName = cp.get("ahope-segments","segments-%s-science-name" \
-                        %(ifo.lower()) ) 
-    sciSegUrl = cp.get("ahope-segments","segments-database-url")
-    sciXmlFilePath = os.path.join(out_dir, "%s-SCIENCE_SEGMENTS.xml" \
-                                       %(ifo.upper()) )
+    sciSegName = cp.get_opt_tag("ahope-segments","segments-%s-science-name" \
+                        %(ifo.lower()), tag ) 
+    sciSegUrl = cp.get_opt_tag("ahope-segments","segments-database-url", tag)
+    if tag:
+        sciXmlFilePath = os.path.join(out_dir, "%s-SCIENCE_SEGMENTS_%s.xml" \
+                                       %(ifo.upper(), tag) )
+        tagList=[tag, 'SCIENCE']
+    else:
+        sciXmlFilePath = os.path.join(out_dir, "%s-SCIENCE_SEGMENTS.xml" \
+                                           %(ifo.upper()) )
+        tagList = ['SCIENCE']
 
     segFindCall = [ cp.get("executables","segment_query"),
         "--query-segments",
@@ -351,11 +386,12 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir):
                                    None, None, None])
     sciXmlFile = AhopeOutSegFile(ifo, 'SEGMENTS',
                                   segValidSeg, currUrl, segList=sciSegs,
-                                  tags = ['SCIENCE'])
+                                  tags=tagList)
 
     return sciSegs, sciXmlFile
 
-def get_veto_segs_at_runtime(ifo, category, cp, start_time, end_time, out_dir, tags):
+def get_veto_segs_at_runtime(ifo, category, cp, start_time, end_time, out_dir,
+                             tag=None):
     """
     Obtain veto segments for the selected ifo and veto category
 
@@ -371,8 +407,13 @@ def get_veto_segs_at_runtime(ifo, category, cp, start_time, end_time, out_dir, t
         The time at which to stop searching for segments.
     out_dir : path
         The directory in which output will be stored.    
-    tags : list of strings
-        The tags that describe this job
+    tag : string, optional (default=None)
+        Use this to specify a tag. This can be used if this module is being
+        called more than once to give call specific configuration (by setting
+        options in [ahope-datafind-${TAG}] rather than [ahope-datafind]). This
+        is also used to tag the AhopeFiles returned by the class to uniqueify
+        the AhopeFiles and uniqueify the actual filename.
+        FIXME: Filenames may not be unique with current codes!
 
     Returns
     --------
@@ -382,9 +423,14 @@ def get_veto_segs_at_runtime(ifo, category, cp, start_time, end_time, out_dir, t
         The ahope File object corresponding to this DQ veto file.
     """
     segValidSeg = segments.segment([start_time,end_time])
-    segServerUrl = cp.get("ahope-segments", "segments-database-url")
-    vetoDefFile = cp.get("ahope-segments", "segments-veto-definer-file")
+    segServerUrl = cp.get_opt_tag("ahope-segments", "segments-database-url",
+                                  tag)
+    vetoDefFile = cp.get_opt_tag("ahope-segments", "segments-veto-definer-file",
+                                 tag)
 
+    # FIXME: segsFromCats has no way of adding tags to output file names
+    #        therefore multiple calls to this function will result in multiple
+    #        files with the same basename.
     segFromCatsCall = [ cp.get("executables","segments_from_cats"),
 #       FIXME: I want to use separate categories here, but to do so needs some
 #       extra code added to create the cumulative files in the format thinca
@@ -408,20 +454,23 @@ def get_veto_segs_at_runtime(ifo, category, cp, start_time, end_time, out_dir, t
     vetoXmlFilePath = os.path.join(out_dir, vetoXmlFileName)
     currUrl = urlparse.urlunparse(['file', 'localhost',
                                    vetoXmlFilePath, None, None, None])
-    vetoXmlFile = AhopeOutSegFile(ifo, 'SEGMENTS', segValidSeg, currUrl, tags=tags)
+    if tag:
+        currTags = [tag, 'VETO_CAT%d' %(category)]
+    else:
+        currTags = ['VETO_CAT%d' %(category)]
 
     # Yes its yucky to generate a file and then read it back in. This will be
     # fixed when the new API for segment generation is ready.
     vetoXmlFP = open(vetoXmlFilePath, 'r')
     vetoSegs = fromsegmentxml(vetoXmlFP)
     vetoXmlFP.close()
-    vetoXmlFile = AhopeOutSegFile(ifo, 'SEGMENTS', segValidSeg, currUrl, tags=tags,
-                                  segList=vetoSegs)
+    vetoXmlFile = AhopeOutSegFile(ifo, 'SEGMENTS', segValidSeg, currUrl, 
+                                  tags=currTags, segList=vetoSegs)
 
     return vetoSegs, vetoXmlFile
 
 def get_veto_segs_in_workflow(ifo, category, start_time, end_time, out_dir,
-                              workflow, vetoGenJob, tags):
+                              workflow, vetoGenJob, tag=None):
     """
     Obtain veto segments for the selected ifo and veto category and add the job
     to generate this to the workflow.
@@ -439,11 +488,17 @@ def get_veto_segs_in_workflow(ifo, category, start_time, end_time, out_dir,
     out_dir : path
         The directory in which output will be stored.    
     workflow : ahope.Workflow
-        The ahope workflow instance that the DQ generation Node will be added to.
+        The ahope workflow instance that the DQ generation Node will be added
+        to.
     vetoGenJob : ahope.Job
         The veto generation Job class that will be used to create the Node.
-    tags : list of strings
-        The tags that describe this job
+    tag : string, optional (default=None)
+        Use this to specify a tag. This can be used if this module is being
+        called more than once to give call specific configuration (by setting
+        options in [ahope-datafind-${TAG}] rather than [ahope-datafind]). This
+        is also used to tag the AhopeFiles returned by the class to uniqueify
+        the AhopeFiles and uniqueify the actual filename.
+        FIXME: Filenames may not be unique with current codes!
 
     Returns
     --------
@@ -461,12 +516,18 @@ def get_veto_segs_in_workflow(ifo, category, start_time, end_time, out_dir,
     vetoXmlFilePath = os.path.join(out_dir, vetoXmlFileName)
     currUrl = urlparse.urlunparse(['file', 'localhost',
                                    vetoXmlFilePath, None, None, None])
-    vetoXmlFile = AhopeOutSegFile(ifo, 'SEGMENTS', segValidSeg, currUrl, tags=tags)
+    if tag:
+        currTags = [tag, 'VETO_CAT%d' %(category)]
+    else:
+        currTags = ['VETO_CAT%d' %(category)]
+
+    vetoXmlFile = AhopeOutSegFile(ifo, 'SEGMENTS', segValidSeg, currUrl,
+                                  tags=currTags)
     node.add_output(vetoXmlFile)
     workflow.add_node(node)
     return vetoXmlFile
 
-def create_segs_from_cats_job(cp, out_dir):
+def create_segs_from_cats_job(cp, out_dir, ifoString, tag=None):
     """
     This function creates the CondorDAGJob that will be used to run 
     ligolw_segments_from_cats as part of the workflow
@@ -477,28 +538,36 @@ def create_segs_from_cats_job(cp, out_dir):
         The in-memory representation of the configuration (.ini) files
     out_dir : path
         Directory in which to put output files
+    ifoString : string
+        String containing all active ifos, ie. "H1L1V1"
+    tag : string, optional (default=None)
+        Use this to specify a tag. This can be used if this module is being
+        called more than once to give call specific configuration (by setting
+        options in [ahope-datafind-${TAG}] rather than [ahope-datafind]). This
+        is also used to tag the AhopeFiles returned by the class to uniqueify
+        the AhopeFiles and uniqueify the actual filename.
+        FIXME: Filenames may not be unique with current codes!
 
     Returns
     --------
     job : ahope.Job instance
         The Job instance that will run segments_from_cats jobs
     """
-    # FIXME: Why is this not an ahope.Job class?!?
-    segServerUrl = cp.get("ahope-segments", "segments-database-url")
-    vetoDefFile = cp.get("ahope-segments", "segments-veto-definer-file")
-    exeName = cp.get("executables","segments_from_cats")
-    tag = "vetogen"
-    logtag = '$(cluster)-$(process)'
-    job = pipeline.CondorDAGJob("vanilla", exeName)
-    job.set_sub_file('%s.sub' %(tag))
-    job.set_stderr_file(os.path.join(out_dir,'logs','%s-%s.err' %(tag,logtag)))
-    job.set_stdout_file(os.path.join(out_dir,'logs','%s-%s.out' %(tag,logtag)))
-    job.add_condor_cmd('getenv','True')
+    segServerUrl = cp.get_opt_tag("ahope-segments", "segments-database-url",
+                                  tag)
+    vetoDefFile = cp.get_opt_tag("ahope-segments", "segments-veto-definer-file",
+                                 tag)
+    if tag:
+        currTags = [tag]
+    else:
+        currTags = []
+    job = Job(cp, 'segments_from_cats', universe='local', ifo=ifoString,
+              out_dir=out_dir, tags=currTags)
     job.add_opt('separate-categories', '')
     job.add_opt('output-dir', out_dir)
     job.add_opt('segment-url', segServerUrl)
     job.add_opt('veto-file', vetoDefFile)
-    job.exe_name = exeName 
+    # FIXME: Would like the proxy in the Workflow instance
     # FIXME: Explore using the x509 condor commands
     # Set up proxy to be accessible in a NFS location
     # If the user has logged in with gsissh then X509_USER_PROXY will be set
@@ -512,14 +581,11 @@ def create_segs_from_cats_job(cp, out_dir):
     shutil.copyfile(proxy, proxyfile)
     job.add_condor_cmd('environment',
                        'USER=$ENV(USER);X509_USER_PROXY=%s' % proxyfile)
-    # For now this falls back to local universe as some clusters do not
-    # allow nodes to have access to the WWW.
-    job.set_universe('local')
 
     return job
 
 def get_cumulative_segs_at_runtime(ifos, currSegFile, category, cp,
-                                   segFilesDict, out_dir):
+                                   segFilesList, out_dir):
     """
     Function to generate one of the cumulative, multi-detector segment files at
     runtime.
@@ -534,14 +600,14 @@ def get_cumulative_segs_at_runtime(ifos, currSegFile, category, cp,
         The veto category to cumulatively include up to in this file.
     cp : ahope.AhopeConfigParser
         The in-memory representation of the configuration (.ini) files
-    segFilesDict : Dictionary of ahopeSegFiles
+    segFilesList : Listionary of ahopeSegFiles
         The list of segment files to be used as input for combining.
     out_dir : path
         The directory to write output to.
     """
     ifoString = ''.join(ifos)
     # First need to determine the input files
-    inputs = get_cumulative_segs_input_files(ifos, segFilesDict, category)
+    inputs = get_cumulative_segs_input_files(ifos, segFilesList, category)
 
     # Construct the call to ligolw_add
     ligolwAddCall = [ cp.get("executables","llwadd"),
@@ -560,7 +626,7 @@ def get_cumulative_segs_at_runtime(ifos, currSegFile, category, cp,
     make_external_call(compatVetoCall, outDir=os.path.join(out_dir,'logs'),
               outBaseName='%s-compat-veto-cats-%d-call' %(ifoString, category) )
 
-def get_cumulative_segs_input_files(ifos, segFilesDict, category):
+def get_cumulative_segs_input_files(ifos, segFilesList, category):
     """
     This function is responsible for identifying which files should be used as input
     when generating a combined, multi-detector veto file.
@@ -569,7 +635,7 @@ def get_cumulative_segs_input_files(ifos, segFilesDict, category):
     -----------
     ifos : list
         List of ifos contained in the output file
-    segFilesDict : Dictionary of ahopeSegFiles
+    segFilesList : List of ahopeSegFiles
         The list of segment files to be used as input for combining.
     category : int
         The veto category to cumulatively include up to in this file.
@@ -580,14 +646,12 @@ def get_cumulative_segs_input_files(ifos, segFilesDict, category):
         List of files to use an inputs.
     """
     ifoString = ''.join(ifos)
-    fileList = AhopeFileList([])
-    for ifo in ifos:
-        currTag='VETO_CAT%d' %(category)
-        fileList.append(segFilesDict[ifo][currTag])
+    fileList = segFilesList.find_output_with_tag('VETO_CAT%d' %(category))
+    assert len(fileList) == len(ifos)
     # FIXME: Add this back in when not using cumulative categories
     #if category > 1:
     #    currTag = 'CUMULATIVE_CAT_%d' %(category - 1)
-    #    fileList.append(segFilesDict[ifoString][currTag])
+    #    fileList.append(segFilesList[ifoString][currTag])
     return fileList
     
 

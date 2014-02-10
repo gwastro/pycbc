@@ -185,7 +185,7 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         pipeline.CondorDAGJob.__init__(self, universe, exe_path)
         pipeline.AnalysisJob.__init__(self, cp, dax=True)       
         
-        if universe == 'vanilla':
+        if not (universe == 'standard'):
             self.add_condor_cmd('getenv', 'True')
         self.add_condor_cmd('copy_to_spool','False')
         
@@ -205,7 +205,7 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
             else:
                 warnString = "warning: config file is missing section [%s]"\
                              %(sec,)
-                print >>sys.stderr, warnString
+                logging.warn(warnString)
 
         # What would be a better more general logname ?
         logBaseNam = 'logs/%s-$(macrogpsstarttime)' %(exe_name,)
@@ -981,7 +981,13 @@ class AhopeFileList(list):
         """
         Find all files who have tag in self.tags
         """
-        return [i for i in self if tag in i.tags]
+        return AhopeFileList([i for i in self if tag in i.tags])
+
+    def find_output_with_ifo(self, ifo):
+        """
+        Find all files who have ifo = ifo
+        """
+        return AhopeFileList([i for i in self if ifo == i.ifo])
 
     def convert_to_lal_cache(self):
         """

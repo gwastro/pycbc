@@ -37,7 +37,7 @@ from pycbc.ahope.ahope_utils import *
 from pycbc.ahope.jobsetup_utils import *
 from pylal import ligolw_cafe, ligolw_tisi
 
-def setup_coincidence_workflow(workflow, science_segs, segsDict, timeSlideFiles,
+def setup_coincidence_workflow(workflow, science_segs, segsList, timeSlideFiles,
                                inspiral_outs, output_dir, maxVetoCat=5,
                                tags=[], timeSlideTags=None):
     '''
@@ -48,12 +48,12 @@ def setup_coincidence_workflow(workflow, science_segs, segsDict, timeSlideFiles,
 
     Parameters
     -----------
-    Workflow : hope.Workflow
+    Workflow : ahope.Workflow
         The ahope workflow instance that the coincidence jobs will be added to.
     science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
         The list of times that are being analysed in this workflow. 
-    segsDict : dictionary
-        The dictionary returned by ahope's segment module that contains
+    segsList : ahope.AhopeFileList
+        The list of files returned by ahope's segment module that contains
         pointers to all the segment files generated in the workflow. If the
         coincidence code will be applying the data quality vetoes, then this
         will be used to ensure that the codes get the necessary input to do
@@ -103,7 +103,7 @@ def setup_coincidence_workflow(workflow, science_segs, segsDict, timeSlideFiles,
 
     # If you want the ligolw_add outputs, call this function directly
     coinc_outs, _ = setup_coincidence_workflow_ligolw_thinca(workflow,
-                     science_segs, segsDict, timeSlideFiles, inspiral_outs,
+                     science_segs, segsList, timeSlideFiles, inspiral_outs,
                      output_dir, maxVetoCat=maxVetoCat, tags=tags,
                      timeSlideTags=timeSlideTags)
 
@@ -111,7 +111,7 @@ def setup_coincidence_workflow(workflow, science_segs, segsDict, timeSlideFiles,
 
     return coinc_outs
 
-def setup_coincidence_workflow_ligolw_thinca(workflow, science_segs, segsDict,
+def setup_coincidence_workflow_ligolw_thinca(workflow, science_segs, segsList,
                                              timeSlideFiles, inspiral_outs, 
                                              output_dir, maxVetoCat=5, tags=[],
                                              timeSlideTags=None):
@@ -125,11 +125,12 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, science_segs, segsDict,
         The ahope workflow instance that the coincidence jobs will be added to.
     science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
         The list of times that are being analysed in this workflow. 
-    segsDict : dictionary
-        The dictionary returned by ahope's segment module that contains
-        pointers to all the segment files generated in the workflow. This
-        will be used to set the input files that the code needs to perform
-        data quality vetoes within the workflow.
+    segsList : ahope.AhopeFileList
+        The list of files returned by ahope's segment module that contains
+        pointers to all the segment files generated in the workflow. If the
+        coincidence code will be applying the data quality vetoes, then this
+        will be used to ensure that the codes get the necessary input to do
+        this.
     timeSlideFiles : ahope.AhopeFileList
         An AhopeFileList of the timeSlide input files that are needed to
         determine what time sliding needs to be done. One of the timeSlideFiles
@@ -193,7 +194,12 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, science_segs, segsDict,
 
         # Now loop over vetoes
         for category in veto_categories:
-            dqSegFile = segsDict[ifoString]['CUMULATIVE_CAT_%d' %(category)]
+            # FIXME: There are currently 3 names to say cumulative cat_3
+            dqSegFile = segsList.find_output_with_tag(\
+                                               'CUMULATIVE_CAT_%d' %(category))
+            if not len(dqSegFile) == 1:
+                errMsg = "Did not find exactly 1 data quality file."
+                raise ValueError(errMsg)
             dqVetoName = 'VETO_CAT%d_CUMULATIVE' %(category)
             # FIXME: Here we set the dqVetoName to be compatible with pipedown
             # FIXME: Yes pipedown has a trailing "_", yes I know its stoopid
