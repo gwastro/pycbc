@@ -124,15 +124,28 @@ Take in command line input and the configuration file.
    ahope/initialization
 
 ====================
-Obtaining data
+Generating segments
 ====================
 
-Determine what data is available and what veto flags are active and use this to construct analysis and veto segment lists. Also check the data exists on the machine that will be performing the analysis.
+Obtain the science segments and data-quality segments from making queries to a segment database.
 
 .. toctree::
    :maxdepth: 1
 
    ahope/segments
+
+=====================
+Obtaining data
+=====================
+
+Run queries to the datafind server to find the needed frames and test these for
+consistency if desired
+
+.. toctree::
+   :maxdepth: 1
+
+   ahope/datafind
+
 
 ====================
 Template bank
