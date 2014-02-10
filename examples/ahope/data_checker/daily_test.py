@@ -11,7 +11,8 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \
 # This is the "official" start according to Stuart
 start_time = 1073822416
 # End times set as current time - one day (86400s)
-end_time= 1075740401
+end_time= 1075994376
+#end_time = 1073850000
 
 workflow = ahope.Workflow('./daily_er5.ini')
 ifos = ['H1','L1','V1']
@@ -45,7 +46,7 @@ def segment_report(sSegs):
         print "For ifo %s there is %d seconds of data in %d segments, %d seconds (%d unique segments) in segments longer than 500s and %d seconds (%d unique segments) longer than 2000s." %(ifo, fullLen, fullNum, shortLen, shortNum, longLen, longNum)
 
 
-scienceSegs, segsDict = ahope.setup_segment_generation(workflow, ifos,
+scienceSegs, segsList = ahope.setup_segment_generation(workflow, ifos,
                                 start_time, end_time, segDir)
 
 segment_report(scienceSegs)
@@ -57,20 +58,16 @@ print
 scienceSegsS = copy.deepcopy(scienceSegs)
 print "RUNNING DATAFIND FOR SYR"
 datafinds, scienceSegsS = ahope.setup_datafind_workflow(workflow, scienceSegsS,
-                     dfDirSYR,checkSegmentGaps='update_times',\
-                     checkFramesExist='no_test', checkSegmentSummary='warn',
-                     segFileDict=segsDict)
+                     dfDirSYR, segsList, tag="SYR")
 
 segment_report(scienceSegsS)
 
 print 
 print
 print "RUNNING DATAFIND FOR CIT"
-os.environ["LIGO_DATAFIND_SERVER"] = """ldr.ligo.caltech.edu:443"""
 scienceSegsC = copy.deepcopy(scienceSegs)
 datafinds, scienceSegsC = ahope.setup_datafind_workflow(workflow, scienceSegsC,
-                       dfDirCIT, checkSegmentGaps='update_times',\
-                       checkFramesExist='no_test')
+                       dfDirCIT, segsList, tag="CIT")
 
 segment_report(scienceSegsC)
 
@@ -100,8 +97,7 @@ print "RUNNING DATAFIND FOR LHO"
 os.environ["LIGO_DATAFIND_SERVER"] = """ldr.ligo-wa.caltech.edu:443"""
 scienceSegsS = copy.deepcopy(scienceSegs)
 datafinds, scienceSegsS = ahope.setup_datafind_workflow(workflow, scienceSegsS,
-                       dfDirLHO,checkSegmentGaps='update_times',\
-                       checkFramesExist='no_test')
+                       dfDirLHO, segsList, tag="LHO")
 
 segment_report(scienceSegsS)
 
@@ -131,8 +127,7 @@ print "RUNNING DATAFIND FOR LLO"
 os.environ["LIGO_DATAFIND_SERVER"] = """ldr.ligo-la.caltech.edu:443"""
 scienceSegsS = copy.deepcopy(scienceSegs)
 datafinds, scienceSegsS = ahope.setup_datafind_workflow(workflow, scienceSegsS,
-                       dfDirLLO,checkSegmentGaps='update_times',\
-                       checkFramesExist='no_test')
+                       dfDirLLO, segsList, tag="LLO")
 
 segment_report(scienceSegsS)
 
@@ -162,8 +157,7 @@ print "RUNNING DATAFIND FOR UWM"
 os.environ["LIGO_DATAFIND_SERVER"] = """nemo-dataserver2.phys.uwm.edu:443"""
 scienceSegsS = copy.deepcopy(scienceSegs)
 datafinds, scienceSegsS = ahope.setup_datafind_workflow(workflow, scienceSegsS,
-                       dfDirUWM,checkSegmentGaps='update_times',\
-                       checkFramesExist='no_test')
+                       dfDirUWM, segsList, tag="UWM")
 
 segment_report(scienceSegsS)
 

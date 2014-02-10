@@ -97,7 +97,7 @@ for ifo in workflow.cp.options('ahope-ifos'):
     ifos.append(ifo.upper())
 
 # Get segments
-scienceSegs, segsDict = ahope.setup_segment_generation(workflow, ifos,
+scienceSegs, segsFileList = ahope.setup_segment_generation(workflow, ifos,
                                start_time, end_time, workingDir)
 
 # Get frames, this can be slow, as we ping every frame to check it exists,
@@ -106,8 +106,7 @@ scienceSegs, segsDict = ahope.setup_segment_generation(workflow, ifos,
 #                         dfDir)
 # This second case will also update the segment list on missing data, not fail
 datafinds, scienceSegs = ahope.setup_datafind_workflow(workflow, scienceSegs,
-                           workingDir, checkFramesExist='update_times',\
-                           checkSegmentGaps='update_times')
+                           workingDir, segsFileList)
 
 # Template bank stuff
 banks = ahope.setup_tmpltbank_workflow(workflow, scienceSegs, datafinds, 

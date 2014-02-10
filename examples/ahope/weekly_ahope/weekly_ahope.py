@@ -50,12 +50,10 @@ ifos = ['H1','L1']
 # Get segments and find where the data is
 # NOTE: not all files are returned to top level, so all_files has some gaps
 all_files = ahope.AhopeFileList([])
-scienceSegs, segsDict = ahope.setup_segment_generation(workflow, ifos, 
+scienceSegs, segsFileList = ahope.setup_segment_generation(workflow, ifos, 
                                             start_time, end_time, segDir)
 datafind_files, scienceSegs = ahope.setup_datafind_workflow(workflow, 
-                                            scienceSegs, dfDir, 
-                                            checkSegmentGaps='update_times',
-                                            checkFramesExist='warn')
+                                            scienceSegs, dfDir, segsFileList)
 all_files.extend(datafind_files)
 
 # Template bank stuff
@@ -90,9 +88,9 @@ for inj_file, tag in zip(inj_files, tags):
                                            tag, injection_file=inj_file,
                                            tags = [tag])
     all_files.extend(insps)
-    coincs = ahope.setup_coincidence_workflow(workflow, scienceSegs, segsDict, 
-                                        timeSlideFiles, insps, tag, tags=[tag],
-                                        maxVetoCat=5,
+    coincs = ahope.setup_coincidence_workflow(workflow, scienceSegs,
+                                        segsFileList, timeSlideFiles, insps,
+                                        tag, tags=[tag], maxVetoCat=5,
                                         timeSlideTags=timeSlideTags)
     all_files.extend(coincs)
     all_coincs.extend(coincs)
@@ -107,7 +105,10 @@ for coincFile in all_coincs:
 # Copy segment files
 ifoString = ''.join(ifos)
 for category in range(1, 6):
-    ahopeVetoFile = segsDict[ifoString]['CUMULATIVE_CAT_%d' %(category)]
+    vetoTag = 'CUMULATIVE_CAT_%d' %(category)
+    ahopeVetoFile = segsFileList.find_output_with_tag(vetoTag)
+    assert len(ahopeVetoFile) == 1
+    ahopeVetoFile = ahopeVetoFile[0]
     ahopeVetoPath = ahopeVetoFile.path
     pipedownVetoFileName = '%s-VETOTIME_CAT_%d-%d-%d.xml' \
                             %(ifoString, category, start_time, \
