@@ -1,3 +1,4 @@
+.. _ahopedatafindmod:
 ###########################################
 The ahope datafind and validation module
 ###########################################

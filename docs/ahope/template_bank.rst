@@ -1,6 +1,7 @@
-###############################
-Template bank section
-###############################
+.. _ahopetmpltbankmod:
+##########################################
+The ahope template bank generation module
+##########################################
 
 =============
 Introduction
@@ -8,30 +9,138 @@ Introduction
 
 The template bank section of ahope is responsible for gathering/generating the banks of waveforms that will be used to matched-filter against the data.
 
-It should be able to run in a number of different modes
+It can run in a number of different modes
 
-- With a pre-generated template bank (or banks) or generating banks on the fly
-- Using the **same** template bank to analyse the same times in different detectors, or using a **different** template bank.
-- Banks (if ~1 of them and it can be generated quickly) could be generated during ahope run time, or as part of the ahope workflow
+- With a pre-generated template bank, which will be used for all ifos
+- By generating unique and independent template banks for each ifo.
+- Further modes can be supported. Please ask, or add yourself!
 
-The template bank section must be as independent of the matched-filtering section as possible (even though the two are obviously dependent on each other). It should be possible/easy for:
+The template bank module, by default, is independent of other modules, though it
+is possible to ensure that there is a one-to-one correspondance between template banks and matched-filter outputs. Unlike ihope we are able to have
 
 - The template bank analysis chunks to be longer/shorter than the inspiral chunks
 - Allow for options sent to one job to be sent to the other **only** if desired. (No hardcoding of options that get sent to **both** matched-filter and template bank stage).
 
-To do this I propose that the return from the template bank section of ahope is a list of template bank objects corresponding to each actual bank that will be (or are already) generated. Each template bank "object" would contain 4 pieces of information:
+Like other modules the return of the template bank module is an AhopeFileList of the template bank files generated/supplied to this module. It is possible to make multiple calls to the template bank module in the same module by using the tags kwarg when calling this.
 
-- The location of the template bank (which may not yet exist)
-- The ifo that the bank is valid for
-- The time span that the bank is valid for
-- The dax job that will generate the bank (if appropriate)
+======
+Usage
+======
 
-This will be the **only** thing that will be passed from the template bank section to the future sections (including the matched filter section).
+Using this module requires a number of things
 
-More details of the code can be found below:
+* A configuration file (or files) containing the information needed to tell this module how to generate (or gather) the template banks (described below).
+* An initialized instance of the ahope workflow class, containing the ConfigParser.
+* A list of segments to be analysed by this module.
+* An AhopeFileList returned by the datafind module containing the frames that contain the data that will be used to make the template banks. (If using a pre-supplied PSD, or some other use-case that does not require reading data this can be set to None).
 
+-------------------------
+Configuration file setup
+-------------------------
+
+Here we describe the options given in the configuration file used in the ahope
+workflow that will be needed in this section
+
+$$$$$$$$$$$$$$$$$$$$$$$$$$
+[ahope-tmpltbank] section
+$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+The configuration file must have an [ahope-tmpltbank] section, which is used to
+tell the workflow how to construct (or gather) the template banks. The first option to choose and provide is
+
+tmpltbank-method = VALUE
+
+The choices here and their description are as described below
+
+* PREGNERATED_BANK - A pregenerated template bank is supplied and this should be used when performing matched-filtering for all ifos and all times. This uses the setup_tmpltbank_pregenerated sub-module.
+* WORKFLOW_INDEPENDENT_IFOS - Template banks will be generated within the workflow. These banks will be made to cover only short (normally ~ 2000s) of data to reflect PSD changes over time and will be independent and distinct for each analysed interferometer. This uses the setup_tmpltbank_dax_generated sub-module.
+
+Each of these options will describe which subfunction to use. These are described here
+
+.. autofunction:: pycbc.ahope.setup_tmpltbank_pregenerated
+   :noindex:
+
+.. autofunction:: pycbc.ahope.setup_tmpltbank_dax_generated
+   :noindex:
+
+When using the setup_tmpltbank_pregenerated sub-module the following additional options apply in the [ahope-tmpltbank] section.
+
+* tmpltbank-pregenerated-bank - PATH - REQUIRED. This is the location of the pre-generated bank that is to be used for all ifos.
+
+When using the setup_tmpltbank_dax_generated sub-module the following additional options apply in the [ahope-templtbank] section.
+
+* tmpltbank-link-to-matchedfltr - OPTIONAL. If this is given ahope will attempt to ensure a one-to-one correspondence between template banks and matched-filter outputs. This may not work in all cases and should be considered an option to be used for comparing with ihope output.
+
+$$$$$$$$$$$$$$$
+[executables]
+$$$$$$$$$$$$$$$
+
+If using setup_tmpltbank_pregenerated then no executables are needed, you have already generated the template bank.
+
+If using setup_tmpltbank_dax_generated then you need to supply the template bank executable. This is done in the [executables] section by adding something like::
+
+tmpltbank = /path/to/lalapps_tmpltbank
+
+the option, in this case 'tmpltbank', will be used to specify the constant command line options that are sent to all tmpltbank jobs. Currently this value is hardcoded to tmpltbank, but we plan to change this to allow multiple tmpltbank executables to be used in a single workflow. How to set up the [{exe_name}] section, and which executables are currently supported is discussed below.
+
+-------------------------------------------------------------
+Supported template bank exes and instructions for using them
+-------------------------------------------------------------
+
+The following template bank executables are currently supported in ahope
+
+* lalapps_tmpltbank
+* pycbc_geom_nonspinbank
+
+Adding a new executable is not too hard, please ask a developer for some pointers on how to do this if you want to add a new code.
+
+Also see :ref:`tmpltbankmod` for a description/introduction to pycbc template bank code and papers describing these codes, lalapps_tmpltbank and sBank.
+
+$$$$$$$$$$$$$$$$$$
+lalapps_tmpltbank
+$$$$$$$$$$$$$$$$$$
+
+Lalapps_tmpltbank is the legacy C-code that has been used to generate template banks for gravitational-wave data analysis since the dawn of time. It is a little inflexible in terms of output file names. We recommend using the newer pycbc_geom_nonspinbank if possible. The help message for lalapps_tmpltbank follows
+
+.. command-output:: lalapps_tmpltbank --help
+
+Of these options ahope will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
+
+* --gps-start-time
+* --gps-end-time
+* --frame-cache
+* --user-tag
+* --ifo-tag
+
+All other options must be provided in the configuration file. Here is an example of a lalapps_tmpltbank call.
+
+.. code-block:: bash
+   lalapps_tmpltbank --grid-spacing Hexagonal --dynamic-range-exponent 69.0 --minimal-match 0.97 --high-pass-order 8 --strain-high-pass-order 8 --maximum-mass 25.0 --gps-end-time 961587599 --calibrated-data real_8 --channel-name H1:LDAS-STRAIN --space Tau0Tau3 --number-of-segments 15 --enable-high-pass 30.0 --gps-start-time 961585551 --high-pass-attenuation 0.1 --num-freq-cutoffs 1 --segment-length 1048576 --low-frequency-cutoff 40.0 --pad-data 8 --min-high-freq-cutoff SchwarzISCO --sample-rate 4096 --high-frequency-cutoff 2048.0 --resample-filter ldas --strain-high-pass-atten 0.1 --strain-high-pass-freq 30 --max-total-mass 25.0 --frame-cache /home/spxiwh/lscsoft_git/src/pycbc/examples/ahope/weekly_ahope/961585543-961671943/datafind/H1-DATAFIND-961585543-86400.lcf --disable-compute-moments  --max-high-freq-cutoff SchwarzISCO --approximant TaylorF2 --write-compress  --minimum-mass 1.0 --order twoPN --spectrum-type median
+
+$$$$$$$$$$$$$$$$$$$$$$$$
+pycbc_geom_nonspinbank
+$$$$$$$$$$$$$$$$$$$$$$$$
+
+pycbc_geom_nonspinbank is pycbc's non-spinning template bank generator. Designed as a replacement and improvement of lalapps_tmpltbank. See :ref:`tmpltbankmod` for documentation of this code. The help message of pycbc_geom_nonspinbank follows:
+
+.. command-output:: pycbc_geom_nonspinbank --help
+
+Of these options ahope will automatically add the following, which are unique fo
+r each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
+
+* --gps-start-time
+* --gps-end-time
+* --frame-cache
+* --output-file
+
+All other options must be provided in the configuration file. Here is an example of a pycbc_geom_nonspinbank call.
+
+.. code-block:: bash
+   pycbc_geom_nonspinbank --pn-order twoPN --f0 40 --f-low 40 --f-upper 2048 --delta-f 0.01 --min-match 0.97 --min-mass1 2.0 --min-mass2 2.0 --max-mass1 3. --max-mass2 3. --verbose --output-file testNonSpin.xml --calculate-ethinca-metric --psd-estimation median --psd-segment-length 256 --psd-segment-stride 128 --psd-inverse-length 8 --gps-start-time 900000033 --gps-end-time 900002081 --strain-high-pass 30 --pad-data 8 --sample-rate 4096 --frame-cache cache/H-H1_NINJA2_G1000176_EARLY_RECOLORED_CACHE-900000024-10653.lcf --channel-name H1:LDAS-STRAIN --max-total-mass 5.5 --min-total-mass 4.5
+
+==========================================
 :mod:`pycbc.ahope.tmpltbank_utils` Module
-------------------------------------------
+==========================================
 
 .. automodule:: pycbc.ahope.tmpltbank_utils
     :noindex:

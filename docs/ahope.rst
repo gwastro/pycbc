@@ -18,6 +18,8 @@ Each of the sections is described in detail below. Also refer to the `page here 
 Ahope to do list
 =======================
 
+**PLEASE** take on an item from this list. If you do please ensure that any changes are reflected in both the in-line documentation and the html web pages. Not taking on any items will result in owing Ian beers at the Nice meeting.
+
 * lalapps_splitbank has issues. Can this be replaced with a cleaner python implementation? - VOLUNTEER?
 * It seems that job tags are not being preserved through splitbank, which runs the risk of having different jobs with the same AhopeFile properties.
 * Want to have the ability to run ligolw_segments_from_cats in separate-categories mode (and have this be the *only* mode that ahope will use). This requires some additions to ligolw_segments_compat so that vetoes called VETO_CAT_1, VETO_CAT_2 are merged into one list called CUMULATIVE_VETO_CAT_3. (Names are probably wrong, but you get the idea). - ALEX DOING?
