@@ -162,7 +162,7 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
                 continue
             missing = scienceSegs[ifo] - newScienceSegs[ifo]
             if abs(missing):
-                msg = "From ifo %s we are missing segments:" %(ifo)
+                msg = "From ifo %s we are missing frames covering:" %(ifo)
                 msg += "\n%s" % "\n".join(map(str, missing))
                 missingData = True
                 logging.error(msg)
