@@ -184,9 +184,9 @@ class LegacyTmpltbankExec(Executable):
                              'the exe_name to anything but "tmpltbank"')                           
         Executable.__init__(self, 'tmpltbank')
 
-    def create_job(self, cp, ifo, out_dir=None):
+    def create_job(self, cp, ifo, out_dir=None, tags=[]):
         return LegacyAnalysisJob(cp, self.exe_name, self.condor_universe,
-                                 ifo=ifo, out_dir=out_dir)   
+                                 ifo=ifo, out_dir=out_dir, tags=tags)   
         
 class LegacyInspiralExec(Executable):
     """

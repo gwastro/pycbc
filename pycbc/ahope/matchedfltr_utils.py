@@ -169,9 +169,15 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
         job_instance = exe_instance.create_job(workflow.cp, ifo, output_dir, 
                                                injection_file=injection_file, 
                                                tags=tags)
+        if link_exe_instance:
+            link_job_instance = link_exe_instance.create_job(cp, ifo, \
+                        output_dir, tags=tags)
+        else:
+            link_job_instance = None
+
         sngl_ifo_job_setup(workflow, ifo, inspiral_outs, job_instance, 
                            science_segs[ifo], datafind_outs, output_dir,
                            parents=tmplt_banks, 
-                           link_exe_instance=link_exe_instance,
+                           link_job_instance=link_job_instance,
                            allow_overlap=False)
     return inspiral_outs

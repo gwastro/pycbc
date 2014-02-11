@@ -42,7 +42,7 @@ class AhopeConfigParser(ConfigParser.SafeConfigParser):
         option in [section] and if it doesn't find it will also try in
         [section-tag]. This is appended to the ConfigParser class. Will raise a
         NoSectionError if [section] doesn't exist. Will raise NoOptionError if
-        option is not found in [section] and [section-ifo] doesn't exist or does
+        option is not found in [section] and [section-tag] doesn't exist or does
         not have the option.
 
         Parameters
@@ -83,6 +83,56 @@ class AhopeConfigParser(ConfigParser.SafeConfigParser):
                              %(section, tag)
                 raise ConfigParser.Error(errString)
 
+    def get_opt_tags(self, section, option, tags):
+        """
+        Supplement to ConfigParser.ConfigParser.get(). This will search for an
+        option in [section] and if it doesn't find it will also try in
+        [section-tag] for every value of tag in tags.
+        Will raise a
+        NoSectionError if [section] doesn't exist. Will raise NoOptionError if
+        option is not found in [section] and [section-tags]
+        doesn't exist or does not have the option.
+
+        Parameters
+        -----------
+        self : ConfigParser object
+            The ConfigParser object (automatically passed when this is appended
+            to the ConfigParser class)
+        section : string
+            The section of the ConfigParser object to read
+        option : string
+            The ConfigParser option to look for
+        tag : string
+            The name of the subsection to look in, if not found in [section]
+ 
+        Returns
+        --------
+        string
+            The value of the options being searched for
+        """
+        try:
+            return self.get(section, option)
+        except ConfigParser.Error:
+            errString = "No option '%s' in section [%s] " %(option,section)
+            if not tags:
+                raise ConfigParser.Error(errString + ".")
+            returnVals = []
+            sectionList = ["%s-%s" %(section, tag) for tag in tags]
+            for tag in tags:
+                if self.has_section('%s-%s' %(section, tag)):
+                    if self.has_option('%s-%s' %(section, tag), option):
+                        returnVals.append(self.get('%s-%s' %(section, tag),
+                                                    option))
+            if not returnVals:
+                errString += "or in sections [%s]." %("] [".join(sectionList))
+                raise ConfigParser.Error(errString)
+            if len(returnVals) > 1:
+                errString += "and multiple entries found in sections [%s]."\
+                              %("] [".join(sectionList))
+                raise ConfigParser.Error(errString)
+            return returnVals[0]
+
+
     def has_option_tag(self, section, option, tag):
         """
         Supplement to ConfigParser.ConfigParser.has_option().
@@ -113,6 +163,38 @@ class AhopeConfigParser(ConfigParser.SafeConfigParser):
             return True
         except ConfigParser.Error:
             return False
+
+    def has_option_tags(self, section, option, tags):
+        """
+        Supplement to ConfigParser.ConfigParser.has_option().
+        This will search for an
+        option in [section] and if it doesn't find it will also try in
+        [section-tag] for each value in tags.
+        Will return True if it finds the option and false if not.
+
+        Parameters
+        -----------
+        self : ConfigParser object
+            The ConfigParser object (automatically passed when this is appended
+            to the ConfigParser class)
+        section : string
+            The section of the ConfigParser object to read
+        option : string
+            The ConfigParser option to look for
+        tags : list of strings
+            The names of the subsection to look in, if not found in [section]
+ 
+        Returns
+        --------
+        Boolean
+            Is the option in the section or [section-tag] (for tag in tags)
+        """
+        try:
+            self.get_opt_tag(section, option, tags)
+            return True
+        except ConfigParser.Error:
+            return False
+
         
 
 

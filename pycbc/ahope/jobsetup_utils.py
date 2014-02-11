@@ -135,7 +135,7 @@ def select_splitfilejob_instance(curr_exe, curr_section):
 
 def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs, 
                        datafind_outs, output_dir, parents=None, 
-                       link_exe_instance=False, allow_overlap=True):
+                       link_job_instance=None, allow_overlap=True):
     """
     This function sets up a set of single ifo jobs.
 
@@ -159,7 +159,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
     parents : ahope.AhopeFileList (optional, kwarg, default=None)
         The AhopeFileList containing the list of jobs that are parents to
         the one being set up.
-    link_exe_instance : Executable instance (optional),
+    link_job_instance : Job instance (optional),
         Coordinate the valid times with another executable.
     allow_overlap : boolean (optional, kwarg, default = True)
         If this is set the times that jobs are valid for will be allowed to
@@ -186,16 +186,15 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
     data_chunk = segments.segment([0, data_length])
     job_tag = curr_exe_job.exe_name.upper()
     
-    if link_exe_instance:
+    if link_job_instance:
+        # FIXME: Should we remove this, after testing is complete??
         # EURGHH! What we are trying to do here is, if this option is given,
         # line up the template bank and inspiral jobs so that there is one
         # template bank for each inspiral job. This is proving a little messy
         # and probably still isn't perfect.
 
         # What data does the linked exe use?
-        link_data_length, link_valid_chunk = \
-                link_exe_instance.create_job(cp, ifo, \
-                        curr_exe_job.out_dir).get_valid_times()
+        link_data_length,link_valid_chunk = link_job_instance.get_valid_times()
         # What data is lost at start and end from either job?
         start_data_loss = max(valid_chunk[0], link_valid_chunk[0])
         end_data_loss = max(data_length - valid_chunk[1],\
@@ -362,8 +361,9 @@ class PyCBCTmpltbankJob(Job):
     The class used to create jobs for pycbc_geom_nonspin_bank executable and
     any other executables using the same command line option groups.
     """
-    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None):
-        Job.__init__(self, cp, exe_name, universe, ifo, out_dir)
+    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None,
+                 tags=[]):
+        Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.cp = cp
         self.set_memory(2000)
 
@@ -405,9 +405,9 @@ class PyCBCTmpltbankExec(Executable):
     The class corresponding to pycbc_geom_nonspin_bank executable, and any
     other executables using the same command line option groups.
     """
-    def create_job(self, cp, ifo, out_dir=None):
+    def create_job(self, cp, ifo, out_dir=None, tags=[]):
         return PyCBCTmpltbankJob(cp, self.exe_name, self.condor_universe,
-                                 ifo=ifo, out_dir=out_dir)
+                                 ifo=ifo, out_dir=out_dir, tags=tags)
 
 class LigolwAddJob(Job):
     """
