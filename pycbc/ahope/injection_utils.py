@@ -74,6 +74,13 @@ def setup_injection_workflow(workflow, science_segs, output_dir=None,
     logging.info("Entering injection module.")
     make_analysis_dir(output_dir)
 
+    # Parse for options in ini file
+    injectionMethod = cp.get_opt_tags("ahope-injections", "injection-method",
+                                      tags)
+
+    if injectionMethod != "IN_WORKFLOW":
+        raise ValueError("Currently only 'IN_WORKFLOW' is a supported method.")
+
     # Get full analysis segment for output file naming
     fullSegment = pycbc.ahope.get_full_analysis_chunk(science_segs)
 

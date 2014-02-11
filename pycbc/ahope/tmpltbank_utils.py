@@ -74,7 +74,7 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
 
     # There can be a large number of different options here, for e.g. to set
     # up fixed bank, or maybe something else
-    if tmpltbankMethod == "PREGNERATED_BANK":
+    if tmpltbankMethod == "PREGENERATED_BANK":
         logging.info("Setting template bank from pre-generated bank(s).")
         tmplt_banks = setup_tmpltbank_pregenerated(cp, science_segs.keys())
     # Else we assume template banks will be generated in the workflow
@@ -87,6 +87,10 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
         tmplt_banks = setup_tmpltbank_dax_generated(workflow, science_segs,
                                          datafind_outs, output_dir, tags=tags,
                                          link_to_matchedfltr=linkToMatchedfltr)
+    else:
+        errMsg = "Template bank method not recognized. Must be either "
+        errMsg += "PREGENERATED_BANK or WORKFLOW_INDEPENDENT_IFOS."
+        raise ValueError(errMsg)
     
     logging.info("Leaving template bank generation module.")
     return tmplt_banks

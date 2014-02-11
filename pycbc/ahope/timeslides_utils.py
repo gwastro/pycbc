@@ -64,7 +64,16 @@ def setup_timeslides_workflow(workflow, science_segs, output_dir=None, tags=[],
     '''
     logging.info("Entering time slides setup module.")
     make_analysis_dir(output_dir)
+
+    # Parse for options in ini file
+    injectionMethod = cp.get_opt_tags("ahope-timeslides", "timeslides-method",
+                                      tags)
+
+    if injectionMethod != "AT_RUNTIME":
+        raise ValueError("Currently only 'AT_RUNTIME' is a supported method.")
+
     ifoList = science_segs.keys()
+    ifoList.sort(key=str.lower)
     ifoString = ''.join(ifoList)
 
     fullSegment = get_full_analysis_chunk(science_segs)    
