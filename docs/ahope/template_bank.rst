@@ -34,6 +34,11 @@ Using this module requires a number of things
 * A list of segments to be analysed by this module.
 * An AhopeFileList returned by the datafind module containing the frames that contain the data that will be used to make the template banks. (If using a pre-supplied PSD, or some other use-case that does not require reading data this can be set to None).
 
+The module is then called according to
+
+.. autofunction:: pycbc.ahope.setup_tmpltbank_workflow
+   :noindex:
+
 -------------------------
 Configuration file setup
 -------------------------
@@ -48,7 +53,7 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$
 The configuration file must have an [ahope-tmpltbank] section, which is used to
 tell the workflow how to construct (or gather) the template banks. The first option to choose and provide is
 
-tmpltbank-method = VALUE
+* tmpltbank-method = VALUE
 
 The choices here and their description are as described below
 
@@ -141,6 +146,8 @@ All other options must be provided in the configuration file. Here is an example
 ==========================================
 :mod:`pycbc.ahope.tmpltbank_utils` Module
 ==========================================
+
+This is complete documentation of this module's code
 
 .. automodule:: pycbc.ahope.tmpltbank_utils
     :noindex:

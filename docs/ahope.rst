@@ -37,7 +37,6 @@ Ahope to do list
 * When above is completed, move segment calls in segment_utils to this and remove duplicate code paths. Also do same with ligolw_tisi call when tisi item above is also completed. - ALEX DOING?
 * Begin moving pipedown codes into ahope. - WOULD PREFER TO WAIT ON DAX FUNCTIONALITY.
 * Add fixes to pipedown in cases where pipedown looks for information based on very specific command line calls made to earlier code, which are not made either in ahope or when using pycbc code in ihope. - CHRIS B CURRENTLY TAKING LEAD ON THIS.
-* Want to add template bank module that generates one bank for all ifos (regenerating the bank every Xs by reading in data). Probably also need a code that does this! - NOT PRIORITY 
 * There is some not-https element in the pycbc docs homepage, which won't load by default on most browsers. Not sure what it is, but it should be fixed. - VOLUNTEER?
 * Identify and correct deprecation warnings that are now present in almost the entire python code base.
 * Fix minifollowups in ahope.
@@ -49,6 +48,10 @@ Longer term/lower priority
 * If we want to move to having a variable number of segments for analysis (ie. if we only have 1000s use say 4 analysis segments, but if we have 5000s use 20), then we need to fix the issues of bias in the inverse PSD causing a bias (from the expected chi-squared distribution) in the output SNR time series, *which will vary based on the number of segments used to analyse the PSD*.
 * Some stubs for GPU support have been added. A method of the standard job class adds the needed environment variables and requirements to select a GPU node on SUGAR and ATLAS. Support for the CIT and MIT clusters is not yet implemented. The ability to run GPU jobs in an unreliability mode where each job is run twice and the results are checked for consistency is not yet implemented. It is not yet certain if this will work within Pegasus. Scripts to check GPU enabled output results against each other also are not yet written. 
 * Want to add template bank module that generates one bank for all ifos (regenerating the bank every Xs by reading in data). Probably also need a code that does this!
+* Add module to take pre-generated injection files as input in injection module.
+* Add ability for injection module to generate injection files at runtime.
+* Add ability for timeslides module to take pre-supplied files
+* Add ability for timeslides module to generate files in the workflow.
 * There is some not-https element in the pycbc docs homepage, which won't load by default on most browsers. Not sure what it is, but it should be fixed.
 
 -----------------------------------------------------------
@@ -152,6 +155,27 @@ consistency if desired
 
    ahope/datafind
 
+======================
+Injection generation
+======================
+
+Generate injection files for use later in the analysis
+
+.. toctree::
+   :maxdepth: 1
+
+   ahope/injections
+
+========================
+Time-slide generation
+========================
+
+Generate the time-slide files used for describing time slides to be performed later in the analysis
+
+.. toctree::
+   :maxdepth: 1
+
+   ahope/time_slides
 
 ====================
 Template bank

@@ -125,3 +125,16 @@ arguments when calling the datafind server. Valid options here
 * urltype=TYPE - If given restrict the returned frames to the given scheme (e.g. "file").
 
 the on_gaps keyword argument is not supported as sanity checking is handled by ahope. This is always set to 'ignore' (this can be overwritten, we don't recommend this).
+
+==========================================
+:mod:`pycbc.ahope.datafind_utils` Module
+==========================================
+
+This is complete documentation of this module's code
+
+.. automodule:: pycbc.ahope.datafind_utils
+    :noindex:
+    :members:
+    :undoc-members:
+    :show-inheritance:
+

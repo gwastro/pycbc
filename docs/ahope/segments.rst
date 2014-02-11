@@ -98,3 +98,15 @@ could break the code.
 
 If there is a reason to do so we could add these sections in.
 
+==========================================
+:mod:`pycbc.ahope.segment_utils` Module
+==========================================
+
+This is complete documentation of this module's code
+
+.. automodule:: pycbc.ahope.segment_utils 
+    :noindex:
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
