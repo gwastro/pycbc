@@ -62,7 +62,7 @@ $$$$$$$$$$$$$$$
 [executables]
 $$$$$$$$$$$$$$$
 
-In this section you need to supply the executable that will be used to generate the time slide files. This is done in the [executables] section by adding something like::
+In this section you need to supply the executable that will be used to generate the time slide files. This is done in the [executables] section by adding something like:
 
 timeslides = /path/to/ligolw_tisi
 
@@ -115,11 +115,13 @@ The output file argument is automatically added.
 An example of a ligolw_tisi call, for time slides, is given below
 
 .. code-block:: bash
+
    ligolw_tisi -v --inspiral-num-slides 100 --remove-zero-lag /home/spxiwh/lscsoft_git/src/pycbc/examples/ahope/weekly_ahope/961585543-961671943/time_slide_files/H1L1-TIMESLIDES_SLIDES-961585543-86400.xml.gz
 
 and for zero-lag only
 
 .. code-block:: bash
+
    ligolw_tisi -v -i H1=0:0:0 -i L1=0:0:0 /home/spxiwh/lscsoft_git/src/pycbc/examples/ahope/weekly_ahope/961585543-961671943/time_slide_files/H1L1-TIMESLIDES_ZEROLAG-961585543-86400.xml.gz
 
 ============================================

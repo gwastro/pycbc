@@ -65,7 +65,7 @@ $$$$$$$$$$$$$$
 [executables]
 $$$$$$$$$$$$$$
 
-In this section you need to supply the executable that will be used to generate the injection files. This is done in the [executables] section by adding something like::
+In this section you need to supply the executable that will be used to generate the injection files. This is done in the [executables] section by adding something like:
 
 injections = /path/to/lalapps_inspinj
 
@@ -98,6 +98,7 @@ Of these options ahope will automatically add the following. **DO NOT ADD THESE 
 All other options must be provided in the configuration file. Here is an example of a lalapps_inspinj call.
 
 .. code-block:: bash
+
    lalapps_inspinj --gps-end-time 961671943 --i-distr uniform --max-mass1 3.1 --max-mass2 3.1 --m-distr componentMass --disable-spin  --min-mtotal 2.0 --output /home/spxiwh/lscsoft_git/src/pycbc/examples/ahope/weekly_ahope/961585543-961671943/inj_files/HL-INJECTIONS_BNSLININJ_2134-961585543-86400.xml --max-mtotal 6.2 --waveform TaylorT4threePointFivePN --time-interval 300 --time-step 837.155 --min-mass2 1.0 --f-lower 30 --l-distr random --min-mass1 1.0 --min-distance 1000 --gps-start-time 961585543 --d-distr uniform --max-distance 60000
 
 ==========================================

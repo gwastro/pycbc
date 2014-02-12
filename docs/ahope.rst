@@ -117,7 +117,7 @@ This will also automatically generate the webpage at the end of the analysis.
 More details of how to run this is found in the following link:
 
 .. toctree::
-      :maxdepth: 1
+   :maxdepth: 1
 
    ahope/daily_ahope
 

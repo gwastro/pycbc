@@ -1,4 +1,5 @@
 .. _ahopedatafindmod:
+
 ###########################################
 The ahope datafind and validation module
 ###########################################
@@ -21,12 +22,9 @@ locations for frame files at the specfied times for each interferometer.
 Optionally, it can also run a set of tests to verify this output and act
 accordingly. This includes
 
-* A check that the all times in the input segment lists are covered with frames,
-and methods for dealing with cases where this is not true.
-* A check that all returned frame files actually exist and are accessible on the
-cluster.
-* A check that segment_summary flags are defined for all frames that have been
-returend.
+* A check that the all times in the input segment lists are covered with frames, and methods for dealing with cases where this is not true.
+* A check that all returned frame files actually exist and are accessible on the cluster.
+* A check that segment_summary flags are defined for all frames that have been returned.
 
 =======
 Usage

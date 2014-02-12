@@ -27,9 +27,9 @@ The first thing that is needed is to install lalsuite and pycbc. This is
 described on the page here:
 
 .. toctree::
-      :maxdepth: 1
+   :maxdepth: 1
 
-   install
+   ../install
 
 ----------------------
 Find the run scripts

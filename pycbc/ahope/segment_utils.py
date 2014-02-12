@@ -186,7 +186,7 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
     CATs 2 and higher *may* be needed for other workflow construction.
     It can also combine these files to create a set of cumulative,
     multi-detector veto files, which can be used in ligolw_thinca and in
-     pipedown. Again these can be created at run time or within the workflow.
+    pipedown. Again these can be created at run time or within the workflow.
 
     Parameters
     -----------
@@ -230,7 +230,6 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
         attribute
         of the instance. (If it will be generated in the workflow it will not be
         because I am not psychic).
-
     """
     # FIXME: Would like to avoid this by having ifos listed in the Workflow
     # Put in alphabetical order
@@ -328,7 +327,7 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir, tag=None):
     """
     Obtain science segments for the selected ifo
 
-    Properties
+    Parameters
     -----------
     ifo : string
         The string describing the ifo to obtain science times for.
@@ -395,7 +394,7 @@ def get_veto_segs_at_runtime(ifo, category, cp, start_time, end_time, out_dir,
     """
     Obtain veto segments for the selected ifo and veto category
 
-    Properties
+    Parameters
     -----------
     ifo : string
         The string describing the ifo to generate vetoes for.
@@ -475,7 +474,7 @@ def get_veto_segs_in_workflow(ifo, category, start_time, end_time, out_dir,
     Obtain veto segments for the selected ifo and veto category and add the job
     to generate this to the workflow.
 
-    Properties
+    Parameters
     -----------
     ifo : string
         The string describing the ifo to generate vetoes for.

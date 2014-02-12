@@ -25,13 +25,13 @@ may be desireable in some cases, so **should** be possible where sensible).
 Options should also not be hardcoded (so there are no cases where an option
 that gets sent to a template bank job also gets sent to a matched-filter job
 without any way to stop that). However, it is possible to duplicate options
-where this is desireable (see :ref:`~pycbc/ahope/initialization_inifile.rst`).
+where this is desireable (see :ref:`ahopeconfigparsermod`).
 
 The return from the matched-filter section of ahope is a list of AhopeOutFile
 objects corresponding to each actual file (one for each job) that will be 
 generated within the workflow. Each object would contain 4 pieces of
-information (see :class:`~pycbc/ahope/AhopeOutFileList` and 
-:class:`~pycbc/ahope/AhopeOutFile` for more):
+information (see :class:`~pycbc/ahope/AhopeFileList` and 
+:class:`~pycbc/ahope/AhopeFile` for more):
 
 - The location of the output file (which may not yet exist)
 - The ifo that the file is valid for

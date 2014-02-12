@@ -1,4 +1,5 @@
 .. _ahopetmpltbankmod:
+
 ##########################################
 The ahope template bank generation module
 ##########################################
@@ -82,7 +83,7 @@ $$$$$$$$$$$$$$$
 
 If using setup_tmpltbank_pregenerated then no executables are needed, you have already generated the template bank.
 
-If using setup_tmpltbank_dax_generated then you need to supply the template bank executable. This is done in the [executables] section by adding something like::
+If using setup_tmpltbank_dax_generated then you need to supply the template bank executable. This is done in the [executables] section by adding something like:
 
 tmpltbank = /path/to/lalapps_tmpltbank
 
@@ -99,7 +100,7 @@ The following template bank executables are currently supported in ahope
 
 Adding a new executable is not too hard, please ask a developer for some pointers on how to do this if you want to add a new code.
 
-Also see :ref:`tmpltbankmod` for a description/introduction to pycbc template bank code and papers describing these codes, lalapps_tmpltbank and sBank.
+Also see :ref:`Pycbc.Tmpltbank <tmpltbankmod>` for a description/introduction to pycbc template bank code and papers describing these codes, lalapps_tmpltbank and sBank.
 
 $$$$$$$$$$$$$$$$$$
 lalapps_tmpltbank
@@ -120,6 +121,7 @@ Of these options ahope will automatically add the following, which are unique fo
 All other options must be provided in the configuration file. Here is an example of a lalapps_tmpltbank call.
 
 .. code-block:: bash
+
    lalapps_tmpltbank --grid-spacing Hexagonal --dynamic-range-exponent 69.0 --minimal-match 0.97 --high-pass-order 8 --strain-high-pass-order 8 --maximum-mass 25.0 --gps-end-time 961587599 --calibrated-data real_8 --channel-name H1:LDAS-STRAIN --space Tau0Tau3 --number-of-segments 15 --enable-high-pass 30.0 --gps-start-time 961585551 --high-pass-attenuation 0.1 --num-freq-cutoffs 1 --segment-length 1048576 --low-frequency-cutoff 40.0 --pad-data 8 --min-high-freq-cutoff SchwarzISCO --sample-rate 4096 --high-frequency-cutoff 2048.0 --resample-filter ldas --strain-high-pass-atten 0.1 --strain-high-pass-freq 30 --max-total-mass 25.0 --frame-cache /home/spxiwh/lscsoft_git/src/pycbc/examples/ahope/weekly_ahope/961585543-961671943/datafind/H1-DATAFIND-961585543-86400.lcf --disable-compute-moments  --max-high-freq-cutoff SchwarzISCO --approximant TaylorF2 --write-compress  --minimum-mass 1.0 --order twoPN --spectrum-type median
 
 $$$$$$$$$$$$$$$$$$$$$$$$
@@ -141,6 +143,7 @@ r each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
 All other options must be provided in the configuration file. Here is an example of a pycbc_geom_nonspinbank call.
 
 .. code-block:: bash
+
    pycbc_geom_nonspinbank --pn-order twoPN --f0 40 --f-low 40 --f-upper 2048 --delta-f 0.01 --min-match 0.97 --min-mass1 2.0 --min-mass2 2.0 --max-mass1 3. --max-mass2 3. --verbose --output-file testNonSpin.xml --calculate-ethinca-metric --psd-estimation median --psd-segment-length 256 --psd-segment-stride 128 --psd-inverse-length 8 --gps-start-time 900000033 --gps-end-time 900002081 --strain-high-pass 30 --pad-data 8 --sample-rate 4096 --frame-cache cache/H-H1_NINJA2_G1000176_EARLY_RECOLORED_CACHE-900000024-10653.lcf --channel-name H1:LDAS-STRAIN --max-total-mass 5.5 --min-total-mass 4.5
 
 ==========================================

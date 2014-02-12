@@ -33,6 +33,7 @@ Package/Executable documentation:
    tmpltbank
    banksim
    faithsim
+   executables
 
 Examples:
 
@@ -50,6 +51,11 @@ Misc:
 
 Indices and tables
 ==================
+
+.. toctree::
+   :maxdepth: 1
+
+   modules
 
 * :ref:`genindex`
 * :ref:`modindex`
