@@ -57,29 +57,23 @@ of ahope, with all checking options enabled. This will do the following
 This example can be edited for any time you are interested in and can be used to identify missing data before submitting a workflow. 
 
 -------------------
-daily_ahope
+er_daily_ahope
 -------------------
 
-This is an example of how to run an ahope workflow as far as it is coded. This
-will:
+This is an example of how to run an ahope workflow mimicing the daily_ihope analysis done in the past. This will:
 
-* Get segments from the server, calculating CAT3 and above in the workflow for speed.
+* Get science and data-quality segments from the server.
 * Query the datafind server for frames.
 * Create the template bank jobs needed to cover the times
 * Split the template banks (into 2). This step could be easily removed, just delete this module in the python file and send the matched-filtering code the template bank input directly.
 * Run the matched-filtering code on the split template banks
-* Write a dax to file that can be submitted to run the workflow
+* Call into the code that generates the dag for running daily_ihope pages and plots and adds this dag to the workflow.
+* Write a dag/dax to file that can be submitted to run the workflow
 
-This currently matches Chris' S6 test and works. Note that running this example (ie. time for the python code to do all of these steps and exit) takes approximately 1 minute to setup a workflow to analyse all of S6D. This is with the ping all frames step turned off, with this on we are seeing run times considerably longer.
+This will therefore set up a *complete* daily_ahope workflow and automatically generate the webpage at the end of the analysis.
 
------------------------
-er_daily_ahope
------------------------
+This is currently being used in ER5 as a supplement and backup to the daily_ihope runs. 
 
-This is a more detailed example of daily_ahope. This will do the same things
-as the daily_ahope example but then call into the remaining jobs, including
-the daily_page dag generation, to set up a *complete* daily_ahope workflow.
-This will also automatically generate the webpage at the end of the analysis.
 More details of how to run this is found in the following link:
 
 .. toctree::

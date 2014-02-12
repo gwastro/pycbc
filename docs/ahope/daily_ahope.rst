@@ -91,7 +91,7 @@ To run through this.
  * omega-conf-file points to the configuration for omega. Currently omega doesn't work within daily ahope, this will be fixed.
  * Everything under [executables] points to the executables that will be used. These should be changed as appropriate
 
-Here are entries that you *may* have to edit if running on different (not ER4) data for e.g.::
+The example is also set up to run on ER4 data. If you are running on non-ER4 data you may have to edit some additional options, for e.g.::
 
     [ahope]
     h1-channel-name = H1:FAKE-STRAIN
@@ -108,6 +108,7 @@ Here are entries that you *may* have to edit if running on different (not ER4) d
     segments-L1-science-name = L1:DMT-SCIENCE:1
     segments-V1-science-name = V1:ITF_SCIENCEMODE
     segments-database-url = https://segdb-er.ligo.caltech.edu
+    segments-veto-definer-url = https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/ER4/H1L1V1-ER4_CBC_OFFLINE-1011571215-0.xml
 
     [ahope-omega]
     omega-frame-dir = /frames/ER4/L1_ER_C00_L1/L1/L-L1_ER_C00_L1-%%d/L-L1_ER_C00_L1-%%d
@@ -118,6 +119,7 @@ To run through this::
  * The datafind-X1-frame-type is the type of the frames for use when calling gw_data_find
  * The segments-X1-science-name is the flag used to store science times in the segment database
  * segments-database-url points to the segment database
+ * segments-veto-definer-url points to the url where the veto-definer file can be found.
 
 The remaining options affect how the jobs run, these should not be edited unless you know what you are doing!
 
