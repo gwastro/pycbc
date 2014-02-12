@@ -93,7 +93,6 @@ for ifo in scienceSegsC.keys():
 
 print
 print "RUNNING DATAFIND FOR LHO"
-os.environ["LIGO_DATAFIND_SERVER"] = """ldr.ligo-wa.caltech.edu:443"""
 scienceSegsS = copy.deepcopy(scienceSegs)
 datafinds, scienceSegsS = ahope.setup_datafind_workflow(workflow, scienceSegsS,
                        dfDirLHO, segsList, tag="LHO")
@@ -123,7 +122,6 @@ for ifo in scienceSegsC.keys():
 
 print
 print "RUNNING DATAFIND FOR LLO"
-os.environ["LIGO_DATAFIND_SERVER"] = """ldr.ligo-la.caltech.edu:443"""
 scienceSegsS = copy.deepcopy(scienceSegs)
 datafinds, scienceSegsS = ahope.setup_datafind_workflow(workflow, scienceSegsS,
                        dfDirLLO, segsList, tag="LLO")
@@ -153,7 +151,6 @@ for ifo in scienceSegsC.keys():
 
 print
 print "RUNNING DATAFIND FOR UWM"
-os.environ["LIGO_DATAFIND_SERVER"] = """nemo-dataserver2.phys.uwm.edu:443"""
 scienceSegsS = copy.deepcopy(scienceSegs)
 datafinds, scienceSegsS = ahope.setup_datafind_workflow(workflow, scienceSegsS,
                        dfDirUWM, segsList, tag="UWM")
