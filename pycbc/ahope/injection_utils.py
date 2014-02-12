@@ -75,8 +75,8 @@ def setup_injection_workflow(workflow, science_segs, output_dir=None,
     make_analysis_dir(output_dir)
 
     # Parse for options in ini file
-    injectionMethod = cp.get_opt_tags("ahope-injections", "injection-method",
-                                      tags)
+    injectionMethod = workflow.cp.get_opt_tags("ahope-injections", 
+                                               "injections-method", tags)
 
     if injectionMethod != "IN_WORKFLOW":
         raise ValueError("Currently only 'IN_WORKFLOW' is a supported method.")
