@@ -18,7 +18,7 @@ Each of the sections is described in detail below. Also refer to the `page here 
 Ahope to do list
 =======================
 
-This least is now maintained `as a wiki <https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/AhopeToDoList>`_; please see that wiki to view items on the list or update their status. **PLEASE** take on an item from this list. If you do please ensure that any changes are reflected in both the in-line documentation and the html web pages. Not taking on any items will result in owing Ian beers at the Nice meeting.
+This list is now maintained `as a wiki <https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/AhopeToDoList>`_; please see that wiki to view items on the list or update their status. **PLEASE** take on an item from this list. If you do, please update the wiki and ensure that any changes are reflected in both the in-line documentation and the html web pages. Not taking on any items will result in owing Ian beers at the Nice meeting.
 
 -----------------------------------------------------------
 Questions concerning the coincidence stage ligolw_sstinca
