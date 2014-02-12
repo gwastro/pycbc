@@ -43,30 +43,27 @@ def threshold_and_cluster(series, threshold, window):
     """Return list of values and indices values over threshold in series. 
     """ 
     
-def fc_cluster(times, values, window_length):
+def fc_cluster_over_window_fast(times, values, window_length):
     from scipy.weave import inline
     indices = numpy.zeros(len(times), dtype=int)
     tlen = len(times)
-    j = 0
     k = numpy.zeros(1, dtype=int)
-    values = abs(values)
+    absvalues = abs(values)
     times = times.astype(int)
     code = """
+        int j = 0;
         for (int i=0; i < tlen; i++){
-            if (i == 0){
-                indices[0] = 0;
-            }
             if ((times[i] - times[indices[j]]) > window_length){
                 j += 1;
                 indices[j] = i;
             }
-            else if (values[i] > values[indices[j]]){
+            else if (absvalues[i] > absvalues[indices[j]]){
                 indices[j] = i;
             }
         }
         k[0] = j;
     """
-    inline(code, ['times', 'values', 'window_length', 'indices', 'tlen', 'j', 'k'])
+    inline(code, ['times', 'absvalues', 'window_length', 'indices', 'tlen', 'k'])
     return indices[0:k[0]+1]
 
 def findchirp_cluster_over_window(times, values, window_length):
@@ -170,8 +167,8 @@ class EventManager(object):
         self.template_events = numpy.sort(self.template_events, order=tcolumn)
         cvec = self.template_events[column]
         tvec = self.template_events[tcolumn]
-        indices = findchirp_cluster_over_window(tvec, cvec, window_size)
-        #indices = fc_cluster(tvec, cvec, window_size)
+        #indices = findchirp_cluster_over_window(tvec, cvec, window_size)
+        indices = fc_cluster_over_window_fast(tvec, cvec, window_size)
         self.template_events = numpy.take(self.template_events, indices)       
         
     def new_template(self, **kwds):
@@ -368,7 +365,8 @@ class EventManager(object):
 
 
 __all__ = ['threshold_and_cluster', 
-           'findchirp_cluster_over_window', 'threshold', 
+           'findchirp_cluster_over_window', 'fc_cluster_over_window_fast',
+           'threshold', 
            'EventManager']
 
 
