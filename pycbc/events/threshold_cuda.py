@@ -78,7 +78,8 @@ def threshold(series, value):
     threshold_kernel(series.data, tv, tl, value, tn)
     pycbc.scheme.mgr.state.context.synchronize()
     n0 = n[0]
-    return loc[0:n0], val[0:n0]
+    srt = numpy.argsort(loc[0:n0])
+    return loc[srt], val[srt]
   
 
 threshold_cluster_mod = SourceModule("""
