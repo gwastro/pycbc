@@ -20,25 +20,18 @@
 Template bank generator for placing a bank of non-spinning templates.
 """
 
-# Imports
 from __future__ import division
-import os,sys,optparse,math,copy
+import optparse
+import math
+import copy
 import numpy
+import logging
 import pycbc.version
-from glue.ligolw import ligolw
-from glue.ligolw import table
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
 import pycbc.psd
-import pycbc.frame
-import pycbc.filter
 import pycbc.strain
 import pycbc.types
 import pycbc.tmpltbank
-import time
-startET = time.time()
-elapsed_time = lambda: time.time()-startET
+
 
 __author__  = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -75,7 +68,13 @@ pycbc.strain.insert_strain_option_group(parser)
 # Add the ethinca calculation options
 pycbc.tmpltbank.insert_ethinca_calculation_option_group(parser)
 
-(opts,args) = parser.parse_args()
+opts, args = parser.parse_args()
+
+if opts.verbose:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
 
 # Sanity check options
 if not opts.output_file:
@@ -97,16 +96,13 @@ maxSpinMag = 0
 
 # If we are going to use h(t) to estimate a PSD we need h(t)
 if opts.psd_estimation:
-    if opts.verbose:
-        print >>sys.stdout, "Obtaining h(t) for PSD generation at %f" \
-                            %(elapsed_time())
+    logging.info("Obtaining h(t) for PSD generation")
     strain = pycbc.strain.from_cli(opts)
 else:
     strain = None
 
 # Get the PSD using the pycbc interface
-if opts.verbose:
-    print >>sys.stdout, "Obtaining PSD at %f." %(elapsed_time())
+logging.info("Obtaining PSD")
 # FIXME: Revisit the following!
 # Want the number of samples to be a binary number and Nyquist must be above
 # opts.f_upper. All this assumes that 1 / deltaF is a binary number
@@ -117,8 +113,7 @@ psd = pycbc.psd.from_cli(opts, length=numSamples, delta_f=opts.delta_f, \
                          low_frequency_cutoff=opts.f_low, strain=strain)
 metricParams.psd = psd
 
-if opts.verbose:
-    print >>sys.stdout, "Calculating metric at %f." %(elapsed_time())
+logging.info("Calculating metric")
 
 # Begin by calculating a metric
 metricParams = pycbc.tmpltbank.determine_eigen_directions(\
@@ -127,8 +122,7 @@ metricParams = pycbc.tmpltbank.determine_eigen_directions(\
 
 # This is used to calculate evalsCV and evecsCV with describe the rotations
 # needed to move into the principal component directions. evalsCV will be 1s.
-if opts.verbose:
-    print >>sys.stdout, "Calculating covariance matrix at %f." %(elapsed_time())
+logging.info("Calculating covariance matrix")
 
 vals = pycbc.tmpltbank.estimate_mass_range(1000000, massRangeParams,\
        metricParams, metricParams.fUpper, covary=False)       
@@ -137,8 +131,7 @@ evalsCV, evecsCV = numpy.linalg.eig(cov)
 metricParams.evecsCV = {}
 metricParams.evecsCV[metricParams.fUpper] = evecsCV
 
-if opts.verbose:
-    print>> sys.stdout, "Covariance matrix calculated at %f." %(elapsed_time())
+logging.info("Estimating extent of parameter space")
 
 # This is to get an estimate of the largest values of \chi1 and \chi2
 vals = pycbc.tmpltbank.estimate_mass_range(5000000, massRangeParams,\
@@ -152,8 +145,7 @@ chi2Min = vals[1].min()
 chi2Diff = chi2Max - chi2Min
 
 # Generate a lattice of points in \chi1 \chi2 coordinates
-if opts.verbose:
-    print>> sys.stdout, "Calculating lattice at %f." %(elapsed_time())
+logging.info("Calculating lattice")
 
 # When placing the lattice we transition from 1D lattice to a hexagonal
 # lattice and then back to 1D lattice
@@ -260,8 +252,7 @@ if lower1DBoundary is not None:
 v1s = numpy.array(v1s)
 v2s = numpy.array(v2s)
 
-if opts.verbose:
-    print>> sys.stdout, "There are %d points in the lattice." %(len(v1s))
+logging.info("%d points in the lattice" % len(v1s))
 
 # What follows is used to 
 #   1) Check if the points are close to the physical space, if not reject
@@ -306,8 +297,7 @@ sortedBins = {}
 #    for j in xrange(numv2bins):
 #        sortedBins[i][j] = []
 
-if opts.verbose:
-    print>> sys.stdout, "Sorting guide points at %f." %(elapsed_time())
+logging.info("Sorting guide points")
 
 bin_size = (opts.max_mismatch)**0.5 * 3.
 
@@ -323,8 +313,7 @@ for iter, currXi in enumerate(xis):
     if len(sortedBins[x1bin][x2bin]) < 100:
         sortedBins[x1bin][x2bin].append( (iter, xi1, xi2) )
 
-if opts.verbose:
-    print>> sys.stdout, "Converting to physical points at %f." %(elapsed_time())
+logging.info("Converting to physical points")
 
 # Now we start looping through all the points and either accept it, with a
 # physical representation *or* accept it nudged toward the physical space
@@ -383,8 +372,7 @@ for iter, (v1, v2) in enumerate(zip(v1s, v2s)):
     # print >>fileP, masses[0],masses[1],masses[2],masses[3],masses[4],\
     #  masses[5],masses[6],masses[7],masses[8],masses[9],v1,v2
 
-if opts.verbose:
-    print>> sys.stdout, "Physical bank generated at %f." %(elapsed_time())
+logging.info("Writing output")
 
 # Currently this is hardcoded to dump as a sngl_inspiral table. But this is
 # easily changed.
@@ -396,6 +384,5 @@ pycbc.tmpltbank.output_sngl_inspiral_table(opts.output_file, tempBank,
          cvs_repository='pycbc/'+pycbc.version.git_branch,\
          cvs_entry_time=pycbc.version.date)
 
-if opts.verbose:
-    print>> sys.stdout, "Done at %f." %(elapsed_time())
+logging.info("Done")
 

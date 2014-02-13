@@ -20,26 +20,19 @@
 Aligned spin bank generator.
 """
 
-
 from __future__ import division
-import matplotlib
-matplotlib.use('Agg')
-import pylab
-import time
-startTS = time.time()
-elapsed_time = lambda: time.time()-startTS
-
-import os,sys,optparse
+import os
+import optparse
 import tempfile
 import ConfigParser
 import numpy
+import logging
 from glue import pipeline
-import pycbc.frame
 import pycbc.psd
 import pycbc.strain
 import pycbc.version
 import pycbc.tmpltbank
-import pycbc.filter
+
 
 __author__  = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -86,7 +79,7 @@ pycbc.psd.insert_psd_option_group(parser)
 # Insert the data reading options
 pycbc.strain.insert_strain_option_group(parser)
 
-(opts,args) = parser.parse_args()
+opts, args = parser.parse_args()
 # Sanity check options
 if not opts.output_file:
     parser.error("Must supply --output-file")
@@ -103,19 +96,22 @@ pycbc.psd.verify_psd_options(opts, parser)
 if opts.psd_estimation:
     pycbc.strain.verify_strain_options(opts, parser)
 
+if opts.verbose:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
+
 # If we are going to use h(t) to estimate a PSD we need h(t)
 if opts.psd_estimation:
     # FIXME: It would be nice if this was similar to psd.from_cli()
-    if opts.verbose:
-        print >>sys.stdout, "Obtaining h(t) for PSD generation at %.3f" \
-                            %(elapsed_time())
+    logging.info("Obtaining h(t) for PSD generation")
     strain = pycbc.strain.from_cli(opts)
 else:
     strain = None
 
 # Get the PSD using the pycbc interface
-if opts.verbose:
-    print >>sys.stdout, "Obtaining PSD at %.3f." %(elapsed_time())
+logging.info("Obtaining PSD")
 # Want the number of samples to be a binary number and Nyquist must be above
 # opts.f_upper. All this assumes that 1 / deltaF is a binary number
 nyquistFreq = 2**numpy.ceil(numpy.log2(opts.f_upper))
@@ -124,15 +120,11 @@ psd = pycbc.psd.from_cli(opts, length=numSamples, delta_f=opts.delta_f, \
                          low_frequency_cutoff=opts.f_low, strain=strain)
 metricParams.psd = psd
 
-if opts.verbose:
-    print >>sys.stdout, "Calculating metric at %.3f." %(elapsed_time())
-
 # Begin by calculating a metric
+logging.info("Calculating metric")
 metricParams = pycbc.tmpltbank.determine_eigen_directions(metricParams)
 
-if opts.verbose:
-    print >>sys.stdout, "Calculating covariance matrix at %.3f."\
-                        %(elapsed_time())
+logging.info("Calculating covariance matrix")
 
 vals = pycbc.tmpltbank.estimate_mass_range(1000000, massRangeParams, \
        metricParams, metricParams.fUpper, covary=False) 
@@ -141,9 +133,7 @@ evalsCV,evecsCV = numpy.linalg.eig(cov)
 metricParams.evecsCV = {}
 metricParams.evecsCV[metricParams.fUpper] = evecsCV
 
-if opts.verbose:
-    print>> sys.stdout, "Covariance matrix calculated at %.3f."\
-                        %(elapsed_time())
+logging.info("Determining parameter space extent")
 
 vals = pycbc.tmpltbank.estimate_mass_range(1000000, massRangeParams, \
        metricParams, metricParams.fUpper, covary=True)
@@ -155,9 +145,7 @@ chi2Max = vals[1].max()
 chi2Min = vals[1].min()
 chi2Diff = chi2Max - chi2Min
 
-if opts.verbose:
-    print>> sys.stdout, "Calculating lattice at %.3f."\
-                        %(elapsed_time())
+logging.info("Calculating lattice")
 
 if not opts.threed_lattice:
     v1s,v2s = pycbc.tmpltbank.generate_hexagonal_lattice(\
@@ -176,9 +164,7 @@ else:
     chi3Min = vals[2].min()
     chi3Diff = chi3Max - chi3Min
 
-if opts.verbose:
-    print>> sys.stdout, "Lattice calculated at %.3f." %(elapsed_time())
-    print>> sys.stdout, "Lattice contains %d points." %(len(v1s))
+logging.info("Lattice contains %d points" % len(v1s))
 
 # Dump the files needed to define the xi_i parameter space
 numpy.savetxt('metric_evecs.dat', metricParams.evecs[opts.f_upper])
@@ -186,14 +172,13 @@ numpy.savetxt('metric_evals.dat', metricParams.evals[opts.f_upper])
 numpy.savetxt('covariance_evecs.dat', metricParams.evecsCV[opts.f_upper])
 
 # Dump the full bank in \xi_i coordinates
-bankFile = open('bank_chis.dat','w')
-if opts.threed_lattice:
-    for i in xrange(len(v1s)):
-        print >> bankFile, "%e %e %e" %(v1s[i],v2s[i],v3s[i])
-else:
-    for i in xrange(len(v1s)):
-        print >> bankFile, "%e %e" %(v1s[i],v2s[i])
-bankFile.close()
+with open('bank_chis.dat', 'w') as bankFile:
+    if opts.threed_lattice:
+        for i in xrange(len(v1s)):
+            print >> bankFile, "%e %e %e" %(v1s[i],v2s[i],v3s[i])
+    else:
+        for i in xrange(len(v1s)):
+            print >> bankFile, "%e %e" %(v1s[i],v2s[i])
 
 # Now begin to generate the dag
 # First split the bank
@@ -205,11 +190,9 @@ if not os.path.isdir('logs'):
     os.makedirs('logs')
 
 bankNum = 0
-bankFile = open('split_banks/split_bank_%05d.dat'%(bankNum),'w')
 
-if opts.verbose:
-    print>> sys.stdout, "Printing split banks at %.3f." %(elapsed_time())
-
+logging.info("Printing split banks")
+bankFile = open('split_banks/split_bank_%05d.dat' % bankNum, 'w')
 for i in xrange(len(v1s)):
     if opts.threed_lattice:
         print >> bankFile, "%e %e %e" %(v1s[i],v2s[i],v3s[i])
@@ -219,7 +202,7 @@ for i in xrange(len(v1s)):
         bankFile.close()
         bankNum = bankNum + 1
         if not i == (len(v1s)-1):
-            bankFile = open('split_banks/split_bank_%05d.dat'%(bankNum),'w')
+            bankFile = open('split_banks/split_bank_%05d.dat' % bankNum, 'w')
   
 if len(v1s) % opts.split_bank_num:
     bankFile.close()

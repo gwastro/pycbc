@@ -33,29 +33,15 @@ List of possible improvements:
 """
 
 from __future__ import division
-import matplotlib
-matplotlib.use('Agg')
-import pylab
-import time
-startET = time.time()
-elapsed_time = lambda: time.time() - startET
-
-import os,sys,optparse,copy
-import tempfile
-import ConfigParser
+import sys, optparse, copy
 import numpy
+import logging
 import pycbc.version
 import pycbc.tmpltbank
 import pycbc.psd
-import pycbc.frame
-import pycbc.filter
 import pycbc.strain
-import pycbc.types
-from glue import pipeline
-from glue.ligolw.utils import process as ligolw_process
-import lal
-LAL_PI = lal.LAL_PI
-LAL_MTSUN_SI = lal.LAL_MTSUN_SI
+from lal import LAL_PI, LAL_MTSUN_SI
+
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
@@ -109,7 +95,13 @@ pycbc.strain.insert_strain_option_group(parser)
 # Add the ethinca calculation options
 pycbc.tmpltbank.insert_ethinca_calculation_option_group(parser)
 
-(opts,args) = parser.parse_args()
+opts, args = parser.parse_args()
+
+if opts.verbose:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
 
 # Sanity check options
 if not opts.output_file:
@@ -129,16 +121,13 @@ pycbc.tmpltbank.verify_ethinca_calculation_options(opts, parser)
 # FIXME: Move to noise.from_cli when its written
 # If we are going to use h(t) to estimate a PSD we need h(t)
 if opts.psd_estimation:
-    if opts.verbose:
-        print >>sys.stdout, "Obtaining h(t) for PSD generation at %f" \
-                            %(elapsed_time())
+    logging.info("Obtaining h(t) for PSD generation")
     strain = pycbc.strain.from_cli(opts)
 else:
     strain = None
 
 # Get the PSD using the pycbc interface
-if opts.verbose:
-    print >>sys.stdout, "Obtaining PSD at %f." %(elapsed_time())
+logging.info("Obtaining PSD")
 # Want the number of samples to be a binary number and Nyquist must be above
 # opts.f_upper. All this assumes that 1 / deltaF is a binary number
 nyquistFreq = 2**numpy.ceil(numpy.log2(opts.f_upper))
@@ -148,6 +137,7 @@ psd = pycbc.psd.from_cli(opts, length=numSamples, delta_f=opts.delta_f, \
 metricParams.psd = psd
 
 # Begin by calculating a metric
+logging.info('Calculating metric')
 metricParams = pycbc.tmpltbank.determine_eigen_directions(\
     metricParams, \
     vary_fmax=(opts.vary_fupper or opts.calculate_ethinca_metric),\
@@ -171,25 +161,17 @@ else:
                 numpy.array([minTMass]), fs)[0]
     refFreq = lowEve
 
-if opts.verbose:
-    print >>sys.stdout, "Calculating covariance matrix at %f." \
-                        %(elapsed_time())
+logging.info("Calculating covariance matrix")
 
 vals = pycbc.tmpltbank.estimate_mass_range(1000000,\
        massRangeParams, metricParams, refFreq, covary=False)
 cov = numpy.cov(vals)
 evalsCV,evecsCV = numpy.linalg.eig(cov)
 metricParams.evecsCV = {}
-metricParams.evecsCV[refFreq] = evecsCV    
-
-if opts.verbose:
-    print>> sys.stdout, "Covariance matrix calculated at %f." \
-                        %(elapsed_time())
+metricParams.evecsCV[refFreq] = evecsCV
 
 # Estimate the largest values of \chi_1 and \chi_2 to optimise what follows
-if opts.verbose:
-    print>> sys.stdout, "Determining parameter space extent %f."\
-                        %(elapsed_time())
+logging.info("Determining parameter space extent")
 
 vals = pycbc.tmpltbank.estimate_mass_range(1000000,\
        massRangeParams, metricParams, refFreq, covary=True)
@@ -206,14 +188,7 @@ chi1Max = chi1Max + 0.1*chi1Diff
 chi2Min = chi2Min - 0.1*chi2Diff
 chi2Max = chi2Max + 0.1*chi2Diff
 
-
-if opts.verbose:
-    print>> sys.stdout, "Determined parameter space extent %f."\
-                        %(elapsed_time())
-
-
-if opts.verbose:
-    print>> sys.stdout, "Initializing bank set up at %f." %(elapsed_time())
+logging.info("Initializing bank set up")
 
 vals = None
 
@@ -221,10 +196,10 @@ vals = None
 massbank = {}
 bank = {}
 MMdist = (opts.max_mismatch)**0.5
-for i in range(-2,int((chi1Max - chi1Min) // MMdist + 2)):
+for i in xrange(-2,int((chi1Max - chi1Min) // MMdist + 2)):
     bank[i] = {}
     massbank[i] = {}
-    for j in range(-2,int((chi2Max - chi2Min) // MMdist + 2)):
+    for j in xrange(-2,int((chi2Max - chi2Min) // MMdist + 2)):
         bank[i][j] = []
         massbank[i][j] = []
 
@@ -243,12 +218,11 @@ if opts.vary_fupper:
             freqMap[freq] = idx
             idx += 1
 
-if opts.verbose:
-    print>> sys.stdout, "Initialized bank and starting at %f." %(elapsed_time())
+logging.info("Starting")
 
 # Begin making the thing
 outbins = [[0,0],[0,1],[1,0],[0,-1],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]]
-while(1):
+while True:
     if not (Ns % 100000):
         # For optimization we generate points in sets of 100000
         rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z =\
@@ -280,8 +254,8 @@ while(1):
         vecs = numpy.array(vecs)
         Ns = 0
     # Then we check each point for acceptance
-    if not (Np % 10000) and opts.verbose:
-        print "Seeds",Np
+    if not (Np % 100000):
+        logging.info("%d seeds" % Np)
     vs = vecs[:,Ns]
     # What bin should it be in?
     v1Bin = int((vs[0] - chi1Min) // MMdist)
@@ -324,20 +298,18 @@ while(1):
           copy.deepcopy(rSpin2z[Ns]), copy.deepcopy(refEve[Ns]),\
           copy.deepcopy(mus[:,:,Ns])])
     N = N + 1
-    if opts.verbose and not (N % 100000):
-        print "Templates %d at %f" %(N,elapsed_time())
+    if not (N % 100000):
+        logging.info("%d templates" % N)
     Ns = Ns + 1  
 
-if opts.verbose:
-    print "Outputting at %f." %(elapsed_time())
+logging.info("Outputting bank")
 
 # Put the whole template bank in one list
 tempBank = []
-for i in range(-2,int((chi1Max - chi1Min) // MMdist + 2)):
-    for j in range(-2,int((chi2Max - chi2Min) // MMdist + 2)):
+for i in xrange(-2,int((chi1Max - chi1Min) // MMdist + 2)):
+    for j in xrange(-2,int((chi2Max - chi2Min) // MMdist + 2)):
         for masses in massbank[i][j]:
             tempBank.append([masses[0],masses[1],masses[2],masses[3]])
-
 
 # Output to file
 pycbc.tmpltbank.output_sngl_inspiral_table(opts.output_file, tempBank, 

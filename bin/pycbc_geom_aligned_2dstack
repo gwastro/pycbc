@@ -27,15 +27,14 @@ It also prints information about the discarded points for debugging.
 """
 
 from __future__ import division
-import time
-start = int(time.time()*10**6)
-elapsed_time = lambda: int(time.time()*10**6-start)
-
-import os,sys,optparse,copy
+import optparse
+import copy
 import numpy
+import logging
 import pycbc.tmpltbank
 import pycbc.version
 from pycbc.tmpltbank.lambda_mapping import pycbcValidOrdersHelpDescriptions
+
 
 __author__  = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -106,9 +105,15 @@ parser.add_option("", "--skip-vec5-depth",action="store_true", default=False,\
 # Insert the mass range options
 pycbc.tmpltbank.insert_mass_range_option_group(parser)
 
-(opts,args) = parser.parse_args()
+opts, args = parser.parse_args()
 opts.eval_vec4_depth = not opts.skip_vec4_depth
 opts.eval_vec5_depth = not opts.skip_vec5_depth
+
+if opts.verbose:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
 
 # Sanity check options
 if not opts.pn_order:
@@ -197,8 +202,7 @@ outPointer3 = open(outFile+'.depths','w')
 numtemps = len(tempBank)
 for entry in tempBank:
     temp_number += 1
-    if opts.verbose:
-        print "Analysing template %d" %(temp_number)
+    logging.info("Analysing template %d" % temp_number)
     # First find the closest point in our set of 2000000 defined above 
     # This is used as the starting point
     xi1_des = entry[0]
@@ -215,13 +219,11 @@ for entry in tempBank:
     masses_close = physMasses[dist < 0.03]
     bestMasses = physMasses[dist.argmin()]
     bestXis = xis[dist.argmin()]
-    if opts.verbose:
-        print "Template %d has initial distance of %e" \
-              %(temp_number, dist.min())
+    logging.info("Template %d has initial distance of %e" \
+                 % (temp_number, dist.min()))
     # Reject point if it is too far away from *any* of these points
     if dist.min() > 2.:
-        if opts.verbose:
-            print "Template %d rejected as too far away" %(temp_number)
+        logging.info("Template %d rejected as too far away" % temp_number)
         # Print info to the rejected points file
         if opts.threed_lattice:
             print >> outPointer2, "%e %e %e %e %e %e %e %e" \
@@ -237,13 +239,11 @@ for entry in tempBank:
                massRangeParams, metricParams, opts.f0)
 
     # Now how close is it?
-    if opts.verbose:
-        print "Template %d has corrected distance of %e"\
-              %(temp_number, masses[5])
+    logging.info("Template %d has corrected distance of %e" \
+                 % (temp_number, masses[5]))
     if masses[5] > opts.max_mismatch:
         # Reject point, it is too far away
-        if opts.verbose:
-            print "Template %d rejected as too far away" %(temp_number)
+        logging.info("Template %d rejected as too far away" % temp_number)
         if opts.threed_lattice:
             print >> outPointer2, "%e %e %e %e %e %e %e %e" \
                      %(xi1_des, xi2_des, xi3_des, masses[0], masses[1],\
@@ -272,7 +272,7 @@ for entry in tempBank:
         # Double check that no points appear outside what was calculated above
         if len(xis_close):
             if vec3_min > xis_close[:,2].min():
-                print "WARNING: Numerical placement fails, trying again"
+                logging.warn("WARNING: Numerical placement fails, trying again")
                 temp_idx = xis_close[:,2].argmin()
                 temmpBestMasses = masses_close[temp_idx]
                 temmpBestXis = xis_close[temp_idx]
@@ -289,7 +289,7 @@ for entry in tempBank:
                     vec3_max = temmpvec3_max
                     vec3_depth = vec3_max - vec3_min
             if vec3_max < xis_close[:,2].max():
-                print "WARNING: Numerical placement fails, trying again"
+                logging.warn("WARNING: Numerical placement fails, trying again")
                 temp_idx = xis_close[:,2].argmax()
                 temmpBestMasses = physMasses[temp_idx]
                 temmpBestXis = xis[temp_idx]
@@ -341,7 +341,7 @@ for entry in tempBank:
         numV3Temps = 1
     else:
         numV3Temps = int(round(vec3_depth // vec3DepthVal)) + 1
-    for ite in range(numV3Temps):
+    for ite in xrange(numV3Temps):
         if not opts.threed_lattice:
             xi3_des = vec3_min + \
                       (vec3_depth) * (2 * ite + 1) / (2. * (numV3Temps))
@@ -374,7 +374,7 @@ for entry in tempBank:
             vec4_depthT = vec4_maxT - vec4_minT
             # Then loop over necessary templates in 4th direction
             numV4Temps = int(round(vec4_depthT // vec3DepthVal)) + 1
-            for ite in range(numV4Temps):
+            for ite in xrange(numV4Temps):
                 xi4_des = vec4_minT + \
                           (vec4_depthT) * (2 * ite + 1) / (2. * (numV4Temps))
                 dist = (xi1_des - xis[:,0])**2 + (xi2_des - xis[:,1])**2 + \
