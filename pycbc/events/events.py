@@ -82,7 +82,17 @@ def findchirp_cluster_over_window(times, values, window_length):
             else:
                 continue
     return indices[0:j+1]
-    
+
+def newsnr(snr, reduced_x2):
+    """Calculate the re-weighted SNR statistic known as NewSNR from given
+    SNR and reduced chi-squared values. See http://arxiv.org/abs/1208.3491
+    for a definition of NewSNR.
+    """
+    if reduced_x2 > 1:
+        return snr * (0.5 * (1. + reduced_x2 ** 3)) ** (-1./6.)
+    else:
+        return snr
+
 class EventManager(object):
     def __init__(self, opt, column, column_types, **kwds):
         self.opt = opt
@@ -99,13 +109,21 @@ class EventManager(object):
                   
     def chisq_threshold(self, value, num_bins, delta=0):
         remove = []
-        for i in range(len(self.events)):
+        for i in xrange(len(self.events)):
             event = self.events[i]
             tind = event['template_id']
             xi = event['chisq'] / (num_bins + delta * event['snr'].conj() * event['snr'])
             if xi > value:
                 remove.append(i)
         self.events = numpy.delete(self.events, remove)          
+
+    def newsnr_threshold(self, threshold):
+        "Remove events with newsnr smaller than given threshold"
+        if not self.opt.chisq_bins:
+            raise RuntimeError('Chi-square test must be enabled in order to use newsnr threshold')
+        x2_dof = 2 * self.opt.chisq_bins - 2
+        remove = [i for i, e in enumerate(self.events) if newsnr(abs(e['snr']), e['chisq'] / x2_dof) < threshold]
+        self.events = numpy.delete(self.events, remove)
    
     def maximize_over_bank(self, tcolumn, column, window):
         if len(self.events) == 0:
