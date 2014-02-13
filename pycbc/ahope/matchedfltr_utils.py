@@ -67,6 +67,7 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
         A list of the tagging strings that will be used for all jobs created
         by this call to the workflow. An example might be ['BNSINJECTIONS'] or
         ['NOINJECTIONANALYSIS']. This will be used in output names.
+        
     Returns
     -------
     inspiral_outs : ahope.AhopeFileList
@@ -126,6 +127,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
         will be one inspiral file for every template bank and they will cover the
         same time span. Note that this option must also be given during template
         bank generation to be meaningful.
+        
     Returns
     -------
     inspiral_outs : ahope.AhopeFileList
