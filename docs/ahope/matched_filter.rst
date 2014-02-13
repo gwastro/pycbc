@@ -1,7 +1,7 @@
 .. _ahopeinspiralmod:
 
 ###############################
-Matched-filter section
+The ahope matched-filter module
 ###############################
 
 =============
@@ -40,11 +40,10 @@ Usage
 
 Using this module requires a number of things
 
- * A configuration file (or files) containing the information needed to tell this module how to 
-generate GW triggers.
- * An initialized instance of the ahope workflow class, containing the ConfigParser.
- * A list of segments to be analysed by this module.
- * An AhopeFileList returned by the templatebank module containing the template banks
+* A configuration file (or files) containing the information needed to tell this module how to generate GW triggers.
+* An initialized instance of the ahope workflow class, containing the ConfigParser.
+* A list of segments to be analysed by this module.
+* An AhopeFileList returned by the templatebank module containing the template banks
 available for use.
  
 The module is then called according to
