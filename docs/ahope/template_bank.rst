@@ -77,6 +77,10 @@ When using the setup_tmpltbank_dax_generated sub-module the following additional
 
 * tmpltbank-link-to-matchedfltr - OPTIONAL. If this is given ahope will attempt to ensure a one-to-one correspondence between template banks and matched-filter outputs. This may not work in all cases and should be considered an option to be used for comparing with ihope output.
 
+The following options apply only to a specific executable.
+
+* analysis-length = LENGTH_IN_SECONDS (pycbc_geom_nonspinbank only) - REQUIRED. The amount of time in seconds that will be used for frames for PSD generation.
+
 $$$$$$$$$$$$$$$
 [executables]
 $$$$$$$$$$$$$$$
