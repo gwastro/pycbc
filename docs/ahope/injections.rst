@@ -27,7 +27,7 @@ Usage
 
 Using this module requires a number of things
 
-* A configuration file (or files) containing the information needed to tell this module how to generate (or gather) the template banks (described below).
+* A configuration file (or files) containing the information needed to tell this module how to generate the injection files (described below).
 * An initialized instance of the ahope workflow class, containing the ConfigParser.
 * A list of science segments, which are only used to identify start and end times of the injection files.
 
@@ -69,7 +69,11 @@ In this section you need to supply the executable that will be used to generate 
 
 injections = /path/to/lalapps_inspinj
 
-the option, in this case 'injections', will be used to specify the constant command line options that are sent to all lalapps_inspinj jobs. The tag 'injections' can be changed, it is currently supplied as a key-word argument when calling the function. 'injections' is the default, and must be used if you want to use pipedown.
+The option, in this case 'injections', will be used to specify the constant command line options that are sent to all lalapps_inspinj jobs. The tag 'injections' can be changed, it is currently supplied as a key-word argument when calling the function. 'injections' is the default, and must be used if you want to use pipedown.
+
+Subsections of the form [injections-SUBSECTION] are used to specifiy options specific to a 
+particular injection set. Note that the number of subsections directly corresponds to the
+number of injection files that will be produced. 
 
 ----------------------------------------------------------------
 Supported injection executables and instructions for using them
