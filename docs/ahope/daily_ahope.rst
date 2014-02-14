@@ -63,9 +63,6 @@ Some things that *will* need to be changed for each user::
     ahope-asset-dir = /home/spxiwh/lscsoft_git/src/lalsuite/lalapps/src/inspiral
     ahope-html-basedir = /home/spxiwh/public_html/ER4/test
 
-    [ahope-segments]
-    segments-veto-definer-file = /home/spxiwh/lscsoft_git/src/pycbc/pycbc/examples/ahope/er_daily_ahope/H1L1V1-ER3_CBC_OFFLINE-1011571215-0.xml
-
     [ahope-omega]
     omega-conf-file = /home/spxiwh/ERs/ER4/daily_ihope_test/old_conf_omega.txt
 
@@ -87,7 +84,6 @@ To run through this.
 
  * The ahope-asset-dir points to the location where the CSS files needed for the html page are stored. This is your lalsuite source directory and then /lalapps/src/inspiral. This will be removed in the future and read from a web-accessible location.
  * The ahope-html-basedir is the directory in which you want the output html pages to appear. Pages will be in subdirectories in this corresponding to unique days. So for me I might see output in directories like /home/spxiwh/public_html/ER4/test/201308/20130812/
- * The segments-veto-definer-file points to the veto-definer-file. This will be changed to take a url input not a filepath.
  * omega-conf-file points to the configuration for omega. Currently omega doesn't work within daily ahope, this will be fixed.
  * Everything under [executables] points to the executables that will be used. These should be changed as appropriate
 
