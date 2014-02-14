@@ -20,41 +20,6 @@ import numpy
 from pycbc.tmpltbank.lambda_mapping import *
         
 
-# This function is taken from Stackoverflow:
-# http://stackoverflow.com/questions/377017/test-if-executable-exists-in-python/377028#377028
-def which(program):
-    """
-    This function will return the full location of the provided program name.
-    This is effectively a python implementation of the bash which command.
-    Function taken from StackOverflow:
-    http://stackoverflow.com/questions/377017/test-if-executable-exists-in-python/377028#377028
-
-    Parameters
-    -----------
-    program : string
-        Name of the program to search for
-
-    Returns
-    --------
-    string
-        Full location to the file. Will return None if no program exists in the
-        path
-    """
-    def is_exe(fpath):
-        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
-    fpath, fname = os.path.split(program)
-    if fpath:
-        if is_exe(program):
-            return program
-    else:
-        for path in os.environ["PATH"].split(os.pathsep):
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
-
-    return None
-
 def determine_eigen_directions(metricParams, preserveMoments=False,\
                                vary_fmax=False, vary_density=25):
     """

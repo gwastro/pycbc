@@ -27,6 +27,7 @@ import tempfile
 import ConfigParser
 import numpy
 import logging
+import distutils.spawn
 from glue import pipeline
 import pycbc.psd
 import pycbc.strain
@@ -215,7 +216,7 @@ fh = open( logfile, "w" )
 fh.close()
 dag = pipeline.CondorDAG(logfile, False)
 dag.set_dag_file('bank_generation')
-exe_path = pycbc.tmpltbank.which('pycbc_geom_aligned_2dstack')
+exe_path = distutils.spawn.find_executable('pycbc_geom_aligned_2dstack')
 job = pipeline.CondorDAGJob('vanilla',exe_path)
 #pipeline.AnalysisJob.__init__(job,cp,False)
 job.set_stdout_file('logs/bank_gen-$(cluster)-$(process).out')
@@ -254,7 +255,7 @@ job.add_condor_cmd('Requirements', 'Memory >= 1390')
 job.add_condor_cmd('request_memory', '1400')
 job.add_condor_cmd('getenv','True')
 # Make the output job
-cat_path = pycbc.tmpltbank.which('pycbc_aligned_bank_cat')
+cat_path = distutils.spawn.find_executable('pycbc_aligned_bank_cat')
 job_cat = pipeline.CondorDAGJob('vanilla', cat_path)
 job_cat.set_stdout_file('logs/bank_cat-$(cluster)-$(process).out')
 job_cat.set_stderr_file('logs/bank_cat-$(cluster)-$(process).err')
