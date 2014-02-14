@@ -11,7 +11,7 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \
 # This is the "official" start according to Stuart
 start_time = 1073822416
 # End times set as current time - one day (86400s)
-end_time= 1076162831
+end_time= 1076352849
 
 workflow = ahope.Workflow('./daily_er5.ini')
 ifos = ['H1','L1','V1']
