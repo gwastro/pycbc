@@ -29,6 +29,7 @@ import os
 import numpy
 import pycbc.tmpltbank
 import pycbc.psd
+import pycbc.pnutils
 from pycbc.types import Array
 import difflib
 import sys
@@ -178,10 +179,10 @@ class TmpltbankTestClass(unittest.TestCase):
         evals = self.metricParams.evals[self.f_upper]
         masses1 = [4,0.25,0.4,0.3]
         masses2 = [4.01,0.249,0.41,0.29]
-        spinSet1 = pycbc.tmpltbank.get_beta_sigma_from_aligned_spins(\
-                     masses1[0], masses1[1], masses1[2], masses1[3])
-        spinSet2 = pycbc.tmpltbank.get_beta_sigma_from_aligned_spins(\
-                     masses2[0], masses2[1], masses2[2], masses2[3])
+        spinSet1 = pycbc.pnutils.get_beta_sigma_from_aligned_spins(\
+                     masses1[1], masses1[2], masses1[3])
+        spinSet2 = pycbc.pnutils.get_beta_sigma_from_aligned_spins(\
+                     masses2[1], masses2[2], masses2[3])
         xis1 = pycbc.tmpltbank.get_cov_params(masses1[0], masses1[1], \
                  spinSet1[0], spinSet1[1], spinSet1[2], spinSet1[3], \
                  self.metricParams, self.f_upper)
@@ -204,8 +205,8 @@ class TmpltbankTestClass(unittest.TestCase):
         # Test that returned masses and xis agree
         massT = output[0] + output[1]
         etaT = output[0]*output[1] / (massT*massT)
-        spinSetT = pycbc.tmpltbank.get_beta_sigma_from_aligned_spins(\
-                     massT, etaT, output[2], output[3])
+        spinSetT = pycbc.pnutils.get_beta_sigma_from_aligned_spins(\
+                     etaT, output[2], output[3])
         xisT = pycbc.tmpltbank.get_cov_params(massT, etaT, \
                  spinSetT[0], spinSetT[1], spinSetT[2], spinSetT[3], \
                  self.metricParams, self.f_upper)
@@ -221,10 +222,10 @@ class TmpltbankTestClass(unittest.TestCase):
         evals = self.metricParams.evals[self.f_upper]
         masses1 = [4,0.25,0.4,0.3]
         masses2 = [4.01,0.249,0.41,0.29]
-        spinSet1 = pycbc.tmpltbank.get_beta_sigma_from_aligned_spins(\
-                     masses1[0], masses1[1], masses1[2], masses1[3])
-        spinSet2 = pycbc.tmpltbank.get_beta_sigma_from_aligned_spins(\
-                     masses2[0], masses2[1], masses2[2], masses2[3])
+        spinSet1 = pycbc.pnutils.get_beta_sigma_from_aligned_spins(\
+                     masses1[1], masses1[2], masses1[3])
+        spinSet2 = pycbc.pnutils.get_beta_sigma_from_aligned_spins(\
+                     masses2[1], masses2[2], masses2[3])
         xis1 = pycbc.tmpltbank.get_cov_params(masses1[0], masses1[1], \
                  spinSet1[0], spinSet1[1], spinSet1[2], spinSet1[3], \
                  self.metricParams, self.f_upper)

@@ -18,7 +18,7 @@ from __future__ import division
 import numpy
 from lal import LAL_PI, LAL_MTSUN_SI
 from pycbc.tmpltbank.lambda_mapping import get_chirp_params
-from pycbc.tmpltbank.lambda_mapping import get_beta_sigma_from_aligned_spins
+from pycbc.pnutils import get_beta_sigma_from_aligned_spins
 
 def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper,\
                         covary=True):
@@ -176,8 +176,8 @@ def get_random_mass(numPoints, massRangeParams):
         spinspin = spin1z*spin2z
 
         # And compute the PN components that come out of this
-        beta, sigma, gamma, chiS = get_beta_sigma_from_aligned_spins(\
-                                     mass, eta, spin1z, spin2z)
+        beta, sigma, gamma, chiS = get_beta_sigma_from_aligned_spins(
+                                     eta, spin1z, spin2z)
 
     return mass,eta,beta,sigma,gamma,spin1z,spin2z
 
@@ -414,9 +414,9 @@ def get_point_distance(point1, point2, metricParams, fUpper):
     bEta = (bMass1 * bMass2) / (bTotMass * bTotMass)
     bCM = bTotMass * bEta**(3./5.)
 
-    abeta, asigma, agamma, achis = get_beta_sigma_from_aligned_spins(aTotMass,\
+    abeta, asigma, agamma, achis = get_beta_sigma_from_aligned_spins(
                                      aEta, aSpin1, aSpin2)
-    bbeta, bsigma, bgamma, bchis = get_beta_sigma_from_aligned_spins(bTotMass,\
+    bbeta, bsigma, bgamma, bchis = get_beta_sigma_from_aligned_spins(
                                      bEta, bSpin1, bSpin2)
 
     aXis = get_cov_params(aTotMass, aEta, abeta, asigma, agamma, achis, \
