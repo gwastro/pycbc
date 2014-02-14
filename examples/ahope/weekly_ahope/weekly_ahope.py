@@ -1,5 +1,35 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2013 Ian W. Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Programe for running multi-detector ahope analysis through coincidence and then
+generate post-processing and plots with pipedown.
+This is designed to mimic the current behaviour of weekly_ihope.
+"""
+import pycbc
+import pycbc.version
+__author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
+__version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
+__program__ = "weekly_ahope"
+
 import os, copy, shutil
-import ConfigParser
+import optparse, ConfigParser
 import logging
 from glue import pipeline
 from glue import segments
@@ -7,23 +37,48 @@ import pycbc.ahope as ahope
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
                     level=logging.INFO,datefmt='%I:%M:%S')
-# Set start and end times
 
-# These are Chris' example S6 day of data
-start_time = 961585543
-end_time = start_time + 86400
+# command line options
+# From http://stackoverflow.com/questions/392041/python-optparse-list
+# this lets us used comma separated lists as arguments
+
+def comma_seperated_option(option, opt, value, parser):
+    setattr(parser.values, option.dest, value.split(','))
+
+usage = """usage: %prog [options]"""
+_desc = __doc__[1:]
+parser = optparse.OptionParser(usage, version=__version__, description=_desc)
+parser.add_option("-s", "--start-time", type="int",\
+                  help="Time to start analysis from.")
+parser.add_option("-e", "--end-time", type="int",\
+                  help="Time to stop analysis at.")
+parser.add_option("-i", "--config-files", type='string', action='callback',
+                  callback=comma_seperated_option,
+                  help="Location of ini files. Can either supply a single "+\
+                  "ini file, or a comma separated list of ini files.")
+parser.add_option("-d", "--output-dir", help="Path to output directory.")
+parser.add_option("-p", "--pipedown-log-dir", 
+                  help="Path to write pipedown log files to.")
+(opts,args) = parser.parse_args()
+
+# Add check that all of these exist
+if not opts.start_time:
+    parser.error("Must supply --start-time")
+if not opts.end_time:
+    parser.error("Must supply --end-time")
+if not opts.config_files:
+    parser.error("Must supply --config-files")
+
+workflow = ahope.Workflow(opts.config_files)
 
 # Needed later for WIP
 baseDir = os.getcwd()
-runDir = '%d-%d' %(start_time,end_time)
+runDir = '%d-%d' %(opts.start_time, opts.end_time)
 if not os.path.exists(runDir):
     os.makedirs(runDir)
 os.chdir(runDir)
 
 currDir = os.getcwd()
-
-workflow = ahope.Workflow(['../weekly_ahope.ini', '../inj.ini',
-                           '../pipedown.ini'])
 
 segDir = os.path.join(currDir, "segments")
 if not os.path.exists(segDir+'/logs'):
@@ -36,22 +91,17 @@ if not os.path.exists('full_data/logs'):
 if not os.path.exists('time_slide_files/logs'):
     os.makedirs('time_slide_files/logs')
 
-# Set start and end times
-
-log_directory = "/usr1/spxiwh/logs"
-
-# This is S6D chunk 3, an example full-scale ihope analysis time-frame
-##start_time = 968543943
-#end_time = 971622087
-
 # Set the ifos to analyse
-ifos = ['H1','L1']
+ifos = []
+for ifo in workflow.cp.options('ahope-ifos'):
+    ifos.append(ifo.upper())
+
 
 # Get segments and find where the data is
 # NOTE: not all files are returned to top level, so all_files has some gaps
 all_files = ahope.AhopeFileList([])
 scienceSegs, segsFileList = ahope.setup_segment_generation(workflow, ifos, 
-                                            start_time, end_time, segDir)
+                                        opts.start_time, opts.end_time, segDir)
 datafind_files, scienceSegs = ahope.setup_datafind_workflow(workflow, 
                                             scienceSegs, dfDir, segsFileList)
 all_files.extend(datafind_files)
@@ -111,8 +161,8 @@ for category in range(1, 6):
     ahopeVetoFile = ahopeVetoFile[0]
     ahopeVetoPath = ahopeVetoFile.path
     pipedownVetoFileName = '%s-VETOTIME_CAT_%d-%d-%d.xml' \
-                            %(ifoString, category, start_time, \
-                              end_time-start_time)
+                            %(ifoString, category, opts.start_time, \
+                              opts.end_time-opts.start_time)
     pipedownVetoPath = os.path.join(segDir, pipedownVetoFileName)
     shutil.copyfile(ahopeVetoPath, pipedownVetoPath)
     
@@ -155,10 +205,10 @@ pipeCp.write(file(iniFile,"w"))
 # Set up the command to run pipedown
 
 pipeCommand = [pipeCp.get("condor","pipedown")]
-pipeCommand.extend(["--log-path", log_directory])
+pipeCommand.extend(["--log-path", opts.pipedown_log_dir])
 pipeCommand.extend(["--config-file", iniFile])
-pipeCommand.extend(["--gps-start-time", str(start_time)])
-pipeCommand.extend(["--gps-end-time", str(end_time)])
+pipeCommand.extend(["--gps-start-time", str(opts.start_time)])
+pipeCommand.extend(["--gps-end-time", str(opts.end_time)])
 pipeCommand.extend(["--ihope-cache", cacheFileName])
 pipeCommand.extend(["--generate-all-data-plots"])
 
@@ -202,8 +252,8 @@ wipCp.write(file('ahope_config_wip.ini', 'w'))
 # Need a second ini file with wip commands
 wipConf = ConfigParser.ConfigParser()
 wipConf.add_section('main')
-wipConf.set('main', 'gps-start-time', start_time)
-wipConf.set('main', 'gps-end-time', end_time)
+wipConf.set('main', 'gps-start-time', opts.start_time)
+wipConf.set('main', 'gps-end-time', opts.end_time)
 wipConf.set('main', 'lead', 'Dotty Wot')
 wipConf.set('main', 'second', 'Spotty Wot')
 wipConf.set('main', 'title', 'Ahope coincidence analysis')
