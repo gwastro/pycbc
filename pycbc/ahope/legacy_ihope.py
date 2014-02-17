@@ -209,8 +209,7 @@ class LegacySplitBankExec(Executable):
     """
     def create_job(self, cp, ifo, out_dir=None):
         return LegacySplitBankJob(cp, self.exe_name, self.condor_universe, 
-                                  ifo=ifo,
-                                  out_dir=out_dir)
+                                  ifo=ifo, out_dir=out_dir)
 
 class LegacySplitBankJob(Job):    
     """
@@ -238,6 +237,8 @@ class LegacySplitBankJob(Job):
         fullPath = bank.cache_entries[0].path
         bank.cache_entries[0].path = os.path.basename(fullPath)
         node.add_input(bank, opt='bank-file')
+        # FIXME: Set the path back to what it was. This is part of the hack
+        #        above and should be removed if possible.
         bank.cache_entries[0].path = fullPath
         
         # Get the output (taken from inspiral.py)
@@ -253,7 +254,7 @@ class LegacySplitBankJob(Job):
                 
         job_tag = bank.description + "_" + self.exe_name.upper()
         out_file_group = AhopeFile(bank.ifo, job_tag, bank.segment, 
-                                   file_url=url_list)
+                                   file_url=url_list, tags=bank.tags)
         node.add_output(out_file_group)
         return node
 
