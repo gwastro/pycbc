@@ -123,30 +123,23 @@ def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir,
         minSegLength = 0
 
     if segmentsMethod == "AT_RUNTIME":
-        logging.info("Generating segments with setup_segment_gen_mixed")
-        segFilesList = setup_segment_gen_mixed(workflow, ifos, veto_categories, 
-                             start_time, end_time, out_dir, 1000, tag=tag,
-                             generate_coincident_segs=generate_coincident_segs)
+        max_veto = 1000
     elif segmentsMethod == "CAT2_PLUS_DAG":
-        logging.info("Generating segments with setup_segment_gen_mixed")
-        segFilesList = setup_segment_gen_mixed(workflow, ifos, veto_categories, 
-                             start_time, end_time, out_dir, 1, tag=tag,
-                             generate_coincident_segs=generate_coincident_segs)
+        max_veto = 1
     elif segmentsMethod == "CAT3_PLUS_DAG":
-        logging.info("Generating segments with setup_segment_gen_mixed")
-        segFilesList = setup_segment_gen_mixed(workflow, ifos, veto_categories, 
-                             start_time, end_time, out_dir, 2, tag=tag,
-                             generate_coincident_segs=generate_coincident_segs)
+        max_veto = 2
     elif segmentsMethod == "CAT4_PLUS_DAG":
-        logging.info("Generating segments with setup_segment_gen_mixed")
-        segFilesList = setup_segment_gen_mixed(workflow, ifos, veto_categories, 
-                             start_time, end_time, out_dir, 3, tag=tag,
-                             generate_coincident_segs=generate_coincident_segs)
+        max_veto = 3
     else:
         msg = "Entry segments-method in [ahope-segments] does not have "
         msg += "expected value. Valid values are AT_RUNTIME, CAT4_PLUS_DAG, "
         msg += "CAT2_PLUS_DAG or CAT3_PLUS_DAG."
         raise ValueError(msg)
+        
+    logging.info("Generating segments with setup_segment_gen_mixed")
+    segFilesList = setup_segment_gen_mixed(workflow, ifos, veto_categories, 
+                             start_time, end_time, out_dir, max_veto, tag=tag,
+                             generate_coincident_segs=generate_coincident_segs)
     logging.info("Segments obtained")
 
     # This creates the segsToAnalyse from the segFilesList. Currently it uses
@@ -239,8 +232,8 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
     segFilesList = AhopeFileList([])
     segValidSeg = segments.segment([start_time,end_time])
     # Will I need to add some jobs to the workflow?
-    if max(veto_categories) > maxVetoAtRunTime:
-        vetoGenJob = create_segs_from_cats_job(cp, out_dir, ''.join(ifos))
+    vetoGenJob = create_segs_from_cats_job(cp, out_dir, ''.join(ifos))
+    
     for ifo in ifos:
         logging.info("Generating science segments for ifo %s" %(ifo))
         currSciSegs, currSciXmlFile = get_science_segments(ifo, cp, start_time,
@@ -248,24 +241,32 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
         segFilesList.append(currSciXmlFile)
 
         for category in veto_categories:
-            if category <= maxVetoAtRunTime:
-                logging.info("Generating CAT_%d segments for ifo %s." \
-                             %(category,ifo))
-                currVetoSegs, currVetoXmlFiles = \
-                    get_veto_segs_at_runtime(ifo, category, cp, start_time, 
-                                             end_time, out_dir, tag=tag)
-            else:
+            if category > maxVetoAtRunTime:
                 msg = "Adding creation of CAT_%d segments " %(category)
                 msg += "for ifo %s to workflow." %(ifo)
                 logging.info(msg)
-                currVetoXmlFiles = get_veto_segs_in_workflow(ifo, 
-                                  category, start_time, end_time, out_dir,
-                                  workflow, vetoGenJob)        
 
-            segFilesList.append(currVetoXmlFiles) 
+                #currVetoSegs, currVetoXmlFiles = \
+                #    get_veto_segs_at_runtime(ifo, category, cp, start_time, 
+                #                             end_time, out_dir, tag=tag)
+
+            currVetoXmlFile = get_veto_segs_in_workflow(ifo, category, 
+                                        start_time, end_time, out_dir,
+                                        workflow, vetoGenJob)        
+                                        
+            if category <= maxVetoAtRunTime:
+                logging.info("Generating CAT_%d segments for ifo %s." \
+                             %(category,ifo))
+                currVetoXmlFile.node.execute_now()
+
+            segFilesList.append(currVetoXmlFile) 
             # Store the CAT_1 veto segs for use below
             if category == 1:
-                cat1Segs = currVetoSegs
+                # Yes its yucky to generate a file and then read it back in. This will be
+                # fixed when the new API for segment generation is ready.
+                vetoXmlFP = open(currVetoXmlFile.path, 'r')
+                cat1Segs = fromsegmentxml(vetoXmlFP)
+                vetoXmlFP.close()
                 
         analysedSegs = currSciSegs - cat1Segs
         analysedSegs.coalesce()
@@ -308,12 +309,11 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
             # And actually make the file (or queue it in the workflow)
             logging.info("Generating combined, cumulative CAT_%d segments."\
                              %(category))
+            get_cumulative_segs_in_workflow(workflow, ifos, currSegFile, 
+                        categories, cp, segFilesList, out_dir)
             if category <= maxVetoAtRunTime:
-                get_cumulative_segs_at_runtime(ifos, currSegFile, category, cp,
-                                               segFilesList, out_dir)
-            else:
-                get_cumulative_segs_in_workflow(workflow, ifos, currSegFile, 
-                                        categories, cp, segFilesList, out_dir)
+                currSegFile.node.execute_now()
+
             segFilesList.append(currSegFile)
 
     return segFilesList
@@ -387,85 +387,6 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir, tag=None):
                                   tags=tagList)
 
     return sciSegs, sciXmlFile
-
-def get_veto_segs_at_runtime(ifo, category, cp, start_time, end_time, out_dir,
-                             tag=None):
-    """
-    Obtain veto segments for the selected ifo and veto category
-
-    Parameters
-    -----------
-    ifo : string
-        The string describing the ifo to generate vetoes for.
-    category : int
-        The veto category to generate vetoes for.
-    start_time : gps time (either int/LIGOTimeGPS)
-        The time at which to begin searching for segments.
-    end_time : gps time (either int/LIGOTimeGPS)
-        The time at which to stop searching for segments.
-    out_dir : path
-        The directory in which output will be stored.    
-    tag : string, optional (default=None)
-        Use this to specify a tag. This can be used if this module is being
-        called more than once to give call specific configuration (by setting
-        options in [ahope-datafind-${TAG}] rather than [ahope-datafind]). This
-        is also used to tag the AhopeFiles returned by the class to uniqueify
-        the AhopeFiles and uniqueify the actual filename.
-        FIXME: Filenames may not be unique with current codes!
-
-    Returns
-    --------
-    vetoSegs : glue.segments.segmentlist
-        The segmentlist generated by this call
-    vetoXmlFile : ahope.AhopeSegFile
-        The ahope File object corresponding to this DQ veto file.
-    """
-    segValidSeg = segments.segment([start_time,end_time])
-    segServerUrl = cp.get_opt_tag("ahope-segments", "segments-database-url",
-                                  tag)
-    vetoDefFile = cp.get_opt_tag("ahope-segments", "segments-veto-definer-file",
-                                 tag)
-
-    # FIXME: segsFromCats has no way of adding tags to output file names
-    #        therefore multiple calls to this function will result in multiple
-    #        files with the same basename.
-    segFromCatsCall = [ cp.get("executables","segments_from_cats"),
-#       FIXME: I want to use separate categories here, but to do so needs some
-#       extra code added to create the cumulative files in the format thinca
-#       and pipedown expect
-#        "--separate-categories", 
-        "--cumulative-categories",
-        "--segment-url", segServerUrl,
-        "--veto-file", vetoDefFile,
-        "--output-dir", out_dir,
-        # FIXME: And set this to just str(category) when not using cumulative
-        "--veto-categories", ','.join([str(i+1) for i in range(category)]),
-        "--ifo-list", ifo,
-        "--gps-start-time", str(start_time),
-        "--gps-end-time", str(end_time)]
-
-    make_external_call(segFromCatsCall, outDir=os.path.join(out_dir,'logs'),
-              outBaseName='%s-veto-cats-%d-call' %(ifo.lower(),category) )
-
-    vetoXmlFileName = "%s-VETOTIME_CAT%d-%d-%d.xml" \
-                         %(ifo, category, start_time, end_time-start_time)
-    vetoXmlFilePath = os.path.join(out_dir, vetoXmlFileName)
-    currUrl = urlparse.urlunparse(['file', 'localhost',
-                                   vetoXmlFilePath, None, None, None])
-    if tag:
-        currTags = [tag, 'VETO_CAT%d' %(category)]
-    else:
-        currTags = ['VETO_CAT%d' %(category)]
-
-    # Yes its yucky to generate a file and then read it back in. This will be
-    # fixed when the new API for segment generation is ready.
-    vetoXmlFP = open(vetoXmlFilePath, 'r')
-    vetoSegs = fromsegmentxml(vetoXmlFP)
-    vetoXmlFP.close()
-    vetoXmlFile = AhopeOutSegFile(ifo, 'SEGMENTS', segValidSeg, currUrl, 
-                                  tags=currTags, segList=vetoSegs)
-
-    return vetoSegs, vetoXmlFile
 
 def get_veto_segs_in_workflow(ifo, category, start_time, end_time, out_dir,
                               workflow, vetoGenJob, tag=None):
@@ -628,49 +549,6 @@ def get_cumulative_segs_in_workflow(workflow, ifos, currSegFile, categories, cp,
     add_job = LigolwAddJob(cp, 'llwadd', ifo=ifo, out_dir=out_dir, tags=tags)
     add_node = add_job.create_node(valid_segment, add_inputs, output=currSegFile)
     workflow.add_node(add_node)
-    
-
-def get_cumulative_segs_at_runtime(ifos, currSegFile, category, cp,
-                                   segFilesList, out_dir):
-    """
-    Function to generate one of the cumulative, multi-detector segment files at
-    runtime.
-   
-    Parameters
-    -----------
-    ifos : list
-        List of ifos contained in the output file
-    currSegFile : ahope.AhopeSegFile
-        The AhopeSegFile corresponding to this file that will be created.
-    category : int
-        The veto category to cumulatively include up to in this file.
-    cp : ahope.AhopeConfigParser
-        The in-memory representation of the configuration (.ini) files
-    segFilesList : Listionary of ahopeSegFiles
-        The list of segment files to be used as input for combining.
-    out_dir : path
-        The directory to write output to.
-    """
-    ifoString = ''.join(ifos)
-    # First need to determine the input files
-    inputs = get_cumulative_segs_input_files(ifos, segFilesList, category)
-
-    # Construct the call to ligolw_add
-    ligolwAddCall = [ cp.get("executables","llwadd"),
-        "--output",
-        currSegFile.path]
-    ligolwAddCall.extend([inp.path for inp in inputs])
-
-    make_external_call(ligolwAddCall, outDir=os.path.join(out_dir,'logs'),
-              outBaseName='%s-gen-cum-cats-%d-call' %(ifoString, category) )
-
-    # FIXME: I want this removed. It cannot go into the workflow as it modifies
-    # files in place. It also shouldn't be needed!
-    compatVetoCall = [ cp.get("executables","ligolw_segments_compat"),
-        currSegFile.path]
-
-    make_external_call(compatVetoCall, outDir=os.path.join(out_dir,'logs'),
-              outBaseName='%s-compat-veto-cats-%d-call' %(ifoString, category) )
 
 def get_cumulative_segs_input_files(ifos, segFilesList, category):
     """
