@@ -1,4 +1,4 @@
-# Copyright (C) 2013  Ian Harry
+# Copyright (C) 2013  Ian Harry, Alex Nitz
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -492,6 +492,28 @@ class Node(pipeline.CondorDAGNode):
         # original name
         if hasattr(self, 'unreliable'):
             pass
+            
+    def execute_now(self):
+        """ Execute this node immediately.
+        """
+        if len(self.partitioned_input_files) > 0:
+            raise RuntimeError('Cannot execute a paritioned node') 
+        
+        cmd_list = [self.job().get_executable()]
+        cmd_tuples = self.get_cmd_tuple_list()   
+        for cmd in cmd_tuples:
+            cmd_list += list(cmd)
+           
+        print cmd_list, self.job().out_dir
+        job_dir = self.job().out_dir
+        
+        if len(self.output_files) > 0:
+            base_name = self.output_files[0].filename
+        else:
+            base_name = self.job().exe_name
+        
+        make_external_call(cmd_list, outDir=os.path.join(job_dir, 'logs'),
+                                     outBaseName=base_name)
 
 class Executable(object):
     """
