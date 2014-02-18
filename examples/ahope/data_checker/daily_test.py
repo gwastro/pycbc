@@ -13,8 +13,7 @@ start_time = 1073822416
 # End times set as current time - one day (86400s)
 end_time= 1076528574
 
-workflow = ahope.Workflow('./daily_er5.ini')
-ifos = ['H1','L1','V1']
+workflow = ahope.Workflow('./daily_er5.ini', start_time, end_time)
 currDir = os.getcwd()
 segDir = os.path.join(currDir,"segments")
 dfDirSYR = os.path.join(currDir,"datafindSYR")
@@ -45,8 +44,7 @@ def segment_report(sSegs):
         print "For ifo %s there is %d seconds of data in %d segments, %d seconds (%d unique segments) in segments longer than 500s and %d seconds (%d unique segments) longer than 2000s." %(ifo, fullLen, fullNum, shortLen, shortNum, longLen, longNum)
 
 
-scienceSegs, segsList = ahope.setup_segment_generation(workflow, ifos,
-                                start_time, end_time, segDir)
+scienceSegs, segsList = ahope.setup_segment_generation(workflow, segDir)
 
 segment_report(scienceSegs)
 

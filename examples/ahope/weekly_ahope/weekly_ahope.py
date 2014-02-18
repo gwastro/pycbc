@@ -69,7 +69,7 @@ if not opts.end_time:
 if not opts.config_files:
     parser.error("Must supply --config-files")
 
-workflow = ahope.Workflow(opts.config_files)
+workflow = ahope.Workflow(opts.config_files, opts.start_time, opts.end_time)
 
 # Needed later for WIP
 baseDir = os.getcwd()
@@ -81,36 +81,24 @@ os.chdir(runDir)
 currDir = os.getcwd()
 
 segDir = os.path.join(currDir, "segments")
-if not os.path.exists(segDir+'/logs'):
-    os.makedirs(segDir+'/logs')
-dfDir = os.path.join(currDir,"datafind")
-if not os.path.exists(dfDir+'/logs'):
-    os.makedirs(dfDir+'/logs')
-if not os.path.exists('full_data/logs'):
-    os.makedirs('full_data/logs')
-if not os.path.exists('time_slide_files/logs'):
-    os.makedirs('time_slide_files/logs')
-
-# Set the ifos to analyse
-ifos = []
-for ifo in workflow.cp.options('ahope-ifos'):
-    ifos.append(ifo.upper())
-
+dfDir = os.path.join(currDir, "datafind")
+fdDir = os.path.join(currDir, "full_data")
+tsDir = os.path.join(currDir, "time_slide_files")
+injDir = os.path.join(currDir, "inj_files")
 
 # Get segments and find where the data is
 # NOTE: not all files are returned to top level, so all_files has some gaps
 all_files = ahope.AhopeFileList([])
-scienceSegs, segsFileList = ahope.setup_segment_generation(workflow, ifos, 
-                                        opts.start_time, opts.end_time, segDir)
+scienceSegs, segsFileList = ahope.setup_segment_generation(workflow, segDir)
 datafind_files, scienceSegs = ahope.setup_datafind_workflow(workflow, 
                                             scienceSegs, dfDir, segsFileList)
 all_files.extend(datafind_files)
 
 # Template bank stuff
 bank_files = ahope.setup_tmpltbank_workflow(workflow, scienceSegs, 
-                                            datafind_files, 'datafind')
-splitbank_files = ahope.setup_splittable_workflow(workflow, bank_files, 
-                                                            'datafind')
+                                            datafind_files, dfDir)
+splitbank_files = ahope.setup_splittable_workflow(workflow, bank_files, dfDir) 
+
 all_files.extend(bank_files)
 #NOTE: may want to remove splitbank if it confuses pipedown
 all_files.extend(splitbank_files)
@@ -118,29 +106,31 @@ all_files.extend(splitbank_files)
 # setup the injection files
 # FIXME: Pipedown expects the injections to have the random seed as a tag,
 # here we just add that tag.
-inj_files, inj_tags = ahope.setup_injection_workflow(workflow, scienceSegs, 
-                                           output_dir='inj_files', tags=['2134'])
-timeSlideFiles = ahope.setup_timeslides_workflow(workflow, scienceSegs,
-                                           output_dir='time_slide_files',
+inj_files, inj_tags = ahope.setup_injection_workflow(workflow,  
+                                           output_dir=injDir, tags=['2134'])
+timeSlideFiles = ahope.setup_timeslides_workflow(workflow,
+                                           output_dir=tsDir,
                                            timeSlideSectionName='tisi')
 
 all_files.extend(inj_files)
 tags = ["full_data"] + inj_tags
 inj_files = [None] + inj_files
+output_dirs = [fdDir]
+output_dirs.extend([os.path.join(currDir, tag) for tag in inj_tags])
 all_coincs = ahope.AhopeFileList([])
-for inj_file, tag in zip(inj_files, tags):
+for inj_file, tag, output_dir in zip(inj_files, tags, output_dirs):
     if not tag == 'full_data':
         timeSlideTags = ['zerolag']
     else:
         timeSlideTags = ['zerolag','slides']
     insps = ahope.setup_matchedfltr_workflow(workflow, scienceSegs, 
                                            datafind_files, splitbank_files, 
-                                           tag, injection_file=inj_file,
+                                           output_dir, injection_file=inj_file,
                                            tags = [tag])
     all_files.extend(insps)
-    coincs = ahope.setup_coincidence_workflow(workflow, scienceSegs,
-                                        segsFileList, timeSlideFiles, insps,
-                                        tag, tags=[tag], maxVetoCat=5,
+    coincs = ahope.setup_coincidence_workflow(workflow, segsFileList,
+                                        timeSlideFiles, insps, output_dir,
+                                        tags=[tag], maxVetoCat=5,
                                         timeSlideTags=timeSlideTags)
     all_files.extend(coincs)
     all_coincs.extend(coincs)
@@ -153,7 +143,7 @@ for coincFile in all_coincs:
 # Prepare the input for compatibility with pipedown
 
 # Copy segment files
-ifoString = ''.join(ifos)
+ifoString = workflow.ifoString
 for category in range(1, 6):
     vetoTag = 'CUMULATIVE_CAT_%d' %(category)
     ahopeVetoFile = segsFileList.find_output_with_tag(vetoTag)
