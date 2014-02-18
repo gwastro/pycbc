@@ -122,7 +122,7 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         out_dir: path, optional
             The folder to store output files of this job. 
         tags : list of strings
-            A list of strings that is used to indentify this job.
+            A list of strings that is used to identify this job.
         """
         self.exe_name = exe_name
         self.cp = cp
