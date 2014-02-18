@@ -257,7 +257,7 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
             if category <= maxVetoAtRunTime:
                 logging.info("Generating CAT_%d segments for ifo %s." \
                              %(category,ifo))
-                currVetoXmlFile.node.execute_now()
+                workflow.execute_node(currVetoXmlFile.node)
 
             segFilesList.append(currVetoXmlFile) 
             # Store the CAT_1 veto segs for use below
@@ -312,7 +312,7 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
             get_cumulative_segs_in_workflow(workflow, ifos, currSegFile, 
                         categories, cp, segFilesList, out_dir)
             if category <= maxVetoAtRunTime:
-                currSegFile.node.execute_now()
+                workflow.execute_node(currSegFile.node)
 
             segFilesList.append(currSegFile)
 
