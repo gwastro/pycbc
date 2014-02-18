@@ -670,8 +670,8 @@ class Workflow(object):
         cmd_tuples = node.get_cmd_tuple_list()   
         for cmd in cmd_tuples:
             cmd_list += list(cmd)
-            print cmd
         cmd_list.remove('')
+        cmd_list = [c for cmd in cmd_list for c in cmd.split(' ')]
            
         job_dir = node.job().out_dir
         
