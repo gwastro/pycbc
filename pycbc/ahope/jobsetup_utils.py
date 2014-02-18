@@ -409,16 +409,29 @@ class PyCBCTmpltbankExec(Executable):
         return PyCBCTmpltbankJob(cp, self.exe_name, self.condor_universe,
                                  ifo=ifo, out_dir=out_dir, tags=tags)
 
+class LigoLWCombineSegs(Job):
+    """ 
+    This class is used to create nodes for the ligolw_combine_segments 
+    executable
+    """
+    def create_node(self, valid_seg, veto_files, segment_name):
+        node = Node(self)
+        node.add_var_opt('segment-name', segment_name)
+        for fil in veto_files:
+            node.add_input(fil, argument=True)        
+        node.make_and_add_output(valid_seg, '.xml', 'output')      
+        return node
+
 class LigolwAddJob(Job):
     """
     The class used to create nodes for the ligolw_add executable.
     """
-    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, tags=[]):
+    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
 
     def create_node(self, jobSegment, inputTrigFiles, timeSlideFile=None,
-                    dqSegFile=None):
+                    dqSegFile=None, output=None):
         node = Node(self)
 
         # Very few options to ligolw_add, all input files are given as a long
@@ -437,7 +450,10 @@ class LigolwAddJob(Job):
         # In ihope, these files were named with only participating ifos. Not
         # sure this is worth doing, can can be done with replacing self.ifo
         # here if desired
-        node.make_and_add_output(jobSegment, '.xml.gz', 'output')
+        if output:
+            node.add_output(output, 'output')
+        else:
+            node.make_and_add_output(jobSegment, '.xml.gz', 'output')
         return node
 
 class LigolwAddExec(Executable):
