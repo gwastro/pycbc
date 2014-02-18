@@ -13,8 +13,8 @@ The template bank section of ahope is responsible for gathering/generating the b
 It can run in a number of different modes
 
 - With a pre-generated template bank, which will be used for all ifos
-- By generating unique and independent template banks for each ifo.
-- Further modes can be supported. Please ask, or add yourself!
+- By generating unique and independent template banks for each ifo that are regenerated every approx. 2000s
+- Generating template banks that do not vary over the workflow, can be the same template bank in each ifo or different ones.
 
 The template bank module, by default, is independent of other modules, though it
 is possible to ensure that there is a one-to-one correspondance between template banks and matched-filter outputs. Unlike ihope we are able to have
@@ -60,6 +60,8 @@ The choices here and their description are as described below
 
 * PREGNERATED_BANK - A pregenerated template bank is supplied and this should be used when performing matched-filtering for all ifos and all times. This uses the setup_tmpltbank_pregenerated sub-module.
 * WORKFLOW_INDEPENDENT_IFOS - Template banks will be generated within the workflow. These banks will be made to cover only short (normally ~ 2000s) of data to reflect PSD changes over time and will be independent and distinct for each analysed interferometer. This uses the setup_tmpltbank_dax_generated sub-module.
+* WORKFLOW_INDEPENDENT_IFOS_NODATA - Template banks will be generated within the workflow. There will be one bank for each ifo, which will cover all times. No data frames will be used when constructing the workflow (ie. using a design PSD or similar). This uses the setup_tmpltbank_without_frames sub-module.
+* WORKFLOW_NO_IFO_VARIATION_NODATA - As WORKFLOW_INDEPENDENT_IFOS_NODATA except only one template bank will be generated that is valid for all ifos. This uses the setup_tmpltbank_without_frames sub-module.
 
 Each of these options will describe which subfunction to use. These are described here
 
@@ -69,17 +71,22 @@ Each of these options will describe which subfunction to use. These are describe
 .. autofunction:: pycbc.ahope.setup_tmpltbank_dax_generated
    :noindex:
 
+.. autofunction:: pycbc.ahope.setup_tmpltbank_without_frames
+   :noindex:
+
 When using the setup_tmpltbank_pregenerated sub-module the following additional options apply in the [ahope-tmpltbank] section.
 
 * tmpltbank-pregenerated-bank - PATH - REQUIRED. This is the location of the pre-generated bank that is to be used for all ifos.
+
+No additional options apply when using setup_tmpltbank_without_frames.
 
 When using the setup_tmpltbank_dax_generated sub-module the following additional options apply in the [ahope-templtbank] section.
 
 * tmpltbank-link-to-matchedfltr - OPTIONAL. If this is given ahope will attempt to ensure a one-to-one correspondence between template banks and matched-filter outputs. This may not work in all cases and should be considered an option to be used for comparing with ihope output.
 
-The following options apply only to a specific executable.
+The following options apply only when using setup_tmpltbank_dax_generated and not using lalapps_tmpltbank
 
-* analysis-length = LENGTH_IN_SECONDS (pycbc_geom_nonspinbank only) - REQUIRED. The amount of time in seconds that will be used for frames for PSD generation.
+* analysis-length = LENGTH_IN_SECONDS (not used when lalapps_tmpltbank is the executable) - REQUIRED. The amount of time in seconds that will be used for frames for PSD generation.
 
 $$$$$$$$$$$$$$$
 [executables]
@@ -87,11 +94,13 @@ $$$$$$$$$$$$$$$
 
 If using setup_tmpltbank_pregenerated then no executables are needed, you have already generated the template bank.
 
-If using setup_tmpltbank_dax_generated then you need to supply the template bank executable. This is done in the [executables] section by adding something like:
+If using setup_tmpltbank_dax_generated or setup_tmpltbank_without_frames then you need to supply the template bank executable. This is done in the [executables] section by adding something like:
 
 tmpltbank = /path/to/lalapps_tmpltbank
 
 the option, in this case 'tmpltbank', will be used to specify the constant command line options that are sent to all tmpltbank jobs. Currently this value is hardcoded to tmpltbank, but we plan to change this to allow multiple tmpltbank executables to be used in a single workflow. How to set up the [{exe_name}] section, and which executables are currently supported is discussed below.
+
+If template banks are being generated separately for each ifo then sections named [tmpltbank-${ifo}] (for e.g. [tmpltbank-h1] or [tmpltbank-v1]) can be used to specify options that should only be supplied when running on that ifo.
 
 -------------------------------------------------------------
 Supported template bank exes and instructions for using them

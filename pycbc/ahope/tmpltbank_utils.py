@@ -76,7 +76,7 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
     # up fixed bank, or maybe something else
     if tmpltbankMethod == "PREGENERATED_BANK":
         logging.info("Setting template bank from pre-generated bank(s).")
-        tmplt_banks = setup_tmpltbank_pregenerated(cp, science_segs.keys())
+        tmplt_banks = setup_tmpltbank_pregenerated(workflow, tags=tags)
     # Else we assume template banks will be generated in the workflow
     elif tmpltbankMethod == "WORKFLOW_INDEPENDENT_IFOS":
         logging.info("Adding template bank jobs to workflow.")
@@ -87,9 +87,18 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
         tmplt_banks = setup_tmpltbank_dax_generated(workflow, science_segs,
                                          datafind_outs, output_dir, tags=tags,
                                          link_to_matchedfltr=linkToMatchedfltr)
+    elif tmpltbankMethod == "WORKFLOW_INDEPENDENT_IFOS_NODATA":
+        logging.info("Adding template bank jobs to workflow.")
+        tmplt_banks = setup_tmpltbank_without_frames(workflow, output_dir,
+                                         tags=tags, independent_ifos=True)
+    elif tmpltbankMethod == "WORKFLOW_NO_IFO_VARIATION_NODATA":
+        logging.info("Adding template bank jobs to workflow.")
+        tmplt_banks = setup_tmpltbank_without_frames(workflow, output_dir,
+                                         tags=tags, independent_ifos=False)
     else:
         errMsg = "Template bank method not recognized. Must be either "
-        errMsg += "PREGENERATED_BANK or WORKFLOW_INDEPENDENT_IFOS."
+        errMsg += "PREGENERATED_BANK, WORKFLOW_INDEPENDENT_IFOS "
+        errMsg += "or WORKFLOW_INDEPENDENT_IFOS_NODATA."
         raise ValueError(errMsg)
     
     logging.info("Leaving template bank generation module.")
@@ -136,8 +145,6 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
     # Need to get the exe to figure out what sections are analysed, what is
     # discarded etc. This should *not* be hardcoded, so using a new executable
     # will require a bit of effort here .... 
-    # There is also a stub for a default class using values given in the .ini
-    # file.
 
     ifos = science_segs.keys()
     tmplt_bank_exe = os.path.basename(cp.get('executables','tmpltbank'))
@@ -182,7 +189,69 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
                            allow_overlap=True)
     return tmplt_banks
 
-def setup_tmpltbank_pregenerated(workflow, science_segs, tags=[]):
+def setup_tmpltbank_without_frames(workflow, output_dir,
+                                   tags=[], independent_ifos=False):
+    '''
+    Setup ahope workflow to use a template bank (or banks) that are generated in
+    the workflow, but do not use the data to estimate a PSD, and therefore do
+    not vary over the duration of the workflow. This can either generate one
+    bank that is valid for all ifos at all times, or multiple banks that are
+    valid only for a single ifo at all times (one bank per ifo).
+
+    Parameters
+    ----------
+    workflow: Workflow
+        An instanced class that manages the constructed workflow.
+    output_dir : path string
+        The directory where the template bank outputs will be placed. 
+    tags : list of strings
+        If given these tags are used to uniquely name and identify output files
+        that would be produced in multiple calls to this function.
+    independent_ifos : Boolean, optional (default=False)
+        If given this will produce one template bank per ifo. If not given
+        there will be on template bank to cover all ifos.
+
+    Returns
+    --------
+    AhopeFileList
+        The AhopeFileList holding the details of the template bank(s).
+    '''
+    cp = workflow.cp
+    # Need to get the exe to figure out what sections are analysed, what is
+    # discarded etc. This should *not* be hardcoded, so using a new executable
+    # will require a bit of effort here .... 
+
+    ifos = workflow.ifos
+    fullSegment = workflow.analysis_time
+
+    tmplt_bank_exe = os.path.basename(cp.get('executables','tmpltbank'))
+    # Can not use lalapps_template bank with this
+    if tmplt_bank_exe == 'lalapps_tmpltbank':
+        errMsg = "Lalapps_tmpltbank cannot be used to generate template banks "
+        errMsg += "without using frames. Try another code."
+        raise ValueError(errMsg)
+
+    # Select the appropriate class
+    exe_instance = select_tmpltbankjob_instance(tmplt_bank_exe,'tmpltbank')
+
+    tmplt_banks = AhopeFileList([])
+
+    # Make the distinction between one bank for all ifos and one bank per ifo
+    if independent_ifos:
+        ifoList = [ifo for ifo in ifos]
+    else:
+        ifoList = [''.join(ifos)]
+
+    for ifo in ifoList:
+        job_instance = exe_instance.create_job(workflow.cp, ifo, output_dir,
+                                               tags=tags)
+        node = job_instance.create_nodata_node(fullSegment)
+        workflow.add_node(node)
+        tmplt_banks += node.output_files
+        
+    return tmplt_banks
+
+def setup_tmpltbank_pregenerated(workflow, tags=[]):
     '''
     Setup ahope workflow to use a pregenerated template bank.
     The bank given in cp.get('ahope','pregenerated-template-bank') will be used
@@ -194,10 +263,6 @@ def setup_tmpltbank_pregenerated(workflow, science_segs, tags=[]):
     ----------
     workflow: Workflow
         An instanced class that manages the constructed workflow.
-    science_segs : Keyed dictionary of glue.segmentlist objects
-        scienceSegs[ifo] holds the science segments to be analysed for each
-        ifo. This is used here to get the active ifos, and the full range of
-        time over which to declare the input file valid.
     tags : list of strings
         If given these tags are used to uniquely name and identify output files
         that would be produced in multiple calls to this function.
@@ -213,11 +278,11 @@ def setup_tmpltbank_pregenerated(workflow, science_segs, tags=[]):
     # Set up class for holding the banks
     tmpltBanks = AhopeFileList([])
 
+    cp = workflow.cp
     pre_gen_bank = cp.get_opt_tags('ahope','tmpltbank-pregenerated-bank', tags)
-    ifos = science_segs.keys()
-    global_seg = get_full_analysis_chunk(science_segs)
+    global_seg = workflow.analysis_time
 
-    for ifo in ifos:
+    for ifo in workflow.ifos:
         # Add bank for that ifo
         user_tag = "PREGEN_TMPLTBANK"
         file_url = urlparse.urljoin('file:', urllib.pathname2url(pre_gen_bank))
