@@ -33,7 +33,7 @@ import logging
 from glue import segments
 from pycbc.ahope.ahope_utils import *
 
-def setup_timeslides_workflow(workflow, science_segs, output_dir=None, tags=[],
+def setup_timeslides_workflow(workflow, output_dir=None, tags=[],
                               timeSlideSectionName='ligolw_tisi'):
     '''
     Setup generation of time_slide input files in the ahope workflow.
@@ -45,8 +45,6 @@ def setup_timeslides_workflow(workflow, science_segs, output_dir=None, tags=[],
     -----------
     Workflow : ahope.Workflow
         The ahope workflow instance that the coincidence jobs will be added to.
-    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
-        The list of times that are being analysed in this workflow. 
     output_dir : path
         The directory in which output files will be stored.
     tags : list of strings (optional, default = [])
@@ -72,11 +70,9 @@ def setup_timeslides_workflow(workflow, science_segs, output_dir=None, tags=[],
     if injectionMethod != "AT_RUNTIME":
         raise ValueError("Currently only 'AT_RUNTIME' is a supported method.")
 
-    ifoList = science_segs.keys()
-    ifoList.sort(key=str.lower)
-    ifoString = ''.join(ifoList)
-
-    fullSegment = get_full_analysis_chunk(science_segs)    
+    ifoList = workflow.ifos
+    ifoString = workflow.ifoString
+    fullSegment = workflow.analysis_time
 
     timeSlideOuts = AhopeFileList([])
 

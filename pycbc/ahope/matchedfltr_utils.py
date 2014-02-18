@@ -87,7 +87,7 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
     inspiral_outs = setup_matchedfltr_dax_generated(workflow, science_segs, 
                                      datafind_outs, tmplt_banks, output_dir,
                                      injection_file=injection_file, tags=tags,
-                                     link_to_tmpltbank=True)
+                                     link_to_tmpltbank=False)
     logging.info("Leaving matched-filtering setup module.")    
     return inspiral_outs
 

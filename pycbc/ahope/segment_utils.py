@@ -37,8 +37,7 @@ from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.ahope.ahope_utils import *
 from pycbc.ahope.jobsetup_utils import *
 
-def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir,
-                             tag=None):
+def setup_segment_generation(workflow, out_dir, tag=None):
     """
     This function is the gateway for setting up the segment generation steps in an
     ahope workflow. It is designed to be able to support multiple ways of obtaining
@@ -50,12 +49,9 @@ def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir,
     -----------
     Workflow : ahope.Workflow
         The ahope workflow instance that the coincidence jobs will be added to.
-    ifos : list of ifo strings
-        The ifos for which to attempt to obtain segments for this analysis.
-    start_time : gps time (either int/LIGOTimeGPS)
-        The time at which to begin searching for segments.
-    end_time : gps time (either int/LIGOTimeGPS)
-        The time at which to stop searching for segments.
+        This instance also contains the ifos for which to attempt to obtain
+        segments for this analysis and the start and end times to search for
+        segments over.
     out_dir : path
         The directory in which output will be stored.    
     tag : string, optional (default=None)
@@ -137,8 +133,8 @@ def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir,
         raise ValueError(msg)
         
     logging.info("Generating segments with setup_segment_gen_mixed")
-    segFilesList = setup_segment_gen_mixed(workflow, ifos, veto_categories, 
-                             start_time, end_time, out_dir, max_veto, tag=tag,
+    segFilesList = setup_segment_gen_mixed(workflow, veto_categories, 
+                             out_dir, max_veto, tag=tag,
                              generate_coincident_segs=generate_coincident_segs)
     logging.info("Segments obtained")
 
@@ -147,7 +143,7 @@ def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir,
     # setup_segment_gen_mixed.
     # This also applies the minimum science length
     segsToAnalyse = {}
-    for ifo in ifos:
+    for ifo in workflow.ifos:
         analSegs = segFilesList.find_output_with_ifo(ifo)
         analSegs = analSegs.find_output_with_tag('ANALYSED')
         assert len(analSegs) == 1
@@ -168,8 +164,8 @@ def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir,
     logging.info("Leaving segment generation module")
     return segsToAnalyse, segFilesList
 
-def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
-                            end_time, out_dir, maxVetoAtRunTime, tag=None,
+def setup_segment_gen_mixed(workflow, veto_categories, out_dir, 
+                            maxVetoAtRunTime, tag=None,
                             generate_coincident_segs=True):
     """
     This function will generate veto files for each ifo and for each veto
@@ -186,15 +182,12 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
     -----------
     Workflow : hope.Workflow
         The ahope workflow instance that the coincidence jobs will be added to.
-    ifos : list of ifo strings
-        The ifos for which to attempt to obtain segments for this analysis.
+        This instance also contains the ifos for which to attempt to obtain
+        segments for this analysis and the start and end times to search for
+        segments over.
     veto_categories : list of ints
         List of veto categories to generate segments for. If this stops being
         integers, this can be changed here.
-    start_time : gps time (either int/LIGOTimeGPS)
-        The time at which to begin searching for segments.
-    end_time : gps time (either int/LIGOTimeGPS)
-        The time at which to stop searching for segments.
     out_dir : path
         The directory in which output will be stored.    
     maxVetoAtRunTime : int
@@ -225,16 +218,15 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
         of the instance. (If it will be generated in the workflow it will 
         not be because I am not psychic).
     """
-    # FIXME: Would like to avoid this by having ifos listed in the Workflow
-    # Put in alphabetical order
-    ifos.sort(key=str.lower)
     cp = workflow.cp
     segFilesList = AhopeFileList([])
-    segValidSeg = segments.segment([start_time,end_time])
+    start_time = workflow.analysis_time[0]
+    end_time = workflow.analysis_time[1]
+    segValidSeg = workflow.analysis_time
     # Will I need to add some jobs to the workflow?
     vetoGenJob = create_segs_from_cats_job(cp, out_dir, ''.join(ifos))
     
-    for ifo in ifos:
+    for ifo in workflow.ifos:
         logging.info("Generating science segments for ifo %s" %(ifo))
         currSciSegs, currSciXmlFile = get_science_segments(ifo, cp, start_time,
                                                     end_time, out_dir, tag=tag)
@@ -287,7 +279,7 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
     if generate_coincident_segs:
         # Need to make some combined category veto files to use when vetoing
         # segments and triggers.
-        ifoString = ''.join(ifos)
+        ifoString = workflow.ifoString
         categories = []
         for category in veto_categories:
             categories.append(category)
@@ -312,7 +304,7 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
                 execute_status = True
             else:
                 execute_status = False
-            get_cumulative_segs(workflow, ifos, currSegFile,  categories,
+            get_cumulative_segs(workflow, currSegFile,  categories,
                                 segFilesList, out_dir, 
                                 execute_now=execute_status)
 
@@ -514,7 +506,7 @@ def create_segs_from_cats_job(cp, out_dir, ifoString, tag=None):
 
     return job
     
-def get_cumulative_segs(workflow, ifos, currSegFile, categories,
+def get_cumulative_segs(workflow, currSegFile, categories,
                                    segFilesList, out_dir, tags=[],
                                    execute_now=False):
     """
@@ -525,8 +517,6 @@ def get_cumulative_segs(workflow, ifos, currSegFile, categories,
     -----------
     workflow: Workflow
         An instance of the ahope Workflow class that manages the workflow.
-    ifos : list
-        List of ifos contained in the output file
     currSegFile : ahope.AhopeSegFile
         The AhopeSegFile corresponding to this file that will be created.
     categories : int
@@ -546,7 +536,7 @@ def get_cumulative_segs(workflow, ifos, currSegFile, categories,
     segment_name = segment_name = 'VETO_CAT%d_CUMULATIVE' % (categories[-1])
     cp = workflow.cp
     # calculate the cumulative veto files for a given ifo
-    for ifo in ifos:
+    for ifo in workflow.ifos:
         cum_job = LigoLWCombineSegs(cp, 'ligolw_combine_segments', 
                        out_dir=out_dir, tags=tags + [segment_name], ifo=ifo)
         inputs = []
@@ -569,35 +559,6 @@ def get_cumulative_segs(workflow, ifos, currSegFile, categories,
         workflow.execute_node(add_node)
     else:
         workflow.add_node(add_node)
-
-def get_cumulative_segs_input_files(ifos, segFilesList, category):
-    """
-    This function is responsible for identifying which files should be used as input
-    when generating a combined, multi-detector veto file.
-
-    Parameters
-    -----------
-    ifos : list
-        List of ifos contained in the output file
-    segFilesList : List of ahopeSegFiles
-        The list of segment files to be used as input for combining.
-    category : int
-        The veto category to cumulatively include up to in this file.
-
-    Returns
-    --------
-    fileList : ahope.AhopeFileList
-        List of files to use an inputs.
-    """
-    ifoString = ''.join(ifos)
-    fileList = segFilesList.find_output_with_tag('VETO_CAT%d' %(category))
-    assert len(fileList) == len(ifos)
-    # FIXME: Add this back in when not using cumulative categories
-    #if category > 1:
-    #    currTag = 'CUMULATIVE_CAT_%d' %(category - 1)
-    #    fileList.append(segFilesList[ifoString][currTag])
-    return fileList
-    
 
 def fromsegmentxml(file, dict=False, id=None):
     """

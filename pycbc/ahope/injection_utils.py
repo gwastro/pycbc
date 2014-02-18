@@ -36,7 +36,7 @@ from pycbc.ahope.jobsetup_utils import *
 from pycbc.ahope.matchedfltr_utils import *
 from glue import segments
 
-def setup_injection_workflow(workflow, science_segs, output_dir=None,
+def setup_injection_workflow(workflow, output_dir=None,
                              injSectionName='injections', tags =[]):
     '''
     This function is the gateway for setting up injection-generation jobs in an
@@ -49,8 +49,6 @@ def setup_injection_workflow(workflow, science_segs, output_dir=None,
     -----------
     Workflow : ahope.Workflow
         The ahope workflow instance that the coincidence jobs will be added to.
-    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
-        The list of times that are being analysed in this workflow. 
     output_dir : path
         The directory in which injection files will be stored.
     injSectionName : string (optional, default='injections')
@@ -82,7 +80,7 @@ def setup_injection_workflow(workflow, science_segs, output_dir=None,
         raise ValueError("Currently only 'IN_WORKFLOW' is a supported method.")
 
     # Get full analysis segment for output file naming
-    fullSegment = pycbc.ahope.get_full_analysis_chunk(science_segs)
+    fullSegment = workflow.analysis_time
 
     # FIXME: Add ability to specify different exes
     inj_exe = LalappsInspinjExec(injSectionName)

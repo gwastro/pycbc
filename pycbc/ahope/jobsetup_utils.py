@@ -389,7 +389,29 @@ class PyCBCTmpltbankJob(Job):
         node.make_and_add_output(valid_seg, '.xml.gz', 'output-file')
         node.add_input(cache_file, opt='frame-cache')
         return node
-        
+
+    def create_nodata_node(self, valid_seg):
+        """
+        A simplified version of create_node that creates a node that does not
+        need to read in data.
+ 
+        Parameters
+        -----------
+        valid_seg : glue.segment
+            The segment over which to declare the node valid. Usually this
+            would be the duration of the analysis.
+
+        Returns
+        --------
+        node : ahope.Node
+            The instance corresponding to the created node.
+        """
+        node = Node(self)
+
+        # Set the output file
+        node.make_and_add_output(valid_seg, '.xml.gz', 'output-file')
+        return node
+
     def get_valid_times(self):
         pad_data = int(self.get_opt( 'pad-data'))
         analysis_length = int(self.cp.get('ahope-tmpltbank', 'analysis-length'))

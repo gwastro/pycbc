@@ -37,7 +37,7 @@ from pycbc.ahope.ahope_utils import *
 from pycbc.ahope.jobsetup_utils import *
 from pylal import ligolw_cafe, ligolw_tisi
 
-def setup_coincidence_workflow(workflow, science_segs, segsList, timeSlideFiles,
+def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
                                inspiral_outs, output_dir, maxVetoCat=5,
                                tags=[], timeSlideTags=None):
     '''
@@ -50,8 +50,6 @@ def setup_coincidence_workflow(workflow, science_segs, segsList, timeSlideFiles,
     -----------
     Workflow : ahope.Workflow
         The ahope workflow instance that the coincidence jobs will be added to.
-    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
-        The list of times that are being analysed in this workflow. 
     segsList : ahope.AhopeFileList
         The list of files returned by ahope's segment module that contains
         pointers to all the segment files generated in the workflow. If the
@@ -103,7 +101,7 @@ def setup_coincidence_workflow(workflow, science_segs, segsList, timeSlideFiles,
 
     # If you want the ligolw_add outputs, call this function directly
     coinc_outs, _ = setup_coincidence_workflow_ligolw_thinca(workflow,
-                     science_segs, segsList, timeSlideFiles, inspiral_outs,
+                     segsList, timeSlideFiles, inspiral_outs,
                      output_dir, maxVetoCat=maxVetoCat, tags=tags,
                      timeSlideTags=timeSlideTags)
 
@@ -111,7 +109,7 @@ def setup_coincidence_workflow(workflow, science_segs, segsList, timeSlideFiles,
 
     return coinc_outs
 
-def setup_coincidence_workflow_ligolw_thinca(workflow, science_segs, segsList,
+def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
                                              timeSlideFiles, inspiral_outs, 
                                              output_dir, maxVetoCat=5, tags=[],
                                              timeSlideTags=None):
@@ -123,8 +121,6 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, science_segs, segsList,
     -----------
     Workflow : ahope.Workflow
         The ahope workflow instance that the coincidence jobs will be added to.
-    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
-        The list of times that are being analysed in this workflow. 
     segsList : ahope.AhopeFileList
         The list of files returned by ahope's segment module that contains
         pointers to all the segment files generated in the workflow. If the
@@ -163,11 +159,6 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, science_segs, segsList,
     ligolwAddOuts : ahope.AhopeFileList
         A list of the output files generated from ligolw_add.
     """
-    # FIXME: Order of ifoList is not necessarily H1L1V1
-    # FIXME: eg. full analysis segment of 968976015-969062415 gives "V1H1L1"
-    ifoList = science_segs.keys()
-    ifoList.sort(key=str.lower)
-    ifoString = ''.join(ifoList)
     veto_categories = range(1,maxVetoCat+1)
 
     # setup code for each veto_category
@@ -209,14 +200,14 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, science_segs, segsList,
 
             currLigolwThincaOuts, currLigolwAddOuts = \
                   setup_snglveto_workflow_ligolw_thinca(workflow, 
-                                        science_segs, dqSegFile, tisiOutFile,
+                                        dqSegFile, tisiOutFile,
                                         dqVetoName, inspiral_outs, output_dir,
                                         tags=curr_thinca_job_tags)
             ligolwAddOuts.extend(currLigolwAddOuts)
             ligolwThincaOuts.extend(currLigolwThincaOuts)
     return ligolwThincaOuts, ligolwAddOuts
 
-def setup_snglveto_workflow_ligolw_thinca(workflow, science_segs, dqSegFile,
+def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile,
                                           tisiOutFile, dqVetoName,
                                           inspiral_outs, output_dir, tags=[]):
     '''
@@ -228,8 +219,6 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, science_segs, dqSegFile,
     -----------
     Workflow : ahope.Workflow
         The ahope workflow instance that the coincidence jobs will be added to.
-    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
-        The list of times that are being analysed in this workflow. 
     dqSegFile : ahope.AhopeSegFile
         The file that contains the data-quality segments to be applied to jobs
         setup by this call to this function.
@@ -257,7 +246,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, science_segs, dqSegFile,
 
     '''
     cp = workflow.cp
-    ifoString = ''.join(science_segs.keys())
+    ifoString = workflow.ifoString
 
     # Next we run ligolw_cafe. This is responsible for
     # identifying what times will be used for the ligolw_thinca jobs and what

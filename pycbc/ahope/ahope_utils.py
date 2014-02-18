@@ -552,7 +552,7 @@ class Workflow(object):
     generate cache files from the inputs. It makes heavy use of the
     pipeline.CondorDAG class, which is instantiated under self.dag.
     """
-    def __init__(self, config):
+    def __init__(self, config, start_time, end_time):
         """
         Create an aHOPE workflow
         
@@ -561,9 +561,24 @@ class Workflow(object):
         config : str
              The path of the ahope configuration file. This is read in and
              stored under self.cp as a ConfigParser.ConfigParser instance.
+        start_time : int
+             The time at which to start considering for analysis.
+        end_time : int
+             The time after which not to consider for analysis.
         """
         # Parse ini file
         self.cp = parse_ahope_ini_file(config)
+
+        # Set global values
+        self.analysis_time = segments.segment([start_time,end_time])
+
+        # Set the ifos to analyse
+        ifos = []
+        for ifo in self.cp.options('ahope-ifos'):
+            ifos.append(ifo.upper())
+        self.ifos = ifos
+        self.ifos.sort(key=str.lower)
+        self.ifoString = ''.join(self.ifos)
         
         if type(config) is list:
             self.basename = basename(splitext(config[0])[0])
