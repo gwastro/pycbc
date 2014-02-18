@@ -492,32 +492,6 @@ class Node(pipeline.CondorDAGNode):
         # original name
         if hasattr(self, 'unreliable'):
             pass
-            
-    def execute_now(self):
-        """ Execute this node immediately.
-        """
-        if len(self.partitioned_input_files) > 0:
-            raise RuntimeError('Cannot execute a paritioned node') 
-            
-        for fil in self.input_files:
-            if hasattr(fil, 'node'):
-                fil.node.execute_now()
-        
-        cmd_list = [self.job().get_executable()]
-        cmd_tuples = self.get_cmd_tuple_list()   
-        for cmd in cmd_tuples:
-            cmd_list += list(cmd)
-        cmd_list.remove('')
-           
-        job_dir = self.job().out_dir
-        
-        if len(self.output_files) > 0:
-            base_name = self.output_files[0].filename
-        else:
-            base_name = self.job().exe_name
-        
-        make_external_call(cmd_list, outDir=os.path.join(job_dir, 'logs'),
-                                     outBaseName=base_name)
 
 class Executable(object):
     """
@@ -669,7 +643,7 @@ class Workflow(object):
                             n.set_jobnum_tag(tag)
                         else:
                             raise ValueError('This node does not support '
-                                             'partitioned files as input')                                 
+                                   'partitioned files as input')                                 
                     self.dag.add_node(n)
                 file.node = nodes
         
@@ -680,7 +654,34 @@ class Workflow(object):
                     node.add_output_file(path)
                     if hasattr(file, 'opt'):
                         node.add_var_opt(file.opt, path)  
-            self.dag.add_node(node)   
+            self.dag.add_node(node)  
+            
+    def execute_node(self, node):
+        """ Execute this node immediately.
+        """
+        if len(node.partitioned_input_files) > 0:
+            raise RuntimeError('Cannot execute a paritioned node') 
+            
+        for fil in node.input_files:
+            if hasattr(fil, 'node'):
+                self.execute_node(node)
+        
+        cmd_list = [node.job().get_executable()]
+        cmd_tuples = node.get_cmd_tuple_list()   
+        for cmd in cmd_tuples:
+            cmd_list += list(cmd)
+            print cmd
+        cmd_list.remove('')
+           
+        job_dir = node.job().out_dir
+        
+        if len(self.output_files) > 0:
+            base_name = node.output_files[0].filename
+        else:
+            base_name = node.job().exe_name
+        
+        make_external_call(cmd_list, outDir=os.path.join(job_dir, 'logs'),
+                                     outBaseName=base_name) 
         
     def write_plans(self):
         """
