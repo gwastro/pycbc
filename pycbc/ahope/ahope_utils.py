@@ -498,13 +498,17 @@ class Node(pipeline.CondorDAGNode):
         """
         if len(self.partitioned_input_files) > 0:
             raise RuntimeError('Cannot execute a paritioned node') 
+            
+        for fil in self.input_files:
+            if hasattr(fil, 'node'):
+                fil.node.execute_now()
         
         cmd_list = [self.job().get_executable()]
         cmd_tuples = self.get_cmd_tuple_list()   
         for cmd in cmd_tuples:
             cmd_list += list(cmd)
+        cmd_list.remove('')
            
-        print cmd_list, self.job().out_dir
         job_dir = self.job().out_dir
         
         if len(self.output_files) > 0:
