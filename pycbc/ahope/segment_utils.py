@@ -35,6 +35,7 @@ import pycurl
 from glue import segments, pipeline
 from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.ahope.ahope_utils import *
+from pycbc.ahope.jobsetup_utils import *
 
 def setup_segment_generation(workflow, ifos, start_time, end_time, out_dir,
                              tag=None):
@@ -260,9 +261,7 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
                 currVetoXmlFiles = get_veto_segs_in_workflow(ifo, 
                                   category, start_time, end_time, out_dir,
                                   workflow, vetoGenJob)        
-                # Don't know what the segments are as they haven't been
-                # calculated yet!
-                vetoSegs[category] = None
+
             segFilesList.append(currVetoXmlFiles) 
             # Store the CAT_1 veto segs for use below
             if category == 1:
@@ -289,7 +288,9 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
         # Need to make some combined category veto files to use when vetoing
         # segments and triggers.
         ifoString = ''.join(ifos)
+        categories = []
         for category in veto_categories:
+            categories.append(category)
             # Set file name in ahope standard
             if tag:
                 currTags = [tag, 'CUMULATIVE_CAT_%d' %(category)]
@@ -305,16 +306,14 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
                                    segValidSeg, currUrl, segList=analysedSegs,
                                    tags=currTags)
             # And actually make the file (or queue it in the workflow)
-            if category <= maxVetoAtRunTime:
-                logging.info("Generating combined, cumulative CAT_%d segments."\
+            logging.info("Generating combined, cumulative CAT_%d segments."\
                              %(category))
+            if category <= maxVetoAtRunTime:
                 get_cumulative_segs_at_runtime(ifos, currSegFile, category, cp,
                                                segFilesList, out_dir)
             else:
-                errMsg = "Generating segments in the workflow is temporarily "
-                errMsg += "disabled as ligolw_segments_compat cannot be added "
-                errMsg += "to the ahope workflow without breaking pegasus."
-                raise NotImplementedError(errMsg)
+                get_cumulative_segs_in_workflow(workflow, ifos, currSegFile, 
+                                        categories, cp, segFilesList, out_dir)
             segFilesList.append(currSegFile)
 
     return segFilesList
@@ -582,6 +581,54 @@ def create_segs_from_cats_job(cp, out_dir, ifoString, tag=None):
                        'USER=$ENV(USER);X509_USER_PROXY=%s' % proxyfile)
 
     return job
+    
+def get_cumulative_segs_in_workflow(workflow, ifos, currSegFile, categories, cp,
+                                   segFilesList, out_dir, tags=[]):
+    """
+    Function to generate one of the cumulative, multi-detector segment files
+    as part of the workflow.
+   
+    Parameters
+    -----------
+    workflow: Workflow
+        An instance of the ahope Workflow class that manages the workflow.
+    ifos : list
+        List of ifos contained in the output file
+    currSegFile : ahope.AhopeSegFile
+        The AhopeSegFile corresponding to this file that will be created.
+    categories : int
+        The veto categories to include in this cumulative veto.
+    cp : ahope.AhopeConfigParser
+        The in-memory representation of the configuration (.ini) files
+    segFilesList : Listionary of ahopeSegFiles
+        The list of segment files to be used as input for combining.
+    out_dir : path
+        The directory to write output to.
+    tags : list of strings
+        A list of strings that is used to identify this job
+    """
+    add_inputs = AhopeFileList([])
+    valid_segment = currSegFile.segment
+    segment_name = segment_name = 'VETO_CAT%d_CUMULATIVE' % (categories[-1])
+    
+    # calculate the cumulative veto files for a given ifo
+    for ifo in ifos:
+        cum_job = LigoLWCombineSegs(cp, 'ligolw_combine_segments', 
+                       out_dir=out_dir, tags=tags + [segment_name], ifo=ifo)
+        inputs = []
+        for category in categories:
+            fileList = segFilesList.find_output_with_tag('VETO_CAT%d' %(category))
+            inputs.append(fileList)                                                       
+        
+        cum_node = cum_job.create_node(valid_segment, inputs, segment_name)
+        workflow.add_node(cum_node)
+        add_inputs += cum_node.output_files
+            
+    # add cumulative files for each ifo together
+    add_job = LigolwAddJob(cp, 'llwadd', ifo=ifo, out_dir=out_dir, tags=tags)
+    add_node = add_job.create_node(valid_segment, add_inputs, output=currSegFile)
+    workflow.add_node(add_node)
+    
 
 def get_cumulative_segs_at_runtime(ifos, currSegFile, category, cp,
                                    segFilesList, out_dir):
