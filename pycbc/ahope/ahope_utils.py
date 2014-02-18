@@ -664,7 +664,7 @@ class Workflow(object):
             
         for fil in node.input_files:
             if hasattr(fil, 'node'):
-                self.execute_node(node)
+                self.execute_node(fil.node)
         
         cmd_list = [node.job().get_executable()]
         cmd_tuples = node.get_cmd_tuple_list()   
@@ -675,7 +675,7 @@ class Workflow(object):
            
         job_dir = node.job().out_dir
         
-        if len(self.output_files) > 0:
+        if len(node.output_files) > 0:
             base_name = node.output_files[0].filename
         else:
             base_name = node.job().exe_name
