@@ -81,6 +81,34 @@ More details of how to run this is found in the following link:
 
    ahope/daily_ahope
 
+=====================
+weekly_ahope
+=====================
+
+This is an example of how to run a coincidence ahope workflow, mimicking standard ihope coincidence analysis as closely as possible. It calls into pipedown to do the post-processing and using write_ihope_page to make an output html page. In total this will:
+
+* Get science and data-quality segments from the server.
+* Query the datafind server for frames.
+* Create the template bank jobs needed to cover the times
+* Split the template banks (into whatever number is specified in the ini file). This step could be easily removed, just delete this module in the python file and send the matched-filtering code the template bank input directly.
+* Run the matched-filtering code on the split template banks
+* Use ligolw_add and ligolw_sstinca to generate coincidence triggers
+* Do some compatibility conversions and then call pipedown to create a dag to do the post-processing
+* Add a node to run write_ihope_page at the end of analysis
+* Write a dag/dax to file that can be submitted to run the workflow
+
+This will therefore set up a *almost complete* mimic of a weekly ihope analysis and automatically generate the output webpage at the end of the analysis.
+
+We hope to run this in ER5 along with the standard weekly ihope runs for comparison.
+
+More details of how to run this is found in the following link:
+
+.. toctree::
+   :maxdepth: 1
+
+   ahope/weekly_ahope
+
+
 ====================
 Initialization
 ====================
