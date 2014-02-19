@@ -140,6 +140,9 @@ for coincFile in all_coincs:
     # Here I assume that no partitioned files are present
     pipedownParents.append(coincFile.node)
 
+# Dump out the formatted, combined ini file
+workflow.cp.write(file("ahope_configuration.ini", "w"))
+
 # Prepare the input for compatibility with pipedown
 
 # Copy segment files
