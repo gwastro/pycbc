@@ -11,9 +11,9 @@ Introduction
 The time-slide generation module of ahope is responsible for generating time
 slide input files, which are used to tell analysis codes which time slides they
 need to perform when estimating the background using the time-slides method.
-An example of where this is needed is when using ligolw_thinca a time slide xml file is required as input, even if no time slides are being performed (in that case the time slide file corresponds to no-lags only).
-
-Currently the only option in this module is to have the time slide files generated at runtime. This is because the interface to ligolw_tisi is not compatible with ConfigParser. This introduces a number of issues/hacks in this module which need resolving (as mentioned on the to-do list).
+An example of where this is needed is when using ligolw_thinca a time slide xml file is required as input, even if no time slides are being performed (in that case the time slide file corresponds to no-lags only). The module can either
+generate time slide files at runtime, within the workflow or take pregenerated
+input files.
 
 The return of the time-slide generation module is an AhopeFileList of the time-slide files generated/supplied to this module. It is possible to call this module multiple times by using the tags key-word argument, but we have not foreseen
 a case where this would be needed. One call should generate all needed time-slide input files.
@@ -26,7 +26,6 @@ Using this module requires a number of things
 
 * A configuration file (or files) containing the information needed to tell this module how to generate (or gather) the template banks (described below).
 * An initialized instance of the ahope workflow class, containing the ConfigParser.
-* A list of science segments, which are only used to identify start and end times for file naming and because AhopeFiles require associated valid segment times.
 
 This module is then called according to
 
@@ -48,27 +47,40 @@ tell the workflow how to construct (or gather) the time slide files. The first o
 
 * timeslides-method = VALUE
 
-
 The choices here and their description are as described below
 
-* AT_RUNTIME - The time slide files are generated within the call to this module.
-* Action items to add other methods (IN_WORKFLOW and PREGENERATED) can be found in the to-do list, but some of this requires the ligolw_tisi issues to be addressed first.
+* IN_WORKFLOW - The time slide file generation will be added as jobs in the workflow and will be generated after submission of the workflow. **Not yet supported because of ligolw_tisi issues mentioned on to-do list**
+* AT_RUNTIME - The time slide jobs will be run directly within this module.
+* PREGENERATED - The time slide files will be supplied as pregenerated files.
 
-With only one current option, this module has no sub-modules. This may change in the future.
+When using IN_WORKFLOW or AT_RUNTIME no additional options are required in the [ahope-timeslides] section.
 
-Currently no additional options are required in the [ahope-injections] section.
+When using PREGENERATED the additional option is needed:
+
+* timeslides-pregenerated-file = PATH - Specifies the location of the pregenerated time slides file.
 
 $$$$$$$$$$$$$$$
 [executables]
 $$$$$$$$$$$$$$$
 
-In this section you need to supply the executable that will be used to generate the time slide files. This is done in the [executables] section by adding something like:
+**PLEASE READ THIS EVEN IF USING method=PREGENERATED**
+
+In this section, if not using PREGENERATED you need to supply the executable that will be used to generate the time slide files. This is done in the [executables] section by adding something like:
 
 timeslides = /path/to/ligolw_tisi
 
 the option, in this case 'timeslides', will be used to specify the constant command line options that are sent to all ligolw_tisi jobs. The tag 'timeslides' can be changed, it is currently supplied as a key-word argument when calling the function. 'ligolw_tisi' is the default.
 
 **PLEASE NOTE THE ISSUES WHEN USING ligolw_tisi AS REPORTED BELOW**
+
+**IMPORTANT** the time slides tag name, "tisi" by default, is used to identify which time slide files are to be produced. The module will search for modules called [tisi-XXXX] and generate one tisi file for every sub-section using XXXX as a tag.
+
+When using the IN_WORKFLOW option, value pairs in [tisi-XXXX]
+are also used to specify options specific to that
+particular injection set. These options will be directly supplied to the
+executable being used to generate the file.
+
+**PLEASE NOTE:** When using PREGENERATED the time slide names are still identified by looking in the "tisi-XXXX" sections (a path in [executables] is not needed). These sections will be empty in this case. Also note that as XXXX is used as a tag you can use [ahope-timeslides-XXXX] section to supply unique pregenerated injection files. You can also use this to supply a mix of pregenerated, and not-pregenerated time slide files.
 
 ----------------------------------------------------------------
 Supported injection executables and instructions for using them
