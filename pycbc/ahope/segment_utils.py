@@ -224,7 +224,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
     end_time = workflow.analysis_time[1]
     segValidSeg = workflow.analysis_time
     # Will I need to add some jobs to the workflow?
-    vetoGenJob = create_segs_from_cats_job(cp, out_dir, ''.join(ifos))
+    vetoGenJob = create_segs_from_cats_job(cp, out_dir, workflow.ifoString)
     
     for ifo in workflow.ifos:
         logging.info("Generating science segments for ifo %s" %(ifo))
@@ -554,7 +554,8 @@ def get_cumulative_segs(workflow, currSegFile, categories,
             
     # add cumulative files for each ifo together
     add_job = LigolwAddJob(cp, 'llwadd', ifo=ifo, out_dir=out_dir, tags=tags)
-    add_node = add_job.create_node(valid_segment, add_inputs, output=currSegFile)   
+    add_node = add_job.create_node(valid_segment, add_inputs,
+                                   output=currSegFile)   
     if execute_now:
         workflow.execute_node(add_node)
     else:
