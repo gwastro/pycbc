@@ -91,13 +91,16 @@ def setup_injection_workflow(workflow, output_dir=None,
         injectionMethod = workflow.cp.get_opt_tags("ahope-injections", 
                                                  "injections-method", currTags)
 
-        if injectionMethod == "IN_WORKFLOW":
+        if injectionMethod in ["IN_WORKFLOW", "AT_RUNTIME"]:
             # FIXME: Add ability to specify different exes
             inj_exe = LalappsInspinjExec(injSectionName)
             inj_job = inj_exe.create_job(workflow.cp, tags=currTags,
                                          out_dir=output_dir)
             node = inj_job.create_node(fullSegment)
-            workflow.add_node(node)
+            if injectionMethod == "AT_RUNTIME":
+                workflow.execute_node(node)
+            else:
+                workflow.add_node(node)
             injFile = node.output_files[0]
         elif injectionMethod == "PREGENERATED":
             injectionFilePath = workflow.cp.get_opt_tags("ahope-injections",
@@ -107,8 +110,8 @@ def setup_injection_workflow(workflow, output_dir=None,
             injFile = AhopeFile('HL', 'PREGEN_INJFILE', fullSegment, file_url,
                                 tags=currTags)
         else:
-            errMsg = "Injection method must be one of IN_WORKFLOW "
-            errMsg += "or PREGENERATED. Got %s." %(injectionMethod)
+            errMsg = "Injection method must be one of IN_WORKFLOW, "
+            errMsg += "AT_RUNTIME or PREGENERATED. Got %s." %(injectionMethod)
             raise ValueError(errMsg)
 
         inj_files.append(injFile)

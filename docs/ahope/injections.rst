@@ -51,9 +51,10 @@ tell the workflow how to construct (or gather) the injection files. The first op
 The choices here and their description are as described below
 
 * IN_WORKFLOW - The injection file generation will be added as jobs in the workflow and will be generated after submission of the workflow.
+* AT_RUNTIME - The injection jobs will be run directly within this module.
 * PREGENERATED - The injection files will be supplied as pregenerated files.
 
-When using IN_WORKFLOW no additional options are required in the [ahope-injections] section.
+When using IN_WORKFLOW or AT_RUNTIME no additional options are required in the [ahope-injections] section.
 
 When using PREGENERATED the additional option is needed:
 
@@ -63,7 +64,9 @@ $$$$$$$$$$$$$$
 [executables]
 $$$$$$$$$$$$$$
 
-In this section you need to supply the executable that will be used to generate the injection files. This is done in the [executables] section by adding something like:
+**PLEASE READ THIS EVEN IF USING method=PREGENERATED**
+
+In this section, if not using PREGENERATED, you need to supply the executable that will be used to generate the injection files. This is done in the [executables] section by adding something like:
 
 injections = /path/to/lalapps_inspinj
 
