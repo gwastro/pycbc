@@ -37,7 +37,7 @@ import numpy
 def threshold(series, value):
     """Return list of values and indices values over threshold in series. 
     """ 
-    
+
 @schemed("pycbc.events.threshold_")
 def threshold_and_cluster(series, threshold, window):
     """Return list of values and indices values over threshold in series. 
