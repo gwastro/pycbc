@@ -418,7 +418,7 @@ class LigoLWCombineSegs(Job):
         node = Node(self)
         node.add_var_opt('segment-name', segment_name)
         for fil in veto_files:
-            node.add_input(fil, argument=True)        
+            node.add_input(fil, argument=True)   
         node.make_and_add_output(valid_seg, '.xml', 'output')      
         return node
 

@@ -354,7 +354,7 @@ class Node(pipeline.CondorDAGNode):
                                 
         # If the file was created by another node, then make that
         # node a parent of this one
-        if file.node:
+        if file.node and hasattr(file.node, 'execute_in_workflow'):
             if isinstance(file.node, list):
                 for n in file.node:
                     self.add_parent(n)
@@ -455,6 +455,7 @@ class Node(pipeline.CondorDAGNode):
                          segment=valid_seg,
                          directory=job.out_dir,
                          tags=tags)    
+
         self.add_output(insp, opt=option_name)
 
                 
@@ -607,21 +608,18 @@ class Workflow(object):
             new_node.add_var_opt(opt, path)
             new_node.add_input_file(path) 
             nodes.append(new_node)     
-        return nodes     
+        return nodes 
         
-    def add_node(self, node):
+    def finalize_node(self, node):
         """
-        Use this function to add a pycbc.ahope.Node instance to the workflow.
-
-        Parameters
-        -----------
-        node : pycbc.ahope.Node instance
-            The pyCBC Node instance to be added.
-        """
+        Use this function to finalize any input and output arguments, along
+        with handling self partitioning.
+        """    
         # For input files that come in pieces, create a new node for each
         # and set the input argument to the individual physical file
         part_files = node.partitioned_input_files
         nodes = [node]
+        out_nodes = []
         for file in part_files:
             for n in nodes:
                 nodes = self.partition_node(n, file)
@@ -644,7 +642,7 @@ class Workflow(object):
                         else:
                             raise ValueError('This node does not support '
                                    'partitioned files as input')                                 
-                    self.dag.add_node(n)
+                    out_nodes.append(n)
                 file.node = nodes
         
         #Standard input files, so nothing special needed    
@@ -654,17 +652,33 @@ class Workflow(object):
                     node.add_output_file(path)
                     if hasattr(file, 'opt'):
                         node.add_var_opt(file.opt, path)  
-            self.dag.add_node(node)  
+            out_nodes.append(node) 
+        return out_nodes
+                 
+    def add_node(self, node):
+        """
+        Use this function to add a pycbc.ahope.Node instance to the workflow.
+
+        Parameters
+        -----------
+        node : pycbc.ahope.Node instance
+            The pyCBC Node instance to be added.
+        """
+        nodes = self.finalize_node(node)
+        for n in nodes:
+            n.execute_in_workflow = True
+            self.dag.add_node(n)
             
     def execute_node(self, node):
         """ Execute this node immediately.
         """
+        
         if len(node.partitioned_input_files) > 0:
             raise RuntimeError('Cannot execute a paritioned node') 
-            
-        for fil in node.input_files:
-            if hasattr(fil, 'node'):
-                self.execute_node(fil.node)
+        node = self.finalize_node(node)[0]   
+        #for fil in node.input_files:
+        #    if fil.node:
+        #        self.execute_node(fil.node)
         
         cmd_list = [node.job().get_executable()]
         cmd_tuples = node.get_cmd_tuple_list()   

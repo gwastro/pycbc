@@ -222,8 +222,8 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
         analysis (e.g. for performing DQ vetoes). If the file was generated at
         run-time the segment lists contained within these files will be an
         attribute
-        of the instance. (If it will be generated in the workflow it will not be
-        because I am not psychic).
+        of the instance. (If it will be generated in the workflow it will 
+        not be because I am not psychic).
     """
     # FIXME: Would like to avoid this by having ifos listed in the Workflow
     # Put in alphabetical order
@@ -245,24 +245,23 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
                 msg = "Adding creation of CAT_%d segments " %(category)
                 msg += "for ifo %s to workflow." %(ifo)
                 logging.info(msg)
-
-                #currVetoSegs, currVetoXmlFiles = \
-                #    get_veto_segs_at_runtime(ifo, category, cp, start_time, 
-                #                             end_time, out_dir, tag=tag)
-
-            currVetoXmlFile = get_veto_segs_in_workflow(ifo, category, 
-                                        start_time, end_time, out_dir,
-                                        workflow, vetoGenJob)        
-                                        
+                execute_status = False
+                                 
             if category <= maxVetoAtRunTime:
                 logging.info("Generating CAT_%d segments for ifo %s." \
                              %(category,ifo))
-                workflow.execute_node(currVetoXmlFile.node)
+                execute_status = True
+
+            currVetoXmlFile = get_veto_segs(workflow, ifo, category, 
+                                                start_time, end_time, out_dir,
+                                                vetoGenJob, 
+                                                execute_now=execute_status)  
 
             segFilesList.append(currVetoXmlFile) 
             # Store the CAT_1 veto segs for use below
             if category == 1:
-                # Yes its yucky to generate a file and then read it back in. This will be
+                # Yes its yucky to generate a file and then read it back in. 
+                #This will be
                 # fixed when the new API for segment generation is ready.
                 vetoXmlFP = open(currVetoXmlFile.path, 'r')
                 cat1Segs = fromsegmentxml(vetoXmlFP)
@@ -309,10 +308,13 @@ def setup_segment_gen_mixed(workflow, ifos, veto_categories, start_time,
             # And actually make the file (or queue it in the workflow)
             logging.info("Generating combined, cumulative CAT_%d segments."\
                              %(category))
-            get_cumulative_segs_in_workflow(workflow, ifos, currSegFile, 
-                        categories, cp, segFilesList, out_dir)
             if category <= maxVetoAtRunTime:
-                workflow.execute_node(currSegFile.node)
+                execute_status = True
+            else:
+                execute_status = False
+            get_cumulative_segs(workflow, ifos, currSegFile,  categories,
+                                segFilesList, out_dir, 
+                                execute_now=execute_status)
 
             segFilesList.append(currSegFile)
 
@@ -388,14 +390,16 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir, tag=None):
 
     return sciSegs, sciXmlFile
 
-def get_veto_segs_in_workflow(ifo, category, start_time, end_time, out_dir,
-                              workflow, vetoGenJob, tag=None):
+def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir, 
+                  vetoGenJob, tag=None, execute_now=False):
     """
     Obtain veto segments for the selected ifo and veto category and add the job
     to generate this to the workflow.
 
     Parameters
     -----------
+    workflow: Workflow
+        An instance of the ahope Workflow class that manages the workflow.
     ifo : string
         The string describing the ifo to generate vetoes for.
     category : int
@@ -418,6 +422,9 @@ def get_veto_segs_in_workflow(ifo, category, start_time, end_time, out_dir,
         is also used to tag the AhopeFiles returned by the class to uniqueify
         the AhopeFiles and uniqueify the actual filename.
         FIXME: Filenames may not be unique with current codes!
+    execute_now : boolean, optional
+        If true, jobs are executed immediately. If false, they are added to the
+        workflow to be run later.
 
     Returns
     --------
@@ -443,7 +450,11 @@ def get_veto_segs_in_workflow(ifo, category, start_time, end_time, out_dir,
     vetoXmlFile = AhopeOutSegFile(ifo, 'SEGMENTS', segValidSeg, currUrl,
                                   tags=currTags)
     node.add_output(vetoXmlFile)
-    workflow.add_node(node)
+    
+    if execute_now:
+        workflow.execute_node(node)
+    else:
+        workflow.add_node(node)
     return vetoXmlFile
 
 def create_segs_from_cats_job(cp, out_dir, ifoString, tag=None):
@@ -503,8 +514,9 @@ def create_segs_from_cats_job(cp, out_dir, ifoString, tag=None):
 
     return job
     
-def get_cumulative_segs_in_workflow(workflow, ifos, currSegFile, categories, cp,
-                                   segFilesList, out_dir, tags=[]):
+def get_cumulative_segs(workflow, ifos, currSegFile, categories,
+                                   segFilesList, out_dir, tags=[],
+                                   execute_now=False):
     """
     Function to generate one of the cumulative, multi-detector segment files
     as part of the workflow.
@@ -519,19 +531,20 @@ def get_cumulative_segs_in_workflow(workflow, ifos, currSegFile, categories, cp,
         The AhopeSegFile corresponding to this file that will be created.
     categories : int
         The veto categories to include in this cumulative veto.
-    cp : ahope.AhopeConfigParser
-        The in-memory representation of the configuration (.ini) files
     segFilesList : Listionary of ahopeSegFiles
         The list of segment files to be used as input for combining.
     out_dir : path
         The directory to write output to.
-    tags : list of strings
+    tags : list of strings, optional
         A list of strings that is used to identify this job
+    execute_now : boolean, optional
+        If true, jobs are executed immediately. If false, they are added to the
+        workflow to be run later.
     """
     add_inputs = AhopeFileList([])
     valid_segment = currSegFile.segment
     segment_name = segment_name = 'VETO_CAT%d_CUMULATIVE' % (categories[-1])
-    
+    cp = workflow.cp
     # calculate the cumulative veto files for a given ifo
     for ifo in ifos:
         cum_job = LigoLWCombineSegs(cp, 'ligolw_combine_segments', 
@@ -542,13 +555,19 @@ def get_cumulative_segs_in_workflow(workflow, ifos, currSegFile, categories, cp,
             inputs.append(fileList)                                                       
         
         cum_node = cum_job.create_node(valid_segment, inputs, segment_name)
-        workflow.add_node(cum_node)
+        if execute_now:
+            workflow.execute_node(cum_node)
+        else:
+            workflow.add_node(cum_node)
         add_inputs += cum_node.output_files
             
     # add cumulative files for each ifo together
     add_job = LigolwAddJob(cp, 'llwadd', ifo=ifo, out_dir=out_dir, tags=tags)
-    add_node = add_job.create_node(valid_segment, add_inputs, output=currSegFile)
-    workflow.add_node(add_node)
+    add_node = add_job.create_node(valid_segment, add_inputs, output=currSegFile)   
+    if execute_now:
+        workflow.execute_node(add_node)
+    else:
+        workflow.add_node(add_node)
 
 def get_cumulative_segs_input_files(ifos, segFilesList, category):
     """
