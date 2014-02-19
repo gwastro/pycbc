@@ -354,7 +354,7 @@ class Node(pipeline.CondorDAGNode):
                                 
         # If the file was created by another node, then make that
         # node a parent of this one
-        if file.node and hasattr(file.node, 'execute_in_workflow'):
+        if file.node and not hasattr(file.node, 'executed'):
             if isinstance(file.node, list):
                 for n in file.node:
                     self.add_parent(n)
@@ -681,16 +681,16 @@ class Workflow(object):
         """
         nodes = self.finalize_node(node)
         for n in nodes:
-            n.execute_in_workflow = True
             self.dag.add_node(n)
             
     def execute_node(self, node):
         """ Execute this node immediately.
         """
-        
+       
         if len(node.partitioned_input_files) > 0:
             raise RuntimeError('Cannot execute a paritioned node') 
-        node = self.finalize_node(node)[0]   
+        node = self.finalize_node(node)[0] 
+        node.executed = True  
         #for fil in node.input_files:
         #    if fil.node:
         #        self.execute_node(fil.node)
