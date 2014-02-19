@@ -106,6 +106,22 @@ Here is an example of the [executables] section of an ahope .ini file::
   inspiral          = /home/cbc/opt/s6b/ab577e4e5dad14e46fce511cffdb04917836ba36/bin/lalapps_inspiral
   inspinj           = /home/cbc/opt/s6b/ab577e4e5dad14e46fce511cffdb04917836ba36/bin/lalapps_inspinj
 
+-------------------
+executable macros
+-------------------
+
+The following macros can be used **only** within this section to automatically fill in full path names
+
+$$$$$$$$$$$$$$$$$$$$$
+which(executable)
+$$$$$$$$$$$$$$$$$$$$$
+
+In the following example tmpltbank's value will be replaced with the output of which(lalapps_tmpltbank)::
+
+  [executables]
+  tmpltbank = ${which:lalapps_tmpltbank}
+  inspiral = /full/path/to/lalapps_inspiral
+
 ===================
 Executable options
 ===================
