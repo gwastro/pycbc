@@ -28,6 +28,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.
 """
 
 import re
+import distutils.spawn
 import copy
 import ConfigParser
 
@@ -220,6 +221,9 @@ def parse_ahope_ini_file(cpFile, parsed_filepath=None):
     # First read the .ini file
     cp = read_ini_file(cpFile)
 
+    # Replace exe macros with full paths
+    perform_exe_expansion(cp)
+
     # Check for any substitutions that can be made
     # FIXME: The python 3 version of ConfigParser can do this automatically
     # move over to that if it can be backported to python2.X.
@@ -264,6 +268,86 @@ def read_ini_file(cpFile):
     # Read the file
     cp.read(cpFile)
     return cp
+
+def perform_exe_expansion(cp, preserve_orig_file=False):
+    """
+    This function will look through the executables section of the ConfigParser
+    object and replace any values using macros with a full path.
+
+    For any values that look like
+
+    ${which:lalapps_tmpltbank}
+
+    will be replaced with the equivalent of which(lalapps_tmpltbank)
+
+    Otherwise values will be unchanged.
+
+    Parameters
+    -----------
+    cp : ConfigParser.ConfigParser
+        The ConfigParser object in memory
+    preserve_orig_file : Boolean, optional
+        By default the input ConfigParser object will be modified in place. If
+        this is set deepcopy will be used and the input will be preserved.
+        Default = False
+    """
+    # Deepcopy the cp object if needed
+    if preserve_orig_file:
+        cp = copy.deepcopy(cp)
+
+    # Only works on executables section
+    for option, value in cp.items('executables'):
+        # Check the value
+        newStr = interpolate_exe(value)
+        if newStr != value:
+            cp.set('executables', option, newStr)
+
+    return cp
+
+
+def interpolate_exe(testString):
+    """
+    Replace testString with a path to an executable based on the format.
+
+    If this looks like
+
+    ${which:lalapps_tmpltbank}
+ 
+    it will return the equivalent of which(lalapps_tmpltbank)
+
+    Otherwise it will return an unchanged string.
+
+    Parameters
+    -----------
+    testString : string
+        The input string
+
+    Returns
+    --------
+    newString : string
+        The output string.
+    """
+    # First check if any interpolation is needed and abort if not
+    testString = testString.strip()
+    if not (testString.startswith('${') and testString.endswith('}')):
+        return testString
+
+    # This may not be an exe interpolation, so even if it has ${XXX} form
+    # I may not have to do anything
+    newString = testString
+    
+    # Strip the ${ and }
+    testString = testString[2:-1]
+
+    testList = testString.split(':')
+
+    # Maybe we can add a few different possibilities for substitution
+    if len(testList) == 2:
+        if testList[0] == 'which':
+            newString = distutils.spawn.find_executable(testList[1])
+
+    return newString
+
 
 def perform_extended_interpolation(cp,preserve_orig_file=False):
     """Filter through an ini file and replace all examples of 
