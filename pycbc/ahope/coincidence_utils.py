@@ -202,8 +202,7 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, science_segs, segsList,
                 raise ValueError(errMsg)
             dqVetoName = 'VETO_CAT%d_CUMULATIVE' %(category)
             # FIXME: Here we set the dqVetoName to be compatible with pipedown
-            # FIXME: Yes pipedown has a trailing "_", yes I know its stoopid
-            pipedownDQVetoName = 'CAT_%d_VETO_' %(category)
+            pipedownDQVetoName = 'CAT_%d_VETO' %(category)
             # FIXME: For pipedown must put the slide identifier first and
             # dqVetoName last.
             curr_thinca_job_tags = [timeSlideTag] + tags + [pipedownDQVetoName]
