@@ -10,12 +10,9 @@ Introduction
 
 The injection generation module of ahope is responsible for generating or
 gathering the injection files that will be used to assess the performance of a
-pipeline to detect simulated signals. It is foreseen that this could be run
+pipeline to detect simulated signals. This can be run
 either by generating injection files at run time, by generating injection files
 within the workflow or by using pregenerated injection files.
-
-Currently the only option is to add jobs that generate injection files within
-the workflow.
 
 The return of the injection generation module is an AhopeFileList of the injection files generated/supplied to this module. It is possible to call this module
 multiple times by using the tags key-word argument, but we have not foreseen
@@ -29,7 +26,6 @@ Using this module requires a number of things
 
 * A configuration file (or files) containing the information needed to tell this module how to generate the injection files (described below).
 * An initialized instance of the ahope workflow class, containing the ConfigParser.
-* A list of science segments, which are only used to identify start and end times of the injection files.
 
 The module is then called according to
 
@@ -55,11 +51,13 @@ tell the workflow how to construct (or gather) the injection files. The first op
 The choices here and their description are as described below
 
 * IN_WORKFLOW - The injection file generation will be added as jobs in the workflow and will be generated after submission of the workflow.
-* Action items to add other methods (AT_RUNTIME and PREGNERATED) can be found in the to-do list.
+* PREGENERATED - The injection files will be supplied as pregenerated files.
 
-With only one current option, this module has no sub-modules. This may change in the future.
+When using IN_WORKFLOW no additional options are required in the [ahope-injections] section.
 
-Currently no additional options are required in the [ahope-injections] section.
+When using PREGENERATED the additional option is needed:
+
+* injections-pregenerated-file = PATH - Specifies the location of the pregenerated injection file.
 
 $$$$$$$$$$$$$$
 [executables]
@@ -71,9 +69,14 @@ injections = /path/to/lalapps_inspinj
 
 The option, in this case 'injections', will be used to specify the constant command line options that are sent to all lalapps_inspinj jobs. The tag 'injections' can be changed, it is currently supplied as a key-word argument when calling the function. 'injections' is the default, and must be used if you want to use pipedown.
 
-Subsections of the form [injections-SUBSECTION] are used to specifiy options specific to a 
-particular injection set. Note that the number of subsections directly corresponds to the
-number of injection files that will be produced. 
+**IMPORTANT** this injSectionName tag, "injections" by default, is used to identify which injections are to be performed. The module will search for modules called [injections-XXXX] and generate one injection file for every sub-section using XXXX as a tag.
+
+When using IN_WORKFLOW option, value pairs in [injections-XXXX]
+are also used to specify options specific to that
+particular injection set. These options will be directly supplied to the
+executable being used to generate the file.
+
+**PLEASE NOTE:** When using PREGENERATED the injection names are still identified by looking in the "injections-XXXX" sections (a path in [executables] is not needed). These sections will be empty in this case. Also note that as XXXX is used as a tag you can use [ahope-injections-XXXX] section to supply unique pregenerated injection files.
 
 ----------------------------------------------------------------
 Supported injection executables and instructions for using them
