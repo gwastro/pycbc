@@ -550,8 +550,9 @@ def get_cumulative_segs(workflow, ifos, currSegFile, categories,
         cum_job = LigoLWCombineSegs(cp, 'ligolw_combine_segments', 
                        out_dir=out_dir, tags=tags + [segment_name], ifo=ifo)
         inputs = []
+        files = segFilesList.find_output_with_ifo(ifo)
         for category in categories:
-            fileList = segFilesList.find_output_with_tag('VETO_CAT%d' %(category))
+            fileList = files.find_output_with_tag('VETO_CAT%d' %(category))
             inputs.append(fileList)                                                       
         
         cum_node = cum_job.create_node(valid_segment, inputs, segment_name)
