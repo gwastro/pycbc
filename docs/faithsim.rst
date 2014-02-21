@@ -29,8 +29,7 @@ Below is an example.
 
 .. literalinclude:: ../examples/faith/faithsim_simple.ini
 
-There are four sections that must be present [inspinj], [executables], [workflow],
-and [faithsim-*].
+There are four sections that must be present [inspinj], [executables], [workflow], and [faithsim-XXX].
 
  #. inspinj
 
@@ -62,7 +61,7 @@ and [faithsim-*].
     is directly proportional to the running time of 
     each job.
 
- #. faithsim-*
+ #. faithsim-XXX
     Multiple sections with a a name of the form 'faithsim-USER_STRING' can exist.
     The generator will create jobs that correspond to each of these sections 
     and each will generate an independent results file

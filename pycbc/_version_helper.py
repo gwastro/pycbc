@@ -24,6 +24,7 @@ import exceptions
 import os
 import time
 import subprocess
+import re
 
 
 class GitInfo(object):

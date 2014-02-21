@@ -1,13 +1,14 @@
 ###################################################
-Using pycbc_inspiral within ihope
+Using pycbc executables within ihope
 ###################################################
 
 ========================================
 Introduction
 ========================================
-These instructions are aimed at allowing the use of pycbc_inspiral within
-standard ihope workflows. This is accomplished using a wrapper script that
-emulates the interface of lalapps_inspiral. The standard ihope instructions
+These instructions are aimed at allowing the use of a few pycbc executables,
+currently pycbc_inspiral and pycbc_geom_nonspinbank, within standard ihope
+workflows. This is accomplished using a wrapper script that emulates the
+interface of the appropriate lalapps executable. The standard ihope instructions
 should be followed with modifications made to the ini file as noted below.
 
 * `ihope instructions <https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/InspiralPipelineDevelopment/101119150805InspiralPipelineDocumentationHow_to_run_ihope_with_the_ligolw_thinca_single_stage_pipeline>`_
@@ -37,7 +38,8 @@ or add it to your .bash_profile.
 Modifications to the ini file
 ========================================
 
-* Change the inspiral executable from lalapps_inspiral to pycbc_legacy_inspiral
+* To use pycbc_inspiral rather than lalapps_inspiral, change the inspiral executable from
+  lalapps_inspiral to pycbc_legacy_inspiral:
 
     The following::
 
@@ -53,16 +55,38 @@ Modifications to the ini file
         inspiral          = /path/to/pycbc/installation/bin/pycbc_legacy_inspiral
         ...
 
-* Add an pycbc flag to the [inspiral] section
 
-    This indicates to the workflow generator that the inspiral jobs are in fact
-    pycbc_inspiral::
+  Similarly, to use pycbc_geom_nonspinbank rather than lalapps_tmpltbank, change the
+  tmpltbank executable from lalapps_tmpltbank to pycbc_legacy_tmpltbank
+
+    The following::
+
+        [condor]
+        ....
+        tmpltbank          = /path/to/lalsuite/installation/bin/lalapps_tmpltbank
+        ...
+
+    is replaced by::
+
+        [condor]
+        ...
+        tmpltbank          = /path/to/pycbc/installation/bin/pycbc_legacy_tmpltbank
+        ...
+
+
+* Add a pycbc flag to the appropriate section
+
+    You must also indicate to the workflow generator that the corresponding executables
+    are in fact pycbc executables.  This is done by adding a pycbc flag to the appropriate
+    section of the ini file; that will be [inspiral] if you are using pycbc_legacy_inspiral
+    and [tmpltbank] if you are using pycbc_legacy_tmpltbank; the example below is for the
+    inspiral executable::
 
         [inspiral]
         pycbc = 
         ...
 
-* Modify the injection approximant names
+* For pycbc_legacy_inspiral, modify the injection approximant names
 
     The injection routines within pycbc inpspiral are thin wrappers around functions
     in lalsimulation. As such, the names of approximants must match those available
@@ -85,4 +109,16 @@ Modifications to the ini file
         d-distr = log10
         min-distance = 5000
     
+* For pycbc_legacy_tmpltbank, modify the post-Newtonian order of the bank
+
+    This step is not strictly necessary, since you may use the same order as
+    lalapps_tmpltbank.  However, one reason you might want to run using
+    pycbc_legacy_tmpltbank is the ability to place banks at a higher PN order.
+    If this is the case, then you may for example use::
+
+        [tmpltbank]
+        ...
+        order = threePointFivePN
+        ...
         
+    to place the bank templates using 3.5 PN order

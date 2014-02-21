@@ -58,7 +58,6 @@ if not opts.config_file:
 if not opts.output_dir:
     parser.error("Must supply --output-dir")
 
-workflow = ahope.Workflow(opts.config_file)
 # Get dates and stuff
 # This feels hacky!
 yestDate = lal.GPSToUTC(opts.start_time)
@@ -70,6 +69,16 @@ yestMnightGPS = lal.UTCToGPS(yestMnight)
 
 monthName = '%04d%02d' %(yestMnight[0], yestMnight[1])
 dayName = '%04d%02d%02d' %(yestMnight[0], yestMnight[1], yestMnight[2])
+
+# THIS CONCLUDES EVERYTHING THAT THE SETUP SCRIPT DID BEFORE RUNNING DAG
+
+# Set start and end times need some padding to assume the whole day
+# is analysed
+pad_time = 72
+start_time = yestMnightGPS - pad_time
+end_time = start_time + 60*60*24 + 2*pad_time
+
+workflow = ahope.Workflow(opts.config_file, start_time, end_time)
 
 workingDir = os.path.join(opts.output_dir, monthName, dayName)
 
@@ -83,22 +92,10 @@ if not os.path.exists('log'):
 if not os.path.exists('logs'):
     os.makedirs('logs')
 
-# THIS CONCLUDES EVERYTHING THAT THE SETUP SCRIPT DID BEFORE RUNNING DAG
-
-# Set start and end times need some padding to assume the whole day
-# is analysed
-pad_time = 72
-start_time = yestMnightGPS - pad_time
-end_time = start_time + 60*60*24 + 2*pad_time
-
-# Set the ifos to analyse
-ifos = []
-for ifo in workflow.cp.options('ahope-ifos'):
-    ifos.append(ifo.upper())
+ifos = workflow.ifos
 
 # Get segments
-scienceSegs, segsFileList = ahope.setup_segment_generation(workflow, ifos,
-                               start_time, end_time, workingDir)
+scienceSegs, segsFileList = ahope.setup_segment_generation(workflow, workingDir)
 
 # Get frames, this can be slow, as we ping every frame to check it exists,
 # the second option shows how to turn this off

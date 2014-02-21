@@ -46,8 +46,8 @@ def frequency_noise_from_psd(psd, seed = None):
         The seed to generate the noise. If None specified,
         the seed will not be reset.
         
-    Return
-    ------
+    Returns
+    --------
     noise : FrequencySeriesSeries
         A FrequencySeries containing gaussian noise colored by the given psd. 
     """
@@ -90,8 +90,8 @@ def noise_from_psd(length, delta_t, psd, seed=0):
     seed : {0, int}
         The seed to generate the noise. 
         
-    Return
-    ------
+    Returns
+    --------
     noise : TimeSeries
         A TimeSeries containing gaussian noise colored by the given psd. 
     """

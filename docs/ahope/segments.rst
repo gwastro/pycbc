@@ -1,4 +1,5 @@
 .. _ahopesegmentsmod:
+
 #####################################
 The ahope segment generation module
 #####################################
@@ -85,9 +86,9 @@ when running this module::
 * segment_query = /home/ahnitz/local/lalsuite/bin/ligolw_segment_query
 * segments_from_cats = /home/ahnitz/local/lalsuite/bin/ligolw_segments_from_cats
 * llwadd = /home/ahnitz/local/lalsuite/bin/ligolw_add
-* ligolw_segments_compat = /home/ahnitz/local/lalsuite/bin/ligolw_segments_compat
+* ligolw_combine_segments = /home/ahnitz/local/lalsuite/bin/ligolw_combine_segments
 
-segment_query is used to obtain the science segments. segments_from_cats is used to obtain the files containing the CAT_1,2,3,4,5 segments. llwadd is used to add veto-files together when producing cumulative, multiple-detector veto lists. ligolw_segments_compat is used to ensure that the output of these codes are compatible with other output xml files. We want to create one front end to do what llwadd and ligolw_segments_compat does in one code.
+segment_query is used to obtain the science segments. segments_from_cats is used to obtain the files containing the CAT_1,2,3,4,5 segments. ligolw_combine_segments produces cumulative veto-files. llwadd is used to add the cumulative veto-files from different ifos together when producing cumulative, multiple-detector veto lists.
 
 $$$$$$$$$$$$$$$$$$$
 Other sections
@@ -97,4 +98,16 @@ For other modules in ahope we would see sections like [segment_query], [segments
 could break the code.
 
 If there is a reason to do so we could add these sections in.
+
+==========================================
+:mod:`pycbc.ahope.segment_utils` Module
+==========================================
+
+This is complete documentation of this module's code
+
+.. automodule:: pycbc.ahope.segment_utils 
+    :noindex:
+    :members:
+    :undoc-members:
+    :show-inheritance:
 

@@ -11,10 +11,9 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \
 # This is the "official" start according to Stuart
 start_time = 1073822416
 # End times set as current time - one day (86400s)
-end_time= 1076080248
+end_time= 1076528574
 
-workflow = ahope.Workflow('./daily_er5.ini')
-ifos = ['H1','L1','V1']
+workflow = ahope.Workflow('./daily_er5.ini', start_time, end_time)
 currDir = os.getcwd()
 segDir = os.path.join(currDir,"segments")
 dfDirSYR = os.path.join(currDir,"datafindSYR")
@@ -45,8 +44,7 @@ def segment_report(sSegs):
         print "For ifo %s there is %d seconds of data in %d segments, %d seconds (%d unique segments) in segments longer than 500s and %d seconds (%d unique segments) longer than 2000s." %(ifo, fullLen, fullNum, shortLen, shortNum, longLen, longNum)
 
 
-scienceSegs, segsList = ahope.setup_segment_generation(workflow, ifos,
-                                start_time, end_time, segDir)
+scienceSegs, segsList = ahope.setup_segment_generation(workflow, segDir)
 
 segment_report(scienceSegs)
 
@@ -93,7 +91,6 @@ for ifo in scienceSegsC.keys():
 
 print
 print "RUNNING DATAFIND FOR LHO"
-os.environ["LIGO_DATAFIND_SERVER"] = """ldr.ligo-wa.caltech.edu:443"""
 scienceSegsS = copy.deepcopy(scienceSegs)
 datafinds, scienceSegsS = ahope.setup_datafind_workflow(workflow, scienceSegsS,
                        dfDirLHO, segsList, tag="LHO")
@@ -123,7 +120,6 @@ for ifo in scienceSegsC.keys():
 
 print
 print "RUNNING DATAFIND FOR LLO"
-os.environ["LIGO_DATAFIND_SERVER"] = """ldr.ligo-la.caltech.edu:443"""
 scienceSegsS = copy.deepcopy(scienceSegs)
 datafinds, scienceSegsS = ahope.setup_datafind_workflow(workflow, scienceSegsS,
                        dfDirLLO, segsList, tag="LLO")
@@ -153,7 +149,6 @@ for ifo in scienceSegsC.keys():
 
 print
 print "RUNNING DATAFIND FOR UWM"
-os.environ["LIGO_DATAFIND_SERVER"] = """nemo-dataserver2.phys.uwm.edu:443"""
 scienceSegsS = copy.deepcopy(scienceSegs)
 datafinds, scienceSegsS = ahope.setup_datafind_workflow(workflow, scienceSegsS,
                        dfDirUWM, segsList, tag="UWM")

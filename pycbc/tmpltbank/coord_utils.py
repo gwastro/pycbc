@@ -52,7 +52,7 @@ def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper,\
         returned.
 
 
-    Return
+    Returns
     -------
     xis : numpy.array
         A list of the positions of each point in the xi_i coordinate system.

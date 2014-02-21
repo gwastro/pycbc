@@ -27,9 +27,9 @@ The first thing that is needed is to install lalsuite and pycbc. This is
 described on the page here:
 
 .. toctree::
-      :maxdepth: 1
+   :maxdepth: 1
 
-   install
+   ../install
 
 ----------------------
 Find the run scripts
@@ -63,9 +63,6 @@ Some things that *will* need to be changed for each user::
     ahope-asset-dir = /home/spxiwh/lscsoft_git/src/lalsuite/lalapps/src/inspiral
     ahope-html-basedir = /home/spxiwh/public_html/ER4/test
 
-    [ahope-segments]
-    segments-veto-definer-file = /home/spxiwh/lscsoft_git/src/pycbc/pycbc/examples/ahope/er_daily_ahope/H1L1V1-ER3_CBC_OFFLINE-1011571215-0.xml
-
     [ahope-omega]
     omega-conf-file = /home/spxiwh/ERs/ER4/daily_ihope_test/old_conf_omega.txt
 
@@ -87,11 +84,10 @@ To run through this.
 
  * The ahope-asset-dir points to the location where the CSS files needed for the html page are stored. This is your lalsuite source directory and then /lalapps/src/inspiral. This will be removed in the future and read from a web-accessible location.
  * The ahope-html-basedir is the directory in which you want the output html pages to appear. Pages will be in subdirectories in this corresponding to unique days. So for me I might see output in directories like /home/spxiwh/public_html/ER4/test/201308/20130812/
- * The segments-veto-definer-file points to the veto-definer-file. This will be changed to take a url input not a filepath.
  * omega-conf-file points to the configuration for omega. Currently omega doesn't work within daily ahope, this will be fixed.
  * Everything under [executables] points to the executables that will be used. These should be changed as appropriate
 
-Here are entries that you *may* have to edit if running on different (not ER4) data for e.g.::
+The example is also set up to run on ER4 data. If you are running on non-ER4 data you may have to edit some additional options, for e.g.::
 
     [ahope]
     h1-channel-name = H1:FAKE-STRAIN
@@ -108,6 +104,7 @@ Here are entries that you *may* have to edit if running on different (not ER4) d
     segments-L1-science-name = L1:DMT-SCIENCE:1
     segments-V1-science-name = V1:ITF_SCIENCEMODE
     segments-database-url = https://segdb-er.ligo.caltech.edu
+    segments-veto-definer-url = https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/ER4/H1L1V1-ER4_CBC_OFFLINE-1011571215-0.xml
 
     [ahope-omega]
     omega-frame-dir = /frames/ER4/L1_ER_C00_L1/L1/L-L1_ER_C00_L1-%%d/L-L1_ER_C00_L1-%%d
@@ -118,6 +115,7 @@ To run through this::
  * The datafind-X1-frame-type is the type of the frames for use when calling gw_data_find
  * The segments-X1-science-name is the flag used to store science times in the segment database
  * segments-database-url points to the segment database
+ * segments-veto-definer-url points to the url where the veto-definer file can be found.
 
 The remaining options affect how the jobs run, these should not be edited unless you know what you are doing!
 

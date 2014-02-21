@@ -1,4 +1,5 @@
 .. _ahopedatafindmod:
+
 ###########################################
 The ahope datafind and validation module
 ###########################################
@@ -21,12 +22,9 @@ locations for frame files at the specfied times for each interferometer.
 Optionally, it can also run a set of tests to verify this output and act
 accordingly. This includes
 
-* A check that the all times in the input segment lists are covered with frames,
-and methods for dealing with cases where this is not true.
-* A check that all returned frame files actually exist and are accessible on the
-cluster.
-* A check that segment_summary flags are defined for all frames that have been
-returend.
+* A check that the all times in the input segment lists are covered with frames, and methods for dealing with cases where this is not true.
+* A check that all returned frame files actually exist and are accessible on the cluster.
+* A check that segment_summary flags are defined for all frames that have been returned.
 
 =======
 Usage
@@ -125,3 +123,16 @@ arguments when calling the datafind server. Valid options here
 * urltype=TYPE - If given restrict the returned frames to the given scheme (e.g. "file").
 
 the on_gaps keyword argument is not supported as sanity checking is handled by ahope. This is always set to 'ignore' (this can be overwritten, we don't recommend this).
+
+==========================================
+:mod:`pycbc.ahope.datafind_utils` Module
+==========================================
+
+This is complete documentation of this module's code
+
+.. automodule:: pycbc.ahope.datafind_utils
+    :noindex:
+    :members:
+    :undoc-members:
+    :show-inheritance:
+

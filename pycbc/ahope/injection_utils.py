@@ -31,12 +31,13 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 
 import os
 import logging
+import urllib
 import pycbc.ahope
 from pycbc.ahope.jobsetup_utils import *
 from pycbc.ahope.matchedfltr_utils import *
 from glue import segments
 
-def setup_injection_workflow(workflow, science_segs, output_dir=None,
+def setup_injection_workflow(workflow, output_dir=None,
                              injSectionName='injections', tags =[]):
     '''
     This function is the gateway for setting up injection-generation jobs in an
@@ -49,8 +50,6 @@ def setup_injection_workflow(workflow, science_segs, output_dir=None,
     -----------
     Workflow : ahope.Workflow
         The ahope workflow instance that the coincidence jobs will be added to.
-    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
-        The list of times that are being analysed in this workflow. 
     output_dir : path
         The directory in which injection files will be stored.
     injSectionName : string (optional, default='injections')
@@ -73,26 +72,50 @@ def setup_injection_workflow(workflow, science_segs, output_dir=None,
     '''
     logging.info("Entering injection module.")
     make_analysis_dir(output_dir)
-
     # Get full analysis segment for output file naming
-    fullSegment = pycbc.ahope.get_full_analysis_chunk(science_segs)
+    fullSegment = workflow.analysis_time
 
-    # FIXME: Add ability to specify different exes
-    inj_exe = LalappsInspinjExec(injSectionName)
+    # Identify which injections to do by presence of sub-sections in
+    # the configuration file
     all_sec = workflow.cp.sections()
     sections = [sec for sec in all_sec if sec.startswith(injSectionName +'-')]
+
     inj_tags = []
-    inj_files = []
-    for sec in sections:  
-        inj_tag = sec.split('-')[1]
-        curr_tags = tags + [inj_tag]
-        inj_job = inj_exe.create_job(workflow.cp, tags=curr_tags,
-                                     out_dir=output_dir)
-        node = inj_job.create_node(fullSegment)
-        workflow.add_node(node)
-        injection_file = node.output_files[0]
-        inj_files.append(injection_file)
+    inj_files = []   
+
+    for section in sections:
+        inj_tag = section.split('-')[1]
+        currTags = tags + [inj_tag]
+
+        # Parse for options in ini file
+        injectionMethod = workflow.cp.get_opt_tags("ahope-injections", 
+                                                 "injections-method", currTags)
+
+        if injectionMethod in ["IN_WORKFLOW", "AT_RUNTIME"]:
+            # FIXME: Add ability to specify different exes
+            inj_exe = LalappsInspinjExec(injSectionName)
+            inj_job = inj_exe.create_job(workflow.cp, tags=currTags,
+                                         out_dir=output_dir)
+            node = inj_job.create_node(fullSegment)
+            if injectionMethod == "AT_RUNTIME":
+                workflow.execute_node(node)
+            else:
+                workflow.add_node(node)
+            injFile = node.output_files[0]
+        elif injectionMethod == "PREGENERATED":
+            injectionFilePath = workflow.cp.get_opt_tags("ahope-injections",
+                                      "injections-pregenerated-file", currTags)
+            file_url = urlparse.urljoin('file:', urllib.pathname2url(\
+                                                  injectionFilePath))
+            injFile = AhopeFile('HL', 'PREGEN_INJFILE', fullSegment, file_url,
+                                tags=currTags)
+        else:
+            errMsg = "Injection method must be one of IN_WORKFLOW, "
+            errMsg += "AT_RUNTIME or PREGENERATED. Got %s." %(injectionMethod)
+            raise ValueError(errMsg)
+
+        inj_files.append(injFile)
         inj_tags.append(inj_tag)
-    logging.info("Leaving injection module.")  
+    logging.info("Leaving injection module.")
     return inj_files, inj_tags
 

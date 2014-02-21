@@ -1,4 +1,4 @@
-# Copyright (C) 2013  Ian Harry
+# Copyright (C) 2013  Ian Harry, Alex Nitz
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -122,7 +122,7 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         out_dir: path, optional
             The folder to store output files of this job. 
         tags : list of strings
-            A list of strings that is used to indentify this job.
+            A list of strings that is used to identify this job.
         """
         self.exe_name = exe_name
         self.cp = cp
@@ -354,7 +354,7 @@ class Node(pipeline.CondorDAGNode):
                                 
         # If the file was created by another node, then make that
         # node a parent of this one
-        if file.node:
+        if file.node and not hasattr(file.node, 'executed'):
             if isinstance(file.node, list):
                 for n in file.node:
                     self.add_parent(n)
@@ -455,6 +455,7 @@ class Node(pipeline.CondorDAGNode):
                          segment=valid_seg,
                          directory=job.out_dir,
                          tags=tags)    
+
         self.add_output(insp, opt=option_name)
 
                 
@@ -551,7 +552,7 @@ class Workflow(object):
     generate cache files from the inputs. It makes heavy use of the
     pipeline.CondorDAG class, which is instantiated under self.dag.
     """
-    def __init__(self, config):
+    def __init__(self, config, start_time, end_time):
         """
         Create an aHOPE workflow
         
@@ -560,9 +561,24 @@ class Workflow(object):
         config : str
              The path of the ahope configuration file. This is read in and
              stored under self.cp as a ConfigParser.ConfigParser instance.
+        start_time : int
+             The time at which to start considering for analysis.
+        end_time : int
+             The time after which not to consider for analysis.
         """
         # Parse ini file
         self.cp = parse_ahope_ini_file(config)
+
+        # Set global values
+        self.analysis_time = segments.segment([start_time,end_time])
+
+        # Set the ifos to analyse
+        ifos = []
+        for ifo in self.cp.options('ahope-ifos'):
+            ifos.append(ifo.upper())
+        self.ifos = ifos
+        self.ifos.sort(key=str.lower)
+        self.ifoString = ''.join(self.ifos)
         
         if type(config) is list:
             self.basename = basename(splitext(config[0])[0])
@@ -607,21 +623,18 @@ class Workflow(object):
             new_node.add_var_opt(opt, path)
             new_node.add_input_file(path) 
             nodes.append(new_node)     
-        return nodes     
+        return nodes 
         
-    def add_node(self, node):
+    def finalize_node(self, node):
         """
-        Use this function to add a pycbc.ahope.Node instance to the workflow.
-
-        Parameters
-        -----------
-        node : pycbc.ahope.Node instance
-            The pyCBC Node instance to be added.
-        """
+        Use this function to finalize any input and output arguments, along
+        with handling self partitioning.
+        """    
         # For input files that come in pieces, create a new node for each
         # and set the input argument to the individual physical file
         part_files = node.partitioned_input_files
         nodes = [node]
+        out_nodes = []
         for file in part_files:
             for n in nodes:
                 nodes = self.partition_node(n, file)
@@ -643,8 +656,8 @@ class Workflow(object):
                             n.set_jobnum_tag(tag)
                         else:
                             raise ValueError('This node does not support '
-                                             'partitioned files as input')                                 
-                    self.dag.add_node(n)
+                                   'partitioned files as input')                                 
+                    out_nodes.append(n)
                 file.node = nodes
         
         #Standard input files, so nothing special needed    
@@ -654,7 +667,50 @@ class Workflow(object):
                     node.add_output_file(path)
                     if hasattr(file, 'opt'):
                         node.add_var_opt(file.opt, path)  
-            self.dag.add_node(node)   
+            out_nodes.append(node) 
+        return out_nodes
+                 
+    def add_node(self, node):
+        """
+        Use this function to add a pycbc.ahope.Node instance to the workflow.
+
+        Parameters
+        -----------
+        node : pycbc.ahope.Node instance
+            The pyCBC Node instance to be added.
+        """
+        nodes = self.finalize_node(node)
+        for n in nodes:
+            self.dag.add_node(n)
+            
+    def execute_node(self, node):
+        """ Execute this node immediately.
+        """
+       
+        if len(node.partitioned_input_files) > 0:
+            raise RuntimeError('Cannot execute a paritioned node') 
+        node = self.finalize_node(node)[0] 
+        node.executed = True  
+        #for fil in node.input_files:
+        #    if fil.node:
+        #        self.execute_node(fil.node)
+        
+        cmd_list = [node.job().get_executable()]
+        cmd_tuples = node.get_cmd_tuple_list()   
+        for cmd in cmd_tuples:
+            cmd_list += list(cmd)
+        cmd_list.remove('')
+        cmd_list = [c for cmd in cmd_list for c in cmd.split(' ')]
+           
+        job_dir = node.job().out_dir
+        
+        if len(node.output_files) > 0:
+            base_name = node.output_files[0].filename
+        else:
+            base_name = node.job().exe_name
+        
+        make_external_call(cmd_list, outDir=os.path.join(job_dir, 'logs'),
+                                     outBaseName=base_name) 
         
     def write_plans(self):
         """

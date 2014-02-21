@@ -130,6 +130,8 @@ def from_cli(opt):
         strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate, 
                                             strain_psd, 
                                             seed=opt.fake_strain_seed)
+        strain._epoch = lal.LIGOTimeGPS(opt.gps_start_time)
+
         if opt.injection_file:
             logging.info("Applying injections")
             injections = InjectionSet(opt.injection_file)
@@ -137,7 +139,6 @@ def from_cli(opt):
         
         logging.info("Converting to float32")
         strain = (DYN_RANGE_FAC * strain).astype(float32)    
-        strain._epoch = lal.LIGOTimeGPS(opt.gps_start_time)
     return strain
 
 def insert_strain_option_group(parser):

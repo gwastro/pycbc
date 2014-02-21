@@ -18,38 +18,7 @@ Each of the sections is described in detail below. Also refer to the `page here 
 Ahope to do list
 =======================
 
-**PLEASE** take on an item from this list. If you do please ensure that any changes are reflected in both the in-line documentation and the html web pages. Not taking on any items will result in owing Ian beers at the Nice meeting.
-
-* lalapps_splitbank has issues. Can this be replaced with a cleaner python implementation? - VOLUNTEER?
-* It seems that job tags are not being preserved through splitbank, which runs the risk of having different jobs with the same AhopeFile properties. - IAN TO CHECK
-* Want to have the ability to run ligolw_segments_from_cats in separate-categories mode (and have this be the *only* mode that ahope will use). This requires some additions to ligolw_segments_compat so that vetoes called VETO_CAT_1, VETO_CAT_2 are merged into one list called CUMULATIVE_VETO_CAT_3. (Names are probably wrong, but you get the idea). - ALEX DOING?
-* Adding ligolw_segments_compat breaks pegasus support and therefore the ability to generate vetoes within the workflow (instead of at runtime) has been temporarily disabled. This is because its input and output files are the *same name*, which pegasus cannot support. This needs fixing. This to-do item probably needs to done in parallel with the above item, and may need a new code, ligolw_make_cumulative_coincident_segments, or similar. - ALEX DOING?
-* Dependent on above, once fixed we need to add some code for running ligolw_add and ligolw_segments_compat in the workflow if desired. - ALEX DOING?
-* Enable the dax functionality (at the moment a dax is written, but we don't know what to do with it!) and ensure that codes are pegasus-compliant. (DUNCAN B + ALEX/IAN).
-* The documentation, both in code and on this page, is woefully out of date. This needs fixing ... anyone/everyone should feel free to edit and improve the existing documentation! - IAN + ALEX TAKING LEAD, OTHERS WELCOME TO HELP
-* Merge functionality of ligolw_add into ligolw_sstinca to produce a single coincidence code that takes multiple inputs, ideally either from the command line or from a cache file. Must be able to specify output file name. - VOLUNTEER?
-* Ligolw_tisi takes repeated (and somewhat opaque) command line input e.g. ligolw_tisi -i H1:0,0,0 -i L1:0,100,5. This is not supported in pipeline.py. Edit ligolw_tisi so that it can be run within pipeline.py, or edit pipeline.py so that this is possible. - VOLUNTEER?
-* Want to add template bank module that does not use the frame files (ie. generates a bank using a specified PSD). - VOLUNTEER?
-* Stop hardcoding exename='tmpltbank' or exename='inspiral' in template bank and matched filter modules, and instead supply this in [ahope-tmpltbank]/[ahope-matchedfltr]. This allows us to use different exes with different calls. lalapps_XXX still requires the exename='tmpltbank' or 'inspiral', but the pyCBC codes do not need this. - IAN (WAITING ON MATCHEDFLTR DOCUMENTATION CHANGES)
-* Add options to CondorDAGJob so that condor commands can be provided as macro arguments (this would allow a number of features in the nodes). - IAN
-* Add in needed plot_hipe plots to ahope ... *There are no plans to tie plot_hipe into ahope*. This may require rewriting parts of a number of these codes, (especially to use the SQL where possible). The codes should also be moved away from pylal. The output format of the plots should be considered, do we still want to use the ihope plotting conventions or do we need something better. - CHRIS B?
-* Add ability to create a node as usual, but instead of adding it to the workflow have it run at ahope runtime. This should fail and refuse to run if it requires input files that are made within the workflow. This should probably be added at the pipeline.py level. - ALEX DOING?
-* When above is completed, move segment calls in segment_utils to this and remove duplicate code paths. Also do same with ligolw_tisi call when tisi item above is also completed. - ALEX DOING?
-* Begin moving pipedown codes into ahope. - WOULD PREFER TO WAIT ON DAX FUNCTIONALITY.
-* Add fixes to pipedown in cases where pipedown looks for information based on very specific command line calls made to earlier code, which are not made either in ahope or when using pycbc code in ihope. - CHRIS B CURRENTLY TAKING LEAD ON THIS.
-* Want to add template bank module that generates one bank for all ifos (regenerating the bank every Xs by reading in data). Probably also need a code that does this! - NOT PRIORITY 
-* There is some not-https element in the pycbc docs homepage, which won't load by default on most browsers. Not sure what it is, but it should be fixed. - VOLUNTEER?
-* Identify and correct deprecation warnings that are now present in almost the entire python code base.
-* Fix minifollowups in ahope.
-
-----------------------------
-Longer term/lower priority
-----------------------------
-
-* If we want to move to having a variable number of segments for analysis (ie. if we only have 1000s use say 4 analysis segments, but if we have 5000s use 20), then we need to fix the issues of bias in the inverse PSD causing a bias (from the expected chi-squared distribution) in the output SNR time series, *which will vary based on the number of segments used to analyse the PSD*.
-* Some stubs for GPU support have been added. A method of the standard job class adds the needed environment variables and requirements to select a GPU node on SUGAR and ATLAS. Support for the CIT and MIT clusters is not yet implemented. The ability to run GPU jobs in an unreliability mode where each job is run twice and the results are checked for consistency is not yet implemented. It is not yet certain if this will work within Pegasus. Scripts to check GPU enabled output results against each other also are not yet written. 
-* Want to add template bank module that generates one bank for all ifos (regenerating the bank every Xs by reading in data). Probably also need a code that does this!
-* There is some not-https element in the pycbc docs homepage, which won't load by default on most browsers. Not sure what it is, but it should be fixed.
+This list is now maintained `as a wiki <https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/AhopeToDoList>`_; please see that wiki to view items on the list or update their status. **PLEASE** take on an item from this list. If you do, please update the wiki and ensure that any changes are reflected in both the in-line documentation and the html web pages. Not taking on any items will result in owing Ian beers at the Nice meeting.
 
 -----------------------------------------------------------
 Questions concerning the coincidence stage ligolw_sstinca
@@ -88,35 +57,57 @@ of ahope, with all checking options enabled. This will do the following
 This example can be edited for any time you are interested in and can be used to identify missing data before submitting a workflow. 
 
 -------------------
-daily_ahope
+er_daily_ahope
 -------------------
 
-This is an example of how to run an ahope workflow as far as it is coded. This
-will:
+This is an example of how to run an ahope workflow mimicing the daily_ihope analysis done in the past. This will:
 
-* Get segments from the server, calculating CAT3 and above in the workflow for speed.
+* Get science and data-quality segments from the server.
 * Query the datafind server for frames.
 * Create the template bank jobs needed to cover the times
 * Split the template banks (into 2). This step could be easily removed, just delete this module in the python file and send the matched-filtering code the template bank input directly.
 * Run the matched-filtering code on the split template banks
-* Write a dax to file that can be submitted to run the workflow
+* Call into the code that generates the dag for running daily_ihope pages and plots and adds this dag to the workflow.
+* Write a dag/dax to file that can be submitted to run the workflow
 
-This currently matches Chris' S6 test and works. Note that running this example (ie. time for the python code to do all of these steps and exit) takes approximately 1 minute to setup a workflow to analyse all of S6D. This is with the ping all frames step turned off, with this on we are seeing run times considerably longer.
+This will therefore set up a *complete* daily_ahope workflow and automatically generate the webpage at the end of the analysis.
 
------------------------
-er_daily_ahope
------------------------
+This is currently being used in ER5 as a supplement and backup to the daily_ihope runs. 
 
-This is a more detailed example of daily_ahope. This will do the same things
-as the daily_ahope example but then call into the remaining jobs, including
-the daily_page dag generation, to set up a *complete* daily_ahope workflow.
-This will also automatically generate the webpage at the end of the analysis.
 More details of how to run this is found in the following link:
 
 .. toctree::
-      :maxdepth: 1
+   :maxdepth: 1
 
    ahope/daily_ahope
+
+=====================
+weekly_ahope
+=====================
+
+This is an example of how to run a coincidence ahope workflow, mimicking standard ihope coincidence analysis as closely as possible. It calls into pipedown to do the post-processing and using write_ihope_page to make an output html page. In total this will:
+
+* Get science and data-quality segments from the server.
+* Query the datafind server for frames.
+* Create the template bank jobs needed to cover the times
+* Split the template banks (into whatever number is specified in the ini file). This step could be easily removed, just delete this module in the python file and send the matched-filtering code the template bank input directly.
+* Run the matched-filtering code on the split template banks
+* Use ligolw_add and ligolw_sstinca to generate coincidence triggers
+* Do some compatibility conversions and then call pipedown to create a dag to do the post-processing
+* Add a node to run write_ihope_page at the end of analysis
+* Write a dag/dax to file that can be submitted to run the workflow
+
+This will therefore set up a *almost complete* mimic of a weekly ihope analysis and automatically generate the output webpage at the end of the analysis.
+
+We hope to run this in ER5 along with the standard weekly ihope runs for comparison.
+
+More details of how to run this is found in the following link:
+
+.. toctree::
+   :maxdepth: 1
+
+   ahope/weekly_ahope
+
 
 ====================
 Initialization
@@ -152,6 +143,27 @@ consistency if desired
 
    ahope/datafind
 
+======================
+Injection generation
+======================
+
+Generate injection files for use later in the analysis
+
+.. toctree::
+   :maxdepth: 1
+
+   ahope/injections
+
+========================
+Time-slide generation
+========================
+
+Generate the time-slide files used for describing time slides to be performed later in the analysis
+
+.. toctree::
+   :maxdepth: 1
+
+   ahope/time_slides
 
 ====================
 Template bank
