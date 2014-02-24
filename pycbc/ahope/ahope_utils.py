@@ -308,7 +308,7 @@ class Node(pipeline.CondorDAGNode):
         
         Parameters
         ----------
-        file : AhopeFile or list of one AhopeFile
+        file : AhopeFile
             The AhopeFile that this node needs to run
         opt : string, optional
             The command line option that the executable needs
@@ -329,64 +329,21 @@ class Node(pipeline.CondorDAGNode):
             errMsg = "You cannot supply an option and tell the code that this "
             errMsg += "is an argument. Choose one or the other."
             raise ValueError(errMsg)
-
-        # Allow input where the file is a list of one AhopeFile
-        if isinstance(file, list):
-            file = file[0]
         
         # Add the files to the nodes internal lists of input
         self.input_files.append(file) 
-        # If possible record in the dag the input
-        if len(file.paths) == 1:
-            self.add_input_file(file.path)  
-        # If not, defer untill we can resolve what the actual inputs
-        # will be 
-        elif len(file.paths) > 1 and recombine:
-            for path in file.paths:
-                self.add_input_file(path)
-        elif len(file.paths) > 1:
-            self.partitioned_input_files.append(file)
-            if not (opt or argument):
-                # What does it mean to get a file group as input?
-                # How would the program know what the files are?
-                raise TypeError('Cannot accept partitioned ahope file as '
-                                'input without a corresponding option string.')
+        self.add_input_file(file.path)  
                                 
         # If the file was created by another node, then make that
         # node a parent of this one
         if file.node and not hasattr(file.node, 'executed'):
-            if isinstance(file.node, list):
-                for n in file.node:
-                    self.add_parent(n)
-            else:
-                self.add_parent(file.node)
+            self.add_parent(file.node)
 
         if opt:
-            # The argument has to be resolved later
-            if len(file.paths) > 1:
-                if not recombine:
-                    file.opt = opt
-                else:
-                    errMsg = "Do not know how to recombine a set of input files"
-                    errMsg += " using an option string. Therefore the opt and"
-                    errMsg += " recombine kwargs cannot be used together for "
-                    errMsg += "partitioned input files."
-                    raise NotImplementedError(errMsg)
-            elif len(file.paths) == 1:
-                self.add_var_opt(opt, file.path)
+            self.add_var_opt(opt, file.path)
 
         if argument:
-            if len(file.paths) > 1 and recombine:
-                # Then *all* files are given as arguments
-                for path in file.paths:
-                    self.add_var_arg(path)
-            elif len(file.paths) > 1:
-                errMsg = "Do not yet have support for taking partitioned "
-                errMsg += "input files as arguments. Ask for this feature "
-                errMsg += "to be added."
-                raise NotImplementedError(errMsg)
-            elif len(file.paths) == 1:
-                self.add_var_arg(file.path)
+            self.add_var_arg(file.path)
             
     def add_output(self, file, opt=None, argument=False): 
         """
@@ -394,9 +351,9 @@ class Node(pipeline.CondorDAGNode):
         
         Parameters
         ----------
-        file : AhopeFile or list of one AhopeFile
+        file : AhopeFile
             A file object that this node generates
-        opt : string or list of strings, optional
+        opt : string, optional
             The command line options that the executable needs
             in order to set the names of this file.
         argument : Boolean, optional
@@ -410,12 +367,9 @@ class Node(pipeline.CondorDAGNode):
             errMsg += "is an argument. Choose one or the other."
             raise ValueError(errMsg)
 
-        # Allow input where the file is a list of one AhopeFile
-        if isinstance(file, list):
-            file = file[0]
-
         # make sure the files know which node creates them   
         self.output_files.append(file)
+        self.add_output_file(file.path)
         file.node = self
         if opt:
             file.opt = opt
@@ -598,83 +552,6 @@ class Workflow(object):
         self.dag = pipeline.CondorDAG(logfile, dax=False)
         self.dag.set_dax_file(self.basename)
         self.dag.set_dag_file(self.basename)
-        
-    def partition_node(self, node, partitioned_file):
-        """
-        Do not call this function directly. It is called from within add_node.
-        It is responsible for dealing with cases where I have been given
-        partitioned input files and I need to create multiple condorDAGNodes
-        to run on each of the partitioned inputs.
-        """
-
-        import time, random, hashlib
-    
-        opt = partitioned_file.opt
-        nodes = []
-        for path in partitioned_file.paths:
-            # Create a valid blank copy of the node
-            new_node = copy.copy(node)
-            new_node._CondorDAGNode__parents = node._CondorDAGNode__parents[:]
-            new_node._CondorDAGNode__opts = node.get_opts().copy()
-            new_node._CondorDAGNode__input_files = node.get_input_files()[:]  
-            new_node._CondorDAGNode__output_files = node.get_output_files()[:]          
-            # generate the md5 node name
-            t = str( long( time.time() * 1000 ) )
-            r = str( long( random.random() * 100000000000000000L ) )
-            a = str( self.__class__ )
-            new_node._CondorDAGNode__name = hashlib.md5(t + r + a).hexdigest()
-            new_node._CondorDAGNode__md5name = new_node._CondorDAGNode__name
-            
-            # Add the now disambiguated input argument
-            new_node.add_var_opt(opt, path)
-            new_node.add_input_file(path) 
-            nodes.append(new_node)     
-        return nodes 
-        
-    def finalize_node(self, node):
-        """
-        Use this function to finalize any input and output arguments, along
-        with handling self partitioning.
-        """    
-        # For input files that come in pieces, create a new node for each
-        # and set the input argument to the individual physical file
-        part_files = node.partitioned_input_files
-        nodes = [node]
-        out_nodes = []
-        for file in part_files:
-            for n in nodes:
-                nodes = self.partition_node(n, file)
-            
-        # Handle the case where we now have many nodes
-        if len(nodes) > 1:
-            # For each input file, append the filename with a tag to make
-            # it unique
-            for file in node.output_files:
-                path_groups, job_num_tags = file.partition_self(len(nodes))
-                for n , paths, tag in zip(nodes, path_groups, job_num_tags):  
-                    for path in paths:       
-                        n.add_output_file(path)                     
-                        if hasattr(file, 'opt'):
-                            n.add_var_opt(file.opt, path) 
-                        # For legacy jobs, allow a function to set the tag, 
-                        # as it cannot be done directly
-                        elif hasattr(n, 'set_jobnum_tag'):
-                            n.set_jobnum_tag(tag)
-                        else:
-                            raise ValueError('This node does not support '
-                                   'partitioned files as input')                                 
-                    out_nodes.append(n)
-                file.node = nodes
-        
-        #Standard input files, so nothing special needed    
-        elif len(nodes) == 1:
-            for file in node.output_files:
-                for path in file.paths:
-                    node.add_output_file(path)
-                    if hasattr(file, 'opt'):
-                        node.add_var_opt(file.opt, path)  
-            out_nodes.append(node) 
-        return out_nodes
                  
     def add_node(self, node):
         """
@@ -685,21 +562,12 @@ class Workflow(object):
         node : pycbc.ahope.Node instance
             The pyCBC Node instance to be added.
         """
-        nodes = self.finalize_node(node)
-        for n in nodes:
-            self.dag.add_node(n)
+        self.dag.add_node(n)
             
     def execute_node(self, node):
         """ Execute this node immediately.
         """
-       
-        if len(node.partitioned_input_files) > 0:
-            raise RuntimeError('Cannot execute a paritioned node') 
-        node = self.finalize_node(node)[0] 
         node.executed = True  
-        #for fil in node.input_files:
-        #    if fil.node:
-        #        self.execute_node(fil.node)
         
         cmd_list = [node.job().get_executable()]
         cmd_tuples = node.get_cmd_tuple_list()   
