@@ -276,7 +276,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                     err_string += "\nThis is a bad error! Contact a developer."
                     raise ValueError(err_string)
             else:
-                curr_parent = None
+                curr_parent = [None]
 
             if datafind_outs:
                 curr_dfouts = datafind_outs.find_all_output_in_range(ifo, 
