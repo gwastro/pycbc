@@ -500,7 +500,14 @@ def create_segs_from_cats_job(cp, out_dir, ifoString, tag=None):
     else:
         proxy = "/tmp/x509up_u%d" % os.getuid()
     proxyfile = os.path.join(out_dir, 'x509up.file')
-    shutil.copyfile(proxy, proxyfile)
+    try:
+        shutil.copyfile(proxy, proxyfile)
+    except IOError:
+        raise RuntimeError('Cannot find certificate in %s. '
+                           'Make sure that ligo-proxy-init ' 
+                           'has been run.' % proxy)
+                           
+        
     job.add_condor_cmd('environment',
                        'USER=$ENV(USER);X509_USER_PROXY=%s' % proxyfile)
 
