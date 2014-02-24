@@ -373,6 +373,8 @@ class Node(pipeline.CondorDAGNode):
         file.node = self
         if opt:
             file.opt = opt
+            self.add_var_opt(op, file.path)
+            
         if argument:
             if (len(file.paths) == 1):
                 self.add_var_arg(file.path)
@@ -562,7 +564,7 @@ class Workflow(object):
         node : pycbc.ahope.Node instance
             The pyCBC Node instance to be added.
         """
-        self.dag.add_node(n)
+        self.dag.add_node(node)
             
     def execute_node(self, node):
         """ Execute this node immediately.

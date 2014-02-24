@@ -550,7 +550,7 @@ def get_cumulative_segs(workflow, currSegFile, categories,
         files = segFilesList.find_output_with_ifo(ifo)
         for category in categories:
             fileList = files.find_output_with_tag('VETO_CAT%d' %(category))
-            inputs.append(fileList)                                                       
+            inputs+=fileList                                                      
         
         cum_node = cum_job.create_node(valid_segment, inputs, segment_name)
         if execute_now:
