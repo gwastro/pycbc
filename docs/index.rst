@@ -29,16 +29,16 @@ Package/Executable documentation:
    :maxdepth: 1
 
    ahope
-   frame
    tmpltbank
+   frame
+   executables
    banksim
    faithsim
-   executables
 
 Examples:
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    waveform
 
