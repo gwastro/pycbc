@@ -3,9 +3,6 @@ Welcome to PYCBC
 More information can be found at the website: 
    https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/
 
-EXTRA LINE EXTRA LINE EXTRA LINE
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
 When installing pycbc:
    python setup.py install --prefix=/path/to/install/directory
 
