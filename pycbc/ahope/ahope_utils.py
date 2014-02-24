@@ -853,34 +853,6 @@ class AhopeFile(object):
             raise TypeError('A single path cannot be returned. This AhopeFile '
                             'is partitioned into multiple physical files.')
         return self.paths[0]
-    
-    def partition_self(self, num_parts):
-        """
-        Function for partitioning this AhopeFile into multiple sub-files.
-        This will be called by the ahope workflow manager and does not need to
-        be called by the user.
-        """
-        new_entries = []
-        path_group = []
-        job_tags = []
-        for num in range(0, num_parts):
-            paths = []
-            tag = str(num)
-            for entry in self.cache_entries:
-                # create a unique pathname for each subfile
-                fol, base = os.path.split(entry.path)
-                ifo, descr, time, duration = base.split('-')
-                path = '%s-%s_%s-%s-%s' % (ifo, descr, tag, time, duration) 
-                path = os.path.join(fol, path)                          
-                new_entry = lal.CacheEntry(self.ifo, self.tagged_description, 
-                                           self.segment, entry.url)
-                new_entry.path = path                                            
-                paths.append(path)
-                new_entries.append(new_entry)
-            path_group.append(paths)
-            job_tags.append(tag)
-        self.cache_entries = new_entries
-        return path_group, job_tags
         
     @property
     def filename(self):
@@ -985,12 +957,13 @@ class AhopeFileList(list):
            # separation.
            return outFiles
 
-    def find_output_in_range(self,ifo,start,end):
+    def find_output_in_range(self, ifo, start, end):
         '''
         Return the AhopeFile that is most appropriate for the supplied
         time range. That is, the AhopeFile whose coverage time has the
         largest overlap with the supplied time range. If no AhopeFiles
-        overlap the supplied time window, will return None.
+        overlap the supplied time window, will return None. If multiple
+        files have the identical overlap, all are returned.
 
         Parameters
         -----------
