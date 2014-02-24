@@ -47,7 +47,7 @@ def megaparsecs_to_meters(distance):
 
 default_args = {'spin1x':0,'spin1y':0,'spin1z':0,
                 'spin2x':0,'spin2y':0,'spin2z':0,'lambda1':0, 'lambda2':0,
-                'inclination':0,'distance':1,'f_final':0,'coa_phase':0,
+                'inclination':0,'distance':1,'f_final':0, 'f_ref':0, 'coa_phase':0,
                 'amplitude_order':-1,'phase_order':-1,'spin_order':-1,
                 'tidal_order':-1}
 
@@ -200,7 +200,7 @@ def _lalsim_td_waveform(**p):
                float(solar_mass_to_kg(p['mass2'])),
                float(p['spin1x']), float(p['spin1y']), float(p['spin1z']),
                float(p['spin2x']), float(p['spin2y']), float(p['spin2z']),
-               float(p['f_lower']), 0,
+               float(p['f_lower']), float(p['f_ref']),
                megaparsecs_to_meters(float(p['distance'])),
                float(p['inclination']),
                float(p['lambda1']),  float(p['lambda2']), flags, None,
