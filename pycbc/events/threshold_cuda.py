@@ -23,9 +23,10 @@
 #
 import numpy
 from pycbc.types import zeros, Array
-from pycuda.gpuarray import to_gpu
+from pycuda.gpuarray import to_gpu, empty
 from pycuda.tools import get_or_register_dtype, dtype_to_ctype
 from pycuda.elementwise import ElementwiseKernel
+from pycuda.scan import ExclusiveScanKernel
 from pycuda.compiler import SourceModule
 import pycbc.scheme
 
@@ -74,12 +75,96 @@ tv.gpudata = vptr
 tl.gpudata = lptr
 tn.flags = tv.flags = tl.flags = n.flags
 
-def threshold(series, value):
+def standard_threshold(series, value):
     threshold_kernel(series.data, tv, tl, value, tn)
     pycbc.scheme.mgr.state.context.synchronize()
     n0 = n[0]
-    return loc[0:n0], val[0:n0]
+    srt = numpy.argsort(loc[0:n0])
+    return loc[srt], val[srt]
   
+
+# An attempt at faster thresholding
+mark_above = ElementwiseKernel(
+        " %(tp_in)s *in, %(tp_mark)s *mark, %(tp_th)s threshold " % {
+            "tp_in": dtype_to_ctype(numpy.complex64),
+            "tp_mark": dtype_to_ctype(numpy.uint32),
+            "tp_th": dtype_to_ctype(numpy.float32) },
+        """
+            pycuda::complex<float> val = in[i];
+            if ( abs(val) > threshold )
+                { mark[i] = 1; }
+            else
+                { mark[i] = 0; }
+        """,
+        "mark_above_threshold")
+
+scan_sum = ExclusiveScanKernel(numpy.uint32, "a+b", 0)
+
+stream_compact = ElementwiseKernel(
+        " %(tp_in)s *in, %(tp_out1)s *out1, %(tp_out2)s *out2, %(tp_wl)s *write_loc, %(tp_th)s threshold, %(tp_n)s *bn " % {
+        "tp_in": dtype_to_ctype(numpy.complex64),
+        "tp_out1": dtype_to_ctype(numpy.complex64),
+        "tp_out2": dtype_to_ctype(numpy.uint32),
+        "tp_wl": dtype_to_ctype(numpy.uint32),
+        "tp_th": dtype_to_ctype(numpy.float32),
+        "tp_n": dtype_to_ctype(numpy.uint32) },
+        """
+            pycuda::complex<float> val = in[i];
+            if ( abs(val) > threshold )
+            {
+                out1[write_loc[i]] = in[i];
+                out2[write_loc[i]] = i;
+            }
+            if ( i == n-1 ) { bn[0] = write_loc[i]; }
+        """,
+        "stream_compact")
+
+write_loc = empty((4096*256), numpy.uint32)
+def threshold_by_scan(series, value):
+    mark_above(series.data, write_loc, value)
+    scan_sum(write_loc)
+    stream_compact(series.data, tv, tl, write_loc, value, tn)
+    pycbc.scheme.mgr.state.context.synchronize()
+    n0 = n[0]
+    return loc[0:n0], val[0:n0]
+
+
+# Do thresholding using the GPU only for the abs function
+threshold_cpu_op = """ 
+    pycuda::complex<float> val = in[i];
+    outv[i] = val;
+    if ( abs(val) > threshold)
+        { outl[i] = 1; }
+    else
+        { outl[i] = 0; }
+"""
+
+threshold_cpu_kernel = ElementwiseKernel(
+            " %(tp_in)s *in, %(tp_out1)s *outv, %(tp_out2)s *outl, %(tp_th)s threshold " % {
+                "tp_in": dtype_to_ctype(numpy.complex64),
+                "tp_out1": dtype_to_ctype(numpy.complex64),
+                "tp_out2": dtype_to_ctype(numpy.int32),
+                "tp_th": dtype_to_ctype(numpy.float32)
+                },
+            threshold_cpu_op,
+            "getstuff")
+
+def threshold_with_gpu_abs(series, value):
+    threshold_cpu_kernel(series.data, tv, tl, value)
+    pycbc.scheme.mgr.state.context.synchronize()
+    tgt = numpy.where(loc == 1)[0]
+    return tgt, val[tgt]
+
+
+# Do thresholding entirely on the CPU
+def threshold_on_cpu(series, value):
+    arr = series.data.get()
+    locs = numpy.where(arr.real**2 + arr.imag**2 > value**2)[0]
+    return locs, arr[locs]
+
+
+# Select which of the thresholding methods we want to use out of the above.
+threshold = threshold_on_cpu
 
 threshold_cluster_mod = SourceModule("""
 #include<pycuda-complex.hpp>
