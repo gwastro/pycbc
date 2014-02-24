@@ -349,7 +349,7 @@ def threshold_on_cpu(series, value):
 
 
 # Select which of the thresholding methods we want to use out of the above.
-threshold = threshold_integrated
+threshold = threshold_on_cpu
 
 threshold_cluster_mod = SourceModule("""
 #include<pycuda-complex.hpp>
