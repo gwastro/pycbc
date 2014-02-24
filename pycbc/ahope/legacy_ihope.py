@@ -252,9 +252,9 @@ class LegacySplitBankJob(Job):
                                           None, None, None])
             url_list.append(out_url)
                 
-        job_tag = bank.description + "_" + self.exe_name.upper()
-        out_file_group = AhopeFile(bank.ifo, job_tag, bank.segment, 
-                                   file_url=url_list, tags=bank.tags)
-        node.add_output(out_file_group)
+            job_tag = bank.description + "_" + self.exe_name.upper()
+            out_file = AhopeFile(bank.ifo, job_tag, bank.segment, 
+                                   file_url=out_url, tags=bank.tags)
+            node.add_output(out_file)
         return node
 
