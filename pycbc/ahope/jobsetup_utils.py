@@ -269,7 +269,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                                                   upper_boundary])
                 
             if parents:
-                curr_parent = parents.find_output(ifo, job_valid_seg)
+                curr_parent = parents.find_all_output_in_range(ifo, job_valid_seg)
                 if not curr_parent:
                     err_string = ("No parent jobs found overlapping %d to %d." 
                                   %(job_valid_seg[0], job_valid_seg[1]))
@@ -287,11 +287,12 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                     err_str += "\nThis shouldn't happen. Contact a developer."
                     raise ValueError(err_str)
 
-            node = curr_exe_job.create_node(job_data_seg, job_valid_seg, 
-                                            parent=curr_parent,
-                                            dfParents=curr_dfouts)
-            workflow.add_node(node)
-            out_files += node.output_files
+            for parent in curr_parent:
+                node = curr_exe_job.create_node(job_data_seg, job_valid_seg, 
+                                                parent=parent,
+                                                dfParents=curr_dfouts)
+                workflow.add_node(node)
+                out_files += node.output_files
     return out_files
 
 class PyCBCInspiralJob(Job):
