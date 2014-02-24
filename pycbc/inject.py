@@ -28,12 +28,15 @@
 
 import numpy as np
 import lal
+import lalinspiral
 import lalsimulation as sim
 from pycbc.waveform import get_td_waveform
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import table, lsctables
 from pycbc.types import float64, float32, TimeSeries
 from pycbc.detector import Detector
+import lalmetaio as lmt
+
 
 # map between tapering string in sim_inspiral
 # table and lalsimulation constants
@@ -74,6 +77,17 @@ class InjectionSet(object):
         self.indoc = ligolw_utils.load_filename(sim_file, False)
         self.table = table.get_table(self.indoc, lsctables.SimInspiralTable.tableName)
         self.extra_args = kwds
+
+    def getswigrow(self, glue_row):
+	 """ Translates glue row from the table to libmetaio row"""   
+         swigrow = lmt.SimInspiralTable()
+         for simattr in lsctables.SimInspiralTable.validcolumns.keys():
+            if simattr in ["waveform", "source", "numrel_data", "taper"]:
+                setattr( swigrow, simattr, str(getattr(glue_row, simattr)) )
+            else:
+                setattr( swigrow, simattr, getattr(glue_row, simattr) )
+	 swigrow.geocent_end_time.gpsNanoSeconds = glue_row.geocent_end_time_ns     
+	 return(swigrow)   	
 
     def apply(self, strain, detector_name, f_lower=None, distance_scale=1):
         """Add injections (as seen by a particular detector) to a time series.
@@ -123,23 +137,45 @@ class InjectionSet(object):
             else:
                 f_l = f_lower
 
-            # roughly estimate if the injection may overlap with the segment
-            end_time = inj.get_time_geocent()
-            inj_length = sim.SimInspiralTaylorLength(
+
+            if (inj.numrel_data != None):
+		### performing NR waveform injection
+		# reading Hp and Hc from the frame files
+                swigrow = self.getswigrow(inj)
+		Hp, Hc = lalinspiral.NRInjectionFromSimInspiral(swigrow, strain.delta_t)
+		### Converting to pycbc timeseries
+                hp = TimeSeries(Hp.data.data[:], delta_t = Hp.deltaT, epoch=Hp.epoch)
+                hc = TimeSeries(Hc.data.data[:], delta_t = Hc.deltaT, epoch=Hc.epoch)
+		if (distance_scale != 1.0 and distance_scale > 0.0):
+		    dist_fact = 1.0/distance_scale
+		    hp = hp*dist_fact
+		    hc = hc*dist_fact
+		    
+                end_time = float(hp.get_end_time())
+                start_time = float(hp.get_start_time())
+
+                if end_time < t0 or start_time > t1:
+                      continue
+ 
+            else:
+
+                # roughly estimate if the injection may overlap with the segment
+                end_time = inj.get_time_geocent()
+                inj_length = sim.SimInspiralTaylorLength(
                     strain.delta_t, inj.mass1 * lal.LAL_MSUN_SI,
                     inj.mass2 * lal.LAL_MSUN_SI, f_l, 0)
-            start_time = end_time - 2 * inj_length
-            if end_time < t0 or start_time > t1:
-                continue
+                start_time = end_time - 2 * inj_length
+                if end_time < t0 or start_time > t1:
+                   continue
 
-            # compute the waveform time series
-            hp, hc = get_td_waveform(
+                # compute the waveform time series
+                hp, hc = get_td_waveform(
                     inj, approximant=inj.waveform, delta_t=strain.delta_t,
                     f_lower=f_l, distance=inj.distance * distance_scale, **self.extra_args)
-            hp._epoch += float(end_time)
-            hc._epoch += float(end_time)
-            if float(hp.start_time) > t1:
-                continue
+                hp._epoch += float(end_time)
+                hc._epoch += float(end_time)
+                if float(hp.start_time) > t1:
+                   continue
 
             # compute the detector response, taper it if requested
             # and add it to the strain
