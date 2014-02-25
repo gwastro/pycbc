@@ -288,9 +288,9 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile,
             if currCache in cafe_cache.objects:
                 inputTrigFiles.append(file)
  
+        llw_files = inputTrigFiles + dqSegFile + [tisiOutFile]
         # Now we can create the nodes
-        node = ligolwadd_job.create_node(cafe_cache.extent, inputTrigFiles,
-                                  tisiOutFile, dqSegFile=dqSegFile)
+        node = ligolwadd_job.create_node(cafe_cache.extent, llw_files)
         ligolwAddFile = node.output_files
         ligolwAddOuts += ligolwAddFile
         workflow.add_node(node)
