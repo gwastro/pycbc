@@ -131,12 +131,6 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         tags = [tag.upper() for tag in tags]
         self.tags = tags
         
-        # some some legacy string descriptors
-        self.leg_descr = self.exe_name
-        if len(self.tags) != 0:
-            self.leg_tag_name = ('_'.join(self.tags))
-            self.leg_descr += ('_' + self.leg_tag_name)
-        
         # Determine the sub file name      
         if self.ifo:
             tags = tags + [self.ifo.upper()]
@@ -384,7 +378,7 @@ class Node(pipeline.CondorDAGNode):
                 errMsg += "to be added."
                 
     def make_and_add_output(self, valid_seg, extension, option_name, 
-                                 extra_tags=[]):
+                                 tags=[]):
         """
         This function will create a AhopeFile corresponding to the given
         information and then add that file as output of this node.
@@ -400,23 +394,24 @@ class Node(pipeline.CondorDAGNode):
             The option that is used when setting this job as output. For e.g.
             'output-name' or 'output-file', whatever is appropriate for the
             current executable.
-        extra_tags : list of strings, (optional, default=[])
+        tags : list of strings, (optional, default=[])
             These tags will be added to the list of tags already associated with
             the job. They can be used to uniquely identify this output file.
         """
         job = self.job()
+
         # Changing this from set(tags) to enforce order. It might make sense
         # for all jobs to have file names with tags in the same order.
-        tags = job.tags
+        all_tags = job.tags
         if extra_tags:
-            for tag in extra_tags:
-                if tag not in tags:
-                    tags.append(tag)
+            for tag in tags:
+                if tag not in all_tags:
+                    all_tags.append(tag)
 
         insp = AhopeFile(job.ifo, job.exe_name, extension=extension,
                          segment=valid_seg,
                          directory=job.out_dir,
-                         tags=tags)    
+                         tags=all_tags)    
 
         self.add_output(insp, opt=option_name)
 
@@ -697,7 +692,7 @@ class AhopeFile(object):
         self.cache_entries = []
         for url in file_url:
             cache_entry = lal.CacheEntry(ifo, self.tagged_description, segment, url)
-            self.cache_entries.append(cache_entry)
+            self.cache_entries.append(cache_entry)   
        
     @property
     def path(self):

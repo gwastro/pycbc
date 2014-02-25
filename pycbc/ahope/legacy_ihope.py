@@ -91,6 +91,13 @@ def legacy_get_valid_times(self):
     validChunk = segments.segment([validStart,validEnd])
 
     return dataLength, validChunk
+
+        
+class LegacyAnalysisNode(Node):
+    # This is *ONLY* used by legacy codes where ahope cannot directly
+    # set the output name. Do not use elsewhere!
+    def  set_jobnum_tag(self, num):
+        self.add_var_opt('user-tag', num)
         
 class LegacyAnalysisJob(Job):
     """
@@ -100,11 +107,8 @@ class LegacyAnalysisJob(Job):
     def __init__(self, cp, exe_name, universe, ifo=None, tags=[], out_dir=None):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
 
-    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
+    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
         node = LegacyAnalysisNode(self)
-        
-        if len(self.tags) != 0:
-            node.add_var_opt('ifo-tag', self.leg_tag_name)
         
         if not dfParents or len(dfParents) != 1: 
             raise ValueError("%s must be supplied with a single cache file" 
@@ -113,9 +117,7 @@ class LegacyAnalysisJob(Job):
         pad_data = int(self.get_opt('pad-data'))
         if pad_data is None:
             raise ValueError("The option pad-data is a required option of "
-                             "%s. Please check the ini file." % self.exe_name)                           
-              
-            
+                             "%s. Please check the ini file." % self.exe_name)                                     
           
         node.add_var_opt('gps-start-time', data_seg[0] + pad_data)
         node.add_var_opt('gps-end-time', data_seg[1] - pad_data)   
@@ -137,7 +139,11 @@ class LegacyAnalysisJob(Job):
                              extension=extension,
                              segment=name_segment,
                              directory=self.out_dir,
-                             tags=self.tags)
+                             tags=self.tags + tags)
+ 
+        if len(out_file.tags) != 0:
+            node.add_var_opt('ifo-tag', out_file.tagged_description)                            
+ 
         out_file.segment = valid_seg
         node.add_output(out_file)
         node.add_input(cache_file, opt='frame-cache')         
@@ -156,9 +162,9 @@ class LegacyInspiralJob(LegacyAnalysisJob):
                                     out_dir=out_dir, tags=tags)
         self.injection_file = injection_file 
 
-    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
+    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
         node = LegacyAnalysisJob.create_node(self, data_seg, valid_seg, 
-                                                   parent, dfParents)
+                                                   parent, dfParents, tags=tags)
         node.add_var_opt('trig-start-time', valid_seg[0])
         node.add_var_opt('trig-end-time', valid_seg[1])  
         node.add_input(parent, opt='bank-file')    

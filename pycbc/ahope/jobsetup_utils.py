@@ -269,6 +269,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                                                   upper_boundary])
                 
             if parents:
+                # Find the set of files with the best overlap
                 curr_parent = parents.find_outputs_in_range(ifo, job_valid_seg)
                 if not curr_parent:
                     err_string = ("No parent jobs found overlapping %d to %d." 
@@ -287,10 +288,14 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                     err_str += "\nThis shouldn't happen. Contact a developer."
                     raise ValueError(err_str)
 
-            for parent in curr_parent:
+            for pnum, parent in enumerate(curr_parent):
+                # To ensure output file uniqueness I add a tag
+                # We should generate unique names automatically, but it is a 
+                # pain until we can set the output names for all executables              
                 node = curr_exe_job.create_node(job_data_seg, job_valid_seg, 
                                                 parent=parent,
-                                                dfParents=curr_dfouts)
+                                                dfParents=curr_dfouts,
+                                                tags=[str(pnum)])
                 workflow.add_node(node)
                 out_files += node.output_files
     return out_files
@@ -308,7 +313,7 @@ class PyCBCInspiralJob(Job):
         if self.get_opt('processing-scheme') == 'cuda':
             self.needs_gpu()
 
-    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
+    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
         node = Node(self)
         pad_data = int(self.get_opt('pad-data'))
         if pad_data is None:
@@ -331,7 +336,7 @@ class PyCBCInspiralJob(Job):
             node.add_input(self.injection_file, 'injection-file')
 
         # set the input and output files        
-        node.make_and_add_output(valid_seg, '.xml.gz', 'output')
+        node.make_and_add_output(valid_seg, '.xml.gz', 'output', tags=tags)
         node.add_input(cache_file, opt='frame-cache')
         node.add_input(parent, opt='bank-file')
         return node
@@ -368,7 +373,7 @@ class PyCBCTmpltbankJob(Job):
         self.cp = cp
         self.set_memory(2000)
 
-    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None):
+    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
         node = Node(self)
 
         if not dfParents or len(dfParents) != 1:
@@ -387,7 +392,7 @@ class PyCBCTmpltbankJob(Job):
         cache_file = dfParents[0]
 
         # set the input and output files      
-        node.make_and_add_output(valid_seg, '.xml.gz', 'output-file')
+        node.make_and_add_output(valid_seg, '.xml.gz', 'output-file', tags=tags)
         node.add_input(cache_file, opt='frame-cache')
         return node
 
