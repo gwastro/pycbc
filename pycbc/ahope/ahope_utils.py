@@ -905,6 +905,17 @@ class AhopeFileList(list):
         """
         return AhopeFileList([i for i in self if ifo == i.ifo])
 
+    def get_times_covered_by_files(self):
+        """
+        Find the coalesced intersection of the segments of all files in the
+        list.
+        """
+        times = segments.segmentlist([])
+        for entry in self:
+            times.append(entry.segment)
+        times.coalesce()
+        return times
+
     def convert_to_lal_cache(self):
         """
         Return all files in this object as a lal.Cache object
