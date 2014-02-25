@@ -91,13 +91,6 @@ def legacy_get_valid_times(self):
     validChunk = segments.segment([validStart,validEnd])
 
     return dataLength, validChunk
-
-        
-class LegacyAnalysisNode(Node):
-    # This is *ONLY* used by legacy codes where ahope cannot directly
-    # set the output name. Do not use elsewhere!
-    def  set_jobnum_tag(self, num):
-        self.add_var_opt('user-tag', num)
         
 class LegacyAnalysisJob(Job):
     """
