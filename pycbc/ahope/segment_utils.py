@@ -139,13 +139,13 @@ def setup_segment_generation(workflow, out_dir, tag=None):
     logging.info("Segments obtained")
 
     # This creates the segsToAnalyse from the segFilesList. Currently it uses
-    # the 'ANALYSED' segFilesList, which is science - CAT_1 in
+    # the 'SCIENCE_OK' segFilesList, which is science - CAT_1 in
     # setup_segment_gen_mixed.
     # This also applies the minimum science length
     segsToAnalyse = {}
     for ifo in workflow.ifos:
         analSegs = segFilesList.find_output_with_ifo(ifo)
-        analSegs = analSegs.find_output_with_tag('ANALYSED')
+        analSegs = analSegs.find_output_with_tag('SCIENCE_OK')
         assert len(analSegs) == 1
         analSegs = analSegs[0]
         if analSegs.segmentList:
@@ -261,17 +261,17 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
                 
         analysedSegs = currSciSegs - cat1Segs
         analysedSegs.coalesce()
-        analysedXmlFile = sciXmlFile = os.path.join(out_dir,
-                             "%s-ANALYSED_SEGMENTS.xml" %(ifo.upper()) )
+        analysedXmlFile = os.path.join(out_dir,
+                             "%s-SCIENCE_OK_SEGMENTS.xml" %(ifo.upper()) )
         currUrl = urlparse.urlunparse(['file', 'localhost', analysedXmlFile,
                           None, None, None])
         if tag:
-            currTags = [tag, 'ANALYSED']
+            currTags = [tag, 'SCIENCE_OK']
         else:
-            currTags = ['ANALYSED']
+            currTags = ['SCIENCE_OK']
         currFile = AhopeOutSegFile(ifo, 'SEGMENTS',
                                    segValidSeg, currUrl, segList=analysedSegs,
-                                   tags = ['ANALYSED'])
+                                   tags = currTags)
         segFilesList.append(currFile)
         currFile.toSegmentXml()
 

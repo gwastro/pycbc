@@ -36,7 +36,7 @@ from glue import datafind
 from glue import lal
 from glue import segments,segmentsUtils,git_version
 from glue.ligolw import utils, table, lsctables, ligolw
-from pycbc.ahope import AhopeFile, AhopeFileList, make_analysis_dir
+from pycbc.ahope import *
 
 def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
                             tag=None):
@@ -170,13 +170,6 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
                     # Remove missing time, so that we can carry on if desired
                     logging.info("Updating science times for ifo %s." %(ifo))
                     scienceSegs[ifo] = scienceSegs[ifo] - missing
-                    # Find the analysed file
-                    analSegs = segFilesList.find_output_with_ifo(ifo)
-                    analSegs = analSegs.find_output_with_tag('ANALYSED')
-                    analSegs = analSegs[0]
-                    # And update it
-                    analSegs.segmentList = scienceSegs[ifo]
-                    analSegs.toSegmentXml()
 
         if checkSegmentGaps == 'raise_error' and missingData:
             raise ValueError("Ahope cannot find needed data, exiting.")
@@ -208,13 +201,6 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
                 # Remove missing times, so that we can carry on if desired
                 logging.info("Updating science times for ifo %s." %(ifo))
                 scienceSegs[ifo] = scienceSegs[ifo] - missingFrSegs[ifo]
-                # Find the analysed file
-                analSegs = segFilesList.find_output_with_ifo(ifo)
-                analSegs = analSegs.find_output_with_tag('ANALYSED')
-                analSegs = analSegs[0]
-                # And update it
-                analSegs.segmentList = scienceSegs[ifo]
-                analSegs.toSegmentXml()
                 
         if checkFramesExist == 'raise_error' and missingFlag:
             raise ValueError("Ahope cannot find all frames, exiting.")
@@ -273,6 +259,21 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
         errMsg += "'warn', or 'raise_error'."
         raise ValueError(errMsg)
 
+    # Now need to create the file for SCIENCE_AVAILABLE
+    for ifo in scienceSegs.keys():
+        availableSegsFile = os.path.join(outputDir, 
+                           "%s-SCIENCE_AVAILABLE_SEGMENTS.xml" %(ifo.upper()) )
+        currUrl = urlparse.urlunparse(['file', 'localhost', availableSegsFile,
+                          None, None, None])
+        if tag:
+            currTags = [tag, 'SCIENCE_AVAILABLE']
+        else:
+            currTags = ['SCIENCE_AVAILABLE']
+        currFile = AhopeOutSegFile(ifo, 'SEGMENTS', workflow.analysis_time,
+                            currUrl, segList=scienceSegs[ifo], tags = currTags)
+        segFilesList.append(currFile)
+        currFile.toSegmentXml()
+   
 
     logging.info("Leaving datafind module")
     return AhopeFileList(datafindouts), scienceSegs
