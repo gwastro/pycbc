@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+
+import string
+import random
+import argparse
+import shutil
+import subprocess
+
+import glue.lal
+
+parser = argparse.ArgumentParser(description='Convert pegasus-proof command line call to an actual lalapps_tmplbankl call. This code takes directly the output file and frame locations and translates these to lalapps_tmplbank.')
+
+parser.add_argument("--output-file", action="store", required=True, 
+                    metavar="OUTFILE", help="Path to output file.")
+parser.add_argument("--frame-files", nargs="*", action="store", required=True,
+                    metavar="FRAMEFILE",
+                    help="List of frame files to be used for analysis.")
+parser.add_argument("--gps-start-time", action="store", required=True,
+                    metavar="TIME", type=int,
+                    help="Start time. Sent straight to tmplbank but needed to figure out file naming")
+parser.add_argument("--gps-end-time", action="store", required=True,
+                    metavar="TIME", type=int,
+                    help="End time. Sent straight to tmplbank but needed to figure out file naming")
+parser.add_argument("--channel-name", action="store", required=True,
+                     metavar="STR", help="Channel name. Sent straight to tmplbank but needed to figure out file naming")
+
+# Leftovers are all the other options that will just be sent to lalapps_inspiral
+args, leftovers = parser.parse_known_args()
+
+# Choose a random string for file naming
+
+randStr = ''.join([random.choice(string.ascii_uppercase) for x in range(10)])
+
+# Let's start with the frame files, these need to be translated to a frame
+# cache file, that will be written to local directory
+frameCache = glue.lal.Cache.from_urls(args.frame_files)
+frameFileName = '%s.lcf' %(randStr)
+with open(frameFileName, 'w') as fP:
+    frameCache.tofile(fP)
+
+# Just get lalapps_tmpltbank to make a random ifotag to guarantee uniqueness
+ifoTag = randStr
+
+# Add this to arguments to send to tmpltbank
+leftovers.extend(['--ifo-tag', ifoTag])
+
+# Also need to know the temporary output file name
+ifo = args.channel_name[0:2]
+startTime = args.gps_start_time
+duration = args.gps_end_time - startTime
+inspOutName = "%s-INSPIRAL_%s-%d-%d" %(ifo, ifoTag, startTime, duration)
+
+if "--write-compress" in leftovers:
+    inspOutName += ".xml.gz"
+else:
+    inspOutName += ".xml"
+
+options = ['lalapps_tmpltbank']
+options += ['--gps-start-time', str(args.gps_start_time), '--gps-end-time',
+           str(args.gps_end_time), '--channel-name', args.channel_name,
+           '--ifo-tag', ifoTag, '--frame-cache', frameFileName]
+options += leftovers
+
+print ' '.join(options)
+
