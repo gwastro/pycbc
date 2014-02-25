@@ -453,20 +453,15 @@ class LigolwAddJob(Job):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
 
-    def create_node(self, jobSegment, inputTrigFiles, timeSlideFile=None,
-                    dqSegFile=None, output=None):
+    def create_node(self, jobSegment, input_files, output=None):
         node = Node(self)
 
         # Very few options to ligolw_add, all input files are given as a long
         # argument list. If this becomes unwieldy we could dump all these files
         # to a cache file and read that in. ALL INPUT FILES MUST BE LISTED AS
         # INPUTS (with .add_input_file) IF THIS IS DONE THOUGH!
-        if timeSlideFile:
-            node.add_input(timeSlideFile, argument=True)
-        if dqSegFile:
-            node.add_input(dqSegFile, argument=True)
-        for trigFile in inputTrigFiles:
-            node.add_input(trigFile, argument=True, recombine=True)
+        for fil in input_files:
+            node.add_input(fil, argument=True)
 
         # Currently we set the output file using the name of *all* active ifos,
         # even if one or more of these ifos is not active within jobSegment.
