@@ -664,9 +664,11 @@ class AhopeFile(object):
         self.kwargs = kwargs 
         self.tags = tags 
         if tags is not None:
+            self.tag_str = '_'.join(tags)
             tagged_description = '_'.join([description] + tags)
         else:
             tagged_description = description
+            
         # Follow the capitals-for-naming convention
         self.tagged_description = tagged_description.upper()
       

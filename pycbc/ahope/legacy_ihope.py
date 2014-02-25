@@ -142,7 +142,7 @@ class LegacyAnalysisJob(Job):
                              tags=self.tags + tags)
  
         if len(out_file.tags) != 0:
-            node.add_var_opt('ifo-tag', out_file.tagged_description)                            
+            node.add_var_opt('ifo-tag', out_file.tag_str)                            
  
         out_file.segment = valid_seg
         node.add_output(out_file)

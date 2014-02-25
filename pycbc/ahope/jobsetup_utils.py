@@ -289,13 +289,17 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                     raise ValueError(err_str)
 
             for pnum, parent in enumerate(curr_parent):
+                if pnum != 0:
+                    tag = [str(pnum)]
+                else:
+                    tag = []
                 # To ensure output file uniqueness I add a tag
                 # We should generate unique names automatically, but it is a 
                 # pain until we can set the output names for all executables              
                 node = curr_exe_job.create_node(job_data_seg, job_valid_seg, 
                                                 parent=parent,
-                                                dfParents=curr_dfouts,
-                                                tags=[str(pnum)])
+                                                dfParents=curr_dfouts, 
+                                                tags=tag)
                 workflow.add_node(node)
                 out_files += node.output_files
     return out_files
