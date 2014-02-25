@@ -807,13 +807,47 @@ class AhopeFileList(list):
            # separation.
            return outFiles
 
+    def find_outputs_in_range(self, ifo, current_segment):
+        """
+        Return the list of AhopeFiles that is most appropriate for the supplied
+        time range. That is, the AhopeFiles whose coverage time has the
+        largest overlap with the supplied time range.
+
+        Parameters
+        -----------
+        ifo : string
+           Name of the ifo that the AhopeFile should correspond to
+        current_segment : glue.segment.segment
+           The segment of time that files must intersect.
+
+        Returns
+        --------
+        AhopeFileList class
+           The list of AhopeFiles that are most appropriate for the time range
+        """
+        # First filter AhopeFiles corresponding to ifo
+        ifo_files = [i for i in self if ifo == i.ifo] 
+
+        # Filter AhopeOutFiles to those overlapping the given window
+        overlap_files = [i for i in ifo_files if i.segment.intersects(current_segment)]
+        
+        overlap_windows = [abs(i.segment & current_segment) for i in overlap_files]           
+        # Return the AhopeFile with the biggest overlap
+        # Note if two AhopeFile have identical overlap, the first is used
+        # to define the valid segment
+        overlap_windows = numpy.array(overlap_windows, dtype = int)
+        segment = overlap_files[overlap_windows.argmax()].segment
+        
+        # Get all output files with the exact same segment definition
+        output_files = [f for f in overlap_files if f.segment==segment]
+        return output_files
+
     def find_output_in_range(self, ifo, start, end):
         '''
         Return the AhopeFile that is most appropriate for the supplied
         time range. That is, the AhopeFile whose coverage time has the
         largest overlap with the supplied time range. If no AhopeFiles
-        overlap the supplied time window, will return None. If multiple
-        files have the identical overlap, all are returned.
+        overlap the supplied time window, will return None. 
 
         Parameters
         -----------
@@ -851,7 +885,7 @@ class AhopeFileList(list):
             # Return the AhopeFile with the biggest overlap
             # Note if two AhopeFile have identical overlap, this will return
             # the first AhopeFile in the list
-            overlapWindows = numpy.array(overlapWindows,dtype = int)
+            overlapWindows = numpy.array(overlapWindows, dtype = int)
             return outFiles[overlapWindows.argmax()]
 
     def find_all_output_in_range(self, ifo, currSeg):

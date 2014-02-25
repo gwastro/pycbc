@@ -269,7 +269,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                                                   upper_boundary])
                 
             if parents:
-                curr_parent = parents.find_all_output_in_range(ifo, job_valid_seg)
+                curr_parent = parents.find_outputs_in_range(ifo, job_valid_seg)
                 if not curr_parent:
                     err_string = ("No parent jobs found overlapping %d to %d." 
                                   %(job_valid_seg[0], job_valid_seg[1]))
