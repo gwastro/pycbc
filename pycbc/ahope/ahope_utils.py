@@ -705,10 +705,7 @@ class AhopeFile(object):
         If only one file is contained in this instance this will be that path.
         Otherwise a TypeError is raised.
         """
-        if len(self.paths) != 1:
-            raise TypeError('A single path cannot be returned. This AhopeFile '
-                            'is partitioned into multiple physical files.')
-        return self.paths[0]
+        return self.cache_entries[0].path
         
     @property
     def filename(self):
@@ -716,10 +713,7 @@ class AhopeFile(object):
         If only one file is contained in this instance this will be that
         file's name. Otherwise a TypeError is raised.
         """
-        if len(self.paths) != 1:
-            raise TypeError('A single filename cannot be returned. This '
-                            'file is partitioned into multiple physical files.')
-        return self.filenames[0]
+        return basename(self.cache_entries[0].path)
         
     def _filename(self, ifo, description, extension, segment):
         """
