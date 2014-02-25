@@ -373,7 +373,7 @@ class Node(pipeline.CondorDAGNode):
         file.node = self
         if opt:
             file.opt = opt
-            self.add_var_opt(op, file.path)
+            self.add_var_opt(opt, file.path)
             
         if argument:
             if (len(file.paths) == 1):
@@ -698,20 +698,6 @@ class AhopeFile(object):
         for url in file_url:
             cache_entry = lal.CacheEntry(ifo, self.tagged_description, segment, url)
             self.cache_entries.append(cache_entry)
-
-    @property
-    def paths(self):
-        """
-        A list of paths for all files contained in this instance.
-        """
-        return [cache.path for cache in self.cache_entries]
-    
-    @property
-    def filenames(self):
-        """
-        A list of file names for all files contained in this instance.
-        """
-        return [basename(path) for path in self.paths]
        
     @property
     def path(self):
