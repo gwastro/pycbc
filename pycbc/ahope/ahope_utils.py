@@ -738,7 +738,10 @@ class AhopeFile(object):
         duration = str(end-start)
         start = str(start)
         
-        return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start, duration, extension)     
+        return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start, duration, extension)    
+        
+    def map_str(site='local'):
+        return "%s %s site='%s'" % (self.lfn, self.pfn, site) 
     
 class AhopeFileList(list):
     '''
