@@ -3,7 +3,7 @@
 # the Gibb's phenomenon. (http://en.wikipedia.org/wiki/Gibbs_phenomenon)
 
 import pylab
-from pycbc import types, fft, waveform, filter
+from pycbc import types, fft, waveform
 
 # Get a time domain waveform
 hp, hc = waveform.get_td_waveform(approximant="EOBNRv2",
