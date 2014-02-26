@@ -294,6 +294,7 @@ class Node(pipeline.CondorDAGNode):
         self.input_files = AhopeFileList([])
         self.output_files = AhopeFileList([])
         self.set_category(job.exe_name)
+        self.executed = False
         
     def add_input(self, file, opt=None, argument=False, recombine=False):
         """
@@ -565,10 +566,13 @@ class Workflow(object):
         self.dag.add_node(node)
         
         if node.input_files:
-            self.input_files += [f for f in node.input_files if f.node == None and f not in self.input_files]
+            self.input_files += [f for f in node.input_files 
+                                if (not f.node or (f.node and f.node.executed)) 
+                                and (f not in self.input_files)]
         
         if node.output_files:
-            self.output_files += [f for f in node.output_files if f not in self.output_files]
+            self.output_files += [f for f in node.output_files 
+                                    if f not in self.output_files]
             
     def execute_node(self, node):
         """ Execute this node immediately.
