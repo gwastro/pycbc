@@ -292,7 +292,6 @@ class Node(pipeline.CondorDAGNode):
 
         pipeline.CondorDAGNode.__init__(self, job)
         self.input_files = AhopeFileList([])
-        self.partitioned_input_files = AhopeFileList([])
         self.output_files = AhopeFileList([])
         self.set_category(job.exe_name)
         
@@ -549,6 +548,10 @@ class Workflow(object):
         self.dag = pipeline.CondorDAG(logfile, dax=False)
         self.dag.set_dax_file(self.basename)
         self.dag.set_dag_file(self.basename)
+        
+        # Set up input and output file lists for workflow
+        self.input_files = AhopeFileList([])
+        self.output_files = AhopeFileList([])
                  
     def add_node(self, node):
         """
@@ -560,6 +563,12 @@ class Workflow(object):
             The pyCBC Node instance to be added.
         """
         self.dag.add_node(node)
+        
+        if node.input_files:
+            self.input_files += [f for f in node.input_files if f.node == None]
+        
+        if node.output_files:
+            self.output_files += node.output_files
             
     def execute_node(self, node):
         """ Execute this node immediately.
@@ -695,6 +704,9 @@ class AhopeFile(object):
         for url in file_url:
             cache_entry = lal.CacheEntry(ifo, self.tagged_description, segment, url)
             self.cache_entries.append(cache_entry)   
+    
+    lfn = filename
+    pfn = path
        
     @property
     def path(self):
