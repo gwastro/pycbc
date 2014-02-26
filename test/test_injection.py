@@ -80,7 +80,7 @@ class MyInjection(object):
         row.taper = self.taper
         row.numrel_mode_min = 0
         row.numrel_mode_max = 0
-        row.numrel_data = 0
+        row.numrel_data = None
         row.source = 'ANTANI'
 
 class TestInjection(unittest.TestCase):
