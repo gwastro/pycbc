@@ -138,9 +138,10 @@ class InjectionSet(object):
                 f_l = f_lower
 
 
-            if (inj.numrel_data != None):
+            if (inj.numrel_data != None and inj.numrel_data != ""):
 		### performing NR waveform injection
 		# reading Hp and Hc from the frame files
+		print "Performing NR injections:", inj.numrel_data
                 swigrow = self.getswigrow(inj)
 		Hp, Hc = lalinspiral.NRInjectionFromSimInspiral(swigrow, strain.delta_t)
 		### Converting to pycbc timeseries
