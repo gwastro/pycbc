@@ -6,8 +6,7 @@ Common Waveform Tasks
 What waveforms can I generate?
 =====================================
 
-.. plot:: ../examples/waveform/what_waveform.py
-   :include-source:
+.. literalinclude:: ../examples/waveform/what_waveform.py
 .. command-output:: python ../examples/waveform/what_waveform.py
 
 
