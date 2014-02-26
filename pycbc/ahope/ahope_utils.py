@@ -565,10 +565,10 @@ class Workflow(object):
         self.dag.add_node(node)
         
         if node.input_files:
-            self.input_files += [f for f in node.input_files if f.node == None]
+            self.input_files += [f for f in node.input_files if f.node == None and f not in self.input_files]
         
         if node.output_files:
-            self.output_files += node.output_files
+            self.output_files += [f for f in node.output_files if f not in self.output_files]
             
     def execute_node(self, node):
         """ Execute this node immediately.
@@ -597,9 +597,17 @@ class Workflow(object):
         This will create the workflow and write it out to disk, only call this
         after the workflow has been completely created.
         """
-        self.dag.write_sub_files()
+        #self.dag.write_sub_files()
         self.dag.write_script()
-        self.dag.write_dag()
+        self.dag.write_abstract_dag()
+        
+        f = open('output_map.dat', 'w')
+        for fil in self.output_files:
+            f.write(fil.map_str() + '\n')
+            
+        f = open('input_map.dat', 'w')
+        for fil in self.input_files:
+            f.write(fil.map_str() + '\n')
 
 class AhopeFile(object):
     '''
@@ -704,9 +712,6 @@ class AhopeFile(object):
         for url in file_url:
             cache_entry = lal.CacheEntry(ifo, self.tagged_description, segment, url)
             self.cache_entries.append(cache_entry)   
-    
-    lfn = filename
-    pfn = path
        
     @property
     def path(self):
@@ -739,8 +744,16 @@ class AhopeFile(object):
         start = str(start)
         
         return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start, duration, extension)    
+       
+    @property
+    def lfn(self):
+        return self.filename
         
-    def map_str(site='local'):
+    @property
+    def pfn(self):
+        return self.path
+
+    def map_str(self, site='local'):
         return "%s %s site='%s'" % (self.lfn, self.pfn, site) 
     
 class AhopeFileList(list):
