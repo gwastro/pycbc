@@ -32,7 +32,7 @@ import lalinspiral
 import lalsimulation as sim
 from pycbc.waveform import get_td_waveform
 from glue.ligolw import utils as ligolw_utils
-from glue.ligolw import table, lsctables
+from glue.ligolw import ligolw, table, lsctables
 from pycbc.types import float64, float32, TimeSeries
 from pycbc.detector import Detector
 import lalmetaio as lmt
@@ -57,6 +57,12 @@ injection_func_map = {
     np.dtype(float64): sim.SimAddInjectionREAL8TimeSeries
 }
 
+# dummy class needed for loading LIGOLW files
+class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+
+lsctables.use_in(LIGOLWContentHandler)
+
 class InjectionSet(object):
     """Manages sets of injections: reads injections from LIGOLW XML files
     and injects them into time series.
@@ -74,20 +80,22 @@ class InjectionSet(object):
     """
 
     def __init__(self, sim_file, **kwds):
-        self.indoc = ligolw_utils.load_filename(sim_file, False)
-        self.table = table.get_table(self.indoc, lsctables.SimInspiralTable.tableName)
+        self.indoc = ligolw_utils.load_filename(
+            sim_file, False, contenthandler=LIGOLWContentHandler)
+        self.table = table.get_table(
+            self.indoc, lsctables.SimInspiralTable.tableName)
         self.extra_args = kwds
 
     def getswigrow(self, glue_row):
-	 """ Translates glue row from the table to libmetaio row"""   
-         swigrow = lmt.SimInspiralTable()
-         for simattr in lsctables.SimInspiralTable.validcolumns.keys():
+        """Translates glue row from the table to libmetaio row"""
+        swigrow = lmt.SimInspiralTable()
+        for simattr in lsctables.SimInspiralTable.validcolumns.keys():
             if simattr in ["waveform", "source", "numrel_data", "taper"]:
                 setattr( swigrow, simattr, str(getattr(glue_row, simattr)) )
             else:
                 setattr( swigrow, simattr, getattr(glue_row, simattr) )
-	 swigrow.geocent_end_time.gpsNanoSeconds = glue_row.geocent_end_time_ns     
-	 return(swigrow)   	
+        swigrow.geocent_end_time.gpsNanoSeconds = glue_row.geocent_end_time_ns
+        return swigrow
 
     def apply(self, strain, detector_name, f_lower=None, distance_scale=1):
         """Add injections (as seen by a particular detector) to a time series.

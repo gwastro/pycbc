@@ -25,16 +25,22 @@
 """
 This module provides classes that describe banks of waveforms
 """
-from pycbc.types import zeros, complex64
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw import table, lsctables
+from pycbc.types import zeros
+from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 import pycbc.waveform
-from pycbc.types import FrequencySeries
 from pycbc.filter import sigmasq
 from pycbc import DYN_RANGE_FAC        
 
+
+# dummy class needed for loading LIGOLW files
+class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+
+lsctables.use_in(LIGOLWContentHandler)
+
 class FilterBank(object):
-    def __init__(self, filename, approximant, filter_length, delta_f, f_lower,  dtype, psd=None, out=None, **kwds):
+    def __init__(self, filename, approximant, filter_length, delta_f, f_lower,
+                 dtype, psd=None, out=None, **kwds):
         self.out = out
         self.dtype = dtype
         self.f_lower = f_lower
@@ -47,8 +53,10 @@ class FilterBank(object):
         self.kmin = int(f_lower / delta_f)
         
         try:
-            self.indoc = ligolw_utils.load_filename(filename, False)     
-            self.table = table.get_table(self.indoc, lsctables.SnglInspiralTable.tableName) 
+            self.indoc = ligolw_utils.load_filename(
+                filename, False, contenthandler=LIGOLWContentHandler)
+            self.table = table.get_table(
+                self.indoc, lsctables.SnglInspiralTable.tableName)
         except:
             self.table = []
         
