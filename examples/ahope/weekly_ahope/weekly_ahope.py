@@ -29,7 +29,7 @@ __date__    = pycbc.version.date
 __program__ = "weekly_ahope"
 
 import os, copy, shutil
-import optparse, ConfigParser
+import argparse, ConfigParser
 import logging
 from glue import pipeline
 from glue import segments
@@ -38,42 +38,24 @@ import pycbc.ahope as ahope
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
                     level=logging.INFO,datefmt='%I:%M:%S')
 
-# command line options
-# From http://stackoverflow.com/questions/392041/python-optparse-list
-# this lets us used comma separated lists as arguments
-
-def comma_seperated_option(option, opt, value, parser):
-    setattr(parser.values, option.dest, value.split(','))
-
-usage = """usage: %prog [options]"""
 _desc = __doc__[1:]
-parser = optparse.OptionParser(usage, version=__version__, description=_desc)
-parser.add_option("-s", "--start-time", type="int",\
-                  help="Time to start analysis from.")
-parser.add_option("-e", "--end-time", type="int",\
-                  help="Time to stop analysis at.")
-parser.add_option("-i", "--config-files", type='string', action='callback',
-                  callback=comma_seperated_option,
-                  help="Location of ini files. Can either supply a single "+\
-                  "ini file, or a comma separated list of ini files.")
-parser.add_option("-d", "--output-dir", help="Path to output directory.")
-parser.add_option("-p", "--pipedown-log-dir", 
-                  help="Path to write pipedown log files to.")
-(opts,args) = parser.parse_args()
+parser = argparse.ArgumentParser(description=_desc)
+parser.add_argument('--version', action='version', version=__version__)
+parser.add_argument("-d", "--output-dir", default=None,
+                    help="Path to output directory.")
+parser.add_argument("-p", "--pipedown-log-dir", 
+                    help="Path to write pipedown log files to.")
+ahope.add_ahope_command_line_group(parser)
+args = parser.parse_args()
 
-# Add check that all of these exist
-if not opts.start_time:
-    parser.error("Must supply --start-time")
-if not opts.end_time:
-    parser.error("Must supply --end-time")
-if not opts.config_files:
-    parser.error("Must supply --config-files")
-
-workflow = ahope.Workflow(opts.config_files, opts.start_time, opts.end_time)
+workflow = ahope.Workflow(args)
 
 # Needed later for WIP
-baseDir = os.getcwd()
-runDir = '%d-%d' %(opts.start_time, opts.end_time)
+if args.output_dir:
+    baseDir = args.output_dir
+else:
+    baseDir = os.getcwd()
+runDir = os.path.join(baseDir, '%d-%d' %tuple(workflow.analysis_time))
 if not os.path.exists(runDir):
     os.makedirs(runDir)
 os.chdir(runDir)
@@ -144,6 +126,8 @@ for coincFile in all_coincs:
 workflow.cp.write(file("ahope_configuration.ini", "w"))
 
 # Prepare the input for compatibility with pipedown
+start_time = workflow.analysis_time[0]
+end_time = workflow.analysis_time[1]
 
 # Copy segment files
 ifoString = workflow.ifoString
@@ -154,8 +138,8 @@ for category in range(1, 6):
     ahopeVetoFile = ahopeVetoFile[0]
     ahopeVetoPath = ahopeVetoFile.path
     pipedownVetoFileName = '%s-VETOTIME_CAT_%d-%d-%d.xml' \
-                            %(ifoString, category, opts.start_time, \
-                              opts.end_time-opts.start_time)
+                            %(ifoString, category, start_time, \
+                              end_time-start_time)
     pipedownVetoPath = os.path.join(segDir, pipedownVetoFileName)
     shutil.copyfile(ahopeVetoPath, pipedownVetoPath)
     
@@ -198,10 +182,10 @@ pipeCp.write(file(iniFile,"w"))
 # Set up the command to run pipedown
 
 pipeCommand = [pipeCp.get("condor","pipedown")]
-pipeCommand.extend(["--log-path", opts.pipedown_log_dir])
+pipeCommand.extend(["--log-path", args.pipedown_log_dir])
 pipeCommand.extend(["--config-file", iniFile])
-pipeCommand.extend(["--gps-start-time", str(opts.start_time)])
-pipeCommand.extend(["--gps-end-time", str(opts.end_time)])
+pipeCommand.extend(["--gps-start-time", str(start_time)])
+pipeCommand.extend(["--gps-end-time", str(end_time)])
 pipeCommand.extend(["--ihope-cache", cacheFileName])
 pipeCommand.extend(["--generate-all-data-plots"])
 
@@ -245,8 +229,8 @@ wipCp.write(file('ahope_config_wip.ini', 'w'))
 # Need a second ini file with wip commands
 wipConf = ConfigParser.ConfigParser()
 wipConf.add_section('main')
-wipConf.set('main', 'gps-start-time', opts.start_time)
-wipConf.set('main', 'gps-end-time', opts.end_time)
+wipConf.set('main', 'gps-start-time', str(start_time))
+wipConf.set('main', 'gps-end-time', str(end_time))
 wipConf.set('main', 'lead', 'Dotty Wot')
 wipConf.set('main', 'second', 'Spotty Wot')
 wipConf.set('main', 'title', 'Ahope coincidence analysis')
