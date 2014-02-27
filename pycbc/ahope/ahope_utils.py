@@ -330,7 +330,7 @@ class Node(pipeline.CondorDAGNode):
                                 
         # If the file was created by another node, then make that
         # node a parent of this one
-        if file.node and not hasattr(file.node, 'executed'):
+        if file.node and file.node.executed is False:
             self.add_parent(file.node)
 
         if opt:
@@ -601,7 +601,6 @@ class Workflow(object):
         This will create the workflow and write it out to disk, only call this
         after the workflow has been completely created.
         """
-        #self.dag.write_sub_files()
         self.dag.write_script()
         self.dag.write_abstract_dag()
         
