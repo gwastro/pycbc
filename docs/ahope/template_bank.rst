@@ -119,11 +119,15 @@ $$$$$$$$$$$$$$$$$$
 lalapps_tmpltbank
 $$$$$$$$$$$$$$$$$$
 
-Lalapps_tmpltbank is the legacy C-code that has been used to generate template banks for gravitational-wave data analysis since the dawn of time. It is a little inflexible in terms of output file names. We recommend using the newer pycbc_geom_nonspinbank if possible. The help message for lalapps_tmpltbank follows
+Lalapps_tmpltbank is the legacy C-code that has been used to generate template banks for gravitational-wave data analysis since the dawn of time. It is a little inflexible in terms of output file names. We recommend using the newer pycbc_geom_nonspinbank if possible.
+
+lalapps_tmpltbank is supported in ahope via a wrapper script lalapps_tmpltbank_ahope, this allows us to specify all the frame files and the output file name directly.
+
+The help message for lalapps_tmpltbank follows
 
 .. command-output:: lalapps_tmpltbank --help
 
-Of these options ahope will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
+Of these options ahope and/or the wrapper script will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
 
 * --gps-start-time
 * --gps-end-time

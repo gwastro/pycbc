@@ -95,9 +95,11 @@ $$$$$$$$$$$$$$$$$$
 
 Lalapps_inspiral is the legacy C-code that has been used for years to find gravitational-wave triggers in  It is a little inflexible in terms of output file names.
 
+lalapps_inspiral is supported in ahope via a wrapper script lalapps_inspiral_ahope, this allows us to specify all the frame files and the output file name directly.
+
 .. command-output:: lalapps_inspiral --help
 
-Of these options ahope will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
+Of these options ahope or the wrapper script will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
 
 * --gps-start-time
 * --gps-end-time
