@@ -34,7 +34,7 @@ from itertools import combinations
 from os.path import splitext, basename, isfile
 from glue import lal
 from glue import segments, pipeline
-from configparserutils import parse_ahope_ini_file, check_duplicate_options
+from configparserutils import AhopeConfigParser
 import pylal.dq.dqSegmentUtils as dqUtils
 import copy
 
@@ -191,7 +191,7 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
              
         # Do some basic sanity checking on the options
         for sec1, sec2 in combinations(sections, 2):
-            check_duplicate_options(cp, sec1, sec2, raise_error=True)
+            cp.check_duplicate_options(sec1, sec2, raise_error=True)
              
         for sec in sections:
             if cp.has_section(sec):
@@ -338,6 +338,49 @@ class Node(pipeline.CondorDAGNode):
 
         if argument:
             self.add_var_arg(file.path)
+
+    def add_input_list(self, fileList, opt=None, argument=False, delimiter=' '):
+        """
+        Add a list of files as input to this node, under a single option, ie:
+        --option-name file1,file2,file3, or as an argument. Use delimiter to
+        specify how to separate the files.
+
+        Parameters
+        -----------
+        fileList: AhopeFileList
+            The list of AhopeFiles that this node needs to run.
+        opt : string, optional
+            The command line option that the executable needs
+            in order to set the associated file list as input.
+        argument : Boolean, optional
+            If present this indicates that the files should be supplied as an
+            argument to the job (ie. file names with no option at the end of
+            the command line call). Using argument=True and opt != None will
+            result in a failure.
+        delimiter : string, optional (default = ' ')
+            Set the delimiter that is used to separate the file names when
+            supplied as an option or argument.
+        """
+        if argument and opt != None:
+            errMsg = "You cannot supply an option and tell the code that this "
+            errMsg += "is an argument. Choose one or the other."
+            raise ValueError(errMsg)
+
+        # Add the files to the nodes internal lists of input
+        for file in fileList:
+            self.input_files.append(file)
+            self.add_input_file(file.path)
+            if file.node and not hasattr(file.node, 'executed'):
+                self.add_parent(file.node)
+
+        fileListString = delimiter.join([file.path for file in fileList])
+     
+        if opt:
+            self.add_var_opt(opt, fileListString)
+
+        if argument:
+            self.add_var_arg(fileListString)
+        
             
     def add_output(self, file, opt=None, argument=False): 
         """
@@ -524,7 +567,7 @@ class Workflow(object):
              The time after which not to consider for analysis.
         """
         # Parse ini file
-        self.cp = parse_ahope_ini_file(config)
+        self.cp = AhopeConfigParser(config, [])
 
         # Set global values
         self.analysis_time = segments.segment([start_time,end_time])
@@ -553,6 +596,15 @@ class Workflow(object):
         # Set up input and output file lists for workflow
         self.input_files = AhopeFileList([])
         self.output_files = AhopeFileList([])
+
+        # Dump the parsed config file
+        iniFile = os.path.abspath(self.basename + 'PARSED.ini')
+        if not os.path.isfile(iniFile):
+            fp = open(iniFile, 'w')
+            self.cp.write(fp)
+            fp.close()
+        else:
+            logging.warn("Cowardly refusing to overwrite %s." %(iniFile))
                  
     def add_node(self, node):
         """
