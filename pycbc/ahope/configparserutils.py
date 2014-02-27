@@ -27,10 +27,50 @@ workflow construction. This module is described in the page here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.html
 """
 
+import os, sys
+import argparse
 import re
 import distutils.spawn
 import copy
 import ConfigParser
+
+def add_ahope_command_line_group(parser):
+    """
+    The standard way of initializing a ConfigParser object in ahope will be
+    to do it from the command line. This is done by giving a
+
+    --config-files filea.ini fileb.ini filec.ini
+
+    command. You can also set config file override commands on the command
+    line. This will be most useful when setting (for example) start and
+    end times, or active ifos. This is done by
+
+    --config-overrides section1:option1:value1 section2:option2:value2 ...
+
+    This can also be given as
+
+    --config-overrides section1:option1
+
+    where the value will be left as ''.
+
+    This function returns an argparse OptionGroup to ensure these options are
+    parsed correctly and can then be sent directly to initialize an
+    AhopeConfigParser.
+
+    Parameters
+    -----------
+    parser : argparse.ArgumentParser instance
+        The initialized argparse instance to add the ahope option group to.
+    """
+    ahopeArgs = parser.add_argument_group('ahope',
+                                          'Options needed for ahope setup.')
+    ahopeArgs.add_argument("--config-files", nargs="*", action='store',
+                           required=True, metavar="CONFIGFILE",
+                           help="List of config files to be used in analysis.")
+    ahopeArgs.add_argument("--config-overrides", nargs="*", action='store',
+                           required=True, metavar="SECTION:OPTION:VALUE",
+                           help="List of section,option,value combinations to add into the configuration file. Normally the gps start and end times might be provided this way, and user specific locations (ie. output directories). This can also be provided as SECTION:OPTION or SECTION:OPTION: both of which indicate that the corresponding value is left blank.")
+
 
 class AhopeConfigParser(ConfigParser.SafeConfigParser):
     """
@@ -60,7 +100,28 @@ class AhopeConfigParser(ConfigParser.SafeConfigParser):
             Initialized AhopeConfigParser instance.
         """
         ConfigParser.SafeConfigParser.__init__(self)
+        for confFile in configFiles:
+            if not os.path.isfile(confFile):
+                errMsg = "File %s does not exist." %(confFile)
+                raise ValueError(errMsg)
         self.read_ini_file(configFiles)
+
+        # Do overrides first
+        for override in overrideTuples:
+            if len(override) not in [2,3]:
+                print override
+                errMsg = "Overrides must be tuples of length 2 or 3."
+                errMsg = "Got %s." %(str(override))
+                raise ValueError(errMsg)
+            section = override[0]
+            option = override[1]
+            value = ''
+            if len(override) == 3:
+                value = override[2]
+            # Check for section existence, create if needed
+            if not self.has_section(section):
+                self.add_section(section)
+            self.set(section, option, value)
 
         # Replace exe macros with full paths
         self.perform_exe_expansion()
@@ -85,6 +146,40 @@ class AhopeConfigParser(ConfigParser.SafeConfigParser):
             fp = open(parsedFilePath,'w')
             cp.write(fp)
             fp.close()
+
+
+    @classmethod
+    def from_args(cls, args):
+        """
+        Initialize a AhopeConfigParser instance using the command line values
+        parsed in args. args must contain the values provided by the
+        ahope_command_line_group() function. If you are not using the standard
+        ahope command line interface, you should probably initialize directly
+        using __init__()
+
+        Parameters
+        -----------
+        args : argparse.ArgumentParser
+            The command line arguments parsed by argparse
+        """
+        # Identify the config files
+        confFiles = args.config_files
+
+        # Identify the overrides
+        confOverrides = args.config_overrides
+        # and parse them
+        parsedOverrides = []
+        for override in confOverrides:
+            splitOverride = override.split(":")
+            if len(splitOverride) == 3:
+                parsedOverrides.append(tuple(splitOverride))
+            if len(splitOverride) == 2:
+                parsedOverrides.append(tuple(splitOverride + [""]))
+            else:
+                errMsg = "Overrides must be of format section:option:value "
+                errMsg = "or section:option. Cannot parse %s." %(override,)
+
+        return cls(confFiles, parsedOverrides) 
 
 
     def read_ini_file(self, cpFile):

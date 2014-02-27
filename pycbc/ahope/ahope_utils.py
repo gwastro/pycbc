@@ -552,24 +552,21 @@ class Workflow(object):
     generate cache files from the inputs. It makes heavy use of the
     pipeline.CondorDAG class, which is instantiated under self.dag.
     """
-    def __init__(self, config, start_time, end_time):
+    def __init__(self, args):
         """
         Create an aHOPE workflow
         
         Parameters
         ----------
-        config : str
-             The path of the ahope configuration file. This is read in and
-             stored under self.cp as a ConfigParser.ConfigParser instance.
-        start_time : int
-             The time at which to start considering for analysis.
-        end_time : int
-             The time after which not to consider for analysis.
+        args : argparse.ArgumentParser
+            The command line options to initialize an ahope workflow.
         """
         # Parse ini file
-        self.cp = AhopeConfigParser(config, [])
+        self.cp = AhopeConfigParser.from_args(args)
 
         # Set global values
+        start_time = int(self.cp.get("ahope","start-time"))
+        end_time = int(self.cp.get("ahope", "end-time"))
         self.analysis_time = segments.segment([start_time,end_time])
 
         # Set the ifos to analyse
@@ -580,10 +577,9 @@ class Workflow(object):
         self.ifos.sort(key=str.lower)
         self.ifoString = ''.join(self.ifos)
         
-        if type(config) is list:
-            self.basename = basename(splitext(config[0])[0])
-        else:
-            self.basename = basename(splitext(config)[0])
+        # FIXME: Not sure if this is this is really what we should be doing to
+        # get the basename!
+        self.basename = basename(splitext(args.config_files[0])[0])
         
         # Initialize the dag
         logfile = self.basename + '.log'
@@ -644,8 +640,14 @@ class Workflow(object):
         else:
             base_name = node.job().exe_name
         
+        # Must execute in output directory.
+        currDir = os.getcwd()
+        os.chdir(job_dir)
+        # Make call
         make_external_call(cmd_list, outDir=os.path.join(job_dir, 'logs'),
                                      outBaseName=base_name) 
+        # Change back
+        os.chdir(currDir)
         
     def write_plans(self):
         """
