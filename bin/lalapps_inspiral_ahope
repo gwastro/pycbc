@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys,os
 import string
 import random
 import argparse
@@ -55,12 +56,20 @@ if "--write-compress" in leftovers:
 else:
     inspOutName += ".xml"
 
-options = ['lalapps_inspiral']
-options += ['--gps-start-time', str(args.gps_start_time), '--gps-end-time',
+cmdList = ['lalapps_inspiral']
+cmdList += ['--gps-start-time', str(args.gps_start_time), '--gps-end-time',
            str(args.gps_end_time), '--channel-name', args.channel_name,
            '--ifo-tag', ifoTag, '--frame-cache', frameFileName]
-options += leftovers
+cmdList += leftovers
 
-print ' '.join(options)
-
-
+# Run lalapps_inspiral
+retCode = subprocess.call(cmdList, stderr=sys.stderr, stdout=sys.stdout,
+                          shell=False)
+os.remove(frameFileName)
+if not retCode:
+    # Clean up
+    shutil.move(inspOutName, args.output_file)
+    sys.exit(0)
+else:
+    os.remove(inspOutName)
+    sys.exit(retCode)

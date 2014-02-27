@@ -277,6 +277,7 @@ setup (
                  'build' : build},
     ext_modules = [lalwrap_module, testlalwrap_module],
     requires = ['lal'],
+<<<<<<< HEAD
     scripts  = [
                'bin/pycbc_banksim',
                'bin/pycbc_faithsim',
