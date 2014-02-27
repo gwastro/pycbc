@@ -486,7 +486,6 @@ def create_segs_from_cats_job(cp, out_dir, ifoString, tag=None):
     job = Job(cp, 'segments_from_cats', universe='local', ifo=ifoString,
               out_dir=out_dir, tags=currTags)
     job.add_opt('separate-categories', '')
-    job.add_opt('output-dir', out_dir)
     job.add_opt('segment-url', segServerUrl)
     job.add_opt('veto-file', vetoDefFile)
     # FIXME: Would like the proxy in the Workflow instance
