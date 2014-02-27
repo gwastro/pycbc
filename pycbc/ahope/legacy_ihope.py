@@ -110,8 +110,8 @@ class LegacyAnalysisJob(Job):
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
         node = LegacyAnalysisNode(self)
         
-        if not dfParents or len(dfParents) != 1: 
-            raise ValueError("%s must be supplied with a single cache file" 
+        if not dfParents: 
+            raise ValueError("%s must be supplied with frame files" 
                               %(self.exe_name))  
         
         pad_data = int(self.get_opt('pad-data'))
@@ -130,23 +130,16 @@ class LegacyAnalysisJob(Job):
         if gzipped is not None:
             extension += '.gz'
         
-        #create the ouptut file for this job 
-        # Note that this doesn't enforce that the program creates a file with this
-        # name. This must match the the expected output of the program.
-        name_segment = segments.segment([data_seg[0] + pad_data, 
-                                         data_seg[1] - pad_data])
+        #create the output file for this job 
         out_file = AhopeFile(self.ifo, self.exe_name, 
                              extension=extension,
-                             segment=name_segment,
+                             segment=valid_seg,
                              directory=self.out_dir,
                              tags=self.tags + tags)
  
-        if len(out_file.tags) != 0:
-            node.add_var_opt('ifo-tag', out_file.tag_str)                            
- 
         out_file.segment = valid_seg
-        node.add_output(out_file)
-        node.add_input(cache_file, opt='frame-cache')         
+        node.add_output(out_file, opt='output-file')
+        node.add_input_list(dfParents, opt='frame-files', delimiter=' ')
         return node
 
     get_valid_times = legacy_get_valid_times

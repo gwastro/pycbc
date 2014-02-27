@@ -57,7 +57,7 @@ def select_tmpltbankjob_instance(curr_exe, curr_section):
     """
     # This is basically a list of if statements
 
-    if curr_exe == 'lalapps_tmpltbank':
+    if curr_exe == 'lalapps_tmpltbank_ahope':
         exe_class = LegacyTmpltbankExec(curr_section)
     elif curr_exe == 'pycbc_geom_nonspinbank':
         exe_class = PyCBCTmpltbankExec(curr_section)
@@ -90,7 +90,7 @@ def select_matchedfilterjob_instance(curr_exe, curr_section):
         * job.create_node()
     """
     # This is basically a list of if statements
-    if curr_exe == 'lalapps_inspiral':
+    if curr_exe == 'lalapps_inspiral_ahope':
         exe_class = LegacyInspiralExec(curr_section)
     elif curr_exe == 'pycbc_inspiral':
         exe_class = PyCBCInspiralExec(curr_section)
