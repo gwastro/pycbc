@@ -196,38 +196,6 @@ Determine if "triggers" seen in one detector are also seen in other detectors. A
 
    ahope/coincidence
 
-====================
-Post-processing
-====================
-
-Interpret the results, calculating false-alarm probabilities and rate limits.
-
-.. toctree::   :maxdepth: 1 
-
-   ahope/post_processing
-
-====================
-Plotting
-====================
-
-Create plots of the various outputs through the pipeline to easily enable the user to view results
-
-.. toctree::   :maxdepth: 1
-
-    ahope/plotting
-
-
-====================
-Generate html pages
-====================
-
-
-Tie the plots together in one html page, where *all* desired information should be available
-
-.. toctree::   :maxdepth: 1
-
-    ahope/web_pages
-
 
 ====================
 Method documentation

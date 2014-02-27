@@ -1,28 +1,269 @@
-###################################################
-Ahope Initialization Documentation
-###################################################
+.. _ahopeconfigparsermod:
+
+#########################################################
+Ahope's configuration file(s) and command line interface
+#########################################################
 
 ============
 Introduction
 ============
 
-Ahope takes input options from two locations
+Ahope at its core is designed to be flexible and allow the user to do what they
+want to create the pipeline that they want to run. One of the ways to allow
+this is by having a, sometimes large, configuration file that serves two
+purposes
 
-- The command line
-- The configuration (.ini) file
+* Tell ahope, the workflow planner, how to run the various stages specified in
+  the top-level ahope script.
+* Specify, as completely as possible, all command line options that will be
+  sent to every executable that is run in the pipeline. Tags are used to
+  identify options sent a subset of jobs, as described more fully later.
 
-It has been designed so that the information provided on the command line is as limited as possible, and as much information as possible goes into the configuration (.ini) file.
+The idea is that the only input that a user *needs* is the configuration file.
+However, it may often be useful for certain options, such as user-specific
+locations and analysis start/end times, to be supplied on the command line.
+To allow this we allow a method by which configuration file options can be
+supplied, or overridden, on the command line.
 
-The command line options that can be provided to ihope is given here:
+Ihope used similar .ini files in every analysis. However, it was noted that these files grew huge and it becomes difficult for a novice to understand which options can be safely changed and which ones to leave well alone. It is also difficult so see which options are going to which job, inspiral.c for example looks for options in > 10 places and it isn't clear where those places are.
 
-.. toctree::
-   :maxdepth: 1
+To attempt to solve this ahope has implemented a number of features
 
-   initialization_commandline
+* Multiple configuration files: You can now supply multiple configuration files to, for e.g. identify a file containing only injection generation parameters, which a user may want to change often. It is even possible to have sections split across files, so one could have a configuration file of key options, ones that might be changed, and another file of "leave alone" options.
+* Direct command line options: In ahope command line options are not drawn from obscure sections, they correspond one-to-one with the executables. Options in the [inspiral] section will be sent to the inspiral executable and *only* to the inspiral executable.
+* Combined sections: To avoid the issue of specifiying common options repeatedly we have allowed the ability of combined sections. So if you have two executables with a large set of shared options you can specify a [exe1&exe2] section to provide the shared options and [exe1] and [exe2] sections to supply the individual options.
+* Interpolation: As in configparser 3.0+ we have the ability to specify an option in one place and use an interpolation string to also provide it in other places, this is described below.
+* Tags/subsections: In some cases options may only need to be sent to certain jobs, or you may want to call individual modules multiple times and do different things. To accomodate this ahope includes a tagging (or subsections) system to provide options to only a subset of jobs, or to a specific call to a module. For example, options in [inspiral] are sent to all inspiral jobs, options in [inspiral-h1] would be sent to inspiral jobs running only on h1 data.
+* Executable expanding: Ahope includes macros to enable the user to more easily specify executable paths. For example $(which:exe1} will be expanded to the location of exe1 in the users path automatically.
 
-The ahope configuration file and it's options are described here:
+most of these features will be applied directly after reading in the configuration file. Ahope will then dump the parser configuration back to disk so the user/reviewer can more easily see what the analysis is actually doing.
 
-.. toctree::
-   :maxdepth: 1
+In this page we describe the layout of the ahope .ini configuration file and what the various sections mean, how they are used, and how an ini file should be set out. 
 
-   initialization_inifile
+**NOTE**: A number of features that have been put in here, are available in the python 3.X version of ConfigParser. In addition this version also has a duplicate option check. In python 2.X if I do::
+
+    [inspiral]
+    detect-gravitational-waves = True
+    LOTS OF GARBAGE
+    detect-gravitational-waves = False
+
+it will set the value to False, and proceed happily. THERE IS NO WAY TO CATCH THIS! There is a python 2.X backport of this new version, it is available in pypi, but not in macports. It would be good to pick up this new version and have some of these features available natively.
+
+======================================================================
+Supplying the config file on the command line and overriding options
+======================================================================
+
+Ahope only uses two command line options, one to specify the configuration files
+and one to specify and overriding options. First the config files:
+
+* --config-files FILE1 [FILE2 FILE3 ....]
+
+where FILEX corresponds to the configuration files. Second the overriding options:
+
+* --config-overrides section1:option1:value1 [section2:option2:value2 ...]
+
+These specify options that should be *added* to the config files, or if already present *overwritten*. The section, option and value refer to the section option and value to be added. If the section doesn't already exist in the configuration file it will be added. In some cases you will want to supply an option without a value. This can be done with either
+
+section:option:
+
+or
+
+section:option
+
+--------------
+Example
+--------------
+
+Here is an example of running an ahope workflow from the command line::
+
+  python weekly_ahope.py --config-files weekly_ahope.ini pipedown.ini inj.ini --config-overrides ahope:start-time:${GPS_START_TIME} ahope:end-time:${GPS_END_TIME}
+
+Here the analysis start and end times are being overriden with values from the user's environment.
+
+=====================================
+Global options - the [ahope] section
+=====================================
+
+The [ahope] section and [ahope-XXX] subsections should appear at the top of an ahope configuration file.
+
+The [ahope] section and [ahope-XXX] subsections of the configuration file are used to store options that ahope uses to make decisions on what paths to take when deciding how to construct the workflow. Options in here are *not* going to end up supplied to any executable on the command line.
+
+The [ahope] section must contain two entries
+
+* start-time=START
+* end-time=END
+
+which are used to tell the workflow that is only to consider times in [START,END) for analysis. These will often be supplied as override options directly on the command line.
+
+It is okay to store other *important and widely used* values in here. You might often see cases where channel names are given here as these are sent to a number of codes on the command line, and it is easier to refer to them here, at the very top of the .ini file, so that the user can more easily see and change such values.
+
+---------------------------------
+[ahope-XXX] subsections
+---------------------------------
+
+Each module that you use when setting up your workflow will need an [ahope-XXX] subsection. The name of the subsection and the particular options needed can be found in each module's documentation page.
+
+If you want to call any module more than once you will need to use ahope's tagging system. As an example let's say I want to call the template bank module twice, once to set up a pycbc template bank and once to set up a SVD template bank. I could then create [ahope-tmpltbank-pycbc] and [ahope-tmpltbank-svd] sections to provide options that are unique to each tag. I could also use [exename-pycbc] and [exename-svd] sections if the two methods are using the same executable, but need different options. In both cases options in [ahope-tmpltbank] and [exename] would be used for *both* tags. (If the two codes were using different executables then [exename1] and [exename2] sections would suffice.)
+
+An example of where this section might be used is in the template bank stage where one can either run with a pre-generated bank or generate banks within the workflow. This information would be provided in this section.
+
+If it proves necessary ahope "subsections" can be created with names like [ahope-segments] or [ahope-datafind] .....
+
+----------------------
+Requirements
+----------------------
+
+The [ahope] section in *every* .ini file should contain a link to this page to see what options are needed.
+
+The [ahope-XXX] sections in *every* .ini file should start with a link to that module's documentation to see what options/values are relevant for that section.
+
+----------------------
+Example
+----------------------
+
+Here is an example of the [ahope] section of a .ini file::
+
+  [ahope]
+  ; https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization.html
+  ; provides details of how to set up an ahope configuration .ini file
+  h1-channel-name = H1:LDAS-STRAIN
+  l1-channel-name = L1:LDAS-STRAIN
+  ;h2-channel-name = H2:LDAS-STRAIN
+  ahope-html-basedir = /home/spxiwh/public_html/ahope/development/weekly_ahope/test
+
+  [ahope-ifos]
+  ; This is the list of ifos to analyse
+  h1 =
+  l1 =
+
+  [ahope-datafind]
+  ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/datafind.html
+  datafind-method = AT_RUNTIME_SINGLE_FRAMES
+  datafind-h1-frame-type = H1_LDAS_C02_L2
+  datafind-l1-frame-type = L1_LDAS_C02_L2
+  ;datafind-h2-frame-type = H2_LDAS_C02_L2
+  datafind-check-segment-gaps = update_times
+  datafind-check-frames-exist = raise_error
+  datafind-check-segment-summary = no_test
+  ; Set this to sepcify the datafind server. If this is not set the code will
+  ; use the value in ${LIGO_DATAFIND_SERVER}
+  ;datafind-ligo-datafind-server = ""
+
+  [ahope-segments]
+  ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html
+  ; PIPEDOWN demands we use AT_RUNTIME
+  segments-method = AT_RUNTIME
+  segments-H1-science-name = H1:DMT-SCIENCE:4
+  segments-L1-science-name = L1:DMT-SCIENCE:4
+  ;segments-V1-science-name = V1:ITF_SCIENCEMODE:6
+  segments-database-url = https://segdb.ligo.caltech.edu
+  segments-veto-definer-url = https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/S6/H1L1V1-S6_CBC_LOWMASS_B_OFFLINE-937473702-0.xml
+  segments-maximum-veto-category = 5
+  segments-minimum-segment-length = 2000
+  segments-generate-coincident-segments =
+
+  [ahope-tmpltbank]
+  ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/template_bank.html
+  tmpltbank-method=WORKFLOW_INDEPENDENT_IFOS
+  ; Remove the option below to disable linking with matchedfilter_utils
+  tmpltbank-link-to-matchedfltr=
+
+  [ahope-injections]
+  ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/injections.html
+  injections-method=IN_WORKFLOW
+
+  [ahope-timeslides]
+  ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/time_slides.html
+  timeslides-method=AT_RUNTIME
+
+
+=================================================
+Executable locations - the [executables] section
+=================================================
+
+This section should contain the names of each of the executables that will be used in the ahope workflow and their locations. 
+
+-------------------
+executable macros
+-------------------
+
+The following macros can be used **only** within this section to automatically fill in full path names
+
+$$$$$$$$$$$$$$$$$$$$$
+which(executable)
+$$$$$$$$$$$$$$$$$$$$$
+
+In the following example tmpltbank's value will be replaced with the output of which(lalapps_tmpltbank)::
+
+  [executables]
+  tmpltbank = ${which:lalapps_tmpltbank}
+  inspiral = /full/path/to/lalapps_inspiral
+
+------------------
+Requirements
+------------------
+
+All executables used by ahope should be supplied in this section, and *only* in this section.
+
+-------------------
+Example
+-------------------
+
+Here is an example of the [executables] section of an ahope .ini file::
+
+  [executables]
+  tmpltbank         = /home/cbc/opt/s6b/ab577e4e5dad14e46fce511cffdb04917836ba36/bin/lalapps_tmpltbank
+  inspiral          = /home/cbc/opt/s6b/ab577e4e5dad14e46fce511cffdb04917836ba36/bin/lalapps_inspiral
+  inspinj           = /home/cbc/opt/s6b/ab577e4e5dad14e46fce511cffdb04917836ba36/bin/lalapps_inspinj
+  thinca            = ${which:ligolw_thinca}
+
+
+===================
+Executable options
+===================
+
+For each of the executables in the [executables] section, options for that executable should be listed under the section corresponding to that executable. Options in the [tmpltbank] section are sent to lalapps_tmpltbank, options in the [inspiral] section are sent to lalapps_inspiral etc.
+
+It is possible to have more than one [tmpltbank] section, ConfigParser will simply combine them together when reading in. Therefore '''important options''' and '''options that a novice user might want to change''' could be supplied in a first [tmpltbank] section near the top of the .ini file. This section could be commented accordingly. The modules documentation page should also include instructions for each of the supported executables (usually the code's own help message). Options that are not so important and ones that a novice user would not want to change could be placed in a second [tmpltbank] section at the bottom of the ini file, this section would be labelled accordingly and also contain a link to documentation for that executable.
+
+Some options are only sent to a subset of jobs using a given executable. For example those running on H1 data. Options like these will be provided in sections labelled [executable_name-subset_tag]. So for the H1 example the section would be called [tmpltbank-H1]. As well as obeying the rules above these section must clearly state ''which'' jobs will be sent those options. This can also be used when calling a section multiple times with different tags. Nested tags are not supported (ie [tmpltbank-H1-pycbc])
+
+Some options need to be sent to more than one executable, for example the channel names are used by any code that reads the data. Such sections should be given as the combination of executable names separated by the & token. So options sent to tmpltbank '''and''' inspiral would go in a section called [tmpltbank&inspiral]. The code parsing the .ini file will automatically separate and duplicate these options in memory. All of the above rules apply. If I want to send an option to all tmpltbank and inspiral jobs running on H1 data, I might do something like [tmpltbank-H1&inspiral-H1].
+
+If an option is given in more than one section (ie. if I specify --time-window 0.5 in [inspiral] and --time-window 1.0 in another [inspiral] or [inspiral&tmpltbank] or [inspiral-H1] the code will throw an error. Specifying --time-window 1.0 in [inspiral-H1] and --time-window 0.5 in [inspiral-L1] is valid as long as the subset of H1 jobs and the subset of L1 jobs do not overlap.
+
+If a particular code (let's say inspiral) wants to use an option supplied in the [ahope] section (for e.g. the channel names) it can do this by using::
+
+  [inspiral-h1]
+  channel-name = ${ahope|h1-channel}
+
+  [inspiral-l1]
+  channel-name = ${ahope|l1-channel}
+
+  [inspiral-v1]
+  channel-name = ${ahope|v1-channel}
+
+Similar macros can be added as needed, but these should be limited to avoid namespace confusion. 
+
+---------------------------------
+Example complete ahope .ini file
+---------------------------------
+
+Please see the examples on the main ahope page for some examples of complete ahope .ini files and example workflows.
+
+=====================
+Code documentation
+=====================
+
+The parsing of ahope .ini files and command line parsing is done from within the pycbc.ahope.configparserutils module. The functions in this module are shown below
+
+--------------------------------------------
+:mod:`pycbc.ahope.configparserutils` Module
+--------------------------------------------
+
+.. automodule:: pycbc.ahope.configparserutils
+    :noindex:
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
