@@ -29,6 +29,7 @@ PyOpenCL, and Numpy.
 
 BACKEND_PREFIX="pycbc.types.array_"
 
+import logging
 import os as _os
 
 import functools as _functools
@@ -703,6 +704,11 @@ class Array(object):
     def resize(self, new_size):
         """Resize self to new_size
         """
+        if (new_size < len(self)):
+            logging.warn("Requested size (%s) of array is less than "
+                         "current size (%s). This will truncate "
+                         "the array." % (new_size, len(self)))
+        
         if new_size == len(self):
             return
         else:
