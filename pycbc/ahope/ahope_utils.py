@@ -812,10 +812,10 @@ class AhopeFile(object):
         
     @property
     def pfn(self):
-        return self.url
+        return self.path
 
     def map_str(self, site='local'):
-        return "%s %s pool='%s'" % (self.lfn, self.pfn, site) 
+        return '%s %s pool="%s"' % (self.lfn, self.pfn, site) 
     
 class AhopeFileList(list):
     '''
