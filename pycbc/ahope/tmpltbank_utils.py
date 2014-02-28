@@ -81,8 +81,12 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
     elif tmpltbankMethod == "WORKFLOW_INDEPENDENT_IFOS":
         logging.info("Adding template bank jobs to workflow.")
         if cp.has_option_tags("ahope-tmpltbank",
-                              "tmpltbank-link-to-matchedfltr", tags):
-            # FIXME: Should this check that this is also true in inspiral?
+                              "tmpltbank-link-to-matchedfilter", tags):
+            if not cp.has_option_tags("ahope-matchedfilter",
+                              "matchedfilter-link-to-tmpltbank", tags):
+                errMsg = "If using tmpltbank-link-to-matchedfilter, you should "
+                errMsg = "also use matchedfilter-link-to-tmpltbank."
+                logging.warn(errMsg)
             linkToMatchedfltr = True
         tmplt_banks = setup_tmpltbank_dax_generated(workflow, science_segs,
                                          datafind_outs, output_dir, tags=tags,

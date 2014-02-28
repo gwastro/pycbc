@@ -346,7 +346,11 @@ class PyCBCInspiralJob(Job):
         return node
         
     def get_valid_times(self):
-        analysis_length = int(self.cp.get('ahope-inspiral', 'analysis-length'))
+        # FIXME: IAN. I'm not happy about analysis_length being buried here.
+        #        Maybe this should be something read in at the
+        #        matchedfilter_utils level, and acted on *if* possible.
+        analysis_length = int(self.cp.get('ahope-matchedfilter',
+                                          'analysis-length'))
         pad_data = int(self.get_opt( 'pad-data'))
         start_pad = int(self.get_opt( 'segment-start-pad'))
         end_pad = int(self.get_opt('segment-end-pad'))

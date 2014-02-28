@@ -78,25 +78,43 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
     '''
     logging.info("Entering matched-filtering setup module.")
     make_analysis_dir(output_dir)
-    # Scope here for choosing different options
-    logging.info("Adding matched-filtering jobs to workflow.")
+    cp = workflow.cp
 
-    # There should be a number of different options here, for e.g. to set
-    # up fixed bank, or maybe something else
-    # FIXME: link_to_tmpltbank needs to be supplied from ini file.
-    inspiral_outs = setup_matchedfltr_dax_generated(workflow, science_segs, 
-                                     datafind_outs, tmplt_banks, output_dir,
-                                     injection_file=injection_file, tags=tags,
-                                     link_to_tmpltbank=False)
+    # Parse for options in .ini file
+    mfltrMethod = cp.get_opt_tags("ahope-matchedfilter", "matchedfilter-method",
+                                  tags)
+
+    # Could have a number of choices here
+    if mfltrMethod == "WORKFLOW_INDEPENDENT_IFOS":
+        logging.info("Adding matched-filter jobs to workflow.")
+        if cp.has_option_tags("ahope-matchedfilter",
+                              "matchedfilter-link-to-tmpltbank", tags):
+            if not cp.has_option_tags("ahope-tmpltbank",
+                              "tmpltbank-link-to-matchedfilter", tags):
+                errMsg = "If using matchedfilter-link-to-tmpltbank, you should "
+                errMsg = "also use tmpltbank-link-to-matchedfilter."
+                logging.warn(errMsg)
+            linkToTmpltbank = True
+    
+        inspiral_outs = setup_matchedfltr_dax_generated(workflow, science_segs, 
+                                      datafind_outs, tmplt_banks, output_dir,
+                                      injection_file=injection_file, tags=tags,
+                                      link_to_tmpltbank=linkToTmpltbank)
+    else:
+        errMsg = "Matched filter method not recognized. Must be one of "
+        errMsg += "WORKFLOW_INDEPENDENT_IFOS (currently only one option)."
+        raise ValueError(errMsg)
+
     logging.info("Leaving matched-filtering setup module.")    
     return inspiral_outs
 
 def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
                                     tmplt_banks, output_dir,
-                                     injection_file=None,
-                                    tags=[], link_to_tmpltbank=True):
+                                    injection_file=None,
+                                    tags=[], link_to_tmpltbank=False):
     '''
-    Setup matched-filter jobs that are generated as part of the ahope workflow. This
+    Setup matched-filter jobs that are generated as part of the ahope workflow.
+    This
     module can support any matched-filter code that is similar in principle to
     lalapps_inspiral, but for new codes some additions are needed to define
     Executable and Job sub-classes (see jobutils.py).
