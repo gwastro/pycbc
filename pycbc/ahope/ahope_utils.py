@@ -656,7 +656,8 @@ class Workflow(object):
         """
         self.dag.write_script()
         self.dag.write_abstract_dag()
-        
+       
+        # FIXME this should be in a lower level code
         f = open('output_map.dat', 'w')
         for fil in self.output_files:
             f.write(fil.map_str() + '\n')
@@ -768,6 +769,10 @@ class AhopeFile(object):
         for url in file_url:
             cache_entry = lal.CacheEntry(ifo, self.tagged_description, segment, url)
             self.cache_entries.append(cache_entry)   
+    
+    @property
+    def url(self):
+        return self.cache_entries[0].url
        
     @property
     def path(self):
@@ -807,10 +812,10 @@ class AhopeFile(object):
         
     @property
     def pfn(self):
-        return self.path
+        return self.url
 
     def map_str(self, site='local'):
-        return "%s %s site='%s'" % (self.lfn, self.pfn, site) 
+        return "%s %s pool='%s'" % (self.lfn, self.pfn, site) 
     
 class AhopeFileList(list):
     '''
