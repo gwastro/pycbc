@@ -420,7 +420,7 @@ def get_td_waveform(template=None, **kwargs):
     input_params = props(template,**kwargs)
     wav_gen = td_wav[type(mgr.state)] 
 
-    if 'approximant' not in input_params:
+    if 'approximant' not in input_params or input_params['approximant'] is None:
         raise ValueError("Please provide an approximant name")
     elif input_params['approximant'].startswith('Inspiral-'):
         pass
