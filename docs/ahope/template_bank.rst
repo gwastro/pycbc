@@ -115,9 +115,9 @@ Adding a new executable is not too hard, please ask a developer for some pointer
 
 Also see :ref:`Pycbc.Tmpltbank <tmpltbankmod>` for a description/introduction to pycbc template bank code and papers describing these codes, lalapps_tmpltbank and sBank.
 
-$$$$$$$$$$$$$$$$$$
-lalapps_tmpltbank
-$$$$$$$$$$$$$$$$$$
+$$$$$$$$$$$$$$$$$$$$$$$$
+lalapps_tmpltbank_ahope
+$$$$$$$$$$$$$$$$$$$$$$$$
 
 Lalapps_tmpltbank is the legacy C-code that has been used to generate template banks for gravitational-wave data analysis since the dawn of time. It is a little inflexible in terms of output file names. We recommend using the newer pycbc_geom_nonspinbank if possible.
 

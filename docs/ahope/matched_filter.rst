@@ -43,8 +43,9 @@ Using this module requires a number of things
 * A configuration file (or files) containing the information needed to tell this module how to generate GW triggers.
 * An initialized instance of the ahope workflow class, containing the ConfigParser.
 * A list of segments to be analysed by this module.
-* An AhopeFileList returned by the templatebank module containing the template banks
-available for use.
+* An AhopeFileList returned by the templatebank module containing the template banks available for use.
+* An AhopeFileList returned by the datafind module containing the frames that contain the data that will be used to make the template banks.
+* If desired an injection file for assessing sensitivity to simulated signals.
  
 The module is then called according to
 
@@ -58,17 +59,26 @@ Configuration file setup
 Here we describe the options given in the configuration file used in the ahope
 workflow that will be needed in this section
 
-$$$$$$$$$$$$$$$$$$$$$$$$$$
-[ahope-inspiral] section
-$$$$$$$$$$$$$$$$$$$$$$$$$$
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+[ahope-matchedfilter] section
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-The configuration file requires an [ahope-inspiral] section only in the case
-where an option is required by the intended executables. See below for options
-required by each executable.
+The configuration file must have an [ahope-matchedfilter] section, which is used to tell the workflow how to construct (or gather) the template banks. The first option to choose and provide is
 
-The following options apply only to a specific executable.
+* matchedfilter-method = VALUE
 
-* analysis-length = LENGTH_IN_SECONDS (pycbc_inspiral only) - REQUIRED. The amount of time in seconds that will be matched-filtered. Note that triggers may not be produced for the entire span of time. 
+The choices here and their description are as described below
+
+* WORKFLOW_INDEPENDENT_IFOS - Template banks will be generated within the workflow. These banks will be made to cover only short (normally ~ 2000s) of data to reflect PSD changes over time and will be independent and distinct for each analysed interferometer. This uses the setup_matchedfltr_dax_generated sub-module.
+
+Currently only one option, but others can be added. The subfunctions used are described here
+
+.. autofunction:: pycbc.ahope.setup_matchedfltr_dax_generated
+      :noindex:
+
+When using the setup_matchedfltr_dax_generated sub-module the following additional options apply in the [ahope-matchedfilter] section:
+
+* analysis-length = LENGTH_IN_SECONDS (*NOT* used for lalapps_inspiral) - REQUIRED. The amount of time in seconds that will be matched-filtered. Note that triggers may not be produced for the entire span of time. 
 
 $$$$$$$$$$$$$$$
 [executables]
@@ -78,9 +88,9 @@ inspiral = /path/to/inspiral_exec
 
 A section, in this case [inspiral], will be used to specify the constant command line options that are sent to all inspiral jobs. How to set up the [{exe_name}] section, and which executables are currently supported is discussed below.
 
----------------------------------------------------------------------
+-----------------------------------------------------------------------
 Supported inspiral trigger generators and instructions for using them
----------------------------------------------------------------------
+-----------------------------------------------------------------------
 
 The following inspiral trigger generators are currently supported in ahope
 
@@ -89,9 +99,9 @@ The following inspiral trigger generators are currently supported in ahope
 
 Adding a new executable is not too hard, please ask a developer for some pointers on how to do this if you want to add a new code.
 
-$$$$$$$$$$$$$$$$$$
-lalapps_inspiral
-$$$$$$$$$$$$$$$$$$
+$$$$$$$$$$$$$$$$$$$$$$$
+lalapps_inspiral_ahope
+$$$$$$$$$$$$$$$$$$$$$$$
 
 Lalapps_inspiral is the legacy C-code that has been used for years to find gravitational-wave triggers in  It is a little inflexible in terms of output file names.
 
