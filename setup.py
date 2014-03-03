@@ -232,7 +232,7 @@ def generate_version_info():
         f.write('git_status = \'%s\'\n' % vcs_info.status)
         f.write('git_builder = \'%s\'\n' % vcs_info.builder)
         f.write('git_build_date = \'%s\'\n' % vcs_info.build_date)
-        f.write('git_verbose_msg = """Branch: %s\nTag: %s\nId: %s\nBuilder: %s\nBuild date: %s\nRepository status is %s"""' %(vcs_info.branch,vcs_info.tag,vcs_info.hash,vcs_info.author,vcs_info.build_date,vcs_info.status) )
+        f.write('git_verbose_msg = """Branch: %s\nTag: %s\nId: %s\nBuilder: %s\nBuild date: %s\nRepository status is %s"""' %(vcs_info.branch,vcs_info.tag,vcs_info.hash,vcs_info.builder,vcs_info.build_date,vcs_info.status) )
     return vcs_info.version
 
 class build_docs(Command):
