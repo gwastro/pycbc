@@ -90,20 +90,25 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
     '''
     logging.info('Entering coincidence setup module.')
     make_analysis_dir(output_dir)
-    
-    if not os.path.isabs(output_dir):
-        output_dir = os.path.join(os.getcwd(), output_dir) 
+
+    # Parse for options in .ini file
+    coincidenceMethod = workflow.cp.get_opt_tags("ahope-coincidence",
+                                        "coincidence-method", tags)
     
     # Scope here for adding different options/methods here. For now we only
     # have the single_stage ihope method which consists of using ligolw_add
     # to create a large job for coincidence and then running ligolw_thinca
     # on that output.
-
-    # If you want the ligolw_add outputs, call this function directly
-    coinc_outs, _ = setup_coincidence_workflow_ligolw_thinca(workflow,
+    if coincidenceMethod == "WORKFLOW_DISCRETE_SLIDES":
+        # If you want the ligolw_add outputs, call this function directly
+        coinc_outs, _ = setup_coincidence_workflow_ligolw_thinca(workflow,
                      segsList, timeSlideFiles, inspiral_outs,
                      output_dir, maxVetoCat=maxVetoCat, tags=tags,
                      timeSlideTags=timeSlideTags)
+    else:
+        errMsg = "Coincidence method not recognized. Must be one of "
+        errMsg += "WORKFLOW_DISCRETE_SLIDES (currently only one option)."
+        raise ValueError(errMsg)
 
     logging.info('Leaving coincidence setup module.')
 

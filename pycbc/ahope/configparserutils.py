@@ -624,7 +624,7 @@ class AhopeConfigParser(ConfigParser.SafeConfigParser):
             Is the option in the section or [section-tag] (for tag in tags)
         """
         try:
-            self.get_opt_tag(section, option, tags)
+            self.get_opt_tags(section, option, tags)
             return True
         except ConfigParser.Error:
             return False

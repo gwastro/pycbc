@@ -95,6 +95,8 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
                 errMsg = "also use tmpltbank-link-to-matchedfilter."
                 logging.warn(errMsg)
             linkToTmpltbank = True
+        else:
+            linkToTmpltbank = False
     
         inspiral_outs = setup_matchedfltr_dax_generated(workflow, science_segs, 
                                       datafind_outs, tmplt_banks, output_dir,
