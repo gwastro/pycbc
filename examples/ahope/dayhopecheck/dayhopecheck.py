@@ -46,7 +46,7 @@ __program__ = "dayhopecheck"
 import os
 import copy
 import logging
-import optparse
+import argparse
 from glue import pipeline
 from glue import segments
 import pycbc.ahope as ahope
@@ -63,38 +63,16 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \
                     level=logging.INFO,datefmt='%I:%M:%S')
 
 # command line options
-# From http://stackoverflow.com/questions/392041/python-optparse-list
-# this lets us used comma separated lists as arguments
-
-def comma_seperated_option(option, opt, value, parser):
-    setattr(parser.values, option.dest, value.split(','))
-
-usage = """usage: %prog [options]"""
 _desc = __doc__[1:]
-parser = optparse.OptionParser(usage, version=__version__, description=_desc)
-parser.add_option("-s", "--start-time", type="int",\
-                  help="Time to start analysis from.")
-parser.add_option("-e", "--end-time", type="int",\
-                  help="Time to stop analysis at.")
-parser.add_option("-i", "--config-files", type='string', action='callback',
-                  callback=comma_seperated_option,
-                  help="Location of ini files. Can either supply a single "+\
-                  "ini file, or a comma separated list of ini files.")
-parser.add_option("-d", "--output-dir", help="Path to output directory.")
-(opts,args) = parser.parse_args()
+parser = argparse.ArgumentParser(description=_desc)
+parser.add_argument('--version', action='version', version=__version__)
+parser.add_argument("-d", "--output-dir", required=True,\
+                    help="Path to output directory.")
+ahope.add_ahope_command_line_group(parser)
+args = parser.parse_args()
 
-# Add check that all of these exist
-if not opts.start_time:
-    parser.error("Must supply --start-time")
-if not opts.end_time:
-    parser.error("Must supply --end-time")
-if not opts.config_files:
-    parser.error("Must supply --config-files")
-if not opts.output_dir:
-    parser.error("Must supply --output-dir")
-
-workflow = ahope.Workflow(opts.config_files, opts.start_time, opts.end_time)
-currDir = os.path.abspath(opts.output_dir)
+workflow = ahope.Workflow(args)
+currDir = os.path.abspath(args.output_dir)
 segDir = os.path.join(currDir,"segments")
 dfDir = os.path.join(currDir,"datafind")
 
@@ -144,7 +122,8 @@ insps = ahope.setup_matchedfltr_workflow(workflow, scienceSegs, datafinds,
 outdoc = ligolw.Document()
 outdoc.appendChild(ligolw.LIGO_LW())
 # FIXME: PROGRAM NAME and dictionary of opts should be variables defined up above
-proc_id = ligolw_process.register_to_xmldoc(outdoc, 'dayhopetest', {}).process_id
+proc_id = ligolw_process.register_to_xmldoc(outdoc, 'dayhopetest',
+                                            vars(args) ).process_id
 for ifo in workflow.ifos:
     # Lets get the segment lists we need
     segIfoFiles = segsList.find_output_with_ifo(ifo)
@@ -167,13 +146,17 @@ for ifo in workflow.ifos:
     analysableSegs = insps.get_times_covered_by_files()
    
     # And add these to the output file
+    # Start with the segment summary
+    summSegs = segments.segmentlist([workflow.analysis_time])
     sci_def_id = segmentdb_utils.add_to_segment_definer(outdoc, proc_id, ifo,
                                                       "CBC_DAYHOPE_SCIENCE", 0)
-    sciok_def_id = segmentdb_utils.add_to_segment_definer(outdoc, proc_id, ifo,                                                    "CBC_DAYHOPE_SCIENCE_OK", 0)
+    sciok_def_id = segmentdb_utils.add_to_segment_definer(outdoc, proc_id, ifo,
+                                                   "CBC_DAYHOPE_SCIENCE_OK", 0)
     sciavailable_def_id = segmentdb_utils.add_to_segment_definer(outdoc,
                               proc_id, ifo, "CBC_DAYHOPE_SCIENCE_AVAILABLE", 0)
     analysable_def_id = segmentdb_utils.add_to_segment_definer(outdoc, proc_id,
                                               ifo, "CBC_DAYHOPE_ANALYSABLE", 0)
+    
     segmentdb_utils.add_to_segment(outdoc, proc_id, sci_def_id, sciSegs)
     segmentdb_utils.add_to_segment(outdoc, proc_id, sciok_def_id, sciokSegs)
     segmentdb_utils.add_to_segment(outdoc, proc_id, sciavailable_def_id,
@@ -181,6 +164,14 @@ for ifo in workflow.ifos:
     segmentdb_utils.add_to_segment(outdoc, proc_id, analysable_def_id,
                                    analysableSegs)
 
+    segmentdb_utils.add_to_segment_summary(outdoc, proc_id, sci_def_id,
+                                           summSegs, comment='')
+    segmentdb_utils.add_to_segment_summary(outdoc, proc_id, sciok_def_id,
+                                           summSegs, comment='')
+    segmentdb_utils.add_to_segment_summary(outdoc, proc_id, sciavailable_def_id,
+                                           summSegs, comment='')
+    segmentdb_utils.add_to_segment_summary(outdoc, proc_id, analysable_def_id,
+                                           summSegs, comment='')
 
 ligolw_utils.write_filename(outdoc, "SUMMARY.xml")
 
