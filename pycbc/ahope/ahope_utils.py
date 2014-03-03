@@ -449,7 +449,13 @@ class Node(pipeline.CondorDAGNode):
             the job. They can be used to uniquely identify this output file.
         """
         job = self.job()
-        tags = list(set(job.tags + extra_tags))
+        # Changing this from set(tags) to enforce order. It might make sense
+        # for all jobs to have file names with tags in the same order.
+        tags = job.tags
+        if extra_tags:
+            for tag in extra_tags:
+                if tag not in tags:
+                    tags.append(tag)
 
         insp = AhopeFile(job.ifo, job.exe_name, extension=extension,
                          segment=valid_seg,
