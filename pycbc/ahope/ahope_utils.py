@@ -165,10 +165,10 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         # Check that the executable actually exists
         if os.path.isfile(exe_path):
 	    logging.debug("Using %s executable "
-                         "at %s." % (exe_name, exe_path))
+                          "at %s" % (exe_name, exe_path))
         else:
             raise TypeError("Failed to find %s executable " 
-                             "at %s" % (exe_name, exe_path))
+                            "at %s" % (exe_name, exe_path))
 
         # Determine the condor universe if we aren't given one 
         # Default is vanilla unless the executable is condor-compiled
@@ -1211,11 +1211,11 @@ class CalledProcessErrorMod(Exception):
         msg = "Command '%s' returned non-zero exit status %d.\n" \
               %(self.cmd, self.returncode)
         if self.errFile:
-            msg += "Stderr can be found in %s.\n" %(self.errFile)
+            msg += "Stderr can be found in %s .\n" %(self.errFile)
         if self.outFile:
-            msg += "Stdout can be found in %s.\n" %(self.outFile)
+            msg += "Stdout can be found in %s .\n" %(self.outFile)
         if self.cmdFile:
-            msg += "The failed command has been printed in %s." %(self.cmdFile)
+            msg += "The failed command has been printed in %s ." %(self.cmdFile)
         return msg
               
 def get_full_analysis_chunk(science_segs):
