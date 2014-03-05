@@ -239,6 +239,13 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,\
     # Calculate Gamma components if needed
     if calculate_ethinca_comps:
         for sngl in sngl_inspiral_table:
+            # Set tau_0 and tau_3 values needed for ethinca
+            eta = sngl.eta
+            totalMass = sngl.mtotal * LAL_MTSUN_SI
+            f0 = metricParams.f0
+            piFl = LAL_PI * f0
+            sngl.tau0 = 5.0/(256.0*eta*(totalMass**(5./3.))*(piFl**(8./3.)))
+            sngl.tau3 = LAL_PI/(8.0*eta*(totalMass**(2./3.))*(piFl**(5./3.)))
             temp_params = (sngl.mass1, sngl.mass2)
             GammaVals = calculate_ethinca_metric_comps(\
                         temp_params, metricParams)
