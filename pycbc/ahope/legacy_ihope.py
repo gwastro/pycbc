@@ -131,13 +131,11 @@ class LegacyAnalysisJob(Job):
             extension += '.gz'
         
         #create the output file for this job 
-        out_file = AhopeFile(self.ifo, self.exe_name, 
+        out_file = AhopeFile(self.ifo, self.exe_name, valid_seg,
                              extension=extension,
-                             segment=valid_seg,
                              directory=self.out_dir,
                              tags=self.tags + tags)
  
-        out_file.segment = valid_seg
         node.add_output(out_file, opt='output-file')
         node.add_input_list(dfParents, opt='frame-files', delimiter=' ')
         return node

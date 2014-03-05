@@ -522,9 +522,8 @@ class LigolwSSthincaJob(Job):
         node.add_var_opt('coinc-end-time-segment', segString)
 
         # FIXME: This must match the *actual* output name!
-        outFile = AhopeFile(self.ifo, self.exe_name, extension='.xml.gz',
-                         segment=jobSegment,
-                         directory=self.out_dir,
+        outFile = AhopeFile(self.ifo, self.exe_name, jobSegment,
+                         extension='.xml.gz', directory=self.out_dir,
                          tags=self.tags)
 
         node.add_output(outFile)

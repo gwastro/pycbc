@@ -451,6 +451,7 @@ class Node(pipeline.CondorDAGNode):
                 if tag not in all_tags:
                     all_tags.append(tag)
 
+
         insp = AhopeFile(job.ifo, job.exe_name, extension=extension,
                          segment=valid_seg,
                          directory=job.out_dir,
@@ -691,27 +692,31 @@ class AhopeFile(object):
 
     c = AhopeFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), directory="/home/spxiwh", extension="xml.gz" )
     '''
-    def __init__(self, ifo, description, segment, file_url=None, 
+    def __init__(self, ifos, description, segs, file_url=None, 
                  extension=None, directory=None, tags=None, **kwargs):       
         """
         Create an AhopeFile instance
         
         Parameters
         ----------
-        ifo : string
-            The ifo that the AhopeFile is valid for. If this is more than one
-            ifo then this can be supplied as, for e.g. "H1L1V1".
+        ifos : string or list
+            The ifo(s) that the AhopeFile is valid for. If the file is
+            independently valid for multiple ifos it can be provided as a list.
+            Ie. ['H1',L1','V1'], if the file is only valid for the combination
+            of ifos (for e.g. ligolw_thinca output) then this can be supplied
+            as, for e.g. "H1L1V1".
         description: string
             A short description of what the file is, normally used in naming of
             the output files.
             FIXME: I think that this is now executable description, tagging
             only the program that ran this job. Can we change the name
             accordingly?
-        segment : glue.segment
+        segs : glue.segment or glue.segmentlist
             The time span that the AhopeOutFile is valid for. Note that this is
             *not* the same as the data that the job that made the file reads in.
             Lalapps_inspiral jobs do not analyse the first an last 72s of the
-            data that is read, and are therefore not valid at those times.
+            data that is read, and are therefore not valid at those times. If
+            the time is not continuous a segmentlist can be supplied.
         file_url : url (optional, default=None)
             If this is *not* supplied, extension and directory must be given.
             If specified this explicitly points to the url of the file, or the
@@ -731,19 +736,32 @@ class AhopeFile(object):
             e.g. this might be ["BNSINJECTIONS" ,"LOWMASS","CAT_2_VETO"].
             These are used in file naming.
         """
+        # Set the science metadata on the file
         self.node=None
-        self.ifo = ifo
+        if isinstance(ifos, (str, unicode)):
+            self.ifoList = [ifos]
+        else:
+            self.ifoList = ifos
+        self.ifoString = ''.join(self.ifoList)
         self.description = description
-        self.segment = segment
-        self.kwargs = kwargs 
+        if isinstance(segs, (segments.segment)):
+            self.segList = segments.segmentlist([segs])
+        elif isinstance(segs, (segments.segmentlist)):
+            self.segList = segs
+        else:
+            errMsg = "segs input must be either glue.segments.segment or "
+            errMsg += "segments.segmentlist. Got %s." %(str(type(segs)),)
+            raise ValueError(errMsg)
         self.tags = tags 
         if tags is not None:
             self.tag_str = '_'.join(tags)
             tagged_description = '_'.join([description] + tags)
         else:
             tagged_description = description
+        self.kwargs = kwargs
             
         # Follow the capitals-for-naming convention
+        self.ifoString = self.ifoString.upper()
         self.tagged_description = tagged_description.upper()
       
         if not file_url:
@@ -754,8 +772,8 @@ class AhopeFile(object):
                 raise TypeError("a directory is required if a file_url is "
                                 "not provided")
             
-            filename = self._filename(ifo, self.tagged_description, extension,
-                                      segment)
+            filename = self._filename(self.ifoString, self.tagged_description,
+                                      extension, self.segList.extent())
             path = os.path.join(directory, filename)
             if not os.path.isabs(path):
                 path = os.path.join(os.getcwd(), path) 
@@ -767,7 +785,8 @@ class AhopeFile(object):
        
         self.cache_entries = []
         for url in file_url:
-            cache_entry = lal.CacheEntry(ifo, self.tagged_description, segment, url)
+            cache_entry = lal.CacheEntry(self.ifoString,
+                       self.tagged_description, self.segList.extent(), url)
             self.cache_entries.append(cache_entry)   
     
     @property
@@ -781,6 +800,32 @@ class AhopeFile(object):
         Otherwise a TypeError is raised.
         """
         return self.cache_entries[0].path
+
+    @property
+    def ifo(self):
+        """
+        If only one ifo in the ifoList this will be that ifo. Otherwise an
+        error is raised.
+        """
+        if len(self.ifoList) == 1:
+            return self.ifoList[0]
+        else:
+            errMsg = "self.ifoList must contain only one ifo to access the "
+            errMsg += "ifo property. %s." %(str(self.ifoList),)
+            raise TypeError(errMsg)
+
+    @property
+    def segment(self):
+        """
+        If only one segment in the segmentlist this will be that segment.
+        Otherwise an error is raised.
+        """
+        if len(self.segList) == 1:
+            return self.segList[0]
+        else:
+            errMsg = "self.segList must only contain one segment to access"
+            errMsg += " the segment property. %s." %(str(self.segList),)
+            raise TypeError(errMsg)
         
     @property
     def filename(self):
@@ -833,7 +878,7 @@ class AhopeFileList(list):
         Parameters
         -----------
         ifo : string
-           Name of the ifo that the 
+           Name of the ifo (or ifos) that the file should be valid for.
         time : int/float/LIGOGPStime or tuple containing two values
            If int/float/LIGOGPStime (or similar may of specifying one time) is
            given, return the AhopeFile corresponding to the time. This calls
@@ -869,7 +914,7 @@ class AhopeFileList(list):
         Parameters
         -----------
         ifo : string
-           Name of the ifo that the AhopeFile should correspond to
+           Name of the ifo (or ifos) that the AhopeFile should correspond to
         time : int/float/LIGOGPStime
            Return the AhopeFiles that covers the supplied time. If no
            AhopeFile covers the time this will return None.
@@ -880,7 +925,8 @@ class AhopeFileList(list):
            The AhopeFiles that corresponds to the time.
         '''
        # Get list of AhopeFiles that overlap time, for given ifo
-       outFiles = [i for i in self if ifo == i.ifo and time in i.segment] 
+       outFiles = [i for i in self if\
+                                    ifo in i.ifoList and time in i.segList] 
        if len(outFiles) == 0:
            # No AhopeOutFile at this time
            return None
@@ -902,7 +948,7 @@ class AhopeFileList(list):
         Parameters
         -----------
         ifo : string
-           Name of the ifo that the AhopeFile should correspond to
+           Name of the ifo (or ifos) that the AhopeFile should correspond to
         current_segment : glue.segment.segment
            The segment of time that files must intersect.
 
@@ -911,21 +957,27 @@ class AhopeFileList(list):
         AhopeFileList class
            The list of AhopeFiles that are most appropriate for the time range
         """
+        currSegList = segments.segmentlist([current_segment])
+
         # First filter AhopeFiles corresponding to ifo
-        ifo_files = [i for i in self if ifo == i.ifo] 
+        ifo_files = [i for i in self if ifo in i.ifoList] 
 
         # Filter AhopeOutFiles to those overlapping the given window
-        overlap_files = [i for i in ifo_files if i.segment.intersects(current_segment)]
-        
-        overlap_windows = [abs(i.segment & current_segment) for i in overlap_files]           
+        overlap_files = [i for i in ifo_files \
+                          if i.segList.intersects_segment(current_segment)]
+        overlap_windows = [abs(i.segList & currSegList) \
+                                                        for i in overlap_files]
+
+        # FIXME: Error handling for the overlap_files == [] case?
+
         # Return the AhopeFile with the biggest overlap
         # Note if two AhopeFile have identical overlap, the first is used
         # to define the valid segment
         overlap_windows = numpy.array(overlap_windows, dtype = int)
-        segment = overlap_files[overlap_windows.argmax()].segment
+        segmentLst = overlap_files[overlap_windows.argmax()].segList
         
         # Get all output files with the exact same segment definition
-        output_files = [f for f in overlap_files if f.segment==segment]
+        output_files = [f for f in overlap_files if f.segList==segmentLst]
         return output_files
 
     def find_output_in_range(self, ifo, start, end):
@@ -938,7 +990,7 @@ class AhopeFileList(list):
         Parameters
         -----------
         ifo : string
-           Name of the ifo that the AhopeFile should correspond to
+           Name of the ifo (or ifos) that the AhopeFile should correspond to
         start : int/float/LIGOGPStime 
            The start of the time range of interest.
         end : int/float/LIGOGPStime
@@ -949,15 +1001,19 @@ class AhopeFileList(list):
         AhopeFile class
            The AhopeFile that is most appropriate for the time range
         '''
+        currSegList = segments.segmentlist([current_segment])
+
         # First filter AhopeFiles corresponding to ifo
-        outFiles = [i for i in self if ifo == i.ifo] 
+        outFiles = [i for i in self if ifo in i.ifoList]
+
         if len(outFiles) == 0:
             # No AhopeOutFiles correspond to that ifo
             return None
         # Filter AhopeOutFiles to those overlapping the given window
         currSeg = segments.segment([start,end])
-        outFiles = [i for i in outFiles if i.segment.intersects(currSeg)]
-        
+        outFiles = [i for i in outFiles \
+                                  if i.segList.intersects_segment(currSeg)]
+
         if len(outFiles) == 0:
             # No AhopeOutFile overlap that time period
             return None
@@ -965,21 +1021,21 @@ class AhopeFileList(list):
             # One AhopeOutFile overlaps that period
             return outFiles[0]
         else:
-            # More than one AhopeFile overlaps period. Find lengths of
-            # overlap between time window and AhopeFile window
-            overlapWindows = [abs(i.segment & currSeg) for i in outFiles]           
+            overlap_windows = [abs(i.segList & currSegList) \
+                                                        for i in outFiles]
             # Return the AhopeFile with the biggest overlap
             # Note if two AhopeFile have identical overlap, this will return
             # the first AhopeFile in the list
-            overlapWindows = numpy.array(overlapWindows, dtype = int)
-            return outFiles[overlapWindows.argmax()]
+            overlap_windows = numpy.array(overlap_windows, dtype = int)
+            return outFiles[overlap_windows.argmax()]
 
     def find_all_output_in_range(self, ifo, currSeg):
         """
         Return all files that overlap the specified segment.
         """
-        outFiles = [i for i in self if ifo == i.ifo]
-        outFiles = [i for i in outFiles if i.segment.intersects(currSeg)]
+        outFiles = [i for i in self if ifo in i.ifoList]
+        outFiles = [i for i in outFiles \
+                                      if i.segList.intersects_segment(currSeg)]
         return self.__class__(outFiles)
 
     def find_output_with_tag(self, tag):
@@ -992,7 +1048,7 @@ class AhopeFileList(list):
         """
         Find all files who have ifo = ifo
         """
-        return AhopeFileList([i for i in self if ifo == i.ifo])
+        return AhopeFileList([i for i in self if ifo in i.ifoList])
 
     def get_times_covered_by_files(self):
         """
@@ -1001,7 +1057,7 @@ class AhopeFileList(list):
         """
         times = segments.segmentlist([])
         for entry in self:
-            times.append(entry.segment)
+            times.extend(entry.segList)
         times.coalesce()
         return times
 
@@ -1031,11 +1087,11 @@ class AhopeOutSegFile(AhopeFile):
 
         Parameters:
         ------------
-        ifo : string (required)
+        ifo : string or list (required)
             See AhopeFile.__init__
         description : string (required)
             See AhopeFile.__init__
-        segment : glue.segments.segment
+        segment : glue.segments.segment or glue.segments.segmentlist
             See AhopeFile.__init__
         fileUrl : string (required)
             See AhopeFile.__init__
