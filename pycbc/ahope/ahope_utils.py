@@ -450,10 +450,8 @@ class Node(pipeline.CondorDAGNode):
             if tag not in all_tags:
                 all_tags.append(tag)
 
-        insp = AhopeFile(job.ifo, job.exe_name, extension=extension,
-                         segment=valid_seg,
-                         directory=job.out_dir,
-                         tags=all_tags)    
+        insp = AhopeFile(job.ifo, job.exe_name, valid_seg, extension=extension, 
+                         directory=job.out_dir, tags=all_tags)    
 
         self.add_output(insp, opt=option_name)
 
