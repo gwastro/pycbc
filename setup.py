@@ -278,6 +278,8 @@ setup (
     ext_modules = [lalwrap_module, testlalwrap_module],
     requires = ['lal'],
     scripts  = [
+               'bin/lalapps_inspiral_ahope',
+               'bin/lalapps_tmpltbank_ahope',
                'bin/pycbc_banksim',
                'bin/pycbc_faithsim',
                'bin/pycbc_inspiral',
