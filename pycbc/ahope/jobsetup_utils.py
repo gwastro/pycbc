@@ -348,7 +348,7 @@ class PyCBCInspiralJob(Job):
     def get_valid_times(self):
         # FIXME: IAN. I'm not happy about analysis_length being buried here.
         #        Maybe this should be something read in at the
-        #        matchedfilter_utils level, and acted on *if* possible.
+        #        matchedfilter_utils level, and acted on *if* possible.
         analysis_length = int(self.cp.get('ahope-matchedfilter',
                                           'analysis-length'))
         pad_data = int(self.get_opt( 'pad-data'))
