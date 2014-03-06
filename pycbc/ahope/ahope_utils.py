@@ -446,10 +446,9 @@ class Node(pipeline.CondorDAGNode):
         # Changing this from set(tags) to enforce order. It might make sense
         # for all jobs to have file names with tags in the same order.
         all_tags = job.tags
-        if extra_tags:
-            for tag in tags:
-                if tag not in all_tags:
-                    all_tags.append(tag)
+        for tag in tags:
+            if tag not in all_tags:
+                all_tags.append(tag)
 
         insp = AhopeFile(job.ifo, job.exe_name, extension=extension,
                          segment=valid_seg,
