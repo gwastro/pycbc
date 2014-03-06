@@ -68,7 +68,7 @@ def add_ahope_command_line_group(parser):
                            required=True, metavar="CONFIGFILE",
                            help="List of config files to be used in analysis.")
     ahopeArgs.add_argument("--config-overrides", nargs="*", action='store',
-                           required=True, metavar="SECTION:OPTION:VALUE",
+                           metavar="SECTION:OPTION:VALUE",
                            help="List of section,option,value combinations to add into the configuration file. Normally the gps start and end times might be provided this way, and user specific locations (ie. output directories). This can also be provided as SECTION:OPTION or SECTION:OPTION: both of which indicate that the corresponding value is left blank.")
 
 

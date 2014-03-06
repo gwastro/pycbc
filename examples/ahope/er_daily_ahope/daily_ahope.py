@@ -31,7 +31,7 @@ import os
 import copy
 import logging
 import urlparse
-import optparse
+import argparse
 import lal
 from glue import pipeline
 from glue import segments
@@ -41,26 +41,19 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \
                     level=logging.INFO,datefmt='%I:%M:%S')
 
 # command line options
-usage = """usage: %prog [options]"""
 _desc = __doc__[1:]
-parser = optparse.OptionParser(usage, version=__version__, description=_desc)
-parser.add_option("-s", "--start-time", type="int",\
-                  help="Time to start analysis from.")
-parser.add_option("-i", "--config-file", help="Location of ini file.")
-parser.add_option("-d", "--output-dir", help="Path to output directory.")
-(opts,args) = parser.parse_args()
-
-# Add check that all of these exist
-if not opts.start_time:
-    parser.error("Must supply --start-time")
-if not opts.config_file:
-    parser.error("Must supply --config-file")
-if not opts.output_dir:
-    parser.error("Must supply --output-dir")
+parser = argparse.ArgumentParser(description=_desc)
+parser.add_argument('--version', action='version', version=__version__)
+parser.add_argument("-s", "--start-time", type=int, required=True,\
+                    help="Time to start analysis from.")
+parser.add_argument("-d", "--output-dir", required=True,
+                    help="Path to output directory.")
+ahope.add_ahope_command_line_group(parser)
+args = parser.parse_args()
 
 # Get dates and stuff
 # This feels hacky!
-yestDate = lal.GPSToUTC(opts.start_time)
+yestDate = lal.GPSToUTC(args.start_time)
 yestMnight = copy.deepcopy(yestDate)
 yestMnight[3] = 0
 yestMnight[4] = 0
@@ -78,9 +71,14 @@ pad_time = 72
 start_time = yestMnightGPS - pad_time
 end_time = start_time + 60*60*24 + 2*pad_time
 
-workflow = ahope.Workflow(opts.config_file, start_time, end_time)
+# Ensure start and end time get sent to workflow properly
+args.config_overrides = []
+args.config_overrides.append("ahope:start-time:%d" %(start_time))
+args.config_overrides.append("ahope:end-time:%d" %(end_time))
 
-workingDir = os.path.join(opts.output_dir, monthName, dayName)
+workflow = ahope.Workflow(args)
+
+workingDir = os.path.join(args.output_dir, monthName, dayName)
 
 if not os.path.exists(workingDir):
     os.makedirs(workingDir)
@@ -272,3 +270,6 @@ dag.add_node(summNode)
 workflow.write_plans()
 
 logging.info("Finished.")
+
+workflow.dag.write_dag()
+workflow.dag.write_sub_files()

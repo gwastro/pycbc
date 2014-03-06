@@ -413,12 +413,7 @@ class Node(pipeline.CondorDAGNode):
             self.add_var_opt(opt, file.path)
             
         if argument:
-            if (len(file.paths) == 1):
-                self.add_var_arg(file.path)
-            else:
-                errMsg = "Do not yet have support for taking partitioned "
-                errMsg += "output files as arguments. Ask for this feature "
-                errMsg += "to be added."
+            self.add_var_arg(file.path)
                 
     def make_and_add_output(self, valid_seg, extension, option_name, 
                                  tags=[]):
