@@ -263,3 +263,5 @@ workflow.dag.add_node(wipNode)
 
 workflow.write_plans()
 logging.info("Finished.")
+workflow.dag.write_dag()
+workflow.dag.write_sub_files()
