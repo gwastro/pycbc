@@ -379,8 +379,8 @@ def get_td_waveform(template=None, **kwargs):
     inclination : {0, float}, optional
         The inclination angle of the source. 
     coa_phase : {0, float}, optional
-        The final phase or phase at the peak of the wavform. See documentation on
-        specific approximants for exact usage. 
+        The final phase or phase at the peak of the wavform. See documentation
+        on specific approximants for exact usage. 
     spin1x : {0, float}, optional
         The x component of the first component objects spin vector. 
     spin1y : {0, float}, optional
@@ -399,7 +399,7 @@ def get_td_waveform(template=None, **kwargs):
         The tidal deformability parameter of object 2.
     phase_order: {-1, int}, optional
         The pN order of the orbital phase. The default of -1 indicates that 
-    all implemented orders are used.
+        all implemented orders are used.
     spin_order: {-1, int}, optional
         The pN order of the spin corrections. The default of -1 indicates that 
         all implemented orders are used.
@@ -463,8 +463,8 @@ def get_fd_waveform(template=None, **kwargs):
     inclination : {0, float}, optional
         The inclination angle of the source. 
     coa_phase : {0, float}, optional
-        The final phase or phase at the peak of the wavform. See documentation on
-        specific approximants for exact usage. 
+        The final phase or phase at the peak of the wavform. See documentation
+        on specific approximants for exact usage. 
     spin1x : {0, float}, optional
         The x component of the first component objects spin vector. 
     spin1y : {0, float}, optional
@@ -483,16 +483,16 @@ def get_fd_waveform(template=None, **kwargs):
         The tidal deformability parameter of object 2.
     phase_order: {-1, int}, optional
         The pN order of the orbital phase. The default of -1 indicates that 
-    all implemented orders are used.
+        all implemented orders are used.
     spin_order: {-1, int}, optional
         The pN order of the spin corrections. The default of -1 indicates that 
-    all implemented orders are used.
+        all implemented orders are used.
     tidal_order: {-1, int}, optional
         The pN order of the tidal corrections. The default of -1 indicates that 
         all implemented orders are used.
     amplitude_order: {-1, int}, optional
         The pN order of the amplitude. The default of -1 indicates that 
-    all implemented orders are used.
+        all implemented orders are used.
    
     Returns
     -------
