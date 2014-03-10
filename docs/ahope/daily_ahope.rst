@@ -129,7 +129,7 @@ When you are ready, you can generate the workflow. First we need to choose a tim
 
 This time should be a gps time during the *same day* that you want to analyse. Daily ahope will analyse from 00:00:00 to 23:59:59 of that day. Then you can generate the workflow::
 
-    python daily_ahope.py -s ${GPS_START_TIME} -i daily_ahope.ini -d ${PWD}
+    python daily_ahope.py --config-files daily_ahope.ini --start-time ${GPS_START_TIME} -d ${PWD}
 
 Then CD into the directory where the dag was generated::
 

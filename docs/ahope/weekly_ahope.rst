@@ -154,7 +154,7 @@ You also need to specify the directory in which pipedown will store log files. A
 
 Then you can generate the workflow::
 
-    python weekly_ahope.py --start-time ${GPS_START_TIME} --end-time ${GPS_END_TIME} --config-files weekly_ahope.ini,pipedown.ini,inj.ini --pipedown-log-dir ${LOGPATH}
+    python weekly_ahope.py --config-files weekly_ahope.ini pipedown.ini inj.ini --config-overrides ahope:start-time:${GPS_START_TIME} ahope:end-time:${GPS_END_TIME} --pipedown-log-dir ${LOGPATH}
 
 Then CD into the directory where the dag was generated::
 
