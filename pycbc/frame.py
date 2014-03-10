@@ -91,17 +91,27 @@ def read_frame(location, channels, start_time=None,
 
     if end_time and duration:
         raise ValueError("end time and duration are mutually exclusive")
-
-    dir_name, file_name = os.path.split(location)
-    base_name, file_extension = os.path.splitext(file_name)
-
-    if file_extension == ".lcf" or file_extension == ".cache":
-        cache = lal.CacheImport(location)
-        stream = lalframe.FrStreamCacheOpen(cache)
-    elif file_extension == ".gwf": 
-        stream = lalframe.FrOpen(dir_name, file_name)
+    
+    if type(location) is list:
+        locations = location
     else:
-        raise TypeError("Invalid location name")
+        locations = [location]
+
+    cum_cache = lal.Cache()
+    for source in locations:
+        dir_name, file_name = os.path.split(source)
+        base_name, file_extension = os.path.splitext(file_name)
+    
+        if file_extension == ".lcf" or file_extension == ".cache":
+            cache = lal.CacheImport(location)
+        elif file_extension == ".gwf": 
+            cache = lalframe.FrOpen(dir_name, file_name).cache
+        else:
+            raise TypeError("Invalid location name")
+            
+        cum_cache = lal.CacheMerge(cum_cache, cache)
+        
+    stream = lalframe.FrStreamCacheOpen(cum_cache)
         
     stream.mode = lalframe.LAL_FR_STREAM_VERBOSE_MODE
     lalframe.FrSetMode(stream.mode | lalframe.LAL_FR_STREAM_CHECKSUM_MODE, 
