@@ -53,9 +53,11 @@ def _read_channel(channel, stream, start, duration):
     read_func = _fr_type_map[channel_type][0]
     d_type = _fr_type_map[channel_type][1]
     data = read_func(stream, channel, start, duration, 0)
-    return TimeSeries(data.data.data, delta_t=data.deltaT, epoch=start, dtype=d_type)
+    return TimeSeries(data.data.data, delta_t=data.deltaT, epoch=start, 
+                      dtype=d_type)
 
-def read_frame(location, channels, start_time=None, end_time=None, duration=None):
+def read_frame(location, channels, start_time=None, 
+               end_time=None, duration=None):
     """Read time series from frame data.
 
     Using a the `location`, which can either be a frame file ".gwf" or a 
@@ -65,25 +67,26 @@ def read_frame(location, channels, start_time=None, end_time=None, duration=None
     Parameters
     ----------
     location : string
-        Either a frame filename (can include pattern) or the cache filename.  
+        A source of gravitational wave frames. Either a frame filename
+       (can include pattern), a list of frame files, or frame cache file.  
     channels : string or list of strings
-        Either a string that contains the channel name or a list of channel name
-        strings.
+        Either a string that contains the channel name or a list of channel
+        name strings.
     start_time : {None, LIGOTimeGPS}, optional
         The gps start time of the time series. Defaults to reading from the 
         beginning of the available frame(s). 
     end_time : {None, LIGOTimeGPS}, optional
-        The gps end time of the time series. Defaults to the end of the frame(s).
+        The gps end time of the time series. Defaults to the end of the frame.
         Note, this argument is incompatible with `duration`.
     duration : {None, float}, optional
-        The amount of data to read in seconds. Note, this argument is incompatible
-        with `end`.
+        The amount of data to read in seconds. Note, this argument is 
+        incompatible with `end`.
 
     Returns
     -------
     Frame Data: TimeSeries or list of TimeSeries
-        A TimeSeries or a list of TimeSeries, corresponding to the data from the
-        frame file/cache for a given channel or channels. 
+        A TimeSeries or a list of TimeSeries, corresponding to the data from
+        the frame file/cache for a given channel or channels. 
     """
 
     if end_time and duration:
@@ -101,7 +104,8 @@ def read_frame(location, channels, start_time=None, end_time=None, duration=None
         raise TypeError("Invalid location name")
         
     stream.mode = lalframe.LAL_FR_STREAM_VERBOSE_MODE
-    lalframe.FrSetMode(stream.mode | lalframe.LAL_FR_STREAM_CHECKSUM_MODE, stream)
+    lalframe.FrSetMode(stream.mode | lalframe.LAL_FR_STREAM_CHECKSUM_MODE, 
+                       stream)
 
     # determine duration of data
     if type(channels) is list:
