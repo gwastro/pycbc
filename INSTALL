@@ -9,6 +9,9 @@ Prerequisites
 
 * python-decorator >= 3.3
   Should be available in the distribution.
+  
+* argparse >= 1.2.0
+  Should be available in the distribution
 
 * Numpy >= 1.4.1 and Scipy >= 0.7.2
   Should be installable either via the distribution packaging system,
@@ -19,6 +22,22 @@ Prerequisites
   See https://www.lsc-group.phys.uwm.edu/daswg/docs/howto/lal-install.html
   for installation instructions. LALSuite must be configured with the
   --enable-swig-python option.
+
+Installing PyCBC
+----------------
+
+    git clone albert.einstein@ligo-vcs.phys.uwm.edu:/usr/local/git/pycbc.git
+    cd pycbc
+    python setup.py build
+    python setup.py install --user
+    python setup.py test
+
+For installing system-wide, replace the 'setup.py install' command with
+    sudo python setup.py install
+
+
+Installing CUDA Python modules
+------------------------------
 
 For GPU acceleration through CUDA:
 
@@ -32,9 +51,6 @@ For GPU acceleration through CUDA:
 
 * Mako >= 0.7.2 - http://www.makotemplates.org
   See next section for instructions.
-
-Installing CUDA Python modules
-------------------------------
 
 These packages may not be available via the distribution packaging system,
 at least in the required versions. Although they should be generally
@@ -68,15 +84,5 @@ To install system-wide rather than to ~/.local, change the 'setup.py install'
 commands to
     sudo python setup.py install
 
-Installing PyCBC
-----------------
 
-    git clone albert.einstein@ligo-vcs.phys.uwm.edu:/usr/local/git/pycbc.git
-    cd pycbc
-    python setup.py build
-    python setup.py install --user
-    python setup.py test
-
-For installing system-wide, replace the 'setup.py install' command with
-    sudo python setup.py install
 
