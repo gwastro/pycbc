@@ -109,6 +109,8 @@ class install(_install):
         print >> env_file, "# Source this file to access PyCBC"
         print >> env_file, "PATH=" + self.install_scripts + ":$PATH"
         print >> env_file, "PYTHONPATH=" + self.install_libbase + ":$PYTHONPATH"
+        print >> env_file, "export PYTHONPATH"
+        print >> env_file, "export PATH"
         env_file.close()
         _install.run(self)
 
