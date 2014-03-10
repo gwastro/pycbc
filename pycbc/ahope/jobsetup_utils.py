@@ -133,6 +133,54 @@ def select_splitfilejob_instance(curr_exe, curr_section):
 
     return exe_class
 
+def select_genericjob_instance(workflow, exe_tag):
+    """
+    This function returns an instance of the class that is appropriate for
+    running the curr_exe. Curr_exe should not be a "specialized" job that fits
+    into one of the select_XXX_instance functions above. IE. not a matched
+    filter instance, or a template bank instance. Such specialized instances
+    require extra setup. The only requirements here is that we can run
+    create_job on the Executable instance, and create_node on the resulting
+    Job class.
+
+    Parameters
+    ----------
+    workflow : ahope.Workflow instance
+        The ahope workflow instance.
+    exe_tag : string
+        The name of the section storing options for this executable and the
+        option giving the executable path in the [executables] section.
+
+    Returns
+    --------
+    exe_class : ahope.Executable sub-classed instance
+        An instance of the class that holds the utility functions appropriate
+        for the given executable. This class **must** contain
+        * exe_class.create_job()
+        and the job returned by this **must** contain
+        * job.create_node()
+    """
+    exe_path = workflow.cp.get("executables", exe_tag)
+    exe_name = os.path.basename(exe_path)
+    if exe_name == 'ligolw_add':
+        exe_class = LigolwAddExec(exe_tag)
+    elif exe_name == 'ligolw_sstinca':
+        exe_class = LigolwSSthincaExec(exe_tag)
+    elif exe_name == 'pycbc_sqlite_simplify':
+        exe_class = PycbcSqliteSimplifyExec(exe_tag)
+    elif exe_name == 'ligolw_cbc_cluster_coincs':
+        exe_class = LigolwClusterCoincsExec(exe_tag)
+    elif exe_name == 'ligolw_dbinjfind':
+        exe_class = LigolwDBInjFindExec(exe_tag)
+    elif exe_name == 'lalapps_inspinj':
+        exe_class = LalappsInspinjExec(exe_tag)
+    else:
+        # Should we try some sort of default class??
+        err_string = "No class exists for executable %s" %(curr_exe,)
+        raise NotImplementedError(err_string)
+
+    return exe_class
+
 def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs, 
                        datafind_outs, output_dir, parents=None, 
                        link_job_instance=None, allow_overlap=True):
@@ -445,6 +493,7 @@ class PyCBCTmpltbankExec(Executable):
         return PyCBCTmpltbankJob(cp, self.exe_name, self.condor_universe,
                                  ifo=ifo, out_dir=out_dir, tags=tags)
 
+# FIXME: Why no Exec class here?
 class LigoLWCombineSegs(Job):
     """ 
     This class is used to create nodes for the ligolw_combine_segments 
@@ -546,6 +595,92 @@ class LigolwSSthincaExec(Executable):
         return LigolwSSthincaJob(cp, self.exe_name, self.condor_universe,
                             ifo=ifo, out_dir=out_dir, 
                             dqVetoName=dqVetoName, tags=tags)
+
+class PycbcSqliteSimplifyJob(Job):
+    """
+    The class responsible for making jobs for pycbc_sqlite_simplify.
+    """
+    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, tags=[]):
+        Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        self.set_memory(2000)
+        
+    def create_node(self, jobSegment, inputFiles, injFile=None, injTag=None):
+        node = Node(self)
+        if injFile and not injTag:
+            raise ValueError("injTag needed if injFile supplied.")
+        for file in inputFiles:
+            node.add_input(file, argument=True)
+        if injFile:
+            node.add_input(file, opt="injection-file")
+            node.add_var_opt("simulation-tag", injTag)
+        node.make_and_add_output(jobSegment, '.sql', 'output-file',
+                                 tags=self.tags) 
+        
+
+class PycbcSqliteSimplifyExec(Executable):
+    """
+    The class corresponding to the pycbc_sqlite_simplify executable.
+    """
+    def __init__(self, exe_name):
+        Executable.__init__(self, exe_name, 'vanilla')
+
+    def create_job(self, cp, ifo, out_dir=None, tags=[]):
+        return PycbcSqliteSimplifyJob(cp, self.exe_name, self.condor_universe,
+                                            ifo=ifo, out_dir=out_dir, tags=tags)
+
+# FIXME: LigolwClusterCoincsJob and LigolwDBInjFindJob are identical. Maybe we
+#        can merge these together into some form of pipedown sql job class?
+class LigolwClusterCoincsJob(Job):
+    """
+    The class responsible for making jobs for ligolw_cbc_cluster_coincs.
+    """
+    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, tags=[]):
+        Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+
+    def create_node(self, jobSegment, inputFile):
+        node = Node(self)
+        for file in inputFiles:
+            node.add_input(file, opt='input')
+        node.make_and_add_output(jobSegment, '.sql', 'output',
+                                 tags=self.tags)
+
+class LigolwClusterCoincsExec(Executable):
+    """
+    The class corresponding to the ligolw_cbc_cluster_coincs executable.
+    """
+    def __init__(self, exe_name):
+        Executable.__init__(self, exe_name, 'vanilla')
+
+    def create_job(self, cp, ifo, out_dir=None, tags=[]):
+        return LigolwClusterCoincsJob(cp, self.exe_name, self.condor_universe,
+                                            ifo=ifo, out_dir=out_dir, tags=tags)
+
+
+class LigolwDBInjFindJob(Job):
+    """
+    The class responsible for making jobs for ligolw_dbinjfind.
+    """
+    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, tags=[]):
+        Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        
+    def create_node(self, jobSegment, inputFile):
+        node = Node(self)
+        for file in inputFiles:
+            node.add_input(file, opt='input')
+        node.make_and_add_output(jobSegment, '.sql', 'output',
+                                 tags=self.tags)
+
+class LigolwDBInjFindExec(Executable):
+    """
+    The class corresponding to the ligolw_dbinjfind executable.
+    """ 
+    def __init__(self, exe_name):
+        Executable.__init__(self, exe_name, 'vanilla')
+
+    def create_job(self, cp, ifo, out_dir=None, tags=[]):
+        return LigolwDBInjFindJob(cp, self.exe_name, self.condor_universe,
+                                            ifo=ifo, out_dir=out_dir, tags=tags)
+
                             
 class LalappsInspinjJob(Job):
     """
