@@ -23,10 +23,12 @@ parser = OptionParser(
     usage   = "%prog [OPTIONS]",
     description = "Creates a template bank and writes it to XML." )
 
-parser.add_option('-n', '--num', metavar='SAMPLES', help='number of templates in the output banks', type=int)
-parser.add_option("-t", "--tmplt-bank", metavar='file', help='template bank to split')
+#parser.add_option('-n', '--num', metavar='SAMPLES', help='number of templates in the output banks', type=int)
 parser.add_option("-V", "--verbose", action="store_true", help="print extra debugging information", default=False )
-parser.add_option("-e", "--prefix",  help="print extra debugging information" )
+parser.add_option("-t", "--bank-file", metavar='FILE', help='template bank to split')
+parser.add_option('-n', '--number-of-banks', metavar='N', help='split template bank into N files', type=int)
+parser.add_option("-o", "--output", default="TMPLTBANK", help="prefix to add to the template bank name (name becomes output#.xml[.gz])" )
+parser.add_option("-z", "--write-compress", action="store_true", help="write a compressed xml.gz file")
 parser.add_option("--sort-mchirp",action="store_true",default=False)
 parser.add_option("--random-sort",action="store_true",default=False)
 
@@ -35,7 +37,7 @@ options, argv_frame_files = parser.parse_args()
 if options.sort_mchirp and options.random_sort:
   print "You can't sort by Mchirp *and* randomly, dumbass!"
 
-indoc = ligolw_utils.load_filename(options.tmplt_bank, options.verbose)
+indoc = ligolw_utils.load_filename(options.bank_file, options.verbose)
 
 try:
   template_bank_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName)
@@ -47,7 +49,7 @@ except:
 
 #print tabletype
 length = len(template_bank_table)
-num_files = int(ceil(length / float(options.num)))
+num_files = options.number_of_banks
 
 def mchirp_sort(x,y):
     import pycbc.pnutils
@@ -64,7 +66,16 @@ if options.sort_mchirp:
 if options.random_sort:
     random.shuffle(template_bank_table)
 
-for num in range(num_files):
+# Decide how to split up the templates
+# Put approximately the requested number of templates in each file
+# But try to make each file very nearly the same size
+approx_num_per_file = length / float(num_files)
+index_list = [int(round(approx_num_per_file*idx)) for idx in range(num_files)]
+index_list.append(length)
+assert(index_list[0] == 0)
+
+for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
+    assert(idx2 > idx1)
     # create a blank xml document and add the process id
     outdoc = ligolw.Document()
     outdoc.appendChild(ligolw.LIGO_LW())
@@ -77,16 +88,15 @@ for num in range(num_files):
     sngl_inspiral_table = lsctables.New(tabletype,columns=template_bank_table.columnnames)
     outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 
-    for i in range(options.num):
-        try:
-           row = tt.pop()
-           sngl_inspiral_table.append(row) 
-        except IndexError:
-            break
+    for i in range(idx2-idx1):
+       row = tt.pop()
+       sngl_inspiral_table.append(row) 
     
     # write the xml doc to disk
     proctable = table.get_table(outdoc, lsctables.ProcessTable.tableName)
     proctable[0].end_time = gpstime.GpsSecondsFromPyUTC(time.time())
 
-    outname = options.prefix + str(num) + '.xml'
-    ligolw_utils.write_filename(outdoc, outname)
+    outname = options.output + str(num) + '.xml'
+    if options.write_compress:
+        outname +='.gz'
+    ligolw_utils.write_filename(outdoc, outname,gz=options.write_compress)
