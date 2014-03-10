@@ -286,7 +286,7 @@ setup (
                'bin/pycbc_faithsim',
                'bin/pycbc_inspiral',
                'bin/pycbc_make_banksim',
-               'bin/pycbc_split_table',
+               'bin/pycbc_splitbank',
                'bin/pycbc_legacy_inspiral',
                'bin/pycbc_geom_aligned_2dstack',
                'bin/pycbc_geom_aligned_bank',

@@ -161,9 +161,9 @@ inj_str = "lalapps_inspinj " + get_ini_opts(confs, "inspinj") + "--output inj.xm
 os.system(inj_str)
 
 print "Splitting template bank..."
-subprocess.call(['pycbc_split_table', '-n', str(templates_per_job), '-t', bank_file, '-e', 'bank/bank', '--sort-mchirp'])
+subprocess.call(['pycbc_splitbank', '-n', str(templates_per_job), '-t', bank_file, '-e', 'bank/bank', '--sort-mchirp'])
 print "Splitting injection file..."
-subprocess.call(['pycbc_split_table', '-n', str(injections_per_job), '-t', "inj.xml",  '-e', 'injection/injection', '--sort-mchirp'])
+subprocess.call(['pycbc_splitbank', '-n', str(injections_per_job), '-t', "inj.xml",  '-e', 'injection/injection', '--sort-mchirp'])
 
 num_banks = len(glob.glob("bank/bank*"))
 num_injs = len(glob.glob("injection/injection*"))
