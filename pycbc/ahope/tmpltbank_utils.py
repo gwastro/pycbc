@@ -282,10 +282,11 @@ def setup_tmpltbank_pregenerated(workflow, tags=[]):
     # Maybe we want to add capability to analyse separate banks in all ifos?
     
     # Set up class for holding the banks
-    tmpltBanks = AhopeFileList([])
+    tmplt_banks = AhopeFileList([])
 
     cp = workflow.cp
-    pre_gen_bank = cp.get_opt_tags('ahope','tmpltbank-pregenerated-bank', tags)
+    pre_gen_bank = cp.get_opt_tags('ahope-tmpltbank',
+                                           'tmpltbank-pregenerated-bank', tags)
     global_seg = workflow.analysis_time
 
     for ifo in workflow.ifos:
