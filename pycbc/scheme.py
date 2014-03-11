@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Alex Nitz, Andrew Miller
+# Copyright (C) 2014  Alex Nitz, Andrew Miller
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -91,8 +91,9 @@ def register_clean_cuda(function):
     _cuda_cleanup_list.append(function)
 
 def clean_cuda(context):
-    #Before cuda context is destroyed, all item destructions dependent on cuda must take place
-    #This calls all functions that have been registered with _register_clean_cuda() in reverse order
+    #Before cuda context is destroyed, all item destructions dependent on cuda
+    # must take place. This calls all functions that have been registered 
+    # with _register_clean_cuda() in reverse order
     #So the last one registered, is the first one cleaned
     _cuda_cleanup_list.reverse()
     for func in _cuda_cleanup_list:
@@ -156,14 +157,17 @@ def schemed(prefix):
             schemed_fn = getattr(backend, fn.__name__)
             schemed_fn.__doc__ = fn.__doc__
         except:
-            raise RuntimeError(("Failed to find implementation of (%s) for %s scheme.") % (str(fn), current_prefix()))
+            err = "Failed to find implementation of (%s) " 
+                  "for %s scheme." % (str(fn), current_prefix())
+            raise RuntimeError(err)
         return schemed_fn(*args, **kwds)
     return scheming_function
 
 @decorator
 def cpuonly(fn, *args, **kwds):
     if type(mgr.state) != CPUScheme:
-        raise TypeError(fn.__name__ + " can only be called from a CPU processing scheme.")
+        raise TypeError(fn.__name__ + 
+                        " can only be called from a CPU processing scheme.")
     else:
         return fn(*args, **kwds)
         
