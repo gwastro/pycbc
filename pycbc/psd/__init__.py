@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright (C) 2012 Alex Nitz, Andrew Miller, Tito Dal Canton
+# Copyright (C) 2014 Alex Nitz, Andrew Miller, Tito Dal Canton
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -82,7 +82,8 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
     opt : object
         Result of parsing the CLI with OptionParser, or any object with the
         required attributes (psd_model, psd_file, asd_file, psd_estimation,
-        psd_segment_length, psd_segment_stride, psd_inverse_length, psd_output).
+        psd_segment_length, psd_segment_stride, psd_inverse_length, 
+        psd_output).
     length : int
         The length in samples of the output PSD.
     delta_f : float
@@ -118,7 +119,8 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         
         psd *= dyn_range_factor ** 2
            
-    elif opt.psd_estimation and not (opt.psd_model or opt.psd_file or opt.asd_file):
+    elif opt.psd_estimation and not (opt.psd_model or 
+                                     opt.psd_file or opt.asd_file):
         # estimate PSD from data
         psd = welch(strain, avg_method=opt.psd_estimation,
                     seg_len=int(opt.psd_segment_length * sample_rate),
@@ -150,28 +152,34 @@ def insert_psd_option_group(parser):
     """
     psd_options = OptionGroup(parser,
                            "Options related to the noise PSD generation",
-                           "These options select the method of PSD generation. The options \
-                           --psd-model, --psd-file, --asd-file, and --psd-estimation are mutually \
-                           exclusive.")
+                           "These options select the method of PSD generation."
+                           " The options --psd-model, --psd-file, --asd-file, "
+                           "and --psd-estimation are mutually exclusive.")
     psd_options.add_option("--psd-model",
-                           help="Get PSD from given analytical model. Choices are " + str(get_list()) , choices=get_list()) 
+                           help="Get PSD from given analytical model. "
+                                "Choices are " + str(get_list()) , 
+                           choices=get_list()) 
     psd_options.add_option("--psd-file",
                            help="Get PSD using given PSD ASCII file")
     psd_options.add_option("--asd-file",
                            help="Get PSD using given ASD ASCII file")
                                                   
     psd_options.add_option("--psd-estimation",
-                 help="Measure PSD from the data, using given average method. Choices are ['mean', 'median', 'median-mean']",
-                 choices=["mean", "median", "median-mean"])
+                           help="Measure PSD from the data, using given "
+                           "average method. Choices are "
+                           "['mean', 'median', 'median-mean']",
+                           choices=["mean", "median", "median-mean"])
     psd_options.add_option("--psd-segment-length", type=float, 
-                          help="(Required for --psd-estimation) The segment length for PSD estimation (s)")
+                          help="(Required for --psd-estimation) The segment "
+                               "length for PSD estimation (s)")
     psd_options.add_option("--psd-segment-stride", type=float, 
-                          help="(Required for --psd-estimation) The separation between consecutive segments (s)")
-                          
+                          help="(Required for --psd-estimation) The separation"
+                               " between consecutive segments (s)")                         
     psd_options.add_option("--psd-inverse-length", type=float, 
-                          help="(Optional) The maximum length of the impulse response " +\
-                          "of the overwhitening filter (s)")
-    psd_options.add_option("--psd-output", help="(Optional) Write PSD to specified file")
+                          help="(Optional) The maximum length of the impulse"
+                          " response of the overwhitening filter (s)")
+    psd_options.add_option("--psd-output", 
+                          help="(Optional) Write PSD to specified file")
     
     
     parser.add_option_group(psd_options)
