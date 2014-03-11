@@ -155,9 +155,9 @@ def insert_strain_option_group(parser):
     
     data_reading_group = OptionGroup(parser, "Options for obtaining h(t)",
                   "These options are used for generating h(t) either by "
-                  "reading from a file or by generating it. This is only needed "
-                  "if the PSD is to be estimated from the data, ie. if the "
-                  "--psd-estimation option is given.")
+                  "reading from a file or by generating it. This is only "
+                  "needed if the PSD is to be estimated from the data, ie. "
+                  " if the --psd-estimation option is given.")
 
     # Required options
     data_reading_group.add_option("--gps-start-time", 
@@ -179,16 +179,16 @@ def insert_strain_option_group(parser):
     
     #Generate gaussian noise with given psd           
     data_reading_group.add_option("--fake-strain", 
-                help="Name of model PSD for generating fake gaussian noise." +\
+                help="Name of model PSD for generating fake gaussian noise."
                      " Choices are " + str(psd.get_list()) , 
                      choices=psd.get_list())
     data_reading_group.add_option("--fake-strain-seed", type=int, default=0,
-                help="Seed value for the generation of fake colored" + \
+                help="Seed value for the generation of fake colored"
                      " gaussian noise")
                                 
     #optional       
     data_reading_group.add_option("--injection-file", type=str, 
-                      help="(optional) Injection file used to add " + \
+                      help="(optional) Injection file used to add "
                            "waveforms into the strain")                 
                    
     parser.add_option_group(data_reading_group)
@@ -320,10 +320,10 @@ class StrainSegments(object):
         """ Return a list of the FFT'd segments.
         
         Return the list of FrequencySeries. Additional properties are
-        added that describe the strain segment. The property 'analyze' is a slice
-        corresponding to the portion of the time domain equivelant of the segment
-        to analyze for triggers. The value 'cumulative_index' indexes from the beginning
-        of the original strain series. 
+        added that describe the strain segment. The property 'analyze' 
+        is a slice corresponding to the portion of the time domain equivelant
+        of the segment to analyze for triggers. The value 'cumulative_index'
+        indexes from the beginning of the original strain series. 
         """
         if not self._fourier_segments:
             self._fourier_segments = []
@@ -370,7 +370,9 @@ class StrainSegments(object):
     @classmethod
     def verify_segment_options(cls, opt, parser):
         required_opts(opt, parser, 
-                  ['--segment-length', '--segment-start-pad', '--segment-end-pad',
+                  ['--segment-length',
+                   '--segment-start-pad',
+                   '--segment-end-pad',
                    ])  
         
         
