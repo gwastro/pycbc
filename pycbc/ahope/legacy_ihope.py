@@ -234,6 +234,11 @@ class LegacySplitBankJob(Job):
         # Get the output (taken from inspiral.py)
         url_list = []
         x = bank.filename.split('-')
+        if len(x) != 4:
+            errMsg = "Input file name is not compatible with splitbank. Name "
+            errMsg += "must follow the lal cache standard, for example "
+            errMsg += "H1-TMPLTBANK-900000000-1000.xml."
+            raise ValueError(errMsg)
         num_banks = int(self.get_opt('number-of-banks'))
         for i in range( 0, num_banks):
             out_file = "%s-%s_%2.2d-%s-%s" %(x[0], x[1], i, x[2], x[3])
