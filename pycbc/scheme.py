@@ -157,8 +157,8 @@ def schemed(prefix):
             schemed_fn = getattr(backend, fn.__name__)
             schemed_fn.__doc__ = fn.__doc__
         except:
-            err = "Failed to find implementation of (%s) " 
-                  "for %s scheme." % (str(fn), current_prefix())
+            err = ("Failed to find implementation of (%s) " 
+                  "for %s scheme." % (str(fn), current_prefix()))
             raise RuntimeError(err)
         return schemed_fn(*args, **kwds)
     return scheming_function
