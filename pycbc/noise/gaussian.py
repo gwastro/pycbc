@@ -35,8 +35,9 @@ import numpy.random
 def frequency_noise_from_psd(psd, seed = None):
     """ Create noise with a given psd.
     
-    Return noise coloured with the given psd. The returned noise FrequencySeries
-    has the same length and frequency step as the given psd. Note that if unique noise is desired a unique seed should be provided.
+    Return noise coloured with the given psd. The returned noise 
+    FrequencySeries has the same length and frequency step as the given psd. 
+    Note that if unique noise is desired a unique seed should be provided.
 
     Parameters
     ----------
@@ -77,7 +78,8 @@ def frequency_noise_from_psd(psd, seed = None):
 def noise_from_psd(length, delta_t, psd, seed=0):
     """ Create noise with a given psd.
     
-    Return noise with a given psd. Note that if unique noise is desired a unique seed should be provided.
+    Return noise with a given psd. Note that if unique noise is desired 
+    a unique seed should be provided.
 
     Parameters
     ----------
@@ -115,9 +117,9 @@ def noise_from_psd(length, delta_t, psd, seed=0):
     SimNoise(segment, 0, psd, randomness) 
     while (length_generated < length):
         if (length_generated + stride) < length:
-            noise_ts.data[length_generated:length_generated+stride]  = segment.data.data[0:stride]
+            noise_ts.data[length_generated:length_generated+stride] = segment.data.data[0:stride]
         else: 
-            noise_ts.data[length_generated:length]  = segment.data.data[0:length-length_generated]
+            noise_ts.data[length_generated:length] = segment.data.data[0:length-length_generated]
     
         length_generated += stride
         SimNoise(segment, stride, psd, randomness)
