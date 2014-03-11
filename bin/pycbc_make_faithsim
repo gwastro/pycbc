@@ -87,7 +87,7 @@ inj_str = "lalapps_inspinj " + get_ini_opts(confs, "inspinj") + "--output inj.xm
 os.system(inj_str)
 
 print "Splitting template bank..."
-subprocess.call(['pycbc_split_table', '-n', str(templates_per_job), '-t', 'inj.xml', '-e', 'bank/bank'])
+subprocess.call(['pycbc_splitbank', '--templates-per-bank', str(templates_per_job), '-t', 'inj.xml', '-o', 'bank/bank'])
 
 num_banks = len(glob.glob("bank/bank*"))
 

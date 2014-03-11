@@ -57,31 +57,30 @@ _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc)
 parser.add_argument('--version', action='version', version=__version__)
 
-#parser.add_argument('-n', '--num', metavar='SAMPLES', help='number of templates in the output banks', type=int)
-parser.add_argument("-V", "--verbose", action="store_true", help="Print extra debugging information", default=False )
-parser.add_argument("-t", "--bank-file", metavar='INPUT_FILE', help='Template bank to split')
-parser.add_argument('-n', '--number-of-banks', metavar='N', help='Split template bank into N files', type=int)
-parser.add_argument("-o", "--output-prefix", default=None, help="Prefix to add to the template bank name (name becomes output#.xml[.gz])" )
-parser.add_argument("-z", "--write-compress", action="store_true", help="Write compressed xml.gz files.")
-parser.add_argument("-O", "--output-filenames", nargs='*', default=None,
+group = parser.add_mutually_exclusive_group(required=True)
+group.add_argument('--templates-per-bank', metavar='SAMPLES', help='number of templates in the output banks', type=int)
+group.add_argument('-n', '--number-of-banks', metavar='N', help='Split template bank into N files', type=int)
+group.add_argument("-O", "--output-filenames", nargs='*', default=None,
                     action="store",
                     metavar="OUTPUT_FILENAME", help="""Directly specify the
                     names of the output files. The number of files specified
                     here will dictate how to split the bank. It will be split
                     equally between all specified files.""")
+
+parser.add_argument("-o", "--output-prefix", default=None, help="Prefix to add to the template bank name (name becomes output#.xml[.gz])" )
+parser.add_argument("-z", "--write-compress", action="store_true", help="Write compressed xml.gz files.")
+
+parser.add_argument("-V", "--verbose", action="store_true", help="Print extra debugging information", default=False )
+parser.add_argument("-t", "--bank-file", metavar='INPUT_FILE', help='Template bank to split')
+
 parser.add_argument("--sort-mchirp",action="store_true",default=False)
 parser.add_argument("--random-sort",action="store_true",default=False)
 
 args = parser.parse_args()
 
-if not args.output_filenames and not args.output_prefix:
-    errMsg="Need to supply either --output-filenames or --output-prefix."
+if args.output_filenames and args.output_prefix:
+    errMsg="Cannot supply --output-filenames with --output-prefix."
     parser.error(errMsg)
-
-if args.output_filenames and (args.output_prefix or args.number_of_banks):
-    errMsg="--output-filenames cannot be used with other options to specify output."
-    parser.error(errMsg)
- 
 
 if args.sort_mchirp and args.random_sort:
     errMsg="You can't sort by Mchirp *and* randomly, dumbass!"
@@ -99,10 +98,7 @@ except:
   template_bank_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
   tabletype = lsctables.SimInspiralTable
 
-
-#print tabletype
 length = len(template_bank_table)
-num_files = args.number_of_banks
 
 def mchirp_sort(x,y):
     import pycbc.pnutils
@@ -119,11 +115,17 @@ if args.sort_mchirp:
 if args.random_sort:
     random.shuffle(template_bank_table)
 
-# Decide how to split up the templates
-# Put approximately the requested number of templates in each file
-# But try to make each file very nearly the same size
-approx_num_per_file = length / float(num_files)
-index_list = [int(round(approx_num_per_file*idx)) for idx in range(num_files)]
+if args.number_of_banks:
+    # Decide how to split up the templates
+    # Put approximately the requested number of templates in each file
+    # But try to make each file very nearly the same size
+    num_files = args.number_of_banks
+    num_per_file = length / float(num_files)
+elif args.templates_per_bank:
+    num_per_file = args.templates_per_bank
+    num_files = int(ceil(float(length) / num_per_file))
+
+index_list = [int(round(num_per_file*idx)) for idx in range(num_files)]
 index_list.append(length)
 assert(index_list[0] == 0)
 
