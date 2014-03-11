@@ -258,7 +258,17 @@ class build_docs_test(Command):
     def run(self):
         subprocess.check_call("cd docs; cp conf_test.py conf.py; sphinx-apidoc -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
                             stderr=subprocess.STDOUT, shell=True)                            
-                            
+
+# Check for some of the required python packages
+requires = ['lal.lal', 'lalinspiral.lalinspiral', 'lalsimulation.lalsimulation']
+requires +=  ['numpy', 'scipy', 'glue', 'argparse']
+
+for ppkg in requires:
+    try:
+        __import__(ppkg)
+    except:
+        raise RuntimeError('Failed to locate required package: %s  ' % ppkg)
+                           
 # do the actual work of building the package
 VERSION = generate_version_info()
 
@@ -278,7 +288,7 @@ setup (
                  'clean' : clean,
                  'build' : build},
     ext_modules = [lalwrap_module, testlalwrap_module],
-    requires = ['lal'],
+    requires = requires,
     scripts  = [
                'bin/lalapps_inspiral_ahope',
                'bin/lalapps_tmpltbank_ahope',
