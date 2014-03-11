@@ -237,7 +237,8 @@ class LegacySplitBankJob(Job):
         if len(x) != 4:
             errMsg = "Input file name is not compatible with splitbank. Name "
             errMsg += "must follow the lal cache standard, for example "
-            errMsg += "H1-TMPLTBANK-900000000-1000.xml."
+            errMsg += "H1-TMPLTBANK-900000000-1000.xml. "
+            errMsg += "Got %s." %(bank.filename,)
             raise ValueError(errMsg)
         num_banks = int(self.get_opt('number-of-banks'))
         for i in range( 0, num_banks):
