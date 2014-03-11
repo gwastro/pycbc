@@ -1,8 +1,46 @@
-#!/usr/bin/env python
+#!/usr/bin/python
+#
+# Copyright (C) 2014 LIGO Scientific Collaboration
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+"""
+Splits a table in an xml file into multiple pieces
+"""
+
+import pycbc
+import pycbc.version
+__author__  = "Alex Nitz <alex.nitz@ligo.org>"
+__version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
+__program__ = "pycbc_splitbank"
+
+
 import time
 import os
 import sys
-from optparse import OptionParser
+import argparse
 from glue import gpstime
 from glue.ligolw import ligolw
 from glue.ligolw import table
@@ -14,30 +52,45 @@ from glue import git_version
 from numpy import loadtxt
 from numpy import random, ceil
  
-__author__  = "Alex Nitz"
+# Command line parsing
+_desc = __doc__[1:]
+parser = argparse.ArgumentParser(description=_desc)
+parser.add_argument('--version', action='version', version=__version__)
 
-PROGRAM_NAME = os.path.abspath(sys.argv[0])
+#parser.add_argument('-n', '--num', metavar='SAMPLES', help='number of templates in the output banks', type=int)
+parser.add_argument("-V", "--verbose", action="store_true", help="Print extra debugging information", default=False )
+parser.add_argument("-t", "--bank-file", metavar='INPUT_FILE', help='Template bank to split')
+parser.add_argument('-n', '--number-of-banks', metavar='N', help='Split template bank into N files', type=int)
+parser.add_argument("-o", "--output-prefix", default=None, help="Prefix to add to the template bank name (name becomes output#.xml[.gz])" )
+parser.add_argument("-z", "--write-compress", action="store_true", help="Write compressed xml.gz files.")
+parser.add_argument("-O", "--output-filenames", nargs='*', default=None,
+                    action="store",
+                    metavar="OUTPUT_FILENAME", help="""Directly specify the
+                    names of the output files. The number of files specified
+                    here will dictate how to split the bank. It will be split
+                    equally between all specified files.""")
+parser.add_argument("--sort-mchirp",action="store_true",default=False)
+parser.add_argument("--random-sort",action="store_true",default=False)
 
-parser = OptionParser(
-    version = git_version.verbose_msg,
-    usage   = "%prog [OPTIONS]",
-    description = "Creates a template bank and writes it to XML." )
+args = parser.parse_args()
 
-#parser.add_option('-n', '--num', metavar='SAMPLES', help='number of templates in the output banks', type=int)
-parser.add_option("-V", "--verbose", action="store_true", help="print extra debugging information", default=False )
-parser.add_option("-t", "--bank-file", metavar='FILE', help='template bank to split')
-parser.add_option('-n', '--number-of-banks', metavar='N', help='split template bank into N files', type=int)
-parser.add_option("-o", "--output", default="TMPLTBANK", help="prefix to add to the template bank name (name becomes output#.xml[.gz])" )
-parser.add_option("-z", "--write-compress", action="store_true", help="write a compressed xml.gz file")
-parser.add_option("--sort-mchirp",action="store_true",default=False)
-parser.add_option("--random-sort",action="store_true",default=False)
+if not args.output_filenames and not args.output_prefix:
+    errMsg="Need to supply either --output-filenames or --output-prefix."
+    parser.error(errMsg)
 
-options, argv_frame_files = parser.parse_args()
+if args.output_filenames and (args.output_prefix or args.number_of_banks):
+    errMsg="--output-filenames cannot be used with other options to specify output."
+    parser.error(errMsg)
+ 
 
-if options.sort_mchirp and options.random_sort:
-  print "You can't sort by Mchirp *and* randomly, dumbass!"
+if args.sort_mchirp and args.random_sort:
+    errMsg="You can't sort by Mchirp *and* randomly, dumbass!"
+    parser.error(errMsg)
 
-indoc = ligolw_utils.load_filename(options.bank_file, options.verbose)
+if args.output_filenames:
+    args.number_of_banks = len(args.output_filenames)
+
+indoc = ligolw_utils.load_filename(args.bank_file, args.verbose)
 
 try:
   template_bank_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName)
@@ -49,7 +102,7 @@ except:
 
 #print tabletype
 length = len(template_bank_table)
-num_files = options.number_of_banks
+num_files = args.number_of_banks
 
 def mchirp_sort(x,y):
     import pycbc.pnutils
@@ -59,11 +112,11 @@ def mchirp_sort(x,y):
 
 tt = template_bank_table
 
-if options.sort_mchirp:
+if args.sort_mchirp:
     print " SORTING"
     tt = sorted(template_bank_table,cmp=mchirp_sort)
 
-if options.random_sort:
+if args.random_sort:
     random.shuffle(template_bank_table)
 
 # Decide how to split up the templates
@@ -81,7 +134,7 @@ for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
     outdoc.appendChild(ligolw.LIGO_LW())
 
     proc_id = ligolw_process.register_to_xmldoc(outdoc, 
-                    PROGRAM_NAME, options.__dict__, ifos=["G1"],
+                    __program__, args.__dict__, ifos=["G1"],
                     version=git_version.id, cvs_repository=git_version.branch,
                     cvs_entry_time=git_version.date).process_id
 
@@ -96,7 +149,13 @@ for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
     proctable = table.get_table(outdoc, lsctables.ProcessTable.tableName)
     proctable[0].end_time = gpstime.GpsSecondsFromPyUTC(time.time())
 
-    outname = options.output + str(num) + '.xml'
-    if options.write_compress:
-        outname +='.gz'
-    ligolw_utils.write_filename(outdoc, outname,gz=options.write_compress)
+    if args.output_filenames:
+        outname = args.output_filenames[num]
+    elif args.output_prefix:
+        outname = args.output_prefix + str(num) + '.xml'
+        if args.write_compress:
+            outname +='.gz'
+    else:
+        errMsg = "Cannot figure out how to set output file names."
+        raise ValueError(errMsg)
+    ligolw_utils.write_filename(outdoc, outname, gz=outname.endswith('.gz'))
