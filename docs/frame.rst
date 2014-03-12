@@ -19,5 +19,5 @@ Here the first argument is the path to the framefile of interest, while the seco
 Method documentation
 ====================
 
-.. autofunction:: pycbc.frame.read_frame
-    :noindex:
+.. automodule:: pycbc.frame
+    :members:
