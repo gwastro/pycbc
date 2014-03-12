@@ -29,14 +29,13 @@ documentation for this function can be found here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/datafind.html
 """
 
-import os,sys,optparse
+import os, sys, optparse
 import urlparse,urllib
 import logging
-from glue import datafind
-from glue import lal
-from glue import segments,segmentsUtils,git_version
+from glue import segments, segmentsUtils, git_version, lal
 from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.ahope import *
+from pycbc.frame import datafind_connection
 
 def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
                             tag=None):
@@ -625,56 +624,6 @@ def get_missing_segs_from_frame_file_cache(datafindcaches):
                 missingFrameSegs[ifo].coalesce()
                 missingFrames[ifo].extend(currMissingFrames)
     return missingFrameSegs, missingFrames
-
-def datafind_connection(server=None):
-    """ Return a connection to the datafind server
-    
-    Parameters
-    -----------
-    server : SERVER:PORT string
-       A string representation of the server and port. 
-       The port may be ommitted.
-
-    Returns
-    --------
-    connection
-        The open connection to the datafind server.
-    """
-    
-    if server:
-        datafind_server = server
-    else:
-        # Get the server name from the environment
-        if os.environ.has_key("LIGO_DATAFIND_SERVER"):
-            datafind_server = os.environ["LIGO_DATAFIND_SERVER"]
-        else:
-            err = "Trying to obtain the ligo datafind server url from "
-            err += "the environment, ${LIGO_DATAFIND_SERVER}, but that "
-            err += "variable is not populated."
-            raise ValueError(err)
-
-    # verify authentication options
-    if not datafind_server.endswith("80"):
-        cert_file, key_file = datafind.find_credential()
-    else:
-        cert_file, key_file = None, None
-
-    # Is a port specified in the server URL
-    server, port = datafind_server.split(':',1)
-    if port == "":
-        port = None
-    else:
-        port = int(port)
-
-    # Open connection to the datafind server
-    if cert_file and key_file:
-        connection = datafind.GWDataFindHTTPSConnection(host=server,
-                                                        port=port, 
-                                                        cert_file=cert_file, 
-                                                        key_file=key_file)
-    else:
-        connection = datafind.GWDataFindHTTPConnection(host=server, port=port)
-    return connection
 
 def setup_datafind_server_connection(cp, tag=None):
     """

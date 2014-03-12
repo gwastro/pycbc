@@ -22,6 +22,7 @@ import numpy
 import os.path
 from pycbc.types import TimeSeries
 import copy
+from glue import datafind
 
 
 # map LAL series types to corresponding functions and Numpy types
@@ -161,3 +162,53 @@ def read_frame(location, channels, start_time=None,
         return all_data
     else:
         return _read_channel(channels, stream, start_time, duration)
+        
+def datafind_connection(server=None):
+    """ Return a connection to the datafind server
+    
+    Parameters
+    -----------
+    server : {SERVER:PORT, string}, optional
+       A string representation of the server and port. 
+       The port may be ommitted.
+
+    Returns
+    --------
+    connection
+        The open connection to the datafind server.
+    """
+    
+    if server:
+        datafind_server = server
+    else:
+        # Get the server name from the environment
+        if os.environ.has_key("LIGO_DATAFIND_SERVER"):
+            datafind_server = os.environ["LIGO_DATAFIND_SERVER"]
+        else:
+            err = "Trying to obtain the ligo datafind server url from "
+            err += "the environment, ${LIGO_DATAFIND_SERVER}, but that "
+            err += "variable is not populated."
+            raise ValueError(err)
+
+    # verify authentication options
+    if not datafind_server.endswith("80"):
+        cert_file, key_file = datafind.find_credential()
+    else:
+        cert_file, key_file = None, None
+
+    # Is a port specified in the server URL
+    server, port = datafind_server.split(':',1)
+    if port == "":
+        port = None
+    else:
+        port = int(port)
+
+    # Open connection to the datafind server
+    if cert_file and key_file:
+        connection = datafind.GWDataFindHTTPSConnection(host=server,
+                                                        port=port, 
+                                                        cert_file=cert_file, 
+                                                        key_file=key_file)
+    else:
+        connection = datafind.GWDataFindHTTPConnection(host=server, port=port)
+    return connection
