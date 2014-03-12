@@ -235,7 +235,7 @@ def frame_paths(frame_type, start_time, end_time, server=None):
     
     Examples
     --------
-    >>> paths = find_frames('H1_LDAS_C02_L2', 968995968, 968995968+2048)
+    >>> paths = frame_paths('H1_LDAS_C02_L2', 968995968, 968995968+2048)
     """
     site = frame_type[0]
     connection = datafind_connection(server)
@@ -246,3 +246,4 @@ def frame_paths(frame_type, start_time, end_time, server=None):
     paths = [entry.path for entry in cache]
     return paths    
     
+__all__ = ['read_frame', 'frame_paths', 'datafind_connection']
