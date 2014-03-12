@@ -41,11 +41,15 @@ randStr = ''.join([random.choice(string.ascii_uppercase) for x in range(10)])
 
 # Let's start with the frame files, these need to be translated to a frame
 # cache file, that will be written to local directory
-frameCache = glue.lal.Cache.from_urls(args.frame_files)
-frameFileName = '%s.lcf' %(randStr)
-atexit.register(file_remove_try, frameFileName)
-with open(frameFileName, 'w') as fP:
-    frameCache.tofile(fP)
+if (len(args.frame_files) == 1) and (args.frame_files[0].endswith('.lcf')):
+    # Assume I was given a frame file as input and use that.
+    frameFileName = args.frame_files[0]
+else:
+    frameCache = glue.lal.Cache.from_urls(args.frame_files)
+    frameFileName = '%s.lcf' %(randStr)
+    atexit.register(file_remove_try, frameFileName)
+    with open(frameFileName, 'w') as fP:
+        frameCache.tofile(fP)
 
 # Just get lalapps_inspiral to make a random ifotag to guarantee uniqueness
 ifoTag = randStr
