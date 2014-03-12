@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Tito Dal Canton, Josh Willis
+# Copyright (C) 2014  Tito Dal Canton, Josh Willis, Alex Nitz
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -19,7 +19,8 @@ Provides a class representing a time series.
 """
 
 import os as _os
-from pycbc.types.array import Array,_convert
+from pycbc.types.array import Array, _convert, complex_same_precision_as, zeros
+from pycbc.types.frequencyseries import FrequencySeries
 import lal as _lal
 import numpy as _numpy
 
@@ -372,6 +373,46 @@ class TimeSeries(Array):
             _numpy.savetxt(path, output)
         else:
             raise ValueError('Path must end with .npy or .txt')
+            
+    def to_frequencyseries(self, delta_f=None):
+        """ Return the Fourier transform of this time series
+        
+        Paramters
+        ---------
+        delta_f : {None, float}, optional
+            The frequency resolution of the returned frequency series. By 
+        default the resolution is determined by the duration of the timeseries.
+        
+        Returns
+        -------        
+        FrequencySeries: 
+            The fourier transform of this time series. 
+        """
+        from pycbc.fft import fft
+        if not delta_f:
+            delta_f = 1.0 / self.duration
+        
+        tlen  = int(1.0 / delta_f / self.delta_t)
+        flen = tlen / 2 + 1
+        
+        if tlen < len(self):
+            raise ValueError("The value of delta_f (%s) would be "
+                             "undersampled. Maximum delta_f "
+                             "is %s." % (delta_f, 1.0 / self.duration))         
+        if not delta_f:
+            tmp = self
+        else:
+            tmp = TimeSeries(zeros(tlen, dtype=self.dtype), 
+                             delta_t=self.delta_t, epoch=self.start_time)
+            tmp[:len(self)] = self[:]
+        
+        f = FrequencySeries(zeros(flen, 
+                           dtype=complex_same_precision_as(self)),
+                           delta_f=delta_f)
+        fft(tmp, f)
+        return f
+        
+        
 
 def load_timeseries(path):
     """
