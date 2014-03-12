@@ -39,7 +39,7 @@ Plotting GW phase and amplitude of TD waveform
    :include-source:
 
 ================================================
-Plotting GW phase and amplitude of TD waveform
+Plotting frequency evolution of TD waveform
 ================================================
 
 .. plot:: ../examples/waveform/plot_freq.py
