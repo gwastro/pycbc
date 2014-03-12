@@ -33,8 +33,10 @@ from pycbc.setuputils import pkg_config
 from distutils.file_util import write_file
 
 # Now use the above function to set up our extension library's needs:
-
 ext_libraries, ext_library_dirs, ext_include_dirs = pkg_config(["lal", "lalsimulation", "lalinspiral"])
+
+requires = ['lal.lal', 'lalinspiral.lalinspiral', 'lalsimulation.lalsimulation']
+requires +=  ['numpy', 'scipy', 'glue', 'argparse']
 
 # Setup our swig options. We need the first two to match with how the swiglal
 # wrappings are compiled, so that our module can talk to theirs.  Then we must
@@ -95,6 +97,12 @@ class clean(_clean):
 
 class install(_install):
     def run(self):
+        # Check for some of the required python packages
+        for ppkg in requires:
+            try:
+                __import__(ppkg)
+            except:
+                raise RuntimeError('Failed to locate required package: %s  ' % ppkg)
 
         etcdirectory = os.path.join(self.install_data, 'etc')
         if not os.path.exists(etcdirectory):
@@ -258,16 +266,6 @@ class build_docs_test(Command):
     def run(self):
         subprocess.check_call("cd docs; cp conf_test.py conf.py; sphinx-apidoc -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
                             stderr=subprocess.STDOUT, shell=True)                            
-
-# Check for some of the required python packages
-requires = ['lal.lal', 'lalinspiral.lalinspiral', 'lalsimulation.lalsimulation']
-requires +=  ['numpy', 'scipy', 'glue', 'argparse']
-
-for ppkg in requires:
-    try:
-        __import__(ppkg)
-    except:
-        raise RuntimeError('Failed to locate required package: %s  ' % ppkg)
                            
 # do the actual work of building the package
 VERSION = generate_version_info()
