@@ -177,6 +177,3 @@ def frequency_from_polarizations(h_plus, h_cross):
     start_time = phase.start_time + phase.delta_t / 2
     return TimeSeries(freq, delta_t=phase.delta_t, epoch=start_time)
 
-
-
-

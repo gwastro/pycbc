@@ -53,14 +53,12 @@ def _convert_to_scheme(ary):
         converted_array = Array(ary, dtype=ary._data.dtype)
         ary._data = converted_array._data
         ary._scheme = _scheme.mgr.state
-        
-def _convert(fn):
+      
+@decorator  
+def _convert(fn, self, *args):
     # Convert this array to the current processing scheme
-    @_functools.wraps(fn)
-    def converted(self, *args):
-        _convert_to_scheme(self)
-        return fn(self, *args)
-    return converted
+    _convert_to_scheme(self)
+    return fn(self, *args)
 
 def force_precision_to_match(scalar, precision):
     if _numpy.iscomplex(scalar):
@@ -224,7 +222,7 @@ class Array(object):
             else:
                 return NotImplemented
 
-        return fn(self,*nargs)
+        return fn(self, *nargs)
     
     @decorator  
     def _vcheckother(fn, self, *args):
@@ -259,36 +257,33 @@ class Array(object):
             else:
                 raise TypeError('array argument required')                    
 
-        return fn(self,*nargs)
+        return fn(self, *nargs)
 
-        
-    def _icheckother(fn):
+    @decorator
+    def _icheckother(fn, self, other):
         """ Checks the input to in-place operations """
-        @_functools.wraps(fn)
-        def checked(self,other):
-            self._typecheck(other) 
-    
-            if type(other) in _ALLOWED_SCALARS:
-                if self.kind == 'real' and type(other) == complex:
-                    raise TypeError('dtypes are incompatible')
-                other = force_precision_to_match(other, self.precision)
-            elif isinstance(other, type(self)) or type(other) is Array:
-                if len(other) != len(self):
-                    raise ValueError('lengths do not match')
-                if self.kind == 'real' and other.kind == 'complex':
-                    raise TypeError('dtypes are incompatible')
-                if other.precision == self.precision:
-                    _convert_to_scheme(other)
-                    other = other._data
-                else:
-                    raise TypeError('precisions do not match')
+        self._typecheck(other) 
+
+        if type(other) in _ALLOWED_SCALARS:
+            if self.kind == 'real' and type(other) == complex:
+                raise TypeError('dtypes are incompatible')
+            other = force_precision_to_match(other, self.precision)
+        elif isinstance(other, type(self)) or type(other) is Array:
+            if len(other) != len(self):
+                raise ValueError('lengths do not match')
+            if self.kind == 'real' and other.kind == 'complex':
+                raise TypeError('dtypes are incompatible')
+            if other.precision == self.precision:
+                _convert_to_scheme(other)
+                other = other._data
             else:
-                return NotImplemented
+                raise TypeError('precisions do not match')
+        else:
+            return NotImplemented
 
-            return fn(self,other)
-        return checked
+        return fn(self, other)
 
-    def _typecheck(self,other):
+    def _typecheck(self, other):
         """ Additional typechecking for other. Placeholder for use by derived
         types. 
         """
@@ -831,7 +826,6 @@ class Array(object):
     def numpy(self):
         """ Returns a Numpy Array that contains this data """     
     
-    @cpuonly
     @_convert
     def  lal(self):
         """ Returns a LAL Object that contains this data """
@@ -846,7 +840,7 @@ class Array(object):
         elif self._data.dtype == complex128:
             lal_data = _lal.CreateCOMPLEX16Vector(len(self))
 
-        lal_data.data[:] = self._data
+        lal_data.data[:] = self.numpy()
 
         return lal_data
 
@@ -882,10 +876,9 @@ class Array(object):
                                         self.numpy().imag)).T
                 _numpy.savetxt(path, output)
         else:
-            raise ValueError('Path must end with .npy or .txt')
-
+            raise ValueError('Path must end with .npy or .txt')            
+            
 # Convenience functions for determining dtypes
-
 def real_same_precision_as(data):
     if data.precision is 'single':
         return float32
