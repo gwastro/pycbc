@@ -212,3 +212,37 @@ def datafind_connection(server=None):
     else:
         connection = datafind.GWDataFindHTTPConnection(host=server, port=port)
     return connection
+    
+def frame_paths(frame_type, start_time, end_time, server=None):
+    """Return the paths to a span of frame files
+    
+    Parameters
+    ----------
+    frame_type : string
+        The string representation of the frame type (ex. 'H1_ER_C00_L1')
+    start_time : int
+        The start time that we need the frames to span.
+    end_time : int 
+        The end time that we need the frames to span.
+    server : {None, SERVER:PORT string}, optional
+        Optional string to specify the datafind server to use. By default an
+        attempt is made to use a local datafind server.
+        
+    Returns
+    -------
+    paths : list of paths
+        The list of paths to the frame files.
+    
+    Examples
+    --------
+    >>> paths = find_frames('H1_LDAS_C02_L2', 968995968, 968995968+2048)
+    """
+    site = frame_type[0]
+    connection = datafind_connection(server)
+    times = connection.find_times(site, frame_type, 
+                                  gpsstart=start_time, 
+                                  gpsend=end_time)
+    cache = connection.find_frame_urls(site, frame_type, start_time, end_time)
+    paths = [entry.path for entry in cache]
+    return paths    
+    
