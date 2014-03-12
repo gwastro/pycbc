@@ -16,5 +16,5 @@ for apx in ['EOBNRv2', 'TaylorT4', 'IMRPhenomB']:
     
 pylab.ylabel('GW Strain Amplitude')
 pylab.xlabel('GW Phase (radians)')
-pylab.legend(loc='left')
+pylab.legend(loc='upper left')
 pylab.show()
