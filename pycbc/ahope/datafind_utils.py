@@ -626,7 +626,55 @@ def get_missing_segs_from_frame_file_cache(datafindcaches):
                 missingFrames[ifo].extend(currMissingFrames)
     return missingFrameSegs, missingFrames
 
+def datafind_connection(server=None):
+    """ Return a connection to the datafind server
+    
+    Parameters
+    -----------
+    server : SERVER:PORT string
+       A string representation of the server and port. 
+       The port may be ommitted.
 
+    Returns
+    --------
+    connection
+        The open connection to the datafind server.
+    """
+    
+    if server:
+        datafind_server = server
+    else:
+        # Get the server name from the environment
+        if os.environ.has_key("LIGO_DATAFIND_SERVER"):
+            datafind_server = os.environ["LIGO_DATAFIND_SERVER"]
+        else:
+            err = "Trying to obtain the ligo datafind server url from "
+            err += "the environment, ${LIGO_DATAFIND_SERVER}, but that "
+            err += "variable is not populated."
+            raise ValueError(err)
+
+    # verify authentication options
+    if not datafind_server.endswith("80"):
+        cert_file, key_file = datafind.find_credential()
+    else:
+        cert_file, key_file = None, None
+
+    # Is a port specified in the server URL
+    server, port = datafind_server.split(':',1)
+    if port == "":
+        port = None
+    else:
+        port = int(port)
+
+    # Open connection to the datafind server
+    if cert_file and key_file:
+        connection = datafind.GWDataFindHTTPSConnection(host=server,
+                                                        port=port, 
+                                                        cert_file=cert_file, 
+                                                        key_file=key_file)
+    else:
+        connection = datafind.GWDataFindHTTPConnection(host=server, port=port)
+    return connection
 
 def setup_datafind_server_connection(cp, tag=None):
     """
@@ -644,42 +692,12 @@ def setup_datafind_server_connection(cp, tag=None):
     """
     if cp.has_option_tag("ahope-datafind", "datafind-ligo-datafind-server",
                                            tag=tag):
-        datafindServer = cp.get_opt_tag("ahope-datafind",
+        datafind_server = cp.get_opt_tag("ahope-datafind",
                                 "datafind-ligo-datafind-server", tag=tag)
     else:
-        # Get the server name from the environment
-        if os.environ.has_key("LIGO_DATAFIND_SERVER"):
-            datafindServer = os.environ["LIGO_DATAFIND_SERVER"]
-        else:
-            errMsg = "Trying to obtain the ligo datafind server url from "
-            errMsg += "the environment, ${LIGO_DATAFIND_SERVER}, but that "
-            errMsg += "variable is not populated."
-            raise ValueError(errMsg)
-
-    # verify authentication options
-    if not datafindServer.endswith("80"):
-        cert_file, key_file = datafind.find_credential()
-    else:
-        cert_file, key_file = None, None
-
-    # Is a port specified in the server URL
-    server, port = datafindServer.split(':',1)
-    if port == "":
-        port = None
-    else:
-        port = int(port)
-
-    # Open connection to the datafind server
-    if cert_file and key_file:
-        #HTTPS connection
-        connection =\
-            datafind.GWDataFindHTTPSConnection(host=server, port=port, 
-                                   cert_file=cert_file, key_file=key_file)
-    else:
-        # HTTP connection
-        connection =\
-            datafind.GWDataFindHTTPConnection(host=server, port=port)
-    return connection
+        datafind_server = None
+        
+    return datafind_connection(datafind_server)
 
 def get_segment_summary_times(scienceFile, segmentName):
     """
