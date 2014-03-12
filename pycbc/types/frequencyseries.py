@@ -19,7 +19,7 @@ Provides a class representing a frequency series.
 """
 
 import os as _os
-from pycbc.types.array import Array,_convert
+from pycbc.types.array import Array,_convert, zeros
 import lal as _lal
 import numpy as _numpy
 
@@ -336,6 +336,47 @@ class FrequencySeries(Array):
             _numpy.savetxt(path, output)
         else:
             raise ValueError('Path must end with .npy or .txt')
+            
+    def to_timeseries(self, delta_t=None):
+        """ Return the Fourier transform of this time series
+        
+        Paramters
+        ---------
+        delta_t : {None, float}, optional
+            The time resolution of the returned series. By default the 
+        resolution is determined by length and delta_f of this frequency 
+        series.
+        
+        Returns
+        -------        
+        TimeSeries: 
+            The inverse fourier transform of this frequency series. 
+        """
+        from pycbc.fft import ifft
+        from pycbc.types import TimeSeries, real_same_precision_as
+        nat_delta_t =  1.0 / ((len(self)-1)*2) / self.delta_f
+        if not delta_t:
+            delta_t = nat_delta_t
+            
+        tlen  = int(1.0 / self.delta_f / delta_t)
+        flen = tlen / 2 + 1
+        
+        if flen < len(self):
+            raise ValueError("The value of delta_t (%s) would be "
+                             "undersampled. Maximum delta_t "
+                             "is %s." % (delta_t, nat_delta_t))         
+        if not delta_t:
+            tmp = self
+        else:
+            tmp = FrequencySeries(zeros(flen, dtype=self.dtype), 
+                             delta_f=self.delta_f, epoch=self.epoch)
+            tmp[:len(self)] = self[:]
+        
+        f = TimeSeries(zeros(tlen, 
+                           dtype=real_same_precision_as(self)),
+                           delta_t=delta_t)
+        ifft(tmp, f)
+        return f
             
 
 def load_frequencyseries(path):
