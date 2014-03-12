@@ -71,7 +71,7 @@ class TimeSeries(Array):
                 if isinstance(initial_array, TimeSeries):
                     epoch = initial_array._epoch
                 else:
-                    epoch = None
+                    epoch = _lal.LIGOTimeGPS(0)
             elif epoch is not None:
                 try: 
                     epoch = _lal.LIGOTimeGPS(epoch)

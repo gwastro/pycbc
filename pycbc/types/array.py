@@ -876,7 +876,16 @@ class Array(object):
                                         self.numpy().imag)).T
                 _numpy.savetxt(path, output)
         else:
-            raise ValueError('Path must end with .npy or .txt')            
+            raise ValueError('Path must end with .npy or .txt')  
+           
+    @_convert 
+    def trim_zeros(self):
+        """Remove the leading and trailing zeros.
+        """      
+        tmp = self.numpy()
+        f = len(self)-len(_numpy.trim_zeros(tmp, trim='f'))
+        b = len(self)-len(_numpy.trim_zeros(tmp, trim='b'))
+        return self[f:len(self)-b]
             
 # Convenience functions for determining dtypes
 def real_same_precision_as(data):
