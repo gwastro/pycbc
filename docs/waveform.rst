@@ -30,4 +30,17 @@ Plotting a TD and FD waveform together in the TD
 
 .. plot:: ../examples/waveform/plot_fd_td.py
    :include-source:
+   
+================================================
+Plotting GW phase and amplitude of TD waveform
+================================================
 
+.. plot:: ../examples/waveform/plot_phase.py
+   :include-source:
+
+================================================
+Plotting GW phase and amplitude of TD waveform
+================================================
+
+.. plot:: ../examples/waveform/plot_freq.py
+   :include-source:
