@@ -57,6 +57,12 @@ ifoTag = randStr
 # Add this to arguments to send to inspiral
 leftovers.extend(['--ifo-tag', ifoTag])
 
+# Pipedown also wants us to store the usertag. This is not robust, but should
+# work until we can do this a better way.
+userTag = os.path.basename(args.output_file).split('-')[1]
+userTag = userTag.split('_')[1:]
+userTag = '_'.join(userTag)
+
 # Also need to know the temporary output file name
 ifo = args.channel_name[0:2]
 startTime = args.gps_start_time
