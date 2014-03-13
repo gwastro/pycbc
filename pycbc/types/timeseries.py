@@ -373,7 +373,8 @@ class TimeSeries(Array):
             _numpy.savetxt(path, output)
         else:
             raise ValueError('Path must end with .npy or .txt')
-            
+                
+    @Array._nocomplex
     def to_frequencyseries(self, delta_f=None):
         """ Return the Fourier transform of this time series
         

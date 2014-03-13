@@ -19,7 +19,7 @@ Provides a class representing a frequency series.
 """
 
 import os as _os
-from pycbc.types.array import Array,_convert, zeros
+from pycbc.types.array import Array, _convert, zeros
 import lal as _lal
 import numpy as _numpy
 
@@ -337,6 +337,7 @@ class FrequencySeries(Array):
         else:
             raise ValueError('Path must end with .npy or .txt')
             
+    @Array._noreal
     def to_timeseries(self, delta_t=None):
         """ Return the Fourier transform of this time series
         

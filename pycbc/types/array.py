@@ -189,6 +189,13 @@ class Array(object):
             return fn(self, *args)
         else:
             raise TypeError( fn.__name__ + " does not support complex types")
+            
+    @decorator
+    def _noreal(fn, self, *args):
+        if self.kind == 'complex':
+            return fn(self, *args)
+        else:
+            raise TypeError( fn.__name__ + " does not support real types")
 
     @decorator
     def _returntype(fn, self, *args):
