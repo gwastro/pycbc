@@ -9,6 +9,7 @@ import shutil
 import subprocess
 
 import glue.lal
+from glue.ligolw import dbtables
 
 def file_remove_try(file):
     try:
@@ -31,6 +32,9 @@ parser.add_argument("--gps-end-time", action="store", required=True,
                     help="End time. Sent straight to tmplbank but needed to figure out file naming")
 parser.add_argument("--channel-name", action="store", required=True,
                      metavar="STR", help="Channel name. Sent straight to tmplbank but needed to figure out file naming")
+
+# Need to add signal handlers to deal with condor remove commands
+dbtables.install_signal_trap()
 
 # Leftovers are all the other options that will just be sent to lalapps_inspiral
 args, leftovers = parser.parse_known_args()
