@@ -81,10 +81,10 @@ def setup_injection_workflow(workflow, output_dir=None,
     sections = [sec for sec in all_sec if sec.startswith(injSectionName +'-')]
 
     inj_tags = []
-    inj_files = []   
+    inj_files = AhopeFileList([])   
 
     for section in sections:
-        inj_tag = section.split('-')[1]
+        inj_tag = (section.split('-')[1]).upper()
         currTags = tags + [inj_tag]
 
         # Parse for options in ini file

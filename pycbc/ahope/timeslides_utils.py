@@ -72,7 +72,7 @@ def setup_timeslides_workflow(workflow, output_dir=None, tags=[],
     # configuration file
     all_sec = workflow.cp.sections()
     timeSlideSections = [sec for sec in all_sec if sec.startswith('tisi-')]
-    timeSlideTags = [sec.split('-')[-1] for sec in timeSlideSections]
+    timeSlideTags = [(sec.split('-')[-1]).upper() for sec in timeSlideSections]
 
     timeSlideOuts = AhopeFileList([])
 

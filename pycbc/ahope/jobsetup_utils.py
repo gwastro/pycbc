@@ -126,6 +126,8 @@ def select_splitfilejob_instance(curr_exe, curr_section):
     if curr_exe == 'lalapps_splitbank':
         exe_class = LegacySplitBankExec(curr_section)
     # Some elif statements
+    elif curr_exe == 'pycbc_splitbank':
+        exe_class = PycbcSplitBankExec(curr_section)
     else:
         # Should we try some sort of default class??
         err_string = "No class exists for executable %s" %(curr_exe,)
@@ -604,17 +606,18 @@ class PycbcSqliteSimplifyJob(Job):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
         
-    def create_node(self, jobSegment, inputFiles, injFile=None, injTag=None):
+    def create_node(self, jobSegment, inputFiles, injFile=None, injString=None):
         node = Node(self)
-        if injFile and not injTag:
-            raise ValueError("injTag needed if injFile supplied.")
+        if injFile and not injString:
+            raise ValueError("injString needed if injFile supplied.")
         for file in inputFiles:
             node.add_input(file, argument=True)
         if injFile:
-            node.add_input(file, opt="injection-file")
-            node.add_var_opt("simulation-tag", injTag)
+            node.add_input(injFile, opt="injection-file")
+            node.add_var_opt("simulation-tag", injString)
         node.make_and_add_output(jobSegment, '.sql', 'output-file',
                                  tags=self.tags) 
+        return node
         
 
 class PycbcSqliteSimplifyExec(Executable):
@@ -639,10 +642,11 @@ class LigolwClusterCoincsJob(Job):
 
     def create_node(self, jobSegment, inputFile):
         node = Node(self)
-        for file in inputFiles:
-            node.add_input(file, opt='input')
+        node.add_input(inputFile, opt='input')
         node.make_and_add_output(jobSegment, '.sql', 'output',
                                  tags=self.tags)
+
+        return node
 
 class LigolwClusterCoincsExec(Executable):
     """
@@ -665,10 +669,10 @@ class LigolwDBInjFindJob(Job):
         
     def create_node(self, jobSegment, inputFile):
         node = Node(self)
-        for file in inputFiles:
-            node.add_input(file, opt='input')
+        node.add_input(inputFile, opt='input')
         node.make_and_add_output(jobSegment, '.sql', 'output',
                                  tags=self.tags)
+        return node
 
 class LigolwDBInjFindExec(Executable):
     """
@@ -709,3 +713,53 @@ class LalappsInspinjExec(Executable):
         # noting this.
         return LalappsInspinjJob(cp, self.exe_name, self.condor_universe,
                                  ifo='HL', out_dir=out_dir, tags=tags)
+
+class PycbcSplitBankExec(Executable):
+    """
+    The class corresponding to the pycbc_splitbank executable
+    """
+    def create_job(self, cp, ifo, numBanks, out_dir=None):
+        return LegacySplitBankJob(cp, self.exe_name, self.condor_universe,
+                                  numBanks, ifo=ifo, out_dir=out_dir)
+
+class PycbcSplitBankJob(Job):
+    """
+    The class responsible for creating jobs for pycbc_splitbank.
+    """
+    def __init__(self, cp, exe_name, universe, num_banks,
+                 ifo=None, out_dir=None, tags=[]):
+        Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        self.num_banks = num_banks
+
+    def create_node(self, bank):
+        """
+        Set up a CondorDagmanNode class to run lalapps_splitbank code
+
+        Parameters
+        ----------
+        bank : AhopeOutFile 
+            The AhopeOutFile containing the template bank to be split
+
+        Returns
+        --------
+        node : Node
+            The node to run the job
+        """
+        node = Node(self)
+        node.add_input(bank, opt='bank-file')
+
+        # Get the output (taken from inspiral.py)
+        num_banks = int(self.get_opt('number-of-banks'))
+        out_files = AhopeFileList([])
+        for i in range( 0, num_banks):
+            curr_tag = 'bank%d' %(i)
+            # FIXME: What should the tags actually be? The job.tags values are
+            #        currently ignored.
+            curr_tags = bank.tags + [curr_tag]
+            job_tag = bank.description + "_" + self.exe_name.upper()
+            out_file = AhopeFile(bank.ifo, job_tag, bank.segment,
+                                 extension=".xml.gz", directory=self.out_dir,
+                                 tags=curr_tags)
+            out_files.append(out_file)
+        node.add_output_list(out_files)
+        return node

@@ -197,14 +197,31 @@ class LegacySplitBankExec(Executable):
     """
     The class corresponding to the lalapps_splitbank executable
     """
-    def create_job(self, cp, ifo, out_dir=None):
+    def create_job(self, cp, ifo, num_banks, out_dir=None):
         return LegacySplitBankJob(cp, self.exe_name, self.condor_universe, 
-                                  ifo=ifo, out_dir=out_dir)
+                                  num_banks, ifo=ifo, out_dir=out_dir)
 
 class LegacySplitBankJob(Job):    
     """
     The class responsible for creating jobs for lalapps_splitbank.
     """
+    def __init__(self, cp, exe_name, universe, numBanks,
+                 ifo=None, out_dir=None, tags=[]):
+        Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        self.num_banks = int(numBanks)
+        tmpNumBanks = self.get_opt("number-of-banks")
+        if tmpNumBanks:
+            # Option is in ini file, check it agrees
+            if not int(tmpNumBanks) == self.num_banks:
+                errMsg = "Number of banks provided in [ahope-splitbank] "
+                errMsg += "section does not agree with value given in the "
+                errMsg += "[%s] section of the ini file. " %(exe_name)
+                raise ValueError(errMsg)
+        else:
+            # Option not given, so add it
+           self.add_opt("number-of-banks", self.num_banks)
+            
+
     def create_node(self, bank):
         """
         Set up a CondorDagmanNode class to run lalapps_splitbank code
@@ -240,8 +257,7 @@ class LegacySplitBankJob(Job):
             errMsg += "H1-TMPLTBANK-900000000-1000.xml. "
             errMsg += "Got %s." %(bank.filename,)
             raise ValueError(errMsg)
-        num_banks = int(self.get_opt('number-of-banks'))
-        for i in range( 0, num_banks):
+        for i in range( 0, self.num_banks):
             out_file = "%s-%s_%2.2d-%s-%s" %(x[0], x[1], i, x[2], x[3])
             out_url = urlparse.urlunparse(['file', 'localhost',
                                           os.path.join(self.out_dir, out_file),

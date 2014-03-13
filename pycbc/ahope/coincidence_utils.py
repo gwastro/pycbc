@@ -173,8 +173,8 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
 
     if not timeSlideTags:
         # Get all sections by looking in ini file, use all time slide files.
-        timeSlideTags = [sec.split('-')[-1] for sec in workflow.cp.sections() \
-                                  if sec.startswith('tisi-')]
+        timeSlideTags = [(sec.split('-')[-1]).upper() \
+                  for sec in workflow.cp.sections() if sec.startswith('tisi-')]
 
     for timeSlideTag in timeSlideTags:
         # Get the time slide file from the inputs

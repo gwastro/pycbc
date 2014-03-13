@@ -414,6 +414,51 @@ class Node(pipeline.CondorDAGNode):
             
         if argument:
             self.add_var_arg(file.path)
+
+    def add_output_list(self, fileList, opt=None, argument=False,
+                        delimiter=' '):
+        """
+        Add a list of files as output to this node, under a single option, ie:
+        --option-name file1,file2,file3, or as an argument. Use delimiter to
+        specify how to separate the files. This can also be added as a list
+        of arguments to the node.
+
+        Parameters
+        -----------
+        fileList: AhopeFileList
+            The list of AhopeFiles that this node will generate.
+        opt : string, optional
+            The command line option that the executable needs
+            in order to set the associated file list as output.
+        argument : Boolean, optional
+            If present this indicates that the files should be supplied as an
+            argument to the job (ie. file names with no option at the end of
+            the command line call). Using argument=True and opt != None will
+            result in a failure.
+        delimiter : string, optional (default = ' ')
+            Set the delimiter that is used to separate the file names when
+            supplied as an option or argument.
+        """
+        if argument and opt != None:
+            errMsg = "You cannot supply an option and tell the code that this "
+            errMsg += "is an argument. Choose one or the other."
+            raise ValueError(errMsg)
+
+        # Add the files to the nodes internal lists of input
+        for file in fileList:
+            self.output_files.append(file)
+            self.add_output_file(file.path)
+            if file.node and not hasattr(file.node, 'executed'):
+                self.add_parent(file.node)
+
+        fileListString = delimiter.join([file.path for file in fileList])
+
+        if opt:
+            self.add_var_opt(opt, fileListString)
+
+        if argument:
+            self.add_var_arg(fileListString)
+
                 
     def make_and_add_output(self, valid_seg, extension, option_name, 
                                  tags=[]):
@@ -1033,12 +1078,16 @@ class AhopeFileList(list):
         """
         Find all files who have tag in self.tags
         """
+        # Enforce upper case
+        tag = tag.upper()
         return AhopeFileList([i for i in self if tag in i.tags])
 
     def find_output_with_ifo(self, ifo):
         """
         Find all files who have ifo = ifo
         """
+        # Enforce upper case
+        ifo = ifo.upper()
         return AhopeFileList([i for i in self if ifo in i.ifoList])
 
     def get_times_covered_by_files(self):

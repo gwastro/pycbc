@@ -60,10 +60,21 @@ def setup_splittable_workflow(workflow, tmplt_banks, out_dir=None):
     '''
     logging.info("Entering split output files module.")
     make_analysis_dir(out_dir)
-    # Scope here for choosing different options
-    logging.info("Adding split output file jobs to workflow.")
-    split_table_outs = setup_splittable_dax_generated(workflow, tmplt_banks,
-                                                    out_dir)
+
+    # Parse for options in .ini file
+    splitbankMethod = workflow.cp.get_opt_tags("ahope-splittable",
+                                        "splittable-method", [])
+
+    if splitbankMethod == "IN_WORKFLOW":
+        # Scope here for choosing different options
+        logging.info("Adding split output file jobs to workflow.")
+        split_table_outs = setup_splittable_dax_generated(workflow, tmplt_banks,
+                                                        out_dir)
+    else:
+        errMsg = "Splittable method not recognized. Must be one of "
+        errMsg += "IN_WORKFLOW (currently only one option)."
+        raise ValueError(errMsg)
+
     logging.info("Leaving split output files module.")  
     return split_table_outs
 
@@ -85,6 +96,10 @@ def setup_splittable_dax_generated(workflow, tmplt_banks, out_dir):
     split_table_outs : ahope.AhopeFileList
         The list of split up files as output from this job.
     '''
+    # Get values from ini file
+    num_banks = workflow.cp.get_opt_tags("ahope-splittable",
+                                             "splittable-num-banks", [])
+
     cp = workflow.cp
     splittable_exe = os.path.basename(cp.get('executables', 'splittable'))
     # Select the appropriate class
@@ -94,7 +109,8 @@ def setup_splittable_dax_generated(workflow, tmplt_banks, out_dir):
     out_file_groups = AhopeFileList([])
 
     # Set up the condorJob class for the current executable
-    curr_exe_job = exe_instance.create_job(workflow.cp, None, out_dir)
+    curr_exe_job = exe_instance.create_job(workflow.cp, 'splittable',
+                                           num_banks, out_dir)
 
     for input in tmplt_banks:
         node = curr_exe_job.create_node(input)

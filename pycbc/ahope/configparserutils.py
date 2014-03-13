@@ -264,6 +264,10 @@ class AhopeConfigParser(ConfigParser.SafeConfigParser):
         if len(testList) == 2:
             if testList[0] == 'which':
                 newString = distutils.spawn.find_executable(testList[1])
+                if not newString:
+                    errMsg = "Cannot find exe %s in your path " %(testList[1])
+                    errMsg += "and you specified ${which:%s}." %(testList[1])
+                    raise ValueError(errMsg)
 
         return newString
 
