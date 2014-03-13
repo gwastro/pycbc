@@ -67,6 +67,7 @@ dfDir = os.path.join(currDir, "datafind")
 fdDir = os.path.join(currDir, "full_data")
 tsDir = os.path.join(currDir, "time_slide_files")
 injDir = os.path.join(currDir, "inj_files")
+ppDir = os.path.join(currDir, "ahope_postproc")
 
 # Get segments and find where the data is
 # NOTE: not all files are returned to top level, so all_files has some gaps
@@ -96,11 +97,10 @@ timeSlideFiles = ahope.setup_timeslides_workflow(workflow,
 
 all_files.extend(inj_files)
 tags = ["full_data"] + inj_tags
-inj_files = [None] + inj_files
 output_dirs = [fdDir]
 output_dirs.extend([os.path.join(currDir, tag) for tag in inj_tags])
 all_coincs = ahope.AhopeFileList([])
-for inj_file, tag, output_dir in zip(inj_files, tags, output_dirs):
+for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
     if not tag == 'full_data':
         timeSlideTags = ['zerolag']
     else:
@@ -116,6 +116,19 @@ for inj_file, tag, output_dir in zip(inj_files, tags, output_dirs):
                                         timeSlideTags=timeSlideTags)
     all_files.extend(coincs)
     all_coincs.extend(coincs)
+
+# Set up ahope's post-processing, this is still incomplete
+
+# FIXME: Don't like having to list this here!
+ppVetoCats = [2,3,4] 
+
+postProcPrepFiles = ahope.setup_postprocessing_preperation(workflow,
+                      all_coincs, ppDir, injectionFiles=inj_files,
+                      injectionTags=inj_tags, injLessTag='full_data',
+                      vetoFiles=segsFileList, vetoCats=ppVetoCats)
+
+
+# Also run pipedown, for legacy comparison
 
 pipedownParents = []
 for coincFile in all_coincs:
