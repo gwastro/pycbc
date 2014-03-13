@@ -719,7 +719,7 @@ class PycbcSplitBankExec(Executable):
     The class corresponding to the pycbc_splitbank executable
     """
     def create_job(self, cp, ifo, numBanks, out_dir=None):
-        return LegacySplitBankJob(cp, self.exe_name, self.condor_universe,
+        return PycbcSplitBankJob(cp, self.exe_name, self.condor_universe,
                                   numBanks, ifo=ifo, out_dir=out_dir)
 
 class PycbcSplitBankJob(Job):
@@ -729,7 +729,7 @@ class PycbcSplitBankJob(Job):
     def __init__(self, cp, exe_name, universe, num_banks,
                  ifo=None, out_dir=None, tags=[]):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
-        self.num_banks = num_banks
+        self.num_banks = int(num_banks)
 
     def create_node(self, bank):
         """
@@ -749,9 +749,8 @@ class PycbcSplitBankJob(Job):
         node.add_input(bank, opt='bank-file')
 
         # Get the output (taken from inspiral.py)
-        num_banks = int(self.get_opt('number-of-banks'))
         out_files = AhopeFileList([])
-        for i in range( 0, num_banks):
+        for i in range( 0, self.num_banks):
             curr_tag = 'bank%d' %(i)
             # FIXME: What should the tags actually be? The job.tags values are
             #        currently ignored.
