@@ -20,6 +20,7 @@ Provides a class representing a time series.
 
 import os as _os
 from pycbc.types.array import Array, _convert, complex_same_precision_as, zeros
+from pycbc.types.array import _nocomplex
 from pycbc.types.frequencyseries import FrequencySeries
 import lal as _lal
 import numpy as _numpy
@@ -374,7 +375,7 @@ class TimeSeries(Array):
         else:
             raise ValueError('Path must end with .npy or .txt')
                 
-    @Array._nocomplex
+    @_nocomplex
     def to_frequencyseries(self, delta_f=None):
         """ Return the Fourier transform of this time series
         

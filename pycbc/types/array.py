@@ -59,6 +59,20 @@ def _convert(fn, self, *args):
     # Convert this array to the current processing scheme
     _convert_to_scheme(self)
     return fn(self, *args)
+    
+@decorator
+def _nocomplex(fn, self, *args):
+    if self.kind == 'real':
+        return fn(self, *args)
+    else:
+        raise TypeError( fn.__name__ + " does not support complex types")
+        
+@decorator
+def _noreal(fn, self, *args):
+    if self.kind == 'complex':
+        return fn(self, *args)
+    else:
+        raise TypeError( fn.__name__ + " does not support real types")
 
 def force_precision_to_match(scalar, precision):
     if _numpy.iscomplex(scalar):
@@ -182,20 +196,6 @@ class Array(object):
     @decorator
     def _returnarray(fn, self, *args):
         return Array(fn(self, *args), copy=False)
-
-    @decorator
-    def _nocomplex(fn, self, *args):
-        if self.kind == 'real':
-            return fn(self, *args)
-        else:
-            raise TypeError( fn.__name__ + " does not support complex types")
-            
-    @decorator
-    def _noreal(fn, self, *args):
-        if self.kind == 'complex':
-            return fn(self, *args)
-        else:
-            raise TypeError( fn.__name__ + " does not support real types")
 
     @decorator
     def _returntype(fn, self, *args):
