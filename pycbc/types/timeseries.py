@@ -340,6 +340,18 @@ class TimeSeries(Array):
         lal_data.data.data[:] = self._data
 
         return lal_data
+      
+    def save_to_wav(self, file_name):
+        """ Save this time series to a wav format audio file.
+        
+        Parameters
+        ----------
+        file_name : string
+             The output file name
+        """   
+        from scipy.io.wavfile import write
+        scaled = _numpy.int16(self.numpy()/max(abs(self)) * 32767)
+        write('test.wav', self.sample_rate, scaled)
 
     def save(self, path):
         """
