@@ -182,7 +182,7 @@ def setup_postprocprep_pipedown_ahope(workflow, coincFiles, output_dir,
         if not len(dqSegFile) == 1:
             errMsg = "Did not find exactly 1 data quality file."
             raise ValueError(errMsg)
-        # Don't think this is used here, this is the tag *in* the file.
+        # Don't think this is used here, this is the tag *in* the file
         dqVetoName = 'VETO_CAT%d_CUMULATIVE' %(vetoCat,)
         # FIXME: Here we set the dqVetoName to be compatible with pipedown
         pipedownDQVetoName = 'CAT_%d_VETO' %(vetoCat,)
