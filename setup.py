@@ -304,7 +304,8 @@ setup (
                'bin/pycbc_make_faithsim',
                'bin/pycbc_get_ffinal',
                'bin/pycbc_legacy_tmpltbank',
-               'bin/pycbc_timeslides'
+               'bin/pycbc_timeslides',
+               'bin/pycbc_sqlite_simplify'
                ],
     packages = [
                'pycbc',
