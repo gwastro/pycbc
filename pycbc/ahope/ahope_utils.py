@@ -448,8 +448,7 @@ class Node(pipeline.CondorDAGNode):
         for file in fileList:
             self.output_files.append(file)
             self.add_output_file(file.path)
-            if file.node and not hasattr(file.node, 'executed'):
-                self.add_parent(file.node)
+            file.node = self
 
         fileListString = delimiter.join([file.path for file in fileList])
 

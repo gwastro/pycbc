@@ -760,5 +760,5 @@ class PycbcSplitBankJob(Job):
                                  extension=".xml.gz", directory=self.out_dir,
                                  tags=curr_tags)
             out_files.append(out_file)
-        node.add_output_list(out_files)
+        node.add_output_list(out_files, opt='output-filenames')
         return node

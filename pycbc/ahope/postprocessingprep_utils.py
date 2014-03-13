@@ -56,12 +56,6 @@ def setup_postprocessing_preperation(workflow, triggerFiles, output_dir,
         input at this stage.
     output_dir : path
         The directory in which output files will be stored.
-    injectionFiles : ahope.AhopeFileList
-        If needed by the method used, the injection files to be used in this
-        stage.
-    vetoFiles : ahope.AhopeFileList
-        If needed by the method used, the data quality files to be used in this
-        stage.
     tags : list of strings (optional, default = [])
         A list of the tagging strings that will be used for all jobs created
         by this call to the workflow. An example might be ['POSTPROC1'] or
@@ -69,7 +63,7 @@ def setup_postprocessing_preperation(workflow, triggerFiles, output_dir,
 
     Returns
     --------
-    postPostPreppedFiles : ahope.AhopeFileList
+    postProcPreppedFiles : ahope.AhopeFileList
         A list of files that can be used as input for the post-processing stage.
     """
     logging.info("Entering post-processing preperation stage.")
