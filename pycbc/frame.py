@@ -1,4 +1,4 @@
-# Copyright (C) 2012 Andrew Miller, Alex Nitz, Tito Dal Canton
+# Copyright (C) 2014 Andrew Miller, Alex Nitz, Tito Dal Canton
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -246,4 +246,41 @@ def frame_paths(frame_type, start_time, end_time, server=None):
     paths = [entry.path for entry in cache]
     return paths    
     
-__all__ = ['read_frame', 'frame_paths', 'datafind_connection']
+def query_and_read_frame(frame_type, channels, start_time, end_time):
+    """Read time series from frame data.
+
+    Query for the locatin of physical frames matching the frame type. Return
+    a time series containing the channel between the given start and end times.
+
+    Parameters
+    ----------
+    frame_type : string
+        The type of frame file that we are looking for.         
+    channels : string or list of strings
+        Either a string that contains the channel name or a list of channel
+        name strings.
+    start_time : LIGOTimeGPS or int
+        The gps start time of the time series. Defaults to reading from the 
+        beginning of the available frame(s). 
+    end_time : LIGOTimeGPS or int
+        The gps end time of the time series. Defaults to the end of the frame.
+
+    Returns
+    -------
+    Frame Data: TimeSeries or list of TimeSeries
+        A TimeSeries or a list of TimeSeries, corresponding to the data from
+        the frame file/cache for a given channel or channels. 
+        
+    Examples
+    --------
+    >>> ts = query_and_read_frame('H1_LDAS_C02_L2', 'H1:LDAS-STRAIN', 
+    >>>                               968995968, 968995968+2048)
+    """
+    paths = frame_paths(frame_type, start_time, end_time)
+    return read_frame(paths, channels, 
+                      start_time=start_time, 
+                      end_time=end_time)
+    
+__all__ = ['read_frame', 'frame_paths', 
+           'datafind_connection', 
+           'query_and_read_frame']
