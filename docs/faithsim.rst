@@ -1,5 +1,5 @@
 ###################################################################
-Doing large scale faithfulness calculations
+Dag Generator for doing Faithfulness Comparisons
 ###################################################################
 
 ===================
@@ -8,11 +8,6 @@ Introduction
 
 This page describes how to use the faithfulness dag generator within
 PyCBC.
-
-===========================
-Running a small job by hand
-===========================
-*WRITE ME*
 
 ================================================
 How to generate a workflow

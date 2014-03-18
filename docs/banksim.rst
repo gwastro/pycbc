@@ -1,5 +1,5 @@
 ###################################################################
-Running a Banksim
+Dag generator for doing Banksims
 ###################################################################
 
 ===================
@@ -9,11 +9,6 @@ Introduction
 This page describes how to use the banksim facilities within PyCBC. 
 A banksim calculates the matches, maximized over a set of templates,
 for a list of injections waveforms. 
-
-===========================
-Running a small job by hand
-===========================
-*WRITE ME*
 
 ================================================
 How to generate a workflow to do a large banksim
