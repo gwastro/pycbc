@@ -33,7 +33,7 @@ Executable/Package documentation:
    banksim
    faithsim
 
-Examples:
+Tutorial and Code Snippets:
 
 .. toctree::
    :maxdepth: 2

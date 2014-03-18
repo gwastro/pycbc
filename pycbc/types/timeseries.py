@@ -391,7 +391,7 @@ class TimeSeries(Array):
     def to_frequencyseries(self, delta_f=None):
         """ Return the Fourier transform of this time series
         
-        Paramters
+        Parameters
         ---------
         delta_f : {None, float}, optional
             The frequency resolution of the returned frequency series. By 

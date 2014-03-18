@@ -130,7 +130,7 @@ class FrequencySeries(Array):
         method of the PyCBC type to get a numpy instance from each
         object, and invoking '==' on those two instances.
 
-        Parameters
+        Paramters
         ----------
         other: another Python object, that should be tested for equality
             with 'self'.
