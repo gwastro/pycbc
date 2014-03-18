@@ -7,7 +7,7 @@
 PyCBC documentation
 ###################
 
-PyCBC is a python toolkit for analysis of data from gravitational-wave laser interferometer detectors with the goal of detecting and studing signals from compact binary coalescences (CBCs).
+PyCBC is a python toolkit for analysis of data from gravitational-wave laser interferometer detectors with the goal of detecting and studying signals from compact binary coalescences (CBCs).
 
 The goals of the PyCBC project are to
 
@@ -15,15 +15,14 @@ The goals of the PyCBC project are to
 - Enable simple, easy and transparent access for various many-core architectures like GPUs
 - Ultimately become the data analysis tool of the 'advanced era'
 
-Documentation overview:
+Getting Started:
 
 .. toctree::
    :maxdepth: 1
 
    install
-   documentation
 
-Package/Executable documentation:
+Executable/Package documentation:
 
 .. toctree::
    :maxdepth: 1
@@ -31,7 +30,6 @@ Package/Executable documentation:
    ahope
    tmpltbank
    frame
-   executables
    banksim
    faithsim
 
@@ -42,6 +40,13 @@ Examples:
 
    waveform
 
+For Developers:
+
+.. toctree::
+    :maxdepth: 1
+    
+    documentation
+
 Misc:
 
 .. toctree::
@@ -49,15 +54,8 @@ Misc:
   
    ihope
 
-Indices and tables
+Indexes and Tables
 ==================
 
-.. toctree::
-   :maxdepth: 1
-
-   modules
-
-* :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
-
+* :ref:`genindex`

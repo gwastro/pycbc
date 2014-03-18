@@ -1,5 +1,5 @@
 ###################################################################
-Dag Generator for doing Faithfulness Comparisons
+Dag Generator for Doing Faithfulness Comparisons
 ###################################################################
 
 ===================
