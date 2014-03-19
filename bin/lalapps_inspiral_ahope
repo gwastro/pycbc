@@ -66,13 +66,19 @@ leftovers.extend(['--ifo-tag', ifoTag])
 # work until we can do this a better way.
 userTag = os.path.basename(args.output_file).split('-')[1]
 userTag = userTag.split('_')[1:]
-userTag = '_'.join(userTag)
+if userTag[0] == 'FULL' and userTag[1] == 'DATA':
+    userTag = 'FULL_DATA'
+elif userTag[0] == 'PLAYGROUND':
+    userTag = 'PLAYGROUND'
+else:
+    userTag = '_'.join(userTag)
 
 # Also need to know the temporary output file name
 ifo = args.channel_name[0:2]
 startTime = args.gps_start_time
 duration = args.gps_end_time - startTime
-inspOutName = "%s-INSPIRAL_%s-%d-%d" %(ifo, ifoTag, startTime, duration)
+inspOutName = "%s-INSPIRAL_%s_%s-%d-%d" \
+              %(ifo, ifoTag, userTag, startTime, duration)
 atexit.register(file_remove_try, inspOutName)
 
 if "--write-compress" in leftovers:

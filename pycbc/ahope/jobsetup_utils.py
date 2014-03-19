@@ -339,7 +339,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                     raise ValueError(err_str)
 
             for pnum, parent in enumerate(curr_parent):
-                if pnum != 0:
+                if len(curr_parent) != 1:
                     tag = [str(pnum)]
                 else:
                     tag = []
