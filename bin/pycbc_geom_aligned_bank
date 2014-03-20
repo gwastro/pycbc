@@ -82,7 +82,7 @@ pycbc.psd.insert_psd_option_group(parser)
 pycbc.strain.insert_strain_option_group(parser)
 
 opts = parser.parse_args()
-exit()
+
 # Sanity check options
 if not opts.output_file:
     parser.error("Must supply --output-file")
