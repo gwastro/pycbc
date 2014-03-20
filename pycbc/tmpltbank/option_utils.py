@@ -556,16 +556,16 @@ def insert_ethinca_calculation_option_group(parser):
     parser : object
         OptionParser instance.
     """
-    ethincaGroup = argparse.OptionGroup(parser, "Ethinca metric options",
+    ethincaGroup = parser.add_argument_group("Ethinca metric options",
                     "These options are used in the calculation of the gamma "
                     "components for ethinca calculations if needed.")
-    ethincaGroup.add_argument("","--calculate-ethinca-metric", \
+    ethincaGroup.add_argument("--calculate-ethinca-metric", \
                         action="store_true",\
                         default=False, help="If given the ethinca metric "+\
                         "will be calculated and stored in the Gamma entried "+\
                         "in the sngl_inspiral table. "+\
                         "OPTIONAL")
-    ethincaGroup.add_argument("","--ethinca-calc-density", action="store",\
+    ethincaGroup.add_argument("--ethinca-calc-density", action="store",\
                         default=10, help="The ethinca metric is calculated "+\
                         "using a given value for f_max. Tmpltbank uses the "+\
                         "ISCO frequency for every template and recomputes "+\
@@ -575,7 +575,6 @@ def insert_ethinca_calculation_option_group(parser):
                         "ISCO frequency. This value sets the spacing between "+\
                         "these discrete values of frequency cutoff. "+\
                         "OPTIONAL: UNITS=Hz.")
-    parser.add_argument_group(ethincaGroup)
 
 def verify_ethinca_calculation_options(opts, parser):
     """
