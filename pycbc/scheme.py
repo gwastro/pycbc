@@ -181,17 +181,16 @@ def insert_processing_option_group(parser):
     parser : object
         OptionParser instance
     """
-    processing_group = OptionGroup(parser, "Options for selecting the"
+    processing_group = parser.add_argument_group("Options for selecting the"
                                    " processing scheme in this program.")   
-    processing_group.add_option("--processing-scheme", 
+    processing_group.add_argument("--processing-scheme", 
                       help="The choice of processing scheme. "
                            "Choices are " + str(scheme_prefix.values()), 
                       choices=scheme_prefix.values(), 
                       default="cpu")                                                          
-    processing_group.add_option("--processing-device-id", 
+    processing_group.add_argument("--processing-device-id", 
                       help="ID of GPU to use for accelerated processing", 
                       default=0, type=int)
-    parser.add_option_group(processing_group)
 
 def from_cli(opt):
     """Parses the command line options and returns a precessing scheme.
