@@ -173,7 +173,7 @@ def insert_strain_option_group(parser):
                    help="The channel containing the gravitational strain data")
                    
     #Read from cache file              
-    data_reading_group.add_argument("--frame-cache", type=str, 
+    data_reading_group.add_argument("--frame-cache", type=str, nargs="+",
                             help="Cache file containing the frame locations.")
     
     #Generate gaussian noise with given psd           
