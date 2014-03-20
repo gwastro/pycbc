@@ -16,43 +16,40 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import logging, sys, numpy 
-from optparse import OptionParser, OptionGroup
+import logging, sys, numpy, argparse
 from pycbc import vetoes, psd, waveform, events, strain, scheme, DYN_RANGE_FAC
 from pycbc.filter import  matched_filter_core, sigmasq, make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
 
-# Option Parsing ##############################################################
-parser = OptionParser(
-    usage   = "%prog [OPTIONS]",
+parser = argparse.ArgumentParser(
     description = "Find single detector gravitational-wave triggers." )
 
-parser.add_option("-V", "--verbose", action="store_true", 
+parser.add_argument("-V", "--verbose", action="store_true", 
                   help="print extra debugging information", default=False )
-parser.add_option("--output", type=str)
+parser.add_argument("--output", type=str)
 
-parser.add_option("--bank-file", type=str)
-parser.add_option("--snr-threshold", 
+parser.add_argument("--bank-file", type=str)
+parser.add_argument("--snr-threshold", 
                   help="The the minimum snr threshold", type=float)
-parser.add_option("--low-frequency-cutoff", type=float,
+parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for filtering (Hz)")
                   
-parser.add_option("--approximant", type=str,
+parser.add_argument("--approximant", type=str,
                   help="The name of the approximant use for filtering")
-parser.add_option("--order", type=str,
+parser.add_argument("--order", type=str,
                   help="The integer half-PN order at which to generate the approximant.")
 
-parser.add_option("--cluster-method", choices=["template", "window"])
-parser.add_option("--cluster-window", type=int, default = -1,
+parser.add_argument("--cluster-method", choices=["template", "window"])
+parser.add_argument("--cluster-window", type=int, default = -1,
                   help="Length of clustering window in seconds")
-parser.add_option("--maximization-interval", type=int, default=0,
+parser.add_argument("--maximization-interval", type=int, default=0,
                   help="Maximize triggers over the template bank (ms)")
 
-parser.add_option("--bank-veto-bank-file", type=str)
+parser.add_argument("--bank-veto-bank-file", type=str)
 
-parser.add_option("--chisq-bins", type=int, default=0)
-parser.add_option("--chisq-threshold", type=float, default=0)
-parser.add_option("--chisq-delta", type=float, default=0)
+parser.add_argument("--chisq-bins", type=int, default=0)
+parser.add_argument("--chisq-threshold", type=float, default=0)
+parser.add_argument("--chisq-delta", type=float, default=0)
 
 # Add options groups
 psd.insert_psd_option_group(parser)
@@ -60,15 +57,13 @@ strain.insert_strain_option_group(parser)
 strain.StrainSegments.insert_segment_option_group(parser)
 scheme.insert_processing_option_group(parser)
 
-opt, argv = parser.parse_args()
+opt = parser.parse_args()
 
 # Check that the values returned for the options make sense
 psd.verify_psd_options(opt, parser)
 strain.verify_strain_options(opt, parser)
 strain.StrainSegments.verify_segment_options(opt, parser)
 scheme.verify_processing_options(opt, parser)
-
-###############################################################################
 
 if opt.verbose:
     log_level = logging.DEBUG
