@@ -14,15 +14,15 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import optparse
+import argparse
 import textwrap
 from pycbc.tmpltbank.lambda_mapping import *
 
-class IndentedHelpFormatterWithNL(optparse.IndentedHelpFormatter):
+class IndentedHelpFormatterWithNL(argparse.ArgumentDefaultsHelpFormatter):
     """
     This class taken from 
     https://groups.google.com/forum/#!topic/comp.lang.python/bfbmtUGhW8I
-    and is used to format the optparse help messages to deal with line breaking
+    and is used to format the argparse help messages to deal with line breaking
     nicer. Specfically the pn-order help is large and looks crappy without this.
     This function is (C) Tim Chase
     """
@@ -90,46 +90,45 @@ class IndentedHelpFormatterWithNL(optparse.IndentedHelpFormatter):
 def insert_metric_calculation_options(parser):
     """
     Adds the options used to obtain a metric in the bank generation codes to an
-    optparser as an OptionGroup. This should be used if you want to use these
+    argparser as an OptionGroup. This should be used if you want to use these
     options in your code.
     """
-    metricOpts = optparse.OptionGroup(parser,
+    metricOpts = parser.add_argument_group(
                    "Options related to calculating the parameter space "+\
                    "metric.")
-    metricOpts.add_option("", "--pn-order", action="store", type="string",\
+    metricOpts.add_argument("--pn-order", action="store", type=str,\
                    default=None,\
                    help="Determines the PN order to use. Note that if you "+\
                         "placing a bank of non-spinning templates, any "+\
                         "spin-related terms in the metric will always "+\
                         "be zero. REQUIRED ARGUMENT: "+\
                         "choices are: %s" %(pycbcValidOrdersHelpDescriptions))
-    metricOpts.add_option("", "--f0", action="store", type="float",\
+    metricOpts.add_argument("--f0", action="store", type=float,\
                   default=70.,\
                   help="f0 is used as a dynamic rescaling factor when "+\
                        "calculating the integrals used in metric "+\
                        "construction. IE. instead of integrating F(f) we "+\
                        "integrate F(f/f0) and then remove f0 after the fact."+\
                        "The default option should be fine here for most "+\
-                       "applications. OPTIONAL: default= %default."+\
+                       "applications. OPTIONAL"+\
                        "WARNING: If using ethinca calculation this must be "+\
                        "equal to f-low. UNITS=Hz")
-    metricOpts.add_option("", "--f-low", action="store", type="float",\
+    metricOpts.add_argument("--f-low", action="store", type=float,\
                   default=None, help="The lower frequency cutoff to use "+\
                        "when computing the components of the parameter "+\
                        "space metric. REQUIRED ARGUMENT. UNITS=Hz")
-    metricOpts.add_option("", "--f-upper", action="store", type="float",\
+    metricOpts.add_argument("--f-upper", action="store", type=float,\
                   default=None, help="The upper frequency cutoff to use "+\
                        "when computing the components of the parameter "+\
                        "space metric. REQUIRED ARGUMENT. UNITS=Hz")
-    metricOpts.add_option("", "--delta-f", action="store", type="float",\
+    metricOpts.add_argument("--delta-f", action="store", type=float,\
                   default=None, help="The frequency spacing to use when "+\
                        "computing the components of the parameter space "+\
                        "metric. IE. the various integrals should be "+\
                        "\int F(f) df, however we only approximate this as "+\
                        "\sum F(f) delta_f. This sets delta_f. "+\
                        "REQUIRED ARGUMENT. UNITS=Hz")
-    parser.add_option_group(metricOpts)
-
+                       
 def verify_metric_calculation_options(opts, parser):
     """
     Parses the metric calculation options given and verifies that they are
@@ -137,7 +136,7 @@ def verify_metric_calculation_options(opts, parser):
 
        Parameters
     ----------
-    opts : optparse.Values instance
+    opts : argparse.Values instance
         Result of parsing the input options with OptionParser,
     parser : object
         The OptionParser instance.
@@ -187,10 +186,10 @@ class metricParameters:
         self._moments=None
 
     @classmethod
-    def from_optparse(cls, opts):
+    def from_argparse(cls, opts):
         """
         Initialize an instance of the metricParameters class from an
-        optparse.OptionParser instance. This assumes that
+        argparse.OptionParser instance. This assumes that
         insert_metric_calculation_options
         and
         verify_metric_calculation_options
@@ -348,7 +347,7 @@ class metricParameters:
 def insert_mass_range_option_group(parser,nonSpin=False):
     """
     Adds the options used to specify mass ranges in the bank generation codes
-    to an optparser as an OptionGroup. This should be used if you
+    to an argparser as an OptionGroup. This should be used if you
     want to use these options in your code.
  
     Parameters
@@ -358,36 +357,36 @@ def insert_mass_range_option_group(parser,nonSpin=False):
     nonSpin : boolean, optional (default=False)
         If this is provided the spin-related options will not be added.
     """
-    massOpts = optparse.OptionGroup(parser,
+    massOpts = parser.add_argument_group(
                    "Options related to mass and spin limits.")
-    massOpts.add_option("", "--min-mass1", action="store", type="float",\
+    massOpts.add_argument("--min-mass1", action="store", type=float,\
                   default=None, help="Minimum mass1 to generate bank with"+\
                                      ", mass1 *must* be larger than mass2." +\
                                       "REQUIRED ARGUMENT. UNITS=Solar mass.")
-    massOpts.add_option("", "--max-mass1", action="store", type="float",\
+    massOpts.add_argument("--max-mass1", action="store", type=float,\
                   default=None, help="Maximum mass1 to generate bank with."+\
                                       "REQUIRED ARGUMENT. UNITS=Solar mass.")
-    massOpts.add_option("", "--min-mass2", action="store", type="float",\
+    massOpts.add_argument("--min-mass2", action="store", type=float,\
                   default=None, help="Minimum mass2 to generate bank with."+\
                                       "REQUIRED ARGUMENT. UNITS=Solar mass.")
-    massOpts.add_option("", "--max-mass2", action="store", type="float",\
+    massOpts.add_argument("--max-mass2", action="store", type=float,\
                   default=None, help="Maximum mass2 to generate bank with."+\
                                       "REQUIRED ARGUMENT. UNITS=Solar mass.")
-    massOpts.add_option("", "--max-total-mass", action="store", type="float",\
+    massOpts.add_argument("--max-total-mass", action="store", type=float,\
                   default=None, help="Minimum total mass to generate bank "+\
                                       "with. OPTIONAL, no limit on max total "+\
                                       "mass if not provided. UNITS=Solar mass.")
-    massOpts.add_option("", "--min-total-mass", action="store", type="float",\
+    massOpts.add_argument("--min-total-mass", action="store", type=float,\
                   default=None, help="Maximum total mass to generate bank "+\
                                       "with. OPTIONAL, no limit on min total "+\
                                       "mass if not provided. UNITS=Solar mass.")
-    massOpts.add_option("", "--max-eta", action="store", type="float",\
+    massOpts.add_argument("--max-eta", action="store", type=float,\
                   default=0.25, help="Minimum symmetric mass ratio to "+\
                                       "generate bank "+\
                                       "with. OPTIONAL, no limit on maximum "+\
                                       "symmetric mass ratio if not provided."+\
                                       "UNITS=Solar mass.")
-    massOpts.add_option("", "--min-eta", action="store", type="float",\
+    massOpts.add_argument("--min-eta", action="store", type=float,\
                   default=0., help="Maximum symmetric mass ratio to "+\
                                       "generate bank "+\
                                       "with. OPTIONAL, no limit on minimum "+\
@@ -395,27 +394,26 @@ def insert_mass_range_option_group(parser,nonSpin=False):
                                       "UNITS=Solar mass.")
 
     if nonSpin:
-        parser.add_option_group(massOpts)
+        parser.add_argument_group(massOpts)
         return
 
-    parser.add_option("", "--max-ns-spin-mag", action="store", type="float",\
+    parser.add_argument("--max-ns-spin-mag", action="store", type=float,\
                   default=None, help="Maximum neutron star spin magnitude."+\
                                      "Neutron stars are defined as objects "+\
                                      "with mass less than 3 solar masses."+\
                                      "REQUIRED ARGUMENT.")
-    parser.add_option("", "--max-bh-spin-mag", action="store", type="float",\
+    parser.add_argument("--max-bh-spin-mag", action="store", type=float,\
                   default=None, help="Maximum black hole spin magnitude."+\
                                      "Neutron stars are defined as objects "+\
                                      "with mass less than 3 solar masses."+\
                                      "REQUIRED ARGUMENT.")
-    parser.add_option("", "--nsbh-flag", action="store_true", default=False,\
+    parser.add_argument("--nsbh-flag", action="store_true", default=False,\
                     help="Set this flag if you are generating a bank that "+\
                          "contains only systems with 1 black hole and 1 "+\
                          "neutron star. This prevents you having a bunch "+\
                          "of 3,3 systems where the 'neutron star' takes "+\
                          "the black hole's value of spin."+\
-                         "OPTIONAL default= %default")
-    parser.add_option_group(massOpts)
+                         "OPTIONAL")
 
 def verify_mass_range_options(opts, parser, nonSpin=False):
     """
@@ -424,7 +422,7 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
 
        Parameters
     ----------
-    opts : optparse.Values instance
+    opts : argparse.Values instance
         Result of parsing the input options with OptionParser,
     parser : object
         The OptionParser instance.
@@ -526,10 +524,10 @@ class massRangeParameters(object):
 
 
     @classmethod
-    def from_optparse(cls, opts, nonSpin=False):
+    def from_argparse(cls, opts, nonSpin=False):
         """
         Initialize an instance of the massRangeParameters class from an
-        optparse.OptionParser instance. This assumes that
+        argparse.OptionParser instance. This assumes that
         insert_mass_range_option_group
         and
         verify_mass_range_options
@@ -558,16 +556,16 @@ def insert_ethinca_calculation_option_group(parser):
     parser : object
         OptionParser instance.
     """
-    ethincaGroup = optparse.OptionGroup(parser, "Ethinca metric options",
+    ethincaGroup = argparse.OptionGroup(parser, "Ethinca metric options",
                     "These options are used in the calculation of the gamma "
                     "components for ethinca calculations if needed.")
-    ethincaGroup.add_option("","--calculate-ethinca-metric", \
+    ethincaGroup.add_argument("","--calculate-ethinca-metric", \
                         action="store_true",\
                         default=False, help="If given the ethinca metric "+\
                         "will be calculated and stored in the Gamma entried "+\
                         "in the sngl_inspiral table. "+\
-                        "OPTIONAL: default= %default")
-    ethincaGroup.add_option("","--ethinca-calc-density", action="store",\
+                        "OPTIONAL")
+    ethincaGroup.add_argument("","--ethinca-calc-density", action="store",\
                         default=10, help="The ethinca metric is calculated "+\
                         "using a given value for f_max. Tmpltbank uses the "+\
                         "ISCO frequency for every template and recomputes "+\
@@ -576,8 +574,8 @@ def insert_ethinca_calculation_option_group(parser):
                         "f_max and uses the closest one to each template's "+\
                         "ISCO frequency. This value sets the spacing between "+\
                         "these discrete values of frequency cutoff. "+\
-                        "OPTIONAL: default= %default, UNITS=Hz.")
-    parser.add_option_group(ethincaGroup)
+                        "OPTIONAL: UNITS=Hz.")
+    parser.add_argument_group(ethincaGroup)
 
 def verify_ethinca_calculation_options(opts, parser):
     """
@@ -586,7 +584,7 @@ def verify_ethinca_calculation_options(opts, parser):
 
        Parameters
     ----------
-    opts : optparse.Values instance
+    opts : argparse.Values instance
         Result of parsing the input options with OptionParser,
     parser : object
         The OptionParser instance.
