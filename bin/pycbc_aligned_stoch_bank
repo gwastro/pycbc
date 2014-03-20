@@ -33,7 +33,7 @@ List of possible improvements:
 """
 
 from __future__ import division
-import sys, optparse, copy
+import sys, argparse, copy
 import numpy
 import logging
 import pycbc.version
@@ -48,35 +48,34 @@ __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
 __program__ = "pycbc_aligned_stoch_bank"
 
-# Read command line options
-usage = """usage: %prog [options]"""
+# Read command line option
 _desc = __doc__[1:]
-parser = optparse.OptionParser(usage, version=__version__, description=_desc,\
-           formatter=pycbc.tmpltbank.IndentedHelpFormatterWithNL())
+parser = argparse.ArgumentParser(version=__version__, description=_desc,\
+           formatter_class=pycbc.tmpltbank.IndentedHelpFormatterWithNL)
 
 # Begin with code specific options
-parser.add_option("-v", "--verbose", action="store_true", default=False,\
-                    help="verbose output, default: %default")
-parser.add_option("-O", "--output-file",  help="Output file name."+\
+parser.add_argument("--verbose", action="store_true", default=False,\
+                    help="verbose output")
+parser.add_argument("-O", "--output-file",  help="Output file name."+\
                                           "REQUIRED ARGUMENT.")
-parser.add_option("-m", "--min-match", action="store", type="float",\
+parser.add_argument("-m", "--min-match", action="store", type=float,\
                   default=None, help="Minimum match to generate bank with."+\
                                       "REQUIRED ARGUMENT")
-parser.add_option("-V", "--vary-fupper", action="store_true", default=False,\
+parser.add_argument("-V", "--vary-fupper", action="store_true", default=False,\
                     help="Set this to run the code using a variable f_upper."\
-                   +"OPTIONAL: default= %default")
-parser.add_option("-N", "--num-seeds", action="store", type="int",\
+                   +"OPTIONAL")
+parser.add_argument("-N", "--num-seeds", action="store", type=int,\
                   default=5000000,\
                   help="Number of seed points to make bank," +\
-                       "OPTIONAL: default= %default")
-parser.add_option("-c", "--covary", action="store_true", default=False,\
+                       "OPTIONAL")
+parser.add_argument("-c", "--covary", action="store_true", default=False,\
                     help="Set this to run with covaried coordinates. This will"\
                    +"provide a speed up, but cannot run with varying f-lower"\
-                   +"yet. OPTIONAL: default= %default")
-parser.add_option("-n", "--num-failed-cutoff", action="store", type="int",\
+                   +"yet. OPTIONAL")
+parser.add_argument("-n", "--num-failed-cutoff", action="store", type=int,\
                   default=1000000000, help="Give up after having tested this "+\
                   "many consecutive points each of which were not accepted "+\
-                  "into the bank. OPTIONAL: default= %default (this is "+\
+                  "into the bank. OPTIONAL: default=1000000000 (this is "+\
                   "really large as --num-seeds provides the default "+\
                   "termination condition.")
 
@@ -95,7 +94,7 @@ pycbc.strain.insert_strain_option_group(parser)
 # Add the ethinca calculation options
 pycbc.tmpltbank.insert_ethinca_calculation_option_group(parser)
 
-opts, args = parser.parse_args()
+opts = parser.parse_args()
 
 if opts.verbose:
     log_level = logging.DEBUG
@@ -110,9 +109,9 @@ if not opts.min_match:
     parser.error("Must supply --min-match")
 opts.max_mismatch = 1 - opts.min_match
 pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
-metricParams=pycbc.tmpltbank.metricParameters.from_optparse(opts)
+metricParams=pycbc.tmpltbank.metricParameters.from_argparse(opts)
 pycbc.tmpltbank.verify_mass_range_options(opts, parser)
-massRangeParams=pycbc.tmpltbank.massRangeParameters.from_optparse(opts)
+massRangeParams=pycbc.tmpltbank.massRangeParameters.from_argparse(opts)
 pycbc.psd.verify_psd_options(opts, parser)
 if opts.psd_estimation:
     pycbc.strain.verify_strain_options(opts, parser)
