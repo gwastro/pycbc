@@ -153,8 +153,7 @@ def insert_psd_option_group(parser):
                            " The options --psd-model, --psd-file, --asd-file, "
                            "and --psd-estimation are mutually exclusive.")
     psd_options.add_argument("--psd-model",
-                           help="Get PSD from given analytical model. "
-                                "Choices are " + str(get_list()) , 
+                           help="Get PSD from given analytical model. ", 
                            choices=get_list()) 
     psd_options.add_argument("--psd-file",
                            help="Get PSD using given PSD ASCII file")
@@ -163,8 +162,7 @@ def insert_psd_option_group(parser):
                                                   
     psd_options.add_argument("--psd-estimation",
                            help="Measure PSD from the data, using given "
-                           "average method. Choices are "
-                           "['mean', 'median', 'median-mean']",
+                           "average method.",
                            choices=["mean", "median", "median-mean"])
     psd_options.add_argument("--psd-segment-length", type=float, 
                           help="(Required for --psd-estimation) The segment "
