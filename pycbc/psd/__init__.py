@@ -14,9 +14,6 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-from optparse import OptionParser, OptionGroup
-
 from pycbc.psd.read import *
 from pycbc.psd.analytical import *
 from pycbc.psd.estimate import *
@@ -150,39 +147,37 @@ def insert_psd_option_group(parser):
     parser : object
         OptionParser instance.
     """
-    psd_options = OptionGroup(parser,
+    psd_options = parser.add_argument_group(
                            "Options related to the noise PSD generation",
                            "These options select the method of PSD generation."
                            " The options --psd-model, --psd-file, --asd-file, "
                            "and --psd-estimation are mutually exclusive.")
-    psd_options.add_option("--psd-model",
+    psd_options.add_argument("--psd-model",
                            help="Get PSD from given analytical model. "
                                 "Choices are " + str(get_list()) , 
                            choices=get_list()) 
-    psd_options.add_option("--psd-file",
+    psd_options.add_argument("--psd-file",
                            help="Get PSD using given PSD ASCII file")
-    psd_options.add_option("--asd-file",
+    psd_options.add_argument("--asd-file",
                            help="Get PSD using given ASD ASCII file")
                                                   
-    psd_options.add_option("--psd-estimation",
+    psd_options.add_argument("--psd-estimation",
                            help="Measure PSD from the data, using given "
                            "average method. Choices are "
                            "['mean', 'median', 'median-mean']",
                            choices=["mean", "median", "median-mean"])
-    psd_options.add_option("--psd-segment-length", type=float, 
+    psd_options.add_argument("--psd-segment-length", type=float, 
                           help="(Required for --psd-estimation) The segment "
                                "length for PSD estimation (s)")
-    psd_options.add_option("--psd-segment-stride", type=float, 
+    psd_options.add_argument("--psd-segment-stride", type=float, 
                           help="(Required for --psd-estimation) The separation"
                                " between consecutive segments (s)")                         
-    psd_options.add_option("--psd-inverse-length", type=float, 
+    psd_options.add_argument("--psd-inverse-length", type=float, 
                           help="(Optional) The maximum length of the impulse"
                           " response of the overwhitening filter (s)")
-    psd_options.add_option("--psd-output", 
+    psd_options.add_argument("--psd-output", 
                           help="(Optional) Write PSD to specified file")
-    
-    
-    parser.add_option_group(psd_options)
+
     
 def verify_psd_options(opt, parser):
     """Parses the CLI options and verifies that they are consistent and 
