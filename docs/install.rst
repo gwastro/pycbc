@@ -15,6 +15,9 @@ In order to install PyCBC, you need to have installed the following prerequisite
 * `LALSuite <https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html>`_ (with swig bindings enabled)
 * `GLUE <https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html>`_
 
+.. note::
+    
+    These dependencies should already be installed on LDG clusters. 
 
 ===================
 Installing from git
