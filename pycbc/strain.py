@@ -19,7 +19,6 @@ This modules contains functions reading, generating, and segmenting strain data
 import logging, numpy, lal
 import pycbc.noise
 import pycbc.psd
-from optparse import OptionGroup
 from pycbc import psd, DYN_RANGE_FAC
 from pycbc.types import float32
 from pycbc.frame import read_frame
@@ -153,45 +152,43 @@ def insert_strain_option_group(parser):
         OptionParser instance.
     """
     
-    data_reading_group = OptionGroup(parser, "Options for obtaining h(t)",
+    data_reading_group = parser.add_argument_group("Options for obtaining h(t)",
                   "These options are used for generating h(t) either by "
                   "reading from a file or by generating it. This is only "
                   "needed if the PSD is to be estimated from the data, ie. "
                   " if the --psd-estimation option is given.")
 
     # Required options
-    data_reading_group.add_option("--gps-start-time", 
+    data_reading_group.add_argument("--gps-start-time", 
                             help="The gps start time of the data", type=int)
-    data_reading_group.add_option("--gps-end-time", 
+    data_reading_group.add_argument("--gps-end-time", 
                             help="The gps end time of the data", type=int)
-    data_reading_group.add_option("--strain-high-pass", type=float, 
+    data_reading_group.add_argument("--strain-high-pass", type=float, 
                             help="High pass frequency")
-    data_reading_group.add_option("--pad-data", 
+    data_reading_group.add_argument("--pad-data", 
               help="Extra padding to remove highpass corruption (s)", type=int)
-    data_reading_group.add_option("--sample-rate", type=int, 
+    data_reading_group.add_argument("--sample-rate", type=int, 
                             help="The sample rate to use for h(t) generation.")
-    data_reading_group.add_option("--channel-name", type=str, 
+    data_reading_group.add_argument("--channel-name", type=str, 
                    help="The channel containing the gravitational strain data")
                    
     #Read from cache file              
-    data_reading_group.add_option("--frame-cache", type=str, 
+    data_reading_group.add_argument("--frame-cache", type=str, 
                             help="Cache file containing the frame locations.")
     
     #Generate gaussian noise with given psd           
-    data_reading_group.add_option("--fake-strain", 
+    data_reading_group.add_argument("--fake-strain", 
                 help="Name of model PSD for generating fake gaussian noise."
                      " Choices are " + str(psd.get_list()) , 
                      choices=psd.get_list())
-    data_reading_group.add_option("--fake-strain-seed", type=int, default=0,
+    data_reading_group.add_argument("--fake-strain-seed", type=int, default=0,
                 help="Seed value for the generation of fake colored"
                      " gaussian noise")
                                 
     #optional       
-    data_reading_group.add_option("--injection-file", type=str, 
+    data_reading_group.add_argument("--injection-file", type=str, 
                       help="(optional) Injection file used to add "
                            "waveforms into the strain")                 
-                   
-    parser.add_option_group(data_reading_group)
 
 def verify_strain_options(opts, parser):
     """Parses the strain data CLI options and verifies that they are consistent 
@@ -348,24 +345,24 @@ class StrainSegments(object):
         
     @classmethod
     def insert_segment_option_group(cls, parser):
-        segment_group = OptionGroup(parser, "Options for segmenting the strain",
+        segment_group = parser.add_argument_group(
+                                   "Options for segmenting the strain",
                                   "These options are used to determine how to "
                                   "segment the strain into smaller chunks, "
                                   "and for determining the portion of each to "
                                   "analyze for triggers. ")
-        segment_group.add_option("--trig-start-time", type=int, default=0, 
+        segment_group.add_argument("--trig-start-time", type=int, default=0, 
                     help="(optional) The gps time to start recording triggers")
-        segment_group.add_option("--trig-end-time", type=int, default=0,
+        segment_group.add_argument("--trig-end-time", type=int, default=0,
                     help="(optional) The gps time to stop recording triggers")
-        segment_group.add_option("--segment-length", type=int, 
+        segment_group.add_argument("--segment-length", type=int, 
                           help="The length of each strain segment in seconds.")
-        segment_group.add_option("--segment-start-pad", type=int, 
+        segment_group.add_argument("--segment-start-pad", type=int, 
                           help="The time in seconds to ignore of the "
                                "beginning of each segment in seconds. ")
-        segment_group.add_option("--segment-end-pad", type=int, 
+        segment_group.add_argument("--segment-end-pad", type=int, 
                           help="The time in seconds to ignore at the "
                                "end of each segment in seconds. ")
-        parser.add_option_group(segment_group)
         
     @classmethod
     def verify_segment_options(cls, opt, parser):
