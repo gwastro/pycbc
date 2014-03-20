@@ -67,7 +67,7 @@ pycbc.strain.insert_strain_option_group(parser)
 # Add the ethinca calculation options
 pycbc.tmpltbank.insert_ethinca_calculation_option_group(parser)
 
-opts, args = parser.parse_args()
+opts = parser.parse_args()
 
 if opts.verbose:
     log_level = logging.DEBUG
