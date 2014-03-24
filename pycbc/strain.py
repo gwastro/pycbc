@@ -187,12 +187,11 @@ def insert_strain_option_group(parser):
                             help="list of frame files")   
     
     #Generate gaussian noise with given psd           
-    data_reading_group.add_argument("--fake-strain", action='append',
+    data_reading_group.add_argument("--fake-strain",
                 help="Name of model PSD for generating fake gaussian noise."
                      " Choices are " + str(psd.get_list()) , 
                      choices=psd.get_list())
     data_reading_group.add_argument("--fake-strain-seed", type=int, default=0,
-                action='append',
                 help="Seed value for the generation of fake colored"
                      " gaussian noise")
                                 
