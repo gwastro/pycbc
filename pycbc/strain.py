@@ -81,7 +81,7 @@ def from_cli(opt):
     opt : object
         Result of parsing the CLI with OptionParser, or any object with the
         required attributes  (gps-start-time, gps-end-time, strain-high-pass, 
-        pad-data, sample-rate, frame-cache, channel-name, fake-strain, 
+        pad-data, sample-rate, (frame-cache or frame-files), channel-name, fake-strain, 
         fake-strain-seed).
 
     Returns
@@ -89,9 +89,14 @@ def from_cli(opt):
     strain : TimeSeries
         The time series containing the conditioned strain data.
     """
-    if opt.frame_cache:
+    if opt.frame_cache or opt.frame_files:
+        if opt.frame_cache:
+            frame_source = opt.frame_cache 
+        if opt.frame_files:
+            frame_source = opt.frame_files 
+
         logging.info("Reading Frames")
-        strain = read_frame(opt.frame_cache, opt.channel_name, 
+        strain = read_frame(frame_source, opt.channel_name, 
                             start_time=opt.gps_start_time-opt.pad_data, 
                             end_time=opt.gps_end_time+opt.pad_data)
 
@@ -176,12 +181,18 @@ def insert_strain_option_group(parser):
     data_reading_group.add_argument("--frame-cache", type=str, nargs="+",
                             help="Cache file containing the frame locations.")
     
+    #Read from cache file              
+    data_reading_group.add_argument("--frame-files",
+                            type=str, nargs="+",
+                            help="list of frame files")   
+    
     #Generate gaussian noise with given psd           
-    data_reading_group.add_argument("--fake-strain", 
+    data_reading_group.add_argument("--fake-strain", action='append',
                 help="Name of model PSD for generating fake gaussian noise."
                      " Choices are " + str(psd.get_list()) , 
                      choices=psd.get_list())
     data_reading_group.add_argument("--fake-strain-seed", type=int, default=0,
+                action='append',
                 help="Seed value for the generation of fake colored"
                      " gaussian noise")
                                 
@@ -204,8 +215,9 @@ def verify_strain_options(opts, parser):
     parser : object
         OptionParser instance.
     """
-    ensure_one_opt(opts, parser, ['--frame-cache', '--fake-strain'])
-    
+    ensure_one_opt(opts, parser, ['--frame-cache', 
+                                  '--fake-strain', 
+                                  '--frame-files'])  
     required_opts(opts, parser, 
                   ['--gps-start-time', '--gps-end-time', '--strain-high-pass',
                    '--pad-data', '--sample-rate', '--channel-name',
