@@ -40,10 +40,11 @@ __program__ = "pycbc_geom_nonspinbank"
 
 # Read command line options
 _desc = __doc__[1:]
-parser = argparse.ArgumentParser(version=__version__, description=_desc,\
+parser = argparse.ArgumentParser(description=_desc,
            formatter_class=pycbc.tmpltbank.IndentedHelpFormatterWithNL)
 
 # Begin with code specific options
+parser.add_argument('--version', action='version', version=__version__)
 parser.add_argument("-V", "--verbose", action="store_true", default=False,\
                     help="verbose output")
 parser.add_argument("-m", "--min-match", action="store", type=float,\
