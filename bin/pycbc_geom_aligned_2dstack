@@ -45,7 +45,7 @@ __program__ = "pycbc_geom_aligned_2dstack"
 usage = """usage: %prog [options]"""
 _desc = __doc__[1:]
 parser = optparse.OptionParser(usage, version=__version__, description=_desc,\
-           formatter=pycbc.tmpltbank.IndentedHelpFormatterWithNL())
+           formatter=pycbc.tmpltbank.IndentedHelpFormatterWithNL)
 # Code specific options
 parser.add_option("-v", "--verbose", action="store_true", default=False,\
                     help="verbose output, default: %default")
