@@ -484,7 +484,7 @@ class Node(pipeline.CondorDAGNode):
 
         # Changing this from set(tags) to enforce order. It might make sense
         # for all jobs to have file names with tags in the same order.
-        all_tags = job.tags
+        all_tags = copy.deepcopy(job.tags)
         for tag in tags:
             if tag not in all_tags:
                 all_tags.append(tag)
