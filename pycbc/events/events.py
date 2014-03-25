@@ -186,9 +186,11 @@ class EventManager(object):
         """
         outdoc = glue.ligolw.ligolw.Document()
         outdoc.appendChild(glue.ligolw.ligolw.LIGO_LW())
+
+        ifo = self.opt.channel_name[0:2]
         
         proc_id = glue.ligolw.utils.process.register_to_xmldoc(outdoc, 
-                        "inspiral", self.opt.__dict__, comment="", ifos=[""],
+                        "inspiral", self.opt.__dict__, comment="", ifos=[ifo],
                         version=glue.git_version.id, cvs_repository=glue.git_version.branch,
                         cvs_entry_time=glue.git_version.date).process_id
         
@@ -197,8 +199,6 @@ class EventManager(object):
         outdoc.childNodes[0].appendChild(sngl_table)
         
         start_time = lal.LIGOTimeGPS(self.opt.gps_start_time)
-        
-        ifo = self.opt.channel_name[0:2]
         
         if self.opt.trig_start_time:
             tstart_time = self.opt.trig_start_time
