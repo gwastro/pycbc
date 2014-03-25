@@ -171,14 +171,18 @@ def select_genericjob_instance(workflow, exe_tag):
     elif exe_name == 'pycbc_sqlite_simplify':
         exe_class = PycbcSqliteSimplifyExec(exe_tag)
     elif exe_name == 'ligolw_cbc_cluster_coincs':
-        exe_class = LigolwClusterCoincsExec(exe_tag)
+        exe_class = SQLInOutExec(exe_tag)
     elif exe_name == 'ligolw_dbinjfind':
-        exe_class = LigolwDBInjFindExec(exe_tag)
+        exe_class = SQLInOutExec(exe_tag)
     elif exe_name == 'lalapps_inspinj':
         exe_class = LalappsInspinjExec(exe_tag)
+    elif exe_name == 'ligolw_cbc_compute_durations':
+        exe_class = SQLInOutExec(exe_tag)
+    elif exe_name == 'pycbc_calculate_far':
+        exe_class = SQLInOutExec(exe_tag)
     else:
         # Should we try some sort of default class??
-        err_string = "No class exists for executable %s" %(curr_exe,)
+        err_string = "No class exists for executable %s" %(exe_name,)
         raise NotImplementedError(err_string)
 
     return exe_class
@@ -374,8 +378,8 @@ class PyCBCInspiralJob(Job):
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.exe_name)
 
-        if not dfParents or len(dfParents) != 1:
-            raise ValueError("%s must be supplied with a single cache file"
+        if not dfParents:
+            raise ValueError("%s must be supplied with data file(s)"
                               %(self.exe_name))
 
         # set remaining options flags   
@@ -384,15 +388,28 @@ class PyCBCInspiralJob(Job):
         node.add_var_opt('trig-start-time', valid_seg[0])
         node.add_var_opt('trig-end-time', valid_seg[1])
 
-        cache_file = dfParents[0]
-        
         if self.injection_file is not None:
             node.add_input(self.injection_file, 'injection-file')
 
         # set the input and output files        
         node.make_and_add_output(valid_seg, '.xml.gz', 'output', tags=tags)
-        node.add_input(cache_file, opt='frame-cache')
+        node.add_input_list(dfParents, opt='frame-files', delimiter=' ')
         node.add_input(parent, opt='bank-file')
+
+        # FIXME: This hack is needed for pipedown compatibility. user-tag is
+        #        no-op and is only needed for pipedown to know whether this is
+        #        a "FULL_DATA" job or otherwise.
+        outFile = os.path.basename(node.output_files[0].path)
+        userTag = outFile.split('-')[1]
+        userTag = userTag.split('_')[1:]
+        if userTag[0] == 'FULL' and userTag[1] == 'DATA':
+            userTag = 'FULL_DATA'
+        elif userTag[0] == 'PLAYGROUND':
+            userTag = 'PLAYGROUND'
+        else:
+            userTag = '_'.join(userTag)
+        node.add_var_opt("user-tag", userTag)
+
         return node
         
     def get_valid_times(self):
@@ -434,8 +451,8 @@ class PyCBCTmpltbankJob(Job):
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
         node = Node(self)
 
-        if not dfParents or len(dfParents) != 1:
-            raise ValueError("%s must be supplied with a single cache file"
+        if not dfParents:
+            raise ValueError("%s must be supplied with data file(s)"
                               %(self.exe_name))
 
         pad_data = int(self.get_opt('pad-data'))
@@ -447,11 +464,9 @@ class PyCBCTmpltbankJob(Job):
         node.add_var_opt('gps-start-time', data_seg[0] + pad_data)
         node.add_var_opt('gps-end-time', data_seg[1] - pad_data)
 
-        cache_file = dfParents[0]
-
         # set the input and output files      
         node.make_and_add_output(valid_seg, '.xml.gz', 'output-file', tags=tags)
-        node.add_input(cache_file, opt='frame-cache')
+        node.add_input_list(dfParents, opt='frame-files', delimiter=' ')
         return node
 
     def create_nodata_node(self, valid_seg):
@@ -631,42 +646,13 @@ class PycbcSqliteSimplifyExec(Executable):
         return PycbcSqliteSimplifyJob(cp, self.exe_name, self.condor_universe,
                                             ifo=ifo, out_dir=out_dir, tags=tags)
 
-# FIXME: LigolwClusterCoincsJob and LigolwDBInjFindJob are identical. Maybe we
-#        can merge these together into some form of pipedown sql job class?
-class LigolwClusterCoincsJob(Job):
-    """
-    The class responsible for making jobs for ligolw_cbc_cluster_coincs.
-    """
-    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, tags=[]):
-        Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
-
-    def create_node(self, jobSegment, inputFile):
-        node = Node(self)
-        node.add_input(inputFile, opt='input')
-        node.make_and_add_output(jobSegment, '.sql', 'output',
-                                 tags=self.tags)
-
-        return node
-
-class LigolwClusterCoincsExec(Executable):
-    """
-    The class corresponding to the ligolw_cbc_cluster_coincs executable.
-    """
-    def __init__(self, exe_name):
-        Executable.__init__(self, exe_name, 'vanilla')
-
-    def create_job(self, cp, ifo, out_dir=None, tags=[]):
-        return LigolwClusterCoincsJob(cp, self.exe_name, self.condor_universe,
-                                            ifo=ifo, out_dir=out_dir, tags=tags)
-
-
-class LigolwDBInjFindJob(Job):
+class SQLInOutJob(Job):
     """
     The class responsible for making jobs for ligolw_dbinjfind.
     """
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, tags=[]):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
-        
+
     def create_node(self, jobSegment, inputFile):
         node = Node(self)
         node.add_input(inputFile, opt='input')
@@ -674,16 +660,16 @@ class LigolwDBInjFindJob(Job):
                                  tags=self.tags)
         return node
 
-class LigolwDBInjFindExec(Executable):
+class SQLInOutExec(Executable):
     """
     The class corresponding to the ligolw_dbinjfind executable.
-    """ 
+    """
     def __init__(self, exe_name):
         Executable.__init__(self, exe_name, 'vanilla')
 
     def create_job(self, cp, ifo, out_dir=None, tags=[]):
-        return LigolwDBInjFindJob(cp, self.exe_name, self.condor_universe,
-                                            ifo=ifo, out_dir=out_dir, tags=tags)
+        return SQLInOutJob(cp, self.exe_name, self.condor_universe,
+                                           ifo=ifo, out_dir=out_dir, tags=tags)
 
                             
 class LalappsInspinjJob(Job):
