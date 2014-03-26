@@ -127,6 +127,10 @@ postProcPrepFiles = ahope.setup_postprocessing_preperation(workflow,
                       injectionTags=inj_tags, injLessTag='full_data',
                       vetoFiles=segsFileList, vetoCats=ppVetoCats)
 
+# COMMENTED OUT WHILE BEING TESTED
+#postProcFiles = ahope.setup_postprocessing(workflow, postProcPrepFiles,
+#                                           ppDir, tags=[], vetoCats=ppVetoCats)
+
 
 # Also run pipedown, for legacy comparison
 
