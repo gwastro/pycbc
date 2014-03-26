@@ -3,7 +3,6 @@ coincidence/
 datafind/
 inspiral/
 segments/
-site-local.xml
 *.dag.*
 test_ahope.dag
 test_ahope.dax
