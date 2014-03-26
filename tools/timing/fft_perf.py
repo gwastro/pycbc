@@ -20,7 +20,9 @@ parser.add_option('--device-num','-d', action='store', type = 'int',
 
 parser.add_option('--size',type=float, help='FFT size')
 parser.add_option('--iterations', type=int, help='Number of iterations to perform')
-parser.add_option('--measure-level', type=int, help='Set the measure level (only applies to FFTW- cpu scheme)')
+parser.add_option('--measure-level', type=int, help='Set the measure level (only applies to FFTW- cpu scheme)', default=1)
+parser.add_option('--backend', type=str, help='set the backend type for this scheme', default='Default')
+         
           
 (options, args) = parser.parse_args()   
 
@@ -55,24 +57,24 @@ vecdin = zeros(N, dtype=complex128) + 1
 vecdout = vecdin * 1
 
 with ctx:
-    fft(vecin, vecout)
-    ifft(vecin, vecout)
+    fft(vecin, vecout, backend=options.backend)
+    ifft(vecin, vecout, backend=options.backend)
 
 def tfft():
     with ctx:
 	for i in range(0, niter):
-	    fft(vecin, vecout)
+	    fft(vecin, vecout, backend=options.backend)
         b = vecout[9]
 def tifft():
     with ctx:
 	for i in range(0, niter):
-	    ifft(vecin, vecout)
+	    ifft(vecin, vecout, backend=options.backend)
         b = vecout[9]
 
 def dtifft():
     with ctx:
         for i in range(0, niter):
-            ifft(vecdin, vecdout)
+            ifft(vecdin, vecdout, backend=options.backend)
         b = vecout[9]
 
 import timeit
