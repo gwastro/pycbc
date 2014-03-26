@@ -186,3 +186,62 @@ directory to see all the stderr and stdout files from each job. You can match th
 to find the command line for each job in the ahope dag if you want to run by hand to debug any job.
 
 We will soon be transitioning to pegasus which will make some of this easier!
+
+-----------------------------------------------
+Submitting the workflow with Pegasus (Optional)
+-----------------------------------------------
+To plan and submit a workflow with Pegasus, first follow the instruction of this page through the end of section, `Edit the configuration file`_.
+
+Copy the script, `run_weekly_ahope.sh` from the example directory to your your working directory.
+
+Next, modify the script `run_weekly_ahope.sh`, choosing the `GPS_START_TIME`, `GPS_END_TIME`, and
+`LOGPATH`, as appropriate. Choices for different sites are described in section, `Generate the workflow`_.::
+
+    #!/bin/bash
+    # run_weekly_ahope.sh
+    GPS_START_TIME=961585543
+    GPS_END_TIME=96167194
+    export LOGPATH=/usr1/${USER}/log
+    ...
+
+Generate the workflow, and use Pegasus to plan a concrete workflow by running the script.::
+
+    sh run_weekly_ahope.sh
+    
+Submit the workflow by following the instructions at the end of the script output, which looks something like 
+the following.::
+
+    ...
+    10:49:15:INFO : Entering post-processing preperation stage.
+    10:49:15:INFO : Leaving post-processing separation module.
+    10:49:18:INFO : Finished.
+    2014.03.26 10:49:28.676 EDT:   
+
+
+    I have concretized your abstract workflow. The workflow has been entered 
+    into the workflow database with a state of "planned". The next step is 
+    to start or execute your workflow. The invocation required is
+
+
+    pegasus-run  /usr1/ahnitz/log/ahnitz/pegasus/weekly_ahope/run0011
+
+     
+    2014.03.26 10:49:28.983 EDT:   Time taken to execute is 7.095 seconds 
+    
+In this case the workflow would be submitted as follows.::
+
+    pegasus-run  /usr1/ahnitz/log/ahnitz/pegasus/weekly_ahope/run0011
+     
+To monitor the workflow::
+
+    pegasus-status /usr1/ahnitz/log/ahnitz/pegasus/weekly_ahope/run0011
+    
+To get debugging information in the case of failures.::
+
+    pegasus-analyzer /usr1/ahnitz/log/ahnitz/pegasus/weekly_ahope/run0011
+
+    
+
+
+
+
