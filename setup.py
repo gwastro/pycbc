@@ -305,7 +305,9 @@ setup (
                'bin/pycbc_get_ffinal',
                'bin/pycbc_legacy_tmpltbank',
                'bin/pycbc_timeslides',
-               'bin/pycbc_sqlite_simplify'
+               'bin/pycbc_sqlite_simplify',
+               'bin/pycbc_calculate_far',
+               'bin/pycbc_compute_durations'
                ],
     packages = [
                'pycbc',
