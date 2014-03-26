@@ -196,6 +196,25 @@ Determine if "triggers" seen in one detector are also seen in other detectors. A
 
    ahope/coincidence
 
+============================
+Post processing preparation
+============================
+
+Prepare output files for the post-processing stage
+
+.. toctree:: :maxdepth: 1
+
+   ahope/postprocprep
+
+========================
+Post-processing
+========================
+
+Assess the significance of all triggers and calculate any rate statements
+
+.. toctree:: :maxdepth: 1
+
+   ahope/postproc
 
 ====================
 Method documentation

@@ -40,9 +40,9 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 [ahope-postprocprep] section
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-The configuration file must have an [ahope-coincidence], which is used to provide instructions to ahope on how to set up the coincidence stage. The first option to choose and provide is
+The configuration file must have an [ahope-postprocprep] section, which is used to provide instructions to ahope on how to set up the postprocessing preparation stage. The first option to choose and provide is
 
-* postprocprep-method = PIPEDOWN_AHOPE
+* postprocprep-method = VALUE
 
 The choices here and their description are as described below
 

@@ -69,7 +69,7 @@ The configuration file must have an [ahope-matchedfilter] section, which is used
 
 The choices here and their description are as described below
 
-* WORKFLOW_INDEPENDENT_IFOS - Template banks will be generated within the workflow. These banks will be made to cover only short (normally ~ 2000s) of data to reflect PSD changes over time and will be independent and distinct for each analysed interferometer. This uses the setup_matchedfltr_dax_generated sub-module.
+* WORKFLOW_INDEPENDENT_IFOS - Matched-filter trigger files will be generated within the workflow. These banks will be made to cover only short (normally ~ 2000s) of data to reflect PSD changes over time and will be independent and distinct for each analysed interferometer. This uses the setup_matchedfltr_dax_generated sub-module.
 
 Currently only one option, but others can be added. The subfunctions used are described here
 
