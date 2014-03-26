@@ -33,6 +33,7 @@ import logging
 import urllib
 from glue import segments
 from pycbc.ahope.ahope_utils import *
+from pycbc.ahope.jobsetup_utils import *
 
 def setup_timeslides_workflow(workflow, output_dir=None, tags=[],
                               timeSlideSectionName='ligolw_tisi'):
@@ -86,51 +87,17 @@ def setup_timeslides_workflow(workflow, output_dir=None, tags=[],
                                                  "timeslides-method", currTags)
 
         if timeSlideMethod in ["IN_WORKFLOW", "AT_RUNTIME"]:
-            # FIXME: Currently hacks because ligolw_tisi's options cannot be
-            # supplied cleanly from a config file. This needs fixing and this
-            # part cleaned up. This will then allow AT_WORKFLOW as a method
-            if timeSlideMethod == "IN_WORKFLOW":
-                errMsg = "Cannot yet put ligolw_tisi into the workflow. "
-                errMsg += "Please see the item in the ahope to-do list."
-                errMsg += " Try method=AT_RUNTIME instead for now."
-                raise ValueError(errMsg)
-            # FIXME: Add ability to specify different exes
-
-            # First we need to run ligolw_tisi to make the necessary time slide
-            # input xml files
-            tisiOutFile = AhopeFile(ifoString, 'TIMESLIDES', fullSegment,
-                                    directory=output_dir, extension=".xml.gz",
-                                    tags=currTags)
-            ligolw_tisi_call = [workflow.cp.get('executables', 'tisi'), "-v"]
-            subString = 'tisi-%s' %(timeSlideTag.lower())
-            if workflow.cp.has_option('tisi', 'inspiral-num-slides'):
-                ligolw_tisi_call.append("--inspiral-num-slides")
-                ligolw_tisi_call.append(\
-                        workflow.cp.get('tisi', 'inspiral-num-slides'))
-            elif workflow.cp.has_option(subString, 'inspiral-num-slides'):
-                ligolw_tisi_call.append("--inspiral-num-slides")
-                ligolw_tisi_call.append(\
-                        workflow.cp.get(subString, 'inspiral-num-slides'))
+            timeSlideExeTag = workflow.cp.get_opt_tags("ahope-timeslides",
+                                                    "timeslides-exe", currTags)
+            timeSlideExe = select_genericjob_instance(workflow, timeSlideExeTag)
+            timeSlideJob = timeSlideExe.create_job(workflow.cp, ifoString,
+                                             tags=currTags, out_dir=output_dir)
+            timeSlideNode = timeSlideJob.create_node(fullSegment)
+            if timeSlideMethod == "AT_RUNTIME":
+                workflow.execute_node(timeSlideNode)
             else:
-                for ifo in ifoList:
-                    ifoSlideStart = workflow.cp.get_opt_tag('tisi',
-                                        '%s-slide-start' %(ifo), timeSlideTag)
-                    ifoSlideEnd = workflow.cp.get_opt_tag('tisi',
-                                        '%s-slide-end' %(ifo), timeSlideTag)
-                    ifoSlideStep = workflow.cp.get_opt_tag('tisi',
-                                        '%s-slide-step' %(ifo), timeSlideTag)
-                    ligolw_tisi_call.append("-i")
-                    optionString = ':'.join([ifoSlideStart, ifoSlideEnd, \
-                                             ifoSlideStep])
-                    optionString = '%s=%s' %(ifo.upper(), optionString)
-                    ligolw_tisi_call.append(optionString)
-            if workflow.cp.has_option('tisi', 'remove-zero-lag') or\
-                       workflow.cp.has_option(subString, 'remove-zero-lag'):
-                ligolw_tisi_call.append("--remove-zero-lag")
-            ligolw_tisi_call.append(tisiOutFile.path)
-            make_external_call(ligolw_tisi_call,
-                            outDir=os.path.join(output_dir,'logs'),
-                            outBaseName='%s-ligolw_tisi-call' %(timeSlideTag) )
+                workflow.add_node(timeSlideNode)
+            tisiOutFile = timeSlideNode.output_files[0]
         elif timeSlideMethod == "PREGENERATED":
             timeSlideFilePath = workflow.cp.get_opt_tags("ahope-timeslides",
                                       "timeslides-pregenerated-file", currTags)

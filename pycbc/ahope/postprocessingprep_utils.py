@@ -87,7 +87,7 @@ def setup_postprocessing_preperation(workflow, triggerFiles, output_dir,
         errMsg += "one of PIPEDOWN_AHOPE (currently only one option)."
         raise ValueError(errMsg)
 
-    logging.info("Leaving post-processing separation module.")
+    logging.info("Leaving post-processing preperation module.")
 
     return postPostPreppedFiles
 

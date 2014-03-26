@@ -176,7 +176,9 @@ def select_genericjob_instance(workflow, exe_tag):
         exe_class = SQLInOutExec(exe_tag)
     elif exe_name == 'lalapps_inspinj':
         exe_class = LalappsInspinjExec(exe_tag)
-    elif exe_name == 'ligolw_cbc_compute_durations':
+    elif exe_name == 'pycbc_timeslides':
+        exe_class = PycbcTimeslidesExec(exe_tag)
+    elif exe_name == 'pycbc_compute_durations':
         exe_class = SQLInOutExec(exe_tag)
     elif exe_name == 'pycbc_calculate_far':
         exe_class = SQLInOutExec(exe_tag)
@@ -699,6 +701,24 @@ class LalappsInspinjExec(Executable):
         # noting this.
         return LalappsInspinjJob(cp, self.exe_name, self.condor_universe,
                                  ifo='HL', out_dir=out_dir, tags=tags)
+
+class PycbcTimeslidesJob(Job):
+    """
+    The class used to create jobs for the pycbc_timeslides executable.
+    """
+    def create_node(self, segment):
+        node = Node(self)
+
+        node.make_and_add_output(segment, '.xml.gz', 'output-files')
+        return node
+
+class PycbcTimeslidesExec(Executable):
+    """
+    The class corresponding to the pycbc_timeslides executable.
+    """
+    def create_job(self, cp, ifo, out_dir=None, tags=[]):
+        return PycbcTimeslidesJob(cp, self.exe_name, self.condor_universe,
+                                 ifo=ifo, out_dir=out_dir, tags=tags)
 
 class PycbcSplitBankExec(Executable):
     """
