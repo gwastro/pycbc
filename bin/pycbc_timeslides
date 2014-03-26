@@ -18,7 +18,23 @@
 # #
 #############################################################################
 
-from optparse import OptionParser
+"""
+pycbc_timeslides constructs time_slide tables, writing the result to one or
+more files. Inspiral-style slides are specified by multiples of a fixed offset
+vector, with equal numbers of +ve and -ve multiples: the total number of time
+slide entries including zerolag is 2*nslides+1. Tisi-style slides are specified
+via one or more ranges of offsets for each instrument. If more than one
+instrument and set of offsets is given, the time slide table will contain
+entries corresponding to all combinations of offsets, one each from the
+different instruments. If no file names are given on the command line, output
+is written to stdout. If more than one file name is given on the command line,
+the time slides are distributed uniformly between files with each file being
+given a disjoint subset.  Output files whose names end in '.gz' will be gzip
+compressed.
+Example:\n\npycbc_timeslides --verbose --tisi-slides H1=-100:+100:10 L1=-100:+100:+10 time_slides.xml.gz
+"""
+
+import argparse
 import sys
 
 from glue.ligolw import ligolw
@@ -32,85 +48,81 @@ from pylal import cbc_timeslides
 
 import pycbc.version
 
+__author__ = "Denty <thomas.dent@ligo.org"
 __version__ = pycbc.version.git_verbose_msg
 __githash__ = pycbc.version.git_hash
 __date__ = pycbc.version.date
+__program__ = "pycbc_timeslides"
 
 
 #### Command line ####
-
 def parse_normalize(normalize):
-  return dict( (name.strip(), float(offset)) for name, offset in \
-      map(lambda s: s.split("="), normalize.split(",")) )
-
+  returnDict = {}
+  for value in normalize:
+    name, offset = value.split("=")
+    returnDict[name] = offset
+  return returnDict
 
 def parse_command_line():
+  """
+  Parse the command line.
+  """
+  _desc = __doc__[1:]
+  parser = argparse.ArgumentParser(description=_desc)
+  parser.add_argument('--version', action='version', version=__version__)
+  
+  parser.add_argument( "-a", "--add-to", metavar = "filename", default = None,
+      help = """Add the time slides from this file to the newly-generated time
+                slides If the name ends in '.gz' it will be gzip-decompressed
+                on input.""" )
 
-  parser = OptionParser(
-      version = "Name: %%prog\n%s" % pycbc.version.git_verbose_msg,
-      usage = "%prog [options] [filename ...]",
-      description = (
-      "%prog constructs time_slide tables, writing the result to one or more files. "
-      "Inspiral-style slides are specified by multiples of a fixed offset vector, "
-      "with equal numbers of +ve and -ve multiples: the total number of time slide "
-      "entries including zerolag is 2*nslides+1.  "
-      "Tisi-style slides are specified via one or more ranges of offsets for each "
-      "instrument.  If more than one instrument and set of offsets is given, "
-      "the time slide table will contain entries corresponding to all combinations "
-      "of offsets, one each from the different instruments.  "
-      "If no file names are given on the command line, output is written to stdout. "
-      "If more than one file name is given on the command line, the time slides are "
-      "distributed uniformly between files with each file being given a disjoint "
-      "subset.  Output files whose names end in '.gz' will be gzip compressed.  "
-      "Example:\n\n%prog --verbose "
-      "--tisi-slides H1=-100:+100:10,L1=-100:+100:+10 time_slides.xml.gz" )
-  )
+  parser.add_argument( "--comment", metavar = "text",
+                 help="Set comment string in process table (default = None)." )
 
-  parser.add_option( "-a", "--add-to", metavar = "filename", default = None, \
-      help = ( 
-      "Add the time slides from this file to the newly-generated time slides.  "
-      "If the name ends in '.gz' it will be gzip-decompressed on input." )
-  )
+  parser.add_argument( "-v", "--verbose", action = "store_true",
+                       help = "Be verbose." )
 
-  parser.add_option( "--comment", metavar = "text", \
-      help="Set comment string in process table (default = None)." )
+  parser.add_argument( "-i", "--tisi-slides", metavar = "name=first:last:step",
+                nargs="*", action = "store", help="""
+                Generate tisi-style (i.e. 'new-style') slides by giving a
+                space-separated list of instrument-specific sets of offsets.
+                The set of offsets is (first + "n * step) where n is an integer
+                such that first <= offset <= last. More than one set of offsets
+                can be given for the same instrument, in which case the union
+                is used.""" )
 
-  parser.add_option( "-v", "--verbose", action = "store_true", help = "Be verbose." )
+  parser.add_argument( "--inspiral-num-slides", 
+                metavar="count:instrument=offset[,instrument=offset...]",
+                action="store", nargs="*",
+                help = """
+                Generate a set of lalapps-thinca-style time slides.  The
+                collection of instrument/offset pairs defines an offset vector,
+                the time slides produced are integer multiples n * {offsets}
+                where n is a non-zero integer in [-count, +count]. To generate
+                multiple set of slides, give the option multiple times
+                separated by spaces, e.g.
+                --inspiral-num-slides '50:H1=0,L1=5 25:H1=10,V1=0'""" )
 
-  parser.add_option( "-i", "--tisi-slides", metavar = \
-      "name=first:last:step[,name = first:last:step...]", action = "store", \
-      help = (
-      "Generate tisi-style (i.e. 'new-style') slides by giving a comma-separated "
-      "list of instrument-specific sets of offsets.  The set of offsets is (first + "
-      "n * step) where n is an integer such that first <= offset <= last.  "
-      "More than one set of offsets can be given for the same instrument, in which "
-      "case the union is used." )
-  )
+  parser.add_argument( "-n", "--normalize", metavar = "name=offset",
+      action = "store", nargs = "*", help = """
+      Normalize the time slides so that a given instrument has the specified
+      offset in all slides.  The other offsets in each time slide are adjusted
+      so that the relative offsets are preserved.  Time slides that do not
+      involve this instrument are unaffected.  If multiple instrument/offset
+      pairs are given, then for each time slide they are considered in
+      alphabetical order by instrument until the first is found that affects
+      the offsets of that time slide. YMMV.""" )
 
-  parser.add_option( "--inspiral-num-slides", \
-      metavar = "count:instrument=offset[,instrument=offset...]", action = "store", \
-      help = (
-      "Generate a set of lalapps-thinca-style time slides.  The collection of "
-      "instrument/offset pairs defines an offset vector, the time slides produced are "
-      "integer multiples n * {offsets} where n is a non-zero integer in [-count, +count]."
-      "  To generate multiple set of slides, give the option multiple times separated "
-      "by semicolons, e.g. --inspiral-num-slides '50:H1=0,L1=5;25:H1=10,V1=0'" )
-  )
-
-  parser.add_option( "-n", "--normalize", metavar = "name=offset[,name=offset...]", \
-      action = "store", help = (
-      "Normalize the time slides so that a given instrument has the specified "
-      "offset in all slides.  The other offsets in each time slide are adjusted so that "
-      "the relative offsets are preserved.  Time slides that do not involve this "
-      "instrument are unaffected.  If multiple instrument/offset pairs are given, then "
-      "for each time slide they are considered in alphabetical order by instrument until "
-      "the first is found that affects the offsets of that time slide. YMMV." )
-  )
-
-  parser.add_option( "--remove-zero-lag", action="store_true", \
+  parser.add_argument( "--remove-zero-lag", action="store_true", \
       help = "Remove the time slide with offsets of 0 for all instruments." )
 
-  options, filenames = parser.parse_args()
+  parser.add_argument( "--output-files", action="store", metavar="FILE",
+                       nargs="+", required=True, help = """The path to the
+                       file(s) in which to write the resulting time slides. If
+                       more than one file is present, split the time slides
+                       equally over the files.""")
+
+  options =  parser.parse_args()
 
   if options.normalize:
     try:
@@ -118,7 +130,7 @@ def parse_command_line():
     except Exception as e:
       raise ValueError("unable to parse --normalize arguments: %s" % str(e))
 
-  return options, (filenames or [None])
+  return options
 
 #### LIGOLW boilerplate ####
 
@@ -129,7 +141,7 @@ def new_doc(comment=None, **kwargs):
 
   process = ligolw_process.register_to_xmldoc(
     doc,
-    program = u"pycbc_timeslides",
+    program = __program__,
     paramdict = kwargs,
     version = __githash__,
     cvs_repository = u"pycbc",
@@ -146,7 +158,8 @@ def new_doc(comment=None, **kwargs):
 #####  MAIN  ######
 ###################
 
-options, filenames = parse_command_line()
+options = parse_command_line()
+filenames = options.output_files
 
 ## Load initial time slides
 
@@ -163,8 +176,7 @@ else:
 if options.tisi_slides:
   if options.verbose: print >>sys.stderr, "Computing new-style time slides ..."
 
-  tisi_split = options.tisi_slides.split(",")
-  for offsetvect in ligolw_tisi.SlidesIter( ligolw_tisi.parse_slides(tisi_split) ):
+  for offsetvect in ligolw_tisi.SlidesIter( ligolw_tisi.parse_slides(options.tisi_slides) ):
     time_slides[lsctables.TimeSlideTable.get_next_id()] = offsetvect
 
 ## Make lalapps-thinca-style time slides
@@ -172,7 +184,7 @@ if options.tisi_slides:
 if options.inspiral_num_slides:
   if options.verbose: print >>sys.stderr, "Computing lalapps_thinca style slides ..."
 
-  for inspiral_slidespec in options.inspiral_num_slides.split(";"):
+  for inspiral_slidespec in options.inspiral_num_slides:
     for offsetvect in cbc_timeslides.Inspiral_Num_Slides_Iter( \
         *cbc_timeslides.parse_lalapps_thinca_slidespec(inspiral_slidespec) ):
       time_slides[lsctables.TimeSlideTable.get_next_id()] = offsetvect
