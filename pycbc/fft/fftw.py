@@ -1,12 +1,25 @@
 from pycbc.types import zeros
+import numpy
 import ctypes
+import functools
+
+def memoize(obj):
+    cache = obj.cache = {}
+
+    @functools.wraps(obj)
+    def memoizer(*args, **kwargs):
+        key = str(args) + str(kwargs)
+        if key not in cache:
+            cache[key] = obj(*args, **kwargs)
+        return cache[key]
+    return memoizer
 
 #FFTW constants, these are pulled from fftw3.h
 FFTW_FORWARD = -1
 FFTW_BACKWARD = 1
 FFTW_ESTIMATE =  1 << 0
-FFTW_MEASRE   =  1 << 1,
-FFTW_EXHASTIVE = 1 << 2,
+FFTW_MEASURE   =  1 << 1
+FFTW_EXHASTIVE = 1 << 2
 FFTW_MEASRE = 0
 FFTW_DESTROY_INPUT = 1 << 0
 FFTW_NALIGNED = 1 << 1
@@ -47,24 +60,35 @@ def alignment_of(vec):
     """ Retrn the byte alignment of this array
     """
     pointer = vec.data.ctypes.data
-    return lib.fftw_alignment_of(pointer)
+    return double_lib.fftw_alignment_of(pointer)
 
+@memoize
 def plan(size, idtype, odtype, direction, flags):
-    ip = zeros(size, idtype).ptr
-    op = zeros(size, odtype).ptr
+    # make some representative arrays
+    ip = zeros(size, dtype=idtype)
+    op = zeros(size, dtype=odtype)
+
+    # Get the plan function
+    idtype = numpy.dtype(idtype)
+    odtype = numpy.dtype(odtype)
     f = plan_function[str(idtype)][str(odtype)]
-    return f(int(size), ip, op, direction, flags)
+    f.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, 
+                  ctypes.c_int, ctypes.c_int]
+
+    theplan = f(size, ip.ptr, op.ptr, direction, flags)
+    return theplan
     
 def execute(plan, invec, outvec):
     f = execute_function[str(invec.dtype)][str(outvec.dtype)]
+    f.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
     f(plan, invec.ptr, outvec.ptr)
     
 def fft(invec, outvec, prec, itype, otype):
-    theplan = plan(len(invec), invec.dtype, outvec.dtype, FFTW_FORWARD, FFTW_ESTIMATE)
+    theplan = plan(len(invec), invec.dtype, outvec.dtype, FFTW_FORWARD, FFTW_MEASURE)
     execute(theplan, invec, outvec)
     
 def ifft(invec, outvec, prec, itype, otype):
-    theplan = plan(len(invec), invec.dtype, outvec.dtype, FFTW_BACKWARD, FFTW_ESTIMATE)
+    theplan = plan(len(invec), invec.dtype, outvec.dtype, FFTW_BACKWARD, FFTW_MEASURE)
     execute(theplan, invec, outvec)
 
     
