@@ -30,11 +30,13 @@ FFTW_PATIENT = 1 << 5
 FFTW_ESTIMATE = 1 << 6
 FFTW_WISDOM_ONLY = 1 << 21
 
+# load the single and double precision libraries
 double_lib_name = 'libfftw3.so'
 double_lib = ctypes.cdll.LoadLibrary(double_lib_name)
 float_lib_name = 'libfftw3f.so'
 float_lib = ctypes.cdll.LoadLibrary(float_lib_name)
 
+# Create function maps for the dtypes
 plan_function = {'float32': {'complex64': float_lib.fftwf_plan_dft_r2c_1d},
                  'float64': {'complex128': double_lib.fftw_plan_dft_r2c_1d},
                  'complex64': {'float32': float_lib.fftwf_plan_dft_c2r_1d,
@@ -55,7 +57,6 @@ execute_function = {'float32': {'complex64': float_lib.fftwf_execute_dft_r2c},
                                   }
                    }
 
-
 def alignment_of(vec):
     """ Retrn the byte alignment of this array
     """
@@ -64,6 +65,9 @@ def alignment_of(vec):
 
 @memoize
 def plan(size, idtype, odtype, direction, flags):
+    if idtype.kind == 'c' and odtype.kind == 'f':
+        size = 2*(size - 1)
+
     # make some representative arrays
     ip = zeros(size, dtype=idtype)
     op = zeros(size, dtype=odtype)
@@ -72,10 +76,18 @@ def plan(size, idtype, odtype, direction, flags):
     idtype = numpy.dtype(idtype)
     odtype = numpy.dtype(odtype)
     f = plan_function[str(idtype)][str(odtype)]
-    f.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, 
-                  ctypes.c_int, ctypes.c_int]
-
-    theplan = f(size, ip.ptr, op.ptr, direction, flags)
+    
+    # handle the C2C cases (forward and reverse)
+    if idtype.kind == odtype.kind:
+        f.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, 
+                      ctypes.c_int, ctypes.c_int]
+        theplan = f(size, ip.ptr, op.ptr, direction, flags)
+    # handle the R2C and C2R case
+    else:
+        f.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, 
+                      ctypes.c_int]
+        theplan = f(size, ip.ptr, op.ptr, flags)  
+         
     return theplan
     
 def execute(plan, invec, outvec):
