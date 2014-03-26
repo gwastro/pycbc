@@ -14,17 +14,20 @@ def memoize(obj):
         return cache[key]
     return memoizer
 
+#Note, I do not set the flag to tell fftw that the plan may be used in 
+# non-identically aligned memory, this should either be set or aligned memory
+# enforced.
+
+
 #FFTW constants, these are pulled from fftw3.h
 FFTW_FORWARD = -1
 FFTW_BACKWARD = 1
-FFTW_ESTIMATE =  1 << 0
-FFTW_MEASURE   =  1 << 1
-FFTW_EXHASTIVE = 1 << 2
-FFTW_MEASRE = 0
+
+FFTW_MEASURE = 0
 FFTW_DESTROY_INPUT = 1 << 0
-FFTW_NALIGNED = 1 << 1
+FFTW_UNALIGNED = 1 << 1
 FFTW_CONSERVE_MEMORY = 1 << 2
-FFTW_EXHASTIVE = 1 << 3
+FFTW_EXHAUSTIVE = 1 << 3
 FFTW_PRESERVE_INPUT = 1 << 4
 FFTW_PATIENT = 1 << 5
 FFTW_ESTIMATE = 1 << 6

@@ -72,7 +72,7 @@ _fft_backends = {}
 def _setup_fft():
     # CPU backends; PyCBC requires LAL so it's an error if the following
     # fails:
-    import lalfft as _cpu_default
+    import fftw as _cpu_default
     _cpu_possible_backends = {'numpy':'npfft',
                               'lal':'lalfft',
                               'fftw':'fftw'}
