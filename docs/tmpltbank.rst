@@ -146,8 +146,7 @@ physical space.
 
 This is all done with monte-carlo techniques, which is why this code requires
 a dag. If there were a more efficient way to map xi_i coordinates to physical
-values it will **massively** speed this code up. Please contact me if you
-want to play around with this.
+values it will **massively** speed this code up. Please contact ian.harry@ligo.org if you want to play around with this.
 
 
 --------------------

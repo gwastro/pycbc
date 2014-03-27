@@ -14,7 +14,7 @@ How to generate a workflow
 ================================================
 
 ------------------------
-Creating an INI file
+Creating a configuration (.ini) file
 ------------------------
 
 All the choices when setting up a faithsim are contained
@@ -107,3 +107,5 @@ how to read the results files.
 Example config files
 -------------------------
 *ADD SOME HERE*
+
+Contact Alex Nitz for some more detailed examples of configuration files.

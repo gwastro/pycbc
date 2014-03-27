@@ -143,3 +143,5 @@ Workflow considerations
 Example config files
 -------------------------
 *ADD SOME HERE*
+
+Please contact Alex Nitz for example configuration files.

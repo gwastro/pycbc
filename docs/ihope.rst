@@ -13,6 +13,8 @@ should be followed with modifications made to the ini file as noted below.
 
 * `ihope instructions <https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/InspiralPipelineDevelopment/101119150805InspiralPipelineDocumentationHow_to_run_ihope_with_the_ligolw_thinca_single_stage_pipeline>`_
 
+**PLEASE NOTE** pycbc executables are now supported natively within :doc:`ahope`. It is recommended to use this instead of ihope now.
+
 ========================================
 Ensure that you have the latest packages
 ========================================

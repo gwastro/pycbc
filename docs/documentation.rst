@@ -2,7 +2,9 @@
 Documenting PyCBC code
 ######################
 
-All code in PyCBC should be appropriately documented.
+These page contains some details of how to use the pyCBC Sphinx documentation system. This is a very similar to that used by numpy and scipy to document that code.
+
+All code in PyCBC must be appropriately documented. If you find any documentation to be inadequate, please contact the development team, or improve yourself where possible.
 
 Sphinx
 ======

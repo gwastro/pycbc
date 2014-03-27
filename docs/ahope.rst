@@ -12,23 +12,18 @@ The ahope workflow runs through a number of stages, which are designed to be as 
 
 Documentation of the ahope executable and how to run it can be found here.
 
-Each of the sections is described in detail below. Also refer to the `page here <https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/InspiralPipelineDevelopment/130627093845InspiralPipelineDocumentationAhope_development_plan>`_ for details. Also see the `link here <https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/InspiralPipelineDevelopment/130614025403InspiralPipelineDevelopmentThe%20evolution%20of%20ihope%20and%20inspiral>`_ for descriptions of what ahope should be and motivation for making ahope in the first place. **NOTE: REMOVE THESE LINKS ONCE AHOPE DOCUMENTATION IS SUFFICIENT THAT THIS IS NOT LONGER NEEDED**
+Please see the `following poster <https://dcc.ligo.org/LIGO-G1400223>`_, presentied at the March LVC meeting, 2014, for an introduction to ahope. Especially see the following ahope top-level workflow generation model.
+
+.. image:: images/workflow_planning.png
+   :width: 100 %
+
+Each of the sections is described in detail below.
 
 =======================
 Ahope to do list
 =======================
 
-This list is now maintained `as a wiki <https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/AhopeToDoList>`_; please see that wiki to view items on the list or update their status. **PLEASE** take on an item from this list. If you do, please update the wiki and ensure that any changes are reflected in both the in-line documentation and the html web pages. Not taking on any items will result in owing Ian beers at the Nice meeting.
-
------------------------------------------------------------
-Questions concerning the coincidence stage ligolw_sstinca
------------------------------------------------------------
-
-* IHOPE: Using .from_url() on the ihope filenames and then using the resulting segment as the time that file is valid from is incorrect as ihope does not analyse the first/last 64s of each file (sometimes even less than that if trig-start-time or trig-end-time are specified). Is this a problem?
-* IHOPE: When setting start/end for thinca it basically sets them to cover *all* triggers in the input files. Sometimes, when segments are > 10000s this should be split over multiple jobs, so you might only want to read in *some* triggers from files at the end of the job. Would this cause duplicate triggers? Is this a problem at all?
-* AHOPE: Sstinca doesn't work unless it is given a veto file. I think this is because it is using it to get the ifos. This is potentially dangerous with ahope, which is *not* guaranteed to have entries for all ifos!
-* BOTH: Handling of veto information in sstinca : the job takes the veto segments as input, then removes them from the output xml.  This is in order to avoid massive duplication of the veto definer and segment tables in thinca output files, which causes pipedown to choke when creating and simplifying databases.  Pipedown puts the veto/segment tables back in again in a single step. 
-
+This list is now maintained `as a wiki <https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/AhopeToDoList>`_; please see that wiki to view items on the list or update their status. **PLEASE** take on an item from this list. If you do, please update the wiki and ensure that any changes are reflected in both the in-line documentation and the html web pages.
 
 ====================
 Examples
@@ -95,6 +90,7 @@ This is an example of how to run a coincidence ahope workflow, mimicking standar
 * Use ligolw_add and ligolw_sstinca to generate coincidence triggers
 * Do some compatibility conversions and then call pipedown to create a dag to do the post-processing
 * Add a node to run write_ihope_page at the end of analysis
+* Native post-processing is also present in a preliminary mode, this will not be seen in the output page.
 * Write a dag/dax to file that can be submitted to run the workflow
 
 This will therefore set up a *almost complete* mimic of a weekly ihope analysis and automatically generate the output webpage at the end of the analysis.

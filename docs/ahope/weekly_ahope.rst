@@ -60,37 +60,11 @@ These files contain all the details needed to run daily_ahope::
 * pipedown.ini contains options that are used when running pipedown
 * inj.ini contains the parameters used when generating simulation files
 
-Some things that *will* need to be changed for each user in the weekly_ahope.ini file::
+*NOTE* if you want to run with pycbc executables replace weekly_ahope.ini with::
 
-    [ahope]
-    ahope-html-basedir = /home/spxiwh/public_html/ahope/development/weekly_ahope/test
+   weekly_ahope_pycbc.ini
 
-    [executables]
-    ; setup of condor universe and location of executables
-    some_exe_name         = /path/to/executable
-    some_other_exe        = /path/to/that/one/too
-
-and some things that *will* need to be changed for each user in the pipedown.ini file::
-
-    [executables]
-    ; setup of condor universe and location of executables
-    some_exe_name         = /path/to/executable
-    some_other_exe        = /path/to/that/one/too
-
-    [pipeline]
-    node-tmp-dir = /usr/spxiwh
-
-
-To run through this. 
-
- * The ahope-html-basedir is the directory in which you want the output html page to appear. The page will be in a subdirectory in this corresponding to the gps times.
- * Everything under [executables] in both .ini files points to the executables that will be used. These should be changed as appropriate
- * node-tmp-dir refers to a directory that must, a) exist, and b) point to a local disk on every node in the cluster you are running on.
-   * /usr/${USER} is approriate for CIT, LLO, LHO and SYR.
-   * /localscratch/${USER} is appropriate on UWM
-   * /local/user/${USER} is appropriate on Atlas.
-
-The example is also set up to run on S6 data and analysing only H1 and L1. If you are running on non-S6 data, or want to analyse a different set of ifos, you will have to edit some additional options::
+The example is set up to run on S6 data and analysing only H1 and L1. If you are running on non-S6 data, or want to analyse a different set of ifos, you will have to edit some additional options::
 
     [ahope]
     h1-channel-name = H1:LDAS-STRAIN
@@ -140,21 +114,28 @@ You also need to specify the directory in which pipedown will store log files. A
  * For CIT,LHO,LLO or SYR set::
 
     export LOGPATH=/usr1/${USER}/log
+    export PIPEDOWNLOG=/usr1/${USER}
     mkdir -p $LOGPATH
 
  * For Atlas set::
 
     export LOGPATH=/local/user/${USER}/log/
+    export PIPEDOWNLOG=/local/user/${USER}
     mkdir -p $LOGPATH 
 
  * For UWM set::
 
     export LOGPATH=/people/${USER}/log/
+    export PIPEDOWNLOG=/localscratch/${USER}
     mkdir -p $LOGPATH
+
+You also need to choose where the html page will be generated. For example::
+
+    export HTMLDIR=/home/${USER}/public_html/ahope
 
 Then you can generate the workflow::
 
-    python weekly_ahope.py --config-files weekly_ahope.ini pipedown.ini inj.ini --config-overrides ahope:start-time:${GPS_START_TIME} ahope:end-time:${GPS_END_TIME} --pipedown-log-dir ${LOGPATH}
+    python weekly_ahope.py --config-files weekly_ahope.ini pipedown.ini inj.ini --config-overrides ahope:start-time:${GPS_START_TIME} ahope:end-time:${GPS_END_TIME} ahope:ahope-html-basedir:${HTMLDIR} ahope:pipedown-log-path:${LOGPATH} ahope:pipedown-tmp-space:${PIPEDOWNLOG}
 
 Then CD into the directory where the dag was generated::
 
