@@ -31,7 +31,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html
 import os,sys,shutil
 import subprocess
 import logging
-import pycurl
+import urllib
 from glue import segments, pipeline
 from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.ahope.ahope_utils import *
@@ -99,13 +99,7 @@ def setup_segment_generation(workflow, out_dir, tag=None):
                                     "segments-veto-definer-url", tag)
         vetoDefBaseName = os.path.basename(vetoDefUrl)
         vetoDefNewPath = os.path.join(out_dir, vetoDefBaseName)
-        fp = open(vetoDefNewPath, "wb")
-        curl = pycurl.Curl()
-        curl.setopt(pycurl.URL, vetoDefUrl)
-        curl.setopt(pycurl.WRITEDATA, fp)
-        curl.perform()
-        curl.close()
-        fp.close()
+        urllib.urlretrieve (vetoDefUrl, vetoDefNewPath)
         # and update location
         cp.set("ahope-segments", "segments-veto-definer-file", vetoDefNewPath)
 
