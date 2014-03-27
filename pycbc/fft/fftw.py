@@ -39,6 +39,15 @@ double_lib = ctypes.cdll.LoadLibrary(double_lib_name)
 float_lib_name = 'libfftw3f.so'
 float_lib = ctypes.cdll.LoadLibrary(float_lib_name)
 
+# Try to import system-wide wisdom files as part of module initialization
+# The function is public in case users want to call it again later
+
+def import_sys_wisdom():
+    double_lib.fftw_import_system_wisdom()
+    float_lib.fftwf_import_system_wisdom()
+
+import_sys_wisdom()
+    
 # We provide an interface for changing the "measure level"
 # By default 1, which does some but not much planning,
 # but we provide functions to read and set it
