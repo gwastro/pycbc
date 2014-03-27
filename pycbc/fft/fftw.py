@@ -14,7 +14,7 @@ def memoize(obj):
         return cache[key]
     return memoizer
 
-#Note, I do not set the flag to tell fftw that the plan may be used in 
+# Note, I do not set the flag to tell fftw that the plan may be used in 
 # non-identically aligned memory, this should either be set or aligned memory
 # enforced.
 
@@ -33,7 +33,7 @@ FFTW_PATIENT = 1 << 5
 FFTW_ESTIMATE = 1 << 6
 FFTW_WISDOM_ONLY = 1 << 21
 
-# load the single and double precision libraries
+# Load the single and double precision libraries
 double_lib_name = 'libfftw3.so'
 double_lib = ctypes.cdll.LoadLibrary(double_lib_name)
 float_lib_name = 'libfftw3f.so'
