@@ -96,9 +96,9 @@ def create_descriptor(size, idtype, odtype):
     
     status = f(ctypes.byref(desc), prec, domain, 1, size)
     
-    status = lib.DftiSetValue(desc, DFTI_PLACEMENT, DFTI_NOT_INPLACE)
-    status = lib.DftiSetValue(desc, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_CCS_FORMAT)   
-    status = lib.DftiCommitDescriptor(desc)
+    lib.DftiSetValue(desc, DFTI_PLACEMENT, DFTI_NOT_INPLACE)
+    lib.DftiSetValue(desc, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_CCS_FORMAT)
+    lib.DftiCommitDescriptor(desc)
     check_status(status)
     return desc
     
