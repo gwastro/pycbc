@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Alex Nitz
+# Copyright (C) 2012  Alex Nitz, Josh Willis
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -26,6 +26,7 @@
 
 """
 import subprocess, os
+import ctypes, ctypes.util
 
 # Check for optional components of the PyCBC Package
 try:
@@ -59,7 +60,28 @@ try:
 except ImportError:
     HAVE_OPENCL=False
     
+# Determine whether we can use aligned memory, and if so define
+# an aligned_malloc function
+
+HAVE_ALIGNED_MALLOC = False
+try:
+    libc = ctypes.cdll.LoadLibrary(ctypes.util.find_library("c"))
+    if libc is not None:
+        if hasattr(libc,'posix_memalign'):
+            HAVE_ALIGNED_MALLOC = True
+except:
+    pass
     
+if HAVE_ALIGNED_MALLOC:
+    MEM_ALIGNMENT = 32
+    def aligned_malloc(n):
+        am_func = libc.posix_memalign
+        am_func.argtypes = [ctypes.POINTER(ctypes.c_void_p),
+                            ctypes.c_ulonglong,ctypes.c_ulonglong]
+        newmem = ctypes.c_void_p()
+        am_func(ctypes.byref(newmem),MEM_ALIGNMENT,n)
+        return newmem
+
 # PYCBC Specfic Constants
 
 DYN_RANGE_FAC =  5.9029581035870565e+20
