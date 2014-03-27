@@ -43,8 +43,6 @@ parser = argparse.ArgumentParser(description=_desc)
 parser.add_argument('--version', action='version', version=__version__)
 parser.add_argument("-d", "--output-dir", default=None,
                     help="Path to output directory.")
-parser.add_argument("-p", "--pipedown-log-dir", 
-                    help="Path to write pipedown log files to.")
 ahope.add_ahope_command_line_group(parser)
 args = parser.parse_args()
 
@@ -197,9 +195,10 @@ iniFile = os.path.join(pipedownDir, 'pipedown.ini')
 pipeCp.write(file(iniFile,"w"))
 
 # Set up the command to run pipedown
+pipedown_log_dir = workflow.cp.get("ahope",'pipedown-log-path')
 
 pipeCommand = [pipeCp.get("condor","pipedown")]
-pipeCommand.extend(["--log-path", args.pipedown_log_dir])
+pipeCommand.extend(["--log-path", pipedown_log_dir])
 pipeCommand.extend(["--config-file", iniFile])
 pipeCommand.extend(["--gps-start-time", str(start_time)])
 pipeCommand.extend(["--gps-end-time", str(end_time)])
