@@ -1,5 +1,17 @@
-import ctypes
+import ctypes, functools
 from pycbc.types import zeros
+
+def memoize(obj):
+    cache = obj.cache = {}
+
+    @functools.wraps(obj)
+    def memoizer(*args, **kwargs):
+        key = str(args) + str(kwargs)
+        if key not in cache:
+            cache[key] = obj(*args, **kwargs)
+        return cache[key]
+    return memoizer
+
 
 lib_name = 'libmkl_rt.so'
 lib = ctypes.cdll.LoadLibrary(lib_name)
@@ -69,7 +81,8 @@ def check_status(status):
         msg = lib.DftiErrorMessage(status)
         msg = ctypes.c_char_p(msg).value
         raise RuntimeError(msg)
-        
+   
+@memoize     
 def create_descriptor(size, idtype, odtype):
     invec = zeros(1, dtype=idtype)
     outvec = zeros(1, dtype=odtype)
@@ -90,14 +103,14 @@ def create_descriptor(size, idtype, odtype):
     return desc
     
 def fft(invec, outvec, prec, itype, otype):
-    descr = create_descriptor(max(len(invec), len(outvec)), itype, otype)
+    descr = create_descriptor(max(len(invec), len(outvec)), invec.dtype, outvec.dtype)
     f = lib.DftiComputeForward
     f.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
     status = f(descr, invec.ptr, outvec.ptr)
     check_status(status)
     
-def fft(invec, outvec, prec, itype, otype):
-    descr = create_descriptor(max(len(invec), len(outvec)), itype, otype)
+def ifft(invec, outvec, prec, itype, otype):
+    descr = create_descriptor(max(len(invec), len(outvec)), invec.dtype, invec.dtype)
     f = lib.DftiComputeBackward
     f.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
     status = f(descr, invec.ptr, outvec.ptr)
