@@ -90,7 +90,7 @@ def plan(size, idtype, odtype, direction, flags):
         f.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, 
                       ctypes.c_int]
         theplan = f(size, ip.ptr, op.ptr, flags)  
-         
+        
     return theplan
     
 def execute(plan, invec, outvec):

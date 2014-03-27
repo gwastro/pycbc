@@ -59,6 +59,7 @@ vecdout = vecdin * 1
 with ctx:
     fft(vecin, vecout, backend=options.backend)
     ifft(vecin, vecout, backend=options.backend)
+    ifft(vecdin, vecdout, backend=options.backend)
 
 def tfft():
     with ctx:
