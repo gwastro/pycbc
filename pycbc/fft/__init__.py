@@ -43,9 +43,12 @@ from numpy import dtype
 # Helper function to import a possible module and update available.
 
 def _backend_update(key,possible,available):
-    mod = __import__('pycbc.fft.'+possible[key],
-                     fromlist=['pycbc.fft'])
-    available.update({key:mod})
+    try:
+        mod = __import__('pycbc.fft.'+possible[key],
+                         fromlist=['pycbc.fft'])
+        available.update({key:mod})
+    except OSError:
+        pass
 
 # The next part is a little tricky.  There are two issues:
 #  (1) The logical name for what the user specifies as the backend
