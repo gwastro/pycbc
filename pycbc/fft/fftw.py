@@ -54,9 +54,20 @@ import_sys_wisdom()
 
 _default_measurelvl = 1
 def get_measure_level():
+    """
+    Get the current 'measure level' used in deciding how much effort to put into
+    creating FFTW plans.  From least effort (and shortest planning time) to most
+    they are 0 to 3.  No arguments.
+    """
     return _default_measurelvl
 
 def set_measure_level(mlvl):
+    """
+    Set the current 'measure level' used in deciding how much effort to expend
+    creating FFTW plans.  Must be an integer from 0 (least effort, shortest time)
+    to 3 (most effort and time).
+    """
+
     global _default_measurelvl
     if mlvl not in (0,1,2,3):
         raise ValueError("Measure level can only be one of 0, 1, 2, or 3")
@@ -68,6 +79,37 @@ _flag_dict = {0: FFTW_ESTIMATE,
               3: FFTW_MEASURE|FFTW_PATIENT|FFTW_EXHAUSTIVE}
 def get_flag(mlvl):
     return _flag_dict(mlvl)
+
+# Add the ability to read/store wisdom to filenames
+
+def import_single_wisdom_from_filename(filename):
+    f = float_lib.fftwf_import_wisdom_from_filename
+    f.argtypes = [ctypes.c_char_p]
+    retval = f(filename)
+    if retval == 0:
+        raise RuntimeError("Could not import wisdom from file {0}".format(filename))
+
+def import_double_wisdom_from_filename(filename):
+    f = double_lib.fftw_import_wisdom_from_filename
+    f.argtypes = [ctypes.c_char_p]
+    retval = f(filename)
+    if retval == 0:
+        raise RuntimeError("Could not import wisdom from file {0}".format(filename))
+
+def export_single_wisdom_to_filename(filename):
+    f = float_lib.fftwf_export_wisdom_to_filename
+    f.argtypes = [ctypes.c_char_p]
+    retval = f(filename)
+    if retval == 0:
+        raise RuntimeError("Could not export wisdom to file {0}".format(filename))
+
+
+def export_double_wisdom_to_filename(filename):
+    f = double_lib.fftw_export_wisdom_to_filename
+    f.argtypes = [ctypes.c_char_p]
+    retval = f(filename)
+    if retval == 0:
+        raise RuntimeError("Could not export wisdom to file {0}".format(filename))
 
 # Create function maps for the dtypes
 plan_function = {'float32': {'complex64': float_lib.fftwf_plan_dft_r2c_1d},
