@@ -75,7 +75,8 @@ def _setup_fft():
     import fftw as _cpu_default
     _cpu_possible_backends = {'numpy':'npfft',
                               'lal':'lalfft',
-                              'fftw':'fftw'}
+                              'fftw':'fftw',
+                              'mkl':'mkl'}
     _cpu_backends = {'Default': _cpu_default}
     cpu_backends.append('Default')
 
