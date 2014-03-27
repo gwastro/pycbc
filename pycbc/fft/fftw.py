@@ -39,6 +39,27 @@ double_lib = ctypes.cdll.LoadLibrary(double_lib_name)
 float_lib_name = 'libfftw3f.so'
 float_lib = ctypes.cdll.LoadLibrary(float_lib_name)
 
+# We provide an interface for changing the "measure level"
+# By default 1, which does some but not much planning,
+# but we provide functions to read and set it
+
+_default_measurelvl = 1
+def get_measure_level():
+    return _default_measurelvl
+
+def set_measure_level(mlvl):
+    global _default_measurelvl
+    if mlvl not in (0,1,2,3):
+        raise ValueError("Measure level can only be one of 0, 1, 2, or 3")
+    _default_measurelvl = mlvl
+
+_flag_dict = {0: FFTW_ESTIMATE,
+              1: FFTW_MEASURE,
+              2: FFTW_MEASURE|FFTW_PATIENT,
+              3: FFTW_MEASURE|FFTW_PATIENT|FFTW_EXHAUSTIVE}
+def get_flag(mlvl):
+    return _flag_dict(mlvl)
+
 # Create function maps for the dtypes
 plan_function = {'float32': {'complex64': float_lib.fftwf_plan_dft_r2c_1d},
                  'float64': {'complex128': double_lib.fftw_plan_dft_r2c_1d},
@@ -61,13 +82,16 @@ execute_function = {'float32': {'complex64': float_lib.fftwf_execute_dft_r2c},
                    }
 
 def alignment_of(vec):
-    """ Retrn the byte alignment of this array
+    """ Return the byte alignment of this array
     """
     pointer = vec.data.ctypes.data
     return double_lib.fftw_alignment_of(pointer)
 
 @memoize
-def plan(size, idtype, odtype, direction, flags):
+def plan(size, idtype, odtype, direction, mlvl):
+    # Convert a measure-level to flags
+    flags = get_flag(mlvl)
+
     if idtype.kind == 'c' and odtype.kind == 'f':
         size = 2*(size - 1)
 
@@ -99,11 +123,11 @@ def execute(plan, invec, outvec):
     f(plan, invec.ptr, outvec.ptr)
     
 def fft(invec, outvec, prec, itype, otype):
-    theplan = plan(len(invec), invec.dtype, outvec.dtype, FFTW_FORWARD, FFTW_MEASURE)
+    theplan = plan(len(invec), invec.dtype, outvec.dtype, FFTW_FORWARD, get_measure_level())
     execute(theplan, invec, outvec)
     
 def ifft(invec, outvec, prec, itype, otype):
-    theplan = plan(len(invec), invec.dtype, outvec.dtype, FFTW_BACKWARD, FFTW_MEASURE)
+    theplan = plan(len(invec), invec.dtype, outvec.dtype, FFTW_BACKWARD, get_measure_level())
     execute(theplan, invec, outvec)
 
     
