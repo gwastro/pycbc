@@ -99,6 +99,7 @@ def create_descriptor(size, idtype, odtype):
     status = lib.DftiSetValue(desc, DFTI_PLACEMENT, DFTI_NOT_INPLACE)
     status = lib.DftiSetValue(desc, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_CCS_FORMAT)   
     status = lib.DftiCommitDescriptor(desc)
+    print idtype, odtype, size, prec, domain, status
     check_status(status)
     return desc
     
@@ -110,7 +111,7 @@ def fft(invec, outvec, prec, itype, otype):
     check_status(status)
     
 def ifft(invec, outvec, prec, itype, otype):
-    descr = create_descriptor(max(len(invec), len(outvec)), invec.dtype, invec.dtype)
+    descr = create_descriptor(max(len(invec), len(outvec)), invec.dtype, outvec.dtype)
     f = lib.DftiComputeBackward
     f.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
     status = f(descr, invec.ptr, outvec.ptr)
