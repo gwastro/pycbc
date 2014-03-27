@@ -23,11 +23,40 @@
 #
 import numpy
 import events
+from scipy.weave import inline
 
-def threshold(series, value):
+def threshold_numpy(series, value):
     arr = series.data
     locs = numpy.where(arr.real**2 + arr.imag**2 > value**2)[0]
     vals = arr[locs]
     return locs, vals
 
+outl = outv = count = None
+def threshold_inline(series, value):
+    arr = series.data.view(dtype=numpy.float32)
+    global outl, outv, count
+    if outl is None:
+        outl = numpy.zeros(len(series), dtype=numpy.uint32)
+        outv = numpy.zeros(len(series), dtype=series.dtype)
+        count = numpy.zeros(1, dtype=numpy.uint32)
+        
+    N = len(series)
+    threshold = value**2
+    code = """
+        unsigned int c = 0;
+        float r, im;
+        for (int i=0; i<N; i++){
+            r = arr[i*2];
+            im = arr[i*2+1];
+            if ((r*r+im*im) > threshold){
+                outl[c] = i;
+                outv[c] = std::complex<float>(r, im);
+                c++;
+            }
+        }
+        count[0] = c;          
+    """
+    inline(code, ['N', 'arr', 'outv', 'outl', 'count', 'threshold'])
+    return outl[0:count], outv[0:count]
 
+threshold=threshold_numpy
