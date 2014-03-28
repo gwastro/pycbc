@@ -118,21 +118,17 @@ def export_double_wisdom_to_filename(filename):
 plan_function = {'float32': {'complex64': float_lib.fftwf_plan_dft_r2c_1d},
                  'float64': {'complex128': double_lib.fftw_plan_dft_r2c_1d},
                  'complex64': {'float32': float_lib.fftwf_plan_dft_c2r_1d,
-                             'complex64': float_lib.fftwf_plan_dft_1d,
-                              },
+                               'complex64': float_lib.fftwf_plan_dft_1d},
                  'complex128': {'float64': double_lib.fftw_plan_dft_c2r_1d,
-                                'complex128': double_lib.fftw_plan_dft_1d,
-                               }
+                                'complex128': double_lib.fftw_plan_dft_1d}
                 }
 
 execute_function = {'float32': {'complex64': float_lib.fftwf_execute_dft_r2c},
                     'float64': {'complex128': double_lib.fftw_execute_dft_r2c},
                     'complex64': {'float32': float_lib.fftwf_execute_dft_c2r,
-                                  'complex64': float_lib.fftwf_execute_dft,
-                            },
+                                  'complex64': float_lib.fftwf_execute_dft},
                     'complex128': {'float64': double_lib.fftw_execute_dft_c2r,
-                                   'complex128': double_lib.fftw_execute_dft,
-                                  }
+                                   'complex128': double_lib.fftw_execute_dft}
                    }
 
 def alignment_of(vec):
@@ -146,12 +142,22 @@ def plan(size, idtype, odtype, direction, mlvl):
     # Convert a measure-level to flags
     flags = get_flag(mlvl)
 
-    if idtype.kind == 'c' and odtype.kind == 'f':
-        size = 2*(size - 1)
+    if (idtype == odtype):
+        # We're in the complex-to-complex case, so lengths are the same
+        isize = size
+        osize = size
+    elif (idtype.kind == 'c') and (odtype.kind == 'f'):
+        # Complex-to-real (reverse), so size is length of real array
+        isize = size/2+1
+        osize = size
+    else:
+        # Real-to-complex (forward), and size is still that of real
+        isize = size
+        osize = size/2+1
 
     # make some representative arrays
-    ip = zeros(size, dtype=idtype)
-    op = zeros(size, dtype=odtype)
+    ip = zeros(isize, dtype=idtype)
+    op = zeros(osize, dtype=odtype)
 
     # Get the plan function
     idtype = numpy.dtype(idtype)
@@ -181,7 +187,7 @@ def fft(invec, outvec, prec, itype, otype):
     execute(theplan, invec, outvec)
     
 def ifft(invec, outvec, prec, itype, otype):
-    theplan = plan(len(invec), invec.dtype, outvec.dtype, FFTW_BACKWARD, get_measure_level())
+    theplan = plan(len(outvec), invec.dtype, outvec.dtype, FFTW_BACKWARD, get_measure_level())
     execute(theplan, invec, outvec)
 
     
