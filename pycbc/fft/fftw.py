@@ -81,7 +81,7 @@ _flag_dict = {0: FFTW_ESTIMATE,
               2: FFTW_MEASURE|FFTW_PATIENT,
               3: FFTW_MEASURE|FFTW_PATIENT|FFTW_EXHAUSTIVE}
 def get_flag(mlvl):
-    return (_flag_dict(mlvl)|alignment_flag)
+    return (_flag_dict[mlvl]|alignment_flag)
 
 # Add the ability to read/store wisdom to filenames
 
@@ -152,7 +152,7 @@ def plan(size, idtype, odtype, direction, mlvl):
     # make some representative arrays
     if _pycbc.HAVE_ALIGNED_MALLOC:
         ip = _pycbc.types.aligned_array(size,dtype=idtype)
-        ip[:] =zeros(size, dtype=idtype)
+        ip[:] = zeros(size, dtype=idtype)
         op = _pycbc.types.aligned_array(size,dtype=odtype)
         op[:] = zeros(size, dtype=odtype)
     else:

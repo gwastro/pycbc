@@ -39,7 +39,7 @@ import lal as _lal
 import numpy as _numpy
 from numpy import float32, float64, complex64, complex128, ones, frombuffer
 from numpy.linalg import norm
-from numpy import dtype as _npdtype
+from numpy import dtype as _npdt
 import ctypes as _ct
 
 import pycbc as _pycbc
@@ -62,7 +62,7 @@ if _pycbc.HAVE_ALIGNED_MALLOC:
         # This would all be much easier in newer versions of numpy...                                               
         nbytes = n*_npdt(dtype).itemsize
         buf = amalloc(nbytes)
-        ptr = _ct.cast(buf,_ct.POINTER(n*_ct_dict[dtype]))
+        ptr = _ct.cast(buf,_ct.POINTER(n*_ct_dict[_npdt(dtype).type]))
         newarr = frombuffer(ptr.contents,dtype=dtype)
         return newarr
 
