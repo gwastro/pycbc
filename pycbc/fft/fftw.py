@@ -150,14 +150,8 @@ def plan(size, idtype, odtype, direction, mlvl):
         size = 2*(size - 1)
 
     # make some representative arrays
-    if _pycbc.HAVE_ALIGNED_MALLOC:
-        ip = _pycbc.types.aligned_array(size,dtype=idtype)
-        ip[:] = zeros(size, dtype=idtype)
-        op = _pycbc.types.aligned_array(size,dtype=odtype)
-        op[:] = zeros(size, dtype=odtype)
-    else:
-        ip = zeros(size, dtype=idtype)
-        op = zeros(size, dtype=odtype)
+    ip = zeros(size, dtype=idtype)
+    op = zeros(size, dtype=odtype)
 
     # Get the plan function
     idtype = numpy.dtype(idtype)
