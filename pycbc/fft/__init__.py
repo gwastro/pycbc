@@ -43,12 +43,9 @@ from numpy import dtype
 # Helper function to import a possible module and update available.
 
 def _backend_update(key,possible,available):
-    try:
-        mod = __import__('pycbc.fft.'+possible[key],
-                         fromlist=['pycbc.fft'])
-        available.update({key:mod})
-    except OSError:
-        pass
+    mod = __import__('pycbc.fft.'+possible[key],
+                     fromlist=['pycbc.fft'])
+    available.update({key:mod})
 
 # The next part is a little tricky.  There are two issues:
 #  (1) The logical name for what the user specifies as the backend
@@ -90,7 +87,7 @@ def _setup_fft():
         try:
             _backend_update(backend,_cpu_possible_backends,_cpu_backends)
             cpu_backends.append(backend)
-        except ImportError:
+        except (ImportError, OSError):
             pass
 
     # CUDA backends;
