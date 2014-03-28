@@ -369,6 +369,9 @@ class Node(pipeline.CondorDAGNode):
         # Add the files to the nodes internal lists of input
         for file in fileList:
             self.input_files.append(file)
+            # NOTE: This is slow as it tests if the files are already listed as
+            #       input files. A possible speed up is
+            # self._CondorDAGNode__input_files.append(currPath)
             self.add_input_file(file.path)
             if file.node and not hasattr(file.node, 'executed'):
                 self.add_parent(file.node)
@@ -650,11 +653,23 @@ class Workflow(object):
         self.dag.add_node(node)
         
         if node.input_files:
-            self.input_files += [f for f in node.input_files 
-                                if (not f.node or (f.node and f.node.executed)) 
-                                and (f not in self.input_files)]
+            # Determine files that need to go in the input mapper
+            for f in node.input_files:
+                if (not f.node or (f.node and f.node.executed)):
+                    if not f.is_workflow_input:
+                        self.input_files.append(f)
+                        f.is_workflow_input = True
+            # OLD METHOD
+            #self.input_files += [f for f in node.input_files 
+            #                   if (not f.node or (f.node and f.node.executed)) 
+            #                    and (f not in self.input_files)]
+            
         
         if node.output_files:
+            # Determine files that need to go in the output mapper
+            # FIXME: Why are you testing if f not in self.output_files
+            #        isn't it a failure condition if two jobs make the same
+            #        output file? 
             self.output_files += [f for f in node.output_files 
                                     if f not in self.output_files]
             
@@ -823,6 +838,8 @@ class AhopeFile(object):
             cache_entry = lal.CacheEntry(self.ifoString,
                        self.tagged_description, self.segList.extent(), url)
             self.cache_entries.append(cache_entry)   
+        # This gets set if this becomes an input file in the workflow
+        self.is_workflow_input = False
     
     @property
     def url(self):
@@ -1069,6 +1086,8 @@ class AhopeFileList(list):
         Return all files that overlap the specified segment.
         """
         outFiles = [i for i in self if ifo in i.ifoList]
+        # FIXME: This can be slow if lots of files are being added
+        #        this was noticed in ER5 with 4s long frame files.
         outFiles = [i for i in outFiles \
                                       if i.segList.intersects_segment(currSeg)]
         return self.__class__(outFiles)

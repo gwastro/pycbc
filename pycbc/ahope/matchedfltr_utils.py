@@ -188,6 +188,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
     # If we want to use multi-detector matched-filtering or something similar to this
     # it would probably require a new module
     for ifo in ifos:
+        logging.info("Setting up matched-filtering for %s." %(ifo))
         job_instance = exe_instance.create_job(workflow.cp, ifo, output_dir, 
                                                injection_file=injection_file, 
                                                tags=tags)

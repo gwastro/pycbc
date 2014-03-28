@@ -30,6 +30,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 
 import os, types
+import logging
 import urlparse
 from glue import pipeline
 from glue import segments
