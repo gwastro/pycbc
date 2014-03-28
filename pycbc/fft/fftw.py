@@ -35,6 +35,46 @@ double_lib = ctypes.cdll.LoadLibrary(double_lib_name)
 float_lib_name = 'libfftw3f.so'
 float_lib = ctypes.cdll.LoadLibrary(float_lib_name)
 
+# We may or may not have threaded support...
+double_threaded_lib_name = 'libfftw3_threads.so'
+float_threaded_lib_name = 'libfftw3f_threads.so'
+
+HAVE_FFTW_THREADED = False
+try:
+    double_threaded_lib = ctypes.cdll.LoadLibrary(double_threaded_lib_name)
+    float_threaded_lib = ctypes.cdll.LoadLibrary(float_threaded_lib_name)
+    HAVE_FFTW_THREADED = True
+except OSError:
+    pass
+
+if HAVE_FFTW_THREADED:
+    # Call each of these exactly once, before anything else...
+    double_threaded_lib.fftw_init_threads()
+    float_threaded_lib.fftwf_init_threads()
+
+    # Now functions to get and use a given number of threads
+
+    # Following defined for users to check; initialized here
+    # to an invalid value, but we'll immediately set it to 1
+    # to start with
+    fftw_nthreads = 0
+
+    def use_nthreads(nthreads):
+        """
+        Set the current number of threads used in FFTW planning/
+        execution.  Must be an non-negative integer.
+        """
+
+        global fftw_nthreads
+        if not (isinstance(nthreads,int) and (nthreads>0)):
+            raise ValueError("nthreads must be nonegative integer")
+        fftw_nthreads = nthreads
+
+        double_threaded_lib.fftw_plan_with_nthreads(nthreads)
+        float_threaded_lib.fftwf_plan_with_nthreads(nthreads)
+        
+    use_nthreads(1)
+
 # Try to import system-wide wisdom files as part of module initialization
 # The function is public in case users want to call it again later
 
