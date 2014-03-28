@@ -74,7 +74,7 @@ except:
     
 if HAVE_ALIGNED_MALLOC:
     MEM_ALIGNMENT = 32
-    def aligned_malloc(n):
+    def amalloc(n):
         am_func = libc.posix_memalign
         am_func.argtypes = [ctypes.POINTER(ctypes.c_void_p),
                             ctypes.c_ulonglong,ctypes.c_ulonglong]
