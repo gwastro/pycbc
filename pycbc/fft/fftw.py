@@ -1,4 +1,5 @@
 from pycbc.types import zeros
+import pycbc as _pycbc
 import numpy
 import ctypes
 import functools
@@ -13,11 +14,6 @@ def memoize(obj):
             cache[key] = obj(*args, **kwargs)
         return cache[key]
     return memoizer
-
-# Note, I do not set the flag to tell fftw that the plan may be used in 
-# non-identically aligned memory, this should either be set or aligned memory
-# enforced.
-
 
 #FFTW constants, these are pulled from fftw3.h
 FFTW_FORWARD = -1
@@ -47,6 +43,13 @@ def import_sys_wisdom():
     float_lib.fftwf_import_system_wisdom()
 
 import_sys_wisdom()
+
+# Define a flag based on alignment
+
+if _pycbc.HAVE_ALIGNED_MALLOC:
+    alignment_flag = 0
+else:
+    alignment_flag = FFTW_UNALIGNED
     
 # We provide an interface for changing the "measure level"
 # By default 1, which does some but not much planning,
@@ -78,7 +81,7 @@ _flag_dict = {0: FFTW_ESTIMATE,
               2: FFTW_MEASURE|FFTW_PATIENT,
               3: FFTW_MEASURE|FFTW_PATIENT|FFTW_EXHAUSTIVE}
 def get_flag(mlvl):
-    return _flag_dict(mlvl)
+    return (_flag_dict(mlvl)|alignment_flag)
 
 # Add the ability to read/store wisdom to filenames
 
@@ -147,8 +150,14 @@ def plan(size, idtype, odtype, direction, mlvl):
         size = 2*(size - 1)
 
     # make some representative arrays
-    ip = zeros(size, dtype=idtype)
-    op = zeros(size, dtype=odtype)
+    if _pycbc.HAVE_ALIGNED_MALLOC:
+        ip = _pycbc.types.aligned_array(size,dtype=idtype)
+        ip[:] =zeros(size, dtype=idtype)
+        op = _pycbc.types.aligned_array(size,dtype=odtype)
+        op[:] = zeros(size, dtype=odtype)
+    else:
+        ip = zeros(size, dtype=idtype)
+        op = zeros(size, dtype=odtype)
 
     # Get the plan function
     idtype = numpy.dtype(idtype)
