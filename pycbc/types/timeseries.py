@@ -125,11 +125,17 @@ class TimeSeries(Array):
         return int(1.0/self.delta_t)
     sample_rate = property(get_sample_rate)
 
-    def get_start_time(self):
+    @property
+    def start_time(self):
         """Return time series start time as a LIGOTimeGPS.
         """
         return self._epoch
-    start_time = property(get_start_time)
+
+    @start_time.setter
+    def start_time(self, time):
+        """ Set the start time
+        """
+        self._epoch = _lal.LIGOTimeGPS(time)
 
     def get_end_time(self):
         """Return time series end time as a LIGOTimeGPS.
