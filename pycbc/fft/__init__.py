@@ -66,6 +66,7 @@ def _backend_update(key,possible,available):
 cpu_backends = []
 cuda_backends = []
 opencl_backends = []
+mkl_backends = []
 
 # Ordinarily, the user will not pass a backend to the fft/ifft
 # functions.  Instead, he or she will set the default backend
@@ -82,6 +83,8 @@ if pycbc.HAVE_CUDA:
 
 if pycbc.HAVE_OPENCL:
     _default_backends.update({pycbc.scheme.OpenCLScheme: 'pyfft'})
+
+_default_backends.update{pycbc.scheme.MKLScheme: 'mkl'}
 
 def get_default_backend(scheme):
     return _default_backends[scheme]
@@ -118,6 +121,14 @@ def _setup_fft():
             pass
 
     _backend_names.update({pycbc.scheme.CPUScheme:cpu_backends})
+
+    # set up mkl backend
+    try:
+        import mkl as _mkl_default
+        _mkl_backends = {'Default': _mkl_default}
+        _fft_backends.update({pycbc.scheme.MKLScheme: _mkl_backends})
+    except:
+        pass
 
     # CUDA backends;
     if pycbc.HAVE_CUDA:
@@ -412,7 +423,6 @@ def from_cli(opt):
         the required attributes.
 
     Returns
-    -------
     kwdrets: dict
         A dictionary containing keyword/value pairs returned by the
         call(s) to backend.from_cli.  If that backend has no return
