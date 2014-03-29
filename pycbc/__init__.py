@@ -26,7 +26,6 @@
 
 """
 import subprocess, os
-import ctypes, ctypes.util
 
 # Check for optional components of the PyCBC Package
 try:
@@ -60,27 +59,11 @@ try:
 except ImportError:
     HAVE_OPENCL=False
     
-# Determine whether we can use aligned memory, and if so define
-# an aligned_malloc function
+# Set the value we want any aligned memory calls to use
+# N.B.: *Not* all pycbc memory will be aligned to multiples
+# of this value
 
-HAVE_ALIGNED_MALLOC = False
-try:
-    libc = ctypes.cdll.LoadLibrary(ctypes.util.find_library("c"))
-    if libc is not None:
-        if hasattr(libc,'posix_memalign'):
-            HAVE_ALIGNED_MALLOC = True
-except:
-    pass
-    
-if HAVE_ALIGNED_MALLOC:
-    MEM_ALIGNMENT = 32
-    def amalloc(n):
-        am_func = libc.posix_memalign
-        am_func.argtypes = [ctypes.POINTER(ctypes.c_void_p),
-                            ctypes.c_ulonglong,ctypes.c_ulonglong]
-        newmem = ctypes.c_void_p()
-        am_func(ctypes.byref(newmem),MEM_ALIGNMENT,n)
-        return newmem
+PYCBC_AMEM_ALIGNMENT = 32
 
 # PYCBC Specfic Constants
 
