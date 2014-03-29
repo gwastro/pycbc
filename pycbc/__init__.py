@@ -63,7 +63,7 @@ except ImportError:
 # N.B.: *Not* all pycbc memory will be aligned to multiples
 # of this value
 
-PYCBC_AMEM_ALIGNMENT = 32
+PYCBC_ALIGNMENT = 32
 
 # PYCBC Specfic Constants
 

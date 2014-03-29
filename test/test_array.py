@@ -49,8 +49,9 @@ elif _scheme == 'opencl':
     import pyopencl.array
     from pyopencl.array import Array as SchemeArray
 elif _scheme == 'cpu':
-    from numpy import ndarray as SchemeArray
+    from pycbc.types.aligned import arrayWithAligned as SchemeArray
 
+from pycbc.types.aligned import arrayWithAligned as CPUArray
 
 # ********************GENERIC ARRAY TESTS ***********************
 
@@ -322,7 +323,7 @@ class ArrayTestBase(array_base,unittest.TestCase):
             self.assertRaises(TypeError, Array, out4, copy=False)
             out6 = Array(out4, dtype=self.dtype)
             self.assertTrue(type(out6._scheme) == CPUScheme)
-            self.assertTrue(type(out6._data) is numpy.ndarray)
+            self.assertTrue(type(out6._data) is CPUArray)
             self.assertEqual(out6[0],1)
             self.assertEqual(out6[1],2)
             self.assertEqual(out6[2],3)

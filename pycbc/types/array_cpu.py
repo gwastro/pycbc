@@ -25,16 +25,13 @@
 """
 import numpy as np
 from array import common_kind, complex128, float64
-from pycbc import HAVE_ALIGNED_MALLOC
+import aligned as _algn
 
 def zeros(length, dtype=np.float64):
-    if HAVE_ALIGNED_MALLOC:
-        from array import aligned_array
-        retarr = aligned_array(length, dtype=dtype)
-        retarr[:] = np.zeros(length, dtype=dtype)
-        return retarr
-    else:
-        return np.zeros(length, dtype=dtype)
+    return _algn.zeros(length, dtype=dtype)
+
+def empty(length, dtype=np.float64):
+    return _algn.empty(length, dtype=dtype)
 
 def ptr(self):
     return self.data.ctypes.data

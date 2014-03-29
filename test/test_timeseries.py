@@ -49,8 +49,9 @@ elif _scheme == 'opencl':
     import pyopencl.array
     from pyopencl.array import Array as SchemeArray
 elif _scheme == 'cpu':
-    from numpy import ndarray as SchemeArray
+    from pycbc.types.aligned import arrayWithAligned as SchemeArray
 
+from pycbc.types.aligned import arrayWithAligned as CPUArray
 
 class TestTimeSeriesBase(array_base,unittest.TestCase):
     def setUp(self):
@@ -333,7 +334,7 @@ class TestTimeSeriesBase(array_base,unittest.TestCase):
             self.assertRaises(TypeError, TimeSeries, out4, 0.1, copy=False, epoch=self.epoch)
             out6 = TimeSeries(out4, 0.1, dtype=self.dtype)
             self.assertTrue(type(out6._scheme) == CPUScheme)
-            self.assertTrue(type(out6._data) is numpy.ndarray)
+            self.assertTrue(type(out6._data) is CPUArray)
             self.assertEqual(out6[0],1)
             self.assertEqual(out6[1],2)
             self.assertEqual(out6[2],3)

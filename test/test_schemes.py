@@ -52,7 +52,9 @@ elif _scheme == 'opencl':
     import pyopencl.array
     from pyopencl.array import Array as SchemeArray
 elif _scheme == 'cpu':
-    from numpy import ndarray as SchemeArray
+    from pycbc.types.aligned import arrayWithAligned as SchemeArray
+
+from pycbc.types.aligned import arrayWithAligned as CPUArray
 
 
 class SchemeTestBase(unittest.TestCase):
@@ -116,7 +118,7 @@ class SchemeTestBase(unittest.TestCase):
             self.assertEqual(c,self.answer)
             # Now check that nothing about a2 has changed, since it wasn't involved
             # in the computation
-            self.assertEqual(type(a2._data),numpy.ndarray)
+            self.assertEqual(type(a2._data),CPUArray)
             self.assertEqual(type(a2._scheme),CPUScheme)
             self.assertEqual(a2,self.a)
 
@@ -128,9 +130,9 @@ class SchemeTestBase(unittest.TestCase):
         self.assertEqual(type(b1._scheme),CPUScheme)
         self.assertEqual(type(c._scheme),CPUScheme)
         # Check that the data types are correct
-        self.assertEqual(type(a1.data),numpy.ndarray)
-        self.assertEqual(type(b1.data),numpy.ndarray)
-        self.assertEqual(type(c.data),numpy.ndarray)
+        self.assertEqual(type(a1.data),CPUArray)
+        self.assertEqual(type(b1.data),CPUArray)
+        self.assertEqual(type(c.data),CPUArray)
         # And finally check that the values are correct
         self.assertEqual(a1,self.a)
         self.assertEqual(b1,self.b)

@@ -37,34 +37,18 @@ from decorator import decorator
 
 import lal as _lal
 import numpy as _numpy
-from numpy import float32, float64, complex64, complex128, ones, frombuffer
+from numpy import float32, float64, complex64, complex128, ones
 from numpy.linalg import norm
-from numpy import dtype as _npdt
-import ctypes as _ct
 
 import pycbc as _pycbc
 import pycbc.scheme as _scheme
 from pycbc.scheme import schemed, cpuonly
+from pycbc.types.aligned import arrayWithAligned
+
 
 _ALLOWED_DTYPES = [_numpy.float32, _numpy.float64, _numpy.complex64,
                    _numpy.complex128]
 _ALLOWED_SCALARS = [int, long, float, complex] + _ALLOWED_DTYPES
-
-if _pycbc.HAVE_ALIGNED_MALLOC:
-    from pycbc import amalloc
-
-    _ct_dict = {float32: _ct.c_float,
-                float64: _ct.c_double,
-                complex64: 2*_ct.c_float,
-                complex128: 2*_ct.c_double}
-
-    def aligned_array(n,dtype):
-        # This would all be much easier in newer versions of numpy...                                               
-        nbytes = n*_npdt(dtype).itemsize
-        buf = amalloc(nbytes)
-        ptr = _ct.cast(buf,_ct.POINTER(n*_ct_dict[_npdt(dtype).type]))
-        newarr = frombuffer(ptr.contents,dtype=dtype)
-        return newarr
 
 def _convert_to_scheme(ary):
     if ary._scheme is not _scheme.mgr.state:
@@ -191,17 +175,10 @@ class Array(object):
             #Create new instance with initial_array as initialization.
             if type(self._scheme) is _scheme.CPUScheme:
                 if hasattr(initial_array, 'get'):
-                    if _pycbc.HAVE_ALIGNED_MALLOC:
-                        self._data = aligned_array(len(initial_array),dtype)
-                        self._data[:] = initial_array.get()
-                    else:
-                        self._data = initial_array.get()
+                    self._data = arrayWithAligned(_numpy.array(initial_array.get()))
                 else:
-                    if _pycbc.HAVE_ALIGNED_MALLOC:
-                        self._data = aligned_array(len(initial_array),dtype)
-                        self._data[:] = _numpy.array(initial_array, dtype=dtype, ndmin=1)
-                    else:
-                        self._data = _numpy.array(initial_array, dtype=dtype, ndmin=1)
+                    self._data = arrayWithAligned(_numpy.array(initial_array, 
+                                                               dtype=dtype, ndmin=1))
             elif _scheme_matches_base_array(initial_array):
                 self._data = _copy_base_array(initial_array)
             else:
