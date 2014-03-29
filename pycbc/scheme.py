@@ -164,10 +164,10 @@ def schemed(prefix):
                 backend = __import__(prefix + scheme_prefix[sch], fromlist=[fn.__name__])
                 schemed_fn = getattr(backend, fn.__name__)
                 schemed_fn.__doc__ = fn.__doc__
-                return schemed_fn(*args, **kwds)
-            except:
-                pass
-            
+            except ImportError:
+                continue    
+            return schemed_fn(*args, **kwds)
+
         err = ("Failed to find implementation of (%s) " 
               "for %s scheme." % (str(fn), current_prefix()))
         raise RuntimeError(err)
@@ -176,7 +176,7 @@ def schemed(prefix):
 
 @decorator
 def cpuonly(fn, *args, **kwds):
-    if type(mgr.state) != CPUScheme:
+    if not issubclass(type(mgr.state), CPUScheme):
         raise TypeError(fn.__name__ + 
                         " can only be called from a CPU processing scheme.")
     else:
