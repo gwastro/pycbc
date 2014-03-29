@@ -279,9 +279,10 @@ _opencl_fd_approximants = {}
 opencl_td = dict(_lalsim_td_approximants.items() + _opencl_td_approximants.items())
 opencl_fd = dict(_lalsim_fd_approximants.items() + _opencl_fd_approximants.items())
 
-
-td_wav = {_scheme.CPUScheme:cpu_td,_scheme.CUDAScheme:cuda_td,_scheme.OpenCLScheme:opencl_td}
-fd_wav = {_scheme.CPUScheme:cpu_fd,_scheme.CUDAScheme:cuda_fd,_scheme.OpenCLScheme:opencl_fd}
+td_wav = _scheme.ChooseBySchemeDict()
+fd_wav = _scheme.ChooseBySchemeDict()
+td_wav.update({_scheme.CPUScheme:cpu_td,_scheme.CUDAScheme:cuda_td,_scheme.OpenCLScheme:opencl_td})
+fd_wav.update({_scheme.CPUScheme:cpu_fd,_scheme.CUDAScheme:cuda_fd,_scheme.OpenCLScheme:opencl_fd})
 
 # List the various available approximants ####################################
 
@@ -536,8 +537,10 @@ _cuda_fd_filters['SPAtmplt'] = spa_tmplt
 opencl_fd_filter['SPAtmplt'] = spa_tmplt
 
 
-
-filter_wav = {_scheme.CPUScheme:_inspiral_fd_filters, _scheme.CUDAScheme:_cuda_fd_filters, _scheme.OpenCLScheme:opencl_fd_filter}
+filter_wav = _scheme.ChooseBySchemeDict()
+filter_wav.update( {_scheme.CPUScheme:_inspiral_fd_filters, 
+              _scheme.CUDAScheme:_cuda_fd_filters, 
+              _scheme.OpenCLScheme:opencl_fd_filter} )
 
 # Organize functions for function conditioning/precalculated values 
 _filter_norms = {}
