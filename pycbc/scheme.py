@@ -139,12 +139,19 @@ class OpenCLScheme(Scheme):
         self.context = pyopencl.Context([self.device])
         self.queue = pyopencl.CommandQueue(self.context)    
 
-CPUScheme = Scheme 
+class CPUScheme(Scheme):
+    pass
+
+class MKLScheme(CPUScheme):
+    pass
 
 DefaultScheme = CPUScheme()
 mgr.state = DefaultScheme
 
-scheme_prefix = {CUDAScheme: "cuda", OpenCLScheme: "opencl", CPUScheme: "cpu"}
+scheme_prefix = {CUDAScheme: "cuda",
+                 OpenCLScheme: "opencl", 
+                 CPUScheme: "cpu",
+                 MKLScheme: "mkl",}
 
 def current_prefix():
     return scheme_prefix[type(mgr.state)]
@@ -152,15 +159,19 @@ def current_prefix():
 def schemed(prefix):
     @decorator
     def scheming_function(fn, *args, **kwds):
-        backend = __import__(prefix + current_prefix(), fromlist=[fn.__name__])
-        try:
-            schemed_fn = getattr(backend, fn.__name__)
-            schemed_fn.__doc__ = fn.__doc__
-        except:
-            err = ("Failed to find implementation of (%s) " 
-                  "for %s scheme." % (str(fn), current_prefix()))
-            raise RuntimeError(err)
-        return schemed_fn(*args, **kwds)
+        for sch in mgr.state.__class__.__mro__[0:-1]: 
+            try:
+                backend = __import__(prefix + scheme_prefix[sch], fromlist=[fn.__name__])
+                schemed_fn = getattr(backend, fn.__name__)
+                schemed_fn.__doc__ = fn.__doc__
+                return schemed_fn(*args, **kwds)
+            except:
+                pass
+            
+        err = ("Failed to find implementation of (%s) " 
+              "for %s scheme." % (str(fn), current_prefix()))
+        raise RuntimeError(err)
+        
     return scheming_function
 
 @decorator
@@ -212,6 +223,9 @@ def from_cli(opt):
     elif opt.processing_scheme == "opencl":
         logging.info("Running with OpenCL support")
         ctx = OpenCLScheme()
+    elif opt.processing_scheme == "mkl":
+        logging.info("Running with threaded MKL support")
+        ctx = MKLScheme()
     else:
         logging.info("Running with CPU support only")
         ctx = CPUScheme()
@@ -238,7 +252,18 @@ def verify_processing_options(opt, parser):
 
 
 
-
+class ChooseBySchemeDict(dict):
+    """ This class represents a dictionary whose purpose is to chose objects
+    based on their processing scheme. The keys are intended to be processing
+    schemes. 
+    """
+    def __getitem__(self, scheme):
+        for base in scheme.__mro__[0:-1]:
+            try:
+                return dict.__getitem__(self, base)
+                break
+            except:
+                pass
 
 
 
