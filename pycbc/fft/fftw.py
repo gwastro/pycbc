@@ -30,34 +30,42 @@ FFTW_ESTIMATE = 1 << 6
 FFTW_WISDOM_ONLY = 1 << 21
 
 # Load the single and double precision libraries
+# We need to construct them directly with CDLL so
+# we can give the RTLD_GLOBAL mode, which we must do
+# in order to use the threaded libraries as well.
 double_lib_name = 'libfftw3.so'
-double_lib = ctypes.cdll.LoadLibrary(double_lib_name)
+double_lib = ctypes.CDLL(double_lib_name,mode=ctypes.RTLD_GLOBAL)
 float_lib_name = 'libfftw3f.so'
-float_lib = ctypes.cdll.LoadLibrary(float_lib_name)
+float_lib = ctypes.CDLL(float_lib_name,mode=ctypes.RTLD_GLOBAL)
 
 # We may or may not have threaded support...
 double_threaded_lib_name = 'libfftw3_threads.so'
 float_threaded_lib_name = 'libfftw3f_threads.so'
 
+# Even if we don't have threaded support, we define a number
+# of threads.  But it's 0 without threaded support (which is 
+# an invalid argument) which allows our planning wrapper
+# to distinguish threaded from nonthreaded plans
+fftw_nthreads = 0
+
 HAVE_FFTW_THREADED = False
 try:
-    double_threaded_lib = ctypes.cdll.LoadLibrary(double_threaded_lib_name)
-    float_threaded_lib = ctypes.cdll.LoadLibrary(float_threaded_lib_name)
+    double_threaded_lib = ctypes.CDLL(double_threaded_lib_name,mode=ctypes.RTLD_GLOBAL)
+    float_threaded_lib = ctypes.CDLL(float_threaded_lib_name,mode=ctypes.RTLD_GLOBAL)
     HAVE_FFTW_THREADED = True
 except OSError:
     pass
 
 if HAVE_FFTW_THREADED:
     # Call each of these exactly once, before anything else...
-    double_threaded_lib.fftw_init_threads()
-    float_threaded_lib.fftwf_init_threads()
+    dret = double_threaded_lib.fftw_init_threads()
+    fret = float_threaded_lib.fftwf_init_threads()
 
-    # Now functions to get and use a given number of threads
+    # FFTW for some reason uses *0* to indicate failure.  In C.
+    if (dret == 0) or (fret == 0):
+        raise ImportError("Threaded FFTW found and loaded, but could not initialize")
 
-    # Following defined for users to check; initialized here
-    # to an invalid value, but we'll immediately set it to 1
-    # to start with
-    fftw_nthreads = 0
+    # Now a function to use a given number of threads
 
     def use_nthreads(nthreads):
         """
@@ -70,9 +78,17 @@ if HAVE_FFTW_THREADED:
             raise ValueError("nthreads must be nonegative integer")
         fftw_nthreads = nthreads
 
-        double_threaded_lib.fftw_plan_with_nthreads(nthreads)
-        float_threaded_lib.fftwf_plan_with_nthreads(nthreads)
-        
+        dplanwthr = double_threaded_lib.fftw_plan_with_nthreads
+        fplanwthr = float_threaded_lib.fftwf_plan_with_nthreads
+        dplanwthr.restype = None
+        fplanwthr.restype = None
+
+        dplanwthr(nthreads)
+        fplanwthr(nthreads)
+
+        return
+
+    # We need to initialize to something valid
     use_nthreads(1)
 
 # Try to import system-wide wisdom files as part of module initialization
@@ -178,7 +194,11 @@ def alignment_of(vec):
     return double_lib.fftw_alignment_of(pointer)
 
 @memoize
-def plan(size, idtype, odtype, direction, mlvl):
+def plan(size, idtype, odtype, direction, mlvl, nthreads):
+    # Really the user should have already done this, but
+    # just in case...
+    if HAVE_FFTW_THREADED:
+        use_nthreads(nthreads)
     # Convert a measure-level to flags
     flags = get_flag(mlvl)
 
@@ -223,11 +243,13 @@ def execute(plan, invec, outvec):
     f(plan, invec.ptr, outvec.ptr)
     
 def fft(invec, outvec, prec, itype, otype):
-    theplan = plan(len(invec), invec.dtype, outvec.dtype, FFTW_FORWARD, get_measure_level())
+    theplan = plan(len(invec), invec.dtype, outvec.dtype, FFTW_FORWARD,
+                   get_measure_level(),fftw_nthreads)
     execute(theplan, invec, outvec)
     
 def ifft(invec, outvec, prec, itype, otype):
-    theplan = plan(len(outvec), invec.dtype, outvec.dtype, FFTW_BACKWARD, get_measure_level())
+    theplan = plan(len(outvec), invec.dtype, outvec.dtype, FFTW_BACKWARD,
+                   get_measure_level(),fftw_nthreads)
     execute(theplan, invec, outvec)
 
     
