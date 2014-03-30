@@ -44,6 +44,8 @@ from pycbc.lalwrap import XLALREAL4ForwardFFT as _REAL4ForwardFFT
 from pycbc.lalwrap import XLALREAL8ReverseFFT as _REAL8ReverseFFT
 from pycbc.lalwrap import XLALREAL4ReverseFFT as _REAL4ReverseFFT
 
+from optparse import OptionGroup
+
 # Measure level.  By default 1, which does some but not much planning,
 # but we provide functions to read and set it
 
@@ -110,3 +112,36 @@ def fft(invec,outvec,prec,itype,otype):
 def ifft(invec,outvec,prec,itype,otype):
     theplan = _get_inv_plan(prec,itype,otype,len(outvec))
     _reverse_fft_fn_dict[(prec,itype,otype)](outvec,invec,theplan)
+
+def insert_fft_options(optgroup):
+    """
+    Inserts the options that affect the behavior of this backend
+
+    Parameters
+    ----------
+    optgroup: fft_option
+       OptionParser argument group whose options are extended
+    """
+    optgroup.add_argument("--lalfft-measure-level", 
+                      help="Determines the measure level used in planning "
+                           "LAL-wrapped FFTs; allowed values are: " + str([0,1,2,3]), 
+                      type=int, default=_default_measurelvl)
+
+def verify_fft_options(opt,parser):
+    """Parses the FFT options and verifies that they are 
+       reasonable. 
+       
+  
+    Parameters
+    ----------
+    opt : object
+        Result of parsing the CLI with OptionParser, or any object with the
+        required attributes.
+    parser : object
+        OptionParser instance.
+    """
+    if opt.lalfft_measure_level not in [0,1,2,3]:
+        parser.error("{0} is not a valid lalfft measure level.".format(opt.lalfft_measure_level))
+
+def from_cli(opt):
+    set_measure_level(opt.lalfft_measure_level)

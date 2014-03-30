@@ -358,7 +358,7 @@ def insert_fft_option_group(parser):
                 pass
 
 def verify_fft_options(opt, parser):
-    """Parses the  processing scheme options and verifies that they are 
+    """Parses the FFT options and verifies that they are 
        reasonable. 
        
   
@@ -370,11 +370,8 @@ def verify_fft_options(opt, parser):
     parser : object
         OptionParser instance.
     """
-    try:
-        if opt.fft_cpu_backend not in cpu_backends:
-            parser.error("{0} is not a valid CPU FFT backend.".format(opt.fft_cpu_backend))
-    except AttributeError:
-        pass
+    if opt.fft_cpu_backend not in cpu_backends:
+        parser.error("{0} is not a valid CPU FFT backend.".format(opt.fft_cpu_backend))
 
     for backend in _fft_backends[pycbc.scheme.CPUScheme].values():
         try:
@@ -383,11 +380,8 @@ def verify_fft_options(opt, parser):
             pass
 
     if pycbc.HAVE_CUDA:
-        try:
-            if opt.fft_cuda_backend not in cuda_backends:
-                parser.error("{0} is not a valid CUDA FFT backend.".format(opt.fft_cuda_backend))
-        except AttributeError:
-            pass
+        if opt.fft_cuda_backend not in cuda_backends:
+            parser.error("{0} is not a valid CUDA FFT backend.".format(opt.fft_cuda_backend))
 
         for backend in _fft_backends[pycbc.scheme.CUDAScheme].values():
             try:
@@ -396,11 +390,8 @@ def verify_fft_options(opt, parser):
                 pass
 
     if pycbc.HAVE_OPENCL:
-        try:
-            if opt.fft_opencl_backend not in opencl_backends:
+        if opt.fft_opencl_backend not in opencl_backends:
                 parser.error("{0} is not a valid OpenCL FFT backend.".format(opt.fft_opencl_backend))
-        except AttributeError:
-            pass
 
         for backend in _fft_backends[pycbc.scheme.OpenCLScheme].values():
             try:

@@ -253,4 +253,65 @@ def ifft(invec, outvec, prec, itype, otype):
     execute(theplan, invec, outvec)
 
     
-    
+def insert_fft_options(optgroup):
+    """
+    Inserts the options that affect the behavior of this backend
+
+    Parameters
+    ----------
+    optgroup: fft_option
+       OptionParser argument group whose options are extended
+    """
+    optgroup.add_argument("--fftw-measure-level", 
+                      help="Determines the measure level used in planning "
+                           "FFTW FFTs; allowed values are: " + str([0,1,2,3]), 
+                      type=int, default=_default_measurelvl)
+    optgroup.add_argument("--fftw-use-nthreads", 
+                      help="Number of threads to use in FFT planning/execution"
+                      type=int, default=0) # 0 is sentinel for no thread support
+    optgroup.add_argument("--fftw-input-float-wisdom", 
+                      help="Filename from which to read single-precision wisdom"
+                      type=string, default=None)
+    optgroup.add_argument("--fftw-input-double-wisdom", 
+                      help="Filename from which to read double-precision wisdom"
+                      type=string, default=None)
+    optgroup.add_argument("--fftw-output-float-wisdom", 
+                      help="Filename to which to write single-precision wisdom"
+                      type=string, default=None)
+    optgroup.add_argument("--fftw-output-double-wisdom", 
+                      help="Filename to which to write double-precision wisdom"
+                      type=string, default=None)
+
+def verify_fft_options(opt,parser):
+    """Parses the FFT options and verifies that they are 
+       reasonable. 
+         
+    Parameters
+    ----------
+    opt : object
+        Result of parsing the CLI with OptionParser, or any object with the
+        required attributes.
+    parser : object
+        OptionParser instance.
+    """
+    if opt.fftw_measure_level not in [0,1,2,3]:
+        parser.error("{0} is not a valid FFTW measure level.".format(opt.fftw_measure_level))
+    if (opt.fftw_use_nthreads > 1) and not HAVE_FFTW_THREADED:
+        parser.error("You specified a number of threads, but do not have threaded FFTW available")
+
+def from_cli(opt):
+    set_measure_level(opt.fftw_measure_level)
+    if (opt.fftw_use_ntheads > 1):
+        use_nthreads(opt.fftw_use_nthreads)
+    # We don't go ahead and import/export wisdom, because that depends on 
+    # plan creation.  Instead just return those in the kwd returns
+    kwdrets = {}
+    if opt.fftw_input_float_wisdom_file is not None:
+        kwdrets.update({"input_float_wisdom_file":opt.fftw_input_float_wisdom_file})
+    if opt.fftw_input_double_wisdom_file is not None:
+        kwdrets.update({"input_double_wisdom_file":opt.fftw_input_double_wisdom_file})
+    if opt.fftw_output_float_wisdom_file is not None:
+        kwdrets.update({"output_float_wisdom_file":opt.fftw_output_float_wisdom_file})
+    if opt.fftw_output_double_wisdom_file is not None:
+        kwdrets.update({"output_double_wisdom_file":opt.fftw_output_double_wisdom_file})
+    return kwdrets
