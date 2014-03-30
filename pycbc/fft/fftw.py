@@ -1,5 +1,4 @@
 from pycbc.types import zeros
-import pycbc as _pycbc
 import numpy
 import ctypes
 import functools
@@ -97,13 +96,6 @@ def import_sys_wisdom():
     float_lib.fftwf_import_system_wisdom()
 
 import_sys_wisdom()
-
-# Define a flag based on alignment
-
-if _pycbc.HAVE_ALIGNED_MALLOC:
-    alignment_flag = 0
-else:
-    alignment_flag = FFTW_UNALIGNED
     
 # We provide an interface for changing the "measure level"
 # By default 1, which does some but not much planning,
@@ -134,8 +126,11 @@ _flag_dict = {0: FFTW_ESTIMATE,
               1: FFTW_MEASURE,
               2: FFTW_MEASURE|FFTW_PATIENT,
               3: FFTW_MEASURE|FFTW_PATIENT|FFTW_EXHAUSTIVE}
-def get_flag(mlvl):
-    return (_flag_dict[mlvl]|alignment_flag)
+def get_flag(mlvl,aligned):
+    if aligned:
+        return _flag_dict[mlvl]
+    else:
+        return (_flag_dict[mlvl]|FFTW_UNALIGNED)
 
 # Add the ability to read/store wisdom to filenames
 
@@ -185,20 +180,14 @@ execute_function = {'float32': {'complex64': float_lib.fftwf_execute_dft_r2c},
                                    'complex128': double_lib.fftw_execute_dft}
                    }
 
-def alignment_of(vec):
-    """ Return the byte alignment of this array
-    """
-    pointer = vec.data.ctypes.data
-    return double_lib.fftw_alignment_of(pointer)
-
 @memoize
-def plan(size, idtype, odtype, direction, mlvl, nthreads):
+def plan(size, idtype, odtype, direction, mlvl, nthreads, aligned):
     # Really the user should have already done this, but
     # just in case...
     if HAVE_FFTW_THREADED:
         use_nthreads(nthreads)
     # Convert a measure-level to flags
-    flags = get_flag(mlvl)
+    flags = get_flag(mlvl,aligned)
 
     if (idtype == odtype):
         # We're in the complex-to-complex case, so lengths are the same
@@ -242,12 +231,14 @@ def execute(plan, invec, outvec):
     
 def fft(invec, outvec, prec, itype, otype):
     theplan = plan(len(invec), invec.dtype, outvec.dtype, FFTW_FORWARD,
-                   get_measure_level(),get_nthreads())
+                   get_measure_level(),get_nthreads(),
+                   (invec._data.isaligned and outvec._data.isaligned))
     execute(theplan, invec, outvec)
     
 def ifft(invec, outvec, prec, itype, otype):
     theplan = plan(len(outvec), invec.dtype, outvec.dtype, FFTW_BACKWARD,
-                   get_measure_level(),get_nthreads())
+                   get_measure_level(),get_nthreads(),
+                   (invec._data.isaligned and outvec._data.isaligned))
     execute(theplan, invec, outvec)
 
     
