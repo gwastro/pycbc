@@ -21,7 +21,7 @@ parser.add_option('--device-num','-d', action='store', type = 'int',
 parser.add_option('--size',type=float, help='FFT size')
 parser.add_option('--iterations', type=int, help='Number of iterations to perform')
 parser.add_option('--measure-level', type=int, help='Set the measure level (only applies to FFTW- cpu scheme)', default=1)
-parser.add_option('--backend', type=str, help='set the backend type for this scheme', default='Default')
+parser.add_option('--backend', type=str, help='set the backend type for this scheme')
          
           
 (options, args) = parser.parse_args()   
@@ -31,8 +31,12 @@ _options = vars(options)
 
 if _options['scheme'] == 'cpu':
     ctx = CPUScheme()
-    from pycbc.fft.lalfft import set_measure_level
-    set_measure_level(options.measure_level)
+    if options.backend == 'lal':
+        from pycbc.fft.lalfft import set_measure_level
+        set_measure_level(options.measure_level)
+    if options.backend == 'fftw':
+        from pycbc.fft.fftw import set_measure_level
+        set_measure_level(options.measure_level)       
 if _options['scheme'] == 'cuda':
     ctx = CUDAScheme(device_num=_options['devicenum'])
 if _options['scheme'] == 'opencl':
@@ -57,9 +61,9 @@ vecdin = zeros(N, dtype=complex128) + 1
 vecdout = vecdin * 1
 
 with ctx:
-    fft(vecin, vecout, backend=options.backend)
+#    fft(vecin, vecout, backend=options.backend)
     ifft(vecin, vecout, backend=options.backend)
-    ifft(vecdin, vecdout, backend=options.backend)
+#    ifft(vecdin, vecdout, backend=options.backend)
 
 def tfft():
     with ctx:
@@ -79,15 +83,15 @@ def dtifft():
         b = vecout[9]
 
 import timeit
-gt = timeit.Timer(tfft)
-t = (1000 * gt.timeit(number=1)/niter)
-print "C2C FFT %.2f msec" % t, " %5.1f /min " % (1000 *60 /t)
+#gt = timeit.Timer(tfft)
+#t = (1000 * gt.timeit(number=1)/niter)
+#print "C2C FFT %.2f msec" % t, " %5.1f /min " % (1000 *60 /t)
 
 gt = timeit.Timer(tifft)
 t = (1000 * gt.timeit(number=1)/niter)
 print "C2C iFFT %.2f msec" % t, " %5.1f /min " % (1000 *60 /t)
 
-gt = timeit.Timer(dtifft)
-t = (1000 * gt.timeit(number=1)/niter)
-print "C2C DOUBLE iFFT %.2f msec" % t, " %5.1f /min " % (1000 *60 /t)
+#gt = timeit.Timer(dtifft)
+#t = (1000 * gt.timeit(number=1)/niter)
+#print "C2C DOUBLE iFFT %.2f msec" % t, " %5.1f /min " % (1000 *60 /t)
 
