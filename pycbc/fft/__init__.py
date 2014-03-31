@@ -399,14 +399,11 @@ def verify_fft_options(opt, parser):
             except AttributeError:
                 pass
 
-def from_cli(opt,ctx):
+def from_cli(opt):
     """Parses the command line options and sets the FFT backend
-    for the provided context.  This function may be called more
-    than once with different instances of ctx to set the backend
-    an options for multiple schemes (if needed). Aside from setting
-    the default backed for this context, this function will also
-    call (if it exists) the from_cli function of the specified
-    backend (that function should only take opt as an argument).
+    for each (available) scheme. Aside from setting the default
+    backed for this context, this function will also call (if
+    it exists) the from_cli function of the specified backend.
 
     Parameters
     ----------
@@ -414,24 +411,18 @@ def from_cli(opt,ctx):
         Result of parsing the CLI with OptionParser, or any object with
         the required attributes.
 
-    ctx: Scheme
-        An instance of a pycbc.scheme type, whose backend will be set
-        and the corresponding options of the backend also parsed from
-        the cli.
-        
     Returns
     -------
     kwdrets: dict
         A dictionary containing keyword/value pairs returned by the
-        call to backend.from_cli.  If that backend has no return
+        call(s) to backend.from_cli.  If that backend has no return
         values, this dict will be empty (i.e., the top level never
         returns anything; it just sets the default backend).
     """
     kwdrets = {}
 
-    thescheme = type(ctx)
-    thebackend = _fft_backends[thescheme][opt.fft_backend]
-    set_fft_backend(thescheme,opt.fft_backend)
+    thebackend = _fft_backends[pycbc.scheme.CPUScheme][opt.fft_cpu_backend]
+    set_default_backend(pycbc.scheme.CPUScheme,opt.fft_cpu_backend)
 
     try:
         tmpdict = thebackend.from_cli(opt)
@@ -439,6 +430,28 @@ def from_cli(opt,ctx):
             kwdrets.update(tmpdict)
     except AttributeError:
         pass
+
+    if pycbc.HAVE_CUDA:
+        thebackend = _fft_backends[pycbc.scheme.CUDAScheme][opt.fft_cuda_backend]
+        set_default_backend(pycbc.scheme.CUDAScheme,opt.fft_cuda_backend)
+
+        try:
+            tmpdict = thebackend.from_cli(opt)
+            if tmpdict is not None:
+                kwdrets.update(tmpdict)
+        except AttributeError:
+            pass
+
+    if pycbc.HAVE_OPENCL:
+        thebackend = _fft_backends[pycbc.scheme.OpenCLScheme][opt.fft_opencl_backend]
+        set_default_backend(pycbc.scheme.OpenCLScheme,opt.fft_opencl_backend)
+
+        try:
+            tmpdict = thebackend.from_cli(opt)
+            if tmpdict is not None:
+                kwdrets.update(tmpdict)
+        except AttributeError:
+            pass
 
     return kwdrets
     

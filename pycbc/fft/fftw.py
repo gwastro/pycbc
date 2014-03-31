@@ -46,7 +46,9 @@ float_threaded_lib_name = 'libfftw3f_threads.so'
 # of threads.  But it's 0 without threaded support (which is 
 # an invalid argument) which allows our planning wrapper
 # to distinguish threaded from nonthreaded plans
-fftw_nthreads = 0
+_fftw_nthreads = 0
+def get_nthreads():
+    return _fftw_nthreads
 
 HAVE_FFTW_THREADED = False
 try:
@@ -72,21 +74,17 @@ if HAVE_FFTW_THREADED:
         Set the current number of threads used in FFTW planning/
         execution.  Must be an non-negative integer.
         """
-
-        global fftw_nthreads
+        global _fftw_nthreads
         if not (isinstance(nthreads,int) and (nthreads>0)):
             raise ValueError("nthreads must be nonegative integer")
-        fftw_nthreads = nthreads
+        _fftw_nthreads = nthreads
 
         dplanwthr = double_threaded_lib.fftw_plan_with_nthreads
         fplanwthr = float_threaded_lib.fftwf_plan_with_nthreads
         dplanwthr.restype = None
         fplanwthr.restype = None
-
         dplanwthr(nthreads)
         fplanwthr(nthreads)
-
-        return
 
     # We need to initialize to something valid
     use_nthreads(1)
@@ -244,12 +242,12 @@ def execute(plan, invec, outvec):
     
 def fft(invec, outvec, prec, itype, otype):
     theplan = plan(len(invec), invec.dtype, outvec.dtype, FFTW_FORWARD,
-                   get_measure_level(),fftw_nthreads)
+                   get_measure_level(),get_nthreads())
     execute(theplan, invec, outvec)
     
 def ifft(invec, outvec, prec, itype, otype):
     theplan = plan(len(outvec), invec.dtype, outvec.dtype, FFTW_BACKWARD,
-                   get_measure_level(),fftw_nthreads)
+                   get_measure_level(),get_nthreads())
     execute(theplan, invec, outvec)
 
     
@@ -267,20 +265,20 @@ def insert_fft_options(optgroup):
                            "FFTW FFTs; allowed values are: " + str([0,1,2,3]), 
                       type=int, default=_default_measurelvl)
     optgroup.add_argument("--fftw-use-nthreads", 
-                      help="Number of threads to use in FFT planning/execution"
+                      help="Number of threads to use in FFT planning/execution",
                       type=int, default=0) # 0 is sentinel for no thread support
-    optgroup.add_argument("--fftw-input-float-wisdom", 
-                      help="Filename from which to read single-precision wisdom"
-                      type=string, default=None)
-    optgroup.add_argument("--fftw-input-double-wisdom", 
-                      help="Filename from which to read double-precision wisdom"
-                      type=string, default=None)
-    optgroup.add_argument("--fftw-output-float-wisdom", 
-                      help="Filename to which to write single-precision wisdom"
-                      type=string, default=None)
-    optgroup.add_argument("--fftw-output-double-wisdom", 
-                      help="Filename to which to write double-precision wisdom"
-                      type=string, default=None)
+    optgroup.add_argument("--fftw-input-float-wisdom-file", 
+                      help="Filename from which to read single-precision wisdom",
+                      default=None)
+    optgroup.add_argument("--fftw-input-double-wisdom-file", 
+                      help="Filename from which to read double-precision wisdom",
+                      default=None)
+    optgroup.add_argument("--fftw-output-float-wisdom-file", 
+                      help="Filename to which to write single-precision wisdom",
+                      default=None)
+    optgroup.add_argument("--fftw-output-double-wisdom-file", 
+                      help="Filename to which to write double-precision wisdom",
+                      default=None)
 
 def verify_fft_options(opt,parser):
     """Parses the FFT options and verifies that they are 
@@ -301,7 +299,7 @@ def verify_fft_options(opt,parser):
 
 def from_cli(opt):
     set_measure_level(opt.fftw_measure_level)
-    if (opt.fftw_use_ntheads > 1):
+    if (opt.fftw_use_nthreads > 1):
         use_nthreads(opt.fftw_use_nthreads)
     # We don't go ahead and import/export wisdom, because that depends on 
     # plan creation.  Instead just return those in the kwd returns
