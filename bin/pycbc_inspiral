@@ -17,7 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import logging, sys, numpy, argparse
-from pycbc import vetoes, psd, waveform, events, strain, scheme, DYN_RANGE_FAC
+from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC
 from pycbc.filter import  matched_filter_core, sigmasq, make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
 
@@ -61,6 +61,7 @@ psd.insert_psd_option_group(parser)
 strain.insert_strain_option_group(parser)
 strain.StrainSegments.insert_segment_option_group(parser)
 scheme.insert_processing_option_group(parser)
+fft.insert_fft_option_group(parser)
 
 opt = parser.parse_args()
 
@@ -69,6 +70,7 @@ psd.verify_psd_options(opt, parser)
 strain.verify_strain_options(opt, parser)
 strain.StrainSegments.verify_segment_options(opt, parser)
 scheme.verify_processing_options(opt, parser)
+fft.verify_fft_options(opt,parser)
 
 if opt.verbose:
     log_level = logging.DEBUG
@@ -79,6 +81,10 @@ logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 ctx = scheme.from_cli(opt)
 gwstrain = strain.from_cli(opt)
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
+fft_opt_dict = fft.from_cli(opt)
+
+if "input_float_wisdom_file" in fft_opt_dict.keys():
+    fft.fftw.import_single_wisdom_from_filename(fft_opt_dict[input_float_wisdom_file])
                       
 flow = opt.low_frequency_cutoff                                                               
 flen = strain_segments.freq_len
