@@ -23,28 +23,28 @@
 #
 """Numpy based CPU backend for PyCBC Array
 """
-import numpy as np
+import numpy as _np
 from array import common_kind, complex128, float64
 import aligned as _algn
 
-def zeros(length, dtype=np.float64):
+def zeros(length, dtype=_np.float64):
     return _algn.zeros(length, dtype=dtype)
 
-def empty(length, dtype=np.float64):
+def empty(length, dtype=_np.float64):
     return _algn.empty(length, dtype=dtype)
 
 def ptr(self):
     return self.data.ctypes.data
     
 def dot(self, other):
-    return np.dot(self._data,other)     
+    return _np.dot(self._data,other)     
 
 def min(self):
     return self.data.min()  
 
 def abs_max_loc(self):
     tmp = abs(self.data)
-    ind = np.argmax(tmp)
+    ind = _np.argmax(tmp)
     return tmp[ind], ind
 
 def cumsum(self):
@@ -54,7 +54,7 @@ def max(self):
     return self.data.max()
 
 def max_loc(self):
-    ind = np.argmax(self.data)
+    ind = _np.argmax(self.data)
     return self.data[ind], ind
     
 def take(self, indices):
@@ -72,7 +72,7 @@ def weighted_inner(self, other, weight):
     else:
         acum_dtype = float64
 
-    return np.sum(self.data.conj() * other / weight, dtype=acum_dtype)
+    return _np.sum(self.data.conj() * other / weight, dtype=acum_dtype)
     
 def inner(self, other):
     """ Return the inner product of the array with complex conjugation.
@@ -82,13 +82,13 @@ def inner(self, other):
         acum_dtype = complex128
     else:
         acum_dtype = float64
-    return np.sum(self.data.conj() * other, dtype=acum_dtype)
-    #return np.vdot(self.data, other)
+    return _np.sum(self.data.conj() * other, dtype=acum_dtype)
+    #return _np.vdot(self.data, other)
 
 def vdot(self, other):
     """ Return the inner product of the array with complex conjugation.
     """
-    return np.vdot(self.data, other)
+    return _np.vdot(self.data, other)
 
 def squared_norm(self):
     """ Return the elementwise squared norm of the array """
@@ -105,15 +105,18 @@ def _getvalue(self, index):
 
 def sum(self):
     if self.kind == 'real':
-        return np.sum(self._data,dtype=float64)
+        return _np.sum(self._data,dtype=float64)
     else:
-        return np.sum(self._data,dtype=complex128)   
+        return _np.sum(self._data,dtype=complex128)   
         
 def clear(self): 
     self[:] = 0 
     
 def _scheme_matches_base_array(array):
-    if isinstance(array, _algn.ArrayWithAligned):
+    # Since ArrayWithAligned is a subclass of ndarray,
+    # and since converting to ArrayWithAligned will
+    # *not* copy 'array', the following is the way to go:
+    if isinstance(array, _np.ndarray):
         return True
     else:
         return False
