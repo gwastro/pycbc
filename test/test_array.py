@@ -49,9 +49,9 @@ elif _scheme == 'opencl':
     import pyopencl.array
     from pyopencl.array import Array as SchemeArray
 elif _scheme == 'cpu':
-    from pycbc.types.aligned import arrayWithAligned as SchemeArray
+    from pycbc.types.aligned import ArrayWithAligned as SchemeArray
 
-from pycbc.types.aligned import arrayWithAligned as CPUArray
+from pycbc.types.aligned import ArrayWithAligned as CPUArray
 
 # ********************GENERIC ARRAY TESTS ***********************
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Alex Nitz, Josh Willis, Andrew Miller, Tito Dal Canton
+# Copyright (C) 2014  Josh Willis, Alex Nitz
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -23,7 +23,7 @@
 # =============================================================================
 #
 """
-This module provides a clas derived from numpy.ndarray that also indicates
+This module provides a class derived from numpy.ndarray that also indicates
 whether or not its memory is aligned.  It further provides functions for
 creating zeros and empty (unitialized) arrays with this class.
 """
@@ -46,7 +46,6 @@ class ArrayWithAligned(_np.ndarray):
 def zeros(n, dtype):
     d = _np.dtype(dtype)
     nbytes = (d.itemsize)*n
-    #print "nbytes = {0}".format(nbytes)                                                                      
     tmp = _np.zeros(nbytes+PYCBC_ALIGNMENT, dtype=_np.uint8)
     address = tmp.__array_interface__['data'][0]
     offset = (PYCBC_ALIGNMENT - address%PYCBC_ALIGNMENT)%PYCBC_ALIGNMENT
