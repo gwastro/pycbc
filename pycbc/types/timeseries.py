@@ -332,9 +332,8 @@ class TimeSeries(Array):
             ep = _lal.LIGOTimeGPS(0,0)
         else:
             ep = self._epoch
-        if type(self._data) is not _numpy.ndarray:
-            raise TypeError("Cannot return lal type from the GPU")
-        elif self._data.dtype == _numpy.float32:
+
+        if self._data.dtype == _numpy.float32:
             lal_data = _lal.CreateREAL4TimeSeries("",ep,0,self.delta_t,_lal.lalSecondUnit,len(self))
         elif self._data.dtype == _numpy.float64:
             lal_data = _lal.CreateREAL8TimeSeries("",ep,0,self.delta_t,_lal.lalSecondUnit,len(self))
@@ -343,7 +342,7 @@ class TimeSeries(Array):
         elif self._data.dtype == _numpy.complex128:
             lal_data = _lal.CreateCOMPLEX16TimeSeries("",ep,0,self.delta_t,_lal.lalSecondUnit,len(self))
 
-        lal_data.data.data[:] = self._data
+        lal_data.data.data[:] = self.numpy()
 
         return lal_data
       

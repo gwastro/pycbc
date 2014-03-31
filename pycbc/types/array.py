@@ -837,7 +837,7 @@ class Array(object):
         """ Returns a Numpy Array that contains this data """     
     
     @_convert
-    def  lal(self):
+    def lal(self):
         """ Returns a LAL Object that contains this data """
 
         lal_data = None

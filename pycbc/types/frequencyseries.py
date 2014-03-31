@@ -265,7 +265,7 @@ class FrequencySeries(Array):
             return False
 
     @_convert
-    def  lal(self):
+    def lal(self):
         """Produces a LAL frequency series object equivalent to self.
 
         Returns
@@ -287,9 +287,8 @@ class FrequencySeries(Array):
             ep = _lal.LIGOTimeGPS(0,0)
         else:
             ep = self._epoch
-        if type(self._data) is not _numpy.ndarray:
-            raise TypeError("Cannot return lal type from the GPU")
-        elif self._data.dtype == _numpy.float32:
+
+        if self._data.dtype == _numpy.float32:
             lal_data = _lal.CreateREAL4FrequencySeries("",ep,0,self.delta_f,_lal.lalSecondUnit,len(self))
         elif self._data.dtype == _numpy.float64:
             lal_data = _lal.CreateREAL8FrequencySeries("",ep,0,self.delta_f,_lal.lalSecondUnit,len(self))
@@ -298,7 +297,7 @@ class FrequencySeries(Array):
         elif self._data.dtype == _numpy.complex128:
             lal_data = _lal.CreateCOMPLEX16FrequencySeries("",ep,0,self.delta_f,_lal.lalSecondUnit,len(self))
 
-        lal_data.data.data[:] = self._data
+        lal_data.data.data[:] = self.numpy()
 
         return lal_data
 
