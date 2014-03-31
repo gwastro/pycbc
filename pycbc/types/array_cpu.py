@@ -113,7 +113,7 @@ def clear(self):
     self[:] = 0 
     
 def _scheme_matches_base_array(array):
-    if isinstance(array, np.ndarray):
+    if isinstance(array, _algn.ArrayWithAligned):
         return True
     else:
         return False

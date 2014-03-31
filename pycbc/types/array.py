@@ -43,7 +43,7 @@ from numpy.linalg import norm
 import pycbc as _pycbc
 import pycbc.scheme as _scheme
 from pycbc.scheme import schemed, cpuonly
-from pycbc.types.aligned import arrayWithAligned
+from pycbc.types.aligned import ArrayWithAligned
 
 
 _ALLOWED_DTYPES = [_numpy.float32, _numpy.float64, _numpy.complex64,
@@ -175,9 +175,9 @@ class Array(object):
             #Create new instance with initial_array as initialization.
             if type(self._scheme) is _scheme.CPUScheme:
                 if hasattr(initial_array, 'get'):
-                    self._data = arrayWithAligned(_numpy.array(initial_array.get()))
+                    self._data = ArrayWithAligned(_numpy.array(initial_array.get()))
                 else:
-                    self._data = arrayWithAligned(_numpy.array(initial_array, 
+                    self._data = ArrayWithAligned(_numpy.array(initial_array, 
                                                                dtype=dtype, ndmin=1))
             elif _scheme_matches_base_array(initial_array):
                 self._data = _copy_base_array(initial_array)

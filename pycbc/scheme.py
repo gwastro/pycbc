@@ -159,12 +159,12 @@ def current_prefix():
 def schemed(prefix):
     @decorator
     def scheming_function(fn, *args, **kwds):
-        for sch in mgr.state.__class__.__mro__[0:-1]: 
+        for sch in mgr.state.__class__.__mro__[0:-2]: 
             try:
                 backend = __import__(prefix + scheme_prefix[sch], fromlist=[fn.__name__])
                 schemed_fn = getattr(backend, fn.__name__)
                 schemed_fn.__doc__ = fn.__doc__
-            except ImportError:
+            except (ImportError, AttributeError):
                 continue    
             return schemed_fn(*args, **kwds)
 

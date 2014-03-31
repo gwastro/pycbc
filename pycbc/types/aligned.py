@@ -31,31 +31,31 @@ import numpy as _np
 from pycbc import PYCBC_ALIGNMENT
 
 def check_aligned(ndarr):
-    return ((ndarr.__array_interface__['data'][0] % PYCBC_ALIGNMENT)==0)
+    return ((ndarr.__array_interface__['data'][0] % PYCBC_ALIGNMENT) == 0)
 
-class arrayWithAligned(_np.ndarray):
-    def __new__(cls,input_array):
+class ArrayWithAligned(_np.ndarray):
+    def __new__(cls, input_array):
         obj = _np.asarray(input_array).view(cls)
         obj.isaligned = check_aligned(input_array)
         return obj
 
-    def __array_finalize__(self,obj):
+    def __array_finalize__(self, obj):
         if obj is None: return
         self.isaligned = check_aligned(self)
 
-def zeros(n,dtype):
+def zeros(n, dtype):
     d = _np.dtype(dtype)
     nbytes = (d.itemsize)*n
     #print "nbytes = {0}".format(nbytes)                                                                      
-    tmp = _np.zeros(nbytes+PYCBC_ALIGNMENT,dtype=_np.uint8)
+    tmp = _np.zeros(nbytes+PYCBC_ALIGNMENT, dtype=_np.uint8)
     address = tmp.__array_interface__['data'][0]
     offset = (PYCBC_ALIGNMENT - address%PYCBC_ALIGNMENT)%PYCBC_ALIGNMENT
-    return arrayWithAligned(tmp[offset:offset+nbytes].view(dtype=_np.dtype(dtype)))
+    return ArrayWithAligned(tmp[offset:offset+nbytes].view(dtype=_np.dtype(dtype)))
 
-def empty(n,dtype):
+def empty(n, dtype):
     d = _np.dtype(dtype)
     nbytes = (d.itemsize)*n
-    tmp = _np.empty(nbytes+PYCBC_ALIGNMENT,dtype=_np.uint8)
+    tmp = _np.empty(nbytes+PYCBC_ALIGNMENT, dtype=_np.uint8)
     address = tmp.__array_interface__['data'][0]
     offset = (PYCBC_ALIGNMENT - address%PYCBC_ALIGNMENT)%PYCBC_ALIGNMENT
-    return arrayWithAligned(tmp[offset:offset+nbytes].view(dtype=d))
+    return ArrayWithAligned(tmp[offset:offset+nbytes].view(dtype=d))
