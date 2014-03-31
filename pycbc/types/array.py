@@ -136,22 +136,22 @@ class Array(object):
             initial_array = initial_array._data
 
         if not copy:
-            # Check that the dtype is supported.
-            if self._data.dtype not in _ALLOWED_DTYPES:
-                raise TypeError(str(self._data.dtype) + ' is not supported')
-
-            if dtype and dtype != self._data.dtype:
-                raise TypeError("Can only set dtype when allowed to copy data")
-
             if not _scheme_matches_base_array(initial_array):
                 raise TypeError("Cannot avoid a copy of this array")
             elif issubclass(type(self._scheme), _scheme.CPUScheme):
                 # ArrayWithAligned does not copy its memory; all 
                 # the following does is add the 'isaligned' flag
                 # in case initial_array was a true numpy array
-                self._data = ArrayWithAligned(initial_array,dtype)
+                self._data = ArrayWithAligned(initial_array)
             else:
                 self._data = initial_array
+
+            # Check that the dtype is supported.
+            if self._data.dtype not in _ALLOWED_DTYPES:
+                raise TypeError(str(self._data.dtype) + ' is not supported')
+
+            if dtype and dtype != self._data.dtype:
+                raise TypeError("Can only set dtype when allowed to copy data")
 
 
         if copy:
