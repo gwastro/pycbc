@@ -125,7 +125,7 @@ def _setup_fft():
     # set up mkl backend
     try:
         import mkl as _mkl_default
-        _mkl_backends = {'Default': _mkl_default}
+        _mkl_backends = {'mkl': _mkl_default}
         _fft_backends.update({pycbc.scheme.MKLScheme: _mkl_backends})
     except:
         pass
