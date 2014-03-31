@@ -173,7 +173,7 @@ class Array(object):
                 initial_array = initial_array.astype(dtype)
                                               
             #Create new instance with initial_array as initialization.
-            if type(self._scheme) is _scheme.CPUScheme:
+            if issubclass(type(self._scheme), _scheme.CPUScheme):
                 if hasattr(initial_array, 'get'):
                     self._data = ArrayWithAligned(_numpy.array(initial_array.get()))
                 else:

@@ -167,7 +167,8 @@ def schemed(prefix):
             except (ImportError, AttributeError):
                 continue    
             return schemed_fn(*args, **kwds)
-
+        print mgr.state.__class__.__mro__[0:-2]
+        print fn.__name__
         err = ("Failed to find implementation of (%s) " 
               "for %s scheme." % (str(fn), current_prefix()))
         raise RuntimeError(err)
