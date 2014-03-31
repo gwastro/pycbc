@@ -84,7 +84,7 @@ if pycbc.HAVE_CUDA:
 if pycbc.HAVE_OPENCL:
     _default_backends.update({pycbc.scheme.OpenCLScheme: 'pyfft'})
 
-_default_backends.update{pycbc.scheme.MKLScheme: 'mkl'}
+_default_backends.update({pycbc.scheme.MKLScheme: 'mkl'})
 
 def get_default_backend(scheme):
     return _default_backends[scheme]
