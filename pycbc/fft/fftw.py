@@ -155,7 +155,6 @@ def export_single_wisdom_to_filename(filename):
     if retval == 0:
         raise RuntimeError("Could not export wisdom to file {0}".format(filename))
 
-
 def export_double_wisdom_to_filename(filename):
     f = double_lib.fftw_export_wisdom_to_filename
     f.argtypes = [ctypes.c_char_p]
@@ -182,10 +181,6 @@ execute_function = {'float32': {'complex64': float_lib.fftwf_execute_dft_r2c},
 
 @memoize
 def plan(size, idtype, odtype, direction, mlvl, nthreads, aligned):
-    # Really the user should have already done this, but
-    # just in case...
-    if HAVE_FFTW_THREADED:
-        use_nthreads(nthreads)
     # Convert a measure-level to flags
     flags = get_flag(mlvl,aligned)
 
