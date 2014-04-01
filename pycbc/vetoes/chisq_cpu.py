@@ -29,7 +29,7 @@ def chisq_accum_bin(chisq, q):
 
 def shift_sum(v1, shifts, slen=None, offset=0):
     from scipy.weave import inline
-    v1 = v1.data
+    v1 = numpy.array(v1.data, copy=False)
     shifts = numpy.array(shifts, dtype=numpy.float32)
     vlen = len(v1)
     if slen is None:

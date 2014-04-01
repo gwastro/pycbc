@@ -33,7 +33,7 @@ def threshold_numpy(series, value):
 
 outl = outv = count = None
 def threshold_inline(series, value):
-    arr = series.data.view(dtype=numpy.float32)
+    arr = numpy.array(series.data.view(dtype=numpy.float32), copy=False)
     global outl, outv, count
     if outl is None:
         outl = numpy.zeros(len(series), dtype=numpy.uint32)
@@ -59,4 +59,4 @@ def threshold_inline(series, value):
     inline(code, ['N', 'arr', 'outv', 'outl', 'count', 'threshold'])
     return outl[0:count], outv[0:count]
 
-threshold=threshold_numpy
+threshold=threshold_inline

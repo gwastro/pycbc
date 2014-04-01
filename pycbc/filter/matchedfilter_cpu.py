@@ -29,19 +29,19 @@ def correlate_numpy(x, y, z):
     z *= y
 
 def correlate_inline(x, y, z):
-    za = z.data
-    xa = x.data
-    ya = y.data
+    za = numpy.array(z.data, copy=False)
+    xa = numpy.array(x.data, copy=False)
+    ya = numpy.array(y.data, copy=False)
     N = len(x)
     code = """
         float re, im;
         for (int i=0; i<N; i++){
-            re = xa[i].real() * ya[i].real() - xa[i].imag() * ya[i].imag();
-            im = xa[i].real() * ya[i].imag() + xa[i].imag() * ya[i].real();
+            re = xa[i].real() * ya[i].real() + xa[i].imag() * ya[i].imag();
+            im = xa[i].real() * ya[i].imag() - xa[i].imag() * ya[i].real();
             za[i] = std::complex<float>(re, im);
         }
     """
     inline(code, ['xa', 'ya', 'za', 'N'])
     
-correlate = correlate_numpy
+correlate = correlate_inline
     
