@@ -203,6 +203,9 @@ for i in xrange(-2,int((chi1Max - chi1Min) // MMdist + 2)):
         bank[i][j] = []
         massbank[i][j] = []
 
+maxChi1Bin = int((chi1Max - chi1Min) // MMdist + 1)
+maxChi2Bin = int((chi2Max - chi2Min) // MMdist + 1)
+
 # Initialise counters
 N = 0
 Np = 0
@@ -260,6 +263,18 @@ while True:
     # What bin should it be in?
     v1Bin = int((vs[0] - chi1Min) // MMdist)
     v2Bin = int((vs[1] - chi2Min) // MMdist)
+    # FIXME: This check should not be necessary
+    # Did our previous numerical placement of bins fail?
+    if (v1Bin < -1) or (v1Bin >= maxChi1Bin) or\
+                                         (v2Bin < -1) or (v2Bin >= maxChi2Bin):
+        for tmpV1 in range(v1Bin-1,v1Bin+2):
+            if not massbank.has_key(tmpV1):
+                massbank[tmpV1] = {}
+                bank[tmpV1] = {}
+            for tmpV2 in range(v2Bin-1,v2Bin+2):
+                if not massbank[tmpV1].has_key(tmpV2):
+                    massbank[tmpV1][tmpV2] = []
+                    bank[tmpV1][tmpV2] = []
     store = True
     Np = Np + 1
     # Stop if we hit break condition
