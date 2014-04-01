@@ -269,7 +269,7 @@ wipJob.set_stderr_file('wip/logs/ihope-page-$(cluster)-$(process).err')
 wipJob.set_stdout_file('wip/logs/ihope-page-$(cluster)-$(process).out')
 wipJob.set_sub_file('write_ihope_page.sub')
 wipJob.add_condor_cmd('getenv', 'True')
-wipJob.add_opt('config-file', 'wip.ini')
+wipJob.add_opt('config-file', os.path.join(currDir, 'wip.ini'))
 wipJob.add_opt('open-the-box', '')
 wipJob.add_opt('skip-followup', '')
 
