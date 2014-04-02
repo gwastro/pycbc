@@ -22,6 +22,7 @@ parser.add_option('--size',type=float, help='FFT size')
 parser.add_option('--iterations', type=int, help='Number of iterations to perform')
 parser.add_option('--measure-level', type=int, help='Set the measure level (only applies to FFTW- cpu scheme)', default=1)
 parser.add_option('--backend', type=str, help='set the backend type for this scheme')
+parser.add_option('--num-threads', type=int, help='set the number of threads to use', default=1)
          
           
 (options, args) = parser.parse_args()   
@@ -35,16 +36,15 @@ if _options['scheme'] == 'cpu':
         from pycbc.fft.lalfft import set_measure_level
         set_measure_level(options.measure_level)
     if options.backend == 'fftw':
-        from pycbc.fft.fftw import set_measure_level
+        from pycbc.fft.fftw import set_measure_level, use_nthreads
+        use_nthreads(options.num_threads)
         set_measure_level(options.measure_level)       
 if _options['scheme'] == 'cuda':
     ctx = CUDAScheme(device_num=_options['devicenum'])
 if _options['scheme'] == 'opencl':
     ctx = OpenCLScheme(device_num=_options['devicenum'])
 
-
 niter = options.iterations
-
 
 if type(ctx) is CUDAScheme:
     print "RUNNING ON ", ctx.device.name()
@@ -54,44 +54,22 @@ print type(ctx)
 
 N = 2**options.size
 
-vecin = zeros(N, dtype=complex64) + 1
-vecout = vecin * 1
+vecin = zeros(N, dtype=complex64)
+vecout = zeros(N, dtype=complex64)
+print "ALIGNMENT:", vecin.data.isaligned
 
-vecdin = zeros(N, dtype=complex128) + 1
-vecdout = vecdin * 1
-
+print "Making the plan"
 with ctx:
-#    fft(vecin, vecout, backend=options.backend)
     ifft(vecin, vecout, backend=options.backend)
-#    ifft(vecdin, vecdout, backend=options.backend)
+print "Planning done"
 
-def tfft():
-    with ctx:
-	for i in range(0, niter):
-	    fft(vecin, vecout, backend=options.backend)
-        b = vecout[9]
 def tifft():
     with ctx:
-	for i in range(0, niter):
-	    ifft(vecin, vecout, backend=options.backend)
-        b = vecout[9]
-
-def dtifft():
-    with ctx:
-        for i in range(0, niter):
-            ifft(vecdin, vecdout, backend=options.backend)
-        b = vecout[9]
+	    for i in range(0, niter):
+	        ifft(vecin, vecout, backend=options.backend)
+	    sync = vecout[0]
 
 import timeit
-#gt = timeit.Timer(tfft)
-#t = (1000 * gt.timeit(number=1)/niter)
-#print "C2C FFT %.2f msec" % t, " %5.1f /min " % (1000 *60 /t)
-
 gt = timeit.Timer(tifft)
 t = (1000 * gt.timeit(number=1)/niter)
 print "C2C iFFT %.2f msec" % t, " %5.1f /min " % (1000 *60 /t)
-
-#gt = timeit.Timer(dtifft)
-#t = (1000 * gt.timeit(number=1)/niter)
-#print "C2C DOUBLE iFFT %.2f msec" % t, " %5.1f /min " % (1000 *60 /t)
-
