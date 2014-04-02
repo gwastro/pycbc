@@ -454,5 +454,5 @@ def overlap_cplx(vec1, vec2, psd=None, low_frequency_cutoff=None,
 
 __all__ = ['match', 'matched_filter', 'sigmasq', 'sigma',
            'sigmasq_series', 'make_frequency_series', 'overlap', 'overlap_cplx',
-           'matched_filter_core']
+           'matched_filter_core', 'correlate']
 
