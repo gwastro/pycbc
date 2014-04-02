@@ -24,6 +24,12 @@
 import numpy
 from scipy.weave import inline
 
+support = """
+    #include <stdio.h>
+    #include <omp.h>
+    #include <math.h>
+"""
+
 def correlate_numpy(x, y, z):
     z.data[:] = numpy.conjugate(x.data)[:]
     z *= y
@@ -34,14 +40,19 @@ def correlate_inline(x, y, z):
     ya = numpy.array(y.data, copy=False)
     N = len(x)
     code = """
-        float re, im;
+        #pragma omp parallel for
         for (int i=0; i<N; i++){
+            float re, im;
             re = xa[i].real() * ya[i].real() + xa[i].imag() * ya[i].imag();
             im = xa[i].real() * ya[i].imag() - xa[i].imag() * ya[i].real();
             za[i] = std::complex<float>(re, im);
         }
     """
-    inline(code, ['xa', 'ya', 'za', 'N'])
+    inline(code, ['xa', 'ya', 'za', 'N'], 
+           extra_compile_args=['-march=native  -O3  -fopenmp' ],
+           support_code = support,
+           libraries=['gomp']
+          )
     
 correlate = correlate_inline
     
