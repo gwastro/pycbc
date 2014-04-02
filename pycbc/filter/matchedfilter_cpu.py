@@ -42,14 +42,20 @@ def correlate_inline(x, y, z):
     code = """
         #pragma omp parallel for
         for (int i=0; i<N; i++){
-            float re, im;
-            re = xa[i].real() * ya[i].real() + xa[i].imag() * ya[i].imag();
-            im = xa[i].real() * ya[i].imag() - xa[i].imag() * ya[i].real();
+            float xr, yr, xi, yi, re, im;
+            xr = xa[i].real();
+            xi = xa[i].imag();
+            yr = ya[i].real();       
+            yi = ya[i].imag();
+            
+            re = xr*yr + xi*yi;
+            im = xr*yi - xi*yr;
+            
             za[i] = std::complex<float>(re, im);
         }
     """
     inline(code, ['xa', 'ya', 'za', 'N'], 
-           extra_compile_args=['-march=native  -O3  -fopenmp' ],
+           extra_compile_args=['-march=native  -O3  -fopenmp'],
            support_code = support,
            libraries=['gomp']
           )

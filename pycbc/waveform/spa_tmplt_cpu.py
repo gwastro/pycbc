@@ -19,6 +19,14 @@ import numpy
 import lal
 from pycbc.types import Array, float32, FrequencySeries
 from pycbc.waveform.spa_tmplt import spa_tmplt_precondition
+from scipy.weave import inline
+
+support = """
+    #include <stdio.h>
+    #include <omp.h>
+    #include <math.h>
+    #define LAL_PI_4 3.141592653/4
+"""
 
 # Precompute cbrt(f) ###########################################################
 
@@ -53,9 +61,6 @@ def get_log(vmax, delta):
 def sin_cos_lookup():
     vec = numpy.arange(0, lal.LAL_TWOPI*3, lal.LAL_TWOPI/10000)
     return Array(numpy.sin(vec)).astype(float32)
-    
-#_sin_cosf = sin_cos_lookup()
-#_sin_cos = _sin_cosf[10000:20000]
 sin_cos = Array([], dtype=float32)
 
 def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN, 
@@ -64,12 +69,63 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
     """ Calculate the spa tmplt phase 
     """
     kfac = spa_tmplt_precondition(len(htilde), delta_f, kmin)
+    htilde = numpy.array(htilde.data, copy=False)
+    cbrt_vec = numpy.array(get_cbrt(len(htilde)*delta_f + kmin, delta_f).data, copy=False)
+    logv_vec = numpy.array(get_log(len(htilde)*delta_f + kmin, delta_f).data, copy=False)
+    length = len(htilde)
+    code = """ 
+    float piM13 = cbrtf(piM);
+    float logpiM13 = log(piM13);
+    float logv0 = log(v0);
+    float log4 = log(4.);
     
-    cbrt_vec = get_cbrt(len(htilde)*delta_f + kmin, delta_f)
-    logv_vec = get_log(len(htilde)*delta_f + kmin, delta_f)
-    
-    spa_engine(htilde, sin_cos, cbrt_vec, logv_vec, kmin,  phase_order, piM,  pfaN, 
-                    pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, v0)
+    #pragma omp parallel for
+    for (unsigned int i=0; i<length; i++){
+        int index = i + kmin;
+        const float v =  piM13 * cbrt_vec[index];
+        const float logv = logv_vec[index] * 1.0/3.0 + logpiM13;
+        const float v5 = v * v * v * v * v;
+        float phasing = 0;
+
+        switch (phase_order)
+        {
+            case -1:
+            case 7:
+                phasing = pfa7 * v;
+            case 6:
+                phasing = (phasing + pfa6 + pfl6 * (logv + log4) ) * v;
+            case 5:
+                phasing = (phasing + pfa5 + pfl5 * (logv - logv0) ) * v;
+            case 4:
+                phasing = (phasing + pfa4) * v;
+            case 3:
+                phasing = (phasing + pfa3) * v;
+            case 2:
+                phasing = (phasing + pfa2) * v * v;
+            case 0:
+                phasing += 1.;
+                break;
+            default:
+                break;
+        }
+
+        phasing *= pfaN / v5;
+        phasing -= LAL_PI_4;
+        htilde[i] = std::complex<float>(cos(phasing), - sin(phasing));
+    }
+    """
+    inline(code, ['htilde', 'cbrt_vec', 'logv_vec', 'kmin', 'phase_order', 
+                   'piM',  'pfaN', 
+                   'pfa2',  'pfa3',  'pfa4',  'pfa5',  'pfl5',
+                   'pfa6',  'pfl6',  'pfa7', 'v0', 'length'],
+                    extra_compile_args=['-march=native  -O3  -fopenmp'],
+                    support_code = support,
+                    libraries=['gomp']
+                )
     htilde *= amp_factor
-    htilde *= kfac
+    htilde *= kfac.data
+    
+    
+    
+    
+
