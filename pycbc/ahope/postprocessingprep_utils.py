@@ -37,7 +37,7 @@ from glue import segments
 from pycbc.ahope.ahope_utils import *
 from pycbc.ahope.jobsetup_utils import *
 
-def setup_postprocessing_preperation(workflow, triggerFiles, output_dir,
+def setup_postprocessing_preparation(workflow, triggerFiles, output_dir,
                                      tags=[], **kwargs):
     """
     This function aims to be the gateway for preparing the output of the
@@ -66,7 +66,7 @@ def setup_postprocessing_preperation(workflow, triggerFiles, output_dir,
     postProcPreppedFiles : ahope.AhopeFileList
         A list of files that can be used as input for the post-processing stage.
     """
-    logging.info("Entering post-processing preperation stage.")
+    logging.info("Entering post-processing preparation stage.")
     make_analysis_dir(output_dir)
 
     # Parse for options in .ini file
@@ -83,11 +83,11 @@ def setup_postprocessing_preperation(workflow, triggerFiles, output_dir,
                            triggerFiles, output_dir,
                            tags=tags, **kwargs) 
     else:
-        errMsg = "Post-processing preperation method not recognized. Must be "
+        errMsg = "Post-processing preparation method not recognized. Must be "
         errMsg += "one of PIPEDOWN_AHOPE (currently only one option)."
         raise ValueError(errMsg)
 
-    logging.info("Leaving post-processing preperation module.")
+    logging.info("Leaving post-processing preparation module.")
 
     return postPostPreppedFiles
 
@@ -121,7 +121,7 @@ def setup_postprocprep_pipedown_ahope(workflow, coincFiles, output_dir,
         Ie. the primary search results.
     injectionTags : list of strings (optional, default = [])
         Each injection file has a unique tag. If used in the method, this
-        tells the post-processing preperation code which injection tags it
+        tells the post-processing preparation code which injection tags it
         should include when creating the combined output.
     vetoCats : list of integers (optional, default = [])
         Decide which set of veto files should be used in the post-processing

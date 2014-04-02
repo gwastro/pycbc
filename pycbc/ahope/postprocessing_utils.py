@@ -64,7 +64,7 @@ def setup_postprocessing(workflow, triggerFiles, output_dir, tags=[], **kwargs):
         A list of the output from this stage.
 
     """
-    logging.info("Entering post-processing preperation stage.")
+    logging.info("Entering post-processing preparation stage.")
     make_analysis_dir(output_dir)
 
     # Parse for options in .ini file

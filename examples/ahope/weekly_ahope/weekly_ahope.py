@@ -120,7 +120,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
 # FIXME: Don't like having to list this here!
 ppVetoCats = [2,3,4] 
 
-postProcPrepFiles = ahope.setup_postprocessing_preperation(workflow,
+postProcPrepFiles = ahope.setup_postprocessing_preparation(workflow,
                       all_coincs, ppDir, injectionFiles=inj_files,
                       injectionTags=inj_tags, injLessTag='full_data',
                       vetoFiles=segsFileList, vetoCats=ppVetoCats)
