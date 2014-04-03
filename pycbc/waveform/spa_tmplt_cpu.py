@@ -25,7 +25,6 @@ support = """
     #include <stdio.h>
     #include <omp.h>
     #include <math.h>
-    #define LAL_PI_4 3.141592653/4
 """
 
 # Precompute cbrt(f) ###########################################################
@@ -89,6 +88,8 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
     const float _pfl6=pfl6;
     const float _pfa7=pfa7;
     const float ampc = amp_factor;
+    const float two_pi = 2 * M_PI;
+    const float inv_two_pi = 1 / (2 * M_PI);
     
     #pragma omp parallel for
     for (unsigned int i=0; i<length; i++){
@@ -97,9 +98,10 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
         const float logv = logv_vec[index] * 1.0/3.0 + logpiM13;
         const float v5 = v * v * v * v * v;
         float phasing = 0;
+        float sinp, cosp;
 
         switch (phase_order)
-        {
+        {   
             case -1:
             case 7:
                 phasing = pfa7 * v;
@@ -121,15 +123,69 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
         }
         float amp = ampc * kfac[i];
         phasing *= _pfaN / v5;
-        phasing -= LAL_PI_4;
-        htilde[i] = std::complex<float>(cos(phasing), - sin(phasing)) * amp;
+        phasing -= M_PI_4;
+        
+        phasing = phasing - int(phasing  * inv_two_pi) * two_pi;    
+        if (phasing < -M_PI)
+            phasing += two_pi;
+        else if (phasing > M_PI)
+            phasing -= two_pi;
+        
+        // compute sine
+        if (phasing < 0)
+        {
+            sinp = 1.27323954 * phasing + .405284735 * phasing * phasing;
+            
+            if (sinp < 0)
+                sinp = .225 * (sinp *-sinp - sinp) + sinp;
+            else
+                sinp = .225 * (sinp * sinp - sinp) + sinp;
+        }
+        else
+        {
+            sinp = 1.27323954 * phasing - 0.405284735 * phasing * phasing;          
+            if (sinp < 0)
+                sinp = .225 * (sinp *-sinp - sinp) + sinp;
+            else
+                sinp = .225 * (sinp * sinp - sinp) + sinp;
+        }
+        
+        
+        //compute cosine
+        
+        phasing += M_PI_2;
+        if (phasing >  M_PI)
+            phasing -= two_pi;
+        if (phasing < 0)
+        {
+            cosp = 1.27323954 * phasing + .405284735 * phasing * phasing;
+                     
+            if (cosp < 0)
+                cosp = .225 * (cosp *-cosp - cosp) + cosp;
+            else
+                cosp = .225 * (cosp * cosp - cosp) + cosp;
+        }
+        else
+        {
+            cosp = 1.27323954 * phasing - 0.405284735 * phasing * phasing;          
+            if (cosp < 0)
+                cosp = .225 * (cosp *-cosp - cosp) + cosp;
+            else
+                cosp = .225 * (cosp * cosp - cosp) + cosp;
+        }
+           
+            
+        
+        //printf("%f %f %f \\n", sinp, sin(phasing), phasing);
+        
+        htilde[i] = std::complex<float>(cosp, - sinp) * amp;
     }
     """
     inline(code, ['htilde', 'cbrt_vec', 'logv_vec', 'kmin', 'phase_order', 
                    'piM',  'pfaN', 'amp_factor', 'kfac',
                    'pfa2',  'pfa3',  'pfa4',  'pfa5',  'pfl5',
                    'pfa6',  'pfl6',  'pfa7', 'v0', 'length'],
-                    extra_compile_args=['-march=native  -O3  -fopenmp'],
+                    extra_compile_args=['-march=native -O3 -fopenmp'],
                     support_code = support,
                     libraries=['gomp']
                 )
