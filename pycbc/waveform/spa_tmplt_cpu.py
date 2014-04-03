@@ -73,6 +73,7 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
     cbrt_vec = numpy.array(get_cbrt(len(htilde)*delta_f + kmin, delta_f).data, copy=False)
     logv_vec = numpy.array(get_log(len(htilde)*delta_f + kmin, delta_f).data, copy=False)
     length = len(htilde)
+    
     code = """ 
     float piM13 = cbrtf(piM);
     float logpiM13 = log(piM13);
@@ -86,6 +87,16 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
         const float logv = logv_vec[index] * 1.0/3.0 + logpiM13;
         const float v5 = v * v * v * v * v;
         float phasing = 0;
+        
+        const float _pfaN=pfaN;
+        const float _pfa2=pfa2;
+        const float _pfa3=pfa3;
+        const float _pfa4=pfa4;
+        const float _pfa5=pfa5;
+        const float _pfl5=pfl5;
+        const float _pfa6=pfa6;
+        const float _pfl6=pfl6;
+        const float _pfa7=pfa7;
 
         switch (phase_order)
         {
@@ -93,15 +104,15 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
             case 7:
                 phasing = pfa7 * v;
             case 6:
-                phasing = (phasing + pfa6 + pfl6 * (logv + log4) ) * v;
+                phasing = (phasing + _pfa6 + _pfl6 * (logv + log4) ) * v;
             case 5:
-                phasing = (phasing + pfa5 + pfl5 * (logv - logv0) ) * v;
+                phasing = (phasing + _pfa5 + _pfl5 * (logv - logv0) ) * v;
             case 4:
-                phasing = (phasing + pfa4) * v;
+                phasing = (phasing + _pfa4) * v;
             case 3:
-                phasing = (phasing + pfa3) * v;
+                phasing = (phasing + _pfa3) * v;
             case 2:
-                phasing = (phasing + pfa2) * v * v;
+                phasing = (phasing + _pfa2) * v * v;
             case 0:
                 phasing += 1.;
                 break;
@@ -109,7 +120,7 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
                 break;
         }
 
-        phasing *= pfaN / v5;
+        phasing *= _pfaN / v5;
         phasing -= LAL_PI_4;
         htilde[i] = std::complex<float>(cos(phasing), - sin(phasing));
     }
@@ -121,7 +132,7 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
                     extra_compile_args=['-march=native  -O3  -fopenmp'],
                     support_code = support,
                     libraries=['gomp']
-                )
+                )  
     htilde *= amp_factor
     htilde *= kfac.data
     
