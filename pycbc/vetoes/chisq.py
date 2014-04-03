@@ -137,7 +137,7 @@ def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
         
     return (chisq * num_bins - snr.squared_norm()) * (snr_norm ** 2.0)
     
-def power_chisq_from_precomputed(corr, snr, snr_norm, bins):
+def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None):
     """Calculate the chisq timeseries from precomputed values
     
     This function calculates the chisq at all times by performing an 
@@ -154,6 +154,9 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins):
         The snr normalization factor. (true snr = snr * snr_norm)
     bins: List of integers
         The edges of the chisq bins.   
+    indices: {Array, None}, optional
+        Index values into snr that indicate where to calculate
+        chisq values. If none, calculate chisq for all possible indices.
     
     Returns
     -------
@@ -161,9 +164,12 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins):
     """      
     q = zeros(len(snr), dtype=complex_same_precision_as(snr))
     qtilde = zeros(len(snr), dtype=complex_same_precision_as(snr))
-    chisq = TimeSeries(zeros(len(snr), dtype=real_same_precision_as(snr)), 
-                       delta_t=snr.delta_t, epoch=snr.start_time, copy=False)
-    
+
+    if indices is not None:
+        snr = snr.take(indices)
+        
+    chisq = zeros(len(snr), dtype=real_same_precision_as(snr))
+                   
     chisq_norm = snr_norm ** 2.0
     num_bins = len(bins) - 1
     
@@ -174,9 +180,18 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins):
         qtilde[k_min:k_max] = corr[k_min:k_max]
         pycbc.fft.ifft(qtilde, q) 
         qtilde[k_min:k_max].clear()
-        chisq_accum_bin(chisq, q)
         
-    return (chisq * num_bins - snr.squared_norm()) * chisq_norm
+        if indices is not None:
+            chisq_accum_bin(chisq, q.take(indices))
+        else:
+            chisq_accum_bin(chisq, q)
+    
+    chisq = (chisq * num_bins - snr.squared_norm()) * chisq_norm
+    
+    if indices is not None:
+        return chisq
+    else:
+        return TimeSeries(chisq, delta_t=snr.delta_t, epoch=snr.start_time, copy=False)
     
 def fastest_power_chisq_at_points(corr, snr, snr_norm, bins, indices):
     """Calculate the chisq values for only select points.
@@ -222,7 +237,7 @@ def fastest_power_chisq_at_points(corr, snr, snr_norm, bins, indices):
         return power_chisq_at_points_from_precomputed(corr, snr.take(indices), snr_norm, bins, indices)
     else:
         # We have a lot of points so it is faster to use the fourier transform
-        return power_chisq_from_precomputed(corr, snr, snr_norm, bins).take(indices)    
+        return power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=indices)
 
 def power_chisq(template, data, num_bins, psd, low_frequency_cutoff=None, high_frequency_cutoff=None):
     """Calculate the chisq timeseries 

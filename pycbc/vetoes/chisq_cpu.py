@@ -55,14 +55,14 @@ def shift_sum(v1, shifts, slen=None, offset=0):
     code = """
         
         float t1, t2, k1, k2, k3, vs, va;
+        
         for (int j=0; j<vlen; j++){
             std::complex<float> v = v1[j];
             float vr = v.real();
             float vi = v.imag();  
             vs = vr + vi;
             va = vi - vr;
-        
-   
+            
             for (int i=0; i<n; i++){
                 t1 = pr[i];
                 t2 = pi[i];
@@ -96,5 +96,7 @@ def shift_sum(v1, shifts, slen=None, offset=0):
     p = numpy.exp(numpy.pi * 2j *  offset * shifts / slen)
     pi = numpy.zeros(n, dtype=numpy.float32) + p.imag
     pr = numpy.zeros(n, dtype=numpy.float32) + p.real
-    inline(code, ['v1', 'n', 'vlen', 'pr', 'pi', 'outi', 'outr', 'vsr', 'vsi'] )
+    inline(code, ['v1', 'n', 'vlen', 'pr', 'pi', 'outi', 'outr', 'vsr', 'vsi'],
+                       extra_compile_args=['-march=native -O3 -fopenmp'],
+                    libraries=['gomp'] )
     return  Array(outr + 1.0j * outi, dtype=numpy.complex64)
