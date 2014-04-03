@@ -68,7 +68,7 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
                     pfa6,  pfl6,  pfa7, v0, amp_factor):
     """ Calculate the spa tmplt phase 
     """
-    kfac = spa_tmplt_precondition(len(htilde), delta_f, kmin)
+    kfac = numpy.array(spa_tmplt_precondition(len(htilde), delta_f, kmin).data, copy=False)
     htilde = numpy.array(htilde.data, copy=False)
     cbrt_vec = numpy.array(get_cbrt(len(htilde)*delta_f + kmin, delta_f).data, copy=False)
     logv_vec = numpy.array(get_log(len(htilde)*delta_f + kmin, delta_f).data, copy=False)
@@ -79,6 +79,16 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
     float logpiM13 = log(piM13);
     float logv0 = log(v0);
     float log4 = log(4.);
+    const float _pfaN=pfaN;
+    const float _pfa2=pfa2;
+    const float _pfa3=pfa3;
+    const float _pfa4=pfa4;
+    const float _pfa5=pfa5;
+    const float _pfl5=pfl5;
+    const float _pfa6=pfa6;
+    const float _pfl6=pfl6;
+    const float _pfa7=pfa7;
+    const float ampc = amp_factor;
     
     #pragma omp parallel for
     for (unsigned int i=0; i<length; i++){
@@ -87,16 +97,6 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
         const float logv = logv_vec[index] * 1.0/3.0 + logpiM13;
         const float v5 = v * v * v * v * v;
         float phasing = 0;
-        
-        const float _pfaN=pfaN;
-        const float _pfa2=pfa2;
-        const float _pfa3=pfa3;
-        const float _pfa4=pfa4;
-        const float _pfa5=pfa5;
-        const float _pfl5=pfl5;
-        const float _pfa6=pfa6;
-        const float _pfl6=pfl6;
-        const float _pfa7=pfa7;
 
         switch (phase_order)
         {
@@ -119,24 +119,17 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
             default:
                 break;
         }
-
+        float amp = ampc * kfac[i];
         phasing *= _pfaN / v5;
         phasing -= LAL_PI_4;
-        htilde[i] = std::complex<float>(cos(phasing), - sin(phasing));
+        htilde[i] = std::complex<float>(cos(phasing), - sin(phasing)) * amp;
     }
     """
     inline(code, ['htilde', 'cbrt_vec', 'logv_vec', 'kmin', 'phase_order', 
-                   'piM',  'pfaN', 
+                   'piM',  'pfaN', 'amp_factor', 'kfac',
                    'pfa2',  'pfa3',  'pfa4',  'pfa5',  'pfl5',
                    'pfa6',  'pfl6',  'pfa7', 'v0', 'length'],
                     extra_compile_args=['-march=native  -O3  -fopenmp'],
                     support_code = support,
                     libraries=['gomp']
-                )  
-    htilde *= amp_factor
-    htilde *= kfac.data
-    
-    
-    
-    
-
+                )
