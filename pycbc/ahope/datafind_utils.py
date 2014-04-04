@@ -488,7 +488,10 @@ def setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
             # like every other code!?
             ifo = frame.description[0:2]
             if ifo[0] != frame.observatory:
-                raise ValueError("Cannot determine ifo of frame.")
+                # HACK TO USE V1 S6 FRAMES
+                # BECAUSE THE FRAME-TYPE DOES NOT START WITH "V1_"
+                ifo = "V1"
+                # raise ValueError("Cannot determine ifo of frame.")
             currFile = AhopeFile(ifo, frame.description,
                                  frame.segment, file_url=frame.url)
             datafindouts.append(currFile)
@@ -549,7 +552,10 @@ def setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
             # like every other code!?
             ifo = frame.description[0:2]
             if ifo[0] != frame.observatory:
-                raise ValueError("Cannot determine ifo of frame.")
+                # HACK TO USE V1 S6 FRAMES
+                # BECAUSE THE FRAME-TYPE DOES NOT START WITH "V1_"
+                ifo = "V1"
+                # raise ValueError("Cannot determine ifo of frame.")
             currFile = AhopeFile(ifo, frame.description, frame.segment,
                                  file_url=frame.url)
             datafindouts.append(currFile)
