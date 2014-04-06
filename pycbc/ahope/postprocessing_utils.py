@@ -164,6 +164,7 @@ def setup_postproc_pipedown_ahope(workflow, triggerFiles, output_dir, tags=[],
                          workflow.ifoString, out_dir=output_dir, tags=currTags)
         cfarNode = cfarJob.create_node(workflow.analysis_time,
                                        computeDurationsOut)
+        workflow.add_node(cfarNode)
 
         # Node has only one output file
         cfarOut = cfarNode.output_files[0]

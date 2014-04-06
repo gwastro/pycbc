@@ -242,12 +242,12 @@ class LegacySplitBankJob(Job):
         # whose path contains the character '-' or if the input file is not in
         # the same directory as the output. Therefore we just set the path to
         # be the local path
-        fullPath = bank.cache_entries[0].path
-        bank.cache_entries[0].path = os.path.basename(fullPath)
+        fullPath = bank.cache_entry.path
+        bank.cache_entry.path = os.path.basename(fullPath)
         node.add_input(bank, opt='bank-file')
         # FIXME: Set the path back to what it was. This is part of the hack
         #        above and should be removed if possible.
-        bank.cache_entries[0].path = fullPath
+        bank.cache_entry.path = fullPath
         
         # Get the output (taken from inspiral.py)
         url_list = []

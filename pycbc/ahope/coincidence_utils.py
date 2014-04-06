@@ -288,10 +288,8 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile,
         # Assume that if we have partitioned input then if *one* job in the
         # partitioned input is an input then *all* jobs will be.
         inputTrigFiles = AhopeFileList([])
-        for file in inspiral_outs:
-            currCache = file.cache_entries[0]
-            if currCache in cafe_cache.objects:
-                inputTrigFiles.append(file)
+        for object in cafe_cache.objects:
+            inputTrigFiles.append(object.ahope_file)
  
         llw_files = inputTrigFiles + dqSegFile + [tisiOutFile]
         # Now we can create the nodes

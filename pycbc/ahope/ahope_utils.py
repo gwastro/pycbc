@@ -830,20 +830,17 @@ class AhopeFile(object):
             file_url = urlparse.urlunparse(['file', 'localhost', path, None,
                                             None, None])
        
-        if not isinstance(file_url, list):
-            file_url = [file_url]
-       
-        self.cache_entries = []
-        for url in file_url:
-            cache_entry = lal.CacheEntry(self.ifoString,
-                       self.tagged_description, self.segList.extent(), url)
-            self.cache_entries.append(cache_entry)   
+        cache_entry = lal.CacheEntry(self.ifoString,
+                   self.tagged_description, self.segList.extent(), file_url)
+        # Make a cyclical reference
+        cache_entry.ahope_file = self
+        self.cache_entry = cache_entry
         # This gets set if this becomes an input file in the workflow
         self.is_workflow_input = False
     
     @property
     def url(self):
-        return self.cache_entries[0].url
+        return self.cache_entry.url
        
     @property
     def path(self):
@@ -851,7 +848,7 @@ class AhopeFile(object):
         If only one file is contained in this instance this will be that path.
         Otherwise a TypeError is raised.
         """
-        return self.cache_entries[0].path
+        return self.cache_entry.path
 
     @property
     def ifo(self):
@@ -885,7 +882,7 @@ class AhopeFile(object):
         If only one file is contained in this instance this will be that
         file's name. Otherwise a TypeError is raised.
         """
-        return basename(self.cache_entries[0].path)
+        return basename(self.cache_entry.path)
         
     def _filename(self, ifo, description, extension, segment):
         """
@@ -1125,7 +1122,7 @@ class AhopeFileList(list):
         """
         lalCache = lal.Cache([])
         for entry in self:
-            lalCache.extend(entry.cache_entries)
+            lalCache.append(entry.cache_entry)
         return lalCache
 
 
