@@ -81,14 +81,11 @@ logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 ctx = scheme.from_cli(opt)
 gwstrain = strain.from_cli(opt)
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
-fft_opt_dict = fft.from_cli(opt)
+fft.from_cli(opt)
 
-if "input_float_wisdom_file" in fft_opt_dict.keys():
-    fft.fftw.import_single_wisdom_from_filename(fft_opt_dict["input_float_wisdom_file"])
+if opt.fftw_input_float_wisdom_file is not None:
+    fft.fftw.import_single_wisdom_from_filename(opt.fftw_input_float_wisdom_file)
 
-if "input_double_wisdom_file" in fft_opt_dict.keys():
-    fft.fftw.import_double_wisdom_from_filename(fft_opt_dict["input_double_wisdom_file"])
-                      
 flow = opt.low_frequency_cutoff                                                               
 flen = strain_segments.freq_len
 tlen = strain_segments.time_len
