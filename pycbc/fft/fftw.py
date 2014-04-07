@@ -338,19 +338,10 @@ def verify_fft_options(opt,parser):
 def from_cli(opt):
     # If we specified a threading backend on the command line, we should set
     # that first.
-    set_threads_backend(opt.fftw_threads_backend)
+    if opt.fftw_threads_backend is not None:
+        set_threads_backend(opt.fftw_threads_backend)
+    # Import system wisdom.  Should really add error checking and logging to that...
+    import_sys_wisdom()
     set_measure_level(opt.fftw_measure_level)
     if (opt.fftw_use_nthreads > 1):
         use_nthreads(opt.fftw_use_nthreads)
-    # We don't go ahead and import/export wisdom, because that depends on 
-    # plan creation.  Instead just return those in the kwd returns
-    kwdrets = {}
-    if opt.fftw_input_float_wisdom_file is not None:
-        kwdrets.update({"input_float_wisdom_file":opt.fftw_input_float_wisdom_file})
-    if opt.fftw_input_double_wisdom_file is not None:
-        kwdrets.update({"input_double_wisdom_file":opt.fftw_input_double_wisdom_file})
-    if opt.fftw_output_float_wisdom_file is not None:
-        kwdrets.update({"output_float_wisdom_file":opt.fftw_output_float_wisdom_file})
-    if opt.fftw_output_double_wisdom_file is not None:
-        kwdrets.update({"output_double_wisdom_file":opt.fftw_output_double_wisdom_file})
-    return kwdrets
