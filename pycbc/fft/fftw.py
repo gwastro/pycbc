@@ -53,18 +53,23 @@ def get_nthreads():
 
 _fftw_threaded_lib = None
 _fftw_threaded_set = False
+_double_threaded_lib = None
+_float_threaded_lib = None
 
 HAVE_FFTW_THREADED = False
 def set_threads_backend(backend):
     global _fftw_threaded_set
     global _fftw_threaded_lib
+    global HAVE_FFTW_THREADED
+    global _double_threaded_lib
+    global _float_threaded_lib
     if _fftw_threaded_set:
         raise RuntimeError(
             "Threading backend for FFTW already set to {0}; cannot be changed".format(_fftw_threaded_lib))
     if backend == 'pthreads':
         try:
-            double_threaded_lib = ctypes.CDLL('libfftw3_threads.so',mode=ctypes.RTLD_GLOBAL)
-            float_threaded_lib = ctypes.CDLL('libfftw3f_threads.so',mode=ctypes.RTLD_GLOBAL)
+            _double_threaded_lib = ctypes.CDLL('libfftw3_threads.so',mode=ctypes.RTLD_GLOBAL)
+            _float_threaded_lib = ctypes.CDLL('libfftw3f_threads.so',mode=ctypes.RTLD_GLOBAL)
             HAVE_FFTW_THREADED = True
             _fftw_threaded_lib = 'pthreads'
             _fftw_threaded_set = True
@@ -72,8 +77,8 @@ def set_threads_backend(backend):
             raise RuntimeError("Could not load 'pthreads' backend")
     elif backend == 'openmp':
         try:
-            double_threaded_lib = ctypes.CDLL('libfftw3_omp.so',mode=ctypes.RTLD_GLOBAL)
-            float_threaded_lib = ctypes.CDLL('libfftw3f_omp.so',mode=ctypes.RTLD_GLOBAL)
+            _double_threaded_lib = ctypes.CDLL('libfftw3_omp.so',mode=ctypes.RTLD_GLOBAL)
+            _float_threaded_lib = ctypes.CDLL('libfftw3f_omp.so',mode=ctypes.RTLD_GLOBAL)
             HAVE_FFTW_THREADED = True
             _fftw_threaded_lib = 'openmp'
             _fftw_threaded_set = True
@@ -88,33 +93,33 @@ def set_threads_backend(backend):
         raise ValueError("Invalid input to set_threads_backend(): must be 'pthreads' or 'openmp'")
     # Call each of these exactly once, before anything else...
     if backend != 'unthreaded':
-        dret = double_threaded_lib.fftw_init_threads()
-        fret = float_threaded_lib.fftwf_init_threads()
+        dret = _double_threaded_lib.fftw_init_threads()
+        fret = _float_threaded_lib.fftwf_init_threads()
         # FFTW for some reason uses *0* to indicate failure.  In C.
         if (dret == 0) or (fret == 0):
             raise RuntimeError("Threaded FFTW found and loaded, but could not initialize")
 
-if HAVE_FFTW_THREADED:
+def use_nthreads(nthreads):
+    global _fftw_nthreads
+    if HAVE_FFTW_THREADED:
     # Now a function to use a given number of threads
-    def use_nthreads(nthreads):
         """
         Set the current number of threads used in FFTW planning/
         execution.  Must be an non-negative integer.
         """
-        global _fftw_nthreads
         if not (isinstance(nthreads,int) and (nthreads>0)):
             raise ValueError("nthreads must be nonegative integer")
         _fftw_nthreads = nthreads
 
-        dplanwthr = double_threaded_lib.fftw_plan_with_nthreads
-        fplanwthr = float_threaded_lib.fftwf_plan_with_nthreads
+        dplanwthr = _double_threaded_lib.fftw_plan_with_nthreads
+        fplanwthr = _float_threaded_lib.fftwf_plan_with_nthreads
         dplanwthr.restype = None
         fplanwthr.restype = None
         dplanwthr(nthreads)
         fplanwthr(nthreads)
-
-    # We need to initialize to something valid
-    use_nthreads(1)
+    else:
+        if not (isinstance(nthreads,int) or (nthreads>0)):
+            raise ValueError("Cannot specify non-zero nthreads without loading a threading backend")
 
 # Function to import system-wide wisdom files.
 
