@@ -136,7 +136,10 @@ def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
         chisq_accum_bin(chisq, qi)
         
     return (chisq * num_bins - snr.squared_norm()) * (snr_norm ** 2.0)
-    
+ 
+_q_l = None
+_qtilde_l = None
+_chisq_l = None  
 def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None):
     """Calculate the chisq timeseries from precomputed values
     
@@ -162,13 +165,26 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None):
     -------
     chisq: TimeSeries
     """      
-    q = zeros(len(snr), dtype=complex_same_precision_as(snr))
-    qtilde = zeros(len(snr), dtype=complex_same_precision_as(snr))
+    # Get workspace memory
+    global _q_l, _qtilde_l, _chisq_l
+    
+    if _q_l is None or len(_q_l) != len(snr):
+        q = zeros(len(snr), dtype=complex_same_precision_as(snr))
+        qtilde = zeros(len(snr), dtype=complex_same_precision_as(snr))
+        _q_l = q
+        _qtilde_l = qtilde
+    else:
+        q = _q_l
+        qtilde = _qtilde_l
 
     if indices is not None:
         snr = snr.take(indices)
-        
-    chisq = zeros(len(snr), dtype=real_same_precision_as(snr))
+     
+    if _chisq_l is None or len(_chisq_l) < len(snr):
+        chisq = zeros(len(snr), dtype=real_same_precision_as(snr))
+        _chisq_l = chisq
+    else:
+        chisq = _chisq_l[0:len(snr)]
                    
     chisq_norm = snr_norm ** 2.0
     num_bins = len(bins) - 1
