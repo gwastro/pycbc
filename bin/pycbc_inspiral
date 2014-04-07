@@ -84,7 +84,10 @@ strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
 fft_opt_dict = fft.from_cli(opt)
 
 if "input_float_wisdom_file" in fft_opt_dict.keys():
-    fft.fftw.import_single_wisdom_from_filename(fft_opt_dict[input_float_wisdom_file])
+    fft.fftw.import_single_wisdom_from_filename(fft_opt_dict["input_float_wisdom_file"])
+
+if "input_double_wisdom_file" in fft_opt_dict.keys():
+    fft.fftw.import_double_wisdom_from_filename(fft_opt_dict["input_double_wisdom_file"])
                       
 flow = opt.low_frequency_cutoff                                                               
 flen = strain_segments.freq_len
@@ -170,4 +173,12 @@ if opt.maximization_interval:
 
 logging.info("Writing out triggers")
 event_mgr.write_events(opt.output)
+
+
+if "output_float_wisdom_file" in fft_opt_dict.keys():
+    fft.fftw.export_single_wisdom_to_filename(fft_opt_dict["output_float_wisdom_file"])
+
+if "output_double_wisdom_file" in fft_opt_dict.keys():
+    fft.fftw.export_double_wisdom_to_filename(fft_opt_dict["output_double_wisdom_file"])
+
 logging.info("Finished")
