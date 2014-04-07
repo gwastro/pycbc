@@ -31,7 +31,7 @@ import numpy as _np
 from pycbc import PYCBC_ALIGNMENT
 
 def check_aligned(ndarr):
-    return ((ndarr.__array_interface__['data'][0] % PYCBC_ALIGNMENT) == 0)
+    return ((ndarr.ctypes.data % PYCBC_ALIGNMENT) == 0)
 
 class ArrayWithAligned(_np.ndarray):
     def __new__(cls, input_array):
