@@ -172,10 +172,10 @@ logging.info("Writing out triggers")
 event_mgr.write_events(opt.output)
 
 
-if "output_float_wisdom_file" in fft_opt_dict.keys():
-    fft.fftw.export_single_wisdom_to_filename(fft_opt_dict["output_float_wisdom_file"])
+if opt.fftw_output_float_wisdom_file:
+    fft.fftw.export_single_wisdom_to_filename(opt.fftw_output_float_wisdom_file)
 
-if "output_double_wisdom_file" in fft_opt_dict.keys():
-    fft.fftw.export_double_wisdom_to_filename(fft_opt_dict["output_double_wisdom_file"])
+if opt.fftw_output_double_wisdom_file:
+    fft.fftw.export_double_wisdom_to_filename(opt.fftw_output_double_wisdom_file)
 
 logging.info("Finished")
