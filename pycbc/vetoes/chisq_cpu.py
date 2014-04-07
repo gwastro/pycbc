@@ -23,12 +23,30 @@
 #
 import numpy
 from pycbc.types import Array
+from scipy.weave import inline
 
-def chisq_accum_bin(chisq, q):
+def chisq_accum_bin_numpy(chisq, q):
     chisq += q.squared_norm()
+    
+def chisq_accum_bin_inline(chisq, q):
+    
+    chisq = numpy.array(chisq.data, copy=False)
+    q = numpy.array(q.data, copy=False)
+    N = len(chisq)
+    code = """
+        #pragma omp parallel for
+        for (int i=0; i<N; i++){
+            chisq[i] += q[i].real()*q[i].real()+q[i].imag()*q[i].imag();
+        }
+    """
+    inline(code, ['chisq', 'q', 'N'], 
+           extra_compile_args=['-march=native  -O3  -fopenmp'],
+           libraries=['gomp']
+          )
+          
+chisq_accum_bin = chisq_accum_bin_inline
 
 def shift_sum(v1, shifts, slen=None, offset=0):
-    from scipy.weave import inline
     v1 = numpy.array(v1.data, copy=False)
     shifts = numpy.array(shifts, dtype=numpy.float32)
     vlen = len(v1)
