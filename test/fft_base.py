@@ -22,7 +22,10 @@
 # =============================================================================
 #
 """
-These are the unit-tests for the pycbc.fft subpackage
+This is a helper module that does most of the work for the unit-tests of the
+pycbc.fft subpackage.  Its class and many private variables are called by
+the three test scripts test_fft_unthreaded, test_fftw_pthreads, and
+test_fftw_openmp.
 
 For both forward and reverse complex FFT, and forward R2C and reverse C2R FFT,
 these tests validate that the FFT produces the correct output and does not
@@ -69,8 +72,6 @@ import sys
 from utils import parse_args_all_schemes, simple_exit
 from lal import LIGOTimeGPS as LTG
 import lal as _lal
-
-_scheme, _context = parse_args_all_schemes("FFT")
 
 # Because we run many similar tests where we only vary dtypes, precisions,
 # or Array/TimeSeries/FrequencySeries, it is helpful to define the following
@@ -412,9 +413,6 @@ class _BaseTestFFTClass(unittest.TestCase):
         # Dictionary to convert a dtype to a relative precision to test
         self.tdict = { float32: 1e-6, float64: 1e-14,
                        complex64: 1e-6, complex128: 1e-14}
-        # Save our scheme and context
-        self.scheme = _scheme
-        self.context = _context
         # Next we set up various lists that are used to build our 'known'
         # test, which are repeated for a variety of different precisions
         # and basic types. All of the lists should be consistent with a
@@ -753,39 +751,3 @@ class _BaseTestFFTClass(unittest.TestCase):
             output_args = {"delta_t": self.delta, "epoch": self.epoch}
             _test_raise_excep_ifft(self,inarr,outexp,output_args)
 
-# Now, factories to create test cases for each available backend.
-# The automation means that the default for each scheme will get created
-# and run twice, once as 'Default' and once under its own name.
-
-# Get our list of backends:
-if _scheme == 'cpu':
-    backends = pycbc.fft.cpu_backends
-elif _scheme == 'cuda':
-    backends = pycbc.fft.cuda_backends
-elif _scheme == 'opencl':
-    backends = pycbc.fft.opencl_backends
-
-FFTTestClasses = []
-for backend in backends:
-    # This creates, for each backend, a new class derived from
-    # both _BaseTestFFTClass and unittest.TestCase, and with
-    # the additional property 'self.backend' set to the value
-    # of backend.  One such class for each backend is appended
-    # to the list
-    kdict = {'backend' : backend}
-    if _scheme == 'cpu' and backend == 'lal':
-        kdict.update({"test_lalfft" : _test_lalfft})
-    klass = type('{0}_{1}_test'.format(_scheme,backend),
-                 (_BaseTestFFTClass,),kdict)
-    FFTTestClasses.append(klass)
-
-# Finally, we create suites and run them
-
-if __name__ == '__main__':
-
-    suite = unittest.TestSuite()
-    for klass in FFTTestClasses:
-        suite.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
-
-    results = unittest.TextTestRunner(verbosity=2).run(suite)
-    simple_exit(results)
