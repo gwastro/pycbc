@@ -56,6 +56,8 @@ _fftw_threaded_set = False
 
 HAVE_FFTW_THREADED = False
 def set_threads_backend(backend):
+    global _fftw_threaded_set
+    global _fftw_threaded_lib
     if _fftw_threaded_set:
         raise RuntimeError(
             "Threading backend for FFTW already set to {0}; cannot be changed".format(_fftw_threaded_lib))
