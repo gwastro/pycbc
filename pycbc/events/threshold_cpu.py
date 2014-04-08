@@ -41,22 +41,42 @@ def threshold_inline(series, value):
         count = numpy.zeros(1, dtype=numpy.uint32)
         
     N = len(series)
-    threshold = value**2
-    code = """
-        unsigned int c = 0;
-        float r, im;
-        for (int i=0; i<N; i++){
-            r = arr[i*2];
-            im = arr[i*2+1];
-            if ((r*r+im*im) > threshold){
-                outl[c] = i;
-                outv[c] = std::complex<float>(r, im);
-                c++;
+    threshold = value**2.0
+    code = """  
+        float v = threshold;
+        int num = 8;
+        unsigned int t=0;
+     
+        #pragma omp parallel for ordered shared(t)
+        for (unsigned int p=0; p<num; p++){
+            int start  = N * p / num;
+            int end    = N * (p+1) / num;
+            unsigned int c = 0;
+            
+            for (unsigned int i=start; i<end; i++){
+                float r = arr[i*2];
+                float im = arr[i*2+1];
+                if ((r * r + im * im > v)){
+                    outl[c+start] = i;
+                    outv[c+start] = std::complex<float>(r, im);
+                    c++;
+                }
+            } 
+            
+            #pragma omp ordered
+            {
+                t+=c;
             }
-        }
-        count[0] = c;          
+            memcpy(outl+t-c, outl+start, sizeof(unsigned int)*c);
+            memcpy(outv+t-c, outv+start, sizeof(std::complex<float>)*c);
+            
+        }       
+        
+        count[0] = t;
     """
-    inline(code, ['N', 'arr', 'outv', 'outl', 'count', 'threshold'])
+    inline(code, ['N', 'arr', 'outv', 'outl', 'count', 'threshold'],
+           extra_compile_args=['-march=native  -Ofast  -fopenmp'],
+           libraries=['gomp'])
     return outl[0:count], outv[0:count]
 
 threshold=threshold_inline
