@@ -185,6 +185,7 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None):
         _chisq_l = chisq
     else:
         chisq = _chisq_l[0:len(snr)]
+        chisq.clear()
                    
     chisq_norm = snr_norm ** 2.0
     num_bins = len(bins) - 1
