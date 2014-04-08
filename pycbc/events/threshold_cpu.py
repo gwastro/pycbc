@@ -75,7 +75,7 @@ def threshold_inline(series, value):
         count[0] = t;
     """
     inline(code, ['N', 'arr', 'outv', 'outl', 'count', 'threshold'],
-           extra_compile_args=['-march=native  -Ofast  -fopenmp'],
+           extra_compile_args=['-march=native  -O3  -fopenmp'],
            libraries=['gomp'])
     return outl[0:count], outv[0:count]
 
