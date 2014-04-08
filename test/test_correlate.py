@@ -43,7 +43,7 @@ class Testcorrelate(unittest.TestCase):
     def setUp(self,*args):
         self.context = _context
         self.scheme = _scheme
-        self.tolerance = 1e-7
+        self.tolerance = 1e-6
         xr = numpy.random.uniform(low=-1, high=1.0, size=2**20)
         yr = numpy.random.uniform(low=-1, high=1.0, size=2**20)
         xi = numpy.random.uniform(low=-1, high=1.0, size=2**20)
