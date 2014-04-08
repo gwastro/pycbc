@@ -86,6 +86,9 @@ fft.from_cli(opt)
 if opt.fftw_input_float_wisdom_file is not None:
     fft.fftw.import_single_wisdom_from_filename(opt.fftw_input_float_wisdom_file)
 
+if opt.fftw_input_double_wisdom_file is not None:
+    fft.fftw.import_double_wisdom_from_filename(opt.fftw_input_float_wisdom_file)
+                      
 flow = opt.low_frequency_cutoff                                                               
 flen = strain_segments.freq_len
 tlen = strain_segments.time_len
