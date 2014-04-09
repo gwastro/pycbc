@@ -54,6 +54,7 @@ try:
         pass
 
     import pyopencl as _pyopencl
+    import pyfft.cl as _pyfftcl
     HAVE_OPENCL=True
 except ImportError:
     HAVE_OPENCL=False
