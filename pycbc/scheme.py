@@ -26,6 +26,7 @@
 This modules provides python contexts that set the default behavior for PyCBC
 objects. 
 """
+import os
 import pycbc
 from decorator import decorator
 from optparse import OptionGroup
@@ -140,7 +141,18 @@ class OpenCLScheme(Scheme):
         self.queue = pyopencl.CommandQueue(self.context)    
 
 class CPUScheme(Scheme):
-    pass
+    def __init__(self, num_threads=1):
+        if isinstance(num_threads, int):
+            self.num_threads=num_threads
+        elif num_threads == 'env' and "PYCBC_NUM_THREADS" in os.environ:
+            self.num_threads = int(os.environ["PYCBC_NUM_THREADS"])
+        else:
+            import multiprocessing
+            self.num_threads = multiprocessing.cpu_count()
+            
+        # PyCBC functions can rely on OMP to be set, or use the context
+        # value
+        os.environ["OMP_NUM_THREADS"] = str(self.num_threads)
 
 class MKLScheme(CPUScheme):
     pass
@@ -196,8 +208,7 @@ def insert_processing_option_group(parser):
                                    " processing scheme in this program.")   
     processing_group.add_argument("--processing-scheme", 
                       help="The choice of processing scheme. "
-                           "Choices are " + str(scheme_prefix.values()), 
-                      choices=scheme_prefix.values(), 
+                           "Choices are " + str(scheme_prefix.values()),  
                       default="cpu")                                                          
     processing_group.add_argument("--processing-device-id", 
                       help="ID of GPU to use for accelerated processing", 
@@ -217,19 +228,33 @@ def from_cli(opt):
     ctx: Scheme
         Returns the requested processing scheme.
     """
-    if opt.processing_scheme == "cuda":
+    scheme_str = opt.processing_scheme.split(':')
+    name = scheme_str[0]
+    
+    if name == "cuda":
         logging.info("Running with CUDA support")
         ctx = CUDAScheme(opt.processing_device_id)
-    elif opt.processing_scheme == "opencl":
+    elif name == "opencl":
         logging.info("Running with OpenCL support")
         ctx = OpenCLScheme()
-    elif opt.processing_scheme == "mkl":
-        logging.info("Running with threaded MKL support")
-        ctx = MKLScheme()
+    elif name == "mkl":
+        if len(scheme_str) > 1:
+            numt = scheme_str[1]
+            if numt.isdigit():
+                numt = int(numt)
+            ctx = MKLScheme(num_threads=numt)
+        else:
+            ctx = MKLScheme()
+        logging.info("Running with MKL support: %s threads" % ctx.num_threads)
     else:
-        logging.info("Running with CPU support only")
-        ctx = CPUScheme()
-        
+        if len(scheme_str) > 1:
+            numt = scheme_str[1]
+            if numt.isdigit():
+                numt = int(numt)
+            ctx = CPUScheme(num_threads=numt)
+        else:
+            ctx = CPUScheme()
+        logging.info("Running with CPU support: %s threads" % ctx.num_threads)
     return ctx
     
 def verify_processing_options(opt, parser):
@@ -246,7 +271,7 @@ def verify_processing_options(opt, parser):
         OptionParser instance.
     """
     scheme_types = scheme_prefix.values()
-    if opt.processing_scheme not in scheme_types:
+    if opt.processing_scheme.split(':')[0] not in scheme_types:
         parser.error("(%s) is not a valid scheme type.")
 
 
