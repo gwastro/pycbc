@@ -26,4 +26,4 @@ bash temp.sh > "${GPS_START_TIME}-${GPS_END_TIME}/site-local.xml"
 
 # Plan the workflow
 cd ${GPS_START_TIME}-${GPS_END_TIME}/
-sh plan.sho
+sh plan.sh weekly_ahope.dax

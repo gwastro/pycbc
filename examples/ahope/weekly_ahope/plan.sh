@@ -1,1 +1,1 @@
-pegasus-plan --conf pegasus.conf -d weekly_ahope.dax --sites local -o local --dir ${LOGPATH}
+pegasus-plan --conf pegasus.conf -d $1 --sites local -o local --dir ${LOGPATH}
