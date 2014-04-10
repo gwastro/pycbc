@@ -249,14 +249,17 @@ def fastest_power_chisq_at_points(corr, snr, snr_norm, bins, indices):
     # Note, the code for gpu support is in place but atm very slow, optimization required
     # before turning it on by default
     #import pycbc.scheme
-    #if (len(indices) < POINT_THRESHOLD and type(pycbc.scheme.mgr.state) is pycbc.scheme.CPUScheme) :
+    if (len(indices) < POINT_THRESHOLD and type(pycbc.scheme.mgr.state) is pycbc.scheme.CPUScheme) :
         # We don't have that many points so do the direct time shift.
-    #    return power_chisq_at_points_from_precomputed(corr, snr.take(indices), snr_norm, bins, indices)
+        return power_chisq_at_points_from_precomputed(corr, snr.take(indices), 
+                                                      snr_norm, bins, indices)
     #else:
         # We have a lot of points so it is faster to use the fourier transform
-    return power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=indices)
+        return power_chisq_from_precomputed(corr, snr, snr_norm, bins, 
+                                            indices=indices)
 
-def power_chisq(template, data, num_bins, psd, low_frequency_cutoff=None, high_frequency_cutoff=None):
+def power_chisq(template, data, num_bins, psd, 
+                low_frequency_cutoff=None, high_frequency_cutoff=None):
     """Calculate the chisq timeseries 
 
     Parameters
@@ -284,10 +287,12 @@ def power_chisq(template, data, num_bins, psd, low_frequency_cutoff=None, high_f
     htilde = make_frequency_series(template)
     stilde = make_frequency_series(data)   
      
-    bins = power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff, high_frequency_cutoff)   
+    bins = power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff, 
+                            high_frequency_cutoff)   
     corra = zeros((len(htilde)-1)*2, dtype=htilde.dtype)   
     total_snr, corr, tnorm = matched_filter_core(htilde, stilde, psd,
-                           low_frequency_cutoff, high_frequency_cutoff, corr_out=corra)
+                           low_frequency_cutoff, high_frequency_cutoff, 
+                           corr_out=corra)
 
     return power_chisq_from_precomputed(corr, total_snr, tnorm, bins)
 
@@ -308,7 +313,8 @@ class SingleDetPowerChisq(object):
         else:
             self.do = False           
 
-    def values(self, corr, snr, snr_norm, psd, indices, template, bank, low_frequency_cutoff):
+    def values(self, corr, snr, snr_norm, psd, indices, template, bank, 
+               low_frequency_cutoff):
         if self.do:
             # Compute the chisq bins if we haven't already
             # Only recompute the bins if the template changes
@@ -318,12 +324,15 @@ class SingleDetPowerChisq(object):
                     logging.info("...Calculating fast power chisq bins")
                     kmin = int(low_frequency_cutoff / corr.delta_f)
                     kmax = template.end_idx
-                    bins = power_chisq_bins_from_sigmasq_series(bank.sigmasq_vec, self._num_bins, kmin, kmax)
+                    bins = power_chisq_bins_from_sigmasq_series(bank.sigmasq_vec, 
+                                                    self._num_bins, kmin, kmax)
                 else:  
                     logging.info("...Calculating power chisq bins")
-                    bins = power_chisq_bins(template, self._num_bins, psd, low_frequency_cutoff)
+                    bins = power_chisq_bins(template, self._num_bins, psd, 
+                                                          low_frequency_cutoff)
                 self._template = template
                 self._bins = bins
                 
             logging.info("...Doing power chisq")     
-            return fastest_power_chisq_at_points(corr, snr, snr_norm, self._bins, indices)
+            return fastest_power_chisq_at_points(corr, snr, snr_norm, 
+                                                           self._bins, indices)
