@@ -154,9 +154,9 @@ class CPUScheme(Scheme):
         Scheme.__enter__(self)
         os.environ["OMP_NUM_THREADS"] = str(self.num_threads)
 
-    def __exit__(self):
-        Scheme.__exit__(self)
+    def __exit__(self, type, value, traceback):
         os.environ["OMP_NUM_THREADS"] = "1"
+        Scheme.__exit__(self, type, value, traceback)
 
 class MKLScheme(CPUScheme):
     pass
