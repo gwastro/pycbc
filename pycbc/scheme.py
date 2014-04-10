@@ -149,10 +149,14 @@ class CPUScheme(Scheme):
         else:
             import multiprocessing
             self.num_threads = multiprocessing.cpu_count()
-            
-        # PyCBC functions can rely on OMP to be set, or use the context
-        # value
+        
+    def __enter__(self):
+        Scheme.__enter__(self)
         os.environ["OMP_NUM_THREADS"] = str(self.num_threads)
+
+    def __exit__(self):
+        Scheme.__exit__(self)
+        os.environ["OMP_NUM_THREADS"] = "1"
 
 class MKLScheme(CPUScheme):
     pass
