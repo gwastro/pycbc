@@ -38,6 +38,12 @@ from configparserutils import AhopeConfigParser
 import pylal.dq.dqSegmentUtils as dqUtils
 import copy
 
+# Ahope should never be using the glue LIGOTimeGPS class, override this with
+# the nice C-wrapped class in pylal
+from glue import lal
+from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+lal.LIGOTimeGPS = LIGOTimeGPS
+
 #REMOVE THESE FUNCTIONS  FOR PYTHON >= 2.7 ####################################
 def check_output(*popenargs, **kwargs):
     """
@@ -835,9 +841,9 @@ class AhopeFile(object):
         # Make a cyclical reference
         cache_entry.ahope_file = self
         self.cache_entry = cache_entry
-        # This gets set if this becomes an input file in the workflow
+        # This gets set if this becomes an input file in the workflow
         self.is_workflow_input = False
-    
+
     @property
     def url(self):
         return self.cache_entry.url
@@ -1078,15 +1084,39 @@ class AhopeFileList(list):
             overlap_windows = numpy.array(overlap_windows, dtype = int)
             return outFiles[overlap_windows.argmax()]
 
-    def find_all_output_in_range(self, ifo, currSeg):
+    def find_all_output_in_range(self, ifo, currSeg, useSplitLists=False):
         """
         Return all files that overlap the specified segment.
         """
-        outFiles = [i for i in self if ifo in i.ifoList]
-        # FIXME: This can be slow if lots of files are being added
-        #        this was noticed in ER5 with 4s long frame files.
-        outFiles = [i for i in outFiles \
+        logging.debug("Finding all output in range.")
+        if not useSplitLists:
+            # Slower, but simpler method
+            outFiles = [i for i in self if ifo in i.ifoList]
+            outFiles = [i for i in outFiles \
                                       if i.segList.intersects_segment(currSeg)]
+        else:
+            # Faster, but more complicated
+            # Basically only check if a subset of files intersects_segment by
+            # using a presorted list. Sorting only happens once.
+            if not self._check_split_list_validity():
+                # FIXME: DO NOT hard code this.
+                self._temporal_split_list(100)
+            startIdx = int( (currSeg[0] - self._splitListsStart) / \
+                                                          self._splitListsStep )
+            # Add some small rounding here
+            endIdx = (currSeg[1] - self._splitListsStart) / self._splitListsStep
+            endIdx = int(endIdx - 0.000001)
+
+            outFiles = []
+            for idx in range(startIdx, endIdx + 1):
+                outFilesTemp = [i for i in self._splitLists[idx] \
+                                                            if ifo in i.ifoList]
+                outFiles.extend([i for i in outFilesTemp \
+                                      if i.segList.intersects_segment(currSeg)])
+                # Remove duplicates
+                outFiles = list(set(outFiles))
+
+        logging.debug("Found all output in range.")
         return self.__class__(outFiles)
 
     def find_output_with_tag(self, tag):
@@ -1124,6 +1154,74 @@ class AhopeFileList(list):
         for entry in self:
             lalCache.append(entry.cache_entry)
         return lalCache
+
+    def _temporal_split_list(self,numSubLists):
+        """
+        This internal function is used to speed the code up in cases where a
+        number of operations are being made to determine if files overlap a
+        specific time. Normally such operations are done on *all* entries with
+        *every* call. However, if we predetermine which files are at which
+        times, we can avoid testing *every* file every time.
+  
+        We therefore create numSubLists distinct and equal length time windows
+        equally spaced from the first time entry in the list until the last.
+        A list is made for each window and files are added to lists which they
+        overlap.
+ 
+        If the list changes it should be captured and these split lists become
+        invalid. Currently the testing for this is pretty basic
+        """
+        # Assume segment lists are coalesced!
+        startTime = float( min([i.segList[0][0] for i in self]))
+        endTime = float( max([i.segList[-1][-1] for i in self]))
+        step = (endTime - startTime) / float(numSubLists)
+
+        # Set up storage
+        self._splitLists = []
+        for idx in range(numSubLists):
+            self._splitLists.append(AhopeFileList([]))
+        
+        # Sort the files
+
+        for ix, currFile in enumerate(self):
+            segExtent = currFile.segList.extent()
+            segExtStart = float(segExtent[0])
+            segExtEnd = float(segExtent[1])
+            startIdx = (segExtent[0] - startTime) / step
+            endIdx = (segExtent[1] - startTime) / step
+            # Add some small rounding here
+            startIdx = int(startIdx - 0.001) 
+            endIdx = int(endIdx + 0.001)
+
+            if startIdx < 0:
+                startIdx = 0
+            if endIdx >= numSubLists:
+                endIdx = numSubLists - 1
+
+            for idx in range(startIdx, endIdx + 1):
+                self._splitLists[idx].append(currFile)
+
+        # Set information needed to detect changes and to be used elsewhere
+        self._splitListsLength = len(self)
+        self._splitListsStart = startTime
+        self._splitListsEnd = endTime
+        self._splitListsStep = step
+        self._splitListsSet = True
+
+    def _check_split_list_validity(self):
+        """
+        See _temporal_split_list above. This function checks if the current
+        split lists are still valid.
+        """
+        # FIXME: Currently very primitive, but needs to be fast
+        if not (hasattr(self,"_splitListsSet") and (self._splitListsSet)):
+            return False
+        elif len(self) != self._splitListsLength:
+            return False
+        else:
+            return True
+   
+        
 
 
 class AhopeOutSegFile(AhopeFile):
