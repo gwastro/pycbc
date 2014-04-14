@@ -70,9 +70,13 @@ def setup_splittable_workflow(workflow, tmplt_banks, out_dir=None):
         logging.info("Adding split output file jobs to workflow.")
         split_table_outs = setup_splittable_dax_generated(workflow, tmplt_banks,
                                                         out_dir)
+    elif splitbankMethod == "NOOP":
+        # Probably better not to call the module at all, but this option will
+        # return the input file list.
+        split_table_outs = tmplt_banks
     else:
         errMsg = "Splittable method not recognized. Must be one of "
-        errMsg += "IN_WORKFLOW (currently only one option)."
+        errMsg += "IN_WORKFLOW or NOOP."
         raise ValueError(errMsg)
 
     logging.info("Leaving split output files module.")  
