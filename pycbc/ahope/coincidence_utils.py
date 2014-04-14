@@ -164,6 +164,7 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
     ligolwAddOuts : ahope.AhopeFileList
         A list of the output files generated from ligolw_add.
     """
+    logging.debug("Entering coincidence module.")
     veto_categories = range(1,maxVetoCat+1)
 
     # setup code for each veto_category
@@ -190,6 +191,7 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
 
         # Now loop over vetoes
         for category in veto_categories:
+            logging.debug("Preparing %s %s" %(timeSlideTag,category))
             # FIXME: There are currently 3 names to say cumulative cat_3
             dqSegFile = segsList.find_output_with_tag(\
                                                'CUMULATIVE_CAT_%d' %(category))
@@ -203,11 +205,13 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
             # dqVetoName last.
             curr_thinca_job_tags = [timeSlideTag] + tags + [pipedownDQVetoName]
 
+            logging.debug("Stgarting workflow")
             currLigolwThincaOuts, currLigolwAddOuts = \
                   setup_snglveto_workflow_ligolw_thinca(workflow, 
                                         dqSegFile, tisiOutFile,
                                         dqVetoName, inspiral_outs, output_dir,
                                         tags=curr_thinca_job_tags)
+            logging.debug("Done")
             ligolwAddOuts.extend(currLigolwAddOuts)
             ligolwThincaOuts.extend(currLigolwThincaOuts)
     return ligolwThincaOuts, ligolwAddOuts
@@ -259,10 +263,12 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile,
     # will be some triggers read into multiple jobs
     cacheInspOuts = inspiral_outs.convert_to_lal_cache()
 
+    logging.debug("Calling into cafe.")
     cafe_seglists, cafe_caches = ligolw_cafe.ligolw_cafe(cacheInspOuts,
         ligolw_tisi.load_time_slides(tisiOutFile.path,
             gz = tisiOutFile.path.endswith(".gz")).values(),
         extentlimit = 10000, verbose=False)
+    logging.debug("Done with cafe.")
 
     # FIXME: This is currently hardcoded to ligolw_thinca and ligolw_add. This
     # is deliberate as different coincidence methods will not just be swapping

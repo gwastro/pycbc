@@ -326,7 +326,8 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                 
             if parents:
                 # Find the set of files with the best overlap
-                curr_parent = parents.find_outputs_in_range(ifo, job_valid_seg)
+                curr_parent = parents.find_outputs_in_range(ifo, job_valid_seg,
+                                                            useSplitLists=True)
                 if not curr_parent:
                     err_string = ("No parent jobs found overlapping %d to %d." 
                                   %(job_valid_seg[0], job_valid_seg[1]))
@@ -334,6 +335,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                     raise ValueError(err_string)
             else:
                 curr_parent = [None]
+
 
             if datafind_outs:
                 curr_dfouts = datafind_outs.find_all_output_in_range(ifo, 
@@ -343,6 +345,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                                 %(job_data_seg[0],job_data_seg[1]))
                     err_str += "\nThis shouldn't happen. Contact a developer."
                     raise ValueError(err_str)
+
 
             for pnum, parent in enumerate(curr_parent):
                 if len(curr_parent) != 1:
@@ -358,6 +361,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                                                 tags=tag)
                 workflow.add_node(node)
                 out_files += node.output_files
+
     return out_files
 
 class PyCBCInspiralJob(Job):

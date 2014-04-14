@@ -32,6 +32,7 @@ import numpy
 import urlparse
 from itertools import combinations
 from os.path import splitext, basename, isfile
+import lal as lalswig
 from glue import lal
 from glue import segments, pipeline
 from configparserutils import AhopeConfigParser
@@ -39,10 +40,8 @@ import pylal.dq.dqSegmentUtils as dqUtils
 import copy
 
 # Ahope should never be using the glue LIGOTimeGPS class, override this with
-# the nice C-wrapped class in pylal
-from glue import lal
-from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
-lal.LIGOTimeGPS = LIGOTimeGPS
+# the nice SWIG-wrapped class in lal
+lal.LIGOTimeGPS = lalswig.LIGOTimeGPS
 
 #REMOVE THESE FUNCTIONS  FOR PYTHON >= 2.7 ####################################
 def check_output(*popenargs, **kwargs):
@@ -375,9 +374,9 @@ class Node(pipeline.CondorDAGNode):
         # Add the files to the nodes internal lists of input
         for file in fileList:
             self.input_files.append(file)
-            # NOTE: This is slow as it tests if the files are already listed as
+            # NOTE: This may slow as it tests if the files are already listed as
             #       input files. A possible speed up is
-            # self._CondorDAGNode__input_files.append(currPath)
+            # self._CondorDAGNode__input_files.append(file.path)
             self.add_input_file(file.path)
             if file.node and not hasattr(file.node, 'executed'):
                 self.add_parent(file.node)
@@ -811,6 +810,7 @@ class AhopeFile(object):
             errMsg = "segs input must be either glue.segments.segment or "
             errMsg += "segments.segmentlist. Got %s." %(str(type(segs)),)
             raise ValueError(errMsg)
+        self.segListExtent = self.segList.extent()
         self.tags = tags 
         if tags is not None:
             self.tag_str = '_'.join(tags)
@@ -832,7 +832,7 @@ class AhopeFile(object):
                                 "not provided")
             
             filename = self._filename(self.ifoString, self.tagged_description,
-                                      extension, self.segList.extent())
+                                      extension, self.segListExtent)
             path = os.path.join(directory, filename)
             if not os.path.isabs(path):
                 path = os.path.join(os.getcwd(), path) 
@@ -840,7 +840,7 @@ class AhopeFile(object):
                                             None, None])
        
         cache_entry = lal.CacheEntry(self.ifoString,
-                   self.tagged_description, self.segList.extent(), file_url)
+                   self.tagged_description, self.segListExtent, file_url)
         # Make a cyclical reference
         cache_entry.ahope_file = self
         self.cache_entry = cache_entry
@@ -999,7 +999,7 @@ class AhopeFileList(list):
            # separation.
            return outFiles
 
-    def find_outputs_in_range(self, ifo, current_segment):
+    def find_outputs_in_range(self, ifo, current_segment, useSplitLists=False):
         """
         Return the list of AhopeFiles that is most appropriate for the supplied
         time range. That is, the AhopeFiles whose coverage time has the
@@ -1019,14 +1019,12 @@ class AhopeFileList(list):
         """
         currSegList = segments.segmentlist([current_segment])
 
-        # First filter AhopeFiles corresponding to ifo
-        ifo_files = [i for i in self if ifo in i.ifoList] 
+        # Get all files overlapping the window
+        overlap_files = self.find_all_output_in_range(ifo, current_segment,
+                                                    useSplitLists=useSplitLists)
 
-        # Filter AhopeOutFiles to those overlapping the given window
-        overlap_files = [i for i in ifo_files \
-                          if i.segList.intersects_segment(current_segment)]
-        overlap_windows = [abs(i.segList & currSegList) \
-                                                        for i in overlap_files]
+        # By how much do they overlap?
+        overlap_windows = [abs(i.segList & currSegList) for i in overlap_files]
 
         # FIXME: Error handling for the overlap_files == [] case?
 
@@ -1093,7 +1091,6 @@ class AhopeFileList(list):
         """
         Return all files that overlap the specified segment.
         """
-        logging.debug("Finding all output in range.")
         if not useSplitLists:
             # Slower, but simpler method
             outFiles = [i for i in self if ifo in i.ifoList]
@@ -1121,7 +1118,6 @@ class AhopeFileList(list):
                 # Remove duplicates
                 outFiles = list(set(outFiles))
 
-        logging.debug("Found all output in range.")
         return self.__class__(outFiles)
 
     def find_output_with_tag(self, tag):
@@ -1189,7 +1185,7 @@ class AhopeFileList(list):
         # Sort the files
 
         for ix, currFile in enumerate(self):
-            segExtent = currFile.segList.extent()
+            segExtent = currFile.segListExtent
             segExtStart = float(segExtent[0])
             segExtEnd = float(segExtent[1])
             startIdx = (segExtent[0] - startTime) / step
