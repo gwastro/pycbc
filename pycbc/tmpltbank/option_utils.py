@@ -546,6 +546,56 @@ class massRangeParameters(object):
                        maxBHSpinMag=opts.max_bh_spin_mag, \
                        nsbhFlag=opts.nsbh_flag)
 
+    def is_unphysical(self, mass1, mass2, spin1z, spin2z):
+        """
+        Test if a given location in mass1, mass2, spin1z, spin2z is within the
+        range of parameters allowed by the massParams object.
+        """
+        # Mass1 test
+        if mass1 < self.minMass1:
+            return 1
+        if mass1 > self.maxMass1:
+            return 1
+        # Mass2 test
+        if mass2 < self.minMass2:
+            return 1
+        if mass2 > self.maxMass2:
+            return 1
+        # Spin1 test
+        if self.nsbhFlag:
+            if (abs(spin1z) > self.maxBHSpinMag):
+                return 1
+        else:
+            spin1zM = abs(spin1z)
+            if not( (mass1 > 2.99 and spin1zM <= self.maxBHSpinMag) \
+                 or (mass1 < 3.01 and spin1zM <= self.maxNSSpinMag)):
+                return 1
+        # Spin2 test
+        if self.nsbhFlag:
+            if (abs(spin2z) > self.maxBHSpinMag):
+                return 1
+        else:
+            spin2zM = abs(spin2z)
+            if not( (mass2 > 2.99 and spin2zM <= self.maxBHSpinMag) \
+                 or (mass2 < 3.01 and spin2zM <= self.maxNSSpinMag)):
+                return 1
+        # Total mass test
+        mTot = mass1 + mass2
+        if mTot > self.maxTotMass:
+            return 1
+        if mTot < self.minTotMass:
+            return 1
+
+        # Eta test
+        eta = mass1 * mass2 / (mTot * mTot)
+        if eta > self.maxEta:
+            return 1
+        if eta < self.minEta:
+            return 1
+
+        return 0
+            
+
 def insert_ethinca_calculation_option_group(parser):
     """
     Adds the options used to obtain the ethinca metric. This should be used
