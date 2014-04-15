@@ -43,14 +43,7 @@ double_lib = ctypes.CDLL(double_lib_name,mode=ctypes.RTLD_GLOBAL)
 float_lib_name = 'libfftw3f.so'
 float_lib = ctypes.CDLL(float_lib_name,mode=ctypes.RTLD_GLOBAL)
 
-# Even if we don't have threaded support, we define a number
-# of threads.  But it's 0 without threaded support (which is 
-# an invalid argument) which allows our planning wrapper
-# to distinguish threaded from nonthreaded plans
-_fftw_nthreads = 0
-def get_nthreads():
-    return _fftw_nthreads
-
+# Support for FFTW's two different threading backends
 _fftw_threaded_lib = None
 _fftw_threaded_set = False
 _double_threaded_lib = None
@@ -63,6 +56,7 @@ def set_threads_backend(backend):
     global HAVE_FFTW_THREADED
     global _double_threaded_lib
     global _float_threaded_lib
+    from scheme import num_threads as _nthreads
     if _fftw_threaded_set:
         raise RuntimeError(
             "Threading backend for FFTW already set to {0}; cannot be changed".format(_fftw_threaded_lib))
@@ -98,28 +92,14 @@ def set_threads_backend(backend):
         # FFTW for some reason uses *0* to indicate failure.  In C.
         if (dret == 0) or (fret == 0):
             raise RuntimeError("Threaded FFTW found and loaded, but could not initialize")
-
-def use_nthreads(nthreads):
-    global _fftw_nthreads
-    if HAVE_FFTW_THREADED:
-    # Now a function to use a given number of threads
-        """
-        Set the current number of threads used in FFTW planning/
-        execution.  Must be an non-negative integer.
-        """
-        if not (isinstance(nthreads,int) and (nthreads>0)):
-            raise ValueError("nthreads must be nonegative integer")
-        _fftw_nthreads = nthreads
-
+        # Since the number of threads is set globally in pycbc, it can only be initialized
+        # to FFTW here, when the threading library itself is initialized
         dplanwthr = _double_threaded_lib.fftw_plan_with_nthreads
         fplanwthr = _float_threaded_lib.fftwf_plan_with_nthreads
         dplanwthr.restype = None
         fplanwthr.restype = None
-        dplanwthr(nthreads)
-        fplanwthr(nthreads)
-    else:
-        if not (isinstance(nthreads,int) or (nthreads>0)):
-            raise ValueError("Cannot specify non-zero nthreads without loading a threading backend")
+        dplanwthr(_nthreads)
+        fplanwthr(_nthreads)
 
 # Function to import system-wide wisdom files.
 
@@ -220,7 +200,10 @@ execute_function = {'float32': {'complex64': float_lib.fftwf_execute_dft_r2c},
                    }
 
 @memoize
-def plan(size, idtype, odtype, direction, mlvl, nthreads, aligned):
+def plan(size, idtype, odtype, direction, mlvl, aligned):
+    # We do *not* include number of threads in the plan dict key,
+    # because this is now a global variable of PyCBC.  Hence it is
+    # an error for it to change during the lifetime of an executable
     if not _fftw_threaded_set:
         set_threads_backend('unthreaded')
     # Convert a measure-level to flags
@@ -272,14 +255,12 @@ def execute(plan, invec, outvec):
     
 def fft(invec, outvec, prec, itype, otype):
     theplan = plan(len(invec), invec.dtype, outvec.dtype, FFTW_FORWARD,
-                   get_measure_level(),get_nthreads(),
-                   (invec._data.isaligned and outvec._data.isaligned))
+                   get_measure_level(),(invec._data.isaligned and outvec._data.isaligned))
     execute(theplan, invec, outvec)
     
 def ifft(invec, outvec, prec, itype, otype):
     theplan = plan(len(outvec), invec.dtype, outvec.dtype, FFTW_BACKWARD,
-                   get_measure_level(),get_nthreads(),
-                   (invec._data.isaligned and outvec._data.isaligned))
+                   get_measure_level(),(invec._data.isaligned and outvec._data.isaligned))
     execute(theplan, invec, outvec)
 
     
@@ -299,9 +280,6 @@ def insert_fft_options(optgroup):
     optgroup.add_argument("--fftw-threads-backend", 
                       help="Give 'pthreads' or 'openmp' to specify which threaded FFTW to use",
                       default=None)
-    optgroup.add_argument("--fftw-use-nthreads", 
-                      help="Number of threads to use in FFT planning/execution",
-                      type=int, default=0) # 0 is sentinel for no thread support
     optgroup.add_argument("--fftw-input-float-wisdom-file", 
                       help="Filename from which to read single-precision wisdom",
                       default=None)
@@ -329,8 +307,6 @@ def verify_fft_options(opt,parser):
     """
     if opt.fftw_measure_level not in [0,1,2,3]:
         parser.error("{0} is not a valid FFTW measure level.".format(opt.fftw_measure_level))
-    if (opt.fftw_use_nthreads > 1) and (opt.fftw_threads_backend is None):
-        parser.error("You specified a number of threads, but not a threads backend (pthreads or openmp)")
     if (opt.fftw_threads_backend is not None):
         if (opt.fftw_threads_backend not in ['openmp','pthreads']):
             parser.error("Invalid threads backend; must be 'pthreads' or 'openmp'")
@@ -343,5 +319,3 @@ def from_cli(opt):
     # Import system wisdom.  Should really add error checking and logging to that...
     import_sys_wisdom()
     set_measure_level(opt.fftw_measure_level)
-    if (opt.fftw_use_nthreads > 1):
-        use_nthreads(opt.fftw_use_nthreads)
