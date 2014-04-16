@@ -1,18 +1,18 @@
-import Pegasus.DAX3
-import copy
+import copy, urlparse
+import Pegasus.DAX3 as dax
 
 class Executable(object):
     def __init__(self, name):
         self.name = name
         self.in_workflow = False
-        self._dax_executable = Pegasus.DAX3.Executable(name)
+        self._dax_executable = dax.Executable(name)
         self.pfns = {}
         
     def add_pfn(self, url, site='local'):
         self._dax_executable.PFN(url, site)
         self.pfns[site] = url
         
-    def get_pfn(self, url, site='local'):
+    def get_pfn(self, site='local'):
         return self.pfns[site]
         
 class Node(object):    
@@ -21,7 +21,7 @@ class Node(object):
         self.executable=executable            
         self._inputs = []
         self._outputs = []        
-        self._dax_node = Pegasus.DAX3.Job(name=executable.name) 
+        self._dax_node = dax.Job(name=executable.name) 
         
     def add_arg(self, arg):
         """ Add an argument
@@ -86,7 +86,7 @@ class Node(object):
     def add_profile(namespace, key, value):
         """ Add profile information to this node at the DAX level
         """
-        entry = Pegasus.DAX3.Profile(namespace, key, value)
+        entry = dax.Profile(namespace, key, value)
         self._dax_node.addProfile(entry)
     
     def set_memory(self, size):
@@ -110,13 +110,10 @@ class Node(object):
     def set_retries(self, number):
         self.add_profile("dagman", "retry", number)
         
-    def get_command_line(self):
-        pass
-
 class Workflow(object):
     def __init__(self, name='my_workflow'):
         self.name = name
-        self._adag = Pegasus.DAX3.ADAG(name)
+        self._adag = dax.ADAG(name)
         
         self._inputs = []
         self._outputs = []
@@ -130,7 +127,7 @@ class Workflow(object):
             if inp.node is not None and inp.node.in_workflow:
                 parent = inp.node._dax_node
                 child = node._dax_node
-                dep = Pegasus.DAX3.Dependency(parent=parent, child=child)
+                dep = dax.Dependency(parent=parent, child=child)
                 self._adag.addDependency(dep)    
                             
             elif inp.node is not None and not inp.node.in_workflow:
@@ -176,17 +173,22 @@ class DataStorage(object):
 class File(DataStorage):
     def __init__(self, name):
         DataStorage.__init__(self, name)
-        self._dax_file = Pegasus.DAX3.File(self.name)
+        self._dax_file = dax.File(self.name)
+        self.pfns = {}
+        self.storage_path = None
+        
+    def storage_path(self, path):
+        self.storage_path=path
 
     def _dax_repr(self):
         return self._dax_file
 
     def _set_as_input_of(self, node):
-        node._dax_node.uses(self._dax_file, link=Pegasus.DAX3.Link.INPUT,
+        node._dax_node.uses(self._dax_file, link=dax.Link.INPUT,
                                             register=False, transfer=True)   
     def _set_as_output_of(self, node):
-        fil = Pegasus.DAX3.File(self.name)
-        node._dax_node.uses(self._dax_file, link=Pegasus.DAX3.Link.OUTPUT,
+        fil = dax.File(self.name)
+        node._dax_node.uses(self._dax_file, link=dax.Link.OUTPUT,
                                             register=False, transfer=True)
     
 class Database(DataStorage):
