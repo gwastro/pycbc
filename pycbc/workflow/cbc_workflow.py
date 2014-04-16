@@ -1,5 +1,7 @@
-from pycbc.workflow import Workflow, Node, File
-
+from pycbc.workflow.workflow import Workflow, Node, File
+from pycbc.ahope.configparserutils import AhopeConfigParser
+import re
+import Pegasus.DAX3 as dax
 
 class AhopeWorkflow(Workflow):
     """
@@ -76,15 +78,21 @@ class AhopeWorkflow(Workflow):
         Workflow.save(self, basename + '.dax')
     
 class AhopeNode(Node):
-    def __init__(self):
+    def __init__(self, name):
+        Node.__init__(self, name)
         self.executed = False
     
     def get_command_line(self):
-        arglist = self._dax_node.getArguments().split(' ')
-        arglist = [a for a in arglist if a != '']
+        arglist = self._dax_node.arguments
+        arglist = [a.path if isinstance(a, dax.File) else a for a in arglist]
         print arglist
+                        
         exe_path = urlparse.urlsplit(self.executable.get_pfn()).path
         return [exe_path] + arglist
+        
+    def new_output_file_opt(self, opt):
+        
+        fil = Node.new_output_file_opt(self, opt, name)
     
 class AhopeFile(File):
     '''
@@ -101,7 +109,7 @@ class AhopeFile(File):
 
     An example of initiating this class:
     
-    c = AhopeFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001),file_url="file://localhost/home/spxiwh/H1-INSPIRAL_S6LOWMASS-815901601-400.xml.gz" )
+    c = AhopeFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), file_url="file://localhost/home/spxiwh/H1-INSPIRAL_S6LOWMASS-815901601-400.xml.gz" )
 
     another where the file url is generated from the inputs:
 

@@ -170,7 +170,7 @@ class DataStorage(object):
     def _dax_repr(self):
         return self.name
         
-class File(DataStorage):
+class File(DataStorage, dax.File):
     def __init__(self, name):
         DataStorage.__init__(self, name)
         self._dax_file = dax.File(self.name)
@@ -181,15 +181,15 @@ class File(DataStorage):
         self.storage_path=path
 
     def _dax_repr(self):
-        return self._dax_file
-
+        return self
+        
     def _set_as_input_of(self, node):
-        node._dax_node.uses(self._dax_file, link=dax.Link.INPUT,
-                                            register=False, transfer=True)   
+        node._dax_node.uses(self, link=dax.Link.INPUT, register=False, 
+                                                       transfer=True) 
+          
     def _set_as_output_of(self, node):
-        fil = dax.File(self.name)
-        node._dax_node.uses(self._dax_file, link=dax.Link.OUTPUT,
-                                            register=False, transfer=True)
+        node._dax_node.uses(self, link=dax.Link.OUTPUT, register=False, 
+                                                        transfer=True)
     
 class Database(DataStorage):
     pass
