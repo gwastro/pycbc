@@ -176,6 +176,17 @@ Construct a template bank, or banks, of CBC waveforms that will be used to match
    ahope/template_bank
 
 ----------------------------------
+Split table
+----------------------------------
+
+Split an output file into numerous parts to allow parallel analysis. Normally used to split the template bank up to allow matched-filtering in parallel
+
+.. toctree::
+      :maxdepth: 1 
+
+   ahope/splittable
+
+----------------------------------
 Matched-filtering
 ----------------------------------
 
