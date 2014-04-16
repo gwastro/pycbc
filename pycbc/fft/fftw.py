@@ -56,7 +56,8 @@ def set_threads_backend(backend):
     global HAVE_FFTW_THREADED
     global _double_threaded_lib
     global _float_threaded_lib
-    from scheme import num_threads as _nthreads
+    from pycbc.scheme import mgr
+    _nthreads = mgr.state.num_threads
     if _fftw_threaded_set:
         raise RuntimeError(
             "Threading backend for FFTW already set to {0}; cannot be changed".format(_fftw_threaded_lib))

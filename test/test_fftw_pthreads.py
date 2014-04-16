@@ -49,15 +49,13 @@ else:
     _exit(0)
 
 print pycbc.fft.fftw.HAVE_FFTW_THREADED
-# Now set the number of threads to something nontrivial
-pycbc.fft.fftw.use_nthreads(2)
 
 # Most of the work is now done in fft_base.  
 
 FFTTestClasses = []
 kdict = {'backend' : 'fftw',
          'scheme' : 'cpu', 
-         'context' : CPUScheme()}
+         'context' : CPUScheme(num_threads=2)}
 klass = type('FFTW_pthreads_test',
              (_BaseTestFFTClass,),kdict)
 FFTTestClasses.append(klass)
