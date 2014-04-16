@@ -52,15 +52,18 @@ The configuration file for weekly_ahope is split into parts::
     pipedown.ini
     inj.ini
 
-These files contain all the details needed to run weekly_ahope::
+These files contain all the details needed to run weekly_ahope
 
-    IF YOU ARE UNFAMILIAR WITH AHOPE WORKFLOWS, LOOK THROUGH THESE FILES. pipedown.ini WILL LOOK FAMILIAR IF YOU ARE USED TO IHOPE WORKFLOWS
+.. note::
+
+    If you are unfamiliar with ahope workflows, look through these files.
+    pipedown.ini will look familiar if you are used to ihope workflows.
 
 * weekly_ahope.ini contains options that are used when running the ahope parts of the workflow
 * pipedown.ini contains options that are used when running pipedown
 * inj.ini contains the parameters used when generating simulation files
 
-*NOTE* if you want to run with pycbc executables replace weekly_ahope.ini with::
+Alternatively, if you want to run with pycbc executables replace weekly_ahope.ini with::
 
    weekly_ahope_pycbc.ini
 
@@ -92,15 +95,15 @@ If you want to run on non-S6 data, or want to analyse a different set of ifos, y
 
     ALL the [tisi], [tisi-zerolag], [tisi-slides] sections (potentially)
 
-To run through this::
+To run through this
 
- * The [ahope-ifos] section supplies which ifos will be analysed if data is found and available.
- * The X1-channel-name options are the h(t) channel name in the frames
- * The datafind-X1-frame-type is the type of the frames for use when calling gw_data_find
- * The segments-X1-science-name is the flag used to store science times in the segment database
- * segments-database-url points to the segment database
- * segments-veto-definer-url points to the url where the veto-definer file can be found.
- * The [tisi] sections give instructions to ahope on how to set up what time slides will be performed. See :ref:`ahopetimeslidesmod` for more details on how to supply this for other situations. Normally you will just need to add or remove detectors.
+* The [ahope-ifos] section supplies which ifos will be analysed if data is found and available.
+* The X1-channel-name options are the h(t) channel name in the frames
+* The datafind-X1-frame-type is the type of the frames for use when calling gw_data_find
+* The segments-X1-science-name is the flag used to store science times in the segment database
+* segments-database-url points to the segment database
+* segments-veto-definer-url points to the url where the veto-definer file can be found.
+* The [tisi] sections give instructions to ahope on how to set up what time slides will be performed. See :ref:`ahopetimeslidesmod` for more details on how to supply this for other situations. Normally you will just need to add or remove detectors.
 
 The remaining options affect how the jobs run, these should not be edited unless you know what you are doing ... but can freely be added if you do know what you are doing and want to change something.
 
@@ -110,8 +113,8 @@ Generate the workflow
 
 When you are ready, you can generate the workflow. First we need to choose a time span::
 
-    GPS_START_TIME=961585543
-    GPS_END_TIME=961671943
+    export GPS_START_TIME=961585543
+    export GPS_END_TIME=961671943
 
 You also need to specify the directory in which pipedown  will store log files. Ahope does not need this, but pipedown does.
 
@@ -139,59 +142,33 @@ You also need to choose where the html page will be generated. For example::
 
 Then you can generate the workflow::
 
-    python weekly_ahope.py --config-files weekly_ahope.ini pipedown.ini inj.ini --config-overrides ahope:start-time:${GPS_START_TIME} ahope:end-time:${GPS_END_TIME} ahope:ahope-html-basedir:${HTMLDIR} ahope:pipedown-log-path:${LOGPATH} ahope:pipedown-tmp-space:${PIPEDOWNLOG}
+    python weekly_ahope.py --config-files weekly_ahope.ini pipedown.ini inj.ini \
+                           --config-overrides ahope:start-time:${GPS_START_TIME} \
+                                              ahope:end-time:${GPS_END_TIME} \
+                                              ahope:ahope-html-basedir:${HTMLDIR} \
+                                              ahope:pipedown-log-path:${LOGPATH} \
+                                              ahope:pipedown-tmp-space:${PIPEDOWNLOG}
 
-Then CD into the directory where the dag was generated::
+-----------------------------------------
+Planning and Submitting the Worklfow
+-----------------------------------------
+First, copy the files needed for planning into the directory where the dax 
+was generated.
+
+    cp plan.sh ${GPS_START_TIME}-${GPS_END_TIME}/
+    cp site-local.xml ${GPS_START_TIME}-${GPS_END_TIME}/
+    cp pegasus.conf ${GPS_START_TIME}-${GPS_END_TIME}/
+
+Then CD into the directory where the dax was generated::
 
     cd ${GPS_START_TIME}-${GPS_END_TIME}
 
-where the directory naming is constructed from the year, month and day that is being analysed. Then submit the dag::
+From the directory where the dax was created, run the planning script::
 
-    condor_submit_dag weekly_ahope.dag
-
-If the dag runs successfully you will find the output under your html directory some time later.
-
----------------------
-Monitor the dagman
----------------------
-
-One can follow the process of the dagman by running::
-
-    tail -f weekly_ahope.dag.dagman.out
-
-in the run directory to watch the progress of the dag. If jobs fail you should
-look in the::
-
-    SUBDIRECTORIES/logs
-
-directory to see all the stderr and stdout files from each job. You can match these files with the condor process numbers given in the dagman.out to figure out which file corresponds to the failing jobs. You can also use::
-
-    weekly_ahope.sh
-
-to find the command line for each job in the ahope dag if you want to run by hand to debug any job.
-
-We will soon be transitioning to pegasus which will make some of this easier!
-
------------------------------------------------
-Submitting the workflow with Pegasus (Optional)
------------------------------------------------
-To plan and submit a workflow with Pegasus, first follow the instruction of this page through the end of section, `Edit the configuration file`_.
-
-Copy the script, `run_weekly_ahope.sh` from the example directory to your your working directory.
-
-Next, modify the script `run_weekly_ahope.sh`, choosing the `GPS_START_TIME`, `GPS_END_TIME`, and
-`LOGPATH`, as appropriate. Choices for different sites are described in section, `Generate the workflow`_.::
-
-    #!/bin/bash
-    # run_weekly_ahope.sh
-    GPS_START_TIME=961585543
-    GPS_END_TIME=96167194
-    export LOGPATH=/usr1/${USER}/log
-    ...
-
-Generate the workflow, and use Pegasus to plan a concrete workflow by running the script.::
-
-    sh run_weekly_ahope.sh
+    sh plan.sh weekly_ahope.dax
+    
+Note, that if you have changed the name of the ini file, or are using an alternative one,
+the dax file's name will change accordingly.
     
 Submit the workflow by following the instructions at the end of the script output, which looks something like 
 the following.::
@@ -213,20 +190,22 @@ the following.::
      
     2014.03.26 10:49:28.983 EDT:   Time taken to execute is 7.095 seconds 
     
-In this case the workflow would be submitted as follows.::
+In this case, the workflow would be submitted as follows.::
 
     pegasus-run  /usr1/ahnitz/log/ahnitz/pegasus/weekly_ahope/run0011
-     
-To monitor the workflow::
+
+If the workflow runs successfully you will find the output under your html directory some time later.
+
+-----------------------------------------
+Monitor and Debug the Worklfow
+-----------------------------------------
+
+To monitor the above workflow, one would run::
 
     pegasus-status /usr1/ahnitz/log/ahnitz/pegasus/weekly_ahope/run0011
     
 To get debugging information in the case of failures.::
 
     pegasus-analyzer /usr1/ahnitz/log/ahnitz/pegasus/weekly_ahope/run0011
-
-    
-
-
 
 
