@@ -375,6 +375,7 @@ if opts.verbose:
 
 # initialize Summaries class, call background
 background = sqlutils.Summaries()
+background2 = sqlutils.Summaries()
 
 # get information about all rows in the experiment summary table
 sqlquery = """
@@ -391,9 +392,15 @@ for eid, esid, duration, datatype in connection.cursor().execute( sqlquery ):
     if datatype != "slide":
         background.append_zero_lag_id( eid, esid )
 
+for eid, esid, duration, datatype in connection.cursor().execute( sqlquery ):
+    background2.append_duration(eid, esid, duration)
+    if datatype != "slide":
+        background2.append_zero_lag_id( eid, esid )
+
+
 # calculate the background duration for each experiment_summary_id 
 background.calc_bkg_durs()
-background_backup = copy.deepcopy(background)
+background2.calc_bkg_durs()
 
 # get desired ifo grouping
 if opts.group_by_ifos:
@@ -411,6 +418,10 @@ for table_name in add_tables:
     JOIN
         """, table_name, """ ON
         experiment_map.coinc_event_id == """, table_name, '.coinc_event_id' ])
+
+#
+#     Calculate uncombined FAR
+#
 
 if rank_by == "MIN":
     connection.create_function("calc_ufar", 5, background.calc_ufar_by_min)
@@ -449,10 +460,6 @@ if opts.debug:
 # sort the background lists
 background.sort_bkg_stats()
 
-#
-#     Calculate uncombined FAR
-#
-
 if opts.verbose:
     print >> sys.stderr, "Calculating uncombined FAR..."
 # calculate the far for each trigger and store in the output table
@@ -488,11 +495,15 @@ if opts.debug:
     print >> sys.stderr, sqlquery
     print >> sys.stderr, time.localtime()[3], time.localtime()[4], time.localtime()[5]
 
+connection.cursor().execute(sqlquery)
+
+connection.commit()
+
 #
 #     Calculate combined FAR
 #
 
-background = background_backup
+connection.create_function("calc_cfar", 5, background2.calc_ufar_by_min)
 
 # get all the triggers
 sqlquery = ''.join([ """
@@ -500,9 +511,9 @@ sqlquery = ''.join([ """
         experiment_summary.experiment_id,
         experiment_summary.experiment_summ_id,
         """,
-        ifo_grouping, """,
+        '"ALL_IFOS"', """,
         """,
-        param_grouping, """,
+        '0', """,
         """, ranking_table, '.', uncombined_far_column,"""
     FROM 
         """, ranking_table, """
@@ -518,13 +529,13 @@ if opts.debug:
     print >> sys.stderr, time.localtime()[3], time.localtime()[4], time.localtime()[5]
 
 for eid, esid, ifos, param_group, stat in connection.cursor().execute(sqlquery):
-    background.add_to_bkg_stats(eid, esid, ifos, param_group, stat)
+    background2.add_to_bkg_stats(eid, esid, ifos, param_group, stat)
 
 if opts.debug:
     print >> sys.stderr, time.localtime()[3], time.localtime()[4], time.localtime()[5]
 
 # sort the background lists
-background.sort_bkg_stats()
+background2.sort_bkg_stats()
 
 if opts.verbose:
     print >> sys.stderr, "Calculating combined FAR..."
@@ -544,11 +555,11 @@ sqlquery = ''.join(["""
     SET
         """, combined_far_column, """ = (
             SELECT
-                calc_ufar(
+                calc_cfar(
                     experiment_summary.experiment_id,
                     experiment_summary.experiment_summ_id,
-                    """, ifo_grouping, """,
-                    """, param_grouping, """,
+                    """, '"ALL_IFOS"', """,
+                    """, '0', """,
                     """, ranking_table, '.', uncombined_far_column, """
                     ) 
             FROM 
