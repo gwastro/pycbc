@@ -70,6 +70,8 @@ if userTag[0] == 'FULL' and userTag[1] == 'DATA':
     userTag = 'FULL_DATA'
 elif userTag[0] == 'PLAYGROUND':
     userTag = 'PLAYGROUND'
+elif userTag[0].endswith("INJ"):
+    userTag = userTag[0]
 else:
     userTag = '_'.join(userTag)
 
