@@ -338,6 +338,3 @@ workflow.dag.add_node(wipNode)
 
 workflow.write_plans()
 logging.info("Written dax.")
-workflow.dag.write_dag()
-workflow.dag.write_sub_files()
-logging.info("Written dag for legacy support")
