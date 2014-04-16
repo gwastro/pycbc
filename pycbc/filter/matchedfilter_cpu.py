@@ -33,28 +33,36 @@ support = """
 def correlate_numpy(x, y, z):
     z.data[:] = numpy.conjugate(x.data)[:]
     z *= y
+    
+code = """
+#pragma omp parallel for
+for (int i=0; i<N; i++){
+    TYPE xr, yr, xi, yi, re, im;
+    xr = xa[i].real();
+    xi = xa[i].imag();
+    yr = ya[i].real();       
+    yi = ya[i].imag();
+
+    re = xr*yr + xi*yi;
+    im = xr*yi - xi*yr;
+
+    za[i] = std::complex<TYPE>(re, im);
+}
+"""
+single_code = code.replace('TYPE', 'float')
+double_code = code.replace('TYPE', 'double')
 
 def correlate_inline(x, y, z):
+    if z.precision == 'single':
+        the_code = single_code
+    else:
+        the_code = double_code
+        
     za = numpy.array(z.data, copy=False)
     xa = numpy.array(x.data, copy=False)
     ya = numpy.array(y.data, copy=False)
-    N = len(x)
-    code = """
-        #pragma omp parallel for
-        for (int i=0; i<N; i++){
-            float xr, yr, xi, yi, re, im;
-            xr = xa[i].real();
-            xi = xa[i].imag();
-            yr = ya[i].real();       
-            yi = ya[i].imag();
-            
-            re = xr*yr + xi*yi;
-            im = xr*yi - xi*yr;
-            
-            za[i] = std::complex<float>(re, im);
-        }
-    """
-    inline(code, ['xa', 'ya', 'za', 'N'], 
+    N = len(x) 
+    inline(the_code, ['xa', 'ya', 'za', 'N'], 
            extra_compile_args=['-march=native  -O3  -fopenmp'],
            support_code = support,
            libraries=['gomp']
