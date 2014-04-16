@@ -58,6 +58,7 @@ class AhopeWorkflow(Workflow):
         # Must execute in output directory.
         currDir = os.getcwd()
         os.chdir(job_dir)
+        
         # Make call
         make_external_call(cmd_list, out_dir=os.path.join(job_dir, 'logs'),
                                      out_baseame=base_name) 
