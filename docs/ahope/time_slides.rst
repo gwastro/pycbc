@@ -49,11 +49,13 @@ tell the workflow how to construct (or gather) the time slide files. The first o
 
 The choices here and their description are as described below
 
-* IN_WORKFLOW - The time slide file generation will be added as jobs in the workflow and will be generated after submission of the workflow. **Not yet supported because of ligolw_tisi issues mentioned on to-do list**
+* IN_WORKFLOW - The time slide file generation will be added as jobs in the workflow and will be generated after submission of the workflow.
 * AT_RUNTIME - The time slide jobs will be run directly within this module.
 * PREGENERATED - The time slide files will be supplied as pregenerated files.
 
-When using IN_WORKFLOW or AT_RUNTIME no additional options are required in the [ahope-timeslides] section.
+For all cases (even PREGENERATED) the following option is needed:
+
+* timeslides-exe = VALUE - This tag is used to locate the timeslides exe and the options needed for that exe. It will also identify which time slides are being done, see below for details.
 
 When using PREGENERATED the additional option is needed:
 
@@ -67,74 +69,51 @@ $$$$$$$$$$$$$$$
 
 In this section, if not using PREGENERATED you need to supply the executable that will be used to generate the time slide files. This is done in the [executables] section by adding something like:
 
-timeslides = /path/to/ligolw_tisi
+timeslides = /path/to/pycbc_timeslides
 
-the option, in this case 'timeslides', will be used to specify the constant command line options that are sent to all ligolw_tisi jobs. The tag 'timeslides' can be changed, it is currently supplied as a key-word argument when calling the function. 'ligolw_tisi' is the default.
+the option, in this case 'timeslides', will be used to specify the constant command line options that are sent to all pycbc_timeslides jobs. This is done in the [timeslides] section and the specific options for each executable is discussed below. The tag 'timeslides' is taken from the ahope-timeslides section of the configuration file, as described above.
 
-**PLEASE NOTE THE ISSUES WHEN USING ligolw_tisi AS REPORTED BELOW**
+**IMPORTANT** the time slides tag name, (e.g. 'timeslides'), is used to identify which time slide files are to be produced. The module will search for modules called [timeslides-XXXX] and generate one time slide file for every sub-section using XXXX as a tag.
 
-**IMPORTANT** the time slides tag name, "tisi" by default, is used to identify which time slide files are to be produced. The module will search for modules called [tisi-XXXX] and generate one tisi file for every sub-section using XXXX as a tag.
-
-When using the IN_WORKFLOW option, value pairs in [tisi-XXXX]
-are also used to specify options specific to that
-particular injection set. These options will be directly supplied to the
+When using the IN_WORKFLOW or AT_RUNTIME options, value pairs in [timeslides-XXXX] are also used to specify options specific to that
+particular time slide job. These options will be directly supplied to the
 executable being used to generate the file.
 
-**PLEASE NOTE:** When using PREGENERATED the time slide names are still identified by looking in the "tisi-XXXX" sections (a path in [executables] is not needed). These sections will be empty in this case. Also note that as XXXX is used as a tag you can use [ahope-timeslides-XXXX] section to supply unique pregenerated injection files. You can also use this to supply a mix of pregenerated, and not-pregenerated time slide files.
+**PLEASE NOTE:** When using PREGENERATED the time slide names are still identified by looking in the "tisi-XXXX" sections (a path in [executables] is not needed). These sections will be empty in this case. Also note that as XXXX is used as a tag you can use [ahope-timeslides-XXXX] section to supply unique pregenerated time slide files. You can also use this to supply a mix of pregenerated, and not-pregenerated time slide files.
 
 ----------------------------------------------------------------
-Supported injection executables and instructions for using them
+Supported time slideexecutables and instructions for using them
 ----------------------------------------------------------------
 
 The following time slide generation executables are currently supported in ahope
 
-* ligolw_tisi
+* pycbc_timeslides
 
 Adding a new executable is not too hard, please ask a developer for some pointers on how to do this if you want to add a new code.
 
 $$$$$$$$$$$$$$$$$
-ligolw_tisi
+pycbc_timeslides
 $$$$$$$$$$$$$$$$$
 
-ligolw_tisi is the pylal ligolw python code that was responsible for making time slide tables in ihope. The help message for ligolw_tisi follow
+pycbc_timeslides is the pycbc python code that is almost identical to the code used for making time slide tables in ihope. The help message for pycbc_timeslides follows
 
-.. command-output:: ligolw_tisi --help
+.. command-output:: pycbc_timeslides --help
 
-At the moment these options cannot be supplied in the ConfigParser because of the repeated use of the --instrument option. Instead the following options need to be given in a [tisi] section
-
-If
-
-inspiral-num-slides = VALUE
-
-is in the section then add that to the command line call. Otherwise look for
-
-X1-slide-start = INT
-X1-slide-end = INT
-X1-slide-step = INT
-
-where X1 loops over all active ifos. This is translated to --instrument X1=slide_start:slide_end:slide_step
-
-Then if
-
-remove-zero-lag
-
-is present this will be added to the command line call.
-
-The output file argument is automatically added.
-
-**THIS NEEDS FIXING AND MAKING COMPATIBLE WITH OTHER AHOPE EXE CALLS**
-
-An example of a ligolw_tisi call, for time slides, is given below
+An example of a pycbc_timeslides call, for time slides, is given below
 
 .. code-block:: bash
 
-   ligolw_tisi -v --inspiral-num-slides 100 --remove-zero-lag /home/spxiwh/lscsoft_git/src/pycbc/examples/ahope/weekly_ahope/961585543-961671943/time_slide_files/H1L1-TIMESLIDES_SLIDES-961585543-86400.xml.gz
+   /home/spxiwh/lscsoft_git/executables_master/bin/pycbc_timeslides --output-files /home/spxiwh/lscsoft_git/src/pycbc/examples/ahope/weekly_ahope/961585543-961671944/time_slide_files/H1L1V1-TISI_SLIDES-961585543-86401.xml.gz --remove-zero-lag --inspiral-num-slides 100:H1=0,L1=5,V1=10
 
 and for zero-lag only
 
 .. code-block:: bash
 
-   ligolw_tisi -v -i H1=0:0:0 -i L1=0:0:0 /home/spxiwh/lscsoft_git/src/pycbc/examples/ahope/weekly_ahope/961585543-961671943/time_slide_files/H1L1-TIMESLIDES_ZEROLAG-961585543-86400.xml.gz
+   /home/spxiwh/lscsoft_git/executables_master/bin/pycbc_timeslides --output-files /home/spxiwh/lscsoft_git/src/pycbc/examples/ahope/weekly_ahope/961585543-961671944/time_slide_files/H1L1V1-TISI_ZEROLAG-961585543-86401.xml.gz --tisi-slides H1=0:0:0 L1=0:0:0 V1=0:0:0
+
+The following options are added by ahope and **must not** be given in the configuration file
+
+* --output-files
 
 ============================================
 :mod:`pycbc.ahope.timeslides_utils` Module
