@@ -5,7 +5,16 @@ class Executable(object):
     def __init__(self, name):
         self.name = name
         self.in_workflow = False
-
+        self._dax_executable = Pegasus.DAX3.Executable(name)
+        self.pfns = {}
+        
+    def add_pfn(self, url, site='local'):
+        self._dax_executable.PFN(url, site)
+        self.pfns[site] = url
+        
+    def get_pfn(self, url, site='local'):
+        return self.pfns[site]
+        
 class Node(object):    
     def __init__(self, executable):
         self.in_workflow = False   
@@ -71,8 +80,7 @@ class Node(object):
     def new_output_file_arg(self, name):
         fil = File(name)
         self.add_output_arg(fil)
-        return fil
-        
+        return fil     
         
     # functions to describe properties of this node
     def add_profile(namespace, key, value):
@@ -101,6 +109,9 @@ class Node(object):
         
     def set_retries(self, number):
         self.add_profile("dagman", "retry", number)
+        
+    def get_command_line(self):
+        pass
 
 class Workflow(object):
     def __init__(self, name='my_workflow'):
