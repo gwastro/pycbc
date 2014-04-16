@@ -283,6 +283,7 @@ setup (
                'pycbc.noise',
                'pycbc.vetoes',
                'pycbc.tmpltbank',
-               'pycbc.ahope'
+               'pycbc.ahope',
+               'pycbc.workflow',
                ],
 )

@@ -4,10 +4,9 @@ import copy
 class Executable(object):
     def __init__(self, name):
         self.name = name
+        self.in_workflow = False
 
-class Node(object):
-    _id = 0
-    
+class Node(object):    
     def __init__(self, executable):
         self.in_workflow = False
     
@@ -16,12 +15,7 @@ class Node(object):
         self._inputs = []
         self._outputs = []
         
-        self._dax_node = Pegasus.DAX3.Job(name=executable.name, 
-                                          id=self._get_node_id())
-    
-    def _get_node_id(self):
-        Node._id += 1
-        return "ID%06d" % self._id
+        self._dax_node = Pegasus.DAX3.Job(name=executable.name)
         
     def add_arg(self, arg):
         """ Add an argument
@@ -35,6 +29,7 @@ class Node(object):
         if value:
             self._dax_node.addArguments(opt, value)
         else:
+            self._dax_node.addArguments(opt)
             
         
     def _add_input(self, inp):
@@ -87,11 +82,12 @@ class Workflow(object):
         
         self._inputs = []
         self._outputs = []
+        self._executables = []
         
     def add_node(self, node):
         node.in_workflow = True
         self._adag.addJob(node._dax_node)
-    
+ 
         for inp in node._inputs:
             if inp.node is not None and inp.node.in_workflow:
                 parent = inp.node._dax_node
@@ -109,6 +105,10 @@ class Workflow(object):
                                                
         for out in node._outputs:
             self._outputs += node._outputs  
+            
+        if not node.executable.in_workflow:
+            node.executable.in_workflow = True
+            self._executables += [node.executable]
         
         return self
         
@@ -139,20 +139,19 @@ class DataStorage(object):
 class File(DataStorage):
     def __init__(self, name):
         DataStorage.__init__(self, name)
-
+        self._dax_file = Pegasus.DAX3.File(self.name)
 
     def _dax_repr(self):
-        return Pegasus.DAX3.File(self.name)
+        return self._dax_file
 
     def _set_as_input_of(self, node):
-        fil = Pegasus.DAX3.File(self.name)
-        node._dax_node.uses(fil, link=Pegasus.DAX3.Link.INPUT,
+        node._dax_node.uses(self._dax_file, link=Pegasus.DAX3.Link.INPUT,
                                                register=False,
                                                transfer=True)
     
     def _set_as_output_of(self, node):
         fil = Pegasus.DAX3.File(self.name)
-        node._dax_node.uses(fil, link=Pegasus.DAX3.Link.OUTPUT,
+        node._dax_node.uses(self._dax_file, link=Pegasus.DAX3.Link.OUTPUT,
                                                register=False,
                                                transfer=True)
     
