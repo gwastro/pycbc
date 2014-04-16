@@ -11,10 +11,10 @@ Weekly ahope is a tool used to analyse data from multiple detectors independentl
 The output is a webpage containing the plots that can be used to understand the results of the analysis
 
 =======================
-How to run daily ahope
+How to run weekly ahope
 =======================
 
-Here we document the stages needed to run daily ahope.
+Here we document the stages needed to run weekly ahope.
 
 ---------------------------
 Install lalsuite and pycbc
@@ -32,7 +32,7 @@ described on the page here:
 Find the run scripts
 ----------------------
 
-The scripts to run daily ahope currently reside within the pycbc source tree.
+The scripts to run weekly ahope currently reside within the pycbc source tree.
 These will be moved to be installed executables at some point. For now this
 can be found in::
 
@@ -52,7 +52,7 @@ The configuration file for weekly_ahope is split into parts::
     pipedown.ini
     inj.ini
 
-These files contain all the details needed to run daily_ahope::
+These files contain all the details needed to run weekly_ahope::
 
     IF YOU ARE UNFAMILIAR WITH AHOPE WORKFLOWS, LOOK THROUGH THESE FILES. pipedown.ini WILL LOOK FAMILIAR IF YOU ARE USED TO IHOPE WORKFLOWS
 
@@ -64,7 +64,11 @@ These files contain all the details needed to run daily_ahope::
 
    weekly_ahope_pycbc.ini
 
-The example is set up to run on S6 data and analysing only H1 and L1. If you are running on non-S6 data, or want to analyse a different set of ifos, you will have to edit some additional options::
+The weekly_ahope.ini example is set up to run on S6 data and analysing only H1 and L1. The weekly_ahope_pycbc.ini example is set up to run on S6 data analysing H1, L1 and V1.
+
+If you want to run in this default configuration please jump down the "Generate the workflow".
+
+If you want to run on non-S6 data, or want to analyse a different set of ifos, you will have to edit some additional options::
 
     [ahope]
     h1-channel-name = H1:LDAS-STRAIN
@@ -96,7 +100,7 @@ To run through this::
  * The segments-X1-science-name is the flag used to store science times in the segment database
  * segments-database-url points to the segment database
  * segments-veto-definer-url points to the url where the veto-definer file can be found.
- * The [tisi] sections give instructions on how to set up the input files used for time sliding. See :ref:`ahopetimeslidesmod` for more details on how to supply this for other situations. Some significant changes are needed to make ligolw_tisi and ahope work nicer with each other (and avoid this hassle). This is on the to-do list.
+ * The [tisi] sections give instructions to ahope on how to set up what time slides will be performed. See :ref:`ahopetimeslidesmod` for more details on how to supply this for other situations. Normally you will just need to add or remove detectors.
 
 The remaining options affect how the jobs run, these should not be edited unless you know what you are doing ... but can freely be added if you do know what you are doing and want to change something.
 
@@ -109,7 +113,7 @@ When you are ready, you can generate the workflow. First we need to choose a tim
     GPS_START_TIME=961585543
     GPS_END_TIME=961671943
 
-You also need to specify the directory in which pipedown will store log files. Ahope does not need this, but pipedown does.
+You also need to specify the directory in which pipedown  will store log files. Ahope does not need this, but pipedown does.
 
  * For CIT,LHO,LLO or SYR set::
 
