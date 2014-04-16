@@ -64,13 +64,13 @@ $$$$$$$$$$$$$$$
 
 Executables required by this module are provided in the [executables] section. Any executable names specified in the [ahope-postproc] section must appear here. For instance if the [ahope-postproc] section reads
 
-postproc-computedurations-exe=computedurs
-postproc-cfar-exe=pycbccfar
+* postproc-computedurations-exe=computedurs
+* postproc-cfar-exe=pycbccfar
 
 you would need to have
 
-computedurs = ${which:pycbc_compute_durations}
-pycbccfar = ${which:pycbc_calculate_far}
+* computedurs = ${which:pycbc_compute_durations}
+* pycbccfar = ${which:pycbc_calculate_far}
 
 in the [executables] section.
 

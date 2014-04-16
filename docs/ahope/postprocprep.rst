@@ -68,16 +68,16 @@ $$$$$$$$$$$$$$$
 
 Executables required by this module are provided in the [executables] section. Any executable names specified in the [ahope-postprocprep] section must appear here. For instance if the [ahope-postprocprep] section reads
 
-postprocprep-combiner1-exe=pycbcsqlite
-postprocprep-combiner2-exe=pycbcsqlite
-postprocprep-cluster-exe=clustercoincs
-postprocprep-injfind-exe=databaseinjfind
+* postprocprep-combiner1-exe=pycbcsqlite
+* postprocprep-combiner2-exe=pycbcsqlite
+* postprocprep-cluster-exe=clustercoincs
+* postprocprep-injfind-exe=databaseinjfind
 
 you would need to have
 
-pycbcsqlite = ${which:pycbc_sqlite_simplify}
-clustercoincs = ${which:ligolw_cbc_cluster_coincs}
-databaseinjfind = ${which:ligolw_dbinjfind}
+* pycbcsqlite = ${which:pycbc_sqlite_simplify}
+* clustercoincs = ${which:ligolw_cbc_cluster_coincs}
+* databaseinjfind = ${which:ligolw_dbinjfind}
 
 in the [executables] section.
 
