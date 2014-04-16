@@ -153,7 +153,7 @@ Then you can generate the workflow::
 Planning and Submitting the Worklfow
 -----------------------------------------
 First, copy the files needed for planning into the directory where the dax 
-was generated.
+was generated.::
 
     cp plan.sh ${GPS_START_TIME}-${GPS_END_TIME}/
     cp site-local.xml ${GPS_START_TIME}-${GPS_END_TIME}/
@@ -166,9 +166,10 @@ Then CD into the directory where the dax was generated::
 From the directory where the dax was created, run the planning script::
 
     sh plan.sh weekly_ahope.dax
-    
-Note, that if you have changed the name of the ini file, or are using an alternative one,
-the dax file's name will change accordingly.
+
+.. note::    
+   Note, that if you have changed the name of the ini file, or are using an alternative one,
+   the dax file's name will change accordingly.
     
 Submit the workflow by following the instructions at the end of the script output, which looks something like 
 the following.::
@@ -194,10 +195,10 @@ In this case, the workflow would be submitted as follows.::
 
     pegasus-run  /usr1/ahnitz/log/ahnitz/pegasus/weekly_ahope/run0011
 
-If the workflow runs successfully you will find the output under your html directory some time later.
+If the workflow runs successfully, you will find the output under your html directory some time later.
 
 -----------------------------------------
-Monitor and Debug the Worklfow
+Monitor and Debug the Workflow
 -----------------------------------------
 
 To monitor the above workflow, one would run::
