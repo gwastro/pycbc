@@ -412,6 +412,8 @@ class PyCBCInspiralJob(Job):
             userTag = 'FULL_DATA'
         elif userTag[0] == 'PLAYGROUND':
             userTag = 'PLAYGROUND'
+        elif userTag[0].endswith("INJ"):
+            userTag = userTag[0]
         else:
             userTag = '_'.join(userTag)
         node.add_var_opt("user-tag", userTag)
