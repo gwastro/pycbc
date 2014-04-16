@@ -8,14 +8,11 @@ class Executable(object):
 
 class Node(object):    
     def __init__(self, executable):
-        self.in_workflow = False
-    
-        self.executable=executable 
-            
+        self.in_workflow = False   
+        self.executable=executable            
         self._inputs = []
-        self._outputs = []
-        
-        self._dax_node = Pegasus.DAX3.Job(name=executable.name)
+        self._outputs = []        
+        self._dax_node = Pegasus.DAX3.Job(name=executable.name) 
         
     def add_arg(self, arg):
         """ Add an argument
@@ -30,8 +27,8 @@ class Node(object):
             self._dax_node.addArguments(opt, value)
         else:
             self._dax_node.addArguments(opt)
-            
-        
+    
+    #private functions to add input and output data sources/sinks        
     def _add_input(self, inp):
         """ Add as source of input data
         """
@@ -45,6 +42,7 @@ class Node(object):
         out.node = self
         out._set_as_output_of(self)
         
+    # public functions to add options, arguments with or without data sources
     def add_input_opt(self, opt, inp):
         """ Add an option that contains an input 
         """
@@ -74,6 +72,35 @@ class Node(object):
         fil = File(name)
         self.add_output_arg(fil)
         return fil
+        
+        
+    # functions to describe properties of this node
+    def add_profile(namespace, key, value):
+        """ Add profile information to this node at the DAX level
+        """
+        entry = Pegasus.DAX3.Profile(namespace, key, value)
+        self._dax_node.addProfile(entry)
+    
+    def set_memory(self, size):
+        self.add_profile('condor', 'request_memory', '%sM' % size)
+         
+    def set_storage(self, size):
+        self.add_profile('condor', 'request_disk', '%sM' % size)
+        
+    def set_num_cpus(self, number):
+        self.add_profile('condor', 'request_cpus', number)
+        
+    def set_universe(self, universe):
+        self.add_profile("condor", "universe", universe)
+        
+    def set_category(self, category):
+        self.add_profile('dagman', 'category', category)
+        
+    def set_priority(self, priority):
+        self.add_profile('dagman', 'priority', priority)
+        
+    def set_retries(self, number):
+        self.add_profile("dagman", "retry", number)
 
 class Workflow(object):
     def __init__(self, name='my_workflow'):
@@ -122,8 +149,7 @@ class Workflow(object):
 
 class DataStorage(object):
     def __init__(self, name):
-        self.name = name
-        
+        self.name = name      
         self.node = None
         self.workfow_input = False
         
@@ -146,14 +172,11 @@ class File(DataStorage):
 
     def _set_as_input_of(self, node):
         node._dax_node.uses(self._dax_file, link=Pegasus.DAX3.Link.INPUT,
-                                               register=False,
-                                               transfer=True)
-    
+                                            register=False, transfer=True)   
     def _set_as_output_of(self, node):
         fil = Pegasus.DAX3.File(self.name)
         node._dax_node.uses(self._dax_file, link=Pegasus.DAX3.Link.OUTPUT,
-                                               register=False,
-                                               transfer=True)
+                                            register=False, transfer=True)
     
 class Database(DataStorage):
     pass
