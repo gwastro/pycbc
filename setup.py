@@ -307,7 +307,8 @@ setup (
                'bin/pycbc_timeslides',
                'bin/pycbc_sqlite_simplify',
                'bin/pycbc_calculate_far',
-               'bin/pycbc_compute_durations'
+               'bin/pycbc_compute_durations',
+               'bin/pycbc_pipedown_plots'
                ],
     packages = [
                'pycbc',
