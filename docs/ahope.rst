@@ -37,19 +37,30 @@ in the source tree under::
 These examples are described in each section below
 
 ---------------------
-data_checker
+weekly_ahope
 ---------------------
 
-This is an example of using only the segment query and datafind query modules
-of ahope, with all checking options enabled. This will do the following
+This is an example of how to run a coincidence ahope workflow, mimicking standard ihope coincidence analysis as closely as possible. It calls into pipedown to do the post-processing and using write_ihope_page to make an output html page. In total this will:
 
-* Use the supplied information in the veto-definer file query for science times
-* Using the veto-definer file query for CAT1,2,3,4,5 times
-* Connect to the datafind server and query for frames at the times given in science - CAT1 (frame types provided in .ini file)
-* Check that frames have been returned at all times that are given as science (-CAT1) by the segment server. Fail if not (this can be changed to update the science times, but here we want to fail if data is not present)
-* Run os.path.is_file() on every frame file that was returned by datafind. This can be slow if run on long periods of time and if the fileservers are slow. Not recommended for a full ahope run at present, but useful for daily [a,i]hope runs.
+* Get science and data-quality segments from the server.
+* Query the datafind server for frames.
+* Create the template bank jobs needed to cover the times
+* Split the template banks (into whatever number is specified in the ini file). This step could be easily removed, just delete this module in the python file and send the matched-filtering code the template bank input directly.
+* Run the matched-filtering code on the split template banks
+* Use ligolw_add and ligolw_sstinca to generate coincidence triggers
+* Do some compatibility conversions and then call pipedown to create a dag to do the post-processing
+* Add a node to run write_ihope_page at the end of analysis
+* Native post-processing is also present in a testing mode, this will not be seen in the default output page, but does include a full set of plots.
+* Write a dag/dax to file that can be submitted to run the workflow
 
-This example can be edited for any time you are interested in and can be used to identify missing data before submitting a workflow. 
+This will therefore set up a *almost complete* mimic of a weekly ihope analysis and automatically generate the output webpage at the end of the analysis.
+
+More details of how to run this is found in the following link:
+
+.. toctree::
+      :maxdepth: 1
+
+   ahope/weekly_ahope
 
 -------------------
 er_daily_ahope
@@ -76,38 +87,30 @@ More details of how to run this is found in the following link:
 
    ahope/daily_ahope
 
-=====================
-weekly_ahope
-=====================
+---------------------
+data_checker
+---------------------
 
-This is an example of how to run a coincidence ahope workflow, mimicking standard ihope coincidence analysis as closely as possible. It calls into pipedown to do the post-processing and using write_ihope_page to make an output html page. In total this will:
+This is an example of using only the segment query and datafind query modules
+of ahope, with all checking options enabled. This will do the following
 
-* Get science and data-quality segments from the server.
-* Query the datafind server for frames.
-* Create the template bank jobs needed to cover the times
-* Split the template banks (into whatever number is specified in the ini file). This step could be easily removed, just delete this module in the python file and send the matched-filtering code the template bank input directly.
-* Run the matched-filtering code on the split template banks
-* Use ligolw_add and ligolw_sstinca to generate coincidence triggers
-* Do some compatibility conversions and then call pipedown to create a dag to do the post-processing
-* Add a node to run write_ihope_page at the end of analysis
-* Native post-processing is also present in a preliminary mode, this will not be seen in the output page.
-* Write a dag/dax to file that can be submitted to run the workflow
+* Use the supplied information in the veto-definer file query for science times
+* Using the veto-definer file query for CAT1,2,3,4,5 times
+* Connect to the datafind server and query for frames at the times given in science - CAT1 (frame types provided in .ini file)
+* Check that frames have been returned at all times that are given as science (-CAT1) by the segment server. Fail if not (this can be changed to update the science times, but here we want to fail if data is not present)
+* Run os.path.is_file() on every frame file that was returned by datafind. This can be slow if run on long periods of time and if the fileservers are slow. Not recommended for a full ahope run at present, but useful for daily [a,i]hope runs.
 
-This will therefore set up a *almost complete* mimic of a weekly ihope analysis and automatically generate the output webpage at the end of the analysis.
+This example can be edited for any time you are interested in and can be used to identify missing data before submitting a workflow.
 
-We hope to run this in ER5 along with the standard weekly ihope runs for comparison.
+===========================
+Ahope module documentation
+===========================
 
-More details of how to run this is found in the following link:
+The following contains a list of ahope's modules, a bried description of what each does, and a link to documentation on how to use each module. Collectively these pages should provide complete details on how to set up a workflow from scratch.
 
-.. toctree::
-   :maxdepth: 1
-
-   ahope/weekly_ahope
-
-
-====================
+--------------------
 Initialization
-====================
+--------------------
 
 Take in command line input and the configuration file.
 
@@ -116,9 +119,9 @@ Take in command line input and the configuration file.
 
    ahope/initialization
 
-====================
+--------------------
 Generating segments
-====================
+--------------------
 
 Obtain the science segments and data-quality segments from making queries to a segment database.
 
@@ -127,9 +130,9 @@ Obtain the science segments and data-quality segments from making queries to a s
 
    ahope/segments
 
-=====================
+--------------------
 Obtaining data
-=====================
+--------------------
 
 Run queries to the datafind server to find the needed frames and test these for
 consistency if desired
@@ -139,9 +142,9 @@ consistency if desired
 
    ahope/datafind
 
-======================
+----------------------------
 Injection generation
-======================
+----------------------------
 
 Generate injection files for use later in the analysis
 
@@ -150,9 +153,9 @@ Generate injection files for use later in the analysis
 
    ahope/injections
 
-========================
+----------------------------------
 Time-slide generation
-========================
+----------------------------------
 
 Generate the time-slide files used for describing time slides to be performed later in the analysis
 
@@ -161,9 +164,9 @@ Generate the time-slide files used for describing time slides to be performed la
 
    ahope/time_slides
 
-====================
+----------------------------------
 Template bank
-====================
+----------------------------------
 
 Construct a template bank, or banks, of CBC waveforms that will be used to matched-filter the data with.
 
@@ -172,9 +175,9 @@ Construct a template bank, or banks, of CBC waveforms that will be used to match
 
    ahope/template_bank
 
-====================
+----------------------------------
 Matched-filtering
-====================
+----------------------------------
 
 Perform the matched-filters and calculate any signal-based consistency tests that should be calculated.
 
@@ -182,9 +185,9 @@ Perform the matched-filters and calculate any signal-based consistency tests tha
 
    ahope/matched_filter
 
-====================
+----------------------------------
 Coincidence
-====================
+----------------------------------
 
 Determine if "triggers" seen in one detector are also seen in other detectors. Also check for coincidence between time-slid triggers for background evaluation
 
@@ -192,9 +195,9 @@ Determine if "triggers" seen in one detector are also seen in other detectors. A
 
    ahope/coincidence
 
-============================
+----------------------------------
 Post processing preparation
-============================
+----------------------------------
 
 Prepare output files for the post-processing stage
 
@@ -202,9 +205,9 @@ Prepare output files for the post-processing stage
 
    ahope/postprocprep
 
-========================
+----------------------------------
 Post-processing
-========================
+----------------------------------
 
 Assess the significance of all triggers and calculate any rate statements
 
