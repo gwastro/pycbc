@@ -1177,7 +1177,7 @@ class AhopeFileList(list):
         endTime = float( max([i.segList[-1][-1] for i in self]))
         step = (endTime - startTime) / float(numSubLists)
 
-        # Set up storage
+        # Set up storage
         self._splitLists = []
         for idx in range(numSubLists):
             self._splitLists.append(AhopeFileList([]))
