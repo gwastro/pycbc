@@ -36,7 +36,7 @@ from glue import segments
 import pycbc.ahope as ahope
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
-                    level=logging.INFO,datefmt='%I:%M:%S')
+                    level=logging.INFO)
 
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc)
@@ -126,8 +126,8 @@ postProcPrepFiles = ahope.setup_postprocessing_preparation(workflow,
                       vetoFiles=segsFileList, vetoCats=ppVetoCats)
 
 # COMMENTED OUT WHILE BEING TESTED
-#postProcFiles = ahope.setup_postprocessing(workflow, postProcPrepFiles,
-#                                           ppDir, tags=[], vetoCats=ppVetoCats)
+postProcFiles = ahope.setup_postprocessing(workflow, postProcPrepFiles,
+                                           ppDir, tags=[], vetoCats=ppVetoCats)
 
 
 # Also run pipedown, for legacy comparison
@@ -221,6 +221,65 @@ if pipedownParents:
 # return to the original directory
 os.chdir("..")
 
+# Set up for pipedown plotting
+
+# Make directory
+pipedownPlotDir = os.path.join(currDir, 'pipedown_plots')
+if not os.path.exists(pipedownPlotDir+'/logs'):
+    os.makedirs(pipedownPlotDir+'/logs')
+os.chdir(pipedownPlotDir)
+
+# Create the necessary ini file
+# This is sufficiently different from the original ini file that some editing is
+# required.
+pipeCp = copy.deepcopy(workflow.cp)
+# Create the condor sections
+pipeCp.add_section("condor")
+pipeCp.set("condor","universe","vanilla")
+for item,value in pipeCp.items('executables'):
+    pipeCp.set("condor", item, value)
+
+# Write ini file to folder
+
+iniFile = os.path.join(pipedownPlotDir, 'pipedown.ini')
+pipeCp.write(file(iniFile,"w"))
+
+# Set up command to run pipedown_plots
+
+pipedown_log_dir = workflow.cp.get("ahope",'pipedown-log-path')
+pipedown_tmp_space = workflow.cp.get("ahope",'pipedown-tmp-space')
+
+for cat in ppVetoCats:
+    veto_tag = "CUMULATIVE_CAT_%d" %(cat,)
+    inputFiles = postProcFiles.find_output_with_tag(veto_tag)
+    assert len(inputFiles) == 1
+    inputFile = inputFiles[0]
+    pipeCommand  = [pipeCp.get("condor","pipedown_plots")]
+    pipeCommand.extend(["--tmp-space", pipedown_tmp_space])
+    namingPrefix = "FULL_DATA_CAT_%d_VETO" %(cat,)
+    pipeCommand.extend(["--naming-prefix", namingPrefix])
+    pipeCommand.extend(["--instruments"] + workflow.ifos)
+    pipeCommand.extend(["--gps-start-time", str(start_time)])
+    pipeCommand.extend(["--gps-end-time", str(end_time)])
+    pipeCommand.extend(["--input-file", inputFile.path])
+    pipeCommand.extend(["--ihope-cache", cacheFileName])
+    pipeCommand.extend(["--simulation-tags"] + inj_tags)
+    pipeCommand.extend(["--veto-category", str(cat)])
+    pipeCommand.extend(["--log-path", pipedown_log_dir])
+    pipeCommand.extend(["--config-file", iniFile])
+
+    # run lalapps_pipedown
+    ahope.make_external_call(pipeCommand, outDir=pipedownPlotDir + "/logs",
+                       outBaseName='pipedown_plots_call')
+    pipePlotDag = iniFile[0:-4] + "_" + namingPrefix + ".dag"
+    pipePlotJob = pipeline.CondorDAGManJob(pipePlotDag, pipedownPlotDir)
+    pipePlotNode = pipePlotJob.create_node()
+    workflow.dag.add_node(pipePlotNode)
+    pipePlotNode.add_parent(inputFile.node)
+
+# return to the original directory
+os.chdir("..")
+
 # Setup for write_ihope_page
 
 # Need to make an altered .ini file, start with the pipedown .ini as its closer
@@ -278,6 +337,7 @@ wipNode.add_parent(pipeNode)
 workflow.dag.add_node(wipNode)
 
 workflow.write_plans()
-logging.info("Finished.")
+logging.info("Written dax.")
 workflow.dag.write_dag()
 workflow.dag.write_sub_files()
+logging.info("Written dag for legacy support")
