@@ -34,7 +34,7 @@ import logging
 import urlparse
 from glue import pipeline
 from glue import segments
-from ahope_utils import Node, AhopeExecutable, AhopeFile
+from ahope_utils import AhopeNode, AhopeExecutable, AhopeFile
 
 def legacy_get_valid_times(self):
     """
@@ -94,13 +94,13 @@ def legacy_get_valid_times(self):
     return dataLength, validChunk
 
         
-class LegacyAnalysisAhopeNode(Node):
+class LegacyAnalysisNode(AhopeNode):
     # This is *ONLY* used by legacy codes where ahope cannot directly
     # set the output name. Do not use elsewhere!
     def  set_jobnum_tag(self, num):
-        self.add_var_opt('user-tag', num)
+        self.add_var_opt('--user-tag', num)
         
-class LegacyAnalysisAhopeExecutable(AhopeExecutable):
+class LegacyAnalysisExecutable(AhopeExecutable):
     """
     The class responsible for setting up jobs for legacy lalapps C-code
     Executables.
@@ -120,8 +120,8 @@ class LegacyAnalysisAhopeExecutable(AhopeExecutable):
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.exe_name)                                     
           
-        node.add_var_opt('gps-start-time', data_seg[0] + pad_data)
-        node.add_var_opt('gps-end-time', data_seg[1] - pad_data)   
+        node.add_var_opt('--gps-start-time', data_seg[0] + pad_data)
+        node.add_var_opt('--gps-end-time', data_seg[1] - pad_data)   
          
         cache_file = dfParents[0]       
         
@@ -142,8 +142,11 @@ class LegacyAnalysisAhopeExecutable(AhopeExecutable):
         return node
 
     get_valid_times = legacy_get_valid_times
+    
+class LegacyTmpltbankExecutable(LegacyAnalysisExecutable):
+    pass
         
-class LegacyInspiralAhopeExecutable(LegacyAnalysisAhopeExecutable):
+class LegacyInspiralExecutable(LegacyAnalysisExecutable):
     """
     The class responsible for setting up jobs for legacy lalapps_inspiral
     AhopeExecutable.
@@ -166,7 +169,7 @@ class LegacyInspiralAhopeExecutable(LegacyAnalysisAhopeExecutable):
         return node
 
 
-class LegacySplitBankAhopeExecutable(AhopeExecutable):    
+class LegacySplitBankExecutable(AhopeExecutable):    
     """
     The class responsible for creating jobs for lalapps_splitbank.
     """

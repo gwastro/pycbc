@@ -93,9 +93,9 @@ def select_matchedfilterjob_instance(curr_exe, curr_section):
     """
     # This is basically a list of if statements
     if curr_exe == 'lalapps_inspiral_ahope':
-        exe_class = LegacyInspiralExec(curr_section)
+        exe_class = LegacyInspiralExecutable(curr_section)
     elif curr_exe == 'pycbc_inspiral':
-        exe_class = PyCBCInspiralExec(curr_section)
+        exe_class = PyCBCInspiralExecutable(curr_section)
     else:
         # Should we try some sort of default class??
         err_string = "No class exists for AhopeExecutable %s" %(curr_exe,)
@@ -126,10 +126,10 @@ def select_splitfilejob_instance(curr_exe, curr_section):
     """
     # This is basically a list of if statements
     if curr_exe == 'lalapps_splitbank':
-        exe_class = LegacySplitBankExec(curr_section)
+        exe_class = LegacySplitBankExecutable(curr_section)
     # Some elif statements
     elif curr_exe == 'pycbc_splitbank':
-        exe_class = PycbcSplitBankExec(curr_section)
+        exe_class = PycbcSplitBankExecutable(curr_section)
     else:
         # Should we try some sort of default class??
         err_string = "No class exists for AhopeExecutable %s" %(curr_exe,)
@@ -167,23 +167,23 @@ def select_genericjob_instance(workflow, exe_tag):
     exe_path = workflow.cp.get("AhopeExecutables", exe_tag)
     exe_name = os.path.basename(exe_path)
     if exe_name == 'ligolw_add':
-        exe_class = LigolwAddExec(exe_tag)
+        exe_class = LigolwAddExecutable(exe_tag)
     elif exe_name == 'ligolw_sstinca':
-        exe_class = LigolwSSthincaExec(exe_tag)
+        exe_class = LigolwSSthincaExecutable(exe_tag)
     elif exe_name == 'pycbc_sqlite_simplify':
-        exe_class = PycbcSqliteSimplifyExec(exe_tag)
+        exe_class = PycbcSqliteSimplifyExecutable(exe_tag)
     elif exe_name == 'ligolw_cbc_cluster_coincs':
-        exe_class = SQLInOutExec(exe_tag)
+        exe_class = SQLInOutExecutable(exe_tag)
     elif exe_name == 'ligolw_dbinjfind':
-        exe_class = SQLInOutExec(exe_tag)
+        exe_class = SQLInOutExecutable(exe_tag)
     elif exe_name == 'lalapps_inspinj':
-        exe_class = LalappsInspinjExec(exe_tag)
+        exe_class = LalappsInspinjExecutable(exe_tag)
     elif exe_name == 'pycbc_timeslides':
-        exe_class = PycbcTimeslidesExec(exe_tag)
+        exe_class = PycbcTimeslidesExecutable(exe_tag)
     elif exe_name == 'pycbc_compute_durations':
         exe_class = ComputeDurationsExec(exe_tag)
     elif exe_name == 'pycbc_calculate_far':
-        exe_class = SQLInOutExec(exe_tag)
+        exe_class = SQLInOutExecutable(exe_tag)
     else:
         # Should we try some sort of default class??
         err_string = "No class exists for AhopeExecutable %s" %(exe_name,)
