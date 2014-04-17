@@ -27,9 +27,9 @@ creating an ahope workflow. For details about ahope see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 
-import os, sys, subprocess, logging, math
+import Pegasus.DAX3 as dax
+import os, sys, subprocess, logging, math, string, urlparse
 import numpy
-import urlparse
 from itertools import combinations
 from os.path import splitext, basename, isfile
 import lal as lalswig
@@ -37,6 +37,7 @@ from glue import lal
 from glue import segments, pipeline
 from configparserutils import AhopeConfigParser
 import pylal.dq.dqSegmentUtils as dqUtils
+from pycbc.workflow.workflow import Workflow, Node, File, Executable
 import copy
 
 # Ahope should never be using the glue LIGOTimeGPS class, override this with
@@ -95,26 +96,13 @@ def is_condor_exec(exe_path):
         return True
     else:
         return False
-
-class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
-    """
-    The pyCBC Job class is an extension of the pipeline.AnalysisJob class.
-    From the Dagman perspective a single AnalysisJob instance corresponds to
-    a single condor submit file, which may be called by several condor nodes.
-    In the DAX perspective it can be used to add several nodes to a workflow
-    which have a number of common arguments.
-
-    The specific pyCBC implementation adds a number of helper functions as
-    documented below and allows for some extra functionality when initializing
-    the instance, including checking if the executable is condor_compiled at
-    run time and setting the stderr, stdout and log files to ahope standards.
-    """
-
-    def __init__(self, cp, exe_name, universe=None, ifo=None, 
-                                     out_dir=None, tags=[]):
+        
+class AhopeExecutable(Executable):
+    def __init__(self, cp, name, 
+                       universe=None, ifo=None, out_dir=None, tags=[]):
         """
-        Initialize the pycbc.ahope.Job class.
-   
+        Initialize the AhopeExecutable class.
+
         Parameters
         -----------
         cp : ConfigParser object
@@ -129,346 +117,177 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         tags : list of strings
             A list of strings that is used to identify this job.
         """
-        self.exe_name = exe_name
-        self.cp = cp
-        self.ifo = ifo
+        Executable.__init__(self, name)
         
         tags = [tag.upper() for tag in tags]
         self.tags = tags
-        
-        # Determine the sub file name      
-        if self.ifo:
-            tags = tags + [self.ifo.upper()]
-        self.tag_desc = '_'.join(tags)
-        
-        if len(tags) != 0:
-            self.tagged_name = "%s-%s" % (exe_name, self.tag_desc)
-        else:
-            self.tagged_name = self.exe_name
+        self.ifo = ifo
+        self.cp = cp
         
         # Determine the output directory
         if out_dir is not None:
             self.out_dir = out_dir
         elif len(tags) == 0:
-            self.out_dir = self.exe_name
+            self.out_dir = name
         else:
-            self.out_dir = self.tagged_name
-            
+            self.out_dir = "%s-%s" % (name, '_'.join(tags))            
         if not os.path.isabs(self.out_dir):
             self.out_dir = os.path.join(os.getcwd(), self.out_dir) 
-            
-        self.base_dir = os.path.basename(self.out_dir)
-        
-        exe_path = cp.get('executables', exe_name)
-        
-        # Check that the executable actually exists
+              
+        # Check that the executable actually exists locally
+        exe_path = cp.get('executables', name)
         if os.path.isfile(exe_path):
             logging.debug("Using %s executable "
                           "at %s" % (exe_name, exe_path))
         else:
             raise TypeError("Failed to find %s executable " 
-                            "at %s" % (exe_name, exe_path))
+                            "at %s" % (name, exe_path))
+        
+        self.add_pfn(exe_path)
 
         # Determine the condor universe if we aren't given one 
-        # Default is vanilla unless the executable is condor-compiled
-        # in which case we detect this and use standard universe
         if universe is None:
             if is_condor_exec(exe_path):
-                universe = 'standard'
+                self.universe = 'standard'
             else:
-                universe = 'vanilla'
-
+                self.universe = 'vanilla'
         logging.debug("%s executable will run as %s universe"
-                     % (exe_name, universe))
-        
-        pipeline.CondorDAGJob.__init__(self, universe, exe_path)
-        pipeline.AnalysisJob.__init__(self, cp, dax=True)       
-        
-        if not (universe == 'standard'):
-            self.add_condor_cmd('getenv', 'True')
-        self.add_condor_cmd('copy_to_spool','False')
-        
-        sections = [self.exe_name]
+                     % (name, universe))  
+    
+        # Determine the sections from the ini file that will configure
+        # this executable
+        sections = [self.name]
         for tag in tags:
-             section = '%s-%s' %(self.exe_name, tag.lower())
+             section = '%s-%s' %(self.name, tag.lower())
              if cp.has_section(section):
                 sections.append(section)
-             
-        # Do some basic sanity checking on the options
+                
+        # Do some basic sanity checking on the options      
         for sec1, sec2 in combinations(sections, 2):
             cp.check_duplicate_options(sec1, sec2, raise_error=True)
              
+        # collect the options from the ini file section(s)
+        self.common_options = []        
         for sec in sections:
             if cp.has_section(sec):
-                self.add_ini_opts(cp, sec)
+                self._add_ini_opts(cp, sec)
             else:
                 warnString = "warning: config file is missing section [%s]"\
                              %(sec,)
                 logging.warn(warnString)
+                
+    def add_ini_opts(self, cp, sec):
+        for opt in cp.options(section):
+            value = string.strip(cp.get(section, opt))
+            self.common_options += [opt, value]
 
-        # What would be a better more general logname ?
-        logBaseNam = 'logs/%s-$(macrogpsstarttime)' %(exe_name,)
-        logBaseNam += '-$(macrogpsendtime)-$(cluster)-$(process)'
+class AhopeWorkflow(Workflow):
+    """
+    This class manages an aHOPE style workflow. It provides convenience 
+    functions for finding input files using time and keywords. It can also
+    generate cache files from the inputs. It makes heavy use of the
+    pipeline.CondorDAG class, which is instantiated under self.dag.
+    """
+    def __init__(self, args, name):
+        """
+        Create an aHOPE workflow
         
-        self.add_condor_cmd("initialdir", self.out_dir)
-        self.set_stdout_file('%s.out' % (logBaseNam,) )
-        self.set_stderr_file('%s.err' % (logBaseNam,) )
-        self.set_sub_file('%s.sub' % (self.tagged_name) )
-          
-        # Set default requirements for a JOB, these can be changed
-        # through methods of this class
+        Parameters
+        ----------
+        args : argparse.ArgumentParser
+            The command line options to initialize an ahope workflow.
+        """
+        Workflow.__init__(self, name)
+        
+        # Parse ini file
+        self.cp = AhopeConfigParser.from_args(args)
+        
+        # Dump the parsed config file
+        ini_file = os.path.abspath(self.name + '_parsed.ini')
+        if not os.path.isfile(iniFile):
+            fp = open(iniFile, 'w')
+            self.cp.write(fp)
+            fp.close()
+        else:
+            logging.warn("Cowardly refusing to overwrite %s." %(ini_file))
+
+        # Set global values
+        start_time = int(self.cp.get("ahope", "start-time"))
+        end_time = int(self.cp.get("ahope", "end-time"))
+        self.analysis_time = segments.segment([start_time, end_time])
+
+        # Set the ifos to analyse
+        ifos = []
+        for ifo in self.cp.options('ahope-ifos'):
+            ifos.append(ifo.upper())
+        self.ifos = ifos
+        self.ifos.sort(key=str.lower)
+        self.ifo_string = ''.join(self.ifos)
+        
+        # Set up input and output file lists for workflow
+        self._inputs = AhopeFileList([])
+        self._outputs = AhopeFileList([])
+         
+    def execute_node(self, node):
+        """ Execute this node immediately on the local site and place its
+        inputs and outputs into the workflow data lists. 
+        """
+        self.node.executed = True
+        cmd_list = node.get_command_line()
+        
+        # Must execute in output directory.
+        currDir = os.getcwd()
+        os.chdir(job_dir)
+        
+        # Make call
+        make_external_call(cmd_list, out_dir=os.path.join(job_dir, 'logs'),
+                                     out_baseame=base_name) 
+        # Change back
+        os.chdir(currDir)
+        
+        self._outputs += node._outputs
+            
+    def save(self, basename):
+        # add executable pfns for local site to dax
+        for exe in self._executables:
+            exe.insert_into_dax(self._adag)
+            
+        # add workflow input files pfns for local site to dax
+        for fil in self._inputs:
+            fil.insert_into_dax(self._adag)
+            
+        # save the dax file
+            Workflow.save(self, basename + '.dax')
+        
+        # add workflow storage locations to the output mapper
+        f = open(basename + '.map')
+        for out in self._outputs:
+            f.write(out.map_str() + '\n')
+    
+class AhopeNode(Node):
+    def __init__(self, executable):
+        Node.__init__(self, executable)
+        self.executed = False
+        self.set_category(executable.name)
+        
+        # Set default requirements for a AhopeNode
         self.set_memory(1000)
         self.set_storage(100)
         
-        # Make sure that the directories for this jobs output exist
-        makedir(self.out_dir)
-        makedir(os.path.join(self.out_dir, 'logs'))
-    
-    def set_memory(self, ram_value):
-        """
-        Set the amount of the RAM that this job requires.
-        
-        Parameters
-        ----------
-        ram_value: int
-              The amount of ram that this job requires in MB.
-        """
-        self.add_condor_cmd('request_memory', '%d' %(ram_value))
-        
-    def set_storage(self, storage_value):
-        """
-        Set the amount of harddrive storage that this job requires.
-        
-        Parameters
-        ----------
-        ram_value: int
-              The amount of storage that this job requires in MB.
-        """
-        self.add_condor_cmd('request_disk', '%dM' %(storage_value))
-    
-    def needs_gpu(self):
-        """
-        Call this function to indicate that this job wants to run on a GPU.
-        FIXME: THIS IS NOT PROPERLY SUPPORTED YET!
-        """
-        # Satisfy the requirements to use GPUs on cit, sugar
-        # FIXME add in the ATLAS support
-        self.add_condor_cmd('+WantsGPU', 'true')
-        self.add_condor_cmd('+WantGPU', 'true')
-        self.add_condor_cmd('+HAS_GPU', 'true')
-        self.add_condor_cmd('Requirements', '( GPU_PRESENT =?= true) || (HasGPU =?= "gtx580") || (Target.HAS_GPU =?= True)')
-
-    def create_node(self):
-        """
-        Create a condor node from this job. This provides a basic interface to
-        the Node class. Most jobs in an ahope workflow will subclass the 
-        pycbc.ahope.Job class and overwrite this to give more details when
-        initializing the node.
-        """
-        return Node(self)
-        
-
-class Node(pipeline.CondorDAGNode):
-    """
-    The pyCBC Node class is an extension of the pipeline.CondorDAGNode class.
-    A single Node instance corresponds to a single command that will be run
-    within the workflow. *Every* command/node in the workflow will have a Node
-    instance.
-
-    The specific pyCBC implementation adds a number of helper functions as
-    documented below and allows for some extra functionality when initializing
-    the instance, including allowing us to deal with cases where a set of
-    partitioned input files are given. For e.g. if I have run lalapps_splitbank
-    I now have a set of files corresponding to *one* template bank. With this
-    function I can just feed the Node that AhopeFile pointing to the complete
-    template bank (ie. the list of files making up that template bank) and this
-    will automatically create a job for each file in the template bank.
-    """
-    def __init__(self, job):
-        """
-        Initialize the pycbc.ahope.Node class. This is often overridden in
-        subclassed instances.
-        
-        Parameters
-        -----------
-        Job : pycbc.ahope.Job instance
-            The pycbc.ahope.Job instance to create a Node from
-        """
-
-        pipeline.CondorDAGNode.__init__(self, job)
-        self.input_files = AhopeFileList([])
-        self.output_files = AhopeFileList([])
-        self.set_category(job.exe_name)
-        self.executed = False
-        
-    def add_input(self, file, opt=None, argument=False, recombine=False):
-        """
-        Add a file, or partitioned file, as input to this node. 
-        
-        Parameters
-        ----------
-        file : AhopeFile
-            The AhopeFile that this node needs to run
-        opt : string, optional
-            The command line option that the executable needs
-            in order to set the associated file as input.
-        argument : Boolean, optional
-            If present this indicates that the file should be supplied as an
-            argument to the job (ie. file name with no option at the end of
-            the command line call). Using argument=True and opt != None will
-            result in a failure.
-        recombine : Boolean, optional
-            If present this indicates that the partitioned input file will be
-            recombined in this Node. So only one Node is needed and all the
-            partitioned input files will be parents. It is possible to
-            sequentially add partitioned files to be recombined and other 
-            partitioned files that are *not* to be recombined. 
-        """
-        if argument and opt != None:
-            errMsg = "You cannot supply an option and tell the code that this "
-            errMsg += "is an argument. Choose one or the other."
-            raise ValueError(errMsg)
-        
-        # Add the files to the nodes internal lists of input
-        self.input_files.append(file) 
-        self.add_input_file(file.path)  
-                                
-        # If the file was created by another node, then make that
-        # node a parent of this one
-        if file.node and file.node.executed is False:
-            self.add_parent(file.node)
-
-        if opt:
-            self.add_var_opt(opt, file.path)
-
-        if argument:
-            self.add_var_arg(file.path)
-
-    def add_input_list(self, fileList, opt=None, argument=False, delimiter=' '):
-        """
-        Add a list of files as input to this node, under a single option, ie:
-        --option-name file1,file2,file3, or as an argument. Use delimiter to
-        specify how to separate the files.
-
-        Parameters
-        -----------
-        fileList: AhopeFileList
-            The list of AhopeFiles that this node needs to run.
-        opt : string, optional
-            The command line option that the executable needs
-            in order to set the associated file list as input.
-        argument : Boolean, optional
-            If present this indicates that the files should be supplied as an
-            argument to the job (ie. file names with no option at the end of
-            the command line call). Using argument=True and opt != None will
-            result in a failure.
-        delimiter : string, optional (default = ' ')
-            Set the delimiter that is used to separate the file names when
-            supplied as an option or argument.
-        """
-        if argument and opt != None:
-            errMsg = "You cannot supply an option and tell the code that this "
-            errMsg += "is an argument. Choose one or the other."
-            raise ValueError(errMsg)
-
-        # Add the files to the nodes internal lists of input
-        for file in fileList:
-            self.input_files.append(file)
-            # NOTE: This may slow as it tests if the files are already listed as
-            #       input files. A possible speed up is
-            # self._CondorDAGNode__input_files.append(file.path)
-            self.add_input_file(file.path)
-            if file.node and not hasattr(file.node, 'executed'):
-                self.add_parent(file.node)
-
-        fileListString = delimiter.join([file.path for file in fileList])
-     
-        if opt:
-            self.add_var_opt(opt, fileListString)
-
-        if argument:
-            self.add_var_arg(fileListString)
-        
+        if executable.universe == 'vanilla':
+            self.add_profile('condor', 'getenv', 'True')
             
-    def add_output(self, file, opt=None, argument=False): 
-        """
-        Add a file, or partitioned file, as an output to this node. 
+        self._options += self.executable.common_options
+    
+    def get_command_line(self):
+        self._finalize()
+        arglist = self._dax_node.arguments
+        arglist = [a.path if isinstance(a, AhopeFile) else a for a in arglist]
+                        
+        exe_path = urlparse.urlsplit(self.executable.get_pfn()).path
+        return [exe_path] + arglist
         
-        Parameters
-        ----------
-        file : AhopeFile
-            A file object that this node generates
-        opt : string, optional
-            The command line options that the executable needs
-            in order to set the names of this file.
-        argument : Boolean, optional
-            If present this indicates that the file should be supplied as an
-            argument to the job (ie. file name with no option at the end of
-            the command line call). Using argument=True and opt != None will
-            result in a failure.
-        """  
-        if argument and opt != None:
-            errMsg = "You cannot supply an option and tell the code that this "
-            errMsg += "is an argument. Choose one or the other."
-            raise ValueError(errMsg)
-
-        # make sure the files know which node creates them   
-        self.output_files.append(file)
-        self.add_output_file(file.path)
-        file.node = self
-        if opt:
-            file.opt = opt
-            self.add_var_opt(opt, file.path)
-            
-        if argument:
-            self.add_var_arg(file.path)
-
-    def add_output_list(self, fileList, opt=None, argument=False,
-                        delimiter=' '):
-        """
-        Add a list of files as output to this node, under a single option, ie:
-        --option-name file1,file2,file3, or as an argument. Use delimiter to
-        specify how to separate the files. This can also be added as a list
-        of arguments to the node.
-
-        Parameters
-        -----------
-        fileList: AhopeFileList
-            The list of AhopeFiles that this node will generate.
-        opt : string, optional
-            The command line option that the executable needs
-            in order to set the associated file list as output.
-        argument : Boolean, optional
-            If present this indicates that the files should be supplied as an
-            argument to the job (ie. file names with no option at the end of
-            the command line call). Using argument=True and opt != None will
-            result in a failure.
-        delimiter : string, optional (default = ' ')
-            Set the delimiter that is used to separate the file names when
-            supplied as an option or argument.
-        """
-        if argument and opt != None:
-            errMsg = "You cannot supply an option and tell the code that this "
-            errMsg += "is an argument. Choose one or the other."
-            raise ValueError(errMsg)
-
-        # Add the files to the nodes internal lists of input
-        for file in fileList:
-            self.output_files.append(file)
-            self.add_output_file(file.path)
-            file.node = self
-
-        fileListString = delimiter.join([file.path for file in fileList])
-
-        if opt:
-            self.add_var_opt(opt, fileListString)
-
-        if argument:
-            self.add_var_arg(fileListString)
-
-                
-    def make_and_add_output(self, valid_seg, extension, option_name, 
-                                 tags=[]):
+    def new_output_file_opt(self, valid_seg, extension, option_name, tags=[]):
         """
         This function will create a AhopeFile corresponding to the given
         information and then add that file as output of this node.
@@ -488,250 +307,21 @@ class Node(pipeline.CondorDAGNode):
             These tags will be added to the list of tags already associated with
             the job. They can be used to uniquely identify this output file.
         """
-        job = self.job()
-
+        
         # Changing this from set(tags) to enforce order. It might make sense
         # for all jobs to have file names with tags in the same order.
-        all_tags = copy.deepcopy(job.tags)
+        all_tags = copy.deepcopy(self.executable.tags)
         for tag in tags:
             if tag not in all_tags:
                 all_tags.append(tag)
 
-        insp = AhopeFile(job.ifo, job.exe_name, valid_seg, extension=extension, 
+        fil = AhopeFile(job.ifo, job.exe_name, valid_seg, extension=extension, 
                          directory=job.out_dir, tags=all_tags)    
-
-        self.add_output(insp, opt=option_name)
-
-                
-    def is_unreliable(script):
-        """
-        Make this job run two instances of itself and check the results using
-        the given script. This is primarily used for GPU jobs where GPUs can
-        produce unreliable results some of the time.
-        FIXME: This has not been fully implemented yet. This mode breaks script
-        output. Does pegasus know how to deal with this? Two jobs writing the
-        same output file sounds dangerous.
-        """
-        raise NotImplementedError
-        
-        #FIXME this mode breaks script output
-        # FIXME: Does pegasus know how to deal with this? Two jobs writing the
-        # same output file sounds dangerous to me.
-        
-        # Make two instances 
-        self.job().__queue = 2
-        
-        # change the output files so that they are unique
-        self.unreliable = True
-        
-        # Call a script on the output of both 
-        self.set_post_script(script)
-        
-    def finalize(self):
-        """
-        This is a stub, it does nothing at the moment, do not call it.
-        FIXME: This is part of the GPU support, needs implementing.
-        """
-        # If the job needs to be run twice and checked, change the output 
-        # name format accordingly (the postscript will produce a file of the
-        # original name
-        if hasattr(self, 'unreliable'):
-            pass
-
-class Executable(object):
-    """
-    This class is a reprentation of an executable and its capabilities.
-    It can be used to create condor job(s) for this executable and is normally
-    sub-classed, hence the lack of stuff in the stock instance.
-    """
-    def __init__(self, exe_name, universe=None):
-        """
-        Initialize the Executable class.
-
-        Parameters
-        -----------
-        exe_name: string
-            The string corresponding to the executable. We demand that this tag
-            points to the executable path in the [executables] section of the
-            config file and that any options in the [exe_name] section will be
-            sent to the nodes resulting in the workflow.
-        universe=None: string, (optional, default=None)
-            The condor universe to run the job in. If not given the condor
-            universe will be automatically checked by determining if condor
-            libraries are present in the executable. We recommend that the
-            auto-detect feature is used.
-        """
-
-        self.exe_name = exe_name
-        self.condor_universe = universe
-
-    def create_job(self, cp, ifo=None, out_dir=None, tags=[]):
-        """
-        Create an pycbc.ahope.Job instance for this Executable.
-
-        Parameters
-        -----------
-        cp : ConfigParser.ConfigParser instance
-            An in-memory representation of the configuration file
-        ifo : string, (optional, default=None)
-            The ifo string appropriate for the job. This is used in naming the
-            output files for some executables and is necessary in some cases.
-            This is normally reflected in the sub-classes of this class.
-        out_dir : string, (optional, default=None)
-            The path to the output directory for this job. This is used in a lot
-            of cases to determine the location of the output files. Again this
-            is normally reflected in the sub-classes of this class.
-        Returns
-        --------
-        pycbc.ahope.Job instance
-            The pycbc.ahope.Job instance requested.
-        """
-        return Job(cp, self.exe_name, self.condor_universe, ifo=ifo, 
-                   out_dir=out_dir, tags=tags)
-
-class Workflow(object):
-    """
-    This class manages an aHOPE style workflow. It provides convenience 
-    functions for finding input files using time and keywords. It can also
-    generate cache files from the inputs. It makes heavy use of the
-    pipeline.CondorDAG class, which is instantiated under self.dag.
-    """
-    def __init__(self, args):
-        """
-        Create an aHOPE workflow
-        
-        Parameters
-        ----------
-        args : argparse.ArgumentParser
-            The command line options to initialize an ahope workflow.
-        """
-        # Parse ini file
-        self.cp = AhopeConfigParser.from_args(args)
-
-        # Set global values
-        start_time = int(self.cp.get("ahope","start-time"))
-        end_time = int(self.cp.get("ahope", "end-time"))
-        self.analysis_time = segments.segment([start_time,end_time])
-
-        # Set the ifos to analyse
-        ifos = []
-        for ifo in self.cp.options('ahope-ifos'):
-            ifos.append(ifo.upper())
-        self.ifos = ifos
-        self.ifos.sort(key=str.lower)
-        self.ifoString = ''.join(self.ifos)
-        
-        # FIXME: Not sure if this is this is really what we should be doing to
-        # get the basename!
-        self.basename = basename(splitext(args.config_files[0])[0])
-        
-        # Initialize the dag
-        logfile = self.basename + '.log'
-        fh = open( logfile, "w" )
-        fh.close()
-        self.dag = pipeline.CondorDAG(logfile, dax=False)
-        self.dag.set_dax_file(self.basename)
-        self.dag.set_dag_file(self.basename)
-        
-        # Set up input and output file lists for workflow
-        self.input_files = AhopeFileList([])
-        self.output_files = AhopeFileList([])
-
-        # Dump the parsed config file
-        iniFile = os.path.abspath(self.basename + 'PARSED.ini')
-        if not os.path.isfile(iniFile):
-            fp = open(iniFile, 'w')
-            self.cp.write(fp)
-            fp.close()
-        else:
-            logging.warn("Cowardly refusing to overwrite %s." %(iniFile))
-                 
-    def add_node(self, node):
-        """
-        Use this function to add a pycbc.ahope.Node instance to the workflow.
-
-        Parameters
-        -----------
-        node : pycbc.ahope.Node instance
-            The pyCBC Node instance to be added.
-        """
-        self.dag.add_node(node)
-        
-        if node.input_files:
-            # Determine files that need to go in the input mapper
-            for f in node.input_files:
-                if (not f.node or (f.node and f.node.executed)):
-                    if not f.is_workflow_input:
-                        self.input_files.append(f)
-                        f.is_workflow_input = True
-            # OLD METHOD
-            #self.input_files += [f for f in node.input_files 
-            #                   if (not f.node or (f.node and f.node.executed)) 
-            #                    and (f not in self.input_files)]
-            
-        
-        if node.output_files:
-            for f in node.output_files:
-                if not f.is_workflow_output:
-                    self.output_files.append(f)
-                    f.is_workflow_output = True
-                else:
-                    errMsg = "Job %s has already been added as a " %(f.path)
-                    errMsg = "workflow output file. We cannot have a file "
-                    errMsg = "generated by two jobs!"
-                    raise ValueError(errMsg)
-            
-    def execute_node(self, node):
-        """ Execute this node immediately.
-        """
-        node.executed = True  
-        
-        cmd_list = [node.job().get_executable()]
-        cmd_tuples = node.get_cmd_tuple_list()   
-        for cmd in cmd_tuples:
-            cmd_list += list(cmd)
-        cmd_list = [c for cmd in cmd_list for c in cmd.split(' ')]
-        cmd_list = filter(None, cmd_list)
-        job_dir = node.job().out_dir
-        
-        if len(node.output_files) > 0:
-            base_name = node.output_files[0].filename
-        else:
-            base_name = node.job().exe_name
-        
-        # Must execute in output directory.
-        currDir = os.getcwd()
-        os.chdir(job_dir)
-        # Make call
-        make_external_call(cmd_list, outDir=os.path.join(job_dir, 'logs'),
-                                     outBaseName=base_name) 
-        # Change back
-        os.chdir(currDir)
-        
-    def write_plans(self):
-        """
-        This will create the workflow and write it out to disk, only call this
-        after the workflow has been completely created.
-        """
-        self.dag.write_script()
-        self.dag.write_abstract_dag()
-       
-        # FIXME this should be in a lower level code
-        f = open('output_map.dat', 'w')
-        for fil in self.output_files:
-            f.write(fil.map_str() + '\n')
-            
-        f = open('input_map.dat', 'w')
-        for fil in self.input_files:
-            f.write(fil.map_str() + '\n')
-
-class AhopeFile(object):
+        self.add_output_opt(option_name, fil)
+    
+class AhopeFile(File):
     '''
-    This class holds the details of an individual output file *or* a group
-    of partitioned output files in the output workflow.
-    An example of partitioned output is a template bank file split up with
-    splitbank, or the matched-filter outputs from running on each of these
-    split template banks in turn.
+    This class holds the details of an individual output file 
     This file(s) may be pre-supplied, generated from within the ahope
     command line script, or generated within the workflow. The important stuff
     is:
@@ -744,14 +334,14 @@ class AhopeFile(object):
 
     An example of initiating this class:
     
-    c = AhopeFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001),file_url="file://localhost/home/spxiwh/H1-INSPIRAL_S6LOWMASS-815901601-400.xml.gz" )
+    c = AhopeFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), file_url="file://localhost/home/spxiwh/H1-INSPIRAL_S6LOWMASS-815901601-400.xml.gz" )
 
     another where the file url is generated from the inputs:
 
     c = AhopeFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), directory="/home/spxiwh", extension="xml.gz" )
     '''
-    def __init__(self, ifos, description, segs, file_url=None, 
-                 extension=None, directory=None, tags=None, **kwargs):       
+    def __init__(self, ifos, exe_name, segs, file_url=None, 
+                 extension=None, directory=None, tags=None):       
         """
         Create an AhopeFile instance
         
@@ -763,12 +353,9 @@ class AhopeFile(object):
             Ie. ['H1',L1','V1'], if the file is only valid for the combination
             of ifos (for e.g. ligolw_thinca output) then this can be supplied
             as, for e.g. "H1L1V1".
-        description: string
-            A short description of what the file is, normally used in naming of
-            the output files.
-            FIXME: I think that this is now executable description, tagging
-            only the program that ran this job. Can we change the name
-            accordingly?
+        exe_name: string
+            A short description of the executable description, tagging
+            only the program that ran this job.
         segs : glue.segment or glue.segmentlist
             The time span that the AhopeOutFile is valid for. Note that this is
             *not* the same as the data that the job that made the file reads in.
@@ -794,33 +381,33 @@ class AhopeFile(object):
             e.g. this might be ["BNSINJECTIONS" ,"LOWMASS","CAT_2_VETO"].
             These are used in file naming.
         """
+        
         # Set the science metadata on the file
-        self.node=None
         if isinstance(ifos, (str, unicode)):
-            self.ifoList = [ifos]
+            self.ifo_list = [ifos]
         else:
-            self.ifoList = ifos
-        self.ifoString = ''.join(self.ifoList)
-        self.description = description
+            self.ifo_list = ifos
+        self.ifo_string = ''.join(self.ifo_list)
+        self.description = exe_name
+        
         if isinstance(segs, (segments.segment)):
-            self.segList = segments.segmentlist([segs])
+            self.segment_list = segments.segmentlist([segs])
         elif isinstance(segs, (segments.segmentlist)):
-            self.segList = segs
+            self.segment_list = segs
         else:
-            errMsg = "segs input must be either glue.segments.segment or "
-            errMsg += "segments.segmentlist. Got %s." %(str(type(segs)),)
-            raise ValueError(errMsg)
-        self.segListExtent = self.segList.extent()
+            err = "segs input must be either glue.segments.segment or "
+            err += "segments.segmentlist. Got %s." %(str(type(segs)),)
+            raise ValueError(err)
+            
         self.tags = tags 
         if tags is not None:
             self.tag_str = '_'.join(tags)
             tagged_description = '_'.join([description] + tags)
         else:
             tagged_description = description
-        self.kwargs = kwargs
             
         # Follow the capitals-for-naming convention
-        self.ifoString = self.ifoString.upper()
+        self.ifo_string = self.ifo_string.upper()
         self.tagged_description = tagged_description.upper()
       
         if not file_url:
@@ -831,35 +418,20 @@ class AhopeFile(object):
                 raise TypeError("a directory is required if a file_url is "
                                 "not provided")
             
-            filename = self._filename(self.ifoString, self.tagged_description,
-                                      extension, self.segListExtent)
+            filename = self._filename(self.ifo_string, self.tagged_description,
+                                      extension, self.segList.extent())
             path = os.path.join(directory, filename)
             if not os.path.isabs(path):
                 path = os.path.join(os.getcwd(), path) 
             file_url = urlparse.urlunparse(['file', 'localhost', path, None,
                                             None, None])
        
-        cache_entry = lal.CacheEntry(self.ifoString,
-                   self.tagged_description, self.segListExtent, file_url)
-        # Make a cyclical reference
+        self.cache_entry = lal.CacheEntry(self.ifoString,
+                   self.tagged_description, self.segList.extent(), file_url)
         cache_entry.ahope_file = self
-        self.cache_entry = cache_entry
-        # This gets set if this becomes an input file in the workflow
-        self.is_workflow_input = False
-        # This gets set if this becomes an output file in the workflow
-        self.is_workflow_output = False
 
-    @property
-    def url(self):
-        return self.cache_entry.url
-       
-    @property
-    def path(self):
-        """
-        If only one file is contained in this instance this will be that path.
-        Otherwise a TypeError is raised.
-        """
-        return self.cache_entry.path
+        File.__init__(self, basename(self.cache_entry.path))
+        self.storage_path = self.cache_entry.path
 
     @property
     def ifo(self):
@@ -867,12 +439,12 @@ class AhopeFile(object):
         If only one ifo in the ifoList this will be that ifo. Otherwise an
         error is raised.
         """
-        if len(self.ifoList) == 1:
-            return self.ifoList[0]
+        if len(self.ifo_list) == 1:
+            return self.ifo_list[0]
         else:
-            errMsg = "self.ifoList must contain only one ifo to access the "
-            errMsg += "ifo property. %s." %(str(self.ifoList),)
-            raise TypeError(errMsg)
+            err = "self.ifoList must contain only one ifo to access the "
+            err += "ifo property. %s." %(str(self.ifo_list),)
+            raise TypeError(err)
 
     @property
     def segment(self):
@@ -880,20 +452,12 @@ class AhopeFile(object):
         If only one segment in the segmentlist this will be that segment.
         Otherwise an error is raised.
         """
-        if len(self.segList) == 1:
-            return self.segList[0]
+        if len(self.seg_list) == 1:
+            return self.seg_list[0]
         else:
-            errMsg = "self.segList must only contain one segment to access"
-            errMsg += " the segment property. %s." %(str(self.segList),)
-            raise TypeError(errMsg)
-        
-    @property
-    def filename(self):
-        """
-        If only one file is contained in this instance this will be that
-        file's name. Otherwise a TypeError is raised.
-        """
-        return basename(self.cache_entry.path)
+            err = "self.segList must only contain one segment to access"
+            err += " the segment property. %s." %(str(self.seg_list),)
+            raise TypeError(err)
         
     def _filename(self, ifo, description, extension, segment):
         """
@@ -902,25 +466,16 @@ class AhopeFile(object):
         """        
         if extension.startswith('.'):
             extension = extension[1:]
-        # Follow the frame convention of using integer filenames, but stretching
-        # to cover partially covered seconds.
+            
+        # Follow the frame convention of using integer filenames,
+        # but stretching to cover partially covered seconds.
         start = int(segment[0])
         end = int(math.ceil(segment[1]))
         duration = str(end-start)
         start = str(start)
         
-        return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start, duration, extension)    
-       
-    @property
-    def lfn(self):
-        return self.filename
-        
-    @property
-    def pfn(self):
-        return self.path
-
-    def map_str(self, site='local'):
-        return '%s %s pool="%s"' % (self.lfn, self.pfn, site) 
+        return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start, 
+                                   duration, extension)  
     
 class AhopeFileList(list):
     '''

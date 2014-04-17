@@ -3,9 +3,9 @@ import Pegasus.DAX3 as dax
 
 class Executable(object):
     def __init__(self, name):
+        self._dax_executable = dax.Executable(name) 
         self.name = name
         self.in_workflow = False
-        self._dax_executable = dax.Executable(name)
         self.pfns = {}
         
     def add_pfn(self, url, site='local'):
@@ -15,27 +15,31 @@ class Executable(object):
     def get_pfn(self, site='local'):
         return self.pfns[site]
         
+    def insert_into_dax(self, dax):
+        dax.addExecutable(self._dax_executable)
+        
 class Node(object):    
     def __init__(self, executable):
         self.in_workflow = False   
         self.executable=executable            
         self._inputs = []
         self._outputs = []        
-        self._dax_node = dax.Job(name=executable.name) 
+        self._dax_node = dax.Job(name=executable.name)
+        self._args = []
+        self._options = []
         
     def add_arg(self, arg):
         """ Add an argument
         """
-        self._dax_node.addArguments(arg)
-        
+        self._args += [arg]
         
     def add_opt(self, opt, value=None):
         """ Add a option
         """
         if value:
-            self._dax_node.addArguments(opt, value)
+            self._options += [opt, value]
         else:
-            self._dax_node.addArguments(opt)
+            self._options += [opt]
     
     #private functions to add input and output data sources/sinks        
     def _add_input(self, inp):
@@ -64,6 +68,16 @@ class Node(object):
         self.add_opt(opt, out._dax_repr())
         self._add_output(out)
         
+    def add_output_list_opt(self, opt, outputs):
+        self.add_opt(opt)
+        for out in outputs:
+            self._add_output(out)
+            
+    def add_input_list_opt(self, opt, inputs):
+        self.add_opt(opt)
+        for inp in inputs:
+            self._add_input(inp)
+        
     def add_input_arg(self, inp):
         self.add_arg(inp._dax_repr())
         self._add_input(inp)
@@ -77,11 +91,6 @@ class Node(object):
         self.add_output_opt(opt, fil)
         return fil
 
-    def new_output_file_arg(self, name):
-        fil = File(name)
-        self.add_output_arg(fil)
-        return fil     
-        
     # functions to describe properties of this node
     def add_profile(namespace, key, value):
         """ Add profile information to this node at the DAX level
@@ -107,8 +116,12 @@ class Node(object):
     def set_priority(self, priority):
         self.add_profile('dagman', 'priority', priority)
         
-    def set_retries(self, number):
+    def set_num_retries(self, number):
         self.add_profile("dagman", "retry", number)
+        
+    def _finalize(self):
+        args = self._args + self._options
+        self._dax_node.addArguments(*args)
         
 class Workflow(object):
     def __init__(self, name='my_workflow'):
@@ -173,23 +186,26 @@ class DataStorage(object):
 class File(DataStorage, dax.File):
     def __init__(self, name):
         DataStorage.__init__(self, name)
+        dax.File.__init__(self, name)
+        
         self._dax_file = dax.File(self.name)
         self.pfns = {}
         self.storage_path = None
-        
-    def storage_path(self, path):
-        self.storage_path=path
 
     def _dax_repr(self):
         return self
         
     def _set_as_input_of(self, node):
         node._dax_node.uses(self, link=dax.Link.INPUT, register=False, 
-                                                       transfer=True) 
-          
+                                                       transfer=True)          
     def _set_as_output_of(self, node):
         node._dax_node.uses(self, link=dax.Link.OUTPUT, register=False, 
-                                                        transfer=True)
+                                                        transfer=True)                                                       
+    def output_map_str(self):
+        return '%s %s pool="%s"' % (self.name, self.storage_path, 'local') 
+        
+    def insert_into_dax(self, dax):
+        dax.addFile(self)
     
 class Database(DataStorage):
     pass
