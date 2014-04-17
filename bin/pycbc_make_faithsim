@@ -183,7 +183,7 @@ os.chmod('submit.sh', 0777)
 print "Done"
 dag.write_sub_files()
 dag.write_script()
-dag.write_dag()
+dag.write_concrete_dag()
 
 f = open('scripts/pycbc_faithsim_plots', "w")
 f.write("""#!/usr/bin/env python
