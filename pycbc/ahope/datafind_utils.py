@@ -489,6 +489,7 @@ def setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
             # like every other code!?
             currFile = AhopeFile(curr_ifo, frame.description,
                                  frame.segment, file_url=frame.url)
+            currFile.PFN(frame.url, site='local')
             datafindouts.append(currFile)
 
     return datafindcaches, datafindouts
@@ -553,6 +554,7 @@ def setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
                 # raise ValueError("Cannot determine ifo of frame.")
             currFile = AhopeFile(ifo, frame.description, frame.segment,
                                  file_url=frame.url)
+            currFile.PFN(frame.url)
             datafindouts.append(currFile)
 
     return datafindcaches, datafindouts

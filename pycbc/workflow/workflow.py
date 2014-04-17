@@ -223,7 +223,6 @@ class File(DataStorage, dax.File):
         dax.File.__init__(self, name)
         
         self._dax_file = dax.File(self.name)
-        self.pfns = {}
         self.storage_path = None
 
     def _dax_repr(self):
