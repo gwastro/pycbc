@@ -193,7 +193,23 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                        datafind_outs, output_dir, parents=None, 
                        link_job_instance=None, allow_overlap=True):
     """
-    This function sets up a set of single ifo jobs.
+    This function sets up a set of single ifo jobs. A basic overview of how this
+    works is as follows:
+
+    * (1) Identify the length of data that each job needs to read in, and what
+      part of that data the job is valid for.
+    * START LOOPING OVER SCIENCE SEGMENTS
+    * (2) Identify how many jobs are needed (if any) to cover the given science
+      segment and the time shift between jobs. If no jobs continue.
+    * START LOPPING OVER JOBS
+    * (3) Identify the time that the given job should produce valid output (ie.
+      inspiral triggers) over.
+    * (4) Identify the data range that the job will need to read in to produce
+      the aforementioned valid output.
+    * (5) Identify all parents/inputs of the job.
+    * (6) Add the job to the workflow
+    * END LOOPING OVER JOBS
+    * END LOOPING OVER SCIENCE SEGMENTS
 
     Parameters
     -----------
@@ -232,98 +248,39 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
     """
     cp = workflow.cp
     
-    # Set up the condorJob class for the current executable
-    data_length, valid_chunk = curr_exe_job.get_valid_times()
-    
-    # Begin by getting analysis start and end, and start and end of time
-    # that the output file is valid for
-    valid_length = abs(valid_chunk)
-
-    data_chunk = segments.segment([0, data_length])
-    job_tag = curr_exe_job.exe_name.upper()
-    
-    if link_job_instance:
-        # FIXME: Should we remove this, after testing is complete??
-        # EURGHH! What we are trying to do here is, if this option is given,
-        # line up the template bank and inspiral jobs so that there is one
-        # template bank for each inspiral job. This is proving a little messy
-        # and probably still isn't perfect.
-
-        # What data does the linked exe use?
-        link_data_length,link_valid_chunk = link_job_instance.get_valid_times()
-        # What data is lost at start and end from either job?
-        start_data_loss = max(valid_chunk[0], link_valid_chunk[0])
-        end_data_loss = max(data_length - valid_chunk[1],\
-                            link_data_length - link_valid_chunk[1])
-        # Correct the data for both jobs
-        valid_chunk = segments.segment(start_data_loss, \
-                                       data_length - end_data_loss)
-        link_valid_chunk = segments.segment(start_data_loss, \
-                                       link_data_length - end_data_loss)
-        valid_length = abs(valid_chunk)
-        link_valid_length = abs(link_valid_chunk)
-
-        # Which one is now longer? Use this is valid_length
-        if link_valid_length < valid_length:
-            valid_length = link_valid_length
+    ########### (1) ############
+    # Get the times that can be analysed and needed data lengths
+    data_length, valid_chunk, valid_length = identify_needed_data(curr_exe_job,\
+                                           link_job_instance=link_job_instance)
 
     # DO NOT! use valid length here, as valid_length and abs(valid_chunk)
-    # may be different by this point if using link_exe_instance
+    # may be different if using link_exe_instance
     data_loss = data_length - abs(valid_chunk)
 
     
-    if data_loss < 0:
-        raise ValueError("Ahope needs fixing! Please contact a developer")
-        
     # Loop over science segments and set up jobs
     for curr_seg in science_segs:
-        # Is there enough data to analyse?
-        curr_seg_length = abs(curr_seg)
-        if curr_seg_length < data_length:
-            continue
-        # How many jobs do we need
-        curr_seg_length = float(abs(curr_seg))
-        num_jobs = int( math.ceil( \
-                 (curr_seg_length - data_loss) / float(valid_length) ))
-        # What is the incremental shift between jobs
-        time_shift = (curr_seg_length - data_length) / float(num_jobs - 1)
-        for job_num in range(num_jobs):
-            # Get the science segment for this job
-            # small factor of 0.0001 to avoid float round offs causing us to
-            # miss a second at end of segments.
-            shift_dur = curr_seg[0] + int(time_shift * job_num + 0.0001)
-            job_data_seg = data_chunk.shift(shift_dur)
-            # Sanity check that all data is used
-            if job_num == 0:
-               if job_data_seg[0] != curr_seg[0]:
-                   errMsg = "Job is not using data from the start of the "
-                   errMsg += "science segment. It should be using all data."
-                   raise ValueError(errMsg)
-            if job_num == (num_jobs - 1):
-                if job_data_seg[1] != curr_seg[1]:
-                    errMsg = "Job is not using data from the end of the "
-                    errMsg += "science segment. It should be using all data."
-                    raise ValueError(errMsg)
-            job_valid_seg = valid_chunk.shift(shift_dur)
-            # If we need to recalculate the valid times to avoid overlap
-            if not allow_overlap:
-                data_per_job = (curr_seg_length - data_loss) / float(num_jobs)
-                lower_boundary = job_num*data_per_job + \
-                                     valid_chunk[0] + curr_seg[0]
-                upper_boundary = data_per_job + lower_boundary
-                # NOTE: Convert to int after calculating both boundaries
-                # small factor of 0.0001 to avoid float round offs causing us to
-                # miss a second at end of segments.
-                lower_boundary = int(lower_boundary)
-                upper_boundary = int(upper_boundary + 0.0001)
-                if lower_boundary < job_valid_seg[0] or \
-                        upper_boundary > job_valid_seg[1]:
-                    err_msg = ("Ahope is attempting to generate output "
-                              "from a job at times where it is not valid.")
-                    raise ValueError(err_msg)
-                job_valid_seg = segments.segment([lower_boundary, 
-                                                  upper_boundary])
+        ########### (2) ############
+        # Initialize the class that identifies how many jobs are needed and the
+        # shift between them.
+        segmenter = JobSegmenter(data_length, valid_chunk, valid_length, 
+                                                           curr_seg, data_loss)
+
+        for job_num in range(segmenter.num_jobs):
+            ############## (3) #############
+            # Figure out over what times this job will be valid for
+
+            job_valid_seg = segmenter.get_valid_times_for_job_ahope(job_num,
+                                                   allow_overlap=allow_overlap)
+
+            ############## (4) #############
+            # Get the data that this job should read in
+
+            job_data_seg = segmenter.get_data_times_for_job_ahope(job_num)
                 
+            ############# (5) ############
+            # Identify parents/inputs to the job
+
             if parents:
                 # Find the set of files with the best overlap
                 curr_parent = parents.find_outputs_in_range(ifo, job_valid_seg,
@@ -347,6 +304,13 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                     raise ValueError(err_str)
 
 
+            ############## (6) #############
+            # Make node and add to workflow
+
+            # Note if I have more than one curr_parent I need to make more than
+            # one job. If there are no curr_parents it is set to [None] and I
+            # make a single job. This catches the case of a split template bank
+            # where I run a number of jobs to cover a single range of time.
             for pnum, parent in enumerate(curr_parent):
                 if len(curr_parent) != 1:
                     tag = [str(pnum)]
@@ -363,6 +327,171 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                 out_files += node.output_files
 
     return out_files
+
+def identify_needed_data(curr_exe_job, link_job_instance=None):
+    """
+    This function will identify the length of data that a specific executable
+    needs to analyse and what part of that data is valid (ie. inspiral doesn't
+    analyse the first or last 64+8s of data it reads in).
+    In addition you can supply a second job instance to "link" to, which will
+    ensure that the two jobs will have a one-to-one correspondence (ie. one
+    template bank per one matched-filter job) and the corresponding jobs will
+    be "valid" at the same times.
+
+    Parameters
+    -----------
+    curr_exe_job : ahope.Job
+        An instanced of the PyCBC Job class that has a get_valid times method.
+    link_job_instance : Job instance (optional),
+        Coordinate the valid times with another executable.
+
+    Returns
+    --------
+    dataLength : float
+        The amount of data (in seconds) that each instance of the job must read
+        in.
+    valid_chunk : glue.segment.segment
+        The times within dataLength for which that jobs output **can** be
+        valid (ie. for inspiral this is (72, dataLength-72) as, for a standard
+        setup the inspiral job cannot look for triggers in the first 72 or
+        last 72 seconds of data read in.)
+    valid_length : float
+        The maximum length of data each job can be valid for. If not using
+        link_job_instance this is abs(valid_segment), but can be smaller than
+        that if the linked job only analyses a small amount of data (for e.g.).
+    """
+    # Set up the condorJob class for the current executable
+    data_length, valid_chunk = curr_exe_job.get_valid_times()
+
+    # Begin by getting analysis start and end, and start and end of time
+    # that the output file is valid for
+    valid_length = abs(valid_chunk)
+
+    data_chunk = segments.segment([0, data_length])
+    job_tag = curr_exe_job.exe_name.upper()
+
+    if link_job_instance:
+        # FIXME: Should we remove this, after testing is complete??
+        # EURGHH! What we are trying to do here is, if this option is given,
+        # line up the template bank and inspiral jobs so that there is one
+        # template bank for each inspiral job. This is proving a little messy
+        # and probably still isn't perfect.
+
+        # What data does the linked exe use?
+        link_data_length,link_valid_chunk = link_job_instance.get_valid_times()
+        # What data is lost at start of both jobs? Take the maximum.
+        start_data_loss = max(valid_chunk[0], link_valid_chunk[0])
+        # What data is lost at end of both jobs? Take the maximum.
+        end_data_loss = max(data_length - valid_chunk[1],\
+                            link_data_length - link_valid_chunk[1])
+        # Calculate valid_segments for both jobs based on the combined data
+        # loss.
+        valid_chunk = segments.segment(start_data_loss, \
+                                       data_length - end_data_loss)
+        link_valid_chunk = segments.segment(start_data_loss, \
+                                       link_data_length - end_data_loss)
+
+        # The maximum valid length should be the minimum of the two
+        link_valid_length = abs(link_valid_chunk)
+
+        # Which one is now longer? Use this is valid_length
+        if link_valid_length < valid_length:
+            valid_length = link_valid_length
+
+    # DO NOT! use valid length here, as valid_length and abs(valid_chunk)
+    # may be different by this point if using link_exe_instance
+    data_loss = data_length - abs(valid_chunk)
+
+
+    if data_loss < 0:
+        raise ValueError("Ahope needs fixing! Please contact a developer")
+
+    return data_length, valid_chunk, valid_length
+
+
+class JobSegmenter(object):
+    """
+    This class is used when running sngl_ifo_job_setup to determine what times
+    should be analysed be each job and what data is needed.
+    """
+    def __init__(self, data_length, valid_chunk, valid_length, curr_seg,
+                 data_loss):
+        """
+        Initialize class.
+        """
+        self.curr_seg = curr_seg
+        self.curr_seg_length = float(abs(curr_seg))
+        self.data_loss = data_loss
+        self.valid_chunk = valid_chunk
+        self.valid_length = valid_length
+        self.data_length = data_length
+        self.data_chunk = segments.segment([0, self.data_length])
+
+        if self.curr_seg_length < data_length:
+            self.num_jobs = 0
+            return
+        # How many jobs do we need
+        self.num_jobs = int( math.ceil( (self.curr_seg_length \
+                                - self.data_loss) / float(self.valid_length) ))
+        # What is the incremental shift between jobs
+        self.job_time_shift = (self.curr_seg_length - self.data_length) / \
+                              float(self.num_jobs - 1)
+
+    def get_valid_times_for_job_ahope(self, num_job, allow_overlap=True):
+        """
+        Get the times for which the job num_job will be valid, using ahope's
+        method.
+        """
+        # small factor of 0.0001 to avoid float round offs causing us to
+        # miss a second at end of segments.
+        shift_dur = self.curr_seg[0] + int(self.job_time_shift * num_job\
+                                           + 0.0001)
+        job_valid_seg = self.valid_chunk.shift(shift_dur)
+        # If we need to recalculate the valid times to avoid overlap
+        if not allow_overlap:
+            data_per_job = (self.curr_seg_length - self.data_loss) / \
+                           float(self.num_jobs)
+            lower_boundary = num_job*data_per_job + \
+                                 self.valid_chunk[0] + self.curr_seg[0]
+            upper_boundary = data_per_job + lower_boundary
+            # NOTE: Convert to int after calculating both boundaries
+            # small factor of 0.0001 to avoid float round offs causing us to
+            # miss a second at end of segments.
+            lower_boundary = int(lower_boundary)
+            upper_boundary = int(upper_boundary + 0.0001)
+            if lower_boundary < job_valid_seg[0] or \
+                    upper_boundary > job_valid_seg[1]:
+                err_msg = ("Ahope is attempting to generate output "
+                          "from a job at times where it is not valid.")
+                raise ValueError(err_msg)
+            job_valid_seg = segments.segment([lower_boundary,
+                                              upper_boundary])
+        return job_valid_seg
+
+    def get_data_times_for_job_ahope(self, num_job):
+        """
+        Get the data that this job will need to read in.
+        """
+        # small factor of 0.0001 to avoid float round offs causing us to
+        # miss a second at end of segments.
+        shift_dur = self.curr_seg[0] + int(self.job_time_shift * num_job\
+                                           + 0.0001)
+        job_data_seg = self.data_chunk.shift(shift_dur)
+        # Sanity check that all data is used
+        if num_job == 0:
+           if job_data_seg[0] != self.curr_seg[0]:
+               errMsg = "Job is not using data from the start of the "
+               errMsg += "science segment. It should be using all data."
+               raise ValueError(errMsg)
+        if num_job == (self.num_jobs - 1):
+            if job_data_seg[1] != self.curr_seg[1]:
+                errMsg = "Job is not using data from the end of the "
+                errMsg += "science segment. It should be using all data."
+                raise ValueError(errMsg)
+
+        return job_data_seg
+
+
 
 class PyCBCInspiralJob(Job):
     """
