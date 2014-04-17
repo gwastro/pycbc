@@ -426,7 +426,7 @@ class AhopeFile(File):
                                 "not provided")
             
             filename = self._filename(self.ifo_string, self.tagged_description,
-                                      extension, self.segList.extent())
+                                      extension, self.seg_list.extent())
             path = os.path.join(directory, filename)
             if not os.path.isabs(path):
                 path = os.path.join(os.getcwd(), path) 
@@ -462,7 +462,7 @@ class AhopeFile(File):
         if len(self.seg_list) == 1:
             return self.seg_list[0]
         else:
-            err = "self.segList must only contain one segment to access"
+            err = "self.seg_list must only contain one segment to access"
             err += " the segment property. %s." %(str(self.seg_list),)
             raise TypeError(err)
         
@@ -547,8 +547,7 @@ class AhopeFileList(list):
            The AhopeFiles that corresponds to the time.
         '''
        # Get list of AhopeFiles that overlap time, for given ifo
-       outFiles = [i for i in self if\
-                                    ifo in i.ifoList and time in i.segList] 
+       outFiles = [i for i in self if ifo in i.ifoList and time in i.seg_list] 
        if len(outFiles) == 0:
            # No AhopeOutFile at this time
            return None
@@ -579,14 +578,14 @@ class AhopeFileList(list):
         AhopeFileList class
            The list of AhopeFiles that are most appropriate for the time range
         """
-        currSegList = segments.segmentlist([current_segment])
+        currseg_list = segments.segmentlist([current_segment])
 
         # Get all files overlapping the window
         overlap_files = self.find_all_output_in_range(ifo, current_segment,
                                                     useSplitLists=useSplitLists)
 
         # By how much do they overlap?
-        overlap_windows = [abs(i.seg_list & currSegList) for i in overlap_files]
+        overlap_windows = [abs(i.seg_list & currseg_list) for i in overlap_files]
 
         # FIXME: Error handling for the overlap_files == [] case?
 
@@ -621,7 +620,7 @@ class AhopeFileList(list):
         AhopeFile class
            The AhopeFile that is most appropriate for the time range
         '''
-        currSegList = segments.segmentlist([current_segment])
+        currseg_list = segments.segmentlist([current_segment])
 
         # First filter AhopeFiles corresponding to ifo
         outFiles = [i for i in self if ifo in i.ifoList]
@@ -641,7 +640,7 @@ class AhopeFileList(list):
             # One AhopeOutFile overlaps that period
             return outFiles[0]
         else:
-            overlap_windows = [abs(i.seg_list & currSegList) \
+            overlap_windows = [abs(i.seg_list & currseg_list) \
                                                         for i in outFiles]
             # Return the AhopeFile with the biggest overlap
             # Note if two AhopeFile have identical overlap, this will return
@@ -747,7 +746,7 @@ class AhopeFileList(list):
         # Sort the files
 
         for ix, currFile in enumerate(self):
-            segExtent = currFile.segListExtent
+            segExtent = currFile.seg_listExtent
             segExtStart = float(segExtent[0])
             segExtEnd = float(segExtent[1])
             startIdx = (segExtent[0] - startTime) / step
@@ -838,12 +837,12 @@ class AhopeOutSegFile(AhopeFile):
             Maximum length of science segments. Segments shorter than this will
             be removed.
         """
-        newSegList = segments.segmentlist()
+        newseg_list = segments.segmentlist()
         for seg in self.segmentList:
             if abs(seg) > minSegLength:
-                newSegList.append(seg)
-        newSegList.coalesce()
-        self.segmentList = newSegList
+                newseg_list.append(seg)
+        newseg_list.coalesce()
+        self.segmentList = newseg_list
         self.toSegmentXml()
 
     def toSegmentXml(self):
