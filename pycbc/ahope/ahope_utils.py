@@ -123,6 +123,7 @@ class AhopeExecutable(Executable):
         self.tags = tags
         self.ifo = ifo
         self.cp = cp
+        self.universe=universe
         
         # Determine the output directory
         if out_dir is not None:
@@ -146,7 +147,7 @@ class AhopeExecutable(Executable):
         self.add_pfn(exe_path)
 
         # Determine the condor universe if we aren't given one 
-        if universe is None:
+        if self.universe is None:
             if is_condor_exec(exe_path):
                 self.universe = 'standard'
             else:
@@ -243,14 +244,14 @@ class AhopeWorkflow(Workflow):
         cmd_list = node.get_command_line()
         
         # Must execute in output directory.
-        currDir = os.getcwd()
-        os.chdir(job_dir)
+        curr_dir = os.getcwd()
+        out_dir = node.executable.out_dir
+        os.chdir(out_dir)
         
         # Make call
-        make_external_call(cmd_list, out_dir=os.path.join(job_dir, 'logs'),
-                                     out_baseame=base_name) 
+        make_external_call(cmd_list, out_dir=os.path.join(out_dir, 'logs')) 
         # Change back
-        os.chdir(currDir)
+        os.chdir(curr_dir)
         
         self._outputs += node._outputs
             
