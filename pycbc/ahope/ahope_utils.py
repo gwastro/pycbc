@@ -152,8 +152,9 @@ class AhopeExecutable(Executable):
                 self.universe = 'standard'
             else:
                 self.universe = 'vanilla'
+                
         logging.debug("%s executable will run as %s universe"
-                     % (name, universe))  
+                     % (name, self.universe))  
     
         # Determine the sections from the ini file that will configure
         # this executable
@@ -162,7 +163,7 @@ class AhopeExecutable(Executable):
              section = '%s-%s' %(self.name, tag.lower())
              if cp.has_section(section):
                 sections.append(section)
-                
+        self.sections = sections   
         # Do some basic sanity checking on the options      
         for sec1, sec2 in combinations(sections, 2):
             cp.check_duplicate_options(sec1, sec2, raise_error=True)
@@ -187,7 +188,13 @@ class AhopeExecutable(Executable):
             self.common_options += [opt]
         else:
             self.common_options += [opt, value]
-
+            
+    def get_opt(self, opt):
+        for sec in self.sections:
+            key = self.cp.get(sec, opt)
+            if key:
+                return key
+        return None
 
 class AhopeWorkflow(Workflow):
     """
@@ -754,7 +761,7 @@ class AhopeFileList(list):
         # Sort the files
 
         for ix, currFile in enumerate(self):
-            segExtent = currFile.segment_listExtent
+            segExtent = currFile.segment_list.extent()
             segExtStart = float(segExtent[0])
             segExtEnd = float(segExtent[1])
             startIdx = (segExtent[0] - startTime) / step

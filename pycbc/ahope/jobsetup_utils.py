@@ -266,6 +266,9 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
     # Begin by getting analysis start and end, and start and end of time
     # that the output file is valid for
     valid_length = abs(valid_chunk)
+
+    data_chunk = segments.segment([0, data_length])
+    job_tag = curr_exe_job.name.upper()
     
     ########### (1) ############
     # Get the times that can be analysed and needed data lengths

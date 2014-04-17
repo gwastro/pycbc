@@ -34,6 +34,40 @@ import os
 from pycbc.ahope.ahope_utils import * 
 from pycbc.ahope.jobsetup_utils import *
 
+def select_matchedfilterjob_class(curr_exe):
+    """
+    This function returns an instance of the class that is appropriate for
+    matched-filtering within ahope.
+    
+    Parameters
+    ----------
+    curr_exe : string
+        The name of the AhopeExecutable that is being used.
+    curr_section : string
+        The name of the section storing options for this executble
+
+    Returns
+    --------
+    Instanced class : exe_class
+        An instance of the class that holds the utility functions appropriate
+        for the given AhopeExecutable. This class **must** contain
+        * exe_class.create_job()
+        and the job returned by this **must** contain
+        * job.get_valid_times(ifo, )
+        * job.create_node()
+    """
+    # This is basically a list of if statements
+    if curr_exe == 'lalapps_inspiral_ahope':
+        exe_class = LegacyInspiralExecutable
+    elif curr_exe == 'pycbc_inspiral':
+        exe_class = PyCBCInspiralExecutable
+    else:
+        # Should we try some sort of default class??
+        err_string = "No class exists for AhopeExecutable %s" %(curr_exe,)
+        raise NotImplementedError(err_string)
+        
+    return exe_class
+
 def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
                                tmplt_banks, output_dir=None,
                                injection_file=None, tags=[]):
@@ -180,7 +214,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
     ifos = science_segs.keys()
     match_fltr_exe = os.path.basename(cp.get('executables','inspiral'))
     # Select the appropriate class
-    exe_instance = select_matchedfilterjob_instance(match_fltr_exe, 'inspiral')
+    exe_class = select_matchedfilterjob_class(match_fltr_exe)
 
     if link_to_tmpltbank:
         # Use this to ensure that inspiral and tmpltbank jobs overlap. This
@@ -192,8 +226,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
         # PSD but then only generate triggers in the 2000s of data that the
         # template bank jobs ran on.
         tmpltbank_exe = os.path.basename(cp.get('executables', 'tmpltbank'))
-        link_exe_instance = select_tmpltbankjob_instance(tmpltbank_exe, 
-                                                        'tmpltbank')
+        link_exe_instance = select_tmpltbankjob_class(tmpltbank_exe)
     else:
         link_exe_instance = None
 
@@ -205,11 +238,11 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
     # it would probably require a new module
     for ifo in ifos:
         logging.info("Setting up matched-filtering for %s." %(ifo))
-        job_instance = exe_instance.create_job(workflow.cp, ifo, output_dir, 
+        job_instance = exe_instance(workflow.cp, 'inspiral', ifo, output_dir, 
                                                injection_file=injection_file, 
                                                tags=tags)
         if link_exe_instance:
-            link_job_instance = link_exe_instance.create_job(cp, ifo, \
+            link_job_instance = link_exe_instance(cp, 'tmpltbank', ifo, \
                         output_dir, tags=tags)
         else:
             link_job_instance = None

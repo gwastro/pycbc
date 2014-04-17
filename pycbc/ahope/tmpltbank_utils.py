@@ -204,7 +204,7 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
     # will require a bit of effort here .... 
 
     ifos = science_segs.keys()
-    tmplt_bank_exe = os.path.basename(cp.get('executables','tmpltbank'))
+    tmplt_bank_exe = os.path.basename(cp.get('executables', 'tmpltbank'))
     # Select the appropriate class
     exe_class = select_tmpltbank_class(tmplt_bank_exe)
 
@@ -222,7 +222,7 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
         # PSD but then only generate triggers in the 2000s of data that the
         # template bank jobs ran on.
         tmpltbank_exe = os.path.basename(cp.get('executables', 'inspiral'))
-        link_exe_instance = select_matchedfilterjob_instance(tmpltbank_exe)
+        link_exe_instance = select_matchedfilter_class(tmpltbank_exe)
     else:
         link_exe_instance = None
 
@@ -239,11 +239,12 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
     # Template banks are independent for different ifos, but might not be!
     # Begin with independent case and add after FIXME
     for ifo in ifos:
-        job_instance = exe_class(workflow.cp, ifo, output_dir,
+        job_instance = exe_class(workflow.cp, 'tmpltbank', ifo=ifo, 
+                                               out_dir=output_dir,
                                                tags=tags)
         if link_exe_instance:
-            link_job_instance = link_exe_instance.create_job(cp, ifo, \
-                        output_dir, tags=tags)
+            link_job_instance = link_exe_instance(cp, 'inspiral', ifo=ifo,
+                        out_dir=out_dir, tags=tags)
         else:
             link_job_instance = None
         sngl_ifo_job_setup(workflow, ifo, tmplt_banks, job_instance, 

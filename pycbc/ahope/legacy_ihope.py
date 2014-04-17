@@ -84,7 +84,7 @@ def legacy_get_valid_times(self):
     validStart = padData
     validEnd = analysisDur + padData
     # If this is inspiral we lose segment-length/4 on start and end
-    if self.exe_name == 'inspiral':
+    if self.name == 'inspiral':
         # Don't think inspiral will do well if segmentLength/4 is not
         # an integer
         validStart = validStart + int(segmentLength/(sampleRate * 4))
@@ -105,20 +105,20 @@ class LegacyAnalysisExecutable(AhopeExecutable):
     The class responsible for setting up jobs for legacy lalapps C-code
     Executables.
     """
-    def __init__(self, cp, exe_name, universe, ifo=None, tags=[], out_dir=None):
-        Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+    def __init__(self, cp, name, universe=None, ifo=None, tags=[], out_dir=None):
+        AhopeExecutable.__init__(self, cp, name, universe, ifo, out_dir, tags=tags)
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
         node = LegacyAnalysisAhopeNode(self)
         
         if not dfParents: 
             raise ValueError("%s must be supplied with frame files" 
-                              %(self.exe_name))  
+                              %(self.name))  
         
         pad_data = int(self.get_opt('pad-data'))
         if pad_data is None:
             raise ValueError("The option pad-data is a required option of "
-                             "%s. Please check the ini file." % self.exe_name)                                     
+                             "%s. Please check the ini file." % self.name)                                     
           
         node.add_var_opt('--gps-start-time', data_seg[0] + pad_data)
         node.add_var_opt('--gps-end-time', data_seg[1] - pad_data)   
@@ -132,7 +132,7 @@ class LegacyAnalysisExecutable(AhopeExecutable):
             extension += '.gz'
         
         #create the output file for this job 
-        out_file = AhopeFile(self.ifo, self.exe_name, valid_seg,
+        out_file = AhopeFile(self.ifo, self.name, valid_seg,
                              extension=extension,
                              directory=self.out_dir,
                              tags=self.tags + tags)
@@ -151,9 +151,9 @@ class LegacyInspiralExecutable(LegacyAnalysisExecutable):
     The class responsible for setting up jobs for legacy lalapps_inspiral
     AhopeExecutable.
     """
-    def __init__(self, cp, exe_name, universe, ifo=None, injection_file=None, 
+    def __init__(self, cp, name, universe, ifo=None, injection_file=None, 
                        out_dir=None, tags=[]):
-        LegacyAnalysisJob.__init__(self, cp, exe_name, universe, ifo, 
+        LegacyAnalysisJob.__init__(self, cp, name, universe, ifo, 
                                     out_dir=out_dir, tags=tags)
         self.injection_file = injection_file 
 
@@ -173,9 +173,9 @@ class LegacySplitBankExecutable(AhopeExecutable):
     """
     The class responsible for creating jobs for lalapps_splitbank.
     """
-    def __init__(self, cp, exe_name, universe, numBanks,
+    def __init__(self, cp,name, universe, numBanks,
                  ifo=None, out_dir=None, tags=[]):
-        Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        Job.__init__(self, cp, name, universe, ifo, out_dir, tags=tags)
         self.num_banks = int(numBanks)
         tmpNumBanks = self.get_opt("number-of-banks")
         if tmpNumBanks:
@@ -183,7 +183,7 @@ class LegacySplitBankExecutable(AhopeExecutable):
             if not int(tmpNumBanks) == self.num_banks:
                 errMsg = "Number of banks provided in [ahope-splitbank] "
                 errMsg += "section does not agree with value given in the "
-                errMsg += "[%s] section of the ini file. " %(exe_name)
+                errMsg += "[%s] section of the ini file. " %(name)
                 raise ValueError(errMsg)
         else:
             # Option not given, so add it
@@ -232,7 +232,7 @@ class LegacySplitBankExecutable(AhopeExecutable):
                                           None, None, None])
             url_list.append(out_url)
                 
-            job_tag = bank.description + "_" + self.exe_name.upper()
+            job_tag = bank.description + "_" + self.name.upper()
             out_file = AhopeFile(bank.ifo, job_tag, bank.segment, 
                                    file_url=out_url, tags=bank.tags)
             node.add_output(out_file)
