@@ -153,7 +153,6 @@ class Node(object):
         
     def _finalize(self):
         args = self._args + self._options
-        print args
         self._dax_node.addArguments(*args)
         
 class Workflow(object):
