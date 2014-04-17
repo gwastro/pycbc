@@ -174,9 +174,9 @@ class Workflow(object):
                 raise ValueError('Parents of this node must be added to the '
                                  'workflow first.')   
                                   
-            elif inp.node is None and inp.workflow_input is False:
+            elif inp.node is None and inp.in_workflow is False:
                 self._inputs += [inp]
-                inp.workflow_input = True
+                inp.in_workflow = True
                                                
         for out in node._outputs:
             self._outputs += node._outputs  

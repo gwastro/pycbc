@@ -98,7 +98,7 @@ class LegacyAnalysisNode(AhopeNode):
     # This is *ONLY* used by legacy codes where ahope cannot directly
     # set the output name. Do not use elsewhere!
     def  set_jobnum_tag(self, num):
-        self.add_var_opt('--user-tag', num)
+        self.add_opt('--user-tag', num)
         
 class LegacyAnalysisExecutable(AhopeExecutable):
     """
@@ -109,7 +109,7 @@ class LegacyAnalysisExecutable(AhopeExecutable):
         AhopeExecutable.__init__(self, cp, name, universe, ifo, out_dir, tags=tags)
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
-        node = LegacyAnalysisAhopeNode(self)
+        node = LegacyAnalysisNode(self)
         
         if not dfParents: 
             raise ValueError("%s must be supplied with frame files" 
@@ -120,8 +120,8 @@ class LegacyAnalysisExecutable(AhopeExecutable):
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.name)                                     
           
-        node.add_var_opt('--gps-start-time', data_seg[0] + pad_data)
-        node.add_var_opt('--gps-end-time', data_seg[1] - pad_data)   
+        node.add_opt('--gps-start-time', data_seg[0] + pad_data)
+        node.add_opt('--gps-end-time', data_seg[1] - pad_data)   
          
         cache_file = dfParents[0]       
         
@@ -137,8 +137,8 @@ class LegacyAnalysisExecutable(AhopeExecutable):
                              directory=self.out_dir,
                              tags=self.tags + tags)
  
-        node.add_output(out_file, opt='output-file')
-        node.add_input_list(dfParents, opt='frame-files', delimiter=' ')
+        node.add_output_opt('--output-file', out_file)
+        node.add_input_list_opt('--frame-files', dfParents)
         return node
 
     get_valid_times = legacy_get_valid_times
@@ -160,8 +160,8 @@ class LegacyInspiralExecutable(LegacyAnalysisExecutable):
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
         node = LegacyAnalysisAhopeExecutable.create_node(self, data_seg, valid_seg, 
                                                    parent, dfParents, tags=tags)
-        node.add_var_opt('trig-start-time', valid_seg[0])
-        node.add_var_opt('trig-end-time', valid_seg[1])  
+        node.add_opt('trig-start-time', valid_seg[0])
+        node.add_opt('trig-end-time', valid_seg[1])  
         node.add_input(parent, opt='bank-file')    
         
         if self.injection_file is not None:
@@ -235,6 +235,6 @@ class LegacySplitBankExecutable(AhopeExecutable):
             job_tag = bank.description + "_" + self.name.upper()
             out_file = AhopeFile(bank.ifo, job_tag, bank.segment, 
                                    file_url=out_url, tags=bank.tags)
-            node.add_output(out_file)
+            node._add_output(out_file)
         return node
 
