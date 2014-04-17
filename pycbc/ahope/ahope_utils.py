@@ -204,8 +204,8 @@ class AhopeWorkflow(Workflow):
         
         # Dump the parsed config file
         ini_file = os.path.abspath(self.name + '_parsed.ini')
-        if not os.path.isfile(iniFile):
-            fp = open(iniFile, 'w')
+        if not os.path.isfile(ini_file):
+            fp = open(ini_file, 'w')
             self.cp.write(fp)
             fp.close()
         else:
