@@ -41,7 +41,7 @@ def select_tmpltbankjob_instance(curr_exe, curr_section):
     Parameters
     ----------
     curr_exe : string
-        The name of the executable that is being used.
+        The name of the AhopeExecutable that is being used.
     curr_section : string
         The name of the section storing options for this executble
 
@@ -49,7 +49,7 @@ def select_tmpltbankjob_instance(curr_exe, curr_section):
     --------
     Instanced class : exe_class
         An instance of the class that holds the utility functions appropriate
-        for the given executable. This class **must** contain
+        for the given AhopeExecutable. This class **must** contain
         * exe_class.create_job()
         and the job returned by this **must** contain
         * job.get_valid_times(ifo, )
@@ -65,7 +65,7 @@ def select_tmpltbankjob_instance(curr_exe, curr_section):
         exe_class = PyCBCTmpltbankExec(curr_section)
     else:
         # Should we try some sort of default class??
-        err_string = "No class exists for executable %s" %(curr_exe,)
+        err_string = "No class exists for AhopeExecutable %s" %(curr_exe,)
         raise NotImplementedError(err_string)
     return exe_class
 
@@ -77,7 +77,7 @@ def select_matchedfilterjob_instance(curr_exe, curr_section):
     Parameters
     ----------
     curr_exe : string
-        The name of the executable that is being used.
+        The name of the AhopeExecutable that is being used.
     curr_section : string
         The name of the section storing options for this executble
 
@@ -85,7 +85,7 @@ def select_matchedfilterjob_instance(curr_exe, curr_section):
     --------
     Instanced class : exe_class
         An instance of the class that holds the utility functions appropriate
-        for the given executable. This class **must** contain
+        for the given AhopeExecutable. This class **must** contain
         * exe_class.create_job()
         and the job returned by this **must** contain
         * job.get_valid_times(ifo, )
@@ -98,7 +98,7 @@ def select_matchedfilterjob_instance(curr_exe, curr_section):
         exe_class = PyCBCInspiralExec(curr_section)
     else:
         # Should we try some sort of default class??
-        err_string = "No class exists for executable %s" %(curr_exe,)
+        err_string = "No class exists for AhopeExecutable %s" %(curr_exe,)
         raise NotImplementedError(err_string)
         
     return exe_class
@@ -111,7 +111,7 @@ def select_splitfilejob_instance(curr_exe, curr_section):
     Parameters
     ----------
     curr_exe : string
-        The name of the executable that is being used.
+        The name of the AhopeExecutable that is being used.
     curr_section : string
         The name of the section storing options for this executble
 
@@ -119,7 +119,7 @@ def select_splitfilejob_instance(curr_exe, curr_section):
     --------
     Instanced class : exe_class
         An instance of the class that holds the utility functions appropriate
-        for the given executable. This class **must** contain
+        for the given AhopeExecutable. This class **must** contain
         * exe_class.create_job()
         and the job returned by this **must** contain
         * job.create_node()
@@ -132,7 +132,7 @@ def select_splitfilejob_instance(curr_exe, curr_section):
         exe_class = PycbcSplitBankExec(curr_section)
     else:
         # Should we try some sort of default class??
-        err_string = "No class exists for executable %s" %(curr_exe,)
+        err_string = "No class exists for AhopeExecutable %s" %(curr_exe,)
         raise NotImplementedError(errString)
 
     return exe_class
@@ -144,7 +144,7 @@ def select_genericjob_instance(workflow, exe_tag):
     into one of the select_XXX_instance functions above. IE. not a matched
     filter instance, or a template bank instance. Such specialized instances
     require extra setup. The only requirements here is that we can run
-    create_job on the Executable instance, and create_node on the resulting
+    create_job on the AhopeExecutable instance, and create_node on the resulting
     Job class.
 
     Parameters
@@ -152,19 +152,19 @@ def select_genericjob_instance(workflow, exe_tag):
     workflow : ahope.Workflow instance
         The ahope workflow instance.
     exe_tag : string
-        The name of the section storing options for this executable and the
-        option giving the executable path in the [executables] section.
+        The name of the section storing options for this AhopeExecutable and the
+        option giving the AhopeExecutable path in the [AhopeExecutables] section.
 
     Returns
     --------
-    exe_class : ahope.Executable sub-classed instance
+    exe_class : ahope.AhopeExecutable sub-classed instance
         An instance of the class that holds the utility functions appropriate
-        for the given executable. This class **must** contain
+        for the given AhopeExecutable. This class **must** contain
         * exe_class.create_job()
         and the job returned by this **must** contain
         * job.create_node()
     """
-    exe_path = workflow.cp.get("executables", exe_tag)
+    exe_path = workflow.cp.get("AhopeExecutables", exe_tag)
     exe_name = os.path.basename(exe_path)
     if exe_name == 'ligolw_add':
         exe_class = LigolwAddExec(exe_tag)
@@ -186,7 +186,7 @@ def select_genericjob_instance(workflow, exe_tag):
         exe_class = SQLInOutExec(exe_tag)
     else:
         # Should we try some sort of default class??
-        err_string = "No class exists for executable %s" %(exe_name,)
+        err_string = "No class exists for AhopeExecutable %s" %(exe_name,)
         raise NotImplementedError(err_string)
 
     return exe_class
@@ -235,7 +235,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
         The AhopeFileList containing the list of jobs that are parents to
         the one being set up.
     link_job_instance : Job instance (optional),
-        Coordinate the valid times with another executable.
+        Coordinate the valid times with another AhopeExecutable.
     allow_overlap : boolean (optional, kwarg, default = True)
         If this is set the times that jobs are valid for will be allowed to
         overlap. This may be desired for template banks which may have some
@@ -253,11 +253,19 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
         A list of the files that will be generated by this step in the
         ahope workflow.
     """
+
     if compatibility_mode and not link_job_instance:
         errMsg = "Compability mode requires a link_job_instance."
         raise ValueError(errMsg)
 
     cp = workflow.cp
+    
+    # Set up the condorJob class for the current AhopeExecutable
+    data_length, valid_chunk = curr_exe_job.get_valid_times()
+    
+    # Begin by getting analysis start and end, and start and end of time
+    # that the output file is valid for
+    valid_length = abs(valid_chunk)
     
     ########### (1) ############
     # Get the times that can be analysed and needed data lengths
@@ -329,7 +337,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                     tag = []
                 # To ensure output file uniqueness I add a tag
                 # We should generate unique names automatically, but it is a 
-                # pain until we can set the output names for all executables              
+                # pain until we can set the output names for all AhopeExecutables              
                 node = curr_exe_job.create_node(job_data_seg, job_valid_seg, 
                                                 parent=parent,
                                                 dfParents=curr_dfouts, 
@@ -587,12 +595,12 @@ class JobSegmenter(object):
 
 
 
-class PyCBCInspiralExecutable(Executable):
+class PyCBCInspiralExecutable(AhopeExecutable):
     """
-    The class used to create jobs for pycbc_inspiral executable.
+    The class used to create jobs for pycbc_inspiral AhopeExecutable.
     """
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, injection_file=None, tags=[]):
-        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.cp = cp
         self.set_memory(2000)
         self.injection_file = injection_file
@@ -666,9 +674,9 @@ class PyCBCInspiralExecutable(Executable):
         end = data_length - pad_data - end_pad
         return data_length, segments.segment(start, end)
 
-class PyCBCInspiralExec(Executable):
+class PyCBCInspiralExec(AhopeExecutable):
     """
-    The class corresponding to the pycbc_inspiral executable. It can be used
+    The class corresponding to the pycbc_inspiral AhopeExecutable. It can be used
     to create jobs and from that create nodes
     """
     def create_job(self, cp, ifo, out_dir=None, injection_file=None, tags=[]):
@@ -676,13 +684,14 @@ class PyCBCInspiralExec(Executable):
                                 ifo=ifo, out_dir=out_dir,
                                 injection_file=injection_file, tags=tags)
 
-class PyCBCTmpltbankExecutable(Executable):
+class PyCBCTmpltbankAhopeExecutable(AhopeExecutable):
     """
-    The class used to create jobs for pycbc_geom_nonspin_bank executable and
-    any other executables using the same command line option groups.
+    The class used to create jobs for pycbc_geom_nonspin_bank AhopeExecutable and
+    any other AhopeExecutables using the same command line option groups.
     """
-    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, tags=[]):
-        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None,
+                 tags=[]):
+        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.cp = cp
         self.set_memory(2000)
         self.write_psd = write_psd
@@ -760,10 +769,10 @@ class PyCBCTmpltbankExec(Executable):
                                  ifo=ifo, out_dir=out_dir, tags=tags,
                                  write_psd=self.write_psd)
 
-class LigoLWCombineSegsExecutable(Executable):
+class LigoLWCombineSegsAhopeExecutable(AhopeExecutable):
     """ 
     This class is used to create nodes for the ligolw_combine_segments 
-    executable
+    AhopeExecutable
     """
     def create_node(self, valid_seg, veto_files, segment_name):
         node = Node(self)
@@ -773,12 +782,12 @@ class LigoLWCombineSegsExecutable(Executable):
         node.make_and_add_output(valid_seg, '.xml', 'output')      
         return node
 
-class LigolwAddExecutable(Executable):
+class LigolwAddAhopeExecutable(AhopeExecutable):
     """
-    The class used to create nodes for the ligolw_add executable.
+    The class used to create nodes for the ligolw_add AhopeExecutable.
     """
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
-        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
 
     def create_node(self, jobSegment, input_files, output=None):
@@ -802,22 +811,22 @@ class LigolwAddExecutable(Executable):
             node.make_and_add_output(jobSegment, '.xml.gz', 'output')
         return node
 
-class LigolwAddExec(Executable):
+class LigolwAddExec(AhopeExecutable):
     """
-    The class corresponding to the ligolw_add executable.
+    The class corresponding to the ligolw_add AhopeExecutable.
     """
     def __init__(self, exe_name):
         if exe_name != 'llwadd':
             raise ValueError('ligolw_add does not support setting '
                              'the exe_name to anything but "llwadd"')
 
-        Executable.__init__(self, exe_name, 'vanilla')
+        AhopeExecutable.__init__(self, exe_name, 'vanilla')
 
     def create_job(self, cp, ifo, out_dir=None, tags=[]):
         return LigolwAddJob(cp, self.exe_name, self.condor_universe,
                             ifo=ifo, out_dir=out_dir, tags=tags)
 
-class LigolwSSthincaExecutable(Executable):
+class LigolwSSthincaAhopeExecutable(AhopeExecutable):
     """
     The class responsible for making jobs for ligolw_sstinca.
     """
@@ -852,28 +861,28 @@ class LigolwSSthincaExecutable(Executable):
         return node
 
 
-class LigolwSSthincaExec(Executable):
+class LigolwSSthincaExec(AhopeExecutable):
     """
-    The class corresponding to the ligolw_sstinca executable.
+    The class corresponding to the ligolw_sstinca AhopeExecutable.
     """
     def __init__(self, exe_name):
         if exe_name != 'thinca':
             raise ValueError('ligolw_sstinca does not support setting '
                              'the exe_name to anything but "thinca"')
 
-        Executable.__init__(self, exe_name, 'vanilla')
+        AhopeExecutable.__init__(self, exe_name, 'vanilla')
 
     def create_job(self, cp, ifo, out_dir=None, dqVetoName=None, tags=[]):
         return LigolwSSthincaJob(cp, self.exe_name, self.condor_universe,
                             ifo=ifo, out_dir=out_dir, 
                             dqVetoName=dqVetoName, tags=tags)
 
-class PycbcSqliteSimplifyExecutable(Executable):
+class PycbcSqliteSimplifyAhopeExecutable(AhopeExecutable):
     """
     The class responsible for making jobs for pycbc_sqlite_simplify.
     """
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, tags=[]):
-        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
         
     def create_node(self, jobSegment, inputFiles, injFile=None, injString=None):
@@ -889,13 +898,13 @@ class PycbcSqliteSimplifyExecutable(Executable):
                                  tags=self.tags) 
         return node
 
-class SQLInOutExecutable(Executable):
+class SQLInOutAhopeExecutable(AhopeExecutable):
     """
     The class responsible for making jobs for SQL codes taking one input and
     one output.
     """
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, tags=[]):
-        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
 
     def create_node(self, jobSegment, inputFile):
         node = Node(self)
@@ -925,9 +934,9 @@ class ComputeDurationsExec(SQLInOutExec):
                                            ifo=ifo, out_dir=out_dir, tags=tags)
                             
    
-class LalappsInspinjExecutable(Executable):
+class LalappsInspinjAhopeExecutable(AhopeExecutable):
     """
-    The class used to create jobs for the lalapps_inspinj executable.
+    The class used to create jobs for the lalapps_inspinj AhopeExecutable.
     """
     def create_node(self, segment):
         node = Node(self)
@@ -942,9 +951,9 @@ class LalappsInspinjExecutable(Executable):
         node.make_and_add_output(segment, '.xml', 'output')
         return node
 
-class PycbcTimeslidesExecutable(Executable):
+class PycbcTimeslidesAhopeExecutable(AhopeExecutable):
     """
-    The class used to create jobs for the pycbc_timeslides executable.
+    The class used to create jobs for the pycbc_timeslides AhopeExecutable.
     """
     def create_node(self, segment):
         node = Node(self)
@@ -953,13 +962,13 @@ class PycbcTimeslidesExecutable(Executable):
         return node
 
 
-class PycbcSplitBankExecutable(Executable):
+class PycbcSplitBankAhopeExecutable(AhopeExecutable):
     """
     The class responsible for creating jobs for pycbc_splitbank.
     """
     def __init__(self, cp, exe_name, universe, num_banks,
                  ifo=None, out_dir=None, tags=[]):
-        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.num_banks = int(num_banks)
 
     def create_node(self, bank):

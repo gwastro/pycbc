@@ -34,14 +34,14 @@ import logging
 import urlparse
 from glue import pipeline
 from glue import segments
-from ahope_utils import Node, Executable, AhopeFile
+from ahope_utils import Node, AhopeExecutable, AhopeFile
 
 def legacy_get_valid_times(self):
     """
     Return the length of data that the tmpltbank job will need to read and
     the part of that data that the template bank is valid for. In the case
     of lalapps_tmpltbank the following options are needed to set this up
-    and will be used by the executable to figure this out:
+    and will be used by the AhopeExecutable to figure this out:
 
     * --pad-data (seconds, amount of data used to pad the analysis region.
       This is needed as some data will be corrupted from the data
@@ -100,10 +100,10 @@ class LegacyAnalysisNode(Node):
     def  set_jobnum_tag(self, num):
         self.add_var_opt('user-tag', num)
         
-class LegacyAnalysisExecutable(Executable):
+class LegacyAnalysisAhopeExecutable(AhopeExecutable):
     """
     The class responsible for setting up jobs for legacy lalapps C-code
-    executables.
+    Executables.
     """
     def __init__(self, cp, exe_name, universe, ifo=None, tags=[], out_dir=None):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
@@ -143,10 +143,10 @@ class LegacyAnalysisExecutable(Executable):
 
     get_valid_times = legacy_get_valid_times
         
-class LegacyInspiralExecutable(LegacyAnalysisExecutable):
+class LegacyInspiralAhopeExecutable(LegacyAnalysisAhopeExecutable):
     """
     The class responsible for setting up jobs for legacy lalapps_inspiral
-    executable.
+    AhopeExecutable.
     """
     def __init__(self, cp, exe_name, universe, ifo=None, injection_file=None, 
                        out_dir=None, tags=[]):
@@ -155,7 +155,7 @@ class LegacyInspiralExecutable(LegacyAnalysisExecutable):
         self.injection_file = injection_file 
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
-        node = LegacyAnalysisExecutable.create_node(self, data_seg, valid_seg, 
+        node = LegacyAnalysisAhopeExecutable.create_node(self, data_seg, valid_seg, 
                                                    parent, dfParents, tags=tags)
         node.add_var_opt('trig-start-time', valid_seg[0])
         node.add_var_opt('trig-end-time', valid_seg[1])  
@@ -166,7 +166,7 @@ class LegacyInspiralExecutable(LegacyAnalysisExecutable):
         return node
 
 
-class LegacySplitBankExecutable(Executable):    
+class LegacySplitBankAhopeExecutable(AhopeExecutable):    
     """
     The class responsible for creating jobs for lalapps_splitbank.
     """

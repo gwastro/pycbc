@@ -223,7 +223,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
     end_time = workflow.analysis_time[1]
     segValidSeg = workflow.analysis_time
     # Will I need to add some jobs to the workflow?
-    vetoGenJob = create_segs_from_cats_job(cp, out_dir, workflow.ifoString)
+    vetoGenJob = create_segs_from_cats_job(cp, out_dir, workflow.ifo_string)
     
     for ifo in workflow.ifos:
         logging.info("Generating science segments for ifo %s" %(ifo))
@@ -482,7 +482,7 @@ def create_segs_from_cats_job(cp, out_dir, ifoString, tag=None):
         currTags = [tag]
     else:
         currTags = []
-    job = Job(cp, 'segments_from_cats', universe='local', ifo=ifoString,
+    job = AhopeExecutable(cp, 'segments_from_cats', universe='local', ifo=ifoString,
               out_dir=out_dir, tags=currTags)
     job.add_opt('separate-categories', '')
     job.add_opt('segment-url', segServerUrl)
