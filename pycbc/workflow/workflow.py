@@ -18,7 +18,7 @@ class Executable(object):
     def insert_into_dax(self, dax):
         dax.addExecutable(self._dax_executable)
         
-    def add_profile(namespace, key, value):
+    def add_profile(self, namespace, key, value):
         """ Add profile information to this executable
         """
         entry = dax.Profile(namespace, key, value)
