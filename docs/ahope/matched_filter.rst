@@ -78,6 +78,8 @@ Currently only one option, but others can be added. The subfunctions used are de
 
 When using the setup_matchedfltr_dax_generated sub-module the following additional options apply in the [ahope-matchedfilter] section:
 
+* matchedfilter-link-to-tmpltbank - OPTIONAL. If this is given ahope will attempt to ensure a one-to-one correspondence between template banks and matched-filter outputs. This may not work in all cases and should be considered an option to be used for comparing with ihope output.
+* matchedfilter-compatibility-mode - OPTIONAL. If this is given ahope will tile the matched-filter jobs in the same way as inspiral_hipe used to. This requires the link option above and that the template bank and matched-filtering jobs are reading the same amount of data in each job.
 * analysis-length = LENGTH_IN_SECONDS (*NOT* used for lalapps_inspiral) - REQUIRED. The amount of time in seconds that will be matched-filtered. Note that triggers may not be produced for the entire span of time. 
 
 $$$$$$$$$$$$$$$
