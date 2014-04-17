@@ -29,7 +29,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 
 import math
-from glue import segments, pipeline
+from glue import segments
 from pycbc.ahope.ahope_utils import *
 from pycbc.ahope.legacy_ihope import *
 
@@ -586,7 +586,8 @@ class JobSegmenter(object):
         return job_data_seg
 
 
-class PyCBCInspiralJob(Job):
+
+class PyCBCInspiralExecutable(Executable):
     """
     The class used to create jobs for pycbc_inspiral executable.
     """
@@ -617,10 +618,10 @@ class PyCBCInspiralJob(Job):
                               %(self.exe_name))
 
         # set remaining options flags   
-        node.add_var_opt('gps-start-time', data_seg[0] + pad_data)
-        node.add_var_opt('gps-end-time', data_seg[1] - pad_data)
-        node.add_var_opt('trig-start-time', valid_seg[0])
-        node.add_var_opt('trig-end-time', valid_seg[1])
+        node.add_opt('--gps-start-time', data_seg[0] + pad_data)
+        node.add_opt('--gps-end-time', data_seg[1] - pad_data)
+        node.add_opt('--trig-start-time', valid_seg[0])
+        node.add_opt('--trig-end-time', valid_seg[1])
 
         node.add_pegasus_profile('condor', 'request_cpus', self.num_threads)        
 
@@ -700,8 +701,8 @@ class PyCBCTmpltbankJob(Job):
                              "%s. Please check the ini file." % self.exe_name)
 
         # set the remaining option flags
-        node.add_var_opt('gps-start-time', data_seg[0] + pad_data)
-        node.add_var_opt('gps-end-time', data_seg[1] - pad_data)
+        node.add_opt('--gps-start-time', data_seg[0] + pad_data)
+        node.add_opt('--gps-end-time', data_seg[1] - pad_data)
 
         # set the input and output files      
         node.make_and_add_output(valid_seg, '.xml.gz', 'output-file', tags=tags)
@@ -768,7 +769,7 @@ class LigoLWCombineSegs(Job):
     """
     def create_node(self, valid_seg, veto_files, segment_name):
         node = Node(self)
-        node.add_var_opt('segment-name', segment_name)
+        node.add_opt('--segment-name', segment_name)
         for fil in veto_files:
             node.add_input(fil, argument=True)   
         node.make_and_add_output(valid_seg, '.xml', 'output')      
@@ -840,7 +841,8 @@ class LigolwSSthincaJob(Job):
         segString += ":"
         if coincSegment[1]:
           segString += str(coincSegment[1])
-        node.add_var_opt('coinc-end-time-segment', segString)
+
+        node.add_opt('--coinc-end-time-segment', segString)
 
         # FIXME: This must match the *actual* output name!
         outFile = AhopeFile(self.ifo, self.exe_name, jobSegment,
@@ -959,8 +961,8 @@ class LalappsInspinjJob(Job):
         else:
             ext = '.xml'
         
-        node.add_var_opt('gps-start-time', segment[0])
-        node.add_var_opt('gps-end-time', segment[1])    
+        node.add_opt('--gps-start-time', segment[0])
+        node.add_opt('--gps-end-time', segment[1])    
         node.make_and_add_output(segment, '.xml', 'output')
         return node
 
