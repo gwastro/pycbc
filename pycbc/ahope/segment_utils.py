@@ -506,7 +506,7 @@ def create_segs_from_cats_job(cp, out_dir, ifoString, tag=None):
                            'has been run.' % proxy)
                            
         
-    job.add_condor_cmd('environment',
+    job.add_profile('condor', 'environment',
                        'USER=$ENV(USER);X509_USER_PROXY=%s' % proxyfile)
 
     return job

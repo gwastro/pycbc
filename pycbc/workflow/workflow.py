@@ -18,6 +18,12 @@ class Executable(object):
     def insert_into_dax(self, dax):
         dax.addExecutable(self._dax_executable)
         
+    def add_profile(namespace, key, value):
+        """ Add profile information to this executable
+        """
+        entry = dax.Profile(namespace, key, value)
+        self._dax_executable.addProfile(entry)
+        
 class Node(object):    
     def __init__(self, executable):
         self.in_workflow = False   

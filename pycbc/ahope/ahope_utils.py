@@ -170,16 +170,23 @@ class AhopeExecutable(Executable):
         self.common_options = []        
         for sec in sections:
             if cp.has_section(sec):
-                self._add_ini_opts(cp, sec)
+                self.add_ini_opts(cp, sec)
             else:
                 warnString = "warning: config file is missing section [%s]"\
                              %(sec,)
                 logging.warn(warnString)
                 
     def add_ini_opts(self, cp, sec):
-        for opt in cp.options(section):
-            value = string.strip(cp.get(section, opt))
+        for opt in cp.options(sec):
+            value = string.strip(cp.get(sec, opt))
             self.common_options += [opt, value]
+            
+    def add_opt(self, opt, value=None):
+        if value is None:
+            self.common_options += [opt]
+        else:
+            self.common_options += [opt, value]
+
 
 class AhopeWorkflow(Workflow):
     """
