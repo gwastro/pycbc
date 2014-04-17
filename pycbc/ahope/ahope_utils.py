@@ -409,9 +409,9 @@ class AhopeFile(File):
         self.tags = tags 
         if tags is not None:
             self.tag_str = '_'.join(tags)
-            tagged_description = '_'.join([description] + tags)
+            tagged_description = '_'.join([self.description] + tags)
         else:
-            tagged_description = description
+            tagged_description = self.description
             
         # Follow the capitals-for-naming convention
         self.ifo_string = self.ifo_string.upper()
@@ -433,8 +433,8 @@ class AhopeFile(File):
             file_url = urlparse.urlunparse(['file', 'localhost', path, None,
                                             None, None])
        
-        self.cache_entry = lal.CacheEntry(self.ifoString,
-                   self.tagged_description, self.segList.extent(), file_url)
+        self.cache_entry = lal.CacheEntry(self.ifo_string,
+                   self.tagged_description, self.seg_list.extent(), file_url)
         cache_entry.ahope_file = self
 
         File.__init__(self, basename(self.cache_entry.path))
@@ -586,7 +586,7 @@ class AhopeFileList(list):
                                                     useSplitLists=useSplitLists)
 
         # By how much do they overlap?
-        overlap_windows = [abs(i.segList & currSegList) for i in overlap_files]
+        overlap_windows = [abs(i.seg_list & currSegList) for i in overlap_files]
 
         # FIXME: Error handling for the overlap_files == [] case?
 
@@ -594,10 +594,10 @@ class AhopeFileList(list):
         # Note if two AhopeFile have identical overlap, the first is used
         # to define the valid segment
         overlap_windows = numpy.array(overlap_windows, dtype = int)
-        segmentLst = overlap_files[overlap_windows.argmax()].segList
+        segmentLst = overlap_files[overlap_windows.argmax()].seg_list
         
         # Get all output files with the exact same segment definition
-        output_files = [f for f in overlap_files if f.segList==segmentLst]
+        output_files = [f for f in overlap_files if f.seg_list==segmentLst]
         return output_files
 
     def find_output_in_range(self, ifo, start, end):
@@ -632,7 +632,7 @@ class AhopeFileList(list):
         # Filter AhopeOutFiles to those overlapping the given window
         currSeg = segments.segment([start,end])
         outFiles = [i for i in outFiles \
-                                  if i.segList.intersects_segment(currSeg)]
+                                  if i.seg_list.intersects_segment(currSeg)]
 
         if len(outFiles) == 0:
             # No AhopeOutFile overlap that time period
@@ -641,7 +641,7 @@ class AhopeFileList(list):
             # One AhopeOutFile overlaps that period
             return outFiles[0]
         else:
-            overlap_windows = [abs(i.segList & currSegList) \
+            overlap_windows = [abs(i.seg_list & currSegList) \
                                                         for i in outFiles]
             # Return the AhopeFile with the biggest overlap
             # Note if two AhopeFile have identical overlap, this will return
@@ -657,7 +657,7 @@ class AhopeFileList(list):
             # Slower, but simpler method
             outFiles = [i for i in self if ifo in i.ifoList]
             outFiles = [i for i in outFiles \
-                                      if i.segList.intersects_segment(currSeg)]
+                                      if i.seg_list.intersects_segment(currSeg)]
         else:
             # Faster, but more complicated
             # Basically only check if a subset of files intersects_segment by
@@ -676,7 +676,7 @@ class AhopeFileList(list):
                 outFilesTemp = [i for i in self._splitLists[idx] \
                                                             if ifo in i.ifoList]
                 outFiles.extend([i for i in outFilesTemp \
-                                      if i.segList.intersects_segment(currSeg)])
+                                      if i.seg_list.intersects_segment(currSeg)])
                 # Remove duplicates
                 outFiles = list(set(outFiles))
 
@@ -705,7 +705,7 @@ class AhopeFileList(list):
         """
         times = segments.segmentlist([])
         for entry in self:
-            times.extend(entry.segList)
+            times.extend(entry.seg_list)
         times.coalesce()
         return times
 
@@ -735,8 +735,8 @@ class AhopeFileList(list):
         invalid. Currently the testing for this is pretty basic
         """
         # Assume segment lists are coalesced!
-        startTime = float( min([i.segList[0][0] for i in self]))
-        endTime = float( max([i.segList[-1][-1] for i in self]))
+        startTime = float( min([i.seg_list[0][0] for i in self]))
+        endTime = float( max([i.seg_list[-1][-1] for i in self]))
         step = (endTime - startTime) / float(numSubLists)
 
         # Set up storage
@@ -795,7 +795,7 @@ class AhopeOutSegFile(AhopeFile):
     segment list, if it is known at ahope run time.
     '''
     def __init__(self, ifo, description, segment, fileUrl,
-                 segList=None, **kwargs):
+                 seg_list=None, **kwargs):
         """
         See AhopeFile.__init__ for a full set of documentation for how to
         call this class. The only thing unique and added to this class is
@@ -814,17 +814,17 @@ class AhopeOutSegFile(AhopeFile):
             FIXME: This is a kwarg in AhopeFile and should be here as well,
             if this is removed from the explicit arguments it would allow for
             either fileUrls or constructed file names to be used in AhopeFile.
-        segList : glue.segments.segmentlist (optional, default=None)
+        seg_list : glue.segments.segmentlist (optional, default=None)
             A glue.segments.segmentlist covering the times covered by the
             segmentlist associated with this file. If this is the science time
             or CAT_1 file this will be used to determine analysis time. Can
-            be added by setting self.segList after initializing an instance of
+            be added by setting self.seg_list after initializing an instance of
             the class.
 
         """
         AhopeFile.__init__(self, ifo, description, segment, fileUrl,
                               **kwargs)
-        self.segmentList = segList
+        self.segmentList = seg_list
 
     def removeShortSciSegs(self, minSegLength):
         """
