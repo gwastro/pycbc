@@ -174,9 +174,9 @@ class Workflow(object):
                 raise ValueError('Parents of this node must be added to the '
                                  'workflow first.')   
                                   
-            elif inp.node is None and inp.in_workflow is False:
+            elif inp.node is None and inp.workflow_input is False:
                 self._inputs += [inp]
-                inp.in_workflow = True
+                inp.workflow_input = True
                                                
         for out in node._outputs:
             self._outputs += node._outputs  
@@ -199,7 +199,7 @@ class DataStorage(object):
     def __init__(self, name):
         self.name = name      
         self.node = None
-        self.workfow_input = False
+        self.workflow_input = False
         
     def _set_as_node_input(self):
         pass
