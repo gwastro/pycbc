@@ -253,7 +253,7 @@ def fastest_power_chisq_at_points(corr, snr, snr_norm, bins, indices):
         # We don't have that many points so do the direct time shift.
         return power_chisq_at_points_from_precomputed(corr, snr.take(indices), 
                                                       snr_norm, bins, indices)
-    #else:
+    else:
         # We have a lot of points so it is faster to use the fourier transform
         return power_chisq_from_precomputed(corr, snr, snr_norm, bins, 
                                             indices=indices)
