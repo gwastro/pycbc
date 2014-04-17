@@ -808,7 +808,7 @@ class LigolwAddExecutable(AhopeExecutable):
         # sure this is worth doing, can can be done with replacing self.ifo
         # here if desired
         if output:
-            node.add_output_opt(output, '--output')
+            node.add_output_opt('--output', output)
         else:
             node.new_output_file_opt(jobSegment, '.xml.gz', '--output')
         return node
