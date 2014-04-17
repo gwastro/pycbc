@@ -155,7 +155,7 @@ class LegacyInspiralExecutable(LegacyAnalysisExecutable):
         self.injection_file = injection_file 
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
-        node = LegacyAnalysisJob.create_node(self, data_seg, valid_seg, 
+        node = LegacyAnalysisExecutable.create_node(self, data_seg, valid_seg, 
                                                    parent, dfParents, tags=tags)
         node.add_var_opt('trig-start-time', valid_seg[0])
         node.add_var_opt('trig-end-time', valid_seg[1])  

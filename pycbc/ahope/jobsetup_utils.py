@@ -592,7 +592,7 @@ class PyCBCInspiralExecutable(Executable):
     The class used to create jobs for pycbc_inspiral executable.
     """
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, injection_file=None, tags=[]):
-        Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.cp = cp
         self.set_memory(2000)
         self.injection_file = injection_file
@@ -629,9 +629,9 @@ class PyCBCInspiralExecutable(Executable):
             node.add_input(self.injection_file, 'injection-file')
 
         # set the input and output files        
-        node.make_and_add_output(valid_seg, '.xml.gz', 'output', tags=tags)
-        node.add_input_list(dfParents, opt='frame-files', delimiter=' ')
-        node.add_input(parent, opt='bank-file')
+        node.new_output_file_opt(valid_seg, '.xml.gz', 'output', tags=tags)
+        node.add_input_list_opt(dfParents, '--frame-files')
+        node.add_input(parent, '--bank-file')
 
         # FIXME: This hack is needed for pipedown compatibility. user-tag is
         #        no-op and is only needed for pipedown to know whether this is
@@ -676,14 +676,13 @@ class PyCBCInspiralExec(Executable):
                                 ifo=ifo, out_dir=out_dir,
                                 injection_file=injection_file, tags=tags)
 
-class PyCBCTmpltbankJob(Job):
+class PyCBCTmpltbankExecutable(Executable):
     """
     The class used to create jobs for pycbc_geom_nonspin_bank executable and
     any other executables using the same command line option groups.
     """
-    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None,
-                 tags=[], write_psd=False):
-        Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, tags=[]):
+        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.cp = cp
         self.set_memory(2000)
         self.write_psd = write_psd
@@ -761,8 +760,7 @@ class PyCBCTmpltbankExec(Executable):
                                  ifo=ifo, out_dir=out_dir, tags=tags,
                                  write_psd=self.write_psd)
 
-# FIXME: Why no Exec class here?
-class LigoLWCombineSegs(Job):
+class LigoLWCombineSegsExecutable(Executable):
     """ 
     This class is used to create nodes for the ligolw_combine_segments 
     executable
@@ -775,12 +773,12 @@ class LigoLWCombineSegs(Job):
         node.make_and_add_output(valid_seg, '.xml', 'output')      
         return node
 
-class LigolwAddJob(Job):
+class LigolwAddExecutable(Executable):
     """
     The class used to create nodes for the ligolw_add executable.
     """
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
-        Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
 
     def create_node(self, jobSegment, input_files, output=None):
@@ -819,7 +817,7 @@ class LigolwAddExec(Executable):
         return LigolwAddJob(cp, self.exe_name, self.condor_universe,
                             ifo=ifo, out_dir=out_dir, tags=tags)
 
-class LigolwSSthincaJob(Job):
+class LigolwSSthincaExecutable(Executable):
     """
     The class responsible for making jobs for ligolw_sstinca.
     """
@@ -870,12 +868,12 @@ class LigolwSSthincaExec(Executable):
                             ifo=ifo, out_dir=out_dir, 
                             dqVetoName=dqVetoName, tags=tags)
 
-class PycbcSqliteSimplifyJob(Job):
+class PycbcSqliteSimplifyExecutable(Executable):
     """
     The class responsible for making jobs for pycbc_sqlite_simplify.
     """
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, tags=[]):
-        Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
         
     def create_node(self, jobSegment, inputFiles, injFile=None, injString=None):
@@ -890,26 +888,14 @@ class PycbcSqliteSimplifyJob(Job):
         node.make_and_add_output(jobSegment, '.sql', 'output-file',
                                  tags=self.tags) 
         return node
-        
 
-class PycbcSqliteSimplifyExec(Executable):
-    """
-    The class corresponding to the pycbc_sqlite_simplify executable.
-    """
-    def __init__(self, exe_name):
-        Executable.__init__(self, exe_name, 'vanilla')
-
-    def create_job(self, cp, ifo, out_dir=None, tags=[]):
-        return PycbcSqliteSimplifyJob(cp, self.exe_name, self.condor_universe,
-                                            ifo=ifo, out_dir=out_dir, tags=tags)
-
-class SQLInOutJob(Job):
+class SQLInOutExecutable(Executable):
     """
     The class responsible for making jobs for SQL codes taking one input and
     one output.
     """
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, tags=[]):
-        Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
 
     def create_node(self, jobSegment, inputFile):
         node = Node(self)
@@ -917,17 +903,6 @@ class SQLInOutJob(Job):
         node.make_and_add_output(jobSegment, '.sql', 'output',
                                  tags=self.tags)
         return node
-
-class SQLInOutExec(Executable):
-    """
-    The class corresponding to SQL codes taking one input and one output.
-    """
-    def __init__(self, exe_name):
-        Executable.__init__(self, exe_name, 'vanilla')
-
-    def create_job(self, cp, ifo, out_dir=None, tags=[]):
-        return SQLInOutJob(cp, self.exe_name, self.condor_universe,
-                                           ifo=ifo, out_dir=out_dir, tags=tags)
 
 class ComputeDurationsJob(SQLInOutJob):
     """
@@ -949,7 +924,8 @@ class ComputeDurationsExec(SQLInOutExec):
         return ComputeDurationsJob(cp, self.exe_name, self.condor_universe,
                                            ifo=ifo, out_dir=out_dir, tags=tags)
                             
-class LalappsInspinjJob(Job):
+   
+class LalappsInspinjExecutable(Executable):
     """
     The class used to create jobs for the lalapps_inspinj executable.
     """
@@ -966,18 +942,7 @@ class LalappsInspinjJob(Job):
         node.make_and_add_output(segment, '.xml', 'output')
         return node
 
-class LalappsInspinjExec(Executable):
-    """
-    The class corresponding to the lalapps_inspinj executable.
-    """
-    def create_job(self, cp, out_dir=None, tags=[]):
-        # FIXME: It is convention to name injection files with a 'HL' prefix
-        # therefore I have hardcoded ifo=HL here. Maybe not a FIXME, but just
-        # noting this.
-        return LalappsInspinjJob(cp, self.exe_name, self.condor_universe,
-                                 ifo='HL', out_dir=out_dir, tags=tags)
-
-class PycbcTimeslidesJob(Job):
+class PycbcTimeslidesExecutable(Executable):
     """
     The class used to create jobs for the pycbc_timeslides executable.
     """
@@ -987,29 +952,14 @@ class PycbcTimeslidesJob(Job):
         node.make_and_add_output(segment, '.xml.gz', 'output-files')
         return node
 
-class PycbcTimeslidesExec(Executable):
-    """
-    The class corresponding to the pycbc_timeslides executable.
-    """
-    def create_job(self, cp, ifo, out_dir=None, tags=[]):
-        return PycbcTimeslidesJob(cp, self.exe_name, self.condor_universe,
-                                 ifo=ifo, out_dir=out_dir, tags=tags)
 
-class PycbcSplitBankExec(Executable):
-    """
-    The class corresponding to the pycbc_splitbank executable
-    """
-    def create_job(self, cp, ifo, numBanks, out_dir=None):
-        return PycbcSplitBankJob(cp, self.exe_name, self.condor_universe,
-                                  numBanks, ifo=ifo, out_dir=out_dir)
-
-class PycbcSplitBankJob(Job):
+class PycbcSplitBankExecutable(Executable):
     """
     The class responsible for creating jobs for pycbc_splitbank.
     """
     def __init__(self, cp, exe_name, universe, num_banks,
                  ifo=None, out_dir=None, tags=[]):
-        Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.num_banks = int(num_banks)
 
     def create_node(self, bank):
