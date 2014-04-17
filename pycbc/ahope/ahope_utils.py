@@ -263,22 +263,23 @@ class AhopeWorkflow(Workflow):
         
         self._outputs += node._outputs
             
-    def save(self, basename):
+    def save(self):
         # add executable pfns for local site to dax
-        for exe in self._executables:
-            exe.insert_into_dax(self._adag)
+        #for exe in self._executables:
+        #    print exe.name
+        #    exe.insert_into_dax(self._adag)
             
         # add workflow input files pfns for local site to dax
         for fil in self._inputs:
             fil.insert_into_dax(self._adag)
             
         # save the dax file
-            Workflow.save(self, basename + '.dax')
+            Workflow.save(self, self.name + '.dax')
         
         # add workflow storage locations to the output mapper
-        f = open(basename + '.map')
+        f = open(self.name + '.map', 'w')
         for out in self._outputs:
-            f.write(out.map_str() + '\n')
+            f.write(out.output_map_str() + '\n')
     
 class AhopeNode(Node):
     def __init__(self, executable):

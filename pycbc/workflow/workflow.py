@@ -3,8 +3,8 @@ import Pegasus.DAX3 as dax
 
 class Executable(object):
     def __init__(self, name):
-        self._dax_executable = dax.Executable(name) 
         self.name = name
+        self._dax_executable = dax.Executable(self.name) 
         self.in_workflow = False
         self.pfns = {}
         
@@ -58,12 +58,17 @@ class Node(object):
     def add_arg(self, arg):
         """ Add an argument
         """
+        if not isinstance(arg, File):
+            arg = str(arg)
+        
         self._args += [arg]
         
     def add_opt(self, opt, value=None):
         """ Add a option
         """
         if value:
+            if not isinstance(value, File):
+                value = str(value)
             self._options += [opt, value]
         else:
             self._options += [opt]
@@ -148,6 +153,7 @@ class Node(object):
         
     def _finalize(self):
         args = self._args + self._options
+        print args
         self._dax_node.addArguments(*args)
         
 class Workflow(object):
@@ -160,6 +166,7 @@ class Workflow(object):
         self._executables = []
         
     def add_node(self, node):
+        node._finalize()
         node.in_workflow = True
         self._adag.addJob(node._dax_node)
  
