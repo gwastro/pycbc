@@ -395,7 +395,7 @@ def identify_needed_data(curr_exe_job, link_job_instance=None):
     valid_length = abs(valid_chunk)
 
     data_chunk = segments.segment([0, data_length])
-    job_tag = curr_exe_job.exe_name.upper()
+    job_tag = curr_exe_job.name.upper()
 
     if link_job_instance:
         # FIXME: Should we remove this, after testing is complete??
@@ -595,8 +595,6 @@ class JobSegmenter(object):
                 raise ValueError(errMsg)
 
         return job_data_seg
-
-
 
 class PyCBCInspiralExecutable(AhopeExecutable):
     """
