@@ -446,13 +446,13 @@ class AhopeFile(File):
     @property
     def ifo(self):
         """
-        If only one ifo in the ifoList this will be that ifo. Otherwise an
+        If only one ifo in the ifo_list this will be that ifo. Otherwise an
         error is raised.
         """
         if len(self.ifo_list) == 1:
             return self.ifo_list[0]
         else:
-            err = "self.ifoList must contain only one ifo to access the "
+            err = "self.ifo_list must contain only one ifo to access the "
             err += "ifo property. %s." %(str(self.ifo_list),)
             raise TypeError(err)
 
@@ -550,7 +550,7 @@ class AhopeFileList(list):
            The AhopeFiles that corresponds to the time.
         '''
        # Get list of AhopeFiles that overlap time, for given ifo
-       outFiles = [i for i in self if ifo in i.ifoList and time in i.segment_list] 
+       outFiles = [i for i in self if ifo in i.ifo_list and time in i.segment_list] 
        if len(outFiles) == 0:
            # No AhopeOutFile at this time
            return None
@@ -626,7 +626,7 @@ class AhopeFileList(list):
         currsegment_list = segments.segmentlist([current_segment])
 
         # First filter AhopeFiles corresponding to ifo
-        outFiles = [i for i in self if ifo in i.ifoList]
+        outFiles = [i for i in self if ifo in i.ifo_list]
 
         if len(outFiles) == 0:
             # No AhopeOutFiles correspond to that ifo
@@ -657,7 +657,7 @@ class AhopeFileList(list):
         """
         if not useSplitLists:
             # Slower, but simpler method
-            outFiles = [i for i in self if ifo in i.ifoList]
+            outFiles = [i for i in self if ifo in i.ifo_list]
             outFiles = [i for i in outFiles \
                                       if i.segment_list.intersects_segment(currSeg)]
         else:
@@ -676,7 +676,7 @@ class AhopeFileList(list):
             outFiles = []
             for idx in range(startIdx, endIdx + 1):
                 outFilesTemp = [i for i in self._splitLists[idx] \
-                                                            if ifo in i.ifoList]
+                                                            if ifo in i.ifo_list]
                 outFiles.extend([i for i in outFilesTemp \
                                       if i.segment_list.intersects_segment(currSeg)])
                 # Remove duplicates
@@ -698,7 +698,7 @@ class AhopeFileList(list):
         """
         # Enforce upper case
         ifo = ifo.upper()
-        return AhopeFileList([i for i in self if ifo in i.ifoList])
+        return AhopeFileList([i for i in self if ifo in i.ifo_list])
 
     def get_times_covered_by_files(self):
         """
