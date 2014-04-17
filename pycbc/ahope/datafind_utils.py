@@ -269,7 +269,7 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
         else:
             currTags = ['SCIENCE_AVAILABLE']
         currFile = AhopeOutSegFile(ifo, 'SEGMENTS', workflow.analysis_time,
-                            currUrl, segList=scienceSegs[ifo], tags = currTags)
+                            currUrl, segment_list=scienceSegs[ifo], tags = currTags)
         segFilesList.append(currFile)
         currFile.toSegmentXml()
    
@@ -782,7 +782,7 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
                            directory=outputDir, tags=currTags)
     dfCache.ifo = ifo
     # Dump output to file
-    fP = open(cache_file.path, "w")
+    fP = open(cache_file.storage_path, "w")
     # FIXME: CANNOT use dfCache.tofile because it will print 815901601.00000
     #        as a gps time which is incompatible with the lal cache format
     #        (and the C codes) which demand an integer.
