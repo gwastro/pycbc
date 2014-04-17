@@ -24,6 +24,27 @@ class Executable(object):
         entry = dax.Profile(namespace, key, value)
         self._dax_executable.addProfile(entry)
         
+    def set_memory(self, size):
+        self.add_profile('condor', 'request_memory', '%sM' % size)
+         
+    def set_storage(self, size):
+        self.add_profile('condor', 'request_disk', '%sM' % size)
+        
+    def set_num_cpus(self, number):
+        self.add_profile('condor', 'request_cpus', number)
+        
+    def set_universe(self, universe):
+        self.add_profile("condor", "universe", universe)
+        
+    def set_category(self, category):
+        self.add_profile('dagman', 'category', category)
+        
+    def set_priority(self, priority):
+        self.add_profile('dagman', 'priority', priority)
+        
+    def set_num_retries(self, number):
+        self.add_profile("dagman", "retry", number)
+        
 class Node(object):    
     def __init__(self, executable):
         self.in_workflow = False   

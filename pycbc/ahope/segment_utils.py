@@ -558,7 +558,7 @@ def get_cumulative_segs(workflow, currSegFile, categories,
         add_inputs += cum_node.output_files
             
     # add cumulative files for each ifo together
-    add_job = LigolwAddJob(cp, 'llwadd', ifo=ifo, out_dir=out_dir, tags=tags)
+    add_job = LigolwAddExecutable(cp, 'llwadd', ifo=ifo, out_dir=out_dir, tags=tags)
     add_node = add_job.create_node(valid_segment, add_inputs,
                                    output=currSegFile)   
     if execute_now:

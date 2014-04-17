@@ -634,12 +634,12 @@ class PyCBCInspiralExecutable(AhopeExecutable):
         node.add_pegasus_profile('condor', 'request_cpus', self.num_threads)        
 
         if self.injection_file is not None:
-            node.add_input(self.injection_file, 'injection-file')
+            node.add_input_opt(self.injection_file, '--injection-file')
 
         # set the input and output files        
-        node.new_output_file_opt(valid_seg, '.xml.gz', 'output', tags=tags)
-        node.add_input_list_opt(dfParents, '--frame-files')
-        node.add_input(parent, '--bank-file')
+        node.new_output_file_opt(valid_seg, '.xml.gz', '--output', tags=tags)
+        node.add_input_opt_list_opt(dfParents, '--frame-files')
+        node.add_input_opt(parent, '--bank-file')
 
         # FIXME: This hack is needed for pipedown compatibility. user-tag is
         #        no-op and is only needed for pipedown to know whether this is
@@ -713,12 +713,14 @@ class PyCBCTmpltbankAhopeExecutable(AhopeExecutable):
         node.add_opt('--gps-end-time', data_seg[1] - pad_data)
 
         # set the input and output files      
-        node.make_and_add_output(valid_seg, '.xml.gz', 'output-file', tags=tags)
         # Add the PSD file if needed
         if self.write_psd:
             node.make_and_add_output(valid_seg, 'txt', 'psd-output',
                                      tags=tags+['PSD_FILE'])
         node.add_input_list(dfParents, opt='frame-files', delimiter=' ')
+
+        node.new_output_file_opt(valid_seg, '.xml.gz', 'output-file', tags=tags)
+        node.add_input_opt_list(dfParents, opt='frame-files', delimiter=' ')
         return node
 
     def create_nodata_node(self, valid_seg):
@@ -740,12 +742,12 @@ class PyCBCTmpltbankAhopeExecutable(AhopeExecutable):
         node = AhopeNode(self)
 
         # Set the output file
-        node.make_and_add_output(valid_seg, '.xml.gz', 'output-file')
         # Add the PSD file if needed
         if self.write_psd:
             node.make_and_add_output(valid_seg, 'txt', 'psd-output', 
                                      tags=tags+['PSD_FILE'])
 
+        node.new_output_file_opt(valid_seg, '.xml.gz', 'output-file')
         return node
 
     def get_valid_times(self):
@@ -778,8 +780,8 @@ class LigoLWCombineSegsExecutable(AhopeExecutable):
         node = AhopeNode(self)
         node.add_opt('--segment-name', segment_name)
         for fil in veto_files:
-            node.add_input(fil, argument=True)   
-        node.make_and_add_output(valid_seg, '.xml', 'output')      
+            node.add_input_arg(fil)   
+        node.new_output_file_opt(valid_seg, '.xml', '--output')      
         return node
 
 class LigolwAddExecutable(AhopeExecutable):
@@ -796,9 +798,9 @@ class LigolwAddExecutable(AhopeExecutable):
         # Very few options to ligolw_add, all input files are given as a long
         # argument list. If this becomes unwieldy we could dump all these files
         # to a cache file and read that in. ALL INPUT FILES MUST BE LISTED AS
-        # INPUTS (with .add_input_file) IF THIS IS DONE THOUGH!
+        # INPUTS (with .add_input_opt_file) IF THIS IS DONE THOUGH!
         for fil in input_files:
-            node.add_input(fil, argument=True)
+            node.add_input_arg(fil)
 
         # Currently we set the output file using the name of *all* active ifos,
         # even if one or more of these ifos is not active within jobSegment.
@@ -806,25 +808,10 @@ class LigolwAddExecutable(AhopeExecutable):
         # sure this is worth doing, can can be done with replacing self.ifo
         # here if desired
         if output:
-            node.add_output(output, 'output')
+            node.add_output_opt(output, '--output')
         else:
-            node.make_and_add_output(jobSegment, '.xml.gz', 'output')
+            node.new_output_file_opt(jobSegment, '.xml.gz', '--output')
         return node
-
-class LigolwAddExecutable(AhopeExecutable):
-    """
-    The class corresponding to the ligolw_add AhopeExecutable.
-    """
-    def __init__(self, exe_name):
-        if exe_name != 'llwadd':
-            raise ValueError('ligolw_add does not support setting '
-                             'the exe_name to anything but "llwadd"')
-
-        AhopeExecutable.__init__(self, exe_name, 'vanilla')
-
-    def create_job(self, cp, ifo, out_dir=None, tags=[]):
-        return LigolwAddJob(cp, self.exe_name, self.condor_universe,
-                            ifo=ifo, out_dir=out_dir, tags=tags)
 
 class LigolwSSthincaExecutable(AhopeExecutable):
     """
@@ -832,14 +819,14 @@ class LigolwSSthincaExecutable(AhopeExecutable):
     """
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None,
                  dqVetoName=None, tags=[]):
-        Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
         if dqVetoName:
             self.add_opt("vetoes-name", dqVetoName)
 
     def create_node(self, jobSegment, coincSegment, inputFile):
         node = AhopeNode(self)
-        node.add_input(inputFile, argument=True)
+        node.add_input_opt(inputFile, argument=True)
 
         # Add the start/end times
         segString = ""
@@ -856,7 +843,7 @@ class LigolwSSthincaExecutable(AhopeExecutable):
                          extension='.xml.gz', directory=self.out_dir,
                          tags=self.tags)
 
-        node.add_output(outFile)
+        node.add_output_opt(outFile)
 
         return node
 
@@ -873,11 +860,11 @@ class PycbcSqliteSimplifyAhopeExecutable(AhopeExecutable):
         if injFile and not injString:
             raise ValueError("injString needed if injFile supplied.")
         for file in inputFiles:
-            node.add_input(file, argument=True)
+            node.add_input_opt(file, argument=True)
         if injFile:
-            node.add_input(injFile, opt="injection-file")
+            node.add_input_opt(injFile, opt="injection-file")
             node.add_var_opt("simulation-tag", injString)
-        node.make_and_add_output(jobSegment, '.sql', 'output-file',
+        node.new_output_file_opt(jobSegment, '.sql', 'output-file',
                                  tags=self.tags) 
         return node
 
@@ -891,8 +878,8 @@ class SQLInOutExecutable(AhopeExecutable):
 
     def create_node(self, jobSegment, inputFile):
         node = AhopeNode(self)
-        node.add_input(inputFile, opt='input')
-        node.make_and_add_output(jobSegment, '.sql', 'output',
+        node.add_input_opt(inputFile, opt='input')
+        node.new_output_file_opt(jobSegment, '.sql', '--output',
                                  tags=self.tags)
         return node
 
@@ -931,7 +918,7 @@ class LalappsInspinjExecutable(AhopeExecutable):
         
         node.add_opt('--gps-start-time', segment[0])
         node.add_opt('--gps-end-time', segment[1])    
-        node.make_and_add_output(segment, '.xml', 'output')
+        node.new_output_file_opt(segment, '.xml', '--output')
         return node
 
 class PycbcTimeslidesExecutable(AhopeExecutable):
@@ -941,7 +928,7 @@ class PycbcTimeslidesExecutable(AhopeExecutable):
     def create_node(self, segment):
         node = AhopeNode(self)
 
-        node.make_and_add_output(segment, '.xml.gz', 'output-files')
+        node.new_output_file_opt(segment, '.xml.gz', 'output-files')
         return node
 
 
@@ -969,7 +956,7 @@ class PycbcSplitBankExecutable(AhopeExecutable):
             The node to run the job
         """
         node = AhopeNode(self)
-        node.add_input(bank, opt='bank-file')
+        node.add_input_opt(bank, opt='bank-file')
 
         # Get the output (taken from inspiral.py)
         out_files = AhopeFileList([])
@@ -983,5 +970,5 @@ class PycbcSplitBankExecutable(AhopeExecutable):
                                  extension=".xml.gz", directory=self.out_dir,
                                  tags=curr_tags)
             out_files.append(out_file)
-        node.add_output_list(out_files, opt='output-filenames')
+        node.add_output_opt_list(out_files, opt='output-filenames')
         return node

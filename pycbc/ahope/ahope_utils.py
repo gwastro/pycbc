@@ -292,7 +292,7 @@ class AhopeNode(Node):
         self._finalize()
         arglist = self._dax_node.arguments
         arglist = [a for a in arglist if a != ' ']
-        arglist = [a.path if isinstance(a, AhopeFile) else a for a in arglist]
+        arglist = [a.storage_path if isinstance(a, AhopeFile) else a for a in arglist]
                         
         exe_path = urlparse.urlsplit(self.executable.get_pfn()).path
         return [exe_path] + arglist
@@ -325,9 +325,14 @@ class AhopeNode(Node):
             if tag not in all_tags:
                 all_tags.append(tag)
 
-        fil = AhopeFile(job.ifo, job.exe_name, valid_seg, extension=extension, 
-                         directory=job.out_dir, tags=all_tags)    
+        fil = AhopeFile(self.executable.ifo, self.executable.name, valid_seg, 
+                         extension=extension, 
+                         directory=self.executable.out_dir, tags=all_tags)    
         self.add_output_opt(option_name, fil)
+        
+    @property    
+    def output_files(self):
+        return self._outputs
     
 class AhopeFile(File):
     '''
