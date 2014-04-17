@@ -90,9 +90,24 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
             linkToMatchedfltr = True
         else:
             linkToMatchedfltr = False
+        if cp.has_option_tags("ahope-tmpltbank",
+                              "tmpltbank-compatibility-mode", tags):
+            if not linkToMatchedfltr:
+                errMsg = "Compatibility mode requires that the "
+                errMsg += "tmpltbank-link-to-matchedfilter option is also set."
+                raise ValueError(errMsg)
+            if not cp.has_option_tags("ahope-matchedfilter",
+                              "matchedfilter-compatibility-mode", tags):
+                errMsg = "If using compatibility mode it must be set both in "
+                errMsg += "the template bank and matched-filtering stages."
+                raise ValueError(errMsg)
+            compatibility_mode = True
+        else:
+            compatibility_mode = False
         tmplt_banks = setup_tmpltbank_dax_generated(workflow, science_segs,
                                          datafind_outs, output_dir, tags=tags,
-                                         link_to_matchedfltr=linkToMatchedfltr)
+                                         link_to_matchedfltr=linkToMatchedfltr,
+                                         compatibility_mode=compatibility_mode)
     elif tmpltbankMethod == "WORKFLOW_INDEPENDENT_IFOS_NODATA":
         logging.info("Adding template bank jobs to workflow.")
         tmplt_banks = setup_tmpltbank_without_frames(workflow, output_dir,
@@ -112,7 +127,8 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
 
 def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
                                   output_dir, tags=[],
-                                  link_to_matchedfltr=True):
+                                  link_to_matchedfltr=True,
+                                  compatibility_mode=False):
     '''
     Setup template bank jobs that are generated as part of the ahope workflow.
     This function will add numerous jobs to the ahope workflow using
@@ -192,7 +208,8 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
         sngl_ifo_job_setup(workflow, ifo, tmplt_banks, job_instance, 
                            science_segs[ifo], datafind_outs, output_dir,
                            link_job_instance=link_job_instance, 
-                           allow_overlap=True)
+                           allow_overlap=True,
+                           compatibility_mode=compatibility_mode)
     return tmplt_banks
 
 def setup_tmpltbank_without_frames(workflow, output_dir,

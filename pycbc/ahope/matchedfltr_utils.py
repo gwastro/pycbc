@@ -92,16 +92,31 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
             if not cp.has_option_tags("ahope-tmpltbank",
                               "tmpltbank-link-to-matchedfilter", tags):
                 errMsg = "If using matchedfilter-link-to-tmpltbank, you should "
-                errMsg = "also use tmpltbank-link-to-matchedfilter."
+                errMsg += "also use tmpltbank-link-to-matchedfilter."
                 logging.warn(errMsg)
             linkToTmpltbank = True
         else:
             linkToTmpltbank = False
+        if cp.has_option_tags("ahope-matchedfilter",
+                              "matchedfilter-compatibility-mode", tags):
+            if not linkToTmpltbank:
+                errMsg = "Compatibility mode requires that the "
+                errMsg += "matchedfilter-link-to-tmpltbank option is also set."
+                raise ValueError(errMsg)
+            if not cp.has_option_tags("ahope-tmpltbank",
+                              "tmpltbank-compatibility-mode", tags):
+                errMsg = "If using compatibility mode it must be set both in "
+                errMsg += "the template bank and matched-filtering stages."
+                raise ValueError(errMsg)
+            compatibility_mode = True
+        else:
+            compatibility_mode = False
     
         inspiral_outs = setup_matchedfltr_dax_generated(workflow, science_segs, 
                                       datafind_outs, tmplt_banks, output_dir,
                                       injection_file=injection_file, tags=tags,
-                                      link_to_tmpltbank=linkToTmpltbank)
+                                      link_to_tmpltbank=linkToTmpltbank,
+                                      compatibility_mode=compatibility_mode)
     else:
         errMsg = "Matched filter method not recognized. Must be one of "
         errMsg += "WORKFLOW_INDEPENDENT_IFOS (currently only one option)."
@@ -113,7 +128,8 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
 def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
                                     tmplt_banks, output_dir,
                                     injection_file=None,
-                                    tags=[], link_to_tmpltbank=False):
+                                    tags=[], link_to_tmpltbank=False,
+                                    compatibility_mode=False):
     '''
     Setup matched-filter jobs that are generated as part of the ahope workflow.
     This
@@ -200,7 +216,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
 
         sngl_ifo_job_setup(workflow, ifo, inspiral_outs, job_instance, 
                            science_segs[ifo], datafind_outs, output_dir,
-                           parents=tmplt_banks, 
+                           parents=tmplt_banks, allow_overlap=False,
                            link_job_instance=link_job_instance,
-                           allow_overlap=False)
+                           compatibility_mode=compatibility_mode)
     return inspiral_outs
