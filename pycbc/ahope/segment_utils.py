@@ -269,7 +269,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
         else:
             currTags = ['SCIENCE_OK']
         currFile = AhopeOutSegFile(ifo, 'SEGMENTS',
-                                   segValidSeg, currUrl, segList=analysedSegs,
+                                   segValidSeg, currUrl, segment_list=analysedSegs,
                                    tags = currTags)
         segFilesList.append(currFile)
         currFile.toSegmentXml()
@@ -294,7 +294,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
             currUrl = urlparse.urlunparse(['file', 'localhost',
                                          cumulativeVetoFile, None, None, None])
             currSegFile = AhopeOutSegFile(ifoString, 'SEGMENTS',
-                                   segValidSeg, currUrl, segList=analysedSegs,
+                                   segValidSeg, currUrl, segment_list=analysedSegs,
                                    tags=currTags)
             # And actually make the file (or queue it in the workflow)
             logging.info("Generating combined, cumulative CAT_%d segments."\
@@ -376,7 +376,7 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir, tag=None):
     currUrl = urlparse.urlunparse(['file', 'localhost', sciXmlFilePath,
                                    None, None, None])
     sciXmlFile = AhopeOutSegFile(ifo, 'SEGMENTS',
-                                  segValidSeg, currUrl, segList=sciSegs,
+                                  segValidSeg, currUrl, segment_list=sciSegs,
                                   tags=tagList)
 
     return sciSegs, sciXmlFile
@@ -423,11 +423,11 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
         The ahope File object corresponding to this DQ veto file.
     """
     segValidSeg = segments.segment([start_time,end_time])
-    node = Node(vetoGenJob)
-    node.add_var_opt('veto-categories', str(category))
-    node.add_var_opt('ifo-list', ifo)
-    node.add_var_opt('gps-start-time', str(start_time))
-    node.add_var_opt('gps-end-time', str(end_time))
+    node = AhopeNode(vetoGenJob)
+    node.add_opt('--veto-categories', str(category))
+    node.add_opt('--ifo-list', ifo)
+    node.add_opt('--gps-start-time', str(start_time))
+    node.add_opt('--gps-end-time', str(end_time))
     vetoXmlFileName = "%s-VETOTIME_CAT%d-%d-%d.xml" \
                          %(ifo, category, start_time, end_time-start_time)
     vetoXmlFilePath = os.path.join(out_dir, vetoXmlFileName)
@@ -440,7 +440,7 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
 
     vetoXmlFile = AhopeOutSegFile(ifo, 'SEGMENTS', segValidSeg, currUrl,
                                   tags=currTags)
-    node.add_output(vetoXmlFile)
+    node._add_output(vetoXmlFile)
     
     if execute_now:
         workflow.execute_node(node)

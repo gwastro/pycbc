@@ -615,7 +615,7 @@ class PyCBCInspiralExecutable(AhopeExecutable):
                 self.num_threads = stxt.split(':')[1]
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
-        node = Node(self)
+        node = AhopeNode(self)
         pad_data = int(self.get_opt('pad-data'))
         if pad_data is None:
             raise ValueError("The option pad-data is a required option of "
@@ -697,7 +697,7 @@ class PyCBCTmpltbankAhopeExecutable(AhopeExecutable):
         self.write_psd = write_psd
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
-        node = Node(self)
+        node = AhopeNode(self)
 
         if not dfParents:
             raise ValueError("%s must be supplied with data file(s)"
@@ -737,7 +737,7 @@ class PyCBCTmpltbankAhopeExecutable(AhopeExecutable):
         node : ahope.Node
             The instance corresponding to the created node.
         """
-        node = Node(self)
+        node = AhopeNode(self)
 
         # Set the output file
         node.make_and_add_output(valid_seg, '.xml.gz', 'output-file')
@@ -775,7 +775,7 @@ class LigoLWCombineSegsAhopeExecutable(AhopeExecutable):
     AhopeExecutable
     """
     def create_node(self, valid_seg, veto_files, segment_name):
-        node = Node(self)
+        node = AhopeNode(self)
         node.add_opt('--segment-name', segment_name)
         for fil in veto_files:
             node.add_input(fil, argument=True)   
@@ -791,7 +791,7 @@ class LigolwAddAhopeExecutable(AhopeExecutable):
         self.set_memory(2000)
 
     def create_node(self, jobSegment, input_files, output=None):
-        node = Node(self)
+        node = AhopeNode(self)
 
         # Very few options to ligolw_add, all input files are given as a long
         # argument list. If this becomes unwieldy we could dump all these files
@@ -838,7 +838,7 @@ class LigolwSSthincaAhopeExecutable(AhopeExecutable):
             self.add_opt("vetoes-name", dqVetoName)
 
     def create_node(self, jobSegment, coincSegment, inputFile):
-        node = Node(self)
+        node = AhopeNode(self)
         node.add_input(inputFile, argument=True)
 
         # Add the start/end times
@@ -886,7 +886,7 @@ class PycbcSqliteSimplifyAhopeExecutable(AhopeExecutable):
         self.set_memory(2000)
         
     def create_node(self, jobSegment, inputFiles, injFile=None, injString=None):
-        node = Node(self)
+        node = AhopeNode(self)
         if injFile and not injString:
             raise ValueError("injString needed if injFile supplied.")
         for file in inputFiles:
@@ -907,7 +907,7 @@ class SQLInOutAhopeExecutable(AhopeExecutable):
         AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
 
     def create_node(self, jobSegment, inputFile):
-        node = Node(self)
+        node = AhopeNode(self)
         node.add_input(inputFile, opt='input')
         node.make_and_add_output(jobSegment, '.sql', 'output',
                                  tags=self.tags)
@@ -939,7 +939,7 @@ class LalappsInspinjAhopeExecutable(AhopeExecutable):
     The class used to create jobs for the lalapps_inspinj AhopeExecutable.
     """
     def create_node(self, segment):
-        node = Node(self)
+        node = AhopeNode(self)
         
         if self.get_opt('write-compress') is not None:
             ext = '.xml.gz'
@@ -956,7 +956,7 @@ class PycbcTimeslidesAhopeExecutable(AhopeExecutable):
     The class used to create jobs for the pycbc_timeslides AhopeExecutable.
     """
     def create_node(self, segment):
-        node = Node(self)
+        node = AhopeNode(self)
 
         node.make_and_add_output(segment, '.xml.gz', 'output-files')
         return node
@@ -985,7 +985,7 @@ class PycbcSplitBankAhopeExecutable(AhopeExecutable):
         node : Node
             The node to run the job
         """
-        node = Node(self)
+        node = AhopeNode(self)
         node.add_input(bank, opt='bank-file')
 
         # Get the output (taken from inspiral.py)

@@ -94,7 +94,7 @@ def legacy_get_valid_times(self):
     return dataLength, validChunk
 
         
-class LegacyAnalysisNode(Node):
+class LegacyAnalysisAhopeNode(Node):
     # This is *ONLY* used by legacy codes where ahope cannot directly
     # set the output name. Do not use elsewhere!
     def  set_jobnum_tag(self, num):
@@ -109,7 +109,7 @@ class LegacyAnalysisAhopeExecutable(AhopeExecutable):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
-        node = LegacyAnalysisNode(self)
+        node = LegacyAnalysisAhopeNode(self)
         
         if not dfParents: 
             raise ValueError("%s must be supplied with frame files" 
@@ -201,7 +201,7 @@ class LegacySplitBankAhopeExecutable(AhopeExecutable):
         node : Node
             The node to run the job
         """
-        node = Node(self)
+        node = AhopeNode(self)
         # FIXME: This is a hack because SplitBank fails if given an input file
         # whose path contains the character '-' or if the input file is not in
         # the same directory as the output. Therefore we just set the path to

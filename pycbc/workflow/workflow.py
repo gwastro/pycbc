@@ -98,7 +98,7 @@ class Node(object):
         return fil
 
     # functions to describe properties of this node
-    def add_profile(namespace, key, value):
+    def add_profile(self, namespace, key, value):
         """ Add profile information to this node at the DAX level
         """
         entry = dax.Profile(namespace, key, value)
