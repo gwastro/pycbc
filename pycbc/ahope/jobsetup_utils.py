@@ -769,7 +769,7 @@ class PyCBCTmpltbankExec(Executable):
                                  ifo=ifo, out_dir=out_dir, tags=tags,
                                  write_psd=self.write_psd)
 
-class LigoLWCombineSegsAhopeExecutable(AhopeExecutable):
+class LigoLWCombineSegsExecutable(AhopeExecutable):
     """ 
     This class is used to create nodes for the ligolw_combine_segments 
     AhopeExecutable
@@ -782,7 +782,7 @@ class LigoLWCombineSegsAhopeExecutable(AhopeExecutable):
         node.make_and_add_output(valid_seg, '.xml', 'output')      
         return node
 
-class LigolwAddAhopeExecutable(AhopeExecutable):
+class LigolwAddExecutable(AhopeExecutable):
     """
     The class used to create nodes for the ligolw_add AhopeExecutable.
     """
@@ -811,7 +811,7 @@ class LigolwAddAhopeExecutable(AhopeExecutable):
             node.make_and_add_output(jobSegment, '.xml.gz', 'output')
         return node
 
-class LigolwAddExec(AhopeExecutable):
+class LigolwAddExecutable(AhopeExecutable):
     """
     The class corresponding to the ligolw_add AhopeExecutable.
     """
@@ -826,7 +826,7 @@ class LigolwAddExec(AhopeExecutable):
         return LigolwAddJob(cp, self.exe_name, self.condor_universe,
                             ifo=ifo, out_dir=out_dir, tags=tags)
 
-class LigolwSSthincaAhopeExecutable(AhopeExecutable):
+class LigolwSSthincaExecutable(AhopeExecutable):
     """
     The class responsible for making jobs for ligolw_sstinca.
     """
@@ -860,23 +860,6 @@ class LigolwSSthincaAhopeExecutable(AhopeExecutable):
 
         return node
 
-
-class LigolwSSthincaExec(AhopeExecutable):
-    """
-    The class corresponding to the ligolw_sstinca AhopeExecutable.
-    """
-    def __init__(self, exe_name):
-        if exe_name != 'thinca':
-            raise ValueError('ligolw_sstinca does not support setting '
-                             'the exe_name to anything but "thinca"')
-
-        AhopeExecutable.__init__(self, exe_name, 'vanilla')
-
-    def create_job(self, cp, ifo, out_dir=None, dqVetoName=None, tags=[]):
-        return LigolwSSthincaJob(cp, self.exe_name, self.condor_universe,
-                            ifo=ifo, out_dir=out_dir, 
-                            dqVetoName=dqVetoName, tags=tags)
-
 class PycbcSqliteSimplifyAhopeExecutable(AhopeExecutable):
     """
     The class responsible for making jobs for pycbc_sqlite_simplify.
@@ -898,7 +881,7 @@ class PycbcSqliteSimplifyAhopeExecutable(AhopeExecutable):
                                  tags=self.tags) 
         return node
 
-class SQLInOutAhopeExecutable(AhopeExecutable):
+class SQLInOutExecutable(AhopeExecutable):
     """
     The class responsible for making jobs for SQL codes taking one input and
     one output.
@@ -934,7 +917,7 @@ class ComputeDurationsExec(SQLInOutExec):
                                            ifo=ifo, out_dir=out_dir, tags=tags)
                             
    
-class LalappsInspinjAhopeExecutable(AhopeExecutable):
+class LalappsInspinjExecutable(AhopeExecutable):
     """
     The class used to create jobs for the lalapps_inspinj AhopeExecutable.
     """
@@ -951,7 +934,7 @@ class LalappsInspinjAhopeExecutable(AhopeExecutable):
         node.make_and_add_output(segment, '.xml', 'output')
         return node
 
-class PycbcTimeslidesAhopeExecutable(AhopeExecutable):
+class PycbcTimeslidesExecutable(AhopeExecutable):
     """
     The class used to create jobs for the pycbc_timeslides AhopeExecutable.
     """
@@ -962,7 +945,7 @@ class PycbcTimeslidesAhopeExecutable(AhopeExecutable):
         return node
 
 
-class PycbcSplitBankAhopeExecutable(AhopeExecutable):
+class PycbcSplitBankExecutable(AhopeExecutable):
     """
     The class responsible for creating jobs for pycbc_splitbank.
     """

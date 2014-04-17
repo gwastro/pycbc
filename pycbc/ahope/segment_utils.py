@@ -254,7 +254,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
                 # Yes its yucky to generate a file and then read it back in. 
                 #This will be
                 # fixed when the new API for segment generation is ready.
-                vetoXmlFP = open(currVetoXmlFile.path, 'r')
+                vetoXmlFP = open(currVetoXmlFile.storage_path, 'r')
                 cat1Segs = fromsegmentxml(vetoXmlFP)
                 vetoXmlFP.close()
                 
@@ -278,7 +278,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
     if generate_coincident_segs:
         # Need to make some combined category veto files to use when vetoing
         # segments and triggers.
-        ifoString = workflow.ifoString
+        ifo_string = workflow.ifo_string
         categories = []
         for category in veto_categories:
             categories.append(category)
@@ -290,10 +290,10 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
 
             cumulativeVetoFile = os.path.join(out_dir,
                                    '%s-CUMULATIVE_CAT_%d_VETO_SEGMENTS.xml' \
-                                   %(ifoString, category) )
+                                   %(ifo_string, category) )
             currUrl = urlparse.urlunparse(['file', 'localhost',
                                          cumulativeVetoFile, None, None, None])
-            currSegFile = AhopeOutSegFile(ifoString, 'SEGMENTS',
+            currSegFile = AhopeOutSegFile(ifo_string, 'SEGMENTS',
                                    segValidSeg, currUrl, segment_list=analysedSegs,
                                    tags=currTags)
             # And actually make the file (or queue it in the workflow)
@@ -365,8 +365,8 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir, tag=None):
         "--include-segments", sciSegName,
         "--output-file", sciXmlFilePath ]
    
-    make_external_call(segFindCall, outDir=os.path.join(out_dir,'logs'),
-                            outBaseName='%s-science-call' %(ifo.lower()) )
+    make_external_call(segFindCall, out_dir=os.path.join(out_dir,'logs'),
+                            out_basename='%s-science-call' %(ifo.lower()) )
 
     # Yes its yucky to generate a file and then read it back in. This will be
     # fixed when the new API for segment generation is ready.
@@ -448,7 +448,7 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
         workflow.add_node(node)
     return vetoXmlFile
 
-def create_segs_from_cats_job(cp, out_dir, ifoString, tag=None):
+def create_segs_from_cats_job(cp, out_dir, ifo_string, tag=None):
     """
     This function creates the CondorDAGJob that will be used to run 
     ligolw_segments_from_cats as part of the workflow
@@ -459,7 +459,7 @@ def create_segs_from_cats_job(cp, out_dir, ifoString, tag=None):
         The in-memory representation of the configuration (.ini) files
     out_dir : path
         Directory in which to put output files
-    ifoString : string
+    ifo_string : string
         String containing all active ifos, ie. "H1L1V1"
     tag : string, optional (default=None)
         Use this to specify a tag. This can be used if this module is being
@@ -482,11 +482,11 @@ def create_segs_from_cats_job(cp, out_dir, ifoString, tag=None):
         currTags = [tag]
     else:
         currTags = []
-    job = AhopeExecutable(cp, 'segments_from_cats', universe='local', ifo=ifoString,
+    job = AhopeExecutable(cp, 'segments_from_cats', universe='local', ifo=ifo_string,
               out_dir=out_dir, tags=currTags)
-    job.add_opt('separate-categories', '')
-    job.add_opt('segment-url', segServerUrl)
-    job.add_opt('veto-file', vetoDefFile)
+    job.add_opt('--separate-categories')
+    job.add_opt('--segment-url', segServerUrl)
+    job.add_opt('--veto-file', vetoDefFile)
     # FIXME: Would like the proxy in the Workflow instance
     # FIXME: Explore using the x509 condor commands
     # Set up proxy to be accessible in a NFS location
@@ -542,7 +542,7 @@ def get_cumulative_segs(workflow, currSegFile, categories,
     cp = workflow.cp
     # calculate the cumulative veto files for a given ifo
     for ifo in workflow.ifos:
-        cum_job = LigoLWCombineSegs(cp, 'ligolw_combine_segments', 
+        cum_job = LigoLWCombineSegsExecutable(cp, 'ligolw_combine_segments', 
                        out_dir=out_dir, tags=tags + [segment_name], ifo=ifo)
         inputs = []
         files = segFilesList.find_output_with_ifo(ifo)

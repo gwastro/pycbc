@@ -249,7 +249,8 @@ class AhopeWorkflow(Workflow):
         os.chdir(out_dir)
         
         # Make call
-        make_external_call(cmd_list, out_dir=os.path.join(out_dir, 'logs')) 
+        make_external_call(cmd_list, out_dir=os.path.join(out_dir, 'logs'),
+                                     out_basename=node.executable.name) 
         # Change back
         os.chdir(curr_dir)
         
@@ -290,6 +291,7 @@ class AhopeNode(Node):
     def get_command_line(self):
         self._finalize()
         arglist = self._dax_node.arguments
+        arglist = [a for a in arglist if a != ' ']
         arglist = [a.path if isinstance(a, AhopeFile) else a for a in arglist]
                         
         exe_path = urlparse.urlsplit(self.executable.get_pfn()).path
@@ -850,11 +852,11 @@ class AhopeOutSegFile(AhopeFile):
         """
         Write the segment list in self.segmentList to the url in self.url.
         """
-        filePointer = open(self.path, 'w')
+        filePointer = open(self.storage_path, 'w')
         dqUtils.tosegmentxml(filePointer, self.segmentList)
         filePointer.close()
 
-def make_external_call(cmdList, outDir=None, outBaseName='external_call',
+def make_external_call(cmdList, out_dir=None, out_basename='external_call',
                        shell=False, fail_on_error=True):
     """
     Use this to make an external call using the python subprocess module.
@@ -866,13 +868,13 @@ def make_external_call(cmdList, outDir=None, outBaseName='external_call',
     cmdList : list of strings
         This list of strings contains the command to be run. See the subprocess
         documentation for more details.
-    outDir : string
+    out_dir : string
         If given the stdout and stderr will be redirected to
-        os.path.join(outDir,outBaseName+[".err",".out])
+        os.path.join(out_dir,out_basename+[".err",".out])
         If not given the stdout and stderr will not be recorded
-    outBaseName : string
-        The value of outBaseName used to construct the file names used to
-        store stderr and stdout. See outDir for more information.
+    out_basename : string
+        The value of out_basename used to construct the file names used to
+        store stderr and stdout. See out_dir for more information.
     shell : boolean, default=False
         This value will be given as the shell kwarg to the subprocess call.
         **WARNING** See the subprocess documentation for details on this
@@ -881,16 +883,16 @@ def make_external_call(cmdList, outDir=None, outBaseName='external_call',
     fail_on_error : boolean, default=True
         If set to true an exception will be raised if the external command does
         not return a code of 0. If set to false such failures will be ignored.
-        Stderr and Stdout can be stored in either case using the outDir
-        and outBaseName options.
+        Stderr and Stdout can be stored in either case using the out_dir
+        and out_basename options.
 
     Returns
     --------
     exitCode : int
         The code returned by the process.
     """
-    if outDir:
-        outBase = os.path.join(outDir,outBaseName)
+    if out_dir:
+        outBase = os.path.join(out_dir,out_basename)
         errFile = outBase + '.err'
         errFP = open(errFile, 'w')
         outFile = outBase + '.out'
