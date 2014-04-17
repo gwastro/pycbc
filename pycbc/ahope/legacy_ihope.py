@@ -34,7 +34,7 @@ import logging
 import urlparse
 from glue import pipeline
 from glue import segments
-from ahope_utils import Job, Node, Executable, AhopeFile
+from ahope_utils import Node, Executable, AhopeFile
 
 def legacy_get_valid_times(self):
     """
@@ -100,7 +100,7 @@ class LegacyAnalysisNode(Node):
     def  set_jobnum_tag(self, num):
         self.add_var_opt('user-tag', num)
         
-class LegacyAnalysisJob(Job):
+class LegacyAnalysisExecutable(Executable):
     """
     The class responsible for setting up jobs for legacy lalapps C-code
     executables.
@@ -143,7 +143,7 @@ class LegacyAnalysisJob(Job):
 
     get_valid_times = legacy_get_valid_times
         
-class LegacyInspiralJob(LegacyAnalysisJob):
+class LegacyInspiralExecutable(LegacyAnalysisExecutable):
     """
     The class responsible for setting up jobs for legacy lalapps_inspiral
     executable.
@@ -165,44 +165,8 @@ class LegacyInspiralJob(LegacyAnalysisJob):
             node.add_input(self.injection_file, 'injection-file')
         return node
 
-class LegacyTmpltbankExec(Executable):
-    """
-    The class corresponding to the lalapps_tmpltbank executable.
-    """
-    def __init__(self, exe_name):
-        if exe_name != 'tmpltbank':
-            raise ValueError('lalapps_tmpltbank does not support setting '
-                             'the exe_name to anything but "tmpltbank"')                           
-        Executable.__init__(self, 'tmpltbank')
 
-    def create_job(self, cp, ifo, out_dir=None, tags=[]):
-        return LegacyAnalysisJob(cp, self.exe_name, self.condor_universe,
-                                 ifo=ifo, out_dir=out_dir, tags=tags)   
-        
-class LegacyInspiralExec(Executable):
-    """
-    The class corresponding to the lalapps_inspiral executable.
-    """
-    def __init__(self, exe_name):
-        if exe_name != 'inspiral':
-            raise ValueError('lalapps_tmpltbank does not support setting '
-                             'the exe_name to anything but "inspiral"')
-        Executable.__init__(self, 'inspiral')
-
-    def create_job(self, cp, ifo, out_dir=None, injection_file=None, tags=[]):
-        return LegacyInspiralJob(cp, self.exe_name, self.condor_universe, 
-                                 ifo=ifo, injection_file=injection_file,
-                                 out_dir=out_dir, tags=tags)
-
-class LegacySplitBankExec(Executable):
-    """
-    The class corresponding to the lalapps_splitbank executable
-    """
-    def create_job(self, cp, ifo, num_banks, out_dir=None):
-        return LegacySplitBankJob(cp, self.exe_name, self.condor_universe, 
-                                  num_banks, ifo=ifo, out_dir=out_dir)
-
-class LegacySplitBankJob(Job):    
+class LegacySplitBankExecutable(Executable):    
     """
     The class responsible for creating jobs for lalapps_splitbank.
     """
