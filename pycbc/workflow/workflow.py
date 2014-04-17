@@ -108,6 +108,7 @@ class Node(object):
     def add_input_list_opt(self, opt, inputs):
         self.add_opt(opt)
         for inp in inputs:
+            self.add_opt(inp)
             self._add_input(inp)
         
     def add_input_arg(self, inp):

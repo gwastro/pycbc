@@ -181,7 +181,7 @@ class AhopeExecutable(Executable):
     def add_ini_opts(self, cp, sec):
         for opt in cp.options(sec):
             value = string.strip(cp.get(sec, opt))
-            self.common_options += [opt, value]
+            self.common_options += ['--%s' % opt, value]
             
     def add_opt(self, opt, value=None):
         if value is None:
