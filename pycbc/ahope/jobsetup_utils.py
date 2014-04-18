@@ -525,8 +525,7 @@ class JobSegmenter(object):
         if self.compatibility_mode:
             return self.get_data_times_for_job_legacy(num_job)
         else:
-           return self.get_data_times_for_job_ahope(num_job,
-                                                   allow_overlap=allow_overlap)
+           return self.get_data_times_for_job_ahope(num_job)
 
 
     def get_data_times_for_job_ahope(self, num_job):
