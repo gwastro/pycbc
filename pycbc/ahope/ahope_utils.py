@@ -265,9 +265,8 @@ class AhopeWorkflow(Workflow):
             
     def save(self):
         # add executable pfns for local site to dax
-        #for exe in self._executables:
-        #    print exe.name
-        #    exe.insert_into_dax(self._adag)
+        for exe in self._executables:
+            exe.insert_into_dax(self._adag)
             
         # add workflow input files pfns for local site to dax
         for fil in self._inputs:

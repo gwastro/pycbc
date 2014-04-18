@@ -2,9 +2,13 @@ import copy, urlparse
 import Pegasus.DAX3 as dax
 
 class Executable(object):
+    id = 0
+
     def __init__(self, name):
         self.name = name
-        self._dax_executable = dax.Executable(self.name) 
+        self.logical_name = self.name + str(Executable.id)
+        Executable.id += 1
+        self._dax_executable = dax.Executable(self.logical_name) 
         self.in_workflow = False
         self.pfns = {}
         
@@ -51,7 +55,7 @@ class Node(object):
         self.executable=executable            
         self._inputs = []
         self._outputs = []        
-        self._dax_node = dax.Job(name=executable.name)
+        self._dax_node = dax.Job(name=executable.logical_name)
         self._args = []
         self._options = []
         
