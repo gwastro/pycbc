@@ -79,4 +79,4 @@ def threshold_inline(series, value):
            libraries=['gomp'])
     return outl[0:count], outv[0:count]
 
-threshold=threshold_inline
+threshold=threshold_numpy
