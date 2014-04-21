@@ -33,14 +33,18 @@ parser.add_option('--export-float-wisdom', type=str, help='export an FFTW float 
 _options = vars(options)
 
 if _options['scheme'] == 'cpu':
+    ctx = CPUScheme(num_threads=options.num_threads)
     if options.backend == 'lal':
-        ctx = CPUScheme()
         from pycbc.fft.lalfft import set_measure_level
         set_measure_level(options.measure_level)
-    if options.backend == 'fftw':
-        ctx = CPUScheme(num_threads=options.num_threads)
-        from pycbc.fft.fftw import set_measure_level
-        set_measure_level(options.measure_level)       
+    if options.backend == 'fftw':     
+        from pycbc.fft.fftw import set_measure_level, set_threads_backend
+        with ctx:
+            set_measure_level(options.measure_level)
+            if options.num_threads != 1:
+                set_threads_backend('openmp')
+              
+          
 if _options['scheme'] == 'cuda':
     ctx = CUDAScheme(device_num=_options['devicenum'])
 if _options['scheme'] == 'opencl':
