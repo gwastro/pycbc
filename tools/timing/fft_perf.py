@@ -18,7 +18,7 @@ parser.add_option('--device-num','-d', action='store', type = 'int',
                     help = 'specifies a GPU device to use for CUDA or OpenCL, 0 by default')
 
 
-parser.add_option('--size',type=float, help='FFT size')
+parser.add_option('--size',type=int, help='FFT size')
 parser.add_option('--iterations', type=int, help='Number of iterations to perform')
 parser.add_option('--measure-level', type=int, help='Set the measure level (only applies to FFTW- cpu scheme)', default=1)
 parser.add_option('--backend', type=str, help='set the backend type for this scheme')
@@ -31,13 +31,13 @@ parser.add_option('--num-threads', type=int, help='set the number of threads to 
 _options = vars(options)
 
 if _options['scheme'] == 'cpu':
-    ctx = CPUScheme()
     if options.backend == 'lal':
+        ctx = CPUScheme()
         from pycbc.fft.lalfft import set_measure_level
         set_measure_level(options.measure_level)
     if options.backend == 'fftw':
-        from pycbc.fft.fftw import set_measure_level, use_nthreads
-        use_nthreads(options.num_threads)
+        ctx = CPUScheme(num_threads=options.num_threads)
+        from pycbc.fft.fftw import set_measure_level
         set_measure_level(options.measure_level)       
 if _options['scheme'] == 'cuda':
     ctx = CUDAScheme(device_num=_options['devicenum'])
