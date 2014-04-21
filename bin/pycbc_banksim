@@ -41,10 +41,9 @@ from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, TimeSeries, zeros, real_same_precision_as, complex_same_precision_as
 from pycbc.filter import match, sigmasq, resample_to_delta_t
-from pycbc.scheme import CPUScheme, CUDAScheme, OpenCLScheme
 from pycbc.fft import fft
 from math import cos, sin
-import pycbc.psd 
+import pycbc.psd, pycbc.scheme, pycbc.fft
 
 def update_progress(progress):
     print '\r\r[{0}] {1:.2%}'.format('#'*(int(progress*100)/2)+' '*(50-int(progress*100)/2), progress),
@@ -175,8 +174,9 @@ parser.add_argument('--filter-low-frequency-cutoff', metavar='FREQ', help='low f
 parser.add_argument("--filter-sample-rate",help="Filter Sample Rate [Hz]",type=float)
 parser.add_argument("--filter-signal-length",help="Length of signal for filtering, shoud be longer than all waveforms and include some padding",type=int)
 
-#Hardware support
-parser.add_argument("--use-cuda",action="store_true")
+#hardware support
+pycbc.scheme.insert_processing_option_group(parser)
+pycbc.fft.insert_fft_option_group(parser)
 
 #Restricted maximization
 parser.add_argument("--mchirp-window",type=float)               
@@ -194,10 +194,7 @@ if options.signal_sample_rate:
 if options.psd and options.asd_file:
     parser.error("PSD and asd-file options are mututally exclusive")
 
-if options.use_cuda:
-    ctx = CUDAScheme()
-else:
-    ctx = CPUScheme()
+ctx = pycbc.scheme.from_cli(options)
 
 if options.verbose:
   print "Options read and verified, beginning banksim at %fs" %(elapsed_time())
@@ -256,6 +253,8 @@ if options.verbose:
   print("Pregenerating Signals")
   
 with ctx: 
+    pycbc.fft.from_cli(options)
+
     signals = []
     index = 0 
     for signal_params in signal_table:
