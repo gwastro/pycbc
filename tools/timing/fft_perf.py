@@ -23,8 +23,10 @@ parser.add_option('--iterations', type=int, help='Number of iterations to perfor
 parser.add_option('--measure-level', type=int, help='Set the measure level (only applies to FFTW- cpu scheme)', default=1)
 parser.add_option('--backend', type=str, help='set the backend type for this scheme')
 parser.add_option('--num-threads', type=int, help='set the number of threads to use', default=1)
-         
-          
+parser.add_option('--import-float-wisdom', type=str, help='import an FFTW float wisdom file')
+parser.add_option('--export-float-wisdom', type=str, help='export an FFTW float wisdom file')
+
+
 (options, args) = parser.parse_args()   
 
 #Changing the optvalues to a dict makes them easier to read
@@ -58,10 +60,18 @@ vecin = zeros(N, dtype=complex64)
 vecout = zeros(N, dtype=complex64)
 print "ALIGNMENT:", vecin.data.isaligned
 
+if options.import_float_wisdom:
+    print "Loading a wisdom file"
+    fftw.import_single_wisdom_from_filename(options.import_float_wisdom)
+
 print "Making the plan"
 with ctx:
     ifft(vecin, vecout, backend=options.backend)
 print "Planning done"
+
+if options.export_float_wisdom:
+    assert(_options['scheme'] == 'cpu' and options.backend == 'fftw')
+    fftw.export_single_wisdom_to_filename(options.export_float_wisdom)
 
 def tifft():
     with ctx:
