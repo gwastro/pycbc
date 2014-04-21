@@ -29,7 +29,7 @@ elapsed_time = lambda: time()-start
 
 import sys
 from numpy import loadtxt,complex64,float32
-from optparse import OptionParser
+from argparse import ArgumentParser
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import table, lsctables
 from math import pow
@@ -142,45 +142,45 @@ def get_waveform(approximant, phase_order, amplitude_order, spin_order, template
 
 
 #File output Settings
-parser = OptionParser()
-parser.add_option("--match-file", dest="out_file", help="file to output match results", metavar="FILE")
-parser.add_option("--verbose",action='store_true', default=False, help="Print verbose statements")
+parser = ArgumentParser()
+parser.add_argument("--match-file", dest="out_file", help="file to output match results", metavar="FILE")
+parser.add_argument("--verbose",action='store_true', default=False, help="Print verbose statements")
 
 #PSD Settings
-parser.add_option("--asd-file", dest="asd_file", help="two-column ASCII file containing ASD data", metavar="FILE")
-parser.add_option("--psd", dest="psd", help="Analytic PSD model: " + str(pycbc.psd.get_list()), choices=pycbc.psd.get_list())
+parser.add_argument("--asd-file", dest="asd_file", help="two-column ASCII file containing ASD data", metavar="FILE")
+parser.add_argument("--psd", dest="psd", help="Analytic PSD model: " + str(pycbc.psd.get_list()), choices=pycbc.psd.get_list())
 
 aprs = list(set(td_approximants() + fd_approximants()))
 
 #Template Settings
-parser.add_option("--template-file", dest="bank_file", help="SimInspiral or SnglInspiral XML file containing the template parameters.", metavar="FILE")
-parser.add_option("--template-approximant",help="Template Approximant Name: " + str(aprs), choices = aprs)
-parser.add_option("--template-phase-order",help="PN order to use for the phase",default=-1,type=int) 
-parser.add_option("--template-amplitude-order",help="PN order to use for the amplitude",default=-1,type=int) 
-parser.add_option("--template-spin-order",help="PN order to use for the spin terms",default=-1,type=int) 
-parser.add_option("--template-start-frequency",help="Starting frequency for injections",type=float) 
-parser.add_option("--template-sample-rate",help="Starting frequency for injections",type=float) 
+parser.add_argument("--template-file", dest="bank_file", help="SimInspiral or SnglInspiral XML file containing the template parameters.", metavar="FILE")
+parser.add_argument("--template-approximant",help="Template Approximant Name: " + str(aprs), choices = aprs)
+parser.add_argument("--template-phase-order",help="PN order to use for the phase",default=-1,type=int) 
+parser.add_argument("--template-amplitude-order",help="PN order to use for the amplitude",default=-1,type=int) 
+parser.add_argument("--template-spin-order",help="PN order to use for the spin terms",default=-1,type=int) 
+parser.add_argument("--template-start-frequency",help="Starting frequency for injections",type=float) 
+parser.add_argument("--template-sample-rate",help="Starting frequency for injections",type=float) 
 
 #Signal Settings
-parser.add_option("--signal-file", dest="sim_file", help="SimInspiral or SnglInspiral XML file containing the signal parameters.", metavar="FILE")
-parser.add_option("--signal-approximant",help="Signal Approximant Name: " + str(aprs), choices = aprs)
-parser.add_option("--signal-phase-order",help="PN order to use for the phase",default=-1,type=int) 
-parser.add_option("--signal-spin-order",help="PN order to use for the spin terms",default=-1,type=int) 
-parser.add_option("--signal-amplitude-order",help="PN order to use for the amplitude",default=-1,type=int) 
-parser.add_option("--signal-start-frequency",help="Starting frequency for templates",type=float)  
-parser.add_option("--signal-sample-rate",help="Starting frequency for templates",type=float)  
+parser.add_argument("--signal-file", dest="sim_file", help="SimInspiral or SnglInspiral XML file containing the signal parameters.", metavar="FILE")
+parser.add_argument("--signal-approximant",help="Signal Approximant Name: " + str(aprs), choices = aprs)
+parser.add_argument("--signal-phase-order",help="PN order to use for the phase",default=-1,type=int) 
+parser.add_argument("--signal-spin-order",help="PN order to use for the spin terms",default=-1,type=int) 
+parser.add_argument("--signal-amplitude-order",help="PN order to use for the amplitude",default=-1,type=int) 
+parser.add_argument("--signal-start-frequency",help="Starting frequency for templates",type=float)  
+parser.add_argument("--signal-sample-rate",help="Starting frequency for templates",type=float)  
 
 #Filtering Settings
-parser.add_option('--filter-low-frequency-cutoff', metavar='FREQ', help='low frequency cutoff of matched filter', type=float)
-parser.add_option("--filter-sample-rate",help="Filter Sample Rate [Hz]",type=float)
-parser.add_option("--filter-signal-length",help="Length of signal for filtering, shoud be longer than all waveforms and include some padding",type=int)
+parser.add_argument('--filter-low-frequency-cutoff', metavar='FREQ', help='low frequency cutoff of matched filter', type=float)
+parser.add_argument("--filter-sample-rate",help="Filter Sample Rate [Hz]",type=float)
+parser.add_argument("--filter-signal-length",help="Length of signal for filtering, shoud be longer than all waveforms and include some padding",type=int)
 
 #Hardware support
-parser.add_option("--use-cuda",action="store_true")
+parser.add_argument("--use-cuda",action="store_true")
 
 #Restricted maximization
-parser.add_option("--mchirp-window",type=float)               
-(options, args) = parser.parse_args()   
+parser.add_argument("--mchirp-window",type=float)               
+options = parser.parse_args()   
 
 template_sample_rate = options.filter_sample_rate
 signal_sample_rate = options.filter_sample_rate
@@ -254,31 +254,32 @@ psd = FrequencySeries(psd,delta_f=psd.delta_f,dtype=float32)
 if options.verbose:
   print("PSD interpolated at %fs" %(elapsed_time()))
   print("Pregenerating Signals")
-signals = []
-index = 0 
-for signal_params in signal_table:
-    index += 1
+  
+with ctx: 
+    signals = []
+    index = 0 
+    for signal_params in signal_table:
+        index += 1
+        if options.verbose:
+          update_progress(float(index)/len(signal_table))
+        stilde = get_waveform(options.signal_approximant, 
+                      options.signal_phase_order, 
+                      options.signal_amplitude_order, 
+                      options.signal_spin_order,
+                      signal_params, 
+                      options.signal_start_frequency, 
+                      signal_sample_rate, 
+                      filter_N, options.filter_sample_rate)
+        s_norm = sigmasq(stilde, psd=psd, 
+                          low_frequency_cutoff=options.filter_low_frequency_cutoff)
+        stilde /= psd
+        signals.append( (stilde, s_norm, [], signal_params) )
+
     if options.verbose:
-      update_progress(float(index)/len(signal_table))
-    stilde = get_waveform(options.signal_approximant, 
-                  options.signal_phase_order, 
-                  options.signal_amplitude_order, 
-                  options.signal_spin_order,
-                  signal_params, 
-                  options.signal_start_frequency, 
-                  signal_sample_rate, 
-                  filter_N, options.filter_sample_rate)
-    s_norm = sigmasq(stilde, psd=psd, 
-                      low_frequency_cutoff=options.filter_low_frequency_cutoff)
-    stilde /= psd
-    signals.append( (stilde, s_norm, [], signal_params) )
+      print
+      print("Signals pregenerated at %fs" %(elapsed_time()))
+      print("Calculating Overlaps")
 
-if options.verbose:
-  print
-  print("Signals pregenerated at %fs" %(elapsed_time()))
-  print("Calculating Overlaps")
-
-with ctx:
     index = 0 
     # Calculate the overlaps
     for template_params in template_table:
