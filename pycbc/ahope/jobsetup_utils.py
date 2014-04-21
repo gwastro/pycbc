@@ -598,12 +598,11 @@ class PyCBCInspiralJob(Job):
         if self.get_opt('processing-scheme') == 'cuda':
             self.needs_gpu()
          
-        num_threads = 1  
+        self.num_threads = 1  
         if self.get_opt('processing-scheme') is not None:
             stxt = self.get_opt('processing-scheme')
             if len(stxt.split(':')) > 1:
-                num_threads = stxt.split(':')[1]
-                print num_threads
+                self.num_threads = stxt.split(':')[1]
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
         node = Node(self)
