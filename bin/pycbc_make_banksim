@@ -31,7 +31,7 @@ class BanksimNode(CondorDAGNode):
         self.add_file_opt("template-file", tmplt_file)
         
         if gpu:
-            self.add_var_opt("use-cuda", None)
+            self.add_var_opt("processing-scheme", 'cuda')
             
         if gpu and gpu_postscript:
                 self.set_retry(5)
