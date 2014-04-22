@@ -512,9 +512,6 @@ class JobSegmenter(object):
             dataPushBack = self.data_length - self.valid_chunk[1]
             job_valid_seg = segments.segment(job_valid_seg[0],
                                                self.curr_seg[1] - dataPushBack)
-            print job_valid_seg, dataPushBack, self.curr_seg
-        else:
-            print job_valid_seg, 0, self.curr_seg
 
         return job_valid_seg
 
@@ -566,9 +563,6 @@ class JobSegmenter(object):
             job_data_seg = segments.segment(job_data_seg[0] - dataPushBack,
                                                  self.curr_seg[1])
             assert (abs(job_data_seg) == self.data_length)
-            print job_data_seg, dataPushBack, self.curr_seg
-        else:
-            print job_data_seg, 0 ,self.curr_seg
 
         # Sanity check that all data is used
         if num_job == 0:
