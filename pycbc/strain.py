@@ -140,6 +140,7 @@ def from_cli(opt):
             logging.info("Applying injections")
             injections = InjectionSet(opt.injection_file)
             injections.apply(strain, opt.channel_name[0:2])
+            strain.injections = injections
         
         logging.info("Converting to float32")
         strain = (DYN_RANGE_FAC * strain).astype(float32)    
@@ -228,7 +229,8 @@ class StrainSegments(object):
         conditioning.
     """
     def __init__(self, strain, segment_length=None, segment_start_pad=0, 
-                 segment_end_pad=0, trigger_start=None, trigger_end=None):
+                 segment_end_pad=0, trigger_start=None, trigger_end=None, 
+                 filter_inj_only=False):
         """ Determine how to chop up the strain data into smaller segents
             for analysis.
         """
@@ -303,11 +305,18 @@ class StrainSegments(object):
         trig_start_idx = (trigger_start - int(strain.start_time)) * strain.sample_rate
         trig_end_idx = (trigger_end - int(strain.start_time)) * strain.sample_rate
 
+        
+        if filter_inj_only and hasattr(strain, 'injections'):
+            inj = strain.injections
+            end_times= inj.end_times()
+            print end_times
+
         for seg, ana in zip(self.segment_slices, self.analyze_slices):
             start = ana.start
             stop = ana.stop
             cum_start = start + seg.start
             cum_end = stop + seg.start 
+            
 
             # adjust first segment
             if trig_start_idx > cum_start:
@@ -352,7 +361,8 @@ class StrainSegments(object):
                    segment_start_pad=opt.segment_start_pad,
                    segment_end_pad=opt.segment_end_pad,
                    trigger_start=opt.trig_start_time,
-                   trigger_end=opt.trig_end_time)
+                   trigger_end=opt.trig_end_time,
+                   filter_inj_only=opt.filter_inj_only)
         
     @classmethod
     def insert_segment_option_group(cls, parser):
@@ -373,7 +383,10 @@ class StrainSegments(object):
                                "beginning of each segment in seconds. ")
         segment_group.add_argument("--segment-end-pad", type=int, 
                           help="The time in seconds to ignore at the "
-                               "end of each segment in seconds. ")
+                               "end of each segment in seconds.")
+        segment_group.add_argument("--filter-inj-only", action='store_true',
+                          help="Analaze only segements that contain an injection.")
+        
         
     @classmethod
     def verify_segment_options(cls, opt, parser):
@@ -382,5 +395,3 @@ class StrainSegments(object):
                    '--segment-start-pad',
                    '--segment-end-pad',
                    ])  
-        
-        
