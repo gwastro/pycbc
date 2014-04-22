@@ -147,24 +147,24 @@ class InjectionSet(object):
 
 
             if (inj.numrel_data != None and inj.numrel_data != ""):
-		### performing NR waveform injection
-		# reading Hp and Hc from the frame files
-		print "Performing NR injections:", inj.numrel_data
-                swigrow = self.getswigrow(inj)
-		Hp, Hc = lalinspiral.NRInjectionFromSimInspiral(swigrow, strain.delta_t)
-		### Converting to pycbc timeseries
-                hp = TimeSeries(Hp.data.data[:], delta_t = Hp.deltaT, epoch=Hp.epoch)
-                hc = TimeSeries(Hc.data.data[:], delta_t = Hc.deltaT, epoch=Hc.epoch)
-		if (distance_scale != 1.0 and distance_scale > 0.0):
-		    dist_fact = 1.0/distance_scale
-		    hp = hp*dist_fact
-		    hc = hc*dist_fact
-		    
-                end_time = float(hp.get_end_time())
-                start_time = float(hp.get_start_time())
+		        ### performing NR waveform injection
+		        # reading Hp and Hc from the frame files
+		        print "Performing NR injections:", inj.numrel_data
+                        swigrow = self.getswigrow(inj)
+		        Hp, Hc = lalinspiral.NRInjectionFromSimInspiral(swigrow, strain.delta_t)
+		        ### Converting to pycbc timeseries
+                        hp = TimeSeries(Hp.data.data[:], delta_t = Hp.deltaT, epoch=Hp.epoch)
+                        hc = TimeSeries(Hc.data.data[:], delta_t = Hc.deltaT, epoch=Hc.epoch)
+		        if (distance_scale != 1.0 and distance_scale > 0.0):
+		            dist_fact = 1.0/distance_scale
+		            hp = hp*dist_fact
+		            hc = hc*dist_fact
+		            
+                        end_time = float(hp.get_end_time())
+                        start_time = float(hp.get_start_time())
 
-                if end_time < t0 or start_time > t1:
-                      continue
+                        if end_time < t0 or start_time > t1:
+                              continue
  
             else:
 
@@ -196,6 +196,12 @@ class InjectionSet(object):
             add_injection(lalstrain, signal_lal, None)
 
         strain.data[:] = lalstrain.data.data[:]
+        
+    def end_times(self):
+        """ Return the end times of all injections
+        """
+        return [inj.get_time_geocent() for inj in self.table]      
+        
         
     def maximum_snrs(self, psd):
         """ Calculate the maximum SNR (without noise), for each signal in the
