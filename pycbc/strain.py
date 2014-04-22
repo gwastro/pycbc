@@ -140,10 +140,13 @@ def from_cli(opt):
             logging.info("Applying injections")
             injections = InjectionSet(opt.injection_file)
             injections.apply(strain, opt.channel_name[0:2])
-            strain.injections = injections
         
         logging.info("Converting to float32")
-        strain = (DYN_RANGE_FAC * strain).astype(float32)    
+        strain = (DYN_RANGE_FAC * strain).astype(float32)
+
+    if opt.injection_file:
+        strain.injections = injections
+    
     return strain
 
 def insert_strain_option_group(parser):
@@ -304,19 +307,27 @@ class StrainSegments(object):
         analyze_slices_red = []
         trig_start_idx = (trigger_start - int(strain.start_time)) * strain.sample_rate
         trig_end_idx = (trigger_end - int(strain.start_time)) * strain.sample_rate
-
         
         if filter_inj_only and hasattr(strain, 'injections'):
             inj = strain.injections
             end_times= inj.end_times()
-            print end_times
+            end_times = [time for time in end_times if float(time) < trigger_end and float(time) > trigger_start]
+            
+            inj_idx = [(float(time) - float(strain.start_time)) * strain.sample_rate for time in end_times]
 
         for seg, ana in zip(self.segment_slices, self.analyze_slices):
             start = ana.start
             stop = ana.stop
             cum_start = start + seg.start
-            cum_end = stop + seg.start 
-            
+            cum_end = stop + seg.start  
+
+            if filter_inj_only and hasattr(strain, 'injections'):
+                analyze_this = False
+                for inj_id in inj_idx:
+                    if inj_id < cum_end and inj_id > cum_start:
+                        analyze_this = True
+                if not analyze_this:
+                    continue     
 
             # adjust first segment
             if trig_start_idx > cum_start:
