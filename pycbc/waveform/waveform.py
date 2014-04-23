@@ -531,7 +531,7 @@ opencl_fd_filter = {}
 from fctmplt import findchirp_template
 from spa_tmplt import spa_tmplt
 _inspiral_fd_filters['SPAtmplt'] = spa_tmplt
-_inspiral_fd_filters['FindChirpSP'] = findchirp_template
+#_inspiral_fd_filters['FindChirpSP'] = findchirp_template
 
 _cuda_fd_filters['SPAtmplt'] = spa_tmplt
 opencl_fd_filter['SPAtmplt'] = spa_tmplt
@@ -555,7 +555,7 @@ _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
 _filter_ends["SPAtmplt"] = spa_tmplt_end
 _template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
 _filter_time_lengths["SPAtmplt"] = spa_length_in_time
-_filter_time_lengths['FindChirpSP'] = spa_length_in_time
+#_filter_time_lengths['FindChirpSP'] = spa_length_in_time
 
 def get_waveform_filter(out, template=None, **kwargs):
     """Return a frequency domain waveform filter for the specified approximant
