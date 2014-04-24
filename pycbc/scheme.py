@@ -60,18 +60,14 @@ class _SchemeManager(object):
 # Create the global processing scheme manager
 mgr = _SchemeManager()
 DefaultScheme = None
+default_context = None
 
 
 class Scheme(object):
     """Context that sets PyCBC objects to use CPU processing. """
     _single = None
-    def __new__(cls, *args, **kwds):
-        if cls is type(DefaultScheme):
-            return DefaultScheme
-        else:
-            return object.__new__(cls)
     def __init__(self):
-        if DefaultScheme is self or DefaultScheme is None:
+        if DefaultScheme is type(self):
             return
         if Scheme._single is not None:
             raise RuntimeError("Only one processing scheme can be used")
@@ -81,7 +77,7 @@ class Scheme(object):
         mgr.lock()
     def __exit__(self, type, value, traceback):
         mgr.unlock()
-        mgr.shift_to(DefaultScheme)   
+        mgr.shift_to(default_context)   
     def __del__(self):
         if Scheme is not None:
             Scheme._single = None
@@ -161,13 +157,16 @@ class CPUScheme(Scheme):
 class MKLScheme(CPUScheme):
     pass
 
-DefaultScheme = CPUScheme()
-mgr.state = DefaultScheme
+class DefaultScheme(CPUScheme):
+    pass
 
+default_context = DefaultScheme()
+mgr.state = default_context
 scheme_prefix = {CUDAScheme: "cuda",
                  OpenCLScheme: "opencl", 
                  CPUScheme: "cpu",
-                 MKLScheme: "mkl",}
+                 MKLScheme: "mkl",
+                 DefaultScheme: 'cpu'}
 
 def current_prefix():
     return scheme_prefix[type(mgr.state)]
