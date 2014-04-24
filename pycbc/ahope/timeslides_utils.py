@@ -66,7 +66,7 @@ def setup_timeslides_workflow(workflow, output_dir=None, tags=[],
     make_analysis_dir(output_dir)
     # Get ifo list and full analysis segment for output file naming
     ifoList = workflow.ifos
-    ifoString = workflow.ifoString
+    ifo_string = workflow.ifo_string
     fullSegment = workflow.analysis_time
 
     # Identify which time-slides to do by presence of sub-sections in the
@@ -89,8 +89,8 @@ def setup_timeslides_workflow(workflow, output_dir=None, tags=[],
         if timeSlideMethod in ["IN_WORKFLOW", "AT_RUNTIME"]:
             timeSlideExeTag = workflow.cp.get_opt_tags("ahope-timeslides",
                                                     "timeslides-exe", currTags)
-            timeSlideExe = select_genericjob_instance(workflow, timeSlideExeTag)
-            timeSlideJob = timeSlideExe.create_job(workflow.cp, ifoString,
+            timeSlideExe = select_generic_executable(workflow, timeSlideExeTag)
+            timeSlideJob = timeSlideExe(workflow.cp, timeSlideExeTag, ifo=ifo_string,
                                              tags=currTags, out_dir=output_dir)
             timeSlideNode = timeSlideJob.create_node(fullSegment)
             if timeSlideMethod == "AT_RUNTIME":

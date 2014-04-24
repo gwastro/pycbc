@@ -137,7 +137,7 @@ def select_splitfilejob_instance(curr_exe, curr_section):
 
     return exe_class
 
-def select_genericjob_instance(workflow, exe_tag):
+def select_generic_executable(workflow, exe_tag):
     """
     This function returns an instance of the class that is appropriate for
     running the curr_exe. Curr_exe should not be a "specialized" job that fits
@@ -151,39 +151,39 @@ def select_genericjob_instance(workflow, exe_tag):
     ----------
     workflow : ahope.Workflow instance
         The ahope workflow instance.
+
     exe_tag : string
         The name of the section storing options for this AhopeExecutable and the
         option giving the AhopeExecutable path in the [AhopeExecutables] section.
 
+
     Returns
     --------
-    exe_class : ahope.AhopeExecutable sub-classed instance
-        An instance of the class that holds the utility functions appropriate
-        for the given AhopeExecutable. This class **must** contain
-        * exe_class.create_job()
-        and the job returned by this **must** contain
-        * job.create_node()
+    exe_class : ahope.AhopeExecutable sub-class
+        The class that holds the utility functions appropriate
+        for the given AhopeExecutable. This class this **must** contain
+        * exe.create_node()
     """
-    exe_path = workflow.cp.get("AhopeExecutables", exe_tag)
+    exe_path = workflow.cp.get("executables", exe_tag)
     exe_name = os.path.basename(exe_path)
     if exe_name == 'ligolw_add':
-        exe_class = LigolwAddExecutable(exe_tag)
+        exe_class = LigolwAddExecutable
     elif exe_name == 'ligolw_sstinca':
-        exe_class = LigolwSSthincaExecutable(exe_tag)
+        exe_class = LigolwSSthincaExecutable
     elif exe_name == 'pycbc_sqlite_simplify':
-        exe_class = PycbcSqliteSimplifyExecutable(exe_tag)
+        exe_class = PycbcSqliteSimplifyExecutable
     elif exe_name == 'ligolw_cbc_cluster_coincs':
-        exe_class = SQLInOutExecutable(exe_tag)
+        exe_class = SQLInOutExecutable
     elif exe_name == 'ligolw_dbinjfind':
-        exe_class = SQLInOutExecutable(exe_tag)
+        exe_class = SQLInOutExecutable
     elif exe_name == 'lalapps_inspinj':
-        exe_class = LalappsInspinjExecutable(exe_tag)
+        exe_class = LalappsInspinjExecutable
     elif exe_name == 'pycbc_timeslides':
-        exe_class = PycbcTimeslidesExecutable(exe_tag)
+        exe_class = PycbcTimeslidesExecutable
     elif exe_name == 'pycbc_compute_durations':
-        exe_class = ComputeDurationsExec(exe_tag)
+        exe_class = ComputeDurationsExecutable
     elif exe_name == 'pycbc_calculate_far':
-        exe_class = SQLInOutExecutable(exe_tag)
+        exe_class = SQLInOutExecutable
     else:
         # Should we try some sort of default class??
         err_string = "No class exists for AhopeExecutable %s" %(exe_name,)
@@ -929,7 +929,7 @@ class PycbcTimeslidesExecutable(AhopeExecutable):
     def create_node(self, segment):
         node = AhopeNode(self)
 
-        node.new_output_file_opt(segment, '.xml.gz', 'output-files')
+        node.new_output_file_opt(segment, '.xml.gz', '--output-files')
         return node
 
 

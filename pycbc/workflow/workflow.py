@@ -107,6 +107,7 @@ class Node(object):
     def add_output_list_opt(self, opt, outputs):
         self.add_opt(opt)
         for out in outputs:
+            self.add_opt(out)
             self._add_output(out)
             
     def add_input_list_opt(self, opt, inputs):
