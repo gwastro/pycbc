@@ -36,6 +36,40 @@ import logging
 from pycbc.ahope.ahope_utils import * 
 from pycbc.ahope.jobsetup_utils import *
 
+def select_splitfilejob_instance(curr_exe):
+    """
+    This function returns an instance of the class that is appropriate for
+    splitting an output file up within ahope (for e.g. splitbank).
+    
+    Parameters
+    ----------
+    curr_exe : string
+        The name of the AhopeExecutable that is being used.
+    curr_section : string
+        The name of the section storing options for this executble
+
+    Returns
+    --------
+    exe class : exe_class
+        The class that holds the utility functions appropriate
+        for the given AhopeExecutable. This class **must** contain
+        * exe_class.create_job()
+        and the job returned by this **must** contain
+        * job.create_node()
+    """
+    # This is basically a list of if statements
+    if curr_exe == 'lalapps_splitbank':
+        exe_class = LegacySplitBankExecutable
+    # Some elif statements
+    elif curr_exe == 'pycbc_splitbank':
+        exe_class = PycbcSplitBankExecutable
+    else:
+        # Should we try some sort of default class??
+        err_string = "No class exists for AhopeExecutable %s" %(curr_exe,)
+        raise NotImplementedError(errString)
+
+    return exe_class
+
 def setup_splittable_workflow(workflow, tmplt_banks, out_dir=None):
     '''
     This function aims to be the gateway for code that is responsible for taking
@@ -107,14 +141,13 @@ def setup_splittable_dax_generated(workflow, tmplt_banks, out_dir):
     cp = workflow.cp
     splittable_exe = os.path.basename(cp.get('executables', 'splittable'))
     # Select the appropriate class
-    exe_instance = select_splitfilejob_instance(splittable_exe, 'splittable')
+    exe_class = select_splitfilejob_instance(splittable_exe)
 
     # Set up output structure
     out_file_groups = AhopeFileList([])
 
     # Set up the condorJob class for the current executable
-    curr_exe_job = exe_instance.create_job(workflow.cp, 'splittable',
-                                           num_banks, out_dir)
+    curr_exe_job = exe_class(workflow.cp, 'splittable', num_banks, out_dir=out_dir)
 
     for input in tmplt_banks:
         node = curr_exe_job.create_node(input)

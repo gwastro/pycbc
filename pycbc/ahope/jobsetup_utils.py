@@ -937,8 +937,8 @@ class PycbcSplitBankExecutable(AhopeExecutable):
     """
     The class responsible for creating jobs for pycbc_splitbank.
     """
-    def __init__(self, cp, exe_name, universe, num_banks,
-                 ifo=None, out_dir=None, tags=[]):
+    def __init__(self, cp, exe_name, num_banks,
+                 ifo=None, out_dir=None, tags=[], universe=None):
         AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.num_banks = int(num_banks)
 
@@ -957,7 +957,7 @@ class PycbcSplitBankExecutable(AhopeExecutable):
             The node to run the job
         """
         node = AhopeNode(self)
-        node.add_input_opt(bank, opt='bank-file')
+        node.add_input_opt('--bank-file', bank)
 
         # Get the output (taken from inspiral.py)
         out_files = AhopeFileList([])
@@ -966,10 +966,10 @@ class PycbcSplitBankExecutable(AhopeExecutable):
             # FIXME: What should the tags actually be? The job.tags values are
             #        currently ignored.
             curr_tags = bank.tags + [curr_tag]
-            job_tag = bank.description + "_" + self.exe_name.upper()
+            job_tag = bank.description + "_" + self.name.upper()
             out_file = AhopeFile(bank.ifo, job_tag, bank.segment,
                                  extension=".xml.gz", directory=self.out_dir,
                                  tags=curr_tags)
             out_files.append(out_file)
-        node.add_output_opt_list(out_files, opt='output-filenames')
+        node.add_output_list_opt('--output-filenames', out_files)
         return node
