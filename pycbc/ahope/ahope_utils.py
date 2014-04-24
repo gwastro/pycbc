@@ -28,7 +28,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 
 import Pegasus.DAX3 as dax
-import os, sys, subprocess, logging, math, string, urlparse
+import os, sys, subprocess, logging, math, string, urlparse, ConfigParser
 import numpy
 from itertools import combinations
 from os.path import splitext, basename, isfile
@@ -191,9 +191,13 @@ class AhopeExecutable(Executable):
             
     def get_opt(self, opt):
         for sec in self.sections:
-            key = self.cp.get(sec, opt)
-            if key:
-                return key
+            try:
+                key = self.cp.get(sec, opt)
+                if key:
+                    return key
+            except ConfigParser.NoOptionError:
+                pass
+        
         return None
 
 class AhopeWorkflow(Workflow):
