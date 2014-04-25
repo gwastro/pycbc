@@ -87,6 +87,14 @@ def setup_injection_workflow(workflow, output_dir=None,
         inj_tag = (section.split('-')[1]).upper()
         currTags = tags + [inj_tag]
 
+        # FIXME: Remove once fixed in pipedown
+        # TEMPORARILY we require inj tags to end in "INJ"
+        if not inj_tag.endswith("INJ"):
+            err_msg = "Currently ahope requires injection names to end with "
+            err_msg += "a inj suffix. Ie. bnslininj or bbhinj. "
+            err_msg += "%s is not good." %(inj_tag.lower())
+            raise ValueError(err_msg)
+
         # Parse for options in ini file
         injectionMethod = workflow.cp.get_opt_tags("ahope-injections", 
                                                  "injections-method", currTags)
