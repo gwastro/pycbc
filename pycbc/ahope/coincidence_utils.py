@@ -189,6 +189,20 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
             raise ValueError(errMsg)
         tisiOutFile = tisiOutFile[0]
 
+        # Next we run ligolw_cafe. This is responsible for
+        # identifying what times will be used for the ligolw_thinca jobs and what
+        # files are needed for each. If doing time sliding there
+        # will be some triggers read into multiple jobs
+        cacheInspOuts = inspiral_outs.convert_to_lal_cache()
+
+        logging.debug("Calling into cafe.")
+        cafe_seglists, cafe_caches = ligolw_cafe.ligolw_cafe(cacheInspOuts,
+            ligolw_tisi.load_time_slides(tisiOutFile.path,
+                gz = tisiOutFile.path.endswith(".gz")).values(),
+            extentlimit = 10000, verbose=False)
+        logging.debug("Done with cafe.")
+
+
         # Now loop over vetoes
         for category in veto_categories:
             logging.debug("Preparing %s %s" %(timeSlideTag,category))
@@ -209,16 +223,16 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
             currLigolwThincaOuts, currLigolwAddOuts = \
                   setup_snglveto_workflow_ligolw_thinca(workflow, 
                                         dqSegFile, tisiOutFile,
-                                        dqVetoName, inspiral_outs, output_dir,
-                                        tags=curr_thinca_job_tags)
+                                        dqVetoName, cafe_seglists, cafe_caches,
+                                        output_dir, tags=curr_thinca_job_tags)
             logging.debug("Done")
             ligolwAddOuts.extend(currLigolwAddOuts)
             ligolwThincaOuts.extend(currLigolwThincaOuts)
     return ligolwThincaOuts, ligolwAddOuts
 
-def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile,
-                                          tisiOutFile, dqVetoName,
-                                          inspiral_outs, output_dir, tags=[]):
+def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
+                                          dqVetoName, cafe_seglists,
+                                          cafe_caches, output_dir, tags=[]):
     '''
     This function is used to setup a single-stage ihope style coincidence stage
     of the workflow for a given dq category and for a given timeslide file
@@ -235,9 +249,11 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile,
         The file that contains the time-slides that will be performed in jobs
         setup by this call to this function. A file containing only one,
         zero-lag, time slide is still a valid "time slide" file.
-    inspiral_outs : ahope.AhopeFileList
-        An AhopeFileList of the matched-filter module output that is used as
-        input to the coincidence codes running at this stage.
+    cafe_seglists : List of glue.segments.segmentlistdicts
+        The times that each sstinca job will be valid for. Each entry represents
+        a unique job
+    cafe_caches : List of glue.lal.Cache objects
+        The files that are inputs to each of the sstinca jobs.
     output_dir : path
         The directory in which coincidence output will be stored.
     tags : list of strings (optional, default = [])
@@ -256,19 +272,6 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile,
     '''
     cp = workflow.cp
     ifoString = workflow.ifoString
-
-    # Next we run ligolw_cafe. This is responsible for
-    # identifying what times will be used for the ligolw_thinca jobs and what
-    # files are needed for each. If doing time sliding there
-    # will be some triggers read into multiple jobs
-    cacheInspOuts = inspiral_outs.convert_to_lal_cache()
-
-    logging.debug("Calling into cafe.")
-    cafe_seglists, cafe_caches = ligolw_cafe.ligolw_cafe(cacheInspOuts,
-        ligolw_tisi.load_time_slides(tisiOutFile.path,
-            gz = tisiOutFile.path.endswith(".gz")).values(),
-        extentlimit = 10000, verbose=False)
-    logging.debug("Done with cafe.")
 
     # FIXME: This is currently hardcoded to ligolw_thinca and ligolw_add. This
     # is deliberate as different coincidence methods will not just be swapping
