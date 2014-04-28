@@ -175,7 +175,7 @@ You also need to specify the directory in which pipedown  will store log files. 
    For the TACC XSEDE cluster set::
 
     export LIGO_DATAFIND_SERVER=tacc.ligo.org:80
-    export LOGPATH=/scratch/${MAGIC_NUMBER??}/${USER}/log
+    export LOGPATH=${SCRATCH}/log
     export PIPEDOWNLOG=/tmp
     mkdir -p $LOG_PATH
 
