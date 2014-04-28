@@ -1,3 +1,5 @@
+.. _ahopehomepage:
+
 ##################################################################
 Ahope: the inspiral analysis workflow generator (``pycbc.ahope``)
 ##################################################################
@@ -58,7 +60,7 @@ This will therefore set up a *almost complete* mimic of a weekly ihope analysis 
 More details of how to run this is found in the following link:
 
 .. toctree::
-      :maxdepth: 1
+   :maxdepth: 1
 
    ahope/weekly_ahope
 
@@ -182,7 +184,7 @@ Split table
 Split an output file into numerous parts to allow parallel analysis. Normally used to split the template bank up to allow matched-filtering in parallel
 
 .. toctree::
-      :maxdepth: 1 
+   :maxdepth: 1 
 
    ahope/splittable
 

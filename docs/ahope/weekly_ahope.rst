@@ -42,11 +42,34 @@ cd to this directory::
 
     cd ${PYCBC_SRC_DIR}/examples/ahope/weekly_ahope
 
------------------------------
-Edit the configuration file
------------------------------
+If you want to run in a different directory then you can copy the files to that directory::
 
-The configuration file for weekly_ahope is split into parts::
+    cp ${PYCBC_SRC_DIR}/examples/ahope/weekly_ahope/* /path/to/your/run/directory
+    cd /path/to/your/run/directory
+
+----------------------------------------------------------------------------
+The configuration file - Do you already have configuration (.ini) file(s)?
+----------------------------------------------------------------------------
+
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+Yes, I already have configuration files
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+Great! Then copy the configuration files into your run directory (overwrite the example files if you need to)::
+
+    cp /path/to/config_file1.ini /path/to/config_file2.ini .
+
+and set the names of these configuration files in your path. If you have more than one configuration file they must be space separated::
+
+    CONFIG_FILES="config_file1.ini config_file2.ini"
+
+Now go down to :ref:`weeklyahopegenerate`.
+
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+No, I need to make a configuration file - Editing the example files
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+The default configuration file for weekly_ahope is found in three parts::
 
     weekly_ahope.ini
     pipedown.ini
@@ -105,13 +128,25 @@ To run through this
 * segments-veto-definer-url points to the url where the veto-definer file can be found.
 * The [tisi] sections give instructions to ahope on how to set up what time slides will be performed. See :ref:`ahopetimeslidesmod` for more details on how to supply this for other situations. Normally you will just need to add or remove detectors.
 
-The remaining options affect how the jobs run, these should not be edited unless you know what you are doing ... but can freely be added if you do know what you are doing and want to change something.
+The remaining options affect how the jobs run, these should not be edited unless you know what you are doing ... but can freely be added if you do know what you are doing and want to change something. To find out more details about the possible options for any stage of the workflow, follow the links at :ref:`ahopehomepage`.
+
+Now you have configuration files and can follow the same instructions as above. That is: 
+
+Copy the configuration files into your run directory::
+
+    cp /path/to/weekly_ahope.ini /path/to/inj.ini /path/to/pipedown.ini .
+
+and set the names of these configuration files in your path. If you have more than one configuration file they must be space separated::
+
+    CONFIG_FILES="weekly_ahope.ini inj.ini pipedown.ini"
+
+.. _weeklyahopegenerate:
 
 -----------------------
 Generate the workflow
 -----------------------
 
-When you are ready, you can generate the workflow. First we need to choose a time span::
+When you are ready, you can generate the workflow. First we need to choose a time span. Here is an example::
 
     export GPS_START_TIME=961585543
     export GPS_END_TIME=961671943
@@ -142,7 +177,7 @@ You also need to choose where the html page will be generated. For example::
 
 Then you can generate the workflow::
 
-    python weekly_ahope.py --config-files weekly_ahope.ini pipedown.ini inj.ini \
+    python weekly_ahope.py --config-files ${CONFIG_FILES} \
                            --config-overrides ahope:start-time:${GPS_START_TIME} \
                                               ahope:end-time:${GPS_END_TIME} \
                                               ahope:ahope-html-basedir:${HTMLDIR} \
