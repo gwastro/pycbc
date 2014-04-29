@@ -8,7 +8,12 @@ class Executable(object):
         self.name = name
         self.logical_name = self.name + str(Executable.id)
         Executable.id += 1
-        self._dax_executable = dax.Executable(self.logical_name) 
+        self.namespace = self.logical_name
+        self._dax_executable = dax.Executable(self.logical_name, 
+                                              namespace=self.namespace,
+                                              version="1.0",
+                                              os="linux", arch="x86_64",
+                                              installed=True) 
         self.in_workflow = False
         self.pfns = {}
         
@@ -55,7 +60,9 @@ class Node(object):
         self.executable=executable            
         self._inputs = []
         self._outputs = []        
-        self._dax_node = dax.Job(name=executable.logical_name)
+        self._dax_node = dax.Job(name=executable.logical_name,
+                                 version = "1.0",
+                                 namespace=executable.namespace)
         self._args = []
         self._options = []
         

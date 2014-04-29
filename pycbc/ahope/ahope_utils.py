@@ -266,6 +266,7 @@ class AhopeWorkflow(Workflow):
 
         for fil in node._outputs:
             fil.node = None
+            fil.PFN(fil.storage_path, site='local')
             
     def save(self):
         # add executable pfns for local site to dax
