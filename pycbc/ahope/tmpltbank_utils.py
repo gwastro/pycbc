@@ -37,6 +37,7 @@ import logging
 from glue import segments
 from pycbc.ahope.ahope_utils import *
 from pycbc.ahope.jobsetup_utils import *
+from pycbc.ahope.matchedfltr_utils import *
 
 def select_tmpltbank_class(curr_exe):
     """

@@ -33,8 +33,9 @@ from __future__ import division
 import os
 from pycbc.ahope.ahope_utils import * 
 from pycbc.ahope.jobsetup_utils import *
+from pycbc.ahope.tmpltbank_utils import *
 
-def select_matchedfilterjob_class(curr_exe):
+def select_matchedfilter_class(curr_exe):
     """
     This function returns an instance of the class that is appropriate for
     matched-filtering within ahope.
@@ -214,7 +215,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
     ifos = science_segs.keys()
     match_fltr_exe = os.path.basename(cp.get('executables','inspiral'))
     # Select the appropriate class
-    exe_class = select_matchedfilterjob_class(match_fltr_exe)
+    exe_class = select_matchedfilter_class(match_fltr_exe)
 
     if link_to_tmpltbank:
         # Use this to ensure that inspiral and tmpltbank jobs overlap. This
