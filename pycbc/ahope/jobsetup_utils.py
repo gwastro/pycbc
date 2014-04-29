@@ -801,7 +801,6 @@ class LigolwAddExecutable(AhopeExecutable):
         # to a cache file and read that in. ALL INPUT FILES MUST BE LISTED AS
         # INPUTS (with .add_input_opt_file) IF THIS IS DONE THOUGH!
         for fil in input_files:
-            print fil.storage_path
             node.add_input_arg(fil)
 
         # Currently we set the output file using the name of *all* active ifos,
@@ -849,11 +848,11 @@ class LigolwSSthincaExecutable(AhopeExecutable):
 
         return node
 
-class PycbcSqliteSimplifyAhopeExecutable(AhopeExecutable):
+class PycbcSqliteSimplifyExecutable(AhopeExecutable):
     """
     The class responsible for making jobs for pycbc_sqlite_simplify.
     """
-    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, tags=[]):
+    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
         AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
         
@@ -864,8 +863,8 @@ class PycbcSqliteSimplifyAhopeExecutable(AhopeExecutable):
         for file in inputFiles:
             node.add_input_arg(file)
         if injFile:
-            node.add_input_opt(injFile, opt="injection-file")
-            node.add_var_opt("simulation-tag", injString)
+            node.add_input_opt("--injection-file", injFile)
+            node.add_opt("--simulation-tag", injString)
         node.new_output_file_opt(jobSegment, '.sql', 'output-file',
                                  tags=self.tags) 
         return node
@@ -875,12 +874,12 @@ class SQLInOutExecutable(AhopeExecutable):
     The class responsible for making jobs for SQL codes taking one input and
     one output.
     """
-    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, tags=[]):
+    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
         AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
 
     def create_node(self, jobSegment, inputFile):
         node = AhopeNode(self)
-        node.add_input_opt(inputFile, opt='input')
+        node.add_input_opt('--input', inputFile)
         node.new_output_file_opt(jobSegment, '.sql', '--output',
                                  tags=self.tags)
         return node
