@@ -845,7 +845,7 @@ class LigolwSSthincaExecutable(AhopeExecutable):
                          extension='.xml.gz', directory=self.out_dir,
                          tags=self.tags)
 
-        node.add_output_opt(outFile)
+        node._add_output(outFile)
 
         return node
 
