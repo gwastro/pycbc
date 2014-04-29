@@ -245,7 +245,7 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
                                                tags=tags)
         if link_exe_instance:
             link_job_instance = link_exe_instance(cp, 'inspiral', ifo=ifo,
-                        out_dir=out_dir, tags=tags)
+                        out_dir=output_dir, tags=tags)
         else:
             link_job_instance = None
         sngl_ifo_job_setup(workflow, ifo, tmplt_banks, job_instance, 
@@ -298,7 +298,7 @@ def setup_tmpltbank_without_frames(workflow, output_dir,
         raise ValueError(errMsg)
 
     # Select the appropriate class
-    exe_instance = select_tmpltbankjob_instance(tmplt_bank_exe,'tmpltbank')
+    exe_instance = select_tmpltbank_class(tmplt_bank_exe, 'tmpltbank')
 
     tmplt_banks = AhopeFileList([])
 
@@ -315,7 +315,8 @@ def setup_tmpltbank_without_frames(workflow, output_dir,
         exe_instance.write_psd = False
 
     for ifo in ifoList:
-        job_instance = exe_instance.create_job(workflow.cp, ifo, output_dir,
+        job_instance = exe_instance(workflow.cp, 'tmpltbank', ifo=ifo, 
+                                               out_dir=output_dir,
                                                tags=tags)
         node = job_instance.create_nodata_node(fullSegment)
         workflow.add_node(node)
