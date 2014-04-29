@@ -16,14 +16,14 @@ ahope:pipedown-tmp-space:${PIPEDOWNLOG} \
 ahope:pipedown-log-path:${LOGPATH}
 
 # Move some files needed to do pegasus planning to the workspace folder
-cp plan.sh ${GPS_START_TIME}-${GPS_END_TIME}/
-cp pegasus.conf ${GPS_START_TIME}-${GPS_END_TIME}/
+#cp plan.sh ${GPS_START_TIME}-${GPS_END_TIME}/
+#cp pegasus.conf ${GPS_START_TIME}-${GPS_END_TIME}/
 
-echo 'cat <<END_OF_TEXT' >  temp.sh
-cat "site-local.xml"                 >> temp.sh
-echo 'END_OF_TEXT'       >> temp.sh
-bash temp.sh > "${GPS_START_TIME}-${GPS_END_TIME}/site-local.xml"
+#echo 'cat <<END_OF_TEXT' >  temp.sh
+#cat "site-local.xml"                 >> temp.sh
+#echo 'END_OF_TEXT'       >> temp.sh
+#bash temp.sh > "${GPS_START_TIME}-${GPS_END_TIME}/site-local.xml"
 
 # Plan the workflow
-cd ${GPS_START_TIME}-${GPS_END_TIME}/
-sh plan.sh weekly_ahope.dax
+#cd ${GPS_START_TIME}-${GPS_END_TIME}/
+#sh plan.sh weekly_ahope.dax

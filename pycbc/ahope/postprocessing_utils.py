@@ -140,11 +140,11 @@ def setup_postproc_pipedown_ahope(workflow, trigger_files, summary_xml_files,
     # Setup needed exe classes
     compute_durations_exe_tag = workflow.cp.get_opt_tags("ahope-postproc",
                                    "postproc-computedurations-exe", tags)
-    compute_durations_exe = select_genericjob_instance(workflow,\
+    compute_durations_exe = select_generic_executable(workflow,
                                                      compute_durations_exe_tag)
-    cfar_exe_tag = workflow.cp.get_opt_tags("ahope-postproc",
-                                            "postproc-cfar-exe", tags)
-    cfar_exe = select_genericjob_instance(workflow, cfar_exe_tag) 
+    cfar_exe_tag = workflow.cp.get_opt_tags("ahope-postproc", "postproc-cfar-exe",
+                                       tags)
+    cfar_exe = select_generic_executable(workflow, cfar_exe_tag) 
 
     comp_durations_outs = AhopeFileList([])
     cfar_outs = AhopeFileList([])
@@ -160,10 +160,13 @@ def setup_postproc_pipedown_ahope(workflow, trigger_files, summary_xml_files,
         curr_tags = tags + [veto_tag]
 
         # Start with compute durations
-        compute_durations_job = compute_durations_exe.create_job(workflow.cp,
-                        workflow.ifoString, out_dir=output_dir, tags=curr_tags)
-        compute_durations_node = compute_durations_job.create_node(\
-             workflow.analysis_time, trig_input_files[0], summary_xml_files[0])
+        computeDurationsJob = compute_durations_exe(workflow.cp, compute_durations_exe_tag,
+                                                 ifo=workflow.ifo_string, 
+                                                 out_dir=output_dir, 
+                                                 tags=curr_tags)
+        compute_durations_node = computeDurationsJob.create_node(\
+                                     workflow.analysis_time, trig_input_files[0],
+                                     summary_xml_files[0])
         workflow.add_node(compute_durations_node)
 
         # Node has only one output file
@@ -171,9 +174,11 @@ def setup_postproc_pipedown_ahope(workflow, trigger_files, summary_xml_files,
         comp_durations_outs.append(compute_durations_out)
 
         # Add the calculate FAR (cfar) job
-        cfar_job = cfar_exe.create_job(workflow.cp,
-                        workflow.ifoString, out_dir=output_dir, tags=curr_tags)
-        cfar_node = cfar_job.create_node(workflow.analysis_time,
+        cfar_job = cfar_exe(workflow.cp, cfar_exe_tag, 
+                                      ifo=workflow.ifo_string, 
+                                      out_dir=output_dir, 
+                                      tags=curr_tags)
+        cfar_node = cfarJob.create_node(workflow.analysis_time,
                                        compute_durations_out)
         workflow.add_node(cfar_node)
 

@@ -149,7 +149,7 @@ start_time = workflow.analysis_time[0]
 end_time = workflow.analysis_time[1]
 
 # Copy segment files
-ifoString = workflow.ifoString
+ifo_string = workflow.ifo_string
 for category in range(1, 6):
     vetoTag = 'CUMULATIVE_CAT_%d' %(category)
     ahopeVetoFile = segsFileList.find_output_with_tag(vetoTag)
@@ -157,7 +157,7 @@ for category in range(1, 6):
     ahopeVetoFile = ahopeVetoFile[0]
     ahopeVetoPath = ahopeVetoFile.path
     pipedownVetoFileName = '%s-VETOTIME_CAT_%d-%d-%d.xml' \
-                            %(ifoString, category, start_time, \
+                            %(ifo_string, category, start_time, \
                               end_time-start_time)
     pipedownVetoPath = os.path.join(segDir, pipedownVetoFileName)
     shutil.copyfile(ahopeVetoPath, pipedownVetoPath)
