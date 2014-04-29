@@ -47,7 +47,7 @@ class Executable(object):
         self.add_profile('dagman', 'priority', priority)
         
     def set_num_retries(self, number):
-        self.add_profile("dagman", "retry", number)
+        self.add_profile("dagman", "retry", number)    
         
 class Node(object):    
     def __init__(self, executable):

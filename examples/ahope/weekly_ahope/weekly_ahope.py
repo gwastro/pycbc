@@ -138,7 +138,6 @@ postProcFiles = ahope.setup_postprocessing(workflow, postProcPrepFiles,
 
 pipedownParents = []
 for coincFile in all_coincs:
-    # Here I assume that no partitioned files are present
     pipedownParents.append(coincFile.node)
 
 # Dump out the formatted, combined ini file
@@ -155,7 +154,7 @@ for category in range(1, 6):
     ahopeVetoFile = segsFileList.find_output_with_tag(vetoTag)
     assert len(ahopeVetoFile) == 1
     ahopeVetoFile = ahopeVetoFile[0]
-    ahopeVetoPath = ahopeVetoFile.path
+    ahopeVetoPath = ahopeVetoFile.storage_path
     pipedownVetoFileName = '%s-VETOTIME_CAT_%d-%d-%d.xml' \
                             %(ifo_string, category, start_time, \
                               end_time-start_time)
@@ -210,8 +209,8 @@ pipeCommand.extend(["--ihope-cache", cacheFileName])
 pipeCommand.extend(["--generate-all-data-plots"])
 
 # run lalapps_pipedown
-ahope.make_external_call(pipeCommand, outDir=pipedownDir + "/logs", 
-                   outBaseName='pipedown_call')
+ahope.make_external_call(pipeCommand, out_dir=pipedownDir + "/logs", 
+                   out_basename='pipedown_call')
 
 # make pipedown job/node
 pipeDag = iniFile.rstrip("ini") + "dag"
