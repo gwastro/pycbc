@@ -271,18 +271,29 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
 
     '''
     cp = workflow.cp
-    ifoString = workflow.ifoString
+    ifoString = workflow.ifo_string
+
+    # Next we run ligolw_cafe. This is responsible for
+    # identifying what times will be used for the ligolw_thinca jobs and what
+    # files are needed for each. If doing time sliding there
+    # will be some triggers read into multiple jobs
+    cacheInspOuts = inspiral_outs.convert_to_lal_cache()
+
+    logging.debug("Calling into cafe.")
+    cafe_seglists, cafe_caches = ligolw_cafe.ligolw_cafe(cacheInspOuts,
+        ligolw_tisi.load_time_slides(tisiOutFile.storage_path,
+            gz = tisiOutFile.storage_path.endswith(".gz")).values(),
+        extentlimit = 10000, verbose=False)
+    logging.debug("Done with cafe.")
 
     # FIXME: This is currently hardcoded to ligolw_thinca and ligolw_add. This
     # is deliberate as different coincidence methods will not just be swapping
     # codes in and out. However, if this needs to be overwritten it can be!
 
     # Set up jobs for ligolw_add and ligolw_thinca
-    ligolwadd_exe = LigolwAddExec('llwadd')
-    ligolwthinca_exe = LigolwSSthincaExec('thinca')
-    ligolwadd_job = ligolwadd_exe.create_job(cp, ifoString, 
+    ligolwadd_job = LigolwAddExecutable(cp, 'llwadd', ifo=ifoString, 
                                      out_dir=output_dir, tags=tags)
-    ligolwthinca_job = ligolwthinca_exe.create_job(cp, ifoString, 
+    ligolwthinca_job = LigolwSSthincaExecutable(cp, 'thinca', ifo=ifoString, 
                                      out_dir=output_dir, 
                                      dqVetoName=dqVetoName, tags=tags)
 

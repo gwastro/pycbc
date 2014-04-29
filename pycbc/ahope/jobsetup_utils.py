@@ -620,11 +620,11 @@ class PyCBCInspiralExecutable(AhopeExecutable):
         pad_data = int(self.get_opt('pad-data'))
         if pad_data is None:
             raise ValueError("The option pad-data is a required option of "
-                             "%s. Please check the ini file." % self.exe_name)
+                             "%s. Please check the ini file." % self.name)
 
         if not dfParents:
             raise ValueError("%s must be supplied with data file(s)"
-                              %(self.exe_name))
+                              %(self.name))
 
         # set remaining options flags   
         node.add_opt('--gps-start-time', data_seg[0] + pad_data)
@@ -681,7 +681,7 @@ class PyCBCInspiralExec(AhopeExecutable):
     to create jobs and from that create nodes
     """
     def create_job(self, cp, ifo, out_dir=None, injection_file=None, tags=[]):
-        return PyCBCInspiralJob(cp, self.exe_name, self.condor_universe,
+        return PyCBCInspiralJob(cp, self.name, self.condor_universe,
                                 ifo=ifo, out_dir=out_dir,
                                 injection_file=injection_file, tags=tags)
 
@@ -702,12 +702,12 @@ class PyCBCTmpltbankAhopeExecutable(AhopeExecutable):
 
         if not dfParents:
             raise ValueError("%s must be supplied with data file(s)"
-                              %(self.exe_name))
+                              %(self.name))
 
         pad_data = int(self.get_opt('pad-data'))
         if pad_data is None:
             raise ValueError("The option pad-data is a required option of "
-                             "%s. Please check the ini file." % self.exe_name)
+                             "%s. Please check the ini file." % self.name)
 
         # set the remaining option flags
         node.add_opt('--gps-start-time', data_seg[0] + pad_data)
@@ -801,6 +801,7 @@ class LigolwAddExecutable(AhopeExecutable):
         # to a cache file and read that in. ALL INPUT FILES MUST BE LISTED AS
         # INPUTS (with .add_input_opt_file) IF THIS IS DONE THOUGH!
         for fil in input_files:
+            print fil.storage_path
             node.add_input_arg(fil)
 
         # Currently we set the output file using the name of *all* active ifos,
@@ -818,7 +819,7 @@ class LigolwSSthincaExecutable(AhopeExecutable):
     """
     The class responsible for making jobs for ligolw_sstinca.
     """
-    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None,
+    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  dqVetoName=None, tags=[]):
         AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
@@ -827,7 +828,7 @@ class LigolwSSthincaExecutable(AhopeExecutable):
 
     def create_node(self, jobSegment, coincSegment, inputFile):
         node = AhopeNode(self)
-        node.add_input_opt(inputFile, argument=True)
+        node.add_input_arg(inputFile)
 
         # Add the start/end times
         segString = ""
@@ -840,7 +841,7 @@ class LigolwSSthincaExecutable(AhopeExecutable):
         node.add_opt('--coinc-end-time-segment', segString)
 
         # FIXME: This must match the *actual* output name!
-        outFile = AhopeFile(self.ifo, self.exe_name, jobSegment,
+        outFile = AhopeFile(self.ifo, self.name, jobSegment,
                          extension='.xml.gz', directory=self.out_dir,
                          tags=self.tags)
 
@@ -861,7 +862,7 @@ class PycbcSqliteSimplifyAhopeExecutable(AhopeExecutable):
         if injFile and not injString:
             raise ValueError("injString needed if injFile supplied.")
         for file in inputFiles:
-            node.add_input_opt(file, argument=True)
+            node.add_input_arg(file)
         if injFile:
             node.add_input_opt(injFile, opt="injection-file")
             node.add_var_opt("simulation-tag", injString)
