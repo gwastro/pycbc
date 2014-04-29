@@ -177,7 +177,7 @@ You also need to specify the directory in which pipedown  will store log files. 
     export LIGO_DATAFIND_SERVER=tacc.ligo.org:80
     export LOGPATH=${SCRATCH}/log
     export PIPEDOWNLOG=/tmp
-    mkdir -p $LOG_PATH
+    mkdir -p $LOGPATH
 
 You also need to choose where the html page will be generated. For example::
 
