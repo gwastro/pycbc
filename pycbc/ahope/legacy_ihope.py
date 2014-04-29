@@ -151,7 +151,7 @@ class LegacyInspiralExecutable(LegacyAnalysisExecutable):
     The class responsible for setting up jobs for legacy lalapps_inspiral
     AhopeExecutable.
     """
-    def __init__(self, cp, name, universe, ifo=None, injection_file=None, 
+    def __init__(self, cp, name, universe=None, ifo=None, injection_file=None, 
                        out_dir=None, tags=[]):
         LegacyAnalysisExecutable.__init__(self, cp, name, universe, ifo, 
                                     out_dir=out_dir, tags=tags)
