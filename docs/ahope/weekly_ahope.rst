@@ -156,19 +156,19 @@ You also need to specify the directory in which pipedown  will store log files. 
  * For CIT,LHO,LLO or SYR set::
 
     export LOGPATH=/usr1/${USER}/log
-    export PIPEDOWNLOG=/usr1/${USER}
+    export PIPEDOWNTMPSPACE=/usr1/${USER}
     mkdir -p $LOGPATH
 
  * For Atlas set::
 
     export LOGPATH=/local/user/${USER}/log/
-    export PIPEDOWNLOG=/local/user/${USER}
+    export PIPEDOWNTMPSPACE=/local/user/${USER}
     mkdir -p $LOGPATH 
 
  * For UWM set::
 
     export LOGPATH=/people/${USER}/log/
-    export PIPEDOWNLOG=/localscratch/${USER}
+    export PIPEDOWNTMPSPACE=/localscratch/${USER}
     mkdir -p $LOGPATH
 
  * On the TACC XSEDE cluster, it is recommended to store your ihope directory under the work filesystem.
@@ -176,7 +176,7 @@ You also need to specify the directory in which pipedown  will store log files. 
 
     export LIGO_DATAFIND_SERVER=tacc.ligo.org:80
     export LOGPATH=${SCRATCH}/log
-    export PIPEDOWNLOG=/tmp
+    export PIPEDOWNTMPSPACE=/tmp
     mkdir -p $LOGPATH
 
 You also need to choose where the html page will be generated. For example::
@@ -190,7 +190,7 @@ Then you can generate the workflow::
                                               ahope:end-time:${GPS_END_TIME} \
                                               ahope:ahope-html-basedir:${HTMLDIR} \
                                               ahope:pipedown-log-path:${LOGPATH} \
-                                              ahope:pipedown-tmp-space:${PIPEDOWNLOG}
+                                              ahope:pipedown-tmp-space:${PIPEDOWNTMPSPACE}
 
 -----------------------------------------
 Planning and Submitting the Worklfow
