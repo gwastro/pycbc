@@ -277,7 +277,7 @@ class AhopeWorkflow(Workflow):
             fil.insert_into_dax(self._adag)
             
         # save the dax file
-            Workflow.save(self, self.name + '.dax')
+        Workflow.save(self, self.name + '.dax')
         
         # add workflow storage locations to the output mapper
         f = open(self.name + '.map', 'w')
