@@ -162,10 +162,10 @@ class LegacyInspiralExecutable(LegacyAnalysisExecutable):
                                                    parent, dfParents, tags=tags)
         node.add_opt('trig-start-time', valid_seg[0])
         node.add_opt('trig-end-time', valid_seg[1])  
-        node.add_file_input('--bank-file', parent)    
+        node.add_input_opt('--bank-file', parent)    
         
         if self.injection_file is not None:
-            node.add_file_input('--injection-file', self.injection_file)
+            node.add_input_opt('--injection-file', self.injection_file)
         return node
 
 
@@ -211,7 +211,7 @@ class LegacySplitBankExecutable(AhopeExecutable):
         # be the local path
         fullPath = bank.cache_entry.path
         bank.cache_entry.path = os.path.basename(fullPath)
-        node.add_file_input('--bank-file', bank)
+        node.add_input_opt('--bank-file', bank)
         # FIXME: Set the path back to what it was. This is part of the hack
         #        above and should be removed if possible.
         bank.cache_entry.path = fullPath
