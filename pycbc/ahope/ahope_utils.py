@@ -248,8 +248,7 @@ class AhopeWorkflow(Workflow):
         self._outputs = AhopeFileList([])
          
     def execute_node(self, node):
-        """ Execute this node immediately on the local site and place its
-        inputs and outputs into the workflow data lists. 
+        """ Execute this node immediately on the local machine
         """
         node.executed = True
         cmd_list = node.get_command_line()
@@ -264,9 +263,7 @@ class AhopeWorkflow(Workflow):
                                      out_basename=node.executable.name) 
         # Change back
         os.chdir(curr_dir)
-        
-        self._inputs += node._outputs
-        
+
         for fil in node._outputs:
             fil.node = None
             

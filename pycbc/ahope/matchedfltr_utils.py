@@ -33,41 +33,6 @@ from __future__ import division
 import os
 from pycbc.ahope.ahope_utils import * 
 from pycbc.ahope.jobsetup_utils import *
-from pycbc.ahope.tmpltbank_utils import *
-
-def select_matchedfilter_class(curr_exe):
-    """
-    This function returns an instance of the class that is appropriate for
-    matched-filtering within ahope.
-    
-    Parameters
-    ----------
-    curr_exe : string
-        The name of the AhopeExecutable that is being used.
-    curr_section : string
-        The name of the section storing options for this executble
-
-    Returns
-    --------
-    Instanced class : exe_class
-        An instance of the class that holds the utility functions appropriate
-        for the given AhopeExecutable. This class **must** contain
-        * exe_class.create_job()
-        and the job returned by this **must** contain
-        * job.get_valid_times(ifo, )
-        * job.create_node()
-    """
-    # This is basically a list of if statements
-    if curr_exe == 'lalapps_inspiral_ahope':
-        exe_class = LegacyInspiralExecutable
-    elif curr_exe == 'pycbc_inspiral':
-        exe_class = PyCBCInspiralExecutable
-    else:
-        # Should we try some sort of default class??
-        err_string = "No class exists for AhopeExecutable %s" %(curr_exe,)
-        raise NotImplementedError(err_string)
-        
-    return exe_class
 
 def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
                                tmplt_banks, output_dir=None,

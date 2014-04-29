@@ -37,41 +37,6 @@ import logging
 from glue import segments
 from pycbc.ahope.ahope_utils import *
 from pycbc.ahope.jobsetup_utils import *
-from pycbc.ahope.matchedfltr_utils import *
-
-def select_tmpltbank_class(curr_exe):
-    """
-    This function returns an instance of the class that is appropriate for
-    creating a template bank within ihope.
-    
-    Parameters
-    ----------
-    curr_exe : string
-        The name of the AhopeExecutable that is being used.
-    curr_section : string
-        The name of the section storing options for this executble
-
-    Returns
-    --------
-    Instanced class : exe_class
-        An instance of the class that holds the utility functions appropriate
-        for the given AhopeExecutable. This class **must** contain
-        * exe_class.create_job()
-        and the job returned by this **must** contain
-        * job.get_valid_times(ifo, )
-        * job.create_node()
-    """
-    # This is basically a list of if statements
-
-    if curr_exe == 'lalapps_tmpltbank_ahope':
-        exe_class = LegacyTmpltbankExecutable
-    elif curr_exe == 'pycbc_geom_nonspinbank':
-        exe_class = PyCBCTmpltbankExecutable
-    else:
-        # Should we try some sort of default class??
-        err_string = "No class exists for AhopeExecutable %s" %(curr_exe,)
-        raise NotImplementedError(err_string)
-    return exe_class
 
 def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
                              output_dir=None, tags=[]):

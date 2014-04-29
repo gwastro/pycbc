@@ -33,7 +33,7 @@ from glue import segments
 from pycbc.ahope.ahope_utils import *
 from pycbc.ahope.legacy_ihope import *
 
-def select_tmpltbankjob_instance(curr_exe, curr_section):
+def select_tmpltbank_class(curr_exe):
     """
     This function returns an instance of the class that is appropriate for
     creating a template bank within ihope.
@@ -58,18 +58,20 @@ def select_tmpltbankjob_instance(curr_exe, curr_section):
     # This is basically a list of if statements
 
     if curr_exe == 'lalapps_tmpltbank_ahope':
-        exe_class = LegacyTmpltbankExec(curr_section)
+        exe_class = LegacyTmpltbankExecutable
     elif curr_exe == 'pycbc_geom_nonspinbank' or 'pycbc_aligned_stoch_bank':
         # These two codes have the same interface (shared option groups) and
         # can therefore used the same internal class
-        exe_class = PyCBCTmpltbankExec(curr_section)
+        exe_class = PyCBCTmpltbankExecutable
+    elif curr_exe == 'pycbc_geom_nonspinbank':
+        exe_class = PyCBCTmpltbankExecutable
     else:
         # Should we try some sort of default class??
         err_string = "No class exists for AhopeExecutable %s" %(curr_exe,)
         raise NotImplementedError(err_string)
     return exe_class
 
-def select_matchedfilterjob_instance(curr_exe, curr_section):
+def select_matchedfilter_class(curr_exe):
     """
     This function returns an instance of the class that is appropriate for
     matched-filtering within ahope.
@@ -93,14 +95,13 @@ def select_matchedfilterjob_instance(curr_exe, curr_section):
     """
     # This is basically a list of if statements
     if curr_exe == 'lalapps_inspiral_ahope':
-        exe_class = LegacyInspiralExecutable(curr_section)
+        exe_class = LegacyInspiralExecutable
     elif curr_exe == 'pycbc_inspiral':
-        exe_class = PyCBCInspiralExecutable(curr_section)
+        exe_class = PyCBCInspiralExecutable
     else:
         # Should we try some sort of default class??
         err_string = "No class exists for AhopeExecutable %s" %(curr_exe,)
-        raise NotImplementedError(err_string)
-        
+        raise NotImplementedError(err_string)        
     return exe_class
 
 def select_splitfilejob_instance(curr_exe, curr_section):
@@ -635,17 +636,17 @@ class PyCBCInspiralExecutable(AhopeExecutable):
         node.add_profile('condor', 'request_cpus', self.num_threads)        
 
         if self.injection_file is not None:
-            node.add_input_opt(self.injection_file, '--injection-file')
+            node.add_input_opt('--injection-file', self.injection_file)
 
         # set the input and output files        
         node.new_output_file_opt(valid_seg, '.xml.gz', '--output', tags=tags)
-        node.add_input_opt_list_opt('--frame-files', dfParents)
+        node.add_input_list_opt('--frame-files', dfParents)
         node.add_input_opt('--bank-file', parent, )
 
         # FIXME: This hack is needed for pipedown compatibility. user-tag is
         #        no-op and is only needed for pipedown to know whether this is
         #        a "FULL_DATA" job or otherwise.
-        outFile = os.path.basename(node.output_files[0].path)
+        outFile = os.path.basename(node.output_files[0].storage_path)
         userTag = outFile.split('-')[1]
         userTag = userTag.split('_')[1:]
         if userTag[0] == 'FULL' and userTag[1] == 'DATA':
@@ -656,7 +657,7 @@ class PyCBCInspiralExecutable(AhopeExecutable):
             userTag = userTag[0]
         else:
             userTag = '_'.join(userTag)
-        node.add_var_opt("user-tag", userTag)
+        node.add_opt("--user-tag", userTag)
 
         return node
         
