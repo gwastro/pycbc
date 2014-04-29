@@ -319,7 +319,6 @@ class AhopeNode(Node):
         arglist = [a.storage_path if isinstance(a, AhopeFile) else a for a in arglist]
                         
         exe_path = urlparse.urlsplit(self.executable.get_pfn()).path
-        print arglist
         return [exe_path] + arglist
         
     def new_output_file_opt(self, valid_seg, extension, option_name, tags=[]):
