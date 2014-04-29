@@ -46,7 +46,7 @@ parser.add_argument("-d", "--output-dir", default=None,
 ahope.add_ahope_command_line_group(parser)
 args = parser.parse_args()
 
-workflow = ahope.Workflow(args)
+workflow = ahope.AhopeWorkflow(args, 'weekly_ahope')
 
 # Needed later for WIP
 if args.output_dir:
