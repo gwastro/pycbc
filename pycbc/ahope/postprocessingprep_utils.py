@@ -151,18 +151,18 @@ def setup_postprocprep_pipedown_ahope(workflow, coincFiles, output_dir,
     # Setup needed exe classes
     sqliteCombine1ExeTag = workflow.cp.get_opt_tags("ahope-postprocprep",
                                    "postprocprep-combiner1-exe", tags)
-    sqliteCombine1Exe = select_genericjob_instance(workflow,\
-                                                   sqliteCombine1ExeTag)
+    sqliteCombine1Exe = select_generic_executable(workflow, 
+                                                  sqliteCombine1ExeTag)
     sqliteCombine2ExeTag = workflow.cp.get_opt_tags("ahope-postprocprep",
                                    "postprocprep-combiner2-exe", tags)
-    sqliteCombine2Exe = select_genericjob_instance(workflow,\
-                                                   sqliteCombine2ExeTag)
+    sqliteCombine2Exe = select_generic_executable(workflow, 
+                                                  sqliteCombine2ExeTag)
     clusterCoincsExeTag = workflow.cp.get_opt_tags("ahope-postprocprep",
                                    "postprocprep-cluster-exe", tags)
-    clusterCoincsExe = select_genericjob_instance(workflow, clusterCoincsExeTag)
+    clusterCoincsExe = select_generic_executable(workflow, clusterCoincsExeTag)
     injFindExeTag = workflow.cp.get_opt_tags("ahope-postprocprep",
                                    "postprocprep-injfind-exe", tags)
-    injFindExe = select_genericjob_instance(workflow, injFindExeTag)
+    injFindExe = select_generic_executable(workflow, injFindExeTag)
 
     sqliteCombine1Outs = AhopeFileList([])
     clusterCoincsOuts = AhopeFileList([])
@@ -189,8 +189,11 @@ def setup_postprocprep_pipedown_ahope(workflow, coincFiles, output_dir,
         trigVetoInpFiles = coincFiles.find_output_with_tag(pipedownDQVetoName)
         trigInpFiles = trigVetoInpFiles.find_output_with_tag(injLessTag)
         trigInpFiles.append(dqSegFile[0])
-        sqliteCombine1Job = sqliteCombine1Exe.create_job(workflow.cp, 
-                          workflow.ifoString, out_dir=output_dir,tags=currTags)
+        sqliteCombine1Job = sqliteCombine1Exe(workflow.cp, 
+                                                    sqliteCombine1ExeTag,
+                                                    ifo=workflow.ifo_string, 
+                                                    out_dir=output_dir,
+                                                    tags=currTags)
         sqliteCombine1Node = sqliteCombine1Job.create_node(\
                                           workflow.analysis_time, trigInpFiles)
         workflow.add_node(sqliteCombine1Node)
@@ -199,8 +202,11 @@ def setup_postprocprep_pipedown_ahope(workflow, coincFiles, output_dir,
         sqliteCombine1Outs.append(sqliteCombine1Out)
 
         # Cluster coincidences
-        clusterCoincsJob = clusterCoincsExe.create_job(workflow.cp, 
-                         workflow.ifoString, out_dir=output_dir, tags=currTags)
+        clusterCoincsJob = clusterCoincsExe(workflow.cp, 
+                                                   clusterCoincsExeTag,
+                                                   ifo=workflow.ifo_string, 
+                                                   out_dir=output_dir, 
+                                                   tags=currTags)
         clusterCoincsNode = clusterCoincsJob.create_node(\
                                      workflow.analysis_time, sqliteCombine1Out)
         workflow.add_node(clusterCoincsNode)
@@ -217,8 +223,11 @@ def setup_postprocprep_pipedown_ahope(workflow, coincFiles, output_dir,
             trigInpFiles.append(dqSegFile[0])
             injFile = injectionFiles.find_output_with_tag(injTag)
             assert (len(injFile) == 1)
-            sqliteCombine1Job = sqliteCombine1Exe.create_job(workflow.cp,
-                          workflow.ifoString, out_dir=output_dir,tags=currTags)
+            sqliteCombine1Job = sqliteCombine1Exe(workflow.cp, 
+                                                  sqliteCombine1ExeTag,
+                                                  ifo=workflow.ifo_string, 
+                                                  out_dir=output_dir,
+                                                  tags=currTags)
             sqliteCombine1Node = sqliteCombine1Job.create_node(\
                                           workflow.analysis_time, trigInpFiles,
                                           injFile=injFile[0], injString=injTag)
@@ -228,8 +237,11 @@ def setup_postprocprep_pipedown_ahope(workflow, coincFiles, output_dir,
             sqliteCombine1Outs.append(sqliteCombine1Out)
 
             # Cluster coincidences
-            clusterCoincsJob = clusterCoincsExe.create_job(workflow.cp,
-                         workflow.ifoString, out_dir=output_dir, tags=currTags)
+            clusterCoincsJob = clusterCoincsExe(workflow.cp, 
+                                                clusterCoincsExeTag,
+                                                ifo=workflow.ifo_string, 
+                                                out_dir=output_dir, 
+                                                tags=currTags)
             clusterCoincsNode = clusterCoincsJob.create_node(\
                                      workflow.analysis_time, sqliteCombine1Out)
             workflow.add_node(clusterCoincsNode)
@@ -240,8 +252,11 @@ def setup_postprocprep_pipedown_ahope(workflow, coincFiles, output_dir,
 
         # Combine everything together and add veto file
         currTags = tags + [vetoTag]
-        sqliteCombine2Job = sqliteCombine2Exe.create_job(workflow.cp,
-                          workflow.ifoString, out_dir=output_dir,tags=currTags)
+        sqliteCombine2Job = sqliteCombine2Exe(workflow.cp, 
+                                              sqliteCombine2ExeTag,
+                                              ifo=workflow.ifo_string, 
+                                              out_dir=output_dir,
+                                              tags=currTags)
         sqliteCombine2Node = sqliteCombine2Job.create_node(\
                                   workflow.analysis_time, sqliteCombine2Inputs)
         workflow.add_node(sqliteCombine2Node)
@@ -249,7 +264,8 @@ def setup_postprocprep_pipedown_ahope(workflow, coincFiles, output_dir,
         sqliteCombine2Outs.append(sqliteCombine2Out)
 
         # Inj finding
-        injFindJob = injFindExe.create_job(workflow.cp, workflow.ifoString,
+        injFindJob = injFindExe(workflow.cp, injFindExeTag, 
+                                          ifo=workflow.ifo_string,
                                           out_dir=output_dir,tags=currTags)
         injFindNode = injFindJob.create_node(workflow.analysis_time,
                                                          sqliteCombine2Out)
