@@ -265,7 +265,10 @@ class AhopeWorkflow(Workflow):
         # Change back
         os.chdir(curr_dir)
         
-        self._outputs += node._outputs
+        self._inputs += node._outputs
+        
+        for fil in node._outputs:
+            fil.node = None
             
     def save(self):
         # add executable pfns for local site to dax
