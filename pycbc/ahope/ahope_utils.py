@@ -159,7 +159,7 @@ class AhopeExecutable(Executable):
         # Determine the sections from the ini file that will configure
         # this executable
         sections = [self.name]
-        for tag in tags:
+        for tag in tags + [self.ifo]:
              section = '%s-%s' %(self.name, tag.lower())
              if cp.has_section(section):
                 sections.append(section)

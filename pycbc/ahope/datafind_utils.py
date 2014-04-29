@@ -489,7 +489,7 @@ def setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
             # like every other code!?
             currFile = AhopeFile(curr_ifo, frame.description,
                                  frame.segment, file_url=frame.url)
-            currFile.PFN(frame.url, site='local')
+            currFile.PFN(frame.path, site='local')
             datafindouts.append(currFile)
 
     return datafindcaches, datafindouts
