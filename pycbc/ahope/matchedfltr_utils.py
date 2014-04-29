@@ -227,7 +227,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
         # PSD but then only generate triggers in the 2000s of data that the
         # template bank jobs ran on.
         tmpltbank_exe = os.path.basename(cp.get('executables', 'tmpltbank'))
-        link_exe_instance = select_tmpltbankjob_class(tmpltbank_exe)
+        link_exe_instance = select_tmpltbank_class(tmpltbank_exe)
     else:
         link_exe_instance = None
 

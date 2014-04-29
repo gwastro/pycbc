@@ -600,8 +600,8 @@ class PyCBCInspiralExecutable(AhopeExecutable):
     """
     The class used to create jobs for pycbc_inspiral AhopeExecutable.
     """
-    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, injection_file=None, tags=[]):
-        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+    def __init__(self, cp, exe_name, ifo=None, out_dir=None, injection_file=None, tags=[]):
+        AhopeExecutable.__init__(self, cp, exe_name, None, ifo, out_dir, tags=tags)
         self.cp = cp
         self.set_memory(2000)
         self.injection_file = injection_file
@@ -639,8 +639,8 @@ class PyCBCInspiralExecutable(AhopeExecutable):
 
         # set the input and output files        
         node.new_output_file_opt(valid_seg, '.xml.gz', '--output', tags=tags)
-        node.add_input_opt_list_opt(dfParents, '--frame-files')
-        node.add_input_opt(parent, '--bank-file')
+        node.add_input_opt_list_opt('--frame-files', dfParents)
+        node.add_input_opt('--bank-file', parent, )
 
         # FIXME: This hack is needed for pipedown compatibility. user-tag is
         #        no-op and is only needed for pipedown to know whether this is
@@ -674,16 +674,6 @@ class PyCBCInspiralExecutable(AhopeExecutable):
         start = pad_data + start_pad
         end = data_length - pad_data - end_pad
         return data_length, segments.segment(start, end)
-
-class PyCBCInspiralExec(AhopeExecutable):
-    """
-    The class corresponding to the pycbc_inspiral AhopeExecutable. It can be used
-    to create jobs and from that create nodes
-    """
-    def create_job(self, cp, ifo, out_dir=None, injection_file=None, tags=[]):
-        return PyCBCInspiralJob(cp, self.name, self.condor_universe,
-                                ifo=ifo, out_dir=out_dir,
-                                injection_file=injection_file, tags=tags)
 
 class PyCBCTmpltbankAhopeExecutable(AhopeExecutable):
     """
@@ -720,8 +710,8 @@ class PyCBCTmpltbankAhopeExecutable(AhopeExecutable):
                                      tags=tags+['PSD_FILE'])
         node.add_input_list(dfParents, opt='frame-files', delimiter=' ')
 
-        node.new_output_file_opt(valid_seg, '.xml.gz', 'output-file', tags=tags)
-        node.add_input_opt_list(dfParents, opt='frame-files', delimiter=' ')
+        node.new_output_file_opt(valid_seg, '.xml.gz', '--output-file', tags=tags)
+        node.add_input_opt_list('--frame-files', dfParents)
         return node
 
     def create_nodata_node(self, valid_seg):
@@ -748,7 +738,7 @@ class PyCBCTmpltbankAhopeExecutable(AhopeExecutable):
             node.make_and_add_output(valid_seg, 'txt', 'psd-output', 
                                      tags=tags+['PSD_FILE'])
 
-        node.new_output_file_opt(valid_seg, '.xml.gz', 'output-file')
+        node.new_output_file_opt(valid_seg, '.xml.gz', '--output-file')
         return node
 
     def get_valid_times(self):
