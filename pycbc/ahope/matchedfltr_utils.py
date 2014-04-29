@@ -238,7 +238,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
     # it would probably require a new module
     for ifo in ifos:
         logging.info("Setting up matched-filtering for %s." %(ifo))
-        job_instance = exe_instance(workflow.cp, 'inspiral', ifo, output_dir, 
+        job_instance = exe_class(workflow.cp, 'inspiral', ifo, output_dir, 
                                                injection_file=injection_file, 
                                                tags=tags)
         if link_exe_instance:
