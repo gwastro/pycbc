@@ -156,6 +156,8 @@ class AhopeExecutable(Executable):
         logging.debug("%s executable will run as %s universe"
                      % (name, self.universe))  
     
+        self.add_profile('condor', 'universe', self.universe)
+
         # Determine the sections from the ini file that will configure
         # this executable
         sections = [self.name]

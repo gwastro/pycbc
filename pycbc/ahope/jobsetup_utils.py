@@ -856,7 +856,7 @@ class PycbcSqliteSimplifyExecutable(AhopeExecutable):
         if injFile:
             node.add_input_opt("--injection-file", injFile)
             node.add_opt("--simulation-tag", injString)
-        node.new_output_file_opt(jobSegment, '.sql', 'output-file',
+        node.new_output_file_opt(jobSegment, '.sql', '--output-file',
                                  tags=self.tags) 
         return node
 
