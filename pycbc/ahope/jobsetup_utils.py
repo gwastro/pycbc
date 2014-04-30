@@ -333,7 +333,12 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                                                 dfParents=curr_dfouts, 
                                                 tags=tag)
                 workflow.add_node(node)
-                out_files += node.output_files
+                curr_out_files = node.output_files
+                # FIXME: Here we remove PSD files if they are coming through.
+                #        This should be done in a better way. On to-do list.
+                curr_out_files = [i for i in curr_out_files if 'PSD_FILE'\
+                                                                 not in i.tags]
+                out_files += curr_out_files
 
     return out_files
 
@@ -674,10 +679,11 @@ class PyCBCTmpltbankJob(Job):
     any other executables using the same command line option groups.
     """
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=[], write_psd=False):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.cp = cp
         self.set_memory(2000)
+        self.write_psd = write_psd
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
         node = Node(self)
@@ -697,6 +703,10 @@ class PyCBCTmpltbankJob(Job):
 
         # set the input and output files      
         node.make_and_add_output(valid_seg, '.xml.gz', 'output-file', tags=tags)
+        # Add the PSD file if needed
+        if self.write_psd:
+            node.make_and_add_output(valid_seg, 'txt', 'psd-output',
+                                     tags=tags+['PSD_FILE'])
         node.add_input_list(dfParents, opt='frame-files', delimiter=' ')
         return node
 
@@ -720,6 +730,11 @@ class PyCBCTmpltbankJob(Job):
 
         # Set the output file
         node.make_and_add_output(valid_seg, '.xml.gz', 'output-file')
+        # Add the PSD file if needed
+        if self.write_psd:
+            node.make_and_add_output(valid_seg, 'txt', 'psd-output', 
+                                     tags=tags+['PSD_FILE'])
+
         return node
 
     def get_valid_times(self):
@@ -737,9 +752,11 @@ class PyCBCTmpltbankExec(Executable):
     The class corresponding to pycbc_geom_nonspin_bank executable, and any
     other executables using the same command line option groups.
     """
+    write_psd = False
     def create_job(self, cp, ifo, out_dir=None, tags=[]):
         return PyCBCTmpltbankJob(cp, self.exe_name, self.condor_universe,
-                                 ifo=ifo, out_dir=out_dir, tags=tags)
+                                 ifo=ifo, out_dir=out_dir, tags=tags,
+                                 write_psd=self.write_psd)
 
 # FIXME: Why no Exec class here?
 class LigoLWCombineSegs(Job):

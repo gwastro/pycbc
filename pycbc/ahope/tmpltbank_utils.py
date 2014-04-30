@@ -195,6 +195,13 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
     # Set up class for holding the banks
     tmplt_banks = AhopeFileList([])
 
+    # Check for the write_psd flag
+    if cp.has_option_tags("ahope-tmpltbank", "tmpltbank-write-psd-file", tags):
+        exe_instance.write_psd = True
+    else:
+        exe_instance.write_psd = False
+        
+
     # Template banks are independent for different ifos, but might not be!
     # Begin with independent case and add after FIXME
     for ifo in ifos:
@@ -264,6 +271,12 @@ def setup_tmpltbank_without_frames(workflow, output_dir,
         ifoList = [ifo for ifo in ifos]
     else:
         ifoList = [''.join(ifos)]
+
+    # Check for the write_psd flag
+    if cp.has_option_tags("ahope-tmpltbank", "tmpltbank-write-psd-file", tags):
+        exe_instance.write_psd = True
+    else:
+        exe_instance.write_psd = False
 
     for ifo in ifoList:
         job_instance = exe_instance.create_job(workflow.cp, ifo, output_dir,
