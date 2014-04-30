@@ -26,6 +26,7 @@ import math
 import copy
 import numpy
 import logging
+import pycbc
 import pycbc.version
 import pycbc.psd
 import pycbc.strain
@@ -110,7 +111,8 @@ nyquistFreq = 2**numpy.ceil(numpy.log2(opts.f_upper))
 numSamples = int(round(nyquistFreq / opts.delta_f)) + 1
 
 psd = pycbc.psd.from_cli(opts, length=numSamples, delta_f=opts.delta_f, \
-                         low_frequency_cutoff=opts.f_low, strain=strain)
+                         low_frequency_cutoff=opts.f_low, strain=strain,
+                         dyn_range_factor=pycbc.DYN_RANGE_FAC)
 metricParams.psd = psd
 
 logging.info("Calculating metric")
