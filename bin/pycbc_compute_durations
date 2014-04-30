@@ -8,7 +8,10 @@
 # =============================================================================
 #
 
-from optparse import OptionParser
+import argparse
+import pycbc
+import pycbc.version
+from pycbc import ahope
 import sqlite3
 import sys
 import os
@@ -16,16 +19,19 @@ import os
 from pylal import ligolw_sqlutils as sqlutils
 from pylal import ligolw_cbc_compute_durations as compute_dur
 
-from glue import git_version
 from glue import segments
 from glue import segmentsUtils
 from glue.ligolw import table
 from glue.ligolw import lsctables
 from glue.ligolw import dbtables
+from glue.ligolw import utils
+from glue.ligolw import ligolw
 from glue.ligolw.utils import process
 
 __prog__ = "pycbc_compute_durations"
 __author__ = "Collin Capano <cdcapano@physics.syr.edu>"
+__version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
 
 description = \
 "Computes durations for every row in the experiment_summary table in a " + \
@@ -43,50 +49,41 @@ def parse_command_line():
     Parse the command line, return options and check for consistency among the
     options.
     """
-    parser = OptionParser(
-        version = git_version.verbose_msg,
-        usage   = "%prog [options]",
-        description = description
-        )
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('--version', action='version', version=__version__)
 
-    parser.add_option( "-i", "--input", action = "store", type = "string",
-        default = None,
-        help = 
-            "Input database to read. Can only input one at a time."
-        )
-    parser.add_option( "-o", "--output", action = "store", type = "string",
-        default = None,
-        help =
-            "Output database to write to."
-        )
-    parser.add_option( "", "--livetime-program", action = "store", type = "string", default = None,
-        help = 
-            "Required; Set the name of the program whose entries in the " +
-            "search summary table will set the live time. Ex. inspiral, ringdown"
-        )
-    parser.add_option( "-t", "--tmp-space", action = "store", type = "string", default = None,
-        metavar = "PATH",
-        help = 
-            "Location of local disk on which to do work. This is optional; " +
-            "it is only used to enhance performance in a networked " +
-            "environment. "
-        )
-    parser.add_option( "-v", "--verbose", action = "store_true", default = False,
-        help =
-            "Be verbose."
-        )
+    parser.add_argument("-i", "--input", action="store", type=str,
+        required=True, metavar="INPUT_FILE",
+        help="Input database to read. Can only input one at a time.")
+    parser.add_argument("-o", "--output", action="store", type=str,
+        required=True, metavar="OUTPUT_FILE",
+        help="Output database to write to.")
+    parser.add_argument("-t", "--tmp-space", action="store", type=str,
+        default=None, metavar="PATH",
+        help="""Location of local disk on which to do work. This is optional;
+                it is only used to enhance performance in a networked 
+                environment.""")
+    parser.add_argument("-s", "--segment-file", action="store", type=str,
+        required=True, metavar="SEGMENT_FILE",
+        help="""The segment file containing the segments that have been
+                analysed by each interferometer. This should contain the
+                segments for all ifos using the same name. For e.g. if I set
+                --channel-name==AHOPE_SEGS I expect this file to contain 
+                H1:AHOPE_SEGS:1, L1:AHOPE_SEGS:1, ... The version number can
+                take any value but we should **not** have multiple version
+                numbers in the same document. Ie. do not include
+                H1:AHOPE_SEGS:1 **and** H1:AHOPE_SEGS:2. Ahope will produce
+                this file from its analysislogging_utils module.""")
+    parser.add_argument("-c", "--channel-name", action="store", type=str,
+        required=True, metavar="CHANNEL_NAME",
+        help="""The channel name to search for in the --segment-file. See help
+                for --segment-file for more information.""")
+    parser.add_argument("-v", "--verbose", action="store_true", default = False,
+        help="Be verbose.")
 
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
-    # check for required options and for self-consistency
-    if not options.input:
-        raise ValueError, "No input database specified."
-    if not options.output:
-        raise ValueError, "No output database specified."
-    if not options.livetime_program:
-        raise ValueError, "No livetime program specified."
-
-    return options, sys.argv[1:]
+    return args
 
 # =============================================================================
 #
@@ -144,35 +141,38 @@ class Durations:
 #       Generic Initilization
 #
 
-options, args = parse_command_line()
+args = parse_command_line()
+
+# DB content handler
+
+class ContentHandler(ligolw.LIGOLWContentHandler):
+        pass
+
+dbtables.use_in(ContentHandler)
 
 # get input database filename
-input_filename = options.input
+input_filename = args.input
 if not os.path.isfile( input_filename ):
     raise ValueError, "The input database, %s, is not there." % input_filename
 
 # Setup working databases and connections
-if options.verbose: 
+if args.verbose: 
     print >> sys.stderr, "Opening database..."
 
 working_filename = dbtables.get_connection_filename( 
-    input_filename, tmp_path = options.tmp_space, verbose = options.verbose )
+    input_filename, tmp_path=args.tmp_space, verbose=args.verbose )
 connection = sqlite3.connect( working_filename )
-if options.tmp_space:
-    dbtables.set_temp_store_directory(connection, options.tmp_space, verbose = options.verbose)
-dbtables.DBTable_set_connection( connection )
+# Link the ContentHandler to the SQL database
+ContentHandler.connection = connection
+if args.tmp_space:
+    dbtables.set_temp_store_directory(connection, args.tmp_space,
+                                                          verbose=args.verbose)
 xmldoc = dbtables.get_xml(connection)
-
-livetime_program = sqlutils.validate_option( options.livetime_program )
 
 # Add program to process and process params table
 
-# FIXME: remove the following two lines once boolean type
-# has been properly handled
-from glue.ligolw import types as ligolwtypes
-ligolwtypes.FromPyType[type(True)] = ligolwtypes.FromPyType[type(8)]
-
-proc_id = process.register_to_xmldoc(xmldoc, __prog__, options.__dict__, version = git_version.id)
+proc_id = process.register_to_xmldoc(xmldoc, __prog__, args.__dict__,
+                                                version=pycbc.version.git_hash)
 
 #
 #       Compute Durations
@@ -186,29 +186,25 @@ del time_slide_dict[ zero_lag_dict.keys()[0] ]
 # initialize duration bank
 dur_bank = Durations()
 
-sqlquery = """
-    SELECT value
-    FROM process_params
-    WHERE param == "-userTag"
-    GROUP BY value
-"""
-usertags = set(usertag[0] for usertag in connection.cursor().execute(sqlquery) )
-
 # determine single-ifo segments for each usertag
 ifo_segments = segments.segmentlistdict()
 datatypes = {}
 
-# FIXME: Not really sure why we're going round the houses to get FULL_DATA and
-# FIXME: PLAYGROUND. I guess the point is you want to see if a separate PLAYGROUND
-# FIXME: run was done and use it if so. Given that a -userTag command is pretty
-# FIXME: explicitly hardcoding lalapps_inspiral, I will set this to FULL_DATA if
-# FIXME: usertags returns garbage
-
-if not (set(usertags) & set(["FULL_DATA","PLAYGROUND"])):
-    usertags = ["FULL_DATA"]
+# In S5/S6 we ran seperate analyses for FULL_DATA and PLAYRGOUND. Here we can
+# reconstruct the playground results from the full_data inputs. 
+usertags = ["FULL_DATA"]
 
 for tag in (set(usertags) & set(["FULL_DATA","PLAYGROUND"])):
-    ifo_segments[tag] = compute_dur.get_single_ifo_segments(connection, program_name = livetime_program, usertag = tag)
+    fP = open(args.segment_file, 'r')
+    ahopeAnalysisSegDict = ahope.segment_utils.fromsegmentxml(fP, dict=True)
+    fP.close()
+    ifo_segments[tag] = segments.segmentlistdict([])
+    for key in ahopeAnalysisSegDict.keys():
+        # Key should be something like H1:DMT-SCIENCE:3
+        channel_details = key.split(':')
+        if channel_details[1] == args.channel_name:
+            ifo_segments[tag][channel_details[0]] = ahopeAnalysisSegDict[key]
+
     if tag == "FULL_DATA":
         datatypes[tag] = ["all_data","slide"]
     elif tag == "PLAYGROUND":
@@ -225,27 +221,27 @@ if "FULL_DATA" in usertags:
     ifo_segments[tag] = ifo_segments["FULL_DATA"] - ifo_segments["PLAYGROUND"]
     datatypes[tag] = ["exclude_play"]
 
-if options.verbose:
+if args.verbose:
     print >> sys.stderr, "Getting all veto categories in the experiment_summary table..."
 
 # get veto_segments
-veto_segments = compute_dur.get_veto_segments(xmldoc, options.verbose)
+veto_segments = compute_dur.get_veto_segments(xmldoc, args.verbose)
 
 for veto_def_name, veto_seg_dict in veto_segments.items():
-    if options.verbose:
+    if args.verbose:
         print >> sys.stderr, "\n\tThe DQ vetoes applied to the single-ifo segments are %s" % veto_def_name
     for usertag, ifo_seg_dict in ifo_segments.items():
         # compute the durations (or livetimes) for every possible instrument combo for every
         # slide in the time-slide table; the resulting durations dictionary has the following form:
         # durations[(on_instruments, veto_def_name, datatype, time_slide_id)] = livetime (in seconds)
 
-        if options.verbose:
+        if args.verbose:
             print >> sys.stderr, "\n\t\tCalculating live-time for %s zerolag time" % usertag
         # determine the durations for the zerolag time
         livetime_dict = compute_dur.get_livetimes(
             ifo_seg_dict - veto_seg_dict,
             zero_lag_dict,
-            verbose = options.verbose)
+            verbose=args.verbose)
         dur_bank.map_slides_to_durations(
             veto_def_name,
             datatypes[usertag][0],
@@ -253,12 +249,12 @@ for veto_def_name, veto_seg_dict in veto_segments.items():
 
         # determine the durations for each separate time-slide
         if len(datatypes[usertag]) > 1:
-            if options.verbose:
+            if args.verbose:
                 print >> sys.stderr, "\n\t\tCalculating live-time for each %s time slide" % usertag
             livetime_dict = compute_dur.get_livetimes(
                 ifo_seg_dict - veto_seg_dict,
                 time_slide_dict,
-                verbose = options.verbose)
+                verbose=args.verbose)
             dur_bank.map_slides_to_durations(
                 veto_def_name,
                 datatypes[usertag][1],
@@ -268,7 +264,7 @@ for veto_def_name, veto_seg_dict in veto_segments.items():
 # finished getting all durations, now populate the experiment_summary table
 # with them
 #
-if options.verbose:
+if args.verbose:
     print >> sys.stderr, "\nPopulating the experiment_summary table with results..."
 
 connection.create_function("retrieve_duration", 4, dur_bank.retrieve_duration)
@@ -296,10 +292,10 @@ connection.cursor().execute( sqlquery )
 
 connection.commit()
 connection.cursor().close()
-dbtables.put_connection_filename(options.output, working_filename,
-                                 verbose = options.verbose)
+dbtables.put_connection_filename(args.output, working_filename,
+                                 verbose=args.verbose)
 
-if options.verbose:
+if args.verbose:
     print >> sys.stderr, "Finished!"
 
 # set process end time

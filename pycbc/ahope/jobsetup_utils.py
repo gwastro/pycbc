@@ -59,7 +59,9 @@ def select_tmpltbankjob_instance(curr_exe, curr_section):
 
     if curr_exe == 'lalapps_tmpltbank_ahope':
         exe_class = LegacyTmpltbankExec(curr_section)
-    elif curr_exe == 'pycbc_geom_nonspinbank':
+    elif curr_exe == 'pycbc_geom_nonspinbank' or 'pycbc_aligned_stoch_bank':
+        # These two codes have the same interface (shared option groups) and
+        # can therefore used the same internal class
         exe_class = PyCBCTmpltbankExec(curr_section)
     else:
         # Should we try some sort of default class??
@@ -179,7 +181,7 @@ def select_genericjob_instance(workflow, exe_tag):
     elif exe_name == 'pycbc_timeslides':
         exe_class = PycbcTimeslidesExec(exe_tag)
     elif exe_name == 'pycbc_compute_durations':
-        exe_class = SQLInOutExec(exe_tag)
+        exe_class = ComputeDurationsExec(exe_tag)
     elif exe_name == 'pycbc_calculate_far':
         exe_class = SQLInOutExec(exe_tag)
     else:
@@ -896,7 +898,8 @@ class PycbcSqliteSimplifyExec(Executable):
 
 class SQLInOutJob(Job):
     """
-    The class responsible for making jobs for ligolw_dbinjfind.
+    The class responsible for making jobs for SQL codes taking one input and
+    one output.
     """
     def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None, tags=[]):
         Job.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
@@ -910,7 +913,7 @@ class SQLInOutJob(Job):
 
 class SQLInOutExec(Executable):
     """
-    The class corresponding to the ligolw_dbinjfind executable.
+    The class corresponding to SQL codes taking one input and one output.
     """
     def __init__(self, exe_name):
         Executable.__init__(self, exe_name, 'vanilla')
@@ -919,6 +922,25 @@ class SQLInOutExec(Executable):
         return SQLInOutJob(cp, self.exe_name, self.condor_universe,
                                            ifo=ifo, out_dir=out_dir, tags=tags)
 
+class ComputeDurationsJob(SQLInOutJob):
+    """
+    The class responsible for making jobs for pycbc_compute_durations.
+    """
+    def create_node(self, job_segment, input_file, summary_xml_file):
+        node = Node(self)
+        node.add_input(input_file, opt='input')
+        node.add_input(summary_xml_file, opt='segment-file')
+        node.make_and_add_output(job_segment, '.sql', 'output',
+                                 tags=self.tags)
+        return node
+
+class ComputeDurationsExec(SQLInOutExec):
+    """
+    The class corresponding to pycbc_compute_durations.
+    """
+    def create_job(self, cp, ifo, out_dir=None, tags=[]):
+        return ComputeDurationsJob(cp, self.exe_name, self.condor_universe,
+                                           ifo=ifo, out_dir=out_dir, tags=tags)
                             
 class LalappsInspinjJob(Job):
     """

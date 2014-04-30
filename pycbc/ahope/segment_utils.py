@@ -602,9 +602,12 @@ def fromsegmentxml(file, dict=False, id=None):
 
     seg_id = {}
     for seg_def in seg_def_table:
-        seg_id[int(seg_def.segment_def_id)] = str(seg_def.name)
+        # Here we want to encode ifo, channel name and version
+        full_channel_name = ':'.join([str(seg_def.ifos), str(seg_def.name), 
+                                                         str(seg_def.version)])
+        seg_id[int(seg_def.segment_def_id)] = full_channel_name
         if dict:
-            segs[str(seg_def.name)] = segments.segmentlist()
+            segs[full_channel_name] = segments.segmentlist()
 
     for seg in seg_table:
         if dict:

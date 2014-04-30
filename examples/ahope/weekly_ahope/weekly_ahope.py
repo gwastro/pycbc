@@ -28,7 +28,7 @@ __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
 __program__ = "weekly_ahope"
 
-import os, copy, shutil
+import os, copy, shutil, sys
 import argparse, ConfigParser
 import logging
 from glue import pipeline
@@ -66,6 +66,7 @@ fdDir = os.path.join(currDir, "full_data")
 tsDir = os.path.join(currDir, "time_slide_files")
 injDir = os.path.join(currDir, "inj_files")
 ppDir = os.path.join(currDir, "ahope_postproc")
+summ_dir = os.path.join(currDir, "summary")
 
 # Get segments and find where the data is
 # NOTE: not all files are returned to top level, so all_files has some gaps
@@ -114,6 +115,10 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                         timeSlideTags=timeSlideTags)
     all_files.extend(coincs)
     all_coincs.extend(coincs)
+    # Write the summary file if this is full_data
+    if tag == 'full_data':
+        anal_log_files = ahope.setup_analysislogging(workflow, segsFileList,
+                               insps, args, summ_dir, program_name=__program__)
 
 # Set up ahope's post-processing, this is still incomplete
 
@@ -125,10 +130,9 @@ postProcPrepFiles = ahope.setup_postprocessing_preparation(workflow,
                       injectionTags=inj_tags, injLessTag='full_data',
                       vetoFiles=segsFileList, vetoCats=ppVetoCats)
 
-# COMMENTED OUT WHILE BEING TESTED
 postProcFiles = ahope.setup_postprocessing(workflow, postProcPrepFiles,
-                                           ppDir, tags=[], vetoCats=ppVetoCats)
-
+                                           anal_log_files, ppDir, tags=[],
+                                           veto_cats=ppVetoCats)
 
 # Also run pipedown, for legacy comparison
 
