@@ -76,14 +76,17 @@ Each of these options will describe which subfunction to use. These are describe
 
 When using the setup_tmpltbank_pregenerated sub-module the following additional options apply in the [ahope-tmpltbank] section.
 
-* tmpltbank-pregenerated-bank - PATH - REQUIRED. This is the location of the pre-generated bank that is to be used for all ifos.
+* tmpltbank-pregenerated-bank = PATH - REQUIRED. This is the location of the pre-generated bank that is to be used for all ifos.
 
-No additional options apply when using setup_tmpltbank_without_frames.
+When using the setup_tmpltbank_without_frames sub-module the following additional options apply in the [ahope-tmpltbank] section:
+
+* tmpltbank-write-psd-file - OPTIONAL. If given the template bank code will also write a file containing the PSD. Currently only supported in pycbc template bank codes.
 
 When using the setup_tmpltbank_dax_generated sub-module the following additional options apply in the [ahope-templtbank] section.
 
 * tmpltbank-link-to-matchedfltr - OPTIONAL. If this is given ahope will attempt to ensure a one-to-one correspondence between template banks and matched-filter outputs. This may not work in all cases and should be considered an option to be used for comparing with ihope output.
 * tmpltbank-compatibility-mode - OPTIONAL. If this is given ahope will tile the template bank jobs in the same way as inspiral_hipe used to. This requires the link option above and that the template bank and matched-filtering jobs are reading the same amount of data in each job.
+* tmpltbank-write-psd-file - OPTIONAL. If given the template bank code will also write a file containing the PSD. Currently only supported in pycbc template bank codes.
 
 The following options apply only when using setup_tmpltbank_dax_generated and not using lalapps_tmpltbank
 
