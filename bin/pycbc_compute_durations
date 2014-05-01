@@ -9,14 +9,9 @@
 #
 
 from optparse import OptionParser
-try:
-    import sqlite3
-except ImportError:
-    # pre 2.5.x
-    from pysqlite2 import dbapi2 as sqlite3
+import sqlite3
 import sys
 import os
-import copy
 
 from pylal import ligolw_sqlutils as sqlutils
 from pylal import ligolw_cbc_compute_durations as compute_dur
@@ -27,7 +22,6 @@ from glue import segmentsUtils
 from glue.ligolw import table
 from glue.ligolw import lsctables
 from glue.ligolw import dbtables
-from glue.ligolw import utils
 from glue.ligolw.utils import process
 
 __prog__ = "pycbc_compute_durations"
