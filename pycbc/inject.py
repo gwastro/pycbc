@@ -145,29 +145,24 @@ class InjectionSet(object):
             else:
                 f_l = f_lower
 
-
-            if (inj.numrel_data != None and inj.numrel_data != ""):
-		        ### performing NR waveform injection
-		        # reading Hp and Hc from the frame files
-		        print "Performing NR injections:", inj.numrel_data
-                        swigrow = self.getswigrow(inj)
-		        Hp, Hc = lalinspiral.NRInjectionFromSimInspiral(swigrow, strain.delta_t)
-		        ### Converting to pycbc timeseries
-                        hp = TimeSeries(Hp.data.data[:], delta_t = Hp.deltaT, epoch=Hp.epoch)
-                        hc = TimeSeries(Hc.data.data[:], delta_t = Hc.deltaT, epoch=Hc.epoch)
-		        if (distance_scale != 1.0 and distance_scale > 0.0):
-		            dist_fact = 1.0/distance_scale
-		            hp = hp*dist_fact
-		            hc = hc*dist_fact
-		            
-                        end_time = float(hp.get_end_time())
-                        start_time = float(hp.get_start_time())
-
-                        if end_time < t0 or start_time > t1:
-                              continue
- 
+            if inj.numrel_data != None and inj.numrel_data != "":
+                # performing NR waveform injection
+                # reading Hp and Hc from the frame files
+                swigrow = self.getswigrow(inj)
+                Hp, Hc = lalinspiral.NRInjectionFromSimInspiral(swigrow,
+                                                                strain.delta_t)
+                # converting to pycbc timeseries
+                hp = TimeSeries(Hp.data.data[:], delta_t=Hp.deltaT,
+                                epoch=Hp.epoch)
+                hc = TimeSeries(Hc.data.data[:], delta_t=Hc.deltaT,
+                                epoch=Hc.epoch)
+                hp /= distance_scale
+                hc /= distance_scale
+                end_time = float(hp.get_end_time())
+                start_time = float(hp.get_start_time())
+                if end_time < t0 or start_time > t1:
+                    continue
             else:
-
                 # roughly estimate if the injection may overlap with the segment
                 end_time = inj.get_time_geocent()
                 inj_length = sim.SimInspiralTaylorLength(
@@ -180,7 +175,8 @@ class InjectionSet(object):
                 # compute the waveform time series
                 hp, hc = get_td_waveform(
                     inj, approximant=inj.waveform, delta_t=strain.delta_t,
-                    f_lower=f_l, distance=inj.distance * distance_scale, **self.extra_args)
+                    f_lower=f_l, distance=inj.distance * distance_scale,
+                    **self.extra_args)
                 hp._epoch += float(end_time)
                 hc._epoch += float(end_time)
                 if float(hp.start_time) > t1:
