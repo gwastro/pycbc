@@ -54,10 +54,6 @@ class Executable(object):
     def set_num_retries(self, number):
         self.add_profile("dagman", "retry", number)    
  
-#class DaxNode(Pegasus.DAX3.DAX):
-#    def __init__(self, filename):
-#        pass
-        
 class Node(object):    
     def __init__(self, executable):
         self.in_workflow = False   

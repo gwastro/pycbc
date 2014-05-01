@@ -161,11 +161,16 @@ class AhopeExecutable(Executable):
         # Determine the sections from the ini file that will configure
         # this executable
         sections = [self.name]
-        for tag in tags + [self.ifo]:
+        if self.ifo:
+            sec_tags = tags + [self.ifo]
+        else:
+            sec_tags = tags
+        for tag in sec_tags:
              section = '%s-%s' %(self.name, tag.lower())
              if cp.has_section(section):
                 sections.append(section)
         self.sections = sections   
+        
         # Do some basic sanity checking on the options      
         for sec1, sec2 in combinations(sections, 2):
             cp.check_duplicate_options(sec1, sec2, raise_error=True)
