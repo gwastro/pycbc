@@ -139,7 +139,7 @@ class AhopeExecutable(Executable):
         exe_path = cp.get('executables', name)
         if os.path.isfile(exe_path):
             logging.debug("Using %s executable "
-                          "at %s" % (exe_name, exe_path))
+                          "at %s" % (name, exe_path))
         else:
             raise TypeError("Failed to find %s executable " 
                             "at %s" % (name, exe_path))
