@@ -105,7 +105,7 @@ def get_waveform(approximant, phase_order, amplitude_order, spin_order, template
 ###############################################################################
 
 aprs = list(set(td_approximants() + fd_approximants()))
-psd_names = pycbc.psd.get_list()
+psd_names = pycbc.psd.get_lalsim_psd_list()
 
 print "STARTING"
 
@@ -115,7 +115,7 @@ parser.add_option("--param-file", dest="bank_file", help="Sngl or Sim Inspiral T
 parser.add_option("--match-file", dest="out_file",help="file to output match results", metavar="FILE")
 
 parser.add_option("--asd-file", dest="asd_file",help="ASD data", metavar="FILE")
-parser.add_option("--psd", dest="psd", help="Analytic PSD model: " + str(psd_names), choices=psd_names)
+parser.add_option("--psd", dest="psd", help="Analytic PSD model from LALSimulation", choices=psd_names)
 
 
 #Waveform generation Settings

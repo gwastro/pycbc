@@ -18,7 +18,6 @@ This modules contains functions reading, generating, and segmenting strain data
 """
 import logging, numpy, lal
 import pycbc.noise
-import pycbc.psd
 from pycbc import psd
 from pycbc.types import float32
 from pycbc.frame import read_frame
@@ -138,8 +137,8 @@ def from_cli(opt, dyn_range_fac=1):
         plen = int(opt.sample_rate / pdf) / 2 + 1
 
         logging.info("Making PSD for strain")
-        strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, 
-                                           pdf, opt.low_frequency_cutoff)
+        strain_psd = psd.from_string(opt.fake_strain, plen, 
+                                     pdf, opt.low_frequency_cutoff)
         
         logging.info("Making colored noise")
         strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate, 
@@ -196,16 +195,15 @@ def insert_strain_option_group(parser):
     data_reading_group.add_argument("--frame-cache", type=str, nargs="+",
                             help="Cache file containing the frame locations.")
     
-    #Read from cache file              
+    #Read from frame files              
     data_reading_group.add_argument("--frame-files",
                             type=str, nargs="+",
                             help="list of frame files")   
     
     #Generate gaussian noise with given psd           
     data_reading_group.add_argument("--fake-strain",
-                help="Name of model PSD for generating fake gaussian noise."
-                     " Choices are " + str(psd.get_list()) , 
-                     choices=psd.get_list())
+                help="Name of model PSD for generating fake gaussian noise.", 
+                     choices=psd.get_lalsim_psd_list())
     data_reading_group.add_argument("--fake-strain-seed", type=int, default=0,
                 help="Seed value for the generation of fake colored"
                      " gaussian noise")

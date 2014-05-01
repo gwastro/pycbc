@@ -62,7 +62,7 @@ class TestPSD(unittest.TestCase):
     def test_analytical(self):
         """Basic test of lalsimulation's analytical noise PSDs"""
         with self.context:
-            psd_list = pycbc.psd.analytical.get_list()
+            psd_list = pycbc.psd.analytical.get_lalsim_psd_list()
             self.assertTrue(psd_list)
             for psd_name in psd_list:
                 psd = pycbc.psd.analytical.from_string(psd_name, self.psd_len,

@@ -120,7 +120,7 @@ logging.info("Calculating metric")
 # Begin by calculating a metric
 metricParams = pycbc.tmpltbank.determine_eigen_directions(\
     metricParams, vary_fmax=opts.calculate_ethinca_metric,\
-    vary_density=opts.ethinca_calc_density)
+    vary_density=opts.ethinca_frequency_step)
 
 # This is used to calculate evalsCV and evecsCV with describe the rotations
 # needed to move into the principal component directions. evalsCV will be 1s.

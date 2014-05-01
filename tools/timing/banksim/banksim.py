@@ -138,7 +138,7 @@ parser.add_option("--match-file", dest="out_file", help="file to output match re
 
 #PSD Settings
 parser.add_option("--asd-file", dest="asd_file", help="two-column ASCII file containing ASD data", metavar="FILE")
-parser.add_option("--psd", dest="psd", help="Analytic PSD model: " + str(pycbc.psd.get_list()), choices=pycbc.psd.get_list())
+parser.add_option("--psd", dest="psd", help="Analytic PSD model from LALSimulation", choices=pycbc.psd.get_lalsim_psd_list())
 
 aprs = list(set(td_approximants() + fd_approximants()))
 #Template Settings
@@ -227,10 +227,10 @@ print("Number of Templates       : ",len(template_table))
 
 print("Reading and Interpolating PSD")
 if options.asd_file:
-    psd = pycbc.psd.from_txt(options.asd_file, filter_n,  
-                           filter_delta_f, options.filter_low_frequency_cutoff)
+    psd = pycbc.psd.read.from_txt(options.asd_file, filter_n, filter_delta_f, 
+                           options.filter_low_frequency_cutoff)
 elif options.psd:
-    psd = pycbc.psd.from_string(options.psd, filter_n, filter_delta_f, 
+    psd = pycbc.psd.analytic.from_string(options.psd, filter_n, filter_delta_f,
                            options.filter_low_frequency_cutoff) 
 
 psd *= DYN_RANGE_FAC **2

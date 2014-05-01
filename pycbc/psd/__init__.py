@@ -20,8 +20,8 @@ from pycbc.psd.estimate import *
 from pycbc.types import float64
 
 def required_opts(opt, parser, opt_list, required_by=None):
-    """Check that all the opts are defined 
-    
+    """Check that all the opts are defined
+
     Parameters
     ----------
     opt : object
@@ -39,11 +39,11 @@ def required_opts(opt, parser, opt_list, required_by=None):
             if required_by is not None:
                 err_str += ", required by %s" % required_by
             parser.error(err_str)
-    
+
 
 def ensure_one_opt(opt, parser, opt_list):
-    """  Check that one and only one in the opt_list is defined in opt
-    
+    """Check that one and only one in the opt_list is defined in opt
+
     Parameters
     ----------
     opt : object
@@ -52,7 +52,7 @@ def ensure_one_opt(opt, parser, opt_list):
         OptionParser instance.
     opt_list : list of strings
     """
-    
+
     the_one = None
     for name in opt_list:
         attr = name[2:].replace('-', '_')
@@ -60,13 +60,13 @@ def ensure_one_opt(opt, parser, opt_list):
             if the_one is None:
                 the_one = name
             else:
-                parser.error("%s and %s are mutually exculsive" \
+                parser.error("%s and %s are mutually exclusive" \
                               % (the_one, name))
-    
+
     if the_one is None:
         parser.error("you must supply one of the following %s" \
                       % (', '.join(opt_list)))
-            
+
 
 def from_cli(opt, length, delta_f, low_frequency_cutoff, 
              strain=None, dyn_range_factor=1):
@@ -106,31 +106,31 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
                       and not opt.psd_estimation:
         # PSD from lalsimulation or file
         if opt.psd_model:
-            psd = from_string(opt.psd_model, length, delta_f, f_low)           
+            psd = from_string(opt.psd_model, length, delta_f, f_low)
         elif opt.psd_file:
             psd = from_txt(opt.psd_file, length, 
-                           delta_f, f_low, is_asd_file=False)                          
+                           delta_f, f_low, is_asd_file=False)
         elif opt.asd_file:
             psd = from_txt(opt.asd_file, length, 
                            delta_f, f_low, is_asd_file=True)
-        
+
         psd *= dyn_range_factor ** 2
-           
+
     elif opt.psd_estimation and not (opt.psd_model or 
                                      opt.psd_file or opt.asd_file):
         # estimate PSD from data
         psd = welch(strain, avg_method=opt.psd_estimation,
                     seg_len=int(opt.psd_segment_length * sample_rate),
                     seg_stride=int(opt.psd_segment_stride * sample_rate))
-                    
+
         if delta_f != psd.delta_f:
-            psd = interpolate(psd, delta_f) 
-                    
+            psd = interpolate(psd, delta_f)
+
     if opt.psd_inverse_length:
         psd = inverse_spectrum_truncation(psd, 
             int(opt.psd_inverse_length * sample_rate),
             low_frequency_cutoff=f_low)
-            
+
     if opt.psd_output:
         (psd.astype(float64) / (dyn_range_factor ** 2)).save(opt.psd_output)
 
@@ -141,46 +141,44 @@ def insert_psd_option_group(parser):
     Adds the options used to call the pycbc.psd.from_cli function to an
     optparser as an OptionGroup. This should be used if you
     want to use these options in your code.
- 
+
     Parameters
     -----------
     parser : object
         OptionParser instance.
     """
     psd_options = parser.add_argument_group(
-                           "Options related to the noise PSD generation",
-                           "These options select the method of PSD generation."
-                           " The options --psd-model, --psd-file, --asd-file, "
-                           "and --psd-estimation are mutually exclusive.")
+                          "Options to select the method of PSD generation",
+                          "The options --psd-model, --psd-file, --asd-file, "
+                          "and --psd-estimation are mutually exclusive.")
     psd_options.add_argument("--psd-model",
-                           help="Get PSD from given analytical model. ", 
-                           choices=get_list()) 
+                          help="Get PSD from given analytical model. ", 
+                          choices=get_lalsim_psd_list())
     psd_options.add_argument("--psd-file",
-                           help="Get PSD using given PSD ASCII file")
+                          help="Get PSD using given PSD ASCII file")
     psd_options.add_argument("--asd-file",
-                           help="Get PSD using given ASD ASCII file")
-                                                  
+                          help="Get PSD using given ASD ASCII file")
     psd_options.add_argument("--psd-estimation",
-                           help="Measure PSD from the data, using given "
-                           "average method.",
-                           choices=["mean", "median", "median-mean"])
+                          help="Measure PSD from the data, using given "
+                          "average method.",
+                          choices=["mean", "median", "median-mean"])
     psd_options.add_argument("--psd-segment-length", type=float, 
                           help="(Required for --psd-estimation) The segment "
                                "length for PSD estimation (s)")
     psd_options.add_argument("--psd-segment-stride", type=float, 
                           help="(Required for --psd-estimation) The separation"
-                               " between consecutive segments (s)")                         
+                               " between consecutive segments (s)")
     psd_options.add_argument("--psd-inverse-length", type=float, 
                           help="(Optional) The maximum length of the impulse"
                           " response of the overwhitening filter (s)")
     psd_options.add_argument("--psd-output", 
                           help="(Optional) Write PSD to specified file")
 
-    
+
 def verify_psd_options(opt, parser):
     """Parses the CLI options and verifies that they are consistent and 
     reasonable.
-    
+
     Parameters
     ----------
     opt : object
@@ -191,9 +189,10 @@ def verify_psd_options(opt, parser):
         OptionParser instance.
     """
     ensure_one_opt(opt, parser, ['--psd-file', '--psd-model', 
-                                '--psd-estimation', '--asd-file'])
-                                
+                                 '--psd-estimation', '--asd-file'])
+
     if opt.psd_estimation:
         required_opts(opt, parser, 
-                      ['--psd-segment-stride', '--psd-segment-length' ],
+                      ['--psd-segment-stride', '--psd-segment-length'],
                       required_by = "--psd-estimation")
+

@@ -147,7 +147,7 @@ parser.add_argument("--verbose",action='store_true', default=False, help="Print 
 
 #PSD Settings
 parser.add_argument("--asd-file", dest="asd_file", help="two-column ASCII file containing ASD data", metavar="FILE")
-parser.add_argument("--psd", dest="psd", help="Analytic PSD model: " + str(pycbc.psd.get_list()), choices=pycbc.psd.get_list())
+parser.add_argument("--psd", dest="psd", help="Analytic PSD model from LALSimulation", choices=pycbc.psd.get_lalsim_psd_list())
 
 aprs = list(set(td_approximants() + fd_approximants()))
 

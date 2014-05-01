@@ -43,7 +43,7 @@ def %s(length, delta_f, low_freq_cutoff):
     return from_lalsimulation(lalsimulation.%s, length, delta_f, low_freq_cutoff)
 """ % (_name, _name, _name_prefix + _name))
 
-def get_list():
+def get_lalsim_psd_list():
     """Return a list of available reference PSD functions.
     """
     return _psd_list

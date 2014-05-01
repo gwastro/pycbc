@@ -143,7 +143,7 @@ logging.info('Calculating metric')
 metricParams = pycbc.tmpltbank.determine_eigen_directions(\
     metricParams, \
     vary_fmax=(opts.vary_fupper or opts.calculate_ethinca_metric),\
-    vary_density=opts.ethinca_calc_density)
+    vary_density=opts.ethinca_frequency_step)
 
 # Choose the discrete values of frequencies to use if --vary-fupper is used
 if not (opts.vary_fupper or opts.calculate_ethinca_metric):
