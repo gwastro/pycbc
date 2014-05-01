@@ -183,8 +183,8 @@ def taylorf2(**kwds):
     FTa5 = -(81.91/6.72 + 58.3/2.4 * eta) * lal.LAL_PI
     FTa6 = (664.3739519/6.9854400 + 16.0/3.0 * lal.LAL_PI*lal.LAL_PI - 
             17.12/1.05 * lal.LAL_GAMMA + 
-		 (4.1/4.8 * lal.LAL_PI*lal.LAL_PI - 134.543/7.776) * eta -
-		 94.403/3.024 * eta*eta - 7.75/3.24 * eta*eta*eta)
+            (4.1/4.8 * lal.LAL_PI*lal.LAL_PI - 134.543/7.776) * eta -
+            94.403/3.024 * eta*eta - 7.75/3.24 * eta*eta*eta)
     FTl6 = -8.56/1.05
     FTa7 = -(162.85/5.04 - 214.745/1.728 * eta - 193.385/3.024 * eta*eta) \
             * lal.LAL_PI

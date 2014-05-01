@@ -195,7 +195,7 @@ def calculate_ethinca_metric_comps(temp_params, metricParams):
     gammaVals[3] = g[0,0]
     gammaVals[4] = g[0,1]
     gammaVals[5] = g[1,1]
-	
+
     return gammaVals
 
 def output_sngl_inspiral_table(outputFile, tempBank, metricParams,\

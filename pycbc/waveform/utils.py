@@ -74,7 +74,7 @@ def unwrap_phase(vec, discont, offset):
         pval = val
 
     return nvec
-	    
+
 def phase_from_polarizations(h_plus, h_cross):
     """Return gravitational wave phase
 

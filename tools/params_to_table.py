@@ -60,9 +60,9 @@ outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 
 for values in params:
     if options.type == "sngl":
-    	tmplt = lsctables.SnglInspiral()
+        tmplt = lsctables.SnglInspiral()
     elif options.type == "sim":
-	tmplt = lsctables.SimInspiral()
+        tmplt = lsctables.SimInspiral()
 
     tmplt.process_id = proc_id
     index = 0 

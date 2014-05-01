@@ -163,7 +163,7 @@ class Job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         
         # Check that the executable actually exists
         if os.path.isfile(exe_path):
-	    logging.debug("Using %s executable "
+            logging.debug("Using %s executable "
                           "at %s" % (exe_name, exe_path))
         else:
             raise TypeError("Failed to find %s executable " 
