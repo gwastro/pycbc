@@ -63,6 +63,17 @@ class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
 
 lsctables.use_in(LIGOLWContentHandler)
 
+def legacy_approximant_name(apx):
+    """ Convert the old style xml approximant name to a name
+    and phase_order. Alex: I hate this function. Please delet this when we
+    use Collin's new tables.
+    """
+    apx = str(apx)
+    order = sim.GetOrderFromString(apx)
+    name = sim.GetStringFromApproximant(sim.GetApproximantFromString(apx))
+    return name, order
+    
+
 class InjectionSet(object):
     """Manages sets of injections: reads injections from LIGOLW XML files
     and injects them into time series.
@@ -171,10 +182,13 @@ class InjectionSet(object):
                 start_time = end_time - 2 * inj_length
                 if end_time < t0 or start_time > t1:
                    continue
+                   
+                name, phase_order = legacy_approximant_name(inj.waveform)
 
                 # compute the waveform time series
                 hp, hc = get_td_waveform(
-                    inj, approximant=inj.waveform, delta_t=strain.delta_t,
+                    inj, approximant=name, delta_t=strain.delta_t,
+                    phase_order=phase_order,
                     f_lower=f_l, distance=inj.distance * distance_scale,
                     **self.extra_args)
                 hp._epoch += float(end_time)

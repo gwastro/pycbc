@@ -6,7 +6,7 @@ export HTMLDIR=/home/${USER}/public_html/ahope/development/weekly_ahope/test
 mkdir -p $LOGPATH
 
 # Generate the workflow
-python weekly_ahope.py --config-files weekly_ahope_pycbc.ini pipedown.ini inj_pycbc.ini \
+python weekly_ahope.py --config-files weekly_ahope_pycbc.ini pipedown.ini inj.ini \
 --config-overrides ahope:start-time:${GPS_START_TIME} \
 ahope:end-time:${GPS_END_TIME} \
 ahope:ahope-html-basedir:${HTMLDIR} \
