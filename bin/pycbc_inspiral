@@ -79,7 +79,7 @@ else:
 logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 ctx = scheme.from_cli(opt)
-gwstrain = strain.from_cli(opt)
+gwstrain = strain.from_cli(opt, DYN_RANGE_FAC)
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
 
 with ctx:

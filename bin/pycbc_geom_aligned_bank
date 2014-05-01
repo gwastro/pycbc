@@ -111,7 +111,7 @@ logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
 if opts.psd_estimation:
     # FIXME: It would be nice if this was similar to psd.from_cli()
     logging.info("Obtaining h(t) for PSD generation")
-    strain = pycbc.strain.from_cli(opts)
+    strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
 else:
     strain = None
 

@@ -19,7 +19,7 @@ This modules contains functions reading, generating, and segmenting strain data
 import logging, numpy, lal
 import pycbc.noise
 import pycbc.psd
-from pycbc import psd, DYN_RANGE_FAC
+from pycbc import psd
 from pycbc.types import float32
 from pycbc.frame import read_frame
 from pycbc.inject import InjectionSet
@@ -73,7 +73,7 @@ def ensure_one_opt(opt, parser, opt_list):
         parser.error("you must supply one of the following %s" \
                       % (', '.join(opt_list)))
             
-def from_cli(opt):
+def from_cli(opt, dyn_range_fac=1):
     """Parses the CLI options related to strain data reading and conditioning.
 
     Parameters
@@ -81,8 +81,11 @@ def from_cli(opt):
     opt : object
         Result of parsing the CLI with OptionParser, or any object with the
         required attributes  (gps-start-time, gps-end-time, strain-high-pass, 
-        pad-data, sample-rate, (frame-cache or frame-files), channel-name, fake-strain, 
-        fake-strain-seed).
+        pad-data, sample-rate, (frame-cache or frame-files), channel-name, 
+        fake-strain, fake-strain-seed).
+        
+    dyn_range_fac: {float, 1}, optional
+        A large constant to reduce the dynamic range of the strain.
 
     Returns
     -------
@@ -109,7 +112,7 @@ def from_cli(opt):
         strain = highpass(strain, frequency=opt.strain_high_pass)
 
         logging.info("Converting to float32")
-        strain = (strain * DYN_RANGE_FAC).astype(float32)
+        strain = (strain * dyn_range_fac).astype(float32)
 
         logging.info("Resampling data")
         strain = resample_to_delta_t(strain, 1.0/opt.sample_rate)
@@ -142,7 +145,7 @@ def from_cli(opt):
             injections.apply(strain, opt.channel_name[0:2])
         
         logging.info("Converting to float32")
-        strain = (DYN_RANGE_FAC * strain).astype(float32)
+        strain = (dyn_range_fac * strain).astype(float32)
 
     if opt.injection_file:
         strain.injections = injections

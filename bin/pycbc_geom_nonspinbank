@@ -98,7 +98,7 @@ maxSpinMag = 0
 # If we are going to use h(t) to estimate a PSD we need h(t)
 if opts.psd_estimation:
     logging.info("Obtaining h(t) for PSD generation")
-    strain = pycbc.strain.from_cli(opts)
+    strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
 else:
     strain = None
 
