@@ -164,7 +164,10 @@ class TestBase(Command):
         self.test_modules = self.find_test_modules("test*.py")
 
         # Run from the build directory
-        os.environ['PYTHONPATH'] = self.build_dir + ":" + os.environ['PYTHONPATH']
+        if 'PYTHONPATH' in os.environ:
+            os.environ['PYTHONPATH'] = self.build_dir + ":" + os.environ['PYTHONPATH']
+        else:
+            os.environ['PYTHONPATH'] = self.build_dir
 
         test_results.append("\n" + (self.scheme + " tests ").rjust(30))
         for test in self.test_modules:
