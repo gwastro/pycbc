@@ -252,4 +252,46 @@ To get debugging information in the case of failures.::
 
     pegasus-analyzer /usr1/ahnitz/log/ahnitz/pegasus/weekly_ahope/run0011
 
+=======================
+Post-processing
+=======================
+
+-----------------------------------------
+Summary page
+-----------------------------------------
+
+An ahope summary page will be created at the end of your weekly ahope workflow. The directory is specified by the evironment varaible HTMLDIR that was set when you ran weekly_ahope.py to generate the workflow. For example::
+
+    /home/${USER}/public_html/ahope
+
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+Full data summary
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+A summary of the results are displayed in Section 3.
+
+Section 3.1 displays the search sensitivity of the detectors over time. The inspiral horizion distance is the distance an optimally-oriented equal-mass system would give SNR equal to 8.
+
+Section 3.2 to 3.4 contain cumulative histograms of coincident triggers against IFAR (inverse false-alarm rate). The blue triangles are coincident triggers and a table of the loudest events is provided below the plot. We use time slides to find background triggers and calculate the false-alarm rate as the number of triggers louder than a given trigger divided by the total background time. If a trigger is louder than all background triggers then we set its false-alarm rate to 0. A low false-alarm rate gives a high IFAR so we plot the trigger with an arrow pointing to the right. This indicates that its true IFAR is somewhere to the right.
+
+Section 3.2 includes hardware injections, so note that a number of these signals are recovered with 0 combined false-alarm rate. These would be detection candidates if they were not hardware injections.
+
+Section 3.4 removes hardware injections and times marked by CAT_3 vetoes.
+
+Section 3.5 shows the recovery of the simulated signals that were added in this workflow.
+
+-----------------------------------------
+Workflow visualization
+-----------------------------------------
+
+Pegasus has a tool called pegasus-plan to visualize workflows. To generate these charts and create an summary html page with this information, one would run::
+
+    export PPLOTSDIR=/home/ahnitz/public_html/ahope/pegasus_plots
+    pegasus-plots --plotting-level all --output ${PPLOTSDIR} /usr1/ahnitz/log/ahnitz/pegasus/weekly_ahope/run0011
+
+The Invocation Breakdown Chart section gives a snapshot of the workflow. You can click on the slices of the pie chart and it will report the number of failures, average runtime, and max/min runtime for that type of jobs in the workflow. The radio button labeled runtime will organize the pie chart by total runtime rather than the total number of jobs for each job type.
+
+The Workflow Execution Gantt Chart section breaks down the workflow how long it took to run each job. You can click on a job in the gantt chart and it will report the job name and runtime.
+
+The Host Over Time Chart section displays a gantt chart where you can see what jobs in the workflow ran on a given machine.
 
