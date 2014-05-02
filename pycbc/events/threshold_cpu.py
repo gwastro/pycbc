@@ -31,32 +31,34 @@ def threshold_numpy(series, value):
     vals = arr[locs]
     return locs, vals
 
-outl = outv = count = None
+outl = None
+outv = None
+count = None
 def threshold_inline(series, value):
     arr = numpy.array(series.data.view(dtype=numpy.float32), copy=False)
     global outl, outv, count
-    if outl is None:
+    if outl is None or len(outl) < len(series):
         outl = numpy.zeros(len(series), dtype=numpy.uint32)
-        outv = numpy.zeros(len(series), dtype=series.dtype)
+        outv = numpy.zeros(len(series), dtype=numpy.complex64)
         count = numpy.zeros(1, dtype=numpy.uint32)
         
     N = len(series)
     threshold = value**2.0
     code = """  
         float v = threshold;
-        int num = 8;
+        unsigned int num = 32;
         unsigned int t=0;
      
         #pragma omp parallel for ordered shared(t)
         for (unsigned int p=0; p<num; p++){
-            int start  = N * p / num;
-            int end    = N * (p+1) / num;
+            unsigned int start  = (N * p) / num;
+            unsigned int end    = (N * (p+1)) / num;
             unsigned int c = 0;
             
             for (unsigned int i=start; i<end; i++){
                 float r = arr[i*2];
                 float im = arr[i*2+1];
-                if ((r * r + im * im > v)){
+                if ((r * r + im * im) > v){
                     outl[c+start] = i;
                     outv[c+start] = std::complex<float>(r, im);
                     c++;
@@ -67,9 +69,9 @@ def threshold_inline(series, value):
             {
                 t+=c;
             }
-            memcpy(outl+t-c, outl+start, sizeof(unsigned int)*c);
-            memcpy(outv+t-c, outv+start, sizeof(std::complex<float>)*c);
-            
+            memmove(outl+t-c, outl+start, sizeof(unsigned int)*c);
+            memmove(outv+t-c, outv+start, sizeof(std::complex<float>)*c);
+
         }       
         
         count[0] = t;
@@ -77,6 +79,10 @@ def threshold_inline(series, value):
     inline(code, ['N', 'arr', 'outv', 'outl', 'count', 'threshold'],
            extra_compile_args=['-march=native  -O3  -fopenmp'],
            libraries=['gomp'])
-    return outl[0:count], outv[0:count]
+    num = count[0]
+    if num > 0:
+        return outl[0:num], outv[0:num]
+    else:
+        return [], []
 
-threshold=threshold_numpy
+threshold=threshold_inline
