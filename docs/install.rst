@@ -14,10 +14,11 @@ In order to install PyCBC, you need to have installed the following prerequisite
 * `argparse <https://pypi.python.org/pypi/argparse>`_ >= 1.2.0
 * `LALSuite <https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html>`_ (with swig bindings enabled)
 * `GLUE <https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html>`_
+* `pylal <https://www.lsc-group.phys.uwm.edu/daswg/projects/pylal.html>`_
 
 .. note::
     
-    These dependencies should already be installed on LDG clusters. 
+    Most of these dependencies should already be installed on LDG clusters. Lalsuite and glue are installed, but for many cases you will need to install your own version as these may be out of date with respect to the latest pycbc. pylal is not installed and you will need to install this yourself. We plan to remove pylal as a dependancy in the future.
 
 ===================
 Installing from git
