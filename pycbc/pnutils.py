@@ -27,62 +27,60 @@
 between quantities.
 """
 from __future__ import division
-import lal
+import lal, lalsimulation
 from numpy import log
 import numpy
 from scipy.optimize import bisect
 
 
-def mass1_mass2_to_tau0_tau3(mass1, mass2, f_lower):
-    m_total = mass1 + mass2
-    mu = mass1 * mass2 / m_total
-    eta = mu / m_total
-    tau3 = 1.0 / (8.0 * (lal.LAL_PI * lal.LAL_PI * f_lower**5)**(1.0/3.0) * m_total**(2.0/3.0) * eta)
-    tau0 = 5.0 / (256.0 * (lal.LAL_PI * f_lower) ** (8.0/3.0) * m_total**(5.0/3.0) * eta)
-    return tau0,tau3
-
-
-def tau0_tau3_to_mtotal_eta(tau0, tau3, f_lower):
-    t0q = 5.0 / (256.0 * (lal.LAL_PI * f_lower) ** (8.0/3.0) * tau0)
-    t3q = 1.0 / (8.0 * (lal.LAL_PI * lal.LAL_PI * f_lower**5) ** (1.0/3.0 ) * tau3)
-    eta = t3q * ( t0q / t3q ) ** (-2.0/3.0) ;
-    m_total = t0q / t3q;
-    return m_total,eta
-
-
-def tau0_tau3_to_mass1_mass2(tau0, tau3, f_lower):
-    t0q = 5.0 / (256.0 * ( lal.LAL_PI * f_lower)**( 8.0/3.0) * tau0)
-    t3q = 1.0 / (8.0 * (lal.LAL_PI * lal.LAL_PI * f_lower **5.0)**(1.0/3.0 ) * tau3)
-    eta = t3q * (t0q/t3q)**( -2.0/3.0 )
-    m_total = t0q / t3q
-    mass1 = 0.5 * m_total * (1.0 + (1.0-4.0*eta)**( 0.5 ))
-    mass2 = 0.5 * m_total * (1.0 - (1.0-4.0*eta)**( 0.5 ))
-    return mass1,mass2
-
-
 def mass1_mass2_to_mtotal_eta(mass1, mass2):
-    m_total = mass1 + mass2;
+    m_total = mass1 + mass2
     eta = (mass1 * mass2) / (m_total * m_total)
     return m_total,eta
-
 
 def mtotal_eta_to_mass1_mass2(m_total, eta):
     mass1 = 0.5 * m_total * (1.0 + (1.0 - 4.0 * eta)**0.5)
     mass2 = 0.5 * m_total * (1.0 - (1.0 - 4.0 * eta)**0.5)
     return mass1,mass2
 
+def mass1_mass2_to_mchirp_eta(mass1, mass2):
+    m_total, eta = mass1_mass2_to_mtotal_eta(mass1, mass2)
+    m_chirp = m_total * eta**(3./5.)
+    return m_chirp,eta
 
 def mchirp_eta_to_mass1_mass2(m_chirp, eta):
-    M = m_chirp / (eta ** (3.0/5.0))
-    return mtotal_eta_to_mass1_mass2( M, eta )
+    M = m_chirp / (eta**(3./5.))
+    return mtotal_eta_to_mass1_mass2(M, eta)
 
+def A0(f_lower):
+    """used in calculating chirp times: see Cokelaer, arxiv.org:0706.4437
+       appendix 1, also lalinspiral/python/sbank/tau0tau3.py
+    """
+    return 5. / (256. * (lal.LAL_PI * f_lower)**(8./3.))
 
-def mass1_mass2_to_mchirp_eta(mass1, mass2):
-    M = mass1 + mass2
-    mu = mass1 * mass2 / M
-    eta = mu / M
-    m_chirp = mu ** (3.0/5.0) * M ** (2.0/5.0)
-    return m_chirp, eta
+def A3(f_lower):
+    """another parameter used for chirp times"""
+    return lal.LAL_PI / (8. * (lal.LAL_PI * f_lower)**(5./3.))
+  
+def mass1_mass2_to_tau0_tau3(mass1, mass2, f_lower):
+    m_total,eta = mass1_mass2_to_mtotal_eta(mass1, mass2)
+    # convert to seconds
+    m_total = m_total * lal.LAL_MTSUN_SI
+    # formulae from arxiv.org:0706.4437
+    tau0 = A0(f_lower) / (m_total**(5./3.) * eta)
+    tau3 = A3(f_lower) / (m_total**(2./3.) * eta)
+    return tau0,tau3
+
+def tau0_tau3_to_mtotal_eta(tau0, tau3, f_lower):
+    m_total = (tau3 / A3(f_lower)) / (tau0 / A0(f_lower))
+    eta = m_total**(-2./3.) * (A3(f_lower) / tau3)
+    # convert back to solar mass units
+    return (m_total/lal.LAL_MTSUN_SI),eta
+
+def tau0_tau3_to_mass1_mass2(tau0, tau3, f_lower):
+    m_total,eta = tau0_tau3_to_mtotal_eta(tau0, tau3, f_lower)
+    return mtotal_eta_to_mass1_mass2(m_total, eta)
+
 
 def mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(mass1, mass2,
                                                   spin1z, spin2z):
@@ -91,9 +89,8 @@ def mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(mass1, mass2,
     # the spin of the heaviest body first
     heavy_spin = numpy.where(mass2 <= mass1, spin1z, spin2z)
     light_spin = numpy.where(mass2 > mass1, spin1z, spin2z)
-    beta, sigma, gamma, xs = get_beta_sigma_from_aligned_spins(eta,
-                                                               heavy_spin,
-                                                               light_spin)
+    beta, sigma, gamma, xs = get_beta_sigma_from_aligned_spins(
+        eta, heavy_spin, light_spin)
     return beta, sigma, gamma
 
 def get_beta_sigma_from_aligned_spins(eta, spin1z, spin2z):
@@ -135,20 +132,216 @@ def get_beta_sigma_from_aligned_spins(eta, spin1z, spin2z):
     gamma += (732985. / 2268. + 140. / 9. * eta) * delta * chiA
     return beta, sigma, gamma, chiS
 
+
 def solar_mass_to_kg(solar_masses):
     return solar_masses * lal.LAL_MSUN_SI
 
 def parsecs_to_meters(distance):
-    return distance *lal.LAL_PC_SI
+    return distance * lal.LAL_PC_SI
 
 def velocity_to_frequency(v, M):
-    return v**(3.0) / (float(M) * lal.LAL_MTSUN_SI * lal.LAL_PI)
+    return v**(3.0) / (M * lal.LAL_MTSUN_SI * lal.LAL_PI)
 
 def frequency_to_velocity(f, M):
-    return (lal.LAL_PI * float(M) * lal.LAL_MTSUN_SI * float(f))**(1.0/3.0)
+    return (lal.LAL_PI * M * lal.LAL_MTSUN_SI * f)**(1.0/3.0)
 
-def schwarzschild_isco(M):
-    return velocity_to_frequency( (1.0/6.0)**(0.5), M)
+
+def f_SchwarzISCO(M):
+    """
+    Innermost stable circular orbit (ISCO) for a test particle 
+    orbiting a Schwarzschild black hole
+
+    Parameters
+    ----------
+    M : float or numpy.array
+        Total mass in solar mass units
+
+    Returns
+    -------
+    f : float or numpy.array
+        Frequency in Hz
+    """
+    return velocity_to_frequency((1.0/6.0)**(0.5), M)
+
+def f_BKLISCO(m1, m2):
+    """
+    Mass ratio dependent ISCO derived from estimates of the final spin 
+    of a merged black hole in a paper by Buonanno, Kidder, Lehner 
+    (arXiv:0709.3839).  See also arxiv:0801.4297v2 eq.(5)
+
+    Parameters
+    ----------
+    m1 : float or numpy.array
+        First component mass in solar mass units
+    m2 : float or numpy.array
+        Second component mass in solar mass units
+
+    Returns
+    -------
+    f : float or numpy.array
+        Frequency in Hz
+    """
+    # q is defined to be in [0,1] for this formula
+    q = numpy.minimum(m1/m2, m2/m1)
+    return f_SchwarzISCO(m1+m2) * ( 1 + 2.8*q - 2.6*q*q + 0.8*q*q*q )
+
+def f_LightRing(M):
+    """
+    Gravitational wave frequency corresponding to the light-ring orbit,
+    equal to 1/(3**(3/2) pi M) : see InspiralBankGeneration.c
+
+    Parameters
+    ----------
+    M : float or numpy.array
+        Total mass in solar mass units
+
+    Returns
+    -------
+    f : float or numpy.array
+        Frequency in Hz
+    """
+    return 1.0 / (3.0**(1.5) * lal.LAL_PI * M * lal.LAL_MTSUN_SI)
+
+def f_ERD(M):
+    """
+    Effective RingDown frequency studied in Pan et al. (arXiv:0704.1964) 
+    found to give good fit between stationary-phase templates and 
+    numerical relativity waveforms [NB equal-mass & nonspinning!]
+    Equal to 1.07*omega_220/2*pi
+
+    Parameters
+    ----------
+    M : float or numpy.array
+        Total mass in solar mass units
+
+    Returns
+    -------
+    f : float or numpy.array
+        Frequency in Hz
+    """
+    return 1.07 * 0.5326 / (2*lal.LAL_PI * 0.955 * M * lal.LAL_MTSUN_SI)
+
+def f_FRD(m1, m2):
+    """
+    Fundamental RingDown frequency calculated from the Berti, Cardoso and 
+    Will (gr-qc/0512160) value for the omega_220 QNM frequency using 
+    mass-ratio dependent fits to the final BH mass and spin from Buonanno 
+    et al. (arXiv:0706.3732) : see also InspiralBankGeneration.c
+
+    Parameters
+    ----------
+    m1 : float or numpy.array
+        First component mass in solar mass units
+    m2 : float or numpy.array
+        Second component mass in solar mass units
+
+    Returns
+    -------
+    f : float or numpy.array
+        Frequency in Hz
+    """
+    m_total, eta = mass1_mass2_to_mtotal_eta(m1, m2)
+    tmp = ( (1. - 0.63*(1. - 3.4641016*eta + 2.9*eta**2)**(0.3)) /
+    (1. - 0.057191*eta - 0.498*eta**2) )
+    return tmp / (2.*lal.LAL_PI * m_total*lal.LAL_MTSUN_SI)
+
+def f_LRD(m1, m2):
+    """
+    Lorentzian RingDown frequency = 1.2*FRD which captures part of 
+    the Lorentzian tail from the decay of the QNMs
+
+    Parameters
+    ----------
+    m1 : float or numpy.array
+        First component mass in solar mass units
+    m2 : float or numpy.array
+        Second component mass in solar mass units
+
+    Returns
+    -------
+    f : float or numpy.array
+        Frequency in Hz
+    """
+    return 1.2 * f_FRD(m1, m2)
+
+def f_finalIMRPhenomB(m1, m2, s1z, s2z):
+    """
+    Calculates the IMRPhenomB final frequency f_cut via a LALSimulation 
+    function (see Ajith et al. arxiv:0710.2335v3)
+
+    Parameters
+    ----------
+    m1 : float
+        First component mass in solar masses
+    m2 : float
+        Second component mass in solar masses
+    s1z : float
+        First component dimensionless spin S_1/m_1^2 projected onto L
+    s2z : float
+        Second component dimensionless spin S_2/m_2^2 projected onto L
+
+    Returns
+    -------
+    f : float
+        Frequency in Hz
+    """
+    chi = lalsimulation.SimIMRPhenomBComputeChi(m1, m2, s1z, s2z)
+    return lalsimulation.SimIMRPhenomBGetFinalFreq(m1, m2, chi)
+
+def get_frequency_cutoffs():
+    """
+    Dictionary of functions with uniform API taking a 
+    parameter dict indexed on m1, m2, s1z, s2z
+
+    Returns
+    -------
+    cutoffFunctions : dict mapping strings to functions
+    """
+    cutoffFunctions = {
+      # functions depending on the total mass alone
+      "SchwarzISCO": lambda p: f_SchwarzISCO(p["m1"]+p["m2"]),
+      "LightRing"  : lambda p: f_LightRing(p["m1"]+p["m2"]),
+      "ERD"        : lambda p: f_ERD(p["m1"]+p["m2"]),
+      # functions depending on the 2 component masses
+      "BKLISCO"    : lambda p: f_BKLISCO(p["m1"], p["m2"]),
+      "FRD"        : lambda p: f_FRD(p["m1"], p["m2"]),
+      "LRD"        : lambda p: f_LRD(p["m1"], p["m2"]),
+      # functions depending on 2 component masses and aligned spins 
+      "MECO"       : lambda p: meco_frequency(p["m1"], p["m2"],
+                                             p["s1z"], p["s2z"]),
+  "finalIMRPhenomB": lambda p: f_finalIMRPhenomB(p["m1"], p["m2"],
+                                                p["s1z"], p["s2z"])
+    }
+    return cutoffFunctions
+
+def frequency_cutoff_from_name(name, m1, m2, s1z, s2z):
+    """
+    Returns the result of evaluating the frequency cutoff function
+    specified by 'name' on a template with given parameters. 
+    NB the 'finalIMRPhenomB' cutoff is an XLAL function and can only 
+    be evaluated on floats, the other functions are array-compatible.
+
+    Parameters
+    ----------
+    name : string
+        Name of the cutoff function
+    m1 : float or numpy.array
+        First component mass in solar masses
+    m2 : float or numpy.array
+        Second component mass in solar masses
+    s1z : float or numpy.array
+        First component dimensionless spin S_1/m_1^2 projected onto L
+    s2z : float or numpy.array
+        Second component dimensionless spin S_2/m_2^2 projected onto L
+
+    Returns
+    -------
+    f : float or numpy.array
+        Frequency in Hz
+    """
+    params = {"m1":m1, "m2":m2, "s1z":s1z, "s2z":s2z}
+    return get_frequency_cutoffs()[name](params)
+
 
 ##############################This code was taken from Andy ###########
 

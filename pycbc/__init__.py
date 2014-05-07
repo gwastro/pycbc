@@ -58,15 +58,17 @@ try:
     HAVE_OPENCL=True
 except ImportError:
     HAVE_OPENCL=False
-    
+
+# PyCBC-Specific Constants
+
 # Set the value we want any aligned memory calls to use
 # N.B.: *Not* all pycbc memory will be aligned to multiples
 # of this value
 
 PYCBC_ALIGNMENT = 32
 
-# PYCBC Specfic Constants
+# Dynamic range factor: a large constant for rescaling
+# GW strains.  This is 2**69 rounded to 17 sig.fig.
 
 DYN_RANGE_FAC =  5.9029581035870565e+20
-
 

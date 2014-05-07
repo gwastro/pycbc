@@ -7,6 +7,7 @@ from glue.ligolw import lsctables
 from glue.ligolw import ilwd
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
+from pycbc import pnutils
 from pycbc.tmpltbank.lambda_mapping import *
 
 def return_empty_sngl():
@@ -74,7 +75,7 @@ def convert_to_sngl_inspiral_table(params, proc_id):
         tmplt.eta = tmplt.mass1 * tmplt.mass2 / (tmplt.mtotal * tmplt.mtotal)
         tmplt.mchirp = tmplt.mtotal * tmplt.eta**(3./5.)
         # Currently using ISCO frequency for termination
-        tmplt.f_final = (1/6.)**(3./2.) / (LAL_PI * tmplt.mtotal * LAL_MTSUN_SI)
+        tmplt.f_final = pnutils.f_SchwarzISCO(tmplt.mtotal)
         tmplt.template_duration = 0 # FIXME
         tmplt.event_id = sngl_inspiral_table.get_next_id()
         # FIXME: Add gamma values
@@ -82,48 +83,59 @@ def convert_to_sngl_inspiral_table(params, proc_id):
 
     return sngl_inspiral_table
 
-def calculate_ethinca_metric_comps(temp_params, metricParams):
+def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2, 
+                                   spin1z=0., spin2z=0.):
     """
-    Calculate the Gamma components that are needed to do an ethinca metric.
-    Note that this only does the standard TaylorF2 metric (feel free to update
-    this!) The reason for this is that it might be better to use the \chi
-    coordinates for metric distance instead of \tau_0 and \tau_3.
+    Calculate the Gamma components needed to use the ethinca metric.
+    At present this outputs the standard TaylorF2 metric over the end time 
+    and chirp times \tau_0 and \tau_3.
+    A desirable upgrade might be to use the \chi coordinates [defined WHERE?] 
+    for metric distance instead of \tau_0 and \tau_3.
+    The lower frequency cutoff is currently hard-coded to be the same as the 
+    bank layout options fLow and f0 (which must be the same as each other).
 
     Parameters
     -----------
-    temp_params : Tuple
-        A tuple containing (mass1,mass2). # FIX: Just make m1 and m2 params
     metricParams : metricParameters instance
         Structure holding all the options for construction of the metric
         and the eigenvalues, eigenvectors and covariance matrix
         needed to manipulate the space.
+    ethincaParams: ethincaParameters instance
+        Structure holding options relevant to the ethinca metric computation.
 
     Returns
     --------
     numpy_array
-        A numpy array holding the 6 values to go into the various Gamma entries
-        in the sngl_inspiral table.
+        A numpy array holding 6 independent metric components in 
+        (end_time, tau_0, tau_3) coordinates to be stored in the Gamma0-5 
+        slots of a SnglInspiral object.
     """
-    # Get twicePNOrder
-    twicePNOrder = get_ethinca_order_from_string(metricParams.pnOrder)
-
-    # Get \tau_0 - \tau_3 coordinates of template
+    if (float(spin1z) != 0. or float(spin2z) != 0.):
+        raise NotImplementedError("Ethinca cannot at present be calculated "
+                                  "for nonzero component spins!")
     f0 = metricParams.f0
+    if f0 != metricParams.fLow: 
+        raise ValueError("If calculating ethinca the bank f0 value must be "
+                         "equal to f-low!")
+    if ethincaParams.fLow is not None and (
+        ethincaParams.fLow != metricParams.fLow):
+        raise NotImplementedError("An ethinca metric f-low different from the"
+                                  " bank metric f-low is not supported!")
+
+    twicePNOrder = ethinca_order_from_string(ethincaParams.pnOrder)
+
     piFl = LAL_PI * f0
-    totalMass = (temp_params[0] + temp_params[1])
-    eta = temp_params[0]*temp_params[1] / (totalMass*totalMass)
+    totalMass, eta = pnutils.mass1_mass2_to_mtotal_eta(mass1, mass2)
     totalMass = totalMass * LAL_MTSUN_SI
-    # tau0 = 5.0/(256.0*eta*(totalMass**(5./3.))*(piFl**(8./3.)))
-    # tau3 = LAL_PI/(8.0*eta*(totalMass**(2./3.))*(piFl**(5./3.)))
-    # t1 = LAL_TWOPI * f0 * tau0
-    # t2 = LAL_TWOPI * f0 * tau3
     v0cube = totalMass*piFl
     v0 = v0cube**(1./3.)
 
-    # Figure out appropriate f_max
-    tempFMax = (1/6.)**(3./2.) / (LAL_PI * totalMass)
+    # Get theoretical cutoff frequency and work out the closest 
+    # frequency for which moments were calculated
+    fMax_theor = pnutils.frequency_cutoff_from_name(
+        ethincaParams.cutoff, mass1, mass2, spin1z, spin2z)
     fMaxes = metricParams.moments['J4'].keys()
-    fMaxIdx = abs(numpy.array(fMaxes,dtype=float) -  tempFMax).argmin()
+    fMaxIdx = abs(numpy.array(fMaxes,dtype=float) - fMax_theor).argmin()
     fMax = fMaxes[fMaxIdx]
 
     # 3pN is a mess, so split it into pieces
@@ -158,14 +170,13 @@ def calculate_ethinca_metric_comps(temp_params, metricParams):
     Psi[1][7,0] = (77096675/1161216 + 378515*eta/24192 + 74045*eta*eta/8064)\
                     *v0cube*v0
 
-
     # Set the appropriate moments
     Js = numpy.zeros([18,3],dtype=float)
     for i in range(18):
         Js[i,0] = metricParams.moments['J%d'%(i)][fMax]
         Js[i,1] = metricParams.moments['log%d'%(i)][fMax]
         Js[i,2] = metricParams.moments['loglog%d'%(i)][fMax]
-  
+
     # Calculate the g matrix
     PNterms = [(0,0),(2,0),(3,0),(4,0),(5,1),(6,0),(6,1),(7,0)]
     PNterms = [term for term in PNterms if term[0] <= twicePNOrder]
@@ -175,7 +186,7 @@ def calculate_ethinca_metric_comps(temp_params, metricParams):
     gammaVals = numpy.zeros([6],dtype=float)
     gammaVals[0] = 0.5 * two_pi_flower_sq * \
                     ( Js[(1,0)] - (Js[(4,0)]*Js[(4,0)]) )
-    
+
     for m in [0, 1]:
         for k in PNterms:
             gammaVals[1+m] += 0.5 * two_pi_flower_sq * Psi[m][k] * \
@@ -198,9 +209,9 @@ def calculate_ethinca_metric_comps(temp_params, metricParams):
 
     return gammaVals
 
-def output_sngl_inspiral_table(outputFile, tempBank, metricParams,\
-                               calculate_ethinca_comps=False,
-                               programName="", optDict = {}, **kwargs):
+def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
+                               ethincaParams, programName="", optDict = {}, 
+                               **kwargs):
     """
     Function that converts the information produced by the various pyCBC bank
     generation codes into a valid LIGOLW xml file, containing a sngl_inspiral
@@ -217,44 +228,36 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,\
         Structure holding all the options for construction of the metric
         and the eigenvalues, eigenvectors and covariance matrix
         needed to manipulate the space.
-    calculate_ethinca_comps (key-word-argument) : Boolean
-        If set to True, this will calculate the ethinca metric components that
-        are needed when doing lalapps/ligolw_thinca coincidence. NOTE: These
-        moments are only valid for non-spinning systems and are currently only
-        calculated to 2PN order.
+    ethincaParams: ethincaParameters instance
+        Structure holding options relevant to the ethinca metric computation.
+        NOTE: The computation is currently only valid for non-spinning systems
+        and uses the TaylorF2 approximant.
     programName (key-word-argument) : string
         Name of the executable that has been run
     optDict (key-word argument) : dictionary
-        Dictionary of the command line arguments that were passed to the program
+        Dictionary of the command line arguments passed to the program
     kwargs : key-word arguments
         All other key word arguments will be passed directly to 
         ligolw_process.register_to_xmldoc
     """
     outdoc = ligolw.Document()
     outdoc.appendChild(ligolw.LIGO_LW())
-    proc_id = ligolw_process.register_to_xmldoc(outdoc, programName, optDict,\
+    proc_id = ligolw_process.register_to_xmldoc(outdoc, programName, optDict,
                                                 **kwargs).process_id
     sngl_inspiral_table = \
             convert_to_sngl_inspiral_table(tempBank, proc_id)
     # Calculate Gamma components if needed
-    if calculate_ethinca_comps:
+    if ethincaParams.doEthinca:
         for sngl in sngl_inspiral_table:
-            # Set tau_0 and tau_3 values needed for ethinca
-            eta = sngl.eta
-            totalMass = sngl.mtotal * LAL_MTSUN_SI
-            f0 = metricParams.f0
-            piFl = LAL_PI * f0
-            sngl.tau0 = 5.0/(256.0*eta*(totalMass**(5./3.))*(piFl**(8./3.)))
-            sngl.tau3 = LAL_PI/(8.0*eta*(totalMass**(2./3.))*(piFl**(5./3.)))
-            temp_params = (sngl.mass1, sngl.mass2)
-            GammaVals = calculate_ethinca_metric_comps(\
-                        temp_params, metricParams)
-            sngl.Gamma0 = GammaVals[0]
-            sngl.Gamma1 = GammaVals[1]
-            sngl.Gamma2 = GammaVals[2]
-            sngl.Gamma3 = GammaVals[3]
-            sngl.Gamma4 = GammaVals[4]
-            sngl.Gamma5 = GammaVals[5]
+            # Set tau_0 and tau_3 values needed for the calculation of 
+            # ethinca metric distances
+            (sngl.tau0,sngl.tau3) = pnutils.mass1_mass2_to_tau0_tau3(
+                  sngl.mass1, sngl.mass2, metricParams.f0) 
+            GammaVals = calculate_ethinca_metric_comps(
+                metricParams, ethincaParams, sngl.mass1, sngl.mass2,
+                sngl.spin1z, sngl.spin2z)
+            # assign the output Gamma0-5 values to the sngl object
+            for i in range(6): setattr(sngl, "Gamma"+str(i), GammaVals[i])
 
     outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 

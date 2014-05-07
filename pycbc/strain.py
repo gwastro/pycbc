@@ -81,7 +81,7 @@ def from_cli(opt, dyn_range_fac=1):
         Result of parsing the CLI with OptionParser, or any object with the
         required attributes  (gps-start-time, gps-end-time, strain-high-pass, 
         pad-data, sample-rate, (frame-cache or frame-files), channel-name, 
-        fake-strain, fake-strain-seed).
+        fake-strain, fake-strain-seed, gating_file).
         
     dyn_range_fac: {float, 1}, optional
         A large constant to reduce the dynamic range of the strain.
@@ -118,8 +118,9 @@ def from_cli(opt, dyn_range_fac=1):
             gate_params = numpy.loadtxt(opt.gating_file)
             if len(gate_params.shape) == 1:
                 gate_params = [gate_params]
-            strain = gate_data(strain, gate_params,
-                            data_start_time=opt.gps_start_time-opt.pad_data)
+            strain = gate_data(
+                strain, gate_params,
+                data_start_time=(opt.gps_start_time - opt.pad_data))
 
         logging.info("Resampling data")
         strain = resample_to_delta_t(strain, 1.0/opt.sample_rate)

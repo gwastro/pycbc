@@ -31,7 +31,7 @@ import pycbc.version
 import pycbc.psd
 import pycbc.strain
 import pycbc.types
-import pycbc.tmpltbank
+from pycbc import tmpltbank
 
 
 __author__  = "Ian Harry <ian.harry@ligo.org>"
@@ -41,24 +41,25 @@ __program__ = "pycbc_geom_nonspinbank"
 
 # Read command line options
 _desc = __doc__[1:]
-parser = argparse.ArgumentParser(description=_desc,
-           formatter_class=pycbc.tmpltbank.IndentedHelpFormatterWithNL)
+parser = argparse.ArgumentParser(
+    description=_desc,
+    formatter_class=tmpltbank.IndentedHelpFormatterWithNL)
 
 # Begin with code specific options
 parser.add_argument('--version', action='version', version=__version__)
-parser.add_argument("-V", "--verbose", action="store_true", default=False,\
+parser.add_argument("-V", "--verbose", action="store_true", default=False,
                     help="verbose output")
-parser.add_argument("-m", "--min-match", action="store", type=float,\
-                  default=None, help="Minimum match to generate bank with."+\
-                                     "REQUIRED OPTION.")
-parser.add_argument("-O", "--output-file",  help="Output file name. "+\
-                                               "REQUIRED OPTION.")
+parser.add_argument("-m", "--min-match", action="store", type=float,
+                    default=None, help="Minimum match to generate bank with. "
+                                       "REQUIRED.")
+parser.add_argument("-O", "--output-file",  help="Output file name. "
+                                                 "REQUIRED.")
 
 # Insert the metric calculation options
-pycbc.tmpltbank.insert_metric_calculation_options(parser)
+tmpltbank.insert_metric_calculation_options(parser)
 
 # Insert the mass range options
-pycbc.tmpltbank.insert_mass_range_option_group(parser, nonSpin=True)
+tmpltbank.insert_mass_range_option_group(parser, nonSpin=True)
 
 # Insert the PSD options
 pycbc.psd.insert_psd_option_group(parser)
@@ -67,7 +68,7 @@ pycbc.psd.insert_psd_option_group(parser)
 pycbc.strain.insert_strain_option_group(parser)
 
 # Add the ethinca calculation options
-pycbc.tmpltbank.insert_ethinca_calculation_option_group(parser)
+tmpltbank.insert_ethinca_metric_options(parser)
 
 opts = parser.parse_args()
 
@@ -83,15 +84,18 @@ if not opts.output_file:
 if not opts.min_match:
     parser.error("Must supply --min-match")
 opts.max_mismatch = 1 - opts.min_match
-pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
-metricParams=pycbc.tmpltbank.metricParameters.from_argparse(opts)
-pycbc.tmpltbank.verify_mass_range_options(opts, parser, nonSpin=True)
-massRangeParams=pycbc.tmpltbank.massRangeParameters.from_argparse(\
-                                                    opts,nonSpin=True)
+tmpltbank.verify_metric_calculation_options(opts, parser)
+metricParams=tmpltbank.metricParameters.from_argparse(opts)
+tmpltbank.verify_mass_range_options(opts, parser, nonSpin=True)
+massRangeParams=tmpltbank.massRangeParameters.from_argparse(opts,nonSpin=True)
 pycbc.psd.verify_psd_options(opts, parser)
 if opts.psd_estimation:
     pycbc.strain.verify_strain_options(opts, parser)
-pycbc.tmpltbank.verify_ethinca_calculation_options(opts, parser)
+tmpltbank.verify_ethinca_options(opts, parser)
+ethincaParams=tmpltbank.ethincaParameters.from_argparse(opts)
+
+# Ensure consistency of ethinca and bank metric parameters
+tmpltbank.check_ethinca_against_bank_params(ethincaParams, metricParams)
 
 maxSpinMag = 0
 
@@ -110,7 +114,7 @@ logging.info("Obtaining PSD")
 nyquistFreq = 2**numpy.ceil(numpy.log2(opts.f_upper))
 numSamples = int(round(nyquistFreq / opts.delta_f)) + 1
 
-psd = pycbc.psd.from_cli(opts, length=numSamples, delta_f=opts.delta_f, \
+psd = pycbc.psd.from_cli(opts, length=numSamples, delta_f=opts.delta_f,
                          low_frequency_cutoff=opts.f_low, strain=strain,
                          dyn_range_factor=pycbc.DYN_RANGE_FAC)
 metricParams.psd = psd
@@ -118,16 +122,16 @@ metricParams.psd = psd
 logging.info("Calculating metric")
 
 # Begin by calculating a metric
-metricParams = pycbc.tmpltbank.determine_eigen_directions(\
-    metricParams, vary_fmax=opts.calculate_ethinca_metric,\
+metricParams = tmpltbank.determine_eigen_directions(
+    metricParams, vary_fmax=opts.calculate_ethinca_metric,
     vary_density=opts.ethinca_frequency_step)
 
 # This is used to calculate evalsCV and evecsCV with describe the rotations
 # needed to move into the principal component directions. evalsCV will be 1s.
 logging.info("Calculating covariance matrix")
 
-vals = pycbc.tmpltbank.estimate_mass_range(1000000, massRangeParams,\
-       metricParams, metricParams.fUpper, covary=False)       
+vals = tmpltbank.estimate_mass_range(1000000, massRangeParams, metricParams,
+                                     metricParams.fUpper, covary=False)
 cov = numpy.cov(vals)
 evalsCV, evecsCV = numpy.linalg.eig(cov)
 metricParams.evecsCV = {}
@@ -136,8 +140,8 @@ metricParams.evecsCV[metricParams.fUpper] = evecsCV
 logging.info("Estimating extent of parameter space")
 
 # This is to get an estimate of the largest values of \chi1 and \chi2
-vals = pycbc.tmpltbank.estimate_mass_range(5000000, massRangeParams,\
-       metricParams, metricParams.fUpper, covary=True)
+vals = tmpltbank.estimate_mass_range(5000000, massRangeParams, metricParams,
+                                     metricParams.fUpper, covary=True)
 
 chi1Max = vals[0].max()
 chi1Min = vals[0].min()
@@ -245,9 +249,9 @@ if lower1DBoundary is not None:
         upperChi1 = chi1Max + 0.02*chi1Diff
     else:
         upperChi1 = chi1Min + upper1DBoundary*chi1Diff/100.
-    tempv1s, tempv2s = pycbc.tmpltbank.generate_hexagonal_lattice(upperChi1,\
-                      lowerChi1, chi2Max + 0.02*chi2Diff,\
-                      chi2Min - 0.02*chi2Diff, opts.max_mismatch)
+    tempv1s, tempv2s = tmpltbank.generate_hexagonal_lattice(
+        upperChi1, lowerChi1, chi2Max + 0.02*chi2Diff,
+        chi2Min - 0.02*chi2Diff, opts.max_mismatch)
     v1s.extend(tempv1s)
     v2s.extend(tempv2s)
 
@@ -268,14 +272,15 @@ logging.info("%d points in the lattice" % len(v1s))
 
 # Choose an initial set of points to begin comparing points to physical space
 rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
-        pycbc.tmpltbank.get_random_mass(2000000, massRangeParams)
+        tmpltbank.get_random_mass(2000000, massRangeParams)
 diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
 rMass1 = (rTotmass + diff)/2.
 rMass2 = (rTotmass - diff)/2.
 rChis = (rSpin1z + rSpin2z)/2.
 # Here we have a set of m1s,m2s and mapped to Xis below
-rXis = pycbc.tmpltbank.get_cov_params(rTotmass, rEta, rBeta, rSigma,\
-        rGamma, rChis, metricParams, metricParams.fUpper)
+rXis = tmpltbank.get_cov_params(
+    rTotmass, rEta, rBeta, rSigma, rGamma, rChis, metricParams, 
+    metricParams.fUpper)
 
 xis = (numpy.array(rXis)).T
 physMasses = numpy.array([rTotmass, rEta, rSpin1z, rSpin2z])
@@ -356,7 +361,7 @@ for iter, (v1, v2) in enumerate(zip(v1s, v2s)):
     # Reject point if it is too far from physical space
     if dist.min() > opts.max_mismatch * 5:
         continue
-    masses = pycbc.tmpltbank.get_physical_covaried_masses([v1,v2],\
+    masses = tmpltbank.get_physical_covaried_masses([v1,v2],\
                copy.deepcopy(bestMasses), copy.deepcopy(bestXis), req_match, \
                massRangeParams, metricParams, metricParams.fUpper, \
                giveUpThresh=20)
@@ -379,12 +384,12 @@ logging.info("Writing output")
 # Currently this is hardcoded to dump as a sngl_inspiral table. But this is
 # easily changed.
 
-pycbc.tmpltbank.output_sngl_inspiral_table(opts.output_file, tempBank,
-         metricParams, calculate_ethinca_comps=opts.calculate_ethinca_metric,\
-         programName=__program__,optDict=opts.__dict__,\
-         comment="", ifos=[""], version=pycbc.version.git_hash,\
-         cvs_repository='pycbc/'+pycbc.version.git_branch,\
-         cvs_entry_time=pycbc.version.date)
+tmpltbank.output_sngl_inspiral_table(
+    opts.output_file, tempBank, metricParams, ethincaParams, 
+    programName=__program__, optDict=opts.__dict__, comment="", ifos=[""],
+    version=pycbc.version.git_hash, 
+    cvs_repository='pycbc/'+pycbc.version.git_branch,
+    cvs_entry_time=pycbc.version.date)
 
 logging.info("Done")
 

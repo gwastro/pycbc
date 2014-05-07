@@ -96,7 +96,7 @@ def spa_tmplt_norm(psd, length, delta_f, f_lower):
     return norm_vec
 
 def spa_tmplt_end(**kwds):
-    return pycbc.pnutils.schwarzschild_isco(kwds['mass1']+kwds['mass2'])
+    return pycbc.pnutils.f_SchwarzISCO(kwds['mass1']+kwds['mass2'])
  
 def spa_distance(psd, mass1, mass2, lower_frequency_cutoff, snr=8):
     """ Return the distance at a given snr (default=8) of the SPA TaylorF2

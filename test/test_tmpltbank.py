@@ -65,6 +65,10 @@ class TmpltbankTestClass(unittest.TestCase):
         self.maxBHSpinMag = 0.9
         self.minTotalMass = 2.5
         self.maxTotalMass = 6.0
+        # Need to use F2 metric for ethinca
+        self.ethincaOrder = 'threePointFivePN'
+        self.ethincaCutoff = 'SchwarzISCO'
+        self.ethincaFreqStep = 10.
 
         self.segLen = 1./self.deltaF
         self.psdSize = int(self.segLen * self.sampleRate) / 2. + 1
@@ -98,6 +102,10 @@ class TmpltbankTestClass(unittest.TestCase):
 
         self.metricParams = metricParams
         self.massRangeParams = massRangeParams
+        self.ethincaParams = pycbc.tmpltbank.ethincaParameters(
+            self.ethincaOrder, self.ethincaCutoff, self.ethincaFreqStep,
+            doEthinca=True)
+
         self.xis = vals
 
     def test_eigen_directions(self):
@@ -257,12 +265,17 @@ class TmpltbankTestClass(unittest.TestCase):
 
     def test_ethinca_calc(self):
         # Just run the function, no checking output
-        masses1 = (2.,2.)
-        # Need to use F2 metric for ethinca
-        self.metricParams.pnOrder='threePointFivePN'
-        pycbc.tmpltbank.calculate_ethinca_metric_comps(masses1, \
-                                                       self.metricParams)
-        self.metricParams.pnOrder='taylorF4_45PN'
+        m1 = 2.
+        m2 = 2.
+        s1z = 0.
+        s2z = 0.
+        # ethinca calc breaks unless f0 = fLow
+        self.metricParams.f0 = self.metricParams.fLow
+        output = pycbc.tmpltbank.calculate_ethinca_metric_comps(
+            self.metricParams, self.ethincaParams, m1, m2, s1z, s2z)
+        print output
+        # restore initial f0 value
+        self.metricParams.f0 = self.f0
 
     def tearDown(self):
         pass

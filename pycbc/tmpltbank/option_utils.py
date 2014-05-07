@@ -17,6 +17,7 @@
 import argparse
 import textwrap
 from pycbc.tmpltbank.lambda_mapping import *
+from pycbc import pnutils
 
 class IndentedHelpFormatterWithNL(argparse.ArgumentDefaultsHelpFormatter):
     """
@@ -130,10 +131,10 @@ def verify_metric_calculation_options(opts, parser):
     Parses the metric calculation options given and verifies that they are
     correct.
 
-       Parameters
+    Parameters
     ----------
     opts : argparse.Values instance
-        Result of parsing the input options with OptionParser,
+        Result of parsing the input options with OptionParser
     parser : object
         The OptionParser instance.
     """
@@ -145,12 +146,14 @@ def verify_metric_calculation_options(opts, parser):
         parser.error("Must supply --f-upper")
     if not opts.delta_f:
         parser.error("Must supply --delta-f")
-    try:
-        if opts.calculate_ethinca_metric and (opts.f_low != opts.f0):
-            parser.error("If calculating ethinca --f0 must be equal to "
-                         "--f-low.")
-    except AttributeError:
-        pass
+    # want to move this check into the calculation and/or the tmpltbank 
+    # executables?
+    #try:
+    #    if opts.calculate_ethinca_metric and (opts.f_low != opts.f0):
+    #        parser.error("If calculating ethinca --f0 must be equal to "
+    #                     "--f-low.")
+    #except AttributeError:
+    #    pass
 
 
 class metricParameters:
@@ -158,8 +161,8 @@ class metricParameters:
     This class holds all of the options that are parsed in the function
     insert_metric_calculation_options
     and all products produced using these options. It can also be initialized
-    from the __init__ function providing directly the options normally
-    provided on the command line
+    from the __init__ function, providing directly the options normally
+    provided on the command line.
     """
     _psd = None
     _metric = None
@@ -171,7 +174,7 @@ class metricParameters:
         Initialize an instance of the metricParameters by providing all
         options directly. See the help message associated with any code
         that uses the metric options for more details of how to set each of
-        these. For e.g. pycbc_aligned_stoch_bank --help
+        these, e.g. pycbc_aligned_stoch_bank --help
         """
         self.pnOrder=pnOrder
         self.fLow=fLow
@@ -223,11 +226,11 @@ class metricParameters:
         In all cases x = f/f0.
 
         For the first entries the options are:
-        
+
         moments['J%d' %(i)][f_cutoff]
         This stores the integral of 
         x**((-i)/3.) * delta X / PSD(x)
-        
+
         moments['log%d' %(i)][f_cutoff]
         This stores the integral of 
         (numpy.log(x**(1./3.))) x**((-i)/3.) * delta X / PSD(x)
@@ -248,7 +251,7 @@ class metricParameters:
         computing the integral.
         """
         return self._moments
-  
+
     @moments.setter
     def moments(self, inMoments):
         self._moments=inMoments
@@ -415,10 +418,10 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
     Parses the metric calculation options given and verifies that they are
     correct.
 
-       Parameters
+    Parameters
     ----------
     opts : argparse.Values instance
-        Result of parsing the input options with OptionParser,
+        Result of parsing the input options with OptionParser
     parser : object
         The OptionParser instance.
     nonSpin : boolean, optional (default=False)
@@ -590,9 +593,52 @@ class massRangeParameters(object):
             return 1
 
         return 0
-            
 
-def insert_ethinca_calculation_option_group(parser):
+class ethincaParameters:
+    """
+    This class holds all of the options that are parsed in the function
+    insert_ethinca_option_group
+    and all products produced using these options. It can also be initialized
+    from the __init__ function, providing directly the options normally
+    provided on the command line
+    """
+    def __init__(self, pnOrder, cutoff, freqStep, fLow=None, doEthinca=False):
+        """
+        Initialize an instance of ethincaParameters by providing all
+        options directly.  See the insert_ethinca_option_group() function
+        for explanation or e.g. run pycbc_geom_nonspinbank --help
+        """
+        self.doEthinca=doEthinca
+        self.pnOrder=pnOrder
+        self.cutoff=cutoff
+        self.freqStep=freqStep
+        # independent fLow for ethinca metric is currently not used
+        self.fLow=fLow
+        # check that ethinca options make sense
+        if doEthinca and not (
+                cutoff in pnutils.get_frequency_cutoffs().keys()):
+            raise ValueError("Need a valid cutoff formula to calculate "
+                             "ethinca! Possible values are "+
+                             str(pnutils.get_frequency_cutoffs().keys()))
+        if doEthinca and not freqStep:
+            raise ValueError("Need to specify a cutoff frequency step to "
+                             "calculate ethinca! (ethincaFreqStep)")
+
+    @classmethod
+    def from_argparse(cls, opts):
+        """
+        Initialize an instance of the ethincaParameters class from an
+        argparse.OptionParser instance. This assumes that
+        insert_ethinca_option_group
+        and
+        verify_ethinca_options
+        have already been called before initializing the class.
+        """
+        return cls(opts.ethinca_pn_order, opts.ethinca_cutoff,
+            opts.ethinca_frequency_step, fLow=None,
+            doEthinca=opts.calculate_ethinca_metric)
+
+def insert_ethinca_metric_options(parser):
     """
     Adds the options used to calculate the ethinca metric, if required.
  
@@ -601,8 +647,6 @@ def insert_ethinca_calculation_option_group(parser):
     parser : object
         OptionParser instance.
     """
-    _cutoff_formulae = ["SchwarzISCO","BKLISCO","LightRing","FRD","ERD","LRD"]
-
     ethincaGroup = parser.add_argument_group("Ethinca metric options",
                     "Options used in the calculation of Gamma metric "
                     "components for the ethinca coincidence test.")
@@ -611,12 +655,17 @@ def insert_ethinca_calculation_option_group(parser):
                     help="If given, the ethinca metric will be calculated "
                     "and stored in the Gamma entries of the sngl_inspiral "
                     "table.  OPTIONAL")
-    ethincaGroup.add_argument("--ethinca-cutoff", action="store",
-                    default=None, choices=_cutoff_formulae,
+    ethincaGroup.add_argument("--ethinca-pn-order",
+                    default=None, choices=get_ethinca_orders(), 
+                    help="Specify a PN order to be used in calculating the "
+                    "ethinca metric.  OPTIONAL: if not specified, the same "
+                    "order will be used as for the bank metric.")
+    ethincaGroup.add_argument("--ethinca-cutoff",
+                    default=None, 
+                    choices=pnutils.get_frequency_cutoffs().keys(),
                     help="Specify an upper frequency cutoff formula for the "
                     "ethinca metric calculation.  REQUIRED if the "
-                    "calculate-ethinca-metric option is given.  **WARNING: "
-                    "Currently only SchwarzISCO is supported**")
+                    "calculate-ethinca-metric option is given.")
     ethincaGroup.add_argument("--ethinca-frequency-step", action="store",
                     default=10.,
                     help="Control the precision with which the upper "
@@ -626,21 +675,74 @@ def insert_ethinca_calculation_option_group(parser):
                     "assigned the result for the f_max closest to its "
                     "analytical cutoff formula.  OPTIONAL. UNITS=Hz")
 
-def verify_ethinca_calculation_options(opts, parser):
+def verify_ethinca_options(opts, parser):
     """
-    Parses the ethinca calculation options given and verifies that they are
-    correct.
+    Checks that the necessary options are given for the ethinca metric
+    calculation.
 
-       Parameters
+    Parameters
     ----------
     opts : argparse.Values instance
-        Result of parsing the input options with OptionParser,
+        Result of parsing the input options with OptionParser
     parser : object
         The OptionParser instance.
-    nonSpin : boolean, optional (default=False)
-        If this is provided the spin-related options will not be checked.
     """
-    if opts.calculate_ethinca_metric and not opts.ethinca_cutoff:
-        parser.error("When calculating the ethinca metric you must specify a "
-                     "high frequency cutoff formula!")
-    pass
+    if opts.calculate_ethinca_metric and not (opts.ethinca_cutoff in
+              pnutils.get_frequency_cutoffs().keys()):
+        parser.error("Need a valid cutoff formula to calculate ethinca! "
+                     "Possible values are "
+                     +str(pnutils.get_frequency_cutoffs().keys()))
+    if opts.calculate_ethinca_metric and not opts.ethinca_frequency_step:
+        parser.error("Need to specify a cutoff frequency step to calculate "
+                     "ethinca!")
+
+def check_ethinca_against_bank_params(ethincaParams, metricParams):
+    """
+    Cross-check the ethinca and bank layout metric calculation parameters
+    and set the ethinca metric PN order equal to the bank PN order if not
+    previously set.
+
+    Parameters
+    ----------
+    ethincaParams: instance of ethincaParameters
+    metricParams: instance of metricParameters
+    """
+    if ethincaParams.doEthinca is True:
+        if metricParams.f0 != metricParams.fLow:
+            raise ValueError("If calculating ethinca metric, f0 and f-low "
+                             "must be equal!")
+        if ethincaParams.fLow is not None and (
+                ethincaParams.fLow != metricParams.fLow):
+            raise ValueError("Ethinca metric calculation does not currently "
+                             "support a f-low value different from the bank "
+                             "metric!")
+        if ethincaParams.pnOrder == None:
+            ethincaParams.pnOrder = metricParams.pnOrder
+    else: pass
+
+def check_ethinca_against_bank_opts(opts, parser):
+    """
+    Cross-check the ethinca and bank layout metric options.
+    The Params-level function 'check_ethinca_against_bank_params' is 
+    preferred to this function since it operates directly on the Params
+    objects which are passed to the ethinca metric calculation, and can 
+    change their attributes if desired.
+
+    Parameters
+    ----------
+    opts : argparse.Values instance
+        Result of parsing the input options with OptionParser
+    parser : object
+        The OptionParser instance.
+    """
+    if ethincaParams.doEthinca is True:
+        if opts.f0 != opts.f_low:
+            parser.error("If calculating ethinca metric, f0 and f-low "
+                         "must be equal!")
+        if opts.ethinca_f_low is not None and (
+                opts.ethinca_f_low != opts.f_low):
+            parser.error("Ethinca metric calculation does not currently "
+                         "support a f-low value different from the bank "
+                         "metric!")
+    else: pass
+

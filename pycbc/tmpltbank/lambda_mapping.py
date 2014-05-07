@@ -119,40 +119,27 @@ def generate_inverse_mapping(order):
 
     return inv_mapping
 
-def get_ethinca_order_from_string(order):
-    """
-    This function will return the integer corresponding to twice the Post-
-    Newtonian order that the ethinca calculation should be calculated up to.
-    Currently is only valid for TaylorF2 metric.
-    
-    Effectively this returns for given values of order:
+def get_ethinca_orders():
+    ethinca_orders = {"zeroPN"           : 0,
+                      "onePN"            : 2,
+                      "onePointFivePN"   : 3,
+                      "twoPN"            : 4,
+                      "twoPointFivePN"   : 5,
+                      "threePN"          : 6,
+                      "threePointFivePN" : 7
+                     }
+    return ethinca_orders
 
-    'zeroPN' -> Return 0
-    'onePN' -> Return 2
-    'onePointFivePN' -> Return 3
-    'twoPN' -> Return 4
-    'twoPointFivePN' -> Return 5
-    'threePN' -> Return 6
-    'threePointFivePN' -> Return 7
-    Anythign else -> raise ValueError
+def ethinca_order_from_string(order):
     """
-    if order=='zeroPN':
-        return 0
-    elif order == 'onePN':
-        return 2
-    elif order == 'onePointFivePN':
-        return 3
-    elif order == 'twoPN':
-        return 4
-    elif order == 'twoPointFivePN':
-        return 5
-    elif order == 'threePN':
-        return 6
-    elif order == 'threePointFivePN':
-        return 7
-    else:
-        msg = "Order %s not valid for ethinca calculation." %(order)
-        raise ValueError(order)
+    Returns the integer corresponding to twice the post-Newtonian order 
+    used by the ethinca calculation. Currently valid only for TaylorF2 metric
+    """
+    if order in get_ethinca_orders().keys():
+      return get_ethinca_orders()[order]
+    else: raiseValueError("Order "+str(order)+" is not valid for ethinca"
+                          "calculation! Valid orders: "+
+                          str(get_ethinca_orders().keys()))
 
 def get_chirp_params(totmass, eta, beta, sigma, gamma, chis, f0, order):
     """
