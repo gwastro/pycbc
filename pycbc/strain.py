@@ -114,7 +114,7 @@ def from_cli(opt, dyn_range_fac=1):
         logging.info("Converting to float32")
         strain = (strain * dyn_range_fac).astype(float32)
 
-        if opt.gating_file:
+        if opt.gating_file is not None:
             logging.info("Gating glitches")
             gate_params = numpy.loadtxt(opt.gating_file)
             if len(gate_params.shape) == 1:
@@ -214,6 +214,11 @@ def insert_strain_option_group(parser):
     data_reading_group.add_argument("--injection-file", type=str, 
                       help="(optional) Injection file used to add "
                            "waveforms into the strain")                 
+
+    data_reading_group.add_argument("--gating-file", type=str,
+                    help="(optional) Text file of gating segments to apply."
+                        " Format of each line is (all times in secs):"
+                        "  gps_time zeros_half_width pad_half_width")
 
 def verify_strain_options(opts, parser):
     """Parses the strain data CLI options and verifies that they are consistent 
