@@ -68,13 +68,6 @@ For Developers:
     
     documentation
 
-Misc:
-
-.. toctree::
-   :maxdepth: 1
-  
-   ihope
-
 ===================
 Indexes and Tables
 ===================
