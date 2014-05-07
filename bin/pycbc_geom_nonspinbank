@@ -54,6 +54,14 @@ parser.add_argument("-m", "--min-match", action="store", type=float,
                                        "REQUIRED.")
 parser.add_argument("-O", "--output-file",  help="Output file name. "
                                                  "REQUIRED.")
+parser.add_argument("--random-seed", action="store", type=int,\
+                    default=None,
+                    help="""Random seed to use whenever the numpy random
+                            functions are called when doing the monte-carlo
+                            for obtaining the principal components and when
+                            translating all points back to physical space.
+                            If this is used the code should give the same
+                            output if run with the same random seed.""")
 
 # Insert the metric calculation options
 tmpltbank.insert_metric_calculation_options(parser)
@@ -96,6 +104,10 @@ ethincaParams=tmpltbank.ethincaParameters.from_argparse(opts)
 
 # Ensure consistency of ethinca and bank metric parameters
 tmpltbank.check_ethinca_against_bank_params(ethincaParams, metricParams)
+
+# Set random seed if needed
+if opts.random_seed is not None:
+    numpy.random.seed(opts.random_seed)
 
 maxSpinMag = 0
 

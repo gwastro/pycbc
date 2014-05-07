@@ -80,6 +80,13 @@ parser.add_argument("-n", "--num-failed-cutoff", action="store", type=int,\
                   "into the bank. OPTIONAL: default=1000000000 (this is "+\
                   "really large as --num-seeds provides the default "+\
                   "termination condition.")
+parser.add_argument("--random-seed", action="store", type=int,\
+                    default=None,
+                    help="""Random seed to use whenever the numpy random
+                            functions are called when doing the monte-carlo
+                            for doing the stochastic placement.
+                            If this is used the code should give the same
+                            output if run with the same random seed.""")
 
 # Insert the metric calculation options
 pycbc.tmpltbank.insert_metric_calculation_options(parser)
@@ -118,6 +125,9 @@ pycbc.psd.verify_psd_options(opts, parser)
 if opts.psd_estimation:
     pycbc.strain.verify_strain_options(opts, parser)
 pycbc.tmpltbank.verify_ethinca_calculation_options(opts, parser)
+# Set random seed if needed
+if opts.random_seed is not None:
+    numpy.random.seed(opts.random_seed)
 
 # FIXME: Move to noise.from_cli when its written
 # If we are going to use h(t) to estimate a PSD we need h(t)

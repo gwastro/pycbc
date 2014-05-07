@@ -70,6 +70,14 @@ parser.add_argument("-S", "--split-bank-num", action="store", type=int,\
                          "OPTIONAL")
 parser.add_argument("-F", "--filter-points", action="store_true", default=False,
                   help="Remove nearby points before generating the bank.")
+parser.add_argument("--random-seed", action="store", type=int,\
+                    default=None,
+                    help="""Random seed to use whenever the numpy random
+                            functions are called when doing the monte-carlo
+                            for obtaining the principal components and when
+                            translating all points back to physical space.
+                            If this is used the code should give the same
+                            output if run with the same random seed.""")
 
 # Insert the metric calculation options
 pycbc.tmpltbank.insert_metric_calculation_options(parser)
@@ -100,6 +108,9 @@ massRangeParams=pycbc.tmpltbank.massRangeParameters.from_argparse(opts)
 pycbc.psd.verify_psd_options(opts, parser)
 if opts.psd_estimation:
     pycbc.strain.verify_strain_options(opts, parser)
+# Set random seed if needed
+if opts.random_seed is not None:
+    numpy.random.seed(opts.random_seed)
 
 if opts.verbose:
     log_level = logging.DEBUG
@@ -316,6 +327,8 @@ if opts.nsbh_flag:
     cp.set('bank','nsbh-flag','')
 if opts.threed_lattice:
     cp.set('bank','threed-lattice','')
+if opts.random_seed:
+    cp.set('bank', 'random-seed', '')
 job.add_ini_opts(cp,'bank')
 job.add_condor_cmd('Requirements', 'Memory >= 1390')
 job.add_condor_cmd('request_memory', '1400')

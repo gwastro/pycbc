@@ -102,6 +102,15 @@ parser.add_argument("--skip-vec4-depth",action="store_true", default=False,\
 parser.add_argument("--skip-vec5-depth",action="store_true", default=False,\
                   help="Assume the 5th direction to have negligible depth. "+\
                        "OPTIONAL")
+parser.add_argument("--random-seed", action="store", type=int,\
+                    default=None,
+                    help="""Random seed to use whenever the numpy random
+                            functions are called when doing the monte-carlo
+                            for obtaining the principal components and when
+                            translating all points back to physical space.
+                            If this is used the code should give the same
+                            output if run with the same random seed.""")
+
 
 # Insert the mass range options
 pycbc.tmpltbank.insert_mass_range_option_group(parser)
@@ -134,6 +143,10 @@ if not opts.cov_evecs_file:
     parser.error("Must supply --cov-evecs-file")
 pycbc.tmpltbank.verify_mass_range_options(opts, parser)
 massRangeParams=pycbc.tmpltbank.massRangeParameters.from_argparse(opts)
+# Set random seed if needed
+if opts.random_seed is not None:
+    numpy.random.seed(opts.random_seed)
+
 
 # FIXME: Note that a bunch of the options to set this are not passed to this
 # function and are not used. f0 is used in place of fUpper, but this is only
