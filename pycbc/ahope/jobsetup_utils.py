@@ -814,7 +814,7 @@ class LigolwSSthincaExecutable(AhopeExecutable):
         AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
         if dqVetoName:
-            self.add_opt("vetoes-name", dqVetoName)
+            self.add_opt("--vetoes-name", dqVetoName)
 
     def create_node(self, jobSegment, coincSegment, inputFile):
         node = AhopeNode(self)
