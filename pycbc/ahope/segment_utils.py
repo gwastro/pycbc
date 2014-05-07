@@ -37,6 +37,11 @@ from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.ahope.ahope_utils import *
 from pycbc.ahope.jobsetup_utils import *
 
+class ContentHandler(ligolw.LIGOLWContentHandler):
+        pass
+
+lsctables.use_in(ContentHandler)
+
 def setup_segment_generation(workflow, out_dir, tag=None):
     """
     This function is the gateway for setting up the segment generation steps in an
@@ -586,7 +591,7 @@ def fromsegmentxml(file, dict=False, id=None):
 
     # load xmldocument and SegmentDefTable and SegmentTables
     xmldoc, digest = utils.load_fileobj(file, gz=file.name.endswith(".gz"),
-                             contenthandler=ligolw.DefaultLIGOLWContentHandler)
+                             contenthandler=ContentHandler)
 
     seg_def_table  = table.get_table(xmldoc,
                                      lsctables.SegmentDefTable.tableName)
