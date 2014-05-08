@@ -37,12 +37,8 @@ _scheme, _context = parse_args_all_schemes("FFT")
 # creating a test for each backend of each scheme.
 
 # Get our list of backends:
-if _scheme == 'cpu':
-    backends = pycbc.fft.cpu_backends
-elif _scheme == 'cuda':
-    backends = pycbc.fft.cuda_backends
-elif _scheme == 'opencl':
-    backends = pycbc.fft.opencl_backends
+
+backends = pycbc.fft._all_backends_list
 
 FFTTestClasses = []
 for backend in backends:
@@ -51,7 +47,7 @@ for backend in backends:
     # the additional property 'self.backend' set to the value
     # of backend.  One such class for each backend is appended
     # to the list
-    kdict = {'backend' : backend, 'scheme' : _scheme, 'context' : _context}
+    kdict = {'backends' : [backend], 'scheme' : _scheme, 'context' : _context}
     if _scheme == 'cpu' and backend == 'lal':
         kdict.update({"test_lalfft" : _test_lalfft})
     klass = type('{0}_{1}_test'.format(_scheme,backend),

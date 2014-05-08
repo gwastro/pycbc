@@ -37,148 +37,65 @@ from numpy import dtype
 
 from optparse import OptionGroup
 
-# Package initialization: loop over *possible* backends, trying to
-# import them, and adding to the list of available backends. Also set
-# the default backend for each of the three schemes, and it is an error
-# if we cannot import that.
+# These are global variables, that are modified by the various scheme-
+# dependent submodules, to maintain a list of all possible backends
+# for all possible schemes that are available at runtime.  This list
+# and dict are then used when parsing command-line options.
 
-# Helper function to import a possible module and update available.
+_all_backends_list = []
+_all_backends_dict = {}
 
-def _backend_update(key,possible,available):
-    mod = __import__('pycbc.fft.'+possible[key],
-                     fromlist=['pycbc.fft'])
-    available.update({key:mod})
+# The following is empty by default, and only used if the command line
+# option parsing sets it
 
-# The next part is a little tricky.  There are two issues:
-#  (1) The logical name for what the user specifies as the backend
-#      may not be something we can call the module (e.g., 'numpy')
-#  (2) We envision a scenario in which several backends supported
-#      in principle may not be available on all platforms (even
-#      all CPU platforms)
-#
-# We also define a module-level function, call that, and delete
-# it, so that we don't pollute the module-level namespace with all
-# of the variables and functions used in setting this up.
+_default_backends_list = []
 
-# The global lists, intended for users to check which backends are
-# available.  They should be empty if the corresponding scheme
-# is not available
-cpu_backends = []
-cuda_backends = []
-opencl_backends = []
-mkl_backends = []
+# The following helper function is in this top-level module because it
+# is used by the scheme-dependent files to write their version of the
+# _available_backends() function.
 
-# Ordinarily, the user will not pass a backend to the fft/ifft
-# functions.  Instead, he or she will set the default backend
-# for a particular scheme, and rely on that.  Below is the
-# machinery to handle that.  Initial values of the defaults
-# are here.
-_default_backends = {pycbc.scheme.CPUScheme: 'fftw'}
-# Note that the following dict is filled in when
-# _setup_fft runs
-_backend_names = {}
-
-if pycbc.HAVE_CUDA:
-    _default_backends.update({pycbc.scheme.CUDAScheme: 'cuda'})
-
-if pycbc.HAVE_OPENCL:
-    _default_backends.update({pycbc.scheme.OpenCLScheme: 'pyfft'})
-
-_default_backends.update({pycbc.scheme.MKLScheme: 'mkl'})
-
-def get_default_backend(scheme):
-    return _default_backends[scheme]
-
-def set_default_backend(scheme,backend_name):
-    global _default_backends
-    if backend_name not in _backend_names[scheme]:
-        raise ValueError("{0} is an invalid choice for default FFT backend".format(backend_name))
-    _default_backends.update({scheme:backend_name})
-
-# This is a private global variable, a dict of dicts indexed
-# by scheme and then by backend.  This double indexing yields
-# actual imported modules that can be called
-_fft_backends = {}
-
-# The function that will set all of the lists and dicts of what is really 
-# available (could be successfully imported).
-def _setup_fft():
-    # CPU backends
-    _cpu_possible_backends = {'numpy':'npfft',
-                              'lal':'lalfft',
-                              'mkl':'mkl',
-                              'fftw':'fftw',
-                             }
-    _cpu_backends = {}
-
-    # NOTE: Syntax below for iteration over dict keys should change in
-    # Python 3!
-    for backend in _cpu_possible_backends.iterkeys():
+def _list_available(possible_list,possible_dict):
+    # It possibly is strange that we have both a list and a dict.
+    # The reason for this is that the name the user specfies for a
+    # backend, e.g. 'numpy', may be something that the fft submodule
+    # cannot be called, so we need a dict mapping those names to the
+    # actual names of the modules.  However when we iterate, it must
+    # be in the defined order, because that represents a preference
+    # for which backends are most likely to be preferrable.  As a
+    # dict is unordered, we cannot simply use its keys for this purpose.
+    available_list = []
+    available_dict = {}
+    for backend in possible_list:
         try:
-            _backend_update(backend,_cpu_possible_backends,_cpu_backends)
-            cpu_backends.append(backend)
+            mod = __import__('pycbc.fft.'+possible_dict[backend],fromlist=['pycbc.fft'])
+            available_dict.update({backend:mod})
+            available_list.append(backend)
         except (ImportError, OSError):
             pass
+    return available_list, available_dict
 
-    _backend_names.update({pycbc.scheme.CPUScheme:cpu_backends})
+# The following is the function called by each scheme's setup to add whatever new
+# backends may have been found to the global list.  Since some backends may be
+# shared, we must first check to make sure that the item in the list is not already
+# in the global list, and we assume that the keys to the dict are in one-to-one
+# correspondence with the items in the list.
 
-    # set up mkl backend
-    try:
-        import mkl as _mkl_default
-        _mkl_backends = {'mkl': _mkl_default}
-        _fft_backends.update({pycbc.scheme.MKLScheme: _mkl_backends})
-    except:
-        pass
+def _update_global_available(new_list,new_dict,global_list,global_dict):
+    for item in new_list:
+        if item not in global_list:
+            global_list.append(item)
+            global_dict.update({item:new_dict[item]})
 
-    # CUDA backends;
-    if pycbc.HAVE_CUDA:
-        _cuda_possible_backends = {'cuda' : 'cufft',
-                                   'pyfft':'cuda_pyfft'}
-        _cuda_backends = {}
+# We import the three modules for the underlying architectures; each of
+# these files may in priniciple provide implementations of the scheme-
+# dependent functions for several schemes. We don't need to *use* these
+# sub-modules directly, but must import them for the side-effects they
+# have on the schemes themselves (adding the availble backends and
+# importing those modules)
 
-        # NOTE: Syntax below for iteration over dict keys should change in
-        # Python 3!
-        for backend in _cuda_possible_backends.iterkeys():
-            try:
-                _backend_update(backend,_cuda_possible_backends,_cuda_backends)
-                cuda_backends.append(backend)
-            except (ImportError, OSError):
-                pass
-
-        _backend_names.update({pycbc.scheme.CUDAScheme:cuda_backends})
-
-    # OpenCL backends
-    if pycbc.HAVE_OPENCL:
-        _opencl_possible_backends = {'pyfft' : 'cl_pyfft'}
-        _opencl_backends = {}
-
-        # NOTE: Syntax below for iteration over dict keys should change in
-        # Python 3!
-        for backend in _opencl_possible_backends.iterkeys():
-            try:
-                _backend_update(backend,_opencl_possible_backends,
-                                _opencl_backends)
-                opencl_backends.append(backend)
-            except (ImportError, OSError):
-                pass
-
-        _backend_names.update({pycbc.scheme.OpenCLScheme:opencl_backends})
-
-
-    # Finally, we update our global dict-of-dicts:
-    _fft_backends.update({pycbc.scheme.CPUScheme: _cpu_backends})
-
-    if pycbc.HAVE_CUDA:
-        _fft_backends.update({pycbc.scheme.CUDAScheme:
-                                  _cuda_backends})
-    if pycbc.HAVE_OPENCL:
-        _fft_backends.update({pycbc.scheme.OpenCLScheme:
-                                  _opencl_backends})
-
-# We're finally at the end of setup_fft(), so call it and delete it:
-_setup_fft()
-del _setup_fft
-del _backend_update
+import fft_cpu as _fft_cpu
+import fft_cuda as _fft_cuda
+import fft_opencl as _fft_opencl
 
 # The main purpose of the top-level module is to present a
 # uniform interface for a forward and reverse FFT, independent of
@@ -219,7 +136,7 @@ def _check_fft_args(invec,outvec):
     otype = outvec.kind
     return [iprec,itype,otype]
 
-def fft(invec,outvec,backend=None):
+def fft(invec,outvec,backends=[]):
     """ Fourier transform from invec to outvec.
 
     Perform a fourier transform. The type of transform is determined
@@ -243,10 +160,26 @@ def fft(invec,outvec,backend=None):
                 "Output length of R2HC must be half input length plus one")
     else:
         raise ValueError("Inconsistent dtypes for forward FFT")
-    thescheme = pycbc.scheme.mgr.state.__class__
-    if backend is None:
-        backend = get_default_backend(thescheme)
-    thebackend = _fft_backends[thescheme][backend]
+    backends_dict = pycbc.scheme.mgr.state.fft_backends_dict
+    backends_list = pycbc.scheme.mgr.state.fft_backends_list
+    if len(backends) > 0:
+        for backend in backends:
+            if backend in backends_list:
+                thebackend = backends_dict[backend]
+                break
+        else:
+            raise RuntimeError("None of specified FFT backends available")
+    elif len(_default_backends_list) > 0:
+        for backend in _default_backends_list:
+            if backend in backends_list:
+                thebackend = backends_dict[backend]
+                break
+        else:
+            raise RuntimeError("None of the command-line specified backends available")
+    else:
+        # This will fail if the backends_list is empty, but then so it should
+        thebackend = backends_dict[backends_list[0]]
+    # The following line is where all the work is done:
     thebackend.fft(invec,outvec,prec,itype,otype)
     # For a forward FFT, the length of the *input* vector is the length
     # we should divide by, whether C2C or R2HC transform
@@ -259,7 +192,7 @@ def fft(invec,outvec,backend=None):
         outvec._delta_t = 1.0/(invec._delta_f*len(invec))
         outvec *= invec._delta_f
 
-def ifft(invec, outvec, backend=None):
+def ifft(invec, outvec, backends=[]):
     """ Inverse fourier transform from invec to outvec.
 
     Perform an inverse fourier transform. The type of transform is determined
@@ -283,10 +216,26 @@ def ifft(invec, outvec, backend=None):
                 "Input length of R2HC@r must be half output length plus one")
     else:
         raise ValueError("Inconsistent dtypes for reverse FFT")
-    thescheme = pycbc.scheme.mgr.state.__class__
-    if backend is None:
-        backend = get_default_backend(thescheme)
-    thebackend = _fft_backends[thescheme][backend]
+    backends_dict = pycbc.scheme.mgr.state.fft_backends_dict
+    backends_list = pycbc.scheme.mgr.state.fft_backends_list
+    if len(backends) > 0:
+        for backend in backends:
+            if backend in backends_list:
+                thebackend = backends_dict[backend]
+                break
+        else:
+            raise RuntimeError("None of specified FFT backends available")
+    elif len(_default_backends_list) > 0:
+        for backend in _default_backends_list:
+            if backend in backends_list:
+                thebackend = backends_dict[backend]
+                break
+        else:
+            raise RuntimeError("None of the command-line specified backends available")
+    else:
+        # This will fail if the backends_list is empty, but then so it should
+        thebackend = backends_dict[backends_list[0]]
+    # The following line is where all the work is done:
     thebackend.ifft(invec,outvec,prec,itype,otype)
     # For an inverse FFT, the length of the *output* vector is the length
     # we should divide by, whether C2C or HC2R transform
@@ -300,15 +249,7 @@ def ifft(invec, outvec, backend=None):
         outvec *= invec._delta_f
 
 # Next we add all of the machinery to set backends and their options
-# from the command line.  There's a single function that will define
-# an option for setting the backend for each of the possible schemes,
-# since a given script might need to setup running under each of them.
-# That function also attempts to set up any options that any of the
-# backends themselves define.  Likewise, another function validates
-# all of the options.  The function to actually act from the command
-# line, called from_cli(), expects in addition to a parsed cli to be
-# given a scheme.  It therefore expects to be called *after* the scheme
-# has been determined, via the pycbc.scheme module's CLI interface.
+# from the command line.
 
 def insert_fft_option_group(parser):
     """
@@ -318,7 +259,7 @@ def insert_fft_option_group(parser):
     choices.  This function will also attempt to add any options exported
     by available backends through a function called insert_fft_options.
     These submodule functions should take the fft_group object as argument.
-    
+
     Parameters
     ----------
     parser : object
@@ -326,53 +267,26 @@ def insert_fft_option_group(parser):
     """
     fft_group = parser.add_argument_group("Options for selecting the"
                                           " FFT backend and controlling its performance"
-                                          " in this program.")   
-    # We have options for each of the backends, because a given script
-    # may not know on which platform it will run and may want to set a
-    # default backend and options for that backend for more than one
-    fft_group.add_argument("--fft-cpu-backend", 
-                      help="Determines the FFT CPU backend. "
-                           "Choices are: \n" + str(cpu_backends), 
-                      choices=cpu_backends, 
-                      default=_default_backends[pycbc.scheme.CPUScheme])
+                                          " in this program.")
+    # We have one argument to specify the backends.  This becomes the default list used
+    # if none is specified for a particular call of fft() of ifft().  Note that this
+    # argument expects a *list* of inputs, as indicated by the nargs='*'.
+    fft_group.add_argument("--fft-backends",
+                      help="Preference list of the FFT backends. "
+                           "Choices are: \n" + str(_all_backends_list),
+                      nargs='*',default=[])
 
-    for backend in _fft_backends[pycbc.scheme.CPUScheme].values():
+    for backend in _all_backends_list:
         try:
             backend.insert_fft_options(fft_group)
         except AttributeError:
             pass
 
-    if pycbc.HAVE_CUDA:
-        fft_group.add_argument("--fft-cuda-backend", 
-                               help="Determines the FFT CUDA backend. "
-                               "Choices are: \n" + str(cuda_backends), 
-                               choices=cuda_backends, 
-                               default=_default_backends[pycbc.scheme.CUDAScheme])
-
-        for backend in _fft_backends[pycbc.scheme.CUDAScheme].values():
-            try:
-                backend.insert_fft_options(fft_group)
-            except AttributeError:
-                pass
-
-    if pycbc.HAVE_OPENCL:
-        fft_group.add_argument("--fft-opencl-backend", 
-                               help="Determines the FFT OpenCL backend. "
-                               "Choices are: \n" + str(opencl_backends), 
-                               choices=opencl_backends, 
-                               default=_default_backends[pycbc.scheme.OpenCLScheme])
-
-        for backend in _fft_backends[pycbc.scheme.OpenCLScheme].values():
-            try:
-                backend.insert_fft_options(fft_group)
-            except AttributeError:
-                pass
-
 def verify_fft_options(opt, parser):
-    """Parses the FFT options and verifies that they are 
-       reasonable. 
-       
-  
+    """Parses the FFT options and verifies that they are
+       reasonable.
+
+
     Parameters
     ----------
     opt : object
@@ -381,34 +295,17 @@ def verify_fft_options(opt, parser):
     parser : object
         OptionParser instance.
     """
-    if opt.fft_cpu_backend not in cpu_backends:
-        parser.error("{0} is not a valid CPU FFT backend.".format(opt.fft_cpu_backend))
 
-    for backend in _fft_backends[pycbc.scheme.CPUScheme].values():
+    if len(opt.fft_backends) > 0:
+        for backend in opt.fft_backends:
+            if backend not in _all_backends_list:
+                parser.error("Backend {0} is not available".format(backend))
+
+    for backend in _all_backends_list:
         try:
             backend.verify_fft_options(opt,parser)
         except AttributeError:
             pass
-
-    if pycbc.HAVE_CUDA:
-        if opt.fft_cuda_backend not in cuda_backends:
-            parser.error("{0} is not a valid CUDA FFT backend.".format(opt.fft_cuda_backend))
-
-        for backend in _fft_backends[pycbc.scheme.CUDAScheme].values():
-            try:
-                backend.verify_fft_options(opt,parser)
-            except AttributeError:
-                pass
-
-    if pycbc.HAVE_OPENCL:
-        if opt.fft_opencl_backend not in opencl_backends:
-                parser.error("{0} is not a valid OpenCL FFT backend.".format(opt.fft_opencl_backend))
-
-        for backend in _fft_backends[pycbc.scheme.OpenCLScheme].values():
-            try:
-                backend.verify_fft_options(opt,parser)
-            except AttributeError:
-                pass
 
 def from_cli(opt):
     """Parses the command line options and sets the FFT backend
@@ -423,45 +320,14 @@ def from_cli(opt):
         the required attributes.
 
     Returns
-    kwdrets: dict
-        A dictionary containing keyword/value pairs returned by the
-        call(s) to backend.from_cli.  If that backend has no return
-        values, this dict will be empty (i.e., the top level never
-        returns anything; it just sets the default backend).
     """
-    kwdrets = {}
+    global _default_backends_list
 
-    thebackend = _fft_backends[pycbc.scheme.CPUScheme][opt.fft_cpu_backend]
-    set_default_backend(pycbc.scheme.CPUScheme,opt.fft_cpu_backend)
+    if len(opt.fft_backends) > 0:
+        _default_backends_list = opt.fft_backends
 
-    try:
-        tmpdict = thebackend.from_cli(opt)
-        if tmpdict is not None:
-            kwdrets.update(tmpdict)
-    except AttributeError:
-        pass
-
-    if pycbc.HAVE_CUDA:
-        thebackend = _fft_backends[pycbc.scheme.CUDAScheme][opt.fft_cuda_backend]
-        set_default_backend(pycbc.scheme.CUDAScheme,opt.fft_cuda_backend)
-
+    for backend in _all_backends_list:
         try:
-            tmpdict = thebackend.from_cli(opt)
-            if tmpdict is not None:
-                kwdrets.update(tmpdict)
+            backend.from_cli(opt)
         except AttributeError:
             pass
-
-    if pycbc.HAVE_OPENCL:
-        thebackend = _fft_backends[pycbc.scheme.OpenCLScheme][opt.fft_opencl_backend]
-        set_default_backend(pycbc.scheme.OpenCLScheme,opt.fft_opencl_backend)
-
-        try:
-            tmpdict = thebackend.from_cli(opt)
-            if tmpdict is not None:
-                kwdrets.update(tmpdict)
-        except AttributeError:
-            pass
-
-    return kwdrets
-    

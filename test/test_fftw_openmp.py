@@ -37,7 +37,7 @@ parse_args_cpu_only("FFTW openmp backend")
 
 # See if we can get set the FFTW backend to 'openmp'; if not, say so and exit.
 
-if 'fftw' in pycbc.fft.cpu_backends:
+if 'fftw' in pycbc.fft._all_backends_list:
     import pycbc.fft.fftw
     try:
         pycbc.fft.fftw.set_threads_backend('openmp')
@@ -48,14 +48,13 @@ else:
     print "FFTW does not seem to be an available CPU backend; skipping openmp thread tests"
     _exit(0)
 
-print pycbc.fft.fftw.HAVE_FFTW_THREADED
 # Now set the number of threads to something nontrivial
 
-# Most of the work is now done in fft_base.  
+# Most of the work is now done in fft_base.
 
 FFTTestClasses = []
-kdict = {'backend' : 'fftw',
-         'scheme' : 'cpu', 
+kdict = {'backends' : ['fftw'],
+         'scheme' : 'cpu',
          'context' : CPUScheme(num_threads=2)}
 klass = type('FFTW_OpenMP_test',
              (_BaseTestFFTClass,),kdict)

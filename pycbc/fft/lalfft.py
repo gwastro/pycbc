@@ -37,12 +37,12 @@ from lal import CreateReverseCOMPLEX8FFTPlan as _CreateReverseCOMPLEX8FFTPlan
 from lal import CreateReverseREAL8FFTPlan as _CreateReverseREAL8FFTPlan
 from lal import CreateReverseREAL4FFTPlan as _CreateReverseREAL4FFTPlan
 
-from pycbc.lalwrap import XLALCOMPLEX16VectorFFT as _COMPLEX16VectorFFT
-from pycbc.lalwrap import XLALCOMPLEX8VectorFFT as _COMPLEX8VectorFFT
-from pycbc.lalwrap import XLALREAL8ForwardFFT as _REAL8ForwardFFT
-from pycbc.lalwrap import XLALREAL4ForwardFFT as _REAL4ForwardFFT
-from pycbc.lalwrap import XLALREAL8ReverseFFT as _REAL8ReverseFFT
-from pycbc.lalwrap import XLALREAL4ReverseFFT as _REAL4ReverseFFT
+from lal import COMPLEX16VectorFFT as _COMPLEX16VectorFFT
+from lal import COMPLEX8VectorFFT as _COMPLEX8VectorFFT
+from lal import REAL8ForwardFFT as _REAL8ForwardFFT
+from lal import REAL4ForwardFFT as _REAL4ForwardFFT
+from lal import REAL8ReverseFFT as _REAL8ReverseFFT
+from lal import REAL4ReverseFFT as _REAL4ReverseFFT
 
 from optparse import OptionGroup
 
@@ -78,6 +78,11 @@ _reverse_fft_fn_dict = {('double','complex','complex') : _COMPLEX16VectorFFT,
                     ('double','complex','real') : _REAL8ReverseFFT,
                     ('single','complex','real') : _REAL4ReverseFFT}
 
+_newlalvec = {('single','real') : lal.CreateREAL4Vector,
+              ('double','real') : lal.CreateREAL8Vector,
+              ('single','complex') : lal.CreateCOMPLEX8Vector,
+              ('double','complex') : lal.CreateCOMPLEX16Vector}
+
 def _get_fwd_plan(prec,itype,otype,inlen):
     try:
         theplan, mlvl = _forward_plans[(prec,itype,otype,inlen)]
@@ -107,11 +112,23 @@ def _get_inv_plan(prec,itype,otype,outlen):
 
 def fft(invec,outvec,prec,itype,otype):
     theplan = _get_fwd_plan(prec,itype,otype,len(invec))
-    _forward_fft_fn_dict[(prec,itype,otype)](outvec,invec,theplan)
+    inlal = _newlalvec[(prec,itype)](len(invec))
+    outlal = _newlalvec[(prec,otype)](len(outvec))
+    inlal.data[:] = invec.numpy()
+    _forward_fft_fn_dict[(prec,itype,otype)](outlal,inlal,theplan)
+    outvec._data[:] = outlal.data
+    del inlal
+    del outlal
 
 def ifft(invec,outvec,prec,itype,otype):
     theplan = _get_inv_plan(prec,itype,otype,len(outvec))
-    _reverse_fft_fn_dict[(prec,itype,otype)](outvec,invec,theplan)
+    inlal = _newlalvec[(prec,itype)](len(invec))
+    outlal = _newlalvec[(prec,otype)](len(outvec))
+    inlal.data[:] = invec.numpy()
+    _reverse_fft_fn_dict[(prec,itype,otype)](outlal,inlal,theplan)
+    outvec._data[:] = outlal.data
+    del inlal
+    del outlal
 
 def insert_fft_options(optgroup):
     """
@@ -122,16 +139,16 @@ def insert_fft_options(optgroup):
     optgroup: fft_option
        OptionParser argument group whose options are extended
     """
-    optgroup.add_argument("--lalfft-measure-level", 
+    optgroup.add_argument("--lalfft-measure-level",
                       help="Determines the measure level used in planning "
-                           "LAL-wrapped FFTs; allowed values are: " + str([0,1,2,3]), 
+                           "LAL-wrapped FFTs; allowed values are: " + str([0,1,2,3]),
                       type=int, default=_default_measurelvl)
 
 def verify_fft_options(opt,parser):
-    """Parses the FFT options and verifies that they are 
-       reasonable. 
-       
-  
+    """Parses the FFT options and verifies that they are
+       reasonable.
+
+
     Parameters
     ----------
     opt : object
