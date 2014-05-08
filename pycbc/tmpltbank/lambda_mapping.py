@@ -120,6 +120,10 @@ def generate_inverse_mapping(order):
     return inv_mapping
 
 def get_ethinca_orders():
+    """
+    Returns the dictionary mapping TaylorF2 PN order names to twice-PN 
+    orders (powers of v/c)
+    """
     ethinca_orders = {"zeroPN"           : 0,
                       "onePN"            : 2,
                       "onePointFivePN"   : 3,
@@ -132,14 +136,22 @@ def get_ethinca_orders():
 
 def ethinca_order_from_string(order):
     """
-    Returns the integer corresponding to twice the post-Newtonian order 
+    Returns the integer giving twice the post-Newtonian order 
     used by the ethinca calculation. Currently valid only for TaylorF2 metric
+
+    Parameters
+    ----------
+    order : string
+    
+    Returns
+    -------
+    int
     """
     if order in get_ethinca_orders().keys():
       return get_ethinca_orders()[order]
-    else: raiseValueError("Order "+str(order)+" is not valid for ethinca"
-                          "calculation! Valid orders: "+
-                          str(get_ethinca_orders().keys()))
+    else: raise ValueError("Order "+str(order)+" is not valid for ethinca"
+                           "calculation! Valid orders: "+
+                           str(get_ethinca_orders().keys()))
 
 def get_chirp_params(totmass, eta, beta, sigma, gamma, chis, f0, order):
     """

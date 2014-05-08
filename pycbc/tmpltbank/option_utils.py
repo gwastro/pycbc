@@ -146,15 +146,6 @@ def verify_metric_calculation_options(opts, parser):
         parser.error("Must supply --f-upper")
     if not opts.delta_f:
         parser.error("Must supply --delta-f")
-    # want to move this check into the calculation and/or the tmpltbank 
-    # executables?
-    #try:
-    #    if opts.calculate_ethinca_metric and (opts.f_low != opts.f0):
-    #        parser.error("If calculating ethinca --f0 must be equal to "
-    #                     "--f-low.")
-    #except AttributeError:
-    #    pass
-
 
 class metricParameters:
     """
