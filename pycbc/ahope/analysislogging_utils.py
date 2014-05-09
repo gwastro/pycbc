@@ -36,7 +36,7 @@ from glue.ligolw.utils import process
 from glue.segmentdb import segmentdb_utils
 
 def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
-                          program_name="ahope"):
+                          program_name="ahope", tags=[]):
     """
     This module sets up the analysis logging xml file that contains the
     following information:
@@ -51,7 +51,7 @@ def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
     -----------
     workflow : ahope.Workflow
         The ahope workflow instance.
-    segsList : AhopeSegFileList
+    segs_list : AhopeSegFileList
         A list of AhopeFiles containing the information needed to generate the
         segments above. For segments generated at run time the associated
         segmentlist is a property of this object.
@@ -62,6 +62,9 @@ def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
         Directory to output any files to.
     program_name : string (optional, default = "ahope")
         The program name to stick in the process/process_params tables.
+    tags : list (optional, default = [])
+        If given restrict to considering inspiral and segment files that
+        are tagged with all tags in this list.
     """
     logging.info("Entering analysis logging module.")
     make_analysis_dir(output_dir)
@@ -75,55 +78,75 @@ def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
                                             vars(args) ).process_id
 
     # Now add the various segment lists to this file
+    summ_segs = segments.segmentlist([workflow.analysis_time])
+    
+    # If tags is given filter by tags
+    if tags:
+        for tag in tags:
+            segs_list = segs_list.find_output_with_tag(tag)
+            insps = insps.find_output_with_tag(tag)
+
     for ifo in workflow.ifos:
         # Lets get the segment lists we need
         seg_ifo_files = segs_list.find_output_with_ifo(ifo)
         # SCIENCE
         sci_seg_file = seg_ifo_files.find_output_with_tag('SCIENCE')
-        assert(len(sci_seg_file) == 1)
-        sci_seg_file = sci_seg_file[0]
-        sci_segs = sci_seg_file.segmentList
+        if len(sci_seg_file) == 1:
+            sci_seg_file = sci_seg_file[0]
+            sci_segs = sci_seg_file.segmentList
+            sci_def_id = segmentdb_utils.add_to_segment_definer(outdoc, proc_id,
+                                                   ifo, "CBC_AHOPE_SCIENCE", 0)
+            segmentdb_utils.add_to_segment(outdoc, proc_id, sci_def_id,
+                                                                      sci_segs)
+            segmentdb_utils.add_to_segment_summary(outdoc, proc_id, sci_def_id,
+                                                         summ_segs, comment='')
+        elif sci_seg_file:
+            err_msg = "Got %d files matching %s and %s. Expected 1 or 0." \
+                      %(len(sci_seg_file), ifo, 'SCIENCE')
+            raise ValueError(err_msg)
+
         # SCIENCE_OK
         sci_ok_seg_file = seg_ifo_files.find_output_with_tag('SCIENCE_OK')
-        assert(len(sci_ok_seg_file) == 1)
-        sci_ok_seg_file = sci_ok_seg_file[0]
-        sci_ok_segs = sci_ok_seg_file.segmentList
+        if len(sci_ok_seg_file) == 1:
+            sci_ok_seg_file = sci_ok_seg_file[0]
+            sci_ok_segs = sci_ok_seg_file.segmentList
+            sci_ok_def_id = segmentdb_utils.add_to_segment_definer(outdoc,
+                                       proc_id, ifo, "CBC_AHOPE_SCIENCE_OK", 0)
+            segmentdb_utils.add_to_segment(outdoc, proc_id, sci_ok_def_id,
+                                                                   sci_ok_segs)
+            segmentdb_utils.add_to_segment_summary(outdoc, proc_id,
+                                          sci_ok_def_id, summ_segs, comment='')
+        elif sci_ok_seg_file:
+            err_msg = "Got %d files matching %s and %s. Expected 1 or 0." \
+                      %(len(sci_ok_seg_file), ifo, 'SCIENCE_OK')
+            raise ValueError(err_msg)
+
+
         # SCIENCE_AVAILABLE
         sci_available_seg_file = seg_ifo_files.find_output_with_tag(\
                                                            'SCIENCE_AVAILABLE')
-        assert(len(sci_available_seg_file) == 1)
-        sci_available_seg_file = sci_available_seg_file[0]
-        sci_available_segs = sci_available_seg_file.segmentList
+        if len(sci_available_seg_file) == 1:
+            sci_available_seg_file = sci_available_seg_file[0]
+            sci_available_segs = sci_available_seg_file.segmentList
+            sci_available_def_id = segmentdb_utils.add_to_segment_definer(\
+                        outdoc, proc_id, ifo, "CBC_AHOPE_SCIENCE_AVAILABLE", 0)
+            segmentdb_utils.add_to_segment(outdoc, proc_id,
+                                      sci_available_def_id, sci_available_segs)
+            segmentdb_utils.add_to_segment_summary(outdoc, proc_id,
+                                   sci_available_def_id, summ_segs, comment='')
+        elif sci_available_seg_file:
+            err_msg = "Got %d files matching %s and %s. Expected 1 or 0." \
+                      %(len(sci_available_seg_file), ifo, 'SCIENCE_AVAILABLE')
+            raise ValueError(err_msg)
+
         # ANALYSABLE - This one needs to come from inspiral outs
         ifo_insps = insps.find_output_with_ifo(ifo)
         analysable_segs = ifo_insps.get_times_covered_by_files()
 
-        # And add these to the output file
-        # Start with the segment summary
-        summ_segs = segments.segmentlist([workflow.analysis_time])
-        sci_def_id = segmentdb_utils.add_to_segment_definer(outdoc, proc_id,
-                                                 ifo, "CBC_AHOPE_SCIENCE", 0)
-        sci_ok_def_id = segmentdb_utils.add_to_segment_definer(outdoc, proc_id,
-                                              ifo, "CBC_AHOPE_SCIENCE_OK", 0)
-        sci_available_def_id = segmentdb_utils.add_to_segment_definer(outdoc,
-                              proc_id, ifo, "CBC_AHOPE_SCIENCE_AVAILABLE", 0)
         analysable_def_id = segmentdb_utils.add_to_segment_definer(outdoc,
                                      proc_id, ifo, "CBC_AHOPE_ANALYSABLE", 0)
-
-        segmentdb_utils.add_to_segment(outdoc, proc_id, sci_def_id, sci_segs)
-        segmentdb_utils.add_to_segment(outdoc, proc_id, sci_ok_def_id,
-                                                                   sci_ok_segs)
-        segmentdb_utils.add_to_segment(outdoc, proc_id, sci_available_def_id,
-                                                           sci_available_segs)
         segmentdb_utils.add_to_segment(outdoc, proc_id, analysable_def_id,
                                                                analysable_segs)
-
-        segmentdb_utils.add_to_segment_summary(outdoc, proc_id, sci_def_id,
-                                                         summ_segs, comment='')
-        segmentdb_utils.add_to_segment_summary(outdoc, proc_id, sci_ok_def_id,
-                                                         summ_segs, comment='')
-        segmentdb_utils.add_to_segment_summary(outdoc, proc_id,
-                                   sci_available_def_id, summ_segs, comment='')
         segmentdb_utils.add_to_segment_summary(outdoc, proc_id,
                                       analysable_def_id, summ_segs, comment='')
 
