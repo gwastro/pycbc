@@ -31,6 +31,9 @@ from pycbc.types import TimeSeries
 # used by the resample action. FIR coeffs are provided for the default   
 # resample action that used a Kaiser window with beta = 5 and a filter   
 # order parameter n = 10. The order of the filter is 2 * n * resampRatio 
+# The filter coefficents used were produced by LDAS-CIT running version 0.7.0
+# of LDAS. See the LDAS dataconditioning API documentation for information.
+
 LDAS_FIR_LP = {}
 
 LDAS_FIR_LP[2] = numpy.array( \
