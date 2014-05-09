@@ -148,8 +148,8 @@ Generate the workflow
 
 When you are ready, you can generate the workflow. First we need to choose a time span. Here is an example::
 
-    export GPS_START_TIME=961585543
-    export GPS_END_TIME=961671943
+    export GPS_START_TIME=967593543
+    export GPS_END_TIME=967679943
 
 You also need to specify the directory in which pipedown  will store log files. Ahope does not need this, but pipedown does.
 

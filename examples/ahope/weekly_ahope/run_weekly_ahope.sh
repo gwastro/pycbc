@@ -1,5 +1,5 @@
-GPS_START_TIME=961585543
-GPS_END_TIME=961671943
+GPS_START_TIME=967593543
+GPS_END_TIME=967679943
 export LOGPATH=/usr1/${USER}/log
 export PIPEDOWNLOG=/usr1/${USER}
 export HTMLDIR=/home/${USER}/public_html/ahope/development/weekly_ahope/test
