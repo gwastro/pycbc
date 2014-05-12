@@ -847,7 +847,7 @@ class PycbcSqliteSimplifyExecutable(AhopeExecutable):
         AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
         
-    def create_node(self, jobSegment, inputFiles, injFile=None, injString=None):
+    def create_node(self, job_segment, inputFiles, injFile=None, injString=None):
         node = AhopeNode(self)
         if injFile and not injString:
             raise ValueError("injString needed if injFile supplied.")
@@ -856,7 +856,7 @@ class PycbcSqliteSimplifyExecutable(AhopeExecutable):
         if injFile:
             node.add_input_opt("--injection-file", injFile)
             node.add_opt("--simulation-tag", injString)
-        node.new_output_file_opt(jobSegment, '.sql', '--output-file',
+        node.new_output_file_opt(job_segment, '.sql', '--output-file',
                                  tags=self.tags) 
         return node
 
@@ -868,34 +868,25 @@ class SQLInOutExecutable(AhopeExecutable):
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
         AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
 
-    def create_node(self, jobSegment, inputFile):
+    def create_node(self, job_segment, inputFile):
         node = AhopeNode(self)
         node.add_input_opt('--input', inputFile)
-        node.new_output_file_opt(jobSegment, '.sql', '--output',
+        node.new_output_file_opt(job_segment, '.sql', '--output',
                                  tags=self.tags)
         return node
 
-class ComputeDurationsJob(SQLInOutJob):
+class ComputeDurationsExecutable(SQLInOutExecutable):
     """
     The class responsible for making jobs for pycbc_compute_durations.
     """
     def create_node(self, job_segment, input_file, summary_xml_file):
-        node = Node(self)
-        node.add_input(input_file, opt='input')
-        node.add_input(summary_xml_file, opt='segment-file')
-        node.make_and_add_output(job_segment, '.sql', 'output',
+        node = AhopeNode(self)
+        node.add_input_opt('--input', input_file)
+        node.add_input_opt('--segment-file', summary_xml_file)
+        node.new_output_file_opt(job_segment, '.sql', '--output',
                                  tags=self.tags)
         return node
 
-class ComputeDurationsExec(SQLInOutExec):
-    """
-    The class corresponding to pycbc_compute_durations.
-    """
-    def create_job(self, cp, ifo, out_dir=None, tags=[]):
-        return ComputeDurationsJob(cp, self.exe_name, self.condor_universe,
-                                           ifo=ifo, out_dir=out_dir, tags=tags)
-                            
-   
 class LalappsInspinjExecutable(AhopeExecutable):
     """
     The class used to create jobs for the lalapps_inspinj AhopeExecutable.

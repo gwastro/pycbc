@@ -178,7 +178,7 @@ def setup_postproc_pipedown_ahope(workflow, trigger_files, summary_xml_files,
                                       ifo=workflow.ifo_string, 
                                       out_dir=output_dir, 
                                       tags=curr_tags)
-        cfar_node = cfarJob.create_node(workflow.analysis_time,
+        cfar_node = cfar_job.create_node(workflow.analysis_time,
                                        compute_durations_out)
         workflow.add_node(cfar_node)
 

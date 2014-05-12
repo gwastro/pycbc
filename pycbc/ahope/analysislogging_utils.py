@@ -153,7 +153,8 @@ def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
     summ_file = AhopeFile(workflow.ifos, "AHOPE_SUMMARY",
                                       workflow.analysis_time, extension=".xml",
                                       directory=output_dir)
-    utils.write_filename(outdoc, summ_file.path)
+    summ_file.PFN(summ_file.storage_path, site='local')
+    utils.write_filename(outdoc, summ_file.storage_path)
 
     return AhopeFileList([summ_file])
 
