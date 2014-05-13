@@ -25,7 +25,7 @@
 """PyCBC contains a toolkit for CBC gravitational wave analysis
 
 """
-import subprocess, os
+import subprocess, os, sys, tempfile
 
 # Check for optional components of the PyCBC Package
 try:
@@ -72,3 +72,12 @@ PYCBC_ALIGNMENT = 32
 
 DYN_RANGE_FAC =  5.9029581035870565e+20
 
+
+# Make sure we use a user specific, machine specific compiled cache location
+_python_name =  "python%d%d_compiled" % tuple(sys.version_info[:2])
+_tmp_dir = tempfile.gettempdir()
+_cache_dir_name = repr(os.getuid()) + '_' + _python_name
+_cache_dir_path = os.path.join(_tmp_dir, _cache_dir_name)
+if not os.path.exists(_cache_dir_path):
+    os.makedirs(_cache_dir_path)
+os.environ['PYTHONCOMPILED'] = _cache_dir_path
