@@ -18,7 +18,7 @@ from __future__ import division
 import numpy
 from lal import LAL_PI, LAL_MTSUN_SI
 from pycbc.tmpltbank.lambda_mapping import get_chirp_params
-from pycbc.pnutils import get_beta_sigma_from_aligned_spins
+from pycbc import pnutils
 
 def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper,\
                         covary=True):
@@ -46,7 +46,7 @@ def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper,\
     covary : boolean, optional (default = True)
         If this is given then evecsCV will be used to rotate from the Cartesian
         coordinate system into the principal coordinate direction (xi_i). If
-        not given then points in the original Caretesian coordinates are 
+        not given then points in the original Cartesian coordinates are
         returned.
 
 
@@ -134,7 +134,7 @@ def get_random_mass(numPoints, massRangeParams):
         errMsg = "ERROR: Maximum eta is smaller than minimum eta!!"
         print maxeta
         print mineta
-        raise ValueError(errMsg)     
+        raise ValueError(errMsg)
     eta = numpy.random.random(numPoints) * (maxeta - mineta) + mineta
 
     # Also calculate the component masses; mass1 > mass2
@@ -176,8 +176,8 @@ def get_random_mass(numPoints, massRangeParams):
         spinspin = spin1z*spin2z
 
         # And compute the PN components that come out of this
-        beta, sigma, gamma, chiS = get_beta_sigma_from_aligned_spins(
-                                     eta, spin1z, spin2z)
+        beta, sigma, gamma, chiS = pnutils.get_beta_sigma_from_aligned_spins(
+            eta, spin1z, spin2z)
 
     return mass,eta,beta,sigma,gamma,spin1z,spin2z
 
@@ -326,7 +326,7 @@ def get_covaried_params(mus, evecsCV):
 def rotate_vector(evecs, old_vector, rescale_factor, index):
     """
     Function to find the position of the system(s) in one of the xi_i or mu_i
-    directions. 
+    directions.
 
     Parameters
     -----------
@@ -340,7 +340,7 @@ def rotate_vector(evecs, old_vector, rescale_factor, index):
     index : int
         The index of the final coordinate system that is being computed. Ie.
         if we are going from mu_i -> xi_j, this will give j.
-    
+
     Returns
     --------
     positions : float or numpy.array
@@ -414,10 +414,10 @@ def get_point_distance(point1, point2, metricParams, fUpper):
     bEta = (bMass1 * bMass2) / (bTotMass * bTotMass)
     bCM = bTotMass * bEta**(3./5.)
 
-    abeta, asigma, agamma, achis = get_beta_sigma_from_aligned_spins(
-                                     aEta, aSpin1, aSpin2)
-    bbeta, bsigma, bgamma, bchis = get_beta_sigma_from_aligned_spins(
-                                     bEta, bSpin1, bSpin2)
+    abeta, asigma, agamma, achis = pnutils.get_beta_sigma_from_aligned_spins(
+        aEta, aSpin1, aSpin2)
+    bbeta, bsigma, bgamma, bchis = pnutils.get_beta_sigma_from_aligned_spins(
+        bEta, bSpin1, bSpin2)
 
     aXis = get_cov_params(aTotMass, aEta, abeta, asigma, agamma, achis, \
                           metricParams, fUpper)
@@ -469,14 +469,14 @@ def calc_point_dist_vary(mus1, fUpper1, mus2, fUpper2, fMap, MMdistA):
         upper frequency cutoff. fMap is used to map between i and actual
         frequencies
     fUpper1 : float
-        The upper frequency cutoff (ISCO) of point 1.
+        The upper frequency cutoff of point 1.
     mus2 : List of numpy arrays
         mus2[i] will give the array of point 2's position in the \chi_j
         coordinate system. The i element corresponds to varying values of the
         upper frequency cutoff. fMap is used to map between i and actual
         frequencies
     fUpper2 : float
-        The upper frequency cutoff (ISCO) of point 2.
+        The upper frequency cutoff of point 2.
     fMap : dictionary
         fMap[fUpper] will give the index needed to get the \chi_j coordinates
         in the two sets of mus
@@ -505,35 +505,46 @@ def calc_point_dist_vary(mus1, fUpper1, mus2, fUpper2, fMap, MMdistA):
         val += (vecs1[i] - vecs2[i])**2
     return (val < MMdistA)
 
-def return_nearest_isco(totmass, freqs):
+def return_nearest_cutoff(name, totmass, freqs):
     """
-    Given a value for total mass and a list of discrete frequencies, this will
-    return the frequency in the list closest to the ISCO.
+    Given an array of total mass values and an (ascending) list of
+    frequencies, this will calculate the specified cutoff formula for each
+    mtotal and return the nearest frequency to each cutoff from the input
+    list.
+    Currently only supports cutoffs that are functions of the total mass
+    and no other parameters (SchwarzISCO, LightRing, ERD)
 
     Parameters
     ----------
+    name : string
+        Name of the cutoff formula to be approximated
     totmass : numpy.array
         The total mass of the input systems
     freqs : list of floats
-        A list of frequencies
+        A list of frequencies (must be sorted ascending)
 
     Returns
     -------
     numpy.array
-        The frequencies closest to the ISCO frequency corresponding to each
-        value of totmass. 
+        The frequencies closest to the cutoff for each value of totmass.
     """
-    # FIXME: I'm not entirely sure how this works! Documentation may be wrong.
-    fISCO = (1/6.)**(3./2.) / (LAL_PI * totmass * LAL_MTSUN_SI)
-    refEv = numpy.zeros(len(fISCO),dtype=float)
+    cutoffFns = {
+        "SchwarzISCO": pnutils.f_SchwarzISCO,
+        "LightRing"  : pnutils.f_LightRing,
+        "ERD"        : pnutils.f_ERD
+    }
+    f_cutoff = cutoffFns[name](totmass)
+    # FIXME: Ian's not entirely sure how this works!  Documentation may be
+    # wrong.
+    refEv = numpy.zeros(len(f_cutoff),dtype=float)
     for i in range(len(freqs)):
         if (i == 0):
-            logicArr = fISCO < ((freqs[0] + freqs[1])/2.)
+            logicArr = f_cutoff < ((freqs[0] + freqs[1])/2.)
         elif (i == (len(freqs)-1)):
-            logicArr = fISCO > ((freqs[-2] + freqs[-1])/2.)
+            logicArr = f_cutoff > ((freqs[-2] + freqs[-1])/2.)
         else:
-            logicArrA = fISCO > ((freqs[i-1] + freqs[i])/2.)
-            logicArrB = fISCO < ((freqs[i] + freqs[i+1])/2.)
+            logicArrA = f_cutoff > ((freqs[i-1] + freqs[i])/2.)
+            logicArrB = f_cutoff < ((freqs[i] + freqs[i+1])/2.)
             logicArr = numpy.logical_and(logicArrA,logicArrB)
         if logicArr.any():
             refEv[logicArr] = freqs[i]

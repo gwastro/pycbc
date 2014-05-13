@@ -20,8 +20,8 @@ import numpy
 from pycbc.tmpltbank.lambda_mapping import *
         
 
-def determine_eigen_directions(metricParams, preserveMoments=False,\
-                               vary_fmax=False, vary_density=25):
+def determine_eigen_directions(metricParams, preserveMoments=False,
+                               vary_fmax=False, vary_density=None):
     """
     This function will calculate the coordinate transfomations that are needed
     to rotate from a coordinate system described by the various Lambda
@@ -36,19 +36,17 @@ def determine_eigen_directions(metricParams, preserveMoments=False,\
         Currently only used for debugging.
         If this is given then if the moments structure is already set
         within metricParams then they will not be recalculated.
-        obtain this structure) then the structure will not be calculated
-        within this function. 
     vary_fmax : boolean, optional (default False)
-        If set to False the metric and rotations are calculate once, for the
-        full range of frequencies [f_low,f_upper).
-        If set to True the metric and rotations are calculated multiple times
-        these are given by [f_low,f_low + i*vary_density). Where i starts at 1
-        and runs up until f_low + i*vary_density is greater than f_upper. The
-        value greater than f_upper is *not* computed. The full range
-        [f_low,f_upper) is also computed
-    vary_density : float, optional (default = 25)
+        If set to False the metric and rotations are calculated once, for the
+        full range of frequency [f_low,f_upper).
+        If set to True the metric and rotations are calculated multiple times,
+        for frequency ranges [f_low,f_low + i*vary_density), where i starts at 
+        1 and runs up until f_low + (i+1)*vary_density > f_upper. 
+        Thus values greater than f_upper are *not* computed. 
+        The calculation for the full range [f_low,f_upper) is also done.
+    vary_density : float, optional
         If vary_fmax is True, this will be used in computing the frequency
-        ranges as described in the description for vary_fmax.
+        ranges as described for vary_fmax.
 
     Returns
     --------
@@ -88,7 +86,7 @@ def determine_eigen_directions(metricParams, preserveMoments=False,\
   
     # First step is to get the moments needed to calculate the metric
     if not (metricParams.moments and preserveMoments):
-        get_moments(metricParams, vary_fmax=vary_fmax, \
+        get_moments(metricParams, vary_fmax=vary_fmax,
                     vary_density=vary_density)
 
     # What values are going to be in the moments
@@ -147,7 +145,7 @@ def determine_eigen_directions(metricParams, preserveMoments=False,\
 
     return metricParams
 
-def get_moments(metricParams, vary_fmax=False, vary_density=25):
+def get_moments(metricParams, vary_fmax=False, vary_density=None):
     """
     This function will calculate the various integrals (moments) that are
     needed to compute the metric used in template bank placement and
@@ -158,16 +156,16 @@ def get_moments(metricParams, vary_fmax=False, vary_density=25):
     metricParams : metricParameters instance
         Structure holding all the options for construction of the metric.
     vary_fmax : boolean, optional (default False)
-        If set to False the metric and rotations are calculate once, for the
-        full range of frequencies [f_low,f_upper).
-        If set to True the metric and rotations are calculated multiple times
-        these are given by [f_low,f_low + i*vary_density). Where i starts at 1
-        and runs up until f_low + i*vary_density is greater than f_upper. The
-        value greater than f_upper is *not* computed. The full range
-        [f_low,f_upper) is also computed
-    vary_density : float, optional (default = 25)
+        If set to False the metric and rotations are calculated once, for the
+        full range of frequency [f_low,f_upper).
+        If set to True the metric and rotations are calculated multiple times,
+        for frequency ranges [f_low,f_low + i*vary_density), where i starts at 
+        1 and runs up until f_low + (i+1)*vary_density > f_upper. 
+        Thus values greater than f_upper are *not* computed. 
+        The calculation for the full range [f_low,f_upper) is also done.
+    vary_density : float, optional
         If vary_fmax is True, this will be used in computing the frequency
-        ranges as described in the description for vary_fmax.
+        ranges as described for vary_fmax.
 
     Returns
     --------
@@ -206,9 +204,8 @@ def get_moments(metricParams, vary_fmax=False, vary_density=25):
         This stores the integral of 
         (numpy.log(x**(1./3.)))**4 x**((-i)/3.) * delta X / PSD(x)
 
-        The second entry stores the frequency cutoff that was used when
-        computing the integral. See the description of the vary_fmax option
-        above for details on this.
+        The second entry stores the frequency cutoff used when computing 
+        the integral. See description of the vary_fmax option above.
     """
     # NOTE: Unless the TaylorR2F4 metric is used the log^3 and log^4 terms are
     # not needed. As this calculation is not too slow compared to bank
@@ -313,8 +310,8 @@ def interpolate_psd(psd_f, psd_amp, deltaF):
     return numpy.asarray(new_psd_f), numpy.asarray(new_psd_amp)
 
 
-def calculate_moment(psd_f, psd_amp, fmin, fmax, f0, funct, \
-                     norm=None, vary_fmax=False, vary_density=25):
+def calculate_moment(psd_f, psd_amp, fmin, fmax, f0, funct,
+                     norm=None, vary_fmax=False, vary_density=None):
     """
     Function for calculating one of the integrals used to construct a template
     bank placement metric. The integral calculated will be
@@ -349,16 +346,16 @@ def calculate_moment(psd_f, psd_amp, fmin, fmax, f0, funct, \
     norm : Dictionary of floats
         If given then moment[f_cutoff] will be divided by norm[f_cutoff]
     vary_fmax : boolean, optional (default False)
-        If set to False the metric and rotations are calculate once, for the
-        full range of frequencies [f_low,f_upper).
-        If set to True the metric and rotations are calculated multiple times
-        these are given by [f_low,f_low + i*vary_density). Where i starts at 1
-        and runs up until f_low + i*vary_density is greater than f_upper. The
-        value greater than f_upper is *not* computed. The full range
-        [f_low,f_upper) is also computed
-    vary_density : float, optional (default = 25)
+        If set to False the metric and rotations are calculated once, for the
+        full range of frequency [f_low,f_upper).
+        If set to True the metric and rotations are calculated multiple times,
+        for frequency ranges [f_low,f_low + i*vary_density), where i starts at 
+        1 and runs up until f_low + (i+1)*vary_density > f_upper. 
+        Thus values greater than f_upper are *not* computed. 
+        The calculation for the full range [f_low,f_upper) is also done.
+    vary_density : float, optional
         If vary_fmax is True, this will be used in computing the frequency
-        ranges as described in the description for vary_fmax.
+        ranges as described for vary_fmax.
 
     Returns
     --------

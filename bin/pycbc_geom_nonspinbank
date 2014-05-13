@@ -50,18 +50,18 @@ parser.add_argument('--version', action='version', version=__version__)
 parser.add_argument("-V", "--verbose", action="store_true", default=False,
                     help="verbose output")
 parser.add_argument("-m", "--min-match", action="store", type=float,
-                    default=None, help="Minimum match to generate bank with. "
-                                       "REQUIRED.")
-parser.add_argument("-O", "--output-file",  help="Output file name. "
-                                                 "REQUIRED.")
-parser.add_argument("--random-seed", action="store", type=int,\
+                    default=None, help=
+                    "Generate bank with specified minimum match.  REQUIRED.")
+parser.add_argument("--random-seed", action="store", type=int,
                     default=None,
-                    help="""Random seed to use whenever the numpy random
-                            functions are called when doing the monte-carlo
-                            for obtaining the principal components and when
-                            translating all points back to physical space.
-                            If this is used the code should give the same
-                            output if run with the same random seed.""")
+                    help="""Random seed to use when calling numpy.random
+                            functions used in obtaining the principal 
+                            components and when translating points back to 
+                            physical space.  
+                            If given, the code should give the same output 
+                            when run with the same random seed.""")
+parser.add_argument("-O", "--output-file",
+                    help="Output file name.  REQUIRED.")
 
 # Insert the metric calculation options
 tmpltbank.insert_metric_calculation_options(parser)
@@ -99,7 +99,7 @@ massRangeParams=tmpltbank.massRangeParameters.from_argparse(opts,nonSpin=True)
 pycbc.psd.verify_psd_options(opts, parser)
 if opts.psd_estimation:
     pycbc.strain.verify_strain_options(opts, parser)
-tmpltbank.verify_ethinca_options(opts, parser)
+tmpltbank.verify_ethinca_metric_options(opts, parser)
 ethincaParams=tmpltbank.ethincaParameters.from_argparse(opts)
 
 # Ensure consistency of ethinca and bank metric parameters
@@ -108,8 +108,6 @@ tmpltbank.check_ethinca_against_bank_params(ethincaParams, metricParams)
 # Set random seed if needed
 if opts.random_seed is not None:
     numpy.random.seed(opts.random_seed)
-
-maxSpinMag = 0
 
 # If we are going to use h(t) to estimate a PSD we need h(t)
 if opts.psd_estimation:

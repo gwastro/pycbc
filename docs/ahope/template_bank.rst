@@ -17,12 +17,13 @@ It can run in a number of different modes
 - Generating template banks that do not vary over the workflow, can be the same template bank in each ifo or different ones.
 
 The template bank module, by default, is independent of other modules, though it
-is possible to ensure that there is a one-to-one correspondance between template banks and matched-filter outputs. Unlike ihope we are able to have
+is possible to ensure that there is a one-to-one correspondence between template banks and matched-filter outputs. 
+Improvements over ihope:
 
-- The template bank analysis chunks to be longer/shorter than the inspiral chunks
-- Allow for options sent to one job to be sent to the other **only** if desired. (No hardcoding of options that get sent to **both** matched-filter and template bank stage).
+- The template bank analysis chunks may be longer or shorter than the inspiral chunks
+- Options sent to one job can be sent to the other or not, as desired.  No hardcoding of options that are **always** sent to both the matched-filter and template bank stages.
 
-Like other modules the return of the template bank module is an AhopeFileList of the template bank files generated/supplied to this module. It is possible to make multiple calls to the template bank module in the same module by using the tags kwarg when calling this.
+Like other modules, the template bank module returns an AhopeFileList of the template bank files generated/supplied to this module. It is possible to make multiple calls to the template bank module in the same module by using the tags kwarg when calling this.
 
 ======
 Usage
@@ -165,7 +166,7 @@ All other options must be provided in the configuration file. Here is an example
 
 .. code-block:: bash
 
-   pycbc_geom_nonspinbank --pn-order twoPN --f0 40 --f-low 40 --f-upper 2048 --delta-f 0.01 --min-match 0.97 --min-mass1 2.0 --min-mass2 2.0 --max-mass1 3. --max-mass2 3. --verbose --output-file testNonSpin.xml --calculate-ethinca-metric --psd-estimation median --psd-segment-length 256 --psd-segment-stride 128 --psd-inverse-length 8 --gps-start-time 900000033 --gps-end-time 900002081 --strain-high-pass 30 --pad-data 8 --sample-rate 4096 --frame-cache cache/H-H1_NINJA2_G1000176_EARLY_RECOLORED_CACHE-900000024-10653.lcf --channel-name H1:LDAS-STRAIN --max-total-mass 5.5 --min-total-mass 4.5
+   pycbc_geom_nonspinbank --pn-order twoPN --f0 40 --f-low 40 --f-upper 2048 --delta-f 0.01 --min-match 0.97 --min-mass1 2.0 --min-mass2 2.0 --max-mass1 3. --max-mass2 3. --verbose --output-file testNonSpin.xml --calculate-ethinca-metric --ethinca-cutoff SchwarzISCO --psd-estimation median --psd-segment-length 256 --psd-segment-stride 128 --psd-inverse-length 8 --gps-start-time 900000033 --gps-end-time 900002081 --strain-high-pass 30 --pad-data 8 --sample-rate 4096 --frame-cache cache/H-H1_NINJA2_G1000176_EARLY_RECOLORED_CACHE-900000024-10653.lcf --channel-name H1:LDAS-STRAIN --max-total-mass 5.5 --min-total-mass 4.5
 
 ==========================================
 :mod:`pycbc.ahope.tmpltbank_utils` Module

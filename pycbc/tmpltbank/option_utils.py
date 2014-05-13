@@ -390,7 +390,7 @@ def insert_mass_range_option_group(parser,nonSpin=False):
     parser.add_argument("--max-ns-spin-mag", action="store", type=float,
                   default=None,
                   help="Maximum neutron star spin magnitude.  Neutron stars "
-                       "are defined as components lighter than 3 Msun."
+                       "are defined as components lighter than 3 Msun. "
                        "REQUIRED if min-mass2 < 3 Msun")
     parser.add_argument("--max-bh-spin-mag", action="store", type=float,\
                   default=None,
@@ -622,7 +622,7 @@ class ethincaParameters:
         argparse.OptionParser instance. This assumes that
         insert_ethinca_option_group
         and
-        verify_ethinca_options
+        verify_ethinca_metric_options
         have already been called before initializing the class.
         """
         return cls(opts.ethinca_pn_order, opts.ethinca_cutoff,
@@ -658,7 +658,7 @@ def insert_ethinca_metric_options(parser):
                     "ethinca metric calculation.  REQUIRED if the "
                     "calculate-ethinca-metric option is given.")
     ethincaGroup.add_argument("--ethinca-frequency-step", action="store",
-                    default=10.,
+                    type=float, default=10.,
                     help="Control the precision with which the upper "
                     "frequency cutoff is specified.  For speed, the metric "
                     "is calculated only for discrete f_max values with a "
@@ -666,7 +666,7 @@ def insert_ethinca_metric_options(parser):
                     "assigned the result for the f_max closest to its "
                     "analytical cutoff formula.  OPTIONAL. UNITS=Hz")
 
-def verify_ethinca_options(opts, parser):
+def verify_ethinca_metric_options(opts, parser):
     """
     Checks that the necessary options are given for the ethinca metric
     calculation.
@@ -686,6 +686,12 @@ def verify_ethinca_options(opts, parser):
     if opts.calculate_ethinca_metric and not opts.ethinca_frequency_step:
         parser.error("Need to specify a cutoff frequency step to calculate "
                      "ethinca!")
+    if not opts.calculate_ethinca_metric and opts.ethinca_cutoff:
+        parser.error("Can't specify an ethinca cutoff formula if not "
+                     "calculating ethinca metric!")
+    if not opts.calculate_ethinca_metric and opts.ethinca_pn_order:
+        parser.error("Can't specify an ethinca PN order if not "
+                     "calculating ethinca metric!")
 
 def check_ethinca_against_bank_params(ethincaParams, metricParams):
     """

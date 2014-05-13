@@ -14,7 +14,7 @@ consist of
 
 * A program to generate a non-spinning template bank
 * A program to generate an aligned-spin template bank using a geometrical lattice algorithm
-* A program to generate an aligned-spin template bank using a stochastical placement algorithm.
+* A program to generate an aligned-spin template bank using a stochastic placement algorithm.
 
 Each of these codes is described in turn and is accompanied by some examples of how to run the code, some relevant background and references and the options described from the codes' help messages.
 
@@ -40,9 +40,6 @@ Mapping back from the new coordinate system to masses and spins makes the bank
 placement slower than lalapps_tmpltbank. However, it doesn't waste stupid
 amounts of time calculating the ethinca metric so it is faster than tmpltbank
 if the ethinca components are being computed.
-
-The ethinca metric is currently hardcoded to 2PN. If someone wants to add the
-terms up to 3.5PN this can be fixed.
 
 ----------------
 Background
@@ -84,7 +81,7 @@ This first example computes a non-spinning template bank using a supplied ASD te
 
 .. code-block:: bash
 
-    pycbc_geom_nonspinbank --pn-order twoPN --f0 40 --f-low 40 --f-upper 2048 --delta-f 0.01 --min-match 0.97 --min-mass1 2.0 --min-mass2 2.0 --max-mass1 3. --max-mass2 3. --verbose --output-file testNonSpin.xml --calculate-ethinca-metric --asd-file ZERO_DET_high_P.txt
+    pycbc_geom_nonspinbank --pn-order twoPN --f0 40 --f-low 40 --f-upper 2048 --delta-f 0.01 --min-match 0.97 --min-mass1 2.0 --min-mass2 2.0 --max-mass1 3. --max-mass2 3. --verbose --output-file testNonSpin.xml --calculate-ethinca-metric --ethinca-cutoff SchwarzISCO --asd-file ZERO_DET_high_P.txt
 
 Here is a second example that computes a non-spinning template bank from a frame
 cache file. This needs a bunch more options to read data and estimate the PSD
@@ -92,7 +89,7 @@ from that.
 
 .. code-block:: bash
 
-    pycbc_geom_nonspinbank --pn-order twoPN --f0 40 --f-low 40 --f-upper 2048 --delta-f 0.01 --min-match 0.97 --min-mass1 2.0 --min-mass2 2.0 --max-mass1 3. --max-mass2 3. --verbose --output-file testNonSpin.xml --calculate-ethinca-metric --psd-estimation median --psd-segment-length 256 --psd-segment-stride 128 --psd-inverse-length 8 --gps-start-time 900000033 --gps-end-time 900002081 --strain-high-pass 30 --pad-data 8 --sample-rate 4096 --frame-cache cache/H-H1_NINJA2_G1000176_EARLY_RECOLORED_CACHE-900000024-10653.lcf --channel-name H1:LDAS-STRAIN --max-total-mass 5.5 --min-total-mass 4.5
+    pycbc_geom_nonspinbank --pn-order threePointFivePN --f0 40 --f-low 40 --f-upper 2048 --delta-f 0.01 --min-match 0.97 --min-mass1 2.0 --min-mass2 2.0 --max-mass1 3. --max-mass2 3. --verbose --output-file testNonSpin.xml --calculate-ethinca-metric --ethinca-cutoff SchwarzISCO --psd-estimation median --psd-segment-length 256 --psd-segment-stride 128 --psd-inverse-length 8 --gps-start-time 900000033 --gps-end-time 900002081 --strain-high-pass 30 --pad-data 8 --sample-rate 4096 --frame-cache cache/H-H1_NINJA2_G1000176_EARLY_RECOLORED_CACHE-900000024-10653.lcf --channel-name H1:LDAS-STRAIN --max-total-mass 5.5 --min-total-mass 4.5
 
 --------------------------
 Command line options
@@ -106,7 +103,7 @@ Some notes on these options:
 
 * The value of f0 generally doesn't matter (so just use 70 if unsure). However if ethinca is being calculated f0 and f-low must be equal.
 * Choose f-upper wisely! If your signals coalesce at <1000Hz, you might want to use a lower value ... although of course in this regime this inspiral-only metric will lose validity.
-* A delta-f value of 1/256 will certainly be accurate enough, but setting this lower will lead to the code being faster.
+* A delta-f value of 1/256 will certainly be accurate enough, a larger value will cause the code to run faster.
 
 =============================================================
 Aligned-spin geometric placement: pycbc_geom_aligned_bank
@@ -176,7 +173,7 @@ Some notes on these options:
 
 * The value of f0 generally doesn't matter (so just use 70 if unsure). However if ethinca is being calculated f0 and f-low must be equal.
 * Choose f-upper wisely! If your signals coalesce at <1000Hz, you might want to use a lower value ... although of course in this regime this inspiral-only metric will lose validity.
-* A delta-f value of 1/256 will certainly be accurate enough, but setting this lower will lead to the code being faster.
+* A delta-f value of 1/256 will certainly be accurate enough, a larger value will cause the code to run faster.
 * For the purposes of spin calculations a NS is considered to be anything with mass < 3 solar masses
 * And a BH is considered to be anything with mass > 3 solar masses.
 * To avoid generating a NSBH bank where you have a wall of triggers with NS mass = 3 and spins up to the black hole maximum use the nsbh-flag. This will ensure that only neutron-star--black-hole systems are generated.
@@ -208,9 +205,14 @@ computing overlaps) to remove points that are too close to each other.
 This algorithm has the benefit that it can work in any parameter space, you
 do not require a flat metric. However, it does require more templates to cover
 a space than a geometric approach. Additionally the computational cost will
-increase as a factor of the number of points in the bank to a power between 2 and 3 - the exact number depends on how well you are able to optimize the parameter space and not match **every** point in the bank with every seed point.
+increase as a factor of the number of points in the bank to a power between 2 
+and 3 - the exact number depends on how well you are able to optimize the 
+parameter space and not match **every** point in the bank with every seed point.
 Nevertheless we have found that the computational cost is not prohibitive for
 aLIGO-size spinning banks.
+
+The stochastic bank code can calculate the ethinca metric, but **only** if both 
+component maximum spins are set to 0.0, i.e. a stochastic non-spinning bank. 
 
 Stochastic placement was first proposed in terms of LISA searches in
 
@@ -230,7 +232,7 @@ Recently stochastic placement has been explored for LIGO searches in
 The method presented here follows the method described in Harry et al. (2009)
 and calculates matches using a metric (in this case the F2 or R2F4 metrics).
 An alternative code "sBank" (which hopefully can be migrated into this module??)
-is available for creating banks of stochastically generated signals with or
+can doe stochastic template bank generation with or
 without a metric. In the absence of a metric it uses the method introduced in
 Babak (2008) and used in Ajith (2012) and Privitera (2013) to compute distances
 between points by generating both waveforms and calculating an explicit overlap.
@@ -240,9 +242,9 @@ Some examples
 --------------------
 
 The command line arguments given to this code are very similar to those given
-to the non-spinning code and the aligned-spin geometric code (not surprising as they actually use the same modules).
+to the non-spinning code and the aligned-spin geometric code (they use the same modules).
 
-Here is one example reading data from a frame cache, as in the non-spinnin example
+Here is one example reading data from a frame cache, as in the non-spinning example
 
 .. code-block:: bash
 
@@ -274,13 +276,13 @@ Some notes on these options:
 
 * The value of f0 generally doesn't matter (so just use 70 if unsure). However if ethinca is being calculated f0 and f-low must be equal.
 * Choose f-upper wisely! If your signals coalesce at <1000Hz, you might want to use a lower value ... although of course in this regime this inspiral-only metric will lose validity.
-* A delta-f value of 1/256 will certainly be accurate enough, but setting this lower will lead to the code being faster.
+* A delta-f value of 1/256 will certainly be accurate enough, a larger value will cause the code to run faster.
 * For the purposes of spin calculations a NS is considered to be anything with mass < 3 solar masses
 * And a BH is considered to be anything with mass > 3 solar masses.
 * To avoid generating a NSBH bank where you have a wall of triggers with NS mass = 3 and spins up to the black hole maximum use the nsbh-flag. This will ensure that only neutron-star--black-hole systems are generated.
 * --num-seeds is the termination condition. The code will throw NUM_SEEDS points at the parameter space, and then filter out those that are too close to each other. If this value is too low, the bank will not converge, if it is too high, the code will take longer to run.
 * --num-failed-cutoff can be used as an alternative termination condition. Here the code runs until NUM_FAILED_CUTOFF points have been **consecutively** rejected and will then stop.
-* --vary-fupper will allow the code to vary the upper frequency cutoff across the parameter space. Currently this feature is **only** available in the stochastic code. If you are not using this option give --covary. Soon I will figure out how to get these options to play nice and then covary will be on by default and will not be an option.
+* --vary-fupper will allow the code to vary the upper frequency cutoff across the parameter space. Currently this feature is **only** available in the stochastic code. 
 
 ==========================
 The module's source code
