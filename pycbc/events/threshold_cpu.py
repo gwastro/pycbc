@@ -46,13 +46,13 @@ def threshold_inline(series, value):
     threshold = value**2.0
     code = """  
         float v = threshold;
-        unsigned int num = 32;
+        unsigned int num_parallel_regions = 16;
         unsigned int t=0;
      
         #pragma omp parallel for ordered shared(t)
-        for (unsigned int p=0; p<num; p++){
-            unsigned int start  = (N * p) / num;
-            unsigned int end    = (N * (p+1)) / num;
+        for (unsigned int p=0; p<num_parallel_regions; p++){
+            unsigned int start  = (N * p) / num_parallel_regions;
+            unsigned int end    = (N * (p+1)) / num_parallel_regions;
             unsigned int c = 0;
             
             for (unsigned int i=start; i<end; i++){

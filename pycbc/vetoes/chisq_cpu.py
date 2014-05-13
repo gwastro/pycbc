@@ -52,69 +52,79 @@ def shift_sum(v1, shifts, slen=None, offset=0):
     vlen = len(v1)
     if slen is None:
         slen = vlen
-        
-    code1 = """
-        float t1, t2;
-        for (int j=0; j<vlen; j++){
-            std::complex<float> v = v1[j];
-            float vr = v.real();
-            float vi = v.imag();  
-                       
-            for (int i=0; i<n; i++){
-                outr[i] += vr * pr[i] - vi * pi[i];
-                outi[i] += vr * pi[i] + vi * pr[i];
-                t1 = pr[i];
-                t2 = pi[i];
-                pr[i] = t1 * vsr[i] - t2 * vsi[i];
-                pi[i] = t1 * vsi[i] + t2 * vsr[i]; 
-            }                                              
-        }            
-    """
+
     code = """
+        int num_parallel_regions = 16;
         
-        float t1, t2, k1, k2, k3, vs, va;
+        #pragma omp parallel for
+        for (unsigned int k=0; k<num_parallel_regions; k++){
+            unsigned int start = vlen * k / num_parallel_regions;
+            unsigned int end = vlen * (k + 1) / num_parallel_regions;
         
-        for (int j=0; j<vlen; j++){
-            std::complex<float> v = v1[j];
-            float vr = v.real();
-            float vi = v.imag();  
-            vs = vr + vi;
-            va = vi - vr;
-            
+            //start the cumulative rotations at the offset point
+            float* pr = (float*) malloc(sizeof(float)*n);
+            float* pi = (float*) malloc(sizeof(float)*n);
+            float* vsr = (float*) malloc(sizeof(float)*n);
+            float* vsi = (float*) malloc(sizeof(float)*n);
+            float* outr_tmp = (float*) malloc(sizeof(float)*n);
+            float* outi_tmp = (float*) malloc(sizeof(float)*n);
             for (int i=0; i<n; i++){
-                t1 = pr[i];
-                t2 = pi[i];
+                pr[i] = cos(2 * 3.141592653 * shifts[i] * (start + offset) / slen);
+                pi[i] = sin(2 * 3.141592653 * shifts[i] * (start + offset) / slen);
+                vsr[i] = cos(2 * 3.141592653 * shifts[i] / slen);
+                vsi[i] = sin(2 * 3.141592653 * shifts[i] / slen);
+                outr_tmp[i] = 0;
+                outi_tmp[i] = 0;
+            }
+            float t1, t2, k1, k2, k3, vs, va;
+            
+            for (unsigned int j=start; j<end; j++){
+                std::complex<float> v = v1[j];
+                float vr = v.real();
+                float vi = v.imag();  
+                vs = vr + vi;
+                va = vi - vr;
                 
-                // Complex multiply pr[i] * v
-                k1 = vr * (t1 + t2);
-                k2 = t1 * va;
-                k3 = t2 * vs;
-                            
-                outr[i] += k1 - k3;
-                outi[i] += k1 + k2;
-                
-                // phase shift for the next time point
-                pr[i] = t1 * vsr[i] - t2 * vsi[i];
-                pi[i] = t1 * vsi[i] + t2 * vsr[i]; 
-            }                                              
-        }            
+                for (int i=0; i<n; i++){
+                    t1 = pr[i];
+                    t2 = pi[i];
+                    
+                    // Complex multiply pr[i] * v
+                    k1 = vr * (t1 + t2);
+                    k2 = t1 * va;
+                    k3 = t2 * vs;
+                                
+                    outr_tmp[i] += k1 - k3;
+                    outi_tmp[i] += k1 + k2;
+                    
+                    // phase shift for the next time point
+                    pr[i] = t1 * vsr[i] - t2 * vsi[i];
+                    pi[i] = t1 * vsi[i] + t2 * vsr[i]; 
+                }                                              
+            } 
+            
+            #pragma omp critical
+            {
+                for (unsigned int i=0; i<n; i++){
+                    outr[i] += outr_tmp[i];
+                    outi[i] += outi_tmp[i];
+                }
+            }
+            free(pr);
+            free(pi);  
+            free(outr_tmp);
+            free(outi_tmp); 
+            free(vsr);
+            free(vsi);
+        }        
     """
     n = int(len(shifts))
-    
-    #Calculate the incremental rotation for each time shift
-    vs = numpy.exp(numpy.pi * 2j * shifts / slen )
-    vsr = vs.real*1
-    vsi = vs.imag*1
     
     # Create some output memory
     outr =  numpy.zeros(n, dtype=numpy.float32)
     outi =  numpy.zeros(n, dtype=numpy.float32)
     
-    # Create memory for storing the cumulative rotation for each time shift
-    p = numpy.exp(numpy.pi * 2j *  offset * shifts / slen)
-    pi = numpy.zeros(n, dtype=numpy.float32) + p.imag
-    pr = numpy.zeros(n, dtype=numpy.float32) + p.real
-    inline(code, ['v1', 'n', 'vlen', 'pr', 'pi', 'outi', 'outr', 'vsr', 'vsi'],
+    inline(code, ['v1', 'n', 'vlen', 'outi', 'outr', 'slen', 'shifts', 'offset'],
                        extra_compile_args=['-march=native -O3 -fopenmp'],
                     libraries=['gomp'] )
     return  Array(outr + 1.0j * outi, dtype=numpy.complex64)

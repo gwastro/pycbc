@@ -248,14 +248,14 @@ def fastest_power_chisq_at_points(corr, snr, snr_norm, bins, indices):
     # This is a temporary hack, standard gpu support is intended and should be forthcoming
     # Note, the code for gpu support is in place but atm very slow, optimization required
     # before turning it on by default
-    #import pycbc.scheme
-#    if (len(indices) < POINT_THRESHOLD and type(pycbc.scheme.mgr.state) is pycbc.scheme.CPUScheme) :
-#        # We don't have that many points so do the direct time shift.
-#        return power_chisq_at_points_from_precomputed(corr, snr.take(indices), 
-#                                                      snr_norm, bins, indices)
-#    else:
+    import pycbc.scheme
+    if (len(indices) < POINT_THRESHOLD) and isinstance(pycbc.scheme.mgr.state, pycbc.scheme.CPUScheme):
+        # We don't have that many points so do the direct time shift.
+        return power_chisq_at_points_from_precomputed(corr, snr.take(indices), 
+                                                      snr_norm, bins, indices)
+    else:
         # We have a lot of points so it is faster to use the fourier transform
-    return power_chisq_from_precomputed(corr, snr, snr_norm, bins, 
+        return power_chisq_from_precomputed(corr, snr, snr_norm, bins, 
                                             indices=indices)
 
 def power_chisq(template, data, num_bins, psd, 
