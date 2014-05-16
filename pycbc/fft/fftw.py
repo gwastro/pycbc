@@ -176,7 +176,6 @@ def set_measure_level(mlvl):
     creating FFTW plans.  Must be an integer from 0 (least effort, shortest time)
     to 3 (most effort and time).
     """
-
     global _default_measurelvl
     if mlvl not in (0,1,2,3):
         raise ValueError("Measure level can only be one of 0, 1, 2, or 3")

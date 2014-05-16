@@ -326,7 +326,7 @@ def from_cli(opt):
     if len(opt.fft_backends) > 0:
         _default_backends_list = opt.fft_backends
 
-    for backend in _all_backends_list:
+    for backend in _all_backends_dict.values():
         try:
             backend.from_cli(opt)
         except AttributeError:
