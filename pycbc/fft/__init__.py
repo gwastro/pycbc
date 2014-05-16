@@ -276,7 +276,7 @@ def insert_fft_option_group(parser):
                            "Choices are: \n" + str(_all_backends_list),
                       nargs='*',default=[])
 
-    for backend in _all_backends_list:
+    for backend in _all_backends_dict.values():
         try:
             backend.insert_fft_options(fft_group)
         except AttributeError:
@@ -301,7 +301,7 @@ def verify_fft_options(opt, parser):
             if backend not in _all_backends_list:
                 parser.error("Backend {0} is not available".format(backend))
 
-    for backend in _all_backends_list:
+    for backend in _all_backends_dict.values():
         try:
             backend.verify_fft_options(opt,parser)
         except AttributeError:
