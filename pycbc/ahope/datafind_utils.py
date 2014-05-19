@@ -790,7 +790,7 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
     fP = open(cache_file.path, "w")
     # FIXME: CANNOT use dfCache.tofile because it will print 815901601.00000
     #        as a gps time which is incompatible with the lal cache format
-    #        (and the C codes) which demand an integer.
+    #        (and the C codes) which demand an integer.
     #dfCache.tofile(fP)
     for entry in dfCache:
         start = str(int(entry.segment[0]))
