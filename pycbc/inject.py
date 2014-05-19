@@ -69,7 +69,11 @@ def legacy_approximant_name(apx):
     use Collin's new tables.
     """
     apx = str(apx)
-    order = sim.GetOrderFromString(apx)
+    try:
+        order = sim.GetOrderFromString(apx)
+    except:
+        print("Warning: Could not read phase order from string, using default")
+        order = -1
     name = sim.GetStringFromApproximant(sim.GetApproximantFromString(apx))
     return name, order
     
