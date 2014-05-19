@@ -676,14 +676,14 @@ class PyCBCInspiralExecutable(AhopeExecutable):
         end = data_length - pad_data - end_pad
         return data_length, segments.segment(start, end)
 
-class PyCBCTmpltbankAhopeExecutable(AhopeExecutable):
+class PyCBCTmpltbankExecutable(AhopeExecutable):
     """
     The class used to create jobs for pycbc_geom_nonspin_bank AhopeExecutable and
     any other AhopeExecutables using the same command line option groups.
     """
-    def __init__(self, cp, exe_name, universe, ifo=None, out_dir=None,
-                 tags=[]):
-        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+    def __init__(self, cp, exe_name, ifo=None, out_dir=None,
+                 tags=[], write_psd=False):
+        AhopeExecutable.__init__(self, cp, exe_name, 'vanilla', ifo, out_dir, tags=tags)
         self.cp = cp
         self.set_memory(2000)
         self.write_psd = write_psd
@@ -707,12 +707,10 @@ class PyCBCTmpltbankAhopeExecutable(AhopeExecutable):
         # set the input and output files      
         # Add the PSD file if needed
         if self.write_psd:
-            node.make_and_add_output(valid_seg, 'txt', 'psd-output',
+            node.make_and_add_output(valid_seg, 'txt', '--psd-output',
                                      tags=tags+['PSD_FILE'])
-        node.add_input_list(dfParents, opt='frame-files', delimiter=' ')
-
         node.new_output_file_opt(valid_seg, '.xml.gz', '--output-file', tags=tags)
-        node.add_input_opt_list('--frame-files', dfParents)
+        node.add_input_list_opt('--frame-files', dfParents)
         return node
 
     def create_nodata_node(self, valid_seg):
@@ -751,17 +749,6 @@ class PyCBCTmpltbankAhopeExecutable(AhopeExecutable):
         start = pad_data
         end = data_length - pad_data
         return data_length, segments.segment(start, end)
-
-class PyCBCTmpltbankExec(Executable):
-    """
-    The class corresponding to pycbc_geom_nonspin_bank executable, and any
-    other executables using the same command line option groups.
-    """
-    write_psd = False
-    def create_job(self, cp, ifo, out_dir=None, tags=[]):
-        return PyCBCTmpltbankJob(cp, self.exe_name, self.condor_universe,
-                                 ifo=ifo, out_dir=out_dir, tags=tags,
-                                 write_psd=self.write_psd)
 
 class LigoLWCombineSegsExecutable(AhopeExecutable):
     """ 
