@@ -79,11 +79,12 @@ else:
 logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 ctx = scheme.from_cli(opt)
-fft.from_cli(opt)
 gwstrain = strain.from_cli(opt, DYN_RANGE_FAC)
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
 
 with ctx:
+    fft.from_cli(opt)
+
     if opt.fftw_input_float_wisdom_file is not None:
         fft.fftw.import_single_wisdom_from_filename(opt.fftw_input_float_wisdom_file)
 
