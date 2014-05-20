@@ -21,8 +21,15 @@
 #
 # =============================================================================
 #
-import numpy
+import numpy, pycbc
 from scipy.weave import inline
+
+if pycbc.HAVE_OMP:
+    omp_libs = ['gomp']
+    omp_flags = ['-fopenmp']
+else:
+    omp_libs = []
+    omp_flags = []
 
 support = """
     #include <stdio.h>
@@ -62,9 +69,9 @@ def correlate_inline(x, y, z):
     ya = numpy.array(y.data, copy=False)
     N = len(x) 
     inline(the_code, ['xa', 'ya', 'za', 'N'], 
-           extra_compile_args=['-march=native  -O3  -fopenmp'],
-           support_code = support,
-           libraries=['gomp']
+                    extra_compile_args=['-march=native -O3'] + omp_flags,
+                    support_code = support,
+                    libraries=omp_libs
           )
     
 correlate = correlate_inline

@@ -22,8 +22,15 @@
 # =============================================================================
 #
 import numpy
-import events
+import events, pycbc
 from scipy.weave import inline
+
+if pycbc.HAVE_OMP:
+    omp_libs = ['gomp']
+    omp_flags = ['-fopenmp']
+else:
+    omp_libs = []
+    omp_flags = []
 
 def threshold_numpy(series, value):
     arr = series.data
@@ -77,8 +84,9 @@ def threshold_inline(series, value):
         count[0] = t;
     """
     inline(code, ['N', 'arr', 'outv', 'outl', 'count', 'threshold'],
-           extra_compile_args=['-march=native  -O3  -fopenmp'],
-           libraries=['gomp'])
+                    extra_compile_args=['-march=native -O3'] + omp_flags,
+                    libraries=omp_libs
+          )
     num = count[0]
     if num > 0:
         return outl[0:num], outv[0:num]

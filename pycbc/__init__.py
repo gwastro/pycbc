@@ -59,6 +59,13 @@ try:
 except ImportError:
     HAVE_OPENCL=False
 
+# Check for openmp suppport, currently we pressume it exists, unless on 
+# platforms (mac) that are silly and don't use the standard gcc. 
+if sys.platform == 'darwin':
+    HAVE_OMP = False
+else:
+    HAVE_OMP = True
+
 # PyCBC-Specific Constants
 
 # Set the value we want any aligned memory calls to use

@@ -16,6 +16,7 @@
 #  MA  02111-1307  USA
 import numpy
 import lal
+import pycbc
 from pycbc.types import Array, float32, FrequencySeries
 from pycbc.waveform.spa_tmplt import spa_tmplt_precondition
 from scipy.weave import inline
@@ -24,6 +25,13 @@ support = """
     #include <stdio.h>
     #include <math.h>
 """
+
+if pycbc.HAVE_OMP:
+    omp_libs = ['gomp']
+    omp_flags = ['-fopenmp']
+else:
+    omp_libs = []
+    omp_flags = []
 
 # Precompute cbrt(f) ###########################################################
 
@@ -183,7 +191,7 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
                    'piM',  'pfaN', 'amp_factor', 'kfac',
                    'pfa2',  'pfa3',  'pfa4',  'pfa5',  'pfl5',
                    'pfa6',  'pfl6',  'pfa7', 'v0', 'length'],
-                    extra_compile_args=['-march=native -O3 -fopenmp'],
+                    extra_compile_args=['-march=native -O3'] + omp_flags,
                     support_code = support,
-                    libraries=['gomp']
+                    libraries=omp_libs
                 )

@@ -21,9 +21,16 @@
 #
 # =============================================================================
 #
-import numpy
+import numpy, pycbc
 from pycbc.types import Array
 from scipy.weave import inline
+
+if pycbc.HAVE_OMP:
+    omp_libs = ['gomp']
+    omp_flags = ['-fopenmp']
+else:
+    omp_libs = []
+    omp_flags = []
 
 def chisq_accum_bin_numpy(chisq, q):
     chisq += q.squared_norm()
@@ -40,8 +47,8 @@ def chisq_accum_bin_inline(chisq, q):
         }
     """
     inline(code, ['chisq', 'q', 'N'], 
-           extra_compile_args=['-march=native  -O3  -fopenmp'],
-           libraries=['gomp']
+                    extra_compile_args=['-march=native -O3'] + omp_flags,
+                    libraries=omp_libs
           )
           
 chisq_accum_bin = chisq_accum_bin_inline
@@ -125,6 +132,7 @@ def shift_sum(v1, shifts, slen=None, offset=0):
     outi =  numpy.zeros(n, dtype=numpy.float32)
     
     inline(code, ['v1', 'n', 'vlen', 'outi', 'outr', 'slen', 'shifts', 'offset'],
-                       extra_compile_args=['-march=native -O3 -fopenmp'],
-                    libraries=['gomp'] )
+                    extra_compile_args=['-march=native -O3'] + omp_flags,
+                    libraries=omp_libs
+          )
     return  Array(outr + 1.0j * outi, dtype=numpy.complex64)
