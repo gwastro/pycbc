@@ -160,8 +160,8 @@ class LegacyInspiralExecutable(LegacyAnalysisExecutable):
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
         node = LegacyAnalysisExecutable.create_node(self, data_seg, valid_seg, 
                                                    parent, dfParents, tags=tags)
-        node.add_opt('trig-start-time', valid_seg[0])
-        node.add_opt('trig-end-time', valid_seg[1])  
+        node.add_opt('--trig-start-time', valid_seg[0])
+        node.add_opt('--trig-end-time', valid_seg[1])  
         node.add_input_opt('--bank-file', parent)    
         
         if self.injection_file is not None:
