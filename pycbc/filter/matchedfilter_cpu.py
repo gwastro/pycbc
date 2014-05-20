@@ -26,7 +26,6 @@ from scipy.weave import inline
 
 support = """
     #include <stdio.h>
-    #include <omp.h>
     #include <math.h>
 """
 
