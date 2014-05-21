@@ -456,7 +456,7 @@ def calc_point_dist(vsA, entryA, MMdistA):
         val += (vsA[i] - entryA[i])**2
     return (val < MMdistA)
 
-def calc_point_dist_vary(mus1, fUpper1, mus2, fUpper2, fMap, MMdistA):
+def calc_point_dist_vary(mus1, fUpper1, mus2, fUpper2, fMap, norm_map, MMdistA):
     """
     Function to determine if two points, with differing upper frequency cutoffs
     have a mismatch < MMdistA for *both* upper frequency cutoffs.
@@ -480,6 +480,9 @@ def calc_point_dist_vary(mus1, fUpper1, mus2, fUpper2, fMap, MMdistA):
     fMap : dictionary
         fMap[fUpper] will give the index needed to get the \chi_j coordinates
         in the two sets of mus
+    norm_map : dictionary
+        norm_map[fUpper] will give the relative frequency domain template
+        amplitude (sigma) at the given value of fUpper.
     MMdistA
         The minimal mismatch allowed between the points
 
@@ -489,20 +492,19 @@ def calc_point_dist_vary(mus1, fUpper1, mus2, fUpper2, fMap, MMdistA):
         True if the points have a mismatch < MMdistA
         False if the points have a mismatch > MMdistA
     """
-    idx1 = fMap[fUpper1]
-    vecs1 = mus1[idx1]
-    vecs2 = mus2[idx1]
+    f_upper = min(fUpper1, fUpper2)
+    f_other = max(fUpper1, fUpper2)
+    idx = fMap[f_upper]
+    vecs1 = mus1[idx]
+    vecs2 = mus2[idx]
     val = (vecs1[0] - vecs2[0])**2
     for i in range(1,len(vecs1)):
         val += (vecs1[i] - vecs2[i])**2
     if (val > MMdistA):
         return False
-    idx2 = fMap[fUpper2]
-    vecs1 = mus1[idx2]
-    vecs2 = mus2[idx2]
-    val = (vecs1[0] - vecs2[0])**2
-    for i in range(1,len(vecs1)):
-        val += (vecs1[i] - vecs2[i])**2
+    # Reduce match to account for normalization.
+    norm_fac = norm_map[f_upper] / norm_map[f_other]
+    val = 1 - (1 - val)*norm_fac
     return (val < MMdistA)
 
 def return_nearest_cutoff(name, totmass, freqs):

@@ -206,6 +206,14 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
 
         The second entry stores the frequency cutoff used when computing 
         the integral. See description of the vary_fmax option above.
+
+        All of these values are nomralized by a factor of
+    
+        x**((-7)/3.) * delta X / PSD(x)
+ 
+        The normalization factor can be obtained in
+
+        moments['I7'][f_cutoff]
     """
     # NOTE: Unless the TaylorR2F4 metric is used the log^3 and log^4 terms are
     # not needed. As this calculation is not too slow compared to bank
@@ -223,6 +231,7 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
 
     # Do all the J moments
     moments = {}
+    moments['I7'] = I7
     for i in xrange(-1,18):
         funct = lambda x: x**((-i+7)/3.)
         moments['J%d' %(i)] = calculate_moment(new_f, new_amp, \

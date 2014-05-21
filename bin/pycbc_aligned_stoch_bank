@@ -154,7 +154,6 @@ else: freqStep = None
 if opts.random_seed is not None:
     numpy.random.seed(opts.random_seed)
 
-# FIXME: Move to noise.from_cli when it is written
 # If we are going to use h(t) to estimate a PSD we need h(t)
 if opts.psd_estimation:
     logging.info("Obtaining h(t) for PSD generation")
@@ -253,13 +252,15 @@ Np = 0
 Ns = 0
 Nr = 0
 
-# Map the frequency values to idx if --vary-fupper is used
+# Map the frequency values and normalizations to idx if --vary-fupper is used
 if opts.vary_fupper:
     freqMap = {}
+    norm_map = {}
     idx = 0
     for freq in fs:
         if freq >= lowEve and freq <= highEve:
             freqMap[freq] = idx
+            norm_map[freq] = (metricParams.moments['I7'][freq])**0.5
             idx += 1
 
 logging.info("Starting bank placement")
@@ -331,7 +332,7 @@ while True:
                 for entry in massbank[v1Bin+i][v2Bin+j]:
                     if tmpltbank.calc_point_dist_vary(
                             mus[:,:,Ns], refEve[Ns], entry[5], entry[4],
-                            freqMap, opts.max_mismatch):
+                            freqMap, norm_map, opts.max_mismatch):
                         store = False
                         break
     else:
