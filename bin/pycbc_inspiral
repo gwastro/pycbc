@@ -40,9 +40,9 @@ parser.add_argument("--order", type=str,
                   help="The integer half-PN order at which to generate the approximant.")
 
 parser.add_argument("--cluster-method", choices=["template", "window"])
-parser.add_argument("--cluster-window", type=int, default = -1,
+parser.add_argument("--cluster-window", type=float, default = -1,
                   help="Length of clustering window in seconds")
-parser.add_argument("--maximization-interval", type=int, default=0,
+parser.add_argument("--maximization-interval", type=float, default=0,
                   help="Maximize triggers over the template bank (ms)")
 
 parser.add_argument("--bank-veto-bank-file", type=str)
@@ -151,7 +151,7 @@ with ctx:
             event_mgr.add_template_events(names, vals)
 
         if opt.cluster_method == "window":
-            cluster_window = opt.cluster_window * gwstrain.sample_rate
+            cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
         elif opt.cluster_method == "template":
             cluster_window = template.length_in_time * gwstrain.sample_rate
             
@@ -168,7 +168,7 @@ if opt.chisq_threshold and opt.chisq_bins:
 
 if opt.maximization_interval:       
     logging.info("Maximizing triggers over %s ms window" % opt.maximization_interval)
-    window = opt.maximization_interval * gwstrain.sample_rate / 1000
+    window = int(opt.maximization_interval * gwstrain.sample_rate / 1000)
     event_mgr.maximize_over_bank("time_index", "snr", window)
     logging.info("%s remaining triggers" % str(len(event_mgr.events)))
 
