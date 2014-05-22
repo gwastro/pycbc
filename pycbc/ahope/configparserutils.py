@@ -526,10 +526,7 @@ class AhopeConfigParser(ConfigParser.SafeConfigParser):
         Supplement to ConfigParser.ConfigParser.get(). This will search for an
         option in [section] and if it doesn't find it will also try in
         [section-tag] for every value of tag in tags.
-        Will raise a
-        NoSectionError if [section] doesn't exist. Will raise NoOptionError if
-        option is not found in [section] and [section-tags]
-        doesn't exist or does not have the option.
+        Will raise a ConfigParser.Error if it cannot find a value.
 
         Parameters
         -----------

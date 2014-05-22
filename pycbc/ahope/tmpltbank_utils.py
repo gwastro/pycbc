@@ -31,6 +31,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/template_bank.html
 from __future__ import division
 
 import os
+import ConfigParser
 import urlparse, urllib
 import logging
 from glue import segments
@@ -315,14 +316,39 @@ def setup_tmpltbank_pregenerated(workflow, tags=[]):
     tmplt_banks = AhopeFileList([])
 
     cp = workflow.cp
-    pre_gen_bank = cp.get_opt_tags('ahope-tmpltbank',
+    pre_gen_banks = {}
+    try:
+        # First check if we have a bank for all ifos
+        pre_gen_bank = cp.get_opt_tags('ahope-tmpltbank',
                                            'tmpltbank-pregenerated-bank', tags)
+        for ifo in workflow.ifos:
+            pre_gen_banks[ifo] = pre_gen_bank
+    except ConfigParser.Error:
+        # Okay then I must have banks for each ifo
+        for ifo in workflow.ifos:
+            try:
+                pre_gen_bank = cp.get_opt_tags('ahope-tmpltbank',
+                                'tmpltbank-pregenerated-bank-%s' %(ifo,), tags)
+            except ConfigParser.Error:
+                err_msg = "Cannot find pregerated template bank in section "
+                err_msg += "[ahope-tmpltbank] or any tagged sections. "
+                if tags:
+                    tagged_secs = " ".join("[ahope-tmpltbank-%s]" \
+                                           %(ifo,) for ifo in workflow.ifos)
+                    err_msg += "Tagged sections are %s. " %(tagged_secs,)
+                err_msg += "I looked for 'tmpltbank-pregenerated-bank' option "
+                err_msg += "and 'tmpltbank-pregenerated-bank-%s'." %(ifo,)
+                raise ConfigParser.Error(err_msg)
+            pre_gen_banks[ifo] = pre_gen_bank
+            
+ 
     global_seg = workflow.analysis_time
 
     for ifo in workflow.ifos:
         # Add bank for that ifo
         user_tag = "PREGEN_TMPLTBANK"
-        file_url = urlparse.urljoin('file:', urllib.pathname2url(pre_gen_bank))
+        curr_bank = pre_gen_banks[ifo]
+        file_url = urlparse.urljoin('file:', urllib.pathname2url(curr_bank))
         curr_file = AhopeFile(ifo, user_tag, global_seg, file_url, tags=tags)
         tmplt_banks.append(curr_file)
         
