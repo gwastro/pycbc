@@ -840,10 +840,10 @@ class ethincaParameters:
         self.fLow=fLow
         # check that ethinca options make sense
         if doEthinca and not (
-                cutoff in pnutils.get_frequency_cutoffs().keys()):
+                cutoff in pnutils.named_frequency_cutoffs().keys()):
             raise ValueError("Need a valid cutoff formula to calculate "
                              "ethinca! Possible values are "+
-                             str(pnutils.get_frequency_cutoffs().keys()))
+                             str(pnutils.named_frequency_cutoffs().keys()))
         if doEthinca and not freqStep:
             raise ValueError("Need to specify a cutoff frequency step to "
                              "calculate ethinca! (ethincaFreqStep)")
@@ -886,7 +886,7 @@ def insert_ethinca_metric_options(parser):
                     "order will be used as for the bank metric.")
     ethincaGroup.add_argument("--ethinca-cutoff",
                     default=None, 
-                    choices=pnutils.get_frequency_cutoffs().keys(),
+                    choices=pnutils.named_frequency_cutoffs().keys(),
                     help="Specify an upper frequency cutoff formula for the "
                     "ethinca metric calculation.  REQUIRED if the "
                     "calculate-ethinca-metric option is given.")
@@ -912,10 +912,10 @@ def verify_ethinca_metric_options(opts, parser):
         The OptionParser instance.
     """
     if opts.calculate_ethinca_metric and not (opts.ethinca_cutoff in
-              pnutils.get_frequency_cutoffs().keys()):
+              pnutils.named_frequency_cutoffs().keys()):
         parser.error("Need a valid cutoff formula to calculate ethinca! "
                      "Possible values are "
-                     +str(pnutils.get_frequency_cutoffs().keys()))
+                     +str(pnutils.named_frequency_cutoffs().keys()))
     if opts.calculate_ethinca_metric and not opts.ethinca_frequency_step:
         parser.error("Need to specify a cutoff frequency step to calculate "
                      "ethinca!")

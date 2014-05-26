@@ -304,31 +304,7 @@ def f_LRD(m1, m2):
     """
     return 1.2 * f_FRD(m1, m2)
 
-def f_finalIMRPhenomB(m1, m2, s1z, s2z):
-    """
-    Calculates the IMRPhenomB final frequency f_cut via a LALSimulation 
-    function (see Ajith et al. arxiv:0710.2335v3)
-
-    Parameters
-    ----------
-    m1 : float
-        First component mass in solar masses
-    m2 : float
-        Second component mass in solar masses
-    s1z : float
-        First component dimensionless spin S_1/m_1^2 projected onto L
-    s2z : float
-        Second component dimensionless spin S_2/m_2^2 projected onto L
-
-    Returns
-    -------
-    f : float
-        Frequency in Hz
-    """
-    chi = lalsimulation.SimIMRPhenomBComputeChi(m1, m2, s1z, s2z)
-    return lalsimulation.SimIMRPhenomBGetFinalFreq(m1, m2, chi)
-
-def get_frequency_cutoffs():
+def named_frequency_cutoffs():
     """
     Dictionary of functions with uniform API taking a 
     parameter dict indexed on m1, m2, s1z, s2z
@@ -347,19 +323,15 @@ def get_frequency_cutoffs():
       "FRD"        : lambda p: f_FRD(p["m1"], p["m2"]),
       "LRD"        : lambda p: f_LRD(p["m1"], p["m2"]),
       # functions depending on 2 component masses and aligned spins 
-      "MECO"       : lambda p: meco_frequency(p["m1"], p["m2"],
-                                             p["s1z"], p["s2z"]),
-  "finalIMRPhenomB": lambda p: f_finalIMRPhenomB(p["m1"], p["m2"],
-                                                p["s1z"], p["s2z"])
+      "MECO"       : lambda p: vec_meco_frequency(p["m1"], p["m2"], 
+                                                  p["s1z"], p["s2z"])
     }
     return cutoffFunctions
 
 def frequency_cutoff_from_name(name, m1, m2, s1z, s2z):
     """
     Returns the result of evaluating the frequency cutoff function
-    specified by 'name' on a template with given parameters. 
-    NB the 'finalIMRPhenomB' cutoff is an XLAL function and can only 
-    be evaluated on floats, the other functions are array-compatible.
+    specified by 'name' on a template with given parameters.
 
     Parameters
     ----------
@@ -380,7 +352,67 @@ def frequency_cutoff_from_name(name, m1, m2, s1z, s2z):
         Frequency in Hz
     """
     params = {"m1":m1, "m2":m2, "s1z":s1z, "s2z":s2z}
-    return get_frequency_cutoffs()[name](params)
+    return named_frequency_cutoffs()[name](params)
+
+def get_final_freq(approx, m1, m2, s1z, s2z):
+    """
+    Wrapper of the LALSimulation function returning the final (highest)
+    frequency for a given approximant an template parameters
+
+    Parameters
+    ----------
+    approx : lalsimulation approximant wrapped object e.g. 
+        lalsimulation.EOBNRv2
+    m1 : float-ish, i.e. castable to float
+        First component mass in solar masses
+    m2 : float-ish
+        Second component mass in solar masses
+    s1z : float-ish
+        First component dimensionless spin S_1/m_1^2 projected onto L
+    s2z : float-ish
+        Second component dimensionless spin S_2/m_2^2 projected onto L
+
+    Returns
+    -------
+    f : float
+        Frequency in Hz
+    """
+    # Convert to SI units for lalsimulation
+    m1kg = float(m1) * lal.LAL_MSUN_SI
+    m2kg = float(m2) * lal.LAL_MSUN_SI
+    return lalsimulation.SimInspiralGetFinalFreq(
+        m1kg, m2kg, 0, 0, float(s1z), 0, 0, float(s2z), int(approx))
+
+# vectorize to enable calls with numpy arrays
+vec_final_freq_from_approx = numpy.vectorize(get_final_freq)
+
+def f_final_from_approximant(approx, m1, m2, s1z, s2z):
+    """
+    Returns the LALSimulation function which evaluates the final
+    (highest) frequency for a given approximant using given template 
+    parameters. 
+    NOTE: TaylorTx and TaylorFx are currently all given an ISCO cutoff !!
+
+    Parameters
+    ----------
+    approx : string
+        Name of the approximant e.g. 'EOBNRv2'
+    m1 : float or numpy.array
+        First component mass in solar masses
+    m2 : float or numpy.array
+        Second component mass in solar masses
+    s1z : float or numpy.array
+        First component dimensionless spin S_1/m_1^2 projected onto L
+    s2z : float or numpy.array
+        Second component dimensionless spin S_2/m_2^2 projected onto L
+
+    Returns
+    -------
+    f : float or numpy.array
+        Frequency in Hz
+    """
+    lalsim_approx = lalsimulation.GetApproximantFromString(approx)
+    return vec_final_freq_from_approx(lalsim_approx, m1, m2, s1z, s2z)
 
 
 ##############################This code was taken from Andy ###########
@@ -415,12 +447,25 @@ def _energy_coeffs(m1, m2, chi1, chi2):
     return (energy0, energy2, energy3, energy4, energy5, energy6)
 
 def meco_velocity(m1, m2, chi1, chi2):
-    """ Returns the velocity of the minimum energy cutoff for 3.5pN (2.5pN spin)
+    """ 
+    Returns the velocity of the minimum energy cutoff for 3.5pN (2.5pN spin)
+
+    Parameters
+    ----------
+    m1 : float
+        First component mass in solar masses
+    m2 : float
+        Second component mass in solar masses
+    chi1 : float
+        First component dimensionless spin S_1/m_1^2 projected onto L
+    chi2 : float
+        Second component dimensionless spin S_2/m_2^2 projected onto L
+
+    Returns
+    -------
+    v : float
+        Velocity (dimensionless)
     """
-    m1 = float(m1)
-    m2 = float(m2)
-    chi1 = float(chi1)
-    chi2 = float(chi2)
     energy0, energy2, energy3, energy4, energy5, energy6 = \
         _energy_coeffs(m1, m2, chi1, chi2)
     def eprime(v):
@@ -434,13 +479,11 @@ def meco_frequency(m1, m2, chi1, chi2):
     """
     return velocity_to_frequency(meco_velocity(m1, m2, chi1, chi2), m1+m2)
 
+vec_meco_frequency = numpy.vectorize(meco_frequency)
+
 def _dtdv_coeffs(m1, m2, chi1, chi2):
     """ Returns the dt/dv coefficients up to 3.5pN (2.5pN spin)
     """
-    m1 = float(m1)
-    m2 = float(m2)
-    chi1 = float(chi1)
-    chi2 = float(chi2)
     mtot = m1 + m2
     eta = m1*m2 / (mtot*mtot)
     chi = (m1*chi1 + m2*chi2) / mtot
@@ -490,8 +533,7 @@ def energy_coefficients(m1, m2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
         raise ValueError("pN coeffiecients of that order have not been implemented")
     elif spin_order == -1:
         spin_order = implemented_spin_order
-     
-    
+
     qmdef1 = 1.0
     qmdef2 = 1.0  
     
@@ -558,7 +600,7 @@ def energy(v, mass1, mass2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
     amp = - (1.0/2.0) * eta
     e = 0.0
     for i in numpy.arange(0, len(ecof), 1):
-            e += float(v)**(i+2.0)* ecof[i]  
+            e += v**(i+2.0) * ecof[i]  
             
     return e * amp
     
@@ -566,7 +608,6 @@ def meco2(m1, m2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
     ecof = energy_coefficients(m1, m2, s1z, s2z, phase_order, spin_order)
     
     def test(v):
-        v = float(v)
         de = 0
         for i in numpy.arange(0, len(ecof), 1):
             de += v**(i+1.0)* ecof[i] * (i + 2)  
