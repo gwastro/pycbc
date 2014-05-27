@@ -208,11 +208,7 @@ Then CD into the directory where the dax was generated::
 
 From the directory where the dax was created, run the planning script::
 
-    sh plan.sh weekly_ahope.dax
-
-.. note::    
-   Note, that if you have changed the name of the ini file, or are using an alternative one,
-   the dax file's name will change accordingly.
+    sh plan.sh weekly_ahope.dax $LOGPATH
     
 Submit the workflow by following the instructions at the end of the script output, which looks something like 
 the following.::
