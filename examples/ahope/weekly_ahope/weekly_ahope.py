@@ -28,12 +28,10 @@ __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
 __program__ = "weekly_ahope"
 
-import os, copy, shutil, sys
-import argparse, ConfigParser
-import logging
-from glue import pipeline
+import os, copy, shutil, argparse, ConfigParser, logging
 from glue import segments
 import pycbc.ahope as ahope
+import Pegasus.DAX3 as dax
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
                     level=logging.INFO)
@@ -79,11 +77,8 @@ all_files.extend(datafind_files)
 # Template bank stuff
 bank_files = ahope.setup_tmpltbank_workflow(workflow, scienceSegs, 
                                             datafind_files, dfDir)
-splitbank_files = ahope.setup_splittable_workflow(workflow, bank_files, dfDir) 
 
 all_files.extend(bank_files)
-#NOTE: may want to remove splitbank if it confuses pipedown
-all_files.extend(splitbank_files)
 
 # setup the injection files
 # FIXME: Pipedown expects the injections to have the random seed as a tag,
@@ -105,7 +100,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
     else:
         timeSlideTags = ['zerolag','slides']
     insps = ahope.setup_matchedfltr_workflow(workflow, scienceSegs, 
-                                           datafind_files, splitbank_files, 
+                                           datafind_files, bank_files, 
                                            output_dir, injection_file=inj_file,
                                            tags = [tag])
     all_files.extend(insps)
@@ -115,10 +110,12 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                         timeSlideTags=timeSlideTags)
     all_files.extend(coincs)
     all_coincs.extend(coincs)
-    # Write the summary file if this is full_data
+    
+    # Write the summary file if this is full_data   
     if tag == 'full_data':
         anal_log_files = ahope.setup_analysislogging(workflow, segsFileList,
                                insps, args, summ_dir, program_name=__program__)
+
 
 # Set up ahope's post-processing, this is still incomplete
 
@@ -134,10 +131,12 @@ postProcFiles = ahope.setup_postprocessing(workflow, postProcPrepFiles,
                                            anal_log_files, ppDir, tags=[],
                                            veto_cats=ppVetoCats)
 
+
 # Also run pipedown, for legacy comparison
 
 pipedownParents = []
 for coincFile in all_coincs:
+    # Here I assume that no partitioned files are present
     pipedownParents.append(coincFile.node)
 
 # Dump out the formatted, combined ini file
@@ -148,7 +147,7 @@ start_time = workflow.analysis_time[0]
 end_time = workflow.analysis_time[1]
 
 # Copy segment files
-ifo_string = workflow.ifo_string
+ifoString = workflow.ifo_string
 for category in range(1, 6):
     vetoTag = 'CUMULATIVE_CAT_%d' %(category)
     ahopeVetoFile = segsFileList.find_output_with_tag(vetoTag)
@@ -156,7 +155,7 @@ for category in range(1, 6):
     ahopeVetoFile = ahopeVetoFile[0]
     ahopeVetoPath = ahopeVetoFile.storage_path
     pipedownVetoFileName = '%s-VETOTIME_CAT_%d-%d-%d.xml' \
-                            %(ifo_string, category, start_time, \
+                            %(ifoString, category, start_time, \
                               end_time-start_time)
     pipedownVetoPath = os.path.join(segDir, pipedownVetoFileName)
     shutil.copyfile(ahopeVetoPath, pipedownVetoPath)
@@ -214,12 +213,19 @@ ahope.make_external_call(pipeCommand, out_dir=pipedownDir + "/logs",
 
 # make pipedown job/node
 pipeDag = iniFile.rstrip("ini") + "dag"
-pipeJob = pipeline.CondorDAGManJob(pipeDag, pipedownDir)
-pipeNode = pipeJob.create_node()
-workflow.dag.add_node(pipeNode)
+pipeDag_lfn = os.path.basename(pipeDag)
+pipeNode = dax.DAG(pipeDag_lfn)
+
+pipeNode.addProfile(dax.Profile("dagman", "DIR", pipedownDir))
+subdag_file = dax.File(pipeDag_lfn)
+subdag_file.PFN(pipeDag, site='local')
+workflow._adag.addFile(subdag_file)
+workflow._adag.addDAG(pipeNode)
+
 if pipedownParents:
-    for thisDag in pipedownParents:
-        pipeNode.add_parent(thisDag)
+    for parent in pipedownParents:
+        dep = dax.Dependency(parent=parent._dax_node, child=pipeNode)
+        workflow._adag.addDependency(dep)
 
 # return to the original directory
 os.chdir("..")
@@ -264,7 +270,7 @@ for cat in ppVetoCats:
     pipeCommand.extend(["--instruments"] + workflow.ifos)
     pipeCommand.extend(["--gps-start-time", str(start_time)])
     pipeCommand.extend(["--gps-end-time", str(end_time)])
-    pipeCommand.extend(["--input-file", inputFile.path])
+    pipeCommand.extend(["--input-file", inputFile.storage_path])
     pipeCommand.extend(["--ihope-cache", cacheFileName])
     pipeCommand.extend(["--simulation-tags"] + inj_tags)
     pipeCommand.extend(["--veto-category", str(cat)])
@@ -272,13 +278,21 @@ for cat in ppVetoCats:
     pipeCommand.extend(["--config-file", iniFile])
 
     # run lalapps_pipedown
-    ahope.make_external_call(pipeCommand, outDir=pipedownPlotDir + "/logs",
-                       outBaseName='pipedown_plots_call')
+    ahope.make_external_call(pipeCommand, out_dir=pipedownPlotDir + "/logs",
+                       out_basename='pipedown_plots_call')
     pipePlotDag = iniFile[0:-4] + "_" + namingPrefix + ".dag"
-    pipePlotJob = pipeline.CondorDAGManJob(pipePlotDag, pipedownPlotDir)
-    pipePlotNode = pipePlotJob.create_node()
-    workflow.dag.add_node(pipePlotNode)
-    pipePlotNode.add_parent(inputFile.node)
+    pipePlot_lfn = os.path.basename(pipePlotDag)
+    pipePlotNode = dax.DAG(pipePlot_lfn)
+    
+    workflow._adag.addDAG(pipePlotNode)
+    dep = dax.Dependency(parent=inputFile.node._dax_node, child=pipePlotNode)
+    workflow._adag.addDependency(dep)
+    
+    subdag_file = dax.File(pipePlot_lfn)
+    subdag_file.PFN(pipePlotDag, site='local')
+    workflow._adag.addFile(subdag_file)
+    pipePlotNode.addProfile(dax.Profile("dagman", "DIR", pipedownPlotDir))
+
 
 # return to the original directory
 os.chdir("..")
@@ -323,21 +337,16 @@ wipConf.set('main', 'output', 'index.html')
 wipConf.write(file('wip.ini', 'w'))
 
 # Now add command to workflow
-wipJob = pipeline.CondorDAGJob('vanilla', \
-                           workflow.cp.get('executables', 'write_ihope_page'))
-if not os.path.exists('wip/logs'):
-    os.makedirs('wip/logs')
-wipJob.set_stderr_file('wip/logs/ihope-page-$(cluster)-$(process).err')
-wipJob.set_stdout_file('wip/logs/ihope-page-$(cluster)-$(process).out')
-wipJob.set_sub_file('write_ihope_page.sub')
-wipJob.add_condor_cmd('getenv', 'True')
-wipJob.add_opt('config-file', os.path.join(currDir, 'wip.ini'))
-wipJob.add_opt('open-the-box', '')
-wipJob.add_opt('skip-followup', '')
+wip_exe = ahope.AhopeExecutable(workflow.cp, 'write_ihope_page')
+wip_node = ahope.AhopeNode(wip_exe)
+wip_node.add_opt('--config-file', os.path.join(currDir, 'wip.ini'))
+wip_node.add_opt('--open-the-box')
+wip_node.add_opt('--skip-followup')
 
-wipNode = wipJob.create_node()
-wipNode.add_parent(pipeNode)
-workflow.dag.add_node(wipNode)
+workflow._adag.addJob(wip_node._dax_node)
+wip_exe.insert_into_dax(workflow._adag)
+dep = dax.Dependency(parent=pipeNode, child=wip_node._dax_node)
+workflow._adag.addDependency(dep)
 
-workflow.write_plans()
+workflow.save()
 logging.info("Written dax.")
