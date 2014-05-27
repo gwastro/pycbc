@@ -223,7 +223,7 @@ def _lalsim_fd_waveform(**p):
                float(solar_mass_to_kg(p['mass2'])),
                float(p['spin1x']), float(p['spin1y']), float(p['spin1z']),
                float(p['spin2x']), float(p['spin2y']), float(p['spin2z']),
-               float(p['f_lower']), float(p['f_final']),
+               float(p['f_lower']), float(p['f_final']), float(p['f_ref']),
                megaparsecs_to_meters(float(p['distance'])),
                float(p['inclination']),
                float(p['lambda1']), float(p['lambda2']), flags, None,
@@ -375,6 +375,8 @@ def get_td_waveform(template=None, **kwargs):
         The time step used to generate the waveform. 
     f_lower :
         The starting frequency of the waveform.
+    f_ref : {float}, optional
+        The reference frequency
     distance : {1, float}, optional
         The distance from the observer to the source in megaparsecs.
     inclination : {0, float}, optional
@@ -396,7 +398,7 @@ def get_td_waveform(template=None, **kwargs):
         The z component of the second component objects spin vector. 
     lambda1: {0, float}, optional
         The tidal deformability parameter of object 1. 
-    lambda2: {0, flaot}, optional
+    lambda2: {0, float}, optional
         The tidal deformability parameter of object 2.
     phase_order: {-1, int}, optional
         The pN order of the orbital phase. The default of -1 indicates that 
@@ -459,6 +461,8 @@ def get_fd_waveform(template=None, **kwargs):
     f_final : {-1, float}, optional
         The ending frequency of the waveform. The default indicates that the
         choice is made by the respective approximant. 
+    f_ref : {float}, optional
+        The reference frequency
     distance : {1, float}, optional
         The distance from the observer to the source in megaparsecs.
     inclination : {0, float}, optional
