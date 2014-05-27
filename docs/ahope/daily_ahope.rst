@@ -131,7 +131,11 @@ This time should be a gps time during the *same day* that you want to analyse. D
 
     python daily_ahope.py --config-files daily_ahope.ini --start-time ${GPS_START_TIME} -d ${PWD}
 
-Then CD into the directory where the dag was generated::
+-----------------------------------------
+Planning and Submitting the Worklfow
+-----------------------------------------
+
+CD into the directory where the dag was generated::
 
     cd 201308/20130802
 
@@ -139,23 +143,51 @@ where the directory naming is constructed from the year, month and day that is b
 
     condor_submit_dag daily_ahope.dag
 
-If the dag runs successfully you will find the output under your html directory some time later.
+First, copy the files needed for planning into the directory where the dax 
+was generated.::
 
----------------------
-Monitor the dagman
----------------------
+    cp ../plan.sh ./
+    cp ../site-local.xml ./
+    cp ../pegasus.conf ./
 
-One can follow the process of the dagman by running::
+Run the planning script::
 
-    tail -f daily_ahope.dag.dagman.out
+    sh plan.sh daily_ahope.dax
+    
+Submit the workflow by following the instructions at the end of the script output, which looks something like 
+the following.::
 
-in the run directory to watch the progress of the dag. If jobs fail you should
-look in the::
+    ...
+    10:49:18:INFO : Finished.
+    2014.03.26 10:49:28.676 EDT:   
 
-    logs
 
-directory to see all the stderr and stdout files from each job. You can match these files with the condor process numbers given in the dagman.out to figure out which file corresponds to the failing jobs. You can also use::
+    I have concretized your abstract workflow. The workflow has been entered 
+    into the workflow database with a state of "planned". The next step is 
+    to start or execute your workflow. The invocation required is
 
-    daily_ahope.sh
 
-to find the command line for each job in the ahope dag if you want to run by hand to debug any job.
+    pegasus-run  /usr1/ahnitz/log/ahnitz/pegasus/daily_ahope/run0001
+
+     
+    2014.03.26 10:49:28.983 EDT:   Time taken to execute is 7.095 seconds 
+    
+In this case, the workflow would be submitted as follows.::
+
+    pegasus-run  /usr1/ahnitz/log/ahnitz/pegasus/daily_ahope/run0001
+
+If the workflow runs successfully, you will find the output under your html directory some time later.
+
+-----------------------------------------
+Monitor and Debug the Workflow
+-----------------------------------------
+
+To monitor the above workflow, one would run::
+
+    pegasus-status /usr1/ahnitz/log/ahnitz/pegasus/daily_ahope/run0001
+    
+To get debugging information in the case of failures.::
+
+    pegasus-analyzer /usr1/ahnitz/log/ahnitz/pegasus/daily_ahope/run0001
+
+
