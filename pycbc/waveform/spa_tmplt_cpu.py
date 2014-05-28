@@ -191,7 +191,7 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
                    'piM',  'pfaN', 'amp_factor', 'kfac',
                    'pfa2',  'pfa3',  'pfa4',  'pfa5',  'pfl5',
                    'pfa6',  'pfl6',  'pfa7', 'v0', 'length'],
-                    extra_compile_args=['-march=native -O3'] + omp_flags,
+                    extra_compile_args=['-march=native -O3 -w'] + omp_flags,
                     support_code = support,
                     libraries=omp_libs
                 )

@@ -84,7 +84,7 @@ def threshold_inline(series, value):
         count[0] = t;
     """
     inline(code, ['N', 'arr', 'outv', 'outl', 'count', 'threshold'],
-                    extra_compile_args=['-march=native -O3'] + omp_flags,
+                    extra_compile_args=['-march=native -O3 -w'] + omp_flags,
                     libraries=omp_libs
           )
     num = count[0]

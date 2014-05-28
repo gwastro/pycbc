@@ -69,7 +69,7 @@ def correlate_inline(x, y, z):
     ya = numpy.array(y.data, copy=False)
     N = len(x) 
     inline(the_code, ['xa', 'ya', 'za', 'N'], 
-                    extra_compile_args=['-march=native -O3'] + omp_flags,
+                    extra_compile_args=['-march=native -O3 -w'] + omp_flags,
                     support_code = support,
                     libraries=omp_libs
           )

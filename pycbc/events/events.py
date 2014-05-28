@@ -63,7 +63,8 @@ def fc_cluster_over_window_fast(times, values, window_length):
         }
         k[0] = j;
     """
-    inline(code, ['times', 'absvalues', 'window_length', 'indices', 'tlen', 'k'])
+    inline(code, ['times', 'absvalues', 'window_length', 'indices', 'tlen', 'k'],
+                 extra_compile_args=['-march=native -O3 -w'])
     return indices[0:k[0]+1]
 
 def findchirp_cluster_over_window(times, values, window_length):
