@@ -241,7 +241,7 @@ In this case, the workflow would be submitted as follows.::
 If the workflow runs successfully, you will find the output under your html directory some time later.
 
 -----------------------------------------
-Monitor and Debug the Workflow
+Monitor and Debug the Workflow (`Detailed Pegasus Documentation <https://pegasus.isi.edu/wms/docs/latest/tutorial.php#idm78622034400>`_)
 -----------------------------------------
 
 To monitor the above workflow, one would run::
