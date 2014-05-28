@@ -497,9 +497,7 @@ def calc_point_dist_vary(mus1, fUpper1, mus2, fUpper2, fMap, norm_map, MMdistA):
     idx = fMap[f_upper]
     vecs1 = mus1[idx]
     vecs2 = mus2[idx]
-    val = (vecs1[0] - vecs2[0])**2
-    for i in range(1,len(vecs1)):
-        val += (vecs1[i] - vecs2[i])**2
+    val = ((vecs1 - vecs2)*(vecs1 - vecs2)).sum()
     if (val > MMdistA):
         return False
     # Reduce match to account for normalization.
@@ -552,3 +550,31 @@ def return_nearest_cutoff(name, totmass, freqs):
             refEv[logicArr] = freqs[i]
     return refEv
 
+def outspiral_loop(N):
+    """
+    Return a list of points that will loop outwards in a 2D lattice in terms
+    of distance from a central point. So if N=2 this will be [0,0], [0,1],
+    [0,-1],[1,0],[-1,0],[1,1] .... This is useful when you want to loop over
+    a number of bins, but want to start in the center and work outwards.
+    """
+    # Create a 2D lattice of all points
+    X,Y = numpy.meshgrid(numpy.arange(-N,N+1), numpy.arange(-N,N+1))
+
+    # Flatten it
+    X = numpy.ndarray.flatten(X)
+    Y = numpy.ndarray.flatten(Y)
+
+    # Force to an integer
+    X = numpy.array(X, dtype=int)
+    Y = numpy.array(Y, dtype=int)
+   
+    # Calculate distances
+    G = numpy.sqrt(X**2+Y**2)
+
+    # Combine back into an array
+    out_arr = numpy.array([X,Y,G])
+   
+    # And order correctly
+    sorted_out_arr = out_arr[:,out_arr[2].argsort()]
+
+    return sorted_out_arr[:2,:].T
