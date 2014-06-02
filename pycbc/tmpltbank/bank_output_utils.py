@@ -247,7 +247,7 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
     sngl_inspiral_table = \
             convert_to_sngl_inspiral_table(tempBank, proc_id)
     # Calculate Gamma components if needed
-    if ethincaParams.doEthinca:
+    if ethincaParams is not None and (ethincaParams.doEthinca == True):
         for sngl in sngl_inspiral_table:
             # Set tau_0 and tau_3 values needed for the calculation of 
             # ethinca metric distances

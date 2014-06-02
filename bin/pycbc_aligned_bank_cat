@@ -17,7 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
-Programe for contatenating the output of the geometric aligned bank dagman.
+Programe for concatenating the output of the geometric aligned bank dagman.
 This will gather all the meta-output files and create a valid template bank
 xml file.
 """
@@ -25,7 +25,7 @@ import fileinput
 import glob
 import optparse
 import pycbc.version
-import pycbc.tmpltbank
+from pycbc import tmpltbank
 from numpy import loadtxt
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
@@ -51,16 +51,14 @@ if not options.output_file:
 # Read in template params
 # NOTE: Files must be set out so that the columns are:
 # Mass1, Mass2, Spin1z, Spin2z
-
 tempBank = loadtxt(fileinput.input(glob.glob(options.input_glob)))
 
-# FIXME: Currently the aligned spin bank will not output the ethinc components.
+# FIXME: Currently the aligned spin bank will not output the ethinca components.
 # They are not meaningful for an aligned spin bank anyway. If these values are
 # needed for any reason, this code would have to be able to recalculate the
 # moments (or read them in) and use the correct value of f0 and pn-order
-pycbc.tmpltbank.output_sngl_inspiral_table(options.output_file, tempBank, \
-         None, calculate_ethinca_comps=False,\
-         programName=__program__,optDict=options.__dict__,\
-         comment="", ifos=[""], version=pycbc.version.git_hash,\
-         cvs_repository='pycbc/'+pycbc.version.git_branch,\
-         cvs_entry_time=pycbc.version.date)
+tmpltbank.output_sngl_inspiral_table(options.output_file, tempBank,
+    None, None, programName=__program__, optDict=options.__dict__,
+    comment="", ifos=[""], version=pycbc.version.git_hash,
+    cvs_repository='pycbc/'+pycbc.version.git_branch,
+    cvs_entry_time=pycbc.version.date)
