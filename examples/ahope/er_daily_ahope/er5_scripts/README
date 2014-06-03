@@ -1,0 +1,40 @@
+# README
+########
+
+In ER5 we used the same automation structure that was used with S6 daily_ihope. We used a crontab to run a script that begins the workflow, and another crontab that launches the post-processing. In the ER5 setup the post-processing is running gw_summ to create the daily ahope IFO summary page tab.
+
+These scripts are compatible with:
+  * pycbc githash: fd7360c846a3040a68b73e516eac98047ebc8c92
+  * lalsuite githash: 0bf46b5422f722c23a9b4b0b6e71dbae075d46a3
+
+NOTE: The values used in A6 (post-ER5 era) are left in scripts and ini files.
+
+# AUTOMATION
+############
+
+There are two crontab jobs. The crontab looks like:
+'''
+# mail address for errors
+MAILTO="daily-ihope@gravity.phy.syr.edu"
+
+# run daily ahope
+0 21 * * * VAR=`/home/cbc/daily_ahope_er5/run_daily_ahope_stage_1.sh 2>&1`; if [ $? -gt 0 ]; then echo -e "Error running daily ahope.\n\n" $VAR; fi
+
+# run gw_summary for daily ahope
+0 8 * * * VAR=`/home/cbc/daily_ahope_er5/run_daily_ahope_stage_2.sh  2>&1`; if [ $? -gt 0 ]; then echo -e "Error running daily ahope.\n\n" $VAR; fi
+
+The first 5 entries in the line designate when to run the crontab job, eg. the first line runs every month, every week, every day, at 21:00. The first crontab runs at 21:00 LLO time (2:00 GMT), if you are implementing this remember to account for daylight savings time.
+
+This calls run_daily_ahope_stage_1.sh which runs daily_ahope.py to generate the workflow and then submits the workflow. The accompanying daily_ahope.py, and daily_ahope.ini files that are needed exist in the pycbc er5_scripts directory. There is another script add_daily_ihope_classad.py adds a classAd to condor jobs so that daily ihope jobs recieve cores allocated for daily ihope jobs during ER5.
+
+There is also a CBC account grid proxy, this should be used.
+
+The second crontab job creates a cache (the input for gw_summ) using lalapps_path2cache and then runs gw_summ to create a IFO summary page tab for daily ahope. In ER5 we did not run the daily_ihope summary page generation. To run gw_summ we use a kerberos keytab, you can create a keytab doing:
+$ ktutil
+  ktutil:  addent -password -p username@LIGO.ORG -k 1 -e rc4-hmac
+  Password for username@LIGO.ORG: [enter your password]
+  ktutil:  addent -password -p username@LIGO.ORG -k 1 -e aes256-cts
+  Password for username@LIGO.ORG: [enter your password]
+  ktutil:  wkt username.keytab
+  ktutil:  quit 
+$ kinit username@LIGO.ORG -k -t mykeytab

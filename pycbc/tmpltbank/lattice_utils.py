@@ -118,27 +118,36 @@ def generate_anstar_3d_lattice(maxv1, minv1, maxv2, minv2, maxv3, minv3, \
     v3s : numpy.array
         Array of positions in the second dimension
     """
+    # Lalpulsar not a requirement for the rest of pycbc, so check if we have it
+    # here in this function.
+    try:
+        import lalpulsar
+    except:
+        err_msg = "A SWIG-wrapped install of lalpulsar is needed to use the "
+        err_msg += "anstar tiling functionality."
+        print >> sys.stderr, err_msg
+        raise
 
-    tiling = lal.CreateFlatLatticeTiling(3)
-    lal.SetFlatLatticeConstantBound(tiling, 0, minv1, maxv1)
-    lal.SetFlatLatticeConstantBound(tiling, 1, minv2, maxv2)
-    lal.SetFlatLatticeConstantBound(tiling, 2, minv3, maxv3)
-    lal.SetFlatLatticeGenerator(tiling, lal.AnstarLatticeGeneratorPtr)
+    tiling = lalpulsar.CreateLatticeTiling(3)
+    lalpulsar.SetLatticeConstantBound(tiling, 0, minv1, maxv1)
+    lalpulsar.SetLatticeConstantBound(tiling, 1, minv2, maxv2)
+    lalpulsar.SetLatticeConstantBound(tiling, 2, minv3, maxv3)
     # Make a 3x3 Euclidean lattice
     a = lal.gsl_matrix(3,3)
     a.data[0,0] = 1
     a.data[1,1] = 1
     a.data[2,2] = 1
-    lal.SetFlatLatticeMetric(tiling, a, mindist)
+    lalpulsar.SetLatticeTypeAndMetric(tiling, lalpulsar.LATTICE_TYPE_ANSTAR,
+                                      a, mindist)
 
     vs1 = []
     vs2 = []
     vs3 = []
     count = 0
-    while (lal.NextFlatLatticePoint(tiling) >= 0):
-        p = lal.GetFlatLatticePoint(tiling)
-        vs1.append(p.data[0])
-        vs2.append(p.data[1])
-        vs3.append(p.data[2])
+    curr_point = lal.gsl_vector(3)
+    while (lalpulsar.NextLatticePoint(tiling, curr_point) >= 0):
+        vs1.append(curr_point.data[0])
+        vs2.append(curr_point.data[1])
+        vs3.append(curr_point.data[2])
     return vs1, vs2, vs3
 

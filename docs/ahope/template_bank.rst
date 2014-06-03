@@ -12,7 +12,7 @@ The template bank section of ahope is responsible for gathering/generating the b
 
 It can run in a number of different modes
 
-- With a pre-generated template bank, which will be used for all ifos
+- With a pre-generated template bank, which can be specified for all ifos, or as one bank for each ifo.
 - By generating unique and independent template banks for each ifo that are regenerated every approx. 2000s
 - Generating template banks that do not vary over the workflow, can be the same template bank in each ifo or different ones.
 
@@ -77,7 +77,8 @@ Each of these options will describe which subfunction to use. These are describe
 
 When using the setup_tmpltbank_pregenerated sub-module the following additional options apply in the [ahope-tmpltbank] section.
 
-* tmpltbank-pregenerated-bank = PATH - REQUIRED. This is the location of the pre-generated bank that is to be used for all ifos.
+* tmpltbank-pregenerated-bank = PATH - OPTIONAL. This is the location of the pre-generated bank that is to be used for all ifos.
+* tmpltbank-pregenerated-bank-[ifo] = PATH = OPTIONAL. This is the location of the pre-generated bank that is to be used for all ifos. Either this option must be given for all active ifos or tmpltbank-pregenerated-bank must be given. If both are supplied this option tmpltbank-pregenerated-bank-[ifo] will be ignored. [ifo] should be replaced by the name of each ifo in lower case. For example tmpltbank-pregenerated-bank-l1 or tmpltbank-pregenerated-bank-v1.
 
 When using the setup_tmpltbank_without_frames sub-module the following additional options apply in the [ahope-tmpltbank] section:
 
