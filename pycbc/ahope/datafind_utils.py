@@ -540,6 +540,9 @@ def setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
         setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
                                                         outputDir, tag=tag)
     datafindouts = []
+    
+    # We keep track of the previous file in the cache to avoid duplicates
+    prev_file = None
 
     # Now need to convert each frame file into an AhopeFile
     for cache in datafindcaches:
@@ -552,9 +555,17 @@ def setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
                 # BECAUSE THE FRAME-TYPE DOES NOT START WITH "V1_"
                 ifo = "V1"
                 # raise ValueError("Cannot determine ifo of frame.")
+            
+            # Don't add a new ahope file entry for this frame if
+            # if is a duplicate. These are assumed to be returned in time
+            # order
+            if prev_file and prev_file.cache_entry.url == frame.url:    
+                continue                
+
             currFile = AhopeFile(ifo, frame.description, frame.segment,
-                                 file_url=frame.url)
-            currFile.PFN(frame.url, site='local')
+                                 file_url=frame.url)  
+            prev_file = currFile                   
+            currFile.PFN(frame.url, site='local') 
             datafindouts.append(currFile)
 
     return datafindcaches, datafindouts
@@ -715,7 +726,7 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
     ----------
     cp : ConfigParser instance
         This is used to find any kwArgs that should be sent to the datafind
-        module.
+        mod
     outputDir : Output cache files will be written here. We also write the
         commands for reproducing what is done in this function to this
         directory.
