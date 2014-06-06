@@ -122,18 +122,28 @@ def get_random_mass(numPoints, massRangeParams):
                             * (mass-massRangeParams.minCompMass)/(mass*mass), \
                            massRangeParams.maxCompMass \
                             * (mass-massRangeParams.maxCompMass)/(mass*mass))
-    # Note that mineta is a numpy.array because mineta depends on the chirp
+    # Note that mineta is a numpy.array because mineta depends on the total
     # mass. Therefore this is not precomputed in the massRangeParams instance
     if massRangeParams.minEta:
         mineta = numpy.maximum(massRangeParams.minEta, mineta)
+    # Eta also restricted by chirp mass restrictions
+    if massRangeParams.min_chirp_mass:
+        eta_val_at_min_chirp = massRangeParams.min_chirp_mass / mass
+        eta_val_at_min_chirp = eta_val_at_min_chirp**(5./3.)
+        mineta = numpy.maximum(mineta, eta_val_at_min_chirp)
+        
     maxeta = numpy.minimum(massRangeParams.maxEta, maxmass2 \
                              * (mass - maxmass2) / (mass*mass))
     maxeta = numpy.minimum(maxeta, minmass1 \
                              * (mass - minmass1) / (mass*mass))
+    # max eta also affected by chirp mass restrictions
+    if massRangeParams.max_chirp_mass:
+        eta_val_at_max_chirp = massRangeParams.max_chirp_mass / mass
+        eta_val_at_max_chirp = eta_val_at_max_chirp**(5./3.)
+        maxeta = numpy.minimum(maxeta, eta_val_at_max_chirp)
+
     if (maxeta < mineta).any():
         errMsg = "ERROR: Maximum eta is smaller than minimum eta!!"
-        print maxeta
-        print mineta
         raise ValueError(errMsg)
     eta = numpy.random.random(numPoints) * (maxeta - mineta) + mineta
 
@@ -162,19 +172,30 @@ def get_random_mass(numPoints, massRangeParams):
         gamma = numpy.zeros(numPoints,dtype=float)
         spin1z = numpy.zeros(numPoints,dtype=float)
         spin2z = numpy.zeros(numPoints,dtype=float)
-    else:
+    elif massRangeParams.nsbhFlag:
+        # Spin 1 first
+        mspin = numpy.zeros(len(mass1))
+        mspin += massRangeParams.maxBHSpinMag
+        spin1z = (2*numpy.random.random(numPoints) - 1) * mspin
+        # Then spin2
+        mspin = numpy.zeros(len(mass2))
+        mspin += massRangeParams.maxNSSpinMag
+        spin2z = (2*numpy.random.random(numPoints) - 1) * mspin
+        # And compute the PN components that come out of this
+        beta, sigma, gamma, chiS = pnutils.get_beta_sigma_from_aligned_spins(
+            eta, spin1z, spin2z)
+    else:        
+        boundary_mass = massRangeParams.ns_bh_boundary_mass
         # Spin 1 first
         mspin = numpy.zeros(len(mass1))
         mspin += massRangeParams.maxNSSpinMag
-        mspin[mass1 > 3] = massRangeParams.maxBHSpinMag
+        mspin[mass1 > boundary_mass] = massRangeParams.maxBHSpinMag
         spin1z = (2*numpy.random.random(numPoints) - 1) * mspin
         # Then spin 2
         mspin = numpy.zeros(len(mass2))
         mspin += massRangeParams.maxNSSpinMag
-        mspin[mass2 > 3] = massRangeParams.maxBHSpinMag
+        mspin[mass2 > boundary_mass] = massRangeParams.maxBHSpinMag
         spin2z = (2*numpy.random.random(numPoints) - 1) * mspin
-        spinspin = spin1z*spin2z
-
         # And compute the PN components that come out of this
         beta, sigma, gamma, chiS = pnutils.get_beta_sigma_from_aligned_spins(
             eta, spin1z, spin2z)

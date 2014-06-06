@@ -52,6 +52,46 @@ def mchirp_eta_to_mass1_mass2(m_chirp, eta):
     M = m_chirp / (eta**(3./5.))
     return mtotal_eta_to_mass1_mass2(M, eta)
 
+def mchirp_mass1_to_mass2(mchirp, mass1):
+    """
+    This function takes a value of mchirp and one component mass and returns
+    the second component mass. As this is a cubic equation this requires
+    finding the roots and returning the one that is real.
+    Basically it can be shown that:
+
+    m2^3 - a(m2 + m1) = 0
+ 
+    where
+  
+    a = Mc^5 / m1^3
+
+    this has 3 solutions but only one will be real.
+    """
+    a = mchirp**5 / mass1**3
+    roots = numpy.roots([1,0,-a,-a*mass1])
+    # Find the real one
+    real_root = roots[(abs(roots - roots.real)).argmin()]
+    return real_root.real
+
+def eta_mass1_to_mass2(eta, mass1, return_mass_heavier=False):
+    """
+    This function takes values for eta and one component mass and returns the
+    second component mass. Similar to mchirp_mass1_to_mass2 this requires
+    finding the roots of a quadratic equation. Basically:
+
+    eta m2^2 + (2 eta - 1)m1 m2 + \eta m1^2 = 0
+
+    This has two solutions which correspond to mass1 being the heavier mass
+    or it being the lighter mass. By default the value corresponding to
+    mass1 > mass2 is returned. Use the return_mass_heavier kwarg to invert this
+    behaviour.
+    """
+    roots = numpy.roots([eta, (2*eta - 1)*mass1, mass1*mass1*eta])
+    if return_mass_heavier==False:
+        return roots[roots.argmin()]
+    else:
+        return roots[roots.argmax()]
+
 def A0(f_lower):
     """used in calculating chirp times: see Cokelaer, arxiv.org:0706.4437
        appendix 1, also lalinspiral/python/sbank/tau0tau3.py

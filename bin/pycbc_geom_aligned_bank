@@ -315,20 +315,26 @@ if opts.max_total_mass:
     cp.set('bank','max-total-mass',str(opts.max_total_mass))
 if opts.min_total_mass:
     cp.set('bank','min-total-mass',str(opts.min_total_mass))
+if opts.max_chirp_mass:
+    cp.set('bank','max-chirp-mass',str(opts.max_chirp_mass))
+if opts.min_chirp_mass:
+    cp.set('bank','min-chirp-mass',str(opts.min_chirp_mass))
 if opts.max_eta:
     cp.set('bank','max-eta',str(opts.max_eta))
 if opts.min_eta:
     cp.set('bank','min-eta',str(opts.min_eta))
 cp.set('bank','max-ns-spin-mag',str(opts.max_ns_spin_mag))
 cp.set('bank','max-bh-spin-mag',str(opts.max_bh_spin_mag))
-cp.set('bank','min-match',str(opts.min_match))
-cp.set('bank','stack-distance',str(opts.stack_distance))
+if opts.ns_bh_boundary_mass:
+    cp.set('bank', 'ns-bh-boundary-mass', str(opts.ns_bh_boundary_mass))
 if opts.nsbh_flag:
     cp.set('bank','nsbh-flag','')
+cp.set('bank','min-match',str(opts.min_match))
+cp.set('bank','stack-distance',str(opts.stack_distance))
 if opts.threed_lattice:
     cp.set('bank','threed-lattice','')
 if opts.random_seed:
-    cp.set('bank', 'random-seed', '')
+    cp.set('bank', 'random-seed', str(opts.random_seed))
 job.add_ini_opts(cp,'bank')
 job.add_condor_cmd('Requirements', 'Memory >= 1390')
 job.add_condor_cmd('request_memory', '1400')

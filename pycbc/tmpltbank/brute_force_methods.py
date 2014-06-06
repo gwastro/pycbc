@@ -216,20 +216,50 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
     minSpinMag = min(massRangeParams.maxNSSpinMag, massRangeParams.maxBHSpinMag)
     # Note that these two are cranged by spinxzFac, *not* spinxzFac/spinxz
     currJumpFac = spin1zJumpFac * scaleFactor
-    if (not massRangeParams.nsbhFlag) and currJumpFac > maxSpinMag:
+    if currJumpFac > maxSpinMag:
         currJumpFac = maxSpinMag
-    elif currJumpFac > massRangeParams.maxBHSpinMag:
-        currJumpFac = massRangeParams.maxBHSpinMag
-        
-    spin1z = bestSpin1z + ( (numpy.random.random(numJumpPoints) - 0.5) \
-                            * currJumpFac)
-    currJumpFac = spin2zJumpFac * scaleFactor
-    if (not massRangeParams.nsbhFlag) and currJumpFac > maxSpinMag:
-        currJumpFac = maxSpinMag
-    elif currJumpFac > massRangeParams.maxNSSpinMag:
-        currJumpFac = massRangeParams.maxNSSpinMag
-    spin2z = bestSpin2z + ( (numpy.random.random(numJumpPoints) - 0.5) \
-                            * currJumpFac)
+
+    # Actually set the new spin trial points
+    if massRangeParams.nsbhFlag or (maxSpinMag == minSpinMag):
+        curr_spin_1z_jump_fac = currJumpFac
+        curr_spin_2z_jump_fac = currJumpFac
+        # Check spins aren't going to be unphysical
+        if currJumpFac > massRangeParams.maxBHSpinMag:
+            curr_spin_1z_jump_fac = massRangeParams.maxBHSpinMag
+        if currJumpFac > massRangeParams.maxNSSpinMag:
+            curr_spin_2z_jump_fac = massRangeParams.maxNSSpinMag
+        spin1z = bestSpin1z + ( (numpy.random.random(numJumpPoints) - 0.5) \
+                            * curr_spin_1z_jump_fac)
+        spin2z = bestSpin2z + ( (numpy.random.random(numJumpPoints) - 0.5) \
+                            * curr_spin_2z_jump_fac)
+    else:
+        # If maxNSSpinMag is very low (0) and maxBHSpinMag is high we can
+        # find it hard to place any points. So mix these when
+        # masses are swapping between the NS and BH.
+        curr_spin_bh_jump_fac = currJumpFac
+        curr_spin_ns_jump_fac = currJumpFac
+        # Check spins aren't going to be unphysical
+        if currJumpFac > massRangeParams.maxBHSpinMag:
+            curr_spin_bh_jump_fac = massRangeParams.maxBHSpinMag
+        if currJumpFac > massRangeParams.maxNSSpinMag:
+            curr_spin_ns_jump_fac = massRangeParams.maxNSSpinMag
+        spin1z = numpy.zeros(numJumpPoints, dtype=float)
+        spin2z = numpy.zeros(numJumpPoints, dtype=float)
+        split_point = int(numJumpPoints/2)
+        # So set the first half to be at least within the BH range and the
+        # second half to be at least within the NS range
+        spin1z[:split_point] = bestSpin1z + \
+                            ( (numpy.random.random(split_point) - 0.5)\
+                              * curr_spin_bh_jump_fac)
+        spin1z[split_point:] = bestSpin1z + \
+                      ( (numpy.random.random(numJumpPoints-split_point) - 0.5)\
+                        * curr_spin_ns_jump_fac)
+        spin2z[:split_point] = bestSpin2z + \
+                            ( (numpy.random.random(split_point) - 0.5)\
+                              * curr_spin_bh_jump_fac)
+        spin2z[split_point:] = bestSpin2z + \
+                      ( (numpy.random.random(numJumpPoints-split_point) - 0.5)\
+                        * curr_spin_ns_jump_fac)
 
     # Point[0] is always set to the original point
     chirpmass[0] = bestChirpmass
@@ -240,7 +270,7 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
     # Remove points where eta becomes unphysical
     eta[eta > massRangeParams.maxEta] = massRangeParams.maxEta
     if massRangeParams.minEta:
-        eta[eta > massRangeParams.minEta] = massRangeParams.minEta
+        eta[eta < massRangeParams.minEta] = massRangeParams.minEta
     else:
         eta[eta < 0.0001] = 0.0001
 
@@ -252,26 +282,33 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
 
     # Check the validity of the spin values
     # Do the first spin
-    numploga1 = numpy.logical_and(mass1 > 2.99,
-                                  abs(spin1z) <= massRangeParams.maxBHSpinMag)
-    if massRangeParams.nsbhFlag:
-        numploga = numpy.logical_not(numploga1)
+
+    # Simple case where I don't have to worry about correlation with mass
+    if massRangeParams.nsbhFlag or (maxSpinMag == minSpinMag):
+        numploga = abs(spin1z) >= massRangeParams.maxBHSpinMag
     else:
-        numploga2 = numpy.logical_and(mass1 < 3.01,
+        # Do have to consider masses
+        boundary_mass = massRangeParams.ns_bh_boundary_mass
+        numploga1 = numpy.logical_and(mass1 >= boundary_mass,
+                                   abs(spin1z) <= massRangeParams.maxBHSpinMag)
+        numploga2 = numpy.logical_and(mass1 < boundary_mass,
                                    abs(spin1z) <= massRangeParams.maxNSSpinMag)
-        numploga = numpy.logical_or(numploga1,numploga2)
+        numploga = numpy.logical_or(numploga1, numploga2)
         numploga = numpy.logical_not(numploga)
     spin1z[numploga] = 0
 
-    # Do the second spin
-    numplogb2 = numpy.logical_and(abs(spin2z) <= massRangeParams.maxNSSpinMag,
-                                  mass2 < 3.01)
-    if massRangeParams.nsbhFlag:
-        numplogb = numpy.logical_not(numplogb2)
+    # Same for the second spin
+
+    if massRangeParams.nsbhFlag or (maxSpinMag == minSpinMag):
+        numplogb = abs(spin2z) >= massRangeParams.maxNSSpinMag
     else:
-        numplogb1 = numpy.logical_and(mass2 > 2.99,
+        # Do have to consider masses
+        boundary_mass = massRangeParams.ns_bh_boundary_mass
+        numplogb1 = numpy.logical_and(mass2 >= boundary_mass,
                                    abs(spin2z) <= massRangeParams.maxBHSpinMag)
-        numplogb = numpy.logical_or(numplogb1,numplogb2)
+        numplogb2 = numpy.logical_and(mass2 < boundary_mass,
+                                   abs(spin2z) <= massRangeParams.maxNSSpinMag)
+        numplogb = numpy.logical_or(numplogb1, numplogb2)
         numplogb = numpy.logical_not(numplogb)
     spin2z[numplogb] = 0
 
@@ -284,6 +321,10 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
 
     # And remove points where the individual masses are outside of the physical
     # range. Or the total masses are.
+    # These "removed" points will have metric distances that will be much, much
+    # larger than any thresholds used in the functions in brute_force_utils.py
+    # and will always be rejected. An unphysical value cannot be used as it
+    # would result in unphysical metric distances and cause failures.
     totmass[mass1 < massRangeParams.minMass1] = 0.0001
     totmass[mass1 > massRangeParams.maxMass1] = 0.0001
     totmass[mass2 < massRangeParams.minMass2] = 0.0001
@@ -294,6 +335,10 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
     # onto the boudaries of the space.
     totmass[totmass > massRangeParams.maxTotMass*1.0001] = 0.0001
     totmass[totmass < massRangeParams.minTotMass*0.9999] = 0.0001
+    if massRangeParams.max_chirp_mass:
+        totmass[chirpmass > massRangeParams.max_chirp_mass*1.0001] = 0.0001
+    if massRangeParams.min_chirp_mass:
+        totmass[chirpmass < massRangeParams.min_chirp_mass*0.9999] = 0.0001
 
     if totmass[0] < 0.00011:
         raise ValueError("Cannot remove the guide point!")

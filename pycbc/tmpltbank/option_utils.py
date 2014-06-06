@@ -372,6 +372,16 @@ def insert_mass_range_option_group(parser,nonSpin=False):
                   help="Minimum total mass. OPTIONAL, if not provided the "
                        "min total mass is determined by the component masses."
                        " UNITS=Solar mass")
+    massOpts.add_argument("--max-chirp-mass", action="store", type=float,
+                  default=None,
+                  help="Maximum chirp mass. OPTIONAL, if not provided the "
+                       "max chirp mass is determined by the component masses."
+                       " UNITS=Solar mass")
+    massOpts.add_argument("--min-chirp-mass", action="store", type=float,
+                  default=None,
+                  help="Minimum total mass. OPTIONAL, if not provided the "
+                       "min chirp mass is determined by the component masses."
+                       " UNITS=Solar mass")
     massOpts.add_argument("--max-eta", action="store", type=float,
                   default=0.25, 
                   help="Maximum symmetric mass ratio. OPTIONAL, no upper bound"
@@ -397,12 +407,23 @@ def insert_mass_range_option_group(parser,nonSpin=False):
                   help="Maximum black hole spin magnitude.  Black holes are "
                        "defined as components with mass >= 3 Msun. REQUIRED "
                        "if max-mass1 > 3 Msun")
-    parser.add_argument("--nsbh-flag", action="store_true", default=False,
+    action = parser.add_mutually_exclusive_group(required=False)
+    action.add_argument("--ns-bh-boundary-mass", action='store', type=float,
+                  default=3,
+                  help="Mass boundary between neutron stars and black holes. "
+                       "Components below this mass are considered neutron "
+                       "stars and are subject to the neutron star spin limits. "
+                       "Components above are considered black holes and are "
+                       "subject to the black hole spin limits. OPTIONAL, if "
+                       "not set the default value of 3 is used.")
+    action.add_argument("--nsbh-flag", action="store_true", default=False,
                   help="Set this flag if generating a bank that contains only "
-                       "systems with 1 black hole and 1 neutron star. This "
-                       "prevents templates being generated for a bunch of "
-                       "(3,3) systems where the 'neutron star' takes the "
-                       "black hole's value of spin. OPTIONAL")
+                       "systems with 1 black hole and 1 neutron star. With "
+                       "this flag set the heavier body will always be subject "
+                       "to the black hole spin restriction and the lighter "
+                       "to the neutron star spin restriction, regardless of "
+                       "mass. OPTIONAL, if set this option will ignore any "
+                       "value provided to --ns-bh-boundary-mass.")
 
 def verify_mass_range_options(opts, parser, nonSpin=False):
     """
@@ -431,6 +452,23 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
         parser.error("min-mass1 cannot be less than min-mass2!")
     if opts.max_mass1 < opts.max_mass2:
         parser.error("max-mass1 cannot be less than max-mass2!")
+    # If given are min/max total mass/chirp mass possible?
+    if opts.min_total_mass:
+        if opts.min_total_mass > opts.max_mass1 + opts.max_mass2:
+            err_msg = "Supplied minimum total mass %f " %(opts.min_total_mass,)
+            err_msg += "greater than the sum of the two max component masses "
+            err_msg += " %f and %f." %(opts.max_mass1,opts.max_mass2)
+    if opts.max_total_mass:
+        if opts.max_total_mass < opts.min_mass1 + opts.min_mass2:
+            err_msg = "Supplied maximum total mass %f " %(opts.max_total_mass,)
+            err_msg += "smaller than the sum of the two min component masses "
+            err_msg += " %f and %f." %(opts.min_mass1,opts.min_mass2)
+            raise ValueError(err_msg)
+    if opts.max_total_mass and opts.min_total_mass:
+        if opts.max_total_mass < opts.min_total_mass:
+            err_msg = "Min total mass must be larger than max total mass."
+            raise ValueError(err_msg)
+
     # Assign min/max total mass from mass1, mass2 if not specified
     if (not opts.min_total_mass) or \
             ((opts.min_mass1 + opts.min_mass2) > opts.min_total_mass):
@@ -438,6 +476,181 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
     if (not opts.max_total_mass) or \
             ((opts.max_mass1 + opts.max_mass2) < opts.max_total_mass):
         opts.max_total_mass = opts.max_mass1 + opts.max_mass2
+
+    # It is vital that min and max total mass be set correctly.
+    # This is becasue the heavily-used function get_random_mass will place
+    # points first in total mass (to some power), and then in eta. If the total
+    # mass limits are not well known ahead of time it will place unphysical
+    # points and fail.
+    # This test is a bit convoluted as we identify the maximum and minimum
+    # possible total mass from chirp mass and/or eta restrictions.
+    if opts.min_chirp_mass is not None:
+        # Need to get the smallest possible min_tot_mass from this chirp mass
+        # There are 4 possibilities for where the min_tot_mass is found on the
+        # line of min_chirp_mass that interacts with the component mass limits.
+        # Either it is found at max_m2, or at min_m1, or it starts on the equal
+        # mass line within the parameter space, or it doesn't intersect
+        # at all.
+        # First let's get the masses at both of these possible points
+        m1_at_max_m2 = pnutils.mchirp_mass1_to_mass2(opts.min_chirp_mass,
+                                                     opts.max_mass2)
+        if m1_at_max_m2 < opts.max_mass2:
+            # Unphysical, remove
+            m1_at_max_m2 = -1
+        m2_at_min_m1 = pnutils.mchirp_mass1_to_mass2(opts.min_chirp_mass,
+                                                      opts.min_mass1)
+        if m2_at_min_m1 > opts.min_mass1:
+            # Unphysical, remove
+            m2_at_min_m1 = -1
+        # Get the values on the equal mass line
+        m1_at_equal_mass, m2_at_equal_mass = pnutils.mchirp_eta_to_mass1_mass2(\
+                                                     opts.min_chirp_mass, 0.25)
+
+        # Are any of these possible?
+        if m1_at_max_m2 <= opts.max_mass1 and m1_at_max_m2 >= opts.min_mass1:
+            min_tot_mass = opts.max_mass2 + m1_at_max_m2
+        elif m2_at_min_m1 <= opts.max_mass2 and m2_at_min_m1 >= opts.min_mass2:
+            min_tot_mass = opts.min_mass1 + m2_at_min_m1
+        elif m1_at_equal_mass <= opts.max_mass1 and \
+                 m1_at_equal_mass >= opts.min_mass1 and\
+                 m2_at_equal_mass <= opts.max_mass2 and\
+                 m2_at_equal_mass >= opts.min_mass2:
+            min_tot_mass = m1_at_equal_mass + m2_at_equal_mass
+        # So either the restriction is low enough to be redundant, or is
+        # removing all the paramter space
+        elif m2_at_min_m1 < opts.min_mass_2:
+            # This is the redundant case, ignore
+            min_tot_mass = opts.min_total_mass
+        else:
+            # And this is the bad case
+            err_msg = "The minimum chirp mass provided is not possible given "
+            err_msg += "restrictions on component masses."
+            raise ValueError(err_msg)
+        # Is there also an eta restriction?
+        if opts.max_eta:
+            # Get the value of m1,m2 at max_eta, min_chirp_mass
+            max_eta_m1, max_eta_m2 = pnutils.mchirp_eta_to_mass1_mass2(
+                                         opts.min_chirp_mass, opts.max_eta)
+            max_eta_min_tot_mass = max_eta_m1 + max_eta_m2
+            if max_eta_min_tot_mass > min_tot_mass:
+                # Okay, eta does restrict this further. Still physical?
+                min_tot_mass = max_eta_min_tot_mass
+                if max_eta_m1 > opts.max_mass1:
+                    err_msg = "The combination of component mass, chirp "
+                    err_msg += "mass, eta and (possibly) total mass limits "
+                    err_msg += "have precluded all systems."
+                    raise ValueError(err_msg)
+        # Update min_tot_mass if needed
+        if min_tot_mass > opts.min_total_mass:
+            opts.min_total_mass = float(min_tot_mass)
+    # Need to check max_eta alone for minimum mass
+    if opts.max_eta:
+        # Similar to above
+        # Need to get the smallest possible min_tot_mass from this eta.
+        # There are 3 possibilities for where the min_tot_mass is found on the
+        # line of max_eta that interacts with the component mass limits.
+        # Either it is found at min_m2, or at min_m1, or it doesn't intersect
+        # at all (ie. this chirp mass is not possible).
+        # First let's get the masses at both of these possible points
+        m1_at_min_m2 = pnutils.eta_mass1_to_mass2(opts.max_eta, opts.min_mass2,
+                                                      return_mass_heavier=True)
+        m2_at_min_m1 = pnutils.eta_mass1_to_mass2(opts.max_eta, opts.min_mass1,
+                                                     return_mass_heavier=False)
+        # Are either of these possible?
+        if m1_at_min_m2 <= opts.max_mass1 and m1_at_min_m2 >= opts.min_mass1:
+            min_tot_mass = opts.min_mass2 + m1_at_min_m2
+        elif m2_at_min_m1 <= opts.max_mass2 and m2_at_min_m1 >= opts.min_mass2:
+            min_tot_mass = opts.min_mass1 + m2_at_min_m1
+        # So either the restriction is low enough to be redundant, or is
+        # removing all the paramter space
+        elif m2_at_min_m1 > opts.max_mass1:
+            # This is the redundant case, ignore
+            min_tot_mass = opts.min_total_mass
+        else:
+            # And this is the bad case
+            err_msg = "The maximum eta provided is not possible given "
+            err_msg += "restrictions on component masses."
+            raise ValueError(err_msg)
+        # Update min_tot_mass if needed
+        if min_tot_mass > opts.min_total_mass:
+            opts.min_total_mass = float(min_tot_mass)
+
+    # Then need to do max_chirp_mass and min_eta
+    if opts.max_chirp_mass is not None:
+        # Need to get the largest possible maxn_tot_mass from this chirp mass
+        # There are 3 possibilities for where the max_tot_mass is found on the
+        # line of max_chirp_mass that interacts with the component mass limits.
+        # Either it is found at min_m2, or at max_m1, or it doesn't intersect
+        # at all.
+        # First let's get the masses at both of these possible points
+        m1_at_min_m2 = pnutils.mchirp_mass1_to_mass2(opts.max_chirp_mass,
+                                                     opts.min_mass2)
+        m2_at_max_m1 = pnutils.mchirp_mass1_to_mass2(opts.max_chirp_mass,
+                                                      opts.max_mass1)
+        # Are either of these possible?
+        if m1_at_min_m2 <= opts.max_mass1 and m1_at_min_m2 >= opts.min_mass1:
+            max_tot_mass = opts.min_mass2 + m1_at_min_m2
+        elif m2_at_max_m1 <= opts.max_mass2 and m2_at_max_m1 >= opts.min_mass2:
+            max_tot_mass = opts.max_mass1 + m2_at_max_m1
+        # So either the restriction is low enough to be redundant, or is
+        # removing all the paramter space
+        elif m2_at_max_m1 > opts.max_mass2:
+            # This is the redundant case, ignore
+            max_tot_mass = opts.max_total_mass
+        else:
+            # And this is the bad case
+            err_msg = "The maximum chirp mass provided is not possible given "
+            err_msg += "restrictions on component masses."
+            raise ValueError(err_msg)
+        # Is there also an eta restriction?
+        if opts.min_eta:
+            # Get the value of m1,m2 at max_eta, min_chirp_mass
+            min_eta_m1, min_eta_m2 = pnutils.mchirp_eta_to_mass1_mass2(
+                                         opts.max_chirp_mass, opts.min_eta)
+            min_eta_max_tot_mass = min_eta_m1 + min_eta_m2
+            if min_eta_max_tot_mass < max_tot_mass:
+                # Okay, eta does restrict this further. Still physical?
+                max_tot_mass = min_eta_max_tot_mass
+                if min_eta_m1 < opts.min_mass1:
+                    err_msg = "The combination of component mass, chirp "
+                    err_msg += "mass, eta and (possibly) total mass limits "
+                    err_msg += "have precluded all systems."
+                    raise ValueError(err_msg)
+        # Update min_tot_mass if needed
+        if max_tot_mass < opts.max_total_mass:
+            opts.max_total_mass = float(max_tot_mass)
+    # Need to check min_eta alone for maximum total mass
+    if opts.min_eta:
+        # Similar to above
+        # Need to get the largest possible max_tot_mass from this eta.
+        # There are 3 possibilities for where the max_tot_mass is found on the
+        # line of min_eta that interacts with the component mass limits.
+        # Either it is found at max_m2, or at max_m1, or it doesn't intersect
+        # at all (ie. this eta is not possible).
+        # First let's get the masses at both of these possible points
+        m1_at_max_m2 = pnutils.eta_mass1_to_mass2(opts.min_eta, opts.max_mass2,
+                                                      return_mass_heavier=True)
+        m2_at_max_m1 = pnutils.eta_mass1_to_mass2(opts.min_eta, opts.max_mass1,
+                                                     return_mass_heavier=False)
+        # Are either of these possible?
+        if m1_at_max_m2 <= opts.max_mass1 and m1_at_max_m2 >= opts.min_mass1:
+            max_tot_mass = opts.max_mass2 + m1_at_max_m2
+        elif m2_at_max_m1 <= opts.max_mass2 and m2_at_max_m1 >= opts.min_mass2:
+            max_tot_mass = opts.max_mass1 + m2_at_max_m1
+        # So either the restriction is low enough to be redundant, or is
+        # removing all the paramter space
+        elif m2_at_max_m1 < opts.min_mass1:
+            # This is the redundant case, ignore
+            max_tot_mass = opts.max_total_mass
+        else:
+            # And this is the bad case
+            err_msg = "The minimum eta provided is not possible given "
+            err_msg += "restrictions on component masses."
+            raise ValueError(err_msg)
+        # Update min_tot_mass if needed
+        if max_tot_mass < opts.max_total_mass:
+            opts.max_total_mass = float(max_tot_mass)
+
     if opts.max_eta and opts.min_eta:
         if opts.max_eta < opts.min_eta:
             parser.error("--max-eta must be larger than --min-eta.")
@@ -466,7 +679,9 @@ class massRangeParameters(object):
     """
     def __init__(self, minMass1, maxMass1, minMass2, maxMass2,
                  maxNSSpinMag=0, maxBHSpinMag=0, maxTotMass=None,
-                 minTotMass=None, maxEta=None, minEta=0, nsbhFlag=False):
+                 minTotMass=None, maxEta=None, minEta=0, 
+                 max_chirp_mass=None, min_chirp_mass=None, 
+                 ns_bh_boundary_mass=3.0, nsbhFlag=False):
         """
         Initialize an instance of the massRangeParameters by providing all
         options directly. See the help message associated with any code
@@ -491,9 +706,10 @@ class massRangeParameters(object):
             self.maxEta=maxEta
         else:
             self.maxEta=0.25
+        self.max_chirp_mass = max_chirp_mass
+        self.min_chirp_mass = min_chirp_mass
         self.minEta=minEta
-        # FIXME: Check you have NSBHs if this is set.
-        # In fact, why not set automatically if you *have* only NSBHs?
+        self.ns_bh_boundary_mass = ns_bh_boundary_mass
         self.nsbhFlag=nsbhFlag
 
         # FIXME: This may be inaccurate if Eta limits are given
@@ -527,14 +743,18 @@ class massRangeParameters(object):
             return cls(opts.min_mass1, opts.max_mass1, opts.min_mass2,\
                        opts.max_mass2, maxTotMass=opts.max_total_mass,\
                        minTotMass=opts.min_total_mass, maxEta=opts.max_eta,\
-                       minEta=opts.min_eta)
+                       minEta=opts.min_eta, max_chirp_mass=opts.max_chirp_mass,\
+                       min_chirp_mass=opts.min_chirp_mass)
         else:
             return cls(opts.min_mass1, opts.max_mass1, opts.min_mass2,\
                        opts.max_mass2, maxTotMass=opts.max_total_mass,\
                        minTotMass=opts.min_total_mass, maxEta=opts.max_eta,\
                        minEta=opts.min_eta, maxNSSpinMag=opts.max_ns_spin_mag,\
                        maxBHSpinMag=opts.max_bh_spin_mag, \
-                       nsbhFlag=opts.nsbh_flag)
+                       nsbhFlag=opts.nsbh_flag,
+                       max_chirp_mass=opts.max_chirp_mass,
+                       min_chirp_mass=opts.min_chirp_mass,
+                       ns_bh_boundary_mass=opts.ns_bh_boundary_mass)
 
     def is_unphysical(self, mass1, mass2, spin1z, spin2z):
         """
