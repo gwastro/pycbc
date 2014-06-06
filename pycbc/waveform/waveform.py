@@ -51,15 +51,18 @@ default_args = {'spin1x':0,'spin1y':0,'spin1z':0,
                 'amplitude_order':-1,'phase_order':-1,'spin_order':-1,
                 'tidal_order':-1}
 
+default_sgburst_args = {'eccentricity':0,'polarization':0}
+
 base_required_args = ['mass1','mass2','f_lower']
 td_required_args = base_required_args + ['delta_t']
 fd_required_args = base_required_args + ['delta_f']
-
+sgburst_required_args = ['q','frequency','hrss']
 
 # td, fd, filter waveforms generated on the CPU
 _lalsim_td_approximants = {}
 _lalsim_fd_approximants = {}
 _lalsim_enum = {}
+_lalsim_sgburst_approximants = {}
 
 def _imrphenombfreq(**p):
     import lal, lalinspiral, lalsimulation
@@ -237,6 +240,19 @@ def _lalsim_fd_waveform(**p):
     
     return hp, hc
 
+def _lalsim_sgburst_waveform(**p):
+    hp, hc = lalsimulation.SimBurstSineGaussian(float(p['q']),
+               float(p['frequency']),
+               float(p['hrss']),
+               float(p['eccentricity']),
+               float(p['polarization']),
+               float(p['delta_t']))
+
+    hp = TimeSeries(hp.data.data[:], delta_t=hp.deltaT, epoch=hp.epoch)
+    hc = TimeSeries(hc.data.data[:], delta_t=hc.deltaT, epoch=hc.epoch)
+
+    return hp, hc
+
 for approx_enum in xrange(0,lalsimulation.NumApproximants):
     if lalsimulation.SimInspiralImplementedTDApproximants(approx_enum):
         approx_name =  lalsimulation.GetStringFromApproximant(approx_enum)
@@ -249,6 +265,13 @@ for approx_enum in xrange(0,lalsimulation.NumApproximants):
         _lalsim_enum[approx_name] = approx_enum
         _lalsim_fd_approximants[approx_name] = _lalsim_fd_waveform
 
+# sine-Gaussian burst
+for approx_enum in xrange(0,lalsimulation.NumApproximants):
+    if lalsimulation.SimInspiralImplementedFDApproximants(approx_enum):
+        approx_name =  lalsimulation.GetStringFromApproximant(approx_enum)
+        _lalsim_enum[approx_name] = approx_enum
+        _lalsim_sgburst_approximants[approx_name] = _lalsim_sgburst_waveform
+
 #Add lalinspiral approximants
 insp_td = {}
 for apx in ['EOB']:
@@ -259,6 +282,7 @@ for apx in ['EOB']:
 cpu_td = dict(_lalsim_td_approximants.items() + insp_td.items())
 cpu_fd = _lalsim_fd_approximants
 cpu_fd['Inspiral-IMRPhenomB'] = _imrphenombfreq
+cpu_sgburst = _lalsim_sgburst_approximants
 
 # Waveforms written in CUDA
 _cuda_td_approximants = {}
@@ -285,6 +309,7 @@ td_wav = _scheme.ChooseBySchemeDict()
 fd_wav = _scheme.ChooseBySchemeDict()
 td_wav.update({_scheme.CPUScheme:cpu_td,_scheme.CUDAScheme:cuda_td,_scheme.OpenCLScheme:opencl_td})
 fd_wav.update({_scheme.CPUScheme:cpu_fd,_scheme.CUDAScheme:cuda_fd,_scheme.OpenCLScheme:opencl_fd})
+sgburst_wav = {_scheme.CPUScheme:cpu_sgburst}
 
 # List the various available approximants ####################################
 
@@ -310,6 +335,11 @@ def print_fd_approximants():
     for approx in _opencl_fd_approximants.keys():
         print "  " + approx
 
+def print_sgburst_approximants():
+    print("Lalsimulation Approximants")
+    for approx in _lalsim_sgburst_approximants.keys():
+        print "  " + approx
+
 def td_approximants(scheme=_scheme.mgr.state):
     """Return a list containing the available time domain approximants for 
        the given processing scheme.
@@ -321,6 +351,12 @@ def fd_approximants(scheme=_scheme.mgr.state):
        the given processing scheme.
     """
     return fd_wav[type(scheme)].keys()    
+
+def sgburst_approximants(scheme=_scheme.mgr.state):
+    """Return a list containing the available time domain sgbursts for
+       the given processing scheme.
+    """
+    return sgburst_wav[type(scheme)].keys()
 
 def filter_approximants(scheme=_scheme.mgr.state):
     """Return a list of fourier domain approximants including those
@@ -351,6 +387,27 @@ def props(obj, **kwargs):
     # Get the parameters to generate the waveform
     # Note that keyword arguments override values in the template object
     input_params = default_args.copy()
+    input_params.update(pr)
+    input_params.update(kwargs)
+
+    return input_params
+
+# Input parameter handling for bursts ########################################
+
+def props_sgburst(obj, **kwargs):
+    pr = {}
+    if obj is not None:
+        for name in dir(obj):
+            try:
+                value = getattr(obj, name)
+                if not name.startswith('__') and not inspect.ismethod(value):
+                    pr[name] = value
+            except:
+                continue
+
+    # Get the parameters to generate the waveform
+    # Note that keyword arguments override values in the template object
+    input_params = default_sgburst_args.copy()
     input_params.update(pr)
     input_params.update(kwargs)
 
@@ -526,6 +583,46 @@ def get_fd_waveform(template=None, **kwargs):
 
     return wav_gen[input_params['approximant']](**input_params)
 
+
+def get_sgburst_waveform(template=None, **kwargs):
+    """Return the plus and cross polarizations of a time domain
+    sine-Gaussian burst waveform.
+
+    Parameters
+    ----------
+    template: object
+        An object that has attached properties. This can be used to subsitute
+        for keyword arguments. A common example would be a row in an xml table.
+    approximant : string
+        A string that indicates the chosen approximant. See `td_approximants`
+        for available options.
+    q : float
+        The quality factor of a sine-Gaussian burst
+    frequency : float
+        The centre-frequency of a sine-Gaussian burst
+    delta_t : float
+        The time step used to generate the waveform
+    hrss : float
+        The strain rss
+    amplitude: float
+        The strain amplitude
+
+    Returns
+    -------
+    hplus: TimeSeries
+        The plus polarization of the waveform.
+    hcross: TimeSeries
+        The cross polarization of the waveform.
+    """
+    input_params = props_sgburst(template,**kwargs)
+
+    for arg in sgburst_required_args:
+        if arg in input_params:
+            pass
+        else:
+            raise ValueError("Please provide " + str(arg) )
+
+    return _lalsim_sgburst_waveform(**input_params)
     
 # Waveform filter routines ###################################################
 
@@ -661,4 +758,5 @@ __all__ = ["get_td_waveform","get_fd_waveform","print_td_approximants",
            "get_waveform_filter", 
            "filter_approximants", "get_waveform_filter_norm", "get_waveform_end_frequency",
             "waveform_norm_exists", "get_template_amplitude_norm",
-           "get_waveform_filter_length_in_time"]
+           "get_waveform_filter_length_in_time","get_sgburst_waveform",
+           "print_sgburst_approximants","sgburst_approximants"]

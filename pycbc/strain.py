@@ -21,7 +21,7 @@ import pycbc.noise
 from pycbc import psd
 from pycbc.types import float32
 from pycbc.frame import read_frame
-from pycbc.inject import InjectionSet
+from pycbc.inject import InjectionSet, SGBurstInjectionSet
 from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series
 
 def required_opts(opt, parser, opt_list, required_by=None):
@@ -107,6 +107,11 @@ def from_cli(opt, dyn_range_fac=1):
             injections = InjectionSet(opt.injection_file)
             injections.apply(strain, opt.channel_name[0:2])
 
+        if opt.sgburst_injection_file:
+            logging.info("Applying sine-Gaussian burst injections")
+            injections = SGBurstInjectionSet(opt.sgburst_injection_file)
+            injections.apply(strain, opt.channel_name[0:2])
+
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
 
@@ -153,6 +158,11 @@ def from_cli(opt, dyn_range_fac=1):
         if opt.injection_file:
             logging.info("Applying injections")
             injections = InjectionSet(opt.injection_file)
+            injections.apply(strain, opt.channel_name[0:2])
+
+        if opt.sgburst_injection_file:
+            logging.info("Applying sine-Gaussian burst injections")
+            injections = SGBurstInjectionSet(opt.sgburst_injection_file)
             injections.apply(strain, opt.channel_name[0:2])
         
         logging.info("Converting to float32")
@@ -219,6 +229,10 @@ def insert_strain_option_group(parser):
     data_reading_group.add_argument("--injection-file", type=str, 
                       help="(optional) Injection file used to add "
                            "waveforms into the strain")                 
+
+    data_reading_group.add_argument("--sgburst-injection-file", type=str,
+                      help="(optional) Injection file used to add "
+                      "sine-Gaussian burst waveforms into the strain")
 
     data_reading_group.add_argument("--gating-file", type=str,
                     help="(optional) Text file of gating segments to apply."
