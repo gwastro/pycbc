@@ -829,12 +829,17 @@ class LigolwSSthincaJob(Job):
         if dqVetoName:
             self.add_opt("vetoes-name", dqVetoName)
 
-    def create_node(self, jobSegment, inputFile):
+    def create_node(self, jobSegment, coincSegment, inputFile):
         node = Node(self)
         node.add_input(inputFile, argument=True)
 
         # Add the start/end times
-        segString = "%f:%f" %(jobSegment[0], jobSegment[1]) 
+        segString = ""
+        if coincSegment[0]:
+          segString += str(coincSegment[0])
+        segString += ":"
+        if coincSegment[1]:
+          segString += str(coincSegment[1])
         node.add_var_opt('coinc-end-time-segment', segString)
 
         # FIXME: This must match the *actual* output name!

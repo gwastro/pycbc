@@ -301,12 +301,21 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
             inputTrigFiles.append(object.ahope_file)
  
         llw_files = inputTrigFiles + dqSegFile + [tisiOutFile]
+
+        # Determine segments to accept coincidences
+        coincStart, coincEnd = None, None
+        if idx and (cafe_cache.extent[0] == cafe_caches[idx-1].extent[1]):
+            coincStart = cafe_cache.extent[0]
+        if idx + 1 - len(cafe_caches) and (cafe_cache.extent[1] == cafe_caches[idx+1].extent[0]):
+            coincEnd = cafe_cache.extent[1]
+        coincSegment = (coincStart, coincEnd)
+
         # Now we can create the nodes
         node = ligolwadd_job.create_node(cafe_cache.extent, llw_files)
         ligolwAddFile = node.output_files[0]
         ligolwAddOuts.append(ligolwAddFile)
         workflow.add_node(node)
-        node = ligolwthinca_job.create_node(cafe_cache.extent, ligolwAddFile)
+        node = ligolwthinca_job.create_node(cafe_cache.extent, coincSegment, ligolwAddFile)
         ligolwThincaOuts += node.output_files
         workflow.add_node(node)
 
