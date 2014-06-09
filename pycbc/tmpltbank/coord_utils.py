@@ -452,10 +452,9 @@ def get_point_distance(point1, point2, metricParams, fUpper):
 
     return dist, aXis, bXis
 
-def calc_point_dist(vsA, entryA, MMdistA):
+def calc_point_dist(vsA, entryA):
     """
-    This function is used to determine if the distance between two points is
-    less than that stated by the minimal match.
+    This function is used to determine the distance between two points.
 
     Parameters
     ----------
@@ -468,14 +467,30 @@ def calc_point_dist(vsA, entryA, MMdistA):
 
     Returns
     --------
-    Boolean
-        True if the points have a mismatch < MMdistA
-        False if the points have a mismatch > MMdistA
+    val : float
+        The metric distance between the two points.
     """
-    val = (vsA[0] - entryA[0])**2
-    for i in range(1,len(vsA)):
-        val += (vsA[i] - entryA[i])**2
-    return (val < MMdistA)
+    chi_diffs = vsA - entryA
+    val = ((chi_diffs)*(chi_diffs)).sum()
+    return val 
+
+def test_point_dist(point_1_chis, point_2_chis, distance_threshold):
+    """
+    This function tests if the difference between two points in the chi
+    parameter space is less than a distance threshold. Returns True if it is
+    and False if it is not.   
+
+    Parameters
+    ----------
+    point_1_chis : numpy.array
+        An array of point 1's position in the \chi_i coordinate system
+    point_2_chis : numpy.array
+        An array of point 2's position in the \chi_i coordinate system
+    distance_threshold : float
+        The distance threshold to use.
+    """
+    return calc_point_dist(point_1_chis, point_2_chis) < distance_threshold
+
 
 def calc_point_dist_vary(mus1, fUpper1, mus2, fUpper2, fMap, norm_map, MMdistA):
     """

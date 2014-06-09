@@ -189,7 +189,7 @@ if opts.vary_fupper==False:
         fs.sort()
         refFreq = fs.max()
 else:
-    # determine upper frequency cutoffs corresponding to the min and max 
+    # determine upper frequency cutoffs corresponding to the min and max
     # total masses
     fs = numpy.array(metricParams.evals.keys(), dtype=float)
     fs.sort()
@@ -200,6 +200,8 @@ else:
         opts.bank_fupper_formula,
         numpy.array([opts.min_total_mass]), fs)[0]
     refFreq = lowEve
+    fs = fs[fs >= lowEve]
+    fs = fs[fs <= highEve]
 
 logging.info("Calculating covariance matrix")
 
@@ -210,42 +212,12 @@ evalsCV,evecsCV = numpy.linalg.eig(cov)
 metricParams.evecsCV = {}
 metricParams.evecsCV[refFreq] = evecsCV
 
-# Estimate the largest values of \chi_1 and \chi_2 to optimise what follows
-logging.info("Determining parameter space extent")
+# Initialize the class for generating the partitioned bank
+logging.info("Initialize the PartitionedTmpltbank class")
 
-vals = tmpltbank.estimate_mass_range(
-    1000000, massRangeParams, metricParams, refFreq, covary=True)
-
-chi1Max = vals[0].max()
-chi1Min = vals[0].min()
-chi1Diff = chi1Max - chi1Min
-chi2Max = vals[1].max()
-chi2Min = vals[1].min()
-chi2Diff = chi2Max - chi2Min
-# FIXME: Maybe better to use the numerical code to find maxima here?
-chi1Min = chi1Min - 0.1*chi1Diff
-chi1Max = chi1Max + 0.1*chi1Diff
-chi2Min = chi2Min - 0.1*chi2Diff
-chi2Max = chi2Max + 0.1*chi2Diff
-
-logging.info("Initializing bank generation")
-
-vals = None
-
-# Set up the bank into sections
-massbank = {}
-bank = {}
-MMdist = (opts.max_mismatch)**0.5
-for i in xrange(-2,int((chi1Max - chi1Min) // MMdist + 2)):
-    bank[i] = {}
-    massbank[i] = {}
-    for j in xrange(-2,int((chi2Max - chi2Min) // MMdist + 2)):
-        bank[i][j] = []
-        massbank[i][j] = {}
-        massbank[i][j]['mass1s'] = numpy.array([])
-
-maxChi1Bin = int((chi1Max - chi1Min) // MMdist + 1)
-maxChi2Bin = int((chi2Max - chi2Min) // MMdist + 1)
+partitioned_bank_object = tmpltbank.PartitionedTmpltbank(massRangeParams,
+                               metricParams, refFreq, (opts.max_mismatch)**0.5,
+                               bin_range_check=1)
 
 # Initialise counters
 N = 0
@@ -255,23 +227,16 @@ Nr = 0
 
 # Map the frequency values and normalizations to idx if --vary-fupper is used
 if opts.vary_fupper:
-    freqMap = {}
-    norm_map = {}
-    idx = 0
-    for freq in fs:
-        if freq >= lowEve and freq <= highEve:
-            freqMap[freq] = idx
-            norm_map[freq] = (metricParams.moments['I7'][freq])**0.5
-            idx += 1
+    partitioned_bank_object.get_freq_map_and_normalizations(fs)
 
 logging.info("Starting bank placement")
 
-outbins = tmpltbank.outspiral_loop(1)
 while True:
     if not (Ns % 100000):
         # For optimization we generate points in sets of 100000
         rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z =\
             tmpltbank.get_random_mass(100000, massRangeParams)
+        # Use pnutils function here
         diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
         rMass1 = (rTotmass + diff)/2.
         rMass2 = (rTotmass - diff)/2.
@@ -285,16 +250,10 @@ while True:
             mus = []
             idx = 0
             for freq in fs:
-                if freq >= lowEve and freq <= highEve: 
-                    mus.append(
-                        tmpltbank.get_mu_params(lambdas, metricParams, freq))
-                    if freqMap[freq] != idx:
-                        raise BrokenError
-                    idx += 1
+                mus.append(
+                    tmpltbank.get_mu_params(lambdas, metricParams, freq))
+                idx += 1
             mus = numpy.array(mus)
-        else:
-            refEve = numpy.zeros(100000)
-            mus = numpy.zeros([1,1,100000])
         vecs = tmpltbank.get_cov_params(
             rTotmass, rEta, rBeta, rSigma, rGamma, rChis, 
             metricParams, refFreq)
@@ -304,73 +263,19 @@ while True:
     if not (Np % 100000):
         logging.info("%d seeds" % Np)
     vs = vecs[:,Ns]
-    # What bin should it be in?
-    v1Bin = int((vs[0] - chi1Min) // MMdist)
-    v2Bin = int((vs[1] - chi2Min) // MMdist)
-    # FIXME: This check should not be necessary
-    # Did our previous numerical placement of bins fail?
-    if ( (v1Bin < -1) or
-         (v1Bin >= maxChi1Bin) or
-         (v2Bin < -1) or
-         (v2Bin >= maxChi2Bin) ):
-        for tmpV1 in range(v1Bin-1, v1Bin+2):
-            if not massbank.has_key(tmpV1):
-                massbank[tmpV1] = {}
-                bank[tmpV1] = {}
-            for tmpV2 in range(v2Bin-max_search_bin, v2Bin+1+max_search_bin):
-                if not massbank[tmpV1].has_key(tmpV2):
-                    massbank[tmpV1][tmpV2] = {}
-                    massbank[tmpV1][tmpV2]['mass1s'] = numpy.array([])
-                    bank[tmpV1][tmpV2] = []
-    store = True
     Np = Np + 1
     # Stop if we hit break condition
     if Np > opts.num_seeds:
         break
     # Calculate if any existing point is too close (set store to False)
     if opts.vary_fupper:
-        for i,j in outbins:
-            if store:
-                curr_bank = massbank[v1Bin+i][v2Bin+j]
-                if not massbank[v1Bin+i][v2Bin+j]['mass1s'].size:
-                    continue
-                # *NOT* the same of .min and .max
-                f_upper = numpy.minimum(refEve[Ns], curr_bank['freqcuts'])
-                f_other = numpy.maximum(refEve[Ns], curr_bank['freqcuts'])
-                # NOTE: idx is a vector!
-                freq_idx = numpy.array([freqMap[f] for f in f_upper])
-                # NOTE: The indices used in the stored and current mu vectors
-                #       are different.
-                # This gives a 2x2 vector: idx0 = stored index, idx1 = mu index
-                vecs1 = mus[freq_idx,:,Ns]
-                # This gives a 2x2 vector: idx0 = stored index, idx1 = mu index
-                range_idx = numpy.arange(len(freq_idx))
-                vecs2 = curr_bank['mus'][range_idx,freq_idx,:]
-
-                # Now do the sums
-                dists = (vecs1 - vecs2)*(vecs1 - vecs2)
-                # This reduces to 1D: idx = stored index
-                dists = numpy.sum(dists, axis=1)
-                # I wonder if this line actually speeds things up?
-                if (dists > opts.max_mismatch).all():
-                    continue
-                # This is only needed for close templates, should we prune?
-                norm_upper = numpy.array([norm_map[f] for f in f_upper])
-                norm_other = numpy.array([norm_map[f] for f in f_other])
-                norm_fac = norm_upper / norm_other
-                renormed_dists = 1 - (1 - dists)*norm_fac
-                if (renormed_dists < opts.max_mismatch).any():
-                    store = False
+        reject = partitioned_bank_object.test_point_distance_vary(vs,
+                                    refEve[Ns], mus[:,:,Ns], opts.max_mismatch) 
     else:
-        for i,j in outbins:
-            if store:
-                for entry in bank[v1Bin+i][v2Bin+j]:
-                    if tmpltbank.calc_point_dist(vs, entry, 
-                                                 opts.max_mismatch):
-                        store = False
-                        break
+        reject = partitioned_bank_object.test_point_distance(vs, 
+                                                             opts.max_mismatch)
     # Increment counters, check for break condition and continue if rejected
-    if not store:
+    if reject:
         Ns = Ns + 1
         Nr = Nr + 1
         if Nr > opts.num_failed_cutoff:
@@ -378,35 +283,15 @@ while True:
         continue
     # Add point, increment counters and continue if accepted
     Nr = 0
-    bank[v1Bin][v2Bin].append(copy.deepcopy(vs))
-    if massbank[v1Bin][v2Bin]['mass1s'].size:
-        curr_bank = massbank[v1Bin][v2Bin]
-        curr_bank['mass1s'] = numpy.append(curr_bank['mass1s'],
-                                           numpy.array([rMass1[Ns]]))
-        curr_bank['mass2s'] = numpy.append(curr_bank['mass2s'],
-                                           numpy.array([rMass2[Ns]]))
-        curr_bank['spin1s'] = numpy.append(curr_bank['spin1s'],
-                                           numpy.array([rSpin1z[Ns]]))
-        curr_bank['spin2s'] = numpy.append(curr_bank['spin2s'],
-                                           numpy.array([rSpin2z[Ns]]))
-        curr_bank['freqcuts'] = numpy.append(curr_bank['freqcuts'],
-                                           numpy.array([refEve[Ns]]))
-        # Mus needs to append onto axis 0. See below for contents of variable
-        curr_bank['mus'] = numpy.append(curr_bank['mus'], 
-                                        numpy.array([mus[:,:,Ns]]), axis=0)
+    if opts.vary_fupper:
+        curr_mus = mus[:,:,Ns]
+        point_fupper = refEve[Ns]
     else:
-        massbank[v1Bin][v2Bin]['mass1s'] = numpy.array([rMass1[Ns]])
-        massbank[v1Bin][v2Bin]['mass2s'] = numpy.array([rMass2[Ns]])
-        massbank[v1Bin][v2Bin]['spin1s'] = numpy.array([rSpin1z[Ns]])
-        massbank[v1Bin][v2Bin]['spin2s'] = numpy.array([rSpin2z[Ns]])
-        massbank[v1Bin][v2Bin]['freqcuts'] = numpy.array([refEve[Ns]]) 
-        # Mus is tricky as this becomes a 3D array
-        # NOTE: mu relates to the non-covaried Cartesian coordinate system
-        # Axis 0: Template index
-        # Axis 1: Frequency cutoff index
-        # Axis 2: Mu coordinate index
-        massbank[v1Bin][v2Bin]['mus'] = numpy.array([mus[:,:,Ns]])
-
+        curr_mus = None
+        point_fupper = None
+    partitioned_bank_object.add_point_to_bank(vs, rMass1[Ns], rMass2[Ns],
+                           rSpin1z[Ns], rSpin2z[Ns], point_fupper=point_fupper,
+                           mus=curr_mus) 
     N = N + 1
     if not (N % 100000):
         logging.info("%d templates" % N)
@@ -415,15 +300,8 @@ while True:
 logging.info("Outputting bank")
 
 # Put the whole template bank in one list
-tempBank = []
-for i in massbank.keys():
-    for j in massbank[i].keys():
-        for k in xrange(len(massbank[i][j]['mass1s'])):
-            mass1 = massbank[i][j]['mass1s'][k]
-            mass2 = massbank[i][j]['mass2s'][k]
-            spin1z = massbank[i][j]['spin1s'][k]  
-            spin2z = massbank[i][j]['spin2s'][k]
-            tempBank.append([mass1, mass2, spin1z, spin2z])
+mass1, mass2, spin1z, spin2z = partitioned_bank_object.output_all_points()
+tempBank = zip(mass1, mass2, spin1z, spin2z)
 
 # Output to file
 tmpltbank.output_sngl_inspiral_table(
