@@ -483,16 +483,11 @@ def setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
 
     # Now need to convert each frame file into an AhopeFile
     for cache in datafindcaches:
+        curr_ifo = cache.ifo
         for frame in cache:
             # Why does datafind not return the ifo as the "observatory"
             # like every other code!?
-            ifo = frame.description[0:2]
-            if ifo[0] != frame.observatory:
-                # HACK TO USE V1 S6 FRAMES
-                # BECAUSE THE FRAME-TYPE DOES NOT START WITH "V1_"
-                ifo = "V1"
-                # raise ValueError("Cannot determine ifo of frame.")
-            currFile = AhopeFile(ifo, frame.description,
+            currFile = AhopeFile(curr_ifo, frame.description,
                                  frame.segment, file_url=frame.url)
             datafindouts.append(currFile)
 
