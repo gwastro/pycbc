@@ -38,49 +38,13 @@ ext_libraries, ext_library_dirs, ext_include_dirs = pkg_config(["lal", "lalsimul
 requires = ['lal.lal', 'lalinspiral.lalinspiral', 'lalsimulation.lalsimulation']
 requires +=  ['numpy', 'scipy', 'glue', 'argparse']
 
-# Setup our swig options. We need the first two to match with how the swiglal
-# wrappings are compiled, so that our module can talk to theirs.  Then we must
-# reassemble the include_dirs to add the "-I" so swig can find things
-ext_swig_opts = ['-O','-keyword','-builtin','-outdir','pycbc']
-for libpath in ext_include_dirs:
-    ext_swig_opts.append('-I'+str(libpath))
-
-# Numpy include must be added separately:
-
-ext_include_dirs += [np_get_include()]
-
-# Define our extension module
-
-lalwrap_module = Extension('_lalwrap',
-                           sources=['include/lalwrap.i'],
-                           depends=['include/pycbc_laltypes.i'],
-                           swig_opts=ext_swig_opts,
-                           include_dirs=ext_include_dirs,
-                           library_dirs=ext_library_dirs,
-                           runtime_library_dirs=ext_library_dirs,
-                           libraries=ext_libraries,
-                           extra_compile_args=['-std=c99']
-                           )
-
-testlalwrap_module = Extension('_testlalwrap',
-                               sources=['include/testlalwrap.i'],
-                               depends=['include/pycbc_laltypes.i'],
-                               swig_opts=ext_swig_opts,
-                               include_dirs=ext_include_dirs,
-                               library_dirs=ext_library_dirs,
-                               runtime_library_dirs=ext_library_dirs,
-                               libraries=ext_libraries,
-                               extra_compile_args=['-std=c99']
-                               )
 
 # Add swig-generated files to the list of things to clean, so they
 # get regenerated each time.
 class clean(_clean):
     def finalize_options (self):
         _clean.finalize_options(self)
-        self.clean_files = ['pycbc/lalwrap.py','pycbc/lalwrap.pyc','include/lalwrap_wrap.c',
-                            'pycbc/testlalwrap.py','pycbc/testlalwrap.pyc','include/testlalwrap_wrap.c']
-
+        self.clean_files = []
         self.clean_folders = ['docs/_build']
     def run(self):
         _clean.run(self)
@@ -127,9 +91,7 @@ class install(_install):
 class build(_build):
     # override order of build sub-commands to work around
     # <http://bugs.python.org/issue7562>
-    sub_commands = [ ('build_clib', _build.has_c_libraries),
-                     ('build_ext', _build.has_ext_modules),
-                     ('build_py', _build.has_pure_modules),
+    sub_commands = [ ('build_py', _build.has_pure_modules),
                      ('build_scripts', _build.has_scripts) ]
 
     def run(self):
@@ -288,7 +250,6 @@ setup (
                  'test_opencl':test_opencl,
                  'clean' : clean,
                  'build' : build},
-    ext_modules = [lalwrap_module, testlalwrap_module],
     requires = requires,
     scripts  = [
                'bin/lalapps_inspiral_ahope',
