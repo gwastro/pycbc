@@ -227,7 +227,8 @@ Nr = 0
 
 # Map the frequency values and normalizations to idx if --vary-fupper is used
 if opts.vary_fupper:
-    partitioned_bank_object.get_freq_map_and_normalizations(fs)
+    partitioned_bank_object.get_freq_map_and_normalizations(fs,
+                                                      opts.bank_fupper_formula)
 
 logging.info("Starting bank placement")
 

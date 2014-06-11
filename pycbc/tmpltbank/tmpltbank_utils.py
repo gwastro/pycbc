@@ -16,6 +16,8 @@
 
 import copy
 import numpy
+import logging
+from pycbc import pnutils
 from pycbc.tmpltbank import coord_utils
 
 class PartitionedTmpltbank(object):
@@ -61,6 +63,10 @@ class PartitionedTmpltbank(object):
             all bins +/- this value in both chi_1 and chi_2 directions. 
             DEFAULT = 1.
         """
+        # Flags to be used in other methods of this class. Initialized here for
+        # simplicity
+        self.spin_warning_given = False
+
         # These will probably be used a lot, so add to object
         self.mass_range_params = mass_range_params
         self.metric_params = metric_params
@@ -110,7 +116,32 @@ class PartitionedTmpltbank(object):
         self.bin_range_check = 1
         self.bin_loop_order = coord_utils.outspiral_loop(self.bin_range_check)
 
-    def get_freq_map_and_normalizations(self, frequency_list):
+    def get_point_from_bins_and_idx(self, chi1_bin, chi2_bin, idx):
+        """
+        Given the chi1 bin, chi2 bin and an index, return the masses and spins
+        of the point at that index. Will fail if no point exists there.
+
+        Parameters
+        -----------
+        chi1_bin : int
+        chi2_bin : int
+        idx : int
+
+        Returns
+        --------
+        mass1 : float
+        mass2 : float
+        spin1z : float
+        spin2z : float
+        """
+        mass1 = self.massbank[chi1_bin][chi2_bin]['mass1s'][idx]
+        mass2 = self.massbank[chi1_bin][chi2_bin]['mass2s'][idx]
+        spin1z = self.massbank[chi1_bin][chi2_bin]['spin1s'][idx]
+        spin2z = self.massbank[chi1_bin][chi2_bin]['spin2s'][idx]
+        return mass1, mass2, spin1z, spin2z
+
+    def get_freq_map_and_normalizations(self, frequency_list,
+                                        upper_freq_formula):
         """
         If using the --vary-fupper capability we need to store the mapping
         between index and frequencies in the list. We also precalculate the
@@ -122,9 +153,11 @@ class PartitionedTmpltbank(object):
         frequency_list : array of floats
             The frequencies for which the metric has been computed and lie
             within the parameter space being considered.
+        upper_freq_formula : string
         """
         self.frequency_map = {}
         self.normalization_map = {}
+        self.upper_freq_formula = upper_freq_formula
         # FIXME: Must this be sorted on input
         frequency_list.sort()
 
@@ -177,17 +210,18 @@ class PartitionedTmpltbank(object):
              (chi1_bin > self.max_chi1_bin-bin_range_check) or
              (chi2_bin < self.min_chi2_bin+bin_range_check) or
              (chi2_bin > self.max_chi2_bin-bin_range_check) ):
-            for tmp_chi1 in xrange(chi1_bin-bin_range_check,
+            for temp_chi1 in xrange(chi1_bin-bin_range_check,
                                                    chi1_bin+bin_range_check+1):
-                if not massbank.has_key[temp_chi1]:
-                    mass_bank[temp_chi1] = {}
-                    bank[temp_chi1] = {}
-                for tmp_chi2 in xrange(chi2_bin-bin_range_check, 
+                if not self.massbank.has_key(temp_chi1):
+                    self.massbank[temp_chi1] = {}
+                    self.bank[temp_chi1] = {}
+                for temp_chi2 in xrange(chi2_bin-bin_range_check, 
                                                    chi2_bin+bin_range_check+1):
-                    if not massbank.has_key[temp_chi2]:
-                        massbank[temp_chi1][temp_chi2]
-                        massbank[temp_chi1][temp_chi2]['mass1s'] = numpy.array()
-                        bank[temp_chi1][temp_chi2] = []
+                    if not self.massbank[temp_chi1].has_key(temp_chi2):
+                        self.massbank[temp_chi1][temp_chi2] = {}
+                        self.massbank[temp_chi1][temp_chi2]['mass1s'] =\
+                                                                numpy.array([])
+                        self.bank[temp_chi1][temp_chi2] = []
 
     def calc_point_distance(self, chi_coords):
         """
@@ -204,18 +238,22 @@ class PartitionedTmpltbank(object):
         min_dist : float
             The smallest **SQUARED** metric distance between the test point and
             the bank.
-
+        indexes : The chi1_bin, chi2_bin and position within that bin at which
+            the closest matching point lies.
         """
         chi1_bin, chi2_bin = self.find_point_bin(chi_coords)
         min_dist = 1000000000
+        indexes = None
         for chi1_bin_offset, chi2_bin_offset in self.bin_loop_order:
             curr_chi1_bin = chi1_bin + chi1_bin_offset
             curr_chi2_bin = chi2_bin + chi2_bin_offset
-            for bank_chis in bank[curr_chi1_bin][curr_chi2_bin]:
+            for idx, bank_chis in \
+                            enumerate(self.bank[curr_chi1_bin][curr_chi2_bin]):
                 dist = coord_utils.calc_point_dist(chi_coords, bank_chis)
                 if dist < min_dist:
                     min_dist = dist
-        return min_dist            
+                    indexes = (curr_chi1_bin, curr_chi2_bin, idx)
+        return min_dist, indexes            
 
     def test_point_distance(self, chi_coords, distance_threshold):
         """
@@ -272,9 +310,12 @@ class PartitionedTmpltbank(object):
         min_dist : float
             The smallest **SQUARED** metric distance between the test point and
             the bank.
+        indexes : The chi1_bin, chi2_bin and position within that bin at which
+            the closest matching point lies.
         """
         chi1_bin, chi2_bin = self.find_point_bin(chi_coords)
         min_dist = 1000000000
+        indexes = None
         for chi1_bin_offset, chi2_bin_offset in self.bin_loop_order:
             curr_chi1_bin = chi1_bin + chi1_bin_offset
             curr_chi2_bin = chi2_bin + chi2_bin_offset
@@ -307,8 +348,9 @@ class PartitionedTmpltbank(object):
             curr_min_dist = renormed_dists.min()
             if curr_min_dist < min_dist:
                 min_dist = curr_min_dist
+                indexes = curr_chi1_bin, curr_chi2_bin, renormed_dists.argmin()
 
-        return min_dist
+        return min_dist, indexes
 
     def test_point_distance_vary(self, chi_coords, point_fupper, mus, 
                                  distance_threshold):
@@ -440,6 +482,95 @@ class PartitionedTmpltbank(object):
             # Axis 2: Mu coordinate index
             if mus is not None:
                 curr_bank['mus'] = numpy.array([mus[:,:]])
+
+    def add_point_by_masses(self, mass1, mass2, spin1z, spin2z,
+                            vary_fupper=False):
+        """
+        Add a point to the template bank. This differs from add point to bank
+        as it assumes that the chi coordinates and the products needed to use
+        vary_fupper have not already been calculated. This function calculates
+        these products and then calls add_point_to_bank. This function also
+        carries out a number of sanity checks (eg. is the point within the
+        ranges given by mass_range_params) that add_point_to_bank does not do
+        for speed concerns.
+
+        Parameters
+        -----------
+        mass1 : float
+            Mass of the heavier body
+        mass2 : float
+            Mass of the lighter body
+        spin1z : float
+            Spin of the heavier body
+        spin2z : float
+            Spin of the lighter body
+        """
+        # Test that masses are the expected way around (ie. mass1 > mass2)
+        if mass2 > mass1:
+            if not self.spin_warning_given:
+                warn_msg = "Am adding a template where mass2 > mass1. The "
+                warn_msg += "convention is that mass1 > mass2. Swapping mass1 "
+                warn_msg += "and mass2 and adding point to bank. This message "
+                warn_msg += "will not be repeated."
+                logging.warn(warn_msg)
+                self.spin_warning_given = True
+
+        # These that masses obey the restrictions of mass_range_params
+        if self.mass_range_params.is_unphysical(mass1, mass2, spin1z, spin2z):
+            err_msg = "Point with masses given by "
+            err_msg += "%f %f %f %f " %(mass1, mass2, spin1z, spin2z)
+            err_msg += "(mass1, mass2, spin1z, spin2z) is not consistent "
+            err_msg += "with the provided command-line restrictions on masses "
+            err_msg += "and spins."
+            raise ValueError(err_msg)
+
+        # Get beta, sigma, gamma
+        tot_mass = mass1 + mass2
+        eta = mass1 * mass2 / (tot_mass * tot_mass)
+        beta, sigma, gamma, chis = pnutils.get_beta_sigma_from_aligned_spins(\
+                                                           eta, spin1z, spin2z)
+       
+        # Get chi coordinates
+        chi_coords = coord_utils.get_cov_params(tot_mass, eta, beta, sigma,
+                               sigma, gamma, self.metric_params, self.ref_freq)
+
+        # Get mus and best fupper for this point, if needed
+        if vary_fupper:
+            freq_cutoff = coord_utils.return_nearest_cutoff(\
+                         self.upper_freq_formula, tot_mass, self.frequency_map)
+            lambdas = coord_utils.get_chirp_params(tot_mass, eta, beta, sigma,
+                                           gamma, chis, self.metric_params.f0,
+                                           self.metric_params.pnOrder)
+            mus = []
+            for freq in self.frequency_map:
+                mus.append(coord_utils.get_mu_params(lambdas,
+                                                    self.metric_params, freq) )
+            mus = numpy.array(mus)
+        else:
+            freq_cutoff=None
+            mus=None
+
+        # And call through to add_point_to_bank
+        self.add_point_to_bank(chi_coords, mass1, mass2, spin1z, spin2z,
+                               point_fupper=freq_cutoff, mus=mus)
+   
+
+    def add_tmpltbank_from_xml_table(self, sngl_table, vary_fupper=False):
+        """
+        This function will take a sngl_inspiral_table of templates and add them
+        into the partitioned template bank object.
+
+        Parameters
+        -----------
+        sngl_table : sngl_inspiral_table
+            List of sngl_inspiral templates.
+        vary_fupper : False
+            If given also include the additional information needed to compute
+            distances with a varying upper frequency cutoff.
+        """
+        for sngl in sngl_table:
+            self.add_point_by_masses(sngl.mass1, sngl.mass2, sngl.spin1z,
+                                     sngl.spin2z, vary_fupper=vary_fupper)
 
     def output_all_points(self):
         """
