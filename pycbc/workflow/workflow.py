@@ -39,7 +39,7 @@ class Executable(ProfileShortcuts):
     id = 0
     def __init__(self, name):
         self.name = name
-        self.logical_name = self.name + str(Executable.id)
+        self.logical_name = self.name + "_ID%s" % str(Executable.id)
         Executable.id += 1
         self.namespace = self.logical_name
         self._dax_executable = dax.Executable(self.logical_name, 
@@ -214,7 +214,7 @@ class Workflow(object):
         for out in node._outputs:
             self._outputs += node._outputs  
             
-        # Recored the executable that this node uses
+        # Record the executable that this node uses
         if not node.executable.in_workflow:
             node.executable.in_workflow = True
             self._executables += [node.executable]

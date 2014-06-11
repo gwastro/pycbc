@@ -117,13 +117,21 @@ class AhopeExecutable(Executable):
         tags : list of strings
             A list of strings that is used to identify this job.
         """
-        Executable.__init__(self, name)
-        
         tags = [tag.upper() for tag in tags]
         self.tags = tags
         self.ifo = ifo
         self.cp = cp
         self.universe=universe
+        
+        if len(tags) != 0:
+            self.tagged_name = "%s-%s" % (name, '_'.join(tags))
+        else:
+            self.tagged_name = name
+        if ifo is not None:
+            self.tagged_name = "%s-%s" % (self.tagged_name, ifo)
+        Executable.__init__(self, self.tagged_name)
+        
+        self.name=name
         
         # Determine the output directory
         if out_dir is not None:
@@ -131,7 +139,7 @@ class AhopeExecutable(Executable):
         elif len(tags) == 0:
             self.out_dir = name
         else:
-            self.out_dir = "%s-%s" % (name, '_'.join(tags))            
+            self.out_dir = self.tagged_name            
         if not os.path.isabs(self.out_dir):
             self.out_dir = os.path.join(os.getcwd(), self.out_dir) 
               
@@ -160,13 +168,13 @@ class AhopeExecutable(Executable):
 
         # Determine the sections from the ini file that will configure
         # this executable
-        sections = [self.name]
+        sections = [name]
         if self.ifo:
             sec_tags = tags + [self.ifo]
         else:
             sec_tags = tags
         for tag in sec_tags:
-             section = '%s-%s' %(self.name, tag.lower())
+             section = '%s-%s' %(name, tag.lower())
              if cp.has_section(section):
                 sections.append(section)
         self.sections = sections   
@@ -206,6 +214,12 @@ class AhopeExecutable(Executable):
                 pass
         
         return None
+
+    def create_node(self):
+        """ Default node constructor. This is usually overridden by subclasses
+        of the AhopeExecutable.
+        """
+        return AhopeNode(self)
 
 class AhopeWorkflow(Workflow):
     """
