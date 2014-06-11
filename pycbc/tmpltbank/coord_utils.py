@@ -570,15 +570,23 @@ def return_nearest_cutoff(name, totmass, freqs):
         "ERD"        : pnutils.f_ERD
     }
     f_cutoff = cutoffFns[name](totmass)
-    # FIXME: Ian's not entirely sure how this works!  Documentation may be
-    # wrong.
     refEv = numpy.zeros(len(f_cutoff),dtype=float)
+    # NOTE: This function assumes a sorted list of frequencies
+    # NOTE: totmass and f_cutoff are both numpy arrays as this function is
+    #       designed so that the cutoff can be calculated for many systems
+    #       simulataneously
     for i in range(len(freqs)):
         if (i == 0):
+            # If frequency is lower than halfway between the first two entries
+            # use the first (lowest) value
             logicArr = f_cutoff < ((freqs[0] + freqs[1])/2.)
         elif (i == (len(freqs)-1)):
+            # If frequency is larger than halfway between the last two entries
+            # use the last (highest) value
             logicArr = f_cutoff > ((freqs[-2] + freqs[-1])/2.)
         else:
+            # For frequencies within the range in freqs, check which points
+            # should use the frequency corresponding to index i.
             logicArrA = f_cutoff > ((freqs[i-1] + freqs[i])/2.)
             logicArrB = f_cutoff < ((freqs[i] + freqs[i+1])/2.)
             logicArr = numpy.logical_and(logicArrA,logicArrB)
