@@ -64,7 +64,7 @@ def add_ahope_command_line_group(parser):
     """
     ahopeArgs = parser.add_argument_group('ahope',
                                           'Options needed for ahope setup.')
-    ahopeArgs.add_argument("--config-files", nargs="*", action='store',
+    ahopeArgs.add_argument("--config-files", nargs="+", action='store',
                            required=True, metavar="CONFIGFILE",
                            help="List of config files to be used in analysis.")
     ahopeArgs.add_argument("--config-overrides", nargs="*", action='store',
