@@ -397,17 +397,17 @@ def insert_mass_range_option_group(parser,nonSpin=False):
         parser.add_argument_group(massOpts)
         return
 
-    parser.add_argument("--max-ns-spin-mag", action="store", type=float,
+    massOpts.add_argument("--max-ns-spin-mag", action="store", type=float,
                   default=None,
                   help="Maximum neutron star spin magnitude.  Neutron stars "
                        "are defined as components lighter than 3 Msun. "
                        "REQUIRED if min-mass2 < 3 Msun")
-    parser.add_argument("--max-bh-spin-mag", action="store", type=float,\
+    massOpts.add_argument("--max-bh-spin-mag", action="store", type=float,\
                   default=None,
                   help="Maximum black hole spin magnitude.  Black holes are "
                        "defined as components with mass >= 3 Msun. REQUIRED "
                        "if max-mass1 > 3 Msun")
-    action = parser.add_mutually_exclusive_group(required=False)
+    action = massOpts.add_mutually_exclusive_group(required=False)
     action.add_argument("--ns-bh-boundary-mass", action='store', type=float,
                   default=3,
                   help="Mass boundary between neutron stars and black holes. "
@@ -777,17 +777,21 @@ class massRangeParameters(object):
                 return 1
         else:
             spin1zM = abs(spin1z)
-            if not( (mass1 > 2.99 and spin1zM <= self.maxBHSpinMag) \
-                 or (mass1 < 3.01 and spin1zM <= self.maxNSSpinMag)):
+            if not( (mass1 > self.ns_bh_boundary_mass \
+                     and spin1zM <= self.maxBHSpinMag) \
+                 or (mass1 < self.ns_bh_boundary_mass \
+                     and spin1zM <= self.maxNSSpinMag)):
                 return 1
         # Spin2 test
         if self.nsbhFlag:
-            if (abs(spin2z) > self.maxBHSpinMag):
+            if (abs(spin2z) > self.maxNSSpinMag):
                 return 1
         else:
             spin2zM = abs(spin2z)
-            if not( (mass2 > 2.99 and spin2zM <= self.maxBHSpinMag) \
-                 or (mass2 < 3.01 and spin2zM <= self.maxNSSpinMag)):
+            if not( (mass2 > self.ns_bh_boundary_mass \
+                     and spin2zM <= self.maxBHSpinMag) \
+                 or (mass2 < self.ns_bh_boundary_mass and \
+                     spin2zM <= self.maxNSSpinMag)):
                 return 1
         # Total mass test
         mTot = mass1 + mass2
@@ -802,6 +806,15 @@ class massRangeParameters(object):
             return 1
         if eta < self.minEta:
             return 1
+
+        # Chirp mass test
+        chirp_mass = mTot * eta**(3./5.)
+        if self.min_chirp_mass is not None:
+            if chirp_mass < min_chirp_mass:
+                return 1
+        if self.max_chirp_mass is not None:
+            if chirp_mass > max_chirp_mass:
+                return
 
         return 0
 
