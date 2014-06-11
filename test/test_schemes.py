@@ -37,21 +37,21 @@ from pycbc.scheme import *
 import numpy
 from numpy import dtype, float32, float64, complex64, complex128
 import lal
-from utils import parse_args_all_schemes
+from utils import parse_args_all_schemes, simple_exit
 
 _scheme, _context = parse_args_all_schemes("Scheme")
 
 # By importing the current schemes array type, it will make it
 # easier to check the  array types later
-if _scheme == 'cuda':
+if isinstance(_context,CUDAScheme):
     import pycuda
     import pycuda.gpuarray
     from pycuda.gpuarray import GPUArray as SchemeArray
-elif _scheme == 'opencl':
+elif isinstance(_context,OpenCLScheme):
     import pyopencl
     import pyopencl.array
     from pyopencl.array import Array as SchemeArray
-elif _scheme == 'cpu':
+elif isinstance(_context,CPUScheme):
     from pycbc.types.aligned import ArrayWithAligned as SchemeArray
 
 from pycbc.types.aligned import ArrayWithAligned as CPUArray
@@ -119,16 +119,16 @@ class SchemeTestBase(unittest.TestCase):
             # Now check that nothing about a2 has changed, since it wasn't involved
             # in the computation
             self.assertEqual(type(a2._data),CPUArray)
-            self.assertEqual(type(a2._scheme),CPUScheme)
+            self.assertEqual(type(a2._scheme),DefaultScheme)
             self.assertEqual(a2,self.a)
 
         # Now move back to the CPU, and check that everything is correctly
         # transferred:
         c = a1 * b1
         # Check that schemes are correct
-        self.assertEqual(type(a1._scheme),CPUScheme)
-        self.assertEqual(type(b1._scheme),CPUScheme)
-        self.assertEqual(type(c._scheme),CPUScheme)
+        self.assertEqual(type(a1._scheme),DefaultScheme)
+        self.assertEqual(type(b1._scheme),DefaultScheme)
+        self.assertEqual(type(c._scheme),DefaultScheme)
         # Check that the data types are correct
         self.assertEqual(type(a1.data),CPUArray)
         self.assertEqual(type(b1.data),CPUArray)
@@ -184,5 +184,6 @@ for ty,oktype in types:
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
+    simple_exit(results)
 
 
