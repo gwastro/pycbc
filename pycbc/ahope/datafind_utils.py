@@ -565,7 +565,8 @@ def setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
             currFile = AhopeFile(ifo, frame.description, frame.segment,
                                  file_url=frame.url)  
             prev_file = currFile                   
-            currFile.PFN(frame.url, site='local') 
+            currFile.PFN(frame.path, site='local') 
+
             datafindouts.append(currFile)
 
     return datafindcaches, datafindouts
