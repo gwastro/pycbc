@@ -84,7 +84,27 @@ def setup_injection_workflow(workflow, output_dir=None,
     inj_files = AhopeFileList([])   
 
     for section in sections:
-        inj_tag = (section.split('-')[1]).upper()
+        split_sec_name = section.split('-')
+        # Sanity check the user has realised that the '-' is a special char.
+        if len(split_sec_name) > 2:
+            # This is unusual, but a format [injection-name-tag] is okay. Just
+            # check that [injection-name] section exists. If not it is possible
+            # the user is trying to use an injection name with '-' in it
+            sect_check = "%s-%s" %(split_sec_name[0], split_sec_name[1])
+            if not workflow.cp.has_section(sect_check):
+                err_msg = "Injection section found with name %s. " %(section,)
+                err_msg += "Ahope uses the '-' as a delimiter so this is "
+                err_msg += "interpreted as exe_tag-inj_tag-other_tag. "
+                err_msg += "No section with name %s was found. " %(sect_check,)
+                err_msg += "If you did not intend to use tags in an "
+                err_msg += "'advanced user' manner, or do not understand what "
+                err_msg += "this means, don't use dashes in injection "
+                err_msg += "names. So [injection-nsbhinj] is good. "
+                err_msg += "[injection-nsbh-inj] is not."
+                raise ValueError(err_msg)
+            continue
+ 
+        inj_tag = (split_sec_name[1]).upper()
         currTags = tags + [inj_tag]
 
         # FIXME: Remove once fixed in pipedown
