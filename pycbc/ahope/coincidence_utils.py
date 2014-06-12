@@ -302,7 +302,12 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
  
         llw_files = inputTrigFiles + dqSegFile + [tisiOutFile]
 
-        # Determine segments to accept coincidences
+        # Determine segments to accept coincidences.
+        # If cache is not the first or last in the timeseries, check if the
+        # two closes caches in the timeseries and see if their extent
+        # match. If they match, they're adjacent and use the time where
+        # they meet as a bound for accepting coincidences. If they're not
+        # adjacent, then there is no bound for accepting coincidences.
         coincStart, coincEnd = None, None
         if idx and (cafe_cache.extent[0] == cafe_caches[idx-1].extent[1]):
             coincStart = cafe_cache.extent[0]
