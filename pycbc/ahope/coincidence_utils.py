@@ -30,6 +30,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 
 from __future__ import division
 
+import re
 import os
 import os.path
 from glue import segments
@@ -100,11 +101,21 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
     # to create a large job for coincidence and then running ligolw_thinca
     # on that output.
     if coincidenceMethod == "WORKFLOW_DISCRETE_SLIDES":
+        # If I am doing exact match I can paralellize these jobs and reduce
+        # memory footprint. This will require all input inspiral jobs to have
+        # a JOB%d tag to distinguish between them.
+        if workflow.cp.has_option_tags("ahope-coincidence", \
+                             "coincidence-exact-match-paralellize", tags):
+            parallelize_split_input = True
+        else:
+            parallelize_split_input = False
+
         # If you want the ligolw_add outputs, call this function directly
         coinc_outs, _ = setup_coincidence_workflow_ligolw_thinca(workflow,
                      segsList, timeSlideFiles, inspiral_outs,
                      output_dir, maxVetoCat=maxVetoCat, tags=tags,
-                     timeSlideTags=timeSlideTags)
+                     timeSlideTags=timeSlideTags, 
+                     parallelize_split_input=parallelize_split_input)
     else:
         errMsg = "Coincidence method not recognized. Must be one of "
         errMsg += "WORKFLOW_DISCRETE_SLIDES (currently only one option)."
@@ -117,7 +128,8 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
 def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
                                              timeSlideFiles, inspiral_outs, 
                                              output_dir, maxVetoCat=5, tags=[],
-                                             timeSlideTags=None):
+                                             timeSlideTags=None,
+                                             parallelize_split_input=False):
     """
     This function is used to setup a single-stage ihope style coincidence stage
     of the workflow using ligolw_sstinca (or compatible code!).
@@ -177,6 +189,57 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
         timeSlideTags = [(sec.split('-')[-1]).upper() \
                   for sec in workflow.cp.sections() if sec.startswith('tisi-')]
 
+    if parallelize_split_input:
+        # Want to split all input jobs according to their JOB%d tag.
+        # This matches any string that is the letters JOB followed by some
+        # numbers and nothing else.
+        inspiral_outs_dict = {}
+        regex_match = re.compile('JOB([0-9]+)\Z')
+        for file in inspiral_outs:
+            matches = [regex_match.match(tag) for tag in file.tags]
+            # Remove non matching entries
+            matches = [i for i in matches if i is not None]
+            # Must have one entry
+            if len(matches) == 0:
+                warn_msg = "I was asked to parallelize over split inspiral "
+                warn_msg += "files at the coincidence stage, but at least one "
+                warn_msg += "input file does not have a JOB\%d tag indicating "
+                warn_msg += "that it was split. Assuming that I do not have "
+                warn_msg += "split input files and turning "
+                warn_msg += "parallelize_split_input off."
+                logging.warn(warn_msg)
+                parallelize_split_input = False
+                break
+            if len(matches) > 1:
+                err_msg = "One of my input files has two tags fitting JOB\%d "
+                err_msg += "this means I cannot tell which split job this "
+                err_msg += "file is from."
+                raise ValueError(err_msg)
+            # Extract the job ID
+            id = int(matches[0].string[3:])
+            if not inspiral_outs_dict.has_key(id):
+                inspiral_outs_dict[id] = AhopeFileList([])
+            inspiral_outs_dict[id].append(file)
+        else:
+            # If I got through all the files I want to sort the dictionaries so
+            # that file with key a and index 3 is the same file as key b and
+            # index 3 other than the tag is JOBA -> JOBB ... ie. it has used
+            # a different part of the template bank.
+            sort_lambda = lambda x: (x.ifoString, x.segment,
+                                     x.tagged_description)
+            for key in inspiral_outs_dict.keys():
+                inspiral_outs_dict[id].sort(key = sort_lambda)
+            # These should be in ascending order, so I can assume the existence
+            # of a JOB0 tag
+            inspiral_outs = inspiral_outs_dict[0]
+            for index, file in enumerate(inspiral_outs):
+                # Store the index in the file for quicker mapping later
+                file.thinca_index = index
+    else:
+        inspiral_outs_dict = None
+
+    print inspiral_outs_dict.keys()
+
     for timeSlideTag in timeSlideTags:
         # Get the time slide file from the inputs
         tisiOutFile = timeSlideFiles.find_output_with_tag(timeSlideTag)
@@ -190,8 +253,8 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
         tisiOutFile = tisiOutFile[0]
 
         # Next we run ligolw_cafe. This is responsible for
-        # identifying what times will be used for the ligolw_thinca jobs and what
-        # files are needed for each. If doing time sliding there
+        # identifying what times will be used for the ligolw_thinca jobs and
+        # what files are needed for each. If doing time sliding there
         # will be some triggers read into multiple jobs
         cacheInspOuts = inspiral_outs.convert_to_lal_cache()
         logging.debug("Calling into cafe.")
@@ -221,9 +284,11 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
             logging.debug("Stgarting workflow")
             currLigolwThincaOuts, currLigolwAddOuts = \
                   setup_snglveto_workflow_ligolw_thinca(workflow, 
-                                        dqSegFile, tisiOutFile,
-                                        dqVetoName, cafe_seglists, cafe_caches,
-                                        output_dir, tags=curr_thinca_job_tags)
+                               dqSegFile, tisiOutFile, dqVetoName,
+                               cafe_seglists, cafe_caches, output_dir,
+                               tags=curr_thinca_job_tags,
+                               parallelize_split_input=parallelize_split_input,
+                               insp_files_dict=inspiral_outs_dict)
             logging.debug("Done")
             ligolwAddOuts.extend(currLigolwAddOuts)
             ligolwThincaOuts.extend(currLigolwThincaOuts)
@@ -231,7 +296,9 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
 
 def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
                                           dqVetoName, cafe_seglists,
-                                          cafe_caches, output_dir, tags=[]):
+                                          cafe_caches, output_dir, tags=[],
+                                          parallelize_split_input=False,
+                                          insp_files_dict=None):
     '''
     This function is used to setup a single-stage ihope style coincidence stage
     of the workflow for a given dq category and for a given timeslide file
@@ -286,15 +353,6 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
         if not len(cafe_cache.objects):
             raise ValueError("One of the cache objects contains no files!")
 
-        # Need to create a list of the AhopeFile contained in the cache.
-        # Assume that if we have partitioned input then if *one* job in the
-        # partitioned input is an input then *all* jobs will be.
-        inputTrigFiles = AhopeFileList([])
-        for object in cafe_cache.objects:
-            inputTrigFiles.append(object.ahope_file)
- 
-        llw_files = inputTrigFiles + dqSegFile + [tisiOutFile]
-
         # Determine segments to accept coincidences.
         # If cache is not the first or last in the timeseries, check if the
         # two closes caches in the timeseries and see if their extent
@@ -304,17 +362,51 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
         coincStart, coincEnd = None, None
         if idx and (cafe_cache.extent[0] == cafe_caches[idx-1].extent[1]):
             coincStart = cafe_cache.extent[0]
-        if idx + 1 - len(cafe_caches) and (cafe_cache.extent[1] == cafe_caches[idx+1].extent[0]):
+        if idx + 1 - len(cafe_caches) and \
+                        (cafe_cache.extent[1] == cafe_caches[idx+1].extent[0]):
             coincEnd = cafe_cache.extent[1]
         coincSegment = (coincStart, coincEnd)
 
-        # Now we can create the nodes
-        node = ligolwadd_job.create_node(cafe_cache.extent, llw_files)
-        ligolwAddFile = node.output_files[0]
-        ligolwAddOuts.append(ligolwAddFile)
-        workflow.add_node(node)
-        node = ligolwthinca_job.create_node(cafe_cache.extent, coincSegment, ligolwAddFile)
-        ligolwThincaOuts += node.output_files
-        workflow.add_node(node)
+        # Need to create a list of the AhopeFile contained in the cache.
+        # Assume that if we have partitioned input then if *one* job in the
+        # partitioned input is an input then *all* jobs will be.
+        if not parallelize_split_input:
+            inputTrigFiles = AhopeFileList([])
+            for object in cafe_cache.objects:
+                inputTrigFiles.append(object.ahope_file)
+ 
+            llw_files = inputTrigFiles + dqSegFile + [tisiOutFile]
+
+            # Now we can create the nodes
+            node = ligolwadd_job.create_node(cafe_cache.extent, llw_files)
+            ligolwAddFile = node.output_files[0]
+            ligolwAddOuts.append(ligolwAddFile)
+            workflow.add_node(node)
+            node = ligolwthinca_job.create_node(cafe_cache.extent,
+                                                   coincSegment, ligolwAddFile)
+            ligolwThincaOuts += node.output_files
+            workflow.add_node(node)
+        else:
+            for key in insp_files_dict.keys():
+                curr_tags = ["JOB%d" %(key)]
+                curr_list = insp_files_dict[key]
+                inputTrigFiles = AhopeFileList([])
+                for object in cafe_cache.objects:
+                    inputTrigFiles.append(\
+                                     curr_list[object.ahope_file.thinca_index])
+
+                llw_files = inputTrigFiles + dqSegFile + [tisiOutFile]
+
+                # Now we can create the nodes
+                node = ligolwadd_job.create_node(cafe_cache.extent, llw_files,
+                                                 tags=curr_tags)
+                ligolwAddFile = node.output_files[0]
+                ligolwAddOuts.append(ligolwAddFile)
+                workflow.add_node(node)
+                node = ligolwthinca_job.create_node(cafe_cache.extent,
+                                   coincSegment, ligolwAddFile, tags=curr_tags)
+                ligolwThincaOuts += node.output_files
+                workflow.add_node(node)
+
 
     return ligolwThincaOuts, ligolwAddOuts

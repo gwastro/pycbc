@@ -336,7 +336,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
             # where I run a number of jobs to cover a single range of time.
             for pnum, parent in enumerate(curr_parent):
                 if len(curr_parent) != 1:
-                    tag = [str(pnum)]
+                    tag = ["JOB%d" %(pnum,)]
                 else:
                     tag = []
                 # To ensure output file uniqueness I add a tag
@@ -771,7 +771,7 @@ class LigolwAddExecutable(AhopeExecutable):
         AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
 
-    def create_node(self, jobSegment, input_files, output=None):
+    def create_node(self, jobSegment, input_files, output=None, tags=[]):
         node = AhopeNode(self)
 
         # Very few options to ligolw_add, all input files are given as a long
@@ -789,7 +789,7 @@ class LigolwAddExecutable(AhopeExecutable):
         if output:
             node.add_output_opt('--output', output)
         else:
-            node.new_output_file_opt(jobSegment, '.xml.gz', '--output')
+            node.new_output_file_opt(jobSegment, '.xml.gz', '--output', tags=tags))
         return node
 
 class LigolwSSthincaExecutable(AhopeExecutable):
@@ -803,9 +803,9 @@ class LigolwSSthincaExecutable(AhopeExecutable):
         if dqVetoName:
             self.add_opt("--vetoes-name", dqVetoName)
 
-    def create_node(self, jobSegment, coincSegment, inputFile):
+    def create_node(self, jobSegment, coincSegment, inputFile, tags=[]):
         node = AhopeNode(self)
-        node.add_input_arg(inputFile)
+        node.add_input_arg(inputFile, argument=True)
 
         # Add the start/end times
         segString = ""
@@ -820,7 +820,7 @@ class LigolwSSthincaExecutable(AhopeExecutable):
         # FIXME: This must match the *actual* output name!
         outFile = AhopeFile(self.ifo, self.name, jobSegment,
                          extension='.xml.gz', directory=self.out_dir,
-                         tags=self.tags)
+                         tags=self.tags+tags)
 
         node._add_output(outFile)
 
