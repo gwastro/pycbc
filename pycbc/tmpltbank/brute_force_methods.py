@@ -283,9 +283,13 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
     # Check the validity of the spin values
     # Do the first spin
 
-    # Simple case where I don't have to worry about correlation with mass
-    if massRangeParams.nsbhFlag or (maxSpinMag == minSpinMag):
-        numploga = abs(spin1z) >= massRangeParams.maxBHSpinMag
+    if maxSpinMag == 0:
+        # Shortcut if non-spinning
+        pass
+    elif massRangeParams.nsbhFlag or (maxSpinMag == minSpinMag):
+        # Simple case where I don't have to worry about correlation with mass
+        numploga = abs(spin1z) > massRangeParams.maxBHSpinMag
+        spin1z[numploga] = 0
     else:
         # Do have to consider masses
         boundary_mass = massRangeParams.ns_bh_boundary_mass
@@ -295,12 +299,16 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
                                    abs(spin1z) <= massRangeParams.maxNSSpinMag)
         numploga = numpy.logical_or(numploga1, numploga2)
         numploga = numpy.logical_not(numploga)
-    spin1z[numploga] = 0
+        spin1z[numploga] = 0
 
     # Same for the second spin
 
-    if massRangeParams.nsbhFlag or (maxSpinMag == minSpinMag):
-        numplogb = abs(spin2z) >= massRangeParams.maxNSSpinMag
+    if maxSpinMag == 0:
+        # Shortcut if non-spinning
+        pass
+    elif massRangeParams.nsbhFlag or (maxSpinMag == minSpinMag):
+        numplogb = abs(spin2z) > massRangeParams.maxNSSpinMag
+        spin2z[numploga] = 0
     else:
         # Do have to consider masses
         boundary_mass = massRangeParams.ns_bh_boundary_mass
@@ -310,13 +318,13 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
                                    abs(spin2z) <= massRangeParams.maxNSSpinMag)
         numplogb = numpy.logical_or(numplogb1, numplogb2)
         numplogb = numpy.logical_not(numplogb)
-    spin2z[numplogb] = 0
+        spin2z[numplogb] = 0
 
     # Get the various spin-derived quantities
     beta, sigma, gamma, chis = get_beta_sigma_from_aligned_spins(eta, spin1z,
                                                                  spin2z)
 
-    if (numploga[0] or numplogb[0]):
+    if (maxSpinMag) and (numploga[0] or numplogb[0]):
         raise ValueError("Cannot remove the guide point!")
 
     # And remove points where the individual masses are outside of the physical
