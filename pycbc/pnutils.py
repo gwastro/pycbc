@@ -121,7 +121,6 @@ def tau0_tau3_to_mass1_mass2(tau0, tau3, f_lower):
     m_total,eta = tau0_tau3_to_mtotal_eta(tau0, tau3, f_lower)
     return mtotal_eta_to_mass1_mass2(m_total, eta)
 
-
 def mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(mass1, mass2,
                                                   spin1z, spin2z):
     M, eta = mass1_mass2_to_mtotal_eta(mass1, mass2)
@@ -172,7 +171,6 @@ def get_beta_sigma_from_aligned_spins(eta, spin1z, spin2z):
     gamma += (732985. / 2268. + 140. / 9. * eta) * delta * chiA
     return beta, sigma, gamma, chiS
 
-
 def solar_mass_to_kg(solar_masses):
     return solar_masses * lal.LAL_MSUN_SI
 
@@ -184,7 +182,6 @@ def velocity_to_frequency(v, M):
 
 def frequency_to_velocity(f, M):
     return (lal.LAL_PI * M * lal.LAL_MTSUN_SI * f)**(1.0/3.0)
-
 
 def f_SchwarzISCO(M):
     """
@@ -304,57 +301,7 @@ def f_LRD(m1, m2):
     """
     return 1.2 * f_FRD(m1, m2)
 
-def named_frequency_cutoffs():
-    """
-    Dictionary of functions with uniform API taking a 
-    parameter dict indexed on m1, m2, s1z, s2z
-
-    Returns
-    -------
-    cutoffFunctions : dict mapping strings to functions
-    """
-    cutoffFunctions = {
-      # functions depending on the total mass alone
-      "SchwarzISCO": lambda p: f_SchwarzISCO(p["m1"]+p["m2"]),
-      "LightRing"  : lambda p: f_LightRing(p["m1"]+p["m2"]),
-      "ERD"        : lambda p: f_ERD(p["m1"]+p["m2"]),
-      # functions depending on the 2 component masses
-      "BKLISCO"    : lambda p: f_BKLISCO(p["m1"], p["m2"]),
-      "FRD"        : lambda p: f_FRD(p["m1"], p["m2"]),
-      "LRD"        : lambda p: f_LRD(p["m1"], p["m2"]),
-      # functions depending on 2 component masses and aligned spins 
-      "MECO"       : lambda p: vec_meco_frequency(p["m1"], p["m2"], 
-                                                  p["s1z"], p["s2z"])
-    }
-    return cutoffFunctions
-
-def frequency_cutoff_from_name(name, m1, m2, s1z, s2z):
-    """
-    Returns the result of evaluating the frequency cutoff function
-    specified by 'name' on a template with given parameters.
-
-    Parameters
-    ----------
-    name : string
-        Name of the cutoff function
-    m1 : float or numpy.array
-        First component mass in solar masses
-    m2 : float or numpy.array
-        Second component mass in solar masses
-    s1z : float or numpy.array
-        First component dimensionless spin S_1/m_1^2 projected onto L
-    s2z : float or numpy.array
-        Second component dimensionless spin S_2/m_2^2 projected onto L
-
-    Returns
-    -------
-    f : float or numpy.array
-        Frequency in Hz
-    """
-    params = {"m1":m1, "m2":m2, "s1z":s1z, "s2z":s2z}
-    return named_frequency_cutoffs()[name](params)
-
-def get_final_freq(approx, m1, m2, s1z, s2z):
+def _get_final_freq(approx, m1, m2, s1z, s2z):
     """
     Wrapper of the LALSimulation function returning the final (highest)
     frequency for a given approximant an template parameters
@@ -384,9 +331,9 @@ def get_final_freq(approx, m1, m2, s1z, s2z):
         m1kg, m2kg, 0, 0, float(s1z), 0, 0, float(s2z), int(approx))
 
 # vectorize to enable calls with numpy arrays
-vec_final_freq_from_approx = numpy.vectorize(get_final_freq)
+_vec_get_final_freq = numpy.vectorize(_get_final_freq)
 
-def f_final_from_approximant(approx, m1, m2, s1z, s2z):
+def get_final_freq(approx, m1, m2, s1z, s2z):
     """
     Returns the LALSimulation function which evaluates the final
     (highest) frequency for a given approximant using given template 
@@ -412,7 +359,66 @@ def f_final_from_approximant(approx, m1, m2, s1z, s2z):
         Frequency in Hz
     """
     lalsim_approx = lalsimulation.GetApproximantFromString(approx)
-    return vec_final_freq_from_approx(lalsim_approx, m1, m2, s1z, s2z)
+    return _vec_get_final_freq(lalsim_approx, m1, m2, s1z, s2z)
+
+def named_frequency_cutoffs():
+    """
+    Dictionary of functions with uniform API taking a 
+    parameter dict indexed on m1, m2, s1z, s2z
+
+    Returns
+    -------
+    cutoffFunctions : dict mapping strings to functions
+    """
+    cutoffFunctions = {
+      # functions depending on the total mass alone
+      "SchwarzISCO": lambda p: f_SchwarzISCO(p["m1"]+p["m2"]),
+      "LightRing"  : lambda p: f_LightRing(p["m1"]+p["m2"]),
+      "ERD"        : lambda p: f_ERD(p["m1"]+p["m2"]),
+      # functions depending on the 2 component masses
+      "BKLISCO"    : lambda p: f_BKLISCO(p["m1"], p["m2"]),
+      "FRD"        : lambda p: f_FRD(p["m1"], p["m2"]),
+      "LRD"        : lambda p: f_LRD(p["m1"], p["m2"]),
+      # functions depending on 2 component masses and aligned spins
+      "MECO"       : lambda p: meco_frequency(p["m1"], p["m2"],
+                                              p["s1z"], p["s2z"]),
+      # IMR functions
+      "IMRPhenomB" : lambda p: get_final_freq("IMRPhenomB", p["m1"], p["m2"],
+                                              p["s1z"], p["s2z"]),
+      "IMRPhenomC" : lambda p: get_final_freq("IMRPhenomC", p["m1"], p["m2"],
+                                              p["s1z"], p["s2z"]),
+      "EOBNRv2"    : lambda p: get_final_freq("EOBNRv2", p["m1"], p["m2"],
+                                              p["s1z"], p["s2z"]),
+      "SEOBNRv1"   : lambda p: get_final_freq("SEOBNRv1", p["m1"], p["m2"],
+                                              p["s1z"], p["s2z"])
+    }
+    return cutoffFunctions
+
+def frequency_cutoff_from_name(name, m1, m2, s1z, s2z):
+    """
+    Returns the result of evaluating the frequency cutoff function
+    specified by 'name' on a template with given parameters.
+
+    Parameters
+    ----------
+    name : string
+        Name of the cutoff function
+    m1 : float or numpy.array
+        First component mass in solar masses
+    m2 : float or numpy.array
+        Second component mass in solar masses
+    s1z : float or numpy.array
+        First component dimensionless spin S_1/m_1^2 projected onto L
+    s2z : float or numpy.array
+        Second component dimensionless spin S_2/m_2^2 projected onto L
+
+    Returns
+    -------
+    f : float or numpy.array
+        Frequency in Hz
+    """
+    params = {"m1":m1, "m2":m2, "s1z":s1z, "s2z":s2z}
+    return named_frequency_cutoffs()[name](params)
 
 
 ##############################This code was taken from Andy ###########
@@ -474,12 +480,12 @@ def meco_velocity(m1, m2, chi1, chi2):
                 + v * (7.*energy5 + 8.*energy6 * v))))
     return bisect(eprime, 0.05, 1.0)
 
-def meco_frequency(m1, m2, chi1, chi2):
+def _meco_frequency(m1, m2, chi1, chi2):
     """Returns the frequency of the minimum energy cutoff for 3.5pN (2.5pN spin)
     """
     return velocity_to_frequency(meco_velocity(m1, m2, chi1, chi2), m1+m2)
 
-vec_meco_frequency = numpy.vectorize(meco_frequency)
+meco_frequency = numpy.vectorize(_meco_frequency)
 
 def _dtdv_coeffs(m1, m2, chi1, chi2):
     """ Returns the dt/dv coefficients up to 3.5pN (2.5pN spin)
