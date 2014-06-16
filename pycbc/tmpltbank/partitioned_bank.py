@@ -421,12 +421,15 @@ class PartitionedTmpltbank(object):
         else:
             return False
 
-    def add_point_to_bank(self, chi_coords, mass1, mass2, spin1z, spin2z,
+    def add_point_by_chi_coords(self, chi_coords, mass1, mass2, spin1z, spin2z,
                           point_fupper=None, mus=None):
         """
         Add a point to the partitioned template bank. The point_fupper and mus
         kwargs must be provided for all templates if the vary fupper capability
-        is desired.
+        is desired. This requires that the chi_coords, as well as mus and
+        point_fupper if needed, to be precalculated. If you just have the 
+        masses and don't want to worry about translations see
+        add_point_by_masses, which will do translations and then call this.
 
         Parameters
         -----------
@@ -475,7 +478,7 @@ class PartitionedTmpltbank(object):
             curr_bank['spin2s'] = numpy.array([spin2z])
             if point_fupper is not None:
                 curr_bank['freqcuts'] = numpy.array([point_fupper])
-            # Mus is tricky as this becomes a 3D array
+            # curr_bank['mus'] is a 3D array
             # NOTE: mu relates to the non-covaried Cartesian coordinate system
             # Axis 0: Template index
             # Axis 1: Frequency cutoff index
@@ -489,10 +492,11 @@ class PartitionedTmpltbank(object):
         Add a point to the template bank. This differs from add point to bank
         as it assumes that the chi coordinates and the products needed to use
         vary_fupper have not already been calculated. This function calculates
-        these products and then calls add_point_to_bank. This function also
+        these products and then calls add_point_by_chi_coords.
+        This function also
         carries out a number of sanity checks (eg. is the point within the
-        ranges given by mass_range_params) that add_point_to_bank does not do
-        for speed concerns.
+        ranges given by mass_range_params) that add_point_by_chi_coords does
+        not do for speed concerns.
 
         Parameters
         -----------
@@ -516,7 +520,8 @@ class PartitionedTmpltbank(object):
                 self.spin_warning_given = True
 
         # These that masses obey the restrictions of mass_range_params
-        if self.mass_range_params.is_unphysical(mass1, mass2, spin1z, spin2z):
+        if self.mass_range_params.is_outside_range(mass1, mass2, spin1z,
+                                                                       spin2z):
             err_msg = "Point with masses given by "
             err_msg += "%f %f %f %f " %(mass1, mass2, spin1z, spin2z)
             err_msg += "(mass1, mass2, spin1z, spin2z) is not consistent "
@@ -550,8 +555,7 @@ class PartitionedTmpltbank(object):
             freq_cutoff=None
             mus=None
 
-        # And call through to add_point_to_bank
-        self.add_point_to_bank(chi_coords, mass1, mass2, spin1z, spin2z,
+        self.add_point_by_chi_coords(chi_coords, mass1, mass2, spin1z, spin2z,
                                point_fupper=freq_cutoff, mus=mus)
    
 
