@@ -532,7 +532,7 @@ class PartitionedTmpltbank(object):
        
         # Get chi coordinates
         chi_coords = coord_utils.get_cov_params(tot_mass, eta, beta, sigma,
-                               sigma, gamma, self.metric_params, self.ref_freq)
+                               gamma, chis, self.metric_params, self.ref_freq)
 
         # Get mus and best fupper for this point, if needed
         if vary_fupper:

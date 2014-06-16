@@ -270,7 +270,9 @@ setup (
                'bin/pycbc_sqlite_simplify',
                'bin/pycbc_calculate_far',
                'bin/pycbc_compute_durations',
-               'bin/pycbc_pipedown_plots'
+               'bin/pycbc_pipedown_plots',
+               'bin/pycbc_tmpltbank_to_chi_params',
+               'bin/pycbc_bank_verification'
                ],
     packages = [
                'pycbc',
