@@ -271,7 +271,7 @@ def setup_tmpltbank_without_frames(workflow, output_dir,
     if independent_ifos:
         ifoList = [ifo for ifo in ifos]
     else:
-        ifoList = [''.join(ifos)]
+        ifoList = [[ifo for ifo in ifos]]
 
     # Check for the write_psd flag
     if cp.has_option_tags("ahope-tmpltbank", "tmpltbank-write-psd-file", tags):
@@ -317,19 +317,31 @@ def setup_tmpltbank_pregenerated(workflow, tags=[]):
     tmplt_banks = AhopeFileList([])
 
     cp = workflow.cp
-    pre_gen_banks = {}
+    global_seg = workflow.analysis_time
+    user_tag = "PREGEN_TMPLTBANK"
+    
     try:
         # First check if we have a bank for all ifos
         pre_gen_bank = cp.get_opt_tags('ahope-tmpltbank',
                                            'tmpltbank-pregenerated-bank', tags)
-        for ifo in workflow.ifos:
-            pre_gen_banks[ifo] = pre_gen_bank
+        file_url = urlparse.urljoin('file:', urllib.pathname2url(pre_gen_bank))
+        curr_file = AhopeFile(workflow.ifos, user_tag, global_seg, file_url,
+                                                                     tags=tags)
+        curr_file.PFN(file_url, site='local')
+        tmplt_banks.append(curr_file)
     except ConfigParser.Error:
         # Okay then I must have banks for each ifo
         for ifo in workflow.ifos:
             try:
                 pre_gen_bank = cp.get_opt_tags('ahope-tmpltbank',
                                 'tmpltbank-pregenerated-bank-%s' %(ifo,), tags)
+                file_url = urlparse.urljoin('file:',
+                                             urllib.pathname2url(pre_gen_bank))
+                curr_file = AhopeFile(ifo, user_tag, global_seg, file_url,
+                                                                     tags=tags)
+                curr_file.PFN(file_url, site='local')
+                tmplt_banks.append(curr_file)
+
             except ConfigParser.Error:
                 err_msg = "Cannot find pregerated template bank in section "
                 err_msg += "[ahope-tmpltbank] or any tagged sections. "
@@ -340,19 +352,6 @@ def setup_tmpltbank_pregenerated(workflow, tags=[]):
                 err_msg += "I looked for 'tmpltbank-pregenerated-bank' option "
                 err_msg += "and 'tmpltbank-pregenerated-bank-%s'." %(ifo,)
                 raise ConfigParser.Error(err_msg)
-            pre_gen_banks[ifo] = pre_gen_bank
             
- 
-    global_seg = workflow.analysis_time
-
-    for ifo in workflow.ifos:
-        # Add bank for that ifo
-        user_tag = "PREGEN_TMPLTBANK"
-        curr_bank = pre_gen_banks[ifo]
-        file_url = urlparse.urljoin('file:', urllib.pathname2url(curr_bank))
-        curr_file = AhopeFile(ifo, user_tag, global_seg, file_url, tags=tags)
-        curr_file.PFN(file_url, site='local')
-        tmplt_banks.append(curr_file)
-        
     return tmplt_banks
 

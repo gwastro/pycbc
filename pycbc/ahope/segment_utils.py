@@ -482,8 +482,8 @@ def create_segs_from_cats_job(cp, out_dir, ifo_string, tag=None):
         currTags = [tag]
     else:
         currTags = []
-    job = AhopeExecutable(cp, 'segments_from_cats', universe='local', ifo=ifo_string,
-              out_dir=out_dir, tags=currTags)
+    job = AhopeExecutable(cp, 'segments_from_cats', universe='local',
+                               ifos=ifo_string, out_dir=out_dir, tags=currTags)
     job.add_opt('--separate-categories')
     job.add_opt('--segment-url', segServerUrl)
     job.add_opt('--veto-file', vetoDefFile)
@@ -543,7 +543,7 @@ def get_cumulative_segs(workflow, currSegFile, categories,
     # calculate the cumulative veto files for a given ifo
     for ifo in workflow.ifos:
         cum_job = LigoLWCombineSegsExecutable(cp, 'ligolw_combine_segments', 
-                       out_dir=out_dir, tags=tags + [segment_name], ifo=ifo)
+                       out_dir=out_dir, tags=tags + [segment_name], ifos=ifo)
         inputs = []
         files = segFilesList.find_output_with_ifo(ifo)
         for category in categories:

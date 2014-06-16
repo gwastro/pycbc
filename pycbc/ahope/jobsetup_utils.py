@@ -789,7 +789,7 @@ class LigolwAddExecutable(AhopeExecutable):
         if output:
             node.add_output_opt('--output', output)
         else:
-            node.new_output_file_opt(jobSegment, '.xml.gz', '--output', tags=tags))
+            node.new_output_file_opt(jobSegment, '.xml.gz', '--output', tags=tags)
         return node
 
 class LigolwSSthincaExecutable(AhopeExecutable):
@@ -805,7 +805,7 @@ class LigolwSSthincaExecutable(AhopeExecutable):
 
     def create_node(self, jobSegment, coincSegment, inputFile, tags=[]):
         node = AhopeNode(self)
-        node.add_input_arg(inputFile, argument=True)
+        node.add_input_arg(inputFile)
 
         # Add the start/end times
         segString = ""
@@ -901,7 +901,6 @@ class PycbcTimeslidesExecutable(AhopeExecutable):
         node.new_output_file_opt(segment, '.xml.gz', '--output-files')
         return node
 
-
 class PycbcSplitBankExecutable(AhopeExecutable):
     """
     The class responsible for creating jobs for pycbc_splitbank.
@@ -936,7 +935,7 @@ class PycbcSplitBankExecutable(AhopeExecutable):
             #        currently ignored.
             curr_tags = bank.tags + [curr_tag]
             job_tag = bank.description + "_" + self.name.upper()
-            out_file = AhopeFile(bank.ifo, job_tag, bank.segment,
+            out_file = AhopeFile(bank.ifoList, job_tag, bank.segment,
                                  extension=".xml.gz", directory=self.out_dir,
                                  tags=curr_tags)
             out_files.append(out_file)

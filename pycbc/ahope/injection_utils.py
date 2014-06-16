@@ -122,7 +122,7 @@ def setup_injection_workflow(workflow, output_dir=None,
         if injectionMethod in ["IN_WORKFLOW", "AT_RUNTIME"]:
             # FIXME: Add ability to specify different exes
             inj_job = LalappsInspinjExecutable(workflow.cp, injSectionName, tags=currTags,
-                                         out_dir=output_dir, ifo='HL')
+                                         out_dir=output_dir, ifos='HL')
             node = inj_job.create_node(fullSegment)
             if injectionMethod == "AT_RUNTIME":
                 workflow.execute_node(node)

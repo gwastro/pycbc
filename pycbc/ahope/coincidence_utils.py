@@ -238,8 +238,6 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
     else:
         inspiral_outs_dict = None
 
-    print inspiral_outs_dict.keys()
-
     for timeSlideTag in timeSlideTags:
         # Get the time slide file from the inputs
         tisiOutFile = timeSlideFiles.find_output_with_tag(timeSlideTag)

@@ -99,7 +99,7 @@ def is_condor_exec(exe_path):
         
 class AhopeExecutable(Executable):
     def __init__(self, cp, name, 
-                       universe=None, ifo=None, out_dir=None, tags=[]):
+                       universe=None, ifos=None, out_dir=None, tags=[]):
         """
         Initialize the AhopeExecutable class.
 
@@ -111,7 +111,12 @@ class AhopeExecutable(Executable):
             Executable name
         universe : string, optional
             Condor universe to run the job in
-        ifo: string, optional
+        ifos : string or list, optional
+            The ifo(s) that the Job is valid for. If the job is
+            independently valid for multiple ifos it can be provided as a list.
+            Ie. ['H1',L1','V1'], if the job is only valid for the combination
+            of ifos (for e.g. ligolw_thinca) then this can be supplied
+            as, for e.g. "H1L1V1".
         out_dir: path, optional
             The folder to store output files of this job. 
         tags : list of strings
@@ -119,7 +124,14 @@ class AhopeExecutable(Executable):
         """
         tags = [tag.upper() for tag in tags]
         self.tags = tags
-        self.ifo = ifo
+        if isinstance(ifos, (str, unicode)):
+            self.ifo_list = [ifos]
+        else:
+            self.ifo_list = ifos
+        if self.ifo_list is not None:
+            self.ifo_string = ''.join(self.ifo_list)
+        else:
+            self.ifo_string = None
         self.cp = cp
         self.universe=universe
         
@@ -127,8 +139,8 @@ class AhopeExecutable(Executable):
             self.tagged_name = "%s-%s" % (name, '_'.join(tags))
         else:
             self.tagged_name = name
-        if ifo is not None:
-            self.tagged_name = "%s-%s" % (self.tagged_name, ifo)
+        if self.ifo_string is not None:
+            self.tagged_name = "%s-%s" % (self.tagged_name, self.ifo_string)
         Executable.__init__(self, self.tagged_name)
         
         self.name=name
@@ -169,8 +181,8 @@ class AhopeExecutable(Executable):
         # Determine the sections from the ini file that will configure
         # this executable
         sections = [name]
-        if self.ifo:
-            sec_tags = tags + [self.ifo]
+        if self.ifo_string:
+            sec_tags = tags + [self.ifo_string]
         else:
             sec_tags = tags
         for tag in sec_tags:
@@ -192,7 +204,20 @@ class AhopeExecutable(Executable):
                 warnString = "warning: config file is missing section [%s]"\
                              %(sec,)
                 logging.warn(warnString)
-                
+
+    @property
+    def ifo(self):
+        """
+        If only one ifo in the ifo list this will be that ifo. Otherwise an
+        error is raised.
+        """
+        if self.ifo_list and len(self.ifo_list) == 1:
+            return self.ifo_list[0]
+        else:
+            errMsg = "self.ifoList must contain only one ifo to access the "
+            errMsg += "ifo property. %s." %(str(self.ifo_list),)
+            raise TypeError(errMsg)
+
     def add_ini_opts(self, cp, sec):
         for opt in cp.options(sec):
             value = string.strip(cp.get(sec, opt))
@@ -212,7 +237,7 @@ class AhopeExecutable(Executable):
                     return key
             except ConfigParser.NoOptionError:
                 pass
-        
+
         return None
 
     def create_node(self):
@@ -368,8 +393,8 @@ class AhopeNode(Node):
             if tag not in all_tags:
                 all_tags.append(tag)
 
-        fil = AhopeFile(self.executable.ifo, self.executable.name, valid_seg, 
-                         extension=extension, 
+        fil = AhopeFile(self.executable.ifo_list, self.executable.name,
+                         valid_seg, extension=extension, 
                          directory=self.executable.out_dir, tags=all_tags)    
         self.add_output_opt(option_name, fil)
         
@@ -638,7 +663,8 @@ class AhopeFileList(list):
         # By how much do they overlap?
         overlap_windows = [abs(i.segment_list & currsegment_list) for i in overlap_files]
 
-        # FIXME: Error handling for the overlap_files == [] case?
+        if not overlap_windows:
+            return []
 
         # Return the AhopeFile with the biggest overlap
         # Note if two AhopeFile have identical overlap, the first is used

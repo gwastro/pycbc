@@ -90,7 +90,7 @@ def setup_timeslides_workflow(workflow, output_dir=None, tags=[],
             timeSlideExeTag = workflow.cp.get_opt_tags("ahope-timeslides",
                                                     "timeslides-exe", currTags)
             timeSlideExe = select_generic_executable(workflow, timeSlideExeTag)
-            timeSlideJob = timeSlideExe(workflow.cp, timeSlideExeTag, ifo=ifo_string,
+            timeSlideJob = timeSlideExe(workflow.cp, timeSlideExeTag, ifos=ifo_string,
                                              tags=currTags, out_dir=output_dir)
             timeSlideNode = timeSlideJob.create_node(fullSegment)
             if timeSlideMethod == "AT_RUNTIME":
