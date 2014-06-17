@@ -33,7 +33,7 @@ import logging
 import urlparse
 import argparse
 import lal
-from glue import pipeline
+import Pegasus.DAX3 as dax
 from glue import segments
 import pycbc.ahope as ahope
 
@@ -76,7 +76,8 @@ args.config_overrides = []
 args.config_overrides.append("ahope:start-time:%d" %(start_time))
 args.config_overrides.append("ahope:end-time:%d" %(end_time))
 
-workflow = ahope.Workflow(args)
+basename = 'daily_ahope'
+workflow = ahope.AhopeWorkflow(args, basename)
 
 workingDir = os.path.join(args.output_dir, monthName, dayName)
 
@@ -91,6 +92,7 @@ if not os.path.exists('logs'):
     os.makedirs('logs')
 
 ifos = workflow.ifos
+cp = workflow.cp
 
 # Get segments
 scienceSegs, segsFileList = ahope.setup_segment_generation(workflow, workingDir)
@@ -116,24 +118,16 @@ insps = ahope.setup_matchedfltr_workflow(workflow, scienceSegs, datafinds,
 # Now I start doing things not supported by ahope at present.
 # NOTE: llwadd was moved over to ahope functionality
 
-# First we need direct access to the dag and cp objects
-dag = workflow.dag
-cp = workflow.cp
-
-basename = 'daily_ahope'
 # Set up condor jobs for this stuff
-llwadd_exe = ahope.LigolwAddExec('llwadd')
-llwadd_job = llwadd_exe.create_job(cp, ''.join(scienceSegs.keys()),
+llwadd_exe = ahope.LigolwAddExecutable(workflow.cp, 'llwadd', ifo=''.join(scienceSegs.keys()),
                                    out_dir=workingDir)
+print llwadd_exe.ifo
 
-cp_exec = ahope.Executable('cp')
-cp_job = cp_exec.create_job(cp, out_dir=workingDir)
+cp_exec = ahope.AhopeExecutable(workflow.cp, 'cp', out_dir=workingDir)
 
 # Hopefully with tags, I would need only one exec and two jobs
-si_exec_coarse = ahope.Executable('siclustercoarse')
-si_exec_fine = ahope.Executable('siclusterfine')
-si_job_coarse = si_exec_coarse.create_job(cp, out_dir=workingDir)
-si_job_fine = si_exec_fine.create_job(cp, out_dir=workingDir)
+si_exe_coarse = ahope.AhopeExecutable(workflow.cp, 'siclustercoarse', out_dir=workingDir)
+si_exe_fine = ahope.AhopeExecutable(workflow.cp, 'siclusterfine', out_dir=workingDir)
 
 inspstr = 'INSPIRAL'
 pageDagParents = []
@@ -142,20 +136,18 @@ for inspOutGroup in insps:
     analysis_seg = inspOutGroup.segment
 
     # Create a cache file to hole the input to ligolw_add
-    llwadd_node = llwadd_job.create_node(analysis_seg, [inspOutGroup]) 
-    # HACK TO OVERWRITE FILE NAMING
-    llwadd_node.output_files = ahope.AhopeFileList([])
     output_name = '%s-INSPIRAL_UNCLUSTERED-%d-%d.xml.gz'\
                    %(ifo, analysis_seg[0], abs(analysis_seg))
     output_url = urlparse.urlunparse(['file', 'localhost', 
-                                      os.path.join(workingDir,output_name),
+                                      os.path.join(workingDir, output_name),
                                       None, None, None])
     llwaddFile = ahope.AhopeFile(ifo, 'LLWADD_UNCLUSTERED', analysis_seg,
                               file_url=output_url)
-    llwaddFile.node = llwadd_node
-    llwadd_node.add_output(llwaddFile, opt='output')
-    llwadd_node.add_var_opt('lfn-start-time', analysis_seg[0])
-    llwadd_node.add_var_opt('lfn-end-time',analysis_seg[1])
+    
+    llwadd_node = llwadd_exe.create_node(analysis_seg, [inspOutGroup], output=llwaddFile) 
+
+    llwadd_node.add_opt('--lfn-start-time', analysis_seg[0])
+    llwadd_node.add_opt('--lfn-end-time',analysis_seg[1])
     workflow.add_node(llwadd_node)
 
     # Finally run 30ms and 16s clustering on the combined files
@@ -175,20 +167,20 @@ for inspOutGroup in insps:
  
 
     for cfile in [clustered_30ms_file, clustered_16s_file]:
-        cpnode = cp_job.create_node()
-        cpnode.add_input(llwaddFile, argument=True)
-        cpnode.add_output(cfile, argument=True)
+        cpnode = cp_exec.create_node()
+        cpnode.add_input_arg(llwaddFile)
+        cpnode.add_output_arg(cfile)
         workflow.add_node(cpnode)
 
         if cfile == clustered_16s_file:
-            sinode = si_job_coarse.create_node()
+            sinode = si_exe_coarse.create_node()
         else:
-            sinode = si_job_fine.create_node()
+            sinode = si_exe_fine.create_node()
 
         # FIXME: this node overwrites the input file. Better
         # that this take command line options, remove the cp job and write to
         # a different file
-        sinode.add_input(cfile, argument=True)
+        sinode.add_input_arg(cfile)
         workflow.add_node(sinode)
         pageDagParents.append(sinode)
 
@@ -239,37 +231,33 @@ ihopePageCmd.append('-s')
 ihopePageCmd.append('%s' %(str(start_time)))
 ihopePageCmd.append('-i')
 ihopePageCmd.append(','.join(ifos))
-ahope.make_external_call(ihopePageCmd, outDir=os.path.join(workingDir,'logs'),\
-                         outBaseName='daily_ihope_page_daggen')
+ahope.make_external_call(ihopePageCmd, out_dir=os.path.join(workingDir,'logs'),\
+                         out_basename='daily_ihope_page_daggen')
 
 # Add this to the workflow and make it a child of all cluster jobs
-dailyPageJob = pipeline.CondorDAGManJob('daily_page.dag', workingDir,\
-                                        'daily_page.dax') 
-dailyPageNode = dailyPageJob.create_node()
+daily_dag_name = 'daily_page.dag'
+daily_dag_path = os.path.join(workingDir, daily_dag_name)
+dailyPageNode = dax.DAG(daily_dag_name)
+dailyPageDagFile = dax.File(daily_dag_name)
+dailyPageNode.addProfile(dax.Profile("dagman", "DIR", workingDir))
+dailyPageDagFile.PFN(daily_dag_path, site='local')
+workflow._adag.addFile(dailyPageDagFile)
+workflow._adag.addDAG(dailyPageNode)
+
 for job in pageDagParents:
-    dailyPageNode.add_parent(job)
-dag.add_node(dailyPageNode)
+    dep = dax.Dependency(parent=job._dax_node, child=dailyPageNode)
+    workflow._adag.addDependency(dep)
 
 # One final job to make the output page
 # Make sub file for summary page job
-summJob = pipeline.CondorDAGJob('vanilla', \
-                            cp.get('executables', 'ihope_daily_page'))
-summJob.set_stderr_file('logs/summ-page-$(cluster)-$(process).err')
-summJob.set_stdout_file('logs/summ-page-$(cluster)-$(process).out')
-summJob.set_sub_file('summary_page.sub')
-summJob.add_condor_cmd('getenv', 'True')
+summ_exe = ahope.AhopeExecutable(workflow.cp, 'ihope_daily_page')
+summNode = summ_exe.create_node()
+summNode.add_opt('--action', 'make_index_page')
+summNode.add_opt('--config', pageConfFile)
+summNode.add_opt('--gps-start-time', start_time)
+summNode.add_opt('--ifos', ','.join(ifos))
+workflow.add_node(summNode)
+workflow._adag.addDependency(dax.Dependency(parent=dailyPageNode, child=summNode._dax_node))
 
-summNode = summJob.create_node()
-summNode.add_var_opt('action', 'make_index_page')
-summNode.add_var_opt('config', pageConfFile)
-summNode.add_var_opt('gps-start-time', start_time)
-summNode.add_var_opt('ifos', ','.join(ifos))
-summNode.add_parent(dailyPageNode)
-dag.add_node(summNode)
-
-workflow.write_plans()
-
+workflow.save()
 logging.info("Finished.")
-
-workflow.dag.write_dag()
-workflow.dag.write_sub_files()
