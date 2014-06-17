@@ -54,8 +54,8 @@ parser.add_option('--show-plots', action='store_true',
 parser.add_option('--save-plots', action='store_true',
                    help = 'save the plots generated in this test suite')  
  
-parser.add_option('--approximant', type = 'choice', choices = td_approximants(),
-                  help = "[default: %default]")      
+parser.add_option('--approximant', type = 'choice', choices = td_approximants() + fd_approximants(),
+                  help = "Choices are %s" % str(td_approximants() + fd_approximants()))      
                                    
 parser.add_option('--mass1', type = float, default=10, help = "[default: %default]")    
 parser.add_option('--mass2', type = float, default=10, help = "[default: %default]")   
@@ -88,11 +88,24 @@ if not opt.show_plots:
 import pylab
 matplotlib.rc('text', usetex=True)
 
+def get_waveform(p, **kwds):
+    """ Given the input parameters get me the waveform, whether it is TD or
+        FD
+    """
+    params = copy.copy(p.__dict__)
+    params.update(kwds)
+    params['delta_f'] = 1.0/256
+
+    if params['approximant'] in td_approximants():
+        return get_td_waveform(**params)
+    else:
+        return get_fd_waveform(**params)
+
 class TestLALSimulation(unittest.TestCase):
     def setUp(self,*args):
         self.save_plots = opt.save_plots
         self.show_plots = opt.show_plots
-        self.plot_dir = "./"
+        self.plot_dir = "."
         
         class params(object):
             pass
@@ -108,46 +121,55 @@ class TestLALSimulation(unittest.TestCase):
         from pycbc import version
         self.version_txt = "pycbc: %s  %s\n" % (version.git_hash, version.date) + \
                            "lalsimulation: %s  %s" % (lalsimulation.lalSimulationVCSId, lalsimulation.lalSimulationVCSDate)
+      
         
     def test_varying_orbital_phase(self):
         #"""Check that the waveform is consistent under phase changes
         #"""
-        mass1 = 10 
-        mass2 = 10
         
+        if self.p.approximant in td_approximants():
+            sample_attr = 'sample_times'
+        else:
+            sample_attr = 'sample_frequencies'   
+            
         pylab.figure()
         pylab.axes([.1, .2, 0.8, 0.70])
-        hp_ref, hc_ref = get_td_waveform(self.p, coa_phase=0)
-        pylab.plot(hp_ref.sample_times, hp_ref, label="phiref")
+        hp_ref, hc_ref = get_waveform(self.p, coa_phase=0)
+        pylab.plot(getattr(hp_ref, sample_attr), hp_ref, label="phiref")
        
-        hp, hc = get_td_waveform(self.p, coa_phase=lal.LAL_PI/4)
+        hp, hc = get_waveform(self.p, coa_phase=lal.LAL_PI/4)
         m, i = match(hp_ref, hp)
         self.assertAlmostEqual(1, m, places=2)
         o = overlap(hp_ref, hp)
-        pylab.plot(hp.sample_times, hp, label="phiref \pi/4")
+        pylab.plot(getattr(hp, sample_attr), hp, label="$phiref \pi/4$")
         
-        hp, hc = get_td_waveform(self.p, coa_phase=lal.LAL_PI/2)
+        hp, hc = get_waveform(self.p, coa_phase=lal.LAL_PI/2)
         m, i = match(hp_ref, hp)
         o = overlap(hp_ref, hp)
         self.assertAlmostEqual(1, m, places=7)
         self.assertAlmostEqual(-1, o, places=7)
-        pylab.plot(hp.sample_times, hp, label="phiref \pi/2")
+        pylab.plot(getattr(hp, sample_attr), hp, label="$phiref \pi/2$")
         
-        hp, hc = get_td_waveform(self.p, coa_phase=lal.LAL_PI)
+        hp, hc = get_waveform(self.p, coa_phase=lal.LAL_PI)
         m, i = match(hp_ref, hp)
         o = overlap(hp_ref, hp)
         self.assertAlmostEqual(1, m, places=7)
         self.assertAlmostEqual(1, o, places=7)
-        pylab.plot(hp.sample_times, hp, label="phiref \pi")                         
+        pylab.plot(getattr(hp, sample_attr), hp, label="$phiref \pi$")                         
         
-        pylab.xlim(-0.05, float(hp.end_time))
+        pylab.xlim(min(getattr(hp, sample_attr)), max(getattr(hp, sample_attr)))
         pylab.title("Vary %s oribital phiref, h+" % self.p.approximant)
-        pylab.xlabel("Time to coalescence (s)")
+        
+        if self.p.approximant in td_approximants():
+            pylab.xlabel("Time to coalescence (s)")
+        else:
+            pylab.xlabel("GW Frequency (Hz)") 
+
         pylab.ylabel("GW Strain")
         pylab.legend(loc="upper left")
         
         info = self.version_txt
-        pylab.figtext(0, 0, info)
+        pylab.figtext(0.05, 0.05, info)
         
         if self.show_plots:
             pylab.show()
@@ -163,10 +185,10 @@ class TestLALSimulation(unittest.TestCase):
         tolerance = 1e-5
         fac = 10
     
-        hpc, hcc = get_td_waveform(self.p, distance=distance)
-        hpm, hcm = get_td_waveform(self.p, distance=distance*fac)
-        hpf, hcf = get_td_waveform(self.p, distance=distance*fac*fac)
-        hpn, hcn = get_td_waveform(self.p, distance=distance/fac)
+        hpc, hcc = get_waveform(self.p, distance=distance)
+        hpm, hcm = get_waveform(self.p, distance=distance*fac)
+        hpf, hcf = get_waveform(self.p, distance=distance*fac*fac)
+        hpn, hcn = get_waveform(self.p, distance=distance/fac)
         
         pylab.figure()
         pylab.axes([.1, .2, 0.8, 0.70])
@@ -186,9 +208,10 @@ class TestLALSimulation(unittest.TestCase):
         pylab.xlabel("GW Frequency (Hz)")
         pylab.ylabel("GW Strain")
         pylab.legend()
+        pylab.xlim(xmin=self.p.f_lower)
         
         info = self.version_txt
-        pylab.figtext(0, 0, info)
+        pylab.figtext(0.05, .05, info)
         
         if self.show_plots:
             pylab.show()
@@ -221,11 +244,11 @@ class TestLALSimulation(unittest.TestCase):
             nearby_params.coa_phase *= uniform(low=1-tol, high=1+tol)
             return nearby_params
             
-        hp, hc = get_td_waveform(self.p)    
+        hp, hc = get_waveform(self.p)    
         
         for i in range(10):
             p_near = nearby(self.p)
-            hpn, hcn = get_td_waveform(p_near)
+            hpn, hcn = get_waveform(p_near)
             
             maxlen = max(len(hpn), len(hp))
             hp.resize(maxlen)
@@ -237,18 +260,14 @@ class TestLALSimulation(unittest.TestCase):
         #""" Test that the waveform is consistent for changes in inclination
         #"""
         sigmas = []
-        incs = numpy.arange(0, 21) * lal.LAL_PI / 10
-        
+        incs = numpy.arange(0, 21, 1.0) * lal.LAL_PI / 10.0
+
         for inc in incs:
             # WARNING: This does not properly handle the case of SpinTaylor*
             # where the spin orientation is not relative to the inclination
-            hp, hc = get_td_waveform(self.p, inclination=inc)
+            hp, hc = get_waveform(self.p, inclination=inc)
             s = sigma(hp, low_frequency_cutoff=self.p.f_lower)        
             sigmas.append(s)
-
-        self.assertAlmostEqual(sigmas[-1], sigmas[0], places=7)
-        self.assertAlmostEqual(max(sigmas), sigmas[0], places=7)
-        self.assertTrue(sigmas[0] > sigmas[5])
          
         pylab.figure()
         pylab.axes([.1, .2, 0.8, 0.70])   
@@ -258,7 +277,7 @@ class TestLALSimulation(unittest.TestCase):
         pylab.ylabel("sigma (flat PSD)")
         
         info = self.version_txt
-        pylab.figtext(0, 0, info)
+        pylab.figtext(0.05, 0.05, info)
         
         if self.show_plots:
             pylab.show()
@@ -266,6 +285,10 @@ class TestLALSimulation(unittest.TestCase):
         if self.save_plots:
             pname = self.plot_dir + "/%s-vary-inclination.png" % self.p.approximant
             pylab.savefig(pname)
+
+        self.assertAlmostEqual(sigmas[-1], sigmas[0], places=7)
+        self.assertAlmostEqual(max(sigmas), sigmas[0], places=7)
+        self.assertTrue(sigmas[0] > sigmas[5])
 
     
 def test_maker(class_name, name, **kwds):
