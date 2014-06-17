@@ -70,7 +70,7 @@ sin_cos = Array([], dtype=float32)
 
 def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, v0, amp_factor):
+                    pfa6,  pfl6,  pfa7, amp_factor):
     """ Calculate the spa tmplt phase 
     """
     kfac = numpy.array(spa_tmplt_precondition(len(htilde), delta_f, kmin).data, copy=False)
@@ -82,7 +82,6 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
     code = """ 
     float piM13 = cbrtf(piM);
     float logpiM13 = log(piM13);
-    float logv0 = log(v0);
     float log4 = log(4.);
     const float _pfaN=pfaN;
     const float _pfa2=pfa2;
@@ -114,7 +113,7 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
             case 6:
                 phasing = (phasing + _pfa6 + _pfl6 * (logv + log4) ) * v;
             case 5:
-                phasing = (phasing + _pfa5 + _pfl5 * (logv - logv0) ) * v;
+                phasing = (phasing + _pfa5 + _pfl5 * (logv) ) * v;
             case 4:
                 phasing = (phasing + _pfa4) * v;
             case 3:
@@ -190,7 +189,7 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
     inline(code, ['htilde', 'cbrt_vec', 'logv_vec', 'kmin', 'phase_order', 
                    'piM',  'pfaN', 'amp_factor', 'kfac',
                    'pfa2',  'pfa3',  'pfa4',  'pfa5',  'pfl5',
-                   'pfa6',  'pfl6',  'pfa7', 'v0', 'length'],
+                   'pfa6',  'pfl6',  'pfa7', 'length'],
                     extra_compile_args=['-march=native -O3 -w'] + omp_flags,
                     support_code = support,
                     libraries=omp_libs

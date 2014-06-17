@@ -79,7 +79,7 @@ class TestWaveform(unittest.TestCase):
 
                             # Check the diff is sane
                             diff = abs(hp - hpr).sum() / mag
-                            self.assertTrue(diff < 0.0013)
+                            self.assertTrue(diff < 0.01)
 
                             # Point to point overlap (no phase or time maximization)
                             o =  overlap(hp, hpr)

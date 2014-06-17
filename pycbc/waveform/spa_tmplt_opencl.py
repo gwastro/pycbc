@@ -60,7 +60,7 @@ taylorf2_text = """
         case 6:
             phasing += (pfa6 + pfl6 * (logv + log4) ) * v6;
         case 5:
-            phasing += (pfa5 + pfl5 * (logv - lv0) ) * v5;
+            phasing += (pfa5 + pfl5 * (logv) ) * v5;
         case 4:
             phasing += pfa4 * v4;
         case 3:
@@ -89,17 +89,17 @@ taylorf2_text = """
 taylorf2_kernel = ElementwiseKernel(mgr.state.context, """cfloat_t *htilde, int kmin, int phase_order,
                                        float delta_f, float piM, float pfaN, 
                                        float pfa2, float pfa3, float pfa4, float pfa5, float pfl5,
-                                       float pfa6, float pfl6, float pfa7, float lv0, float amp""",
+                                       float pfa6, float pfl6, float pfa7, float amp""",
                     taylorf2_text, "SPAtmplt",
                     preamble=preamble, options=pkg_config_header_strings(['lal']))
 
 def spa_tmplt_engine(htilde,  kmin,  phase_order,
                     delta_f,  piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, v0, amp_factor):
+                    pfa6,  pfl6,  pfa7, amp_factor):
     """ Calculate the spa tmplt phase 
     """
     taylorf2_kernel(htilde.data,  kmin,  phase_order,
                     delta_f,  piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, log(v0), amp_factor)
+                    pfa6,  pfl6,  pfa7, amp_factor)

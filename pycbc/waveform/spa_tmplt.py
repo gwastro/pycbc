@@ -110,7 +110,7 @@ def spa_distance(psd, mass1, mass2, lower_frequency_cutoff, snr=8):
 @schemed("pycbc.waveform.spa_tmplt_")  
 def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, v0, amp_factor):
+                    pfa6,  pfl6,  pfa7, amp_factor):
     """ Calculate the spa tmplt phase 
     """
  
@@ -172,8 +172,6 @@ def spa_tmplt(**kwds):
     f_max = ceilpow2(fISCO);
     n = int(f_max / delta_f) + 1;
 
-    v0 = (piM *  kmin * delta_f) ** (1.0/3.0)
-
     if not out:
         htilde = FrequencySeries(zeros(n, dtype=numpy.complex64), delta_f=delta_f, copy=False)
     else:
@@ -187,7 +185,7 @@ def spa_tmplt(**kwds):
     
     spa_tmplt_engine(htilde[kmin:kmax],  kmin, phase_order, delta_f, piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, v0, amp_factor)          
+                    pfa6,  pfl6,  pfa7, amp_factor)
     return htilde
     
 
