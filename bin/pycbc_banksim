@@ -168,6 +168,7 @@ parser.add_argument("--signal-spin-order",help="PN order to use for the spin ter
 parser.add_argument("--signal-amplitude-order",help="PN order to use for the amplitude",default=-1,type=int) 
 parser.add_argument("--signal-start-frequency",help="Starting frequency for templates",type=float)  
 parser.add_argument("--signal-sample-rate",help="Starting frequency for templates",type=float)  
+parser.add_argument("--use-sky-location",help="Inject into a theoretical detector at the celestial North pole of a non-rotating Earth rather than overhead",action='store_true')
 
 #Filtering Settings
 parser.add_argument('--filter-low-frequency-cutoff', metavar='FREQ', help='low frequency cutoff of matched filter', type=float)
@@ -262,6 +263,9 @@ with ctx:
         index += 1
         if options.verbose:
             update_progress(float(index)/len(signal_table))
+        if not options.use_sky_location:
+            signal_params.latitude = 0.
+            signal_params.longitude = 0.
         stilde = get_waveform(options.signal_approximant, 
                       options.signal_phase_order, 
                       options.signal_amplitude_order, 
