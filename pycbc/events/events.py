@@ -70,9 +70,7 @@ def fc_cluster_over_window_fast(times, values, window_length):
 def findchirp_cluster_over_window(times, values, window_length):
     indices = numpy.zeros(len(times), dtype=int)
     j = 0 
-    for i in range(len(times)):
-        if i==0:
-            indices[0] = 0
+    for i in xrange(len(times)):
         if times[i] - times[indices[j]] > window_length:
             j += 1
             indices[j] = i
@@ -109,13 +107,11 @@ class EventManager(object):
                   
     def chisq_threshold(self, value, num_bins, delta=0):
         remove = []
-        for i in xrange(len(self.events)):
-            event = self.events[i]
-            tind = event['template_id']
+        for i, event in enumerate(self.events):
             xi = event['chisq'] / (num_bins + delta * event['snr'].conj() * event['snr'])
             if xi > value:
                 remove.append(i)
-        self.events = numpy.delete(self.events, remove)          
+        self.events = numpy.delete(self.events, remove)
 
     def newsnr_threshold(self, threshold):
         "Remove events with newsnr smaller than given threshold"
@@ -159,7 +155,7 @@ class EventManager(object):
         win = gps_nsec.astype(int) / wnsec
 
         indices.append(0)
-        for i in range(len(tvec)):
+        for i in xrange(len(tvec)):
             if gps_sec[i] == gps_sec[indices[-1]] and  win[i] == win[indices[-1]]:
                     if abs(cvec[i]) > abs(cvec[indices[-1]]):
                         indices[-1] = i
@@ -229,8 +225,7 @@ class EventManager(object):
         else:
             tend_time = self.opt.gps_end_time - self.opt.segment_end_pad
             
-        event_num = 0      
-        for event in self.events:
+        for event_num, event in enumerate(self.events):
             tind = event['template_id']
         
             tmplt = self.template_params[tind]['tmplt']
@@ -267,7 +262,6 @@ class EventManager(object):
             row.sigmasq = sigmasq
             
             row.event_id = glue.ligolw.lsctables.SnglInspiralID(event_num)
-            event_num += 1
             
             sngl_table.append(row)
                 
