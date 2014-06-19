@@ -37,19 +37,19 @@ parse_args_cpu_only("PN Utilities")
 class TestUtils(unittest.TestCase):
     def test_mass1_mass2_to_tau0_tau3(self):
         result = mass1_mass2_to_tau0_tau3(3.0,5.0,15.0)
-        answer = (8.9886054117032569e-08, 0.00068132339501069089)
+        answer = (63.039052988077955, 2.353532999897545)
         self.assertAlmostEqual(result[0]/answer[0],1,places=6)
         self.assertAlmostEqual(result[1]/answer[1],1,places=6)
 
     def test_tau0_tau3_to_mtotal_eta(self):
-        result = tau0_tau3_to_mtotal_eta(10,5,15.0)
-        answer = [0.00052771444173289135, 0.019562392458119287]
+        result = tau0_tau3_to_mtotal_eta(93.84928959285253,2.9198487498891126,20.0)
+        answer = [5., 4.*1./5./5.]
         self.assertAlmostEqual(result[0]/answer[0],1,places=6)
         self.assertAlmostEqual(result[1]/answer[1],1,places=6)
 
     def test_tau0_tau3_to_mass1_mass2(self):
-        result = tau0_tau3_to_mass1_mass2(10,5,15.0)
-        answer =  [0.00051718082839390816, 1.0533613338983225e-05]
+        result = tau0_tau3_to_mass1_mass2(12.410035910174642,0.9266455525603574,30.0)
+        answer =  [6., 2.]
         self.assertAlmostEqual(result[0]/answer[0],1,places=6)
         self.assertAlmostEqual(result[1]/answer[1],1,places=6)
 
