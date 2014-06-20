@@ -21,8 +21,8 @@ from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_
 from pycbc.filter import  matched_filter_core, sigmasq, make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
 
-parser = argparse.ArgumentParser(
-    description = "Find single detector gravitational-wave triggers." )
+parser = argparse.ArgumentParser(usage='',
+    description="Find single detector gravitational-wave triggers.")
 
 parser.add_argument("-V", "--verbose", action="store_true", 
                   help="print extra debugging information", default=False )
@@ -39,7 +39,8 @@ parser.add_argument("--low-frequency-cutoff", type=float,
 parser.add_argument("--approximant", type=str,
                   help="The name of the approximant use for filtering")
 parser.add_argument("--order", type=str,
-                  help="The integer half-PN order at which to generate the approximant.")
+                  help="The integer half-PN order at which to generate"
+                       " the approximant.")
 
 parser.add_argument("--cluster-method", choices=["template", "window"])
 parser.add_argument("--cluster-window", type=float, default = -1,

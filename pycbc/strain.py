@@ -183,15 +183,18 @@ def insert_strain_option_group(parser):
 
     # Required options
     data_reading_group.add_argument("--gps-start-time", 
-                            help="The gps start time of the data", type=int)
+                            help="The gps start time of the data "
+                                 "(integer seconds)", type=int)
     data_reading_group.add_argument("--gps-end-time", 
-                            help="The gps end time of the data", type=int)
+                            help="The gps end time of the data "
+                                 " (integer seconds)", type=int)
     data_reading_group.add_argument("--strain-high-pass", type=float, 
                             help="High pass frequency")
     data_reading_group.add_argument("--pad-data", 
-              help="Extra padding to remove highpass corruption (s)", type=int)
+              help="Extra padding to remove highpass corruption "
+                   "(integer seconds)", type=int)
     data_reading_group.add_argument("--sample-rate", type=int, 
-                            help="The sample rate to use for h(t) generation.")
+                            help="The sample rate to use for h(t) generation (integer Hz).")
     data_reading_group.add_argument("--channel-name", type=str, 
                    help="The channel containing the gravitational strain data")
                    
