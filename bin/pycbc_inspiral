@@ -45,6 +45,10 @@ parser.add_argument("--order", type=str,
 parser.add_argument("--cluster-method", choices=["template", "window"])
 parser.add_argument("--cluster-window", type=float, default = -1,
                   help="Length of clustering window in seconds")
+parser.add_argument("--cluster-before-vetoes", action='store_true', default=False,
+                  help="Cluster above threashold SNR values before doing "
+                       "chisq calculations."
+                   )
 parser.add_argument("--maximization-interval", type=float, default=0,
                   help="Maximize triggers over the template bank (ms)")
 
@@ -127,7 +131,12 @@ with ctx:
     corr_mem = zeros(tlen, dtype=complex64)
     
     for t_num, template in enumerate(bank):  
-        event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)   
+        event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)  
+               
+        if opt.cluster_method == "window":
+            cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
+        elif opt.cluster_method == "template":
+            cluster_window = int(template.length_in_time * gwstrain.sample_rate)
                                                                                                  
         for s_num, stilde in enumerate(segments):                 
             logging.info("Filtering template %d/%d segment %d/%d" % \
@@ -140,9 +149,13 @@ with ctx:
             idx, snrv = events.threshold(snr[stilde.analyze], 
                                          opt.snr_threshold / norm)            
             if len(idx) == 0:
-                continue                 
+                continue            
+            logging.info("%s points above threshold" % str(len(idx)))              
                 
-            logging.info("%s points above threshold" % str(len(idx)))
+            if opt.cluster_before_vetoes:    
+                idx, snrv = events.cluster_reduce(idx, snrv, cluster_window) 
+                logging.info("%s points after clustering" % str(len(idx))) 
+                
             bank_chisqv = bank_chisq.values(template, s_num, snr, norm, 
                                             idx+stilde.analyze.start)
             power_chisqv = power_chisq.values(corr, snr, norm, psd, 
@@ -152,11 +165,6 @@ with ctx:
             idx += stilde.cumulative_index           
             vals = [idx, snrv, power_chisqv, bank_chisqv]
             event_mgr.add_template_events(names, vals)
-
-        if opt.cluster_method == "window":
-            cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
-        elif opt.cluster_method == "template":
-            cluster_window = template.length_in_time * gwstrain.sample_rate
             
         event_mgr.cluster_template_events("time_index", "snr", cluster_window) 
         event_mgr.finalize_template_events()   

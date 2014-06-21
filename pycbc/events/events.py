@@ -44,6 +44,23 @@ def threshold_and_cluster(series, threshold, window):
     """ 
     
 def fc_cluster_over_window_fast(times, values, window_length):
+    """ Reduce the events by clustering over a window using
+    the FindChirp clustering algorithm
+    
+    Parameters
+    -----------
+    indices: Array
+        The list of indices of the SNR values
+    snr: Array
+        The list of SNR value
+    window_size: int
+        The size of the window in integer samples.
+    
+    Returns 
+    -------
+    indices: Array
+        The reduced list of indices of the SNR values
+    """
     from scipy.weave import inline
     indices = numpy.zeros(len(times), dtype=int)
     tlen = len(times)
@@ -66,6 +83,28 @@ def fc_cluster_over_window_fast(times, values, window_length):
     inline(code, ['times', 'absvalues', 'window_length', 'indices', 'tlen', 'k'],
                  extra_compile_args=['-march=native -O3 -w'])
     return indices[0:k[0]+1]
+    
+def cluster_reduce(idx, snr, window_size):
+    """ Reduce the events by clustering over a window
+    
+    Parameters
+    -----------
+    indices: Array
+        The list of indices of the SNR values
+    snr: Array
+        The list of SNR value
+    window_size: int
+        The size of the window in integer samples.
+    
+    Returns 
+    -------
+    indices: Array
+        The list of indices of the SNR values
+    snr: Array
+        The list of SNR values
+    """
+    ind = fc_cluster_over_window_fast(idx, snr, window_size)
+    return idx.take(ind), snr.take(ind)
 
 def findchirp_cluster_over_window(times, values, window_length):
     indices = numpy.zeros(len(times), dtype=int)
@@ -378,7 +417,7 @@ class EventManager(object):
 
 __all__ = ['threshold_and_cluster', 
            'findchirp_cluster_over_window', 'fc_cluster_over_window_fast',
-           'threshold', 
+           'threshold', 'cluster_reduce',
            'EventManager']
 
 
