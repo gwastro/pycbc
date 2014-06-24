@@ -208,9 +208,6 @@ try :
 except ValueError:
     template_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
 
-# open the output file where the max overlaps over the bank are stored 
-fout = open(options.out_file, "w")
-
 # Load in the simulation list
 indoc = ligolw_utils.load_filename(options.sim_file, False)
 try:
@@ -301,45 +298,42 @@ with ctx:
             if stilde is None:
                 matches.append(0)
                 continue
-            elif options.mchirp_window and outside_mchirp_window(template_params, 
+            elif options.mchirp_window and outside_mchirp_window(template_params,
                                         signal_params, options.mchirp_window):
                 matches.append(0)
                 continue
 
-            # Generate htilde if we haven't already done so 
+            # Generate htilde if we haven't already done so
             if htilde is None:
-                htilde = get_waveform(options.template_approximant, 
-                                      options.template_phase_order, 
+                htilde = get_waveform(options.template_approximant,
+                                      options.template_phase_order,
                                       options.template_amplitude_order,
                                       options.template_spin_order,
-                                      template_params, 
-                                      options.template_start_frequency, 
-                                      template_sample_rate, 
+                                      template_params,
+                                      options.template_start_frequency,
+                                      template_sample_rate,
                                       filter_N, options.filter_sample_rate)
             h_norm = sigmasq(htilde, psd=psd,
                     low_frequency_cutoff=options.filter_low_frequency_cutoff,
                     high_frequency_cutoff=high_frequency_cutoff)
 
-            o,i = match(htilde, stilde, v1_norm=h_norm, v2_norm=s_norm, 
+            o,i = match(htilde, stilde, v1_norm=h_norm, v2_norm=s_norm,
                     low_frequency_cutoff=options.filter_low_frequency_cutoff,
                     high_frequency_cutoff=high_frequency_cutoff)
             matches.append(o)
-         
+
 if options.verbose:
   print
   print("Overlaps finished at %fs" %(elapsed_time()))
   print("Determining maximum overlaps and outputting results")
 
-#Find the maximum overlap in the bank and output to a file
-index = 0
-for stilde, s_norm, matches, sim_template in signals:
-    match_str = "%5.5f " % (max(matches))
-    match_str += " " + options.bank_file 
-    match_str += " " + str(matches.index(max(matches)))
-    match_str += " " + options.sim_file
-    match_str += " " + str(index)
-    match_str += " %5.5f \n" % s_norm
-    fout.write(match_str)
-    index += 1
-
-
+# Find the maximum overlap in the bank and output to a file
+with open(options.out_file, "w") as fout:
+    for i, (stilde, s_norm, matches, sim_template) in enumerate(signals):
+        match_str = "%5.5f " % max(matches)
+        match_str += " " + options.bank_file
+        match_str += " " + str(matches.index(max(matches)))
+        match_str += " " + options.sim_file
+        match_str += " %d" % i
+        match_str += " %5.5f\n" % s_norm
+        fout.write(match_str)
