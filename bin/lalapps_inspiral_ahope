@@ -64,23 +64,32 @@ leftovers.extend(['--ifo-tag', ifoTag])
 
 # Pipedown also wants us to store the usertag. This is not robust, but should
 # work until we can do this a better way.
-userTag = os.path.basename(args.output_file).split('-')[1]
-userTag = userTag.split('_')[1:]
-if userTag[0] == 'FULL' and userTag[1] == 'DATA':
-    userTag = 'FULL_DATA'
-elif userTag[0] == 'PLAYGROUND':
-    userTag = 'PLAYGROUND'
-elif userTag[0].endswith("INJ"):
-    userTag = userTag[0]
-else:
-    userTag = '_'.join(userTag)
+try:
+    userTag = os.path.basename(args.output_file).split('-')[1]
+    userTag = userTag.split('_')[1:]
+    if userTag[0] == 'FULL' and userTag[1] == 'DATA':
+        userTag = 'FULL_DATA'
+    elif userTag[0] == 'PLAYGROUND':
+        userTag = 'PLAYGROUND'
+    elif userTag[0].endswith("INJ"):
+        userTag = userTag[0]
+    else:
+        userTag = '_'.join(userTag)
+except:
+    userTag = None
 
 # Also need to know the temporary output file name
 ifo = args.channel_name[0:2]
 startTime = args.gps_start_time
 duration = args.gps_end_time - startTime
-inspOutName = "%s-INSPIRAL_%s_%s-%d-%d" \
+
+if userTag is not None:
+    inspOutName = "%s-INSPIRAL_%s_%s-%d-%d" \
               %(ifo, ifoTag, userTag, startTime, duration)
+else:
+    inspOutName = "%s-INSPIRAL_%s-%d-%d" \
+              %(ifo, ifoTag, startTime, duration)               
+              
 atexit.register(file_remove_try, inspOutName)
 
 if "--write-compress" in leftovers:
@@ -91,8 +100,11 @@ else:
 cmdList = ['lalapps_inspiral']
 cmdList += ['--gps-start-time', str(args.gps_start_time), '--gps-end-time',
            str(args.gps_end_time), '--channel-name', args.channel_name,
-           '--ifo-tag', ifoTag, '--frame-cache', frameFileName,
-           '-userTag', userTag]
+           '--ifo-tag', ifoTag, '--frame-cache', frameFileName]
+
+if userTag is not None:
+    cmdList += ['-userTag', userTag]
+
 cmdList += leftovers
 
 # Run lalapps_inspiral
