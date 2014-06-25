@@ -41,6 +41,21 @@ class Detector(object):
         self.response = self.frDetector.response
         self.location = self.frDetector.location
 
+    def light_travel_time_to_detector(self, det):
+        """ Return the light travel time from this detector
+        
+        Parameters
+        ----------
+        detector: Detector
+            The other detector to determine the light travel time to.
+        
+        Returns
+        -------
+        time: float
+            The light travel time in seconds
+        """
+        return lal.LightTravelTime(self.frDetector, det.frDetector) * 1e-9
+
     def antenna_pattern(self, right_ascension, declination, polarization, t_gps):
         """Return the detector response.
         """
