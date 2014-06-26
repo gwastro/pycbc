@@ -238,8 +238,7 @@ class Workflow(object):
                 inp.workflow_input = True
             
         # Record the outputs that this node generates                                   
-        for out in node._outputs:
-            self._outputs += node._outputs  
+        self._outputs += node._outputs  
             
         # Record the executable that this node uses
         if not node.executable.in_workflow:
