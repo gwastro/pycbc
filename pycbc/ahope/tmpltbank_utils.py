@@ -351,6 +351,7 @@ def setup_tmpltbank_pregenerated(workflow, tags=[]):
         curr_bank = pre_gen_banks[ifo]
         file_url = urlparse.urljoin('file:', urllib.pathname2url(curr_bank))
         curr_file = AhopeFile(ifo, user_tag, global_seg, file_url, tags=tags)
+        curr_file.PFN(file_url, site='local')
         tmplt_banks.append(curr_file)
         
     return tmplt_banks
