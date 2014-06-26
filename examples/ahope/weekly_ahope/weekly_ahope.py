@@ -78,7 +78,12 @@ all_files.extend(datafind_files)
 bank_files = ahope.setup_tmpltbank_workflow(workflow, scienceSegs, 
                                             datafind_files, dfDir)
 
+splitbank_files = ahope.setup_splittable_workflow(workflow, bank_files, dfDir) 
+
+
 all_files.extend(bank_files)
+#NOTE: may want to remove splitbank if it confuses pipedown
+all_files.extend(splitbank_files)
 
 # setup the injection files
 # FIXME: Pipedown expects the injections to have the random seed as a tag,
@@ -100,7 +105,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
     else:
         timeSlideTags = ['zerolag','slides']
     insps = ahope.setup_matchedfltr_workflow(workflow, scienceSegs, 
-                                           datafind_files, bank_files, 
+                                           datafind_files, splitbank_files, 
                                            output_dir, injection_file=inj_file,
                                            tags = [tag])
     all_files.extend(insps)
