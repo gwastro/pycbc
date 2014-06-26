@@ -62,12 +62,13 @@ class Executable(ProfileShortcuts):
     """ The workflow representation of an Executable 
     """
     id = 0
-    def __init__(self, name, namespace=None, os="linux", 
-                       arch="x86_64", installed=True, version="1.0"):
+    def __init__(self, name, namespace=None, os=None, 
+                       arch=None, installed=True, version=None):
         self.name = name
         self.logical_name = self.name + "_ID%s" % str(Executable.id)
         Executable.id += 1
         self.namespace = namespace
+        self.version = version
         self._dax_executable = dax.Executable(self.logical_name, 
                    namespace=self.namespace, version=version, os=os, 
                    arch=arch, installed=installed) 
@@ -97,7 +98,7 @@ class Node(ProfileShortcuts):
         self._inputs = []
         self._outputs = []        
         self._dax_node = dax.Job(name=executable.logical_name,
-                                 version = "1.0", 
+                                 version = executable.version, 
                                  namespace=executable.namespace)
         self._args = []
         self._options = []
