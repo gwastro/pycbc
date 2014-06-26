@@ -935,7 +935,7 @@ class PycbcSplitBankExecutable(AhopeExecutable):
             #        currently ignored.
             curr_tags = bank.tags + [curr_tag]
             job_tag = bank.description + "_" + self.name.upper()
-            out_file = AhopeFile(bank.ifoList, job_tag, bank.segment,
+            out_file = AhopeFile(bank.ifo_list, job_tag, bank.segment,
                                  extension=".xml.gz", directory=self.out_dir,
                                  tags=curr_tags)
             out_files.append(out_file)
