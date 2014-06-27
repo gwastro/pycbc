@@ -225,7 +225,7 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
             # that file with key a and index 3 is the same file as key b and
             # index 3 other than the tag is JOBA -> JOBB ... ie. it has used
             # a different part of the template bank.
-            sort_lambda = lambda x: (x.ifoString, x.segment,
+            sort_lambda = lambda x: (x.ifo_string, x.segment,
                                      x.tagged_description)
             for key in inspiral_outs_dict.keys():
                 inspiral_outs_dict[id].sort(key = sort_lambda)
