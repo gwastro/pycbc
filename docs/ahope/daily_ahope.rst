@@ -135,14 +135,6 @@ This time should be a gps time during the *same day* that you want to analyse. D
 Planning and Submitting the Worklfow
 -----------------------------------------
 
-CD into the directory where the dag was generated::
-
-    cd 201308/20130802
-
-where the directory naming is constructed from the year, month and day that is being analysed. Then submit the dag::
-
-    condor_submit_dag daily_ahope.dag
-
 First, copy the files needed for planning into the directory where the dax 
 was generated.::
 
