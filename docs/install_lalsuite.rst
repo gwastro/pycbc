@@ -24,6 +24,10 @@ The system installation includes all executables except the pylal programs in ``
 
    On the TACC XSEDE cluster, you will need to run module load git to make sure that you are running the correct version of git to clone lalsuite.
 
+.. note::
+
+   On the TACC XSEDE cluster it is recommended to install code into the $WORK directory not $HOME because of space limitations.
+
 To do this, clone the lalsuite repository by following the `instructions on the DASWG pages <https://www.lsc-group.phys.uwm.edu/daswg/docs/howto/advanced-lalsuite-git.html#clone>`_
 
 If you want to install a specific version of pylal, for example the ER5 release (v0.5.0) you can run
@@ -65,6 +69,10 @@ Building and installing your own lalsuite
 .. note::
 
     On the TACC XSEDE cluster, you will need to run module load condor to have access to condor_compile
+
+.. note::
+
+    On the TACC XSEDE cluster it is recommended to install code into the $WORK directory not $HOME because of space limitations.
 
 Clone the lalsuite repository by following the `instructions on the DASWG pages <https://www.lsc-group.phys.uwm.edu/daswg/docs/howto/advanced-lalsuite-git.html#clone>`_. Once you have the repository cloned, you will need to checkout the master branch by running
 
