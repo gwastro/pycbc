@@ -227,7 +227,8 @@ Nr = 0
 
 # Map the frequency values and normalizations to idx if --vary-fupper is used
 if opts.vary_fupper:
-    partitioned_bank_object.get_freq_map_and_normalizations(fs)
+    partitioned_bank_object.get_freq_map_and_normalizations(fs,
+                                                      opts.bank_fupper_formula)
 
 logging.info("Starting bank placement")
 
@@ -289,7 +290,7 @@ while True:
     else:
         curr_mus = None
         point_fupper = None
-    partitioned_bank_object.add_point_to_bank(vs, rMass1[Ns], rMass2[Ns],
+    partitioned_bank_object.add_point_by_chi_coords(vs, rMass1[Ns], rMass2[Ns],
                            rSpin1z[Ns], rSpin2z[Ns], point_fupper=point_fupper,
                            mus=curr_mus) 
     N = N + 1

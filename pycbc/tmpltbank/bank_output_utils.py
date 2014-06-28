@@ -211,7 +211,7 @@ def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2,
 
 def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
                                ethincaParams, programName="", optDict = {}, 
-                               **kwargs):
+                               outdoc=None, **kwargs):
     """
     Function that converts the information produced by the various pyCBC bank
     generation codes into a valid LIGOLW xml file, containing a sngl_inspiral
@@ -236,12 +236,16 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
         Name of the executable that has been run
     optDict (key-word argument) : dictionary
         Dictionary of the command line arguments passed to the program
+    outdoc (key-word argument) : ligolw xml document
+        If given add template bank to this representation of a xml document and
+        write to disk. If not given create a new document.
     kwargs : key-word arguments
         All other key word arguments will be passed directly to 
         ligolw_process.register_to_xmldoc
     """
-    outdoc = ligolw.Document()
-    outdoc.appendChild(ligolw.LIGO_LW())
+    if outdoc is None:
+        outdoc = ligolw.Document()
+        outdoc.appendChild(ligolw.LIGO_LW())
     proc_id = ligolw_process.register_to_xmldoc(outdoc, programName, optDict,
                                                 **kwargs).process_id
     sngl_inspiral_table = \

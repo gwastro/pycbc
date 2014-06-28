@@ -756,7 +756,7 @@ class massRangeParameters(object):
                        min_chirp_mass=opts.min_chirp_mass,
                        ns_bh_boundary_mass=opts.ns_bh_boundary_mass)
 
-    def is_unphysical(self, mass1, mass2, spin1z, spin2z):
+    def is_outside_range(self, mass1, mass2, spin1z, spin2z):
         """
         Test if a given location in mass1, mass2, spin1z, spin2z is within the
         range of parameters allowed by the massParams object.

@@ -22,6 +22,7 @@ Aligned spin bank generator.
 
 from __future__ import division
 import os
+import copy
 import argparse
 import tempfile
 import ConfigParser
@@ -29,6 +30,12 @@ import numpy
 import logging
 import distutils.spawn
 from glue import pipeline
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue.ligolw import ilwd
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw.utils import process as ligolw_process
 import pycbc
 import pycbc.psd
 import pycbc.strain
@@ -78,6 +85,13 @@ parser.add_argument("--random-seed", action="store", type=int,\
                             translating all points back to physical space.
                             If this is used the code should give the same
                             output if run with the same random seed.""")
+parser.add_argument("--print-chi-points", action="store", default=None,
+                    metavar="FILENAME",
+                    help="Add a node to print off an ASCII list of mass "
+                    "parameters and corresponding location in the xi space "
+                    "using pycbc_tmpltbank_to_chi_params. This will be "
+                    "written to FILENAME. If this argument is not given, no "
+                    "chi points file will be written.")
 
 # Insert the metric calculation options
 pycbc.tmpltbank.insert_metric_calculation_options(parser)
@@ -92,6 +106,18 @@ pycbc.psd.insert_psd_option_group(parser)
 pycbc.strain.insert_strain_option_group(parser)
 
 opts = parser.parse_args()
+# Going to need this for setting up the dag later
+orig_opts = copy.deepcopy(opts)
+
+# Set up the process/process_params table and output xml document
+cmds_file_name = "aligned_bank_commands.xml"
+outdoc = ligolw.Document()
+outdoc.appendChild(ligolw.LIGO_LW())
+ligolw_process.register_to_xmldoc(outdoc, __program__, vars(opts), comment="",
+                            ifos="", version=pycbc.version.git_hash,
+                            cvs_repository='pycbc/'+pycbc.version.git_branch,
+                            cvs_entry_time=pycbc.version.date)
+ligolw_utils.write_filename(outdoc, cmds_file_name)
 
 # Sanity check options
 if not opts.output_file:
@@ -349,6 +375,7 @@ job_cat.add_condor_cmd('getenv','True')
 
 # Make the output node
 cat_node = pipeline.CondorDAGNode(job_cat)
+cat_node.add_var_opt('metadata-file', cmds_file_name)
 cat_node.add_var_opt('input-glob', 'output_banks/output_bank_*.dat')
 cat_node.add_var_opt('output-file', opts.output_file)
 
@@ -362,6 +389,41 @@ for i in xrange(numBanks):
     dag.add_node(node)
 
 dag.add_node(cat_node)
+
+if opts.print_chi_points:
+    # Make the printer job
+    cat_path = distutils.spawn.find_executable('pycbc_tmpltbank_to_chi_params')
+    job_print = pipeline.CondorDAGJob('vanilla', cat_path)
+    job_print.set_stdout_file('logs/print_chi-$(cluster)-$(process).out')
+    job_print.set_stderr_file('logs/print_chi-$(cluster)-$(process).err')
+    job_print.set_sub_file('print_chi.sub')
+    job_print.add_condor_cmd('getenv','True')
+
+    # Add options by parsing the options sent to this job. Convert to dict
+    print_chis_opts = vars(copy.deepcopy(orig_opts))
+    # Remove options we don't want to send on
+    remove_opts = ['output_file', 'log_path', 'min_match', 'stack_distance',
+                   'threed_lattice', 'split_bank_num', 'filter_points',
+                   'print_chi_points', 'verbose']
+    for opt in remove_opts:
+        if opt in print_chis_opts.keys():
+            del print_chis_opts[opt]
+    # Add the rest
+    for opt, val in print_chis_opts.items():
+        if val is None:
+            continue
+        elif val is True or val is False:
+            job_print.add_opt(str(opt.replace("_","-")), "")
+        else:
+            job_print.add_opt(str(opt.replace("_","-")), str(val))
+
+    print_node = pipeline.CondorDAGNode(job_print)
+    
+    print_node.add_var_opt('input-bank', opts.output_file)
+    print_node.add_var_opt('output-file', opts.print_chi_points)
+    print_node.add_parent(cat_node)
+    dag.add_node(print_node)
+
 dag.write_sub_files()
 dag.write_dag()
 dag.write_script()
