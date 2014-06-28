@@ -348,8 +348,7 @@ wip_node.add_opt('--config-file', os.path.join(currDir, 'wip.ini'))
 wip_node.add_opt('--open-the-box')
 wip_node.add_opt('--skip-followup')
 
-workflow._adag.addJob(wip_node._dax_node)
-wip_exe.insert_into_dax(workflow._adag)
+workflow.add_node(wip_node)
 dep = dax.Dependency(parent=pipeNode, child=wip_node._dax_node)
 workflow._adag.addDependency(dep)
 
