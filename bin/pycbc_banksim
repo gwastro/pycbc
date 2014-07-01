@@ -172,7 +172,7 @@ parser.add_argument("--use-sky-location",help="Inject into a theoretical detecto
 
 #Filtering Settings
 parser.add_argument('--filter-low-frequency-cutoff', metavar='FREQ', help='low frequency cutoff of matched filter', type=float)
-parser.add_argument('--filter-high-frequency-cutoff', metavar='FLOAT', help='high frequency cutoff of matched filter as a fraction of the ISCO', type=float)
+parser.add_argument('--filter-high-freq-cutoff-isco-factor', metavar='FLOAT', help='High frequency cutoff of matched filter as a fraction of the injection\'s ISCO', type=float)
 parser.add_argument("--filter-sample-rate",help="Filter Sample Rate [Hz]",type=float)
 parser.add_argument("--filter-signal-length",help="Length of signal for filtering, shoud be longer than all waveforms and include some padding",type=int)
 
@@ -271,15 +271,17 @@ with ctx:
                       options.signal_start_frequency, 
                       signal_sample_rate, 
                       filter_N, options.filter_sample_rate)
-        if options.filter_high_frequency_cutoff is not None:
-            high_frequency_cutoff = options.filter_high_frequency_cutoff * f_SchwarzISCO(signal_params.mass1+signal_params.mass2)
+        if options.filter_high_freq_cutoff_isco_factor is not None:
+            high_freq_cutoff = options.filter_high_freq_cutoff_isco_factor \
+                    * f_SchwarzISCO(signal_params.mass1 + signal_params.mass2)
         else:
-            high_frequency_cutoff = None
+            high_freq_cutoff = None
         s_norm = sigmasq(stilde, psd=psd, 
                 low_frequency_cutoff=options.filter_low_frequency_cutoff,
-                high_frequency_cutoff=high_frequency_cutoff)
+                high_frequency_cutoff=high_freq_cutoff)
         stilde /= psd
-        signals.append( (stilde, s_norm, [], signal_params) )
+        signals.append((stilde, s_norm, [], signal_params,
+                        high_freq_cutoff))
 
     if options.verbose:
       print
@@ -293,7 +295,7 @@ with ctx:
         if options.verbose:
           update_progress(float(index)/len(template_table))
         h_norm = htilde = None
-        for stilde, s_norm, matches, signal_params in signals:
+        for stilde, s_norm, matches, signal_params, signal_high_freq_cutoff in signals:
             # Check if we need to look at this
             if stilde is None:
                 matches.append(0)
@@ -315,11 +317,11 @@ with ctx:
                                       filter_N, options.filter_sample_rate)
             h_norm = sigmasq(htilde, psd=psd,
                     low_frequency_cutoff=options.filter_low_frequency_cutoff,
-                    high_frequency_cutoff=high_frequency_cutoff)
+                    high_frequency_cutoff=signal_high_freq_cutoff)
 
-            o,i = match(htilde, stilde, v1_norm=h_norm, v2_norm=s_norm,
+            o, i = match(htilde, stilde, v1_norm=h_norm, v2_norm=s_norm,
                     low_frequency_cutoff=options.filter_low_frequency_cutoff,
-                    high_frequency_cutoff=high_frequency_cutoff)
+                    high_frequency_cutoff=signal_high_freq_cutoff)
             matches.append(o)
 
 if options.verbose:
@@ -329,7 +331,7 @@ if options.verbose:
 
 # Find the maximum overlap in the bank and output to a file
 with open(options.out_file, "w") as fout:
-    for i, (stilde, s_norm, matches, sim_template) in enumerate(signals):
+    for i, (stilde, s_norm, matches, sim_template, hfc) in enumerate(signals):
         match_str = "%5.5f " % max(matches)
         match_str += " " + options.bank_file
         match_str += " " + str(matches.index(max(matches)))
