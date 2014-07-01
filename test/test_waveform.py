@@ -88,6 +88,10 @@ class TestWaveform(unittest.TestCase):
                             print "..checked m1: %s m2:: %s s1z: %s s2z: %s" % (m1, m2, s1, s2)
 
     def test_spintaylorf2GPU(self):
+    
+        if not isinstance(self.scheme, CPUScheme):
+            return
+            
         fl = 25
         delta_f = 1.0 / 256
 

@@ -32,9 +32,11 @@ import pycbc
 import pycbc.psd
 from pycbc.types import TimeSeries, FrequencySeries
 from pycbc.fft import ifft
+from pycbc.fft.fftw import set_measure_level
 import unittest
 import numpy
 from utils import parse_args_all_schemes, simple_exit
+set_measure_level(0)
 
 _scheme, _context = parse_args_all_schemes("PSD")
 
