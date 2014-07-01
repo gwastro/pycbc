@@ -903,6 +903,21 @@ class Array(object):
         f = len(self)-len(_numpy.trim_zeros(tmp, trim='f'))
         b = len(self)-len(_numpy.trim_zeros(tmp, trim='b'))
         return self[f:len(self)-b]
+
+    @_returntype
+    @_convert
+    def view(self, dtype):
+        """
+        Return a 'view' of the array with its bytes now interpreted according
+        to 'dtype'. The location in memory is unchanged and changing elements
+        in a view of an array will also change the original array.
+
+        Parameters
+        ----------
+        dtype : numpy dtype (one of float32, float64, complex64 or complex128)
+            The new dtype that should be used to interpret the bytes of self
+        """
+        return self._data.view(dtype)
             
 # Convenience functions for determining dtypes
 def real_same_precision_as(data):

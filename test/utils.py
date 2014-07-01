@@ -849,3 +849,21 @@ class array_base(object):
                 c = self.a.min()
                 self.assertEqual(self.a,acopy)
                 self.assertEqual(self.min,c)
+
+    def test_view(self):
+        rtypes = { complex64: float32, complex128: float64}
+        if self.kind == 'complex':
+            rtype = rtypes[self.dtype]
+            # Create an array that is the complex array
+            # reinterpreted as real
+            c_cmp = self.type([5,1,3,3,1,5],dtype=rtype,**self.kwds)
+            d_cmp = self.type([5+2j,3+3j,1+5j],dtype=self.dtype,**self.kwds)
+            with self.context:
+                c = self.a.view(rtype)
+                # Check that we correctly created the view
+                self.assertEqual(c,c_cmp)
+                # That the memory locations are the same
+                self.assertEqual(self.a.ptr,c.ptr)
+                # And that changing the view changes the original
+                c[1] = 2.0
+                self.assertEqual(self.a,d_cmp)
