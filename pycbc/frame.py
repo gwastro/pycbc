@@ -137,9 +137,9 @@ def read_frame(location, channels, start_time=None,
     if end_time is None:
         end_time = start_time + data_duration
 
-    if start_time is not lal.LIGOTimeGPS:
+    if type(start_time) is not lal.LIGOTimeGPS:
         start_time = lal.LIGOTimeGPS(start_time)
-    if end_time is not lal.LIGOTimeGPS:
+    if type(end_time) is not lal.LIGOTimeGPS:
         end_time = lal.LIGOTimeGPS(end_time)
 
     if duration is None:
