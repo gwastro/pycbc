@@ -36,6 +36,8 @@ import numpy
 from utils import parse_args_all_schemes, simple_exit
 
 _scheme, _context = parse_args_all_schemes("Matched Filter")
+import pycbc.fft.fftw
+pycbc.fft.fftw.set_measure_level(0)
 
 class TestMatchedFilter(unittest.TestCase):
     def setUp(self,*args):
