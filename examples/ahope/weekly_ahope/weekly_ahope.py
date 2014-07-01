@@ -345,8 +345,6 @@ wipConf.write(file('wip.ini', 'w'))
 wip_exe = ahope.AhopeExecutable(workflow.cp, 'write_ihope_page')
 wip_node = ahope.AhopeNode(wip_exe)
 wip_node.add_opt('--config-file', os.path.join(currDir, 'wip.ini'))
-wip_node.add_opt('--open-the-box')
-wip_node.add_opt('--skip-followup')
 
 workflow.add_node(wip_node)
 dep = dax.Dependency(parent=pipeNode, child=wip_node._dax_node)
