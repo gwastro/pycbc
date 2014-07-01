@@ -78,7 +78,7 @@ class FrameTestBase(unittest.TestCase):
         #               'dx':self.delta_t,'type':1}])
 
         # Reading just one channel first
-        ts1 = pycbc.frame.read_frame(filename,'channel1')
+        ts1 = pycbc.frame.read_frame(filename, 'channel1')
         # Checking all values
         self.assertEqual(ts1,self.expected_data1)
         # Now checking the start time
@@ -87,7 +87,7 @@ class FrameTestBase(unittest.TestCase):
         self.assertEqual(ts1.end_time - ts1.start_time,self.size * self.delta_t)
 
         # Now reading multiple channels
-        ts2 = pycbc.frame.read_frame(filename,['channel1','channel2'])
+        ts2 = pycbc.frame.read_frame(filename, ['channel1','channel2'])
         # We should get back a list
         self.assertTrue(type(ts2) is list)
         self.assertEqual(ts2[0],self.expected_data1)
@@ -104,10 +104,14 @@ class FrameTestBase(unittest.TestCase):
         endind = int(50/self.delta_t)
 
         # Now reading in a specific segment with an integer
-        ts3 = pycbc.frame.read_frame(filename, 'channel1',start_time=int(start),end_time=int(end))
+        ts3 = pycbc.frame.read_frame(filename, 'channel1', 
+                                                start_time=int(start),
+                                                end_time=int(end))
 
         # The same, but with a LIGOTimeGPS for the start and end times
-        ts4 = pycbc.frame.read_frame(filename, 'channel1',start_time=start, end_time=end)
+        ts4 = pycbc.frame.read_frame(filename, 'channel1', 
+                                                start_time=start, 
+                                                 end_time=end)
 
         # Now we will check those two TimeSeries
         self.assertEqual(ts3,self.expected_data1[startind:endind])
@@ -121,10 +125,12 @@ class FrameTestBase(unittest.TestCase):
 
         # There must be a span grater than 0
         self.assertRaises(ValueError, pycbc.frame.read_frame, filename,
-                          'channel1', start_time=self.epoch,end_time=self.epoch)
+                          'channel1', start_time=self.epoch, 
+                          end_time=self.epoch)
         # The start must be before the end
         self.assertRaises(ValueError, pycbc.frame.read_frame, filename,
-                          'channel1', start_time=self.epoch+1,end_time=self.epoch)
+                          'channel1', start_time=self.epoch+1, 
+                          end_time=self.epoch)
 
 # We take a factory approach so we can test all possible dtypes we support
 TestClasses = []
