@@ -51,8 +51,8 @@ class MyInjection(object):
         row.polarization = self.polarization
         row.phi0 = 0
         row.f_lower = 20
-        row.f_final = lal.LAL_C_SI ** 3 / \
-                (6. ** (3. / 2.) * lal.LAL_PI * lal.LAL_G_SI * total_mass)
+        row.f_final = lal.C_SI ** 3 / \
+                (6. ** (3. / 2.) * lal.PI * lal.G_SI * total_mass)
         row.spin1x = row.spin1y = row.spin1z = 0
         row.spin2x = row.spin2y = row.spin2z = 0
         row.alpha1 = 0
@@ -87,7 +87,7 @@ class TestInjection(unittest.TestCase):
     def setUp(self):
         self.detectors = [Detector(d) for d in ['H1', 'L1', 'V1']]
         self.sample_rate = 4096.
-        self.earth_time = lal.LAL_REARTH_SI / lal.LAL_C_SI
+        self.earth_time = lal.REARTH_SI / lal.C_SI
 
         # create a few random injections
         self.injections = []
@@ -100,11 +100,11 @@ class TestInjection(unittest.TestCase):
             random = numpy.random.uniform
             inj.mass1 = random(low=1., high=20.)
             inj.mass2 = random(low=1., high=20.)
-            inj.distance = random(low=0.9, high=1.1) * 1e6 * lal.LAL_PC_SI
+            inj.distance = random(low=0.9, high=1.1) * 1e6 * lal.PC_SI
             inj.latitude = numpy.arccos(random(low=-1, high=1))
-            inj.longitude = random(low=0, high=2 * lal.LAL_PI)
+            inj.longitude = random(low=0, high=2 * lal.PI)
             inj.inclination = numpy.arccos(random(low=-1, high=1))
-            inj.polarization = random(low=0, high=2 * lal.LAL_PI)
+            inj.polarization = random(low=0, high=2 * lal.PI)
             inj.taper = taper
             self.injections.append(inj)
 

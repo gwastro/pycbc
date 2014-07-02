@@ -27,22 +27,22 @@ from glue import datafind
 
 # map LAL series types to corresponding functions and Numpy types
 _fr_type_map = {
-    lal.LAL_S_TYPE_CODE: [
+    lal.S_TYPE_CODE: [
         lalframe.FrStreamReadREAL4TimeSeries, numpy.float32,
         lal.CreateREAL4TimeSeries,
         lalframe.FrStreamGetREAL4TimeSeriesMetadata
     ],
-    lal.LAL_D_TYPE_CODE: [
+    lal.D_TYPE_CODE: [
         lalframe.FrStreamReadREAL8TimeSeries, numpy.float64,
         lal.CreateREAL8TimeSeries,
         lalframe.FrStreamGetREAL8TimeSeriesMetadata
     ],
-    lal.LAL_C_TYPE_CODE: [
+    lal.C_TYPE_CODE: [
         lalframe.FrStreamReadCOMPLEX8TimeSeries, numpy.complex64,
         lal.CreateCOMPLEX8TimeSeries,
         lalframe.FrStreamGetCOMPLEX8TimeSeriesMetadata
     ],
-    lal.LAL_Z_TYPE_CODE: [
+    lal.Z_TYPE_CODE: [
         lalframe.FrStreamReadCOMPLEX16TimeSeries, numpy.complex128,
         lal.CreateCOMPLEX16TimeSeries,
         lalframe.FrStreamGetCOMPLEX16TimeSeriesMetadata
@@ -114,8 +114,8 @@ def read_frame(location, channels, start_time=None,
         
     stream = lalframe.FrStreamCacheOpen(cum_cache)
         
-    stream.mode = lalframe.LAL_FR_STREAM_VERBOSE_MODE
-    lalframe.FrSetMode(stream.mode | lalframe.LAL_FR_STREAM_CHECKSUM_MODE, 
+    stream.mode = lalframe.FR_STREAM_VERBOSE_MODE
+    lalframe.FrSetMode(stream.mode | lalframe.FR_STREAM_CHECKSUM_MODE,
                        stream)
 
     # determine duration of data
@@ -128,7 +128,7 @@ def read_frame(location, channels, start_time=None,
     create_series_func = _fr_type_map[channel_type][2]
     get_series_metadata_func = _fr_type_map[channel_type][3]
     series = create_series_func(first_channel, stream.epoch, 0, 0,
-                                lal.lalADCCountUnit, 0)
+                                lal.ADCCountUnit, 0)
     get_series_metadata_func(series, stream)
     data_duration = data_length * series.deltaT
 

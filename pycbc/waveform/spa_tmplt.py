@@ -58,7 +58,7 @@ def spa_amplitude_factor(**kwds):
     m1 = kwds['mass1']
     m2 = kwds['mass2']
     
-    dist = 10e6 * lal.LAL_PC_SI
+    dist = 10e6 * lal.PC_SI
     
     mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
     
@@ -67,10 +67,10 @@ def spa_amplitude_factor(**kwds):
     
     M = m1 + m2
     
-    m_sec = M * lal.LAL_MTSUN_SI;
-    piM = lal.LAL_PI * m_sec;
+    m_sec = M * lal.MTSUN_SI;
+    piM = lal.PI * m_sec;
     
-    amp0 = 4. * m1 * m2 / (1e6 * lal.LAL_PC_SI ) * lal.LAL_MRSUN_SI * lal.LAL_MTSUN_SI * sqrt(lal.LAL_PI/12.0)  
+    amp0 = 4. * m1 * m2 / (1e6 * lal.PC_SI ) * lal.MRSUN_SI * lal.MTSUN_SI * sqrt(lal.PI/12.0)
 
     fac = sqrt( -dETaN / FTaN) * amp0 * (piM ** (-7.0/6.0)) 
     return -fac
@@ -146,23 +146,23 @@ def spa_tmplt(**kwds):
     lambdaa = -1987./3080.0;
     pfaN = 3.0/(128.0 * eta);
     pfa2 = 5*(743.0/84 + 11.0 * eta)/9.0;
-    pfa3 = -16.0*lal.LAL_PI + 4.0*beta;
+    pfa3 = -16.0*lal.PI + 4.0*beta;
     pfa4 = 5.0*(3058.673/7.056 + 5429.0/7.0 * eta + 617.0 * eta*eta)/72.0 - \
             10.0*sigma
-    pfa5 = 5.0/9.0 * (7729.0/84.0 - 13.0 * eta) * lal.LAL_PI - gamma
-    pfl5 = 5.0/3.0 * (7729.0/84.0 - 13.0 * eta) * lal.LAL_PI - gamma * 3
-    pfa6 = (11583.231236531/4.694215680 - 640.0/3.0 * lal.LAL_PI * lal.LAL_PI- \
-            6848.0/21.0*lal.LAL_GAMMA) + \
-            eta * (-15335.597827/3.048192 + 2255./12. * lal.LAL_PI * \
-            lal.LAL_PI - 1760./3.*theta +12320./9.*lambdaa) + \
+    pfa5 = 5.0/9.0 * (7729.0/84.0 - 13.0 * eta) * lal.PI - gamma
+    pfl5 = 5.0/3.0 * (7729.0/84.0 - 13.0 * eta) * lal.PI - gamma * 3
+    pfa6 = (11583.231236531/4.694215680 - 640.0/3.0 * lal.PI * lal.PI- \
+            6848.0/21.0*lal.GAMMA) + \
+            eta * (-15335.597827/3.048192 + 2255./12. * lal.PI * \
+            lal.PI - 1760./3.*theta +12320./9.*lambdaa) + \
             eta*eta * 76055.0/1728.0 - \
             eta*eta*eta*  127825.0/1296.0 
     pfl6 = -6848.0/21.0;
-    pfa7 = lal.LAL_PI * 5.0/756.0 * ( 15419335.0/336.0 + 75703.0/2.0 * eta - \
+    pfa7 = lal.PI * 5.0/756.0 * ( 15419335.0/336.0 + 75703.0/2.0 * eta - \
             14809.0 * eta*eta)
     
-    m_sec = M * lal.LAL_MTSUN_SI;
-    piM = lal.LAL_PI * m_sec; 
+    m_sec = M * lal.MTSUN_SI;
+    piM = lal.PI * m_sec;
 
     kmin = int(f_lower / float(delta_f))
 

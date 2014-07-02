@@ -105,7 +105,7 @@ def phase_from_polarizations(h_plus, h_cross):
 
     """
     p_wrapped = numpy.arctan2(h_plus, h_cross)
-    p = unwrap_phase(p_wrapped, 2*lal.LAL_PI*0.7, lal.LAL_PI*2)
+    p = unwrap_phase(p_wrapped, 2*lal.PI*0.7, lal.PI*2)
     p += -p[0]
     return TimeSeries(abs(p), delta_t=h_plus.delta_t, epoch=h_plus.start_time)
 
@@ -173,7 +173,7 @@ def frequency_from_polarizations(h_plus, h_cross):
 
     """
     phase = phase_from_polarizations(h_plus, h_cross)
-    freq = numpy.diff(phase) / ( 2 * lal.LAL_PI * phase.delta_t )
+    freq = numpy.diff(phase) / ( 2 * lal.PI * phase.delta_t )
     start_time = phase.start_time + phase.delta_t / 2
     return TimeSeries(freq, delta_t=phase.delta_t, epoch=start_time)
 

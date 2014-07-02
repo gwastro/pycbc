@@ -40,10 +40,10 @@ import pycbc
 
 
 def solar_mass_to_kg(solar_masses):
-    return solar_masses * lal.LAL_MSUN_SI
+    return solar_masses * lal.MSUN_SI
     
 def megaparsecs_to_meters(distance):
-    return distance * lal.LAL_PC_SI * 1e6
+    return distance * lal.PC_SI * 1e6
 
 default_args = {'spin1x':0,'spin1y':0,'spin1z':0,
                 'spin2x':0,'spin2y':0,'spin2z':0,'lambda1':0, 'lambda2':0,
@@ -75,7 +75,7 @@ def _imrphenombfreq(**p):
     params.approximant = lalsimulation.IMRPhenomB
     params.fLower = p['f_lower']
     params.eta = et
-    params.distance = p['distance'] * lal.LAL_PC_SI * 1e6
+    params.distance = p['distance'] * lal.PC_SI * 1e6
     params.mass1 = m1
     params.mass2 = m2
     params.spin1[2] = p['spin1z']
@@ -170,19 +170,19 @@ def _get_waveform_from_inspiral(**p):
     out = pycbc.types.TimeSeries(zeros(N), delta_t = dt, 
                                  epoch=epoch, dtype=float32)
     outl = out.lal()
-    outl.sampleUnits = lal.lalADCCountUnit
+    outl.sampleUnits = lal.ADCCountUnit
     
     out2 = pycbc.types.TimeSeries(zeros(N), delta_t = dt, 
                                  epoch=epoch, dtype=float32)
     outl2 = out.lal()
-    outl2.sampleUnits = lal.lalADCCountUnit
+    outl2.sampleUnits = lal.ADCCountUnit
     
     respl = resp.lal()
-    respl.sampleUnites = lal.lalDimensionlessUnit
+    respl.sampleUnites = lal.DimensionlessUnit
 
     lalinspiral.FindChirpInjectSignals(outl, params, respl)  
     
-    params.coa_phase -= lal.LAL_PI / 4
+    params.coa_phase -= lal.PI / 4
     lalinspiral.FindChirpInjectSignals(outl2, params, respl)
     seriesp = TimeSeries(outl.data.data, delta_t=dt, 
                          epoch=epoch - params.geocent_end_time)

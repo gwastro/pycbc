@@ -289,13 +289,13 @@ class FrequencySeries(Array):
             ep = self._epoch
 
         if self._data.dtype == _numpy.float32:
-            lal_data = _lal.CreateREAL4FrequencySeries("",ep,0,self.delta_f,_lal.lalSecondUnit,len(self))
+            lal_data = _lal.CreateREAL4FrequencySeries("",ep,0,self.delta_f,_lal.SecondUnit,len(self))
         elif self._data.dtype == _numpy.float64:
-            lal_data = _lal.CreateREAL8FrequencySeries("",ep,0,self.delta_f,_lal.lalSecondUnit,len(self))
+            lal_data = _lal.CreateREAL8FrequencySeries("",ep,0,self.delta_f,_lal.SecondUnit,len(self))
         elif self._data.dtype == _numpy.complex64:
-            lal_data = _lal.CreateCOMPLEX8FrequencySeries("",ep,0,self.delta_f,_lal.lalSecondUnit,len(self))
+            lal_data = _lal.CreateCOMPLEX8FrequencySeries("",ep,0,self.delta_f,_lal.SecondUnit,len(self))
         elif self._data.dtype == _numpy.complex128:
-            lal_data = _lal.CreateCOMPLEX16FrequencySeries("",ep,0,self.delta_f,_lal.lalSecondUnit,len(self))
+            lal_data = _lal.CreateCOMPLEX16FrequencySeries("",ep,0,self.delta_f,_lal.SecondUnit,len(self))
 
         lal_data.data.data[:] = self.numpy()
 

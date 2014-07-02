@@ -64,7 +64,7 @@ def get_log(vmax, delta):
 
 # Precompute the sine function #################################################
 def sin_cos_lookup():
-    vec = numpy.arange(0, lal.LAL_TWOPI*3, lal.LAL_TWOPI/10000)
+    vec = numpy.arange(0, lal.TWOPI*3, lal.TWOPI/10000)
     return Array(numpy.sin(vec)).astype(float32)
 sin_cos = Array([], dtype=float32)
 

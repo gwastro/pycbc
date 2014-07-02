@@ -334,13 +334,13 @@ class TimeSeries(Array):
             ep = self._epoch
 
         if self._data.dtype == _numpy.float32:
-            lal_data = _lal.CreateREAL4TimeSeries("",ep,0,self.delta_t,_lal.lalSecondUnit,len(self))
+            lal_data = _lal.CreateREAL4TimeSeries("",ep,0,self.delta_t,_lal.SecondUnit,len(self))
         elif self._data.dtype == _numpy.float64:
-            lal_data = _lal.CreateREAL8TimeSeries("",ep,0,self.delta_t,_lal.lalSecondUnit,len(self))
+            lal_data = _lal.CreateREAL8TimeSeries("",ep,0,self.delta_t,_lal.SecondUnit,len(self))
         elif self._data.dtype == _numpy.complex64:
-            lal_data = _lal.CreateCOMPLEX8TimeSeries("",ep,0,self.delta_t,_lal.lalSecondUnit,len(self))
+            lal_data = _lal.CreateCOMPLEX8TimeSeries("",ep,0,self.delta_t,_lal.SecondUnit,len(self))
         elif self._data.dtype == _numpy.complex128:
-            lal_data = _lal.CreateCOMPLEX16TimeSeries("",ep,0,self.delta_t,_lal.lalSecondUnit,len(self))
+            lal_data = _lal.CreateCOMPLEX16TimeSeries("",ep,0,self.delta_t,_lal.SecondUnit,len(self))
 
         lal_data.data.data[:] = self.numpy()
 

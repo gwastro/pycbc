@@ -42,8 +42,8 @@ def findchirp_template(**p):
     M = m1 + m2
     mc, et = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
     
-    m_sec = M * lal.LAL_MTSUN_SI;
-    piM = lal.LAL_PI * m_sec; 
+    m_sec = M * lal.MTSUN_SI;
+    piM = lal.PI * m_sec;
     kmin = int(p['f_lower'] / float(p['delta_f']))
     vISCO = 1. / sqrt(6.)
     fISCO = vISCO * vISCO * vISCO / piM;

@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 from __future__ import division
 import numpy
-from lal import LAL_MTSUN_SI, LAL_GAMMA
+from lal import MTSUN_SI, GAMMA
 
 # PLEASE ENSURE THESE ARE KEPT UP TO DATE WITH THE REST OF THIS FILE
 pycbcValidTmpltbankOrders = ['zeroPN','onePN','onePointFivePN','twoPN',\
@@ -190,7 +190,7 @@ def get_chirp_params(totmass, eta, beta, sigma, gamma, chis, f0, order):
     """ %(pycbcValidOrdersHelpDescriptions)
 
     # Convert mass to seconds
-    totmass = totmass * LAL_MTSUN_SI
+    totmass = totmass * MTSUN_SI
     pi = numpy.pi
     mapping = generate_inverse_mapping(order)
     if order[0:8] == 'taylorF4':
@@ -225,7 +225,7 @@ def get_chirp_params(totmass, eta, beta, sigma, gamma, chis, f0, order):
             lambdas.append(loglambda5)
         elif mapping[idx] == 'Lambda6':
             lambda6 = 11583231236531./4694215680. - (640.*pi*pi)/3.\
-                      - (6848.*LAL_GAMMA)/21.  
+                      - (6848.*GAMMA)/21.
             lambda6 -= (6848./21.) * numpy.log(4 * (pi*totmass*f0)**(1./3.))
             lambda6 += (-15737765635/3048192. + 2255.*pi*pi/12.)*eta
             lambda6 += (76055.*eta*eta)/1728. - (127825.*eta*eta*eta)/1296.

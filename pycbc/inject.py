@@ -42,9 +42,9 @@ import lalmetaio as lmt
 # table and lalsimulation constants
 taper_map = {
     'TAPER_NONE': None,
-    'TAPER_START': sim.LAL_SIM_INSPIRAL_TAPER_START,
-    'TAPER_END': sim.LAL_SIM_INSPIRAL_TAPER_END,
-    'TAPER_STARTEND': sim.LAL_SIM_INSPIRAL_TAPER_STARTEND
+    'TAPER_START': sim.SIM_INSPIRAL_TAPER_START,
+    'TAPER_END': sim.SIM_INSPIRAL_TAPER_END,
+    'TAPER_STARTEND': sim.SIM_INSPIRAL_TAPER_STARTEND
 }
 
 taper_func_map = {
@@ -144,7 +144,7 @@ class InjectionSet(object):
 
         lalstrain = strain.lal()    
         detector = Detector(detector_name)
-        earth_travel_time = lal.LAL_REARTH_SI / lal.LAL_C_SI
+        earth_travel_time = lal.REARTH_SI / lal.C_SI
         t0 = float(strain.start_time) - earth_travel_time
         t1 = float(strain.end_time) + earth_travel_time
 
@@ -181,8 +181,8 @@ class InjectionSet(object):
                 # roughly estimate if the injection may overlap with the segment
                 end_time = inj.get_time_geocent()
                 inj_length = sim.SimInspiralTaylorLength(
-                    strain.delta_t, inj.mass1 * lal.LAL_MSUN_SI,
-                    inj.mass2 * lal.LAL_MSUN_SI, f_l, 0)
+                    strain.delta_t, inj.mass1 * lal.MSUN_SI,
+                    inj.mass2 * lal.MSUN_SI, f_l, 0)
                 start_time = end_time - 2 * inj_length
                 if end_time < t0 or start_time > t1:
                    continue
@@ -314,7 +314,7 @@ class SGBurstInjectionSet(object):
 
         lalstrain = strain.lal()
         detector = Detector(detector_name)
-        earth_travel_time = lal.LAL_REARTH_SI / lal.LAL_C_SI
+        earth_travel_time = lal.REARTH_SI / lal.C_SI
         t0 = float(strain.start_time) - earth_travel_time
         t1 = float(strain.end_time) + earth_travel_time
 

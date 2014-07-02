@@ -16,7 +16,6 @@
 
 from __future__ import division
 import numpy
-from lal import LAL_PI, LAL_MTSUN_SI
 from pycbc.tmpltbank.lambda_mapping import get_chirp_params
 from pycbc import pnutils
 

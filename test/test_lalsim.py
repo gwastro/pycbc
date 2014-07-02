@@ -120,7 +120,7 @@ class TestLALSimulation(unittest.TestCase):
         
         from pycbc import version
         self.version_txt = "pycbc: %s  %s\n" % (version.git_hash, version.date) + \
-                           "lalsimulation: %s  %s" % (lalsimulation.lalSimulationVCSId, lalsimulation.lalSimulationVCSDate)
+                           "lalsimulation: %s  %s" % (lalsimulation.SimulationVCSId, lalsimulation.SimulationVCSDate)
       
         
     def test_varying_orbital_phase(self):
@@ -137,20 +137,20 @@ class TestLALSimulation(unittest.TestCase):
         hp_ref, hc_ref = get_waveform(self.p, coa_phase=0)
         pylab.plot(getattr(hp_ref, sample_attr), hp_ref, label="phiref")
        
-        hp, hc = get_waveform(self.p, coa_phase=lal.LAL_PI/4)
+        hp, hc = get_waveform(self.p, coa_phase=lal.PI/4)
         m, i = match(hp_ref, hp)
         self.assertAlmostEqual(1, m, places=2)
         o = overlap(hp_ref, hp)
         pylab.plot(getattr(hp, sample_attr), hp, label="$phiref \pi/4$")
         
-        hp, hc = get_waveform(self.p, coa_phase=lal.LAL_PI/2)
+        hp, hc = get_waveform(self.p, coa_phase=lal.PI/2)
         m, i = match(hp_ref, hp)
         o = overlap(hp_ref, hp)
         self.assertAlmostEqual(1, m, places=7)
         self.assertAlmostEqual(-1, o, places=7)
         pylab.plot(getattr(hp, sample_attr), hp, label="$phiref \pi/2$")
         
-        hp, hc = get_waveform(self.p, coa_phase=lal.LAL_PI)
+        hp, hc = get_waveform(self.p, coa_phase=lal.PI)
         m, i = match(hp_ref, hp)
         o = overlap(hp_ref, hp)
         self.assertAlmostEqual(1, m, places=7)
@@ -260,7 +260,7 @@ class TestLALSimulation(unittest.TestCase):
         #""" Test that the waveform is consistent for changes in inclination
         #"""
         sigmas = []
-        incs = numpy.arange(0, 21, 1.0) * lal.LAL_PI / 10.0
+        incs = numpy.arange(0, 21, 1.0) * lal.PI / 10.0
 
         for inc in incs:
             # WARNING: This does not properly handle the case of SpinTaylor*

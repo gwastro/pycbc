@@ -1,6 +1,6 @@
 from __future__ import division
 import numpy
-from lal import LAL_PI, LAL_MTSUN_SI, LAL_TWOPI, LAL_GAMMA
+from lal import PI, MTSUN_SI, TWOPI, GAMMA
 from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables
@@ -124,9 +124,9 @@ def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2,
 
     twicePNOrder = ethinca_order_from_string(ethincaParams.pnOrder)
 
-    piFl = LAL_PI * f0
+    piFl = PI * f0
     totalMass, eta = pnutils.mass1_mass2_to_mtotal_eta(mass1, mass2)
-    totalMass = totalMass * LAL_MTSUN_SI
+    totalMass = totalMass * MTSUN_SI
     v0cube = totalMass*piFl
     v0 = v0cube**(1./3.)
 
@@ -139,8 +139,8 @@ def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2,
     fMax = fMaxes[fMaxIdx]
 
     # 3pN is a mess, so split it into pieces
-    a0 = 11583231236531/200286535680 - 5*LAL_PI*LAL_PI - 107*LAL_GAMMA/14
-    a1 = (-15737765635/130056192 + 2255*LAL_PI*LAL_PI/512)*eta
+    a0 = 11583231236531/200286535680 - 5*PI*PI - 107*GAMMA/14
+    a1 = (-15737765635/130056192 + 2255*PI*PI/512)*eta
     a2 = (76055/73728)*eta*eta
     a3 = (-127825/55296)*eta*eta*eta
     alog = numpy.log(4*v0) # Log terms are tricky - be careful
@@ -152,21 +152,21 @@ def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2,
     Psi[0][3,0] = 0.
     Psi[0][4,0] = (-3058673/508032 + 5429*eta/504 + 617*eta*eta/24)\
                     *v0cube*v0
-    Psi[0][5,1] = (-7729*LAL_PI/126)*v0cube*v0*v0/3
+    Psi[0][5,1] = (-7729*PI/126)*v0cube*v0*v0/3
     Psi[0][6,0] = (128/15)*(-3*a0 - a1 + a2 + 3*a3 + 107*(1+3*alog)/14)\
                     *v0cube*v0cube
     Psi[0][6,1] = (6848/35)*v0cube*v0cube/3
-    Psi[0][7,0] = (-15419335/63504 - 75703*eta/756)*LAL_PI*v0cube*v0cube*v0
+    Psi[0][7,0] = (-15419335/63504 - 75703*eta/756)*PI*v0cube*v0cube*v0
 
     Psi[1][0,0] = 0.
-    Psi[1][2,0] = (3715/12096 - 55*eta/96)/LAL_PI/v0;
+    Psi[1][2,0] = (3715/12096 - 55*eta/96)/PI/v0;
     Psi[1][3,0] = -3/2
     Psi[1][4,0] = (15293365/4064256 - 27145*eta/16128 - 3085*eta*eta/384)\
-                    *v0/LAL_PI
+                    *v0/PI
     Psi[1][5,1] = (193225/8064)*v0*v0/3
-    Psi[1][6,0] = (4/LAL_PI)*(2*a0 + a1/3 - 4*a2/3 - 3*a3 -107*(1+6*alog)/42)\
+    Psi[1][6,0] = (4/PI)*(2*a0 + a1/3 - 4*a2/3 - 3*a3 -107*(1+6*alog)/42)\
                     *v0cube
-    Psi[1][6,1] = (-428/LAL_PI/7)*v0cube/3
+    Psi[1][6,1] = (-428/PI/7)*v0cube/3
     Psi[1][7,0] = (77096675/1161216 + 378515*eta/24192 + 74045*eta*eta/8064)\
                     *v0cube*v0
 
@@ -180,7 +180,7 @@ def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2,
     # Calculate the g matrix
     PNterms = [(0,0),(2,0),(3,0),(4,0),(5,1),(6,0),(6,1),(7,0)]
     PNterms = [term for term in PNterms if term[0] <= twicePNOrder]
-    two_pi_flower_sq = LAL_TWOPI * f0 * LAL_TWOPI * f0
+    two_pi_flower_sq = TWOPI * f0 * TWOPI * f0
 
     # Now can compute the gamma values
     gammaVals = numpy.zeros([6],dtype=float)

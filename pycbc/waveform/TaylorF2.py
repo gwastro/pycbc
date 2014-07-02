@@ -161,45 +161,45 @@ def taylorf2(**kwds):
     lambdaa = -1987./3080.0;
     pfaN = 3.0/(128.0 * eta);
     pfa2 = 5*(743.0/84 + 11.0 * eta)/9.0;
-    pfa3 = -16.0*lal.LAL_PI + 4.0*beta;
+    pfa3 = -16.0*lal.PI + 4.0*beta;
     pfa4 = 5.0*(3058.673/7.056 + 5429.0/7.0 * eta + 617.0 * eta*eta)/72.0 - \
             10.0*sigma
-    pfa5 = 5.0/9.0 * (7729.0/84.0 - 13.0 * eta) * lal.LAL_PI - gamma
-    pfl5 = 5.0/3.0 * (7729.0/84.0 - 13.0 * eta) * lal.LAL_PI - gamma * 3
-    pfa6 = (11583.231236531/4.694215680 - 640.0/3.0 * lal.LAL_PI * lal.LAL_PI- \
-            6848.0/21.0*lal.LAL_GAMMA) + \
-            eta * (-15335.597827/3.048192 + 2255./12. * lal.LAL_PI * \
-            lal.LAL_PI - 1760./3.*theta +12320./9.*lambdaa) + \
+    pfa5 = 5.0/9.0 * (7729.0/84.0 - 13.0 * eta) * lal.PI - gamma
+    pfl5 = 5.0/3.0 * (7729.0/84.0 - 13.0 * eta) * lal.PI - gamma * 3
+    pfa6 = (11583.231236531/4.694215680 - 640.0/3.0 * lal.PI * lal.PI- \
+            6848.0/21.0*lal.GAMMA) + \
+            eta * (-15335.597827/3.048192 + 2255./12. * lal.PI * \
+            lal.PI - 1760./3.*theta +12320./9.*lambdaa) + \
             eta*eta * 76055.0/1728.0 - \
             eta*eta*eta*  127825.0/1296.0 
     pfl6 = -6848.0/21.0;
-    pfa7 = lal.LAL_PI * 5.0/756.0 * ( 15419335.0/336.0 + 75703.0/2.0 * eta - \
+    pfa7 = lal.PI * 5.0/756.0 * ( 15419335.0/336.0 + 75703.0/2.0 * eta - \
             14809.0 * eta*eta)
 
     FTaN = 32.0 * eta*eta / 5.0;
     FTa2 = -(12.47/3.36 + 3.5/1.2 * eta)
-    FTa3 = 4.0 * lal.LAL_PI
+    FTa3 = 4.0 * lal.PI
     FTa4 = -(44.711/9.072 - 92.71/5.04 * eta - 6.5/1.8 * eta*eta)
-    FTa5 = -(81.91/6.72 + 58.3/2.4 * eta) * lal.LAL_PI
-    FTa6 = (664.3739519/6.9854400 + 16.0/3.0 * lal.LAL_PI*lal.LAL_PI - 
-            17.12/1.05 * lal.LAL_GAMMA + 
-            (4.1/4.8 * lal.LAL_PI*lal.LAL_PI - 134.543/7.776) * eta -
+    FTa5 = -(81.91/6.72 + 58.3/2.4 * eta) * lal.PI
+    FTa6 = (664.3739519/6.9854400 + 16.0/3.0 * lal.PI*lal.PI -
+            17.12/1.05 * lal.GAMMA +
+            (4.1/4.8 * lal.PI*lal.PI - 134.543/7.776) * eta -
             94.403/3.024 * eta*eta - 7.75/3.24 * eta*eta*eta)
     FTl6 = -8.56/1.05
     FTa7 = -(162.85/5.04 - 214.745/1.728 * eta - 193.385/3.024 * eta*eta) \
-            * lal.LAL_PI
+            * lal.PI
 
     dETaN = 2 * -eta/2.0;
     dETa1 = 2 * -(3.0/4.0 + 1.0/12.0 * eta)
     dETa2 = 3 * -(27.0/8.0 - 19.0/8.0 * eta + 1./24.0 * eta*eta)
-    dETa3 = 4 * -(67.5/6.4 - (344.45/5.76 - 20.5/9.6 * lal.LAL_PI*lal.LAL_PI) *
+    dETa3 = 4 * -(67.5/6.4 - (344.45/5.76 - 20.5/9.6 * lal.PI*lal.PI) *
                              eta + 15.5/9.6 * eta*eta + 3.5/518.4 * eta*eta*eta)
   
-    amp0 = -4. * mass1 * mass2 / (1.0e+06 * float(distance) * lal.LAL_PC_SI )* \
-                    lal.LAL_MRSUN_SI * lal.LAL_MTSUN_SI * sqrt(lal.LAL_PI/12.0)    
+    amp0 = -4. * mass1 * mass2 / (1.0e+06 * float(distance) * lal.PC_SI )* \
+                    lal.MRSUN_SI * lal.MTSUN_SI * sqrt(lal.PI/12.0)
     
-    m_sec = M * lal.LAL_MTSUN_SI;
-    piM = lal.LAL_PI * m_sec; 
+    m_sec = M * lal.MTSUN_SI;
+    piM = lal.PI * m_sec;
 
     kmin = int(kwds['f_lower'] / float(delta_f))
 

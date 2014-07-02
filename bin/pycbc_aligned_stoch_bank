@@ -29,7 +29,6 @@ import pycbc.version
 from pycbc import tmpltbank, pnutils
 import pycbc.psd
 import pycbc.strain
-from lal import LAL_PI, LAL_MTSUN_SI
 
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"

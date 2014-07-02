@@ -160,7 +160,7 @@ def FinalSpin( Xi, eta ):
 
 def fRD( a, M):
   """Calculate the ring-down frequency for the final Kerr BH. Using Eq. 5.5 of Main paper"""
-  f = (lal.LAL_C_SI**3.0 / (2.0*lal.LAL_PI*lal.LAL_G_SI*M*lal.LAL_MSUN_SI)) * (1.5251 - 1.1568*(1.0-a)**0.1292)
+  f = (lal.C_SI**3.0 / (2.0*lal.PI*lal.G_SI*M*lal.MSUN_SI)) * (1.5251 - 1.1568*(1.0-a)**0.1292)
   return f
 
 def Qa( a ):
@@ -199,11 +199,11 @@ def imrphenomc_tmplt(**kwds):
     Xiprod = Xi*Xi
     Xi2 = Xi*Xi
     
-    m_sec = M * lal.LAL_MTSUN_SI;
-    piM = lal.LAL_PI * m_sec;
+    m_sec = M * lal.MTSUN_SI;
+    piM = lal.PI * m_sec;
 
     ## The units of distance given as input is taken to pe Mpc. Converting to SI
-    distance *= (1.0e6 * lal.LAL_PC_SI / (2. * sqrt(5. / (64.*lal.LAL_PI)) * M * lal.LAL_MRSUN_SI * M * lal.LAL_MTSUN_SI))
+    distance *= (1.0e6 * lal.PC_SI / (2. * sqrt(5. / (64.*lal.PI)) * M * lal.MRSUN_SI * M * lal.MTSUN_SI))
    
     # Check if the value of f_max is correctly given, else replace with the fCut
     # used in the PhenomB code in lalsimulation. The various coefficients come
@@ -315,70 +315,70 @@ def imrphenomc_tmplt(**kwds):
     ### Calculate the PN coefficients, Eq A3 - A5 of main paper ###
     pfaN = 3.0/(128.0 * eta)
     pfa2 = (3715./756.) + (55.*eta/9.0)
-    pfa3 = -16.0*lal.LAL_PI + (113./3.)*Xi - 38.*eta*Xisum/3.
+    pfa3 = -16.0*lal.PI + (113./3.)*Xi - 38.*eta*Xisum/3.
     pfa4 = (152.93365/5.08032) - 50.*Xi2 + eta*(271.45/5.04 + 1.25*Xiprod) + \
         3085.*eta2/72.
-    pfa5 = lal.LAL_PI*(386.45/7.56 - 65.*eta/9.) - \
+    pfa5 = lal.PI*(386.45/7.56 - 65.*eta/9.) - \
         Xi*(735.505/2.268 + 130.*eta/9.) + Xisum*(1285.0*eta/8.1 + 170.*eta2/9.) - \
         10.*Xi2*Xi/3. + 10.*eta*Xi*Xiprod
-    pfa6 = 11583.231236531/4.694215680 - 640.0*lal.LAL_PI*lal.LAL_PI/3. - \
-        6848.0*lal.LAL_GAMMA/21. - 684.8*log(64.)/6.3 + \
-        eta*(2255.*lal.LAL_PI*lal.LAL_PI/12. - 15737.765635/3.048192) + \
+    pfa6 = 11583.231236531/4.694215680 - 640.0*lal.PI*lal.PI/3. - \
+        6848.0*lal.GAMMA/21. - 684.8*log(64.)/6.3 + \
+        eta*(2255.*lal.PI*lal.PI/12. - 15737.765635/3.048192) + \
         76.055*eta2/1.728 - (127.825*eta2*eta/1.296) + \
-        2920.*lal.LAL_PI*Xi/3. - (175. - 1490.*eta)*Xi2/3. - \
-        (1120.*lal.LAL_PI/3. - 1085.*Xi/3.)*eta*Xisum + \
+        2920.*lal.PI*Xi/3. - (175. - 1490.*eta)*Xi2/3. - \
+        (1120.*lal.PI/3. - 1085.*Xi/3.)*eta*Xisum + \
         (269.45*eta/3.36 - 2365.*eta2/6.)*Xiprod
 
     pfa6log = -6848./63.
   
-    pfa7 = lal.LAL_PI*(770.96675/2.54016 + 378.515*eta/1.512 - 740.45*eta2/7.56) - \
+    pfa7 = lal.PI*(770.96675/2.54016 + 378.515*eta/1.512 - 740.45*eta2/7.56) - \
         Xi*(20373.952415/3.048192 + 1509.35*eta/2.24 - 5786.95*eta2/4.32) + \
         Xisum*(4862.041225*eta/1.524096 + 1189.775*eta2/1.008 - 717.05*eta2*eta/2.16 - 830.*eta*Xi2/3. + 35.*eta2*Xiprod/3.) - \
-        560.*lal.LAL_PI*Xi2 + 20.*lal.LAL_PI*eta*Xiprod + \
+        560.*lal.PI*Xi2 + 20.*lal.PI*eta*Xiprod + \
         Xi2*Xi*(945.55/1.68 - 85.*eta) + Xi*Xiprod*(396.65*eta/1.68 + 255.*eta2)
 
 
     xdotaN = 64.*eta/5.
     xdota2 = -7.43/3.36 - 11.*eta/4.
-    xdota3 = 4.*lal.LAL_PI - 11.3*Xi/1.2 + 19.*eta*Xisum/6.
+    xdota3 = 4.*lal.PI - 11.3*Xi/1.2 + 19.*eta*Xisum/6.
     xdota4 = 3.4103/1.8144 + 5*Xi2 + eta*(13.661/2.016 - Xiprod/8.) + 5.9*eta2/1.8
-    xdota5 = -lal.LAL_PI*(41.59/6.72 + 189.*eta/8.) - Xi*(31.571/1.008 - 116.5*eta/2.4) + \
+    xdota5 = -lal.PI*(41.59/6.72 + 189.*eta/8.) - Xi*(31.571/1.008 - 116.5*eta/2.4) + \
           Xisum*(21.863*eta/1.008 - 79.*eta2/6.) - 3*Xi*Xi2/4. + \
           9.*eta*Xi*Xiprod/4.
-    xdota6 = 164.47322263/1.39708800 - 17.12*lal.LAL_GAMMA/1.05 + \
-          16.*lal.LAL_PI*lal.LAL_PI/3 - 8.56*log(16.)/1.05 + \
-          eta*(45.1*lal.LAL_PI*lal.LAL_PI/4.8 - 561.98689/2.17728) + \
-          5.41*eta2/8.96 - 5.605*eta*eta2/2.592 - 80.*lal.LAL_PI*Xi/3. + \
-          eta*Xisum*(20.*lal.LAL_PI/3. - 113.5*Xi/3.6) + \
+    xdota6 = 164.47322263/1.39708800 - 17.12*lal.GAMMA/1.05 + \
+          16.*lal.PI*lal.PI/3 - 8.56*log(16.)/1.05 + \
+          eta*(45.1*lal.PI*lal.PI/4.8 - 561.98689/2.17728) + \
+          5.41*eta2/8.96 - 5.605*eta*eta2/2.592 - 80.*lal.PI*Xi/3. + \
+          eta*Xisum*(20.*lal.PI/3. - 113.5*Xi/3.6) + \
           Xi2*(64.153/1.008 - 45.7*eta/3.6) - \
           Xiprod*(7.87*eta/1.44 - 30.37*eta2/1.44)
   
     xdota6log = -856./105.
   
-    xdota7 = -lal.LAL_PI*(4.415/4.032 - 358.675*eta/6.048 - 91.495*eta2/1.512) - \
+    xdota7 = -lal.PI*(4.415/4.032 - 358.675*eta/6.048 - 91.495*eta2/1.512) - \
           Xi*(252.9407/2.7216 - 845.827*eta/6.048 + 415.51*eta2/8.64) + \
           Xisum*(158.0239*eta/5.4432 - 451.597*eta2/6.048 + 20.45*eta2*eta/4.32 + 107.*eta*Xi2/6. - 5.*eta2*Xiprod/24.) + \
-          12.*lal.LAL_PI*Xi2 - Xi2*Xi*(150.5/2.4 + eta/8.) + \
+          12.*lal.PI*Xi2 - Xi2*Xi*(150.5/2.4 + eta/8.) + \
           Xi*Xiprod*(10.1*eta/2.4 + 3.*eta2/8.)
 
 
-    AN = 8.*eta*sqrt(lal.LAL_PI/5.)
+    AN = 8.*eta*sqrt(lal.PI/5.)
     A2 = (-107. + 55.*eta)/42.
-    A3 = 2.*lal.LAL_PI - 4.*Xi/3. + 2.*eta*Xisum/3.
+    A3 = 2.*lal.PI - 4.*Xi/3. + 2.*eta*Xisum/3.
     A4 = -2.173/1.512 - eta*(10.69/2.16 - 2.*Xiprod) + 2.047*eta2/1.512
-    A5 = -10.7*lal.LAL_PI/2.1 + eta*(3.4*lal.LAL_PI/2.1)
+    A5 = -10.7*lal.PI/2.1 + eta*(3.4*lal.PI/2.1)
     
     A5imag = -24.*eta
 
-    A6 = 270.27409/6.46800 - 8.56*lal.LAL_GAMMA/1.05 + \
-      2.*lal.LAL_PI*lal.LAL_PI/3. + \
-      eta*(4.1*lal.LAL_PI*lal.LAL_PI/9.6 - 27.8185/3.3264) - \
+    A6 = 270.27409/6.46800 - 8.56*lal.GAMMA/1.05 + \
+      2.*lal.PI*lal.PI/3. + \
+      eta*(4.1*lal.PI*lal.PI/9.6 - 27.8185/3.3264) - \
       20.261*eta2/2.772 + 11.4635*eta*eta2/9.9792 - \
       4.28*log(16.)/1.05
   
     A6log = -428./105.
 
-    A6imag = 4.28*lal.LAL_PI/1.05
+    A6imag = 4.28*lal.PI/1.05
 
     ### Define other parameters needed by waveform generation ###
     kmin = int(f_min / delta_f)

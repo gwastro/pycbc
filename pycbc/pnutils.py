@@ -96,16 +96,16 @@ def A0(f_lower):
     """used in calculating chirp times: see Cokelaer, arxiv.org:0706.4437
        appendix 1, also lalinspiral/python/sbank/tau0tau3.py
     """
-    return 5. / (256. * (lal.LAL_PI * f_lower)**(8./3.))
+    return 5. / (256. * (lal.PI * f_lower)**(8./3.))
 
 def A3(f_lower):
     """another parameter used for chirp times"""
-    return lal.LAL_PI / (8. * (lal.LAL_PI * f_lower)**(5./3.))
+    return lal.PI / (8. * (lal.PI * f_lower)**(5./3.))
   
 def mass1_mass2_to_tau0_tau3(mass1, mass2, f_lower):
     m_total,eta = mass1_mass2_to_mtotal_eta(mass1, mass2)
     # convert to seconds
-    m_total = m_total * lal.LAL_MTSUN_SI
+    m_total = m_total * lal.MTSUN_SI
     # formulae from arxiv.org:0706.4437
     tau0 = A0(f_lower) / (m_total**(5./3.) * eta)
     tau3 = A3(f_lower) / (m_total**(2./3.) * eta)
@@ -115,7 +115,7 @@ def tau0_tau3_to_mtotal_eta(tau0, tau3, f_lower):
     m_total = (tau3 / A3(f_lower)) / (tau0 / A0(f_lower))
     eta = m_total**(-2./3.) * (A3(f_lower) / tau3)
     # convert back to solar mass units
-    return (m_total/lal.LAL_MTSUN_SI),eta
+    return (m_total/lal.MTSUN_SI),eta
 
 def tau0_tau3_to_mass1_mass2(tau0, tau3, f_lower):
     m_total,eta = tau0_tau3_to_mtotal_eta(tau0, tau3, f_lower)
@@ -172,16 +172,16 @@ def get_beta_sigma_from_aligned_spins(eta, spin1z, spin2z):
     return beta, sigma, gamma, chiS
 
 def solar_mass_to_kg(solar_masses):
-    return solar_masses * lal.LAL_MSUN_SI
+    return solar_masses * lal.MSUN_SI
 
 def parsecs_to_meters(distance):
-    return distance * lal.LAL_PC_SI
+    return distance * lal.PC_SI
 
 def velocity_to_frequency(v, M):
-    return v**(3.0) / (M * lal.LAL_MTSUN_SI * lal.LAL_PI)
+    return v**(3.0) / (M * lal.MTSUN_SI * lal.PI)
 
 def frequency_to_velocity(f, M):
-    return (lal.LAL_PI * M * lal.LAL_MTSUN_SI * f)**(1.0/3.0)
+    return (lal.PI * M * lal.MTSUN_SI * f)**(1.0/3.0)
 
 def f_SchwarzISCO(M):
     """
@@ -237,7 +237,7 @@ def f_LightRing(M):
     f : float or numpy.array
         Frequency in Hz
     """
-    return 1.0 / (3.0**(1.5) * lal.LAL_PI * M * lal.LAL_MTSUN_SI)
+    return 1.0 / (3.0**(1.5) * lal.PI * M * lal.MTSUN_SI)
 
 def f_ERD(M):
     """
@@ -256,7 +256,7 @@ def f_ERD(M):
     f : float or numpy.array
         Frequency in Hz
     """
-    return 1.07 * 0.5326 / (2*lal.LAL_PI * 0.955 * M * lal.LAL_MTSUN_SI)
+    return 1.07 * 0.5326 / (2*lal.PI * 0.955 * M * lal.MTSUN_SI)
 
 def f_FRD(m1, m2):
     """
@@ -280,7 +280,7 @@ def f_FRD(m1, m2):
     m_total, eta = mass1_mass2_to_mtotal_eta(m1, m2)
     tmp = ( (1. - 0.63*(1. - 3.4641016*eta + 2.9*eta**2)**(0.3)) /
     (1. - 0.057191*eta - 0.498*eta**2) )
-    return tmp / (2.*lal.LAL_PI * m_total*lal.LAL_MTSUN_SI)
+    return tmp / (2.*lal.PI * m_total*lal.MTSUN_SI)
 
 def f_LRD(m1, m2):
     """
@@ -325,8 +325,8 @@ def _get_final_freq(approx, m1, m2, s1z, s2z):
         Frequency in Hz
     """
     # Convert to SI units for lalsimulation
-    m1kg = float(m1) * lal.LAL_MSUN_SI
-    m2kg = float(m2) * lal.LAL_MSUN_SI
+    m1kg = float(m1) * lal.MSUN_SI
+    m2kg = float(m2) * lal.MSUN_SI
     return lalsimulation.SimInspiralGetFinalFreq(
         m1kg, m2kg, 0, 0, float(s1z), 0, 0, float(s2z), int(approx))
 
@@ -442,7 +442,7 @@ def _energy_coeffs(m1, m2, chi1, chi2):
     energy4 = -3.375 + (19*eta)/8. - pow(eta,2)/24.
     energy5 = 0.
     energy6 = -10.546875 - (155*pow(eta,2))/96. - (35*pow(eta,3))/5184. \
-                + eta*(59.80034722222222 - (205*pow(lal.LAL_PI,2))/96.)
+                + eta*(59.80034722222222 - (205*pow(lal.PI,2))/96.)
 
     energy3 += (32*beta)/113. + (52*chisym*eta)/113.
     
@@ -502,12 +502,12 @@ def _dtdv_coeffs(m1, m2, chi1, chi2):
     energy0 = -0.5*eta
     dtdv0 = 1. # FIXME: Wrong but doesn't matter for now.
     dtdv2 = (1./336.) * (743. + 924.*eta)
-    dtdv3 = -4. * lal.LAL_PI + beta
+    dtdv3 = -4. * lal.PI + beta
     dtdv4 = (3058673. + 5472432.*eta + 4353552.*eta*eta)/1016064. - sigma12 - sigmaqm 
-    dtdv5 = (1./672.) * lal.LAL_PI * (-7729. + 1092.*eta) + (146597.*beta/18984. + 42.*beta*eta/113. - 417307.*chisym*eta/18984. - 1389.*chisym*eta*eta/226.)
+    dtdv5 = (1./672.) * lal.PI * (-7729. + 1092.*eta) + (146597.*beta/18984. + 42.*beta*eta/113. - 417307.*chisym*eta/18984. - 1389.*chisym*eta*eta/226.)
     dtdv6 = 22.065 + 165.416*eta - 2.20067*eta*eta + 4.93152*eta*eta*eta
     dtdv6log = 1712./315.
-    dtdv7 = (lal.LAL_PI/1016064.) * (-15419335. - 12718104.*eta + 4975824.*eta*eta)
+    dtdv7 = (lal.PI/1016064.) * (-15419335. - 12718104.*eta + 4975824.*eta*eta)
 
     return (dtdv0, dtdv2, dtdv3, dtdv4, dtdv5, dtdv6, dtdv6log, dtdv7)    
 
@@ -569,7 +569,7 @@ def energy_coefficients(m1, m2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
         ecof[5] = 0
     if phase_order >= 6:
         ecof[6] = - 675.0/64.0 + ( 34445.0/576.0    \
-              - 205.0/96.0 * lal.LAL_PI * lal.LAL_PI ) * eta  \
+              - 205.0/96.0 * lal.PI * lal.PI ) * eta  \
               - (155.0/96.0) *eta * eta - 35.0/5184.0 * eta * eta
     # Spin terms
  
