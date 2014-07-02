@@ -60,7 +60,7 @@ class TestWaveform(unittest.TestCase):
 
         for m1 in [1, 1.4, 20]:
             for m2 in [1.4, 20]:
-                for s1 in [-1, -.5, 0, 0.5, 1.0, 10]:
+                for s1 in [-1, 0, 1.0]:
                     for s2 in [-10, -.5, 0, 0.5, 1.0]:
                         # Generate TaylorF2 from lalsimulation, restricting to the capabilities of spatmplt
                         hpr,_ = get_fd_waveform( mass1=m1, mass2=m2, spin1z=s1, spin2z=s2, delta_f=delta_f, f_lower=fl,
@@ -89,7 +89,8 @@ class TestWaveform(unittest.TestCase):
 
     def test_spintaylorf2GPU(self):
     
-        if not isinstance(self.scheme, CPUScheme):
+        print type(self.context)
+        if isinstance(self.context, CPUScheme):
             return
             
         fl = 25
