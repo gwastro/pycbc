@@ -123,10 +123,7 @@ def generate_anstar_3d_lattice(maxv1, minv1, maxv2, minv2, maxv3, minv3, \
     try:
         import lalpulsar
     except:
-        err_msg = "A SWIG-wrapped install of lalpulsar is needed to use the "
-        err_msg += "anstar tiling functionality."
-        print >> sys.stderr, err_msg
-        raise
+        raise ImportError("A SWIG-wrapped install of lalpulsar is needed to use the anstar tiling functionality.")
 
     tiling = lalpulsar.CreateLatticeTiling(3)
     lalpulsar.SetLatticeConstantBound(tiling, 0, minv1, maxv1)
