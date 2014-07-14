@@ -69,7 +69,8 @@ parser.add_option('--spin2z', type = float, default=0, help = "[default: %defaul
 parser.add_option('--coa-phase', type = float, default=0, help = "[default: %default]") 
 parser.add_option('--inclination', type = float, default=0, help = "[default: %default]") 
 
-parser.add_option('--delta-t', type = float, default=1.0/8192,  help = "[default: %default]") 
+parser.add_option('--delta-t', type = float, default=1.0/8192,  help = "[default: %default]")
+parser.add_option('--delta-f', type = float, default=1.0/256,  help = "[default: %default]")  
 parser.add_option('--f-lower', type = float, default=30, help = "[default: %default]")   
 
 parser.add_option('--phase-order', type = int, default=-1, help = "[default: %default]") 
@@ -94,7 +95,6 @@ def get_waveform(p, **kwds):
     """
     params = copy.copy(p.__dict__)
     params.update(kwds)
-    params['delta_f'] = 1.0/256
 
     if params['approximant'] in td_approximants():
         return get_td_waveform(**params)
