@@ -54,7 +54,7 @@ for d in lal lalframe lalmetaio lalxml lalsimulation lalburst lalinspiral lalsto
         make distclean || echo "Warning: could not make distclean. Carrying on anyway"
     fi
     ./00boot
-    ./configure --prefix=${INSTALL_DIR} --enable-swig
+    ./configure --prefix=${INSTALL_DIR} --enable-swig-python
      make -j ${MAKE_CORES} install;
     echo "source ${INSTALL_DIR}/etc/${d}-user-env.sh" >> ${SOURCE_SCRIPTDIR}/lscsoftrc;
     popd;
