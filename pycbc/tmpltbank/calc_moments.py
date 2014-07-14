@@ -83,6 +83,7 @@ def determine_eigen_directions(metricParams, preserveMoments=False,
     evals = {}
     evecs = {}
     metric = {}
+    unmax_metric = {}
   
     # First step is to get the moments needed to calculate the metric
     if not (metricParams.moments and preserveMoments):
@@ -119,9 +120,10 @@ def determine_eigen_directions(metricParams, preserveMoments=False,
         mapping = generate_mapping(metricParams.pnOrder)
  
         # Calculate the metric
-        gs = calculate_metric(Js, logJs, loglogJs, logloglogJs, \
-                              loglogloglogJs, mapping)
+        gs, unmax_metric_curr = calculate_metric(Js, logJs, loglogJs,
+                                          logloglogJs, loglogloglogJs, mapping)
         metric[item] = numpy.matrix(gs)
+        unmax_metric[item] = unmax_metric_curr
 
         # And the eigenvalues
         evals[item],evecs[item] = numpy.linalg.eig(gs)
@@ -142,6 +144,7 @@ def determine_eigen_directions(metricParams, preserveMoments=False,
     metricParams.evals = evals
     metricParams.evecs = evecs
     metricParams.metric = metric
+    metricParams.time_unprojected_metric = unmax_metric
 
     return metricParams
 
@@ -429,23 +432,37 @@ def calculate_metric(Js, logJs, loglogJs, logloglogJs, loglogloglogJs, \
     maxLen = len(mapping.keys())
 
     metric = numpy.matrix(numpy.zeros(shape=(maxLen,maxLen),dtype=float))
+    unmax_metric = numpy.matrix(numpy.zeros(shape=(maxLen+1,maxLen+1),
+                                                                  dtype=float))
 
     for i in xrange(16):
         for j in xrange(16):
-            metric = calculate_metric_comp(metric, i, j, Js, logJs, loglogJs, \
-                                       logloglogJs, loglogloglogJs, mapping)
-    return metric
+            calculate_metric_comp(metric, unmax_metric, i, j, Js,
+                                           logJs, loglogJs, logloglogJs,
+                                           loglogloglogJs, mapping)
+    return metric, unmax_metric
 
 
-def calculate_metric_comp(gs, i, j, Js, logJs, loglogJs, logloglogJs,\
-                          loglogloglogJs, mapping):
+def calculate_metric_comp(gs, unmax_metric, i, j, Js, logJs, loglogJs,
+                          logloglogJs, loglogloglogJs, mapping):
     """
     Used to compute part of the metric. Only call this from within
     calculate_metric(). Please see the documentation for that function.
     """
+    # Time term in unmax_metric. Note that these terms are recomputed a bunch
+    # of time, but this cost is insignificant compared to computing the moments
+    unmax_metric[-1,-1] = (Js[1] - Js[4]*Js[4])
+
     # Normal terms
     if mapping.has_key('Lambda%d'%i) and mapping.has_key('Lambda%d'%j):
-        gs[mapping['Lambda%d'%i],mapping['Lambda%d'%j]] = 0.5 * (Js[17-i-j] - Js[12-i]*Js[12-j] - (Js[9-i] - Js[4]*Js[12-i]) * (Js[9-j] - Js[4] * Js[12-j])/(Js[1] - Js[4]*Js[4]))
+        gammaij = Js[17-i-j] - Js[12-i]*Js[12-j]
+        gamma0i = (Js[9-i] - Js[4]*Js[12-i])
+        gamma0j = (Js[9-j] - Js[4] * Js[12-j])
+        gs[mapping['Lambda%d'%i],mapping['Lambda%d'%j]] = \
+            0.5 * (gammaij - gamma0i*gamma0j/(Js[1] - Js[4]*Js[4]))
+        unmax_metric[mapping['Lambda%d'%i], -1] = gamma0i
+        unmax_metric[-1, mapping['Lambda%d'%j]] = gamma0j
+        unmax_metric[mapping['Lambda%d'%i],mapping['Lambda%d'%j]] = gammaij
     # Normal,log cross terms
     if mapping.has_key('Lambda%d'%i) and mapping.has_key('LogLambda%d'%j):
         gammaij = logJs[17-i-j] - logJs[12-j] * Js[12-i]
@@ -454,6 +471,12 @@ def calculate_metric_comp(gs, i, j, Js, logJs, loglogJs, logloglogJs,\
         gs[mapping['Lambda%d'%i],mapping['LogLambda%d'%j]] = \
             gs[mapping['LogLambda%d'%j],mapping['Lambda%d'%i]] = \
             0.5 * (gammaij - gamma0i*gamma0j/(Js[1] - Js[4]*Js[4]))
+        unmax_metric[mapping['Lambda%d'%i], -1] = gamma0i
+        unmax_metric[-1, mapping['Lambda%d'%i]] = gamma0i
+        unmax_metric[-1, mapping['LogLambda%d'%j]] = gamma0j
+        unmax_metric[mapping['LogLambda%d'%j], -1] = gamma0j
+        unmax_metric[mapping['Lambda%d'%i],mapping['LogLambda%d'%j]] = gammaij
+        unmax_metric[mapping['LogLambda%d'%j],mapping['Lambda%d'%i]] = gammaij
     # Log,log terms
     if mapping.has_key('LogLambda%d'%i) and mapping.has_key('LogLambda%d'%j):
         gammaij = loglogJs[17-i-j] - logJs[12-j] * logJs[12-i]
@@ -461,6 +484,11 @@ def calculate_metric_comp(gs, i, j, Js, logJs, loglogJs, logloglogJs,\
         gamma0j = logJs[9-j] - logJs[12-j] * Js[4]
         gs[mapping['LogLambda%d'%i],mapping['LogLambda%d'%j]] = \
             0.5 * (gammaij - gamma0i*gamma0j/(Js[1] - Js[4]*Js[4]))
+        unmax_metric[mapping['LogLambda%d'%i], -1] = gamma0i
+        unmax_metric[-1, mapping['LogLambda%d'%j]] = gamma0j
+        unmax_metric[mapping['LogLambda%d'%i],mapping['LogLambda%d'%j]] =\
+            gammaij
+
     # Normal,loglog cross terms
     if mapping.has_key('Lambda%d'%i) and mapping.has_key('LogLogLambda%d'%j):
         gammaij = loglogJs[17-i-j] - loglogJs[12-j] * Js[12-i]
@@ -469,6 +497,15 @@ def calculate_metric_comp(gs, i, j, Js, logJs, loglogJs, logloglogJs,\
         gs[mapping['Lambda%d'%i],mapping['LogLogLambda%d'%j]] = \
             gs[mapping['LogLogLambda%d'%j],mapping['Lambda%d'%i]] = \
             0.5 * (gammaij - gamma0i*gamma0j/(Js[1] - Js[4]*Js[4]))
+        unmax_metric[mapping['Lambda%d'%i], -1] = gamma0i
+        unmax_metric[-1, mapping['Lambda%d'%i]] = gamma0i
+        unmax_metric[-1, mapping['LogLogLambda%d'%j]] = gamma0j
+        unmax_metric[mapping['LogLogLambda%d'%j], -1] = gamma0j
+        unmax_metric[mapping['Lambda%d'%i],mapping['LogLogLambda%d'%j]] = \
+            gammaij
+        unmax_metric[mapping['LogLogLambda%d'%j],mapping['Lambda%d'%i]] = \
+            gammaij
+
     # log,loglog cross terms
     if mapping.has_key('LogLambda%d'%i) and mapping.has_key('LogLogLambda%d'%j):
         gammaij = logloglogJs[17-i-j] - loglogJs[12-j] * logJs[12-i]
@@ -477,6 +514,15 @@ def calculate_metric_comp(gs, i, j, Js, logJs, loglogJs, logloglogJs,\
         gs[mapping['LogLambda%d'%i],mapping['LogLogLambda%d'%j]] = \
             gs[mapping['LogLogLambda%d'%j],mapping['LogLambda%d'%i]] = \
             0.5 * (gammaij - gamma0i*gamma0j/(Js[1] - Js[4]*Js[4]))
+        unmax_metric[mapping['LogLambda%d'%i], -1] = gamma0i
+        unmax_metric[-1, mapping['LogLambda%d'%i]] = gamma0i
+        unmax_metric[-1, mapping['LogLogLambda%d'%j]] = gamma0j
+        unmax_metric[mapping['LogLogLambda%d'%j], -1] = gamma0j
+        unmax_metric[mapping['LogLambda%d'%i],mapping['LogLogLambda%d'%j]] = \
+            gammaij
+        unmax_metric[mapping['LogLogLambda%d'%j],mapping['LogLambda%d'%i]] = \
+            gammaij
+
     # Loglog,loglog terms
     if mapping.has_key('LogLogLambda%d'%i) and mapping.has_key('LogLogLambda%d'%j):
         gammaij = loglogloglogJs[17-i-j] - loglogJs[12-j] * loglogJs[12-i]
@@ -484,5 +530,8 @@ def calculate_metric_comp(gs, i, j, Js, logJs, loglogJs, logloglogJs,\
         gamma0j = loglogJs[9-j] - loglogJs[12-j] * Js[4]
         gs[mapping['LogLogLambda%d'%i],mapping['LogLogLambda%d'%j]] = \
             0.5 * (gammaij - gamma0i*gamma0j/(Js[1] - Js[4]*Js[4]))
-    return gs
+        unmax_metric[mapping['LogLogLambda%d'%i], -1] = gamma0i
+        unmax_metric[-1, mapping['LogLogLambda%d'%j]] = gamma0j
+        unmax_metric[mapping['LogLogLambda%d'%i],mapping['LogLogLambda%d'%j]] =\
+            gammaij
 
