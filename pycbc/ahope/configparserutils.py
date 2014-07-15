@@ -173,11 +173,12 @@ class AhopeConfigParser(ConfigParser.SafeConfigParser):
             splitOverride = override.split(":")
             if len(splitOverride) == 3:
                 parsedOverrides.append(tuple(splitOverride))
-            if len(splitOverride) == 2:
+            elif len(splitOverride) == 2:
                 parsedOverrides.append(tuple(splitOverride + [""]))
             else:
-                errMsg = "Overrides must be of format section:option:value "
-                errMsg = "or section:option. Cannot parse %s." %(override,)
+                raise ValueError(
+                    "Overrides must be of format section:option:value "
+                    "or section:option. Cannot parse %s." % override)
 
         return cls(confFiles, parsedOverrides) 
 
