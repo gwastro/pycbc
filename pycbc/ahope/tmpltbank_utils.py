@@ -263,7 +263,7 @@ def setup_tmpltbank_without_frames(workflow, output_dir,
         raise ValueError(errMsg)
 
     # Select the appropriate class
-    exe_instance = select_tmpltbank_class(tmplt_bank_exe, 'tmpltbank')
+    exe_instance = select_tmpltbank_class(tmplt_bank_exe)
 
     tmplt_banks = AhopeFileList([])
 

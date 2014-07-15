@@ -41,35 +41,29 @@ def select_tmpltbank_class(curr_exe):
     Parameters
     ----------
     curr_exe : string
-        The name of the AhopeExecutable that is being used.
-    curr_section : string
-        The name of the section storing options for this executble
+        The name of the AhopeExecutable that is being used for generating
+        template banks.
 
     Returns
     --------
-    Instanced class : exe_class
-        An instance of the class that holds the utility functions appropriate
-        for the given AhopeExecutable. This class **must** contain
-        * exe_class.create_job()
+    exe_class : class
+        A class that holds the utility functions appropriate for the given
+        AhopeExecutable. This class **must** have a create_job method
         and the job returned by this **must** contain
         * job.get_valid_times(ifo, )
         * job.create_node()
     """
-    # This is basically a list of if statements
 
-    if curr_exe == 'lalapps_tmpltbank_ahope':
-        exe_class = LegacyTmpltbankExecutable
-    elif curr_exe == 'pycbc_geom_nonspinbank' or 'pycbc_aligned_stoch_bank':
-        # These two codes have the same interface (shared option groups) and
-        # can therefore used the same internal class
-        exe_class = PyCBCTmpltbankExecutable
-    elif curr_exe == 'pycbc_geom_nonspinbank':
-        exe_class = PyCBCTmpltbankExecutable
+    exe_to_class_map = {
+        'lalapps_tmpltbank_ahope': LegacyTmpltbankExecutable,
+        'pycbc_geom_nonspinbank': PyCBCTmpltbankExecutable,
+        'pycbc_aligned_stoch_bank': PyCBCTmpltbankExecutable
+    }
+    if curr_exe in exe_to_class_map:
+        return exe_to_class_map[curr_exe]
     else:
-        # Should we try some sort of default class??
-        err_string = "No class exists for AhopeExecutable %s" %(curr_exe,)
-        raise NotImplementedError(err_string)
-    return exe_class
+        raise NotImplementedError(
+            "No class exists for AhopeExecutable %s" % curr_exe)
 
 def select_matchedfilter_class(curr_exe):
     """
