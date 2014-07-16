@@ -193,7 +193,7 @@ Then you can generate the workflow::
                                               ahope:pipedown-tmp-space:${PIPEDOWNTMPSPACE}
 
 -----------------------------------------
-Planning and Submitting the Worklfow
+Planning and Submitting the Workflow
 -----------------------------------------
 First, copy the files needed for planning into the directory where the dax 
 was generated.::
