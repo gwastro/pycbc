@@ -135,27 +135,27 @@ class TestLALSimulation(unittest.TestCase):
         pylab.figure()
         pylab.axes([.1, .2, 0.8, 0.70])
         hp_ref, hc_ref = get_waveform(self.p, coa_phase=0)
-        pylab.plot(getattr(hp_ref, sample_attr), hp_ref, label="phiref")
+        pylab.plot(getattr(hp_ref, sample_attr), hp_ref.real(), label="phiref")
        
         hp, hc = get_waveform(self.p, coa_phase=lal.PI/4)
         m, i = match(hp_ref, hp)
         self.assertAlmostEqual(1, m, places=2)
         o = overlap(hp_ref, hp)
-        pylab.plot(getattr(hp, sample_attr), hp, label="$phiref \pi/4$")
+        pylab.plot(getattr(hp, sample_attr), hp.real(), label="$phiref \pi/4$")
         
         hp, hc = get_waveform(self.p, coa_phase=lal.PI/2)
         m, i = match(hp_ref, hp)
         o = overlap(hp_ref, hp)
         self.assertAlmostEqual(1, m, places=7)
         self.assertAlmostEqual(-1, o, places=7)
-        pylab.plot(getattr(hp, sample_attr), hp, label="$phiref \pi/2$")
+        pylab.plot(getattr(hp, sample_attr), hp.real(), label="$phiref \pi/2$")
         
         hp, hc = get_waveform(self.p, coa_phase=lal.PI)
         m, i = match(hp_ref, hp)
         o = overlap(hp_ref, hp)
         self.assertAlmostEqual(1, m, places=7)
         self.assertAlmostEqual(1, o, places=7)
-        pylab.plot(getattr(hp, sample_attr), hp, label="$phiref \pi$")                         
+        pylab.plot(getattr(hp, sample_attr), hp.real(), label="$phiref \pi$")
         
         pylab.xlim(min(getattr(hp, sample_attr)), max(getattr(hp, sample_attr)))
         pylab.title("Vary %s oribital phiref, h+" % self.p.approximant)
@@ -165,7 +165,7 @@ class TestLALSimulation(unittest.TestCase):
         else:
             pylab.xlabel("GW Frequency (Hz)") 
 
-        pylab.ylabel("GW Strain")
+        pylab.ylabel("GW Strain (real part)")
         pylab.legend(loc="upper left")
         
         info = self.version_txt
