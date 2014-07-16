@@ -211,10 +211,23 @@ def insert_processing_option_group(parser):
                                    " processing scheme in this program.")   
     processing_group.add_argument("--processing-scheme", 
                       help="The choice of processing scheme. "
-                           "Choices are " + str(scheme_prefix.values()),  
+                           "Choices are " + str(list(set(scheme_prefix.values()))) + 
+                           ". (optional for CPU scheme) The number of "
+                           "execution threads "
+                           "can be indicated by cpu:NUM_THREADS, " 
+                           "where NUM_THREADS "
+                           "is an integer. The default is a single thread. "
+                           "If the scheme is provided as cpu:env, the number "
+                           "of threads can be provided by the PYCBC_NUM_THREADS "
+                           "environment variable. If the environment variable "
+                           "is not set, the number of threads matches the number "
+                           "of logical cores. "
+
+,  
                       default="cpu")                                                          
     processing_group.add_argument("--processing-device-id", 
-                      help="ID of GPU to use for accelerated processing", 
+                      help="(optional) ID of GPU to use for accelerated "
+                           "processing", 
                       default=0, type=int)
 
 def from_cli(opt):
