@@ -27,12 +27,12 @@ workflow construction. This module is described in the page here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.html
 """
 
-import os, sys
-import argparse
+import os
 import re
 import distutils.spawn
-import copy
 import ConfigParser
+import glue.pipeline
+
 
 def add_ahope_command_line_group(parser):
     """
@@ -72,12 +72,12 @@ def add_ahope_command_line_group(parser):
                            help="List of section,option,value combinations to add into the configuration file. Normally the gps start and end times might be provided this way, and user specific locations (ie. output directories). This can also be provided as SECTION:OPTION or SECTION:OPTION: both of which indicate that the corresponding value is left blank.")
 
 
-class AhopeConfigParser(ConfigParser.SafeConfigParser):
+class AhopeConfigParser(glue.pipeline.DeepCopyableConfigParser):
     """
-    This is a sub-class of ConfigParser.ConfigParser, which lets us add a few
-    additional helper features that are useful in ahope.
+    This is a sub-class of glue.pipeline.DeepCopyableConfigParser, which lets
+    us add a few additional helper features that are useful in ahope.
     """
-    def __init__(self, configFiles, overrideTuples, parsedFilePath=None):
+    def __init__(self, configFiles=[], overrideTuples=[], parsedFilePath=None):
         """
         Initialize an AhopeConfigParser. This reads the input configuration
         files, overrides values if necessary and performs the interpolation.
@@ -99,7 +99,8 @@ class AhopeConfigParser(ConfigParser.SafeConfigParser):
         AhopeConfigParser
             Initialized AhopeConfigParser instance.
         """
-        ConfigParser.SafeConfigParser.__init__(self)
+        glue.pipeline.DeepCopyableConfigParser.__init__(self)
+
         for confFile in configFiles:
             if not os.path.isfile(confFile):
                 errMsg = "File %s does not exist." %(confFile)
@@ -218,11 +219,12 @@ class AhopeConfigParser(ConfigParser.SafeConfigParser):
         Otherwise values will be unchanged.
         """
         # Only works on executables section
-        for option, value in self.items('executables'):
-            # Check the value
-            newStr = self.interpolate_exe(value)
-            if newStr != value:
-                self.set('executables', option, newStr)
+        if self.has_section('executables'):
+            for option, value in self.items('executables'):
+                # Check the value
+                newStr = self.interpolate_exe(value)
+                if newStr != value:
+                    self.set('executables', option, newStr)
 
 
     def interpolate_exe(self, testString):
@@ -634,4 +636,3 @@ class AhopeConfigParser(ConfigParser.SafeConfigParser):
             return True
         except ConfigParser.Error:
             return False
-
