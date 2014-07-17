@@ -32,14 +32,12 @@ __program__ = "pycbc_pipedown_plots"
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
 import os, sys, re, copy
-import ConfigParser
 import argparse
 import tempfile
 
 ##############################################################################
 # import the modules we need to build the pipeline
 from glue import pipeline
-from glue import lal
 from glue import iterutils
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
@@ -106,7 +104,7 @@ proc_id = process.register_to_xmldoc(logdoc, __program__, args.__dict__,
 
 ##############################################################################
 # parse the ini file and initialize
-cp = ConfigParser.ConfigParser()
+cp = pipeline.DeepCopyableConfigParser()
 cp.read(args.config_file)
 time_column = cp.get('pipeline', 'time-column')
 
