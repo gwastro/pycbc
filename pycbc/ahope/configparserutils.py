@@ -546,6 +546,10 @@ class AhopeConfigParser(ConfigParser.SafeConfigParser):
         string
             The value of the options being searched for
         """
+        # Need lower case tag name
+        if tags:
+            tags = [tag.lower() for tag in tags]
+
         try:
             return self.get(section, option)
         except ConfigParser.Error:
