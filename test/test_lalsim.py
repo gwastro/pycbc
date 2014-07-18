@@ -291,6 +291,19 @@ class TestLALSimulation(unittest.TestCase):
         self.assertAlmostEqual(max(sigmas), sigmas[0], places=7)
         self.assertTrue(sigmas[0] > sigmas[5])
 
+    def test_swapping_constituents(self):
+        #""" Test that waveform remains unchanged under swapping both objects
+        #"""
+
+        hp, hc = get_waveform(self.p)
+        hpswap, hcswap = get_waveform(self.p, mass1=self.p.mass2, mass2=self.p.mass1,
+                spin1x=self.p.spin2x, spin1y=self.p.spin2y, spin1z=self.p.spin2z,
+                spin2x=self.p.spin1x, spin2y=self.p.spin1y, spin2z=self.p.spin1z,
+                lambda1=self.p.lambda2, lambda2=self.p.lambda1)
+        op = overlap(hp, hpswap)
+        self.assertAlmostEqual(1, op, places=7)
+        oc = overlap(hc, hcswap)
+        self.assertAlmostEqual(1, oc, places=7)
     
 def test_maker(class_name, name, **kwds):
     class Test(class_name):
