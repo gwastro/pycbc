@@ -65,7 +65,8 @@ parser.add_option('--spin1z', type = float, default=0, help = "[default: %defaul
 parser.add_option('--spin2x', type = float, default=0, help = "[default: %default]")   
 parser.add_option('--spin2y', type = float, default=0, help = "[default: %default]")   
 parser.add_option('--spin2z', type = float, default=0, help = "[default: %default]")  
- 
+parser.add_option('--lambda1', type = float, default=0, help = "[default: %default]")   
+parser.add_option('--lambda2', type = float, default=0, help = "[default: %default]")   
 parser.add_option('--coa-phase', type = float, default=0, help = "[default: %default]") 
 parser.add_option('--inclination', type = float, default=0, help = "[default: %default]") 
 
