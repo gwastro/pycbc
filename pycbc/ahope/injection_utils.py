@@ -136,6 +136,7 @@ def setup_injection_workflow(workflow, output_dir=None,
                                                   injectionFilePath))
             injFile = AhopeFile('HL', 'PREGEN_INJFILE', fullSegment, file_url,
                                 tags=currTags)
+            injFile.PFN(injectionFilePath, site='local')
         else:
             errMsg = "Injection method must be one of IN_WORKFLOW, "
             errMsg += "AT_RUNTIME or PREGENERATED. Got %s." %(injectionMethod)
