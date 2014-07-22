@@ -63,7 +63,10 @@ Currently only one option, but others can be added. The subfunctions used are de
 .. autofunction:: pycbc.ahope.setup_coincidence_workflow_ligolw_thinca
    :noindex:
 
-Currently no additional options apply in the [ahope-coincidence] section.
+If exact-match coincidence is used, then the coincidence jobs can be parallelized to reduce the memory footprint. This requires that the inspiral jobs also use a split bank. To parallelize the coincidence, add under [ahope-coincidence]
+
+* coincidence-exact-match-parallelize =
+
 
 $$$$$$$$$$$$$$$
 [executables]

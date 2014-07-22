@@ -101,11 +101,11 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
     # to create a large job for coincidence and then running ligolw_thinca
     # on that output.
     if coincidenceMethod == "WORKFLOW_DISCRETE_SLIDES":
-        # If I am doing exact match I can paralellize these jobs and reduce
+        # If I am doing exact match I can parallelize these jobs and reduce
         # memory footprint. This will require all input inspiral jobs to have
         # a JOB%d tag to distinguish between them.
         if workflow.cp.has_option_tags("ahope-coincidence", \
-                             "coincidence-exact-match-paralellize", tags):
+                             "coincidence-exact-match-parallelize", tags):
             parallelize_split_input = True
         else:
             parallelize_split_input = False
