@@ -23,7 +23,7 @@
 #
 """
 This module provides the worker functions and classes that are used when
-creating an ahope workflow. For details about ahope see here:
+creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 
@@ -36,12 +36,12 @@ from os.path import splitext, basename, isfile
 import lal as lalswig
 from glue import lal
 from glue import segments, pipeline
-from configparserutils import AhopeConfigParser
+from configparserutils import WorkflowConfigParser
 import pylal.dq.dqSegmentUtils as dqUtils
 from pycbc.workflow.workflow import Workflow, Node, File, Executable
 import copy
 
-# Ahope should never be using the glue LIGOTimeGPS class, override this with
+# workflow should never be using the glue LIGOTimeGPS class, override this with
 # the nice SWIG-wrapped class in lal
 lal.LIGOTimeGPS = lalswig.LIGOTimeGPS
 
@@ -98,16 +98,16 @@ def is_condor_exec(exe_path):
     else:
         return False
         
-class AhopeExecutable(Executable):
+class WorkflowExecutable(Executable):
     def __init__(self, cp, name, 
                        universe=None, ifos=None, out_dir=None, tags=[]):
         """
-        Initialize the AhopeExecutable class.
+        Initialize the WorkflowExecutable class.
 
         Parameters
         -----------
         cp : ConfigParser object
-            The ConfigParser object holding the ahope configuration settings
+            The ConfigParser object holding the workflow configuration settings
         exec_name : string
             Executable name
         universe : string, optional
@@ -243,30 +243,30 @@ class AhopeExecutable(Executable):
 
     def create_node(self):
         """ Default node constructor. This is usually overridden by subclasses
-        of the AhopeExecutable.
+        of the WorkflowExecutable.
         """
-        return AhopeNode(self)
+        return WorkflowNode(self)
 
-class AhopeWorkflow(Workflow):
+class CBCWorkflow(Workflow):
     """
-    This class manages an aHOPE style workflow. It provides convenience 
+    This class manages a CBC style workflow. It provides convenience 
     functions for finding input files using time and keywords. It can also
     generate cache files from the inputs. It makes heavy use of the
     pipeline.CondorDAG class, which is instantiated under self.dag.
     """
     def __init__(self, args, name):
         """
-        Create an aHOPE workflow
+        Create an CBC workflow
         
         Parameters
         ----------
         args : argparse.ArgumentParser
-            The command line options to initialize an ahope workflow.
+            The command line options to initialize a CBC workflow.
         """
         Workflow.__init__(self, name)
         
         # Parse ini file
-        self.cp = AhopeConfigParser.from_args(args)
+        self.cp = WorkflowConfigParser.from_args(args)
         
         # Dump the parsed config file
         ini_file = os.path.abspath(self.name + '_parsed.ini')
@@ -278,21 +278,21 @@ class AhopeWorkflow(Workflow):
             logging.warn("Cowardly refusing to overwrite %s." %(ini_file))
 
         # Set global values
-        start_time = int(self.cp.get("ahope", "start-time"))
-        end_time = int(self.cp.get("ahope", "end-time"))
+        start_time = int(self.cp.get("workflow", "start-time"))
+        end_time = int(self.cp.get("workflow", "end-time"))
         self.analysis_time = segments.segment([start_time, end_time])
 
         # Set the ifos to analyse
         ifos = []
-        for ifo in self.cp.options('ahope-ifos'):
+        for ifo in self.cp.options('workflow-ifos'):
             ifos.append(ifo.upper())
         self.ifos = ifos
         self.ifos.sort(key=str.lower)
         self.ifo_string = ''.join(self.ifos)
         
         # Set up input and output file lists for workflow
-        self._inputs = AhopeFileList([])
-        self._outputs = AhopeFileList([])
+        self._inputs = WorkflowFileList([])
+        self._outputs = WorkflowFileList([])
          
     def execute_node(self, node):
         """ Execute this node immediately on the local machine
@@ -332,13 +332,13 @@ class AhopeWorkflow(Workflow):
         for out in self._outputs:
             f.write(out.output_map_str() + '\n')
     
-class AhopeNode(Node):
+class WorkflowNode(Node):
     def __init__(self, executable):
         Node.__init__(self, executable)
         self.executed = False
         self.set_category(executable.name)
         
-        # Set default requirements for a AhopeNode
+        # Set default requirements for a WorkflowNode
         self.set_memory(1000)
         self.set_storage(100)
         
@@ -353,7 +353,7 @@ class AhopeNode(Node):
         
         tmpargs = []
         for a in arglist:
-            if not isinstance(a, AhopeFile):
+            if not isinstance(a, WorkflowFile):
                 tmpargs += a.split(' ')
             else:
                 tmpargs.append(a)
@@ -361,14 +361,14 @@ class AhopeNode(Node):
         
         arglist = [a for a in arglist if a != '']
         
-        arglist = [a.storage_path if isinstance(a, AhopeFile) else a for a in arglist]
+        arglist = [a.storage_path if isinstance(a, WorkflowFile) else a for a in arglist]
                         
         exe_path = urlparse.urlsplit(self.executable.get_pfn()).path
         return [exe_path] + arglist
         
     def new_output_file_opt(self, valid_seg, extension, option_name, tags=[]):
         """
-        This function will create a AhopeFile corresponding to the given
+        This function will create a WorkflowFile corresponding to the given
         information and then add that file as output of this node.
 
         Parameters
@@ -394,7 +394,7 @@ class AhopeNode(Node):
             if tag not in all_tags:
                 all_tags.append(tag)
 
-        fil = AhopeFile(self.executable.ifo_list, self.executable.name,
+        fil = WorkflowFile(self.executable.ifo_list, self.executable.name,
                          valid_seg, extension=extension, 
                          directory=self.executable.out_dir, tags=all_tags)    
         self.add_output_opt(option_name, fil)
@@ -403,36 +403,36 @@ class AhopeNode(Node):
     def output_files(self):
         return self._outputs
     
-class AhopeFile(File):
+class WorkflowFile(File):
     '''
     This class holds the details of an individual output file 
-    This file(s) may be pre-supplied, generated from within the ahope
+    This file(s) may be pre-supplied, generated from within the workflow
     command line script, or generated within the workflow. The important stuff
     is:
 
-    * The ifo that the AhopeFile is valid for
-    * The time span that the AhopeOutFile is valid for
+    * The ifo that the WorkflowFile is valid for
+    * The time span that the WorkflowOutFile is valid for
     * A short description of what the file is
     * The extension that the file should have
     * The url where the file should be located
 
     An example of initiating this class:
     
-    c = AhopeFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), file_url="file://localhost/home/spxiwh/H1-INSPIRAL_S6LOWMASS-815901601-400.xml.gz" )
+    c = WorkflowFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), file_url="file://localhost/home/spxiwh/H1-INSPIRAL_S6LOWMASS-815901601-400.xml.gz" )
 
     another where the file url is generated from the inputs:
 
-    c = AhopeFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), directory="/home/spxiwh", extension="xml.gz" )
+    c = WorkflowFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), directory="/home/spxiwh", extension="xml.gz" )
     '''
     def __init__(self, ifos, exe_name, segs, file_url=None, 
                  extension=None, directory=None, tags=None):       
         """
-        Create an AhopeFile instance
+        Create a WorkflowFile instance
         
         Parameters
         ----------
         ifos : string or list
-            The ifo(s) that the AhopeFile is valid for. If the file is
+            The ifo(s) that the WorkflowFile is valid for. If the file is
             independently valid for multiple ifos it can be provided as a list.
             Ie. ['H1',L1','V1'], if the file is only valid for the combination
             of ifos (for e.g. ligolw_thinca output) then this can be supplied
@@ -441,7 +441,7 @@ class AhopeFile(File):
             A short description of the executable description, tagging
             only the program that ran this job.
         segs : glue.segment or glue.segmentlist
-            The time span that the AhopeOutFile is valid for. Note that this is
+            The time span that the WorkflowOutFile is valid for. Note that this is
             *not* the same as the data that the job that made the file reads in.
             Lalapps_inspiral jobs do not analyse the first an last 72s of the
             data that is read, and are therefore not valid at those times. If
@@ -454,12 +454,12 @@ class AhopeFile(File):
             Either supply this *and* directory *or* supply only file_url.
             If given this gives the extension at the end of the file name. The
             full file name will be inferred from the other arguments
-            following the ahope standard.
+            following the workflow standard.
         directory : string (optional, default=None)
             Either supply this *and* extension *or* supply only file_url.
             If given this gives the directory in which the file exists, or will
             exists. The file name will be inferred from the other arguments
-            following the ahope standard.
+            following the workflow standard.
         tags : list of strings (optional, default=None)
             This is a list of descriptors describing what this file is. For
             e.g. this might be ["BNSINJECTIONS" ,"LOWMASS","CAT_2_VETO"].
@@ -512,7 +512,7 @@ class AhopeFile(File):
        
         self.cache_entry = lal.CacheEntry(self.ifo_string,
                    self.tagged_description, self.segment_list.extent(), file_url)
-        self.cache_entry.ahope_file = self
+        self.cache_entry.workflow_file = self
 
         File.__init__(self, basename(self.cache_entry.path))
         self.storage_path = self.cache_entry.path
@@ -546,7 +546,7 @@ class AhopeFile(File):
     def _filename(self, ifo, description, extension, segment):
         """
         Construct the standard output filename. Should only be used internally
-        of the AhopeFile class.
+        of the WorkflowFile class.
         """        
         if extension.startswith('.'):
             extension = extension[1:]
@@ -561,13 +561,13 @@ class AhopeFile(File):
         return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start, 
                                    duration, extension)  
     
-class AhopeFileList(list):
+class WorkflowFileList(list):
     '''
-    This class holds a list of AhopeFile objects. It inherits from the
+    This class holds a list of WorkflowFile objects. It inherits from the
     built-in list class, but also allows a number of features. ONLY
-    AhopeFile instances should be within an AhopeFileList instance.
+    WorkflowFile instances should be within an WorkflowFileList instance.
     '''
-    entry_class = AhopeFile
+    entry_class = WorkflowFile
 
     def categorize_by_attr(self, attribute):
         '''
@@ -604,7 +604,7 @@ class AhopeFileList(list):
 
     def find_output(self, ifo, time):
         '''
-        Return one AhopeFile that covers the given time, or is most
+        Return one WorkflowFile that covers the given time, or is most
         appropriate for the supplied time range.
 
         Parameters
@@ -613,16 +613,16 @@ class AhopeFileList(list):
            Name of the ifo (or ifos) that the file should be valid for.
         time : int/float/LIGOGPStime or tuple containing two values
            If int/float/LIGOGPStime (or similar may of specifying one time) is
-           given, return the AhopeFile corresponding to the time. This calls
+           given, return the WorkflowFile corresponding to the time. This calls
            self.find_output_at_time(ifo,time).
-           If a tuple of two values is given, return the AhopeFile that is
+           If a tuple of two values is given, return the WorkflowFile that is
            **most appropriate** for the time range given. This calls
            self.find_output_in_range
 
         Returns
         --------
-        AhopeFile class
-           The AhopeFile that corresponds to the time/time range
+        WorkflowFile class
+           The WorkflowFile that corresponds to the time/time range
         '''
         # Determine whether I have a specific time, or a range of times
         try:
@@ -641,28 +641,28 @@ class AhopeFileList(list):
 
     def find_output_at_time(self, ifo, time):
        '''
-       Return AhopeFile that covers the given time.
+       Return WorkflowFile that covers the given time.
 
         Parameters
         -----------
         ifo : string
-           Name of the ifo (or ifos) that the AhopeFile should correspond to
+           Name of the ifo (or ifos) that the WorkflowFile should correspond to
         time : int/float/LIGOGPStime
-           Return the AhopeFiles that covers the supplied time. If no
-           AhopeFile covers the time this will return None.
+           Return the WorkflowFiles that covers the supplied time. If no
+           WorkflowFile covers the time this will return None.
 
         Returns
         --------
-        list of AhopeFile classes
-           The AhopeFiles that corresponds to the time.
+        list of WorkflowFile classes
+           The WorkflowFiles that corresponds to the time.
         '''
-       # Get list of AhopeFiles that overlap time, for given ifo
+       # Get list of WorkflowFiles that overlap time, for given ifo
        outFiles = [i for i in self if ifo in i.ifo_list and time in i.segment_list] 
        if len(outFiles) == 0:
-           # No AhopeOutFile at this time
+           # No WorkflowOutFile at this time
            return None
        elif len(outFiles) == 1:
-           # 1 AhopeOutFile at this time (good!)
+           # 1 WorkflowOutFile at this time (good!)
            return outFiles
        else:
            # Multiple output files. Currently this is valid, but we may want
@@ -672,21 +672,21 @@ class AhopeFileList(list):
 
     def find_outputs_in_range(self, ifo, current_segment, useSplitLists=False):
         """
-        Return the list of AhopeFiles that is most appropriate for the supplied
-        time range. That is, the AhopeFiles whose coverage time has the
+        Return the list of WorkflowFiles that is most appropriate for the supplied
+        time range. That is, the WorkflowFiles whose coverage time has the
         largest overlap with the supplied time range.
 
         Parameters
         -----------
         ifo : string
-           Name of the ifo (or ifos) that the AhopeFile should correspond to
+           Name of the ifo (or ifos) that the WorkflowFile should correspond to
         current_segment : glue.segment.segment
            The segment of time that files must intersect.
 
         Returns
         --------
-        AhopeFileList class
-           The list of AhopeFiles that are most appropriate for the time range
+        WorkflowFileList class
+           The list of WorkflowFiles that are most appropriate for the time range
         """
         currsegment_list = segments.segmentlist([current_segment])
 
@@ -700,8 +700,8 @@ class AhopeFileList(list):
         if not overlap_windows:
             return []
 
-        # Return the AhopeFile with the biggest overlap
-        # Note if two AhopeFile have identical overlap, the first is used
+        # Return the WorkflowFile with the biggest overlap
+        # Note if two WorkflowFile have identical overlap, the first is used
         # to define the valid segment
         overlap_windows = numpy.array(overlap_windows, dtype = int)
         segmentLst = overlap_files[overlap_windows.argmax()].segment_list
@@ -712,15 +712,15 @@ class AhopeFileList(list):
 
     def find_output_in_range(self, ifo, start, end):
         '''
-        Return the AhopeFile that is most appropriate for the supplied
-        time range. That is, the AhopeFile whose coverage time has the
-        largest overlap with the supplied time range. If no AhopeFiles
+        Return the WorkflowFile that is most appropriate for the supplied
+        time range. That is, the WorkflowFile whose coverage time has the
+        largest overlap with the supplied time range. If no WorkflowFiles
         overlap the supplied time window, will return None. 
 
         Parameters
         -----------
         ifo : string
-           Name of the ifo (or ifos) that the AhopeFile should correspond to
+           Name of the ifo (or ifos) that the WorkflowFile should correspond to
         start : int/float/LIGOGPStime 
            The start of the time range of interest.
         end : int/float/LIGOGPStime
@@ -728,34 +728,34 @@ class AhopeFileList(list):
 
         Returns
         --------
-        AhopeFile class
-           The AhopeFile that is most appropriate for the time range
+        WorkflowFile class
+           The WorkflowFile that is most appropriate for the time range
         '''
         currsegment_list = segments.segmentlist([current_segment])
 
-        # First filter AhopeFiles corresponding to ifo
+        # First filter WorkflowFiles corresponding to ifo
         outFiles = [i for i in self if ifo in i.ifo_list]
 
         if len(outFiles) == 0:
-            # No AhopeOutFiles correspond to that ifo
+            # No WorkflowOutFiles correspond to that ifo
             return None
-        # Filter AhopeOutFiles to those overlapping the given window
+        # Filter WorkflowOutFiles to those overlapping the given window
         currSeg = segments.segment([start,end])
         outFiles = [i for i in outFiles \
                                   if i.segment_list.intersects_segment(currSeg)]
 
         if len(outFiles) == 0:
-            # No AhopeOutFile overlap that time period
+            # No WorkflowOutFile overlap that time period
             return None
         elif len(outFiles) == 1:
-            # One AhopeOutFile overlaps that period
+            # One WorkflowOutFile overlaps that period
             return outFiles[0]
         else:
             overlap_windows = [abs(i.segment_list & currsegment_list) \
                                                         for i in outFiles]
-            # Return the AhopeFile with the biggest overlap
-            # Note if two AhopeFile have identical overlap, this will return
-            # the first AhopeFile in the list
+            # Return the WorkflowFile with the biggest overlap
+            # Note if two WorkflowFile have identical overlap, this will return
+            # the first WorkflowFile in the list
             overlap_windows = numpy.array(overlap_windows, dtype = int)
             return outFiles[overlap_windows.argmax()]
 
@@ -798,7 +798,7 @@ class AhopeFileList(list):
         """
         # Enforce upper case
         tag = tag.upper()
-        return AhopeFileList([i for i in self if tag in i.tags])
+        return WorkflowFileList([i for i in self if tag in i.tags])
 
     def find_output_with_ifo(self, ifo):
         """
@@ -806,7 +806,7 @@ class AhopeFileList(list):
         """
         # Enforce upper case
         ifo = ifo.upper()
-        return AhopeFileList([i for i in self if ifo in i.ifo_list])
+        return WorkflowFileList([i for i in self if ifo in i.ifo_list])
 
     def get_times_covered_by_files(self):
         """
@@ -852,7 +852,7 @@ class AhopeFileList(list):
         # Set up storage
         self._splitLists = []
         for idx in range(numSubLists):
-            self._splitLists.append(AhopeFileList([]))
+            self._splitLists.append(WorkflowFileList([]))
         
         # Sort the files
 
@@ -897,33 +897,33 @@ class AhopeFileList(list):
         
 
 
-class AhopeOutSegFile(AhopeFile):
+class WorkflowOutSegFile(WorkflowFile):
     '''
-    This class inherits from the AhopeFile class, and is designed to store
-    ahope output files containing a segment list. This is identical in
-    usage to AhopeFile except for an additional kwarg for holding the
-    segment list, if it is known at ahope run time.
+    This class inherits from the WorkflowFile class, and is designed to store
+    workflow output files containing a segment list. This is identical in
+    usage to WorkflowFile except for an additional kwarg for holding the
+    segment list, if it is known at workflow run time.
     '''
     def __init__(self, ifo, description, segment, fileUrl,
                  segment_list=None, **kwargs):
         """
-        See AhopeFile.__init__ for a full set of documentation for how to
+        See WorkflowFile.__init__ for a full set of documentation for how to
         call this class. The only thing unique and added to this class is
         the required option timeSeg, as described below:
 
         Parameters:
         ------------
         ifo : string or list (required)
-            See AhopeFile.__init__
+            See WorkflowFile.__init__
         description : string (required)
-            See AhopeFile.__init__
+            See WorkflowFile.__init__
         segment : glue.segments.segment or glue.segments.segmentlist
-            See AhopeFile.__init__
+            See WorkflowFile.__init__
         fileUrl : string (required)
-            See AhopeFile.__init__
-            FIXME: This is a kwarg in AhopeFile and should be here as well,
+            See WorkflowFile.__init__
+            FIXME: This is a kwarg in WorkflowFile and should be here as well,
             if this is removed from the explicit arguments it would allow for
-            either fileUrls or constructed file names to be used in AhopeFile.
+            either fileUrls or constructed file names to be used in WorkflowFile.
         segment_list : glue.segments.segmentlist (optional, default=None)
             A glue.segments.segmentlist covering the times covered by the
             segmentlist associated with this file. If this is the science time
@@ -932,7 +932,7 @@ class AhopeOutSegFile(AhopeFile):
             the class.
 
         """
-        AhopeFile.__init__(self, ifo, description, segment, fileUrl,
+        WorkflowFile.__init__(self, ifo, description, segment, fileUrl,
                               **kwargs)
         self.segmentList = segment_list
 
