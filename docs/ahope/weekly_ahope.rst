@@ -323,7 +323,7 @@ listing of all of the data products of the prior workflow.
 
 Select the entries for files that you would like to skip generating again and
 place that into a new file. The example below selects all the inspiral and 
-tmpltbank jobs and places their entires into a new listing called prior_data.map.::
+tmpltbank jobs and places their entries into a new listing called prior_data.map.::
 
     # Lets get the tmpltbank entries
     cat /path/to/old/run/${GPS_START_TIME}-${GPS_END_TIME}/weekly_ahope.map | grep 'TMPLTBANK' > prior_data.map
