@@ -121,7 +121,6 @@ insps = ahope.setup_matchedfltr_workflow(workflow, scienceSegs, datafinds,
 # Set up condor jobs for this stuff
 llwadd_exe = ahope.LigolwAddExecutable(workflow.cp, 'llwadd', ifo=''.join(scienceSegs.keys()),
                                    out_dir=workingDir)
-print llwadd_exe.ifo
 
 cp_exec = ahope.AhopeExecutable(workflow.cp, 'cp', out_dir=workingDir)
 
@@ -129,60 +128,65 @@ cp_exec = ahope.AhopeExecutable(workflow.cp, 'cp', out_dir=workingDir)
 si_exe_coarse = ahope.AhopeExecutable(workflow.cp, 'siclustercoarse', out_dir=workingDir)
 si_exe_fine = ahope.AhopeExecutable(workflow.cp, 'siclusterfine', out_dir=workingDir)
 
+# turn inspiral files into list where each element is a AhopeFileList
+# of jobs that were split from the same template bank via splitbank
+inspOutKeys, inspOutGroups = insps.categorize_by_attr('segment')
+
 inspstr = 'INSPIRAL'
 pageDagParents = []
-for inspOutGroup in insps:
-    ifo = inspOutGroup.ifo
-    analysis_seg = inspOutGroup.segment
+for inspOutGroup in inspOutGroups:
+    for ifo in ifos:
+        inspOutGroup = inspOutGroup.find_output_with_ifo(ifo)
+        analysis_seg = inspOutGroup.get_times_covered_by_files()[0]
 
-    # Create a cache file to hole the input to ligolw_add
-    output_name = '%s-INSPIRAL_UNCLUSTERED-%d-%d.xml.gz'\
-                   %(ifo, analysis_seg[0], abs(analysis_seg))
-    output_url = urlparse.urlunparse(['file', 'localhost', 
-                                      os.path.join(workingDir, output_name),
-                                      None, None, None])
-    llwaddFile = ahope.AhopeFile(ifo, 'LLWADD_UNCLUSTERED', analysis_seg,
-                              file_url=output_url)
+        # Create a cache file to hole the input to ligolw_add
+        output_name = '%s-INSPIRAL_UNCLUSTERED-%d-%d.xml.gz'\
+                       %(ifo, analysis_seg[0], abs(analysis_seg))
+        output_url = urlparse.urlunparse(['file', 'localhost', 
+                                          os.path.join(workingDir, output_name),
+                                          None, None, None])
+        llwaddFile = ahope.AhopeFile(ifo, 'LLWADD_UNCLUSTERED', analysis_seg,
+                                  file_url=output_url)
     
-    llwadd_node = llwadd_exe.create_node(analysis_seg, [inspOutGroup], output=llwaddFile) 
+        llwadd_node = llwadd_exe.create_node(analysis_seg, inspOutGroup, output=llwaddFile) 
 
-    llwadd_node.add_opt('--lfn-start-time', analysis_seg[0])
-    llwadd_node.add_opt('--lfn-end-time',analysis_seg[1])
-    workflow.add_node(llwadd_node)
+        llwadd_node.add_opt('--lfn-start-time', analysis_seg[0])
+        llwadd_node.add_opt('--lfn-end-time',analysis_seg[1])
+        workflow.add_node(llwadd_node)
 
-    # Finally run 30ms and 16s clustering on the combined files
-    clustered_30ms_name = output_name.replace('UNCLUSTERED',\
-                                              '30MILLISEC_CLUSTERED')
-    clustered_30ms_url = urlparse.urlunparse(['file', 'localhost',
-                                 os.path.join(workingDir, clustered_30ms_name),
-                                 None, None, None])
-    clustered_30ms_file = ahope.AhopeFile(ifo, 'LLWADD_30MS_CLUSTERED',
-                            analysis_seg, file_url=clustered_30ms_url)
-    clustered_16s_name  = output_name.replace('UNCLUSTERED', '16SEC_CLUSTERED')
-    clustered_16s_url = urlparse.urlunparse(['file', 'localhost',
-                                 os.path.join(workingDir, clustered_16s_name),
-                                 None, None, None])
-    clustered_16s_file = ahope.AhopeFile(ifo, 'LLWADD_16S_CLUSTERED',
-                            analysis_seg, file_url=clustered_16s_url)
+        # Finally run 30ms and 16s clustering on the combined files
+        clustered_30ms_name = output_name.replace('UNCLUSTERED',\
+                                                  '30MILLISEC_CLUSTERED')
+        clustered_30ms_url = urlparse.urlunparse(['file', 'localhost',
+                                     os.path.join(workingDir, clustered_30ms_name),
+                                     None, None, None])
+        clustered_30ms_file = ahope.AhopeFile(ifo, 'LLWADD_30MS_CLUSTERED',
+                                analysis_seg, file_url=clustered_30ms_url)
+        clustered_16s_name  = output_name.replace('UNCLUSTERED', '16SEC_CLUSTERED')
+        clustered_16s_url = urlparse.urlunparse(['file', 'localhost',
+                                     os.path.join(workingDir, clustered_16s_name),
+                                     None, None, None])
+        clustered_16s_file = ahope.AhopeFile(ifo, 'LLWADD_16S_CLUSTERED',
+                                analysis_seg, file_url=clustered_16s_url)
  
 
-    for cfile in [clustered_30ms_file, clustered_16s_file]:
-        cpnode = cp_exec.create_node()
-        cpnode.add_input_arg(llwaddFile)
-        cpnode.add_output_arg(cfile)
-        workflow.add_node(cpnode)
+        for cfile in [clustered_30ms_file, clustered_16s_file]:
+            cpnode = cp_exec.create_node()
+            cpnode.add_input_arg(llwaddFile)
+            cpnode.add_output_arg(cfile)
+            workflow.add_node(cpnode)
 
-        if cfile == clustered_16s_file:
-            sinode = si_exe_coarse.create_node()
-        else:
-            sinode = si_exe_fine.create_node()
+            if cfile == clustered_16s_file:
+                sinode = si_exe_coarse.create_node()
+            else:
+                sinode = si_exe_fine.create_node()
 
-        # FIXME: this node overwrites the input file. Better
-        # that this take command line options, remove the cp job and write to
-        # a different file
-        sinode.add_input_arg(cfile)
-        workflow.add_node(sinode)
-        pageDagParents.append(sinode)
+            # FIXME: this node overwrites the input file. Better
+            # that this take command line options, remove the cp job and write to
+            # a different file
+            sinode.add_input_arg(cfile)
+            workflow.add_node(sinode)
+            pageDagParents.append(sinode)
 
 # Now we construct the page_conf.txt for the daily_ihope_page code
 pageConts = []
@@ -209,10 +213,10 @@ pageConts.append('veto_definer_file = %s' \
 pageConts.append('# source dir with triggers')
 pageConts.append('trigger_dir = %s' %(workingDir)) 
 pageConts.append('# temp directory')
-pageConts.append('tmp_dir = %s' %(workingDir))
-pageConts.append('# target directory')
 htmlBaseDir = cp.get('ahope','ahope-html-basedir')
 htmlOutDir = os.path.join(htmlBaseDir, monthName, dayName)
+pageConts.append('tmp_dir = %s' %(htmlOutDir))
+pageConts.append('# target directory')
 pageConts.append('out_dir = %s' %(htmlOutDir))
 pageText = '\n'.join(pageConts)
 pageConfFile = os.path.join(workingDir, 'page_conf.txt')
@@ -234,16 +238,17 @@ ihopePageCmd.append(','.join(ifos))
 ahope.make_external_call(ihopePageCmd, out_dir=os.path.join(workingDir,'logs'),\
                          out_basename='daily_ihope_page_daggen')
 
-# Add this to the workflow and make it a child of all cluster jobs
+# Add this to the workflow
 daily_dag_name = 'daily_page.dag'
-daily_dag_path = os.path.join(workingDir, daily_dag_name)
+daily_dag_path = os.path.join(htmlOutDir, daily_dag_name)
 dailyPageNode = dax.DAG(daily_dag_name)
 dailyPageDagFile = dax.File(daily_dag_name)
-dailyPageNode.addProfile(dax.Profile("dagman", "DIR", workingDir))
+dailyPageNode.addProfile(dax.Profile("dagman", "DIR", htmlOutDir))
 dailyPageDagFile.PFN(daily_dag_path, site='local')
 workflow._adag.addFile(dailyPageDagFile)
 workflow._adag.addDAG(dailyPageNode)
 
+# Make daily_page.dag child of all clusering jobs
 for job in pageDagParents:
     dep = dax.Dependency(parent=job._dax_node, child=dailyPageNode)
     workflow._adag.addDependency(dep)
