@@ -30,7 +30,8 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 import Pegasus.DAX3 as dax
 import os, sys, subprocess, logging, math, string, urlparse, ConfigParser
 import numpy
-from itertools import combinations
+from itertools import combinations, groupby
+from operator import attrgetter
 from os.path import splitext, basename, isfile
 import lal as lalswig
 from glue import lal
@@ -567,6 +568,39 @@ class AhopeFileList(list):
     AhopeFile instances should be within an AhopeFileList instance.
     '''
     entry_class = AhopeFile
+
+    def categorize_by_attr(self, attribute):
+        '''
+        Function to categorize an AhopeFileList by an AhopeFile object
+        attribute (eg. 'segment', 'ifo', 'description').
+
+        Parameters
+        -----------
+        attribute : string
+           AhopeFile object attribute to categorize AhopeFileList
+
+        Returns
+        --------
+        keys : list
+           A list of values for an attribute
+        groups : list
+           A list of AhopeFileLists
+        '''
+
+        # need to sort AhopeFileList otherwise using groupby without sorting does
+        # 'AAABBBCCDDAABB' -> ['AAA','BBB','CC','DD','AA','BB']
+        # and using groupby with sorting does
+        # 'AAABBBCCDDAABB' -> ['AAAAA','BBBBB','CC','DD']
+        flist = sorted(self, key=attrgetter(attribute), reverse=True)
+
+        # use groupby to create lists
+        groups = []
+        keys = []
+        for k, g in groupby(flist, attrgetter(attribute)):
+            groups.append(AhopeFileList(g))
+            keys.append(k)
+
+        return keys, groups
 
     def find_output(self, ifo, time):
         '''
