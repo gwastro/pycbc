@@ -23,7 +23,7 @@
 #
 
 """
-This module is responsible for setting up the time slide files for ahope
+This module is responsible for setting up the time slide files for
 workflows. For details about this module and its capabilities see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
@@ -32,21 +32,21 @@ import os
 import logging
 import urllib
 from glue import segments
-from pycbc.ahope.ahope_utils import *
-from pycbc.ahope.jobsetup_utils import *
+from pycbc.workflow.workflow_utils import *
+from pycbc.workflow.jobsetup_utils import *
 
 def setup_timeslides_workflow(workflow, output_dir=None, tags=[],
                               timeSlideSectionName='ligolw_tisi'):
     '''
-    Setup generation of time_slide input files in the ahope workflow.
+    Setup generation of time_slide input files in the workflow.
     Currently used
     only with ligolw_tisi to generate files containing the list of slides to be
     performed in each time slide job.
 
     Parameters
     -----------
-    Workflow : ahope.Workflow
-        The ahope workflow instance that the coincidence jobs will be added to.
+    Workflow : workflow.Workflow
+        The workflow instance that the coincidence jobs will be added to.
     output_dir : path
         The directory in which output files will be stored.
     tags : list of strings (optional, default = [])
@@ -59,7 +59,7 @@ def setup_timeslides_workflow(workflow, output_dir=None, tags=[],
         the code at run time.
     Returns
     --------
-    timeSlideOuts : ahope.AhopeFileList
+    timeSlideOuts : workflow.WorkflowFileList
         The list of time slide files created by this call.
     '''
     logging.info("Entering time slides setup module.")
@@ -75,7 +75,7 @@ def setup_timeslides_workflow(workflow, output_dir=None, tags=[],
     timeSlideSections = [sec for sec in all_sec if sec.startswith('tisi-')]
     timeSlideTags = [(sec.split('-')[-1]).upper() for sec in timeSlideSections]
 
-    timeSlideOuts = AhopeFileList([])
+    timeSlideOuts = WorkflowFileList([])
 
     # FIXME: Add ability to specify different exes
 
@@ -83,11 +83,11 @@ def setup_timeslides_workflow(workflow, output_dir=None, tags=[],
     for timeSlideTag in timeSlideTags:
         currTags = tags + [timeSlideTag]
 
-        timeSlideMethod = workflow.cp.get_opt_tags("ahope-timeslides",
+        timeSlideMethod = workflow.cp.get_opt_tags("workflow-timeslides",
                                                  "timeslides-method", currTags)
 
         if timeSlideMethod in ["IN_WORKFLOW", "AT_RUNTIME"]:
-            timeSlideExeTag = workflow.cp.get_opt_tags("ahope-timeslides",
+            timeSlideExeTag = workflow.cp.get_opt_tags("workflow-timeslides",
                                                     "timeslides-exe", currTags)
             timeSlideExe = select_generic_executable(workflow, timeSlideExeTag)
             timeSlideJob = timeSlideExe(workflow.cp, timeSlideExeTag, ifos=ifo_string,
@@ -99,11 +99,11 @@ def setup_timeslides_workflow(workflow, output_dir=None, tags=[],
                 workflow.add_node(timeSlideNode)
             tisiOutFile = timeSlideNode.output_files[0]
         elif timeSlideMethod == "PREGENERATED":
-            timeSlideFilePath = workflow.cp.get_opt_tags("ahope-timeslides",
+            timeSlideFilePath = workflow.cp.get_opt_tags("workflow-timeslides",
                                       "timeslides-pregenerated-file", currTags)
             file_url = urlparse.urljoin('file:', urllib.pathname2url(\
                                                   timeSlideFilePath))
-            tisiOutFile = AhopeFile(ifoString, 'PREGEN_TIMESLIDES',
+            tisiOutFile = WorkflowFile(ifoString, 'PREGEN_TIMESLIDES',
                                     fullSegment, file_url, tags=currTags)
 
         timeSlideOuts.append(tisiOutFile)
