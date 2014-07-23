@@ -10,6 +10,8 @@ Weekly ahope is a tool used to analyse data from multiple detectors independentl
 
 The output is a webpage containing the plots that can be used to understand the results of the analysis
 
+.. _howtorunahope:
+
 =======================
 How to run weekly ahope
 =======================
@@ -192,6 +194,8 @@ Then you can generate the workflow::
                                               ahope:pipedown-log-path:${LOGPATH} \
                                               ahope:pipedown-tmp-space:${PIPEDOWNTMPSPACE}
 
+.. _weeklyahopeplan:
+
 -----------------------------------------
 Planning and Submitting the Workflow
 -----------------------------------------
@@ -290,4 +294,64 @@ The Invocation Breakdown Chart section gives a snapshot of the workflow. You can
 The Workflow Execution Gantt Chart section breaks down the workflow how long it took to run each job. You can click on a job in the gantt chart and it will report the job name and runtime.
 
 The Host Over Time Chart section displays a gantt chart where you can see what jobs in the workflow ran on a given machine.
+
+.. _weeklyahopereuse:
+
+================================
+Reuse of workflow file products
+================================
+
+One of the features of  Pegasus is to reuse the data products of prior runs.
+This can be used to expand an analysis or recover a run with mistaken settings without
+duplicating work.
+
+-----------------------------------------
+Generate the full workflow you want to do
+-----------------------------------------
+
+First generate the full workflow for the
+run you would like to do as normal, following the instructions of this page from :ref:`howtorunahope`,
+but stop before planning the workflow with plan.sh in :ref:`weeklyahopeplan`.
+
+-----------------------------------------------------
+Select the files you want to reuse from the prior run
+-----------------------------------------------------
+
+Locate the directory of the run that you would like to reuse. There is a file
+called ${GPS_START_TIME}-${GPS_END_TIME}/weekly_ahope.map, that contains a 
+listing of all of the data products of the prior workflow. 
+
+Select the entries for files that you would like to skip generating again and
+place that into a new file. The example below selects all the inspiral and 
+tmpltbank jobs and places their entires into a new listing called prior_data.map.::
+
+    # Lets get the tmpltbank entries
+    cat /path/to/old/run/${GPS_START_TIME}-${GPS_END_TIME}/weekly_ahope.map | grep 'TMPLTBANK' > prior_data.map
+    
+    # Add in the inspiral  files
+    cat /path/to/old/run/${GPS_START_TIME}-${GPS_END_TIME}/weekly_ahope.map | grep 'INSPIRAL' >> prior_data.map
+
+.. note::
+
+    You can include files in the prior data listing that wouldn't be generated anyway by your new run. These are simply
+    ignored.
+
+Place this file in the ${GPS_START_TIME}-${GPS_END_TIME}/  directory of your new run.
+
+-----------------------------------------------------------
+Tell pegasus about these files during the workflow planning
+-----------------------------------------------------------
+
+In base directory of your new run, modify the pegasus.conf file to include the following
+lines, which tells pegasus that it can use the data produces in the file we just created.::
+
+     pegasus.catalog.replica=File
+     pegasus.catalog.replica.file=prior_data.map 
+
+--------
+Run
+--------
+
+Follow the :ref:`weeklyahopeplan` instructions to now plan and submit your reduced
+workflow.
 
