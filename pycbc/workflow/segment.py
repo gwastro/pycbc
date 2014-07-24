@@ -34,8 +34,8 @@ import logging
 import urllib
 from glue import segments, pipeline
 from glue.ligolw import utils, table, lsctables, ligolw
-from pycbc.workflow.workflow_utils import *
-from pycbc.workflow.jobsetup_utils import *
+from pycbc.workflow.workflow import *
+from pycbc.workflow.jobsetup import *
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
         pass

@@ -33,8 +33,8 @@ import os
 import logging
 import urllib
 import pycbc.workflow
-from pycbc.workflow.jobsetup_utils import *
-from pycbc.workflow.matchedfltr_utils import *
+from pycbc.workflow.jobsetup import *
+from pycbc.workflow.matched_filter import *
 from glue import segments
 
 def setup_injection_workflow(workflow, output_dir=None,

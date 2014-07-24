@@ -34,8 +34,8 @@ from __future__ import division
 import os
 import os.path
 from glue import segments
-from pycbc.workflow.workflow_utils import *
-from pycbc.workflow.jobsetup_utils import *
+from pycbc.workflow.workflow import *
+from pycbc.workflow.jobsetup import *
 
 def setup_postprocessing_preparation(workflow, triggerFiles, output_dir,
                                      tags=[], **kwargs):

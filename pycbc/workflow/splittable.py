@@ -33,8 +33,8 @@ from __future__ import division
 
 import os
 import logging
-from pycbc.workflow.workflow_utils import * 
-from pycbc.workflow.jobsetup_utils import *
+from pycbc.workflow.workflow import * 
+from pycbc.workflow.jobsetup import *
 
 def select_splitfilejob_instance(curr_exe):
     """

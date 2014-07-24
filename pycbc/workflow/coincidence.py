@@ -34,8 +34,8 @@ import re
 import os
 import os.path
 from glue import segments
-from pycbc.workflow.workflow_utils import *
-from pycbc.workflow.jobsetup_utils import *
+from pycbc.workflow.workflow import *
+from pycbc.workflow.jobsetup import *
 from pylal import ligolw_cafe, ligolw_tisi
 
 def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,

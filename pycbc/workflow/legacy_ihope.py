@@ -34,7 +34,7 @@ import logging
 import urlparse
 from glue import pipeline
 from glue import segments
-from workflow_utils import WorkflowNode, WorkflowExecutable, WorkflowFile
+from pycbc.workflow.workflow import WorkflowNode, WorkflowExecutable, WorkflowFile
 
 def legacy_get_valid_times(self):
     """

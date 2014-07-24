@@ -31,8 +31,8 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 from __future__ import division
 
 import os
-from pycbc.workflow.workflow_utils import * 
-from pycbc.workflow.jobsetup_utils import *
+from pycbc.workflow.workflow import * 
+from pycbc.workflow.jobsetup import *
 
 def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
                                tmplt_banks, output_dir=None,

@@ -30,7 +30,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 
 import math
 from glue import segments
-from pycbc.workflow.workflow_utils import *
+from pycbc.workflow.workflow import *
 from pycbc.workflow.legacy_ihope import *
 
 def select_tmpltbank_class(curr_exe):

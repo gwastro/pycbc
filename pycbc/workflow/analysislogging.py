@@ -29,8 +29,8 @@ times used within the workflow, etc.
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
-from pycbc.workflow.workflow_utils import *
-from pycbc.workflow.jobsetup_utils import *
+from pycbc.workflow.workflow import *
+from pycbc.workflow.jobsetup import *
 from glue.ligolw import ligolw, table, utils
 from glue.ligolw.utils import process
 from glue.segmentdb import segmentdb_utils

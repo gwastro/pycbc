@@ -32,8 +32,8 @@ import os
 import logging
 import urllib
 from glue import segments
-from pycbc.workflow.workflow_utils import *
-from pycbc.workflow.jobsetup_utils import *
+from pycbc.workflow.workflow import *
+from pycbc.workflow.jobsetup import *
 
 def setup_timeslides_workflow(workflow, output_dir=None, tags=[],
                               timeSlideSectionName='ligolw_tisi'):
