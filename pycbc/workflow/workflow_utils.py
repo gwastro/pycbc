@@ -38,7 +38,8 @@ from glue import lal
 from glue import segments, pipeline
 from configparserutils import WorkflowConfigParser
 import pylal.dq.dqSegmentUtils as dqUtils
-from pycbc.workflow.workflow import Workflow, Node, File, Executable
+from pycbc.workflow.pegasus_workflow import Node, File, Executable
+from pycbc.workflow.pegasus_workflow import Workflow as PegasusWorkflow
 import copy
 
 # workflow should never be using the glue LIGOTimeGPS class, override this with
@@ -247,16 +248,16 @@ class WorkflowExecutable(Executable):
         """
         return WorkflowNode(self)
 
-class CBCWorkflow(Workflow):
+class Workflow(PegasusWorkflow):
     """
-    This class manages a CBC style workflow. It provides convenience 
+    This class manages a pycbc workflow. It provides convenience 
     functions for finding input files using time and keywords. It can also
     generate cache files from the inputs. It makes heavy use of the
     pipeline.CondorDAG class, which is instantiated under self.dag.
     """
     def __init__(self, args, name):
         """
-        Create an CBC workflow
+        Create a pycbc workflow
         
         Parameters
         ----------
