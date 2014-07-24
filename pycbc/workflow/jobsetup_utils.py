@@ -24,14 +24,14 @@
 
 """
 This library code contains functions and classes that are used to set up
-and add jobs/nodes to an ahope workflow. For details about ahope see here:
+and add jobs/nodes to a pycbc workflow. For details about pycbc.workflow see:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 
 import math
 from glue import segments
-from pycbc.ahope.ahope_utils import *
-from pycbc.ahope.legacy_ihope import *
+from pycbc.workflow.workflow_utils import *
+from pycbc.workflow.legacy_ihope import *
 
 def select_tmpltbank_class(curr_exe):
     """
@@ -41,14 +41,14 @@ def select_tmpltbank_class(curr_exe):
     Parameters
     ----------
     curr_exe : string
-        The name of the AhopeExecutable that is being used for generating
+        The name of the WorkflowExecutable that is being used for generating
         template banks.
 
     Returns
     --------
     exe_class : class
         A class that holds the utility functions appropriate for the given
-        AhopeExecutable. This class **must** have a create_job method
+        WorkflowExecutable. This class **must** have a create_job method
         and the job returned by this **must** contain
         * job.get_valid_times(ifo, )
         * job.create_node()
@@ -63,17 +63,17 @@ def select_tmpltbank_class(curr_exe):
         return exe_to_class_map[curr_exe]
     else:
         raise NotImplementedError(
-            "No class exists for AhopeExecutable %s" % curr_exe)
+            "No class exists for WorkflowExecutable %s" % curr_exe)
 
 def select_matchedfilter_class(curr_exe):
     """
     This function returns an instance of the class that is appropriate for
-    matched-filtering within ahope.
+    matched-filtering within workflow.
     
     Parameters
     ----------
     curr_exe : string
-        The name of the AhopeExecutable that is being used.
+        The name of the WorkflowExecutable that is being used.
     curr_section : string
         The name of the section storing options for this executble
 
@@ -81,7 +81,7 @@ def select_matchedfilter_class(curr_exe):
     --------
     Instanced class : exe_class
         An instance of the class that holds the utility functions appropriate
-        for the given AhopeExecutable. This class **must** contain
+        for the given WorkflowExecutable. This class **must** contain
         * exe_class.create_job()
         and the job returned by this **must** contain
         * job.get_valid_times(ifo, )
@@ -94,19 +94,19 @@ def select_matchedfilter_class(curr_exe):
         exe_class = PyCBCInspiralExecutable
     else:
         # Should we try some sort of default class??
-        err_string = "No class exists for AhopeExecutable %s" %(curr_exe,)
+        err_string = "No class exists for WorkflowExecutable %s" %(curr_exe,)
         raise NotImplementedError(err_string)        
     return exe_class
 
 def select_splitfilejob_instance(curr_exe, curr_section):
     """
     This function returns an instance of the class that is appropriate for
-    splitting an output file up within ahope (for e.g. splitbank).
+    splitting an output file up within workflow (for e.g. splitbank).
     
     Parameters
     ----------
     curr_exe : string
-        The name of the AhopeExecutable that is being used.
+        The name of the WorkflowExecutable that is being used.
     curr_section : string
         The name of the section storing options for this executble
 
@@ -114,7 +114,7 @@ def select_splitfilejob_instance(curr_exe, curr_section):
     --------
     Instanced class : exe_class
         An instance of the class that holds the utility functions appropriate
-        for the given AhopeExecutable. This class **must** contain
+        for the given WorkflowExecutable. This class **must** contain
         * exe_class.create_job()
         and the job returned by this **must** contain
         * job.create_node()
@@ -127,7 +127,7 @@ def select_splitfilejob_instance(curr_exe, curr_section):
         exe_class = PycbcSplitBankExecutable(curr_section)
     else:
         # Should we try some sort of default class??
-        err_string = "No class exists for AhopeExecutable %s" %(curr_exe,)
+        err_string = "No class exists for WorkflowExecutable %s" %(curr_exe,)
         raise NotImplementedError(errString)
 
     return exe_class
@@ -139,24 +139,24 @@ def select_generic_executable(workflow, exe_tag):
     into one of the select_XXX_instance functions above. IE. not a matched
     filter instance, or a template bank instance. Such specialized instances
     require extra setup. The only requirements here is that we can run
-    create_job on the AhopeExecutable instance, and create_node on the resulting
+    create_job on the WorkflowExecutable instance, and create_node on the resulting
     Job class.
 
     Parameters
     ----------
-    workflow : ahope.Workflow instance
-        The ahope workflow instance.
+    workflow : workflow.Workflow instance
+        The workflow instance.
 
     exe_tag : string
-        The name of the section storing options for this AhopeExecutable and the
-        option giving the AhopeExecutable path in the [AhopeExecutables] section.
+        The name of the section storing options for this WorkflowExecutable and the
+        option giving the WorkflowExecutable path in the [WorkflowExecutables] section.
 
 
     Returns
     --------
-    exe_class : ahope.AhopeExecutable sub-class
+    exe_class : workflow.WorkflowExecutable sub-class
         The class that holds the utility functions appropriate
-        for the given AhopeExecutable. This class this **must** contain
+        for the given WorkflowExecutable. This class this **must** contain
         * exe.create_node()
     """
     exe_path = workflow.cp.get("executables", exe_tag)
@@ -181,7 +181,7 @@ def select_generic_executable(workflow, exe_tag):
         exe_class = SQLInOutExecutable
     else:
         # Should we try some sort of default class??
-        err_string = "No class exists for AhopeExecutable %s" %(exe_name,)
+        err_string = "No class exists for WorkflowExecutable %s" %(exe_name,)
         raise NotImplementedError(err_string)
 
     return exe_class
@@ -211,26 +211,26 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
 
     Parameters
     -----------
-    workflow: ahope.Workflow
+    workflow: workflow.Workflow
         An instanced class that manages the constructed workflow.
     ifo : string
         The name of the ifo to set up the jobs for
-    out_files : ahope.AhopeFileList
-        The AhopeFileList containing the list of jobs. Jobs will be appended
+    out_files : workflow.WorkflowFileList
+        The WorkflowFileList containing the list of jobs. Jobs will be appended
         to this list, and it does not need to be empty when supplied.
-    curr_exe_job : ahope.Job
+    curr_exe_job : workflow.Job
         An instanced of the PyCBC Job class that has a get_valid times method.
     science_segs : glue.segments.segmentlist
         The list of times that the jobs should cover
-    datafind_outs : ahope.AhopeFileList
+    datafind_outs : workflow.WorkflowFileList
         The file list containing the datafind files.
     output_dir : path string
         The directory where data products will be placed.
-    parents : ahope.AhopeFileList (optional, kwarg, default=None)
-        The AhopeFileList containing the list of jobs that are parents to
+    parents : workflow.WorkflowFileList (optional, kwarg, default=None)
+        The WorkflowFileList containing the list of jobs that are parents to
         the one being set up.
     link_job_instance : Job instance (optional),
-        Coordinate the valid times with another AhopeExecutable.
+        Coordinate the valid times with another WorkflowExecutable.
     allow_overlap : boolean (optional, kwarg, default = True)
         If this is set the times that jobs are valid for will be allowed to
         overlap. This may be desired for template banks which may have some
@@ -240,13 +240,13 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
     compatibility_mode : boolean (optional,  kwarg, default = False)
         If given the jobs will be tiled in the same method as used in inspiral
         hipe. This requires that link_job_instance is also given. If not given
-        ahope's methods are used.
+        workflow's methods are used.
 
     Returns
     --------
-    out_files : ahope.AhopeFileList
+    out_files : workflow.WorkflowFileList
         A list of the files that will be generated by this step in the
-        ahope workflow.
+        workflow.
     """
 
     if compatibility_mode and not link_job_instance:
@@ -255,7 +255,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
 
     cp = workflow.cp
     
-    # Set up the condorJob class for the current AhopeExecutable
+    # Set up the condorJob class for the current WorkflowExecutable
     data_length, valid_chunk = curr_exe_job.get_valid_times()
     
     # Begin by getting analysis start and end, and start and end of time
@@ -335,7 +335,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                     tag = []
                 # To ensure output file uniqueness I add a tag
                 # We should generate unique names automatically, but it is a 
-                # pain until we can set the output names for all AhopeExecutables              
+                # pain until we can set the output names for all WorkflowExecutables              
                 node = curr_exe_job.create_node(job_data_seg, job_valid_seg, 
                                                 parent=parent,
                                                 dfParents=curr_dfouts, 
@@ -362,7 +362,7 @@ def identify_needed_data(curr_exe_job, link_job_instance=None):
 
     Parameters
     -----------
-    curr_exe_job : ahope.Job
+    curr_exe_job : workflow.Job
         An instanced of the PyCBC Job class that has a get_valid times method.
     link_job_instance : Job instance (optional),
         Coordinate the valid times with another executable.
@@ -426,7 +426,7 @@ def identify_needed_data(curr_exe_job, link_job_instance=None):
 
 
     if data_loss < 0:
-        raise ValueError("Ahope needs fixing! Please contact a developer")
+        raise ValueError("pycbc.workflow.jobsetup needs fixing! Please contact a developer")
 
     return data_length, valid_chunk, valid_length
 
@@ -477,12 +477,12 @@ class JobSegmenter(object):
         if self.compatibility_mode:
             return self.get_valid_times_for_job_legacy(num_job)
         else:
-           return self.get_valid_times_for_job_ahope(num_job, 
+           return self.get_valid_times_for_job_workflow(num_job, 
                                                    allow_overlap=allow_overlap)
 
-    def get_valid_times_for_job_ahope(self, num_job, allow_overlap=True):
+    def get_valid_times_for_job_workflow(self, num_job, allow_overlap=True):
         """
-        Get the times for which the job num_job will be valid, using ahope's
+        Get the times for which the job num_job will be valid, using workflow's
         method.
         """
         # small factor of 0.0001 to avoid float round offs causing us to
@@ -504,7 +504,7 @@ class JobSegmenter(object):
             upper_boundary = int(upper_boundary + 0.0001)
             if lower_boundary < job_valid_seg[0] or \
                     upper_boundary > job_valid_seg[1]:
-                err_msg = ("Ahope is attempting to generate output "
+                err_msg = ("Workflow is attempting to generate output "
                           "from a job at times where it is not valid.")
                 raise ValueError(err_msg)
             job_valid_seg = segments.segment([lower_boundary,
@@ -535,10 +535,10 @@ class JobSegmenter(object):
         if self.compatibility_mode:
             return self.get_data_times_for_job_legacy(num_job)
         else:
-           return self.get_data_times_for_job_ahope(num_job)
+           return self.get_data_times_for_job_workflow(num_job)
 
 
-    def get_data_times_for_job_ahope(self, num_job):
+    def get_data_times_for_job_workflow(self, num_job):
         """
         Get the data that this job will need to read in.
         """
@@ -591,12 +591,12 @@ class JobSegmenter(object):
 
         return job_data_seg
 
-class PyCBCInspiralExecutable(AhopeExecutable):
+class PyCBCInspiralExecutable(WorkflowExecutable):
     """
-    The class used to create jobs for pycbc_inspiral AhopeExecutable.
+    The class used to create jobs for pycbc_inspiral WorkflowExecutable.
     """
     def __init__(self, cp, exe_name, ifo=None, out_dir=None, injection_file=None, tags=[]):
-        AhopeExecutable.__init__(self, cp, exe_name, None, ifo, out_dir, tags=tags)
+        WorkflowExecutable.__init__(self, cp, exe_name, None, ifo, out_dir, tags=tags)
         self.cp = cp
         self.set_memory(2000)
         self.injection_file = injection_file
@@ -611,7 +611,7 @@ class PyCBCInspiralExecutable(AhopeExecutable):
                 self.num_threads = stxt.split(':')[1]
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
-        node = AhopeNode(self)
+        node = WorkflowNode(self)
         pad_data = int(self.get_opt('pad-data'))
         if pad_data is None:
             raise ValueError("The option pad-data is a required option of "
@@ -659,7 +659,7 @@ class PyCBCInspiralExecutable(AhopeExecutable):
         # FIXME: IAN. I'm not happy about analysis_length being buried here.
         #        Maybe this should be something read in at the
         #        matchedfilter_utils level, and acted on *if* possible.
-        analysis_length = int(self.cp.get('ahope-matchedfilter',
+        analysis_length = int(self.cp.get('workflow-matchedfilter',
                                           'analysis-length'))
         pad_data = int(self.get_opt( 'pad-data'))
         start_pad = int(self.get_opt( 'segment-start-pad'))
@@ -670,20 +670,20 @@ class PyCBCInspiralExecutable(AhopeExecutable):
         end = data_length - pad_data - end_pad
         return data_length, segments.segment(start, end)
 
-class PyCBCTmpltbankExecutable(AhopeExecutable):
+class PyCBCTmpltbankExecutable(WorkflowExecutable):
     """
-    The class used to create jobs for pycbc_geom_nonspin_bank AhopeExecutable and
-    any other AhopeExecutables using the same command line option groups.
+    The class used to create jobs for pycbc_geom_nonspin_bank WorkflowExecutable and
+    any other WorkflowExecutables using the same command line option groups.
     """
     def __init__(self, cp, exe_name, ifo=None, out_dir=None,
                  tags=[], write_psd=False):
-        AhopeExecutable.__init__(self, cp, exe_name, 'vanilla', ifo, out_dir, tags=tags)
+        WorkflowExecutable.__init__(self, cp, exe_name, 'vanilla', ifo, out_dir, tags=tags)
         self.cp = cp
         self.set_memory(2000)
         self.write_psd = write_psd
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
-        node = AhopeNode(self)
+        node = WorkflowNode(self)
 
         if not dfParents:
             raise ValueError("%s must be supplied with data file(s)"
@@ -720,10 +720,10 @@ class PyCBCTmpltbankExecutable(AhopeExecutable):
 
         Returns
         --------
-        node : ahope.Node
+        node : workflow.Node
             The instance corresponding to the created node.
         """
-        node = AhopeNode(self)
+        node = WorkflowNode(self)
 
         # Set the output file
         # Add the PSD file if needed
@@ -736,7 +736,7 @@ class PyCBCTmpltbankExecutable(AhopeExecutable):
 
     def get_valid_times(self):
         pad_data = int(self.get_opt( 'pad-data'))
-        analysis_length = int(self.cp.get('ahope-tmpltbank', 'analysis-length'))
+        analysis_length = int(self.cp.get('workflow-tmpltbank', 'analysis-length'))
         
         #FIXME this should not be hard coded 
         data_length = analysis_length + pad_data * 2
@@ -744,29 +744,29 @@ class PyCBCTmpltbankExecutable(AhopeExecutable):
         end = data_length - pad_data
         return data_length, segments.segment(start, end)
 
-class LigoLWCombineSegsExecutable(AhopeExecutable):
+class LigoLWCombineSegsExecutable(WorkflowExecutable):
     """ 
     This class is used to create nodes for the ligolw_combine_segments 
-    AhopeExecutable
+    WorkflowExecutable
     """
     def create_node(self, valid_seg, veto_files, segment_name):
-        node = AhopeNode(self)
+        node = WorkflowNode(self)
         node.add_opt('--segment-name', segment_name)
         for fil in veto_files:
             node.add_input_arg(fil)   
         node.new_output_file_opt(valid_seg, '.xml', '--output')      
         return node
 
-class LigolwAddExecutable(AhopeExecutable):
+class LigolwAddExecutable(WorkflowExecutable):
     """
-    The class used to create nodes for the ligolw_add AhopeExecutable.
+    The class used to create nodes for the ligolw_add WorkflowExecutable.
     """
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
-        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        WorkflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
 
     def create_node(self, jobSegment, input_files, output=None, tags=[]):
-        node = AhopeNode(self)
+        node = WorkflowNode(self)
 
         # Very few options to ligolw_add, all input files are given as a long
         # argument list. If this becomes unwieldy we could dump all these files
@@ -786,19 +786,19 @@ class LigolwAddExecutable(AhopeExecutable):
             node.new_output_file_opt(jobSegment, '.xml.gz', '--output', tags=tags)
         return node
 
-class LigolwSSthincaExecutable(AhopeExecutable):
+class LigolwSSthincaExecutable(WorkflowExecutable):
     """
     The class responsible for making jobs for ligolw_sstinca.
     """
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  dqVetoName=None, tags=[]):
-        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        WorkflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
         if dqVetoName:
             self.add_opt("--vetoes-name", dqVetoName)
 
     def create_node(self, jobSegment, coincSegment, inputFile, tags=[]):
-        node = AhopeNode(self)
+        node = WorkflowNode(self)
         node.add_input_arg(inputFile)
 
         # Add the start/end times
@@ -812,7 +812,7 @@ class LigolwSSthincaExecutable(AhopeExecutable):
         node.add_opt('--coinc-end-time-segment', segString)
 
         # FIXME: This must match the *actual* output name!
-        outFile = AhopeFile(self.ifo, self.name, jobSegment,
+        outFile = WorkflowFile(self.ifo, self.name, jobSegment,
                          extension='.xml.gz', directory=self.out_dir,
                          tags=self.tags+tags)
 
@@ -820,16 +820,16 @@ class LigolwSSthincaExecutable(AhopeExecutable):
 
         return node
 
-class PycbcSqliteSimplifyExecutable(AhopeExecutable):
+class PycbcSqliteSimplifyExecutable(WorkflowExecutable):
     """
     The class responsible for making jobs for pycbc_sqlite_simplify.
     """
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
-        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        WorkflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
         
     def create_node(self, job_segment, inputFiles, injFile=None, injString=None):
-        node = AhopeNode(self)
+        node = WorkflowNode(self)
         if injFile and not injString:
             raise ValueError("injString needed if injFile supplied.")
         for file in inputFiles:
@@ -841,16 +841,16 @@ class PycbcSqliteSimplifyExecutable(AhopeExecutable):
                                  tags=self.tags) 
         return node
 
-class SQLInOutExecutable(AhopeExecutable):
+class SQLInOutExecutable(WorkflowExecutable):
     """
     The class responsible for making jobs for SQL codes taking one input and
     one output.
     """
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
-        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        WorkflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
 
     def create_node(self, job_segment, inputFile):
-        node = AhopeNode(self)
+        node = WorkflowNode(self)
         node.add_input_opt('--input', inputFile)
         node.new_output_file_opt(job_segment, '.sqlite', '--output',
                                  tags=self.tags)
@@ -861,19 +861,19 @@ class ComputeDurationsExecutable(SQLInOutExecutable):
     The class responsible for making jobs for pycbc_compute_durations.
     """
     def create_node(self, job_segment, input_file, summary_xml_file):
-        node = AhopeNode(self)
+        node = WorkflowNode(self)
         node.add_input_opt('--input', input_file)
         node.add_input_opt('--segment-file', summary_xml_file)
         node.new_output_file_opt(job_segment, '.sqlite', '--output',
                                  tags=self.tags)
         return node
 
-class LalappsInspinjExecutable(AhopeExecutable):
+class LalappsInspinjExecutable(WorkflowExecutable):
     """
-    The class used to create jobs for the lalapps_inspinj AhopeExecutable.
+    The class used to create jobs for the lalapps_inspinj WorkflowExecutable.
     """
     def create_node(self, segment):
-        node = AhopeNode(self)
+        node = WorkflowNode(self)
         
         if self.get_opt('write-compress') is not None:
             ext = '.xml.gz'
@@ -885,23 +885,23 @@ class LalappsInspinjExecutable(AhopeExecutable):
         node.new_output_file_opt(segment, '.xml', '--output')
         return node
 
-class PycbcTimeslidesExecutable(AhopeExecutable):
+class PycbcTimeslidesExecutable(WorkflowExecutable):
     """
-    The class used to create jobs for the pycbc_timeslides AhopeExecutable.
+    The class used to create jobs for the pycbc_timeslides WorkflowExecutable.
     """
     def create_node(self, segment):
-        node = AhopeNode(self)
+        node = WorkflowNode(self)
 
         node.new_output_file_opt(segment, '.xml.gz', '--output-files')
         return node
 
-class PycbcSplitBankExecutable(AhopeExecutable):
+class PycbcSplitBankExecutable(WorkflowExecutable):
     """
     The class responsible for creating jobs for pycbc_splitbank.
     """
     def __init__(self, cp, exe_name, num_banks,
                  ifo=None, out_dir=None, tags=[], universe=None):
-        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
+        WorkflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.num_banks = int(num_banks)
 
     def create_node(self, bank):
@@ -910,26 +910,26 @@ class PycbcSplitBankExecutable(AhopeExecutable):
 
         Parameters
         ----------
-        bank : AhopeOutFile 
-            The AhopeOutFile containing the template bank to be split
+        bank : WorkflowOutFile 
+            The WorkflowOutFile containing the template bank to be split
 
         Returns
         --------
         node : Node
             The node to run the job
         """
-        node = AhopeNode(self)
+        node = WorkflowNode(self)
         node.add_input_opt('--bank-file', bank)
 
         # Get the output (taken from inspiral.py)
-        out_files = AhopeFileList([])
+        out_files = WorkflowFileList([])
         for i in range( 0, self.num_banks):
             curr_tag = 'bank%d' %(i)
             # FIXME: What should the tags actually be? The job.tags values are
             #        currently ignored.
             curr_tags = bank.tags + [curr_tag]
             job_tag = bank.description + "_" + self.name.upper()
-            out_file = AhopeFile(bank.ifo_list, job_tag, bank.segment,
+            out_file = WorkflowFile(bank.ifo_list, job_tag, bank.segment,
                                  extension=".xml.gz", directory=self.out_dir,
                                  tags=curr_tags)
             out_files.append(out_file)
