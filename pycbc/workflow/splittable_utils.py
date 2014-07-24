@@ -23,7 +23,7 @@
 #
 
 """
-This module is responsible for setting up the splitting output files stage of ahope
+This module is responsible for setting up the splitting output files stage of
 workflows. For details about this module and its capabilities see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
@@ -33,18 +33,18 @@ from __future__ import division
 
 import os
 import logging
-from pycbc.ahope.ahope_utils import * 
-from pycbc.ahope.jobsetup_utils import *
+from pycbc.workflow.workflow_utils import * 
+from pycbc.workflow.jobsetup_utils import *
 
 def select_splitfilejob_instance(curr_exe):
     """
     This function returns an instance of the class that is appropriate for
-    splitting an output file up within ahope (for e.g. splitbank).
+    splitting an output file up within workflow (for e.g. splitbank).
     
     Parameters
     ----------
     curr_exe : string
-        The name of the AhopeExecutable that is being used.
+        The name of the WorkflowExecutable that is being used.
     curr_section : string
         The name of the section storing options for this executble
 
@@ -52,7 +52,7 @@ def select_splitfilejob_instance(curr_exe):
     --------
     exe class : exe_class
         The class that holds the utility functions appropriate
-        for the given AhopeExecutable. This class **must** contain
+        for the given WorkflowExecutable. This class **must** contain
         * exe_class.create_job()
         and the job returned by this **must** contain
         * job.create_node()
@@ -65,7 +65,7 @@ def select_splitfilejob_instance(curr_exe):
         exe_class = PycbcSplitBankExecutable
     else:
         # Should we try some sort of default class??
-        err_string = "No class exists for AhopeExecutable %s" %(curr_exe,)
+        err_string = "No class exists for WorkflowExecutable %s" %(curr_exe,)
         raise NotImplementedError(errString)
 
     return exe_class
@@ -80,23 +80,23 @@ def setup_splittable_workflow(workflow, tmplt_banks, out_dir=None):
 
     Parameters
     -----------
-    Workflow : ahope.Workflow
-        The ahope workflow instance that the jobs will be added to.
-    tmplt_banks : ahope.AhopeFileList
+    Workflow : workflow.Workflow
+        The workflow instance that the jobs will be added to.
+    tmplt_banks : workflow.WorkflowFileList
         The input files to be split up.
     out_dir : path
         The directory in which output will be written.
 
     Returns
     --------
-    split_table_outs : ahope.AhopeFileList
+    split_table_outs : workflow.WorkflowFileList
         The list of split up files as output from this job.
     '''
     logging.info("Entering split output files module.")
     make_analysis_dir(out_dir)
 
     # Parse for options in .ini file
-    splitbankMethod = workflow.cp.get_opt_tags("ahope-splittable",
+    splitbankMethod = workflow.cp.get_opt_tags("workflow-splittable",
                                         "splittable-method", [])
 
     if splitbankMethod == "IN_WORKFLOW":
@@ -122,20 +122,20 @@ def setup_splittable_dax_generated(workflow, tmplt_banks, out_dir):
 
     Parameters
     -----------
-    Workflow : ahope.Workflow
-        The ahope workflow instance that the jobs will be added to.
-    tmplt_banks : ahope.AhopeFileList
+    Workflow : workflow.Workflow
+        The workflow instance that the jobs will be added to.
+    tmplt_banks : workflow.WorkflowFileList
         The input files to be split up.
     out_dir : path
         The directory in which output will be written.
 
     Returns
     --------
-    split_table_outs : ahope.AhopeFileList
+    split_table_outs : workflow.WorkflowFileList
         The list of split up files as output from this job.
     '''
     # Get values from ini file
-    num_banks = workflow.cp.get_opt_tags("ahope-splittable",
+    num_banks = workflow.cp.get_opt_tags("workflow-splittable",
                                              "splittable-num-banks", [])
 
     cp = workflow.cp
@@ -144,7 +144,7 @@ def setup_splittable_dax_generated(workflow, tmplt_banks, out_dir):
     exe_class = select_splitfilejob_instance(splittable_exe)
 
     # Set up output structure
-    out_file_groups = AhopeFileList([])
+    out_file_groups = WorkflowFileList([])
 
     # Set up the condorJob class for the current executable
     curr_exe_job = exe_class(workflow.cp, 'splittable', num_banks, out_dir=out_dir)
