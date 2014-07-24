@@ -572,23 +572,23 @@ class WorkflowFileList(list):
 
     def categorize_by_attr(self, attribute):
         '''
-        Function to categorize an AhopeFileList by an AhopeFile object
+        Function to categorize a WorkflowFileList by a WorkflowFile object
         attribute (eg. 'segment', 'ifo', 'description').
 
         Parameters
         -----------
         attribute : string
-           AhopeFile object attribute to categorize AhopeFileList
+           WorkflowFile object attribute to categorize WorkflowFileList
 
         Returns
         --------
         keys : list
            A list of values for an attribute
         groups : list
-           A list of AhopeFileLists
+           A list of WorkflowFileLists
         '''
 
-        # need to sort AhopeFileList otherwise using groupby without sorting does
+        # need to sort WorkflowFileList otherwise using groupby without sorting does
         # 'AAABBBCCDDAABB' -> ['AAA','BBB','CC','DD','AA','BB']
         # and using groupby with sorting does
         # 'AAABBBCCDDAABB' -> ['AAAAA','BBBBB','CC','DD']
@@ -598,7 +598,7 @@ class WorkflowFileList(list):
         groups = []
         keys = []
         for k, g in groupby(flist, attrgetter(attribute)):
-            groups.append(AhopeFileList(g))
+            groups.append(WorkflowFileList(g))
             keys.append(k)
 
         return keys, groups
