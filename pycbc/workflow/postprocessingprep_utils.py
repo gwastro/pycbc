@@ -34,8 +34,8 @@ from __future__ import division
 import os
 import os.path
 from glue import segments
-from pycbc.ahope.ahope_utils import *
-from pycbc.ahope.jobsetup_utils import *
+from pycbc.workflow.workflow_utils import *
+from pycbc.workflow.jobsetup_utils import *
 
 def setup_postprocessing_preparation(workflow, triggerFiles, output_dir,
                                      tags=[], **kwargs):
@@ -49,10 +49,10 @@ def setup_postprocessing_preparation(workflow, triggerFiles, output_dir,
 
     Properties
     -----------
-    Workflow : ahope.Workflow
-        The ahope workflow instance that the coincidence jobs will be added to.
-    triggerFiles : ahope.AhopeFileList
-        An AhopeFileList of the trigger files that are used as
+    Workflow : workflow.Workflow
+        The workflow instance that the coincidence jobs will be added to.
+    triggerFiles : workflow.WorkflowFileList
+        An WorkflowFileList of the trigger files that are used as
         input at this stage.
     output_dir : path
         The directory in which output files will be stored.
@@ -63,45 +63,45 @@ def setup_postprocessing_preparation(workflow, triggerFiles, output_dir,
 
     Returns
     --------
-    postProcPreppedFiles : ahope.AhopeFileList
+    postProcPreppedFiles : workflow.WorkflowFileList
         A list of files that can be used as input for the post-processing stage.
     """
     logging.info("Entering post-processing preparation stage.")
     make_analysis_dir(output_dir)
 
     # Parse for options in .ini file
-    postProcPrepMethod = workflow.cp.get_opt_tags("ahope-postprocprep",
+    postProcPrepMethod = workflow.cp.get_opt_tags("workflow-postprocprep",
                                         "postprocprep-method", tags)
 
     # Scope here for adding different options/methods here. For now we only
     # have the single_stage ihope method which consists of converting the
     # ligolw_thinca output xml into one file, clustering, performing injection
     # finding and putting everything into one SQL database.
-    if postProcPrepMethod == "PIPEDOWN_AHOPE":
+    if postProcPrepMethod == "PIPEDOWN_WORKFLOW":
         # If you want the intermediate output files, call this directly
-        postPostPreppedFiles,_,_,_ = setup_postprocprep_pipedown_ahope(workflow,
+        postPostPreppedFiles,_,_,_ = setup_postprocprep_pipedown_workflow(workflow,
                            triggerFiles, output_dir,
                            tags=tags, **kwargs) 
     else:
         errMsg = "Post-processing preparation method not recognized. Must be "
-        errMsg += "one of PIPEDOWN_AHOPE (currently only one option)."
+        errMsg += "one of PIPEDOWN_WORKFLOW (currently only one option)."
         raise ValueError(errMsg)
 
     logging.info("Leaving post-processing preparation module.")
 
     return postPostPreppedFiles
 
-def setup_postprocprep_pipedown_ahope(workflow, coincFiles, output_dir,
+def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
                                       tags=[], injectionFiles=None,
                                       vetoFiles=None, injLessTag=None,
                                       injectionTags=[], vetoCats=[]):
     """
     Properties
     -----------
-    Workflow : ahope.Workflow
-        The ahope workflow instance that the coincidence jobs will be added to.
-    coincFiles : ahope.AhopeFileList
-        An AhopeFileList of the coincident trigger files that are used as
+    Workflow : workflow.Workflow
+        The workflow instance that the coincidence jobs will be added to.
+    coincFiles : workflow.WorkflowFileList
+        An WorkflowFileList of the coincident trigger files that are used as
         input at this stage.
     output_dir : path
         The directory in which output files will be stored.
@@ -109,11 +109,11 @@ def setup_postprocprep_pipedown_ahope(workflow, coincFiles, output_dir,
         A list of the tagging strings that will be used for all jobs created
         by this call to the workflow. An example might be ['POSTPROC1'] or
         ['DENTYSNEWPOSTPROC']. This will be used in output names.
-    injectionFiles : ahope.AhopeFileList (optional, default=None)
+    injectionFiles : workflow.WorkflowFileList (optional, default=None)
         The injection files to be used in this stage. An empty list (or any
         other input that evaluates as false) is valid and will imply that no
         injections are being done.
-    vetoFiles : ahope.AhopeFileList (required)
+    vetoFiles : workflow.WorkflowFileList (required)
         The data quality files to be used in this stage. This is required and
         will be used to determine the analysed times when doing post-processing.
     injLessTag : string (required)
@@ -131,15 +131,15 @@ def setup_postprocprep_pipedown_ahope(workflow, coincFiles, output_dir,
 
     Returns
     --------
-    finalFiles : ahope.AhopeFileList
+    finalFiles : workflow.WorkflowFileList
         A list of the single SQL database storing the clustered, injection
         found, triggers for all injections, time slid and zero lag analyses.
-    initialSqlFiles : ahope.AhopeFileList
+    initialSqlFiles : workflow.WorkflowFileList
         The SQL files before clustering is applied and injection finding
         performed.
-    clusteredSqlFiles : ahope.AhopeFileList
+    clusteredSqlFiles : workflow.WorkflowFileList
         The clustered SQL files before injection finding performed.
-    combinedSqlFiles : ahope.AhopeFileList
+    combinedSqlFiles : workflow.WorkflowFileList
         A combined file containing all triggers after clustering, including
         the injection and veto tables, but before injection finding performed.
         Probably there is no need to ever keep this file and it will be a
@@ -149,25 +149,25 @@ def setup_postprocprep_pipedown_ahope(workflow, coincFiles, output_dir,
         raise ValueError("Veto cats is required.")
 
     # Setup needed exe classes
-    sqliteCombine1ExeTag = workflow.cp.get_opt_tags("ahope-postprocprep",
+    sqliteCombine1ExeTag = workflow.cp.get_opt_tags("workflow-postprocprep",
                                    "postprocprep-combiner1-exe", tags)
     sqliteCombine1Exe = select_generic_executable(workflow, 
                                                   sqliteCombine1ExeTag)
-    sqliteCombine2ExeTag = workflow.cp.get_opt_tags("ahope-postprocprep",
+    sqliteCombine2ExeTag = workflow.cp.get_opt_tags("workflow-postprocprep",
                                    "postprocprep-combiner2-exe", tags)
     sqliteCombine2Exe = select_generic_executable(workflow, 
                                                   sqliteCombine2ExeTag)
-    clusterCoincsExeTag = workflow.cp.get_opt_tags("ahope-postprocprep",
+    clusterCoincsExeTag = workflow.cp.get_opt_tags("workflow-postprocprep",
                                    "postprocprep-cluster-exe", tags)
     clusterCoincsExe = select_generic_executable(workflow, clusterCoincsExeTag)
-    injFindExeTag = workflow.cp.get_opt_tags("ahope-postprocprep",
+    injFindExeTag = workflow.cp.get_opt_tags("workflow-postprocprep",
                                    "postprocprep-injfind-exe", tags)
     injFindExe = select_generic_executable(workflow, injFindExeTag)
 
-    sqliteCombine1Outs = AhopeFileList([])
-    clusterCoincsOuts = AhopeFileList([])
-    injFindOuts = AhopeFileList([])
-    sqliteCombine2Outs = AhopeFileList([])
+    sqliteCombine1Outs = WorkflowFileList([])
+    clusterCoincsOuts = WorkflowFileList([])
+    injFindOuts = WorkflowFileList([])
+    sqliteCombine2Outs = WorkflowFileList([])
     for vetoCat in vetoCats:
         # FIXME: Some hacking is still needed while we support pipedown
         # FIXME: There are currently 3 names to say cumulative cat_3
@@ -181,7 +181,7 @@ def setup_postprocprep_pipedown_ahope(workflow, coincFiles, output_dir,
         # FIXME: Here we set the dqVetoName to be compatible with pipedown
         pipedownDQVetoName = 'CAT_%d_VETO' %(vetoCat,)
 
-        sqliteCombine2Inputs = AhopeFileList([])
+        sqliteCombine2Inputs = WorkflowFileList([])
         # Do injection-less jobs first.
 
         # Combine trig files first
