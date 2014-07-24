@@ -24,8 +24,8 @@
 
 """
 This library code contains functions and classes that are used to set up
-and add jobs/nodes from legacy lalapps C-code to an ahope workflow.
-For details about ahope see here:
+and add jobs/nodes from legacy lalapps C-code to a pycbc workflow.
+For details about pycbc.workflow see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 
@@ -34,14 +34,14 @@ import logging
 import urlparse
 from glue import pipeline
 from glue import segments
-from ahope_utils import AhopeNode, AhopeExecutable, AhopeFile
+from workflow_utils import WorkflowNode, WorkflowExecutable, WorkflowFile
 
 def legacy_get_valid_times(self):
     """
     Return the length of data that the tmpltbank job will need to read and
     the part of that data that the template bank is valid for. In the case
     of lalapps_tmpltbank the following options are needed to set this up
-    and will be used by the AhopeExecutable to figure this out:
+    and will be used by the WorkflowExecutable to figure this out:
 
     * --pad-data (seconds, amount of data used to pad the analysis region.
       This is needed as some data will be corrupted from the data
@@ -94,19 +94,19 @@ def legacy_get_valid_times(self):
     return dataLength, validChunk
 
         
-class LegacyAnalysisNode(AhopeNode):
-    # This is *ONLY* used by legacy codes where ahope cannot directly
+class LegacyAnalysisNode(WorkflowNode):
+    # This is *ONLY* used by legacy codes where pycbc.workflow cannot directly
     # set the output name. Do not use elsewhere!
     def  set_jobnum_tag(self, num):
         self.add_opt('--user-tag', num)
         
-class LegacyAnalysisExecutable(AhopeExecutable):
+class LegacyAnalysisExecutable(WorkflowExecutable):
     """
     The class responsible for setting up jobs for legacy lalapps C-code
     Executables.
     """
     def __init__(self, cp, name, universe=None, ifo=None, tags=[], out_dir=None):
-        AhopeExecutable.__init__(self, cp, name, universe, ifo, out_dir, tags=tags)
+        WorkflowExecutable.__init__(self, cp, name, universe, ifo, out_dir, tags=tags)
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
         node = LegacyAnalysisNode(self)
@@ -132,7 +132,7 @@ class LegacyAnalysisExecutable(AhopeExecutable):
             extension += '.gz'
         
         #create the output file for this job 
-        out_file = AhopeFile(self.ifo, self.name, valid_seg,
+        out_file = WorkflowFile(self.ifo, self.name, valid_seg,
                              extension=extension,
                              directory=self.out_dir,
                              tags=self.tags + tags)
@@ -149,7 +149,7 @@ class LegacyTmpltbankExecutable(LegacyAnalysisExecutable):
 class LegacyInspiralExecutable(LegacyAnalysisExecutable):
     """
     The class responsible for setting up jobs for legacy lalapps_inspiral
-    AhopeExecutable.
+    WorkflowExecutable.
     """
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None, 
                        out_dir=None, tags=[]):
@@ -169,7 +169,7 @@ class LegacyInspiralExecutable(LegacyAnalysisExecutable):
         return node
 
 
-class LegacySplitBankExecutable(AhopeExecutable):    
+class LegacySplitBankExecutable(WorkflowExecutable):    
     """
     The class responsible for creating jobs for lalapps_splitbank.
     """
@@ -181,7 +181,7 @@ class LegacySplitBankExecutable(AhopeExecutable):
         if tmpNumBanks:
             # Option is in ini file, check it agrees
             if not int(tmpNumBanks) == self.num_banks:
-                errMsg = "Number of banks provided in [ahope-splitbank] "
+                errMsg = "Number of banks provided in [workflow-splitbank] "
                 errMsg += "section does not agree with value given in the "
                 errMsg += "[%s] section of the ini file. " %(name)
                 raise ValueError(errMsg)
@@ -196,15 +196,15 @@ class LegacySplitBankExecutable(AhopeExecutable):
 
         Parameters
         ----------
-        bank : AhopeOutFile 
-            The AhopeOutFile containing the template bank to be split
+        bank : WorkflowOutFile 
+            The WorkflowOutFile containing the template bank to be split
 
         Returns
         --------
         node : Node
             The node to run the job
         """
-        node = AhopeNode(self)
+        node = WorkflowNode(self)
         # FIXME: This is a hack because SplitBank fails if given an input file
         # whose path contains the character '-' or if the input file is not in
         # the same directory as the output. Therefore we just set the path to
@@ -233,7 +233,7 @@ class LegacySplitBankExecutable(AhopeExecutable):
             url_list.append(out_url)
                 
             job_tag = bank.description + "_" + self.name.upper()
-            out_file = AhopeFile(bank.ifo, job_tag, bank.segment, 
+            out_file = WorkflowFile(bank.ifo, job_tag, bank.segment, 
                                    file_url=out_url, tags=bank.tags)
             node._add_output(out_file)
         return node
