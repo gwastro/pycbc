@@ -22,7 +22,7 @@
 # =============================================================================
 #
 """
-This module is responsible for setting up the coincidence stage of ahope
+This module is responsible for setting up the coincidence stage of pycbc
 workflows. For details about this module and its capabilities see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
@@ -34,8 +34,8 @@ import re
 import os
 import os.path
 from glue import segments
-from pycbc.ahope.ahope_utils import *
-from pycbc.ahope.jobsetup_utils import *
+from pycbc.workflow.workflow_utils import *
+from pycbc.workflow.jobsetup_utils import *
 from pylal import ligolw_cafe, ligolw_tisi
 
 def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
@@ -43,27 +43,27 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
                                tags=[], timeSlideTags=None):
     '''
     This function aims to be the gateway for setting up a set of coincidence
-    jobs in an ahope workflow. The goal is that this function can support a
+    jobs in a workflow. The goal is that this function can support a
     number of different ways/codes that could be used for doing this.
     For now it only supports ligolw_sstinca.
 
     Parameters
     -----------
-    Workflow : ahope.Workflow
-        The ahope workflow instance that the coincidence jobs will be added to.
-    segsList : ahope.AhopeFileList
-        The list of files returned by ahope's segment module that contains
+    Workflow : workflow.Workflow
+        The workflow instance that the coincidence jobs will be added to.
+    segsList : workflow.WorkflowFileList
+        The list of files returned by workflow's segment module that contains
         pointers to all the segment files generated in the workflow. If the
         coincidence code will be applying the data quality vetoes, then this
         will be used to ensure that the codes get the necessary input to do
         this.
-    timeSlideFiles : ahope.AhopeFileList
-        An AhopeFileList of the timeSlide input files that are needed to
+    timeSlideFiles : workflow.WorkflowFileList
+        An WorkflowFileList of the timeSlide input files that are needed to
         determine what time sliding needs to be done if the coincidence code
         will be running time slides to facilitate background computations later
         in the workflow.
-    inspiral_outs : ahope.AhopeFileList
-        An AhopeFileList of the matched-filter module output that is used as
+    inspiral_outs : workflow.WorkflowFileList
+        An WorkflowFileList of the matched-filter module output that is used as
         input to the coincidence codes running at this stage.
     output_dir : path
         The directory in which coincidence output will be stored.
@@ -83,7 +83,7 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
         time slides (or vice-versa if you prefer!)
     Returns
     --------
-    coinc_outs : ahope.AhopeFileList
+    coinc_outs : workflow.WorkflowFileList
         A list of the *final* outputs of the coincident stage. This *does not*
         include any intermediate products produced within the workflow. If you
         require access to intermediate products call the various sub-functions
@@ -93,7 +93,7 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
     make_analysis_dir(output_dir)
 
     # Parse for options in .ini file
-    coincidenceMethod = workflow.cp.get_opt_tags("ahope-coincidence",
+    coincidenceMethod = workflow.cp.get_opt_tags("workflow-coincidence",
                                         "coincidence-method", tags)
     
     # Scope here for adding different options/methods here. For now we only
@@ -104,7 +104,7 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
         # If I am doing exact match I can parallelize these jobs and reduce
         # memory footprint. This will require all input inspiral jobs to have
         # a JOB%d tag to distinguish between them.
-        if workflow.cp.has_option_tags("ahope-coincidence", \
+        if workflow.cp.has_option_tags("workflow-coincidence", \
                              "coincidence-exact-match-parallelize", tags):
             parallelize_split_input = True
         else:
@@ -136,22 +136,22 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
 
     Parameters
     -----------
-    Workflow : ahope.Workflow
-        The ahope workflow instance that the coincidence jobs will be added to.
-    segsList : ahope.AhopeFileList
-        The list of files returned by ahope's segment module that contains
+    Workflow : workflow.Workflow
+        The workflow instance that the coincidence jobs will be added to.
+    segsList : workflow.WorkflowFileList
+        The list of files returned by workflow's segment module that contains
         pointers to all the segment files generated in the workflow. If the
         coincidence code will be applying the data quality vetoes, then this
         will be used to ensure that the codes get the necessary input to do
         this.
-    timeSlideFiles : ahope.AhopeFileList
-        An AhopeFileList of the timeSlide input files that are needed to
+    timeSlideFiles : workflow.WorkflowFileList
+        An WorkflowFileList of the timeSlide input files that are needed to
         determine what time sliding needs to be done. One of the timeSlideFiles
         will normally be "zero-lag only", the others containing time slides
         used to facilitate background computations later
         in the workflow.
-    inspiral_outs : ahope.AhopeFileList
-        An AhopeFileList of the matched-filter module output that is used as
+    inspiral_outs : workflow.WorkflowFileList
+        An WorkflowFileList of the matched-filter module output that is used as
         input to the coincidence codes running at this stage.
     output_dir : path
         The directory in which coincidence output will be stored.
@@ -171,9 +171,9 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
         time slides (or vice-versa if you prefer!)
     Returns
     --------
-    ligolwThincaOuts : ahope.AhopeFileList
+    ligolwThincaOuts : workflow.WorkflowFileList
         A list of the output files generated from ligolw_sstinca.
-    ligolwAddOuts : ahope.AhopeFileList
+    ligolwAddOuts : workflow.WorkflowFileList
         A list of the output files generated from ligolw_add.
     """
     logging.debug("Entering coincidence module.")
@@ -181,8 +181,8 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
 
     # setup code for each veto_category
 
-    ligolwThincaOuts = AhopeFileList([])
-    ligolwAddOuts = AhopeFileList([])
+    ligolwThincaOuts = WorkflowFileList([])
+    ligolwAddOuts = WorkflowFileList([])
 
     if not timeSlideTags:
         # Get all sections by looking in ini file, use all time slide files.
@@ -218,7 +218,7 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
             # Extract the job ID
             id = int(matches[0].string[3:])
             if not inspiral_outs_dict.has_key(id):
-                inspiral_outs_dict[id] = AhopeFileList([])
+                inspiral_outs_dict[id] = WorkflowFileList([])
             inspiral_outs_dict[id].append(file)
         else:
             # If I got through all the files I want to sort the dictionaries so
@@ -304,12 +304,12 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
 
     Parameters
     -----------
-    Workflow : ahope.Workflow
-        The ahope workflow instance that the coincidence jobs will be added to.
-    dqSegFile : ahope.AhopeSegFile
+    Workflow : workflow.Workflow
+        The workflow instance that the coincidence jobs will be added to.
+    dqSegFile : workflow.WorkflowSegFile
         The file that contains the data-quality segments to be applied to jobs
         setup by this call to this function.
-    tisiOutFile : ahope.AhopeFile
+    tisiOutFile : workflow.WorkflowFile
         The file that contains the time-slides that will be performed in jobs
         setup by this call to this function. A file containing only one,
         zero-lag, time slide is still a valid "time slide" file.
@@ -328,9 +328,9 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
         data quality veto should be included.
     Returns
     --------
-    ligolwThincaOuts : ahope.AhopeFileList
+    ligolwThincaOuts : workflow.WorkflowFileList
         A list of the output files generated from ligolw_sstinca.
-    ligolwAddOuts : ahope.AhopeFileList
+    ligolwAddOuts : workflow.WorkflowFileList
         A list of the output files generated from ligolw_add.
 
     '''
@@ -345,8 +345,8 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
                                      dqVetoName=dqVetoName, tags=tags)
 
     # Set up the nodes to do the coincidence analysis
-    ligolwAddOuts = AhopeFileList([])
-    ligolwThincaOuts = AhopeFileList([])
+    ligolwAddOuts = WorkflowFileList([])
+    ligolwThincaOuts = WorkflowFileList([])
     for idx, cafe_cache in enumerate(cafe_caches):
         if not len(cafe_cache.objects):
             raise ValueError("One of the cache objects contains no files!")
@@ -365,13 +365,13 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
             coincEnd = cafe_cache.extent[1]
         coincSegment = (coincStart, coincEnd)
 
-        # Need to create a list of the AhopeFile contained in the cache.
+        # Need to create a list of the WorkflowFile contained in the cache.
         # Assume that if we have partitioned input then if *one* job in the
         # partitioned input is an input then *all* jobs will be.
         if not parallelize_split_input:
-            inputTrigFiles = AhopeFileList([])
+            inputTrigFiles = WorkflowFileList([])
             for object in cafe_cache.objects:
-                inputTrigFiles.append(object.ahope_file)
+                inputTrigFiles.append(object.workflow_file)
  
             llw_files = inputTrigFiles + dqSegFile + [tisiOutFile]
 
@@ -388,10 +388,10 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
             for key in insp_files_dict.keys():
                 curr_tags = ["JOB%d" %(key)]
                 curr_list = insp_files_dict[key]
-                inputTrigFiles = AhopeFileList([])
+                inputTrigFiles = WorkflowFileList([])
                 for object in cafe_cache.objects:
                     inputTrigFiles.append(\
-                                     curr_list[object.ahope_file.thinca_index])
+                                     curr_list[object.workflow_file.thinca_index])
 
                 llw_files = inputTrigFiles + dqSegFile + [tisiOutFile]
 
