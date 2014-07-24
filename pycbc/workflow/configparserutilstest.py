@@ -2,7 +2,7 @@ import re
 import copy
 import configparser as ConfigParser
 
-def parse_ahope_ini_file(cpFile,parsed_filepath=None):
+def parse_workflow_ini_file(cpFile,parsed_filepath=None):
     """Read a .ini file in, parse it as described in the documentation linked
     to above, and return the parsed ini file.
 
