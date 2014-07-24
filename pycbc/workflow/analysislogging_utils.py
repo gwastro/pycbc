@@ -29,14 +29,14 @@ times used within the workflow, etc.
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
-from pycbc.ahope.ahope_utils import *
-from pycbc.ahope.jobsetup_utils import *
+from pycbc.workflow.workflow_utils import *
+from pycbc.workflow.jobsetup_utils import *
 from glue.ligolw import ligolw, table, utils
 from glue.ligolw.utils import process
 from glue.segmentdb import segmentdb_utils
 
 def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
-                          program_name="ahope", tags=[]):
+                          program_name="workflow", tags=[]):
     """
     This module sets up the analysis logging xml file that contains the
     following information:
@@ -49,18 +49,18 @@ def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
 
     Parameters
     -----------
-    workflow : ahope.Workflow
-        The ahope workflow instance.
-    segs_list : AhopeSegFileList
-        A list of AhopeFiles containing the information needed to generate the
+    workflow : workflow.Workflow
+        The workflow instance.
+    segs_list : WorkflowSegFileList
+        A list of WorkflowFiles containing the information needed to generate the
         segments above. For segments generated at run time the associated
         segmentlist is a property of this object.
-    insps : AhopeFileList
+    insps : WorkflowFileList
         The output files from the matched-filtering module. Used to identify
         what times have been analysed in this workflow.
     output_dir : path
         Directory to output any files to.
-    program_name : string (optional, default = "ahope")
+    program_name : string (optional, default = "workflow")
         The program name to stick in the process/process_params tables.
     tags : list (optional, default = [])
         If given restrict to considering inspiral and segment files that
@@ -95,7 +95,7 @@ def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
             sci_seg_file = sci_seg_file[0]
             sci_segs = sci_seg_file.segmentList
             sci_def_id = segmentdb_utils.add_to_segment_definer(outdoc, proc_id,
-                                                   ifo, "CBC_AHOPE_SCIENCE", 0)
+                                                   ifo, "CBC_WORKFLOW_SCIENCE", 0)
             segmentdb_utils.add_to_segment(outdoc, proc_id, sci_def_id,
                                                                       sci_segs)
             segmentdb_utils.add_to_segment_summary(outdoc, proc_id, sci_def_id,
@@ -111,7 +111,7 @@ def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
             sci_ok_seg_file = sci_ok_seg_file[0]
             sci_ok_segs = sci_ok_seg_file.segmentList
             sci_ok_def_id = segmentdb_utils.add_to_segment_definer(outdoc,
-                                       proc_id, ifo, "CBC_AHOPE_SCIENCE_OK", 0)
+                                       proc_id, ifo, "CBC_WORKFLOW_SCIENCE_OK", 0)
             segmentdb_utils.add_to_segment(outdoc, proc_id, sci_ok_def_id,
                                                                    sci_ok_segs)
             segmentdb_utils.add_to_segment_summary(outdoc, proc_id,
@@ -129,7 +129,7 @@ def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
             sci_available_seg_file = sci_available_seg_file[0]
             sci_available_segs = sci_available_seg_file.segmentList
             sci_available_def_id = segmentdb_utils.add_to_segment_definer(\
-                        outdoc, proc_id, ifo, "CBC_AHOPE_SCIENCE_AVAILABLE", 0)
+                        outdoc, proc_id, ifo, "CBC_WORKFLOW_SCIENCE_AVAILABLE", 0)
             segmentdb_utils.add_to_segment(outdoc, proc_id,
                                       sci_available_def_id, sci_available_segs)
             segmentdb_utils.add_to_segment_summary(outdoc, proc_id,
@@ -144,17 +144,17 @@ def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
         analysable_segs = ifo_insps.get_times_covered_by_files()
 
         analysable_def_id = segmentdb_utils.add_to_segment_definer(outdoc,
-                                     proc_id, ifo, "CBC_AHOPE_ANALYSABLE", 0)
+                                     proc_id, ifo, "CBC_WORKFLOW_ANALYSABLE", 0)
         segmentdb_utils.add_to_segment(outdoc, proc_id, analysable_def_id,
                                                                analysable_segs)
         segmentdb_utils.add_to_segment_summary(outdoc, proc_id,
                                       analysable_def_id, summ_segs, comment='')
 
-    summ_file = AhopeFile(workflow.ifos, "AHOPE_SUMMARY",
+    summ_file = WorkflowFile(workflow.ifos, "WORKFLOW_SUMMARY",
                                       workflow.analysis_time, extension=".xml",
                                       directory=output_dir)
     summ_file.PFN(summ_file.storage_path, site='local')
     utils.write_filename(outdoc, summ_file.storage_path)
 
-    return AhopeFileList([summ_file])
+    return WorkflowFileList([summ_file])
 
