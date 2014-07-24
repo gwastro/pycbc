@@ -22,7 +22,7 @@
 # =============================================================================
 #
 """
-This module provides a wrapper to the ConfigParser utilities for ahope
+This module provides a wrapper to the ConfigParser utilities for pycbc
 workflow construction. This module is described in the page here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.html
 """
@@ -34,9 +34,9 @@ import ConfigParser
 import glue.pipeline
 
 
-def add_ahope_command_line_group(parser):
+def add_workflow_command_line_group(parser):
     """
-    The standard way of initializing a ConfigParser object in ahope will be
+    The standard way of initializing a ConfigParser object in workflow will be
     to do it from the command line. This is done by giving a
 
     --config-files filea.ini fileb.ini filec.ini
@@ -55,31 +55,30 @@ def add_ahope_command_line_group(parser):
 
     This function returns an argparse OptionGroup to ensure these options are
     parsed correctly and can then be sent directly to initialize an
-    AhopeConfigParser.
+    WorkflowConfigParser.
 
     Parameters
     -----------
     parser : argparse.ArgumentParser instance
-        The initialized argparse instance to add the ahope option group to.
+        The initialized argparse instance to add the workflow option group to.
     """
-    ahopeArgs = parser.add_argument_group('ahope',
-                                          'Options needed for ahope setup.')
-    ahopeArgs.add_argument("--config-files", nargs="+", action='store',
+    workflowArgs = parser.add_argument_group('workflow',
+                                          'Options needed for workflow setup.')
+    workflowArgs.add_argument("--config-files", nargs="+", action='store',
                            required=True, metavar="CONFIGFILE",
                            help="List of config files to be used in analysis.")
-    ahopeArgs.add_argument("--config-overrides", nargs="*", action='store',
+    workflowArgs.add_argument("--config-overrides", nargs="*", action='store',
                            metavar="SECTION:OPTION:VALUE",
                            help="List of section,option,value combinations to add into the configuration file. Normally the gps start and end times might be provided this way, and user specific locations (ie. output directories). This can also be provided as SECTION:OPTION or SECTION:OPTION: both of which indicate that the corresponding value is left blank.")
 
-
-class AhopeConfigParser(glue.pipeline.DeepCopyableConfigParser):
+class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
     """
     This is a sub-class of glue.pipeline.DeepCopyableConfigParser, which lets
     us add a few additional helper features that are useful in ahope.
     """
     def __init__(self, configFiles=[], overrideTuples=[], parsedFilePath=None):
         """
-        Initialize an AhopeConfigParser. This reads the input configuration
+        Initialize an WorkflowConfigParser. This reads the input configuration
         files, overrides values if necessary and performs the interpolation.
         See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.html
         
@@ -96,8 +95,8 @@ class AhopeConfigParser(glue.pipeline.DeepCopyableConfigParser):
 
         Returns
         --------
-        AhopeConfigParser
-            Initialized AhopeConfigParser instance.
+        WorkflowConfigParser
+            Initialized WorkflowConfigParser instance.
         """
         glue.pipeline.DeepCopyableConfigParser.__init__(self)
 
@@ -152,10 +151,10 @@ class AhopeConfigParser(glue.pipeline.DeepCopyableConfigParser):
     @classmethod
     def from_args(cls, args):
         """
-        Initialize a AhopeConfigParser instance using the command line values
+        Initialize a WorkflowConfigParser instance using the command line values
         parsed in args. args must contain the values provided by the
-        ahope_command_line_group() function. If you are not using the standard
-        ahope command line interface, you should probably initialize directly
+        workflow_command_line_group() function. If you are not using the standard
+        workflow command line interface, you should probably initialize directly
         using __init__()
 
         Parameters
@@ -361,7 +360,7 @@ class AhopeConfigParser(glue.pipeline.DeepCopyableConfigParser):
 
     def split_multi_sections(self):
         """
-        Parse through the AhopeConfigParser instance and splits any sections
+        Parse through the WorkflowConfigParser instance and splits any sections
         labelled with an "&" sign (for e.g. [inspiral&tmpltbank]) into
         [inspiral] and [tmpltbank] sections. If these individual sections
         already exist they  will be appended to. If an option exists in both the
