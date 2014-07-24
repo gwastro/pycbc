@@ -22,7 +22,7 @@
 # =============================================================================
 #
 """
-This module is responsible for setting up the part of an ahope workflow that
+This module is responsible for setting up the part of a pycbc workflow that
 will generate the injection files to be used for assessing the workflow's
 ability to detect predicted signals. (In ihope parlance, this sets up the
 inspinj jobs). Full documentation for this module can be found here:
@@ -32,24 +32,24 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 import os
 import logging
 import urllib
-import pycbc.ahope
-from pycbc.ahope.jobsetup_utils import *
-from pycbc.ahope.matchedfltr_utils import *
+import pycbc.workflow
+from pycbc.workflow.jobsetup_utils import *
+from pycbc.workflow.matchedfltr_utils import *
 from glue import segments
 
 def setup_injection_workflow(workflow, output_dir=None,
                              injSectionName='injections', tags =[]):
     '''
-    This function is the gateway for setting up injection-generation jobs in an
-    ahope workflow. It should be possible for this function to support a number
+    This function is the gateway for setting up injection-generation jobs in a
+    workflow. It should be possible for this function to support a number
     of different ways/codes that could be used for doing this, however as this
     will presumably stay as a single call to a single code (which need not be
     inspinj) there are currently no subfunctions in this moudle. 
 
     Parameters
     -----------
-    Workflow : ahope.Workflow
-        The ahope workflow instance that the coincidence jobs will be added to.
+    Workflow : workflow.Workflow
+        The workflow instance that the coincidence jobs will be added to.
     output_dir : path
         The directory in which injection files will be stored.
     injSectionName : string (optional, default='injections')
@@ -63,11 +63,11 @@ def setup_injection_workflow(workflow, output_dir=None,
 
     Returns
     --------
-    inj_files : ahope.AhopeFileList
+    inj_files : workflow.WorkflowFileList
         The list of injection files created by this call.
     inj_tags : list of strings
         The tag corresponding to each injection file and used to uniquely
-        identify them. The AhopeFileList class contains functions to search
+        identify them. The WorkflowFileList class contains functions to search
         based on tags.
     '''
     logging.info("Entering injection module.")
@@ -81,7 +81,7 @@ def setup_injection_workflow(workflow, output_dir=None,
     sections = [sec for sec in all_sec if sec.startswith(injSectionName +'-')]
 
     inj_tags = []
-    inj_files = AhopeFileList([])   
+    inj_files = WorkflowFileList([])   
 
     for section in sections:
         split_sec_name = section.split('-')
@@ -93,7 +93,7 @@ def setup_injection_workflow(workflow, output_dir=None,
             sect_check = "%s-%s" %(split_sec_name[0], split_sec_name[1])
             if not workflow.cp.has_section(sect_check):
                 err_msg = "Injection section found with name %s. " %(section,)
-                err_msg += "Ahope uses the '-' as a delimiter so this is "
+                err_msg += "Workflow uses the '-' as a delimiter so this is "
                 err_msg += "interpreted as exe_tag-inj_tag-other_tag. "
                 err_msg += "No section with name %s was found. " %(sect_check,)
                 err_msg += "If you did not intend to use tags in an "
@@ -110,13 +110,13 @@ def setup_injection_workflow(workflow, output_dir=None,
         # FIXME: Remove once fixed in pipedown
         # TEMPORARILY we require inj tags to end in "INJ"
         if not inj_tag.endswith("INJ"):
-            err_msg = "Currently ahope requires injection names to end with "
+            err_msg = "Currently workflow requires injection names to end with "
             err_msg += "a inj suffix. Ie. bnslininj or bbhinj. "
             err_msg += "%s is not good." %(inj_tag.lower())
             raise ValueError(err_msg)
 
         # Parse for options in ini file
-        injectionMethod = workflow.cp.get_opt_tags("ahope-injections", 
+        injectionMethod = workflow.cp.get_opt_tags("workflow-injections", 
                                                  "injections-method", currTags)
 
         if injectionMethod in ["IN_WORKFLOW", "AT_RUNTIME"]:
@@ -130,11 +130,11 @@ def setup_injection_workflow(workflow, output_dir=None,
                 workflow.add_node(node)
             injFile = node.output_files[0]
         elif injectionMethod == "PREGENERATED":
-            injectionFilePath = workflow.cp.get_opt_tags("ahope-injections",
+            injectionFilePath = workflow.cp.get_opt_tags("workflow-injections",
                                       "injections-pregenerated-file", currTags)
             file_url = urlparse.urljoin('file:', urllib.pathname2url(\
                                                   injectionFilePath))
-            injFile = AhopeFile('HL', 'PREGEN_INJFILE', fullSegment, file_url,
+            injFile = WorkflowFile('HL', 'PREGEN_INJFILE', fullSegment, file_url,
                                 tags=currTags)
             injFile.PFN(injectionFilePath, site='local')
         else:
