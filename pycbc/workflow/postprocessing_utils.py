@@ -34,8 +34,8 @@ from __future__ import division
 import os
 import os.path
 from glue import segments
-from pycbc.ahope.ahope_utils import *
-from pycbc.ahope.jobsetup_utils import *
+from pycbc.workflow.workflow_utils import *
+from pycbc.workflow.jobsetup_utils import *
 
 def setup_postprocessing(workflow, trigger_files, summary_xml_files,
                          output_dir, tags=[], **kwargs):
@@ -47,13 +47,13 @@ def setup_postprocessing(workflow, trigger_files, summary_xml_files,
 
     Properties
     -----------
-    Workflow : ahope.Workflow
-        The ahope workflow instance that the coincidence jobs will be added to.
-    trigger_files : ahope.AhopeFileList
-        An AhopeFileList of the trigger files that are used as
+    Workflow : workflow.Workflow
+        The workflow instance that the coincidence jobs will be added to.
+    trigger_files : workflow.WorkflowFileList
+        An WorkflowFileList of the trigger files that are used as
         input at this stage.
-    summary_xml_files : ahope.AhopeFileList
-        An AhopeFileList of the output of the analysislogging_utils module.
+    summary_xml_files : workflow.WorkflowFileList
+        An WorkflowFileList of the output of the analysislogging_utils module.
     output_dir : path
         The directory in which output files will be stored.
     tags : list of strings (optional, default = [])
@@ -63,7 +63,7 @@ def setup_postprocessing(workflow, trigger_files, summary_xml_files,
 
     Returns
     --------
-    post_proc_files : ahope.AhopeFileList
+    post_proc_files : workflow.WorkflowFileList
         A list of the output from this stage.
 
     """
@@ -71,31 +71,31 @@ def setup_postprocessing(workflow, trigger_files, summary_xml_files,
     make_analysis_dir(output_dir)
 
     # Parse for options in .ini file
-    post_proc_method = workflow.cp.get_opt_tags("ahope-postproc",
+    post_proc_method = workflow.cp.get_opt_tags("workflow-postproc",
                                         "postproc-method", tags)
 
     # Scope here for adding different options/methods here. For now we only
     # have the single_stage ihope method which consists of converting the
     # ligolw_thinca output xml into one file, clustering, performing injection
     # finding and putting everything into one SQL database.
-    if post_proc_method == "PIPEDOWN_AHOPE":
+    if post_proc_method == "PIPEDOWN_WORKFLOW":
         # If you want the intermediate output files, call this directly
-        post_proc_files = setup_postproc_pipedown_ahope(workflow,
+        post_proc_files = setup_postproc_pipedown_workflow(workflow,
                            trigger_files, summary_xml_files, output_dir,
                            tags=tags, **kwargs)
     else:
         errMsg = "Post-processing method not recognized. Must be "
-        errMsg += "one of PIPEDOWN_AHOPE (currently only one option)."
+        errMsg += "one of PIPEDOWN_WORKFLOW (currently only one option)."
         raise ValueError(errMsg)
 
     logging.info("Leaving post-processing module.")
 
     return post_proc_files
 
-def setup_postproc_pipedown_ahope(workflow, trigger_files, summary_xml_files,
+def setup_postproc_pipedown_workflow(workflow, trigger_files, summary_xml_files,
                                   output_dir, tags=[], veto_cats=[]):
     """
-    This module sets up the post-processing stage in ahope, using a pipedown
+    This module sets up the post-processing stage in the workflow, using a pipedown
     style set up. This consists of running compute_durations to determine and
     store the analaysis time (foreground and background). It then runs cfar
     jobs to determine the false alarm rate for all triggers (simulations or
@@ -104,13 +104,13 @@ def setup_postproc_pipedown_ahope(workflow, trigger_files, summary_xml_files,
     containing all triggers. This sub-module follows that same idea, so
     len(triggerFiles) must equal 1 (for every DQ category that we will run).
 
-    Workflow : ahope.Workflow
-        The ahope workflow instance that the coincidence jobs will be added to.
-    trigger_files : ahope.AhopeFileList
-        An AhopeFileList containing the combined databases at CAT_1,2,3... that
+    Workflow : workflow.Workflow
+        The workflow instance that the coincidence jobs will be added to.
+    trigger_files : workflow.WorkflowFileList
+        An WorkflowFileList containing the combined databases at CAT_1,2,3... that
         will be used to calculate FARs
-    summary_xml_files : ahope.AhopeFileList
-        An AhopeFileList of the output of the analysislogging_utils module.
+    summary_xml_files : workflow.WorkflowFileList
+        An WorkflowFileList of the output of the analysislogging_utils module.
         For pipedown-style post-processing this should be one file conataing a
         segment table holding the single detector analysed times.
     output_dir : path
@@ -127,7 +127,7 @@ def setup_postproc_pipedown_ahope(workflow, trigger_files, summary_xml_files,
    
     Returns
     --------
-    final_files : ahope.AhopeFileList
+    final_files : workflow.WorkflowFileList
         A list of the final SQL databases containing computed FARs.
     """
     if not veto_cats:
@@ -138,16 +138,16 @@ def setup_postproc_pipedown_ahope(workflow, trigger_files, summary_xml_files,
         raise ValueError(errMsg)
 
     # Setup needed exe classes
-    compute_durations_exe_tag = workflow.cp.get_opt_tags("ahope-postproc",
+    compute_durations_exe_tag = workflow.cp.get_opt_tags("workflow-postproc",
                                    "postproc-computedurations-exe", tags)
     compute_durations_exe = select_generic_executable(workflow,
                                                      compute_durations_exe_tag)
-    cfar_exe_tag = workflow.cp.get_opt_tags("ahope-postproc", "postproc-cfar-exe",
+    cfar_exe_tag = workflow.cp.get_opt_tags("workflow-postproc", "postproc-cfar-exe",
                                        tags)
     cfar_exe = select_generic_executable(workflow, cfar_exe_tag) 
 
-    comp_durations_outs = AhopeFileList([])
-    cfar_outs = AhopeFileList([])
+    comp_durations_outs = WorkflowFileList([])
+    cfar_outs = WorkflowFileList([])
 
     for veto_cat in veto_cats:
         veto_tag = 'CUMULATIVE_CAT_%d' %(veto_cat,)
