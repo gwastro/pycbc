@@ -11,7 +11,7 @@
 import argparse
 import pycbc
 import pycbc.version
-from pycbc import ahope
+from pycbc import workflow
 import sqlite3
 import sys
 import os
@@ -68,12 +68,12 @@ def parse_command_line():
         help="""The segment file containing the segments that have been
                 analysed by each interferometer. This should contain the
                 segments for all ifos using the same name. For e.g. if I set
-                --channel-name==AHOPE_SEGS I expect this file to contain 
-                H1:AHOPE_SEGS:1, L1:AHOPE_SEGS:1, ... The version number can
+                --channel-name==WORKFLOW_SEGS I expect this file to contain 
+                H1:WORKFLOW_SEGS:1, L1:WORKFLOW_SEGS:1, ... The version number can
                 take any value but we should **not** have multiple version
                 numbers in the same document. Ie. do not include
-                H1:AHOPE_SEGS:1 **and** H1:AHOPE_SEGS:2. Ahope will produce
-                this file from its analysislogging_utils module.""")
+                H1:WORKFLOW_SEGS:1 **and** H1:WORKFLOW_SEGS:2. Workflow will produce
+                this file from its analysislogging module.""")
     parser.add_argument("-c", "--channel-name", action="store", type=str,
         required=True, metavar="CHANNEL_NAME",
         help="""The channel name to search for in the --segment-file. See help
@@ -196,14 +196,14 @@ usertags = ["FULL_DATA"]
 
 for tag in (set(usertags) & set(["FULL_DATA","PLAYGROUND"])):
     fP = open(args.segment_file, 'r')
-    ahopeAnalysisSegDict = ahope.segment_utils.fromsegmentxml(fP, dict=True)
+    WorkflowAnalysisSegDict = workflow.segment.fromsegmentxml(fP, dict=True)
     fP.close()
     ifo_segments[tag] = segments.segmentlistdict([])
-    for key in ahopeAnalysisSegDict.keys():
+    for key in WorkflowAnalysisSegDict.keys():
         # Key should be something like H1:DMT-SCIENCE:3
         channel_details = key.split(':')
         if channel_details[1] == args.channel_name:
-            ifo_segments[tag][channel_details[0]] = ahopeAnalysisSegDict[key]
+            ifo_segments[tag][channel_details[0]] = WorkflowAnalysisSegDict[key]
 
     if tag == "FULL_DATA":
         datatypes[tag] = ["all_data","slide"]
