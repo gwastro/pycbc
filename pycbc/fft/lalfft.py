@@ -111,6 +111,8 @@ def _get_inv_plan(prec,itype,otype,outlen):
 
 
 def fft(invec,outvec,prec,itype,otype):
+    if invec.ptr == outvec.ptr:
+        raise NotImplementedError("lal backend of pycbc.fft does not support in-place transforms.")
     theplan = _get_fwd_plan(prec,itype,otype,len(invec))
     inlal = _newlalvec[(prec,itype)](len(invec))
     outlal = _newlalvec[(prec,otype)](len(outvec))
@@ -121,6 +123,8 @@ def fft(invec,outvec,prec,itype,otype):
     del outlal
 
 def ifft(invec,outvec,prec,itype,otype):
+    if invec.ptr == outvec.ptr:
+        raise NotImplementedError("lal backend of pycbc.fft does not support in-place transforms.")
     theplan = _get_inv_plan(prec,itype,otype,len(outvec))
     inlal = _newlalvec[(prec,itype)](len(invec))
     outlal = _newlalvec[(prec,otype)](len(outvec))

@@ -83,7 +83,7 @@ def check_status(status):
         raise RuntimeError(msg)
    
 @memoize     
-def create_descriptor(size, idtype, odtype):
+def create_descriptor(size, idtype, odtype, inplace):
     invec = zeros(1, dtype=idtype)
     outvec = zeros(1, dtype=odtype)
     
@@ -95,22 +95,26 @@ def create_descriptor(size, idtype, odtype):
     domain = mkl_domain[str(invec.kind)][str(outvec.kind)]
     
     status = f(ctypes.byref(desc), prec, domain, 1, size)
-    
-    lib.DftiSetValue(desc, DFTI_PLACEMENT, DFTI_NOT_INPLACE)
+    if inplace:
+        lib.DftiSetValue(desc, DFTI_PLACEMENT, DFTI_INPLACE)
+    else:
+        lib.DftiSetValue(desc, DFTI_PLACEMENT, DFTI_NOT_INPLACE)
     lib.DftiSetValue(desc, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_CCS_FORMAT)
     lib.DftiCommitDescriptor(desc)
     check_status(status)
     return desc
     
 def fft(invec, outvec, prec, itype, otype):
-    descr = create_descriptor(max(len(invec), len(outvec)), invec.dtype, outvec.dtype)
+    descr = create_descriptor(max(len(invec), len(outvec)), invec.dtype,
+                              outvec.dtype, (invec.ptr == outvec.ptr))
     f = lib.DftiComputeForward
     f.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
     status = f(descr, invec.ptr, outvec.ptr)
     check_status(status)
     
 def ifft(invec, outvec, prec, itype, otype):
-    descr = create_descriptor(max(len(invec), len(outvec)), invec.dtype, outvec.dtype)
+    descr = create_descriptor(max(len(invec), len(outvec)), invec.dtype,
+                              outvec.dtype, (invec.ptr == outvec.ptr))
     f = lib.DftiComputeBackward
     f.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
     status = f(descr, invec.ptr, outvec.ptr)

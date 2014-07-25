@@ -50,6 +50,9 @@ def _get_plan(itype,otype,inlen):
 
 def fft(invec, outvec, prec, itype, otype):
     # This has been hacked horrible to make it work more generally
+    if invec.ptr == outvec.ptr:
+        # Not actually sure if it does support them, but for now it's an error
+        raise NotImplementedError("opencl backend of pycbc.fft does not support in-place transforms.")
     N = int(near_two(len(outvec)))
     N2 = int (near_two(len(invec)))
     if N2 > N:
@@ -66,6 +69,10 @@ def fft(invec, outvec, prec, itype, otype):
     outvec.data = o[0:len(outvec)]
 
 def ifft(invec, outvec, prec, itype, otype):
+    if invec.ptr == outvec.ptr:
+        # Not actually sure if it does support them, but for now it's an error
+        raise NotImplementedError("opencl backend of pycbc.fft does not support in-place transforms.")
+
     if otype == 'complex':
         pyplan=_get_plan(invec.dtype, outvec.dtype, len(outvec))
         pyplan.execute(invec.data.data, outvec.data.data, inverse=True)    

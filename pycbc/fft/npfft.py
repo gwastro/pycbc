@@ -30,12 +30,16 @@ import pycbc.types
 import numpy.fft
 
 def fft(invec,outvec,prec,itype,otype):
+    if invec.ptr == outvec.ptr:
+        raise NotImplementedError("numpy backend of pycbc.fft does not support in-place transforms")
     if itype == 'complex' and otype == 'complex':
         outvec.data = numpy.asarray(numpy.fft.fft(invec.data),dtype=outvec.dtype)
     elif itype == 'real' and otype == 'complex':
         outvec.data = numpy.asarray(numpy.fft.rfft(invec.data),dtype=outvec.dtype)
 
 def ifft(invec,outvec,prec,itype,otype):
+    if invec.ptr == outvec.ptr:
+        raise NotImplementedError("numpy backend of pycbc.fft does not support in-place transforms")
     if itype == 'complex' and otype == 'complex':
         outvec.data = numpy.asarray(numpy.fft.ifft(invec.data),dtype=outvec.dtype)
         outvec *= len(outvec)

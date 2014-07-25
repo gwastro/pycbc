@@ -247,30 +247,44 @@ execute_function = {'float32': {'complex64': float_lib.fftwf_execute_dft_r2c},
                    }
 
 @memoize
-def plan(size, idtype, odtype, direction, mlvl, aligned, nthreads):
+def plan(size, idtype, odtype, direction, mlvl, aligned, nthreads, inplace):
     if not _fftw_threaded_set:
         set_threads_backend()
     if nthreads != _fftw_current_nthreads:
         _fftw_plan_with_nthreads(nthreads)
     # Convert a measure-level to flags
     flags = get_flag(mlvl,aligned)
-
+    
+    # We make our arrays of the necessary type and size.  Things can be
+    # tricky, especially for in-place transforms with one of input or
+    # output real.
     if (idtype == odtype):
         # We're in the complex-to-complex case, so lengths are the same
-        isize = size
-        osize = size
+        ip = zeros(size, dtype=idtype)
+        if inplace:
+            op = ip
+        else:
+            op = zeros(size, dtype=odtype)
     elif (idtype.kind == 'c') and (odtype.kind == 'f'):
-        # Complex-to-real (reverse), so size is length of real array
-        isize = size/2+1
-        osize = size
+        # Complex-to-real (reverse), so size is length of real array.
+        # However the complex array may be larger (in bytes) and
+        # should therefore be allocated first and reused for an in-place
+        # transform
+        ip = zeros(size/2+1, dtype=idtype)
+        if inplace:
+            op = ip.view(dtype=odtype)[0:size]
+        else:
+            op = zeros(size, dtype=odtype)
     else:
-        # Real-to-complex (forward), and size is still that of real
-        isize = size
-        osize = size/2+1
-
-    # make some representative arrays
-    ip = zeros(isize, dtype=idtype)
-    op = zeros(osize, dtype=odtype)
+        # Real-to-complex (forward), and size is still that of real.
+        # However it is still true that the complex array may be larger
+        # (in bytes) and should therefore be allocated first and reused
+        # for an in-place transform
+        op = zeros(size/2+1, dtype=odtype)
+        if inplace:
+            ip = op.view(dtype=idtype)[0:size]
+        else:
+            ip = zeros(size, dtype=idtype)
 
     # Get the plan function
     idtype = numpy.dtype(idtype)
@@ -289,6 +303,10 @@ def plan(size, idtype, odtype, direction, mlvl, aligned, nthreads):
                       ctypes.c_int]
         theplan = f(size, ip.ptr, op.ptr, flags)
 
+    # We don't need ip or op anymore
+    del ip, op
+
+    # And done...
     return theplan
 
 
@@ -303,13 +321,13 @@ def execute(plan, invec, outvec):
 def fft(invec, outvec, prec, itype, otype):
     theplan = plan(len(invec), invec.dtype, outvec.dtype, FFTW_FORWARD,
                    get_measure_level(),(invec._data.isaligned and outvec._data.isaligned),
-                   _scheme.mgr.state.num_threads)
+                   _scheme.mgr.state.num_threads, (invec.ptr == outvec.ptr))
     execute(theplan, invec, outvec)
 
 def ifft(invec, outvec, prec, itype, otype):
     theplan = plan(len(outvec), invec.dtype, outvec.dtype, FFTW_BACKWARD,
                    get_measure_level(),(invec._data.isaligned and outvec._data.isaligned),
-                   _scheme.mgr.state.num_threads)
+                   _scheme.mgr.state.num_threads, (invec.ptr == outvec.ptr))
     execute(theplan, invec, outvec)
 
 def insert_fft_options(optgroup):
