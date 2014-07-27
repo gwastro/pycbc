@@ -484,15 +484,15 @@ class PyCBCTrig2HDFExecutable(AhopeExecutable):
 class PyCBCFindCoincExecutable(AhopeExecutable):
     """ Find coinc triggers using a folded interval method 
     """
-    def create_node(self, trig_files, veto_files, hdf_prefix):
+    def create_node(self, trig_files, veto_files, hdf_prefix, tags=[]):
         segs = trig_files.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
         
         node = AhopeNode(self)
         node.add_input_list_opt('--trigger-files', trig_files)
         node.add_input_list_opt('--veto-files', veto_files)
-        node.add_input_opt('--hdf-prefix', hdf_prefix)
-        node.new_output_file_opt(seg, '.hdf', '--output-file') 
+        node.add_opt('--hdf-prefix', hdf_prefix)
+        node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags) 
         return node
     
 def setup_interval_coinc(workflow, bank, inspiral, veto, out_dir, tags=[]):
@@ -510,6 +510,7 @@ def setup_interval_coinc(workflow, bank, inspiral, veto, out_dir, tags=[]):
     --------
     I don't know yet...
     """
+    make_analysis_dir(out_dir)
     logging.info('Setting up coincidence')
     #FIXME, make me not needed
     # convert template bank to hdf 
@@ -544,10 +545,13 @@ def setup_interval_coinc(workflow, bank, inspiral, veto, out_dir, tags=[]):
     # actually calculate foreground and background coincidences
     findcoinc_exe = PyCBCFindCoincExecutable(workflow.cp, 'coinc', 
                                               ifos=workflow.ifos)
-    for veto_file in veto:
-        print veto_file.tags
-        for group_id in range(int(trig2hdf_exe.get_opt('number-of-groups'))):
-            coinc_node = findcoinc_exe.create_node(trig_files, veto_file, group_id)   
-            workflow.add_node(coinc_node)
+                                              
+                                              
+    tags, veto_file_groups = veto.categorize_by_attr('tags')
+    for tag, veto_files in zip(tags, veto_file_groups):
+        if 'CUMULATIVE_CAT' in tag[0]:
+            for group_id in range(int(trig2hdf_exe.get_opt('number-of-groups'))):
+                coinc_node = findcoinc_exe.create_node(trig_files, veto_files, group_id, tags=tag)   
+                workflow.add_node(coinc_node)
     logging.info('...leaving coincidence ')
     
