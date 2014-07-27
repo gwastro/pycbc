@@ -296,6 +296,9 @@ setup (
                'bin/pycbc_make_daily_workflow',
                'bin/pycbc_ligolw_find_playground',
                'bin/pycbc_basic_pegasus_plan',
+               'bin/pycbc_coinc_findtrigs',
+               'bin/pycbc_coinc_bank2hdf',
+               'bin/pycbc_coinc_trig2hdf',
                ],
     packages = [
                'pycbc',

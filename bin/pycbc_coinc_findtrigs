@@ -1,0 +1,245 @@
+#!/bin/env  python
+"""
+This program find the foreground and background coincidence between single
+detector gravitational-wave triggers, using  a dynamic  sampling  timeslide
+method.
+"""
+import itertools, copy, numpy, logging, argparse, h5py, os
+from pycbc.detector import Detector
+
+class BinnedLookup(dict):
+    """ Lookup  table for a binned column vectors
+    """
+    def  __init__(self, columns, column_types, bounds):
+        """ Create a lookup table  for a binned column vectors.
+        
+        Parameters
+        ----------
+        columns : list  of uint32 numpy  arrays
+            The column  vectors to instantiate the lookup table
+        column_types : 'neighbors', 'exact'
+            Type of binning performed  on the column
+        bounds : list of tuples (int, int)
+            List of tuples of two ints that represent the cyclic boundaries
+            of the bins. None if not cyclic. 
+        """
+        self.columns = columns
+        self.column_types = column_types 
+        self.bounds = bounds
+       
+        if  len(columns) != len(column_types) != len(bounds):
+            raise ValueError('Number of columns, names, and types must match')
+           
+        self.columns, self.indices = self._expand_columns() 
+        for j, tup in enumerate(itertools.izip(*self.columns)):   
+            if tup not in self:
+                self[tup] = [self.indices[j]]
+            else:
+                self[tup].append(self.indices[j])
+
+    def lookup(self, columns):
+        """Return two arrays of index and result for matches between
+        the binned input columns and this lookup
+        
+        Parameters
+        ----------
+        columns : list of binned column vectors to look up in the dictionary
+        
+        Returns
+        index, index : two arrays containing the matched indices
+        """
+        if len(columns) != len(self.columns):
+            raise ValueError('Number of columns, names, and types must match')
+        
+        d1_indices = []
+        d2_indices = []
+        for index, tup in enumerate(itertools.izip(*columns)): 
+            if tup in self:
+                for index2 in self[tup]:
+                    d1_indices.append(index)
+                    d2_indices.append(index2)
+        return (numpy.array(d1_indices, dtype=numpy.uint32), 
+               numpy.array(d2_indices, dtype=numpy.uint32) )
+
+    def _cyclic_increment(self, vec, lbound, ubound):
+        vec = vec + 1
+        if ubound and lbound:
+            vec[vec>ubound] = lbound
+        return vec
+        
+    def _cyclic_decrement(self, vec, lbound, ubound):
+        vec = vec - 1
+        if lbound and lbound:
+            vec[vec<lbound] = ubound
+        return vec
+        
+    def _expand_columns(self):
+        expanded = copy.deepcopy(self.columns)
+        indices = numpy.arange(0, len(expanded[0]), 1).astype(numpy.uint32)
+        for i, (c, t) in enumerate(zip(self.columns, self.column_types)):
+            if t == 'exact':
+                continue
+            elif t == 'neighbors':
+                for j, (vec, (lb, ub)) in enumerate(zip(expanded, self.bounds)):
+                    if i == j:
+                        upper = self._cyclic_increment(vec, lb, ub)
+                        lower = self._cyclic_decrement(vec, lb, ub)
+                        expanded[i] = numpy.concatenate((lower, vec, upper))
+                    else:
+                        expanded[j] = numpy.resize(vec, len(vec)*3)
+                        indices = numpy.resize(indices, len(indices)*3)
+        return expanded, indices
+        
+def bin_vector(vector, window):
+    return (vector / window).astype(numpy.uint32)
+    
+def bin_slide_window(time, slide_step, window):
+    bins =  (numpy.remainder(time, slide_step) / window).astype(numpy.uint32)
+    return bins
+    
+def exact_match_binning(time, template, time_step, time_window):
+    columns = []
+    if time_step is not None:
+        columns.append(bin_slide_window(time, time_step, time_window))
+    else:
+        columns.append(bin_vector(time, time_window)) 
+    columns.append(template)
+    return columns
+    
+def test_exact_match_coincidence(index1, index2, time1, time2, slide_step, window):
+    coinc_times1 = time1[index1]
+    coinc_times2 = time2[index2]
+    if slide_step is not None:
+        slide_index = numpy.around(((coinc_times2 - coinc_times1) / slide_step)).astype(numpy.int32)
+        time_diff = abs(coinc_times2 - coinc_times1 - slide_index * slide_step)
+    else:
+        slide_index = numpy.zeros(len(index1), dtype=numpy.int32)
+        time_diff = abs(coinc_times2 - coinc_times1)
+    passes = (time_diff <= window)
+    return index1[passes], index2[passes], slide_index[passes]
+    
+def load_triggers(trigger_files, prefix):
+    triggers = {}
+    num_trigs = 0
+    duration = 0
+    for i, filename in enumerate(trigger_files):
+        logging.info('Loading file: %s' % filename)
+        f = h5py.File(filename, "r")
+        snr = f[prefix + '/stat'][:]
+        end_time = f[prefix + '/end_time'][:]
+        th = f[prefix + '/template_id'][:]
+
+        if len(snr) > 0:
+            ifo = f.attrs['ifo']
+
+            if ifo not in triggers:
+                triggers[ifo] = ([], [], [])
+
+            sl, el, tl = triggers[ifo]
+            sl += [snr]
+            el += [end_time]
+            tl += [th]
+
+            num_trigs += len(snr)
+        logging.info("%s/%s : Total Trigs=%s: %s-%s" % (i+1, len(trigger_files), num_trigs, snr.min(), snr.max()))
+    
+    for key in triggers.keys():
+        sl, el, tl = triggers[key]
+        triggers[key] = (numpy.concatenate(sl), 
+                         numpy.concatenate(el),
+                         numpy.concatenate(tl))
+    return triggers  
+
+def veto_indices(times, veto_files):
+    times = numpy.sort(times)
+    indices = numpy.array([], dtype=numpy.uint32)
+
+    from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
+    class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+        pass
+    lsctables.use_in(LIGOLWContentHandler)
+   
+    for veto_file in veto_files:
+        indoc = ligolw_utils.load_filename(veto_file, False, contenthandler=LIGOLWContentHandler)
+        segment_table  = table.get_table(indoc, lsctables.SegmentTable.tableName)
+        start = numpy.array(segment_table.getColumnByName('start_time')) + numpy.array(segment_table.getColumnByName('start_time_ns')) * 1e-9
+        end = numpy.array(segment_table.getColumnByName('end_time')) + numpy.array(segment_table.getColumnByName('end_time_ns')) * 1e-9
+        
+        left = numpy.searchsorted(times, start, side='left')
+        right = numpy.searchsorted(times, end, side='right')       
+        for li, ri in zip(left, right):
+            seg_indices = numpy.arange(li, ri, 1).astype(numpy.uint32)
+            indices=numpy.union1d(seg_indices, indices)       
+    return indices    
+
+if __name__ == '__main__': 
+    parser = argparse.ArgumentParser()
+    # General required options
+    parser.add_argument('--trigger-files', nargs='+')
+    parser.add_argument('--veto-files', nargs='+')
+    # Could be different ways to communicate this information, think about it
+    parser.add_argument('--timeslide-interval', type=float, default=None)
+    parser.add_argument('--hdf-prefix')
+    parser.add_argument('--verbose', '-v', action='count')
+    parser.add_argument('--output-file')
+    args = parser.parse_args()
+
+    if args.verbose == 1:
+        log_level = logging.INFO
+    elif args.verbose == 2:
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.WARN
+    logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)       
+
+    triggers = load_triggers(args.trigger_files, args.hdf_prefix)
+    ifo1, ifo2 = triggers.keys()
+    s1, t1, r1 = triggers[ifo1]
+    s2, t2, r2 = triggers[ifo2]
+    
+    logging.info('applying vetoes')
+    veto = veto_indices(t1, args.veto_files)
+    s1, t1, r1 = numpy.delete(s1, veto), numpy.delete(t1, veto), numpy.delete(r1, veto)
+    s2, t2, r2 = numpy.delete(s2, veto), numpy.delete(t2, veto), numpy.delete(r2, veto)
+    
+    d1 = Detector(ifo1)
+    d2 = Detector(ifo2)
+    logging.info('d1 : %s d2: %s' % (len(s1), len(s2)))
+    time_window = d1.light_travel_time_to_detector(d2)
+    
+    slide = args.timeslide_interval  
+    logging.info('making bins') 
+    c1s = exact_match_binning(t1, r1, slide, time_window)
+    c2s = exact_match_binning(t2, r2, slide, time_window)
+    
+    logging.info('making lookup table')     
+    if args.timeslide_interval is not None: 
+        course = BinnedLookup(c2s, ['neighbors', 'exact'],
+                                   [(0, int(slide/time_window)), (None, None)])
+    else:
+        logging.info('only looking for foreground events')
+        course = BinnedLookup(c2s, ['neighbors', 'exact'], 
+                                   [(None, None), (None, None)]) 
+
+    logging.info('finding course coincidences')                  
+    i1, i2 = course.lookup(c1s)
+    
+    logging.info('finding coincidences')   
+    c1, c2, slide_index = test_exact_match_coincidence(i1, i2, t1, t2, slide, time_window)
+    
+    logging.info('%s total triggers' % len(c1))
+    logging.info('%s foreground triggers' % (slide_index == 0).sum())
+    logging.info('saving coincident triggers')
+    f = h5py.File(args.output_file, "w")    
+    
+    if len(c1) > 0:
+        f.create_dataset('coinc/stat1', data=s1[c1])
+        f.create_dataset('coinc/stat2', data=s2[c2])
+        f.create_dataset('coinc/time1', data=t1[c1])
+        f.create_dataset('coinc/time2', data=t2[c2])
+        f.create_dataset('coinc/timeslide_id', data=slide_index)
+        f.create_dataset('coinc/template_id', data=r1[c1])
+    else:
+        logging.info('huh, why are there no triggers?')
+
+    logging.info('Done')

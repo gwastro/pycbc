@@ -1,0 +1,112 @@
+#!/usr/bin/python
+""" This program converts single detector xml files into hdf files 
+in preparation for coincidence
+"""
+import numpy, argparse
+from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
+
+import h5py, os
+# dummy class needed for loading LIGOLW files
+class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(LIGOLWContentHandler)
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--trigger-files', nargs='+')
+parser.add_argument('--bank-file')
+parser.add_argument('--number-of-groups', type=int)
+parser.add_argument('--output-file')
+args = parser.parse_args()
+
+def read_files(trigger_files):
+    snrs = []
+    end_times = []
+    ths = []
+    
+    # This iteration is  only for  split  input, do not combine from different
+    # detectors or time
+    for i, filename in enumerate(trigger_files):
+_        indoc = ligolw_utils.load_filename(filename, False, contenthandler=LIGOLWContentHandler)
+        sngl_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName)
+        
+        if  i == 0:
+            search_sum = table.get_table(indoc, lsctables.SearchSummaryTable.tableName)
+            ifo = search_sum[0].ifos
+            start = search_sum[0].out_start_time
+            end = search_sum[0].out_end_time
+            
+        snr = numpy.array(sngl_table.get_new_snr(), dtype=numpy.float32)
+        end_time = numpy.array(sngl_table.get_column('end_time') + 1e-9 * sngl_table.get_column('end_time_ns'), dtype=numpy.float64)
+               
+        m1 = numpy.array(sngl_table.get_column('mass1'), dtype=numpy.float32)
+        m2 = numpy.array(sngl_table.get_column('mass2'), dtype=numpy.float32)
+        s1 = numpy.array(sngl_table.get_column('spin1z'), dtype=numpy.float32)
+        s2 = numpy.array(sngl_table.get_column('spin2z'), dtype=numpy.float32)
+        th = numpy.zeros(len(m1), dtype=int)
+        for j, v in enumerate(zip(m1, m2, s1, s2)):
+            th[j] = hash(v)
+        
+        snrs.append(snr)
+        end_times.append(end_time)
+        ths.append(th)
+        
+        print "transforming file %s/%s" % (i+1, len(args.trigger_files))
+    return numpy.concatenate(snrs), numpy.concatenate(end_times), numpy.concatenate(ths), (ifo, start, end)
+
+def hash_to_row(template_hashes):
+    row_lookup = {}
+    for i, h in enumerate(template_hashes):
+        row_lookup[h] = i
+    return row_lookup
+
+def group_trigs_by_hash(template_hash, trig_hash, snr, end_time, num_groups):
+    sort_trig = trig_hash.argsort()
+    trig_hash = trig_hash[sort_trig]
+    snr = snr[sort_trig]
+    end_time = end_time[sort_trig]
+
+    bounds = []
+    for i in range(num_groups):
+        index = len(template_hash) / num_groups * i
+        bounds.append(template_hash[index])        
+    
+    trig_bounds = numpy.searchsorted(trig_hash, bounds)
+    trig_bounds = list(trig_bounds) + [len(trig_hash)]
+    
+    template_map = hash_to_row(template_hash)
+    
+    snrs = []
+    end_times = []
+    tids = []
+    for j in range(len(trig_bounds) - 1):
+        l = trig_bounds[j]
+        r = trig_bounds[j+1]
+        snrs.append(snr[l:r])
+        end_times.append(end_time[l:r])
+        
+        tid = numpy.zeros(r-l, dtype=numpy.uint32)
+        for i, h in enumerate(trig_hash[l:r]):
+            tid[i] = template_map[h]
+        tids.append(tid)
+    
+    return snrs, end_times, tids
+
+f = h5py.File(args.bank_file, "r")
+template_hashes = f['template_hash'][:]
+
+snr, end_time, trig_hash, (ifo, start, end) = read_files(args.trigger_files)
+
+snrs, end_times, tids = group_trigs_by_hash(template_hashes, trig_hash, 
+                                            snr, end_time,
+                                            args.number_of_groups)
+
+f = h5py.File(args.output_file, "w")
+f.attrs['ifo'] = str(ifo) 
+f.attrs['start_time'] = int(start)
+f.attrs['end_time'] = int(end)
+for i, v in enumerate(zip(snrs, end_times, tids)):
+    snr, end_time, tid = v                                           
+    f.create_dataset("%i/stat" % i, data=snr)
+    f.create_dataset("%i/end_time" % i, data=end_time)
+    f.create_dataset("%i/template_id" % i, data=tid)
+f.close()

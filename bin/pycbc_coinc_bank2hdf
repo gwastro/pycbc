@@ -1,0 +1,47 @@
+#!/usr/bin/python
+""" This program converts a standard sngl_inspiral table based template bank
+into an hdf format that includes a template hash used to associate triggers
+with their template.
+"""
+import numpy, pylab, argparse
+from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
+
+import h5py, os
+# dummy class needed for loading LIGOLW files
+class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(LIGOLWContentHandler)
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument('--bank-file')
+parser.add_argument('--output-file')
+args = parser.parse_args()
+
+indoc = ligolw_utils.load_filename(args.bank_file, False, contenthandler=LIGOLWContentHandler)
+sngl_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName)
+
+m1 = numpy.array(sngl_table.get_column('mass1'), dtype=numpy.float32)
+m2 = numpy.array(sngl_table.get_column('mass2'), dtype=numpy.float32)
+s1 = numpy.array(sngl_table.get_column('spin1z'), dtype=numpy.float32)
+s2 = numpy.array(sngl_table.get_column('spin2z'), dtype=numpy.float32)
+
+th = numpy.zeros(len(m1), dtype=int)
+for j, v in enumerate(zip(m1, m2, s1, s2)):
+    th[j] = hash(v)
+
+# Store the templates by sorted id
+sorted_ind = th.argsort()
+m1 = m1[sorted_ind]
+m2 = m2[sorted_ind]
+s1 = s1[sorted_ind]
+s2 = s2[sorted_ind]
+th = th[sorted_ind]
+    
+f = h5py.File(args.output_file, "w")
+f.create_dataset("mass1", data=m1)
+f.create_dataset("mass2", data=m1)
+f.create_dataset("spin1z", data=s1)
+f.create_dataset("spin2z", data=s2)
+f.create_dataset("template_hash", data=th)
+f.close()
