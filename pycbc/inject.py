@@ -178,6 +178,7 @@ class InjectionSet(object):
                     phase_order=phase_order,
                     f_lower=f_l, distance=inj.distance * distance_scale,
                     **self.extra_args)
+
                 hp._epoch += float(end_time)
                 hc._epoch += float(end_time)
                 if float(hp.start_time) > t1:
