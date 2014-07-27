@@ -551,7 +551,7 @@ def setup_interval_coinc(workflow, bank, inspiral, veto, out_dir, tags=[]):
     for tag, veto_files in zip(tags, veto_file_groups):
         if 'CUMULATIVE_CAT' in tag[0]:
             for group_id in range(int(trig2hdf_exe.get_opt('number-of-groups'))):
-                coinc_node = findcoinc_exe.create_node(trig_files, veto_files, group_id, tags=tag)   
+                coinc_node = findcoinc_exe.create_node(trig_files, veto_files, str(group_id), tags=tag)   
                 workflow.add_node(coinc_node)
     logging.info('...leaving coincidence ')
     
