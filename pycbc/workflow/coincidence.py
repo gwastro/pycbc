@@ -465,19 +465,28 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
 class PyCBCBank2HDFExecutable(AhopeExecutable):
     """ This converts xml tmpltbank to an hdf format
     """
-    pass
+    def create_node(self, bank_file):
+        node = AhopeNode(self)
+        node.add_input_opt('--bank-file', bank_file)
+        node.new_output_file_opt(bank_file.segment, '.hdf', '--output-file') 
+        return node
     
 class PyCBCTrig2HDFExecutable(AhopeExecutable):
     """ This converts xml triggers to an hdf format 
     """
-    pass
+    def create_node(self, trig_files, bank_file):
+        node = AhopeNode(self)
+        node.add_input_opt('--bank-file', bank_file)
+        node.add_input_opt_list('--trigger-files', trig_file)
+        node.new_output_file_opt(trig_files[0].segment, '.hdf', '--output-file') 
+        return node
     
 class PyCBCFindCoinExecutable(AhopeExecutable):
     """ Find coinc triggers using a folded interval method 
     """
     pass
     
-def setup_interval_coinc((workflow, bank, inspiral, veto, output_dir, tags=[]):
+def setup_interval_coinc((workflow, bank, inspiral, veto, out_dir, tags=[]):
     """
     This function sets up exact match coincidence and background estimation
     using a folded interval technique.
@@ -492,5 +501,32 @@ def setup_interval_coinc((workflow, bank, inspiral, veto, output_dir, tags=[]):
     --------
     I don't know yet...
     """
-    pass
+    #FIXME, make me not needed
+    # convert template bank to hdf 
+    bank2hdf_exec = PyCBCBank2HDFExecutable(workflow.cp, 'bank2hdf', 
+                                            ifos=bank.ifo_list, 
+                                            out_dir=out_dir, tags=tags)
+    bank2hdf_node = bank2hdf_exe.create_node(bank_file)
+    workflow.add_node(bank2hdf_node)
+    hdfbank = bank2hdf_node.output_files[0]
+    
+    #FIXME, make me not needed
+    # convert trigger files to hdf
+    ifos, insp_groups = inspiral.categorize_by_attr('ifo')
+    
+    if len(ifos) > 2:
+        raise ValueError('This coincidence method only supports two ifo searches')
+        
+    trig_files = []
+    for ifo, insp_group in zip(ifo,  insp_groups):
+        trig2hdf_exec = PyCBCTrig2HDFExecutable(workflow.cp, 'trig2hdf',
+                                                ifos=ifo, out_dir=out_dir,
+                                                tags=tags)
+        segments, insp_bundles = insp_group.categorize_by_attr('segment')
+        for inps in  insp_bundles:
+            trig2hdf_node =  trig2hdf_exe.create_node(insps, hdfbank)
+            workflow.add_node(trig2hdf_node)
+            trig_files += trig2hdf_node.output_files()
+            
+            
     
