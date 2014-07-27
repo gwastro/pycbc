@@ -477,7 +477,7 @@ class PyCBCTrig2HDFExecutable(AhopeExecutable):
     def create_node(self, trig_files, bank_file):
         node = AhopeNode(self)
         node.add_input_opt('--bank-file', bank_file)
-        node.add_input_opt_list('--trigger-files', trig_files)
+        node.add_input_list_opt('--trigger-files', trig_files)
         node.new_output_file_opt(trig_files[0].segment, '.hdf', '--output-file') 
         return node
     
@@ -489,13 +489,13 @@ class PyCBCFindCoincExecutable(AhopeExecutable):
         seg = segments.segment(segs[0][0], segs[-1][1])
         
         node = AhopeNode(self)
-        node.add_input_opt_list('--trigger-files', trig_files)
-        node.add_input_opt_list('--veto-files', veto_files)
+        node.add_input_list_opt('--trigger-files', trig_files)
+        node.add_input_list_opt('--veto-files', veto_files)
         node.add_input_opt('--hdf-prefix', hdf_prefix)
         node.new_output_file_opt(seg, '.hdf', '--output-file') 
         return node
     
-def setup_interval_coinc((workflow, bank, inspiral, veto, out_dir, tags=[]):
+def setup_interval_coinc(workflow, bank, inspiral, veto, out_dir, tags=[]):
     """
     This function sets up exact match coincidence and background estimation
     using a folded interval technique.
@@ -510,15 +510,16 @@ def setup_interval_coinc((workflow, bank, inspiral, veto, out_dir, tags=[]):
     --------
     I don't know yet...
     """
+    logging.info('Setting up coincidence')
     #FIXME, make me not needed
     # convert template bank to hdf 
     if len(bank) > 1:
         raise ValueError('This coincidence method only supports a pregenerated template bank')
     
-    bank2hdf_exec = PyCBCBank2HDFExecutable(workflow.cp, 'bank2hdf', 
+    bank2hdf_exe = PyCBCBank2HDFExecutable(workflow.cp, 'bank2hdf', 
                                             ifos=workflow.ifos, 
                                             out_dir=out_dir, tags=tags)
-    bank2hdf_node = bank2hdf_exe.create_node(bank_file)
+    bank2hdf_node = bank2hdf_exe.create_node(bank[0])
     workflow.add_node(bank2hdf_node)
     hdfbank = bank2hdf_node.output_files[0]
     
@@ -529,22 +530,24 @@ def setup_interval_coinc((workflow, bank, inspiral, veto, out_dir, tags=[]):
     if len(ifos) > 2:
         raise ValueError('This coincidence method only supports two ifo searches')
         
-    trig_files = []
-    for ifo, insp_group in zip(ifo,  insp_groups):
-        trig2hdf_exec = PyCBCTrig2HDFExecutable(workflow.cp, 'trig2hdf',
+    trig_files = AhopeFileList()
+    for ifo, insp_group in zip(ifos,  insp_groups):
+        trig2hdf_exe = PyCBCTrig2HDFExecutable(workflow.cp, 'trig2hdf',
                                                 ifos=ifo, out_dir=out_dir,
                                                 tags=tags)
         segs, insp_bundles = insp_group.categorize_by_attr('segment')
-        for inps in  insp_bundles:
+        for insps in  insp_bundles:
             trig2hdf_node =  trig2hdf_exe.create_node(insps, hdfbank)
             workflow.add_node(trig2hdf_node)
-            trig_files += trig2hdf_node.output_files()
+            trig_files += trig2hdf_node.output_files
             
     # actually calculate foreground and background coincidences
-    findcoinc_exec = PyCBCFindCoincExecutable(workflow.cp, 'coinc', 
+    findcoinc_exe = PyCBCFindCoincExecutable(workflow.cp, 'coinc', 
                                               ifos=workflow.ifos)
     for veto_file in veto:
-        for group_id in range(int(trig2hdf_exec.get_opt('number-of-groups'))):
+        print veto_file.tags
+        for group_id in range(int(trig2hdf_exe.get_opt('number-of-groups'))):
             coinc_node = findcoinc_exe.create_node(trig_files, veto_file, group_id)   
-            workflow.add_node(coinc_node) 
+            workflow.add_node(coinc_node)
+    logging.info('...leaving coincidence ')
     
