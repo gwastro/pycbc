@@ -152,7 +152,7 @@ def load_triggers(trigger_files, prefix):
 
 def veto_indices(times, veto_files):
     times = numpy.sort(times)
-    indices = numpy.array([], dtype=numpy.uint32)
+    indices_map = {}
 
     from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
     class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
@@ -162,15 +162,31 @@ def veto_indices(times, veto_files):
     for veto_file in veto_files:
         indoc = ligolw_utils.load_filename(veto_file, False, contenthandler=LIGOLWContentHandler)
         segment_table  = table.get_table(indoc, lsctables.SegmentTable.tableName)
+        
+        seg_def_table = table.get_table(indoc, lsctables.SegmentDefinerTable.tableName)
+        def_ifos = seg_def_table.getColumnByName('ifos')
+        def_ids = seg_def_table.getColumnByName('segment_def_id')
+        ifo_map =  {}
+        for def_ifo, def_id in zip(def_ifos, def_ids):
+            ifo_map[did] = def_ifo
+        
         start = numpy.array(segment_table.getColumnByName('start_time')) + numpy.array(segment_table.getColumnByName('start_time_ns')) * 1e-9
         end = numpy.array(segment_table.getColumnByName('end_time')) + numpy.array(segment_table.getColumnByName('end_time_ns')) * 1e-9
+        ifos = [ifo_map[v] for v in segment_table.getColumnByName('segment_def_id')]
         
         left = numpy.searchsorted(times, start, side='left')
         right = numpy.searchsorted(times, end, side='right')       
-        for li, ri in zip(left, right):
+        for li, ri, ifo in zip(left, right, ifos):
+            if ifo in indices_map:
+                indices = indices_map[ifo]
+            else:
+                incices = numpy.array([], dtype=numpy.uint32)
+                
             seg_indices = numpy.arange(li, ri, 1).astype(numpy.uint32)
-            indices=numpy.union1d(seg_indices, indices)       
-    return indices    
+            indices=numpy.union1d(seg_indices, indices)  
+            
+            indices_map[ifo] = indices     
+    return indices_map
 
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser()
@@ -193,14 +209,17 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)       
 
     triggers = load_triggers(args.trigger_files, args.hdf_prefix)
+
     ifo1, ifo2 = triggers.keys()
     s1, t1, r1 = triggers[ifo1]
     s2, t2, r2 = triggers[ifo2]
     
-    logging.info('applying vetoes')
-    veto = veto_indices(t1, args.veto_files)
-    s1, t1, r1 = numpy.delete(s1, veto), numpy.delete(t1, veto), numpy.delete(r1, veto)
-    s2, t2, r2 = numpy.delete(s2, veto), numpy.delete(t2, veto), numpy.delete(r2, veto)
+    if  args.veto_files:
+        logging.info('applying vetoes')
+        veto = veto_indices(t1, args.veto_files)
+        veto1, veto2 =  veto[det1], veto[det2]
+        s1, t1, r1 = numpy.delete(s1, veto1), numpy.delete(t1, veto1), numpy.delete(r1, veto1)
+        s2, t2, r2 = numpy.delete(s2, veto2), numpy.delete(t2, veto2), numpy.delete(r2, veto2)
     
     d1 = Detector(ifo1)
     d2 = Detector(ifo2)
@@ -214,6 +233,7 @@ if __name__ == '__main__':
     
     logging.info('making lookup table')     
     if args.timeslide_interval is not None: 
+        logging.info('looking for foreground and background events')
         course = BinnedLookup(c2s, ['neighbors', 'exact'],
                                    [(0, int(slide/time_window)), (None, None)])
     else:
