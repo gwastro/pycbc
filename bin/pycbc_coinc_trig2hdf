@@ -26,7 +26,7 @@ def read_files(trigger_files):
     # This iteration is  only for  split  input, do not combine from different
     # detectors or time
     for i, filename in enumerate(trigger_files):
-_        indoc = ligolw_utils.load_filename(filename, False, contenthandler=LIGOLWContentHandler)
+        indoc = ligolw_utils.load_filename(filename, False, contenthandler=LIGOLWContentHandler)
         sngl_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName)
         
         if  i == 0:

@@ -3,7 +3,7 @@
 into an hdf format that includes a template hash used to associate triggers
 with their template.
 """
-import numpy, pylab, argparse
+import numpy, argparse
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 
 import h5py, os
