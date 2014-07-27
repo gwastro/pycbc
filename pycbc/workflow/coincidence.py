@@ -461,3 +461,36 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
         main_return = ligolwThincaOuts
 
     return main_return, other_returns
+    
+class PyCBCBank2HDFExecutable(AhopeExecutable):
+    """ This converts xml tmpltbank to an hdf format
+    """
+    pass
+    
+class PyCBCTrig2HDFExecutable(AhopeExecutable):
+    """ This converts xml triggers to an hdf format 
+    """
+    pass
+    
+class PyCBCFindCoinExecutable(AhopeExecutable):
+    """ Find coinc triggers using a folded interval method 
+    """
+    pass
+    
+def setup_interval_coinc((workflow, bank, inspiral, veto, output_dir, tags=[]):
+    """
+    This function sets up exact match coincidence and background estimation
+    using a folded interval technique.
+
+    Parameters
+    -----------
+    Workflow : ahope.Workflow
+        The ahope workflow instance that the coincidence jobs will be added to.
+    And other stuff: 
+
+    Returns
+    --------
+    I don't know yet...
+    """
+    pass
+    
