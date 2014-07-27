@@ -544,7 +544,8 @@ def setup_interval_coinc(workflow, bank, inspiral, veto, out_dir, tags=[]):
             
     # actually calculate foreground and background coincidences
     findcoinc_exe = PyCBCFindCoincExecutable(workflow.cp, 'coinc', 
-                                              ifos=workflow.ifos)
+                                              ifos=workflow.ifos,
+                                              tags=tags, out_dir=out_dir)
                                               
                                               
     tags, veto_file_groups = veto.categorize_by_attr('tags')
