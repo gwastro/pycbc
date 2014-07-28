@@ -266,6 +266,14 @@ def veto_indices(times, ifo, veto_files):
             
     return time_sorting[indices], veto_segs
 
+def cluster_coincs(stat1, stat2, time1, time2, timeslide_id, template_id):
+    """Cluster coincident events for each timeslide separately, across 
+    templates, based on the loudest network statistic (stat1**2 + stat2**2). 
+    Return the set of indices corresponding to the surviving coincidences.
+    """
+    nstatsq = stat1**2.0 + stat2**2.0
+    
+
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser()
     # General required options
@@ -273,6 +281,7 @@ if __name__ == '__main__':
     parser.add_argument('--veto-files', nargs='+')
     # Could be different ways to communicate this information, think about it
     parser.add_argument('--timeslide-interval', type=float, default=None)
+    parser.add_argument('--cluster-window', type=float)
     parser.add_argument('--hdf-prefix')
     parser.add_argument('--verbose', '-v', action='count')
     parser.add_argument('--output-file')
