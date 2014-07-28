@@ -494,6 +494,20 @@ class PyCBCFindCoincExecutable(AhopeExecutable):
         node.add_opt('--hdf-prefix', hdf_prefix)
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags) 
         return node
+        
+class PyCBCFAPMapExecutable(AhopeExecutable):
+    """ Calculate the FAP to RANKING STAT 
+    """
+    def create_node(self, coinc_files, veto_files, hdf_prefix, tags=[]):
+        segs = trig_files.get_times_covered_by_files()
+        seg = segments.segment(segs[0][0], segs[-1][1])
+        
+        node = AhopeNode(self)
+        node.add_input_list_opt('--trigger-files', trig_files)
+        node.add_input_list_opt('--veto-files', veto_files)
+        node.add_opt('--hdf-prefix', hdf_prefix)
+        node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags) 
+        return node
     
 def setup_interval_coinc(workflow, bank, inspiral, veto, out_dir, tags=[]):
     """
@@ -552,7 +566,10 @@ def setup_interval_coinc(workflow, bank, inspiral, veto, out_dir, tags=[]):
     for tag, veto_files in zip(tags, veto_file_groups):
         if 'CUMULATIVE_CAT' in tag[0]:
             for group_id in range(int(trig2hdf_exe.get_opt('number-of-groups'))):
-                coinc_node = findcoinc_exe.create_node(trig_files, veto_files, str(group_id), tags=tag)   
+                groupd_id = str(group_id)
+                coinc_node = findcoinc_exe.create_node(trig_files, veto_files, 
+                                                       group_id, 
+                                                       tags= tag + [groupd_id])   
                 workflow.add_node(coinc_node)
     logging.info('...leaving coincidence ')
     
