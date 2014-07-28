@@ -281,7 +281,6 @@ if __name__ == '__main__':
     parser.add_argument('--veto-files', nargs='+')
     # Could be different ways to communicate this information, think about it
     parser.add_argument('--timeslide-interval', type=float, default=None)
-    parser.add_argument('--cluster-window', type=float)
     parser.add_argument('--hdf-prefix')
     parser.add_argument('--verbose', '-v', action='count')
     parser.add_argument('--output-file')

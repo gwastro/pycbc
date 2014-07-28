@@ -8,7 +8,7 @@ import argparse, h5py, numpy, logging, itertools
     
 def load_coincs(coinc_files):
     stat1 = []
-    stat2 = []
+    stat2 = []s
     time1 = []
     time2 = []
     timeslide_id = []
