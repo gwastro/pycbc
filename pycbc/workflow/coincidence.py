@@ -492,7 +492,6 @@ class PyCBCFindCoincExecutable(AhopeExecutable):
         node.add_input_list_opt('--trigger-files', trig_files)
         node.add_input_list_opt('--veto-files', veto_files)
         node.add_opt('--hdf-prefix', hdf_prefix)
-        print "PREFIXXME", hdf_prefix
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags) 
         return node
         
