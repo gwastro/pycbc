@@ -1,0 +1,43 @@
+#!/bin/env  python
+"""
+The program combines coincident output files generated
+by pycbc_coinc_findtrigs to generated a mapping between SNR and FAP, along
+with producing the combined foreground and background triggers
+"""
+import argparse, h5py, numpy
+
+parser = argparse.ArgumentParser()
+# General required options
+parser.add_argument('--coinc-files', nargs='+')
+parser.add_argument('--verbose')
+parser.add_argument('--output-foreground')
+parser.add_argument('--output-background')
+parser.add_argument('--output-fap-map')
+args = parser.parse_args()
+
+if args.verbose:
+    log_level = logging.INFO
+    logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)       
+    
+def load_coincs(coinc_files):
+    stat1 = []
+    stat2 = []
+    time1 = []
+    time2 = []
+    timeslide_id = []
+    template_id = []
+    for cfile in coinc_files:
+        f = h5py.File(cfile, "r")
+        stat1.append(f['coinc/stat1'])
+        stat2.append(f['coinc/stat2'])
+        time1.append(f['coinc/time1'])
+        time2.append(f['coinc/time2'])
+        timeslide_id.append(f['coinc/timeslide_id'])
+        template_id.append(f['coinc/template_id'])
+    return numpy.concatenate(stat1),
+           numpy.concatenate(stat2),
+           numpy.concatenate(time1),
+           numpy.concatenate(time2),
+           numpy.concatenate(timeslide_id),
+           numpy.concatenate(template_id)
+    
