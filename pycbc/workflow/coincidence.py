@@ -496,17 +496,15 @@ class PyCBCFindCoincExecutable(AhopeExecutable):
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags) 
         return node
         
-class PyCBCFAPMapExecutable(AhopeExecutable):
+class PyCBCStatMapExecutable(AhopeExecutable):
     """ Calculate the FAP to RANKING STAT 
     """
-    def create_node(self, coinc_files, veto_files, hdf_prefix, tags=[]):
-        segs = trig_files.get_times_covered_by_files()
+    def create_node(self, coinc_files, tags=[]):
+        segs = coinc_files.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
         
         node = AhopeNode(self)
-        node.add_input_list_opt('--trigger-files', trig_files)
-        node.add_input_list_opt('--veto-files', veto_files)
-        node.add_opt('--hdf-prefix', hdf_prefix)
+        node.add_input_list_opt('--coinc-files', trig_files)
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags) 
         return node
     
@@ -562,15 +560,24 @@ def setup_interval_coinc(workflow, bank, inspiral, veto, out_dir, tags=[]):
                                               ifos=workflow.ifos,
                                               tags=tags, out_dir=out_dir)
                                               
+    combinecoinc_exe = PyCBCStatMapExecutable(workflow.cp, 'statmap', 
+                                              ifos=workflow.ifos,
+                                              tags=tags, out_dir=out_dir)
+                                              
                                               
     tags, veto_file_groups = veto.categorize_by_attr('tags')
     for tag, veto_files in zip(tags, veto_file_groups):
+        bg_files = []
         if 'CUMULATIVE_CAT' in tag[0]:
             for group_id in range(int(trig2hdf_exe.get_opt('number-of-groups'))):
                 group_id = str(group_id)
                 coinc_node = findcoinc_exe.create_node(trig_files, veto_files, 
                                                        group_id, 
-                                                       tags= tag + [group_id])   
+                                                       tags= tag + [group_id])  
+                bg_files == coinc_node.output_files 
                 workflow.add_node(coinc_node)
+            combine_node = combinecoinc_exe.create_node(bg_files, tags=tag)
+            workflow.add_node(combine_node)             
+                
     logging.info('...leaving coincidence ')
     
