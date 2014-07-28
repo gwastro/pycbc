@@ -141,6 +141,9 @@ with ctx:
 
     snr_mem = zeros(tlen, dtype=complex64)
     corr_mem = zeros(tlen, dtype=complex64)
+    w = 0
+    r = 0
+    f = 0
     
     for t_num, template in enumerate(bank):  
         event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)  
@@ -152,18 +155,32 @@ with ctx:
 
         for s_num, stilde in enumerate(segments):                 
             logging.info("Filtering template %d/%d segment %d/%d" % \
-                         (t_num + 1, len(bank), s_num + 1, len(segments)))       
+                         (t_num + 1, len(bank), s_num + 1, len(segments)))  
+                         
+            tsh = template[0:len(template)/4+1]
+            ssh = stilde[0:len(stilde)/4+1]
+            snr2,  corr2, norm2 = matched_filter_core(tsh, ssh,
+                                                  h_norm=template.sigmasq, 
+                                                  low_frequency_cutoff=flow)
+            idx2, snrv2 = events.threshold(snr2[len(snr2)/4:len(snr2)/4*3], 
+                                         opt.snr_threshold / norm2*.95)
+            if len(idx2) == 0:
+                continue  
+                           
             snr, corr, norm = matched_filter_core(template, stilde, 
                                                   h_norm=template.sigmasq, 
                                                   low_frequency_cutoff=flow, 
                                                   out=snr_mem, 
-                                                  corr_out=corr_mem)                                         
+                                                  corr_out=corr_mem)                                    
             idx, snrv = events.threshold(snr[stilde.analyze], 
-                                         opt.snr_threshold / norm)            
+                                         opt.snr_threshold / norm)  
+                                                                               
+                              
             if len(idx) == 0:
                 continue            
-            logging.info("%s points above threshold" % str(len(idx)))              
-                
+            logging.info("%s points above threshold" % str(len(idx)))      
+            
+                    
             if opt.cluster_before_vetoes:    
                 idx, snrv = events.cluster_reduce(idx, snrv, cluster_window) 
                 logging.info("%s points after clustering" % str(len(idx))) 
