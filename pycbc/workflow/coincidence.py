@@ -492,6 +492,7 @@ class PyCBCFindCoincExecutable(AhopeExecutable):
         node.add_input_list_opt('--trigger-files', trig_files)
         node.add_input_list_opt('--veto-files', veto_files)
         node.add_opt('--hdf-prefix', hdf_prefix)
+        print "PREFIXXME", hdf_prefix
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags) 
         return node
         
@@ -566,10 +567,10 @@ def setup_interval_coinc(workflow, bank, inspiral, veto, out_dir, tags=[]):
     for tag, veto_files in zip(tags, veto_file_groups):
         if 'CUMULATIVE_CAT' in tag[0]:
             for group_id in range(int(trig2hdf_exe.get_opt('number-of-groups'))):
-                groupd_id = str(group_id)
+                group_id = str(group_id)
                 coinc_node = findcoinc_exe.create_node(trig_files, veto_files, 
                                                        group_id, 
-                                                       tags= tag + [groupd_id])   
+                                                       tags= tag + [group_id])   
                 workflow.add_node(coinc_node)
     logging.info('...leaving coincidence ')
     
