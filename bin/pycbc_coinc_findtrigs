@@ -265,7 +265,7 @@ if __name__ == '__main__':
         f.create_dataset('coinc/time2', data=t2[c2])
         f.create_dataset('coinc/timeslide_id', data=slide_index)
         f.create_dataset('coinc/template_id', data=r1[c1])
-        f['coinc'].attrs['timeslide_interval'] = args.timeslide_interval
+        f.attrs['timeslide_interval'] = numpy.float64(args.timeslide_interval)
     else:
         logging.info('huh, why are there no triggers?')
 
