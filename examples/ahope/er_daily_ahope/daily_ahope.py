@@ -130,13 +130,13 @@ si_exe_fine = ahope.AhopeExecutable(workflow.cp, 'siclusterfine', out_dir=workin
 
 # turn inspiral files into list where each element is a AhopeFileList
 # of jobs that were split from the same template bank via splitbank
-inspOutKeys, inspOutGroups = insps.categorize_by_attr('segment')
 
 inspstr = 'INSPIRAL'
 pageDagParents = []
-for inspOutGroup in inspOutGroups:
-    for ifo in ifos:
-        inspOutGroup = inspOutGroup.find_output_with_ifo(ifo)
+for ifo in ifos:
+    insp_for_ifo = insps.find_output_with_ifo(ifo)
+    inspOutKeys, inspOutGroups = insp_for_ifo.categorize_by_attr('segment')
+    for inspOutGroup in inspOutGroups:
         analysis_seg = inspOutGroup.get_times_covered_by_files()[0]
 
         # Create a cache file to hole the input to ligolw_add
