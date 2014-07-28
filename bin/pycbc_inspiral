@@ -162,8 +162,9 @@ with ctx:
             snr2,  corr2, norm2 = matched_filter_core(tsh, ssh,
                                                   h_norm=template.sigmasq, 
                                                   low_frequency_cutoff=flow)
-            idx2, snrv2 = events.threshold(snr2[len(snr2)/4:len(snr2)/4*3], 
-                                         opt.snr_threshold / norm2*.95)
+                                                  
+            idx2, snrv2 = events.threshold(snr2[stilde.analyze.start/4:stilde.analyze.stop/4], 
+                                           opt.snr_threshold / norm2*.95)
             if len(idx2) == 0:
                 continue  
                            
