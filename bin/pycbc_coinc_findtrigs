@@ -309,6 +309,8 @@ if __name__ == '__main__':
     
     logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))
     
+    logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))
+    
     if  args.veto_files:
         logging.info('applying vetoes')
         veto1, vsegs1 = veto_indices(t1, ifo1, args.veto_files)
@@ -324,6 +326,8 @@ if __name__ == '__main__':
     det2 = Detector(ifo2)
     logging.info('%s : %s %s: %s' % (ifo1, len(s1), ifo2, len(s2)))
     time_window = det1.light_travel_time_to_detector(det2)
+    
+    logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))
     
     logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))
     
