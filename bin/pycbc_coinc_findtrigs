@@ -151,7 +151,8 @@ def load_triggers(trigger_files, prefix):
     return triggers  
 
 def veto_indices(times, veto_files):
-    times = numpy.sort(times)
+    time_sorting = numpy.argsort(times)
+    times = times[time_sorting]
     indices_map = {}
 
     from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
@@ -175,7 +176,7 @@ def veto_indices(times, veto_files):
         ifos = [ifo_map[v] for v in segment_table.getColumnByName('segment_def_id')]
         
         left = numpy.searchsorted(times, start, side='left')
-        right = numpy.searchsorted(times, end, side='right')       
+        right = numpy.searchsorted(times, end, side='right')   
         for li, ri, ifo in zip(left, right, ifos):
             if ifo in indices_map:
                 indices = indices_map[ifo]
@@ -185,7 +186,7 @@ def veto_indices(times, veto_files):
             seg_indices = numpy.arange(li, ri, 1).astype(numpy.uint32)
             indices=numpy.union1d(seg_indices, indices)  
             
-            indices_map[ifo] = indices     
+            indices_map[ifo] = time_sorting[indices]     
     return indices_map
     
 
@@ -215,6 +216,8 @@ if __name__ == '__main__':
     s1, t1, r1 = triggers[ifo1]
     s2, t2, r2 = triggers[ifo2]
     
+    logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))
+    
     if  args.veto_files:
         logging.info('applying vetoes')
         veto = veto_indices(t1, args.veto_files)
@@ -229,8 +232,10 @@ if __name__ == '__main__':
         
     d1 = Detector(ifo1)
     d2 = Detector(ifo2)
-    logging.info('d1 : %s d2: %s' % (len(s1), len(s2)))
+    logging.info('%s : %s %s: %s' % (ifo1, len(s1), ifo2, len(s2)))
     time_window = d1.light_travel_time_to_detector(d2)
+    
+    logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))
     
     slide = args.timeslide_interval  
     logging.info('making bins') 
