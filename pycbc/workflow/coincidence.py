@@ -583,9 +583,10 @@ def setup_interval_coinc(workflow, bank, inspiral, veto, out_dir, tags=[]):
                 workflow.add_node(combine_node)    
                 
     else:
+        bg_files = AhopeFileList()
         for group_id in range(int(trig2hdf_exe.get_opt('number-of-groups'))):
             group_id = str(group_id)
-            coinc_node = findcoinc_exe.create_node(trig_files, veto_files, 
+            coinc_node = findcoinc_exe.create_node(trig_files, [], 
                                                group_id, 
                                                tags=[group_id])  
             bg_files += coinc_node.output_files 
