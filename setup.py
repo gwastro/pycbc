@@ -314,6 +314,7 @@ setup (
                'pycbc.vetoes',
                'pycbc.tmpltbank',
                'pycbc.workflow',
+               'pycbc.results',
                ],
      package_data = {'pycbc.workflow': find_package_data('pycbc/workflow')},
 )

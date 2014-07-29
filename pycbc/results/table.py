@@ -28,7 +28,7 @@ def table(columns, names, page_size=None):
     ----------
     columns : list of numpy arrays 
     names : list of strings 
-        Theh list of columns names  
+        The list of columns names  
     page_size : {int, None}, optionals
         The number of items to show on each page of the table
         

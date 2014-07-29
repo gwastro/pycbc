@@ -1,7 +1,7 @@
 #!/usr/bin/python
 """ Make table of the foreground coincident events
 """
-import argparse, h5py, numpy, logging
+import argparse, h5py, numpy, logging, pycbc.results
 
 parser = argparse.ArgumentParser()
 # General required options
@@ -30,5 +30,7 @@ logging.info('Found %s foreground triggers' % len(stat1))
 #mass2 = f['mass2'][:]
 #spin1z = f['spin1z'][:]
 #spin2z = f['spin2z'][:]
+
+logging.info('Making table of foreground triggers')
 
 
