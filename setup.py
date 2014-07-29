@@ -300,6 +300,7 @@ setup (
                'bin/pycbc_coinc_bank2hdf',
                'bin/pycbc_coinc_trig2hdf',
                'bin/pycbc_coinc_statmap',
+               'bin/pycbc_page_foreground',
                ],
     packages = [
                'pycbc',
