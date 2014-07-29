@@ -32,5 +32,10 @@ logging.info('Found %s foreground triggers' % len(stat1))
 #spin2z = f['spin2z'][:]
 
 logging.info('Making table of foreground triggers')
-
-
+html_table = pycbc.results.table([(stat1**2.0+stat2**2.0)**0.5,  time1], 
+                            ['NewSNR', 'Time'], 
+                            page_size=10,
+                           )
+print  html_table
+f = open(args.output_file, 'w')
+f.write(html_table)

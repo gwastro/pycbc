@@ -8,17 +8,17 @@ google_table_template = mako.template.Template("""
       function drawTable() {
         var data = new google.visualization.DataTable();
         % for type, name in column_descriptions:
-            data.addColumn(${str(type)}, ${str(name)});
+            data.addColumn('${str(type)}', '${str(name)}');
         % endfor
         data.addRows(${data});
         var table = new google.visualization.Table(document.getElementById('${div_id}'));
-        table.draw(data, {showRowNumber: true, 
-                          page: ${page_enable}, 
+        table.draw(data, {showRowNumber: 'true', 
+                          page: '${page_enable}', 
                           allowHtml: 'true',
                           pageSize: ${page_size}});
       }
     </script>
-    <div id='%{div_id}'></div>
+    <div id='${div_id}'></div>
 """)
 
 def table(columns, names, page_size=None):
@@ -46,8 +46,8 @@ def table(columns, names, page_size=None):
     
     column_descriptions = []
     for column, name in zip(columns, names):
-        if column.dtype.kind == 'S'
-            ctype = 'string':
+        if column.dtype.kind == 'S':
+            ctype = 'string'
         else:
             ctype = 'number'
         column_descriptions.append((ctype, name))
@@ -57,7 +57,7 @@ def table(columns, names, page_size=None):
         data.append(list(item))
         
     return google_table_template.render(div_id=div_id,
-                                        page=page,
+                                        page_enable=page,
                                         column_descriptions = column_descriptions,
                                         page_size=page_size,
                                         data=data,
