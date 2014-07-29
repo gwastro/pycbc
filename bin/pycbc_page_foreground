@@ -1,7 +1,7 @@
 #!/usr/bin/python
 """ Make table of the foreground coincident events
 """
-import argparse, h5py
+import argparse, h5py, numpy, logging
 
 parser = argparse.ArgumentParser()
 # General required options
@@ -15,17 +15,20 @@ if args.verbose:
     log_level = logging.INFO
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
     
-# Read in the foreground data
+logging.info('Read in the foreground data')
 f = h5py.File(args.foreground_file, 'r')
 stat1 = f['foreground/stat1'][:]
 stat2 = f['foreground/stat2'][:]
 time1 = f['foreground/time1'][:]
 time2 = f['foreground/time2'][:]
 template_id = f['foreground/template_id'][:]
+logging.info('Found %s foreground triggers' % len(stat1))
 
-#  Read in the template bank data to get template parameters
-f = h5py.File(args.bank_file, 'r')
-mass1 = f['mass1'][:]
-mass2 = f['mass2'][:]
-spin1z = f['spin1z'][:]
-spin2z = f['spin2z'][:]
+#logging.info('Read in the template bank data to get template parameters')
+#f = h5py.File(args.bank_file, 'r')
+#mass1 = f['mass1'][:]
+#mass2 = f['mass2'][:]
+#spin1z = f['spin1z'][:]
+#spin2z = f['spin2z'][:]
+
+
