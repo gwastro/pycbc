@@ -523,6 +523,7 @@ def setup_interval_coinc(workflow, bank, inspiral, veto, out_dir, tags=[]):
     --------
     I don't know yet...
     """
+    
     make_analysis_dir(out_dir)
     logging.info('Setting up coincidence')
     #FIXME, make me not needed
