@@ -2,8 +2,6 @@
 # 
 #  Copyright (C) 2007 Jolien Creighton, B.S. Sathyaprakash, Thomas Cokelaer
 #  Copyright (C) 2012 Leo Singer, Alex Nitz
-#  Adapted from code found in:
-#    - LALSimInspiralTaylorF2.c
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -30,14 +28,6 @@ from pycbc.scheme import schemed
 import numpy
 import pycbc.pnutils
 from pycbc.types import FrequencySeries, Array, complex64, float32, zeros
-
-def ceilpow2(n):
-    signif,exponent = frexp(n)
-    if (signif < 0):
-        return 1;
-    if (signif == 0.5):
-        exponent -= 1;
-    return (1) << exponent;
 
 def spa_length_in_time(**kwds):
     """
@@ -78,7 +68,7 @@ def spa_amplitude_factor(**kwds):
 _prec = None
 def spa_tmplt_precondition(length, delta_f, kmin=0):
     """Return the amplitude portion of the TaylorF2 approximant, used to precondition
-    the strian data. The result is cached, and so should not be modified only read.
+    the strain data. The result is cached, and so should not be modified only read.
     """
     global _prec
     if _prec is None or _prec.delta_f != delta_f or len(_prec) < length:       

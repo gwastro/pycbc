@@ -31,7 +31,7 @@ import pycbc
 import pycbc.pnutils
 from math import sqrt
 from pycbc.types import Array, zeros, complex64, float32, FrequencySeries, complex128
-from pycbc.waveform.spa_tmplt import spa_tmplt_precondition, spa_amplitude_factor, spa_tmplt, ceilpow2
+from pycbc.waveform.spa_tmplt import spa_tmplt_precondition, spa_amplitude_factor, spa_tmplt
 
 def findchirp_template(**p):
     m1 = p['mass1']
@@ -59,7 +59,7 @@ def findchirp_template(**p):
     
     amp_factor = spa_amplitude_factor(mass1=m1, mass2=m2) / p['distance']
     
-    fctmplt = lalinspiral.FindChirpTemplate() 
+    fctmplt = lalinspiral.FindChirpTemplate()
     fctmplt.data = zeros(n, dtype=complex64).lal()
     
     tmplt = lalinspiral.InspiralTemplate() 

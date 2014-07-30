@@ -2,8 +2,6 @@
 # 
 #  Copyright (C) 2007 Jolien Creighton, B.S. Sathyaprakash, Thomas Cokelaer
 #  Copyright (C) 2012 Leo Singer, Alex Nitz
-#  Adapted from code found in:
-#    - LALSimInspiralTaylorF2.c
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -115,14 +113,6 @@ taylorf2_text = """
     htilde[i]._M_im = - amp * sin(phasing - LAL_PI_4);
 
 """
-
-def ceilpow2(n):
-    signif, exponent = frexp(n)
-    if (signif < 0):
-        return 1;
-    if (signif == 0.5):
-        exponent -= 1;
-    return (1) << exponent;
 
 taylorf2_kernel = ElementwiseKernel("""pycuda::complex<double> *htilde, int kmin, int phase_order,
                                        int amplitude_order, double delta_f, double piM, double pfaN, 

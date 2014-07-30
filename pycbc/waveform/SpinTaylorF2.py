@@ -210,13 +210,6 @@ spintaylorf2_text = """
     htildeC[i]._M_im = IM_prec_facC * CPhasing - RE_prec_facC * SPhasing ;
 
 """
-def ceilpow2(n):
-    signif, exponent = frexp(n)
-    if (signif < 0):
-        return 1
-    if (signif == 0.5):
-        exponent -= 1
-    return (1) << exponent
 
 spintaylorf2_kernel = ElementwiseKernel("""pycuda::complex<double> *htildeP,
                                            pycuda::complex<double> *htildeC,

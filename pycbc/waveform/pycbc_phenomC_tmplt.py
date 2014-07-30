@@ -116,14 +116,6 @@ phenomC_text = """
 
 """
 
-def ceilpow2(n):
-    signif,exponent = frexp(n)
-    if (signif < 0):
-        return 1;
-    if (signif == 0.5):
-        exponent -= 1;
-    return (1) << exponent;
-
 phenomC_kernel = ElementwiseKernel("""pycuda::complex<double> *htilde, int kmin, double delta_f, 
                                        double eta, double Xi, double distance,
                                        double m_sec, double piM, double Mfrd,

@@ -29,6 +29,15 @@ import lal
 import numpy
 import copy
 
+def ceilpow2(n):
+    """convenience function to determine a power-of-2 upper frequency limit"""
+    signif,exponent = frexp(n)
+    if (signif < 0):
+        return 1;
+    if (signif == 0.5):
+        exponent -= 1;
+    return (1) << exponent;
+
 def unwrap_phase(vec, discont, offset):
     """Return a new vector that is unwrapped.
 
