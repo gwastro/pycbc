@@ -104,9 +104,15 @@ f = h5py.File(args.output_file, "w")
 f.attrs['ifo'] = str(ifo) 
 f.attrs['start_time'] = int(start)
 f.attrs['end_time'] = int(end)
-for i, v in enumerate(zip(snrs, end_times, tids)):
-    snr, end_time, tid = v                                           
-    f.create_dataset("%i/stat" % i, data=snr)
-    f.create_dataset("%i/end_time" % i, data=end_time)
-    f.create_dataset("%i/template_id" % i, data=tid)
+if len(snr) > 0:
+    for i, v in enumerate(zip(snrs, end_times, tids)):
+        try:
+            snr, end_time, tid = v                                           
+            f.create_dataset("%i/stat" % i, data=snr)
+            f.create_dataset("%i/end_time" % i, data=end_time)
+            f.create_dataset("%i/template_id" % i, data=tid)
+        except ValueError:
+            pass
+else:
+    logging.info('There were no triggers in the sngl_inspiral table')
 f.close()

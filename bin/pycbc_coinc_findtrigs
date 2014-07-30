@@ -6,6 +6,7 @@ method.
 """
 import itertools, copy, numpy, logging, argparse, h5py, os
 from pycbc.detector import Detector
+from glue import segments
 
 class BinnedLookup(dict):
     """ Lookup  table for a binned column vectors
@@ -120,18 +121,29 @@ def test_exact_match_coincidence(index1, index2, time1, time2, slide_step, windo
     
 def load_triggers(trigger_files, prefix):
     triggers = {}
+    trig_segments = {}
     num_trigs = 0
-    duration = 0
+    
     for i, filename in enumerate(trigger_files):
         logging.info('Loading file: %s' % filename)
         f = h5py.File(filename, "r")
-        snr = f[prefix + '/stat'][:]
-        end_time = f[prefix + '/end_time'][:]
-        th = f[prefix + '/template_id'][:]
+        
+        try:
+            snr = f[prefix + '/stat'][:]
+            end_time = f[prefix + '/end_time'][:]
+            th = f[prefix + '/template_id'][:]
+            ifo = f.attrs['ifo']
+        except ValueError:
+            continue
+
+        # Compile a complete segment list for the foreground time
+        if ifo not in trig_segments:
+            trig_segments[ifo] = segments.segmentlist()  
+          
+        seg = segments.segment(f.attrs['start_time'], f.attrs['end_time'])
+        trig_segments[ifo] += [seg]
 
         if len(snr) > 0:
-            ifo = f.attrs['ifo']
-
             if ifo not in triggers:
                 triggers[ifo] = ([], [], [])
 
@@ -148,15 +160,73 @@ def load_triggers(trigger_files, prefix):
         triggers[key] = (numpy.concatenate(sl), 
                          numpy.concatenate(el),
                          numpy.concatenate(tl))
-    return triggers  
+    return triggers, trig_segments
+    
+def decimate_triggers(s1, s2, slide, num_keep, bins, factor=2):
+    """ Remove coinc triggers that are unlikely to be significant in
+    determining in affecting the error bars of a FAP calculation
+    
+    Parameters
+    ----------
+    s1 : numpy array
+        The values of the first detector's ranking statistic
+    s2 : numpy array
+        The values of the second detector's ranking statistic
+    slide : numpy array
+        The array of timeslide id values that identify the unique timeslide
+        this trigger was coincident for. 
+    num_keep : int 
+        The number of triggers that will be kept at the highest ranking
+    statistic value without any decimation.
+    bins : int
+        The number of network statistic bins to perform separate decimation
+    in. The boundaries are divided evenly between the statistic value range.
+    factor : int
+        The factor to decimate each bin by. This factor of slides will be
+    removed.
+    
+    """
+    netstatsq = s1 ** 2.0 + s2 ** 2.0
+    stat_sort = netstatsq.argsort()
+    netstatsq = netstatsq[stat_sort]
+    slide = slide[stat_sort]
+    
+    # keep the number of loud triggers
+    keep = numpy.arange(len(s1) - num_keep, len(s1), 1)
+    factors = numpy.zeros(len(keep), dtype=numpy.uint32) + 1
+    netstatsq = netstatsq[0:len(s1) - num_keep]
+    slide = slide[0:len(s1) - num_keep]
 
-def veto_indices(times, veto_files):
+    min_slide = slide.min()
+    max_slide = slide.max()
+ 
+    edges = [netstatsq[0] + inc*(netstatsq[-1]-netstatsq[0])/bins for inc in range(bins)]
+    bin_edges = numpy.append(numpy.searchsorted(netstatsq, edges), len(netstatsq))
+    for i in range(bins):
+        lbin = bin_edges[-i-2]
+        rbin = bin_edges[-i-1]
+    
+        keep_upper = numpy.arange(0, max_slide + factor, factor)
+        keep_lower = numpy.arange(-factor, min_slide - factor, -factor)
+        keep_slides = numpy.unique(numpy.append(keep_upper, keep_lower))
+
+        
+        bin_int = numpy.in1d(slide[lbin:rbin], keep_slides)
+        bin_keep = numpy.where(bin_int)[0] + lbin
+        
+        factors = numpy.append(factors, numpy.zeros(len(bin_keep))+factor)
+        keep = numpy.append(keep, bin_keep)
+        factor = factor * 2   
+
+    return stat_sort[keep], factors.astype(numpy.uint32)
+
+def veto_indices(times, ifo, veto_files):
     """ Return the list of indices that should be vetoed by the segments in the
     lsit of veto_files.
     """
     time_sorting = numpy.argsort(times)
     times = times[time_sorting]
-    indices_map = {}
+    indices = numpy.array([], dtype=numpy.uint32)
 
     from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
     class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
@@ -178,20 +248,23 @@ def veto_indices(times, veto_files):
         end = numpy.array(segment_table.getColumnByName('end_time')) + numpy.array(segment_table.getColumnByName('end_time_ns')) * 1e-9
         ifos = [ifo_map[v] for v in segment_table.getColumnByName('segment_def_id')]
         
+        veto_segs = segments.segmentlist()
+        for s, e, ifo_row in zip(start, end, ifos):
+            if ifo != ifo_row:
+                continue
+                
+            veto_segs += [segments.segment(s, e)]
+        
         left = numpy.searchsorted(times, start, side='left')
         right = numpy.searchsorted(times, end, side='right')   
-        for li, ri, ifo in zip(left, right, ifos):
-            if ifo in indices_map:
-                indices = indices_map[ifo]
-            else:
-                indices = numpy.array([], dtype=numpy.uint32)
+        for li, ri, ifo_row in zip(left, right, ifos):
+            if ifo != ifo_row:
+                continue
                 
             seg_indices = numpy.arange(li, ri, 1).astype(numpy.uint32)
             indices=numpy.union1d(seg_indices, indices)  
             
-            indices_map[ifo] = time_sorting[indices]     
-    return indices_map
-    
+    return time_sorting[indices], veto_segs
 
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser()
@@ -203,6 +276,9 @@ if __name__ == '__main__':
     parser.add_argument('--hdf-prefix')
     parser.add_argument('--verbose', '-v', action='count')
     parser.add_argument('--output-file')
+    parser.add_argument('--decimation-factor', type=int)
+    parser.add_argument('--decimation-bins', type=int)
+    parser.add_argument('--decimation-keep', type=int)
     args = parser.parse_args()
 
     if args.verbose == 1:
@@ -213,30 +289,33 @@ if __name__ == '__main__':
         log_level = logging.WARN
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)       
 
-    triggers = load_triggers(args.trigger_files, args.hdf_prefix)
+    triggers, foreground_segments = load_triggers(args.trigger_files, args.hdf_prefix)
 
     ifo1, ifo2 = triggers.keys()
     s1, t1, r1 = triggers[ifo1]
     s2, t2, r2 = triggers[ifo2]
+    fore_time1 = abs(foreground_segments[ifo1])
+    fore_time2 = abs(foreground_segments[ifo2])
+    
+    logging.info('%s time: %s  %s time: %s' %  (ifo1, fore_time1, ifo2, fore_time2))
     
     logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))
     
     if  args.veto_files:
         logging.info('applying vetoes')
-        veto = veto_indices(t1, args.veto_files)
+        veto1, vsegs1 = veto_indices(t1, ifo1, args.veto_files)
+        s1, t1, r1 = numpy.delete(s1, veto1), numpy.delete(t1, veto1), numpy.delete(r1, veto1)
+        fore_time1 -= abs(foreg_time1 and vsegs1)
 
-        if ifo1 in  veto:
-            veto1 = veto[ifo1]
-            s1, t1, r1 = numpy.delete(s1, veto1), numpy.delete(t1, veto1), numpy.delete(r1, veto1)
-       
-        if ifo2 in veto:
-            veto2 = veto[ifo2]     
-            s2, t2, r2 = numpy.delete(s2, veto2), numpy.delete(t2, veto2), numpy.delete(r2, veto2)
+        veto2, vsegs2 = veto_indices(t1, ifo2, args.veto_files)     
+        s2, t2, r2 = numpy.delete(s2, veto2), numpy.delete(t2, veto2), numpy.delete(r2, veto2)
+        fore_time2 -= abs(fore_time2 and vsegs2)
+        logging.info('%s time: %s  %s time: %s' %  (ifo1, fore_time1, ifo2, fore_time2))   
         
-    d1 = Detector(ifo1)
-    d2 = Detector(ifo2)
+    det1 = Detector(ifo1)
+    det2 = Detector(ifo2)
     logging.info('%s : %s %s: %s' % (ifo1, len(s1), ifo2, len(s2)))
-    time_window = d1.light_travel_time_to_detector(d2)
+    time_window = det1.light_travel_time_to_detector(det2)
     
     logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))
     
@@ -250,32 +329,54 @@ if __name__ == '__main__':
         logging.info('looking for foreground and background events')
         course = BinnedLookup(c2s, ['neighbors', 'exact'],
                                    [(0, int(slide/time_window)), (None, None)])
+        num_slides = int(max(fore_time1, fore_time2) / args.timeslide_interval)
     else:
         logging.info('only looking for foreground events')
         course = BinnedLookup(c2s, ['neighbors', 'exact'], 
                                    [(None, None), (None, None)]) 
+        num_slides = 0
+        
+    logging.info('Number of timeslides: %s' % num_slides)
 
     logging.info('finding course coincidences')                  
     i1, i2 = course.lookup(c1s)
     
     logging.info('finding coincidences')   
     c1, c2, slide_index = test_exact_match_coincidence(i1, i2, t1, t2, slide, time_window)
-    
-    logging.info('%s total triggers' % len(c1))
+    s1, s2, t1, t2, r1, r2 = s1[c1], s2[c2], t1[c1], t2[c2], r1[c1], r2[c2]   
+    logging.info('%s total triggers' % len(s1))
     logging.info('%s foreground triggers' % (slide_index == 0).sum())
+    
+    if args.decimation_keep < len(s1) and args.timeslide_interval is not None: 
+        logging.info('decimating triggers')
+        d1, decimation_factor = decimate_triggers(s1, s2, slide_index, 
+                               args.decimation_keep, 
+                               args.decimation_bins, 
+                               args.decimation_factor)
+        s1, s2, t1, t2, r1, r2 = s1[d1], s2[d1], t1[d1], t2[d1], r1[d1], r2[d1]
+        slide_index = slide_index[d1]
+        logging.info('%s total triggers' % len(s1))
+        logging.info('%s foreground triggers' % (slide_index == 0).sum())
+    else:
+        decimation_factor 
+    
     logging.info('saving coincident triggers')
-    f = h5py.File(args.output_file, "w")    
+    f = h5py.File(args.output_file, "w")
     
     if len(c1) > 0:
-        f.create_dataset('coinc/stat1', data=s1[c1])
-        f.create_dataset('coinc/stat2', data=s2[c2])
-        f.create_dataset('coinc/time1', data=t1[c1])
-        f.create_dataset('coinc/time2', data=t2[c2])
+        f.create_dataset('coinc/stat1', data=s1)
+        f.create_dataset('coinc/decimation_factor', data=decimation_factor)
+        f.create_dataset('coinc/stat2', data=s2)
+        f.create_dataset('coinc/time1', data=t1)
+        f.create_dataset('coinc/time2', data=t2)
         f.create_dataset('coinc/timeslide_id', data=slide_index)
-        f.create_dataset('coinc/template_id', data=r1[c1])
+        f.create_dataset('coinc/template_id', data=r1)
         f.attrs['timeslide_interval'] = numpy.float64(args.timeslide_interval)
-        f.attrs['detector_1'] = d1.name
-        f.attrs['detector_2'] = d2.name
+        f.attrs['detector_1'] = det1.name
+        f.attrs['detector_2'] = det2.name
+        f.attrs['foreground_time1'] = fore_time1
+        f.attrs['foreground_time1'] = fore_time1
+        f.attrs['num_slides'] = num_slides
     else:
         logging.info('huh, why are there no triggers?')
 

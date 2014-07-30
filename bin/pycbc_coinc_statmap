@@ -14,7 +14,6 @@ def load_coincs(coinc_files):
     timeslide_id = []
     template_id = []
     for cfile in coinc_files:
-        print cfile
         f = h5py.File(cfile, "r")
         stat1.append(f['coinc/stat1'])
         stat2.append(f['coinc/stat2'])
@@ -65,7 +64,6 @@ def cluster_coincs(stat1, stat2, time1, time2,
     
     for l, r in itertools.izip(grouped_lbin, grouped_rbin):  
         unique_slides = numpy.unique(slide[l:r])    
-        #print len(unique_slides) 
         for slide_id in unique_slides:
             slide_locs = numpy.where(slide[l:r] == slide_id)[0]        
             indices.append(slide_locs[nstatsq[l:r][slide_locs].argmax()] + l)
