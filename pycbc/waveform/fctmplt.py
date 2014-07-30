@@ -37,65 +37,65 @@ def findchirp_template(**p):
     m1 = p['mass1']
     m2 = p['mass2']
     s1z = p['spin1z']
-    s2z = p['spin2z']    
-    
+    s2z = p['spin2z']
+
     M = m1 + m2
     mc, et = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
-    
+
     m_sec = M * lal.MTSUN_SI;
     piM = lal.PI * m_sec;
     kmin = int(p['f_lower'] / float(p['delta_f']))
     vISCO = 1. / sqrt(6.)
     fISCO = vISCO * vISCO * vISCO / piM;
     kmax = int(fISCO / p['delta_f'])
-    
+
     if 'out' in p:
         n = len(p['out'])
     else:
         n = kmax
-        
-    N = (n-1)*2      
+
+    N = (n-1)*2
     delta_t = 1.0 / (p['delta_f'] * N)
-    
+
     amp_factor = spa_amplitude_factor(mass1=m1, mass2=m2) / p['distance']
-    
+
     fctmplt = lalinspiral.FindChirpTemplate()
     fctmplt.data = zeros(n, dtype=complex64).lal()
-    
-    tmplt = lalinspiral.InspiralTemplate() 
+
+    tmplt = lalinspiral.InspiralTemplate()
     tmplt.totalMass = M
     tmplt.eta = et
     tmplt.mu = m1*m2 / M
     tmplt.spin1[2] = s1z
     tmplt.spin2[2] = s2z
     tmplt.fFinal = fISCO
-    
-    params = lalinspiral.FindChirpTmpltParams() 
-    
+
+    params = lalinspiral.FindChirpTmpltParams()
+
     vec = numpy.arange(0, n, 1)
     vec2 = numpy.zeros(n, dtype=float32)
     vec2[1:] = vec[1:] ** (-1.0/3.0)
     params.xfacVec = Array(vec2, dtype=float32).lal()
-    
+
     params.approximant=lalsimulation.FindChirpSP
-    
+
     # Max implemented order is 7 for fctmplt
     if p['phase_order'] == -1:
         p['phase_order'] = 7
-        
+
     params.order = int(p['phase_order'])
     params.deltaT = delta_t
     params.fLow = p['f_lower']
     params.dynRange = pycbc.DYN_RANGE_FAC
-    
+
     lalinspiral.FindChirpSPTemplate(fctmplt, tmplt, params)
     kfac = spa_tmplt_precondition(n, p['delta_f'])
-       
+
     htilde = FrequencySeries(fctmplt.data.data, delta_f=p['delta_f'])
     htilde *= (amp_factor * kfac)
-    
+
     if 'out' in p:
         p['out'][:] = htilde[:]
         htilde = FrequencySeries(p['out'], copy=False, delta_f=p['delta_f'])
-    
+
     return htilde
