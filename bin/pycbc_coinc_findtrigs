@@ -405,7 +405,7 @@ if __name__ == '__main__':
         logging.info('applying vetoes')
         veto1, vsegs1 = veto_indices(t1, ifo1, args.veto_files)
         s1, t1, r1 = numpy.delete(s1, veto1), numpy.delete(t1, veto1), numpy.delete(r1, veto1)
-        fore_time1 -= abs(foreg_time1 and vsegs1)
+        fore_time1 -= abs(fore_time1 and vsegs1)
 
         veto2, vsegs2 = veto_indices(t1, ifo2, args.veto_files)     
         s2, t2, r2 = numpy.delete(s2, veto2), numpy.delete(t2, veto2), numpy.delete(r2, veto2)
