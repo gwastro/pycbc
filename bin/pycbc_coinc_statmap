@@ -30,51 +30,43 @@ def load_coincs(coinc_files):
            numpy.concatenate(template_id), 
            f.attrs['timeslide_interval'])
   
+def changed(arr):
+    return arr[:-1] != arr[1:]
   
-def cluster_coincs2(stat1, stat2, time1, time2, 
-                   timeslide_id, timeslide_interval, window):
-    """Cluster coincident events for each timeslide separately, across 
-    templates, based on the loudest network statistic (stat1**2 + stat2**2). 
-    Return the set of indices corresponding to the surviving coincidences.
-    """
-    indices = []
-    nstatsq = stat1**2.0 + stat2**2.0
-    time = (time2 + (time1 + timeslide_id * timeslide_interval)) / 2 
-    pass
-    
-    
 def cluster_coincs(stat1, stat2, time1, time2, 
                    timeslide_id, timeslide_interval, window):
     """Cluster coincident events for each timeslide separately, across 
     templates, based on the loudest network statistic (stat1**2 + stat2**2). 
     Return the set of indices corresponding to the surviving coincidences.
     """
+    
+    logging.info('clustering coinc triggers over %ss window' % window)
+    
     indices = []
     nstatsq = stat1**2.0 + stat2**2.0
-    time = (time2 + (time1 + timeslide_id * timeslide_interval)) / 2 
+    if numpy.isfinite(timeslide_interval):
+        time = (time2 + (time1 + timeslide_id * timeslide_interval)) / 2
+    else:
+        time = 0.5 * (time2 + time1)
+        
+    time_sorting = time.argsort()
+    nstatsq = nstatsq[time_sorting]
+    time = time[time_sorting]
+    slide = timeslide_id[time_sorting]
     
-    logging.info('separating by timeslide')
-    trig = {}
-    for t, s, sid in itertools.izip(time, nstatsq, timeslide_id):
-        if sid not in trig:
-            trig[sid] = [[t], [s]]
-        else:
-            trig[sid] = [trig[sid][0]+[t], trig[sid][1]+[s]]
-   
-    logging.info('actually clustering')         
-    for i, (t, s, sid) in enumerate(itertools.izip(time, nstatsq, timeslide_id)):
-        clustered_away = False
-        for t_other, s_other in zip(*trig[sid]):
-            if t_other != t and abs(t_other - t) <= window and s_other > s:
-                clustered_away = True
-                break
-                
-        if clustered_away:
-            continue
-        else:  
-            indices.append(i)  
+    ledge = time - window
+    redge = time + window
+    lbin = numpy.searchsorted(time, ledge, side='left')
+    rbin = numpy.searchsorted(time, redge, side='right')
     
-    return numpy.array(indices, dtype=numpy.uint32)
+    bin_edges = numpy.where(changed(lbin) + changed(rbin))
+    grouped_lbin = lbin[bin_edges]
+    grouped_rbin = rbin[bin_edges]  
+    
+    for l, r in itertools.izip(grouped_lbin, grouped_rbin):       
+        indices.append(nstatsq[l:r].argmax())
+            
+    return numpy.array(time_sorting[indices], dtype=numpy.uint32)
 
 if __name__ == '__main__':
 
