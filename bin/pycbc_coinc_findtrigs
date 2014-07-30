@@ -151,6 +151,9 @@ def load_triggers(trigger_files, prefix):
     return triggers  
 
 def veto_indices(times, veto_files):
+    """ Return the list of indices that should be vetoed by the segments in the
+    lsit of veto_files.
+    """
     time_sorting = numpy.argsort(times)
     times = times[time_sorting]
     indices_map = {}
@@ -271,6 +274,8 @@ if __name__ == '__main__':
         f.create_dataset('coinc/timeslide_id', data=slide_index)
         f.create_dataset('coinc/template_id', data=r1[c1])
         f.attrs['timeslide_interval'] = numpy.float64(args.timeslide_interval)
+        f.attrs['detector_1'] = d1.name
+        f.attrs['detector_2'] = d2.name
     else:
         logging.info('huh, why are there no triggers?')
 
