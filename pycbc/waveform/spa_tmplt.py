@@ -1,5 +1,4 @@
-#  
-#  Apapted from code in LALSimInpspiralTaylorF2.c 
+#  Adapted from code in LALSimInspiralTaylorF2.c 
 # 
 #  Copyright (C) 2007 Jolien Creighton, B.S. Sathyaprakash, Thomas Cokelaer
 #  Copyright (C) 2012 Leo Singer, Alex Nitz
@@ -20,7 +19,8 @@
 #  along with with program; see the file COPYING. If not, write to the
 #  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #  MA  02111-1307  USA
-"""This module contains functions for generating common SPA temlate precalculated
+
+"""This module contains functions for generating common SPA template precalculated
    vectors. 
 """ 
 from math import sqrt, frexp

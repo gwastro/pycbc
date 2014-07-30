@@ -1,5 +1,4 @@
-#  
-#  Apapted from code in LALSimInpspiralTaylorF2.c 
+#  Adapted from code in LALSimInspiralTaylorF2.c 
 # 
 #  Copyright (C) 2007 Jolien Creighton, B.S. Sathyaprakash, Thomas Cokelaer
 #  Copyright (C) 2012 Leo Singer, Alex Nitz
