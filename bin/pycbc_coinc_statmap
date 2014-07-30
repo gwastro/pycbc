@@ -14,7 +14,6 @@ def load_coincs(coinc_files):
     timeslide_id = []
     template_id = []
     for cfile in coinc_files:
-        print cfile
         f = h5py.File(cfile, "r")
         stat1.append(f['coinc/stat1'])
         stat2.append(f['coinc/stat2'])
