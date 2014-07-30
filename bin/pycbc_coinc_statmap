@@ -70,7 +70,7 @@ def cluster_coincs(stat1, stat2, time1, time2,
             slide_locs = numpy.where(slide[l:r] == slide_id)[0]        
             indices.append(slide_locs[nstatsq[l:r][slide_locs].argmax()] + l)
        
-    return numpy.unique(numpy.array(time_sorting[indices], dtype=numpy.uint32))
+    return numpy.unique(numpy.array(time_sorting[indices], dtype=numpy.uint32)
 
 if __name__ == '__main__':
 
