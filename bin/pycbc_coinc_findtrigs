@@ -397,6 +397,7 @@ if __name__ == '__main__':
     s2, t2, r2 = triggers[ifo2]
     fore_time1 = abs(foreground_segments[ifo1])
     fore_time2 = abs(foreground_segments[ifo2])
+    coinc_time = abs(foreground_segments[ifo1] and foreground_segments[ifo2])
     
     logging.info('%s time: %s  %s time: %s' %  (ifo1, fore_time1, ifo2, fore_time2))
     
@@ -481,7 +482,8 @@ if __name__ == '__main__':
         f.attrs['detector_1'] = det1.name
         f.attrs['detector_2'] = det2.name
         f.attrs['foreground_time1'] = fore_time1
-        f.attrs['foreground_time1'] = fore_time1
+        f.attrs['foreground_time2'] = fore_time2
+        f.attrs['coinc_time'] = coinc_time
         f.attrs['num_slides'] = num_slides
     else:
         logging.info('huh, why are there no triggers?')
