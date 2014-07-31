@@ -150,11 +150,11 @@ if __name__ == '__main__':
         background_time = attrs['num_slides'] * attrs['coinc_time']
         logging.info("calculating ifar values")
         ifar = background_time / fanmap(cstat(s1[fore_locs], s2[fore_locs]))
-        
+
         logging.info("calculating fap values")
         fap = numpy.clip(attrs['coinc_time']/ifar, 0, 1)
         
-        f['foreground/ifar'] = ifar
+        f['foreground/ifar'] = sec_to_year(ifar)
         f['foreground/fap'] = fap
     else:
         pass
