@@ -4,7 +4,8 @@ The program combines coincident output files generated
 by pycbc_coinc_findtrigs to generated a mapping between SNR and FAP, along
 with producing the combined foreground and background triggers
 """
-import argparse, h5py, numpy, logging, itertools  
+import argparse, h5py, numpy, logging, itertools, copy
+from scipy.interpolate import interp1d    
     
 def load_coincs(coinc_files):
     stat1 = []
@@ -13,6 +14,7 @@ def load_coincs(coinc_files):
     time2 = []
     timeslide_id = []
     template_id = []
+    decimation_factor = []    
     for cfile in coinc_files:
         f = h5py.File(cfile, "r")
         stat1.append(f['coinc/stat1'])
@@ -21,13 +23,17 @@ def load_coincs(coinc_files):
         time2.append(f['coinc/time2'])
         timeslide_id.append(f['coinc/timeslide_id'])
         template_id.append(f['coinc/template_id'])
+        decimation_factor.append(f['coinc/decimation_factor'])
+        attr = dict(f.attrs)
     return (numpy.concatenate(stat1),
            numpy.concatenate(stat2),
            numpy.concatenate(time1),
            numpy.concatenate(time2),
            numpy.concatenate(timeslide_id),
            numpy.concatenate(template_id), 
-           f.attrs['timeslide_interval'])
+           numpy.concatenate(decimation_factor),
+           attr,
+           )
   
 def changed(arr):
     return arr[:-1] != arr[1:]
@@ -70,6 +76,23 @@ def cluster_coincs(stat1, stat2, time1, time2,
        
     return numpy.unique(numpy.array(time_sorting[indices], dtype=numpy.uint32))
 
+def calculate_fan_map(combined_stat, dec):
+    """ Return a function to map between false alarm number (FAN) and the
+    combined ranking statistic.
+    """
+    stat_sorting = combined_stat.argsort()
+    
+    combined_stat = combined_stat[stat_sorting]
+    fan = dec[stat_sorting][::-1].cumsum()[::-1]
+    
+    return interp1d(combined_stat, fan, fill_value=0.67, bounds_error=False) 
+
+def cstat(s1, s2):
+    return numpy.sqrt(s1**2.0 + s2 ** 2.0)
+
+def sec_to_year(sec):
+    return sec / (3.15569e7)
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -86,13 +109,13 @@ if __name__ == '__main__':
                                 level=log_level)
     
     logging.info("Loading coinc triggers")    
-    s1, s2, t1, t2, sid, tid, timeslide_interval = load_coincs(args.coinc_files)    
+    s1, s2, t1, t2, sid, tid, dec, attrs = load_coincs(args.coinc_files)   
     logging.info("We have %s triggers" % len(s1))
 
     if args.cluster_window != 0:
         logging.info("Clustering coinc triggers")
         cid = cluster_coincs(s1, s2, t1, t2, sid, 
-                             timeslide_interval, 
+                             attrs['timeslide_interval'], 
                              args.cluster_window)
                          
     s1, s2, t1, t2, sid, tid = s1[cid], s2[cid], t1[cid], t2[cid], sid[cid], tid[cid]
@@ -100,13 +123,18 @@ if __name__ == '__main__':
     
     logging.info("Dumping foreground triggers")
     f = h5py.File(args.output_file, "w")
+    
+    f.attrs['detector_1'] = attrs['detector_1']
+    f.attrs['detector_2'] = attrs['detector_2']
+    f.attrs['num_slides'] = attrs['num_slides']
+    
     fore_locs = sid == 0
     f['foreground/stat1'] = s1[fore_locs]
     f['foreground/stat2'] = s2[fore_locs]
     f['foreground/time1'] = t1[fore_locs]
     f['foreground/time2'] = t2[fore_locs]
     f['foreground/template_id'] = tid[fore_locs]
-       
+    print cstat(s1[fore_locs], s2[fore_locs])
     back_locs = numpy.where((sid != 0))[0]
     if len(back_locs) > 0:
         logging.info("Dumping background tirggers")
@@ -116,8 +144,18 @@ if __name__ == '__main__':
         f['background/time2'] = t2[back_locs]
         f['background/timeslide_id'] = sid[back_locs]
         f['background/template_id'] = tid[back_locs]
+
+        logging.info("Making mapping from FAN to the combined statistic")
+        fanmap = calculate_fan_map(cstat(s1[back_locs], s2[back_locs]), dec)
+        background_time = attrs['num_slides'] * attrs['coinc_time']
+        logging.info("calculating ifar values")
+        ifar = background_time / fanmap(cstat(s1[fore_locs], s2[fore_locs]))
         
-        logging.info("Making FAP to STAT mapping")
+        logging.info("calculating fap values")
+        fap = numpy.clip(attrs['coinc_time']/ifar, 0, 1)
+        
+        f['foreground/ifar'] = ifar
+        f['foreground/fap'] = fap
     else:
         pass
 
