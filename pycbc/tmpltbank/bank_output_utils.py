@@ -44,21 +44,21 @@ def return_empty_sngl():
 
 def convert_to_sngl_inspiral_table(params, proc_id):
     '''
-    Convert a list of m1,m2,spin1z,spin2z into a sngl_inspiral format template
-    bank.
+    Convert a list of m1,m2,spin1z,spin2z values into a basic sngl_inspiral 
+    table with mass and spin parameters populated and event IDs assigned
 
     Parameters
     -----------
-    params : list of tuples
-        Each entry in the params list should be a tuple/list/numpy array
-        whose entries contain [mass1,mass2,spin1z,spin2z]
+    params : iterable
+        Each entry in the params iterable should be a sequence of 
+        [mass1, mass2, spin1z, spin2z] in that order
     proc_id : ilwd char
         Process ID to add to each row of the sngl_inspiral table
 
     Returns
     ----------
     SnglInspiralTable
-        The bank of templates in SnglInspiralTable format.
+        Bank of templates in SnglInspiralTable format
     '''
     sngl_inspiral_table = lsctables.New(lsctables.SnglInspiralTable)
     col_names = ['mass1','mass2','spin1z','spin2z']
@@ -67,18 +67,14 @@ def convert_to_sngl_inspiral_table(params, proc_id):
         tmplt = return_empty_sngl()
 
         tmplt.process_id = proc_id
-        index = 0
-        for value in values[0:4]:
-            setattr(tmplt,col_names[index],value)
-            index += 1
-        tmplt.mtotal = tmplt.mass1 + tmplt.mass2
-        tmplt.eta = tmplt.mass1 * tmplt.mass2 / (tmplt.mtotal * tmplt.mtotal)
-        tmplt.mchirp = tmplt.mtotal * tmplt.eta**(3./5.)
-        # Currently using ISCO frequency for termination
-        tmplt.f_final = pnutils.f_SchwarzISCO(tmplt.mtotal)
+        for colname, value in zip(col_names, values):
+            setattr(tmplt, colname, value)
+        tmplt.mtotal, tmplt.eta = pnutils.mass1_mass2_to_mtotal_eta(
+            tmplt.mass1, tmplt.mass2)
+        tmplt.mchirp, junk = pnutils.mass1_mass2_to_mchirp_eta(
+            tmplt.mass1, tmplt.mass2)
         tmplt.template_duration = 0 # FIXME
         tmplt.event_id = sngl_inspiral_table.get_next_id()
-        # FIXME: Add gamma values
         sngl_inspiral_table.append(tmplt)
 
     return sngl_inspiral_table
@@ -100,13 +96,17 @@ def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2,
         Structure holding all the options for construction of the metric
         and the eigenvalues, eigenvectors and covariance matrix
         needed to manipulate the space.
-    ethincaParams: ethincaParameters instance
+    ethincaParams : ethincaParameters instance
         Structure holding options relevant to the ethinca metric computation.
 
     Returns
     --------
-    numpy_array
-        A numpy array holding 6 independent metric components in 
+    fMax_theor : float
+        Value of the upper frequency cutoff given by the template parameters
+        and the cutoff formula requested.
+
+    gammaVals : numpy_array
+        Array holding 6 independent metric components in 
         (end_time, tau_0, tau_3) coordinates to be stored in the Gamma0-5 
         slots of a SnglInspiral object.
     """
@@ -207,29 +207,30 @@ def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2,
     gammaVals[4] = g[0,1]
     gammaVals[5] = g[1,1]
 
-    return gammaVals
+    return fMax_theor, gammaVals
 
 def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
                                ethincaParams, programName="", optDict = {}, 
                                outdoc=None, **kwargs):
     """
     Function that converts the information produced by the various pyCBC bank
-    generation codes into a valid LIGOLW xml file, containing a sngl_inspiral
-    table and output this to file.
+    generation codes into a valid LIGOLW xml file containing a sngl_inspiral
+    table and outputs to file.
  
     Parameters
     -----------
     outputFile : string
         Name of the file that the bank will be written to
-    tempBank : list of tuples
-        Each entry in the tempBank list should be a tuple/list/numpy array
-        whose entries contain [mass1,mass2,spin1z,spin2z]
+    tempBank : iterable
+        Each entry in the tempBank iterable should be a sequence of
+        [mass1,mass2,spin1z,spin2z] in that order.
     metricParams : metricParameters instance
         Structure holding all the options for construction of the metric
         and the eigenvalues, eigenvectors and covariance matrix
         needed to manipulate the space.
     ethincaParams: ethincaParameters instance
-        Structure holding options relevant to the ethinca metric computation.
+        Structure holding options relevant to the ethinca metric computation
+        including the upper frequency cutoff to be used for filtering.
         NOTE: The computation is currently only valid for non-spinning systems
         and uses the TaylorF2 approximant.
     programName (key-word-argument) : string
@@ -251,21 +252,29 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
     sngl_inspiral_table = \
             convert_to_sngl_inspiral_table(tempBank, proc_id)
     # Calculate Gamma components if needed
-    if ethincaParams is not None and (ethincaParams.doEthinca == True):
+    if ethincaParams.doEthinca:
         for sngl in sngl_inspiral_table:
             # Set tau_0 and tau_3 values needed for the calculation of 
             # ethinca metric distances
             (sngl.tau0,sngl.tau3) = pnutils.mass1_mass2_to_tau0_tau3(
-                  sngl.mass1, sngl.mass2, metricParams.f0) 
-            GammaVals = calculate_ethinca_metric_comps(
-                metricParams, ethincaParams, sngl.mass1, sngl.mass2,
-                sngl.spin1z, sngl.spin2z)
-            # assign the output Gamma0-5 values to the sngl object
+                sngl.mass1, sngl.mass2, metricParams.f0)
+            fMax_theor, GammaVals = calculate_ethinca_metric_comps(
+                metricParams, ethincaParams,
+                sngl.mass1, sngl.mass2, sngl.spin1z, sngl.spin2z)
+            # assign the upper frequency cutoff and Gamma0-5 values
+            sngl.f_final = fMax_theor
             for i in range(6): setattr(sngl, "Gamma"+str(i), GammaVals[i])
+    # If Gamma metric components are not wanted, assign f_final from an 
+    # upper frequency cutoff specified in ethincaParams
+    elif ethincaParams is not None and ethincaParams.cutoff is not None:
+        for sngl in sngl_inspiral_table:
+            sngl.f_final = pnutils.frequency_cutoff_from_name(
+                ethincaParams.cutoff,
+                sngl.mass1, sngl.mass2, sngl.spin1z, sngl.spin2z)
 
     outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 
     # write the xml doc to disk
     proctable = table.get_table(outdoc, lsctables.ProcessTable.tableName)
-    ligolw_utils.write_filename(outdoc, outputFile, \
+    ligolw_utils.write_filename(outdoc, outputFile,
                                 gz=outputFile.endswith('.gz'))

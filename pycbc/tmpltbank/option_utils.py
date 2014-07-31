@@ -331,8 +331,6 @@ class metricParameters:
     def evecsCV(self, inEvecs):
         self._evecsCV = inEvecs
 
-
-
 def insert_mass_range_option_group(parser,nonSpin=False):
     """
     Adds the options used to specify mass ranges in the bank generation codes
@@ -400,30 +398,34 @@ def insert_mass_range_option_group(parser,nonSpin=False):
     massOpts.add_argument("--max-ns-spin-mag", action="store", type=float,
                   default=None,
                   help="Maximum neutron star spin magnitude.  Neutron stars "
-                       "are defined as components lighter than 3 Msun. "
-                       "REQUIRED if min-mass2 < 3 Msun")
-    massOpts.add_argument("--max-bh-spin-mag", action="store", type=float,\
+                       "are defined as components lighter than the NS-BH "
+                       "boundary (3 Msun by default). REQUIRED if min-mass2 "
+                       "< ns-bh-boundary-mass")
+    massOpts.add_argument("--max-bh-spin-mag", action="store", type=float,
                   default=None,
                   help="Maximum black hole spin magnitude.  Black holes are "
-                       "defined as components with mass >= 3 Msun. REQUIRED "
-                       "if max-mass1 > 3 Msun")
+                       "defined as components at or above the NS-BH boundary "
+                       "(3 Msun by default). REQUIRED if max-mass1 >= "
+                       "ns-bh-boundary-mass")
+    # Mutually exclusive group prevents both options being set on command line
+    # If --nsbh-flag is True then spinning bank generation must ignore the
+    # default value of ns-bh-boundary-mass.
     action = massOpts.add_mutually_exclusive_group(required=False)
     action.add_argument("--ns-bh-boundary-mass", action='store', type=float,
                   default=3,
                   help="Mass boundary between neutron stars and black holes. "
                        "Components below this mass are considered neutron "
                        "stars and are subject to the neutron star spin limits. "
-                       "Components above are considered black holes and are "
-                       "subject to the black hole spin limits. OPTIONAL, if "
-                       "not set the default value of 3 is used.")
+                       "Components at/above are subject to the black hole spin "
+                       "limits.  OPTIONAL, default=3.  UNITS=Solar mass")
     action.add_argument("--nsbh-flag", action="store_true", default=False,
                   help="Set this flag if generating a bank that contains only "
                        "systems with 1 black hole and 1 neutron star. With "
                        "this flag set the heavier body will always be subject "
                        "to the black hole spin restriction and the lighter "
                        "to the neutron star spin restriction, regardless of "
-                       "mass. OPTIONAL, if set this option will ignore any "
-                       "value provided to --ns-bh-boundary-mass.")
+                       "mass.  OPTIONAL.  If set, the value of "
+                       "--ns-bh-boundary-mass will be ignored.")
 
 def verify_mass_range_options(opts, parser, nonSpin=False):
     """
@@ -503,7 +505,7 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
             # Unphysical, remove
             m2_at_min_m1 = -1
         # Get the values on the equal mass line
-        m1_at_equal_mass, m2_at_equal_mass = pnutils.mchirp_eta_to_mass1_mass2(\
+        m1_at_equal_mass, m2_at_equal_mass = pnutils.mchirp_eta_to_mass1_mass2(
                                                      opts.min_chirp_mass, 0.25)
 
         # Are any of these possible?
@@ -512,12 +514,12 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
         elif m2_at_min_m1 <= opts.max_mass2 and m2_at_min_m1 >= opts.min_mass2:
             min_tot_mass = opts.min_mass1 + m2_at_min_m1
         elif m1_at_equal_mass <= opts.max_mass1 and \
-                 m1_at_equal_mass >= opts.min_mass1 and\
-                 m2_at_equal_mass <= opts.max_mass2 and\
+                 m1_at_equal_mass >= opts.min_mass1 and \
+                 m2_at_equal_mass <= opts.max_mass2 and \
                  m2_at_equal_mass >= opts.min_mass2:
             min_tot_mass = m1_at_equal_mass + m2_at_equal_mass
         # So either the restriction is low enough to be redundant, or is
-        # removing all the paramter space
+        # removing all the parameter space
         elif m2_at_min_m1 < opts.min_mass2:
             # This is the redundant case, ignore
             min_tot_mass = opts.min_total_mass
@@ -699,16 +701,23 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
             parser.error("--max-eta must be larger than --min-eta.")
     if nonSpin:
         return
+
     if opts.max_ns_spin_mag is None:
+        if opts.nsbh_flag:
+            parser.error("Must supply --max_ns_spin_mag with --nsbh-flag")
         # Can ignore this if no NSs will be generated
-        if opts.min_mass2 < 3:
-            parser.error("Must supply --max-ns-spin-mag")
+        elif opts.min_mass2 < opts.ns_bh_boundary_mass:
+            parser.error("Must supply --max-ns-spin-mag for the chosen"
+                         " value of --min_mass2")
         else:
             opts.max_ns_spin_mag = opts.max_bh_spin_mag
     if opts.max_bh_spin_mag is None:
+        if opts.nsbh_flag:
+            parser.error("Must supply --max_bh_spin_mag with --nsbh-flag")
         # Can ignore this if no BHs will be generated
-        if opts.max_mass1 > 3:
-            parser.error("Must supply --max-bh-spin-mag")
+        if opts.max_mass1 >= opts.ns_bh_boundary_mass:
+            parser.error("Must supply --max-bh-spin-mag for the chosen"
+                         " value of --max_mass1")
         else:
             opts.max_bh_spin_mag = opts.max_ns_spin_mag
 
@@ -783,17 +792,17 @@ class massRangeParameters(object):
         have already been called before initializing the class.
         """
         if nonSpin:
-            return cls(opts.min_mass1, opts.max_mass1, opts.min_mass2,\
-                       opts.max_mass2, maxTotMass=opts.max_total_mass,\
-                       minTotMass=opts.min_total_mass, maxEta=opts.max_eta,\
-                       minEta=opts.min_eta, max_chirp_mass=opts.max_chirp_mass,\
+            return cls(opts.min_mass1, opts.max_mass1, opts.min_mass2,
+                       opts.max_mass2, maxTotMass=opts.max_total_mass,
+                       minTotMass=opts.min_total_mass, maxEta=opts.max_eta,
+                       minEta=opts.min_eta, max_chirp_mass=opts.max_chirp_mass,
                        min_chirp_mass=opts.min_chirp_mass)
         else:
-            return cls(opts.min_mass1, opts.max_mass1, opts.min_mass2,\
-                       opts.max_mass2, maxTotMass=opts.max_total_mass,\
-                       minTotMass=opts.min_total_mass, maxEta=opts.max_eta,\
-                       minEta=opts.min_eta, maxNSSpinMag=opts.max_ns_spin_mag,\
-                       maxBHSpinMag=opts.max_bh_spin_mag, \
+            return cls(opts.min_mass1, opts.max_mass1, opts.min_mass2,
+                       opts.max_mass2, maxTotMass=opts.max_total_mass,
+                       minTotMass=opts.min_total_mass, maxEta=opts.max_eta,
+                       minEta=opts.min_eta, maxNSSpinMag=opts.max_ns_spin_mag,
+                       maxBHSpinMag=opts.max_bh_spin_mag,
                        nsbhFlag=opts.nsbh_flag,
                        max_chirp_mass=opts.max_chirp_mass,
                        min_chirp_mass=opts.min_chirp_mass,
@@ -864,7 +873,7 @@ class massRangeParameters(object):
 class ethincaParameters:
     """
     This class holds all of the options that are parsed in the function
-    insert_ethinca_option_group
+    insert_ethinca_metric_options
     and all products produced using these options. It can also be initialized
     from the __init__ function, providing directly the options normally
     provided on the command line
@@ -872,7 +881,7 @@ class ethincaParameters:
     def __init__(self, pnOrder, cutoff, freqStep, fLow=None, doEthinca=False):
         """
         Initialize an instance of ethincaParameters by providing all
-        options directly.  See the insert_ethinca_option_group() function
+        options directly.  See the insert_ethinca_metric_options() function
         for explanation or e.g. run pycbc_geom_nonspinbank --help
         """
         self.doEthinca=doEthinca
@@ -896,12 +905,12 @@ class ethincaParameters:
         """
         Initialize an instance of the ethincaParameters class from an
         argparse.OptionParser instance. This assumes that
-        insert_ethinca_option_group
+        insert_ethinca_metric_options
         and
         verify_ethinca_metric_options
         have already been called before initializing the class.
         """
-        return cls(opts.ethinca_pn_order, opts.ethinca_cutoff,
+        return cls(opts.ethinca_pn_order, opts.filter_cutoff,
             opts.ethinca_frequency_step, fLow=None,
             doEthinca=opts.calculate_ethinca_metric)
 
@@ -916,31 +925,33 @@ def insert_ethinca_metric_options(parser):
     """
     ethincaGroup = parser.add_argument_group("Ethinca metric options",
                     "Options used in the calculation of Gamma metric "
-                    "components for the ethinca coincidence test.")
+                    "components for the ethinca coincidence test and for "
+                    "assigning high-frequency cutoffs to templates.")
     ethincaGroup.add_argument("--calculate-ethinca-metric",
                     action="store_true", default=False, 
                     help="If given, the ethinca metric will be calculated "
                     "and stored in the Gamma entries of the sngl_inspiral "
-                    "table.  OPTIONAL")
+                    "table. OPTIONAL, default=False")
     ethincaGroup.add_argument("--ethinca-pn-order",
                     default=None, choices=get_ethinca_orders(), 
                     help="Specify a PN order to be used in calculating the "
-                    "ethinca metric.  OPTIONAL: if not specified, the same "
+                    "ethinca metric. OPTIONAL: if not specified, the same "
                     "order will be used as for the bank metric.")
-    ethincaGroup.add_argument("--ethinca-cutoff",
+    ethincaGroup.add_argument("--filter-cutoff",
                     default=None, 
                     choices=pnutils.named_frequency_cutoffs().keys(),
                     help="Specify an upper frequency cutoff formula for the "
-                    "ethinca metric calculation.  REQUIRED if the "
+                    "ethinca metric calculation, and for the values of f_final"
+                    " assigned to the templates.  REQUIRED if the "
                     "calculate-ethinca-metric option is given.")
     ethincaGroup.add_argument("--ethinca-frequency-step", action="store",
                     type=float, default=10.,
-                    help="Control the precision with which the upper "
-                    "frequency cutoff is specified.  For speed, the metric "
-                    "is calculated only for discrete f_max values with a "
-                    "spacing given by this option.  Each template is then "
-                    "assigned the result for the f_max closest to its "
-                    "analytical cutoff formula.  OPTIONAL. UNITS=Hz")
+                    help="Control the precision of the upper frequency cutoff."
+                    " For speed, the metric is calculated only for discrete "
+                    "f_max values with a spacing given by this option. Each "
+                    "template is assigned the metric for the f_max closest to "
+                    "its analytical cutoff formula. OPTIONAL, default=10. "
+                    "UNITS=Hz")
 
 def verify_ethinca_metric_options(opts, parser):
     """
@@ -954,17 +965,14 @@ def verify_ethinca_metric_options(opts, parser):
     parser : object
         The OptionParser instance.
     """
-    if opts.calculate_ethinca_metric and not (opts.ethinca_cutoff in
+    if opts.filter_cutoff is not None and not (opts.filter_cutoff in
               pnutils.named_frequency_cutoffs().keys()):
-        parser.error("Need a valid cutoff formula to calculate ethinca! "
-                     "Possible values are "
+        parser.error("Need a valid cutoff formula to calculate ethinca or "
+                     "assign filter f_final values! Possible values are "
                      +str(pnutils.named_frequency_cutoffs().keys()))
     if opts.calculate_ethinca_metric and not opts.ethinca_frequency_step:
         parser.error("Need to specify a cutoff frequency step to calculate "
                      "ethinca!")
-    if not opts.calculate_ethinca_metric and opts.ethinca_cutoff:
-        parser.error("Can't specify an ethinca cutoff formula if not "
-                     "calculating ethinca metric!")
     if not opts.calculate_ethinca_metric and opts.ethinca_pn_order:
         parser.error("Can't specify an ethinca PN order if not "
                      "calculating ethinca metric!")
