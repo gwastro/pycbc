@@ -344,9 +344,11 @@ def veto_indices(times, ifo, veto_files):
                 continue
                 
             veto_segs += [segments.segment(s, e)]
-        
+
+        veto_segs.coalesce()        
+
         left = numpy.searchsorted(times, start, side='left')
-        right = numpy.searchsorted(times, end, side='right')   
+        right = numpy.searchsorted(times, end, side='right')
         for li, ri, ifo_row in zip(left, right, ifos):
             if ifo != ifo_row:
                 continue
@@ -405,11 +407,12 @@ if __name__ == '__main__':
         logging.info('applying vetoes')
         veto1, vsegs1 = veto_indices(t1, ifo1, args.veto_files)
         s1, t1, r1 = numpy.delete(s1, veto1), numpy.delete(t1, veto1), numpy.delete(r1, veto1)
-        fore_time1 -= abs(fore_time1 and vsegs1)
+        fore_time1 -= abs(foreground_segments[ifo1] and vsegs1)
 
-        veto2, vsegs2 = veto_indices(t1, ifo2, args.veto_files)     
+        veto2, vsegs2 = veto_indices(t2, ifo2, args.veto_files)     
         s2, t2, r2 = numpy.delete(s2, veto2), numpy.delete(t2, veto2), numpy.delete(r2, veto2)
-        fore_time2 -= abs(fore_time2 and vsegs2)
+        fore_time2 -= abs(foreground_segments[ifo2] and vsegs2)
+
         logging.info('%s time: %s  %s time: %s' %  (ifo1, fore_time1, ifo2, fore_time2))   
         
     det1 = Detector(ifo1)
@@ -460,7 +463,7 @@ if __name__ == '__main__':
         logging.info('%s total triggers' % len(s1))
         logging.info('%s foreground triggers' % (slide_index == 0).sum())
     else:
-        decimation_factor 
+        decimation_factor = numpy.zeros(len(s1), dtype=numpy.uint32) + 1
     
     logging.info('saving coincident triggers')
     f = h5py.File(args.output_file, "w")
