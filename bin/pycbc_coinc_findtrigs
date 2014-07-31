@@ -217,21 +217,22 @@ def load_triggers(trigger_files, prefix):
     for i, filename in enumerate(trigger_files):
         logging.info('Loading file: %s' % filename)
         f = h5py.File(filename, "r")
+        ifo = f.attrs['ifo']
         
-        try:
-            snr = f[prefix + '/stat'][:]
-            end_time = f[prefix + '/end_time'][:]
-            th = f[prefix + '/template_id'][:]
-            ifo = f.attrs['ifo']
-        except ValueError:
-            continue
-
         # Compile a complete segment list for the foreground time
         if ifo not in trig_segments:
             trig_segments[ifo] = segments.segmentlist()  
           
         seg = segments.segment(f.attrs['start_time'], f.attrs['end_time'])
         trig_segments[ifo] += [seg]
+        
+        try:
+            snr = f[prefix + '/stat'][:]
+            end_time = f[prefix + '/end_time'][:]
+            th = f[prefix + '/template_id'][:]
+        except KeyError:
+            # There weren't any triggers 
+            continue
 
         if len(snr) > 0:
             if ifo not in triggers:
