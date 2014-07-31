@@ -107,19 +107,19 @@ if __name__ == '__main__':
     f['foreground/time2'] = t2[fore_locs]
     f['foreground/template_id'] = tid[fore_locs]
        
-    logging.info("Dumping background tirggers")
-    back_locs = sid != 0
+    back_locs = numpy.where((sid != 0))[0]
     if len(back_locs) > 0:
+        logging.info("Dumping background tirggers")
         f['background/stat1'] = s1[back_locs]
         f['background/stat2'] = s2[back_locs]
         f['background/time1'] = t1[back_locs]
         f['background/time2'] = t2[back_locs]
         f['background/timeslide_id'] = sid[back_locs]
         f['background/template_id'] = tid[back_locs]
+        
+        logging.info("Making FAP to STAT mapping")
     else:
         pass
-    
-    logging.info("Making FAP to STAT mapping")
 
     logging.info("Done") 
     
