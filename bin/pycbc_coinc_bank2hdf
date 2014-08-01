@@ -40,7 +40,7 @@ th = th[sorted_ind]
     
 f = h5py.File(args.output_file, "w")
 f.create_dataset("mass1", data=m1)
-f.create_dataset("mass2", data=m1)
+f.create_dataset("mass2", data=m2)
 f.create_dataset("spin1z", data=s1)
 f.create_dataset("spin2z", data=s2)
 f.create_dataset("template_hash", data=th)

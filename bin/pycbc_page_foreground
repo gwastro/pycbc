@@ -30,10 +30,10 @@ logging.info('Found %s foreground triggers' % len(stat1))
 
 logging.info('Read in the template bank data to get template parameters')
 f = h5py.File(args.bank_file, 'r')
-mass1 = f['mass1'][:]
-mass2 = f['mass2'][:]
-spin1z = f['spin1z'][:]
-spin2z = f['spin2z'][:]
+mass1 = f['mass1'][:][template_id]
+mass2 = f['mass2'][:][template_id]
+spin1z = f['spin1z'][:][template_id]
+spin2z = f['spin2z'][:][template_id]
 
 mchirp, eta = mass1_mass2_to_mchirp_eta(mass1, mass2)
 
@@ -43,5 +43,6 @@ names = ['IFAR', 'FAP', 'Combined NewSNR', 'Time', 'Time Difference', 'm1', 'm2'
 
 logging.info('Making table of foreground triggers')
 html_table = pycbc.results.table(columns, names, page_size=10)
+print html_table
 f = open(args.output_file, 'w')
 f.write(html_table)

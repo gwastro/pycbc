@@ -485,6 +485,7 @@ if __name__ == '__main__':
         f.attrs['foreground_time2'] = fore_time2
         f.attrs['coinc_time'] = coinc_time
         f.attrs['num_slides'] = num_slides
+        f.attrs['background_time'] = 
     else:
         logging.info('huh, why are there no triggers?')
 
