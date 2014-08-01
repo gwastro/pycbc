@@ -1,6 +1,21 @@
 #!/bin/bash
 # Set up the site-local with the correct paths
 
+# Check I have two arguments supplied
+
+if [ "x$1" == "x" ]
+then
+  echo "I take two arguments, the name of the dax file and the logpath. None supplied."
+  exit 1
+fi
+
+if [ "x$2" == "x" ]
+then
+  echo "I take two arguments, the name of the dax file and the logpath. Only got one: $1"
+  exit 1
+fi
+
+
 echo 'cat <<END_OF_TEXT' >  temp.sh
 cat "site-local.xml"                 >> temp.sh
 echo 'END_OF_TEXT'       >> temp.sh
