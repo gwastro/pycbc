@@ -12,6 +12,7 @@ I use a similar naming convention here, with minor simplifications to the
 twiddle factors. 
 """ 
 import numpy, scipy.weave, ctypes, pycbc.types
+from pycbc.libutils import get_ctypes_library
 
 # FFTW constants
 FFTW_FORWARD = -1
@@ -36,9 +37,10 @@ def plan_first_phase(N1, N2):
                   ctypes.c_int, ctypes.c_int]   
     f.restype = ctypes.c_void_p
     return f(1, ctypes.byref(ctypes.c_int(N2)), N1,
-             vin.ptr, None, 1, N2,
+             vin.ptr, None, N1, 1,
              vout.ptr, None, 1, N2, FFTW_BACKWARD, FFTW_MEASURE)  
 
+_theplan = None
 def first_phase(invec, outvec, N1, N2):
     """  This implements the first phase of the FFT decomposition, using
     the standard FFT many plans
@@ -46,7 +48,6 @@ def first_phase(invec, outvec, N1, N2):
     global _theplan
     if _theplan is None:
         _theplan = plan_first_phase(N1, N2)
-    
     fexecute(_theplan, invec.ptr, outvec.ptr)
     
 
@@ -70,8 +71,7 @@ def second_phase(invec, indices, N1, N2):
     -------
     out : array of floats
     """
-    indices = indices.astype(numpy.uint32)
-    invec = numpy.array(invec, copy=False)
+    invec = numpy.array(invec.data, copy=False)
     NI = len(indices)
     N1=int(N1)
     N2=int(N2)
@@ -98,18 +98,18 @@ def second_phase(invec, indices, N1, N2):
     
 def pruned_c2cifft(invec, outvec, indices):
     """Perform a pruned iFFT, only valid for power of 2 iffts as the
-    decomposition is easier to choose. This is not a strict requirement of the
+    decomposition is easier to choose. This is not a rict requirement of the
     functions, but it is unlikely to the optimal to use anything but power
      of 2.
     """
     # This is a sloppy guess at an OK decomposition boudary, but could be better
     # through benchmarking and optimization (the second phase is a lot slower
     # than it strictly has to be). 
-    N2 = numpy.log2(len(invec))/2
+    N2 = int(2 ** (numpy.log2( len(invec) ) / 2))
     N1 = len(invec)/N2
-    
+
     # Do the explicit transpose here as I would like to move this out of the 
     # loop soon
-    invec.data = invec.data.reshape(N2, N1).transpose().copy()
+    #invec = pycbc.types.Array(invec.data.copy().reshape(N2, N1).transpose().copy(), copy=False)
     first_phase(invec, outvec, N1=N1, N2=N2)
     return second_phase(outvec, indices, N1=N1, N2=N2)    
