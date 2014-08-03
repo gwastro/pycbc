@@ -301,6 +301,13 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
            FrequencySeries(_qtilde, epoch=stilde._epoch, delta_f=htilde.delta_f, copy=False), 
            norm)
            
+def smear(idx, factor):
+    s = [idx]
+    for i in range(factor):
+        a = i - factor/2
+        s += [idx + a]
+    return numpy.unique(numpy.concatenate(s))
+           
 q, q2, qtilde, qtilde2 = None, None, None, None
 def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
                                             downsample_factor,
@@ -335,9 +342,10 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
     idx2, snrv2 = threshold(q2s, snr_threshold / norm * downsample_threshold)
     if len(idx2) > 0:
        idx = (idx2+stilde.analyze.start/downsample_factor)*downsample_factor
+       idx = smear(idx, downsample_factor*2)
        correlate(htilde[kmin:kmax], stilde[kmin:kmax], qtilde[kmin:kmax])
        snrv = pruned_c2cifft(qtilde, q, idx)   
-       return idx2, snrv, qtilde, norm
+       return idx, snrv, qtilde, norm
     
     return [], [], None, None
            

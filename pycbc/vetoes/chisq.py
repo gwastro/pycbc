@@ -127,6 +127,7 @@ def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
     """
     logging.info('doing fast point chisq')
     snr = Array(snr, copy=False)    
+    snr = Array(snr, copy=False)   
     num_bins = len(bins) - 1
               
     chisq = shift_sum(corr, indices, bins)

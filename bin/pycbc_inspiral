@@ -148,7 +148,10 @@ with ctx:
 
     for t_num, template in enumerate(bank):  
         event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)  
-               
+
+        chisq_bins = vetoes.power_chisq_bins_from_sigmasq_series(bank.sigmasq_vec, 
+                             opt.chisq_bins, int(flow / delta_f), template.end_idx) 
+   
         if opt.cluster_method == "window":
             cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
         elif opt.cluster_method == "template":
@@ -168,20 +171,14 @@ with ctx:
             if len(idx) == 0:
                 continue            
             logging.info("%s points above threshold" % str(len(idx)))    
-            
-            #if len(idx) > 0:
-            #    print snrv*norm  
-            continue
                     
             if opt.cluster_before_vetoes:    
                 idx, snrv = events.cluster_reduce(idx, snrv, cluster_window) 
                 logging.info("%s points after clustering" % str(len(idx))) 
                 
-            bank_chisqv = bank_chisq.values(template, s_num, snr, norm, 
-                                            idx+stilde.analyze.start)
-            power_chisqv = power_chisq.values(corr, snr, norm, psd, 
-                                            idx+stilde.analyze.start, 
-                                            template, bank, flow)   
+            power_chisqv =  vetoes.power_chisq_at_points_from_precomputed(corr, 
+                                               snrv, norm, chisq_bins, idx)
+                   
             snrv *= norm
             
             if opt.autochi_number_points:
@@ -189,7 +186,7 @@ with ctx:
                     indices=idx+stilde.analyze.start, template=template, psd=psd, 
                     low_frequency_cutoff=flow)
 
-            idx += stilde.cumulative_index          
+            idx += stilde.cumulative_index + stilde.analyze.start
 
             if (opt.autochi_number_points):
                vals = [idx, snrv, power_chisqv, bank_chisqv, auto_chisqv[:, 2]]
