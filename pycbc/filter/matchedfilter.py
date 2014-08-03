@@ -301,6 +301,46 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
            FrequencySeries(_qtilde, epoch=stilde._epoch, delta_f=htilde.delta_f, copy=False), 
            norm)
            
+q, q2, qtilde, qtilde2 = None, None, None, None
+def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
+                                            downsample_factor,
+                                            downsample_threshold,
+                                            snr_threshold,
+                                            valid_slice,
+                                            low_frequency_cutoff=None,
+                                            high_frequency_cutoff=None):
+    """ Return the complex snr  
+    """
+    global q, q2, qtilde, qtilde2
+    from pycbc.fft.fftw_pruned import pruned_c2cifft
+    from pycbc.events import threshold
+
+    N = (len(stilde)-1) * 2   
+    kmin, kmax = get_cutoff_indices(low_frequency_cutoff,
+                                   high_frequency_cutoff, stilde.delta_f, N)                                     
+    N2 = N / downsample_factor
+    kmin2, kmax2 = get_cutoff_indices(low_frequency_cutoff,
+                                   high_frequency_cutoff, stilde.delta_f, N2)   
+    norm = (4.0 * stilde.delta_f) / sqrt(h_norm)
+    ctype = complex_same_precision_as(htilde)
+
+    if q is None:
+        q, qtilde = zeros(N, dtype=ctype), zeros(N, dtype=ctype)
+        q2, qtilde2 = zeros(N2, dtype=ctype), zeros(N2, dtype=ctype)   
+    
+    correlate(htilde[kmin2:kmax2], stilde[kmin2:kmax2], qtilde2[kmin2:kmax2])    
+    ifft(qtilde2, q2)    
+    
+    q2s = q2[stilde.analyze.start/downsample_factor:stilde.analyze.stop/downsample_factor]
+    idx2, snrv2 = threshold(q2s, snr_threshold / norm * downsample_threshold)
+   
+    if len(idx2) > 0:
+       correlate(htilde[kmin:kmax], stilde[kmin:kmax], qtilde[kmin:kmax])
+       snrv = pruned_c2cifft(qtilde, q, idx2)   
+       return idx2, snrv, qtilde, norm
+    
+    return [], [], None, None
+           
 def matched_filter(template, data, psd, low_frequency_cutoff=None,
                   high_frequency_cutoff=None):
     """ Return the complex snr and normalization. 
@@ -453,7 +493,7 @@ def overlap_cplx(vec1, vec2, psd=None, low_frequency_cutoff=None,
 
       
 
-__all__ = ['match', 'matched_filter', 'sigmasq', 'sigma',
+__all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'dynamic_rate_thresholded_matched_filter',
            'sigmasq_series', 'make_frequency_series', 'overlap', 'overlap_cplx',
            'matched_filter_core', 'correlate']
 

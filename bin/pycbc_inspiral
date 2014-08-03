@@ -18,7 +18,7 @@
 
 import logging
 import argparse
-from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC
+from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC, filter
 from pycbc.filter import matched_filter_core, sigmasq, make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
 import pycbc.fft.fftw
@@ -68,6 +68,7 @@ parser.add_argument("--autochi-number-points", type=int, default=0)
 parser.add_argument("--autochi-stride", type=int, default=0)
 parser.add_argument("--autochi-onesided", action='store_true', default=False)
 parser.add_argument("--snr-precheck", action='store_true')
+parser.add_argument("--snr-precheck-factor", type=int)
 parser.add_argument("--snr-precheck-threshold", type=float)
 
 parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
@@ -145,10 +146,6 @@ with ctx:
     snr_mem = zeros(tlen, dtype=complex64)
     corr_mem = zeros(tlen, dtype=complex64)
 
-    if opt.snr_precheck:
-        snr_pre_mem = zeros(tlen/4, dtype=complex64)
-        corr_pre_mem = zeros(tlen/4, dtype=complex64)
-
     for t_num, template in enumerate(bank):  
         event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)  
                
@@ -161,34 +158,20 @@ with ctx:
             logging.info("Filtering template %d/%d segment %d/%d" % \
                          (t_num + 1, len(bank), s_num + 1, len(segments)))  
                          
-            tsh = template[0:len(template)/4+1]
-            ssh = stilde[0:len(stilde)/4+1]
-            
-            if opt.snr_precheck:
-                snr2,  corr2, norm2 = matched_filter_core(tsh, ssh,
-                                                      h_norm=template.sigmasq, 
-                                                      low_frequency_cutoff=flow,
-                                                      out=snr_pre_mem,
-                                                      corr_out=corr_pre_mem)
-                                                      
-                idx2, snrv2 = events.threshold(snr2[stilde.analyze.start/4:stilde.analyze.stop/4], 
-                                               opt.snr_threshold / norm2*opt.snr_precheck_threshold)
-                if len(idx2) == 0:
-                    continue  
-                           
-            snr, corr, norm = matched_filter_core(template, stilde, 
-                                                  h_norm=template.sigmasq, 
-                                                  low_frequency_cutoff=flow, 
-                                                  out=snr_mem, 
-                                                  corr_out=corr_mem)                                    
-            idx, snrv = events.threshold(snr[stilde.analyze], 
-                                         opt.snr_threshold / norm)  
-                                                                               
-                              
+            idx, snrv, corr, norm = filter.dynamic_rate_thresholded_matched_filter(template, 
+                                                    stilde, template.sigmasq,
+                                                    opt.snr_precheck_factor,
+                                                    opt.snr_precheck_threshold,
+                                                    opt.snr_threshold,
+                                                    stilde.analyze,
+                                                    low_frequency_cutoff=flow)                                                                                                   
             if len(idx) == 0:
                 continue            
-            logging.info("%s points above threshold" % str(len(idx)))      
+            logging.info("%s points above threshold" % str(len(idx)))    
             
+            #if len(idx) > 0:
+            #    print snrv*norm  
+            continue
                     
             if opt.cluster_before_vetoes:    
                 idx, snrv = events.cluster_reduce(idx, snrv, cluster_window) 
