@@ -837,7 +837,7 @@ class PycbcSqliteSimplifyExecutable(AhopeExecutable):
         if injFile:
             node.add_input_opt("--injection-file", injFile)
             node.add_opt("--simulation-tag", injString)
-        node.new_output_file_opt(job_segment, '.sql', '--output-file',
+        node.new_output_file_opt(job_segment, '.sqlite', '--output-file',
                                  tags=self.tags) 
         return node
 
@@ -852,7 +852,7 @@ class SQLInOutExecutable(AhopeExecutable):
     def create_node(self, job_segment, inputFile):
         node = AhopeNode(self)
         node.add_input_opt('--input', inputFile)
-        node.new_output_file_opt(job_segment, '.sql', '--output',
+        node.new_output_file_opt(job_segment, '.sqlite', '--output',
                                  tags=self.tags)
         return node
 
@@ -864,7 +864,7 @@ class ComputeDurationsExecutable(SQLInOutExecutable):
         node = AhopeNode(self)
         node.add_input_opt('--input', input_file)
         node.add_input_opt('--segment-file', summary_xml_file)
-        node.new_output_file_opt(job_segment, '.sql', '--output',
+        node.new_output_file_opt(job_segment, '.sqlite', '--output',
                                  tags=self.tags)
         return node
 
