@@ -39,6 +39,6 @@ from coincidence import *
 from legacy_ihope import *
 from injection import *
 from timeslides import *
-from postprocessingprep import *
+from postprocessing_prep import *
 from postprocessing import *
 from analysislogging import *
