@@ -27,18 +27,18 @@ performing a coincident CBC matched-filter analysis on gravitational-wave
 interferometer data
 """
 
-from workflow_utils import *
-from configparserutils import *
-from datafind_utils import *
-from segment_utils import *
-from tmpltbank_utils import *
-from jobsetup_utils import *
-from matchedfltr_utils import *
-from splittable_utils import *
-from coincidence_utils import *
+from workflow import *
+from pycbc_configparser import *
+from datafind import *
+from segment import *
+from tmpltbank import *
+from jobsetup import *
+from matched_filter import *
+from splittable import *
+from coincidence import *
 from legacy_ihope import *
-from injection_utils import *
-from timeslides_utils import *
-from postprocessingprep_utils import *
-from postprocessing_utils import *
-from analysislogging_utils import *
+from injection import *
+from timeslides import *
+from postprocessingprep import *
+from postprocessing import *
+from analysislogging import *
