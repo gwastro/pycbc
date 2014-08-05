@@ -25,6 +25,7 @@
 These are the unittests for the pycbc.tmpltbank module
 """
 
+from __future__ import division
 import os
 import numpy
 import pycbc.tmpltbank
@@ -47,6 +48,51 @@ parse_args_cpu_only("Template bank module")
 
 import argparse
 parser = argparse.ArgumentParser()
+
+def update_mass_parameters(tmpltbank_class):
+    """
+    Choose various sets of mass parameters for testing.
+    """
+    num_comp_masses = 3
+    min_mass1 = [1,2,6]
+    max_mass1 = [5,8,12]
+    min_mass2 = [1,1,1]
+    max_mass2 = [5,5,5]
+    num_tot_masses = 3
+    # These *must* be provided
+    min_tot_mass = [None, 2.5, 3.5]
+    max_tot_mass = [None, 11, 7.5]
+    num_chirp_masses = 3
+    max_chirp_mass = [None, 2.43, 3.5]
+    min_chirp_mass = [None, 1.218, 2.43]
+    num_etas = 3
+    max_eta = [0.25, 0.24, 0.23]
+    min_eta = [None, 0.16, 0.17]
+
+    max_iter_idx = num_comp_masses * num_tot_masses *\
+                   num_chirp_masses * num_etas
+
+    for idx in xrange(max_iter_idx):
+        comp_masses_idx = idx % num_comp_masses
+        tmpltbank_class.min_mass1 = min_mass1[comp_masses_idx]
+        tmpltbank_class.max_mass1 = max_mass1[comp_masses_idx]
+        tmpltbank_class.min_mass2 = min_mass2[comp_masses_idx]
+        tmpltbank_class.max_mass2 = max_mass2[comp_masses_idx]
+        reduced_idx = idx // num_comp_masses
+        tot_mass_idx = reduced_idx % num_tot_masses
+        tmpltbank_class.min_total_mass = min_tot_mass[tot_mass_idx]
+        tmpltbank_class.max_total_mass = max_tot_mass[tot_mass_idx]
+        reduced_idx = reduced_idx // num_tot_masses
+        chirp_mass_idx = reduced_idx % num_chirp_masses
+        tmpltbank_class.min_chirp_mass = min_chirp_mass[chirp_mass_idx]
+        tmpltbank_class.max_chirp_mass = max_chirp_mass[chirp_mass_idx]
+        reduced_idx = reduced_idx // num_chirp_masses
+        eta_idx = reduced_idx
+        tmpltbank_class.max_eta = max_eta[eta_idx]
+        tmpltbank_class.min_eta = min_eta[eta_idx]
+        yield idx
+   
+    return
 
 class TmpltbankTestClass(unittest.TestCase):
     def setUp(self):
@@ -152,7 +198,7 @@ class TmpltbankTestClass(unittest.TestCase):
         errMsg = "pycbc.tmpltbank.determine_eigen_directions has failed "
         errMsg += "sanity check."
         evalsDiff = abs(evalsCurr - evalsStock)/maxEval
-        self.assertTrue(not (evalsDiff.data > 1E-5).any(), msg=errMsg)
+        self.assertTrue(not (evalsDiff > 1E-5).any(), msg=errMsg)
         for stock,test in zip(evecsStock.data,evecsCurr.data):
             stockScaled = stock * evalsCurr.data**0.5
             testScaled = test * evalsCurr.data**0.5
@@ -160,53 +206,163 @@ class TmpltbankTestClass(unittest.TestCase):
             self.assertTrue(not (diff > 1E-4).any(), msg=errMsg)
 
     def test_get_random_mass(self):
-       mass,eta,beta,sigma,gamma,spin1z,spin2z = \
-             pycbc.tmpltbank.get_random_mass(1000000, self.massRangeParams)
-       errMsg = "pycbc.tmpltbank.get_random_mass returns invalid ranges."
-       self.assertTrue(not (mass < 2.5).any(),msg=errMsg)
-       self.assertTrue(not (mass > 6.0).any(),msg=errMsg)
-       # Get individual masses
-       diff = (mass*mass * (1-4*eta))**0.5
-       mass1 = (mass + diff)/2.
-       mass2 = (mass - diff)/2.
-       self.assertTrue(not (mass1 > 5 * 1.001).any(),msg=errMsg)
-       self.assertTrue(not (mass1 < 1 * 0.999).any(),msg=errMsg)
-       self.assertTrue(not (mass2 > 5 * 1.001).any(),msg=errMsg)
-       self.assertTrue(not (mass2 < 1 * 0.999).any(),msg=errMsg)
-       self.assertTrue(not (mass1 < mass2).any(),msg=errMsg)
-       # Chirp mass and eta
-       mchirp, eta = pnutils.mass1_mass2_to_mchirp_eta(mass1,mass2)
-       self.assertTrue(not (mchirp > self.max_chirp_mass*1.0001).any(),
-                      msg=errMsg)
-       self.assertTrue(not (mchirp < self.min_chirp_mass*0.9999).any(),
-                      msg=errMsg)
-       self.assertTrue(not (eta < self.min_eta*0.9999).any(), msg=errMsg)
-       self.assertTrue(not (eta > self.max_eta*1.0001).any(), msg=errMsg)
-       nsSpin1 = spin1z[mass1 < self.ns_bh_boundary_mass]
-       nsSpin2 = spin2z[mass2 < self.ns_bh_boundary_mass]
-       bhSpin1 = spin1z[mass1 > self.ns_bh_boundary_mass]
-       bhSpin2 = spin2z[mass2 > self.ns_bh_boundary_mass]
-       self.assertTrue(not (abs(nsSpin1) > 0.5).any(), msg=errMsg)
-       self.assertTrue(not (abs(nsSpin2) > 0.5).any(), msg=errMsg) 
-       self.assertTrue(not (abs(bhSpin1) > 0.9).any(), msg=errMsg)
-       self.assertTrue(not (abs(bhSpin2) > 0.9).any(), msg=errMsg)
-       # Check that *some* spins are bigger than 0.5
-       self.assertTrue((abs(bhSpin1) > 0.5).any(), msg=errMsg)
-       self.assertTrue((abs(bhSpin2) > 0.5).any(), msg=errMsg)
-       # This can be used to test the boundaries are all applied visually
-       #pylab.plot(mass1, mass2, 'b.')
-       #pylab.plot([3.0,5.0],[3.0,1.0],'r-')
-       #pylab.plot([1.7216566400945545,1.9921146662296347,3.4433132801891091,4.01175560949798],[1.1477710933963694,1.0066274466204264,2.2955421867927388,1.002938902374495],'mx')
-       #pylab.ylim([0.8,3.0])
-       #pylab.xlim([1.5,5.0])
-       #pylab.savefig("masses.png")
+        # Want to do this for a variety of mass combinations
+        for i in update_mass_parameters(self):
+            curr_min_mass = self.min_total_mass
+            curr_max_mass = self.max_total_mass
+            try:
+                pycbc.tmpltbank.verify_mass_range_options(self, parser=parser)
+            except ValueError:
+                # Some of the inputs are unphysical and will fail.
+                # These cases are known to fail, the inputs are unphysical
+                # 35 has inconsistent total mass and eta restrictions
+                # 38 Component mass, [upper] chirp mass and [lower] eta limits
+                #    rule out the entire space.
+                # 41 Same as 38
+                # 44 Same as 38
+                # 62 From component mass and total mass limits only total masses
+                #    between 7 and 7.5 are possible. This range all has eta
+                #    lower than the limit of 0.17.
+                # 65 Same as 38
+                # 68 Same as 38
+                # 71 Same as 38
+                # 80 Same as 62
+                if i in [35,38,41,44,62,65,68,71,80]:
+                    continue
+                raise
 
-       # Check nsbh flag
-       mass,eta,beta,sigma,gamma,spin1z,spin2z = \
-             pycbc.tmpltbank.get_random_mass(1000000, self.massRangeParams2)
-       self.assertTrue(not (abs(spin1z) > 0.9).any(), msg=errMsg)
-       self.assertTrue(not (abs(spin2z) > 0.5).any(), msg=errMsg)
-       self.assertTrue((abs(spin1z) > 0.5).any(), msg=errMsg)
+            # Check that if the mass limits have changed, it was right to do so
+            # This is not exhaustive, but gets most things
+            if not self.min_total_mass == curr_min_mass:
+                min_comp_mass = self.min_mass1 + self.min_mass2
+                min_eta = self.min_mass1 * self.min_mass2 /\
+                           (min_comp_mass * min_comp_mass)
+                min_chirp_mass = min_comp_mass * min_eta**(3./5.)
+                if self.min_total_mass == min_comp_mass:
+                    # Okay, the total mass is changed by the components
+                    pass
+                elif min_eta < self.min_eta or min_eta > self.max_eta:
+                    # Okay, not possible from eta
+                    pass
+                elif min_chirp_mass < self.min_chirp_mass:
+                    # Okay, not possible from chirp mass
+                    pass
+                else:
+                    err_msg = "Minimum total mass changed unexpectedly."
+                    print self.min_total_mass, curr_min_mass
+                    print self.min_mass1, self.min_mass2, min_comp_mass
+                    print min_eta, self.min_eta, self.max_eta
+                    print min_chirp_mass, self.min_chirp_mass
+                    self.fail(err_msg)
+            if not self.max_total_mass == curr_max_mass:
+                max_comp_mass = self.max_mass1 + self.max_mass2
+                max_eta = self.max_mass1 * self.max_mass2 /\
+                           (max_comp_mass * max_comp_mass)
+                max_chirp_mass = max_comp_mass * max_eta**(3./5.)
+                if self.max_total_mass == max_comp_mass:
+                    # Okay, the total mass is changed by the components
+                    pass
+                elif max_eta < self.min_eta or max_eta > self.max_eta:
+                    # Okay, not possible from eta
+                    pass
+                elif max_chirp_mass > self.max_chirp_mass:
+                    # Okay, not possible from chirp mass
+                    pass
+                else:
+                    err_msg = "Maximum total mass changed unexpectedly."
+                    self.fail(err_msg)
+
+            massRangeParams = pycbc.tmpltbank.massRangeParameters(\
+                                self.min_mass1,\
+                                self.max_mass1, self.min_mass2, self.max_mass2,\
+                                maxNSSpinMag=self.max_ns_spin_mag,\
+                                maxBHSpinMag=self.max_bh_spin_mag,\
+                                maxTotMass=self.max_total_mass,\
+                                minTotMass=self.min_total_mass,\
+                                max_chirp_mass=self.max_chirp_mass,\
+                                min_chirp_mass=self.min_chirp_mass,\
+                                maxEta=self.max_eta,\
+                                minEta=self.min_eta,\
+                                ns_bh_boundary_mass=self.ns_bh_boundary_mass)
+
+            # And again with the nsbh flag
+            massRangeParams2 = pycbc.tmpltbank.massRangeParameters(\
+                                self.min_mass1,\
+                                self.max_mass1, self.min_mass2, self.max_mass2,\
+                                maxNSSpinMag=self.max_ns_spin_mag,\
+                                maxBHSpinMag=self.max_bh_spin_mag,\
+                                maxTotMass=self.max_total_mass,\
+                                minTotMass=self.min_total_mass,\
+                                max_chirp_mass=self.max_chirp_mass,\
+                                min_chirp_mass=self.min_chirp_mass,\
+                                maxEta=self.max_eta,\
+                                minEta=self.min_eta,\
+                                nsbhFlag=True)
+
+            mass,eta,beta,sigma,gamma,spin1z,spin2z = \
+                      pycbc.tmpltbank.get_random_mass(100000, massRangeParams)
+            errMsg = "pycbc.tmpltbank.get_random_mass returns invalid ranges."
+            if (mass < self.min_total_mass).any():
+                idx = mass.argmin()
+                diff = (mass*mass * (1-4*eta))**0.5
+                mass1 = (mass + diff)/2.
+                mass2 = (mass - diff)/2.
+            self.assertTrue(not (mass < self.min_total_mass).any(),msg=errMsg)
+            self.assertTrue(not (mass > self.max_total_mass).any(),msg=errMsg)
+            # Get individual masses
+            diff = (mass*mass * (1-4*eta))**0.5
+            mass1 = (mass + diff)/2.
+            mass2 = (mass - diff)/2.
+            self.assertTrue(not (mass1 > self.max_mass1 * 1.001).any(),
+                            msg=errMsg)
+            self.assertTrue(not (mass1 < self.min_mass1 * 0.999).any(),
+                            msg=errMsg)
+            self.assertTrue(not (mass2 > self.max_mass2 * 1.001).any(),
+                            msg=errMsg)
+            self.assertTrue(not (mass2 < self.min_mass2 * 0.999).any(),
+                            msg=errMsg)
+            self.assertTrue(not (mass1 < mass2).any(),msg=errMsg)
+            # Chirp mass and eta
+            mchirp, eta = pnutils.mass1_mass2_to_mchirp_eta(mass1,mass2)
+            if self.max_chirp_mass:
+                self.assertTrue(not (mchirp > self.max_chirp_mass*1.0001).any(),
+                                msg=errMsg)
+            if self.min_chirp_mass:
+                self.assertTrue(not (mchirp < self.min_chirp_mass*0.9999).any(),
+                                msg=errMsg)
+            if self.min_eta:
+                self.assertTrue(not (eta < self.min_eta*0.9999).any(),
+                                msg=errMsg)
+                self.assertTrue(not (eta > self.max_eta*1.0001).any(),
+                                msg=errMsg)
+            nsSpin1 = spin1z[mass1 < self.ns_bh_boundary_mass]
+            nsSpin2 = spin2z[mass2 < self.ns_bh_boundary_mass]
+            bhSpin1 = spin1z[mass1 > self.ns_bh_boundary_mass]
+            bhSpin2 = spin2z[mass2 > self.ns_bh_boundary_mass]
+            self.assertTrue(not (abs(nsSpin1) > 0.5).any(), msg=errMsg)
+            self.assertTrue(not (abs(nsSpin2) > 0.5).any(), msg=errMsg) 
+            self.assertTrue(not (abs(bhSpin1) > 0.9).any(), msg=errMsg)
+            self.assertTrue(not (abs(bhSpin2) > 0.9).any(), msg=errMsg)
+            # Check that *some* spins are bigger than 0.5
+            if len(bhSpin1):
+                self.assertTrue((abs(bhSpin1) > 0.5).any(), msg=errMsg)
+            if len(bhSpin2):
+                self.assertTrue((abs(bhSpin2) > 0.5).any(), msg=errMsg)
+            # This can be used to test the boundaries are all applied visually
+            # FIXME: This would need to be updated for all of the mass limits
+            #pylab.plot(mass1, mass2, 'b.')
+            #pylab.plot([3.0,5.0],[3.0,1.0],'r-')
+            #pylab.plot([1.7216566400945545,1.9921146662296347,3.4433132801891091,4.01175560949798],[1.1477710933963694,1.0066274466204264,2.2955421867927388,1.002938902374495],'mx')
+            #pylab.ylim([0.8,3.0])
+            #pylab.xlim([1.5,5.0])
+            #pylab.savefig("masses_%d.png" %(idx,))
+
+            # Check nsbh flag
+            mass,eta,beta,sigma,gamma,spin1z,spin2z = \
+                 pycbc.tmpltbank.get_random_mass(100000, massRangeParams2)
+            self.assertTrue(not (abs(spin1z) > 0.9).any(), msg=errMsg)
+            self.assertTrue(not (abs(spin2z) > 0.5).any(), msg=errMsg)
+            self.assertTrue((abs(spin1z) > 0.5).any(), msg=errMsg)
 
     def test_chirp_params(self):
         chirps=pycbc.tmpltbank.get_chirp_params(4, 0.24 ,0.2 ,0.2 ,0.2 ,0.1, \

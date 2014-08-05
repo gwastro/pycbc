@@ -518,7 +518,7 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
             min_tot_mass = m1_at_equal_mass + m2_at_equal_mass
         # So either the restriction is low enough to be redundant, or is
         # removing all the paramter space
-        elif m2_at_min_m1 < opts.min_mass_2:
+        elif m2_at_min_m1 < opts.min_mass2:
             # This is the redundant case, ignore
             min_tot_mass = opts.min_total_mass
         else:
@@ -540,37 +540,6 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
                     err_msg += "mass, eta and (possibly) total mass limits "
                     err_msg += "have precluded all systems."
                     raise ValueError(err_msg)
-        # Update min_tot_mass if needed
-        if min_tot_mass > opts.min_total_mass:
-            opts.min_total_mass = float(min_tot_mass)
-    # Need to check max_eta alone for minimum mass
-    if opts.max_eta:
-        # Similar to above
-        # Need to get the smallest possible min_tot_mass from this eta.
-        # There are 3 possibilities for where the min_tot_mass is found on the
-        # line of max_eta that interacts with the component mass limits.
-        # Either it is found at min_m2, or at min_m1, or it doesn't intersect
-        # at all (ie. this chirp mass is not possible).
-        # First let's get the masses at both of these possible points
-        m1_at_min_m2 = pnutils.eta_mass1_to_mass2(opts.max_eta, opts.min_mass2,
-                                                      return_mass_heavier=True)
-        m2_at_min_m1 = pnutils.eta_mass1_to_mass2(opts.max_eta, opts.min_mass1,
-                                                     return_mass_heavier=False)
-        # Are either of these possible?
-        if m1_at_min_m2 <= opts.max_mass1 and m1_at_min_m2 >= opts.min_mass1:
-            min_tot_mass = opts.min_mass2 + m1_at_min_m2
-        elif m2_at_min_m1 <= opts.max_mass2 and m2_at_min_m1 >= opts.min_mass2:
-            min_tot_mass = opts.min_mass1 + m2_at_min_m1
-        # So either the restriction is low enough to be redundant, or is
-        # removing all the paramter space
-        elif m2_at_min_m1 > opts.max_mass1:
-            # This is the redundant case, ignore
-            min_tot_mass = opts.min_total_mass
-        else:
-            # And this is the bad case
-            err_msg = "The maximum eta provided is not possible given "
-            err_msg += "restrictions on component masses."
-            raise ValueError(err_msg)
         # Update min_tot_mass if needed
         if min_tot_mass > opts.min_total_mass:
             opts.min_total_mass = float(min_tot_mass)
@@ -619,27 +588,81 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
         # Update min_tot_mass if needed
         if max_tot_mass < opts.max_total_mass:
             opts.max_total_mass = float(max_tot_mass)
-    # Need to check min_eta alone for maximum total mass
+
+    # Need to check max_eta alone for minimum and maximum mass
+    if opts.max_eta:
+        # Similar to above except this can affect both the minimum and maximum
+        # total mass. Need to identify where the line of max_eta intersects
+        # the parameter space, and if it affects mass restrictions.
+        m1_at_min_m2 = pnutils.eta_mass1_to_mass2(opts.max_eta, opts.min_mass2,
+                                                      return_mass_heavier=True)
+        m2_at_min_m1 = pnutils.eta_mass1_to_mass2(opts.max_eta, opts.min_mass1,
+                                                     return_mass_heavier=False)
+        m1_at_max_m2 = pnutils.eta_mass1_to_mass2(opts.max_eta, opts.max_mass2,
+                                                      return_mass_heavier=True)
+        m2_at_max_m1 = pnutils.eta_mass1_to_mass2(opts.max_eta, opts.max_mass1,
+                                                      return_mass_heavier=False)
+        # Check for restrictions on the minimum total mass
+        # Are either of these possible?
+        if m1_at_min_m2 <= opts.max_mass1 and m1_at_min_m2 >= opts.min_mass1:
+            min_tot_mass = opts.min_mass2 + m1_at_min_m2
+        elif m2_at_min_m1 <= opts.max_mass2 and m2_at_min_m1 >= opts.min_mass2:
+            # This case doesn't change the minimal total mass
+            min_tot_mass = opts.min_total_mass
+        # So either the restriction is low enough to be redundant, or is
+        # removing all the paramter space
+        elif m2_at_min_m1 > opts.max_mass2:
+            # This is the redundant case, ignore
+            min_tot_mass = opts.min_total_mass
+        else:
+            # And this is the bad case
+            err_msg = "The maximum eta provided is not possible given "
+            err_msg += "restrictions on component masses."
+            raise ValueError(err_msg)
+        # Update min_tot_mass if needed
+        if min_tot_mass > opts.min_total_mass:
+            opts.min_total_mass = float(min_tot_mass)
+
+        # Check for restrictions on the maximum total mass
+        # Are either of these possible?
+        if m2_at_max_m1 <= opts.max_mass2 and m2_at_max_m1 >= opts.min_mass2:
+            max_tot_mass = opts.max_mass1 + m2_at_max_m1
+        elif m1_at_max_m2 <= opts.max_mass1 and m1_at_max_m2 >= opts.min_mass1:
+            # This case doesn't change the maximal total mass
+            max_tot_mass = opts.max_total_mass
+        # So either the restriction is low enough to be redundant, or is
+        # removing all the paramter space, the latter case is already tested
+        else:
+            # This is the redundant case, ignore
+            max_tot_mass = opts.max_total_mass
+        if max_tot_mass < opts.max_total_mass:
+            opts.max_total_mass = float(max_tot_mass)
+
+    # Need to check min_eta alone for maximum and minimum total mass
     if opts.min_eta:
-        # Similar to above
-        # Need to get the largest possible max_tot_mass from this eta.
-        # There are 3 possibilities for where the max_tot_mass is found on the
-        # line of min_eta that interacts with the component mass limits.
-        # Either it is found at max_m2, or at max_m1, or it doesn't intersect
-        # at all (ie. this eta is not possible).
-        # First let's get the masses at both of these possible points
+        # Same as max_eta.
+        # Need to identify where the line of max_eta intersects
+        # the parameter space, and if it affects mass restrictions.
+        m1_at_min_m2 = pnutils.eta_mass1_to_mass2(opts.min_eta, opts.min_mass2,
+                                                      return_mass_heavier=True)
+        m2_at_min_m1 = pnutils.eta_mass1_to_mass2(opts.min_eta, opts.min_mass1,
+                                                     return_mass_heavier=False)
         m1_at_max_m2 = pnutils.eta_mass1_to_mass2(opts.min_eta, opts.max_mass2,
                                                       return_mass_heavier=True)
         m2_at_max_m1 = pnutils.eta_mass1_to_mass2(opts.min_eta, opts.max_mass1,
-                                                     return_mass_heavier=False)
+                                                      return_mass_heavier=False)
+
+        # Check for restrictions on the maximum total mass
         # Are either of these possible?
         if m1_at_max_m2 <= opts.max_mass1 and m1_at_max_m2 >= opts.min_mass1:
             max_tot_mass = opts.max_mass2 + m1_at_max_m2
+
         elif m2_at_max_m1 <= opts.max_mass2 and m2_at_max_m1 >= opts.min_mass2:
-            max_tot_mass = opts.max_mass1 + m2_at_max_m1
+            # This case doesn't affect the maximum total mass
+            max_tot_mass = opts.max_total_mass
         # So either the restriction is low enough to be redundant, or is
         # removing all the paramter space
-        elif m2_at_max_m1 < opts.min_mass1:
+        elif m2_at_max_m1 < opts.min_mass2:
             # This is the redundant case, ignore
             max_tot_mass = opts.max_total_mass
         else:
@@ -650,6 +673,26 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
         # Update min_tot_mass if needed
         if max_tot_mass < opts.max_total_mass:
             opts.max_total_mass = float(max_tot_mass)
+
+        # Check for restrictions on the minimum total mass
+        # Are either of these possible?
+        if m2_at_min_m1 <= opts.max_mass2 and m2_at_min_m1 >= opts.min_mass2:
+            min_tot_mass = opts.min_mass1 + m2_at_min_m1
+        elif m1_at_min_m2 <= opts.max_mass1 and m1_at_min_m2 >= opts.min_mass1:
+            # This case doesn't change the maximal total mass
+            min_tot_mass = opts.min_total_mass
+        # So either the restriction is low enough to be redundant, or is
+        # removing all the paramter space, which is tested above
+        else:
+            # This is the redundant case, ignore
+            min_tot_mass = opts.min_total_mass
+        if min_tot_mass > opts.min_total_mass:
+            opts.min_total_mass = float(min_tot_mass)
+
+    if opts.max_total_mass < opts.min_total_mass:
+        err_msg = "After including restrictions on chirp mass, component mass, "
+        err_msg += "eta and total mass, no physical systems are possible."
+        raise ValueError(err_msg)
 
     if opts.max_eta and opts.min_eta:
         if opts.max_eta < opts.min_eta:
