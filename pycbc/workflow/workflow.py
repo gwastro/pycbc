@@ -264,7 +264,7 @@ class Workflow(PegasusWorkflow):
         args : argparse.ArgumentParser
             The command line options to initialize a CBC workflow.
         """
-        Workflow.__init__(self, name)
+        super(Workflow, self).__init__(name)
         
         # Parse ini file
         self.cp = WorkflowConfigParser.from_args(args)
