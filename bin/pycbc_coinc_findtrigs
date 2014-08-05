@@ -397,7 +397,7 @@ if __name__ == '__main__':
     s2, t2, r2 = triggers[ifo2]
     fore_time1 = abs(foreground_segments[ifo1])
     fore_time2 = abs(foreground_segments[ifo2])
-    coinc_time = abs(foreground_segments[ifo1] and foreground_segments[ifo2])
+    coinc_time = abs(foreground_segments[ifo1] & foreground_segments[ifo2])
     
     logging.info('%s time: %s  %s time: %s' %  (ifo1, fore_time1, ifo2, fore_time2))
     
@@ -409,17 +409,17 @@ if __name__ == '__main__':
         logging.info('applying vetoes')
         veto1, vsegs1 = veto_indices(t1, ifo1, args.veto_files)
         s1, t1, r1 = numpy.delete(s1, veto1), numpy.delete(t1, veto1), numpy.delete(r1, veto1)
-        fore_time1 -= abs(foreground_segments[ifo1] and vsegs1)
+        fore_time1 -= abs(foreground_segments[ifo1] & vsegs1)
 
         veto2, vsegs2 = veto_indices(t2, ifo2, args.veto_files)     
         s2, t2, r2 = numpy.delete(s2, veto2), numpy.delete(t2, veto2), numpy.delete(r2, veto2)
-        fore_time2 -= abs(foreground_segments[ifo2] and vsegs2)
+        fore_time2 -= abs(foreground_segments[ifo2] & vsegs2)
 
         logging.info('%s time: %s  %s time: %s' %  (ifo1, fore_time1, ifo2, fore_time2))   
         
     det1 = Detector(ifo1)
     det2 = Detector(ifo2)
-    logging.info('%s : %s %s: %s' % (ifo1, len(s1), ifo2, len(s2)))
+    logging.info('%s num: %s   %s num: %s' % (ifo1, len(s1), ifo2, len(s2)))
     time_window = det1.light_travel_time_to_detector(det2)
     
     logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))
@@ -485,7 +485,6 @@ if __name__ == '__main__':
         f.attrs['foreground_time2'] = fore_time2
         f.attrs['coinc_time'] = coinc_time
         f.attrs['num_slides'] = num_slides
-        f.attrs['background_time'] = 
     else:
         logging.info('huh, why are there no triggers?')
 
