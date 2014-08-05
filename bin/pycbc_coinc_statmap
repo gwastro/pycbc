@@ -16,6 +16,7 @@ def load_coincs(coinc_files):
     template_id = []
     decimation_factor = []    
     for cfile in coinc_files:
+        logging.info('reading %s' % cfile)
         f = h5py.File(cfile, "r")
         stat1.append(f['coinc/stat1'])
         stat2.append(f['coinc/stat2'])
@@ -149,25 +150,16 @@ if __name__ == '__main__':
         fanmap = calculate_fan_map(cstat(s1[back_locs], s2[back_locs]), dec[back_locs])
         
         maxtime = max(attrs['foreground_time1'], attrs['foreground_time2'])
-        mintime = max(attrs['foreground_time1'], attrs['foreground_time2'])
+        mintime = min(attrs['foreground_time1'], attrs['foreground_time2'])
         
         background_time = int(maxtime / attrs['timeslide_interval']) * mintime
-        print mintime, attrs['foreground_time1'], attrs['foreground_time2']
+        coinc_time = float(attrs['coinc_time'])
+
         logging.info("calculating ifar values")
         ifar = background_time / fanmap(cstat(s1[fore_locs], s2[fore_locs]))
 
         logging.info("calculating fap values")
-        fap = numpy.clip(mintime/ifar, 0, 1)
-        
-        import pylab
-        r = numpy.arange(7.8, 11, .01)
-        pylab.semilogy(r, fanmap(r) /  background_time)
-        ct = cstat(s1[fore_locs], s2[fore_locs])
-        ct.sort()
-        vt = numpy.arange(len(ct), 0, -1) / mintime
-        print len(ct), len(vt)
-        pylab.plot(ct,  vt)
-        pylab.savefig('test.png')
+        fap = numpy.clip(coinc_time/ifar, 0, 1)
         
         f['foreground/ifar'] = sec_to_year(ifar)
         f['foreground/fap'] = fap
