@@ -36,7 +36,7 @@ from os.path import splitext, basename, isfile
 import lal as lalswig
 from glue import lal
 from glue import segments, pipeline
-from configparserutils import WorkflowConfigParser
+from pycbc_configparser import WorkflowConfigParser
 import pylal.dq.dqSegmentUtils as dqUtils
 from pycbc.workflow.pegasus_workflow import Node, File, Executable
 from pycbc.workflow.pegasus_workflow import Workflow as PegasusWorkflow
