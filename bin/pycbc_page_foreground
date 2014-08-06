@@ -37,9 +37,9 @@ spin2z = f['spin2z'][:][template_id]
 
 mchirp, eta = mass1_mass2_to_mchirp_eta(mass1, mass2)
 
-columns = [ifar, fap, (stat1**2.0+stat2**2.0)**0.5,  time1, time2-time1, mchirp, mass1, mass2, spin1z, spin2z]
-names = ['IFAR (YR)', 'FAP', 'Combined NewSNR', 'End Time', 'Time Difference', 'mchirp', 'm1', 'm2', 's1z', 's2z']
-format_strings = ['#.###E0', '#.##E0', '##.###', None, '#.###E0', None, None, None, None, None]
+columns = [ifar, fap, (stat1**2.0+stat2**2.0)**0.5,  time1, (time2-time1)*1000, mchirp, mass1, mass2, spin1z, spin2z]
+names = ['IFAR (YR)', 'FAP', 'Combined NewSNR', 'End Time', 'Time Diff. (ms)', 'mchirp', 'm1', 'm2', 's1z', 's2z']
+format_strings = ['#.###E0', '#.##E0', '##.###', None, '##.##', '##.##', '##.##', '##.##', '##.##', '##.##']
 
 logging.info('Making table of foreground triggers')
 html_table = pycbc.results.table(columns, names, format_strings=format_strings, page_size=10)

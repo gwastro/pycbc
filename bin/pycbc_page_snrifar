@@ -1,13 +1,11 @@
 #!/usr/bin/python
 """ Make table of the foreground coincident events
 """
-import argparse, h5py, numpy, logging, pycbc.results
-from pycbc.pnutils import mass1_mass2_to_mchirp_eta
+import argparse, h5py, numpy, logging
 
 parser = argparse.ArgumentParser()
 # General required options
 parser.add_argument('--trigger-file')
-parser.add_argument('--bank-file')
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
 args = parser.parse_args()
@@ -16,33 +14,18 @@ if args.verbose:
     log_level = logging.INFO
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
     
-logging.info('Read in the foreground data')
+logging.info('Read in the data')
 f = h5py.File(args.trigger_file, 'r')
 stat1 = f['foreground/stat1'][:]
 stat2 = f['foreground/stat2'][:]
 time1 = f['foreground/time1'][:]
 time2 = f['foreground/time2'][:]
 template_id = f['foreground/template_id'][:]
-
 ifar = f['foreground/ifar'][:]
 fap = f['foreground/fap'][:]
+fan = f['foreground/fan'][:]
+
+back_fan = f['background/fan'][:]
+back_ifar = f['background/ifar'][:]
 logging.info('Found %s foreground triggers' % len(stat1))
 
-logging.info('Read in the template bank data to get template parameters')
-f = h5py.File(args.bank_file, 'r')
-mass1 = f['mass1'][:][template_id]
-mass2 = f['mass2'][:][template_id]
-spin1z = f['spin1z'][:][template_id]
-spin2z = f['spin2z'][:][template_id]
-
-mchirp, eta = mass1_mass2_to_mchirp_eta(mass1, mass2)
-
-columns = [ifar, fap, (stat1**2.0+stat2**2.0)**0.5,  time1, (time2-time1)*1000, mchirp, mass1, mass2, spin1z, spin2z]
-names = ['IFAR (YR)', 'FAP', 'Combined NewSNR', 'End Time', 'Time Diff. (ms)', 'mchirp', 'm1', 'm2', 's1z', 's2z']
-format_strings = ['#.###E0', '#.##E0', '##.###', None, '##.##', '##.##', '##.##', '##.##', '##.##', '##.##']
-
-logging.info('Making table of foreground triggers')
-html_table = pycbc.results.table(columns, names, format_strings=format_strings, page_size=10)
-
-f = open(args.output_file, 'w')
-f.write(html_table)

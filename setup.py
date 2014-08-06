@@ -301,6 +301,7 @@ setup (
                'bin/pycbc_coinc_trig2hdf',
                'bin/pycbc_coinc_statmap',
                'bin/pycbc_page_foreground',
+               'bin/pycbc_page_snrifar',
                ],
     packages = [
                'pycbc',
