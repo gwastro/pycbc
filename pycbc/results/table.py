@@ -11,6 +11,15 @@ google_table_template = mako.template.Template("""
             data.addColumn('${str(type)}', '${str(name)}');
         % endfor
         data.addRows(${data});
+        
+        % if format_strings is not None:
+            % for i, format_string in enumerate(format_strings):
+                % if format_string is not None:
+                    var formatter = new google.visualization.NumberFormat({pattern:'${format_string}'});
+                    formatter.format(data, ${i});
+                % endif
+            % endfor
+        % endif
         var table = new google.visualization.Table(document.getElementById('${div_id}'));
         table.draw(data, {showRowNumber: 'true', 
                           page: '${page_enable}', 
@@ -21,7 +30,7 @@ google_table_template = mako.template.Template("""
     <div id='${div_id}'></div>
 """)
 
-def table(columns, names, page_size=None):
+def table(columns, names, page_size=None, format_strings=None):
     """ Return an html table of this data
     
     Parameters
@@ -29,8 +38,11 @@ def table(columns, names, page_size=None):
     columns : list of numpy arrays 
     names : list of strings 
         The list of columns names  
-    page_size : {int, None}, optionals
+    page_size : {int, None}, optional
         The number of items to show on each page of the table
+    format_strings : {lists of strings, None}, optional
+        The ICU format string for this column, None for no formatting. All
+    columns must have a format string if provided.
         
     Returns
     -------
@@ -57,8 +69,9 @@ def table(columns, names, page_size=None):
         data.append(list(item))
         
     return google_table_template.render(div_id=div_id,
-                                        page_enable=page,
-                                        column_descriptions = column_descriptions,
-                                        page_size=page_size,
-                                        data=data,
-                                       )
+                                page_enable=page,
+                                column_descriptions = column_descriptions,
+                                page_size=page_size,
+                                data=data,
+                                format_strings=format_strings,
+                               )
