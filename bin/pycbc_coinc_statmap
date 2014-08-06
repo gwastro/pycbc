@@ -100,6 +100,7 @@ if __name__ == '__main__':
     parser.add_argument('--coinc-files', nargs='+')
     parser.add_argument('--verbose', action='count')
     parser.add_argument('--cluster-window', type=float, default=0)
+    parser.add_argument('--external-background')
     parser.add_argument('--output-file')
     args = parser.parse_args()
 
@@ -128,15 +129,40 @@ if __name__ == '__main__':
     f.attrs['detector_2'] = attrs['detector_2']
     f.attrs['num_slides'] = attrs['num_slides']
     
-    fore_locs = sid == 0
+    fore_locs = (sid == 0)
+    back_locs = numpy.where((sid != 0))[0]
     f['foreground/stat1'] = s1[fore_locs]
     f['foreground/stat2'] = s2[fore_locs]
     f['foreground/time1'] = t1[fore_locs]
     f['foreground/time2'] = t2[fore_locs]
     f['foreground/template_id'] = tid[fore_locs]
     
-    back_locs = numpy.where((sid != 0))[0]
-    if len(back_locs) > 0:
+    if args.external_background:
+        # We are using an external background file
+        # to calculate the foreground, FAP
+        # IFAR, etc
+        fb = h5py.File(args.external_background, "r")
+        background_time = fb.attrs['background_time']
+        coinc_time = float(attrs['coinc_time'])
+        back_stat = cstat(fb['background/stat1'][:], fb['background/stat2'][:])
+        fanmap = calculate_fan_map(back_stat, fb['background/decimation_factor'][:])
+        
+        logging.info("calculating ifar values")
+        fore_stat = cstat(s1[fore_locs], s2[fore_locs])
+        fore_fan = fanmap(fore_stat)
+        ifar = background_time / fore_fan
+
+        logging.info("calculating fap values")
+        fap = numpy.clip(coinc_time/ifar, 0, 1)
+        
+        f['foreground/fan'] = fore_fan
+        f['foreground/ifar'] = sec_to_year(ifar)
+        f['foreground/fap'] = fap
+        f.attrs['background_time'] = background_time
+        f.attrs['foreground_time'] = coinc_time
+        
+    
+    elif len(back_locs) > 0:
         logging.info("Dumping background triggers")
         f['background/stat1'] = s1[back_locs]
         f['background/stat2'] = s2[back_locs]
@@ -144,6 +170,7 @@ if __name__ == '__main__':
         f['background/time2'] = t2[back_locs]
         f['background/timeslide_id'] = sid[back_locs]
         f['background/template_id'] = tid[back_locs]
+        f['background/decimation_factor'] = dec[back_locs]
         
         maxtime = max(attrs['foreground_time1'], attrs['foreground_time2'])
         mintime = min(attrs['foreground_time1'], attrs['foreground_time2'])
@@ -175,7 +202,7 @@ if __name__ == '__main__':
         f['foreground/ifar'] = sec_to_year(ifar)
         f['foreground/fap'] = fap
     else:
-        pass
-
+        logging.warn("There were no background events, so we could not assign "
+                     "any statistic values")
     logging.info("Done") 
     
