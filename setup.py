@@ -24,7 +24,7 @@ import sys
 import subprocess
 import shutil
 from trace import fullmodname
-from distutils.core import setup,Command,Extension
+from distutils.core import setup, Command, Extension
 from distutils.command.clean import clean as _clean
 from distutils.command.install import install as _install
 from distutils.command.build import build as _build
@@ -37,6 +37,19 @@ ext_libraries, ext_library_dirs, ext_include_dirs = pkg_config(["lal", "lalsimul
 
 requires = ['lal.lal', 'lalinspiral.lalinspiral', 'lalsimulation.lalsimulation']
 requires +=  ['numpy', 'scipy', 'glue', 'argparse']
+
+def find_package_data(dirname):
+    def find_paths(dirname):
+        items = []
+        for fname in os.listdir(dirname):
+            path = os.path.join(dirname, fname)
+            if os.path.isdir(path):
+                items += find_paths(path)
+            elif not path.endswith(".py") and not path.endswith(".pyc"):
+                items.append(path)
+        return items
+    items = find_paths(dirname)
+    return [os.path.relpath(path, dirname) for path in items]
 
 def find_package_data(dirname):
     def find_paths(dirname):
@@ -252,7 +265,7 @@ setup (
     version = VERSION,
     description = 'Gravitational wave CBC analysis toolkit',
     author = 'Ligo Virgo Collaboration - PyCBC team',
-    url = 'https://sugwg-git.phy.syr.edu/dokuwiki/doku.php?id=pycbc:home',
+    url = 'https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/',
     cmdclass = { 'test'  : test,
                  'build_docs' : build_docs,
                  'build_docs_test' : build_docs_test,
@@ -318,5 +331,8 @@ setup (
                'pycbc.workflow',
                'pycbc.results',
                ],
-     package_data = {'pycbc.workflow': find_package_data('pycbc/workflow')},
+     package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'), 
+	             'pycbc.results': find_package_data('pycbc/results')},
 )
+
+
