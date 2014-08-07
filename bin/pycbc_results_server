@@ -1,0 +1,11 @@
+#!/bin/env python
+
+from flask import Flask, render_template, url_for
+app = Flask('pycbc.results')
+
+@app.route('/')
+def base():
+    tp = render_template('base.html')
+    return tp
+
+app.run()
