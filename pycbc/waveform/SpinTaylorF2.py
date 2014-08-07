@@ -29,6 +29,7 @@ from pycuda.gpuarray import to_gpu
 from pycbc.setuputils import pkg_config_header_strings
 from pycbc.types import FrequencySeries, zeros
 import pycbc.pnutils
+from pycbc.waveform.utils import ceilpow2
 
 preamble = """
 #include <lal/LALConstants.h>

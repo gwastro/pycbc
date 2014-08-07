@@ -26,6 +26,7 @@ import lal
 from lalinspiral import FindChirpChirpTime
 from pycbc.scheme import schemed
 import numpy
+from pycbc.waveform.utils import ceilpow2
 import pycbc.pnutils
 from pycbc.types import FrequencySeries, Array, complex64, float32, zeros
 
