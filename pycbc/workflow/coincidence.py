@@ -474,9 +474,10 @@ class PyCBCBank2HDFExecutable(AhopeExecutable):
 class PyCBCTrig2HDFExecutable(AhopeExecutable):
     """ This converts xml triggers to an hdf format, grouped by template hash 
     """
-    def create_node(self, trig_files, bank_file):
+    def create_node(self, trig_files, bank_file, num_groups):
         node = AhopeNode(self)
         node.add_input_opt('--bank-file', bank_file)
+        node.add_opt('--number-of-groups', num_groups)
         node.add_input_list_opt('--trigger-files', trig_files)
         node.new_output_file_opt(trig_files[0].segment, '.hdf', '--output-file') 
         return node
@@ -536,6 +537,8 @@ def convert_trig_to_hdf(workflow, xml_trigger_files, out_dir, tags=[]):
     logging.info('convert signle inspiral trigger files to hdf5')
     make_analysis_dir(out_dir)
     
+    num_groups = workflow.cp.get_opt('ahope-coincidence', 'number-of-groups')
+    
     ifos, insp_groups = inspiral.categorize_by_attr('ifo')       
     trig_files = AhopeFileList()
     for ifo, insp_group in zip(ifos,  insp_groups):
@@ -543,7 +546,7 @@ def convert_trig_to_hdf(workflow, xml_trigger_files, out_dir, tags=[]):
                                        ifos=ifo, out_dir=out_dir, tags=tags)
         segs, insp_bundles = insp_group.categorize_by_attr('segment')
         for insps in  insp_bundles:
-            trig2hdf_node =  trig2hdf_exe.create_node(insps, hdfbank)
+            trig2hdf_node =  trig2hdf_exe.create_node(insps, hdfbank, num_groups)
             workflow.add_node(trig2hdf_node)
             trig_files += trig2hdf_node.output_files
     return trig_files
@@ -553,16 +556,6 @@ def set_interval_coinc_inj(workflow, hdfbank, trig_files,
     """
     This function sets up exact match coincidence and background estimation
     using a folded interval technique.
-
-    Parameters
-    -----------
-    Workflow : ahope.Workflow
-        The ahope workflow instance that the coincidence jobs will be added to.
-    And other stuff: 
-
-    Returns
-    --------
-    I don't know yet...
     """
     make_analysis_dir(out_dir)
     logging.info('Setting up coincidence for injection')
@@ -584,7 +577,7 @@ def set_interval_coinc_inj(workflow, hdfbank, trig_files,
                                               tags=tags, out_dir=out_dir)
                                                                           
     bg_files = AhopeFileList()
-    for group_id in range(int(trig2hdf_exe.get_opt('number-of-groups'))):
+    for group_id in range(int(cp.get_opt('ahope-coincidence', 'number-of-groups'))):
         group_id = str(group_id)
         coinc_node = findcoinc_exe.create_node(trig_files, [], 
                                            group_id, 
@@ -603,16 +596,6 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
     """
     This function sets up exact match coincidence and background estimation
     using a folded interval technique.
-
-    Parameters
-    -----------
-    Workflow : ahope.Workflow
-        The ahope workflow instance that the coincidence jobs will be added to.
-    And other stuff: 
-
-    Returns
-    --------
-    I don't know yet...
     """
     make_analysis_dir(out_dir)
     logging.info('Setting up coincidence')
@@ -637,7 +620,7 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
     for tag, veto_files in zip(tags, veto_file_groups):
         bg_files = AhopeFileList()
         if 'CUMULATIVE_CAT' in tag[0]:
-            for group_id in range(int(trig2hdf_exe.get_opt('number-of-groups'))):
+            for group_id in range(int(cp.get_opt('ahope-coincidence', 'number-of-groups'))):
                 group_id = str(group_id)
                 coinc_node = findcoinc_exe.create_node(trig_files, veto_files, 
                                                        group_id, 
