@@ -47,8 +47,6 @@
       }
       core-item:hover{
         font-weight:bold;
-        background-color:grey;
-        color:white;
       }
       #core_selector {
         width: 100%;
@@ -81,42 +79,14 @@
       <div id="div" tool>PyCBC Gravitational-wave Search Results</div>
       <section id="()" center center-justified vertical layout>
 
-        <core-card id="core_card" layout vertical start>
-            <paper-button raisedButton onclick="document.querySelector('#collapse1').toggle()">The most important content bellow</paper-button>
-            <core-collapse id="collapse1">
-            
-                <script type='text/javascript' src='https://www.google.com/jsapi'></script>
-                <script type='text/javascript'>
-                  google.load('visualization', '1', {packages:['table']});
-                  google.setOnLoadCallback(drawTable);
-                  function drawTable() {
-                    var data = new google.visualization.DataTable();
-                    data.addColumn('string', 'Name');
-                    data.addColumn('number', 'NewSNR');
-                    data.addRows([
-                      ['NSSBH',  8.3],
-                      ['BBH',   6.2],
-                      ['BNS', 100.23],
-                      ['BNS',   10.05]
-                    ]);
-
-                    var table = new google.visualization.Table(document.getElementById('table_div'));
-                    table.draw(data, {showRowNumber: true});
-                  }
-                  
-                </script>
-                <div id='table_div'></div>
-                       
-             </core-collapse>
-        </core-card>
-
-        <core-card id="core_card" layout vertical start>
-            <paper-button onclick="document.querySelector('#collapse2').toggle()">This is some really import content</paper-button>
-            <core-collapse id="collapse2">
-                <div>Hello This is cool</div>       
-             </core-collapse>
-        </core-card>
-
+        {% for heading, section in zip(headings, sections) %}
+            <core-card id="core_card" layout vertical start>
+                <paper-button onclick="document.querySelector('#collapse{{loop.index}}').toggle()">{{heading}}</paper-button>
+                <core-collapse id="collapse{{loop.index}}">
+                      <link rel="import" href="{{section}}">
+                </core-collapse>
+            </core-card>
+        {% endfor %}
       </section>
 
       <core-header-panel mode="standard" id="core_header_panel" navigation flex>
