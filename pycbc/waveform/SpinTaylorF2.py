@@ -20,7 +20,7 @@ import lalsimulation
 import lal
 import numpy
 from numpy import sqrt, double, complex128
-from math import frexp, pow, log, cos, sin, acos, atan2
+from math import pow, log, cos, sin, acos, atan2
 
 import pycuda.tools
 from pycuda.elementwise import ElementwiseKernel

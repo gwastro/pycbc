@@ -20,7 +20,6 @@ import lalsimulation
 import lal
 import numpy
 from numpy import sqrt, tanh, log, float128
-from math import frexp
 
 import pycuda.tools
 from pycuda.elementwise import ElementwiseKernel

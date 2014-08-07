@@ -26,9 +26,9 @@
 """
 from pycbc.types import TimeSeries
 import lal
+from math import frexp
 import numpy
 import copy
-from numpy import frexp
 
 def ceilpow2(n):
     """convenience function to determine a power-of-2 upper frequency limit"""

@@ -1,5 +1,5 @@
 #  Adapted from code in LALSimInspiralTaylorF2.c 
-# 
+#
 #  Copyright (C) 2007 Jolien Creighton, B.S. Sathyaprakash, Thomas Cokelaer
 #  Copyright (C) 2012 Leo Singer, Alex Nitz
 #
@@ -19,16 +19,16 @@
 #  MA  02111-1307  USA
 
 """This module contains functions for generating common SPA template precalculated
-   vectors. 
-""" 
-from math import sqrt, frexp
+   vectors.
+"""
+from math import sqrt
+import numpy
 import lal
 from lalinspiral import FindChirpChirpTime
 from pycbc.scheme import schemed
-import numpy
-from pycbc.waveform.utils import ceilpow2
 import pycbc.pnutils
 from pycbc.types import FrequencySeries, Array, complex64, float32, zeros
+from pycbc.waveform.utils import ceilpow2
 
 def spa_length_in_time(**kwds):
     """
@@ -48,36 +48,36 @@ def spa_length_in_time(**kwds):
 def spa_amplitude_factor(**kwds):
     m1 = kwds['mass1']
     m2 = kwds['mass2']
-    
+
     dist = 10e6 * lal.PC_SI
-    
+
     mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
-    
+
     FTaN = 32.0 * eta*eta / 5.0
     dETaN = 2 * -eta/2.0;
-    
+
     M = m1 + m2
-    
+
     m_sec = M * lal.MTSUN_SI;
     piM = lal.PI * m_sec;
-    
+
     amp0 = 4. * m1 * m2 / (1e6 * lal.PC_SI ) * lal.MRSUN_SI * lal.MTSUN_SI * sqrt(lal.PI/12.0)
 
-    fac = sqrt( -dETaN / FTaN) * amp0 * (piM ** (-7.0/6.0)) 
+    fac = sqrt( -dETaN / FTaN) * amp0 * (piM ** (-7.0/6.0))
     return -fac
-   
+
 _prec = None
 def spa_tmplt_precondition(length, delta_f, kmin=0):
     """Return the amplitude portion of the TaylorF2 approximant, used to precondition
     the strain data. The result is cached, and so should not be modified only read.
     """
     global _prec
-    if _prec is None or _prec.delta_f != delta_f or len(_prec) < length:       
+    if _prec is None or _prec.delta_f != delta_f or len(_prec) < length:
         v = numpy.arange(0, (kmin+length*2), 1.0) * delta_f
         v = numpy.power(v[1:len(v)], -7.0/6.0)
         _prec = FrequencySeries(v, delta_f=delta_f, dtype=float32)
     return _prec[kmin:kmin + length]
-   
+
 def spa_tmplt_norm(psd, length, delta_f, f_lower):
     amp = spa_tmplt_precondition(length, delta_f)
     k_min = int(f_lower / delta_f)
@@ -88,7 +88,7 @@ def spa_tmplt_norm(psd, length, delta_f, f_lower):
 
 def spa_tmplt_end(**kwds):
     return pycbc.pnutils.f_SchwarzISCO(kwds['mass1']+kwds['mass2'])
- 
+
 def spa_distance(psd, mass1, mass2, lower_frequency_cutoff, snr=8):
     """ Return the distance at a given snr (default=8) of the SPA TaylorF2
     template.
@@ -96,17 +96,17 @@ def spa_distance(psd, mass1, mass2, lower_frequency_cutoff, snr=8):
     kend = spa_tmplt_end(mass1=mass1, mass2=mass2) / psd.delta_f
     norm1 = spa_tmplt_norm(psd, len(psd), psd.delta_f, lower_frequency_cutoff)
     norm2 = (spa_amplitude_factor(mass1=mass1, mass2=mass2)) ** 2.0
-    return sqrt(norm1[kend] * norm2) / snr        
- 
-@schemed("pycbc.waveform.spa_tmplt_")  
-def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN, 
-                    pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, amp_factor):
-    """ Calculate the spa tmplt phase 
+    return sqrt(norm1[kend] * norm2) / snr
+
+@schemed("pycbc.waveform.spa_tmplt_")
+def spa_tmplt_engine(htilde, kmin, phase_order, delta_f, piM, pfaN,
+                     pfa2, pfa3, pfa4, pfa5, pfl5,
+                     pfa6, pfl6, pfa7, amp_factor):
+    """ Calculate the spa tmplt phase
     """
- 
+
 def spa_tmplt(**kwds):
-    """ 
+    """
     """
     # Pull out the input arguments
     f_lower = kwds['f_lower']
@@ -122,8 +122,8 @@ def spa_tmplt(**kwds):
     else:
         out = None
 
-    tC= -1.0 / delta_f 
-    
+    tC = -1.0 / delta_f
+
     amp_factor = spa_amplitude_factor(mass1=mass1, mass2=mass2) / distance
 
     #Calculate the spin corrections
@@ -151,7 +151,7 @@ def spa_tmplt(**kwds):
     pfl6 = -6848.0/21.0;
     pfa7 = lal.PI * 5.0/756.0 * ( 15419335.0/336.0 + 75703.0/2.0 * eta - \
             14809.0 * eta*eta)
-    
+
     m_sec = M * lal.MTSUN_SI;
     piM = lal.PI * m_sec;
 
@@ -173,11 +173,9 @@ def spa_tmplt(**kwds):
         if out.dtype != complex64:
             raise TypeError("Output array is the wrong dtype")
         htilde = FrequencySeries(out, delta_f=delta_f, copy=False)
-    
-    spa_tmplt_engine(htilde[kmin:kmax],  kmin, phase_order, delta_f, piM,  pfaN, 
-                    pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
-                    pfa6,  pfl6,  pfa7, amp_factor)
-    return htilde
-    
 
+    spa_tmplt_engine(htilde[kmin:kmax], kmin, phase_order, delta_f, piM, pfaN,
+                     pfa2, pfa3, pfa4, pfa5, pfl5,
+                     pfa6, pfl6, pfa7, amp_factor)
+    return htilde
 

@@ -23,7 +23,6 @@ import lalsimulation
 import lal
 import numpy
 from numpy import sqrt
-from math import frexp
 
 import pycuda.tools
 from pycuda.elementwise import ElementwiseKernel
