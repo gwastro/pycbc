@@ -1,0 +1,120 @@
+#!/usr/bin/python
+""" Make table of the foreground coincident events
+"""
+import argparse, h5py, numpy, logging
+import matplotlib
+matplotlib.use('Agg')
+import pylab
+from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
+from glue import segments
+
+# dummy class needed for loading LIGOLW files
+class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(LIGOLWContentHandler)
+
+def veto_indices(times, ifo, veto_files):
+    """ Return the list of indices that should be vetoed by the segments in the
+    lsit of veto_files.
+    """
+    time_sorting = numpy.argsort(times)
+    times = times[time_sorting]
+    indices = numpy.array([], dtype=numpy.uint32)
+   
+    for veto_file in veto_files:
+        indoc = ligolw_utils.load_filename(veto_file, False, contenthandler=LIGOLWContentHandler)
+        segment_table  = table.get_table(indoc, lsctables.SegmentTable.tableName)
+        
+        seg_def_table = table.get_table(indoc, lsctables.SegmentDefTable.tableName)
+        def_ifos = seg_def_table.getColumnByName('ifos')
+        def_ids = seg_def_table.getColumnByName('segment_def_id')
+        ifo_map =  {}
+        for def_ifo, def_id in zip(def_ifos, def_ids):
+            ifo_map[def_id] = def_ifo
+        
+        start = numpy.array(segment_table.getColumnByName('start_time')) + numpy.array(segment_table.getColumnByName('start_time_ns')) * 1e-9
+        end = numpy.array(segment_table.getColumnByName('end_time')) + numpy.array(segment_table.getColumnByName('end_time_ns')) * 1e-9
+        ifos = [ifo_map[v] for v in segment_table.getColumnByName('segment_def_id')]
+        
+        veto_segs = segments.segmentlist()
+        for s, e, ifo_row in zip(start, end, ifos):
+            if ifo != ifo_row:
+                continue
+                
+            veto_segs += [segments.segment(s, e)]
+
+        veto_segs.coalesce()        
+
+        left = numpy.searchsorted(times, start, side='left')
+        right = numpy.searchsorted(times, end, side='right')
+        for li, ri, ifo_row in zip(left, right, ifos):
+            if ifo != ifo_row:
+                continue
+                
+            seg_indices = numpy.arange(li, ri, 1).astype(numpy.uint32)
+            indices=numpy.union1d(seg_indices, indices)  
+            
+    return time_sorting[indices], veto_segs
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--trigger-file')
+parser.add_argument('--injection-file')
+parser.add_argument('--veto-file')
+parser.add_argument('--injection-window', type=float)
+parser.add_argument('--verbose', action='count')
+parser.add_argument('--output-file')
+args = parser.parse_args()
+
+if args.verbose:
+    log_level = logging.INFO
+    logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+    
+logging.info('Read in the data')
+f = h5py.File(args.trigger_file, 'r')
+
+stat1 = f['foreground/stat1'][:]
+stat2 = f['foreground/stat2'][:]
+ifar = f['foreground/ifar'][:]
+time1 = f['foreground/time1'][:]
+time2 = f['foreground/time2'][:]
+time = 0.5 * (time1 + time2)
+time_sorting = time.argsort()
+
+logging.info('Read in the injection file')
+indoc = ligolw_utils.load_filename(args.injection_file, False, contenthandler=LIGOLWContentHandler)
+sim_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
+inj_time = numpy.array(sim_table.get_column('geocent_end_time') + 1e-9 * sim_table.get_column('geocent_end_time_ns'), dtype=numpy.float64)
+inj_m1 = numpy.array(sim_table.get_column('mass1'), dtype=numpy.float32)
+inj_m2 = numpy.array(sim_table.get_column('mass2'), dtype=numpy.float32)
+inj_s1x = numpy.array(sim_table.get_column('spin1x'), dtype=numpy.float32)
+inj_s1y = numpy.array(sim_table.get_column('spin1y'), dtype=numpy.float32)
+inj_s1z = numpy.array(sim_table.get_column('spin1z'), dtype=numpy.float32)
+inj_s2x = numpy.array(sim_table.get_column('spin2x'), dtype=numpy.float32)
+inj_s2x = numpy.array(sim_table.get_column('spin2y'), dtype=numpy.float32)
+inj_s2z = numpy.array(sim_table.get_column('spin2z'), dtype=numpy.float32)
+dist_h = numpy.array(sim_table.get_column('eff_dist_h'), dtype=numpy.float32)
+dist_l = numpy.array(sim_table.get_column('eff_dist_l'), dtype=numpy.float32)
+dec_dist = numpy.minimum(dist_h, dist_l)
+
+logging.info('Deterimined the found injections by time')
+left = numpy.searchsorted(time[time_sorting], inj_time - args.injection_window, side='left')
+right = numpy.searchsorted(time[time_sorting], inj_time + args.injection_window, side='right')
+
+i1, v1 = veto_indices(inj_time, 'H1',[ args.veto_file])
+i2, v2 = veto_indices(inj_time, 'L1', [args.veto_file])
+print i1, i2
+i = numpy.concatenate([i1, i2])
+
+found = numpy.where((right-left) == 1)[0]
+found_fore = numpy.arange(0, len(inj_time), 1)[left[found]]
+missed = numpy.where((right-left) == 0)[0]
+ambiguous = numpy.where((right-left) > 1)[0]
+ifar_found = ifar[time_sorting][found_fore]
+print len(ifar_found), len(inj_time[found])
+
+tmis = numpy.delete(inj_time[missed], i)
+dmis = numpy.delete(dec_dist[missed], i)
+pylab.semilogy(tmis, dmis, marker='x', linewidth=0, color='black')
+pylab.semilogy(inj_time[found], dec_dist[found], marker='o', linewidth=0, color='green')
+pylab.savefig(args.output_file)
+

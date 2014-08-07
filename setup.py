@@ -302,6 +302,7 @@ setup (
                'bin/pycbc_coinc_statmap',
                'bin/pycbc_page_foreground',
                'bin/pycbc_page_snrifar',
+               'bin/pycbc_coinc_hdfinjfind',
                ],
     packages = [
                'pycbc',
