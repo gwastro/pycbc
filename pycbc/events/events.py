@@ -424,7 +424,7 @@ class EventManager(object):
         glue.ligolw.utils.write_filename(outdoc, outname, gz=outname.endswith('gz'))    
 
 
-__all__ = ['threshold_and_cluster', 
+__all__ = ['threshold_and_cluster', 'newsnr',
            'findchirp_cluster_over_window', 'fc_cluster_over_window_fast',
            'threshold', 'cluster_reduce',
            'EventManager']
