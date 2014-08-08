@@ -34,6 +34,8 @@ def load_coincs(coinc_files):
            numpy.concatenate(template_id), 
            numpy.concatenate(decimation_factor),
            attr,
+           f['coinc/analyzed_start'][:]
+           f['coinc/analyzed_end'][:]
            )
   
 def changed(arr):
@@ -110,7 +112,7 @@ if __name__ == '__main__':
                                 level=log_level)
     
     logging.info("Loading coinc triggers")    
-    s1, s2, t1, t2, sid, tid, dec, attrs = load_coincs(args.coinc_files)   
+    s1, s2, t1, t2, sid, tid, dec, attrs, start, end = load_coincs(args.coinc_files)   
     logging.info("We have %s triggers" % len(s1))
 
     if args.cluster_window != 0:
@@ -155,6 +157,8 @@ if __name__ == '__main__':
         logging.info("calculating fap values")
         fap = numpy.clip(coinc_time/ifar, 0, 1)
         
+        f['foreground/analyzed_start'] = start
+        f['foreground/analayzed_end'] = end
         f['foreground/fan'] = fore_fan
         f['foreground/ifar'] = sec_to_year(ifar)
         f['foreground/fap'] = fap

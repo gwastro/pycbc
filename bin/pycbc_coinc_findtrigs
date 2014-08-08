@@ -397,6 +397,14 @@ if __name__ == '__main__':
 
     triggers, foreground_segments = load_triggers(args.trigger_files, args.template_group)
 
+    start = []
+    end = []
+    for seg in foreground_segments:
+        start.append(seg[0])
+        end.append(seg[1])
+    start = numpy.array(start)
+    end = numpy.array(end)
+
     ifo1, ifo2 = triggers.keys()
     s1, t1, r1 = triggers[ifo1]
     s2, t2, r2 = triggers[ifo2]
@@ -483,6 +491,8 @@ if __name__ == '__main__':
         f.create_dataset('coinc/time2', data=t2)
         f.create_dataset('coinc/timeslide_id', data=slide_index)
         f.create_dataset('coinc/template_id', data=r1)
+        f['coinc/analyzed_start'] = start
+        f['coinc/analyzed_end'] = end
         f.attrs['timeslide_interval'] = numpy.float64(args.timeslide_interval)
         f.attrs['detector_1'] = det1.name
         f.attrs['detector_2'] = det2.name
