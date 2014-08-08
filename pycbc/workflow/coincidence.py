@@ -245,9 +245,11 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
         if not len(tisiOutFile) == 1:
             errMsg = "If you are seeing this, something batshit is going on!"
             if len(tisiOutFile) == 0:
-                errMsg = "No time slide files found matching %s." %(tag)
+                errMsg = "No time slide files found matching %s." \
+                                                                %(timeSlideTag)
             if len(tisiOutFile) > 1:
-                errMsg = "More than one time slide files match %s." %(tag)
+                errMsg = "More than one time slide files match %s." \
+                                                                %(timeSlideTag)
             raise ValueError(errMsg)
         tisiOutFile = tisiOutFile[0]
 

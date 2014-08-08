@@ -181,6 +181,14 @@ def select_generic_executable(workflow, exe_tag):
         exe_class = ComputeDurationsExecutable
     elif exe_name == 'pycbc_calculate_far':
         exe_class = SQLInOutExecutable
+    elif exe_name == "pycbc_run_sqlite":
+        exe_class = SQLInOutExecutable
+    # FIXME: We may end up with more than one class for using ligolw_sqlite
+    #        How to deal with this?
+    elif exe_name == "ligolw_sqlite":
+        exe_class = ExtractToXMLExecutable
+    elif exe_name == "pycbc_inspinjfind":
+        exe_class = InspinjfindExecutable
     else:
         # Should we try some sort of default class??
         err_string = "No class exists for Executable %s" %(exe_name,)
@@ -820,6 +828,11 @@ class LigolwSSthincaExecutable(Executable):
 
         node._add_output(outFile)
 
+        # FIXME: Better way of dealing with the gstlal output file
+        outFile = WorkflowFile(self.ifo, self.name, jobSegment,
+                         extension='.xml.gz', directory=self.out_dir,
+                         tags=['DIST_STATS']+self.tags+tags)
+
         return node
 
 class PycbcSqliteSimplifyExecutable(Executable):
@@ -858,6 +871,23 @@ class SQLInOutExecutable(Executable):
                                  tags=self.tags)
         return node
 
+class ExtractToXMLExecutable(WorkflowExecutable):
+    """
+    This class is responsible for running ligolw_sqlite jobs that will take an
+    SQL file and dump it back to XML.
+    """
+    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
+                 tags=[]):
+        WorkflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+                                  tags=tags)
+    def create_node(self, job_segment, input_file):
+        node = WorkflowNode(self)
+        node.add_input_opt('--database', input_file)
+        node.new_output_file_opt(job_segment, '.xml', '--extract',
+                                 tags=self.tags)
+        return node
+
+
 class ComputeDurationsExecutable(SQLInOutExecutable):
     """
     The class responsible for making jobs for pycbc_compute_durations.
@@ -870,7 +900,23 @@ class ComputeDurationsExecutable(SQLInOutExecutable):
                                  tags=self.tags)
         return node
 
-class LalappsInspinjExecutable(Executable):
+class InspinjfindExecutable(WorkflowExecutable):
+    """
+    The class responsible for running jobs with pycbc_inspinjfind
+    """
+    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
+                 tags=[]):
+        WorkflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+                                  tags=tags)
+    def create_node(self, job_segment, input_file):
+        node = WorkflowNode(self)
+        node.add_input_opt('--input-file', input_file)
+        node.new_output_file_opt(job_segment, '.xml', '--output-file',
+                                 tags=self.tags)
+        return node
+
+
+class LalappsInspinjExecutable(WorkflowExecutable):
     """
     The class used to create jobs for the lalapps_inspinj Executable.
     """

@@ -272,7 +272,9 @@ setup (
                'bin/pycbc_compute_durations',
                'bin/pycbc_pipedown_plots',
                'bin/pycbc_tmpltbank_to_chi_params',
-               'bin/pycbc_bank_verification'
+               'bin/pycbc_bank_verification',
+               'bin/pycbc_run_sqlite',
+               'bin/pycbc_inspinjfind'
                ],
     packages = [
                'pycbc',
