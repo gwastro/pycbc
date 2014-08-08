@@ -127,10 +127,12 @@ def newsnr(snr, reduced_x2):
     SNR and reduced chi-squared values. See http://arxiv.org/abs/1208.3491
     for a definition of NewSNR.
     """
-    if reduced_x2 > 1:
-        return snr * (0.5 * (1. + reduced_x2 ** 3)) ** (-1./6.)
-    else:
-        return snr
+    factor = numpy.zeros(len(snr), dtype=numpy.float32) + 1.0
+    newsnr = snr * 1
+    
+    ind = numpy.where(reduced_x2 > 1)[0]
+    newsnr[ind] *= (0.5 * (1. + reduced_x2[ind] ** 3)) ** (-1./6.)
+    return newsnr
 
 class EventManager(object):
     def __init__(self, opt, column, column_types, **kwds):

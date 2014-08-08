@@ -485,7 +485,7 @@ class PyCBCTrig2HDFExecutable(AhopeExecutable):
 class PyCBCFindCoincExecutable(AhopeExecutable):
     """ Find coinc triggers using a folded interval method 
     """
-    def create_node(self, trig_files, veto_files, hdf_prefix, tags=[]):
+    def create_node(self, trig_files, veto_files, template_group, tags=[]):
         segs = trig_files.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
         
@@ -493,7 +493,7 @@ class PyCBCFindCoincExecutable(AhopeExecutable):
         node.add_input_list_opt('--trigger-files', trig_files)
         if len(veto_files) != 0:
             node.add_input_list_opt('--veto-files', veto_files)
-        node.add_opt('--hdf-prefix', hdf_prefix)
+        node.add_opt('--template-group', template_group)
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags) 
         return node
         

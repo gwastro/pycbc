@@ -33,9 +33,10 @@ def read_files(trigger_files, columns, attribute_columns):
                 search_sum = table.get_table(indoc, lsctables.SearchSummaryTable.tableName)
                 attrs['start_time'] = search_sum[0].out_start_time
                 attrs['end_time'] = search_sum[0].out_end_time
-        
+                attrs['ifo'] = search_sum[0].ifos
+       
             for attr in attribute_columns:
-                attrs[attr] = sngl_table.get_column(column)[0]
+                attrs[attr] = sngl_table.get_column(attr)[0]
                 
         # Template id hack
         m1 = numpy.array(sngl_table.get_column('mass1'), dtype=numpy.float32)
@@ -109,8 +110,6 @@ data, attrs = read_files(args.trigger_files,
                  attribute_columns=['chisq_dof',
                                     'bank_chisq_dof',
                                     'cont_chisq_dof',
-                                    'ifo',
-                                    'channel',
                                     ])
 left, right, tids, sorting = group_trigs_by_hash(template_hashes, 
                                     data['template_hash'],
@@ -118,7 +117,7 @@ left, right, tids, sorting = group_trigs_by_hash(template_hashes,
 
 data['end_time'] = data['end_time'] + 1e-9 * data['end_time'].astype(numpy.float64)
 data.pop('end_time_ns', None)                                 
-                                   
+                            
 f = h5py.File(args.output_file, "w")
 for key in attrs.keys():
     f.attrs[key] = attrs[key]

@@ -6,6 +6,7 @@ method.
 """
 import itertools, copy, numpy, logging, argparse, h5py, os
 from pycbc.detector import Detector
+import pycbc.events
 from glue import segments
 
 def unique(ar, return_index=False, return_inverse=False):
@@ -209,16 +210,17 @@ def test_exact_match_coincidence(index1, index2, time1, time2, slide_step, windo
     passes = (time_diff <= window)
     return index1[passes], index2[passes], slide_index[passes]
     
-def load_triggers(trigger_files, prefix):
+def load_triggers(trigger_files, group_id):
     triggers = {}
+    group_id = int(group_id)
     trig_segments = {}
     num_trigs = 0
     
     for i, filename in enumerate(trigger_files):
         logging.info('Loading file: %s' % filename)
         f = h5py.File(filename, "r")
-        ifo = f.attrs['ifo']
-        
+        ifo = str(f.attrs['ifo'])
+
         # Compile a complete segment list for the foreground time
         if ifo not in trig_segments:
             trig_segments[ifo] = segments.segmentlist()  
@@ -227,9 +229,12 @@ def load_triggers(trigger_files, prefix):
         trig_segments[ifo] += [seg]
         
         try:
-            snr = f[prefix + '/stat'][:]
-            end_time = f[prefix + '/end_time'][:]
-            th = f[prefix + '/template_id'][:]
+            l = f['template_group/left'][group_id]
+            r = f['template_group/right'][group_id]
+            x2_dof = 2 * f.attrs['chisq_dof'] - 2
+            snr = pycbc.events.newsnr(f['snr'][l:r], f['chisq'][l:r] / x2_dof)
+            end_time = f['end_time'][l:r]
+            th = f['template_id'][l:r]
         except KeyError:
             # There weren't any triggers 
             continue
@@ -374,7 +379,7 @@ if __name__ == '__main__':
     parser.add_argument('--veto-files', nargs='+')
     # Could be different ways to communicate this information, think about it
     parser.add_argument('--timeslide-interval', type=float, default=None)
-    parser.add_argument('--hdf-prefix')
+    parser.add_argument('--template-group')
     parser.add_argument('--verbose', '-v', action='count')
     parser.add_argument('--output-file')
     parser.add_argument('--decimation-factor', type=int)
@@ -390,7 +395,7 @@ if __name__ == '__main__':
         log_level = logging.WARN
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)       
 
-    triggers, foreground_segments = load_triggers(args.trigger_files, args.hdf_prefix)
+    triggers, foreground_segments = load_triggers(args.trigger_files, args.template_group)
 
     ifo1, ifo2 = triggers.keys()
     s1, t1, r1 = triggers[ifo1]

@@ -4,6 +4,7 @@ from flask import Flask, render_template, url_for
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--plots-base-dir')
+parser.add_argument('--host')
 args = parser.parse_args()
 
 app = Flask('pycbc.results')
@@ -13,4 +14,4 @@ def base():
     tp = render_template('base.html', headings=['Example', 'another'], sections=['www.google.com', 'news.google.com'], zip=zip)
     return tp
 
-app.run(debug=True)
+app.run(debug=True, host=args.host)
