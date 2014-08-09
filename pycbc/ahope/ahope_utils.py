@@ -519,6 +519,17 @@ class AhopeFile(File):
         File.__init__(self, basename(self.cache_entry.path))
         self.storage_path = self.cache_entry.path
 
+    def __getstate__(self):
+        """ Allow the ahope file to be picklable. This disables the usage of
+        the internal cache entry.
+        """
+        for i, seg in enumerate(self.segment_list):
+            self.segment_list[i] = segments.segment(float(seg[0]), float(seg[1]))
+        self.cache_entry = None
+        safe_dict = copy.copy(self.__dict__)
+        safe_dict['cache_entry'] = None
+        return safe_dict   
+
     @property
     def ifo(self):
         """
@@ -905,7 +916,6 @@ class AhopeFileList(list):
         f = open(filename, 'r')
         return cPickle.load(f)
     
-   
     def dump(self, filename):
         """
         Output this AhopeFileList to a pickle file
