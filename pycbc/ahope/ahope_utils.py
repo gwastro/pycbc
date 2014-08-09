@@ -29,7 +29,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 
 import Pegasus.DAX3 as dax
 import os, sys, subprocess, logging, math, string, urlparse, ConfigParser
-import numpy
+import numpy, cPickle
 from itertools import combinations, groupby
 from operator import attrgetter
 from os.path import splitext, basename, isfile
@@ -563,6 +563,7 @@ class AhopeFile(File):
         return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start, 
                                    duration, extension)  
     
+    
 class AhopeFileList(list):
     '''
     This class holds a list of AhopeFile objects. It inherits from the
@@ -895,9 +896,43 @@ class AhopeFileList(list):
             return False
         else:
             return True
+    
+    @classmethod
+    def load(self, filename):
+        """
+        Load an AhopeFileList from a pickle file
+        """
+        f = open(filename, 'r')
+        return cPickle.load(f)
+    
    
+    def dump(self, filename):
+        """
+        Output this AhopeFileList to a pickle file
+        """
+        f = open(filename, 'w')
+        cPickle.dump(self, f)
         
-
+    def to_ahope_file(self, name, out_dir):
+        """Dump to a pickle file and return an AhopeFile reference of this list
+        
+        Parameters
+        ----------
+        name : str
+            An identifier of this file. Needs to be unique.
+        out_dir : path 
+            path to place this file
+            
+        Returns
+        -------
+        file : AhopeFile
+        """
+        make_analysis_dir(out_dir)
+        
+        file_ref = AhopeFile('ALL', name, self.get_times_covered_by_files(),
+                             extension='.pkl', directory=out_dir)
+        self.dump(file_ref.storage_path)
+        return file_ref
 
 class AhopeOutSegFile(AhopeFile):
     '''
