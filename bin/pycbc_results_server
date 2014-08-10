@@ -1,6 +1,7 @@
 #!/bin/env python
 import argparse
 from flask import Flask, render_template, url_for
+import pycbc.results.followup
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--plots-base-dir')
@@ -9,9 +10,35 @@ args = parser.parse_args()
 
 app = Flask('pycbc.results')
 
+def retrieve(filename):
+    return open(filename, 'r').read()
+    
+def find():
+    pass
+
 @app.route('/')
-def base():
-    tp = render_template('base.html', headings=['Example', 'another'], sections=['www.google.com', 'news.google.com'], zip=zip)
+def index():
+    return section_view('')
+
+@app.route('/<folder>')
+def section_view(folder):
+    print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", folder
+    tp = render_template('base.html', 
+                headings=['Example', 'another'], 
+                folder = folder,
+                sections=[retrieve('/home/ahnitz/projects/post/plots/cat4.html'), 
+                          retrieve('/home/ahnitz/projects/post/plots/foreground_events4.html'),
+                         ], 
+                zip=zip)
     return tp
+    
+@app.route('/followup/<start>/<end>')
+def followup_view(start, end):
+    return str(start) + str(end)
+    ifos = ['L1', 'H1']
+    start = int(start)
+    end = int(end)
+    fil = ''
+    return pycbc.results.followup.trigger_timeseries_plot(fil, ifos, start, end)
 
 app.run(debug=True, host=args.host)
