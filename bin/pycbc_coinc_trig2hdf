@@ -115,7 +115,7 @@ left, right, tids, sorting = group_trigs_by_hash(template_hashes,
                                     data['template_hash'],
                                     args.number_of_groups)
 
-data['end_time'] = data['end_time'] + 1e-9 * data['end_time'].astype(numpy.float64)
+data['end_time'] = data['end_time'] + 1e-9 * data['end_time_ns'].astype(numpy.float64)
 data.pop('end_time_ns', None)                                 
                             
 f = h5py.File(args.output_file, "w")
