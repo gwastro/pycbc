@@ -397,20 +397,21 @@ if __name__ == '__main__':
 
     triggers, foreground_segments = load_triggers(args.trigger_files, args.template_group)
 
-    start = []
-    end = []
-    for seg in foreground_segments:
-        start.append(seg[0])
-        end.append(seg[1])
-    start = numpy.array(start)
-    end = numpy.array(end)
-
     ifo1, ifo2 = triggers.keys()
     s1, t1, r1 = triggers[ifo1]
     s2, t2, r2 = triggers[ifo2]
     fore_time1 = abs(foreground_segments[ifo1])
     fore_time2 = abs(foreground_segments[ifo2])
-    coinc_time = abs(foreground_segments[ifo1] & foreground_segments[ifo2])
+    coinc_segs = (foreground_segments[ifo1] & foreground_segments[ifo2]).coalesce()
+    coinc_time = abs(coinc_segs)
+    
+    start = []
+    end = []
+    for seg in coinc_segs:
+        start.append(seg[0])
+        end.append(seg[1])
+    start = numpy.array(start)
+    end = numpy.array(end)    
     
     logging.info('%s time: %s  %s time: %s' %  (ifo1, fore_time1, ifo2, fore_time2))
     
