@@ -189,6 +189,12 @@ def select_generic_executable(workflow, exe_tag):
         exe_class = ExtractToXMLExecutable
     elif exe_name == "pycbc_inspinjfind":
         exe_class = InspinjfindExecutable
+    elif exe_name == "gstlal_inspiral_calc_likelihood":
+        exe_class = GstlalCalcLikelihoodExecutable
+    elif exe_name == "gstlal_inspiral_marginalize_likelihood":
+        exe_class = GstlalMarginalizeLikelihoodExecutable
+    elif exe_name == "pycbc_compute_far_from_snr_chisq_histograms":
+        exe_class = GstlalFarfromsnrchisqhistExecutable
     else:
         # Should we try some sort of default class??
         err_string = "No class exists for Executable %s" %(exe_name,)
@@ -913,6 +919,60 @@ class InspinjfindExecutable(WorkflowExecutable):
         node.add_input_opt('--input-file', input_file)
         node.new_output_file_opt(job_segment, '.xml', '--output-file',
                                  tags=self.tags)
+        return node
+
+class GstlalCalcLikelihoodExecutable(AhopeExecutable):
+    """
+    The class responsible for running the gstlal calc_likelihood jobs
+    """
+    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
+                 tags=[]):
+        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+                                  tags=tags)
+    def create_node(self, job_segment, trigger_files, dist_stat_files):
+        node = AhopeNode(self)
+        for file in dist_stat_files:
+            node.add_input_opt('--likelihood-url', file)
+        for file in trigger_files:
+            node.add_input_arg(file)
+        node.new_output_file_opt(job_segment, '.xml.gz', '--write-likelihood',
+                                 tags=self.tags)
+        return node
+
+class GstlalMarginalizeLikelihoodExecutable(AhopeExecutable):
+    """
+    The class responsible for running the gstlal marginalize_likelihood jobs
+    """
+    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
+                 tags=[]):
+        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+                                  tags=tags)
+    def create_node(self, job_segment, input_file):
+        node = AhopeNode(self)
+        node.add_input_arg(input_file)
+        node.new_output_file_opt(job_segment, '.xml.gz', '--output',
+                                 tags=self.tags)
+        return node
+
+class GstlalFarfromsnrchisqhistExecutable(AhopeExecutable):
+    """
+    The class responsible for running the gstlal far from chisq hist jobs
+    """
+    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
+                 tags=[]):
+        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+                                  tags=tags)
+    def create_node(self, job_segment, non_inj_db, output_database,
+                    inj_database=None, write_background_bins=False):
+        node = AhopeNode(self)
+        node.add_input_opt("--non-injection-db", non_inj_db)
+        if inj_database is not None:
+            node.add_input_opt("--input-database", non_inj_db)
+        node.new_output_file_opt(job_segment, '.sqlite', '--output-database',
+                                 tags=self.tags)
+        if write_background_bins:
+            node.new_output_file_opt(job_segment, '.xml.gz',
+                                  "--background-bins-out-file", tags=self.tags)
         return node
 
 
