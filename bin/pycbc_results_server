@@ -22,7 +22,6 @@ def index():
 
 @app.route('/<folder>')
 def section_view(folder):
-    print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", folder
     tp = render_template('base.html', 
                 headings=['Example', 'another'], 
                 folder = folder,
@@ -34,11 +33,10 @@ def section_view(folder):
     
 @app.route('/followup/<start>/<end>')
 def followup_view(start, end):
-    return str(start) + str(end)
     ifos = ['L1', 'H1']
     start = int(start)
     end = int(end)
-    fil = ''
+    fil = '/home/ahnitz/projects/post/myrun11/967593543-968803287/file_lists/ALL-SINGLE_TRIG_FULL_DATA-967593615-1209648.pkl'
     return pycbc.results.followup.trigger_timeseries_plot(fil, ifos, start, end)
 
 app.run(debug=True, host=args.host)
