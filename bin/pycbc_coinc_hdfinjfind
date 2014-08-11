@@ -56,6 +56,17 @@ def veto_indices(times, ifo, veto_files):
             
     return time_sorting[indices], veto_segs
 
+
+def veto_ind(times, start, end):
+    print times, start, end
+    indices = numpy.array([], dtype=numpy.uint32)
+    left = numpy.searchsorted(times, start, side='left')
+    right = numpy.searchsorted(times, end, side='right')
+    for li, ri in zip(left, right):
+        seg_indices = numpy.arange(li, ri, 1).astype(numpy.uint32)
+        indices=numpy.union1d(seg_indices, indices)  
+    return indices   
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--trigger-file')
 parser.add_argument('--injection-file')
@@ -77,6 +88,9 @@ stat2 = f['foreground/stat2'][:]
 ifar = f['foreground/ifar'][:]
 time1 = f['foreground/time1'][:]
 time2 = f['foreground/time2'][:]
+ana_start = f['foreground/analyzed_start'][:]
+ana_end = f['foreground/analyzed_end'][:]
+print ana_start, ana_end
 time = 0.5 * (time1 + time2)
 time_sorting = time.argsort()
 
@@ -100,9 +114,9 @@ logging.info('Deterimined the found injections by time')
 left = numpy.searchsorted(time[time_sorting], inj_time - args.injection_window, side='left')
 right = numpy.searchsorted(time[time_sorting], inj_time + args.injection_window, side='right')
 
-i1, v1 = veto_indices(inj_time, 'H1',[ args.veto_file])
+i1, v1 = veto_indices(inj_time, 'H1', [args.veto_file])
 i2, v2 = veto_indices(inj_time, 'L1', [args.veto_file])
-print i1, i2
+#print i1, i2
 i = numpy.concatenate([i1, i2])
 
 found = numpy.where((right-left) == 1)[0]
@@ -110,8 +124,10 @@ found_fore = numpy.arange(0, len(inj_time), 1)[left[found]]
 missed = numpy.where((right-left) == 0)[0]
 ambiguous = numpy.where((right-left) > 1)[0]
 ifar_found = ifar[time_sorting][found_fore]
-print len(ifar_found), len(inj_time[found])
+#print len(ifar_found), len(inj_time[found])
 
+i = veto_ind(inj_time, ana_start, ana_end)
+print i
 tmis = numpy.delete(inj_time[missed], i)
 dmis = numpy.delete(dec_dist[missed], i)
 pylab.semilogy(tmis, dmis, marker='x', linewidth=0, color='black')
