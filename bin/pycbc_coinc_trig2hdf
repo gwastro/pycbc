@@ -139,4 +139,3 @@ if len(data['snr']) > 0:
     f['template_group/right'] = right          
 else:
     logging.info('There were no triggers in the sngl_inspiral table')
-f.close()s
