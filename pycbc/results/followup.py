@@ -26,7 +26,7 @@ time series.
 """ 
 import h5py, numpy, matplotlib
 matplotlib.use('Agg')
-import pylab, mpld3
+import pylab, mpld3, mpld3.plugins
 from pycbc.ahope import AhopeFileList
 from glue.segments import segment
 
@@ -73,6 +73,8 @@ def columns_from_file_list(file_list_file, columns, ifo, start, end):
             
     return trig_dict
     
+ifo_color = {'H1': 'blue', 'L1':'red', 'V1':'green'}
+    
 def trigger_timeseries_plot(trigger_file_list, ifos, start, end):
 
     fig = pylab.figure()
@@ -80,7 +82,14 @@ def trigger_timeseries_plot(trigger_file_list, ifos, start, end):
         trigs = columns_from_file_list(trigger_file_list,
                                        ['snr', 'end_time'],
                                        ifo, start, end)
-        pylab.scatter(trigs['end_time'], trigs['snr'], label=ifo)
+        pylab.scatter(trigs['end_time'], trigs['snr'], label=ifo,     
+                      color=ifo_color[ifo])
+             
+               
+        fmt = '.12g'
+        mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt=fmt))
+        
+        
     pylab.legend()
     pylab.grid() 
     return mpld3.fig_to_html(fig)
