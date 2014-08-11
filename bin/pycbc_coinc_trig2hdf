@@ -4,7 +4,7 @@ in preparation for coincidence
 """
 import numpy, argparse, h5py, os
 
-def read_files(trigger_files, columns, attribute_columns):
+def read_files(trigger_files, columns, column_types, attribute_columns):
     """ Read in the column of data from the ligolw xml format
     """
     data = {}
@@ -22,11 +22,11 @@ def read_files(trigger_files, columns, attribute_columns):
                                            contenthandler=LIGOLWContentHandler)
         sngl_table = table.get_table(indoc, 'sngl_inspiral') 
         
-        for column in columns:
+        for column, ctype in zip(columns, column_types):
             if column not in data:
                 data[column] = []    
-            col_data = numpy.array(sngl_table.get_column(column), dtype=numpy.float32)
-            data[column] = numpy.concatenate([col_data, data[column]]) 
+            col_data = numpy.array(sngl_table.get_column(column), dtype=ctype)
+            data[column] = numpy.concatenate([data[column], col_data]) 
             
         if i == 0:
             if  i == 0:
@@ -107,6 +107,15 @@ data, attrs = read_files(args.trigger_files,
                          'sigmasq',
                          'coa_phase',
                         ],
+                column_types=[numpy.float32,
+                              numpy.float32,
+                              numpy.float32,
+                              numpy.float32,
+                              numpy.float64,
+                              numpy.float64,
+                              numpy.float32,
+                              numpy.float32
+                              ],
                  attribute_columns=['chisq_dof',
                                     'bank_chisq_dof',
                                     'cont_chisq_dof',
@@ -115,7 +124,7 @@ left, right, tids, sorting = group_trigs_by_hash(template_hashes,
                                     data['template_hash'],
                                     args.number_of_groups)
 
-data['end_time'] = data['end_time'] + 1e-9 * data['end_time_ns'].astype(numpy.float64)
+data['end_time'] = data['end_time'] + 1e-9 * data['end_time_ns']
 data.pop('end_time_ns', None)                                 
                             
 f = h5py.File(args.output_file, "w")
@@ -130,4 +139,4 @@ if len(data['snr']) > 0:
     f['template_group/right'] = right          
 else:
     logging.info('There were no triggers in the sngl_inspiral table')
-f.close()
+f.close()s
