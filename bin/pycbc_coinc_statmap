@@ -139,7 +139,7 @@ if __name__ == '__main__':
     f['foreground/time2'] = t2[fore_locs]
     f['foreground/template_id'] = tid[fore_locs]
     f['foreground/analyzed_start'] = start
-    f['foreground/analayzed_end'] = end
+    f['foreground/analyzed_end'] = end
     
     if args.external_background:
         # We are using an external background file
