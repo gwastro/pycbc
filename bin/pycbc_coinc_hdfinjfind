@@ -1,12 +1,44 @@
 #!/usr/bin/python
 """ Make table of the foreground coincident events
 """
-import argparse, h5py, numpy, logging, mpld3
+import argparse, h5py, numpy, logging, mpld3, mpld3.plugins, mpld3.utils
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plot
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from glue import segments
+
+class ClickInfo(mpld3.plugins.PluginBase):
+    """Plugin for getting info on click"""
+    
+    JAVASCRIPT = """
+    mpld3.register_plugin("clickinfo", ClickInfo);
+    ClickInfo.prototype = Object.create(mpld3.Plugin.prototype);
+    ClickInfo.prototype.constructor = ClickInfo;
+    ClickInfo.prototype.requiredProps = ["id"];
+    ClickInfo.prototype.defaultProps = {
+        links: null
+    }
+    function ClickInfo(fig, props){
+        mpld3.Plugin.call(this, fig, props);
+    };
+    
+    ClickInfo.prototype.draw = function(){
+        var obj = mpld3.get_element(this.props.id);
+        var links = this.props.links;
+        
+        obj.elements().on("mousedown",
+                          function(d, i){ 
+                                           window.open(links[i]);
+                                        }
+                          );
+    }
+    """
+    def __init__(self, points, links):
+        self.dict_ = {"type": "clickinfo",
+                      "id": mpld3.utils.get_id(points),
+                      "links": links,
+                      }
 
 # dummy class needed for loading LIGOLW files
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
@@ -131,8 +163,7 @@ ten = numpy.where(ifar_found > 10)[0]
 hundred = numpy.where(ifar_found > 100)[0]
 thousand = numpy.where(ifar_found > 1000)[0]
 
-color[ten] = 0.4
-color[hundred] = 0.8
+color[ten] = 0.5
 color[thousand] = 1.0
 
 ki = keep_ind(tmis, ana_start, ana_end)
@@ -140,12 +171,20 @@ tmis = tmis[ki]
 dmis = dmis[ki]
 fig = plot.figure()
 plot.scatter(tmis, dmis, marker='x', color='black', label='missed')
-plot.scatter(inj_time[found], dec_dist[found], c=color, 
+points = plot.scatter(inj_time[found], dec_dist[found], c=color, 
              linewidth=0, vmin=0, vmax=1, 
              marker='o', label='found')
 plot.xlabel('Time (s)')
 plot.ylabel('Injected Decisive Distance')
 plot.legend()
 plot.grid()
+
+url_base = '../followup/%s/%s'
+urls = []
+for t in inj_time[found]:
+    urls.append(url_base % (t - 5, t + 5))
+
+mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt='.5g'))
+mpld3.plugins.connect(fig, ClickInfo(points, urls))
 mpld3.save_html(fig, open(args.output_file, 'w'))
 
