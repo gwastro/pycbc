@@ -228,15 +228,17 @@ def load_triggers(trigger_files, group_id):
         seg = segments.segment(f.attrs['start_time'], f.attrs['end_time'])
         trig_segments[ifo] += [seg]
         
-        try:
-            l = f['template_group/left'][group_id]
-            r = f['template_group/right'][group_id]
-            x2_dof = 2 * f.attrs['chisq_dof'] - 2
-            snr = pycbc.events.newsnr(f['snr'][l:r], f['chisq'][l:r] / x2_dof)
+        
+        l = f['template_group/left'][group_id]
+        r = f['template_group/right'][group_id]
+        if (r-l) > 0:
             end_time = f['end_time'][l:r]
             th = f['template_id'][l:r]
-        except KeyError:
-            # There weren't any triggers 
+            print r, l
+            x2_dof = 2 * f.attrs['chisq_dof'] - 2
+            snr = pycbc.events.newsnr(f['snr'][l:r], f['chisq'][l:r] / x2_dof)
+            snr = numpy.array(snr, ndmin=1)
+        else:
             continue
 
         if len(snr) > 0:

@@ -1,10 +1,10 @@
 #!/usr/bin/python
 """ Make table of the foreground coincident events
 """
-import argparse, h5py, numpy, logging
+import argparse, h5py, numpy, logging, mpld3
 import matplotlib
 matplotlib.use('Agg')
-import pylab
+import matplotlib.pyplot as plot
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from glue import segments
 
@@ -57,8 +57,7 @@ def veto_indices(times, ifo, veto_files):
     return time_sorting[indices], veto_segs
 
 
-def veto_ind(times, start, end):
-    print times, start, end
+def keep_ind(times, start, end):
     indices = numpy.array([], dtype=numpy.uint32)
     left = numpy.searchsorted(times, start, side='left')
     right = numpy.searchsorted(times, end, side='right')
@@ -88,8 +87,8 @@ stat2 = f['foreground/stat2'][:]
 ifar = f['foreground/ifar'][:]
 time1 = f['foreground/time1'][:]
 time2 = f['foreground/time2'][:]
-#ana_start = f['foreground/analyzed_start'][:]
-#ana_end = f['foreground/analyzed_end'][:]
+ana_start = f['foreground/analyzed_start'][:]
+ana_end = f['foreground/analyzed_end'][:]
 #print ana_start, ana_end
 time = 0.5 * (time1 + time2)
 time_sorting = time.argsort()
@@ -110,13 +109,12 @@ dist_h = numpy.array(sim_table.get_column('eff_dist_h'), dtype=numpy.float32)
 dist_l = numpy.array(sim_table.get_column('eff_dist_l'), dtype=numpy.float32)
 dec_dist = numpy.minimum(dist_h, dist_l)
 
-logging.info('Deterimined the found injections by time')
+logging.info('Determined the found injections by time')
 left = numpy.searchsorted(time[time_sorting], inj_time - args.injection_window, side='left')
 right = numpy.searchsorted(time[time_sorting], inj_time + args.injection_window, side='right')
 
 i1, v1 = veto_indices(inj_time, 'H1', [args.veto_file])
 i2, v2 = veto_indices(inj_time, 'L1', [args.veto_file])
-#print i1, i2
 i = numpy.concatenate([i1, i2])
 
 found = numpy.where((right-left) == 1)[0]
@@ -124,16 +122,30 @@ found_fore = numpy.arange(0, len(inj_time), 1)[left[found]]
 missed = numpy.where((right-left) == 0)[0]
 ambiguous = numpy.where((right-left) > 1)[0]
 ifar_found = ifar[time_sorting][found_fore]
-#print len(ifar_found), len(inj_time[found])
 
 tmis = numpy.delete(inj_time[missed], i)
 dmis = numpy.delete(dec_dist[missed], i)
 
-for t, d in zip(tmis, dmis):
-    if d < 10:
-        print "MISSED AT ", t
+color = numpy.zeros(len(found))
+ten = numpy.where(ifar_found > 10)[0]
+hundred = numpy.where(ifar_found > 100)[0]
+thousand = numpy.where(ifar_found > 1000)[0]
 
-pylab.semilogy(tmis, dmis, marker='x', linewidth=0, color='black')
-pylab.semilogy(inj_time[found], dec_dist[found], marker='o', linewidth=0, color='green')
-pylab.savefig(args.output_file)
+color[ten] = 0.4
+color[hundred] = 0.8
+color[thousand] = 1.0
+
+ki = keep_ind(tmis, ana_start, ana_end)
+tmis = tmis[ki]
+dmis = dmis[ki]
+fig = plot.figure()
+plot.scatter(tmis, dmis, marker='x', color='black', label='missed')
+plot.scatter(inj_time[found], dec_dist[found], c=color, 
+             linewidth=0, vmin=0, vmax=1, 
+             marker='o', label='found')
+plot.xlabel('Time (s)')
+plot.ylabel('Injected Decisive Distance')
+plot.legend()
+plot.grid()
+mpld3.save_html(fig, open(args.output_file, 'w'))
 
