@@ -1,10 +1,11 @@
 #!/bin/env python
-import argparse
-from flask import Flask, render_template, url_for
+import argparse, os
+from flask import Flask, render_template, url_for, send_from_directory
 import pycbc.results.followup
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--plots-base-dir')
+parser.add_argument('--trigger-file-list')
 parser.add_argument('--host')
 args = parser.parse_args()
 
@@ -13,30 +14,64 @@ app = Flask('pycbc.results')
 def retrieve(filename):
     return open(filename, 'r').read()
     
-def find():
-    pass
+def get_folders(directory):
+    dirs = [d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
+    return dirs
+
+def get_sections(base, fol):
+    directory = os.path.join(base, fol)
+
+    files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]   
+    
+    sections = []
+    headings = []
+    types = []
+    for fil in files:
+        name = fil.split('.')[0]
+        path = os.path.join(directory, fil)
+        t = fil.split('.')[1]
+        
+        if t == 'html':
+            sections.append(retrieve(path))
+        elif t == 'png':
+            sections.append(os.path.join(fol, fil))
+        else:
+            continue
+        
+        headings.append(name)
+        types.append(t)
+             
+    return sections, headings, types  
 
 @app.route('/')
 def index():
     return section_view('')
 
-@app.route('/<folder>')
+# Custom static data
+@app.route('/cdn/<path:filename>')
+def custom_static(filename):
+    return send_from_directory(args.plots_base_dir, filename)
+
+@app.route('/sections/<folder>/')
 def section_view(folder):
-    tp = render_template('base.html', 
-                headings=['Example', 'another'], 
-                folder = folder,
-                sections=[retrieve('/home/ahnitz/projects/post/plots/cat4.html'), 
-                          retrieve('/home/ahnitz/projects/post/plots/foreground_events4.html'),
-                         ], 
-                zip=zip)
+    print "BASE", args.plots_base_dir
+    folders = get_folders(args.plots_base_dir)
+    print "FOLDER", folders
+    sections, headings, types = get_sections(args.plots_base_dir, folder)
+    tp = render_template('base.html', headings=headings, 
+                                      folder=folder, 
+                                      folders=folders,
+                                      types = types,
+                                      sections=sections, 
+                                      zip=zip)
     return tp
     
 @app.route('/followup/<start>/<end>')
 def followup_view(start, end):
     ifos = ['L1', 'H1']
-    start = int(start)
-    end = int(end)
-    fil = '/home/ahnitz/projects/post/myrun11/967593543-968803287/file_lists/ALL-SINGLE_TRIG_FULL_DATA-967593615-1209648.pkl'
+    start = float(start)
+    end = float(end)
+    fil = args.trigger_file_list
     return pycbc.results.followup.trigger_timeseries_plot(fil, ifos, start, end)
 
 app.run(debug=True, host=args.host)

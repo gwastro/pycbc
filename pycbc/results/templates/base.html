@@ -58,6 +58,9 @@
         left: 1480px;
         top: 680px;
       }
+    img {
+        max-width: 100%;
+    }
     paper-button {
         width: 100%;
     }
@@ -79,11 +82,16 @@
       <div id="div" tool>PyCBC Gravitational-wave Search Results</div>
       <section id="()" center center-justified vertical layout>
 
-        {% for heading, section in zip(headings, sections) %}
+        {% for heading, section, t in zip(headings, sections, types) %}
             <core-card id="core_card" layout vertical start>
                 <paper-button onclick="document.querySelector('#collapse{{loop.index}}').toggle()">{{heading}}</paper-button>
                 <core-collapse id="collapse{{loop.index}}">
+                    {% if t == 'html' %}
                       {{section|safe}}
+                    {% endif %}
+                    {% if t == 'png' %}
+                      <img src="{{ url_for('custom_static', filename=section) }}">
+                    {% endif %} 
                 </core-collapse>
             </core-card>
         {% endfor %}
@@ -91,8 +99,9 @@
 
       <core-header-panel mode="standard" id="core_header_panel" navigation flex>
         <core-menu selected="{{folder}}" valueattr="label"  id="core_menu" theme="core-light-theme">
-          <core-item label="Injections" icon="settings" size="24" id="core_item1" horizontal center layout> <a href="/Injections"></a></core-item>
-          <core-item label="Summary" icon="settings" size="24" id="core_item" horizontal center layout active> <a href="/Summary"></a></core-item>
+          {% for fol in folders %}
+              <core-item label="{{fol}}" icon="settings" size="24" id="core_item1" horizontal center layout> <a href="/sections/{{fol}}"></a></core-item>
+          {% endfor %}
         </core-menu>
         <core-toolbar id="core_toolbar">
           </core-toolbar>

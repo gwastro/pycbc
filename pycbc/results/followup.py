@@ -84,11 +84,9 @@ def trigger_timeseries_plot(trigger_file_list, ifos, start, end):
                                        ifo, start, end)
         pylab.scatter(trigs['end_time'], trigs['snr'], label=ifo,     
                       color=ifo_color[ifo])
-             
-               
+                            
         fmt = '.12g'
         mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt=fmt))
-        
         
     pylab.legend()
     pylab.grid() 

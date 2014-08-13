@@ -88,9 +88,9 @@ stat2 = f['foreground/stat2'][:]
 ifar = f['foreground/ifar'][:]
 time1 = f['foreground/time1'][:]
 time2 = f['foreground/time2'][:]
-ana_start = f['foreground/analyzed_start'][:]
-ana_end = f['foreground/analyzed_end'][:]
-print ana_start, ana_end
+#ana_start = f['foreground/analyzed_start'][:]
+#ana_end = f['foreground/analyzed_end'][:]
+#print ana_start, ana_end
 time = 0.5 * (time1 + time2)
 time_sorting = time.argsort()
 
@@ -126,10 +126,13 @@ ambiguous = numpy.where((right-left) > 1)[0]
 ifar_found = ifar[time_sorting][found_fore]
 #print len(ifar_found), len(inj_time[found])
 
-i = veto_ind(inj_time, ana_start, ana_end)
-print i
 tmis = numpy.delete(inj_time[missed], i)
 dmis = numpy.delete(dec_dist[missed], i)
+
+for t, d in zip(tmis, dmis):
+    if d < 10:
+        print "MISSED AT ", t
+
 pylab.semilogy(tmis, dmis, marker='x', linewidth=0, color='black')
 pylab.semilogy(inj_time[found], dec_dist[found], marker='o', linewidth=0, color='green')
 pylab.savefig(args.output_file)
