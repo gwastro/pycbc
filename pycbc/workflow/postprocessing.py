@@ -190,7 +190,8 @@ def setup_postproc_pipedown_workflow(workflow, trigger_files, output_dir,
     return cfar_outs
 
 def setup_postproc_gstlal(workflow, trigger_files, output_dir,
-                          tags=[], veto_cats=[], likelihood_files=[]
+                          tags=[], veto_cats=[], likelihood_files=[],
+                          inj_less_tag=None, injection_tags=[],
                           sqlite_stage1_files=[]):
     """
     This module sets up the post-processing stage in ahope, using a pipedown
@@ -209,6 +210,13 @@ def setup_postproc_gstlal(workflow, trigger_files, output_dir,
         runs. Not yet sure how to deal with vetoes in gstlal!
     output_dir : path
         The directory in which output files will be stored.
+    inj_less_tag : string (required)
+        The tag that identifies files that do not have simulations in them.
+        Ie. the primary search results.
+    injection_tags : list of strings (optional, default = [])
+        Each injection file has a unique tag. If used in the method, this
+        tells the post-processing preparation code which injection tags it
+        should include when creating the combined output.
     tags : list of strings (optional, default = [])
         A list of the tagging strings that will be used for all jobs created
         by this call to the workflow. An example might be ['POSTPROC1'] or
@@ -224,4 +232,38 @@ def setup_postproc_gstlal(workflow, trigger_files, output_dir,
     final_files : ahope.AhopeFileList
         A list of the final SQL databases containing computed FARs.
     """
+    # Sanity checks
+    
+    # Setup needed exe classes
+    calc_likelihood_exe_name = workflow.cp.get_opt_tags("ahope-postprocprep",
+                                   "postproc-calclikelihood-exe", tags)
+    marg_likelihood_exe_name = workflow.cp.get_opt_tags("ahope-postproc",
+                                   "postproc-marglikelihood-exe", tags)
+    far_gstlal_exe_name = workflow.cp.get_opt_tags("ahope-postproc",
+                                   "postproc-fargstlal-exe", tags)
+    calc_likelihood_exe = select_generic_executable(workflow,
+                                                       calc_likelihood_exe_name)
+    marg_likelihood_exe = select_generic_executable(workflow,
+                                                        marg_likelihood_exe_name)
+    far_gstlal_exe = select_generic_executable(workflow, far_gstlal_exe_name)
 
+    calclikelihood_outputs = AhopeFileList([])
+    
+    # Do for all injection runs and zero lag
+    for inj_tag in [inj_less_tag] + injection_tags:
+        curr_tags = tags + [inj_tag, veto_tag]
+        input_trigger_files = sqlite_stage1_files.find_output_with_tag(inj_tag)
+        input_likelihood_files = likelihood_files.find_output_with_tag(\
+                                                                   inj_less_tag)
+        calc_likelihood_job = calc_likelihood_exe(workflow.cp, 
+                                                  calc_likelihood_exe_name,
+                                                  ifo=workflow.ifo_string,
+                                                  out_dir=output_dir,
+                                                  tags=curr_tags)
+        calc_likelihood_node = calc_likelihood_job.create_node(\
+                                                  workflow.analysis_time,
+                                                  input_trigger_files,
+                                                  input_likelihood_files)
+        # Only one output file
+        out_file = calc_likelihood_node.output_files[0]
+        calclikelihood_outputs.append(out_file)

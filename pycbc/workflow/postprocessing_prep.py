@@ -286,7 +286,8 @@ def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
                                        tags=[], injection_files=None,
                                        veto_files=None, inj_less_tag=None,
                                        injection_tags=[], veto_cats=[],
-                                       summary_xml_files=None):
+                                       summary_xml_files=None,
+                                       likelihood_files=[]):
     """
     Properties
     -----------
@@ -356,11 +357,55 @@ def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
                                    "postprocprep-inspinjfind-exe", tags)
     sql_to_xml_exe_name = workflow.cp.get_opt_tags("ahope-postprocprep",
                                    "postprocprep-sqltoxml-exe", tags)
+    pycbc_picklehor_exe_name = workflow.cp.get_opt_tags("ahope-postprocprep",
+                                   "postprocprep-picklehor-exe", tags)
+    pycbc_combllhood_exe_name = workflow.cp.get_opt_tags("ahope-postprocprep",
+                                   "postprocprep-combllhood-exe", tags)
+    pycbc_genranking_exe_name = workflow.cp.get_opt_tags("ahope-postprocprep",
+                                   "postprocprep-genranking-exe", tags)
+    pycbc_compllhood_exe_name = workflow.cp.get_opt_tags("ahope-postprocprep",
+                                   "postprocprep-compllhood-exe", tags)
+    marg_likelihood_exe_name = workflow.cp.get_opt_tags("ahope-postprocprep",
+                                   "postprocprep-marglikelihood-exe", tags)
+    far_gstlal_exe_name = workflow.cp.get_opt_tags("ahope-postprocprep",
+                                   "postprocprep-fargstlal-exe", tags)
+    plot_summary_exe_name = workflow.cp.get_opt_tags("ahope-postprocprep",
+                                   "postprocprep-plotsummary-exe", tags)
+    plot_sensitivity_exe_name = workflow.cp.get_opt_tags("ahope-postprocprep",
+                                   "postprocprep-plotsensitivity-exe", tags)
+    plot_background_exe_name = workflow.cp.get_opt_tags("ahope-postprocprep",
+                                   "postprocprep-plotbackground-exe", tags)
+    summary_page_exe_name = workflow.cp.get_opt_tags("ahope-postprocprep",
+                                   "postprocprep-summarypage-exe", tags)
+
+
     run_sqlite_exe = select_generic_executable(workflow, run_sqlite_exe_name)
     ligolw_sqlite_exe = select_generic_executable(workflow,
                                                         ligolw_sqlite_exe_name)
     inspinjfind_exe = select_generic_executable(workflow, inspinjfind_exe_name)
     sql_to_xml_exe = select_generic_executable(workflow, sql_to_xml_exe_name)
+    pycbc_picklehor_exe = select_generic_executable(workflow,
+                                                      pycbc_picklehor_exe_name)
+    pycbc_combllhood_exe = select_generic_executable(workflow,
+                                                     pycbc_combllhood_exe_name)
+    pycbc_genranking_exe = select_generic_executable(workflow,
+                                                     pycbc_genranking_exe_name)
+    pycbc_compllhood_exe = select_generic_executable(workflow,
+                                                     pycbc_compllhood_exe_name)
+    marg_likelihood_exe = select_generic_executable(workflow,
+                                                      marg_likelihood_exe_name)
+    far_gstlal_exe = select_generic_executable(workflow, far_gstlal_exe_name)
+    plot_summary_exe = select_generic_executable(workflow,
+                                                         plot_summary_exe_name)
+    plot_sensitivity_exe = select_generic_executable(workflow,
+                                                     plot_sensitivity_exe_name)
+    plot_background_exe = select_generic_executable(workflow,
+                                                      plot_background_exe_name)
+    summary_page_exe = select_generic_executable(workflow,
+                                                         summary_page_exe_name)
+
+
+
 
     # SETUP
     # FIXME: Some hacking is still needed while we support pipedown
@@ -374,8 +419,91 @@ def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
     #    raise ValueError(errMsg)
     # FIXME: Here we set the dqVetoName to be compatible with pipedown
     pipedown_dq_veto_name = 'CAT_%d_VETO' %(veto_cat,)
+
+    # First we need to covert to SQL, this is STAGE0
+    # Do for all injection runs and zero lag
+    stage0_outputs = {}
+    for inj_tag in [inj_less_tag] + injection_tags:
+        curr_tags = tags + [inj_tag, veto_tag]
+        trig_veto_inp_files = \
+                  coinc_files.find_output_with_tag(pipedown_dq_veto_name)
+        trig_inp_files = trig_veto_inp_files.find_output_with_tag(inj_tag)
+        stage0_job = ligolw_sqlite_exe(workflow.cp, ligolw_sqlite_exe_name,
+                                      ifo=workflow.ifo_string,
+                                      out_dir=output_dir,
+                                      tags=['STAGE0'] + curr_tags)
+        stage0_outputs[inj_tag] = AhopeFileList([])
+        assert len(trig_inp_files) > 0
+        for file in trig_inp_files:
+            stage0_node = stage0_job.create_node(file.segment, [file])
+            workflow.add_node(stage0_node)
+            # Node has only one output file
+            stage0_out = stage0_node.output_files[0]
+            stage0_outputs[inj_tag].append(stage0_out)
+
+    curr_tags = tags + [veto_tag]
+
+    # NOW WE DO LIKELIHOOD SETUP
+    pycbc_picklehor_job = pycbc_picklehor_exe(workflow.cp,
+                                  pycbc_picklehor_exe_name,
+                                  ifo=workflow.ifo_string,
+                                  out_dir=output_dir,
+                                  tags=curr_tags)
+    pycbc_combllhood_job = pycbc_combllhood_exe(workflow.cp,
+                                  pycbc_combllhood_exe_name,
+                                  ifo=workflow.ifo_string,
+                                  out_dir=output_dir,
+                                  tags=curr_tags)
+    pycbc_genranking_job = pycbc_genranking_exe(workflow.cp, 
+                                  pycbc_genranking_exe_name,
+                                  ifo=workflow.ifo_string,
+                                  out_dir=output_dir,
+                                  tags=curr_tags)
+    marg_likelihood_job_1 = marg_likelihood_exe(workflow.cp,
+                                  marg_likelihood_exe_name,
+                                  ifo=workflow.ifo_string,
+                                  out_dir=output_dir,
+                                  tags=['MARG1']+curr_tags)
+    marg_likelihood_job_2 = marg_likelihood_exe(workflow.cp,
+                                  marg_likelihood_exe_name,
+                                  ifo=workflow.ifo_string,
+                                  out_dir=output_dir,
+                                  tags=['MARG2']+curr_tags)
+
+
+    # Begin with finding the horizon distances
+    picklehor_inputs = stage0_outputs[inj_less_tag]
+    node = pycbc_picklehor_job.create_node(workflow.analysis_time,
+                                                              picklehor_inputs)
+    workflow.add_node(node)
+    horizon_dist_file = node.output_files[0]
+    # Then combine all likelihood files
+    combllhood_inputs = likelihood_files.find_output_with_tag(\
+                                                         pipedown_dq_veto_name) 
+    combllhood_inputs = combllhood_inputs.find_output_with_tag(inj_less_tag)
+    assert len(combllhood_inputs) > 0
+    node = pycbc_combllhood_job.create_node(workflow.analysis_time,
+                                          combllhood_inputs, horizon_dist_file)
+    workflow.add_node(node)
+    likelihood_file = node.output_files[0]
+    # Also compute the ranking file
+    node = pycbc_genranking_job.create_node(workflow.analysis_time,
+                                            likelihood_file, horizon_dist_file)
+    workflow.add_node(node)
+    ranking_likelihood_file = node.output_files[0]
+    # And marginalize (twice for some reason!)
+    node = marg_likelihood_job_1.create_node(workflow.analysis_time,
+                                                       ranking_likelihood_file)
+    workflow.add_node(node)
+    marg_likelihood_file_1 = node.output_files[0]
+    node = marg_likelihood_job_2.create_node(workflow.analysis_time,
+                                                        marg_likelihood_file_1)
+    workflow.add_node(node)
+    marg_likelihood_file_2 = node.output_files[0]
+
+    # Now do the sqlite conditioning. This has a few stages.
                                                   
-    # STAGE 1: Run ligolw_sqlite on all input files
+    # STAGE 1: Populate likelihood in all input files
     # STAGE 2: Run run_sqlite on all outputs of stage 1
     # STAGE 3: Combine all files into one sqlite file
     # STAGE 4: Run run_sqlite on outputs of stage 3
@@ -398,13 +526,12 @@ def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
     # Do for all injection runs and zero lag
     for inj_tag in [inj_less_tag] + injection_tags:
         curr_tags = tags + [inj_tag, veto_tag]
-        trig_veto_inp_files = \
-                        coinc_files.find_output_with_tag(pipedown_dq_veto_name)
-        trig_inp_files = trig_veto_inp_files.find_output_with_tag(inj_tag)
-        stage1_job = ligolw_sqlite_exe(workflow.cp, ligolw_sqlite_exe_name,
+        trig_inp_files = stage0_outputs[inj_tag]
+        stage1_job = pycbc_compllhood_exe(workflow.cp,
+                                      pycbc_compllhood_exe_name,
                                       ifo=workflow.ifo_string,
                                       out_dir=output_dir,
-                                      tags=['STAGE1'] + curr_tags)
+                                      tags=['STAGE1']+curr_tags)
         stage2_job = run_sqlite_exe(workflow.cp, run_sqlite_exe_name,
                                       ifo=workflow.ifo_string,
                                       out_dir=output_dir,
@@ -440,15 +567,17 @@ def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
                                           ifo=workflow.ifo_string,
                                           out_dir=output_dir,
                                           tags=['STAGE8'] + curr_tags)
-            stage9_job = ligolw_sqlite_exe(workflow.cp, run_sqlite_exe_name,
+            stage9_job = ligolw_sqlite_exe(workflow.cp, ligolw_sqlite_exe_name,
                                           ifo=workflow.ifo_string,
                                           out_dir=output_dir,
                                           tags=['FINAL'] + curr_tags)
 
         stage1_outputs[inj_tag] = AhopeFileList([])
         stage2_outputs[inj_tag] = AhopeFileList([])
+        assert len(trig_inp_files) > 0
         for file in trig_inp_files:
-            stage1_node = stage1_job.create_node(file.segment, [file])
+            stage1_node = stage1_job.create_node(file.segment, file,
+                                            likelihood_file, horizon_dist_file)
             workflow.add_node(stage1_node)
             # Node has only one output file
             stage1_out = stage1_node.output_files[0]
@@ -516,7 +645,98 @@ def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
             stage9_outputs[inj_tag] = stage9_out
             final_outputs.append(stage9_out)
 
+    # Next we run the compute FAR from snr_chisq histograms job
+    far_gstlal_outputs = {}
+    for inj_tag in [inj_less_tag] + injection_tags:
+        curr_tags = tags + [inj_tag, veto_tag]
+        far_gstlal_job = far_gstlal_exe(workflow.cp, far_gstlal_exe_name,
+                                          ifo=workflow.ifo_string,
+                                          out_dir=output_dir, tags=curr_tags)
+        trig_veto_inp_files = \
+                  final_outputs.find_output_with_tag(veto_tag)
+        trig_inp_files = trig_veto_inp_files.find_output_with_tag(inj_tag)
+        assert len(trig_inp_files) == 1
+        input_database = trig_inp_files[0]
+        if inj_tag != inj_less_tag:
+            no_inj_db = trig_veto_inp_files.find_output_with_tag(inj_less_tag)
+            assert len(no_inj_db) == 1
+            no_inj_db = no_inj_db[0]
+            write_background = False
+        else:
+            # Here I don't want to provide the same file as a dependancy
+            # twice. Therefore I just give non-injection DB and the code
+            # assumes this is also the input-database if it is not given.
+            # Also, I only want the background file once
+            no_inj_db =  input_database
+            input_database = None
+            write_background = True
+        far_gstlal_node = far_gstlal_job.create_node(workflow.analysis_time,
+                                        no_inj_db, marg_likelihood_file_2,
+                                        inj_database=input_database,
+                                        write_background_bins=write_background)
+        workflow.add_node(far_gstlal_node)
+        outputs = far_gstlal_node.output_files
+        if inj_tag != inj_less_tag:
+            assert len(outputs) == 1
+            far_gstlal_outputs[inj_tag] = outputs[0]
+        else:
+            assert len(outputs) == 2
+            sql_out = outputs.find_output_without_tag('POSTMARG')[0]
+            xml_out = outputs.find_output_with_tag('POSTMARG')[0]
+            far_gstlal_outputs[inj_tag] = sql_out
+            post_marginalized_file = xml_out
+            
+
+    # Finally some plotting. 
+    # FIXME: These are given explicit output directories and pegasus does not
+    # know about output files. Would be nice if this was done "better"  
+    curr_tags = tags + [veto_tag]
+    plot_summary_job = plot_summary_exe(workflow.cp, plot_summary_exe_name,
+                                          ifo=workflow.ifo_string,
+                                          out_dir=output_dir, tags=curr_tags)
+    plot_sensitivity_job = plot_sensitivity_exe(workflow.cp,
+                                          plot_sensitivity_exe_name,
+                                          ifo=workflow.ifo_string,
+                                          out_dir=output_dir, tags=curr_tags)
+    plot_background_job = plot_background_exe(workflow.cp,
+                                          plot_background_exe_name,
+                                          ifo=workflow.ifo_string,
+                                          out_dir=output_dir, tags=curr_tags)
+    inj_dbs = []
+    for inj_tag in injection_tags:
+        inj_dbs.append(far_gstlal_outputs[inj_tag])
+    non_inj_db = far_gstlal_outputs[inj_less_tag]
+    
+    plot_summary_node = plot_summary_job.create_node(non_inj_db, inj_dbs)
+    plot_background_node = plot_background_job.create_node(non_inj_db,
+                                                        post_marginalized_file)
+    plot_sensitivity_node = plot_sensitivity_job.create_node(non_inj_db,
+                                                                       inj_dbs)
+
+    workflow.add_node(plot_summary_node)
+    workflow.add_node(plot_background_node)
+    workflow.add_node(plot_sensitivity_node)
+
+    # And make the html pages
+    parents = [plot_summary_node, plot_background_node, plot_sensitivity_node]
+    closed_summarypage_job = summary_page_exe(workflow.cp,
+                                              summary_page_exe_name,
+                                              ifo=workflow.ifo_string,
+                                              out_dir=output_dir,
+                                              tags=['CLOSEDBOX'] + curr_tags)
+    open_summarypage_job = summary_page_exe(workflow.cp, 
+                                              summary_page_exe_name,
+                                              ifo=workflow.ifo_string,
+                                              out_dir=output_dir,
+                                              tags=['OPENBOX'] + curr_tags)
+
+    closed_summarypage_node = closed_summarypage_job.create_and_add_node(\
+                                              workflow, parents)
+    open_summarypage_node = open_summarypage_job.create_and_add_node(workflow,
+                                              parents)
+
     # FIXME: Maybe contatenate and return all other outputs if needed elsewhere
+    # FIXME: MOve to pp utils and return the FAR files.
     return final_outputs
 
 

@@ -30,6 +30,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 
 import math, os
 from glue import segments
+import Pegasus.DAX3 as dax
 from pycbc.workflow.core import Executable, File, FileList, Node
 from pycbc.workflow.legacy_ihope import LegacyTmpltbankExecutable, LegacyInspiralExecutable
 
@@ -189,12 +190,26 @@ def select_generic_executable(workflow, exe_tag):
         exe_class = ExtractToXMLExecutable
     elif exe_name == "pycbc_inspinjfind":
         exe_class = InspinjfindExecutable
-    elif exe_name == "gstlal_inspiral_calc_likelihood":
-        exe_class = GstlalCalcLikelihoodExecutable
+    elif exe_name == "pycbc_pickle_horizon_distances":
+        exe_class = PycbcPickleHorizonDistsExecutable
+    elif exe_name == "pycbc_combine_likelihood":
+        exe_class = PycbcCombineLikelihoodExecutable
+    elif exe_name == "pycbc_gen_ranking_data":
+        exe_class = PycbcGenerateRankingDataExecutable
+    elif exe_name == "pycbc_calculate_likelihood":
+        exe_class = PycbcCalculateLikelihoodExecutable
     elif exe_name == "gstlal_inspiral_marginalize_likelihood":
         exe_class = GstlalMarginalizeLikelihoodExecutable
     elif exe_name == "pycbc_compute_far_from_snr_chisq_histograms":
         exe_class = GstlalFarfromsnrchisqhistExecutable
+    elif exe_name == "gstlal_inspiral_plot_sensitivity":
+        exe_class = GstlalPlotSensitivity
+    elif exe_name == "gstlal_inspiral_plot_background":
+        exe_class = GstlalPlotBackground
+    elif exe_name == "gstlal_inspiral_plotsummary":
+        exe_class = GstlalPlotSummary
+    elif exe_name == "gstlal_inspiral_summary_page":
+        exe_class = GstlalSummaryPage
     else:
         # Should we try some sort of default class??
         err_string = "No class exists for Executable %s" %(exe_name,)
@@ -813,7 +828,8 @@ class LigolwSSthincaExecutable(Executable):
         if dqVetoName:
             self.add_opt("--vetoes-name", dqVetoName)
 
-    def create_node(self, jobSegment, coincSegment, inputFile, tags=[]):
+    def create_node(self, jobSegment, coincSegment, inputFile, tags=[],
+                    write_likelihood=False):
         node = Node(self)
         node.add_input_arg(inputFile)
 
@@ -835,9 +851,9 @@ class LigolwSSthincaExecutable(Executable):
         node._add_output(outFile)
 
         # FIXME: Better way of dealing with the gstlal output file
-        outFile = WorkflowFile(self.ifo, self.name, jobSegment,
-                         extension='.xml.gz', directory=self.out_dir,
-                         tags=['DIST_STATS']+self.tags+tags)
+        node.new_output_file_opt(jobSegment, '.xml.gz',
+                                 '--likelihood-output-file',
+                                 tags=['DIST_STATS']+self.tags)
 
         return node
 
@@ -921,21 +937,79 @@ class InspinjfindExecutable(WorkflowExecutable):
                                  tags=self.tags)
         return node
 
-class GstlalCalcLikelihoodExecutable(AhopeExecutable):
+class PycbcPickleHorizonDistsExecutable(AhopeExecutable):
     """
-    The class responsible for running the gstlal calc_likelihood jobs
+    The class responsible for running the pycbc_pickle_horizon_distances
+    executable which is part 1 of 4 of the gstlal_inspiral_calc_likelihood
+    functionality
     """
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
         AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
-    def create_node(self, job_segment, trigger_files, dist_stat_files):
+    def create_node(self, job_segment, trigger_files):
         node = AhopeNode(self)
-        for file in dist_stat_files:
-            node.add_input_opt('--likelihood-url', file)
         for file in trigger_files:
             node.add_input_arg(file)
-        node.new_output_file_opt(job_segment, '.xml.gz', '--write-likelihood',
+        node.new_output_file_opt(job_segment, '.pickle', '--output-file',
+                                 tags=self.tags)
+        return node
+
+class PycbcCombineLikelihoodExecutable(AhopeExecutable):
+    """
+    The class responsible for running the pycbc_combine_likelihood
+    executable which is part 2 of 4 of the gstlal_inspiral_calc_likelihood
+    functionality
+    """
+    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
+                 tags=[]):
+        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+                                  tags=tags)
+    def create_node(self, job_segment, likelihood_files, horizon_dist_file):
+        node = AhopeNode(self)
+        node.add_input_list_opt('--likelihood-urls', likelihood_files)
+        node.add_input_opt('--horizon-dist-file', horizon_dist_file)
+        node.new_output_file_opt(job_segment, '.xml.gz', '--output-file',
+                                 tags=self.tags)
+        return node
+
+class PycbcGenerateRankingDataExecutable(AhopeExecutable):
+    """
+    The class responsible for running the pycbc_gen_ranking_data
+    executable which is part 3 of 4 of the gstlal_inspiral_calc_likelihood
+    functionality
+    """
+    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
+                 tags=[]):
+        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+                                  tags=tags)
+        self.set_num_cpus(4)
+        self.set_memory('8000M')
+    def create_node(self, job_segment, likelihood_file, horizon_dist_file):
+        node = AhopeNode(self)
+        node.add_input_opt('--likelihood-file', likelihood_file)
+        node.add_input_opt('--horizon-dist-file', horizon_dist_file)
+        node.new_output_file_opt(job_segment, '.xml.gz', '--output-file',
+                                 tags=self.tags)
+        return node
+
+class PycbcCalculateLikelihoodExecutable(AhopeExecutable):
+    """
+    The class responsible for running the pycbc_calculate_likelihood
+    executable which is part 4 of 4 of the gstlal_inspiral_calc_likelihood
+    functionality
+    """
+    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
+                 tags=[]):
+        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+                                  tags=tags)
+    def create_node(self, job_segment, trigger_file, likelihood_file,
+                    horizon_dist_file):
+        node = AhopeNode(self)
+        node.add_input_opt('--trigger-file', trigger_file)
+        node.add_input_opt('--horizon-dist-file', horizon_dist_file)
+        node.add_input_opt('--likelihood-file', likelihood_file)
+        node.new_output_file_opt(job_segment, '.sqlite', '--output-file',
                                  tags=self.tags)
         return node
 
@@ -962,19 +1036,86 @@ class GstlalFarfromsnrchisqhistExecutable(AhopeExecutable):
                  tags=[]):
         AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
-    def create_node(self, job_segment, non_inj_db, output_database,
-                    inj_database=None, write_background_bins=False):
+    def create_node(self, job_segment, non_inj_db, marg_input_file,
+                   inj_database=None, write_background_bins=False):
         node = AhopeNode(self)
         node.add_input_opt("--non-injection-db", non_inj_db)
         if inj_database is not None:
-            node.add_input_opt("--input-database", non_inj_db)
+            node.add_input_opt("--input-database", inj_database)
+        node.add_input_opt("--background-bins-file", marg_input_file)
         node.new_output_file_opt(job_segment, '.sqlite', '--output-database',
                                  tags=self.tags)
+        # FIXME: Not supported yet
         if write_background_bins:
             node.new_output_file_opt(job_segment, '.xml.gz',
-                                  "--background-bins-out-file", tags=self.tags)
+                                  "--background-bins-out-file",
+                                  tags=["POSTMARG"] + self.tags)
         return node
 
+
+class GstlalPlotSensitivity(AhopeExecutable):
+    """
+    The class responsible for running gstlal_plot_sensitivity
+    """
+    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
+                 tags=[]):
+        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+                                  tags=tags)
+    def create_node(self, non_inj_db, injection_dbs):
+        node = AhopeNode(self)
+        node.add_input_opt("--zero-lag-database", non_inj_db)
+        for file in injection_dbs:
+            node.add_input_arg(file)
+        return node
+
+class GstlalPlotSummary(AhopeExecutable):
+    """
+    The class responsible for running gstlal_plot_summary
+    """
+    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
+                 tags=[]):
+        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+                                  tags=tags)
+    def create_node(self, non_inj_db, injection_dbs):
+        node = AhopeNode(self)
+        node.add_input_arg(non_inj_db)
+        for file in injection_dbs:
+            node.add_input_arg(file)
+        return node
+
+class GstlalPlotBackground(AhopeExecutable):
+    """
+    The class responsible for running gstlal_plot_background
+    """
+    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
+                 tags=[]):
+        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+                                  tags=tags)
+    def create_node(self, non_inj_db, likelihood_file):
+        node = AhopeNode(self)
+        node.add_input_opt("--database", non_inj_db)
+        node.add_input_arg(likelihood_file)
+        return node
+
+class GstlalSummaryPage(AhopeExecutable):
+    """
+    The class responsible for running gstlal_inspiral_summary_page
+    """
+    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
+                 tags=[]):
+        AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+                                  tags=tags)
+    def create_and_add_node(self, workflow, parent_nodes):
+        node = AhopeNode(self)
+        # FIXME: As the parents of this job (the plotting scripts) do not track
+        # the location of their output files, we must set explicit parent-child
+        # relations the "old-fashioned" way here. Possibly this is how the AEI
+        # DB stuff could work?
+        workflow.add_node(node)
+        for parent in parent_nodes:
+            dep = dax.Dependency(parent=parent._dax_node, child=node._dax_node)
+            workflow._adag.addDependency(dep)
+        return node
 
 class LalappsInspinjExecutable(WorkflowExecutable):
     """

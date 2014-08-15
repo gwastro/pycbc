@@ -112,7 +112,8 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
             parallelize_split_input = False
 
         # If you want the ligolw_add outputs, call this function directly
-        coinc_outs, _ = setup_coincidence_workflow_ligolw_thinca(workflow,
+        coinc_outs, other_outs = setup_coincidence_workflow_ligolw_thinca(\
+                     workflow,
                      segsList, timeSlideFiles, inspiral_outs,
                      output_dir, maxVetoCat=maxVetoCat, tags=tags,
                      timeSlideTags=timeSlideTags, 
@@ -124,7 +125,7 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
 
     logging.info('Leaving coincidence setup module.')
 
-    return coinc_outs
+    return coinc_outs, other_outs
 
 def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
                                              timeSlideFiles, inspiral_outs, 
@@ -183,7 +184,7 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
     # setup code for each veto_category
 
     ligolwThincaOuts = FileList([])
-    ligolwAddOuts = FileList([])
+    other_outs = {}
 
     if not timeSlideTags:
         # Get all sections by looking in ini file, use all time slide files.
@@ -283,7 +284,7 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
             curr_thinca_job_tags = [timeSlideTag] + tags + [pipedownDQVetoName]
 
             logging.debug("Stgarting workflow")
-            currLigolwThincaOuts, currLigolwAddOuts = \
+            currLigolwThincaOuts, currOtherOuts = \
                   setup_snglveto_workflow_ligolw_thinca(workflow, 
                                dqSegFile, tisiOutFile, dqVetoName,
                                cafe_seglists, cafe_caches, output_dir,
@@ -291,9 +292,13 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
                                parallelize_split_input=parallelize_split_input,
                                insp_files_dict=inspiral_outs_dict)
             logging.debug("Done")
-            ligolwAddOuts.extend(currLigolwAddOuts)
             ligolwThincaOuts.extend(currLigolwThincaOuts)
-    return ligolwThincaOuts, ligolwAddOuts
+            for key, file_list in currOtherOuts.items():
+                if other_outs.has_key(key):
+                    other_outs[key].extend(currOtherOuts[key])
+                else:
+                    other_outs[key] = currOtherOuts[key]
+    return ligolwThincaOuts, other_outs
 
 def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
                                           dqVetoName, cafe_seglists,
@@ -350,6 +355,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
     # Set up the nodes to do the coincidence analysis
     ligolwAddOuts = FileList([])
     ligolwThincaOuts = FileList([])
+    ligolwThincaLikelihoodOuts = FileList([])
     for idx, cafe_cache in enumerate(cafe_caches):
         if not len(cafe_cache.objects):
             raise ValueError("One of the cache objects contains no files!")
@@ -385,7 +391,10 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
             workflow.add_node(node)
             node = ligolwthinca_job.create_node(cafe_cache.extent,
                                                    coincSegment, ligolwAddFile)
-            ligolwThincaOuts += node.output_files
+            ligolwThincaOuts += \
+                        node.output_files.find_output_without_tag('DIST_STATS')
+            ligolwThincaLikelihoodOuts += \
+                           node.output_files.find_output_with_tag('DIST_STATS')
             workflow.add_node(node)
         else:
             for key in insp_files_dict.keys():
@@ -404,10 +413,22 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
                 ligolwAddFile = node.output_files[0]
                 ligolwAddOuts.append(ligolwAddFile)
                 workflow.add_node(node)
+                if workflow.cp.has_option_tags("ahope-coincidence", \
+                                         "coincidence-write-likelihood", tags):
+                    write_likelihood=True
+                else:
+                    write_likelihood=False
                 node = ligolwthinca_job.create_node(cafe_cache.extent,
-                                   coincSegment, ligolwAddFile, tags=curr_tags)
-                ligolwThincaOuts += node.output_files
+                                   coincSegment, ligolwAddFile, tags=curr_tags,
+                                   write_likelihood=write_likelihood)
+                ligolwThincaOuts += \
+                       node.output_files.find_output_without_tag('DIST_STATS')
+                ligolwThincaLikelihoodOuts += \
+                          node.output_files.find_output_with_tag('DIST_STATS')
                 workflow.add_node(node)
 
+    other_returns = {}
+    other_returns['LIGOLW_ADD'] = ligolwAddOuts
+    other_returns['DIST_STATS'] = ligolwThincaLikelihoodOuts
 
-    return ligolwThincaOuts, ligolwAddOuts
+    return ligolwThincaOuts, other_returns

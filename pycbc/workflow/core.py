@@ -403,7 +403,7 @@ class Node(pegasus_workflow.Node):
         
     @property    
     def output_files(self):
-        return self._outputs
+        return WorkflowFileList(self._outputs)
     
 class File(pegasus_workflow.File):
     '''
@@ -801,6 +801,14 @@ class FileList(list):
         # Enforce upper case
         tag = tag.upper()
         return FileList([i for i in self if tag in i.tags])
+
+    def find_output_without_tag(self, tag):
+        """
+        Find all files who do not have tag in self.tags
+        """
+        # Enforce upper case
+        tag = tag.upper()
+        return WorkflowFileList([i for i in self if not tag in i.tags])
 
     def find_output_with_ifo(self, ifo):
         """

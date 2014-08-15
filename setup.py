@@ -274,7 +274,12 @@ setup (
                'bin/pycbc_tmpltbank_to_chi_params',
                'bin/pycbc_bank_verification',
                'bin/pycbc_run_sqlite',
-               'bin/pycbc_inspinjfind'
+               'bin/pycbc_inspinjfind',
+               'bin/pycbc_calculate_likelihood',
+               'bin/pycbc_combine_likelihood',
+               'bin/pycbc_compute_far_from_snr_chisq_histograms',
+               'bin/pycbc_gen_ranking_data',
+               'bin/pycbc_pickle_horizon_distances'
                ],
     packages = [
                'pycbc',

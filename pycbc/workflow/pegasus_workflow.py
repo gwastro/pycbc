@@ -225,12 +225,15 @@ class Workflow(object):
  
         # Determine the parent child relationships based on the inputs that
         # this node requires.
+        added_nodes = []
         for inp in node._inputs:
             if inp.node is not None and inp.node.in_workflow:
-                parent = inp.node._dax_node
-                child = node._dax_node
-                dep = dax.Dependency(parent=parent, child=child)
-                self._adag.addDependency(dep)    
+                if inp.node not in added_nodes:
+                    parent = inp.node._dax_node
+                    child = node._dax_node
+                    dep = dax.Dependency(parent=parent, child=child)
+                    self._adag.addDependency(dep)    
+                    added_nodes.append(inp.node)
                             
             elif inp.node is not None and not inp.node.in_workflow:
                 raise ValueError('Parents of this node must be added to the '

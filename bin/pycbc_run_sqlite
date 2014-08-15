@@ -1,0 +1,101 @@
+#!/usr/bin/env python
+#
+# Copyright (C) 2010 Chad Hanna
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Run a provided SQL script on a database.
+"""
+
+import argparse
+import sqlite3
+import sys
+
+from glue.ligolw import dbtables
+import pycbc.version
+
+__program__ = "pycbc_run_sqlite"
+__author__ = "Chad Hanna <channa@ligo.caltech.edu>, Ian Harry <ian.harry@ligo.org>"
+__version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
+
+def parse_command_line():
+    """
+    Parse the command line, return options and check for consistency among the
+    options.
+    """
+    _desc = __doc__[1:]
+    parser = argparse.ArgumentParser(description=_desc)
+    parser.add_argument('--version', action='version', version=__version__)
+    parser.add_argument("-i", "--input", action="store", type=str, 
+                        default=None, required=True,
+                        help="""Input database to read. Can only
+                                input one at a time.""")
+    parser.add_argument("-o", "--output", action="store", type=str,
+                        default=None, required=True,
+                        help="Name of output database to save to.")
+    parser.add_argument("-t", "--tmp-space", action="store", type=str,
+                        default=None, metavar="PATH", required=True,
+                        help="""Requried. Location of local disk on which to do
+                                work. This is used to enhance performance in a
+                                networked environment, and to protect against
+                                accidently overwriting the input database.""")
+    parser.add_argument("-c", "--sql", metavar="code",
+                        help="Execute this SQL code.")
+    parser.add_argument("-s", "--sql-file", metavar="filename",
+                        help="Execute this SQL file.")
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="Be verbose.")
+    args = parser.parse_args()
+    if bool(args.sql) + bool(args.sql_file) != 1:
+        raise ValueError("must set exactly one of --sql or --sql-file")
+    return args
+
+
+args = parse_command_line()
+
+if args.sql_file:
+    # Parse the sql file into something that can be executed in sequence
+    sql = [line.strip() for line in open(args.sql_file)]
+    # Remove comments and pragmas
+    sql = [s for s in sql if not s.startswith("--") \
+                                                and not s.startswith("PRAGMA")]
+    sql = "\n".join(sql)
+    sql = [statement.strip() for statement in sql.split(";\n")]
+elif args.sql:
+    sql = [statement.strip() for statement in args.sql.split(";")]
+else:
+    raise NotImplemented
+# remove no-ops
+sql = [statement for statement in sql if statement]
+
+if args.verbose:
+    print >>sys.stderr, "Applying SQL to %s" %(args.input,)
+working_filename = dbtables.get_connection_filename(args.input,
+                                 tmp_path=args.tmp_space, verbose=args.verbose)
+connection = sqlite3.connect(working_filename)
+dbtables.set_temp_store_directory(connection, args.tmp_space,
+                                                   verbose=args.verbose)
+cursor = connection.cursor()
+for statement in sql:
+    if args.verbose:
+        print >>sys.stderr, "Executing:\n%s" % statement
+    cursor.execute(statement)
+    connection.commit()
+cursor.close()
+connection.close()
+dbtables.put_connection_filename(args.output, working_filename,
+                                                   verbose=args.verbose)
