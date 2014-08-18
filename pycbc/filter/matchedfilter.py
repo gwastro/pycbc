@@ -303,7 +303,7 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
            
 def smear(idx, factor):
     s = [idx]
-    for i in range(factor):
+    for i in range(factor+1):
         a = i - factor/2
         s += [idx + a]
     return numpy.unique(numpy.concatenate(s))
