@@ -1,11 +1,12 @@
 #!/bin/env python
 import argparse, os
 from flask import Flask, render_template, url_for, send_from_directory
+import pycbc.ahope
 import pycbc.results.followup
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--plots-base-dir')
-parser.add_argument('--trigger-file-list')
+parser.add_argument('--trigger-file-lists', nargs='+')
 parser.add_argument('--host')
 args = parser.parse_args()
 
@@ -63,13 +64,19 @@ def section_view(folder):
                                       sections=sections, 
                                       zip=zip)
     return tp
-    
-@app.route('/followup/<start>/<end>')
-def followup_view(start, end):
+
+trigger_file_list = pycbc.ahope.AhopeFileList()
+for fil in args.trigger_file_lists:
+    print fil
+    trigger_file_list += pycbc.ahope.AhopeFileList.load(fil)
+ 
+@app.route('/followup/<tag>/<start>/<end>')
+def followup_view(start, end, tag):
     ifos = ['L1', 'H1']
+    tag = str(tag)
     start = float(start)
     end = float(end)
-    fil = args.trigger_file_list
-    return pycbc.results.followup.trigger_timeseries_plot(fil, ifos, start, end)
+    select = trigger_file_list.find_output_with_tag(tag)
+    return pycbc.results.followup.trigger_timeseries_plot(select, ifos, start, end, tag)
 
 app.run(debug=True, host=args.host)

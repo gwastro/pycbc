@@ -7,6 +7,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plot
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from glue import segments
+import pycbc.results.followup
 
 class ClickInfo(mpld3.plugins.PluginBase):
     """Plugin for getting info on click"""
@@ -101,6 +102,7 @@ def keep_ind(times, start, end):
 parser = argparse.ArgumentParser()
 parser.add_argument('--trigger-file')
 parser.add_argument('--injection-file')
+parser.add_argument('--injection-tag')
 parser.add_argument('--veto-file')
 parser.add_argument('--injection-window', type=float)
 parser.add_argument('--verbose', action='count')
@@ -147,16 +149,24 @@ right = numpy.searchsorted(time[time_sorting], inj_time + args.injection_window,
 
 i1, v1 = veto_indices(inj_time, 'H1', [args.veto_file])
 i2, v2 = veto_indices(inj_time, 'L1', [args.veto_file])
-i = numpy.concatenate([i1, i2])
+vi = numpy.concatenate([i1, i2])
+ki = keep_ind(inj_time, ana_start, ana_end)
 
 found = numpy.where((right-left) == 1)[0]
-found_fore = numpy.arange(0, len(inj_time), 1)[left[found]]
 missed = numpy.where((right-left) == 0)[0]
 ambiguous = numpy.where((right-left) > 1)[0]
+
+# Keep only those that were in analyzed times
+found = numpy.intersect1d(ki, found)
+missed = numpy.intersect1d(ki, missed)
+
+# Keep only those in unvetoed times
+found = numpy.delete(found, numpy.in1d(found, vi))
+missed = numpy.delete(missed, numpy.in1d(missed, vi))
+
+found_fore = numpy.arange(0, len(inj_time), 1)[left[found]]
 ifar_found = ifar[time_sorting][found_fore]
 
-tmis = numpy.delete(inj_time[missed], i)
-dmis = numpy.delete(dec_dist[missed], i)
 
 color = numpy.zeros(len(found))
 ten = numpy.where(ifar_found > 10)[0]
@@ -166,12 +176,9 @@ thousand = numpy.where(ifar_found > 1000)[0]
 color[ten] = 0.5
 color[thousand] = 1.0
 
-ki = keep_ind(tmis, ana_start, ana_end)
-tmis = tmis[ki]
-dmis = dmis[ki]
 fig = plot.figure()
-plot.scatter(tmis, dmis, marker='x', color='black', label='missed')
-points = plot.scatter(inj_time[found], dec_dist[found], c=color, 
+mpoints = plot.scatter(inj_time[missed], dec_dist[missed], marker='x', color='black', label='missed', s=40)
+points = plot.scatter(inj_time[found], dec_dist[found], c=color, s=40, 
              linewidth=0, vmin=0, vmax=1, 
              marker='o', label='found')
 plot.xlabel('Time (s)')
@@ -179,12 +186,12 @@ plot.ylabel('Injected Decisive Distance')
 plot.legend()
 plot.grid()
 
-url_base = '../followup/%s/%s'
-urls = []
-for t in inj_time[found]:
-    urls.append(url_base % (t - 5, t + 5))
+urls = pycbc.results.followup.times_to_urls(inj_time[found], 2.0, args.injection_tag)
+murls = pycbc.results.followup.times_to_urls(inj_time[missed], 2.0, args.injection_tag)
 
 mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt='.5g'))
 mpld3.plugins.connect(fig, ClickInfo(points, urls))
+mpld3.plugins.connect(fig, ClickInfo(mpoints, murls))
+
 mpld3.save_html(fig, open(args.output_file, 'w'))
 
