@@ -94,9 +94,15 @@ def trigger_timeseries_plot(trigger_file_list, ifos, start, end):
     pylab.grid() 
     return mpld3.fig_to_html(fig)
     
-    
-    
-    
+def times_to_links(times, window):
+    base = "<a href='/../followup/%s/%s'>followup</a>"
+    urls = []
+    for time in times:
+        start = time - window
+        end = time + window
+        urls.append(base % (start, end))
+    return numpy.array(urls)
+        
     
     
     

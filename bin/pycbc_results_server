@@ -54,9 +54,7 @@ def custom_static(filename):
 
 @app.route('/sections/<folder>/')
 def section_view(folder):
-    print "BASE", args.plots_base_dir
     folders = get_folders(args.plots_base_dir)
-    print "FOLDER", folders
     sections, headings, types = get_sections(args.plots_base_dir, folder)
     tp = render_template('base.html', headings=headings, 
                                       folder=folder, 
