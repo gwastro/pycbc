@@ -32,15 +32,27 @@ logging.info('Found %s foreground triggers' % len(stat1))
 back_stat1 = f['background/stat1'][:]
 back_stat2 = f['background/stat2'][:]
 back_ifar = f['background/ifar'][:]
+
 cstat_back = (back_stat1**2.0 + back_stat2**2.0) ** 0.5
+back_sort = cstat_back.argsort()
+cstat_back = cstat_back[back_sort]
+far_back = 1.0 / back_ifar[back_sort]
 logging.info('Found %s background triggers' % len(back_stat1))
 
+back_fan = f['background/fan'][:][back_sort]
+err_low = far_back * ((back_fan - numpy.sqrt(back_fan)) / back_fan) 
+err_low[err_low == 0] = 1e-100
+err_high = far_back * ((back_fan + numpy.sqrt(back_fan)) / back_fan)
+
 pylab.figure(1)
-pylab.yscale('log')
-pylab.scatter(cstat_back, 1.0/back_ifar, linewidth=0, color='black', label='Background')
+pylab.fill_between(cstat_back, err_low, err_high, linewidth=0, color='tan')
+pylab.plot(cstat_back, far_back, color='black', label='Background')
 pylab.scatter(cstat_fore, cstat_rate, linewidth=0, color='blue', marker='^', label='Foreground')
 pylab.ylabel('Cumulative Rate (1/year)')
 pylab.xlabel('Combined NewSNR')
+pylab.yscale('log')
+pylab.xlim(cstat_back.min(), max(cstat_back.max(), cstat_fore.max()) + 1)
+pylab.ylim(far_back.min() / 10.0, far_back.max())
 pylab.legend()
 pylab.grid()
 pylab.savefig(args.output_file)
