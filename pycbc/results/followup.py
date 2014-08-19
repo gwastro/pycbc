@@ -89,6 +89,8 @@ def trigger_timeseries_plot(trigger_file_list, ifos, start, end):
         mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt=fmt))
         
     pylab.legend()
+    pylab.xlabel('Time (s)')
+    pylab.ylabel('SNR')
     pylab.grid() 
     return mpld3.fig_to_html(fig)
     
