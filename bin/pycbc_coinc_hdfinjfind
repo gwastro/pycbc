@@ -7,7 +7,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plot
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from glue import segments
-import pycbc.results.followup
+import pycbc.results.followup, pycbc.pnutils
+import os.path
 
 from pycbc.results.mpld3_utils import ClickLink
 
@@ -61,13 +62,16 @@ def veto_indices(times, ifo, veto_files):
 
 
 def keep_ind(times, start, end):
+    time_sorting = times.argsort()
+    times = times[time_sorting]
     indices = numpy.array([], dtype=numpy.uint32)
     left = numpy.searchsorted(times, start, side='left')
     right = numpy.searchsorted(times, end, side='right')
+    
     for li, ri in zip(left, right):
         seg_indices = numpy.arange(li, ri, 1).astype(numpy.uint32)
         indices=numpy.union1d(seg_indices, indices)  
-    return indices   
+    return time_sorting[indices] 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--trigger-file')
@@ -112,6 +116,7 @@ inj_s2z = numpy.array(sim_table.get_column('spin2z'), dtype=numpy.float32)
 dist_h = numpy.array(sim_table.get_column('eff_dist_h'), dtype=numpy.float32)
 dist_l = numpy.array(sim_table.get_column('eff_dist_l'), dtype=numpy.float32)
 dec_dist = numpy.minimum(dist_h, dist_l)
+inj_mchirp, inj_eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(inj_m1, inj_m2)
 
 logging.info('Determined the found injections by time')
 left = numpy.searchsorted(time[time_sorting], inj_time - args.injection_window, side='left')
@@ -122,6 +127,18 @@ i2, v2 = veto_indices(inj_time, 'L1', [args.veto_file])
 vi = numpy.concatenate([i1, i2])
 ki = keep_ind(inj_time, ana_start, ana_end)
 
+
+#import pylab
+#pylab.figure()
+#for s, e in zip(ana_start, ana_end):
+#    pylab.axvspan(s, e, color='gray')
+    
+#pylab.scatter(time, stat1)
+#pylab.show()
+
+print ana_start, ana_end
+print "KI", len(ana_start), len(vi), len(ki)
+
 found = numpy.where((right-left) == 1)[0]
 missed = numpy.where((right-left) == 0)[0]
 ambiguous = numpy.where((right-left) > 1)[0]
@@ -129,6 +146,8 @@ ambiguous = numpy.where((right-left) > 1)[0]
 # Keep only those that were in analyzed times
 found = numpy.intersect1d(ki, found)
 missed = numpy.intersect1d(ki, missed)
+
+
 
 # Keep only those in unvetoed times
 found = numpy.delete(found, numpy.in1d(found, vi))
@@ -146,6 +165,8 @@ thousand = numpy.where(ifar_found > 1000)[0]
 color[hundred] = 0.5
 color[thousand] = 1.0
 
+print len(found), len(missed), len(inj_time), len(numpy.where((right-left) == 1)[0])
+
 fig = plot.figure()
 mpoints = plot.scatter(inj_time[missed], dec_dist[missed], marker='x', color='black', label='missed', s=40)
 points = plot.scatter(inj_time[found], dec_dist[found], c=color, s=40, 
@@ -158,10 +179,29 @@ plot.grid()
 
 urls = pycbc.results.followup.times_to_urls(inj_time[found], 2.0, args.injection_tag)
 murls = pycbc.results.followup.times_to_urls(inj_time[missed], 2.0, args.injection_tag)
-
 mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt='.5g'))
 mpld3.plugins.connect(fig, ClickLink(points, urls))
 mpld3.plugins.connect(fig, ClickLink(mpoints, murls))
 
 mpld3.save_html(fig, open(args.output_file, 'w'))
+
+
+fig = plot.figure()
+mpoints = plot.scatter(inj_mchirp[missed], dec_dist[missed], marker='x', color='black', label='missed', s=40)
+points = plot.scatter(inj_mchirp[found], dec_dist[found], c=color, s=40, 
+             linewidth=0, vmin=0, vmax=1, 
+             marker='o', label='found')
+plot.xlabel('Mchirp')
+plot.ylabel('Injected Decisive Distance')
+plot.legend()
+plot.grid()
+
+urls = pycbc.results.followup.times_to_urls(inj_time[found], 2.0, args.injection_tag)
+murls = pycbc.results.followup.times_to_urls(inj_time[missed], 2.0, args.injection_tag)
+mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt='.5g'))
+mpld3.plugins.connect(fig, ClickLink(points, urls))
+mpld3.plugins.connect(fig, ClickLink(mpoints, murls))
+oname = os.path.split(args.output_file)[0] + '/mchirp-' + os.path.split(args.output_file)[1]
+
+mpld3.save_html(fig, open(oname, 'w'))
 
