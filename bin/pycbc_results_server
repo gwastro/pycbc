@@ -77,6 +77,6 @@ def followup_view(start, end, tag):
     start = float(start)
     end = float(end)
     select = trigger_file_list.find_output_with_tag(tag)
-    return pycbc.results.followup.trigger_timeseries_plot(select, ifos, start, end, tag)
+    return pycbc.results.followup.trigger_timeseries_plot(select, ifos, start, end)
 
 app.run(debug=True, host=args.host)

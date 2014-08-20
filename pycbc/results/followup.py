@@ -74,7 +74,29 @@ def columns_from_file_list(file_list, columns, ifo, start, end):
     
 ifo_color = {'H1': 'blue', 'L1':'red', 'V1':'green'}
     
-def trigger_timeseries_plot(file_list, ifos, start, end, tag):
+def coinc_timeseries_plot(coinc_file, start, end):
+    fig = pylab.figure()
+    f = h5py.File(coinc_file, 'r')
+    
+    stat1 = f['foreground/stat1'] 
+    stat2 = f['foreground/stat2']
+    time1 = f['foreground/time1']
+    time2 = f['foreground/time2']
+    ifo1 = f.attrs['detector_1']
+    ifo2 = f.attrs['detector_2']
+    
+    pylab.scatter(time1, stat1, label=ifo1, color=ifo_color[ifo1])
+    pylab.scatter(time2, stat2, label=ifo2, color=ifo_color[ifo2])
+
+    fmt = '.12g'
+    mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt=fmt))
+    pylab.legend()
+    pylab.xlabel('Time (s)')
+    pylab.ylabel('NewSNR')
+    pylab.grid() 
+    return mpld3.fig_to_html(fig)
+    
+def trigger_timeseries_plot(file_list, ifos, start, end):
 
     fig = pylab.figure()
     for ifo in ifos:

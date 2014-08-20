@@ -16,16 +16,19 @@ def load_coincs(coinc_files):
     template_id = []
     decimation_factor = []    
     for cfile in coinc_files:
-        logging.info('reading %s' % cfile)
-        f = h5py.File(cfile, "r")
-        stat1.append(f['coinc/stat1'])
-        stat2.append(f['coinc/stat2'])
-        time1.append(f['coinc/time1'])
-        time2.append(f['coinc/time2'])
-        timeslide_id.append(f['coinc/timeslide_id'])
-        template_id.append(f['coinc/template_id'])
-        decimation_factor.append(f['coinc/decimation_factor'])
-        attr = dict(f.attrs)
+        try:
+            logging.info('reading %s' % cfile)
+            f = h5py.File(cfile, "r")
+            stat1.append(f['coinc/stat1'])
+            stat2.append(f['coinc/stat2'])
+            time1.append(f['coinc/time1'])
+            time2.append(f['coinc/time2'])
+            timeslide_id.append(f['coinc/timeslide_id'])
+            template_id.append(f['coinc/template_id'])
+            decimation_factor.append(f['coinc/decimation_factor'])
+            attr = dict(f.attrs)
+        except:
+            continue
     return (numpy.concatenate(stat1),
            numpy.concatenate(stat2),
            numpy.concatenate(time1),
@@ -133,13 +136,16 @@ if __name__ == '__main__':
     
     fore_locs = (sid == 0)
     back_locs = numpy.where((sid != 0))[0]
-    f['foreground/stat1'] = s1[fore_locs]
-    f['foreground/stat2'] = s2[fore_locs]
-    f['foreground/time1'] = t1[fore_locs]
-    f['foreground/time2'] = t2[fore_locs]
-    f['foreground/template_id'] = tid[fore_locs]
-    f['foreground/analyzed_start'] = start
-    f['foreground/analyzed_end'] = end
+    logging.info("%s foreground triggers" % fore_locs.sum())
+    
+    if fore_locs.sum() > 0:
+        f['foreground/stat1'] = s1[fore_locs]
+        f['foreground/stat2'] = s2[fore_locs]
+        f['foreground/time1'] = t1[fore_locs]
+        f['foreground/time2'] = t2[fore_locs]
+        f['foreground/template_id'] = tid[fore_locs]
+        f['foreground/analyzed_start'] = start
+        f['foreground/analyzed_end'] = end
     
     if args.external_background:
         # We are using an external background file
@@ -201,10 +207,10 @@ if __name__ == '__main__':
 
         logging.info("calculating fap values")
         fap = numpy.clip(coinc_time/ifar, 0, 1)
-        
-        f['foreground/fan'] = fore_fan
-        f['foreground/ifar'] = sec_to_year(ifar)
-        f['foreground/fap'] = fap
+        if fore_locs.sum() > 0:
+            f['foreground/fan'] = fore_fan
+            f['foreground/ifar'] = sec_to_year(ifar)
+            f['foreground/fap'] = fap
     else:
         logging.warn("There were no background events, so we could not assign "
                      "any statistic values")

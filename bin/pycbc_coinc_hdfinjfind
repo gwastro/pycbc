@@ -9,37 +9,7 @@ from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from glue import segments
 import pycbc.results.followup
 
-class ClickInfo(mpld3.plugins.PluginBase):
-    """Plugin for getting info on click"""
-    
-    JAVASCRIPT = """
-    mpld3.register_plugin("clickinfo", ClickInfo);
-    ClickInfo.prototype = Object.create(mpld3.Plugin.prototype);
-    ClickInfo.prototype.constructor = ClickInfo;
-    ClickInfo.prototype.requiredProps = ["id"];
-    ClickInfo.prototype.defaultProps = {
-        links: null
-    }
-    function ClickInfo(fig, props){
-        mpld3.Plugin.call(this, fig, props);
-    };
-    
-    ClickInfo.prototype.draw = function(){
-        var obj = mpld3.get_element(this.props.id);
-        var links = this.props.links;
-        
-        obj.elements().on("mousedown",
-                          function(d, i){ 
-                                           window.open(links[i]);
-                                        }
-                          );
-    }
-    """
-    def __init__(self, points, links):
-        self.dict_ = {"type": "clickinfo",
-                      "id": mpld3.utils.get_id(points),
-                      "links": links,
-                      }
+from pycbc.results.mpld3_utils import ClickLink
 
 # dummy class needed for loading LIGOLW files
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
@@ -173,7 +143,7 @@ ten = numpy.where(ifar_found > 10)[0]
 hundred = numpy.where(ifar_found > 100)[0]
 thousand = numpy.where(ifar_found > 1000)[0]
 
-color[ten] = 0.5
+color[hundred] = 0.5
 color[thousand] = 1.0
 
 fig = plot.figure()
@@ -190,8 +160,8 @@ urls = pycbc.results.followup.times_to_urls(inj_time[found], 2.0, args.injection
 murls = pycbc.results.followup.times_to_urls(inj_time[missed], 2.0, args.injection_tag)
 
 mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt='.5g'))
-mpld3.plugins.connect(fig, ClickInfo(points, urls))
-mpld3.plugins.connect(fig, ClickInfo(mpoints, murls))
+mpld3.plugins.connect(fig, ClickLink(points, urls))
+mpld3.plugins.connect(fig, ClickLink(mpoints, murls))
 
 mpld3.save_html(fig, open(args.output_file, 'w'))
 
