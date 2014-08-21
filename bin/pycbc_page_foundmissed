@@ -57,12 +57,15 @@ plot.xlabel('Time (s)')
 plot.ylabel('Injected Decisive Distance')
 plot.legend()
 plot.grid()
-
+plot.subplots_adjust(left=0.1, right=0.8, top=0.9, bottom=0.1)
 urls = pycbc.results.followup.times_to_urls(time[found], 2.0, args.injection_tag)
 murls = pycbc.results.followup.times_to_urls(time[missed], 2.0, args.injection_tag)
 mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt='.5g'))
 mpld3.plugins.connect(fig, ClickLink(points, urls))
 mpld3.plugins.connect(fig, ClickLink(mpoints, murls))
+mpld3.plugins.connect(fig, mpld3.plugins.InteractiveLegendPlugin([mpoints, points],
+                                                                 ['missed', 'found'],
+                                                                 alpha_unsel=0.1))
 mpld3.save_html(fig, open(args.output_file, 'w'))
 
 fig = plot.figure()
@@ -73,14 +76,20 @@ points = plot.scatter(mchirp[found], dec_dist[found], c=color, s=40,
                          marker='o', label='found')
 plot.xlabel('Mchirp')
 plot.ylabel('Injected Decisive Distance')
-plot.legend()
 plot.grid()
-
+plot.subplots_adjust(left=0.1, right=0.8, top=0.9, bottom=0.1)
 urls = pycbc.results.followup.times_to_urls(time[found], 2.0, args.injection_tag)
 murls = pycbc.results.followup.times_to_urls(time[missed], 2.0, args.injection_tag)
 mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt='.5g'))
 mpld3.plugins.connect(fig, ClickLink(points, urls))
 mpld3.plugins.connect(fig, ClickLink(mpoints, murls))
+
+mpld3.plugins.connect(fig, mpld3.plugins.InteractiveLegendPlugin([mpoints, points],
+                                                                 ['missed', 'found'],
+                                                                 alpha_unsel=0.1))
+
 oname = os.path.split(args.output_file)[0] + '/mchirp-' + os.path.split(args.output_file)[1]
 mpld3.save_html(fig, open(oname, 'w'))
+
+
 
