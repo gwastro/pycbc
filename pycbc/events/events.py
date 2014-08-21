@@ -292,6 +292,13 @@ class EventManager(object):
                 row.bank_chisq_dof = 0
                 row.bank_chisq = 0
             
+            if hasattr(self.opt, 'autochi_number_points') and self.opt.autochi_number_points>0:
+                row.cont_chisq = event['cont_chisq']
+                if (self.opt.autochi_onesided):
+                    row.cont_chisq_dof =  self.opt.autochi_number_points
+                else:    
+                    row.cont_chisq_dof =  2*self.opt.autochi_number_points
+            
             row.eff_distance = sigmasq ** (0.5) / abs(snr)
             row.snr = abs(snr)
             row.end_time = int(end_time.gpsSeconds)
