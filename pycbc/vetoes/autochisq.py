@@ -23,6 +23,7 @@ from pycbc.types import complex_same_precision_as,real_same_precision_as
 import numpy as np
 from math import cos, sin, sqrt, pi, atan2, exp 
 import time
+import logging
 
 
 BACKEND_PREFIX="pycbc.vetoes.autochisq_"
@@ -57,10 +58,6 @@ def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, i
 
     """
  	
-    #strt_tm = time.clock()
-    #tm_cur = time.clock()
-    #print "Stas: starting Autochisquare"
-    #print "Stas before copy, dt = ", tm_cur - strt_tm
 
     Nsnr = len(sn) 
   
@@ -74,8 +71,6 @@ def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, i
 	maxSNR, max_ind = snr_v.max_loc()
 	indx = np.append(indx, max_ind)
 	indices = Array(indx, copy=True)
-        # Stas debugging: 
-        #print "stas ",snr_v.max_loc()
  
     achisq = np.zeros(len(indices))
     num_points_all = int(Nsnr/stride)
@@ -85,8 +80,6 @@ def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, i
        num_points = num_points_all
     
     tm_cur = time.clock()
-    #print "Stas, dt = ", tm_cur - strt_tm
-    #ip = 0
     for ip,ind in enumerate(indices):
         print "ind = ", ind    
         end_point = ind + stride*num_points+1
@@ -95,7 +88,6 @@ def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, i
         sphi = sin(phi)
         k = 1   
         snr_ind =  sn[ind].real*cphi + sn[ind].imag*sphi
-        #print "Stas: snr_ind = ", snr_ind
 	# going right
 	for i in xrange(int(ind)+1, int(end_point), stride):
             if (i>Nsnr-1):
@@ -120,7 +112,6 @@ def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, i
         # Stas last two cycles can be combined in a single cycle in "k" 
     
     tm_cur = time.clock()
-    #print "Stas, dt = ", tm_cur - strt_tm
 
     
     dof = 2*num_points
@@ -134,7 +125,6 @@ def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, i
 	#achisq_list[i, 1] = snr_v[indices[i]]
 	achisq_list[i, 1] = abs(sn[indices[i]])
     tm_cur = time.clock()
-    #print "Stas, end -> dt = ", tm_cur - strt_tm
  
     return(dof, achisq_list)
 
@@ -292,9 +282,9 @@ class SingleDetAutoChisq(object):
             
             logging.info("...Calculating autochisquare")
             achi_list = np.array([])
-            if (len(index_list) > 0):
-        	index_list = Array(index_list, copy=False)
-                dof, achi_list = autochisq_from_precomputed(sn, cor, self._autocor, stride=self._stride, \
+            if (len(indices) > 0):
+                index_list = np.array(indices)
+                dof, achi_list = autochisq_from_precomputed(sn, corr, self._autocor, stride=self._stride, \
         			num_points=self._num_points, indices=index_list, oneside=self._onesided)
                 self.dof = dof
             return (achi_list)    
