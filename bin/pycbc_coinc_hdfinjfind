@@ -1,16 +1,10 @@
 #!/usr/bin/python
 """ Make table of the foreground coincident events
 """
-import argparse, h5py, numpy, logging, mpld3, mpld3.plugins, mpld3.utils
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plot
+import argparse, h5py, numpy, logging
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from glue import segments
-import pycbc.results.followup, pycbc.pnutils
 import os.path
-
-from pycbc.results.mpld3_utils import ClickLink
 
 # dummy class needed for loading LIGOLW files
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
@@ -57,11 +51,11 @@ def veto_indices(times, ifo, veto_files):
                 
             seg_indices = numpy.arange(li, ri, 1).astype(numpy.uint32)
             indices=numpy.union1d(seg_indices, indices)  
-            
     return time_sorting[indices], veto_segs
 
-
 def keep_ind(times, start, end):
+    """ Return the list of indices within the list of start and end times
+    """
     time_sorting = times.argsort()
     times = times[time_sorting]
     indices = numpy.array([], dtype=numpy.uint32)
@@ -73,10 +67,17 @@ def keep_ind(times, start, end):
         indices=numpy.union1d(seg_indices, indices)  
     return time_sorting[indices] 
 
+def xml_to_hdf(table, hdf_file, hdf_key, columns):
+    """ Save xml columns as hdf columns, only float32 supported atm.
+    """
+    for col in columns:
+        key = os.path.join(hdf_key, col) 
+        hdf_file[key] = numpy.array(table.get_column(col), 
+                                        dtype=numpy.float32)
+        
 parser = argparse.ArgumentParser()
 parser.add_argument('--trigger-file')
 parser.add_argument('--injection-file')
-parser.add_argument('--injection-tag')
 parser.add_argument('--veto-file')
 parser.add_argument('--injection-window', type=float)
 parser.add_argument('--verbose', action='count')
@@ -87,7 +88,7 @@ if args.verbose:
     log_level = logging.INFO
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
     
-logging.info('Read in the data')
+logging.info('Read in the coinc data')
 f = h5py.File(args.trigger_file, 'r')
 
 stat1 = f['foreground/stat1'][:]
@@ -97,7 +98,6 @@ time1 = f['foreground/time1'][:]
 time2 = f['foreground/time2'][:]
 ana_start = f['foreground/analyzed_start'][:]
 ana_end = f['foreground/analyzed_end'][:]
-#print ana_start, ana_end
 time = 0.5 * (time1 + time2)
 time_sorting = time.argsort()
 
@@ -105,103 +105,61 @@ logging.info('Read in the injection file')
 indoc = ligolw_utils.load_filename(args.injection_file, False, contenthandler=LIGOLWContentHandler)
 sim_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
 inj_time = numpy.array(sim_table.get_column('geocent_end_time') + 1e-9 * sim_table.get_column('geocent_end_time_ns'), dtype=numpy.float64)
-inj_m1 = numpy.array(sim_table.get_column('mass1'), dtype=numpy.float32)
-inj_m2 = numpy.array(sim_table.get_column('mass2'), dtype=numpy.float32)
-inj_s1x = numpy.array(sim_table.get_column('spin1x'), dtype=numpy.float32)
-inj_s1y = numpy.array(sim_table.get_column('spin1y'), dtype=numpy.float32)
-inj_s1z = numpy.array(sim_table.get_column('spin1z'), dtype=numpy.float32)
-inj_s2x = numpy.array(sim_table.get_column('spin2x'), dtype=numpy.float32)
-inj_s2x = numpy.array(sim_table.get_column('spin2y'), dtype=numpy.float32)
-inj_s2z = numpy.array(sim_table.get_column('spin2z'), dtype=numpy.float32)
-dist_h = numpy.array(sim_table.get_column('eff_dist_h'), dtype=numpy.float32)
-dist_l = numpy.array(sim_table.get_column('eff_dist_l'), dtype=numpy.float32)
-dec_dist = numpy.minimum(dist_h, dist_l)
-inj_mchirp, inj_eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(inj_m1, inj_m2)
 
 logging.info('Determined the found injections by time')
 left = numpy.searchsorted(time[time_sorting], inj_time - args.injection_window, side='left')
 right = numpy.searchsorted(time[time_sorting], inj_time + args.injection_window, side='right')
-
-i1, v1 = veto_indices(inj_time, 'H1', [args.veto_file])
-i2, v2 = veto_indices(inj_time, 'L1', [args.veto_file])
-vi = numpy.concatenate([i1, i2])
-ki = keep_ind(inj_time, ana_start, ana_end)
-
-
-#import pylab
-#pylab.figure()
-#for s, e in zip(ana_start, ana_end):
-#    pylab.axvspan(s, e, color='gray')
-    
-#pylab.scatter(time, stat1)
-#pylab.show()
-
-print ana_start, ana_end
-print "KI", len(ana_start), len(vi), len(ki)
-
 found = numpy.where((right-left) == 1)[0]
 missed = numpy.where((right-left) == 0)[0]
 ambiguous = numpy.where((right-left) > 1)[0]
+logging.info('Found: %s, Missed: %s', % (len(found), len(missed))
 
-# Keep only those that were in analyzed times
-found = numpy.intersect1d(ki, found)
-missed = numpy.intersect1d(ki, missed)
+if len(ambiguous) > 0:
+    logging.warn('More than one coinc trigger found associated to injection') 
 
+logging.info('Removing injections outside of analyzed time')
+ki = keep_ind(inj_time, ana_start, ana_end)
+found_within_time = numpy.intersect1d(ki, found)
+missed_within_time = numpy.intersect1d(ki, missed)
+logging.info('Found: %s, Missed: %s', % (len(found_within_time), len(missed_within_time))
 
-
-# Keep only those in unvetoed times
-found = numpy.delete(found, numpy.in1d(found, vi))
-missed = numpy.delete(missed, numpy.in1d(missed, vi))
+logging.info('Removing injections in vetoed time')
+i1, v1 = veto_indices(inj_time, 'H1', [args.veto_file])
+i2, v2 = veto_indices(inj_time, 'L1', [args.veto_file])
+vi = numpy.concatenate([i1, i2])
+found_after_vetoes = numpy.delete(found, numpy.in1d(found_within_time, vi))
+missed_after_vetoes = numpy.delete(missed, numpy.in1d(missed_within_time, vi))
+logging.info('Found: %s, Missed: %s', % (len(found_after_vetoes), len(missed_after_vetoes))
 
 found_fore = numpy.arange(0, len(inj_time), 1)[left[found]]
-ifar_found = ifar[time_sorting][found_fore]
+found_fore_v = numpy.arange(0, len(inj_time), 1)[left[found_after_vetoes]]
 
+logging.info('Saving injection information')
+f = h5py.File(args.output_file)
+columns = ['mass1', 'mass2', 'spin1x', 'spin1y', 
+           'spin1z', 'spin2x', 'spin2y', 'spin2z',
+           'eff_dist_l', 'eff_dist_h', 'eff_dist_v', 
+           'inclination', 'polarization', 'coa_phase', 
+           'latitude', 'longitude']
+xml_to_hdf(sim_table, f, 'injections', columns)
+f['injections/end_time'] = inj_time
 
-color = numpy.zeros(len(found))
-ten = numpy.where(ifar_found > 10)[0]
-hundred = numpy.where(ifar_found > 100)[0]
-thousand = numpy.where(ifar_found > 1000)[0]
+f['missed/all'] = missed
+f['missed/within_analysis'] = missed_within_time
+f['missed/after_vetoes'] = missed_after_vetoes
 
-color[hundred] = 0.5
-color[thousand] = 1.0
+f['found/injection_index'] = found
+f['found/stat1'] = stat1[time_sorting][found_fore]
+f['found/stat2'] = stat2[time_sorting][found_fore]
+f['found/time1'] = time1[time_sorting][found_fore]
+f['found/time2'] = time2[time_sorting][found_fore]
+f['found/ifar'] = ifar[time_sorting][found_fore]
 
-print len(found), len(missed), len(inj_time), len(numpy.where((right-left) == 1)[0])
+f['found_after_vetoes/injection_index'] = found_after_vetoes
+f['found/stat1'] = stat1[time_sorting][found_fore_v]
+f['found/stat2'] = stat2[time_sorting][found_fore_v]
+f['found/time1'] = time1[time_sorting][found_fore_v]
+f['found/time2'] = time2[time_sorting][found_fore_v]
+f['found/ifar'] = ifar[time_sorting][found_fore_v]
 
-fig = plot.figure()
-mpoints = plot.scatter(inj_time[missed], dec_dist[missed], marker='x', color='black', label='missed', s=40)
-points = plot.scatter(inj_time[found], dec_dist[found], c=color, s=40, 
-             linewidth=0, vmin=0, vmax=1, 
-             marker='o', label='found')
-plot.xlabel('Time (s)')
-plot.ylabel('Injected Decisive Distance')
-plot.legend()
-plot.grid()
-
-urls = pycbc.results.followup.times_to_urls(inj_time[found], 2.0, args.injection_tag)
-murls = pycbc.results.followup.times_to_urls(inj_time[missed], 2.0, args.injection_tag)
-mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt='.5g'))
-mpld3.plugins.connect(fig, ClickLink(points, urls))
-mpld3.plugins.connect(fig, ClickLink(mpoints, murls))
-
-mpld3.save_html(fig, open(args.output_file, 'w'))
-
-
-fig = plot.figure()
-mpoints = plot.scatter(inj_mchirp[missed], dec_dist[missed], marker='x', color='black', label='missed', s=40)
-points = plot.scatter(inj_mchirp[found], dec_dist[found], c=color, s=40, 
-             linewidth=0, vmin=0, vmax=1, 
-             marker='o', label='found')
-plot.xlabel('Mchirp')
-plot.ylabel('Injected Decisive Distance')
-plot.legend()
-plot.grid()
-
-urls = pycbc.results.followup.times_to_urls(inj_time[found], 2.0, args.injection_tag)
-murls = pycbc.results.followup.times_to_urls(inj_time[missed], 2.0, args.injection_tag)
-mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt='.5g'))
-mpld3.plugins.connect(fig, ClickLink(points, urls))
-mpld3.plugins.connect(fig, ClickLink(mpoints, murls))
-oname = os.path.split(args.output_file)[0] + '/mchirp-' + os.path.split(args.output_file)[1]
-
-mpld3.save_html(fig, open(oname, 'w'))
 
