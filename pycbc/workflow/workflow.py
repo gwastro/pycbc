@@ -27,7 +27,6 @@ creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 
-import Pegasus.DAX3 as dax
 import os, sys, subprocess, logging, math, string, urlparse, ConfigParser
 import numpy
 from itertools import combinations, groupby
@@ -35,11 +34,10 @@ from operator import attrgetter
 from os.path import splitext, basename, isfile
 import lal as lalswig
 from glue import lal
-from glue import segments, pipeline
+from glue import segments
 from pycbc_configparser import WorkflowConfigParser
 import pylal.dq.dqSegmentUtils as dqUtils
-from pycbc.workflow.pegasus_workflow import Node, File, Executable
-from pycbc.workflow.pegasus_workflow import Workflow as PegasusWorkflow
+import pycbc.workflow.pegasus_workflow as pegasus_workflow
 import copy
 
 # workflow should never be using the glue LIGOTimeGPS class, override this with
@@ -99,11 +97,11 @@ def is_condor_exec(exe_path):
     else:
         return False
         
-class WorkflowExecutable(Executable):
+class Executable(pegasus_workflow.Executable):
     def __init__(self, cp, name, 
                        universe=None, ifos=None, out_dir=None, tags=[]):
         """
-        Initialize the WorkflowExecutable class.
+        Initialize the Executable class.
 
         Parameters
         -----------
@@ -244,11 +242,11 @@ class WorkflowExecutable(Executable):
 
     def create_node(self):
         """ Default node constructor. This is usually overridden by subclasses
-        of the WorkflowExecutable.
+        of Executable.
         """
-        return WorkflowNode(self)
+        return Node(self)
 
-class Workflow(PegasusWorkflow):
+class Workflow(pegasus_workflow.Workflow):
     """
     This class manages a pycbc workflow. It provides convenience 
     functions for finding input files using time and keywords. It can also
@@ -292,8 +290,8 @@ class Workflow(PegasusWorkflow):
         self.ifo_string = ''.join(self.ifos)
         
         # Set up input and output file lists for workflow
-        self._inputs = WorkflowFileList([])
-        self._outputs = WorkflowFileList([])
+        self._inputs = FileList([])
+        self._outputs = FileList([])
          
     def execute_node(self, node):
         """ Execute this node immediately on the local machine
@@ -333,13 +331,13 @@ class Workflow(PegasusWorkflow):
         for out in self._outputs:
             f.write(out.output_map_str() + '\n')
     
-class WorkflowNode(Node):
+class Node(pegasus_workflow.Node):
     def __init__(self, executable):
-        Node.__init__(self, executable)
+        super(Node, self).__init__(executable)
         self.executed = False
         self.set_category(executable.name)
         
-        # Set default requirements for a WorkflowNode
+        # Set default requirements for a Node
         self.set_memory(1000)
         self.set_storage(100)
         
@@ -354,7 +352,7 @@ class WorkflowNode(Node):
         
         tmpargs = []
         for a in arglist:
-            if not isinstance(a, WorkflowFile):
+            if not isinstance(a, File):
                 tmpargs += a.split(' ')
             else:
                 tmpargs.append(a)
@@ -362,14 +360,14 @@ class WorkflowNode(Node):
         
         arglist = [a for a in arglist if a != '']
         
-        arglist = [a.storage_path if isinstance(a, WorkflowFile) else a for a in arglist]
+        arglist = [a.storage_path if isinstance(a, File) else a for a in arglist]
                         
         exe_path = urlparse.urlsplit(self.executable.get_pfn()).path
         return [exe_path] + arglist
         
     def new_output_file_opt(self, valid_seg, extension, option_name, tags=[]):
         """
-        This function will create a WorkflowFile corresponding to the given
+        This function will create a workflow.File object corresponding to the given
         information and then add that file as output of this node.
 
         Parameters
@@ -395,45 +393,45 @@ class WorkflowNode(Node):
             if tag not in all_tags:
                 all_tags.append(tag)
 
-        fil = WorkflowFile(self.executable.ifo_list, self.executable.name,
-                         valid_seg, extension=extension, 
-                         directory=self.executable.out_dir, tags=all_tags)    
+        fil = File(self.executable.ifo_list, self.executable.name,
+                   valid_seg, extension=extension, 
+                   directory=self.executable.out_dir, tags=all_tags)    
         self.add_output_opt(option_name, fil)
         
     @property    
     def output_files(self):
         return self._outputs
     
-class WorkflowFile(File):
+class File(pegasus_workflow.File):
     '''
     This class holds the details of an individual output file 
     This file(s) may be pre-supplied, generated from within the workflow
     command line script, or generated within the workflow. The important stuff
     is:
 
-    * The ifo that the WorkflowFile is valid for
-    * The time span that the WorkflowOutFile is valid for
+    * The ifo that the File is valid for
+    * The time span that the OutFile is valid for
     * A short description of what the file is
     * The extension that the file should have
     * The url where the file should be located
 
     An example of initiating this class:
     
-    c = WorkflowFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), file_url="file://localhost/home/spxiwh/H1-INSPIRAL_S6LOWMASS-815901601-400.xml.gz" )
+    c = File("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), file_url="file://localhost/home/spxiwh/H1-INSPIRAL_S6LOWMASS-815901601-400.xml.gz" )
 
     another where the file url is generated from the inputs:
 
-    c = WorkflowFile("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), directory="/home/spxiwh", extension="xml.gz" )
+    c = File("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), directory="/home/spxiwh", extension="xml.gz" )
     '''
     def __init__(self, ifos, exe_name, segs, file_url=None, 
                  extension=None, directory=None, tags=None):       
         """
-        Create a WorkflowFile instance
+        Create a File instance
         
         Parameters
         ----------
         ifos : string or list
-            The ifo(s) that the WorkflowFile is valid for. If the file is
+            The ifo(s) that the File is valid for. If the file is
             independently valid for multiple ifos it can be provided as a list.
             Ie. ['H1',L1','V1'], if the file is only valid for the combination
             of ifos (for e.g. ligolw_thinca output) then this can be supplied
@@ -442,7 +440,7 @@ class WorkflowFile(File):
             A short description of the executable description, tagging
             only the program that ran this job.
         segs : glue.segment or glue.segmentlist
-            The time span that the WorkflowOutFile is valid for. Note that this is
+            The time span that the OutFile is valid for. Note that this is
             *not* the same as the data that the job that made the file reads in.
             Lalapps_inspiral jobs do not analyse the first an last 72s of the
             data that is read, and are therefore not valid at those times. If
@@ -515,7 +513,7 @@ class WorkflowFile(File):
                    self.tagged_description, self.segment_list.extent(), file_url)
         self.cache_entry.workflow_file = self
 
-        File.__init__(self, basename(self.cache_entry.path))
+        super(File, self).__init__(basename(self.cache_entry.path))
         self.storage_path = self.cache_entry.path
 
     @property
@@ -547,7 +545,7 @@ class WorkflowFile(File):
     def _filename(self, ifo, description, extension, segment):
         """
         Construct the standard output filename. Should only be used internally
-        of the WorkflowFile class.
+        of the File class.
         """        
         if extension.startswith('.'):
             extension = extension[1:]
@@ -562,33 +560,33 @@ class WorkflowFile(File):
         return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start, 
                                    duration, extension)  
     
-class WorkflowFileList(list):
+class FileList(list):
     '''
-    This class holds a list of WorkflowFile objects. It inherits from the
+    This class holds a list of File objects. It inherits from the
     built-in list class, but also allows a number of features. ONLY
-    WorkflowFile instances should be within an WorkflowFileList instance.
+    pycbc.workflow.File instances should be within a FileList instance.
     '''
-    entry_class = WorkflowFile
+    entry_class = File
 
     def categorize_by_attr(self, attribute):
         '''
-        Function to categorize a WorkflowFileList by a WorkflowFile object
+        Function to categorize a FileList by a File object
         attribute (eg. 'segment', 'ifo', 'description').
 
         Parameters
         -----------
         attribute : string
-           WorkflowFile object attribute to categorize WorkflowFileList
+           File object attribute to categorize FileList
 
         Returns
         --------
         keys : list
            A list of values for an attribute
         groups : list
-           A list of WorkflowFileLists
+           A list of FileLists
         '''
 
-        # need to sort WorkflowFileList otherwise using groupby without sorting does
+        # need to sort FileList otherwise using groupby without sorting does
         # 'AAABBBCCDDAABB' -> ['AAA','BBB','CC','DD','AA','BB']
         # and using groupby with sorting does
         # 'AAABBBCCDDAABB' -> ['AAAAA','BBBBB','CC','DD']
@@ -598,14 +596,14 @@ class WorkflowFileList(list):
         groups = []
         keys = []
         for k, g in groupby(flist, attrgetter(attribute)):
-            groups.append(WorkflowFileList(g))
+            groups.append(FileList(g))
             keys.append(k)
 
         return keys, groups
 
     def find_output(self, ifo, time):
         '''
-        Return one WorkflowFile that covers the given time, or is most
+        Return one File that covers the given time, or is most
         appropriate for the supplied time range.
 
         Parameters
@@ -614,16 +612,16 @@ class WorkflowFileList(list):
            Name of the ifo (or ifos) that the file should be valid for.
         time : int/float/LIGOGPStime or tuple containing two values
            If int/float/LIGOGPStime (or similar may of specifying one time) is
-           given, return the WorkflowFile corresponding to the time. This calls
+           given, return the File corresponding to the time. This calls
            self.find_output_at_time(ifo,time).
-           If a tuple of two values is given, return the WorkflowFile that is
+           If a tuple of two values is given, return the File that is
            **most appropriate** for the time range given. This calls
            self.find_output_in_range
 
         Returns
         --------
-        WorkflowFile class
-           The WorkflowFile that corresponds to the time/time range
+        File class
+           The File that corresponds to the time/time range
         '''
         # Determine whether I have a specific time, or a range of times
         try:
@@ -642,28 +640,28 @@ class WorkflowFileList(list):
 
     def find_output_at_time(self, ifo, time):
        '''
-       Return WorkflowFile that covers the given time.
+       Return File that covers the given time.
 
         Parameters
         -----------
         ifo : string
-           Name of the ifo (or ifos) that the WorkflowFile should correspond to
+           Name of the ifo (or ifos) that the File should correspond to
         time : int/float/LIGOGPStime
-           Return the WorkflowFiles that covers the supplied time. If no
-           WorkflowFile covers the time this will return None.
+           Return the Files that covers the supplied time. If no
+           File covers the time this will return None.
 
         Returns
         --------
-        list of WorkflowFile classes
-           The WorkflowFiles that corresponds to the time.
+        list of File classes
+           The Files that corresponds to the time.
         '''
-       # Get list of WorkflowFiles that overlap time, for given ifo
+       # Get list of Files that overlap time, for given ifo
        outFiles = [i for i in self if ifo in i.ifo_list and time in i.segment_list] 
        if len(outFiles) == 0:
-           # No WorkflowOutFile at this time
+           # No OutFile at this time
            return None
        elif len(outFiles) == 1:
-           # 1 WorkflowOutFile at this time (good!)
+           # 1 OutFile at this time (good!)
            return outFiles
        else:
            # Multiple output files. Currently this is valid, but we may want
@@ -673,21 +671,21 @@ class WorkflowFileList(list):
 
     def find_outputs_in_range(self, ifo, current_segment, useSplitLists=False):
         """
-        Return the list of WorkflowFiles that is most appropriate for the supplied
-        time range. That is, the WorkflowFiles whose coverage time has the
+        Return the list of Files that is most appropriate for the supplied
+        time range. That is, the Files whose coverage time has the
         largest overlap with the supplied time range.
 
         Parameters
         -----------
         ifo : string
-           Name of the ifo (or ifos) that the WorkflowFile should correspond to
+           Name of the ifo (or ifos) that the File should correspond to
         current_segment : glue.segment.segment
            The segment of time that files must intersect.
 
         Returns
         --------
-        WorkflowFileList class
-           The list of WorkflowFiles that are most appropriate for the time range
+        FileList class
+           The list of Files that are most appropriate for the time range
         """
         currsegment_list = segments.segmentlist([current_segment])
 
@@ -701,8 +699,8 @@ class WorkflowFileList(list):
         if not overlap_windows:
             return []
 
-        # Return the WorkflowFile with the biggest overlap
-        # Note if two WorkflowFile have identical overlap, the first is used
+        # Return the File with the biggest overlap
+        # Note if two File have identical overlap, the first is used
         # to define the valid segment
         overlap_windows = numpy.array(overlap_windows, dtype = int)
         segmentLst = overlap_files[overlap_windows.argmax()].segment_list
@@ -713,15 +711,15 @@ class WorkflowFileList(list):
 
     def find_output_in_range(self, ifo, start, end):
         '''
-        Return the WorkflowFile that is most appropriate for the supplied
-        time range. That is, the WorkflowFile whose coverage time has the
-        largest overlap with the supplied time range. If no WorkflowFiles
+        Return the File that is most appropriate for the supplied
+        time range. That is, the File whose coverage time has the
+        largest overlap with the supplied time range. If no Files
         overlap the supplied time window, will return None. 
 
         Parameters
         -----------
         ifo : string
-           Name of the ifo (or ifos) that the WorkflowFile should correspond to
+           Name of the ifo (or ifos) that the File should correspond to
         start : int/float/LIGOGPStime 
            The start of the time range of interest.
         end : int/float/LIGOGPStime
@@ -729,34 +727,34 @@ class WorkflowFileList(list):
 
         Returns
         --------
-        WorkflowFile class
-           The WorkflowFile that is most appropriate for the time range
+        File class
+           The File that is most appropriate for the time range
         '''
         currsegment_list = segments.segmentlist([current_segment])
 
-        # First filter WorkflowFiles corresponding to ifo
+        # First filter Files corresponding to ifo
         outFiles = [i for i in self if ifo in i.ifo_list]
 
         if len(outFiles) == 0:
-            # No WorkflowOutFiles correspond to that ifo
+            # No OutFiles correspond to that ifo
             return None
-        # Filter WorkflowOutFiles to those overlapping the given window
+        # Filter OutFiles to those overlapping the given window
         currSeg = segments.segment([start,end])
         outFiles = [i for i in outFiles \
                                   if i.segment_list.intersects_segment(currSeg)]
 
         if len(outFiles) == 0:
-            # No WorkflowOutFile overlap that time period
+            # No OutFile overlap that time period
             return None
         elif len(outFiles) == 1:
-            # One WorkflowOutFile overlaps that period
+            # One OutFile overlaps that period
             return outFiles[0]
         else:
             overlap_windows = [abs(i.segment_list & currsegment_list) \
                                                         for i in outFiles]
-            # Return the WorkflowFile with the biggest overlap
-            # Note if two WorkflowFile have identical overlap, this will return
-            # the first WorkflowFile in the list
+            # Return the File with the biggest overlap
+            # Note if two File have identical overlap, this will return
+            # the first File in the list
             overlap_windows = numpy.array(overlap_windows, dtype = int)
             return outFiles[overlap_windows.argmax()]
 
@@ -799,7 +797,7 @@ class WorkflowFileList(list):
         """
         # Enforce upper case
         tag = tag.upper()
-        return WorkflowFileList([i for i in self if tag in i.tags])
+        return FileList([i for i in self if tag in i.tags])
 
     def find_output_with_ifo(self, ifo):
         """
@@ -807,7 +805,7 @@ class WorkflowFileList(list):
         """
         # Enforce upper case
         ifo = ifo.upper()
-        return WorkflowFileList([i for i in self if ifo in i.ifo_list])
+        return FileList([i for i in self if ifo in i.ifo_list])
 
     def get_times_covered_by_files(self):
         """
@@ -853,7 +851,7 @@ class WorkflowFileList(list):
         # Set up storage
         self._splitLists = []
         for idx in range(numSubLists):
-            self._splitLists.append(WorkflowFileList([]))
+            self._splitLists.append(FileList([]))
         
         # Sort the files
 
@@ -898,33 +896,33 @@ class WorkflowFileList(list):
         
 
 
-class WorkflowOutSegFile(WorkflowFile):
+class OutSegFile(File):
     '''
-    This class inherits from the WorkflowFile class, and is designed to store
+    This class inherits from the File class, and is designed to store
     workflow output files containing a segment list. This is identical in
-    usage to WorkflowFile except for an additional kwarg for holding the
+    usage to File except for an additional kwarg for holding the
     segment list, if it is known at workflow run time.
     '''
     def __init__(self, ifo, description, segment, fileUrl,
                  segment_list=None, **kwargs):
         """
-        See WorkflowFile.__init__ for a full set of documentation for how to
+        See File.__init__ for a full set of documentation for how to
         call this class. The only thing unique and added to this class is
         the required option timeSeg, as described below:
 
         Parameters:
         ------------
         ifo : string or list (required)
-            See WorkflowFile.__init__
+            See File.__init__
         description : string (required)
-            See WorkflowFile.__init__
+            See File.__init__
         segment : glue.segments.segment or glue.segments.segmentlist
-            See WorkflowFile.__init__
+            See File.__init__
         fileUrl : string (required)
-            See WorkflowFile.__init__
-            FIXME: This is a kwarg in WorkflowFile and should be here as well,
+            See File.__init__
+            FIXME: This is a kwarg in File and should be here as well,
             if this is removed from the explicit arguments it would allow for
-            either fileUrls or constructed file names to be used in WorkflowFile.
+            either fileUrls or constructed file names to be used in File.
         segment_list : glue.segments.segmentlist (optional, default=None)
             A glue.segments.segmentlist covering the times covered by the
             segmentlist associated with this file. If this is the science time
@@ -933,7 +931,7 @@ class WorkflowOutSegFile(WorkflowFile):
             the class.
 
         """
-        WorkflowFile.__init__(self, ifo, description, segment, fileUrl,
+        super(OutSegFile, self).__init__(ifo, description, segment, fileUrl,
                               **kwargs)
         self.segmentList = segment_list
 

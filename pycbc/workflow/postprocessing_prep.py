@@ -34,7 +34,7 @@ from __future__ import division
 import os
 import os.path
 from glue import segments
-from pycbc.workflow.workflow import *
+from pycbc.workflow import workflow as wf
 from pycbc.workflow.jobsetup import *
 
 def setup_postprocessing_preparation(workflow, triggerFiles, output_dir,
@@ -49,10 +49,10 @@ def setup_postprocessing_preparation(workflow, triggerFiles, output_dir,
 
     Properties
     -----------
-    Workflow : workflow.Workflow
-        The workflow instance that the coincidence jobs will be added to.
-    triggerFiles : workflow.WorkflowFileList
-        An WorkflowFileList of the trigger files that are used as
+    workflow : Workflow
+        The Workflow instance that the coincidence jobs will be added to.
+    triggerFiles : FileList
+        An FileList of the trigger files that are used as
         input at this stage.
     output_dir : path
         The directory in which output files will be stored.
@@ -63,7 +63,7 @@ def setup_postprocessing_preparation(workflow, triggerFiles, output_dir,
 
     Returns
     --------
-    postProcPreppedFiles : workflow.WorkflowFileList
+    postProcPreppedFiles : FileList
         A list of files that can be used as input for the post-processing stage.
     """
     logging.info("Entering post-processing preparation stage.")
@@ -98,10 +98,10 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
     """
     Properties
     -----------
-    Workflow : workflow.Workflow
-        The workflow instance that the coincidence jobs will be added to.
-    coincFiles : workflow.WorkflowFileList
-        An WorkflowFileList of the coincident trigger files that are used as
+    workflow : Workflow
+        The Workflow instance that the coincidence jobs will be added to.
+    coincFiles : FileList
+        An FileList of the coincident trigger files that are used as
         input at this stage.
     output_dir : path
         The directory in which output files will be stored.
@@ -109,11 +109,11 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
         A list of the tagging strings that will be used for all jobs created
         by this call to the workflow. An example might be ['POSTPROC1'] or
         ['DENTYSNEWPOSTPROC']. This will be used in output names.
-    injectionFiles : workflow.WorkflowFileList (optional, default=None)
+    injectionFiles : FileList (optional, default=None)
         The injection files to be used in this stage. An empty list (or any
         other input that evaluates as false) is valid and will imply that no
         injections are being done.
-    vetoFiles : workflow.WorkflowFileList (required)
+    vetoFiles : FileList (required)
         The data quality files to be used in this stage. This is required and
         will be used to determine the analysed times when doing post-processing.
     injLessTag : string (required)
@@ -131,15 +131,15 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
 
     Returns
     --------
-    finalFiles : workflow.WorkflowFileList
+    finalFiles : FileList
         A list of the single SQL database storing the clustered, injection
         found, triggers for all injections, time slid and zero lag analyses.
-    initialSqlFiles : workflow.WorkflowFileList
+    initialSqlFiles : FileList
         The SQL files before clustering is applied and injection finding
         performed.
-    clusteredSqlFiles : workflow.WorkflowFileList
+    clusteredSqlFiles : FileList
         The clustered SQL files before injection finding performed.
-    combinedSqlFiles : workflow.WorkflowFileList
+    combinedSqlFiles : FileList
         A combined file containing all triggers after clustering, including
         the injection and veto tables, but before injection finding performed.
         Probably there is no need to ever keep this file and it will be a
@@ -164,10 +164,10 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
                                    "postprocprep-injfind-exe", tags)
     injFindExe = select_generic_executable(workflow, injFindExeTag)
 
-    sqliteCombine1Outs = WorkflowFileList([])
-    clusterCoincsOuts = WorkflowFileList([])
-    injFindOuts = WorkflowFileList([])
-    sqliteCombine2Outs = WorkflowFileList([])
+    sqliteCombine1Outs = wf.FileList([])
+    clusterCoincsOuts = wf.FileList([])
+    injFindOuts = wf.FileList([])
+    sqliteCombine2Outs = wf.FileList([])
     for vetoCat in vetoCats:
         # FIXME: Some hacking is still needed while we support pipedown
         # FIXME: There are currently 3 names to say cumulative cat_3
@@ -181,7 +181,7 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
         # FIXME: Here we set the dqVetoName to be compatible with pipedown
         pipedownDQVetoName = 'CAT_%d_VETO' %(vetoCat,)
 
-        sqliteCombine2Inputs = WorkflowFileList([])
+        sqliteCombine2Inputs = wf.FileList([])
         # Do injection-less jobs first.
 
         # Combine trig files first

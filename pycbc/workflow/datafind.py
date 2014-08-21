@@ -34,7 +34,7 @@ import urlparse,urllib
 import logging
 from glue import segments, segmentsUtils, git_version, lal
 from glue.ligolw import utils, table, lsctables, ligolw
-from pycbc.workflow import *
+from pycbc.workflow import workflow as wf
 from pycbc.frame import datafind_connection
 
 def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
@@ -45,7 +45,7 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
     record the location of the frame files needed to perform the analysis.
     There could be multiple options here, the datafind jobs could be done at
     run time or could be put into a dag. The subsequent jobs will know
-    what was done here from the WorkflowOutFileList containing the datafind jobs
+    what was done here from the OutFileList containing the datafind jobs
     (and the Dagman nodes if appropriate.
     For now the only implemented option is to generate the datafind files at
     runtime. This module can also check if the frameFiles actually exist, check
@@ -70,13 +70,13 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
         Use this to specify a tag. This can be used if this module is being
         called more than once to give call specific configuration (by setting
         options in [workflow-datafind-${TAG}] rather than [workflow-datafind]). This
-        is also used to tag the WorkflowFiles returned by the class to uniqueify
-        the WorkflowFiles and uniqueify the actual filename.
+        is also used to tag the Files returned by the class to uniqueify
+        the Files and uniqueify the actual filename.
         FIXME: Filenames may not be unique with current codes!
 
     Returns
     --------
-    datafindOuts : WorkflowOutGroupList
+    datafindOuts : OutGroupList
         List of all the datafind output files for use later in the pipeline.
     scienceSegs : Dictionary of ifo keyed glue.segment.segmentlist instances
         This contains the times that the workflow is expected to analyse. If the 
@@ -268,14 +268,14 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
             currTags = [tag, 'SCIENCE_AVAILABLE']
         else:
             currTags = ['SCIENCE_AVAILABLE']
-        currFile = WorkflowOutSegFile(ifo, 'SEGMENTS', workflow.analysis_time,
+        currFile = wf.OutSegFile(ifo, 'SEGMENTS', workflow.analysis_time,
                             currUrl, segment_list=scienceSegs[ifo], tags = currTags)
         segFilesList.append(currFile)
         currFile.toSegmentXml()
    
 
     logging.info("Leaving datafind module")
-    return WorkflowFileList(datafindouts), scienceSegs
+    return wf.FileList(datafindouts), scienceSegs
     
 
 def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs, 
@@ -307,8 +307,8 @@ def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
         Use this to specify a tag. This can be used if this module is being
         called more than once to give call specific configuration (by setting
         options in [workflow-datafind-${TAG}] rather than [workflow-datafind]). This
-        is also used to tag the WorkflowFiles returned by the class to uniqueify
-        the WorkflowFiles and uniqueify the actual filename.
+        is also used to tag the Files returned by the class to uniqueify
+        the Files and uniqueify the actual filename.
         FIXME: Filenames may not be unique with current codes!
 
     Returns
@@ -316,7 +316,7 @@ def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
     datafindcaches : list of glue.lal.Cache instances
        The glue.lal.Cache representations of the various calls to the datafind
        server and the returned frame files.
-    datafindOuts : WorkflowFileList
+    datafindOuts : FileList
         List of all the datafind output files for use later in the pipeline.
 
     """
@@ -385,8 +385,8 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
         Use this to specify a tag. This can be used if this module is being
         called more than once to give call specific configuration (by setting
         options in [workflow-datafind-${TAG}] rather than [workflow-datafind]). This
-        is also used to tag the WorkflowFiles returned by the class to uniqueify
-        the WorkflowFiles and uniqueify the actual filename.
+        is also used to tag the Files returned by the class to uniqueify
+        the Files and uniqueify the actual filename.
         FIXME: Filenames may not be unique with current codes!
 
     Returns
@@ -394,7 +394,7 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
     datafindcaches : list of glue.lal.Cache instances
        The glue.lal.Cache representations of the various calls to the datafind
        server and the returned frame files.
-    datafindOuts : WorkflowFileList
+    datafindOuts : FileList
         List of all the datafind output files for use later in the pipeline.
 
     """
@@ -463,8 +463,8 @@ def setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
         Use this to specify a tag. This can be used if this module is being
         called more than once to give call specific configuration (by setting
         options in [workflow-datafind-${TAG}] rather than [workflow-datafind]). This
-        is also used to tag the WorkflowFiles returned by the class to uniqueify
-        the WorkflowFiles and uniqueify the actual filename.
+        is also used to tag the Files returned by the class to uniqueify
+        the Files and uniqueify the actual filename.
         FIXME: Filenames may not be unique with current codes!
 
     Returns
@@ -472,7 +472,7 @@ def setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
     datafindcaches : list of glue.lal.Cache instances
        The glue.lal.Cache representations of the various calls to the datafind
        server and the returned frame files.
-    datafindOuts : WorkflowFileList
+    datafindOuts : FileList
         List of all the datafind output files for use later in the pipeline.
 
     """
@@ -481,13 +481,13 @@ def setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
                                                         outputDir, tag=tag)
     datafindouts = []
 
-    # Now need to convert each frame file into an WorkflowFile
+    # Now need to convert each frame file into an File
     for cache in datafindcaches:
         curr_ifo = cache.ifo
         for frame in cache:
             # Why does datafind not return the ifo as the "observatory"
             # like every other code!?
-            currFile = WorkflowFile(curr_ifo, frame.description,
+            currFile = wf.File(curr_ifo, frame.description,
                                  frame.segment, file_url=frame.url)
             currFile.PFN(frame.path, site='local')
             datafindouts.append(currFile)
@@ -523,8 +523,8 @@ def setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
         Use this to specify a tag. This can be used if this module is being
         called more than once to give call specific configuration (by setting
         options in [workflow-datafind-${TAG}] rather than [workflow-datafind]). This
-        is also used to tag the WorkflowFiles returned by the class to uniqueify
-        the WorkflowFiles and uniqueify the actual filename.
+        is also used to tag the Files returned by the class to uniqueify
+        the Files and uniqueify the actual filename.
         FIXME: Filenames may not be unique with current codes!
 
     Returns
@@ -532,7 +532,7 @@ def setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
     datafindcaches : list of glue.lal.Cache instances
        The glue.lal.Cache representations of the various calls to the datafind
        server and the returned frame files.
-    datafindOuts : WorkflowFileList
+    datafindOuts : FileList
         List of all the datafind output files for use later in the pipeline.
 
     """
@@ -544,7 +544,7 @@ def setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
     # We keep track of the previous file in the cache to avoid duplicates
     prev_file = None
 
-    # Now need to convert each frame file into an WorkflowFile
+    # Now need to convert each frame file into an File
     for cache in datafindcaches:
         for frame in cache:
             # Why does datafind not return the ifo as the "observatory"
@@ -562,7 +562,7 @@ def setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
             if prev_file and prev_file.cache_entry.url == frame.url:    
                 continue                
 
-            currFile = WorkflowFile(ifo, frame.description, frame.segment,
+            currFile = wf.File(ifo, frame.description, frame.segment,
                                  file_url=frame.url)  
             prev_file = currFile                   
             currFile.PFN(frame.path, site='local') 
@@ -575,13 +575,13 @@ def setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
 def get_science_segs_from_datafind_outs(datafindcaches):
     """
     This function will calculate the science segments that are covered in
-    the WorkflowOutGroupList containing the frame files returned by various
+    the OutGroupList containing the frame files returned by various
     calls to the datafind server. This can then be used to check whether this
     list covers what it is expected to cover.
 
     Parameters
     ----------
-    datafindOuts : WorkflowOutGroupList
+    datafindOuts : OutGroupList
         List of all the datafind output files.
 
     Returns
@@ -611,7 +611,7 @@ def get_missing_segs_from_frame_file_cache(datafindcaches):
    
     Parameters
     -----------
-    datafindOuts : WorkflowOutGroupList
+    datafindOuts : OutGroupList
         List of all the datafind output files.
 
     Returns
@@ -647,7 +647,7 @@ def setup_datafind_server_connection(cp, tag=None):
 
     Parameters
     -----------
-    cp : workflow.WorkflowConfigParser
+    cp : WorkflowConfigParser
         The memory representation of the ConfigParser
     Returns
     --------
@@ -670,7 +670,7 @@ def get_segment_summary_times(scienceFile, segmentName):
 
     Parameters
     -----------
-    scienceFile : workflow.WorkflowSegFile
+    scienceFile : SegFile
         The segment file that we want to use to determine this.
     segmentName : string
         The DQ flag to search for times in the segment_summary table.
@@ -751,8 +751,8 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
         Use this to specify a tag. This can be used if this module is being
         called more than once to give call specific configuration (by setting
         options in [workflow-datafind-${TAG}] rather than [workflow-datafind]). This
-        is also used to tag the WorkflowFiles returned by the class to uniqueify
-        the WorkflowFiles and uniqueify the actual filename.
+        is also used to tag the Files returned by the class to uniqueify
+        the Files and uniqueify the actual filename.
         FIXME: Filenames may not be unique with current codes!
 
 
@@ -761,7 +761,7 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
     dfCache : glue.lal.Cache instance
        The glue.lal.Cache representation of the call to the datafind
        server and the returned frame files.
-    cacheFile : WorkflowFile
+    cacheFile : File
         List of all the datafind output files for use later in the pipeline.
 
     """
@@ -792,7 +792,7 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
                                         startTime, endTime, **dfKwargs)
     logging.debug("Frames returned")
     # workflow format output file
-    cache_file = WorkflowFile(ifo, 'DATAFIND', seg, extension='lcf',
+    cache_file = wf.File(ifo, 'DATAFIND', seg, extension='lcf',
                            directory=outputDir, tags=currTags)
     dfCache.ifo = ifo
     # Dump output to file

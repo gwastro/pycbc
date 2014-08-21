@@ -32,7 +32,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 import os
 import logging
 import urllib
-import pycbc.workflow
+from pycbc.workflow import workflow as wf
 from pycbc.workflow.jobsetup import *
 from pycbc.workflow.matched_filter import *
 from glue import segments
@@ -48,8 +48,8 @@ def setup_injection_workflow(workflow, output_dir=None,
 
     Parameters
     -----------
-    Workflow : workflow.Workflow
-        The workflow instance that the coincidence jobs will be added to.
+    workflow : Workflow
+        The Workflow instance that the coincidence jobs will be added to.
     output_dir : path
         The directory in which injection files will be stored.
     injSectionName : string (optional, default='injections')
@@ -63,11 +63,11 @@ def setup_injection_workflow(workflow, output_dir=None,
 
     Returns
     --------
-    inj_files : workflow.WorkflowFileList
+    inj_files : FileList
         The list of injection files created by this call.
     inj_tags : list of strings
         The tag corresponding to each injection file and used to uniquely
-        identify them. The WorkflowFileList class contains functions to search
+        identify them. The FileList class contains functions to search
         based on tags.
     '''
     logging.info("Entering injection module.")
@@ -81,7 +81,7 @@ def setup_injection_workflow(workflow, output_dir=None,
     sections = [sec for sec in all_sec if sec.startswith(injSectionName +'-')]
 
     inj_tags = []
-    inj_files = WorkflowFileList([])   
+    inj_files = wf.FileList([])   
 
     for section in sections:
         split_sec_name = section.split('-')
@@ -134,7 +134,7 @@ def setup_injection_workflow(workflow, output_dir=None,
                                       "injections-pregenerated-file", currTags)
             file_url = urlparse.urljoin('file:', urllib.pathname2url(\
                                                   injectionFilePath))
-            injFile = WorkflowFile('HL', 'PREGEN_INJFILE', fullSegment, file_url,
+            injFile = wf.File('HL', 'PREGEN_INJFILE', fullSegment, file_url,
                                 tags=currTags)
             injFile.PFN(injectionFilePath, site='local')
         else:

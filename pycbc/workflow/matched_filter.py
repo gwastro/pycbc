@@ -31,7 +31,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 from __future__ import division
 
 import os
-from pycbc.workflow.workflow import * 
+from pycbc.workflow import workflow as wf
 from pycbc.workflow.jobsetup import *
 
 def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
@@ -52,15 +52,15 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
         The workflow instance that the coincidence jobs will be added to.
     science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
         The list of times that are being analysed in this workflow. 
-    datafind_outs : workflow.WorkflowFileList
-        An WorkflowFileList of the datafind files that are needed to obtain the
+    datafind_outs : FileList
+        An FileList of the datafind files that are needed to obtain the
         data used in the analysis.
-    tmplt_banks : workflow.WorkflowFileList
-        An WorkflowFileList of the template bank files that will serve as input
+    tmplt_banks : FileList
+        An FileList of the template bank files that will serve as input
         in this stage.
     output_dir : path
         The directory in which output will be stored.
-    injection_file : workflow.WorkflowFile, optional (default=None)
+    injection_file : File, optional (default=None)
         If given the file containing the simulation file to be sent to these
         jobs on the command line. If not given no file will be sent.
     tags : list of strings (optional, default = [])
@@ -70,7 +70,7 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
         
     Returns
     -------
-    inspiral_outs : workflow.WorkflowFileList
+    inspiral_outs : FileList
         A list of output files written by this stage. This *will not* contain
         any intermediate products produced within this stage of the workflow.
         If you require access to any intermediate products produced at this
@@ -139,19 +139,19 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
 
     Parameters
     -----------
-    Workflow : hope.Workflow
-        The workflow instance that the coincidence jobs will be added to.
+    workflow : Workflow
+        The Workflow instance that the coincidence jobs will be added to.
     science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
         The list of times that are being analysed in this workflow. 
-    datafind_outs : workflow.WorkflowFileList
-        An WorkflowFileList of the datafind files that are needed to obtain the
+    datafind_outs : FileList
+        An FileList of the datafind files that are needed to obtain the
         data used in the analysis.
-    tmplt_banks : workflow.WorkflowFileList
-        An WorkflowFileList of the template bank files that will serve as input
+    tmplt_banks : FileList
+        An FileList of the template bank files that will serve as input
         in this stage.
     output_dir : path
         The directory in which output will be stored.
-    injection_file : workflow.WorkflowFile, optional (default=None)
+    injection_file : File, optional (default=None)
         If given the file containing the simulation file to be sent to these
         jobs on the command line. If not given no file will be sent.
     tags : list of strings (optional, default = [])
@@ -166,7 +166,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
         
     Returns
     -------
-    inspiral_outs : workflow.WorkflowFileList
+    inspiral_outs : FileList
         A list of output files written by this stage. This *will not* contain
         any intermediate products produced within this stage of the workflow.
         If you require access to any intermediate products produced at this
@@ -197,7 +197,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
         link_exe_instance = None
 
     # Set up class for holding the banks
-    inspiral_outs = WorkflowFileList([])
+    inspiral_outs = wf.FileList([])
 
     # Matched-filtering is done independently for different ifos, but might not be!
     # If we want to use multi-detector matched-filtering or something similar to this

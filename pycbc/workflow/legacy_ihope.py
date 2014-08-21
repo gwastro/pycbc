@@ -34,14 +34,14 @@ import logging
 import urlparse
 from glue import pipeline
 from glue import segments
-from pycbc.workflow.workflow import WorkflowNode, WorkflowExecutable, WorkflowFile
+from pycbc.workflow import workflow as wf
 
 def legacy_get_valid_times(self):
     """
     Return the length of data that the tmpltbank job will need to read and
     the part of that data that the template bank is valid for. In the case
     of lalapps_tmpltbank the following options are needed to set this up
-    and will be used by the WorkflowExecutable to figure this out:
+    and will be used by the Executable to figure this out:
 
     * --pad-data (seconds, amount of data used to pad the analysis region.
       This is needed as some data will be corrupted from the data
@@ -94,19 +94,19 @@ def legacy_get_valid_times(self):
     return dataLength, validChunk
 
         
-class LegacyAnalysisNode(WorkflowNode):
+class LegacyAnalysisNode(wf.Node):
     # This is *ONLY* used by legacy codes where pycbc.workflow cannot directly
     # set the output name. Do not use elsewhere!
     def  set_jobnum_tag(self, num):
         self.add_opt('--user-tag', num)
         
-class LegacyAnalysisExecutable(WorkflowExecutable):
+class LegacyAnalysisExecutable(wf.Executable):
     """
     The class responsible for setting up jobs for legacy lalapps C-code
     Executables.
     """
     def __init__(self, cp, name, universe=None, ifo=None, tags=[], out_dir=None):
-        WorkflowExecutable.__init__(self, cp, name, universe, ifo, out_dir, tags=tags)
+        wf.Executable.__init__(self, cp, name, universe, ifo, out_dir, tags=tags)
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
         node = LegacyAnalysisNode(self)
@@ -132,7 +132,7 @@ class LegacyAnalysisExecutable(WorkflowExecutable):
             extension += '.gz'
         
         #create the output file for this job 
-        out_file = WorkflowFile(self.ifo, self.name, valid_seg,
+        out_file = wf.File(self.ifo, self.name, valid_seg,
                              extension=extension,
                              directory=self.out_dir,
                              tags=self.tags + tags)
@@ -149,7 +149,7 @@ class LegacyTmpltbankExecutable(LegacyAnalysisExecutable):
 class LegacyInspiralExecutable(LegacyAnalysisExecutable):
     """
     The class responsible for setting up jobs for legacy lalapps_inspiral
-    WorkflowExecutable.
+    Executable.
     """
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None, 
                        out_dir=None, tags=[]):
@@ -169,7 +169,7 @@ class LegacyInspiralExecutable(LegacyAnalysisExecutable):
         return node
 
 
-class LegacySplitBankExecutable(WorkflowExecutable):    
+class LegacySplitBankExecutable(wf.Executable):    
     """
     The class responsible for creating jobs for lalapps_splitbank.
     """
@@ -196,15 +196,15 @@ class LegacySplitBankExecutable(WorkflowExecutable):
 
         Parameters
         ----------
-        bank : WorkflowOutFile 
-            The WorkflowOutFile containing the template bank to be split
+        bank : OutFile 
+            The OutFile containing the template bank to be split
 
         Returns
         --------
         node : Node
             The node to run the job
         """
-        node = WorkflowNode(self)
+        node = wf.Node(self)
         # FIXME: This is a hack because SplitBank fails if given an input file
         # whose path contains the character '-' or if the input file is not in
         # the same directory as the output. Therefore we just set the path to
@@ -233,7 +233,7 @@ class LegacySplitBankExecutable(WorkflowExecutable):
             url_list.append(out_url)
                 
             job_tag = bank.description + "_" + self.name.upper()
-            out_file = WorkflowFile(bank.ifo, job_tag, bank.segment, 
+            out_file = wf.File(bank.ifo, job_tag, bank.segment, 
                                    file_url=out_url, tags=bank.tags)
             node._add_output(out_file)
         return node

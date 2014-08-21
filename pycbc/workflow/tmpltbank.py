@@ -35,7 +35,7 @@ import ConfigParser
 import urlparse, urllib
 import logging
 from glue import segments
-from pycbc.workflow.workflow import *
+from pycbc.workflow import workflow as wf
 from pycbc.workflow.jobsetup import *
 
 def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
@@ -52,7 +52,7 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
     science_segs : Keyed dictionary of glue.segmentlist objects
         scienceSegs[ifo] holds the science segments to be analysed for each
         ifo. 
-    datafind_outs : WorkflowFileList
+    datafind_outs : FileList
         The file list containing the datafind files.
     output_dir : path string
         The directory where data products will be placed. 
@@ -62,8 +62,8 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
 
     Returns
     --------
-    WorkflowFileList
-        The WorkflowFileList holding the details of all the template bank jobs.
+    FileList
+        The FileList holding the details of all the template bank jobs.
     '''
     logging.info("Entering template bank generation module.")
     make_analysis_dir(output_dir)
@@ -146,7 +146,7 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
     science_segs : Keyed dictionary of glue.segmentlist objects
         scienceSegs[ifo] holds the science segments to be analysed for each
         ifo. 
-    datafind_outs : WorkflowFileList
+    datafind_outs : FileList
         The file list containing the datafind files.
     output_dir : path string
         The directory where data products will be placed. 
@@ -161,8 +161,8 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
 
     Returns
     --------
-    WorkflowOutFileList
-        The WorkflowOutFileList holding the details of all the template bank jobs.
+    OutFileList
+        The OutFileList holding the details of all the template bank jobs.
     '''
     cp = workflow.cp
     # Need to get the exe to figure out what sections are analysed, what is
@@ -193,7 +193,7 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
         link_exe_instance = None
 
     # Set up class for holding the banks
-    tmplt_banks = WorkflowFileList([])
+    tmplt_banks = wf.FileList([])
 
 
     # Template banks are independent for different ifos, but might not be!
@@ -244,8 +244,8 @@ def setup_tmpltbank_without_frames(workflow, output_dir,
 
     Returns
     --------
-    WorkflowFileList
-        The WorkflowFileList holding the details of the template bank(s).
+    FileList
+        The FileList holding the details of the template bank(s).
     '''
     cp = workflow.cp
     # Need to get the exe to figure out what sections are analysed, what is
@@ -265,7 +265,7 @@ def setup_tmpltbank_without_frames(workflow, output_dir,
     # Select the appropriate class
     exe_instance = select_tmpltbank_class(tmplt_bank_exe)
 
-    tmplt_banks = WorkflowFileList([])
+    tmplt_banks = wf.FileList([])
 
     # Make the distinction between one bank for all ifos and one bank per ifo
     if independent_ifos:
@@ -307,14 +307,14 @@ def setup_tmpltbank_pregenerated(workflow, tags=[]):
 
     Returns
     --------
-    WorkflowFileList
-        The WorkflowFileList holding the details of the template bank.
+    FileList
+        The FileList holding the details of the template bank.
     '''
     # Currently this uses the *same* fixed bank for all ifos.
     # Maybe we want to add capability to analyse separate banks in all ifos?
     
     # Set up class for holding the banks
-    tmplt_banks = WorkflowFileList([])
+    tmplt_banks = wf.FileList([])
 
     cp = workflow.cp
     global_seg = workflow.analysis_time
@@ -325,7 +325,7 @@ def setup_tmpltbank_pregenerated(workflow, tags=[]):
         pre_gen_bank = cp.get_opt_tags('workflow-tmpltbank',
                                            'tmpltbank-pregenerated-bank', tags)
         file_url = urlparse.urljoin('file:', urllib.pathname2url(pre_gen_bank))
-        curr_file = WorkflowFile(workflow.ifos, user_tag, global_seg, file_url,
+        curr_file = wf.File(workflow.ifos, user_tag, global_seg, file_url,
                                                                      tags=tags)
         curr_file.PFN(file_url, site='local')
         tmplt_banks.append(curr_file)
@@ -337,7 +337,7 @@ def setup_tmpltbank_pregenerated(workflow, tags=[]):
                                 'tmpltbank-pregenerated-bank-%s' %(ifo,), tags)
                 file_url = urlparse.urljoin('file:',
                                              urllib.pathname2url(pre_gen_bank))
-                curr_file = WorkflowFile(ifo, user_tag, global_seg, file_url,
+                curr_file = wf.File(ifo, user_tag, global_seg, file_url,
                                                                      tags=tags)
                 curr_file.PFN(file_url, site='local')
                 tmplt_banks.append(curr_file)

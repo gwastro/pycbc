@@ -34,7 +34,7 @@ import logging
 import urllib
 from glue import segments, pipeline
 from glue.ligolw import utils, table, lsctables, ligolw
-from pycbc.workflow.workflow import *
+from pycbc.workflow import workflow as wf
 from pycbc.workflow.jobsetup import *
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
@@ -52,7 +52,7 @@ def setup_segment_generation(workflow, out_dir, tag=None):
     
     Parameters
     -----------
-    Workflow : workflow.Workflow
+    workflow : Workflow
         The workflow instance that the coincidence jobs will be added to.
         This instance also contains the ifos for which to attempt to obtain
         segments for this analysis and the start and end times to search for
@@ -63,8 +63,8 @@ def setup_segment_generation(workflow, out_dir, tag=None):
         Use this to specify a tag. This can be used if this module is being
         called more than once to give call specific configuration (by setting
         options in [workflow-datafind-${TAG}] rather than [workflow-datafind]). This
-        is also used to tag the WorkflowFiles returned by the class to uniqueify
-        the WorkflowFiles and uniqueify the actual filename.
+        is also used to tag the Files returned by the class to uniqueify
+        the Files and uniqueify the actual filename.
         FIXME: Filenames may not be unique with current codes!
 
     Returns
@@ -72,7 +72,7 @@ def setup_segment_generation(workflow, out_dir, tag=None):
     segsToAnalyse : dictionay of ifo-keyed glue.segment.segmentlist instances
         This will contain the times that your code should analyse. By default this
         is science time - CAT_1 vetoes. (This default could be changed if desired)
-    segFilesList : workflow.WorkflowFileList of workflow.WorkflowSegFile instances
+    segFilesList : FileList of SegFile instances
         These are representations of the various segment files that were constructed
         at this stage of the workflow and may be needed at later stages of the
         analysis (e.g. for performing DQ vetoes). If the file was generated at
@@ -179,8 +179,8 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
 
     Parameters
     -----------
-    Workflow : workflow.Workflow
-        The workflow instance that the coincidence jobs will be added to.
+    workflow : Workflow
+        The Workflow instance that the coincidence jobs will be added to.
         This instance also contains the ifos for which to attempt to obtain
         segments for this analysis and the start and end times to search for
         segments over.
@@ -198,8 +198,8 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
         Use this to specify a tag. This can be used if this module is being
         called more than once to give call specific configuration (by setting
         options in [workflow-datafind-${TAG}] rather than [workflow-datafind]). This
-        is also used to tag the WorkflowFiles returned by the class to uniqueify
-        the WorkflowFiles and uniqueify the actual filename.
+        is also used to tag the Files returned by the class to uniqueify
+        the Files and uniqueify the actual filename.
         FIXME: Filenames may not be unique with current codes!
     generate_coincident_segs : boolean, optional (default = True)
         If given this module will generate a set of coincident, cumulative veto
@@ -207,7 +207,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
 
     Returns
     -------
-    segFilesList : dictionary of workflow.WorkflowSegFile instances
+    segFilesList : dictionary of workflow.SegFile instances
         These are representations of the various segment files that were
         constructed
         at this stage of the workflow and may be needed at later stages of the
@@ -218,7 +218,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
         not be because I am not psychic).
     """
     cp = workflow.cp
-    segFilesList = WorkflowFileList([])
+    segFilesList = wf.FileList([])
     start_time = workflow.analysis_time[0]
     end_time = workflow.analysis_time[1]
     segValidSeg = workflow.analysis_time
@@ -268,7 +268,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
             currTags = [tag, 'SCIENCE_OK']
         else:
             currTags = ['SCIENCE_OK']
-        currFile = WorkflowOutSegFile(ifo, 'SEGMENTS',
+        currFile = wf.OutSegFile(ifo, 'SEGMENTS',
                                    segValidSeg, currUrl, segment_list=analysedSegs,
                                    tags = currTags)
         segFilesList.append(currFile)
@@ -293,7 +293,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
                                    %(ifo_string, category) )
             currUrl = urlparse.urlunparse(['file', 'localhost',
                                          cumulativeVetoFile, None, None, None])
-            currSegFile = WorkflowOutSegFile(ifo_string, 'SEGMENTS',
+            currSegFile = wf.OutSegFile(ifo_string, 'SEGMENTS',
                                    segValidSeg, currUrl, segment_list=analysedSegs,
                                    tags=currTags)
             # And actually make the file (or queue it in the workflow)
@@ -333,14 +333,14 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir, tag=None):
         Use this to specify a tag. This can be used if this module is being
         called more than once to give call specific configuration (by setting
         options in [workflow-datafind-${TAG}] rather than [workflow-datafind]). This
-        is also used to tag the WorkflowFiles returned by the class to uniqueify
-        the WorkflowFiles and uniqueify the actual filename.
+        is also used to tag the Files returned by the class to uniqueify
+        the Files and uniqueify the actual filename.
 
     Returns
     --------
     sciSegs : glue.segments.segmentlist
         The segmentlist generated by this call
-    sciXmlFile : workflow.WorkflowSegFile
+    sciXmlFile : SegFile
         The workflow File object corresponding to this science segments file.
 
     """
@@ -375,7 +375,7 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir, tag=None):
     sciXmlFP.close()
     currUrl = urlparse.urlunparse(['file', 'localhost', sciXmlFilePath,
                                    None, None, None])
-    sciXmlFile = WorkflowOutSegFile(ifo, 'SEGMENTS',
+    sciXmlFile = wf.OutSegFile(ifo, 'SEGMENTS',
                                   segValidSeg, currUrl, segment_list=sciSegs,
                                   tags=tagList)
 
@@ -390,7 +390,7 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
     Parameters
     -----------
     workflow: Workflow
-        An instance of the workflow.Workflow class that manages the workflow.
+        An instance of the Workflow class that manages the workflow.
     ifo : string
         The string describing the ifo to generate vetoes for.
     category : int
@@ -401,17 +401,14 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
         The time at which to stop searching for segments.
     out_dir : path
         The directory in which output will be stored.    
-    workflow : workflow.Workflow
-        The workflow instance that the DQ generation Node will be added
-        to.
-    vetoGenJob : workflow.Job
+    vetoGenJob : Job
         The veto generation Job class that will be used to create the Node.
     tag : string, optional (default=None)
         Use this to specify a tag. This can be used if this module is being
         called more than once to give call specific configuration (by setting
         options in [workflow-datafind-${TAG}] rather than [workflow-datafind]). This
-        is also used to tag the WorkflowFiles returned by the class to uniqueify
-        the WorkflowFiles and uniqueify the actual filename.
+        is also used to tag the Files returned by the class to uniqueify
+        the Files and uniqueify the actual filename.
         FIXME: Filenames may not be unique with current codes!
     execute_now : boolean, optional
         If true, jobs are executed immediately. If false, they are added to the
@@ -419,11 +416,11 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
 
     Returns
     --------
-    veto_def_file : workflow.WorkflowSegFile
+    veto_def_file : SegFile
         The workflow File object corresponding to this DQ veto file.
     """
     segValidSeg = segments.segment([start_time,end_time])
-    node = WorkflowNode(vetoGenJob)
+    node = wf.Node(vetoGenJob)
     node.add_opt('--veto-categories', str(category))
     node.add_opt('--ifo-list', ifo)
     node.add_opt('--gps-start-time', str(start_time))
@@ -438,7 +435,7 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
     else:
         currTags = ['VETO_CAT%d' %(category)]
 
-    vetoXmlFile = WorkflowOutSegFile(ifo, 'SEGMENTS', segValidSeg, currUrl,
+    vetoXmlFile = wf.OutSegFile(ifo, 'SEGMENTS', segValidSeg, currUrl,
                                   tags=currTags)
     node._add_output(vetoXmlFile)
     
@@ -455,7 +452,7 @@ def create_segs_from_cats_job(cp, out_dir, ifo_string, tag=None):
 
     Parameters
     -----------
-    cp : workflow.WorkflowConfigParser
+    cp : WorkflowConfigParser
         The in-memory representation of the configuration (.ini) files
     out_dir : path
         Directory in which to put output files
@@ -465,13 +462,13 @@ def create_segs_from_cats_job(cp, out_dir, ifo_string, tag=None):
         Use this to specify a tag. This can be used if this module is being
         called more than once to give call specific configuration (by setting
         options in [workflow-datafind-${TAG}] rather than [workflow-datafind]). This
-        is also used to tag the WorkflowFiles returned by the class to uniqueify
-        the WorkflowFiles and uniqueify the actual filename.
+        is also used to tag the Files returned by the class to uniqueify
+        the Files and uniqueify the actual filename.
         FIXME: Filenames may not be unique with current codes!
 
     Returns
     --------
-    job : workflow.Job instance
+    job : Job instance
         The Job instance that will run segments_from_cats jobs
     """
     segServerUrl = cp.get_opt_tag("workflow-segments", "segments-database-url",
@@ -482,7 +479,7 @@ def create_segs_from_cats_job(cp, out_dir, ifo_string, tag=None):
         currTags = [tag]
     else:
         currTags = []
-    job = WorkflowExecutable(cp, 'segments_from_cats', universe='local',
+    job = wf.Executable(cp, 'segments_from_cats', universe='local',
                                ifos=ifo_string, out_dir=out_dir, tags=currTags)
     job.add_opt('--separate-categories')
     job.add_opt('--segment-url', segServerUrl)
@@ -520,10 +517,10 @@ def get_cumulative_segs(workflow, currSegFile, categories,
    
     Parameters
     -----------
-    workflow: workflow.Workflow
+    workflow: Workflow
         An instance of the Workflow class that manages the workflow.
-    currSegFile : workflow.WorkflowSegFile
-        The WorkflowSegFile corresponding to this file that will be created.
+    currSegFile : SegFile
+        The SegFile corresponding to this file that will be created.
     categories : int
         The veto categories to include in this cumulative veto.
     segFilesList : Listionary of workflowSegFiles
@@ -536,7 +533,7 @@ def get_cumulative_segs(workflow, currSegFile, categories,
         If true, jobs are executed immediately. If false, they are added to the
         workflow to be run later.
     """
-    add_inputs = WorkflowFileList([])
+    add_inputs = wf.FileList([])
     valid_segment = currSegFile.segment
     segment_name = segment_name = 'VETO_CAT%d_CUMULATIVE' % (categories[-1])
     cp = workflow.cp
