@@ -74,7 +74,7 @@ def xml_to_hdf(table, hdf_file, hdf_key, columns):
         key = os.path.join(hdf_key, col) 
         hdf_file[key] = numpy.array(table.get_column(col), 
                                         dtype=numpy.float32)
-        
+     
 parser = argparse.ArgumentParser()
 parser.add_argument('--trigger-file')
 parser.add_argument('--injection-file')
@@ -135,31 +135,30 @@ found_fore = numpy.arange(0, len(inj_time), 1)[left[found]]
 found_fore_v = numpy.arange(0, len(inj_time), 1)[left[found_after_vetoes]]
 
 logging.info('Saving injection information')
-f = h5py.File(args.output_file, 'w')
+fo = h5py.File(args.output_file, 'w')
 columns = ['mass1', 'mass2', 'spin1x', 'spin1y', 
            'spin1z', 'spin2x', 'spin2y', 'spin2z',
            'eff_dist_l', 'eff_dist_h', 'eff_dist_v', 
            'inclination', 'polarization', 'coa_phase', 
            'latitude', 'longitude']
-xml_to_hdf(sim_table, f, 'injections', columns)
-f['injections/end_time'] = inj_time
+xml_to_hdf(sim_table, fo, 'injections', columns)
+fo['injections/end_time'] = inj_time
+fo.attrs['detector_1'] = f.attrs['detector_1']
+fo.attrs['detector_2'] = f.attrs['detector_2']
+fo['missed/all'] = missed
+fo['missed/within_analysis'] = missed_within_time
+fo['missed/after_vetoes'] = missed_after_vetoes
 
-f['missed/all'] = missed
-f['missed/within_analysis'] = missed_within_time
-f['missed/after_vetoes'] = missed_after_vetoes
+fo['found/injection_index'] = found
+fo['found/stat1'] = stat1[time_sorting][found_fore]
+fo['found/stat2'] = stat2[time_sorting][found_fore]
+fo['found/time1'] = time1[time_sorting][found_fore]
+fo['found/time2'] = time2[time_sorting][found_fore]
+fo['found/ifar'] = ifar[time_sorting][found_fore]
 
-f['found/injection_index'] = found
-f['found/stat1'] = stat1[time_sorting][found_fore]
-f['found/stat2'] = stat2[time_sorting][found_fore]
-f['found/time1'] = time1[time_sorting][found_fore]
-f['found/time2'] = time2[time_sorting][found_fore]
-f['found/ifar'] = ifar[time_sorting][found_fore]
-
-f['found_after_vetoes/injection_index'] = found_after_vetoes
-f['found_after_vetoes/stat1'] = stat1[time_sorting][found_fore_v]
-f['found_after_vetoes/stat2'] = stat2[time_sorting][found_fore_v]
-f['found_after_vetoes/time1'] = time1[time_sorting][found_fore_v]
-f['found_after_vetoes/time2'] = time2[time_sorting][found_fore_v]
-f['found_after_vetoes/ifar'] = ifar[time_sorting][found_fore_v]
-
-
+fo['found_after_vetoes/injection_index'] = found_after_vetoes
+fo['found_after_vetoes/stat1'] = stat1[time_sorting][found_fore_v]
+fo['found_after_vetoes/stat2'] = stat2[time_sorting][found_fore_v]
+fo['found_after_vetoes/time1'] = time1[time_sorting][found_fore_v]
+fo['found_after_vetoes/time2'] = time2[time_sorting][found_fore_v]
+fo['found_after_vetoes/ifar'] = ifar[time_sorting][found_fore_v]
