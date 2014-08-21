@@ -112,7 +112,7 @@ right = numpy.searchsorted(time[time_sorting], inj_time + args.injection_window,
 found = numpy.where((right-left) == 1)[0]
 missed = numpy.where((right-left) == 0)[0]
 ambiguous = numpy.where((right-left) > 1)[0]
-logging.info('Found: %s, Missed: %s', % (len(found), len(missed))
+logging.info('Found: %s, Missed: %s' % (len(found), len(missed)))
 
 if len(ambiguous) > 0:
     logging.warn('More than one coinc trigger found associated to injection') 
@@ -121,21 +121,21 @@ logging.info('Removing injections outside of analyzed time')
 ki = keep_ind(inj_time, ana_start, ana_end)
 found_within_time = numpy.intersect1d(ki, found)
 missed_within_time = numpy.intersect1d(ki, missed)
-logging.info('Found: %s, Missed: %s', % (len(found_within_time), len(missed_within_time))
+logging.info('Found: %s, Missed: %s' % (len(found_within_time), len(missed_within_time)))
 
 logging.info('Removing injections in vetoed time')
 i1, v1 = veto_indices(inj_time, 'H1', [args.veto_file])
 i2, v2 = veto_indices(inj_time, 'L1', [args.veto_file])
 vi = numpy.concatenate([i1, i2])
-found_after_vetoes = numpy.delete(found, numpy.in1d(found_within_time, vi))
-missed_after_vetoes = numpy.delete(missed, numpy.in1d(missed_within_time, vi))
-logging.info('Found: %s, Missed: %s', % (len(found_after_vetoes), len(missed_after_vetoes))
+found_after_vetoes = numpy.delete(found_within_time, numpy.in1d(found_within_time, vi))
+missed_after_vetoes = numpy.delete(missed_within_time, numpy.in1d(missed_within_time, vi))
+logging.info('Found: %s, Missed: %s' % (len(found_after_vetoes), len(missed_after_vetoes)))
 
 found_fore = numpy.arange(0, len(inj_time), 1)[left[found]]
 found_fore_v = numpy.arange(0, len(inj_time), 1)[left[found_after_vetoes]]
 
 logging.info('Saving injection information')
-f = h5py.File(args.output_file)
+f = h5py.File(args.output_file, 'w')
 columns = ['mass1', 'mass2', 'spin1x', 'spin1y', 
            'spin1z', 'spin2x', 'spin2y', 'spin2z',
            'eff_dist_l', 'eff_dist_h', 'eff_dist_v', 
@@ -156,10 +156,10 @@ f['found/time2'] = time2[time_sorting][found_fore]
 f['found/ifar'] = ifar[time_sorting][found_fore]
 
 f['found_after_vetoes/injection_index'] = found_after_vetoes
-f['found/stat1'] = stat1[time_sorting][found_fore_v]
-f['found/stat2'] = stat2[time_sorting][found_fore_v]
-f['found/time1'] = time1[time_sorting][found_fore_v]
-f['found/time2'] = time2[time_sorting][found_fore_v]
-f['found/ifar'] = ifar[time_sorting][found_fore_v]
+f['found_after_vetoes/stat1'] = stat1[time_sorting][found_fore_v]
+f['found_after_vetoes/stat2'] = stat2[time_sorting][found_fore_v]
+f['found_after_vetoes/time1'] = time1[time_sorting][found_fore_v]
+f['found_after_vetoes/time2'] = time2[time_sorting][found_fore_v]
+f['found_after_vetoes/ifar'] = ifar[time_sorting][found_fore_v]
 
 
