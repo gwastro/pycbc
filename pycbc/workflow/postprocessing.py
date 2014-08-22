@@ -82,7 +82,7 @@ def setup_postprocessing(workflow, trigger_files, summary_xml_files,
     if post_proc_method == "PIPEDOWN_WORKFLOW":
         # If you want the intermediate output files, call this directly
         post_proc_files = setup_postproc_pipedown_workflow(workflow,
-                           trigger_files, output_dir,
+                           trigger_files, summary_xml_files, output_dir,
                            tags=tags, **kwargs)
     else:
         errMsg = "Post-processing method not recognized. Must be "
@@ -93,8 +93,8 @@ def setup_postprocessing(workflow, trigger_files, summary_xml_files,
 
     return post_proc_files
 
-def setup_postproc_pipedown_workflow(workflow, trigger_files, output_dir,
-                                summary_xml_files=None, tags=[], veto_cats=[]):
+def setup_postproc_pipedown_workflow(workflow, trigger_files, summary_xml_files,
+                                  output_dir, tags=[], veto_cats=[]):
     """
     This module sets up the post-processing stage in the workflow, using a pipedown
     style set up. This consists of running compute_durations to determine and
@@ -110,12 +110,12 @@ def setup_postproc_pipedown_workflow(workflow, trigger_files, output_dir,
     trigger_files : pycbc.workflow.core.FileList
         An FileList containing the combined databases at CAT_1,2,3... that
         will be used to calculate FARs
-    output_dir : path
-        The directory in which output files will be stored.
     summary_xml_files : pycbc.workflow.core.FileList (required)
         A FileList of the output of the analysislogging_utils module.
         For pipedown-style post-processing this should be one file conataing a
         segment table holding the single detector analysed times.
+    output_dir : path
+        The directory in which output files will be stored.
     tags : list of strings (optional, default = [])
         A list of the tagging strings that will be used for all jobs created
         by this call to the workflow. An example might be ['POSTPROC1'] or
@@ -188,82 +188,3 @@ def setup_postproc_pipedown_workflow(workflow, trigger_files, output_dir,
         cfar_outs.append(cfar_out)
 
     return cfar_outs
-
-def setup_postproc_gstlal(workflow, trigger_files, output_dir,
-                          tags=[], veto_cats=[], likelihood_files=[],
-                          inj_less_tag=None, injection_tags=[],
-                          sqlite_stage1_files=[]):
-    """
-    This module sets up the post-processing stage in ahope, using a pipedown
-    style set up. This consists of running compute_durations to determine and
-    store the analaysis time (foreground and background). It then runs cfar
-    jobs to determine the false alarm rate for all triggers (simulations or
-    otherwise) in the input database.
-    Pipedown expects to take as input (at this stage) a single database
-    containing all triggers. This sub-module follows that same idea, so
-    len(triggerFiles) must equal 1 (for every DQ category that we will run).
-
-    Workflow : ahope.Workflow
-        The ahope workflow instance that the coincidence jobs will be added to.
-    trigger_files : ahope.AhopeFileList
-        An AhopeFileList with the databases for full_data, and the injection
-        runs. Not yet sure how to deal with vetoes in gstlal!
-    output_dir : path
-        The directory in which output files will be stored.
-    inj_less_tag : string (required)
-        The tag that identifies files that do not have simulations in them.
-        Ie. the primary search results.
-    injection_tags : list of strings (optional, default = [])
-        Each injection file has a unique tag. If used in the method, this
-        tells the post-processing preparation code which injection tags it
-        should include when creating the combined output.
-    tags : list of strings (optional, default = [])
-        A list of the tagging strings that will be used for all jobs created
-        by this call to the workflow. An example might be ['POSTPROC1'] or
-        ['DENTYSNEWPOSTPROC']. This will be used in output names.
-    veto_cats : list of integers (optional, default = [])
-        Decide which set of veto files should be used in the post-processing
-        preparation. This is used, for example, to tell the workflow that you
-        are only interested in quoting results at categories 2, 3 and 4. In
-        which case just supply [2,3,4] for those veto files here.
-   
-    Returns
-    --------
-    final_files : ahope.AhopeFileList
-        A list of the final SQL databases containing computed FARs.
-    """
-    # Sanity checks
-    
-    # Setup needed exe classes
-    calc_likelihood_exe_name = workflow.cp.get_opt_tags("ahope-postprocprep",
-                                   "postproc-calclikelihood-exe", tags)
-    marg_likelihood_exe_name = workflow.cp.get_opt_tags("ahope-postproc",
-                                   "postproc-marglikelihood-exe", tags)
-    far_gstlal_exe_name = workflow.cp.get_opt_tags("ahope-postproc",
-                                   "postproc-fargstlal-exe", tags)
-    calc_likelihood_exe = select_generic_executable(workflow,
-                                                       calc_likelihood_exe_name)
-    marg_likelihood_exe = select_generic_executable(workflow,
-                                                        marg_likelihood_exe_name)
-    far_gstlal_exe = select_generic_executable(workflow, far_gstlal_exe_name)
-
-    calclikelihood_outputs = AhopeFileList([])
-    
-    # Do for all injection runs and zero lag
-    for inj_tag in [inj_less_tag] + injection_tags:
-        curr_tags = tags + [inj_tag, veto_tag]
-        input_trigger_files = sqlite_stage1_files.find_output_with_tag(inj_tag)
-        input_likelihood_files = likelihood_files.find_output_with_tag(\
-                                                                   inj_less_tag)
-        calc_likelihood_job = calc_likelihood_exe(workflow.cp, 
-                                                  calc_likelihood_exe_name,
-                                                  ifo=workflow.ifo_string,
-                                                  out_dir=output_dir,
-                                                  tags=curr_tags)
-        calc_likelihood_node = calc_likelihood_job.create_node(\
-                                                  workflow.analysis_time,
-                                                  input_trigger_files,
-                                                  input_likelihood_files)
-        # Only one output file
-        out_file = calc_likelihood_node.output_files[0]
-        calclikelihood_outputs.append(out_file)

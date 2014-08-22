@@ -285,7 +285,7 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
 def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
                                        tags=[], injection_files=None,
                                        veto_files=None, inj_less_tag=None,
-                                       injection_tags=[], veto_cats=[],
+                                       injection_tags=[], veto_cat=None,
                                        summary_xml_files=None,
                                        likelihood_files=[]):
     """
@@ -411,9 +411,10 @@ def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
     # FIXME: Some hacking is still needed while we support pipedown
     # FIXME: How does gstlal deal with veto categories?
     #         Hardcode to CAT1 for now.
-    veto_cat = 1
     veto_tag = 'CUMULATIVE_CAT_%d' %(veto_cat,)
-    #dqSegFile = vetoFiles.find_output_with_tag(vetoTag)
+    dq_seg_file = veto_files.find_output_with_tag(veto_tag)
+    assert len(dq_seg_file) == 1
+    dq_seg_file = dq_seg_file[0]
     #if not len(dqSegFile) == 1:
     #    errMsg = "Did not find exactly 1 data quality file."
     #    raise ValueError(errMsg)
@@ -604,6 +605,7 @@ def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
 
         stage5_inputs = [stage4_out]
         stage5_inputs.append(summary_xml_files[0])
+        stage5_inputs.append(dq_seg_file)
         if inj_tag != inj_less_tag:
             inj_file = injection_files.find_output_with_tag(inj_tag)
             assert (len(inj_file) == 1)

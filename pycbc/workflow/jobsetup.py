@@ -853,7 +853,7 @@ class LigolwSSthincaExecutable(Executable):
         # FIXME: Better way of dealing with the gstlal output file
         node.new_output_file_opt(jobSegment, '.xml.gz',
                                  '--likelihood-output-file',
-                                 tags=['DIST_STATS']+self.tags)
+                                 tags=['DIST_STATS']+self.tags+tags)
 
         return node
 
@@ -869,13 +869,19 @@ class PycbcSqliteSimplifyExecutable(Executable):
         node = Node(self)
         if injFile and not injString:
             raise ValueError("injString needed if injFile supplied.")
+        # Need to check if I am dealing with a single split job
+        extra_tags = []
+        if len(inputFiles) == 1:
+            for tag in inputFiles[0].tags:
+                if tag.startswith('JOB'):
+                    extra_tags.append(tag)
         for file in inputFiles:
             node.add_input_arg(file)
         if injFile:
             node.add_input_opt("--injection-file", injFile)
             node.add_opt("--simulation-tag", injString)
         node.new_output_file_opt(job_segment, '.sqlite', '--output-file',
-                                 tags=self.tags) 
+                                 tags=self.tags+extra_tags) 
         return node
 
 class SQLInOutExecutable(Executable):
@@ -886,11 +892,17 @@ class SQLInOutExecutable(Executable):
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
         super(SQLInOutExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
 
-    def create_node(self, job_segment, inputFile):
+    def create_node(self, job_segment, input_file):
+        # Need to follow through the split job tag if present
+        extra_tags = []
+        for tag in input_file.tags:
+            if tag.startswith('JOB'):
+                extra_tags.append(tag)
+
         node = Node(self)
-        node.add_input_opt('--input', inputFile)
-        node.new_output_file_opt(job_segment, '.sqlite', '--output',
-                                 tags=self.tags)
+        node.add_input_opt('--input', input_file)
+        node.new_output_file_opt(job_segment, '.sql', '--output',
+                                 tags=self.tags+extra_tags)
         return node
 
 class ExtractToXMLExecutable(WorkflowExecutable):
@@ -984,7 +996,7 @@ class PycbcGenerateRankingDataExecutable(AhopeExecutable):
         AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
         self.set_num_cpus(4)
-        self.set_memory('8000M')
+        self.set_memory('8000')
     def create_node(self, job_segment, likelihood_file, horizon_dist_file):
         node = AhopeNode(self)
         node.add_input_opt('--likelihood-file', likelihood_file)
@@ -1006,11 +1018,17 @@ class PycbcCalculateLikelihoodExecutable(AhopeExecutable):
     def create_node(self, job_segment, trigger_file, likelihood_file,
                     horizon_dist_file):
         node = AhopeNode(self)
+        # Need to follow through the split job tag if present
+        extra_tags = []
+        for tag in trigger_file.tags:
+            if tag.startswith('JOB'):
+                extra_tags.append(tag)
+
         node.add_input_opt('--trigger-file', trigger_file)
         node.add_input_opt('--horizon-dist-file', horizon_dist_file)
         node.add_input_opt('--likelihood-file', likelihood_file)
         node.new_output_file_opt(job_segment, '.sqlite', '--output-file',
-                                 tags=self.tags)
+                                 tags=self.tags + extra_tags)
         return node
 
 class GstlalMarginalizeLikelihoodExecutable(AhopeExecutable):
@@ -1061,6 +1079,7 @@ class GstlalPlotSensitivity(AhopeExecutable):
                  tags=[]):
         AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
+        self.set_memory('4000')
     def create_node(self, non_inj_db, injection_dbs):
         node = AhopeNode(self)
         node.add_input_opt("--zero-lag-database", non_inj_db)
@@ -1076,6 +1095,7 @@ class GstlalPlotSummary(AhopeExecutable):
                  tags=[]):
         AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
+        self.set_memory('4000')
     def create_node(self, non_inj_db, injection_dbs):
         node = AhopeNode(self)
         node.add_input_arg(non_inj_db)
@@ -1091,6 +1111,7 @@ class GstlalPlotBackground(AhopeExecutable):
                  tags=[]):
         AhopeExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
+        self.set_memory('4000')
     def create_node(self, non_inj_db, likelihood_file):
         node = AhopeNode(self)
         node.add_input_opt("--database", non_inj_db)

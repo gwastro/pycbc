@@ -156,7 +156,7 @@ count_above_threshold = far.CountAboveThreshold()
 # get working copy of database.
 #
 
-working_filename = dbtables.get_connection_filename(filename, tmp_path=args.tmp_path, verbose=args.verbose)
+working_filename = dbtables.get_connection_filename(args.non_injection_db, tmp_path=args.tmp_space, verbose=args.verbose)
 connection = sqlite3.connect(working_filename)
 
 #
@@ -173,7 +173,7 @@ count_above_threshold.update(connection, coinc_def_id, ranking_data.likelihood_r
 #
 
 connection.close()
-dbtables.discard_connection_filename(filename, working_filename, verbose = args.verbose)
+dbtables.discard_connection_filename(args.non_injection_db, working_filename, verbose = args.verbose)
 
 coinc_params_distributions.count_above_threshold = count_above_threshold
 # make sure instrument combination probabilities reflect new counts
