@@ -34,7 +34,7 @@ import logging
 import urlparse
 from glue import pipeline
 from glue import segments
-from pycbc.workflow import workflow as wf
+import pycbc.workflow.core
 
 def legacy_get_valid_times(self):
     """
@@ -94,19 +94,19 @@ def legacy_get_valid_times(self):
     return dataLength, validChunk
 
         
-class LegacyAnalysisNode(wf.Node):
+class LegacyAnalysisNode(pycbc.workflow.core.Node):
     # This is *ONLY* used by legacy codes where pycbc.workflow cannot directly
     # set the output name. Do not use elsewhere!
     def  set_jobnum_tag(self, num):
         self.add_opt('--user-tag', num)
         
-class LegacyAnalysisExecutable(wf.Executable):
+class LegacyAnalysisExecutable(pycbc.workflow.core.Executable):
     """
     The class responsible for setting up jobs for legacy lalapps C-code
     Executables.
     """
     def __init__(self, cp, name, universe=None, ifo=None, tags=[], out_dir=None):
-        wf.Executable.__init__(self, cp, name, universe, ifo, out_dir, tags=tags)
+        pycbc.workflow.core.Executable.__init__(self, cp, name, universe, ifo, out_dir, tags=tags)
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
         node = LegacyAnalysisNode(self)
@@ -132,7 +132,7 @@ class LegacyAnalysisExecutable(wf.Executable):
             extension += '.gz'
         
         #create the output file for this job 
-        out_file = wf.File(self.ifo, self.name, valid_seg,
+        out_file = pycbc.workflow.core.File(self.ifo, self.name, valid_seg,
                              extension=extension,
                              directory=self.out_dir,
                              tags=self.tags + tags)
@@ -169,7 +169,7 @@ class LegacyInspiralExecutable(LegacyAnalysisExecutable):
         return node
 
 
-class LegacySplitBankExecutable(wf.Executable):    
+class LegacySplitBankExecutable(pycbc.workflow.core.Executable):    
     """
     The class responsible for creating jobs for lalapps_splitbank.
     """
@@ -196,15 +196,15 @@ class LegacySplitBankExecutable(wf.Executable):
 
         Parameters
         ----------
-        bank : OutFile 
+        bank : pycbc.workflow.core.File 
             The OutFile containing the template bank to be split
 
         Returns
         --------
-        node : Node
+        node : pycbc.workflow.core.Node
             The node to run the job
         """
-        node = wf.Node(self)
+        node = pycbc.workflow.core.Node(self)
         # FIXME: This is a hack because SplitBank fails if given an input file
         # whose path contains the character '-' or if the input file is not in
         # the same directory as the output. Therefore we just set the path to
@@ -233,7 +233,7 @@ class LegacySplitBankExecutable(wf.Executable):
             url_list.append(out_url)
                 
             job_tag = bank.description + "_" + self.name.upper()
-            out_file = wf.File(bank.ifo, job_tag, bank.segment, 
+            out_file = pycbc.workflow.core.File(bank.ifo, job_tag, bank.segment, 
                                    file_url=out_url, tags=bank.tags)
             node._add_output(out_file)
         return node

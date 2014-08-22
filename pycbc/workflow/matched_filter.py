@@ -31,8 +31,8 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 from __future__ import division
 
 import os
-from pycbc.workflow import workflow as wf
-from pycbc.workflow.jobsetup import *
+import pycbc.workflow.core
+import pycbc.workflow.jobsetup
 
 def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
                                tmplt_banks, output_dir=None,
@@ -48,19 +48,19 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
 
     Parameters
     -----------
-    Workflow : workflow.Workflow
+    Workflow : pycbc.workflow.core.Workflow
         The workflow instance that the coincidence jobs will be added to.
     science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
         The list of times that are being analysed in this workflow. 
-    datafind_outs : FileList
+    datafind_outs : pycbc.workflow.core.FileList
         An FileList of the datafind files that are needed to obtain the
         data used in the analysis.
-    tmplt_banks : FileList
+    tmplt_banks : pycbc.workflow.core.FileList
         An FileList of the template bank files that will serve as input
         in this stage.
     output_dir : path
         The directory in which output will be stored.
-    injection_file : File, optional (default=None)
+    injection_file : pycbc.workflow.core.File, optional (default=None)
         If given the file containing the simulation file to be sent to these
         jobs on the command line. If not given no file will be sent.
     tags : list of strings (optional, default = [])
@@ -70,7 +70,7 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
         
     Returns
     -------
-    inspiral_outs : FileList
+    inspiral_outs : pycbc.workflow.core.FileList
         A list of output files written by this stage. This *will not* contain
         any intermediate products produced within this stage of the workflow.
         If you require access to any intermediate products produced at this
@@ -139,19 +139,19 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
 
     Parameters
     -----------
-    workflow : Workflow
+    workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the coincidence jobs will be added to.
     science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
         The list of times that are being analysed in this workflow. 
-    datafind_outs : FileList
+    datafind_outs : pycbc.workflow.core.FileList
         An FileList of the datafind files that are needed to obtain the
         data used in the analysis.
-    tmplt_banks : FileList
+    tmplt_banks : pycbc.workflow.core.FileList
         An FileList of the template bank files that will serve as input
         in this stage.
     output_dir : path
         The directory in which output will be stored.
-    injection_file : File, optional (default=None)
+    injection_file : pycbc.workflow.core.File, optional (default=None)
         If given the file containing the simulation file to be sent to these
         jobs on the command line. If not given no file will be sent.
     tags : list of strings (optional, default = [])
@@ -166,7 +166,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
         
     Returns
     -------
-    inspiral_outs : FileList
+    inspiral_outs : pycbc.workflow.core.FileList
         A list of output files written by this stage. This *will not* contain
         any intermediate products produced within this stage of the workflow.
         If you require access to any intermediate products produced at this
@@ -180,7 +180,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
     ifos = science_segs.keys()
     match_fltr_exe = os.path.basename(cp.get('executables','inspiral'))
     # Select the appropriate class
-    exe_class = select_matchedfilter_class(match_fltr_exe)
+    exe_class = pycbc.workflow.jobsetup.select_matchedfilter_class(match_fltr_exe)
 
     if link_to_tmpltbank:
         # Use this to ensure that inspiral and tmpltbank jobs overlap. This
@@ -192,12 +192,12 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
         # PSD but then only generate triggers in the 2000s of data that the
         # template bank jobs ran on.
         tmpltbank_exe = os.path.basename(cp.get('executables', 'tmpltbank'))
-        link_exe_instance = select_tmpltbank_class(tmpltbank_exe)
+        link_exe_instance = pycbc.workflow.jobsetup.select_tmpltbank_class(tmpltbank_exe)
     else:
         link_exe_instance = None
 
     # Set up class for holding the banks
-    inspiral_outs = wf.FileList([])
+    inspiral_outs = pycbc.workflow.core.FileList([])
 
     # Matched-filtering is done independently for different ifos, but might not be!
     # If we want to use multi-detector matched-filtering or something similar to this
@@ -214,9 +214,9 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
         else:
             link_job_instance = None
 
-        sngl_ifo_job_setup(workflow, ifo, inspiral_outs, job_instance, 
-                           science_segs[ifo], datafind_outs, output_dir,
-                           parents=tmplt_banks, allow_overlap=False,
-                           link_job_instance=link_job_instance,
-                           compatibility_mode=compatibility_mode)
+        pycbc.workflow.jobsetup.sngl_ifo_job_setup(workflow, ifo, inspiral_outs, job_instance, 
+                                                   science_segs[ifo], datafind_outs, output_dir,
+                                                   parents=tmplt_banks, allow_overlap=False,
+                                                   link_job_instance=link_job_instance,
+                                                   compatibility_mode=compatibility_mode)
     return inspiral_outs

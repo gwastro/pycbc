@@ -29,8 +29,7 @@ times used within the workflow, etc.
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
-from pycbc.workflow import workflow as wf
-from pycbc.workflow.jobsetup import *
+import pycbc.workflow.core
 from glue.ligolw import ligolw, table, utils
 from glue.ligolw.utils import process
 from glue.segmentdb import segmentdb_utils
@@ -49,13 +48,13 @@ def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
 
     Parameters
     -----------
-    workflow : Workflow
+    workflow : pycbc.workflow.core.Workflow
         The Workflow instance.
-    segs_list : SegFileList
+    segs_list : pycbc.workflow.core.FileList
         A list of Files containing the information needed to generate the
         segments above. For segments generated at run time the associated
         segmentlist is a property of this object.
-    insps : FileList
+    insps : pycbc.workflow.core.FileList
         The output files from the matched-filtering module. Used to identify
         what times have been analysed in this workflow.
     output_dir : path
@@ -150,11 +149,11 @@ def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
         segmentdb_utils.add_to_segment_summary(outdoc, proc_id,
                                       analysable_def_id, summ_segs, comment='')
 
-    summ_file = wf.File(workflow.ifos, "WORKFLOW_SUMMARY",
+    summ_file = pycbc.workflow.core.File(workflow.ifos, "WORKFLOW_SUMMARY",
                                       workflow.analysis_time, extension=".xml",
                                       directory=output_dir)
     summ_file.PFN(summ_file.storage_path, site='local')
     utils.write_filename(outdoc, summ_file.storage_path)
 
-    return wf.FileList([summ_file])
+    return pycbc.workflow.core.FileList([summ_file])
 

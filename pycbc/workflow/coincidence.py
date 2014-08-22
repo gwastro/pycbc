@@ -34,8 +34,8 @@ import re
 import os
 import os.path
 from glue import segments
-from pycbc.workflow import workflow as wf
-from pycbc.workflow.jobsetup import *
+import pycbc.workflow.core
+import pycbc.workflow.jobsetup
 from pylal import ligolw_cafe, ligolw_tisi
 
 def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
@@ -49,20 +49,20 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
 
     Parameters
     -----------
-    workflow : Workflow
-        The workflow instance that the coincidence jobs will be added to.
-    segsList : FileList
+    workflow : pycbc.workflow.core.Workflow
+        The Workflow instance that the coincidence jobs will be added to.
+    segsList : pycbc.workflow.core.FileList
         The list of files returned by workflow's segment module that contains
         pointers to all the segment files generated in the workflow. If the
         coincidence code will be applying the data quality vetoes, then this
         will be used to ensure that the codes get the necessary input to do
         this.
-    timeSlideFiles : FileList
+    timeSlideFiles : pycbc.workflow.core.FileList
         An FileList of the timeSlide input files that are needed to
         determine what time sliding needs to be done if the coincidence code
         will be running time slides to facilitate background computations later
         in the workflow.
-    inspiral_outs : FileList
+    inspiral_outs : pycbc.workflow.core.FileList
         An FileList of the matched-filter module output that is used as
         input to the coincidence codes running at this stage.
     output_dir : path
@@ -83,7 +83,7 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
         time slides (or vice-versa if you prefer!)
     Returns
     --------
-    coinc_outs : FileList
+    coinc_outs : pycbc.workflow.core.FileList
         A list of the *final* outputs of the coincident stage. This *does not*
         include any intermediate products produced within the workflow. If you
         require access to intermediate products call the various sub-functions
@@ -136,21 +136,21 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
 
     Parameters
     -----------
-    workflow : Workflow
+    workflow : pycbc.workflow.core.Workflow
         The workflow instance that the coincidence jobs will be added to.
-    segsList : FileList
+    segsList : pycbc.workflow.core.FileList
         The list of files returned by workflow's segment module that contains
         pointers to all the segment files generated in the workflow. If the
         coincidence code will be applying the data quality vetoes, then this
         will be used to ensure that the codes get the necessary input to do
         this.
-    timeSlideFiles : FileList
+    timeSlideFiles : pycbc.workflow.core.FileList
         An FileList of the timeSlide input files that are needed to
         determine what time sliding needs to be done. One of the timeSlideFiles
         will normally be "zero-lag only", the others containing time slides
         used to facilitate background computations later
         in the workflow.
-    inspiral_outs : FileList
+    inspiral_outs : pycbc.workflow.core.FileList
         An FileList of the matched-filter module output that is used as
         input to the coincidence codes running at this stage.
     output_dir : path
@@ -171,9 +171,9 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
         time slides (or vice-versa if you prefer!)
     Returns
     --------
-    ligolwThincaOuts : FileList
+    ligolwThincaOuts : pycbc.workflow.core.FileList
         A list of the output files generated from ligolw_sstinca.
-    ligolwAddOuts : FileList
+    ligolwAddOuts : pycbc.workflow.core.FileList
         A list of the output files generated from ligolw_add.
     """
     logging.debug("Entering coincidence module.")
@@ -181,8 +181,8 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
 
     # setup code for each veto_category
 
-    ligolwThincaOuts = wf.FileList([])
-    ligolwAddOuts = wf.FileList([])
+    ligolwThincaOuts = pycbc.workflow.core.FileList([])
+    ligolwAddOuts = pycbc.workflow.core.FileList([])
 
     if not timeSlideTags:
         # Get all sections by looking in ini file, use all time slide files.
@@ -218,7 +218,7 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
             # Extract the job ID
             id = int(matches[0].string[3:])
             if not inspiral_outs_dict.has_key(id):
-                inspiral_outs_dict[id] = wf.FileList([])
+                inspiral_outs_dict[id] = pycbc.workflow.core.FileList([])
             inspiral_outs_dict[id].append(file)
         else:
             # If I got through all the files I want to sort the dictionaries so
@@ -304,12 +304,12 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
 
     Parameters
     -----------
-    workflow : Workflow
+    workflow : pycbc.workflow.core.Workflow
         The workflow instance that the coincidence jobs will be added to.
-    dqSegFile : SegFile
+    dqSegFile : pycbc.workflow.core.SegFile
         The file that contains the data-quality segments to be applied to jobs
         setup by this call to this function.
-    tisiOutFile : File
+    tisiOutFile : pycbc.workflow.core.File
         The file that contains the time-slides that will be performed in jobs
         setup by this call to this function. A file containing only one,
         zero-lag, time slide is still a valid "time slide" file.
@@ -328,9 +328,9 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
         data quality veto should be included.
     Returns
     --------
-    ligolwThincaOuts : FileList
+    ligolwThincaOuts : pycbc.workflow.core.FileList
         A list of the output files generated from ligolw_sstinca.
-    ligolwAddOuts : FileList
+    ligolwAddOuts : pycbc.workflow.core.FileList
         A list of the output files generated from ligolw_add.
 
     '''
@@ -338,15 +338,15 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
     ifoString = workflow.ifo_string
 
     # Set up jobs for ligolw_add and ligolw_thinca
-    ligolwadd_job = LigolwAddExecutable(cp, 'llwadd', ifo=ifoString, 
+    ligolwadd_job = pycbc.workflow.jobsetup.LigolwAddExecutable(cp, 'llwadd', ifo=ifoString, 
                                      out_dir=output_dir, tags=tags)
-    ligolwthinca_job = LigolwSSthincaExecutable(cp, 'thinca', ifo=ifoString, 
+    ligolwthinca_job = pycbc.workflow.jobsetup.LigolwSSthincaExecutable(cp, 'thinca', ifo=ifoString, 
                                      out_dir=output_dir, 
                                      dqVetoName=dqVetoName, tags=tags)
 
     # Set up the nodes to do the coincidence analysis
-    ligolwAddOuts = wf.FileList([])
-    ligolwThincaOuts = wf.FileList([])
+    ligolwAddOuts = pycbc.workflow.core.FileList([])
+    ligolwThincaOuts = pycbc.workflow.core.FileList([])
     for idx, cafe_cache in enumerate(cafe_caches):
         if not len(cafe_cache.objects):
             raise ValueError("One of the cache objects contains no files!")
@@ -369,7 +369,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
         # Assume that if we have partitioned input then if *one* job in the
         # partitioned input is an input then *all* jobs will be.
         if not parallelize_split_input:
-            inputTrigFiles = wf.FileList([])
+            inputTrigFiles = pycbc.workflow.core.FileList([])
             for object in cafe_cache.objects:
                 inputTrigFiles.append(object.workflow_file)
  
@@ -388,7 +388,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
             for key in insp_files_dict.keys():
                 curr_tags = ["JOB%d" %(key)]
                 curr_list = insp_files_dict[key]
-                inputTrigFiles = wf.FileList([])
+                inputTrigFiles = pycbc.workflow.core.FileList([])
                 for object in cafe_cache.objects:
                     inputTrigFiles.append(\
                                      curr_list[object.workflow_file.thinca_index])

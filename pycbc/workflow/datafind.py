@@ -34,7 +34,7 @@ import urlparse,urllib
 import logging
 from glue import segments, segmentsUtils, git_version, lal
 from glue.ligolw import utils, table, lsctables, ligolw
-from pycbc.workflow import workflow as wf
+import pycbc.workflow.core
 from pycbc.frame import datafind_connection
 
 def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
@@ -54,7 +54,7 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
 
     Parameters
     ----------
-    workflow: Workflow
+    workflow: pycbc.workflow.core.Workflow
         The workflow class that stores the jobs that will be run.
     scienceSegs : Dictionary of ifo keyed glue.segment.segmentlist instances
         This contains the times that the workflow is expected to analyse.
@@ -268,14 +268,14 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
             currTags = [tag, 'SCIENCE_AVAILABLE']
         else:
             currTags = ['SCIENCE_AVAILABLE']
-        currFile = wf.OutSegFile(ifo, 'SEGMENTS', workflow.analysis_time,
+        currFile = pycbc.workflow.core.OutSegFile(ifo, 'SEGMENTS', workflow.analysis_time,
                             currUrl, segment_list=scienceSegs[ifo], tags = currTags)
         segFilesList.append(currFile)
         currFile.toSegmentXml()
    
 
     logging.info("Leaving datafind module")
-    return wf.FileList(datafindouts), scienceSegs
+    return pycbc.workflow.core.FileList(datafindouts), scienceSegs
     
 
 def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs, 
@@ -316,7 +316,7 @@ def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
     datafindcaches : list of glue.lal.Cache instances
        The glue.lal.Cache representations of the various calls to the datafind
        server and the returned frame files.
-    datafindOuts : FileList
+    datafindOuts : pycbc.workflow.core.FileList
         List of all the datafind output files for use later in the pipeline.
 
     """
@@ -394,7 +394,7 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
     datafindcaches : list of glue.lal.Cache instances
        The glue.lal.Cache representations of the various calls to the datafind
        server and the returned frame files.
-    datafindOuts : FileList
+    datafindOuts : pycbc.workflow.core.FileList
         List of all the datafind output files for use later in the pipeline.
 
     """
@@ -472,7 +472,7 @@ def setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
     datafindcaches : list of glue.lal.Cache instances
        The glue.lal.Cache representations of the various calls to the datafind
        server and the returned frame files.
-    datafindOuts : FileList
+    datafindOuts : pycbc.workflow.core.FileList
         List of all the datafind output files for use later in the pipeline.
 
     """
@@ -487,7 +487,7 @@ def setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
         for frame in cache:
             # Why does datafind not return the ifo as the "observatory"
             # like every other code!?
-            currFile = wf.File(curr_ifo, frame.description,
+            currFile = pycbc.workflow.core.File(curr_ifo, frame.description,
                                  frame.segment, file_url=frame.url)
             currFile.PFN(frame.path, site='local')
             datafindouts.append(currFile)
@@ -532,7 +532,7 @@ def setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
     datafindcaches : list of glue.lal.Cache instances
        The glue.lal.Cache representations of the various calls to the datafind
        server and the returned frame files.
-    datafindOuts : FileList
+    datafindOuts : pycbc.workflow.core.FileList
         List of all the datafind output files for use later in the pipeline.
 
     """
@@ -562,7 +562,7 @@ def setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
             if prev_file and prev_file.cache_entry.url == frame.url:    
                 continue                
 
-            currFile = wf.File(ifo, frame.description, frame.segment,
+            currFile = pycbc.workflow.core.File(ifo, frame.description, frame.segment,
                                  file_url=frame.url)  
             prev_file = currFile                   
             currFile.PFN(frame.path, site='local') 
@@ -581,7 +581,7 @@ def get_science_segs_from_datafind_outs(datafindcaches):
 
     Parameters
     ----------
-    datafindOuts : OutGroupList
+    datafindcaches : OutGroupList
         List of all the datafind output files.
 
     Returns
@@ -611,7 +611,7 @@ def get_missing_segs_from_frame_file_cache(datafindcaches):
    
     Parameters
     -----------
-    datafindOuts : OutGroupList
+    datafindcaches : OutGroupList
         List of all the datafind output files.
 
     Returns
@@ -647,7 +647,7 @@ def setup_datafind_server_connection(cp, tag=None):
 
     Parameters
     -----------
-    cp : WorkflowConfigParser
+    cp : pycbc.workflow.configuration.WorkflowConfigParser
         The memory representation of the ConfigParser
     Returns
     --------
@@ -761,8 +761,8 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
     dfCache : glue.lal.Cache instance
        The glue.lal.Cache representation of the call to the datafind
        server and the returned frame files.
-    cacheFile : File
-        List of all the datafind output files for use later in the pipeline.
+    cacheFile : pycbc.workflow.core.File
+        Cache file listing all of the datafind output files for use later in the pipeline.
 
     """
     seg = segments.segment([startTime, endTime])
@@ -792,7 +792,7 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
                                         startTime, endTime, **dfKwargs)
     logging.debug("Frames returned")
     # workflow format output file
-    cache_file = wf.File(ifo, 'DATAFIND', seg, extension='lcf',
+    cache_file = pycbc.workflow.core.File(ifo, 'DATAFIND', seg, extension='lcf',
                            directory=outputDir, tags=currTags)
     dfCache.ifo = ifo
     # Dump output to file

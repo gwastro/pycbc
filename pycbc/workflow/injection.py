@@ -32,9 +32,8 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 import os
 import logging
 import urllib
-from pycbc.workflow import workflow as wf
-from pycbc.workflow.jobsetup import *
-from pycbc.workflow.matched_filter import *
+import pycbc.workflow.core
+import pycbc.workflow.jobsetup
 from glue import segments
 
 def setup_injection_workflow(workflow, output_dir=None,
@@ -48,7 +47,7 @@ def setup_injection_workflow(workflow, output_dir=None,
 
     Parameters
     -----------
-    workflow : Workflow
+    workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the coincidence jobs will be added to.
     output_dir : path
         The directory in which injection files will be stored.
@@ -63,7 +62,7 @@ def setup_injection_workflow(workflow, output_dir=None,
 
     Returns
     --------
-    inj_files : FileList
+    inj_files : pycbc.workflow.core.FileList
         The list of injection files created by this call.
     inj_tags : list of strings
         The tag corresponding to each injection file and used to uniquely
@@ -81,7 +80,7 @@ def setup_injection_workflow(workflow, output_dir=None,
     sections = [sec for sec in all_sec if sec.startswith(injSectionName +'-')]
 
     inj_tags = []
-    inj_files = wf.FileList([])   
+    inj_files = pycbc.workflow.core.FileList([])   
 
     for section in sections:
         split_sec_name = section.split('-')
@@ -121,7 +120,7 @@ def setup_injection_workflow(workflow, output_dir=None,
 
         if injectionMethod in ["IN_WORKFLOW", "AT_RUNTIME"]:
             # FIXME: Add ability to specify different exes
-            inj_job = LalappsInspinjExecutable(workflow.cp, injSectionName, tags=currTags,
+            inj_job = pycbc.workflow.jobsetup.LalappsInspinjExecutable(workflow.cp, injSectionName, tags=currTags,
                                          out_dir=output_dir, ifos='HL')
             node = inj_job.create_node(fullSegment)
             if injectionMethod == "AT_RUNTIME":
@@ -134,7 +133,7 @@ def setup_injection_workflow(workflow, output_dir=None,
                                       "injections-pregenerated-file", currTags)
             file_url = urlparse.urljoin('file:', urllib.pathname2url(\
                                                   injectionFilePath))
-            injFile = wf.File('HL', 'PREGEN_INJFILE', fullSegment, file_url,
+            injFile = pycbc.workflow.core.File('HL', 'PREGEN_INJFILE', fullSegment, file_url,
                                 tags=currTags)
             injFile.PFN(injectionFilePath, site='local')
         else:

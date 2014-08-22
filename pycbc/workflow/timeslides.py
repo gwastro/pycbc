@@ -32,8 +32,8 @@ import os
 import logging
 import urllib
 from glue import segments
-from pycbc.workflow import workflow as wf
-from pycbc.workflow.jobsetup import *
+import pycbc.workflow.core
+import pycbc.workflow.jobsetup
 
 def setup_timeslides_workflow(workflow, output_dir=None, tags=[],
                               timeSlideSectionName='ligolw_tisi'):
@@ -45,7 +45,7 @@ def setup_timeslides_workflow(workflow, output_dir=None, tags=[],
 
     Parameters
     -----------
-    workflow : Workflow
+    workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the coincidence jobs will be added to.
     output_dir : path
         The directory in which output files will be stored.
@@ -59,7 +59,7 @@ def setup_timeslides_workflow(workflow, output_dir=None, tags=[],
         the code at run time.
     Returns
     --------
-    timeSlideOuts : FileList
+    timeSlideOuts : pycbc.workflow.core.FileList
         The list of time slide files created by this call.
     '''
     logging.info("Entering time slides setup module.")
@@ -75,7 +75,7 @@ def setup_timeslides_workflow(workflow, output_dir=None, tags=[],
     timeSlideSections = [sec for sec in all_sec if sec.startswith('tisi-')]
     timeSlideTags = [(sec.split('-')[-1]).upper() for sec in timeSlideSections]
 
-    timeSlideOuts = wf.FileList([])
+    timeSlideOuts = pycbc.workflow.core.FileList([])
 
     # FIXME: Add ability to specify different exes
 
@@ -89,7 +89,7 @@ def setup_timeslides_workflow(workflow, output_dir=None, tags=[],
         if timeSlideMethod in ["IN_WORKFLOW", "AT_RUNTIME"]:
             timeSlideExeTag = workflow.cp.get_opt_tags("workflow-timeslides",
                                                     "timeslides-exe", currTags)
-            timeSlideExe = select_generic_executable(workflow, timeSlideExeTag)
+            timeSlideExe = pycbc.workflow.jobsetup.select_generic_executable(workflow, timeSlideExeTag)
             timeSlideJob = timeSlideExe(workflow.cp, timeSlideExeTag, ifos=ifo_string,
                                              tags=currTags, out_dir=output_dir)
             timeSlideNode = timeSlideJob.create_node(fullSegment)
@@ -103,7 +103,7 @@ def setup_timeslides_workflow(workflow, output_dir=None, tags=[],
                                       "timeslides-pregenerated-file", currTags)
             file_url = urlparse.urljoin('file:', urllib.pathname2url(\
                                                   timeSlideFilePath))
-            tisiOutFile = wf.File(ifoString, 'PREGEN_TIMESLIDES',
+            tisiOutFile = pycbc.workflow.core.File(ifoString, 'PREGEN_TIMESLIDES',
                                     fullSegment, file_url, tags=currTags)
 
         timeSlideOuts.append(tisiOutFile)

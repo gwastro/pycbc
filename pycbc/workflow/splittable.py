@@ -33,8 +33,9 @@ from __future__ import division
 
 import os
 import logging
-from pycbc.workflow import workflow as wf
-from pycbc.workflow.jobsetup import *
+import pycbc.workflow.core
+import pycbc.workflow.jobsetup
+import pycbc.workflow.legacy_ihope
 
 def select_splitfilejob_instance(curr_exe):
     """
@@ -50,7 +51,7 @@ def select_splitfilejob_instance(curr_exe):
 
     Returns
     --------
-    exe class : exe_class
+    exe class : sub-class of pycbc.workflow.core.Executable
         The class that holds the utility functions appropriate
         for the given Executable. This class **must** contain
         * exe_class.create_job()
@@ -59,10 +60,10 @@ def select_splitfilejob_instance(curr_exe):
     """
     # This is basically a list of if statements
     if curr_exe == 'lalapps_splitbank':
-        exe_class = LegacySplitBankExecutable
+        exe_class = pycbc.workflow.legacy_ihope.LegacySplitBankExecutable
     # Some elif statements
     elif curr_exe == 'pycbc_splitbank':
-        exe_class = PycbcSplitBankExecutable
+        exe_class = pycbc.workflow.jobsetup.PycbcSplitBankExecutable
     else:
         # Should we try some sort of default class??
         err_string = "No class exists for Executable %s" %(curr_exe,)
@@ -80,16 +81,16 @@ def setup_splittable_workflow(workflow, tmplt_banks, out_dir=None):
 
     Parameters
     -----------
-    workflow : Workflow
+    workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the jobs will be added to.
-    tmplt_banks : FileList
+    tmplt_banks : pycbc.workflow.core.FileList
         The input files to be split up.
     out_dir : path
         The directory in which output will be written.
 
     Returns
     --------
-    split_table_outs : FileList
+    split_table_outs : pycbc.workflow.core.FileList
         The list of split up files as output from this job.
     '''
     logging.info("Entering split output files module.")
@@ -122,16 +123,16 @@ def setup_splittable_dax_generated(workflow, tmplt_banks, out_dir):
 
     Parameters
     -----------
-    workflow : Workflow
+    workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the jobs will be added to.
-    tmplt_banks : FileList
+    tmplt_banks : pycbc.workflow.core.FileList
         The input files to be split up.
     out_dir : path
         The directory in which output will be written.
 
     Returns
     --------
-    split_table_outs : FileList
+    split_table_outs : pycbc.workflow.core.FileList
         The list of split up files as output from this job.
     '''
     # Get values from ini file
@@ -144,7 +145,7 @@ def setup_splittable_dax_generated(workflow, tmplt_banks, out_dir):
     exe_class = select_splitfilejob_instance(splittable_exe)
 
     # Set up output structure
-    out_file_groups = wf.FileList([])
+    out_file_groups = pycbc.workflow.core.FileList([])
 
     # Set up the condorJob class for the current executable
     curr_exe_job = exe_class(workflow.cp, 'splittable', num_banks, out_dir=out_dir)

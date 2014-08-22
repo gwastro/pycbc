@@ -34,8 +34,8 @@ from __future__ import division
 import os
 import os.path
 from glue import segments
-from pycbc.workflow import workflow as wf
-from pycbc.workflow.jobsetup import *
+import pycbc.workflow.core
+import pycbc.workflow.jobsetup
 
 def setup_postprocessing(workflow, trigger_files, summary_xml_files,
                          output_dir, tags=[], **kwargs):
@@ -47,12 +47,12 @@ def setup_postprocessing(workflow, trigger_files, summary_xml_files,
 
     Properties
     -----------
-    workflow : Workflow
+    workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the coincidence jobs will be added to.
-    trigger_files : FileList
+    trigger_files : pycbc.workflow.core.FileList
         An FileList of the trigger files that are used as
         input at this stage.
-    summary_xml_files : FileList
+    summary_xml_files : pycbc.workflow.core.FileList
         An FileList of the output of the analysislogging_utils module.
     output_dir : path
         The directory in which output files will be stored.
@@ -63,7 +63,7 @@ def setup_postprocessing(workflow, trigger_files, summary_xml_files,
 
     Returns
     --------
-    post_proc_files : FileList
+    post_proc_files : pycbc.workflow.core.FileList
         A list of the output from this stage.
 
     """
@@ -104,12 +104,12 @@ def setup_postproc_pipedown_workflow(workflow, trigger_files, summary_xml_files,
     containing all triggers. This sub-module follows that same idea, so
     len(triggerFiles) must equal 1 (for every DQ category that we will run).
 
-    workflow : Workflow
+    workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the coincidence jobs will be added to.
-    trigger_files : FileList
+    trigger_files : pycbc.workflow.core.FileList
         An FileList containing the combined databases at CAT_1,2,3... that
         will be used to calculate FARs
-    summary_xml_files : FileList
+    summary_xml_files : pycbc.workflow.core.FileList
         An FileList of the output of the analysislogging_utils module.
         For pipedown-style post-processing this should be one file conataing a
         segment table holding the single detector analysed times.
@@ -127,7 +127,7 @@ def setup_postproc_pipedown_workflow(workflow, trigger_files, summary_xml_files,
    
     Returns
     --------
-    final_files : FileList
+    final_files : pycbc.workflow.core.FileList
         A list of the final SQL databases containing computed FARs.
     """
     if not veto_cats:
@@ -140,14 +140,14 @@ def setup_postproc_pipedown_workflow(workflow, trigger_files, summary_xml_files,
     # Setup needed exe classes
     compute_durations_exe_tag = workflow.cp.get_opt_tags("workflow-postproc",
                                    "postproc-computedurations-exe", tags)
-    compute_durations_exe = select_generic_executable(workflow,
+    compute_durations_exe = pycbc.workflow.jobsetup.select_generic_executable(workflow,
                                                      compute_durations_exe_tag)
     cfar_exe_tag = workflow.cp.get_opt_tags("workflow-postproc", "postproc-cfar-exe",
                                        tags)
-    cfar_exe = select_generic_executable(workflow, cfar_exe_tag) 
+    cfar_exe = pycbc.workflow.jobsetup.select_generic_executable(workflow, cfar_exe_tag) 
 
-    comp_durations_outs = wf.FileList([])
-    cfar_outs = wf.FileList([])
+    comp_durations_outs = pycbc.workflow.core.FileList([])
+    cfar_outs = pycbc.workflow.core.FileList([])
 
     for veto_cat in veto_cats:
         veto_tag = 'CUMULATIVE_CAT_%d' %(veto_cat,)
