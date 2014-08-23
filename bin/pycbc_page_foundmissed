@@ -27,6 +27,8 @@ time = f['injections/end_time'][:]
 found = f['found_after_vetoes/injection_index'][:]
 missed = f['missed/after_vetoes'][:]
 
+ifar = f['found_after_vetoes/ifar'][:]
+foundg = found[ifar > 1000]
 
 m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
 mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
@@ -34,8 +36,28 @@ mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 # This hardcodes HL search !!!!!, replace with function that takes or/sky/det
 hdist = f['injections/eff_dist_h'][:]
 ldist = f['injections/eff_dist_l'][:]
-dec_dist = numpy.minimum(hdist, ldist)
+dec_dist = numpy.maximum(hdist, ldist)
+dist = f['injections/distance'][:]
+m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
+import pycbc.pnutils
+mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 
+mbf = mchirp[foundg] < 1.31
+mbm = mchirp[missed] < 1.31
+vol = dist**3.0
+fvc = vol[foundg][mbf]
+
+fvc.sort()
+mvol = fvc[-1] 
+miv = vol[missed][mbf]
+mv = miv[miv < mvol].sum()
+
+
+
+fv = fvc.sum()
+eff = fv / (mv + fv)
+dist = (eff * mvol)**(1.0/3.0)
+print eff, dist, mv, fv
 # For speed don't bother plotting really distant missed points
 missed = missed[dec_dist[missed] < dec_dist[found].max() * 1.1]
 
@@ -55,7 +77,6 @@ points = plot.scatter(time[found], dec_dist[found], c=color, s=40,
                          marker='o', label='found')
 plot.xlabel('Time (s)')
 plot.ylabel('Injected Decisive Distance')
-plot.legend()
 plot.grid()
 plot.subplots_adjust(left=0.1, right=0.8, top=0.9, bottom=0.1)
 urls = pycbc.results.followup.times_to_urls(time[found], 2.0, args.injection_tag)
