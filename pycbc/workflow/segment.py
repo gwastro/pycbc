@@ -34,8 +34,8 @@ import logging
 import urllib
 from glue import segments, pipeline
 from glue.ligolw import utils, table, lsctables, ligolw
-import pycbc.workflow.core
-import pycbc.workflow.jobsetup
+from pycbc.workflow.core import Executable, FileList, Node, OutSegFile
+from pycbc.workflow.jobsetup import LigolwAddExecutable, LigoLWCombineSegsExecutable
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
         pass
@@ -218,7 +218,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
         not be because I am not psychic).
     """
     cp = workflow.cp
-    segFilesList = pycbc.workflow.core.FileList([])
+    segFilesList = FileList([])
     start_time = workflow.analysis_time[0]
     end_time = workflow.analysis_time[1]
     segValidSeg = workflow.analysis_time
@@ -268,7 +268,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
             currTags = [tag, 'SCIENCE_OK']
         else:
             currTags = ['SCIENCE_OK']
-        currFile = pycbc.workflow.core.OutSegFile(ifo, 'SEGMENTS',
+        currFile = OutSegFile(ifo, 'SEGMENTS',
                                    segValidSeg, currUrl, segment_list=analysedSegs,
                                    tags = currTags)
         segFilesList.append(currFile)
@@ -293,7 +293,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
                                    %(ifo_string, category) )
             currUrl = urlparse.urlunparse(['file', 'localhost',
                                          cumulativeVetoFile, None, None, None])
-            currSegFile = pycbc.workflow.core.OutSegFile(ifo_string, 'SEGMENTS',
+            currSegFile = OutSegFile(ifo_string, 'SEGMENTS',
                                    segValidSeg, currUrl, segment_list=analysedSegs,
                                    tags=currTags)
             # And actually make the file (or queue it in the workflow)
@@ -375,7 +375,7 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir, tag=None):
     sciXmlFP.close()
     currUrl = urlparse.urlunparse(['file', 'localhost', sciXmlFilePath,
                                    None, None, None])
-    sciXmlFile = pycbc.workflow.core.OutSegFile(ifo, 'SEGMENTS',
+    sciXmlFile = OutSegFile(ifo, 'SEGMENTS',
                                   segValidSeg, currUrl, segment_list=sciSegs,
                                   tags=tagList)
 
@@ -420,7 +420,7 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
         The workflow File object corresponding to this DQ veto file.
     """
     segValidSeg = segments.segment([start_time,end_time])
-    node = pycbc.workflow.core.Node(vetoGenJob)
+    node = Node(vetoGenJob)
     node.add_opt('--veto-categories', str(category))
     node.add_opt('--ifo-list', ifo)
     node.add_opt('--gps-start-time', str(start_time))
@@ -435,7 +435,7 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
     else:
         currTags = ['VETO_CAT%d' %(category)]
 
-    vetoXmlFile = pycbc.workflow.core.OutSegFile(ifo, 'SEGMENTS', segValidSeg, currUrl,
+    vetoXmlFile = OutSegFile(ifo, 'SEGMENTS', segValidSeg, currUrl,
                                   tags=currTags)
     node._add_output(vetoXmlFile)
     
@@ -479,7 +479,7 @@ def create_segs_from_cats_job(cp, out_dir, ifo_string, tag=None):
         currTags = [tag]
     else:
         currTags = []
-    job = pycbc.workflow.core.Executable(cp, 'segments_from_cats', universe='local',
+    job = Executable(cp, 'segments_from_cats', universe='local',
                                ifos=ifo_string, out_dir=out_dir, tags=currTags)
     job.add_opt('--separate-categories')
     job.add_opt('--segment-url', segServerUrl)
@@ -533,13 +533,13 @@ def get_cumulative_segs(workflow, currSegFile, categories,
         If true, jobs are executed immediately. If false, they are added to the
         workflow to be run later.
     """
-    add_inputs = pycbc.workflow.core.FileList([])
+    add_inputs = FileList([])
     valid_segment = currSegFile.segment
     segment_name = segment_name = 'VETO_CAT%d_CUMULATIVE' % (categories[-1])
     cp = workflow.cp
     # calculate the cumulative veto files for a given ifo
     for ifo in workflow.ifos:
-        cum_job = pycbc.workflow.jobsetup.LigoLWCombineSegsExecutable(cp, 'ligolw_combine_segments', 
+        cum_job = LigoLWCombineSegsExecutable(cp, 'ligolw_combine_segments', 
                        out_dir=out_dir, tags=tags + [segment_name], ifos=ifo)
         inputs = []
         files = segFilesList.find_output_with_ifo(ifo)
@@ -555,7 +555,7 @@ def get_cumulative_segs(workflow, currSegFile, categories,
         add_inputs += cum_node.output_files
             
     # add cumulative files for each ifo together
-    add_job = pycbc.workflow.jobsetup.LigolwAddExecutable(cp, 'llwadd', ifo=ifo, out_dir=out_dir, tags=tags)
+    add_job = LigolwAddExecutable(cp, 'llwadd', ifo=ifo, out_dir=out_dir, tags=tags)
     add_node = add_job.create_node(valid_segment, add_inputs,
                                    output=currSegFile)   
     if execute_now:

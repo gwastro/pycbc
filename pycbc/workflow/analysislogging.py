@@ -29,7 +29,7 @@ times used within the workflow, etc.
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
-import pycbc.workflow.core
+from pycbc.workflow.core import File, FileList
 from glue.ligolw import ligolw, table, utils
 from glue.ligolw.utils import process
 from glue.segmentdb import segmentdb_utils
@@ -149,11 +149,11 @@ def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
         segmentdb_utils.add_to_segment_summary(outdoc, proc_id,
                                       analysable_def_id, summ_segs, comment='')
 
-    summ_file = pycbc.workflow.core.File(workflow.ifos, "WORKFLOW_SUMMARY",
-                                      workflow.analysis_time, extension=".xml",
-                                      directory=output_dir)
+    summ_file = File(workflow.ifos, "WORKFLOW_SUMMARY",
+                     workflow.analysis_time, extension=".xml",
+                     directory=output_dir)
     summ_file.PFN(summ_file.storage_path, site='local')
     utils.write_filename(outdoc, summ_file.storage_path)
 
-    return pycbc.workflow.core.FileList([summ_file])
+    return FileList([summ_file])
 

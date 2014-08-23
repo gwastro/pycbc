@@ -34,8 +34,8 @@ import re
 import os
 import os.path
 from glue import segments
-import pycbc.workflow.core
-import pycbc.workflow.jobsetup
+from pycbc.workflow.core import FileList
+from pycbc.workflow.jobsetup import LigolwAddExecutable, LigolwSSthincaExecutable
 from pylal import ligolw_cafe, ligolw_tisi
 
 def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
@@ -181,8 +181,8 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
 
     # setup code for each veto_category
 
-    ligolwThincaOuts = pycbc.workflow.core.FileList([])
-    ligolwAddOuts = pycbc.workflow.core.FileList([])
+    ligolwThincaOuts = FileList([])
+    ligolwAddOuts = FileList([])
 
     if not timeSlideTags:
         # Get all sections by looking in ini file, use all time slide files.
@@ -218,7 +218,7 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
             # Extract the job ID
             id = int(matches[0].string[3:])
             if not inspiral_outs_dict.has_key(id):
-                inspiral_outs_dict[id] = pycbc.workflow.core.FileList([])
+                inspiral_outs_dict[id] = FileList([])
             inspiral_outs_dict[id].append(file)
         else:
             # If I got through all the files I want to sort the dictionaries so
@@ -338,15 +338,15 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
     ifoString = workflow.ifo_string
 
     # Set up jobs for ligolw_add and ligolw_thinca
-    ligolwadd_job = pycbc.workflow.jobsetup.LigolwAddExecutable(cp, 'llwadd', ifo=ifoString, 
+    ligolwadd_job = LigolwAddExecutable(cp, 'llwadd', ifo=ifoString, 
                                      out_dir=output_dir, tags=tags)
-    ligolwthinca_job = pycbc.workflow.jobsetup.LigolwSSthincaExecutable(cp, 'thinca', ifo=ifoString, 
+    ligolwthinca_job = LigolwSSthincaExecutable(cp, 'thinca', ifo=ifoString, 
                                      out_dir=output_dir, 
                                      dqVetoName=dqVetoName, tags=tags)
 
     # Set up the nodes to do the coincidence analysis
-    ligolwAddOuts = pycbc.workflow.core.FileList([])
-    ligolwThincaOuts = pycbc.workflow.core.FileList([])
+    ligolwAddOuts = FileList([])
+    ligolwThincaOuts = FileList([])
     for idx, cafe_cache in enumerate(cafe_caches):
         if not len(cafe_cache.objects):
             raise ValueError("One of the cache objects contains no files!")
@@ -369,7 +369,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
         # Assume that if we have partitioned input then if *one* job in the
         # partitioned input is an input then *all* jobs will be.
         if not parallelize_split_input:
-            inputTrigFiles = pycbc.workflow.core.FileList([])
+            inputTrigFiles = FileList([])
             for object in cafe_cache.objects:
                 inputTrigFiles.append(object.workflow_file)
  
@@ -388,7 +388,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
             for key in insp_files_dict.keys():
                 curr_tags = ["JOB%d" %(key)]
                 curr_list = insp_files_dict[key]
-                inputTrigFiles = pycbc.workflow.core.FileList([])
+                inputTrigFiles = FileList([])
                 for object in cafe_cache.objects:
                     inputTrigFiles.append(\
                                      curr_list[object.workflow_file.thinca_index])

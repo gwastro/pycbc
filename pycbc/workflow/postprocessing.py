@@ -34,8 +34,8 @@ from __future__ import division
 import os
 import os.path
 from glue import segments
-import pycbc.workflow.core
-import pycbc.workflow.jobsetup
+from pycbc.workflow.core import FileList
+from pycbc.workflow.jobsetup import select_generic_executable
 
 def setup_postprocessing(workflow, trigger_files, summary_xml_files,
                          output_dir, tags=[], **kwargs):
@@ -140,14 +140,14 @@ def setup_postproc_pipedown_workflow(workflow, trigger_files, summary_xml_files,
     # Setup needed exe classes
     compute_durations_exe_tag = workflow.cp.get_opt_tags("workflow-postproc",
                                    "postproc-computedurations-exe", tags)
-    compute_durations_exe = pycbc.workflow.jobsetup.select_generic_executable(workflow,
+    compute_durations_exe = select_generic_executable(workflow,
                                                      compute_durations_exe_tag)
     cfar_exe_tag = workflow.cp.get_opt_tags("workflow-postproc", "postproc-cfar-exe",
                                        tags)
-    cfar_exe = pycbc.workflow.jobsetup.select_generic_executable(workflow, cfar_exe_tag) 
+    cfar_exe = select_generic_executable(workflow, cfar_exe_tag) 
 
-    comp_durations_outs = pycbc.workflow.core.FileList([])
-    cfar_outs = pycbc.workflow.core.FileList([])
+    comp_durations_outs = FileList([])
+    cfar_outs = FileList([])
 
     for veto_cat in veto_cats:
         veto_tag = 'CUMULATIVE_CAT_%d' %(veto_cat,)

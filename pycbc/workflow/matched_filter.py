@@ -31,8 +31,8 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 from __future__ import division
 
 import os
-import pycbc.workflow.core
-import pycbc.workflow.jobsetup
+from pycbc.workflow.core import FileList
+from pycbc.workflow.jobsetup import select_matchedfilter_class, select_tmpltbank_class, sngl_ifo_job_setup
 
 def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
                                tmplt_banks, output_dir=None,
@@ -180,7 +180,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
     ifos = science_segs.keys()
     match_fltr_exe = os.path.basename(cp.get('executables','inspiral'))
     # Select the appropriate class
-    exe_class = pycbc.workflow.jobsetup.select_matchedfilter_class(match_fltr_exe)
+    exe_class = select_matchedfilter_class(match_fltr_exe)
 
     if link_to_tmpltbank:
         # Use this to ensure that inspiral and tmpltbank jobs overlap. This
@@ -192,12 +192,12 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
         # PSD but then only generate triggers in the 2000s of data that the
         # template bank jobs ran on.
         tmpltbank_exe = os.path.basename(cp.get('executables', 'tmpltbank'))
-        link_exe_instance = pycbc.workflow.jobsetup.select_tmpltbank_class(tmpltbank_exe)
+        link_exe_instance = select_tmpltbank_class(tmpltbank_exe)
     else:
         link_exe_instance = None
 
     # Set up class for holding the banks
-    inspiral_outs = pycbc.workflow.core.FileList([])
+    inspiral_outs = FileList([])
 
     # Matched-filtering is done independently for different ifos, but might not be!
     # If we want to use multi-detector matched-filtering or something similar to this
@@ -214,9 +214,9 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
         else:
             link_job_instance = None
 
-        pycbc.workflow.jobsetup.sngl_ifo_job_setup(workflow, ifo, inspiral_outs, job_instance, 
-                                                   science_segs[ifo], datafind_outs, output_dir,
-                                                   parents=tmplt_banks, allow_overlap=False,
-                                                   link_job_instance=link_job_instance,
-                                                   compatibility_mode=compatibility_mode)
+        sngl_ifo_job_setup(workflow, ifo, inspiral_outs, job_instance, 
+                           science_segs[ifo], datafind_outs, output_dir,
+                           parents=tmplt_banks, allow_overlap=False,
+                           link_job_instance=link_job_instance,
+                           compatibility_mode=compatibility_mode)
     return inspiral_outs

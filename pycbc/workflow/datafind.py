@@ -34,7 +34,7 @@ import urlparse,urllib
 import logging
 from glue import segments, segmentsUtils, git_version, lal
 from glue.ligolw import utils, table, lsctables, ligolw
-import pycbc.workflow.core
+from pycbc.workflow.core import OutSegFile, File, FileList
 from pycbc.frame import datafind_connection
 
 def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
@@ -268,14 +268,14 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
             currTags = [tag, 'SCIENCE_AVAILABLE']
         else:
             currTags = ['SCIENCE_AVAILABLE']
-        currFile = pycbc.workflow.core.OutSegFile(ifo, 'SEGMENTS', workflow.analysis_time,
+        currFile = OutSegFile(ifo, 'SEGMENTS', workflow.analysis_time,
                             currUrl, segment_list=scienceSegs[ifo], tags = currTags)
         segFilesList.append(currFile)
         currFile.toSegmentXml()
    
 
     logging.info("Leaving datafind module")
-    return pycbc.workflow.core.FileList(datafindouts), scienceSegs
+    return FileList(datafindouts), scienceSegs
     
 
 def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs, 
@@ -487,7 +487,7 @@ def setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
         for frame in cache:
             # Why does datafind not return the ifo as the "observatory"
             # like every other code!?
-            currFile = pycbc.workflow.core.File(curr_ifo, frame.description,
+            currFile = File(curr_ifo, frame.description,
                                  frame.segment, file_url=frame.url)
             currFile.PFN(frame.path, site='local')
             datafindouts.append(currFile)
@@ -562,7 +562,7 @@ def setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
             if prev_file and prev_file.cache_entry.url == frame.url:    
                 continue                
 
-            currFile = pycbc.workflow.core.File(ifo, frame.description, frame.segment,
+            currFile = File(ifo, frame.description, frame.segment,
                                  file_url=frame.url)  
             prev_file = currFile                   
             currFile.PFN(frame.path, site='local') 
@@ -792,8 +792,8 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
                                         startTime, endTime, **dfKwargs)
     logging.debug("Frames returned")
     # workflow format output file
-    cache_file = pycbc.workflow.core.File(ifo, 'DATAFIND', seg, extension='lcf',
-                           directory=outputDir, tags=currTags)
+    cache_file = File(ifo, 'DATAFIND', seg, extension='lcf',
+                      directory=outputDir, tags=currTags)
     dfCache.ifo = ifo
     # Dump output to file
     fP = open(cache_file.storage_path, "w")

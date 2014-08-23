@@ -35,8 +35,8 @@ import ConfigParser
 import urlparse, urllib
 import logging
 from glue import segments
-import pycbc.workflow.core
-import pycbc.workflow.jobsetup
+from pycbc.workflow.core import File, FileList
+from pycbc.workflow.jobsetup import select_tmpltbank_class, select_matchedfilter_class, sngl_ifo_job_setup
 
 def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
                              output_dir=None, tags=[]):
@@ -172,7 +172,7 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
     ifos = science_segs.keys()
     tmplt_bank_exe = os.path.basename(cp.get('executables', 'tmpltbank'))
     # Select the appropriate class
-    exe_class = pycbc.workflow.jobsetup.select_tmpltbank_class(tmplt_bank_exe)
+    exe_class = select_tmpltbank_class(tmplt_bank_exe)
 
     # The exe instance needs to know what data segments are analysed, what is
     # discarded etc. This should *not* be hardcoded, so using a new executable
@@ -188,12 +188,12 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
         # PSD but then only generate triggers in the 2000s of data that the
         # template bank jobs ran on.
         tmpltbank_exe = os.path.basename(cp.get('executables', 'inspiral'))
-        link_exe_instance = pycbc.workflow.jobsetup.select_matchedfilter_class(tmpltbank_exe)
+        link_exe_instance = select_matchedfilter_class(tmpltbank_exe)
     else:
         link_exe_instance = None
 
     # Set up class for holding the banks
-    tmplt_banks = pycbc.workflow.core.FileList([])
+    tmplt_banks = FileList([])
 
 
     # Template banks are independent for different ifos, but might not be!
@@ -213,11 +213,11 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
                         out_dir=output_dir, tags=tags)
         else:
             link_job_instance = None
-        pycbc.workflow.jobsetup.sngl_ifo_job_setup(workflow, ifo, tmplt_banks, job_instance, 
-                                                   science_segs[ifo], datafind_outs, output_dir,
-                                                   link_job_instance=link_job_instance, 
-                                                   allow_overlap=True,
-                                                   compatibility_mode=compatibility_mode)
+        sngl_ifo_job_setup(workflow, ifo, tmplt_banks, job_instance, 
+                           science_segs[ifo], datafind_outs, output_dir,
+                           link_job_instance=link_job_instance, 
+                           allow_overlap=True,
+                           compatibility_mode=compatibility_mode)
     return tmplt_banks
 
 def setup_tmpltbank_without_frames(workflow, output_dir,
@@ -263,9 +263,9 @@ def setup_tmpltbank_without_frames(workflow, output_dir,
         raise ValueError(errMsg)
 
     # Select the appropriate class
-    exe_instance = pycbc.workflow.jobsetup.select_tmpltbank_class(tmplt_bank_exe)
+    exe_instance = select_tmpltbank_class(tmplt_bank_exe)
 
-    tmplt_banks = pycbc.workflow.core.FileList([])
+    tmplt_banks = FileList([])
 
     # Make the distinction between one bank for all ifos and one bank per ifo
     if independent_ifos:
@@ -314,7 +314,7 @@ def setup_tmpltbank_pregenerated(workflow, tags=[]):
     # Maybe we want to add capability to analyse separate banks in all ifos?
     
     # Set up class for holding the banks
-    tmplt_banks = pycbc.workflow.core.FileList([])
+    tmplt_banks = FileList([])
 
     cp = workflow.cp
     global_seg = workflow.analysis_time
@@ -325,7 +325,7 @@ def setup_tmpltbank_pregenerated(workflow, tags=[]):
         pre_gen_bank = cp.get_opt_tags('workflow-tmpltbank',
                                            'tmpltbank-pregenerated-bank', tags)
         file_url = urlparse.urljoin('file:', urllib.pathname2url(pre_gen_bank))
-        curr_file = pycbc.workflow.core.File(workflow.ifos, user_tag, global_seg, file_url,
+        curr_file = File(workflow.ifos, user_tag, global_seg, file_url,
                                                                      tags=tags)
         curr_file.PFN(file_url, site='local')
         tmplt_banks.append(curr_file)
@@ -337,7 +337,7 @@ def setup_tmpltbank_pregenerated(workflow, tags=[]):
                                 'tmpltbank-pregenerated-bank-%s' %(ifo,), tags)
                 file_url = urlparse.urljoin('file:',
                                              urllib.pathname2url(pre_gen_bank))
-                curr_file = pycbc.workflow.core.File(ifo, user_tag, global_seg, file_url,
+                curr_file = File(ifo, user_tag, global_seg, file_url,
                                                                      tags=tags)
                 curr_file.PFN(file_url, site='local')
                 tmplt_banks.append(curr_file)

@@ -30,8 +30,8 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 
 import math
 from glue import segments
-import pycbc.workflow.core
-import pycbc.workflow.legacy_ihope
+from pycbc.workflow.core import Executable, File, FileList, Node
+from pycbc.workflow.legacy_ihope import LegacyTmpltbankExecutable, LegacyInspiralExecutable
 
 def select_tmpltbank_class(curr_exe):
     """
@@ -55,7 +55,7 @@ def select_tmpltbank_class(curr_exe):
     """
 
     exe_to_class_map = {
-        'lalapps_tmpltbank_ahope': pycbc.workflow.legacy_ihope.LegacyTmpltbankExecutable,
+        'lalapps_tmpltbank_ahope': LegacyTmpltbankExecutable,
         'pycbc_geom_nonspinbank': PyCBCTmpltbankExecutable,
         'pycbc_aligned_stoch_bank': PyCBCTmpltbankExecutable
     }
@@ -89,7 +89,7 @@ def select_matchedfilter_class(curr_exe):
     """
     # This is basically a list of if statements
     if curr_exe == 'lalapps_inspiral_ahope':
-        exe_class = pycbc.workflow.legacy_ihope.LegacyInspiralExecutable
+        exe_class = LegacyInspiralExecutable
     elif curr_exe == 'pycbc_inspiral':
         exe_class = PyCBCInspiralExecutable
     else:
@@ -593,7 +593,7 @@ class JobSegmenter(object):
 
         return job_data_seg
 
-class PyCBCInspiralExecutable(pycbc.workflow.core.Executable):
+class PyCBCInspiralExecutable(Executable):
     """
     The class used to create jobs for pycbc_inspiral Executable.
     """
@@ -613,7 +613,7 @@ class PyCBCInspiralExecutable(pycbc.workflow.core.Executable):
                 self.num_threads = stxt.split(':')[1]
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
-        node = pycbc.workflow.core.Node(self)
+        node = Node(self)
         pad_data = int(self.get_opt('pad-data'))
         if pad_data is None:
             raise ValueError("The option pad-data is a required option of "
@@ -672,7 +672,7 @@ class PyCBCInspiralExecutable(pycbc.workflow.core.Executable):
         end = data_length - pad_data - end_pad
         return data_length, segments.segment(start, end)
 
-class PyCBCTmpltbankExecutable(pycbc.workflow.core.Executable):
+class PyCBCTmpltbankExecutable(Executable):
     """
     The class used to create jobs for pycbc_geom_nonspin_bank Executable and
     any other Executables using the same command line option groups.
@@ -685,7 +685,7 @@ class PyCBCTmpltbankExecutable(pycbc.workflow.core.Executable):
         self.write_psd = write_psd
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
-        node = pycbc.workflow.core.Node(self)
+        node = Node(self)
 
         if not dfParents:
             raise ValueError("%s must be supplied with data file(s)"
@@ -725,7 +725,7 @@ class PyCBCTmpltbankExecutable(pycbc.workflow.core.Executable):
         node : pycbc.workflow.core.Node
             The instance corresponding to the created node.
         """
-        node = pycbc.workflow.core.Node(self)
+        node = Node(self)
 
         # Set the output file
         # Add the PSD file if needed
@@ -746,20 +746,20 @@ class PyCBCTmpltbankExecutable(pycbc.workflow.core.Executable):
         end = data_length - pad_data
         return data_length, segments.segment(start, end)
 
-class LigoLWCombineSegsExecutable(pycbc.workflow.core.Executable):
+class LigoLWCombineSegsExecutable(Executable):
     """ 
     This class is used to create nodes for the ligolw_combine_segments 
     Executable
     """
     def create_node(self, valid_seg, veto_files, segment_name):
-        node = pycbc.workflow.core.Node(self)
+        node = Node(self)
         node.add_opt('--segment-name', segment_name)
         for fil in veto_files:
             node.add_input_arg(fil)   
         node.new_output_file_opt(valid_seg, '.xml', '--output')      
         return node
 
-class LigolwAddExecutable(pycbc.workflow.core.Executable):
+class LigolwAddExecutable(Executable):
     """
     The class used to create nodes for the ligolw_add Executable.
     """
@@ -768,7 +768,7 @@ class LigolwAddExecutable(pycbc.workflow.core.Executable):
         self.set_memory(2000)
 
     def create_node(self, jobSegment, input_files, output=None, tags=[]):
-        node = pycbc.workflow.core.Node(self)
+        node = Node(self)
 
         # Very few options to ligolw_add, all input files are given as a long
         # argument list. If this becomes unwieldy we could dump all these files
@@ -788,7 +788,7 @@ class LigolwAddExecutable(pycbc.workflow.core.Executable):
             node.new_output_file_opt(jobSegment, '.xml.gz', '--output', tags=tags)
         return node
 
-class LigolwSSthincaExecutable(pycbc.workflow.core.Executable):
+class LigolwSSthincaExecutable(Executable):
     """
     The class responsible for making jobs for ligolw_sstinca.
     """
@@ -800,7 +800,7 @@ class LigolwSSthincaExecutable(pycbc.workflow.core.Executable):
             self.add_opt("--vetoes-name", dqVetoName)
 
     def create_node(self, jobSegment, coincSegment, inputFile, tags=[]):
-        node = pycbc.workflow.core.Node(self)
+        node = Node(self)
         node.add_input_arg(inputFile)
 
         # Add the start/end times
@@ -814,7 +814,7 @@ class LigolwSSthincaExecutable(pycbc.workflow.core.Executable):
         node.add_opt('--coinc-end-time-segment', segString)
 
         # FIXME: This must match the *actual* output name!
-        outFile = pycbc.workflow.core.File(self.ifo, self.name, jobSegment,
+        outFile = File(self.ifo, self.name, jobSegment,
                          extension='.xml.gz', directory=self.out_dir,
                          tags=self.tags+tags)
 
@@ -822,7 +822,7 @@ class LigolwSSthincaExecutable(pycbc.workflow.core.Executable):
 
         return node
 
-class PycbcSqliteSimplifyExecutable(pycbc.workflow.core.Executable):
+class PycbcSqliteSimplifyExecutable(Executable):
     """
     The class responsible for making jobs for pycbc_sqlite_simplify.
     """
@@ -831,7 +831,7 @@ class PycbcSqliteSimplifyExecutable(pycbc.workflow.core.Executable):
         self.set_memory(2000)
         
     def create_node(self, job_segment, inputFiles, injFile=None, injString=None):
-        node = pycbc.workflow.core.Node(self)
+        node = Node(self)
         if injFile and not injString:
             raise ValueError("injString needed if injFile supplied.")
         for file in inputFiles:
@@ -843,7 +843,7 @@ class PycbcSqliteSimplifyExecutable(pycbc.workflow.core.Executable):
                                  tags=self.tags) 
         return node
 
-class SQLInOutExecutable(pycbc.workflow.core.Executable):
+class SQLInOutExecutable(Executable):
     """
     The class responsible for making jobs for SQL codes taking one input and
     one output.
@@ -852,7 +852,7 @@ class SQLInOutExecutable(pycbc.workflow.core.Executable):
         super(SQLInOutExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
 
     def create_node(self, job_segment, inputFile):
-        node = pycbc.workflow.core.Node(self)
+        node = Node(self)
         node.add_input_opt('--input', inputFile)
         node.new_output_file_opt(job_segment, '.sqlite', '--output',
                                  tags=self.tags)
@@ -863,19 +863,19 @@ class ComputeDurationsExecutable(SQLInOutExecutable):
     The class responsible for making jobs for pycbc_compute_durations.
     """
     def create_node(self, job_segment, input_file, summary_xml_file):
-        node = pycbc.workflow.core.Node(self)
+        node = Node(self)
         node.add_input_opt('--input', input_file)
         node.add_input_opt('--segment-file', summary_xml_file)
         node.new_output_file_opt(job_segment, '.sqlite', '--output',
                                  tags=self.tags)
         return node
 
-class LalappsInspinjExecutable(pycbc.workflow.core.Executable):
+class LalappsInspinjExecutable(Executable):
     """
     The class used to create jobs for the lalapps_inspinj Executable.
     """
     def create_node(self, segment):
-        node = pycbc.workflow.core.Node(self)
+        node = Node(self)
         
         if self.get_opt('write-compress') is not None:
             ext = '.xml.gz'
@@ -887,17 +887,17 @@ class LalappsInspinjExecutable(pycbc.workflow.core.Executable):
         node.new_output_file_opt(segment, '.xml', '--output')
         return node
 
-class PycbcTimeslidesExecutable(pycbc.workflow.core.Executable):
+class PycbcTimeslidesExecutable(Executable):
     """
     The class used to create jobs for the pycbc_timeslides Executable.
     """
     def create_node(self, segment):
-        node = pycbc.workflow.core.Node(self)
+        node = Node(self)
 
         node.new_output_file_opt(segment, '.xml.gz', '--output-files')
         return node
 
-class PycbcSplitBankExecutable(pycbc.workflow.core.Executable):
+class PycbcSplitBankExecutable(Executable):
     """
     The class responsible for creating jobs for pycbc_splitbank.
     """
@@ -920,18 +920,18 @@ class PycbcSplitBankExecutable(pycbc.workflow.core.Executable):
         node : pycbc.workflow.core.Node
             The node to run the job
         """
-        node = pycbc.workflow.core.Node(self)
+        node = Node(self)
         node.add_input_opt('--bank-file', bank)
 
         # Get the output (taken from inspiral.py)
-        out_files = pycbc.workflow.core.FileList([])
+        out_files = FileList([])
         for i in range( 0, self.num_banks):
             curr_tag = 'bank%d' %(i)
             # FIXME: What should the tags actually be? The job.tags values are
             #        currently ignored.
             curr_tags = bank.tags + [curr_tag]
             job_tag = bank.description + "_" + self.name.upper()
-            out_file = pycbc.workflow.core.File(bank.ifo_list, job_tag, bank.segment,
+            out_file = File(bank.ifo_list, job_tag, bank.segment,
                                extension=".xml.gz", directory=self.out_dir,
                                tags=curr_tags)
             out_files.append(out_file)

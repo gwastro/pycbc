@@ -32,8 +32,8 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 import os
 import logging
 import urllib
-import pycbc.workflow.core
-import pycbc.workflow.jobsetup
+from pycbc.workflow.core import File, FileList
+from pycbc.workflow.jobsetup import LalappsInspinjExecutable
 from glue import segments
 
 def setup_injection_workflow(workflow, output_dir=None,
@@ -80,7 +80,7 @@ def setup_injection_workflow(workflow, output_dir=None,
     sections = [sec for sec in all_sec if sec.startswith(injSectionName +'-')]
 
     inj_tags = []
-    inj_files = pycbc.workflow.core.FileList([])   
+    inj_files = FileList([])   
 
     for section in sections:
         split_sec_name = section.split('-')
@@ -120,7 +120,7 @@ def setup_injection_workflow(workflow, output_dir=None,
 
         if injectionMethod in ["IN_WORKFLOW", "AT_RUNTIME"]:
             # FIXME: Add ability to specify different exes
-            inj_job = pycbc.workflow.jobsetup.LalappsInspinjExecutable(workflow.cp, injSectionName, tags=currTags,
+            inj_job = LalappsInspinjExecutable(workflow.cp, injSectionName, tags=currTags,
                                          out_dir=output_dir, ifos='HL')
             node = inj_job.create_node(fullSegment)
             if injectionMethod == "AT_RUNTIME":
@@ -133,7 +133,7 @@ def setup_injection_workflow(workflow, output_dir=None,
                                       "injections-pregenerated-file", currTags)
             file_url = urlparse.urljoin('file:', urllib.pathname2url(\
                                                   injectionFilePath))
-            injFile = pycbc.workflow.core.File('HL', 'PREGEN_INJFILE', fullSegment, file_url,
+            injFile = File('HL', 'PREGEN_INJFILE', fullSegment, file_url,
                                 tags=currTags)
             injFile.PFN(injectionFilePath, site='local')
         else:

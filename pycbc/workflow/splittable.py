@@ -33,9 +33,9 @@ from __future__ import division
 
 import os
 import logging
-import pycbc.workflow.core
-import pycbc.workflow.jobsetup
-import pycbc.workflow.legacy_ihope
+from pycbc.workflow.core import FileList
+from pycbc.workflow.jobsetup import PycbcSplitBankExecutable
+from pycbc.workflow.legacy_ihope import LegacySplitBankExecutable
 
 def select_splitfilejob_instance(curr_exe):
     """
@@ -60,10 +60,10 @@ def select_splitfilejob_instance(curr_exe):
     """
     # This is basically a list of if statements
     if curr_exe == 'lalapps_splitbank':
-        exe_class = pycbc.workflow.legacy_ihope.LegacySplitBankExecutable
+        exe_class = LegacySplitBankExecutable
     # Some elif statements
     elif curr_exe == 'pycbc_splitbank':
-        exe_class = pycbc.workflow.jobsetup.PycbcSplitBankExecutable
+        exe_class = PycbcSplitBankExecutable
     else:
         # Should we try some sort of default class??
         err_string = "No class exists for Executable %s" %(curr_exe,)
@@ -145,7 +145,7 @@ def setup_splittable_dax_generated(workflow, tmplt_banks, out_dir):
     exe_class = select_splitfilejob_instance(splittable_exe)
 
     # Set up output structure
-    out_file_groups = pycbc.workflow.core.FileList([])
+    out_file_groups = FileList([])
 
     # Set up the condorJob class for the current executable
     curr_exe_job = exe_class(workflow.cp, 'splittable', num_banks, out_dir=out_dir)

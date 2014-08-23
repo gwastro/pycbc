@@ -37,7 +37,10 @@ from glue import lal
 from glue import segments
 from pycbc.workflow.configuration import WorkflowConfigParser
 import pylal.dq.dqSegmentUtils as dqUtils
-import pycbc.workflow.pegasus_workflow as pegasus_workflow
+# The following syntax is convoluted, but designed to make
+# it easy to change when pegasus_workflow is moved upstream
+# into Pegasus.
+from pycbc.workflow import pegasus_workflow as pegasus_workflow
 import copy
 
 # workflow should never be using the glue LIGOTimeGPS class, override this with

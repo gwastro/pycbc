@@ -34,8 +34,8 @@ from __future__ import division
 import os
 import os.path
 from glue import segments
-import pycbc.workflow.core
-import pycbc.workflow.jobsetup
+from pycbc.workflow.core import FileList
+from pycbc.workflow.jobsetup import select_generic_executable
 
 def setup_postprocessing_preparation(workflow, triggerFiles, output_dir,
                                      tags=[], **kwargs):
@@ -151,23 +151,23 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
     # Setup needed exe classes
     sqliteCombine1ExeTag = workflow.cp.get_opt_tags("workflow-postprocprep",
                                    "postprocprep-combiner1-exe", tags)
-    sqliteCombine1Exe = pycbc.workflow.jobsetup.select_generic_executable(workflow, 
+    sqliteCombine1Exe = select_generic_executable(workflow, 
                                                   sqliteCombine1ExeTag)
     sqliteCombine2ExeTag = workflow.cp.get_opt_tags("workflow-postprocprep",
                                    "postprocprep-combiner2-exe", tags)
-    sqliteCombine2Exe = pycbc.workflow.jobsetup.select_generic_executable(workflow, 
+    sqliteCombine2Exe = select_generic_executable(workflow, 
                                                   sqliteCombine2ExeTag)
     clusterCoincsExeTag = workflow.cp.get_opt_tags("workflow-postprocprep",
                                    "postprocprep-cluster-exe", tags)
-    clusterCoincsExe = pycbc.workflow.jobsetup.select_generic_executable(workflow, clusterCoincsExeTag)
+    clusterCoincsExe = select_generic_executable(workflow, clusterCoincsExeTag)
     injFindExeTag = workflow.cp.get_opt_tags("workflow-postprocprep",
                                    "postprocprep-injfind-exe", tags)
-    injFindExe = pycbc.workflow.jobsetup.select_generic_executable(workflow, injFindExeTag)
+    injFindExe = select_generic_executable(workflow, injFindExeTag)
 
-    sqliteCombine1Outs = pycbc.workflow.core.FileList([])
-    clusterCoincsOuts = pycbc.workflow.core.FileList([])
-    injFindOuts = pycbc.workflow.core.FileList([])
-    sqliteCombine2Outs = pycbc.workflow.core.FileList([])
+    sqliteCombine1Outs = FileList([])
+    clusterCoincsOuts = FileList([])
+    injFindOuts = FileList([])
+    sqliteCombine2Outs = FileList([])
     for vetoCat in vetoCats:
         # FIXME: Some hacking is still needed while we support pipedown
         # FIXME: There are currently 3 names to say cumulative cat_3
@@ -181,7 +181,7 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
         # FIXME: Here we set the dqVetoName to be compatible with pipedown
         pipedownDQVetoName = 'CAT_%d_VETO' %(vetoCat,)
 
-        sqliteCombine2Inputs = pycbc.workflow.core.FileList([])
+        sqliteCombine2Inputs = FileList([])
         # Do injection-less jobs first.
 
         # Combine trig files first
