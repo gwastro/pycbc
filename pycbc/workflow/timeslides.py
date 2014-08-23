@@ -32,7 +32,7 @@ import os
 import logging
 import urllib
 from glue import segments
-from pycbc.workflow.core import File, FileList
+from pycbc.workflow.core import File, FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import select_generic_executable
 
 def setup_timeslides_workflow(workflow, output_dir=None, tags=[],

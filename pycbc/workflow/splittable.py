@@ -33,7 +33,7 @@ from __future__ import division
 
 import os
 import logging
-from pycbc.workflow.core import FileList
+from pycbc.workflow.core import FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import PycbcSplitBankExecutable
 from pycbc.workflow.legacy_ihope import LegacySplitBankExecutable
 

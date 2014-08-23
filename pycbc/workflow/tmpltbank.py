@@ -35,7 +35,7 @@ import ConfigParser
 import urlparse, urllib
 import logging
 from glue import segments
-from pycbc.workflow.core import File, FileList
+from pycbc.workflow.core import File, FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import select_tmpltbank_class, select_matchedfilter_class, sngl_ifo_job_setup
 
 def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,

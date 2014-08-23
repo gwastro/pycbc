@@ -34,7 +34,7 @@ import urlparse,urllib
 import logging
 from glue import segments, segmentsUtils, git_version, lal
 from glue.ligolw import utils, table, lsctables, ligolw
-from pycbc.workflow.core import OutSegFile, File, FileList
+from pycbc.workflow.core import OutSegFile, File, FileList, make_analysis_dir
 from pycbc.frame import datafind_connection
 
 def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,

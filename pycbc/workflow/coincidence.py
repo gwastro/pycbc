@@ -34,7 +34,7 @@ import re
 import os
 import os.path
 from glue import segments
-from pycbc.workflow.core import FileList
+from pycbc.workflow.core import FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import LigolwAddExecutable, LigolwSSthincaExecutable
 from pylal import ligolw_cafe, ligolw_tisi
 

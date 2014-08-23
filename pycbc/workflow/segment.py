@@ -34,7 +34,7 @@ import logging
 import urllib
 from glue import segments, pipeline
 from glue.ligolw import utils, table, lsctables, ligolw
-from pycbc.workflow.core import Executable, FileList, Node, OutSegFile
+from pycbc.workflow.core import Executable, FileList, Node, OutSegFile, make_analysis_dir
 from pycbc.workflow.jobsetup import LigolwAddExecutable, LigoLWCombineSegsExecutable
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
