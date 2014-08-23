@@ -140,7 +140,7 @@ columns = ['mass1', 'mass2', 'spin1x', 'spin1y',
            'spin1z', 'spin2x', 'spin2y', 'spin2z',
            'eff_dist_l', 'eff_dist_h', 'eff_dist_v', 
            'inclination', 'polarization', 'coa_phase', 
-           'latitude', 'longitude']
+           'latitude', 'longitude', 'distance']
 xml_to_hdf(sim_table, fo, 'injections', columns)
 fo['injections/end_time'] = inj_time
 fo.attrs['detector_1'] = f.attrs['detector_1']
