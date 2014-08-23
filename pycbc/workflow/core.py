@@ -144,7 +144,7 @@ class Executable(pegasus_workflow.Executable):
             self.tagged_name = name
         if self.ifo_string is not None:
             self.tagged_name = "%s-%s" % (self.tagged_name, self.ifo_string)
-        Executable.__init__(self, self.tagged_name)
+        super(Executable, self).__init__(self.tagged_name)
         
         self.name=name
         
