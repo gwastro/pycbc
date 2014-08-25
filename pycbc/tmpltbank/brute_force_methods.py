@@ -90,7 +90,7 @@ def get_physical_covaried_masses(xis, bestMasses, bestXis, req_match,
         if (cDist.min() < req_match):
             idx = cDist.argmin()
             scaleFactor = origScaleFactor
-            new_xis_list = [new_xis[ldx][idx] for ldx in range(len(new_xis))]
+            new_xis_list = [new_xis[ldx][idx] for ldx in xrange(len(new_xis))]
             return mass1[idx], mass2[idx], spin1z[idx], spin2z[idx], count, \
                    cDist.min(), new_xis_list
         if (cDist.min() < currDist):
@@ -110,7 +110,7 @@ def get_physical_covaried_masses(xis, bestMasses, bestXis, req_match,
             diff = (bestMasses[0]*bestMasses[0] * (1-4*bestMasses[1]))**0.5
             mass1 = (bestMasses[0] + diff)/2.
             mass2 = (bestMasses[0] - diff)/2.
-            new_xis_list = [new_xis[ldx][0] for ldx in range(len(new_xis))]
+            new_xis_list = [new_xis[ldx][0] for ldx in xrange(len(new_xis))]
             return mass1, mass2, bestMasses[2], bestMasses[3], count, \
                    currDist, new_xis_list
         if not unFixedCount % 100:

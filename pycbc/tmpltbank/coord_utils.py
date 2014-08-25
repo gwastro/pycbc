@@ -316,7 +316,7 @@ def get_mu_params(lambdas, metricParams, fUpper):
     evals = metricParams.evals[fUpper]
 
     mus = []
-    for i in range(len(evals)):
+    for i in xrange(len(evals)):
         mus.append(rotate_vector(evecs,lambdas,numpy.sqrt(evals[i]),i))
     return mus
 
@@ -339,7 +339,7 @@ def get_covaried_params(mus, evecsCV):
         Position of the system(s) in the xi coordinate system
     """
     xis = []
-    for i in range(len(evecsCV)):
+    for i in xrange(len(evecsCV)):
         xis.append(rotate_vector(evecsCV,mus,1.,i))
     return xis
 
@@ -367,7 +367,7 @@ def rotate_vector(evecs, old_vector, rescale_factor, index):
         Position of the point(s) in the resulting coordinate.
     """
     temp = 0
-    for i in range(len(evecs)):
+    for i in xrange(len(evecs)):
         temp += evecs[i,index] * old_vector[i]
     temp *= rescale_factor
     return temp
@@ -446,7 +446,7 @@ def get_point_distance(point1, point2, metricParams, fUpper):
                           metricParams, fUpper)
 
     dist = (aXis[0] - bXis[0])**2
-    for i in range(1,len(aXis)):
+    for i in xrange(1,len(aXis)):
         dist += (aXis[i] - bXis[i])**2
 
     return dist, aXis, bXis
@@ -574,12 +574,12 @@ def return_nearest_cutoff(name, totmass, freqs):
     # NOTE: totmass and f_cutoff are both numpy arrays as this function is
     #       designed so that the cutoff can be calculated for many systems
     #       simulataneously
-    for i in range(len(freqs)):
-        if (i == 0):
+    for i in xrange(len(freqs)):
+        if i == 0:
             # If frequency is lower than halfway between the first two entries
             # use the first (lowest) value
             logicArr = f_cutoff < ((freqs[0] + freqs[1])/2.)
-        elif (i == (len(freqs)-1)):
+        elif i == (len(freqs)-1):
             # If frequency is larger than halfway between the last two entries
             # use the last (highest) value
             logicArr = f_cutoff > ((freqs[-2] + freqs[-1])/2.)

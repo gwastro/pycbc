@@ -199,7 +199,7 @@ def get_chirp_params(totmass, eta, beta, sigma, gamma, chis, f0, order):
         r2f4Terms = False
     lambdas = []
 
-    for idx in range(len(mapping.keys())):
+    for idx in xrange(len(mapping.keys())):
         if mapping[idx] == 'Lambda0':
             lambda0 = 3. / (128. * eta * (pi * totmass * f0)**(5./3.))
             lambdas.append(lambda0)
