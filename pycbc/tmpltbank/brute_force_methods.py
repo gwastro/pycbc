@@ -308,7 +308,7 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
         pass
     elif massRangeParams.nsbhFlag or (maxSpinMag == minSpinMag):
         numplogb = abs(spin2z) > massRangeParams.maxNSSpinMag
-        spin2z[numploga] = 0
+        spin2z[numplogb] = 0
     else:
         # Do have to consider masses
         boundary_mass = massRangeParams.ns_bh_boundary_mass
