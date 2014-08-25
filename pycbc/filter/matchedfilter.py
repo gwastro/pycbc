@@ -33,6 +33,7 @@ from pycbc.fft import fft,ifft
 import pycbc.scheme
 import pycbc
 import numpy
+from scipy import interpolate
 
 BACKEND_PREFIX="pycbc.filter.matchedfilter_"
 
@@ -320,7 +321,7 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
     """
     global q, q2, qtilde, qtilde2
     from pycbc.fft.fftw_pruned import pruned_c2cifft
-    from pycbc.events import threshold
+    from pycbc.events import threshold, cluster_reduce
 
     N = (len(stilde)-1) * 2   
     kmin, kmax = get_cutoff_indices(low_frequency_cutoff,
@@ -340,14 +341,40 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
     
     q2s = q2[stilde.analyze.start/downsample_factor:stilde.analyze.stop/downsample_factor]
     idx2, snrv2 = threshold(q2s, snr_threshold / norm * downsample_threshold)
+    if len(idx2) == 0:
+        return [], [], None, None
+    # Cluster
+    cluster_window = 512
+    idx2, _ = cluster_reduce(idx2, snrv2, cluster_window)
+
+    # This is a simple linear interpolation. Any content above the reduced
+    # Nyquist frequency is lost, but this does have the desired time resolution
+    snr_indexes = []
+    snrv = []
+    for index2 in idx2:
+        interp_idxs = numpy.arange(index2-2, index2+3, dtype='int')
+        interp_snrs = q2s[interp_idxs]
+        q_idx = index2 * downsample_factor
+        interp_rsmpl_idxs = interp_idxs*downsample_factor
+        q_idxs = numpy.arange(q_idx-downsample_factor/2,
+                              q_idx+downsample_factor/2 + 1, dtype='int')
+        snr_indexes.extend(q_idxs)
+        interp_func = interpolate.interp1d(interp_rsmpl_idxs, interp_snrs, 
+                                           kind='quadratic')
+        snrv.extend(interp_func(q_idxs))
+    correlate(htilde[kmin:kmax], stilde[kmin:kmax], qtilde[kmin:kmax])
+    return numpy.array(snr_indexes), numpy.array(snrv, dtype=numpy.complex64),\
+           qtilde, norm
+
+    # The fancy upsampling is here
     if len(idx2) > 0:
-       idx = (idx2+stilde.analyze.start/downsample_factor)*downsample_factor
-       idx = smear(idx, downsample_factor*2)
+       idx = (idx2*downsample_factor) + stilde.analyze.start
+       idx = smear(idx, downsample_factor)
        correlate(htilde[kmin:kmax], stilde[kmin:kmax], qtilde[kmin:kmax])
        snrv = pruned_c2cifft(qtilde, q, idx)   
+       idx = idx - stilde.analyze.start
        return idx, snrv, qtilde, norm
     
-    return [], [], None, None
            
 def matched_filter(template, data, psd, low_frequency_cutoff=None,
                   high_frequency_cutoff=None):
