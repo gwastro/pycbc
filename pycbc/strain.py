@@ -323,7 +323,7 @@ class StrainSegments(object):
     """
     def __init__(self, strain, segment_length=None, segment_start_pad=0, 
                  segment_end_pad=0, trigger_start=None, trigger_end=None, 
-                 filter_inj_only=False):
+                 filter_inj_only=False, injection_window=None):
         """ Determine how to chop up the strain data into smaller segents
             for analysis.
         """
@@ -416,6 +416,23 @@ class StrainSegments(object):
                 for inj_id in inj_idx:
                     if inj_id < cum_end and inj_id > cum_start:
                         analyze_this = True
+                        if injection_window is not None:
+                            # FIXME: How to deal with 2 injections in a single
+                            #        segment? For now analyse the whole seg.
+                            if start != ana.start or stop != ana.stop:
+                                start = ana.start
+                                stop = ana.stop
+                            win_points = injection_window * strain.sample_rate
+                            inj_start = inj_id - win_points
+                            inj_start = int(inj_start - 0.5)
+                            inj_end = inj_id + win_points
+                            inj_end = int(inj_end + 0.5)
+                            if inj_start > cum_start:
+                                start += (inj_start - cum_start)
+                                cum_start = start + seg.start
+                            if inj_end < cum_end:
+                                stop -= (cum_end - inj_end)
+                                cum_end = stop + seg.start
                 if not analyze_this:
                     continue     
 
@@ -463,7 +480,8 @@ class StrainSegments(object):
                    segment_end_pad=opt.segment_end_pad,
                    trigger_start=opt.trig_start_time,
                    trigger_end=opt.trig_end_time,
-                   filter_inj_only=opt.filter_inj_only)
+                   filter_inj_only=opt.filter_inj_only,
+                   injection_window=opt.injection_window)
         
     @classmethod
     def insert_segment_option_group(cls, parser):
@@ -487,6 +505,15 @@ class StrainSegments(object):
                                "end of each segment in seconds.")
         segment_group.add_argument("--filter-inj-only", action='store_true',
                           help="Analaze only segements that contain an injection.")
+        segment_group.add_argument("--injection-window", default=None,
+                          type=int, help="""If using --filter-inj-only then
+                          only search for injections within +/- injection
+                          window of the injections's end time. This is useful
+                          to speed up a coherent search or a search where we
+                          initially filter at lower sample rate, and then
+                          filter at full rate where needed. NOTE: Currently
+                          does not work if two injections are in the same
+                          segment.""")
         
         
     @classmethod
