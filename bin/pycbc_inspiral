@@ -186,7 +186,7 @@ with ctx:
                     indices=idx+stilde.analyze.start, template=template, psd=psd, 
                     low_frequency_cutoff=flow)
 
-            idx += stilde.cumulative_index + stilde.analyze.start
+            idx += stilde.cumulative_index
 
             if (opt.autochi_number_points):
                vals = [idx, snrv, power_chisqv, bank_chisqv, auto_chisqv[:, 2]]
