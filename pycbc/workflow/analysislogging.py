@@ -29,6 +29,7 @@ times used within the workflow, etc.
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
+import logging
 from pycbc.workflow.core import File, FileList, make_analysis_dir
 from glue.ligolw import ligolw, table, utils
 from glue.ligolw.utils import process
