@@ -34,7 +34,7 @@ from pycbc.workflow.core import File, FileList, make_analysis_dir
 from glue.ligolw import ligolw, table, utils
 from glue.ligolw.utils import process
 from glue.segmentdb import segmentdb_utils
-from pycbc.workflow.segments import segmentlist
+from pycbc.workflow.segment import segmentlist
 
 def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
                           program_name="workflow", tags=[]):
