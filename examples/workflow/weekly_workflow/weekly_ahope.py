@@ -68,7 +68,7 @@ summ_dir = os.path.join(currDir, "summary")
 
 # Get segments and find where the data is
 # NOTE: not all files are returned to top level, so all_files has some gaps
-all_files = _workflow.WorkflowFileList([])
+all_files = _workflow.FileList([])
 scienceSegs, segsFileList = _workflow.setup_segment_generation(workflow, segDir)
 datafind_files, scienceSegs = _workflow.setup_datafind_workflow(workflow, 
                                             scienceSegs, dfDir, segsFileList)
@@ -98,7 +98,7 @@ all_files.extend(inj_files)
 tags = ["full_data"] + inj_tags
 output_dirs = [fdDir]
 output_dirs.extend([os.path.join(currDir, tag) for tag in inj_tags])
-all_coincs = _workflow.WorkflowFileList([])
+all_coincs = _workflow.FileList([])
 for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
     if not tag == 'full_data':
         timeSlideTags = ['zerolag']
@@ -342,8 +342,8 @@ wipConf.set('main', 'output', 'index.html')
 wipConf.write(file('wip.ini', 'w'))
 
 # Now add command to workflow
-wip_exe = _workflow.WorkflowExecutable(workflow.cp, 'write_ihope_page')
-wip_node = _workflow.WorkflowNode(wip_exe)
+wip_exe = _workflow.Executable(workflow.cp, 'write_ihope_page')
+wip_node = _workflow.Node(wip_exe)
 wip_node.add_opt('--config-file', os.path.join(currDir, 'wip.ini'))
 
 workflow.add_node(wip_node)

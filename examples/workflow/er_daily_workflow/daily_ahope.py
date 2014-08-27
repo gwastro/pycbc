@@ -122,11 +122,11 @@ insps = _workflow.setup_matchedfltr_workflow(workflow, scienceSegs, datafinds,
 llwadd_exe = _workflow.LigolwAddExecutable(workflow.cp, 'llwadd', ifo=''.join(scienceSegs.keys()),
                                    out_dir=workingDir)
 
-cp_exec = _workflow.WorkflowExecutable(workflow.cp, 'cp', out_dir=workingDir)
+cp_exec = _workflow.Executable(workflow.cp, 'cp', out_dir=workingDir)
 
 # Hopefully with tags, I would need only one exec and two jobs
-si_exe_coarse = _workflow.WorkflowExecutable(workflow.cp, 'siclustercoarse', out_dir=workingDir)
-si_exe_fine = _workflow.WorkflowExecutable(workflow.cp, 'siclusterfine', out_dir=workingDir)
+si_exe_coarse = _workflow.Executable(workflow.cp, 'siclustercoarse', out_dir=workingDir)
+si_exe_fine = _workflow.Executable(workflow.cp, 'siclusterfine', out_dir=workingDir)
 
 # turn inspiral files into list where each element is a AhopeFileList
 # of jobs that were split from the same template bank via splitbank
@@ -145,7 +145,7 @@ for ifo in ifos:
         output_url = urlparse.urlunparse(['file', 'localhost', 
                                           os.path.join(workingDir, output_name),
                                           None, None, None])
-        llwaddFile = _workflow.WorkflowFile(ifo, 'LLWADD_UNCLUSTERED', analysis_seg,
+        llwaddFile = _workflow.File(ifo, 'LLWADD_UNCLUSTERED', analysis_seg,
                                   file_url=output_url)
     
         llwadd_node = llwadd_exe.create_node(analysis_seg, inspOutGroup, output=llwaddFile) 
@@ -160,13 +160,13 @@ for ifo in ifos:
         clustered_30ms_url = urlparse.urlunparse(['file', 'localhost',
                                      os.path.join(workingDir, clustered_30ms_name),
                                      None, None, None])
-        clustered_30ms_file = _workflow.WorkflowFile(ifo, 'LLWADD_30MS_CLUSTERED',
+        clustered_30ms_file = _workflow.File(ifo, 'LLWADD_30MS_CLUSTERED',
                                 analysis_seg, file_url=clustered_30ms_url)
         clustered_16s_name  = output_name.replace('UNCLUSTERED', '16SEC_CLUSTERED')
         clustered_16s_url = urlparse.urlunparse(['file', 'localhost',
                                      os.path.join(workingDir, clustered_16s_name),
                                      None, None, None])
-        clustered_16s_file = _workflow.WorkflowFile(ifo, 'LLWADD_16S_CLUSTERED',
+        clustered_16s_file = _workflow.File(ifo, 'LLWADD_16S_CLUSTERED',
                                 analysis_seg, file_url=clustered_16s_url)
 
         for cfile in [clustered_30ms_file, clustered_16s_file]:
@@ -254,7 +254,7 @@ for job in pageDagParents:
 
 # One final job to make the output page
 # Make sub file for summary page job
-summ_exe = _workflow.WorkflowExecutable(workflow.cp, 'ihope_daily_page')
+summ_exe = _workflow.Executable(workflow.cp, 'ihope_daily_page')
 summNode = summ_exe.create_node()
 summNode.add_opt('--action', 'make_index_page')
 summNode.add_opt('--config', pageConfFile)
