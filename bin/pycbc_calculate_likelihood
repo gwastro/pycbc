@@ -96,6 +96,8 @@ def parse_command_line():
                                 vetoes (default = do not apply vetoes).""")
     parser.add_argument("--trim-database", action="store_true", 
                         help="""Delete events that are found to be below the pipeline's likelihood ratio threshold (default = do not delete them).  Deleting the events saves a significant amount of disk space but is inconvenient during pipeline development and tuning as it makes it impossible to rerank the events later with a different ranking statistic.""")
+    parser.add_argument("--drop-veto-info", action = "store_true", help = "Remove the segment, segment_definer, veto_definer and segment_summary tables from the database as well as the associated rows in the process and process_params tables.")
+
 
     args = parser.parse_args()
     return args
@@ -224,6 +226,45 @@ if args.trim_database and (coinc_def_id is not None):
     cursor.execute("""DELETE FROM sngl_inspiral WHERE snr < (SELECT value FROM process_params WHERE process_params.process_id == sngl_inspiral.process_id AND param == "--singles-threshold") AND event_id NOT IN (SELECT event_id FROM coinc_event_map WHERE table_name == "sngl_inspiral");""")
     cursor.execute("""VACUUM;""")
     cursor.close()
+
+if args.drop_veto_info:
+    cursor = connection.cursor()
+
+    query_text = """
+    DELETE FROM process
+        WHERE process_id IN (
+            SELECT DISTINCT process_id
+            FROM segment_definer);"""
+    cursor.execute(query_text)
+    query_text = """
+    DELETE FROM process_params
+        WHERE process_id IN (
+            SELECT DISTINCT process_id
+            FROM segment_definer);"""
+    cursor.execute(query_text)
+    cursor.execute("DROP TABLE segment;")
+    cursor.execute("DROP TABLE segment_summary;")
+    cursor.execute("DROP TABLE segment_definer;")
+    if args.verbose:
+        print >> sys.stderr, "segment, segment-definer & segment-summary tables dropped "
+    query_text = """
+    DELETE FROM process
+        WHERE process_id IN (
+            SELECT DISTINCT process_id
+            FROM veto_definer);"""
+    cursor.execute(query_text)
+    query_text = """
+    DELETE FROM process_params
+        WHERE process_id IN (
+            SELECT DISTINCT process_id
+            FROM veto_definer);"""
+    cursor.execute(query_text)
+
+    # remove veto_definer table from xmldoc
+    query_text = "DROP TABLE veto_definer;" 
+    cursor.execute(query_text)
+    if args.verbose:
+        print >> sys.stderr, "Veto-Definer table dropped"
 
 #
 # Close out process metadata
