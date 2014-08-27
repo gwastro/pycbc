@@ -413,7 +413,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
                 ligolwAddFile = node.output_files[0]
                 ligolwAddOuts.append(ligolwAddFile)
                 workflow.add_node(node)
-                if workflow.cp.has_option_tags("ahope-coincidence", \
+                if workflow.cp.has_option_tags("workflow-coincidence", \
                                          "coincidence-write-likelihood", tags):
                     write_likelihood=True
                 else:
