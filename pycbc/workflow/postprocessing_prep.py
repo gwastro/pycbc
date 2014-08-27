@@ -33,6 +33,7 @@ from __future__ import division
 
 import os
 import os.path
+import logging
 from glue import segments
 from pycbc.workflow.core import FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import select_generic_executable
