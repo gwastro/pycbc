@@ -54,6 +54,43 @@ from pylal import ligolw_sqlutils as sqlutils
 # so they can be inserted into a database
 dbtables.ligolwtypes.ToPyType["ilwd:char"] = unicode
 
+
+def cleanup_tables(connection, vacuum=True, verbose=False, debug=False):
+    """
+    Function to remove duplicate entries and compress.
+    """
+    # FIXME: Leaving the debug=False in here so this can be altered when logging
+    #        module is added.
+    # Cleaning up the veto_definer and segments tables
+    sqlutils.simplify_segments_tbls(connection, verbose=verbose, debug=False)
+    sqlutils.simplify_vetodef_tbl(connection, verbose=verbose, debug=False)
+
+    # Make process_id map from info in the process & process_params tables
+    sqlutils.get_process_info(connection, verbose=verbose, debug=False)
+
+    sqlutils.simplify_timeslide_tbl(connection, verbose=verbose, debug=False)
+    sqlutils.simplify_sim_tbls(connection, verbose=verbose, debug=False)
+
+    # Remove empty space & defragment database
+    sqlutils.vacuum_database(connection, vacuum=vacuum, verbose=verbose)
+
+    # Cleaning up the coinc_definer & experiment tables
+    sqlutils.simplify_coincdef_tbl(connection, verbose=verbose, debug=False)
+    sqlutils.simplify_expr_tbl(connection, verbose=verbose, debug=False)
+    sqlutils.simplify_exprsumm_tbl(connection, verbose=verbose, debug=False)
+
+    # Cleaning up the summary tables
+    sqlutils.simplify_summ_tbls(connection, verbose=verbose, debug=False)
+    # Update process_ids in the sngl-ifo trigger tables tables
+    sqlutils.update_pid_in_snglstbls(connection, verbose=verbose, debug=False)
+    # Cleaning up the process & process_params tables
+    sqlutils.simplify_proc_tbls(connection, verbose=verbose, debug=False)
+
+    # Remove empty space & defragment database
+    sqlutils.vacuum_database(connection, vacuum=vacuum, verbose=verbose)
+    connection.commit()
+
+
 # Command line parsing
 
 # FIXME: Move verbose to loggin module
@@ -140,6 +177,9 @@ for n, path in enumerate(args.input_files):
                   contenthandler = ContentHandler,
                   preserve_ids=args.preserve_ids, verbose=args.verbose)
     dbtables.build_indexes(ContentHandler.connection, args.verbose)
+    if not (n%20):
+        # Do cleanup as we go to avoid file getting to big.
+        cleanup_tables(connection, vacuum=args.vacuum, verbose=args.verbose)
 
 # Add injection file if present
 if args.injection_file:
@@ -222,40 +262,8 @@ if args.injection_file:
                                           "--userTag", "string",
                                           args.simulation_tag))
 
-ContentHandler.connection.commit()
+cleanup_tables(connection, vacuum=args.vacuum, verbose=args.verbose)
 
-# Now run the cleanup stuff
-# FIXME: Leaving the debug=False in here so this can be altered when logging
-#        module is added.
-# Cleaning up the veto_definer and segments tables
-sqlutils.simplify_segments_tbls(connection, verbose=args.verbose, debug=False)
-sqlutils.simplify_vetodef_tbl(connection, verbose=args.verbose, debug=False)
-
-# Make process_id map from info in the process & process_params tables
-sqlutils.get_process_info(connection, verbose=args.verbose, debug=False)
-
-sqlutils.simplify_timeslide_tbl(connection, verbose=args.verbose, debug=False)
-sqlutils.simplify_sim_tbls(connection, verbose=args.verbose, debug=False)
-
-# Remove empty space & defragment database
-sqlutils.vacuum_database(connection, vacuum=args.vacuum, verbose=args.verbose)
-
-# Cleaning up the coinc_definer & experiment tables
-sqlutils.simplify_coincdef_tbl(connection, verbose=args.verbose, debug=False)
-sqlutils.simplify_expr_tbl(connection, verbose=args.verbose, debug=False)
-sqlutils.simplify_exprsumm_tbl(connection, verbose=args.verbose, debug=False)
-
-# Cleaning up the summary tables
-sqlutils.simplify_summ_tbls(connection, verbose=args.verbose, debug=False)
-# Update process_ids in the sngl-ifo trigger tables tables
-sqlutils.update_pid_in_snglstbls(connection, verbose=args.verbose, debug=False)
-# Cleaning up the process & process_params tables
-sqlutils.simplify_proc_tbls(connection, verbose=args.verbose, debug=False)
-
-# Remove empty space & defragment database
-sqlutils.vacuum_database(connection, vacuum=args.vacuum, verbose=args.verbose)
-
-# Close database
 ContentHandler.connection.commit()
 ContentHandler.connection.close()
 
