@@ -34,6 +34,7 @@ from pycbc.workflow.core import File, FileList, make_analysis_dir
 from glue.ligolw import ligolw, table, utils
 from glue.ligolw.utils import process
 from glue.segmentdb import segmentdb_utils
+from pycbc.workflow.segments import segmentlist
 
 def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
                           program_name="workflow", tags=[]):
@@ -78,7 +79,7 @@ def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
                                             vars(args) ).process_id
 
     # Now add the various segment lists to this file
-    summ_segs = segments.segmentlist([workflow.analysis_time])
+    summ_segs = segmentlist([workflow.analysis_time])
     
     # If tags is given filter by tags
     if tags:
