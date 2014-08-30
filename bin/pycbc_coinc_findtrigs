@@ -252,7 +252,7 @@ def load_triggers(trigger_files, group_id):
 
             num_trigs += len(snr)
             logging.info("%s/%s : Total Trigs=%s: %s-%s" % (i+1, len(trigger_files), num_trigs, snr.min(), snr.max()))
-    
+        f.close()
     for key in triggers.keys():
         sl, el, tl = triggers[key]
         triggers[key] = (numpy.concatenate(sl), 
