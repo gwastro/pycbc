@@ -64,7 +64,6 @@ def columns_from_file_list(file_list, columns, ifo, start, end):
         pick = numpy.logical_and(time < end, time > start)
         pick_loc = numpy.where(pick)[0]
         
-        
         for col in columns:
             if col not in trig_dict:
                 trig_dict[col] = []

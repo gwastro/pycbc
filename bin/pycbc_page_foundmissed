@@ -16,6 +16,33 @@ parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
+def compute_sensitive_distance(f_dist, m_dist):
+    """ Compute the sensitive volume
+    """
+    f_dist.sort()
+    m_dist.sort()
+    distances = numpy.concatenate([f_dist, m_dist])
+    dist_sorting = distances.argsort()
+    distances = distances[dist_sorting]
+    
+    low = 0
+    vol = 0
+    for i in range(len(distances)):
+        if i == len(distances) - 1:
+            break
+    
+        high = (distances[i+1] + distances[i]) / 2
+        bin_width = high - low
+        
+        if dist_sorting[i] <= len(f_dist):
+            vol += 4 * numpy.pi * distances[i]**2.0 * bin_width
+
+        low = high
+        
+    dist = (vol * 3.0/4.0/numpy.pi) ** (1.0/3.0)
+    print distances[-1], dist
+    return dist
+
 if args.verbose:
     log_level = logging.INFO
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
@@ -28,7 +55,6 @@ found = f['found_after_vetoes/injection_index'][:]
 missed = f['missed/after_vetoes'][:]
 
 ifar = f['found_after_vetoes/ifar'][:]
-foundg = found[ifar > 1000]
 
 m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
 mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
@@ -42,22 +68,15 @@ m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
 import pycbc.pnutils
 mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 
-mbf = mchirp[foundg] < 1.31
-mbm = mchirp[missed] < 1.31
-vol = dist**3.0
-fvc = vol[foundg][mbf]
+foundg = found[ifar > 1000]
+mbf = numpy.logical_and(mchirp[foundg] > 1.34, mchirp[foundg] > 2.17)
+mbm = numpy.logical_and(mchirp[missed] > 1.34, mchirp[missed] > 2.17)
+f_dist = dist[foundg][mbf]
+m_dist = dist[missed][mbm]
 
-fvc.sort()
-mvol = fvc[-1] 
-miv = vol[missed][mbf]
-mv = miv[miv < mvol].sum()
+sdist = compute_sensitive_distance(f_dist, m_dist)
+print "SENSITIVE DISTANCE", sdist
 
-
-
-fv = fvc.sum()
-eff = fv / (mv + fv)
-dist = (eff * mvol)**(1.0/3.0)
-print eff, dist, mv, fv
 # For speed don't bother plotting really distant missed points
 missed = missed[dec_dist[missed] < dec_dist[found].max() * 1.1]
 
