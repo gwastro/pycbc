@@ -31,7 +31,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 
 import os
 import logging
-import urllib
+import urllib, urlparse
 from pycbc.workflow.core import File, FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import LalappsInspinjExecutable
 from glue import segments
