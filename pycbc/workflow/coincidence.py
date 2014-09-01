@@ -35,7 +35,7 @@ import os
 import os.path
 import logging
 from glue import segments
-from pycbc.workflow.core import FileList, make_analysis_dir
+from pycbc.workflow.core import FileList, make_analysis_dir, Executable, Node
 from pycbc.workflow.jobsetup import LigolwAddExecutable, LigolwSSthincaExecutable, SQLInOutExecutable
 from pylal import ligolw_cafe, ligolw_tisi
 
@@ -462,34 +462,34 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
 
     return main_return, other_returns
     
-class PyCBCBank2HDFExecutable(AhopeExecutable):
+class PyCBCBank2HDFExecutable(Executable):
     """ This converts xml tmpltbank to an hdf format
     """
     def create_node(self, bank_file):
-        node = AhopeNode(self)
+        node = Node(self)
         node.add_input_opt('--bank-file', bank_file)
         node.new_output_file_opt(bank_file.segment, '.hdf', '--output-file') 
         return node
     
-class PyCBCTrig2HDFExecutable(AhopeExecutable):
+class PyCBCTrig2HDFExecutable(Executable):
     """ This converts xml triggers to an hdf format, grouped by template hash 
     """
     def create_node(self, trig_files, bank_file, num_groups):
-        node = AhopeNode(self)
+        node = Node(self)
         node.add_input_opt('--bank-file', bank_file)
         node.add_opt('--number-of-groups', num_groups)
         node.add_input_list_opt('--trigger-files', trig_files)
         node.new_output_file_opt(trig_files[0].segment, '.hdf', '--output-file') 
         return node
     
-class PyCBCFindCoincExecutable(AhopeExecutable):
+class PyCBCFindCoincExecutable(Executable):
     """ Find coinc triggers using a folded interval method 
     """
     def create_node(self, trig_files, veto_files, template_group, tags=[]):
         segs = trig_files.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
         
-        node = AhopeNode(self)
+        node = Node(self)
         node.add_input_list_opt('--trigger-files', trig_files)
         if len(veto_files) != 0:
             node.add_input_list_opt('--veto-files', veto_files)
@@ -497,14 +497,14 @@ class PyCBCFindCoincExecutable(AhopeExecutable):
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags) 
         return node
         
-class PyCBCStatMapExecutable(AhopeExecutable):
+class PyCBCStatMapExecutable(Executable):
     """ Calculate FAP, IFAR, etc
     """
     def create_node(self, coinc_files, external_background=None, tags=[]):
         segs = coinc_files.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
         
-        node = AhopeNode(self)
+        node = Node(self)
         node.add_input_list_opt('--coinc-files', coinc_files)
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags)         
         if external_background:
@@ -537,10 +537,10 @@ def convert_trig_to_hdf(workflow, xml_trigger_files, out_dir, tags=[]):
     logging.info('convert signle inspiral trigger files to hdf5')
     make_analysis_dir(out_dir)
     
-    num_groups = workflow.cp.get_opt('ahope-coincidence', 'number-of-groups')
+    num_groups = workflow.cp.get_opt('workflow-coincidence', 'number-of-groups')
     
     ifos, insp_groups = inspiral.categorize_by_attr('ifo')       
-    trig_files = AhopeFileList()
+    trig_files = FileList()
     for ifo, insp_group in zip(ifos,  insp_groups):
         trig2hdf_exe = PyCBCTrig2HDFExecutable(workflow.cp, 'trig2hdf',
                                        ifos=ifo, out_dir=out_dir, tags=tags)
@@ -576,8 +576,8 @@ def set_interval_coinc_inj(workflow, hdfbank, trig_files,
                                               ifos=workflow.ifos,
                                               tags=tags, out_dir=out_dir)
                                                                           
-    bg_files = AhopeFileList()
-    for group_id in range(int(cp.get_opt('ahope-coincidence', 'number-of-groups'))):
+    bg_files = FileList()
+    for group_id in range(int(cp.get_opt('workflow-coincidence', 'number-of-groups'))):
         group_id = str(group_id)
         coinc_node = findcoinc_exe.create_node(trig_files, [], 
                                            group_id, 
@@ -618,9 +618,9 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
                                   
     tags, veto_file_groups = veto_files.categorize_by_attr('tags')
     for tag, veto_files in zip(tags, veto_file_groups):
-        bg_files = AhopeFileList()
+        bg_files = FileList()
         if 'CUMULATIVE_CAT' in tag[0]:
-            for group_id in range(int(cp.get_opt('ahope-coincidence', 'number-of-groups'))):
+            for group_id in range(int(cp.get_opt('workflow-coincidence', 'number-of-groups'))):
                 group_id = str(group_id)
                 coinc_node = findcoinc_exe.create_node(trig_files, veto_files, 
                                                        group_id, 
