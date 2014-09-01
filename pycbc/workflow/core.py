@@ -628,6 +628,17 @@ class File(pegasus_workflow.File):
         else:
             self.storage_path = None
 
+    def __getstate__(self):
+        """ Allow the ahope file to be picklable. This disables the usage of
+        the internal cache entry.
+        """
+        for i, seg in enumerate(self.segment_list):
+            self.segment_list[i] = segments.segment(float(seg[0]), float(seg[1]))
+        self.cache_entry = None
+        safe_dict = copy.copy(self.__dict__)
+        safe_dict['cache_entry'] = None
+        return safe_dict   
+
     @property
     def ifo(self):
         """
@@ -1012,6 +1023,42 @@ class FileList(list):
             return False
         else:
             return True
+
+    @classmethod
+    def load(self, filename):
+        """
+        Load an AhopeFileList from a pickle file
+        """
+        f = open(filename, 'r')
+        return cPickle.load(f)
+    
+    def dump(self, filename):
+        """
+        Output this AhopeFileList to a pickle file
+        """
+        f = open(filename, 'w')
+        cPickle.dump(self, f)
+        
+    def to_ahope_file(self, name, out_dir):
+        """Dump to a pickle file and return an AhopeFile reference of this list
+        
+        Parameters
+        ----------
+        name : str
+            An identifier of this file. Needs to be unique.
+        out_dir : path 
+            path to place this file
+            
+        Returns
+        -------
+        file : AhopeFile
+        """
+        make_analysis_dir(out_dir)
+        
+        file_ref = AhopeFile('ALL', name, self.get_times_covered_by_files(),
+                             extension='.pkl', directory=out_dir)
+        self.dump(file_ref.storage_path)
+        return file_ref
    
         
 
