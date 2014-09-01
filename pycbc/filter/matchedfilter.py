@@ -316,7 +316,8 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
                                             snr_threshold,
                                             valid_slice,
                                             low_frequency_cutoff=None,
-                                            high_frequency_cutoff=None):
+                                            high_frequency_cutoff=None,
+                                            upsample_method='interpolation'):
     """ Return the complex snr  
     """
     global q, q2, qtilde, qtilde2
@@ -349,31 +350,56 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
 
     # This is a simple linear interpolation. Any content above the reduced
     # Nyquist frequency is lost, but this does have the desired time resolution
-    snr_indexes = []
-    snrv = []
-    for index2 in idx2:
-        interp_idxs = numpy.arange(index2-2, index2+3, dtype='int')
-        interp_snrs = q2s[interp_idxs]
-        q_idx = index2 * downsample_factor
-        interp_rsmpl_idxs = interp_idxs*downsample_factor
-        q_idxs = numpy.arange(q_idx-downsample_factor/2,
-                              q_idx+downsample_factor/2 + 1, dtype='int')
-        snr_indexes.extend(q_idxs)
-        interp_func = interpolate.interp1d(interp_rsmpl_idxs, interp_snrs, 
-                                           kind='quadratic')
-        snrv.extend(interp_func(q_idxs))
-    correlate(htilde[kmin:kmax], stilde[kmin:kmax], qtilde[kmin:kmax])
-    return numpy.array(snr_indexes), numpy.array(snrv, dtype=numpy.complex64),\
-           qtilde, norm
+    if upsample_method=='interpolation':
+        snr_indexes = []
+        snrv = []
+        for index2 in idx2:
+            interp_idxs = numpy.arange(index2-2, index2+3, dtype='int')
+            try:
+                interp_snrs = q2s[interp_idxs]
+            except IndexError:
+                # This happens when the point is at the edge of the SNR time
+                # series. Here we don't have the necessary +/- 2 points on
+                # either side to perform interpolation so we just fall back
+                # on the pruned FFT.
+                upsample_method='pruned_fft'
+                break
+            q_idx = index2 * downsample_factor
+            interp_rsmpl_idxs = interp_idxs*downsample_factor
+            q_idxs = numpy.arange(q_idx-downsample_factor/2,
+                                  q_idx+downsample_factor/2 + 1, dtype='int')
+            snr_indexes.extend(q_idxs)
+            interp_func = interpolate.interp1d(interp_rsmpl_idxs, interp_snrs, 
+                                               kind='quadratic')
+            snrv.extend(interp_func(q_idxs))
+        else:
+            correlate(htilde[kmin:kmax], stilde[kmin:kmax], qtilde[kmin:kmax])
+            snr_indexes = numpy.array(snr_indexes)
+            snrv = numpy.array(snrv, dtype=numpy.complex64)
+            return snr_indexes, snrv, qtilde, norm
 
     # The fancy upsampling is here
-    if len(idx2) > 0:
-       idx = (idx2*downsample_factor) + stilde.analyze.start
-       idx = smear(idx, downsample_factor)
-       correlate(htilde[kmin:kmax], stilde[kmin:kmax], qtilde[kmin:kmax])
-       snrv = pruned_c2cifft(qtilde, q, idx)   
-       idx = idx - stilde.analyze.start
-       return idx, snrv, qtilde, norm
+    if upsample_method=='pruned_fft':
+        idx = (idx2*downsample_factor) + stilde.analyze.start
+        idx = smear(idx, downsample_factor)
+        correlate(htilde[kmin:kmax], stilde[kmin:kmax], qtilde[kmin:kmax])
+        # If there are too many points, revert back to IFFT
+        # FIXME: What should this value be??
+        if len (idx) > 50:
+            ifft(qtilde, q)
+            qs = q[stilde.analyze.start:stilde.analyze.stop]
+            idx, snrv = threshold(qs, snr_threshold / norm)
+            if len(idx) == 0:
+                return [], [], None, None
+            # FIXME: Use proper cluster window!
+            cluster_window = 512
+            idx, snrv = cluster_reduce(idx, snrv, cluster_window)
+            return idx, snrv, qtilde, norm
+        # Or do the fancy upsampling
+        else:
+            snrv = pruned_c2cifft(qtilde, q, idx)   
+            idx = idx - stilde.analyze.start
+            return idx, snrv, qtilde, norm
     
            
 def matched_filter(template, data, psd, low_frequency_cutoff=None,
