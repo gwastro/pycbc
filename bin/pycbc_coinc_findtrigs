@@ -234,7 +234,6 @@ def load_triggers(trigger_files, group_id):
         if (r-l) > 0:
             end_time = f['end_time'][l:r]
             th = f['template_id'][l:r]
-            print r, l
             x2_dof = 2 * f.attrs['chisq_dof'] - 2
             snr = pycbc.events.newsnr(f['snr'][l:r], f['chisq'][l:r] / x2_dof)
             snr = numpy.array(snr, ndmin=1)
@@ -307,7 +306,6 @@ def decimate_triggers(s1, s2, slide, num_keep, bins, factor=2):
         keep_upper = numpy.arange(0, max_slide + factor, factor)
         keep_lower = numpy.arange(-factor, min_slide - factor, -factor)
         keep_slides = numpy.unique(numpy.append(keep_upper, keep_lower))
-
         
         bin_int = numpy.in1d(slide[lbin:rbin], keep_slides)
         bin_keep = numpy.where(bin_int)[0] + lbin

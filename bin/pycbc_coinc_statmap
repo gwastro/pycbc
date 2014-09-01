@@ -38,7 +38,7 @@ def load_coincs(coinc_files):
            numpy.concatenate(decimation_factor),
            attr,
            f['coinc/analyzed_start'][:],
-           f['coinc/analyzed_end'][:]
+           f['coinc/analyzed_end'][:],
            )
   
 def changed(arr):
@@ -170,8 +170,7 @@ if __name__ == '__main__':
         f['foreground/fap'] = fap
         f.attrs['background_time'] = background_time
         f.attrs['foreground_time'] = coinc_time
-        
-    
+            
     elif len(back_locs) > 0:
         logging.info("Dumping background triggers")
         f['background/stat1'] = s1[back_locs]
@@ -188,7 +187,6 @@ if __name__ == '__main__':
         background_time = int(maxtime / attrs['timeslide_interval']) * mintime
         coinc_time = float(attrs['coinc_time'])
         
-
         logging.info("Making mapping from FAN to the combined statistic")
         back_stat = cstat(s1[back_locs], s2[back_locs])
         fanmap = calculate_fan_map(back_stat, dec[back_locs])
