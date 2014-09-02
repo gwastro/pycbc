@@ -26,9 +26,8 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-
 import os, sys, subprocess, logging, math, string, urlparse, ConfigParser
-import numpy
+import numpy, cPickle
 from itertools import combinations, groupby
 from operator import attrgetter
 from os.path import splitext, basename, isfile
@@ -1039,8 +1038,8 @@ class FileList(list):
         f = open(filename, 'w')
         cPickle.dump(self, f)
         
-    def to_ahope_file(self, name, out_dir):
-        """Dump to a pickle file and return an AhopeFile reference of this list
+    def to_file_object(self, name, out_dir):
+        """Dump to a pickle file and return an File object reference of this list
         
         Parameters
         ----------
@@ -1055,13 +1054,10 @@ class FileList(list):
         """
         make_analysis_dir(out_dir)
         
-        file_ref = AhopeFile('ALL', name, self.get_times_covered_by_files(),
+        file_ref = File('ALL', name, self.get_times_covered_by_files(),
                              extension='.pkl', directory=out_dir)
         self.dump(file_ref.storage_path)
         return file_ref
-   
-        
-
 
 class OutSegFile(File):
     '''
