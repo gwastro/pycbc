@@ -88,7 +88,7 @@ def setup_postprocessing_preparation(workflow, triggerFiles, output_dir,
                                  triggerFiles, output_dir, tags=tags, **kwargs)
     else:
         errMsg = "Post-processing preparation method not recognized. Must be "
-        errMsg += "one of PIPEDOWN_AHOPE or GSTLAL_POSTPROCPREP."
+        errMsg += "one of PIPEDOWN_WORKFLOW or GSTLAL_POSTPROCPREP."
         raise ValueError(errMsg)
 
     logging.info("Leaving post-processing preparation module.")
@@ -199,7 +199,8 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
                                                     out_dir=output_dir,
                                                     tags=currTags)
         sqliteCombine1Node = sqliteCombine1Job.create_node(\
-                                          workflow.analysis_time, trigInpFiles)
+                                          workflow.analysis_time, trigInpFiles, 
+                                          workflow=workflow)
         workflow.add_node(sqliteCombine1Node)
         # Node has only one output file
         sqliteCombine1Out = sqliteCombine1Node.output_files[0]
@@ -234,7 +235,8 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
                                                   tags=currTags)
             sqliteCombine1Node = sqliteCombine1Job.create_node(\
                                           workflow.analysis_time, trigInpFiles,
-                                          injFile=injFile[0], injString=injTag)
+                                          injFile=injFile[0], injString=injTag,
+                                          workflow=workflow)
             workflow.add_node(sqliteCombine1Node)
             # Node has only one output file
             sqliteCombine1Out = sqliteCombine1Node.output_files[0]
@@ -591,7 +593,7 @@ def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
             stage2_outputs[inj_tag].append(stage2_out)
 
         stage3_node = stage3_job.create_node(workflow.analysis_time,
-                                                       stage2_outputs[inj_tag])
+                                    stage2_outputs[inj_tag], workflow=workflow)
         workflow.add_node(stage3_node)
         # Node has only one output file
         stage3_out = stage3_node.output_files[0]

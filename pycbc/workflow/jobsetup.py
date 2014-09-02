@@ -865,7 +865,8 @@ class PycbcSqliteSimplifyExecutable(Executable):
         super(PycbcSqliteSimplifyExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
         
-    def create_node(self, job_segment, inputFiles, injFile=None, injString=None):
+    def create_node(self, job_segment, inputFiles, injFile=None,
+                    injString=None, workflow=None):
         node = Node(self)
         if injFile and not injString:
             raise ValueError("injString needed if injFile supplied.")
@@ -875,6 +876,35 @@ class PycbcSqliteSimplifyExecutable(Executable):
             for tag in inputFiles[0].tags:
                 if tag.startswith('JOB'):
                     extra_tags.append(tag)
+        # If the number of input files is large, split this up
+        num_inputs = len(inputFiles)
+        if num_inputs > 20 and workflow is not None:
+            reduced_inputs = WorkflowFileList([])
+            count = 0
+            testing = 0
+            curr_node = WorkflowNode(self)
+            for i, file in enumerate(inputFiles):
+                curr_node.add_input_arg(file)
+                if ( (not (i % 20)) and (i != 0) ) or ((i+1) == num_inputs):
+                    print i
+                    count_tag = ['SPLIT%d' %(count)]
+                    curr_node.new_output_file_opt(job_segment, '.sqlite', 
+                                    '--output-file',
+                                     tags=self.tags+extra_tags+count_tag)
+                    workflow.add_node(curr_node)
+                    reduced_inputs.append(curr_node.output_file)
+                    testing += len(curr_node._inputs)
+                    curr_node = WorkflowNode(self)
+                    count+=1
+            inputFiles = reduced_inputs
+            print "BEFORE %d, AFTER %d" %(num_inputs, testing)
+        elif num_inputs > 20:
+            err_msg = "Please provide the workflow keyword to the "
+            err_msg += "pycbc_sqlite_simplify create node function if "
+            err_msg += "supplying a large number of inputs. This allows us "
+            err_msg += "to parallelize the operation and speedup the workflow."
+            logging.warn(err_msg)
+                
         for file in inputFiles:
             node.add_input_arg(file)
         if injFile:
@@ -1093,7 +1123,7 @@ class GstlalPlotSummary(WorkflowExecutable):
     """
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
-        WorflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+        WorkflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
         self.set_memory('4000')
     def create_node(self, non_inj_db, injection_dbs):
