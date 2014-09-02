@@ -317,7 +317,7 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
                                             valid_slice,
                                             low_frequency_cutoff=None,
                                             high_frequency_cutoff=None,
-                                            upsample_method='interpolation'):
+                                            upsample_method='pruned_fft'):
     """ Return the complex snr  
     """
     global q, q2, qtilde, qtilde2
@@ -336,7 +336,7 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
     if q is None:
         q, qtilde = zeros(N, dtype=ctype), zeros(N, dtype=ctype)
         q2, qtilde2 = zeros(N2, dtype=ctype), zeros(N2, dtype=ctype)   
-    
+
     correlate(htilde[kmin2:kmax2], stilde[kmin2:kmax2], qtilde2[kmin2:kmax2])    
     ifft(qtilde2, q2)    
     

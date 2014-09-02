@@ -177,7 +177,8 @@ with ctx:
                 logging.info("%s points after clustering" % str(len(idx))) 
                 
             power_chisqv =  vetoes.power_chisq_at_points_from_precomputed(corr, 
-                                               snrv, norm, chisq_bins, idx)
+                                               snrv, norm, chisq_bins,
+                                               idx+stilde.analyze.start)
                    
             snrv *= norm
             
