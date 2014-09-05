@@ -81,7 +81,6 @@ def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, i
     
     tm_cur = time.clock()
     for ip,ind in enumerate(indices):
-        #print "ind = ", ind    
         end_point = ind + stride*num_points+1
         phi = atan2(sn[ind].imag, sn[ind].real)
         cphi = cos(phi)
@@ -122,7 +121,6 @@ def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, i
     achisq_list[:,0] = indices
     achisq_list[:,2] = achisq
     for i in xrange(len(indices)):
-	#achisq_list[i, 1] = snr_v[indices[i]]
 	achisq_list[i, 1] = abs(sn[indices[i]])
     tm_cur = time.clock()
  
@@ -209,7 +207,6 @@ def autochisq(template, data, psd, stride=1, snr_thr=8.0, num_points=None, \
 	    for i in xrange(Nsnr):
 		if (snr_v[i] >= snr_thr and snr_v[i] != maxSNR):
 			index_list = np.append(index_list, int(i))
-    #print "Stas, size of index list = ", len(index_list)
 
     dof= 0
     achi_list = np.array([])
@@ -240,7 +237,6 @@ class SingleDetAutoChisq(object):
             self._snr_thr = snr_thr
             self._num_points = num_points
             self._onesided = onesided 
-            #self._sn = None
             self._template = None
             self._autocor = None
         else:
