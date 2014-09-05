@@ -19,7 +19,7 @@
 import logging
 import argparse
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC, filter
-from pycbc.filter import matched_filter_core, sigmasq, make_frequency_series
+from pycbc.filter import MatchedFilterControl, sigmasq, make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
 import pycbc.fft.fftw
 
@@ -28,9 +28,8 @@ parser = argparse.ArgumentParser(usage='',
 
 parser.add_argument("-V", "--verbose", action="store_true", 
                   help="print extra debugging information", default=False )
-parser.add_argument("--output", type=str)
-
-parser.add_argument("--bank-file", type=str)
+parser.add_argument("--output", type=str, help="FIXME: ADD")
+parser.add_argument("--bank-file", type=str, help="FIXME: ADD")
 parser.add_argument("--snr-threshold", 
                   help="SNR threshold for trigger generation", type=float)
 parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
@@ -48,7 +47,8 @@ parser.add_argument("--taper-template", choices=taper_choices,
                   help="For time-domain approximants, taper the start and/or "
                        "end of the waveform before FFTing.")
 
-parser.add_argument("--cluster-method", choices=["template", "window"])
+parser.add_argument("--cluster-method", choices=["template", "window"],
+                    help="FIXME: ADD")
 parser.add_argument("--cluster-window", type=float, default = -1,
                   help="Length of clustering window in seconds")
 parser.add_argument("--cluster-before-vetoes", action='store_true', default=False,
@@ -58,18 +58,20 @@ parser.add_argument("--cluster-before-vetoes", action='store_true', default=Fals
 parser.add_argument("--maximization-interval", type=float, default=0,
                   help="Maximize triggers over the template bank (ms)")
 
-parser.add_argument("--bank-veto-bank-file", type=str)
+parser.add_argument("--bank-veto-bank-file", type=str, help="FIXME: ADD")
 
-parser.add_argument("--chisq-bins", type=int, default=0)
-parser.add_argument("--chisq-threshold", type=float, default=0)
-parser.add_argument("--chisq-delta", type=float, default=0)
+parser.add_argument("--chisq-bins", type=int, default=0, help="FIXME: ADD")
+parser.add_argument("--chisq-threshold", type=float, default=0,
+                    help="FIXME: ADD")
+parser.add_argument("--chisq-delta", type=float, default=0, help="FIXME: ADD")
 
 parser.add_argument("--autochi-number-points", type=int, default=0)
 parser.add_argument("--autochi-stride", type=int, default=0)
 parser.add_argument("--autochi-onesided", action='store_true', default=False)
-parser.add_argument("--snr-precheck", action='store_true')
-parser.add_argument("--snr-precheck-factor", type=int)
-parser.add_argument("--snr-precheck-threshold", type=float)
+parser.add_argument("--downsample-factor", type=int, help="FIXME: ADD")
+parser.add_argument("--downsample-precheck-threshold", type=float, help="FIXME: ADD")
+parser.add_argument("--upsample-method", choices=["pruned_fft","interpolation"],
+                    help="FIXME: ADD")
 
 parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
                     This is used to identify FULL_DATA jobs for 
@@ -105,6 +107,7 @@ strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
 with ctx:
     fft.from_cli(opt)
 
+    # FIXME: Shoulnd't these live in the fft.from_cli function?
     if opt.fftw_input_float_wisdom_file is not None:
         fft.fftw.import_single_wisdom_from_filename(opt.fftw_input_float_wisdom_file)
 
@@ -122,14 +125,28 @@ with ctx:
     logging.info("Computing noise PSD")
     psd = psd.from_cli(opt, flen, delta_f, flow, gwstrain, DYN_RANGE_FAC)
     psd = psd.astype(float32)                              
-    bank_chisq = vetoes.SingleDetBankVeto(opt.bank_veto_bank_file, 
-                                          opt.approximant, psd, segments, flow, 
-                                          phase_order=opt.order)                                       
+
+    cluster_method = opt.cluster_before_vetoes and opt.cluster_method or None
+    # FIXME: Do we want a from_cli() function below?
+    # FIXME: Upper frequency cutoff is the second option. But I don't think
+    # that this is supported through the matchedfilter module yet
+    matched_filter = MatchedFilterControl(opt.low_frequency_cutoff, None,
+                                   opt.snr_threshold, strain_segments,
+                                   cluster_method=opt.cluster_method,
+                                   cluster_window=opt.cluster_window,
+                                   downsample_factor=opt.downsample_factor,
+                                   downsample_precheck_threshold=\
+                                     opt.downsample_precheck_threshold,
+                                   upsample_method=opt.upsample_method)
+                               
+    bank_chisq = vetoes.SingleDetBankVeto(opt.bank_veto_bank_file,
+                                          opt.approximant, psd, segments, flow,
+                                          phase_order=opt.order)
+
     power_chisq = vetoes.SingleDetPowerChisq(opt.chisq_bins)
- 
     autochisq = vetoes.SingleDetAutoChisq(opt.autochi_stride, opt.snr_threshold,
-                                    opt.autochi_number_points, opt.autochi_onesided)
-  
+                               opt.autochi_number_points, opt.autochi_onesided)
+
     logging.info("Overwhitening frequency-domain data segments")
     for seg in segments:
         seg /= psd
@@ -148,10 +165,6 @@ with ctx:
 
     for t_num, template in enumerate(bank):  
         event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)  
-
-        chisq_bins = vetoes.power_chisq_bins_from_sigmasq_series(bank.sigmasq_vec, 
-                             opt.chisq_bins, int(flow / delta_f), template.end_idx) 
-   
         if opt.cluster_method == "window":
             cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
         elif opt.cluster_method == "template":
@@ -161,25 +174,18 @@ with ctx:
             logging.info("Filtering template %d/%d segment %d/%d" % \
                          (t_num + 1, len(bank), s_num + 1, len(segments)))  
                          
-            idx, snrv, corr, norm = filter.dynamic_rate_thresholded_matched_filter(template, 
-                                                    stilde, template.sigmasq,
-                                                    opt.snr_precheck_factor,
-                                                    opt.snr_precheck_threshold,
-                                                    opt.snr_threshold,
-                                                    stilde.analyze,
-                                                    low_frequency_cutoff=flow)                                                                                                   
-            if len(idx) == 0:
-                continue            
-            logging.info("%s points above threshold" % str(len(idx)))    
-                    
-            if opt.cluster_before_vetoes:    
-                idx, snrv = events.cluster_reduce(idx, snrv, cluster_window) 
-                logging.info("%s points after clustering" % str(len(idx))) 
-                
-            power_chisqv =  vetoes.power_chisq_at_points_from_precomputed(corr, 
-                                               snrv, norm, chisq_bins,
-                                               idx+stilde.analyze.start)
-                   
+            snr, norm, corr, idx, snrv = \
+                    matched_filter.matched_filter_and_cluster(template, stilde)
+
+            if not len(idx):
+                continue
+
+            bank_chisqv = bank_chisq.values(template, s_num, snr, norm,
+                                            idx+stilde.analyze.start)
+            power_chisqv = power_chisq.values(corr, snr, norm, psd,
+                                            idx+stilde.analyze.start,
+                                            template, bank, flow)
+
             snrv *= norm
             
             if opt.autochi_number_points:
