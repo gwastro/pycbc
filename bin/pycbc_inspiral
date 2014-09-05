@@ -58,6 +58,10 @@ parser.add_argument("--chisq-bins", type=int, default=0)
 parser.add_argument("--chisq-threshold", type=float, default=0)
 parser.add_argument("--chisq-delta", type=float, default=0)
 
+parser.add_argument("--autochi-number-points", type=int, default=0)
+parser.add_argument("--autochi-stride", type=int, default=0)
+parser.add_argument("--autochi-onesided", action='store_true', default=False)
+
 parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
                     This is used to identify FULL_DATA jobs for 
                     compatibility with pipedown post-processing. 
@@ -113,14 +117,17 @@ with ctx:
                                           opt.approximant, psd, segments, flow, 
                                           phase_order=opt.order)                                       
     power_chisq = vetoes.SingleDetPowerChisq(opt.chisq_bins)
+
+    autochisq = vetoes.SingleDetAutoChisq(opt.autochi_stride, opt.snr_threshold,
+                                    opt.autochi_number_points, opt.autochi_onesided)
   
     logging.info("Overwhitening frequency-domain data segments")
     for seg in segments:
         seg /= psd
-
-    names =  ['time_index', 'snr', 'chisq', 'bank_chisq']
+    
+    names =  ['time_index', 'snr', 'chisq', 'bank_chisq', 'cont_chisq']
     event_mgr = events.EventManager(opt, names,
-                         [int, complex64, float32, float32, float32], psd=psd)
+                         [int, complex64, float32, float32, float32, float32], psd=psd)
 
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, opt.approximant, flen, delta_f, 
@@ -160,10 +167,16 @@ with ctx:
                                             idx+stilde.analyze.start)
             power_chisqv = power_chisq.values(corr, snr, norm, psd, 
                                             idx+stilde.analyze.start, 
-                                            template, bank, flow)         
+                                            template, bank, flow)   
             snrv *= norm
+            
+            auto_chisqv = autochisq.values(snr*norm, corr, hautocorr=None, 
+                    indices=idx+stilde.analyze.start, template=template, psd=psd, 
+                    low_frequency_cutoff=flow)
+
+
             idx += stilde.cumulative_index           
-            vals = [idx, snrv, power_chisqv, bank_chisqv]
+            vals = [idx, snrv, power_chisqv, bank_chisqv, auto_chisqv[:, 2]]
             event_mgr.add_template_events(names, vals)
             
         event_mgr.cluster_template_events("time_index", "snr", cluster_window) 

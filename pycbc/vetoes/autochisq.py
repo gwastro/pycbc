@@ -22,12 +22,14 @@ from pycbc.types import Array, TimeSeries, FrequencySeries, float32, complex64, 
 from pycbc.types import complex_same_precision_as,real_same_precision_as
 import numpy as np
 from math import cos, sin, sqrt, pi, atan2, exp 
+import time
+import logging
 
 
 BACKEND_PREFIX="pycbc.vetoes.autochisq_"
 
 
-def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, indices=None):
+def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, indices=None, oneside=False):
 
     """ Compute correlation (two sided) between template and data
         and compares with autocorrelation of the template: C(t) = IFFT(A*A/S(f))
@@ -46,6 +48,8 @@ def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, i
 	        total length <= 2*num_points*stride, default=1
 	indices: Array[int], optional], compute autochisquare only at the points specified 
 		 in this array, default: compute autochisquare for max snr in the snr array
+	oneside: [bool, optional] whether to use one or two sided autochisquare
+	         if "True" only one side is used, default=False
 
 	Returns
 	-------
@@ -54,20 +58,20 @@ def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, i
 
     """
  	
-     
-    snr_v = Array(np.abs(sn), copy=True)
-    Nsnr = len(sn) 
 
+    Nsnr = len(sn) 
+  
+    
     ## normalizing the hautocorr
     hautocorr = hautocorr/hautocorr[0]
 
     indx = np.array([])
     if (indices == None): ### find the maximum snr 
+        snr_v = Array(np.absolute(sn), copy=True)
 	maxSNR, max_ind = snr_v.max_loc()
 	indx = np.append(indx, max_ind)
 	indices = Array(indx, copy=True)
-    
-    
+ 
     achisq = np.zeros(len(indices))
     num_points_all = int(Nsnr/stride)
     if num_points is None:
@@ -75,8 +79,8 @@ def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, i
     if (num_points > num_points_all):   
        num_points = num_points_all
     
-    ip = 0
-    for ind in indices:
+    tm_cur = time.clock()
+    for ip,ind in enumerate(indices):
         end_point = ind + stride*num_points+1
         phi = atan2(sn[ind].imag, sn[ind].real)
         cphi = cos(phi)
@@ -86,39 +90,45 @@ def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, i
 	# going right
 	for i in xrange(int(ind)+1, int(end_point), stride):
             if (i>Nsnr-1):
-		  i = i - Nsnr  # folding it
+	       i = i - Nsnr  # folding it
 	    z = sn[i].real*cphi + sn[i].imag*sphi
 	    dz = z - hautocorr[k]*snr_ind
 	    chisq_norm = 1.0 - hautocorr[k]*hautocorr[k]
 	    achisq[ip] += dz*dz/chisq_norm
 	    k += stride
-        # going left
-        end_point = ind - stride*num_points -1
-        k=1
-	for i in xrange(int(ind)-1, int(end_point), -stride):
-            if (i<0):
-		  i = i + Nsnr  # folding it
-	    z = sn[i].real*cphi + sn[i].imag*sphi
-	    dz = z - hautocorr[k]*snr_ind
-	    chisq_norm = 1.0 - hautocorr[k]*hautocorr[k]
-	    achisq[ip] += dz*dz/chisq_norm
-	    k += stride
+	if (not oneside):    
+           # going left
+           end_point = ind - stride*num_points -1
+           k=1
+	   for i in xrange(int(ind)-1, int(end_point), -stride):
+               if (i<0):
+		   i = i + Nsnr  # folding it
+	       z = sn[i].real*cphi + sn[i].imag*sphi
+	       dz = z - hautocorr[k]*snr_ind
+	       chisq_norm = 1.0 - hautocorr[k]*hautocorr[k]
+	       achisq[ip] += dz*dz/chisq_norm
+	       k += stride
         # Stas last two cycles can be combined in a single cycle in "k" 
-        ip += 1
+    
+    tm_cur = time.clock()
 
-    dof = 2*num_points	    
+    
+    dof = 2*num_points
+    if (oneside):
+       dof = num_points
     achisq_list=np.zeros((len(indices), 3))
 
     achisq_list[:,0] = indices
     achisq_list[:,2] = achisq
     for i in xrange(len(indices)):
-	achisq_list[i, 1] = snr_v[indices[i]]
+	achisq_list[i, 1] = abs(sn[indices[i]])
+    tm_cur = time.clock()
  
     return(dof, achisq_list)
 
 
 def autochisq(template, data, psd, stride=1, snr_thr=8.0, num_points=None, \
-		low_frequency_cutoff=None, high_frequency_cutoff=None, max_snr=True):
+		low_frequency_cutoff=None, high_frequency_cutoff=None, max_snr=True, onesided=False):
 
     
     """ Compute correlation (two sided) between template and data
@@ -126,13 +136,13 @@ def autochisq(template, data, psd, stride=1, snr_thr=8.0, num_points=None, \
 
 	Parameters
 	----------
-        template: FrequencySeries or TimeSeries
+    template: FrequencySeries or TimeSeries
 	    A time or frequency series that contains the filter template. The length
             must be commensurate with the data. 
-        data: FrequencySeries or TimeSeries
+    data: FrequencySeries or TimeSeries
             A time ore frequency series that contains the data to filter. The length
             must be commensurate with the template.
-        psd: FrequencySeries
+    psd: FrequencySeries
             The psd of the data. 
 	num_points: [int, optional] number of points used for autochisq
 	             on each side, if None allpoints are used
@@ -148,6 +158,9 @@ def autochisq(template, data, psd, stride=1, snr_thr=8.0, num_points=None, \
 	max_snr: bool, default=True
 	     if True we compute autochisq for a point with maximum snr (independent of the 
 	     snr_thr) otherwise autochisq is computed only if snr>=snr_thr>0
+        onesided: [bool, optional] whether to use one or two sided autochisquare
+	     if "True" only one side is used, default=False
+
 
 	Returns
 	-------
@@ -173,7 +186,6 @@ def autochisq(template, data, psd, stride=1, snr_thr=8.0, num_points=None, \
 		   low_frequency_cutoff=low_frequency_cutoff,\
                   high_frequency_cutoff=high_frequency_cutoff)
     _P = Array(Pt.real(), copy=True)
-    #_P = _P/_P[0]  # normalize it
  
     
     sn, cor, hnrm = matched_filter_core(htilde, xtilde, psd=psd, \
@@ -195,21 +207,86 @@ def autochisq(template, data, psd, stride=1, snr_thr=8.0, num_points=None, \
 	    for i in xrange(Nsnr):
 		if (snr_v[i] >= snr_thr and snr_v[i] != maxSNR):
 			index_list = np.append(index_list, int(i))
-    #print "Stas, size of index list = ", len(index_list)
 
     dof= 0
     achi_list = np.array([])
     if (len(index_list) > 0):
 	index_list = Array(index_list, copy=False)
         dof, achi_list = autochisq_from_precomputed(sn, cor, _P, stride=stride, \
-			num_points=num_points, indices=index_list)
+			num_points=num_points, indices=index_list, oneside=onesided)
     return(dof, achi_list)
+
+    #}}}
  
 
-		    
+class SingleDetAutoChisq(object):
+    """Class that handles precomputation and memory management for efficiently
+    running the auto chisq in a single detector inspiral analysis.
+    """	
+    #{{{
+    def __init__(self, stride, snr_thr=8.0, num_points=None, onesided=False):
+        if stride > 0:
+            self.do = True
+            self.column_name = "cont_chisq"
+            self.table_dof_name = "cont_chisq_dof"
+            self.dof = 2*num_points
+            if (onesided):
+                self.dof = num_points
+            
+            self._stride = stride
+            self._snr_thr = snr_thr
+            self._num_points = num_points
+            self._onesided = onesided 
+            self._template = None
+            self._autocor = None
+        else:
+            self.do = False
 	    
  
+    def values(self, sn, corr, hautocorr=None, indices=None, template=None, psd=None, low_frequency_cutoff=None, 
+                high_frequency_cutoff=None):
+        if self.do:
+            ### compute autochisquare from precomputed
+            # make sure that sn, corr and autocorr is computed
+            # !!! assumes that sn is normalize: sn = sn*hnorm
+            if (hautocorr == None or self._autocor != hautocorr or self.template != template):
+                ### compute autocorrelation
+                logging.info("...Calculating autocorrelation")
+                htilde = make_frequency_series(template)
+                N = (len(htilde)-1) * 2 
 
+                _Ptilde = zeros(N, dtype=complex_same_precision_as(template))
+                Pt = zeros(N, dtype=complex_same_precision_as(template))
+
+                Pt, _Ptilde, P_norm = matched_filter_core(htilde, htilde, psd=psd, \
+            		   low_frequency_cutoff=low_frequency_cutoff,\
+                              high_frequency_cutoff=high_frequency_cutoff)
+                self._autocor = Array(Pt.real(), copy=True)
+                self._template = template
+            else:  
+                self._autocor = hautocorr
+            
+            if (indices==None):
+                logging.info("...indices are not given, compute where snr>snr_thr")
+                Nsnr = len(sn)
+                if (self._snr_thr > 0.0):
+                    # compute snr data set
+                    snr_v = np.absolute(sn)
+            	    for i in xrange(Nsnr):
+            		   if (snr_v[i] >= self._snr_thr):
+            			  index_list = np.append(index_list, int(i))
+            
+            logging.info("...Calculating autochisquare")
+            achi_list = np.array([])
+            if (len(indices) > 0):
+                index_list = np.array(indices)
+                dof, achi_list = autochisq_from_precomputed(sn, corr, self._autocor, stride=self._stride, \
+        			num_points=self._num_points, indices=index_list, oneside=self._onesided)
+                self.dof = dof
+            return (achi_list)    
+    #}}}        
+                  
+        
 
 
 
