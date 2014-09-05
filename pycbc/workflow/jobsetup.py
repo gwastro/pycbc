@@ -850,7 +850,6 @@ class LigolwSSthincaExecutable(Executable):
 
         node._add_output(outFile)
 
-        # FIXME: Better way of dealing with the gstlal output file
         if write_likelihood:
             node.new_output_file_opt(jobSegment, '.xml.gz',
                                      '--likelihood-output-file',
