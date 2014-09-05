@@ -81,7 +81,7 @@ def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, i
     
     tm_cur = time.clock()
     for ip,ind in enumerate(indices):
-        print "ind = ", ind    
+        #print "ind = ", ind    
         end_point = ind + stride*num_points+1
         phi = atan2(sn[ind].imag, sn[ind].real)
         cphi = cos(phi)
