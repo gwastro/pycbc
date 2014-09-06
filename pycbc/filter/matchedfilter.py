@@ -486,7 +486,7 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
     q = TimeSeries(snr_mem, epoch=stilde._epoch, delta_t=delta_t, copy=False)
     if corr_mem is None:
         corr_mem = zeros(N, dtype=ctype)
-    qtilde = FrequencySeries(corr_mem, delta_f = stilde.delta_f, copy=False)
+    qtilde = FrequencySeries(corr_mem, delta_f=stilde.delta_f, copy=False)
     if downsampled_snr_mem is None:
         downsampled_snr_mem = zeros(N2, dtype=ctype)
     q2 = downsampled_snr_mem 
@@ -562,6 +562,7 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
         idx = (idx2*downsample_factor) + stilde.analyze.start
         idx = smear(idx, downsample_factor)
         correlate(htilde[kmin:kmax], stilde[kmin:kmax], qtilde[kmin:kmax])
+        
         # If there are too many points, revert back to IFFT
         # FIXME: What should this value be??
         if len (idx) > 50:
@@ -579,16 +580,31 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
             logging.info(msg)
             return q, norm, qtilde, idx, snrv
         # Or do the fancy upsampling
-        else:
+        else:             
+            # cache transposed  versions of htilde and stilde
+            if not hasattr(qtilde, 'transposed'):
+                qtilde.transposed = qtilde * 1
             
+            if not hasattr(htilde, 'transposed'):
+                htilde.transposed = qtilde * 1
+                htilde.transposed[kmin:kmax] = htilde[kmin:kmax]
+                htilde.transposed = fft_transpose(htilde.transposed)
             
-            snrv = pruned_c2cifft(fft_transpose(qtilde), tempvec, idx, pretransposed=True)   
+            if not hasattr(stilde, 'transposed'):
+                stilde.transposed = qtilde * 1
+                stilde.transposed[kmin:kmax] = stilde[kmin:kmax]
+                stilde.transposed = fft_transpose(stilde.transposed)  
+            
+            correlate(htilde.transposed, stilde.transposed, qtilde.transposed)
+        
+            snrv = pruned_c2cifft(qtilde.transposed, tempvec, idx, pretransposed=True)   
             q.data[idx] = snrv
             idx = idx - stilde.analyze.start
             
             msg = "%s points at full filter resolution" %(str(len(idx)),)
             msg += " after pruned FFT upsample and clustering."
             logging.info(msg)
+            print snrv*norm
             return q, norm, qtilde, idx, snrv
 
     # I shouldn't have gotten here
