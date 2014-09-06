@@ -102,7 +102,7 @@ def fft_transpose(vec):
 
 def pruned_c2cifft(invec, outvec, indices, pretransposed=False):
     """Perform a pruned iFFT, only valid for power of 2 iffts as the
-    decomposition is easier to choose. This is not a rict requirement of the
+    decomposition is easier to choose. This is not a strict requirement of the
     functions, but it is unlikely to the optimal to use anything but power
      of 2.
     """

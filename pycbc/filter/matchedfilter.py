@@ -30,7 +30,7 @@ import logging
 from math import log,ceil,sqrt
 from pycbc.types import TimeSeries,FrequencySeries,zeros, Array, complex64
 from pycbc.types import complex_same_precision_as,real_same_precision_as
-from pycbc.fft import fft,ifft
+from pycbc.fft import fft, ifft
 import pycbc.scheme
 from pycbc import events
 import pycbc
@@ -467,7 +467,7 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
         err_msg = "Supported methods are %s." %(' '.join(valid_methods))
         raise ValueError(err_msg)
 
-    from pycbc.fft.fftw_pruned import pruned_c2cifft
+    from pycbc.fft.fftw_pruned import pruned_c2cifft, fft_transpose
     from pycbc.events import threshold, cluster_reduce
 
     N = (len(stilde)-1) * 2   
@@ -580,10 +580,12 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
             return q, norm, qtilde, idx, snrv
         # Or do the fancy upsampling
         else:
-            snrv = pruned_c2cifft(qtilde, tempvec, idx)   
-            for i in range(len(snrv)):
-                q[idx[i]] = snrv[i]
+            
+            
+            snrv = pruned_c2cifft(fft_transpose(qtilde), tempvec, idx, pretransposed=True)   
+            q.data[idx] = snrv
             idx = idx - stilde.analyze.start
+            
             msg = "%s points at full filter resolution" %(str(len(idx)),)
             msg += " after pruned FFT upsample and clustering."
             logging.info(msg)
