@@ -582,8 +582,8 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
         # Or do the fancy upsampling
         else:             
             # cache transposed  versions of htilde and stilde
-            if not hasattr(qtilde, 'transposed'):
-                qtilde.transposed = qtilde * 1
+            if not hasattr(corr_mem, 'transposed'):
+                corr_mem.transposed = qtilde * 1
             
             if not hasattr(htilde, 'transposed'):
                 htilde.transposed = qtilde * 1
@@ -595,16 +595,14 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
                 stilde.transposed[kmin:kmax] = stilde[kmin:kmax]
                 stilde.transposed = fft_transpose(stilde.transposed)  
             
-            correlate(htilde.transposed, stilde.transposed, qtilde.transposed)
-        
-            snrv = pruned_c2cifft(qtilde.transposed, tempvec, idx, pretransposed=True)   
+            correlate(htilde.transposed, stilde.transposed, corr_mem.transposed)      
+            snrv = pruned_c2cifft(corr_mem.transposed, tempvec, idx, pretransposed=True)   
             q.data[idx] = snrv
             idx = idx - stilde.analyze.start
             
             msg = "%s points at full filter resolution" %(str(len(idx)),)
             msg += " after pruned FFT upsample and clustering."
             logging.info(msg)
-            print snrv*norm
             return q, norm, qtilde, idx, snrv
 
     # I shouldn't have gotten here

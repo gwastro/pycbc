@@ -13,6 +13,7 @@ twiddle factors.
 """
 import numpy, scipy.weave, ctypes, pycbc.types
 from pycbc.libutils import get_ctypes_library
+import logging
 
 # FFTW constants
 FFTW_FORWARD = -1
@@ -23,6 +24,33 @@ FFTW_ESTIMATE = 1 << 6
 float_lib = get_ctypes_library('fftw3f', ['fftw3f'],mode=ctypes.RTLD_GLOBAL)
 fexecute = float_lib.fftwf_execute_dft
 fexecute.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+
+ftexecute = float_lib.fftwf_execute_dft
+ftexecute.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+
+def plan_transpose(N1, N2):
+    rows = N1
+    cols = N2
+
+    iodim = numpy.zeros(6, dtype=numpy.int32) 
+    iodim[0] = rows
+    iodim[1] = 1
+    iodim[2] = cols
+    iodim[3] = cols
+    iodim[4] = rows
+    iodim[5] = 1
+    
+    N = N1*N2
+    vin = pycbc.types.zeros(N, dtype=numpy.complex64)
+    vout = pycbc.types.zeros(N, dtype=numpy.complex64)
+    
+    f = float_lib.fftwf_plan_guru_dft
+    f.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_int,
+                  ctypes.c_void_p, ctypes.c_void_p,
+                  ctypes.c_void_p, ctypes.c_void_p,
+                  ctypes.c_int]
+    f.restype = ctypes.c_void_p
+    return f(0, None, 2, iodim.ctypes.data, vin.ptr, vout.ptr, None, FFTW_MEASURE)
 
 def plan_first_phase(N1, N2):
     N = N1*N2
@@ -95,10 +123,23 @@ def second_phase(invec, indices, N1, N2):
     scipy.weave.inline(code, ['N1', 'N2', 'NI', 'indices', 'out', 'invec'])
     return out
 
-def fft_transpose(vec):
+_thetransposeplan = None
+def fft_transpose_fftw(vec):
+    global _thetransposeplan
+    outvec = pycbc.types.zeros(len(vec), dtype=vec.dtype)
+    if _theplan is None:
+        N2 = int(2 ** (numpy.log2( len(vec) ) / 2))
+        N1 = len(vec)/N2
+        _thetransposeplan = plan_transpose(N1, N2)
+    ftexecute(_thetransposeplan, vec.ptr, outvec.ptr)
+    return  outvec
+
+def fft_transpose_numpy(vec):
     N2 = int(2 ** (numpy.log2( len(vec) ) / 2))
     N1 = len(vec)/N2
     return pycbc.types.Array(vec.data.copy().reshape(N2, N1).transpose().reshape(len(vec)).copy())
+
+fft_transpose = fft_transpose_fftw
 
 def pruned_c2cifft(invec, outvec, indices, pretransposed=False):
     """Perform a pruned iFFT, only valid for power of 2 iffts as the
@@ -111,10 +152,12 @@ def pruned_c2cifft(invec, outvec, indices, pretransposed=False):
     # than it strictly has to be).
     N2 = int(2 ** (numpy.log2( len(invec) ) / 2))
     N1 = len(invec)/N2
+    
 
     # Do the explicit transpose here as I would like to move this out of the
     # loop soon
     if not pretransposed:
         invec = fft_transpose(invec)
     first_phase(invec, outvec, N1=N1, N2=N2)
-    return second_phase(outvec, indices, N1=N1, N2=N2)
+    out = second_phase(outvec, indices, N1=N1, N2=N2)
+    return out
