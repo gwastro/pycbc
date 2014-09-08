@@ -403,7 +403,7 @@ class Node(pegasus_workflow.Node):
         
     @property    
     def output_files(self):
-        return WorkflowFileList(self._outputs)
+        return FileList(self._outputs)
 
     @property
     def output_file(self):
@@ -821,7 +821,7 @@ class FileList(list):
         """
         # Enforce upper case
         tag = tag.upper()
-        return WorkflowFileList([i for i in self if not tag in i.tags])
+        return FileList([i for i in self if not tag in i.tags])
 
     def find_output_with_ifo(self, ifo):
         """

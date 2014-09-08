@@ -295,8 +295,8 @@ def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
     -----------
     workflow : workflow.Workflow
         The workflow instance that the coincidence jobs will be added to.
-    coinc_files : workflow.WorkflowFileList
-        An WorkflowFileList of the coincident trigger files that are used as
+    coinc_files : workflow.FileList
+        An FileList of the coincident trigger files that are used as
         input at this stage.
     output_dir : path
         The directory in which output files will be stored.
@@ -304,11 +304,11 @@ def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
         A list of the tagging strings that will be used for all jobs created
         by this call to the workflow. An example might be ['POSTPROC1'] or
         ['DENTYSNEWPOSTPROC']. This will be used in output names.
-    injection_files : workflow.WorkflowFileList (optional, default=None)
+    injection_files : workflow.FileList (optional, default=None)
         The injection files to be used in this stage. An empty list (or any
         other input that evaluates as false) is valid and will imply that no
         injections are being done.
-    veto_files : workflow.WorkflowFileList (required)
+    veto_files : workflow.FileList (required)
         The data quality files to be used in this stage. This is required and
         will be used to determine the analysed times when doing post-processing.
     inj_less_tag : string (required)
@@ -323,22 +323,22 @@ def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
         preparation. This is used, for example, to tell the workflow that you
         are only interested in quoting results at categories 2, 3 and 4. In
         which case just supply [2,3,4] for those veto files here.
-    summary_xml_files : workflow.WorkflowFileList
-        An WorkflowFileList of the output of the analysislogging_utils module.
+    summary_xml_files : workflow.FileList
+        An FileList of the output of the analysislogging_utils module.
         Here, this will be one file that includes the segments analysed by the
         workflow.
 
     Returns
     --------
-    finalFiles : workflow.WorkflowFileList
+    finalFiles : workflow.FileList
         A list of the single SQL database storing the clustered, injection
         found, triggers for all injections, time slid and zero lag analyses.
-    initialSqlFiles : workflow.WorkflowFileList
+    initialSqlFiles : workflow.FileList
         The SQL files before clustering is applied and injection finding
         performed.
-    clusteredSqlFiles : workflow.WorkflowFileList
+    clusteredSqlFiles : workflow.FileList
         The clustered SQL files before injection finding performed.
-    combinedSqlFiles : workflow.WorkflowFileList
+    combinedSqlFiles : workflow.FileList
         A combined file containing all triggers after clustering, including
         the injection and veto tables, but before injection finding performed.
         Probably there is no need to ever keep this file and it will be a
@@ -435,7 +435,7 @@ def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
                                       ifo=workflow.ifo_string,
                                       out_dir=output_dir,
                                       tags=['STAGE0'] + curr_tags)
-        stage0_outputs[inj_tag] = WorkflowFileList([])
+        stage0_outputs[inj_tag] = FileList([])
         assert len(trig_inp_files) > 0
         for file in trig_inp_files:
             stage0_node = stage0_job.create_node(file.segment, [file])
@@ -525,7 +525,7 @@ def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
     stage7_outputs = {}
     stage8_outputs = {}
     stage9_outputs = {}
-    final_outputs = WorkflowFileList([])
+    final_outputs = FileList([])
     # Do for all injection runs and zero lag
     for inj_tag in [inj_less_tag] + injection_tags:
         curr_tags = tags + [inj_tag, veto_tag]
@@ -575,8 +575,8 @@ def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
                                           out_dir=output_dir,
                                           tags=['FINAL'] + curr_tags)
 
-        stage1_outputs[inj_tag] = WorkflowFileList([])
-        stage2_outputs[inj_tag] = WorkflowFileList([])
+        stage1_outputs[inj_tag] = FileList([])
+        stage2_outputs[inj_tag] = FileList([])
         assert len(trig_inp_files) > 0
         for file in trig_inp_files:
             stage1_node = stage1_job.create_node(file.segment, file,

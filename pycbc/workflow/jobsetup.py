@@ -879,14 +879,13 @@ class PycbcSqliteSimplifyExecutable(Executable):
         # If the number of input files is large, split this up
         num_inputs = len(inputFiles)
         if num_inputs > 20 and workflow is not None:
-            reduced_inputs = WorkflowFileList([])
+            reduced_inputs = FileList([])
             count = 0
             testing = 0
-            curr_node = WorkflowNode(self)
+            curr_node = Node(self)
             for i, file in enumerate(inputFiles):
                 curr_node.add_input_arg(file)
                 if ( (not (i % 20)) and (i != 0) ) or ((i+1) == num_inputs):
-                    print i
                     count_tag = ['SPLIT%d' %(count)]
                     curr_node.new_output_file_opt(job_segment, '.sqlite', 
                                     '--output-file',
@@ -894,10 +893,9 @@ class PycbcSqliteSimplifyExecutable(Executable):
                     workflow.add_node(curr_node)
                     reduced_inputs.append(curr_node.output_file)
                     testing += len(curr_node._inputs)
-                    curr_node = WorkflowNode(self)
+                    curr_node = Node(self)
                     count+=1
             inputFiles = reduced_inputs
-            print "BEFORE %d, AFTER %d" %(num_inputs, testing)
         elif num_inputs > 20:
             err_msg = "Please provide the workflow keyword to the "
             err_msg += "pycbc_sqlite_simplify create node function if "
@@ -935,17 +933,17 @@ class SQLInOutExecutable(Executable):
                                  tags=self.tags+extra_tags)
         return node
 
-class ExtractToXMLExecutable(WorkflowExecutable):
+class ExtractToXMLExecutable(Executable):
     """
     This class is responsible for running ligolw_sqlite jobs that will take an
     SQL file and dump it back to XML.
     """
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
-        WorkflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, input_file):
-        node = WorkflowNode(self)
+        node = Node(self)
         node.add_input_opt('--database', input_file)
         node.new_output_file_opt(job_segment, '.xml', '--extract',
                                  tags=self.tags)
@@ -964,22 +962,22 @@ class ComputeDurationsExecutable(SQLInOutExecutable):
                                  tags=self.tags)
         return node
 
-class InspinjfindExecutable(WorkflowExecutable):
+class InspinjfindExecutable(Executable):
     """
     The class responsible for running jobs with pycbc_inspinjfind
     """
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
-        WorkflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, input_file):
-        node = WorkflowNode(self)
+        node = Node(self)
         node.add_input_opt('--input-file', input_file)
         node.new_output_file_opt(job_segment, '.xml', '--output-file',
                                  tags=self.tags)
         return node
 
-class PycbcPickleHorizonDistsExecutable(WorkflowExecutable):
+class PycbcPickleHorizonDistsExecutable(Executable):
     """
     The class responsible for running the pycbc_pickle_horizon_distances
     executable which is part 1 of 4 of the gstlal_inspiral_calc_likelihood
@@ -987,17 +985,17 @@ class PycbcPickleHorizonDistsExecutable(WorkflowExecutable):
     """
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
-        WorkflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, trigger_files):
-        node = WorkflowNode(self)
+        node = Node(self)
         for file in trigger_files:
             node.add_input_arg(file)
         node.new_output_file_opt(job_segment, '.pickle', '--output-file',
                                  tags=self.tags)
         return node
 
-class PycbcCombineLikelihoodExecutable(WorkflowExecutable):
+class PycbcCombineLikelihoodExecutable(Executable):
     """
     The class responsible for running the pycbc_combine_likelihood
     executable which is part 2 of 4 of the gstlal_inspiral_calc_likelihood
@@ -1005,17 +1003,17 @@ class PycbcCombineLikelihoodExecutable(WorkflowExecutable):
     """
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
-        WorkflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, likelihood_files, horizon_dist_file):
-        node = WorkflowNode(self)
+        node = Node(self)
         node.add_input_list_opt('--likelihood-urls', likelihood_files)
         node.add_input_opt('--horizon-dist-file', horizon_dist_file)
         node.new_output_file_opt(job_segment, '.xml.gz', '--output-file',
                                  tags=self.tags)
         return node
 
-class PycbcGenerateRankingDataExecutable(WorkflowExecutable):
+class PycbcGenerateRankingDataExecutable(Executable):
     """
     The class responsible for running the pycbc_gen_ranking_data
     executable which is part 3 of 4 of the gstlal_inspiral_calc_likelihood
@@ -1023,19 +1021,19 @@ class PycbcGenerateRankingDataExecutable(WorkflowExecutable):
     """
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
-        WorkflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
         self.set_num_cpus(4)
         self.set_memory('8000')
     def create_node(self, job_segment, likelihood_file, horizon_dist_file):
-        node = WorkflowNode(self)
+        node = Node(self)
         node.add_input_opt('--likelihood-file', likelihood_file)
         node.add_input_opt('--horizon-dist-file', horizon_dist_file)
         node.new_output_file_opt(job_segment, '.xml.gz', '--output-file',
                                  tags=self.tags)
         return node
 
-class PycbcCalculateLikelihoodExecutable(WorkflowExecutable):
+class PycbcCalculateLikelihoodExecutable(Executable):
     """
     The class responsible for running the pycbc_calculate_likelihood
     executable which is part 4 of 4 of the gstlal_inspiral_calc_likelihood
@@ -1043,11 +1041,11 @@ class PycbcCalculateLikelihoodExecutable(WorkflowExecutable):
     """
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
-        WorkflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, trigger_file, likelihood_file,
                     horizon_dist_file):
-        node = WorkflowNode(self)
+        node = Node(self)
         # Need to follow through the split job tag if present
         extra_tags = []
         for tag in trigger_file.tags:
@@ -1061,32 +1059,32 @@ class PycbcCalculateLikelihoodExecutable(WorkflowExecutable):
                                  tags=self.tags + extra_tags)
         return node
 
-class GstlalMarginalizeLikelihoodExecutable(WorkflowExecutable):
+class GstlalMarginalizeLikelihoodExecutable(Executable):
     """
     The class responsible for running the gstlal marginalize_likelihood jobs
     """
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
-        WorkflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, input_file):
-        node = WorkflowNode(self)
+        node = Node(self)
         node.add_input_arg(input_file)
         node.new_output_file_opt(job_segment, '.xml.gz', '--output',
                                  tags=self.tags)
         return node
 
-class GstlalFarfromsnrchisqhistExecutable(WorkflowExecutable):
+class GstlalFarfromsnrchisqhistExecutable(Executable):
     """
     The class responsible for running the gstlal far from chisq hist jobs
     """
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
-        WorkflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, non_inj_db, marg_input_file,
                    inj_database=None, write_background_bins=False):
-        node = WorkflowNode(self)
+        node = Node(self)
         node.add_input_opt("--non-injection-db", non_inj_db)
         if inj_database is not None:
             node.add_input_opt("--input-database", inj_database)
@@ -1101,63 +1099,63 @@ class GstlalFarfromsnrchisqhistExecutable(WorkflowExecutable):
         return node
 
 
-class GstlalPlotSensitivity(WorkflowExecutable):
+class GstlalPlotSensitivity(Executable):
     """
     The class responsible for running gstlal_plot_sensitivity
     """
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
-        WorkflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
         self.set_memory('4000')
     def create_node(self, non_inj_db, injection_dbs):
-        node = WorkflowNode(self)
+        node = Node(self)
         node.add_input_opt("--zero-lag-database", non_inj_db)
         for file in injection_dbs:
             node.add_input_arg(file)
         return node
 
-class GstlalPlotSummary(WorkflowExecutable):
+class GstlalPlotSummary(Executable):
     """
     The class responsible for running gstlal_plot_summary
     """
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
-        WorkflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
         self.set_memory('4000')
     def create_node(self, non_inj_db, injection_dbs):
-        node = WorkflowNode(self)
+        node = Node(self)
         node.add_input_arg(non_inj_db)
         for file in injection_dbs:
             node.add_input_arg(file)
         return node
 
-class GstlalPlotBackground(WorkflowExecutable):
+class GstlalPlotBackground(Executable):
     """
     The class responsible for running gstlal_plot_background
     """
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
-        WorkflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
         self.set_memory('4000')
     def create_node(self, non_inj_db, likelihood_file):
-        node = WorkflowNode(self)
+        node = Node(self)
         node.add_input_opt("--database", non_inj_db)
         node.add_input_arg(likelihood_file)
         return node
 
-class GstlalSummaryPage(WorkflowExecutable):
+class GstlalSummaryPage(Executable):
     """
     The class responsible for running gstlal_inspiral_summary_page
     """
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
-        WorkflowExecutable.__init__(self, cp, exe_name, universe, ifo, out_dir,
+        Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_and_add_node(self, workflow, parent_nodes):
-        node = WorkflowNode(self)
+        node = Node(self)
         # FIXME: As the parents of this job (the plotting scripts) do not track
         # the location of their output files, we must set explicit parent-child
         # relations the "old-fashioned" way here. Possibly this is how the AEI
@@ -1168,7 +1166,7 @@ class GstlalSummaryPage(WorkflowExecutable):
             workflow._adag.addDependency(dep)
         return node
 
-class LalappsInspinjExecutable(WorkflowExecutable):
+class LalappsInspinjExecutable(Executable):
     """
     The class used to create jobs for the lalapps_inspinj Executable.
     """
