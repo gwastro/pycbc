@@ -1,15 +1,15 @@
-.. _ahopesegmentsmod:
+.. _workflowsegmentsmod:
 
-#####################################
-The ahope segment generation module
-#####################################
+#######################################
+The workflow segment generation module
+#######################################
 
 =============
 Introduction
 =============
 
 This page is designed to give you an introduction to the capabilities of the
-ahope segment generation module and how to use this as part of an ahope
+pycbc workflow segment generation module and how to use this as part of a pycbc
 workflow.
 
 This module is designed to be able to support multiple ways of obtaining these
@@ -31,25 +31,25 @@ Usage
 Using this module requires a number of things
 
 * A configuration file (or files) containing the information needed to tell this module how to generate the segments (described below).
-* An initialized instance of the ahope workflow class, containing the ConfigParser.
+* An initialized instance of the pycbc Workflow class, containing the ConfigParser.
 
 The module is then called according to
 
-.. autofunction:: pycbc.ahope.setup_segment_generation
+.. autofunction:: pycbc.workflow.setup_segment_generation
        :noindex:
 
 -------------------------
 Configuration file setup
 -------------------------
 
-Here we describe the options given in the configuration file used in the ahope
+Here we describe the options given in the configuration file used in the
 workflow that will be needed in this section
 
 $$$$$$$$$$$$$$$$$$$$$$$$$
-[ahope-segments] section
+[workflow-segments] section
 $$$$$$$$$$$$$$$$$$$$$$$$$
 
-The configuration file must have an [ahope-segments] section, which is used to
+The configuration file must have a [workflow-segments] section, which is used to
 tell the workflow how to construct the segments. The first option to choose
 and provide is
 
@@ -64,7 +64,7 @@ The choices here and their description are as described below
 
 Each of these options will describe which subfunction to use. These are described here
 
-.. autofunction:: pycbc.ahope.setup_segment_gen_mixed
+.. autofunction:: pycbc.workflow.setup_segment_gen_mixed
           :noindex:
 
 When using the setup_segment_gen_mixed function the following additional options apply
@@ -94,18 +94,18 @@ $$$$$$$$$$$$$$$$$$$
 Other sections
 $$$$$$$$$$$$$$$$$$$
 
-For other modules in ahope we would see sections like [segment_query], [segments_from_cats] etc. which would provide the options provided to those jobs. In this case the codes require rather specific input so for now these are hardcoded in this module and any segment like [segment_query] would either be ignored or
+For other sub-modules in the pycbc workflow module we would see sections like [segment_query], [segments_from_cats] etc. which would provide the options provided to those jobs. In this case the codes require rather specific input so for now these are hardcoded in this module and any segment like [segment_query] would either be ignored or
 could break the code.
 
 If there is a reason to do so we could add these sections in.
 
 ==========================================
-:mod:`pycbc.ahope.segment_utils` Module
+:mod:`pycbc.workflow.segment` Module
 ==========================================
 
 This is complete documentation of this module's code
 
-.. automodule:: pycbc.ahope.segment_utils 
+.. automodule:: pycbc.workflow.segment 
     :noindex:
     :members:
     :undoc-members:

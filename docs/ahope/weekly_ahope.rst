@@ -38,15 +38,15 @@ The scripts to run weekly ahope currently reside within the pycbc source tree.
 These will be moved to be installed executables at some point. For now this
 can be found in::
 
-    examples/ahope/weekly_ahope
+    examples/workflow/weekly_workflow
 
 cd to this directory::
 
-    cd ${PYCBC_SRC_DIR}/examples/ahope/weekly_ahope
+    cd ${PYCBC_SRC_DIR}/examples/workflow/weekly_workflow
 
 If you want to run in a different directory then you can copy the files to that directory::
 
-    cp ${PYCBC_SRC_DIR}/examples/ahope/weekly_ahope/* /path/to/your/run/directory
+    cp ${PYCBC_SRC_DIR}/examples/workflow/weekly_workflow/* /path/to/your/run/directory
     cd /path/to/your/run/directory
 
 ----------------------------------------------------------------------------
@@ -81,10 +81,10 @@ These files contain all the details needed to run weekly_ahope
 
 .. note::
 
-    If you are unfamiliar with ahope workflows, look through these files.
+    If you are unfamiliar with pycbc workflows, look through these files.
     pipedown.ini will look familiar if you are used to ihope workflows.
 
-* weekly_ahope.ini contains options that are used when running the ahope parts of the workflow
+* weekly_ahope.ini contains options that are used when running the pycbc.workflow parts of the workflow
 * pipedown.ini contains options that are used when running pipedown
 * inj.ini contains the parameters used when generating simulation files
 
@@ -98,20 +98,20 @@ If you want to run in this default configuration please jump down the "Generate 
 
 If you want to run on non-S6 data, or want to analyse a different set of ifos, you will have to edit some additional options::
 
-    [ahope]
+    [workflow]
     h1-channel-name = H1:LDAS-STRAIN
     l1-channel-name = L1:LDAS-STRAIN
 
-    [ahope-ifos]
+    [workflow-ifos]
     ; This is the list of ifos to analyse
     h1 =
     l1 =
 
-    [ahope-datafind]
+    [workflow-datafind]
     datafind-h1-frame-type = H1_LDAS_C02_L2
     datafind-l1-frame-type = L1_LDAS_C02_L2
 
-    [ahope-segments]
+    [workflow-segments]
     segments-H1-science-name = H1:DMT-SCIENCE:4
     segments-L1-science-name = L1:DMT-SCIENCE:4
     segments-V1-science-name = V1:ITF_SCIENCEMODE
@@ -122,15 +122,15 @@ If you want to run on non-S6 data, or want to analyse a different set of ifos, y
 
 To run through this
 
-* The [ahope-ifos] section supplies which ifos will be analysed if data is found and available.
+* The [workflow-ifos] section supplies which ifos will be analysed if data is found and available.
 * The X1-channel-name options are the h(t) channel name in the frames
 * The datafind-X1-frame-type is the type of the frames for use when calling gw_data_find
 * The segments-X1-science-name is the flag used to store science times in the segment database
 * segments-database-url points to the segment database
 * segments-veto-definer-url points to the url where the veto-definer file can be found.
-* The [tisi] sections give instructions to ahope on how to set up what time slides will be performed. See :ref:`ahopetimeslidesmod` for more details on how to supply this for other situations. Normally you will just need to add or remove detectors.
+* The [tisi] sections give instructions to the workflow module on how to set up what time slides will be performed. See :ref:`workflowtimeslidesmod` for more details on how to supply this for other situations. Normally you will just need to add or remove detectors.
 
-The remaining options affect how the jobs run, these should not be edited unless you know what you are doing ... but can freely be added if you do know what you are doing and want to change something. To find out more details about the possible options for any stage of the workflow, follow the links at :ref:`ahopehomepage`.
+The remaining options affect how the jobs run, these should not be edited unless you know what you are doing ... but can freely be added if you do know what you are doing and want to change something. To find out more details about the possible options for any stage of the workflow, follow the links at :ref:`workflowhomepage`.
 
 Now you have configuration files and can follow the same instructions as above. That is: 
 
@@ -153,7 +153,7 @@ When you are ready, you can generate the workflow. First we need to choose a tim
     export GPS_START_TIME=967593543
     export GPS_END_TIME=967679943
 
-You also need to specify the directory in which pipedown  will store log files. Ahope does not need this, but pipedown does.
+You also need to specify the directory for storing log files.
 
  * For CIT,LHO,LLO or SYR set::
 
@@ -240,9 +240,9 @@ In this case, the workflow would be submitted as follows.::
 
 If the workflow runs successfully, you will find the output under your html directory some time later.
 
------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------
 Monitor and Debug the Workflow (`Detailed Pegasus Documentation <https://pegasus.isi.edu/wms/docs/latest/tutorial.php#idm78622034400>`_)
------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------
 
 To monitor the above workflow, one would run::
 
@@ -260,9 +260,9 @@ Post-processing
 Summary page
 -----------------------------------------
 
-An ahope summary page will be created at the end of your weekly ahope workflow. The directory is specified by the evironment varaible HTMLDIR that was set when you ran weekly_ahope.py to generate the workflow. For example::
+A summary page will be created at the end of your weekly workflow. The directory is specified by the evironment varaible HTMLDIR that was set when you ran weekly_ahope.py to generate the workflow. For example::
 
-    /home/${USER}/public_html/ahope
+    /home/${USER}/public_html/workflow
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Full data summary
@@ -286,7 +286,7 @@ Workflow visualization
 
 Pegasus has a tool called pegasus-plan to visualize workflows. To generate these charts and create an summary html page with this information, one would run::
 
-    export PPLOTSDIR=/home/ahnitz/public_html/ahope/pegasus_plots
+    export PPLOTSDIR=/home/ahnitz/public_html/workflow/pegasus_plots
     pegasus-plots --plotting-level all --output ${PPLOTSDIR} /usr1/ahnitz/log/ahnitz/pegasus/weekly_ahope/run0011
 
 The Invocation Breakdown Chart section gives a snapshot of the workflow. You can click on the slices of the pie chart and it will report the number of failures, average runtime, and max/min runtime for that type of jobs in the workflow. The radio button labeled runtime will organize the pie chart by total runtime rather than the total number of jobs for each job type.

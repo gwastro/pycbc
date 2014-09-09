@@ -1,8 +1,8 @@
-.. _ahopepostprocprepmod:
+.. _workflowpostprocprepmod:
 
-############################################
-The ahope postprocessing preperation module
-############################################
+###############################################
+The workflow postprocessing preperation module
+###############################################
 
 =============
 Introduction
@@ -10,7 +10,7 @@ Introduction
 
 The postprocessing preparation module is used to prepare the output of the coincidence stage for the postprocessing (ie. calculation of trigger significance and of rate statements). For the case of pipedown-style running this involves combining together all the trigger files adding in the injection and segment tables, performing injection finding and some clustering of coincident triggers.
 
-The return from this module is a list of AhopeOutFile
+The return from this module is a list of pycbc workflow File
 objects corresponding to the output files to be directly used in the post-processing.
 
 ======
@@ -20,27 +20,27 @@ Usage
 Using this module requires a number of things
 
 * A configuration file (or files) containing the information needed to tell this module how to do the postprocessing preparation.
-* An initialized instance of the ahope workflow class, containing the ConfigParser.
-* An AhopeFileList returned by the coincidence module containing the triggers.
-* Other AhopeFileLists that may be needed by different methods, as described below.
+* An initialized instance of the pycbc Workflow class, containing the ConfigParser.
+* A FileList returned by the coincidence module containing the triggers.
+* Other FileLists that may be needed by different methods, as described below.
 
 This module is then called according to
 
-.. autofunction:: pycbc.ahope.setup_postprocessing_preperation
+.. autofunction:: pycbc.workflow.setup_postprocessing_preperation
    :noindex:
 
 -------------------------
 Configuration file setup
 -------------------------
 
-Here we describe the options given in the configuration file used in the ahope
+Here we describe the options given in the configuration file used in the
 workflow that will be needed in this section
 
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-[ahope-postprocprep] section
+[workflow-postprocprep] section
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-The configuration file must have an [ahope-postprocprep] section, which is used to provide instructions to ahope on how to set up the postprocessing preparation stage. The first option to choose and provide is
+The configuration file must have a [workflow-postprocprep] section, which is used to provide instructions to the workflow module on how to set up the postprocessing preparation stage. The first option to choose and provide is
 
 * postprocprep-method = VALUE
 
@@ -94,7 +94,7 @@ $$$$$$$$$$$$$$$
 For the PIPEDOWN_WORKFLOW method
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Executables required by this module are provided in the [executables] section. Any executable names specified in the [ahope-postprocprep] section must appear here. For instance if the [ahope-postprocprep] section reads
+Executables required by this module are provided in the [executables] section. Any executable names specified in the [workflow-postprocprep] section must appear here. For instance if the [workflow-postprocprep] section reads
 
 * postprocprep-combiner1-exe=pycbcsqlite
 * postprocprep-combiner2-exe=pycbcsqlite
@@ -115,7 +115,7 @@ Sections, in this case [pycbcsqlite], [clustercoincs] and [databaseinjfind], wil
 For the GSTLAL_POSTPROCPREP method
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Executables required by this module are provided in the [executables] section. Any executable names specified in the [ahope-postprocprep] section must appear here. For instance if the [ahope-postprocprep] section reads
+Executables required by this module are provided in the [executables] section. Any executable names specified in the [workflow-postprocprep] section must appear here. For instance if the [workflow-postprocprep] section reads
 
 * ADD
 
@@ -136,7 +136,7 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 For the PIPEDOWN_WORKFLOW method
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-The following coincidence codes are currently supported in ahope
+The following coincidence codes are currently supported in the workflow module
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 postprocprep-combiner1-exe
@@ -270,7 +270,7 @@ This code is responsible for combining together multiple xml or sql files into a
 
 .. command-output:: pycbc_sqlite_simplify --help
 
-Of these options ahope will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
+Of these options the workflow module will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
 
 * --injection-file
 * --simulation-tag
@@ -285,7 +285,7 @@ This code is used to perform a clustering stage on a set of coincident triggers.
 
 .. command-output:: ligolw_cbc_cluster_coincs --help
 
-Of these options ahope will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
+Of these options the workflow module will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
 
 * --input
 * --output
@@ -298,7 +298,7 @@ This code is used to perform "injection finding" - it associates injection entri
 
 .. command-output:: ligolw_dbinjfind --help
 
-Of these options ahope will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
+Of these options the workflow module will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
 
 * --input
 * --output

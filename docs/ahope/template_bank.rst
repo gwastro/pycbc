@@ -1,14 +1,14 @@
-.. _ahopetmpltbankmod:
+.. _workflowtmpltbankmod:
 
-##########################################
-The ahope template bank generation module
-##########################################
+#############################################
+The workflow template bank generation module
+#############################################
 
 =============
 Introduction
 =============
 
-The template bank section of ahope is responsible for gathering/generating the banks of waveforms that will be used to matched-filter against the data.
+The template bank section of the pycbc workflow module is responsible for gathering/generating the banks of waveforms that will be used to matched-filter against the data.
 
 It can run in a number of different modes
 
@@ -23,7 +23,7 @@ Improvements over ihope:
 - The template bank analysis chunks may be longer or shorter than the inspiral chunks
 - Options sent to one job can be sent to the other or not, as desired.  No hardcoding of options that are **always** sent to both the matched-filter and template bank stages.
 
-Like other modules, the template bank module returns an AhopeFileList of the template bank files generated/supplied to this module. It is possible to make multiple calls to the template bank module in the same module by using the tags kwarg when calling this.
+Like other modules, the template bank module returns a pycbc FileList of the template bank files generated/supplied to this module. It is possible to make multiple calls to the template bank module in the same module by using the tags kwarg when calling this.
 
 ======
 Usage
@@ -32,27 +32,28 @@ Usage
 Using this module requires a number of things
 
 * A configuration file (or files) containing the information needed to tell this module how to generate (or gather) the template banks (described below).
-* An initialized instance of the ahope workflow class, containing the ConfigParser.
+* An initialized instance of the pycbc Workflow class, containing the ConfigParser.
 * A list of segments to be analysed by this module.
-* An AhopeFileList returned by the datafind module containing the frames that contain the data that will be used to make the template banks. (If using a pre-supplied PSD, or some other use-case that does not require reading data this can be set to None).
+* A FileList returned by the datafind module containing the frames that contain the data that will be used to make the template banks. (If using a pre-supplied PSD, or some other use-case that does not require reading data this can be set to None).
 
 The module is then called according to
 
-.. autofunction:: pycbc.ahope.setup_tmpltbank_workflow
+.. autofunction:: pycbc.workflow.setup_tmpltbank_workflow
    :noindex:
 
 -------------------------
 Configuration file setup
 -------------------------
 
-Here we describe the options given in the configuration file used in the ahope
+Here we describe the options given in the configuration file used in the
 workflow that will be needed in this section
 
-$$$$$$$$$$$$$$$$$$$$$$$$$$
-[ahope-tmpltbank] section
-$$$$$$$$$$$$$$$$$$$$$$$$$$
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+[workflow-tmpltbank] section
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-The configuration file must have an [ahope-tmpltbank] section, which is used to
+The configuration file must have a [workflow-tmpltbank] section,
+which is used to
 tell the workflow how to construct (or gather) the template banks. The first option to choose and provide is
 
 * tmpltbank-method = VALUE
@@ -66,28 +67,28 @@ The choices here and their description are as described below
 
 Each of these options will describe which subfunction to use. These are described here
 
-.. autofunction:: pycbc.ahope.setup_tmpltbank_pregenerated
+.. autofunction:: pycbc.workflow.setup_tmpltbank_pregenerated
    :noindex:
 
-.. autofunction:: pycbc.ahope.setup_tmpltbank_dax_generated
+.. autofunction:: pycbc.workflow.setup_tmpltbank_dax_generated
    :noindex:
 
-.. autofunction:: pycbc.ahope.setup_tmpltbank_without_frames
+.. autofunction:: pycbc.workflow.setup_tmpltbank_without_frames
    :noindex:
 
-When using the setup_tmpltbank_pregenerated sub-module the following additional options apply in the [ahope-tmpltbank] section.
+When using the setup_tmpltbank_pregenerated sub-module the following additional options apply in the [workflow-tmpltbank] section.
 
 * tmpltbank-pregenerated-bank = PATH - OPTIONAL. This is the location of the pre-generated bank that is to be used for all ifos.
 * tmpltbank-pregenerated-bank-[ifo] = PATH = OPTIONAL. This is the location of the pre-generated bank that is to be used for all ifos. Either this option must be given for all active ifos or tmpltbank-pregenerated-bank must be given. If both are supplied this option tmpltbank-pregenerated-bank-[ifo] will be ignored. [ifo] should be replaced by the name of each ifo in lower case. For example tmpltbank-pregenerated-bank-l1 or tmpltbank-pregenerated-bank-v1.
 
-When using the setup_tmpltbank_without_frames sub-module the following additional options apply in the [ahope-tmpltbank] section:
+When using the setup_tmpltbank_without_frames sub-module the following additional options apply in the [workflow-tmpltbank] section:
 
 * tmpltbank-write-psd-file - OPTIONAL. If given the template bank code will also write a file containing the PSD. Currently only supported in pycbc template bank codes.
 
-When using the setup_tmpltbank_dax_generated sub-module the following additional options apply in the [ahope-templtbank] section.
+When using the setup_tmpltbank_dax_generated sub-module the following additional options apply in the [workflow-templtbank] section.
 
-* tmpltbank-link-to-matchedfltr - OPTIONAL. If this is given ahope will attempt to ensure a one-to-one correspondence between template banks and matched-filter outputs. This may not work in all cases and should be considered an option to be used for comparing with ihope output.
-* tmpltbank-compatibility-mode - OPTIONAL. If this is given ahope will tile the template bank jobs in the same way as inspiral_hipe used to. This requires the link option above and that the template bank and matched-filtering jobs are reading the same amount of data in each job.
+* tmpltbank-link-to-matchedfltr - OPTIONAL. If this is given the workflow module will attempt to ensure a one-to-one correspondence between template banks and matched-filter outputs. This may not work in all cases and should be considered an option to be used for comparing with ihope output.
+* tmpltbank-compatibility-mode - OPTIONAL. If this is given the workflow module will tile the template bank jobs in the same way as inspiral_hipe used to. This requires the link option above and that the template bank and matched-filtering jobs are reading the same amount of data in each job.
 * tmpltbank-write-psd-file - OPTIONAL. If given the template bank code will also write a file containing the PSD. Currently only supported in pycbc template bank codes.
 
 The following options apply only when using setup_tmpltbank_dax_generated and not using lalapps_tmpltbank
@@ -112,7 +113,7 @@ If template banks are being generated separately for each ifo then sections name
 Supported template bank exes and instructions for using them
 -------------------------------------------------------------
 
-The following template bank executables are currently supported in ahope
+The following template bank executables are currently supported in the workflow module
 
 * lalapps_tmpltbank
 * pycbc_geom_nonspinbank
@@ -127,13 +128,13 @@ $$$$$$$$$$$$$$$$$$$$$$$$
 
 Lalapps_tmpltbank is the legacy C-code that has been used to generate template banks for gravitational-wave data analysis since the dawn of time. It is a little inflexible in terms of output file names. We recommend using the newer pycbc_geom_nonspinbank if possible.
 
-lalapps_tmpltbank is supported in ahope via a wrapper script lalapps_tmpltbank_ahope, this allows us to specify all the frame files and the output file name directly.
+lalapps_tmpltbank is supported in pycbc's workflow module via a wrapper script lalapps_tmpltbank_ahope, this allows us to specify all the frame files and the output file name directly.
 
 The help message for lalapps_tmpltbank follows
 
 .. command-output:: lalapps_tmpltbank --help
 
-Of these options ahope and/or the wrapper script will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
+Of these options the workflow module and/or the wrapper script will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
 
 * --gps-start-time
 * --gps-end-time
@@ -155,7 +156,7 @@ pycbc_geom_nonspinbank is pycbc's non-spinning template bank generator. Designed
 
 .. command-output:: pycbc_geom_nonspinbank --help
 
-Of these options ahope will automatically add the following, which are unique fo
+Of these options the workflow module will automatically add the following, which are unique fo
 r each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
 
 * --gps-start-time
@@ -170,12 +171,12 @@ All other options must be provided in the configuration file. Here is an example
    pycbc_geom_nonspinbank --pn-order twoPN --f0 40 --f-low 40 --f-upper 2048 --delta-f 0.01 --min-match 0.97 --min-mass1 2.0 --min-mass2 2.0 --max-mass1 3. --max-mass2 3. --verbose --output-file testNonSpin.xml --calculate-ethinca-metric --filter-cutoff SchwarzISCO --psd-estimation median --psd-segment-length 256 --psd-segment-stride 128 --psd-inverse-length 8 --gps-start-time 900000033 --gps-end-time 900002081 --strain-high-pass 30 --pad-data 8 --sample-rate 4096 --frame-cache cache/H-H1_NINJA2_G1000176_EARLY_RECOLORED_CACHE-900000024-10653.lcf --channel-name H1:LDAS-STRAIN --max-total-mass 5.5 --min-total-mass 4.5
 
 ==========================================
-:mod:`pycbc.ahope.tmpltbank_utils` Module
+:mod:`pycbc.workflow.tmpltbank` Module
 ==========================================
 
 This is complete documentation of this module's code
 
-.. automodule:: pycbc.ahope.tmpltbank_utils
+.. automodule:: pycbc.workflow.tmpltbank
     :noindex:
     :members:
     :undoc-members:
