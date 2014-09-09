@@ -59,6 +59,55 @@ class MatchedFilterControl(object):
                  upsample_method='pruned_fft'):
         """
         Initialize instance and set various parameters.
+
+        Parameters
+        -----------
+        lower_frequency_cutoff : float
+            The lower frequency cutoff to use when filtering.
+        upper_frequency_cutoff : float
+            The upper frequency cutoff to use when filtering.
+            WARNING: This currently is not hooked up and will do nothing.
+            This will be fixed soon!
+        snr_threshold : float
+            The lower SNR threshold at which to accept triggers.
+        cluster_method : string, optional (default: None)
+            The method to use to cluster over individual templates' SNR time
+            series. Choices are:
+            * Window: Cluster over a fixed time window (see cluster_window)
+            * Template: Cluster over the length of the template
+            * None: Perform no clustering; *not* recommended.
+        cluster_window : float
+            If using cluster_method=window, specifies the length of time, in
+            seconds, to cluster over.
+        downsample_factor : int, optional (default: None)
+            If provided the data will be prefiltered at a lower frequency than
+            that of the input data by this factor and then upsampled according
+            to options below. This can provide a significant speed-up, but
+            some of the options may decrease sensitivity. This has only been
+            tested with binary values (ie. 2, 4, ...), it is not recommended to
+            use any other value.
+        downsample_precheck_threshold : float
+            This is required if downsample_factor is given. This, multiplied by
+            the SNR threshold, sets the threshold in the downsampled data for
+            upsampling ... ie. we will not upsample parts of the SNR time
+            series where SNR is less than SNR threshold multiplied by this.
+            A recommended value is to use a downsample_factor of 4 and a
+            downsample_precheck_threshold of 0.98. Other values/settings may
+            also be possible/appropriate.
+        upsample_method : string, default = "pruned_fft"
+            Used only if downsample_factor is given. This specifies the method
+            that will be used for upsampling the data. Current options are:
+            * pruned_fft: Use Alex's fancy FFT (which he will provide more
+              details of), to upsample the data with no loss in SNR. The only
+              potential loss in sensitivity here is if we have not identified
+              the necessary number of points to be upsampled.
+            * interpolation: Use a 2nd order interpolation technique to
+              evaluate SNR at the higher sample rate. As this performs an
+              interpolation at the downsampled data, any higher-frequency
+              content not included in the downsampled filter will be lost.
+              Therefore this can reduce sensitivity for systems with power at
+              high frequencies. (Alex also doesn't trust the interpolation
+              completely).
         """
         # Set values
         self.f_low = lower_frequency_cutoff
@@ -290,7 +339,10 @@ def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
 
 def sigma(htilde, psd = None, low_frequency_cutoff=None,
         high_frequency_cutoff=None):
-    """Return the loudness of the waveform.
+    """Return the loudness of the waveform. This is defined (see Duncan
+    Brown's thesis) as the unnormalized matched-filter of the input waveform,
+    htilde, with itself. This quantity is usually referred to as (sigma)^2
+    and is then used to normalize matched-filters with the data.
 
     Parameters
     ----------
@@ -311,7 +363,8 @@ def sigma(htilde, psd = None, low_frequency_cutoff=None,
     
 def get_cutoff_indices(flow, fhigh, df, N):
     """
-    Gets the indices of a frequency series at which to stop an overlap calculation.
+    Gets the indices of a frequency series at which to stop an overlap
+    calculation.
 
     Parameters
     ----------
@@ -440,6 +493,26 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
            norm)
            
 def smear(idx, factor):
+    """
+    This function will take as input an array of indexes and return every
+    unique index within the specified factor of the inputs.
+
+    E.g.: smear([5,7,100],2) = [3,4,5,6,7,8,9,98,99,100,101,102]
+
+    Parameters
+    -----------
+    idx : numpy.array of ints
+        The indexes to be smeared.
+    factor : idx
+        The factor by which to smear out the input array.
+
+    Returns
+    --------
+    new_idx : numpy.array of ints
+        The smeared array of indexes.
+    """
+
+
     s = [idx]
     for i in range(factor+1):
         a = i - factor/2
@@ -459,7 +532,72 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
                                             downsampled_snr_mem=None,
                                             downsampled_corr_mem=None,
                                             downsampled_pruned_mem=None):
-    """ Return the complex snr  
+    """
+    Perform a matched-filter calculation by:
+    * Downsampling the data
+    * Performing a matched-filter at the downsampled rate,   
+    * Thresholding at a reduced threshold
+    * Computing the upsampled SNR at the points above the downsampled threshold
+
+    Parameters
+    ----------
+    htilde : FrequencySeries 
+        The template waveform
+    stilde : FrequencySeries 
+        The strain data to be filtered.
+    h_norm : float
+        The template normalization.
+        FIXME: Should be able to calculate this internally (and cache) if
+        not provided.
+    downsample_factor : int
+        The factor by which the sample rate of the input data should be
+        reduced before initial filtering. Binary values (2,4,...) are
+        recommended.
+    downsample_threshold : float
+        The factor, multiplied by the SNR threshold, to use when thresholding
+        the downsampled SNR time series.
+    snr_threshold : float
+        The threshold with which to accept triggers at the full sample rate.
+    cluster_window : int
+        The length, in sample points (at full sample rate), to use when
+        performing clustering.
+    psd : {FrequencySeries}, optional
+        The noise weighting of the filter.
+    low_frequency_cutoff : {None, float}, optional
+        The frequency to begin the filter calculation. If None, begin at the
+        first frequency after DC.
+    high_frequency_cutoff : {None, float}, optional
+        The frequency to stop the filter calculation. If None, continue to the 
+        the nyquist frequency.
+    upsample_method : string, default = "pruned_fft"
+        Used only if downsample_factor is given. This specifies the method
+        that will be used for upsampling the data. Current options are:
+        * pruned_fft: Use Alex's fancy FFT (which he will provide more
+          details of), to upsample the data with no loss in SNR. The only
+          potential loss in sensitivity here is if we have not identified
+          the necessary number of points to be upsampled.
+        * interpolation: Use a 2nd order interpolation technique to
+          evaluate SNR at the higher sample rate. As this performs an
+          interpolation at the downsampled data, any higher-frequency
+          content not included in the downsampled filter will be lost.
+          Therefore this can reduce sensitivity for systems with power at
+          high frequencies. (Alex also doesn't trust the interpolation
+          completely).
+    snr_mem : {None, Array}, optional
+        An array to use as memory for snr storage. If None, memory is allocated 
+        internally.
+    corr_mem : {None, Array}, optional
+        An array to use as memory for correlation storage. If None, memory is
+        allocated internally.
+    downsampled_snr_mem : {None, Array}, optional
+        An array to use as memory for reduced filter SNR storage.
+        If None, memory is allocated internally.
+    downsampled_corr_mem : {None, Array}, optional
+        An array to use as memory for reduced filter correlation storage.
+        If None, memory is allocated internally.
+    downsampled_pruned_mem : {None, Array}, optional
+        An array to use as memory for the intermediate pruned_fft calculation.
+        If None, memory is allocated internally.
     """
     valid_methods = ['pruned_fft', 'interpolation']
     if upsample_method not in valid_methods:
@@ -505,7 +643,7 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
     if len(idx2) == 0:
         return [], None, [], [], []
     # Cluster
-    idx2, _ = cluster_reduce(idx2, snrv2, cluster_window)
+    idx2, _ = cluster_reduce(idx2, snrv2, cluster_window / downsample_factor)
     logging.info("%s points above threshold at lower filter resolution"\
                   %(str(len(idx2)),))
 
