@@ -391,6 +391,8 @@ def named_frequency_cutoffs():
                                               p["s1z"], p["s2z"]),
       "SEOBNRv1"   : lambda p: get_final_freq("SEOBNRv1", p["m1"], p["m2"],
                                               p["s1z"], p["s2z"])
+      "SEOBNRv2"   : lambda p: get_final_freq("SEOBNRv2", p["m1"], p["m2"],
+                                              p["s1z"], p["s2z"])
     }
     return cutoffFunctions
 
