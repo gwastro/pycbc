@@ -46,14 +46,12 @@ The configuration file must have an [ahope-postprocprep] section, which is used 
 
 The choices here and their description are as described below
 
-* PIPEDOWN_AHOPE - This will prepare the output files for pipedown-style postprocessing. This involves combining all triggers, injection sets, segments into a single file, performing injection finding and performing clustering.
+* PIPEDOWN_WORKFLOW - This will prepare the output files for pipedown-style postprocessing. This involves combining all triggers, injection sets, segments into a single file, performing injection finding and performing clustering.
 
-Currently only one option, but others can be added. The subfunctions used are described here
-
-.. autofunction:: pycbc.ahope.setup_postprocprep_pipedown_ahope
+.. autofunction:: pycbc.workflow.setup_postprocprep_pipedown_workflow
    :noindex:
 
-With the PIPEDOWN_AHOPE method the following options apply
+With the PIPEDOWN_WORKFLOW method the following options apply
 
 * postprocprep-combiner1-exe=NAME
 * postprocprep-combiner2-exe=NAME
@@ -62,9 +60,39 @@ With the PIPEDOWN_AHOPE method the following options apply
 
 these specify which executables will be used for each step. These are described more fully below.
 
+* GSTLAL_POSTPROCPREP - This will perform the gstlal-style post-processing. This involves computing likelihood files, from there FAP and then some plotting routines.
+
+.. autofunction:: pycbc.workflow.setup_postprocprep_gstlal_workflow
+   :noindex:
+
+
+With the GSTLAL_POSTPROCPREP method the following options apply
+
+* postprocprep-runsqlite-exe=NAME
+* postprocprep-ligolwsqlite-exe=NAME
+* postprocprep-inspinjfind-exe=NAME
+* postprocprep-sqltoxml-exe=NAME
+* postprocprep-picklehor-exe=NAME
+* postprocprep-combllhood-exe=NAME
+* postprocprep-genranking-exe=NAME
+* postprocprep-compllhood-exe=NAME
+* postprocprep-marglikelihood-exe=NAME
+* postprocprep-fargstlal-exe=NAME
+* postprocprep-plotsummary-exe=NAME
+* postprocprep-plotsensitivity-exe=NAME
+* postprocprep-plotbackground-exe=NAME
+* postprocprep-summarypage-exe=NAME
+
+these specify which executables will be used for each step. These are described 
+more fully below.
+
 $$$$$$$$$$$$$$$
 [executables]
 $$$$$$$$$$$$$$$
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+For the PIPEDOWN_WORKFLOW method
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Executables required by this module are provided in the [executables] section. Any executable names specified in the [ahope-postprocprep] section must appear here. For instance if the [ahope-postprocprep] section reads
 
@@ -83,35 +111,148 @@ in the [executables] section.
 
 Sections, in this case [pycbcsqlite], [clustercoincs] and [databaseinjfind], will be used to specify the constant command line options that are sent to all jobs with the corresponding exe name. How to set up the [{exe_name}] section, and which executables are currently supported is discussed below.
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+For the GSTLAL_POSTPROCPREP method
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Executables required by this module are provided in the [executables] section. Any executable names specified in the [ahope-postprocprep] section must appear here. For instance if the [ahope-postprocprep] section reads
+
+* ADD
+
+you would need to have
+
+* ADD
+
+in the [executables] section.
+
+Sections will be used to specify the constant command line options that are sent to all jobs with the corresponding exe name. How to set up the [{exe_name}] section, and which executables are currently supported is discussed below.
+
+
 ----------------------------------------------------------------------------
 Supported post-processing preparation codes and instructions for using them
 ----------------------------------------------------------------------------
 
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+For the PIPEDOWN_WORKFLOW method
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
 The following coincidence codes are currently supported in ahope
 
-$$$$$$$$$$$$$$$$$$$$$$$$$$$
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 postprocprep-combiner1-exe
-$$$$$$$$$$$$$$$$$$$$$$$$$$$
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * pycbc_sqlite_simplify
 
-$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 postprocprep-combiner2-exe
-$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * pycbc_sqlite_simplify
 
-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 postprocprep-cluster-exe
-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * ligolw_cbc_cluster_coincs
 
-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 postprocprep-injfind-exe
-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * ligolw_dbinjfind
+
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+For the GSTLAL_POSTPROCPREP method
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+postprocprep-runsqlite-exe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ADD
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+postprocprep-ligolwsqlite-exe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ADD
+
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+postprocprep-inspinjfind-exe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ADD
+
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+postprocprep-sqltoxml-exe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ADD
+
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+postprocprep-picklehor-exe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ADD
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+postprocprep-combllhood-exe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ADD
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+postprocprep-genranking-exe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ADD
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+postprocprep-compllhood-exe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ADD
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+postprocprep-marglikelihood-exe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ADD
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+postprocprep-fargstlal-exe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ADD
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+postprocprep-plotsummary-exe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ADD
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+postprocprep-plotsensitivity-exe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ADD
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+postprocprep-plotbackground-exe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ADD
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+postprocprep-summarypage-exe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ADD
+
 
 ---------------------------
 Instructions for each code

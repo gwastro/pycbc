@@ -67,6 +67,14 @@ If exact-match coincidence is used, then the coincidence jobs can be parallelize
 
 * coincidence-exact-match-parallelize =
 
+If it is desired to use the gstlal-likelihood-based post-processing, which requires exact-match, then the option
+
+* coincidence-write-likelihood =
+
+Can be added, which instructs the code to write gstlal-style likelihood files,
+and will convert output to gstlal format. At the moment this means that the
+chisq column is replaced with chisq / dof (hopefully an agreement can be made
+so that the two write the *same* format files.
 
 $$$$$$$$$$$$$$$
 [executables]
