@@ -189,8 +189,8 @@ def fft_transpose_fftw(vec):
     global _thetransposeplan
     outvec = pycbc.types.zeros(len(vec), dtype=vec.dtype)
     if _theplan is None:
-        N2 = int(2 ** (numpy.log2( len(vec) ) / 2))
-        N1 = len(vec)/N2
+        N2 = 2 ** int(numpy.log2( len(vec) ) / 2)
+        N1 = len(vec) / N2
         _thetransposeplan = plan_transpose(N1, N2)
     ftexecute(_thetransposeplan, vec.ptr, outvec.ptr)
     return  outvec
@@ -210,8 +210,8 @@ def fft_transpose_numpy(vec):
     outvec : array
         Transposed output array.
     """
-    N2 = int(2 ** (numpy.log2( len(vec) ) / 2))
-    N1 = len(vec)/N2
+    N2 = 2 ** int(numpy.log2( len(vec) ) / 2)
+    N1 = len(vec) / N2
     return pycbc.types.Array(vec.data.copy().reshape(N2, N1).transpose().reshape(len(vec)).copy())
 
 fft_transpose = fft_transpose_fftw
@@ -244,9 +244,8 @@ def pruned_c2cifft(invec, outvec, indices, pretransposed=False):
     # This is a sloppy guess at an OK decomposition boudary, but could be better
     # through benchmarking and optimization (the second phase is a lot slower
     # than it strictly has to be).
-    N2 = int(2 ** (numpy.log2( len(invec) ) / 2))
-    N1 = len(invec)/N2
-    
+    N2 = 2 ** int(numpy.log2( len(invec) ) / 2)
+    N1 = len(invec) / N2
 
     # Do the explicit transpose here as I would like to move this out of the
     # loop soon
