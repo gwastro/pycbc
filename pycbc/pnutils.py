@@ -361,6 +361,8 @@ def get_final_freq(approx, m1, m2, s1z, s2z):
     lalsim_approx = lalsimulation.GetApproximantFromString(approx)
     return _vec_get_final_freq(lalsim_approx, m1, m2, s1z, s2z)
 
+# FIXME: Why is this a function? Why not just declare named_frequency_cutoffs
+#        as a dictionary?
 def named_frequency_cutoffs():
     """
     Dictionary of functions with uniform API taking a 
