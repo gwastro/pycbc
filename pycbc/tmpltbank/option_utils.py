@@ -412,12 +412,12 @@ def insert_mass_range_option_group(parser,nonSpin=False):
     # default value of ns-bh-boundary-mass.
     action = massOpts.add_mutually_exclusive_group(required=False)
     action.add_argument("--ns-bh-boundary-mass", action='store', type=float,
-                  default=3,
                   help="Mass boundary between neutron stars and black holes. "
                        "Components below this mass are considered neutron "
                        "stars and are subject to the neutron star spin limits. "
                        "Components at/above are subject to the black hole spin "
-                       "limits.  OPTIONAL, default=3.  UNITS=Solar mass")
+                       "limits.  OPTIONAL, default=%f.  UNITS=Solar mass" \
+                       % massRangeParameters.default_nsbh_boundary_mass)
     action.add_argument("--nsbh-flag", action="store_true", default=False,
                   help="Set this flag if generating a bank that contains only "
                        "systems with 1 black hole and 1 neutron star. With "
@@ -706,7 +706,8 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
         if opts.nsbh_flag:
             parser.error("Must supply --max_ns_spin_mag with --nsbh-flag")
         # Can ignore this if no NSs will be generated
-        elif opts.min_mass2 < opts.ns_bh_boundary_mass:
+        elif opts.min_mass2 < (opts.ns_bh_boundary_mass or
+                massRangeParameters.default_nsbh_boundary_mass):
             parser.error("Must supply --max-ns-spin-mag for the chosen"
                          " value of --min_mass2")
         else:
@@ -715,7 +716,8 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
         if opts.nsbh_flag:
             parser.error("Must supply --max_bh_spin_mag with --nsbh-flag")
         # Can ignore this if no BHs will be generated
-        if opts.max_mass1 >= opts.ns_bh_boundary_mass:
+        if opts.max_mass1 >= (opts.ns_bh_boundary_mass or
+                massRangeParameters.default_nsbh_boundary_mass):
             parser.error("Must supply --max-bh-spin-mag for the chosen"
                          " value of --max_mass1")
         else:
@@ -729,11 +731,14 @@ class massRangeParameters(object):
     from the __init__ function providing directly the options normally
     provided on the command line
     """
+
+    default_nsbh_boundary_mass = 3.
+
     def __init__(self, minMass1, maxMass1, minMass2, maxMass2,
                  maxNSSpinMag=0, maxBHSpinMag=0, maxTotMass=None,
                  minTotMass=None, maxEta=None, minEta=0, 
                  max_chirp_mass=None, min_chirp_mass=None, 
-                 ns_bh_boundary_mass=3.0, nsbhFlag=False):
+                 ns_bh_boundary_mass=None, nsbhFlag=False):
         """
         Initialize an instance of the massRangeParameters by providing all
         options directly. See the help message associated with any code
@@ -761,7 +766,8 @@ class massRangeParameters(object):
         self.max_chirp_mass = max_chirp_mass
         self.min_chirp_mass = min_chirp_mass
         self.minEta=minEta
-        self.ns_bh_boundary_mass = ns_bh_boundary_mass
+        self.ns_bh_boundary_mass = (
+            ns_bh_boundary_mass or self.default_nsbh_boundary_mass)
         self.nsbhFlag=nsbhFlag
 
         # FIXME: This may be inaccurate if Eta limits are given
