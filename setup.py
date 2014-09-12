@@ -38,6 +38,18 @@ ext_libraries, ext_library_dirs, ext_include_dirs = pkg_config(["lal", "lalsimul
 requires = ['lal.lal', 'lalinspiral.lalinspiral', 'lalsimulation.lalsimulation']
 requires +=  ['numpy', 'scipy', 'glue', 'argparse']
 
+def find_package_data(dirname):
+    def find_paths(dirname):
+        items = []
+        for fname in os.listdir(dirname):
+            path = os.path.join(dirname, fname)
+            if os.path.isdir(path):
+                items += find_paths(path)
+            elif not path.endswith(".py") and not path.endswith(".pyc"):
+                items.append(path)
+        return items
+    items = find_paths(dirname)
+    return [os.path.relpath(path, dirname) for path in items]
 
 # Add swig-generated files to the list of things to clean, so they
 # get regenerated each time.
@@ -279,7 +291,8 @@ setup (
                'bin/gstlal/pycbc_combine_likelihood',
                'bin/gstlal/pycbc_compute_far_from_snr_chisq_histograms',
                'bin/gstlal/pycbc_gen_ranking_data',
-               'bin/gstlal/pycbc_pickle_horizon_distances'
+               'bin/gstlal/pycbc_pickle_horizon_distances',
+               'bin/pycbc_make_generic_coinc_workflow',
                ],
     packages = [
                'pycbc',
@@ -294,4 +307,5 @@ setup (
                'pycbc.tmpltbank',
                'pycbc.workflow',
                ],
+     package_data = {'pycbc.results': find_package_data('pycbc/results')},
 )
