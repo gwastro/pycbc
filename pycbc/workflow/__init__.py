@@ -26,6 +26,7 @@ This package provides the utilities to construct an inspiral workflow for
 performing a coincident CBC matched-filter analysis on gravitational-wave
 interferometer data
 """
+import os.path
 
 from pycbc.workflow.configuration import *
 from pycbc.workflow.core import *
@@ -42,3 +43,8 @@ from pycbc.workflow.timeslides import *
 from pycbc.workflow.postprocessing_prep import *
 from pycbc.workflow.postprocessing import *
 from pycbc.workflow.analysislogging import *
+
+
+# Set the configuration file base directory
+
+INI_FILE_DIRECTORY = os.path.join(os.path.dirname(pycbc.workflow.__file__), 'ini_files')
