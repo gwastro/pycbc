@@ -32,7 +32,7 @@ import re
 import distutils.spawn
 import ConfigParser
 import glue.pipeline
-
+import pycbc.workflow
 
 def add_workflow_command_line_group(parser):
     """
@@ -168,15 +168,19 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             The command line arguments parsed by argparse
         """
         # Identify the config files
+        confFiles = []
+
         # Local files that contain the full path
-        confFiles = args.local_config_files
+        if args.local_config_files:
+            confFiles += args.local_config_files
         
         # Installed configuration files specific to the version of PyCBC
-        installed_config_files = []
-        for config_file in args.installed_config_files:
-            path = os.path.join(pycbc.workflow.INI_FILE_DIRECTORY, config_file)
-            installed_config_files += path
-        confFiles += installed_config_files
+        if args.installed_config_files:
+            installed_config_files = []
+            for config_file in args.installed_config_files:
+                path = os.path.join(pycbc.workflow.INI_FILE_DIRECTORY, config_file)
+                installed_config_files += [path]
+            confFiles += installed_config_files 
 
         # Identify the overrides
         confOverrides = args.config_overrides
