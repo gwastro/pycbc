@@ -145,7 +145,7 @@ def determine_eigen_directions(metricParams, preserveMoments=False,
     metricParams.evecs = evecs
     metricParams.metric = metric
     metricParams.time_unprojected_metric = unmax_metric
-
+    
     return metricParams
 
 def get_moments(metricParams, vary_fmax=False, vary_density=None):

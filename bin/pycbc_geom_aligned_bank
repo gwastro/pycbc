@@ -119,6 +119,12 @@ ligolw_process.register_to_xmldoc(outdoc, __program__, vars(opts), comment="",
                             cvs_entry_time=pycbc.version.date)
 ligolw_utils.write_filename(outdoc, cmds_file_name)
 
+if opts.verbose:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
+
 # Sanity check options
 if not opts.output_file:
     parser.error("Must supply --output-file")
@@ -127,6 +133,10 @@ if not opts.min_match:
 opts.max_mismatch = 1 - opts.min_match
 if not opts.log_path:
     parser.error("Must supply --log-path")
+if not opts.write_metric:
+    warn_message = "--write-metric is required by this code. Enabling it."
+    logging.warn(warn_message)
+    opts.write_metric = True
 pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
 metricParams=pycbc.tmpltbank.metricParameters.from_argparse(opts)
 pycbc.tmpltbank.verify_mass_range_options(opts, parser)
@@ -137,12 +147,6 @@ if opts.psd_estimation:
 # Set random seed if needed
 if opts.random_seed is not None:
     numpy.random.seed(opts.random_seed)
-
-if opts.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
 
 # If we are going to use h(t) to estimate a PSD we need h(t)
 if opts.psd_estimation:
@@ -172,9 +176,11 @@ logging.info("Calculating covariance matrix")
 vals = pycbc.tmpltbank.estimate_mass_range(1000000, massRangeParams, \
        metricParams, metricParams.fUpper, covary=False) 
 cov = numpy.cov(vals)
-evalsCV,evecsCV = numpy.linalg.eig(cov)
-metricParams.evecsCV = {}
-metricParams.evecsCV[metricParams.fUpper] = evecsCV
+evalsCV, evecsCV = numpy.linalg.eig(cov)
+evecsCVdict = {}
+evecsCVdict[metricParams.fUpper] = evecsCV
+metricParams.evecsCV = evecsCVdict
+
 
 logging.info("Determining parameter space extent")
 
@@ -208,11 +214,6 @@ else:
     chi3Diff = chi3Max - chi3Min
 
 logging.info("Lattice contains %d points" % len(v1s))
-
-# Dump the files needed to define the xi_i parameter space
-numpy.savetxt('metric_evecs.dat', metricParams.evecs[opts.f_upper])
-numpy.savetxt('metric_evals.dat', metricParams.evals[opts.f_upper])
-numpy.savetxt('covariance_evecs.dat', metricParams.evecsCV[opts.f_upper])
 
 # Now remove points that are too far from edges of parameter space
 
@@ -329,9 +330,9 @@ job.set_sub_file('bank_gen.sub')
 cp = ConfigParser.ConfigParser()
 cp.add_section('bank')
 cp.set('bank','pn-order',opts.pn_order)
-cp.set('bank','metric-evals-file','metric_evals.dat')
-cp.set('bank','metric-evecs-file','metric_evecs.dat')
-cp.set('bank','cov-evecs-file','covariance_evecs.dat')
+cp.set('bank','metric-evals-file','metric_evals_%d.dat' %metricParams.fUpper)
+cp.set('bank','metric-evecs-file','metric_evecs_%d.dat' %metricParams.fUpper)
+cp.set('bank','cov-evecs-file','covariance_evecs_%d.dat' %metricParams.fUpper)
 cp.set('bank','f0',str(opts.f0))
 cp.set('bank','max-mass1',str(opts.max_mass1))
 cp.set('bank','min-mass1',str(opts.min_mass1))

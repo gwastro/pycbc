@@ -205,9 +205,10 @@ logging.info("Calculating covariance matrix")
 vals = tmpltbank.estimate_mass_range(
     1000000, massRangeParams, metricParams, refFreq, covary=False)
 cov = numpy.cov(vals)
-evalsCV,evecsCV = numpy.linalg.eig(cov)
-metricParams.evecsCV = {}
-metricParams.evecsCV[refFreq] = evecsCV
+evalsCV, evecsCV = numpy.linalg.eig(cov)
+evecsCVdict = {}
+evecsCVdict[refFreq] = evecsCV
+metricParams.evecsCV = evecsCVdict
 
 # Initialize the class for generating the partitioned bank
 logging.info("Initialize the PartitionedTmpltbank class")

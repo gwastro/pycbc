@@ -125,6 +125,9 @@ def insert_metric_calculation_options(parser):
                      "space metric:  integrals of the form \int F(f) df "
                      "are approximated as \sum F(f) delta_f.  REQUIRED. "
                      "UNITS=Hz")
+    metricOpts.add_argument("--write-metric", action="store_true",
+                default=False, help="If given write the metric components "
+                     "to disk as they are calculated.")
 
 def verify_metric_calculation_options(opts, parser):
     """
@@ -147,7 +150,7 @@ def verify_metric_calculation_options(opts, parser):
     if not opts.delta_f:
         parser.error("Must supply --delta-f")
 
-class metricParameters:
+class metricParameters(object):
     """
     This class holds all of the options that are parsed in the function
     insert_metric_calculation_options
@@ -160,7 +163,8 @@ class metricParameters:
     _evals = None
     _evecs = None
     _evecsCV = None
-    def __init__(self, pnOrder, fLow, fUpper, deltaF, f0=70):
+    def __init__(self, pnOrder, fLow, fUpper, deltaF, f0=70,
+                 write_metric=False):
         """
         Initialize an instance of the metricParameters by providing all
         options directly. See the help message associated with any code
@@ -173,6 +177,7 @@ class metricParameters:
         self.deltaF=deltaF
         self.f0=f0
         self._moments=None
+        self.write_metric=write_metric
 
     @classmethod
     def from_argparse(cls, opts):
@@ -185,7 +190,7 @@ class metricParameters:
         have already been called before initializing the class.
         """
         return cls(opts.pn_order, opts.f_low, opts.f_upper, opts.delta_f,\
-                   f0=opts.f0)
+                   f0=opts.f0, write_metric=opts.write_metric)
 
     @property
     def psd(self):
@@ -262,7 +267,7 @@ class metricParameters:
         in evecs, are needed to rotate the
         coordinate system to one in which the metric is the identity matrix.
         """
-        if not self._evals:
+        if self._evals is None:
             errMsg = "The metric eigenvalues have not been set in the "
             errMsg += "metricParameters instance."
             raise ValueError(errMsg)
@@ -270,6 +275,10 @@ class metricParameters:
 
     @evals.setter
     def evals(self, inEvals):
+        if self.write_metric:
+            for frequency in inEvals.keys():
+                numpy.savetxt("metric_evals_%d.dat" %(frequency),
+                              inEvals[frequency])
         self._evals = inEvals
 
     @property
@@ -282,7 +291,7 @@ class metricParameters:
         in evals, are needed to rotate the
         coordinate system to one in which the metric is the identity matrix.
         """
-        if not self._evecs:
+        if self._evecs is None:
             errMsg = "The metric eigenvectors have not been set in the "
             errMsg += "metricParameters instance."
             raise ValueError(errMsg)
@@ -290,18 +299,22 @@ class metricParameters:
 
     @evecs.setter
     def evecs(self, inEvecs):
+        if self.write_metric:
+            for frequency in inEvecs.keys():
+                numpy.savetxt("metric_evecs_%d.dat" %(frequency),
+                              inEvecs[frequency])
         self._evecs = inEvecs
 
     @property
     def metric(self):
         """
-        The eigenvectors of the parameter space.
+        The metric of the parameter space.
         This is a Dictionary of numpy.matrix
         Each entry in the dictionary is as described under evals.
         Each numpy.matrix contains the metric of the parameter space in the
         Lambda_i coordinate system.
         """
-        if not self._metric:
+        if self._metric is None:
             errMsg = "The metric eigenvectors have not been set in the "
             errMsg += "metricParameters instance."
             raise ValueError(errMsg)
@@ -309,7 +322,35 @@ class metricParameters:
 
     @metric.setter
     def metric(self, inMetric):
+        if self.write_metric:
+            for frequency in inMetric.keys():
+                numpy.savetxt("metric_components_%d.dat" %(frequency),
+                              inMetric[frequency])
         self._metric = inMetric
+
+    @property
+    def time_unprojected_metric(self):
+        """
+        The metric of the parameter space with the time dimension unprojected.
+        This is a Dictionary of numpy.matrix
+        Each entry in the dictionary is as described under evals.
+        Each numpy.matrix contains the metric of the parameter space in the
+        Lambda_i, t coordinate system. The time components are always in the
+        last [-1] position in the matrix.
+        """
+        if self._time_unprojected_metric is None:
+            err_msg = "The time unprojected metric has not been set in the "
+            err_msg += "metricParameters instance."
+            raise ValueError(err_msg)
+        return self._time_unprojected_metric
+
+    @time_unprojected_metric.setter
+    def time_unprojected_metric(self, inMetric):
+        if self.write_metric:
+            for frequency in inMetric.keys():
+                numpy.savetxt("metric_timeunprojected_%d.dat" %(frequency),
+                              inMetric[frequency])
+        self._time_unprojected_metric = inMetric
 
     @property
     def evecsCV(self):
@@ -321,7 +362,7 @@ class metricParameters:
         in evals, are needed to rotate the
         coordinate system to one in which the metric is the identity matrix.
         """
-        if not self._evecsCV:
+        if self._evecsCV is None:
             errMsg = "The covariance eigenvectors have not been set in the "
             errMsg += "metricParameters instance."
             raise ValueError(errMsg)
@@ -329,7 +370,12 @@ class metricParameters:
 
     @evecsCV.setter
     def evecsCV(self, inEvecs):
+        if self.write_metric:
+            for frequency in inEvecs.keys():
+                numpy.savetxt("covariance_evecs_%d.dat" %(frequency),
+                              inEvecs[frequency])
         self._evecsCV = inEvecs
+
 
 def insert_mass_range_option_group(parser,nonSpin=False):
     """
@@ -876,7 +922,7 @@ class massRangeParameters(object):
 
         return 0
 
-class ethincaParameters:
+class ethincaParameters(object):
     """
     This class holds all of the options that are parsed in the function
     insert_ethinca_metric_options
