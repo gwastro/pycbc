@@ -123,7 +123,7 @@ def first_phase(invec, outvec, N1, N2):
         _theplan = plan_first_phase(N1, N2)
     fexecute(_theplan, invec.ptr, outvec.ptr)
     
-def fast_second_phase(invec, indices, N1, N2):
+def second_phase(invec, indices, N1, N2):
     """
     This is the second phase of the FFT decomposition that actually performs
     the pruning. It is an explicit calculation for the subset of points. Note
@@ -168,11 +168,10 @@ def fast_second_phase(invec, indices, N1, N2):
         }
     """
     scipy.weave.inline(code, ['N1', 'N2', 'NI', 'indices', 'out', 'invec'],
-                       extra_compile_args=['-march=native -O3 -w']
                       )
     return out
 
-def second_phase(invec, indices, N1, N2):
+def fast_second_phase(invec, indices, N1, N2):
     """
     This is the second phase of the FFT decomposition that actually performs
     the pruning. It is an explicit calculation for the subset of points. Note
@@ -200,7 +199,7 @@ def second_phase(invec, indices, N1, N2):
     N2=int(N2)
     out = numpy.zeros(len(indices), dtype=numpy.complex64)
     code = """
-        float pi = 3.141592653;
+        float pi = 3.14159265359;
         for(int i=0; i<NI; i++){
             float sp, cp;
             std::complex<double> val= (0, 0);
@@ -208,11 +207,11 @@ def second_phase(invec, indices, N1, N2):
             unsigned int k = indices[i];
             int N = N1*N2;
             float k2 = k % N2;
+            
             float phase_inc = 2 * pi * float(k) / float(N);
             sincosf(phase_inc, &sp, &cp);
-            std::complex<float> twiddle_inc = (sp, cp);
-            
-            std::complex<float> twiddle = (0, 0);
+            std::complex<float> twiddle_inc = std::complex<float>(cp, sp);             
+            std::complex<float> twiddle = std::complex<float>(1, 0);
 
             for (float n1=0; n1<N1; n1+=1){
                 val += twiddle * invec[int(k2 + N2*n1)];
@@ -221,7 +220,8 @@ def second_phase(invec, indices, N1, N2):
             out[i] = val;
         }
     """
-    scipy.weave.inline(code, ['N1', 'N2', 'NI', 'indices', 'out', 'invec'])
+    scipy.weave.inline(code, ['N1', 'N2', 'NI', 'indices', 'out', 'invec'],
+                       extra_compile_args=['-march=native -O3 -w'])
     return out
 
 _thetransposeplan = None
