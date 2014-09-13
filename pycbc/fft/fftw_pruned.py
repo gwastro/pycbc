@@ -122,6 +122,55 @@ def first_phase(invec, outvec, N1, N2):
     if _theplan is None:
         _theplan = plan_first_phase(N1, N2)
     fexecute(_theplan, invec.ptr, outvec.ptr)
+    
+def fast_second_phase(invec, indices, N1, N2):
+    """
+    This is the second phase of the FFT decomposition that actually performs
+    the pruning. It is an explicit calculation for the subset of points. Note
+    that there seem to be some numerical accumulation issues at various values
+    of N1 and N2.
+
+    Parameters
+    ----------
+    invec :
+        The result of the first phase FFT
+    indices : array of ints
+        The index locations to calculate the FFT
+    N1 : int
+        The length of the second phase "FFT"
+    N2 : int
+        The length of the first phase FFT
+
+    Returns
+    -------
+    out : array of floats
+    """
+    invec = numpy.array(invec.data, copy=False)
+    NI = len(indices)
+    N1=int(N1)
+    N2=int(N2)
+    out = numpy.zeros(len(indices), dtype=numpy.complex64)
+    code = """
+        float pi = 3.14159265359;
+        for(int i=0; i<NI; i++){
+            std::complex<double> val= (0, 0);
+            unsigned int k = indices[i];
+            int N = N1*N2;
+            float k2 = k % N2;
+            float phase_inc = 2 * pi * float(k) / float(N);
+            float sp, cp;
+
+            for (float n1=0; n1<N1; n1+=1){
+                sincosf(phase_inc * n1, &sp, &cp);
+                val += std::complex<float>(cp, sp) * invec[int(k2 + N2*n1)];
+            }
+            out[i] = val;
+        }
+    """
+    scipy.weave.inline(code, ['N1', 'N2', 'NI', 'indices', 'out', 'invec'],
+                       extra_compile_args=['-march=native -O3 -w']
+                      )
+    return out
 
 def second_phase(invec, indices, N1, N2):
     """
@@ -153,16 +202,21 @@ def second_phase(invec, indices, N1, N2):
     code = """
         float pi = 3.141592653;
         for(int i=0; i<NI; i++){
+            float sp, cp;
             std::complex<double> val= (0, 0);
+            
             unsigned int k = indices[i];
             int N = N1*N2;
             float k2 = k % N2;
             float phase_inc = 2 * pi * float(k) / float(N);
-            float sp, cp;
+            sincosf(phase_inc, &sp, &cp);
+            std::complex<float> twiddle_inc = (sp, cp);
+            
+            std::complex<float> twiddle = (0, 0);
 
             for (float n1=0; n1<N1; n1+=1){
-                sincosf(phase_inc * n1, &sp, &cp);
-                val += std::complex<float>(cp, sp) * invec[int(k2 + N2*n1)];
+                val += twiddle * invec[int(k2 + N2*n1)];
+                twiddle *= twiddle_inc;
             }
             out[i] = val;
         }
@@ -252,5 +306,5 @@ def pruned_c2cifft(invec, outvec, indices, pretransposed=False):
     if not pretransposed:
         invec = fft_transpose(invec)
     first_phase(invec, outvec, N1=N1, N2=N2)
-    out = second_phase(outvec, indices, N1=N1, N2=N2)
+    out = fast_second_phase(outvec, indices, N1=N1, N2=N2)
     return out
