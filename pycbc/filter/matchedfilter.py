@@ -703,7 +703,7 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
         
         # If there are too many points, revert back to IFFT
         # FIXME: What should this value be??
-        if len (idx) > 50:
+        if len (idx) > 150:
             msg = "Too many points at lower sample rate, reverting to IFFT"
             logging.info(msg)
             ifft(qtilde, q)
