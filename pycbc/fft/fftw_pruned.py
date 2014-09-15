@@ -198,6 +198,8 @@ def fast_second_phase(invec, indices, N1, N2):
     N1=int(N1)
     N2=int(N2)
     out = numpy.zeros(len(indices), dtype=numpy.complex64)
+    
+    # Note, the next step if this needs to be faster is to invert the loops
     code = """
         float pi = 3.14159265359;
         for(int i=0; i<NI; i++){

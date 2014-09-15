@@ -703,6 +703,7 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
         
         # If there are too many points, revert back to IFFT
         # FIXME: What should this value be??
+
         if len (idx) > 150:
             msg = "Too many points at lower sample rate, reverting to IFFT"
             logging.info(msg)
@@ -898,7 +899,29 @@ def overlap_cplx(vec1, vec2, psd=None, low_frequency_cutoff=None,
 
     return 4 * htilde.delta_f * inner * norm
 
-      
+def quadratic_interpolate_peak(left, middle, right):
+    """ Interpolate the peak and offset using a quadratic approximation
+    
+    Parameters
+    ----------
+    left : numpy array
+        Values at a relative bin value of [-1]
+    middle : numpy array
+        Values at a relative bin value of [0]
+    right : numpy array
+        Values at a relative bin value of [1]
+    
+    Returns
+    -------
+    bin_offset : numpy array
+        Array of bins offsets, each in the range [-1/2, 1/2] 
+    peak_values : numpy array
+        Array of the estimated peak values at the interpolated offset
+    """
+    bin_offset = 1.0/2.0 * (left - right) / (left - 2 * middle + right)
+    peak_value = middle + 0.25 * (left - right) * bin_offset
+    return bin_offset, peak_value
+        
 
 __all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'dynamic_rate_thresholded_matched_filter',
            'sigmasq_series', 'make_frequency_series', 'overlap', 'overlap_cplx',
