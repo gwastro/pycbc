@@ -364,14 +364,6 @@ def veto_indices(times, ifo, veto_files):
             
     return time_sorting[indices], veto_segs
 
-def cluster_coincs(stat1, stat2, time1, time2, timeslide_id, template_id):
-    """Cluster coincident events for each timeslide separately, across 
-    templates, based on the loudest network statistic (stat1**2 + stat2**2). 
-    Return the set of indices corresponding to the surviving coincidences.
-    """
-    nstatsq = stat1**2.0 + stat2**2.0
-    
-
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser()
     # General required options
@@ -413,10 +405,8 @@ if __name__ == '__main__':
     start = numpy.array(start)
     end = numpy.array(end)    
     
-    logging.info('%s time: %s  %s time: %s' %  (ifo1, fore_time1, ifo2, fore_time2))
-    
-    logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))
-    
+    logging.info('%s time: %s  %s time: %s' %  (ifo1, fore_time1, ifo2, fore_time2))   
+    logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))   
     logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))
     
     if  args.veto_files:
