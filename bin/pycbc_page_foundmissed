@@ -16,33 +16,6 @@ parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
-def compute_sensitive_distance(f_dist, m_dist):
-    """ Compute the sensitive volume
-    """
-    f_dist.sort()
-    m_dist.sort()
-    distances = numpy.concatenate([f_dist, m_dist])
-    dist_sorting = distances.argsort()
-    distances = distances[dist_sorting]
-    
-    low = 0
-    vol = 0
-    for i in range(len(distances)):
-        if i == len(distances) - 1:
-            break
-    
-        high = (distances[i+1] + distances[i]) / 2
-        bin_width = high - low
-        
-        if dist_sorting[i] <= len(f_dist):
-            vol += 4 * numpy.pi * distances[i]**2.0 * bin_width
-
-        low = high
-        
-    dist = (vol * 3.0/4.0/numpy.pi) ** (1.0/3.0)
-    print distances[-1], dist
-    return dist
-
 if args.verbose:
     log_level = logging.INFO
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
@@ -68,15 +41,6 @@ m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
 import pycbc.pnutils
 mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 
-foundg = found[ifar > 1000]
-mbf = numpy.logical_and(mchirp[foundg] > 1.34, mchirp[foundg] > 2.17)
-mbm = numpy.logical_and(mchirp[missed] > 1.34, mchirp[missed] > 2.17)
-f_dist = dist[foundg][mbf]
-m_dist = dist[missed][mbm]
-
-sdist = compute_sensitive_distance(f_dist, m_dist)
-print "SENSITIVE DISTANCE", sdist
-
 # For speed don't bother plotting really distant missed points
 missed = missed[dec_dist[missed] < dec_dist[found].max() * 1.1]
 
@@ -88,6 +52,7 @@ thousand = numpy.where(ifar_found > 1000)[0]
 color[hundred] = 0.5
 color[thousand] = 1.0
 
+# time vs dec distance plot
 fig = plot.figure()
 mpoints = plot.scatter(time[missed], dec_dist[missed], marker='x', color='black', 
                          label='missed', s=60)
@@ -108,6 +73,8 @@ mpld3.plugins.connect(fig, mpld3.plugins.InteractiveLegendPlugin([mpoints, point
                                                                  alpha_unsel=0.1))
 mpld3.save_html(fig, open(args.output_file, 'w'))
 
+
+# mchirp vs dec distance plot
 fig = plot.figure()
 mpoints = plot.scatter(mchirp[missed], dec_dist[missed], marker='x', 
                         color='black', label='missed', s=60)
@@ -130,6 +97,4 @@ mpld3.plugins.connect(fig, mpld3.plugins.InteractiveLegendPlugin([mpoints, point
 
 oname = os.path.split(args.output_file)[0] + '/mchirp-' + os.path.split(args.output_file)[1]
 mpld3.save_html(fig, open(oname, 'w'))
-
-
 
