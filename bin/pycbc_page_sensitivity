@@ -1,0 +1,87 @@
+#!/usr/bin/python
+""" Make table of the foreground coincident events
+"""
+import argparse, h5py, numpy, logging, os.path
+import matplotlib
+matplotlib.use('Agg')
+import pylab
+import pycbc.pnutils
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--injection-file')
+parser.add_argument('--verbose', action='count')
+parser.add_argument('--output-file')
+args = parser.parse_args()
+
+def compute_sensitive_distance(f_dist, m_dist):
+    """ Compute the sensitive volume
+    """
+    f_dist.sort()
+    m_dist.sort()
+    distances = numpy.concatenate([f_dist, m_dist])
+    dist_sorting = distances.argsort()
+    distances = distances[dist_sorting]
+    
+    low = 0
+    vol = 0
+    for i in range(len(distances)):
+        if i == len(distances) - 1:
+            break
+    
+        high = (distances[i+1] + distances[i]) / 2
+        bin_width = high - low
+        
+        if dist_sorting[i] <= len(f_dist):
+            vol += 4 * numpy.pi * distances[i]**2.0 * bin_width
+
+        low = high
+        
+    dist = (vol * 3.0/4.0/numpy.pi) ** (1.0/3.0)
+    return dist
+
+if args.verbose:
+    log_level = logging.INFO
+    logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+    
+logging.info('Read in the data')
+f = h5py.File(args.injection_file, 'r')
+
+time = f['injections/end_time'][:]
+found = f['found_after_vetoes/injection_index'][:]
+missed = f['missed/after_vetoes'][:]
+
+ifar = f['found_after_vetoes/ifar'][:]
+
+m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
+mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
+
+# This hardcodes HL search !!!!!, replace with function that takes or/sky/det
+hdist = f['injections/eff_dist_h'][:]
+ldist = f['injections/eff_dist_l'][:]
+dec_dist = numpy.maximum(hdist, ldist)
+dist = f['injections/distance'][:]
+m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
+mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
+
+mbm = numpy.logical_and(mchirp[missed] > 1.34, mchirp[missed] > 2.17)
+m_dist = dist[missed][mbm]
+
+dists = []
+ifar_values = [1, 5, 10, 50, 100, 500, 1000, 2000]
+for ifar_value in ifar_values:
+    foundg = found[ifar > ifar_value]
+    mbf = numpy.logical_and(mchirp[foundg] > 1.34, mchirp[foundg] > 2.17)
+    f_dist = dist[foundg][mbf]
+    sdist = compute_sensitive_distance(f_dist, m_dist)
+    dists.append(sdist)
+    print ifar_value, sdist
+
+pylab.semilogx(ifar_values, dists)
+pylab.ylabel('Sensitive Distance (Mpc)')
+pylab.xlabel('Inverse False Alarm Rate')
+pylab.savefig(args.output_file)
+
+
+
+
+
