@@ -1,7 +1,7 @@
 #!/bin/env python
 import argparse, os
 from flask import Flask, render_template, url_for, send_from_directory
-import pycbc.ahope
+import pycbc.workflow
 import pycbc.results.followup
 
 parser = argparse.ArgumentParser()
@@ -65,10 +65,10 @@ def section_view(folder):
                                       zip=zip)
     return tp
 
-trigger_file_list = pycbc.ahope.AhopeFileList()
+trigger_file_list = pycbc.workflow.FileList()
 for fil in args.trigger_file_lists:
     print fil
-    trigger_file_list += pycbc.ahope.AhopeFileList.load(fil)
+    trigger_file_list += pycbc.workflow.FileList.load(fil)
  
 @app.route('/followup/<tag>/<start>/<end>')
 def followup_view(start, end, tag):
