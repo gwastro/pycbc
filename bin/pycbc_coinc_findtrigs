@@ -446,7 +446,7 @@ if __name__ == '__main__':
                                    [(None, None), (None, None)]) 
         num_slides = 0
         
-    logging.info('Number of timeslides: %s' % num_slides
+    logging.info('Number of timeslides: %s' % num_slides)
     logging.info('finding course coincidences')                  
     i1, i2 = course.lookup(c1s)
     
