@@ -378,6 +378,7 @@ if __name__ == '__main__':
     parser.add_argument('--decimation-factor', type=int)
     parser.add_argument('--decimation-bins', type=int)
     parser.add_argument('--decimation-keep', type=int)
+    parser.add_argument('--coinc-threshold', type=float, default=0)
     args = parser.parse_args()
 
     if args.verbose == 1:
@@ -425,6 +426,9 @@ if __name__ == '__main__':
     det2 = Detector(ifo2)
     logging.info('%s num: %s   %s num: %s' % (ifo1, len(s1), ifo2, len(s2)))
     time_window = det1.light_travel_time_to_detector(det2)
+
+    if args.coinc_threshold:
+	time_window += args.coinc_threshold
     
     logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))  
     logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))
