@@ -9,6 +9,10 @@ import pycbc.pnutils
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--injection-file')
+parser.add_argument('--bins', nargs='*')
+parser.add_argument('--bin-type')
+parser.add_argument('--min-dist', type=float)
+parser.add_argument('--max-dist', type=float)
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
 args = parser.parse_args()
@@ -61,22 +65,45 @@ dist = f['injections/distance'][:]
 m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
 mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 
-mbm = numpy.logical_and(mchirp[missed] > 1.34, mchirp[missed] > 2.17)
-m_dist = dist[missed][mbm]
+# Dict to hold possible bin types
+values = {}
+values['mchirp'] = mchirp
+values['eta'] = eta
+values['total_mass'] = m1 + m2
 
-dists = []
-ifar_values = numpy.arange(1, 5000, 10)
-for ifar_value in ifar_values:
-    foundg = found[ifar > ifar_value]
-    mbf = numpy.logical_and(mchirp[foundg] > 1.34, mchirp[foundg] > 2.17)
-    f_dist = dist[foundg][mbf]
-    sdist = compute_sensitive_distance(f_dist, m_dist)
-    dists.append(sdist)
-    print ifar_value, sdist
 
-pylab.semilogx(ifar_values, dists)
-pylab.ylabel('Sensitive Distance (Mpc)')
-pylab.xlabel('Inverse False Alarm Rate')
+for j in range(len(args.bins)-1):
+    left =  float(args.bins[j])
+    right = float(args.bins[j+1])
+    binval = values[args.bin_type]
+
+    mbm = numpy.logical_and(binval[missed] > left, binval[missed] < right)
+    m_dist = dist[missed][mbm]
+
+    dists = []
+    ifar_values = [.1, 1, 10, 100, 500, 1000, 5000, 10000]
+    for ifar_value in ifar_values:
+        foundg = found[ifar >= ifar_value]
+        mbf = numpy.logical_and(binval[foundg] > left, binval[foundg] < right)
+        f_dist = dist[foundg][mbf]
+        
+        foundm = found[ifar < ifar_value]
+        mbfm = numpy.logical_and(binval[foundm] > left, binval[foundm] < right)
+        f_distm = dist[foundm][mbfm]
+        
+        m_dist_full = numpy.append(m_dist, f_distm)
+        
+        sdist = compute_sensitive_distance(f_dist, m_dist_full)
+        dists.append(sdist)
+        print ifar_value, sdist
+
+    pylab.semilogx(ifar_values, dists, label=('%s-%s' % (left, right)))
+    pylab.ylabel('Sensitive Distance (Mpc)')
+    pylab.xlabel('Inverse False Alarm Rate (Years)')
+
+if args.min_dist:
+    pylab.ylim(args.min_dist, args.max_dist)
+pylab.legend()
 pylab.savefig(args.output_file)
 
 
