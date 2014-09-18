@@ -1,7 +1,7 @@
 #!/usr/bin/python
 """ Make table of the foreground coincident events
 """
-import argparse, h5py, numpy, logging
+import argparse, h5py, numpy, logging, types
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from glue import segments
 import os.path
@@ -10,6 +10,16 @@ import os.path
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
 lsctables.use_in(LIGOLWContentHandler)
+
+def hdf_append(f, key, value):
+    if key in f:
+        tmp = numpy.concatenate([f[key][:], value])
+        del f[key]
+        f[key] = tmp
+    else:
+        f[key] = value
+       
+h5py.File.append = types.MethodType(hdf_append, h5py.File)
 
 def veto_indices(times, ifo, veto_files):
     """ Return the list of indices that should be vetoed by the segments in the
@@ -72,12 +82,12 @@ def xml_to_hdf(table, hdf_file, hdf_key, columns):
     """
     for col in columns:
         key = os.path.join(hdf_key, col) 
-        hdf_file[key] = numpy.array(table.get_column(col), 
-                                        dtype=numpy.float32)
+        hdf_append(hdf_file, key, numpy.array(table.get_column(col), 
+                                        dtype=numpy.float32))
      
 parser = argparse.ArgumentParser()
-parser.add_argument('--trigger-file')
-parser.add_argument('--injection-file')
+parser.add_argument('--trigger-files', nargs='+')
+parser.add_argument('--injection-files', nargs='+')
 parser.add_argument('--veto-file')
 parser.add_argument('--injection-window', type=float)
 parser.add_argument('--verbose', action='count')
@@ -87,78 +97,82 @@ args = parser.parse_args()
 if args.verbose:
     log_level = logging.INFO
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
-    
-logging.info('Read in the coinc data')
-f = h5py.File(args.trigger_file, 'r')
 
-stat1 = f['foreground/stat1'][:]
-stat2 = f['foreground/stat2'][:]
-ifar = f['foreground/ifar'][:]
-time1 = f['foreground/time1'][:]
-time2 = f['foreground/time2'][:]
-ana_start = f['foreground/analyzed_start'][:]
-ana_end = f['foreground/analyzed_end'][:]
-time = 0.5 * (time1 + time2)
-time_sorting = time.argsort()
-
-logging.info('Read in the injection file')
-indoc = ligolw_utils.load_filename(args.injection_file, False, contenthandler=LIGOLWContentHandler)
-sim_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
-inj_time = numpy.array(sim_table.get_column('geocent_end_time') + 1e-9 * sim_table.get_column('geocent_end_time_ns'), dtype=numpy.float64)
-
-logging.info('Determined the found injections by time')
-left = numpy.searchsorted(time[time_sorting], inj_time - args.injection_window, side='left')
-right = numpy.searchsorted(time[time_sorting], inj_time + args.injection_window, side='right')
-found = numpy.where((right-left) == 1)[0]
-missed = numpy.where((right-left) == 0)[0]
-ambiguous = numpy.where((right-left) > 1)[0]
-logging.info('Found: %s, Missed: %s' % (len(found), len(missed)))
-
-if len(ambiguous) > 0:
-    logging.warn('More than one coinc trigger found associated to injection') 
-
-logging.info('Removing injections outside of analyzed time')
-ki = keep_ind(inj_time, ana_start, ana_end)
-found_within_time = numpy.intersect1d(ki, found)
-missed_within_time = numpy.intersect1d(ki, missed)
-logging.info('Found: %s, Missed: %s' % (len(found_within_time), len(missed_within_time)))
-
-logging.info('Removing injections in vetoed time')
-i1, v1 = veto_indices(inj_time, 'H1', [args.veto_file])
-i2, v2 = veto_indices(inj_time, 'L1', [args.veto_file])
-vi = numpy.concatenate([i1, i2])
-found_after_vetoes = numpy.delete(found_within_time, numpy.in1d(found_within_time, vi))
-missed_after_vetoes = numpy.delete(missed_within_time, numpy.in1d(missed_within_time, vi))
-logging.info('Found: %s, Missed: %s' % (len(found_after_vetoes), len(missed_after_vetoes)))
-
-found_fore = numpy.arange(0, len(inj_time), 1)[left[found]]
-found_fore_v = numpy.arange(0, len(inj_time), 1)[left[found_after_vetoes]]
-
-logging.info('Saving injection information')
 fo = h5py.File(args.output_file, 'w')
-columns = ['mass1', 'mass2', 'spin1x', 'spin1y', 
-           'spin1z', 'spin2x', 'spin2y', 'spin2z',
-           'eff_dist_l', 'eff_dist_h', 'eff_dist_v', 
-           'inclination', 'polarization', 'coa_phase', 
-           'latitude', 'longitude', 'distance']
-xml_to_hdf(sim_table, fo, 'injections', columns)
-fo['injections/end_time'] = inj_time
-fo.attrs['detector_1'] = f.attrs['detector_1']
-fo.attrs['detector_2'] = f.attrs['detector_2']
-fo['missed/all'] = missed
-fo['missed/within_analysis'] = missed_within_time
-fo['missed/after_vetoes'] = missed_after_vetoes
+injection_index = 0
+for trigger_file, injection_file in zip(args.trigger_files, args.injection_files):   
+    logging.info('Read in the coinc data')
+    f = h5py.File(trigger_file, 'r')
 
-fo['found/injection_index'] = found
-fo['found/stat1'] = stat1[time_sorting][found_fore]
-fo['found/stat2'] = stat2[time_sorting][found_fore]
-fo['found/time1'] = time1[time_sorting][found_fore]
-fo['found/time2'] = time2[time_sorting][found_fore]
-fo['found/ifar'] = ifar[time_sorting][found_fore]
+    stat1 = f['foreground/stat1'][:]
+    stat2 = f['foreground/stat2'][:]
+    ifar = f['foreground/ifar'][:]
+    time1 = f['foreground/time1'][:]
+    time2 = f['foreground/time2'][:]
+    ana_start = f['foreground/analyzed_start'][:]
+    ana_end = f['foreground/analyzed_end'][:]
+    time = 0.5 * (time1 + time2)
+    time_sorting = time.argsort()
 
-fo['found_after_vetoes/injection_index'] = found_after_vetoes
-fo['found_after_vetoes/stat1'] = stat1[time_sorting][found_fore_v]
-fo['found_after_vetoes/stat2'] = stat2[time_sorting][found_fore_v]
-fo['found_after_vetoes/time1'] = time1[time_sorting][found_fore_v]
-fo['found_after_vetoes/time2'] = time2[time_sorting][found_fore_v]
-fo['found_after_vetoes/ifar'] = ifar[time_sorting][found_fore_v]
+    logging.info('Read in the injection file')
+    indoc = ligolw_utils.load_filename(injection_file, False, contenthandler=LIGOLWContentHandler)
+    sim_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
+    inj_time = numpy.array(sim_table.get_column('geocent_end_time') + 1e-9 * sim_table.get_column('geocent_end_time_ns'), dtype=numpy.float64)
+
+    logging.info('Determined the found injections by time')
+    left = numpy.searchsorted(time[time_sorting], inj_time - args.injection_window, side='left')
+    right = numpy.searchsorted(time[time_sorting], inj_time + args.injection_window, side='right')
+    found = numpy.where((right-left) == 1)[0]
+    missed = numpy.where((right-left) == 0)[0]
+    ambiguous = numpy.where((right-left) > 1)[0]
+    logging.info('Found: %s, Missed: %s' % (len(found), len(missed)))
+
+    if len(ambiguous) > 0:
+        logging.warn('More than one coinc trigger found associated to injection') 
+
+    logging.info('Removing injections outside of analyzed time')
+    ki = keep_ind(inj_time, ana_start, ana_end)
+    found_within_time = numpy.intersect1d(ki, found)
+    missed_within_time = numpy.intersect1d(ki, missed)
+    logging.info('Found: %s, Missed: %s' % (len(found_within_time), len(missed_within_time)))
+
+    logging.info('Removing injections in vetoed time')
+    i1, v1 = veto_indices(inj_time, 'H1', [args.veto_file])
+    i2, v2 = veto_indices(inj_time, 'L1', [args.veto_file])
+    vi = numpy.concatenate([i1, i2])
+    found_after_vetoes = numpy.delete(found_within_time, numpy.in1d(found_within_time, vi))
+    missed_after_vetoes = numpy.delete(missed_within_time, numpy.in1d(missed_within_time, vi))
+    logging.info('Found: %s, Missed: %s' % (len(found_after_vetoes), len(missed_after_vetoes)))
+
+    found_fore = numpy.arange(0, len(inj_time), 1)[left[found]]
+    found_fore_v = numpy.arange(0, len(inj_time), 1)[left[found_after_vetoes]]
+
+    logging.info('Saving injection information')
+    columns = ['mass1', 'mass2', 'spin1x', 'spin1y', 
+               'spin1z', 'spin2x', 'spin2y', 'spin2z',
+               'eff_dist_l', 'eff_dist_h', 'eff_dist_v', 
+               'inclination', 'polarization', 'coa_phase', 
+               'latitude', 'longitude', 'distance']
+    xml_to_hdf(sim_table, fo, 'injections', columns)
+    hdf_append(fo, 'injections/end_time', inj_time)
+    fo.attrs['detector_1'] = f.attrs['detector_1']
+    fo.attrs['detector_2'] = f.attrs['detector_2']
+    hdf_append(fo, 'missed/all', missed + injection_index)
+    hdf_append(fo, 'missed/within_analysis', missed_within_time + injection_index)
+    hdf_append(fo, 'missed/after_vetoes', missed_after_vetoes + injection_index)
+
+    hdf_append(fo, 'found/injection_index', found + injection_index)
+    hdf_append(fo, 'found/stat1', stat1[time_sorting][found_fore])
+    hdf_append(fo, 'found/stat2', stat2[time_sorting][found_fore])
+    hdf_append(fo, 'found/time1', time1[time_sorting][found_fore])
+    hdf_append(fo, 'found/time2', time2[time_sorting][found_fore])
+    hdf_append(fo, 'found/ifar', ifar[time_sorting][found_fore])
+
+    hdf_append(fo, 'found_after_vetoes/injection_index', found_after_vetoes + injection_index)
+    hdf_append(fo, 'found_after_vetoes/stat1', stat1[time_sorting][found_fore_v])
+    hdf_append(fo, 'found_after_vetoes/stat2', stat2[time_sorting][found_fore_v])
+    hdf_append(fo, 'found_after_vetoes/time1', time1[time_sorting][found_fore_v])
+    hdf_append(fo, 'found_after_vetoes/time2', time2[time_sorting][found_fore_v])
+    hdf_append(fo, 'found_after_vetoes/ifar', ifar[time_sorting][found_fore_v])
+    
+    injection_index += len(sim_table)

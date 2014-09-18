@@ -19,13 +19,11 @@ args = parser.parse_args()
 
 def compute_efficiency_bins(f_dist, m_dist, bins=15):
     f_dist.sort()
-    m_dist.sort()
-    
+    m_dist.sort()   
     top = max(f_dist.max(), f_dist.max())
     bot = min(m_dist.min(), f_dist.min())
-
     w = (top - bot) / float(bins)
-    
+  
     effs, dists, vol = [], [], 0
     t, b = w + bot, 0 + bot
     for i in range(bins): 
