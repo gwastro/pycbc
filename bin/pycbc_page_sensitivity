@@ -17,6 +17,28 @@ parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
+def compute_efficiency_bins(f_dist, m_dist, bins=15):
+    f_dist.sort()
+    m_dist.sort()
+    
+    top = max(f_dist.max(), f_dist.max())
+    bot = min(m_dist.min(), f_dist.min())
+
+    w = (top - bot) / float(bins)
+    
+    effs, dists, vol = [], [], 0
+    t, b = w + bot, 0 + bot
+    for i in range(bins): 
+        fn = numpy.logical_and(f_dist < t, f_dist > b).sum()
+        mn = numpy.logical_and(m_dist < t, m_dist > b).sum()
+        eff = fn / float(fn + mn)
+        t, b = t + w, b + w
+        effs += [eff]
+        dists += [(b, t)]
+        vol += ((t+b)/2.0)**2.0 * 4 * numpy.pi * w * eff
+    dist = (vol * 3.0/4.0/numpy.pi) ** (1.0/3.0)
+    return effs, dists, dist
+
 def compute_sensitive_distance(f_dist, m_dist):
     """ Compute the sensitive volume
     """
@@ -27,6 +49,7 @@ def compute_sensitive_distance(f_dist, m_dist):
     distances = distances[dist_sorting]
     low = 0
     vol = 0
+    vol_err = 0
     for i in range(len(distances)):
         if i == len(distances) - 1:
             break
@@ -36,10 +59,13 @@ def compute_sensitive_distance(f_dist, m_dist):
         
         if dist_sorting[i] < len(f_dist):
             vol += 4 * numpy.pi * distances[i]**2.0 * bin_width
+            vol_err += (4 * numpy.pi * distances[i]**2.0 * bin_width)**2.0
         low = high
-        
+    vol_err = vol_err ** 0.5
+    d_high = ((vol + vol_err) * 3.0/4.0/numpy.pi) ** (1.0/3.0)
+    d_low = ((vol - vol_err) * 3.0/4.0/numpy.pi) ** (1.0/3.0)
     dist = (vol * 3.0/4.0/numpy.pi) ** (1.0/3.0)
-    return dist
+    return dist, dist - d_low, d_high - dist
 
 if args.verbose:
     log_level = logging.INFO
@@ -79,8 +105,8 @@ for j in range(len(args.bins)-1):
     mbm = numpy.logical_and(binval[missed] > left, binval[missed] < right)
     m_dist = dist[missed][mbm]
 
-    dists = []
-    ifar_values = [.1, 1, 10, 100, 500, 1000, 5000, 10000]
+    dists, low_errors, high_errors = [], [], []
+    ifar_values = [.1, 1, 10, 100, 500, 1000]
     for ifar_value in ifar_values:
         foundg = found[ifar >= ifar_value]
         mbf = numpy.logical_and(binval[foundg] > left, binval[foundg] < right)
@@ -92,11 +118,15 @@ for j in range(len(args.bins)-1):
         
         m_dist_full = numpy.append(m_dist, f_distm)
         
-        sdist = compute_sensitive_distance(f_dist, m_dist_full)
-        dists.append(sdist)
-        print ifar_value, sdist
+        sdist, elow, ehigh = compute_sensitive_distance(f_dist, m_dist_full)
+        #eff, bins, edist = compute_efficiency_bins(f_dist, m_dist, bins=30)
 
-    pylab.semilogx(ifar_values, dists, label=('%s-%s' % (left, right)))
+        dists.append(sdist)
+        low_errors.append(elow)
+        high_errors.append(ehigh)
+
+    pylab.errorbar(ifar_values, dists, yerr=[low_errors, high_errors], label=('%5.2f - %5.2f M' % (left, right)))
+    pylab.gca().set_xscale('log')
     pylab.ylabel('Sensitive Distance (Mpc)')
     pylab.xlabel('Inverse False Alarm Rate (Years)')
 
