@@ -104,7 +104,7 @@ for j in range(len(args.bins)-1):
     m_dist = dist[missed][mbm]
 
     dists, low_errors, high_errors = [], [], []
-    ifar_values = [.1, 1, 10, 100, 500, 1000]
+    ifar_values = [.1, .5, 1, 5, 10, 50, 100, 500, 1000, 5000, 10000]
     for ifar_value in ifar_values:
         foundg = found[ifar >= ifar_value]
         mbf = numpy.logical_and(binval[foundg] > left, binval[foundg] < right)
@@ -126,6 +126,7 @@ for j in range(len(args.bins)-1):
     pylab.errorbar(ifar_values, dists, yerr=[low_errors, high_errors], label=('%5.2f - %5.2f M' % (left, right)))
     pylab.gca().set_xscale('log')
     pylab.ylabel('Sensitive Distance (Mpc)')
+    pylab.grid()
     pylab.xlabel('Inverse False Alarm Rate (Years)')
 
 if args.min_dist:
