@@ -71,7 +71,6 @@ values['mchirp'] = mchirp
 values['eta'] = eta
 values['total_mass'] = m1 + m2
 
-
 for j in range(len(args.bins)-1):
     left =  float(args.bins[j])
     right = float(args.bins[j+1])

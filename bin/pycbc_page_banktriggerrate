@@ -1,0 +1,48 @@
+#!/usr/bin/python
+""" Plot the rate of triggers across the template bank
+"""
+import matplotlib
+matplotlib.use('Agg')
+import numpy, argparse, h5py, os, pylab, pycbc.pnutils
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--trigger-files', nargs='+')
+parser.add_argument('--bank-file')
+parser.add_argument('--output-file')
+args = parser.parse_args()
+
+bf = h5py.File(args.bank_file)
+m1 = bf['mass1'][:]
+m2 = bf['mass2'][:]
+
+mc, et = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
+
+num_templates = len(m1) 
+template_num = numpy.zeros(num_templates)
+max_snr = numpy.zeros(num_templates)
+
+for trig_filename in args.trigger_files:
+    print trig_filename
+    f = h5py.File(trig_filename)
+    tid = f['template_id'][:]
+    
+    # Count triggers produced by each template
+    tsort = tid.argsort()
+    tid = tid[tsort]
+    snr = f['snr'][:][tsort]
+    chisq = f['chisq'][:][tsort]
+    
+    u = numpy.unique(tid)
+    l = numpy.searchsorted(tid, u, side='left')
+    r = numpy.searchsorted(tid, u, side='right')
+    n = r - l
+    template_num[u] += n
+    
+pylab.scatter(et, m1+m2, c=template_num, s=template_num/template_num.max()*50)
+pylab.ylabel('Total Mass')
+pylab.xlabel('Eta')
+pylab.colorbar()
+pylab.savefig(args.output_file)
+    
+    
+

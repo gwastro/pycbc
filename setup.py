@@ -317,6 +317,7 @@ setup (
                'bin/pycbc_page_foundmissed',
                'bin/pycbc_page_snrifar',
                'bin/pycbc_page_sensitivity',
+               'bin/pycbc_page_banktriggerrate',
                'bin/pycbc_coinc_hdfinjfind',
                ],
     packages = [
