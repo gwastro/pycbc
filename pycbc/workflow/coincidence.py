@@ -487,9 +487,9 @@ class PyCBCFindCoincExecutable(Executable):
     """
     def create_node(self, trig_files, veto_files, template_group, tags=[]):
         segs = trig_files.get_times_covered_by_files()
-        seg = segments.segment(segs[0][0], segs[-1][1])
-
+        seg = segments.segment(segs[0][0], segs[-1][1]
         node = Node(self)
+        node.set_memory(4000)
         node.add_input_list_opt('--trigger-files', trig_files)
         if len(veto_files) != 0:
             node.add_input_list_opt('--veto-files', veto_files)
