@@ -25,7 +25,7 @@ bash temp.sh > site-local-parsed.xml
 
 # Plan the workflow
 echo "Generating concrete workflow"
-pegasus-plan --conf pegasus.conf -d $1 --sites local -o local --dir $2 --nocleanup
+pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites local -o local --dir $2 --nocleanup
 
 #echo "Generating the workflow shell script"
-#pegasus-plan --conf pegasus.conf -d $1 --sites local -o local --dir $PWD --nocleanup
+#pegasus-plan --conf basic_pegasus.conf -d $1 --sites local -o local --dir $PWD --nocleanup
