@@ -426,8 +426,8 @@ class Node(pegasus_workflow.Node):
         self.set_category(executable.name)
         
         # Set default requirements for a Node
-        self.set_memory(1000)
-        self.set_storage(100)
+        #self.set_memory(1000)
+        #self.set_storage(100)
         
         if executable.universe == 'vanilla':
             self.add_profile('condor', 'getenv', 'True')
