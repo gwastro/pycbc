@@ -1,19 +1,19 @@
 ########################################################
-Weekly ahope: A CBC analysis workflow generator
+pycbc_make_coinc_workflow: A CBC analysis workflow generator
 ########################################################
 
 ===============
 Introduction
 ===============
 
-Weekly ahope is a tool used to analyse data from multiple detectors independently and then perform a coincidence test and various signal-based veto cuts and data quality cuts to determine whether or not a compact binary coalescence is present in the given data.
+pycbc_make_coinc_workflow is a tool used to analyse data from multiple detectors independently and then perform a coincidence test and various signal-based veto cuts and data quality cuts to determine whether or not a compact binary coalescence is present in the given data.
 
 The output is a webpage containing the plots that can be used to understand the results of the analysis
 
 .. _howtorunahope:
 
 =======================
-How to run weekly ahope
+How to run
 =======================
 
 Here we document the stages needed to run weekly ahope.
@@ -30,25 +30,6 @@ described on the page here:
 
    ../install
 
-----------------------
-Find the run scripts
-----------------------
-
-The scripts to run weekly ahope currently reside within the pycbc source tree.
-These will be moved to be installed executables at some point. For now this
-can be found in::
-
-    examples/workflow/weekly_workflow
-
-cd to this directory::
-
-    cd ${PYCBC_SRC_DIR}/examples/workflow/weekly_workflow
-
-If you want to run in a different directory then you can copy the files to that directory::
-
-    cp ${PYCBC_SRC_DIR}/examples/workflow/weekly_workflow/* /path/to/your/run/directory
-    cd /path/to/your/run/directory
-
 ----------------------------------------------------------------------------
 The configuration file - Do you already have configuration (.ini) file(s)?
 ----------------------------------------------------------------------------
@@ -63,7 +44,7 @@ Great! Then copy the configuration files into your run directory (overwrite the 
 
 and set the names of these configuration files in your path. If you have more than one configuration file they must be space separated::
 
-    CONFIG_FILES="config_file1.ini config_file2.ini"
+    LOCAL_CONFIG_FILES="config_file1.ini config_file2.ini"
 
 Now go down to :ref:`weeklyahopegenerate`.
 
@@ -73,9 +54,9 @@ No, I need to make a configuration file - Editing the example files
 
 The default configuration file for weekly_ahope is found in three parts::
 
-    weekly_ahope.ini
-    pipedown.ini
-    inj.ini
+    /src/dir/pycbc/workflow/ini_files/example_pycbc.ini
+    /src/dir/pycbc/workflow/ini_files/example_pipedown.ini
+    /src/dir/pycbc/workflow/ini_files/example_inj.ini
 
 These files contain all the details needed to run weekly_ahope
 
@@ -84,13 +65,13 @@ These files contain all the details needed to run weekly_ahope
     If you are unfamiliar with pycbc workflows, look through these files.
     pipedown.ini will look familiar if you are used to ihope workflows.
 
-* weekly_ahope.ini contains options that are used when running the pycbc.workflow parts of the workflow
-* pipedown.ini contains options that are used when running pipedown
-* inj.ini contains the parameters used when generating simulation files
+* example_pycbc.ini contains options that are used when running the pycbc.workflow parts of the workflow
+* example_pipedown.ini contains options that are used when running pipedown
+* example_inj.ini contains the parameters used when generating simulation files
 
-Alternatively, if you want to run with pycbc executables replace weekly_ahope.ini with::
+Alternatively, if you want to run with lalapps executables replace example_pycbc.ini with::
 
-   weekly_ahope_pycbc.ini
+   example_lalapps.ini
 
 The weekly_ahope.ini example is set up to run on S6 data and analysing only H1 and L1. The weekly_ahope_pycbc.ini example is set up to run on S6 data analysing H1, L1 and V1.
 
@@ -187,7 +168,7 @@ You also need to choose where the html page will be generated. For example::
 
 Then you can generate the workflow::
 
-    python weekly_ahope.py --config-files ${CONFIG_FILES} \
+    pycbc_make_coinc_workflow --installed-config-files ${CONFIG_FILES} \
                            --config-overrides ahope:start-time:${GPS_START_TIME} \
                                               ahope:end-time:${GPS_END_TIME} \
                                               ahope:ahope-html-basedir:${HTMLDIR} \
@@ -199,20 +180,13 @@ Then you can generate the workflow::
 -----------------------------------------
 Planning and Submitting the Workflow
 -----------------------------------------
-First, copy the files needed for planning into the directory where the dax 
-was generated.::
-
-    cp plan.sh ${GPS_START_TIME}-${GPS_END_TIME}/
-    cp site-local.xml ${GPS_START_TIME}-${GPS_END_TIME}/
-    cp pegasus.conf ${GPS_START_TIME}-${GPS_END_TIME}/
-
-Then CD into the directory where the dax was generated::
+CD into the directory where the dax was generated::
 
     cd ${GPS_START_TIME}-${GPS_END_TIME}
 
 From the directory where the dax was created, run the planning script::
 
-    sh plan.sh weekly_ahope.dax $LOGPATH
+    pycbc_basic_pegasus_plan weekly_ahope.dax $LOGPATH
     
 Submit the workflow by following the instructions at the end of the script output, which looks something like 
 the following.::
