@@ -292,7 +292,7 @@ setup (
                'bin/gstlal/pycbc_compute_far_from_snr_chisq_histograms',
                'bin/gstlal/pycbc_gen_ranking_data',
                'bin/gstlal/pycbc_pickle_horizon_distances',
-               'bin/pycbc_make_generic_coinc_workflow',
+               'bin/pycbc_make_coinc_workflow',
                ],
     packages = [
                'pycbc',
