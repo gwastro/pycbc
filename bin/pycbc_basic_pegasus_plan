@@ -1,8 +1,6 @@
 #!/bin/bash
-# Set up the site-local with the correct paths
 
 # Check I have two arguments supplied
-
 if [ "x$1" == "x" ]
 then
   echo "I take two arguments, the name of the dax file and the logpath. None supplied."
@@ -15,9 +13,13 @@ then
   exit 1
 fi
 
+# find the site-local template directory
+PEG_DIR=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGASUS_FILE_DIRECTORY'`
+SITE_TEMPLATE=$PEG_DIR/basic_site_template.xml
 
+# Set up the site-local with the correct paths
 echo 'cat <<END_OF_TEXT' >  temp.sh
-cat "site-local.xml"                 >> temp.sh
+cat $SITE_TEMPLATE       >> temp.sh
 echo 'END_OF_TEXT'       >> temp.sh
 bash temp.sh > site-local-parsed.xml
 
