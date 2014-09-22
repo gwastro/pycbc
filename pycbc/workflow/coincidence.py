@@ -573,14 +573,33 @@ def setup_interval_coinc_inj(workflow, hdfbank, trig_files,
                                               ifos=workflow.ifos,
                                               tags=tags, out_dir=out_dir)
 
+    # Wall time knob
+    group_size = range(int(workflow.cp.get_opt_tags('workflow-coincidence', 'groups-per-coinc', tags)))
+    
+    # Memory usage knob
+    max_groups = int(workflow.cp.get_opt_tags('workflow-coincidence', 'number-of-groups', tags))
+
+    group_start = 0
+    group_end = group_size
+
     bg_files = FileList()
-    for group_id in range(int(workflow.cp.get_opt_tags('workflow-coincidence', 'number-of-groups', tags))):
-        group_id = str(group_id)
+    while 1:
+        values = range(group_start, group_end)
+        group_str = (' %s ' * len(values)) % values
+        
         coinc_node = findcoinc_exe.create_node(trig_files, [],
                                            group_id,
                                            tags=[group_id])
         bg_files += coinc_node.output_files
         workflow.add_node(coinc_node)
+        
+        group_start += group_size
+        group_end += group_size
+        
+        if group_start >= max_groups:
+            break
+        if group_end >= max_groups:
+            group_end = max_groups
 
     combine_node = combinecoinc_exe.create_node(bg_files,
                                            external_background=background_file[0])
@@ -613,20 +632,37 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
                                               ifos=workflow.ifos,
                                               tags=tags, out_dir=out_dir)
 
-    rang = range(int(workflow.cp.get_opt_tags('workflow-coincidence', 'number-of-groups', tags)))
+    # Wall time knob
+    group_size = range(int(workflow.cp.get_opt_tags('workflow-coincidence', 'groups-per-coinc', tags)))
+    
+    # Memory usage knob
+    max_groups = int(workflow.cp.get_opt_tags('workflow-coincidence', 'number-of-groups', tags))
+
+    group_start = 0
+    group_end = group_size
 
     tags, veto_file_groups = veto_files.categorize_by_attr('tags')
     chosen_bg_file = FileList()
     for tag, veto_files in zip(tags, veto_file_groups):
         bg_files = FileList()
         if 'CUMULATIVE_CAT' in tag[0]:
-            for group_id in rang:
-                group_id = str(group_id)
+            while 1:
+                
+                values = range(group_start, group_end)
+                group_str = (' %s ' * len(values)) % values
                 coinc_node = findcoinc_exe.create_node(trig_files, veto_files,
-                                                       group_id,
+                                                       group_str,
                                                        tags= tag + [group_id])
                 bg_files += coinc_node.output_files
                 workflow.add_node(coinc_node)
+                
+                group_start += group_size
+                group_end += group_size
+                
+                if group_start >= max_groups:
+                    break
+                if group_end >= max_groups:
+                    group_end = max_groups
 
             combine_node = combinecoinc_exe.create_node(bg_files, tags=tag)
             workflow.add_node(combine_node)
