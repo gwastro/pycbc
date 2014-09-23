@@ -332,7 +332,11 @@ class Workflow(pegasus_workflow.Workflow):
         # add workflow storage locations to the output mapper
         f = open(self.name + '.map', 'w')
         for out in self._outputs:
-            f.write(out.output_map_str() + '\n')
+            try:
+                f.write(out.output_map_str() + '\n')
+            except ValueError:
+                # There was no storage path
+                pass
     
 class Node(pegasus_workflow.Node):
     def __init__(self, executable):
@@ -440,7 +444,8 @@ class File(pegasus_workflow.File):
     c = File("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), directory="/home/spxiwh", extension="xml.gz" )
     '''
     def __init__(self, ifos, exe_name, segs, file_url=None, 
-                 extension=None, directory=None, tags=None):       
+                 extension=None, directory=None, tags=None, 
+                 store_file=True):       
         """
         Create a File instance
         
@@ -530,7 +535,9 @@ class File(pegasus_workflow.File):
         self.cache_entry.workflow_file = self
 
         super(File, self).__init__(basename(self.cache_entry.path))
-        self.storage_path = self.cache_entry.path
+        
+        if store_file:
+            self.storage_path = self.cache_entry.path
 
     @property
     def ifo(self):

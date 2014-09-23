@@ -307,7 +307,10 @@ class File(DataStorage, dax.File):
         node._dax_node.uses(self, link=dax.Link.OUTPUT, register=False, 
                                                         transfer=True)                                                       
     def output_map_str(self):
-        return '%s %s pool="%s"' % (self.name, self.storage_path, 'local') 
+        if self.storage_path:
+            return '%s %s pool="%s"' % (self.name, self.storage_path, 'local')
+        else:
+            raise ValueError('This file does not have a storage path')
         
     def insert_into_dax(self, dax):
         dax.addFile(self)
