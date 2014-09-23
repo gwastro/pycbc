@@ -117,7 +117,7 @@ for j in range(len(args.bins)-1):
         m_dist_full = numpy.append(m_dist, f_distm)
         
         sdist, elow, ehigh = compute_sensitive_distance(f_dist, m_dist_full)
-        #eff, bins, edist = compute_efficiency_bins(f_dist, m_dist, bins=30)
+        eff, bins, edist = compute_efficiency_bins(f_dist, m_dist, bins=30)
 
         dists.append(sdist)
         low_errors.append(elow)
@@ -133,8 +133,3 @@ if args.min_dist:
     pylab.ylim(args.min_dist, args.max_dist)
 pylab.legend()
 pylab.savefig(args.output_file)
-
-
-
-
-

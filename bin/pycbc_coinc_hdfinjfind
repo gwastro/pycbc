@@ -101,7 +101,7 @@ if args.verbose:
 fo = h5py.File(args.output_file, 'w')
 injection_index = 0
 for trigger_file, injection_file in zip(args.trigger_files, args.injection_files):   
-    logging.info('Read in the coinc data')
+    logging.info('Read in the coinc data: %s' % trigger_file)
     f = h5py.File(trigger_file, 'r')
 
     stat1 = f['foreground/stat1'][:]
@@ -125,10 +125,16 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
     found = numpy.where((right-left) == 1)[0]
     missed = numpy.where((right-left) == 0)[0]
     ambiguous = numpy.where((right-left) > 1)[0]
-    logging.info('Found: %s, Missed: %s' % (len(found), len(missed)))
+    missed = numpy.concatenate([missed, ambiguous])
+    logging.info('Found: %s, Missed: %s Ambiguous: %s' % (len(found), len(missed), len(ambiguous)))
 
     if len(ambiguous) > 0:
         logging.warn('More than one coinc trigger found associated to injection') 
+        print inj_time[ambiguous]
+        am = numpy.arange(0, len(inj_time), 1)[left[ambiguous]]
+        bm = numpy.arange(0, len(inj_time), 1)[right[ambiguous]]
+        print time[time_sorting][am]
+        print am, bm
 
     logging.info('Removing injections outside of analyzed time')
     ki = keep_ind(inj_time, ana_start, ana_end)
