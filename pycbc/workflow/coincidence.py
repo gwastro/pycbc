@@ -590,7 +590,7 @@ def setup_interval_coinc_inj(workflow, hdfbank, trig_files,
         group_str = (' %s ' * len(values)) % tuple(values)
         
         coinc_node = findcoinc_exe.create_node(trig_files, [],
-                                           group_id,
+                                           group_str,
                                            tags=[str(group_id)])
         bg_files += coinc_node.output_files
         workflow.add_node(coinc_node)

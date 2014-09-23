@@ -492,8 +492,10 @@ if __name__ == '__main__':
     logging.info('saving coincident triggers')
     f = h5py.File(args.output_file, "w")
     
-    if len(c1) > 0:
-        f.create_dataset('coinc/stat1', data=numpy.concatenate(s1_all))
+    s1_all = numpy.concatenate(s1_all)
+    
+    if len(s1_all) > 0:
+        f.create_dataset('coinc/stat1', data=s1_all)
         f.create_dataset('coinc/decimation_factor', data=numpy.concatenate(dec_all))
         f.create_dataset('coinc/stat2', data=numpy.concatenate(s2_all))
         f.create_dataset('coinc/time1', data=numpy.concatenate(t1_all))
