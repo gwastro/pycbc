@@ -123,7 +123,6 @@ if __name__ == '__main__':
         cid = cluster_coincs(s1, s2, t1, t2, sid, 
                              attrs['timeslide_interval'], 
                              args.cluster_window)
-                         
         s1, s2, t1, t2, sid, tid, dec = s1[cid], s2[cid], t1[cid], t2[cid], sid[cid], tid[cid], dec[cid]
         logging.info("We now have %s triggers" % len(s1))
     

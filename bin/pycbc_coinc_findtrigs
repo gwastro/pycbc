@@ -435,10 +435,7 @@ if __name__ == '__main__':
         det1 = Detector(ifo1)
         det2 = Detector(ifo2)
         logging.info('%s num: %s   %s num: %s' % (ifo1, len(s1), ifo2, len(s2)))
-        time_window = det1.light_travel_time_to_detector(det2)
-
-        if args.coinc_threshold:
-	    time_window += args.coinc_threshold
+        time_window = det1.light_travel_time_to_detector(det2) + args.coinc_threshold
         
         logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))  
         logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))
@@ -501,8 +498,8 @@ if __name__ == '__main__':
         f.create_dataset('coinc/stat2', data=numpy.concatenate(s2_all))
         f.create_dataset('coinc/time1', data=numpy.concatenate(t1_all))
         f.create_dataset('coinc/time2', data=numpy.concatenate(t2_all))
-        f.create_dataset('coinc/timeslide_id', data=numpy.concatenate(template_all))
-        f.create_dataset('coinc/template_id', data=r1)
+        f.create_dataset('coinc/timeslide_id', data=numpy.concatenate(slide_all))
+        f.create_dataset('coinc/template_id', data=numpy.concatenate(template_all))
         f['coinc/analyzed_start'] = start
         f['coinc/analyzed_end'] = end
         f.attrs['timeslide_interval'] = numpy.float64(args.timeslide_interval)
