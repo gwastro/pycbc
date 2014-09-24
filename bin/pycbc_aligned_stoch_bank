@@ -129,7 +129,7 @@ if ethincaParams.doEthinca==False:
 # Ensure consistency of ethinca and bank metric parameters
 tmpltbank.check_ethinca_against_bank_params(ethincaParams, metricParams)
 # Ethinca calculation should currently only be done for non-spin templates
-if ethincaParams.doEthinca and (massRangeParams.maxNSSpinMag>0.0 or
+if ethincaParams.full_ethinca and (massRangeParams.maxNSSpinMag>0.0 or
                                 massRangeParams.maxBHSpinMag>0.0):
     parser.error("Ethinca metric calculation is currently not valid for "
                  "nonzero spins!") 

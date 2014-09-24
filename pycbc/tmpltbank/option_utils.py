@@ -930,25 +930,32 @@ class ethincaParameters(object):
     from the __init__ function, providing directly the options normally
     provided on the command line
     """
-    def __init__(self, pnOrder, cutoff, freqStep, fLow=None, doEthinca=False):
+    def __init__(self, pnOrder, cutoff, freqStep, fLow=None, full_ethinca=False,
+                 time_ethinca=False):
         """
         Initialize an instance of ethincaParameters by providing all
         options directly.  See the insert_ethinca_metric_options() function
         for explanation or e.g. run pycbc_geom_nonspinbank --help
         """
-        self.doEthinca=doEthinca
+        self.full_ethinca=full_ethinca
+        self.time_ethinca=time_ethinca
+        self.doEthinca= self.full_ethinca or self.time_ethinca
         self.pnOrder=pnOrder
         self.cutoff=cutoff
         self.freqStep=freqStep
         # independent fLow for ethinca metric is currently not used
         self.fLow=fLow
         # check that ethinca options make sense
-        if doEthinca and not (
+        if self.full_ethinca and self.time_ethinca:
+            err_msg = "It does not make sense to ask me to do the time "
+            err_msg += "restricted ethinca and also the full ethinca."
+            raise ValueError(err_msg)
+        if self.doEthinca and not (
                 cutoff in pnutils.named_frequency_cutoffs().keys()):
             raise ValueError("Need a valid cutoff formula to calculate "
                              "ethinca! Possible values are "+
                              str(pnutils.named_frequency_cutoffs().keys()))
-        if doEthinca and not freqStep:
+        if self.doEthinca and not freqStep:
             raise ValueError("Need to specify a cutoff frequency step to "
                              "calculate ethinca! (ethincaFreqStep)")
 
@@ -964,7 +971,8 @@ class ethincaParameters(object):
         """
         return cls(opts.ethinca_pn_order, opts.filter_cutoff,
             opts.ethinca_frequency_step, fLow=None,
-            doEthinca=opts.calculate_ethinca_metric)
+            full_ethinca=opts.calculate_ethinca_metric,
+            time_ethinca=opts.calculate_time_metric_components)
 
 def insert_ethinca_metric_options(parser):
     """
@@ -979,7 +987,13 @@ def insert_ethinca_metric_options(parser):
                     "Options used in the calculation of Gamma metric "
                     "components for the ethinca coincidence test and for "
                     "assigning high-frequency cutoffs to templates.")
-    ethincaGroup.add_argument("--calculate-ethinca-metric",
+    ethinca_methods = ethincaGroup.add_mutually_exclusive_group()
+    ethinca_methods.add_argument("--calculate-time-metric-components",
+                    action="store_true", default=False,
+                    help="If given, the ethinca metric will be calculated "
+                    "for only the time component, and stored in the Gamma0 "
+                    "entry of the sngl_inspiral table. OPTIONAL, default=False")
+    ethinca_methods.add_argument("--calculate-ethinca-metric",
                     action="store_true", default=False, 
                     help="If given, the ethinca metric will be calculated "
                     "and stored in the Gamma entries of the sngl_inspiral "
@@ -1022,10 +1036,12 @@ def verify_ethinca_metric_options(opts, parser):
         parser.error("Need a valid cutoff formula to calculate ethinca or "
                      "assign filter f_final values! Possible values are "
                      +str(pnutils.named_frequency_cutoffs().keys()))
-    if opts.calculate_ethinca_metric and not opts.ethinca_frequency_step:
+    if (opts.calculate_ethinca_metric or opts.calculate_time_metric_components)\
+                                           and not opts.ethinca_frequency_step:
         parser.error("Need to specify a cutoff frequency step to calculate "
                      "ethinca!")
-    if not opts.calculate_ethinca_metric and opts.ethinca_pn_order:
+    if not (opts.calculate_ethinca_metric or\
+              opts.calculate_time_metric_components) and opts.ethinca_pn_order:
         parser.error("Can't specify an ethinca PN order if not "
                      "calculating ethinca metric!")
 
@@ -1040,7 +1056,7 @@ def check_ethinca_against_bank_params(ethincaParams, metricParams):
     ethincaParams: instance of ethincaParameters
     metricParams: instance of metricParameters
     """
-    if ethincaParams.doEthinca is True:
+    if ethincaParams.doEthinca:
         if metricParams.f0 != metricParams.fLow:
             raise ValueError("If calculating ethinca metric, f0 and f-low "
                              "must be equal!")
@@ -1068,7 +1084,7 @@ def check_ethinca_against_bank_opts(opts, parser):
     parser : object
         The OptionParser instance.
     """
-    if ethincaParams.doEthinca is True:
+    if ethincaParams.doEthinca:
         if opts.f0 != opts.f_low:
             parser.error("If calculating ethinca metric, f0 and f-low "
                          "must be equal!")
