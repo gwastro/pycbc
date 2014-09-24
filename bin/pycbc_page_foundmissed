@@ -30,16 +30,21 @@ missed = f['missed/after_vetoes'][:]
 ifar = f['found_after_vetoes/ifar'][:]
 
 m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
+
+
 mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 
 # This hardcodes HL search !!!!!, replace with function that takes or/sky/det
 hdist = f['injections/eff_dist_h'][:]
 ldist = f['injections/eff_dist_l'][:]
+s1z = f['injections/spin1z'][:]
+s2z = f['injections/spin2z'][:]
 dec_dist = numpy.maximum(hdist, ldist)
 dist = f['injections/distance'][:]
 m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
 import pycbc.pnutils
 mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
+spin = (m1 * s1z + m2 * s2z) / (m1 + m2)
 
 # For speed don't bother plotting really distant missed points
 missed = missed[dec_dist[missed] < dec_dist[found].max() * 1.1]
@@ -95,6 +100,27 @@ mpld3.plugins.connect(fig, mpld3.plugins.InteractiveLegendPlugin([mpoints, point
                                                                  ['missed', 'found'],
                                                                  alpha_unsel=0.1))
 
-oname = os.path.split(args.output_file)[0] + '/mchirp-' + os.path.split(args.output_file)[1]
+# spin vs dec distance plot
+fig = plot.figure()
+mpoints = plot.scatter(spin[missed], dec_dist[missed], marker='x', 
+                        color='black', label='missed', s=60)
+points = plot.scatter(spin[found], dec_dist[found], c=color, s=40, 
+                        linewidth=0, vmin=0, vmax=1, 
+                         marker='o', label='found')
+plot.xlabel('Effective Spin Z')
+plot.ylabel('Injected Decisive Distance')
+plot.grid()
+plot.subplots_adjust(left=0.1, right=0.8, top=0.9, bottom=0.1)
+urls = pycbc.results.followup.times_to_urls(time[found], 2.0, args.injection_tag)
+murls = pycbc.results.followup.times_to_urls(time[missed], 2.0, args.injection_tag)
+mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt='.5g'))
+mpld3.plugins.connect(fig, ClickLink(points, urls))
+mpld3.plugins.connect(fig, ClickLink(mpoints, murls))
+
+mpld3.plugins.connect(fig, mpld3.plugins.InteractiveLegendPlugin([mpoints, points],
+                                                                 ['missed', 'found'],
+                                                                 alpha_unsel=0.1))
+
+oname = os.path.split(args.output_file)[0] + '/spin-' + os.path.split(args.output_file)[1]
 mpld3.save_html(fig, open(oname, 'w'))
 
