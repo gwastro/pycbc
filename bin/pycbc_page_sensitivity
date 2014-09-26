@@ -105,7 +105,7 @@ values = {}
 values['mchirp'] = mchirp
 values['eta'] = eta
 values['total_mass'] = m1 + m2
-values['spin'] = (m1 * s1z + m2 * s2z) / (m1 + m2)
+values['spin'] = (m1 * s1z + m2 * s2z) / (m1 + m2) * 2
 labels = {}
 labels['mchirp'] = "$ M_{chirp} \in [%5.2f, %5.2f] M_\odot $"
 labels['total_mass'] = "$ M_{total} \in [%5.2f, %5.2f] M_\odot $"
@@ -120,7 +120,8 @@ for j in range(len(args.bins)-1):
     m_dist = dist[missed][mbm]
 
     dists, low_errors, high_errors = [], [], []
-    ifar_values = [.1, .3, 1, 3, 10, 30, 100, 300, 1000, 3000, 10000]
+    ifar_values = 10 ** (numpy.arange(0, 4, .05))
+
     for ifar_value in ifar_values:
         foundg = found[ifar >= ifar_value]
         mbf = numpy.logical_and(binval[foundg] > left, binval[foundg] < right)
@@ -148,7 +149,20 @@ for j in range(len(args.bins)-1):
 
 if args.min_dist:
     pylab.ylim(args.min_dist, args.max_dist)
+    
+def tick_function(val):
+    val = numpy.array(val)
+    from scipy.constants import Julian_year
+    return 1.0 / (val * Julian_year) 
+
 
 pylab.grid()  
 pylab.legend(loc='lower left')
+
+#ax2 = pylab.gca().twiny()
+#ax2.set_xticks(ifar_values)
+#ax2.set_xticklabels(tick_function(ifar_values))
+#ax2.set_xlabel("FAR (1/s)")
+
+
 pylab.savefig(args.output_file)

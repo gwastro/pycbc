@@ -44,7 +44,7 @@ dist = f['injections/distance'][:]
 m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
 import pycbc.pnutils
 mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
-spin = (m1 * s1z + m2 * s2z) / (m1 + m2)
+spin = (m1 * s1z + m2 * s2z) / (m1 + m2) * 2
 
 # For speed don't bother plotting really distant missed points
 missed = missed[dec_dist[missed] < dec_dist[found].max() * 1.1]
@@ -99,6 +99,8 @@ mpld3.plugins.connect(fig, ClickLink(mpoints, murls))
 mpld3.plugins.connect(fig, mpld3.plugins.InteractiveLegendPlugin([mpoints, points],
                                                                  ['missed', 'found'],
                                                                  alpha_unsel=0.1))
+oname = os.path.split(args.output_file)[0] + '/mchirp-' + os.path.split(args.output_file)[1]
+mpld3.save_html(fig, open(oname, 'w'))
 
 # spin vs dec distance plot
 fig = plot.figure()
