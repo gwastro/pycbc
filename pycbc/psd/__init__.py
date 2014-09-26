@@ -174,6 +174,8 @@ def insert_psd_option_group(parser):
     psd_options.add_argument("--psd-output", 
                           help="(Optional) Write PSD to specified file")
 
+    return psd_options
+
 
 def verify_psd_options(opt, parser):
     """Parses the CLI options and verifies that they are consistent and 

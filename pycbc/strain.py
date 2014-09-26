@@ -239,6 +239,8 @@ def insert_strain_option_group(parser):
                         " Format of each line is (all times in secs):"
                         "  gps_time zeros_half_width pad_half_width")
 
+    return data_reading_group
+
 def verify_strain_options(opts, parser):
     """Parses the strain data CLI options and verifies that they are consistent 
     and reasonable.
