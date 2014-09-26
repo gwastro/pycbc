@@ -88,6 +88,20 @@ class IndentedHelpFormatterWithNL(argparse.ArgumentDefaultsHelpFormatter):
             result.append("\n")
         return "".join(result)
 
+def get_options_from_group(option_group):
+    """
+    Take an option group and return all the options that are defined in that
+    group.
+    """
+    option_list = option_group._group_actions
+    command_lines = []
+    for option in option_list:
+        option_strings = option.option_strings
+        for string in option_strings:
+            if string.startswith('--'):
+                command_lines.append(string)
+    return command_lines
+
 def insert_metric_calculation_options(parser):
     """
     Adds the options used to obtain a metric in the bank generation codes to an
@@ -128,6 +142,7 @@ def insert_metric_calculation_options(parser):
     metricOpts.add_argument("--write-metric", action="store_true",
                 default=False, help="If given write the metric components "
                      "to disk as they are calculated.")
+    return metricOpts
 
 def verify_metric_calculation_options(opts, parser):
     """
@@ -439,7 +454,7 @@ def insert_mass_range_option_group(parser,nonSpin=False):
 
     if nonSpin:
         parser.add_argument_group(massOpts)
-        return
+        return massOpts
 
     massOpts.add_argument("--max-ns-spin-mag", action="store", type=float,
                   default=None,
@@ -472,6 +487,7 @@ def insert_mass_range_option_group(parser,nonSpin=False):
                        "to the neutron star spin restriction, regardless of "
                        "mass.  OPTIONAL.  If set, the value of "
                        "--ns-bh-boundary-mass will be ignored.")
+    return massOpts
 
 def verify_mass_range_options(opts, parser, nonSpin=False):
     """
@@ -1018,6 +1034,8 @@ def insert_ethinca_metric_options(parser):
                     "template is assigned the metric for the f_max closest to "
                     "its analytical cutoff formula. OPTIONAL, default=10. "
                     "UNITS=Hz")
+
+    return ethincaGroup
 
 def verify_ethinca_metric_options(opts, parser):
     """
