@@ -21,13 +21,20 @@ Programe for concatenating the output of the geometric aligned bank dagman.
 This will gather all the meta-output files and create a valid template bank
 xml file.
 """
+import logging
 import fileinput
 import glob
-import optparse
+import argparse
+import numpy
 import pycbc.version
 from glue.ligolw import utils
 from pycbc import tmpltbank
 from numpy import loadtxt
+import pycbc
+import pycbc.psd
+import pycbc.strain
+import pycbc.version
+import pycbc.tmpltbank
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
@@ -37,20 +44,87 @@ __program__ = "pycbc_aligned_bank_cat"
 # Read command line options
 usage = """usage: %prog [options]"""
 _desc = __doc__[1:]
-parser = optparse.OptionParser(usage, version=__version__, description=_desc)
-parser.add_option("-i", "--input-glob",  help="file glob the list of paramters")
-parser.add_option("-o", "--output-file",  help="Output file name")
-parser.add_option("-m", "--metadata-file", metavar="METADATA_FILE",
+parser = argparse.ArgumentParser(description=_desc,
+           formatter_class=tmpltbank.IndentedHelpFormatterWithNL)
+
+parser.add_argument("--version", action="version", version=__version__)
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="verbose output")
+parser.add_argument("-i", "--input-glob",
+                    help="file glob the list of paramters")
+parser.add_argument("-o", "--output-file",  help="Output file name")
+parser.add_argument("-m", "--metadata-file", metavar="METADATA_FILE",
                   help="XML file containing the process and process_params "
                   "tables that the aligned_bank code was run with.")
 
-options, args = parser.parse_args()
+# Insert the metric calculation options
+tmpltbank.insert_metric_calculation_options(parser)
+
+# Insert the PSD options
+pycbc.psd.insert_psd_option_group(parser)
+
+# Insert the data reading options
+pycbc.strain.insert_strain_option_group(parser)
+
+# Add the ethinca calculation options
+tmpltbank.insert_ethinca_metric_options(parser)
+
+options = parser.parse_args()
+
+if options.verbose:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
 
 # Sanity check options
 if not options.input_glob:
     parser.error("Must supply --input-glob.")
 if not options.output_file:
     parser.error("Must supply --output-file.")
+
+tmpltbank.verify_metric_calculation_options(options, parser)
+metricParams=tmpltbank.metricParameters.from_argparse(options)
+pycbc.psd.verify_psd_options(options, parser)
+if options.psd_estimation:
+    pycbc.strain.verify_strain_options(options, parser)
+tmpltbank.verify_ethinca_metric_options(options, parser)
+ethincaParams=tmpltbank.ethincaParameters.from_argparse(options)
+# delete default ethinca frequency step if calculation is not done
+if ethincaParams.doEthinca==False:
+    ethincaParams.freqStep = None
+
+# Ensure consistency of ethinca and bank metric parameters
+tmpltbank.check_ethinca_against_bank_params(ethincaParams, metricParams)
+
+# Ethinca calculation should currently only be done for non-spin templates
+if ethincaParams.full_ethinca and (massRangeParams.maxNSSpinMag>0.0 or
+                                massRangeParams.maxBHSpinMag>0.0):
+    parser.error("Ethinca metric calculation is currently not valid for "
+                 "nonzero spins!")
+
+# If we are going to use h(t) to estimate a PSD we need h(t)
+if options.psd_estimation:
+    logging.info("Obtaining h(t) for PSD generation")
+    strain = pycbc.strain.from_cli(options, pycbc.DYN_RANGE_FAC)
+else:
+    strain = None
+
+# Get the PSD using the pycbc interface
+logging.info("Obtaining PSD")
+# Want the number of samples to be a binary number and Nyquist must be above
+# opts.f_upper. All this assumes that 1 / deltaF is a binary number
+nyquistFreq = 2**numpy.ceil(numpy.log2(options.f_upper))
+numSamples = int(round(nyquistFreq / options.delta_f)) + 1
+psd = pycbc.psd.from_cli(options, length=numSamples, delta_f=options.delta_f,
+                         low_frequency_cutoff=options.f_low, strain=strain,
+                         dyn_range_factor=pycbc.DYN_RANGE_FAC)
+metricParams.psd = psd
+
+# Begin by calculating a metric
+logging.info("Calculating metric")
+metricParams = tmpltbank.determine_eigen_directions(metricParams,
+    vary_fmax=ethincaParams.doEthinca, vary_density=ethincaParams.freqStep)
 
 # Read in template params
 # NOTE: Files must be set out so that the columns are:
@@ -67,7 +141,8 @@ if options.metadata_file:
 else:
     outdoc = None
 tmpltbank.output_sngl_inspiral_table(options.output_file, tempBank,
-    None, None, programName=__program__, optDict=options.__dict__,
+    metricParams, ethincaParams, programName=__program__,
+    optDict=options.__dict__,
     outdoc=outdoc, comment="", ifos=[""], version=pycbc.version.git_hash,
     cvs_repository='pycbc/'+pycbc.version.git_branch,
     cvs_entry_time=pycbc.version.date)
