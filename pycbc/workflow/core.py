@@ -538,6 +538,8 @@ class File(pegasus_workflow.File):
         
         if store_file:
             self.storage_path = self.cache_entry.path
+        else:
+            self.storage_path = None
 
     @property
     def ifo(self):
