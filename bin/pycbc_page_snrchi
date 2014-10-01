@@ -6,7 +6,7 @@ import matplotlib
 import numpy, argparse, h5py, os, pylab
     
 def snr_to_chisq(snr, newsnr):
-    return (((newsnr * 2.0 / snr) ** (-6.0)) - 1.0) ** (1.0/3.0)  
+    return (((snr / newsnr) ** (6.0)) * 2.0 - 1.0) ** (1.0/3.0)  
     
 def get_snrchi(trig_files):
     snrs = []
@@ -69,11 +69,16 @@ ichisq = chisq[keep]
 
 pylab.scatter(bsnr, bchisq, label='background', color='blue')
 pylab.scatter(isnr, ichisq, label='injections', color='red')
-r = numpy.arange(4, 100, 1)
+r = numpy.arange(4, 500, .2)
 pylab.plot(r, snr_to_chisq(r, 4))
+r = numpy.arange(5, 500, .2)
 pylab.plot(r, snr_to_chisq(r, 5))
+r = numpy.arange(6, 500, .2)
 pylab.plot(r, snr_to_chisq(r, 6))
+r = numpy.arange(7, 500, .2)
 pylab.plot(r, snr_to_chisq(r, 7))
+r = numpy.arange(8, 500, .2)
+pylab.plot(r, snr_to_chisq(r, 8))
 pylab.legend()
 pylab.show()
 pylab.savefig('snrchi.png')

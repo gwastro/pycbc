@@ -102,6 +102,7 @@ def trigger_timeseries_plot(file_list, ifos, start, end):
         trigs = columns_from_file_list(file_list,
                                        ['snr', 'end_time'],
                                        ifo, start, end)
+        print trigs
         pylab.scatter(trigs['end_time'], trigs['snr'], label=ifo,     
                       color=ifo_color[ifo])
                             

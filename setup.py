@@ -319,6 +319,8 @@ setup (
                'bin/pycbc_page_sensitivity',
                'bin/pycbc_page_banktriggerrate',
                'bin/pycbc_coinc_hdfinjfind',
+               'bin/pycbc_page_snrchi',
+               'bin/pycbc_results_server',
                ],
     packages = [
                'pycbc',

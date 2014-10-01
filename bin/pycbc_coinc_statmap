@@ -45,11 +45,12 @@ def changed(arr):
     return arr[:-1] != arr[1:]
     
 def merge(left, right):
-    overlapped = numpy.where(right[:-1] > left[1:])
+    overlapped = numpy.where(right[:-1] > left[1:])[0]
     for idx in overlapped:
         left[idx + 1] = left[idx]
-        left = numpy.delete(left, idx)
-        right = numpy.delete(right, idx)
+        
+    left = numpy.delete(left, overlapped)
+    right = numpy.delete(right, overlapped)
         
     return left, right
   
@@ -84,9 +85,11 @@ def cluster_coincs(stat1, stat2, time1, time2,
     bin_edges = numpy.where(changed(lbin) + changed(rbin))
     grouped_lbin = lbin[bin_edges]
     grouped_rbin = rbin[bin_edges]  
+    print len(grouped_lbin)
     
     # merge overlapping bins
     grouped_lbin , grouped_rbin = merge(grouped_lbin, grouped_rbin)
+    print len(grouped_lbin)
     
     for l, r in itertools.izip(grouped_lbin, grouped_rbin):  
         unique_slides = numpy.unique(slide[l:r])    
@@ -94,9 +97,9 @@ def cluster_coincs(stat1, stat2, time1, time2,
             slide_locs = numpy.where(slide[l:r] == slide_id)[0]        
             indices.append(slide_locs[nstatsq[l:r][slide_locs].argmax()] + l)
             
-            if slide_id == 0:
-                idx = slide_locs[nstatsq[l:r][slide_locs].argmax()] + l
-                ts = time1[time_sorting[idx]]
+            #if slide_id == 0:
+            #    idx = slide_locs[nstatsq[l:r][slide_locs].argmax()] + l
+            #    ts = time1[time_sorting[idx]]
 
     return numpy.unique(numpy.array(time_sorting[indices], dtype=numpy.uint32))
 
@@ -136,6 +139,7 @@ if __name__ == '__main__':
     s1, s2, t1, t2, sid, tid, dec, attrs, start, end = load_coincs(args.coinc_files)   
     logging.info("We have %s triggers" % len(s1))
 
+    print s1.max(), s2.max()
     if args.cluster_window != 0:
         logging.info("Clustering coinc triggers")
         cid = cluster_coincs(s1, s2, t1, t2, sid, 
@@ -143,7 +147,7 @@ if __name__ == '__main__':
                              args.cluster_window)
         s1, s2, t1, t2, sid, tid, dec = s1[cid], s2[cid], t1[cid], t2[cid], sid[cid], tid[cid], dec[cid]
         logging.info("We now have %s triggers" % len(s1))
-    
+        print s1.max(), s2.max()
     logging.info("Dumping foreground triggers")
     f = h5py.File(args.output_file, "w")
     
