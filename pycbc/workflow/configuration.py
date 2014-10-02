@@ -74,7 +74,7 @@ def add_workflow_command_line_group(parser):
 class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
     """
     This is a sub-class of glue.pipeline.DeepCopyableConfigParser, which lets
-    us add a few additional helper features that are useful in ahope.
+    us add a few additional helper features that are useful in workflows.
     """
     def __init__(self, configFiles=[], overrideTuples=[], parsedFilePath=None):
         """

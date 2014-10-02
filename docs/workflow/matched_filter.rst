@@ -1,14 +1,15 @@
-.. _ahopeinspiralmod:
+.. _workflowinspiralmod:
 
-###############################
-The ahope matched-filter module
-###############################
+###################################
+The workflow matched-filter module
+###################################
 
 =============
 Introduction
 =============
 
-The matched-filter section of ahope is responsible for matched-filtering the
+The matched-filter section of pycbc's workflow module
+is responsible for matched-filtering the
 data against the template bank(s) from the template bank section and generating
 a list of "triggers" for each interferometer. These triggers should be a list
 of any event where the signal to noise ratio and any signal consistency test
@@ -16,7 +17,8 @@ are such that that point should be sent forward to check for coincidence in
 other ifos.
 
 Any single-ifo signal consistency tests (ie. chi-squared tests etc.) should
-be computed in this section and stored within the lists of triggers. Ahope
+be computed in this section and stored within the lists of triggers. The
+workfloe
 does not make any specifications on the output format, but obviously code in
 the next stages of the workflow must know how to process that input.
 
@@ -27,9 +29,10 @@ may be desireable in some cases, so **should** be possible where sensible).
 Options should also not be hardcoded (so there are no cases where an option
 that gets sent to a template bank job also gets sent to a matched-filter job
 without any way to stop that). However, it is possible to duplicate options
-where this is desireable (see :ref:`ahopeconfigparsermod`).
+where this is desireable (see :ref:`workflowconfigparsermod`).
 
-The return from the matched-filter section of ahope is a list of AhopeOutFile
+The return from the matched-filter section of the workflow module
+is a list of File
 objects corresponding to each actual file (one for each job) that will be 
 generated within the workflow. This will be the **only** thing that will be 
 passed from the matched-filter section to the future sections.
@@ -41,29 +44,29 @@ Usage
 Using this module requires a number of things
 
 * A configuration file (or files) containing the information needed to tell this module how to generate GW triggers.
-* An initialized instance of the ahope workflow class, containing the ConfigParser.
+* An initialized instance of the workflow class, containing the ConfigParser.
 * A list of segments to be analysed by this module.
-* An AhopeFileList returned by the templatebank module containing the template banks available for use.
-* An AhopeFileList returned by the datafind module containing the frames that contain the data that will be used to make the template banks.
+* A FileList returned by the templatebank module containing the template banks available for use.
+* A FileList returned by the datafind module containing the frames that contain the data that will be used to make the template banks.
 * If desired an injection file for assessing sensitivity to simulated signals.
  
 The module is then called according to
 
-.. autofunction:: pycbc.ahope.setup_matchedfltr_workflow
+.. autofunction:: pycbc.workflow.setup_matchedfltr_workflow
    :noindex:
 
 -------------------------
 Configuration file setup
 -------------------------
 
-Here we describe the options given in the configuration file used in the ahope
+Here we describe the options given in the configuration file used in the 
 workflow that will be needed in this section
 
-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-[ahope-matchedfilter] section
-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+[workflow-matchedfilter] section
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-The configuration file must have an [ahope-matchedfilter] section, which is used to tell the workflow how to construct (or gather) the template banks. The first option to choose and provide is
+The configuration file must have an [workflow-matchedfilter] section, which is used to tell the workflow how to construct (or gather) the template banks. The first option to choose and provide is
 
 * matchedfilter-method = VALUE
 
@@ -73,13 +76,13 @@ The choices here and their description are as described below
 
 Currently only one option, but others can be added. The subfunctions used are described here
 
-.. autofunction:: pycbc.ahope.setup_matchedfltr_dax_generated
+.. autofunction:: pycbc.workflow.setup_matchedfltr_dax_generated
       :noindex:
 
-When using the setup_matchedfltr_dax_generated sub-module the following additional options apply in the [ahope-matchedfilter] section:
+When using the setup_matchedfltr_dax_generated sub-module the following additional options apply in the [workflow-matchedfilter] section:
 
-* matchedfilter-link-to-tmpltbank - OPTIONAL. If this is given ahope will attempt to ensure a one-to-one correspondence between template banks and matched-filter outputs. This may not work in all cases and should be considered an option to be used for comparing with ihope output.
-* matchedfilter-compatibility-mode - OPTIONAL. If this is given ahope will tile the matched-filter jobs in the same way as inspiral_hipe used to. This requires the link option above and that the template bank and matched-filtering jobs are reading the same amount of data in each job.
+* matchedfilter-link-to-tmpltbank - OPTIONAL. If this is given the workflow module will attempt to ensure a one-to-one correspondence between template banks and matched-filter outputs. This may not work in all cases and should be considered an option to be used for comparing with ihope output.
+* matchedfilter-compatibility-mode - OPTIONAL. If this is given the workflow module will tile the matched-filter jobs in the same way as inspiral_hipe used to. This requires the link option above and that the template bank and matched-filtering jobs are reading the same amount of data in each job.
 * analysis-length = LENGTH_IN_SECONDS (*NOT* used for lalapps_inspiral) - REQUIRED. The amount of time in seconds that will be matched-filtered. Note that triggers may not be produced for the entire span of time. 
 
 $$$$$$$$$$$$$$$
@@ -94,7 +97,8 @@ A section, in this case [inspiral], will be used to specify the constant command
 Supported inspiral trigger generators and instructions for using them
 -----------------------------------------------------------------------
 
-The following inspiral trigger generators are currently supported in ahope
+The following inspiral trigger generators are currently supported in pycbc's
+workflow module
 
 * lalapps_inspiral
 * pycbc_inspiral
@@ -107,11 +111,11 @@ $$$$$$$$$$$$$$$$$$$$$$$
 
 Lalapps_inspiral is the legacy C-code that has been used for years to find gravitational-wave triggers in  It is a little inflexible in terms of output file names.
 
-lalapps_inspiral is supported in ahope via a wrapper script lalapps_inspiral_ahope, this allows us to specify all the frame files and the output file name directly.
+lalapps_inspiral is supported in the workflow module via a wrapper script lalapps_inspiral_ahope, this allows us to specify all the frame files and the output file name directly.
 
 .. command-output:: lalapps_inspiral --help
 
-Of these options ahope or the wrapper script will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
+Of these options the workflow module or the wrapper script will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
 
 * --gps-start-time
 * --gps-end-time
@@ -136,7 +140,7 @@ pycbc_inspiral is pycbc's inspiral matched-filtering program. Designed as a repl
 
 .. command-output:: pycbc_inspiral --help
 
-Of these options ahope will automatically add the following, which are unique fo
+Of these options the workflow module will automatically add the following, which are unique fo
 r each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
 
 * --gps-start-time
@@ -152,12 +156,12 @@ All other options must be provided in the configuration file. Here is an example
 
 
 ==========================================
-:mod:`pycbc.ahope.matchedfltr_utils` Module
+:mod:`pycbc.workflow.matched_filter` Module
 ==========================================
 
 This is complete documentation of this module's code
 
-.. automodule:: pycbc.ahope.matchedfltr_utils
+.. automodule:: pycbc.workflow.matched_filter
     :noindex:
     :members:
     :undoc-members:

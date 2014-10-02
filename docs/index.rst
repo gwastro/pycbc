@@ -48,7 +48,7 @@ Executable/Package documentation:
 .. toctree::
    :maxdepth: 1
 
-   ahope
+   workflow
    tmpltbank
    frame
    banksim

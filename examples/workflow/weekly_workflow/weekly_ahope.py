@@ -109,7 +109,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                            output_dir, injection_file=inj_file,
                                            tags = [tag])
     all_files.extend(insps)
-    coincs = _workflow.setup_coincidence_workflow(workflow, segsFileList,
+    coincs, others = _workflow.setup_coincidence_workflow(workflow, segsFileList,
                                         timeSlideFiles, insps, output_dir,
                                         tags=[tag], maxVetoCat=5,
                                         timeSlideTags=timeSlideTags)

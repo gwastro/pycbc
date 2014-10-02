@@ -1,14 +1,15 @@
-.. _ahopecoincmod:
+.. _workflowcoincmod:
 
 ##################################
-The ahope coincidence module
+The workflow coincidence module
 ##################################
 
 =============
 Introduction
 =============
 
-The coincidence module of ahope is responsible for performing coincidence
+The coincidence module of the workflow module is responsible for
+performing coincidence
 between single detector triggers to determine if any of these triggers are
 coincident and potential gravitational wave candidates. This can be run on
 foreground triggers, but can also be run with time shifts included between
@@ -19,7 +20,7 @@ The standard method is ethinca coincidence over masses and time between sets
 of triggers, however other methods include "exact mass" coincidence, and
 possibly coincidence algorithms including the effects of spin.
 
-The return from the coincidence module of ahope if a list of AhopeOutFile
+The return from the coincidence module is a list of pycbc.workflow.File
 objects corresponding to the files holding the lists of coincidence triggers.
 
 ======
@@ -29,28 +30,28 @@ Usage
 Using this module requires a number of things
 
 * A configuration file (or files) containing the information needed to tell this module how to determine coincident GW triggers.
-* An initialized instance of the ahope workflow class, containing the ConfigParser.
-* An AhopeFileList returned by the matchedfilter module containing the single detector triggers to perform coincidence over.
-* An AhopeFileList of the data quality veto files if they are going to be included during the coincidence stage.
-* An AhopeFileList of the time slides that will be performed. If you are doing no time slides a "no time slides" time slide file still needs to be provided.
+* An initialized instance of the Workflow class, containing the ConfigParser.
+* A FileList returned by the matchedfilter module containing the single detector triggers to perform coincidence over.
+* A FileList of the data quality veto files if they are going to be included during the coincidence stage.
+* A FileList of the time slides that will be performed. If you are doing no time slides a "no time slides" time slide file still needs to be provided.
 
 This module is then called according to
 
-.. autofunction:: pycbc.ahope.setup_coincidence_workflow
+.. autofunction:: pycbc.workflow.setup_coincidence_workflow
    :noindex:
 
 -------------------------
 Configuration file setup
 -------------------------
 
-Here we describe the options given in the configuration file used in the ahope
+Here we describe the options given in the configuration file used in the
 workflow that will be needed in this section
 
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-[ahope-coincidence] section
+[workflow-coincidence] section
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-The configuration file must have an [ahope-coincidence], which is used to provide instructions to ahope on how to set up the coincidence stage. The first option to choose and provide is
+The configuration file must have a [workflow-coincidence] section, which is used to provide instructions to the workflow module on how to set up the coincidence stage. The first option to choose and provide is
 
 * coincidence-method = VALUE
 
@@ -60,13 +61,21 @@ The choices here and their description are as described below
 
 Currently only one option, but others can be added. The subfunctions used are described here
 
-.. autofunction:: pycbc.ahope.setup_coincidence_workflow_ligolw_thinca
+.. autofunction:: pycbc.workflow.setup_coincidence_workflow_ligolw_thinca
    :noindex:
 
-If exact-match coincidence is used, then the coincidence jobs can be parallelized to reduce the memory footprint. This requires that the inspiral jobs also use a split bank. To parallelize the coincidence, add under [ahope-coincidence]
+If exact-match coincidence is used, then the coincidence jobs can be parallelized to reduce the memory footprint. This requires that the inspiral jobs also use a split bank. To parallelize the coincidence, add under [workflow-coincidence]
 
 * coincidence-exact-match-parallelize =
 
+If it is desired to use the gstlal-likelihood-based post-processing, which requires exact-match, then the option
+
+* coincidence-write-likelihood =
+
+Can be added, which instructs the code to write gstlal-style likelihood files,
+and will convert output to gstlal format. At the moment this means that the
+chisq column is replaced with chisq / dof (hopefully an agreement can be made
+so that the two write the *same* format files.
 
 $$$$$$$$$$$$$$$
 [executables]
@@ -83,7 +92,7 @@ A section, in this case [llwadd] and [thinca], will be used to specify the const
 Supported coincidence codes and instructions for using them
 -----------------------------------------------------------------------
 
-The following coincidence codes are currently supported in ahope
+The following coincidence codes are currently supported
 
 * ligolw_add followed by ligolw_sstinca
 
@@ -97,7 +106,7 @@ This code simply adds together the input files in preparation for ligolw_sstinca
 
 .. command-output:: ligolw_add --help
 
-Of these options ahope will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
+Of these options the workflow module will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
 
 * --input-cache (this will not be used and should not be used)
 * --output
@@ -111,7 +120,7 @@ This code is responsible for identifying coincidences and applying and vetoes th
 
 .. command-output:: ligolw_sstinca --help
 
-Of these options ahope will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
+Of these options the workflow will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
 
 * Positional arguments supplying the input file
 * --vetoes-name

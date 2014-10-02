@@ -88,6 +88,20 @@ class IndentedHelpFormatterWithNL(argparse.ArgumentDefaultsHelpFormatter):
             result.append("\n")
         return "".join(result)
 
+def get_options_from_group(option_group):
+    """
+    Take an option group and return all the options that are defined in that
+    group.
+    """
+    option_list = option_group._group_actions
+    command_lines = []
+    for option in option_list:
+        option_strings = option.option_strings
+        for string in option_strings:
+            if string.startswith('--'):
+                command_lines.append(string)
+    return command_lines
+
 def insert_metric_calculation_options(parser):
     """
     Adds the options used to obtain a metric in the bank generation codes to an
@@ -125,6 +139,10 @@ def insert_metric_calculation_options(parser):
                      "space metric:  integrals of the form \int F(f) df "
                      "are approximated as \sum F(f) delta_f.  REQUIRED. "
                      "UNITS=Hz")
+    metricOpts.add_argument("--write-metric", action="store_true",
+                default=False, help="If given write the metric components "
+                     "to disk as they are calculated.")
+    return metricOpts
 
 def verify_metric_calculation_options(opts, parser):
     """
@@ -147,7 +165,7 @@ def verify_metric_calculation_options(opts, parser):
     if not opts.delta_f:
         parser.error("Must supply --delta-f")
 
-class metricParameters:
+class metricParameters(object):
     """
     This class holds all of the options that are parsed in the function
     insert_metric_calculation_options
@@ -160,7 +178,8 @@ class metricParameters:
     _evals = None
     _evecs = None
     _evecsCV = None
-    def __init__(self, pnOrder, fLow, fUpper, deltaF, f0=70):
+    def __init__(self, pnOrder, fLow, fUpper, deltaF, f0=70,
+                 write_metric=False):
         """
         Initialize an instance of the metricParameters by providing all
         options directly. See the help message associated with any code
@@ -173,6 +192,7 @@ class metricParameters:
         self.deltaF=deltaF
         self.f0=f0
         self._moments=None
+        self.write_metric=write_metric
 
     @classmethod
     def from_argparse(cls, opts):
@@ -185,7 +205,7 @@ class metricParameters:
         have already been called before initializing the class.
         """
         return cls(opts.pn_order, opts.f_low, opts.f_upper, opts.delta_f,\
-                   f0=opts.f0)
+                   f0=opts.f0, write_metric=opts.write_metric)
 
     @property
     def psd(self):
@@ -262,7 +282,7 @@ class metricParameters:
         in evecs, are needed to rotate the
         coordinate system to one in which the metric is the identity matrix.
         """
-        if not self._evals:
+        if self._evals is None:
             errMsg = "The metric eigenvalues have not been set in the "
             errMsg += "metricParameters instance."
             raise ValueError(errMsg)
@@ -270,6 +290,10 @@ class metricParameters:
 
     @evals.setter
     def evals(self, inEvals):
+        if self.write_metric:
+            for frequency in inEvals.keys():
+                numpy.savetxt("metric_evals_%d.dat" %(frequency),
+                              inEvals[frequency])
         self._evals = inEvals
 
     @property
@@ -282,7 +306,7 @@ class metricParameters:
         in evals, are needed to rotate the
         coordinate system to one in which the metric is the identity matrix.
         """
-        if not self._evecs:
+        if self._evecs is None:
             errMsg = "The metric eigenvectors have not been set in the "
             errMsg += "metricParameters instance."
             raise ValueError(errMsg)
@@ -290,18 +314,22 @@ class metricParameters:
 
     @evecs.setter
     def evecs(self, inEvecs):
+        if self.write_metric:
+            for frequency in inEvecs.keys():
+                numpy.savetxt("metric_evecs_%d.dat" %(frequency),
+                              inEvecs[frequency])
         self._evecs = inEvecs
 
     @property
     def metric(self):
         """
-        The eigenvectors of the parameter space.
+        The metric of the parameter space.
         This is a Dictionary of numpy.matrix
         Each entry in the dictionary is as described under evals.
         Each numpy.matrix contains the metric of the parameter space in the
         Lambda_i coordinate system.
         """
-        if not self._metric:
+        if self._metric is None:
             errMsg = "The metric eigenvectors have not been set in the "
             errMsg += "metricParameters instance."
             raise ValueError(errMsg)
@@ -309,7 +337,35 @@ class metricParameters:
 
     @metric.setter
     def metric(self, inMetric):
+        if self.write_metric:
+            for frequency in inMetric.keys():
+                numpy.savetxt("metric_components_%d.dat" %(frequency),
+                              inMetric[frequency])
         self._metric = inMetric
+
+    @property
+    def time_unprojected_metric(self):
+        """
+        The metric of the parameter space with the time dimension unprojected.
+        This is a Dictionary of numpy.matrix
+        Each entry in the dictionary is as described under evals.
+        Each numpy.matrix contains the metric of the parameter space in the
+        Lambda_i, t coordinate system. The time components are always in the
+        last [-1] position in the matrix.
+        """
+        if self._time_unprojected_metric is None:
+            err_msg = "The time unprojected metric has not been set in the "
+            err_msg += "metricParameters instance."
+            raise ValueError(err_msg)
+        return self._time_unprojected_metric
+
+    @time_unprojected_metric.setter
+    def time_unprojected_metric(self, inMetric):
+        if self.write_metric:
+            for frequency in inMetric.keys():
+                numpy.savetxt("metric_timeunprojected_%d.dat" %(frequency),
+                              inMetric[frequency])
+        self._time_unprojected_metric = inMetric
 
     @property
     def evecsCV(self):
@@ -321,7 +377,7 @@ class metricParameters:
         in evals, are needed to rotate the
         coordinate system to one in which the metric is the identity matrix.
         """
-        if not self._evecsCV:
+        if self._evecsCV is None:
             errMsg = "The covariance eigenvectors have not been set in the "
             errMsg += "metricParameters instance."
             raise ValueError(errMsg)
@@ -329,7 +385,12 @@ class metricParameters:
 
     @evecsCV.setter
     def evecsCV(self, inEvecs):
+        if self.write_metric:
+            for frequency in inEvecs.keys():
+                numpy.savetxt("covariance_evecs_%d.dat" %(frequency),
+                              inEvecs[frequency])
         self._evecsCV = inEvecs
+
 
 def insert_mass_range_option_group(parser,nonSpin=False):
     """
@@ -393,7 +454,7 @@ def insert_mass_range_option_group(parser,nonSpin=False):
 
     if nonSpin:
         parser.add_argument_group(massOpts)
-        return
+        return massOpts
 
     massOpts.add_argument("--max-ns-spin-mag", action="store", type=float,
                   default=None,
@@ -412,12 +473,12 @@ def insert_mass_range_option_group(parser,nonSpin=False):
     # default value of ns-bh-boundary-mass.
     action = massOpts.add_mutually_exclusive_group(required=False)
     action.add_argument("--ns-bh-boundary-mass", action='store', type=float,
-                  default=3,
                   help="Mass boundary between neutron stars and black holes. "
                        "Components below this mass are considered neutron "
                        "stars and are subject to the neutron star spin limits. "
                        "Components at/above are subject to the black hole spin "
-                       "limits.  OPTIONAL, default=3.  UNITS=Solar mass")
+                       "limits.  OPTIONAL, default=%f.  UNITS=Solar mass" \
+                       % massRangeParameters.default_nsbh_boundary_mass)
     action.add_argument("--nsbh-flag", action="store_true", default=False,
                   help="Set this flag if generating a bank that contains only "
                        "systems with 1 black hole and 1 neutron star. With "
@@ -426,6 +487,7 @@ def insert_mass_range_option_group(parser,nonSpin=False):
                        "to the neutron star spin restriction, regardless of "
                        "mass.  OPTIONAL.  If set, the value of "
                        "--ns-bh-boundary-mass will be ignored.")
+    return massOpts
 
 def verify_mass_range_options(opts, parser, nonSpin=False):
     """
@@ -706,7 +768,8 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
         if opts.nsbh_flag:
             parser.error("Must supply --max_ns_spin_mag with --nsbh-flag")
         # Can ignore this if no NSs will be generated
-        elif opts.min_mass2 < opts.ns_bh_boundary_mass:
+        elif opts.min_mass2 < (opts.ns_bh_boundary_mass or
+                massRangeParameters.default_nsbh_boundary_mass):
             parser.error("Must supply --max-ns-spin-mag for the chosen"
                          " value of --min_mass2")
         else:
@@ -715,7 +778,8 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
         if opts.nsbh_flag:
             parser.error("Must supply --max_bh_spin_mag with --nsbh-flag")
         # Can ignore this if no BHs will be generated
-        if opts.max_mass1 >= opts.ns_bh_boundary_mass:
+        if opts.max_mass1 >= (opts.ns_bh_boundary_mass or
+                massRangeParameters.default_nsbh_boundary_mass):
             parser.error("Must supply --max-bh-spin-mag for the chosen"
                          " value of --max_mass1")
         else:
@@ -729,11 +793,14 @@ class massRangeParameters(object):
     from the __init__ function providing directly the options normally
     provided on the command line
     """
+
+    default_nsbh_boundary_mass = 3.
+
     def __init__(self, minMass1, maxMass1, minMass2, maxMass2,
                  maxNSSpinMag=0, maxBHSpinMag=0, maxTotMass=None,
                  minTotMass=None, maxEta=None, minEta=0, 
                  max_chirp_mass=None, min_chirp_mass=None, 
-                 ns_bh_boundary_mass=3.0, nsbhFlag=False):
+                 ns_bh_boundary_mass=None, nsbhFlag=False):
         """
         Initialize an instance of the massRangeParameters by providing all
         options directly. See the help message associated with any code
@@ -761,7 +828,8 @@ class massRangeParameters(object):
         self.max_chirp_mass = max_chirp_mass
         self.min_chirp_mass = min_chirp_mass
         self.minEta=minEta
-        self.ns_bh_boundary_mass = ns_bh_boundary_mass
+        self.ns_bh_boundary_mass = (
+            ns_bh_boundary_mass or self.default_nsbh_boundary_mass)
         self.nsbhFlag=nsbhFlag
 
         # FIXME: This may be inaccurate if Eta limits are given
@@ -870,7 +938,7 @@ class massRangeParameters(object):
 
         return 0
 
-class ethincaParameters:
+class ethincaParameters(object):
     """
     This class holds all of the options that are parsed in the function
     insert_ethinca_metric_options
@@ -878,25 +946,32 @@ class ethincaParameters:
     from the __init__ function, providing directly the options normally
     provided on the command line
     """
-    def __init__(self, pnOrder, cutoff, freqStep, fLow=None, doEthinca=False):
+    def __init__(self, pnOrder, cutoff, freqStep, fLow=None, full_ethinca=False,
+                 time_ethinca=False):
         """
         Initialize an instance of ethincaParameters by providing all
         options directly.  See the insert_ethinca_metric_options() function
         for explanation or e.g. run pycbc_geom_nonspinbank --help
         """
-        self.doEthinca=doEthinca
+        self.full_ethinca=full_ethinca
+        self.time_ethinca=time_ethinca
+        self.doEthinca= self.full_ethinca or self.time_ethinca
         self.pnOrder=pnOrder
         self.cutoff=cutoff
         self.freqStep=freqStep
         # independent fLow for ethinca metric is currently not used
         self.fLow=fLow
         # check that ethinca options make sense
-        if doEthinca and not (
+        if self.full_ethinca and self.time_ethinca:
+            err_msg = "It does not make sense to ask me to do the time "
+            err_msg += "restricted ethinca and also the full ethinca."
+            raise ValueError(err_msg)
+        if self.doEthinca and not (
                 cutoff in pnutils.named_frequency_cutoffs().keys()):
             raise ValueError("Need a valid cutoff formula to calculate "
                              "ethinca! Possible values are "+
                              str(pnutils.named_frequency_cutoffs().keys()))
-        if doEthinca and not freqStep:
+        if self.doEthinca and not freqStep:
             raise ValueError("Need to specify a cutoff frequency step to "
                              "calculate ethinca! (ethincaFreqStep)")
 
@@ -912,7 +987,8 @@ class ethincaParameters:
         """
         return cls(opts.ethinca_pn_order, opts.filter_cutoff,
             opts.ethinca_frequency_step, fLow=None,
-            doEthinca=opts.calculate_ethinca_metric)
+            full_ethinca=opts.calculate_ethinca_metric,
+            time_ethinca=opts.calculate_time_metric_components)
 
 def insert_ethinca_metric_options(parser):
     """
@@ -927,7 +1003,13 @@ def insert_ethinca_metric_options(parser):
                     "Options used in the calculation of Gamma metric "
                     "components for the ethinca coincidence test and for "
                     "assigning high-frequency cutoffs to templates.")
-    ethincaGroup.add_argument("--calculate-ethinca-metric",
+    ethinca_methods = ethincaGroup.add_mutually_exclusive_group()
+    ethinca_methods.add_argument("--calculate-time-metric-components",
+                    action="store_true", default=False,
+                    help="If given, the ethinca metric will be calculated "
+                    "for only the time component, and stored in the Gamma0 "
+                    "entry of the sngl_inspiral table. OPTIONAL, default=False")
+    ethinca_methods.add_argument("--calculate-ethinca-metric",
                     action="store_true", default=False, 
                     help="If given, the ethinca metric will be calculated "
                     "and stored in the Gamma entries of the sngl_inspiral "
@@ -953,6 +1035,8 @@ def insert_ethinca_metric_options(parser):
                     "its analytical cutoff formula. OPTIONAL, default=10. "
                     "UNITS=Hz")
 
+    return ethincaGroup
+
 def verify_ethinca_metric_options(opts, parser):
     """
     Checks that the necessary options are given for the ethinca metric
@@ -970,10 +1054,12 @@ def verify_ethinca_metric_options(opts, parser):
         parser.error("Need a valid cutoff formula to calculate ethinca or "
                      "assign filter f_final values! Possible values are "
                      +str(pnutils.named_frequency_cutoffs().keys()))
-    if opts.calculate_ethinca_metric and not opts.ethinca_frequency_step:
+    if (opts.calculate_ethinca_metric or opts.calculate_time_metric_components)\
+                                           and not opts.ethinca_frequency_step:
         parser.error("Need to specify a cutoff frequency step to calculate "
                      "ethinca!")
-    if not opts.calculate_ethinca_metric and opts.ethinca_pn_order:
+    if not (opts.calculate_ethinca_metric or\
+              opts.calculate_time_metric_components) and opts.ethinca_pn_order:
         parser.error("Can't specify an ethinca PN order if not "
                      "calculating ethinca metric!")
 
@@ -988,7 +1074,7 @@ def check_ethinca_against_bank_params(ethincaParams, metricParams):
     ethincaParams: instance of ethincaParameters
     metricParams: instance of metricParameters
     """
-    if ethincaParams.doEthinca is True:
+    if ethincaParams.doEthinca:
         if metricParams.f0 != metricParams.fLow:
             raise ValueError("If calculating ethinca metric, f0 and f-low "
                              "must be equal!")
@@ -1016,7 +1102,7 @@ def check_ethinca_against_bank_opts(opts, parser):
     parser : object
         The OptionParser instance.
     """
-    if ethincaParams.doEthinca is True:
+    if ethincaParams.doEthinca:
         if opts.f0 != opts.f_low:
             parser.error("If calculating ethinca metric, f0 and f-low "
                          "must be equal!")

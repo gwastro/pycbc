@@ -1,4 +1,4 @@
-import ctypes, functools
+import ctypes, functools, pycbc.libutils
 from pycbc.types import zeros
 
 def memoize(obj):
@@ -12,9 +12,9 @@ def memoize(obj):
         return cache[key]
     return memoizer
 
-
-lib_name = 'libmkl_rt.so'
-lib = ctypes.cdll.LoadLibrary(lib_name)
+lib = pycbc.libutils.get_ctypes_library('mkl_rt', [])
+if lib is None:
+    raise ImportError
 
 #MKL constants  taken from mkl_df_defines.h
 DFTI_FORWARD_DOMAIN = 0

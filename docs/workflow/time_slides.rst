@@ -1,21 +1,22 @@
-.. _ahopetimeslidesmod:
+.. _workflowtimeslidesmod:
 
-########################################
-The ahope time-slide generation module
-########################################
+##########################################
+The workflow time-slide generation module
+##########################################
 
 ==============
 Introduction
 ==============
 
-The time-slide generation module of ahope is responsible for generating time
+The time-slide generation sub-module of pycbc's workflow module
+is responsible for generating time
 slide input files, which are used to tell analysis codes which time slides they
 need to perform when estimating the background using the time-slides method.
 An example of where this is needed is when using ligolw_thinca a time slide xml file is required as input, even if no time slides are being performed (in that case the time slide file corresponds to no-lags only). The module can either
 generate time slide files at runtime, within the workflow or take pregenerated
 input files.
 
-The return of the time-slide generation module is an AhopeFileList of the time-slide files generated/supplied to this module. It is possible to call this module multiple times by using the tags key-word argument, but we have not foreseen
+The return of the time-slide generation module is an pycbc FileList of the time-slide files generated/supplied to this module. It is possible to call this module multiple times by using the tags key-word argument, but we have not foreseen
 a case where this would be needed. One call should generate all needed time-slide input files.
 
 =======
@@ -25,24 +26,24 @@ Usage
 Using this module requires a number of things
 
 * A configuration file (or files) containing the information needed to tell this module how to generate (or gather) the template banks (described below).
-* An initialized instance of the ahope workflow class, containing the ConfigParser.
+* An initialized instance of the pycbc Workflow class, containing the ConfigParser.
 
 This module is then called according to
 
-.. autofunction:: pycbc.ahope.setup_timeslides_workflow
+.. autofunction:: pycbc.workflow.setup_timeslides_workflow
    :noindex:
 
 Configuration file setup
 -------------------------
 
-Here we describe the options given in the configuration file used in the ahope
+Here we describe the options given in the configuration file used in the
 workflow that will be needed in this section
 
-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-[ahope-timeslides] section
-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+[workflow-timeslides] section
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-The configuration file must have an [ahope-timeslides] section, which is used to
+The configuration file must have a [workflow-timeslides] section, which is used to
 tell the workflow how to construct (or gather) the time slide files. The first option to choose and provide is
 
 * timeslides-method = VALUE
@@ -71,7 +72,7 @@ In this section, if not using PREGENERATED you need to supply the executable tha
 
 timeslides = /path/to/pycbc_timeslides
 
-the option, in this case 'timeslides', will be used to specify the constant command line options that are sent to all pycbc_timeslides jobs. This is done in the [timeslides] section and the specific options for each executable is discussed below. The tag 'timeslides' is taken from the ahope-timeslides section of the configuration file, as described above.
+the option, in this case 'timeslides', will be used to specify the constant command line options that are sent to all pycbc_timeslides jobs. This is done in the [timeslides] section and the specific options for each executable is discussed below. The tag 'timeslides' is taken from the workflow-timeslides section of the configuration file, as described above.
 
 **IMPORTANT** the time slides tag name, (e.g. 'timeslides'), is used to identify which time slide files are to be produced. The module will search for modules called [timeslides-XXXX] and generate one time slide file for every sub-section using XXXX as a tag.
 
@@ -79,13 +80,13 @@ When using the IN_WORKFLOW or AT_RUNTIME options, value pairs in [timeslides-XXX
 particular time slide job. These options will be directly supplied to the
 executable being used to generate the file.
 
-**PLEASE NOTE:** When using PREGENERATED the time slide names are still identified by looking in the "tisi-XXXX" sections (a path in [executables] is not needed). These sections will be empty in this case. Also note that as XXXX is used as a tag you can use [ahope-timeslides-XXXX] section to supply unique pregenerated time slide files. You can also use this to supply a mix of pregenerated, and not-pregenerated time slide files.
+**PLEASE NOTE:** When using PREGENERATED the time slide names are still identified by looking in the "tisi-XXXX" sections (a path in [executables] is not needed). These sections will be empty in this case. Also note that as XXXX is used as a tag you can use [workflow-timeslides-XXXX] section to supply unique pregenerated time slide files. You can also use this to supply a mix of pregenerated, and not-pregenerated time slide files.
 
 ----------------------------------------------------------------
 Supported time slideexecutables and instructions for using them
 ----------------------------------------------------------------
 
-The following time slide generation executables are currently supported in ahope
+The following time slide generation executables are currently supported
 
 * pycbc_timeslides
 
@@ -111,22 +112,19 @@ and for zero-lag only
 
    /home/spxiwh/lscsoft_git/executables_master/bin/pycbc_timeslides --output-files /home/spxiwh/lscsoft_git/src/pycbc/examples/ahope/weekly_ahope/961585543-961671944/time_slide_files/H1L1V1-TISI_ZEROLAG-961585543-86401.xml.gz --tisi-slides H1=0:0:0 L1=0:0:0 V1=0:0:0
 
-The following options are added by ahope and **must not** be given in the configuration file
+The following options are added by the workflow module and **must not** be given in the configuration file
 
 * --output-files
 
 ============================================
-:mod:`pycbc.ahope.timeslides_utils` Module
+:mod:`pycbc.workflow.timeslides` Module
 ============================================
 
 This is complete documentation of this module's code
 
-.. automodule:: pycbc.ahope.timeslides_utils
+.. automodule:: pycbc.workflow.timeslides
     :noindex:
     :members:
     :undoc-members:
     :show-inheritance:
-
-
-
 

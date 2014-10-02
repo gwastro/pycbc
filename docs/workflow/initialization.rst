@@ -1,20 +1,21 @@
-.. _ahopeconfigparsermod:
+.. _workflowconfigparsermod:
 
-#########################################################
-Ahope's configuration file(s) and command line interface
-#########################################################
+#########################################################################
+Pycbc's workflow module configuration file(s) and command line interface
+#########################################################################
 
 ============
 Introduction
 ============
 
-Ahope at its core is designed to be flexible and allow the user to do what they
+The workflow module at its core is designed to be flexible and allow the user
+to do what they
 want to create the pipeline that they want to run. One of the ways to allow
 this is by having a, sometimes large, configuration file that serves two
 purposes
 
-* Tell ahope, the workflow planner, how to run the various stages specified in
-  the top-level ahope script.
+* Tell the workflow planner, how to run the various stages specified in
+  the top-level workflow script.
 * Specify, as completely as possible, all command line options that will be
   sent to every executable that is run in the pipeline. Tags are used to
   identify options sent a subset of jobs, as described more fully later.
@@ -27,18 +28,18 @@ supplied, or overridden, on the command line.
 
 Ihope used similar .ini files in every analysis. However, it was noted that these files grew huge and it becomes difficult for a novice to understand which options can be safely changed and which ones to leave well alone. It is also difficult so see which options are going to which job, inspiral.c for example looks for options in > 10 places and it isn't clear where those places are.
 
-To attempt to solve this ahope has implemented a number of features
+To attempt to solve this the workflow module has a number of features
 
 * Multiple configuration files: You can now supply multiple configuration files to, for e.g. identify a file containing only injection generation parameters, which a user may want to change often. It is even possible to have sections split across files, so one could have a configuration file of key options, ones that might be changed, and another file of "leave alone" options.
-* Direct command line options: In ahope command line options are not drawn from obscure sections, they correspond one-to-one with the executables. Options in the [inspiral] section will be sent to the inspiral executable and *only* to the inspiral executable.
+* Direct command line options: In the workflow module command line options are not drawn from obscure sections, they correspond one-to-one with the executables. Options in the [inspiral] section will be sent to the inspiral executable and *only* to the inspiral executable.
 * Combined sections: To avoid the issue of specifiying common options repeatedly we have allowed the ability of combined sections. So if you have two executables with a large set of shared options you can specify a [exe1&exe2] section to provide the shared options and [exe1] and [exe2] sections to supply the individual options.
 * Interpolation: As in configparser 3.0+ we have the ability to specify an option in one place and use an interpolation string to also provide it in other places, this is described below.
-* Tags/subsections: In some cases options may only need to be sent to certain jobs, or you may want to call individual modules multiple times and do different things. To accomodate this ahope includes a tagging (or subsections) system to provide options to only a subset of jobs, or to a specific call to a module. For example, options in [inspiral] are sent to all inspiral jobs, options in [inspiral-h1] would be sent to inspiral jobs running only on h1 data.
-* Executable expanding: Ahope includes macros to enable the user to more easily specify executable paths. For example $(which:exe1} will be expanded to the location of exe1 in the users path automatically.
+* Tags/subsections: In some cases options may only need to be sent to certain jobs, or you may want to call individual modules multiple times and do different things. To accomodate this the workflow module includes a tagging (or subsections) system to provide options to only a subset of jobs, or to a specific call to a module. For example, options in [inspiral] are sent to all inspiral jobs, options in [inspiral-h1] would be sent to inspiral jobs running only on h1 data.
+* Executable expanding: The workflow module includes macros to enable the user to more easily specify executable paths. For example $(which:exe1} will be expanded to the location of exe1 in the users path automatically.
 
-most of these features will be applied directly after reading in the configuration file. Ahope will then dump the parser configuration back to disk so the user/reviewer can more easily see what the analysis is actually doing.
+most of these features will be applied directly after reading in the configuration file. The workflow module will then dump the parser configuration back to disk so the user/reviewer can more easily see what the analysis is actually doing.
 
-In this page we describe the layout of the ahope .ini configuration file and what the various sections mean, how they are used, and how an ini file should be set out. 
+In this page we describe the layout of the workflow module .ini configuration file and what the various sections mean, how they are used, and how an ini file should be set out. 
 
 **NOTE**: A number of features that have been put in here, are available in the python 3.X version of ConfigParser. In addition this version also has a duplicate option check. In python 2.X if I do::
 
@@ -53,7 +54,8 @@ it will set the value to False, and proceed happily. THERE IS NO WAY TO CATCH TH
 Supplying the config file on the command line and overriding options
 ======================================================================
 
-Ahope only uses two command line options, one to specify the configuration files
+The workflow module only uses two command line options, one to specify the
+configuration files
 and one to specify and overriding options. First the config files:
 
 * --config-files FILE1 [FILE2 FILE3 ....]
@@ -74,21 +76,21 @@ section:option
 Example
 --------------
 
-Here is an example of running an ahope workflow from the command line::
+Here is an example of running a workflow from the command line::
 
-  python weekly_ahope.py --config-files weekly_ahope.ini pipedown.ini inj.ini --config-overrides ahope:start-time:${GPS_START_TIME} ahope:end-time:${GPS_END_TIME}
+  python weekly_ahope.py --config-files weekly_ahope.ini pipedown.ini inj.ini --config-overrides workflow:start-time:${GPS_START_TIME} workflow:end-time:${GPS_END_TIME}
 
 Here the analysis start and end times are being overriden with values from the user's environment.
 
 =====================================
-Global options - the [ahope] section
+Global options - the [workflow] section
 =====================================
 
-The [ahope] section and [ahope-XXX] subsections should appear at the top of an ahope configuration file.
+The [workflow] section and [workflow-XXX] subsections should appear at the top of a configuration file.
 
-The [ahope] section and [ahope-XXX] subsections of the configuration file are used to store options that ahope uses to make decisions on what paths to take when deciding how to construct the workflow. Options in here are *not* going to end up supplied to any executable on the command line.
+The [workflow] section and [workflow-XXX] subsections of the configuration file are used to store options that the workflow module uses to make decisions on what paths to take when deciding how to construct the workflow. Options in here are *not* going to end up supplied to any executable on the command line.
 
-The [ahope] section must contain two entries
+The [workflow] section must contain two entries
 
 * start-time=START
 * end-time=END
@@ -98,46 +100,44 @@ which are used to tell the workflow that is only to consider times in [START,END
 It is okay to store other *important and widely used* values in here. You might often see cases where channel names are given here as these are sent to a number of codes on the command line, and it is easier to refer to them here, at the very top of the .ini file, so that the user can more easily see and change such values.
 
 ---------------------------------
-[ahope-XXX] subsections
+[workflow-XXX] subsections
 ---------------------------------
 
-Each module that you use when setting up your workflow will need an [ahope-XXX] subsection. The name of the subsection and the particular options needed can be found in each module's documentation page.
+Each module that you use when setting up your workflow will need an [workflow-XXX] subsection. The name of the subsection and the particular options needed can be found in each module's documentation page.
 
-If you want to call any module more than once you will need to use ahope's tagging system. As an example let's say I want to call the template bank module twice, once to set up a pycbc template bank and once to set up a SVD template bank. I could then create [ahope-tmpltbank-pycbc] and [ahope-tmpltbank-svd] sections to provide options that are unique to each tag. I could also use [exename-pycbc] and [exename-svd] sections if the two methods are using the same executable, but need different options. In both cases options in [ahope-tmpltbank] and [exename] would be used for *both* tags. (If the two codes were using different executables then [exename1] and [exename2] sections would suffice.)
+If you want to call any module more than once you will need to use the workflow module's tagging system. As an example let's say I want to call the template bank module twice, once to set up a pycbc template bank and once to set up a SVD template bank. I could then create [workflow-tmpltbank-pycbc] and [workflow-tmpltbank-svd] sections to provide options that are unique to each tag. I could also use [exename-pycbc] and [exename-svd] sections if the two methods are using the same executable, but need different options. In both cases options in [workflow-tmpltbank] and [exename] would be used for *both* tags. (If the two codes were using different executables then [exename1] and [exename2] sections would suffice.)
 
 An example of where this section might be used is in the template bank stage where one can either run with a pre-generated bank or generate banks within the workflow. This information would be provided in this section.
-
-If it proves necessary ahope "subsections" can be created with names like [ahope-segments] or [ahope-datafind] .....
 
 ----------------------
 Requirements
 ----------------------
 
-The [ahope] section in *every* .ini file should contain a link to this page to see what options are needed.
+The [workflow] section in *every* .ini file should contain a link to this page to see what options are needed.
 
-The [ahope-XXX] sections in *every* .ini file should start with a link to that module's documentation to see what options/values are relevant for that section.
+The [workflow-XXX] sections in *every* .ini file should start with a link to that module's documentation to see what options/values are relevant for that section.
 
 ----------------------
 Example
 ----------------------
 
-Here is an example of the [ahope] section of a .ini file::
+Here is an example of the [workflow] section of a .ini file::
 
-  [ahope]
-  ; https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization.html
-  ; provides details of how to set up an ahope configuration .ini file
+  [workflow]
+  ; https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/initialization.html
+  ; provides details of how to set up a pycbc workflow configuration .ini file
   h1-channel-name = H1:LDAS-STRAIN
   l1-channel-name = L1:LDAS-STRAIN
   ;h2-channel-name = H2:LDAS-STRAIN
-  ahope-html-basedir = /home/spxiwh/public_html/ahope/development/weekly_ahope/test
+  workflow-html-basedir = /home/spxiwh/public_html/workflow/development/weekly_ahope/test
 
-  [ahope-ifos]
+  [workflow-ifos]
   ; This is the list of ifos to analyse
   h1 =
   l1 =
 
-  [ahope-datafind]
-  ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/datafind.html
+  [workflow-datafind]
+  ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/datafind.html
   datafind-method = AT_RUNTIME_SINGLE_FRAMES
   datafind-h1-frame-type = H1_LDAS_C02_L2
   datafind-l1-frame-type = L1_LDAS_C02_L2
@@ -149,8 +149,8 @@ Here is an example of the [ahope] section of a .ini file::
   ; use the value in ${LIGO_DATAFIND_SERVER}
   ;datafind-ligo-datafind-server = ""
 
-  [ahope-segments]
-  ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html
+  [workflow-segments]
+  ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/segments.html
   ; PIPEDOWN demands we use AT_RUNTIME
   segments-method = AT_RUNTIME
   segments-H1-science-name = H1:DMT-SCIENCE:4
@@ -162,18 +162,18 @@ Here is an example of the [ahope] section of a .ini file::
   segments-minimum-segment-length = 2000
   segments-generate-coincident-segments =
 
-  [ahope-tmpltbank]
-  ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/template_bank.html
+  [workflow-tmpltbank]
+  ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/template_bank.html
   tmpltbank-method=WORKFLOW_INDEPENDENT_IFOS
   ; Remove the option below to disable linking with matchedfilter_utils
   tmpltbank-link-to-matchedfltr=
 
-  [ahope-injections]
-  ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/injections.html
+  [workflow-injections]
+  ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/injections.html
   injections-method=IN_WORKFLOW
 
-  [ahope-timeslides]
-  ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/time_slides.html
+  [workflow-timeslides]
+  ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/time_slides.html
   timeslides-method=AT_RUNTIME
 
 
@@ -181,7 +181,7 @@ Here is an example of the [ahope] section of a .ini file::
 Executable locations - the [executables] section
 =================================================
 
-This section should contain the names of each of the executables that will be used in the ahope workflow and their locations. 
+This section should contain the names of each of the executables that will be used in the workflow and their locations. 
 
 -------------------
 executable macros
@@ -203,13 +203,13 @@ In the following example tmpltbank's value will be replaced with the output of w
 Requirements
 ------------------
 
-All executables used by ahope should be supplied in this section, and *only* in this section.
+All executables used in the workflow should be supplied in this section, and *only* in this section.
 
 -------------------
 Example
 -------------------
 
-Here is an example of the [executables] section of an ahope .ini file::
+Here is an example of the [executables] section of a pycbc workflow .ini file::
 
   [executables]
   tmpltbank         = /home/cbc/opt/s6b/ab577e4e5dad14e46fce511cffdb04917836ba36/bin/lalapps_tmpltbank
@@ -232,36 +232,36 @@ Some options need to be sent to more than one executable, for example the channe
 
 If an option is given in more than one section (ie. if I specify --time-window 0.5 in [inspiral] and --time-window 1.0 in another [inspiral] or [inspiral&tmpltbank] or [inspiral-H1] the code will throw an error. Specifying --time-window 1.0 in [inspiral-H1] and --time-window 0.5 in [inspiral-L1] is valid as long as the subset of H1 jobs and the subset of L1 jobs do not overlap.
 
-If a particular code (let's say inspiral) wants to use an option supplied in the [ahope] section (for e.g. the channel names) it can do this by using::
+If a particular code (let's say inspiral) wants to use an option supplied in the [workflow] section (for e.g. the channel names) it can do this by using::
 
   [inspiral-h1]
-  channel-name = ${ahope|h1-channel}
+  channel-name = ${workflow|h1-channel}
 
   [inspiral-l1]
-  channel-name = ${ahope|l1-channel}
+  channel-name = ${workflow|l1-channel}
 
   [inspiral-v1]
-  channel-name = ${ahope|v1-channel}
+  channel-name = ${workflow|v1-channel}
 
 Similar macros can be added as needed, but these should be limited to avoid namespace confusion. 
 
----------------------------------
-Example complete ahope .ini file
----------------------------------
+------------------------------------
+Example complete workflow .ini file
+------------------------------------
 
-Please see the examples on the main ahope page for some examples of complete ahope .ini files and example workflows.
+Please see the examples on the main workflow module page for some examples of complete .ini files and example workflows.
 
 =====================
 Code documentation
 =====================
 
-The parsing of ahope .ini files and command line parsing is done from within the pycbc.ahope.configparserutils module. The functions in this module are shown below
+The parsing of .ini files and command line parsing is done from within the pycbc.workflow.configuration module. The functions in this module are shown below
 
 --------------------------------------------
-:mod:`pycbc.ahope.configparserutils` Module
+:mod:`pycbc.workflow.configuration` Module
 --------------------------------------------
 
-.. automodule:: pycbc.ahope.configparserutils
+.. automodule:: pycbc.workflow.configuration
     :noindex:
     :members:
     :undoc-members:

@@ -1,7 +1,7 @@
-.. _ahopedatafindmod:
+.. _workflowdatafindmod:
 
 ###########################################
-The ahope datafind and validation module
+The workflow datafind and validation module
 ###########################################
 
 =============
@@ -9,7 +9,7 @@ Introduction
 =============
 
 This page is designed to give you an introduction to the capabilities of the
-ahope datafind and validation module and how to use this as part of an ahope
+workflow datafind and validation module and how to use this as part of a pycbc
 workflow.
 
 This module is designed to be able to support multiple ways of obtaining
@@ -33,26 +33,26 @@ Usage
 Using this module requires a number of things
 
 * A configuration file (or files) containing the information needed to tell this module how to generate the segments (described below).
-* An initialized instance of the ahope workflow class, containing the ConfigParser.
-* An ifo-keyed dictionary of glue.segments.segmentlist instances containing the times that should be analysed for each ifo. See :ref:`ahopesegmentsmod` for documentation of the segments module, which in most cases should be used to obtain this input.
+* An initialized instance of the pycbc workflow class, containing the ConfigParser.
+* An ifo-keyed dictionary of glue.segments.segmentlist instances containing the times that should be analysed for each ifo. See :ref:`workflowsegmentsmod` for documentation of the segments module, which in most cases should be used to obtain this input.
 
 The module is then called according to
 
-.. autofunction:: pycbc.ahope.setup_segment_generation
+.. autofunction:: pycbc.workflow.setup_segment_generation
        :noindex:
 
 -------------------------
 Configuration file setup
 -------------------------
 
-Here we describe the options given in the configuration file used in the ahope
+Here we describe the options given in the configuration file used in the
 workflow that will be needed in this section
 
 $$$$$$$$$$$$$$$$$$$$$$$$$
-[ahope-datafind] section
+[workflow-datafind] section
 $$$$$$$$$$$$$$$$$$$$$$$$$
 
-The configuration file must have an [ahope-datafind] section, which is used to
+The configuration file must have an [workflow-datafind] section, which is used to
 tell the workflow how to generate the datafind calls. The first option to choose
 and provide is
 
@@ -67,34 +67,34 @@ The choices here and their description are as described below
 
 Each of these options will describe which subfunction to use. These are described here
 
-.. autofunction:: pycbc.ahope.setup_datafind_runtime_cache_multi_calls_perifo
+.. autofunction:: pycbc.workflow.setup_datafind_runtime_cache_multi_calls_perifo
           :noindex:
 
-.. autofunction:: pycbc.ahope.setup_datafind_runtime_cache_single_call_perifo
+.. autofunction:: pycbc.workflow.setup_datafind_runtime_cache_single_call_perifo
           :noindex:
 
-.. autofunction:: pycbc.ahope.setup_datafind_runtime_frames_multi_calls_perifo
+.. autofunction:: pycbc.workflow.setup_datafind_runtime_frames_multi_calls_perifo
           :noindex:
 
-.. autofunction:: pycbc.ahope.setup_datafind_runtime_frames_single_call_perifo
+.. autofunction:: pycbc.workflow.setup_datafind_runtime_frames_single_call_perifo
           :noindex:
 
 
-When using any of these sub-modules the following other configuration options apply in the [ahope-datafind] section
+When using any of these sub-modules the following other configuration options apply in the [workflow-datafind] section
 
 * datafind-X1-frame-type = NAME - REQUIRED. Where X1 is replaced by the ifo name for each ifo. The NAME should be the full frame type, which is used when querying the database.
 * datafind-ligo-datafind-server = URL - OPTIONAL. If provided use this server when querying for frames. If not provided, which is recommended for most applications, then the LIGO_DATAFIND_SERVER environment variable will be used to determine this.
-* datafind-check-segment-gaps = STRING - OPTIONAL (default = "no_test"). If this option takes any value other than 'no_test' ahope will check that the local datafind server has returned frames covering all of the listed science times. Its behaviour is then as follows
+* datafind-check-segment-gaps = STRING - OPTIONAL (default = "no_test"). If this option takes any value other than 'no_test' the workflow module will check that the local datafind server has returned frames covering all of the listed science times. Its behaviour is then as follows
   * 'no_test': Do not perform this test. Any discrepancies will cause later failures.
   * 'warn': Perform the test, print warnings covering any discrepancies but do nothing about them. Discrepancies will cause failures later in the workflow.
   * 'update_times': Perform the test, print warnings covering any discrepancies and update the input science times to remove times that are not present on the host cluster.
   * 'raise_error': Perform the test. If any discrepancies occur, raise a ValueError.
-* datafind-check-frames-exist = STRING - OPTIONAL (default = "no_test"). If this options takes any value other than 'no_test' ahope will check that the frames returned by the local datafind server are accessible from the machine that is running ahope. Its behaviour is then as follows
+* datafind-check-frames-exist = STRING - OPTIONAL (default = "no_test"). If this options takes any value other than 'no_test' the workflow module will check that the frames returned by the local datafind server are accessible from the machine that is running the workflow generation. Its behaviour is then as follows
   * 'no_test': Do not perform this test. Any discrepancies will cause later failures.
   * 'warn': Perform the test, print warnings covering any discrepancies but do nothing about them. Discrepancies will cause failures later in the workflow.
   * 'update_times': Perform the test, print warnings covering any discrepancies and update the input science times to remove times that are not present on the host cluster.
   * 'raise_error': Perform the test. If any discrepancies occur, raise a ValueError.
-* datafind-check-segment-summary = STRING - OPTIONAL (default = "no_test"). If this option takes any value other than 'no_test' ahope will check that all frames returned by datafind are covered by the segment_summary table (for the science flag). Its behaviour is then as follows:
+* datafind-check-segment-summary = STRING - OPTIONAL (default = "no_test"). If this option takes any value other than 'no_test' the workflow module will check that all frames returned by datafind are covered by the segment_summary table (for the science flag). Its behaviour is then as follows:
   * 'no_test': Do not perform this test. 
   * 'warn': Perform the test, print warnings covering any discrepancies but do nothing about them.
   * 'raise_error': Perform the test. If any discrepancies occur, raise a ValueError.
@@ -104,8 +104,8 @@ $$$$$$$$$$$$$$$
 [executables]
 $$$$$$$$$$$$$$$
 
-Currently no executables are needed in the datafind section. Ahope will use the
-glue.datafind module to run the calls to the datafind server.
+Currently no executables are needed in the datafind section. Workflow will use
+the glue.datafind module to run the calls to the datafind server.
 
 $$$$$$$$$$$$$$$$$$$
 Other sections
@@ -122,15 +122,15 @@ arguments when calling the datafind server. Valid options here
 * match=STRING - If given return only those frames matching the given regular expression.
 * urltype=TYPE - If given restrict the returned frames to the given scheme (e.g. "file").
 
-the on_gaps keyword argument is not supported as sanity checking is handled by ahope. This is always set to 'ignore' (this can be overwritten, we don't recommend this).
+the on_gaps keyword argument is not supported as sanity checking is handled by the workflow module. This is always set to 'ignore' (this can be overwritten, we don't recommend this).
 
 ==========================================
-:mod:`pycbc.ahope.datafind_utils` Module
+:mod:`pycbc.workflow.datafind` Module
 ==========================================
 
 This is complete documentation of this module's code
 
-.. automodule:: pycbc.ahope.datafind_utils
+.. automodule:: pycbc.workflow.datafind
     :noindex:
     :members:
     :undoc-members:

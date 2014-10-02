@@ -225,12 +225,15 @@ class Workflow(object):
  
         # Determine the parent child relationships based on the inputs that
         # this node requires.
+        added_nodes = []
         for inp in node._inputs:
             if inp.node is not None and inp.node.in_workflow:
-                parent = inp.node._dax_node
-                child = node._dax_node
-                dep = dax.Dependency(parent=parent, child=child)
-                self._adag.addDependency(dep)    
+                if inp.node not in added_nodes:
+                    parent = inp.node._dax_node
+                    child = node._dax_node
+                    dep = dax.Dependency(parent=parent, child=child)
+                    self._adag.addDependency(dep)    
+                    added_nodes.append(inp.node)
                             
             elif inp.node is not None and not inp.node.in_workflow:
                 raise ValueError('Parents of this node must be added to the '
@@ -304,7 +307,10 @@ class File(DataStorage, dax.File):
         node._dax_node.uses(self, link=dax.Link.OUTPUT, register=False, 
                                                         transfer=True)                                                       
     def output_map_str(self):
-        return '%s %s pool="%s"' % (self.name, self.storage_path, 'local') 
+        if self.storage_path:
+            return '%s %s pool="%s"' % (self.name, self.storage_path, 'local')
+        else:
+            raise ValueError('This file does not have a storage path')
         
     def insert_into_dax(self, dax):
         dax.addFile(self)

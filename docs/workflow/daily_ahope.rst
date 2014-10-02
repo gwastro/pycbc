@@ -39,11 +39,11 @@ The scripts to run daily ahope currently reside within the pycbc source tree.
 These will be moved to be installed executables at some point. For now this
 can be found in::
 
-    examples/ahope/er_daily_ahope
+    examples/workflow/er_daily_workflow
 
 CD to this directory::
 
-    cd ${SRC_DIR}/examples/ahope/er_daily_ahope
+    cd ${SRC_DIR}/examples/workflow/er_daily_workflow
 
 -----------------------------
 Edit the configuration file
@@ -59,11 +59,11 @@ contains all the details needed to run daily_ahope::
 
 Some things that *will* need to be changed for each user::
 
-    [ahope]
-    ahope-asset-dir = /home/spxiwh/lscsoft_git/src/lalsuite/lalapps/src/inspiral
-    ahope-html-basedir = /home/spxiwh/public_html/ER4/test
+    [workflow]
+    workflow-asset-dir = /home/spxiwh/lscsoft_git/src/lalsuite/lalapps/src/inspiral
+    workflow-html-basedir = /home/spxiwh/public_html/ER4/test
 
-    [ahope-omega]
+    [workflow-omega]
     omega-conf-file = /home/spxiwh/ERs/ER4/daily_ihope_test/old_conf_omega.txt
 
     [executables]
@@ -82,31 +82,31 @@ Some things that *will* need to be changed for each user::
 
 To run through this. 
 
- * The ahope-asset-dir points to the location where the CSS files needed for the html page are stored. This is your lalsuite source directory and then /lalapps/src/inspiral. This will be removed in the future and read from a web-accessible location.
- * The ahope-html-basedir is the directory in which you want the output html pages to appear. Pages will be in subdirectories in this corresponding to unique days. So for me I might see output in directories like /home/spxiwh/public_html/ER4/test/201308/20130812/
+ * The worflow-asset-dir points to the location where the CSS files needed for the html page are stored. This is your lalsuite source directory and then /lalapps/src/inspiral. This will be removed in the future and read from a web-accessible location.
+ * The workflow-html-basedir is the directory in which you want the output html pages to appear. Pages will be in subdirectories in this corresponding to unique days. So for me I might see output in directories like /home/spxiwh/public_html/ER4/test/201308/20130812/
  * omega-conf-file points to the configuration for omega. Currently omega doesn't work within daily ahope, this will be fixed.
  * Everything under [executables] points to the executables that will be used. These should be changed as appropriate
 
 The example is also set up to run on ER4 data. If you are running on non-ER4 data you may have to edit some additional options, for e.g.::
 
-    [ahope]
+    [workflow]
     h1-channel-name = H1:FAKE-STRAIN
     l1-channel-name = L1:FAKE-STRAIN
     v1-channel-name = V1:FAKE_h_16384Hz_4R
 
-    [ahope-datafind]
+    [workflow-datafind]
     datafind-h1-frame-type = H1_ER_C00_L1
     datafind-l1-frame-type = L1_ER_C00_L1
     datafind-v1-frame-type = V1Online
 
-    [ahope-segments]
+    [workflow-segments]
     segments-H1-science-name = H1:DMT-SCIENCE:1
     segments-L1-science-name = L1:DMT-SCIENCE:1
     segments-V1-science-name = V1:ITF_SCIENCEMODE
     segments-database-url = https://segdb-er.ligo.caltech.edu
     segments-veto-definer-url = https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/ER4/H1L1V1-ER4_CBC_OFFLINE-1011571215-0.xml
 
-    [ahope-omega]
+    [workflow-omega]
     omega-frame-dir = /frames/ER4/L1_ER_C00_L1/L1/L-L1_ER_C00_L1-%%d/L-L1_ER_C00_L1-%%d
 
 To run through this::

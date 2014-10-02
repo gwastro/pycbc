@@ -59,7 +59,7 @@ parser.add_argument("--bank-fupper-step", type=float, default=10.,
                     "--ethinca-freq-step are also given, the code will use "
                     "the smaller of the two step values. OPTIONAL. Units=Hz")
 parser.add_argument("--bank-fupper-formula", default="SchwarzISCO",
-                    choices=["SchwarzISCO","LightRing","ERD"],
+                    choices=pnutils.named_frequency_cutoffs().keys(),
                     help="Frequency cutoff formula for varying fupper. "
                     "Frequencies will be rounded to the nearest discrete "
                     "step. OPTIONAL.")
@@ -129,7 +129,7 @@ if ethincaParams.doEthinca==False:
 # Ensure consistency of ethinca and bank metric parameters
 tmpltbank.check_ethinca_against_bank_params(ethincaParams, metricParams)
 # Ethinca calculation should currently only be done for non-spin templates
-if ethincaParams.doEthinca and (massRangeParams.maxNSSpinMag>0.0 or
+if ethincaParams.full_ethinca and (massRangeParams.maxNSSpinMag>0.0 or
                                 massRangeParams.maxBHSpinMag>0.0):
     parser.error("Ethinca metric calculation is currently not valid for "
                  "nonzero spins!") 
@@ -178,6 +178,8 @@ metricParams = tmpltbank.determine_eigen_directions(
     vary_fmax=(opts.vary_fupper or ethincaParams.doEthinca),
     vary_density=freqStep)
 
+logging.info("Identify limits of frequency.")
+
 # Choose the frequency values to use for metric calculation
 if opts.vary_fupper==False:
     if ethincaParams.doEthinca==False:
@@ -192,12 +194,8 @@ else:
     # total masses
     fs = numpy.array(metricParams.evals.keys(), dtype=float)
     fs.sort()
-    lowEve = tmpltbank.return_nearest_cutoff(
-        opts.bank_fupper_formula,
-        numpy.array([opts.max_total_mass]), fs)[0]
-    highEve = tmpltbank.return_nearest_cutoff(
-        opts.bank_fupper_formula,
-        numpy.array([opts.min_total_mass]), fs)[0]
+    lowEve, highEve = tmpltbank.find_max_and_min_frequencies(\
+                              opts.bank_fupper_formula, massRangeParams, fs)
     refFreq = lowEve
     fs = fs[fs >= lowEve]
     fs = fs[fs <= highEve]
@@ -207,9 +205,10 @@ logging.info("Calculating covariance matrix")
 vals = tmpltbank.estimate_mass_range(
     1000000, massRangeParams, metricParams, refFreq, covary=False)
 cov = numpy.cov(vals)
-evalsCV,evecsCV = numpy.linalg.eig(cov)
-metricParams.evecsCV = {}
-metricParams.evecsCV[refFreq] = evecsCV
+evalsCV, evecsCV = numpy.linalg.eig(cov)
+evecsCVdict = {}
+evecsCVdict[refFreq] = evecsCV
+metricParams.evecsCV = evecsCVdict
 
 # Initialize the class for generating the partitioned bank
 logging.info("Initialize the PartitionedTmpltbank class")
@@ -242,8 +241,13 @@ while True:
         rMass2 = (rTotmass - diff)/2.
         rChis = (rSpin1z + rSpin2z)/2.
         if opts.vary_fupper:
+            mass_dict = {}
+            mass_dict['m1'] = rMass1
+            mass_dict['m2'] = rMass2
+            mass_dict['s1z'] = rSpin1z
+            mass_dict['s2z'] = rSpin2z
             refEve = tmpltbank.return_nearest_cutoff(
-                opts.bank_fupper_formula, rTotmass, fs)
+                opts.bank_fupper_formula, mass_dict, fs)
             lambdas = tmpltbank.get_chirp_params(
                 rTotmass, rEta, rBeta, rSigma, rGamma, rChis,
                 metricParams.f0, metricParams.pnOrder)

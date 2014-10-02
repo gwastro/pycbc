@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+import logging
 import os
 import shutil
 import ConfigParser
@@ -102,7 +103,6 @@ def check_outside_mchirp(bf, sf, w):
     mc_min, mc_max = bf_mchirps[bf]
     mc2_min, mc2_max =  sf_mchirps[sf]
     
-    print mc_min, mc_max, mc2_min, mc2_max, (( mc_min  <= mc2_max * (1+w) ) and (mc_max * (1+w) >= mc2_min))
     if (mc_min  <= mc2_max * (1+w) ) and (mc_max * (1+w) >= mc2_min):
         return False
     else:
@@ -116,6 +116,17 @@ parser.add_option('--config', type=str)
 
 if options.config is None:
     raise ValueError("Config file is required")  
+
+
+# Code doesn't have a verbose mode. Commenting in case this gets added
+# if opts.verbose:
+if 0:
+    log_level = logging.DEBUG
+else:
+#    log_level = logging.WARN
+    log_level = logging.INFO
+logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+
 
 confs = ConfigParser.ConfigParser()
 confs.read(options.config)
@@ -143,7 +154,7 @@ try:
 except:
     pass
      
-print "Making workspace directories..."
+logging.info("Making workspace directories...")
 mkdir('scripts')
 mkdir('bank')
 mkdir('match')
@@ -152,23 +163,23 @@ mkdir('match-part')
 mkdir('log')
 mkdir('plots')
 
-print "Copying scripts"
+logging.info("Copying scripts")
 shutil.copy(banksim_prog, 'scripts/pycbc_banksim')
 os.chmod('scripts/pycbc_banksim', 0777)
 
-print "Creating Injection File"
+logging.info("Creating Injection File")
 inj_str = "lalapps_inspinj " + get_ini_opts(confs, "inspinj") + "--output inj.xml"
 os.system(inj_str)
 
-print "Splitting template bank..."
+logging.info("Splitting template bank...")
 subprocess.call(['pycbc_splitbank', '--templates-per-bank', str(templates_per_job), '-t', bank_file, '-o', 'bank/bank', '--sort-mchirp'])
-print "Splitting injection file..."
+logging.info("Splitting injection file...")
 subprocess.call(['pycbc_splitbank', '--templates-per-bank', str(injections_per_job), '-t', "inj.xml",  '-o', 'injection/injection', '--sort-mchirp'])
 
 num_banks = len(glob.glob("bank/bank*"))
 num_injs = len(glob.glob("injection/injection*"))
 
-print "Creating Dag..."
+logging.info("Creating Dag...")
 f = open("banksim.dag", "w")
 
 do_count = 0
@@ -213,7 +224,7 @@ dag.add_node(rnode)
 pnode.add_parent(rnode)
 dag.add_node(pnode)
 
-print "DO : ", do_count, "SKIP: ", skip_count
+logging.info("DO : %d SKIP %d" %(do_count, skip_count))
 f.close()
 
 f = open("scripts/pycbc_banksim_match_combine", "w")
@@ -373,7 +384,7 @@ if gpu:
     """)
     os.chmod('scripts/diff_match.sh', 0777)
     
-print "Creating submit script"
+logging.info("Creating submit script")
 f = open("submit.sh","w")
 if gpu:
     f.write("""#!/bin/bash
@@ -391,7 +402,7 @@ scripts/pycbc_banksim_collect_results
 """)
 os.chmod('partial_results.sh', 0777)
 
-print "Done"
+logging.info("Done")
 dag.write_sub_files()
 dag.write_script()
 dag.write_dag()
@@ -462,7 +473,6 @@ s1m = (ispin1x**2+ispin1y**2+ispin1z**2)**0.5
 s2m = (ispin2x**2+ispin2y**2+ispin2z**2)**0.5
 
 def mhist(c1, name, cum=False, normed=True, log=False, bins=100, xl="", yl=""):
-    print name
     pylab.figure()
     pylab.xlabel(xl)
     pylab.ylabel(yl)
@@ -472,7 +482,6 @@ def mhist(c1, name, cum=False, normed=True, log=False, bins=100, xl="", yl=""):
     pylab.savefig(name)
 
 def mplot(c1, c2, c, name, xl="", yl="", vmin=None, vmax=None):
-    print name
     pylab.figure()
     pylab.axes((0.15, 0.15, 0.8, 0.8))
     pylab.scatter(c1, c2, c=c, linewidth=0, s=1, vmin=vmin, vmax=vmax)

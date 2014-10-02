@@ -1,16 +1,16 @@
-.. _ahopepostprocmod:
+.. _workflowpostprocmod:
 
 ############################################
-The ahope postprocessing module
+The workflow postprocessing module
 ############################################
 
 =============
 Introduction
 =============
 
-The postprocessing module of ahope is used to assess the significance of all triggers identified at earlier stages of the pipeline and to compute any rate statements that can be made from the analysis results.
+The postprocessing sub-module of the pycbc workflow module is used to assess the significance of all triggers identified at earlier stages of the pipeline and to compute any rate statements that can be made from the analysis results.
 
-The return from this module is a list of AhopeOutFile objects corresponding to the files containing the trigger significances and rate statements.
+The return from this module is a list of pycbc workflow File objects corresponding to the files containing the trigger significances and rate statements.
 
 ======
 Usage
@@ -19,39 +19,39 @@ Usage
 Using this module requires a number of things
 
 * A configuration file (or files) containing the information needed to tell this module how to do the postprocessing preparation.
-* An initialized instance of the ahope workflow class, containing the ConfigParser.
-* An AhopeFileList containing the analysis results.
+* An initialized instance of the pycbc Workflow class, containing the ConfigParser.
+* A FileList containing the analysis results.
 
 This module is then called according to
 
-.. autofunction:: pycbc.ahope.setup_postprocessing
+.. autofunction:: pycbc.workflow.setup_postprocessing
    :noindex:
 
 -------------------------
 Configuration file setup
 -------------------------
 
-Here we describe the options given in the configuration file used in the ahope
+Here we describe the options given in the configuration file used in the
 workflow that will be needed in this section
 
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-[ahope-postproc] section
+[workflow-postproc] section
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-The configuration file must have an [ahope-postproc] section, which is used to provide instructions to ahope on how to set up the post-processinge stage. The first option to choose and provide is
+The configuration file must have an [workflow-postproc] section, which is used to provide instructions to the workflow module on how to set up the post-processinge stage. The first option to choose and provide is
 
 * postproc-method = VALUE
 
 The choices here and their description are as described below
 
-* PIPEDOWN_AHOPE - This will perform pipedown style post-processing, using the same methods as was used by pipedown to assess trigger significance and compute rate statements (currently rate statements are not calculated)
+* PIPEDOWN_WORKFLOW - This will perform pipedown style post-processing, using the same methods as was used by pipedown to assess trigger significance and compute rate statements (currently rate statements are not calculated)
 
 Currently only one option, but others can be added. The subfunctions used are described here
 
-.. autofunction:: pycbc.ahope.setup_postproc_pipedown_ahope
+.. autofunction:: pycbc.workflow.setup_postproc_pipedown_workflow
    :noindex:
 
-With the PIPEDOWN_AHOPE method the following options apply
+With the PIPEDOWN_WORKFLOW method the following options apply
 
 * postproc-computedurations-exe=NAME
 * postproc-cfar-exe=NAME
@@ -62,7 +62,7 @@ $$$$$$$$$$$$$$$
 [executables]
 $$$$$$$$$$$$$$$
 
-Executables required by this module are provided in the [executables] section. Any executable names specified in the [ahope-postproc] section must appear here. For instance if the [ahope-postproc] section reads
+Executables required by this module are provided in the [executables] section. Any executable names specified in the [workflow-postproc] section must appear here. For instance if the [workflow-postproc] section reads
 
 * postproc-computedurations-exe=computedurs
 * postproc-cfar-exe=pycbccfar
@@ -80,7 +80,7 @@ Sections, in this case [computedurs] and [pycbccfar], will be used to specify th
 Supported post-processing codes and instructions for using them
 ----------------------------------------------------------------------------
 
-The following coincidence codes are currently supported in ahope
+The following coincidence codes are currently supported in the workflow module
 
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 postproc-computedurations-exe
@@ -110,7 +110,7 @@ This code is responsible for determining how how time was analysed, in coinciden
 
 .. command-output:: pycbc_compute_durations --help
 
-Of these options ahope will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
+Of these options the workflow module will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
 
 * --input
 * --output
@@ -123,7 +123,7 @@ This code will calculate the false alarm rate associated with each trigger. It w
 
 .. command-output:: pycbc_calculate_far --help
 
-Of these options ahope will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
+Of these options the workflow module will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
 
 * --input
 * --output

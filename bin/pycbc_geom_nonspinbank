@@ -144,8 +144,10 @@ vals = tmpltbank.estimate_mass_range(1000000, massRangeParams, metricParams,
                                      metricParams.fUpper, covary=False)
 cov = numpy.cov(vals)
 evalsCV, evecsCV = numpy.linalg.eig(cov)
-metricParams.evecsCV = {}
-metricParams.evecsCV[metricParams.fUpper] = evecsCV
+evecsCVdict = {}
+evecsCVdict[metricParams.fUpper] = evecsCV
+metricParams.evecsCV = evecsCVdict
+
 
 logging.info("Estimating extent of parameter space")
 

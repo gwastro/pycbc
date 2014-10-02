@@ -252,8 +252,8 @@ setup (
                  'build' : build},
     requires = requires,
     scripts  = [
-               'bin/lalapps_inspiral_ahope',
-               'bin/lalapps_tmpltbank_ahope',
+               'bin/lalapps/lalapps_inspiral_ahope',
+               'bin/lalapps/lalapps_tmpltbank_ahope',
                'bin/pycbc_banksim',
                'bin/pycbc_faithsim',
                'bin/pycbc_inspiral',
@@ -272,7 +272,14 @@ setup (
                'bin/pycbc_compute_durations',
                'bin/pycbc_pipedown_plots',
                'bin/pycbc_tmpltbank_to_chi_params',
-               'bin/pycbc_bank_verification'
+               'bin/pycbc_bank_verification',
+               'bin/pycbc_run_sqlite',
+               'bin/pycbc_inspinjfind',
+               'bin/gstlal/pycbc_calculate_likelihood',
+               'bin/gstlal/pycbc_combine_likelihood',
+               'bin/gstlal/pycbc_compute_far_from_snr_chisq_histograms',
+               'bin/gstlal/pycbc_gen_ranking_data',
+               'bin/gstlal/pycbc_pickle_horizon_distances'
                ],
     packages = [
                'pycbc',

@@ -1,20 +1,21 @@
-.. _ahopeinjectionsmod:
+.. _workflowinjectionsmod:
 
-######################################
-The ahope injection generation module
-######################################
+#########################################
+The workflow injection generation module
+#########################################
 
 ==============
 Introduction
 ==============
 
-The injection generation module of ahope is responsible for generating or
+The injection generation module of pycbc's workflow
+is responsible for generating or
 gathering the injection files that will be used to assess the performance of a
 pipeline to detect simulated signals. This can be run
 either by generating injection files at run time, by generating injection files
 within the workflow or by using pregenerated injection files.
 
-The return of the injection generation module is an AhopeFileList of the injection files generated/supplied to this module. It is possible to call this module
+The return of the injection generation module is a FileList of the injection files generated/supplied to this module. It is possible to call this module
 multiple times by using the tags key-word argument, but we have not foreseen
 a case where this would be needed.
 
@@ -25,25 +26,24 @@ Usage
 Using this module requires a number of things
 
 * A configuration file (or files) containing the information needed to tell this module how to generate the injection files (described below).
-* An initialized instance of the ahope workflow class, containing the ConfigParser.
+* An initialized instance of the pycbc Workflow class, containing the ConfigParser.
 
 The module is then called according to
 
-.. autofunction:: pycbc.ahope.setup_injection_workflow
+.. autofunction:: pycbc.workflow.setup_injection_workflow
    :noindex:
 
 -------------------------
 Configuration file setup
 -------------------------
 
-Here we describe the options given in the configuration file used in the ahope
-workflow that will be needed in this section
+Here we describe the options given in the configuration file used in the workflow that will be needed in this section
 
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-[ahope-injections] section
+[workflow-injections] section
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-The configuration file must have an [ahope-injections] section, which is used to
+The configuration file must have a [workflow-injections] section, which is used to
 tell the workflow how to construct (or gather) the injection files. The first option to choose and provide is
 
 * injections-method = VALUE
@@ -54,7 +54,7 @@ The choices here and their description are as described below
 * AT_RUNTIME - The injection jobs will be run directly within this module.
 * PREGENERATED - The injection files will be supplied as pregenerated files.
 
-When using IN_WORKFLOW or AT_RUNTIME no additional options are required in the [ahope-injections] section.
+When using IN_WORKFLOW or AT_RUNTIME no additional options are required in the [workflow-injections] section.
 
 When using PREGENERATED the additional option is needed:
 
@@ -79,13 +79,13 @@ are also used to specify options specific to that
 particular injection set. These options will be directly supplied to the
 executable being used to generate the file.
 
-**PLEASE NOTE:** When using PREGENERATED the injection names are still identified by looking in the "injections-XXXX" sections (a path in [executables] is not needed). These sections will be empty in this case. Also note that as XXXX is used as a tag you can use [ahope-injections-XXXX] section to supply unique pregenerated injection files.
+**PLEASE NOTE:** When using PREGENERATED the injection names are still identified by looking in the "injections-XXXX" sections (a path in [executables] is not needed). These sections will be empty in this case. Also note that as XXXX is used as a tag you can use [workflow-injections-XXXX] section to supply unique pregenerated injection files.
 
 ----------------------------------------------------------------
 Supported injection executables and instructions for using them
 ----------------------------------------------------------------
 
-The following injection generation executables are currently supported in ahope
+The following injection generation executables are currently supported
 
 * lalapps_inspinj
 
@@ -99,7 +99,7 @@ lalapps_inspinj is the legacy C-code that has been used to generate injection fi
 
 .. command-output:: lalapps_inspinj --help
 
-Of these options ahope will automatically add the following. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
+Of these options the workflow will automatically add the following. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
 
 * --gps-start-time
 * --gps-end-time
@@ -112,12 +112,12 @@ All other options must be provided in the configuration file. Here is an example
    lalapps_inspinj --gps-end-time 961671943 --i-distr uniform --max-mass1 3.1 --max-mass2 3.1 --m-distr componentMass --disable-spin  --min-mtotal 2.0 --output /home/spxiwh/lscsoft_git/src/pycbc/examples/ahope/weekly_ahope/961585543-961671943/inj_files/HL-INJECTIONS_BNSLININJ_2134-961585543-86400.xml --max-mtotal 6.2 --waveform TaylorT4threePointFivePN --time-interval 300 --time-step 837.155 --min-mass2 1.0 --f-lower 30 --l-distr random --min-mass1 1.0 --min-distance 1000 --gps-start-time 961585543 --d-distr uniform --max-distance 60000
 
 ==========================================
-:mod:`pycbc.ahope.injection_utils` Module
+:mod:`pycbc.workflow.injection` Module
 ==========================================
 
 This is complete documentation of this module's code
 
-.. automodule:: pycbc.ahope.injection_utils
+.. automodule:: pycbc.ahope.injection
     :noindex:
     :members:
     :undoc-members:

@@ -15,6 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from __future__ import division
+import logging
 import numpy
 from pycbc.tmpltbank.lambda_mapping import get_chirp_params
 from pycbc import pnutils
@@ -540,7 +541,65 @@ def calc_point_dist_vary(mus1, fUpper1, mus2, fUpper2, fMap, norm_map, MMdistA):
     val = 1 - (1 - val)*norm_fac
     return (val < MMdistA)
 
-def return_nearest_cutoff(name, totmass, freqs):
+
+def find_max_and_min_frequencies(name, mass_range_params, freqs):
+    """
+    ADD DOCS
+    """
+
+    cutoff_fns = pnutils.named_frequency_cutoffs()
+    if name not in cutoff_fns.keys():
+        err_msg = "%s not recognized as a valid cutoff frequency choice." %name
+        err_msg += "Recognized choices: " + " ".join(cutoff_fns.keys())
+
+    # Can I do this quickly?
+    total_mass_approxs = {
+        "SchwarzISCO": pnutils.f_SchwarzISCO,
+        "LightRing"  : pnutils.f_LightRing,
+        "ERD"        : pnutils.f_ERD
+    }
+    
+    if name in total_mass_approxs.keys():
+        # This can be done quickly if the cutoff only depends on total mass
+        # Assumes that lower total mass = higher cutoff frequency
+        upper_f_cutoff = total_mass_approxs[name](mass_range_params.minTotMass)
+        lower_f_cutoff = total_mass_approxs[name](mass_range_params.maxTotMass)
+    else:
+        # Do this numerically
+        # FIXME: Is 1000000 the right choice? I think so, but just highlighting
+        tot_mass, eta, _, _, _, spin1z, spin2z = \
+                get_random_mass(1000000, mass_range_params)
+        mass1, mass2 = pnutils.mtotal_eta_to_mass1_mass2(tot_mass, eta)
+        mass_dict = {}
+        mass_dict['m1'] = mass1
+        mass_dict['m2'] = mass2
+        mass_dict['s1z'] = spin1z
+        mass_dict['s2z'] = spin2z
+        tmp_freqs = cutoff_fns[name](mass_dict)
+        upper_f_cutoff = tmp_freqs.max()
+        lower_f_cutoff = tmp_freqs.min()
+
+    cutoffs = numpy.array([lower_f_cutoff,upper_f_cutoff])
+    if lower_f_cutoff < freqs.min():
+        warn_msg = "WARNING: "
+        warn_msg += "Lowest frequency cutoff is %s Hz " %(lower_f_cutoff,)
+        warn_msg += "which is lower than the lowest frequency calculated "
+        warn_msg += "for the metric: %s Hz. " %(freqs.min())
+        warn_msg += "Distances for these waveforms will be calculated at "
+        warn_msg += "the lowest available metric frequency."
+        logging.warn(warn_msg)
+    if upper_f_cutoff > freqs.max():
+        warn_msg = "WARNING: "
+        warn_msg += "Highest frequency cutoff is %s Hz " %(upper_f_cutoff,)
+        warn_msg += "which is larger than the highest frequency calculated "
+        warn_msg += "for the metric: %s Hz. " %(freqs.max())
+        warn_msg += "Distances for these waveforms will be calculated at "
+        warn_msg += "the largest available metric frequency."
+        logging.warn(warn_msg)
+    return find_closest_calculated_frequencies(cutoffs, freqs)
+
+
+def return_nearest_cutoff(name, mass_dict, freqs):
     """
     Given an array of total mass values and an (ascending) list of
     frequencies, this will calculate the specified cutoff formula for each
@@ -553,8 +612,9 @@ def return_nearest_cutoff(name, totmass, freqs):
     ----------
     name : string
         Name of the cutoff formula to be approximated
-    totmass : numpy.array
-        The total mass of the input systems
+    mass_dict : Dictionary where the keys are used to call the functions
+        returned by tmpltbank.named_frequency_cutoffs. The values can be
+        numpy arrays or single values.
     freqs : list of floats
         A list of frequencies (must be sorted ascending)
 
@@ -563,34 +623,68 @@ def return_nearest_cutoff(name, totmass, freqs):
     numpy.array
         The frequencies closest to the cutoff for each value of totmass.
     """
-    cutoffFns = {
-        "SchwarzISCO": pnutils.f_SchwarzISCO,
-        "LightRing"  : pnutils.f_LightRing,
-        "ERD"        : pnutils.f_ERD
-    }
-    f_cutoff = cutoffFns[name](totmass)
-    refEv = numpy.zeros(len(f_cutoff),dtype=float)
+    # A bypass for the redundant case
+    if len(freqs) == 1:
+        return numpy.zeros(len(mass_dict['m1']), dtype=float) + freqs[0]
+    cutoff_fns = pnutils.named_frequency_cutoffs()
+    if name not in cutoff_fns.keys():
+        err_msg = "%s not recognizes as a valid cutoff frequency choice." %name
+        err_msg += "Recognized choices: " + " ".join(cutoff_fns.keys())
+    f_cutoff = cutoff_fns[name](mass_dict)
+    return find_closest_calculated_frequencies(f_cutoff, freqs)
+
+def find_closest_calculated_frequencies(input_freqs, metric_freqs):
+    """
+    Given a value (or array) of input frequencies find the closest values in
+    the list of frequencies calculated in the metric.
+
+    Parameters
+    -----------
+    input_freqs : numpy.array or float
+        The frequency(ies) that you want to find the closest value in
+        metric_freqs
+    metric_freqs : numpy.array
+        The list of frequencies calculated by the metric
+
+    Returns
+    --------
+    output_freqs : numpy.array or float
+        The list of closest values to input_freqs for which the metric was
+        computed
+    """
+    try:
+        refEv = numpy.zeros(len(input_freqs),dtype=float)
+    except TypeError:
+        refEv = numpy.zeros(1, dtype=float)
+        input_freqs = numpy.array([input_freqs])
+
+    if len(metric_freqs) == 1:
+        refEv[:] = metric_freqs[0]
+        return refEv
+
+    # FIXME: This seems complicated for what is a simple operation. Is there
+    #        a simpler *and* faster way of doing this?
     # NOTE: This function assumes a sorted list of frequencies
     # NOTE: totmass and f_cutoff are both numpy arrays as this function is
     #       designed so that the cutoff can be calculated for many systems
     #       simulataneously
-    for i in xrange(len(freqs)):
+    for i in xrange(len(metric_freqs)):
         if i == 0:
             # If frequency is lower than halfway between the first two entries
             # use the first (lowest) value
-            logicArr = f_cutoff < ((freqs[0] + freqs[1])/2.)
-        elif i == (len(freqs)-1):
+            logicArr = input_freqs < ((metric_freqs[0] + metric_freqs[1])/2.)
+        elif i == (len(metric_freqs)-1):
             # If frequency is larger than halfway between the last two entries
             # use the last (highest) value
-            logicArr = f_cutoff > ((freqs[-2] + freqs[-1])/2.)
+            logicArr = input_freqs > ((metric_freqs[-2] + metric_freqs[-1])/2.)
         else:
             # For frequencies within the range in freqs, check which points
             # should use the frequency corresponding to index i.
-            logicArrA = f_cutoff > ((freqs[i-1] + freqs[i])/2.)
-            logicArrB = f_cutoff < ((freqs[i] + freqs[i+1])/2.)
+            logicArrA = input_freqs > ((metric_freqs[i-1] + metric_freqs[i])/2.)
+            logicArrB = input_freqs < ((metric_freqs[i] + metric_freqs[i+1])/2.)
             logicArr = numpy.logical_and(logicArrA,logicArrB)
         if logicArr.any():
-            refEv[logicArr] = freqs[i]
+            refEv[logicArr] = metric_freqs[i]
     return refEv
 
 def outspiral_loop(N):

@@ -48,6 +48,20 @@ __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
 __program__ = "pycbc_geom_aligned_bank"
 
+
+# Define function used below
+
+def add_commands_to_cp(commands, options, cp, section_name):
+    for command in commands:
+        command_uscore = (command.replace('-','_'))[2:]
+        if hasattr(options, command_uscore):
+            attr = getattr(options, command_uscore)
+            if attr is True:
+                cp.set(section_name, command[2:], '')
+            elif attr:
+                cp.set(section_name, command[2:], str(attr))
+
+
 # Read command line options
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc,
@@ -94,16 +108,19 @@ parser.add_argument("--print-chi-points", action="store", default=None,
                     "chi points file will be written.")
 
 # Insert the metric calculation options
-pycbc.tmpltbank.insert_metric_calculation_options(parser)
+metric_opts = pycbc.tmpltbank.insert_metric_calculation_options(parser)
 
 # Insert the mass range options
-pycbc.tmpltbank.insert_mass_range_option_group(parser)
+mass_range_opts = pycbc.tmpltbank.insert_mass_range_option_group(parser)
 
 # Insert the PSD options
-pycbc.psd.insert_psd_option_group(parser)
+psd_opts = pycbc.psd.insert_psd_option_group(parser)
 
 # Insert the data reading options
-pycbc.strain.insert_strain_option_group(parser)
+data_opts = pycbc.strain.insert_strain_option_group(parser)
+
+# Add the ethinca calculation options - applied in the combiner
+ethinca_opts = pycbc.tmpltbank.insert_ethinca_metric_options(parser)
 
 opts = parser.parse_args()
 # Going to need this for setting up the dag later
@@ -119,6 +136,12 @@ ligolw_process.register_to_xmldoc(outdoc, __program__, vars(opts), comment="",
                             cvs_entry_time=pycbc.version.date)
 ligolw_utils.write_filename(outdoc, cmds_file_name)
 
+if opts.verbose:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
+
 # Sanity check options
 if not opts.output_file:
     parser.error("Must supply --output-file")
@@ -127,6 +150,14 @@ if not opts.min_match:
 opts.max_mismatch = 1 - opts.min_match
 if not opts.log_path:
     parser.error("Must supply --log-path")
+if not opts.write_metric:
+    warn_message = "--write-metric is required by this code. Enabling it."
+    logging.warn(warn_message)
+    opts.write_metric = True
+if orig_opts.write_metric:
+    # Do not want the combiner job to write these files again
+    orig_opts.write_metric = False
+
 pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
 metricParams=pycbc.tmpltbank.metricParameters.from_argparse(opts)
 pycbc.tmpltbank.verify_mass_range_options(opts, parser)
@@ -134,15 +165,19 @@ massRangeParams=pycbc.tmpltbank.massRangeParameters.from_argparse(opts)
 pycbc.psd.verify_psd_options(opts, parser)
 if opts.psd_estimation:
     pycbc.strain.verify_strain_options(opts, parser)
+pycbc.tmpltbank.verify_ethinca_metric_options(opts, parser)
+ethincaParams = pycbc.tmpltbank.ethincaParameters.from_argparse(opts)
+# Ensure consistency of ethinca and bank metric parameters
+pycbc.tmpltbank.check_ethinca_against_bank_params(ethincaParams, metricParams)
+# Ethinca calculation should currently only be done for non-spin templates
+if ethincaParams.full_ethinca and (massRangeParams.maxNSSpinMag>0.0 or
+                                massRangeParams.maxBHSpinMag>0.0):
+    parser.error("Ethinca metric calculation is currently not valid for "
+                 "nonzero spins!")
+
 # Set random seed if needed
 if opts.random_seed is not None:
     numpy.random.seed(opts.random_seed)
-
-if opts.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
 
 # If we are going to use h(t) to estimate a PSD we need h(t)
 if opts.psd_estimation:
@@ -172,9 +207,11 @@ logging.info("Calculating covariance matrix")
 vals = pycbc.tmpltbank.estimate_mass_range(1000000, massRangeParams, \
        metricParams, metricParams.fUpper, covary=False) 
 cov = numpy.cov(vals)
-evalsCV,evecsCV = numpy.linalg.eig(cov)
-metricParams.evecsCV = {}
-metricParams.evecsCV[metricParams.fUpper] = evecsCV
+evalsCV, evecsCV = numpy.linalg.eig(cov)
+evecsCVdict = {}
+evecsCVdict[metricParams.fUpper] = evecsCV
+metricParams.evecsCV = evecsCVdict
+
 
 logging.info("Determining parameter space extent")
 
@@ -208,11 +245,6 @@ else:
     chi3Diff = chi3Max - chi3Min
 
 logging.info("Lattice contains %d points" % len(v1s))
-
-# Dump the files needed to define the xi_i parameter space
-numpy.savetxt('metric_evecs.dat', metricParams.evecs[opts.f_upper])
-numpy.savetxt('metric_evals.dat', metricParams.evals[opts.f_upper])
-numpy.savetxt('covariance_evecs.dat', metricParams.evecsCV[opts.f_upper])
 
 # Now remove points that are too far from edges of parameter space
 
@@ -322,56 +354,48 @@ dag.set_dag_file('bank_generation')
 exe_path = distutils.spawn.find_executable('pycbc_geom_aligned_2dstack')
 job = pipeline.CondorDAGJob('vanilla',exe_path)
 #pipeline.AnalysisJob.__init__(job,cp,False)
-job.set_stdout_file('logs/bank_gen-$(cluster)-$(process).out')
+job.set_stdout_file('/dev/null')
 job.set_stderr_file('logs/bank_gen-$(cluster)-$(process).err')
 job.set_sub_file('bank_gen.sub')
 # Add global job options
 cp = ConfigParser.ConfigParser()
 cp.add_section('bank')
+# Add full set of mass range options
+mass_range_commands = pycbc.tmpltbank.get_options_from_group(mass_range_opts)
+add_commands_to_cp(mass_range_commands, orig_opts, cp, 'bank')
+
 cp.set('bank','pn-order',opts.pn_order)
-cp.set('bank','metric-evals-file','metric_evals.dat')
-cp.set('bank','metric-evecs-file','metric_evecs.dat')
-cp.set('bank','cov-evecs-file','covariance_evecs.dat')
+cp.set('bank','metric-evals-file','metric_evals_%d.dat' %metricParams.fUpper)
+cp.set('bank','metric-evecs-file','metric_evecs_%d.dat' %metricParams.fUpper)
+cp.set('bank','cov-evecs-file','covariance_evecs_%d.dat' %metricParams.fUpper)
 cp.set('bank','f0',str(opts.f0))
-cp.set('bank','max-mass1',str(opts.max_mass1))
-cp.set('bank','min-mass1',str(opts.min_mass1))
-cp.set('bank','max-mass2',str(opts.max_mass2))
-cp.set('bank','min-mass2',str(opts.min_mass2))
-if opts.max_total_mass:
-    cp.set('bank','max-total-mass',str(opts.max_total_mass))
-if opts.min_total_mass:
-    cp.set('bank','min-total-mass',str(opts.min_total_mass))
-if opts.max_chirp_mass:
-    cp.set('bank','max-chirp-mass',str(opts.max_chirp_mass))
-if opts.min_chirp_mass:
-    cp.set('bank','min-chirp-mass',str(opts.min_chirp_mass))
-if opts.max_eta:
-    cp.set('bank','max-eta',str(opts.max_eta))
-if opts.min_eta:
-    cp.set('bank','min-eta',str(opts.min_eta))
-cp.set('bank','max-ns-spin-mag',str(opts.max_ns_spin_mag))
-cp.set('bank','max-bh-spin-mag',str(opts.max_bh_spin_mag))
-if opts.ns_bh_boundary_mass:
-    cp.set('bank', 'ns-bh-boundary-mass', str(opts.ns_bh_boundary_mass))
-if opts.nsbh_flag:
-    cp.set('bank','nsbh-flag','')
 cp.set('bank','min-match',str(opts.min_match))
 cp.set('bank','stack-distance',str(opts.stack_distance))
 if opts.threed_lattice:
     cp.set('bank','threed-lattice','')
 if opts.random_seed:
     cp.set('bank', 'random-seed', str(opts.random_seed))
-job.add_ini_opts(cp,'bank')
+job.add_ini_opts(cp, 'bank')
 job.add_condor_cmd('Requirements', 'Memory >= 1390')
 job.add_condor_cmd('request_memory', '1400')
 job.add_condor_cmd('getenv','True')
 # Make the output job
 cat_path = distutils.spawn.find_executable('pycbc_aligned_bank_cat')
 job_cat = pipeline.CondorDAGJob('vanilla', cat_path)
-job_cat.set_stdout_file('logs/bank_cat-$(cluster)-$(process).out')
+job_cat.set_stdout_file('/dev/null')
 job_cat.set_stderr_file('logs/bank_cat-$(cluster)-$(process).err')
 job_cat.set_sub_file('bank_cat.sub')
 job_cat.add_condor_cmd('getenv','True')
+cp.add_section('combiner')
+metric_commands = pycbc.tmpltbank.get_options_from_group(metric_opts)
+add_commands_to_cp(metric_commands, orig_opts, cp, 'combiner')
+psd_commands = pycbc.tmpltbank.get_options_from_group(psd_opts)
+add_commands_to_cp(psd_commands, orig_opts, cp, 'combiner')
+data_commands = pycbc.tmpltbank.get_options_from_group(data_opts)
+add_commands_to_cp(data_commands, orig_opts, cp, 'combiner')
+ethinca_commands = pycbc.tmpltbank.get_options_from_group(ethinca_opts)
+add_commands_to_cp(ethinca_commands, orig_opts, cp, 'combiner')
+job_cat.add_ini_opts(cp, 'combiner')
 
 # Make the output node
 cat_node = pipeline.CondorDAGNode(job_cat)
@@ -394,7 +418,7 @@ if opts.print_chi_points:
     # Make the printer job
     cat_path = distutils.spawn.find_executable('pycbc_tmpltbank_to_chi_params')
     job_print = pipeline.CondorDAGJob('vanilla', cat_path)
-    job_print.set_stdout_file('logs/print_chi-$(cluster)-$(process).out')
+    job_print.set_stdout_file('/dev/null')
     job_print.set_stderr_file('logs/print_chi-$(cluster)-$(process).err')
     job_print.set_sub_file('print_chi.sub')
     job_print.add_condor_cmd('getenv','True')

@@ -1,0 +1,30 @@
+
+./dist/pycbc_inspiral_static \
+--cluster-method window \
+--cluster-window 1 \
+--bank-file testNonSpin.xml \
+--approximant SPAtmplt \
+--gps-start-time   1026026000 \
+--gps-end-time 1026028048 \
+--snr-threshold 5.5 \
+--strain-high-pass 30.0 \
+--chisq-bins 16 \
+--psd-inverse-length 16 \
+--psd-segment-stride 128 \
+--psd-segment-length 256 \
+--psd-estimation median \
+--segment-length 256 \
+--segment-start-pad 64 \
+--segment-end-pad 16 \
+--low-frequency-cutoff 40.0 \
+--pad-data 8 \
+--sample-rate 4096 \
+--order 7 \
+--fake-strain iLIGOModel \
+--fake-strain-seed 0 \
+--channel-name H1:FAKE-STRAIN \
+--output test.xml.gz \
+--processing-scheme cpu \
+--fftw-measure-level 0 \
+--cluster-before-vetoes \
+--verbose

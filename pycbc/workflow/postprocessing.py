@@ -110,8 +110,8 @@ def setup_postproc_pipedown_workflow(workflow, trigger_files, summary_xml_files,
     trigger_files : pycbc.workflow.core.FileList
         An FileList containing the combined databases at CAT_1,2,3... that
         will be used to calculate FARs
-    summary_xml_files : pycbc.workflow.core.FileList
-        An FileList of the output of the analysislogging_utils module.
+    summary_xml_files : pycbc.workflow.core.FileList (required)
+        A FileList of the output of the analysislogging_utils module.
         For pipedown-style post-processing this should be one file conataing a
         segment table holding the single detector analysed times.
     output_dir : path

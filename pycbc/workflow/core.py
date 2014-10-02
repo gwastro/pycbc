@@ -332,7 +332,11 @@ class Workflow(pegasus_workflow.Workflow):
         # add workflow storage locations to the output mapper
         f = open(self.name + '.map', 'w')
         for out in self._outputs:
-            f.write(out.output_map_str() + '\n')
+            try:
+                f.write(out.output_map_str() + '\n')
+            except ValueError:
+                # There was no storage path
+                pass
     
 class Node(pegasus_workflow.Node):
     def __init__(self, executable):
@@ -403,7 +407,20 @@ class Node(pegasus_workflow.Node):
         
     @property    
     def output_files(self):
-        return self._outputs
+        return FileList(self._outputs)
+
+    @property
+    def output_file(self):
+        """
+        If only one output file return it. Otherwise raise an exception.
+        """
+        out_files = self.output_files
+        if len(out_files) != 1:
+            err_msg = "output_file property is only valid if there is a single"
+            err_msg += " output file. Here there are "
+            err_msg += "%d output files." %(len(out_files))
+            raise ValueError(err_msg)
+        return out_files[0]
     
 class File(pegasus_workflow.File):
     '''
@@ -427,7 +444,8 @@ class File(pegasus_workflow.File):
     c = File("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), directory="/home/spxiwh", extension="xml.gz" )
     '''
     def __init__(self, ifos, exe_name, segs, file_url=None, 
-                 extension=None, directory=None, tags=None):       
+                 extension=None, directory=None, tags=None, 
+                 store_file=True):       
         """
         Create a File instance
         
@@ -517,7 +535,11 @@ class File(pegasus_workflow.File):
         self.cache_entry.workflow_file = self
 
         super(File, self).__init__(basename(self.cache_entry.path))
-        self.storage_path = self.cache_entry.path
+        
+        if store_file:
+            self.storage_path = self.cache_entry.path
+        else:
+            self.storage_path = None
 
     @property
     def ifo(self):
@@ -801,6 +823,14 @@ class FileList(list):
         # Enforce upper case
         tag = tag.upper()
         return FileList([i for i in self if tag in i.tags])
+
+    def find_output_without_tag(self, tag):
+        """
+        Find all files who do not have tag in self.tags
+        """
+        # Enforce upper case
+        tag = tag.upper()
+        return FileList([i for i in self if not tag in i.tags])
 
     def find_output_with_ifo(self, ifo):
         """
