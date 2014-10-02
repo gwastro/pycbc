@@ -36,7 +36,7 @@ import os.path
 import logging
 from glue import segments
 from pycbc.workflow.core import FileList, make_analysis_dir
-from pycbc.workflow.jobsetup import LigolwAddExecutable, LigolwSSthincaExecutable
+from pycbc.workflow.jobsetup import LigolwAddExecutable, LigolwSSthincaExecutable, SQLInOutExecutable
 from pylal import ligolw_cafe, ligolw_tisi
 
 def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
@@ -345,17 +345,30 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
     cp = workflow.cp
     ifoString = workflow.ifo_string
 
+    # This flag will add a clustering job after ligolw_thinca
+    if workflow.cp.has_option_tags("workflow-coincidence", 
+                                             "coincidence-post-cluster", tags):
+        coinc_post_cluster = True
+    else:
+        coinc_post_cluster = False
+
+
     # Set up jobs for ligolw_add and ligolw_thinca
     ligolwadd_job = LigolwAddExecutable(cp, 'llwadd', ifo=ifoString, 
                                      out_dir=output_dir, tags=tags)
     ligolwthinca_job = LigolwSSthincaExecutable(cp, 'thinca', ifo=ifoString, 
                                      out_dir=output_dir, 
                                      dqVetoName=dqVetoName, tags=tags)
+    if coinc_post_cluster:
+        cluster_job = SQLInOutExecutable(cp, 'pycbccluster',
+                                     ifo=ifoString, out_dir=output_dir,
+                                     tags=tags)
 
     # Set up the nodes to do the coincidence analysis
     ligolwAddOuts = FileList([])
     ligolwThincaOuts = FileList([])
     ligolwThincaLikelihoodOuts = FileList([])
+    ligolwClusterOuts = FileList([])
     for idx, cafe_cache in enumerate(cafe_caches):
         if not len(cafe_cache.objects):
             raise ValueError("One of the cache objects contains no files!")
@@ -396,6 +409,11 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
             ligolwThincaLikelihoodOuts += \
                            node.output_files.find_output_with_tag('DIST_STATS')
             workflow.add_node(node)
+            if coinc_post_cluster:
+                node = cluster_job.create_node(cafe_cache.extent,
+                                               ligolwThincaOuts[-1])
+                ligolwClusterOuts += node.output_files
+                workflow.add_node(node)
         else:
             for key in insp_files_dict.keys():
                 curr_tags = ["JOB%d" %(key)]
@@ -426,9 +444,20 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
                 ligolwThincaLikelihoodOuts += \
                           node.output_files.find_output_with_tag('DIST_STATS')
                 workflow.add_node(node)
+                if coinc_post_cluster:
+                    node = cluster_job.create_node(cafe_cache.extent, 
+                                                   ligolwThincaOuts[-1])
+                    ligolwClusterOuts += node.output_files
+                    workflow.add_node(node)
 
     other_returns = {}
     other_returns['LIGOLW_ADD'] = ligolwAddOuts
     other_returns['DIST_STATS'] = ligolwThincaLikelihoodOuts
+    
+    if coinc_post_cluster:
+        main_return = ligolwClusterOuts
+        other_returns['THINCA'] = ligolwThincaOuts
+    else:
+        main_return = ligolwThincaOuts
 
-    return ligolwThincaOuts, other_returns
+    return main_return, other_returns

@@ -929,7 +929,7 @@ class SQLInOutExecutable(Executable):
 
         node = Node(self)
         node.add_input_opt('--input', input_file)
-        node.new_output_file_opt(job_segment, '.sql', '--output',
+        node.new_output_file_opt(job_segment, '.sqlite', '--output',
                                  tags=self.tags+extra_tags)
         return node
 

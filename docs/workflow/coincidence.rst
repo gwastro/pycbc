@@ -68,6 +68,11 @@ If exact-match coincidence is used, then the coincidence jobs can be parallelize
 
 * coincidence-exact-match-parallelize =
 
+To reduce output file size, it can be useful to put clustering jobs directly
+after the coincidence jobs. To do this add
+
+* coincidence-post-cluster =
+
 If it is desired to use the gstlal-likelihood-based post-processing, which requires exact-match, then the option
 
 * coincidence-write-likelihood =
