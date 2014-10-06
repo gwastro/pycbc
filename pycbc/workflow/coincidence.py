@@ -510,6 +510,25 @@ class PyCBCStatMapExecutable(Executable):
         if external_background:
             node.add_input_opt('--external-background', external_background)
         return node
+        
+class PyCBCHDFInjFindExecutable(Executable):
+    """ Find injections in the hdf files output
+    """
+    def create_node(self, inj_coinc_file, inj_xml_file, veto_file, tags=[]):
+        node = Node(self)
+        node.add_input_opt('--trigger-file', inj_coinc_file)
+        node.add_input_opt('--injection-file', inj_xml_file)
+        node.new_output_file_opt(inj_xml_file.segment, '.hdf', '--output-file', 
+                                 tags=tags)
+
+def find_injections_in_hdf_coinc(workflow, inj_coinc_file, inj_xml_file, 
+                                 veto_file, out_dir, tags=[]):
+    exe = PyCBCHDFInjFindExecutable(workflow.cp, 'hdfinjfind', 
+                                    ifos=workflow.ifos, 
+                                    out_dir=out_dir, tags=tags)
+    node = exe.create_node(inj_coinc_file, inj_xml_file, veto_file, tags)
+    workflow += node
+    return node.output_files[0]     
 
 def convert_bank_to_hdf(workflow, xmlbank, out_dir, tags=[]):
     """Return the template bank in hdf format
