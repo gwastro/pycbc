@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2013 Ian W. Harry
+# Copyright (C) 2013 Ian W. Harry, Alex Nitz
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -19,7 +19,6 @@
 """
 Programe for running multi-detector workflow analysis through coincidence and then
 generate post-processing and plots with pipedown.
-This is designed to mimic the current behaviour of weekly_ihope.
 """
 import pycbc
 import pycbc.version
@@ -46,10 +45,10 @@ workflow = wf.Workflow(args, 'weekly_ahope')
 
 # Needed later for WIP
 if args.output_dir:
-    baseDir = args.output_dir
+    runDir = args.output_dir
 else:
     baseDir = os.getcwd()
-runDir = os.path.join(baseDir, '%d-%d' %tuple(workflow.analysis_time))
+    runDir = os.path.join(baseDir, '%d-%d' %tuple(workflow.analysis_time))
 if not os.path.exists(runDir):
     os.makedirs(runDir)
 os.chdir(runDir)
