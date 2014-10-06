@@ -308,6 +308,7 @@ setup (
                'bin/pycbc_make_coinc_workflow',
                'bin/pycbc_make_daily_workflow',
                'bin/pycbc_ligolw_find_playground',
+               'bin/pycbc_make_nitz_coinc_workflow',
                'bin/pycbc_basic_pegasus_plan',
                'bin/pycbc_coinc_findtrigs',
                'bin/pycbc_coinc_bank2hdf',

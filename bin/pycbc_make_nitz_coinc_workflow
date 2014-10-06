@@ -1,0 +1,115 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2013 Ian W. Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Programe for running multi-detector workflow analysis through coincidence and then
+generate post-processing and plots with pipedown.
+This is designed to mimic the current behaviour of weekly_ihope.
+"""
+import pycbc
+import pycbc.version
+__author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
+__version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
+__program__ = "weekly_workflow"
+
+import os, argparse, ConfigParser, logging
+from pycbc import workflow as wf
+
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
+                    level=logging.INFO)
+
+_desc = __doc__[1:]
+parser = argparse.ArgumentParser(description=_desc)
+parser.add_argument('--version', action='version', version=__version__)
+parser.add_argument("-d", "--output-dir", default=None,
+                    help="Path to output directory.")
+wf.add_workflow_command_line_group(parser)
+args = parser.parse_args()
+
+workflow = wf.Workflow(args, 'weekly_ahope')
+
+# Needed later for WIP
+if args.output_dir:
+    baseDir = args.output_dir
+else:
+    baseDir = os.getcwd()
+runDir = os.path.join(baseDir, '%d-%d' %tuple(workflow.analysis_time))
+if not os.path.exists(runDir):
+    os.makedirs(runDir)
+os.chdir(runDir)
+
+currDir = os.getcwd()
+
+segDir = os.path.join(currDir, "segments")
+bankDir = os.path.join(currDir, "bank")
+fdDir = os.path.join(currDir, "full_data")
+dfDir = os.path.join(currDir, "datafind")
+injDir = os.path.join(currDir, "inj_files")
+flDir = os.path.join(currDir, "file_lists")
+
+# Get segments and find where the data is
+scienceSegs, segsFileList = wf.setup_segment_generation(workflow, segDir)
+datafind_files, scienceSegs = wf.setup_datafind_workflow(workflow, 
+                                            scienceSegs, dfDir, segsFileList)
+
+# Template bank stuff
+bank_files = wf.setup_tmpltbank_workflow(workflow, scienceSegs, 
+                                            datafind_files, dfDir)
+                                            
+hdfbank = wf.convert_bank_to_hdf(workflow, bank_files, dfDir)
+                                       
+splitbank_files = wf.setup_splittable_workflow(workflow, bank_files, dfDir) 
+
+
+# setup the injection files
+inj_files, inj_tags = wf.setup_injection_workflow(workflow, 
+                                                     output_dir=injDir)
+bg_file = None                                                                                     
+tags = ["full_data"] + inj_tags
+output_dirs = [fdDir]
+output_dirs.extend([os.path.join(currDir, tag) for tag in inj_tags])
+for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
+
+    if tag == 'full_data':
+        ctags = [tag, 'full']
+        veto_files = segsFileList
+    else:
+        ctags = [tag, 'inj']
+        veto_files = []
+        output_dir += '_coinc'
+
+    # setup the matchedfilter jobs                                                     
+    insps = wf.setup_matchedfltr_workflow(workflow, scienceSegs, 
+                                       datafind_files, splitbank_files, 
+                                       output_dir, injection_file=inj_file,
+                                       tags = [tag])
+
+    # convert insps to hdf
+    insps_hdf = wf.convert_trig_to_hdf(workflow, hdfbank, insps, output_dir, tags=[tag])
+    insps_hdf.to_file_object("single_trig_" + tag, flDir)
+    # setup coinc for the filtering jobs
+    if tag == 'full_data':
+        bg_file = wf.setup_interval_coinc(workflow, hdfbank, insps_hdf, veto_files,
+                                       output_dir, tags=ctags)       
+    else:
+        wf.setup_interval_coinc_inj(workflow, hdfbank, insps_hdf, bg_file,
+                                         output_dir, tags = ctags)
+        
+workflow.save()
+logging.info("Written dax.")
