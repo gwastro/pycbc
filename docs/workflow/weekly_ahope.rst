@@ -1,6 +1,6 @@
-########################################################
+############################################################
 pycbc_make_coinc_workflow: A CBC analysis workflow generator
-########################################################
+############################################################
 
 ===============
 Introduction
@@ -33,7 +33,6 @@ described on the page here:
 ----------------------------------------------------------------------------
 The configuration file - Do you already have configuration (.ini) file(s)?
 ----------------------------------------------------------------------------
-
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Yes, I already have configuration files
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
@@ -48,11 +47,22 @@ and set the names of these configuration files in your path. If you have more th
 
 Now go down to :ref:`weeklyahopegenerate`.
 
+
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+Yes, I would like to use the unmodified preinstalled configuration files
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+Set the configurations files in your path and proceed to workflow generation::
+
+    INSTALLED_CONFIG_FILES="example_pycbc.ini example_inj.ini example_pipedown.ini"
+
+Now go down to :ref:`weeklyahopegenerate`.
+
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 No, I need to make a configuration file - Editing the example files
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-The default configuration file for weekly_ahope is found in three parts::
+Default configuration files are found in three parts::
 
     /src/dir/pycbc/workflow/ini_files/example_pycbc.ini
     /src/dir/pycbc/workflow/ini_files/example_pipedown.ini
@@ -63,7 +73,7 @@ These files contain all the details needed to run weekly_ahope
 .. note::
 
     If you are unfamiliar with pycbc workflows, look through these files.
-    pipedown.ini will look familiar if you are used to ihope workflows.
+    example_pipedown.ini will look familiar if you are used to ihope workflows.
 
 * example_pycbc.ini contains options that are used when running the pycbc.workflow parts of the workflow
 * example_pipedown.ini contains options that are used when running pipedown
@@ -121,7 +131,7 @@ Copy the configuration files into your run directory::
 
 and set the names of these configuration files in your path. If you have more than one configuration file they must be space separated::
 
-    CONFIG_FILES="weekly_ahope.ini inj.ini pipedown.ini"
+    LOCAL_CONFIG_FILES="weekly_ahope.ini inj.ini pipedown.ini"
 
 .. _weeklyahopegenerate:
 
@@ -166,9 +176,21 @@ You also need to choose where the html page will be generated. For example::
 
     export HTMLDIR=/home/${USER}/public_html/ahope
 
-Then you can generate the workflow::
+If you are using locally editted or custom configuration files then you can
+create the workflow using::
 
-    pycbc_make_coinc_workflow --installed-config-files ${CONFIG_FILES} \
+    pycbc_make_coinc_workflow --local-config-files ${LOCAL_CONFIG_FILES} \
+                           --config-overrides ahope:start-time:${GPS_START_TIME} \
+                                              ahope:end-time:${GPS_END_TIME} \
+                                              ahope:ahope-html-basedir:${HTMLDIR} \
+                                              ahope:pipedown-log-path:${LOGPATH} \
+                                              ahope:pipedown-tmp-space:${PIPEDOWNTMPSPACE}
+                                              
+                                              
+If you are using default installed configuration files then you can create the
+workflow using::
+
+    pycbc_make_coinc_workflow --installed-config-files ${INSTALLED_CONFIG_FILES} \
                            --config-overrides ahope:start-time:${GPS_START_TIME} \
                                               ahope:end-time:${GPS_END_TIME} \
                                               ahope:ahope-html-basedir:${HTMLDIR} \
@@ -254,9 +276,22 @@ Section 3.4 removes hardware injections and times marked by CAT_3 vetoes.
 
 Section 3.5 shows the recovery of the simulated signals that were added in this workflow.
 
------------------------------------------
+=============================
 Workflow visualization
------------------------------------------
+=============================
+
+-----------------------------
+Pegasus Dashboard
+-----------------------------
+
+The `pegeasus dashboard <http://pegasus.isi.edu/wms/docs/latest/ch02s11.php>`_ is a visual and interactive way to get information about the progress, status, etc of your workflows. 
+
+The software can be obtained from a seprate pegasus package here <https://github.com/pegasus-isi/pegasus-service>. 
+
+-----------------------------
+Pegasus Plots
+-----------------------------
+
 
 Pegasus has a tool called pegasus-plan to visualize workflows. To generate these charts and create an summary html page with this information, one would run::
 
