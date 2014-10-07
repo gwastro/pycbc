@@ -104,11 +104,15 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
     insps_hdf.to_file_object("single_trig_" + tag, flDir)
     # setup coinc for the filtering jobs
     if tag == 'full_data':
-        bg_file = wf.setup_interval_coinc(workflow, hdfbank, insps_hdf, veto_files,
+        bg_file, veto_file = wf.setup_interval_coinc(workflow, hdfbank, insps_hdf, veto_files,
                                        output_dir, tags=ctags)       
     else:
-        wf.setup_interval_coinc_inj(workflow, hdfbank, insps_hdf, bg_file,
-                                         output_dir, tags = ctags)
+        inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank, 
+                                                insps_hdf, bg_file,
+                                                output_dir, tags = ctags)
+        found_inj = wf.find_injections_in_hdf_coinc(workflow, inj_coinc,
+                                                inj_file, veto_file, 
+                                                output_dir, tags=ctags)
         
 workflow.save()
 logging.info("Written dax.")

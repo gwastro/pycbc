@@ -518,8 +518,10 @@ class PyCBCHDFInjFindExecutable(Executable):
         node = Node(self)
         node.add_input_opt('--trigger-file', inj_coinc_file)
         node.add_input_opt('--injection-file', inj_xml_file)
+        node.add_input_opt('--veto-file', veto_file)
         node.new_output_file_opt(inj_xml_file.segment, '.hdf', '--output-file', 
                                  tags=tags)
+        return node
 
 def find_injections_in_hdf_coinc(workflow, inj_coinc_file, inj_xml_file, 
                                  veto_file, out_dir, tags=[]):
@@ -627,6 +629,7 @@ def setup_interval_coinc_inj(workflow, hdfbank, trig_files,
     workflow.add_node(combine_node)
 
     logging.info('...leaving coincidence ')
+    return combine_node.output_files[0]
 
 def setup_interval_coinc(workflow, hdfbank, trig_files,
                          veto_files, out_dir, tags=[]):
@@ -661,6 +664,8 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
 
     tags, veto_file_groups = veto_files.categorize_by_attr('tags')
     chosen_bg_file = FileList()
+    chosen_veto_file = None
+    
     for tag, veto_files in zip(tags, veto_file_groups):
         bg_files = FileList()
         if 'CUMULATIVE_CAT' in tag[0]:
@@ -668,10 +673,8 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
             group_start = 0
             group_end = group_size
             while 1:
-                group_id += 1
-                          
+                group_id += 1                        
                 values = range(group_start, group_end)
-                
                 group_str = (' %s ' * len(values)) % tuple(values)
                 coinc_node = findcoinc_exe.create_node(trig_files, veto_files,
                                                        group_str,
@@ -693,7 +696,8 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
             workflow.add_node(combine_node)
             if 'CUMULATIVE_CAT_4' in tag[0]:
                 chosen_bg_file += combine_node.output_files
+                chosen_veto_file = veto_files[0]
 
-    return chosen_bg_file
+    return chosen_bg_file, chosen_veto_file
     logging.info('...leaving coincidence ')
     
