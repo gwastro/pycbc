@@ -1,13 +1,11 @@
 #!/bin/bash
 # Check I have two arguments supplied
-if [ "x$1" == "x" ]
-then
+if [ "x$1" == "x" ]; then
   echo "I take two arguments, the name of the dax file and the logpath. None supplied."
   exit 1
 fi
 
-if [ "x$2" == "x" ]
-then
+if [ "x$2" == "x" ]; then
   echo "I take two arguments, the name of the dax file and the logpath. Only got one: $1"
   exit 1
 fi
@@ -24,7 +22,13 @@ bash temp.sh > site-local-parsed.xml
 
 # Plan the workflow
 echo "Generating concrete workflow"
-pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites local -o local --dir $2 --cleanup inplace
+
+if [ "x$3" == "x--cache" ]; then
+  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites local -o local --dir $2 --cleanup inplace --cache $4
+else
+  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites local -o local --dir $2 --cleanup inplace
+fi
+
 
 #echo "Generating the workflow shell script"
 #pegasus-plan --conf basic_pegasus.conf -d $1 --sites local -o local --dir $PWD --nocleanup
