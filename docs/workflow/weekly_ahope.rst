@@ -347,20 +347,14 @@ tmpltbank jobs and places their entries into a new listing called prior_data.map
 
 Place this file in the ${GPS_START_TIME}-${GPS_END_TIME}/  directory of your new run.
 
------------------------------------------------------------
-Tell pegasus about these files during the workflow planning
------------------------------------------------------------
+---------------------------
+Plan the workflow
+---------------------------
 
-In base directory of your new run, modify the pegasus.conf file to include the following
-lines, which tells pegasus that it can use the data produces in the file we just created.::
+From the directory where the dax was created, run the planning script::
 
-     pegasus.catalog.replica=File
-     pegasus.catalog.replica.file=prior_data.map 
+    pycbc_basic_pegasus_plan weekly_ahope.dax $LOGPATH --cache prior_data.map
 
---------
-Run
---------
-
-Follow the :ref:`weeklyahopeplan` instructions to now plan and submit your reduced
+Follow the remaining :ref:`weeklyahopeplan` instructions to submit your reduced
 workflow.
 
