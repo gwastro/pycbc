@@ -510,7 +510,33 @@ class PyCBCStatMapExecutable(Executable):
         if external_background:
             node.add_input_opt('--external-background', external_background)
         return node
-        
+
+
+def make_sensitivity_plot(workflow, inj_file, out_dir, tags=[]):
+    make_analysis_dir(out_dir)
+    node = Node(Executable(workflow.cp, 'plot_sensitivity', ifos=workflow.ifos,
+                out_dir=out_dir, tags=tags))
+    node.add_input_opt('--injection-file', inj_file)
+    node.new_output_file_opt(inj_file.segment, '.png', '--output-file')
+    workflow += node
+
+def make_foundmissed_plot(workflow, inj_file, inj_tag, out_dir, tags=[]):
+    make_analysis_dir(out_dir)
+    node = Node(Executable(workflow.cp, 'plot_foundmissed', ifos=workflow.ifos,
+                out_dir=out_dir, tags=tags))
+    node.add_opt('--injection-tag', inj_tag)
+    node.add_input_opt('--injection-file', inj_file)
+    node.new_output_file_opt(inj_file.segment, '.html', '--output-file')
+    workflow += node   
+    
+def make_snrifar_plot(workflow, bg_file, out_dir, tags=[]):
+    make_analysis_dir(out_dir)
+    node = Node(Executable(workflow.cp, 'plot_snrifar', ifos=workflow.ifos,
+                out_dir=out_dir, tags=tags))
+    node.add_input_opt('--trigger-file', bg_file)
+    node.new_output_file_opt(bg_file.segment, '.png', '--output-file')
+    workflow += node
+ 
 class PyCBCHDFInjFindExecutable(Executable):
     """ Find injections in the hdf files output
     """
@@ -525,6 +551,7 @@ class PyCBCHDFInjFindExecutable(Executable):
 
 def find_injections_in_hdf_coinc(workflow, inj_coinc_file, inj_xml_file, 
                                  veto_file, out_dir, tags=[]):
+    make_analysis_dir(out_dir)
     exe = PyCBCHDFInjFindExecutable(workflow.cp, 'hdfinjfind', 
                                     ifos=workflow.ifos, 
                                     out_dir=out_dir, tags=tags)
@@ -694,6 +721,10 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
 
             combine_node = combinecoinc_exe.create_node(bg_files, tags=tag)
             workflow.add_node(combine_node)
+            
+            make_snrifar_plot(workflow, combine_node.output_files[0], 
+                              'plots/background', tags=tag)
+            
             if 'CUMULATIVE_CAT_4' in tag[0]:
                 chosen_bg_file += combine_node.output_files
                 chosen_veto_file = veto_files[0]

@@ -105,7 +105,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
     # setup coinc for the filtering jobs
     if tag == 'full_data':
         bg_file, veto_file = wf.setup_interval_coinc(workflow, hdfbank, insps_hdf, veto_files,
-                                       output_dir, tags=ctags)       
+                                       output_dir, tags=ctags)      
     else:
         inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank, 
                                                 insps_hdf, bg_file,
@@ -113,6 +113,10 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
         found_inj = wf.find_injections_in_hdf_coinc(workflow, inj_coinc,
                                                 inj_file, veto_file, 
                                                 output_dir, tags=ctags)
-        
+                                                
+        wf.make_sensitivity_plot(workflow, found_inj, 'plots/sensitivity',
+                                 tags=ctags)
+        wf.make_foundmissed_plot(workflow, found_inj, tag, 'plots/foundmissed', 
+                                 tags=[tag])
 workflow.save()
 logging.info("Written dax.")
