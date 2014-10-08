@@ -99,7 +99,7 @@ mpld3.plugins.connect(fig, ClickLink(mpoints, murls))
 mpld3.plugins.connect(fig, mpld3.plugins.InteractiveLegendPlugin([mpoints, points],
                                                                  ['missed', 'found'],
                                                                  alpha_unsel=0.1))
-oname = os.path.split(args.output_file)[0] + '/mchirp-' + os.path.split(args.output_file)[1]
+oname = os.path.join(os.path.split(args.output_file)[0], 'mchirp-' + os.path.split(args.output_file)[1])
 mpld3.save_html(fig, open(oname, 'w'))
 
 # spin vs dec distance plot
@@ -123,6 +123,6 @@ mpld3.plugins.connect(fig, mpld3.plugins.InteractiveLegendPlugin([mpoints, point
                                                                  ['missed', 'found'],
                                                                  alpha_unsel=0.1))
 
-oname = os.path.split(args.output_file)[0] + '/spin-' + os.path.split(args.output_file)[1]
+oname = os.path.join(os.path.split(args.output_file)[0], 'spin-' + os.path.split(args.output_file)[1])
 mpld3.save_html(fig, open(oname, 'w'))
 
