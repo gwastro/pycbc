@@ -60,7 +60,7 @@ tell the workflow how to construct (or gather) the template banks. The first opt
 
 The choices here and their description are as described below
 
-* PREGNERATED_BANK - A pregenerated template bank is supplied and this should be used when performing matched-filtering for all ifos and all times. This uses the setup_tmpltbank_pregenerated sub-module.
+* PREGENERATED_BANK - A pregenerated template bank is supplied and this should be used when performing matched-filtering for all ifos and all times. This uses the setup_tmpltbank_pregenerated sub-module.
 * WORKFLOW_INDEPENDENT_IFOS - Template banks will be generated within the workflow. These banks will be made to cover only short (normally ~ 2000s) of data to reflect PSD changes over time and will be independent and distinct for each analysed interferometer. This uses the setup_tmpltbank_dax_generated sub-module.
 * WORKFLOW_INDEPENDENT_IFOS_NODATA - Template banks will be generated within the workflow. There will be one bank for each ifo, which will cover all times. No data frames will be used when constructing the workflow (ie. using a design PSD or similar). This uses the setup_tmpltbank_without_frames sub-module.
 * WORKFLOW_NO_IFO_VARIATION_NODATA - As WORKFLOW_INDEPENDENT_IFOS_NODATA except only one template bank will be generated that is valid for all ifos. This uses the setup_tmpltbank_without_frames sub-module.
