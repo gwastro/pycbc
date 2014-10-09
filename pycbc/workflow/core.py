@@ -243,6 +243,14 @@ class Executable(pegasus_workflow.Executable):
 
         return None
 
+    def has_opt(self, opt):
+        for sec in self.sections:
+            val = self.cp.has_option(sec, opt)
+            if val:
+                return val
+
+        return False
+
     def create_node(self):
         """ Default node constructor. This is usually overridden by subclasses
         of Executable.

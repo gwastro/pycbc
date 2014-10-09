@@ -127,7 +127,7 @@ class LegacyAnalysisExecutable(Executable):
         
         #check the extension       
         extension = '.xml'
-        gzipped = self.get_opt('write-compress')
+        gzipped = self.has_opt('write-compress')
         if gzipped is not None:
             extension += '.gz'
         
