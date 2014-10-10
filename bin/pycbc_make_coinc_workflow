@@ -17,7 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
-Programe for running multi-detector pycbc analysis through coincidence and then
+Program for running multi-detector pycbc analysis through coincidence and then
 generate post-processing and plots with pipedown.
 This is designed to mimic the current behaviour of weekly_ihope.
 """
@@ -74,6 +74,9 @@ datafind_files, scienceSegs = _workflow.setup_datafind_workflow(workflow,
                                             scienceSegs, dfDir, segsFileList)
 all_files.extend(datafind_files)
 
+max_veto_cat = int(
+    workflow.cp.get('workflow-segments', 'segments-maximum-veto-category'))
+
 # Template bank stuff
 bank_files = _workflow.setup_tmpltbank_workflow(workflow, scienceSegs, 
                                             datafind_files, dfDir)
@@ -111,7 +114,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
     all_files.extend(insps)
     coincs, others = _workflow.setup_coincidence_workflow(workflow, segsFileList,
                                         timeSlideFiles, insps, output_dir,
-                                        tags=[tag], maxVetoCat=5,
+                                        tags=[tag], maxVetoCat=max_veto_cat,
                                         timeSlideTags=timeSlideTags)
     all_files.extend(coincs)
     all_coincs.extend(coincs)
@@ -125,7 +128,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
 # Set up workflow's post-processing, this is still incomplete
 
 # FIXME: Don't like having to list this here!
-ppVetoCats = [2,3,4] 
+ppVetoCats = [2,3,4]
 
 postProcPrepFiles = _workflow.setup_postprocessing_preparation(workflow,
                       all_coincs, ppDir, injectionFiles=inj_files,
@@ -153,7 +156,7 @@ end_time = workflow.analysis_time[1]
 
 # Copy segment files
 ifoString = workflow.ifo_string
-for category in range(1, 6):
+for category in xrange(1, max_veto_cat + 1):
     vetoTag = 'CUMULATIVE_CAT_%d' %(category)
     workflowVetoFile = segsFileList.find_output_with_tag(vetoTag)
     assert len(workflowVetoFile) == 1
@@ -308,7 +311,8 @@ os.chdir("..")
 wipCp = copy.deepcopy(pipeCp)
 # We hardcoded vetocat to 5 above, so do so again here until fixed
 wipCp.add_section('segments')
-wipCp.set('segments','veto-categories','2,3,4,5')
+wipCp.set('segments', 'veto-categories',
+          ','.join([str(cat) for cat in xrange(2, max_veto_cat + 1)]))
 # Put the veto-definer in the expected location
 vetoFile = wipCp.get('workflow-segments', 'segments-veto-definer-file')
 vetoFileBase = os.path.basename(vetoFile)
