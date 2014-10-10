@@ -66,7 +66,7 @@ def filter_zpk(timeseries, z, p, k):
 
     return TimeSeries(series, delta_t = timeseries.delta_t,
                       dtype=timeseries.dtype,
-                      start_time=timeseries.start_time)
+                      epoch=timeseries._epoch)
 
 def filter_zpk_factored(timeseries, z, p, k, increment=3):
     """Return a new timeseries that is filter with zpk (zeros, poles, gain)
@@ -128,7 +128,7 @@ def filter_zpk_factored(timeseries, z, p, k, increment=3):
 
     return TimeSeries(series, delta_t = timeseries.delta_t,
                       dtype=timeseries.dtype,
-                      start_time=timeseries.start_time)
+                      epoch=timeseries._epoch)
  
 def coefficients_zpk(z, p, k, sample_rate):
     """Return anolog and digital coefficients for a zero-pole-gain filter.
