@@ -23,6 +23,7 @@ from pycbc.types import float32
 from pycbc.frame import read_frame
 from pycbc.inject import InjectionSet, SGBurstInjectionSet
 from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series
+from pycbc.filter.zpk import filter_zpk_factored
 
 def required_opts(opt, parser, opt_list, required_by=None):
     """Check that all the opts are defined 
@@ -102,6 +103,18 @@ def from_cli(opt, dyn_range_fac=1):
                             start_time=opt.gps_start_time-opt.pad_data, 
                             end_time=opt.gps_end_time+opt.pad_data)
 
+        if opt.zpk_z and opt.zpk_p and opt.zpk_k:
+            logging.info("Applying zpk filter")
+            z = -2*numpy.pi* numpy.array(opt.zpk_z)
+            p = -2*numpy.pi* numpy.array(opt.zpk_p)
+            k = opt.zpk_k
+            strain = filter_zpk_factored(strain.astype(numpy.float64), z, p, k)
+
+        if opt.normalize_strain:
+            logging.info("Dividing strain by constant")
+            l = opt.normalize_strain
+            strain = strain / l
+
         if opt.injection_file:
             logging.info("Applying injections")
             injections = InjectionSet(opt.injection_file)
@@ -137,7 +150,7 @@ def from_cli(opt, dyn_range_fac=1):
         start = opt.pad_data*opt.sample_rate
         end = len(strain)-opt.sample_rate*opt.pad_data
         strain = strain[start:end]
-        
+
     if opt.fake_strain:
         logging.info("Generating Fake Strain")
         duration = opt.gps_end_time - opt.gps_start_time
@@ -238,6 +251,21 @@ def insert_strain_option_group(parser):
                     help="(optional) Text file of gating segments to apply."
                         " Format of each line is (all times in secs):"
                         "  gps_time zeros_half_width pad_half_width")
+
+    data_reading_group.add_argument("--normalize-strain", type=float,
+                    help="(optional) Divide frame data by constant.")
+
+    data_reading_group.add_argument("--zpk-z", type=float, nargs="+",
+                    help="(optional) Zero-pole-gain (zpk) filter strain. "
+                        "A list of zeros for transfer function")
+
+    data_reading_group.add_argument("--zpk-p", type=float, nargs="+",
+                    help="(optional) Zero-pole-gain (zpk) filter strain. "
+                        "A list of poles for transfer function")
+
+    data_reading_group.add_argument("--zpk-k", type=float,
+                    help="(optional) Zero-pole-gain (zpk) filter strain. "
+                        "Transfer function gain")
 
     return data_reading_group
 
