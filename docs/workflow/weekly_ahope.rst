@@ -180,22 +180,22 @@ If you are using locally editted or custom configuration files then you can
 create the workflow using::
 
     pycbc_make_coinc_workflow --local-config-files ${LOCAL_CONFIG_FILES} \
-                           --config-overrides ahope:start-time:${GPS_START_TIME} \
-                                              ahope:end-time:${GPS_END_TIME} \
-                                              ahope:ahope-html-basedir:${HTMLDIR} \
-                                              ahope:pipedown-log-path:${LOGPATH} \
-                                              ahope:pipedown-tmp-space:${PIPEDOWNTMPSPACE}
+                           --config-overrides workflow:start-time:${GPS_START_TIME} \
+                                              workflow:end-time:${GPS_END_TIME} \
+                                              workflow:workflow-html-basedir:${HTMLDIR} \
+                                              workflow:pipedown-log-path:${LOGPATH} \
+                                              workflow:pipedown-tmp-space:${PIPEDOWNTMPSPACE}
                                               
                                               
 If you are using default installed configuration files then you can create the
 workflow using::
 
     pycbc_make_coinc_workflow --installed-config-files ${INSTALLED_CONFIG_FILES} \
-                           --config-overrides ahope:start-time:${GPS_START_TIME} \
-                                              ahope:end-time:${GPS_END_TIME} \
-                                              ahope:ahope-html-basedir:${HTMLDIR} \
-                                              ahope:pipedown-log-path:${LOGPATH} \
-                                              ahope:pipedown-tmp-space:${PIPEDOWNTMPSPACE}
+                           --config-overrides workflow:start-time:${GPS_START_TIME} \
+                                              workflow:end-time:${GPS_END_TIME} \
+                                              workflow:workflow-html-basedir:${HTMLDIR} \
+                                              workflow:pipedown-log-path:${LOGPATH} \
+                                              workflow:pipedown-tmp-space:${PIPEDOWNTMPSPACE}
 
 .. _weeklyahopeplan:
 
