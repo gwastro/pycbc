@@ -301,6 +301,65 @@ def f_LRD(m1, m2):
     """
     return 1.2 * f_FRD(m1, m2)
 
+def _get_freq(freqfunc, m1, m2, s1z, s2z):
+    """
+    Wrapper of the LALSimulation function returning the frequency
+    for a given frequency function and template parameters.
+
+    Parameters
+    ----------
+    freqfunc : lalsimulation FrequencyFunction wrapped object e.g. 
+        lalsimulation.fEOBNRv2RD
+    m1 : float-ish, i.e. castable to float
+        First component mass in solar masses
+    m2 : float-ish
+        Second component mass in solar masses
+    s1z : float-ish
+        First component dimensionless spin S_1/m_1^2 projected onto L
+    s2z : float-ish
+        Second component dimensionless spin S_2/m_2^2 projected onto L
+
+    Returns
+    -------
+    f : float
+        Frequency in Hz
+    """
+    # Convert to SI units for lalsimulation
+    m1kg = float(m1) * lal.MSUN_SI
+    m2kg = float(m2) * lal.MSUN_SI
+    return lalsimulation.SimInspiralGetFrequency(
+        m1kg, m2kg, 0, 0, float(s1z), 0, 0, float(s2z), int(freqfunc))
+
+# vectorize to enable calls with numpy arrays
+_vec_get_freq = numpy.vectorize(_get_freq)
+
+def get_freq(freqfunc, m1, m2, s1z, s2z):
+    """
+    Returns the LALSimulation function which evaluates the frequency
+    for the given frequency function and template parameters.
+
+    Parameters
+    ----------
+    freqfunc : string
+        Name of the frequency function to use, e.g., 'fEOBNRv2RD'
+    m1 : float or numpy.array
+        First component mass in solar masses
+    m2 : float or numpy.array
+        Second component mass in solar masses
+    s1z : float or numpy.array
+        First component dimensionless spin S_1/m_1^2 projected onto L
+    s2z : float or numpy.array
+        Second component dimensionless spin S_2/m_2^2 projected onto L
+
+    Returns
+    -------
+    f : float or numpy.array
+        Frequency in Hz
+    """
+    lalsim_ffunc = getattr(lalsimulation, freqfunc)
+    return _vec_get_freq(lalsim_ffunc, m1, m2, s1z, s2z)
+
+
 def _get_final_freq(approx, m1, m2, s1z, s2z):
     """
     Wrapper of the LALSimulation function returning the final (highest)
@@ -385,15 +444,27 @@ def named_frequency_cutoffs():
       "MECO"       : lambda p: meco_frequency(p["m1"], p["m2"],
                                               p["s1z"], p["s2z"]),
       # IMR functions
-      "IMRPhenomB" : lambda p: get_final_freq("IMRPhenomB", p["m1"], p["m2"],
+      "IMRPhenomBFinal" : lambda p: get_freq("fIMRPhenomBFinal",
+                                              p["m1"], p["m2"],
                                               p["s1z"], p["s2z"]),
-      "IMRPhenomC" : lambda p: get_final_freq("IMRPhenomC", p["m1"], p["m2"],
+      "IMRPhenomCFinal" : lambda p: get_freq("fIMRPhenomCFinal",
+                                              p["m1"], p["m2"],
                                               p["s1z"], p["s2z"]),
-      "EOBNRv2"    : lambda p: get_final_freq("EOBNRv2", p["m1"], p["m2"],
+      "EOBNRv2RD"  : lambda p: get_freq("fEOBNRv2RD", p["m1"], p["m2"],
                                               p["s1z"], p["s2z"]),
-      "SEOBNRv1"   : lambda p: get_final_freq("SEOBNRv1", p["m1"], p["m2"],
+      "EOBNRv2HMRD"  : lambda p: get_freq("fEOBNRv2HMRD", p["m1"], p["m2"],
                                               p["s1z"], p["s2z"]),
-      "SEOBNRv2"   : lambda p: get_final_freq("SEOBNRv2", p["m1"], p["m2"],
+      "SEOBNRv1RD"   : lambda p: get_freq("fSEOBNRv1RD",
+                                              p["m1"], p["m2"],
+                                              p["s1z"], p["s2z"]),
+      "SEOBNRv1Peak"   : lambda p: get_freq("fSEOBNRv1Peak",
+                                              p["m1"], p["m2"],
+                                              p["s1z"], p["s2z"]),
+      "SEOBNRv2RD"   : lambda p: get_freq("fSEOBNRv2RD",
+                                              p["m1"], p["m2"],
+                                              p["s1z"], p["s2z"]),
+      "SEOBNRv2Peak"   : lambda p: get_freq("fSEOBNRv2Peak",
+                                              p["m1"], p["m2"],
                                               p["s1z"], p["s2z"])
     }
     return cutoffFunctions
