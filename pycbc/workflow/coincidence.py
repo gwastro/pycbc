@@ -695,40 +695,38 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
     
     for tag, veto_files in zip(tags, veto_file_groups):
         bg_files = FileList()
-        if 'CUMULATIVE_CAT' in tag[0]:
-            group_id = 0
-            group_start = 0
-            group_end = group_size
-            while 1:
-                group_id += 1                        
-                values = range(group_start, group_end)
-                group_str = (' %s ' * len(values)) % tuple(values)
-                coinc_node = findcoinc_exe.create_node(trig_files, veto_files,
-                                                       group_str,
-                                                       tags= tag + [str(group_id)])
-                bg_files += coinc_node.output_files
-                workflow.add_node(coinc_node)
-                
-                group_start += group_size
-                group_end += group_size
-                
-                if group_start >= max_groups:
-                    break  
-                    
-                if group_end >= max_groups:
-                    group_end = max_groups
-                 
-
-            combine_node = combinecoinc_exe.create_node(bg_files, tags=tag)
-            workflow.add_node(combine_node)
+        stat_files = FileList()
+        group_id = 0
+        group_start = 0
+        group_end = group_size
+        while 1:
+            group_id += 1                        
+            values = range(group_start, group_end)
+            group_str = (' %s ' * len(values)) % tuple(values)
+            coinc_node = findcoinc_exe.create_node(trig_files, veto_files,
+                                                   group_str,
+                                                   tags= tag + [str(group_id)])
+            bg_files += coinc_node.output_files
+            workflow.add_node(coinc_node)
             
-            make_snrifar_plot(workflow, combine_node.output_files[0], 
-                              'plots/background', tags=tag)
+            group_start += group_size
+            group_end += group_size
             
-            if 'CUMULATIVE_CAT_4' in tag[0]:
-                chosen_bg_file += combine_node.output_files
-                chosen_veto_file = veto_files[0]
+            if group_start >= max_groups:
+                break  
+                
+            if group_end >= max_groups:
+                group_end = max_groups
+             
 
-    return chosen_bg_file, chosen_veto_file
+        combine_node = combinecoinc_exe.create_node(bg_files, tags=tag)
+        workflow.add_node(combine_node)
+        stat_files += combine_node.output_files
+        
+        make_snrifar_plot(workflow, combine_node.output_files[0], 
+                          'plots/background', tags=tag)
+            
+
+    return stat_files
     logging.info('...leaving coincidence ')
     

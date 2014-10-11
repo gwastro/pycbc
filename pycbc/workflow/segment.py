@@ -874,7 +874,7 @@ def save_veto_definer(cp, out_dir, tags=[]):
                                 "segments-veto-definer-url", tags)
     vetoDefBaseName = os.path.basename(vetoDefUrl)
     vetoDefNewPath = os.path.join(out_dir, vetoDefBaseName)
-    urllib.urlretrieve(vetoDefUrl, vetoDefNewPath)
+    urllib.urlretrieve (vetoDefUrl, vetoDefNewPath)
     # and update location
     cp.set("workflow-segments", "segments-veto-definer-file", vetoDefNewPath)
     
@@ -912,9 +912,8 @@ def cat_to_pipedown_cat(val):
         return 4
     if val == 'H':
         return 3 
-    else:
-        raise ValueError('Invalid Category Choice')
-  
+    return cat_sets
+        
 def get_analyzable_segments(workflow, out_dir, tags=[]):
     """
     Get the analyzable segments after applying ini specified vetoes.
@@ -935,8 +934,7 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
         The segment list specifying the analyzable times
     seg_files : workflow.core.FileList instance
         The cumulative segment files from each ifo that determined the
-        analyzable time.
-        
+        analyzable time.        
     """
     logging.info('Entering generation of science segments')
     start_time = workflow.analysis_time[0]

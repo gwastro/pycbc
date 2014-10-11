@@ -63,12 +63,15 @@ injDir = os.path.join(currDir, "inj_files")
 flDir = os.path.join(currDir, "file_lists")
 
 # Get segments and find where the data is
-scienceSegs, segsFileList = wf.setup_segment_generation(workflow, segDir)
-datafind_files, scienceSegs = wf.setup_datafind_workflow(workflow, 
-                                            scienceSegs, dfDir, segsFileList)
+science_segs, science_seg_file = wf.get_analyzable_segments(workflow, segDir)
+datafind_files, science_segs = wf.setup_datafind_workflow(workflow, 
+                                         science_segs, dfDir, science_seg_file)
+
+cum_veto_files = wf.get_cumulative_veto_group_files(workflow, 'segments-veto-groups', segDir)
+final_veto_file = wf.get_cumulative_veto_group_files(workflow, 'segments-final-veto-group', segDir)
 
 # Template bank stuff
-bank_files = wf.setup_tmpltbank_workflow(workflow, scienceSegs, 
+bank_files = wf.setup_tmpltbank_workflow(workflow, science_segs, 
                                             datafind_files, dfDir)
                                             
 hdfbank = wf.convert_bank_to_hdf(workflow, bank_files, dfDir)
@@ -79,6 +82,7 @@ splitbank_files = wf.setup_splittable_workflow(workflow, bank_files, dfDir)
 # setup the injection files
 inj_files, inj_tags = wf.setup_injection_workflow(workflow, 
                                                      output_dir=injDir)
+                                                     
 bg_file = None                                                                                     
 tags = ["full_data"] + inj_tags
 output_dirs = [fdDir]
@@ -87,14 +91,12 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
 
     if tag == 'full_data':
         ctags = [tag, 'full']
-        veto_files = segsFileList
     else:
         ctags = [tag, 'inj']
-        veto_files = []
         output_dir += '_coinc'
 
     # setup the matchedfilter jobs                                                     
-    insps = wf.setup_matchedfltr_workflow(workflow, scienceSegs, 
+    insps = wf.setup_matchedfltr_workflow(workflow, science_segs, 
                                        datafind_files, splitbank_files, 
                                        output_dir, injection_file=inj_file,
                                        tags = [tag])
@@ -104,14 +106,16 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
     insps_hdf.to_file_object("single_trig_" + tag, flDir)
     # setup coinc for the filtering jobs
     if tag == 'full_data':
-        bg_file, veto_file = wf.setup_interval_coinc(workflow, hdfbank, insps_hdf, veto_files,
-                                       output_dir, tags=ctags)      
+        bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps_hdf, cum_veto_files,
+                                       output_dir, tags=ctags)  
+        final_bg_file =  wf.setup_interval_coinc(workflow, hdfbank, insps_hdf, final_veto_file,
+                                       output_dir, tags=ctags)   
     else:
         inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank, 
-                                                insps_hdf, bg_file,
+                                                insps_hdf, final_bg_file,
                                                 output_dir, tags = ctags)
         found_inj = wf.find_injections_in_hdf_coinc(workflow, inj_coinc,
-                                                inj_file, veto_file, 
+                                                inj_file, final_veto_file[0], 
                                                 output_dir, tags=ctags)
                                                 
         wf.make_sensitivity_plot(workflow, found_inj, 'plots/sensitivity',
