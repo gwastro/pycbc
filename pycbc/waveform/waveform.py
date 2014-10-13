@@ -25,13 +25,10 @@
 """Convenience functions to genenerate gravitational wave templates and
 waveforms.
 """
-import sys
-import lal
-import lalsimulation
+import lal, lalsimulation, lalinspiral
 from pycbc.types import TimeSeries,FrequencySeries,zeros,Array,complex_same_precision_as
 from pycbc.types import complex64, float32, complex128
 from pycbc import HAVE_CUDA,HAVE_OPENCL
-from pycbc.scheme import mgr
 from pycbc.types import real_same_precision_as
 import pycbc.scheme as _scheme
 import inspect
@@ -45,13 +42,13 @@ def solar_mass_to_kg(solar_masses):
 def megaparsecs_to_meters(distance):
     return distance * lal.PC_SI * 1e6
 
-default_args = {'spin1x':0,'spin1y':0,'spin1z':0,
-                'spin2x':0,'spin2y':0,'spin2z':0,'lambda1':0, 'lambda2':0,
-                'inclination':0,'distance':1,'f_final':0, 'f_ref':0, 'coa_phase':0,
-                'amplitude_order':-1,'phase_order':-1,'spin_order':-1,
-                'tidal_order':-1}
+default_args = {'spin1x':0, 'spin1y':0, 'spin1z':0, 'spin2x':0, 'spin2y':0, 
+                'spin2z':0, 'lambda1':0, 'lambda2':0,
+                'inclination':0, 'distance':1, 'f_final':0, 'f_ref':0, 
+                'coa_phase':0, 'amplitude_order':-1, 'phase_order':-1, 
+                'spin_order':-1, 'tidal_order':-1}
 
-default_sgburst_args = {'eccentricity':0,'polarization':0}
+default_sgburst_args = {'eccentricity':0, 'polarization':0}
 
 base_required_args = ['mass1','mass2','f_lower']
 td_required_args = base_required_args + ['delta_t']
@@ -65,7 +62,6 @@ _lalsim_enum = {}
 _lalsim_sgburst_approximants = {}
 
 def _imrphenombfreq(**p):
-    import lal, lalinspiral, lalsimulation
     from pycbc import pnutils
     params = lalinspiral.InspiralTemplate()
     m1 = p['mass1']
@@ -107,6 +103,8 @@ def _imrphenombfreq(**p):
     return hptc.astype(complex128),  hctc.astype(complex128)
 
 def _get_waveform_from_inspiral(**p):
+    import lalmetaio
+
     def get_string_from_order(order):
         if order == 0:
             return 'newtonian'
@@ -127,9 +125,6 @@ def _get_waveform_from_inspiral(**p):
         if order == -8:
             return 'pseudoFourPN'
 
-    import lalmetaio
-    import lal
-    import lalinspiral
     # prefix with 'Inspiral-'
     name = p['approximant'][9:]
 
@@ -154,9 +149,8 @@ def _get_waveform_from_inspiral(**p):
     guess_length = lalinspiral.FindChirpChirpTime(params.mass1, params.mass2,
                                                   params.f_lower, 7)
     guess_length = max(guess_length, 3)
-
     params.geocent_end_time = guess_length * 1.5
-    params.taper = 'TAPER_NONE'
+    params.taper = 'TAPER_NONE'  #FIXME - either explain or don't hardcode this
     bufferl = guess_length * 2
     dt = p['delta_t']
     df = 1.0 / bufferl
@@ -277,7 +271,6 @@ insp_td = {}
 for apx in ['EOB']:
     name = 'Inspiral-' + apx
     insp_td[name] = _get_waveform_from_inspiral
-
 
 cpu_td = dict(_lalsim_td_approximants.items() + insp_td.items())
 cpu_fd = _lalsim_fd_approximants
@@ -429,7 +422,7 @@ def get_td_waveform(template=None, **kwargs):
     mass1 : float
         The mass of the first component object in the binary in solar masses.
     mass2 : 
-        The mass of teh second component object in the binary in solar masses.
+        The mass of the second component object in the binary in solar masses.
     delta_t :
         The time step used to generate the waveform. 
     f_lower :
@@ -480,7 +473,7 @@ def get_td_waveform(template=None, **kwargs):
         The cross polarization of the waveform.
     """
     input_params = props(template,**kwargs)
-    wav_gen = td_wav[type(mgr.state)]
+    wav_gen = td_wav[type(_scheme.mgr.state)]
 
     if 'approximant' not in input_params or input_params['approximant'] is None:
         raise ValueError("Please provide an approximant name")
@@ -567,7 +560,7 @@ def get_fd_waveform(template=None, **kwargs):
     """
 
     input_params = props(template,**kwargs)
-    wav_gen = fd_wav[type(mgr.state)]
+    wav_gen = fd_wav[type(_scheme.mgr.state)]
 
     if 'approximant' not in input_params:
         raise ValueError("Please provide an approximant name")
@@ -667,23 +660,23 @@ def get_waveform_filter(out, template=None, **kwargs):
 
     input_params = props(template,**kwargs)
 
-    if input_params['approximant'] in filter_approximants(mgr.state):
-        wav_gen = filter_wav[type(mgr.state)]
+    if input_params['approximant'] in filter_approximants(_scheme.mgr.state):
+        wav_gen = filter_wav[type(_scheme.mgr.state)]
         htilde = wav_gen[input_params['approximant']](out=out, **input_params)
         htilde.resize(n)
         htilde.length_in_time = get_waveform_filter_length_in_time(**input_params)
         return htilde
 
-    if input_params['approximant'] in fd_approximants(mgr.state):
-        wav_gen = fd_wav[type(mgr.state)]
+    if input_params['approximant'] in fd_approximants(_scheme.mgr.state):
+        wav_gen = fd_wav[type(_scheme.mgr.state)]
         hp, hc = wav_gen[input_params['approximant']](**input_params)
         hp.resize(n)
         hp.length_in_time = get_waveform_filter_length_in_time(**input_params)
         return hp
 
-    elif input_params['approximant'] in td_approximants(mgr.state):
+    elif input_params['approximant'] in td_approximants(_scheme.mgr.state):
         delta_f = 1.0 / (N * input_params['delta_t'])
-        wav_gen = td_wav[type(mgr.state)]
+        wav_gen = td_wav[_scheme.type(mgr.state)]
         hp, hc = wav_gen[input_params['approximant']](**input_params)
         tmplt_length = len(hp)
         hp.resize(N)
