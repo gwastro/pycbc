@@ -41,7 +41,7 @@ import pycbc
 
 def solar_mass_to_kg(solar_masses):
     return solar_masses * lal.MSUN_SI
-    
+
 def megaparsecs_to_meters(distance):
     return distance * lal.PC_SI * 1e6
 
@@ -70,7 +70,7 @@ def _imrphenombfreq(**p):
     params = lalinspiral.InspiralTemplate()
     m1 = p['mass1']
     m2 = p['mass2']
-    
+
     mc, et = pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
     params.approximant = lalsimulation.IMRPhenomB
     params.fLower = p['f_lower']
@@ -82,28 +82,28 @@ def _imrphenombfreq(**p):
     params.spin2[2] = p['spin2z']
     params.startPhase = p['coa_phase']*2 - 3.141592653
     params.startTime = 0
-    
+
     params.tSampling = 8192
     N = int(params.tSampling / p['delta_f'])
     n = N / 2
-    
+
     # Create temporary memory to hold the results and call the generator
     hpt = zeros(N, dtype=float32)
-    hct = zeros(N, dtype=float32)    
+    hct = zeros(N, dtype=float32)
     hpt=hpt.lal()
-    hct=hct.lal()    
+    hct=hct.lal()
     lalinspiral.BBHPhenWaveBFreqDomTemplates(hpt, hct, params)
-    
-    # Copy the results to a complex frequencyseries format 
+
+    # Copy the results to a complex frequencyseries format
     hctc = FrequencySeries(zeros(n, dtype=complex64), delta_f=p['delta_f'])
     hptc = FrequencySeries(zeros(n, dtype=complex64), delta_f=p['delta_f'])
-       
+
     hptc.data += hpt.data[0:n]
     hptc.data[1:n] += hpt.data[N:N-n:-1] * 1j
-    
+
     hctc.data += hct.data[0:n]
     hctc.data[1:n] += hct.data[N:N-n:-1] * 1j
-    
+
     return hptc.astype(complex128),  hctc.astype(complex128)
 
 def _get_waveform_from_inspiral(**p):
@@ -132,7 +132,7 @@ def _get_waveform_from_inspiral(**p):
     import lalinspiral
     # prefix with 'Inspiral-'
     name = p['approximant'][9:]
-    
+
     if name.startswith('EOB'):
         p['phase_order'] = -8
 
@@ -150,11 +150,11 @@ def _get_waveform_from_inspiral(**p):
     params.inclination = p['inclination']
     params.distance = p['distance']
     params.coa_phase = p['coa_phase']
-    
-    guess_length =  lalinspiral.FindChirpChirpTime(params.mass1, params.mass2, 
-                                                        params.f_lower, 7)
+
+    guess_length = lalinspiral.FindChirpChirpTime(params.mass1, params.mass2,
+                                                  params.f_lower, 7)
     guess_length = max(guess_length, 3)
-   
+
     params.geocent_end_time = guess_length * 1.5
     params.taper = 'TAPER_NONE'
     bufferl = guess_length * 2
@@ -164,32 +164,32 @@ def _get_waveform_from_inspiral(**p):
     epoch = lal.LIGOTimeGPS(0, 0)
     N = bufferl * sample_rate
     n = N / 2 + 1
-    
-    resp = pycbc.types.FrequencySeries(zeros(n), delta_f = df, 
-                                       epoch=epoch, dtype=complex64) + 1
-    out = pycbc.types.TimeSeries(zeros(N), delta_t = dt, 
-                                 epoch=epoch, dtype=float32)
-    outl = out.lal()
+
+    resp  = pycbc.types.FrequencySeries(zeros(n), delta_f = df,
+                                        epoch=epoch, dtype=complex64) + 1
+    out   = pycbc.types.TimeSeries(zeros(N), delta_t = dt,
+                                   epoch=epoch, dtype=float32)
+    outl  = out.lal()
     outl.sampleUnits = lal.ADCCountUnit
-    
-    out2 = pycbc.types.TimeSeries(zeros(N), delta_t = dt, 
-                                 epoch=epoch, dtype=float32)
+
+    out2  = pycbc.types.TimeSeries(zeros(N), delta_t = dt,
+                                   epoch=epoch, dtype=float32)
     outl2 = out.lal()
     outl2.sampleUnits = lal.ADCCountUnit
-    
-    respl = resp.lal()
-    respl.sampleUnites = lal.DimensionlessUnit
 
-    lalinspiral.FindChirpInjectSignals(outl, params, respl)  
-    
+    respl = resp.lal()
+    respl.sampleUnits = lal.DimensionlessUnit
+
+    lalinspiral.FindChirpInjectSignals(outl, params, respl)
+
     params.coa_phase -= lal.PI / 4
     lalinspiral.FindChirpInjectSignals(outl2, params, respl)
-    seriesp = TimeSeries(outl.data.data, delta_t=dt, 
+    seriesp = TimeSeries(outl.data.data, delta_t=dt,
                          epoch=epoch - params.geocent_end_time)
-                         
+
     seriesc = TimeSeries(outl2.data.data, delta_t=dt,
                          epoch=epoch - params.geocent_end_time)
-    
+
     return seriesp, seriesc
 
 def _lalsim_td_waveform(**p):
@@ -236,8 +236,8 @@ def _lalsim_fd_waveform(**p):
     hp = FrequencySeries(hp.data.data[:], delta_f=hp.deltaF,
                             epoch=hp.epoch)
     hc = FrequencySeries(hc.data.data[:], delta_f=hc.deltaF,
-                            epoch=hc.epoch)                        
-    
+                            epoch=hc.epoch)
+
     return hp, hc
 
 def _lalsim_sgburst_waveform(**p):
@@ -294,7 +294,7 @@ if pycbc.HAVE_CUDA:
     from pycbc.waveform.SpinTaylorF2 import spintaylorf2 as cuda_spintaylorf2
     _cuda_fd_approximants["IMRPhenomC"] = imrphenomc_tmplt
     _cuda_fd_approximants["SpinTaylorF2"] = cuda_spintaylorf2
-    
+
 cuda_td = dict(_lalsim_td_approximants.items() + _cuda_td_approximants.items())
 cuda_fd = dict(_lalsim_fd_approximants.items() + _cuda_fd_approximants.items())
 
@@ -323,7 +323,7 @@ def print_td_approximants():
     print("OpenCL Approximants")
     for approx in _opencl_td_approximants.keys():
         print "  " + approx
-    
+
 def print_fd_approximants():
     print("Lalsimulation Approximants")
     for approx in _lalsim_fd_approximants.keys():
@@ -350,7 +350,7 @@ def fd_approximants(scheme=_scheme.mgr.state):
     """Return a list containing the available fourier domain approximants for 
        the given processing scheme.
     """
-    return fd_wav[type(scheme)].keys()    
+    return fd_wav[type(scheme)].keys()
 
 def sgburst_approximants(scheme=_scheme.mgr.state):
     """Return a list containing the available time domain sgbursts for
@@ -412,7 +412,7 @@ def props_sgburst(obj, **kwargs):
     input_params.update(kwargs)
 
     return input_params
-    
+
 # Waveform generation ########################################################
 
 def get_td_waveform(template=None, **kwargs):
@@ -477,18 +477,18 @@ def get_td_waveform(template=None, **kwargs):
     hplus: TimeSeries
         The plus polarization of the waveform.
     hcross: TimeSeries
-        The cross polarization of the waveform.    
+        The cross polarization of the waveform.
     """
     input_params = props(template,**kwargs)
-    wav_gen = td_wav[type(mgr.state)] 
+    wav_gen = td_wav[type(mgr.state)]
 
     if 'approximant' not in input_params or input_params['approximant'] is None:
         raise ValueError("Please provide an approximant name")
     elif input_params['approximant'].startswith('Inspiral-'):
         pass
     elif input_params['approximant'] not in wav_gen:
-        raise ValueError("Approximant %s not available" % \
-                         (input_params['approximant']))
+        raise ValueError("Approximant %s not available" %
+                            (input_params['approximant']))
 
     for arg in td_required_args:
         if arg in input_params:
@@ -504,46 +504,46 @@ def get_fd_waveform(template=None, **kwargs):
     Parameters
     ----------
     template: object
-        An object that has attached properties. This can be used to subsitute
+        An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table. 
     approximant : string
         A string that indicates the chosen approximant. See `fd_approximants` 
         for available options. 
     mass1 : float
         The mass of the first component object in the binary in solar masses.
-    mass2 : 
-        The mass of teh second component object in the binary in solar masses.
-    delta_f :
+    mass2 : float
+        The mass of the second component object in the binary in solar masses.
+    delta_f : float
         The frequency step used to generate the waveform. 
-    f_lower :
+    f_lower : float
         The starting frequency of the waveform.
     f_final : {-1, float}, optional
         The ending frequency of the waveform. The default indicates that the
         choice is made by the respective approximant. 
     f_ref : {float}, optional
-        The reference frequency
+        The reference frequency.
     distance : {1, float}, optional
         The distance from the observer to the source in megaparsecs.
     inclination : {0, float}, optional
         The inclination angle of the source. 
     coa_phase : {0, float}, optional
-        The final phase or phase at the peak of the wavform. See documentation
+        The final phase or phase at the peak of the waveform. See documentation
         on specific approximants for exact usage. 
     spin1x : {0, float}, optional
-        The x component of the first component objects spin vector. 
+        The x component of the first binary component's spin vector. 
     spin1y : {0, float}, optional
-        The y component of the first component objects spin vector. 
+        y component of the first binary component's spin. 
     spin1z : {0, float}, optional
-        The z component of the first component objects spin vector. 
+        z component of the first binary component's spin. 
     spin2x : {0, float}, optional
-        The x component of the second component objects spin vector. 
+        The x component of the second binary component's spin vector. 
     spin2y : {0, float}, optional
-        The y component of the second component objects spin vector. 
+        y component of the second binary component's spin. 
     spin2z : {0, float}, optional
-        The z component of the second component objects spin vector. 
+        z component of the second binary component's spin. 
     lambda1: {0, float}, optional
-        The tidal deformability parameter of object 1. 
-    lambda2: {0, flaot}, optional
+        The tidal deformability parameter of object 1.
+    lambda2: {0, float}, optional
         The tidal deformability parameter of object 2.
     phase_order: {-1, int}, optional
         The pN order of the orbital phase. The default of -1 indicates that 
@@ -557,7 +557,7 @@ def get_fd_waveform(template=None, **kwargs):
     amplitude_order: {-1, int}, optional
         The pN order of the amplitude. The default of -1 indicates that 
         all implemented orders are used.
-   
+
     Returns
     -------
     hplustilde: FrequencySeries
@@ -567,13 +567,13 @@ def get_fd_waveform(template=None, **kwargs):
     """
 
     input_params = props(template,**kwargs)
-    wav_gen = fd_wav[type(mgr.state)] 
+    wav_gen = fd_wav[type(mgr.state)]
 
     if 'approximant' not in input_params:
         raise ValueError("Please provide an approximant name")
     elif input_params['approximant'] not in wav_gen:
-        raise ValueError("Approximant %s not available" % \
-                         (input_params['approximant']))
+        raise ValueError("Approximant %s not available" %
+                            (input_params['approximant']))
 
     for arg in fd_required_args:
         if arg in input_params:
@@ -620,10 +620,10 @@ def get_sgburst_waveform(template=None, **kwargs):
         if arg in input_params:
             pass
         else:
-            raise ValueError("Please provide " + str(arg) )
+            raise ValueError("Please provide " + str(arg))
 
     return _lalsim_sgburst_waveform(**input_params)
-    
+
 # Waveform filter routines ###################################################
 
 # Organize Filter Generators
@@ -639,13 +639,12 @@ _inspiral_fd_filters['SPAtmplt'] = spa_tmplt
 _cuda_fd_filters['SPAtmplt'] = spa_tmplt
 opencl_fd_filter['SPAtmplt'] = spa_tmplt
 
-
 filter_wav = _scheme.ChooseBySchemeDict()
-filter_wav.update( {_scheme.CPUScheme:_inspiral_fd_filters, 
-              _scheme.CUDAScheme:_cuda_fd_filters, 
-              _scheme.OpenCLScheme:opencl_fd_filter} )
+filter_wav.update( {_scheme.CPUScheme:_inspiral_fd_filters,
+                    _scheme.CUDAScheme:_cuda_fd_filters,
+                    _scheme.OpenCLScheme:opencl_fd_filter} )
 
-# Organize functions for function conditioning/precalculated values 
+# Organize functions for function conditioning/precalculated values
 _filter_norms = {}
 _filter_ends = {}
 _filter_preconditions = {}
@@ -665,24 +664,26 @@ def get_waveform_filter(out, template=None, **kwargs):
     """
     n = len(out)
     N = (n-1)*2
-    
+
     input_params = props(template,**kwargs)
 
     if input_params['approximant'] in filter_approximants(mgr.state):
-        wav_gen = filter_wav[type(mgr.state)] 
+        wav_gen = filter_wav[type(mgr.state)]
         htilde = wav_gen[input_params['approximant']](out=out, **input_params)
         htilde.resize(n)
         htilde.length_in_time = get_waveform_filter_length_in_time(**input_params)
         return htilde
+
     if input_params['approximant'] in fd_approximants(mgr.state):
-        wav_gen = fd_wav[type(mgr.state)] 
+        wav_gen = fd_wav[type(mgr.state)]
         hp, hc = wav_gen[input_params['approximant']](**input_params)
         hp.resize(n)
         hp.length_in_time = get_waveform_filter_length_in_time(**input_params)
         return hp
+
     elif input_params['approximant'] in td_approximants(mgr.state):
         delta_f = 1.0 / (N * input_params['delta_t'])
-        wav_gen = td_wav[type(mgr.state)] 
+        wav_gen = td_wav[type(mgr.state)]
         hp, hc = wav_gen[input_params['approximant']](**input_params)
         tmplt_length = len(hp)
         hp.resize(N)
@@ -692,16 +693,17 @@ def get_waveform_filter(out, template=None, **kwargs):
         fft(hp.astype(real_same_precision_as(htilde)), htilde)
         htilde.length_in_time = tmplt_length
         return htilde
+
     else:
-        raise ValueError("Approximant %s not available" % \
-                         (input_params['approximant']))
-        
+        raise ValueError("Approximant %s not available" %
+                            (input_params['approximant']))
+
 def waveform_norm_exists(approximant):
     if approximant in _filter_norms:
         return True
     else:
         return False
-        
+
 def get_template_amplitude_norm(template=None, **kwargs):
     """ Return additional constant template normalization. This only affects
         the effective distance calculation. Returns None for all templates with a
@@ -709,41 +711,38 @@ def get_template_amplitude_norm(template=None, **kwargs):
     """
     input_params = props(template,**kwargs)
     approximant = kwargs['approximant']
-    
+
     if approximant in _template_amplitude_norms:
         return _template_amplitude_norms[approximant](**input_params)
     else:
         return None
-        
-  
+
 def get_waveform_filter_precondition(approximant, length, delta_f):
     """Return the data preconditioning factor for this approximant.
     """
-    
     if approximant in _filter_preconditions:
         return _filter_preconditions[approximant](length, delta_f)
     else:
         return None
-        
+
 def get_waveform_filter_norm(approximant, psd, length, delta_f, f_lower):
     """ Return the normalization vector for the approximant 
     """
-    
     if approximant in _filter_norms:
         return _filter_norms[approximant](psd, length, delta_f, f_lower)
     else:
         return None
-        
+
 def get_waveform_end_frequency(template=None, **kwargs):
    """Return the stop frequency of a template
-   """ 
+   """
    input_params = props(template,**kwargs)
    approximant = kwargs['approximant']
-   
+
    if approximant in _filter_ends:
         return _filter_ends[approximant](**input_params)
    else:
-        return None 
+        return None
 
 def get_waveform_filter_length_in_time(approximant,**kwargs):
     """For filter templates, return the length in time of the template.
@@ -753,10 +752,11 @@ def get_waveform_filter_length_in_time(approximant,**kwargs):
     else:
         return None
 
-__all__ = ["get_td_waveform","get_fd_waveform","print_td_approximants",
-           "print_fd_approximants","td_approximants","fd_approximants", 
-           "get_waveform_filter", 
-           "filter_approximants", "get_waveform_filter_norm", "get_waveform_end_frequency",
-            "waveform_norm_exists", "get_template_amplitude_norm",
-           "get_waveform_filter_length_in_time","get_sgburst_waveform",
-           "print_sgburst_approximants","sgburst_approximants"]
+__all__ = ["get_td_waveform", "get_fd_waveform",
+           "print_td_approximants", "print_fd_approximants",
+           "td_approximants", "fd_approximants",
+           "get_waveform_filter", "filter_approximants",
+           "get_waveform_filter_norm", "get_waveform_end_frequency",
+           "waveform_norm_exists", "get_template_amplitude_norm",
+           "get_waveform_filter_length_in_time", "get_sgburst_waveform",
+           "print_sgburst_approximants", "sgburst_approximants"]
