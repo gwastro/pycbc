@@ -70,7 +70,7 @@ def _imrphenombfreq(**p):
     params.mass2 = m2
     params.spin1[2] = p['spin1z']
     params.spin2[2] = p['spin2z']
-    params.startPhase = p['coa_phase']*2 - 3.141592653
+    params.startPhase = p['coa_phase']*2 - lal.PI
     params.startTime = 0
 
     params.tSampling = 8192
