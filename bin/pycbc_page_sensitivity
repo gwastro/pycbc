@@ -18,10 +18,29 @@ parser.add_argument('--dist-bins', type=int, default=0)
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
+def compute_efficiency_bins_pylal(f_dist, m_dist, bins=15):
+    def sims_to_bin(sim):
+        return (sim, 0)
+
+    from pylal import rate
+    from pylal.imr_utils import compute_search_volume_in_bins, compute_search_efficiency_in_bins
+    found = f_dist
+    
+    total = numpy.concatenate([f_dist, m_dist])
+    ndbins = rate.NDBins([rate.LinearBins(min(total), max(total), bins), rate.LinearBins(0, 10, 1)])
+    
+    vol, verr = compute_search_volume_in_bins(found, total, ndbins, sims_to_bin)
+
+    vol, verr = vol.array[0], verr.array[0]
+    d_high = ((vol + verr) * 3.0/4.0/numpy.pi) ** (1.0/3.0)
+    d_low = ((vol - verr) * 3.0/4.0/numpy.pi) ** (1.0/3.0)
+    dist = (vol * 3.0/4.0/numpy.pi) ** (1.0/3.0)
+    return dist, dist - d_low, d_high - dist
+    
 def compute_efficiency_bins(f_dist, m_dist, bins=15):
     f_dist.sort()
     m_dist.sort()   
-    top = max(f_dist.max(), f_dist.max())
+    top = max(m_dist.max(), f_dist.max())
     bot = min(m_dist.min(), f_dist.min())
     w = (top - bot) / float(bins)
   
@@ -30,15 +49,17 @@ def compute_efficiency_bins(f_dist, m_dist, bins=15):
     for i in range(bins): 
         fn = numpy.logical_and(f_dist < t, f_dist > b).sum()
         mn = numpy.logical_and(m_dist < t, m_dist > b).sum()
+        
         eff = fn / float(fn + mn)
+        
+        print t, b, fn, mn, eff
         t, b = t + w, b + w
         effs += [eff]
         err = numpy.sqrt(eff * (1 - eff) / float(fn + mn))
-        
         dists += [(b, t)]
         vols += [((t+b)/2.0)**2.0 * 4 * numpy.pi * eff]
         verr += (((t+b)/2.0)**2.0 * 4 * numpy.pi * w * err) ** 2.0
-     
+
     vol = numpy.trapz(vols, dx=w)    
     verr = numpy.sqrt(verr)    
         
@@ -121,7 +142,6 @@ for j in range(len(args.bins)-1):
 
     dists, low_errors, high_errors = [], [], []
     ifar_values = 10 ** (numpy.arange(0, 4, .05))
-
     for ifar_value in ifar_values:
         foundg = found[ifar >= ifar_value]
         mbf = numpy.logical_and(binval[foundg] > left, binval[foundg] < right)
@@ -136,7 +156,7 @@ for j in range(len(args.bins)-1):
         if not args.dist_bins: 
             sdist, elow, ehigh = compute_sensitive_distance(f_dist, m_dist_full)
         else:
-            sdist, elow, ehigh = compute_efficiency_bins(f_dist, m_dist, bins=args.dist_bins)
+            sdist, elow, ehigh = compute_efficiency_bins_pylal(f_dist, m_dist, bins=args.dist_bins)
 
         dists.append(sdist)
         low_errors.append(elow)
