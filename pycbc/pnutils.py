@@ -177,6 +177,9 @@ def solar_mass_to_kg(solar_masses):
 def parsecs_to_meters(distance):
     return distance * lal.PC_SI
 
+def megaparsecs_to_meters(distance):
+    return parsecs_to_meters(distance) * 1e6   
+
 def velocity_to_frequency(v, M):
     return v**(3.0) / (M * lal.MTSUN_SI * lal.PI)
 

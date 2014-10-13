@@ -33,14 +33,9 @@ from pycbc.types import real_same_precision_as
 import pycbc.scheme as _scheme
 import inspect
 from pycbc.fft import fft
+from pycbc import pnutils, inject
 import pycbc
 
-
-def solar_mass_to_kg(solar_masses):
-    return solar_masses * lal.MSUN_SI
-
-def megaparsecs_to_meters(distance):
-    return distance * lal.PC_SI * 1e6
 
 default_args = {'spin1x':0, 'spin1y':0, 'spin1z':0, 'spin2x':0, 'spin2y':0, 
                 'spin2z':0, 'lambda1':0, 'lambda2':0,
@@ -62,7 +57,6 @@ _lalsim_enum = {}
 _lalsim_sgburst_approximants = {}
 
 def _imrphenombfreq(**p):
-    from pycbc import pnutils
     params = lalinspiral.InspiralTemplate()
     m1 = p['mass1']
     m2 = p['mass2']
@@ -193,12 +187,12 @@ def _lalsim_td_waveform(**p):
 
     hp, hc = lalsimulation.SimInspiralChooseTDWaveform(float(p['coa_phase']),
                float(p['delta_t']),
-               float(solar_mass_to_kg(p['mass1'])),
-               float(solar_mass_to_kg(p['mass2'])),
+               float(pnutils.solar_mass_to_kg(p['mass1'])),
+               float(pnutils.solar_mass_to_kg(p['mass2'])),
                float(p['spin1x']), float(p['spin1y']), float(p['spin1z']),
                float(p['spin2x']), float(p['spin2y']), float(p['spin2z']),
                float(p['f_lower']), float(p['f_ref']),
-               megaparsecs_to_meters(float(p['distance'])),
+               pnutils.megaparsecs_to_meters(float(p['distance'])),
                float(p['inclination']),
                float(p['lambda1']),  float(p['lambda2']), flags, None,
                int(p['amplitude_order']), int(p['phase_order']),
@@ -216,12 +210,12 @@ def _lalsim_fd_waveform(**p):
 
     hp, hc = lalsimulation.SimInspiralChooseFDWaveform(float(p['coa_phase']),
                float(p['delta_f']),
-               float(solar_mass_to_kg(p['mass1'])),
-               float(solar_mass_to_kg(p['mass2'])),
+               float(pnutils.solar_mass_to_kg(p['mass1'])),
+               float(pnutils.solar_mass_to_kg(p['mass2'])),
                float(p['spin1x']), float(p['spin1y']), float(p['spin1z']),
                float(p['spin2x']), float(p['spin2y']), float(p['spin2z']),
                float(p['f_lower']), float(p['f_final']), float(p['f_ref']),
-               megaparsecs_to_meters(float(p['distance'])),
+               pnutils.megaparsecs_to_meters(float(p['distance'])),
                float(p['inclination']),
                float(p['lambda1']), float(p['lambda2']), flags, None,
                int(p['amplitude_order']), int(p['phase_order']),
@@ -360,6 +354,8 @@ def filter_approximants(scheme=_scheme.mgr.state):
 # Input parameter handling ###################################################
 
 def props(obj, **kwargs):
+    """ DOCUMENT ME !!
+    """
     pr = {}
     if obj is not None:
         if hasattr(obj, '__dict__'):
@@ -656,7 +652,6 @@ def get_waveform_filter(out, template=None, **kwargs):
     """Return a frequency domain waveform filter for the specified approximant
     """
     n = len(out)
-    N = (n-1)*2
 
     input_params = props(template,**kwargs)
 
@@ -675,6 +670,8 @@ def get_waveform_filter(out, template=None, **kwargs):
         return hp
 
     elif input_params['approximant'] in td_approximants(_scheme.mgr.state):
+        # N: number of time samples required
+        N = (n-1)*2
         delta_f = 1.0 / (N * input_params['delta_t'])
         wav_gen = td_wav[_scheme.type(mgr.state)]
         hp, hc = wav_gen[input_params['approximant']](**input_params)
