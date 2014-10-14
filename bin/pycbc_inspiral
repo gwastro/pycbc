@@ -16,10 +16,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import logging, sys, numpy, argparse
+import logging
+import argparse
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC
-from pycbc.filter import  matched_filter_core, sigmasq, make_frequency_series
-from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
+from pycbc.filter import matched_filter_core, sigmasq
+from pycbc.types import zeros, float32, complex64
+
 
 parser = argparse.ArgumentParser(usage='',
     description="Find single detector gravitational-wave triggers.")
