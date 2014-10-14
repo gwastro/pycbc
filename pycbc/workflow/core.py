@@ -338,7 +338,7 @@ class Workflow(pegasus_workflow.Workflow):
         super(Workflow, self).save(self.name + '.dax')
         
         # add workflow storage locations to the output mapper
-        f = open(self.name + '.map', 'w')
+        f = open('output.map', 'w')
         for out in self._outputs:
             try:
                 f.write(out.output_map_str() + '\n')
