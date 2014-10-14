@@ -20,8 +20,7 @@ import logging
 import argparse
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC
 from pycbc.filter import matched_filter_core, sigmasq
-from pycbc.types import zeros, float32, complex64
-
+from pycbc.types import TimeSeries, zeros, float32, complex64
 
 parser = argparse.ArgumentParser(usage='',
     description="Find single detector gravitational-wave triggers.")
@@ -32,23 +31,27 @@ parser.add_argument("--output", type=str)
 
 parser.add_argument("--bank-file", type=str)
 parser.add_argument("--snr-threshold", 
-                  help="The the minimum snr threshold", type=float)
+                  help="SNR threshold for trigger generation", type=float)
 parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
                     help="Cut triggers with NewSNR less than THRESHOLD")
 parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for filtering (Hz)")
                   
 parser.add_argument("--approximant", type=str,
-                  help="The name of the approximant use for filtering")
+                  help="The name of the approximant to use for filtering")
 parser.add_argument("--order", type=str,
                   help="The integer half-PN order at which to generate"
                        " the approximant.")
+taper_choices = ["start","end","startend"]
+parser.add_argument("--taper-template", choices=taper_choices,
+                  help="For time-domain approximants, taper the start and/or "
+                       "end of the waveform before FFTing.")
 
 parser.add_argument("--cluster-method", choices=["template", "window"])
 parser.add_argument("--cluster-window", type=float, default = -1,
                   help="Length of clustering window in seconds")
 parser.add_argument("--cluster-before-vetoes", action='store_true', default=False,
-                  help="Cluster above threashold SNR values before doing "
+                  help="Cluster above-threshold SNR values before doing "
                        "chisq calculations."
                    )
 parser.add_argument("--maximization-interval", type=float, default=0,
@@ -130,8 +133,8 @@ with ctx:
 
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, opt.approximant, flen, delta_f, 
-                    flow, dtype=complex64, psd=psd, phase_order=opt.order, 
-                    out=zeros(tlen, dtype=complex64))  
+                    flow, dtype=complex64, psd=psd, phase_order=opt.order,
+                    taper=opt.taper_template, out=zeros(tlen, dtype=complex64))
 
     snr_mem = zeros(tlen, dtype=complex64)
     corr_mem = zeros(tlen, dtype=complex64)

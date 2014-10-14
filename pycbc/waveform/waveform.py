@@ -26,14 +26,15 @@
 waveforms.
 """
 import lal, lalsimulation, lalinspiral
-from pycbc.types import TimeSeries,FrequencySeries,zeros,Array,complex_same_precision_as
+from pycbc.types import TimeSeries,FrequencySeries,zeros,Array
 from pycbc.types import complex64, float32, complex128
-from pycbc import HAVE_CUDA,HAVE_OPENCL
 from pycbc.types import real_same_precision_as
+from pycbc import HAVE_CUDA,HAVE_OPENCL
 import pycbc.scheme as _scheme
 import inspect
 from pycbc.fft import fft
-from pycbc import pnutils, inject
+from pycbc import pnutils
+from pycbc.waveform import utils as wfutils
 import pycbc
 
 
@@ -153,15 +154,13 @@ def _get_waveform_from_inspiral(**p):
     N = bufferl * sample_rate
     n = N / 2 + 1
 
-    resp  = pycbc.types.FrequencySeries(zeros(n), delta_f = df,
-                                        epoch=epoch, dtype=complex64) + 1
-    out   = pycbc.types.TimeSeries(zeros(N), delta_t = dt,
-                                   epoch=epoch, dtype=float32)
+    resp  = FrequencySeries(zeros(n), delta_f=df, epoch=epoch, 
+                            dtype=complex64) + 1
+    out   = TimeSeries(zeros(N), delta_t=dt, epoch=epoch, dtype=float32)
     outl  = out.lal()
     outl.sampleUnits = lal.ADCCountUnit
 
-    out2  = pycbc.types.TimeSeries(zeros(N), delta_t = dt,
-                                   epoch=epoch, dtype=float32)
+    out2  = TimeSeries(zeros(N), delta_t=dt, epoch=epoch, dtype=float32)
     outl2 = out.lal()
     outl2.sampleUnits = lal.ADCCountUnit
 
@@ -243,20 +242,20 @@ def _lalsim_sgburst_waveform(**p):
 
 for approx_enum in xrange(0,lalsimulation.NumApproximants):
     if lalsimulation.SimInspiralImplementedTDApproximants(approx_enum):
-        approx_name =  lalsimulation.GetStringFromApproximant(approx_enum)
+        approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
         _lalsim_enum[approx_name] = approx_enum
         _lalsim_td_approximants[approx_name] = _lalsim_td_waveform
 
 for approx_enum in xrange(0,lalsimulation.NumApproximants):
     if lalsimulation.SimInspiralImplementedFDApproximants(approx_enum):
-        approx_name =  lalsimulation.GetStringFromApproximant(approx_enum)
+        approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
         _lalsim_enum[approx_name] = approx_enum
         _lalsim_fd_approximants[approx_name] = _lalsim_fd_waveform
 
 # sine-Gaussian burst
 for approx_enum in xrange(0,lalsimulation.NumApproximants):
     if lalsimulation.SimInspiralImplementedFDApproximants(approx_enum):
-        approx_name =  lalsimulation.GetStringFromApproximant(approx_enum)
+        approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
         _lalsim_enum[approx_name] = approx_enum
         _lalsim_sgburst_approximants[approx_name] = _lalsim_sgburst_waveform
 
@@ -433,17 +432,17 @@ def get_td_waveform(template=None, **kwargs):
         The final phase or phase at the peak of the wavform. See documentation
         on specific approximants for exact usage. 
     spin1x : {0, float}, optional
-        The x component of the first component objects spin vector. 
+        The x component of the first binary component's spin vector. 
     spin1y : {0, float}, optional
-        The y component of the first component objects spin vector. 
+        y component of the first binary component's spin. 
     spin1z : {0, float}, optional
-        The z component of the first component objects spin vector. 
+        z component of the first binary component's spin. 
     spin2x : {0, float}, optional
-        The x component of the second component objects spin vector. 
+        The x component of the second binary component's spin vector. 
     spin2y : {0, float}, optional
-        The y component of the second component objects spin vector. 
+        y component of the second binary component's spin. 
     spin2z : {0, float}, optional
-        The z component of the second component objects spin vector. 
+        z component of the second binary component's spin.
     lambda1: {0, float}, optional
         The tidal deformability parameter of object 1. 
     lambda2: {0, float}, optional
@@ -653,7 +652,7 @@ def get_waveform_filter(out, template=None, **kwargs):
     """
     n = len(out)
 
-    input_params = props(template,**kwargs)
+    input_params = props(template, **kwargs)
 
     if input_params['approximant'] in filter_approximants(_scheme.mgr.state):
         wav_gen = filter_wav[type(_scheme.mgr.state)]
@@ -673,9 +672,12 @@ def get_waveform_filter(out, template=None, **kwargs):
         # N: number of time samples required
         N = (n-1)*2
         delta_f = 1.0 / (N * input_params['delta_t'])
-        wav_gen = td_wav[_scheme.type(mgr.state)]
+        wav_gen = td_wav[type(_scheme.mgr.state)]
         hp, hc = wav_gen[input_params['approximant']](**input_params)
-        tmplt_length = len(hp)
+        # taper the time series hp if required
+        if 'taper' in input_params.keys():
+            hp = wfutils.taper_timeseries(hp, input_params['taper'], return_lal=False)
+        tmplt_length = len(hp) * hp.delta_t # FIXME is this correct for the physical duration of the signal?
         hp.resize(N)
         k_zero = int(hp.start_time / hp.delta_t)
         hp.roll(k_zero)

@@ -30,27 +30,13 @@ import numpy as np
 import lal
 import lalinspiral
 import lalsimulation as sim
-from pycbc.waveform import get_td_waveform, get_sgburst_waveform
+from pycbc.waveform import get_td_waveform, get_sgburst_waveform, utils as wfutils
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import ligolw, table, lsctables
 from pycbc.types import float64, float32, TimeSeries
 from pycbc.detector import Detector
 import lalmetaio as lmt
 
-
-# map between tapering string in sim_inspiral
-# table and lalsimulation constants
-taper_map = {
-    'TAPER_NONE': None,
-    'TAPER_START': sim.SIM_INSPIRAL_TAPER_START,
-    'TAPER_END': sim.SIM_INSPIRAL_TAPER_END,
-    'TAPER_STARTEND': sim.SIM_INSPIRAL_TAPER_STARTEND
-}
-
-taper_func_map = {
-    np.dtype(float32): sim.SimInspiralREAL4WaveTaper,
-    np.dtype(float64): sim.SimInspiralREAL8WaveTaper
-}
 
 injection_func_map = {
     np.dtype(float32): sim.SimAddInjectionREAL4TimeSeries,
@@ -148,9 +134,6 @@ class InjectionSet(object):
         t0 = float(strain.start_time) - earth_travel_time
         t1 = float(strain.end_time) + earth_travel_time
 
-        # pick lalsimulation tapering function
-        taper = taper_func_map[strain.dtype]
-
         # pick lalsimulation injection function
         add_injection = injection_func_map[strain.dtype]
 
@@ -204,9 +187,8 @@ class InjectionSet(object):
             # and add it to the strain
             signal = detector.project_wave(
                     hp, hc, inj.longitude, inj.latitude, inj.polarization)
-            signal_lal = signal.astype(strain.dtype).lal()
-            if taper_map[inj.taper] is not None:
-                taper(signal_lal.data, taper_map[inj.taper])
+            # the taper_timeseries function converts to a LAL TimeSeries
+            signal_lal = wfutils.taper_timeseries(signal, inj.taper, return_lal=True)
             add_injection(lalstrain, signal_lal, None)
 
         strain.data[:] = lalstrain.data.data[:]
