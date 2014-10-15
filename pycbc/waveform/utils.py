@@ -232,9 +232,9 @@ def taper_timeseries(tsdata, tapermethod=None, return_lal=False):
     ts_lal = tsdata.astype(tsdata.dtype).lal()
     if taper_map[tapermethod] is not None:
         taper_func(ts_lal.data, taper_map[tapermethod])
-    if return_lal == True: 
+    if return_lal == True:
         return ts_lal
-    else: 
+    else:
         return TimeSeries(ts_lal.data.data[:], delta_t=ts_lal.deltaT,
                           epoch=ts_lal.epoch)
 

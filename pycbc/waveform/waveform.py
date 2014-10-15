@@ -38,10 +38,10 @@ from pycbc.waveform import utils as wfutils
 import pycbc
 
 
-default_args = {'spin1x':0, 'spin1y':0, 'spin1z':0, 'spin2x':0, 'spin2y':0, 
+default_args = {'spin1x':0, 'spin1y':0, 'spin1z':0, 'spin2x':0, 'spin2y':0,
                 'spin2z':0, 'lambda1':0, 'lambda2':0,
-                'inclination':0, 'distance':1, 'f_final':0, 'f_ref':0, 
-                'coa_phase':0, 'amplitude_order':-1, 'phase_order':-1, 
+                'inclination':0, 'distance':1, 'f_final':0, 'f_ref':0,
+                'coa_phase':0, 'amplitude_order':-1, 'phase_order':-1,
                 'spin_order':-1, 'tidal_order':-1}
 
 default_sgburst_args = {'eccentricity':0, 'polarization':0}
@@ -154,7 +154,7 @@ def _get_waveform_from_inspiral(**p):
     N = bufferl * sample_rate
     n = N / 2 + 1
 
-    resp  = FrequencySeries(zeros(n), delta_f=df, epoch=epoch, 
+    resp  = FrequencySeries(zeros(n), delta_f=df, epoch=epoch,
                             dtype=complex64) + 1
     out   = TimeSeries(zeros(N), delta_t=dt, epoch=epoch, dtype=float32)
     outl  = out.lal()
@@ -432,19 +432,19 @@ def get_td_waveform(template=None, **kwargs):
         The final phase or phase at the peak of the wavform. See documentation
         on specific approximants for exact usage. 
     spin1x : {0, float}, optional
-        The x component of the first binary component's spin vector. 
+        The x component of the first binary component's spin vector.
     spin1y : {0, float}, optional
-        y component of the first binary component's spin. 
+        y component of the first binary component's spin.
     spin1z : {0, float}, optional
-        z component of the first binary component's spin. 
+        z component of the first binary component's spin.
     spin2x : {0, float}, optional
-        The x component of the second binary component's spin vector. 
+        The x component of the second binary component's spin vector.
     spin2y : {0, float}, optional
-        y component of the second binary component's spin. 
+        y component of the second binary component's spin.
     spin2z : {0, float}, optional
         z component of the second binary component's spin.
     lambda1: {0, float}, optional
-        The tidal deformability parameter of object 1. 
+        The tidal deformability parameter of object 1.
     lambda2: {0, float}, optional
         The tidal deformability parameter of object 2.
     phase_order: {-1, int}, optional
@@ -518,17 +518,17 @@ def get_fd_waveform(template=None, **kwargs):
         The final phase or phase at the peak of the waveform. See documentation
         on specific approximants for exact usage. 
     spin1x : {0, float}, optional
-        The x component of the first binary component's spin vector. 
+        The x component of the first binary component's spin vector.
     spin1y : {0, float}, optional
-        y component of the first binary component's spin. 
+        y component of the first binary component's spin.
     spin1z : {0, float}, optional
-        z component of the first binary component's spin. 
+        z component of the first binary component's spin.
     spin2x : {0, float}, optional
-        The x component of the second binary component's spin vector. 
+        The x component of the second binary component's spin vector.
     spin2y : {0, float}, optional
-        y component of the second binary component's spin. 
+        y component of the second binary component's spin.
     spin2z : {0, float}, optional
-        z component of the second binary component's spin. 
+        z component of the second binary component's spin.
     lambda1: {0, float}, optional
         The tidal deformability parameter of object 1.
     lambda2: {0, float}, optional
