@@ -97,7 +97,7 @@ def legacy_get_valid_times(self):
 class LegacyAnalysisNode(Node):
     # This is *ONLY* used by legacy codes where pycbc.workflow cannot directly
     # set the output name. Do not use elsewhere!
-    def  set_jobnum_tag(self, num):
+    def set_jobnum_tag(self, num):
         self.add_opt('--user-tag', num)
         
 class LegacyAnalysisExecutable(Executable):

@@ -314,7 +314,7 @@ def take(self, indices):
         indices = pycuda.gpuarray.to_gpu(indices)
     return pycuda.gpuarray.take(self.data, indices)
     
-def  numpy(self):
+def numpy(self):
     return self._data.get()
      
 def _copy(self, self_ref, other_ref):

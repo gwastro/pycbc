@@ -832,7 +832,7 @@ class Array(object):
     @property
     @cpuonly
     @_convert
-    def  _swighelper(self):
+    def _swighelper(self):
         """ Used internally by SWIG typemaps to ensure @_convert 
             is called and scheme is correct  
         """

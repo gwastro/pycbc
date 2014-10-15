@@ -94,7 +94,7 @@ def squared_norm(self):
     """ Return the elementwise squared norm of the array """
     return (self.data.real**2 + self.data.imag**2)
     
-def  numpy(self):
+def numpy(self):
     return self._data
     
 def _copy(self, self_ref, other_ref):
