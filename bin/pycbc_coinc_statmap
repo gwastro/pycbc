@@ -8,8 +8,7 @@ import argparse, h5py, numpy, logging, itertools, copy
 from scipy.interpolate import interp1d    
     
 def load_coincs(coinc_files):
-    stat1 = []
-    stat2 = []
+    stat = []
     time1 = []
     time2 = []
     timeslide_id = []
@@ -19,8 +18,7 @@ def load_coincs(coinc_files):
         try:
             logging.info('reading %s' % cfile)
             f = h5py.File(cfile, "r")
-            stat1.append(f['coinc/stat1'])
-            stat2.append(f['coinc/stat2'])
+            stat.append(f['coinc/stat'])
             time1.append(f['coinc/time1'])
             time2.append(f['coinc/time2'])
             timeslide_id.append(f['coinc/timeslide_id'])
@@ -29,8 +27,7 @@ def load_coincs(coinc_files):
             attr = dict(f.attrs)
         except:
             continue
-    return (numpy.concatenate(stat1),
-           numpy.concatenate(stat2),
+    return (numpy.concatenate(stat),
            numpy.concatenate(time1),
            numpy.concatenate(time2),
            numpy.concatenate(timeslide_id),
@@ -47,31 +44,28 @@ def changed(arr):
 def merge(left, right):
     overlapped = numpy.where(right[:-1] > left[1:])[0]
     for idx in overlapped:
-        left[idx + 1] = left[idx]
-        
+        left[idx + 1] = left[idx]        
     left = numpy.delete(left, overlapped)
-    right = numpy.delete(right, overlapped)
-        
+    right = numpy.delete(right, overlapped)       
     return left, right
   
-def cluster_coincs(stat1, stat2, time1, time2, 
+def cluster_coincs(stat, time1, time2, 
                    timeslide_id, timeslide_interval, window):
     """Cluster coincident events for each timeslide separately, across 
-    templates, based on the loudest network statistic (stat1**2 + stat2**2). 
+    templates, based on the ranking statistic 
     Return the set of indices corresponding to the surviving coincidences.
     """
     
     logging.info('clustering coinc triggers over %ss window' % window)
     
     indices = []
-    nstatsq = stat1**2.0 + stat2**2.0
     if numpy.isfinite(timeslide_interval):
         time = (time2 + (time1 + timeslide_id * timeslide_interval)) / 2
     else:
         time = 0.5 * (time2 + time1)
         
     time_sorting = time.argsort()
-    nstatsq = nstatsq[time_sorting]
+    stat = stat[time_sorting]
     time = time[time_sorting]
     slide = timeslide_id[time_sorting]
     
@@ -95,7 +89,7 @@ def cluster_coincs(stat1, stat2, time1, time2,
         unique_slides = numpy.unique(slide[l:r])    
         for slide_id in unique_slides:
             slide_locs = numpy.where(slide[l:r] == slide_id)[0]        
-            indices.append(slide_locs[nstatsq[l:r][slide_locs].argmax()] + l)
+            indices.append(slide_locs[stat[l:r][slide_locs].argmax()] + l)
             
             #if slide_id == 0:
             #    idx = slide_locs[nstatsq[l:r][slide_locs].argmax()] + l
@@ -107,15 +101,10 @@ def calculate_fan_map(combined_stat, dec):
     """ Return a function to map between false alarm number (FAN) and the
     combined ranking statistic.
     """
-    stat_sorting = combined_stat.argsort()
-    
+    stat_sorting = combined_stat.argsort()    
     combined_stat = combined_stat[stat_sorting]
-    fan = dec[stat_sorting][::-1].cumsum()[::-1]
-    
+    fan = dec[stat_sorting][::-1].cumsum()[::-1]    
     return interp1d(combined_stat, fan, fill_value=1, bounds_error=False) 
-
-def cstat(s1, s2):
-    return numpy.sqrt(s1**2.0 + s2 ** 2.0)
 
 def sec_to_year(sec):
     return sec / (3.15569e7)
@@ -136,18 +125,17 @@ if __name__ == '__main__':
                                 level=log_level)
     
     logging.info("Loading coinc triggers")    
-    s1, s2, t1, t2, sid, tid, dec, attrs, start, end = load_coincs(args.coinc_files)   
-    logging.info("We have %s triggers" % len(s1))
+    stat, t1, t2, sid, tid, dec, attrs, start, end = load_coincs(args.coinc_files)   
+    logging.info("We have %s triggers" % len(stat))
 
-    print s1.max(), s2.max()
     if args.cluster_window != 0:
         logging.info("Clustering coinc triggers")
-        cid = cluster_coincs(s1, s2, t1, t2, sid, 
+        cid = cluster_coincs(stat, t1, t2, sid, 
                              attrs['timeslide_interval'], 
                              args.cluster_window)
-        s1, s2, t1, t2, sid, tid, dec = s1[cid], s2[cid], t1[cid], t2[cid], sid[cid], tid[cid], dec[cid]
-        logging.info("We now have %s triggers" % len(s1))
-        print s1.max(), s2.max()
+        stat, t1, t2, sid, tid, dec = stat[cid], t1[cid], t2[cid], sid[cid], tid[cid], dec[cid]
+        logging.info("We now have %s triggers" % len(stat))
+
     logging.info("Dumping foreground triggers")
     f = h5py.File(args.output_file, "w")
     
@@ -160,8 +148,7 @@ if __name__ == '__main__':
     logging.info("%s foreground triggers" % fore_locs.sum())
     
     if fore_locs.sum() > 0:
-        f['foreground/stat1'] = s1[fore_locs]
-        f['foreground/stat2'] = s2[fore_locs]
+        f['foreground/stat'] = stat[fore_locs]
         f['foreground/time1'] = t1[fore_locs]
         f['foreground/time2'] = t2[fore_locs]
         f['foreground/template_id'] = tid[fore_locs]
@@ -175,11 +162,11 @@ if __name__ == '__main__':
         fb = h5py.File(args.external_background, "r")
         background_time = fb.attrs['background_time']
         coinc_time = float(attrs['coinc_time'])
-        back_stat = cstat(fb['background/stat1'][:], fb['background/stat2'][:])
+        back_stat = fb['background/stat'][:]
         fanmap = calculate_fan_map(back_stat, fb['background/decimation_factor'][:])
         
         logging.info("calculating ifar values")
-        fore_stat = cstat(s1[fore_locs], s2[fore_locs])
+        fore_stat = stat[fore_locs]
         fore_fan = fanmap(fore_stat)
         ifar = background_time / fore_fan
 
@@ -194,8 +181,7 @@ if __name__ == '__main__':
             
     elif len(back_locs) > 0:
         logging.info("Dumping background triggers")
-        f['background/stat1'] = s1[back_locs]
-        f['background/stat2'] = s2[back_locs]
+        f['background/stat'] = stat[back_locs]
         f['background/time1'] = t1[back_locs]
         f['background/time2'] = t2[back_locs]
         f['background/timeslide_id'] = sid[back_locs]
@@ -209,7 +195,7 @@ if __name__ == '__main__':
         coinc_time = float(attrs['coinc_time'])
         
         logging.info("Making mapping from FAN to the combined statistic")
-        back_stat = cstat(s1[back_locs], s2[back_locs])
+        back_stat = stat[back_locs]
         fanmap = calculate_fan_map(back_stat, dec[back_locs])
         
         back_fan = fanmap(back_stat)
@@ -220,7 +206,7 @@ if __name__ == '__main__':
         f.attrs['foreground_time'] = coinc_time
         
         logging.info("calculating ifar values")
-        fore_stat = cstat(s1[fore_locs], s2[fore_locs])
+        fore_stat = stat[fore_locs]
         fore_fan = fanmap(fore_stat)
         ifar = background_time / fore_fan
 
