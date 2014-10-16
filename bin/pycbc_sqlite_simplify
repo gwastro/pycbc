@@ -173,8 +173,8 @@ for n, path in enumerate(args.input_files):
                                                           verbose=args.verbose)
     else:
         fileUrl = urlparse.urljoin('file:', urllib.pathname2url(path))
-        ligolw_sqlite.insert_from_url(ContentHandler.connection, fileUrl,
-                  contenthandler = ContentHandler,
+        ligolw_sqlite.insert_from_url(fileUrl,
+                  contenthandler=ContentHandler,
                   preserve_ids=args.preserve_ids, verbose=args.verbose)
     dbtables.build_indexes(ContentHandler.connection, args.verbose)
     if not (n%20):
@@ -189,8 +189,7 @@ if args.injection_file:
     sim_table = sqlutils.validate_option( sim_table )
 
     # Insert the injection file to the databse
-    ligolw_sqlite.insert_from_urls(connection, [args.injection_file],
-                                   contenthandler=ContentHandler,
+    ligolw_sqlite.insert_from_urls([args.injection_file], ContentHandler,
                                    preserve_ids=False, verbose=args.verbose)
 
     if args.verbose:

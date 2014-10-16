@@ -272,7 +272,6 @@ working_filename = dbtables.get_connection_filename(
 connection = sqlite3.connect( working_filename )
 if opts.tmp_space:
     dbtables.set_temp_store_directory(connection, opts.tmp_space, verbose = opts.verbose)
-dbtables.DBTable_set_connection( connection )
 
 ranking_table = sqlutils.validate_option( opts.ranking_table )
 if opts.ifos_table is None:
