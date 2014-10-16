@@ -181,7 +181,7 @@ def select_generic_executable(workflow, exe_tag):
     elif exe_name == 'pycbc_compute_durations':
         exe_class = ComputeDurationsExecutable
     elif exe_name == 'pycbc_calculate_far':
-        exe_class = SQLInOutExecutable
+        exe_class = PycbcCalculateFarExecutable
     elif exe_name == "pycbc_run_sqlite":
         exe_class = SQLInOutExecutable
     # FIXME: We may end up with more than one class for using ligolw_sqlite
@@ -626,6 +626,7 @@ class PyCBCInspiralExecutable(Executable):
     """
     The class used to create jobs for pycbc_inspiral Executable.
     """
+    current_retention_level = Executable.CRITICAL
     def __init__(self, cp, exe_name, ifo=None, out_dir=None, injection_file=None, tags=[]):
         super(PyCBCInspiralExecutable, self).__init__(cp, exe_name, None, ifo, out_dir, tags=tags)
         self.cp = cp
@@ -664,7 +665,8 @@ class PyCBCInspiralExecutable(Executable):
             node.add_input_opt('--injection-file', self.injection_file)
 
         # set the input and output files        
-        node.new_output_file_opt(valid_seg, '.xml.gz', '--output', tags=tags)
+        node.new_output_file_opt(valid_seg, '.xml.gz', '--output', tags=tags,
+                                 store_file=self.retain_files)
         node.add_input_list_opt('--frame-files', dfParents)
         node.add_input_opt('--bank-file', parent, )
 
@@ -706,6 +708,7 @@ class PyCBCTmpltbankExecutable(Executable):
     The class used to create jobs for pycbc_geom_nonspin_bank Executable and
     any other Executables using the same command line option groups.
     """
+    current_retention_level = Executable.CRITICAL
     def __init__(self, cp, exe_name, ifo=None, out_dir=None,
                  tags=[], write_psd=False):
         super(PyCBCTmpltbankExecutable, self).__init__(cp, exe_name, 'vanilla', ifo, out_dir, tags=tags)
@@ -734,7 +737,8 @@ class PyCBCTmpltbankExecutable(Executable):
         if self.write_psd:
             node.make_and_add_output(valid_seg, 'txt', '--psd-output',
                                      tags=tags+['PSD_FILE'])
-        node.new_output_file_opt(valid_seg, '.xml.gz', '--output-file', tags=tags)
+        node.new_output_file_opt(valid_seg, '.xml.gz', '--output-file',
+                                 tags=tags, store_file=self.retain_files)
         node.add_input_list_opt('--frame-files', dfParents)
         return node
 
@@ -762,7 +766,8 @@ class PyCBCTmpltbankExecutable(Executable):
             node.make_and_add_output(valid_seg, 'txt', 'psd-output', 
                                      tags=tags+['PSD_FILE'])
 
-        node.new_output_file_opt(valid_seg, '.xml.gz', '--output-file')
+        node.new_output_file_opt(valid_seg, '.xml.gz', '--output-file',
+                                 store_file=self.retain_files)
         return node
 
     def get_valid_times(self):
@@ -780,18 +785,22 @@ class LigoLWCombineSegsExecutable(Executable):
     This class is used to create nodes for the ligolw_combine_segments 
     Executable
     """
+    # Always want to keep the segments
+    current_retention_level = Executable.FINAL_RESULT
     def create_node(self, valid_seg, veto_files, segment_name):
         node = Node(self)
         node.add_opt('--segment-name', segment_name)
         for fil in veto_files:
             node.add_input_arg(fil)   
-        node.new_output_file_opt(valid_seg, '.xml', '--output')      
+        node.new_output_file_opt(valid_seg, '.xml', '--output',
+                                 store_file=self.retain_files)      
         return node
 
 class LigolwAddExecutable(Executable):
     """
     The class used to create nodes for the ligolw_add Executable.
     """
+    current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
         super(LigolwAddExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
@@ -814,13 +823,15 @@ class LigolwAddExecutable(Executable):
         if output:
             node.add_output_opt('--output', output)
         else:
-            node.new_output_file_opt(jobSegment, '.xml.gz', '--output', tags=tags)
+            node.new_output_file_opt(jobSegment, '.xml.gz', '--output',
+                                     tags=tags, store_file=self.retain_files)
         return node
 
 class LigolwSSthincaExecutable(Executable):
     """
     The class responsible for making jobs for ligolw_sstinca.
     """
+    current_retention_level = Executable.CRITICAL
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  dqVetoName=None, tags=[]):
         super(LigolwSSthincaExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
@@ -846,14 +857,16 @@ class LigolwSSthincaExecutable(Executable):
         # FIXME: This must match the *actual* output name!
         outFile = File(self.ifo, self.name, jobSegment,
                          extension='.xml.gz', directory=self.out_dir,
-                         tags=self.tags+tags)
+                         tags=self.tags+tags,
+                         store_file=self.retain_files)
 
         node._add_output(outFile)
 
         if write_likelihood:
             node.new_output_file_opt(jobSegment, '.xml.gz',
-                                     '--likelihood-output-file',
-                                     tags=['DIST_STATS']+self.tags+tags)
+                        '--likelihood-output-file',
+                        tags=['DIST_STATS']+self.tags+tags,
+                        store_file=self.retain_files)
 
         return node
 
@@ -861,6 +874,7 @@ class PycbcSqliteSimplifyExecutable(Executable):
     """
     The class responsible for making jobs for pycbc_sqlite_simplify.
     """
+    current_retention_level = Executable.NON_CRITICAL
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
         super(PycbcSqliteSimplifyExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
@@ -883,13 +897,19 @@ class PycbcSqliteSimplifyExecutable(Executable):
             count = 0
             testing = 0
             curr_node = Node(self)
+            if self.global_retention_threshold > \
+                                 Executable.INTERMEDIATE_PRODUCT:
+                curr_store_file = False
+            else:
+                curr_store_file = True
             for i, file in enumerate(inputFiles):
                 curr_node.add_input_arg(file)
                 if ( (not (i % 20)) and (i != 0) ) or ((i+1) == num_inputs):
                     count_tag = ['SPLIT%d' %(count)]
                     curr_node.new_output_file_opt(job_segment, '.sqlite', 
                                     '--output-file',
-                                     tags=self.tags+extra_tags+count_tag)
+                                     tags=self.tags+extra_tags+count_tag,
+                                     store_file=curr_store_file)
                     workflow.add_node(curr_node)
                     reduced_inputs.append(curr_node.output_file)
                     testing += len(curr_node._inputs)
@@ -909,7 +929,7 @@ class PycbcSqliteSimplifyExecutable(Executable):
             node.add_input_opt("--injection-file", injFile)
             node.add_opt("--simulation-tag", injString)
         node.new_output_file_opt(job_segment, '.sqlite', '--output-file',
-                                 tags=self.tags+extra_tags) 
+                        tags=self.tags+extra_tags, store_file=self.retain_files)
         return node
 
 class SQLInOutExecutable(Executable):
@@ -917,6 +937,7 @@ class SQLInOutExecutable(Executable):
     The class responsible for making jobs for SQL codes taking one input and
     one output.
     """
+    current_retention_level=Executable.NON_CRITICAL
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
         super(SQLInOutExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
 
@@ -930,14 +951,22 @@ class SQLInOutExecutable(Executable):
         node = Node(self)
         node.add_input_opt('--input', input_file)
         node.new_output_file_opt(job_segment, '.sqlite', '--output',
-                                 tags=self.tags+extra_tags)
+                        tags=self.tags+extra_tags, store_file=self.retain_files)
         return node
+
+class PycbcCalculateFarExecutable(SQLInOutExecutable):
+    """
+    The class responsible for making jobs for the FAR calculation code. This
+    only raises the default retention level
+    """
+    current_retention_level=Executable.FINAL_RESULT
 
 class ExtractToXMLExecutable(Executable):
     """
     This class is responsible for running ligolw_sqlite jobs that will take an
     SQL file and dump it back to XML.
     """
+    current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
@@ -946,7 +975,7 @@ class ExtractToXMLExecutable(Executable):
         node = Node(self)
         node.add_input_opt('--database', input_file)
         node.new_output_file_opt(job_segment, '.xml', '--extract',
-                                 tags=self.tags)
+                                 tags=self.tags, store_file=self.retain_files)
         return node
 
 
@@ -954,18 +983,20 @@ class ComputeDurationsExecutable(SQLInOutExecutable):
     """
     The class responsible for making jobs for pycbc_compute_durations.
     """
+    current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def create_node(self, job_segment, input_file, summary_xml_file):
         node = Node(self)
         node.add_input_opt('--input', input_file)
         node.add_input_opt('--segment-file', summary_xml_file)
         node.new_output_file_opt(job_segment, '.sqlite', '--output',
-                                 tags=self.tags)
+                                 tags=self.tags, store_file=self.retain_files)
         return node
 
 class InspinjfindExecutable(Executable):
     """
     The class responsible for running jobs with pycbc_inspinjfind
     """
+    current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
@@ -974,7 +1005,7 @@ class InspinjfindExecutable(Executable):
         node = Node(self)
         node.add_input_opt('--input-file', input_file)
         node.new_output_file_opt(job_segment, '.xml', '--output-file',
-                                 tags=self.tags)
+                                 tags=self.tags, store_file=self.retain_files)
         return node
 
 class PycbcPickleHorizonDistsExecutable(Executable):
@@ -983,6 +1014,8 @@ class PycbcPickleHorizonDistsExecutable(Executable):
     executable which is part 1 of 4 of the gstlal_inspiral_calc_likelihood
     functionality
     """
+    # FIXME: This class will soon be removed when gstlal post-proc is updated
+    current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
@@ -992,7 +1025,7 @@ class PycbcPickleHorizonDistsExecutable(Executable):
         for file in trigger_files:
             node.add_input_arg(file)
         node.new_output_file_opt(job_segment, '.pickle', '--output-file',
-                                 tags=self.tags)
+                                 tags=self.tags, store_file=self.retain_files)
         return node
 
 class PycbcCombineLikelihoodExecutable(Executable):
@@ -1001,6 +1034,7 @@ class PycbcCombineLikelihoodExecutable(Executable):
     executable which is part 2 of 4 of the gstlal_inspiral_calc_likelihood
     functionality
     """
+    current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
@@ -1010,7 +1044,7 @@ class PycbcCombineLikelihoodExecutable(Executable):
         node.add_input_list_opt('--likelihood-urls', likelihood_files)
         node.add_input_opt('--horizon-dist-file', horizon_dist_file)
         node.new_output_file_opt(job_segment, '.xml.gz', '--output-file',
-                                 tags=self.tags)
+                                 tags=self.tags, store_file=self.retain_files)
         return node
 
 class PycbcGenerateRankingDataExecutable(Executable):
@@ -1019,6 +1053,7 @@ class PycbcGenerateRankingDataExecutable(Executable):
     executable which is part 3 of 4 of the gstlal_inspiral_calc_likelihood
     functionality
     """
+    current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
@@ -1030,7 +1065,7 @@ class PycbcGenerateRankingDataExecutable(Executable):
         node.add_input_opt('--likelihood-file', likelihood_file)
         node.add_input_opt('--horizon-dist-file', horizon_dist_file)
         node.new_output_file_opt(job_segment, '.xml.gz', '--output-file',
-                                 tags=self.tags)
+                                 tags=self.tags, store_file=self.retain_files)
         return node
 
 class PycbcCalculateLikelihoodExecutable(Executable):
@@ -1039,6 +1074,7 @@ class PycbcCalculateLikelihoodExecutable(Executable):
     executable which is part 4 of 4 of the gstlal_inspiral_calc_likelihood
     functionality
     """
+    current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
@@ -1056,13 +1092,15 @@ class PycbcCalculateLikelihoodExecutable(Executable):
         node.add_input_opt('--horizon-dist-file', horizon_dist_file)
         node.add_input_opt('--likelihood-file', likelihood_file)
         node.new_output_file_opt(job_segment, '.sqlite', '--output-file',
-                                 tags=self.tags + extra_tags)
+                                 tags=self.tags + extra_tags,
+                                 store_file=self.retain_files)
         return node
 
 class GstlalMarginalizeLikelihoodExecutable(Executable):
     """
     The class responsible for running the gstlal marginalize_likelihood jobs
     """
+    current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
@@ -1071,13 +1109,14 @@ class GstlalMarginalizeLikelihoodExecutable(Executable):
         node = Node(self)
         node.add_input_arg(input_file)
         node.new_output_file_opt(job_segment, '.xml.gz', '--output',
-                                 tags=self.tags)
+                                 tags=self.tags, store_file=self.retain_files)
         return node
 
 class GstlalFarfromsnrchisqhistExecutable(Executable):
     """
     The class responsible for running the gstlal far from chisq hist jobs
     """
+    current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
@@ -1090,12 +1129,13 @@ class GstlalFarfromsnrchisqhistExecutable(Executable):
             node.add_input_opt("--input-database", inj_database)
         node.add_input_opt("--background-bins-file", marg_input_file)
         node.new_output_file_opt(job_segment, '.sqlite', '--output-database',
-                                 tags=self.tags)
+                                 tags=self.tags, store_file=self.retain_files)
         # FIXME: Not supported yet
         if write_background_bins:
             node.new_output_file_opt(job_segment, '.xml.gz',
                                   "--background-bins-out-file",
-                                  tags=["POSTMARG"] + self.tags)
+                                  tags=["POSTMARG"] + self.tags,
+                                  store_file=self.retain_files)
         return node
 
 
@@ -1103,6 +1143,7 @@ class GstlalPlotSensitivity(Executable):
     """
     The class responsible for running gstlal_plot_sensitivity
     """
+    current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
@@ -1119,6 +1160,7 @@ class GstlalPlotSummary(Executable):
     """
     The class responsible for running gstlal_plot_summary
     """
+    current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
@@ -1135,6 +1177,7 @@ class GstlalPlotBackground(Executable):
     """
     The class responsible for running gstlal_plot_background
     """
+    current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
@@ -1150,6 +1193,7 @@ class GstlalSummaryPage(Executable):
     """
     The class responsible for running gstlal_inspiral_summary_page
     """
+    current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  tags=[]):
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
@@ -1170,6 +1214,7 @@ class LalappsInspinjExecutable(Executable):
     """
     The class used to create jobs for the lalapps_inspinj Executable.
     """
+    current_retention_level = Executable.FINAL_RESULT
     def create_node(self, segment):
         node = Node(self)
         
@@ -1180,23 +1225,27 @@ class LalappsInspinjExecutable(Executable):
         
         node.add_opt('--gps-start-time', segment[0])
         node.add_opt('--gps-end-time', segment[1])    
-        node.new_output_file_opt(segment, '.xml', '--output')
+        node.new_output_file_opt(segment, '.xml', '--output',
+                                 store_file=self.retain_files)
         return node
 
 class PycbcTimeslidesExecutable(Executable):
     """
     The class used to create jobs for the pycbc_timeslides Executable.
     """
+    current_retention_level = Executable.FINAL_RESULT
     def create_node(self, segment):
         node = Node(self)
 
-        node.new_output_file_opt(segment, '.xml.gz', '--output-files')
+        node.new_output_file_opt(segment, '.xml.gz', '--output-files',
+                                 store_file=self.retain_files)
         return node
 
 class PycbcSplitBankExecutable(Executable):
     """
     The class responsible for creating jobs for pycbc_splitbank.
     """
+    current_retention_level = Executable.NON_CRITICAL
     def __init__(self, cp, exe_name, num_banks,
                  ifo=None, out_dir=None, tags=[], universe=None):
         super(PycbcSplitBankExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
@@ -1229,7 +1278,7 @@ class PycbcSplitBankExecutable(Executable):
             job_tag = bank.description + "_" + self.name.upper()
             out_file = File(bank.ifo_list, job_tag, bank.segment,
                                extension=".xml.gz", directory=self.out_dir,
-                               tags=curr_tags)
+                               tags=curr_tags, store_file=self.retain_files)
             out_files.append(out_file)
         node.add_output_list_opt('--output-filenames', out_files)
         return node

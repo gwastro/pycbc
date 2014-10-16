@@ -105,6 +105,7 @@ class LegacyAnalysisExecutable(Executable):
     The class responsible for setting up jobs for legacy lalapps C-code
     Executables.
     """
+    current_retention_level = Executable.CRITICAL
     def __init__(self, cp, name, universe=None, ifo=None, tags=[], out_dir=None):
         super(LegacyAnalysisExecutable, self).__init__(cp, name, universe, ifo, out_dir, tags=tags)
 
@@ -135,7 +136,8 @@ class LegacyAnalysisExecutable(Executable):
         out_file = File(self.ifo, self.name, valid_seg,
                              extension=extension,
                              directory=self.out_dir,
-                             tags=self.tags + tags)
+                             tags=self.tags + tags,
+                             store_file=self.retain_files)
  
         node.add_output_opt('--output-file', out_file)
         node.add_input_list_opt('--frame-files', dfParents)
@@ -144,13 +146,14 @@ class LegacyAnalysisExecutable(Executable):
     get_valid_times = legacy_get_valid_times
     
 class LegacyTmpltbankExecutable(LegacyAnalysisExecutable):
-    pass
+    current_retention_level = Executable.CRITICAL
         
 class LegacyInspiralExecutable(LegacyAnalysisExecutable):
     """
     The class responsible for setting up jobs for legacy lalapps_inspiral
     Executable.
     """
+    current_retention_level = Executable.CRITICAL
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None, 
                        out_dir=None, tags=[]):
         super(LegacyInspiralExecutable, self).__init__(cp, name, universe, ifo, 
@@ -173,6 +176,7 @@ class LegacySplitBankExecutable(Executable):
     """
     The class responsible for creating jobs for lalapps_splitbank.
     """
+    current_retention_level = Executable.NON_CRITICAL
     def __init__(self, cp,name, universe, numBanks,
                  ifo=None, out_dir=None, tags=[]):
         Job.__init__(self, cp, name, universe, ifo, out_dir, tags=tags)
@@ -234,7 +238,8 @@ class LegacySplitBankExecutable(Executable):
                 
             job_tag = bank.description + "_" + self.name.upper()
             out_file = File(bank.ifo, job_tag, bank.segment, 
-                            file_url=out_url, tags=bank.tags)
+                            file_url=out_url, tags=bank.tags,
+                            store_file=self.retain_files)
             node._add_output(out_file)
         return node
 

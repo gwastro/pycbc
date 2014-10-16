@@ -101,6 +101,19 @@ def is_condor_exec(exe_path):
         return False
         
 class Executable(pegasus_workflow.Executable):
+    # These are the file retention levels
+    INTERMEDIATE_PRODUCT = 1
+    NON_CRITICAL = 2
+    CRITICAL = 3
+    FINAL_RESULT = 4
+    # This is the default value. It will give a warning if a class is
+    # used where the retention level is not set. The file will still be stored
+    KEEP_BUT_RAISE_WARNING = 5
+    _warned_classes_list = ['Executable']
+
+    # Sub classes, or instances, should override this. If not overriden the
+    # file will be retained, but a warning given
+    current_retention_level = KEEP_BUT_RAISE_WARNING
     def __init__(self, cp, name, 
                        universe=None, ifos=None, out_dir=None, tags=[]):
         """
@@ -207,6 +220,52 @@ class Executable(pegasus_workflow.Executable):
                 warnString = "warning: config file is missing section [%s]"\
                              %(sec,)
                 logging.warn(warnString)
+
+        # Determine the level at which output files should be kept
+        try:
+            global_retention_level = \
+                cp.get_opt_tags("workflow", "file-retention-level",
+                                   tags+[name])
+        except:
+            msg="Cannot find file-retention-level in [workflow] section "
+            msg+="of the configuration file. Setting a default value of "
+            msg+="retain all files."
+            logging.warn(msg)
+            self.retain_files = True
+            self.global_retention_threshold = 1
+            cp.set("workflow", "file-retention-level", "all")
+        else:
+            # FIXME: Are these names suitably descriptive?
+            if global_retention_level == 'all_files':
+                self.global_retention_threshold = 1
+            elif global_retention_level == 'no_intermediates':
+                self.global_retention_threshold = 2
+            elif global_retention_level == 'all_triggers':
+                self.global_retention_threshold = 3
+            elif global_retention_level == 'results_only':
+                self.global_retention_threshold = 4
+            else:
+                err_msg = "Cannot recognize the file-retention-level in the "
+                err_msg += "[workflow] section of the ini file. "
+                err_msg += "Got : %s." %(global_retention_level,)
+                err_msg += "Valid options are: 'all_files', 'no_intermediates',"
+                err_msg += "'all_triggers' or 'results_only' "
+                raise ValueError(err_msg)
+            if self.current_retention_level == 5:
+                self.retain_files = True
+                if type(self).__name__ in Executable._warned_classes_list:
+                    pass
+                else:
+                    warn_msg = "Attribute current_retention_level has not "
+                    warn_msg += "been set in class %s. " %(type(self),)
+                    warn_msg += "This value should be set explicitly. "
+                    warn_msg += "All output from this class will be stored."
+                    logging.warn(warn_msg)
+                    Executable._warned_classes_list.append(type(self).__name__)
+            elif self.global_retention_threshold > self.current_retention_level:
+                self.retain_files = False
+            else:
+                self.retain_files = True
 
     @property
     def ifo(self):
@@ -380,7 +439,8 @@ class Node(pegasus_workflow.Node):
         exe_path = urlparse.urlsplit(self.executable.get_pfn()).path
         return [exe_path] + arglist
         
-    def new_output_file_opt(self, valid_seg, extension, option_name, tags=[]):
+    def new_output_file_opt(self, valid_seg, extension, option_name, tags=[],
+                            store_file=True):
         """
         This function will create a workflow.File object corresponding to the given
         information and then add that file as output of this node.
@@ -399,6 +459,10 @@ class Node(pegasus_workflow.Node):
         tags : list of strings, (optional, default=[])
             These tags will be added to the list of tags already associated with
             the job. They can be used to uniquely identify this output file.
+        store_file : Boolean, (optional, default=True)
+            This file is to be added to the output mapper and will be stored
+            in the specified output location if True. If false file will be
+            removed when no longer needed in the workflow.
         """
         
         # Changing this from set(tags) to enforce order. It might make sense
@@ -409,7 +473,7 @@ class Node(pegasus_workflow.Node):
                 all_tags.append(tag)
 
         fil = File(self.executable.ifo_list, self.executable.name,
-                   valid_seg, extension=extension, 
+                   valid_seg, extension=extension, store_file=store_file, 
                    directory=self.executable.out_dir, tags=all_tags)    
         self.add_output_opt(option_name, fil)
         
