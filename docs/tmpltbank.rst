@@ -9,12 +9,12 @@ Introduction
 ===================
 
 This page gives details on how to use the various bank generation codes
-available in pyCBC and the pyCBC.tmpltbank module. These codes currently
-consist of 
+available in pyCBC, the pyCBC.tmpltbank module. In addition we describe the
+sBank code. These codes currently consist of 
 
-* A program to generate a non-spinning template bank
-* A program to generate an aligned-spin template bank using a geometrical lattice algorithm
-* A program to generate an aligned-spin template bank using a stochastic placement algorithm.
+* :ref:`A program to generate a non-spinning template bank (pycbc_geom_nonspinbank) <tmpltbank_nonspinbank>`
+* :ref:`A program to generate an aligned-spin template bank using a geometrical lattice algorithm (pycbc_geom_aligned_bank) <tmpltbank_alignedgeombank>`
+* :ref:`Two programs to generate an aligned-spin template bank using a stochastic placement algorithm. This is done either using a metric to approximate distances, or by computing explicit matches from waveforms. (pycbc_aligned_stoch_bank, lalapps_cbc_sbank) <tmpltbank_alignedstochbank>`
 
 Each of these codes is described in turn and is accompanied by some examples of how to run the code, some relevant background and references and the options described from the codes' help messages.
 
@@ -23,6 +23,15 @@ However, if people want to output in SQL or other formats it should be
 easy to write a back-end module to do this. The code may not fill every
 necessary column of the sngl_inspiral table, please let me know if something
 is missing and it will be added!
+
+**In some cases recommendations are given for which codes to use where. It
+should be noted that these are personal recommendations of the page maintainer
+(Ian), and there is always a strong possibility that Ian, and the
+recommendations he makes, are wrong. Where multiple methods exist, it is
+advised that the user try out the different methods and decide for themselves
+which method is best.**
+
+.. _tmpltbank_nonspinbank:
 
 =================================================
 Non spin bank placement: pycbc_geom_nonspinbank
@@ -40,6 +49,10 @@ Mapping back from the new coordinate system to masses and spins makes the bank
 placement slower than lalapps_tmpltbank. However, it doesn't waste stupid
 amounts of time calculating the ethinca metric so it is faster than tmpltbank
 if the ethinca components are being computed.
+
+
+**Ian's recommendation: Use this code instead of lalapps_tmpltbank if you want
+a non-spinning bank.**
 
 ----------------
 Background
@@ -105,6 +118,8 @@ Some notes on these options:
 * Choose f-upper wisely! If your signals coalesce at <1000Hz, you might want to use a lower value ... although of course in this regime this inspiral-only metric will lose validity.
 * A delta-f value of 1/256 will certainly be accurate enough, a larger value will cause the code to run faster.
 
+.. _tmpltbank_alignedgeombank:
+
 =============================================================
 Aligned-spin geometric placement: pycbc_geom_aligned_bank
 =============================================================
@@ -123,6 +138,14 @@ scheme is developed it could be used in that. This code has already been used
 in two published works, has been run through the GRB code, MBTA and in
 ahope development work ongoing at AEI.
 
+**Ian's recommendation: This code will produce optimal template banks, if the
+metric can be trusted (ie. BNS). For NSBH and BBH the merger matters. Here the
+stochastic approaches described below could be more appropriate for your
+parameter space. It is recommended to try these, and maybe even look into
+the hybrid approaches described below. Note that the merger matters less in
+ZDHP than in O1, so this approach works better for NSBH banks in 2018 than it
+will in 2015.**
+
 If any problems are encountered please email ian.harry@ligo.org.
 
 ----------------
@@ -132,8 +155,8 @@ Background
 This code build upon the methods used to calculate the metric used in
 lalapps_tmpltbank. For details of how this code works see:
 
-* Phys.Rev. D86 (2012) 084017
-* arXiv:1307.3562
+* Brown et al., Phys.Rev. D86 (2012) 084017
+* Harry et al., Phys.Rev. D89 (2014) 024010
 
 As with our non-spinning generator we place a lattice in the flat xi_i
 coordinate system and then map the points back to physical coordinates. In
@@ -178,9 +201,13 @@ Some notes on these options:
 * And a BH is considered to be anything with mass > 3 solar masses.
 * To avoid generating a NSBH bank where you have a wall of triggers with NS mass = 3 and spins up to the black hole maximum use the nsbh-flag. This will ensure that only neutron-star--black-hole systems are generated.
 
-============================================================
-Aligned-spin stochastic placement: pycbc_aligned_stoch_bank
-============================================================
+.. _tmpltbank_alignedstochbank:
+
+===============================================================================
+Aligned-spin stochastic placement
+===============================================================================
+
+lalapps_cbc_sbank and pycbc_aligned_stoch_bank
 
 ------------------
 Introduction
@@ -190,8 +217,15 @@ pycbc_aligned_stoch_bank is an aligned-spin bank generator that uses a
 stochastic algorithm and the TaylorF2 (or TaylorR2F4) metric to create a bank
 of templates.
 
-This code does not require the processing power of the geometric lattice
-algorithm and does not produce a dag. Run the command, wait, get bank.
+lalapps_cbc_sbank is an aligned-spin bank generator that uses a stochastic algorithm to create a bank of templates. It can use a metric to approximate distances (currently available metrics: TaylorF2 single spin approximation). It can also compute banks using direct matches between waveforms instead of a metric. In theory this could also be used to generate precessing banks (and of course non-spin banks), although computational cost of precessing banks may be way too much to make this practical.
+
+Comparisons, advantages and disadvantages of the two codes are discussed below.
+
+When using a metric these codes do not require the processing power of the
+geometric lattice algorithm and does no produce a dag.
+Run the command, wait, get bank. When using the direct match method in sbank
+computational cost is much higher. For this purpose a dag generator is also
+supplied to parallelize generation.
 
 ------------------
 Background
@@ -199,8 +233,8 @@ Background
 
 As opposed to geometric algorithms where the metric is used to determine a
 lattice of equally placed points, a stochastic algorithm works by creating
-a large set of randomly placed points and then using the metric (or actually
-computing overlaps) to remove points that are too close to each other.
+a large set of randomly placed points and then using the metric or actually
+computing overlaps to remove points that are too close to each other.
 
 This algorithm has the benefit that it can work in any parameter space, you
 do not require a flat metric. However, it does require more templates to cover
@@ -208,34 +242,89 @@ a space than a geometric approach. Additionally the computational cost will
 increase as a factor of the number of points in the bank to a power between 2 
 and 3 - the exact number depends on how well you are able to optimize the 
 parameter space and not match **every** point in the bank with every seed point.
-Nevertheless we have found that the computational cost is not prohibitive for
-aLIGO-size spinning banks.
+Nevertheless it has been found that the computational cost is not prohibitive
+for aLIGO-size stochastically-generated spinning banks, when a metric can be
+used. 
 
 The stochastic bank code can calculate the ethinca metric, but **only** if both 
-component maximum spins are set to 0.0, i.e. a stochastic non-spinning bank. 
+component maximum spins are set to 0.0, i.e. a stochastic non-spinning bank. One can also generate only the time component of the metric if doing exact-match coincidence.
 
 Stochastic placement was first proposed in terms of LISA searches in
 
 * Harry et al. Class.Quant.Grav. 25 (2008) 184027
 * Babak Class.Quant.Grav. 25 (2008) 195011
 
-and then described in more detail in
+(the former using a metric, and the latter using direct match). Then described in more detail in
 
 * Harry et al. Phys.Rev. D80 (2009) 104014 
 * Manca and Vallisneri Phys.Rev. D81 (2010) 024004
 
 Recently stochastic placement has been explored for LIGO searches in
 
-* Ajith et al. arXiv:1210.6666
-* Privitera et al. arXiv:1310.5633 
+* Ajith et al., Phys.Rev. D89 (2014) 084041
+* Privitera et al., Phys.Rev. D89 (2014) 024003
+* Harry et al., Phys.Rev. D89 (2014) 024010
 
-The method presented here follows the method described in Harry et al. (2009)
+pycbc_aligned_stoch_bank follows the method described in Harry et al. (2009)
 and calculates matches using a metric (in this case the F2 or R2F4 metrics).
-An alternative code "sBank" (which hopefully can be migrated into this module??)
-can doe stochastic template bank generation with or
+lalapps_cbc_sbank can do stochastic template bank generation with or
 without a metric. In the absence of a metric it uses the method introduced in
-Babak (2008) and used in Ajith (2012) and Privitera (2013) to compute distances
+Babak (2008) and used in Privitera (2013) to compute distances
 between points by generating both waveforms and calculating an explicit overlap.
+
+-------------------------------------------------------------
+Ian's recommendation: Which stochastic code should I use?
+-------------------------------------------------------------
+
+Okay so there are two stochastic codes, and a lot of overlap between the two
+codes. We are aware that this is not optimal and hope to combine the features
+of these two codes into a single front-end to get the best of both worlds.
+
+In the mean-time here is how I see the breakdown of the two codes:
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+I want to use the F2 or R2F4 metric
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+If you want to use one of the metrics that can be used in the geometric code
+then I recommend to use pycbc_aligned_stoch_bank. Here I have found the
+code to be faster
+than lalapps_cbc_sbank using the F2 reduced spin metric because the pycbc
+code is using
+a Cartesian parameter space and is therefore able to greatly reduce the
+number of matches that are calculated. (Effectively lalapps_cbc_sbank only
+limits the number of matches calculated by chirp mass differences,
+pycbc_aligned_stoch_bank also uses the second direction (some combination
+of mass ratio and the spins).
+The pycbc metric also incorporates the effect of both spins.
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+I want to use another metric, ie. an IMR metric
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+If you have and want to use a different metric, such as the IMRPhenomX
+metric, where the approach used in the geometric bank cannot be used to
+create a Cartesian coordinate system, then use lalapps_cbc_sbank.
+
+This code is more flexible, and is not dependent on the assumptions that are
+used in the geometric code. If your metric is not already added then please
+contact a developer for help in integrating this.
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+I want to use direct match
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+Use lalapps_cbc_sbank. Be aware though that this is difficult to run in a
+single process and will require the dag generator described below. However,
+this will produce banks that have significantly overlapping coverage regions
+as the parallelized jobs cannot talk to each other. Choose the number of
+parallel jobs wisely! It is possible to have 2x-3x more templates than would be
+generated from running the code in a single process.
+
+We are also working on a hybrid method where the metric approach is used to
+create a first-pass of a template bank and then the direct match is used to
+fill the holes. This has the advantage of significantly reducing the
+overcoverage from using the dag generator.
 
 --------------------
 Some examples
@@ -262,9 +351,11 @@ And a third example where we use a batshit PN order.
 
     pycbc_aligned_stoch_bank -v --pn-order onePN --f0 60 --f-low 30 --delta-f 0.1 --min-match 0.97 --min-mass1 2.5 --max-mass1 3 --min-mass2 2.5 --max-mass2 3 --max-ns-spin-mag 0.05 --max-bh-spin-mag 0.05 --nsbh-flag --verbose --asd-file ZERO_DET_high_P.txt --num-seeds 10000 --output-file "testStoch.xml"
 
---------------------------
-Command line options
---------------------------
+lalapps_cbc_sbank provides example in the help text, see below.
+
+-----------------------------------------------
+Command line options: pycbc_aligned_stoch_bank
+-----------------------------------------------
 
 The command line options read as follows
 
@@ -283,6 +374,41 @@ Some notes on these options:
 * --num-seeds is the termination condition. The code will throw NUM_SEEDS points at the parameter space, and then filter out those that are too close to each other. If this value is too low, the bank will not converge, if it is too high, the code will take longer to run.
 * --num-failed-cutoff can be used as an alternative termination condition. Here the code runs until NUM_FAILED_CUTOFF points have been **consecutively** rejected and will then stop.
 * --vary-fupper will allow the code to vary the upper frequency cutoff across the parameter space. Currently this feature is **only** available in the stochastic code. 
+
+-----------------------------------------------
+Command line options: lalapps_cbc_sbank
+-----------------------------------------------
+
+The command line options read as follows
+
+.. command-output:: lalapps_cbc_sbank --help
+
+Some notes on these options:
+
+* Anything to highlight Steve?
+
+-----------------------------------------------
+Command line options: lalapps_cbc_sbank_pipe
+-----------------------------------------------
+
+The command line options read as follows
+
+.. command-output:: lalapps_cbc_sbank_pipe --help
+
+Some notes on these options:
+
+* Anything to highlight Steve?
+
+===================================================
+Hybrid approaches: the best of both worlds
+===================================================
+
+We are currently looking into hybrid bank construction techniques. This is
+where one of the methods used above is used to create a preliminary bank and
+then a second method is run on that output to fill in any holes that might 
+exist in parameter space.
+
+Documentation on hybrid approaches will be added soon.
 
 ==========================
 The module's source code
