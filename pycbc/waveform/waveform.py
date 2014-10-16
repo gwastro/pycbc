@@ -97,28 +97,21 @@ def _imrphenombfreq(**p):
 
     return hptc.astype(complex128),  hctc.astype(complex128)
 
+string_from_order = {
+    0 : 'newtonian',
+    1 : 'oneHalfPN',
+    2 : 'onePN',
+    3 : 'onePointFivePN',
+    4 : 'twoPN',
+    5 : 'twoPointFivePN',
+    6 : 'threePN',
+    7 : 'threePointFivePN',
+    -1: 'threePointFivePN',
+    -8: 'pseudoFourPN'
+    }
+
 def _get_waveform_from_inspiral(**p):
     import lalmetaio
-
-    def get_string_from_order(order):
-        if order == 0:
-            return 'newtonian'
-        if order == 1:
-            return 'oneHalfPN'
-        if order == 2:
-            return 'onePN'
-        if order == 3:
-            return 'onePointFivePN'
-        if order == 4:
-            return 'twoPN'
-        if order == 5:
-            return 'twoPointFivePN'
-        if order == 6:
-            return 'threePN'
-        if (order == 7) or (order == -1):
-            return 'threePointFivePN'
-        if order == -8:
-            return 'pseudoFourPN'
 
     # prefix with 'Inspiral-'
     name = p['approximant'][9:]
@@ -127,7 +120,7 @@ def _get_waveform_from_inspiral(**p):
         p['phase_order'] = -8
 
     params = lalmetaio.SimInspiralTable()
-    params.waveform = name + get_string_from_order(p['phase_order'])
+    params.waveform = name + string_from_order(p['phase_order'])
     params.mass1= p['mass1']
     params.mass2= p['mass2']
     params.f_lower = p['f_lower']

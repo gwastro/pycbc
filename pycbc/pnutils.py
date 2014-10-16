@@ -423,54 +423,39 @@ def get_final_freq(approx, m1, m2, s1z, s2z):
     lalsim_approx = lalsimulation.GetApproximantFromString(approx)
     return _vec_get_final_freq(lalsim_approx, m1, m2, s1z, s2z)
 
-# FIXME: Why is this a function? Why not just declare named_frequency_cutoffs
-#        as a dictionary?
-def named_frequency_cutoffs():
-    """
-    Dictionary of functions with uniform API taking a 
-    parameter dict indexed on m1, m2, s1z, s2z
-
-    Returns
-    -------
-    cutoffFunctions : dict mapping strings to functions
-    """
-    cutoffFunctions = {
-      # functions depending on the total mass alone
-      "SchwarzISCO": lambda p: f_SchwarzISCO(p["m1"]+p["m2"]),
-      "LightRing"  : lambda p: f_LightRing(p["m1"]+p["m2"]),
-      "ERD"        : lambda p: f_ERD(p["m1"]+p["m2"]),
-      # functions depending on the 2 component masses
-      "BKLISCO"    : lambda p: f_BKLISCO(p["m1"], p["m2"]),
-      "FRD"        : lambda p: f_FRD(p["m1"], p["m2"]),
-      "LRD"        : lambda p: f_LRD(p["m1"], p["m2"]),
-      # functions depending on 2 component masses and aligned spins
-      "MECO"       : lambda p: meco_frequency(p["m1"], p["m2"],
+# Dictionary of functions with uniform API taking a 
+# parameter dict indexed on m1, m2, s1z, s2z
+named_frequency_cutoffs = {
+    # functions depending on the total mass alone
+    "SchwarzISCO": lambda p: f_SchwarzISCO(p["m1"]+p["m2"]),
+    "LightRing"  : lambda p: f_LightRing(p["m1"]+p["m2"]),
+    "ERD"        : lambda p: f_ERD(p["m1"]+p["m2"]),
+    # functions depending on the 2 component masses
+    "BKLISCO"    : lambda p: f_BKLISCO(p["m1"], p["m2"]),
+    "FRD"        : lambda p: f_FRD(p["m1"], p["m2"]),
+    "LRD"        : lambda p: f_LRD(p["m1"], p["m2"]),
+    # functions depending on 2 component masses and aligned spins
+    "MECO"       : lambda p: meco_frequency(p["m1"], p["m2"],
                                               p["s1z"], p["s2z"]),
-      # IMR functions
-      "IMRPhenomBFinal" : lambda p: get_freq("fIMRPhenomBFinal",
+    "IMRPhenomBFinal": lambda p: get_freq("fIMRPhenomBFinal",
                                               p["m1"], p["m2"],
                                               p["s1z"], p["s2z"]),
-      "IMRPhenomCFinal" : lambda p: get_freq("fIMRPhenomCFinal",
+    "IMRPhenomCFinal": lambda p: get_freq("fIMRPhenomCFinal",
                                               p["m1"], p["m2"],
                                               p["s1z"], p["s2z"]),
-      "EOBNRv2RD"  : lambda p: get_freq("fEOBNRv2RD", p["m1"], p["m2"],
+    "EOBNRv2RD"   : lambda p: get_freq("fEOBNRv2RD", p["m1"], p["m2"],
                                               p["s1z"], p["s2z"]),
-      "EOBNRv2HMRD"  : lambda p: get_freq("fEOBNRv2HMRD", p["m1"], p["m2"],
+    "EOBNRv2HMRD" : lambda p: get_freq("fEOBNRv2HMRD", p["m1"], p["m2"],
                                               p["s1z"], p["s2z"]),
-      "SEOBNRv1RD"   : lambda p: get_freq("fSEOBNRv1RD",
-                                              p["m1"], p["m2"],
+    "SEOBNRv1RD"  : lambda p: get_freq("fSEOBNRv1RD",  p["m1"], p["m2"],
                                               p["s1z"], p["s2z"]),
-      "SEOBNRv1Peak"   : lambda p: get_freq("fSEOBNRv1Peak",
-                                              p["m1"], p["m2"],
+    "SEOBNRv1Peak": lambda p: get_freq("fSEOBNRv1Peak", p["m1"], p["m2"],
                                               p["s1z"], p["s2z"]),
-      "SEOBNRv2RD"   : lambda p: get_freq("fSEOBNRv2RD",
-                                              p["m1"], p["m2"],
+    "SEOBNRv2RD"  : lambda p: get_freq("fSEOBNRv2RD", p["m1"], p["m2"],
                                               p["s1z"], p["s2z"]),
-      "SEOBNRv2Peak"   : lambda p: get_freq("fSEOBNRv2Peak",
-                                              p["m1"], p["m2"],
+    "SEOBNRv2Peak": lambda p: get_freq("fSEOBNRv2Peak", p["m1"], p["m2"],
                                               p["s1z"], p["s2z"])
     }
-    return cutoffFunctions
 
 def frequency_cutoff_from_name(name, m1, m2, s1z, s2z):
     """
