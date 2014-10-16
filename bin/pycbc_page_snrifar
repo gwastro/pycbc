@@ -25,7 +25,7 @@ print f.attrs['background_time'], f.attrs['foreground_time']
 cstat_fore = f['foreground/stat'][:]
 cstat_fore.sort()
 cstat_rate = numpy.arange(len(cstat_fore), 0, -1) / f.attrs['foreground_time'] * 3.15569e7
-logging.info('Found %s foreground triggers' % len(stat))
+logging.info('Found %s foreground triggers' % len(cstat_fore))
 
 back_ifar = f['background/ifar'][:]
 
@@ -33,7 +33,7 @@ cstat_back = f['background/stat'][:]
 back_sort = cstat_back.argsort()
 cstat_back = cstat_back[back_sort]
 far_back = 1.0 / back_ifar[back_sort]
-logging.info('Found %s background triggers' % len(back_stat))
+logging.info('Found %s background triggers' % len(cstat_back))
 
 back_fan = f['background/fan'][:][back_sort]
 err_low = far_back * ((back_fan - numpy.sqrt(back_fan)) / back_fan) 

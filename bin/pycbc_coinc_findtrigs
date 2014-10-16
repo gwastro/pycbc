@@ -9,6 +9,88 @@ from pycbc.detector import Detector
 import pycbc.events
 from glue import segments
 
+def get_statistic_class(option):
+    if option == 'newsnr':
+        return NewSNRStatistic()
+    elif option == 'newsnr_volume':
+        return NewSNRVolStatistic()
+    elif option == 'newsnr_phasehl':
+        return NewSNRPhaseStatistic()
+
+class NewSNRStatistic(object):
+    """ ABS Class to handle information about detection statistics
+    """
+    def single_read(self, f, l, r):
+        """ Read in the single detector information and make a single detector
+        statistic. Results can either be a single number or a record array.
+        """
+        x2_dof = 2 * f.attrs['chisq_dof'] - 2
+        snr = pycbc.events.newsnr(f['snr'][l:r], f['chisq'][l:r] / x2_dof)
+        return numpy.array(snr, ndmin=1)
+
+    def coinc_statistic(self, s1, s2):
+        """ Calculate teh coincidend statistic.
+        """
+        return (s1**2.0 + s2**2.0) ** 0.5
+        
+class NewSNRVolStatistic(object):
+    """ ABS Class to handle information about detection statistics
+    """    
+    def single_read(self, f, l, r):
+        """ Read in the single detector information and make a single detector
+        statistic. Results can either be a single number or a record array.
+        """
+        x2_dof = 2 * f.attrs['chisq_dof'] - 2
+        snr = pycbc.events.newsnr(f['snr'][l:r], f['chisq'][l:r] / x2_dof)
+        snr = numpy.array(snr, ndmin=1)
+        vol = numpy.array(f['sigmasq'][l:r] ** (3.0/2.0), ndmin=1)
+        stat1 = numpy.zeros(len(snr), dtype=[('snr', numpy.float32), ('vol', numpy.float32)])
+        stat1['vol'] = vol
+        stat1['snr'] = snr
+        return stat1
+    
+    def coinc_statistic(self, s1, s2):
+        """ Calculate teh coincidend statistic.
+        """
+        snr1, snr2 = s1['snr'], s2['snr']
+        vol1, vol2 = s1['vol'], s2['vol']
+        stat = (snr1**2.0 + snr2**2.0) / 2.0 + numpy.log(vol1) + numpy.log(vol2)
+        return stat**0.5
+        
+class NewSNRPhaseStatistic(object):
+    """ ABS Class to handle information about detection statistics
+    """
+    def phase_log_pdf(self, p1, p2):
+        pdiff = abs(p2 - p1) / numpy.pi - 1
+        sigsq = 1.0        
+        
+        # This ignores many factors that are simply constants in the loglikelihood
+        logsig = -1.0 * (pdiff)**2.0 / 2.0 / sigsq
+        lognoise = numpy.log(0.5 * (2 - pdiff))   
+        return logsig - lognoise
+        
+    
+    def single_read(self, f, l, r):
+        """ Read in the single detector information and make a single detector
+        statistic. Results can either be a single number or a record array.
+        """
+        x2_dof = 2 * f.attrs['chisq_dof'] - 2
+        snr = pycbc.events.newsnr(f['snr'][l:r], f['chisq'][l:r] / x2_dof)
+        snr = numpy.array(snr, ndmin=1)
+        phase = numpy.array(f['coa_phase'][l:r], ndmin=1)
+        stat1 = numpy.zeros(len(snr), dtype=[('snr', numpy.float32), ('phase', numpy.float32)])
+        stat1['phase'] = phase
+        stat1['snr'] = snr
+        return stat1
+    
+    def coinc_statistic(self, s1, s2):
+        """ Calculate teh coincidend statistic.
+        """
+        snr1, snr2 = s1['snr'], s2['snr']
+        p1, p2 = s1['phase'], s2['phase']
+        stat = (snr1**2.0 + snr2**2.0) / 2.0 + self.phase_log_pdf(p1, p2)
+        return stat**0.5
+
 def unique(ar, return_index=False, return_inverse=False):
     """
         KILL ME!!!!
@@ -210,7 +292,7 @@ def test_exact_match_coincidence(index1, index2, time1, time2, slide_step, windo
     passes = (time_diff <= window)
     return index1[passes], index2[passes], slide_index[passes]
     
-def load_triggers(trigger_files, group_id):
+def load_triggers(trigger_files, group_id, stat_class):
     triggers = {}
     group_id = int(group_id)
     trig_segments = {}
@@ -234,9 +316,7 @@ def load_triggers(trigger_files, group_id):
         if (r-l) > 0:
             end_time = f['end_time'][l:r]
             th = f['template_id'][l:r]
-            x2_dof = 2 * f.attrs['chisq_dof'] - 2
-            snr = pycbc.events.newsnr(f['snr'][l:r], f['chisq'][l:r] / x2_dof)
-            snr = numpy.array(snr, ndmin=1)
+            snr = stat_class.single_read(f, l, r)
         else:
             continue
 
@@ -250,7 +330,7 @@ def load_triggers(trigger_files, group_id):
             tl += [th]
 
             num_trigs += len(snr)
-            logging.info("%s/%s : Total Trigs=%s: %s-%s" % (i+1, len(trigger_files), num_trigs, snr.min(), snr.max()))
+            logging.info("%s/%s : Total Trigs=%s:" % (i+1, len(trigger_files), num_trigs))
         f.close()
     for key in triggers.keys():
         sl, el, tl = triggers[key]
@@ -281,16 +361,16 @@ def decimate_triggers(stat, slide, num_keep, bins, factor=2):
     removed.
     
     """
-    netstatsq = s1 ** 2.0 + s2 ** 2.0
+    netstatsq = stat
     stat_sort = netstatsq.argsort()
     netstatsq = netstatsq[stat_sort]
     slide = slide[stat_sort]
     
     # keep the number of loud triggers
-    keep = numpy.arange(len(s1) - num_keep, len(s1), 1)
+    keep = numpy.arange(len(stat) - num_keep, len(stat), 1)
     factors = numpy.zeros(len(keep), dtype=numpy.uint32) + 1
-    netstatsq = netstatsq[0:len(s1) - num_keep]
-    slide = slide[0:len(s1) - num_keep]
+    netstatsq = netstatsq[0:len(stat) - num_keep]
+    slide = slide[0:len(stat) - num_keep]
 
     min_slide = slide.min()
     max_slide = slide.max()
@@ -366,18 +446,21 @@ def veto_indices(times, ifo, veto_files):
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser()
     # General required options
-    parser.add_argument('--trigger-files', nargs='+')
-    parser.add_argument('--veto-files', nargs='+')
+    parser.add_argument('--trigger-files', nargs='+', help='List of hdf format single detector inspiral trigger files.')
+    parser.add_argument('--veto-files', nargs='+', help='List of veto files to apply to the single detector triggers.')
     # Could be different ways to communicate this information, think about it
-    parser.add_argument('--timeslide-interval', type=float, default=None)
-    parser.add_argument('--template-group', nargs='+')
+    parser.add_argument('--timeslide-interval', type=float, default=None, help='Interval in seconds between timeslide offsets')
+    parser.add_argument('--template-group', nargs='+', help='Template group index to analyze')
     parser.add_argument('--verbose', '-v', action='count')
     parser.add_argument('--output-file')
-    parser.add_argument('--decimation-factor', type=int)
-    parser.add_argument('--decimation-bins', type=int)
-    parser.add_argument('--decimation-keep', type=int)
-    parser.add_argument('--coinc-threshold', type=float, default=0)
+    parser.add_argument('--decimation-factor', type=int, help='Factor to decimate triggers by for each bin')
+    parser.add_argument('--decimation-bins', type=int, help='Number of decimation intervals')
+    parser.add_argument('--decimation-keep', type=int, help='Number of the most significant backgroud triggers to keep without decimation')
+    parser.add_argument('--coinc-threshold', type=float, default=0, help='Fixed time to add to the time-of-flight coincidence window size in seconds')
+    parser.add_argument('--coinc-statistic', default='newsnr', help='The coinc statistic to calculate. The default is newsnr')
     args = parser.parse_args()
+    
+    stat_class = get_statistic_class(args.coinc_statistic)
 
     if args.verbose == 1:
         log_level = logging.INFO
@@ -396,7 +479,7 @@ if __name__ == '__main__':
     
     for template_group in args.template_group:
         logging.info('Loading triggers from template group %s' % template_group)
-        triggers, foreground_segments = load_triggers(args.trigger_files, template_group)
+        triggers, foreground_segments = load_triggers(args.trigger_files, template_group, stat_class)
 
         ifo1, ifo2 = triggers.keys()
         s1, t1, r1 = triggers[ifo1]
@@ -415,8 +498,8 @@ if __name__ == '__main__':
         end = numpy.array(end)    
         
         logging.info('%s time: %s  %s time: %s' %  (ifo1, fore_time1, ifo2, fore_time2))   
-        logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))   
-        logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))
+        #logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))   
+        #logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))
         
         if  args.veto_files:
             logging.info('applying vetoes')
@@ -434,8 +517,8 @@ if __name__ == '__main__':
         logging.info('%s num: %s   %s num: %s' % (ifo1, len(s1), ifo2, len(s2)))
         time_window = det1.light_travel_time_to_detector(det2) + args.coinc_threshold
         
-        logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))  
-        logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))
+        #logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))  
+        #logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))
         
         slide = args.timeslide_interval  
         logging.info('making bins') 
@@ -464,7 +547,7 @@ if __name__ == '__main__':
         logging.info('%s total triggers' % len(s1))
         logging.info('%s foreground triggers' % (slide_index == 0).sum())
         
-        stat = (s1**2.0 + s2**2.0)**0.5
+        stat = stat_class.coinc_statistic(s1, s2)
         
         if args.decimation_keep < len(s1) and args.timeslide_interval is not None: 
             logging.info('decimating triggers')
@@ -491,7 +574,7 @@ if __name__ == '__main__':
     f = h5py.File(args.output_file, "w")
     
     if len(stat_all) > 0:
-        f.create_dataset('coinc/stat', data=numpy.concatentate(stat_all))
+        f.create_dataset('coinc/stat', data=numpy.concatenate(stat_all))
         f.create_dataset('coinc/decimation_factor', data=numpy.concatenate(dec_all))
         f.create_dataset('coinc/time1', data=numpy.concatenate(t1_all))
         f.create_dataset('coinc/time2', data=numpy.concatenate(t2_all))
