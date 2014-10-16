@@ -259,16 +259,14 @@ def load_triggers(trigger_files, group_id):
                          numpy.concatenate(tl))
     return triggers, trig_segments
     
-def decimate_triggers(s1, s2, slide, num_keep, bins, factor=2):
+def decimate_triggers(stat, slide, num_keep, bins, factor=2):
     """ Remove coinc triggers that are unlikely to be significant in
     determining in affecting the error bars of a FAP calculation
     
     Parameters
     ----------
-    s1 : numpy array
-        The values of the first detector's ranking statistic
-    s2 : numpy array
-        The values of the second detector's ranking statistic
+    stat : numpy array
+        The values of the ranking statistic
     slide : numpy array
         The array of timeslide id values that identify the unique timeslide
         this trigger was coincident for. 
@@ -389,8 +387,7 @@ if __name__ == '__main__':
         log_level = logging.WARN
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)       
 
-    s1_all = []
-    s2_all = []
+    stat_all = []
     t1_all = []
     t2_all = []
     dec_all = []
@@ -467,22 +464,23 @@ if __name__ == '__main__':
         logging.info('%s total triggers' % len(s1))
         logging.info('%s foreground triggers' % (slide_index == 0).sum())
         
+        stat = (s1**2.0 + s2**2.0)**0.5
+        
         if args.decimation_keep < len(s1) and args.timeslide_interval is not None: 
             logging.info('decimating triggers')
-            d1, decimation_factor = decimate_triggers(s1, s2, slide_index, 
+            d1, decimation_factor = decimate_triggers(stat, slide_index, 
                                    args.decimation_keep, 
                                    args.decimation_bins, 
                                    args.decimation_factor)
-            s1, s2, t1, t2, r1, r2 = s1[d1], s2[d1], t1[d1], t2[d1], r1[d1], r2[d1]
+            stat, t1, t2, r1, r2 = stat[d1], t1[d1], t2[d1], r1[d1], r2[d1]
             slide_index = slide_index[d1]
-            logging.info('%s total triggers' % len(s1))
+            logging.info('%s total triggers' % len(stat))
             logging.info('%s foreground triggers' % (slide_index == 0).sum())
         else:
-            decimation_factor = numpy.zeros(len(s1), dtype=numpy.uint32) + 1
+            decimation_factor = numpy.zeros(len(stat), dtype=numpy.uint32) + 1
         
         # Accumulate the coinc triggers from this groups of templates
-        s1_all += [s1]
-        s2_all += [s2]
+        stat_all += [stat]
         t1_all += [t1]
         t2_all += [t2]
         dec_all += [decimation_factor]
@@ -492,12 +490,9 @@ if __name__ == '__main__':
     logging.info('saving coincident triggers')
     f = h5py.File(args.output_file, "w")
     
-    s1_all = numpy.concatenate(s1_all)
-    
-    if len(s1_all) > 0:
-        f.create_dataset('coinc/stat1', data=s1_all)
+    if len(stat_all) > 0:
+        f.create_dataset('coinc/stat', data=numpy.concatentate(stat_all))
         f.create_dataset('coinc/decimation_factor', data=numpy.concatenate(dec_all))
-        f.create_dataset('coinc/stat2', data=numpy.concatenate(s2_all))
         f.create_dataset('coinc/time1', data=numpy.concatenate(t1_all))
         f.create_dataset('coinc/time2', data=numpy.concatenate(t2_all))
         f.create_dataset('coinc/timeslide_id', data=numpy.concatenate(slide_all))

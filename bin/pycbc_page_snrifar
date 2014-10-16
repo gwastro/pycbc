@@ -22,22 +22,18 @@ f = h5py.File(args.trigger_file, 'r')
 
 print f.attrs['background_time'], f.attrs['foreground_time']
 
-stat1 = f['foreground/stat1'][:]
-stat2 = f['foreground/stat2'][:]
-cstat_fore = (stat1**2.0 + stat2**2.0) ** 0.5
+cstat_fore = f['foreground/stat'][:]
 cstat_fore.sort()
 cstat_rate = numpy.arange(len(cstat_fore), 0, -1) / f.attrs['foreground_time'] * 3.15569e7
-logging.info('Found %s foreground triggers' % len(stat1))
+logging.info('Found %s foreground triggers' % len(stat))
 
-back_stat1 = f['background/stat1'][:]
-back_stat2 = f['background/stat2'][:]
 back_ifar = f['background/ifar'][:]
 
-cstat_back = (back_stat1**2.0 + back_stat2**2.0) ** 0.5
+cstat_back = f['background/stat'][:]
 back_sort = cstat_back.argsort()
 cstat_back = cstat_back[back_sort]
 far_back = 1.0 / back_ifar[back_sort]
-logging.info('Found %s background triggers' % len(back_stat1))
+logging.info('Found %s background triggers' % len(back_stat))
 
 back_fan = f['background/fan'][:][back_sort]
 err_low = far_back * ((back_fan - numpy.sqrt(back_fan)) / back_fan) 

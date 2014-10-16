@@ -27,7 +27,7 @@ def compute_efficiency_bins_pylal(f_dist, m_dist, bins=15):
     found = f_dist
     
     total = numpy.concatenate([f_dist, m_dist])
-    ndbins = rate.NDBins([rate.LinearBins(min(total), max(total), bins), rate.LinearBins(0, 10, 1)])
+    ndbins = rate.NDBins([rate.LinearBins(min(total), max(total), bins), rate.LinearBins(0, 1, 1)])
     
     vol, verr = compute_search_volume_in_bins(found, total, ndbins, sims_to_bin)
 

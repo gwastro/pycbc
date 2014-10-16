@@ -105,8 +105,7 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
     f = h5py.File(trigger_file, 'r')
 
     template_id = f['foreground/template_id'][:]
-    stat1 = f['foreground/stat1'][:]
-    stat2 = f['foreground/stat2'][:]
+    stat = f['foreground/stat'][:]
     ifar = f['foreground/ifar'][:]
     time1 = f['foreground/time1'][:]
     time2 = f['foreground/time2'][:]
@@ -170,16 +169,14 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
 
     hdf_append(fo, 'found/template_id', template_id[time_sorting][found_fore])
     hdf_append(fo, 'found/injection_index', found + injection_index)
-    hdf_append(fo, 'found/stat1', stat1[time_sorting][found_fore])
-    hdf_append(fo, 'found/stat2', stat2[time_sorting][found_fore])
+    hdf_append(fo, 'found/stat', stat[time_sorting][found_fore])
     hdf_append(fo, 'found/time1', time1[time_sorting][found_fore])
     hdf_append(fo, 'found/time2', time2[time_sorting][found_fore])
     hdf_append(fo, 'found/ifar', ifar[time_sorting][found_fore])
 
     hdf_append(fo, 'found_after_vetoes/template_id', template_id[time_sorting][found_fore_v])
     hdf_append(fo, 'found_after_vetoes/injection_index', found_after_vetoes + injection_index)
-    hdf_append(fo, 'found_after_vetoes/stat1', stat1[time_sorting][found_fore_v])
-    hdf_append(fo, 'found_after_vetoes/stat2', stat2[time_sorting][found_fore_v])
+    hdf_append(fo, 'found_after_vetoes/stat', stat[time_sorting][found_fore_v])
     hdf_append(fo, 'found_after_vetoes/time1', time1[time_sorting][found_fore_v])
     hdf_append(fo, 'found_after_vetoes/time2', time2[time_sorting][found_fore_v])
     hdf_append(fo, 'found_after_vetoes/ifar', ifar[time_sorting][found_fore_v])

@@ -24,13 +24,12 @@ ifar = f['foreground/ifar'][:]
 sorting = ifar.argsort()[::-1]
 ifar = ifar[sorting]
 fap = f['foreground/fap'][:][sorting]
-stat1 = f['foreground/stat1'][:][sorting]
-stat2 = f['foreground/stat2'][:][sorting]
+stat = f['foreground/stat'][:][sorting]
 time1 = f['foreground/time1'][:][sorting]
 time2 = f['foreground/time2'][:][sorting]
 template_id = f['foreground/template_id'][:][sorting]
 
-logging.info('Found %s foreground triggers' % len(stat1))
+logging.info('Found %s foreground triggers' % len(stat))
 
 logging.info('Read in the template bank data to get template parameters')
 f = h5py.File(args.bank_file, 'r')
@@ -44,7 +43,7 @@ mchirp, eta = mass1_mass2_to_mchirp_eta(mass1, mass2)
 urls = pycbc.results.followup.times_to_links(time1, 5.0, args.foreground_tag)
 urls = numpy.array(urls)
 
-columns = [ifar, fap, (stat1**2.0+stat2**2.0)**0.5,  time1,
+columns = [ifar, fap, stat,  time1,
            (time2-time1)*1000, mchirp, mass1, mass2, spin1z, spin2z, urls]
 names = ['IFAR (YR)', 'FAP', 'Combined NewSNR', 'End Time', 
          'Time Diff. (ms)', 'mchirp', 'm1', 'm2',
