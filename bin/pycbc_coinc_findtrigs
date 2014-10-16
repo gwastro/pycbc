@@ -62,7 +62,7 @@ class NewSNRPhaseStatistic(object):
     """
     def phase_log_pdf(self, p1, p2):
         pdiff = abs(p2 - p1) / numpy.pi - 1
-        sigsq = 1.0        
+        sigsq = (1.0 / numpy.pi) ** 2.0       
         
         # This ignores many factors that are simply constants in the loglikelihood
         logsig = -1.0 * (pdiff)**2.0 / 2.0 / sigsq
