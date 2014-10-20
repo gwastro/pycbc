@@ -80,13 +80,18 @@ def mkdir(dir_name):
         pass
         
 def mc_min_max_from_sorted_file(fname):
+    from glue.ligolw import lsctables
+    from glue.ligolw.ligolw import LIGOLWContentHandler 
+    class mycontenthandler(LIGOLWContentHandler):
+        pass
+    lsctables.use_in(mycontenthandler)
     from glue.ligolw.utils import load_filename
     from glue.ligolw.table import get_table
     from pycbc.pnutils import mass1_mass2_to_mchirp_eta
     try:
-        t = get_table(load_filename(fname, False), "sngl_inspiral")
+        t = get_table(load_filename(fname, False, contenthandler=mycontenthandler), "sngl_inspiral")
     except:
-        t = get_table(load_filename(fname, False), "sim_inspiral")
+        t = get_table(load_filename(fname, False, contenthandler=mycontenthandler), "sim_inspiral")
     mc_max, et = mass1_mass2_to_mchirp_eta(t[0].mass1, t[0].mass2)
     mc_min, et = mass1_mass2_to_mchirp_eta(t[-1].mass1, t[-1].mass2)
     return mc_min, mc_max
@@ -264,6 +269,12 @@ from numpy import *
 from glue.ligolw import utils, table
 import glob
 
+from glue.ligolw.ligolw import LIGOLWContentHandler
+from glue.ligolw import lsctables
+class mycontenthandler(LIGOLWContentHandler):
+    pass
+lsctables.use_in(mycontenthandler)
+
 fils = glob.glob("match/match*.dat")
 
 dtypem={'names': ('match', 'bank', 'bank_i', 'sim', 'sim_i', 'sigmasq'), 'formats': ('f8', 'S256', 'i4', 'S256', 'i4', 'f8')}
@@ -283,11 +294,11 @@ f = open("results.dat", "w")
 for row in res: 
     outstr = ""
     if row['bank'] not in btables:
-        indoc = utils.load_filename(row['bank'], False)
+        indoc = utils.load_filename(row['bank'], False, contenthandler=mycontenthandler)
         btables[row['bank']] = table.get_table(indoc, "sngl_inspiral") 
 
     if row['sim'] not in itables:
-        indoc = utils.load_filename(row['sim'], False)
+        indoc = utils.load_filename(row['sim'], False, contenthandler=mycontenthandler)
         itables[row['sim']] = table.get_table(indoc, "sim_inspiral") 
     
     bt = btables[row['bank']][row['bank_i']]     

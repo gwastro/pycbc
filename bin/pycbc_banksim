@@ -32,6 +32,10 @@ from numpy import complex64, float32
 from argparse import ArgumentParser
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import table, lsctables
+from glue.ligolw.ligolw import LIGOLWContentHandler
+class mycontenthandler(LIGOLWContentHandler):
+    pass
+lsctables.use_in(mycontenthandler)
 
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta, f_SchwarzISCO
 from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd_approximants
@@ -204,14 +208,14 @@ if options.verbose:
   print "Options read and verified, beginning banksim at %fs" %(elapsed_time())
 
 # Load in the template bank file
-indoc = ligolw_utils.load_filename(options.bank_file, False)
+indoc = ligolw_utils.load_filename(options.bank_file, False, contenthandler=mycontenthandler)
 try :
     template_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName) 
 except ValueError:
     template_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
 
 # Load in the simulation list
-indoc = ligolw_utils.load_filename(options.sim_file, False)
+indoc = ligolw_utils.load_filename(options.sim_file, False, contenthandler=mycontenthandler)
 try:
     signal_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName) 
 except ValueError:
