@@ -481,7 +481,7 @@ def frequency_cutoff_from_name(name, m1, m2, s1z, s2z):
         Frequency in Hz
     """
     params = {"m1":m1, "m2":m2, "s1z":s1z, "s2z":s2z}
-    return named_frequency_cutoffs()[name](params)
+    return named_frequency_cutoffs[name](params)
 
 
 ##############################This code was taken from Andy ###########

@@ -547,10 +547,11 @@ def find_max_and_min_frequencies(name, mass_range_params, freqs):
     ADD DOCS
     """
 
-    cutoff_fns = pnutils.named_frequency_cutoffs()
+    cutoff_fns = pnutils.named_frequency_cutoffs
     if name not in cutoff_fns.keys():
         err_msg = "%s not recognized as a valid cutoff frequency choice." %name
         err_msg += "Recognized choices: " + " ".join(cutoff_fns.keys())
+        raise ValueError(err_msg)
 
     # Can I do this quickly?
     total_mass_approxs = {
@@ -626,10 +627,11 @@ def return_nearest_cutoff(name, mass_dict, freqs):
     # A bypass for the redundant case
     if len(freqs) == 1:
         return numpy.zeros(len(mass_dict['m1']), dtype=float) + freqs[0]
-    cutoff_fns = pnutils.named_frequency_cutoffs()
+    cutoff_fns = pnutils.named_frequency_cutoffs
     if name not in cutoff_fns.keys():
-        err_msg = "%s not recognizes as a valid cutoff frequency choice." %name
+        err_msg = "%s not recognized as a valid cutoff frequency choice." %name
         err_msg += "Recognized choices: " + " ".join(cutoff_fns.keys())
+        raise ValueError(err_msg)
     f_cutoff = cutoff_fns[name](mass_dict)
     return find_closest_calculated_frequencies(f_cutoff, freqs)
 

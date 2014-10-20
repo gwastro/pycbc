@@ -120,7 +120,7 @@ def _get_waveform_from_inspiral(**p):
         p['phase_order'] = -8
 
     params = lalmetaio.SimInspiralTable()
-    params.waveform = name + string_from_order(p['phase_order'])
+    params.waveform = name + string_from_order[p['phase_order']]
     params.mass1= p['mass1']
     params.mass2= p['mass2']
     params.f_lower = p['f_lower']

@@ -185,7 +185,7 @@ class TmpltbankTestClass(unittest.TestCase):
         self.massRangeParams2 = massRangeParams2
         self.ethincaParams = pycbc.tmpltbank.ethincaParameters(
             self.ethincaOrder, self.ethincaCutoff, self.ethincaFreqStep,
-            doEthinca=True)
+            full_ethinca=False, time_ethinca=False)
 
         self.xis = vals
 

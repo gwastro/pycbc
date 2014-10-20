@@ -59,7 +59,7 @@ parser.add_argument("--bank-fupper-step", type=float, default=10.,
                     "--ethinca-freq-step are also given, the code will use "
                     "the smaller of the two step values. OPTIONAL. Units=Hz")
 parser.add_argument("--bank-fupper-formula", default="SchwarzISCO",
-                    choices=pnutils.named_frequency_cutoffs().keys(),
+                    choices=pnutils.named_frequency_cutoffs.keys(),
                     help="Frequency cutoff formula for varying fupper. "
                     "Frequencies will be rounded to the nearest discrete "
                     "step. OPTIONAL.")
