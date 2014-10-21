@@ -237,13 +237,7 @@ while filenames:
 
   # Add the slides
   for offsetvect in time_slides[:N]:
-    # FIXME:  replace with
-    # timeslidetable.append_offsetvector(offsetvect, process)
-    # when we can rely on a new enough glue, then delete
-    # RowsFromOffsetDict() from ligolw_tisi
-    for row in ligolw_tisi.RowsFromOffsetDict( offsetvect, \
-        timeslidetable.get_next_id(), process ):
-      timeslidetable.append(row)
+    timeslidetable.append_offsetvector(offsetvect, process)
 
   del time_slides[:N]
 
