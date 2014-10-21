@@ -301,11 +301,19 @@ class File(DataStorage, dax.File):
         return self
         
     def _set_as_input_of(self, node):
+        if self.storage_path:
+            transfer_file = True
+        else:
+            transfer_file = False
         node._dax_node.uses(self, link=dax.Link.INPUT, register=False, 
-                                                       transfer=True)          
+                                                       transfer=transfer_file)          
     def _set_as_output_of(self, node):
+        if self.storage_path:
+            transfer_file = True
+        else:
+            transfer_file = False
         node._dax_node.uses(self, link=dax.Link.OUTPUT, register=False, 
-                                                        transfer=True)                                                       
+                                                        transfer=transfer_file)                                                       
     def output_map_str(self):
         if self.storage_path:
             return '%s %s pool="%s"' % (self.name, self.storage_path, 'local')
