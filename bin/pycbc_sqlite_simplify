@@ -214,9 +214,6 @@ if args.injection_file:
         """])
     crs.execute( sqlquery )
 
-    # FIXME: This really doesn't belong in the process_params table!
-    # Set the --user-tag entry of the process params inspinj table
-    
     # Need to get the process ID
     sqlquery = '''SELECT
                     sim_proc_id
@@ -227,8 +224,20 @@ if args.injection_file:
                 ORDER BY
                     sim_proc_id
                 DESC LIMIT 1'''
-    procId = crs.execute(sqlquery).fetchall()[0]
+    procId = crs.execute(sqlquery).fetchall()[0][0]
 
+    # Ensure that all sims in the injection file now have the new process ID.
+    sqlquery = ''.join(["""
+        UPDATE
+            sim_inspiral
+        SET
+            process_id = ?
+        """])
+    crs.execute(sqlquery, (procId,))
+
+    # FIXME: This really doesn't belong in the process_params table!
+    # Set the --user-tag entry of the process params inspinj table
+    
     # First need to check if a user-tag is already set
     sqlquery = '''SELECT
                       value
@@ -238,7 +247,7 @@ if args.injection_file:
                       program == "inspinj" AND
                       process_id == ? AND
                       (param == "--userTag" OR param == "-userTag")'''
-    orig_tag = crs.execute(sqlquery, (procId)).fetchall()
+    orig_tag = crs.execute(sqlquery, (procId,)).fetchall()
 
     if orig_tag:
         # If it exists update it
@@ -250,14 +259,14 @@ if args.injection_file:
                           program == "inspinj" AND
                           process_id == ? AND
                           (param == "--userTag" OR param == "-userTag")'''
-        crs.execute(sqlquery, (args.simulation_tag,procId[0]))
+        crs.execute(sqlquery, (args.simulation_tag, procId))
     else:
         # Else set it
         sqlquery = '''INSERT INTO
                           process_params
                           (program, process_id, param, type, value)
                       VALUES (?, ?, ?, ?, ?)'''
-        crs.execute(sqlquery, ("inspinj", procId[0],
+        crs.execute(sqlquery, ("inspinj", procId,
                                           "--userTag", "string",
                                           args.simulation_tag))
 
