@@ -17,6 +17,7 @@ def read_files(trigger_files, columns, column_types, attribute_columns):
         pass
     lsctables.use_in(LIGOLWContentHandler)
     
+    retrieved_attrs = False
     for i, filename in enumerate(trigger_files):
         indoc = ligolw_utils.load_filename(filename, False, 
                                            contenthandler=LIGOLWContentHandler)
@@ -28,13 +29,14 @@ def read_files(trigger_files, columns, column_types, attribute_columns):
             col_data = numpy.array(sngl_table.get_column(column), dtype=ctype)
             data[column] = numpy.concatenate([data[column], col_data]) 
             
-        if i == 0:
-            if  i == 0:
-                search_sum = table.get_table(indoc, lsctables.SearchSummaryTable.tableName)
-                attrs['start_time'] = search_sum[0].out_start_time
-                attrs['end_time'] = search_sum[0].out_end_time
-                attrs['ifo'] = search_sum[0].ifos
+        if i==0:
+            search_sum = table.get_table(indoc, lsctables.SearchSummaryTable.tableName)
+            attrs['start_time'] = search_sum[0].out_start_time
+            attrs['end_time'] = search_sum[0].out_end_time
+            attrs['ifo'] = search_sum[0].ifos
        
+        if len(sngl_table) > 0 and not retrieved_attrs:
+            retrieved_attrs = True
             for attr in attribute_columns:
                 attrs[attr] = sngl_table.get_column(attr)[0]
                 
