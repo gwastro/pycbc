@@ -27,6 +27,8 @@ import glob
 import argparse
 import numpy
 import pycbc.version
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
 from glue.ligolw import utils
 from pycbc import tmpltbank
 from numpy import loadtxt
@@ -136,8 +138,12 @@ tempBank = loadtxt(fileinput.input(glob.glob(options.input_glob)))
 # needed for any reason, this code would have to be able to recalculate the
 # moments (or read them in) and use the correct value of f0 and pn-order
 if options.metadata_file:
+    class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+        pass
+    lsctables.use_in(LIGOLWContentHandler)
     outdoc = utils.load_filename(options.metadata_file,\
-                                     gz = options.metadata_file.endswith("gz"))
+                                     gz = options.metadata_file.endswith("gz"),
+                                     contenthandler=LIGOLWContentHandler)
 else:
     outdoc = None
 tmpltbank.output_sngl_inspiral_table(options.output_file, tempBank,
