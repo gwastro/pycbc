@@ -33,11 +33,11 @@ described on the page here:
 ----------------------------------------------------------------------------
 The configuration file - Do you already have configuration (.ini) file(s)?
 ----------------------------------------------------------------------------
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-Yes, I already have configuration files
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+Yes, I already have my own local config files
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-Great! Then copy the configuration files into your run directory (overwrite the example files if you need to)::
+Great! Then copy the configuration files into your run directory::
 
     cp /path/to/config_file1.ini /path/to/config_file2.ini .
 
@@ -47,10 +47,11 @@ and set the names of these configuration files in your path. If you have more th
 
 Now go down to :ref:`weeklyahopegenerate`.
 
-
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Yes, I would like to use the unmodified preinstalled configuration files
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+For a full list of the preinstalled configuration files, see :ref:`configuration_files`.
 
 Set the configurations files in your path and proceed to workflow generation::
 
@@ -62,7 +63,7 @@ Now go down to :ref:`weeklyahopegenerate`.
 No, I need to make a configuration file - Editing the example files
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-Default configuration files are found in three parts::
+An example configuration file set is found in three parts::
 
     /src/dir/pycbc/workflow/ini_files/example_pycbc.ini
     /src/dir/pycbc/workflow/ini_files/example_pipedown.ini
@@ -319,7 +320,7 @@ Generate the full workflow you want to do
 -----------------------------------------
 
 First generate the full workflow for the
-run you would like to do as normal, following the instructions of this page from :ref:`howtorunahope`,
+run you would like to do as normal. Follow the instructions of this page from :ref:`howtorunahope`,
 but stop before planning the workflow with plan.sh in :ref:`weeklyahopeplan`.
 
 -----------------------------------------------------
@@ -327,34 +328,32 @@ Select the files you want to reuse from the prior run
 -----------------------------------------------------
 
 Locate the directory of the run that you would like to reuse. There is a file
-called ${GPS_START_TIME}-${GPS_END_TIME}/weekly_ahope.map, that contains a 
-listing of all of the data products of the prior workflow. 
+called ${GPS_START_TIME}-${GPS_END_TIME}/output.map. This file contains a 
+listing of all of the data products of the prior workflow, and can be used to tell
+pegasus to skip regenerating them.
 
-Select the entries for files that you would like to skip generating again and
+Select the entries in the file that you would like to skip generating again and
 place that into a new file. The example below selects all the inspiral and 
 tmpltbank jobs and places their entries into a new listing called prior_data.map.::
 
     # Lets get the tmpltbank entries
-    cat /path/to/old/run/${GPS_START_TIME}-${GPS_END_TIME}/weekly_ahope.map | grep 'TMPLTBANK' > prior_data.map
+    cat /path/to/old/run/${GPS_START_TIME}-${GPS_END_TIME}/output.map | grep 'TMPLTBANK' > prior_data.map
     
     # Add in the inspiral  files
-    cat /path/to/old/run/${GPS_START_TIME}-${GPS_END_TIME}/weekly_ahope.map | grep 'INSPIRAL' >> prior_data.map
+    cat /path/to/old/run/${GPS_START_TIME}-${GPS_END_TIME}/output.map | grep 'INSPIRAL' >> prior_data.map
 
 .. note::
 
     You can include files in the prior data listing that wouldn't be generated anyway by your new run. These are simply
     ignored.
 
-Place this file in the ${GPS_START_TIME}-${GPS_END_TIME}/  directory of your new run.
-
 ---------------------------
 Plan the workflow
 ---------------------------
 
-From the directory where the dax was created, run the planning script::
+From the directory where the dax was created, now plan the workflow with an additional argument as follows.::
 
-    pycbc_basic_pegasus_plan weekly_ahope.dax $LOGPATH --cache prior_data.map
+    pycbc_basic_pegasus_plan weekly_ahope.dax $LOGPATH --cache /path/to/prior_data.map
 
 Follow the remaining :ref:`weeklyahopeplan` instructions to submit your reduced
 workflow.
-
