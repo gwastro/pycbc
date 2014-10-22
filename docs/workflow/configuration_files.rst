@@ -24,8 +24,11 @@ The post-processing and injections are available in the following ini files.
 * example_inj.ini
 
 ----------------------------------
-Something Something Review File
-----------------------------------
-This file is for something and sets up some stuff. 
-
 s6d_pycbc_review_twoweek_v1.ini
+----------------------------------
+The ini file is configured to reproduce the two-stage S6D results here but with a single-stage configuration.
+
+* https://sugar-jobs.phy.syr.edu/~spxiwh/S6/all_sky/badgamma_reruns/968543943-971622087/
+ This was the run that obtained the single-detector triggers for the Big Dog
+ Plot in S6D.
+
