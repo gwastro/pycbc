@@ -43,7 +43,7 @@ from pycbc.workflow.timeslides import *
 from pycbc.workflow.postprocessing_prep import *
 from pycbc.workflow.postprocessing import *
 from pycbc.workflow.analysislogging import *
-
+from pycbc.workflow.summaryplots import *
 
 # Set the configuration file base directory
 INI_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__), 'ini_files')

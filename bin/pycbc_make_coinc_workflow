@@ -64,6 +64,8 @@ fdDir = os.path.join(currDir, "full_data")
 tsDir = os.path.join(currDir, "time_slide_files")
 injDir = os.path.join(currDir, "inj_files")
 ppDir = os.path.join(currDir, "workflow_postproc")
+playDir = os.path.join(currDir, "playground")
+hwinjDir = os.path.join(currDir, "hardware_injection_summary")
 summ_dir = os.path.join(currDir, "summary")
 
 # Get segments and find where the data is
@@ -102,6 +104,7 @@ tags = ["full_data"] + inj_tags
 output_dirs = [fdDir]
 output_dirs.extend([os.path.join(currDir, tag) for tag in inj_tags])
 all_coincs = _workflow.FileList([])
+fd_insps = _workflow.FileList([])
 for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
     if not tag == 'full_data':
         timeSlideTags = ['zerolag']
@@ -123,7 +126,51 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
     if tag == 'full_data':
         anal_log_files = _workflow.setup_analysislogging(workflow, segsFileList,
                                insps, args, summ_dir, program_name=__program__)
+        fd_insps = insps
 
+# Set up playground trigger jobs
+play_exe = _workflow.Executable(workflow.cp, 'pycbc_ligolw_find_playground')
+play_segs = _workflow.segment.find_playground_segments([workflow.analysis_time])
+for tag in ['playground']:
+    if not os.path.exists(playDir):
+        os.makedirs(playDir)
+
+    for insp in fd_insps:
+        if play_segs.intersects_segment(insp.segment):
+            play_file = _workflow.File(insp.ifo, 'inspiral',
+                             insp.segment, directory=playDir,
+                             extension="xml.gz", tags=['playground']+insp.tags)
+
+            play_node = _workflow.Node(play_exe)
+            play_node.add_input_opt('--trigger-file', insp)
+            play_node.add_output_opt('--output-file', play_file)
+
+            workflow.add_node(play_node)
+
+            all_files.append(play_file)
+
+# Set up summary plots
+for tag in ['full_data']:
+    cacheFileName = os.path.join(currDir, 'ihope_full_cache.cache')
+    plotDir = os.path.join(currDir, '%s_summary_plots'%tag)
+    plotFiles = _workflow.setup_summary_plots(workflow, all_coincs,
+                      cacheFileName,
+                      tmpltbank_cachepattern='TMPLTBANK',
+                      inspiral_cachepattern='INSPIRAL_FULL_DATA',
+                      output_dir=plotDir, tags=[tag])
+for tag in ['full_data_slide']:
+    cacheFileName = os.path.join(currDir, 'ihope_full_cache.cache')
+    plotDir = os.path.join(currDir, '%s_summary_plots'%tag)
+    plotFiles = _workflow.setup_summary_plots(workflow, all_coincs,
+                      cacheFileName,
+                      tmpltbank_cachepattern='TMPLTBANK',
+                      inspiral_cachepattern='INSPIRAL_PLAYGROUND',
+                      output_dir=plotDir, tags=[tag])
+
+# Set up hardware injection summary page
+hwinjFiles = _workflow.setup_hardware_injection_page(workflow, all_coincs,
+                   cacheFileName, inspiral_cachepattern='INSPIRAL_FULL_DATA',
+                   output_dir=hwinjDir, tags=['full_data'])
 
 # Set up workflow's post-processing, this is still incomplete
 
