@@ -119,6 +119,9 @@ dec_dist = numpy.maximum(hdist, ldist)
 dist = f['injections/distance'][:]
 m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
 s1z, s2z = f['injections/spin1z'][:], f['injections/spin2z'][:]
+s1x, s2x = f['injections/spin1x'][:], f['injections/spin2x'][:]
+s1y, s2y = f['injections/spin1y'][:], f['injections/spin2y'][:]
+inc = f['injections/inclination'][:]
 mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 
 # Dict to hold possible bin types
@@ -126,7 +129,11 @@ values = {}
 values['mchirp'] = mchirp
 values['eta'] = eta
 values['total_mass'] = m1 + m2
-values['spin'] = (m1 * s1z + m2 * s2z) / (m1 + m2) * 2
+
+s1 = s1x * numpy.sin(inc) + s1z * numpy.cos(inc)
+s2 = s2x * numpy.sin(inc) + s2z * numpy.cos(inc)
+
+values['spin'] = (m1 * s1 + m2 * s2) / (m1 + m2)
 labels = {}
 labels['mchirp'] = "$ M_{chirp} \in [%5.2f, %5.2f] M_\odot $"
 labels['total_mass'] = "$ M_{total} \in [%5.2f, %5.2f] M_\odot $"
