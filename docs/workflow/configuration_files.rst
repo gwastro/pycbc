@@ -32,3 +32,5 @@ The ini file is configured to reproduce the two-stage S6D results here but with 
  This was the run that obtained the single-detector triggers for the Big Dog
  Plot in S6D.
 
+* s6d_pycbc_review_twoweek_v1.ini
+
