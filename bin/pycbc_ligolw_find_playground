@@ -1,0 +1,163 @@
+#! /usr/bin/python
+
+# Copyright (C) 2014 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Generals
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import logging
+import glob
+import sys
+
+import glue.git_version
+from glue import lal
+from glue import segments
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import table
+from glue.ligolw import utils
+
+from pycbc.workflow.segment import find_playground_segments 
+
+# parse command line
+parser = argparse.ArgumentParser(usage='pycbc_ligolw_find_playground \
+[--options]',
+                                 description="Find single detector \
+                                 gravitational-wave triggers during \
+                                 playground segments.")
+parser.add_argument('-i', '--trigger-file', type=str,
+                  help='Input xml file with SnglInspiral triggers.')
+parser.add_argument('-o', '--output-file', type=str,
+                  help='Output xml file with playground segment triggers.')
+parser.add_argument('-v', '--verbose', action='store_true',
+                  help='Print extra debugging information.', default=False)
+opts = parser.parse_args()
+
+# setup log
+if opts.verbose:
+    logging_level = logging.DEBUG
+else:
+    logging_level = logging.WARN
+logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
+
+# load xml
+logging.info('Reading trigger file...')
+inspiral_xml = utils.load_filename(opts.trigger_file)
+
+# get sngl_inspiral table
+sngl_table = table.get_table(inspiral_xml, \
+                             lsctables.SnglInspiralTable.tableName)
+
+# create output file
+logging.info('Appending tables to output file...')
+outdoc = ligolw.Document()
+outdoc.appendChild(ligolw.LIGO_LW())
+
+# add ProcessTable to output file from trigger file
+proc_table = table.get_table(inspiral_xml,
+                             lsctables.ProcessTable.tableName)
+outdoc.childNodes[0].appendChild(proc_table)
+
+# add ProcessParamsTable to output file from trigger file
+proc_params_table = table.get_table(inspiral_xml,
+                             lsctables.ProcessParamsTable.tableName)
+outdoc.childNodes[0].appendChild(proc_params_table)
+
+# add SearchSummaryTable to output file from trigger file
+search_summary_table = table.get_table(inspiral_xml,
+                             lsctables.SearchSummaryTable.tableName)
+
+# add FilterTable to output file from trigger file
+filter_table = table.get_table(inspiral_xml, \
+                             lsctables.FilterTable.tableName)
+outdoc.childNodes[0].appendChild(filter_table)
+
+# add SearchSummVarsTable to output file from trigger file
+search_summ_vars_table = table.get_table(inspiral_xml,
+                             lsctables.SearchSummVarsTable.tableName)
+outdoc.childNodes[0].appendChild(search_summ_vars_table)
+
+# add SummValueTable to output file from trigger file
+summ_value_table = table.get_table(inspiral_xml,
+                             lsctables.SummValueTable.tableName)
+outdoc.childNodes[0].appendChild(summ_value_table)
+
+# add SnglInspiralTable with playground segments to output file
+outdoc.childNodes[0].appendChild(sngl_table)
+
+# get IFO from trigger file ProcessTable
+# FIXME: Only handles a single IFO
+ifo = proc_table[0].ifos
+
+# determine playground segments that intersect trigger file segments
+trig_start_time = search_summary_table[0].out_start_time
+trig_end_time = search_summary_table[0].out_end_time
+trig_seg = segments.segment(trig_start_time, trig_end_time)
+trig_segs = segments.segmentlist([trig_seg])
+
+# find playground segments
+logging.info('Finding playground segments...')
+playground_segs = find_playground_segments(trig_segs)
+playground_segs &= trig_segs
+
+if len(playground_segs) < 1:
+  logging.info('No playground segments...')
+  sys.exit()
+
+# get triggers in playground segments
+logging.info('Find triggers in playground segments...')
+playground_sngl_table = lsctables.SnglInspiralTable()
+for trig in sngl_table:
+  end_time = trig.end_time + trig.end_time_ns*10**(-9)
+  if end_time in playground_segs:
+    playground_sngl_table.append(trig)
+
+# register pycbc_ligolw_find_playground to ProcessTable in output file
+proc_id = utils.process.register_to_xmldoc(outdoc,
+                    "pycbc_ligolw_select_playground", opts.__dict__,
+                    comment="", ifos=[ifo], version=glue.git_version.id,
+                    cvs_repository=glue.git_version.branch,
+                    cvs_entry_time=glue.git_version.date).process_id
+
+# create SearchSummaryTable for playground segments and add to output file
+# FIXME: Assumes one row in SearchSummaryTable
+# FIXME: Only handles integer GPS times for playground segments
+row = glue.ligolw.lsctables.SearchSummary()
+row.nevents = len(playground_sngl_table)
+row.process_id = proc_id
+row.shared_object = ""
+row.lalwrapper_cvs_tag = ""
+row.lal_cvs_tag = ""
+row.comment = ""
+row.ifos = ifo
+row.in_start_time = search_summary_table[0].in_start_time
+row.in_start_time_ns = search_summary_table[0].in_start_time_ns
+row.in_end_time = search_summary_table[0].in_end_time
+row.in_end_time_ns = search_summary_table[0].in_end_time_ns
+row.out_start_time = playground_segs[0][0]
+row.out_start_time_ns = 0
+row.out_end_time = playground_segs[-1][1]
+row.out_end_time_ns = 0
+row.nnodes = 1
+search_summary_table.append(row)
+outdoc.childNodes[0].appendChild(search_summary_table)
+
+# save output file
+logging.info('Writing output file...')
+utils.write_filename(outdoc, opts.output_file,
+                     gz=opts.output_file.endswith('gz'))
+
+# exit
+logging.info('Done.')
