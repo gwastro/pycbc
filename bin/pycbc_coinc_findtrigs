@@ -303,6 +303,12 @@ def load_triggers(trigger_files, group_id, stat_class):
         f = h5py.File(filename, "r")
         ifo = str(f.attrs['ifo'])
 
+        # Test if file is empty
+        try:
+            f['snr']
+        except KeyError:
+            continue
+
         # Compile a complete segment list for the foreground time
         if ifo not in trig_segments:
             trig_segments[ifo] = segments.segmentlist()  
