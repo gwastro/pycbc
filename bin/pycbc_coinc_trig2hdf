@@ -2,7 +2,7 @@
 """ This program converts single detector xml files into hdf files 
 in preparation for coincidence
 """
-import numpy, argparse, h5py, os
+import numpy, argparse, h5py, os, logging
 
 def read_files(trigger_files, columns, column_types, attribute_columns):
     """ Read in the column of data from the ligolw xml format
