@@ -177,7 +177,7 @@ for n, path in enumerate(args.input_files):
                   contenthandler=ContentHandler,
                   preserve_ids=args.preserve_ids, verbose=args.verbose)
     dbtables.build_indexes(ContentHandler.connection, args.verbose)
-    if not (n%20):
+    if not ((n+1)%20):
         # Do cleanup as we go to avoid file getting to big.
         cleanup_tables(connection, vacuum=args.vacuum, verbose=args.verbose)
 
