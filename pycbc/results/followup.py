@@ -27,7 +27,6 @@ time series.
 import h5py, numpy, matplotlib
 matplotlib.use('Agg')
 import pylab, mpld3, mpld3.plugins
-from pycbc.ahope import AhopeFileList
 from glue.segments import segment
 
 def columns_from_file_list(file_list, columns, ifo, start, end):
