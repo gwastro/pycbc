@@ -45,6 +45,10 @@ parser.add_argument('-v', '--verbose', action='store_true',
                   help='Print extra debugging information.', default=False)
 opts = parser.parse_args()
 
+class DefaultContentHandler(lsctables.ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(DefaultContentHandler)
+
 # setup log
 if opts.verbose:
     logging_level = logging.DEBUG
@@ -54,10 +58,11 @@ logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
 
 # load xml
 logging.info('Reading trigger file...')
-inspiral_xml = utils.load_filename(opts.trigger_file)
+inspiral_xml = utils.load_filename(opts.trigger_file,
+                                   contenthandler=DefaultContentHandler)
 
 # get sngl_inspiral table
-sngl_table = table.get_table(inspiral_xml, \
+sngl_table = table.get_table(inspiral_xml,
                              lsctables.SnglInspiralTable.tableName)
 
 # create output file
