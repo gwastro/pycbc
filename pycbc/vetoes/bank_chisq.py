@@ -22,7 +22,7 @@
 # =============================================================================
 #
 import logging
-from pycbc.types import zeros, real_same_precision_as, TimeSeries, complex_same_precision_as
+from pycbc.types import Array, zeros, real_same_precision_as, TimeSeries, complex_same_precision_as
 from pycbc.filter import overlap_cplx, matched_filter_core
 from pycbc.waveform import FilterBank
 from math import sqrt
@@ -150,6 +150,9 @@ def bank_chisq_from_filters(tmplt_snr, tmplt_norm, bank_snrs, bank_norms,
         
         bank_SNR = bank_snrs[i] * (bank_norms[i] / bank_norm)     
         tmplt_SNR = tmplt_snr * (bank_match.conj() * tmplt_norm / bank_norm)
+
+        bank_SNR = Array(bank_SNR, copy=False)
+        tmplt_SNR = Array(tmplt_SNR, copy=False)
         
         bank_chisq += (bank_SNR - tmplt_SNR).squared_norm()
 
