@@ -236,7 +236,8 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
         internally.
     corr_out : {None, Array}, optional
         An array to use as memory for correlation storage. If None, memory is allocated 
-        internally.
+        internally. If provided, management of the vector is handled externally by the
+        caller. No zero'ing is done internally. 
 
     Returns
     -------
