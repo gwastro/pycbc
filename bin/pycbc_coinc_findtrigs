@@ -326,17 +326,14 @@ def load_triggers(trigger_files, group_id, stat_class):
         seg = segments.segment(f.attrs['start_time'], f.attrs['end_time'])
         trig_segments[ifo] += [seg]
         
-        
         l = f['template_group/left'][group_id]
         r = f['template_group/right'][group_id]
+
         if (r-l) > 0:
             end_time = f['end_time'][l:r]
             th = f['template_id'][l:r]
             snr = stat_class.single_read(f, l, r)
-        else:
-            continue
-
-        if len(snr) > 0:
+            
             if ifo not in triggers:
                 triggers[ifo] = ([], [], [])
 
