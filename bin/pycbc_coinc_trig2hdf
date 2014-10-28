@@ -66,12 +66,12 @@ def group_trigs_by_hash(template_hash, trig_hash, num_groups):
 
     bounds = []
     for i in range(num_groups):
-        index = len(template_hash) / num_groups * i
+        index = int(float(len(template_hash)) / float(num_groups) * i)
         bounds.append(template_hash[index])        
-    
+    print bounds
     trig_bounds = numpy.searchsorted(trig_hash, bounds)
     trig_bounds = list(trig_bounds) + [len(trig_hash)]
-    
+    print trig_bounds
     template_map = hash_to_row(template_hash)
     
     left = []
@@ -95,10 +95,22 @@ parser.add_argument('--trigger-files', nargs='+')
 parser.add_argument('--bank-file')
 parser.add_argument('--number-of-groups', type=int)
 parser.add_argument('--output-file')
+parser.add_argument('--verbose', '-v', action='count')
 args = parser.parse_args()
 
+if args.verbose == 1:
+    log_level = logging.INFO
+elif args.verbose == 2:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level) 
+
+logging.info('reading template bank')
 f = h5py.File(args.bank_file, "r")
 template_hashes = f['template_hash'][:]
+
+logging.info('reading triggers')
 data, attrs = read_files(args.trigger_files, 
                 columns=['snr',
                          'chisq',
@@ -122,13 +134,17 @@ data, attrs = read_files(args.trigger_files,
                                     'bank_chisq_dof',
                                     'cont_chisq_dof',
                                     ])
+                                    
+logging.info('group triggers by hash')
 left, right, tids, sorting = group_trigs_by_hash(template_hashes, 
                                     data['template_hash'],
                                     args.number_of_groups)
 
+
 data['end_time'] = data['end_time'] + 1e-9 * data['end_time_ns']
 data.pop('end_time_ns', None)                                 
-                            
+
+logging.info('saving to hdf')                            
 f = h5py.File(args.output_file, "w")
 for key in attrs.keys():
     f.attrs[key] = attrs[key]
