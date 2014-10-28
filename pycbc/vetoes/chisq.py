@@ -94,7 +94,7 @@ def chisq_accum_bin(chisq, q):
     pass
    
 @schemed(BACKEND_PREFIX) 
-def shift_sum(v1, shifts, slen=None, offset=0):
+def shift_sum(v1, shifts, bins):
     """ Calculate the time shifted sum of the FrequencySeries
     """
     pass
@@ -125,15 +125,11 @@ def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
     chisq: Array
         An array containing only the chisq at the selected points.
     """
-    snr = Array(snr, copy=False)   
-    chisq = zeros(len(indices), dtype=real_same_precision_as(corr))     
+    logging.info('doing fast point chisq')
+    snr = Array(snr, copy=False)    
     num_bins = len(bins) - 1
-    
-    for j in range(len(bins)-1):
-        k_min = int(bins[j])
-        k_max = int(bins[j+1])                 
-        qi = shift_sum(corr[k_min:k_max], indices, slen=len(corr), offset=k_min)
-        chisq_accum_bin(chisq, qi)
+              
+    chisq = shift_sum(corr, indices, bins)
         
     return (chisq * num_bins - snr.squared_norm()) * (snr_norm ** 2.0)
  
