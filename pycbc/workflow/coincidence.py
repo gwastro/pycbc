@@ -690,9 +690,6 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
     max_groups = int(workflow.cp.get_opt_tags('workflow-coincidence', 'number-of-groups', tags))
 
     tags, veto_file_groups = veto_files.categorize_by_attr('tags')
-    chosen_bg_file = FileList()
-    chosen_veto_file = None
-    
     for tag, veto_files in zip(tags, veto_file_groups):
         bg_files = FileList()
         stat_files = FileList()
@@ -718,7 +715,6 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
             if group_end >= max_groups:
                 group_end = max_groups
              
-
         combine_node = combinecoinc_exe.create_node(bg_files, tags=tag)
         workflow.add_node(combine_node)
         stat_files += combine_node.output_files
@@ -726,7 +722,6 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
         make_snrifar_plot(workflow, combine_node.output_files[0], 
                           'plots/background', tags=tag)
             
-
     return stat_files
     logging.info('...leaving coincidence ')
     
