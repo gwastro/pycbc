@@ -937,7 +937,7 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
         The segment list specifying the analyzable times
     seg_files : workflow.core.FileList instance
         The cumulative segment files from each ifo that determined the
-        analyzable time.        
+        analyzable time.
     """
     logging.info('Entering generation of science segments')
     start_time = workflow.analysis_time[0]
