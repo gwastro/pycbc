@@ -175,12 +175,14 @@ with ctx:
                                             template, bank, flow)   
             snrv *= norm
             
-            auto_chisqv = autochisq.values(snr*norm, corr, hautocorr=None, 
+            if opt.autochi_number_points:
+                auto_chisqv = autochisq.values(snr*norm, corr, hautocorr=None, 
                     indices=idx+stilde.analyze.start, template=template, psd=psd, 
                     low_frequency_cutoff=flow)
 
             idx += stilde.cumulative_index          
-            if (auto_chisqv):
+
+            if (opt.autochi_number_points):
                vals = [idx, snrv, power_chisqv, bank_chisqv, auto_chisqv[:, 2]]
             else:
                vals = [idx, snrv, power_chisqv, bank_chisqv, None]
