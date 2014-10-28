@@ -181,6 +181,10 @@ def in1d(ar1, ar2, assume_unique=False, invert=False):
 
 numpy.in1d = in1d
 
+class ArrayList(list):
+    def get(self):
+        return numpy.concatenate(self)
+
 class BinnedLookup(dict):
     """ Lookup  table for a binned column vectors
     """
@@ -225,15 +229,21 @@ class BinnedLookup(dict):
         if len(columns) != len(self.columns):
             raise ValueError('Number of columns, names, and types must match')
         
-        d1_indices = []
-        d2_indices = []
+        d1_indices = ArrayList()
+        d2_indices = ArrayList()
+
         for index, tup in enumerate(itertools.izip(*columns)): 
             if tup in self:
-                for index2 in self[tup]:
-                    d1_indices.append(index)
-                    d2_indices.append(index2)
-        return (numpy.array(d1_indices, dtype=numpy.uint32), 
-               numpy.array(d2_indices, dtype=numpy.uint32) )
+                val = self[tup]
+                indices = numpy.empty(len(val), dtype=numpy.uint32)
+                indices.fill(index)
+                indices2 = numpy.array(val, dtype=numpy.uint32)
+    
+                d1_indices.append(indices)
+                d2_indices.append(indices2)
+        logging.info('lookup done')        
+
+        return d1_indices.get(), d2_indices.get()
 
     def _cyclic_increment(self, vec, lbound, ubound):
         vec = vec + 1
@@ -367,23 +377,22 @@ def decimate_triggers(stat, slide, num_keep, bins, factor=2):
     removed.
     
     """
-    netstatsq = stat
-    stat_sort = netstatsq.argsort()
-    netstatsq = netstatsq[stat_sort]
+    stat_sort = stat.argsort()
+    stat = stat[stat_sort]
     slide = slide[stat_sort]
     
     # keep the number of loud triggers
     keep = numpy.arange(len(stat) - num_keep, len(stat), 1)
     factors = numpy.zeros(len(keep), dtype=numpy.uint32) + 1
-    netstatsq = netstatsq[0:len(stat) - num_keep]
+    stat = stat[0:len(stat) - num_keep]
     slide = slide[0:len(stat) - num_keep]
 
     min_slide = slide.min()
     max_slide = slide.max()
  
     if bins > 0:
-        edges = [netstatsq[0] + inc*(netstatsq[-1]-netstatsq[0])/bins for inc in range(bins)]
-        bin_edges = numpy.append(numpy.searchsorted(netstatsq, edges), len(netstatsq))
+        edges = [stat[0] + inc*(stat[-1]-stat[0])/bins for inc in range(bins)]
+        bin_edges = numpy.append(numpy.searchsorted(stat, edges), len(stat))
         for i in range(bins):
             lbin = bin_edges[-i-2]
             rbin = bin_edges[-i-1]
@@ -545,23 +554,26 @@ if __name__ == '__main__':
             
         logging.info('Number of timeslides: %s' % num_slides)
         logging.info('finding course coincidences')                  
-        i1, i2 = course.lookup(c1s)
+        c1, c2 = course.lookup(c1s)
         
         logging.info('finding coincidences')   
-        c1, c2, slide_index = test_exact_match_coincidence(i1, i2, t1, t2, slide, time_window)
-        s1, s2, t1, t2, r1, r2 = s1[c1], s2[c2], t1[c1], t2[c2], r1[c1], r2[c2]   
-        logging.info('%s total triggers' % len(s1))
+        c1, c2, slide_index = test_exact_match_coincidence(c1, c2, t1, t2, slide, time_window)
+        
+        logging.info('%s total triggers' % len(c1))
         logging.info('%s foreground triggers' % (slide_index == 0).sum())
         
-        stat = stat_class.coinc_statistic(s1, s2)
+        logging.info('calculating the coinc statistic')
+        stat = stat_class.coinc_statistic(s1[c1], s2[c2])
         
-        if args.decimation_keep < len(s1) and args.timeslide_interval is not None: 
+        if args.decimation_keep < len(stat) and args.timeslide_interval is not None: 
             logging.info('decimating triggers')
             d1, decimation_factor = decimate_triggers(stat, slide_index, 
                                    args.decimation_keep, 
                                    args.decimation_bins, 
-                                   args.decimation_factor)
-            stat, t1, t2, r1, r2 = stat[d1], t1[d1], t2[d1], r1[d1], r2[d1]
+                                   args.decimation_factor)                                 
+            e1 = c1[d1]
+            e2 = c2[d1]
+            stat, t1, t2, r1, r2 = stat[d1], t1[e1], t2[e2], r1[e1], r2[e2]
             slide_index = slide_index[d1]
             logging.info('%s total triggers' % len(stat))
             logging.info('%s foreground triggers' % (slide_index == 0).sum())
