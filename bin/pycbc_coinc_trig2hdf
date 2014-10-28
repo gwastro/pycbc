@@ -68,10 +68,10 @@ def group_trigs_by_hash(template_hash, trig_hash, num_groups):
     for i in range(num_groups):
         index = int(float(len(template_hash)) / float(num_groups) * i)
         bounds.append(template_hash[index])        
-    print bounds
+
     trig_bounds = numpy.searchsorted(trig_hash, bounds)
     trig_bounds = list(trig_bounds) + [len(trig_hash)]
-    print trig_bounds
+
     template_map = hash_to_row(template_hash)
     
     left = []
