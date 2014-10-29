@@ -141,7 +141,7 @@ def from_cli(opt, dyn_range_fac=1):
                 data_start_time=(opt.gps_start_time - opt.pad_data))
 
         logging.info("Resampling data")
-        strain = resample_to_delta_t(strain, 1.0/opt.sample_rate)
+        strain = resample_to_delta_t(strain, 1.0/opt.sample_rate, method='ldas')
 
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
