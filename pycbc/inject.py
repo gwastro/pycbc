@@ -188,6 +188,7 @@ class InjectionSet(object):
             signal = detector.project_wave(
                     hp, hc, inj.longitude, inj.latitude, inj.polarization)
             # the taper_timeseries function converts to a LAL TimeSeries
+            signal = signal.astype(strain.dtype)
             signal_lal = wfutils.taper_timeseries(signal, inj.taper, return_lal=True)
             add_injection(lalstrain, signal_lal, None)
 
