@@ -30,7 +30,6 @@ parser.add_argument("-V", "--verbose", action="store_true",
 parser.add_argument("--output", type=str)
 
 parser.add_argument("--bank-file", type=str)
-parser.add_argument("--bank-cache", type=str)
 parser.add_argument("--snr-threshold", 
                   help="SNR threshold for trigger generation", type=float)
 parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
@@ -136,11 +135,7 @@ with ctx:
                          [int, complex64, float32, float32, float32, float32], psd=psd)
 
     logging.info("Read in template bank")
-    if opt.bank_cache:
-        bank = waveform.CachedFilterBank(opt.bank_file, opt.bank_cache, flen,
-                    delta_f, flow, complex64, psd)
-    else:
-        bank = waveform.FilterBank(opt.bank_file, opt.approximant, flen, delta_f, 
+    bank = waveform.FilterBank(opt.bank_file, opt.approximant, flen, delta_f, 
                     flow, dtype=complex64, psd=psd, phase_order=opt.order,
                     taper=opt.taper_template, out=zeros(tlen, dtype=complex64))
 
@@ -162,8 +157,7 @@ with ctx:
                                                   h_norm=template.sigmasq, 
                                                   low_frequency_cutoff=flow, 
                                                   out=snr_mem, 
-                                                  corr_out=corr_mem)  
-                                                                                   
+                                                  corr_out=corr_mem)                                         
             idx, snrv = events.threshold(snr[stilde.analyze], 
                                          opt.snr_threshold / norm)            
             if len(idx) == 0:
