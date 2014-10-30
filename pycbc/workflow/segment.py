@@ -34,7 +34,7 @@ import logging
 import urllib, urlparse
 from glue import segments, pipeline
 from glue.ligolw import utils, table, lsctables, ligolw
-from pycbc.workflow.core import Executable, FileList, Node, OutSegFile, make_analysis_dir, make_external_call, File
+from pycbc.workflow.core import Executable, FileList, Node, OutSegFile, make_analysis_dir, make_external_call
 from pycbc.workflow.jobsetup import LigolwAddExecutable, LigoLWCombineSegsExecutable
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
@@ -510,7 +510,7 @@ def create_segs_from_cats_job(cp, out_dir, ifo_string, tag=None):
     
 def get_cumulative_segs(workflow, currSegFile, categories,
                                    segFilesList, out_dir, tags=[],
-                                   execute_now=False, segment_name=None):
+                                   execute_now=False):
     """
     Function to generate one of the cumulative, multi-detector segment files
     as part of the workflow.
@@ -535,8 +535,7 @@ def get_cumulative_segs(workflow, currSegFile, categories,
     """
     add_inputs = FileList([])
     valid_segment = currSegFile.segment
-    if segment_name is None:
-        segment_name = 'VETO_CAT%d_CUMULATIVE' % (categories[-1])
+    segment_name = segment_name = 'VETO_CAT%d_CUMULATIVE' % (categories[-1])
     cp = workflow.cp
     # calculate the cumulative veto files for a given ifo
     for ifo in workflow.ifos:
@@ -563,7 +562,6 @@ def get_cumulative_segs(workflow, currSegFile, categories,
         workflow.execute_node(add_node)
     else:
         workflow.add_node(add_node)
-    return add_node.output_files[0]
 
 def fromsegmentxml(file, dict=False, id=None):
     """
@@ -633,170 +631,60 @@ def fromsegmentxml(file, dict=False, id=None):
 
     return segs
 
-def save_veto_definer(cp, out_dir, tags=[]):
-    """ Retrieve the veto definer file and save it locally
-    
-    Parameters
-    -----------
-    cp : ConfigParser instance
-    out_dir : path
-    tags : list of strings
-        Used to retrieve subsections of the ini file for
-        configuration options.
-    """
-    make_analysis_dir(out_dir)
-    vetoDefUrl = cp.get_opt_tag("workflow-segments",
-                                "segments-veto-definer-url", tags)
-    vetoDefBaseName = os.path.basename(vetoDefUrl)
-    vetoDefNewPath = os.path.join(out_dir, vetoDefBaseName)
-    urllib.urlretrieve(vetoDefUrl, vetoDefNewPath)
-    # and update location
-    cp.set("workflow-segments", "segments-veto-definer-file", vetoDefNewPath)
-    
-def parse_cat_ini_opt(cat_str):
-    """ Parse a cat str from the ini file into a list of sets """
-    cat_groups = cat_str.split(',')
-    cat_sets = []
-    for group in cat_groups:
-        group = group.strip()
-        cat_sets += [set(c for c in group)]
-    return cat_sets  
-    
-def cat_to_pipedown_cat(val):
-    """ Convert a category character to the pipedown equivelant
-    
-    Parameters
-    ----------
-    str : single character string
-        The input category character
+def find_playground_segments(segs):
+    '''Finds playground time in a list of segments.
+
+      Playground segments include the first 600s of every 6370s stride starting
+      at GPS time 729273613.
+
+      Parameters
+      ----------
+      segs : segmentfilelist
+          A segmentfilelist to find playground segments.
         
-    Returns
-    -------
-    pipedown_str : str
-        The pipedown equivelant notation that can be passed to programs 
-    that expect this definition.
-    """
-    if val == '1':
-        return 1
-    if val == '2':
-        return 2
-    if val == '3':
-        return 4
-    if val == 'H':
-        return 3 
-    else:
-        raise ValueError('Invalid Category Choice')
-  
-def get_analyzable_segments(workflow, out_dir, tags=[]):
-    """
-    Get the analyzable segments after applying ini specified vetoes.
+      Returns
+      -------
+      outlist : segmentfilelist
+          A segmentfilelist with all playground segments during the input
+          segmentfilelist (ie. segs).
+    '''
 
-    Parameters
-    -----------
-    workflow : Workflow object
-        Instance of the workflow object
-    out_dir : path
-        Location to store output files
-    tags : list of strings
-        Used to retrieve subsections of the ini file for
-        configuration options.
+    # initializations
+    start_s2 = 729273613
+    playground_stride = 6370
+    playground_length = 600
+    outlist = segments.segmentlist()
 
-    Returns
-    --------
-    segs : glue.segments.segmentlist instance
-        The segment list specifying the analyzable times
-    seg_files : workflow.core.FileList instance
-        The cumulative segment files from each ifo that determined the
-        analyzable time.
-        
-    """
-    logging.info('Entering generation of science segments')
-    start_time = workflow.analysis_time[0]
-    end_time = workflow.analysis_time[1]
-    save_veto_definer(workflow.cp, out_dir, tags)
-    
-    cat_sets = parse_cat_ini_opt(workflow.cp.get_opt_tag('workflow-segments', 
-                                                'segments-science-veto', tags))
-    if len(cat_sets) > 1: 
-        raise ValueError('Provide only 1 category group to determine'
-                         ' analyzable segments')
-    cat_set = cat_sets[0]
-    
-    veto_gen_job = create_segs_from_cats_job(workflow.cp, out_dir, 
-                                             workflow.ifo_string) 
-    sci_segs = {}
-    seg_files = FileList()
-    for ifo in workflow.ifos:
-        sci_segs[ifo], sci_xml = get_science_segments(ifo, workflow.cp, 
-                                                 start_time, end_time, out_dir) 
-        seg_files += [sci_xml]      
-        for category in cat_set:
-            curr_veto_file = get_veto_segs(workflow, ifo, 
-                                        cat_to_pipedown_cat(category), 
-                                        start_time, end_time, out_dir,
-                                        veto_gen_job, execute_now=True)  
-            f = open(curr_veto_file.storage_path, 'r')
-            cat_segs = fromsegmentxml(f)
-            f.close()    
-            sci_segs[ifo] -= cat_segs
-        sci_segs[ifo].coalesce()
-    logging.info('Leaving generation of science segments')
-    return sci_segs, seg_files
-    
-def get_cumulative_veto_group_files(workflow, option, out_dir, tags=[]):
-    """
-    Get the cumulative veto files that define the different backgrounds 
-    we want to analyze, defined by groups of vetos.
+    # loop over segments
+    for seg in segs:
+      start = seg[0]
+      end = seg[1]
 
-    Parameters
-    -----------
-    workflow : Workflow object
-        Instance of the workflow object
-    option : str
-        ini file option to use to get the veto groups
-    out_dir : path
-        Location to store output files
-    tags : list of strings
-        Used to retrieve subsections of the ini file for
-        configuration options.
+      # the first playground segment whose end is after the start of seg
+      playground_start = start_s2 + playground_stride * ( 1 + \
+                      int(start-start_s2-playground_length) / playground_stride)
 
-    Returns
-    --------
-    seg_files : workflow.core.FileList instance
-        The cumulative segment files for each veto group.
-    """
-    start_time = workflow.analysis_time[0]
-    end_time = workflow.analysis_time[1]
+      while playground_start < end:
+        # find start of playground segment
+        if playground_start > start:
+          ostart = playground_start
+        else:
+          ostart = start
 
-    cat_sets = parse_cat_ini_opt(workflow.cp.get_opt_tag('workflow-segments', 
-                                            option, tags))
-    veto_gen_job = create_segs_from_cats_job(workflow.cp, out_dir, 
-                                             workflow.ifo_string) 
-    cats = set()
-    for cset in cat_sets:
-        cats = cats.union(cset)
-    
-    cat_files = FileList()
-    for ifo in workflow.ifos:
-        for category in cats:        
-            cat_files.append(get_veto_segs(workflow, ifo,
-                                        cat_to_pipedown_cat(category), 
-                                        start_time, end_time, out_dir,
-                                        veto_gen_job, execute_now=True))
+        playground_end = playground_start + playground_length
 
-    cum_seg_files = FileList()        
-    for cat_set in cat_sets:
-        segment_name = ''.join(sorted(cat_set))
-        logging.info('getting information for cumulative CAT %s' % segment_name)
-        categories = [cat_to_pipedown_cat(c) for c in cat_set]
-        path = os.path.join(out_dir, '%s-CUMULATIVE_CAT_%s_VETO_SEGMENTS.xml' \
-                            % (workflow.ifo_string, segment_name))
-        url = urlparse.urlunparse(['file', 'localhost', path, None, None, None])
-        seg_file = File(workflow.ifos, 'CUM_VETOSEGS', workflow.analysis_time,
-                        file_url=url, tags=[segment_name])
-                        
-        cum_seg_files += [get_cumulative_segs(workflow, seg_file,  categories,
-              cat_files, out_dir, execute_now=False, segment_name=segment_name)]
-              
-    return cum_seg_files
-      
+        # find end of playground segment
+        if playground_end < end:
+          oend = playground_end
+        else:
+          oend = end
+
+        # append segment
+        x = segments.segment(ostart, oend)
+        outlist.append(x)
+
+        # increment
+        playground_start = playground_start + playground_stride
+
+    return outlist
+
