@@ -36,12 +36,14 @@ def check_aligned(ndarr):
 class ArrayWithAligned(_np.ndarray):
     def __new__(cls, input_array):
         obj = _np.asarray(input_array).view(cls)
-        obj.isaligned = check_aligned(input_array)
         return obj
+    
+    @property
+    def isaligned(self):
+        return check_aligned(self)
 
     def __array_finalize__(self, obj):
         if obj is None: return
-        self.isaligned = check_aligned(self)
 
 def zeros(n, dtype):
     d = _np.dtype(dtype)
