@@ -171,21 +171,31 @@ scheme_prefix = {CUDAScheme: "cuda",
 def current_prefix():
     return scheme_prefix[type(mgr.state)]
 
+_import_cache = {}
 def schemed(prefix):
     @decorator
     def scheming_function(fn, *args, **kwds):
-        for sch in mgr.state.__class__.__mro__[0:-2]: 
-            try:
-                backend = __import__(prefix + scheme_prefix[sch], fromlist=[fn.__name__])
-                schemed_fn = getattr(backend, fn.__name__)
-                schemed_fn.__doc__ = fn.__doc__
-            except (ImportError, AttributeError):
-                continue    
-            return schemed_fn(*args, **kwds)
+        try:
+            return _import_cache[mgr.state][fn](*args, **kwds)
+        except KeyError:
+            for sch in mgr.state.__class__.__mro__[0:-2]: 
+                try:
+                    backend = __import__(prefix + scheme_prefix[sch], fromlist=[fn.__name__])
+                    schemed_fn = getattr(backend, fn.__name__)
+                    schemed_fn.__doc__ = fn.__doc__
+                except (ImportError, AttributeError):
+                    continue    
+                
+                if mgr.state not in _import_cache:
+                    _import_cache[mgr.state] = {}
+                    
+                _import_cache[mgr.state][fn] = schemed_fn
+                
+                return schemed_fn(*args, **kwds)
 
-        err = ("Failed to find implementation of (%s) " 
-              "for %s scheme." % (str(fn), current_prefix()))
-        raise RuntimeError(err)
+            err = ("Failed to find implementation of (%s) " 
+                  "for %s scheme." % (str(fn), current_prefix()))
+            raise RuntimeError(err)
         
     return scheming_function
 
