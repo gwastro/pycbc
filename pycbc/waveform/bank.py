@@ -25,11 +25,12 @@
 """
 This module provides classes that describe banks of waveforms
 """
-from pycbc.types import zeros
+from pycbc.types import zeros, TimeSeries, Array
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 import pycbc.waveform
 from pycbc.filter import sigmasq
 from pycbc import DYN_RANGE_FAC
+import h5py
 
 
 # dummy class needed for loading LIGOLW files
@@ -37,6 +38,41 @@ class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
 
 lsctables.use_in(LIGOLWContentHandler)
+
+class CachedFilterBank(object):
+    def __init__(self, filename, cache_name, filter_length, delta_f, f_lower, dtype, psd):              
+        self.filter_length = filter_length
+        self.delta_f = delta_f
+        self.f_lower = f_lower
+        self.dtype = dtype
+        self.psd = psd
+        self.sigmasq_vec = None
+        self.N = (filter_length - 1 ) * 2
+        
+        self.cache = h5py.File(cache_name)
+    
+        try:
+            self.indoc = ligolw_utils.load_filename(
+                filename, False, contenthandler=LIGOLWContentHandler)
+            self.table = table.get_table(
+                self.indoc, lsctables.SnglInspiralTable.tableName)
+        except:
+            self.table = []
+            
+    def __len__(self):
+        return len(self.table)
+        
+    def __getitem__(self, index):
+        template = TimeSeries(self.cache[str(index)][:], delta_t=1.0/4096, dtype=self.psd.dtype)
+        template_size = len(template)
+        template.resize(self.N)
+        template.roll(-template_size)
+        htilde = template.to_frequencyseries()
+        htilde.resize(self.filter_length)
+        htilde.sigmasq = sigmasq(htilde, self.psd, low_frequency_cutoff=self.f_lower)
+        htilde.params = self.table[index]
+        return htilde
+        
 
 class FilterBank(object):
     def __init__(self, filename, approximant, filter_length, delta_f, f_lower,
@@ -124,7 +160,7 @@ class FilterBank(object):
                 htilde.sigmasq = self.sigmasq_vec[htilde.end_idx] * (scale) **2
             else:
                 htilde.sigmasq = sigmasq(htilde, self.psd, low_frequency_cutoff=self.f_lower)
-
+                
         if length_in_time is not None:
             htilde.length_in_time = length_in_time
             self.table[index].template_duration = length_in_time
