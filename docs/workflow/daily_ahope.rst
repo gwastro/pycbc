@@ -1,23 +1,23 @@
 ########################################################
-Daily ahope: A single-ifo detchar tool
+pycbc_make_daily_workflow: A single-ifo detchar tool
 ########################################################
 
 ===============
 Introduction
 ===============
 
-Daily ahope is a tool used to analyse data from single detector(s), with no
-coincidence stage. The output from this single detector matched-filter runs
-can be used to identify times where the detectors are producing glitches
-that have a large single-detector detection statistic for the CBC searches.
-If the detectoralists can identify what causes these most egregious glitches
-it can increase the overall search sensitivity.
+The executable ``pycbc_make_daily_workflow`` is a tool used to analyse data
+from single detector(s), with no coincidence stage. The output from this single
+detector matched-filter runs can be used to identify times where the detectors
+are producing glitches that have a large single-detector detection statistic
+for the CBC searches. If the detectoralists can identify what causes these most
+egregious glitches it can increase the overall search sensitivity.
 
-=======================
-How to run daily ahope
-=======================
+=========================================
+How to run `pycbc_make_daily_workflow`
+=========================================
 
-Here we document the stages needed to run daily ahope.
+Here we document the stages needed to run ``pycbc_make_daily_workflow``.
 
 ---------------------------
 Install lalsuite and pycbc
@@ -31,125 +31,171 @@ described on the page here:
 
    ../install
 
-----------------------
-Find the run scripts
-----------------------
+----------------------------------------------------------------------------
+The configuration file - Do you already have configuration (.ini) file(s)?
+----------------------------------------------------------------------------
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+Yes, I already have my own local config files
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-The scripts to run daily ahope currently reside within the pycbc source tree.
-These will be moved to be installed executables at some point. For now this
-can be found in::
+Great! Then copy the configuration files into your run directory::
 
-    examples/workflow/er_daily_workflow
+    cp /path/to/config_file1.ini /path/to/config_file2.ini .
 
-CD to this directory::
+and set the names of these configuration files in your path. If you have more than one configuration file they must be space separated::
 
-    cd ${SRC_DIR}/examples/workflow/er_daily_workflow
+    LOCAL_CONFIG_FILES="config_file1.ini config_file2.ini"
 
------------------------------
-Edit the configuration file
------------------------------
+Now go down to :ref:`pycbcdailygenerate`.
 
-The configuration file::
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+Yes, I would like to use the unmodified preinstalled configuration files
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-    daily_ahope.ini
+For a full list of the preinstalled configuration files, see :ref:`configuration_files`.
 
-contains all the details needed to run daily_ahope::
+Set the configurations files in your path and proceed to workflow generation::
 
-    LOOK THROUGH THIS FILE
+    INSTALLED_CONFIG_FILES="example_daily_lalapps.ini"
 
-Some things that *will* need to be changed for each user::
+Now go down to :ref:`pycbcdailygenerate`.
 
-    [workflow]
-    workflow-asset-dir = /home/spxiwh/lscsoft_git/src/lalsuite/lalapps/src/inspiral
-    workflow-html-basedir = /home/spxiwh/public_html/ER4/test
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+No, I need to make a configuration file - Editing the example files
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-    [workflow-omega]
-    omega-conf-file = /home/spxiwh/ERs/ER4/daily_ihope_test/old_conf_omega.txt
+An example configuration file set is found here::
 
-    [executables]
-    ; setup of condor universe and location of executables
-    tmpltbank         = /usr/bin/lalapps_tmpltbank
-    inspiral          = /usr/bin/lalapps_inspiral
-    splittable = /usr/bin/lalapps_splitbank
-    segment_query = /usr/bin/ligolw_segment_query
-    segments_from_cats = /home/spxiwh/lscsoft_git/executables_master/bin/ligolw_segments_from_cats
-    ligolw_add = /usr/bin/ligolw_add
-    siclustercoarse = /home/spxiwh/lscsoft_git/executables_master/bin/ligolw_sicluster
-    siclusterfine = /home/spxiwh/lscsoft_git/executables_master/bin/ligolw_sicluster
-    ihope_daily_page = /home/spxiwh/ERs/ER4/daily_ihope_test/lalapps_ihope_daily_page
-    cbc_glitch_page = /home/spxiwh/lscsoft_git/executables_master/bin/ligolw_cbc_glitch_page
-    cbc_hardware_inj_page = /home/spxiwh/lscsoft_git/executables_master/bin/ligolw_cbc_hardware_inj_page
+    /src/dir/pycbc/workflow/ini_files/example_daily_lalapps.ini
 
-To run through this. 
+This file contains all the details needed to run ``pycbc_make_daily_workflow``
 
- * The worflow-asset-dir points to the location where the CSS files needed for the html page are stored. This is your lalsuite source directory and then /lalapps/src/inspiral. This will be removed in the future and read from a web-accessible location.
- * The workflow-html-basedir is the directory in which you want the output html pages to appear. Pages will be in subdirectories in this corresponding to unique days. So for me I might see output in directories like /home/spxiwh/public_html/ER4/test/201308/20130812/
- * omega-conf-file points to the configuration for omega. Currently omega doesn't work within daily ahope, this will be fixed.
- * Everything under [executables] points to the executables that will be used. These should be changed as appropriate
+.. note::
 
-The example is also set up to run on ER4 data. If you are running on non-ER4 data you may have to edit some additional options, for e.g.::
+    If you are unfamiliar with pycbc workflows, look through these files.
+    example_daily_lalapps.ini will look familiar if you are used to daily ihope workflows.
+
+The ``example_daily_lalapps.ini`` example is set up to run on S6 data and analysing only H1 and L1.
+
+If you want to run in this default configuration please jump down the "Generate the workflow".
+
+If you want to run on non-ER5 data, or want to analyse a different set of ifos, you will have to edit some additional options::
 
     [workflow]
     h1-channel-name = H1:FAKE-STRAIN
     l1-channel-name = L1:FAKE-STRAIN
-    v1-channel-name = V1:FAKE_h_16384Hz_4R
+
+    [workflow-ifos]
+    ; This is the list of ifos to analyse
+    h1 =
+    l1 =
 
     [workflow-datafind]
     datafind-h1-frame-type = H1_ER_C00_L1
     datafind-l1-frame-type = L1_ER_C00_L1
-    datafind-v1-frame-type = V1Online
 
     [workflow-segments]
     segments-H1-science-name = H1:DMT-SCIENCE:1
     segments-L1-science-name = L1:DMT-SCIENCE:1
-    segments-V1-science-name = V1:ITF_SCIENCEMODE
     segments-database-url = https://segdb-er.ligo.caltech.edu
     segments-veto-definer-url = https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/ER4/H1L1V1-ER4_CBC_OFFLINE-1011571215-0.xml
 
-    [workflow-omega]
-    omega-frame-dir = /frames/ER4/L1_ER_C00_L1/L1/L-L1_ER_C00_L1-%%d/L-L1_ER_C00_L1-%%d
+To run through this
 
-To run through this::
+* The ``[workflow-ifos]`` section supplies which ifos will be analysed if data is found and available.
+* The ``X1-channel-name`` options are the h(t) channel name in the frames.
+* The ``datafind-X1-frame-type`` options are the type of the frames for use when calling ``gw_data_find``.
+* The ``segments-X1-science-name`` options are the flag used to store science times in the segment database.
+* The ``segments-database-url`` option points to the segment database.
+* The ``segments-veto-definer-url`` option points to the url where the veto-definer file can be found.
 
- * The X1-channel-name options are the h(t) channel name in the frames
- * The datafind-X1-frame-type is the type of the frames for use when calling gw_data_find
- * The segments-X1-science-name is the flag used to store science times in the segment database
- * segments-database-url points to the segment database
- * segments-veto-definer-url points to the url where the veto-definer file can be found.
+The remaining options affect how the jobs run, these should not be edited unless you know what you are doing. To find out more details about the possible options for any stage of the workflow, follow the links at :ref:`workflowhomepage`.
 
-The remaining options affect how the jobs run, these should not be edited unless you know what you are doing!
+Now you have configuration files and can follow the same instructions as above. That is: 
+
+Copy the configuration files into your run directory::
+
+    cp /path/to/example_daily_lalapps.ini .
+
+and set the names of these configuration files in your path. If you have more than one configuration file they must be space separated::
+
+    LOCAL_CONFIG_FILES="example_daily_lalapps.ini"
+
+.. _pycbcdailygenerate:
 
 -----------------------
 Generate the workflow
 -----------------------
 
-When you are ready, you can generate the workflow. First we need to choose a time::
+When you are ready, you can generate the workflow. First we need to choose a start time. Here is an example::
 
-    GPS_START_TIME=1059436816
+    export DAY=2/23/2014
+    export GPS_START_TIME=`lalapps_tconvert ${DAY}`
+    export MONTHDIR=`lalapps_tconvert -f "%Y%m" ${GPSSTART}`
+    export DAYDIR=`lalapps_tconvert -f "%Y%m%d" ${GPSSTART}`
 
-This time should be a gps time during the *same day* that you want to analyse. Daily ahope will analyse from 00:00:00 to 23:59:59 of that day. Then you can generate the workflow::
+The executable ``pycbc_make_daily_workflow`` assumes that the end time will be 24 hours from the start time.
 
-    python daily_ahope.py --config-files daily_ahope.ini --start-time ${GPS_START_TIME} -d ${PWD}
+You also need to specify the directory for storing log files.
+
+ * For CIT,LHO,LLO or SYR set::
+
+    export LOGPATH=/usr1/${USER}/log
+    mkdir -p $LOGPATH
+
+ * For Atlas set::
+
+    export LOGPATH=/local/user/${USER}/log/
+    mkdir -p $LOGPATH 
+
+ * For UWM set::
+
+    export LOGPATH=/people/${USER}/log/
+    mkdir -p $LOGPATH
+
+You also need to choose where the html page will be generated. For example::
+
+    export HTMLDIR=/home/${USER}/public_html/daily_cbc_offline
+
+You also need to tell the post-processing dag the path of the css file. For example::
+
+    export ASSETDIR=/src/dir/lalsuite/lalapps/src/inspiral
+
+If you are using locally edited or custom configuration files then you can
+create the workflow using::
+
+    pycbc_make_daily_workflow --local-config-files ${LOCAL_CONFIG_FILES} \
+                              --start-time ${GPS_START_TIME} --ouput-dir ${LOGPATH} \
+                           --config-overrides workflow:workflow-html-basedir:${HTMLDIR} \
+                                              workflow:workflow-asset-dir:${ASSETDIR} \
+                                              
+If you are using default installed configuration files then you can create the
+workflow using::
+
+    pycbc_make_daily_workflow --installed-config-files ${INSTALLED_CONFIG_FILES} \
+                              --start-time ${GPS_START_TIME} --output-dir ${LOGPATH} \
+                           --config-overrides workflow:workflow-html-basedir:${HTMLDIR} \
+                                              workflow:workflow-asset-dir:${ASSETDIR} \
+
+.. _weeklyahopeplan:
 
 -----------------------------------------
-Planning and Submitting the Worklfow
+Planning and submitting the workflow
 -----------------------------------------
+CD into the directory where the dax was generated::
 
-First, copy the files needed for planning into the directory where the dax 
-was generated.::
+    cd ${MONTHDIR}/${DAYDIR}/
 
-    cp ../plan.sh ./
-    cp ../site-local.xml ./
-    cp ../pegasus.conf ./
+From the directory where the dax was created, run the planning script::
 
-Run the planning script::
-
-    sh plan.sh daily_ahope.dax
+    pycbc_basic_pegasus_plan daily_ahope.dax ${LOGPATH}
     
 Submit the workflow by following the instructions at the end of the script output, which looks something like 
 the following.::
 
     ...
+    10:49:15:INFO : Entering post-processing preperation stage.
+    10:49:15:INFO : Leaving post-processing separation module.
     10:49:18:INFO : Finished.
     2014.03.26 10:49:28.676 EDT:   
 
@@ -159,16 +205,15 @@ the following.::
     to start or execute your workflow. The invocation required is
 
 
-    pegasus-run  /usr1/ahnitz/log/ahnitz/pegasus/daily_ahope/run0001
+    pegasus-run  /usr1/albert.einstein/log/albert.einstein/pegasus/weekly_ahope/run0011
 
      
     2014.03.26 10:49:28.983 EDT:   Time taken to execute is 7.095 seconds 
     
 In this case, the workflow would be submitted as follows.::
 
-    pegasus-run  /usr1/ahnitz/log/ahnitz/pegasus/daily_ahope/run0001
+    pegasus-run  /usr1/${USER}/log/${USER}/pegasus/weekly_ahope/run0011
 
-If the workflow runs successfully, you will find the output under your html directory some time later.
 
 -----------------------------------------
 Monitor and Debug the Workflow
@@ -176,10 +221,10 @@ Monitor and Debug the Workflow
 
 To monitor the above workflow, one would run::
 
-    pegasus-status /usr1/ahnitz/log/ahnitz/pegasus/daily_ahope/run0001
+    pegasus-status /usr1/${USER}/log/${USER}/pegasus/daily_ahope/run0011
     
-To get debugging information in the case of failures.::
+To get debugging information in the case of failures::
 
-    pegasus-analyzer /usr1/ahnitz/log/ahnitz/pegasus/daily_ahope/run0001
+    pegasus-analyzer /usr1/${USER}/log/${USER}/pegasus/daily_ahope/run0011
 
 
