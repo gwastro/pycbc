@@ -191,6 +191,13 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
     elif method == 'ldas':  
         factor = int(delta_t / timeseries.delta_t)
         
+        if factor == 8:
+            timeseries = resample_to_delta_t(timeseries, timeseries.delta_t * 2.0, method='ldas')
+            factor = 2
+        elif factor == 16:
+            timeseries = resample_to_delta_t(timeseries, timeseries.delta_t * 4.0, method='ldas')
+            factor = 4 
+
         try:
             filter_coefficients = LDAS_FIR_LP[factor]
         except:
