@@ -1,0 +1,54 @@
+#!/usr/bin/env /usr/bin/python
+
+# Copyright (C) 2014 Andrew Lundgren
+import glue.ligolw.utils
+from glue.ligolw import ligolw
+import glue.ligolw.table
+from glue.ligolw import lsctables
+import sys
+from itertools import cycle
+
+tabletype = lsctables.SimInspiralTable
+
+# The following is required for reasons
+class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+
+# The XML reading will hang if you forget this line
+lsctables.use_in(LIGOLWContentHandler)
+
+if len(sys.argv) < 3:
+    print "Arguments: XML_file num_splits"
+    sys.exit()
+inj_xml = sys.argv[1]
+num_split = int(sys.argv[2])
+
+xmldoc = glue.ligolw.utils.load_filename(inj_xml, contenthandler = LIGOLWContentHandler, verbose=True)
+allinjs = tabletype.get_table(xmldoc)
+
+# The sim_inspiral table is a grandchild of the document, I guess
+xmlroot = xmldoc.childNodes[0]
+
+xmlroot.removeChild(allinjs)
+
+new_inj_tables = [lsctables.New(tabletype, columns=allinjs.columnnames)  for idx in range(num_split)]
+
+table_cycle = cycle(new_inj_tables)
+prev_inj_time = 0
+for idx in xrange(len(allinjs)):
+    inj = allinjs.pop(0)
+    # Make sure that the injections are in order
+    assert inj.geocent_end_time > prev_inj_time
+    table_cycle.next().append(inj)
+    prev_inj_time = inj.geocent_end_time
+
+temp = inj_xml.split('-')
+temp[1] += '_%u'
+filename_pattern = '-'.join(temp)
+for idx, simtable in enumerate(new_inj_tables):
+    print "Output", idx, "with", len(simtable), "injections"
+    xmlroot.appendChild(simtable)
+    xmldoc.write(open(filename_pattern % idx, 'w'))
+    xmlroot.removeChild(simtable)
+
+
