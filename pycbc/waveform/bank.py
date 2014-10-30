@@ -94,14 +94,21 @@ class FilterBank(object):
 
         # Get the waveform filter
         distance = 1.0 / DYN_RANGE_FAC
-        htilde = pycbc.waveform.get_waveform_filter(tempout[0:self.filter_length],
-                            self.table[index], approximant=self.approximant,
-                            f_lower=self.f_lower, delta_f=self.delta_f, delta_t=self.delta_t,
-                            distance=distance, **self.extra_args)
+        htilde = pycbc.waveform.get_waveform_filter(
+            tempout[0:self.filter_length], self.table[index],
+            approximant=self.approximant, f_lower=self.f_lower,
+            delta_f=self.delta_f, delta_t=self.delta_t, distance=distance,
+            **self.extra_args)
 
+        # For time domain templates, record the total duration (which may
+        # include ringdown) and the duration up to merger since they will be 
+        # erased by the type conversion below
         length_in_time = None
+        chirp_length = None
         if hasattr(htilde, 'length_in_time'):
             length_in_time = htilde.length_in_time
+        if hasattr(htilde, 'chirp_length'):
+            chirp_length = htilde.chirp_length
 
         # Make sure it is the desired type
         htilde = htilde.astype(self.dtype)
@@ -115,18 +122,26 @@ class FilterBank(object):
             if self.sigmasq_vec is not None:
 
                 # Get an amplitude normalization (mass dependant constant norm)
-                amp_norm = pycbc.waveform.get_template_amplitude_norm(self.table[index],
-                                  approximant=self.approximant, **self.extra_args)
+                amp_norm = pycbc.waveform.get_template_amplitude_norm(
+                     self.table[index], approximant=self.approximant,
+                     **self.extra_args)
                 if amp_norm is None:
                     amp_norm = 1
                 scale = DYN_RANGE_FAC * amp_norm
 
                 htilde.sigmasq = self.sigmasq_vec[htilde.end_idx] * (scale) **2
             else:
-                htilde.sigmasq = sigmasq(htilde, self.psd, low_frequency_cutoff=self.f_lower)
+                htilde.sigmasq = sigmasq(htilde, self.psd,
+                                         low_frequency_cutoff=self.f_lower)
 
+        # For time domain templates, assign 'ttotal' to the total template
+        # duration (which may include ringdown) and 'template_duration' to
+        # the duration up to merger as in previous IMR searches
         if length_in_time is not None:
             htilde.length_in_time = length_in_time
-            self.table[index].template_duration = length_in_time
+            self.table[index].ttotal = length_in_time
+        if chirp_length is not None:
+            htilde.chirp_length = chirp_length
+            self.table[index].template_duration = chirp_length
 
         return htilde

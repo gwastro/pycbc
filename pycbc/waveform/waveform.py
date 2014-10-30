@@ -668,15 +668,23 @@ def get_waveform_filter(out, template=None, **kwargs):
         wav_gen = td_wav[type(_scheme.mgr.state)]
         hp, hc = wav_gen[input_params['approximant']](**input_params)
         # taper the time series hp if required
-        if 'taper' in input_params.keys():
-            hp = wfutils.taper_timeseries(hp, input_params['taper'], return_lal=False)
-        tmplt_length = len(hp) * hp.delta_t # FIXME is this correct for the physical duration of the signal?
+        if ('taper' in input_params.keys() and \
+            input_params['taper'] is not None):
+            hp = wfutils.taper_timeseries(hp, input_params['taper'],
+                                          return_lal=False)
+        # total duration of the waveform
+        tmplt_length = len(hp) * hp.delta_t
+        # for IMR templates the zero of time is at max amplitude (merger)
+        # thus the start time is minus the duration of the template from
+        # lower frequency cutoff to merger, i.e. minus the 'chirp time'
+        tChirp = - float( hp.start_time )  # conversion from LIGOTimeGPS
         hp.resize(N)
         k_zero = int(hp.start_time / hp.delta_t)
         hp.roll(k_zero)
         htilde = FrequencySeries(out, delta_f=delta_f, copy=False)
         fft(hp.astype(real_same_precision_as(htilde)), htilde)
         htilde.length_in_time = tmplt_length
+        htilde.chirp_length = tChirp
         return htilde
 
     else:

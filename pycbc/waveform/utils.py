@@ -221,6 +221,9 @@ def taper_timeseries(tsdata, tapermethod=None, return_lal=False):
         If True, return a wrapped LAL time series object, else return a 
         PyCBC time series.
     """
+    if tapermethod is None:
+        raise ValueError("Must specify a tapering method (function was called"
+                         "with tapermethod=None)")
     if tapermethod not in taper_map.keys():
         raise ValueError("Tapering method %s is not known! Valid methods: "
                          + taper_map.keys() % (tapermethod))
