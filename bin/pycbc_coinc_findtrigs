@@ -569,12 +569,13 @@ if __name__ == '__main__':
                                    args.decimation_bins, 
                                    args.decimation_factor)                                 
             e1 = c1[d1]
-            e2 = c2[d1]
-            stat, t1, t2, r1, r2 = stat[d1], t1[e1], t2[e2], r1[e1], r2[e2]
+            e2 = c2[d2]
+            stat, t1, t2, r1 = stat[d1], t1[e1], t2[e2], r1[e1]
             slide_index = slide_index[d1]
             logging.info('%s total triggers' % len(stat))
             logging.info('%s foreground triggers' % (slide_index == 0).sum())
         else:
+            stat, t1, t2, r1 = stat[c1], t1[c1], t2[c2], r1[c1]
             decimation_factor = numpy.zeros(len(stat), dtype=numpy.uint32) + 1
         
         # Accumulate the coinc triggers from this groups of templates
