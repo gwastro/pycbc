@@ -651,14 +651,14 @@ def get_waveform_filter(out, template=None, **kwargs):
         wav_gen = filter_wav[type(_scheme.mgr.state)]
         htilde = wav_gen[input_params['approximant']](out=out, **input_params)
         htilde.resize(n)
-        htilde.length_in_time = get_waveform_filter_length_in_time(**input_params)
+        htilde.chirp_length = get_waveform_filter_length_in_time(**input_params)
         return htilde
 
     if input_params['approximant'] in fd_approximants(_scheme.mgr.state):
         wav_gen = fd_wav[type(_scheme.mgr.state)]
         hp, hc = wav_gen[input_params['approximant']](**input_params)
         hp.resize(n)
-        hp.length_in_time = get_waveform_filter_length_in_time(**input_params)
+        hp.chirp_length = get_waveform_filter_length_in_time(**input_params)
         return hp
 
     elif input_params['approximant'] in td_approximants(_scheme.mgr.state):
