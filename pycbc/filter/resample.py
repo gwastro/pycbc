@@ -192,7 +192,7 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
         factor = int(delta_t / timeseries.delta_t)
         
         if factor == 8:
-            timeseries = resample_to_delta_t(timeseries, timeseries.delta_t * 2.0, method='ldas')
+            timeseries = resample_to_delta_t(timeseries, timeseries.delta_t * 4.0, method='ldas')
             factor = 2
         elif factor == 16:
             timeseries = resample_to_delta_t(timeseries, timeseries.delta_t * 4.0, method='ldas')
