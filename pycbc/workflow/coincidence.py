@@ -510,23 +510,34 @@ class PyCBCStatMapExecutable(Executable):
         if external_background:
             node.add_input_opt('--external-background', external_background)
         return node
-
+        
+def get_subsections(cp, section_name):
+    sections = cp.sections()   
+    subsections = [sec.split('-')[1] for sec in sections if sec.startswith(section_name + '-')]   
+    if len(subsections) > 0:
+        return subsections
+    else:
+        return ['']
 
 def make_sensitivity_plot(workflow, inj_file, out_dir, tags=[]):
     make_analysis_dir(out_dir)
-    node = Node(Executable(workflow.cp, 'plot_sensitivity', ifos=workflow.ifos,
-                out_dir=out_dir, tags=tags))
-    node.add_input_opt('--injection-file', inj_file)
-    node.new_output_file_opt(inj_file.segment, '.png', '--output-file')
+    
+    for tag in get_subsections(workflow.cp, 'plot_sensitivity'):
+        node = Node(Executable(workflow.cp, 'plot_sensitivity', ifos=workflow.ifos,
+                    out_dir=out_dir, tags=[tag] + tags))
+        node.add_input_opt('--injection-file', inj_file)
+        node.new_output_file_opt(inj_file.segment, '.png', '--output-file')
     workflow += node
 
 def make_foundmissed_plot(workflow, inj_file, inj_tag, out_dir, tags=[]):
     make_analysis_dir(out_dir)
-    node = Node(Executable(workflow.cp, 'plot_foundmissed', ifos=workflow.ifos,
-                out_dir=out_dir, tags=tags))
-    node.add_opt('--injection-tag', inj_tag)
-    node.add_input_opt('--injection-file', inj_file)
-    node.new_output_file_opt(inj_file.segment, '.html', '--output-file')
+    
+    for tag in get_subsections(workflow.cp, 'plot_foundmissed'):
+        node = Node(Executable(workflow.cp, 'plot_foundmissed', ifos=workflow.ifos,
+                    out_dir=out_dir, tags=[tag] + tags))
+        node.add_opt('--injection-tag', inj_tag)
+        node.add_input_opt('--injection-file', inj_file)
+        node.new_output_file_opt(inj_file.segment, '.html', '--output-file')
     workflow += node   
     
 def make_snrifar_plot(workflow, bg_file, out_dir, tags=[]):
@@ -690,9 +701,9 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
     max_groups = int(workflow.cp.get_opt_tags('workflow-coincidence', 'number-of-groups', tags))
 
     tags, veto_file_groups = veto_files.categorize_by_attr('tags')
+    stat_files = FileList()
     for tag, veto_files in zip(tags, veto_file_groups):
         bg_files = FileList()
-        stat_files = FileList()
         group_id = 0
         group_start = 0
         group_end = group_size
