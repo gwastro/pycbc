@@ -519,6 +519,16 @@ def get_subsections(cp, section_name):
     else:
         return ['']
 
+def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir, tags=[]):
+    make_analysis_dir(out_dir)
+    node = Node(Executable(workflow.cp, 'page_foreground', ifos=workflow.ifos,
+                    out_dir=out_dir, tags=tags))
+    node.add_input_opt('--bank-file', bank_file)
+    node.add_opt('--foreground-tag', ftag)
+    node.add_input_opt('--trigger-file', trig_file)
+    node.new_output_file_opt(bank_file.segment, '.html', '--output-file')
+    workflow += node
+
 def make_sensitivity_plot(workflow, inj_file, out_dir, tags=[]):
     make_analysis_dir(out_dir)
     

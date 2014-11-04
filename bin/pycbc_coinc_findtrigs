@@ -183,7 +183,10 @@ numpy.in1d = in1d
 
 class ArrayList(list):
     def get(self):
-        return numpy.concatenate(self)
+        try:
+            return numpy.concatenate(self)
+        except:
+	    return numpy.array([], ndmin=1, dtype=numpy.uint32)
 
 class BinnedLookup(dict):
     """ Lookup  table for a binned column vectors

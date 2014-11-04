@@ -110,6 +110,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                        output_dir, tags=ctags)  
         final_bg_file =  wf.setup_interval_coinc(workflow, hdfbank, insps_hdf, final_veto_file,
                                        output_dir, tags=ctags)   
+        wf.make_foreground_table(workflow, final_bg_file[0], hdfbank[0], tag, 'plots/foreground')
     else:
         inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank, 
                                                 insps_hdf, final_bg_file,
