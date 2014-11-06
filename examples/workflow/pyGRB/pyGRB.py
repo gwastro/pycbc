@@ -35,7 +35,7 @@ if args.output_dir:
     baseDir = args.output_dir
 else:
     baseDir = os.getcwd()
-runDir = os.path.join(baseDir, 'GRB%s' % str(wflow.cp.get('workflow-coherent',
+runDir = os.path.join(baseDir, 'GRB%s' % str(wflow.cp.get('workflow',
                                                           'trigger-name')))
 if not os.path.exists(runDir):
     os.makedirs(runDir)
@@ -47,11 +47,10 @@ segDir = os.path.join(currDir, "segments")
 sciSegs, segsFileList = _workflow.setup_segment_generation(wflow, segDir)
 
 # Make coherent network segments
-if wflow.cp.has_option_tag("workflow-coherent", "do-coherent-search", tags):
-    onSrc, sciSegs = _workflow.get_coherent_segment(wflow, segDir, sciSegs)
-    # FIXME: The following two lines are/were crude hacks.
-    ifo = sciSegs.keys()[0]
-    wflow.analysis_time = sciSegs[ifo][0]
+onSrc, sciSegs = _workflow.get_triggered_coherent_segment(wflow, segDir, sciSegs)
+# FIXME: The following two lines are/were crude hacks.
+ifo = sciSegs.keys()[0]
+wflow.analysis_time = sciSegs[ifo][0]
 
 # Datafind
 dfDir = os.path.join(currDir, "datafind")

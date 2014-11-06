@@ -688,7 +688,7 @@ def find_playground_segments(segs):
 
     return outlist
 
-def get_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
+def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
     """
     Construct the coherent network on and off source segments.
 
@@ -715,31 +715,29 @@ def get_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
     offsource : glue.segments.segmentlistdict
         A dictionary containing the off source segments for network IFOs
     """
-    logging.info("Entering coherent segment module.")
+    logging.info("Calculating optimal coherent segment.")
 
     # Load parsed workflow config options
     cp = workflow.cp
-    ra = int(os.path.basename(cp.get('workflow-coherent',
-                                     'ra')))
-    dec = int(os.path.basename(cp.get('workflow-coherent',
-                                      'dec')))
-    triggertime = int(os.path.basename(cp.get('workflow-coherent',
-                                              'trigger-time')))
-    minbefore = int(os.path.basename(cp.get('workflow-coherent',
+    ra = int(os.path.basename(cp.get('workflow', 'ra')))
+    dec = int(os.path.basename(cp.get('workflow', 'dec')))
+    triggertime = int(os.path.basename(cp.get('workflow', 'trigger-time')))
+    
+    minbefore = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                             'min-before')))
-    minafter = int(os.path.basename(cp.get('workflow-coherent',
+    minafter = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                            'min-after')))
-    minduration = int(os.path.basename(cp.get('workflow-coherent',
+    minduration = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                               'min-duration')))
-    maxduration = int(os.path.basename(cp.get('workflow-coherent',
+    maxduration = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                               'max-duration')))
-    onbefore = int(os.path.basename(cp.get('workflow-coherent',
+    onbefore = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                            'on-before')))
-    onafter = int(os.path.basename(cp.get('workflow-coherent',
+    onafter = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                           'on-after')))
-    padding = int(os.path.basename(cp.get('workflow-coherent',
+    padding = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                           'pad-data')))
-    quanta = int(os.path.basename(cp.get('workflow-coherent',
+    quanta = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                          'quanta')))
 
     # Check available data segments meet criteria specified in arguments
@@ -854,6 +852,6 @@ def get_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
     currFile = OutSegFile(ifos, 'COH-OFFSOURCE', offsource[iifo], currUrl,
                           offsource[iifo])
     currFile.toSegmentXml()
-    logging.info("Leaving coherent segment module.")
+    logging.info("Optimal coherent segment calculated.")
 
     return onsource, offsource
