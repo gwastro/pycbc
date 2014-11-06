@@ -26,7 +26,7 @@ import sys
 from numpy import loadtxt,complex64,float32
 from optparse import OptionParser
 from glue.ligolw import utils as ligolw_utils
-from glue.ligolw import table, lsctables
+from glue.ligolw import table, lsctables, ligolw
 from math import pow
 
 from scipy.interpolate import interp1d
@@ -39,6 +39,10 @@ from pycbc.filter import match, overlap, sigma
 from pycbc.scheme import CPUScheme, CUDAScheme, OpenCLScheme
 from pycbc.fft import fft
 import pycbc.psd 
+
+class ContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(ContentHandler)
 
 def update_progress(progress):
     print '\r\r[{0}] {1}%'.format('#'*(progress/2)+' '*(50-progress/2), progress),
@@ -149,7 +153,7 @@ else:
     ctx = CPUScheme()
 
 # Load in the waveform1 bank file
-indoc = ligolw_utils.load_filename(options.bank_file, False)
+indoc = ligolw_utils.load_filename(options.bank_file, False, contenthandler=ContentHandler)
 try :
     waveform_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName) 
 except ValueError:

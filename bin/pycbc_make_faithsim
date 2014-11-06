@@ -124,8 +124,12 @@ f = open("scripts/pycbc_faithsim_collect_results", "w")
 f.write("""#!/usr/bin/env python
 from os.path import isfile
 from numpy import *
-from glue.ligolw import utils, table, lsctables
+from glue.ligolw import utils, table, lsctables, ligolw
 import glob
+
+class ContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(ContentHandler)
 
 fils = glob.glob("match/match*.dat")
 mfields = ('match', 'overlap', 'sigma1', 'sigma2')
@@ -151,7 +155,7 @@ if __name__ == "__main__":
             btag = part.split('-')[2].split('.')[0]
             bname = "bank/bank" + btag + ".xml"
             if bname not in btables:
-                indoc = utils.load_filename(bname, False)
+                indoc = utils.load_filename(bname, False, contenthandler=ContentHandler)
                 btables[bname] = table.get_table(indoc, lsctables.SimInspiralTable.tableName) 
             bt = btables[bname]
             try:      
