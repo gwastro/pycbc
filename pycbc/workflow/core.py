@@ -362,6 +362,16 @@ class Workflow(pegasus_workflow.Workflow):
         # Set up input and output file lists for workflow
         self._inputs = FileList([])
         self._outputs = FileList([])
+ 
+        self.as_job.addArguments('-Dpegasus.dir.storage.mapper.replica.file=%s' % self.output_map) 
+
+     
+    @property
+    def output_map(self):  
+        if self.in_workflow != False:
+            return self.name + '.map'
+        else:
+            return 'output.map'
          
     def execute_node(self, node):
         """ Execute this node immediately on the local machine
@@ -394,10 +404,10 @@ class Workflow(pegasus_workflow.Workflow):
             fil.insert_into_dax(self._adag)
             
         # save the dax file
-        super(Workflow, self).save(self.name + '.dax')
+        super(Workflow, self).save()
         
         # add workflow storage locations to the output mapper
-        f = open('output.map', 'w')
+        f = open(self.output_map, 'w')
         for out in self._outputs:
             try:
                 f.write(out.output_map_str() + '\n')

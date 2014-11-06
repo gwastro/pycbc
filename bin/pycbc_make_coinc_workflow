@@ -31,6 +31,7 @@ __program__ = "weekly_ahope"
 import os, copy, shutil, argparse, ConfigParser, logging
 from glue import segments
 import pycbc.workflow as _workflow
+from pycbc.workflow import pegasus_workflow
 import Pegasus.DAX3 as dax
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
@@ -44,7 +45,9 @@ parser.add_argument("-d", "--output-dir", default=None,
 _workflow.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 
-workflow = _workflow.Workflow(args, 'weekly_ahope')
+container = _workflow.Workflow(args, 'weekly_ahope')
+workflow = _workflow.Workflow(args, 'main')
+post_workflow = _workflow.Workflow(args, 'post_processing')
 
 # Needed later for WIP
 if args.output_dir:
@@ -153,7 +156,7 @@ for tag in ['playground']:
 for tag in ['full_data']:
     cacheFileName = os.path.join(currDir, 'ihope_full_cache.cache')
     plotDir = os.path.join(currDir, '%s_summary_plots'%tag)
-    plotFiles = _workflow.setup_summary_plots(workflow, all_coincs,
+    plotFiles = _workflow.setup_summary_plots(post_workflow, all_coincs,
                       cacheFileName,
                       tmpltbank_cachepattern='TMPLTBANK',
                       inspiral_cachepattern='INSPIRAL_FULL_DATA',
@@ -161,7 +164,7 @@ for tag in ['full_data']:
 for tag in ['full_data_slide']:
     cacheFileName = os.path.join(currDir, 'ihope_full_cache.cache')
     plotDir = os.path.join(currDir, '%s_summary_plots'%tag)
-    plotFiles = _workflow.setup_summary_plots(workflow, all_coincs,
+    plotFiles = _workflow.setup_summary_plots(post_workflow, all_coincs,
                       cacheFileName,
                       tmpltbank_cachepattern='TMPLTBANK',
                       inspiral_cachepattern='INSPIRAL_PLAYGROUND',
@@ -188,11 +191,6 @@ postProcFiles = _workflow.setup_postprocessing(workflow, postProcPrepFiles,
 
 
 # Also run pipedown, for legacy comparison
-
-pipedownParents = []
-for coincFile in all_coincs:
-    # Here I assume that no partitioned files are present
-    pipedownParents.append(coincFile.node)
 
 # Dump out the formatted, combined ini file
 workflow.cp.write(file("workflow_configuration.ini", "w"))
@@ -274,13 +272,8 @@ pipeNode = dax.DAG(pipeDag_lfn)
 pipeNode.addProfile(dax.Profile("dagman", "DIR", pipedownDir))
 subdag_file = dax.File(pipeDag_lfn)
 subdag_file.PFN(pipeDag, site='local')
-workflow._adag.addFile(subdag_file)
-workflow._adag.addDAG(pipeNode)
-
-if pipedownParents:
-    for parent in pipedownParents:
-        dep = dax.Dependency(parent=parent._dax_node, child=pipeNode)
-        workflow._adag.addDependency(dep)
+post_workflow._adag.addFile(subdag_file)
+post_workflow._adag.addDAG(pipeNode)
 
 # return to the original directory
 os.chdir("..")
@@ -339,13 +332,11 @@ for cat in ppVetoCats:
     pipePlot_lfn = os.path.basename(pipePlotDag)
     pipePlotNode = dax.DAG(pipePlot_lfn)
     
-    workflow._adag.addDAG(pipePlotNode)
-    dep = dax.Dependency(parent=inputFile.node._dax_node, child=pipePlotNode)
-    workflow._adag.addDependency(dep)
+    post_workflow._adag.addDAG(pipePlotNode)
     
     subdag_file = dax.File(pipePlot_lfn)
     subdag_file.PFN(pipePlotDag, site='local')
-    workflow._adag.addFile(subdag_file)
+    post_workflow._adag.addFile(subdag_file)
     pipePlotNode.addProfile(dax.Profile("dagman", "DIR", pipedownPlotDir))
 
 
@@ -397,9 +388,16 @@ wip_exe = _workflow.Executable(workflow.cp, 'write_ihope_page')
 wip_node = _workflow.Node(wip_exe)
 wip_node.add_opt('--config-file', os.path.join(currDir, 'wip.ini'))
 
-workflow.add_node(wip_node)
+post_workflow.add_node(wip_node)
 dep = dax.Dependency(parent=pipeNode, child=wip_node._dax_node)
-workflow._adag.addDependency(dep)
+post_workflow._adag.addDependency(dep)
 
-workflow.save()
+container += workflow
+container += post_workflow
+
+dep = dax.Dependency(parent=workflow.as_job, child=post_workflow.as_job)
+container._adag.addDependency(dep)
+
+container.save()
+
 logging.info("Written dax.")

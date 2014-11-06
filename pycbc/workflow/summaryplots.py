@@ -82,9 +82,9 @@ def setup_plotinspiral(workflow, input_files, cache_filename, inspiral_cachepatt
             workflow.add_node(node)
 
             # make all input_files parents
-            for f in input_files:
-                dep = dax.Dependency(parent=f.node._dax_node, child=node._dax_node)
-                workflow._adag.addDependency(dep)
+            #for f in input_files:
+            #    dep = dax.Dependency(parent=f.node._dax_node, child=node._dax_node)
+            #    workflow._adag.addDependency(dep)
 
     return plot_files
 
@@ -140,9 +140,9 @@ def setup_plotnumtemplates(workflow, input_files, cache_filename, tmpltbank_cach
         workflow.add_node(node)
 
         # make all input_files parents
-        for f in input_files:
-            dep = dax.Dependency(parent=f.node._dax_node, child=node._dax_node)
-            workflow._adag.addDependency(dep)
+        #for f in input_files:
+        #    dep = dax.Dependency(parent=f.node._dax_node, child=node._dax_node)
+        #    workflow._adag.addDependency(dep)
 
     return plot_files
 
@@ -213,9 +213,9 @@ def setup_plotthinca(workflow, input_files, cache_filename, coinc_cachepattern, 
             workflow.add_node(node)
 
             # make all input_files parents
-            for f in input_files:
-                dep = dax.Dependency(parent=f.node._dax_node, child=node._dax_node)
-                workflow._adag.addDependency(dep)       
+            #for f in input_files:
+            #    dep = dax.Dependency(parent=f.node._dax_node, child=node._dax_node)
+            #    workflow._adag.addDependency(dep)       
 
     return plot_files
 
@@ -273,9 +273,9 @@ def setup_plotinspiralrange(workflow, input_files, cache_filename, tmpltbank_cac
         workflow.add_node(node)
 
         # make all input_files parents
-        for f in input_files:
-            dep = dax.Dependency(parent=f.node._dax_node, child=node._dax_node)
-            workflow._adag.addDependency(dep)
+        #for f in input_files:
+        #    dep = dax.Dependency(parent=f.node._dax_node, child=node._dax_node)
+        #    workflow._adag.addDependency(dep)
 
     return plot_files
 
@@ -413,9 +413,9 @@ def setup_hardware_injection_page(workflow, input_files, cache_filename, \
     workflow.add_node(node)
 
     # make all input_files parents
-    for f in input_files:
-        dep = dax.Dependency(parent=f.node._dax_node, child=node._dax_node)
-        workflow._adag.addDependency(dep)
+    #for f in input_files:
+    #    dep = dax.Dependency(parent=f.node._dax_node, child=node._dax_node)
+    #    workflow._adag.addDependency(dep)
 
     out_files += node.output_files
 

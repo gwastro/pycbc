@@ -27,6 +27,7 @@
 provides additional abstraction and argument handling.
 """
 import Pegasus.DAX3 as dax
+import os
 
 class ProfileShortcuts(object):
     """ Container of common methods for setting pegasus profile information
@@ -207,6 +208,58 @@ class Workflow(object):
         self._inputs = []
         self._outputs = []
         self._executables = []
+        self.in_workflow = False
+        self.sub_workflows = []
+        self._external_workflow_inputs = []
+        self.filename = self.name + '.dax'
+        
+        self.as_job = dax.DAX(self.filename)
+        
+    def _make_root_dependency(self, inp):  
+        def root_path(v):
+            path = []
+            while v.in_workflow:
+                path += [v.in_workflow]
+                v = v.in_workflow
+            return path
+                
+        workflow_root = root_path(self)
+        input_root = root_path(inp)
+        
+        for step in workflow_root:
+            if step in input_root:
+                common = step
+                break
+        
+        dep = dax.Dependency(child=workflow_root[workflow_root.index(common)-1],
+                             parent=input_root[input_root.index(common)-1])
+        common._adag.addDependency(dep)
+      
+    def add_workflow(self, workflow):
+        """ Add a sub-workflow to this workflow
+        
+        This function adds a sub-workflow of Workflow class to this workflow.
+        Parent child relationships are determined by data dependencies
+        
+        Parameters
+        ----------
+        workflow : Workflow instance
+            The sub-workflow to add to this one
+        """
+        workflow.in_workflow = self
+        self.sub_workflows += [workflow]
+        
+        node = workflow.as_job
+        self._adag.addJob(node)
+        
+        node.file.PFN(os.path.join(os.getcwd(), node.file.name), site='local')
+        self._adag.addFile(node.file)
+        
+        for inp in self._external_workflow_inputs:
+            workflow._make_root_dependency(inp.node)
+            
+        return self
+        
         
     def add_node(self, node):
         """ Add a node to this workflow
@@ -220,28 +273,33 @@ class Workflow(object):
             A node that should be exectuded as part of this workflow.
         """
         node._finalize()
-        node.in_workflow = True
+        node.in_workflow = self
         self._adag.addJob(node._dax_node)
  
         # Determine the parent child relationships based on the inputs that
         # this node requires.
         added_nodes = []
         for inp in node._inputs:
-            if inp.node is not None and inp.node.in_workflow:
+            if inp.node is not None and inp.node.in_workflow == self:
                 if inp.node not in added_nodes:
                     parent = inp.node._dax_node
                     child = node._dax_node
                     dep = dax.Dependency(parent=parent, child=child)
                     self._adag.addDependency(dep)    
-                    added_nodes.append(inp.node)
+                    added_nodes.append(inp.node)                  
                             
             elif inp.node is not None and not inp.node.in_workflow:
                 raise ValueError('Parents of this node must be added to the '
                                  'workflow first.')   
-                                  
-            elif inp.node is None and inp.workflow_input is False:
+                      
+            elif inp.node is None and not inp.workflow_input:
                 self._inputs += [inp]
-                inp.workflow_input = True
+                inp.workflow_input = True    
+            
+            elif inp.node is not None and inp.node.in_workflow != self and inp not in self._inputs:
+                self._inputs += [inp]
+                self._external_workflow_inputs += [inp]    
+
             
         # Record the outputs that this node generates                                   
         self._outputs += node._outputs  
@@ -253,12 +311,22 @@ class Workflow(object):
         
         return self
         
-    __iadd__ = add_node
+    def __add__(self, other):
+        if isinstance(other, Node):
+            return self.add_node(other)
+        elif isinstance(other, Workflow):
+            return self.add_workflow(other)
+        else:
+            raise TypeError('Cannot add type %s to this workflow' % type(other))
+            
       
-    def save(self, filename):
+    def save(self):
         """ Write this workflow to DAX file 
-        """
-        f = open(filename, "w")
+        """        
+        for sub in self.sub_workflows:
+            sub.save()
+        
+        f = open(self.filename, "w")
         self._adag.writeXML(f)
 
 class DataStorage(object):
