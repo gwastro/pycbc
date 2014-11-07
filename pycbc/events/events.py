@@ -61,8 +61,9 @@ def fc_cluster_over_window_fast(times, values, window_length):
     indices: Array
         The reduced list of indices of the SNR values
     """
-    if window_length <= 0:	
+    if window_length <= 0:
         return times
+
     from scipy.weave import inline
     indices = numpy.zeros(len(times), dtype=int)
     tlen = len(times)
