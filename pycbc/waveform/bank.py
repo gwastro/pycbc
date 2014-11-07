@@ -96,7 +96,7 @@ class FilterBank(object):
         distance = 1.0 / DYN_RANGE_FAC
         htilde = pycbc.waveform.get_waveform_filter(
             tempout[0:self.filter_length], self.table[index],
-            approximant=self.approximant, f_lower=self.f_lower,
+            approximant=self.approximant, f_lower=self.f_lower, f_final=f_end,
             delta_f=self.delta_f, delta_t=self.delta_t, distance=distance,
             **self.extra_args)
 

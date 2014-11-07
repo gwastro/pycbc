@@ -129,7 +129,7 @@ with ctx:
     logging.info("Overwhitening frequency-domain data segments")
     for seg in segments:
         seg /= psd
-    
+
     names =  ['time_index', 'snr', 'chisq', 'bank_chisq', 'cont_chisq']
     event_mgr = events.EventManager(opt, names,
                          [int, complex64, float32, float32, float32, float32], psd=psd)

@@ -638,7 +638,25 @@ _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
 _filter_ends["SPAtmplt"] = spa_tmplt_end
 _template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
 _filter_time_lengths["SPAtmplt"] = spa_length_in_time
-#_filter_time_lengths['FindChirpSP'] = spa_length_in_time
+
+
+def seobnrrom_length_in_time(**kwds):
+    """
+    This is a stub for holding the calculation for getting length of the ROM
+    waveforms.
+    """
+    # FIXME: Approximate SEOBNRv2 ROM lengths as SPA for now
+    time = spa_length_in_time(**kwds)
+    # FIXME: When this is done properly remove this.
+    if time < 0.1:
+        time = 0.1
+    return time
+
+_filter_time_lengths["SEOBNRv1_ROM_SingleSpin"] = spa_length_in_time
+_filter_time_lengths["SEOBNRv1_ROM_DoubleSpin"] = spa_length_in_time
+_filter_time_lengths["SEOBNRv2_ROM_SingleSpin"] = spa_length_in_time
+_filter_time_lengths["SEOBNRv2_ROM_DoubleSpin"] = spa_length_in_time
+
 
 def get_waveform_filter(out, template=None, **kwargs):
     """Return a frequency domain waveform filter for the specified approximant
@@ -652,6 +670,7 @@ def get_waveform_filter(out, template=None, **kwargs):
         htilde = wav_gen[input_params['approximant']](out=out, **input_params)
         htilde.resize(n)
         htilde.chirp_length = get_waveform_filter_length_in_time(**input_params)
+        htilde.length_in_time = htilde.chirp_length
         return htilde
 
     if input_params['approximant'] in fd_approximants(_scheme.mgr.state):
@@ -659,6 +678,7 @@ def get_waveform_filter(out, template=None, **kwargs):
         hp, hc = wav_gen[input_params['approximant']](**input_params)
         hp.resize(n)
         hp.chirp_length = get_waveform_filter_length_in_time(**input_params)
+        hp.length_in_time = hp.chirp_length
         return hp
 
     elif input_params['approximant'] in td_approximants(_scheme.mgr.state):
