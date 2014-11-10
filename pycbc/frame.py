@@ -1,4 +1,4 @@
-# Copyright (C) 2014 Andrew Miller, Alex Nitz, Tito Dal Canton
+# Copyright (C) 2014 Andrew Miller, Alex Nitz, Tito Dal Canton, Christopher M. Biwer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -24,28 +24,35 @@ from pycbc.types import TimeSeries
 import copy
 from glue import datafind
 
-
 # map LAL series types to corresponding functions and Numpy types
 _fr_type_map = {
     lal.S_TYPE_CODE: [
         lalframe.FrStreamReadREAL4TimeSeries, numpy.float32,
         lal.CreateREAL4TimeSeries,
-        lalframe.FrStreamGetREAL4TimeSeriesMetadata
+        lalframe.FrStreamGetREAL4TimeSeriesMetadata,
+        lal.CreateREAL4Sequence,
+        lalframe.FrameAddREAL4TimeSeriesProcData
     ],
     lal.D_TYPE_CODE: [
         lalframe.FrStreamReadREAL8TimeSeries, numpy.float64,
         lal.CreateREAL8TimeSeries,
-        lalframe.FrStreamGetREAL8TimeSeriesMetadata
+        lalframe.FrStreamGetREAL8TimeSeriesMetadata,
+        lal.CreateREAL8Sequence,
+        lalframe.FrameAddREAL8TimeSeriesProcData
     ],
     lal.C_TYPE_CODE: [
         lalframe.FrStreamReadCOMPLEX8TimeSeries, numpy.complex64,
         lal.CreateCOMPLEX8TimeSeries,
-        lalframe.FrStreamGetCOMPLEX8TimeSeriesMetadata
+        lalframe.FrStreamGetCOMPLEX8TimeSeriesMetadata,
+        lal.CreateCOMPLEX8Sequence,
+        lalframe.FrameAddCOMPLEX8TimeSeriesProcData
     ],
     lal.Z_TYPE_CODE: [
         lalframe.FrStreamReadCOMPLEX16TimeSeries, numpy.complex128,
         lal.CreateCOMPLEX16TimeSeries,
-        lalframe.FrStreamGetCOMPLEX16TimeSeriesMetadata
+        lalframe.FrStreamGetCOMPLEX16TimeSeriesMetadata,
+        lal.CreateCOMPLEX16Sequence,
+        lalframe.FrameAddCOMPLEX16TimeSeriesProcData
     ],
 }
 
@@ -284,3 +291,64 @@ def query_and_read_frame(frame_type, channels, start_time, end_time):
 __all__ = ['read_frame', 'frame_paths', 
            'datafind_connection', 
            'query_and_read_frame']
+
+def write_frame(location, channels, timeseries):
+    """Write a list of time series to a single frame file.
+
+    Parameters
+    ----------
+    location : string
+        A frame filename.  
+    channels : string or list of strings
+        Either a string that contains the channel name or a list of channel
+        name strings.
+    timeseries: TimeSeries
+        A TimeSeries or list of TimeSeries, corresponding to the data to be
+        written to the frame file for a given channel. 
+    """
+    # check if a single channel or a list of channels
+    if type(channels) is list and type(timeseries) is list:
+        channels = channels
+        timeseries = timeseries
+    else:
+        channels = [channels]
+        timeseries = [timeseries]
+
+    # check that timeseries have the same start and end time
+    gps_start_times = set([series.start_time for series in timeseries])
+    gps_end_times = set([series.end_time for series in timeseries])
+    if len(gps_start_times) != 1 or len(gps_end_times) != 1:
+        raise ValueError("Start and end times of TimeSeries must be identical.")
+
+    # check that start, end time, and duration are integers
+    gps_start_time = gps_start_times.pop()
+    gps_end_time = gps_end_times.pop()
+    duration = int(gps_end_time - gps_start_time)
+    if gps_start_time % 1 or gps_end_time % 1:
+        raise ValueError("Start and end times of TimeSeries must be integer seconds.")
+
+    # create frame
+    frame = lalframe.FrameNew(epoch=gps_start_time, duration=duration,
+                              project='', run=1, frnum=1,
+                              detectorFlags=lal.LALDETECTORTYPE_ABSENT)
+
+    for i,tseries in enumerate(timeseries):
+        # get data type
+        for seriestype in _fr_type_map.keys():
+            if _fr_type_map[seriestype][1] == tseries.dtype:
+                create_series_func = _fr_type_map[seriestype][2]
+                create_sequence_func = _fr_type_map[seriestype][4]
+                add_series_func = _fr_type_map[seriestype][5]
+                break
+
+        # add time series to frame
+        series = create_series_func(channels[i], tseries.start_time,
+                       0, tseries.delta_t, lal.ADCCountUnit,
+                       len(tseries.numpy()))
+        series.data = create_sequence_func(len(tseries.numpy()))
+        series.data.data = tseries.numpy()
+        add_series_func(frame, series)
+
+    # write frame
+    lalframe.FrameWrite(frame, location)
+
