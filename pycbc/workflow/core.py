@@ -363,16 +363,16 @@ class Workflow(pegasus_workflow.Workflow):
         self._inputs = FileList([])
         self._outputs = FileList([])
  
-        self.as_job.addArguments('-Dpegasus.dir.storage.mapper.replica.file=%s' % self.output_map) 
-
-     
     @property
     def output_map(self):  
         if self.in_workflow != False:
-            return self.name + '.map'
+            name = self.name + '.map'
         else:
-            return 'output.map'
-         
+            name = 'output.map'
+        path =  os.path.join(os.getcwd(), name)
+        return path
+        
+
     def execute_node(self, node):
         """ Execute this node immediately on the local machine
         """
@@ -395,6 +395,10 @@ class Workflow(pegasus_workflow.Workflow):
             fil.PFN(fil.storage_path, site='local')
             
     def save(self):
+        self.as_job.addArguments('-Dpegasus.dir.storage.mapper.replica.file=%s' % self.output_map) 
+        self.as_job.addArguments('-Dpegasus.dir.storage.mapper.replica=File') 
+        self.as_job.addArguments('--output-site local')     
+
         # add executable pfns for local site to dax
         for exe in self._executables:
             exe.insert_into_dax(self._adag)
