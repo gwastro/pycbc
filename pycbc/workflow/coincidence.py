@@ -515,6 +515,7 @@ def get_subsections(cp, section_name):
     sections = cp.sections()   
     subsections = [sec.split('-')[1] for sec in sections if sec.startswith(section_name + '-')]   
     if len(subsections) > 0:
+        print subsections
         return subsections
     else:
         return ['']
@@ -537,7 +538,7 @@ def make_sensitivity_plot(workflow, inj_file, out_dir, tags=[]):
                     out_dir=out_dir, tags=[tag] + tags))
         node.add_input_opt('--injection-file', inj_file)
         node.new_output_file_opt(inj_file.segment, '.png', '--output-file')
-    workflow += node
+        workflow += node
 
 def make_foundmissed_plot(workflow, inj_file, inj_tag, out_dir, tags=[]):
     make_analysis_dir(out_dir)
@@ -548,7 +549,7 @@ def make_foundmissed_plot(workflow, inj_file, inj_tag, out_dir, tags=[]):
         node.add_opt('--injection-tag', inj_tag)
         node.add_input_opt('--injection-file', inj_file)
         node.new_output_file_opt(inj_file.segment, '.html', '--output-file')
-    workflow += node   
+        workflow += node   
     
 def make_snrifar_plot(workflow, bg_file, out_dir, tags=[]):
     make_analysis_dir(out_dir)

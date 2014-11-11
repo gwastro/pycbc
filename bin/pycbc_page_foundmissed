@@ -81,7 +81,7 @@ if args.axis_type == 'time':
                                                                      alpha_unsel=0.1))
     mpld3.save_html(fig, open(args.output_file, 'w'))
 
-if args.axis_type == 'mchirp'
+if args.axis_type == 'mchirp':
     # mchirp vs dec distance plot
     fig = plot.figure()
     mpoints = plot.scatter(mchirp[missed], dec_dist[missed], marker='x', 
@@ -105,7 +105,7 @@ if args.axis_type == 'mchirp'
     mpld3.save_html(fig, open(args.output_file, 'w'))
 
 # spin vs dec distance plot
-if args.axis_type == 'spin'
+if args.axis_type == 'spin':
     fig = plot.figure()
     mpoints = plot.scatter(spin[missed], dec_dist[missed], marker='x', 
                             color='black', label='missed', s=60)
