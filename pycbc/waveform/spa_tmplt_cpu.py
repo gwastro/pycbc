@@ -95,6 +95,7 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
     const float ampc = amp_factor;
     const float two_pi = 2 * M_PI;
     const float inv_two_pi = 1 / (2 * M_PI);
+    int phase_offset = 0;
     
     #pragma omp parallel for
     for (unsigned int i=0; i<length; i++){
@@ -130,11 +131,19 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
         phasing *= _pfaN / v5;
         phasing -= M_PI_4;
         
-        phasing = phasing - int(phasing  * inv_two_pi) * two_pi;    
-        if (phasing < -M_PI)
+        if (i == 0)
+            phase_offset = - int(phasing  * inv_two_pi); 
+            
+        phasing += phase_offset * two_pi;  
+         
+        while (phasing < -M_PI){
             phasing += two_pi;
-        else if (phasing > M_PI)
+            phase_offset++;
+        }
+        while (phasing > M_PI){
             phasing -= two_pi;
+            phase_offset--;
+        }
         
         // compute sine
         if (phasing < 0)
