@@ -63,7 +63,7 @@ def spa_amplitude_factor(**kwds):
 
     amp0 = 4. * m1 * m2 / (1e6 * lal.PC_SI ) * lal.MRSUN_SI * lal.MTSUN_SI * sqrt(lal.PI/12.0)
 
-    fac = sqrt( -dETaN / FTaN) * amp0 * (piM ** (-7.0/6.0))
+    fac = numpy.sqrt( -dETaN / FTaN) * amp0 * (piM ** (-7.0/6.0))
     return -fac
 
 _prec = None

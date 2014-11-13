@@ -16,6 +16,8 @@ def get_statistic_class(option):
         return NewSNRVolStatistic()
     elif option == 'newsnr_phasehl':
         return NewSNRPhaseStatistic()
+    elif option == 'newsnr_phase_basvol_hl':
+        return NewSNRVolStatistic()
 
 class NewSNRStatistic(object):
     """ ABS Class to handle information about detection statistics
@@ -32,30 +34,6 @@ class NewSNRStatistic(object):
         """ Calculate teh coincidend statistic.
         """
         return (s1**2.0 + s2**2.0) ** 0.5
-        
-class NewSNRVolStatistic(object):
-    """ ABS Class to handle information about detection statistics
-    """    
-    def single_read(self, f, l, r):
-        """ Read in the single detector information and make a single detector
-        statistic. Results can either be a single number or a record array.
-        """
-        x2_dof = 2 * f.attrs['chisq_dof'] - 2
-        snr = pycbc.events.newsnr(f['snr'][l:r], f['chisq'][l:r] / x2_dof)
-        snr = numpy.array(snr, ndmin=1)
-        vol = numpy.array(f['sigmasq'][l:r] ** (3.0/2.0), ndmin=1)
-        stat1 = numpy.zeros(len(snr), dtype=[('snr', numpy.float32), ('vol', numpy.float32)])
-        stat1['vol'] = vol
-        stat1['snr'] = snr
-        return stat1
-    
-    def coinc_statistic(self, s1, s2):
-        """ Calculate teh coincidend statistic.
-        """
-        snr1, snr2 = s1['snr'], s2['snr']
-        vol1, vol2 = s1['vol'], s2['vol']
-        stat = (snr1**2.0 + snr2**2.0) / 2.0 + numpy.log(vol1) + numpy.log(vol2)
-        return stat**0.5
         
 class NewSNRPhaseStatistic(object):
     """ ABS Class to handle information about detection statistics
@@ -90,6 +68,41 @@ class NewSNRPhaseStatistic(object):
         p1, p2 = s1['phase'], s2['phase']
         stat = (snr1**2.0 + snr2**2.0) / 2.0 + self.phase_log_pdf(p1, p2)
         return stat**0.5
+
+class NewSNRVolStatistic(NewSNRPhaseStatistic):
+    """ ABS Class to handle information about detection statistics
+    """    
+    def single_read(self, f, l, r):
+        """ Read in the single detector information and make a single detector
+        statistic. Results can either be a single number or a record array.
+        """
+        from pycbc.waveform.spa_tmplt import spa_amplitude_factor
+        x2_dof = 2 * f.attrs['chisq_dof'] - 2
+        snr = pycbc.events.newsnr(f['snr'][l:r], f['chisq'][l:r] / x2_dof)
+        snr = numpy.array(snr, ndmin=1)
+        phase = numpy.array(f['coa_phase'][l:r], ndmin=1)
+
+        amp = spa_amplitude_factor(mass1=f['mass1'][l:r], mass2=f['mass2'][l:r])
+        ref_amp = spa_amplitude_factor(mass1=1.4, mass2=1.4)
+        
+        dist_fact = numpy.sqrt(f['sigmasq'][l:r]) / 1000.0 * ref_amp / amp
+
+        stat1 = numpy.zeros(len(snr), dtype=[('snr', numpy.float32), 
+                                             ('phase', numpy.float32),
+                                             ('vol', numpy.float32)])
+        stat1['phase'] = phase
+        stat1['snr'] = snr
+        stat1['vol'] = dist_fact ** 3.0
+        return stat1
+
+    def coinc_statistic(self, s1, s2):
+        snr1, snr2 = s1['snr'], s2['snr']
+        p1, p2 = s1['phase'], s2['phase']
+        v1, v2 = s1['vol'], s2['vol']
+        stat = (snr1**2.0 + snr2**2.0) / 2.0 + self.phase_log_pdf(p1, p2) + numpy.log(numpy.minimum(v1, v2))
+        return stat**0.5
+
+
 
 def unique(ar, return_index=False, return_inverse=False):
     """
