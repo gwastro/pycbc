@@ -701,48 +701,35 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
         idx = smear(idx, downsample_factor)
         correlate(htilde[kmin:kmax], stilde[kmin:kmax], qtilde[kmin:kmax])
         
-        # If there are too many points, revert back to IFFT
-        # FIXME: What should this value be??
+        # cache transposed  versions of htilde and stilde
+        if not hasattr(corr_mem, 'transposed'):
+            corr_mem.transposed = qtilde * 1
+            
+        if not hasattr(htilde, 'transposed'):
+            htilde.transposed = qtilde * 1
+            htilde.transposed[kmin:kmax] = htilde[kmin:kmax]
+            htilde.transposed = fft_transpose(htilde.transposed)
+            
+        if not hasattr(stilde, 'transposed'):
+            stilde.transposed = qtilde * 1
+            stilde.transposed[kmin:kmax] = stilde[kmin:kmax]
+            stilde.transposed = fft_transpose(stilde.transposed)  
+            
+        correlate(htilde.transposed, stilde.transposed, corr_mem.transposed)      
+        snrv = pruned_c2cifft(corr_mem.transposed, tempvec, idx, pretransposed=True)   
+        q.data[idx] = snrv
+        idx = idx - stilde.analyze.start
 
-        if len (idx) > 150:
-            msg = "Too many points at lower sample rate, reverting to IFFT"
-            logging.info(msg)
-            ifft(qtilde, q)
-            qs = q[stilde.analyze.start:stilde.analyze.stop]
-            idx, snrv = threshold(qs, snr_threshold / norm)
-            if len(idx) == 0:
-                return [], None, [], [], []
-            # FIXME: Use proper cluster window!
-            idx, snrv = cluster_reduce(idx, snrv, cluster_window)
-            msg = "%s points at full filter resolution" %(str(len(idx)),)
-            msg += " after full sample rate filter and clustering."
-            logging.info(msg)
-            return q, norm, qtilde, idx, snrv
-        # Or do the fancy upsampling
-        else:             
-            # cache transposed  versions of htilde and stilde
-            if not hasattr(corr_mem, 'transposed'):
-                corr_mem.transposed = qtilde * 1
-            
-            if not hasattr(htilde, 'transposed'):
-                htilde.transposed = qtilde * 1
-                htilde.transposed[kmin:kmax] = htilde[kmin:kmax]
-                htilde.transposed = fft_transpose(htilde.transposed)
-            
-            if not hasattr(stilde, 'transposed'):
-                stilde.transposed = qtilde * 1
-                stilde.transposed[kmin:kmax] = stilde[kmin:kmax]
-                stilde.transposed = fft_transpose(stilde.transposed)  
-            
-            correlate(htilde.transposed, stilde.transposed, corr_mem.transposed)      
-            snrv = pruned_c2cifft(corr_mem.transposed, tempvec, idx, pretransposed=True)   
-            q.data[idx] = snrv
-            idx = idx - stilde.analyze.start
-            
-            msg = "%s points at full filter resolution" %(str(len(idx)),)
-            msg += " after pruned FFT upsample and clustering."
-            logging.info(msg)
-            return q, norm, qtilde, idx, snrv
+        idx2, snrv = threshold(Array(snrv, copy=False), snr_threshold / norm)
+  
+        if len(idx2) > 0:
+            idx, snrv = cluster_reduce(idx[idx2], snrv, cluster_window)
+        else:
+            idx, snrv = [], []
+        msg = "%s points at full filter resolution" %(str(len(idx)),)
+        msg += " after pruned FFT upsample and clustering."
+        logging.info(msg)
+        return q, norm, qtilde, idx, snrv
 
     # I shouldn't have gotten here
     err_msg = "Something went wrong somewhere. Please contact a developer."
