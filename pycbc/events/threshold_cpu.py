@@ -91,6 +91,6 @@ def threshold_inline(series, value):
     if num > 0:
         return outl[0:num], outv[0:num]
     else:
-        return [], []
+        return numpy.array([], numpy.uint32), numpy.array([], numpy.float32)
 
 threshold=threshold_inline
