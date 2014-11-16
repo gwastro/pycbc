@@ -423,7 +423,7 @@ def setup_hardware_injection_page(workflow, input_files, cache_filename, \
 
     return out_files
 
-def get_hardware_injection_segment_files(workflow, output_dir, hwinjDefPath):
+def get_hardware_injection_segment_files(workflow, output_dir, hwinjDefPath, tag=None):
     """
     This function queries the segment database for the hardware
     injection segments and saves them to the output_dir.
@@ -436,6 +436,12 @@ def get_hardware_injection_segment_files(workflow, output_dir, hwinjDefPath):
         The directory in which output files will be stored.
     hwinjDefPath : path
         The path to the hardware injection definer file.
+    tag : string, optional (default=None)
+        Use this to specify a tag. This can be used if this module is being
+        called more than once to give call specific configuration (by setting
+        options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).
+        This is also used to tag the Files returned by the class to uniqueify
+        the Files and uniqueify the actual filename.
     """
 
     # create log dir
@@ -443,16 +449,25 @@ def get_hardware_injection_segment_files(workflow, output_dir, hwinjDefPath):
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
-    # make external call to get segments
-    hwinjsegFindCall = [ workflow.cp.get("executables", "hardware_injection_page"),
-        "--gps-start-time", workflow.analysis_time[0],
-        "--gps-end-time", workflow.analysis_time[1],
-        "--segment-db", workflow.cp.get("workflow-segments", "segments-database-url"),
-        "--segment-dir", output_dir,
-        "--source-xml", hwinjDefPath,
-        "--get-segment-list" ]
+    # get hardware injection segments
+    # ligolw_cbc_hardware_inj_page expects seperate XML files for each IFO
     for ifo in workflow.ifos:
-        hwinjsegFindCall.append('--%s-injections'%ifo.lower())
-    hwinjsegFindCall = map(str, hwinjsegFindCall)
-    make_external_call(hwinjsegFindCall, out_dir=log_dir, out_basename='hwinjseg-call')
+        hwinjSegName = workflow.cp.get_opt_tag('workflow-hardware-injections',
+                                  'segments-%s-hwinj-name'%(ifo.lower()), tag)
 
+        output_filename = '-'.join(map(str, [ifo, 'HWINJ_SEGMENTS',
+                                       workflow.analysis_time[0],
+                                       abs(workflow.analysis_time)])) + '.xml'
+        output_path = os.path.join(output_dir, output_filename)
+
+        segFindCall = [ workflow.cp.get("executables","segment_query"),
+            "--query-segments",
+            "--gps-start-time", str(workflow.analysis_time[0]),
+            "--gps-end-time", str(workflow.analysis_time[1]),
+            "--include-segments", hwinjSegName,
+            "--output-file", output_path,
+            "--segment-url", workflow.cp.get("workflow-hardware-injections",
+                                                 "segments-database-url")]
+
+        make_external_call(segFindCall, out_dir=log_dir,
+                                out_basename='%s-hwinj-call' %(ifo.lower()) )
