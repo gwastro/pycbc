@@ -22,8 +22,10 @@ bash temp.sh > site-local-parsed.xml
 
 # Plan the workflow
 echo "Generating concrete workflow"
+touch _reuse.cache
 
 if [ "x$3" == "x--cache" ]; then
+  cp $4 _reuse.cache
   pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites local -o local --dir $2 --cleanup inplace --cache $4
 else
   pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites local -o local --dir $2 --cleanup inplace

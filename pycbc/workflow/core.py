@@ -397,6 +397,7 @@ class Workflow(pegasus_workflow.Workflow):
     def save(self):
         self.as_job.addArguments('-Dpegasus.dir.storage.mapper.replica.file=%s' % self.output_map) 
         self.as_job.addArguments('-Dpegasus.dir.storage.mapper.replica=File') 
+        self.as_job.addArguments('--cache %s' % os.path.join(os.getcwd(), '_reuse.cache')) 
         self.as_job.addArguments('--output-site local')     
 
         # add executable pfns for local site to dax
