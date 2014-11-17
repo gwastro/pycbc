@@ -443,10 +443,10 @@ class StrainSegments(object):
                 if injections_in_segment == 1:
                     start = inj_start
                     stop = inj_end
-                print start, stop
+
                 if not analyze_this:
                     continue     
-            print injections_in_segment, start, stop
+
             if start < stop:
                 segment_slices_red.append(seg)  
                 analyze_slices_red.append(slice(start, stop))       
