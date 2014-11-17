@@ -613,7 +613,8 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
                                    high_frequency_cutoff, stilde.delta_f, N)                                     
     N2 = N / downsample_factor
     kmin2, kmax2 = get_cutoff_indices(low_frequency_cutoff,
-                                   high_frequency_cutoff, stilde.delta_f, N2)   
+                                   high_frequency_cutoff, stilde.delta_f, N2)                              
+                                     
     norm = (4.0 * stilde.delta_f) / sqrt(h_norm)
     ctype = complex_same_precision_as(htilde)
 
@@ -699,19 +700,18 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
     if upsample_method=='pruned_fft':
         idx = (idx2*downsample_factor) + stilde.analyze.start
         idx = smear(idx, downsample_factor)
-        correlate(htilde[kmin:kmax], stilde[kmin:kmax], qtilde[kmin:kmax])
         
         # cache transposed  versions of htilde and stilde
         if not hasattr(corr_mem, 'transposed'):
-            corr_mem.transposed = qtilde * 1
+            corr_mem.transposed = zeros(len(qtilde), dtype=qtilde.dtype)
             
         if not hasattr(htilde, 'transposed'):
-            htilde.transposed = qtilde * 1
+            htilde.transposed = zeros(len(qtilde), dtype=qtilde.dtype)
             htilde.transposed[kmin:kmax] = htilde[kmin:kmax]
             htilde.transposed = fft_transpose(htilde.transposed)
             
         if not hasattr(stilde, 'transposed'):
-            stilde.transposed = qtilde * 1
+            stilde.transposed = zeros(len(qtilde), dtype=qtilde.dtype)
             stilde.transposed[kmin:kmax] = stilde[kmin:kmax]
             stilde.transposed = fft_transpose(stilde.transposed)  
             
@@ -723,6 +723,7 @@ def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
         idx2, snrv = threshold(Array(snrv, copy=False), snr_threshold / norm)
   
         if len(idx2) > 0:
+            correlate(htilde[kmin:kmax], stilde[kmin:kmax], qtilde[kmin:kmax])
             idx, snrv = cluster_reduce(idx[idx2], snrv, cluster_window)
         else:
             idx, snrv = [], []
