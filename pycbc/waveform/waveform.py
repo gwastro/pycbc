@@ -652,10 +652,10 @@ def seobnrrom_length_in_time(**kwds):
         time = 0.1
     return time
 
-_filter_time_lengths["SEOBNRv1_ROM_SingleSpin"] = spa_length_in_time
-_filter_time_lengths["SEOBNRv1_ROM_DoubleSpin"] = spa_length_in_time
-_filter_time_lengths["SEOBNRv2_ROM_SingleSpin"] = spa_length_in_time
-_filter_time_lengths["SEOBNRv2_ROM_DoubleSpin"] = spa_length_in_time
+_filter_time_lengths["SEOBNRv1_ROM_SingleSpin"] = seobnrrom_length_in_time
+_filter_time_lengths["SEOBNRv1_ROM_DoubleSpin"] = seobnrrom_length_in_time
+_filter_time_lengths["SEOBNRv2_ROM_SingleSpin"] = seobnrrom_length_in_time
+_filter_time_lengths["SEOBNRv2_ROM_DoubleSpin"] = seobnrrom_length_in_time
 
 
 def get_waveform_filter(out, template=None, **kwargs):
