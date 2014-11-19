@@ -171,7 +171,7 @@ for tag in ['full_data_slide']:
                       output_dir=plotDir, tags=[tag])
 
 # Set up hardware injection summary page
-hwinjFiles = _workflow.setup_hardware_injection_page(workflow, all_coincs,
+hwinjFiles = _workflow.setup_hardware_injection_page(post_workflow, all_coincs,
                    cacheFileName, inspiral_cachepattern='THINCA_ZEROLAG_FULL_DATA_CAT_1_VETO',
                    output_dir=hwinjDir, tags=['full_data'])
 
