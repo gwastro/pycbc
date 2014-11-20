@@ -233,7 +233,7 @@ class Executable(pegasus_workflow.Executable):
             logging.warn(msg)
             self.retain_files = True
             self.global_retention_threshold = 1
-            cp.set("workflow", "file-retention-level", "all")
+            cp.set("workflow", "file-retention-level", "all_files")
         else:
             # FIXME: Are these names suitably descriptive?
             if global_retention_level == 'all_files':
