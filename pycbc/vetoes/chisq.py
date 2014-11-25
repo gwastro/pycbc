@@ -310,7 +310,7 @@ class SingleDetPowerChisq(object):
         else:
             self.do = False           
 
-    def values(self, corr, snr, snr_norm, psd, indices, template, bank, 
+    def values(self, corr, snrv, snr_norm, psd, indices, template, bank, 
                low_frequency_cutoff):
         if self.do:
             # Compute the chisq bins if we haven't already
@@ -331,5 +331,4 @@ class SingleDetPowerChisq(object):
                 self._bins = bins
                 
             logging.info("...Doing power chisq")     
-            return fastest_power_chisq_at_points(corr, snr, snr_norm, 
-                                                           self._bins, indices)
+            return power_chisq_at_points_from_precomputed(corr, snrv, snr_norm, bins, indices)
