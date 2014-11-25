@@ -54,82 +54,93 @@ def chisq_accum_bin_inline(chisq, q):
 chisq_accum_bin = chisq_accum_bin_inline
 
 point_chisq_code = """
-    int num_parallel_regions = 256 / num_bins;
-    TYPE* __restrict__ shift = shifts;
-    TYPE* __restrict__ v = v1;
-    TYPE* __restrict__ pr = (TYPE*) malloc(sizeof(TYPE)*n);
-    TYPE* __restrict__  pi = (TYPE*) malloc(sizeof(TYPE)*n);
-    TYPE* __restrict__  vsr = (TYPE*) malloc(sizeof(TYPE)*n);
-    TYPE* __restrict__  vsi = (TYPE*) malloc(sizeof(TYPE)*n);
-    TYPE* __restrict__ outr = (TYPE* ) malloc(sizeof(TYPE)*n);
-    TYPE* __restrict__ outi = (TYPE*) malloc(sizeof(TYPE)*n);
+    int num_parallel_regions = 16;
     
-    TYPE TWO_PI = 6.28318530718;
-    
-    for (int i=0; i<n; i++){
-        vsr[i] = cos(TWO_PI * shift[i] / slen);
-        vsi[i] = sin(TWO_PI * shift[i] / slen);
-    }
-    
-    for (unsigned int r=0; r<num_bins; r++){     
+    for (unsigned int r=0; r<blen; r++){     
         int bstart = bins[r];
         int bend = bins[r+1];
         int blen = bend - bstart;
-
+        
+        TYPE* outr = (TYPE*) malloc(sizeof(TYPE)*n);
+        TYPE* outi = (TYPE*) malloc(sizeof(TYPE)*n);
         for (int i=0; i<n; i++){
             outr[i] = 0;
             outi[i] = 0;
         }
     
+        #pragma omp parallel for
         for (unsigned int k=0; k<num_parallel_regions; k++){
             unsigned int start = blen * k / num_parallel_regions + bstart;
             unsigned int end = blen * (k + 1) / num_parallel_regions + bstart;
         
             //start the cumulative rotations at the offset point
+            TYPE* pr = (TYPE*) malloc(sizeof(TYPE)*n);
+            TYPE* pi = (TYPE*) malloc(sizeof(TYPE)*n);
+            TYPE* vsr = (TYPE*) malloc(sizeof(TYPE)*n);
+            TYPE* vsi = (TYPE*) malloc(sizeof(TYPE)*n);
+            TYPE* outr_tmp = (TYPE*) malloc(sizeof(TYPE)*n);
+            TYPE* outi_tmp = (TYPE*) malloc(sizeof(TYPE)*n);
+
+            
             for (int i=0; i<n; i++){
-                pr[i] = cos(TWO_PI * shift[i] * (start) / slen);
-                pi[i] = sin(TWO_PI * shift[i] * (start) / slen);
+                pr[i] = cos(2 * 3.141592653 * shifts[i] * (start) / slen);
+                pi[i] = sin(2 * 3.141592653 * shifts[i] * (start) / slen);
+                vsr[i] = cos(2 * 3.141592653 * shifts[i] / slen);
+                vsi[i] = sin(2 * 3.141592653 * shifts[i] / slen);
+                outr_tmp[i] = 0;
+                outi_tmp[i] = 0;
             }
             
-            TYPE t1, t2, k1, k2, k3, vs, va;          
+            TYPE t1, t2, k1, k2, k3, vs, va;
+            
             for (unsigned int j=start; j<end; j++){
-                TYPE vr = v[j*2];
-                TYPE vi = v[j*2+1];  
+                std::complex<TYPE> v = v1[j];
+                TYPE vr = v.real();
+                TYPE vi = v.imag();  
                 vs = vr + vi;
                 va = vi - vr;
-                    
-                for (int i=0; i<n; i++){            
+                
+                for (int i=0; i<n; i++){
                     t1 = pr[i];
                     t2 = pi[i];
-                                
+                    
                     // Complex multiply pr[i] * v
                     k1 = vr * (t1 + t2);
                     k2 = t1 * va;
                     k3 = t2 * vs;
                                 
-                    outr[i] += k1 - k3;
-                    outi[i] += k1 + k2;
+                    outr_tmp[i] += k1 - k3;
+                    outi_tmp[i] += k1 + k2;
                     
                     // phase shift for the next time point
                     pr[i] = t1 * vsr[i] - t2 * vsi[i];
                     pi[i] = t1 * vsi[i] + t2 * vsr[i]; 
                 }                                              
             } 
-               
+            
+            #pragma omp critical
+            {
+                for (unsigned int i=0; i<n; i++){
+                    outr[i] += outr_tmp[i];
+                    outi[i] += outi_tmp[i];
+                }
+            }
+            
+            free(pr);
+            free(pi);  
+            free(outr_tmp);
+            free(outi_tmp); 
+            free(vsr);
+            free(vsi);
+            
         }    
         
         for (unsigned int i=0; i<n; i++){
             chisq[i] += outr[i]*outr[i] + outi[i]*outi[i];
         }
-        
-    }  
-    
-    free(pr);
-    free(pi);  
-    free(vsr);
-    free(vsi);      
-    free(outr);
-    free(outi);  
+        free(outr);
+        free(outi);
+    }    
 """
 
 point_chisq_code_single = point_chisq_code.replace('TYPE', 'float')
@@ -140,11 +151,11 @@ def shift_sum(v1, shifts, bins):
     shifts = numpy.array(shifts, dtype=real_type)
     
     bins = numpy.array(bins, dtype=numpy.uint32)
-    num_bins = len(bins) - 1
-    v1 = numpy.array(v1.data, copy=False).view(dtype=real_type)
+    blen = len(bins) - 1
+    v1 = numpy.array(v1.data, copy=False)
     slen = len(v1)
-    
-    if v1.dtype.name == 'float32':
+
+    if v1.dtype.name == 'complex64':
         code = point_chisq_code_single
     else:
         code = point_chisq_code_double
@@ -154,8 +165,8 @@ def shift_sum(v1, shifts, bins):
     # Create some output memory
     chisq =  numpy.zeros(n, dtype=real_type)
     
-    inline(code, ['v1', 'n', 'chisq', 'slen', 'shifts', 'bins', 'num_bins'],
-                    extra_compile_args=['-march=native -O3 -w -ffast-math -ftree-vectorizer-verbose=6'],
+    inline(code, ['v1', 'n', 'chisq', 'slen', 'shifts', 'bins', 'blen'],
+                    extra_compile_args=['-march=native -O3 -w'] + omp_flags,
                     libraries=omp_libs
           )
           
