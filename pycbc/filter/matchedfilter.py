@@ -47,7 +47,27 @@ def correlate(x, y, z):
 class MatchedFilterControl(object):
     def __init__(self, low_frequency_cutoff, high_frequency_cutoff, 
                 snr_threshold, segments, downsample_factor=1, 
-                upsample_threshold=None, upsample_method=None):
+                upsample_threshold=1, upsample_method='pruned_fft'):
+        """ Create a matched filter engine.
+
+        Parameters
+        ----------
+        low_frequency_cutoff : {None, float}, optional
+            The frequency to begin the filter calculation. If None, begin at the
+            first frequency after DC.
+        high_frequency_cutoff : {None, float}, optional
+            The frequency to stop the filter calculation. If None, continue to the 
+            the nyquist frequency.
+        snr_threshold : float
+            The minimum snr to return when filtering
+        downsample_factor : {1, int}, optional
+            The factor by which to reduce the sample rate when doing a heirarchical
+            matched filter
+        upsample_threshold : {1, float}, optional
+            The fraction of the snr_threshold to trigger on the subsampled filter.
+        upsample_method : {pruned_fft, str}
+            The method to upsample or interpolate the reduced rate filter.
+        """
         self.tlen = (len(segments[0]) - 1) * 2
         self.delta_f = segments[0].delta_f
         self.dtype = segments[0].dtype
@@ -90,6 +110,32 @@ class MatchedFilterControl(object):
             raise ValueError("Invalid downsample factor")
               
     def full_matched_filter_and_cluster(self, template, stilde, window):
+        """ Return the complex snr and normalization. 
+    
+        Calculated the matched filter, threshold, and cluster. 
+
+        Parameters
+        ----------
+        htilde : FrequencySeries 
+            The template waveform. Must come from the FilterBank class.
+        stilde : FrequencySeries 
+            The strain data to be filtered.
+        window : int
+            The size of the cluster window in samples.
+
+        Returns
+        -------
+        snr : TimeSeries
+            A time series containing the complex snr.
+        norm : float
+            The normalization of the complex snr.  
+        corrrelation: FrequencySeries
+            A frequency series containing the correlation vector. 
+        idx : Array
+            List of indices of the triggers.
+        snrv : Array
+            The snr values at the trigger locations.
+        """
         snr, corr, norm = matched_filter_core(template, stilde, 
                                               low_frequency_cutoff=self.flow, 
                                               high_frequency_cutoff=self.fhigh, 
@@ -108,6 +154,32 @@ class MatchedFilterControl(object):
         return snr, norm, corr, idx, snrv   
         
     def heirarchical_matched_filter_and_cluster(self, htilde, stilde, window):
+        """ Return the complex snr and normalization. 
+    
+        Calculated the matched filter, threshold, and cluster. 
+
+        Parameters
+        ----------
+        htilde : FrequencySeries 
+            The template waveform. Must come from the FilterBank class.
+        stilde : FrequencySeries 
+            The strain data to be filtered.
+        window : int
+            The size of the cluster window in samples.
+
+        Returns
+        -------
+        snr : TimeSeries
+            A time series containing the complex snr at the reduced sample rate.
+        norm : float
+            The normalization of the complex snr.  
+        corrrelation: FrequencySeries
+            A frequency series containing the correlation vector. 
+        idx : Array
+            List of indices of the triggers.
+        snrv : Array
+            The snr values at the trigger locations.
+        """
         from pycbc.fft.fftw_pruned import pruned_c2cifft, fft_transpose                           
                                          
         norm = (4.0 * stilde.delta_f) / sqrt(htilde.sigmasq)
