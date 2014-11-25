@@ -57,8 +57,8 @@ class MatchedFilterControl(object):
                 
         if downsample_factor == 1:
             self.matched_filter_and_cluster = self.full_matched_filter_and_cluster
-            self.snr_mem = zeros(tlen, dtype=self.dtype)
-            self.corr_mem = zeros(tlen, dtype=self.dtype)           
+            self.snr_mem = zeros(self.tlen, dtype=self.dtype)
+            self.corr_mem = zeros(self.tlen, dtype=self.dtype)           
         elif downsample_factor >= 1:
             self.matched_filter_and_cluster = self.heirarchical_matched_filter_and_cluster
             self.downsample_factor = downsample_factor
