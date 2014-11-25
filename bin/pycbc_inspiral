@@ -184,7 +184,7 @@ with ctx:
                     low_frequency_cutoff=flow)
 
             idx += stilde.cumulative_index
-            print snrv, power_chisqv
+
             if (opt.autochi_number_points):
                vals = [idx, snrv, power_chisqv, bank_chisqv, auto_chisqv[:, 2]]
             else:
