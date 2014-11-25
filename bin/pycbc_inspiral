@@ -127,7 +127,7 @@ with ctx:
     psd = psd.astype(float32)                              
 
     matched_filter = MatchedFilterControl(opt.low_frequency_cutoff, None,
-                                   opt.snr_threshold, tlen, complex64,
+                                   opt.snr_threshold, segments,
                                    downsample_factor=opt.downsample_factor,
                                    upsample_threshold=opt.upsample_threshold,
                                    upsample_method=opt.upsample_method)

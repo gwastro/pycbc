@@ -46,10 +46,11 @@ def correlate(x, y, z):
 
 class MatchedFilterControl(object):
     def __init__(self, low_frequency_cutoff, high_frequency_cutoff, 
-                snr_threshold, tlen, dtype, downsample_factor=1, 
+                snr_threshold, segments, downsample_factor=1, 
                 upsample_threshold=None, upsample_method=None):
-        self.tlen = tlen
-        self.dtype = dtype
+        self.tlen = (len(segments[0]) - 1) * 2
+        self.delta_f = segments[0].delta_f
+        self.dtype = segments[0].dtype
         self.snr_threshold = snr_threshold    
         self.flow = low_frequency_cutoff
         self.fhigh = high_frequency_cutoff    
@@ -63,6 +64,28 @@ class MatchedFilterControl(object):
             self.downsample_factor = downsample_factor
             self.upsample_method = upsample_method
             self.upsample_threshold = upsample_threshold  
+            
+            N_full = self.tlen 
+            N_red = N_full / downsample_factor  
+            self.kmin_full, self.kmax_full = get_cutoff_indices(self.flow,
+                                              self.fhigh, self.delta_f, N_full)  
+    
+            self.kmin_red, _ = get_cutoff_indices(self.flow,
+                                              self.fhigh, self.delta_f, N_red)
+            
+            if self.kmax_full < N_red:
+                self.kmax_red = self.kmax_full
+            else:
+                self.kmax_red = N_red - 1  
+                
+            for seg in segments:
+                seg.red_analyze = slice(seg.analyze.start/downsample_factor, 
+                                        seg.analyze.stop/downsample_factor)  
+            self.snr_mem = zeros(N_red, dtype=self.dtype)
+            self.corr_mem = zeros(N_red, dtype=self.dtype)
+            self.corr_mem_full = FrequencySeries(zeros(N_full, dtype=self.dtype), delta_f=self.delta_f)
+            self.inter_vec = zeros(N_full, dtype=self.dtype)                      
+                                                 
         else:
             raise ValueError("Invalid downsample factor")
               
@@ -84,66 +107,60 @@ class MatchedFilterControl(object):
         
         return snr, norm, corr, idx, snrv   
         
-    def heirarchical_matched_filter_and_cluster(self, template, strain, window):
-        from pycbc.fft.fftw_pruned import pruned_c2cifft, fft_transpose
-
-        N = (len(stilde)-1) * 2   
-        kmin, kmax = get_cutoff_indices(low_frequency_cutoff,
-                                       high_frequency_cutoff, stilde.delta_f, N)                                     
-        N2 = N / downsample_factor
-        kmin2, kmax2 = get_cutoff_indices(low_frequency_cutoff,
-                                       high_frequency_cutoff, stilde.delta_f, N2)                              
+    def heirarchical_matched_filter_and_cluster(self, htilde, stilde, window):
+        from pycbc.fft.fftw_pruned import pruned_c2cifft, fft_transpose                           
                                          
-        norm = (4.0 * stilde.delta_f) / sqrt(h_norm)
-        ctype = complex_same_precision_as(htilde)
-
-        correlate(htilde[kmin2:kmax2], stilde[kmin2:kmax2], qtilde2[kmin2:kmax2])    
-        ifft(qtilde2, q2)    
+        norm = (4.0 * stilde.delta_f) / sqrt(htilde.sigmasq)
         
-        q2s = q2[stilde.analyze.start/downsample_factor:stilde.analyze.stop/downsample_factor]
-        idx2, snrv2 = threshold(q2s, snr_threshold / norm * downsample_threshold)
-        if len(idx2) == 0:
+        correlate(htilde[self.kmin_red:self.kmax_red], 
+                  stilde[self.kmin_red:self.kmax_red], 
+                  self.corr_mem[self.kmin_red:self.kmax_red]) 
+                     
+        ifft(self.corr_mem, self.snr_mem)           
+        
+        idx_red, snrv_red = events.threshold(self.snr_mem[stilde.red_analyze], 
+                                self.snr_threshold / norm * self.upsample_threshold)
+        if len(idx_red) == 0:
             return [], None, [], [], []
 
-        idx2, _ = cluster_reduce(idx2, snrv2, cluster_window / downsample_factor)
-        logging.info("%s points above threshold at lower filter resolution"\
-                      %(str(len(idx2)),))
+        idx_red, _ = events.cluster_reduce(idx_red, snrv_red, window / self.downsample_factor)
+        logging.info("%s points above threshold at reduced resolution"\
+                      %(str(len(idx_red)),))
 
         # The fancy upsampling is here
-        if upsample_method=='pruned_fft':
-            idx = (idx2*downsample_factor) + stilde.analyze.start
-            idx = smear(idx, downsample_factor)
+        if self.upsample_method=='pruned_fft':
+            idx = (idx_red * self.downsample_factor) + stilde.analyze.start
+            idx = smear(idx, self.downsample_factor)
             
             # cache transposed  versions of htilde and stilde
-            if not hasattr(corr_mem, 'transposed'):
-                corr_mem.transposed = zeros(len(qtilde), dtype=qtilde.dtype)
+            if not hasattr(self.corr_mem_full, 'transposed'):
+                self.corr_mem_full.transposed = zeros(len(self.corr_mem_full), dtype=self.dtype)
                 
             if not hasattr(htilde, 'transposed'):
-                htilde.transposed = zeros(len(qtilde), dtype=qtilde.dtype)
-                htilde.transposed[kmin:kmax] = htilde[kmin:kmax]
+                htilde.transposed = zeros(len(self.corr_mem_full), dtype=self.dtype)
+                htilde.transposed[self.kmin_full:self.kmax_full] = htilde[self.kmin_full:self.kmax_full]
                 htilde.transposed = fft_transpose(htilde.transposed)
                 
             if not hasattr(stilde, 'transposed'):
-                stilde.transposed = zeros(len(qtilde), dtype=qtilde.dtype)
-                stilde.transposed[kmin:kmax] = stilde[kmin:kmax]
+                stilde.transposed = zeros(len(self.corr_mem_full), dtype=self.dtype)
+                stilde.transposed[self.kmin_full:self.kmax_full] = stilde[self.kmin_full:self.kmax_full]
                 stilde.transposed = fft_transpose(stilde.transposed)  
                 
-            correlate(htilde.transposed, stilde.transposed, corr_mem.transposed)      
-            snrv = pruned_c2cifft(corr_mem.transposed, tempvec, idx, pretransposed=True)   
-            q.data[idx] = snrv
+            correlate(htilde.transposed, stilde.transposed, self.corr_mem_full.transposed)      
+            snrv = pruned_c2cifft(self.corr_mem_full.transposed, self.inter_vec, idx, pretransposed=True)   
             idx = idx - stilde.analyze.start
-
-            idx2, snrv = threshold(Array(snrv, copy=False), snr_threshold / norm)
+            idx2, snrv = events.threshold(Array(snrv, copy=False), self.snr_threshold / norm)
       
             if len(idx2) > 0:
-                correlate(htilde[kmin:kmax], stilde[kmin:kmax], qtilde[kmin:kmax])
-                idx, snrv = cluster_reduce(idx[idx2], snrv, cluster_window)
+                correlate(htilde[self.kmin_full:self.kmax_full], 
+                          stilde[self.kmin_full:self.kmax_full], 
+                          self.corr_mem_full[self.kmin_full:self.kmax_full])
+                idx, snrv = events.cluster_reduce(idx[idx2], snrv, window)
             else:
                 idx, snrv = [], []
-            msg = "%s points at full filter resolution" %(str(len(idx)),)
-            msg += " after pruned FFT upsample and clustering."
-            logging.info(msg)
-            return q, norm, qtilde, idx, snrv
+
+            logging.info("%s points at full rate and clustering" % len(idx))
+            return self.snr_mem, norm, self.corr_mem_full, idx, snrv
         else:
             raise ValueError("Invalid upsample method")            
 
