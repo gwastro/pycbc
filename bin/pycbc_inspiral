@@ -68,10 +68,10 @@ parser.add_argument("--chisq-delta", type=float, default=0, help="FIXME: ADD")
 parser.add_argument("--autochi-number-points", type=int, default=0)
 parser.add_argument("--autochi-stride", type=int, default=0)
 parser.add_argument("--autochi-onesided", action='store_true', default=False)
-parser.add_argument("--downsample-factor", type=int, help="FIXME: ADD")
-parser.add_argument("--downsample-precheck-threshold", type=float, help="FIXME: ADD")
-parser.add_argument("--upsample-method", choices=["pruned_fft","interpolation"],
-                    help="FIXME: ADD")
+parser.add_argument("--downsample-factor", type=int, help="FIXME: ADD", default=1)
+parser.add_argument("--upsample-threshold", type=float, help="FIXME: ADD")
+parser.add_argument("--upsample-method", choices=["pruned_fft"],
+                    help="FIXME: ADD", default='pruned_fft')
 
 parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
                     This is used to identify FULL_DATA jobs for 
@@ -126,17 +126,10 @@ with ctx:
     psd = psd.from_cli(opt, flen, delta_f, flow, gwstrain, DYN_RANGE_FAC)
     psd = psd.astype(float32)                              
 
-    cluster_method = opt.cluster_before_vetoes and opt.cluster_method or None
-    # FIXME: Do we want a from_cli() function below?
-    # FIXME: Upper frequency cutoff is the second option. But I don't think
-    # that this is supported through the matchedfilter module yet
     matched_filter = MatchedFilterControl(opt.low_frequency_cutoff, None,
-                                   opt.snr_threshold, strain_segments,
-                                   cluster_method=opt.cluster_method,
-                                   cluster_window=opt.cluster_window,
+                                   opt.snr_threshold, tlen, complex64,
                                    downsample_factor=opt.downsample_factor,
-                                   downsample_precheck_threshold=\
-                                     opt.downsample_precheck_threshold,
+                                   upsample_threshold=opt.upsample_threshold,
                                    upsample_method=opt.upsample_method)
                                
     bank_chisq = vetoes.SingleDetBankVeto(opt.bank_veto_bank_file,
@@ -172,7 +165,7 @@ with ctx:
                          (t_num + 1, len(bank), s_num + 1, len(segments)))  
                          
             snr, norm, corr, idx, snrv = \
-                    matched_filter.matched_filter_and_cluster(template, stilde)
+                    matched_filter.matched_filter_and_cluster(template, stilde, cluster_window)
 
             if not len(idx):
                 continue
@@ -191,7 +184,7 @@ with ctx:
                     low_frequency_cutoff=flow)
 
             idx += stilde.cumulative_index
-
+            print snrv, power_chisqv
             if (opt.autochi_number_points):
                vals = [idx, snrv, power_chisqv, bank_chisqv, auto_chisqv[:, 2]]
             else:

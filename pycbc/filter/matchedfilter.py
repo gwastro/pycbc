@@ -27,9 +27,9 @@ utilities.
 """
 
 import logging
-from math import log,ceil,sqrt
-from pycbc.types import TimeSeries,FrequencySeries,zeros, Array, complex64
-from pycbc.types import complex_same_precision_as,real_same_precision_as
+from math import log, ceil, sqrt
+from pycbc.types import TimeSeries, FrequencySeries, zeros, Array, complex64
+from pycbc.types import complex_same_precision_as, real_same_precision_as
 from pycbc.fft import fft, ifft
 import pycbc.scheme
 from pycbc import events
@@ -45,188 +45,108 @@ def correlate(x, y, z):
 
 
 class MatchedFilterControl(object):
-    """
-    This class holds all the information/settings related to matched-filtering
-    and provides a simple interface for pycbc to use when performing
-    matched-filtering.
-    """
-    def __init__(self, lower_frequency_cutoff, upper_frequency_cutoff,
-                 snr_threshold, strain_segments,
-                 cluster_method=None,
-                 cluster_window=0,
-                 downsample_factor=None,
-                 downsample_precheck_threshold=None,
-                 upsample_method='pruned_fft'):
-        """
-        Initialize instance and set various parameters.
-
-        Parameters
-        -----------
-        lower_frequency_cutoff : float
-            The lower frequency cutoff to use when filtering.
-        upper_frequency_cutoff : float
-            The upper frequency cutoff to use when filtering.
-            WARNING: This currently is not hooked up and will do nothing.
-            This will be fixed soon!
-        snr_threshold : float
-            The lower SNR threshold at which to accept triggers.
-        cluster_method : string, optional (default: None)
-            The method to use to cluster over individual templates' SNR time
-            series. Choices are:
-            * Window: Cluster over a fixed time window (see cluster_window)
-            * Template: Cluster over the length of the template
-            * None: Perform no clustering; *not* recommended.
-        cluster_window : float
-            If using cluster_method=window, specifies the length of time, in
-            seconds, to cluster over.
-        downsample_factor : int, optional (default: None)
-            If provided the data will be prefiltered at a lower frequency than
-            that of the input data by this factor and then upsampled according
-            to options below. This can provide a significant speed-up, but
-            some of the options may decrease sensitivity. This has only been
-            tested with binary values (ie. 2, 4, ...), it is not recommended to
-            use any other value.
-        downsample_precheck_threshold : float
-            This is required if downsample_factor is given. This, multiplied by
-            the SNR threshold, sets the threshold in the downsampled data for
-            upsampling ... ie. we will not upsample parts of the SNR time
-            series where SNR is less than SNR threshold multiplied by this.
-            A recommended value is to use a downsample_factor of 4 and a
-            downsample_precheck_threshold of 0.98. Other values/settings may
-            also be possible/appropriate.
-        upsample_method : string, default = "pruned_fft"
-            Used only if downsample_factor is given. This specifies the method
-            that will be used for upsampling the data. Current options are:
-            * pruned_fft: Use Alex's fancy FFT (which he will provide more
-              details of), to upsample the data with no loss in SNR. The only
-              potential loss in sensitivity here is if we have not identified
-              the necessary number of points to be upsampled.
-            * interpolation: Use a 2nd order interpolation technique to
-              evaluate SNR at the higher sample rate. As this performs an
-              interpolation at the downsampled data, any higher-frequency
-              content not included in the downsampled filter will be lost.
-              Therefore this can reduce sensitivity for systems with power at
-              high frequencies. (Alex also doesn't trust the interpolation
-              completely).
-        """
-        # Set values
-        self.f_low = lower_frequency_cutoff
-        self.f_upper = upper_frequency_cutoff
-        self.snr_threshold = snr_threshold
-        self.segments = strain_segments.fourier_segments()
-        self.cluster_method = cluster_method
-        self.cluster_window = cluster_window
-        self.downsample_factor=downsample_factor
-        self.downsample_precheck_threshold = downsample_precheck_threshold
-        self.upsample_method = upsample_method
-
-        # Error checking
-        if self.downsample_factor == 1:
-            # If factor is 1, just turn it off
-            self.downsample_factor = None
-        elif self.downsample_factor is not None and self.downsample_factor < 1:
-            # Huh?
-            err_msg = "Downsample factor must be greater than one."
-            err_msg += "Otherwise you are upsampling, which is a bad idea."
-            raise ValueError(err_msg)
-        if self.downsample_factor and ((not self.cluster_method) or\
-                (self.cluster_method == 'window' and not self.cluster_window)):
-            err_msg = "Downsampling requires that we are clustering during the"
-            err_msg += "matched-filtering process. Please provide a cluster "
-            err_msg += "method, and window if appropriate to the "
-            err_msg += "MatchedFilterControl."     
-
-
-        # Set derived values
-        self.flen = strain_segments.freq_len
-        self.tlen = strain_segments.time_len
-        self.delta_f = strain_segments.delta_f
-        self.delta_t = strain_segments.delta_t
-
-        # Initialize memory (starting to look like C-code!)
-        self.snr_mem = zeros(self.tlen, dtype=complex64)
-        self.corr_mem = zeros(self.tlen, dtype=complex64)
-        if downsample_factor:
-            N2 = self.tlen / downsample_factor
-            self.downsampled_snr_mem = zeros(N2, dtype=complex64)
-            self.downsampled_corr_mem = zeros(N2, dtype=complex64)
-            self.downsampled_pruned_mem = zeros(self.tlen, dtype=complex64)
-
-        # FIXME: Should overwhitening occur within here?
-
-    def matched_filter_and_cluster(self, template, stilde):
-        """
-        Compute the matched filter between two data streams. We assume that any
-        PSD has already been included by (over-)whitening one (or both) of 
-        these inputs. Also cluster output to find points above threshold and
-        loudest within the cluster window.
-
-        Parameters
-        ----------
-        template : PyCBC FrequencyArray or TimeArray
-            The template, given either as a pycbc FrequencyArray or TimeArray.
-        stilde : PyCBC FrequencyArray
-            The data, usually over-whitened.
-
-        Returns
-        --------
-        snr : PyCBC complex TimeArray
-            The calculated complex SNR time series. This is *not* normalized,
-            to get sane values, multiply the entire array by norm. For some
-            methods values are only populated at a small subset of points where
-            the SNR is loud/above threshold.
-        norm : float
-            The normalization factor of the template, which needs to be applied
-            to snr as described above.
-        corr : PyCBC complex FrequencyArray
-            The frequency-domain complex correlation between template and
-            stilde. The IFFT of this gives SNR.
-        idx : Array of ints
-            The locations in the snr array that are above threshold and have
-            passed any clustering checks
-        snrv : Array of complex
-            The values of SNR at the list of idx. Also needs normalizing by the
-            norm factor.
-        """
-        if self.cluster_method == "window":
-            cluster_window = int(self.cluster_window * (1 / self.delta_t))
-        elif self.cluster_method == "template":
-            cluster_window = int(template.length_in_time * (1 / self.delta_t))
+    def __init__(self, low_frequency_cutoff, high_frequency_cutoff, 
+                snr_threshold, tlen, dtype, downsample_factor=1, 
+                upsample_threshold=None, upsample_method=None):
+        self.tlen = tlen
+        self.dtype = dtype
+        self.snr_threshold = snr_threshold    
+        self.flow = low_frequency_cutoff
+        self.fhigh = high_frequency_cutoff    
+                
+        if downsample_factor == 1:
+            self.matched_filter_and_cluster = self.full_matched_filter_and_cluster
+            self.snr_mem = zeros(tlen, dtype=self.dtype)
+            self.corr_mem = zeros(tlen, dtype=self.dtype)           
+        elif downsample_factor >= 1:
+            self.matched_filter_and_cluster = self.heirarchical_matched_filter_and_cluster
+            self.downsample_factor = downsample_factor
+            self.upsample_method = upsample_method
+            self.upsample_threshold = upsample_threshold  
         else:
-            cluster_window = None
+            raise ValueError("Invalid downsample factor")
+              
+    def full_matched_filter_and_cluster(self, template, stilde, window):
+        snr, corr, norm = matched_filter_core(template, stilde, 
+                                              low_frequency_cutoff=self.flow, 
+                                              high_frequency_cutoff=self.fhigh, 
+                                              h_norm=template.sigmasq,
+                                              out=self.snr_mem,
+                                              corr_out=self.corr_mem)
+        idx, snrv = events.threshold(snr[stilde.analyze], self.snr_threshold / norm)            
 
-        # Choose a path
-        if self.downsample_factor is None:
-            # This is the standard filtering engine
-            snr, corr, norm = matched_filter_core(template, stilde,
-                                               h_norm=template.sigmasq,
-                                               low_frequency_cutoff=self.f_low,
-                                               out=self.snr_mem,
-                                               corr_out=self.corr_mem)
-            idx, snrv = events.threshold(snr[stilde.analyze],
-                                         self.snr_threshold / norm)
-            if len(idx) == 0:
-                return [], 0, [], [], []
-            logging.info("%s points above threshold" % str(len(idx)))
+        if len(idx) == 0:
+            return [], [], [], [], []            
+        logging.info("%s points above threshold" % str(len(idx)))              
+  
+        idx, snrv = events.cluster_reduce(idx, snrv, window)
+        logging.info("%s clustered points" % str(len(idx)))
+        
+        return snr, norm, corr, idx, snrv   
+        
+    def heirarchical_matched_filter_and_cluster(self, template, strain, window):
+        from pycbc.fft.fftw_pruned import pruned_c2cifft, fft_transpose
 
-            if cluster_window:
-                idx, snrv = events.cluster_reduce(idx, snrv, cluster_window)
-                logging.info("%s points after clustering" % str(len(idx)))
-            return snr, norm, corr, idx, snrv
+        N = (len(stilde)-1) * 2   
+        kmin, kmax = get_cutoff_indices(low_frequency_cutoff,
+                                       high_frequency_cutoff, stilde.delta_f, N)                                     
+        N2 = N / downsample_factor
+        kmin2, kmax2 = get_cutoff_indices(low_frequency_cutoff,
+                                       high_frequency_cutoff, stilde.delta_f, N2)                              
+                                         
+        norm = (4.0 * stilde.delta_f) / sqrt(h_norm)
+        ctype = complex_same_precision_as(htilde)
+
+        correlate(htilde[kmin2:kmax2], stilde[kmin2:kmax2], qtilde2[kmin2:kmax2])    
+        ifft(qtilde2, q2)    
+        
+        q2s = q2[stilde.analyze.start/downsample_factor:stilde.analyze.stop/downsample_factor]
+        idx2, snrv2 = threshold(q2s, snr_threshold / norm * downsample_threshold)
+        if len(idx2) == 0:
+            return [], None, [], [], []
+
+        idx2, _ = cluster_reduce(idx2, snrv2, cluster_window / downsample_factor)
+        logging.info("%s points above threshold at lower filter resolution"\
+                      %(str(len(idx2)),))
+
+        # The fancy upsampling is here
+        if upsample_method=='pruned_fft':
+            idx = (idx2*downsample_factor) + stilde.analyze.start
+            idx = smear(idx, downsample_factor)
+            
+            # cache transposed  versions of htilde and stilde
+            if not hasattr(corr_mem, 'transposed'):
+                corr_mem.transposed = zeros(len(qtilde), dtype=qtilde.dtype)
+                
+            if not hasattr(htilde, 'transposed'):
+                htilde.transposed = zeros(len(qtilde), dtype=qtilde.dtype)
+                htilde.transposed[kmin:kmax] = htilde[kmin:kmax]
+                htilde.transposed = fft_transpose(htilde.transposed)
+                
+            if not hasattr(stilde, 'transposed'):
+                stilde.transposed = zeros(len(qtilde), dtype=qtilde.dtype)
+                stilde.transposed[kmin:kmax] = stilde[kmin:kmax]
+                stilde.transposed = fft_transpose(stilde.transposed)  
+                
+            correlate(htilde.transposed, stilde.transposed, corr_mem.transposed)      
+            snrv = pruned_c2cifft(corr_mem.transposed, tempvec, idx, pretransposed=True)   
+            q.data[idx] = snrv
+            idx = idx - stilde.analyze.start
+
+            idx2, snrv = threshold(Array(snrv, copy=False), snr_threshold / norm)
+      
+            if len(idx2) > 0:
+                correlate(htilde[kmin:kmax], stilde[kmin:kmax], qtilde[kmin:kmax])
+                idx, snrv = cluster_reduce(idx[idx2], snrv, cluster_window)
+            else:
+                idx, snrv = [], []
+            msg = "%s points at full filter resolution" %(str(len(idx)),)
+            msg += " after pruned FFT upsample and clustering."
+            logging.info(msg)
+            return q, norm, qtilde, idx, snrv
         else:
-            snr, norm, corr, idx, snrv = \
-                    dynamic_rate_thresholded_matched_filter(template,
-                            stilde, template.sigmasq, self.downsample_factor,
-                            self.downsample_precheck_threshold,
-                            self.snr_threshold, cluster_window,
-                            low_frequency_cutoff=self.f_low,
-                            upsample_method=self.upsample_method,
-                            snr_mem=self.snr_mem, corr_mem=self.corr_mem,
-                            downsampled_snr_mem=self.downsampled_snr_mem,
-                            downsampled_corr_mem=self.downsampled_corr_mem,
-                            downsampled_pruned_mem=self.downsampled_pruned_mem)
-            return snr, norm, corr, idx, snrv
-       
+            raise ValueError("Invalid upsample method")            
+
 
 def make_frequency_series(vec):
     """Return a frequency series of the input vector.
@@ -519,224 +439,6 @@ def smear(idx, factor):
         s += [idx + a]
     return numpy.unique(numpy.concatenate(s))
            
-def dynamic_rate_thresholded_matched_filter(htilde, stilde, h_norm,
-                                            downsample_factor,
-                                            downsample_threshold,
-                                            snr_threshold,
-                                            cluster_window,
-                                            low_frequency_cutoff=None,
-                                            high_frequency_cutoff=None,
-                                            upsample_method='pruned_fft',
-                                            snr_mem=None,
-                                            corr_mem=None,
-                                            downsampled_snr_mem=None,
-                                            downsampled_corr_mem=None,
-                                            downsampled_pruned_mem=None):
-    """
-    Perform a matched-filter calculation by:
-    * Downsampling the data
-    * Performing a matched-filter at the downsampled rate,   
-    * Thresholding at a reduced threshold
-    * Computing the upsampled SNR at the points above the downsampled threshold
-
-    Parameters
-    ----------
-    htilde : FrequencySeries 
-        The template waveform
-    stilde : FrequencySeries 
-        The strain data to be filtered.
-    h_norm : float
-        The template normalization.
-        FIXME: Should be able to calculate this internally (and cache) if
-        not provided.
-    downsample_factor : int
-        The factor by which the sample rate of the input data should be
-        reduced before initial filtering. Binary values (2,4,...) are
-        recommended.
-    downsample_threshold : float
-        The factor, multiplied by the SNR threshold, to use when thresholding
-        the downsampled SNR time series.
-    snr_threshold : float
-        The threshold with which to accept triggers at the full sample rate.
-    cluster_window : int
-        The length, in sample points (at full sample rate), to use when
-        performing clustering.
-    psd : {FrequencySeries}, optional
-        The noise weighting of the filter.
-    low_frequency_cutoff : {None, float}, optional
-        The frequency to begin the filter calculation. If None, begin at the
-        first frequency after DC.
-    high_frequency_cutoff : {None, float}, optional
-        The frequency to stop the filter calculation. If None, continue to the 
-        the nyquist frequency.
-    upsample_method : string, default = "pruned_fft"
-        Used only if downsample_factor is given. This specifies the method
-        that will be used for upsampling the data. Current options are:
-        * pruned_fft: Use Alex's fancy FFT (which he will provide more
-          details of), to upsample the data with no loss in SNR. The only
-          potential loss in sensitivity here is if we have not identified
-          the necessary number of points to be upsampled.
-        * interpolation: Use a 2nd order interpolation technique to
-          evaluate SNR at the higher sample rate. As this performs an
-          interpolation at the downsampled data, any higher-frequency
-          content not included in the downsampled filter will be lost.
-          Therefore this can reduce sensitivity for systems with power at
-          high frequencies. (Alex also doesn't trust the interpolation
-          completely).
-    snr_mem : {None, Array}, optional
-        An array to use as memory for snr storage. If None, memory is allocated 
-        internally.
-    corr_mem : {None, Array}, optional
-        An array to use as memory for correlation storage. If None, memory is
-        allocated internally.
-    downsampled_snr_mem : {None, Array}, optional
-        An array to use as memory for reduced filter SNR storage.
-        If None, memory is allocated internally.
-    downsampled_corr_mem : {None, Array}, optional
-        An array to use as memory for reduced filter correlation storage.
-        If None, memory is allocated internally.
-    downsampled_pruned_mem : {None, Array}, optional
-        An array to use as memory for the intermediate pruned_fft calculation.
-        If None, memory is allocated internally.
-    """
-    valid_methods = ['pruned_fft', 'interpolation']
-    if upsample_method not in valid_methods:
-        err_msg = "Upsample method %s is not recognized." %(upsample_method)
-        err_msg = "Supported methods are %s." %(' '.join(valid_methods))
-        raise ValueError(err_msg)
-
-    from pycbc.fft.fftw_pruned import pruned_c2cifft, fft_transpose
-    from pycbc.events import threshold, cluster_reduce
-
-    N = (len(stilde)-1) * 2   
-    kmin, kmax = get_cutoff_indices(low_frequency_cutoff,
-                                   high_frequency_cutoff, stilde.delta_f, N)                                     
-    N2 = N / downsample_factor
-    kmin2, kmax2 = get_cutoff_indices(low_frequency_cutoff,
-                                   high_frequency_cutoff, stilde.delta_f, N2)                              
-                                     
-    norm = (4.0 * stilde.delta_f) / sqrt(h_norm)
-    ctype = complex_same_precision_as(htilde)
-
-    # Set up the arrays if not already provided
-    if snr_mem is None:
-        snr_mem = zeros(N, dtype=ctype)
-    delta_t = 1.0 / (N * stilde.delta_f)
-    q = TimeSeries(snr_mem, epoch=stilde._epoch, delta_t=delta_t, copy=False)
-    if corr_mem is None:
-        corr_mem = zeros(N, dtype=ctype)
-    qtilde = FrequencySeries(corr_mem, delta_f=stilde.delta_f, copy=False)
-    if downsampled_snr_mem is None:
-        downsampled_snr_mem = zeros(N2, dtype=ctype)
-    q2 = downsampled_snr_mem 
-    if downsampled_corr_mem is None:
-        downsampled_corr_mem = zeros(N2, dtype=ctype)
-    qtilde2 = downsampled_corr_mem
-    if downsampled_pruned_mem is None:
-        downsampled_pruned_mem = zeros(N2, dtype=ctype)
-    tempvec = downsampled_pruned_mem 
-
-    correlate(htilde[kmin2:kmax2], stilde[kmin2:kmax2], qtilde2[kmin2:kmax2])    
-    ifft(qtilde2, q2)    
-    
-    q2s = q2[stilde.analyze.start/downsample_factor:stilde.analyze.stop/downsample_factor]
-    idx2, snrv2 = threshold(q2s, snr_threshold / norm * downsample_threshold)
-    if len(idx2) == 0:
-        return [], None, [], [], []
-    # Cluster
-    idx2, _ = cluster_reduce(idx2, snrv2, cluster_window / downsample_factor)
-    logging.info("%s points above threshold at lower filter resolution"\
-                  %(str(len(idx2)),))
-
-    # This is a simple linear interpolation. Any content above the reduced
-    # Nyquist frequency is lost, but this does have the desired time resolution
-    if upsample_method=='interpolation':
-        idx_shift_fac = stilde.analyze.start/downsample_factor
-        snr_indexes = []
-        snrv = []
-        for index2 in idx2:
-            interp_idxs = numpy.arange(index2-2, index2+3, dtype='int')
-            try:
-                interp_snrs = q2[interp_idxs + idx_shift_fac]
-            except IndexError:
-                # This happens when the point is at the edge of the SNR time
-                # series. Here we don't have the necessary +/- 2 points on
-                # either side to perform interpolation so we just fall back
-                # on the pruned FFT.
-                # NOTE: This should now not be possible to happen as we allow
-                # points in the SNR time series that are not within
-                # stilde.analyze
-                upsample_method='pruned_fft'
-                logging.info("Something went wrong, falling back to pruned FFT")
-                break
-            q_idx = index2 * downsample_factor
-            interp_rsmpl_idxs = interp_idxs*downsample_factor
-            q_idxs = numpy.arange(q_idx-downsample_factor/2,
-                                  q_idx+downsample_factor/2 + 1, dtype='int')
-            snr_indexes.extend(q_idxs)
-            interp_func = interpolate.interp1d(interp_rsmpl_idxs, interp_snrs, 
-                                               kind='quadratic')
-            upsampled_snrs = interp_func(q_idxs)
-            snrv.extend(upsampled_snrs)
-            # FIXME: In numpy, this is done with a one line array operation. I
-            # couldn't get that to work here th_ough!
-            for i in range(len(upsampled_snrs)):
-                q[q_idxs[i] + stilde.analyze.start] = upsampled_snrs[i] 
-        else:
-            # We end up here only if the loop above is successful. Otherwise
-            # this is skipped and we fall back on the fancyfft.
-            correlate(htilde[kmin:kmax], stilde[kmin:kmax], qtilde[kmin:kmax])
-            snr_indexes = numpy.array(snr_indexes)
-            snrv = numpy.array(snrv, dtype=numpy.complex64)
-            logging.info("%s points above threshold" % str(len(snr_indexes)))
-            snr_indexes, snrv = events.cluster_reduce(snr_indexes, snrv,
-                                                      cluster_window)
-            msg = "%s points at full filter resolution" %str(len(snr_indexes))
-            msg += " after interpolation upsampling and clustering."
-            logging.info(msg)
-            return q, norm, qtilde, snr_indexes, snrv
-
-    # The fancy upsampling is here
-    if upsample_method=='pruned_fft':
-        idx = (idx2*downsample_factor) + stilde.analyze.start
-        idx = smear(idx, downsample_factor)
-        
-        # cache transposed  versions of htilde and stilde
-        if not hasattr(corr_mem, 'transposed'):
-            corr_mem.transposed = zeros(len(qtilde), dtype=qtilde.dtype)
-            
-        if not hasattr(htilde, 'transposed'):
-            htilde.transposed = zeros(len(qtilde), dtype=qtilde.dtype)
-            htilde.transposed[kmin:kmax] = htilde[kmin:kmax]
-            htilde.transposed = fft_transpose(htilde.transposed)
-            
-        if not hasattr(stilde, 'transposed'):
-            stilde.transposed = zeros(len(qtilde), dtype=qtilde.dtype)
-            stilde.transposed[kmin:kmax] = stilde[kmin:kmax]
-            stilde.transposed = fft_transpose(stilde.transposed)  
-            
-        correlate(htilde.transposed, stilde.transposed, corr_mem.transposed)      
-        snrv = pruned_c2cifft(corr_mem.transposed, tempvec, idx, pretransposed=True)   
-        q.data[idx] = snrv
-        idx = idx - stilde.analyze.start
-
-        idx2, snrv = threshold(Array(snrv, copy=False), snr_threshold / norm)
-  
-        if len(idx2) > 0:
-            correlate(htilde[kmin:kmax], stilde[kmin:kmax], qtilde[kmin:kmax])
-            idx, snrv = cluster_reduce(idx[idx2], snrv, cluster_window)
-        else:
-            idx, snrv = [], []
-        msg = "%s points at full filter resolution" %(str(len(idx)),)
-        msg += " after pruned FFT upsample and clustering."
-        logging.info(msg)
-        return q, norm, qtilde, idx, snrv
-
-    # I shouldn't have gotten here
-    err_msg = "Something went wrong somewhere. Please contact a developer."
-    raise ValueError(err_msg) 
-    
-           
 def matched_filter(template, data, psd, low_frequency_cutoff=None,
                   high_frequency_cutoff=None):
     """ Return the complex snr and normalization. 
@@ -911,7 +613,7 @@ def quadratic_interpolate_peak(left, middle, right):
     return bin_offset, peak_value
         
 
-__all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'dynamic_rate_thresholded_matched_filter',
+__all__ = ['match', 'matched_filter', 'sigmasq', 'sigma',
            'sigmasq_series', 'make_frequency_series', 'overlap', 'overlap_cplx',
            'matched_filter_core', 'correlate', 'MatchedFilterControl']
 

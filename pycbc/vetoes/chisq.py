@@ -331,4 +331,4 @@ class SingleDetPowerChisq(object):
                 self._bins = bins
                 
             logging.info("...Doing power chisq")     
-            return power_chisq_at_points_from_precomputed(corr, snrv, snr_norm, bins, indices)
+            return power_chisq_at_points_from_precomputed(corr, snrv, snr_norm, self._bins, indices)
