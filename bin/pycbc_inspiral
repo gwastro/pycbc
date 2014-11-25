@@ -160,9 +160,6 @@ with ctx:
                     flow, dtype=complex64, psd=psd, phase_order=opt.order,
                     taper=opt.taper_template, out=zeros(tlen, dtype=complex64))
 
-    snr_mem = zeros(tlen, dtype=complex64)
-    corr_mem = zeros(tlen, dtype=complex64)
-
     for t_num, template in enumerate(bank):  
         event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)  
         if opt.cluster_method == "window":
