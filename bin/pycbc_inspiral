@@ -68,10 +68,14 @@ parser.add_argument("--chisq-delta", type=float, default=0, help="FIXME: ADD")
 parser.add_argument("--autochi-number-points", type=int, default=0)
 parser.add_argument("--autochi-stride", type=int, default=0)
 parser.add_argument("--autochi-onesided", action='store_true', default=False)
-parser.add_argument("--downsample-factor", type=int, help="FIXME: ADD", default=1)
-parser.add_argument("--upsample-threshold", type=float, help="FIXME: ADD")
+parser.add_argument("--downsample-factor", type=int, 
+                    help="Factor that determines the interval between the "
+                         "initial SNR sampling. If not set (or 1) no sparse sample " 
+                         "is created, and the standard full SNR is calculated.", default=1)
+parser.add_argument("--upsample-threshold", type=float, 
+                    help="The fraction of the SNR threshold to check the sparse SNR sample")
 parser.add_argument("--upsample-method", choices=["pruned_fft"],
-                    help="FIXME: ADD", default='pruned_fft')
+                    help="The method to find the SNR points between the sparse SNR sample.", default='pruned_fft')
 
 parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
                     This is used to identify FULL_DATA jobs for 
