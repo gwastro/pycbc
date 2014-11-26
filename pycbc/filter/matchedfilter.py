@@ -102,8 +102,8 @@ class MatchedFilterControl(object):
                 seg.red_analyze = slice(seg.analyze.start/downsample_factor, 
                                         seg.analyze.stop/downsample_factor)  
             self.snr_mem = zeros(N_red, dtype=self.dtype)
-            self.corr_mem = zeros(N_red, dtype=self.dtype)
             self.corr_mem_full = FrequencySeries(zeros(N_full, dtype=self.dtype), delta_f=self.delta_f)
+            self.corr_mem = Array(self.corr_mem_full[0:N_red], copy=False)
             self.inter_vec = zeros(N_full, dtype=self.dtype)                      
                                                  
         else:
@@ -224,9 +224,9 @@ class MatchedFilterControl(object):
             idx2, snrv = events.threshold(Array(snrv, copy=False), self.snr_threshold / norm)
       
             if len(idx2) > 0:
-                correlate(htilde[self.kmin_full:self.kmax_full], 
-                          stilde[self.kmin_full:self.kmax_full], 
-                          self.corr_mem_full[self.kmin_full:self.kmax_full])
+                correlate(htilde[self.kmax_red:self.kmax_full], 
+                          stilde[self.kmax_red:self.kmax_full], 
+                          self.corr_mem_full[self.kmax_red:self.kmax_full])
                 idx, snrv = events.cluster_reduce(idx[idx2], snrv, window)
             else:
                 idx, snrv = [], []

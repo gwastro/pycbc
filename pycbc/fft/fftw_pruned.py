@@ -245,8 +245,7 @@ def fft_transpose_fftw(vec):
     global _thetransposeplan
     outvec = pycbc.types.zeros(len(vec), dtype=vec.dtype)
     if _theplan is None:
-        N2 = 2 ** int(numpy.log2( len(vec) ) / 2)
-        N1 = len(vec) / N2
+        N1, N2 = splay(vec)
         _thetransposeplan = plan_transpose(N1, N2)
     ftexecute(_thetransposeplan, vec.ptr, outvec.ptr)
     return  outvec
@@ -266,11 +265,17 @@ def fft_transpose_numpy(vec):
     outvec : array
         Transposed output array.
     """
-    N2 = 2 ** int(numpy.log2( len(vec) ) / 2)
-    N1 = len(vec) / N2
+    N1, N2 = splay(vec)
     return pycbc.types.Array(vec.data.copy().reshape(N2, N1).transpose().reshape(len(vec)).copy())
 
 fft_transpose = fft_transpose_fftw
+
+def splay(vec):
+    """ Determine two lengths to split stride the input vector by
+    """
+    N2 = 2 ** int(numpy.log2( len(vec) ) / 2)
+    N1 = len(vec) / N2
+    return N1, N2
 
 def pruned_c2cifft(invec, outvec, indices, pretransposed=False):
     """
@@ -297,14 +302,8 @@ def pruned_c2cifft(invec, outvec, indices, pretransposed=False):
     SNRs : array
         The complex SNRs at the indexes given by indices.
     """
-    # This is a sloppy guess at an OK decomposition boudary, but could be better
-    # through benchmarking and optimization (the second phase is a lot slower
-    # than it strictly has to be).
-    N2 = 2 ** int(numpy.log2( len(invec) ) / 2)
-    N1 = len(invec) / N2
+    N1, N2 = splay(invec)
 
-    # Do the explicit transpose here as I would like to move this out of the
-    # loop soon
     if not pretransposed:
         invec = fft_transpose(invec)
     first_phase(invec, outvec, N1=N1, N2=N2)
