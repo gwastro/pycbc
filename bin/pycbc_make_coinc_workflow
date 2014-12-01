@@ -42,6 +42,7 @@ parser = argparse.ArgumentParser(description=_desc)
 parser.add_argument('--version', action='version', version=__version__)
 parser.add_argument("-d", "--output-dir", default=None,
                     help="Path to output directory.")
+parser.add_argument("--enable-hdf-post-processing", action='store_true')
 _workflow.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 
@@ -86,6 +87,10 @@ max_veto_cat = int(
 bank_files = _workflow.setup_tmpltbank_workflow(workflow, scienceSegs, 
                                             datafind_files, dfDir)
 
+if args.enable_hdf_post_processing:
+    # Convert the SINGLE FIXED template bank file to an hdf format
+    hdfbank = _workflow.convert_bank_to_hdf(workflow, bank_files, dfDir)
+
 splitbank_files = _workflow.setup_splittable_workflow(workflow, bank_files, dfDir) 
 
 
@@ -118,6 +123,34 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                            output_dir, injection_file=inj_file,
                                            tags = [tag])
     all_files.extend(insps)
+    
+    # Setup hdf coincidence and post-processing/plotting
+    if args.enable_hdf_post_processing:
+        # Workaround for the current segment module HARDCODED!!!
+        final_veto_file = segsFileList.find_output_with_tag('CUMULATIVE_CAT_4')
+        cum_veto_files = _workflow.FileList()
+    
+        insps_hdf = _workflow.convert_trig_to_hdf(workflow, hdfbank, insps, output_dir, tags=[tag])
+    
+        if tag == 'full_data':
+            ctags = [tag, 'full']
+            bg_files = _workflow.setup_interval_coinc(workflow, hdfbank, insps_hdf, 
+                            cum_veto_files, output_dir, tags=ctags)  
+            final_bg_file =  _workflow.setup_interval_coinc(workflow, hdfbank, 
+                            insps_hdf, final_veto_file, output_dir, tags=ctags)   
+            _workflow.make_foreground_table(workflow, final_bg_file[0], 
+                            hdfbank[0], tag, 'plots/foreground')
+        else:
+            ctags = [tag, 'inj']
+            inj_coinc = _workflow.setup_interval_coinc_inj(workflow, hdfbank, 
+                            insps_hdf, final_bg_file, output_dir, tags = ctags)
+            found_inj = _workflow.find_injections_in_hdf_coinc(workflow, inj_coinc,
+                            inj_file, final_veto_file[0], output_dir, tags=ctags)                                          
+            _workflow.make_sensitivity_plot(workflow, found_inj, 'plots/sensitivity',
+                                     tags=ctags)
+            _workflow.make_foundmissed_plot(workflow, found_inj, tag, 'plots/foundmissed', 
+                                     tags=[tag])
+    
     coincs, others = _workflow.setup_coincidence_workflow(workflow, segsFileList,
                                         timeSlideFiles, insps, output_dir,
                                         tags=[tag], maxVetoCat=max_veto_cat,
