@@ -1,0 +1,62 @@
+#!/usr/bin/python
+""" This program adds single detector hdf trigger files together.
+"""
+import numpy, argparse, h5py, os, logging
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--trigger-files', nargs='+')
+parser.add_argument('--output-file')
+parser.add_argument('--verbose', '-v', action='count')
+args = parser.parse_args()
+
+if args.verbose == 1:
+    log_level = logging.INFO
+elif args.verbose == 2:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+    
+logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level) 
+
+f = h5py.File(args.output_file, 'w')
+
+trigger_columns = h5py.File(args.trigger_files[0]).keys()
+trigger_columns.remove('search')
+trigger_columns.remove('template_group')
+
+logging.info('reading the metadata from the files')
+num_trigs = 0
+left = numpy.array([], dtype=numpy.uint32)
+right = numpy.array([], dtype=numpy.uint32)
+start = numpy.array([], dtype=numpy.float64)
+end = numpy.array([], dtype=numpy.float64)
+for filename in args.trigger_files:
+    logging.info('file: %s' % filename)
+    data = h5py.File(filename)
+    l, r = data['template_group/left'][:], data['template_group/right'][:]
+    l, r = l + num_trigs, r + num_trigs
+    s, e = data['search/start_time'][:], data['search/end_time'][:]
+    left, right = numpy.append(left, l), numpy.append(right, r)
+    start, end = numpy.append(start, s), numpy.append(end, e)
+    num_trigs = r[-1]
+
+f['template_group/left'], f['template_group/right'] = left, right
+f['search/start_time'], f['search/end_time'] = start, end   
+
+for k in data.attrs.keys(): 
+    f.attrs[k] = data.attrs[k]
+
+logging.info('reading the trigger columns from the input files')
+for column in trigger_columns:
+    dset = None
+    trigs = 0
+    for filename in args.trigger_files:
+        logging.info('file: %s' % filename)
+        data = h5py.File(filename)
+        cdata = data[column]
+        if dset is None:
+            dset = f.create_dataset(column, (num_trigs,), dtype=cdata.dtype)
+        dset[trigs:trigs+len(cdata)] = cdata
+        trigs += len(cdata)
+
+f.close()
