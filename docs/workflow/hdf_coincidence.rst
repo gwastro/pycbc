@@ -48,6 +48,8 @@ The following restrictions are slated to be be removed when time permits
 Configuration File
 ===================
 
+An example configuration file is included as example_hdf_post.ini
+
 ----------------------
 Workflow Configuration
 ----------------------
@@ -61,14 +63,15 @@ There are two options, both of which are permorfance options.
 * --number-of-groups
 
 This is integer that sets how many groups of templates to analyze at once
-for coincidence. A reasonable choice seems to be 1 per 100 templates in your bank.
-This will directly correlate the to memory usage of each coincidence job.
+for coincidence. A reasonable choice seems to be 1 per 20 templates in your bank.
+This will directly correlate the to memory usage of each coincidence job. If you 
+drop the snr threshold this will also need to drop as there will be a much higher
+trigger rate per template.
 
 * --groups-per-coinc
 
 This sets how many template groups per coincidence job. This knob helps control
-how long each coincidence job should take. A number of ~ 50 seems to give
-fairly short running jobs. 
+how long each coincidence job should take. A number of 50 seems to be about reasonable.
 
 ------------------------
 Executable Configuration
@@ -85,6 +88,7 @@ plotting. They following needs to be in your [executables] section.::
     plot_sensitivity = ${which:pycbc_page_sensitivity}
     plot_foundmissed = ${which:pycbc_page_foundmissed}
     plot_snrifar = ${which:pycbc_page_snrifar}
+    page_foreground = ${which:pycbc_page_foreground}
 
 Executables that do not require any additional configuration.
 
@@ -104,7 +108,7 @@ Options to the coincidence/background executable
     coinc-threshold = .005
     ; Background coincident triggers are decimated. This option controls how
     ;many of the loudest triggers to keep from each group of templates.
-    decimation-keep = 100
+    decimation-keep = 200
     ; For now, don't touch these options, but they control how to decimate low
     ; significane triggers.
     decimation-factor = 1000
@@ -123,7 +127,7 @@ Options to the coincidence clustering + statistic asignment executable
     [statmap]
     ; The only option is to set the time window in seconds to cluster 
     ; coincident triggers over the entire template bank
-    cluster-window = 0.2
+    cluster-window = 5.0
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Options to the injection finding executable
@@ -135,7 +139,7 @@ Options to the injection finding executable
     ; determines the size in seconds of the window. Make sure this is smaller
     ; then the coincident clustering window, otherwise note that injections
     ; found in association with multiple triggers are simply marked as missed.
-    injection-window = .05
+    injection-window = 1.0
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Options for sensitivity plotting
@@ -154,6 +158,10 @@ Options for sensitivity plotting
     ; only exists for comparison to other pipelines where the codes do distance bins.
     dist-bins = 15 
 
+Additional plots can be made by adding a tag. This works similary to the system for injection files. For 
+example you can add  [plot_sensitivity-mchirp], [plot_sensitivity-mtotal], and [plot_sensitivity-splin]
+sections to make three version of the plot.
+
 =====================================
 Workflow Generation an Planning
 =====================================
@@ -162,45 +170,32 @@ Configure a two-detector search using a single fixed template bank for all ifos
 and the entire analysis. Follow the standard module configurations up through
 the inspiral stage of the workflow.
 
-For module configuation documentation.
+For module configuration documentation.
 .. toctree::
    :maxdepth: 1
 
    ../weekly_ahope
 
-To generate the workflow::
-
-    GPS_START_TIME=966384015
-    GPS_END_TIME=967384015
-    export LOGPATH=/usr1/${USER}/log
-    mkdir -p $LOGPATH
-
-    pycbc_make_nitz_coinc_workflow \
-    --output-dir gwanalysis \
-    --local-config-files ncoinc.ini \
-    --config-overrides \
-    workflow:start-time:${GPS_START_TIME} \
-    workflow:end-time:${GPS_END_TIME} 
-
-To plan the workflow::
-
-    cd gwanalysis
-    pycbc_basic_pegasus_plan weekly_ahope.dax $LOGPATH
+Add '--enable-hdf-post-processing' to the 'pycbc_make_coinc_workflow' invocation and proceed with the standard instructions.
+::
+   pycbc_make_coinc_workflow \
+    --enable-hdf-post-processing \
+    ...
+    ...    
 
 ==============================================================
-Reusing data from workflow that use some other post-processing
+Reusing data from workflow that uses some other post-processing
 ==============================================================
 
 Assuming the list of limitations is satisfied by the previous run, then one
-can simply select the 'weekly_ahope.map' file in the '--cache' option to the
+can simply select the 'main.map' file in the '--cache' option to the
 pegasus planner.::
 
     cd gwanalysis
-    pycbc_basic_pegasus_plan weekly_ahope.dax $LOGPATH --cache /path/to/prior/worklfow/weekly_ahope.map
+    pycbc_basic_pegasus_plan weekly_ahope.dax $LOGPATH --cache /path/to/prior/worklfow/main.map
 
 If the prior workflow did not use the post-processing described on this page, then there is no need
 to edit the map file and it can be used as is.
 
 If you are rerunning a workflow using this post-processing, then select from your weekly_ahope.map file only
 the files you want to reuse, and then point the '--cache' option to it instead.
-
