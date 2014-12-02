@@ -48,7 +48,7 @@ The following restrictions are slated to be be removed when time permits
 Configuration File
 ===================
 
-An example configuration file is included as example_hdf_post.ini
+An example configuration file is included as example_hdf_post.ini. This acts as a supplement to the standard ini files. It does not stand alone.
 
 ----------------------
 Workflow Configuration
