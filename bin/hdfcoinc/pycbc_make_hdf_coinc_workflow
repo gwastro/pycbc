@@ -103,7 +103,8 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
 
     # convert insps to hdf
     insps_hdf = wf.convert_trig_to_hdf(workflow, hdfbank, insps, output_dir, tags=[tag])
-    insps_hdf.to_file_object("single_trig_" + tag, flDir)
+    insps_hdf = wf.merge_single_detector_hdf_files(workflow, insps_hdf, output_dir, tags=[tag])
+
     # setup coinc for the filtering jobs
     if tag == 'full_data':
         bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps_hdf, cum_veto_files,

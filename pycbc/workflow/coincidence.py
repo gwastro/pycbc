@@ -461,7 +461,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
         main_return = ligolwThincaOuts
 
     return main_return, other_returns
-    
+  
 class PyCBCBank2HDFExecutable(Executable):
     """ This converts xml tmpltbank to an hdf format
     """
@@ -519,7 +519,19 @@ def get_subsections(cp, section_name):
         return subsections
     else:
         return ['']
-
+        
+def merge_single_detector_hdf_files(workflow, trigger_files, out_dir, tags=[]):
+    make_analysis_dir(out_dir)
+    out = FileList()
+    for ifo in workflow.ifos:
+        node = Node(Executable(workflow.cp, 'hdf_trigger_merge', 
+                        ifos=ifo, out_dir=out_dir, tags=tags))  
+        node.add_input_list_opt('--trigger-files', trigger_files.find_output_with_ifo(ifo))
+        node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
+        workflow += node
+        out += node.output_files
+    return out
+        
 def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir, tags=[]):
     make_analysis_dir(out_dir)
     node = Node(Executable(workflow.cp, 'page_foreground', ifos=workflow.ifos,

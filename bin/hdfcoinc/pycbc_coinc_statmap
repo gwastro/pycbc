@@ -9,7 +9,7 @@ from scipy.interpolate import interp1d
 from pycbc.future import numpy  
     
 def load_coincs(coinc_files):
-    stat, time1, time2, timeslide_id, decimation_factor = [], [], [], [], [], []  
+    stat, time1, time2, timeslide_id, template_id, decimation_factor = [], [], [], [], [], []  
     for cfile in coinc_files:
         try:
             logging.info('reading %s' % cfile)

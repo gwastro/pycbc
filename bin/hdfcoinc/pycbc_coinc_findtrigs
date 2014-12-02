@@ -246,7 +246,7 @@ def load_triggers(trigger_files, group_id, stat_class):
         if ifo not in trig_segments:
             trig_segments[ifo] = segments.segmentlist()  
           
-        for s, e in f['search/start_time'][:], f.attrs['search/end_time'][:]:
+        for s, e in zip(f['search/start_time'][:], f['search/end_time'][:]):
             trig_segments[ifo] += [segments.segment(s,e)]
         
         l = f['template_group/left'][group_id]

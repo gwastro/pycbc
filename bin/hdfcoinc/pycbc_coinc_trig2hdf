@@ -9,6 +9,7 @@ def read_files(trigger_files, columns, column_types, attribute_columns):
     """
     data = {}
     attrs = {}
+    other = {}
     ths = []
     
     from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
@@ -31,8 +32,8 @@ def read_files(trigger_files, columns, column_types, attribute_columns):
             
         if i==0:
             search_sum = table.get_table(indoc, lsctables.SearchSummaryTable.tableName)
-            f['search/start_time'] = numpy.array([search_sum[0].out_start_time], dtype=numpy.float64)
-            f['search/end_time'] = numpy.array([search_sum[0].out_end_time], dtype=numpy.float64)
+            other['search/start_time'] = numpy.array([search_sum[0].out_start_time], dtype=numpy.float64)
+            other['search/end_time'] = numpy.array([search_sum[0].out_end_time], dtype=numpy.float64)
             attrs['ifo'] = str(search_sum[0].ifos)
        
         if len(sngl_table) > 0 and not retrieved_attrs:
@@ -52,7 +53,7 @@ def read_files(trigger_files, columns, column_types, attribute_columns):
         ths.append(th)
     data['template_hash'] = numpy.concatenate(ths)
      
-    return data, attrs
+    return data, attrs, other
 
 def hash_to_row(template_hashes):
     row_lookup = {}
@@ -111,7 +112,7 @@ f = h5py.File(args.bank_file, "r")
 template_hashes = f['template_hash'][:]
 
 logging.info('reading triggers')
-data, attrs = read_files(args.trigger_files, 
+data, attrs, other = read_files(args.trigger_files, 
                 columns=['snr',
                          'chisq',
                          'bank_chisq',
@@ -156,6 +157,8 @@ for key in attrs.keys():
 if len(data['snr']) > 0:
     for col in data.keys():
         f[col] = data[col][sorting]
+    for col in other.keys():
+        f[col] = other[col]
     f['template_id'] = tids
     f['template_group/left'] = left
     f['template_group/right'] = right          
