@@ -32,7 +32,7 @@ class NewSNRStatistic(object):
         return numpy.array(snr, ndmin=1)
 
     def coinc_statistic(self, s1, s2):
-        """ Calculate teh coincidend statistic.
+        """ Calculate the coincident statistic.
         """
         return (s1**2.0 + s2**2.0) ** 0.5
         
@@ -63,8 +63,6 @@ class NewSNRPhaseStatistic(object):
         return stat1
     
     def coinc_statistic(self, s1, s2):
-        """ Calculate teh coincidend statistic.
-        """
         snr1, snr2 = s1['snr'], s2['snr']
         p1, p2 = s1['phase'], s2['phase']
         stat = (snr1**2.0 + snr2**2.0) / 2.0 + self.phase_log_pdf(p1, p2)
@@ -248,8 +246,8 @@ def load_triggers(trigger_files, group_id, stat_class):
         if ifo not in trig_segments:
             trig_segments[ifo] = segments.segmentlist()  
           
-        seg = segments.segment(f.attrs['start_time'], f.attrs['end_time'])
-        trig_segments[ifo] += [seg]
+        for s, e in f['search/start_time'][:], f.attrs['search/end_time'][:]:
+            trig_segments[ifo] += [segments.segment(s,e)]
         
         l = f['template_group/left'][group_id]
         r = f['template_group/right'][group_id]
