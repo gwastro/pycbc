@@ -24,6 +24,8 @@ from pycbc.types.array import _nocomplex
 from pycbc.types.frequencyseries import FrequencySeries
 import lal as _lal
 import numpy as _numpy
+from scipy.io.wavfile import write as write_wav
+
 
 class TimeSeries(Array):
     """Models a time series consisting of uniformly sampled scalar values.
@@ -353,10 +355,9 @@ class TimeSeries(Array):
         ----------
         file_name : string
              The output file name
-        """   
-        from scipy.io.wavfile import write
+        """
         scaled = _numpy.int16(self.numpy()/max(abs(self)) * 32767)
-        write('test.wav', self.sample_rate, scaled)
+        write_wav(file_name, self.sample_rate, scaled)
 
     def save(self, path):
         """
