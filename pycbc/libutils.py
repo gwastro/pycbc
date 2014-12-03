@@ -39,7 +39,7 @@ def pkg_config_libdirs(packages):
             raise ValueError("Package {0} cannot be found on the pkg-config search path".format(pkg))
 
     libdirs = []
-    for token in commands.getoutput("PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 pkg-config --libs-only-L {0}".format(' '.join(packages))).split():
+    for token in commands.getoutput("PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 pkg-config --libs-only-L {0}".format(' '.join(packages))).split():
         if token.startswith("-L"):
             libdirs.append(token[2:])
     return libdirs
