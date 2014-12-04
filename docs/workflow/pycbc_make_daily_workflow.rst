@@ -1,5 +1,5 @@
 ########################################################
-pycbc_make_daily_workflow: A single-ifo detchar tool
+``pycbc_make_daily_workflow``: A single-ifo detchar tool
 ########################################################
 
 ===============
@@ -14,7 +14,7 @@ for the CBC searches. If the detectoralists can identify what causes these most
 egregious glitches it can increase the overall search sensitivity.
 
 =========================================
-How to run `pycbc_make_daily_workflow`
+How to run ``pycbc_make_daily_workflow``
 =========================================
 
 Here we document the stages needed to run ``pycbc_make_daily_workflow``.

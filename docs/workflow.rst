@@ -40,10 +40,10 @@ in the source tree under::
 These examples are described in each section below
 
 ---------------------
-weekly_ahope
+``pycbc_make_coinc_workflow``
 ---------------------
 
-This is an example of how to run a coincidence workflow, mimicking standard ihope coincidence analysis as closely as possible. It calls into pipedown to do the post-processing and using write_ihope_page to make an output html page. In total this will:
+This is an example of how to run a coincidence workflow, mimicking standard ihope coincidence analysis as closely as possible. It calls into pipedown to do the post-processing and using `lalapps_write_ihope_page` to make an output html page. In total this will:
 
 * Get science and data-quality segments from the server.
 * Query the datafind server for frames.
@@ -54,22 +54,22 @@ This is an example of how to run a coincidence workflow, mimicking standard ihop
 * Do some compatibility conversions and then call pipedown to create a dag to do the post-processing
 * Add a node to run write_ihope_page at the end of analysis
 * Native post-processing is also present in a testing mode, this will not be seen in the default output page, but does include a full set of plots.
-* Write a dag/dax to file that can be submitted to run the workflow
+* Write a dax to file that can be submitted to run the workflow
 
-This will therefore set up a *almost complete* mimic of a weekly ihope analysis and automatically generate the output webpage at the end of the analysis.
+This will therefore set up an *almost complete* mimic of a weekly ihope analysis and automatically generate the output webpage at the end of the analysis.
 
 More details of how to run this is found in the following link:
 
 .. toctree::
    :maxdepth: 1
 
-   workflow/weekly_ahope
+   workflow/pycbc_make_coinc_workflow
 
 -------------------
-er_daily_ahope
+``pycbc_make_daily_workflow``
 -------------------
 
-This is an example of how to run a workflow mimicing the daily_ihope analysis done in the past. This will:
+This is an example of how to run a workflow mimicing the daily ihope analysis done in the past. This will:
 
 * Get science and data-quality segments from the server.
 * Query the datafind server for frames.
@@ -81,17 +81,17 @@ This is an example of how to run a workflow mimicing the daily_ihope analysis do
 
 This will therefore set up a *complete* daily_ahope workflow and automatically generate the webpage at the end of the analysis.
 
-This is currently being used in ER5 as a supplement and backup to the daily_ihope runs. 
+This is currently being used in ER6 as a supplement and backup to the daily ihope runs. 
 
 More details of how to run this is found in the following link:
 
 .. toctree::
    :maxdepth: 1
 
-   workflow/daily_ahope
+   workflow/pycbc_make_daily_workflow
 
 ---------------------
-data_checker
+`data_checker`
 ---------------------
 
 This is an example of using only the segment query and datafind query modules
