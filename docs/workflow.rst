@@ -69,7 +69,7 @@ More details of how to run this is found in the following link:
 ``pycbc_make_daily_workflow``
 -------------------
 
-This is an example of how to run a workflow mimicing the daily ihope analysis done in the past. This will:
+This is an example of how to run a workflow mimicking the daily ihope analysis done in the past. This will:
 
 * Get science and data-quality segments from the server.
 * Query the datafind server for frames.
