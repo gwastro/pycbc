@@ -9,7 +9,7 @@ from scipy.interpolate import interp1d
 from pycbc.future import numpy  
     
 def load_coincs(coinc_files):
-    stat, time1, time2, timeslide_id, template_id, decimation_factor = [], [], [], [], [], []  
+    stat, time1, time2, timeslide_id, template_id, decimation_factor, i1, i2 = [], [], [], [], [], [], [], []
     for cfile in coinc_files:
         try:
             logging.info('reading %s' % cfile)
@@ -17,6 +17,8 @@ def load_coincs(coinc_files):
             stat.append(f['coinc/stat'])
             time1.append(f['coinc/time1'])
             time2.append(f['coinc/time2'])
+            i1.append(f['coinc/trigger_id1'])
+            i2.append(f['coinc/trigger_id2'])
             timeslide_id.append(f['coinc/timeslide_id'])
             template_id.append(f['coinc/template_id'])
             decimation_factor.append(f['coinc/decimation_factor'])
@@ -26,7 +28,8 @@ def load_coincs(coinc_files):
     return (numpy.concatenate(stat), numpy.concatenate(time1),
            numpy.concatenate(time2), numpy.concatenate(timeslide_id),
            numpy.concatenate(template_id), numpy.concatenate(decimation_factor),
-           attr, f['coinc/analyzed_start'][:], f['coinc/analyzed_end'][:],
+           numpy.concatenate(i1), numpy.concatenate(i2), attr, 
+           f['coinc/analyzed_start'][:], f['coinc/analyzed_end'][:], 
            )
   
 def changed(arr):
@@ -116,7 +119,7 @@ if __name__ == '__main__':
                                 level=log_level)
     
     logging.info("Loading coinc triggers")    
-    stat, t1, t2, sid, tid, dec, attrs, start, end = load_coincs(args.coinc_files)   
+    stat, t1, t2, sid, tid, dec, i1, i2, attrs, start, end = load_coincs(args.coinc_files)   
     logging.info("We have %s triggers" % len(stat))
 
     if args.cluster_window != 0:
@@ -124,7 +127,7 @@ if __name__ == '__main__':
         cid = cluster_coincs(stat, t1, t2, sid, 
                              attrs['timeslide_interval'], 
                              args.cluster_window)
-        stat, t1, t2, sid, tid, dec = stat[cid], t1[cid], t2[cid], sid[cid], tid[cid], dec[cid]
+        stat, t1, t2, sid, tid, dec, i1, i2 = stat[cid], t1[cid], t2[cid], sid[cid], tid[cid], dec[cid], i1[cid], i2[cid]
         logging.info("We now have %s triggers" % len(stat))
 
     logging.info("Dumping foreground triggers")
@@ -142,6 +145,8 @@ if __name__ == '__main__':
         f['foreground/stat'] = stat[fore_locs]
         f['foreground/time1'] = t1[fore_locs]
         f['foreground/time2'] = t2[fore_locs]
+        f['foreground/trigger_id1'] = i1[fore_locs]
+        f['foreground/trigger_id2'] = i2[fore_locs]
         f['foreground/template_id'] = tid[fore_locs]
         f['foreground/analyzed_start'] = start
         f['foreground/analyzed_end'] = end
@@ -175,6 +180,8 @@ if __name__ == '__main__':
         f['background/stat'] = stat[back_locs]
         f['background/time1'] = t1[back_locs]
         f['background/time2'] = t2[back_locs]
+        f['background/trigger_id1'] = i1[back_locs]
+        f['background/trigger_id2'] = i2[back_locs]
         f['background/timeslide_id'] = sid[back_locs]
         f['background/template_id'] = tid[back_locs]
         f['background/decimation_factor'] = dec[back_locs]

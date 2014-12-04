@@ -47,7 +47,8 @@ for column in trigger_columns:
     for filename in args.trigger_files:
         cdata =  h5py.File(filename)[column][:]
         filec[filename] = cdata
-    dset = f.create_dataset(column, (num_trigs,), dtype=cdata.dtype, compression='gzip', compression_opts=1)
+    dset = f.create_dataset(column, (num_trigs,), dtype=cdata.dtype, 
+                            compression='gzip', compression_opts=1)
 
     trigs = 0
     for j in range(num_groups):

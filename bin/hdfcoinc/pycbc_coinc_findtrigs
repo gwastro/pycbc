@@ -406,11 +406,11 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)       
 
     stat_all = []
-    t1_all = []
-    t2_all = []
+    t1_all, t2_all = [], []
     dec_all = []
     slide_all = []
     template_all = []
+    i1_all, i2_all = [], []
     
     for template_group in args.template_group:
         logging.info('Loading triggers from template group %s' % template_group)
@@ -423,6 +423,8 @@ if __name__ == '__main__':
         fore_time2 = abs(foreground_segments[ifo2])
         coinc_segs = (foreground_segments[ifo1] & foreground_segments[ifo2]).coalesce()
         coinc_time = abs(coinc_segs)
+        i1 = numpy.arange(0, len(s1))
+        i2 = i1 * 1
         
         start = []
         end = []
@@ -432,18 +434,15 @@ if __name__ == '__main__':
         start = numpy.array(start)
         end = numpy.array(end)    
         
-        logging.info('%s time: %s  %s time: %s' %  (ifo1, fore_time1, ifo2, fore_time2))   
-        #logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))   
-        #logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))
-        
+        logging.info('%s time: %s  %s time: %s' %  (ifo1, fore_time1, ifo2, fore_time2))           
         if  args.veto_files:
             logging.info('applying vetoes')
             veto1, vsegs1 = veto_indices(t1, ifo1, args.veto_files)
-            s1, t1, r1 = numpy.delete(s1, veto1), numpy.delete(t1, veto1), numpy.delete(r1, veto1)
+            s1, t1, r1, i1 = numpy.delete(s1, veto1), numpy.delete(t1, veto1), numpy.delete(r1, veto1), numpy.delete(i1, veto1)
             fore_time1 -= abs(foreground_segments[ifo1] & vsegs1)
 
             veto2, vsegs2 = veto_indices(t2, ifo2, args.veto_files)     
-            s2, t2, r2 = numpy.delete(s2, veto2), numpy.delete(t2, veto2), numpy.delete(r2, veto2)
+            s2, t2, r2, i2 = numpy.delete(s2, veto2), numpy.delete(t2, veto2), numpy.delete(r2, veto2), numpy.delete(i2, veto2)
             fore_time2 -= abs(foreground_segments[ifo2] & vsegs2)
             logging.info('%s time: %s  %s time: %s' %  (ifo1, fore_time1, ifo2, fore_time2))   
             
@@ -451,9 +450,6 @@ if __name__ == '__main__':
         det2 = Detector(ifo2)
         logging.info('%s num: %s   %s num: %s' % (ifo1, len(s1), ifo2, len(s2)))
         time_window = det1.light_travel_time_to_detector(det2) + args.coinc_threshold
-        
-        #logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))  
-        #logging.info('%s loudest: %s  %s loudest: %s' %  (ifo1, s1.max(), ifo2, s2.max()))
         
         slide = args.timeslide_interval  
         logging.info('making bins') 
@@ -493,12 +489,12 @@ if __name__ == '__main__':
                                    args.decimation_factor)                                 
             e1 = c1[d1]
             e2 = c2[d1]
-            stat, t1, t2, r1 = stat[d1], t1[e1], t2[e2], r1[e1]
+            stat, t1, t2, r1, i1, i2 = stat[d1], t1[e1], t2[e2], r1[e1], i1[e1], i2[e2]
             slide_index = slide_index[d1]
             logging.info('%s total triggers' % len(stat))
             logging.info('%s foreground triggers' % (slide_index == 0).sum())
         else:
-            t1, t2, r1 = t1[c1], t2[c2], r1[c1]
+            t1, t2, r1, i1, i2 = t1[c1], t2[c2], r1[c1], i1[c1], i2[c2]
             decimation_factor = numpy.zeros(len(stat), dtype=numpy.uint32) + 1
         
         # Accumulate the coinc triggers from this groups of templates
@@ -508,6 +504,7 @@ if __name__ == '__main__':
         dec_all += [decimation_factor]
         slide_all += [slide_index]
         template_all += [r1]
+        i1_all, i2_all = i1_all + [i1], i2_all + [i2]
         
     logging.info('saving coincident triggers')
     f = h5py.File(args.output_file, "w")
@@ -517,6 +514,8 @@ if __name__ == '__main__':
         f.create_dataset('coinc/decimation_factor', data=numpy.concatenate(dec_all))
         f.create_dataset('coinc/time1', data=numpy.concatenate(t1_all))
         f.create_dataset('coinc/time2', data=numpy.concatenate(t2_all))
+        f.create_dataset('coinc/trigger_id1', data=numpy.concatenate(i1_all))
+        f.create_dataset('coinc/trigger_id2', data=numpy.concatenate(i2_all))
         f.create_dataset('coinc/timeslide_id', data=numpy.concatenate(slide_all))
         f.create_dataset('coinc/template_id', data=numpy.concatenate(template_all))
         f['coinc/analyzed_start'] = start
