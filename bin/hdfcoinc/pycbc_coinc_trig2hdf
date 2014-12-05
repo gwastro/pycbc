@@ -156,12 +156,12 @@ for key in attrs.keys():
 
 if len(data['snr']) > 0:
     for col in data.keys():
-        dset = f.create_dataset(col, (len(sorting),), compression='gzip')
+        dset = f.create_dataset(col, (len(sorting),), compression='gzip', dtype=data[col].dtype)
         dset[:] = data[col][sorting]
     for col in other.keys():
-        dset = f.create_dataset(col, (len(other[col]),), compression='gzip')
+        dset = f.create_dataset(col, (len(other[col]),), compression='gzip', dtype=other[col].dtype)
         dset[:] = other[col]
-    dset = f.create_dataset('template_id', (len(tids),), compression='gzip')
+    dset = f.create_dataset('template_id', (len(tids),), compression='gzip', dtype=tids.dtype)
     dset[:] = tids
     f['template_group/left'] = left
     f['template_group/right'] = right          
