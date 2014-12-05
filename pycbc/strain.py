@@ -16,63 +16,21 @@
 """
 This modules contains functions reading, generating, and segmenting strain data
 """
+import copy
 import logging, numpy, lal
 import pycbc.noise
 from pycbc import psd
 from pycbc.types import float32
+from pycbc.types import MultiDetOptionAppendAction, MultiDetOptionAction
+from pycbc.types import MultiDetOptionActionSpecial
+from pycbc.types import required_opts, required_opts_multi_ifo
+from pycbc.types import ensure_one_opt, ensure_one_opt_multi_ifo
+from pycbc.types import copy_opts_for_single_ifo
 from pycbc.frame import read_frame
 from pycbc.inject import InjectionSet, SGBurstInjectionSet
 from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series
 from pycbc.filter.zpk import filter_zpk_factored
 
-def required_opts(opt, parser, opt_list, required_by=None):
-    """Check that all the opts are defined 
-    
-    Parameters
-    ----------
-    opt : object
-        Result of option parsing
-    parser : object
-        OptionParser instance.
-    opt_list : list of strings
-    required_by : string, optional
-        the option that requires these options (if applicable)
-    """
-    for name in opt_list:
-        attr = name[2:].replace('-', '_')
-        if not hasattr(opt, attr) or (getattr(opt, attr) is None):
-            err_str = "%s is missing " % name
-            if required_by is not None:
-                err_str += ", required by %s" % required_by
-            parser.error(err_str)
-    
-
-def ensure_one_opt(opt, parser, opt_list):
-    """  Check that one and only one in the opt_list is defined in opt
-    
-    Parameters
-    ----------
-    opt : object
-        Result of option parsing
-    parser : object
-        OptionParser instance.
-    opt_list : list of strings
-    """
-    
-    the_one = None
-    for name in opt_list:
-        attr = name[2:].replace('-', '_')
-        if hasattr(opt, attr) and (getattr(opt, attr) is not None):
-            if the_one is None:
-                the_one = name
-            else:
-                parser.error("%s and %s are mutually exculsive" \
-                              % (the_one, name))
-    
-    if the_one is None:
-        parser.error("you must supply one of the following %s" \
-                      % (', '.join(opt_list)))
-            
 def from_cli(opt, dyn_range_fac=1):
     """Parses the CLI options related to strain data reading and conditioning.
 
@@ -186,6 +144,23 @@ def from_cli(opt, dyn_range_fac=1):
     
     return strain
 
+def from_cli_single_ifo(opt, ifo, **kwargs):
+    """
+    Get the strain for a single ifo when using the multi-detector CLI
+    """
+    single_det_opt = copy_opts_for_single_ifo(opt, ifo)
+    return from_cli(single_det_opt, **kwargs)
+
+def from_cli_multi_ifos(opt, ifos, **kwargs):
+    """
+    Get the PSD for all ifos when using the multi-detector CLI
+    """
+    strain = {}
+    for ifo in ifos:
+        strain[ifo] = from_cli_single_ifo(opt, ifo, **kwargs)
+    return strain
+
+
 def insert_strain_option_group(parser):
     """
     Adds the options used to call the pycbc.strain.from_cli function to an
@@ -269,6 +244,130 @@ def insert_strain_option_group(parser):
 
     return data_reading_group
 
+# FIXME: This repeats almost all of the options above. Any nice way of reducing
+#        this?
+def insert_strain_option_group_multi_ifo(parser):
+    """
+    Adds the options used to call the pycbc.strain.from_cli function to an
+    optparser as an OptionGroup. This should be used if you
+    want to use these options in your code.
+ 
+    Parameters
+    -----------    parser : object
+        OptionParser instance.
+    """
+
+    data_reading_group = parser.add_argument_group("Options for obtaining h(t)",
+                  "These options are used for generating h(t) either by "
+                  "reading from a file or by generating it. This is only "
+                  "needed if the PSD is to be estimated from the data, ie. "
+                  "if the --psd-estimation option is given. This group "
+                  "supports reading from multiple ifos simultaneously.")
+
+    # Required options
+    data_reading_group.add_argument("--gps-start-time", nargs='+',
+                            action=MultiDetOptionAction, metavar='IFO:TIME',
+                            help="The gps start time of the data "
+                                 "(integer seconds)", type=int)
+    data_reading_group.add_argument("--gps-end-time", nargs='+', type=int,
+                            action=MultiDetOptionAction, metavar='IFO:TIME',
+                            help="The gps end time of the data "
+                                 "(integer seconds)")
+    data_reading_group.add_argument("--strain-high-pass", nargs='+',
+                            action=MultiDetOptionAction,
+                            type=float, metavar='IFO:FREQUENCY',
+                            help="High pass frequency")
+    data_reading_group.add_argument("--pad-data", nargs='+',
+                            action=MultiDetOptionAction,
+                            type=int, metavar='IFO:LENGTH',
+                            help="Extra padding to remove highpass corruption "
+                                "(integer seconds)")
+    data_reading_group.add_argument("--sample-rate", type=int, nargs='+',
+                            action=MultiDetOptionAction, metavar='IFO:RATE',
+                            help="The sample rate to use for h(t) generation "
+                                " (integer Hz).")
+    data_reading_group.add_argument("--channel-name", type=str, nargs='+',
+                            action=MultiDetOptionActionSpecial,
+                            metavar='IFO:CHANNEL',
+                            help="The channel containing the gravitational "
+                                "strain data")
+
+    #Read from cache file              
+    data_reading_group.add_argument("--frame-cache", type=str, nargs="+",
+                            action=MultiDetOptionAppendAction,
+                            metavar='IFO:FRAME_CACHE',
+                            help="Cache file containing the frame locations.")
+
+    #Read from frame files              
+    data_reading_group.add_argument("--frame-files", type=str, nargs="+",
+                            action=MultiDetOptionAppendAction,
+                            metavar='IFO:FRAME_FILES',
+                            help="list of frame files")
+
+    #Generate gaussian noise with given psd           
+    data_reading_group.add_argument("--fake-strain", type=str, nargs="+",
+                            action=MultiDetOptionAction, metavar='IFO:CHOICE',
+                            help="Name of model PSD for generating fake "
+                            "gaussian noise. Choose from %s" \
+                            %((', ').join(psd.get_lalsim_psd_list()),) )
+    data_reading_group.add_argument("--fake-strain-seed", type=int, default=0,
+                            nargs="+",
+                            action=MultiDetOptionAction, metavar='IFO:SEED',
+                            help="Seed value for the generation of fake "
+                            "colored gaussian noise")
+
+    #optional       
+    data_reading_group.add_argument("--injection-file", type=str, nargs="+",
+                            action=MultiDetOptionAction, metavar='IFO:FILE',
+                            help="(optional) Injection file used to add "
+                            "waveforms into the strain")
+
+    data_reading_group.add_argument("--sgburst-injection-file", type=str,
+                      nargs="+", action=MultiDetOptionAction, 
+                      metavar='IFO:FILE',
+                      help="(optional) Injection file used to add "
+                      "sine-Gaussian burst waveforms into the strain")
+
+    data_reading_group.add_argument("--gating-file", type=str,
+                      nargs="+", action=MultiDetOptionAction, 
+                      metavar='IFO:FILE',
+                      help="(optional) Text file of gating segments to apply."
+                          " Format of each line is (all times in secs):"
+                          "  gps_time zeros_half_width pad_half_width")
+
+    data_reading_group.add_argument("--normalize-strain", type=float,
+                     nargs="+", action=MultiDetOptionAction,
+                     metavar='IFO:VALUE',
+                     help="(optional) Divide frame data by constant.")
+
+    data_reading_group.add_argument("--zpk-z", type=float,
+                     nargs="+", action=MultiDetOptionAppendAction,
+                     metavar='IFO:VALUE',
+                     help="(optional) Zero-pole-gain (zpk) filter strain. "
+                         "A list of zeros for transfer function")
+
+    data_reading_group.add_argument("--zpk-p", type=float,
+                     nargs="+", action=MultiDetOptionAppendAction,
+                     metavar='IFO:VALUE',
+                     help="(optional) Zero-pole-gain (zpk) filter strain. "
+                         "A list of poles for transfer function")
+
+    data_reading_group.add_argument("--zpk-k", type=float,
+                     nargs="+", action=MultiDetOptionAppendAction,
+                     metavar='IFO:VALUE',
+                     help="(optional) Zero-pole-gain (zpk) filter strain. "
+                         "Transfer function gain")
+
+    return data_reading_group
+
+
+ensure_one_opt_groups = []
+ensure_one_opt_groups.append(['--frame-cache','--fake-strain','--frame-files'])
+
+required_opts_list = ['--gps-start-time', '--gps-end-time', 
+                      '--strain-high-pass', '--pad-data', '--sample-rate',
+                      '--channel-name']
+
 def verify_strain_options(opts, parser):
     """Parses the strain data CLI options and verifies that they are consistent 
     and reasonable.
@@ -283,13 +382,31 @@ def verify_strain_options(opts, parser):
     parser : object
         OptionParser instance.
     """
-    ensure_one_opt(opts, parser, ['--frame-cache', 
-                                  '--fake-strain', 
-                                  '--frame-files'])  
-    required_opts(opts, parser, 
-                  ['--gps-start-time', '--gps-end-time', '--strain-high-pass',
-                   '--pad-data', '--sample-rate', '--channel-name',
-                   ])               
+    for opt_group in ensure_one_opt_groups:
+        ensure_one_opt(opts, parser, opt_group)
+    required_opts(opts, parser, required_opts_list)
+
+def verify_strain_options_multi_ifo(opts, parser, ifos):
+    """Parses the strain data CLI options and verifies that they are consistent 
+    and reasonable.
+    
+    Parameters
+    ----------
+    opt : object
+        Result of parsing the CLI with OptionParser, or any object with the
+        required attributes (gps-start-time, gps-end-time, strain-high-pass, 
+        pad-data, sample-rate, frame-cache, channel-name, fake-strain, 
+        fake-strain-seed).
+    parser : object
+        OptionParser instance.
+    ifos : list of strings
+        List of ifos for which to verify options for
+    """
+    for ifo in ifos:
+        for opt_group in ensure_one_opt_groups:
+            ensure_one_opt_multi_ifo(opts, parser, ifo, opt_group)
+        required_opts_multi_ifo(opts, parser, ifo, required_opts_list)
+
 
 def gate_data(data, gate_params, data_start_time):
     def inverted_tukey(M, n_pad):
@@ -518,11 +635,68 @@ class StrainSegments(object):
                           full analysis if two injections are in the same
                           segment.""")
         
-        
     @classmethod
-    def verify_segment_options(cls, opt, parser):
-        required_opts(opt, parser, 
-                  ['--segment-length',
+    def from_cli_single_ifo(cls, opt, strain, ifo):
+        """Calculate the segmentation of the strain data for analysis from
+        the command line options.
+        """
+        return cls(strain, segment_length=opt.segment_length[ifo],
+                   segment_start_pad=opt.segment_start_pad[ifo],
+                   segment_end_pad=opt.segment_end_pad[ifo],
+                   trigger_start=opt.trig_start_time[ifo],
+                   trigger_end=opt.trig_end_time[ifo],
+                   filter_inj_only=opt.filter_inj_only)
+
+    @classmethod
+    def from_cli_multi_ifos(cls, opt, strain_dict, ifos):
+        """Calculate the segmentation of the strain data for analysis from
+        the command line options.
+        """
+        strain_segments = {}
+        for ifo in ifos:
+            strain_segments[ifo] = cls.from_cli_single_ifo(opt,
+                                                         strain_dict[ifo], ifo)
+        return strain_segments
+
+    @classmethod
+    def insert_segment_option_group_multi_ifo(cls, parser):
+        segment_group = parser.add_argument_group(
+                                   "Options for segmenting the strain",
+                                  "These options are used to determine how to "
+                                  "segment the strain into smaller chunks, "
+                                  "and for determining the portion of each to "
+                                  "analyze for triggers. ")
+        segment_group.add_argument("--trig-start-time", type=int, default=0,
+                    nargs='+', action=MultiDetOptionAction, metavar='IFO:TIME',
+                    help="(optional) The gps time to start recording triggers")
+        segment_group.add_argument("--trig-end-time", type=int, default=0,
+                    nargs='+', action=MultiDetOptionAction, metavar='IFO:TIME',
+                    help="(optional) The gps time to stop recording triggers")
+        segment_group.add_argument("--segment-length", type=int,
+                    nargs='+', action=MultiDetOptionAction,
+                    metavar='IFO:LENGTH',
+                    help="The length of each strain segment in seconds.")
+        segment_group.add_argument("--segment-start-pad", type=int,
+                    nargs='+', action=MultiDetOptionAction, metavar='IFO:TIME',
+                    help="The time in seconds to ignore of the "
+                        "beginning of each segment in seconds. ")
+        segment_group.add_argument("--segment-end-pad", type=int,
+                    nargs='+', action=MultiDetOptionAction, metavar='IFO:TIME',
+                    help="The time in seconds to ignore at the "
+                         "end of each segment in seconds.")
+        segment_group.add_argument("--filter-inj-only", action='store_true',
+                    help="Analaze only segements that contain an injection.")
+
+    required_opts_list = ['--segment-length',
                    '--segment-start-pad',
                    '--segment-end-pad',
-                   ])  
+                   ]
+    
+    @classmethod
+    def verify_segment_options(cls, opt, parser):
+        required_opts(opt, parser, cls.required_opts_list)
+
+    @classmethod
+    def verify_segment_options_multi_ifo(cls, opt, parser, ifos):
+        for ifo in ifos:
+            required_opts_multi_ifo(opt, parser, ifo, cls.required_opts_list)
