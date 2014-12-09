@@ -22,10 +22,13 @@ f = h5py.File(args.trigger_file, 'r')
 
 print f.attrs['background_time'], f.attrs['foreground_time']
 
-cstat_fore = f['foreground/stat'][:]
-cstat_fore.sort()
-cstat_rate = numpy.arange(len(cstat_fore), 0, -1) / f.attrs['foreground_time'] * 3.15569e7
-logging.info('Found %s foreground triggers' % len(cstat_fore))
+try:
+    cstat_fore = f['foreground/stat'][:]
+    cstat_fore.sort()
+    cstat_rate = numpy.arange(len(cstat_fore), 0, -1) / f.attrs['foreground_time'] * 3.15569e7
+    logging.info('Found %s foreground triggers' % len(cstat_fore))
+except:
+    cstat_fore = None
 
 back_ifar = f['background/ifar'][:]
 
@@ -41,13 +44,19 @@ err_low[err_low == 0] = 1e-100
 err_high = far_back * ((back_fan + numpy.sqrt(back_fan)) / back_fan)
 
 pylab.figure(1)
+
 pylab.fill_between(cstat_back, err_low, err_high, linewidth=0, color='tan')
 pylab.plot(cstat_back, far_back, color='black', label='Background')
-pylab.scatter(cstat_fore, cstat_rate, linewidth=0, color='blue', marker='^', label='Foreground')
+
+if cstat_fore is not None:
+    pylab.scatter(cstat_fore, cstat_rate, linewidth=0, color='blue', marker='^', label='Foreground')
+    pylab.xlim(cstat_back.min(), max(cstat_fore.max(), cstat_back.max()) + 1)
+else:
+    pylab.xlim(cstat_back.min(), cstat_back.max() + 1)
+
 pylab.ylabel('Cumulative Rate (1/year)')
 pylab.xlabel('Combined NewSNR')
 pylab.yscale('log')
-pylab.xlim(cstat_back.min(), max(cstat_back.max(), cstat_fore.max()) + 1)
 pylab.ylim(far_back.min() / 10.0, far_back.max())
 pylab.legend()
 pylab.grid()

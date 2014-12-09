@@ -594,10 +594,10 @@ class PyCBCHDFInjFindExecutable(Executable):
     """
     def create_node(self, inj_coinc_file, inj_xml_file, veto_file, tags=[]):
         node = Node(self)
-        node.add_input_opt('--trigger-file', inj_coinc_file)
-        node.add_input_opt('--injection-file', inj_xml_file)
+        node.add_input_list_opt('--trigger-file', inj_coinc_file)
+        node.add_input_list_opt('--injection-file', inj_xml_file)
         node.add_input_opt('--veto-file', veto_file)
-        node.new_output_file_opt(inj_xml_file.segment, '.hdf', '--output-file', 
+        node.new_output_file_opt(inj_xml_file[0].segment, '.hdf', '--output-file', 
                                  tags=tags)
         return node
 

@@ -108,6 +108,7 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
     template_id = f['foreground/template_id'][:]
     stat = f['foreground/stat'][:]
     ifar = f['foreground/ifar'][:]
+    fap = f['foreground/fap'][:]
     time1 = f['foreground/time1'][:]
     time2 = f['foreground/time2'][:]
     trig1 = f['foreground/trigger_id1'][:]
@@ -180,6 +181,7 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
     hdf_append(fo, 'found/trigger_id1', trig1[time_sorting][found_fore])
     hdf_append(fo, 'found/trigger_id2', trig2[time_sorting][found_fore])
     hdf_append(fo, 'found/ifar', ifar[time_sorting][found_fore])
+    hdf_append(fo, 'found/fap', fap[time_sorting][found_fore])
 
     hdf_append(fo, 'found_after_vetoes/template_id', template_id[time_sorting][found_fore_v])
     hdf_append(fo, 'found_after_vetoes/injection_index', found_after_vetoes + injection_index)
@@ -189,5 +191,6 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
     hdf_append(fo, 'found_after_vetoes/trigger_id1', trig1[time_sorting][found_fore_v])
     hdf_append(fo, 'found_after_vetoes/trigger_id2', trig2[time_sorting][found_fore_v])
     hdf_append(fo, 'found_after_vetoes/ifar', ifar[time_sorting][found_fore_v])
+    hdf_append(fo, 'found_after_vetoes/fap', fap[time_sorting][found_fore_v])
     
     injection_index += len(sim_table)

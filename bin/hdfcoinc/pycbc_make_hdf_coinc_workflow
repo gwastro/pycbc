@@ -86,6 +86,7 @@ inj_files, inj_tags = wf.setup_injection_workflow(workflow,
 bg_file = None                                                                                     
 tags = ["full_data"] + inj_tags
 output_dirs = [fdDir]
+inj_coincs = wf.FileList()
 output_dirs.extend([os.path.join(currDir, tag) for tag in inj_tags])
 for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
 
@@ -116,13 +117,20 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
         inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank, 
                                                 insps_hdf, final_bg_file,
                                                 output_dir, tags = ctags)
-        found_inj = wf.find_injections_in_hdf_coinc(workflow, inj_coinc,
-                                                inj_file, final_veto_file[0], 
+        found_inj = wf.find_injections_in_hdf_coinc(workflow, wf.FileList([inj_coinc]),
+                                                wf.FileList([inj_file]), final_veto_file[0], 
                                                 output_dir, tags=ctags)
-                                                
+        inj_coincs += [inj_coinc]                      
         wf.make_sensitivity_plot(workflow, found_inj, 'plots/sensitivity',
                                  tags=ctags)
         wf.make_foundmissed_plot(workflow, found_inj, tag, 'plots/foundmissed', 
                                  tags=[tag])
+
+
+found_inj = wf.find_injections_in_hdf_coinc(workflow, inj_coincs,
+                                            inj_files, final_veto_file[0], 
+                                            output_dir, tags=['ALLINJ'])                                                
+wf.make_sensitivity_plot(workflow, found_inj, 'plots/sensitivity', tags=['ALLINJ'])
+
 workflow.save()
 logging.info("Written dax.")

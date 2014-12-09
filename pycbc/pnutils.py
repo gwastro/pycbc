@@ -32,6 +32,8 @@ from numpy import log
 import numpy
 from scipy.optimize import bisect
 
+def chirp_distance(dist, mchirp, ref_mass=1.4):
+    return dist * (2.**(-1./5) * ref_mass / mchirp)**(5./6)
 
 def mass1_mass2_to_mtotal_eta(mass1, mass2):
     m_total = mass1 + mass2
