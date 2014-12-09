@@ -646,6 +646,9 @@ def seobnrrom_length_in_time(**kwds):
     waveforms.
     """
     # FIXME: Approximate SEOBNRv2 ROM lengths as SPA for now
+    # Hardcode the phase order to 7 when estimating SPA length. Note this does
+    # not include any spin terms.
+    kwds['phase_order'] = 7
     time = spa_length_in_time(**kwds)
     # FIXME: When this is done properly remove this.
     if time < 0.1:
