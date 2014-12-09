@@ -51,10 +51,6 @@ parser.add_argument("--cluster-method", choices=["template", "window"],
                     help="FIXME: ADD")
 parser.add_argument("--cluster-window", type=float, default = -1,
                   help="Length of clustering window in seconds")
-parser.add_argument("--cluster-before-vetoes", action='store_true', default=False,
-                  help="Cluster above-threshold SNR values before doing "
-                       "chisq calculations."
-                   )
 parser.add_argument("--maximization-interval", type=float, default=0,
                   help="Maximize triggers over the template bank (ms)")
 
