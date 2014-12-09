@@ -424,7 +424,7 @@ if __name__ == '__main__':
         coinc_segs = (foreground_segments[ifo1] & foreground_segments[ifo2]).coalesce()
         coinc_time = abs(coinc_segs)
         i1 = numpy.arange(0, len(s1))
-        i2 = i1 * 1
+        i2 = numpy.arange(0, len(s2))
         
         start = []
         end = []
@@ -471,10 +471,10 @@ if __name__ == '__main__':
         logging.info('Number of timeslides: %s' % num_slides)
         logging.info('finding course coincidences')                  
         c1, c2 = course.lookup(c1s)
-        
+
         logging.info('finding coincidences')   
         c1, c2, slide_index = test_exact_match_coincidence(c1, c2, t1, t2, slide, time_window)
-        
+
         logging.info('%s total triggers' % len(c1))
         logging.info('%s foreground triggers' % (slide_index == 0).sum())
         
@@ -494,6 +494,7 @@ if __name__ == '__main__':
             logging.info('%s total triggers' % len(stat))
             logging.info('%s foreground triggers' % (slide_index == 0).sum())
         else:
+            print len(t1), len(i1), len(c2), c2.max(), c1.max()
             t1, t2, r1, i1, i2 = t1[c1], t2[c2], r1[c1], i1[c1], i2[c2]
             decimation_factor = numpy.zeros(len(stat), dtype=numpy.uint32) + 1
         
