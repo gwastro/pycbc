@@ -37,6 +37,11 @@ from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.workflow.core import OutSegFile, File, FileList, make_analysis_dir
 from pycbc.frame import datafind_connection
 
+class ContentHandler(ligolw.LIGOLWContentHandler):
+        pass
+
+lsctables.use_in(ContentHandler)
+
 def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
                             tag=None):
     """
@@ -691,9 +696,9 @@ def get_segment_summary_times(scienceFile, segmentName):
         version = int(segmentName[2])
 
     # Load the filename
-    xmldoc = utils.load_filename(scienceFile.path,
-                             gz=scienceFile.path.endswith("gz"),
-                             contenthandler=ligolw.DefaultLIGOLWContentHandler)
+    xmldoc = utils.load_filename(scienceFile.cache_entry.path,
+                             gz=scienceFile.cache_entry.path.endswith("gz"),
+                             contenthandler=ContentHandler)
 
     # Get the segment_def_id for the segmentName
     segmentDefTable = table.get_table(xmldoc, "segment_definer")

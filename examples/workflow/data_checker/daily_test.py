@@ -45,7 +45,7 @@ parser.add_argument('--version', action='version', version=__version__)
 _workflow.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 
-workflow = _workflow.Workflow(args)
+workflow = _workflow.Workflow(args, 'daily_check')
 currDir = os.getcwd()
 segDir = os.path.join(currDir,"segments")
 dfDirSYR = os.path.join(currDir,"datafindSYR")
