@@ -148,9 +148,11 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
     logging.info('Removing injections in vetoed time')
     i1, v1 = veto_indices(inj_time, 'H1', [args.veto_file])
     i2, v2 = veto_indices(inj_time, 'L1', [args.veto_file])
+    
     vi = numpy.concatenate([i1, i2])
-    found_after_vetoes = numpy.delete(found_within_time, numpy.in1d(found_within_time, vi))
-    missed_after_vetoes = numpy.delete(missed_within_time, numpy.in1d(missed_within_time, vi))
+
+    found_after_vetoes = numpy.delete(found_within_time, numpy.where(numpy.in1d(found_within_time, vi))[0])
+    missed_after_vetoes = numpy.delete(missed_within_time, numpy.where(numpy.in1d(missed_within_time, vi))[0])
     logging.info('Found: %s, Missed: %s' % (len(found_after_vetoes), len(missed_after_vetoes)))
 
     found_fore = numpy.arange(0, len(inj_time), 1)[left[found]]
