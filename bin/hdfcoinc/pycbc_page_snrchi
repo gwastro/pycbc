@@ -2,86 +2,36 @@
 """ Plot the rate of triggers across the template bank
 """
 import matplotlib
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import numpy, argparse, h5py, os, pylab
     
 def snr_to_chisq(snr, newsnr):
     return (((snr / newsnr) ** (6.0)) * 2.0 - 1.0) ** (1.0/3.0)  
     
-def get_snrchi(trig_files):
-    snrs = []
-    chisqs = []
-    times = []
-    for tf in trig_files:
-        print tf
-        f = h5py.File(tf)
-        time = f['end_time'][:]
-        snr = f['snr'][:]
-        chisq = f['chisq'][:]
-        snrs += [snr]
-        chisqs += [chisq]
-        times += [time]
-        det = f.attrs['ifo']
-        dof = f.attrs['chisq_dof'] * 2 - 2
-        f.close()
-        
-    ctime = t[det]  
-
-        
-    snr = numpy.concatenate(snrs)
-    time = numpy.concatenate(times)
-    chisq = numpy.concatenate(chisqs)
-    return snr, chisq / dof, time, det
-
 parser = argparse.ArgumentParser()
-parser.add_argument('--trigger-files', nargs='+')
-parser.add_argument('--coinc-file')
-parser.add_argument('--injection-trigger-files', nargs='+')
+parser.add_argument('--trigger-file')
 parser.add_argument('--injection-file')
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
-# Read in the background coinc times
-f = h5py.File(args.coinc_file)
-t1 = f['background/time1'][:]
-t2 = f['background/time2'][:]
-t = {f.attrs['detector_1']:t1, f.attrs['detector_2']:t2}
-f.close()
-
-
-snr, chisq, time, det = get_snrchi(args.trigger_files)
-ctime = t[det]  
-keep = numpy.in1d(time, ctime)
-bsnr = snr[keep]
-bchisq = chisq[keep]
+f = h5py.File(args.trigger_file)
+snr = f['snr'][:]
+chisq = f['chisq'][:]
 
 f = h5py.File(args.injection_file)
-t1 = f['found_after_vetoes/time1'][:]
-t2 = f['found_after_vetoes/time2'][:]
-t = {f.attrs['detector_1']:t1, f.attrs['detector_2']:t2}
-f.close()
+trigid1 = f['found_after_vetoes/trigger_id1'][:]
+trigid2 = f['found_after_vetoes/trigger_id2'][:]
 
-snr, chisq, time, det = get_snrchi(args.injection_trigger_files)
-ctime = t[det]  
-keep = numpy.in1d(time, ctime)
-isnr = snr[keep]
-ichisq = chisq[keep]
+#print chisq.max(), snr.max()
+#print trigid1
+#bsnr = numpy.delete(snr, trigid1)
+#bchisq = numpy.delete(chisq, trigid1)
 
-pylab.scatter(bsnr, bchisq, label='background', color='blue')
-pylab.scatter(isnr, ichisq, label='injections', color='red')
-r = numpy.arange(4, 500, .2)
-pylab.plot(r, snr_to_chisq(r, 4))
-r = numpy.arange(5, 500, .2)
-pylab.plot(r, snr_to_chisq(r, 5))
-r = numpy.arange(6, 500, .2)
-pylab.plot(r, snr_to_chisq(r, 6))
-r = numpy.arange(7, 500, .2)
-pylab.plot(r, snr_to_chisq(r, 7))
-r = numpy.arange(8, 500, .2)
-pylab.plot(r, snr_to_chisq(r, 8))
-pylab.legend()
-pylab.show()
-pylab.savefig('snrchi.png')
-    
-    
+#pylab.scatter(bsnr, bchisq, color='black', marker='o')
+pylab.scatter(snr[trigid1], chisq[trigid1], color='red', marker='x')
+pylab.xlim(5.5, 10)
+pylab.ylim(150, 500)
+pylab.savefig(args.output_file)
+
+
 
