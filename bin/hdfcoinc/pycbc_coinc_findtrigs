@@ -494,7 +494,6 @@ if __name__ == '__main__':
             logging.info('%s total triggers' % len(stat))
             logging.info('%s foreground triggers' % (slide_index == 0).sum())
         else:
-            print len(t1), len(i1), len(c2), c2.max(), c1.max()
             t1, t2, r1, i1, i2 = t1[c1], t2[c2], r1[c1], i1[c1], i2[c2]
             decimation_factor = numpy.zeros(len(stat), dtype=numpy.uint32) + 1
         
