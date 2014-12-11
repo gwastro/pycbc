@@ -288,12 +288,10 @@ setup (
                'bin/pycbc_split_inspinj',
                'bin/pycbc_geom_aligned_2dstack',
                'bin/pycbc_geom_aligned_bank',
-               'bin/pycbc_geom_aligned_bank_holiday',
                'bin/pycbc_geom_nonspinbank',
                'bin/pycbc_aligned_bank_cat',
                'bin/pycbc_aligned_bank_cat_hack',
                'bin/pycbc_aligned_stoch_bank',
-               'bin/pycbc_aligned_stoch_bank_holiday',
                'bin/pycbc_make_faithsim',
                'bin/pycbc_get_ffinal',
                'bin/pycbc_timeslides',
@@ -351,7 +349,8 @@ setup (
                'pycbc.results',
                ],
      package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'), 
-	             'pycbc.results': find_package_data('pycbc/results')},
+	             'pycbc.results': find_package_data('pycbc/results'),
+                     'pycbc.tmpltbank': find_package_data('pycbc/tmpltbank')},
 )
 
 

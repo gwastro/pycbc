@@ -14,18 +14,18 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+# TODO: clean-up fsolve warnings, initial guess, outout to stdout
+
 from __future__ import division
 import math
 import numpy as np
 import pycbc
 import pycbc.tmpltbank.em_progenitors 
+#from pycbc.tmpltbank import NS_SEQUENCE_FILE_DIRECTORY
 import os.path
 import scipy.optimize
 import scipy.interpolate
 #from lal import LAL_PI, LAL_MTSUN_SI
-
-# Setup the directory with the NS equilibrium sequence(s)
-NS_SEQUENCE_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__), 'ns_sequences')
 
 #############################################################################
 # Innermost Stable Spherical Orbit (ISSO) solver in the Perez-Giz formalism #
@@ -143,7 +143,8 @@ def load_ns_sequence(eos_name):
     ns_sequence = []
 
     if eos_name == '2H':
-        ns_sequence_path = os.path.join(NS_SEQUENCE_FILE_DIRECTORY, 'equil_2H.dat')
+        ns_sequence_path = os.path.join(pycbc.tmpltbank.NS_SEQUENCE_FILE_DIRECTORY, 'equil_2H.dat')
+        #ns_sequence_path = os.path.join(NS_SEQUENCE_FILE_DIRECTORY, 'equil_2H.dat')
         ns_sequence = np.loadtxt(ns_sequence_path)
     else:
         print 'Only the 2H EOS is currently supported!'
@@ -279,22 +280,21 @@ def find_em_constraint_data_point(mNS, sBH, mBH_min, mBH_max, eos_name, shift, e
     if mNS > max_ns_g_mass:
         eta_sol = eta_default
     else:
-        eta_min = 0.01#mBH_max*mNS/(mBH_max+mNS)**2
+        eta_min = 0.01 #mBH_max*mNS/(mBH_max+mNS)**2
         disk_mass_down = remnant_mass_ulim(eta_min, mNS, sBH, ns_sequence, max_ns_g_mass, shift) 
         eta_max = 0.25 #mBH_min*mNS/(mBH_min+mNS)**2
         disk_mass_up = remnant_mass_ulim(eta_max, mNS, sBH, ns_sequence, max_ns_g_mass, shift) 
-        #print eta_min, disk_mass_down, eta_max, disk_mass_up
         if disk_mass_down*disk_mass_up < 0:
             try:
                 # Initial guess in the middle of the range
                 eta_sol = scipy.optimize.fsolve(remnant_mass_ulim, 0.5*(eta_max-eta_min), args=(mNS, sBH, ns_sequence, max_ns_g_mass, shift))
             except: 
                 try:
-                    # Initial guess is low
+                    # Low initial guess
                     print 'Problems with mNS={0}, sBH,z={1}.: trying a different initial guess in the root-finder'.format(mNS, sBH)
                     eta_sol = scipy.optimize.fsolve(remnant_mass_ulim, eta_min+0.01, args=(mNS, sBH, ns_sequence, max_ns_g_mass, shift))
                 except: 
-                    # Initial guess is high
+                    # High initial guess
                     print 'Problems with mNS={0}, sBH,z={1}.: trying a different initial guess in the root-finder'.format(mNS, sBH)
                     eta_sol = scipy.optimize.fsolve(remnant_mass_ulim, eta_max-0.00001, args=(mNS, sBH, ns_sequence, max_ns_g_mass, shift))
         elif disk_mass_down > 0:

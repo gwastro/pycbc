@@ -17,12 +17,10 @@
 from __future__ import division
 import logging
 import numpy
+import os.path
 from pycbc.tmpltbank.lambda_mapping import get_chirp_params
 from pycbc import pnutils
-from pycbc.tmpltbank.em_progenitors import load_ns_sequence # FP
-from pycbc.tmpltbank.em_progenitors import min_eta_for_em_bright # FP
-from pycbc.tmpltbank.em_progenitors import generate_em_constraint_data # FP
-import os.path # FP
+from pycbc.tmpltbank.em_progenitors import generate_em_constraint_data, load_ns_sequence, min_eta_for_em_bright 
 
 def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper,\
                         covary=True):
@@ -130,9 +128,9 @@ def get_random_mass(numPoints, massRangeParams, **kwargs):
         # TODO: avoid hardcoded numbers and add options to this script
         if not os.path.isfile('constraint_em_bright.npz'):
             logging.info("""Generating the constraint surface for EM bright binaries
-                            in the physical parameter space.  One day, this will be
-                            made faster, for now be patient and wait a few minutes! 
-                            """)
+                        in the physical parameter space.  One day, this will be
+                        made faster, for now be patient and wait a few minutes! 
+                        """)
             generate_em_constraint_data(opts.min_mass2, opts.max_mass2, 0.1, \
                                         -1.0, opts.max_bh_spin_mag, 0.1, \
                                         opts.min_mass1, opts.max_mass1, \
@@ -141,8 +139,8 @@ def get_random_mass(numPoints, massRangeParams, **kwargs):
                                         opts.remnant_mass_threshold, 0.0)
         else:
             logging.info("""Reading in the constraint surface for EM bright binaries
-                            contained in constraint_em_bright.npz.
-                            """)
+                        contained in constraint_em_bright.npz.
+                        """)
         constraint_datafile = numpy.load('constraint_em_bright.npz')
         mNS_pts = constraint_datafile['mNS_pts']
         bh_spin_z_pts = constraint_datafile['sBH_pts']

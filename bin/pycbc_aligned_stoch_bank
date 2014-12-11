@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 # Copyright (C) 2011 Ian W. Harry
 #
@@ -29,6 +29,7 @@ import pycbc.version
 from pycbc import tmpltbank, pnutils
 import pycbc.psd
 import pycbc.strain
+from pycbc.tmpltbank.em_progenitors import load_ns_sequence, generate_em_constraint_data
 
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
@@ -102,6 +103,17 @@ if opts.verbose:
 else:
     log_level = logging.WARN
 logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
+
+if opts.nsbh_flag and not opts.remnant_mass_threshold is None:
+    logging.info("""You have asked to not include EM dim NS-BH systems in
+                    the template bank. The script will assume that m1 is
+                    the BH and m2 is the NS: make sure that your settings
+                    respect this convention. The script will also treat the
+                    NS as non-spinning: use NS spins in the template bank
+                    at your own risk!""") 
+    if opts.use_eos_max_ns_mass:
+        logging.info("""You have asked to take into account the maximum NS
+                    mass value for the EOS in use.""")
 
 # Sanity check options
 if not opts.output_file:
@@ -233,8 +245,14 @@ logging.info("Starting bank placement")
 while True:
     if not (Ns % 100000):
         # For optimization we generate points in sets of 100000
-        rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z =\
-            tmpltbank.get_random_mass(100000, massRangeParams)
+        # Use the EM constraint only if asked to do so
+        if opts.nsbh_flag and not opts.remnant_mass_threshold is None:
+            rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
+                  tmpltbank.get_random_mass(100000, massRangeParams, \
+                      opts=opts, em_constraint=True)
+        else:
+            rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
+                  tmpltbank.get_random_mass(100000, massRangeParams)
         # Use pnutils function here
         diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
         rMass1 = (rTotmass + diff)/2.

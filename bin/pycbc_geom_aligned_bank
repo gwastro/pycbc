@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 # Copyright (C) 2011 Ian W. Harry
 #
@@ -41,6 +41,7 @@ import pycbc.psd
 import pycbc.strain
 import pycbc.version
 import pycbc.tmpltbank
+from pycbc.tmpltbank.em_progenitors import load_ns_sequence, generate_em_constraint_data
 from scipy import spatial
 
 __author__  = "Ian Harry <ian.harry@ligo.org>"
@@ -90,7 +91,7 @@ parser.add_argument("-S", "--split-bank-num", action="store", type=int,\
                     help="Number of points per job in dag. "+\
                          "OPTIONAL")
 parser.add_argument("-F", "--filter-points", action="store_true", default=False,
-                  help="Remove nearby points before generating the bank.")
+                    help="Remove nearby points before generating the bank.")
 parser.add_argument("--random-seed", action="store", type=int,\
                     default=None,
                     help="""Random seed to use whenever the numpy random
@@ -142,6 +143,19 @@ else:
     log_level = logging.WARN
 logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
 
+# If the user asked to avoid EM dim NS-BH systems, inform him/her about the
+# caveats and risks
+if opts.nsbh_flag and not opts.remnant_mass_threshold is None:
+    logging.info("""You have asked to not include EM dim NS-BH systems in
+                    the template bank. The script will assume that m1 is
+                    the BH and m2 is the NS: make sure that your settings
+                    respect this convention. The script will also treat the
+                    NS as non-spinning: use NS spins in the template bank
+                    at your own risk!""") 
+    if opts.use_eos_max_ns_mass:
+        logging.info("""You have asked to take into account the maximum NS
+                    mass value for the EOS in use.""")
+
 # Sanity check options
 if not opts.output_file:
     parser.error("Must supply --output-file")
@@ -161,6 +175,7 @@ if orig_opts.write_metric:
 pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
 metricParams=pycbc.tmpltbank.metricParameters.from_argparse(opts)
 pycbc.tmpltbank.verify_mass_range_options(opts, parser)
+# TODO if use-eos-max-mass...
 massRangeParams=pycbc.tmpltbank.massRangeParameters.from_argparse(opts)
 pycbc.psd.verify_psd_options(opts, parser)
 if opts.psd_estimation:
@@ -252,8 +267,14 @@ if opts.filter_points:
     logging.info("Removing lattice points too far from physical space.")
     # Create a large set of points and map to xi_i to give a starting point when
     # mapping from xi_i to masses and spins
-    rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
-          pycbc.tmpltbank.get_random_mass(2000000, massRangeParams)
+    # Use the EM constraint only if asked to do so
+    if opts.nsbh_flag and not opts.remnant_mass_threshold is None:
+        rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
+              pycbc.tmpltbank.get_random_mass(2000000, massRangeParams, \
+                  opts=opts, em_constraint=True)
+    else:
+        rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
+              pycbc.tmpltbank.get_random_mass(2000000, massRangeParams)
     diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
     rMass1 = (rTotmass + diff)/2.
     rMass2 = (rTotmass - diff)/2.
@@ -279,10 +300,14 @@ if opts.filter_points:
     if opts.threed_lattice:
         newV3s = []
 
+    # TODO: remove when done testing 
+    numpy.savetxt('xis.dat', xis)
+    numpy.savetxt('physMasses.dat', physMasses)
+
     # Use scipy's KDtree to quickly calculate Euclidean distances
     logging.info("Setting up KDtree to compute distances.")
     if opts.threed_lattice:
-        tree = spatial.KRTree(xis[:,:3])
+        tree = spatial.KDTree(xis[:,:3])
         xi_points = zip(v1s,v2s,v3s)
     else:
         tree = spatial.KDTree(xis[:,:2])
@@ -355,6 +380,7 @@ exe_path = distutils.spawn.find_executable('pycbc_geom_aligned_2dstack')
 job = pipeline.CondorDAGJob('vanilla',exe_path)
 #pipeline.AnalysisJob.__init__(job,cp,False)
 job.set_stdout_file('/dev/null')
+#job.set_stdout_file('logs/bank_gen-$(cluster)-$(process).out')
 job.set_stderr_file('logs/bank_gen-$(cluster)-$(process).err')
 job.set_sub_file('bank_gen.sub')
 # Add global job options
@@ -381,8 +407,10 @@ job.add_condor_cmd('request_memory', '1400')
 job.add_condor_cmd('getenv','True')
 # Make the output job
 cat_path = distutils.spawn.find_executable('pycbc_aligned_bank_cat')
+#cat_path = distutils.spawn.find_executable('pycbc_aligned_bank_cat_hack')
 job_cat = pipeline.CondorDAGJob('vanilla', cat_path)
 job_cat.set_stdout_file('/dev/null')
+#job_cat.set_stdout_file('logs/bank_cat-$(cluster)-$(process).out')
 job_cat.set_stderr_file('logs/bank_cat-$(cluster)-$(process).err')
 job_cat.set_sub_file('bank_cat.sub')
 job_cat.add_condor_cmd('getenv','True')
@@ -402,6 +430,9 @@ cat_node = pipeline.CondorDAGNode(job_cat)
 cat_node.add_var_opt('metadata-file', cmds_file_name)
 cat_node.add_var_opt('input-glob', 'output_banks/output_bank_*.dat')
 cat_node.add_var_opt('output-file', opts.output_file)
+#cat_node.add_var_opt('pn-order', opts.pn_order) #FP
+#cat_node.add_var_opt('f-low', opts.f_low) #FP
+#cat_node.add_var_opt('f-upper', opts.f_upper) #FP
 
 # Make the nodes
 numBanks = int((len(newV1s) - 0.5)//opts.split_bank_num) + 1
@@ -419,6 +450,7 @@ if opts.print_chi_points:
     cat_path = distutils.spawn.find_executable('pycbc_tmpltbank_to_chi_params')
     job_print = pipeline.CondorDAGJob('vanilla', cat_path)
     job_print.set_stdout_file('/dev/null')
+    #job_print.set_stdout_file('logs/print_chi-$(cluster)-$(process).out')
     job_print.set_stderr_file('logs/print_chi-$(cluster)-$(process).err')
     job_print.set_sub_file('print_chi.sub')
     job_print.add_condor_cmd('getenv','True')
