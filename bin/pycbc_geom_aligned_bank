@@ -407,7 +407,6 @@ job.add_condor_cmd('request_memory', '1400')
 job.add_condor_cmd('getenv','True')
 # Make the output job
 cat_path = distutils.spawn.find_executable('pycbc_aligned_bank_cat')
-#cat_path = distutils.spawn.find_executable('pycbc_aligned_bank_cat_hack')
 job_cat = pipeline.CondorDAGJob('vanilla', cat_path)
 job_cat.set_stdout_file('/dev/null')
 #job_cat.set_stdout_file('logs/bank_cat-$(cluster)-$(process).out')
