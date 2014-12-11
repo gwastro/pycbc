@@ -27,7 +27,7 @@ parser.add_argument("-d", "--output-dir", default=None,
                     help="Path to output directory.")
 _workflow.add_workflow_command_line_group(parser)
 args = parser.parse_args()
-wflow = _workflow.Workflow(args, 'pyGRB')
+wflow = _workflow.Workflow(args, 'pygrb')
 all_files = _workflow.FileList([])
 tags = []
 
@@ -41,13 +41,22 @@ if not os.path.exists(runDir):
     os.makedirs(runDir)
 os.chdir(runDir)
 
+# Hack to set start and end times based on maximum allowed duration
+start = int(wflow.cp.get('workflow', 'trigger-time')) - int(wflow.cp.get(
+            'workflow-exttrig_segments', 'max-duration'))
+end = int(wflow.cp.get('workflow', 'trigger-time')) + int(wflow.cp.get(
+    'workflow-exttrig_segments', 'max-duration'))
+wflow.cp.set('workflow', 'start-time', str(start))
+wflow.cp.set('workflow', 'end-time', str(end))
+
 # Retrieve segments ahope-style
 currDir = os.getcwd()
 segDir = os.path.join(currDir, "segments")
 sciSegs, segsFileList = _workflow.setup_segment_generation(wflow, segDir)
 
 # Make coherent network segments
-onSrc, sciSegs = _workflow.get_triggered_coherent_segment(wflow, segDir, sciSegs)
+onSrc, sciSegs = _workflow.get_triggered_coherent_segment(wflow, segDir,
+                                                          sciSegs)
 # FIXME: The following two lines are/were crude hacks.
 ifo = sciSegs.keys()[0]
 wflow.analysis_time = sciSegs[ifo][0]
