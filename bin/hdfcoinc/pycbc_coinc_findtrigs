@@ -229,7 +229,7 @@ def load_triggers(trigger_files, group_id, stat_class):
     group_id = int(group_id)
     trig_segments = {}
     num_trigs = 0
-    
+
     for i, filename in enumerate(trigger_files):
         logging.info('Loading file: %s' % filename)
         f = h5py.File(filename, "r")
@@ -257,21 +257,23 @@ def load_triggers(trigger_files, group_id, stat_class):
             snr = stat_class.single_read(f, l, r)
             
             if ifo not in triggers:
-                triggers[ifo] = ([], [], [])
-
-            sl, el, tl = triggers[ifo]
+                triggers[ifo] = ([], [], [], [])
+                                        
+            sl, el, tl, nl = triggers[ifo]
             sl += [snr]
             el += [end_time]
             tl += [th]
+            nl += [l]
 
             num_trigs += len(snr)
             logging.info("%s/%s : Total Trigs=%s:" % (i+1, len(trigger_files), num_trigs))
         f.close()
     for key in triggers.keys():
-        sl, el, tl = triggers[key]
+        sl, el, tl, nl = triggers[key]
         triggers[key] = (numpy.concatenate(sl), 
                          numpy.concatenate(el),
-                         numpy.concatenate(tl))
+                         numpy.concatenate(tl),
+                         numpy.array(nl).sum())
     return triggers, trig_segments
     
 def decimate_triggers(stat, slide, num_keep, bins, factor=2):
@@ -362,21 +364,21 @@ if __name__ == '__main__':
     slide_all = []
     template_all = []
     i1_all, i2_all = [], []
-    
+
     for template_group in args.template_group:
         logging.info('Loading triggers from template group %s' % template_group)
         triggers, foreground_segments = load_triggers(args.trigger_files, template_group, stat_class)
 
         ifo1, ifo2 = triggers.keys()
-        s1, t1, r1 = triggers[ifo1]
-        s2, t2, r2 = triggers[ifo2]
+        s1, t1, r1, fn1 = triggers[ifo1]
+        s2, t2, r2, fn2 = triggers[ifo2]
         fore_time1 = abs(foreground_segments[ifo1])
         fore_time2 = abs(foreground_segments[ifo2])
         coinc_segs = (foreground_segments[ifo1] & foreground_segments[ifo2]).coalesce()
         coinc_time = abs(coinc_segs)
-        i1 = numpy.arange(0, len(s1))
-        i2 = numpy.arange(0, len(s2))
-        
+        i1 = numpy.arange(0, len(s1)) + fn1
+        i2 = numpy.arange(0, len(s2)) + fn2
+
         start = []
         end = []
         for seg in coinc_segs:

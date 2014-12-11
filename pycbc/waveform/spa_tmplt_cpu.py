@@ -110,7 +110,7 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
         {   
             case -1:
             case 7:
-                phasing = pfa7 * v;
+                phasing = _pfa7 * v;
             case 6:
                 phasing = (phasing + _pfa6 + _pfl6 * (logv + log4) ) * v;
             case 5:

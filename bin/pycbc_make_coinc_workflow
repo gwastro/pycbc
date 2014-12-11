@@ -126,11 +126,11 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
     # Setup hdf coincidence and post-processing/plotting
     if args.enable_hdf_post_processing:
         # Workaround for the current segment module HARDCODED!!!
-        final_veto_file = segsFileList.find_output_with_tag('CUMULATIVE_CAT_4')
+        final_veto_file = segsFileList.find_output_with_tag('CUMULATIVE_CAT_3')
         cum_veto_files = _workflow.FileList()
 
-        insps_hdf = _workflow.convert_trig_to_hdf(workflow, hdfbank, insps,
-                                                  output_dir, tags=[tag])
+        insps_hdf = _workflow.convert_trig_to_hdf(workflow, hdfbank, insps, output_dir, tags=[tag])
+        insps_hdf = _workflow.merge_single_detector_hdf_files(workflow, insps_hdf, output_dir, tags=[tag])
 
         if tag == 'full_data':
             ctags = [tag, 'full']
@@ -143,21 +143,22 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                             hdfbank[0], tag, 'plots/foreground')
         else:
             ctags = [tag, 'inj']
-            inj_coinc = _workflow.setup_interval_coinc_inj(workflow, hdfbank,
-                            insps_hdf, final_bg_file, output_dir, tags=ctags)
-            found_inj = _workflow.find_injections_in_hdf_coinc(workflow,
-                                       inj_coinc, inj_file, final_veto_file[0],
-                                       output_dir, tags=ctags)
-            _workflow.make_sensitivity_plot(workflow, found_inj,
-                                            'plots/sensitivity', tags=ctags)
-            _workflow.make_foundmissed_plot(workflow, found_inj, tag,
-                                            'plots/foundmissed', tags=[tag])
 
-    coincs, others = _workflow.setup_coincidence_workflow(workflow,
-                                           segsFileList, timeSlideFiles, insps,
-                                           output_dir, tags=[tag],
-                                           maxVetoCat=max_veto_cat,
-                                           timeSlideTags=timeSlideTags)
+            inj_coinc = _workflow.setup_interval_coinc_inj(workflow, hdfbank, 
+                            insps_hdf, final_bg_file, output_dir, tags = ctags)
+            found_inj = _workflow.find_injections_in_hdf_coinc(workflow, _workflow.FileList([inj_coinc]),
+                            _workflow.FileList([inj_file]), final_veto_file[0], output_dir, tags=ctags)                                          
+
+            _workflow.make_sensitivity_plot(workflow, found_inj, 'plots/sensitivity',
+                                     tags=ctags)
+            _workflow.make_foundmissed_plot(workflow, found_inj, tag, 'plots/foundmissed',
+                                     tags=[tag])
+
+    coincs, others = _workflow.setup_coincidence_workflow(workflow, segsFileList,
+                                        timeSlideFiles, insps, output_dir,
+                                        tags=[tag], maxVetoCat=max_veto_cat,
+                                        timeSlideTags=timeSlideTags)
+
     all_files.extend(coincs)
     all_coincs.extend(coincs)
 

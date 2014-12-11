@@ -45,6 +45,7 @@ m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
 import pycbc.pnutils
 vals['mchirp'], eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 vals['spin'] = (m1 * s1z + m2 * s2z) / (m1 + m2)
+vals['time'] = time
 dvals['chirp_distance'] = pycbc.pnutils.chirp_distance(dvals['decisive_distance'], vals['mchirp'])
 
 labels={'mchirp': 'Chirp Mass',

@@ -11,24 +11,22 @@ def snr_to_chisq(snr, newsnr):
 parser = argparse.ArgumentParser()
 parser.add_argument('--trigger-file')
 parser.add_argument('--injection-file')
+parser.add_argument('--injection-trigger-file')
 parser.add_argument('--output-file')
 args = parser.parse_args()
-
 f = h5py.File(args.trigger_file)
 snr = f['snr'][:]
 chisq = f['chisq'][:]
+pylab.scatter(snr, chisq, color='black', marker='o', label='background')
 
 f = h5py.File(args.injection_file)
 trigid1 = f['found_after_vetoes/trigger_id1'][:]
 trigid2 = f['found_after_vetoes/trigger_id2'][:]
+f = h5py.File(args.injection_trigger_file)
+snr = f['snr'][:]
+chisq = f['chisq'][:]
 
-#print chisq.max(), snr.max()
-#print trigid1
-#bsnr = numpy.delete(snr, trigid1)
-#bchisq = numpy.delete(chisq, trigid1)
-
-#pylab.scatter(bsnr, bchisq, color='black', marker='o')
-pylab.scatter(snr[trigid1], chisq[trigid1], color='red', marker='x')
+pylab.scatter(snr, chisq, color='red', marker='x')
 pylab.xlim(5.5, 10)
 pylab.ylim(150, 500)
 pylab.savefig(args.output_file)
