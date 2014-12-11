@@ -17,8 +17,10 @@
 from __future__ import division
 import logging
 import numpy
+import os.path
 from pycbc.tmpltbank.lambda_mapping import get_chirp_params
 from pycbc import pnutils
+from pycbc.tmpltbank.em_progenitors import generate_em_constraint_data, load_ns_sequence, min_eta_for_em_bright
 
 def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper,\
                         covary=True):
@@ -71,7 +73,7 @@ def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper,\
 
     return numpy.array(lambdas)
 
-def get_random_mass(numPoints, massRangeParams):
+def get_random_mass_point_particles(numPoints, massRangeParams):
     """
     This function will generate a large set of points within the chosen mass
     and spin space. It will also return the corresponding PN spin coefficients
@@ -102,6 +104,12 @@ def get_random_mass(numPoints, massRangeParams):
     spin2z : numpy.array
         List of the spin on the smaller body. NOTE: Body 2 is **always** the
         smaller body to remove mass,eta -> m1,m2 degeneracy
+    mass1 : numpy.array
+        List of the mass of the heavier body. NOTE: Body 1 is **always** the
+        heavier body to remove mass,eta -> m1,m2 degeneracy
+    mass2 : numpy.array
+        List of the mass of the smaller body. NOTE: Body 2 is **always** the
+        smaller body to remove mass,eta -> m1,m2 degeneracy
     """
 
     # WARNING: We expect mass1 > mass2 ALWAYS
@@ -131,7 +139,7 @@ def get_random_mass(numPoints, massRangeParams):
         eta_val_at_min_chirp = massRangeParams.min_chirp_mass / mass
         eta_val_at_min_chirp = eta_val_at_min_chirp**(5./3.)
         mineta = numpy.maximum(mineta, eta_val_at_min_chirp)
-        
+
     maxeta = numpy.minimum(massRangeParams.maxEta, maxmass2 \
                              * (mass - maxmass2) / (mass*mass))
     maxeta = numpy.minimum(maxeta, minmass1 \
@@ -199,6 +207,133 @@ def get_random_mass(numPoints, massRangeParams):
         # And compute the PN components that come out of this
         beta, sigma, gamma, chiS = pnutils.get_beta_sigma_from_aligned_spins(
             eta, spin1z, spin2z)
+
+    return mass,eta,beta,sigma,gamma,spin1z,spin2z,mass1,mass2
+
+def get_random_mass(numPoints, massRangeParams):
+    """
+    This function will generate a large set of points within the chosen mass
+    and spin space, and with the desired minimum remnant disk mass (this applies
+    to NS-BH systems only). It will also return the corresponding PN spin
+    coefficients for ease of use later (though these may be removed at some
+    future point).
+
+    Parameters
+    ----------
+    numPoints : int
+        Number of systems to simulate
+    massRangeParams : massRangeParameters instance
+        Instance holding all the details of mass ranges and spin ranges.
+
+    Returns
+    --------
+    mass : numpy.array
+        List of the total masses.
+    eta : numpy.array
+        List of the symmetric mass ratios
+    beta : numpy.array
+        List of the 1.5PN beta spin coefficients
+    sigma : numpy.array
+        List of the 2PN sigma spin coefficients
+    gamma : numpy.array
+        List of the 2.5PN gamma spin coefficients
+    spin1z : numpy.array
+        List of the spin on the heavier body. NOTE: Body 1 is **always** the
+        heavier body to remove mass,eta -> m1,m2 degeneracy
+    spin2z : numpy.array
+        List of the spin on the smaller body. NOTE: Body 2 is **always** the
+        smaller body to remove mass,eta -> m1,m2 degeneracy
+    """
+
+    # WARNING: We expect mass1 > mass2 ALWAYS
+
+    # Check if EM contraints are required, i.e. if the systems must produce
+    # a minimum remnant disk mass.  If this is not the case, proceed treating
+    # the systems as point particle binaries
+    if massRangeParams.remnant_mass_threshold is None:
+        mass, eta, beta, sigma, gamma, spin1z, spin2z, mass1, mass2 = \
+        get_random_mass_point_particles(numPoints, massRangeParams)
+    # otherwise, load EOS dependent data, generate the EM constraint
+    # (i.e. compute the minimum symmetric mass ratio needed to
+    # generate a given remnant disk mass as a function of the NS
+    # mass and the BH spin along z) and then proceed by accepting
+    # only systems that can yield (at least) the desired remnant
+    # disk mass and that pass the mass and spin range cuts.
+    else:
+        ns_sequence, max_ns_g_mass = load_ns_sequence(massRangeParams.ns_eos)
+
+        # Generate EM constraint surface: minumum eta as a function of BH spin
+        # and NS mass required to produce an EM counterpart
+        if not os.path.isfile('constraint_em_bright.npz'):
+            logging.info("""Generating the constraint surface for EM bright binaries
+                        in the physical parameter space.  One day, this will be
+                        made faster, for now be patient and wait a few minutes!
+                        """)
+            generate_em_constraint_data(massRangeParams.minMass2, massRangeParams.maxMass2, massRangeParams.delta_ns_mass, \
+                                        -1.0, massRangeParams.maxBHSpinMag, massRangeParams.delta_bh_spin, \
+                                        massRangeParams.ns_eos, massRangeParams.remnant_mass_threshold, 0.0)
+        else:
+            logging.info("""Reading in the constraint surface for EM bright binaries
+                        contained in constraint_em_bright.npz.""")
+        constraint_datafile = numpy.load('constraint_em_bright.npz')
+        mNS_pts = constraint_datafile['mNS_pts']
+        bh_spin_z_pts = constraint_datafile['sBH_pts']
+        eta_mins = constraint_datafile['eta_mins']
+
+        # Empty arrays to store points that pass all cuts
+        massOut = []
+        etaOut = []
+        betaOut = []
+        sigmaOut = []
+        gammaOut = []
+        spin1zOut = []
+        spin2zOut = []
+
+        # As the EM cut can remove several randomly generated
+        # binaries, track the number of accepted points that pass
+        # all cuts and stop only once enough of them are generated
+        numPointsFound = 0
+        while numPointsFound < numPoints:
+            # Generate the random points within the required mass
+            # and spin cuts
+            mass, eta, beta, sigma, gamma, spin1z, spin2z, mass1, mass2 = \
+            get_random_mass_point_particles(numPoints-numPointsFound, massRangeParams)
+
+            # Now proceed with cutting out EM dim systems
+            # Logical mask to clean up points by removing EM dim binaries
+            mask = numpy.ones(len(mass1), dtype=bool)
+            # Commpute the minimum eta to generate a counterpart
+            min_eta_em = min_eta_for_em_bright(spin1z, mass2, mNS_pts, bh_spin_z_pts, eta_mins)
+            # Remove a point if:
+            # 1) eta is smaller than the eta threshold required to have a counterpart;
+            # 2) the primary is a BH (mass1 >= ns_bh_boundary_mass);
+            # 3) the secondary mass does not exceed the maximum NS mass
+            # allowed by the EOS (if the user runs with --use-eos-max-ns-mass
+            # this last condition will always be true, otherwise the user is
+            # implicitly asking to keep binaries in which the secondary may be
+            # a BH).
+            mask[(mass1 >= massRangeParams.ns_bh_boundary_mass) & (mass2 <= max_ns_g_mass) & (eta < min_eta_em)] = False
+            # Keep only binaries that can produce an EM counterpart and add them to
+            # the pile of accpeted points to output
+            massOut   = numpy.concatenate((massOut,mass[mask]))
+            etaOut    = numpy.concatenate((etaOut,eta[mask]))
+            betaOut   = numpy.concatenate((betaOut,beta[mask]))
+            sigmaOut  = numpy.concatenate((sigmaOut,sigma[mask]))
+            gammaOut  = numpy.concatenate((gammaOut,gamma[mask]))
+            spin1zOut = numpy.concatenate((spin1zOut,spin1z[mask]))
+            spin2zOut = numpy.concatenate((spin2zOut,spin2z[mask]))
+
+            # Number of points that survived all cuts
+            numPointsFound = len(massOut)
+
+        # Ready to go
+        mass = massOut
+        eta = etaOut
+        beta = betaOut
+        sigma = sigmaOut
+        gamma = gammaOut
+        spin1z = spin1zOut
+        spin2z = spin2zOut
 
     return mass,eta,beta,sigma,gamma,spin1z,spin2z
 
