@@ -6,3 +6,4 @@ from pycbc.tmpltbank.brute_force_methods import *
 from pycbc.tmpltbank.bank_output_utils import *
 from pycbc.tmpltbank.option_utils import *
 from pycbc.tmpltbank.partitioned_bank import *
+from pycbc.tmpltbank.em_progenitors import * #FP

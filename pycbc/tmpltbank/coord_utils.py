@@ -19,6 +19,10 @@ import logging
 import numpy
 from pycbc.tmpltbank.lambda_mapping import get_chirp_params
 from pycbc import pnutils
+from pycbc.tmpltbank.em_progenitors import load_ns_sequence # FP
+from pycbc.tmpltbank.em_progenitors import min_eta_for_em_bright # FP
+from pycbc.tmpltbank.em_progenitors import generate_em_constraint_data # FP
+import os.path # FP
 
 def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper,\
                         covary=True):
@@ -71,7 +75,7 @@ def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper,\
 
     return numpy.array(lambdas)
 
-def get_random_mass(numPoints, massRangeParams):
+def get_random_mass(numPoints, massRangeParams, **kwargs):
     """
     This function will generate a large set of points within the chosen mass
     and spin space. It will also return the corresponding PN spin coefficients
@@ -106,99 +110,185 @@ def get_random_mass(numPoints, massRangeParams):
 
     # WARNING: We expect mass1 > mass2 ALWAYS
 
-    # First we choose the total masses from a unifrom distribution in mass
-    # to the -5/3. power.
-    mass = numpy.random.random(numPoints) * \
-           (massRangeParams.minTotMass**(-5./3.) \
-            - massRangeParams.maxTotMass**(-5./3.)) \
-           + massRangeParams.maxTotMass**(-5./3.)
-    mass = mass**(-3./5.)
+    # Check if EM contrains are required 
+    em_constraint = kwargs.get('em_constraint', False) 
+    # If so, load EOS dependent data and generate the EM constraint
+    if em_constraint: 
+        opts = kwargs.get('opts', None) 
+        if not opts:
+            print "Please supply the options!"
+        # Load the NS equilibrium sequence and maximum mass
+        if opts.ns_eos:
+            ns_sequence, max_ns_g_mass = load_ns_sequence(str(opts.ns_eos))
+            eos_name = str(opts.ns_eos)
+        else:
+            ns_sequence, max_ns_g_mass = load_ns_sequence('2H')
+            eos_name = '2H'
 
-    # Next we choose the mass ratios, this will take different limits based on
-    # the value of total mass
-    maxmass2 = numpy.minimum(mass/2., massRangeParams.maxMass2)
-    minmass1 = numpy.maximum(massRangeParams.minMass1, mass/2.)
-    mineta = numpy.maximum(massRangeParams.minCompMass \
-                            * (mass-massRangeParams.minCompMass)/(mass*mass), \
-                           massRangeParams.maxCompMass \
-                            * (mass-massRangeParams.maxCompMass)/(mass*mass))
-    # Note that mineta is a numpy.array because mineta depends on the total
-    # mass. Therefore this is not precomputed in the massRangeParams instance
-    if massRangeParams.minEta:
-        mineta = numpy.maximum(massRangeParams.minEta, mineta)
-    # Eta also restricted by chirp mass restrictions
-    if massRangeParams.min_chirp_mass:
-        eta_val_at_min_chirp = massRangeParams.min_chirp_mass / mass
-        eta_val_at_min_chirp = eta_val_at_min_chirp**(5./3.)
-        mineta = numpy.maximum(mineta, eta_val_at_min_chirp)
-        
-    maxeta = numpy.minimum(massRangeParams.maxEta, maxmass2 \
-                             * (mass - maxmass2) / (mass*mass))
-    maxeta = numpy.minimum(maxeta, minmass1 \
-                             * (mass - minmass1) / (mass*mass))
-    # max eta also affected by chirp mass restrictions
-    if massRangeParams.max_chirp_mass:
-        eta_val_at_max_chirp = massRangeParams.max_chirp_mass / mass
-        eta_val_at_max_chirp = eta_val_at_max_chirp**(5./3.)
-        maxeta = numpy.minimum(maxeta, eta_val_at_max_chirp)
+        # Generate EM constraint surface: minumum eta as a function of BH spin
+        # and NS mass required to produce an EM counterpart (FP)
+        # TODO: avoid hardcoded numbers and add options to this script
+        if not os.path.isfile('constraint_em_bright.npz'):
+            logging.info("""Generating the constraint surface for EM bright binaries
+                            in the physical parameter space.  One day, this will be
+                            made faster, for now be patient and wait a few minutes! 
+                            """)
+            generate_em_constraint_data(opts.min_mass2, opts.max_mass2, 0.1, \
+                                        -1.0, opts.max_bh_spin_mag, 0.1, \
+                                        opts.min_mass1, opts.max_mass1, \
+            #                            ns_sequence, max_ns_g_mass, \
+                                        eos_name, \
+                                        opts.remnant_mass_threshold, 0.0)
+        else:
+            logging.info("""Reading in the constraint surface for EM bright binaries
+                            contained in constraint_em_bright.npz.
+                            """)
+        constraint_datafile = numpy.load('constraint_em_bright.npz')
+        mNS_pts = constraint_datafile['mNS_pts']
+        bh_spin_z_pts = constraint_datafile['sBH_pts']
+        eta_mins = constraint_datafile['eta_mins'] 
 
-    if (maxeta < mineta).any():
-        errMsg = "ERROR: Maximum eta is smaller than minimum eta!!"
-        raise ValueError(errMsg)
-    eta = numpy.random.random(numPoints) * (maxeta - mineta) + mineta
+    # Empty arrays to store points that pass all cuts 
+    massOut = []
+    etaOut = []
+    betaOut = []
+    sigmaOut = []
+    gammaOut = []
+    spin1zOut = []
+    spin2zOut = []
 
-    # Also calculate the component masses; mass1 > mass2
-    diff = (mass*mass * (1-4*eta))**0.5
-    mass1 = (mass + diff)/2.
-    mass2 = (mass - diff)/2.
-    # Check the masses are where we want them to be (allowing some floating
-    # point rounding error).
-    if (mass1 > massRangeParams.maxMass1*1.001).any() \
-          or (mass1 < massRangeParams.minMass1*0.999).any():
-        errMsg = "Mass1 is not within the specified mass range."
-        raise ValueError(errMsg)
-    if (mass2 > massRangeParams.maxMass2*1.001).any() \
-          or (mass2 < massRangeParams.minMass2*0.999).any():
-        errMsg = "Mass2 is not within the specified mass range."
-        raise ValueError(errMsg)
+    # Count the number of generated points that pass all cuts and stop only
+    # once enough points are generated
+    numPointsFound = 0
+    while numPointsFound < numPoints:
+    
+        # First we choose the total masses from a unifrom distribution in mass
+        # to the -5/3. power.
+        mass = numpy.random.random(numPoints-numPointsFound) * \
+               (massRangeParams.minTotMass**(-5./3.) \
+                - massRangeParams.maxTotMass**(-5./3.)) \
+               + massRangeParams.maxTotMass**(-5./3.)
+        mass = mass**(-3./5.)
+    
+        # Next we choose the mass ratios, this will take different limits based on
+        # the value of total mass
+        maxmass2 = numpy.minimum(mass/2., massRangeParams.maxMass2)
+        minmass1 = numpy.maximum(massRangeParams.minMass1, mass/2.)
+        mineta = numpy.maximum(massRangeParams.minCompMass \
+                                * (mass-massRangeParams.minCompMass)/(mass*mass), \
+                               massRangeParams.maxCompMass \
+                                * (mass-massRangeParams.maxCompMass)/(mass*mass))
+        # Note that mineta is a numpy.array because mineta depends on the total
+        # mass. Therefore this is not precomputed in the massRangeParams instance
+        if massRangeParams.minEta:
+            mineta = numpy.maximum(massRangeParams.minEta, mineta)
+        # Eta also restricted by chirp mass restrictions
+        if massRangeParams.min_chirp_mass:
+            eta_val_at_min_chirp = massRangeParams.min_chirp_mass / mass
+            eta_val_at_min_chirp = eta_val_at_min_chirp**(5./3.)
+            mineta = numpy.maximum(mineta, eta_val_at_min_chirp)
+            
+        maxeta = numpy.minimum(massRangeParams.maxEta, maxmass2 \
+                                 * (mass - maxmass2) / (mass*mass))
+        maxeta = numpy.minimum(maxeta, minmass1 \
+                                 * (mass - minmass1) / (mass*mass))
+        # max eta also affected by chirp mass restrictions
+        if massRangeParams.max_chirp_mass:
+            eta_val_at_max_chirp = massRangeParams.max_chirp_mass / mass
+            eta_val_at_max_chirp = eta_val_at_max_chirp**(5./3.)
+            maxeta = numpy.minimum(maxeta, eta_val_at_max_chirp)
+    
+        if (maxeta < mineta).any():
+            errMsg = "ERROR: Maximum eta is smaller than minimum eta!!"
+            raise ValueError(errMsg)
+        eta = numpy.random.random(numPoints-numPointsFound) * (maxeta - mineta) + mineta
+    
+        # Also calculate the component masses; mass1 > mass2
+        diff = (mass*mass * (1-4*eta))**0.5
+        mass1 = (mass + diff)/2.
+        mass2 = (mass - diff)/2.
+        # Check the masses are where we want them to be (allowing some floating
+        # point rounding error).
+        if (mass1 > massRangeParams.maxMass1*1.001).any() \
+              or (mass1 < massRangeParams.minMass1*0.999).any():
+            errMsg = "Mass1 is not within the specified mass range."
+            raise ValueError(errMsg)
+        if (mass2 > massRangeParams.maxMass2*1.001).any() \
+              or (mass2 < massRangeParams.minMass2*0.999).any():
+            errMsg = "Mass2 is not within the specified mass range."
+            raise ValueError(errMsg)
+    
+        # Next up is the spins. First check if we have non-zero spins
+        if massRangeParams.maxNSSpinMag == 0 and massRangeParams.maxBHSpinMag == 0:
+            spinspin = numpy.zeros(numPoints-numPointsFound,dtype=float)
+            spin1z = numpy.zeros(numPoints-numPointsFound,dtype=float)
+            spin2z = numpy.zeros(numPoints-numPointsFound,dtype=float)
+            beta = numpy.zeros(numPoints-numPointsFound,dtype=float)
+            sigma = numpy.zeros(numPoints-numPointsFound,dtype=float)
+            gamma = numpy.zeros(numPoints-numPointsFound,dtype=float)
+            spin1z = numpy.zeros(numPoints-numPointsFound,dtype=float)
+            spin2z = numpy.zeros(numPoints-numPointsFound,dtype=float)
+        elif massRangeParams.nsbhFlag:
+            # Spin 1 first
+            mspin = numpy.zeros(len(mass1))
+            mspin += massRangeParams.maxBHSpinMag
+            spin1z = (2*numpy.random.random(numPoints-numPointsFound) - 1) * mspin
+            # Then spin2
+            mspin = numpy.zeros(len(mass2))
+            mspin += massRangeParams.maxNSSpinMag
+            spin2z = (2*numpy.random.random(numPoints-numPointsFound) - 1) * mspin
+            # And compute the PN components that come out of this
+            beta, sigma, gamma, chiS = pnutils.get_beta_sigma_from_aligned_spins(
+                eta, spin1z, spin2z)
+        else:        
+            boundary_mass = massRangeParams.ns_bh_boundary_mass
+            # Spin 1 first
+            mspin = numpy.zeros(len(mass1))
+            mspin += massRangeParams.maxNSSpinMag
+            mspin[mass1 > boundary_mass] = massRangeParams.maxBHSpinMag
+            spin1z = (2*numpy.random.random(numPoints-numPointsFound) - 1) * mspin
+            # Then spin 2
+            mspin = numpy.zeros(len(mass2))
+            mspin += massRangeParams.maxNSSpinMag
+            mspin[mass2 > boundary_mass] = massRangeParams.maxBHSpinMag
+            spin2z = (2*numpy.random.random(numPoints-numPointsFound) - 1) * mspin
+            # And compute the PN components that come out of this
+            beta, sigma, gamma, chiS = pnutils.get_beta_sigma_from_aligned_spins(
+                eta, spin1z, spin2z)
 
-    # Next up is the spins. First check if we have non-zero spins
-    if massRangeParams.maxNSSpinMag == 0 and massRangeParams.maxBHSpinMag == 0:
-        spinspin = numpy.zeros(numPoints,dtype=float)
-        spin1z = numpy.zeros(numPoints,dtype=float)
-        spin2z = numpy.zeros(numPoints,dtype=float)
-        beta = numpy.zeros(numPoints,dtype=float)
-        sigma = numpy.zeros(numPoints,dtype=float)
-        gamma = numpy.zeros(numPoints,dtype=float)
-        spin1z = numpy.zeros(numPoints,dtype=float)
-        spin2z = numpy.zeros(numPoints,dtype=float)
-    elif massRangeParams.nsbhFlag:
-        # Spin 1 first
-        mspin = numpy.zeros(len(mass1))
-        mspin += massRangeParams.maxBHSpinMag
-        spin1z = (2*numpy.random.random(numPoints) - 1) * mspin
-        # Then spin2
-        mspin = numpy.zeros(len(mass2))
-        mspin += massRangeParams.maxNSSpinMag
-        spin2z = (2*numpy.random.random(numPoints) - 1) * mspin
-        # And compute the PN components that come out of this
-        beta, sigma, gamma, chiS = pnutils.get_beta_sigma_from_aligned_spins(
-            eta, spin1z, spin2z)
-    else:        
-        boundary_mass = massRangeParams.ns_bh_boundary_mass
-        # Spin 1 first
-        mspin = numpy.zeros(len(mass1))
-        mspin += massRangeParams.maxNSSpinMag
-        mspin[mass1 > boundary_mass] = massRangeParams.maxBHSpinMag
-        spin1z = (2*numpy.random.random(numPoints) - 1) * mspin
-        # Then spin 2
-        mspin = numpy.zeros(len(mass2))
-        mspin += massRangeParams.maxNSSpinMag
-        mspin[mass2 > boundary_mass] = massRangeParams.maxBHSpinMag
-        spin2z = (2*numpy.random.random(numPoints) - 1) * mspin
-        # And compute the PN components that come out of this
-        beta, sigma, gamma, chiS = pnutils.get_beta_sigma_from_aligned_spins(
-            eta, spin1z, spin2z)
+        # Logical mask to clean up points if needed
+        mask = numpy.ones(len(mass1), dtype=bool)
+        # Remove EM dim binaries if asked to do so
+        if em_constraint:
+            # Commpute the minimum eta to generate a counterpart
+            min_eta_em = min_eta_for_em_bright(spin1z, mass2, mNS_pts, bh_spin_z_pts, eta_mins)
+            # Remove a point if eta is smaller than the eta threshold to have
+            # a counterpart and if the secondary mass does not exceed the
+            # maximum NS mass allowed by the EOS (if the user runs with
+            # --use-eos-max-ns-mass this second condition will always be true,
+            # otherwise the user is implicitly asking to keep binaries in which
+            # the secondary may be a BH)
+            mask[numpy.logical_and(numpy.logical_not(mass2 > max_ns_g_mass), eta < min_eta_em)] = False
+        # Keep only binaries that can produce an EM counterpart and add them to
+        # the pile of accpeted points to output
+        massOut   = numpy.concatenate((massOut,mass[mask]))
+        etaOut    = numpy.concatenate((etaOut,eta[mask]))
+        betaOut   = numpy.concatenate((betaOut,beta[mask]))
+        sigmaOut  = numpy.concatenate((sigmaOut,sigma[mask]))
+        gammaOut  = numpy.concatenate((gammaOut,gamma[mask]))
+        spin1zOut = numpy.concatenate((spin1zOut,spin1z[mask]))
+        spin2zOut = numpy.concatenate((spin2zOut,spin2z[mask]))
+
+        numPointsFound = len(massOut)
+
+    # Ready to go
+    mass = massOut
+    eta = etaOut
+    beta = betaOut
+    sigma = sigmaOut
+    gamma = gammaOut
+    spin1z = spin1zOut
+    spin2z = spin2zOut
 
     return mass,eta,beta,sigma,gamma,spin1z,spin2z
 

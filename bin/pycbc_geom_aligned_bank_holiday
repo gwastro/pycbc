@@ -1,0 +1,460 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2011 Ian W. Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Aligned spin bank generator.
+"""
+
+from __future__ import division
+import os
+import copy
+import argparse
+import tempfile
+import ConfigParser
+import numpy
+import logging
+import distutils.spawn
+from glue import pipeline
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue.ligolw import ilwd
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw.utils import process as ligolw_process
+import pycbc
+import pycbc.psd
+import pycbc.strain
+import pycbc.version
+import pycbc.tmpltbank
+from pycbc.tmpltbank.em_progenitors import load_ns_sequence # FP
+from pycbc.tmpltbank.em_progenitors import generate_em_constraint_data # FP
+from scipy import spatial
+
+__author__  = "Ian Harry <ian.harry@ligo.org>"
+__version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
+__program__ = "pycbc_geom_aligned_bank"
+
+# Read command line options
+_desc = __doc__[1:]
+parser = argparse.ArgumentParser(description=_desc,
+           formatter_class=pycbc.tmpltbank.IndentedHelpFormatterWithNL)
+
+# Begin with code specific options
+parser.add_argument('--version', action='version', version=__version__)
+parser.add_argument("-V", "--verbose", action="store_true", default=False,\
+                    help="verbose output")
+parser.add_argument("-O", "--output-file",  help="Output file name. "+\
+                                               "REQUIRED ARGUMENT.")
+parser.add_argument("-L", "--log-path", action="store", type=str,\
+                   default=None,\
+                   help="Directory to store condor logs. REQUIRED ARGUMENT")
+parser.add_argument("-m", "--min-match", action="store", type=float,\
+                  default=None, help="Minimum match to generate bank with. "+\
+                                      "REQUIRED ARGUMENT")
+parser.add_argument("-s", "--stack-distance", action="store", type=float,\
+                  default=0.2, help="Minimum metric spacing before we "+\
+                               "stack.")
+parser.add_argument("-3", "--threed-lattice", action="store_true", default=False,\
+                    help="Set this to use a 3D lattice. "+\
+                         "OPTIONAL")
+parser.add_argument("-S", "--split-bank-num", action="store", type=int,\
+                    default=100,\
+                    help="Number of points per job in dag. "+\
+                         "OPTIONAL")
+parser.add_argument("-F", "--filter-points", action="store_true", default=False,
+                    help="Remove nearby points before generating the bank.")
+parser.add_argument("--random-seed", action="store", type=int,\
+                    default=None,
+                    help="""Random seed to use whenever the numpy random
+                            functions are called when doing the monte-carlo
+                            for obtaining the principal components and when
+                            translating all points back to physical space.
+                            If this is used the code should give the same
+                            output if run with the same random seed.""")
+parser.add_argument("--print-chi-points", action="store", default=None,
+                    metavar="FILENAME",
+                    help="Add a node to print off an ASCII list of mass "
+                    "parameters and corresponding location in the xi space "
+                    "using pycbc_tmpltbank_to_chi_params. This will be "
+                    "written to FILENAME. If this argument is not given, no "
+                    "chi points file will be written.")
+
+# Insert the metric calculation options
+pycbc.tmpltbank.insert_metric_calculation_options(parser)
+
+# Insert the mass range options
+pycbc.tmpltbank.insert_mass_range_option_group(parser)
+
+# Insert the PSD options
+pycbc.psd.insert_psd_option_group(parser)
+
+# Insert the data reading options
+pycbc.strain.insert_strain_option_group(parser)
+
+opts = parser.parse_args()
+# Going to need this for setting up the dag later
+orig_opts = copy.deepcopy(opts)
+
+if opts.verbose:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
+
+#FP
+if opts.nsbh_flag and not opts.remnant_mass_threshold is None:
+    logging.info("""You have asked to not include EM dim NS-BH systems in
+                    the template bank. The script will assume that m1 is
+                    the BH and m2 is the NS: make sure that your settings
+                    respect this convention. The script will also treat the
+                    NS as non-spinning: use NS spins in the template bank
+                    at your own risk!""") 
+    if opts.use_eos_max_ns_mass:
+        logging.info("""You have asked to take the maximum NS mass value
+                    for this EOS into account.""")
+#
+
+# Set up the process/process_params table and output xml document
+cmds_file_name = "aligned_bank_commands.xml"
+outdoc = ligolw.Document()
+outdoc.appendChild(ligolw.LIGO_LW())
+ligolw_process.register_to_xmldoc(outdoc, __program__, vars(opts), comment="",
+                            ifos="", version=pycbc.version.git_hash,
+                            cvs_repository='pycbc/'+pycbc.version.git_branch,
+                            cvs_entry_time=pycbc.version.date)
+ligolw_utils.write_filename(outdoc, cmds_file_name)
+
+# Sanity check options
+if not opts.output_file:
+    parser.error("Must supply --output-file")
+if not opts.min_match:
+    parser.error("Must supply --min-match")
+opts.max_mismatch = 1 - opts.min_match
+if not opts.log_path:
+    parser.error("Must supply --log-path")
+pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
+metricParams=pycbc.tmpltbank.metricParameters.from_argparse(opts)
+pycbc.tmpltbank.verify_mass_range_options(opts, parser)
+# TODO if use-eos-max-mass...
+massRangeParams=pycbc.tmpltbank.massRangeParameters.from_argparse(opts)
+pycbc.psd.verify_psd_options(opts, parser)
+if opts.psd_estimation:
+    pycbc.strain.verify_strain_options(opts, parser)
+# Set random seed if needed
+if opts.random_seed is not None:
+    numpy.random.seed(opts.random_seed)
+
+# If we are going to use h(t) to estimate a PSD we need h(t)
+if opts.psd_estimation:
+    # FIXME: It would be nice if this was similar to psd.from_cli()
+    logging.info("Obtaining h(t) for PSD generation")
+    strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
+else:
+    strain = None
+
+# Get the PSD using the pycbc interface
+logging.info("Obtaining PSD")
+# Want the number of samples to be a binary number and Nyquist must be above
+# opts.f_upper. All this assumes that 1 / deltaF is a binary number
+nyquistFreq = 2**numpy.ceil(numpy.log2(opts.f_upper))
+numSamples = int(round(nyquistFreq / opts.delta_f)) + 1
+psd = pycbc.psd.from_cli(opts, length=numSamples, delta_f=opts.delta_f, \
+                         low_frequency_cutoff=opts.f_low, strain=strain,
+                         dyn_range_factor=pycbc.DYN_RANGE_FAC)
+metricParams.psd = psd
+
+# Begin by calculating a metric
+logging.info("Calculating metric")
+metricParams = pycbc.tmpltbank.determine_eigen_directions(metricParams)
+
+logging.info("Calculating covariance matrix")
+
+vals = pycbc.tmpltbank.estimate_mass_range(1000000, massRangeParams, \
+       metricParams, metricParams.fUpper, covary=False) 
+cov = numpy.cov(vals)
+evalsCV,evecsCV = numpy.linalg.eig(cov)
+metricParams.evecsCV = {}
+metricParams.evecsCV[metricParams.fUpper] = evecsCV
+
+logging.info("Determining parameter space extent")
+
+vals = pycbc.tmpltbank.estimate_mass_range(1000000, massRangeParams, \
+       metricParams, metricParams.fUpper, covary=True)
+
+chi1Max = vals[0].max()
+chi1Min = vals[0].min()
+chi1Diff = chi1Max - chi1Min
+chi2Max = vals[1].max()
+chi2Min = vals[1].min()
+chi2Diff = chi2Max - chi2Min
+
+logging.info("Calculating lattice")
+
+if not opts.threed_lattice:
+    v1s,v2s = pycbc.tmpltbank.generate_hexagonal_lattice(\
+              chi1Max+(0.02*chi1Diff), chi1Min-(0.02*chi1Diff),\
+              chi2Max+(0.02*chi2Diff), chi2Min-(0.02*chi2Diff),\
+              opts.max_mismatch)
+else:
+    chi3Max = vals[2].max()
+    chi3Min = vals[2].min()
+    chi3Diff = chi3Max - chi3Min
+    v1s, v2s, v3s = pycbc.tmpltbank.generate_anstar_3d_lattice(\
+          chi1Max+(0.02*chi1Diff), chi1Min-(0.02*chi1Diff),\
+          chi2Max+(0.02*chi2Diff), chi2Min-(0.02*chi2Diff),\
+          chi3Max+(0.02*chi3Diff), chi3Min-(0.02*chi3Diff), opts.max_mismatch)
+    chi3Max = vals[2].max()
+    chi3Min = vals[2].min()
+    chi3Diff = chi3Max - chi3Min
+
+logging.info("Lattice contains %d points" % len(v1s))
+
+# Dump the files needed to define the xi_i parameter space
+numpy.savetxt('metric_evecs.dat', metricParams.evecs[opts.f_upper])
+numpy.savetxt('metric_evals.dat', metricParams.evals[opts.f_upper])
+numpy.savetxt('covariance_evecs.dat', metricParams.evecsCV[opts.f_upper])
+
+# Now remove points that are too far from edges of parameter space
+if opts.filter_points:
+    logging.info("Removing lattice points too far from physical space.")
+    # Create a large set of points and map to xi_i to give a starting point when
+    # mapping from xi_i to masses and spins
+    # FP: Use the EM constraint if asked to do so
+    if opts.nsbh_flag and not opts.remnant_mass_threshold is None:
+        rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
+              pycbc.tmpltbank.get_random_mass(2000000, massRangeParams, \
+                  opts=opts, em_constraint=True)
+    else:
+        rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
+              pycbc.tmpltbank.get_random_mass(2000000, massRangeParams)
+    diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
+    rMass1 = (rTotmass + diff)/2.
+    rMass2 = (rTotmass - diff)/2.
+    rChis = (rSpin1z + rSpin2z)/2.
+
+    rXis = pycbc.tmpltbank.get_cov_params(rTotmass, rEta, rBeta, rSigma,
+               rGamma, rChis, metricParams, metricParams.fUpper)
+
+    xis = (numpy.array(rXis)).T
+    physMasses = numpy.array([rTotmass, rEta, rSpin1z, rSpin2z])
+    physMasses = physMasses.T
+    f0 = opts.f0
+    order = opts.pn_order
+    maxmass1 = opts.max_mass1
+    maxmass2 = opts.max_mass2
+    minmass1 = opts.min_mass1
+    minmass2 = opts.min_mass2
+    maxNSspin = opts.max_ns_spin_mag
+    maxBHspin = opts.max_bh_spin_mag
+
+    newV1s = []
+    newV2s = []
+    if opts.threed_lattice:
+        newV3s = []
+
+    # FP
+    numpy.savetxt('xis.dat', xis)
+    numpy.savetxt('physMasses.dat', physMasses)
+
+    # Use scipy's KDtree to quickly calculate Euclidean distances
+    logging.info("Setting up KDtree to compute distances.")
+    if opts.threed_lattice:
+        tree = spatial.KDTree(xis[:,:3])
+        xi_points = zip(v1s,v2s,v3s)
+    else:
+        tree = spatial.KDTree(xis[:,:2])
+        xi_points = zip(v1s,v2s)
+
+    logging.info("Computing distances using KDtree.")
+    dists, pointargs = tree.query(xi_points)
+
+    logging.info("Removing far-away points.")
+
+    for i in xrange(len(v1s)):
+        if dists[i] < 2.:
+            newV1s.append(v1s[i])
+            newV2s.append(v2s[i])
+            if opts.threed_lattice:
+                newV3s.append(v3s[i])
+
+    logging.info("Filtered lattice contains %d points" % len(newV1s))
+else:
+    newV1s = v1s
+    newV2s = v2s
+    if opts.threed_lattice:
+        newV3s = v3s
+
+# Dump the full bank in \xi_i coordinates
+with open('bank_chis.dat', 'w') as bankFile:
+    if opts.threed_lattice:
+        for i in xrange(len(newV1s)):
+            print >> bankFile, "%e %e %e" %(newV1s[i],newV2s[i],newV3s[i])
+    else:
+        for i in xrange(len(newV1s)):
+            print >> bankFile, "%e %e" %(newV1s[i],newV2s[i])
+
+# Now begin to generate the dag
+# First split the bank
+if not os.path.isdir('split_banks'):
+    os.makedirs('split_banks')
+if not os.path.isdir('output_banks'):
+    os.makedirs('output_banks')
+if not os.path.isdir('logs'):
+    os.makedirs('logs')
+
+bankNum = 0
+
+logging.info("Printing split banks")
+bankFile = open('split_banks/split_bank_%05d.dat' % bankNum, 'w')
+for i in xrange(len(newV1s)):
+    if opts.threed_lattice:
+        print >> bankFile, "%e %e %e" %(newV1s[i],newV2s[i],newV3s[i])
+    else:
+        print >> bankFile, "%e %e" %(newV1s[i],newV2s[i])
+    if not (i+1) % opts.split_bank_num:
+        bankFile.close()
+        bankNum = bankNum + 1
+        if not i == (len(newV1s)-1):
+            bankFile = open('split_banks/split_bank_%05d.dat' % bankNum, 'w')
+  
+if len(newV1s) % opts.split_bank_num:
+    bankFile.close()
+
+# And begin dag generation
+tempfile.tempdir = opts.log_path
+tempfile.template='bank_gen.dag.log.'
+logfile = tempfile.mktemp()
+fh = open( logfile, "w" )
+fh.close()
+dag = pipeline.CondorDAG(logfile, False)
+dag.set_dag_file('bank_generation')
+exe_path = distutils.spawn.find_executable('pycbc_geom_aligned_2dstack') #FP
+job = pipeline.CondorDAGJob('vanilla',exe_path)
+#pipeline.AnalysisJob.__init__(job,cp,False)
+job.set_stdout_file('logs/bank_gen-$(cluster)-$(process).out')
+job.set_stderr_file('logs/bank_gen-$(cluster)-$(process).err')
+job.set_sub_file('bank_gen.sub')
+# Add global job options
+cp = ConfigParser.ConfigParser()
+cp.add_section('bank')
+cp.set('bank','pn-order',opts.pn_order)
+cp.set('bank','metric-evals-file','metric_evals.dat')
+cp.set('bank','metric-evecs-file','metric_evecs.dat')
+cp.set('bank','cov-evecs-file','covariance_evecs.dat')
+cp.set('bank','f0',str(opts.f0))
+cp.set('bank','max-mass1',str(opts.max_mass1))
+cp.set('bank','min-mass1',str(opts.min_mass1))
+cp.set('bank','max-mass2',str(opts.max_mass2))
+cp.set('bank','min-mass2',str(opts.min_mass2))
+if opts.max_total_mass:
+    cp.set('bank','max-total-mass',str(opts.max_total_mass))
+if opts.min_total_mass:
+    cp.set('bank','min-total-mass',str(opts.min_total_mass))
+if opts.max_chirp_mass:
+    cp.set('bank','max-chirp-mass',str(opts.max_chirp_mass))
+if opts.min_chirp_mass:
+    cp.set('bank','min-chirp-mass',str(opts.min_chirp_mass))
+if opts.max_eta:
+    cp.set('bank','max-eta',str(opts.max_eta))
+if opts.min_eta:
+    cp.set('bank','min-eta',str(opts.min_eta))
+cp.set('bank','max-ns-spin-mag',str(opts.max_ns_spin_mag))
+cp.set('bank','max-bh-spin-mag',str(opts.max_bh_spin_mag))
+if opts.ns_bh_boundary_mass:
+    cp.set('bank', 'ns-bh-boundary-mass', str(opts.ns_bh_boundary_mass))
+if opts.nsbh_flag:
+    cp.set('bank','nsbh-flag','')
+cp.set('bank','min-match',str(opts.min_match))
+cp.set('bank','stack-distance',str(opts.stack_distance))
+if opts.threed_lattice:
+    cp.set('bank','threed-lattice','')
+if opts.random_seed:
+    cp.set('bank', 'random-seed', str(opts.random_seed))
+job.add_ini_opts(cp,'bank')
+job.add_condor_cmd('Requirements', 'Memory >= 1390')
+job.add_condor_cmd('request_memory', '1400')
+job.add_condor_cmd('getenv','True')
+# Make the output job
+cat_path = distutils.spawn.find_executable('pycbc_aligned_bank_cat_hack') #FP
+job_cat = pipeline.CondorDAGJob('vanilla', cat_path)
+job_cat.set_stdout_file('logs/bank_cat-$(cluster)-$(process).out')
+job_cat.set_stderr_file('logs/bank_cat-$(cluster)-$(process).err')
+job_cat.set_sub_file('bank_cat.sub')
+job_cat.add_condor_cmd('getenv','True')
+
+# Make the output node
+cat_node = pipeline.CondorDAGNode(job_cat)
+cat_node.add_var_opt('metadata-file', cmds_file_name)
+cat_node.add_var_opt('input-glob', 'output_banks/output_bank_*.dat')
+cat_node.add_var_opt('output-file', opts.output_file)
+cat_node.add_var_opt('pn-order', opts.pn_order) #FP
+cat_node.add_var_opt('f-low', opts.f_low) #FP
+cat_node.add_var_opt('f-upper', opts.f_upper) #FP
+
+# Make the nodes
+numBanks = int((len(newV1s) - 0.5)//opts.split_bank_num) + 1
+for i in xrange(numBanks):
+    node = pipeline.CondorDAGNode(job)
+    node.add_var_opt('input-bank-file','split_banks/split_bank_%05d.dat'%(i))
+    node.add_var_opt('output-bank-file','output_banks/output_bank_%05d.dat'%(i))
+    cat_node.add_parent(node)
+    dag.add_node(node)
+
+dag.add_node(cat_node)
+
+if opts.print_chi_points:
+    # Make the printer job
+    cat_path = distutils.spawn.find_executable('pycbc_tmpltbank_to_chi_params')
+    job_print = pipeline.CondorDAGJob('vanilla', cat_path)
+    job_print.set_stdout_file('logs/print_chi-$(cluster)-$(process).out')
+    job_print.set_stderr_file('logs/print_chi-$(cluster)-$(process).err')
+    job_print.set_sub_file('print_chi.sub')
+    job_print.add_condor_cmd('getenv','True')
+
+    # Add options by parsing the options sent to this job. Convert to dict
+    print_chis_opts = vars(copy.deepcopy(orig_opts))
+    # Remove options we don't want to send on
+    remove_opts = ['output_file', 'log_path', 'min_match', 'stack_distance',
+                   'threed_lattice', 'split_bank_num', 'filter_points',
+                   'print_chi_points', 'verbose']
+    for opt in remove_opts:
+        if opt in print_chis_opts.keys():
+            del print_chis_opts[opt]
+    # Add the rest
+    for opt, val in print_chis_opts.items():
+        if val is None:
+            continue
+        elif val is True or val is False:
+            job_print.add_opt(str(opt.replace("_","-")), "")
+        else:
+            job_print.add_opt(str(opt.replace("_","-")), str(val))
+
+    print_node = pipeline.CondorDAGNode(job_print)
+    
+    print_node.add_var_opt('input-bank', opts.output_file)
+    print_node.add_var_opt('output-file', opts.print_chi_points)
+    print_node.add_parent(cat_node)
+    dag.add_node(print_node)
+
+dag.write_sub_files()
+dag.write_dag()
+dag.write_script()
+
+print "Now submit bank_generation.dag to generate your template bank."
+print "This may take a while, go make a cup of tea!"

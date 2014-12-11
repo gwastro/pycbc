@@ -18,6 +18,7 @@ import argparse
 import textwrap
 from pycbc.tmpltbank.lambda_mapping import *
 from pycbc import pnutils
+from pycbc.tmpltbank.em_progenitors import load_ns_sequence # FP
 
 class IndentedHelpFormatterWithNL(argparse.ArgumentDefaultsHelpFormatter):
     """
@@ -451,6 +452,20 @@ def insert_mass_range_option_group(parser,nonSpin=False):
                   help="Minimum symmetric mass ratio. OPTIONAL, no lower bound"
                        " on eta will be imposed if not provided. "
                        "UNITS=Solar mass.")
+    # FP
+    massOpts.add_argument("--ns-eos", action="store", 
+                  default=None,
+                  help="Select the EOS to be used for the NS when calculating"
+                       "the remnant disk mass. Only 2H is currently supported."
+                       "OPTIONAL")
+    massOpts.add_argument("--remnant-mass-threshold", action="store", type=float,
+                  default=None,
+                  help="Setting this filters EM dim NS-BH binaries: if the"
+                       "remnant disk mass does not exceed this value, the NS-BH"
+                       "binary is dropped from the bank.  OPTIONAL")
+    massOpts.add_argument("--use-eos-max-ns-mass", action="store_true", default=False,
+                  help="Cut NS mass range to maximum mass allowed by EOS."
+                       "OPTIONAL")
 
     if nonSpin:
         parser.add_argument_group(massOpts)
@@ -795,12 +810,14 @@ class massRangeParameters(object):
     """
 
     default_nsbh_boundary_mass = 3.
+    default_ns_eos = '2H' # FP
 
     def __init__(self, minMass1, maxMass1, minMass2, maxMass2,
                  maxNSSpinMag=0, maxBHSpinMag=0, maxTotMass=None,
                  minTotMass=None, maxEta=None, minEta=0, 
                  max_chirp_mass=None, min_chirp_mass=None, 
-                 ns_bh_boundary_mass=None, nsbhFlag=False):
+                 ns_bh_boundary_mass=None, nsbhFlag=False,
+                 remnant_mass_threshold=None, ns_eos=None, use_eos_max_ns_mass=False): # FP
         """
         Initialize an instance of the massRangeParameters by providing all
         options directly. See the help message associated with any code
@@ -831,7 +848,30 @@ class massRangeParameters(object):
         self.ns_bh_boundary_mass = (
             ns_bh_boundary_mass or self.default_nsbh_boundary_mass)
         self.nsbhFlag=nsbhFlag
-
+        # FP
+        self.remnant_mass_threshold = remnant_mass_threshold
+        self.ns_eos = (
+            ns_eos or self.default_ns_eos)
+        self.use_eos_max_ns_mass = use_eos_max_ns_mass
+        if not self.remnant_mass_threshold is None:
+            if not self.ns_eos is '2H':
+                errMsg = """
+                         By setting a value for --remnant-mass-threshold
+                         you have asked to filter out EM dim NS-BH templates.
+                         The EOS you chose is not supported currently: please
+                         set --ns-eos to '2H' or remove the --ns-eos option.
+                         """
+                raise ValueError(errMsg)
+            if use_eos_max_ns_mass:
+                ns_sequence, max_ns_g_mass = load_ns_sequence(self.ns_eos)
+                if(self.maxMass2 > max_ns_g_mass):
+                    errMsg = """
+                             The maximum NS mass supported by this EOS is
+                             {0}. Please set --max-mass2 to this value or run
+                             without the --use-eos-max-ns-mass flag.
+                             """.format(max_ns_g_mass-0.0000000001)
+                    raise ValueError(errMsg)
+        #
         # FIXME: This may be inaccurate if Eta limits are given
         # This will not cause any problems, but maybe could be fixed.
         self.minCompMass = self.minMass2
@@ -864,7 +904,9 @@ class massRangeParameters(object):
                        opts.max_mass2, maxTotMass=opts.max_total_mass,
                        minTotMass=opts.min_total_mass, maxEta=opts.max_eta,
                        minEta=opts.min_eta, max_chirp_mass=opts.max_chirp_mass,
-                       min_chirp_mass=opts.min_chirp_mass)
+                       min_chirp_mass=opts.min_chirp_mass,
+                       remnant_mass_threshold=opts.remnant_mass_threshold, # FP
+                       ns_eos=opts.ns_eos, use_eos_max_ns_mass=opts.use_eos_max_ns_mass) # FP
         else:
             return cls(opts.min_mass1, opts.max_mass1, opts.min_mass2,
                        opts.max_mass2, maxTotMass=opts.max_total_mass,
@@ -874,7 +916,9 @@ class massRangeParameters(object):
                        nsbhFlag=opts.nsbh_flag,
                        max_chirp_mass=opts.max_chirp_mass,
                        min_chirp_mass=opts.min_chirp_mass,
-                       ns_bh_boundary_mass=opts.ns_bh_boundary_mass)
+                       ns_bh_boundary_mass=opts.ns_bh_boundary_mass,
+                       remnant_mass_threshold=opts.remnant_mass_threshold, # FP
+                       ns_eos=opts.ns_eos, use_eos_max_ns_mass=opts.use_eos_max_ns_mass) # FP
 
     def is_outside_range(self, mass1, mass2, spin1z, spin2z):
         """
