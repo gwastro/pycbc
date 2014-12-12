@@ -721,8 +721,8 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
 
     # Load parsed workflow config options
     cp = workflow.cp
-    ra = int(os.path.basename(cp.get('workflow', 'ra')))
-    dec = int(os.path.basename(cp.get('workflow', 'dec')))
+    ra = float(os.path.basename(cp.get('workflow', 'ra')))
+    dec = float(os.path.basename(cp.get('workflow', 'dec')))
     triggertime = int(os.path.basename(cp.get('workflow', 'trigger-time')))
     
     minbefore = int(os.path.basename(cp.get('workflow-exttrig_segments',

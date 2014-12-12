@@ -105,6 +105,26 @@ of the workflow module, with all checking options enabled. This will do the foll
 
 This example can be edited for any time you are interested in and can be used to identify missing data before submitting a workflow.
 
+---------------------
+``pygrb``
+---------------------
+
+This is an example of how to generate a coherent network segment for analysis in a targeted, coherent workflow in response to an external trigger, such as a gamma-ray burst. If submitted, single detector coincidence analysis jobs will be run, however coherent matched filtering is in development. In summary, this will currently:
+
+* Get science and data-quality segments from the server.
+* Query the datafind server for frames.
+* Create single detector template bank jobs needed to cover the search parameter space, or use a pregenerated bank (recommended).
+* Split the template banks according to options given in the ini file.
+* Run single detector coincident matched-filtering code on the split template banks.
+* Write a dax to file that can be submitted to run the workflow.
+
+More details of how to run this is found in the following link:
+
+.. toctree::
+   :maxdepth: 1
+
+   workflow/pygrb
+
 ==============================
 Workflow module documentation
 ==============================

@@ -36,7 +36,7 @@ described on the page here:
    ../install
 
 -------------------------------------
-Copy pyGRB.py into your run directory
+Copy pygrb.py into your run directory
 -------------------------------------
 
 Now copy the workflow generation script into your run directory::
@@ -44,7 +44,7 @@ Now copy the workflow generation script into your run directory::
     RUN_DIRECTORY=path/to/run_directory
     mkdir -p ${RUN_DIRECTORY}
     cd ${RUN_DIRECTORY}
-    cp /src/pycbc/examples/workflow/pyGRB/pyGRB.py .
+    cp /src/pycbc/examples/workflow/pygrb/pygrb.py .
 
 ----------------------------------------------------------------------------
 The configuration file - Do you already have configuration (.ini) file(s)?
@@ -70,7 +70,7 @@ No, I need to edit a configuration file
 
 The default configuration files is found in::
 
-    /src/pycbc/examples/workflow/pyGRB/pyGRB.ini
+    /src/pycbc/examples/workflow/pygrb/pygrb.ini
 
 This file contains all the details needed to construct a pyGRB workflow
 
@@ -78,10 +78,10 @@ This file contains all the details needed to construct a pyGRB workflow
 
     If you are unfamiliar with pycbc workflows, look through these files.
     
-* pyGRB.ini contains options that are used when running the pycbc.workflow
+* pygrb.ini contains options that are used when running the pycbc.workflow
   parts of the workflow
 
-The pyGRB.ini example is set up to run on S6 data and analysing only H1 and L1.
+The pygrb.ini example is set up to run on S6 data and analysing only H1 and L1.
 
 If you want to run in this default configuration please jump down to
 :ref:`pygrbgenerate`.
@@ -149,12 +149,12 @@ above. That is:
 
 Copy the configuration file into your run directory::
 
-    cp /path/to/pyGRB.ini .
+    cp /path/to/pygrb.ini .
 
 and set the name of the configuration file in your path. If you have more than
 one configuration file they must be space separated::
 
-    LOCAL_CONFIG_FILES="pyGRB.ini"
+    LOCAL_CONFIG_FILES="pygrb.ini"
 
 .. _pygrbgenerate:
 
@@ -219,7 +219,7 @@ example::
 If you are using locally editted or custom configuration files then you can
 create the workflow from within the run directory using::
 
-    pyGRB.py --local-config-files ${LOCAL_CONFIG_FILES} \
+    pygrb.py --local-config-files ${LOCAL_CONFIG_FILES} \
              --config-overrides workflow:ra:${RA} \
                                 workflow:dec:${DEC} \
                                 workflow:trigger-name:${GRB_NAME} \
@@ -238,7 +238,7 @@ CD into the directory where the dax was generated::
 
 From the directory where the dax was created, run the planning script::
 
-    pycbc_basic_pegasus_plan pyGRB.dax $LOGPATH
+    pycbc_basic_pegasus_plan pygrb.dax $LOGPATH
 
 Submit the workflow by following the instructions at the end of the script
 output, which looks something like::
@@ -347,7 +347,7 @@ Plan the workflow
 
 From the directory where the dax was created, run the planning script::
 
-    pycbc_basic_pegasus_plan pyGRB.dax $LOGPATH --cache prior_data.map
+    pycbc_basic_pegasus_plan pygrb.dax $LOGPATH --cache prior_data.map
 
 Follow the remaining :ref:`pygrbplan` instructions to submit your reduced
 workflow.
