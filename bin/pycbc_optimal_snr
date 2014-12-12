@@ -1,0 +1,117 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2014 Andrew Lundgren, Tito Dal Canton
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Compute the optimal SNRs for every injection in a sim_inspiral table and
+store the result in selectable columns of the same table.
+"""
+
+import logging
+import argparse
+import pycbc
+import pycbc.inject
+import pycbc.psd
+import glue.ligolw.utils
+from pycbc.filter import sigma, make_frequency_series
+from pycbc.types import TimeSeries, zeros, float32, MultiDetOptionAction
+from glue.ligolw import lsctables
+
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('-i', dest='inj_xml', required=True, help='Input LIGOLW file defining injections')
+parser.add_argument('-o', dest='out_file', required=True, help='Output LIGOLW file')
+parser.add_argument('--f-low', type=float, default=30.,
+                    help='Start frequency of matched-filter integration in Hz (default %(default)s)')
+parser.add_argument('--seg-length', type=float, default=256,
+                    help='Segment duration in seconds (default %(default)s)')
+parser.add_argument('--sample-rate', type=float, default=16384,
+                    help='Data sample rate in Hz (default %(default)s)')
+parser.add_argument('--snr-columns', nargs='+', action=MultiDetOptionAction,
+                    metavar='DETECTOR:COLUMN', required=True,
+                    help='Defines in which column of the sim_inspiral table' \
+                    ' the optimal SNR for each detector should be stored.')
+pycbc.psd.insert_psd_option_group_multi_ifo(parser)
+opts = parser.parse_args()
+
+detectors = opts.snr_columns.keys()
+pycbc.psd.verify_psd_options_multi_ifo(opts, parser, detectors)
+
+log_fmt = '%(asctime)s %(message)s'
+log_date_fmt = '%Y-%m-%d %H:%M:%S'
+logging.basicConfig(level=logging.INFO, format=log_fmt, datefmt=log_date_fmt)
+
+seg_len = opts.seg_length
+sample_rate = opts.sample_rate
+delta_t = 1. / sample_rate
+delta_f = 1. / seg_len
+tlen = int(seg_len * sample_rate)
+flen = tlen / 2 + 1
+f_low = opts.f_low
+
+logging.info("Loading PSD")
+psd = pycbc.psd.from_cli_multi_ifos(
+    opts,
+    length_dict=dict((det, flen) for det in detectors),
+    delta_f_dict=dict((det, delta_f) for det in detectors),
+    low_frequency_cutoff_dict=dict((det, f_low) for det in detectors),
+    ifos=detectors,
+    strain_dict=dict((det, None) for det in detectors),
+    dyn_range_factor=pycbc.DYN_RANGE_FAC)
+for det in detectors:
+    psd[det] = psd[det].astype(float32)
+
+def get_injection(injections, det, injection_time, simulation_id):
+    """ Do an injection from the injection XML file, specified by
+    IFO and end time"""
+    start_time = int(injection_time - seg_len/2.)
+    strain = TimeSeries(zeros(tlen, dtype=float32), delta_t=delta_t,
+                        epoch=start_time)
+    injections.apply(strain, det, distance_scale=1./pycbc.DYN_RANGE_FAC,
+                     simulation_ids=[simulation_id])
+    return make_frequency_series(strain)
+
+logging.info("Loading injections")
+injections = pycbc.inject.InjectionSet(opts.inj_xml)
+
+out_sim_inspiral = lsctables.New(lsctables.SimInspiralTable,
+                                 columns=injections.table.columnnames)
+
+for i, inj in enumerate(injections.table):
+    logging.info('%d/%d', i, len(injections.table))
+    injection_time = inj.geocent_end_time
+    for det, column in opts.snr_columns.items():
+        try:
+            wave = get_injection(injections, det, injection_time,
+                                 simulation_id=inj.simulation_id)
+        except Exception, e:
+            logging.warn('%s: waveform generation failed, skipping (%s)',
+                         inj.simulation_id, e)
+            continue
+        sval = sigma(wave, psd=psd[det], low_frequency_cutoff=f_low)
+        setattr(inj, column, sval)
+    out_sim_inspiral.append(inj)
+
+logging.info('Writing output')
+llw_doc = injections.indoc
+llw_root = llw_doc.childNodes[0]
+llw_root.removeChild(injections.table)
+llw_root.appendChild(out_sim_inspiral)
+glue.ligolw.utils.write_filename(
+    llw_doc, opts.out_file, gz=opts.out_file.endswith('gz'))
+
+logging.info('Done')

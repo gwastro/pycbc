@@ -313,6 +313,7 @@ setup (
                'bin/pycbc_ligolw_find_playground',
                'bin/hdfcoinc/pycbc_make_hdf_coinc_workflow',
                'bin/pycbc_basic_pegasus_plan',
+               'bin/pycbc_optimal_snr',
                'bin/hdfcoinc/pycbc_coinc_mergetrigs',
                'bin/hdfcoinc/pycbc_coinc_findtrigs',
                'bin/hdfcoinc/pycbc_coinc_bank2hdf',
