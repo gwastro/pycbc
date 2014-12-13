@@ -1,0 +1,46 @@
+#!/bin/bash
+# Redirect stdout ( > ) into a named pipe ( >() ) running "tee"
+exec > >(tee submit.log)
+
+# Without this, only stdout would be captured - i.e. your
+# log file would not contain any error messages.
+# SEE answer by Adam Spiers, which keeps STDERR a seperate stream -
+# I did not want to steal from him by simply adding his answer to mine.
+exec 2>&1
+
+# Check I have two arguments supplied
+if [ "x$1" == "x" ]; then
+  echo "I take one argument, the name of the dax file. None supplied."
+  exit 1
+fi
+
+#Make a directory for the submit files
+SUBMIT_DIR=`mktemp -d`
+
+# find the site-local template directory
+PEG_DIR=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGASUS_FILE_DIRECTORY'`
+SITE_TEMPLATE=$PEG_DIR/basic_site_template.xml
+
+# Set up the site-local with the correct paths
+echo 'cat <<END_OF_TEXT' >  temp.sh
+cat $SITE_TEMPLATE       >> temp.sh
+echo 'END_OF_TEXT'       >> temp.sh
+bash temp.sh > site-local-parsed.xml
+
+# Plan the workflow
+echo "Generating concrete workflow"
+touch _reuse.cache
+
+if [ "x$2" == "x--cache" ]; then
+  cp $4 _reuse.cache
+  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites local -o local --dir $SUBMIT_DIR --cleanup inplace --cache $2 --relative-submit-dir . --submit
+else
+  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites local -o local --dir $SUBMIT_DIR --cleanup inplace --relative-submit-dir . --submit
+fi
+
+ln -s $SUBMIT_DIR submitdir
+
+echo pegasus-status $SUBMIT_DIR > status
+chmod 755 status
+
+echo Submitting from: $HOSTNAME
