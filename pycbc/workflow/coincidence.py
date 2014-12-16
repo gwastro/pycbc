@@ -533,7 +533,6 @@ def get_subsections(cp, section_name):
     sections = cp.sections()   
     subsections = [sec.split('-')[1] for sec in sections if sec.startswith(section_name + '-')]   
     if len(subsections) > 0:
-        print subsections
         return subsections
     else:
         return ['']
