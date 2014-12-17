@@ -18,14 +18,14 @@ other ifos.
 
 Any single-ifo signal consistency tests (ie. chi-squared tests etc.) should
 be computed in this section and stored within the lists of triggers. The
-workfloe
+workflow
 does not make any specifications on the output format, but obviously code in
 the next stages of the workflow must know how to process that input.
 
 The matched-filtering section should be as independent of the other stages of
 the workflow as possible. This means that we don't require the data read in by
 matched-filter jobs to match that read in by template bank jobs (however this
-may be desireable in some cases, so **should** be possible where sensible).
+may be desirable in some cases, so **should** be possible where sensible).
 Options should also not be hardcoded (so there are no cases where an option
 that gets sent to a template bank job also gets sent to a matched-filter job
 without any way to stop that). However, it is possible to duplicate options
@@ -83,7 +83,7 @@ When using the setup_matchedfltr_dax_generated sub-module the following addition
 
 * matchedfilter-link-to-tmpltbank - OPTIONAL. If this is given the workflow module will attempt to ensure a one-to-one correspondence between template banks and matched-filter outputs. This may not work in all cases and should be considered an option to be used for comparing with ihope output.
 * matchedfilter-compatibility-mode - OPTIONAL. If this is given the workflow module will tile the matched-filter jobs in the same way as inspiral_hipe used to. This requires the link option above and that the template bank and matched-filtering jobs are reading the same amount of data in each job.
-* analysis-length = LENGTH_IN_SECONDS (*NOT* used for lalapps_inspiral) - REQUIRED. The amount of time in seconds that will be matched-filtered. Note that triggers may not be produced for the entire span of time. 
+* analysis-length = LENGTH_IN_SECONDS (*NOT* used for lalapps_inspiral) - REQUIRED. The maximum amount of time in seconds that will be matched-filtered. Note that triggers may not be produced for the entire span of time. 
 
 $$$$$$$$$$$$$$$
 [executables]

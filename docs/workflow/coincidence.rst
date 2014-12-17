@@ -64,6 +64,10 @@ Currently only one option, but others can be added. The subfunctions used are de
 .. autofunction:: pycbc.workflow.setup_coincidence_workflow_ligolw_thinca
    :noindex:
 
+* maximum-extent = EXTENT_IN_SECONDS (default=3600). The maximum amount of zerolag or time-shifted analysis time a single coincidence job will process.  
+
+If running with ethinca coincidence, the computational cost of each coincidence job will scale with the time extent, thus if jobs are evicted before finishing it may help to rerun with a smaller value, the number of jobs will scale up inversely.
+
 If exact-match coincidence is used, then the coincidence jobs can be parallelized to reduce the memory footprint. This requires that the inspiral jobs also use a split bank. To parallelize the coincidence, add under [workflow-coincidence]
 
 * coincidence-exact-match-parallelize =
@@ -80,7 +84,7 @@ If it is desired to use the gstlal-likelihood-based post-processing, which requi
 Can be added, which instructs the code to write gstlal-style likelihood files,
 and will convert output to gstlal format. At the moment this means that the
 chisq column is replaced with chisq / dof (hopefully an agreement can be made
-so that the two write the *same* format files.
+so that the two write the *same* format files).
 
 $$$$$$$$$$$$$$$
 [executables]
