@@ -34,6 +34,7 @@ import ConfigParser
 import glue.pipeline
 import pycbc.workflow
 
+
 def add_workflow_command_line_group(parser):
     """
     The standard way of initializing a ConfigParser object in workflow will be
@@ -75,6 +76,7 @@ def add_workflow_command_line_group(parser):
     workflowArgs.add_argument("--config-overrides", nargs="*", action='store',
                            metavar="SECTION:OPTION:VALUE",
                            help="List of section,option,value combinations to add into the configuration file. Normally the gps start and end times might be provided this way, and user specific locations (ie. output directories). This can also be provided as SECTION:OPTION or SECTION:OPTION: both of which indicate that the corresponding value is left blank.")
+
 
 class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
     """
@@ -492,7 +494,6 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         return duplicates
 
 
-
     def get_opt_tag(self, section, option, tag):
         """
         Supplement to ConfigParser.ConfigParser.get(). This will search for an
@@ -540,6 +541,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
                              %(section, tag)
                 raise ConfigParser.Error(errString)
 
+
     def get_opt_tags(self, section, option, tags):
         """
         Supplement to ConfigParser.ConfigParser.get(). This will search for an
@@ -556,8 +558,8 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             The section of the ConfigParser object to read
         option : string
             The ConfigParser option to look for
-        tag : string
-            The name of the subsection to look in, if not found in [section]
+        tag : list of strings
+            The name of subsections to look in, if not found in [section]
  
         Returns
         --------
@@ -621,6 +623,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             return True
         except ConfigParser.Error:
             return False
+
 
     def has_option_tags(self, section, option, tags):
         """

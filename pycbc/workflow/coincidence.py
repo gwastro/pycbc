@@ -96,7 +96,7 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
     # Parse for options in .ini file
     coincidenceMethod = workflow.cp.get_opt_tags("workflow-coincidence",
                                         "coincidence-method", tags)
-    
+
     # Scope here for adding different options/methods here. For now we only
     # have the single_stage ihope method which consists of using ligolw_add
     # to create a large job for coincidence and then running ligolw_thinca
@@ -105,18 +105,18 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
         # If I am doing exact match I can parallelize these jobs and reduce
         # memory footprint. This will require all input inspiral jobs to have
         # a JOB%d tag to distinguish between them.
-        if workflow.cp.has_option_tags("workflow-coincidence", \
+        if workflow.cp.has_option_tags("workflow-coincidence",
                              "coincidence-exact-match-parallelize", tags):
             parallelize_split_input = True
         else:
             parallelize_split_input = False
 
         # If you want the ligolw_add outputs, call this function directly
-        coinc_outs, other_outs = setup_coincidence_workflow_ligolw_thinca(\
+        coinc_outs, other_outs = setup_coincidence_workflow_ligolw_thinca(
                      workflow,
                      segsList, timeSlideFiles, inspiral_outs,
                      output_dir, maxVetoCat=maxVetoCat, tags=tags,
-                     timeSlideTags=timeSlideTags, 
+                     timeSlideTags=timeSlideTags,
                      parallelize_split_input=parallelize_split_input)
     else:
         errMsg = "Coincidence method not recognized. Must be one of "
@@ -128,7 +128,7 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
     return coinc_outs, other_outs
 
 def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
-                                             timeSlideFiles, inspiral_outs, 
+                                             timeSlideFiles, inspiral_outs,
                                              output_dir, maxVetoCat=5, tags=[],
                                              timeSlideTags=None,
                                              parallelize_split_input=False):
@@ -150,8 +150,7 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
         An FileList of the timeSlide input files that are needed to
         determine what time sliding needs to be done. One of the timeSlideFiles
         will normally be "zero-lag only", the others containing time slides
-        used to facilitate background computations later
-        in the workflow.
+        used to facilitate background computations later in the workflow.
     inspiral_outs : pycbc.workflow.core.FileList
         An FileList of the matched-filter module output that is used as
         input to the coincidence codes running at this stage.
@@ -188,7 +187,7 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
 
     if not timeSlideTags:
         # Get all sections by looking in ini file, use all time slide files.
-        timeSlideTags = [(sec.split('-')[-1]).upper() \
+        timeSlideTags = [(sec.split('-')[-1]).upper()
                   for sec in workflow.cp.sections() if sec.startswith('tisi-')]
 
     if parallelize_split_input:
@@ -259,11 +258,18 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
         # what files are needed for each. If doing time sliding there
         # will be some triggers read into multiple jobs
         cacheInspOuts = inspiral_outs.convert_to_lal_cache()
+        if workflow.cp.has_option_tags("workflow-coincidence", 
+                                       "maximum-extent", tags):
+            max_extent = float( workflow.cp.get_opt_tags(
+                              "workflow-coincidence", "maximum-extent", tags) )
+        else:
+            # hard-coded default value for extent of time in a single job
+            max_extent = 3600
         logging.debug("Calling into cafe.")
         cafe_seglists, cafe_caches = ligolw_cafe.ligolw_cafe(cacheInspOuts,
             ligolw_tisi.load_time_slides(tisiOutFile.storage_path,
-                gz = tisiOutFile.storage_path.endswith(".gz")).values(),
-            extentlimit = 10000, verbose=False)
+                gz=tisiOutFile.storage_path.endswith(".gz")).values(),
+            extentlimit=max_extent, verbose=False)
         logging.debug("Done with cafe.")
 
 
@@ -271,7 +277,7 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
         for category in veto_categories:
             logging.debug("Preparing %s %s" %(timeSlideTag,category))
             # FIXME: There are currently 3 names to say cumulative cat_3
-            dqSegFile = segsList.find_output_with_tag(\
+            dqSegFile = segsList.find_output_with_tag(
                                                'CUMULATIVE_CAT_%d' %(category))
             if not len(dqSegFile) == 1:
                 errMsg = "Did not find exactly 1 data quality file."
@@ -283,9 +289,9 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
             # dqVetoName last.
             curr_thinca_job_tags = [timeSlideTag] + tags + [pipedownDQVetoName]
 
-            logging.debug("Stgarting workflow")
+            logging.debug("Starting workflow")
             currLigolwThincaOuts, currOtherOuts = \
-                  setup_snglveto_workflow_ligolw_thinca(workflow, 
+                  setup_snglveto_workflow_ligolw_thinca(workflow,
                                dqSegFile, tisiOutFile, dqVetoName,
                                cafe_seglists, cafe_caches, output_dir,
                                tags=curr_thinca_job_tags,
@@ -346,7 +352,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
     ifoString = workflow.ifo_string
 
     # This flag will add a clustering job after ligolw_thinca
-    if workflow.cp.has_option_tags("workflow-coincidence", 
+    if workflow.cp.has_option_tags("workflow-coincidence",
                                              "coincidence-post-cluster", tags):
         coinc_post_cluster = True
     else:
@@ -354,10 +360,10 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
 
 
     # Set up jobs for ligolw_add and ligolw_thinca
-    ligolwadd_job = LigolwAddExecutable(cp, 'llwadd', ifo=ifoString, 
+    ligolwadd_job = LigolwAddExecutable(cp, 'llwadd', ifo=ifoString,
                                      out_dir=output_dir, tags=tags)
-    ligolwthinca_job = LigolwSSthincaExecutable(cp, 'thinca', ifo=ifoString, 
-                                     out_dir=output_dir, 
+    ligolwthinca_job = LigolwSSthincaExecutable(cp, 'thinca', ifo=ifoString,
+                                     out_dir=output_dir,
                                      dqVetoName=dqVetoName, tags=tags)
     if coinc_post_cluster:
         cluster_job = SQLInOutExecutable(cp, 'pycbccluster',
@@ -394,7 +400,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
             inputTrigFiles = FileList([])
             for object in cafe_cache.objects:
                 inputTrigFiles.append(object.workflow_file)
- 
+
             llw_files = inputTrigFiles + dqSegFile + [tisiOutFile]
 
             # Now we can create the nodes
@@ -420,7 +426,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
                 curr_list = insp_files_dict[key]
                 inputTrigFiles = FileList([])
                 for object in cafe_cache.objects:
-                    inputTrigFiles.append(\
+                    inputTrigFiles.append(
                                      curr_list[object.workflow_file.thinca_index])
 
                 llw_files = inputTrigFiles + dqSegFile + [tisiOutFile]
@@ -431,7 +437,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
                 ligolwAddFile = node.output_files[0]
                 ligolwAddOuts.append(ligolwAddFile)
                 workflow.add_node(node)
-                if workflow.cp.has_option_tags("workflow-coincidence", \
+                if workflow.cp.has_option_tags("workflow-coincidence",
                                          "coincidence-write-likelihood", tags):
                     write_likelihood=True
                 else:
@@ -445,7 +451,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
                           node.output_files.find_output_with_tag('DIST_STATS')
                 workflow.add_node(node)
                 if coinc_post_cluster:
-                    node = cluster_job.create_node(cafe_cache.extent, 
+                    node = cluster_job.create_node(cafe_cache.extent,
                                                    ligolwThincaOuts[-1])
                     ligolwClusterOuts += node.output_files
                     workflow.add_node(node)
@@ -453,7 +459,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
     other_returns = {}
     other_returns['LIGOLW_ADD'] = ligolwAddOuts
     other_returns['DIST_STATS'] = ligolwThincaLikelihoodOuts
-    
+
     if coinc_post_cluster:
         main_return = ligolwClusterOuts
         other_returns['THINCA'] = ligolwThincaOuts
@@ -461,7 +467,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
         main_return = ligolwThincaOuts
 
     return main_return, other_returns
-  
+
 class PyCBCBank2HDFExecutable(Executable):
     """ This converts xml tmpltbank to an hdf format
     """
@@ -692,6 +698,7 @@ def setup_interval_coinc_inj(workflow, hdfbank, trig_files,
     logging.info('...leaving coincidence ')
     return combine_node.output_files[0]
 
+
 def setup_interval_coinc(workflow, hdfbank, trig_files,
                          veto_files, out_dir, tags=[]):
     """
@@ -719,7 +726,7 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
 
     # Wall time knob
     group_size = int(workflow.cp.get_opt_tags('workflow-coincidence', 'groups-per-coinc', tags))
-    
+
     # Memory usage knob
     max_groups = int(workflow.cp.get_opt_tags('workflow-coincidence', 'number-of-groups', tags))
 
@@ -731,7 +738,7 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
         group_start = 0
         group_end = group_size
         while 1:
-            group_id += 1                        
+            group_id += 1
             values = range(group_start, group_end)
             group_str = (' %s ' * len(values)) % tuple(values)
             coinc_node = findcoinc_exe.create_node(trig_files, veto_files,
@@ -744,7 +751,7 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
             group_end += group_size
             
             if group_start >= max_groups:
-                break  
+                break
                 
             if group_end >= max_groups:
                 group_end = max_groups
@@ -753,9 +760,9 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
         workflow.add_node(combine_node)
         stat_files += combine_node.output_files
         
-        make_snrifar_plot(workflow, combine_node.output_files[0], 
+        make_snrifar_plot(workflow, combine_node.output_files[0],
                           'plots/background', tags=tag)
-            
+
     return stat_files
     logging.info('...leaving coincidence ')
-    
+
