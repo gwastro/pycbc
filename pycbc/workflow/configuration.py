@@ -208,6 +208,8 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         This function does none of the parsing/combining of sections. It simply
         reads the file and returns it unedited
 
+        Stub awaiting more functionality - see configparser_test.py
+
         Parameters
         ----------
         cpFile : Path to .ini file, or list of paths
@@ -218,7 +220,6 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         cp : ConfigParser
             The ConfigParser class containing the read in .ini file
         """
-
         # Read the file
         self.read(cpFile)
 
@@ -469,7 +470,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
 
         Returns
         ----------
-        duplicate : List
+        duplicates : List
             List of duplicate options
         """
         # Sanity checking
@@ -496,12 +497,9 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
 
     def get_opt_tag(self, section, option, tag):
         """
-        Supplement to ConfigParser.ConfigParser.get(). This will search for an
-        option in [section] and if it doesn't find it will also try in
-        [section-tag]. This is appended to the ConfigParser class. Will raise a
-        NoSectionError if [section] doesn't exist. Will raise NoOptionError if
-        option is not found in [section] and [section-tag] doesn't exist or does
-        not have the option.
+        Convenience function accessing get_opt_tags() for a single tag: see 
+        documentation for that function.
+        NB calling get_opt_tags() directly is preferred for simplicity.
 
         Parameters
         -----------
@@ -520,26 +518,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         string
             The value of the options being searched for
         """
-        # Need lower case tag name
-        if tag:
-            tag = tag.lower()
-
-        try:
-            return self.get(section,option)
-        except ConfigParser.Error:
-            errString = "No option '%s' in section '%s' " %(option,section)
-            if not tag:
-                raise ConfigParser.Error(errString + ".")
-            if self.has_section('%s-%s' %(section, tag)):
-                if self.has_option('%s-%s' %(section, tag),option):
-                    return self.get('%s-%s' %(section, tag),option)
-                else:
-                    errString+= "or in section '%s-%s'." %(section, tag)
-                    raise ConfigParser.Error(errString)
-            else:
-                errString += "and section '%s-%s' does not exist."\
-                             %(section, tag)
-                raise ConfigParser.Error(errString)
+        return get_opt_tags(self, section, option, [tag])
 
 
     def get_opt_tags(self, section, option, tags):
@@ -558,7 +537,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             The section of the ConfigParser object to read
         option : string
             The ConfigParser option to look for
-        tag : list of strings
+        tags : list of strings
             The name of subsections to look in, if not found in [section]
  
         Returns
@@ -566,9 +545,9 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         string
             The value of the options being searched for
         """
-        # Need lower case tag name
+        # Need lower case tag name; also exclude cases with tag=None
         if tags:
-            tags = [tag.lower() for tag in tags]
+            tags = [tag.lower() for tag in tags if tag is not None]
 
         try:
             return self.get(section, option)
@@ -595,11 +574,9 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
 
     def has_option_tag(self, section, option, tag):
         """
-        Supplement to ConfigParser.ConfigParser.has_option().
-        This will search for an
-        option in [section] and if it doesn't find it will also try in
-        [section-tag]. Will return True if it finds the option and false if
-        not.
+        Convenience function accessing has_option_tags() for a single tag: see
+        documentation for that function.
+        NB calling has_option_tags() directly is preferred for simplicity.
 
         Parameters
         -----------
@@ -618,20 +595,15 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         Boolean
             Is the option in the section or [section-tag]
         """
-        try:
-            self.get_opt_tag(section, option, tag)
-            return True
-        except ConfigParser.Error:
-            return False
+        return has_option_tags(section, option, [tag])
 
 
     def has_option_tags(self, section, option, tags):
         """
         Supplement to ConfigParser.ConfigParser.has_option().
-        This will search for an
-        option in [section] and if it doesn't find it will also try in
-        [section-tag] for each value in tags.
-        Will return True if it finds the option and false if not.
+        This will search for an option in [section] and if it doesn't find it
+        will also try in [section-tag] for each value in tags.
+        Returns True if the option is found and false if not.
 
         Parameters
         -----------

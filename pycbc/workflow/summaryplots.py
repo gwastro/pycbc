@@ -452,8 +452,8 @@ def get_hardware_injection_segment_files(workflow, output_dir, hwinjDefPath, tag
     # get hardware injection segments
     # ligolw_cbc_hardware_inj_page expects seperate XML files for each IFO
     for ifo in workflow.ifos:
-        hwinjSegName = workflow.cp.get_opt_tag('workflow-hardware-injections',
-                                  'segments-%s-hwinj-name'%(ifo.lower()), tag)
+        hwinjSegName = workflow.cp.get_opt_tags('workflow-hardware-injections',
+                                 'segments-%s-hwinj-name'%(ifo.lower()), [tag])
 
         output_filename = '-'.join(map(str, [ifo, 'HWINJ_SEGMENTS',
                                        workflow.analysis_time[0],

@@ -74,8 +74,8 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
     tag : string, optional (default=None)
         Use this to specify a tag. This can be used if this module is being
         called more than once to give call specific configuration (by setting
-        options in [workflow-datafind-${TAG}] rather than [workflow-datafind]). This
-        is also used to tag the Files returned by the class to uniqueify
+        options in [workflow-datafind-${TAG}] rather than [workflow-datafind]). 
+        This is also used to tag the Files returned by the class to uniqueify
         the Files and uniqueify the actual filename.
         FIXME: Filenames may not be unique with current codes!
 
@@ -84,30 +84,34 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
     datafindOuts : OutGroupList
         List of all the datafind output files for use later in the pipeline.
     scienceSegs : Dictionary of ifo keyed glue.segment.segmentlist instances
-        This contains the times that the workflow is expected to analyse. If the 
-        updateSegmentTimes kwarg is given this will be updated to reflect any
-        instances of missing data.
+        This contains the times that the workflow is expected to analyse. If 
+        the updateSegmentTimes kwarg is given this will be updated to reflect 
+        any instances of missing data.
     """
     logging.info("Entering datafind module")
     make_analysis_dir(outputDir)
     cp = workflow.cp
 
     # Parse for options in ini file
-    datafindMethod = cp.get_opt_tag("workflow-datafind", "datafind-method", tag)
-    if cp.has_option_tag("workflow-datafind", "datafind-check-segment-gaps", tag):
-        checkSegmentGaps = cp.get_opt_tag("workflow-datafind", 
-                                  "datafind-check-segment-gaps", tag)
+    datafindMethod = cp.get_opt_tags("workflow-datafind",
+                                     "datafind-method", [tag])
+
+    if cp.has_option_tags("workflow-datafind",
+                          "datafind-check-segment-gaps", [tag]):
+        checkSegmentGaps = cp.get_opt_tags("workflow-datafind", 
+                                          "datafind-check-segment-gaps", [tag])
     else:
         checkSegmentGaps = "no_test"
-    if cp.has_option_tag("workflow-datafind", "datafind-check-frames-exist", tag):
-        checkFramesExist = cp.get_opt_tag("workflow-datafind",
-                                  "datafind-check-frames-exist", tag)
+    if cp.has_option_tags("workflow-datafind",
+                          "datafind-check-frames-exist", [tag]):
+        checkFramesExist = cp.get_opt_tags("workflow-datafind",
+                                          "datafind-check-frames-exist", [tag])
     else:
         checkFramesExist = "no_test"
-    if cp.has_option_tag("workflow-datafind", "datafind-check-segment-summary",
-                                           tag):
-        checkSegmentSummary = cp.get_opt_tag("workflow-datafind",
-                                     "datafind-check-segment-summary", tag)
+    if cp.has_option_tags("workflow-datafind",
+                          "datafind-check-segment-summary", [tag]):
+        checkSegmentSummary = cp.get_opt_tags("workflow-datafind",
+                                       "datafind-check-segment-summary", [tag])
     else:
         checkSegmentSummary = "no_test"
     
@@ -284,7 +288,7 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
     
 
 def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs, 
-                                                     outputDir, tag=None):
+                                                    outputDir, tag=None):
     """
     This function uses the glue.datafind library to obtain the location of all
     the frame files that will be needed to cover the analysis of the data
@@ -337,8 +341,8 @@ def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
     logging.info("Querying datafind server for all science segments.")
     for ifo, scienceSegsIfo in scienceSegs.items():
         observatory = ifo[0].upper()
-        frameType = cp.get_opt_tag("workflow-datafind", 
-                                   "datafind-%s-frame-type"%(ifo), tag=tag)
+        frameType = cp.get_opt_tags("workflow-datafind", 
+                                    "datafind-%s-frame-type"%(ifo), [tag])
         for seg in scienceSegsIfo:
             msg = "Finding data between %d and %d " %(seg[0],seg[1])
             msg += "for ifo %s" %(ifo)
@@ -420,8 +424,8 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
     logging.info("Querying datafind server for all science segments.")
     for ifo, scienceSegsIfo in scienceSegs.items():
         observatory = ifo[0].upper()
-        frameType = cp.get_opt_tag("workflow-datafind",
-                                   "datafind-%s-frame-type"%(ifo), tag=tag)
+        frameType = cp.get_opt_tags("workflow-datafind",
+                                    "datafind-%s-frame-type"%(ifo), [tag])
         # This REQUIRES a coalesced segment list to work
         startTime = int(scienceSegsIfo[0][0])
         endTime = int(scienceSegsIfo[-1][1])
@@ -659,10 +663,10 @@ def setup_datafind_server_connection(cp, tag=None):
     connection
         The open connection to the datafind server.
     """
-    if cp.has_option_tag("workflow-datafind", "datafind-ligo-datafind-server",
-                                           tag=tag):
-        datafind_server = cp.get_opt_tag("workflow-datafind",
-                                "datafind-ligo-datafind-server", tag=tag)
+    if cp.has_option_tags("workflow-datafind",
+                          "datafind-ligo-datafind-server", [tag]):
+        datafind_server = cp.get_opt_tags("workflow-datafind",
+                                        "datafind-ligo-datafind-server", [tag])
     else:
         datafind_server = None
         
