@@ -64,6 +64,7 @@ The choices here and their description are as described below
 * AT_RUNTIME_MULTIPLE_FRAMES - Find frame files at runtime using setup_datafind_runtime_frames_multi_calls_perifo, use one datafind query for every science segment. This may be a little slower than the above, but only frames that overlap analysable data stretches will be returned. The output list will contain a single entry for every frame file returned by the datafind queries, which will enable pegasus to more easily track input files for jobs that need to read from frame files.
 * AT_RUNTIME_SINGLE_CACHES - Find frame files at runtime using setup_datafind_runtime_cache_single_call_perifo, use one datafind query for every interferometer. This may be the quickest approach, but some of the frames returned will not be suitable for analysis. The output list will contain a single entry for every call made to the datafind server, which will correspond to a .lcf "frame cache" file in the output directory.
 * AT_RUNTIME_MULTIPLE_CACHES - Find frame files at runtime using setup_datafind_runtime_cache_multi_calls_perifo, use one datafind query for every science segment. This may be a little slower than the above, but only frames that overlap analysable data stretches will be returned. The output list will contain a single entry for every call made to the datafind server, which will correspond to a .lcf "frame cache" file in the output directory.
+* FROM_PREGENERATED_LCF_FILES - Supply a set of pregenerated .lcf files containing a list of frame files to use for analysis. This option is intended to be used in cases where a datafind server is not available. Be warned that data does move around on clusters so on standard LDG clusters the AT_RUNTIME options are recommended.
 
 Each of these options will describe which subfunction to use. These are described here
 
@@ -79,11 +80,21 @@ Each of these options will describe which subfunction to use. These are describe
 .. autofunction:: pycbc.workflow.setup_datafind_runtime_frames_single_call_perifo
           :noindex:
 
+.. autofunction:: pycbc.workflow.setup_datafind_from_pregenerated_lcf_files
+          :noindex:
 
-When using any of these sub-modules the following other configuration options apply in the [workflow-datafind] section
+
+When using any of the AT_RUNTIME sub-modules the following other configuration options apply in the [workflow-datafind] section
 
 * datafind-X1-frame-type = NAME - REQUIRED. Where X1 is replaced by the ifo name for each ifo. The NAME should be the full frame type, which is used when querying the database.
 * datafind-ligo-datafind-server = URL - OPTIONAL. If provided use this server when querying for frames. If not provided, which is recommended for most applications, then the LIGO_DATAFIND_SERVER environment variable will be used to determine this.
+
+When using the PREGENERATED sub-module the following configuartion options apply in the [workflow-datafind] section:
+
+* datafind-pregenerated-cache-file-x1 = Path/to/file.lcf. This should be specified independently for each ifo and points to the pregenerated files.
+
+The following configuration options apply in the [workflow-datafind] section for all sub-modules and can be used as sanity checks:
+
 * datafind-check-segment-gaps = STRING - OPTIONAL (default = "no_test"). If this option takes any value other than 'no_test' the workflow module will check that the local datafind server has returned frames covering all of the listed science times. Its behaviour is then as follows
   * 'no_test': Do not perform this test. Any discrepancies will cause later failures.
   * 'warn': Perform the test, print warnings covering any discrepancies but do nothing about them. Discrepancies will cause failures later in the workflow.

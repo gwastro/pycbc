@@ -132,6 +132,11 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
         datafindcaches, datafindouts = \
             setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
                                                             outputDir, tag=tag)
+    elif datafindMethod == "FROM_PREGENERATED_LCF_FILES":
+        ifos = scienceSegs.keys()
+        datafindcaches, datafindouts = \
+            setup_datafind_from_pregenerated_lcf_files(cp, ifos,
+                                                       outputDir, tag=tag)
     else:
         msg = "Entry datafind-method in [workflow-datafind] does not have "
         msg += "expected value. Valid values are "
@@ -488,18 +493,8 @@ def setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
     datafindcaches, _ = \
         setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs,
                                                         outputDir, tag=tag)
-    datafindouts = []
 
-    # Now need to convert each frame file into an File
-    for cache in datafindcaches:
-        curr_ifo = cache.ifo
-        for frame in cache:
-            # Why does datafind not return the ifo as the "observatory"
-            # like every other code!?
-            currFile = File(curr_ifo, frame.description,
-                                 frame.segment, file_url=frame.url)
-            currFile.PFN(frame.path, site='local')
-            datafindouts.append(currFile)
+    datafindouts = convert_cachelist_to_filelist(datafindcaches)
 
     return datafindcaches, datafindouts
 
@@ -548,37 +543,87 @@ def setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
     datafindcaches, _ = \
         setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
                                                         outputDir, tag=tag)
-    datafindouts = []
-    
-    # We keep track of the previous file in the cache to avoid duplicates
-    prev_file = None
 
-    # Now need to convert each frame file into an File
-    for cache in datafindcaches:
+    datafindouts = convert_cachelist_to_filelist(datafindcaches)
+
+    return datafindcaches, datafindouts
+
+def setup_datafind_from_pregenerated_lcf_files(cp, ifos, outputDir, tag=None):
+    """
+    This function is used if you want to run with pregenerated lcf frame
+    cache files. 
+
+    Parameters
+    -----------
+    cp : ConfigParser.ConfigParser instance
+        This contains a representation of the information stored within the
+        workflow configuration files
+    ifos : list of ifo strings
+        List of ifos to get pregenerated files for.
+    outputDir : path
+        All output files written by datafind processes will be written to this
+        directory. Currently this sub-module writes no output.
+    tag : string, optional (default=None)
+        Use this to specify a tag. This can be used if this module is being
+        called more than once to give call specific configuration (by setting
+        options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).
+        This is also used to tag the Files returned by the class to uniqueify
+        the Files and uniqueify the actual filename.
+
+    Returns
+    --------
+    datafindcaches : list of glue.lal.Cache instances
+       The glue.lal.Cache representations of the various calls to the datafind
+       server and the returned frame files.
+    datafindOuts : pycbc.workflow.core.FileList
+        List of all the datafind output files for use later in the pipeline.
+    """
+    datafindcaches = []
+    for ifo in ifos:
+        search_string = "datafind-pregenerated-cache-file-%s" %(ifo.lower(),)
+        frame_cache_file_name = cp.get_opt_tags("workflow-datafind",
+                                                search_string, tags=[tag])
+        curr_cache = lal.Cache.fromfilenames([frame_cache_file_name],
+                                             coltype=lal.LIGOTimeGPS)
+        curr_cache.ifo = ifo
+        datafindcaches.append(curr_cache)
+    datafindouts = convert_cachelist_to_filelist(datafindcaches)
+    print len(datafindouts)
+
+    return datafindcaches, datafindouts
+
+def convert_cachelist_to_filelist(datafindcache_list):
+    """
+    Take as input a list of glue.lal.Cache objects and return a pycbc FileList
+    containing all frames within those caches.
+   
+    Parameters
+    -----------
+    datafindcache_list : list of glue.lal.Cache objects
+        The list of cache files to convert.
+  
+    Returns
+    --------
+    datafind_filelist : FileList of frame File objects
+        The list of frame files.
+    """ 
+    datafind_filelist = FileList([])
+    prev_file = None
+    for cache in datafindcache_list:
+        curr_ifo = cache.ifo
         for frame in cache:
-            # Why does datafind not return the ifo as the "observatory"
-            # like every other code!?
-            ifo = frame.description[0:2]
-            if ifo[0] != frame.observatory:
-                # HACK TO USE V1 S6 FRAMES
-                # BECAUSE THE FRAME-TYPE DOES NOT START WITH "V1_"
-                ifo = "V1"
-                # raise ValueError("Cannot determine ifo of frame.")
-            
             # Don't add a new workflow file entry for this frame if
             # if is a duplicate. These are assumed to be returned in time
             # order
-            if prev_file and prev_file.cache_entry.url == frame.url:    
-                continue                
+            if prev_file and prev_file.cache_entry.url == frame.url:
+                continue
 
-            currFile = File(ifo, frame.description, frame.segment,
-                                 file_url=frame.url)  
-            prev_file = currFile                   
-            currFile.PFN(frame.path, site='local') 
-
-            datafindouts.append(currFile)
-
-    return datafindcaches, datafindouts
+            currFile = File(curr_ifo, frame.description,
+                                 frame.segment, file_url=frame.url)
+            currFile.PFN(frame.path, site='local')
+            datafind_filelist.append(currFile)
+            prev_file = currFile
+    return datafind_filelist
 
 
 def get_science_segs_from_datafind_outs(datafindcaches):
