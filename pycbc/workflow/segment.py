@@ -27,7 +27,6 @@ workflows. For details about this module and its capabilities see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html
 """
 
-
 import os,sys,shutil
 import subprocess
 import logging
@@ -41,6 +40,26 @@ class ContentHandler(ligolw.LIGOLWContentHandler):
         pass
 
 lsctables.use_in(ContentHandler)
+
+# This variable is global to this module and is used to tell the code when to
+# regenerate files. NOTE: This only applies to files generated during run-time
+# within this module. For files generated within the workflow use the standard
+# pegasus reuse facility if you need it. NOTE: It is recommended for most
+# applications to use the default option and regenerate all segment files at
+# runtime. Only use this facility if you need it
+# Options are:
+# generate_segment_files='always' : DEFAULT: All files will be generated
+#                                     even if they already exist.
+# generate_segment_files='if_not_present': Files will be generated if they do
+#                                   not already exist. Pre-existing files will
+#                                   be read in and used.
+# generate_segment_files='error_on_duplicate': Files will be generated if they
+#                                   do not already exist. Pre-existing files
+#                                   will raise a failure.
+# generate_segment_files='never': Pre-existing files will be read in and used.
+#                                 If no file exists the code will fail.
+global generate_segment_files
+generate_segment_files='always'
 
 def setup_segment_generation(workflow, out_dir, tag=None):
     """
@@ -131,6 +150,13 @@ def setup_segment_generation(workflow, out_dir, tag=None):
         msg += "expected value. Valid values are AT_RUNTIME, CAT4_PLUS_DAG, "
         msg += "CAT2_PLUS_DAG or CAT3_PLUS_DAG."
         raise ValueError(msg)
+
+    global generate_segment_files
+    if cp.has_option_tags("workflow-segments",
+                          "segments-generate-segment-files", [tag]):
+        value = cp.get_opt_tags("workflow-segments", 
+                                   "segments-generate-segment-files", [tag])
+        generate_segment_files = value
         
     logging.info("Generating segments with setup_segment_gen_mixed")
     segFilesList = setup_segment_gen_mixed(workflow, veto_categories, 
@@ -359,16 +385,17 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir, tag=None):
             out_dir, "%s-SCIENCE_SEGMENTS.xml" %(ifo.upper()) )
         tagList = ['SCIENCE']
 
-    segFindCall = [ cp.get("executables","segment_query"),
-        "--query-segments",
-        "--segment-url", sciSegUrl,
-        "--gps-start-time", str(start_time),
-        "--gps-end-time", str(end_time),
-        "--include-segments", sciSegName,
-        "--output-file", sciXmlFilePath ]
+    if file_needs_generating(sciXmlFilePath):
+        segFindCall = [ cp.get("executables","segment_query"),
+            "--query-segments",
+            "--segment-url", sciSegUrl,
+            "--gps-start-time", str(start_time),
+            "--gps-end-time", str(end_time),
+            "--include-segments", sciSegName,
+            "--output-file", sciXmlFilePath ]
    
-    make_external_call(segFindCall, out_dir=os.path.join(out_dir,'logs'),
-                            out_basename='%s-science-call' %(ifo.lower()) )
+        make_external_call(segFindCall, out_dir=os.path.join(out_dir,'logs'),
+                                out_basename='%s-science-call' %(ifo.lower()) )
 
     # Yes its yucky to generate a file and then read it back in. This will be
     # fixed when the new API for segment generation is ready.
@@ -442,7 +469,10 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
     node._add_output(vetoXmlFile)
     
     if execute_now:
-        workflow.execute_node(node)
+        if file_needs_generating(vetoXmlFile.cache_entry.path):
+            workflow.execute_node(node)
+        else:
+            node.executed = True
     else:
         workflow.add_node(node)
     return vetoXmlFile
@@ -552,7 +582,10 @@ def get_cumulative_segs(workflow, currSegFile, categories,
         
         cum_node = cum_job.create_node(valid_segment, inputs, segment_name)
         if execute_now:
-            workflow.execute_node(cum_node)
+            if file_needs_generating(cum_node.output_files[0].cache_entry.path):
+                workflow.execute_node(cum_node)
+            else:
+                cum_node.executed = True
         else:
             workflow.add_node(cum_node)
         add_inputs += cum_node.output_files
@@ -562,7 +595,10 @@ def get_cumulative_segs(workflow, currSegFile, categories,
     add_node = add_job.create_node(valid_segment, add_inputs,
                                    output=currSegFile)   
     if execute_now:
-        workflow.execute_node(add_node)
+        if file_needs_generating(add_node.output_files[0].cache_entry.path):
+            workflow.execute_node(add_node)
+        else:
+            add_node.executed = True
     else:
         workflow.add_node(add_node)
     return add_node.output_files[0]
@@ -1030,3 +1066,53 @@ def get_cumulative_veto_group_files(workflow, option, out_dir, tags=[]):
               cat_files, out_dir, execute_now=False, segment_name=segment_name)]
               
     return cum_seg_files
+
+def file_needs_generating(file_path):
+    """
+    This job tests the file location and determines if the file should be
+    generated now or if an error should be raised. This uses the 
+    generate_segment_files variable, global to this module, which is described
+    above and in the documentation.
+   
+    Parameters
+    -----------
+    file_path : path
+        Location of file to check
+
+    Returns
+    --------
+    int
+        1 = Generate the file. 0 = File already exists, use it. Other cases
+        will raise an error.
+    """
+    global generate_segment_files
+    # Does the file exist
+    if os.path.isfile(file_path):
+        if generate_segment_files in ['if_not_present', 'never']:
+            return 0
+        elif generate_segment_files == 'always':
+            err_msg = "File %s already exists. " %(file_path,)
+            err_msg += "Regenerating and overwriting."
+            logging.warn(err_msg)
+            return 1
+        elif generate_segment_files == 'error_on_duplicate':
+            err_msg = "File %s already exists. " %(file_path,)
+            err_msg += "Refusing to overwrite file and exiting."
+            raise ValueError(err_msg)
+        else:
+            err_msg = 'Global variable generate_segment_files must be one of '
+            err_msg += '"always", "if_not_present", "error_on_duplicate", '
+            err_msg += '"never". Got %s.' %(generate_segment_files,)
+            raise ValueError(err_msg)
+    else:
+        if generate_segment_files in ['always', 'if_not_present', 
+                                      'error_on_duplicate']:
+            return 1
+        elif generate_segment_files == 'never':
+            err_msg = 'File %s does not exist. ' %(file_path,)
+            raise ValueError(err_msg)
+        else:
+            err_msg = 'Global variable generate_segment_files must be one of '
+            err_msg += '"always", "if_not_present", "error_on_duplicate", '
+            err_msg += '"never". Got %s.' %(generate_segment_files,)
+            raise ValueError(err_msg)
