@@ -148,21 +148,25 @@ dag.set_dag_file(basename)
 plotslides_job = inspiral.PlotSlidesJob(cp)
 plotcumhist_job = inspiral.PlotCumhistJob(cp)
 
-printsims_job = inspiral.LigolwCBCPrintJob(cp, 'printsims', ['cbc_print', 'printsims'])
-printsims_nominifup_job = inspiral.LigolwCBCPrintJob(cp, 'printsims', ['cbc_print', 'printsims'])
-printmissed_job = inspiral.LigolwCBCPrintJob(cp, 'printmissed', ['cbc_print', 'printmissed'])
-printmissed_nominifup_job = inspiral.LigolwCBCPrintJob(cp, 'printmissed', ['cbc_print', 'printmissed'])
+printsims_job = inspiral.LigolwCBCPrintJob(cp, 'printsims', ['printsims'])
+printmissed_job = inspiral.LigolwCBCPrintJob(cp, 'printmissed', ['printmissed'])
 # time-slide minifollowup jobs require a separate time-slides argument
 # and missed injection minifollowups don't use full xml files
 minifup_job = inspiral.MiniFollowupsJob(cp)
 minifup_ts_job = inspiral.MiniFollowupsJob(cp)
 minifup_ts_job.set_time_slides()
 minifup_cm_job = inspiral.MiniFollowupsJob(cp)
+search_volume_job = inspiral.SearchVolumeJob(cp)
+search_upper_limit_job = inspiral.SearchUpperLimitJob(cp)
+
 
 # the number of and options given to plotfm job is optional and is set by the ini file
 # to handle this, we do a similar thing as is done in ihope with inspinj: the 'plot_found/missed'
 # section in the ini file gives the names of sections to read for plotfm jobs; these sections are cycled over
 # and temporarily re-named to 'plotfm' then passed to the PlotFMJob class to create the job
+# FIXME: The tag system was introduced in ahope to deal with this case. If we
+#        move this code over to use the pycbc workflow setup, please use the
+#        tag system and not this!
 plotfm_jobs = []
 if cp.has_section('plotfm'):
   for plotfm_tag in cp.options('plotfm'):
@@ -175,14 +179,12 @@ if cp.has_section('plotfm'):
       fmcp.set('plotfm', fmopt, fmval)
     plotfm_jobs.append( (plotfm_tag, inspiral.PlotFMJob(fmcp)) )
 
-printlc_job = inspiral.LigolwCBCPrintJob(cp, 'printlc', ['cbc_print', 'printlc'])
+printlc_job = inspiral.LigolwCBCPrintJob(cp, 'printlc', ['printlc'])
 plotifar_job = inspiral.PlotIfarJob(cp)
 
 printlc_job.set_sub_file( '.'.join([ basename, 'printlc', 'sub' ]) )
 printsims_job.set_sub_file( '.'.join([ basename, 'printsims', 'sub' ]) )
-printsims_nominifup_job.set_sub_file( '.'.join([ basename, 'no_minifollowups', 'printsims', 'sub' ]) )
 printmissed_job.set_sub_file( '.'.join([ basename, 'printmissed', 'sub' ]) )
-printmissed_nominifup_job.set_sub_file( '.'.join([ basename, 'no_minifollowups', 'printmissed', 'sub' ]) )
 minifup_job.set_sub_file( '.'.join([ basename, 'minifollowups', 'sub' ]) )
 minifup_ts_job.set_sub_file( '.'.join([ basename, 'time_slides', 'minifollowups', 'sub' ]) )
 minifup_cm_job.set_sub_file( '.'.join([ basename, 'closest_missed', 'minifollowups', 'sub' ]) )
@@ -191,14 +193,55 @@ for fmtag, fmjob in plotfm_jobs:
   fmjob.set_sub_file( '.'.join([ basename, fmtag, 'plotfm', 'sub' ]) )
 plotslides_job.set_sub_file( '.'.join([ basename, 'plotslides', 'sub' ]) )
 plotcumhist_job.set_sub_file( '.'.join([ basename, 'plotcumhist', 'sub' ]) )
+search_volume_job.set_sub_file( '.'.join([ basename, 'search_volume', 'sub' ]) )
+search_upper_limit_job.set_sub_file( '.'.join([ basename, 'search_upper_limit', 'sub' ]) )
 
 # set memory requirments for memory intensive jobs
 printlc_job.add_condor_cmd("request_memory", "1000")
 printsims_job.add_condor_cmd("request_memory", "1000")
-printsims_nominifup_job.add_condor_cmd("request_memory", "1000")
 minifup_job.add_condor_cmd("request_memory", "2000")
 minifup_ts_job.add_condor_cmd("request_memory", "2000")
 minifup_cm_job.add_condor_cmd("request_memory", "2000")
+
+############################################################################
+# UPPERLIMIT CALCULATIONS
+############################################################################
+
+tag = "FULL_DATA_" + veto_tag
+weird_veto_string = "VETO_CAT"+str(veto_level)+"_CUMULATIVE"
+output_cache_name = ''.join(sorted(instruments)) + "-SEARCH_VOLUME_" + tag
+output_cache_name += ".cache"
+
+search_volume_node = inspiral.SearchVolumeNode( search_volume_job )
+search_volume_node.set_open_box()
+search_volume_node.add_database( input_database )
+search_volume_node.set_user_tag( tag )
+search_volume_node.set_output_cache( output_cache_name )
+search_volume_node.set_veto_segments_name( weird_veto_string )
+
+search_upper_limit_node = inspiral.SearchUpperLimitNode(search_upper_limit_job)
+search_upper_limit_node.set_open_box()
+search_upper_limit_node.add_input_cache( output_cache_name )
+search_upper_limit_node.set_user_tag( tag )
+search_upper_limit_node.add_parent( search_volume_node )
+dag.add_node( search_volume_node )
+dag.add_node( search_upper_limit_node )
+
+# make corresponding jobs for playground (using FAR of expected loudest event)
+playtag = tag.replace("FULL_DATA","PLAYGROUND")
+search_volume_node = inspiral.SearchVolumeNode( search_volume_job )
+output_cache_name = output_cache_name.replace("FULL_DATA","PLAYGROUND")
+search_volume_node.add_database( input_database )
+search_volume_node.set_user_tag( playtag )
+search_volume_node.set_output_cache( output_cache_name )
+search_volume_node.set_veto_segments_name( weird_veto_string )
+
+search_upper_limit_node = inspiral.SearchUpperLimitNode(search_upper_limit_job)
+search_upper_limit_node.add_input_cache( output_cache_name )
+search_upper_limit_node.set_user_tag( playtag )
+search_upper_limit_node.add_parent( search_volume_node )
+dag.add_node( search_volume_node )
+dag.add_node( search_upper_limit_node )
 
 ############################################################################
 # Summary: Setup PrintLC and MiniFollowup Nodes to generate a summary of 

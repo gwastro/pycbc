@@ -18,7 +18,7 @@
 
 """
 Program for running multi-detector pycbc analysis through coincidence and then
-generate post-processing and plots with pipedown.
+generate post-processing and plots.
 This is designed to mimic the current behaviour of weekly_ihope.
 """
 import pycbc
@@ -91,10 +91,10 @@ if args.enable_hdf_post_processing:
     # Convert the SINGLE FIXED template bank file to an hdf format
     hdfbank = _workflow.convert_bank_to_hdf(workflow, bank_files, dfDir)
 
-splitbank_files = _workflow.setup_splittable_workflow(workflow, bank_files, dfDir)
+splitbank_files = _workflow.setup_splittable_workflow(workflow,
+                                                      bank_files, dfDir)
 
 all_files.extend(bank_files)
-#NOTE: may want to remove splitbank if it confuses pipedown
 all_files.extend(splitbank_files)
 
 # setup the injection files
@@ -129,12 +129,14 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
         final_veto_file = segsFileList.find_output_with_tag('CUMULATIVE_CAT_4')
         cum_veto_files = _workflow.FileList()
 
-        insps_hdf = _workflow.convert_trig_to_hdf(workflow, hdfbank, insps, output_dir, tags=[tag])
+        insps_hdf = _workflow.convert_trig_to_hdf(workflow, hdfbank, insps,
+                                                  output_dir, tags=[tag])
 
         if tag == 'full_data':
             ctags = [tag, 'full']
-            bg_files = _workflow.setup_interval_coinc(workflow, hdfbank, insps_hdf,
-                            cum_veto_files, output_dir, tags=ctags)
+            bg_files = _workflow.setup_interval_coinc(workflow, hdfbank,
+                                                      insps_hdf, cum_veto_files,
+                                                      output_dir, tags=ctags)
             final_bg_file =  _workflow.setup_interval_coinc(workflow, hdfbank,
                             insps_hdf, final_veto_file, output_dir, tags=ctags)
             _workflow.make_foreground_table(workflow, final_bg_file[0],
@@ -143,17 +145,19 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
             ctags = [tag, 'inj']
             inj_coinc = _workflow.setup_interval_coinc_inj(workflow, hdfbank,
                             insps_hdf, final_bg_file, output_dir, tags=ctags)
-            found_inj = _workflow.find_injections_in_hdf_coinc(workflow, inj_coinc,
-                            inj_file, final_veto_file[0], output_dir, tags=ctags)
-            _workflow.make_sensitivity_plot(workflow, found_inj, 'plots/sensitivity',
-                                     tags=ctags)
-            _workflow.make_foundmissed_plot(workflow, found_inj, tag, 'plots/foundmissed',
-                                     tags=[tag])
+            found_inj = _workflow.find_injections_in_hdf_coinc(workflow,
+                                       inj_coinc, inj_file, final_veto_file[0],
+                                       output_dir, tags=ctags)
+            _workflow.make_sensitivity_plot(workflow, found_inj,
+                                            'plots/sensitivity', tags=ctags)
+            _workflow.make_foundmissed_plot(workflow, found_inj, tag,
+                                            'plots/foundmissed', tags=[tag])
 
-    coincs, others = _workflow.setup_coincidence_workflow(workflow, segsFileList,
-                                        timeSlideFiles, insps, output_dir,
-                                        tags=[tag], maxVetoCat=max_veto_cat,
-                                        timeSlideTags=timeSlideTags)
+    coincs, others = _workflow.setup_coincidence_workflow(workflow,
+                                           segsFileList, timeSlideFiles, insps,
+                                           output_dir, tags=[tag],
+                                           maxVetoCat=max_veto_cat,
+                                           timeSlideTags=timeSlideTags)
     all_files.extend(coincs)
     all_coincs.extend(coincs)
 
@@ -184,6 +188,36 @@ for tag in ['playground']:
 
             all_files.append(play_file)
 
+# Set up workflow's post-processing, this is still incomplete
+
+# FIXME: Don't like having to list this here!
+ppVetoCats = [2,3,4]
+
+postProcPrepFiles = _workflow.setup_postprocessing_preparation(workflow,
+                      all_coincs, ppDir, injectionFiles=inj_files,
+                      injectionTags=inj_tags, injLessTag='full_data',
+                      vetoFiles=segsFileList, vetoCats=ppVetoCats)
+
+postProcFiles = _workflow.setup_postprocessing(workflow, postProcPrepFiles,
+                                           anal_log_files, ppDir, tags=[],
+                                           veto_cats=ppVetoCats)
+
+# Dump out the formatted, combined ini file
+workflow.cp.write(file("workflow_configuration.ini", "w"))
+
+# Get start and end times for summary/plotting jobs
+start_time = workflow.analysis_time[0]
+end_time = workflow.analysis_time[1]
+
+# Legacy plotting codes use a glue.lal cache file so create this
+cacheFileList = all_files.convert_to_lal_cache()
+cacheFileName = os.path.join(currDir, 'ihope_full_cache.cache')
+cacheFileFP = open(cacheFileName, 'w')
+cacheFileList.tofile(cacheFileFP)
+cacheFileFP.close()
+
+########## Plotting follows ########
+
 # Set up summary plots
 for tag in ['full_data']:
     cacheFileName = os.path.join(currDir, 'ihope_full_cache.cache')
@@ -204,115 +238,13 @@ for tag in ['full_data_slide']:
 
 # Set up hardware injection summary page
 hwinjFiles = _workflow.setup_hardware_injection_page(post_workflow, all_coincs,
-                   cacheFileName, inspiral_cachepattern='THINCA_ZEROLAG_FULL_DATA_CAT_1_VETO',
-                   output_dir=hwinjDir, tags=['full_data'])
+                   cacheFileName, output_dir=hwinjDir, tags=['full_data'],
+                   inspiral_cachepattern='THINCA_ZEROLAG_FULL_DATA_CAT_1_VETO')
 
-# Set up workflow's post-processing, this is still incomplete
-
-# FIXME: Don't like having to list this here!
-ppVetoCats = [2,3,4]
-
-postProcPrepFiles = _workflow.setup_postprocessing_preparation(workflow,
-                      all_coincs, ppDir, injectionFiles=inj_files,
-                      injectionTags=inj_tags, injLessTag='full_data',
-                      vetoFiles=segsFileList, vetoCats=ppVetoCats)
-
-postProcFiles = _workflow.setup_postprocessing(workflow, postProcPrepFiles,
-                                           anal_log_files, ppDir, tags=[],
-                                           veto_cats=ppVetoCats)
-
-
-# Also run pipedown, for legacy comparison
-
-# Dump out the formatted, combined ini file
-workflow.cp.write(file("workflow_configuration.ini", "w"))
-
-# Prepare the input for compatibility with pipedown
-start_time = workflow.analysis_time[0]
-end_time = workflow.analysis_time[1]
-
-# Copy segment files
-ifoString = workflow.ifo_string
-for category in xrange(1, max_veto_cat + 1):
-    vetoTag = 'CUMULATIVE_CAT_%d' %(category)
-    workflowVetoFile = segsFileList.find_output_with_tag(vetoTag)
-    assert len(workflowVetoFile) == 1
-    workflowVetoFile = workflowVetoFile[0]
-    workflowVetoPath = workflowVetoFile.storage_path
-    pipedownVetoFileName = '%s-VETOTIME_CAT_%d-%d-%d.xml' \
-                            %(ifoString, category, start_time, \
-                              end_time-start_time)
-    pipedownVetoPath = os.path.join(segDir, pipedownVetoFileName)
-    shutil.copyfile(workflowVetoPath, pipedownVetoPath)
-
-# Convert filelist to lal cache format
-cacheFileList = all_files.convert_to_lal_cache()
-cacheFileName = os.path.join(currDir, 'ihope_full_cache.cache')
-cacheFileFP = open(cacheFileName, 'w')
-cacheFileList.tofile(cacheFileFP)
-cacheFileFP.close()
-
-# Everything that follows is copied and modified from inspiralutils to allow us
-# to run pipedown
+# Set up for running the pipedown plotting codes
 
 # Make directory
-pipedownDir = os.path.join(currDir, 'pipedown')
-if not os.path.exists(pipedownDir+'/logs'):
-    os.makedirs(pipedownDir+'/logs')
-os.chdir(pipedownDir)
-
-# Create the necessary ini file
-# This is sufficiently different from the original ini file that some editing is
-# required.
-pipeCp = copy.deepcopy(workflow.cp)
-# Create the condor sections
-pipeCp.add_section("condor")
-pipeCp.set("condor","universe","vanilla")
-for item,value in pipeCp.items('executables'):
-    pipeCp.set("condor", item, value)
-
-# Create input section
-pipeCp.add_section("input")
-pipeCp.set("input","ihope-segments-directory","../segments")
-
-# Write ini file to folder
-
-iniFile = os.path.join(pipedownDir, 'pipedown.ini')
-pipeCp.write(file(iniFile,"w"))
-
-# Set up the command to run pipedown
-pipedown_log_dir = workflow.cp.get("workflow",'pipedown-log-path')
-
-pipeCommand = [pipeCp.get("condor","pipedown")]
-pipeCommand.extend(["--log-path", pipedown_log_dir])
-pipeCommand.extend(["--config-file", iniFile])
-pipeCommand.extend(["--gps-start-time", str(start_time)])
-pipeCommand.extend(["--gps-end-time", str(end_time)])
-pipeCommand.extend(["--ihope-cache", cacheFileName])
-pipeCommand.extend(["--generate-all-data-plots"])
-
-# run lalapps_pipedown
-_workflow.make_external_call(pipeCommand, out_dir=pipedownDir + "/logs",
-                             out_basename='pipedown_call')
-
-# make pipedown job/node
-pipeDag = iniFile.rstrip("ini") + "dag"
-pipeDag_lfn = os.path.basename(pipeDag)
-pipeNode = dax.DAG(pipeDag_lfn)
-
-pipeNode.addProfile(dax.Profile("dagman", "DIR", pipedownDir))
-subdag_file = dax.File(pipeDag_lfn)
-subdag_file.PFN(pipeDag, site='local')
-post_workflow._adag.addFile(subdag_file)
-post_workflow._adag.addDAG(pipeNode)
-
-# return to the original directory
-os.chdir("..")
-
-# Set up for pipedown plotting
-
-# Make directory
-pipedownPlotDir = os.path.join(currDir, 'pipedown_plots')
+pipedownPlotDir = os.path.join(currDir, 'pipedown')
 if not os.path.exists(pipedownPlotDir+'/logs'):
     os.makedirs(pipedownPlotDir+'/logs')
 os.chdir(pipedownPlotDir)
@@ -337,6 +269,7 @@ pipeCp.write(file(iniFile,"w"))
 pipedown_log_dir = workflow.cp.get("workflow",'pipedown-log-path')
 pipedown_tmp_space = workflow.cp.get("workflow",'pipedown-tmp-space')
 
+pipe_plot_nodes = []
 for cat in ppVetoCats:
     veto_tag = "CUMULATIVE_CAT_%d" %(cat,)
     inputFiles = postProcFiles.find_output_with_tag(veto_tag)
@@ -369,6 +302,7 @@ for cat in ppVetoCats:
     subdag_file.PFN(pipePlotDag, site='local')
     post_workflow._adag.addFile(subdag_file)
     pipePlotNode.addProfile(dax.Profile("dagman", "DIR", pipedownPlotDir))
+    pipe_plot_nodes.append(pipePlotNode)
 
 
 # return to the original directory
@@ -420,8 +354,9 @@ wip_node = _workflow.Node(wip_exe)
 wip_node.add_opt('--config-file', os.path.join(currDir, 'wip.ini'))
 
 post_workflow.add_node(wip_node)
-dep = dax.Dependency(parent=pipeNode, child=wip_node._dax_node)
-post_workflow._adag.addDependency(dep)
+for node in pipe_plot_nodes:
+    dep = dax.Dependency(parent=node, child=wip_node._dax_node)
+    post_workflow._adag.addDependency(dep)
 
 container += workflow
 container += post_workflow
