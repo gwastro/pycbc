@@ -35,9 +35,16 @@ import os
 import os.path
 import logging
 from glue import segments
+from glue.ligolw import lsctables,ligolw
+from glue.ligolw import utils as ligolw_utils
 from pycbc.workflow.core import FileList, make_analysis_dir, Executable, Node
 from pycbc.workflow.jobsetup import LigolwAddExecutable, LigolwSSthincaExecutable, SQLInOutExecutable
-from pylal import ligolw_cafe, ligolw_tisi
+from pylal import ligolw_cafe
+
+class ContentHandler(ligolw.LIGOLWContentHandler):
+        pass
+
+lsctables.use_in(ContentHandler)
 
 def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
                                inspiral_outs, output_dir, maxVetoCat=5,
@@ -266,10 +273,15 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
             # hard-coded default value for extent of time in a single job
             max_extent = 3600
         logging.debug("Calling into cafe.")
+        time_slide_table = lsctables.TimeSlideTable.get_table(\
+                ligolw_utils.load_filename(tisiOutFile.storage_path,
+                                 gz=tisiOutFile.storage_path.endswith(".gz"),
+                                 contenthandler=ContentHandler,
+                                 verbose=False))
+        time_slide_table.sync_next_id()
+        time_slide_dict = time_slide_table.as_dict()
         cafe_seglists, cafe_caches = ligolw_cafe.ligolw_cafe(cacheInspOuts,
-            ligolw_tisi.load_time_slides(tisiOutFile.storage_path,
-                gz=tisiOutFile.storage_path.endswith(".gz")).values(),
-            extentlimit=max_extent, verbose=False)
+            time_slide_dict.values(), extentlimit=max_extent, verbose=False)
         logging.debug("Done with cafe.")
 
 

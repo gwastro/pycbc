@@ -41,6 +41,7 @@ from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
+from glue.ligolw.utils import time_slide as ligolw_time_slide
 from glue import offsetvector
 
 from pylal import ligolw_tisi
@@ -164,7 +165,9 @@ filenames = options.output_files
 ## Load initial time slides
 
 if options.add_to is not None:
-  time_slides = ligolw_tisi.load_time_slides(options.add_to, verbose = options.verbose)
+  time_slide_table = lsctables.TimeSlideTable.get_table(ligolw_utils.load_filename(options.add_to, verbose = options.verbose, gz = gz, contenthandler = contenthandler))
+  time_slide_table.sync_next_id()
+  time_slides = time_slide_table.as_dict()
   if options.verbose: print >>sys.stderr, "Loaded %d time slides." % len(time_slides)
 else:
     time_slides = {}
@@ -195,7 +198,7 @@ if options.verbose: print >>sys.stderr, "Total of %d time slides." % len(time_sl
 
 if options.verbose: print >>sys.stderr, "Identifying and removing duplicates ..."
 
-map( time_slides.pop, ligolw_tisi.time_slides_vacuum(time_slides, verbose=options.verbose).keys() )
+map( time_slides.pop, ligolw_time_slide.time_slides_vacuum(time_slides, verbose=options.verbose).keys() )
 
 if options.verbose: print >>sys.stderr, "%d time slides remain." % len(time_slides)
 
