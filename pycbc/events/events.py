@@ -167,6 +167,7 @@ class EventManager(object):
         """
         if not self.opt.chisq_bins:
             raise RuntimeError('Chi-square test must be enabled in order to use newsnr threshold')
+
         remove = [i for i, e in enumerate(self.events) if \
             newsnr(abs(e['snr']), e['chisq'] / (2 * e['chisq_dof'] - 2)) < threshold]
         self.events = numpy.delete(self.events, remove)

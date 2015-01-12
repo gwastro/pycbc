@@ -1,4 +1,4 @@
-#!/usr/bin/env /usr/bin/python
+#!/usr/bin/env python
 
 # Copyright (C) 2014 Alex Nitz
 #
@@ -60,7 +60,8 @@ parser.add_argument("--bank-veto-bank-file", type=str, help="FIXME: ADD")
 parser.add_argument("--chisq-bins", default=0, help=
                     "Number of frequency bins to use for power chisq. Specify"
                     " an integer for a constant number of bins, or a function "
-                    "of template params.  Math functions are allowed, ex. "
+                    "of template attributes.  Math functions are "
+                    "allowed, ex. "
                     "'10./math.sqrt((params.mass1+params.mass2)/100.)'. "
                     "Non-integer values will be rounded down.")
 parser.add_argument("--chisq-threshold", type=float, default=0,
@@ -190,9 +191,9 @@ with ctx:
 
             out_vals['bank_chisq'] = bank_chisq.values(template, s_num, snr,
                                                 norm, idx+stilde.analyze.start)
-            out_vals['chisq'], out_vals['chisq_dof'] = \
-                power_chisq.values(corr, snr, norm, psd, snrv, 
-                                idx+stilde.analyze.start, template, bank, flow)
+
+            out_vals['chisq'], out_vals['chisq_dof'] = power_chisq.values(corr,
+               snr, snrv, norm, psd, idx+stilde.analyze.start, template, bank, flow)
 
             snrv *= norm
 

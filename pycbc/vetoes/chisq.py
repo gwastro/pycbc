@@ -23,8 +23,6 @@
 #
 import numpy, logging, math, pycbc.fft
 
-import pycbc.fft
-
 from pycbc.types import Array, zeros, real_same_precision_as, TimeSeries, complex_same_precision_as, FrequencySeries
 from pycbc.filter import sigmasq_series, make_frequency_series, sigmasq, matched_filter_core, get_cutoff_indices
 from pycbc.scheme import schemed
@@ -327,6 +325,7 @@ class SingleDetPowerChisq(object):
             if self._template is None or self._template != template:
                 # determine number of bins by parsing the option
                 self._num_bins = int(self.parse_option(template, self.num_bins))
+
                 if bank.sigmasq_vec is not None:
                     logging.info("...Calculating fast power chisq bins")
                     kmin = int(low_frequency_cutoff / corr.delta_f)
@@ -343,3 +342,5 @@ class SingleDetPowerChisq(object):
             logging.info("...Doing power chisq")
             return (fastest_power_chisq_at_points(corr, snr, snrv, snr_norm,
                self._bins, indices), self._num_bins * numpy.ones_like(indices))
+                
+            logging.info("...Doing power chisq")     
