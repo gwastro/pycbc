@@ -37,6 +37,7 @@ import logging
 from glue import segments
 from pycbc.workflow.core import FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import select_generic_executable
+from pycbc.workflow.core import get_random_label
 
 def setup_postprocessing(workflow, trigger_files, summary_xml_files,
                          output_dir, tags=[], **kwargs):
@@ -160,14 +161,18 @@ def setup_postproc_pipedown_workflow(workflow, trigger_files, summary_xml_files,
 
         curr_tags = tags + [veto_tag]
 
+        # Choose a label for clustering the jobs
+        job_label = get_random_label()
+
         # Start with compute durations
         computeDurationsJob = compute_durations_exe(workflow.cp, compute_durations_exe_tag,
                                                  ifo=workflow.ifo_string, 
                                                  out_dir=output_dir, 
                                                  tags=curr_tags)
         compute_durations_node = computeDurationsJob.create_node(\
-                                     workflow.analysis_time, trig_input_files[0],
-                                     summary_xml_files[0])
+                                    workflow.analysis_time, trig_input_files[0],
+                                    summary_xml_files[0])
+        compute_durations_node.add_profile('pegasus', 'label', job_label)
         workflow.add_node(compute_durations_node)
 
         # Node has only one output file
@@ -181,6 +186,7 @@ def setup_postproc_pipedown_workflow(workflow, trigger_files, summary_xml_files,
                                       tags=curr_tags)
         cfar_node = cfar_job.create_node(workflow.analysis_time,
                                        compute_durations_out)
+        cfar_node.add_profile('pegasus', 'label', job_label)
         workflow.add_node(cfar_node)
 
         # Node has only one output file

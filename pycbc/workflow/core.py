@@ -28,6 +28,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 import os, sys, subprocess, logging, math, string, urlparse, ConfigParser
 import numpy, cPickle
+import string, random
 from itertools import combinations, groupby
 from operator import attrgetter
 from os.path import splitext, basename, isfile
@@ -265,6 +266,8 @@ class Executable(pegasus_workflow.Executable):
                 self.retain_files = False
             else:
                 self.retain_files = True
+        if hasattr(self, "group_jobs"):
+            self.add_profile('pegasus', 'clusters.size', self.group_jobs)
 
     @property
     def ifo(self):
@@ -319,8 +322,7 @@ class Workflow(pegasus_workflow.Workflow):
     """
     This class manages a pycbc workflow. It provides convenience 
     functions for finding input files using time and keywords. It can also
-    generate cache files from the inputs. It makes heavy use of the
-    pipeline.CondorDAG class, which is instantiated under self.dag.
+    generate cache files from the inputs.
     """
     def __init__(self, args, name):
         """
@@ -398,6 +400,8 @@ class Workflow(pegasus_workflow.Workflow):
         self.as_job.addArguments('-Dpegasus.dir.storage.mapper.replica=File') 
         self.as_job.addArguments('--cache %s' % os.path.join(os.getcwd(), '_reuse.cache')) 
         self.as_job.addArguments('--output-site local')     
+        self.as_job.addArguments('--cleanup inplace')
+        self.as_job.addArguments('--cluster label,horizontal')
 
         # add executable pfns for local site to dax
         for exe in self._executables:
@@ -1240,3 +1244,9 @@ def get_full_analysis_chunk(science_segs):
     fullSegment = segments.segment(min, max)
     return fullSegment
         
+def get_random_label():
+    """
+    Get a random label string to use when clustering jobs.
+    """
+    return ''.join(random.choice(string.ascii_uppercase + string.digits) \
+                   for _ in range(15))

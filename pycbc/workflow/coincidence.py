@@ -38,6 +38,7 @@ from glue import segments
 from glue.ligolw import lsctables,ligolw
 from glue.ligolw import utils as ligolw_utils
 from pycbc.workflow.core import FileList, make_analysis_dir, Executable, Node
+from pycbc.workflow.core import get_random_label
 from pycbc.workflow.jobsetup import LigolwAddExecutable, LigolwSSthincaExecutable, SQLInOutExecutable
 from pylal import ligolw_cafe
 
@@ -409,6 +410,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
         # Assume that if we have partitioned input then if *one* job in the
         # partitioned input is an input then *all* jobs will be.
         if not parallelize_split_input:
+            job_label = get_random_label()
             inputTrigFiles = FileList([])
             for object in cafe_cache.objects:
                 inputTrigFiles.append(object.workflow_file)
@@ -417,11 +419,13 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
 
             # Now we can create the nodes
             node = ligolwadd_job.create_node(cafe_cache.extent, llw_files)
+            node.add_profile('pegasus', 'label', job_label)
             ligolwAddFile = node.output_files[0]
             ligolwAddOuts.append(ligolwAddFile)
             workflow.add_node(node)
             node = ligolwthinca_job.create_node(cafe_cache.extent,
                                                    coincSegment, ligolwAddFile)
+            node.add_profile('pegasus', 'label', job_label)
             ligolwThincaOuts += \
                         node.output_files.find_output_without_tag('DIST_STATS')
             ligolwThincaLikelihoodOuts += \
@@ -430,10 +434,12 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
             if coinc_post_cluster:
                 node = cluster_job.create_node(cafe_cache.extent,
                                                ligolwThincaOuts[-1])
+                node.add_profile('pegasus', 'label', job_label)
                 ligolwClusterOuts += node.output_files
                 workflow.add_node(node)
         else:
             for key in insp_files_dict.keys():
+                job_label = get_random_label()
                 curr_tags = ["JOB%d" %(key)]
                 curr_list = insp_files_dict[key]
                 inputTrigFiles = FileList([])
@@ -446,6 +452,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
                 # Now we can create the nodes
                 node = ligolwadd_job.create_node(cafe_cache.extent, llw_files,
                                                  tags=curr_tags)
+                node.add_profile('pegasus', 'label', job_label)
                 ligolwAddFile = node.output_files[0]
                 ligolwAddOuts.append(ligolwAddFile)
                 workflow.add_node(node)
@@ -457,6 +464,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
                 node = ligolwthinca_job.create_node(cafe_cache.extent,
                                    coincSegment, ligolwAddFile, tags=curr_tags,
                                    write_likelihood=write_likelihood)
+                node.add_profile('pegasus', 'label', job_label)
                 ligolwThincaOuts += \
                        node.output_files.find_output_without_tag('DIST_STATS')
                 ligolwThincaLikelihoodOuts += \
@@ -465,6 +473,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
                 if coinc_post_cluster:
                     node = cluster_job.create_node(cafe_cache.extent,
                                                    ligolwThincaOuts[-1])
+                    node.add_profile('pegasus', 'label', job_label)
                     ligolwClusterOuts += node.output_files
                     workflow.add_node(node)
 

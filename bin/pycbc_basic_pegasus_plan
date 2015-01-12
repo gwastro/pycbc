@@ -26,11 +26,7 @@ touch _reuse.cache
 
 if [ "x$3" == "x--cache" ]; then
   cp $4 _reuse.cache
-  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites local -o local --dir $2 --cleanup inplace --cache $4
+  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites local -o local --dir $2 --cleanup inplace --cache $4 --cluster label,horizontal
 else
-  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites local -o local --dir $2 --cleanup inplace
+  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites local -o local --dir $2 --cleanup inplace --cluster label,horizontal
 fi
-
-
-#echo "Generating the workflow shell script"
-#pegasus-plan --conf basic_pegasus.conf -d $1 --sites local -o local --dir $PWD --nocleanup

@@ -37,6 +37,7 @@ import logging
 from glue import segments
 from pycbc.workflow.core import FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import select_generic_executable
+from pycbc.workflow.core import get_random_label
 
 def setup_postprocessing_preparation(workflow, triggerFiles, output_dir,
                                      tags=[], **kwargs):
@@ -188,6 +189,9 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
         sqliteCombine2Inputs = FileList([])
         # Do injection-less jobs first.
 
+        # Choose a label for clustering the jobs
+        job_label = get_random_label()
+
         # Combine trig files first
         currTags = tags + [injLessTag, vetoTag]
         trigVetoInpFiles = coincFiles.find_output_with_tag(pipedownDQVetoName)
@@ -201,6 +205,7 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
         sqliteCombine1Node = sqliteCombine1Job.create_node(\
                                           workflow.analysis_time, trigInpFiles, 
                                           workflow=workflow)
+        sqliteCombine1Node.add_profile('pegasus', 'label', job_label)
         workflow.add_node(sqliteCombine1Node)
         # Node has only one output file
         sqliteCombine1Out = sqliteCombine1Node.output_files[0]
@@ -214,6 +219,7 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
                                                    tags=currTags)
         clusterCoincsNode = clusterCoincsJob.create_node(\
                                      workflow.analysis_time, sqliteCombine1Out)
+        clusterCoincsNode.add_profile('pegasus', 'label', job_label)
         workflow.add_node(clusterCoincsNode)
         # Node has only one output file
         clusterCoincsOut = clusterCoincsNode.output_files[0]
@@ -222,6 +228,8 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
 
         # Do injection jobs
         for injTag in injectionTags:
+            # Choose a label for clustering the jobs
+            job_label = get_random_label()
             # Combine trig files first
             currTags = tags + [injTag, vetoTag]
             trigInpFiles = trigVetoInpFiles.find_output_with_tag(injTag)
@@ -237,6 +245,7 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
                                           workflow.analysis_time, trigInpFiles,
                                           injFile=injFile[0], injString=injTag,
                                           workflow=workflow)
+            sqliteCombine1Node.add_profile('pegasus', 'label', job_label)
             workflow.add_node(sqliteCombine1Node)
             # Node has only one output file
             sqliteCombine1Out = sqliteCombine1Node.output_files[0]
@@ -250,11 +259,15 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
                                                 tags=currTags)
             clusterCoincsNode = clusterCoincsJob.create_node(\
                                      workflow.analysis_time, sqliteCombine1Out)
+            clusterCoincsNode.add_profile('pegasus', 'label', job_label)
             workflow.add_node(clusterCoincsNode)
             # Node has only one output file
             clusterCoincsOut = clusterCoincsNode.output_files[0]
             clusterCoincsOuts.append(clusterCoincsOut)
             sqliteCombine2Inputs.append(clusterCoincsOut)
+
+        # Choose a new label for pegasus-clustering the jobs
+        job_label = get_random_label()
 
         # Combine everything together and add veto file
         currTags = tags + [vetoTag]
@@ -265,6 +278,7 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
                                               tags=currTags)
         sqliteCombine2Node = sqliteCombine2Job.create_node(\
                                   workflow.analysis_time, sqliteCombine2Inputs)
+        sqliteCombine2Node.add_profile('pegasus', 'label', job_label)
         workflow.add_node(sqliteCombine2Node)
         sqliteCombine2Out = sqliteCombine2Node.output_files[0]
         sqliteCombine2Outs.append(sqliteCombine2Out)
@@ -275,6 +289,7 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
                                           out_dir=output_dir,tags=currTags)
         injFindNode = injFindJob.create_node(workflow.analysis_time,
                                                          sqliteCombine2Out)
+        injFindNode.add_profile('pegasus', 'label', job_label)
         workflow.add_node(injFindNode)
         injFindOut = injFindNode.output_files[0]
         injFindOuts.append(injFindOut)
@@ -742,10 +757,3 @@ def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
     # FIXME: Maybe contatenate and return all other outputs if needed elsewhere
     # FIXME: MOve to pp utils and return the FAR files.
     return final_outputs
-
-
-
-
-
-
-    
