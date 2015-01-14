@@ -224,7 +224,7 @@ with ctx:
              
             logging.info("%s points above threshold" % str(len(idx)))
             bank_chisqv = bank_chisq.values(template, s_num, snr, norm, idx+snr_start)
-            power_chisqv = power_chisq.values(corr, snr, norm, psd, idx+snr_start, template, bank, opt.low_frequency_cutoff)
+            power_chisqv, chisqdof = power_chisq.values(corr, snr, norm, psd, idx+snr_start, template, bank, opt.low_frequency_cutoff)
             
             snrv *= norm
             idx += (cumulative_index - seg_width_idx + (snr_start - opt.segment_start_pad * opt.sample_rate))

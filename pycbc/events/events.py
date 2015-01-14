@@ -124,9 +124,9 @@ def findchirp_cluster_over_window(times, values, window_length):
     return indices[0:j+1]
 
 def newsnr(snr, reduced_x2):
-    """Calculate the re-weighted SNR statistic known as NewSNR from given
-    SNR and reduced chi-squared values. See http://arxiv.org/abs/1208.3491
-    for a definition of NewSNR.
+    """Calculate the re-weighted SNR statistic ('newSNR') from given SNR and
+    reduced chi-squared values. See http://arxiv.org/abs/1208.3491 for
+    definition.
     """
     newsnr = numpy.array(snr, ndmin=1)
     reduced_x2 = numpy.array(reduced_x2, ndmin=1)
@@ -159,17 +159,18 @@ class EventManager(object):
     def chisq_threshold(self, value, num_bins, delta=0):
         remove = []
         for i, event in enumerate(self.events):
-            xi = event['chisq'] / (num_bins + delta * event['snr'].conj() * event['snr'])
+            xi = event['chisq'] / (event['chisq_dof'] + delta * event['snr'].conj() * event['snr'])
             if xi > value:
                 remove.append(i)
         self.events = numpy.delete(self.events, remove)
 
     def newsnr_threshold(self, threshold):
-        "Remove events with newsnr smaller than given threshold"
+        """ Remove events with newsnr smaller than given threshold
+        """
         if not self.opt.chisq_bins:
             raise RuntimeError('Chi-square test must be enabled in order to use newsnr threshold')
-        x2_dof = 2 * self.opt.chisq_bins - 2
-        remove = [i for i, e in enumerate(self.events) if newsnr(abs(e['snr']), e['chisq'] / x2_dof) < threshold]
+        remove = [i for i, e in enumerate(self.events) if \
+            newsnr(abs(e['snr']), e['chisq'] / (2 * e['chisq_dof'] - 2)) < threshold]
         self.events = numpy.delete(self.events, remove)
 
     def maximize_over_bank(self, tcolumn, column, window):
@@ -217,7 +218,15 @@ class EventManager(object):
 
     def add_template_events(self, columns, vectors):
         """ Add a vector indexed """
-        new_events = numpy.zeros(len(vectors[0]), dtype=self.event_dtype)
+        # initialize with zeros - since vectors can be None, look for the
+        # first one that isn't
+        new_events = None
+        for v in vectors:
+            if v is not None:
+                new_events = numpy.zeros(len(v), dtype=self.event_dtype)
+                break
+        # they shouldn't all be None
+        assert new_events is not None
         new_events['template_id'] = self.template_index
         for c, v in zip(columns, vectors):
             if v is not None:
@@ -294,10 +303,20 @@ class EventManager(object):
             if self.opt.chisq_bins != 0:
                 # FIXME: This is *not* the dof!!!
                 # but is needed for later programs not to fail
-                row.chisq_dof = self.opt.chisq_bins
-                row.chisq = event['chisq']
+                try:
+                    # if the options specify an integer, use it and check
+                    # that the value can be cast as an int without changing
+                    # numerically
+                    row.chisq_dof = int(self.opt.chisq_bins)
+                    assert row.chisq_dof == self.opt.chisq_bins
+                except:
+                    # fail through: copy the value from the trigger
+                    row.chisq_dof = event['chisq_dof']
+                #row.chisq_dof = self.opt.chisq_bins
+                    row.chisq = event['chisq']
 
             if hasattr(self.opt, 'bank_veto_bank_file') and self.opt.bank_veto_bank_file:
+                # EXPLAINME - is this a hard-coding? Certainly looks like one
                 row.bank_chisq_dof = 10
                 row.bank_chisq = event['bank_chisq']
             else:

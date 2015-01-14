@@ -51,12 +51,18 @@ parser.add_argument("--cluster-method", choices=["template", "window"],
                     help="FIXME: ADD")
 parser.add_argument("--cluster-window", type=float, default = -1,
                   help="Length of clustering window in seconds")
+
 parser.add_argument("--maximization-interval", type=float, default=0,
                   help="Maximize triggers over the template bank (ms)")
 
 parser.add_argument("--bank-veto-bank-file", type=str, help="FIXME: ADD")
 
-parser.add_argument("--chisq-bins", type=int, default=0, help="FIXME: ADD")
+parser.add_argument("--chisq-bins", default=0, help=
+                    "Number of frequency bins to use for power chisq. Specify"
+                    " an integer for a constant number of bins, or a function "
+                    "of template params.  Math functions are allowed, ex. "
+                    "'10./math.sqrt((params.mass1+params.mass2)/100.)'. "
+                    "Non-integer values will be rounded down.")
 parser.add_argument("--chisq-threshold", type=float, default=0,
                     help="FIXME: ADD")
 parser.add_argument("--chisq-delta", type=float, default=0, help="FIXME: ADD")
@@ -107,7 +113,7 @@ strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
 with ctx:
     fft.from_cli(opt)
 
-    flow = opt.low_frequency_cutoff                                                               
+    flow = opt.low_frequency_cutoff
     flen = strain_segments.freq_len
     tlen = strain_segments.time_len
     delta_f = strain_segments.delta_f
@@ -137,9 +143,27 @@ with ctx:
     for seg in segments:
         seg /= psd
 
-    names = ['time_index', 'snr', 'chisq', 'bank_chisq', 'cont_chisq']
+    # storage for values and types to be passed to event manager
+    out_types = {
+        'time_index' : int,
+        'snr'        : complex64,
+        'chisq'      : float32,
+        'chisq_dof'  : int,
+        'bank_chisq' : float32,
+        'cont_chisq' : float32
+                }
+    out_vals = {
+        'time_index' : None,
+        'snr'        : None,
+        'chisq'      : None,
+        'chisq_dof'  : None,
+        'bank_chisq' : None,
+        'cont_chisq' : None
+               }
+    names = sorted(out_vals.keys())
+
     event_mgr = events.EventManager(opt, names,
-                         [int, complex64, float32, float32, float32, float32], psd=psd)
+                                        [out_types[n] for n in names], psd=psd)
 
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, opt.approximant, flen, delta_f,
@@ -158,32 +182,32 @@ with ctx:
                          (t_num + 1, len(bank), s_num + 1, len(segments)))
 
             snr, norm, corr, idx, snrv = \
-                    matched_filter.matched_filter_and_cluster(template, stilde, cluster_window)
+                    matched_filter.matched_filter_and_cluster(template, stilde,
+                                                                cluster_window)
 
             if not len(idx):
                 continue
 
-            bank_chisqv = bank_chisq.values(template, s_num, snr, norm,
-                                            idx+stilde.analyze.start)
-            power_chisqv = power_chisq.values(corr, snr, norm, psd, snrv, 
-                                            idx+stilde.analyze.start,
-                                            template, bank, flow)
+            out_vals['bank_chisq'] = bank_chisq.values(template, s_num, snr,
+                                                norm, idx+stilde.analyze.start)
+            out_vals['chisq'], out_vals['chisq_dof'] = \
+                power_chisq.values(corr, snr, norm, psd, snrv, 
+                                idx+stilde.analyze.start, template, bank, flow)
 
             snrv *= norm
 
             if opt.autochi_number_points:
-                auto_chisqv = autochisq.values(snr*norm, corr, hautocorr=None, 
-                    indices=idx+stilde.analyze.start, template=template, psd=psd, 
-                    low_frequency_cutoff=flow)
+                auto_chisqv = autochisq.values(snr*norm, corr, hautocorr=None,
+                           indices=idx+stilde.analyze.start, template=template,
+                                            psd=psd, low_frequency_cutoff=flow)
+                out_vals['cont_chisq'] = auto_chisqv[:,2]
 
             idx += stilde.cumulative_index
 
-            if (opt.autochi_number_points):
-               vals = [idx, snrv, power_chisqv, bank_chisqv, auto_chisqv[:, 2]]
-            else:
-               vals = [idx, snrv, power_chisqv, bank_chisqv, None]
+            out_vals['time_index'] = idx
+            out_vals['snr'] = snrv
 
-            event_mgr.add_template_events(names, vals)
+            event_mgr.add_template_events(names, [out_vals[n] for n in names])
 
         event_mgr.cluster_template_events("time_index", "snr", cluster_window)
         event_mgr.finalize_template_events()
