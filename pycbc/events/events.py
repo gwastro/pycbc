@@ -327,9 +327,16 @@ class EventManager(object):
             template_sigmasq = numpy.array([t['sigmasq'] for t in self.template_params], dtype=numpy.float32)
             f['sigmasq'] = template_sigmasq[tid]
          
-            cont_dof = self.opt.autochi_number_points if self.opt.autochi_onesided else 2 * self.opt.autochi_number_points
+            # FIXME: Can we get this value from the autochisq instance?
+            cont_dof = self.opt.autochi_number_points
+            if self.opt.autochi_onesided is None:
+                cont_dof = cont_dof * 2
+            if self.opt.autochi_two_phase:
+                cont_dof = cont_dof * 2
+            if self.opt.autochi_max_valued_dof:
+                cont_dof = self.opt.autochi_max_valued_dof
             f['cont_chisq_dof'] = numpy.repeat(cont_dof, len(self.events))
-            f['bank_chisq_dof'] = numpy.repeat(10, len(self.events))      
+            f['bank_chisq_dof'] = numpy.repeat(10, len(self.events))
 
             if 'chisq_dof' in self.events.dtype.names:
                 f['chisq_dof'] = self.events['chisq_dof'] / 2 + 1
@@ -455,10 +462,15 @@ class EventManager(object):
             if hasattr(self.opt, 'autochi_number_points')\
                     and self.opt.autochi_number_points>0:
                 row.cont_chisq = event['cont_chisq']
-                if (self.opt.autochi_onesided):
-                    row.cont_chisq_dof = self.opt.autochi_number_points
-                else:
-                    row.cont_chisq_dof = 2*self.opt.autochi_number_points
+                # FIXME: Can this come from the autochisq instance?
+                cont_dof = self.opt.autochi_number_points
+                if self.opt.autochi_onesided is None:
+                    cont_dof = cont_dof * 2
+                if self.opt.autochi_two_phase:
+                    cont_dof = cont_dof * 2
+                if self.opt.autochi_max_valued_dof:
+                    cont_dof = self.opt.autochi_max_valued_dof
+                row.cont_chisq_dof = cont_dof
 
             row.eff_distance = sigmasq ** (0.5) / abs(snr)
             row.snr = abs(snr)

@@ -24,235 +24,261 @@ from math import cos, sin, sqrt, pi, atan2, exp
 import time
 import logging
 
-
 BACKEND_PREFIX="pycbc.vetoes.autochisq_"
 
 
-def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None,
-                               indices=None, oneside=False):
-    """ Compute correlation (two sided) between template and data
-        and compares with autocorrelation of the template: C(t) = IFFT(A*A/S(f))
+def autochisq_from_precomputed(sn, corr_sn, hautocorr, indices,
+                       stride=1, num_points=None, oneside=None,
+                       twophase=True, maxvalued=False):
+    """ 
+    Compute correlation (two sided) between template and data
+    and compares with autocorrelation of the template: C(t) = IFFT(A*A/S(f))
 
-	Parameters
-	----------
-	sn: Array[complex]
-	    normalized (!) array of complex snr 
-	corr: FrequencySeries[complex] 
-	    correlation of the template and the data in freq. domain ### not used but could be
-	hautocorr: Array[real] 
-	     time domain autocorrelation for the template
-	num_points: [int, optional] number of points used for autochisq
-	             on each side, if None allpoints are used
-	stride: [int, optional] stride for points selection for autochisq
-	        total length <= 2*num_points*stride, default=1
-	indices: Array[int], optional], compute autochisquare only at the points specified 
-		 in this array, default: compute autochisquare for max snr in the snr array
-	oneside: [bool, optional] whether to use one or two sided autochisquare
-	         if "True" only one side is used, default=False
+    Parameters
+    ----------
+    sn: Array[complex]
+        normalized (!) array of complex snr for the template that produced the
+        trigger(s) being tested
+    corr_sn : Array[complex]
+        normalized (!) array of complex snr for the template that you want to
+        produce a correlation chisq test for. In the [common] case that sn and
+        corr_sn are the same, you are computing auto-correlation chisq.
+    hautocorr: Array[complex] 
+        time domain autocorrelation for the template
+    indices: Array[int]
+        compute correlation chisquare at the points specified in this array,
+    num_points: [int, optional; default=None]
+        Number of points used for autochisq on each side, if None all points
+        are used.
+    stride: [int, optional; default = 1]
+        stride for points selection for autochisq
+        total length <= 2*num_points*stride
+    oneside: [str, optional; default=None]
+        whether to use one or two sided autochisquare. If None (or not
+        provided) twosided chi-squared will be used. If given, options are
+        'left' or 'right', to do one-sided chi-squared on the left or right.
+    twophase: Boolean, optional; default=True
+        If True calculate the auto-chisq using both phases of the filter.
+        If False only use the phase of the obtained trigger(s).
+    maxvalued: Boolean, optional; default=False
+        Return the largest auto-chisq at any of the points tested if True.
+        If False, return the sum of auto-chisq at all points tested.
 
-	Returns
-	-------
-	autochisq: [tupple] returns autochisq values and snr corresponding to the instances 
-	          of time defined by indices
+    Returns
+    -------
+    autochisq: [tuple]
+        returns autochisq values and snr corresponding to the instances 
+        of time defined by indices
     """
-
     Nsnr = len(sn)
 
-    ## normalizing the hautocorr
-    hautocorr = hautocorr/hautocorr[0]
-
     indx = np.array([])
-    if (indices == None): ### find the maximum snr 
-        snr_v = Array(np.absolute(sn), copy=True)
-	maxSNR, max_ind = snr_v.max_loc()
-	indx = np.append(indx, max_ind)
-	indices = Array(indx, copy=True)
 
     achisq = np.zeros(len(indices))
     num_points_all = int(Nsnr/stride)
     if num_points is None:
-       num_points = num_points_all
+        num_points = num_points_all
     if (num_points > num_points_all):
-       num_points = num_points_all
+        num_points = num_points_all
 
-    tm_cur = time.clock()
+    snrabs = np.abs(sn[indices])
+    cphi_array = (sn[indices]).real / snrabs
+    sphi_array = (sn[indices]).imag / snrabs
+
+    start_point = - stride*num_points
+    end_point = stride*num_points+1
+    if oneside == 'left':
+        achisq_idx_list = np.arange(start_point, 0, stride)
+    elif oneside == 'right':
+        achisq_idx_list = np.arange(stride, end_point, stride)
+    else:
+        achisq_idx_list_pt1 = np.arange(start_point, 0, stride)
+        achisq_idx_list_pt2 = np.arange(stride, end_point, stride)
+        achisq_idx_list = np.append(achisq_idx_list_pt1,
+                                    achisq_idx_list_pt2)
+
+    hauto_corr_vec = hautocorr[achisq_idx_list]
+    hauto_norm = hauto_corr_vec.real*hauto_corr_vec.real
+    # REMOVE THIS LINE TO REPRODUCE OLD RESULTS
+    hauto_norm += hauto_corr_vec.imag*hauto_corr_vec.imag
+    chisq_norm = 1.0 - hauto_norm
+
     for ip,ind in enumerate(indices):
-        end_point = ind + stride*num_points+1
-        phi = atan2(sn[ind].imag, sn[ind].real)
-        cphi = cos(phi)
-        sphi = sin(phi)
-        k = 1
+        curr_achisq_idx_list = achisq_idx_list + ind
+        
+        cphi = cphi_array[ip]
+        sphi = sphi_array[ip]
+        # By construction, the other "phase" of the SNR is 0
         snr_ind =  sn[ind].real*cphi + sn[ind].imag*sphi
-	# going right
-	for i in xrange(int(ind)+1, int(end_point), stride):
-            if (i>Nsnr-1):
-	       i = i - Nsnr  # folding it
-	    z = sn[i].real*cphi + sn[i].imag*sphi
-	    dz = z - hautocorr[k]*snr_ind
-	    chisq_norm = 1.0 - hautocorr[k]*hautocorr[k]
-	    achisq[ip] += dz*dz/chisq_norm
-	    k += stride
-	if (not oneside):
-           # going left
-           end_point = ind - stride*num_points -1
-           k=1
-	   for i in xrange(int(ind)-1, int(end_point), -stride):
-               if (i<0):
-		   i = i + Nsnr  # folding it
-	       z = sn[i].real*cphi + sn[i].imag*sphi
-	       dz = z - hautocorr[k]*snr_ind
-	       chisq_norm = 1.0 - hautocorr[k]*hautocorr[k]
-	       achisq[ip] += dz*dz/chisq_norm
-	       k += stride
-        # Stas last two cycles can be combined in a single cycle in "k" 
 
-    tm_cur = time.clock()
+        # Wrap index if needed (maybe should fail in this case?)
+        if curr_achisq_idx_list[0] < 0:
+            curr_achisq_idx_list[curr_achisq_idx_list < 0] += Nsnr
+        if curr_achisq_idx_list[-1] > (Nsnr - 1):
+            curr_achisq_idx_list[curr_achisq_idx_list > (Nsnr-1)] -= Nsnr
 
-    dof = 2*num_points
-    if (oneside):
-       dof = num_points
-    achisq_list=np.zeros((len(indices), 3))
+        z = corr_sn[curr_achisq_idx_list].real*cphi + \
+             corr_sn[curr_achisq_idx_list].imag*sphi
+        dz = z - hauto_corr_vec.real*snr_ind
+        curr_achisq_list = dz*dz/chisq_norm
 
-    achisq_list[:,0] = indices
-    achisq_list[:,2] = achisq
-    for i in xrange(len(indices)):
-	achisq_list[i, 1] = abs(sn[indices[i]])
-    tm_cur = time.clock()
+        if twophase:
+            chisq_norm = 1.0 - hauto_norm
+            z = -corr_sn[curr_achisq_idx_list].real*sphi + \
+                 corr_sn[curr_achisq_idx_list].imag*cphi
+            dz = z - hauto_corr_vec.imag*snr_ind
+            curr_achisq_list += dz*dz/chisq_norm
+          
+        if maxvalued:
+            achisq[ip] = curr_achisq_list.max()
+        else:
+            achisq[ip] = curr_achisq_list.sum()
 
-    return(dof, achisq_list)
+    dof = num_points
+    if oneside is None:
+        dof = dof * 2
+    if twophase:
+        dof = dof * 2
 
-
-def autochisq(template, data, psd, stride=1, snr_thr=8.0, num_points=None, \
-		low_frequency_cutoff=None, high_frequency_cutoff=None, max_snr=True, onesided=False):
-    """ Compute correlation (two sided) between template and data
-        and compares with autocorrelation of the template: C(t) = IFFT(A*A/S(f))
-
-	Parameters
-	----------
-    template: FrequencySeries or TimeSeries
-	    A time or frequency series that contains the filter template. The length
-            must be commensurate with the data. 
-    data: FrequencySeries or TimeSeries
-            A time ore frequency series that contains the data to filter. The length
-            must be commensurate with the template.
-    psd: FrequencySeries
-            The psd of the data. 
-	num_points: [int, optional] number of points used for autochisq
-	             on each side, if None allpoints are used
-	stride: [int, optional] stride for points selection for autochisq
-	        total length <= 2*num_points*stride, default=1
-	low_frequency_cutoff: [float, None], 
-	        lower frequency for filtering, if None, start at df
-	high_frequency_cutoff: [float, None], higher frequency for filtering, 
-	                      if None, stops at Nyquist frequency
-	snr_thr: float, default=8.0
-	    Compute autochisq for every point with snr >= snr_thr, if snr_thr<=0.0
-	    then autochisq is not computed unless max_snr=True
-	max_snr: bool, default=True
-	     if True we compute autochisq for a point with maximum snr (independent of the 
-	     snr_thr) otherwise autochisq is computed only if snr>=snr_thr>0
-        onesided: [bool, optional] whether to use one or two sided autochisquare
-	     if "True" only one side is used, default=False
-
-	Returns
-	-------
-	autochisq: [tupple] returns autochisq values and snr corresponding to the instances 
-	          of time defined by indices 
-    """
-    htilde = make_frequency_series(template)
-    xtilde = make_frequency_series(data)
-
-    if len(htilde) != len(xtilde):
-        raise ValueError("Length of template and data must match")
-
-    N = (len(xtilde)-1) * 2
-
-    _Ptilde = zeros(N, dtype=complex_same_precision_as(template))
-    Pt = zeros(N, dtype=complex_same_precision_as(template))
-
-    Pt, _Ptilde, P_norm = matched_filter_core(htilde, htilde, psd=psd, \
-		   low_frequency_cutoff=low_frequency_cutoff,\
-                  high_frequency_cutoff=high_frequency_cutoff)
-    _P = Array(Pt.real(), copy=True)
-
-    sn, cor, hnrm = matched_filter_core(htilde, xtilde, psd=psd, \
-		   low_frequency_cutoff=low_frequency_cutoff,\
-                  high_frequency_cutoff=high_frequency_cutoff)
-
-    sn = sn*hnrm
-    Nsnr = len(sn)
-    index_list = np.array([])
-    if (max_snr or snr_thr > 0.0):
-        # compute snr data set
-        snr_v = np.abs(sn)
-        if (max_snr):
-	    # looking for max snr
-            ind_max = np.argmax(snr_v)
-	    maxSNR = snr_v[ind_max]
-            index_list = np.append(index_list, int(ind_max))
-        if (maxSNR >= snr_thr and snr_thr>0.0):
-	    for i in xrange(Nsnr):
-		if (snr_v[i] >= snr_thr and snr_v[i] != maxSNR):
-			index_list = np.append(index_list, int(i))
-
-    dof = 0
-    achi_list = np.array([])
-    if (len(index_list) > 0):
-	index_list = Array(index_list, copy=False)
-        dof, achi_list = autochisq_from_precomputed(sn, cor, _P, stride=stride, \
-			num_points=num_points, indices=index_list, oneside=onesided)
-    return(dof, achi_list)
-
+    return dof, achisq, indices
 
 class SingleDetAutoChisq(object):
     """Class that handles precomputation and memory management for efficiently
     running the auto chisq in a single detector inspiral analysis.
     """	
-    def __init__(self, stride, num_points, onesided=False):
+    def __init__(self, stride, num_points, onesided=None, twophase=False,
+                 reverse_template=False, take_maximum_value=False,
+                 maximal_value_dof=None):
+        """
+        Initialize autochisq calculation instance
+
+        Parameters
+        -----------
+        stride : int
+            Number of sample points between points at which auto-chisq is
+            calculated.
+        num_points : int
+            Number of sample points at which to calculate auto-chisq in each
+            direction from the trigger
+        onesided : optional, default=None, choices=['left','right']
+            If None (default), calculate auto-chisq in both directions from the
+            trigger. If left (backwards in time) or right (forwards in time)
+            calculate auto-chisq only in that direction.
+        twophase : optional, default=False
+            If False calculate auto-chisq using only the phase of the trigger.
+            If True, compare also against the orthogonal phase.
+        reverse_template : optional, default=False
+            If true, time-reverse the template before calculating auto-chisq.
+            In this case this is more of a cross-correlation chisq than auto.
+        take_maximum_value : optional, default=False
+            If provided, instead of adding the auto-chisq value at each sample
+            point tested, return only the maximum value.
+        maximal_value_dof : int, required if using take_maximum_value
+            If using take_maximum_value the expected value is not known. This
+            value specifies what to store in the cont_chisq_dof output.
+        """
         if stride > 0:
             self.do = True
             self.column_name = "cont_chisq"
             self.table_dof_name = "cont_chisq_dof"
-            self.dof = 2*num_points
-            if (onesided):
-                self.dof = num_points
+            self.dof = num_points
+            self.num_points = num_points
+            self.stride = stride
+            self.one_sided = onesided
+            if (onesided is not None):
+                self.dof = self.dof * 2
+            self.two_phase = twophase
+            if self.two_phase:
+                self.dof = self.dof * 2
+            self.reverse_template = reverse_template
+            self.take_maximum_value=take_maximum_value
+            if self.take_maximum_value:
+                if maximal_value_dof is None:
+                    err_msg = "Must provide the maximal_value_dof keyword "
+                    err_msg += "argument if using the take_maximum_value "
+                    err_msg += "option."
+                    raise ValueError(err_msg)
+                self.dof = maximal_value_dof
             
-            self._stride = stride
-            self._num_points = num_points
-            self._onesided = onesided 
             self._autocor = None
             self._autocor_id = None
         else:
             self.do = False
 
-    def values(self, sn, corr, indices, template, psd, norm,
+    def values(self, sn, indices, template, psd, norm, stilde=None,
                low_frequency_cutoff=None, high_frequency_cutoff=None):
-        if self.do:
-            # NOTE: The code needs a normalized sn:
-            sn = sn*norm
+        """
+        Calculate the auto-chisq at the specified indices.
+
+        Parameters
+        -----------
+        sn : Array[complex]
+            SNR time series of the template for which auto-chisq is being
+            computed. Provided unnormalized. 
+        indices : Array[int]
+            List of points at which to calculate auto-chisq
+        template : Pycbc template object 
+            The template for which we are calculating auto-chisq
+        psd : Pycbc psd object
+            The PSD of the data being analysed
+        norm : float
+            The normalization factor to apply to sn
+        stilde : Pycbc data object, needed if using reverse-template
+            The data being analysed. Only needed if using reverse-template,
+            otherwise ignored
+        low_frequency_cutoff : float
+            The lower frequency to consider in matched-filters
+        high_frequency_cutoff : float
+            The upper frequency to consider in matched-filters
+        """
+        if self.do and (len(indices) > 0):
+            htilde = make_frequency_series(template)
 
             # Check if we need to recompute the autocorrelation
             key = (id(template), id(psd))
             if key != self._autocor_id:
                 logging.info("Calculating autocorrelation")
-                htilde = make_frequency_series(template)
-                N = (len(htilde)-1) * 2 
 
-                _Ptilde = zeros(N, dtype=complex_same_precision_as(template))
-                Pt = zeros(N, dtype=complex_same_precision_as(template))
-                Pt, _Ptilde, P_norm = matched_filter_core(htilde, htilde,
-                            psd=psd, low_frequency_cutoff=low_frequency_cutoff,
-                            high_frequency_cutoff=high_frequency_cutoff)
-                self._autocor = Array(Pt.real(), copy=True)
+                if not self.reverse_template:
+                    Pt, _Ptilde, P_norm = matched_filter_core(htilde,
+                              htilde, psd=psd,
+                              low_frequency_cutoff=low_frequency_cutoff,
+                              high_frequency_cutoff=high_frequency_cutoff)
+                    Pt = Pt * (1./ Pt[0])
+                    self._autocor = Array(Pt, copy=True)
+                else:
+                    Pt, _Ptilde, P_norm = matched_filter_core(htilde,
+                              htilde.conj(), psd=psd,
+                              low_frequency_cutoff=low_frequency_cutoff,
+                              high_frequency_cutoff=high_frequency_cutoff)
+
+                    # T-reversed template has same norm as forward template
+                    # so we can normalize using that
+                    # FIXME: Here sigmasq has to be cast to a float or the
+                    #        code is really slow ... why??
+                    norm_fac = P_norm / float(((template.sigmasq(psd))**0.5))
+                    Pt *= norm_fac
+                    self._autocor = Array(Pt, copy=True)
                 self._autocor_id = key
+            
+            logging.info("...Calculating autochisquare")
+            sn = sn*norm
+            if self.reverse_template:
+                assert(stilde is not None)
+                asn, acor, ahnrm = matched_filter_core(htilde.conj(), stilde,
+                                 low_frequency_cutoff=low_frequency_cutoff,
+                                 high_frequency_cutoff=high_frequency_cutoff,
+                                 h_norm=template.sigmasq(psd))
+                correlation_snr = asn * ahnrm
+            else:
+                correlation_snr = sn
 
-            logging.info("Calculating autochisquare")
             achi_list = np.array([])
-            if (len(indices) > 0):
-                index_list = np.array(indices)
-                dof, achi_list = autochisq_from_precomputed(sn, corr,
-                                    self._autocor, stride=self._stride,
-                                    num_points=self._num_points, 
-                                    indices=index_list, oneside=self._onesided)
-                self.dof = dof
-            return achi_list[:,2]
+            index_list = np.array(indices)
+            dof, achi_list, _ = autochisq_from_precomputed(sn, correlation_snr,
+                               self._autocor, index_list, stride=self.stride,
+                               num_points=self.num_points,
+                               oneside=self.one_sided, twophase=self.two_phase,
+                               maxvalued=self.take_maximum_value)
+            self.dof = dof
+            return achi_list
