@@ -300,6 +300,7 @@ setup (
                'bin/pycbc_bank_verification',
                'bin/pycbc_run_sqlite',
                'bin/pycbc_inspinjfind',
+               'bin/pycbc_write_results_page',
                'bin/gstlal/pycbc_calculate_likelihood',
                'bin/gstlal/pycbc_combine_likelihood',
                'bin/gstlal/pycbc_compute_far_from_snr_chisq_histograms',
