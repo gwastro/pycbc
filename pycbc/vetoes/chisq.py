@@ -26,7 +26,7 @@ import logging
 import pycbc.fft
 
 from pycbc.types import Array, zeros, real_same_precision_as, TimeSeries, complex_same_precision_as, FrequencySeries
-from pycbc.filter import sigmasq_series, make_frequency_series, sigmasq, matched_filter_core
+from pycbc.filter import sigmasq_series, make_frequency_series, sigmasq, matched_filter_core, get_cutoff_indices
 from pycbc.scheme import schemed
 
 BACKEND_PREFIX="pycbc.vetoes.chisq_"
@@ -85,8 +85,10 @@ def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff=None,
     """
     sigma_vec = sigmasq_series(htilde, psd, low_frequency_cutoff, 
                                high_frequency_cutoff).numpy() 
-    kmin = int(low_frequency_cutoff / htilde.delta_f)
-    kmax = len(sigma_vec) - 1
+    kmin, kmax = get_cutoff_indices(low_frequency_cutoff, 
+                                    high_frequency_cutoff,
+                                    htilde.delta_f, 
+                                    (len(htilde)-1)*2)
     return power_chisq_bins_from_sigmasq_series(sigma_vec, num_bins, kmin, kmax)
     
 @schemed(BACKEND_PREFIX)

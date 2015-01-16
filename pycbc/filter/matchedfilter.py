@@ -702,7 +702,7 @@ def quadratic_interpolate_peak(left, middle, right):
     return bin_offset, peak_value
         
 
-__all__ = ['match', 'matched_filter', 'sigmasq', 'sigma',
+__all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'get_cutoff_indices',
            'sigmasq_series', 'make_frequency_series', 'overlap', 'overlap_cplx',
            'matched_filter_core', 'correlate', 'MatchedFilterControl']
 
