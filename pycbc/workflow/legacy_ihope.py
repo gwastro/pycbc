@@ -242,3 +242,58 @@ class LegacySplitBankExecutable(Executable):
             node._add_output(out_file)
         return node
 
+
+class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
+    """
+    The class responsible for setting up jobs for legacy
+    lalapps_coh_PTF_inspiral Executable.
+    """
+    current_retention_level = Executable.CRITICAL
+    def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
+                       out_dir=None, tags=[]):
+        super(LegacyCohPTFInspiralExecutable, self).__init__(cp, name, universe,
+                ifo, out_dir=out_dir, tags=tags)
+        self.cp = cp
+        self.set_memory(2000)
+        self.injection_file = injection_file
+
+    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
+        node = Node(self)
+
+        if not dfParents:
+            raise ValueError("%s must be supplied with frame files"
+                              %(self.name))
+
+        pad_data = int(self.get_opt('pad-data'))
+        if pad_data is None:
+            raise ValueError("The option pad-data is a required option of "
+                             "%s. Please check the ini file." % self.name)
+
+        node.add_opt('--gps-start-time', data_seg[0] + pad_data)
+        node.add_opt('--gps-end-time', data_seg[1] - pad_data)
+        node.add_opt('--trig-start-time', valid_seg[0])
+        node.add_opt('--trig-end-time', valid_seg[1])
+
+        node.add_profile('condor', 'request_cpus', self.num_threads)
+
+        # set the input and output files
+        node.new_output_file_opt(valid_seg, '.xml.gz', '--output-file',
+                                 tags=tags, store_file=self.retain_files)
+        node.add_input_list_opt('--frame-files', dfParents)
+        node.add_input_opt('--bank-file', parent, )
+
+        if self.injection_file is not None:
+            node.add_input_opt('--injection-file', self.injection_file)
+        return node
+
+    def get_valid_times(self):
+        analysis_length = int(self.cp.get('workflow-matchedfilter',
+                                          'analysis-length'))
+        pad_data = int(self.get_opt('pad-data'))
+        start_pad = int(self.get_opt('segment-start-pad'))
+        end_pad = int(self.get_opt('segment-end-pad'))
+
+        data_length = analysis_length + pad_data * 2
+        start = pad_data + start_pad
+        end = data_length - pad_data - end_pad
+        return data_length, segments.segment(start, end)
