@@ -32,7 +32,7 @@ import math, os
 from glue import segments
 import Pegasus.DAX3 as dax
 from pycbc.workflow.core import Executable, File, FileList, Node
-from pycbc.workflow.legacy_ihope import LegacyTmpltbankExecutable, LegacyInspiralExecutable
+from pycbc.workflow.legacy_ihope import LegacyTmpltbankExecutable, LegacyInspiralExecutable, LegacyCohPTFInspiralExecutable
 
 def select_tmpltbank_class(curr_exe):
     """
@@ -85,7 +85,8 @@ def select_matchedfilter_class(curr_exe):
     """
     exe_to_class_map = {
         'lalapps_inspiral_ahope'  : LegacyInspiralExecutable,
-        'pycbc_inspiral'          : PyCBCInspiralExecutable
+        'pycbc_inspiral'          : PyCBCInspiralExecutable,
+        'lalapps_coh_PTF_inspiral': LegacyCohPTFInspiralExecutable
     }
     try:
         return exe_to_class_map[curr_exe]

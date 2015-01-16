@@ -117,6 +117,12 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
                                       injection_file=injection_file, tags=tags,
                                       link_to_tmpltbank=linkToTmpltbank,
                                       compatibility_mode=compatibility_mode)
+    elif mfltrMethod == "WORKFLOW_MULTIPLE_IFOS":
+        logging.info("Adding matched-filter jobs to workflow.")
+        inspiral_outs = setup_matchedfltr_dax_generated_multi(workflow,
+                                      science_segs,
+                                      datafind_outs, tmplt_banks, output_dir,
+                                      injection_file=injection_file, tags=tags)
     else:
         errMsg = "Matched filter method not recognized. Must be one of "
         errMsg += "WORKFLOW_INDEPENDENT_IFOS (currently only one option)."
@@ -219,4 +225,73 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
                            parents=tmplt_banks, allow_overlap=False,
                            link_job_instance=link_job_instance,
                            compatibility_mode=compatibility_mode)
+    return inspiral_outs
+
+def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
+                                    tmplt_banks, output_dir,
+                                    injection_file=None,
+                                    tags=[], link_to_tmpltbank=False,
+                                    compatibility_mode=False):
+    '''
+    Setup matched-filter jobs that are generated as part of the workflow in
+    which a single job reads in and generates triggers over multiple ifos.
+    This
+    module can support any matched-filter code that is similar in principle to
+    pycbc_multi_inspiral or lalapps_coh_PTF_inspiral, but for new codes some
+    additions are needed to define Executable and Job sub-classes
+    (see jobutils.py).
+
+    Parameters
+    -----------
+    workflow : pycbc.workflow.core.Workflow
+        The Workflow instance that the coincidence jobs will be added to.
+    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
+        The list of times that are being analysed in this workflow.
+    datafind_outs : pycbc.workflow.core.FileList
+        An FileList of the datafind files that are needed to obtain the
+        data used in the analysis.
+    tmplt_banks : pycbc.workflow.core.FileList
+        An FileList of the template bank files that will serve as input
+        in this stage.
+    output_dir : path
+        The directory in which output will be stored.
+    injection_file : pycbc.workflow.core.File, optional (default=None)
+        If given the file containing the simulation file to be sent to these
+        jobs on the command line. If not given no file will be sent.
+    tags : list of strings (optional, default = [])
+        A list of the tagging strings that will be used for all jobs created
+        by this call to the workflow. An example might be ['BNSINJECTIONS'] or
+        ['NOINJECTIONANALYSIS']. This will be used in output names.
+
+    Returns
+    -------
+    inspiral_outs : pycbc.workflow.core.FileList
+        A list of output files written by this stage. This *will not* contain
+        any intermediate products produced within this stage of the workflow.
+        If you require access to any intermediate products produced at this
+        stage you can call the various sub-functions directly.
+    '''
+    #TODO: Get this to work with coh_PTF
+    # Need to get the exe to figure out what sections are analysed, what is
+    # discarded etc. This should *not* be hardcoded, so using a new executable
+    # will require a bit of effort here ....
+
+    cp = workflow.cp
+    ifos = science_segs.keys()
+    match_fltr_exe = os.path.basename(cp.get('executables','inspiral'))
+    # Select the appropriate class
+    exe_class = select_matchedfilter_class(match_fltr_exe)
+
+    # List for holding the output
+    inspiral_outs = FileList([])
+
+    logging.info("Setting up matched-filtering for %s." %(' '.join(ifos),))
+    job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
+                                           out_dir=output_dir,
+                                           injection_file=injection_file,
+                                           tags=tags)
+
+    multi_ifo_job_setup(workflow, inspiral_outs, job_instance,
+                       science_segs, datafind_outs, output_dir,
+                       parents=tmplt_banks)
     return inspiral_outs
