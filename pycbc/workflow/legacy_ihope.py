@@ -255,6 +255,7 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         super(LegacyCohPTFInspiralExecutable, self).__init__(cp, name, universe,
                 ifo, out_dir=out_dir, tags=tags)
         self.cp = cp
+        #TODO: Check previous runs for relevant memory value
         self.set_memory(2000)
         self.injection_file = injection_file
 
