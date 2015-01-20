@@ -245,7 +245,7 @@ hwinjFiles = _workflow.setup_hardware_injection_page(post_workflow, all_coincs,
 # Set up for running the pipedown plotting codes
 
 # Make directory
-pipedownPlotDir = os.path.join(currDir, 'pipedown')
+pipedownPlotDir = os.path.join(currDir, 'coinc_result_plots')
 if not os.path.exists(pipedownPlotDir+'/logs'):
     os.makedirs(pipedownPlotDir+'/logs')
 os.chdir(pipedownPlotDir)
@@ -290,7 +290,7 @@ for cat in ppVetoCats:
     pipeCommand.extend(["--log-path", pipedown_log_dir])
     pipeCommand.extend(["--config-file", iniFile])
 
-    # run lalapps_pipedown
+    # run pipedown_plots
     _workflow.make_external_call(pipeCommand, out_dir=pipedownPlotDir + "/logs",
                        out_basename='pipedown_plots_call')
     pipePlotDag = iniFile[0:-4] + "_" + namingPrefix + ".dag"
@@ -311,7 +311,8 @@ os.chdir("..")
 
 # Setup for write_ihope_page
 
-# Need to make an altered .ini file, start with the pipedown .ini as its closer
+# Need to make an altered .ini file, start with the pipedown_plots 
+# .ini as its closer
 wipCp = copy.deepcopy(pipeCp)
 # We hardcoded vetocat to 5 above, so do so again here until fixed
 wipCp.add_section('segments')

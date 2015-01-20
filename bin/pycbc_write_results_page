@@ -298,32 +298,34 @@ def write_results(page, opts, section,injection=None):
     page = write_datainfo(page, opts)
   elif section=='playsummary':
     page = write_summary(page,opts,thisSearch='playground',injection='allinj',
-                         pipedown='pipedown')
+                         coinc_plots='coinc_result_plots')
   elif section=='fullsummary':
     page = write_summary(page,opts,thisSearch='full_data',injection='allinj',
-                         pipedown='pipedown')
+                         coinc_plots='coinc_result_plots')
   elif section=='play_full_slide_summary':
     page = write_summary(page,opts,thisSearch='full_data_slide',
-                         injection='allinj',pipedown='pipedown')
+                         injection='allinj', coinc_plots='coinc_result_plots')
   elif section=='playground': 	
     page = write_analysis(page, opts,thisSearch='playground',
-                          pipedown='pipedown')
+                          coinc_plots='coinc_result_plots')
   elif section=='full_data_slide': 	
     page = write_analysis(page, opts,thisSearch='full_data_slide',
-                          pipedown='pipedown')
+                          coinc_plots='coinc_result_plots')
   elif section in hipecp.options("injections"):
-    page = write_injection(page, opts,section,pipedown='pipedown')
+    page = write_injection(page, opts,section, coinc_plots='coinc_result_plots')
   elif section=='allinj':
-     page = write_injection(page, opts,section,pipedown='pipedown')
+    page = write_injection(page, opts,section, coinc_plots='coinc_result_plots')
   elif section=='hardware_injections':
     page = write_hw_injection(page, opts)
   elif section=='full_data':
     page=write_analysis(page,opts,thisSearch='full_data',
-                        pipedown='pipedown')
+                        coinc_plots='coinc_result_plots')
   elif section=='upperlimit_play': 	
-    page = write_upperlimit(page, opts,thisSearch='playground',pipedown='pipedown')
+    page = write_upperlimit(page, opts,thisSearch='playground',
+                            coinc_plots='coinc_result_plots')
   elif section=='upperlimit_full':
-    page = write_upperlimit(page, opts,thisSearch='full_data',pipedown='pipedown')
+    page = write_upperlimit(page, opts,thisSearch='full_data',
+                            coinc_plots='coinc_result_plots')
   elif section=='logfile':
     page = write_logfile(page, opts)
   elif section=='about': 
@@ -620,7 +622,7 @@ def write_table(page, segs, keys,printKeys = True):
   return page
 # ***************************************************************************
 def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
-                  pipedown = 'pipedown'):
+                  coinc_plots = 'coinc_result_plots'):
   """
   Creates the summary section.
 
@@ -628,7 +630,7 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
   @param opts: the main options variable (type: write_ihope_page options)
   @param thisSearch: either "playground" or "full_data" or "full_data_slide" (type: string)
   @param injection: UNDOCUMENTED
-  @param pipedown: UNDOCUMENTED
+  @param coinc_plots: UNDOCUMENTED
   @return: an update of HTML document
   """
   webdir = opts.webdir
@@ -649,7 +651,7 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
     print 'Error in write_analysis function: thisSearch is not valid'
     sys.exit(1)
   IJdir = injection + '_summary_plots/'
-  PDdir = pipedown + '/'
+  PDdir = coinc_plots + '/'
   if opts.symlink_plots:
     symlink_plot_directory(opts.datadir + ZLdir,\
         opts.physdir + ZLdir)
@@ -905,7 +907,7 @@ def write_datainfo(page,opts):
           "applied."
     page = heading(page, msg) 
 
-    msg = "Coincident live times (only available if pipedown has finished " +\
+    msg = "Coincident live times (only available if workflow has finished " +\
           "and ran at this veto category)."
     page.add(msg)
     key = 0
@@ -916,7 +918,7 @@ def write_datainfo(page,opts):
     totTime = 0
     for coinc in get_ifo_coinc():
       key += 1
-      summGlob = datadir + '/pipedown/' + coinc + '-FULL_DATA'
+      summGlob = datadir + '/coinc_result_plots/' + coinc + '-FULL_DATA'
       if i != 1:
         summGlob += '_CAT_' + str(i) + '_VETO'
       summGlob += '_LOUDEST_ALL_DATA_EVENTS_BY_COMBINED_FAR_SUMMARY-*.xml'
@@ -978,14 +980,15 @@ def write_datainfo(page,opts):
 
 
 # ***************************************************************************
-def write_upperlimit(page, opts, thisSearch='playground', pipedown='pipedown'):
+def write_upperlimit(page, opts, thisSearch='playground',
+                     coinc_plots='coinc_result_plots'):
   """
   Creates an upper limit section
   
   @param page: the HTML document page. (type: markup.py document)
   @param opts: the main options variable (type: write_ihope_page options)
   @param thisSearch: either "playground" or "full_data" or "full_data_slide" (type: string)
-  @param pipedown: UNDOCUMENTED
+  @param coinc_plots: UNDOCUMENTED
   @return: an update of HTML document
   """
   webdir = opts.webdir
@@ -1004,7 +1007,7 @@ def write_upperlimit(page, opts, thisSearch='playground', pipedown='pipedown'):
   else:
     print 'Error in write_analysis function: thisSearch is not valid'
     sys.exit(1)
-  PDdir = pipedown + '/'
+  PDdir = coinc_plots + '/'
 
   page.add("This section gives the search sensitivity and upper limits using "+FARtext)
   page.add("<br/>")
@@ -1111,14 +1114,15 @@ def write_upperlimit(page, opts, thisSearch='playground', pipedown='pipedown'):
 #***************************************************************************
 
 
-def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
+def write_analysis(page, opts, thisSearch='playground',
+                   coinc_plots='coinc_result_plots'):
   """
   Creates the playground or full_data section. It uses the same function 
   because except the name and time analysed, the figures of merits are the same. 
   @param page: the HTML document page. (type: markup.py document)
   @param opts: the main options variable (type: write_ihope_page options)
   @param thisSearch: either "playground" or "full_data" or "full_data_slide" (type: string)
-  @param pipedown: UNDOCUMENTED
+  @param coinc_plots: UNDOCUMENTED
   @return: an update of HTML document
   """
   webdir = opts.webdir
@@ -1138,7 +1142,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
   else:
     print 'Error in write_analysis function: thisSearch is not valid'
     sys.exit(1)
-  PDdir = pipedown + '/'
+  PDdir = coinc_plots + '/'
   if opts.symlink_plots:
     symlink_plot_directory(opts.datadir + images_dir,\
                       opts.physdir + images_dir)
@@ -1379,14 +1383,14 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
 
 
 # ***************************************************************************
-def write_injection(page, opts,injection,pipedown='pipedown'):
+def write_injection(page, opts,injection, coinc_plots='coinc_result_plots'):
   """
   Creates the injection section
 
   @param page: the HTML document page. (type: markup.py document)
   @param opts: the main options variable (type: write_ihope_page options)
   @param injection: UNDOCUMENTED
-  @param pipedown: UNDOCUMENTED
+  @param coinc_plots: UNDOCUMENTED
   @return: an update of HTML document
   """
   webdir = opts.webdir
@@ -1400,7 +1404,7 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
     copy_plot_directory(opts.datadir + images_dir,\
                       opts.physdir + images_dir)
 
-  PDdir = pipedown + '/'
+  PDdir = coinc_plots + '/'
   if opts.symlink_plots:
     symlink_plot_directory(opts.datadir + PDdir,\
         opts.physdir + PDdir)
