@@ -17,6 +17,12 @@ import logging
 import pycbc.workflow as _workflow
 ###############################################################################
 
+
+def set_start_end(cp, a, b):
+    cp.set('workflow', 'start-time', str(a))
+    cp.set('workflow', 'end-time', str(b))
+    return cp
+
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
 
@@ -46,8 +52,7 @@ start = int(wflow.cp.get('workflow', 'trigger-time')) - int(wflow.cp.get(
             'workflow-exttrig_segments', 'max-duration'))
 end = int(wflow.cp.get('workflow', 'trigger-time')) + int(wflow.cp.get(
     'workflow-exttrig_segments', 'max-duration'))
-wflow.cp.set('workflow', 'start-time', str(start))
-wflow.cp.set('workflow', 'end-time', str(end))
+wflow.cp = set_start_end(wflow.cp, start, end)
 
 # Retrieve segments ahope-style
 currDir = os.getcwd()
@@ -60,6 +65,7 @@ onSrc, sciSegs = _workflow.get_triggered_coherent_segment(wflow, segDir,
 # FIXME: The following two lines are/were crude hacks.
 ifo = sciSegs.keys()[0]
 wflow.analysis_time = sciSegs[ifo][0]
+wflow.cp = set_start_end(wflow.cp, sciSegs[ifo][0][0], sciSegs[ifo][0][1])
 
 # Datafind
 dfDir = os.path.join(currDir, "datafind")
