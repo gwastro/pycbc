@@ -258,7 +258,8 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         #TODO: Check previous runs for relevant memory value
         self.set_memory(2000)
         self.injection_file = injection_file
-
+        self.data_seg = segments.segment(int(cp.get('workflow', 'start-time')),
+                                         int(cp.get('workflow', 'end-time')))
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
         node = Node(self)
 
@@ -270,7 +271,7 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         if pad_data is None:
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.name)
-
+        
         node.add_opt('--gps-start-time', data_seg[0] + pad_data)
         node.add_opt('--gps-end-time', data_seg[1] - pad_data)
         node.add_opt('--trig-start-time', valid_seg[0])
@@ -289,13 +290,9 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         return node
 
     def get_valid_times(self):
-        analysis_length = int(self.cp.get('workflow-matchedfilter',
-                                          'analysis-length'))
+        overlap = 64
         pad_data = int(self.get_opt('pad-data'))
-        start_pad = int(self.get_opt('segment-start-pad'))
-        end_pad = int(self.get_opt('segment-end-pad'))
-
-        data_length = analysis_length + pad_data * 2
-        start = pad_data + start_pad
-        end = data_length - pad_data - end_pad
-        return data_length, segments.segment(start, end)
+        
+        valid_start = self.data_seg[0] + pad_data + overlap
+        valid_end = self.data_seg[1] - pad_data - overlap
+        return abs(self.data_seg), segments.segment(valid_start, valid_end)
