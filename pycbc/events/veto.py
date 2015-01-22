@@ -94,6 +94,6 @@ def indices_outside_segments(times, ifo, segment_files):
     segmentlist: 
         The segment list corresponding to the selected time.
     """
-    exclude = indices_within_segments(times, ifo, segment_files)
+    exclude, segs = indices_within_segments(times, ifo, segment_files)
     indices = numpy.arange(0, len(times))
     return numpy.delete(indices, exclude)
