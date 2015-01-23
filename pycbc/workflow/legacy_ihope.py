@@ -284,9 +284,12 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         # set the input and output files
         node.new_output_file_opt(valid_seg, '.xml.gz', '--output-file',
                                  tags=tags, store_file=self.retain_files)
-        node.add_input_list_opt('--frame-files', dfParents)
         node.add_input_opt('--bank-file', parent[0], )
-
+       
+        for frameCache in dfParents:
+            #TODO: For each IFO provide cache file via --ifo.lower()-frame-cache
+            #node.add_input_opt('--frame-files', dfParents)
+       
         if self.injection_file is not None:
             node.add_input_opt('--injection-file', self.injection_file)
         return node
