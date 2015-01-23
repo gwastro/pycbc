@@ -334,7 +334,7 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
     return out_files
 
 def multi_ifo_job_setup(workflow, out_files, curr_exe_job, science_segs,
-                       datafind_outs, output_dir, parents=None):
+                        datafind_outs, output_dir, parents=None):
     """
     Documentation goes here.
     """
