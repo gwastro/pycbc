@@ -311,7 +311,11 @@ def from_cli(opt):
     """Parses the command line options and sets the FFT backend
     for each (available) scheme. Aside from setting the default
     backed for this context, this function will also call (if
-    it exists) the from_cli function of the specified backend.
+    it exists) the from_cli function of the specified backends in
+    the *current* scheme; typically one would only call this function
+    once inside of a scheme context manager, but if it is desired
+    to perform FFTs both inside and outside of a context, then
+    this function would need to be called again.
 
     Parameters
     ----------
@@ -326,8 +330,12 @@ def from_cli(opt):
     if len(opt.fft_backends) > 0:
         _default_backends_list = opt.fft_backends
 
-    for backend in _all_backends_dict.values():
-        try:
-            backend.from_cli(opt)
-        except AttributeError:
-            pass
+    backends_dict = pycbc.scheme.mgr.state.fft_backends_dict
+    backends_list = pycbc.scheme.mgr.state.fft_backends_list
+
+    for backend in _default_backends_list:
+        if backend in backends_list:
+            try:
+                backend.from_cli(opt)
+            except AttributeError:
+                pass

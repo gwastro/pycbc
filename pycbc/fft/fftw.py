@@ -358,6 +358,9 @@ def insert_fft_options(optgroup):
     optgroup.add_argument("--fftw-output-double-wisdom-file",
                       help="Filename to which to write double-precision wisdom",
                       default=None)
+    optgroup.add_argument("--fftw-import-system-wisdom",
+                          help = "If given, call fftw[f]_import_system_wisdom()",
+                          action = "store_true")
 
 def verify_fft_options(opt,parser):
     """Parses the FFT options and verifies that they are
@@ -373,6 +376,12 @@ def verify_fft_options(opt,parser):
     """
     if opt.fftw_measure_level not in [0,1,2,3]:
         parser.error("{0} is not a valid FFTW measure level.".format(opt.fftw_measure_level))
+
+    if opt.fftw_import_system_wisdom and ((opt.fftw_input_float_wisdom_file is not None) 
+                                          or (opt.fftw_input_double_wisdom_file is not None)):
+        parser.error("If --fftw-import-system-wisdom is given, then you cannot give"
+                     " either of --fftw-input-float-wisdom-file or --fftw-input-double-wisdom-file")
+
     if opt.fftw_threads_backend is not None:
         if opt.fftw_threads_backend not in ['openmp','pthreads','unthreaded']:
             parser.error("Invalid threads backend; must be 'openmp', 'pthreads' or 'unthreaded'")
@@ -381,6 +390,17 @@ def from_cli(opt):
     # Since opt.fftw_threads_backend defaults to None, the following is always
     # appropriate:
     set_threads_backend(opt.fftw_threads_backend)
+
     # Import system wisdom.  Should really add error checking and logging to that...
-    import_sys_wisdom()
+    if opt.import_system_wisdom:
+        import_sys_wisdom()
+
+    # Read specified user-provided wisdom files
+    if opt.fftw_input_float_wisdom_file is not None:
+        import_single_wisdom_from_filename(opt.fftw_input_float_wisdom_file)        
+
+    if opt.fftw_input_double_wisdom_file is not None:
+        import_double_wisdom_from_filename(opt.fftw_input_double_wisdom_file)        
+
+    # Set the user-provided measure level
     set_measure_level(opt.fftw_measure_level)
