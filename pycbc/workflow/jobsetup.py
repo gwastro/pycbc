@@ -355,6 +355,30 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
 
     return out_files
 
+def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
+                                 science_segs, datafind_outs, output_dir,
+                                 parents=None):
+    """
+    Documentation goes here.
+    """
+    cp = workflow.cp
+    ifos = science_segs.keys()
+    job_tag = curr_exe_job.name.upper()
+    data_seg, job_valid_seg = curr_exe_job.get_valid_times()
+    tag=[]
+    node = curr_exe_job.create_node(data_seg, job_valid_seg, parent=parents,
+                                    dfParents=datafind_outs, tags=tag)
+    workflow.add_node(node)
+    curr_out_files = node.output_files
+    # FIXME: Here we remove PSD files if they are coming
+    #        through. This should be done in a better way. On
+    #        to-do list.
+    curr_out_files = [i for i in curr_out_files if 'PSD_FILE'\
+                      not in i.tags]
+    out_files += curr_out_files
+
+    return out_files
+
 def multi_ifo_job_setup(workflow, out_files, curr_exe_job, science_segs,
                        datafind_outs, output_dir, parents=None):
     """

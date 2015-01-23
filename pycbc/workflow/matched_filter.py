@@ -32,7 +32,7 @@ from __future__ import division
 
 import os, logging
 from pycbc.workflow.core import FileList, make_analysis_dir
-from pycbc.workflow.jobsetup import select_matchedfilter_class, select_tmpltbank_class, sngl_ifo_job_setup
+from pycbc.workflow.jobsetup import select_matchedfilter_class, select_tmpltbank_class, sngl_ifo_job_setup, multi_ifo_job_setup, multi_ifo_coherent_job_setup
 
 def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
                                tmplt_banks, output_dir=None,
@@ -290,8 +290,12 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
                                            out_dir=output_dir,
                                            injection_file=injection_file,
                                            tags=tags)
-
-    multi_ifo_job_setup(workflow, inspiral_outs, job_instance,
-                       science_segs, datafind_outs, output_dir,
-                       parents=tmplt_banks)
+    if match_fltr_exe == 'lalapps_coh_PTF_inspiral':
+        multi_ifo_coherent_job_setup(workflow, inspiral_outs, job_instance,
+                                     science_segs, datafind_outs, output_dir,
+                                     parents=tmplt_banks)
+    else:
+        multi_ifo_job_setup(workflow, inspiral_outs, job_instance,
+	                    science_segs, datafind_outs, output_dir,
+                            parents=tmplt_banks)
     return inspiral_outs

@@ -260,6 +260,8 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         self.injection_file = injection_file
         self.data_seg = segments.segment(int(cp.get('workflow', 'start-time')),
                                          int(cp.get('workflow', 'end-time')))
+        self.num_threads = 1
+ 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
         node = Node(self)
 
@@ -283,7 +285,7 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         node.new_output_file_opt(valid_seg, '.xml.gz', '--output-file',
                                  tags=tags, store_file=self.retain_files)
         node.add_input_list_opt('--frame-files', dfParents)
-        node.add_input_opt('--bank-file', parent, )
+        node.add_input_opt('--bank-file', parent[0], )
 
         if self.injection_file is not None:
             node.add_input_opt('--injection-file', self.injection_file)
@@ -295,4 +297,4 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         
         valid_start = self.data_seg[0] + pad_data + overlap
         valid_end = self.data_seg[1] - pad_data - overlap
-        return abs(self.data_seg), segments.segment(valid_start, valid_end)
+        return self.data_seg, segments.segment(valid_start, valid_end)
