@@ -31,7 +31,7 @@ from pycbc.inject import InjectionSet, SGBurstInjectionSet
 from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series
 from pycbc.filter.zpk import filter_zpk_factored
 
-def from_cli(opt, dyn_range_fac=1):
+def from_cli(opt, dyn_range_fac=1, precision='single'):
     """Parses the CLI options related to strain data reading and conditioning.
 
     Parameters
@@ -86,8 +86,9 @@ def from_cli(opt, dyn_range_fac=1):
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
 
-        logging.info("Converting to float32")
-        strain = (strain * dyn_range_fac).astype(float32)
+        if precision == 'single':
+            logging.info("Converting to float32")
+            strain = (strain * dyn_range_fac).astype(float32)
 
         if opt.gating_file is not None:
             logging.info("Gating glitches")
@@ -136,8 +137,9 @@ def from_cli(opt, dyn_range_fac=1):
             injections = SGBurstInjectionSet(opt.sgburst_injection_file)
             injections.apply(strain, opt.channel_name[0:2])
         
-        logging.info("Converting to float32")
-        strain = (dyn_range_fac * strain).astype(float32)
+        if precision == 'single':
+            logging.info("Converting to float32")
+            strain = (dyn_range_fac * strain).astype(float32)
 
     if opt.injection_file:
         strain.injections = injections
