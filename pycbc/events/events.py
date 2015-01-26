@@ -21,7 +21,7 @@
 #
 # =============================================================================
 #
-"""This modules defines functions for clustering and thresholding timeseries to 
+"""This modules defines functions for clustering and thresholding timeseries to
 produces event triggers
 """
 import glue.ligolw.utils.process
@@ -35,18 +35,18 @@ import numpy
 
 @schemed("pycbc.events.threshold_")
 def threshold(series, value):
-    """Return list of values and indices values over threshold in series. 
-    """ 
+    """Return list of values and indices values over threshold in series.
+    """
 
 @schemed("pycbc.events.threshold_")
 def threshold_and_cluster(series, threshold, window):
-    """Return list of values and indices values over threshold in series. 
-    """ 
-    
+    """Return list of values and indices values over threshold in series.
+    """
+
 def fc_cluster_over_window_fast(times, values, window_length):
     """ Reduce the events by clustering over a window using
     the FindChirp clustering algorithm
-    
+
     Parameters
     -----------
     indices: Array
@@ -55,8 +55,8 @@ def fc_cluster_over_window_fast(times, values, window_length):
         The list of SNR value
     window_size: int
         The size of the window in integer samples.
-    
-    Returns 
+
+    Returns
     -------
     indices: Array
         The reduced list of indices of the SNR values
@@ -86,10 +86,10 @@ def fc_cluster_over_window_fast(times, values, window_length):
     inline(code, ['times', 'absvalues', 'window_length', 'indices', 'tlen', 'k'],
                  extra_compile_args=['-march=native -O3 -w'])
     return indices[0:k[0]+1]
-    
+
 def cluster_reduce(idx, snr, window_size):
     """ Reduce the events by clustering over a window
-    
+
     Parameters
     -----------
     indices: Array
@@ -98,8 +98,8 @@ def cluster_reduce(idx, snr, window_size):
         The list of SNR value
     window_size: int
         The size of the window in integer samples.
-    
-    Returns 
+
+    Returns
     -------
     indices: Array
         The list of indices of the SNR values
@@ -111,7 +111,7 @@ def cluster_reduce(idx, snr, window_size):
 
 def findchirp_cluster_over_window(times, values, window_length):
     indices = numpy.zeros(len(times), dtype=int)
-    j = 0 
+    j = 0
     for i in xrange(len(times)):
         if times[i] - times[indices[j]] > window_length:
             j += 1
@@ -123,7 +123,7 @@ def findchirp_cluster_over_window(times, values, window_length):
                 continue
     return indices[0:j+1]
 
-def newsnr(snr, reduced_x2, q=6):
+def newsnr(snr, reduced_x2):
     """Calculate the re-weighted SNR statistic known as NewSNR from given
     SNR and reduced chi-squared values. See http://arxiv.org/abs/1208.3491
     for a definition of NewSNR.
@@ -131,9 +131,11 @@ def newsnr(snr, reduced_x2, q=6):
     newsnr = numpy.array(snr, ndmin=1)
     reduced_x2 = numpy.array(reduced_x2, ndmin=1)
 
-    # newsnr is only different from snr if reduced chisq > 1
-    ind = numpy.where(reduced_x2 > 1.)[0]
-    newsnr[ind] *= ( 0.5 * (1. + reduced_x2[ind] ** (q/2.)) ) ** (-1./q)
+    factor = numpy.zeros(len(snr), dtype=numpy.float32) + 1.0
+    newsnr = snr * 1
+
+    ind = numpy.where(reduced_x2 > 1)[0]
+    newsnr[ind] *= (0.5 * (1. + reduced_x2[ind] ** 3)) ** (-1./6.)
 
     if len(newsnr) > 1:
         return newsnr
@@ -148,12 +150,12 @@ class EventManager(object):
         self.event_dtype = [ ('template_id', int) ]
         for column, coltype in zip (column, column_types):
             self.event_dtype.append( (column, coltype) )
-        
+
         self.events = numpy.events = numpy.array([], dtype=self.event_dtype)
         self.template_params = []
         self.template_index = -1
         self.template_events = numpy.array([], dtype=self.event_dtype)
-                  
+
     def chisq_threshold(self, value, num_bins, delta=0):
         remove = []
         for i, event in enumerate(self.events):
@@ -169,21 +171,21 @@ class EventManager(object):
         x2_dof = 2 * self.opt.chisq_bins - 2
         remove = [i for i, e in enumerate(self.events) if newsnr(abs(e['snr']), e['chisq'] / x2_dof) < threshold]
         self.events = numpy.delete(self.events, remove)
-   
+
     def maximize_over_bank(self, tcolumn, column, window):
         if len(self.events) == 0:
             return
-    
+
         self.events = numpy.sort(self.events, order=tcolumn)
         cvec = self.events[column]
         tvec = self.events[tcolumn]
-        
+
         indices = []
 #        mint = tvec.min()
 #        maxt = tvec.max()
 #        edges = numpy.arange(mint, maxt, window)
-        
-#        # Get the location of each time bin 
+
+#        # Get the location of each time bin
 #        bins = numpy.searchsorted(tvec, edges)
 #        bins = numpy.append(bins, len(tvec))
 #        for i in range(len(bins)-1):
@@ -199,7 +201,7 @@ class EventManager(object):
         gps = tvec.astype(numpy.float64) / self.opt.sample_rate + self.opt.gps_start_time
         gps_sec  = numpy.floor(gps)
         gps_nsec = (gps - gps_sec) * 1e9
-        
+
         wnsec = int(window * 1e9 / self.opt.sample_rate)
         win = gps_nsec.astype(int) / wnsec
 
@@ -211,20 +213,20 @@ class EventManager(object):
             else:
                 indices.append(i)
 
-        self.events = numpy.take(self.events, indices)         
-        
+        self.events = numpy.take(self.events, indices)
+
     def add_template_events(self, columns, vectors):
         """ Add a vector indexed """
         new_events = numpy.zeros(len(vectors[0]), dtype=self.event_dtype)
         new_events['template_id'] = self.template_index
         for c, v in zip(columns, vectors):
-            if v is not None:   
+            if v is not None:
                 if isinstance(v, Array):
                     new_events[c] = v.numpy()
                 else:
                     new_events[c] = v
-        self.template_events = numpy.append(self.template_events, new_events)                     
-     
+        self.template_events = numpy.append(self.template_events, new_events)
+
     def cluster_template_events(self, tcolumn, column, window_size):
         """ Cluster the internal events over the named column
         """
@@ -232,63 +234,63 @@ class EventManager(object):
         tvec = self.template_events[tcolumn]
         #indices = findchirp_cluster_over_window(tvec, cvec, window_size)
         indices = fc_cluster_over_window_fast(tvec, cvec, window_size)
-        self.template_events = numpy.take(self.template_events, indices)       
-        
+        self.template_events = numpy.take(self.template_events, indices)
+
     def new_template(self, **kwds):
         self.template_params.append(kwds)
         self.template_index += 1
-    
+
     def add_template_params(self, **kwds):
-        self.template_params[-1].update(kwds)  
-            
+        self.template_params[-1].update(kwds)
+
     def finalize_template_events(self):
         self.events = numpy.append(self.events, self.template_events)
-        self.template_events = numpy.array([], dtype=self.event_dtype)        
-        
+        self.template_events = numpy.array([], dtype=self.event_dtype)
+
     def write_events(self, outname):
-        """ Write the found events to a sngl inspiral table 
+        """ Write the found events to a sngl inspiral table
         """
         outdoc = glue.ligolw.ligolw.Document()
         outdoc.appendChild(glue.ligolw.ligolw.LIGO_LW())
 
         ifo = self.opt.channel_name[0:2]
-        
-        proc_id = glue.ligolw.utils.process.register_to_xmldoc(outdoc, 
+
+        proc_id = glue.ligolw.utils.process.register_to_xmldoc(outdoc,
                         "inspiral", self.opt.__dict__, comment="", ifos=[ifo],
                         version=glue.git_version.id, cvs_repository=glue.git_version.branch,
                         cvs_entry_time=glue.git_version.date).process_id
-        
+
         # Create sngl_inspiral table ###########################################
         sngl_table = glue.ligolw.lsctables.New(glue.ligolw.lsctables.SnglInspiralTable)
         outdoc.childNodes[0].appendChild(sngl_table)
-        
+
         start_time = lal.LIGOTimeGPS(self.opt.gps_start_time)
-        
+
         if self.opt.trig_start_time:
             tstart_time = self.opt.trig_start_time
         else:
             tstart_time = self.opt.gps_start_time + self.opt.segment_start_pad
-            
+
         if self.opt.trig_end_time:
             tend_time = self.opt.trig_end_time
         else:
             tend_time = self.opt.gps_end_time - self.opt.segment_end_pad
-            
+
         for event_num, event in enumerate(self.events):
             tind = event['template_id']
-        
+
             tmplt = self.template_params[tind]['tmplt']
             sigmasq = self.template_params[tind]['sigmasq']
-            
+
             row = copy.deepcopy(tmplt)
-                
+
             snr = event['snr']
             idx = event['time_index']
             end_time = start_time + float(idx) / self.opt.sample_rate
-                    
+
             row.channel = self.opt.channel_name[3:]
             row.ifo = ifo
-            
+
             if self.opt.chisq_bins != 0:
                 # FIXME: This is *not* the dof!!!
                 # but is needed for later programs not to fail
@@ -301,14 +303,14 @@ class EventManager(object):
             else:
                 row.bank_chisq_dof = 0
                 row.bank_chisq = 0
-            
+
             if hasattr(self.opt, 'autochi_number_points') and self.opt.autochi_number_points>0:
                 row.cont_chisq = event['cont_chisq']
                 if (self.opt.autochi_onesided):
-                    row.cont_chisq_dof =  self.opt.autochi_number_points
+                    row.cont_chisq_dof = self.opt.autochi_number_points
                 else:    
-                    row.cont_chisq_dof =  2*self.opt.autochi_number_points
-            
+                    row.cont_chisq_dof = 2*self.opt.autochi_number_points
+
             row.eff_distance = sigmasq ** (0.5) / abs(snr)
             row.snr = abs(snr)
             row.end_time = int(end_time.gpsSeconds)
@@ -316,15 +318,15 @@ class EventManager(object):
             row.process_id = proc_id
             row.coa_phase = numpy.angle(snr)
             row.sigmasq = sigmasq
-            
+
             row.event_id = glue.ligolw.lsctables.SnglInspiralID(event_num)
-            
+
             sngl_table.append(row)
-                
+
         # Create Search Summary Table ########################################
         search_summary_table = glue.ligolw.lsctables.New(glue.ligolw.lsctables.SearchSummaryTable)
         outdoc.childNodes[0].appendChild(search_summary_table)
-        
+
         row = glue.ligolw.lsctables.SearchSummary()
         row.nevents = len(sngl_table)
         row.process_id = proc_id
@@ -342,13 +344,13 @@ class EventManager(object):
         row.out_end_time = tend_time
         row.out_end_time_ns = 0
         row.nnodes = 1
-        
+
         search_summary_table.append(row)
-        
+
         # Create Filter Table ########################################
         filter_table = glue.ligolw.lsctables.New(glue.ligolw.lsctables.FilterTable)
         outdoc.childNodes[0].appendChild(filter_table)
-        
+
         row = glue.ligolw.lsctables.Filter()
         row.process_id = proc_id
         row.program = "PyCBC_INSPIRAL"
@@ -357,36 +359,37 @@ class EventManager(object):
         row.param_set = 0
         row.comment = ""
         row.filter_id = str(glue.ligolw.lsctables.FilterID(0))
-        
+
         filter_table.append(row)
-        
+
         # SumVars Table ########################################
         search_summvars_table = glue.ligolw.lsctables.New(glue.ligolw.lsctables.SearchSummVarsTable)
         outdoc.childNodes[0].appendChild(search_summvars_table)
-        
+
         row = glue.ligolw.lsctables.SearchSummVars()
         row.process_id = proc_id
         row.name = "raw data sample rate"
         row.string = ""
         row.value = 1.0 /16384
-        row.search_summvar_id = str(glue.ligolw.lsctables.SearchSummVarsID(0))       
+        row.search_summvar_id = str(glue.ligolw.lsctables.SearchSummVarsID(0))
         search_summvars_table.append(row)
-        
+
         row = glue.ligolw.lsctables.SearchSummVars()
         row.process_id = proc_id
         row.name = "filter data sample rate"
         row.string = ""
         row.value = 1.0 / self.opt.sample_rate
-        row.search_summvar_id = str(glue.ligolw.lsctables.SearchSummVarsID(1))       
+        row.search_summvar_id = str(glue.ligolw.lsctables.SearchSummVarsID(1))
         search_summvars_table.append(row)
-        
+
         # SumValue Table ########################################
-        summ_val_columns = ['program', 'process_id', 'start_time', 'start_time_ns',
-                           'end_time', 'end_time_ns', 'ifo', 'name', 'value', 'comment',
-                           'summ_value_id']
-        summ_value_table = glue.ligolw.lsctables.New(glue.ligolw.lsctables.SummValueTable, columns = summ_val_columns)
+        summ_val_columns = ['program', 'process_id', 'start_time',
+                            'start_time_ns', 'end_time', 'end_time_ns', 'ifo',
+                            'name', 'value', 'comment', 'summ_value_id']
+        summ_value_table = glue.ligolw.lsctables.New(
+                glue.ligolw.lsctables.SummValueTable, columns=summ_val_columns)
         outdoc.childNodes[0].appendChild(summ_value_table)
-        
+
         row = glue.ligolw.lsctables.SummValue()
         row.process_id = proc_id
         row.start_time = tstart_time
@@ -398,44 +401,39 @@ class EventManager(object):
         row.program = "PyCBC-INSPIRAL"
         row.error = 0
         row.intvalue = 0
-        
-        
+
         row1 = copy.deepcopy(row)
         row2 = copy.deepcopy(row)
         row3 = copy.deepcopy(row)
         row1.name = "inspiral_effective_distance"
-        
-        
-        psd = self.global_params['psd'] 
+
+        psd = self.global_params['psd']
         from pycbc.waveform.spa_tmplt import spa_distance
         from pycbc import DYN_RANGE_FAC
-        row1.value = spa_distance(psd, 1.4, 1.4, self.opt.low_frequency_cutoff, snr=8) * DYN_RANGE_FAC
+        row1.value = spa_distance(psd, 1.4, 1.4, self.opt.low_frequency_cutoff,
+                                                         snr=8) * DYN_RANGE_FAC
         row1.comment = "1.4_1.4_8"
-        row1.summ_value_id = str(glue.ligolw.lsctables.SummValueID(0))       
+        row1.summ_value_id = str(glue.ligolw.lsctables.SummValueID(0))
         summ_value_table.append(row1)
-        
+
         row2.name = "calibration alpha"
         row2.value = 0
         row2.comment = "analysis"
-        row2.summ_value_id = str(glue.ligolw.lsctables.SummValueID(1))       
+        row2.summ_value_id = str(glue.ligolw.lsctables.SummValueID(1))
         summ_value_table.append(row2)
-        
+
         row3.name = "calibration alphabeta"
         row3.value = 0
         row3.comment = "analysis"
-        row3.summ_value_id = str(glue.ligolw.lsctables.SummValueID(2))       
+        row3.summ_value_id = str(glue.ligolw.lsctables.SummValueID(2))
         summ_value_table.append(row3)
-        
-        
-        
-        # Write out file #####################################################     
-        glue.ligolw.utils.write_filename(outdoc, outname, gz=outname.endswith('gz'))    
+
+        # Write out file #####################################################
+        glue.ligolw.utils.write_filename(outdoc, outname, gz=outname.endswith('gz'))
 
 
 __all__ = ['threshold_and_cluster', 'newsnr',
            'findchirp_cluster_over_window', 'fc_cluster_over_window_fast',
            'threshold', 'cluster_reduce',
            'EventManager']
-
-
 
