@@ -36,7 +36,7 @@ parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
                     help="Cut triggers with NewSNR less than THRESHOLD")
 parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for filtering (Hz)")
-                  
+
 parser.add_argument("--approximant", type=str,
                   help="The name of the approximant to use for filtering")
 parser.add_argument("--order", type=str,
@@ -66,7 +66,7 @@ parser.add_argument("--autochi-stride", type=int, default=0)
 parser.add_argument("--autochi-onesided", action='store_true', default=False)
 parser.add_argument("--downsample-factor", type=int, 
                     help="Factor that determines the interval between the "
-                         "initial SNR sampling. If not set (or 1) no sparse sample " 
+                         "initial SNR sampling. If not set (or 1) no sparse sample "
                          "is created, and the standard full SNR is calculated.", default=1)
 parser.add_argument("--upsample-threshold", type=float, 
                     help="The fraction of the SNR threshold to check the sparse SNR sample.")
@@ -117,14 +117,14 @@ with ctx:
 
     logging.info("Computing noise PSD")
     psd = psd.from_cli(opt, flen, delta_f, flow, gwstrain, DYN_RANGE_FAC)
-    psd = psd.astype(float32)                              
+    psd = psd.astype(float32)
 
     matched_filter = MatchedFilterControl(opt.low_frequency_cutoff, None,
                                    opt.snr_threshold, segments,
                                    downsample_factor=opt.downsample_factor,
                                    upsample_threshold=opt.upsample_threshold,
                                    upsample_method=opt.upsample_method)
-                               
+
     bank_chisq = vetoes.SingleDetBankVeto(opt.bank_veto_bank_file,
                                           opt.approximant, psd, segments, flow,
                                           phase_order=opt.order)
@@ -137,26 +137,26 @@ with ctx:
     for seg in segments:
         seg /= psd
 
-    names =  ['time_index', 'snr', 'chisq', 'bank_chisq', 'cont_chisq']
+    names = ['time_index', 'snr', 'chisq', 'bank_chisq', 'cont_chisq']
     event_mgr = events.EventManager(opt, names,
                          [int, complex64, float32, float32, float32, float32], psd=psd)
 
     logging.info("Read in template bank")
-    bank = waveform.FilterBank(opt.bank_file, opt.approximant, flen, delta_f, 
+    bank = waveform.FilterBank(opt.bank_file, opt.approximant, flen, delta_f,
                     flow, dtype=complex64, psd=psd, phase_order=opt.order,
                     taper=opt.taper_template, out=zeros(tlen, dtype=complex64))
 
-    for t_num, template in enumerate(bank):  
-        event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)  
+    for t_num, template in enumerate(bank):
+        event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)
         if opt.cluster_method == "window":
             cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
         elif opt.cluster_method == "template":
             cluster_window = int(template.chirp_length * gwstrain.sample_rate)
 
-        for s_num, stilde in enumerate(segments):                 
+        for s_num, stilde in enumerate(segments):
             logging.info("Filtering template %d/%d segment %d/%d" % \
-                         (t_num + 1, len(bank), s_num + 1, len(segments)))  
-                         
+                         (t_num + 1, len(bank), s_num + 1, len(segments)))
+
             snr, norm, corr, idx, snrv = \
                     matched_filter.matched_filter_and_cluster(template, stilde, cluster_window)
 
@@ -168,9 +168,9 @@ with ctx:
             power_chisqv = power_chisq.values(corr, snr, norm, psd, snrv, 
                                             idx+stilde.analyze.start,
                                             template, bank, flow)
-                                            
+
             snrv *= norm
-            
+
             if opt.autochi_number_points:
                 auto_chisqv = autochisq.values(snr*norm, corr, hautocorr=None, 
                     indices=idx+stilde.analyze.start, template=template, psd=psd, 
@@ -185,14 +185,14 @@ with ctx:
 
             event_mgr.add_template_events(names, vals)
 
-        event_mgr.cluster_template_events("time_index", "snr", cluster_window) 
-        event_mgr.finalize_template_events()   
-        
+        event_mgr.cluster_template_events("time_index", "snr", cluster_window)
+        event_mgr.finalize_template_events()
+
 logging.info("Found %s triggers" % str(len(event_mgr.events)))
 
 if opt.chisq_threshold and opt.chisq_bins:
     logging.info("Removing triggers with poor chisq")
-    event_mgr.chisq_threshold(opt.chisq_threshold, opt.chisq_bins, 
+    event_mgr.chisq_threshold(opt.chisq_threshold, opt.chisq_bins,
                               opt.chisq_delta)
     logging.info("%d remaining triggers" % len(event_mgr.events))
 
@@ -201,7 +201,7 @@ if opt.newsnr_threshold and opt.chisq_bins:
     event_mgr.newsnr_threshold(opt.newsnr_threshold)
     logging.info("%d remaining triggers" % len(event_mgr.events))
 
-if opt.maximization_interval:       
+if opt.maximization_interval:
     logging.info("Maximizing triggers over %s ms window" % opt.maximization_interval)
     window = int(opt.maximization_interval * gwstrain.sample_rate / 1000)
     event_mgr.maximize_over_bank("time_index", "snr", window)
