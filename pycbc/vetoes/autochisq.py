@@ -13,7 +13,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
 import sys, re
 import pycbc
 from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series
@@ -29,8 +28,8 @@ import logging
 BACKEND_PREFIX="pycbc.vetoes.autochisq_"
 
 
-def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, indices=None, oneside=False):
-
+def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None,
+                               indices=None, oneside=False):
     """ Compute correlation (two sided) between template and data
         and compares with autocorrelation of the template: C(t) = IFFT(A*A/S(f))
 
@@ -54,14 +53,11 @@ def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, i
 	Returns
 	-------
 	autochisq: [tupple] returns autochisq values and snr corresponding to the instances 
-	          of time defined by indices 
-
+	          of time defined by indices
     """
- 	
 
-    Nsnr = len(sn) 
-  
-    
+    Nsnr = len(sn)
+
     ## normalizing the hautocorr
     hautocorr = hautocorr/hautocorr[0]
 
@@ -71,21 +67,21 @@ def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, i
 	maxSNR, max_ind = snr_v.max_loc()
 	indx = np.append(indx, max_ind)
 	indices = Array(indx, copy=True)
- 
+
     achisq = np.zeros(len(indices))
     num_points_all = int(Nsnr/stride)
     if num_points is None:
        num_points = num_points_all
-    if (num_points > num_points_all):   
+    if (num_points > num_points_all):
        num_points = num_points_all
-    
+
     tm_cur = time.clock()
     for ip,ind in enumerate(indices):
         end_point = ind + stride*num_points+1
         phi = atan2(sn[ind].imag, sn[ind].real)
         cphi = cos(phi)
         sphi = sin(phi)
-        k = 1   
+        k = 1
         snr_ind =  sn[ind].real*cphi + sn[ind].imag*sphi
 	# going right
 	for i in xrange(int(ind)+1, int(end_point), stride):
@@ -96,7 +92,7 @@ def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, i
 	    chisq_norm = 1.0 - hautocorr[k]*hautocorr[k]
 	    achisq[ip] += dz*dz/chisq_norm
 	    k += stride
-	if (not oneside):    
+	if (not oneside):
            # going left
            end_point = ind - stride*num_points -1
            k=1
@@ -109,10 +105,9 @@ def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, i
 	       achisq[ip] += dz*dz/chisq_norm
 	       k += stride
         # Stas last two cycles can be combined in a single cycle in "k" 
-    
+
     tm_cur = time.clock()
 
-    
     dof = 2*num_points
     if (oneside):
        dof = num_points
@@ -123,14 +118,12 @@ def autochisq_from_precomputed(sn, corr, hautocorr, stride=1, num_points=None, i
     for i in xrange(len(indices)):
 	achisq_list[i, 1] = abs(sn[indices[i]])
     tm_cur = time.clock()
- 
+
     return(dof, achisq_list)
 
 
 def autochisq(template, data, psd, stride=1, snr_thr=8.0, num_points=None, \
 		low_frequency_cutoff=None, high_frequency_cutoff=None, max_snr=True, onesided=False):
-
-    
     """ Compute correlation (two sided) between template and data
         and compares with autocorrelation of the template: C(t) = IFFT(A*A/S(f))
 
@@ -161,23 +154,18 @@ def autochisq(template, data, psd, stride=1, snr_thr=8.0, num_points=None, \
         onesided: [bool, optional] whether to use one or two sided autochisquare
 	     if "True" only one side is used, default=False
 
-
 	Returns
 	-------
 	autochisq: [tupple] returns autochisq values and snr corresponding to the instances 
 	          of time defined by indices 
-
     """
- 
-    ### {{{
-
     htilde = make_frequency_series(template)
     xtilde = make_frequency_series(data)
 
     if len(htilde) != len(xtilde):
         raise ValueError("Length of template and data must match")
 
-    N = (len(xtilde)-1) * 2 
+    N = (len(xtilde)-1) * 2
 
     _Ptilde = zeros(N, dtype=complex_same_precision_as(template))
     Pt = zeros(N, dtype=complex_same_precision_as(template))
@@ -186,14 +174,13 @@ def autochisq(template, data, psd, stride=1, snr_thr=8.0, num_points=None, \
 		   low_frequency_cutoff=low_frequency_cutoff,\
                   high_frequency_cutoff=high_frequency_cutoff)
     _P = Array(Pt.real(), copy=True)
- 
-    
+
     sn, cor, hnrm = matched_filter_core(htilde, xtilde, psd=psd, \
 		   low_frequency_cutoff=low_frequency_cutoff,\
                   high_frequency_cutoff=high_frequency_cutoff)
- 
-    sn = sn*hnrm 
-    Nsnr = len(sn) 
+
+    sn = sn*hnrm
+    Nsnr = len(sn)
     index_list = np.array([])
     if (max_snr or snr_thr > 0.0):
         # compute snr data set
@@ -208,7 +195,7 @@ def autochisq(template, data, psd, stride=1, snr_thr=8.0, num_points=None, \
 		if (snr_v[i] >= snr_thr and snr_v[i] != maxSNR):
 			index_list = np.append(index_list, int(i))
 
-    dof= 0
+    dof = 0
     achi_list = np.array([])
     if (len(index_list) > 0):
 	index_list = Array(index_list, copy=False)
@@ -216,14 +203,11 @@ def autochisq(template, data, psd, stride=1, snr_thr=8.0, num_points=None, \
 			num_points=num_points, indices=index_list, oneside=onesided)
     return(dof, achi_list)
 
-    #}}}
- 
 
 class SingleDetAutoChisq(object):
     """Class that handles precomputation and memory management for efficiently
     running the auto chisq in a single detector inspiral analysis.
     """	
-    #{{{
     def __init__(self, stride, snr_thr=8.0, num_points=None, onesided=False):
         if stride > 0:
             self.do = True
@@ -241,8 +225,8 @@ class SingleDetAutoChisq(object):
             self._autocor = None
         else:
             self.do = False
-	    
- 
+
+
     def values(self, sn, corr, hautocorr=None, indices=None, template=None, psd=None, low_frequency_cutoff=None, 
                 high_frequency_cutoff=None):
         if self.do:
@@ -263,7 +247,7 @@ class SingleDetAutoChisq(object):
                               high_frequency_cutoff=high_frequency_cutoff)
                 self._autocor = Array(Pt.real(), copy=True)
                 self._template = template
-            else:  
+            else:
                 self._autocor = hautocorr
             
             if (indices==None):
@@ -283,12 +267,4 @@ class SingleDetAutoChisq(object):
                 dof, achi_list = autochisq_from_precomputed(sn, corr, self._autocor, stride=self._stride, \
         			num_points=self._num_points, indices=index_list, oneside=self._onesided)
                 self.dof = dof
-            return (achi_list)    
-    #}}}        
-                  
-        
-
-
-
- 
-
+            return (achi_list)
