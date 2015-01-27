@@ -4,6 +4,65 @@ segment.
 import numpy
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from glue import segments
+from glue.segments import segment, segmentlist
+
+def start_end_to_segments(start, end):
+    return segmentlist([segment(s, e) for s, e in zip(start, end)])
+
+def segments_to_start_end(segs):
+    segs.coalesce()
+    return (numpy.array([s[0] for s in segs]), 
+            numpy.array([s[1] for s in segs]))
+
+def start_end_from_segments(segment_file):
+    """ Return the start and end time arrays from a segment file.
+    
+    Parameters
+    ----------
+    segment_file: xml segment file
+    
+    Return
+    ------
+    start: numpy.ndarray
+    end: numpy.ndarray
+    """
+    # dummy class needed for loading LIGOLW files
+    class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+        pass
+    lsctables.use_in(LIGOLWContentHandler)
+    indoc = ligolw_utils.load_filename(segment_file, False, 
+                                       contenthandler=LIGOLWContentHandler)
+    segment_table  = table.get_table(indoc, lsctables.SegmentTable.tableName)
+    start = numpy.array(segment_table.getColumnByName('start_time'))
+    start_ns = numpy.array(segment_table.getColumnByName('start_time_ns'))
+    end = numpy.array(segment_table.getColumnByName('end_time'))
+    end_ns = numpy.array(segment_table.getColumnByName('end_time_ns'))
+    return start + start_ns * 1e-9, end + end_ns * 1e-9
+
+
+def indices_within_times(times, start, end):
+    """ Return the an index array into times that give the values within the 
+    durations defined by the start and end arrays
+    
+    Parameters
+    ----------
+    times: numpy.ndarray
+        Array of times
+    start: numpy.ndarray
+        Array of duration start times
+    end: numpy.ndarray 
+        Array of duration end times
+    
+    Returns
+    -------
+    indices: numpy.ndarray
+        Array of indices into times
+    """
+    tsort = times.argsort()
+    times_sorted = times[tsort]
+    left = numpy.searchsorted(times_sorted, start)
+    right = numpy.searchsorted(times_sorted, end)
+    return numpy.hstack(numpy.r_[s:e] for s, e in zip(left, right))
 
 def indices_within_segments(times, ifo, segment_files):
     """ Return the list of indices that should be vetoed by the segments in the
@@ -96,4 +155,5 @@ def indices_outside_segments(times, ifo, segment_files):
     """
     exclude, segs = indices_within_segments(times, ifo, segment_files)
     indices = numpy.arange(0, len(times))
-    return numpy.delete(indices, exclude)
+    return numpy.delete(indices, exclude), segs
+    
