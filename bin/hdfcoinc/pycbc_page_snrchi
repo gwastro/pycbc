@@ -1,35 +1,51 @@
-#!/usr/bin/python
-""" Plot the rate of triggers across the template bank
-"""
-import matplotlib
+#!/usr/bin/env python
+import numpy, h5py, argparse, logging, matplotlib
 matplotlib.use('Agg')
-import numpy, argparse, h5py, os, pylab
-    
-def snr_to_chisq(snr, newsnr):
-    return (((snr / newsnr) ** (6.0)) * 2.0 - 1.0) ** (1.0/3.0)  
-    
+from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
+import pylab
+from pycbc.events import veto
+from matplotlib import colors
+
 parser = argparse.ArgumentParser()
-parser.add_argument('--trigger-file')
-parser.add_argument('--injection-file')
-parser.add_argument('--injection-trigger-file')
+parser.add_argument('--trigger-file', help='Single ifo trigger file')
+parser.add_argument('--veto-file', help='Optional, file of veto segments to remove triggers')
+parser.add_argument('--min-snr', type=float, help='Optional, Minimum SNR to plot')
 parser.add_argument('--output-file')
+parser.add_argument('--verbose')
 args = parser.parse_args()
-f = h5py.File(args.trigger_file)
+
+
+if args.verbose:
+    logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.DEBUG)
+
+f = h5py.File(args.trigger_file, 'r')
+
 snr = f['snr'][:]
 chisq = f['chisq'][:]
-pylab.scatter(snr, chisq, color='black', marker='o', label='background')
+if args.veto_file:
+    time = f['end_time'][:]
+    locs, segs = veto.indices_outside_segments(time, f.attrs['ifo'], [args.veto_file])
+    snr = snr[locs]
+    chisq = chisq[locs]
 
-f = h5py.File(args.injection_file)
-trigid1 = f['found_after_vetoes/trigger_id1'][:]
-trigid2 = f['found_after_vetoes/trigger_id2'][:]
-f = h5py.File(args.injection_trigger_file)
-snr = f['snr'][:]
-chisq = f['chisq'][:]
+if args.min_snr is not None:
+    locs = snr > args.min_snr
+    snr = snr[locs]
+    chisq = chisq[locs]
 
-pylab.scatter(snr, chisq, color='red', marker='x')
-pylab.xlim(5.5, 10)
-pylab.ylim(150, 500)
-pylab.savefig(args.output_file)
+pylab.hexbin(snr, chisq / (f.attrs['chisq_dof'] * 2 - 2), gridsize=300,
+             xscale='log', yscale='log', mincnt=1, norm=colors.LogNorm())
+
+ax = pylab.gca()
+pylab.grid()   
+ax.set_xscale('log')
+cb = pylab.colorbar() 
+cb.set_label('Trigger Density')
+pylab.xlabel('Signal-to-noise Ratio')
+pylab.ylabel('Reduced $\chi^2$')
+pylab.title('%s unclustered trigger distribution' % f.attrs['ifo'])
+pylab.savefig(args.output_file, dpi=300)
+
 
 
 

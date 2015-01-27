@@ -507,7 +507,7 @@ class PyCBCFindCoincExecutable(Executable):
         segs = trig_files.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
         node = Node(self)
-        node.set_memory(4000)
+        node.set_memory(8000)
         node.add_input_list_opt('--trigger-files', trig_files)
         if len(veto_files) != 0:
             node.add_input_list_opt('--veto-files', veto_files)
@@ -568,6 +568,21 @@ def make_sensitivity_plot(workflow, inj_file, out_dir, tags=[]):
         node.add_input_opt('--injection-file', inj_file)
         node.new_output_file_opt(inj_file.segment, '.png', '--output-file')
         workflow += node
+
+def make_snrchi_plot(workflow, trig_files, veto_file, out_dir, tags=[]):
+    make_analysis_dir(out_dir)
+    
+    for tag in get_subsections(workflow.cp, 'plot_snrchi'):
+        for trig_file in trig_files:
+            node = Node(Executable(workflow.cp, 'plot_snrchi',
+                        ifos=trig_file.ifo, 
+                        out_dir=out_dir, 
+                        tags=[tag] + tags))
+            node.set_memory(15000)
+            node.add_input_opt('--trigger-file', trig_file)
+            node.add_input_opt('--veto-file', veto_file)
+            node.new_output_file_opt(trig_file.segment, '.png', '--output-file')
+            workflow += node  
 
 def make_foundmissed_plot(workflow, inj_file, inj_tag, out_dir, tags=[]):
     make_analysis_dir(out_dir)
