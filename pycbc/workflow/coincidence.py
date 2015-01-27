@@ -492,6 +492,7 @@ def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
 class PyCBCBank2HDFExecutable(Executable):
     """ This converts xml tmpltbank to an hdf format
     """
+    current_retention_level = Executable.CRITICAL
     def create_node(self, bank_file):
         node = Node(self)
         node.add_input_opt('--bank-file', bank_file)
@@ -501,10 +502,10 @@ class PyCBCBank2HDFExecutable(Executable):
 class PyCBCTrig2HDFExecutable(Executable):
     """ This converts xml triggers to an hdf format, grouped by template hash
     """
-    def create_node(self, trig_files, bank_file, num_groups):
+    current_retention_level = Executable.CRITICAL
+    def create_node(self, trig_files, bank_file):
         node = Node(self)
         node.add_input_opt('--bank-file', bank_file)
-        node.add_opt('--number-of-groups', num_groups)
         node.add_input_list_opt('--trigger-files', trig_files)
         node.new_output_file_opt(trig_files[0].segment, '.hdf', '--output-file')
         return node
@@ -512,26 +513,30 @@ class PyCBCTrig2HDFExecutable(Executable):
 class PyCBCFindCoincExecutable(Executable):
     """ Find coinc triggers using a folded interval method
     """
-    def create_node(self, trig_files, veto_files, template_group, tags=[]):
+    current_retention_level = Executable.CRITICAL
+    def create_node(self, trig_files, bank_file, veto_files, template_str, tags=[]):
         segs = trig_files.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
         node = Node(self)
-        node.set_memory(8000)
+        node.set_memory(10000)
+        node.add_input_opt('--template-bank', bank_file)
         node.add_input_list_opt('--trigger-files', trig_files)
         if len(veto_files) != 0:
             node.add_input_list_opt('--veto-files', veto_files)
-        node.add_opt('--template-group', template_group)
+        node.add_opt('--template-fraction-range', template_str)
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags)
         return node
 
 class PyCBCStatMapExecutable(Executable):
     """ Calculate FAP, IFAR, etc
     """
+    current_retention_level = Executable.CRITICAL
     def create_node(self, coinc_files, external_background=None, tags=[]):
         segs = coinc_files.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
 
         node = Node(self)
+        node.set_memory(5000)
         node.add_input_list_opt('--coinc-files', coinc_files)
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags)
         if external_background:
@@ -616,6 +621,7 @@ def make_snrifar_plot(workflow, bg_file, out_dir, tags=[]):
 class PyCBCHDFInjFindExecutable(Executable):
     """ Find injections in the hdf files output
     """
+    current_retention_level = Executable.CRITICAL
     def create_node(self, inj_coinc_file, inj_xml_file, veto_file, tags=[]):
         node = Node(self)
         node.add_input_list_opt('--trigger-file', inj_coinc_file)
@@ -658,8 +664,6 @@ def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=[]):
     logging.info('convert single inspiral trigger files to hdf5')
     make_analysis_dir(out_dir)
 
-    num_groups = workflow.cp.get_opt_tags('workflow-coincidence', 'number-of-groups', tags)
-
     ifos, insp_groups = xml_trigger_files.categorize_by_attr('ifo')
     trig_files = FileList()
     for ifo, insp_group in zip(ifos,  insp_groups):
@@ -667,7 +671,7 @@ def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=[]):
                                        ifos=ifo, out_dir=out_dir, tags=tags)
         segs, insp_bundles = insp_group.categorize_by_attr('segment')
         for insps in  insp_bundles:
-            trig2hdf_node =  trig2hdf_exe.create_node(insps, hdfbank[0], num_groups)
+            trig2hdf_node =  trig2hdf_exe.create_node(insps, hdfbank[0])
             workflow.add_node(trig2hdf_node)
             trig_files += trig2hdf_node.output_files
     return trig_files
@@ -697,35 +701,16 @@ def setup_interval_coinc_inj(workflow, hdfbank, trig_files,
                                               ifos=workflow.ifos,
                                               tags=tags, out_dir=out_dir)
 
-    # Wall time knob
-    group_size = int(workflow.cp.get_opt_tags('workflow-coincidence', 'groups-per-coinc', tags))
-    
-    # Memory usage knob
-    max_groups = int(workflow.cp.get_opt_tags('workflow-coincidence', 'number-of-groups', tags))
-
-    group_start = 0
-    group_end = group_size
+    # Wall time knob and memory knob
+    factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
 
     bg_files = FileList()
-    group_id = 0
-    while 1:
-        group_id += 1
-        values = range(group_start, group_end)
-        group_str = (' %s ' * len(values)) % tuple(values)
-        
-        coinc_node = findcoinc_exe.create_node(trig_files, [],
-                                           group_str,
-                                           tags=[str(group_id)])
+    for i in range(factor):
+        group_str = '%s/%s' % (i, factor)
+        coinc_node = findcoinc_exe.create_node(trig_files, hdfbank, [],
+                                           group_str, tags=[str(i)])
         bg_files += coinc_node.output_files
         workflow.add_node(coinc_node)
-        
-        group_start += group_size
-        group_end += group_size
-        
-        if group_start >= max_groups:
-            break
-        if group_end >= max_groups:
-            group_end = max_groups
 
     combine_node = combinecoinc_exe.create_node(bg_files,
                                            external_background=background_file[0])
@@ -759,38 +744,21 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
     combinecoinc_exe = PyCBCStatMapExecutable(workflow.cp, 'statmap',
                                               ifos=workflow.ifos,
                                               tags=tags, out_dir=out_dir)
-
-    # Wall time knob
-    group_size = int(workflow.cp.get_opt_tags('workflow-coincidence', 'groups-per-coinc', tags))
-
-    # Memory usage knob
-    max_groups = int(workflow.cp.get_opt_tags('workflow-coincidence', 'number-of-groups', tags))
+                                              
+    # Wall time knob and memory knob
+    factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
 
     tags, veto_file_groups = veto_files.categorize_by_attr('tags')
     stat_files = FileList()
     for tag, veto_files in zip(tags, veto_file_groups):
         bg_files = FileList()
-        group_id = 0
-        group_start = 0
-        group_end = group_size
-        while 1:
-            group_id += 1
-            values = range(group_start, group_end)
-            group_str = (' %s ' * len(values)) % tuple(values)
-            coinc_node = findcoinc_exe.create_node(trig_files, veto_files,
+        for i in range(factor):
+            group_str = '%s/%s' % (i, factor)
+            coinc_node = findcoinc_exe.create_node(trig_files, hdfbank, veto_files,
                                                    group_str,
-                                                   tags= tag + [str(group_id)])
+                                                   tags= tag + [str(i)])
             bg_files += coinc_node.output_files
             workflow.add_node(coinc_node)
-            
-            group_start += group_size
-            group_end += group_size
-            
-            if group_start >= max_groups:
-                break
-                
-            if group_end >= max_groups:
-                group_end = max_groups
              
         combine_node = combinecoinc_exe.create_node(bg_files, tags=tag)
         workflow.add_node(combine_node)

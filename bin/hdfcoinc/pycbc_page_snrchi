@@ -14,7 +14,6 @@ parser.add_argument('--output-file')
 parser.add_argument('--verbose')
 args = parser.parse_args()
 
-
 if args.verbose:
     logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.DEBUG)
 
@@ -22,6 +21,9 @@ f = h5py.File(args.trigger_file, 'r')
 
 snr = f['snr'][:]
 chisq = f['chisq'][:]
+chisq_dof = f['chisq_dof'][:]
+chisq /= (chisq_dof * 2 - 2)
+
 if args.veto_file:
     time = f['end_time'][:]
     locs, segs = veto.indices_outside_segments(time, f.attrs['ifo'], [args.veto_file])
@@ -33,7 +35,7 @@ if args.min_snr is not None:
     snr = snr[locs]
     chisq = chisq[locs]
 
-pylab.hexbin(snr, chisq / (f.attrs['chisq_dof'] * 2 - 2), gridsize=300,
+pylab.hexbin(snr, chisq, gridsize=300,
              xscale='log', yscale='log', mincnt=1, norm=colors.LogNorm())
 
 ax = pylab.gca()
@@ -43,7 +45,7 @@ cb = pylab.colorbar()
 cb.set_label('Trigger Density')
 pylab.xlabel('Signal-to-noise Ratio')
 pylab.ylabel('Reduced $\chi^2$')
-pylab.title('%s unclustered trigger distribution' % f.attrs['ifo'])
+pylab.title('%s: Single Detector Trigger Distribution' % f.attrs['ifo'])
 pylab.savefig(args.output_file, dpi=300)
 
 

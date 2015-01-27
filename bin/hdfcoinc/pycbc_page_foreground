@@ -27,30 +27,32 @@ fap = f['foreground/fap'][:][sorting]
 stat = f['foreground/stat'][:][sorting]
 time1 = f['foreground/time1'][:][sorting]
 time2 = f['foreground/time2'][:][sorting]
-template_id = f['foreground/template_id'][:][sorting]
+template_id = f['foreground/template_id'][:][sorting].astype(numpy.uint32)
+trigid1 = f['foreground/trigger_id1'][:][sorting].astype(numpy.uint32)
+trigid2 = f['foreground/trigger_id2'][:][sorting].astype(numpy.uint32)
 
 logging.info('Found %s foreground triggers' % len(stat))
 
 logging.info('Read in the template bank data to get template parameters')
 f = h5py.File(args.bank_file, 'r')
-mass1 = f['mass1'][:][template_id][sorting]
-mass2 = f['mass2'][:][template_id][sorting]
-spin1z = f['spin1z'][:][template_id][sorting]
-spin2z = f['spin2z'][:][template_id][sorting]
+mass1 = f['mass1'][:][template_id]
+mass2 = f['mass2'][:][template_id]
+spin1z = f['spin1z'][:][template_id]
+spin2z = f['spin2z'][:][template_id]
 
 mchirp, eta = mass1_mass2_to_mchirp_eta(mass1, mass2)
 
-urls = pycbc.results.followup.times_to_links(time1, 5.0, args.foreground_tag)
-urls = numpy.array(urls)
+#urls = pycbc.results.followup.times_to_links(time1, 5.0, args.foreground_tag)
+#urls = numpy.array(urls)
 
 columns = [ifar, fap, stat,  time1,
-           (time2-time1)*1000, mchirp, mass1, mass2, spin1z, spin2z, urls]
+           (time2-time1)*1000, mchirp, mass1, mass2, spin1z, spin2z, trigid1, trigid2, template_id]
 names = ['IFAR (YR)', 'FAP', 'Combined NewSNR', 'End Time', 
          'Time Diff. (ms)', 'mchirp', 'm1', 'm2',
-         's1z', 's2z', 'followup']
+         's1z', 's2z', 'tid1', 'tid2', 'template id']
 format_strings = ['#.###E0', '#.##E0', '##.###',
                   None, '##.##', '##.##', '##.##',
-                  '##.##', '##.##', '##.##', None]
+                  '##.##', '##.##', '##.##', None, None, None]
 
 logging.info('Making table of foreground triggers')
 html_table = pycbc.results.table(columns, names, 

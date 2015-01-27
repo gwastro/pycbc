@@ -7,6 +7,7 @@ with producing the combined foreground and background triggers
 import argparse, h5py, logging, itertools, copy
 from scipy.interpolate import interp1d  
 from pycbc.future import numpy  
+from itertools import izip
     
 def load_coincs(coinc_files):
     stat, time1, time2, timeslide_id, template_id, decimation_factor, i1, i2 = [], [], [], [], [], [], [], []
@@ -14,37 +15,26 @@ def load_coincs(coinc_files):
         try:
             logging.info('reading %s' % cfile)
             f = h5py.File(cfile, "r")
-            stat.append(f['coinc/stat'])
-            time1.append(f['coinc/time1'])
-            time2.append(f['coinc/time2'])
-            i1.append(f['coinc/trigger_id1'])
-            i2.append(f['coinc/trigger_id2'])
-            timeslide_id.append(f['coinc/timeslide_id'])
-            template_id.append(f['coinc/template_id'])
-            decimation_factor.append(f['coinc/decimation_factor'])
+            stat.append(f['stat'])
+            time1.append(f['time1'])
+            time2.append(f['time2'])
+            i1.append(f['trigger_id1'])
+            i2.append(f['trigger_id2'])
+            timeslide_id.append(f['timeslide_id'])
+            template_id.append(f['template_id'])
+            decimation_factor.append(f['decimation_factor'])
             attr = dict(f.attrs)
+            
         except:
             continue
     return (numpy.concatenate(stat), numpy.concatenate(time1),
            numpy.concatenate(time2), numpy.concatenate(timeslide_id),
            numpy.concatenate(template_id), numpy.concatenate(decimation_factor),
            numpy.concatenate(i1), numpy.concatenate(i2), attr, 
-           f['coinc/analyzed_start'][:], f['coinc/analyzed_end'][:], 
+           f['analyzed_start'][:], f['analyzed_end'][:], 
            )
-  
-def changed(arr):
-    return arr[:-1] != arr[1:]
-    
-def merge(left, right):
-    overlapped = numpy.where(right[:-1] > left[1:])[0]
-    for idx in overlapped:
-        left[idx + 1] = left[idx]        
-    left = numpy.delete(left, overlapped)
-    right = numpy.delete(right, overlapped)       
-    return left, right
-  
-def cluster_coincs(stat, time1, time2, 
-                   timeslide_id, timeslide_interval, window):
+
+def cluster_coincs(stat, time1, time2, timeslide_id, slide, window):
     """Cluster coincident events for each timeslide separately, across 
     templates, based on the ranking statistic 
     Return the set of indices corresponding to the surviving coincidences.
@@ -53,43 +43,31 @@ def cluster_coincs(stat, time1, time2,
     logging.info('clustering coinc triggers over %ss window' % window)
     
     indices = []
-    if numpy.isfinite(timeslide_interval):
-        time = (time2 + (time1 + timeslide_id * timeslide_interval)) / 2
+    if numpy.isfinite(slide):
+        time = (time2 + (time1 + timeslide_id * slide)) / 2
     else:
         time = 0.5 * (time2 + time1)
         
+    tslide = timeslide_id.astype(numpy.float128)
+    time = time.astype(numpy.float128)
+    span = (time.max() - time.min()) + window * 10
+    time = time + span * tslide
+    
     time_sorting = time.argsort()
     stat = stat[time_sorting]
     time = time[time_sorting]
-    slide = timeslide_id[time_sorting]
+    tslide = tslide[time_sorting]
     
-    # make a bin around each trigger
-    ledge = time - window
-    redge = time + window
-    lbin = numpy.searchsorted(time, ledge, side='left')
-    rbin = numpy.searchsorted(time, redge, side='right')
-    
-    # remove duplicate bins
-    bin_edges = numpy.where(changed(lbin) + changed(rbin))
-    grouped_lbin = lbin[bin_edges]
-    grouped_rbin = rbin[bin_edges]  
-    print len(grouped_lbin)
-    
-    # merge overlapping bins
-    grouped_lbin , grouped_rbin = merge(grouped_lbin, grouped_rbin)
-    print len(grouped_lbin)
-    
-    for l, r in itertools.izip(grouped_lbin, grouped_rbin):  
-        unique_slides = numpy.unique(slide[l:r])    
-        for slide_id in unique_slides:
-            slide_locs = numpy.where(slide[l:r] == slide_id)[0]        
-            indices.append(slide_locs[stat[l:r][slide_locs].argmax()] + l)
-            
-            #if slide_id == 0:
-            #    idx = slide_locs[nstatsq[l:r][slide_locs].argmax()] + l
-            #    ts = time1[time_sorting[idx]]
-
-    return numpy.unique(numpy.array(time_sorting[indices], dtype=numpy.uint32))
+    logging.info('sorting...')
+    left = numpy.searchsorted(time, time - window)
+    right = numpy.searchsorted(time, time + window)
+    logging.info('done sorting')
+    indices = []
+    for i, (l, r) in enumerate(izip(left, right)):
+        if stat[l:r].argmax() + l == i:
+            indices += [i]
+    logging.info('done clustering coinc triggers: %s triggers remaining' % len(indices))
+    return time_sorting[numpy.array(indices)]
 
 def calculate_fan_map(combined_stat, dec):
     """ Return a function to map between false alarm number (FAN) and the

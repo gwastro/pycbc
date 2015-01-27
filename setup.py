@@ -325,6 +325,7 @@ setup (
                'bin/hdfcoinc/pycbc_coinc_hdfinjfind',
                'bin/hdfcoinc/pycbc_page_snrchi',
                'bin/hdfcoinc/pycbc_results_server',
+               'bin/hdfcoinc/pycbc_page_inspiralrange',
                'bin/pycbc_submit_dax',
                ],
     packages = [

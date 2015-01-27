@@ -632,6 +632,18 @@ class PyCBCInspiralExecutable(Executable):
         self.cp = cp
         self.set_memory(2000)
         self.injection_file = injection_file
+        
+        try:
+            outtype = cp.get('workflow-matchedfilter', 'output-type')
+        except:
+            outtype = None
+
+        if outtype is None or 'xml' in outtype:
+            self.ext = '.xml.gz'
+        elif 'hdf' in outtype:
+            self.ext = '.hdf'
+        else:
+            raise ValueError('Invalid output type for PyCBC Inspiral: %s' % outtype)
 
         if self.get_opt('processing-scheme') == 'cuda':
             self.needs_gpu()
@@ -665,7 +677,7 @@ class PyCBCInspiralExecutable(Executable):
             node.add_input_opt('--injection-file', self.injection_file)
 
         # set the input and output files        
-        node.new_output_file_opt(valid_seg, '.xml.gz', '--output', tags=tags,
+        node.new_output_file_opt(valid_seg, self.ext, '--output', tags=tags,
                                  store_file=self.retain_files)
         node.add_input_list_opt('--frame-files', dfParents)
         node.add_input_opt('--bank-file', parent, )

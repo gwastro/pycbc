@@ -1,0 +1,22 @@
+#!/usr/bin/env python
+import numpy, h5py, argparse, logging, matplotlib
+matplotlib.use('Agg')
+import pylab
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--trigger-files', help='Single ifo trigger files', nargs='+')
+parser.add_argument('--bank-file', help='Template Bank file')
+parser.add_argument('--output-file')
+parser.add_argument('--verbose')
+args = parser.parse_args()
+
+bank = h5py.File(args.bank_file)
+m1, m2 = bank['mass1'][:], bank['mass2'][:]
+
+for fil in args.trigger_files:
+    f = h5py.File(f, 'r')
+    ifo = f.attrs['ifo']
+    
+
+
+

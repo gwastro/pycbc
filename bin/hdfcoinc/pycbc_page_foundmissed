@@ -5,10 +5,7 @@ import argparse, h5py, numpy, logging, os.path
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plot
-import mpld3, mpld3.plugins, mpld3.utils
-
 import pycbc.results.followup, pycbc.pnutils
-from pycbc.results.mpld3_utils import ClickLink
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--injection-file',
@@ -79,18 +76,23 @@ plot.ylabel(labels[args.distance_type])
 plot.title('Found and Missed Injections')
 plot.grid()
 plot.subplots_adjust(left=0.1, right=0.8, top=0.9, bottom=0.1)
-    
-if args.injection_tag:   
-    urls = pycbc.results.followup.times_to_urls(time[found], 2.0, args.injection_tag)
-    murls = pycbc.results.followup.times_to_urls(time[missed], 2.0, args.injection_tag)
-    mpld3.plugins.connect(fig, ClickLink(points, urls))
-    mpld3.plugins.connect(fig, ClickLink(mpoints, murls))    
 
-mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt='.5g'))
-legend =  mpld3.plugins.InteractiveLegendPlugin([mpoints, points],
-                                                ['missed', 'found'],
-                                                alpha_unsel=0.1)
-mpld3.plugins.connect(fig, legend)
-mpld3.save_html(fig, open(args.output_file, 'w'))
+if '.png' in args.output_file:
+    plot.savefig(args.output_file, dpi=500)
+else:
+    import mpld3, mpld3.plugins, mpld3.utils
+    from pycbc.results.mpld3_utils import ClickLink    
+    if args.injection_tag:   
+        urls = pycbc.results.followup.times_to_urls(time[found], 2.0, args.injection_tag)
+        murls = pycbc.results.followup.times_to_urls(time[missed], 2.0, args.injection_tag)
+        mpld3.plugins.connect(fig, ClickLink(points, urls))
+        mpld3.plugins.connect(fig, ClickLink(mpoints, murls))    
+
+    mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt='.5g'))
+    legend =  mpld3.plugins.InteractiveLegendPlugin([mpoints, points],
+                                                    ['missed', 'found'],
+                                                    alpha_unsel=0.1)
+    mpld3.plugins.connect(fig, legend)
+    mpld3.save_html(fig, open(args.output_file, 'w'))
 
 

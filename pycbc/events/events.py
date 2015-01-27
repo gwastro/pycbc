@@ -258,6 +258,69 @@ class EventManager(object):
     def write_events(self, outname):
         """ Write the found events to a sngl inspiral table
         """
+
+        if '.xml' in outname:
+            self.write_to_xml(outname)
+        elif '.hdf' in outname:
+            self.write_to_hdf(outname)
+        else:
+            raise ValueError('Cannot write to this format')
+    
+    def write_to_hdf(self, outname):
+        import h5py
+        f = h5py.File(outname, 'w')
+        
+        if len(self.events):
+            f.create_dataset('snr', data=abs(self.events['snr']), compression='gzip')
+            f.create_dataset('coa_phase', data=numpy.angle(self.events['snr']), compression='gzip')
+            f.create_dataset('chisq', data=abs(self.events['chisq']), compression='gzip')
+            f.create_dataset('bank_chisq', data=abs(self.events['bank_chisq']), compression='gzip')
+            f.create_dataset('cont_chisq', data=abs(self.events['cont_chisq']), compression='gzip')
+            
+            end_time = self.events['time_index'] / float(self.opt.sample_rate) + self.opt.gps_start_time
+            f.create_dataset('end_time', data=end_time, compression='gzip')
+            
+            tid = self.events['template_id']
+            template_sigmasq = numpy.array([t['sigmasq'] for t in self.template_params], dtype=numpy.float32)
+            f.create_dataset('sigmasq', data=template_sigmasq[tid], compression='gzip')
+         
+        cont_dof = self.opt.autochi_number_points if self.opt.autochi_onesided else 2 * self.opt.autochi_number_points
+        f.create_dataset('cont_chisq_dof', data=numpy.repeat(cont_dof, len(self.events)), compression='gzip')
+        f.create_dataset('bank_chisq_dof', data=numpy.repeat(10, len(self.events)), compression='gzip')        
+        f.create_dataset('chisq_dof', data=self.events['chisq_dof'], compression='gzip')    
+        
+        f.attrs['ifo'] = self.opt.channel_name[0:2]
+        if self.opt.trig_start_time:
+            f['search/start_time'] = numpy.array([self.opt.trig_start_time])
+        else:
+            f['search/start_time'] = numpy.array([self.opt.gps_start_time + self.opt.segment_start_pad])
+            
+        if self.opt.trig_end_time:
+            f['search/end_time'] = numpy.array([self.opt.trig_end_time])
+        else:
+            f['search/end_time'] = numpy.array([self.opt.gps_end_time - self.opt.segment_end_pad])
+
+        # Template id hack
+        m1 = numpy.array([p['tmplt'].mass1 for p in self.template_params], dtype=numpy.float32)
+        m2 = numpy.array([p['tmplt'].mass2 for p in self.template_params], dtype=numpy.float32)
+        s1 = numpy.array([p['tmplt'].spin1z for p in self.template_params], dtype=numpy.float32)
+        s2 = numpy.array([p['tmplt'].spin2z for p in self.template_params], dtype=numpy.float32)
+        
+        th = numpy.zeros(len(m1), dtype=int)
+        for j, v in enumerate(zip(m1, m2, s1, s2)):
+            th[j] = hash(v)
+        th_sort = th.argsort()
+        
+        th_map  = {}
+        for j, h in enumerate(th[th_sort]):
+            th_map[h] = j
+            
+        rtid = numpy.array([th_map[h] for h in th])
+        f.create_dataset('template_id', data=rtid[tid], compression='gzip') 
+    
+    def write_to_xml(self, outname):
+        """ Write the found events to a sngl inspiral table 
+        """
         outdoc = glue.ligolw.ligolw.Document()
         outdoc.appendChild(glue.ligolw.ligolw.LIGO_LW())
 

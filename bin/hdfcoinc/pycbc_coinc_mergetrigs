@@ -14,48 +14,33 @@ logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.INFO)
 f = h5py.File(args.output_file, 'w')
 trigger_columns = h5py.File(args.trigger_files[0]).keys()
 trigger_columns.remove('search')
-trigger_columns.remove('template_group')
 
 logging.info('reading the metadata from the files')
 num_trigs = 0
-left, right = [], []
 start = numpy.array([], dtype=numpy.float64)
 end = numpy.array([], dtype=numpy.float64)
 for filename in args.trigger_files:
     data = h5py.File(filename)
-    l, r = data['template_group/left'][:], data['template_group/right'][:]
-    num_trigs += r[-1]
+    num_trigs += len(data['snr'])
     s, e = data['search/start_time'][:], data['search/end_time'][:]
     start, end = numpy.append(start, s), numpy.append(end, e)
-    left += [l]
-    right += [r]
-
 f['search/start_time'], f['search/end_time'] = start, end   
-f['template_group/left'] = numpy.sum(left, axis=0)
-f['template_group/right'] = numpy.sum(right, axis=0)
-num_groups = len(f['template_group/right'])
 
 for k in data.attrs.keys(): 
     f.attrs[k] = data.attrs[k]
 
 logging.info('reading the trigger columns from the input files')
-for column in trigger_columns:
-    logging.info('Column: %s' % column)
-    
-    filec = {}
-    
-    for filename in args.trigger_files:
-        cdata =  h5py.File(filename)[column][:]
-        filec[filename] = cdata
-    dset = f.create_dataset(column, (num_trigs,), dtype=cdata.dtype, 
-                            compression='gzip', compression_opts=1, shuffle=True)
+dwrite = {}
+for filename in args.trigger_files:
+    f2 = h5py.File(filename)
+    for column in trigger_columns:
+        logging.info('Column: %s' % column)
+        if column not in dwrite:
+            dwrite[column] = (f.create_dataset(column, (num_trigs,), dtype=f2[column].dtype, 
+                             compression='gzip', compression_opts=1, shuffle=True),
+                             0)    
+        dset, num = dwrite[column]
+        dset[num:num+len(f2[column])] = f2[column][:]
+        dwrite[column] = dset, num + len(f2[column])
 
-    trigs = 0
-    for j in range(num_groups):
-        group_patches = []
-        for i, filename in enumerate(args.trigger_files):
-            cdata = filec[filename]        
-            group_patches += [cdata[left[i][j]:right[i][j]]]
-        s = numpy.concatenate(group_patches)
-        dset[trigs:trigs+len(s)] = s
-        trigs += len(s)
+

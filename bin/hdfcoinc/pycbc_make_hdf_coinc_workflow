@@ -101,22 +101,19 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                        datafind_files, splitbank_files, 
                                        output_dir, injection_file=inj_file,
                                        tags = [tag])
-
-    # convert insps to hdf
-    insps_hdf = wf.convert_trig_to_hdf(workflow, hdfbank, insps, output_dir, tags=[tag])
-    insps_hdf = wf.merge_single_detector_hdf_files(workflow, insps_hdf, output_dir, tags=[tag])
+    insps = wf.merge_single_detector_hdf_files(workflow, insps, output_dir, tags=[tag])
 
     # setup coinc for the filtering jobs
     if tag == 'full_data':
-        bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps_hdf, cum_veto_files,
+        bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, cum_veto_files,
                                        output_dir, tags=ctags)  
-        final_bg_file =  wf.setup_interval_coinc(workflow, hdfbank, insps_hdf, final_veto_file,
+        final_bg_file =  wf.setup_interval_coinc(workflow, hdfbank, insps, final_veto_file,
                                        output_dir, tags=ctags)   
         wf.make_foreground_table(workflow, final_bg_file[0], hdfbank[0], tag, 'plots/foreground')
-        wf.make_snrchi_plot(workflow, insps_hdf, final_veto_file[0], 'plots/background', tags=[tag])
+        wf.make_snrchi_plot(workflow, insps, final_veto_file[0], 'plots/background', tags=[tag])
     else:
         inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank, 
-                                                insps_hdf, final_bg_file,
+                                                insps, final_bg_file,
                                                 output_dir, tags = ctags)
         found_inj = wf.find_injections_in_hdf_coinc(workflow, wf.FileList([inj_coinc]),
                                                 wf.FileList([inj_file]), final_veto_file[0], 

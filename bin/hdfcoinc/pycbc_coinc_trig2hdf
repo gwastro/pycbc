@@ -28,7 +28,7 @@ def read_files(trigger_files, columns, column_types, attribute_columns):
             if column not in data:
                 data[column] = []    
             col_data = numpy.array(sngl_table.get_column(column), dtype=ctype)
-            data[column] = numpy.concatenate([data[column], col_data]) 
+            data[column] = numpy.concatenate([data[column], col_data]).astype(ctype)
             
         if i==0:
             search_sum = table.get_table(indoc, lsctables.SearchSummaryTable.tableName)
@@ -61,40 +61,13 @@ def hash_to_row(template_hashes):
         row_lookup[h] = i
     return row_lookup
 
-def group_trigs_by_hash(template_hash, trig_hash, num_groups):
-    sort_trig = trig_hash.argsort()
-    trig_hash = trig_hash[sort_trig]
-
-    bounds = []
-    for i in range(num_groups):
-        index = int(float(len(template_hash)) / float(num_groups) * i)
-        bounds.append(template_hash[index])        
-
-    trig_bounds = numpy.searchsorted(trig_hash, bounds)
-    trig_bounds = list(trig_bounds) + [len(trig_hash)]
-
+def find_ids(template_hash, trig_hash):
     template_map = hash_to_row(template_hash)
-    
-    left = []
-    right = []
-    tids = []
-    for j in range(len(trig_bounds) - 1):
-        l = trig_bounds[j]
-        r = trig_bounds[j+1]
-        
-        tid = numpy.zeros(r-l, dtype=numpy.uint32)
-        for i, h in enumerate(trig_hash[l:r]):
-            tid[i] = template_map[h]
-            
-        tids.append(tid)
-        left.append(l)
-        right.append(r)
-    return numpy.array(left), numpy.array(right), numpy.concatenate(tids), sort_trig
+    return numpy.array([template_map[i] for i in trig_hash], dtype=numpy.uint32) 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--trigger-files', nargs='+')
 parser.add_argument('--bank-file')
-parser.add_argument('--number-of-groups', type=int)
 parser.add_argument('--output-file')
 parser.add_argument('--verbose', '-v', action='count')
 args = parser.parse_args()
@@ -123,6 +96,9 @@ data, attrs, other = read_files(args.trigger_files,
                          'coa_phase',
                          'mass1',
                          'mass2',
+                         'chisq_dof',
+                         'bank_chisq_dof',
+                         'cont_chisq_dof',
                         ],
                 column_types=[numpy.float32,
                               numpy.float32,
@@ -134,16 +110,15 @@ data, attrs, other = read_files(args.trigger_files,
                               numpy.float32,
                               numpy.float32,
                               numpy.float32,
+                              numpy.uint32,
+                              numpy.uint32,
+                              numpy.uint32,
                               ],
-                 attribute_columns=['chisq_dof',
-                                    'bank_chisq_dof',
-                                    'cont_chisq_dof',
+                 attribute_columns=[
                                     ])
                                     
 logging.info('group triggers by hash')
-left, right, tids, sorting = group_trigs_by_hash(template_hashes, 
-                                    data['template_hash'],
-                                    args.number_of_groups)
+tids = find_ids(template_hashes, data['template_hash'])
 
 
 data['end_time'] = data['end_time'] + 1e-9 * data['end_time_ns']
@@ -156,14 +131,12 @@ for key in attrs.keys():
 
 if len(data['snr']) > 0:
     for col in data.keys():
-        dset = f.create_dataset(col, (len(sorting),), compression='gzip', dtype=data[col].dtype)
-        dset[:] = data[col][sorting]
+        dset = f.create_dataset(col, (len(tids),), compression='gzip', dtype=data[col].dtype)
+        dset[:] = data[col]
     for col in other.keys():
         dset = f.create_dataset(col, (len(other[col]),), compression='gzip', dtype=other[col].dtype)
         dset[:] = other[col]
     dset = f.create_dataset('template_id', (len(tids),), compression='gzip', dtype=tids.dtype)
-    dset[:] = tids
-    f['template_group/left'] = left
-    f['template_group/right'] = right          
+    dset[:] = tids        
 else:
     logging.info('There were no triggers in the sngl_inspiral table')
