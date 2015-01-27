@@ -587,6 +587,7 @@ def make_snrchi_plot(workflow, trig_files, veto_file, out_dir, tags=[]):
                         ifos=trig_file.ifo, 
                         out_dir=out_dir, 
                         tags=[tag] + tags))
+
             node.set_memory(15000)
             node.add_input_opt('--trigger-file', trig_file)
             node.add_input_opt('--veto-file', veto_file)
