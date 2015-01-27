@@ -255,8 +255,7 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         super(LegacyCohPTFInspiralExecutable, self).__init__(cp, name, universe,
                 ifo, out_dir=out_dir, tags=tags)
         self.cp = cp
-        #TODO: Check previous runs for relevant memory value
-        self.set_memory(2000)
+        self.set_memory(1300)
         self.injection_file = injection_file
         self.data_seg = segments.segment(int(cp.get('workflow', 'start-time')),
                                          int(cp.get('workflow', 'end-time')))
@@ -287,9 +286,9 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         node.add_input_opt('--bank-file', parent[0], )
        
         for frameCache in dfParents:
-            #TODO: For each IFO provide cache file via --ifo.lower()-frame-cache
-            #node.add_input_opt('--frame-files', dfParents)
-       
+            node.add_input_opt('--%s-frame-cache' % frameCache.ifo.lower(),
+                               frameCache)
+
         if self.injection_file is not None:
             node.add_input_opt('--injection-file', self.injection_file)
         return node
