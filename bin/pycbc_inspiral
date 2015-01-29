@@ -165,7 +165,7 @@ with ctx:
 
             bank_chisqv = bank_chisq.values(template, s_num, snr, norm,
                                             idx+stilde.analyze.start)
-            power_chisqv = power_chisq.values(corr, snrv, norm, psd,
+            power_chisqv = power_chisq.values(corr, snr, norm, psd,
                                             idx+stilde.analyze.start,
                                             template, bank, flow)
                                             
