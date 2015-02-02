@@ -92,6 +92,9 @@ all_files.extend(inj_files)
 
 # Matched-filtering
 # TODO: Write coherent matched filtering code
+#logging.info(abs(sciSegs[ifo][0]))
+#wflow.cp.set('inspiral', 'block-duration',
+#             str(abs(sciSegs[ifo][0] - 2 * padding)))
 inspDir = os.path.join(currDir, "inspiral")
 inspiral_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
                                                       datafind_files,
