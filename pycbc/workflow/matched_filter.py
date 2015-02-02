@@ -278,6 +278,9 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
 
     cp = workflow.cp
     ifos = science_segs.keys()
+    cp.set('inspiral', 'block-duration',
+           str(abs(science_segs[ifos[0]][0]) - 2 * int(cp.get('inspiral',
+                                                              'pad-data'))))
     match_fltr_exe = os.path.basename(cp.get('executables','inspiral'))
     # Select the appropriate class
     exe_class = select_matchedfilter_class(match_fltr_exe)
