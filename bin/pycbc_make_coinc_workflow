@@ -141,7 +141,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                             insps_hdf, final_veto_file, output_dir, tags=ctags)
             _workflow.make_foreground_table(workflow, final_bg_file[0],
                             hdfbank[0], tag, 'plots/foreground')
-            _workflow.make_snrchi_plot(workflow, insps_hdf, final_veto_file, 
+            _workflow.make_snrchi_plot(workflow, insps_hdf, final_veto_file[0], 
                                       'plots/background', tags=[tag])
         else:
             ctags = [tag, 'inj']
