@@ -58,20 +58,15 @@ The following are the sections used to configure the workflow.
 
 * [workflow-coincidence]
 
-There are two options, both of which are permorfance options.
+There is one option related to the performance of the background estimation and coincidence.
 
-* --number-of-groups
+* --parallelization-factor
 
-This is integer that sets how many groups of templates to analyze at once
-for coincidence. A reasonable choice seems to be 1 per 20 templates in your bank.
-This will directly correlate the to memory usage of each coincidence job. If you 
-drop the snr threshold this will also need to drop as there will be a much higher
-trigger rate per template.
-
-* --groups-per-coinc
-
-This sets how many template groups per coincidence job. This knob helps control
-how long each coincidence job should take. A number of 50 seems to be about reasonable.
+This is an integer that determines the total number of jobs to calculate the foreground and background
+coincidences for the entire run. The number is inversely proportional to the memory usage of each job, and the expected run time.
+A factor of 10 is sufficient for a one month run with an SNR threshold of 5.0, 8000 templates, and a timeslide every 1.1 seconds. 
+To ensure short running jobs, the factor should be increased in proportion to the number of background triggers. 
+The memory usage of each jobs is only porportional to the fraction of single detector triggers that are read in. 
 
 ------------------------
 Executable Configuration
@@ -88,7 +83,9 @@ plotting. They following needs to be in your [executables] section.::
     plot_sensitivity = ${which:pycbc_page_sensitivity}
     plot_foundmissed = ${which:pycbc_page_foundmissed}
     plot_snrifar = ${which:pycbc_page_snrifar}
+    plot_snrchi = ${which:pycbc_page_snrchi}
     page_foreground = ${which:pycbc_page_foreground}
+    hdf_trigger_merge = ${which:pycbc_coinc_mergetrigs}
 
 Executables that do not require any additional configuration.
 
@@ -108,11 +105,10 @@ Options to the coincidence/background executable
     coinc-threshold = .005
     ; Background coincident triggers are decimated. This option controls how
     ;many of the loudest triggers to keep from each group of templates.
-    decimation-keep = 200
+    loudest-keep = 200
     ; For now, don't touch these options, but they control how to decimate low
     ; significane triggers.
     decimation-factor = 1000
-    decimation-bins = 1
 
     [coinc-inj]
     [coinc-full]
@@ -159,8 +155,8 @@ Options for sensitivity plotting
     dist-bins = 15 
 
 Additional plots can be made by adding a tag. This works similary to the system for injection files. For 
-example you can add  [plot_sensitivity-mchirp], [plot_sensitivity-mtotal], and [plot_sensitivity-splin]
-sections to make three version of the plot.
+example you can add  [plot_sensitivity-mchirp], [plot_sensitivity-mtotal], and [plot_sensitivity-spin]
+sections to make three versions of the plot.
 
 =====================================
 Workflow Generation an Planning
