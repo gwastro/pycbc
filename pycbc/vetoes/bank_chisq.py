@@ -80,7 +80,7 @@ def template_overlaps(bank_filters, template, psd, low_frequency_cutoff):
     for bank_template in bank_filters:        
         overlap = overlap_cplx(template_ow, bank_template,
                 low_frequency_cutoff=low_frequency_cutoff, normalized=False)
-        norm = sqrt(1 / template.sigmasq / bank_template.sigmasq)
+        norm = sqrt(1 / template.sigmasq(psd) / bank_template.sigmasq(psd))
         overlaps.append(overlap * norm)
         if (abs(overlaps[-1]) > 0.99):
             errMsg = "Overlap > 0.99 between bank template and filter. "

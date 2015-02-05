@@ -18,8 +18,8 @@
 
 import logging
 import argparse
-from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC, filter
-from pycbc.filter import MatchedFilterControl, sigmasq, make_frequency_series
+from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC
+from pycbc.filter import MatchedFilterControl, make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
 import pycbc.fft.fftw
 
@@ -46,17 +46,13 @@ taper_choices = ["start","end","startend"]
 parser.add_argument("--taper-template", choices=taper_choices,
                   help="For time-domain approximants, taper the start and/or "
                        "end of the waveform before FFTing.")
-
 parser.add_argument("--cluster-method", choices=["template", "window"],
                     help="FIXME: ADD")
 parser.add_argument("--cluster-window", type=float, default = -1,
                   help="Length of clustering window in seconds")
-
 parser.add_argument("--maximization-interval", type=float, default=0,
                   help="Maximize triggers over the template bank (ms)")
-
 parser.add_argument("--bank-veto-bank-file", type=str, help="FIXME: ADD")
-
 parser.add_argument("--chisq-bins", default=0, help=
                     "Number of frequency bins to use for power chisq. Specify"
                     " an integer for a constant number of bins, or a function "
@@ -67,7 +63,6 @@ parser.add_argument("--chisq-bins", default=0, help=
 parser.add_argument("--chisq-threshold", type=float, default=0,
                     help="FIXME: ADD")
 parser.add_argument("--chisq-delta", type=float, default=0, help="FIXME: ADD")
-
 parser.add_argument("--autochi-number-points", type=int, default=0)
 parser.add_argument("--autochi-stride", type=int, default=0)
 parser.add_argument("--autochi-onesided", action='store_true', default=False)
@@ -168,11 +163,11 @@ with ctx:
 
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, opt.approximant, flen, delta_f,
-                    flow, dtype=complex64, psd=psd, phase_order=opt.order,
+                    flow, dtype=complex64, phase_order=opt.order,
                     taper=opt.taper_template, out=zeros(tlen, dtype=complex64))
 
     for t_num, template in enumerate(bank):
-        event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq)
+        event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq(psd))
         if opt.cluster_method == "window":
             cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
         elif opt.cluster_method == "template":
@@ -183,8 +178,8 @@ with ctx:
                          (t_num + 1, len(bank), s_num + 1, len(segments)))
 
             snr, norm, corr, idx, snrv = \
-                    matched_filter.matched_filter_and_cluster(template, stilde,
-                                                                cluster_window)
+               matched_filter.matched_filter_and_cluster(template, 
+                                  template.sigmasq(psd), stilde, cluster_window)
 
             if not len(idx):
                 continue
@@ -193,7 +188,7 @@ with ctx:
                                                 norm, idx+stilde.analyze.start)
 
             out_vals['chisq'], out_vals['chisq_dof'] = power_chisq.values(corr,
-               snr, snrv, norm, psd, idx+stilde.analyze.start, template, bank, flow)
+               snr, snrv, norm, psd, idx+stilde.analyze.start, template, flow)
 
             snrv *= norm
 
@@ -234,7 +229,6 @@ if opt.maximization_interval:
 
 logging.info("Writing out triggers")
 event_mgr.write_events(opt.output)
-
 
 if opt.fftw_output_float_wisdom_file:
     fft.fftw.export_single_wisdom_to_filename(opt.fftw_output_float_wisdom_file)

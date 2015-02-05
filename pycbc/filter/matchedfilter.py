@@ -112,7 +112,7 @@ class MatchedFilterControl(object):
         else:
             raise ValueError("Invalid downsample factor")
               
-    def full_matched_filter_and_cluster(self, template, stilde, window):
+    def full_matched_filter_and_cluster(self, template, template_norm, stilde, window):
         """ Return the complex snr and normalization. 
     
         Calculated the matched filter, threshold, and cluster. 
@@ -121,6 +121,8 @@ class MatchedFilterControl(object):
         ----------
         htilde : FrequencySeries 
             The template waveform. Must come from the FilterBank class.
+        template_norm : float
+            The htilde, template normalization factor.
         stilde : FrequencySeries 
             The strain data to be filtered.
         window : int
@@ -142,7 +144,7 @@ class MatchedFilterControl(object):
         snr, corr, norm = matched_filter_core(template, stilde, 
                                               low_frequency_cutoff=self.flow, 
                                               high_frequency_cutoff=self.fhigh, 
-                                              h_norm=template.sigmasq,
+                                              h_norm=template_norm,
                                               out=self.snr_mem,
                                               corr_out=self.corr_mem)
         idx, snrv = events.threshold(snr[stilde.analyze], self.snr_threshold / norm)            
@@ -156,7 +158,7 @@ class MatchedFilterControl(object):
         
         return snr, norm, corr, idx, snrv   
         
-    def heirarchical_matched_filter_and_cluster(self, htilde, stilde, window):
+    def heirarchical_matched_filter_and_cluster(self, htilde, template_norm, stilde, window):
         """ Return the complex snr and normalization. 
     
         Calculated the matched filter, threshold, and cluster. 
@@ -165,6 +167,8 @@ class MatchedFilterControl(object):
         ----------
         htilde : FrequencySeries 
             The template waveform. Must come from the FilterBank class.
+        template_norm : float
+            The htilde, template normalization factor.
         stilde : FrequencySeries 
             The strain data to be filtered.
         window : int
@@ -185,7 +189,7 @@ class MatchedFilterControl(object):
         """
         from pycbc.fft.fftw_pruned import pruned_c2cifft, fft_transpose                           
                                          
-        norm = (4.0 * stilde.delta_f) / sqrt(htilde.sigmasq)
+        norm = (4.0 * stilde.delta_f) / sqrt(template_norm)
         
         correlate(htilde[self.kmin_red:self.kmax_red], 
                   stilde[self.kmin_red:self.kmax_red], 
