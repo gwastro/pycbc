@@ -287,7 +287,11 @@ class EventManager(object):
         cont_dof = self.opt.autochi_number_points if self.opt.autochi_onesided else 2 * self.opt.autochi_number_points
         f.create_dataset('cont_chisq_dof', data=numpy.repeat(cont_dof, len(self.events)), compression='gzip')
         f.create_dataset('bank_chisq_dof', data=numpy.repeat(10, len(self.events)), compression='gzip')        
-        f.create_dataset('chisq_dof', data=self.events['chisq_dof'], compression='gzip')    
+
+        if 'chisq_dof' in self.events:
+            f.create_dataset('chisq_dof', data=self.events['chisq_dof'] / 2 + 1, compression='gzip')
+        else:
+            f.create_dataset('chisq_dof', data=numpy.zeros(len(self.events)), compression='gzip')    
         
         f.attrs['ifo'] = self.opt.channel_name[0:2]
         if self.opt.trig_start_time:
@@ -362,19 +366,13 @@ class EventManager(object):
             row.channel = self.opt.channel_name[3:]
             row.ifo = ifo
 
-            if self.opt.chisq_bins != 0:
-                row.chisq = event['chisq']
-                # FIXME: This is *not* the dof!!!
-                # but is needed for later programs not to fail
-                try:
-                    # if the options specify an integer, use it by checking
-                    # that the value can be cast as int without changing
-                    # numerically
-                    row.chisq_dof = int(self.opt.chisq_bins)
-                    assert row.chisq_dof == self.opt.chisq_bins
-                except:
-                    # fail through: copy the value from the trigger
-                    row.chisq_dof = event['chisq_dof']
+            # FIXME: This is *not* the dof!!!
+            # but is needed for later programs not to fail
+            if 'chisq_dof' in event:
+                # fail through: copy the value from the trigger
+                row.chisq_dof = event['chisq_dof'] / 2 + 1
+            else:
+                row.chisq_dof = 0
 
             if hasattr(self.opt, 'bank_veto_bank_file') and self.opt.bank_veto_bank_file:
                 # EXPLAINME - is this a hard-coding? Certainly looks like one

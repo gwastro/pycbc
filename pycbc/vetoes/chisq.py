@@ -291,13 +291,10 @@ class SingleDetPowerChisq(object):
             self.column_name = "chisq"
             self.table_dof_name = "chisq_dof"
             self.num_bins = num_bins
-
-            # internal values to store parameters between computations
-            self._num_bins = None
-            self._bins = None
-            self._template = None
         else:
             self.do = False
+            
+        self._bin_cache = {}
 
     @staticmethod
     def parse_option(row, arg):
@@ -305,9 +302,26 @@ class SingleDetPowerChisq(object):
         safe_dict.update(row.__dict__)
         safe_dict.update(math.__dict__)
         return eval(arg, {"__builtins__":None}, safe_dict)
+        
+    def cached_chisq_bins(self, template, psd):
+        key = (id(template.params), id(psd))    
+        if key not in self._bin_cache:        
+            num_bins = int(self.parse_option(template, self.num_bins))
 
-    def values(self, corr, snr, snrv, snr_norm, psd,
-                    indices, template, low_frequency_cutoff):
+            if hasattr(psd, 'sigmasq_vec'):
+                logging.info("...Calculating fast power chisq bins")
+                kmin = int(template.f_lower / psd.delta_f)
+                kmax = template.end_idx
+                bins = power_chisq_bins_from_sigmasq_series(
+                                    psd.sigmasq_vec, num_bins, kmin, kmax)
+            else:
+                logging.info("...Calculating power chisq bins")
+                bins = power_chisq_bins(template, num_bins, psd, template.f_lower)
+            self._bin_cache[key] = bins
+                
+        return self._bin_cache[key]
+
+    def values(self, corr, snr, snrv, snr_norm, psd, indices, template):
         """FIXME: Document this function?
 
         Returns
@@ -319,27 +333,7 @@ class SingleDetPowerChisq(object):
             Numbers of frequency bins corresponding to the chisq values
         """
         if self.do:
-            # Compute the chisq bins if we haven't already
-            # Only recompute the bins if the template changes
-            if self._template is None or self._template != template:
-                # determine number of bins by parsing the option
-                self._num_bins = int(self.parse_option(template, self.num_bins))
-
-                if hasattr(psd, 'sigmasq_vec'):
-                    logging.info("...Calculating fast power chisq bins")
-                    kmin = int(low_frequency_cutoff / corr.delta_f)
-                    kmax = template.end_idx
-                    bins = power_chisq_bins_from_sigmasq_series(
-                        psd.sigmasq_vec, self._num_bins, kmin, kmax)
-                else:
-                    logging.info("...Calculating power chisq bins")
-                    bins = power_chisq_bins(template, self._num_bins, psd,
-                                                          low_frequency_cutoff)
-                self._template = template
-                self._bins = bins
-
-            logging.info("...Doing power chisq")
-            return (fastest_power_chisq_at_points(corr, snr, snrv, snr_norm,
-               self._bins, indices), self._num_bins * numpy.ones_like(indices))
-                
-            logging.info("...Doing power chisq")     
+            logging.info("...Doing power chisq")  
+            bins = self.cached_chisq_bins(template, psd)
+            return (fastest_power_chisq_at_points(corr, snr, snrv, snr_norm, bins, indices),
+                  ((len(bins)-1) * 2 - 2) * numpy.ones_like(indices))

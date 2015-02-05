@@ -188,7 +188,7 @@ with ctx:
                                                 norm, idx+stilde.analyze.start)
 
             out_vals['chisq'], out_vals['chisq_dof'] = power_chisq.values(corr,
-               snr, snrv, norm, psd, idx+stilde.analyze.start, template, flow)
+                       snr, snrv, norm, psd, idx+stilde.analyze.start, template)
 
             snrv *= norm
 
