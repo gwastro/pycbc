@@ -392,7 +392,7 @@ def from_cli(opt):
     set_threads_backend(opt.fftw_threads_backend)
 
     # Import system wisdom.  Should really add error checking and logging to that...
-    if opt.import_system_wisdom:
+    if opt.fftw_import_system_wisdom:
         import_sys_wisdom()
 
     # Read specified user-provided wisdom files

@@ -336,6 +336,6 @@ def from_cli(opt):
     for backend in _default_backends_list:
         if backend in backends_list:
             try:
-                backend.from_cli(opt)
+                backends_dict[backend].from_cli(opt)
             except AttributeError:
                 pass
