@@ -133,8 +133,8 @@ with ctx:
                                    upsample_method=opt.upsample_method)
 
     bank_chisq = vetoes.SingleDetBankVeto(opt.bank_veto_bank_file,
-                                          opt.approximant, psd, segments, flow,
-                                          phase_order=opt.order)
+                                          opt.approximant, flen, delta_f, flow,
+                                          complex64, phase_order=opt.order)
 
     power_chisq = vetoes.SingleDetPowerChisq(opt.chisq_bins)
     autochisq = vetoes.SingleDetAutoChisq(opt.autochi_stride, opt.snr_threshold,
@@ -189,7 +189,7 @@ with ctx:
             if not len(idx):
                 continue
 
-            out_vals['bank_chisq'] = bank_chisq.values(template, s_num, snr,
+            out_vals['bank_chisq'] = bank_chisq.values(template, psd, stilde, snrv,
                                                 norm, idx+stilde.analyze.start)
 
             out_vals['chisq'], out_vals['chisq_dof'] = power_chisq.values(corr,
