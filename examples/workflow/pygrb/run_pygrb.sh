@@ -2,6 +2,7 @@
 export LOGPATH=/usr1/${USER}/log
 mkdir -p ${LOGPATH}
 export RUN_DIR=${PWD}
+export LAL_SRC=/usr1/${USER}/git/lalsuite
 RA=0
 DEC=0
 GRB_NAME=
@@ -17,5 +18,4 @@ workflow:trigger-name:${GRB_NAME} \
 workflow:trigger-time:${GRB_TIME} \
 workflow:start-time:$(( GRB_TIME - 4096 )) \
 workflow:end-time:$(( GRB_TIME + 4096 )) \
-workflow-tmpltbank:tmpltbank-pregenerated-bank:${BANK_FILE} \
-inspiral:trigger-time:${GRB_TIME}
+workflow-tmpltbank:tmpltbank-pregenerated-bank:${BANK_FILE}
