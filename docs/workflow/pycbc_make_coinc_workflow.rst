@@ -283,9 +283,9 @@ Workflow visualization
 Pegasus Dashboard
 -----------------------------
 
-The `pegeasus dashboard <http://pegasus.isi.edu/wms/docs/latest/ch02s11.php>`_ is a visual and interactive way to get information about the progress, status, etc of your workflows. 
+The `pegasus dashboard <http://pegasus.isi.edu/wms/docs/latest/ch02s11.php>`_ is a visual and interactive way to get information about the progress, status, etc of your workflows.
 
-The software can be obtained from a seprate pegasus package here <https://github.com/pegasus-isi/pegasus-service>. 
+The software can be obtained from a separate pegasus package here <https://github.com/pegasus-isi/pegasus-service>.
 
 Pegasus Dashboard is currently installed on sugar. To view your Pegasus Dashboard, in a browser go to::
 
@@ -299,11 +299,18 @@ You can view the details of a job by clicking the link in the Job Name column. T
 
 On the Invocation Details page there is information about the command line arguments, executable path, CPU time, wall clock time, etc.
 
+In certain cases, the pegasus monitor daemon may crash and this could result in
+invalid or nonsensical information on the dashboard (e.g. a cumulative
+computing time of None). This problem can be solved by running
+``pegasus-plots`` on the workflow directory: the command should tell you what
+to do. Typically this will be running ``pegasus-monitord`` in replay mode (see
+its man page).
+
 -----------------------------
 Pegasus Analyzer
 -----------------------------
 
-The `pegeasus analyzer <http://pegasus.isi.edu/wms/docs/trunk/cli-pegasus-analyzer.php>`_ is a command-line tool for reporting sucessful and failed jobs.
+The `pegasus analyzer <http://pegasus.isi.edu/wms/docs/trunk/cli-pegasus-analyzer.php>`_ is a command-line tool for reporting sucessful and failed jobs.
 
 To run ``pegasus_analyzer`` on your workflow, type::
 
