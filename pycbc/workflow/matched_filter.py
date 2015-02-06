@@ -278,10 +278,8 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
 
     cp = workflow.cp
     ifos = science_segs.keys()
-    cp.set('inspiral', 'block-duration',
-           str(abs(science_segs[ifos[0]][0]) - 2 * int(cp.get('inspiral',
-                                                              'pad-data'))))
     match_fltr_exe = os.path.basename(cp.get('executables','inspiral'))
+
     # Select the appropriate class
     exe_class = select_matchedfilter_class(match_fltr_exe)
 
@@ -294,6 +292,11 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
                                            injection_file=injection_file,
                                            tags=tags)
     if match_fltr_exe == 'lalapps_coh_PTF_inspiral':
+        #TODO: Have antenna.py and bank_veto_bank.xml files automatically
+        #      copied over into run directory.
+        cp.set('inspiral', 'block-duration',
+               str(abs(science_segs[ifos[0]][0]) - \
+                       2 * int(cp.get('inspiral', 'pad-data'))))
         multi_ifo_coherent_job_setup(workflow, inspiral_outs, job_instance,
                                      science_segs, datafind_outs, output_dir,
                                      parents=tmplt_banks)

@@ -313,7 +313,7 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
                                  science_segs, datafind_outs, output_dir,
                                  parents=None):
     """
-    Documentation goes here.
+    Method for setting up coherent inspiral jobs.
     """
     cp = workflow.cp
     ifos = science_segs.keys()
