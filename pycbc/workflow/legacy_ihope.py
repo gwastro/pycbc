@@ -247,11 +247,11 @@ class LegacySplitBankExecutable(Executable):
 class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
     """
     The class responsible for setting up jobs for legacy
-    lalapps_coh_PTF_inspiral Executable.
+    lalapps_coh_PTF_inspiral executable.
     """
     current_retention_level = Executable.CRITICAL
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
-                       out_dir=None, tags=[]):
+                 out_dir=None, tags=[]):
         super(LegacyCohPTFInspiralExecutable, self).__init__(cp, name, universe,
                 ifo, out_dir=out_dir, tags=tags)
         self.cp = cp
@@ -259,11 +259,15 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         self.injection_file = injection_file
         self.data_seg = segments.segment(int(cp.get('workflow', 'start-time')),
                                          int(cp.get('workflow', 'end-time')))
+        self.cp.set('inspiral', 'trigger-time',
+                    self.cp.get('workflow', 'trigger-time'))
         self.num_threads = 1
  
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
         node = Node(self)
 
+        #FIXME: If we are forcing bank_veto_bank through this way, this check
+        #       will no longer work.
         if not dfParents:
             raise ValueError("%s must be supplied with frame files"
                               %(self.name))
@@ -280,15 +284,20 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
 
         node.add_profile('condor', 'request_cpus', self.num_threads)
 
-        # set the input and output files
+        # Set the input and output files
         node.new_output_file_opt(valid_seg, '.xml.gz', '--output-file',
                                  tags=tags, store_file=self.retain_files)
         node.add_input_opt('--non-spin-bank', parent[0], )
-       
+
+        # Retreive bank_veto_bank.xml from list
+        if self.cp.has_option('inspiral', 'do-bank-veto'):
+            bankVetoBank = dfParents.pop()
+            node.add_input_opt('--bank-veto-templates', bankVetoBank)
+
         for frameCache in dfParents:
             node.add_input_opt('--%s-frame-cache' % frameCache.ifo.lower(),
                                frameCache)
-            node.add_opt('--%s-data' % frameCache.ifo.lower())
+            node.add_arg('--%s-data' % frameCache.ifo.lower())
             node.add_opt('--%s-channel-name' % frameCache.ifo.lower(),
                          self.cp.get('workflow',
                                      '%s-channel-name' %frameCache.ifo.lower()))
