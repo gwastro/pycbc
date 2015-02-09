@@ -209,7 +209,7 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None):
     else:
         return TimeSeries(chisq, delta_t=snr.delta_t, epoch=snr.start_time, copy=False)
     
-def fastest_power_chisq_at_points(corr, snr, snr_norm, bins, indices):
+def fastest_power_chisq_at_points(corr, snr, snrv, snr_norm, bins, indices):
     """Calculate the chisq values for only select points.
     
     This function looks at the number of point that need to evaluated and
@@ -236,21 +236,10 @@ def fastest_power_chisq_at_points(corr, snr, snr_norm, bins, indices):
     chisq: Array
         An array containing only the chisq at the selected points.
     """ 
-    # Time per fft (ms)
-    FFT_T = 50
-    # Time per single point calculation
-    P_T = 3
-    # This is empirically chosen from tests on SUGAR. It may not be correct
-    # into the future. Replace with better estimate or auto-tuning.
-    POINT_THRESHOLD = (len(bins)-1)*FFT_T / P_T
-    
-    # This is a temporary hack, standard gpu support is intended and should be forthcoming
-    # Note, the code for gpu support is in place but atm very slow, optimization required
-    # before turning it on by default
     import pycbc.scheme
-    if (len(indices) < POINT_THRESHOLD) and isinstance(pycbc.scheme.mgr.state, pycbc.scheme.CPUScheme):
+    if isinstance(pycbc.scheme.mgr.state, pycbc.scheme.CPUScheme):
         # We don't have that many points so do the direct time shift.
-        return power_chisq_at_points_from_precomputed(corr, snr.take(indices), 
+        return power_chisq_at_points_from_precomputed(corr, snrv, 
                                                       snr_norm, bins, indices)
     else:
         # We have a lot of points so it is faster to use the fourier transform
@@ -312,7 +301,7 @@ class SingleDetPowerChisq(object):
         else:
             self.do = False           
 
-    def values(self, corr, snr, snr_norm, psd, indices, template, bank, 
+    def values(self, corr, snr, snr_norm, psd, snrv, indices, template, bank, 
                low_frequency_cutoff):
         if self.do:
             # Compute the chisq bins if we haven't already
@@ -333,4 +322,4 @@ class SingleDetPowerChisq(object):
                 self._bins = bins
                 
             logging.info("...Doing power chisq")     
-            return fastest_power_chisq_at_points(corr, snr, snr_norm, self._bins, indices)
+            return fastest_power_chisq_at_points(corr, snr, snrv, snr_norm, self._bins, indices)
