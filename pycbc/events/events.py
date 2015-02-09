@@ -123,19 +123,17 @@ def findchirp_cluster_over_window(times, values, window_length):
                 continue
     return indices[0:j+1]
 
-def newsnr(snr, reduced_x2):
+def newsnr(snr, reduced_x2, q=6):
     """Calculate the re-weighted SNR statistic known as NewSNR from given
     SNR and reduced chi-squared values. See http://arxiv.org/abs/1208.3491
     for a definition of NewSNR.
     """
-    snr = numpy.array(snr, ndmin=1)
+    newsnr = numpy.array(snr, ndmin=1)
     reduced_x2 = numpy.array(reduced_x2, ndmin=1)
 
-    factor = numpy.zeros(len(snr), dtype=numpy.float32) + 1.0
-    newsnr = snr * 1
-    
-    ind = numpy.where(reduced_x2 > 1)[0]
-    newsnr[ind] *= (0.5 * (1. + reduced_x2[ind] ** 3)) ** (-1./6.)
+    # newsnr is only different from snr if reduced chisq > 1
+    ind = numpy.where(reduced_x2 > 1.)[0]
+    newsnr[ind] *= ( 0.5 * (1. + reduced_x2[ind] ** (q/2.)) ) ** (-1./q)
 
     if len(newsnr) > 1:
         return newsnr
