@@ -366,10 +366,17 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
     job_tag = curr_exe_job.name.upper()
     data_seg, job_valid_seg = curr_exe_job.get_valid_times()
     tag=[]
-    node = curr_exe_job.create_node(data_seg, job_valid_seg, parent=parents,
-                                    dfParents=datafind_outs, tags=tag)
-    workflow.add_node(node)
-    curr_out_files = node.output_files
+    curr_out_files = FileList([])
+    bank_veto = datafind_outs.pop()
+
+    for split_bank in parents:
+        node = curr_exe_job.create_node(data_seg, job_valid_seg,
+                                        parent=split_bank,
+                                        dfParents=datafind_outs,
+                                        bankVetoBank=bank_veto,  tags=tag)
+        workflow.add_node(node)
+        curr_out_files.extend(node.output_files)
+
     # FIXME: Here we remove PSD files if they are coming
     #        through. This should be done in a better way. On
     #        to-do list.
