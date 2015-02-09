@@ -287,20 +287,27 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
     inspiral_outs = FileList([])
 
     logging.info("Setting up matched-filtering for %s." %(' '.join(ifos),))
-    job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
-                                           out_dir=output_dir,
-                                           injection_file=injection_file,
-                                           tags=tags)
+
     if match_fltr_exe == 'lalapps_coh_PTF_inspiral':
         #TODO: Have antenna.py and bank_veto_bank.xml files automatically
         #      copied over into run directory.
+        cp.set('inspiral', 'right-ascension', cp.get('workflow', 'ra'))
+        cp.set('inspiral', 'declination', cp.get('workflow', 'dec'))
+        cp.set('inspiral', 'sky-error', cp.get('workflow', 'sky-error'))
+        cp.set('inspiral', 'trigger-time', cp.get('workflow', 'trigger-time'))
         cp.set('inspiral', 'block-duration',
                str(abs(science_segs[ifos[0]][0]) - \
                        2 * int(cp.get('inspiral', 'pad-data'))))
+        job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
+                                 out_dir=output_dir,
+                                 injection_file=injection_file, tags=tags)
         multi_ifo_coherent_job_setup(workflow, inspiral_outs, job_instance,
                                      science_segs, datafind_outs, output_dir,
                                      parents=tmplt_banks)
     else:
+        job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
+                                 out_dir=output_dir,
+                                 injection_file=injection_file, tags=tags)
         multi_ifo_job_setup(workflow, inspiral_outs, job_instance,
 	                    science_segs, datafind_outs, output_dir,
                             parents=tmplt_banks)

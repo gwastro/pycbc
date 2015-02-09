@@ -258,23 +258,28 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         self.injection_file = injection_file
         self.data_seg = segments.segment(int(cp.get('workflow', 'start-time')),
                                          int(cp.get('workflow', 'end-time')))
-        self.cp.set('inspiral', 'trigger-time',
-                    self.cp.get('workflow', 'trigger-time'))
         self.num_threads = 1
  
-    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
+    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None,
+                    bankVetoBank=None, tags=[]):
         node = Node(self)
 
-        #FIXME: If we are forcing bank_veto_bank through this way, this check
-        #       will no longer work.
         if not dfParents:
             raise ValueError("%s must be supplied with frame files"
-                              %(self.name))
+                              % self.name)
 
         pad_data = int(self.get_opt('pad-data'))
         if pad_data is None:
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.name)
+        
+        # Feed bank_veto_bank.xml
+        if self.cp.has_option('inspiral', 'do-bank-veto'):
+            if not bankVetoBank:
+                raise ValueError("%s must be given a bank veto file if the"
+                                 "argument 'do-bank-veto' is given"
+                                 % self.name)
+            node.add_input_opt('--bank-veto-templates', bankVetoBank)
         
         node.add_opt('--gps-start-time', data_seg[0] + pad_data)
         node.add_opt('--gps-end-time', data_seg[1] - pad_data)
@@ -286,12 +291,7 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         # Set the input and output files
         node.new_output_file_opt(valid_seg, '.xml.gz', '--output-file',
                                  tags=tags, store_file=self.retain_files)
-        node.add_input_opt('--non-spin-bank', parent[0], )
-
-        # Retreive bank_veto_bank.xml from list
-        if self.cp.has_option('inspiral', 'do-bank-veto'):
-            bankVetoBank = dfParents.pop()
-            node.add_input_opt('--bank-veto-templates', bankVetoBank)
+        node.add_input_opt('--non-spin-bank', parent, )
 
         for frameCache in dfParents:
             node.add_input_opt('--%s-frame-cache' % frameCache.ifo.lower(),

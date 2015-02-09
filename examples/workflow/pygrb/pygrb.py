@@ -43,9 +43,9 @@ def get_bank_veto(cp, run_dir):
         sci_seg = segment(int(cp.get("workflow", "start-time")),
                           int(cp.get("workflow", "end-time")))
         bank_veto_url = "file://localhost%s/bank_veto_bank.xml" % run_dir
-        logging.info(bank_veto_url)
         bank_veto = _workflow.File("H1L1", "bank_veto_bank",
                                    sci_seg, file_url=bank_veto_url)
+        bank_veto.PFN(bank_veto.cache_entry.path, site='local')
         return bank_veto
 
 logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
