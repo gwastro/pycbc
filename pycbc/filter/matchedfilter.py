@@ -68,6 +68,9 @@ class MatchedFilterControl(object):
         upsample_method : {pruned_fft, str}
             The method to upsample or interpolate the reduced rate filter.
         """
+        if len(segments) == 0:
+            return
+
         self.tlen = (len(segments[0]) - 1) * 2
         self.delta_f = segments[0].delta_f
         self.dtype = segments[0].dtype
