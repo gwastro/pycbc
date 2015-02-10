@@ -33,7 +33,7 @@ import math, os
 from glue import segments
 import Pegasus.DAX3 as dax
 from pycbc.workflow.core import Executable, File, FileList, Node
-from pycbc.workflow.legacy_ihope import LegacyTmpltbankExecutable, LegacyInspiralExecutable, LegacyCohPTFInspiralExecutable
+from pycbc.workflow.legacy_ihope import LegacyTmpltbankExecutable, LegacyInspiralExecutable, LegacyCohPTFInspiralExecutable, LegacyCohPTFTrigCombiner
 
 def select_tmpltbank_class(curr_exe):
     """
@@ -182,7 +182,8 @@ def select_generic_executable(workflow, exe_tag):
         "gstlal_inspiral_plot_sensitivity"            : GstlalPlotSensitivity,
         "gstlal_inspiral_plot_background" : GstlalPlotBackground,
         "gstlal_inspiral_plotsummary"     : GstlalPlotSummary,
-        "gstlal_inspiral_summary_page"    : GstlalSummaryPage
+        "gstlal_inspiral_summary_page"    : GstlalSummaryPage,
+        "coh_PTF_trig_combiner"           : LegacyCohPTFTrigCombiner
     }
     try:
         return exe_to_class_map[exe_name]
@@ -365,16 +366,19 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
     ifos = science_segs.keys()
     job_tag = curr_exe_job.name.upper()
     data_seg, job_valid_seg = curr_exe_job.get_valid_times()
-    tag=[]
+    tag = []
     curr_out_files = FileList([])
     bank_veto = datafind_outs.pop()
+    split_bank_counter = 0
 
     for split_bank in parents:
+        tag = ['%s' % str(split_bank_counter)]
         node = curr_exe_job.create_node(data_seg, job_valid_seg,
                                         parent=split_bank,
                                         dfParents=datafind_outs,
-                                        bankVetoBank=bank_veto,  tags=tag)
+                                        bankVetoBank=bank_veto, tags=tag)
         workflow.add_node(node)
+        split_bank_counter += 1
         curr_out_files.extend(node.output_files)
 
     # FIXME: Here we remove PSD files if they are coming
