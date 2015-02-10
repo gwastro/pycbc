@@ -132,7 +132,6 @@ def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
     num_bins = len(bins) - 1
 
     chisq = shift_sum(corr, indices, bins)
-
     return (chisq * num_bins - snr.squared_norm()) * (snr_norm ** 2.0)
 
 _q_l = None
@@ -307,7 +306,7 @@ class SingleDetPowerChisq(object):
         safe_dict.update(math.__dict__)
         return eval(arg, {"__builtins__":None}, safe_dict)
 
-    def values(self, corr, snr, snr_norm, psd, snrv, indices, template, bank,
+    def values(self, corr, snr, snrv, snr_norm, psd, indices, template, bank,
                low_frequency_cutoff):
         """FIXME: Document this function more fully
 
