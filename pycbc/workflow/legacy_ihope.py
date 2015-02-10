@@ -268,7 +268,7 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
             raise ValueError("%s must be supplied with frame files"
                               % self.name)
 
-        pad_data = int(self.get_opt('pad-data'))
+        pad_data = self.get_opt('pad-data')
         if pad_data is None:
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.name)
@@ -281,8 +281,8 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
                                  % self.name)
             node.add_input_opt('--bank-veto-templates', bankVetoBank)
         
-        node.add_opt('--gps-start-time', data_seg[0] + pad_data)
-        node.add_opt('--gps-end-time', data_seg[1] - pad_data)
+        node.add_opt('--gps-start-time', data_seg[0] + int(pad_data))
+        node.add_opt('--gps-end-time', data_seg[1] - int(pad_data))
         node.add_opt('--trig-start-time', valid_seg[0])
         node.add_opt('--trig-end-time', valid_seg[1])
 
@@ -315,3 +315,48 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         start = pad_data + start_pad
         end = data_length - pad_data - end_pad
         return data_length, segments.segment(start, end)
+
+
+class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
+    """
+    The class responsible for setting up jobs for legacy
+    lalapps_coh_PTF_inspiral executable.
+    """
+    current_retention_level = Executable.CRITICAL
+    def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
+                 out_dir=None, tags=[]):
+        super(LegacyCohPTFTrigCombiner, self).__init__(cp, name, universe,
+              ifo=ifo, out_dir=out_dir, tags=tags)
+        self.cp = cp
+        self.ifos = ifo
+        self.output_dir = out_dir
+        #self.set_memory(1300)
+ 
+    def create_node(self, parent=None, segment_dir=None, tags=[]):
+        node = Node(self)
+
+        if not parent:
+            raise ValueError("%s must be supplied with trigger files"
+                              % self.name)
+
+        # Data options
+        pad_data = self.cp.get('inspiral', 'pad-data')
+        if pad_data is None:
+            raise ValueError("The option pad-data is a required option of "
+                             "%s. Please check the ini file." % self.name)
+        
+        node.add_opt('grb-name', self.cp.get('workflow', 'trigger-name'))
+        
+        node.add_opt('--pad-data', pad_data)
+        node.add_opt('--segment-length', self.cp.get('inspiral',
+                                                     'segment-duration'))
+        node.add_opt('--ifo-tag', self.ifos)
+        
+        # Set input / output options
+        node.add_input_opt('--cache', parent, )
+        node.add_opt('--segment-dir', segment_dir)
+        node.add_opt('--output-dir', self.output_dir)
+
+        node.add_profile('condor', 'request_cpus', self.num_threads)
+
+        return node

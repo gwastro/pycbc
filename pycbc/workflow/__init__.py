@@ -41,6 +41,7 @@ from pycbc.workflow.coincidence import *
 from pycbc.workflow.injection import *
 from pycbc.workflow.timeslides import *
 from pycbc.workflow.postprocessing_prep import *
+from pycbc.workflow.postprocessing_cohptf import *
 from pycbc.workflow.postprocessing import *
 from pycbc.workflow.analysislogging import *
 from pycbc.workflow.summaryplots import *
