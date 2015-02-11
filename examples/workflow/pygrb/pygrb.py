@@ -45,8 +45,29 @@ def get_bank_veto(cp, run_dir):
         bank_veto_url = "file://localhost%s/bank_veto_bank.xml" % run_dir
         bank_veto = _workflow.File("H1L1", "bank_veto_bank",
                                    sci_seg, file_url=bank_veto_url)
-        bank_veto.PFN(bank_veto.cache_entry.path, site='local')
+        bank_veto.PFN(bank_veto.cache_entry.path, site="local")
         return bank_veto
+
+
+def make_cache(input_files, ifos, name, seg, cacheDir, tags=[]):
+    """
+    Place input_files into a cache file.
+    """
+    cache_file = _workflow.File(ifos, name, seg, extension="lcf",
+                                directory=cacheDir, tags=tags)
+    cache_file.PFN(cache_file.cache_entry.path, site="local")
+
+    # Dump output to file
+    fP = open(cache_file.storage_path, "w")
+    for entry in input_files:
+        start = str(int(entry.segment[0]))
+        duration = str(int(abs(entry.segment)))
+        print >> fP, "%s %s %s %s %s" \
+            %(ifos, entry.description, start, duration, entry.PFN)
+    fP.close()
+    
+    return cache_file
+
 
 logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
                     level=logging.INFO)
@@ -119,12 +140,13 @@ all_files.extend(bank_files)
 all_files.extend(splitbank_files)
 
 # Injections
-"""
-injDir = os.path.join(currDir, "inj_files")
-inj_files, inj_tags = ahope.setup_injection_workflow(wflow,
-                                                     output_dir=injDir)
-all_files.extend(inj_files)
-"""
+if wflow.cp.has_section("inspiral-inj"):
+    injDir = os.path.join(currDir, "inj_files")
+    inj_files, inj_tags = _workflow.setup_injection_workflow(wflow,
+                                                             output_dir=injDir)
+    all_files.extend(inj_files)
+else:
+    inj_files = None
 
 # Matched-filtering
 # TODO: Write coherent matched filtering code
@@ -133,6 +155,34 @@ inspiral_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
                                                       datafind_veto_files,
                                                       splitbank_files, inspDir)
 all_files.extend(inspiral_files)
+
+# Post processing
+ppDir = os.path.join(currDir, "post_processing")
+ifos = ''.join(sciSegs.keys())
+post_proc_method = wflow.cp.get_opt_tags("workflow-postproc",
+                                         "postproc-method", tags)
+if post_proc_method == "COH_PTF_WORKFLOW":
+    pp_config_file_name = wflow.cp.get("workflow-postproc", "config-file")
+    pp_config_file_url = "file://localhost%s/%s" % (baseDir,
+                                                    pp_config_file_name)
+    pp_config_file = _workflow.File(ifos, pp_config_file_name,
+                                    wflow.analysis_time,
+                                    file_url=pp_config_file_url)
+    pp_config_file.PFN(pp_config_file.cache_entry.path, site="local")
+    inspiral_files.extend(_workflow.FileList([pp_config_file]))
+    pp_files = _workflow.setup_coh_PTF_post_processing(wflow, inspiral_files,
+                                                       inj_files, ppDir,
+                                                       segDir, run_dir=runDir,
+                                                       ifos=ifos)
+
+elif post_proc_method == "COH_PTF_WORKFLOW_NEW":
+    inspiral_cache = make_cache(inspiral_files, ifos, "inspiral",
+                                sciSegs[ifo][0], inspDir)
+    pp_files = _workflow.setup_coh_PTF_post_processing(wflow, inspiral_cache,
+                                                       inj_files, ppDir,
+                                                       segDir, ifos=ifos)
+
+all_files.extend(pp_files)
 
 # Compile workflow and write DAX
 wflow.save()
