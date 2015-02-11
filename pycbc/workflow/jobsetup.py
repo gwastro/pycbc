@@ -36,68 +36,63 @@ from pycbc.workflow.legacy_ihope import LegacyTmpltbankExecutable, LegacyInspira
 
 def select_tmpltbank_class(curr_exe):
     """
-    This function returns an instance of the class that is appropriate for
-    creating a template bank within ihope.
-    
+    This function returns a class that is appropriate for setting up
+    template bank jobs within workflow.
+
     Parameters
     ----------
     curr_exe : string
-        The name of the Executable that is being used for generating
-        template banks.
+        The name of the executable to be used for generating template banks.
 
     Returns
     --------
-    exe_class : class
-        A class that holds the utility functions appropriate for the given
-        Executable. This class **must** have a create_job method
-        and the job returned by this **must** contain
-        * job.get_valid_times(ifo, )
+    exe_class : Sub-class of pycbc.workflow.core.Executable that holds utility
+        functions appropriate for the given executable.  Instances of the class
+        ('jobs') **must** have methods
         * job.create_node()
+        and
+        * job.get_valid_times(ifo, )
     """
-
     exe_to_class_map = {
-        'lalapps_tmpltbank_ahope': LegacyTmpltbankExecutable,
-        'pycbc_geom_nonspinbank': PyCBCTmpltbankExecutable,
+        'lalapps_tmpltbank_ahope' : LegacyTmpltbankExecutable,
+        'pycbc_geom_nonspinbank'  : PyCBCTmpltbankExecutable,
         'pycbc_aligned_stoch_bank': PyCBCTmpltbankExecutable
     }
-    if curr_exe in exe_to_class_map:
+    try:
         return exe_to_class_map[curr_exe]
-    else:
+    except KeyError:
         raise NotImplementedError(
-            "No class exists for Executable %s" % curr_exe)
+            "No job class exists for executable %s, exiting" % curr_exe)
 
 def select_matchedfilter_class(curr_exe):
     """
-    This function returns an instance of the class that is appropriate for
-    matched-filtering within workflow.
-    
+    This function returns a class that is appropriate for setting up
+    matched-filtering jobs within workflow.
+
     Parameters
     ----------
     curr_exe : string
-        The name of the Executable that is being used.
-    curr_section : string
-        The name of the section storing options for this executble
+        The name of the matched filter executable to be used.
 
     Returns
     --------
-    Instanced class : exe_class
-        An instance of the class that holds the utility functions appropriate
-        for the given Executable. This class **must** contain
-        * exe_class.create_job()
-        and the job returned by this **must** contain
-        * job.get_valid_times(ifo, )
+    exe_class : Sub-class of pycbc.workflow.core.Executable that holds utility
+        functions appropriate for the given executable.  Instances of the class
+        ('jobs') **must** have methods
         * job.create_node()
+        and
+        * job.get_valid_times(ifo, )
     """
-    # This is basically a list of if statements
-    if curr_exe == 'lalapps_inspiral_ahope':
-        exe_class = LegacyInspiralExecutable
-    elif curr_exe == 'pycbc_inspiral':
-        exe_class = PyCBCInspiralExecutable
-    else:
-        # Should we try some sort of default class??
-        err_string = "No class exists for Executable %s" %(curr_exe,)
-        raise NotImplementedError(err_string)        
-    return exe_class
+    exe_to_class_map = {
+        'lalapps_inspiral_ahope'  : LegacyInspiralExecutable,
+        'pycbc_inspiral'          : PyCBCInspiralExecutable
+    }
+    try:
+        return exe_to_class_map[curr_exe]
+    except KeyError:
+        # also conceivable to introduce a default class??
+        raise NotImplementedError(
+            "No job class exists for executable %s, exiting" % curr_exe)
 
 # This is also defined in splittable.py, with the same behavior
 # and slightly different wording in documentation.  So commenting out here.
@@ -137,13 +132,11 @@ def select_matchedfilter_class(curr_exe):
 
 def select_generic_executable(workflow, exe_tag):
     """
-    This function returns an instance of the class that is appropriate for
-    running the curr_exe. Curr_exe should not be a "specialized" job that fits
-    into one of the select_XXX_instance functions above. IE. not a matched
-    filter instance, or a template bank instance. Such specialized instances
-    require extra setup. The only requirements here is that we can run
-    create_job on the Executable instance, and create_node on the resulting
-    Job class.
+    Returns a class that is appropriate for setting up jobs to run executables
+    having specific tags in the workflow config.
+    Executables should not be "specialized" jobs fitting into one of the 
+    select_XXX_class functions above, i.e. not a matched filter or template
+    bank job, which require extra setup.  
 
     Parameters
     ----------
@@ -151,71 +144,50 @@ def select_generic_executable(workflow, exe_tag):
         The Workflow instance.
 
     exe_tag : string
-        The name of the section storing options for this Executable and the
-        option giving the Executable path in the [Executables] section.
-
+        The name of the config section storing options for this executable and
+        the option giving the executable path in the [executables] section.
 
     Returns
     --------
-    exe_class : sub-class of pycbc.workflow.core.Executable
-        The class that holds the utility functions appropriate
-        for the given Executable. This class this **must** contain
-        * exe.create_node()
+    exe_class : Sub-class of pycbc.workflow.core.Executable that holds utility
+        functions appropriate for the given executable.  Instances of the class
+        ('jobs') **must** have a method job.create_node()
     """
     exe_path = workflow.cp.get("executables", exe_tag)
     exe_name = os.path.basename(exe_path)
-    if exe_name == 'ligolw_add':
-        exe_class = LigolwAddExecutable
-    elif exe_name == 'ligolw_sstinca':
-        exe_class = LigolwSSthincaExecutable
-    elif exe_name == 'pycbc_sqlite_simplify':
-        exe_class = PycbcSqliteSimplifyExecutable
-    elif exe_name == 'ligolw_cbc_cluster_coincs':
-        exe_class = SQLInOutExecutable
-    elif exe_name == 'ligolw_dbinjfind':
-        exe_class = SQLInOutExecutable
-    elif exe_name == 'lalapps_inspinj':
-        exe_class = LalappsInspinjExecutable
-    elif exe_name == 'pycbc_timeslides':
-        exe_class = PycbcTimeslidesExecutable
-    elif exe_name == 'pycbc_compute_durations':
-        exe_class = ComputeDurationsExecutable
-    elif exe_name == 'pycbc_calculate_far':
-        exe_class = PycbcCalculateFarExecutable
-    elif exe_name == "pycbc_run_sqlite":
-        exe_class = SQLInOutExecutable
-    # FIXME: We may end up with more than one class for using ligolw_sqlite
-    #        How to deal with this?
-    elif exe_name == "ligolw_sqlite":
-        exe_class = ExtractToXMLExecutable
-    elif exe_name == "pycbc_inspinjfind":
-        exe_class = InspinjfindExecutable
-    elif exe_name == "pycbc_pickle_horizon_distances":
-        exe_class = PycbcPickleHorizonDistsExecutable
-    elif exe_name == "pycbc_combine_likelihood":
-        exe_class = PycbcCombineLikelihoodExecutable
-    elif exe_name == "pycbc_gen_ranking_data":
-        exe_class = PycbcGenerateRankingDataExecutable
-    elif exe_name == "pycbc_calculate_likelihood":
-        exe_class = PycbcCalculateLikelihoodExecutable
-    elif exe_name == "gstlal_inspiral_marginalize_likelihood":
-        exe_class = GstlalMarginalizeLikelihoodExecutable
-    elif exe_name == "pycbc_compute_far_from_snr_chisq_histograms":
-        exe_class = GstlalFarfromsnrchisqhistExecutable
-    elif exe_name == "gstlal_inspiral_plot_sensitivity":
-        exe_class = GstlalPlotSensitivity
-    elif exe_name == "gstlal_inspiral_plot_background":
-        exe_class = GstlalPlotBackground
-    elif exe_name == "gstlal_inspiral_plotsummary":
-        exe_class = GstlalPlotSummary
-    elif exe_name == "gstlal_inspiral_summary_page":
-        exe_class = GstlalSummaryPage
-    else:
+    exe_to_class_map = {
+        'ligolw_add'               : LigolwAddExecutable,
+        'ligolw_sstinca'           : LigolwSSthincaExecutable,
+        'pycbc_sqlite_simplify'    : PycbcSqliteSimplifyExecutable,
+        'ligolw_cbc_cluster_coincs': SQLInOutExecutable,
+        'ligolw_cbc_repop_coinc'   : SQLInOutExecutable,
+        'ligolw_dbinjfind'         : SQLInOutExecutable,
+        'lalapps_inspinj'          : LalappsInspinjExecutable,
+        'pycbc_timeslides'         : PycbcTimeslidesExecutable,
+        'pycbc_compute_durations'  : ComputeDurationsExecutable,
+        'pycbc_calculate_far'      : PycbcCalculateFarExecutable,
+        "pycbc_run_sqlite"         : SQLInOutExecutable,
+        # FIXME: We may end up with more than one class for using ligolw_sqlite
+        #        How to deal with this?
+        "ligolw_sqlite"            : ExtractToXMLExecutable,
+        "pycbc_inspinjfind"        : InspinjfindExecutable,
+        "pycbc_pickle_horizon_distances" : PycbcPickleHorizonDistsExecutable,
+        "pycbc_combine_likelihood" : PycbcCombineLikelihoodExecutable,
+        "pycbc_gen_ranking_data"   : PycbcGenerateRankingDataExecutable,
+        "pycbc_calculate_likelihood"     : PycbcCalculateLikelihoodExecutable,
+        "gstlal_inspiral_marginalize_likelihood"      : GstlalMarginalizeLikelihoodExecutable,
+        "pycbc_compute_far_from_snr_chisq_histograms" : GstlalFarfromsnrchisqhistExecutable,
+        "gstlal_inspiral_plot_sensitivity"            : GstlalPlotSensitivity,
+        "gstlal_inspiral_plot_background" : GstlalPlotBackground,
+        "gstlal_inspiral_plotsummary"     : GstlalPlotSummary,
+        "gstlal_inspiral_summary_page"    : GstlalSummaryPage
+    }
+    try:
+        return exe_to_class_map[exe_name]
+    except KeyError:
         # Should we try some sort of default class??
-        err_string = "No class exists for Executable %s" %(exe_name,)
-        raise NotImplementedError(err_string)
-
-    return exe_class
+        raise NotImplementedError(
+            "No job class exists for executable %s, exiting" % exe_name)
 
 def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs, 
                        datafind_outs, output_dir, parents=None, 
@@ -230,7 +202,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
     * START LOOPING OVER SCIENCE SEGMENTS
     * (2) Identify how many jobs are needed (if any) to cover the given science
       segment and the time shift between jobs. If no jobs continue.
-    * START LOPPING OVER JOBS
+    * START LOOPING OVER JOBS
     * (3) Identify the time that the given job should produce valid output (ie.
       inspiral triggers) over.
     * (4) Identify the data range that the job will need to read in to produce
@@ -699,7 +671,7 @@ class PyCBCInspiralExecutable(Executable):
         node.add_opt("--user-tag", userTag)
 
         return node
-        
+
     def get_valid_times(self):
         # FIXME: IAN. I'm not happy about analysis_length being buried here.
         #        Maybe this should be something read in at the
@@ -744,7 +716,7 @@ class PyCBCTmpltbankExecutable(Executable):
         node.add_opt('--gps-start-time', data_seg[0] + pad_data)
         node.add_opt('--gps-end-time', data_seg[1] - pad_data)
 
-        # set the input and output files      
+        # set the input and output files
         # Add the PSD file if needed
         if self.write_psd:
             node.make_and_add_output(valid_seg, 'txt', '--psd-output',
@@ -758,7 +730,7 @@ class PyCBCTmpltbankExecutable(Executable):
         """
         A simplified version of create_node that creates a node that does not
         need to read in data.
- 
+
         Parameters
         -----------
         valid_seg : glue.segment
@@ -785,16 +757,16 @@ class PyCBCTmpltbankExecutable(Executable):
     def get_valid_times(self):
         pad_data = int(self.get_opt( 'pad-data'))
         analysis_length = int(self.cp.get('workflow-tmpltbank', 'analysis-length'))
-        
-        #FIXME this should not be hard coded 
+
+        #FIXME this should not be hard coded
         data_length = analysis_length + pad_data * 2
         start = pad_data
         end = data_length - pad_data
         return data_length, segments.segment(start, end)
 
 class LigoLWCombineSegsExecutable(Executable):
-    """ 
-    This class is used to create nodes for the ligolw_combine_segments 
+    """
+    This class is used to create nodes for the ligolw_combine_segments
     Executable
     """
     # Always want to keep the segments
@@ -803,9 +775,9 @@ class LigoLWCombineSegsExecutable(Executable):
         node = Node(self)
         node.add_opt('--segment-name', segment_name)
         for fil in veto_files:
-            node.add_input_arg(fil)   
+            node.add_input_arg(fil)
         node.new_output_file_opt(valid_seg, '.xml', '--output',
-                                 store_file=self.retain_files)      
+                                 store_file=self.retain_files)
         return node
 
 class LigolwAddExecutable(Executable):
@@ -890,7 +862,7 @@ class PycbcSqliteSimplifyExecutable(Executable):
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
         super(PycbcSqliteSimplifyExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
-        
+
     def create_node(self, job_segment, inputFiles, injFile=None,
                     injString=None, workflow=None):
         node = Node(self)
@@ -934,7 +906,7 @@ class PycbcSqliteSimplifyExecutable(Executable):
             err_msg += "supplying a large number of inputs. This allows us "
             err_msg += "to parallelize the operation and speedup the workflow."
             logging.warn(err_msg)
-                
+
         for file in inputFiles:
             node.add_input_arg(file)
         if injFile:
@@ -1229,14 +1201,14 @@ class LalappsInspinjExecutable(Executable):
     current_retention_level = Executable.FINAL_RESULT
     def create_node(self, segment):
         node = Node(self)
-        
+
         if self.get_opt('write-compress') is not None:
             ext = '.xml.gz'
         else:
             ext = '.xml'
-        
+
         node.add_opt('--gps-start-time', segment[0])
-        node.add_opt('--gps-end-time', segment[1])    
+        node.add_opt('--gps-end-time', segment[1])
         node.new_output_file_opt(segment, '.xml', '--output',
                                  store_file=self.retain_files)
         return node

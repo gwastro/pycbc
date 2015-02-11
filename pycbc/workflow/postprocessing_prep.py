@@ -24,12 +24,11 @@
 """
 This module is used to prepare output from the coincidence and/or matched filter
 stages of the workflow for post-processing (post-processing = calculating
-significance of candidates and making any rates statements). For details of this
+significance of candidates, following up interesting events and injections and 
+making sensitivity and/or rates statements). For details of this
 module and its capabilities see here:
-https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
+https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/postprocprep.html
 """
-
-from __future__ import division
 
 import os
 import os.path
@@ -81,9 +80,13 @@ def setup_postprocessing_preparation(workflow, triggerFiles, output_dir,
     # finding and putting everything into one SQL database.
     if postProcPrepMethod == "PIPEDOWN_WORKFLOW":
         # If you want the intermediate output files, call this directly
-        postPostPreppedFiles,_,_,_ = setup_postprocprep_pipedown_workflow(\
+        postPostPreppedFiles,_,_,_ = setup_postprocprep_pipedown_workflow(
                                        workflow, triggerFiles, output_dir,
-                                       tags=tags, **kwargs) 
+                                       tags=tags, **kwargs)
+    elif postProcPrepMethod == "PIPEDOWN_REPOP":
+        postPostPreppedFiles,_,_,_ = setup_postprocprep_pipedown_workflow(
+                                       workflow, triggerFiles, output_dir,
+                                       tags=tags, do_repop=True, **kwargs)
     elif postProcPrepMethod == "GSTLAL_POSTPROCPREP":
         postPostPreppedFiles = setup_postprocprep_gstlal_workflow(workflow,
                                  triggerFiles, output_dir, tags=tags, **kwargs)
@@ -97,7 +100,8 @@ def setup_postprocessing_preparation(workflow, triggerFiles, output_dir,
     return postPostPreppedFiles
 
 def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
-                                      tags=[], injectionFiles=None,
+                                      tags=[], do_repop=False, 
+                                      injectionFiles=None,
                                       vetoFiles=None, injLessTag=None,
                                       injectionTags=[], vetoCats=[]):
     """
@@ -114,6 +118,11 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
         A list of the tagging strings that will be used for all jobs created
         by this call to the workflow. An example might be ['POSTPROC1'] or
         ['DENTYSNEWPOSTPROC']. This will be used in output names.
+    do_repop : Boolean
+        If False, use the 'coinc_inspiral.snr' column from the coincident 
+        trigger files as clustering and ranking statistic; if True, use
+        a repop_coinc job before clustering to calculate a different ranking
+        statistic and store in the coinc_inspiral table for later use.
     injectionFiles : pycbc.workflow.core.FileList (optional, default=None)
         The injection files to be used in this stage. An empty list (or any
         other input that evaluates as false) is valid and will imply that no
@@ -173,6 +182,13 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
     clusterCoincsOuts = FileList([])
     injFindOuts = FileList([])
     sqliteCombine2Outs = FileList([])
+
+    if do_repop:
+        repopCoincExeTag = workflow.cp.get_opt_tags("workflow-postprocprep",
+                                                "postprocprep-repop-exe", tags)
+        repopCoincExe = select_generic_executable(workflow, repopCoincExeTag)
+        repopCoincOuts = FileList([])
+
     for vetoCat in vetoCats:
         # FIXME: Some hacking is still needed while we support pipedown
         # FIXME: There are currently 3 names to say cumulative cat_3
@@ -197,12 +213,12 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
         trigVetoInpFiles = coincFiles.find_output_with_tag(pipedownDQVetoName)
         trigInpFiles = trigVetoInpFiles.find_output_with_tag(injLessTag)
         trigInpFiles.append(dqSegFile[0])
-        sqliteCombine1Job = sqliteCombine1Exe(workflow.cp, 
-                                                    sqliteCombine1ExeTag,
-                                                    ifo=workflow.ifo_string, 
-                                                    out_dir=output_dir,
-                                                    tags=currTags)
-        sqliteCombine1Node = sqliteCombine1Job.create_node(\
+        sqliteCombine1Job = sqliteCombine1Exe(workflow.cp,
+                                              sqliteCombine1ExeTag,
+                                              ifo=workflow.ifo_string,
+                                              out_dir=output_dir,
+                                              tags=currTags)
+        sqliteCombine1Node = sqliteCombine1Job.create_node(
                                           workflow.analysis_time, trigInpFiles, 
                                           workflow=workflow)
         sqliteCombine1Node.add_profile('pegasus', 'label', job_label)
@@ -211,14 +227,30 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
         sqliteCombine1Out = sqliteCombine1Node.output_files[0]
         sqliteCombine1Outs.append(sqliteCombine1Out)
 
+        if do_repop:
+            repopCoincJob = repopCoincExe(workflow.cp,
+                                          repopCoincExeTag,
+                                          ifo=workflow.ifo_string,
+                                          out_dir=output_dir,
+                                          tags=currTags)
+            repopCoincNode = repopCoincJob.create_node(workflow.analysis_time,
+                                                       sqliteCombine1Out)
+            repopCoincNode.add_profile('pegasus', 'label', job_label)
+            workflow.add_node(repopCoincNode)
+            # Node has only one output file
+            repopCoincOut = repopCoincNode.output_files[0]
+            repopCoincOuts.append(repopCoincOut)
+
+        # Input file plumbing allowing for possible repop_coinc job
+        clusterCoincsIn = repopCoincOut if do_repop else sqliteCombine1Out
         # Cluster coincidences
-        clusterCoincsJob = clusterCoincsExe(workflow.cp, 
-                                                   clusterCoincsExeTag,
-                                                   ifo=workflow.ifo_string, 
-                                                   out_dir=output_dir, 
-                                                   tags=currTags)
-        clusterCoincsNode = clusterCoincsJob.create_node(\
-                                     workflow.analysis_time, sqliteCombine1Out)
+        clusterCoincsJob = clusterCoincsExe(workflow.cp,
+                                            clusterCoincsExeTag,
+                                            ifo=workflow.ifo_string, 
+                                            out_dir=output_dir, 
+                                            tags=currTags)
+        clusterCoincsNode = clusterCoincsJob.create_node(
+                                       workflow.analysis_time, clusterCoincsIn)
         clusterCoincsNode.add_profile('pegasus', 'label', job_label)
         workflow.add_node(clusterCoincsNode)
         # Node has only one output file
@@ -236,12 +268,12 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
             trigInpFiles.append(dqSegFile[0])
             injFile = injectionFiles.find_output_with_tag(injTag)
             assert (len(injFile) == 1)
-            sqliteCombine1Job = sqliteCombine1Exe(workflow.cp, 
+            sqliteCombine1Job = sqliteCombine1Exe(workflow.cp,
                                                   sqliteCombine1ExeTag,
-                                                  ifo=workflow.ifo_string, 
+                                                  ifo=workflow.ifo_string,
                                                   out_dir=output_dir,
                                                   tags=currTags)
-            sqliteCombine1Node = sqliteCombine1Job.create_node(\
+            sqliteCombine1Node = sqliteCombine1Job.create_node(
                                           workflow.analysis_time, trigInpFiles,
                                           injFile=injFile[0], injString=injTag,
                                           workflow=workflow)
@@ -251,14 +283,30 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
             sqliteCombine1Out = sqliteCombine1Node.output_files[0]
             sqliteCombine1Outs.append(sqliteCombine1Out)
 
-            # Cluster coincidences
-            clusterCoincsJob = clusterCoincsExe(workflow.cp, 
-                                                clusterCoincsExeTag,
-                                                ifo=workflow.ifo_string, 
-                                                out_dir=output_dir, 
-                                                tags=currTags)
-            clusterCoincsNode = clusterCoincsJob.create_node(\
+            if do_repop:
+                repopCoincJob = repopCoincExe(workflow.cp,
+                                          repopCoincExeTag,
+                                          ifo=workflow.ifo_string,
+                                          out_dir=output_dir,
+                                          tags=currTags)
+                repopCoincNode = repopCoincJob.create_node(
                                      workflow.analysis_time, sqliteCombine1Out)
+                repopCoincNode.add_profile('pegasus', 'label', job_label)
+                workflow.add_node(repopCoincNode)
+                # Node has only one output file
+                repopCoincOut = repopCoincNode.output_files[0]
+                repopCoincOuts.append(repopCoincOut)
+
+            # Input file plumbing allowing for possible repop_coinc job
+            clusterCoincsIn = repopCoincOut if do_repop else sqliteCombine1Out
+            # Cluster coincidences
+            clusterCoincsJob = clusterCoincsExe(workflow.cp,
+                                                clusterCoincsExeTag,
+                                                ifo=workflow.ifo_string,
+                                                out_dir=output_dir,
+                                                tags=currTags)
+            clusterCoincsNode = clusterCoincsJob.create_node(
+                                       workflow.analysis_time, clusterCoincsIn)
             clusterCoincsNode.add_profile('pegasus', 'label', job_label)
             workflow.add_node(clusterCoincsNode)
             # Node has only one output file
@@ -276,7 +324,7 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
                                               ifo=workflow.ifo_string, 
                                               out_dir=output_dir,
                                               tags=currTags)
-        sqliteCombine2Node = sqliteCombine2Job.create_node(\
+        sqliteCombine2Node = sqliteCombine2Job.create_node(
                                   workflow.analysis_time, sqliteCombine2Inputs)
         sqliteCombine2Node.add_profile('pegasus', 'label', job_label)
         workflow.add_node(sqliteCombine2Node)
@@ -284,7 +332,7 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
         sqliteCombine2Outs.append(sqliteCombine2Out)
 
         # Inj finding
-        injFindJob = injFindExe(workflow.cp, injFindExeTag, 
+        injFindJob = injFindExe(workflow.cp, injFindExeTag,
                                           ifo=workflow.ifo_string,
                                           out_dir=output_dir,tags=currTags)
         injFindNode = injFindJob.create_node(workflow.analysis_time,
@@ -420,8 +468,6 @@ def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
                                                       plot_background_exe_name)
     summary_page_exe = select_generic_executable(workflow,
                                                          summary_page_exe_name)
-
-
 
 
     # SETUP
@@ -755,5 +801,5 @@ def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
                                               parents)
 
     # FIXME: Maybe contatenate and return all other outputs if needed elsewhere
-    # FIXME: MOve to pp utils and return the FAR files.
+    # FIXME: Move to pp utils and return the FAR files.
     return final_outputs
