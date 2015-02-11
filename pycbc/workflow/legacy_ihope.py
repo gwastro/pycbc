@@ -316,11 +316,47 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         end = data_length - pad_data - end_pad
         return data_length, segments.segment(start, end)
 
+class LegacyCohPTFPostProc(LegacyAnalysisExecutable):
+    """
+    The class responsible for setting up jobs for legacy
+    lalapps_coh_PTF_post_processing executable.
+    """
+    current_retention_level = Executable.CRITICAL
+    def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
+                 out_dir=None, tags=[]):
+        super(LegacyCohPTFPostProc, self).__init__(cp, name, universe,
+              ifo=ifo, out_dir=out_dir, tags=tags)
+        self.cp = cp
+        self.add_opt('--grb-name', cp.get('workflow', 'trigger-name'))
+        self.add_opt('--ifo-tag', ifo)
+        self.add_opt('--output-dir', out_dir)
+        self.add_profile('condor', 'request_cpus', 1)
+ 
+    def create_node(self, parents=None, run_dir=None, seg_dir=None,
+                    out_dir=None, tags=[]):
+        node = Node(self)
+
+        if not parents:
+            raise ValueError("%s must be supplied with inspiral and injection"
+                             "output files"
+                              % self.name)
+
+        # Set input / output options
+        config_file = parents.pop()
+        node.add_input_opt('--config-file', config_file)
+        for parent in parents:
+            node._add_input(parent)
+        node.add_opt('--run-dir', run_dir)
+        node.add_opt('--veto-directory', seg_dir)
+        node.add_opt('--log-path', os.path.join(out_dir, "logs"))
+
+        return node
+
 
 class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
     """
-    The class responsible for setting up jobs for legacy
-    lalapps_coh_PTF_inspiral executable.
+    The class responsible for setting up jobs for legacy coh_PTF_trig_combiner
+    executable.
     """
     current_retention_level = Executable.CRITICAL
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
@@ -330,7 +366,7 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
         self.cp = cp
         self.ifos = ifo
         self.output_dir = out_dir
-        #self.set_memory(1300)
+        self.num_threads = 1
  
     def create_node(self, parent=None, segment_dir=None, tags=[]):
         node = Node(self)
@@ -345,7 +381,7 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.name)
         
-        node.add_opt('grb-name', self.cp.get('workflow', 'trigger-name'))
+        node.add_opt('--grb-name', self.cp.get('workflow', 'trigger-name'))
         
         node.add_opt('--pad-data', pad_data)
         node.add_opt('--segment-length', self.cp.get('inspiral',
@@ -355,6 +391,37 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
         # Set input / output options
         node.add_input_opt('--cache', parent, )
         node.add_opt('--segment-dir', segment_dir)
+        node.add_opt('--output-dir', self.output_dir)
+
+        node.add_profile('condor', 'request_cpus', self.num_threads)
+
+        return node
+
+
+class LegacyCohPTFTrigCluster(LegacyAnalysisExecutable):
+    """
+    The class responsible for setting up jobs for legacy coh_PTF_trig_cluster
+    executable.
+    """
+    current_retention_level = Executable.CRITICAL
+    def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
+                 out_dir=None, tags=[]):
+        super(LegacyCohPTFTrigCluster, self).__init__(cp, name, universe,
+              ifo=ifo, out_dir=out_dir, tags=tags)
+        self.cp = cp
+        self.ifos = ifo
+        self.output_dir = out_dir
+        self.num_threads = 1
+ 
+    def create_node(self, parent=None, tags=[]):
+        node = Node(self)
+
+        if not parent:
+            raise ValueError("%s must be supplied with trigger files"
+                              % self.name)
+
+        # Set input / output options
+        node.add_input_opt('--trig-file', parent, )
         node.add_opt('--output-dir', self.output_dir)
 
         node.add_profile('condor', 'request_cpus', self.num_threads)
