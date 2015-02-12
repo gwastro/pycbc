@@ -326,6 +326,7 @@ setup (
                'bin/hdfcoinc/pycbc_page_snrchi',
                'bin/hdfcoinc/pycbc_results_server',
                'bin/hdfcoinc/pycbc_page_inspiralrange',
+               'bin/hdfcoinc/pycbc_page_segments',
                'bin/pycbc_submit_dax',
                ],
     packages = [
