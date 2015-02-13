@@ -16,17 +16,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import sqlite3
-import sys
-
-import numpy as np
-
 import matplotlib as mpl; mpl.use('Agg')
 import matplotlib.pyplot as plt
 
-from glue.ligolw import dbtables
 from glue.ligolw import lsctables
-from pylal import ligolw_cbc_compute_durations as compute_dur
 
 def find_bins(snrsq_list):
   '''
