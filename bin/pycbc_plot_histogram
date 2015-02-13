@@ -16,10 +16,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import argparse
+
 import matplotlib as mpl; mpl.use('Agg')
 import matplotlib.pyplot as plt
 
+from glue import segments
 from glue.ligolw import lsctables
+from pylal import SnglInspiralUtils
 
 def find_bins(snrsq_list):
   '''
@@ -28,7 +32,7 @@ def find_bins(snrsq_list):
 
   remaining = 0
   huge_snrs = 0
-  upper_lim = 1e7
+  upper_lim = 1e3
   total_count = 0
   bins        = [1e-40 for i in range(int(upper_lim))]
   biggest     = 0
@@ -44,7 +48,6 @@ def find_bins(snrsq_list):
           huge_snrs += 1
       else:
           if snrsq > biggest:
-              biggest = snrsq
               biggest = snrsq
           bins[snrsq] += 1
 
@@ -84,8 +87,11 @@ for trig in inspiralTable:
 
 # make bins for histogram
 bins, biggest, high_end, remaining = find_bins(significance)
+ymax = int(max(significance)**2) + 1
+ymin = int(min(significance)**2) + 1
 
 # plot
-plt.semilogy(range(0,high_end), bins[:high_end])
+plt.semilogy(range(0,ymax), bins[:ymax])
+plt.ylim(0.1)
+plt.xlim(ymin *0.9, ymax * 1.1)
 plt.savefig(opts.output_file)
-plt.save()
