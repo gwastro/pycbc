@@ -43,11 +43,8 @@ args = parser.parse_args()
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO,datefmt='%I:%M:%S')
 
-# setup workflow
-workflow = _workflow.Workflow(args, args.name)
-
-# setup directories
-runDir = os.path.join(os.getcwd(), '%d-%d' %tuple(workflow.analysis_time))
+# directory names
+runDir = os.path.join(os.getcwd(), args.name)
 segDir = runDir + '/segments'
 datafindDir = runDir + '/datafind'
 fulldataDir = runDir + '/full_data'
@@ -57,6 +54,9 @@ outputDir = runDir + '/output'
 if not os.path.exists(runDir):
   os.makedirs(runDir)
 os.chdir(runDir)
+
+# setup workflow
+workflow = _workflow.Workflow(args, args.name)
 
 # get segments
 scienceSegs, segsFileList = _workflow.setup_segment_generation(workflow, segDir)
