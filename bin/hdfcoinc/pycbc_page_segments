@@ -80,6 +80,8 @@ css = """
 mpld3.plugins.DEFAULT_PLUGINS = []
 fig = pylab.figure(figsize=[10, 5])
      
+names = []
+smin, smax = numpy.inf, -numpy.inf
 for i, seg_file in enumerate(args.segment_files):
     y = i + .05
     h = .7
@@ -95,8 +97,11 @@ for i, seg_file in enumerate(args.segment_files):
              <tr><th>Duration</th><td>%s</td></tr>
       </table>
     """
+    smin = start.min() if len(start) and start.min() < smin else smin
+    smax = end.max() if len(end) and end.max() > smax else smax
     
-    pylab.text(start.min(), y + h + .1, "%s: %s" % (name, total))
+    names += [(name, total, y + h + .1)]
+
     patches = plot_segs(start, end, y=y, h=h)
     for i, p in enumerate(patches):
         l = label % (start[i], end[i], timestr(dur[i]))
@@ -105,8 +110,11 @@ for i, seg_file in enumerate(args.segment_files):
         else:
             mpld3.plugins.connect(fig, Tooltip(p, [l], css=css))
 
-pylab.ylim(0, y + h + .2)
-pylab.xlim(start.min(), start.max())
+for name, total, h in names:
+     pylab.text(smin, h, "%s: %s" % (name, total))
+     
+pylab.ylim(0, h + 0.2)
+pylab.xlim(smin, smax)
 pylab.xlabel('GPS Time (s)')
 
 mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14, fmt='10f'))
