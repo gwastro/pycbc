@@ -363,19 +363,18 @@ class EventManager(object):
             row.ifo = ifo
 
             if self.opt.chisq_bins != 0:
+                row.chisq = event['chisq']
                 # FIXME: This is *not* the dof!!!
                 # but is needed for later programs not to fail
                 try:
-                    # if the options specify an integer, use it and check
-                    # that the value can be cast as an int without changing
+                    # if the options specify an integer, use it by checking
+                    # that the value can be cast as int without changing
                     # numerically
                     row.chisq_dof = int(self.opt.chisq_bins)
                     assert row.chisq_dof == self.opt.chisq_bins
                 except:
                     # fail through: copy the value from the trigger
                     row.chisq_dof = event['chisq_dof']
-                #row.chisq_dof = self.opt.chisq_bins
-                    row.chisq = event['chisq']
 
             if hasattr(self.opt, 'bank_veto_bank_file') and self.opt.bank_veto_bank_file:
                 # EXPLAINME - is this a hard-coding? Certainly looks like one
