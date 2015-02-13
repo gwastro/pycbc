@@ -28,10 +28,12 @@
 <div class="container">
   <div class="jumbotron">
     <h1>{{analysis_title}}</h1>
-    <p>{{analysis_subtitle}}</p> 
-
+    <p>{{analysis_subtitle}}</p>
 <ul class="nav nav-pills">
-    {% for dir0 in dirs_0 %}
+  <li>
+  <a class="btn btn-primary" href="{{output_path}}" role="button">HOME</a>
+  </li>
+  {% for dir0 in dirs_0 %}
   <li class="dropdown">
     <a class="dropdown-toggle" id="drop4" role="button" data-toggle="dropdown" data-target="#" href="#">{{dir0.title()}}<b class="caret"></b></a>
     <ul id="menu1" class="dropdown-menu" role="menu" aria-labelledby="drop4">
@@ -41,9 +43,8 @@
       <li><a tabindex="-1" href="{{output_path}}/{{subdir.path}}">{{subdir.title()}}</a></li>
       {% endfor %}
     </ul>
-
-</li>
-    {% endfor %}
+  </li>
+  {% endfor %}
 </ul>
 
   </div>
@@ -130,7 +131,6 @@
 <br>
 <br>
 <br>
-
 
 </body>
 </html>
