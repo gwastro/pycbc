@@ -69,7 +69,7 @@ def setup_postprocessing(workflow, trigger_files, summary_xml_files,
         A list of the output from this stage.
 
     """
-    logging.info("Entering post-processing preparation stage.")
+    logging.info("Entering post-processing module.")
     make_analysis_dir(output_dir)
 
     # Parse for options in .ini file

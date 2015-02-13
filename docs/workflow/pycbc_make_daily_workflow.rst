@@ -194,11 +194,6 @@ Submit the workflow by following the instructions at the end of the script outpu
 the following.::
 
     ...
-    10:49:15:INFO : Entering post-processing preperation stage.
-    10:49:15:INFO : Leaving post-processing separation module.
-    10:49:18:INFO : Finished.
-    2014.03.26 10:49:28.676 EDT:   
-
 
     I have concretized your abstract workflow. The workflow has been entered 
     into the workflow database with a state of "planned". The next step is 

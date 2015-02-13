@@ -212,13 +212,10 @@ From the directory where the dax was created, run the planning script::
 Submit the workflow by following the instructions at the end of the script output, which looks something like 
 the following.::
 
-    ...
-    10:49:15:INFO : Entering post-processing preperation stage.
-    10:49:15:INFO : Leaving post-processing separation module.
-    10:49:18:INFO : Finished.
-    2014.03.26 10:49:28.676 EDT:   
+    Generating concrete workflow
+    2015.02.12 15:17:17.977 EST:
 
-
+    
     I have concretized your abstract workflow. The workflow has been entered 
     into the workflow database with a state of "planned". The next step is 
     to start or execute your workflow. The invocation required is

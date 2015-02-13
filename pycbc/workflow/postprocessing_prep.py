@@ -68,7 +68,7 @@ def setup_postprocessing_preparation(workflow, triggerFiles, output_dir,
     postProcPreppedFiles : pycbc.workflow.core.FileList
         A list of files that can be used as input for the post-processing stage.
     """
-    logging.info("Entering post-processing preparation stage.")
+    logging.info("Entering post-processing preparation module.")
     make_analysis_dir(output_dir)
 
     # Parse for options in .ini file

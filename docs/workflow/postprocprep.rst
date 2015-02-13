@@ -1,7 +1,7 @@
 .. _workflowpostprocprepmod:
 
 ###############################################
-The workflow postprocessing preperation module
+The workflow postprocessing preparation module
 ###############################################
 
 =============
@@ -26,7 +26,7 @@ Using this module requires a number of things
 
 This module is then called according to
 
-.. autofunction:: pycbc.workflow.setup_postprocessing_preperation
+.. autofunction:: pycbc.workflow.setup_postprocessing_preparation
    :noindex:
 
 -------------------------
