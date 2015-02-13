@@ -583,6 +583,19 @@ def make_sensitivity_plot(workflow, inj_file, out_dir, tags=[]):
         node.new_output_file_opt(inj_file.segment, '.png', '--output-file')
         workflow += node
 
+def make_coinc_snrchi_plot(workflow, inj_file, inj_trig, stat_file, trig_file, out_dir, tags=[]):
+    make_analysis_dir(out_dir)
+    
+    for tag in get_subsections(workflow.cp, 'plot_coinc_snrchi'):
+        node = Node(Executable(workflow.cp, 'plot_coinc_snrchi', ifos=inj_trig.ifo,
+                    out_dir=out_dir, tags=[tag] + tags))
+        node.add_input_opt('--found-injection-file', inj_file)
+        node.add_input_opt('--single-injection-file', inj_trig)
+        node.add_input_opt('--coinc-statistic-file', stat_file)
+        node.add_input_opt('--single-trigger-file', trig_file)
+        node.new_output_file_opt(inj_file.segment, '.png', '--output-file')
+        workflow += node
+
 def make_snrchi_plot(workflow, trig_files, veto_file, out_dir, tags=[]):
     make_analysis_dir(out_dir)
     

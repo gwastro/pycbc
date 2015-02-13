@@ -328,6 +328,7 @@ setup (
                'bin/hdfcoinc/pycbc_page_inspiralrange',
                'bin/hdfcoinc/pycbc_page_segments',
                'bin/pycbc_submit_dax',
+               'bin/hdfcoinc/pycbc_page_coinc_snrchi',
                ],
     packages = [
                'pycbc',
