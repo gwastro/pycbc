@@ -1,0 +1,155 @@
+#!/usr/bin/python
+
+# Copyright (C) 2015 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Generals
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import os
+import random
+import shutil
+import string
+
+from jinja2 import Environment, FileSystemLoader
+
+from pycbc.workflow import segment
+
+def examine_dir(dir):
+  """
+  Looks in a directory and returns all subdirs and files.
+  """
+  names = os.listdir(dir)
+  dirs, nondirs = [], []
+  for name in names:
+    if os.path.isdir(os.path.join(dir, name)):
+      dirs.append(name)
+    else:
+      nondirs.append(name)
+  return dir, dirs, nondirs
+
+class Directory():
+  """
+  Class used to find all sub-directories in a directory.
+  """
+  instances = []
+  def __init__(self, path, plots_dir):
+
+    dir,subdirs,filenames = examine_dir(path)
+
+    self.path    = path.replace(plots_dir, '')
+    self.subdirs = [Directory(path+'/'+subdir, plots_dir) for subdir in subdirs]
+
+    self.files = []
+    for filename in filenames:
+      extension = filename.split('.')[-1]
+      if extension == 'caption':
+        continue
+      elif os.path.exists(dir+'/'+filename.replace('.'+extension, '.caption')):
+        self.files.append(File(filename, dir+'/'+filename.replace('.'+extension, '.caption')))
+      else:
+        self.files.append(File(filename))
+
+    self.instances.append(self)
+
+  def title(self):
+    return self.path.split('/')[-1].replace('_', ' ').upper()
+
+class File():
+  """
+  Class used to keep track of files.
+  """
+  def __init__(self, path, path_caption=''):
+    self.path = path
+    if path_caption:
+      self.title = open(path_caption, 'r').readline()
+      self.caption = open(path_caption, 'r').read().replace('\n', '<br>')
+    else:
+      self.title = path
+      self.caption = ''
+    self.id = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
+
+  def fromsegmentxml(self,path):
+    try:
+      segDict = segment.fromsegmentxml(open(path, 'r'), dict=True)
+      return segDict
+    except:
+      return {'dsadsa':(1,2)}
+
+# parse command line
+parser = argparse.ArgumentParser(usage='pycbc_make_html_page \
+[--options]',
+                                 description="Create static html\
+                                 pages for analysis.")
+parser.add_argument('-d', '--template-dir', type=str,
+                  help='Input xml file with SnglInspiral triggers.')
+parser.add_argument('-n', '--template-name', type=str,
+                  help='Output xml file with playground segment triggers.')
+parser.add_argument('-o', '--output-path', type=str,
+                  help='Output xml file with playground segment triggers.')
+parser.add_argument('-p', '--plots-dir', type=str,
+                  help='Output xml file with playground segment triggers.')
+parser.add_argument('-t', '--analysis-title', type=str,
+                  help='Print extra debugging information.', default=False)
+parser.add_argument('-s', '--analysis-subtitle', type=str,
+                  help='Print extra debugging information.', default=False)
+parser.add_argument('-v', '--verbose', action='store_true',
+                  help='Print extra debugging information.', default=False)
+opts = parser.parse_args()
+
+# FIXME: rename options because I was lazy and didn't change everything
+analysis_title = opts.analysis_title.strip('"').rstrip('"')
+analysis_subtitle = opts.analysis_subtitle.strip('"').rstrip('"')
+input_path = opts.template_dir
+input_template = opts.template_name
+output_path = opts.output_path
+plots_dir = opts.plots_dir
+
+# setup template
+env = Environment(loader=FileSystemLoader(input_path))
+template = env.get_template(input_template)
+env.globals['STATIC_URL'] = '/home/cbiwer/pycbc/ncoinc4_20141124_8e603_working/lib/python2.6/site-packages/pycbc/results/static/'
+env.globals.update(zip=zip)
+env.globals.update(abs=abs)
+
+# find all subdirs
+Directory(plots_dir, plots_dir)
+dirs   = [dir for dir in Directory.instances]
+dirs_0 = [dir for dir in Directory.instances if dir.path.count('/') == 1]
+
+# FIXME: hardcoded
+output_url = 'https://sugar-jobs.phy.syr.edu/~cbiwer/pycbc_plotting/970012743-970099143'
+
+# loop over all directories
+for dir in dirs:
+
+  # render template
+  context = {'analysis_title' : analysis_title,
+             'analysis_subtitle' : analysis_subtitle,
+             'dirs_0' : dirs_0,
+             'dir'    : dir,
+             'output_path' : output_url,
+             'plots_dir' : plots_dir}
+  output = template.render(context)
+
+  # save
+  if not os.path.exists(output_path+dir.path):
+    os.makedirs(output_path+dir.path)
+  with open(output_path+dir.path+'/index.html', "wb") as fp:
+    fp.write(output)
+
+# move all files
+for dir in dirs:
+  for file in dir.files:
+    shutil.copy(plots_dir+dir.path+'/'+file.path,output_path+'/'+dir.path+'/'+file.path)

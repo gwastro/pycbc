@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+    <head>
+        <title>PyCBC Gravitation-wave Results</title>
+        <script src="https://sugar-jobs.phy.syr.edu/~cbiwer/web/static/polymer/platform/platform.js"></script>
+        <link rel="import" href="https://sugar-jobs.phy.syr.edu/~cbiwer/web/static/polymer/core-scaffold/core-scaffold.html">
+        <link rel="import" href="https://sugar-jobs.phy.syr.edu/~cbiwer/web/static/polymer/core-header-panel/core-header-panel.html">
+        <link rel="import" href="https://sugar-jobs.phy.syr.edu/~cbiwer/web/static/polymer/core-menu/core-menu.html">
+        <link rel="import" href="https://sugar-jobs.phy.syr.edu/~cbiwer/web/static/polymer/core-item/core-item.html">
+        <link rel="import" href="https://sugar-jobs.phy.syr.edu/~cbiwer/web/static/polymer/core-icon-button/core-icon-button.html">
+        <link rel="import" href="https://sugar-jobs.phy.syr.edu/~cbiwer/web/static/polymer/core-toolbar/core-toolbar.html">
+        <link rel="import" href="https://sugar-jobs.phy.syr.edu/~cbiwer/web/static/polymer/core-menu/core-submenu.html">
+        <link rel="import" href="https://sugar-jobs.phy.syr.edu/~cbiwer/web/static/polymer/paper-toggle-button/paper-toggle-button.html">
+        <link rel="import" href="https://sugar-jobs.phy.syr.edu/~cbiwer/web/static/polymer/paper-button/paper-button.html">
+        <link rel="import" href="https://sugar-jobs.phy.syr.edu/~cbiwer/web/static/polymer/core-collapse/core-collapse.html">
+    </head>   
+
+
+    <body>
+           
+              <style>    
+      :host {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+      }
+      core-collapse{ 
+      }
+      #core_scaffold {
+        position: absolute;
+        top: 0px;
+        right: 0px;
+        bottom: 0px;
+        left: 0px;
+      }
+      #core_header_panel {
+        opacity: 1;
+        background-color: rgb(255, 255, 255);
+      }
+      #core_toolbar {
+        color: rgb(255, 255, 255);
+        background-color: rgb(67, 121, 140);
+      }
+      #core_menu {
+        font-size: 16px;
+      }
+      core-item:hover{
+        font-weight:bold;
+      }
+      #core_selector {
+        width: 100%;
+        height: 50px;
+        left: 1640px;
+        top: 670px;
+      }
+      #core_tooltip {
+        left: 1480px;
+        top: 680px;
+      }
+    img {
+        max-width: 100%;
+    }
+    paper-button {
+        width: 100%;
+    }
+    core-card {
+        width: 95%;
+        position: relative;
+        margin: 5px;
+        border-top-left-radius: 2px;
+        border-top-right-radius: 2px;
+        border-bottom-right-radius: 2px;
+        border-bottom-left-radius: 2px;
+        box-shadow: rgba(0, 0, 0, 0.1980392) 0px 2px 4px, rgba(0, 0, 0, 0.0980392) 0px 0px 6px;
+
+        background-color: rgb(255, 255, 255);
+      }
+
+    </style>
+    <core-scaffold id="core_scaffold" start>  
+      <div id="div" tool>PyCBC Gravitational-wave Search Results</div>
+      <section id="()" center center-justified vertical layout>
+
+        {% for heading, section, t in zip(headings, sections, types) %}
+            <core-card id="core_card" layout vertical start>
+                <paper-button onclick="document.querySelector('#collapse{{loop.index}}').toggle()">{{heading}}</paper-button>
+                <core-collapse id="collapse{{loop.index}}">
+                    {% if t == 'html' %}
+                      {{section|safe}}
+                    {% endif %}
+                    {% if t == 'png' %}
+                      <img src="{{ url_for('custom_static', filename=section) }}">
+                    {% endif %} 
+                </core-collapse>
+            </core-card>
+        {% endfor %}
+      </section>
+
+      <core-header-panel mode="standard" id="core_header_panel" navigation flex>
+        <core-menu selected="{{folder}}" valueattr="label"  id="core_menu" theme="core-light-theme">
+          {% for fol in folders %}
+              <core-item label="{{fol}}" icon="settings" size="24" id="core_item1" horizontal center layout> <a href="/sections/{{fol}}"></a></core-item>
+          {% endfor %}
+        </core-menu>
+        <core-toolbar id="core_toolbar">
+          </core-toolbar>
+      </core-header-panel>
+  
+    </core-scaffold>
+    </body>
+
+</html>
+
+

@@ -1,0 +1,86 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
+<LIGO_LW>
+	<Table Name="process:table">
+		<Column Type="lstring" Name="process:comment"/>
+		<Column Type="lstring" Name="process:node"/>
+		<Column Type="lstring" Name="process:domain"/>
+		<Column Type="int_4s" Name="process:unix_procid"/>
+		<Column Type="int_4s" Name="process:start_time"/>
+		<Column Type="ilwd:char" Name="process:process_id"/>
+		<Column Type="int_4s" Name="process:is_online"/>
+		<Column Type="lstring" Name="process:ifos"/>
+		<Column Type="int_4s" Name="process:jobid"/>
+		<Column Type="lstring" Name="process:username"/>
+		<Column Type="lstring" Name="process:program"/>
+		<Column Type="int_4s" Name="process:end_time"/>
+		<Column Type="lstring" Name="process:version"/>
+		<Column Type="lstring" Name="process:cvs_repository"/>
+		<Column Type="int_4s" Name="process:cvs_entry_time"/>
+		<Stream Delimiter="," Type="Local" Name="process:table">
+			,"sugar-dev3.phy.syr.edu",,1116,1107284819,"process:process_id:0",0,,0,"swetha.bhagwat","/usr/bin/ligolw_segment_query_dqsegdb",,"18c86702190ea6e9504d2e59a5a78eed2a9c244a",,1106652838
+		</Stream>
+	</Table>
+	<Table Name="process_params:table">
+		<Column Type="ilwd:char" Name="process_params:process_id"/>
+		<Column Type="lstring" Name="process_params:program"/>
+		<Column Type="lstring" Name="process_params:type"/>
+		<Column Type="lstring" Name="process_params:value"/>
+		<Column Type="lstring" Name="process_params:param"/>
+		<Stream Delimiter="," Type="Local" Name="process_params:table">
+			"process:process_id:0","/usr/bin/ligolw_segment_query_dqsegdb",,,"--query-segments",
+			"process:process_id:0","/usr/bin/ligolw_segment_query_dqsegdb","lstring","1102089616","--gps-start-time",
+			"process:process_id:0","/usr/bin/ligolw_segment_query_dqsegdb","lstring","https://dqsegdb5.phy.syr.edu","--segment-url",
+			"process:process_id:0","/usr/bin/ligolw_segment_query_dqsegdb","lstring","/home/swetha.bhagwat/ER6/master_branch_ahope/1102089616-1103155216/segments/H1-SCIENCE_SEGMENTS.xml","--output-file",
+			"process:process_id:0","/usr/bin/ligolw_segment_query_dqsegdb","lstring","RESULT","--result-name",
+			"process:process_id:0","/usr/bin/ligolw_segment_query_dqsegdb","lstring","H1:DMT-SCIENCE:1","--include-segments",
+			"process:process_id:0","/usr/bin/ligolw_segment_query_dqsegdb","lstring","1103155216","--gps-end-time"
+		</Stream>
+	</Table>
+	<Table Name="segment_definer:table">
+		<Column Type="ilwd:char" Name="segment_definer:process_id"/>
+		<Column Type="ilwd:char" Name="segment_definer:segment_def_id"/>
+		<Column Type="lstring" Name="segment_definer:ifos"/>
+		<Column Type="lstring" Name="segment_definer:name"/>
+		<Column Type="int_4s" Name="segment_definer:version"/>
+		<Column Type="lstring" Name="segment_definer:comment"/>
+		<Stream Delimiter="," Type="Local" Name="segment_definer:table">
+			"process:process_id:0","segment_definer:segment_def_id:0","H1","DMT-SCIENCE",1,"",
+			"process:process_id:0","segment_definer:segment_def_id:1","H1","RESULT",1,""
+		</Stream>
+	</Table>
+	<Table Name="segment_summary:table">
+		<Column Type="ilwd:char" Name="segment_summary:process_id"/>
+		<Column Type="ilwd:char" Name="segment_summary:segment_def_id"/>
+		<Column Type="ilwd:char" Name="segment_summary:segment_sum_id"/>
+		<Column Type="int_4s" Name="segment_summary:start_time"/>
+		<Column Type="int_4s" Name="segment_summary:start_time_ns"/>
+		<Column Type="int_4s" Name="segment_summary:end_time"/>
+		<Column Type="int_4s" Name="segment_summary:end_time_ns"/>
+		<Column Type="lstring" Name="segment_summary:comment"/>
+		<Stream Delimiter="," Type="Local" Name="segment_summary:table">
+			"process:process_id:0","segment_definer:segment_def_id:0","segment_summary:segment_sum_id:0",1102089616,0,1102193052,0,"",
+			"process:process_id:0","segment_definer:segment_def_id:0","segment_summary:segment_sum_id:1",1102193568,0,1102361944,0,"",
+			"process:process_id:0","segment_definer:segment_def_id:0","segment_summary:segment_sum_id:2",1102361962,0,1102362040,0,"",
+			"process:process_id:0","segment_definer:segment_def_id:0","segment_summary:segment_sum_id:3",1102363358,0,1102363436,0,"",
+			"process:process_id:0","segment_definer:segment_def_id:0","segment_summary:segment_sum_id:4",1102372344,0,1103155216,0,"",
+			"process:process_id:0","segment_definer:segment_def_id:1","segment_summary:segment_sum_id:5",1102089616,0,1103155216,0,""
+		</Stream>
+	</Table>
+	<Table Name="segment:table">
+		<Column Type="ilwd:char" Name="segment:process_id"/>
+		<Column Type="ilwd:char" Name="segment:segment_def_id"/>
+		<Column Type="ilwd:char" Name="segment:segment_id"/>
+		<Column Type="int_4s" Name="segment:start_time"/>
+		<Column Type="int_4s" Name="segment:start_time_ns"/>
+		<Column Type="int_4s" Name="segment:end_time"/>
+		<Column Type="int_4s" Name="segment:end_time_ns"/>
+		<Stream Delimiter="," Type="Local" Name="segment:table">
+			"process:process_id:0","segment_definer:segment_def_id:1","segment:segment_id:0",1102089616,0,1102193052,0,
+			"process:process_id:0","segment_definer:segment_def_id:1","segment:segment_id:1",1102193568,0,1102361944,0,
+			"process:process_id:0","segment_definer:segment_def_id:1","segment:segment_id:2",1102361962,0,1102362040,0,
+			"process:process_id:0","segment_definer:segment_def_id:1","segment:segment_id:3",1102363358,0,1102363436,0,
+			"process:process_id:0","segment_definer:segment_def_id:1","segment:segment_id:4",1102372344,0,1103155216,0
+		</Stream>
+	</Table>
+</LIGO_LW>
