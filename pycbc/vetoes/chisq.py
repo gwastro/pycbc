@@ -306,9 +306,9 @@ class SingleDetPowerChisq(object):
         safe_dict.update(math.__dict__)
         return eval(arg, {"__builtins__":None}, safe_dict)
 
-    def values(self, corr, snr, snrv, snr_norm, psd, indices, template, bank,
-               low_frequency_cutoff):
-        """FIXME: Document this function more fully
+    def values(self, corr, snr, snrv, snr_norm, psd,
+                    indices, template, low_frequency_cutoff):
+        """FIXME: Document this function?
 
         Returns
         -------
@@ -325,12 +325,12 @@ class SingleDetPowerChisq(object):
                 # determine number of bins by parsing the option
                 self._num_bins = int(self.parse_option(template, self.num_bins))
 
-                if bank.sigmasq_vec is not None:
+                if hasattr(psd, 'sigmasq_vec'):
                     logging.info("...Calculating fast power chisq bins")
                     kmin = int(low_frequency_cutoff / corr.delta_f)
                     kmax = template.end_idx
                     bins = power_chisq_bins_from_sigmasq_series(
-                        bank.sigmasq_vec, self._num_bins, kmin, kmax)
+                        psd.sigmasq_vec, self._num_bins, kmin, kmax)
                 else:
                     logging.info("...Calculating power chisq bins")
                     bins = power_chisq_bins(template, self._num_bins, psd,

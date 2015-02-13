@@ -17,6 +17,9 @@ fi
 #Make a directory for the submit files
 SUBMIT_DIR=`mktemp -d`
 
+#Make sure the directory is world readable
+chmod 644 $SUBMIT_DIR
+
 # find the site-local template directory
 PEG_DIR=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGASUS_FILE_DIRECTORY'`
 SITE_TEMPLATE=$PEG_DIR/basic_site_template.xml

@@ -51,8 +51,8 @@ def segment_snrs(filters, stilde, psd, low_frequency_cutoff):
     for i, bank_template in enumerate(filters):
         # For every template compute the snr against the stilde segment
         snr, corr, norm = matched_filter_core(
-                bank_template, stilde, psd,
-                low_frequency_cutoff=low_frequency_cutoff)
+                bank_template, stilde, h_norm=bank_template.sigmasq(psd), 
+                psd=None, low_frequency_cutoff=low_frequency_cutoff)
         # SNR time series stored here
         snrs.append(snr)
         # Template normalization factor stored here
@@ -80,7 +80,7 @@ def template_overlaps(bank_filters, template, psd, low_frequency_cutoff):
     for bank_template in bank_filters:        
         overlap = overlap_cplx(template_ow, bank_template,
                 low_frequency_cutoff=low_frequency_cutoff, normalized=False)
-        norm = sqrt(1 / template.sigmasq / bank_template.sigmasq)
+        norm = sqrt(1 / template.sigmasq(psd) / bank_template.sigmasq(psd))
         overlaps.append(overlap * norm)
         if (abs(overlaps[-1]) > 0.99):
             errMsg = "Overlap > 0.99 between bank template and filter. "
@@ -126,7 +126,7 @@ def bank_chisq_from_filters(tmplt_snr, tmplt_norm, bank_snrs, bank_norms,
     bank_chisq: TimeSeries of the bank vetos
     """
     if indices is not None: 
-        tmplt_snr = tmplt_snr.take(indices)
+        tmplt_snr = Array(tmplt_snr, copy=False)
         bank_snrs_tmp = []
         for bank_snr in bank_snrs:
             bank_snrs_tmp.append(bank_snr.take(indices))
@@ -167,50 +167,51 @@ class SingleDetBankVeto(object):
        memory management of its filters internally, and calculates the bank
        veto TimeSeries.
     """
-    def __init__(self, bank_file, approximant, psd, segments, f_low, **kwds):
+    def __init__(self, bank_file, approximant, flen, delta_f, f_low, cdtype, **kwds):
         if bank_file is not None:
             self.do = True
             
             self.column_name = "bank_chisq"
             self.table_dof_name = "bank_chisq_dof"
 
-            self.psd = psd    
-            self.cdtype = complex_same_precision_as(psd)
-            self.delta_f = psd.delta_f
+            self.cdtype = cdtype
+            self.delta_f = delta_f
             self.f_low = f_low
-            self.seg_len_freq = len(psd)
+            self.seg_len_freq = flen
             self.seg_len_time = (self.seg_len_freq-1)*2
 
             logging.info("Read in bank veto template bank")
             bank_veto_bank = FilterBank(bank_file,
                     approximant, self.seg_len_freq, 
-                    self.delta_f, f_low, dtype=self.cdtype, psd=self.psd, **kwds)
+                    self.delta_f, f_low, dtype=self.cdtype, **kwds)
 
             self.filters = list(bank_veto_bank)
-
-            logging.info("Precalculate the bank veto template snrs")
-            self.snr_data = []
-            for seg in segments:
-                self.snr_data.append(segment_snrs(self.filters, seg, psd, f_low))
-                  
             self.dof = len(bank_veto_bank) * 2
 
-            self._overlaps = None
-            self._template = None
+            self._overlaps_cache = {}
+            self._segment_snrs_cache = {}
         else:
             self.do = False
+            
+    def cache_segment_snrs(self, stilde, psd):
+        key = (id(stilde), id(psd))
+        if key not in self._segment_snrs_cache:
+            logging.info("Precalculate the bank veto template snrs")
+            data = segment_snrs(self.filters, stilde, psd, self.f_low)
+            self._segment_snrs_cache[key] = data
+        return self._segment_snrs_cache[key]
+            
+    def cache_overlaps(self, template, psd):
+        key = (id(template.params), id(psd))
+        if key not in self._overlaps_cache:
+            logging.info("...Calculate Bank Chisq Overlaps")
+            o = template_overlaps(self.filters, template, psd, self.f_low)
+            self._overlaps_cache[key] = o
+        return self._overlaps_cache[key]        
         
-    def values(self, template, s_num, snr, norm, indices):
+    def values(self, template, psd, stilde, snrv, norm, indices):
         if self.do:
             logging.info("...Doing Bank Chisq")
-            
-            #Only calculate the overlaps if I haven't already and the template hasn't changed
-            if self._overlaps is None or self._template != template:
-                logging.info("...Calculate Bank Chisq Overlaps")
-                self._overlaps = template_overlaps(self.filters, template, self.psd, self.f_low)
-                self._template = template
-                         
-            bank_veto_snrs, bank_veto_norms = self.snr_data[s_num]
-            return bank_chisq_from_filters(snr, norm, bank_veto_snrs, bank_veto_norms, self._overlaps, indices)
-
-        
+            overlaps = self.cache_overlaps(template, psd)
+            bank_veto_snrs, bank_veto_norms = self.cache_segment_snrs(stilde, psd)
+            return bank_chisq_from_filters(snrv, norm, bank_veto_snrs, bank_veto_norms, overlaps, indices)       
