@@ -466,7 +466,7 @@ class Node(pegasus_workflow.Node):
         return [exe_path] + arglist
         
     def new_output_file_opt(self, valid_seg, extension, option_name, tags=[],
-                            store_file=True):
+                            store_file=True, use_tmp_subdirs=False):
         """
         This function will create a workflow.File object corresponding to the given
         information and then add that file as output of this node.
@@ -500,7 +500,8 @@ class Node(pegasus_workflow.Node):
 
         fil = File(self.executable.ifo_list, self.executable.name,
                    valid_seg, extension=extension, store_file=store_file, 
-                   directory=self.executable.out_dir, tags=all_tags)    
+                   directory=self.executable.out_dir, tags=all_tags,
+                   use_tmp_subdirs=use_tmp_subdirs)
         self.add_output_opt(option_name, fil)
         
     @property    
@@ -543,7 +544,7 @@ class File(pegasus_workflow.File):
     '''
     def __init__(self, ifos, exe_name, segs, file_url=None, 
                  extension=None, directory=None, tags=None, 
-                 store_file=True):       
+                 store_file=True, use_tmp_subdirs=False):
         """
         Create a File instance
         
@@ -632,7 +633,13 @@ class File(pegasus_workflow.File):
                    self.tagged_description, self.segment_list.extent(), file_url)
         self.cache_entry.workflow_file = self
 
-        super(File, self).__init__(basename(self.cache_entry.path))
+        # Let's do a test here
+        if use_tmp_subdirs:
+            pegasus_lfn = str(int(self.cache_entry.segment[0]))[:-4]
+            pegasus_lfn = pegasus_lfn + '/' + basename(self.cache_entry.path)
+        else:
+            pegasus_lfn = basename(self.cache_entry.path) 
+        super(File, self).__init__(pegasus_lfn)
         
         if store_file:
             self.storage_path = self.cache_entry.path

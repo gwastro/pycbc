@@ -507,7 +507,8 @@ class PyCBCTrig2HDFExecutable(Executable):
         node = Node(self)
         node.add_input_opt('--bank-file', bank_file)
         node.add_input_list_opt('--trigger-files', trig_files)
-        node.new_output_file_opt(trig_files[0].segment, '.hdf', '--output-file')
+        node.new_output_file_opt(trig_files[0].segment, '.hdf',
+                                 '--output-file', use_tmp_subdirs=True)
         return node
 
 class PyCBCFindCoincExecutable(Executable):

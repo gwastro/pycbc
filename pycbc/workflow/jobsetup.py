@@ -647,7 +647,7 @@ class PyCBCInspiralExecutable(Executable):
 
         # set the input and output files        
         node.new_output_file_opt(valid_seg, self.ext, '--output', tags=tags,
-                                 store_file=self.retain_files)
+                         store_file=self.retain_files, use_tmp_subdirs=True)
         node.add_input_list_opt('--frame-files', dfParents)
         node.add_input_opt('--bank-file', parent, )
 
@@ -805,7 +805,8 @@ class LigolwAddExecutable(Executable):
             node.add_output_opt('--output', output)
         else:
             node.new_output_file_opt(jobSegment, '.xml.gz', '--output',
-                                     tags=tags, store_file=self.retain_files)
+                                    tags=tags, store_file=self.retain_files,
+                                    use_tmp_subdirs=True)
         return node
 
 class LigolwSSthincaExecutable(Executable):
@@ -839,7 +840,7 @@ class LigolwSSthincaExecutable(Executable):
         outFile = File(self.ifo, self.name, jobSegment,
                          extension='.xml.gz', directory=self.out_dir,
                          tags=self.tags+tags,
-                         store_file=self.retain_files)
+                         store_file=self.retain_files, use_tmp_subdirs=True)
 
         node._add_output(outFile)
 

@@ -620,7 +620,7 @@ def convert_cachelist_to_filelist(datafindcache_list):
                 continue
 
             currFile = File(curr_ifo, frame.description,
-                                 frame.segment, file_url=frame.url)
+                    frame.segment, file_url=frame.url, use_tmp_subdirs=True)
             currFile.PFN(frame.path, site='local')
             datafind_filelist.append(currFile)
             prev_file = currFile
