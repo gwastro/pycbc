@@ -134,6 +134,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
 
         if tag == 'full_data':
             ctags = [tag, 'full']
+            full_insps = insps_hdf
             bg_files = _workflow.setup_interval_coinc(workflow, hdfbank,
                                                       insps_hdf, cum_veto_files,
                                                       output_dir, tags=ctags)
@@ -157,6 +158,10 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                      tags=ctags)
             _workflow.make_foundmissed_plot(workflow, found_inj, tag, 'plots/foundmissed',
                                      tags=[tag])
+            for inj_insp, trig_insp in zip(insps_hdf, full_insps):
+                _workflow.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 
+                                          final_bg_file[0], trig_insp,
+                                          'plots/background', tags=[tag])
 
     coincs, others = _workflow.setup_coincidence_workflow(workflow, segsFileList,
                                         timeSlideFiles, insps, output_dir,

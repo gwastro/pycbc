@@ -105,6 +105,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
 
     # setup coinc for the filtering jobs
     if tag == 'full_data':
+        full_insps = insps
         bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, cum_veto_files,
                                        output_dir, tags=ctags)  
         final_bg_file =  wf.setup_interval_coinc(workflow, hdfbank, insps, final_veto_file,
@@ -123,6 +124,11 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                  tags=ctags)
         wf.make_foundmissed_plot(workflow, found_inj, tag, 'plots/foundmissed', 
                                  tags=[tag])
+                                 
+        for inj_insp, trig_insp in zip(insps, full_insps):
+            wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 
+                                      final_bg_file[0], trig_insp,
+                                      'plots/background', tags=[tag])
 
 found_inj = wf.find_injections_in_hdf_coinc(workflow, inj_coincs,
                                             inj_files, final_veto_file[0], 
