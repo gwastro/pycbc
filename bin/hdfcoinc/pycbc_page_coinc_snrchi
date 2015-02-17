@@ -19,6 +19,7 @@ parser.add_argument('--single-injection-file', help='Single detector trigger fil
 parser.add_argument('--coinc-statistic-file', help='HDF format statistic file')
 parser.add_argument('--single-trigger-file', help='Single detector triggers files from the zero lag run')
 parser.add_argument('--newsnr-contours', nargs='*', help="List of newsnr values to draw contours at.")
+parser.add_argument('--background-front', action='store_true', default=False)
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
@@ -34,8 +35,10 @@ tid = b_tids[ifo]
 snr = f['snr'][:][tid]
 chisq = f['chisq'][:][tid]
 chisq_dof = f['chisq_dof'][:][tid]
-chisq /= (chisq_dof * 2 - 2)
-pylab.scatter(snr, chisq, marker='o', color='black')
+chisq /= (chisq_dof * 2 - 2) 
+pylab.scatter(snr, chisq, marker='o', color='black',
+              linewidth=0, s=0.6, label='background', 
+              zorder=args.background_front)
 
 # Add the found injection points
 f = h5py.File(args.found_injection_file)
@@ -53,13 +56,14 @@ snr = f['snr'][:][tid]
 chisq = f['chisq'][:][tid]
 chisq_dof = f['chisq_dof'][:][tid]
 chisq /= (chisq_dof * 2 - 2)
-pylab.scatter(snr, chisq, c=eff_dist, norm=colors.LogNorm())
+pylab.scatter(snr, chisq, c=eff_dist, norm=colors.LogNorm(), 
+              marker='^', linewidth=0, label="Injections", 
+              zorder= not args.background_front)
     
 r = numpy.logspace(numpy.log(chisq.min()), numpy.log(chisq.max()), 200)   
-
 for cval in args.newsnr_contours:
     snrv = snr_from_chisq(r, cval)
-    pylab.plot(snrv, r, color='black')
+    pylab.plot(snrv, r, '--', color='grey', linewidth=1)
     
 ax = pylab.gca()
 ax.set_xscale('log')
@@ -70,6 +74,7 @@ pylab.title('Distribution of %s single $\\rho-\chi^2$ for Coincident triggers' %
 pylab.xlabel('Signal-to-noise Ratio')
 pylab.ylabel('Reduced $\chi^2$')
 pylab.xlim(snr.min(), snr.max())
-pylab.ylim(chisq.min(), chisq.max())
-pylab.grid()
+pylab.ylim(0.5, chisq.max())
+pylab.legend(loc='upper left')
+pylab.grid(which='both')
 pylab.savefig(args.output_file, dpi=300)
