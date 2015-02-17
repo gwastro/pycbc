@@ -28,10 +28,15 @@ import glue.ligolw.utils.process
 import lal
 import numpy
 import copy
+
 import pycbc
 from pycbc.types import Array
+from pycbc.types import convert_to_process_params_dict
 from pycbc.scheme import schemed
-import numpy
+from pycbc.detector import Detector
+
+from . import coinc
+
 
 @schemed("pycbc.events.threshold_")
 def threshold(series, value):
@@ -153,6 +158,20 @@ class EventManager(object):
         self.template_params = []
         self.template_index = -1
         self.template_events = numpy.array([], dtype=self.event_dtype)
+
+    @classmethod
+    def from_multi_ifo_interface(cls, opt, ifo, column, column_types, **kwds):
+        """
+        To use this for a single ifo from the multi ifo interface requires
+        some small fixing of the opt structure. This does that. As we edit the
+        opt structure the process_params table will not be correct.
+        """
+        opt = copy.deepcopy(opt)
+        opt_dict = vars(opt)
+        for arg, value in opt_dict.items():
+            if isinstance(value, dict):
+                setattr(opt, arg, getattr(opt, arg)[ifo])
+        return cls(opt, column, column_types, **kwds)
 
     def chisq_threshold(self, value, num_bins, delta=0):
         remove = []
@@ -332,38 +351,80 @@ class EventManager(object):
 
         proc_id = glue.ligolw.utils.process.register_to_xmldoc(outdoc,
                         "inspiral", self.opt.__dict__, comment="", ifos=[ifo],
-                        version=glue.git_version.id, cvs_repository=glue.git_version.branch,
+                        version=glue.git_version.id,
+                        cvs_repository=glue.git_version.branch,
                         cvs_entry_time=glue.git_version.date).process_id
 
         # Create sngl_inspiral table ###########################################
-        sngl_table = glue.ligolw.lsctables.New(glue.ligolw.lsctables.SnglInspiralTable)
+        sngl_table = glue.ligolw.lsctables.New(\
+                                       glue.ligolw.lsctables.SnglInspiralTable)
+        self._add_sngls_to_output(sngl_table, proc_id)
         outdoc.childNodes[0].appendChild(sngl_table)
+                
+        # Create Search Summary Table ########################################
+        search_summary_table = self._create_search_summary_table(proc_id,
+                                                               len(sngl_table))
+        outdoc.childNodes[0].appendChild(search_summary_table)
+        
+        # Create Filter Table ########################################
+        filter_table = self._create_filter_table(proc_id)
+        outdoc.childNodes[0].appendChild(filter_table)
+        
+        # SumVars Table ########################################
+        search_summvars_table = self._create_search_summvars_table(proc_id)
+        outdoc.childNodes[0].appendChild(search_summvars_table)
+        
+        # SumValue Table ########################################
+        summ_value_table = self._create_summ_val_table(proc_id)
+        outdoc.childNodes[0].appendChild(summ_value_table)
+        
+        # Write out file #####################################################
+        glue.ligolw.utils.write_filename(outdoc, outname,
+                                         gz=outname.endswith('gz'))    
 
-        start_time = lal.LIGOTimeGPS(self.opt.gps_start_time)
+    def _add_sngls_to_output(self, sngl_table, proc_id, ifo=None, channel=None,
+                             start_time=None, sample_rate=None,
+                             multi_ifo=False):
+        """
+        Add events to sngl inspiral table.
+        """
+        if multi_ifo and ifo is not None:
+            err_msg = "If using multiple ifos you cannot supply the ifo kwarg "
+            err_msg += "to _add_sngls_to_output"
+            raise ValueError(err_msg)
 
-        if self.opt.trig_start_time:
-            tstart_time = self.opt.trig_start_time
-        else:
-            tstart_time = self.opt.gps_start_time + self.opt.segment_start_pad
-
-        if self.opt.trig_end_time:
-            tend_time = self.opt.trig_end_time
-        else:
-            tend_time = self.opt.gps_end_time - self.opt.segment_end_pad
+        if start_time is None:
+            start_time = lal.LIGOTimeGPS(self.opt.gps_start_time)
+        if sample_rate is None:
+            sample_rate = self.opt.sample_rate
+        if ifo is None and not multi_ifo:
+            ifo = self.opt.channel_name[0:2]
+        if channel is None:
+            if multi_ifo:
+                channel = {}
+                for ifo in self.ifos:
+                    channel[ifo] = self.opt.channel_name[ifo].split(':')[1]
+            else:            
+                channel = self.opt.channel_name.split(':')[1]
 
         for event_num, event in enumerate(self.events):
             tind = event['template_id']
 
             tmplt = self.template_params[tind]['tmplt']
-            sigmasq = self.template_params[tind]['sigmasq']
 
             row = copy.deepcopy(tmplt)
 
             snr = event['snr']
             idx = event['time_index']
-            end_time = start_time + float(idx) / self.opt.sample_rate
+            end_time = start_time + float(idx) / sample_rate
 
-            row.channel = self.opt.channel_name[3:]
+            if multi_ifo:
+                sigmasq = self.template_params[tind]['sigmasq'][ifo]
+                ifo = self.ifo_reverse[event['ifo']]
+                row.channel = channel[ifo]
+            else:
+                sigmasq = self.template_params[tind]['sigmasq']
+                row.channel = channel
             row.ifo = ifo
 
             # FIXME: This is *not* the dof!!!
@@ -374,19 +435,21 @@ class EventManager(object):
             else:
                 row.chisq_dof = 0
 
-            if hasattr(self.opt, 'bank_veto_bank_file') and self.opt.bank_veto_bank_file:
-                # EXPLAINME - is this a hard-coding? Certainly looks like one
+            if hasattr(self.opt, 'bank_veto_bank_file')\
+                    and self.opt.bank_veto_bank_file:
+                # FIXME: Why is this hardcoded?
                 row.bank_chisq_dof = 10
                 row.bank_chisq = event['bank_chisq']
             else:
                 row.bank_chisq_dof = 0
                 row.bank_chisq = 0
 
-            if hasattr(self.opt, 'autochi_number_points') and self.opt.autochi_number_points>0:
+            if hasattr(self.opt, 'autochi_number_points')\
+                    and self.opt.autochi_number_points>0:
                 row.cont_chisq = event['cont_chisq']
                 if (self.opt.autochi_onesided):
                     row.cont_chisq_dof = self.opt.autochi_number_points
-                else:    
+                else:
                     row.cont_chisq_dof = 2*self.opt.autochi_number_points
 
             row.eff_distance = sigmasq ** (0.5) / abs(snr)
@@ -401,48 +464,77 @@ class EventManager(object):
 
             sngl_table.append(row)
 
-        # Create Search Summary Table ########################################
-        search_summary_table = glue.ligolw.lsctables.New(glue.ligolw.lsctables.SearchSummaryTable)
-        outdoc.childNodes[0].appendChild(search_summary_table)
-
+    def _create_search_summary_table(self, proc_id, nevents,
+                                     ifo=None, start_time=None, end_time=None,
+                                     trig_start_time=None, trig_end_time=None):
+        if ifo is None:
+            ifo = self.opt.channel_name[0:2]
+        if start_time is None:
+            start_time = self.opt.gps_start_time - self.opt.pad_data
+        if end_time is None:
+            end_time = self.opt.gps_end_time + self.opt.pad_data
+        if trig_start_time is None:
+            if self.opt.trig_start_time:
+                trig_start_time = self.opt.trig_start_time
+            else:
+                trig_start_time = self.opt.gps_start_time +\
+                              self.opt.segment_start_pad
+        if trig_end_time is None:
+            if self.opt.trig_end_time:
+                trig_end_time = self.opt.trig_end_time
+            else:
+                trig_end_time = self.opt.gps_end_time - self.opt.segment_end_pad
+      
+        search_summary_table = glue.ligolw.lsctables.New(\
+                                      glue.ligolw.lsctables.SearchSummaryTable)
         row = glue.ligolw.lsctables.SearchSummary()
-        row.nevents = len(sngl_table)
+        row.nevents = nevents
         row.process_id = proc_id
         row.shared_object = ""
         row.lalwrapper_cvs_tag = ""
         row.lal_cvs_tag = ""
         row.comment = ""
         row.ifos = ifo
-        row.in_start_time = self.opt.gps_start_time - self.opt.pad_data
+        row.in_start_time = start_time
         row.in_start_time_ns = 0
-        row.in_end_time = self.opt.gps_end_time + self.opt.pad_data
+        row.in_end_time = end_time
         row.in_end_time_ns = 0
-        row.out_start_time = tstart_time
+        row.out_start_time = trig_start_time
         row.out_start_time_ns = 0
-        row.out_end_time = tend_time
+        row.out_end_time = trig_end_time
         row.out_end_time_ns = 0
         row.nnodes = 1
 
         search_summary_table.append(row)
+        return search_summary_table
 
-        # Create Filter Table ########################################
-        filter_table = glue.ligolw.lsctables.New(glue.ligolw.lsctables.FilterTable)
-        outdoc.childNodes[0].appendChild(filter_table)
+    def _create_filter_table(self, proc_id, start_time=None, approximant=None):
+        if start_time is None:
+            start_time = self.opt.gps_start_time
+        if approximant is None:
+            approximant = self.opt.approximant
+
+        filter_table = glue.ligolw.lsctables.New(\
+                                             glue.ligolw.lsctables.FilterTable)
 
         row = glue.ligolw.lsctables.Filter()
         row.process_id = proc_id
         row.program = "PyCBC_INSPIRAL"
-        row.start_time = self.opt.gps_start_time
-        row.filter_name = self.opt.approximant
+        row.start_time = start_time
+        row.filter_name = approximant
         row.param_set = 0
         row.comment = ""
         row.filter_id = str(glue.ligolw.lsctables.FilterID(0))
 
         filter_table.append(row)
+        return filter_table
 
-        # SumVars Table ########################################
-        search_summvars_table = glue.ligolw.lsctables.New(glue.ligolw.lsctables.SearchSummVarsTable)
-        outdoc.childNodes[0].appendChild(search_summvars_table)
+    def _create_search_summvars_table(self, proc_id, sample_rate=None):
+        if sample_rate is None:
+            sample_rate = self.opt.sample_rate
+
+        search_summvars_table = glue.ligolw.lsctables.New(\
+                                     glue.ligolw.lsctables.SearchSummVarsTable)
 
         row = glue.ligolw.lsctables.SearchSummVars()
         row.process_id = proc_id
@@ -456,23 +548,42 @@ class EventManager(object):
         row.process_id = proc_id
         row.name = "filter data sample rate"
         row.string = ""
-        row.value = 1.0 / self.opt.sample_rate
-        row.search_summvar_id = str(glue.ligolw.lsctables.SearchSummVarsID(1))
+        row.value = 1.0 / sample_rate
+        row.search_summvar_id = str(glue.ligolw.lsctables.SearchSummVarsID(1))   
         search_summvars_table.append(row)
+        return search_summvars_table
 
-        # SumValue Table ########################################
+    def _create_summ_val_table(self, proc_id, ifo=None, trig_start_time=None,
+                                trig_end_time=None, low_frequency_cutoff=None):
+
+        if ifo is None:
+            ifo = self.opt.channel_name[0:2]
+
+        if trig_start_time is None:
+            if self.opt.trig_start_time:
+                trig_start_time = self.opt.trig_start_time
+            else:
+                trig_start_time = self.opt.gps_start_time +\
+                              self.opt.segment_start_pad
+        if trig_end_time is None:
+            if self.opt.trig_end_time:
+                trig_end_time = self.opt.trig_end_time
+            else:
+                trig_end_time = self.opt.gps_end_time - self.opt.segment_end_pad
+        if low_frequency_cutoff is None:
+            low_frequency_cutoff = self.opt.low_frequency_cutoff
+
         summ_val_columns = ['program', 'process_id', 'start_time',
                             'start_time_ns', 'end_time', 'end_time_ns', 'ifo',
                             'name', 'value', 'comment', 'summ_value_id']
-        summ_value_table = glue.ligolw.lsctables.New(
+        summ_value_table = glue.ligolw.lsctables.New(\
                 glue.ligolw.lsctables.SummValueTable, columns=summ_val_columns)
-        outdoc.childNodes[0].appendChild(summ_value_table)
 
         row = glue.ligolw.lsctables.SummValue()
         row.process_id = proc_id
-        row.start_time = tstart_time
+        row.start_time = trig_start_time
         row.start_time_ns = 0
-        row.end_time = tend_time
+        row.end_time = trig_end_time
         row.end_time_ns = 0
         row.ifo = ifo
         row.frameset_group = ""
@@ -488,12 +599,16 @@ class EventManager(object):
         psd = self.global_params['psd']
         from pycbc.waveform.spa_tmplt import spa_distance
         from pycbc import DYN_RANGE_FAC
-        row1.value = spa_distance(psd, 1.4, 1.4, self.opt.low_frequency_cutoff,
-                                                         snr=8) * DYN_RANGE_FAC
+        # FIXME: Lalapps did this "right" for non-spa waveforms.
+        #        Should also be right here (maybe covering a range of masses)
+        row1.value = spa_distance(psd, 1.4, 1.4, self.opt.low_frequency_cutoff, 
+snr=8) * DYN_RANGE_FAC
         row1.comment = "1.4_1.4_8"
         row1.summ_value_id = str(glue.ligolw.lsctables.SummValueID(0))
         summ_value_table.append(row1)
 
+        # FIXME: We haven't run on uncalibrated data since S4(?)
+        #        Do we really still need this?
         row2.name = "calibration alpha"
         row2.value = 0
         row2.comment = "analysis"
@@ -506,12 +621,299 @@ class EventManager(object):
         row3.summ_value_id = str(glue.ligolw.lsctables.SummValueID(2))
         summ_value_table.append(row3)
 
-        # Write out file #####################################################
-        glue.ligolw.utils.write_filename(outdoc, outname, gz=outname.endswith('gz'))
+        return summ_value_table
 
+class EventManagerMultiDet(EventManager):
+    def __init__(self, opt, ifos, column, column_types, psd=None, **kwargs):
+        self.opt = opt
+        self.ifos = ifos
+        self.global_params = kwargs
+        if psd is not None:
+            self.global_params['psd'] = psd[ifos[0]]
+
+        # The events array does not like holding the ifo as string,
+        # so create a mapping dict and hold as an int
+        self.ifo_dict = {}
+        self.ifo_reverse = {}
+        for i, ifo in enumerate(ifos):
+            self.ifo_dict[ifo] = i
+            self.ifo_reverse[i] = ifo
+
+        self.event_dtype = [ ('template_id', int), ('event_id', int) ]
+        for column, coltype in zip (column, column_types):
+            self.event_dtype.append( (column, coltype) )
+
+        self.events = numpy.events = numpy.array([], dtype=self.event_dtype)
+        self.event_id_map = {}
+        self.event_index = 0
+        self.template_params = []
+        self.template_index = -1
+        self.template_event_dict = {}
+        self.coinc_list = []
+        for ifo in ifos:
+            self.template_event_dict[ifo] = numpy.array([],
+                                                        dtype=self.event_dtype)
+
+    def add_template_events_to_ifo(self, ifo, columns, vectors):
+        """ Add a vector indexed """
+        # Just call through to the standard function
+        self.template_events = self.template_event_dict[ifo]
+        self.add_template_events(columns, vectors)
+        self.template_event_dict[ifo] = self.template_events
+        self.template_events = None
+
+    def cluster_template_events_single_ifo(self, tcolumn, column, window_size,
+                                          ifo):
+        """ Cluster the internal events over the named column
+        """
+        # Just call through to the standard function
+        self.template_events = self.template_event_dict[ifo]
+        self.cluster_template_events(tcolumn, column, window_size)
+        self.template_event_dict[ifo] = self.template_events
+        self.template_events = None
+
+    def finalize_template_events(self, perform_coincidence=True,
+                                 coinc_window=0.0):
+        # Set ids
+        for ifo in self.ifos:
+            num_events = len(self.template_event_dict[ifo])
+            new_event_ids = numpy.arange(self.event_index,
+                                                   self.event_index+num_events)
+            self.template_event_dict[ifo]['event_id'] = new_event_ids
+            self.event_index = self.event_index+num_events
+         
+        if perform_coincidence:
+            if not len(self.ifos) == 2:
+                err_msg = "Coincidence currently only supported for 2 ifos."
+                raise ValueError(err_msg)
+            ifo1 = self.ifos[0]
+            ifo2 = self.ifos[1]
+            end_times1 = self.template_event_dict[ifo1]['time_index']  /\
+              float(self.opt.sample_rate[ifo1]) + self.opt.gps_start_time[ifo1]
+            end_times2 = self.template_event_dict[ifo2]['time_index']  /\
+              float(self.opt.sample_rate[ifo2]) + self.opt.gps_start_time[ifo2]
+            light_travel_time = Detector(ifo1).light_travel_time_to_detector(\
+                                                                Detector(ifo2))
+            coinc_window = coinc_window + light_travel_time
+            # FIXME: Remove!!!
+            coinc_window = 2.0
+            if len(end_times1) and len(end_times2):
+                idx_list1, idx_list2, _ = \
+                                 coinc.time_coincidence(end_times1, end_times2,
+                                                        coinc_window)
+                if len(idx_list1):
+                    for idx1, idx2 in zip(idx_list1, idx_list2):
+                        event1 = self.template_event_dict[ifo1][idx1]
+                        event2 = self.template_event_dict[ifo2][idx2]
+                        self.coinc_list.append((event1, event2))
+        for ifo in self.ifos:
+            self.events = numpy.append(self.events,
+                                                 self.template_event_dict[ifo])
+            self.template_event_dict[ifo] = numpy.array([],
+                                                        dtype=self.event_dtype)
+
+    def write_events(self, outname):
+        """ Write the found events to a sngl inspiral table 
+        """
+        outdoc = glue.ligolw.ligolw.Document()
+        outdoc.appendChild(glue.ligolw.ligolw.LIGO_LW())
+
+        ifostring = ''.join(self.ifos)
+        ifo_ex = self.ifos[0]
+        start_time = self.opt.gps_start_time[ifo_ex]
+        start_time_gps = lal.LIGOTimeGPS(start_time)
+        start_time_padded = self.opt.gps_start_time[ifo_ex] \
+                             - self.opt.pad_data[ifo_ex]
+        end_time_padded = self.opt.gps_end_time[ifo_ex] \
+                           + self.opt.pad_data[ifo_ex]
+        if self.opt.trig_start_time[ifo_ex]:
+            trig_start_time = self.opt.trig_start_time[ifo_ex]
+        else:
+            trig_start_time = self.opt.gps_start_time[ifo_ex] \
+                               + self.opt.segment_start_pad[ifo_ex]
+        if self.opt.trig_end_time[ifo_ex]:
+            trig_end_time = self.opt.trig_end_time[ifo_ex]
+        else:
+            trig_end_time = self.opt.gps_end_time[ifo_ex] \
+                             + self.opt.segment_end_pad[ifo_ex]
+        sample_rate = self.opt.sample_rate[ifo_ex]
+        approximant = self.opt.approximant
+        low_frequency_cutoff = self.opt.low_frequency_cutoff
+
+        proc_id = glue.ligolw.utils.process.register_to_xmldoc(outdoc,
+                        "inspiral", convert_to_process_params_dict(self.opt),
+                        comment="", ifos=[ifostring],
+                        version=glue.git_version.id,
+                        cvs_repository=glue.git_version.branch,
+                        cvs_entry_time=glue.git_version.date).process_id
+
+        # Create sngl_inspiral table ###########################################
+        sngl_table = glue.ligolw.lsctables.New(\
+                                       glue.ligolw.lsctables.SnglInspiralTable)
+        self._add_sngls_to_output(sngl_table, proc_id,
+                                  start_time=start_time_gps,
+                                  sample_rate=sample_rate, multi_ifo=True)
+        outdoc.childNodes[0].appendChild(sngl_table)
+
+        # Create the coincidence tables ######################################
+        coinc_def_table = glue.ligolw.lsctables.New(\
+                                       glue.ligolw.lsctables.CoincDefTable)
+        coinc_event_table = glue.ligolw.lsctables.New(\
+                                         glue.ligolw.lsctables.CoincTable)
+        coinc_event_map_table = glue.ligolw.lsctables.New(\
+                                      glue.ligolw.lsctables.CoincMapTable)
+        time_slide_table = glue.ligolw.lsctables.New(\
+                                          glue.ligolw.lsctables.TimeSlideTable)
+        coinc_inspiral_table = glue.ligolw.lsctables.New(\
+                                      glue.ligolw.lsctables.CoincInspiralTable)
+        self._add_coincs_to_output(coinc_def_table, coinc_event_table,
+                                   coinc_event_map_table, time_slide_table,
+                                   coinc_inspiral_table, sngl_table, proc_id)
+        outdoc.childNodes[0].appendChild(coinc_def_table)
+        outdoc.childNodes[0].appendChild(coinc_event_table)
+        outdoc.childNodes[0].appendChild(coinc_event_map_table)
+        outdoc.childNodes[0].appendChild(time_slide_table)
+        outdoc.childNodes[0].appendChild(coinc_inspiral_table)
+
+        # Create Search Summary Table ########################################
+        search_summary_table = self._create_search_summary_table(proc_id,
+                           len(sngl_table),
+                           ifo=ifostring, start_time=start_time_padded,
+                           end_time=end_time_padded,
+                           trig_start_time=trig_start_time,
+                           trig_end_time=trig_end_time)
+        outdoc.childNodes[0].appendChild(search_summary_table)
+
+        # Create Filter Table ########################################
+        filter_table = self._create_filter_table(proc_id, start_time=start_time,
+                                                 approximant=approximant)
+        outdoc.childNodes[0].appendChild(filter_table)
+
+        # SumVars Table ########################################
+        search_summvars_table = self._create_search_summvars_table(proc_id,
+                                                       sample_rate=sample_rate)
+        outdoc.childNodes[0].appendChild(search_summvars_table)
+
+        # SumValue Table ########################################
+        summ_value_table = self._create_summ_val_table(proc_id, ifo=ifostring,
+                                     trig_start_time=trig_start_time,
+                                     trig_end_time=trig_end_time,
+                                     low_frequency_cutoff=low_frequency_cutoff)
+        outdoc.childNodes[0].appendChild(summ_value_table)
+
+        # Write out file #####################################################
+        glue.ligolw.utils.write_filename(outdoc, outname,
+                                         gz=outname.endswith('gz'))
+
+    def _add_coincs_to_output(self, coinc_def_table, coinc_event_table,
+                              coinc_event_map_table, time_slide_table,
+                              coinc_inspiral_table, sngl_table, proc_id):
+        from pylal.ligolw_sstinca import coinc_inspiral_end_time
+        # FIXME: This shouldn't live here
+        # FIXME: More choices would be good
+        magic_number = 6.0
+        def get_weighted_snr(self, fac):
+            rchisq = self.chisq/(2*self.chisq_dof - 2)
+            nhigh = 2.
+            if rchisq > 1.:
+                return self.snr/((1+rchisq**(fac/nhigh))/2)**(1./fac)
+            else:
+                return self.snr
+
+        # Define global IDs up front:
+        coinc_def_id = glue.ligolw.lsctables.CoincDefID(0)
+        # FIXME: Add support for multiple slides
+        time_slide_id = glue.ligolw.lsctables.TimeSlideID(0)
+        for ifo in self.ifos:
+            time_slide_row = glue.ligolw.lsctables.TimeSlide()
+            time_slide_row.instrument = ifo
+            time_slide_row.time_slide_id = time_slide_id
+            time_slide_row.offset = 0
+            time_slide_row.process_id = proc_id
+            time_slide_table.append(time_slide_row)
+        time_slide_dict = time_slide_table.as_dict()
+
+        ifostring = ''.join(self.ifos)
+
+        count = 0
+        for coinc in self.coinc_list:
+            # Check that all sngls are present
+            coinc_removed_flag=0
+            for sngl in coinc:
+                if not self.event_id_map.has_key(sngl['event_id']):
+                    # If not event_id then one of the sngls is not in the sngl
+                    # table because it was removed at some point after testing
+                    # coincidence. Therefore this is not still a coincident
+                    # event.
+                    coinc_removed_flag=1
+                    break
+            if coinc_removed_flag:
+                continue
+            coinc_id = glue.ligolw.lsctables.CoincID(count)
+            count = count+1
+            # Create the coinc map entry
+            sngl_xmls = []
+            for sngl in coinc:
+                coinc_map_row = glue.ligolw.lsctables.CoincMap()
+                # I really need this .... every time?!
+                coinc_map_row.table_name = 'sngl_inspiral'
+                coinc_map_row.coinc_event_id = coinc_id
+                sngl_id_num = self.event_id_map[sngl['event_id']]
+                sngl_id = glue.ligolw.lsctables.SnglInspiralID(sngl_id_num)
+                coinc_map_row.event_id = sngl_id
+                coinc_event_map_table.append(coinc_map_row)
+                # NOTE: This now assumes event_ids are ordered in sngl_inspiral
+                #       table.
+                sngl_xmls.append(sngl_table[sngl_id_num])
+
+            # Now construct the coinc_inspiral, which is actually *two* tables
+            coinc_event_row = glue.ligolw.lsctables.Coinc()
+            coinc_inspiral_row = glue.ligolw.lsctables.CoincInspiral()
+            # Fill the joining/meta columns
+            coinc_event_row.coinc_def_id = coinc_def_id
+            coinc_event_row.nevents = len(coinc)
+            coinc_event_row.instruments = ifostring
+            coinc_inspiral_row.set_ifos(self.ifos)
+            coinc_event_row.time_slide_id = time_slide_id
+            coinc_event_row.process_id = proc_id
+            coinc_event_row.coinc_event_id = coinc_id
+            coinc_inspiral_row.coinc_event_id = coinc_id
+
+            # Meaningful rows
+            coinc_inspiral_row.mchirp = sum(sngl.mchirp for sngl in sngl_xmls)\
+                                                               / len(sngl_xmls)
+            coinc_inspiral_row.minimum_duration = \
+                              min(sngl.template_duration for sngl in sngl_xmls)
+            coinc_inspiral_row.mass = sum(sngl.mass1 + sngl.mass2 \
+                                        for sngl in sngl_xmls) / len(sngl_xmls)
+            # End time is chosen as the unslid time of the first ifo in the
+            # coincidence, where "first" ifo is chosen alphabetically.
+            first_xml = min(sngl_xmls, key = lambda sngl: sngl.ifo)
+            end_time = first_xml.get_end() + \
+                                    timeslid_dict[time_slide_id][first_xml.ifo]
+            coinc_inspiral_row.set_end(end_time)
+            coinc_inspiral_row.snr = numpy.sqrt( sum( \
+                                  get_weighted_snr(sngl, fac=magic_number)**2 \
+                                                        for sngl in sngl_xmls))
+
+            # Rows that are populated later
+            coinc_event_row.likelihood = 0.
+            coinc_inspiral_row.false_alarm_rate = 0.
+            coinc_inspiral_row.combined_far = 0.
+
+            # Add new row
+            coinc_event_table.append(coinc_event_row)
+            coinc_inspiral_table.append(coinc_inspiral_row)
+
+        # Create coinc_definer table
+        coinc_def_row = glue.ligolw.lsctables.CoincDef()
+        coinc_def_row.search = "inspiral"
+        coinc_def_row.description = "sngl_inspiral-sngl_inspiral coincidences"
+        coinc_def_row.coinc_def_id = coinc_def_id
+        coinc_def_row.search_coinc_type = 0
+        coinc_def_table.append(coinc_def_row)
 
 __all__ = ['threshold_and_cluster', 'newsnr',
            'findchirp_cluster_over_window', 'fc_cluster_over_window_fast',
            'threshold', 'cluster_reduce',
-           'EventManager']
-
+           'EventManager', 'EventManagerMultiDet']
