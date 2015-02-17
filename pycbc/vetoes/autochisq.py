@@ -208,7 +208,7 @@ class SingleDetAutoChisq(object):
     """Class that handles precomputation and memory management for efficiently
     running the auto chisq in a single detector inspiral analysis.
     """	
-    def __init__(self, stride, snr_thr=8.0, num_points=None, onesided=False):
+    def __init__(self, stride, num_points, onesided=False):
         if stride > 0:
             self.do = True
             self.column_name = "cont_chisq"
@@ -218,53 +218,41 @@ class SingleDetAutoChisq(object):
                 self.dof = num_points
             
             self._stride = stride
-            self._snr_thr = snr_thr
             self._num_points = num_points
             self._onesided = onesided 
-            self._template = None
             self._autocor = None
+            self._autocor_id = None
         else:
             self.do = False
 
-
-    def values(self, sn, corr, hautocorr=None, indices=None, template=None, psd=None, low_frequency_cutoff=None, 
-                high_frequency_cutoff=None):
+    def values(self, sn, corr, indices, template, psd, norm,
+               low_frequency_cutoff=None, high_frequency_cutoff=None):
         if self.do:
-            ### compute autochisquare from precomputed
-            # make sure that sn, corr and autocorr is computed
-            # !!! assumes that sn is normalize: sn = sn*hnorm
-            if (hautocorr == None or self._autocor != hautocorr or self.template != template):
-                ### compute autocorrelation
-                logging.info("...Calculating autocorrelation")
+            # NOTE: The code needs a normalized sn:
+            sn = sn*norm
+
+            # Check if we need to recompute the autocorrelation
+            key = (id(template), id(psd))
+            if key != self._autocor_id:
+                logging.info("Calculating autocorrelation")
                 htilde = make_frequency_series(template)
                 N = (len(htilde)-1) * 2 
 
                 _Ptilde = zeros(N, dtype=complex_same_precision_as(template))
                 Pt = zeros(N, dtype=complex_same_precision_as(template))
-
-                Pt, _Ptilde, P_norm = matched_filter_core(htilde, htilde, psd=psd, \
-            		   low_frequency_cutoff=low_frequency_cutoff,\
-                              high_frequency_cutoff=high_frequency_cutoff)
+                Pt, _Ptilde, P_norm = matched_filter_core(htilde, htilde,
+                            psd=psd, low_frequency_cutoff=low_frequency_cutoff,
+                            high_frequency_cutoff=high_frequency_cutoff)
                 self._autocor = Array(Pt.real(), copy=True)
-                self._template = template
-            else:
-                self._autocor = hautocorr
-            
-            if (indices==None):
-                logging.info("...indices are not given, compute where snr>snr_thr")
-                Nsnr = len(sn)
-                if (self._snr_thr > 0.0):
-                    # compute snr data set
-                    snr_v = np.absolute(sn)
-            	    for i in xrange(Nsnr):
-            		   if (snr_v[i] >= self._snr_thr):
-            			  index_list = np.append(index_list, int(i))
-            
-            logging.info("...Calculating autochisquare")
+                self._autocor_id = key
+
+            logging.info("Calculating autochisquare")
             achi_list = np.array([])
             if (len(indices) > 0):
                 index_list = np.array(indices)
-                dof, achi_list = autochisq_from_precomputed(sn, corr, self._autocor, stride=self._stride, \
-        			num_points=self._num_points, indices=index_list, oneside=self._onesided)
+                dof, achi_list = autochisq_from_precomputed(sn, corr,
+                                    self._autocor, stride=self._stride,
+                                    num_points=self._num_points, 
+                                    indices=index_list, oneside=self._onesided)
                 self.dof = dof
-            return (achi_list)
+            return achi_list[:,2]

@@ -132,8 +132,9 @@ with ctx:
                                           complex64, phase_order=opt.order)
 
     power_chisq = vetoes.SingleDetPowerChisq(opt.chisq_bins)
-    autochisq = vetoes.SingleDetAutoChisq(opt.autochi_stride, opt.snr_threshold,
-                               opt.autochi_number_points, opt.autochi_onesided)
+    autochisq = vetoes.SingleDetAutoChisq(opt.autochi_stride,
+                                          opt.autochi_number_points, 
+                                          onesided=opt.autochi_onesided)
 
     logging.info("Overwhitening frequency-domain data segments")
     for seg in segments:
@@ -192,11 +193,9 @@ with ctx:
 
             snrv *= norm
 
-            if opt.autochi_number_points:
-                auto_chisqv = autochisq.values(snr*norm, corr, hautocorr=None,
-                           indices=idx+stilde.analyze.start, template=template,
-                                            psd=psd, low_frequency_cutoff=flow)
-                out_vals['cont_chisq'] = auto_chisqv[:,2]
+            out_vals['cont_chisq'] = autochisq.values(snr, corr,
+                                       idx+stilde.analyze.start, template, psd,
+                                       norm, low_frequency_cutoff=flow)
 
             idx += stilde.cumulative_index
 
