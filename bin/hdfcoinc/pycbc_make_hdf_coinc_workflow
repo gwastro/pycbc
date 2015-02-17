@@ -36,12 +36,13 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc)
 parser.add_argument('--version', action='version', version=__version__)
+parser.add_argument('--workflow-name', default='my_unamed_run')
 parser.add_argument("-d", "--output-dir", default=None,
                     help="Path to output directory.")
 wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 
-workflow = wf.Workflow(args, 'weekly_ahope')
+workflow = wf.Workflow(args, args.workflow_name)
 
 # Needed later for WIP
 if args.output_dir:
