@@ -24,11 +24,15 @@ chmod 755 $SUBMIT_DIR
 PEG_DIR=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGASUS_FILE_DIRECTORY'`
 SITE_TEMPLATE=$PEG_DIR/basic_site_template.xml
 
+
+mkdir working
+cd working
 # Set up the site-local with the correct paths
 echo 'cat <<END_OF_TEXT' >  temp.sh
 cat $SITE_TEMPLATE       >> temp.sh
 echo 'END_OF_TEXT'       >> temp.sh
-bash temp.sh > site-local-parsed.xml
+bash temp.sh > ../site-local-parsed.xml
+cd ..
 
 # Plan the workflow
 echo "Generating concrete workflow"
@@ -45,5 +49,14 @@ ln -s $SUBMIT_DIR submitdir
 
 echo pegasus-status $SUBMIT_DIR > status
 chmod 755 status
+
+echo pegasus-analyzer $SUBMIT_DIR > debug
+chmod 755 debug
+
+echo pegasus-remove $SUBMIT_DIR > stop
+chmod 755 stop
+
+echo pegasus-run $SUBMIT_DIR > start
+chmod 755 start
 
 echo Submitting from: $HOSTNAME
