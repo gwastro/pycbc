@@ -12,16 +12,27 @@ args = parser.parse_args()
 logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.INFO) 
 
 f = h5py.File(args.output_file, 'w')
-trigger_columns = h5py.File(args.trigger_files[0]).keys()
-trigger_columns.remove('search')
+
+empty = True
+trigger_columns = []
+for fname in args.trigger_files:
+    f2 = h5py.File(fname, 'r')
+    if 'snr' in f2:
+        trigger_columns = f2.keys()
+        trigger_columns.remove('search')
+        f2.close()
+        break
+    f2.close()
 
 logging.info('reading the metadata from the files')
 num_trigs = 0
 start = numpy.array([], dtype=numpy.float64)
 end = numpy.array([], dtype=numpy.float64)
 for filename in args.trigger_files:
-    data = h5py.File(filename)
-    num_trigs += len(data['snr'])
+    print filename
+    data = h5py.File(filename, 'r')
+    if 'snr' in data:
+        num_trigs += len(data['snr'])
     s, e = data['search/start_time'][:], data['search/end_time'][:]
     start, end = numpy.append(start, s), numpy.append(end, e)
 f['search/start_time'], f['search/end_time'] = start, end   
@@ -31,9 +42,12 @@ for k in data.attrs.keys():
 
 logging.info('reading the trigger columns from the input files')
 dwrite = {}
-for filename in args.trigger_files:
-    f2 = h5py.File(filename)
+for filename in args.trigger_files:        
+    f2 = h5py.File(filename, 'r')
     for column in trigger_columns:
+        if column not in f2:
+            continue
+            
         logging.info('Column: %s' % column)
         if column not in dwrite:
             dwrite[column] = (f.create_dataset(column, (num_trigs,), dtype=f2[column].dtype, 
@@ -42,5 +56,3 @@ for filename in args.trigger_files:
         dset, num = dwrite[column]
         dset[num:num+len(f2[column])] = f2[column][:]
         dwrite[column] = dset, num + len(f2[column])
-
-

@@ -129,13 +129,14 @@ f = h5py.File(args.output_file, "w")
 for key in attrs.keys():
     f.attrs[key] = attrs[key]
 
+for col in other.keys():
+    dset = f.create_dataset(col, (len(other[col]),), compression='gzip', dtype=other[col].dtype)
+    dset[:] = other[col]
+
 if len(data['snr']) > 0:
     for col in data.keys():
         dset = f.create_dataset(col, (len(tids),), compression='gzip', dtype=data[col].dtype)
         dset[:] = data[col]
-    for col in other.keys():
-        dset = f.create_dataset(col, (len(other[col]),), compression='gzip', dtype=other[col].dtype)
-        dset[:] = other[col]
     dset = f.create_dataset('template_id', (len(tids),), compression='gzip', dtype=tids.dtype)
     dset[:] = tids        
 else:
