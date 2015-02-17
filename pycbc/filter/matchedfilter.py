@@ -46,7 +46,7 @@ def correlate(x, y, z):
 
 class MatchedFilterControl(object):
     def __init__(self, low_frequency_cutoff, high_frequency_cutoff, 
-                snr_threshold, segments, downsample_factor=1, 
+                snr_threshold, tlen, delta_f, dtype, downsample_factor=1, 
                 upsample_threshold=1, upsample_method='pruned_fft'):
         """ Create a matched filter engine.
 
@@ -68,12 +68,10 @@ class MatchedFilterControl(object):
         upsample_method : {pruned_fft, str}
             The method to upsample or interpolate the reduced rate filter.
         """
-        if len(segments) == 0:
-            return
 
-        self.tlen = (len(segments[0]) - 1) * 2
-        self.delta_f = segments[0].delta_f
-        self.dtype = segments[0].dtype
+        self.tlen = tlen
+        self.delta_f = delta_f
+        self.dtype = dtype
         self.snr_threshold = snr_threshold    
         self.flow = low_frequency_cutoff
         self.fhigh = high_frequency_cutoff    
@@ -101,9 +99,6 @@ class MatchedFilterControl(object):
             else:
                 self.kmax_red = N_red - 1  
                 
-            for seg in segments:
-                seg.red_analyze = slice(seg.analyze.start/downsample_factor, 
-                                        seg.analyze.stop/downsample_factor)  
             self.snr_mem = zeros(N_red, dtype=self.dtype)
             self.corr_mem_full = FrequencySeries(zeros(N_full, dtype=self.dtype), delta_f=self.delta_f)
             self.corr_mem = Array(self.corr_mem_full[0:N_red], copy=False)
@@ -196,6 +191,12 @@ class MatchedFilterControl(object):
                   self.corr_mem[self.kmin_red:self.kmax_red]) 
                      
         ifft(self.corr_mem, self.snr_mem)           
+
+        if not hasattr(stilde, 'red_analyze'):
+            stilde.red_analyze = \
+                             slice(stilde.analyze.start/self.downsample_factor,
+                                   stilde.analyze.stop/self.downsample_factor)
+
         
         idx_red, snrv_red = events.threshold(self.snr_mem[stilde.red_analyze], 
                                 self.snr_threshold / norm * self.upsample_threshold)
