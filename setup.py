@@ -282,6 +282,7 @@ setup (
                'bin/pycbc_banksim',
                'bin/pycbc_faithsim',
                'bin/pycbc_inspiral',
+               'bin/pycbc_multi_inspiral',
                'bin/pycbc_make_banksim',
                'bin/pycbc_splitbank',
                'bin/pycbc_split_inspinj',
