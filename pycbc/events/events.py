@@ -427,6 +427,7 @@ class EventManager(object):
                 row.channel = channel
             row.ifo = ifo
 
+            row.chisq = event['chisq']
             # FIXME: This is *not* the dof!!!
             # but is needed for later programs not to fail
             if 'chisq_dof' in event.dtype.names:
