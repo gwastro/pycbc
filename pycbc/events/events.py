@@ -288,7 +288,7 @@ class EventManager(object):
             f.create_dataset('cont_chisq_dof', data=numpy.repeat(cont_dof, len(self.events)), compression='gzip')
             f.create_dataset('bank_chisq_dof', data=numpy.repeat(10, len(self.events)), compression='gzip')        
 
-            if 'chisq_dof' in self.events:
+            if 'chisq_dof' in self.events.dtype.names:
                 f.create_dataset('chisq_dof', data=self.events['chisq_dof'] / 2 + 1, compression='gzip')
             else:
                 f.create_dataset('chisq_dof', data=numpy.zeros(len(self.events)), compression='gzip')    
@@ -368,7 +368,7 @@ class EventManager(object):
 
             # FIXME: This is *not* the dof!!!
             # but is needed for later programs not to fail
-            if 'chisq_dof' in event:
+            if 'chisq_dof' in event.dtype.names:
                 # fail through: copy the value from the trigger
                 row.chisq_dof = event['chisq_dof'] / 2 + 1
             else:
