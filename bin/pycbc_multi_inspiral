@@ -244,9 +244,9 @@ with ctx:
 
                 snrv *= norm
 
-                out_vals['cont_chisq'] = autochisq.values(snr*norm, corr,
+                out_vals['cont_chisq'] = autochisq.values(snr, corr,
                                   idx+stilde.analyze.start, template, psd[ifo],
-                                  low_frequency_cutoff=flow)
+                                  norm, low_frequency_cutoff=flow)
 
                 idx += stilde.cumulative_index
 
