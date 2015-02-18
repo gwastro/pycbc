@@ -29,6 +29,10 @@ import Pegasus.DAX3 as dax
 from glue import segments
 import pycbc.workflow as _workflow
 
+################
+# setup workflow
+################
+
 # read command line
 parser = argparse.ArgumentParser(usage='pycbc_make_sngl_workflow \
 [--options]',
@@ -45,10 +49,10 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
 
 # directory names
 runDir = os.path.join(os.getcwd(), args.name)
-segDir = runDir + '/segments'
 datafindDir = runDir + '/datafind'
 fulldataDir = runDir + '/full_data'
-outputDir = runDir + '/output'
+htmlDir = runDir + '/output'
+segDir = htmlDir + '/segments'
 
 # change into run dir
 if not os.path.exists(runDir):
@@ -58,12 +62,20 @@ os.chdir(runDir)
 # setup workflow
 workflow = _workflow.Workflow(args, args.name)
 
+####################################
+# retreieve segments and frame files
+####################################
+
 # get segments
-scienceSegs, segsFileList = _workflow.setup_segment_generation(workflow, segDir)
+scienceSegs, segFileList = _workflow.setup_segment_generation(workflow, segDir)
 
 # get frames
 datafinds, scienceSegs = _workflow.setup_datafind_workflow(workflow, scienceSegs,
-                           datafindDir, segsFileList)
+                           datafindDir, segFileList)
+
+###########################
+# setup template bank nodes
+###########################
 
 # setup template bank
 banks = _workflow.setup_tmpltbank_workflow(workflow, scienceSegs, datafinds, 
@@ -72,26 +84,44 @@ banks = _workflow.setup_tmpltbank_workflow(workflow, scienceSegs, datafinds,
 # setup splitbank
 splitBanks = _workflow.setup_splittable_workflow(workflow, banks, datafindDir)
 
+###############################
+# setup matched filtering nodes
+###############################
+
 # setup matched filtering
 insps = _workflow.setup_matchedfltr_workflow(workflow, scienceSegs, datafinds,
                                          splitBanks, fulldataDir)
 
-#################
-# setup plotting
-#################
+########################
+# setup ligolw_add nodes
+########################
 
-# setup directory
-if not os.path.exists(outputDir):
-  os.makedirs(outputDir)
-os.makedirs(outputDir+'/segments')
+# setup ligolw_add executable
+llwadd_exe = _workflow.LigolwAddExecutable(workflow.cp, 'llwadd',
+                                   ifo=''.join(scienceSegs.keys()),
+                                   out_dir=fulldataDir)
 
-# get segment files
-# FIXME: hardcoded
-cp_exec = _workflow.Executable(workflow.cp, 'cp', out_dir=outputDir+'/segments')
-cpnode = cp_exec.create_node()
-cpnode.add_arg(segDir+'/*.xml')
-cpnode.add_arg(outputDir+'/segments')
-workflow.add_node(cpnode)
+# group inspiral files by IFO and loop over IFOs
+insps_ifos, insps_ifos_filelists = insps.categorize_by_attr('ifo')
+for insps_ifo, insps_ifo_filelist in zip(insps_ifos, insps_ifos_filelists):
+
+    # group IFO inspiral files by valid segments and loop over valid segments
+    insps_segs, insps_seg_filelists = insps_ifo_filelist.categorize_by_attr('segment')
+    for insps_seg, insps_seg_filelist in zip(insps_segs, insps_seg_filelists): 
+
+        # setup ligolw_add nodes for inspiral filelists of identical IFO and valid segment
+        llwadd_file = _workflow.File(insps_ifo, 'LLWADD_UNCLUSTERED', insps_seg,
+                                     directory=fulldataDir, extension='xml.gz')
+        llwadd_node = llwadd_exe.create_node(insps_seg, insps_seg_filelist,
+                                             output=llwadd_file) 
+        llwadd_node.add_opt('--lfn-start-time', insps_seg[0])
+        llwadd_node.add_opt('--lfn-end-time',insps_seg[1])
+        workflow.add_node(llwadd_node)
+
+######################
+# setup plotting nodes
+######################
+
 
 # save
 workflow.save()
