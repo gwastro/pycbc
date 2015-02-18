@@ -374,6 +374,15 @@ def setup_hardware_injection_page(workflow, input_files, cache_filename, \
 
     out_files = FileList([])
 
+    # check if hardware injection section exists
+    # if not then do not do add hardware injection job to the workflow
+    if not workflow.cp.has_section('workflow-hardware-injections'):
+      msg  = "There is no workflow-hardware-injections section. "
+      msg += "The hardware injection page will not be added to the workflow."
+      logging.info(msg)
+      logging.info("Leaving hardware injection page setup.")
+      return out_files
+
     # make the output dir
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
