@@ -37,7 +37,7 @@ chisq = f['chisq'][:][tid]
 chisq_dof = f['chisq_dof'][:][tid]
 chisq /= (chisq_dof * 2 - 2) 
 pylab.scatter(snr, chisq, marker='o', color='black',
-              linewidth=0, s=0.6, label='background', 
+              linewidth=0, s=2.0, label='background', 
               zorder=args.background_front)
 
 # Add the found injection points
@@ -60,7 +60,7 @@ pylab.scatter(snr, chisq, c=eff_dist, norm=colors.LogNorm(),
               marker='^', linewidth=0, label="Injections", 
               zorder= not args.background_front)
     
-r = numpy.logspace(numpy.log(chisq.min()), numpy.log(chisq.max()), 200)   
+r = numpy.logspace(numpy.log(chisq.min()*0.9), numpy.log(chisq.max()*1.1), 200)   
 for cval in args.newsnr_contours:
     snrv = snr_from_chisq(r, cval)
     pylab.plot(snrv, r, '--', color='grey', linewidth=1)
@@ -69,12 +69,13 @@ ax = pylab.gca()
 ax.set_xscale('log')
 ax.set_yscale('log')
 cb = pylab.colorbar()
-cb.set_label('Effective Distance (Mpc)')
-pylab.title('Distribution of %s single $\\rho-\chi^2$ for Coincident triggers' % ifo)
-pylab.xlabel('Signal-to-noise Ratio')
-pylab.ylabel('Reduced $\chi^2$')
-pylab.xlim(snr.min(), snr.max())
-pylab.ylim(0.5, chisq.max())
-pylab.legend(loc='upper left')
-pylab.grid(which='both')
+cb.set_label('Effective Distance (Mpc)', size='large')
+pylab.title('%s Coincident Triggers' % ifo, size='large')
+pylab.xlabel('SNR', size='large')
+pylab.ylabel('Reduced $\chi^2$', size='large')
+pylab.xlim(snr.min()*0.9, snr.max()*1.1)
+pylab.ylim(chisq.min()*0.9, chisq.max()*1.1)
+pylab.legend(loc='upper left', fontsize=12)
+pylab.grid(which='major', ls='solid', alpha=0.7, linewidth=.5)
+pylab.grid(which='minor', ls='solid', alpha=0.7, linewidth=.1)
 pylab.savefig(args.output_file, dpi=300)
