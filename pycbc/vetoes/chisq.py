@@ -286,7 +286,7 @@ class SingleDetPowerChisq(object):
     running the power chisq in a single detector inspiral analysis.
     """
     def __init__(self, num_bins=0):
-        if not (num_bins == 0):
+        if not (num_bins == "0"):
             self.do = True
             self.column_name = "chisq"
             self.table_dof_name = "chisq_dof"
@@ -337,3 +337,5 @@ class SingleDetPowerChisq(object):
             bins = self.cached_chisq_bins(template, psd)
             return (fastest_power_chisq_at_points(corr, snr, snrv, snr_norm, bins, indices),
                   ((len(bins)-1) * 2 - 2) * numpy.ones_like(indices))
+        else:
+            return None, None
