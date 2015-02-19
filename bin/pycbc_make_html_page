@@ -94,9 +94,7 @@ parser = argparse.ArgumentParser(usage='pycbc_make_html_page \
 [--options]',
                                  description="Create static html\
                                  pages for analysis.")
-parser.add_argument('-d', '--template-dir', type=str,
-                  help='Input xml file with SnglInspiral triggers.')
-parser.add_argument('-n', '--template-name', type=str,
+parser.add_argument('-n', '--template-file', type=str,
                   help='Output xml file with playground segment triggers.')
 parser.add_argument('-o', '--output-path', type=str,
                   help='Output xml file with playground segment triggers.')
@@ -113,8 +111,8 @@ opts = parser.parse_args()
 # FIXME: rename options because I was lazy and didn't change everything
 analysis_title = opts.analysis_title.strip('"').rstrip('"')
 analysis_subtitle = opts.analysis_subtitle.strip('"').rstrip('"')
-input_path = opts.template_dir
-input_template = opts.template_name
+input_path = opts.template_file.split('/')[:-1]
+input_template = opts.template_name.split('/')[-1]
 output_path = opts.output_path
 plots_dir = opts.plots_dir
 
