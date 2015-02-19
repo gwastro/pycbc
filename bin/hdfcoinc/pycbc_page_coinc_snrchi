@@ -18,7 +18,7 @@ parser.add_argument('--found-injection-file', help='HDF format found injection f
 parser.add_argument('--single-injection-file', help='Single detector trigger files from the injection set. One per ifos')
 parser.add_argument('--coinc-statistic-file', help='HDF format statistic file')
 parser.add_argument('--single-trigger-file', help='Single detector triggers files from the zero lag run')
-parser.add_argument('--newsnr-contours', nargs='*', help="List of newsnr values to draw contours at.")
+parser.add_argument('--newsnr-contours', nargs='*', help="List of newsnr values to draw contours at.", default=[])
 parser.add_argument('--background-front', action='store_true', default=False)
 parser.add_argument('--output-file')
 args = parser.parse_args()

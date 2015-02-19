@@ -11,7 +11,7 @@ parser.add_argument('--trigger-file', help='Single ifo trigger file')
 parser.add_argument('--veto-file', help='Optional, file of veto segments to remove triggers')
 parser.add_argument('--min-snr', type=float, help='Optional, Minimum SNR to plot')
 parser.add_argument('--output-file')
-parser.add_argument('--newsnr-contours', nargs='*', help="List of newsnr values to draw contours at.")
+parser.add_argument('--newsnr-contours', nargs='*', help="List of newsnr values to draw contours at.", default=[])
 args = parser.parse_args()
 
 f = h5py.File(args.trigger_file, 'r')
