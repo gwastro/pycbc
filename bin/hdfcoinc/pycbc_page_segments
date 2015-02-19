@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 """ Make interactive visualization of segments
 """
-import matplotlib, numpy, pylab, pycbc.events, argparse, mpld3, mpld3.plugins
+import matplotlib
+matplotlib.use('Agg')
+import numpy, pylab, pycbc.events, argparse, mpld3, mpld3.plugins
 import itertools, datetime, time
 from matplotlib.patches import Rectangle
 from pycbc.results.mpld3_utils import MPLSlide, Tooltip

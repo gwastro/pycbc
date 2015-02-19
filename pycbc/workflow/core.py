@@ -36,7 +36,7 @@ import lal as lalswig
 from glue import lal
 from glue import segments
 from pycbc.workflow.configuration import WorkflowConfigParser
-import pylal.dq.dqSegmentUtils as dqUtils
+
 # The following syntax is convoluted, but designed to make
 # it easy to change when pegasus_workflow is moved upstream
 # into Pegasus.
@@ -1126,9 +1126,9 @@ class OutSegFile(File):
         """
         Write the segment list in self.segmentList to the url in self.url.
         """
-        filePointer = open(self.storage_path, 'w')
-        dqUtils.tosegmentxml(filePointer, self.segmentList)
-        filePointer.close()
+        from pycbc.events import segments_to_file
+        segments_to_file(self.segmentList, self.storage_path, 
+                             self.tagged_description,  ifo=self.ifo_string)
 
 def make_external_call(cmdList, out_dir=None, out_basename='external_call',
                        shell=False, fail_on_error=True):

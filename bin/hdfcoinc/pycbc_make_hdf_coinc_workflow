@@ -27,7 +27,7 @@ __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
 __program__ = "weekly_workflow"
 
-import os, argparse, ConfigParser, logging
+import os, argparse, ConfigParser, logging, glue.segments
 from pycbc import workflow as wf
 import pycbc.events
 
@@ -53,9 +53,10 @@ os.chdir(args.output_dir)
 science_segs, science_seg_file = wf.get_analyzable_segments(workflow, "segments")
 datafind_files, science_segs = wf.setup_datafind_workflow(workflow, 
                                          science_segs, "datafind", science_seg_file)
-cum_veto_files = wf.get_cumulative_veto_group_files(workflow, 
+
+cum_veto_files, ind_cats = wf.get_cumulative_veto_group_files(workflow, 
                                         'segments-veto-groups', "segments")
-final_veto_file = wf.get_cumulative_veto_group_files(workflow, 
+final_veto_file, ind_cats = wf.get_cumulative_veto_group_files(workflow, 
                                         'segments-final-veto-group', "segments")
 
 # Template bank stuff
@@ -88,6 +89,9 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                        datafind_files, splitbank_files, 
                                        output_dir, injection_file=inj_file,
                                        tags = [tag])
+   
+    ind_insps = insps if tag == 'full_data' else ind_insps
+   
     insps = wf.merge_single_detector_hdf_files(workflow, insps, output_dir, tags=[tag])
 
     # setup coinc for the filtering jobs
@@ -117,6 +121,20 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
             wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 
                                       final_bg_file[0], trig_insp,
                                       'plots/background', tags=[tag])
+   
+full_segs = []                                 
+for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
+    name = 'INSPIRAL_SEGMENTS'
+    fname = 'segments/%s-' % ifo + name + '.xml'
+    fsegs = glue.segments.segmentlist([f.segment for f in files])
+    full_segs.append(pycbc.events.segments_to_file(fsegs, fname, name, ifo=ifo))
+
+for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
+    wf.make_segments_plot(workflow, files, 'plots/segments', 
+                          tags=['%s_VETO_SEGMENTS' % ifo])
+
+wf.make_segments_plot(workflow, full_segs, 'plots/segments', tags=['INSPIRAL_SEGMENTS'])
+wf.make_segments_plot(workflow, science_seg_file, 'plots/segments', tags=['SCIENCE_MINUS_CAT1'])
 
 
 wf.make_segments_plot(workflow, science_seg_file, 'plot/segments', tags=['SCIENCE_MINUS_CAT1'])

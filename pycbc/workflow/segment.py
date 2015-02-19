@@ -400,6 +400,7 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir, tag=None):
     # Yes its yucky to generate a file and then read it back in. This will be
     # fixed when the new API for segment generation is ready.
     sciXmlFP = open(sciXmlFilePath,'r')
+    sciXmlFilePath = os.path.abspath(sciXmlFilePath)
     sciSegs = fromsegmentxml(sciXmlFP)
     sciXmlFP.close()
     currUrl = urlparse.urlunparse(['file', 'localhost', sciXmlFilePath,
@@ -407,7 +408,7 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir, tag=None):
     sciXmlFile = OutSegFile(ifo, 'SEGMENTS',
                                   segValidSeg, currUrl, segment_list=sciSegs,
                                   tags=tagList)
-
+    sciXmlFile.PFN(sciXmlFilePath, site='local')
     return sciSegs, sciXmlFile
 
 def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir, 
@@ -456,7 +457,7 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
     node.add_opt('--gps-end-time', str(end_time))
     vetoXmlFileName = "%s-VETOTIME_CAT%d-%d-%d.xml" \
                          %(ifo, category, start_time, end_time-start_time)
-    vetoXmlFilePath = os.path.join(out_dir, vetoXmlFileName)
+    vetoXmlFilePath = os.path.abspath(os.path.join(out_dir, vetoXmlFileName))
     currUrl = urlparse.urlunparse(['file', 'localhost',
                                    vetoXmlFilePath, None, None, None])
     if tag:
@@ -507,6 +508,7 @@ def create_segs_from_cats_job(cp, out_dir, ifo_string, tag=None):
                                    "segments-database-url", [tag])
     vetoDefFile = cp.get_opt_tags("workflow-segments", 
                                   "segments-veto-definer-file", [tag])
+
     if tag:
         currTags = [tag]
     else:
@@ -515,6 +517,7 @@ def create_segs_from_cats_job(cp, out_dir, ifo_string, tag=None):
                                ifos=ifo_string, out_dir=out_dir, tags=currTags)
     job.add_opt('--separate-categories')
     job.add_opt('--segment-url', segServerUrl)
+    
     job.add_opt('--veto-file', vetoDefFile)
     # FIXME: Would like the proxy in the Workflow instance
     # FIXME: Explore using the x509 condor commands
@@ -911,7 +914,7 @@ def save_veto_definer(cp, out_dir, tags=[]):
     vetoDefUrl = cp.get_opt_tags("workflow-segments",
                                  "segments-veto-definer-url", tags)
     vetoDefBaseName = os.path.basename(vetoDefUrl)
-    vetoDefNewPath = os.path.join(out_dir, vetoDefBaseName)
+    vetoDefNewPath = os.path.abspath(os.path.join(out_dir, vetoDefBaseName))
     urllib.urlretrieve(vetoDefUrl, vetoDefNewPath)
     # and update location
     cp.set("workflow-segments", "segments-veto-definer-file", vetoDefNewPath)
@@ -977,7 +980,9 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
         The cumulative segment files from each ifo that determined the
         analyzable time.
     """
+    from pycbc.events import segments_to_file
     logging.info('Entering generation of science segments')
+    make_analysis_dir(out_dir)
     start_time = workflow.analysis_time[0]
     end_time = workflow.analysis_time[1]
     save_veto_definer(workflow.cp, out_dir, tags)
@@ -1006,6 +1011,11 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
             cat_segs = fromsegmentxml(f)
             f.close()    
             sci_segs[ifo] -= cat_segs
+            
+            seg_ok_path = os.path.abspath(os.path.join(out_dir, '%s-SCIENCE-OK.xml' % ifo))
+            seg_files += [segments_to_file(sci_segs[ifo], seg_ok_path, 
+                                          "SCIENCE_OK", ifo=ifo)]
+            
         sci_segs[ifo].coalesce()
     logging.info('Leaving generation of science segments')
     return sci_segs, seg_files
@@ -1030,8 +1040,11 @@ def get_cumulative_veto_group_files(workflow, option, out_dir, tags=[]):
     Returns
     --------
     seg_files : workflow.core.FileList instance
-        The cumulative segment files for each veto group.
+        The cumulative segment files for each veto group.   
+    cat_files : workflow.core.FileList instance
+        The list of individual category veto files
     """
+    make_analysis_dir(out_dir)
     start_time = workflow.analysis_time[0]
     end_time = workflow.analysis_time[1]
 
@@ -1058,6 +1071,7 @@ def get_cumulative_veto_group_files(workflow, option, out_dir, tags=[]):
         categories = [cat_to_pipedown_cat(c) for c in cat_set]
         path = os.path.join(out_dir, '%s-CUMULATIVE_CAT_%s_VETO_SEGMENTS.xml' \
                             % (workflow.ifo_string, segment_name))
+        path = os.path.abspath(path)
         url = urlparse.urlunparse(['file', 'localhost', path, None, None, None])
         seg_file = File(workflow.ifos, 'CUM_VETOSEGS', workflow.analysis_time,
                         file_url=url, tags=[segment_name])
@@ -1065,7 +1079,7 @@ def get_cumulative_veto_group_files(workflow, option, out_dir, tags=[]):
         cum_seg_files += [get_cumulative_segs(workflow, seg_file,  categories,
               cat_files, out_dir, execute_now=False, segment_name=segment_name)]
               
-    return cum_seg_files
+    return cum_seg_files, cat_files
 
 def file_needs_generating(file_path):
     """

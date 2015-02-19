@@ -274,8 +274,8 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
 
     # Now need to create the file for SCIENCE_AVAILABLE
     for ifo in scienceSegs.keys():
-        availableSegsFile = os.path.join(outputDir, 
-                           "%s-SCIENCE_AVAILABLE_SEGMENTS.xml" %(ifo.upper()) )
+        availableSegsFile = os.path.abspath(os.path.join(outputDir, 
+                           "%s-SCIENCE_AVAILABLE_SEGMENTS.xml" %(ifo.upper()) ))
         currUrl = urlparse.urlunparse(['file', 'localhost', availableSegsFile,
                           None, None, None])
         if tag:
@@ -284,6 +284,7 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
             currTags = ['SCIENCE_AVAILABLE']
         currFile = OutSegFile(ifo, 'SEGMENTS', workflow.analysis_time,
                             currUrl, segment_list=scienceSegs[ifo], tags = currTags)
+        currFile.PFN(availableSegsFile, site='local')
         segFilesList.append(currFile)
         currFile.toSegmentXml()
    

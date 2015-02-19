@@ -556,7 +556,7 @@ def make_segments_plot(workflow, seg_files, out_dir, tags=[]):
     node = Node(Executable(workflow.cp, 'plot_segments', ifos=workflow.ifos,
                     out_dir=out_dir, tags=tags))
     node.add_input_list_opt('--segment-files', seg_files)
-    node.new_output_file_opt(workflow.segment, '.html', '--output-file')
+    node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
         
 def merge_single_detector_hdf_files(workflow, trigger_files, out_dir, tags=[]):
@@ -609,7 +609,7 @@ def make_inj_table(workflow, inj_file, out_dir, tags=[]):
     node = Node(Executable(workflow.cp, 'page_injections', ifos=workflow.ifos,
                     out_dir=out_dir, tags=tags))
     node.add_input_opt('--injection-file', inj_file)
-    node.new_output_file_opt(bank_file.segment, '.html', '--output-file')
+    node.new_output_file_opt(inj_file.segment, '.html', '--output-file')
     workflow += node   
 
 def make_snrchi_plot(workflow, trig_files, veto_file, out_dir, tags=[]):
