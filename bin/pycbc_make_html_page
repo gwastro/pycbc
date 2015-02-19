@@ -24,6 +24,8 @@ import string
 
 from jinja2 import Environment, FileSystemLoader
 
+from glue import segments
+
 from pycbc.workflow import segment
 
 def examine_dir(dir):
@@ -85,7 +87,7 @@ class File():
       segDict = segment.fromsegmentxml(open(path, 'r'), dict=True)
       return segDict
     except:
-      return {'dsadsa':(1,2)}
+      return segments.segmentlistdict()
 
 # parse command line
 parser = argparse.ArgumentParser(usage='pycbc_make_html_page \
@@ -129,10 +131,12 @@ dirs   = [dir for dir in Directory.instances]
 dirs_0 = [dir for dir in Directory.instances if dir.path.count('/') == 1]
 
 # FIXME: hardcoded
-output_url = 'https://sugar-jobs.phy.syr.edu/~cbiwer/pycbc_plotting/970012743-970099143'
+output_url = 'https://sugar-jobs.phy.syr.edu/~cbiwer/pycbc_plotting/sngl_test/'
 
 # loop over all directories
 for dir in dirs:
+
+  print dir.path
 
   # render template
   context = {'analysis_title' : analysis_title,
