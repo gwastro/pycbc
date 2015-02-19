@@ -1,10 +1,12 @@
 """ This module contains utilities to manipulate trigger lists based on 
 segment.
 """
-import numpy
+import numpy, urlparse
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from glue import segments
 from glue.segments import segment, segmentlist
+from glue.segmentdb import segmentdb_utils as segutil
+from pycbc.workflow.core import File
 
 def start_end_to_segments(start, end):
     return segmentlist([segment(s, e) for s, e in zip(start, end)])
@@ -13,6 +15,33 @@ def segments_to_start_end(segs):
     segs.coalesce()
     return (numpy.array([s[0] for s in segs]), 
             numpy.array([s[1] for s in segs]))
+
+def segments_to_file(segs, filename, name, ifo=""):
+    """ Save segments to an xml file
+    
+    Parameters
+    ----------
+    segs : glue.segments.segmentlist
+        List of segments to write to disk
+    filename : str
+        name of the output file
+    name : 
+        name of the segmentlist
+        
+    Returns
+    -------
+    File : Return a pycbc.core.File reference to the file
+    """
+    outdoc = ligolw.Document()
+    outdoc.appendChild(ligolw.LIGO_LW())
+
+    proc_id = process.register_to_xmldoc(outdoc, "").process_id 
+    def_id = segmentdb_utils.add_to_segment_definer(outdoc, proc_id, ifo, name, 0)
+    segmentdb_utils.add_to_segment(outdoc, proc_id, def_id, segs)
+    ligolw_utils.write_filename(outdoc, filename)
+    
+    url = urlparse.urlunparse(['file', 'localhost', filename, None, None, None])
+    return File(ifo, name, segs, file_url=url, tags=[name])
 
 def start_end_from_segments(segment_file):
     """ Return the start and end time arrays from a segment file.

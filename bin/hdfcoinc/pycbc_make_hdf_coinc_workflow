@@ -29,6 +29,7 @@ __program__ = "weekly_workflow"
 
 import os, argparse, ConfigParser, logging
 from pycbc import workflow as wf
+import pycbc.events
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
                     level=logging.INFO)
@@ -44,51 +45,36 @@ args = parser.parse_args()
 
 workflow = wf.Workflow(args, args.workflow_name)
 
-# Needed later for WIP
-if args.output_dir:
-    runDir = args.output_dir
-else:
-    baseDir = os.getcwd()
-    runDir = os.path.join(baseDir, '%d-%d' %tuple(workflow.analysis_time))
-if not os.path.exists(runDir):
-    os.makedirs(runDir)
-os.chdir(runDir)
-
-currDir = os.getcwd()
-
-segDir = os.path.join(currDir, "segments")
-bankDir = os.path.join(currDir, "bank")
-fdDir = os.path.join(currDir, "full_data")
-dfDir = os.path.join(currDir, "datafind")
-injDir = os.path.join(currDir, "inj_files")
-flDir = os.path.join(currDir, "file_lists")
+if not os.path.exists(args.output_dir):
+    os.makedirs(args.output_dir)
+os.chdir(args.output_dir)
 
 # Get segments and find where the data is
-science_segs, science_seg_file = wf.get_analyzable_segments(workflow, segDir)
+science_segs, science_seg_file = wf.get_analyzable_segments(workflow, "segments")
 datafind_files, science_segs = wf.setup_datafind_workflow(workflow, 
-                                         science_segs, dfDir, science_seg_file)
-
-cum_veto_files = wf.get_cumulative_veto_group_files(workflow, 'segments-veto-groups', segDir)
-final_veto_file = wf.get_cumulative_veto_group_files(workflow, 'segments-final-veto-group', segDir)
+                                         science_segs, "datafind", science_seg_file)
+cum_veto_files = wf.get_cumulative_veto_group_files(workflow, 
+                                        'segments-veto-groups', "segments")
+final_veto_file = wf.get_cumulative_veto_group_files(workflow, 
+                                        'segments-final-veto-group', "segments")
 
 # Template bank stuff
 bank_files = wf.setup_tmpltbank_workflow(workflow, science_segs, 
-                                            datafind_files, dfDir)
-                                            
-hdfbank = wf.convert_bank_to_hdf(workflow, bank_files, dfDir)
-                                       
-splitbank_files = wf.setup_splittable_workflow(workflow, bank_files, dfDir) 
+                                            datafind_files, "bank")                                            
+hdfbank = wf.convert_bank_to_hdf(workflow, bank_files, "bank")
+splitbank_files = wf.setup_splittable_workflow(workflow, bank_files, "bank") 
 
 
 # setup the injection files
 inj_files, inj_tags = wf.setup_injection_workflow(workflow, 
-                                                     output_dir=injDir)
+                                                     output_dir="inj_files")
                                                      
+                                                                                                         
 bg_file = None                                                                                     
 tags = ["full_data"] + inj_tags
-output_dirs = [fdDir]
+output_dirs = ["full_data"]
 inj_coincs = wf.FileList()
-output_dirs.extend([os.path.join(currDir, tag) for tag in inj_tags])
+output_dirs += inj_tags
 for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
 
     if tag == 'full_data':
@@ -131,6 +117,9 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
             wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 
                                       final_bg_file[0], trig_insp,
                                       'plots/background', tags=[tag])
+
+
+wf.make_segments_plot(workflow, science_seg_file, 'plot/segments', tags=['SCIENCE_MINUS_CAT1'])
 
 found_inj = wf.find_injections_in_hdf_coinc(workflow, inj_coincs,
                                             inj_files, final_veto_file[0], 

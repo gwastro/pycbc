@@ -550,6 +550,14 @@ def get_subsections(cp, section_name):
         return subsections
     else:
         return ['']
+ 
+def make_segments_plot(workflow, seg_files, out_dir, tags=[]):
+    make_analysis_dir(out_dir)
+    node = Node(Executable(workflow.cp, 'plot_segments', ifos=workflow.ifos,
+                    out_dir=out_dir, tags=tags))
+    node.add_input_list_opt('--segment-files', seg_files)
+    node.new_output_file_opt(workflow.segment, '.html', '--output-file')
+    workflow += node
         
 def merge_single_detector_hdf_files(workflow, trigger_files, out_dir, tags=[]):
     make_analysis_dir(out_dir)
