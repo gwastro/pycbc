@@ -17,8 +17,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
-Programe for running multi-detector workflow analysis through coincidence and then
-generate post-processing and plots with pipedown.
+Program for running multi-detector workflow analysis through coincidence and then
+generate post-processing and plots.
 """
 import pycbc
 import pycbc.version
@@ -125,6 +125,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                  tags=ctags)
         wf.make_foundmissed_plot(workflow, found_inj, tag, 'plots/foundmissed', 
                                  tags=[tag])
+        wf.make_inj_table(workflow, found_inj, 'plots/foundmissed', tags=[tag])
                                  
         for inj_insp, trig_insp in zip(insps, full_insps):
             wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 

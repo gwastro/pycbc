@@ -596,6 +596,14 @@ def make_coinc_snrchi_plot(workflow, inj_file, inj_trig, stat_file, trig_file, o
         node.new_output_file_opt(inj_file.segment, '.png', '--output-file')
         workflow += node
 
+def make_inj_table(workflow, inj_file, out_dir, tags=[]):
+    make_analysis_dir(out_dir)
+    node = Node(Executable(workflow.cp, 'page_injections', ifos=workflow.ifos,
+                    out_dir=out_dir, tags=tags))
+    node.add_input_opt('--injection-file', inj_file)
+    node.new_output_file_opt(bank_file.segment, '.html', '--output-file')
+    workflow += node   
+
 def make_snrchi_plot(workflow, trig_files, veto_file, out_dir, tags=[]):
     make_analysis_dir(out_dir)
     

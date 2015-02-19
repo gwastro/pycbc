@@ -328,6 +328,7 @@ setup (
                'bin/hdfcoinc/pycbc_results_server',
                'bin/hdfcoinc/pycbc_page_inspiralrange',
                'bin/hdfcoinc/pycbc_page_segments',
+               'bin/hdfcoinc/pycbc_page_injtable',
                'bin/pycbc_submit_dax',
                'bin/hdfcoinc/pycbc_page_coinc_snrchi',
                ],
