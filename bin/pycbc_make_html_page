@@ -111,8 +111,9 @@ opts = parser.parse_args()
 # FIXME: rename options because I was lazy and didn't change everything
 analysis_title = opts.analysis_title.strip('"').rstrip('"')
 analysis_subtitle = opts.analysis_subtitle.strip('"').rstrip('"')
-input_path = opts.template_file.split('/')[:-1]
-input_template = opts.template_name.split('/')[-1]
+input_template = opts.template_file.split('/')[-1]
+input_path = opts.template_file.rstrip(input_template)
+print input_path, input_template
 output_path = opts.output_path
 plots_dir = opts.plots_dir
 
