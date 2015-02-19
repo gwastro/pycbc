@@ -51,8 +51,9 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
 runDir = os.path.join(os.getcwd(), args.name)
 datafindDir = runDir + '/datafind'
 fulldataDir = runDir + '/full_data'
-htmlDir = runDir + '/output'
-segDir = htmlDir + '/segments'
+outputDir = runDir + '/output'
+configDir = outputDir + '/config'
+segDir = outputDir + '/segments'
 
 # change into run dir
 if not os.path.exists(runDir):
@@ -62,9 +63,9 @@ os.chdir(runDir)
 # setup workflow
 workflow = _workflow.Workflow(args, args.name)
 
-####################################
-# retreieve segments and frame files
-####################################
+###################################
+# retrieve segments and frame files
+###################################
 
 # get segments
 scienceSegs, segFileList = _workflow.setup_segment_generation(workflow, segDir)
@@ -97,6 +98,7 @@ insps = _workflow.setup_matchedfltr_workflow(workflow, scienceSegs, datafinds,
 ########################
 
 # setup ligolw_add executable
+llwadds = _workflow.FileList([])
 llwadd_exe = _workflow.LigolwAddExecutable(workflow.cp, 'llwadd',
                                    ifo=''.join(scienceSegs.keys()),
                                    out_dir=fulldataDir)
@@ -108,21 +110,113 @@ for insps_ifo, insps_ifo_filelist in zip(insps_ifos, insps_ifos_filelists):
     # group IFO inspiral files by valid segments and loop over valid segments
     insps_segs, insps_seg_filelists = insps_ifo_filelist.categorize_by_attr('segment')
     for insps_seg, insps_seg_filelist in zip(insps_segs, insps_seg_filelists): 
-
+ 
         # setup ligolw_add nodes for inspiral filelists of identical IFO and valid segment
-        llwadd_file = _workflow.File(insps_ifo, 'LLWADD_UNCLUSTERED', insps_seg,
-                                     directory=fulldataDir, extension='xml.gz')
-        llwadd_node = llwadd_exe.create_node(insps_seg, insps_seg_filelist,
-                                             output=llwadd_file) 
-        llwadd_node.add_opt('--lfn-start-time', insps_seg[0])
-        llwadd_node.add_opt('--lfn-end-time',insps_seg[1])
-        workflow.add_node(llwadd_node)
+        if len(insps_seg_filelist) > 1:
+          llwadd_file = _workflow.File(insps_ifo, 'LLWADD', insps_seg,
+                                       directory=fulldataDir, extension='xml.gz',
+                                       tags=['UNCLUSTERED'])
+          llwadd_node = llwadd_exe.create_node(insps_seg, insps_seg_filelist,
+                                               output=llwadd_file) 
+          llwadd_node.add_opt('--lfn-start-time', insps_seg[0])
+          llwadd_node.add_opt('--lfn-end-time',insps_seg[1])
+          workflow.add_node(llwadd_node)
+          llwadds.append(llwadd_file)
 
-######################
-# setup plotting nodes
-######################
+########################
+# setup clustering nodes
+########################
 
+# setup clustering executable
+clusters = _workflow.FileList([])
+cluster_exe = _workflow.Executable(workflow.cp, 'cluster', out_dir=fulldataDir)
 
-# save
+# get all tags for cluster executable
+tags = []
+for section in workflow.cp.sections():
+    split_section_name = section.split('-')
+    if len(split_section_name) > 1 and split_section_name[0] == cluster_exe.name:
+        tags.append('-'.join(split_section_name[1:]))
+
+# setup clustering nodes for each ligolw_add and tag combination
+for llwadd_file in llwadds:
+    for tag in tags:
+        cluster_file = _workflow.File(llwadd_file.ifo, 'LLWADD_CLUSTER',
+                                   llwadd_file.segment,
+                                   directory=fulldataDir,
+                                   extension='xml.gz', tags=[tag])
+        cluster_node = cluster_exe.create_node()
+        cluster_node.add_input_opt('--input-file', llwadd_file)
+        cluster_node.add_output_opt('--output-file', cluster_file)
+        cluster_window = workflow.cp.get_opt_tags(cluster_exe.name, 'cluster-window', [tag])
+        cluster_node.add_opt('--cluster-window', cluster_window)
+        workflow.add_node(cluster_node)
+        clusters.append(cluster_file)
+
+########################
+# setup glitchgram nodes
+########################
+
+# setup glitchgram executable
+trigs = _workflow.FileList(llwadds+clusters)
+images = _workflow.FileList([])
+glitchgram_exe = _workflow.Executable(workflow.cp, 'glitchgram', out_dir=outputDir)
+
+# group trigger files by IFO and loop over IFOs
+trigs_ifos, trigs_ifos_filelists = trigs.categorize_by_attr('ifo')
+for trigs_ifo, trigs_ifo_filelist in zip(trigs_ifos, trigs_ifos_filelists):
+
+    # group trigger files by tags and loop over tags
+    trigs_tags, trigs_tags_filelists = trigs_ifo_filelist.categorize_by_attr('tags')
+    for trigs_tag, trigs_tag_filelist in zip(trigs_tags, trigs_tags_filelists):
+
+        # setup glitchgram nodes for trigger filelists of identical IFO and tags
+        image_dir = outputDir+'/'+'_'.join([trigs_ifo]+trigs_tag)
+        for stat in ['snr', 'new_snr']:
+            image_file = _workflow.File(trigs_ifo, 'GLITCHGRAM',
+                                        workflow.analysis_time,
+                                        directory=image_dir,
+                                        extension='png', tags=trigs_tag+[stat, 'ALLTIME'])
+            glitchgram_node = glitchgram_exe.create_node()
+            glitchgram_node.add_input_list_opt('--trigger-files', trigs_tag_filelist)
+            glitchgram_node.add_output_opt('--output-file', image_file)
+            glitchgram_node.add_opt('--gps-start-time', workflow.analysis_time[0])
+            glitchgram_node.add_opt('--gps-end-time', workflow.analysis_time[1])
+            if stat == 'new_snr':
+                glitchgram_node.add_arg('--new-snr')
+            workflow.add_node(glitchgram_node)
+            images.append(image_file)
+
+        # group trigger files by valid segments and loop over valid segments
+        trigs_segs, trigs_seg_filelists = trigs_tag_filelist.categorize_by_attr('segment')
+        for trigs_seg, trigs_seg_filelist in zip(trigs_segs, trigs_seg_filelists):
+
+            # setup glitchgram nodes for trigger filelists of identical IFO and valid segment
+            image_dir = outputDir+'/'+'_'.join([trigs_ifo]+trigs_tag)
+            for stat in ['snr', 'new_snr']:
+                image_file = _workflow.File(trigs_ifo, 'GLITCHGRAM',
+                                            trigs_seg,
+                                            directory=image_dir,
+                                            extension='png', tags=trigs_tag+[stat])
+                glitchgram_node = glitchgram_exe.create_node()
+                glitchgram_node.add_input_list_opt('--trigger-files', trigs_seg_filelist)
+                glitchgram_node.add_output_opt('--output-file', image_file)
+                glitchgram_node.add_opt('--gps-start-time', trigs_seg[0])
+                glitchgram_node.add_opt('--gps-end-time', trigs_seg[1])
+                if stat == 'new_snr':
+                    glitchgram_node.add_arg('--new-snr')
+                workflow.add_node(glitchgram_node)
+                images.append(image_file)
+
+###############
+# save and exit
+###############
+
+# write configuration file
+if not os.path.exists(configDir):
+  os.makedirs(configDir)
+workflow.cp.write(file(configDir+'/'+'workflow_configuration.ini', 'w'))
+
+# write dax
 workflow.save()
 logging.info('Finished.')
