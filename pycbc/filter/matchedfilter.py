@@ -142,14 +142,12 @@ class MatchedFilterControl(object):
                                               h_norm=template_norm,
                                               out=self.snr_mem,
                                               corr_out=self.corr_mem)
-        idx, snrv = events.threshold(snr[stilde.analyze], self.snr_threshold / norm)            
+        #idx, snrv = events.threshold(snr[stilde.analyze], self.snr_threshold / norm)            
+        snrv, idx = events.threshold_and_cluster(snr[stilde.analyze], self.snr_threshold / norm, window)            
 
         if len(idx) == 0:
             return [], [], [], [], []            
         logging.info("%s points above threshold" % str(len(idx)))              
-  
-        idx, snrv = events.cluster_reduce(idx, snrv, window)
-        logging.info("%s clustered points" % str(len(idx)))
         
         return snr, norm, corr, idx, snrv   
         
