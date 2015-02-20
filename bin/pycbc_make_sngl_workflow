@@ -213,7 +213,6 @@ for trigs_ifo, trigs_ifo_filelist in zip(trigs_ifos, trigs_ifos_filelists):
 ########################
 
 # setup glitchgram executable
-trigs = _workflow.FileList(llwadds+clusters)
 images = _workflow.FileList([])
 glitchgram_exe = _workflow.Executable(workflow.cp, 'glitchgram', out_dir=outputDir)
 
@@ -263,6 +262,22 @@ for trigs_ifo, trigs_ifo_filelist in zip(trigs_ifos, trigs_ifos_filelists):
                 workflow.add_node(glitchgram_node)
                 images.append(image_file)
 
+######################
+# setup html page node
+######################
+
+# setup html page executable
+html_exe = _workflow.Executable(workflow.cp, 'html', universe='local')
+
+# setup html page node
+html_node = html_exe.create_node()
+html_node.add_opt('--plots-dir', outputDir)
+workflow.add_node(html_node)
+
+# impose html page node is child of plotting nodes
+for image in images:
+    dep = dax.Dependency(parent=image.node._dax_node, child=html_node._dax_node)
+    workflow._adag.addDependency(dep)
 
 ###############
 # save and exit

@@ -43,7 +43,7 @@ def examine_dir(dir):
 
 class Directory():
   """
-  Class used to find all sub-directories in a directory.
+  Class used to relate all sub-directories and files in a directory.
   """
   instances = []
   def __init__(self, path, plots_dir):
@@ -94,65 +94,61 @@ parser = argparse.ArgumentParser(usage='pycbc_make_html_page \
 [--options]',
                                  description="Create static html\
                                  pages for analysis.")
-parser.add_argument('-n', '--template-file', type=str,
-                  help='Output xml file with playground segment triggers.')
-parser.add_argument('-o', '--output-path', type=str,
-                  help='Output xml file with playground segment triggers.')
+parser.add_argument('-f', '--template-file', type=str,
+                  help='Template file to use for skeleton html page.')
+parser.add_argument('-a', '--output-server', type=str,
+                  help='Path to the directory of the web server, eg. /home/${USER}/public_html.')
+parser.add_argument('-b', '--output-path', type=str,
+                  help='Path on web server for main html page.')
 parser.add_argument('-p', '--plots-dir', type=str,
-                  help='Output xml file with playground segment triggers.')
+                  help='Path to the directory that contains plots.')
 parser.add_argument('-t', '--analysis-title', type=str,
-                  help='Print extra debugging information.', default=False)
+                  help='Title to include at the top of each page.',
+                  default=False)
 parser.add_argument('-s', '--analysis-subtitle', type=str,
-                  help='Print extra debugging information.', default=False)
+                  help='Subtitle to include at the top of each page.',
+                  default=False)
 parser.add_argument('-v', '--verbose', action='store_true',
                   help='Print extra debugging information.', default=False)
 opts = parser.parse_args()
 
-# FIXME: rename options because I was lazy and didn't change everything
+# edit command line
 analysis_title = opts.analysis_title.strip('"').rstrip('"')
 analysis_subtitle = opts.analysis_subtitle.strip('"').rstrip('"')
 input_template = opts.template_file.split('/')[-1]
 input_path = opts.template_file.rstrip(input_template)
-print input_path, input_template
-output_path = opts.output_path
-plots_dir = opts.plots_dir
+html_dir = opts.output_server+'/'+opts.output_path
 
 # setup template
 env = Environment(loader=FileSystemLoader(input_path))
 template = env.get_template(input_template)
-env.globals['STATIC_URL'] = '/home/cbiwer/pycbc/ncoinc4_20141124_8e603_working/lib/python2.6/site-packages/pycbc/results/static/'
 env.globals.update(zip=zip)
 env.globals.update(abs=abs)
 
 # find all subdirs
-Directory(plots_dir, plots_dir)
+Directory(opts.plots_dir, opts.plots_dir)
 dirs   = [dir for dir in Directory.instances]
 dirs_0 = [dir for dir in Directory.instances if dir.path.count('/') == 1]
 
-# FIXME: hardcoded
-output_url = 'https://sugar-jobs.phy.syr.edu/~cbiwer/pycbc_plotting/sngl_test/'
-
 # loop over all directories
 for dir in dirs:
-
-  print dir.path
 
   # render template
   context = {'analysis_title' : analysis_title,
              'analysis_subtitle' : analysis_subtitle,
              'dirs_0' : dirs_0,
              'dir'    : dir,
-             'output_path' : output_url,
-             'plots_dir' : plots_dir}
+             'output_path' : opts.output_path,
+             'plots_dir' : opts.plots_dir}
   output = template.render(context)
 
   # save
-  if not os.path.exists(output_path+dir.path):
-    os.makedirs(output_path+dir.path)
-  with open(output_path+dir.path+'/index.html', "wb") as fp:
+  if not os.path.exists(html_dir+dir.path):
+    os.makedirs(html_dir+dir.path)
+  with open(html_dir+dir.path+'/index.html', "wb") as fp:
     fp.write(output)
 
 # move all files
 for dir in dirs:
   for file in dir.files:
-    shutil.copy(plots_dir+dir.path+'/'+file.path,output_path+'/'+dir.path+'/'+file.path)
+    shutil.copy(opts.plots_dir+dir.path+'/'+file.path, html_dir+'/'+dir.path+'/'+file.path)

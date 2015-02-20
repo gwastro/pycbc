@@ -374,6 +374,11 @@ def setup_hardware_injection_page(workflow, input_files, cache_filename, \
 
     out_files = FileList([])
 
+    # check if hardware injection file
+    # if not then do not do hardware injection job
+    if not workflow.cp.has_opt_tags('workflow-hardware-injections', 'hwinj-definer-url', tags):
+      return out_files
+
     # make the output dir
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
