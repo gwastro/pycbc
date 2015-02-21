@@ -62,8 +62,8 @@ def make_cache(input_files, ifos, name, seg, cacheDir, tags=[]):
     for entry in input_files:
         start = str(int(entry.segment[0]))
         duration = str(int(abs(entry.segment)))
-        print >> fP, "%s %s %s %s %s" \
-            %(ifos, entry.description, start, duration, entry.PFN)
+        print >> fP, "%s %s %s %s file://localhost%s" \
+            %(ifos, entry.description, start, duration, entry.storage_path)
     fP.close()
     
     return cache_file
