@@ -853,6 +853,8 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
     padding = int(os.path.basename(cp.get('inspiral', 'pad-data')))
     quanta = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                          'quanta')))
+    bufferleft = int(cp.get('workflow-exttrig_segments', 'num-buffer-left'))
+    bufferright = int(cp.get('workflow-exttrig_segments', 'num-buffer-right'))
 
     # Check available data segments meet criteria specified in arguments
     sciencesegs = segments.segmentlistdict(sciencesegs)
@@ -942,8 +944,9 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
     offsrc = segments.segmentlist([offsrc])
 
     # Construct on-source
-    onsrc = segments.segment(triggertime - onbefore,
-                             triggertime + onafter)
+    onstart = triggertime - onbefore
+    onend = triggertime + onafter
+    onsrc = segments.segment(onstart, onend)
     logging.info("Constructed ON-SOURCE: duration %ds (%ds before to %ds after"
                  " trigger)."
                  % (abs(onsrc), triggertime - onsrc[0],
@@ -967,6 +970,21 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
                           offsource[iifo])
     currFile.toSegmentXml()
     logging.info("Optimal coherent segment calculated.")
+
+    #FIXME: For legacy coh_PTF_post_processing we must write out the segments
+    #       to segwizard files (with hardcoded names!)
+    offsourceSegfile = os.path.join(out_dir, "offSourceSeg.txt")
+    segmentsUtils.tosegwizard(open(offsourceSegfile, "w"), offsrc)
+
+    onsourceSegfile = os.path.join(out_dir, "onSourceSeg.txt")
+    segmentsUtils.tosegwizard(file(onsourceSegfile, "w"), onsrc)
+
+    onlen = abs(onsrc[0])
+    bufferSegment = segments.segment(onstart - bufferleft * onlen,
+                                     onend + bufferright * onlen)
+    bufferSegfile = os.path.join(out_dir, "bufferSeg.txt")
+    segmentsUtils.tosegwizard(file(bufferSegfile, "w"),
+                              segments.segmentlist([bufferSegment]))
 
     return onsource, offsource
 

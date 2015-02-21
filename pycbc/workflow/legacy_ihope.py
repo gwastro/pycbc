@@ -387,7 +387,8 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
         node.add_opt('--segment-length', self.cp.get('inspiral',
                                                      'segment-duration'))
         node.add_opt('--ifo-tag', self.ifos)
-        
+        node.add_opt('--user-tag', 'inspiral')
+
         # Set input / output options
         node.add_input_opt('--cache', parent, )
         node.add_opt('--segment-dir', segment_dir)
