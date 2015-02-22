@@ -348,7 +348,7 @@ def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
     for ifo, scienceSegsIfo in scienceSegs.items():
         observatory = ifo[0].upper()
         frameType = cp.get_opt_tags("workflow-datafind", 
-                                    "datafind-%s-frame-type"%(ifo), [tag])
+                                    "datafind-%s-frame-type" % (ifo.lower()), [tag])
         for seg in scienceSegsIfo:
             msg = "Finding data between %d and %d " %(seg[0],seg[1])
             msg += "for ifo %s" %(ifo)
@@ -431,7 +431,7 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
     for ifo, scienceSegsIfo in scienceSegs.items():
         observatory = ifo[0].upper()
         frameType = cp.get_opt_tags("workflow-datafind",
-                                    "datafind-%s-frame-type"%(ifo), [tag])
+                                    "datafind-%s-frame-type" % (ifo.lower()), [tag])
         # This REQUIRES a coalesced segment list to work
         startTime = int(scienceSegsIfo[0][0])
         endTime = int(scienceSegsIfo[-1][1])

@@ -106,6 +106,9 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             Initialized WorkflowConfigParser instance.
         """
         glue.pipeline.DeepCopyableConfigParser.__init__(self)
+        
+        # Enable case sensitive options
+        self.optionxform = str
 
         for confFile in configFiles:
             if not os.path.isfile(confFile):

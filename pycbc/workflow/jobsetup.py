@@ -617,9 +617,6 @@ class PyCBCInspiralExecutable(Executable):
         else:
             raise ValueError('Invalid output type for PyCBC Inspiral: %s' % outtype)
 
-        if self.get_opt('processing-scheme') == 'cuda':
-            self.needs_gpu()
-         
         self.num_threads = 1  
         if self.get_opt('processing-scheme') is not None:
             stxt = self.get_opt('processing-scheme')
