@@ -145,6 +145,7 @@ def get_cached_bin_layout(bins):
         _bcache[key] = (kmin, kmax, bv) 
     return _bcache[key]
 
+
 def shift_sum(corr, points, bins):
     corr = corr.data
     kmin, kmax, bv = get_cached_bin_layout(bins)
@@ -153,77 +154,46 @@ def shift_sum(corr, points, bins):
     nbins = numpy.uint32(len(bins) - 1)
     outc = pycuda.gpuarray.zeros((len(points), nbins), dtype=numpy.complex64)
     outp = outc.reshape(nbins * len(points))
-<<<<<<< HEAD
     phase = [numpy.float32(p * 2.0 * numpy.pi / N) for p in points]
-=======
-    phase = [numpy.float32(p * -2.0 * numpy.pi / N) for p in points]
->>>>>>> first commit of cuda point chisq, note: result it wrong
 
     np = len(points)
     while np > 0:
         if np >= 4:
             fn, nt = get_pchisq_fn(4)
-<<<<<<< HEAD
             fn.prepared_call((nb, 1), (nt, 1, 1), 
                corr.gpudata, outp.gpudata, N, phase[0], phase[1], phase[2], phase[3], 
                kmin.gpudata, kmax.gpudata, bv.gpudata, nbins)
             outp = outp[4*nbins:]
-=======
-            fn(corr, outp, N, phase[0], phase[1], phase[2], phase[3], 
-               kmin, kmax, bv, nbins, block=(nt, 1, 1), grid=(nb, 1))
-            outp = outp[4*nb:]
->>>>>>> first commit of cuda point chisq, note: result it wrong
             phase = phase[4:]
             np -= 4    
             continue
         elif np >=3:
             fn, nt = get_pchisq_fn(3)
-<<<<<<< HEAD
             fn.prepared_call((nb, 1), (nt, 1, 1), 
                 corr.gpudata, outp.gpudata, N, phase[0], phase[1], phase[2], 
                 kmin.gpudata, kmax.gpudata, bv.gpudata, nbins)
             np -= 3
             outp = outp[3*nbins:]
-=======
-            fn(corr, outp, N, phase[0], phase[1], phase[2], 
-                kmin, kmax, bv, nbins, block=(nt, 1, 1), grid=(nb, 1))
-            np -= 3
-            outp = outp[3*nb:]
->>>>>>> first commit of cuda point chisq, note: result it wrong
             phase = phase[3:]
             continue
         elif np >=2:
             fn, nt = get_pchisq_fn(2)
-<<<<<<< HEAD
             fn.prepared_call((nb, 1), (nt, 1, 1), 
                 corr.gpudata, outp.gpudata, N, phase[0], phase[1],
                 kmin.gpudata, kmax.gpudata, bv.gpudata, nbins)
             np -= 2
             outp = outp[2*nbins:]
-=======
-            fn(corr, outp, N, phase[0], phase[1],
-                kmin, kmax, bv, nbins, block=(nt, 1, 1), grid=(nb, 1))
-            np -= 2
-            outp = outp[2*nb:]
->>>>>>> first commit of cuda point chisq, note: result it wrong
             phase=phase[2:]
             continue
         elif np == 1:
             fn, nt = get_pchisq_fn(1)
-<<<<<<< HEAD
             fn.prepared_call((nb, 1), (nt, 1, 1), 
                 corr.gpudata, outp.gpudata, N, phase[0], 
                 kmin.gpudata, kmax.gpudata, bv.gpudata, nbins)
             np -= 1
             outp = outp[1*nbins:]
             phase=phase[1:]
-=======
-            fn(corr, outp, N, phase[0], 
-                kmin, kmax, bv, nbins, block=(nt, 1, 1), grid=(nb, 1))
-            np -= 1
->>>>>>> first commit of cuda point chisq, note: result it wrong
             continue
     o = outc.get()
     return (o.conj() * o).sum(axis=1).real
-    
     
