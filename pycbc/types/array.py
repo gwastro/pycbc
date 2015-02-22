@@ -51,7 +51,7 @@ _ALLOWED_DTYPES = [_numpy.float32, _numpy.float64, _numpy.complex64,
 _ALLOWED_SCALARS = [int, long, float, complex] + _ALLOWED_DTYPES
 
 def _convert_to_scheme(ary):
-    if ary._scheme is not _scheme.mgr.state:
+    if not isinstance(ary._scheme, _scheme.mgr.state.__class__):
         converted_array = Array(ary, dtype=ary._data.dtype)
         ary._data = converted_array._data
         ary._scheme = _scheme.mgr.state
