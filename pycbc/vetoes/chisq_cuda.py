@@ -152,7 +152,7 @@ def shift_sum(corr, points, bins):
     nbins = numpy.uint32(len(bins) - 1)
     outc = pycuda.gpuarray.zeros((len(points), nbins), dtype=numpy.complex64)
     outp = outc.reshape(nbins * len(points))
-    phase = [numpy.float32(p * -2.0 * numpy.pi / N) for p in points]
+    phase = [numpy.float32(p * 2.0 * numpy.pi / N) for p in points]
 
     np = len(points)
     while np > 0:
