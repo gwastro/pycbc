@@ -170,4 +170,4 @@ def shift_sum(v1, shifts, bins):
                     libraries=omp_libs
           )
           
-    return  Array(chisq, copy=False)
+    return  chisq
