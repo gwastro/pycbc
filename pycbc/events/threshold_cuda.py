@@ -374,6 +374,7 @@ def threshold_and_cluster(series, threshold, window):
     (fn, fn2), nt, nb = get_tkernel(len(series), window)
     threshold = numpy.float32(threshold * threshold)
     window = numpy.int32(window)
+    
     cl = loc[0:nb]
     cv = val[0:nb]
     #outv = gpuarray.empty(nb, dtype=numpy.complex64)
