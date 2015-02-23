@@ -6,7 +6,6 @@ from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from glue import segments
 from glue.segments import segment, segmentlist
 from glue.segmentdb import segmentdb_utils as segutil
-from pycbc.workflow.core import File
 
 def start_end_to_segments(start, end):
     return segmentlist([segment(s, e) for s, e in zip(start, end)])
@@ -32,6 +31,7 @@ def segments_to_file(segs, filename, name, ifo=""):
     -------
     File : Return a pycbc.core.File reference to the file
     """
+    from pycbc.workflow.core import File
     outdoc = ligolw.Document()
     outdoc.appendChild(ligolw.LIGO_LW())
 
