@@ -97,7 +97,7 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
     const float inv_two_pi = 1 / (2 * M_PI);
     int phase_offset = 0;
     
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(dynamic, 1024)
     for (unsigned int i=0; i<length; i++){
         int index = i + kmin;
         const float v =  piM13 * cbrt_vec[index];
@@ -131,7 +131,7 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
         phasing *= _pfaN / v5;
         phasing -= M_PI_4;
         
-        if (i == 0)
+        if (abs(phasing - phase_offset) > 10)
             phase_offset = - int(phasing  * inv_two_pi); 
             
         phasing += phase_offset * two_pi;  
