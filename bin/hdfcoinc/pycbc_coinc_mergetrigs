@@ -20,6 +20,8 @@ for fname in args.trigger_files:
     if 'snr' in f2:
         trigger_columns = f2.keys()
         trigger_columns.remove('search')
+        for k in f2.attrs.keys():
+            f.attrs[k] = f2.attrs[k]
         f2.close()
         break
     f2.close()
@@ -29,16 +31,14 @@ num_trigs = 0
 start = numpy.array([], dtype=numpy.float64)
 end = numpy.array([], dtype=numpy.float64)
 for filename in args.trigger_files:
-    print filename
     data = h5py.File(filename, 'r')
     if 'snr' in data:
         num_trigs += len(data['snr'])
     s, e = data['search/start_time'][:], data['search/end_time'][:]
     start, end = numpy.append(start, s), numpy.append(end, e)
+    data.close()
 f['search/start_time'], f['search/end_time'] = start, end   
 
-for k in data.attrs.keys(): 
-    f.attrs[k] = data.attrs[k]
 
 logging.info('reading the trigger columns from the input files')
 dwrite = {}
@@ -56,3 +56,4 @@ for filename in args.trigger_files:
         dset, num = dwrite[column]
         dset[num:num+len(f2[column])] = f2[column][:]
         dwrite[column] = dset, num + len(f2[column])
+    f2.close()
