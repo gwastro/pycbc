@@ -110,10 +110,10 @@ def setup_segment_generation(workflow, out_dir, tag=None):
     # These only needed if calling setup_segment_gen_mixed
     if segmentsMethod in ['AT_RUNTIME','CAT2_PLUS_DAG','CAT3_PLUS_DAG',
                           'CAT4_PLUS_DAG']:
-        maxVetoCat = cp.get_opt_tags("workflow-segments",
-                                     "segments-maximum-veto-category", [tag])
-        maxVetoCat = int(maxVetoCat)
-        veto_categories = range(1,maxVetoCat+1)
+        veto_cats = cp.get_opt_tags("workflow-segments",
+                                    "segments-veto-categories", [tag])
+        max_veto_cat = max([int(c) for c in veto_cats.split(',')])
+        veto_categories = range(1, max_veto_cat + 1)
         if cp.has_option_tags("workflow-segments",
                               "segments-generate-coincident-segments", [tag]):
             generate_coincident_segs = True
@@ -157,7 +157,7 @@ def setup_segment_generation(workflow, out_dir, tag=None):
         value = cp.get_opt_tags("workflow-segments", 
                                    "segments-generate-segment-files", [tag])
         generate_segment_files = value
-        
+
     logging.info("Generating segments with setup_segment_gen_mixed")
     segFilesList = setup_segment_gen_mixed(workflow, veto_categories, 
                              out_dir, max_veto, tag=tag,
@@ -186,7 +186,7 @@ def setup_segment_generation(workflow, out_dir, tag=None):
             msg += "commands that can be used to reproduce some of these "
             msg += "in %s/*.sh" %(os.path.join(out_dir,'logs'))
             logging.warn(msg)
-            
+
     logging.info("Leaving segment generation module")
     return segsToAnalyse, segFilesList
 

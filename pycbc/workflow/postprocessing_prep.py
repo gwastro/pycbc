@@ -48,7 +48,7 @@ def setup_postprocessing_preparation(workflow, triggerFiles, output_dir,
     clustering and performing mapping between triggers and simulations where
     needed.
 
-    Properties
+    Parameters
     -----------
     workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the coincidence jobs will be added to.
@@ -103,9 +103,9 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
                                       tags=[], do_repop=False, 
                                       injectionFiles=None,
                                       vetoFiles=None, injLessTag=None,
-                                      injectionTags=[], vetoCats=[]):
+                                      injectionTags=[], veto_cats=[]):
     """
-    Properties
+    Parameters
     -----------
     workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the coincidence jobs will be added to.
@@ -137,11 +137,10 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
         Each injection file has a unique tag. If used in the method, this
         tells the post-processing preparation code which injection tags it
         should include when creating the combined output.
-    vetoCats : list of integers (optional, default = [])
+    veto_cats : list of integers (optional, default = [])
         Decide which set of veto files should be used in the post-processing
-        preparation. This is used, for example, to tell the workflow that you
-        are only interested in quoting results at categories 2, 3 and 4. In
-        which case just supply [2,3,4] for those veto files here.
+        preparation. For example tell the workflow to only generate results
+        at cumulative categories 2, 3 and 4 by supplying [2,3,4] here.
 
     Returns
     --------
@@ -159,8 +158,8 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
         Probably there is no need to ever keep this file and it will be a
         temporary file in most cases.
     """
-    if not vetoCats:
-        raise ValueError("Veto cats is required.")
+    if not veto_cats:
+        raise ValueError("A non-empty list of veto categories is required.")
 
     # Setup needed exe classes
     sqliteCombine1ExeTag = workflow.cp.get_opt_tags("workflow-postprocprep",
@@ -189,18 +188,18 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
         repopCoincExe = select_generic_executable(workflow, repopCoincExeTag)
         repopCoincOuts = FileList([])
 
-    for vetoCat in vetoCats:
+    for cat in veto_cats:
         # FIXME: Some hacking is still needed while we support pipedown
         # FIXME: There are currently 3 names to say cumulative cat_3
-        vetoTag = 'CUMULATIVE_CAT_%d' %(vetoCat,)
+        vetoTag = 'CUMULATIVE_CAT_%d' %(cat)
         dqSegFile = vetoFiles.find_output_with_tag(vetoTag)
         if not len(dqSegFile) == 1:
             errMsg = "Did not find exactly 1 data quality file."
             raise ValueError(errMsg)
         # Don't think this is used here, this is the tag *in* the file
-        dqVetoName = 'VETO_CAT%d_CUMULATIVE' %(vetoCat,)
+        dqVetoName = 'VETO_CAT%d_CUMULATIVE' %(cat)
         # FIXME: Here we set the dqVetoName to be compatible with pipedown
-        pipedownDQVetoName = 'CAT_%d_VETO' %(vetoCat,)
+        pipedownDQVetoName = 'CAT_%d_VETO' %(cat)
 
         sqliteCombine2Inputs = FileList([])
         # Do injection-less jobs first.
@@ -381,11 +380,9 @@ def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
         Each injection file has a unique tag. If used in the method, this
         tells the post-processing preparation code which injection tags it
         should include when creating the combined output.
-    veto_cats : list of integers (optional, default = [])
-        Decide which set of veto files should be used in the post-processing
-        preparation. This is used, for example, to tell the workflow that you
-        are only interested in quoting results at categories 2, 3 and 4. In
-        which case just supply [2,3,4] for those veto files here.
+    veto_cat : int (optional, default = None)
+        FIXME: How does gstlal deal with veto categories?
+        Hardcode to CAT1 for now.
     summary_xml_files : workflow.FileList
         An FileList of the output of the analysislogging_utils module.
         Here, this will be one file that includes the segments analysed by the

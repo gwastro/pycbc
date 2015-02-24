@@ -72,7 +72,7 @@ When using the setup_segment_gen_mixed function the following additional options
 * segments-X1-science-name = NAME - REQUIRED. Where X1 is replaced by the ifo name for each ifo. The NAME should be the full channel name corresponding to analysable times for e.g. H1:DMT-SCIENCE:4
 * segments-database-url = URL - REQUIRED. The URL to the segment databse that will be used to obtain this information
 * segments-veto-definer-url = PATH - REQUIRED. The location to the veto-definer file that is used to identify which channels are CAT_1, which are CAT_2 etc.
-* segments-maximum-veto-category = INT - REQUIRED. Generate veto files for all veto categories up to and including INT. 4 or 5 is the standard value for ihope runs.
+* segments-veto-categories = COMMA-SEPARATED LIST OF INTS - OPTIONAL. Generate veto files for veto categories given by the ints in the list. These ranged from 1 through 4 or 5 for S5/S6 veto definers. Standard results have used categories 2,3,4.
 * segments-minimum-segment-length = INT - OPTIONAL. If given, any segments of analysable data shorter than INT will not be included in the list of analysable times returned by this module.
 * segments-generate-coincident-segments - OPTIONAL. Option takes no value. If given the module will generate cumulative, multiple detector coincidence files for easy use in ligolw_thinca and pipedown.
 * segments-generate-segment-files - OPTIONAL (DEFAULT='always'). This option can be used if the user wants to re-use segment files generated previously. It is not recommended to use this option unless necessary. Options are

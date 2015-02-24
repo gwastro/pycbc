@@ -24,7 +24,7 @@
 """
 This module is responsible for setting up the coincidence stage of pycbc
 workflows. For details about this module and its capabilities see here:
-https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
+https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/coincidence.html
 """
 
 
@@ -43,12 +43,12 @@ from pycbc.workflow.jobsetup import LigolwAddExecutable, LigolwSSthincaExecutabl
 from pylal import ligolw_cafe
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
-        pass
+    pass
 
 lsctables.use_in(ContentHandler)
 
 def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
-                               inspiral_outs, output_dir, maxVetoCat=5,
+                               inspiral_outs, output_dir, veto_cats=[2,3,4],
                                tags=[], timeSlideTags=None):
     '''
     This function aims to be the gateway for setting up a set of coincidence
@@ -76,11 +76,11 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
         input to the coincidence codes running at this stage.
     output_dir : path
         The directory in which coincidence output will be stored.
-    maxVetoCat : int (optional, default=5)
-        The maximum veto category that will be applied. If this takes the
-        default value the code will run data quality at cumulative categories
-        1, 2, 3, 4 and 5. Note that if we change the flag definitions to be
-        non-cumulative then this option will need to be revisited,
+    veto_cats : list of ints (optional, default = [2,3,4])
+        Veto categories that will be applied in the coincidence jobs. If this
+        takes the default value the code will run data quality at cumulative 
+        categories 2, 3 and 4. Note that if we change the flag definitions to
+        be non-cumulative then this option will need to be revisited.
     tags : list of strings (optional, default = [])
         A list of the tagging strings that will be used for all jobs created
         by this call to the workflow. An example might be ['BNSINJECTIONS'] or
@@ -123,7 +123,7 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
         coinc_outs, other_outs = setup_coincidence_workflow_ligolw_thinca(
                      workflow,
                      segsList, timeSlideFiles, inspiral_outs,
-                     output_dir, maxVetoCat=maxVetoCat, tags=tags,
+                     output_dir, veto_cats=veto_cats, tags=tags,
                      timeSlideTags=timeSlideTags,
                      parallelize_split_input=parallelize_split_input)
     else:
@@ -135,11 +135,10 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
 
     return coinc_outs, other_outs
 
-def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
-                                             timeSlideFiles, inspiral_outs,
-                                             output_dir, maxVetoCat=5, tags=[],
-                                             timeSlideTags=None,
-                                             parallelize_split_input=False):
+def setup_coincidence_workflow_ligolw_thinca(
+        workflow, segsList, timeSlideFiles, inspiral_outs, output_dir,
+        veto_cats=[2,3,4], tags=[], timeSlideTags=None,
+        parallelize_split_input=False):
     """
     This function is used to setup a single-stage ihope style coincidence stage
     of the workflow using ligolw_sstinca (or compatible code!).
@@ -164,11 +163,11 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
         input to the coincidence codes running at this stage.
     output_dir : path
         The directory in which coincidence output will be stored.
-    maxVetoCat : int (optional, default=5)
-        The maximum veto category that will be applied. If this takes the
-        default value the code will run data quality at cumulative categories
-        1, 2, 3, 4 and 5. Note that if we change the flag definitions to be
-        non-cumulative then this option will need to be revisited,
+    veto_cats : list of ints (optional, default = [2,3,4])
+        Veto categories that will be applied in the coincidence jobs. If this
+        takes the default value the code will run data quality at cumulative 
+        categories 2, 3 and 4. Note that if we change the flag definitions to
+        be non-cumulative then this option will need to be revisited.
     tags : list of strings (optional, default = [])
         A list of the tagging strings that will be used for all jobs created
         by this call to the workflow. An example might be ['BNSINJECTIONS'] or
@@ -186,10 +185,8 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
         A list of the output files generated from ligolw_add.
     """
     logging.debug("Entering coincidence module.")
-    veto_categories = range(1,maxVetoCat+1)
 
-    # setup code for each veto_category
-
+    # setup code for each veto category
     ligolwThincaOuts = FileList([])
     other_outs = {}
 
@@ -287,7 +284,7 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
 
 
         # Now loop over vetoes
-        for category in veto_categories:
+        for category in veto_cats:
             logging.debug("Preparing %s %s" %(timeSlideTag,category))
             # FIXME: There are currently 3 names to say cumulative cat_3
             dqSegFile = segsList.find_output_with_tag(

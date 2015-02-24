@@ -19,7 +19,6 @@
 """
 Program for running multi-detector pycbc analysis through coincidence and then
 generate post-processing and plots.
-This is designed to mimic the current behaviour of weekly_ihope.
 """
 import pycbc
 import pycbc.version
@@ -62,13 +61,13 @@ os.chdir(runDir)
 
 currDir = os.getcwd()
 
-segDir = os.path.join(currDir, "segments")
-dfDir = os.path.join(currDir, "datafind")
-fdDir = os.path.join(currDir, "full_data")
-tsDir = os.path.join(currDir, "time_slide_files")
-injDir = os.path.join(currDir, "inj_files")
-ppDir = os.path.join(currDir, "workflow_postproc")
-playDir = os.path.join(currDir, "playground")
+segDir   = os.path.join(currDir, "segments")
+dfDir    = os.path.join(currDir, "datafind")
+fdDir    = os.path.join(currDir, "full_data")
+tsDir    = os.path.join(currDir, "time_slide_files")
+injDir   = os.path.join(currDir, "inj_files")
+ppDir    = os.path.join(currDir, "workflow_postproc")
+playDir  = os.path.join(currDir, "playground")
 hwinjDir = os.path.join(currDir, "hardware_injection_summary")
 summ_dir = os.path.join(currDir, "summary")
 
@@ -80,8 +79,9 @@ datafind_files, scienceSegs = _workflow.setup_datafind_workflow(workflow,
                                             scienceSegs, dfDir, segsFileList)
 all_files.extend(datafind_files)
 
-max_veto_cat = int(
-    workflow.cp.get('workflow-segments', 'segments-maximum-veto-category'))
+veto_cats_string = workflow.cp.get('workflow-segments',
+            'segments-veto-categories')
+veto_cats = [int(c) for c in veto_cats_string.split(',')]
 
 # Template bank stuff
 bank_files = _workflow.setup_tmpltbank_workflow(workflow, scienceSegs,
@@ -165,7 +165,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
 
     coincs, others = _workflow.setup_coincidence_workflow(workflow, segsFileList,
                                         timeSlideFiles, insps, output_dir,
-                                        tags=[tag], maxVetoCat=max_veto_cat,
+                                        tags=[tag], veto_cats=veto_cats,
                                         timeSlideTags=timeSlideTags)
 
     all_files.extend(coincs)
@@ -200,17 +200,14 @@ for tag in ['playground']:
 
 # Set up workflow's post-processing, this is still incomplete
 
-# FIXME: Don't like having to list this here!
-ppVetoCats = [2,3,4]
-
 postProcPrepFiles = _workflow.setup_postprocessing_preparation(workflow,
                       all_coincs, ppDir, injectionFiles=inj_files,
                       injectionTags=inj_tags, injLessTag='full_data',
-                      vetoFiles=segsFileList, vetoCats=ppVetoCats)
+                      vetoFiles=segsFileList, veto_cats=veto_cats)
 
 postProcFiles = _workflow.setup_postprocessing(workflow, postProcPrepFiles,
                                            anal_log_files, ppDir, tags=[],
-                                           veto_cats=ppVetoCats)
+                                           veto_cats=veto_cats)
 
 # Dump out the formatted, combined ini file
 workflow.cp.write(file("workflow_configuration.ini", "w"))
@@ -280,7 +277,7 @@ pipedown_log_dir = workflow.cp.get("workflow",'pipedown-log-path')
 pipedown_tmp_space = workflow.cp.get("workflow",'pipedown-tmp-space')
 
 pipe_plot_nodes = []
-for cat in ppVetoCats:
+for cat in veto_cats:
     veto_tag = "CUMULATIVE_CAT_%d" %(cat,)
     inputFiles = postProcFiles.find_output_with_tag(veto_tag)
     assert len(inputFiles) == 1
@@ -321,12 +318,10 @@ os.chdir("..")
 # Setup for write_ihope_page
 
 # Need to make an altered .ini file, start with the pipedown_plots 
-# .ini as its closer
+# .ini as it's closer
 wipCp = copy.deepcopy(pipeCp)
-# We hardcoded vetocat to 5 above, so do so again here until fixed
 wipCp.add_section('segments')
-wipCp.set('segments', 'veto-categories',
-          ','.join([str(cat) for cat in xrange(2, max_veto_cat + 1)]))
+wipCp.set('segments', 'veto-categories', veto_cats_string)
 # Put the veto-definer in the expected location
 vetoFile = wipCp.get('workflow-segments', 'segments-veto-definer-file')
 vetoFileBase = os.path.basename(vetoFile)
