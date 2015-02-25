@@ -44,6 +44,11 @@ def threshold_and_cluster(series, threshold, window):
     """Return list of values and indices values over threshold in series.
     """
 
+@schemed("pycbc.events.threshold_")
+def batched_threshold_and_cluster(series, threshold, window):
+    """Return list of values and indices values over threshold in series.
+    """
+
 def fc_cluster_over_window_fast(times, values, window_length):
     """ Reduce the events by clustering over a window using
     the FindChirp clustering algorithm
@@ -933,7 +938,7 @@ class EventManagerMultiDet(EventManager):
         coinc_def_row.search_coinc_type = 0
         coinc_def_table.append(coinc_def_row)
 
-__all__ = ['threshold_and_cluster', 'newsnr',
+__all__ = ['threshold_and_cluster', 'newsnr', 'batched_threshold_and_cluster',
            'findchirp_cluster_over_window', 'fc_cluster_over_window_fast',
            'threshold', 'cluster_reduce',
            'EventManager', 'EventManagerMultiDet']
