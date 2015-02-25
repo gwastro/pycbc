@@ -205,138 +205,6 @@ __global__ void threshold_and_cluster2(float2* outv, int* outl, float threshold,
 }
 """)
 
-threshold_cluster_krnl = threshold_cluster_mod.get_function("threshold_and_cluster")
-  
-
-tkernel1 = mako.template.Template("""
-#include <stdio.h>
-
-__global__ void threshold_and_cluster(float2* in, float2* outv, int* outl, int window, float threshold){
-    int s = window * blockIdx.x;
-    int e = s + window;
-    
-    // shared memory for chuck size candidates
-    __shared__ float svr[${chunk}];
-    __shared__ float svi[${chunk}];
-    __shared__ int sl[${chunk}];
-    
-    // shared memory for the warp size candidates
-    __shared__ float svv[32];
-    __shared__ int idx[32];
-    
-    int ml = -1;
-    float mvr = 0;
-    float mvi = 0;
-    float re;
-    float im;
-    
-    // Iterate trought the entire window size chunk and find blockDim.x number
-    // of candidates
-    for (int i = s + threadIdx.x; i < e; i += blockDim.x){
-        re = in[i].x;
-        im = in[i].y;
-        if ((re * re + im * im) > (mvr * mvr + mvi * mvi)){
-            mvr = re;
-            mvi = im;
-            ml = i;
-        }
-    }
-    
-    // Save the candidate from this thread to shared memory
-    svr[threadIdx.x] = mvr;
-    svi[threadIdx.x] = mvi;
-    sl[threadIdx.x] = ml;
-    
-    syncthreads();
-    if (threadIdx.x < 32){
-        int tl = threadIdx.x;
-        
-        // Now that we have all the candiates for this chunk in shared memory
-        // Iterate through in the warp size to reduce to 32 candidates
-        for (int i = threadIdx.x; i < ${chunk}; i += 32){
-            re = svr[i];
-            im = svi[i];
-            if ((re * re + im * im) > (mvr * mvr + mvi * mvi))
-                tl = i;
-        }
-        
-        // Store the 32 candidates into shared memory
-        svv[threadIdx.x] = svr[tl] * svr[tl] + svi[tl] * svi[tl];
-        idx[threadIdx.x] = tl;
-       
-        // Find the 1 candidate we are looking for using a manual log algorithm
-        if ((threadIdx.x < 16) && (svv[threadIdx.x] < svv[threadIdx.x + 16])){
-            svv[threadIdx.x] = svv[threadIdx.x + 16];
-            idx[threadIdx.x] = idx[threadIdx.x + 16];
-        }
-              
-        if ((threadIdx.x < 8) && (svv[threadIdx.x] < svv[threadIdx.x + 8])){
-            svv[threadIdx.x] = svv[threadIdx.x + 8];
-            idx[threadIdx.x] = idx[threadIdx.x + 8];
-        }
-    
-        if ((threadIdx.x < 4) && (svv[threadIdx.x] < svv[threadIdx.x + 4])){
-            svv[threadIdx.x] = svv[threadIdx.x + 4];
-            idx[threadIdx.x] = idx[threadIdx.x + 4];
-        }
-        
-        if ((threadIdx.x < 2) && (svv[threadIdx.x] < svv[threadIdx.x + 2])){
-            svv[threadIdx.x] = svv[threadIdx.x + 2];
-            idx[threadIdx.x] = idx[threadIdx.x + 2];
-        }
-        
-        
-        // Save the 1 candidate maximum and location to the output vectors
-        if (threadIdx.x == 0){
-            if (svv[threadIdx.x] < svv[threadIdx.x + 1]){
-                idx[0] = idx[1];
-                svv[0] = svv[1];
-            }
-            
-            if (svv[0] > threshold){   
-                tl = idx[0];
-                outv[blockIdx.x].x = svr[tl];
-                outv[blockIdx.x].y = svi[tl];
-                outl[blockIdx.x] = sl[tl];
-            } else{
-                outl[blockIdx.x] = -1;
-            }
-        }        
-    }
-}
-""")
-
-tkernel2 = mako.template.Template("""
-#include <stdio.h>
-__global__ void threshold_and_cluster2(float2* outv, int* outl, float threshold, int window){
-    __shared__ int loc[${blocks}];
-    __shared__ float val[${blocks}];
-    
-    int i = threadIdx.x;
-
-    int l = outl[i];
-    loc[i] = l;
-    
-    if (l == -1)
-        return;
-        
-    val[i] = outv[i].x * outv[i].x + outv[i].y * outv[i].y;
-
-    
-    // Check right
-    if (i < (${blocks} - 1) && (val[i + 1] > val[i] && (loc[i+1] - loc[i]) < window)){
-        outl[i] = -1;
-        return;
-    }
-    
-    // Check left
-    if (i > 0 && (val[i - 1] > val[i] && (loc[i] - loc[i-1]) < window)){
-        outl[i] = -1;
-        return;
-    }
-}
-""")
-
 tfn_cache = {}
 def get_tkernel(slen, window):
     if window < 32:
@@ -361,28 +229,51 @@ def get_tkernel(slen, window):
     except KeyError:
         mod = SourceModule(tkernel1.render(chunk=nt))
         mod2 = SourceModule(tkernel2.render(blocks=nb))
-        tfn_cache[(nt, nb)] = mod.get_function("threshold_and_cluster"), mod2.get_function("threshold_and_cluster2")
+        fn = mod.get_function("threshold_and_cluster")
+        fn.prepare("PPPif")
+        fn2 = mod2.get_function("threshold_and_cluster2")
+        fn2.prepare("PPfi")
+        tfn_cache[(nt, nb)] = (fn, fn2)
         return tfn_cache[(nt, nb)], nt, nb
-
-#outv = gpuarray.empty(1024, dtype=numpy.complex64)
-#outl = gpuarray.empty(1024, dtype=numpy.int32)
     
 def threshold_and_cluster(series, threshold, window):
-    outl = tl
-    outv = tv
-    series = series.data
-    (fn, fn2), nt, nb = get_tkernel(len(series), window)
+    outl = tl.gpudata
+    outv = tv.gpudata
+    slen = len(series)
+    series = series.data.gpudata
+    (fn, fn2), nt, nb = get_tkernel(slen, window)
     threshold = numpy.float32(threshold * threshold)
     window = numpy.int32(window)
     
     cl = loc[0:nb]
     cv = val[0:nb]
-    #outv = gpuarray.empty(nb, dtype=numpy.complex64)
-    #outl = gpuarray.empty(nb, dtype=numpy.int32)
     
-    fn(series, outv, outl, window, threshold, block=(nt, 1, 1), grid=(nb, 1))
-    fn2(outv, outl, threshold, window, block=(nb, 1, 1), grid=(1, 1))   
+    fn.prepared_call((nb, 1), (nt, 1, 1), series, outv, outl, window, threshold,)
+    fn2.prepared_call((1, 1), (nb, 1, 1), outv, outl, threshold, window)   
     pycbc.scheme.mgr.state.context.synchronize()
     w = (cl != -1)
     return cv[w], cl[w]
+    
+def batched_threshold_and_cluster(seriesl, threshold, window):
+    (fn, fn2), nt, nb = get_tkernel(len(series), window)
+    threshold = numpy.float32(threshold * threshold)
+    window = numpy.int32(window)
+    cv, cl = [], []
+    
+    for series in seriesl:
+        series = series.data
+        outv = gpuarray.empty(nb, dtype=numpy.complex64)
+        outl = gpuarray.empty(nb, dtype=numpy.int32)
+        fn(series, outv, outl, window, threshold, block=(nt, 1, 1), grid=(nb, 1))
+        fn2(outv, outl, threshold, window, block=(nb, 1, 1), grid=(1, 1))   
+        cv.append(outv.get_async())
+        cl.append(outl.get_async())
+        
+    pycbc.scheme.mgr.state.context.synchronize()
+    cvs, lvs = [], []
+    for v, l in zip(cv, cl):        
+        w = (l != -1)
+        cvs.append(c[w])
+        lvs.append(l[w])
+    return cvs, cls
 

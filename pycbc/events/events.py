@@ -48,6 +48,7 @@ def threshold_and_cluster(series, threshold, window):
 def batched_threshold_and_cluster(series, threshold, window):
     """Return list of values and indices values over threshold in series.
     """
+
 @schemed("pycbc.events.threshold_")
 def _threshold_cluster_factory(series, window):
     pass
