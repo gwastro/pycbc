@@ -106,6 +106,23 @@ class MatchedFilterControl(object):
                                                  
         else:
             raise ValueError("Invalid downsample factor")
+ 
+    def batched_matched_filter_and_cluster(self, template, template_norm, stildes, window):
+        for stilde in stildes:
+            N = (len(stilde)-1) * 2   
+            kmin, kmax = get_cutoff_indices(low_frequency_cutoff,
+                                           high_frequency_cutoff, stilde.delta_f, N)              
+            correlate(htilde[kmin:kmax], stilde[kmin:kmax], _qtilde[kmin:kmax])                
+            ifft(_qtilde, _q)
+        
+        snrv, idx = events.batched_threshold_and_cluster(snr[stilde.analyze], 
+                                          self.snr_threshold / norm, window)            
+
+        norm = (4.0 * stilde.delta_f) / sqrt( template_norm)
+        delta_t = 1.0 / (N * stilde.delta_f)
+        
+        return self.snrs
+         
               
     def full_matched_filter_and_cluster(self, template, template_norm, stilde, window):
         """ Return the complex snr and normalization. 
