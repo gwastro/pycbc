@@ -160,7 +160,7 @@ def shift_sum(corr, points, bins):
             fn, nt = get_pchisq_fn(4)
             fn(corr, outp, N, phase[0], phase[1], phase[2], phase[3], 
                kmin, kmax, bv, nbins, block=(nt, 1, 1), grid=(nb, 1))
-            outp = outp[4*nb:]
+            outp = outp[4*nbins:]
             phase = phase[4:]
             np -= 4    
             continue
@@ -169,7 +169,7 @@ def shift_sum(corr, points, bins):
             fn(corr, outp, N, phase[0], phase[1], phase[2], 
                 kmin, kmax, bv, nbins, block=(nt, 1, 1), grid=(nb, 1))
             np -= 3
-            outp = outp[3*nb:]
+            outp = outp[3*nbins:]
             phase = phase[3:]
             continue
         elif np >=2:
@@ -177,7 +177,7 @@ def shift_sum(corr, points, bins):
             fn(corr, outp, N, phase[0], phase[1],
                 kmin, kmax, bv, nbins, block=(nt, 1, 1), grid=(nb, 1))
             np -= 2
-            outp = outp[2*nb:]
+            outp = outp[2*nbins:]
             phase=phase[2:]
             continue
         elif np == 1:
@@ -185,6 +185,8 @@ def shift_sum(corr, points, bins):
             fn(corr, outp, N, phase[0], 
                 kmin, kmax, bv, nbins, block=(nt, 1, 1), grid=(nb, 1))
             np -= 1
+            outp = outp[1*nbins:]
+            phase=phase[1:]
             continue
     o = outc.get()
     return (o.conj() * o).sum(axis=1).real
