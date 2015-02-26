@@ -94,4 +94,9 @@ ymin = int(min(significance)**2) + 1
 plt.semilogy(range(0,ymax), bins[:ymax])
 plt.ylim(0.1)
 plt.xlim(ymin *0.9, ymax * 1.1)
+plt.ylabel('Count')
+if opts.new_snr:
+  plt.xlabel('newSNR squared')
+else:
+  plt.xlabel('SNR squared')
 plt.savefig(opts.output_file)

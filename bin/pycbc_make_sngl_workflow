@@ -195,7 +195,7 @@ for trigs_ifo, trigs_ifo_filelist in zip(trigs_ifos, trigs_ifos_filelists):
         for trigs_seg, trigs_seg_filelist in zip(trigs_segs, trigs_seg_filelists):
 
             # setup histogram nodes for trigger filelists of identical IFO and valid segment
-            image_dir = outputDir+'/'+'_'.join([trigs_ifo]+trigs_tag)+'/'+str(trigs_seg[0])+'-'+str(trigs_seg[1])
+            image_dir = outputDir+'/'+'_'.join([trigs_ifo]+trigs_tag)+'/jobs/'+str(trigs_seg[0])+'-'+str(trigs_seg[1])
             for stat in ['snr', 'new_snr']:
                 image_file = _workflow.File(trigs_ifo, 'HISTOGRAM',
                                             trigs_seg,
@@ -249,7 +249,7 @@ for trigs_ifo, trigs_ifo_filelist in zip(trigs_ifos, trigs_ifos_filelists):
         for trigs_seg, trigs_seg_filelist in zip(trigs_segs, trigs_seg_filelists):
 
             # setup glitchgram nodes for trigger filelists of identical IFO and valid segment
-            image_dir = outputDir+'/'+'_'.join([trigs_ifo]+trigs_tag)+'/'+str(trigs_seg[0])+'-'+str(trigs_seg[1])
+            image_dir = outputDir+'/'+'_'.join([trigs_ifo]+trigs_tag)+'/jobs/'+str(trigs_seg[0])+'-'+str(trigs_seg[1])
             for stat in ['snr', 'new_snr']:
                 image_file = _workflow.File(trigs_ifo, 'GLITCHGRAM',
                                             trigs_seg,

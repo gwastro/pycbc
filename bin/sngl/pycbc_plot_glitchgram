@@ -89,6 +89,8 @@ for r in ranges:
 plt.yscale('log')
 plt.ylim(min(y) * 0.9, max(y) * 1.1)
 plt.xlim(0, (opts.gps_end_time- opts.gps_start_time)/(60.0*60.0))
+plt.ylabel('Template duration (s)')
+plt.xlabel('Time since %s (hrs)'%opts.gps_start_time)
 
 # save plot
 plt.savefig(opts.output_file)

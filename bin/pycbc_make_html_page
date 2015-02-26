@@ -133,10 +133,17 @@ template = env.get_template(input_template)
 env.globals.update(zip=zip)
 env.globals.update(abs=abs)
 
-# find all subdirs
+# find all subdirs and the top-level subdirs
 Directory(opts.plots_dir, opts.plots_dir)
 dirs   = [dir for dir in Directory.instances]
 dirs_0 = [dir for dir in Directory.instances if dir.path.count('/') == 1]
+
+# sort alphanumerically
+dirs.sort(key=lambda x: x.title())
+for dir in dirs:
+  dir.subdirs.sort(key=lambda x: x.title())
+  dir.files.sort(key=lambda x: x.title)
+dirs_0.sort(key=lambda x: x.title())
 
 # loop over all directories
 for dir in dirs:
