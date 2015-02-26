@@ -229,27 +229,27 @@ def get_tkernel(slen, window):
     except KeyError:
         mod = SourceModule(tkernel1.render(chunk=nt))
         mod2 = SourceModule(tkernel2.render(blocks=nb))
-        tfn_cache[(nt, nb)] = mod.get_function("threshold_and_cluster"), mod2.get_function("threshold_and_cluster2")
+        fn = mod.get_function("threshold_and_cluster")
+        fn.prepare("PPPif")
+        fn2 = mod2.get_function("threshold_and_cluster2")
+        fn2.prepare("PPfi")
+        tfn_cache[(nt, nb)] = (fn, fn2)
         return tfn_cache[(nt, nb)], nt, nb
-
-#outv = gpuarray.empty(1024, dtype=numpy.complex64)
-#outl = gpuarray.empty(1024, dtype=numpy.int32)
     
 def threshold_and_cluster(series, threshold, window):
-    outl = tl
-    outv = tv
-    series = series.data
-    (fn, fn2), nt, nb = get_tkernel(len(series), window)
+    outl = tl.gpudata
+    outv = tv.gpudata
+    slen = len(series)
+    series = series.data.gpudata
+    (fn, fn2), nt, nb = get_tkernel(slen, window)
     threshold = numpy.float32(threshold * threshold)
     window = numpy.int32(window)
     
     cl = loc[0:nb]
     cv = val[0:nb]
-    #outv = gpuarray.empty(nb, dtype=numpy.complex64)
-    #outl = gpuarray.empty(nb, dtype=numpy.int32)
     
-    fn(series, outv, outl, window, threshold, block=(nt, 1, 1), grid=(nb, 1))
-    fn2(outv, outl, threshold, window, block=(nb, 1, 1), grid=(1, 1))   
+    fn.prepared_call((nb, 1), (nt, 1, 1), series, outv, outl, window, threshold,)
+    fn2.prepared_call((1, 1), (nb, 1, 1), outv, outl, threshold, window)   
     pycbc.scheme.mgr.state.context.synchronize()
     w = (cl != -1)
     return cv[w], cl[w]
