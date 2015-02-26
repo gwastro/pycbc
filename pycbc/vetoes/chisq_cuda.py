@@ -145,7 +145,6 @@ def get_cached_bin_layout(bins):
         _bcache[key] = (kmin, kmax, bv) 
     return _bcache[key]
 
-
 def shift_sum(corr, points, bins):
     corr = corr.data
     kmin, kmax, bv = get_cached_bin_layout(bins)
@@ -196,4 +195,5 @@ def shift_sum(corr, points, bins):
             continue
     o = outc.get()
     return (o.conj() * o).sum(axis=1).real
+    
     
