@@ -286,7 +286,7 @@ class SingleDetPowerChisq(object):
     running the power chisq in a single detector inspiral analysis.
     """
     def __init__(self, num_bins=0):
-        if not (num_bins == "0"):
+        if not (num_bins == "0" or num_bins == 0):
             self.do = True
             self.column_name = "chisq"
             self.table_dof_name = "chisq_dof"
@@ -322,7 +322,7 @@ class SingleDetPowerChisq(object):
         return self._bin_cache[key]
 
     def values(self, corr, snr, snrv, snr_norm, psd, indices, template):
-        """FIXME: Document this function?
+        """ Calculate the chisq at points given by indices.
 
         Returns
         -------
@@ -330,7 +330,8 @@ class SingleDetPowerChisq(object):
             Chisq values, one for each sample index
 
         chisq_dof: Array
-            Numbers of frequency bins corresponding to the chisq values
+            Number of statistical degrees of freedom for the chisq test 
+            in the given template
         """
         if self.do:
             logging.info("...Doing power chisq")  
