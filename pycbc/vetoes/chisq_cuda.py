@@ -118,6 +118,7 @@ def get_pchisq_fn(np):
         nt = 256
         mod = SourceModule(chisqkernel.render(NT=nt, NP=np))
         fn = mod.get_function("power_chisq_at_points_%s" % (np))
+        fn.prepare("PPI" + "f" * np + "PPPI")
         _pchisq_cache[np] = (fn, nt)
     return _pchisq_cache[np]
 
@@ -158,32 +159,36 @@ def shift_sum(corr, points, bins):
     while np > 0:
         if np >= 4:
             fn, nt = get_pchisq_fn(4)
-            fn(corr, outp, N, phase[0], phase[1], phase[2], phase[3], 
-               kmin, kmax, bv, nbins, block=(nt, 1, 1), grid=(nb, 1))
+            fn.prepared_call((nb, 1), (nt, 1, 1), 
+               corr.gpudata, outp.gpudata, N, phase[0], phase[1], phase[2], phase[3], 
+               kmin.gpudata, kmax.gpudata, bv.gpudata, nbins)
             outp = outp[4*nbins:]
             phase = phase[4:]
             np -= 4    
             continue
         elif np >=3:
             fn, nt = get_pchisq_fn(3)
-            fn(corr, outp, N, phase[0], phase[1], phase[2], 
-                kmin, kmax, bv, nbins, block=(nt, 1, 1), grid=(nb, 1))
+            fn.prepared_call((nb, 1), (nt, 1, 1), 
+                corr.gpudata, outp.gpudata, N, phase[0], phase[1], phase[2], 
+                kmin.gpudata, kmax.gpudata, bv.gpudata, nbins)
             np -= 3
             outp = outp[3*nbins:]
             phase = phase[3:]
             continue
         elif np >=2:
             fn, nt = get_pchisq_fn(2)
-            fn(corr, outp, N, phase[0], phase[1],
-                kmin, kmax, bv, nbins, block=(nt, 1, 1), grid=(nb, 1))
+            fn.prepared_call((nb, 1), (nt, 1, 1), 
+                corr.gpudata, outp.gpudata, N, phase[0], phase[1],
+                kmin.gpudata, kmax.gpudata, bv.gpudata, nbins)
             np -= 2
             outp = outp[2*nbins:]
             phase=phase[2:]
             continue
         elif np == 1:
             fn, nt = get_pchisq_fn(1)
-            fn(corr, outp, N, phase[0], 
-                kmin, kmax, bv, nbins, block=(nt, 1, 1), grid=(nb, 1))
+            fn.prepared_call((nb, 1), (nt, 1, 1), 
+                corr.gpudata, outp.gpudata, N, phase[0], 
+                kmin.gpudata, kmax.gpudata, bv.gpudata, nbins)
             np -= 1
             outp = outp[1*nbins:]
             phase=phase[1:]
