@@ -89,6 +89,15 @@ class File():
     except:
       return segments.segmentlistdict()
 
+  def render(self):
+      env = Environment(loader=FileSystemLoader(input_path))
+      template = env.get_template('file_standard.html')
+      if True:
+          context = {'file' : self}
+          output = template.render(context)
+
+      return output
+
 # parse command line
 parser = argparse.ArgumentParser(usage='pycbc_make_html_page \
 [--options]',
@@ -97,7 +106,7 @@ parser = argparse.ArgumentParser(usage='pycbc_make_html_page \
 parser.add_argument('-f', '--template-file', type=str,
                   help='Template file to use for skeleton html page.')
 parser.add_argument('-a', '--output-server', type=str,
-                  help='Path to the directory of the web server, eg. /home/${USER}/public_html.')
+                  help='URL for web access.')
 parser.add_argument('-b', '--output-path', type=str,
                   help='Path on web server for main html page.')
 parser.add_argument('-p', '--plots-dir', type=str,
@@ -117,7 +126,6 @@ analysis_title = opts.analysis_title.strip('"').rstrip('"')
 analysis_subtitle = opts.analysis_subtitle.strip('"').rstrip('"')
 input_template = opts.template_file.split('/')[-1]
 input_path = opts.template_file.rstrip(input_template)
-html_dir = opts.output_server+'/'+opts.output_path
 
 # setup template
 env = Environment(loader=FileSystemLoader(input_path))
@@ -138,17 +146,17 @@ for dir in dirs:
              'analysis_subtitle' : analysis_subtitle,
              'dirs_0' : dirs_0,
              'dir'    : dir,
-             'output_path' : opts.output_path,
+             'output_path' : opts.output_server,
              'plots_dir' : opts.plots_dir}
   output = template.render(context)
 
   # save
-  if not os.path.exists(html_dir+dir.path):
-    os.makedirs(html_dir+dir.path)
-  with open(html_dir+dir.path+'/index.html', "wb") as fp:
+  if not os.path.exists(opts.output_path+dir.path):
+    os.makedirs(opts.output_path+dir.path)
+  with open(opts.output_path+dir.path+'/index.html', "wb") as fp:
     fp.write(output)
 
 # move all files
 for dir in dirs:
   for file in dir.files:
-    shutil.copy(opts.plots_dir+dir.path+'/'+file.path, html_dir+'/'+dir.path+'/'+file.path)
+    shutil.copy(opts.plots_dir+dir.path+'/'+file.path, opts.output_path+'/'+dir.path+'/'+file.path)

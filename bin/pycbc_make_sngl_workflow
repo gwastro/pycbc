@@ -26,7 +26,10 @@ import urlparse
 import argparse
 import lal
 import Pegasus.DAX3 as dax
+
+from glue import lal
 from glue import segments
+
 import pycbc.workflow as _workflow
 
 ################
@@ -282,6 +285,41 @@ for image in images:
 ###############
 # save and exit
 ###############
+
+# setup cache file to be used by summary pages
+cache = lal.Cache()
+
+# group trigger files by IFO and loop over IFOs
+trigs_ifos, trigs_ifos_filelists = trigs.categorize_by_attr('ifo')
+for trigs_ifo, trigs_ifo_filelist in zip(trigs_ifos, trigs_ifos_filelists):
+
+  # group trigger files by tags and loop over tags
+  trigs_tags, trigs_tags_filelists = trigs_ifo_filelist.categorize_by_attr('tags')
+  for trigs_tag, trigs_tag_filelist in zip(trigs_tags, trigs_tags_filelists):
+
+    # append cache file
+    cache = trigs_tag_filelist.convert_to_lal_cache()
+
+    # write cache file (mimics old workflow filename)
+    tag = '_'.join(trigs_tag).upper()
+    filename = outputDir+'/'+trigs_ifo+'-INSPIRAL_'+tag+'.cache'
+    cache.tofile(open(filename, 'w'))
+
+# group tmpltbank files by IFO and loop over IFOs
+banks_ifos, banks_ifos_filelists = trigs.categorize_by_attr('ifo')
+for banks_ifo, banks_ifo_filelist in zip(banks_ifos, banks_ifos_filelists):
+
+  # group tmpltbank files by tags and loop over tags
+  trigs_tags, trigs_tags_filelists = trigs_ifo_filelist.categorize_by_attr('tags')
+  for trigs_tag, trigs_tag_filelist in zip(trigs_tags, trigs_tags_filelists):
+
+    # append cache file
+    cache = trigs_tag_filelist.convert_to_lal_cache()
+
+    # write cache file (mimics old workflow file)
+    tag = '_'.join(trigs_tag).upper()
+    filename = outputDir+'/'+trigs_ifo+'-TMPLTBANK_'+tag+'.cache'
+    cache.tofile(open(filename, 'w'))
 
 # write configuration file
 if not os.path.exists(configDir):

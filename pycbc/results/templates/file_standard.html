@@ -1,0 +1,21 @@
+<div class="panel-group" id="accordion">
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+      <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href='#{{file.id}}'>
+      {{file.title}}
+      </a>
+      </h4>
+    </div>
+
+    <div id="{{file.id}}" class="panel-collapse collapse">
+      <div class="panel-body">
+
+      <p>Unsupported file extension.</p>
+      <p><a href={{file.path}}>Link to file.</a></p>
+
+      </div>
+    </div>
+  </div>
+</div>
+
