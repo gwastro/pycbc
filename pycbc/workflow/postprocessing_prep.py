@@ -353,7 +353,7 @@ def setup_postprocprep_gstlal_workflow(workflow, coinc_files, output_dir,
                                        summary_xml_files=None,
                                        likelihood_files=[]):
     """
-    Properties
+    Parameters
     -----------
     workflow : workflow.Workflow
         The workflow instance that the coincidence jobs will be added to.

@@ -29,13 +29,13 @@ from pycbc.workflow.core import *
 
 import Pegasus.DAX3 as dax
 
-def setup_plotinspiral(workflow, input_files, cache_filename, inspiral_cachepattern, \
-                           output_dir, tags=[], **kwargs):
+def setup_plotinspiral(workflow, input_files, cache_filename,
+                       inspiral_cachepattern, output_dir, tags=[], **kwargs):
     """
     This function sets up the nodes that will generate summary plots given a
     list of inspiral files.
 
-    Properties
+    Parameters
     -----------
     Workflow : ahope.Workflow
         The ahope workflow instance that the coincidence jobs will be added to.
@@ -61,8 +61,8 @@ def setup_plotinspiral(workflow, input_files, cache_filename, inspiral_cachepatt
     plot_files = FileList([])
 
     # create executable
-    plotinspiral_job = Executable(workflow.cp, 'plotinspiral', 'vanilla', workflow.ifos, \
-                                           output_dir, tags)
+    plotinspiral_job = Executable(workflow.cp, 'plotinspiral', 'vanilla',
+                                  workflow.ifos, output_dir, tags)
 
     for tag in tags:
         for ifo in plotinspiral_job.ifo_list:
@@ -72,7 +72,7 @@ def setup_plotinspiral(workflow, input_files, cache_filename, inspiral_cachepatt
             node.add_opt('--gps-end-time', workflow.analysis_time[1])
             node.add_opt('--cache-file', cache_filename)
             node.add_opt('--ifo-times', ifo)
-            node.add_opt('--ifo-tag', 'FIRST_'+ifo)  
+            node.add_opt('--ifo-tag', 'FIRST_'+ifo)
             node.add_opt('--user-tag', tag.upper()+'_SUMMARY_PLOTS')
             node.add_opt('--output-path', output_dir)
             node.add_opt('--trig-pattern', inspiral_cachepattern)
@@ -89,13 +89,14 @@ def setup_plotinspiral(workflow, input_files, cache_filename, inspiral_cachepatt
     return plot_files
 
 
-def setup_plotnumtemplates(workflow, input_files, cache_filename, tmpltbank_cachepattern, output_dir, \
-                               tags=[], **kwargs):
+def setup_plotnumtemplates(workflow, input_files, cache_filename,
+                           tmpltbank_cachepattern, output_dir, tags=[],
+                           **kwargs):
     """
     This function sets up the nodes that will generate a plot of the number
     of templates against time.
 
-    Properties
+    Parameters
     -----------
     Workflow : ahope.Workflow
         The ahope workflow instance that the coincidence jobs will be added to.
@@ -121,8 +122,8 @@ def setup_plotnumtemplates(workflow, input_files, cache_filename, tmpltbank_cach
     plot_files = FileList([])
 
     # create executable
-    plotnumtemplates_job = Executable(workflow.cp, 'plotnumtemplates', 'vanilla', workflow.ifos, \
-                                               output_dir, tags)
+    plotnumtemplates_job = Executable(workflow.cp, 'plotnumtemplates',
+                                  'vanilla', workflow.ifos, output_dir, tags)
 
     for tag in tags:
         # create node
@@ -147,13 +148,13 @@ def setup_plotnumtemplates(workflow, input_files, cache_filename, tmpltbank_cach
     return plot_files
 
 
-def setup_plotthinca(workflow, input_files, cache_filename, coinc_cachepattern, slide_cachepattern, \
-                         output_dir, tags=[], **kwargs):
+def setup_plotthinca(workflow, input_files, cache_filename, coinc_cachepattern,
+                     slide_cachepattern, output_dir, tags=[], **kwargs):
     """
     This function sets up the nodes that will generate summary from a list of
     thinca files.
 
-    Properties
+    Parameters
     -----------
     Workflow : ahope.Workflow
         The ahope workflow instance that the coincidence jobs will be added to.
@@ -181,8 +182,8 @@ def setup_plotthinca(workflow, input_files, cache_filename, coinc_cachepattern, 
     plot_files = FileList([])
 
     # create executable
-    plotthinca_job = Executable(workflow.cp, 'plotthinca', 'vanilla', workflow.ifos, \
-                                         output_dir, tags)
+    plotthinca_job = Executable(workflow.cp, 'plotthinca', 'vanilla',
+                                workflow.ifos, output_dir, tags)
 
     # get all ifo combinations of at least 2 coincident ifos
     ifo_combos = []
@@ -215,17 +216,18 @@ def setup_plotthinca(workflow, input_files, cache_filename, coinc_cachepattern, 
             # make all input_files parents
             #for f in input_files:
             #    dep = dax.Dependency(parent=f.node._dax_node, child=node._dax_node)
-            #    workflow._adag.addDependency(dep)       
+            #    workflow._adag.addDependency(dep)
 
     return plot_files
 
-def setup_plotinspiralrange(workflow, input_files, cache_filename, tmpltbank_cachepattern, \
-                                inspiral_cachepattern, output_dir, tags=[], **kwargs):
+def setup_plotinspiralrange(workflow, input_files, cache_filename,
+                            tmpltbank_cachepattern, inspiral_cachepattern,
+                            output_dir, tags=[], **kwargs):
     """
     This function sets up the nodes that will generate the inspiral horizon distance
     plots.
 
-    Properties
+    Parameters
     -----------
     Workflow : ahope.Workflow
         The ahope workflow instance that the coincidence jobs will be added to.
@@ -253,8 +255,8 @@ def setup_plotinspiralrange(workflow, input_files, cache_filename, tmpltbank_cac
     plot_files = FileList([])
 
     # create executable
-    plotinspiralrange_job = Executable(workflow.cp, 'plotinspiralrange', 'vanilla', \
-                                                workflow.ifos, output_dir, tags)
+    plotinspiralrange_job = Executable(workflow.cp, 'plotinspiralrange',
+                                   'vanilla', workflow.ifos, output_dir, tags)
 
     for tag in tags:
         # create node
@@ -279,14 +281,14 @@ def setup_plotinspiralrange(workflow, input_files, cache_filename, tmpltbank_cac
 
     return plot_files
 
-def setup_summary_plots(workflow, input_files, cache_filename, tmpltbank_cachepattern, \
-                            inspiral_cachepattern,
-                            #coinc_cachepattern, slide_cachepattern, \
-                            output_dir, tags=[], **kwargs):
+def setup_summary_plots(workflow, input_files, cache_filename,
+                        tmpltbank_cachepattern, inspiral_cachepattern,
+                        #coinc_cachepattern, slide_cachepattern,
+                        output_dir, tags=[], **kwargs):
     """
     This function sets up the summary plots jobs.
 
-    Properties
+    Parameters
     -----------
     Workflow : ahope.Workflow
         The ahope workflow instance that the coincidence jobs will be added to.
@@ -298,9 +300,9 @@ def setup_summary_plots(workflow, input_files, cache_filename, tmpltbank_cachepa
         The pattern that will be used to find template_bank filenames in the cache.
     inspiral_cachepattern : str
         The pattern that will be used to find inspiral filenames in the cache.
-    coinc_cachepattern : str
+    coinc_cachepattern : str (currently not implemented)
         The pattern that will be used to find zero-lag coincidence filenames in the cache.
-    slide_cachepattern : str
+    slide_cachepattern : str (currently not implemented)
         The pattern that will be used to find time slide filenames in the cache.
     output_dir : path
         The directory in which output files will be stored.
@@ -322,17 +324,16 @@ def setup_summary_plots(workflow, input_files, cache_filename, tmpltbank_cachepa
         os.makedirs(output_dir)
 
     # setup summary plot jobs
-    plotinspiral_files = setup_plotinspiral(workflow, input_files, cache_filename,\
-                                            inspiral_cachepattern, output_dir, tags)
-    plotinspiralrange_files = setup_plotinspiralrange(workflow, input_files, \
-                                            cache_filename, tmpltbank_cachepattern, \
-                                            inspiral_cachepattern, output_dir, tags)
-    plotnumtemplates_files = setup_plotnumtemplates(workflow, input_files, \
-                                            cache_filename, tmpltbank_cachepattern, \
-                                            output_dir, tags)
-    #plotthinca_files = setup_plotthinca(workflow, input_files, cache_filename, \
-    #                                        coinc_cachepattern, slide_cachepattern, \
-    #                                        output_dir, tags) 
+    plotinspiral_files = setup_plotinspiral(workflow, input_files,
+                       cache_filename, inspiral_cachepattern, output_dir, tags)
+    plotinspiralrange_files = setup_plotinspiralrange(workflow, input_files,
+                                       cache_filename, tmpltbank_cachepattern,
+                                       inspiral_cachepattern, output_dir, tags)
+    plotnumtemplates_files = setup_plotnumtemplates(workflow, input_files,
+                      cache_filename, tmpltbank_cachepattern, output_dir, tags)
+    #plotthinca_files = setup_plotthinca(workflow, input_files, cache_filename,
+    #                                        coinc_cachepattern, slide_cachepattern,
+    #                                        output_dir, tags)
 
     # concatenate plot files
     plot_files += plotinspiral_files
@@ -342,12 +343,12 @@ def setup_summary_plots(workflow, input_files, cache_filename, tmpltbank_cachepa
 
     return plot_files
 
-def setup_hardware_injection_page(workflow, input_files, cache_filename, \
-                                  inspiral_cachepattern, output_dir, tags=[], **kwargs):
+def setup_hardware_injection_page(workflow, input_files, cache_filename,
+                         inspiral_cachepattern, output_dir, tags=[], **kwargs):
     """
     This function sets up the nodes that will create the hardware injection page.
 
-    Properties
+    Parameters
     -----------
     Workflow : ahope.Workflow
         The ahope workflow instance that the coincidence jobs will be added to.
@@ -388,17 +389,19 @@ def setup_hardware_injection_page(workflow, input_files, cache_filename, \
         os.makedirs(output_dir)
 
     # create executable
-    hwinjpage_job = Executable(workflow.cp, 'hardware_injection_page', \
+    hwinjpage_job = Executable(workflow.cp, 'hardware_injection_page',
                                     'vanilla', workflow.ifos, output_dir, tags)
 
     # retrieve hardware injection file
-    hwinjDefUrl = workflow.cp.get_opt_tags('workflow-hardware-injections', 'hwinj-definer-url', tags)
+    hwinjDefUrl = workflow.cp.get_opt_tags('workflow-hardware-injections',
+                                                     'hwinj-definer-url', tags)
     hwinjDefBaseName = os.path.basename(hwinjDefUrl)
     hwinjDefNewPath = os.path.join(output_dir, hwinjDefBaseName)
     urllib.urlretrieve (hwinjDefUrl, hwinjDefNewPath)
 
     # update hwinj definer file location
-    workflow.cp.set("workflow-hardware-injections", "hwinj-definer-file", hwinjDefNewPath)
+    workflow.cp.set("workflow-hardware-injections", "hwinj-definer-file",
+                                                               hwinjDefNewPath)
 
     # query for the hardware injection segments
     get_hardware_injection_segment_files(workflow, output_dir, hwinjDefNewPath)
@@ -414,8 +417,8 @@ def setup_hardware_injection_page(workflow, input_files, cache_filename, \
     node.add_opt('--analyze-injections', '')
     for ifo in workflow.ifos:
         node.add_opt('--%s-injections'%ifo.lower(), '')
-    outfile = File(node.executable.ifo_string, 'HWINJ_SUMMARY', workflow.analysis_time, \
-                            extension='html', directory=output_dir)
+    outfile = File(node.executable.ifo_string, 'HWINJ_SUMMARY',
+                workflow.analysis_time, extension='html', directory=output_dir)
     node.add_opt('--outfile', outfile.storage_path)
 
     # add node to workflow
@@ -432,12 +435,13 @@ def setup_hardware_injection_page(workflow, input_files, cache_filename, \
 
     return out_files
 
-def get_hardware_injection_segment_files(workflow, output_dir, hwinjDefPath, tag=None):
+def get_hardware_injection_segment_files(workflow, output_dir, hwinjDefPath,
+                                         tag=None):
     """
     This function queries the segment database for the hardware
     injection segments and saves them to the output_dir.
 
-    Properties
+    Parameters
     -----------
     workflow : ahope.Workflow
         The ahope workflow instance that the coincidence jobs will be added to.
