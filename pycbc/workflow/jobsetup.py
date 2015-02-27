@@ -33,7 +33,7 @@ import math, os
 from glue import segments
 import Pegasus.DAX3 as dax
 from pycbc.workflow.core import Executable, File, FileList, Node
-from pycbc.workflow.legacy_ihope import LegacyTmpltbankExecutable, LegacyInspiralExecutable, LegacyCohPTFInspiralExecutable, LegacyCohPTFPostProc, LegacyCohPTFTrigCombiner, LegacyCohPTFTrigCluster
+from pycbc.workflow.legacy_ihope import LegacyTmpltbankExecutable, LegacyInspiralExecutable, LegacyCohPTFInspiralExecutable, LegacyCohPTFTrigCombiner, LegacyCohPTFTrigCluster, LegacyCohPTFSbvPlotter
 
 def select_tmpltbank_class(curr_exe):
     """
@@ -184,7 +184,8 @@ def select_generic_executable(workflow, exe_tag):
         "gstlal_inspiral_plotsummary"     : GstlalPlotSummary,
         "gstlal_inspiral_summary_page"    : GstlalSummaryPage,
         "coh_PTF_trig_combiner"           : LegacyCohPTFTrigCombiner,
-        "coh_PTF_trig_cluster"            : LegacyCohPTFTrigCluster
+        "coh_PTF_trig_cluster"            : LegacyCohPTFTrigCluster,
+        "coh_PTF_sbv_plotter"             : LegacyCohPTFSbvPlotter
     }
     try:
         return exe_to_class_map[exe_name]

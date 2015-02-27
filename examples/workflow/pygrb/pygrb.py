@@ -63,7 +63,8 @@ def make_cache(input_files, ifos, name, seg, cacheDir, tags=[]):
         start = str(int(entry.segment[0]))
         duration = str(int(abs(entry.segment)))
         print >> fP, "%s %s %s %s file://localhost%s" \
-            %(ifos, entry.description, start, duration, entry.storage_path)
+            %(ifos, entry.description.upper(), start, duration,
+              entry.storage_path)
     fP.close()
     
     return cache_file
@@ -161,7 +162,7 @@ ppDir = os.path.join(currDir, "post_processing")
 ifos = ''.join(sciSegs.keys())
 post_proc_method = wflow.cp.get_opt_tags("workflow-postproc",
                                          "postproc-method", tags)
-if post_proc_method == "COH_PTF_WORKFLOW":
+if post_proc_method == "COH_PTF_PP_DAG_WORKFLOW":
     pp_config_file_name = wflow.cp.get("workflow-postproc", "config-file")
     pp_config_file_url = "file://localhost%s/%s" % (baseDir,
                                                     pp_config_file_name)
@@ -175,10 +176,11 @@ if post_proc_method == "COH_PTF_WORKFLOW":
                                                        segDir, run_dir=runDir,
                                                        ifos=ifos)
 
-elif post_proc_method == "COH_PTF_WORKFLOW_NEW":
-    inspiral_cache = make_cache(inspiral_files, ifos, "inspiral",
+elif post_proc_method == "COH_PTF_WORKFLOW":
+    inspiral_cache = make_cache(inspiral_files, ifos, "INSPIRAL",
                                 sciSegs[ifo][0], inspDir)
-    pp_files = _workflow.setup_coh_PTF_post_processing(wflow, inspiral_cache,
+    inspiral_files.extend(_workflow.FileList([inspiral_cache]))
+    pp_files = _workflow.setup_coh_PTF_post_processing(wflow, inspiral_files,
                                                        inj_files, ppDir,
                                                        segDir, ifos=ifos)
 

@@ -34,7 +34,7 @@ import logging
 import urlparse
 from glue import pipeline
 from glue import segments
-from pycbc.workflow.core import Executable, File, Node
+from pycbc.workflow.core import Executable, File, FileList, Node
 
 def legacy_get_valid_times(self):
     """
@@ -366,11 +366,11 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
         self.ifos = ifo
         self.output_dir = out_dir
         self.num_threads = 1
- 
-    def create_node(self, parent=None, segment_dir=None, tags=[]):
+
+    def create_node(self, parents=None, segment_dir=None, tags=[]):
         node = Node(self)
 
-        if not parent:
+        if not parents:
             raise ValueError("%s must be supplied with trigger files"
                               % self.name)
 
@@ -379,19 +379,27 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
         if pad_data is None:
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.name)
-        
-        node.add_opt('--grb-name', self.cp.get('workflow', 'trigger-name'))
+
+        trig_name = self.cp.get('workflow', 'trigger-name')
+        node.add_opt('--grb-name', trig_name)
         
         node.add_opt('--pad-data', pad_data)
         node.add_opt('--segment-length', self.cp.get('inspiral',
                                                      'segment-duration'))
         node.add_opt('--ifo-tag', self.ifos)
-        node.add_opt('--user-tag', 'inspiral')
+        node.add_opt('--user-tag', 'INSPIRAL')
 
         # Set input / output options
-        node.add_input_opt('--cache', parent, )
+        cache_file = parents.pop()
+        node.add_input_opt('--cache', cache_file)
+        for parent in parents:
+            node._add_input(parent)
         node.add_opt('--segment-dir', segment_dir)
         node.add_opt('--output-dir', self.output_dir)
+        #out_file = File(self.ifos, 'INSPIRAL', parents[0].segment,
+        #                directory=self.output_dir, extension='xml.gz',
+        #                tags=["GRB%s_ALL_TIMES" % trig_name])
+        #node._add_output(out_file)
 
         node.add_profile('condor', 'request_cpus', self.num_threads)
 
@@ -418,12 +426,61 @@ class LegacyCohPTFTrigCluster(LegacyAnalysisExecutable):
 
         if not parent:
             raise ValueError("%s must be supplied with trigger files"
-                              % self.name)
+                             % self.name)
 
         # Set input / output options
-        node.add_input_opt('--trig-file', parent, )
+        trig_file = "%s/%s-INSPIRAL_%s-%s-%s.xml.gz" % (self.output_dir,
+                                                        self.ifos, tags[0],
+                                                        parent.segment[0],
+                                                        abs(parent.segment))
+        node.add_opt('--trig-file', trig_file)
         node.add_opt('--output-dir', self.output_dir)
 
         node.add_profile('condor', 'request_cpus', self.num_threads)
 
+        # Adding output files as pycbc.workflow.core.File objects
+        tags[0] += "_CLUSTERED"
+        out_file = File(self.ifos, 'INSPIRAL', parent.segment,
+                        directory=self.output_dir, extension='xml.gz',
+                        tags=tags)
+        node._add_output(out_file)
+
         return node
+
+
+class LegacyCohPTFSbvPlotter(LegacyAnalysisExecutable):
+    """
+    The class responsible for setting up jobs for legacy coh_PTF_sbv_plotter
+    executable.
+    """
+    current_retention_level = Executable.CRITICAL
+    def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
+                 out_dir=None, tags=[]):
+        super(LegacyCohPTFSbvPlotter, self).__init__(cp, name, universe,
+              ifo=ifo, out_dir=out_dir, tags=tags)
+        self.cp = cp
+        self.ifos = ifo
+        self.output_dir = out_dir
+        self.num_threads = 1
+
+    def create_node(self, parent=None, seg_dir=None,
+                    tags=[]):
+        node = Node(self)
+
+        if not parent:
+            raise ValueError("%s must be supplied with trigger files"
+                             % self.name)
+
+        node.add_opt('--grb-name', self.cp.get('workflow', 'trigger-name'))
+
+        # Set input / output options
+        node.add_opt('--veto-directory', seg_dir)
+        node.add_opt('--trig-file', parent)
+        node.add_opt('--segment-dir', seg_dir)
+        out_dir = "%s/output/%s" % (self.output_dir, tags)
+        node.add_opt('--output-dir', out_dir)
+
+        node.add_profile('condor', 'request_cpus', self.num_threads)
+
+        return node
+
