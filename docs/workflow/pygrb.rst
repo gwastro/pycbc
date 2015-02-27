@@ -12,8 +12,14 @@ whether or not a compact binary coalescence signal is present in the given data
 coming from the same point in the sky and at the same time as an observed short
 GRB.
 
-The output is a webpage containing the plots that can be used to understand the
+The output will be a webpage containing the plots that can be used to understand the
 results of the analysis.
+
+***
+Currently the workflow does not feature a fully integrated post-processing module! At the
+moment the end data products are files containing the clustered and un-clustered
+triggers. There are also no injection jobs, or long time slides implemented as of yet.
+***
 
 .. _howtorunpygrb:
 
@@ -81,14 +87,16 @@ This file contains all the details needed to construct a pyGRB workflow
 * pygrb.ini contains options that are used when running the pycbc.workflow
   parts of the workflow
 
-The pygrb.ini example is set up to run on S6 data and analysing only H1 and L1.
+The pygrb.ini example is set up to run on S6 data, analysing only H1 and L1.
 
 If you want to run in this default configuration please jump down to
 :ref:`pygrbgenerate`.
 
 If you want to run on non-S6 data, analyze a different set of ifos, or change
 any data-type or segment length options, you will have to edit some additional
-options::
+options.
+
+Firstly, the sections specifying some workflow-wide options include::
 
     [workflow]
     h1-channel-name = H1:LDAS-STRAIN
@@ -120,8 +128,8 @@ options::
     max-duration = 4096
     pad-data = 8
     quanta = 128
-
-    ALL the [tisi], [tisi-zerolag], [tisi-slides] sections (potentially)
+    num-buffer-left = 8
+    num-buffer-right = 8
 
 To run through this
 
@@ -138,18 +146,56 @@ To run through this
 * segments-veto-definer-url points to the url where the veto-definer file can
   be found.
 
-The remaining options affect how the jobs run, these should not be edited
-unless you know what you are doing ... but can freely be added if you do know
-what you are doing and want to change something. To find out more details about
-the possible options for any stage of the workflow, follow the links at
+We also set the executables to be used for the analysis::
+    
+    [executables]
+    ; setup of condor universe and location of executables
+    tmpltbank = ${which:lalapps_tmpltbank_ahope}
+    inspiral = ${which:lalapps_coh_PTF_inspiral}
+    splittable = ${which:pycbc_splitbank}
+    segment_query = ${which:ligolw_segment_query}
+    segments_from_cats = ${which:ligolw_segments_from_cats}
+    llwadd = ${which:ligolw_add}
+    ligolw_combine_segments = ${which:ligolw_combine_segments}
+
+The options to be given to every job run by an executable are then given within a secion
+with the relevant name, for example our inspiral jobs (in this case,
+lalapps_coh_PTF_inspiral) use the options in the following section::
+
+    [inspiral]
+    ; coh_PTF_inspiral analysis parameters -- added to all inspiral jobs
+    ; Note that some values are dynamically recalculated during workflow generation
+    .
+    .
+    .
+
+    ALL the [tisi], [tisi-zerolag], [tisi-slides] sections (potentially)
+
+These should not be edited unless you know what you are doing. To find out more details
+about the possible options for any stage of the workflow, follow the links at
 :ref:`workflowhomepage`.
 
-Now you have a configuration file and can follow the same instructions as
+Multiple configuration files may be used, and in fact the same sections may be populated
+from within multiple files. As an example, we might wish to have a seperate file for the
+post-processing options. This file may contain the following::
+
+    [executables]
+    trig_combiner = ${which:coh_PTF_trig_combiner}
+    trig_cluster = ${which:coh_PTF_trig_cluster}
+    injfinder = ${which:coh_PTF_injfinder}
+    injcombiner = ${which:coh_PTF_injcombiner}
+    sbv_plotter = ${which:coh_PTF_sbv_plotter}
+    efficiency = ${which:coh_PTF_efficiency}
+    horizon_dist = ${which:coh_PTF_inspiral_horizon}
+
+This will add to the values given in the [executables] section of the other file. Options for the trig_combiner code may then be given in a section [trig_combiner], and so on.
+
+Now you have a configuration file (or files) and can follow the same instructions as
 above. That is: 
 
 Copy the configuration file into your run directory::
 
-    cp /path/to/pygrb.ini .
+    cp /path/to/<file(s)>.ini .
 
 and set the name of the configuration file in your path. If you have more than
 one configuration file they must be space separated::
@@ -177,6 +223,7 @@ example::
 
     RA=223.0
     DEC=-28.5
+    SKY_ERROR=0
 
 If you are using a pregenerated template bank and do not have a path to the
 bank set in your config file, set it here::
@@ -216,17 +263,27 @@ example::
 
     export HTMLDIR=/home/${USER}/public_html/pygrb
 
+Lastly, provide a location for the lalsuite git repository (the folder containing the
+file lalsuite.git).::
+
+    export LAL_SRC=/usr1/${USER}/git/lalsuite
+
 If you are using locally editted or custom configuration files then you can
 create the workflow from within the run directory using::
 
     pygrb.py --local-config-files ${LOCAL_CONFIG_FILES} \
              --config-overrides workflow:ra:${RA} \
                                 workflow:dec:${DEC} \
+                                workflow:sky-error:${SKY_ERROR} \
                                 workflow:trigger-name:${GRB_NAME} \
                                 workflow:trigger-time:${GRB_TIME} \
                                 workflow:start-time:$(( GRB_TIME - 4096 )) \
                                 workflow:end-time:$(( GRB_TIME + 4096 )) \
                                 workflow-tmpltbank:tmpltbank-pregenerated-bank:${BANK_FILE}
+
+This may all be conveniently placed within a shell script, an example of which is given
+in::
+    /src/pycbc/examples/workflow/pygrb/run_pygrb.sh
 .. _pygrbplan:
 
 -----------------------------------------
