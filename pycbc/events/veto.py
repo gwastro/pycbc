@@ -34,6 +34,7 @@ def segments_to_file(segs, filename, name, ifo=""):
     """
     from glue.segmentdb import segmentdb_utils as segutil
     from pycbc.workflow.core import File
+    outdoc = ligolw.Document()
     outdoc.appendChild(ligolw.LIGO_LW())
 
     proc_id = ligolw_utils.process.register_to_xmldoc(outdoc, "", {}).process_id 
