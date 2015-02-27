@@ -34,14 +34,15 @@ from __future__ import division
 import os
 import os.path
 import logging
+import Pegasus.DAX3 as dax
 from glue import segments
-from pycbc.workflow.core import FileList, make_analysis_dir
+from pycbc.workflow.core import File, FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import select_generic_executable
 from pycbc.workflow.legacy_ihope import LegacyCohPTFTrigCombiner 
 
 def setup_coh_PTF_post_processing(workflow, trigger_files, injection_files,
-                                 output_dir, segment_dir, run_dir=None,
-                                 ifos=None, tags=[], **kwargs):
+                                  output_dir, segment_dir, run_dir=None,
+                                  ifos=None, tags=[], **kwargs):
     """
     This function aims to be the gateway for running postprocessing in CBC
     offline workflows. Post-processing generally consists of calculating the
@@ -70,7 +71,7 @@ def setup_coh_PTF_post_processing(workflow, trigger_files, injection_files,
         A list of the output from this stage.
 
     """
-    logging.info("Entering post-processing preparation stage.")
+    logging.info("Entering post-processing stage.")
     make_analysis_dir(output_dir)
 
     # Parse for options in .ini file
@@ -82,16 +83,12 @@ def setup_coh_PTF_post_processing(workflow, trigger_files, injection_files,
     # ligolw_thinca output xml into one file, clustering, performing injection
     # finding and putting everything into one SQL database.
     if post_proc_method == "COH_PTF_WORKFLOW":
-        post_proc_files = setup_old_coh_PTF_pp_workflow(workflow,
-                           trigger_files, injection_files, output_dir,
-                           segment_dir, run_dir, ifos=ifos, tags=tags, **kwargs)
-    elif post_proc_method == "COH_PTF_WORKFLOW_NEW":
         post_proc_files = setup_postproc_coh_PTF_workflow(workflow,
                            trigger_files, injection_files, output_dir,
                            segment_dir, ifos=ifos, tags=tags, **kwargs)
     else:
         errMsg = "Post-processing method not recognized. Must be "
-        errMsg += "one of PIPEDOWN_WORKFLOW or COH_PTF_WORKFLOW."
+        errMsg += "COH_PTF_WORKFLOW."
         raise ValueError(errMsg)
 
     logging.info("Leaving post-processing module.")
@@ -155,12 +152,12 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
                                                "trig_cluster"))
     trig_cluster_class = select_generic_executable(workflow,
                                                    "trig_cluster")
-    """
+
     sbv_plotter_exe = os.path.basename(cp.get("executables",
                                               "sbv_plotter"))
     sbv_plotter_class = select_generic_executable(workflow,
                                                   "sbv_plotter")
-
+    """
     efficiency_exe = os.path.basename(cp.get("executables",
                                              "efficiency"))
     efficiency_class = select_generic_executable(workflow,
@@ -179,20 +176,56 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
     trig_combiner_node = trig_combiner_jobs.create_node(trigger_files,
                                                         segment_dir, tags=tags)
     workflow.add_node(trig_combiner_node)
-    #FIXME: trig_combiner_outs will be empty!
-    trig_combiner_outs = trig_combiner_node.output_files
-    post_proc_outs.append(trig_combiner_outs)
- 
+    #FIXME: trig_combiner_node.output_files is empty! This is a hack.
+    #trig_combiner_outs = trig_combiner_node.output_files
+    #post_proc_outs.append(trig_combiner_outs)
+
     # Set up trig_cluster jobs
     trig_cluster_outs = FileList([])
-    trig_cluster_jobs = trig_combiner_class(workflow.cp, "trig_cluster",
-                                            ifo=ifos,
-                                            out_dir=output_dir, tags=tags)
+    trig_cluster_jobs = trig_cluster_class(workflow.cp, "trig_cluster",
+                                           ifo=ifos,
+                                           out_dir=output_dir, tags=tags)
 
-    for parent in trig_combiner_outs:
-        trig_cluster_node = trig_cluster_jobs.create_node(parent, tags=tags)
-        trig_cluster_outs.append(trig_cluster_node.output_files)
+    # Adding output files as pycbc.workflow.core.File objects
+    trig_name = cp.get('workflow', 'trigger-name')
+    cluster_out_tags = ['ALL_TIMES', 'OFFSOURCE', 'ONSOURCE']
+    for out_tag in cluster_out_tags:
+        #curr_file = File(ifos, 'INSPIRAL', trigger_files[-1].segment,
+        #                 directory=output_dir, extension='xml.gz',
+        #                 tags=["GRB%s_%s" % (trig_name, out_tag)])
+        #curr_file.PFN(curr_file.cache_entry.path, site="local")
+        trig_cluster_node = trig_cluster_jobs.create_node(trigger_files[-1],
+                tags=["GRB%s_%s" % (trig_name, out_tag)])
+        trig_cluster_outs.extend(trig_cluster_node.output_files)
+        workflow.add_node(trig_cluster_node)
+        dep = dax.Dependency(parent=trig_combiner_node._dax_node,
+                             child=trig_cluster_node._dax_node)
+        workflow._adag.addDependency(dep)
 
-    post_proc_outs.append(trig_cluster_outs)
+    trials = int(cp.get('trig_combiner', 'num-trials'))
+    trial = 1
+    while trial <= trials:
+        #curr_file = File(ifos, 'INSPIRAL', trigger_files[-1].segment,
+        #                 directory=output_dir, extension='xml.gz',
+        #                 tags=["GRB%s_OFFTRIAL_%d" % (trig_name, trial)])
+        #curr_file.PFN(curr_file.cache_entry.path, site="local")
+        trig_cluster_node = trig_cluster_jobs.create_node(trigger_files[-1],
+                tags=["GRB%s_OFFTRIAL_%d" % (trig_name, trial)])
+        trig_cluster_outs.extend(trig_cluster_node.output_files)
+        workflow.add_node(trig_cluster_node)
+        dep = dax.Dependency(parent=trig_combiner_node._dax_node,
+                             child=trig_cluster_node._dax_node)
+        workflow._adag.addDependency(dep)
+        trial += 1
 
+    post_proc_outs.extend(trig_cluster_outs)
+    """
+    # Set up sbv_plotter jobs
+    sbv_plotter_outs = FileList([])
+    sbv_plotter_jobs = sbv_plotter_class(workflow.cp, "sbv_plotter", ifo=ifos,
+                                         out_dir=output_dir, tags=tags)
+    for tag in cluster_out_tags[:1]:
+        sbv_plotter_node = sbv_plotter_jobs.create_node(trig_cluster_outs[0],
+                                                        segment_dir)
+    """
     return post_proc_outs
