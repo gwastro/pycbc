@@ -466,7 +466,7 @@ class Node(pegasus_workflow.Node):
         return [exe_path] + arglist
         
     def new_output_file_opt(self, valid_seg, extension, option_name, tags=[],
-                            store_file=True, use_tmp_subdirs=False):
+                            store_file=None, use_tmp_subdirs=False):
         """
         This function will create a workflow.File object corresponding to the given
         information and then add that file as output of this node.
@@ -497,6 +497,8 @@ class Node(pegasus_workflow.Node):
         for tag in tags:
             if tag not in all_tags:
                 all_tags.append(tag)
+
+        store_file = store_file if store_file is not None else self.executable.retain_files
 
         fil = File(self.executable.ifo_list, self.executable.name,
                    valid_seg, extension=extension, store_file=store_file, 

@@ -541,123 +541,34 @@ class PyCBCStatMapExecutable(Executable):
             node.add_input_opt('--external-background', external_background)
         return node
         
-def get_subsections(cp, section_name):
-    sections = cp.sections()   
-    subsections = [sec.split('-')[1] for sec in sections if sec.startswith(section_name + '-')]   
-    if len(subsections) > 0:
-        return subsections
-    else:
-        return ['']
- 
-def make_segments_plot(workflow, seg_files, out_dir, tags=[]):
-    make_analysis_dir(out_dir)
-    node = Node(Executable(workflow.cp, 'plot_segments', ifos=workflow.ifos,
-                    out_dir=out_dir, tags=tags))
-    node.add_input_list_opt('--segment-files', seg_files)
-    node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
-    workflow += node
-        
-def merge_single_detector_hdf_files(workflow, bank_file, trigger_files, out_dir, tags=[]):
-    make_analysis_dir(out_dir)
-    out = FileList()
-    for ifo in workflow.ifos:
-        node = Node(Executable(workflow.cp, 'hdf_trigger_merge', 
-                        ifos=ifo, out_dir=out_dir, tags=tags))  
-        node.add_input_opt('--bank-file', bank_file)
-        node.add_input_list_opt('--trigger-files', trigger_files.find_output_with_ifo(ifo))
-        node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
-        workflow += node
-        out += node.output_files
-    return out
-        
-def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir, tags=[]):
-    make_analysis_dir(out_dir)
-    node = Node(Executable(workflow.cp, 'page_foreground', ifos=workflow.ifos,
-                    out_dir=out_dir, tags=tags))
-    node.add_input_opt('--bank-file', bank_file)
-    node.add_opt('--foreground-tag', ftag)
-    node.add_input_opt('--trigger-file', trig_file)
-    node.new_output_file_opt(bank_file.segment, '.html', '--output-file')
-    workflow += node
-
-def make_sensitivity_plot(workflow, inj_file, out_dir, tags=[]):
-    make_analysis_dir(out_dir)
-    
-    for tag in get_subsections(workflow.cp, 'plot_sensitivity'):
-        node = Node(Executable(workflow.cp, 'plot_sensitivity', ifos=workflow.ifos,
-                    out_dir=out_dir, tags=[tag] + tags))
-        node.add_input_opt('--injection-file', inj_file)
-        node.new_output_file_opt(inj_file.segment, '.png', '--output-file')
-        workflow += node
-
-def make_coinc_snrchi_plot(workflow, inj_file, inj_trig, stat_file, trig_file, out_dir, tags=[]):
-    make_analysis_dir(out_dir)
-    
-    for tag in get_subsections(workflow.cp, 'plot_coinc_snrchi'):
-        node = Node(Executable(workflow.cp, 'plot_coinc_snrchi', ifos=inj_trig.ifo,
-                    out_dir=out_dir, tags=[tag] + tags))
-        node.add_input_opt('--found-injection-file', inj_file)
-        node.add_input_opt('--single-injection-file', inj_trig)
-        node.add_input_opt('--coinc-statistic-file', stat_file)
-        node.add_input_opt('--single-trigger-file', trig_file)
-        node.new_output_file_opt(inj_file.segment, '.png', '--output-file')
-        workflow += node
-
-def make_inj_table(workflow, inj_file, out_dir, tags=[]):
-    make_analysis_dir(out_dir)
-    node = Node(Executable(workflow.cp, 'page_injections', ifos=workflow.ifos,
-                    out_dir=out_dir, tags=tags))
-    node.add_input_opt('--injection-file', inj_file)
-    node.new_output_file_opt(inj_file.segment, '.html', '--output-file')
-    workflow += node   
-
-def make_snrchi_plot(workflow, trig_files, veto_file, out_dir, tags=[]):
-    make_analysis_dir(out_dir)
-    
-    for tag in get_subsections(workflow.cp, 'plot_snrchi'):
-        for trig_file in trig_files:
-            node = Node(Executable(workflow.cp, 'plot_snrchi',
-                        ifos=trig_file.ifo, 
-                        out_dir=out_dir, 
-                        tags=[tag] + tags))
-
-            node.set_memory(15000)
-            node.add_input_opt('--trigger-file', trig_file)
-            node.add_input_opt('--veto-file', veto_file)
-            node.new_output_file_opt(trig_file.segment, '.png', '--output-file')
-            workflow += node  
-
-def make_foundmissed_plot(workflow, inj_file, inj_tag, out_dir, tags=[]):
-    make_analysis_dir(out_dir)
-    
-    for tag in get_subsections(workflow.cp, 'plot_foundmissed'):
-        node = Node(Executable(workflow.cp, 'plot_foundmissed', ifos=workflow.ifos,
-                    out_dir=out_dir, tags=[tag] + tags))
-        node.add_opt('--injection-tag', inj_tag)
-        node.add_input_opt('--injection-file', inj_file)
-        node.new_output_file_opt(inj_file.segment, '.html', '--output-file')
-        workflow += node   
-    
-def make_snrifar_plot(workflow, bg_file, out_dir, tags=[]):
-    make_analysis_dir(out_dir)
-    node = Node(Executable(workflow.cp, 'plot_snrifar', ifos=workflow.ifos,
-                out_dir=out_dir, tags=tags))
-    node.add_input_opt('--trigger-file', bg_file)
-    node.new_output_file_opt(bg_file.segment, '.png', '--output-file')
-    workflow += node
- 
 class PyCBCHDFInjFindExecutable(Executable):
     """ Find injections in the hdf files output
     """
     current_retention_level = Executable.CRITICAL
     def create_node(self, inj_coinc_file, inj_xml_file, veto_file, tags=[]):
-        node = Node(self)
+        node = Node(self)        
         node.add_input_list_opt('--trigger-file', inj_coinc_file)
         node.add_input_list_opt('--injection-file', inj_xml_file)
         node.add_input_opt('--veto-file', veto_file)
         node.new_output_file_opt(inj_xml_file[0].segment, '.hdf', '--output-file', 
                                  tags=tags)
         return node
+
+class MergeExecutable(Executable):
+    current_retention_level = Executable.CRITICAL
+
+def merge_single_detector_hdf_files(workflow, bank_file, trigger_files, out_dir, tags=[]):
+    make_analysis_dir(out_dir)
+    out = FileList()
+    for ifo in workflow.ifos:
+        node = MergeExecutable(workflow.cp, 'hdf_trigger_merge', 
+                        ifos=ifo, out_dir=out_dir, tags=tags).create_node()
+        node.add_input_opt('--bank-file', bank_file)
+        node.add_input_list_opt('--trigger-files', trigger_files.find_output_with_ifo(ifo))
+        node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
+        workflow += node
+        out += node.output_files
+    return out
 
 def find_injections_in_hdf_coinc(workflow, inj_coinc_file, inj_xml_file, 
                                  veto_file, out_dir, tags=[]):
@@ -772,7 +683,7 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
     combinecoinc_exe = PyCBCStatMapExecutable(workflow.cp, 'statmap',
                                               ifos=workflow.ifos,
                                               tags=tags, out_dir=out_dir)
-                                              
+                                         
     # Wall time knob and memory knob
     factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
 
@@ -792,6 +703,7 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
         workflow.add_node(combine_node)
         stat_files += combine_node.output_files
         
+        from pycbc.workflow.plotting import make_snrifar_plot
         make_snrifar_plot(workflow, combine_node.output_files[0],
                           'plots/background', tags=tag)
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2013  Ian Harry
+# Copyright (C) 2015  Ian Harry, Alex Nitz
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -29,16 +29,13 @@ inspinj jobs). Full documentation for this module can be found here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
-import os
-import logging
-import urllib, urlparse
+import logging, urllib, urlparse
 from pycbc.workflow.core import File, FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import LalappsInspinjExecutable
-from glue import segments
 
 def setup_injection_workflow(workflow, output_dir=None,
-                             injSectionName='injections', tags =[]):
-    '''
+                             inj_section_name='injections', tags =[]):
+    """
     This function is the gateway for setting up injection-generation jobs in a
     workflow. It should be possible for this function to support a number
     of different ways/codes that could be used for doing this, however as this
@@ -51,7 +48,7 @@ def setup_injection_workflow(workflow, output_dir=None,
         The Workflow instance that the coincidence jobs will be added to.
     output_dir : path
         The directory in which injection files will be stored.
-    injSectionName : string (optional, default='injections')
+    inj_section_name : string (optional, default='injections')
         The string that corresponds to the option describing the exe location
         in the [executables] section of the .ini file and that corresponds to
         the section (and sub-sections) giving the options that will be given to
@@ -68,43 +65,19 @@ def setup_injection_workflow(workflow, output_dir=None,
         The tag corresponding to each injection file and used to uniquely
         identify them. The FileList class contains functions to search
         based on tags.
-    '''
+    """
     logging.info("Entering injection module.")
     make_analysis_dir(output_dir)
+    
     # Get full analysis segment for output file naming
-    fullSegment = workflow.analysis_time
-
-    # Identify which injections to do by presence of sub-sections in
-    # the configuration file
-    all_sec = workflow.cp.sections()
-    sections = [sec for sec in all_sec if sec.startswith(injSectionName +'-')]
+    full_segment = workflow.analysis_time
 
     inj_tags = []
-    inj_files = FileList([])   
+    inj_files = FileList([])  
 
-    for section in sections:
-        split_sec_name = section.split('-')
-        # Sanity check the user has realised that the '-' is a special char.
-        if len(split_sec_name) > 2:
-            # This is unusual, but a format [injection-name-tag] is okay. Just
-            # check that [injection-name] section exists. If not it is possible
-            # the user is trying to use an injection name with '-' in it
-            sect_check = "%s-%s" %(split_sec_name[0], split_sec_name[1])
-            if not workflow.cp.has_section(sect_check):
-                err_msg = "Injection section found with name %s. " %(section,)
-                err_msg += "Workflow uses the '-' as a delimiter so this is "
-                err_msg += "interpreted as exe_tag-inj_tag-other_tag. "
-                err_msg += "No section with name %s was found. " %(sect_check,)
-                err_msg += "If you did not intend to use tags in an "
-                err_msg += "'advanced user' manner, or do not understand what "
-                err_msg += "this means, don't use dashes in injection "
-                err_msg += "names. So [injection-nsbhinj] is good. "
-                err_msg += "[injection-nsbh-inj] is not."
-                raise ValueError(err_msg)
-            continue
- 
-        inj_tag = (split_sec_name[1]).upper()
-        currTags = tags + [inj_tag]
+    for section in  workflow.cp.get_subsections(inj_section_name):
+        inj_tag = section.upper()
+        curr_tags = tags + [inj_tag]
 
         # FIXME: Remove once fixed in pipedown
         # TEMPORARILY we require inj tags to end in "INJ"
@@ -115,34 +88,39 @@ def setup_injection_workflow(workflow, output_dir=None,
             raise ValueError(err_msg)
 
         # Parse for options in ini file
-        injectionMethod = workflow.cp.get_opt_tags("workflow-injections", 
-                                                 "injections-method", currTags)
+        injection_method = workflow.cp.get_opt_tags("workflow-injections", 
+                                                 "injections-method", curr_tags)
 
-        if injectionMethod in ["IN_WORKFLOW", "AT_RUNTIME"]:
+        if injection_method in ["IN_WORKFLOW", "AT_RUNTIME"]:
             # FIXME: Add ability to specify different exes
-            inj_job = LalappsInspinjExecutable(workflow.cp, injSectionName, tags=currTags,
+            inj_job = LalappsInspinjExecutable(workflow.cp, injSectionName, tags=curr_tags,
                                          out_dir=output_dir, ifos='HL')
-            node = inj_job.create_node(fullSegment)
-            if injectionMethod == "AT_RUNTIME":
+            node = inj_job.create_node(full_segment)
+            
+            if injection_method == "AT_RUNTIME":
                 workflow.execute_node(node)
             else:
                 workflow.add_node(node)
-            injFile = node.output_files[0]
-        elif injectionMethod == "PREGENERATED":
+                
+            inj_file = node.output_files[0]
+            
+        elif injection_method == "PREGENERATED":
             injectionFilePath = workflow.cp.get_opt_tags("workflow-injections",
-                                      "injections-pregenerated-file", currTags)
-            file_url = urlparse.urljoin('file:', urllib.pathname2url(\
-                                                  injectionFilePath))
-            injFile = File('HL', 'PREGEN_INJFILE', fullSegment, file_url,
-                                tags=currTags)
-            injFile.PFN(injectionFilePath, site='local')
+                                      "injections-pregenerated-file", curr_tags)
+            file_url = urlparse.urljoin('file:', 
+                                        urllib.pathname2url(injectionFilePath))
+            inj_file = File('HL', 'PREGEN_inj_file', full_segment, file_url,
+                                        tags=curr_tags)
+            inj_file.PFN(injectionFilePath, site='local')
+            
         else:
-            errMsg = "Injection method must be one of IN_WORKFLOW, "
-            errMsg += "AT_RUNTIME or PREGENERATED. Got %s." %(injectionMethod)
-            raise ValueError(errMsg)
+            err = "Injection method must be one of IN_WORKFLOW, "
+            err += "AT_RUNTIME or PREGENERATED. Got %s." % (injection_method)
+            raise ValueError(err)
 
-        inj_files.append(injFile)
+        inj_files.append(inj_file)
         inj_tags.append(inj_tag)
+        
     logging.info("Leaving injection module.")
     return inj_files, inj_tags
 

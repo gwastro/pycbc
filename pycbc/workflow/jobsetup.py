@@ -653,19 +653,21 @@ class PyCBCInspiralExecutable(Executable):
 
         # FIXME: This hack is needed for pipedown compatibility. user-tag is
         #        no-op and is only needed for pipedown to know whether this is
-        #        a "FULL_DATA" job or otherwise.
-        outFile = os.path.basename(node.output_files[0].storage_path)
-        userTag = outFile.split('-')[1]
-        userTag = userTag.split('_')[1:]
-        if userTag[0] == 'FULL' and userTag[1] == 'DATA':
-            userTag = 'FULL_DATA'
-        elif userTag[0] == 'PLAYGROUND':
-            userTag = 'PLAYGROUND'
-        elif userTag[0].endswith("INJ"):
-            userTag = userTag[0]
-        else:
-            userTag = '_'.join(userTag)
-        node.add_opt("--user-tag", userTag)
+        #        a "FULL_DATA" job or otherwise. Alex wants to burn this code
+        #        with fire. 
+        if node.output_files[0].storage_path is not None:
+            outFile = os.path.basename(node.output_files[0].storage_path)
+            userTag = outFile.split('-')[1]
+            userTag = userTag.split('_')[1:]
+            if userTag[0] == 'FULL' and userTag[1] == 'DATA':
+                userTag = 'FULL_DATA'
+            elif userTag[0] == 'PLAYGROUND':
+                userTag = 'PLAYGROUND'
+            elif userTag[0].endswith("INJ"):
+                userTag = userTag[0]
+            else:
+                userTag = '_'.join(userTag)
+            node.add_opt("--user-tag", userTag)
 
         return node
 
