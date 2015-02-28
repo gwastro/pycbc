@@ -559,12 +559,13 @@ def make_segments_plot(workflow, seg_files, out_dir, tags=[]):
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
         
-def merge_single_detector_hdf_files(workflow, trigger_files, out_dir, tags=[]):
+def merge_single_detector_hdf_files(workflow, bank_file, trigger_files, out_dir, tags=[]):
     make_analysis_dir(out_dir)
     out = FileList()
     for ifo in workflow.ifos:
         node = Node(Executable(workflow.cp, 'hdf_trigger_merge', 
                         ifos=ifo, out_dir=out_dir, tags=tags))  
+        node.add_input_opt('--bank-file', bank_file)
         node.add_input_list_opt('--trigger-files', trigger_files.find_output_with_ifo(ifo))
         node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
         workflow += node

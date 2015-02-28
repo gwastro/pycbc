@@ -6,12 +6,24 @@ import numpy, argparse, h5py, logging
 parser = argparse.ArgumentParser()
 parser.add_argument('--trigger-files', nargs='+')
 parser.add_argument('--output-file')
+parser.add_argument('--bank-file')
 parser.add_argument('--verbose', '-v', action='count')
 args = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.INFO) 
 
 f = h5py.File(args.output_file, 'w')
+
+_hash_look = None
+def reassign_id(hashes, bank_file):
+    global _hash_look
+    if _hash_look is None:
+        _hash_look = {}
+        hashes = h5py.File(bank_file)['template_hash']
+        for j, h in enumerate(hashes):
+            _hash_look[h] = j
+
+    return numpy.array([])
 
 empty = True
 trigger_columns = []
@@ -54,6 +66,11 @@ for filename in args.trigger_files:
                              compression='gzip', compression_opts=1, shuffle=True),
                              0)    
         dset, num = dwrite[column]
-        dset[num:num+len(f2[column])] = f2[column][:]
+        f2_data = f2[column][:]
+        
+        if args.bank_file and column == 'template_id':
+            f2_data = reassign_id(f2['template_hash'][:], args.bank_file)
+        
+        dset[num:num+len(f2[column])] = f2_data
         dwrite[column] = dset, num + len(f2[column])
     f2.close()

@@ -92,7 +92,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
    
     ind_insps = insps if tag == 'full_data' else ind_insps
    
-    insps = wf.merge_single_detector_hdf_files(workflow, insps, output_dir, tags=[tag])
+    insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0], insps, output_dir, tags=[tag])
 
     # setup coinc for the filtering jobs
     if tag == 'full_data':

@@ -130,7 +130,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
         cum_veto_files = _workflow.FileList()
 
         insps_hdf = _workflow.convert_trig_to_hdf(workflow, hdfbank, insps, output_dir, tags=[tag])
-        insps_hdf = _workflow.merge_single_detector_hdf_files(workflow, insps_hdf, output_dir, tags=[tag])
+        insps_hdf = _workflow.merge_single_detector_hdf_files(workflow, hdfbank[0], insps_hdf, output_dir, tags=[tag])
 
         if tag == 'full_data':
             ctags = [tag, 'full']
