@@ -329,7 +329,7 @@ class EventManager(object):
             
             rtid = numpy.array([th_map[h] for h in th])
             f.create_dataset('template_id', data=rtid[tid], compression='gzip')
-            f.create_dataset('template_hash', data=th, compression='gzip') 
+            f.create_dataset('template_hash', data=th[tid], compression='gzip') 
     
         f.attrs['ifo'] = self.opt.channel_name[0:2]
         if self.opt.trig_start_time:

@@ -15,7 +15,7 @@ logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.INFO)
 f = h5py.File(args.output_file, 'w')
 
 _hash_look = None
-def reassign_id(hashes, bank_file):
+def reassign_id(trig_hashes, bank_file):
     global _hash_look
     if _hash_look is None:
         _hash_look = {}
@@ -23,7 +23,7 @@ def reassign_id(hashes, bank_file):
         for j, h in enumerate(hashes):
             _hash_look[h] = j
 
-    return numpy.array([])
+    return numpy.array([_hash_look[v] for v in trig_hashes])
 
 empty = True
 trigger_columns = []
