@@ -140,14 +140,18 @@ class MatchedFilterControl(object):
         norm = (4.0 * stilde.delta_f) / sqrt(template_norm)
         kmin, kmax = get_cutoff_indices(self.flow, self.fhigh, stilde.delta_f, self.tlen)   
                    
-        correlate(htilde[kmin:kmax], stilde[kmin:kmax], self.corr_mem[kmin:kmax])                
+        correlate(htilde[kmin:kmax], stilde[kmin:kmax], self.corr_mem[kmin:kmax])  
+        
+        #from pycbc.fft.fft_callback import c2c_ifft              
+        #c2c_ifft(self.corr_mem, self.snr_mem)
+        
         ifft(self.corr_mem, self.snr_mem)
         snrv, idx = events.threshold_and_cluster(self.snr_mem[stilde.analyze], self.snr_threshold / norm, window)            
 
         if len(idx) == 0:
-            return [], [], [], [], []            
-        logging.info("%s points above threshold" % str(len(idx)))              
-        
+            return [], [], [], [], [] 
+                       
+        logging.info("%s points above threshold" % str(len(idx)))                     
         return self.snr_mem, norm, self.corr_mem, idx, snrv   
         
     def heirarchical_matched_filter_and_cluster(self, htilde, template_norm, stilde, window):
