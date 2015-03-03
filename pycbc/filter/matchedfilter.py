@@ -70,6 +70,7 @@ class MatchedFilterControl(object):
         """
 
         self.tlen = tlen
+        self.flen = self.tlen / 2 + 1
         self.delta_f = delta_f
         self.dtype = dtype
         self.snr_threshold = snr_threshold    
@@ -106,25 +107,8 @@ class MatchedFilterControl(object):
                                                  
         else:
             raise ValueError("Invalid downsample factor")
- 
-    def batched_matched_filter_and_cluster(self, template, template_norm, stildes, window):
-        for stilde in stildes:
-            N = (len(stilde)-1) * 2   
-            kmin, kmax = get_cutoff_indices(low_frequency_cutoff,
-                                           high_frequency_cutoff, stilde.delta_f, N)              
-            correlate(htilde[kmin:kmax], stilde[kmin:kmax], _qtilde[kmin:kmax])                
-            ifft(_qtilde, _q)
-        
-        snrv, idx = events.batched_threshold_and_cluster(snr[stilde.analyze], 
-                                          self.snr_threshold / norm, window)            
-
-        norm = (4.0 * stilde.delta_f) / sqrt( template_norm)
-        delta_t = 1.0 / (N * stilde.delta_f)
-        
-        return self.snrs
-         
               
-    def full_matched_filter_and_cluster(self, template, template_norm, stilde, window):
+    def full_matched_filter_and_cluster(self, htilde, template_norm, stilde, window):
         """ Return the complex snr and normalization. 
     
         Calculated the matched filter, threshold, and cluster. 
@@ -153,20 +137,18 @@ class MatchedFilterControl(object):
         snrv : Array
             The snr values at the trigger locations.
         """
-        snr, corr, norm = matched_filter_core(template, stilde, 
-                                              low_frequency_cutoff=self.flow, 
-                                              high_frequency_cutoff=self.fhigh, 
-                                              h_norm=template_norm,
-                                              out=self.snr_mem,
-                                              corr_out=self.corr_mem)
-        #idx, snrv = events.threshold(snr[stilde.analyze], self.snr_threshold / norm)            
-        snrv, idx = events.threshold_and_cluster(snr[stilde.analyze], self.snr_threshold / norm, window)            
+        norm = (4.0 * stilde.delta_f) / sqrt(template_norm)
+        kmin, kmax = get_cutoff_indices(self.flow, self.fhigh, stilde.delta_f, self.tlen)   
+                   
+        correlate(htilde[kmin:kmax], stilde[kmin:kmax], self.corr_mem[kmin:kmax])                
+        ifft(self.corr_mem, self.snr_mem)
+        snrv, idx = events.threshold_and_cluster(self.snr_mem[stilde.analyze], self.snr_threshold / norm, window)            
 
         if len(idx) == 0:
             return [], [], [], [], []            
         logging.info("%s points above threshold" % str(len(idx)))              
         
-        return snr, norm, corr, idx, snrv   
+        return self.snr_mem, norm, self.corr_mem, idx, snrv   
         
     def heirarchical_matched_filter_and_cluster(self, htilde, template_norm, stilde, window):
         """ Return the complex snr and normalization. 
