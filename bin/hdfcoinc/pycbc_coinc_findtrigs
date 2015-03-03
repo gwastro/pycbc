@@ -172,7 +172,9 @@ for tnum in trigs0.template_map:
     
     b = c[bi]
     sep = len(b) - args.loudest_keep
-    bsort = numpy.argpartition(b, sep)
+    # FIXME conversion to 'object' needed due to numpy bug, see
+    # https://github.com/numpy/numpy/issues/5469
+    bsort = numpy.argpartition(b.astype(object), sep)
     
     bl = bi[bsort[0:sep]]
     bl = bl[slide[bl] % args.decimation_factor == 0]
