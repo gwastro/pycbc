@@ -686,11 +686,11 @@ class ThreshClusterObject(object):
 
     def execute(self):
         series = self.series
-        slen = self.arrlen
+        slen = self.slen
         values = self.values
         locs = self.locs
         thresh = self.thresh
-        window = self.winsize
+        window = self.window
         segsize = self.segsize
         nthr = inline(self.code, ['series', 'slen', 'values', 'locs', 'thresh', 'window', 'segsize'],
                       extra_compile_args = ['-march=native -O3 -w'] + omp_flags,
@@ -698,7 +698,7 @@ class ThreshClusterObject(object):
                       #extra_compile_args = ['-msse4.1 -O3 -w'],
                       support_code = self.support, libraries = omp_libs,
                       auto_downcast = 1, verbose = self.verbose)
-        if nthr > 1:
+        if nthr > 0:
             return self.values[0:nthr], self.locs[0:nthr]
         else:
             return _np.array([], dtype = complex64), _np.array([], dtype = _np.uint32)
