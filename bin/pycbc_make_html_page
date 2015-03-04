@@ -30,71 +30,70 @@ import pycbc.results.render
 from pycbc.workflow import segment
 
 def examine_dir(dir):
-  """
-  Looks in a directory and returns all subdirs and files.
-  """
-  names = os.listdir(dir)
-  dirs, nondirs = [], []
-  for name in names:
-      if os.path.isdir(os.path.join(dir, name)):
-          dirs.append(name)
-      else:
-          nondirs.append(name)
-  return dir, dirs, nondirs
+    """
+    Looks in a directory and returns all subdirs and files.
+    """
+    names = os.listdir(dir)
+    dirs, nondirs = [], []
+    for name in names:
+        if os.path.isdir(os.path.join(dir, name)):
+            dirs.append(name)
+        else:
+            nondirs.append(name)
+    return dir, dirs, nondirs
 
 class Directory():
-  """
-  Class used to relate all sub-directories and files in a directory.
-  """
-  instances = []
-  def __init__(self, path, plots_dir):
+    """
+    Class used to relate all sub-directories and files in a directory.
+    """
+    instances = []
+    def __init__(self, path, plots_dir):
 
-      # find all subdirs and filenames in directory
-      dir, subdirs, filenames = examine_dir(path)
+        # find all subdirs and filenames in directory
+        dir, subdirs, filenames = examine_dir(path)
 
-      # save subdirs
-      self.path    = path.replace(plots_dir, '')
-#      self.path    = path.strip(plots_dir)
-      self.subdirs = [Directory(path+'/'+subdir, plots_dir) for subdir in subdirs]
+        # save subdirs
+        self.path    = path.replace(plots_dir, '')
+        self.subdirs = [Directory(path+'/'+subdir, plots_dir) for subdir in subdirs]
 
-      # loop over all filenames
-      self.files = []
-      for filename in filenames:
+        # loop over all filenames
+        self.files = []
+        for filename in filenames:
 
-          # check if configuration file exists for file
-          extension = self.path.split('.')[-1]
-          config_filename = dir+'/'+filename.rstrip(extension)+'.ini'
-          if not os.path.exists(config_filename) or filename == config_filename:
-              self.config_filename = None
+            # check if configuration file exists for file
+            extension = self.path.split('.')[-1]
+            config_filename = dir+'/'+filename.rstrip(extension)+'.ini'
+            if not os.path.exists(config_filename) or filename == config_filename:
+                self.config_filename = None
 
-          # append file to directory
-          self.files.append(File(filename, config_filename))
+            # append file to directory
+            self.files.append(File(filename, config_filename))
 
-      # append to class list
-      self.instances.append(self)
+        # append to class list
+        self.instances.append(self)
 
-  def title(self):
-      return self.path.split('/')[-1].replace('_', ' ').upper()
+    def title(self):
+        return self.path.split('/')[-1].replace('_', ' ').upper()
 
 class File():
-  """
-  Class used to keep track of files.
-  """
-  def __init__(self, path, config_path):
+    """
+    Class used to keep track of files.
+    """
+    def __init__(self, path, config_path):
 
-      # save path to file
-      self.path = path
-      self.config_path = config_path
+        # save path to file
+        self.path = path
+        self.config_path = config_path
 
-      # assign random string
-      self.id = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
+        # assign random string
+        self.id = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
 
-  def render(self):
+    def render(self):
 
-      output = ''
-      output = pycbc.results.render.setup_template_render(self.path, self.config_path)
+        output = ''
+        output = pycbc.results.render.setup_template_render(self.path, self.config_path)
 
-      return output
+        return output
 
 # parse command line
 parser = argparse.ArgumentParser(usage='pycbc_make_html_page \
