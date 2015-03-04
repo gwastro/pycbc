@@ -26,7 +26,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from glue import segments
 
-import pycbc.results
+import pycbc.results.render
 from pycbc.workflow import segment
 
 def examine_dir(dir):
@@ -53,7 +53,8 @@ class Directory():
       dir, subdirs, filenames = examine_dir(path)
 
       # save subdirs
-      self.path    = path.strip(plots_dir)
+      self.path    = path.replace(plots_dir, '')
+#      self.path    = path.strip(plots_dir)
       self.subdirs = [Directory(path+'/'+subdir, plots_dir) for subdir in subdirs]
 
       # loop over all filenames
@@ -62,7 +63,7 @@ class Directory():
 
           # check if configuration file exists for file
           extension = self.path.split('.')[-1]
-          config_filename = dir+'/'+filename.replace('.'+extension, '.ini')
+          config_filename = dir+'/'+filename.rstrip(extension)+'.ini'
           if not os.path.exists(config_filename) or filename == config_filename:
               self.config_filename = None
 
@@ -91,7 +92,7 @@ class File():
   def render(self):
 
       output = ''
-      output = pycbc.render.setup_template_render(self.path, self.path_config)  
+      output = pycbc.results.render.setup_template_render(self.path, self.config_path)
 
       return output
 

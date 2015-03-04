@@ -19,6 +19,8 @@
 from ConfigParser import ConfigParser
 from jinja2 import Environment, FileSystemLoader
 
+import pycbc.results
+
 def setup_template_render(path, config_path):
 
    # initialization
@@ -26,32 +28,36 @@ def setup_template_render(path, config_path):
    output = ''
 
    # read configuration file
-    if config_path:
-        cp.read(config_path)
+   if config_path:
+       cp.read(config_path)
 
-        # render template
-        if cp.has_option(path, 'render-function'):
-            render_function_name = cp.get_opt(path)
-            render_function = eval(render_function_name)
-            output = render_function(path, cp)
-        else:
-            output = render_default(path, cp)
+       # render template
+       if cp.has_option(path, 'render-function'):
+           render_function_name = cp.get_opt(path)
+           render_function = eval(render_function_name)
+           output = render_function(path, cp)
+       else:
+           output = render_default(path, cp)
 
-    # if no configuration file is present
-    # then render the default template
-    else:
-        output = render_deault(path, cp)
+   # if no configuration file is present
+   # then render the default template
+   else:
+       output = render_deault(path, cp)
 
-    return output
+   return output
 
 def render_default(path, cp):
 
-    # render template
-    template_dir = __path__ + '/templates/files'
-    env = Environment(loader=FileSystemLoader(template_dir))
-    template = env.get_template('file_default.html')
-    context = {'path' : path}
-    output = template.render(context)
+   # define slug
+   slug = path.split('/')[-1].split('.')[0]
 
-    return output
+   # render template
+   template_dir = pycbc.results.__path__[0] + '/templates/files'
+   env = Environment(loader=FileSystemLoader(template_dir))
+   template = env.get_template('file_default.html')
+   context = {'path' : path,
+              'slug' : slug}
+   output = template.render(context)
+
+   return output
 
