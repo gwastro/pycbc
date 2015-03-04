@@ -24,6 +24,7 @@
 import numpy
 import events, pycbc
 from scipy.weave import inline
+from .simd_threshold import thresh_cluster_support, ThreshClusterObject, default_segsize
 
 if pycbc.HAVE_OMP:
     omp_libs = ['gomp']
@@ -94,3 +95,29 @@ def threshold_inline(series, value):
         return numpy.array([], numpy.uint32), numpy.array([], numpy.float32)
 
 threshold=threshold_inline
+
+# The CUDA function we are trying to emulate seems to hard-code
+# choices based on a 4096 window, so for now we do the same. This means
+# we can have up to 256 points in a 2^20 size SNR time series.
+simd_outv = numpy.zeros(256, dtype = numpy.complex64)
+simd_outl = numpy.zeros(256, dtype = numpy.uint32)
+simd_count = 0
+def threshold_and_cluster(series, threshold, window):
+    code = """
+    return_val = parallel_thresh_cluster(series, (uint32_t) slen, values, locs, 
+                                         (float) threshold, (uint32_t) window, (uint32_t) segsize);
+    """
+    series = numpy.array(series.data, copy = False)
+    slen = len(series)
+    values = simd_outv
+    locs = simd_outl
+    segsize = default_segsize
+    simd_count = inline(code, ['series', 'slen', 'values', 'locs', 'threshold', 'window', 'segsize'],
+                        extra_compile_args = ['-march=native -O3 -w'] + omp_flags,
+                        support_code = thresh_cluster_support, libraries = omp_libs,
+                        auto_downcast = 1)
+    if simd_count > 0:
+        return values[0:simd_count], locs[0:simd_count]
+    else:
+        return numpy.array([], dtype = complex64), numpy.array([], dtype = _np.uint32)
+    
