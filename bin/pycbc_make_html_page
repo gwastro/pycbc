@@ -26,6 +26,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from glue import segments
 
+import pycbc.results
 from pycbc.workflow import segment
 
 def examine_dir(dir):
@@ -48,21 +49,27 @@ class Directory():
   instances = []
   def __init__(self, path, plots_dir):
 
-      dir,subdirs,filenames = examine_dir(path)
+      # find all subdirs and filenames in directory
+      dir, subdirs, filenames = examine_dir(path)
 
-      self.path    = path.replace(plots_dir, '')
+      # save subdirs
+      self.path    = path.strip(plots_dir)
       self.subdirs = [Directory(path+'/'+subdir, plots_dir) for subdir in subdirs]
 
+      # loop over all filenames
       self.files = []
       for filename in filenames:
-          extension = filename.split('.')[-1]
-          if extension == 'caption':
-              continue
-          elif os.path.exists(dir+'/'+filename.replace('.'+extension, '.caption')):
-              self.files.append(File(filename, dir+'/'+filename.replace('.'+extension, '.caption')))
-          else:
-              self.files.append(File(filename))
 
+          # check if configuration file exists for file
+          extension = self.path.split('.')[-1]
+          config_filename = dir+'/'+filename.replace('.'+extension, '.ini')
+          if not os.path.exists(config_filename) or filename == config_filename:
+              self.config_filename = None
+
+          # append file to directory
+          self.files.append(File(filename, config_filename))
+
+      # append to class list
       self.instances.append(self)
 
   def title(self):
@@ -72,22 +79,19 @@ class File():
   """
   Class used to keep track of files.
   """
-  def __init__(self, path, path_caption=''):
+  def __init__(self, path, config_path):
+
+      # save path to file
       self.path = path
-      if path_caption:
-          self.title = open(path_caption, 'r').readline()
-          self.caption = open(path_caption, 'r').read().replace('\n', '<br>')
-      else:
-          self.title = path
-          self.caption = ''
+      self.config_path = config_path
+
+      # assign random string
       self.id = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
 
   def render(self):
-      env = Environment(loader=FileSystemLoader(input_path))
-      template = env.get_template('file_standard.html')
-      if True:
-          context = {'file' : self}
-          output = template.render(context)
+
+      output = ''
+      output = pycbc.render.setup_template_render(self.path, self.path_config)  
 
       return output
 
@@ -132,10 +136,11 @@ dirs   = [dir for dir in Directory.instances]
 dirs_0 = [dir for dir in Directory.instances if dir.path.count('/') == 1]
 
 # sort alphanumerically
+# FIXME: could move this into Directory when subdirs/files are added
 dirs.sort(key=lambda x: x.title())
 for dir in dirs:
     dir.subdirs.sort(key=lambda x: x.title())
-    dir.files.sort(key=lambda x: x.title)
+    dir.files.sort(key=lambda x: x.path)
 dirs_0.sort(key=lambda x: x.title())
 
 # loop over all directories
