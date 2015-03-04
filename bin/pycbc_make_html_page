@@ -98,8 +98,7 @@ class File():
 # parse command line
 parser = argparse.ArgumentParser(usage='pycbc_make_html_page \
 [--options]',
-                                 description="Create static html\
-                                 pages for analysis.")
+                  description="Create static html pages of a filesystem's content.")
 parser.add_argument('-f', '--template-file', type=str,
                   help='Template file to use for skeleton html page.')
 parser.add_argument('-a', '--output-server', type=str,
@@ -118,7 +117,7 @@ parser.add_argument('-v', '--verbose', action='store_true',
                   help='Print extra debugging information.', default=False)
 opts = parser.parse_args()
 
-# edit command line
+# edit command line options
 analysis_title = opts.analysis_title.strip('"').rstrip('"')
 analysis_subtitle = opts.analysis_subtitle.strip('"').rstrip('"')
 input_template = opts.template_file.split('/')[-1]
@@ -155,13 +154,14 @@ for dir in dirs:
                'plots_dir' : opts.plots_dir}
     output = template.render(context)
 
-    # save
+    # save html page
     if not os.path.exists(opts.output_path+dir.path):
         os.makedirs(opts.output_path+dir.path)
     with open(opts.output_path+dir.path+'/index.html', "wb") as fp:
         fp.write(output)
 
-# move all files
+# copy all files to html directory
 for dir in dirs:
     for file in dir.files:
-        shutil.copy(opts.plots_dir+dir.path+'/'+file.path, opts.output_path+'/'+dir.path+'/'+file.path)
+        shutil.copy(opts.plots_dir+dir.path+'/'+file.path,
+                    opts.output_path+'/'+dir.path+'/'+file.path)

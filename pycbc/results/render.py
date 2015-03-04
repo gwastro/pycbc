@@ -22,6 +22,9 @@ from jinja2 import Environment, FileSystemLoader
 import pycbc.results
 
 def setup_template_render(path, config_path):
+   '''
+    This function is the gateway for rendering a template for a file.
+   '''
 
    # initialization
    cp = ConfigParser()
@@ -47,6 +50,10 @@ def setup_template_render(path, config_path):
    return output
 
 def render_default(path, cp):
+   '''
+   This is the default function that will render a template to a string of HTML. The
+   string will be for a drop-down tab that contains a link to the file.
+   '''
 
    # define slug
    slug = path.split('/')[-1].split('.')[0]
@@ -60,4 +67,3 @@ def render_default(path, cp):
    output = template.render(context)
 
    return output
-
