@@ -36,12 +36,12 @@
 
                     {% for channel, segmentlist in content.iteritems() %}
                         {% for seg in segmentlist %}
-                        <tr>
-                            <td>{{channel}}</td>
-                            <td>{{seg[0]}}</td>
-                            <td>{{seg[1]}}</td>
-                            <td>{{abs(seg)}}</td>
-                        </tr>
+                            <tr>
+                                <td>{{channel}}</td>
+                                <td>{{seg[0]}}</td>
+                                <td>{{seg[1]}}</td>
+                                <td>{{abs(seg)}}</td>
+                            </tr>
                         {% endfor %}
                     {% endfor %}
                     </tbody>
@@ -53,7 +53,7 @@
 
                 {% endif %}
 
-                    <!-- always link to file-->
+                    <!--always link to file-->
                     <p><a href={{filename}}>Link to file.</a></p>
 
             </div>
