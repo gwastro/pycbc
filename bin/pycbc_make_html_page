@@ -153,7 +153,7 @@ dirs   = [dir for dir in Directory.instances]
 dirs_0 = [dir for dir in Directory.instances if dir.path.count('/') == 1]
 
 # sort alphanumerically
-# FIXME: could move this into Directory when subdirs/files are added
+# FIXME: could move this into Directory when subdirs/files are appended
 dirs.sort(key=lambda x: x.title())
 for dir in dirs:
     dir.subdirs.sort(key=lambda x: x.title())
@@ -164,12 +164,12 @@ dirs_0.sort(key=lambda x: x.title())
 for dir in dirs:
 
     # render template
-    context = {'analysis_title' : analysis_title,
+    context = {'analysis_title'    : analysis_title,
                'analysis_subtitle' : analysis_subtitle,
-               'dirs_0' : dirs_0,
-               'dir'    : dir,
-               'output_path' : opts.output_server,
-               'plots_dir' : opts.plots_dir}
+               'dirs_0'            : dirs_0,
+               'dir'               : dir,
+               'output_path'       : opts.output_server,
+               'plots_dir'         : opts.plots_dir}
     output = template.render(context)
 
     # save html page
