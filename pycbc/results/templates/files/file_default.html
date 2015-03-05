@@ -5,7 +5,7 @@
         <!--accordion title-->
         <div class="panel-heading accordion-toggle collapsed" data-toggle="collapse" data-parent="#accordion" href="#{{slug}}">
             <h4 class="panel-title">
-                <a href='#'>{{path}}</a>
+                <a href='#'>{{filename}}</a>
             </h4>
         </div>
 
@@ -13,8 +13,44 @@
         <div id="{{slug}}" class="panel-collapse collapse">
             <div class="panel-body">
 
-                <p>Unsupported file extension.</p>
-                <p><a href={{path}}>Link to file.</a></p>
+                <!--image file condition-->
+                {% if filename.endswith('png') %}
+                    <img src="{{filename}}" style="width:900px">
+
+                <!--segment XML file condition-->
+                {% elif ( filename.endswith('xml') or filename.endswith('xml.gz') ) and content %}
+                    <table class="table"> 
+                    <thead>         
+                    <tr>
+                        <th>Channel</th>
+                        <th>GPS Start</th>
+                        <th>GPS End</th>
+                        <th>GPS Duration</th>
+                    </tr>         
+                    </thead>    
+                    <tbody>
+
+                    {% for channel, segmentlist in content.iteritems() %}
+                        {% for seg in segmentlist %}
+                        <tr>
+                            <td>{{channel}}</td>
+                            <td>{{seg[0]}}</td>
+                            <td>{{seg[1]}}</td>
+                            <td>{{abs(seg)}}</td>
+                        </tr>
+                        {% endfor %}
+                    {% endfor %}
+                    </tbody>
+                    </table>
+
+                <!--catch-all condition-->
+                {% else %}
+                    <p>Unsupported file extension.</p>
+                    <p><a href={{filename}}>Link to file.</a></p>
+                {% endif %}
+
+                    <!-- always link to file-->
+                    <p><a href={{filename}}>Link to file.</a></p>
 
             </div>
         </div>

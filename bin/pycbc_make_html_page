@@ -76,7 +76,8 @@ class Directory():
                 self.config_filename = None
 
             # append file to directory
-            self.files.append(File(filename, config_filename))
+            self.files.append(File(plots_dir+'/'+self.path+'/'+filename,
+                                   plots_dir+'/'+self.path+'/'+config_filename))
 
         # append to class list
         self.instances.append(self)
@@ -97,11 +98,11 @@ class File():
     def __init__(self, path, config_path):
 
         # save path to file
-        self.path = path
+        self.path        = path
         self.config_path = config_path
 
-        # assign random string
-        self.id = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
+    def filename(self):
+        return self.path.split('/')[-1]
 
     def render(self):
         """
@@ -109,7 +110,8 @@ class File():
         """
 
         output = ''
-        output = pycbc.results.render.setup_template_render(self.path, self.config_path)
+        output = pycbc.results.render.setup_template_render(self.path,
+                                                            self.config_path)
 
         return output
 
@@ -144,8 +146,6 @@ input_path = opts.template_file.rstrip(input_template)
 # setup template
 env = Environment(loader=FileSystemLoader(input_path))
 template = env.get_template(input_template)
-env.globals.update(zip=zip)
-env.globals.update(abs=abs)
 
 # find all subdirs and the top-level subdirs
 Directory(opts.plots_dir, opts.plots_dir)
@@ -181,5 +181,5 @@ for dir in dirs:
 # copy all files to html directory
 for dir in dirs:
     for file in dir.files:
-        shutil.copy(opts.plots_dir+dir.path+'/'+file.path,
-                    opts.output_path+'/'+dir.path+'/'+file.path)
+        shutil.copy(file.path,
+                    opts.output_path+'/'+dir.path+'/'+file.filename())
