@@ -63,7 +63,7 @@ def render_default(path, cp):
 
    # define filename and slug from path
    filename = path.split('/')[-1]
-   slug     = path.split('/')[-1].split('.')[0]
+   slug     = path.split('/')[-1].replace('.', '_')
 
    # initializations
    content = None
