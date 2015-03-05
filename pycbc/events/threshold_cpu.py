@@ -119,5 +119,5 @@ def threshold_and_cluster(series, threshold, window):
     if simd_count > 0:
         return values[0:simd_count], locs[0:simd_count]
     else:
-        return numpy.array([], dtype = complex64), numpy.array([], dtype = _np.uint32)
+        return numpy.array([], dtype = numpy.complex64), numpy.array([], dtype = numpy.uint32)
     
