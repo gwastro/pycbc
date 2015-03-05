@@ -331,7 +331,7 @@ void ccorrf_simd(float * __restrict inconj, float * __restrict innoconj,
 
 #endif
 
-  for ( ; i < howmany; i += 2){
+  for ( ; i < len; i += 2){
     ar = *aptr;
     ai = *(aptr+1);
     br = *bptr;
@@ -361,11 +361,11 @@ corr_simd_code = """
 ccorrf_simd(htilde, stilde, qtilde, (uint32_t) arrlen);
 """
 
-def simd_correlate(ht, st, qt):
-    htilde = _np.array(ht.data.view(dtype = float32), copy = False)
-    stilde = _np.array(st.data.view(dtype = float32), copy = False)
-    qtilde = _np.array(qt.data.view(dtype = float32), copy = False)
-    arrlen = 2*len(htilde)
+def correlate_simd(ht, st, qt):
+    htilde = _np.array(ht.data, copy = False).view(dtype = float32)
+    stilde = _np.array(st.data, copy = False).view(dtype = float32)
+    qtilde = _np.array(qt.data, copy = False).view(dtype = float32)
+    arrlen = len(htilde)
     inline(corr_simd_code, ['htilde', 'stilde', 'qtilde', 'arrlen'],
            extra_compile_args = ['-march=native -O3 -w'],
            #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],
