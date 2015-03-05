@@ -102,6 +102,10 @@ class File():
         self.config_path = config_path
 
     def filename(self):
+        """
+        Returns filename of File as a string.
+        """
+
         return self.path.split('/')[-1]
 
     def render(self):
@@ -153,7 +157,7 @@ dirs   = [dir for dir in Directory.instances]
 dirs_0 = [dir for dir in Directory.instances if dir.path.count('/') == 1]
 
 # sort alphanumerically
-# FIXME: could move this into Directory when subdirs/files are appended
+# FIXME: could move this into Directory when subdirs and files are appended
 dirs.sort(key=lambda x: x.title())
 for dir in dirs:
     dir.subdirs.sort(key=lambda x: x.title())
