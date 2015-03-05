@@ -43,6 +43,13 @@
 
     <!--navbar-->
     <ul class="nav nav-pills">
+
+        <!--home button-->
+        <li>
+            <a href="{{output_path}}" class="btn btn-info" role="button" style="background-color: #87AFFF">Home</a>
+        </li>
+
+        <!--display top-level directories-->
         {% for dir0 in dirs_0 %}
         <li class="dropdown">
         <a class="dropdown-toggle" id="drop4" role="button" data-toggle="dropdown" data-target="#" href="#">{{dir0.title()}}<b class="caret"></b></a>
