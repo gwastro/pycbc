@@ -1,13 +1,11 @@
 <!--accordion--> 
-<div class="panel-group" id="accordion">
+<div class="panel-group" id="accordion-{{slug}}">
     <div class="panel panel-default">
 
         <!--accordion title-->
-        <div class="panel-heading">
+        <div class="panel-heading accordion-toggle collapsed" data-toggle="collapse" data-parent="#accordion" href="#{{slug}}">
             <h4 class="panel-title">
-            <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href='#{{slug}}'>
-                {{path}}
-            </a>
+                <a href='#'>{{path}}</a>
             </h4>
         </div>
 
