@@ -23,6 +23,7 @@
 #
 import numpy, pycbc
 from scipy.weave import inline
+from .simd_correlate import correlate_parallel
 
 if pycbc.HAVE_OMP:
     omp_libs = ['gomp']
@@ -74,5 +75,5 @@ def correlate_inline(x, y, z):
                     libraries=omp_libs
           )
     
-correlate = correlate_inline
-    
+#correlate = correlate_inline
+correlate = correlate_parallel   
