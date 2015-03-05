@@ -419,7 +419,7 @@ def correlate_parallel(ht, st, qt):
     arrlen = len(htilde)
     segsize = default_segsize
     inline(corr_parallel_code, ['htilde', 'stilde', 'qtilde', 'arrlen', 'segsize'],
-           extra_compile_args = ['-march=native -O3 -w'],
+           extra_compile_args = ['-march=native -O3 -w'] + omp_flags, libraries = omp_libs,
            #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],
            #extra_compile_args = ['-msse3 -O3 -w'],
            support_code = corr_support, auto_downcast = 1)
