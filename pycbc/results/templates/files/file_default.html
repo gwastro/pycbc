@@ -18,7 +18,7 @@
                     <a href="{{filename}}"><img src="{{filename}}" style="width:825px"></a>
 
                 <!--html file condition-->
-                {% if filename.endswith('html') %}
+                {% elif filename.endswith('html') %}
                     <iframe src="{{filename}}" style="width:825px"></iframe>
 
                 <!--segment XML file condition-->
