@@ -355,6 +355,40 @@ void ccorrf_simd(float * __restrict inconj, float * __restrict innoconj,
  return;
 
 }
+
+void ccorrf_parallel(std::complex<float> * __restrict inconj,
+                     std::complex<float> * __restrict innoconj,
+                     std::complex<float> * __restrict out,
+                     const uint32_t arrlen, const uint32_t segsize){
+
+  uint32_t i, *seglens;
+  int nsegs;
+
+  nsegs = ( (arrlen % segsize) ? (arrlen/segsize) + 1 : (arrlen/segsize) );
+  
+  seglens = (uint32_t *) malloc(nsegs * sizeof(uint32_t));
+  if (seglens == NULL){
+    error(EXIT_FAILURE, ENOMEM, "ccorrf_parallel: could not allocate temporary memory");
+  }
+
+  // Setup the segment lengths; only the last might be different.
+  // The factor of two is because our inputs and outputs are complex
+  // arrays, but ccorrf_simd needs float array arguments.
+  for (i = 0; i < nsegs-1; i++){
+    seglens[i] = 2*segsize;
+  }
+  seglens[i] = 2*(arrlen - i*segsize);
+
+#pragma omp parallel for schedule(dynamic,1)
+  for (i = 0; i < nsegs; i++){
+    ccorrf_simd( (float *) &inconj[i*segsize], (float *) &innoconj[i*segsize],
+                 (float *) &out[i*segsize], seglens[i]);
+  }
+
+  free(seglens);
+  return;
+}
+
 """
 
 corr_simd_code = """
@@ -367,6 +401,24 @@ def correlate_simd(ht, st, qt):
     qtilde = _np.array(qt.data, copy = False).view(dtype = float32)
     arrlen = len(htilde)
     inline(corr_simd_code, ['htilde', 'stilde', 'qtilde', 'arrlen'],
+           extra_compile_args = ['-march=native -O3 -w'],
+           #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],
+           #extra_compile_args = ['-msse3 -O3 -w'],
+           support_code = corr_support, auto_downcast = 1)
+ 
+corr_parallel_code = """
+ccorrf_parallel(htilde, stilde, qtilde, (uint32_t) arrlen, (uint32_t) segsize);
+"""
+
+default_segsize = 8192
+
+def correlate_parallel(ht, st, qt):
+    htilde = _np.array(ht.data, copy = False)
+    stilde = _np.array(st.data, copy = False)
+    qtilde = _np.array(qt.data, copy = False)
+    arrlen = len(htilde)
+    segsize = default_segsize
+    inline(corr_parallel_code, ['htilde', 'stilde', 'qtilde', 'arrlen', 'segsize'],
            extra_compile_args = ['-march=native -O3 -w'],
            #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],
            #extra_compile_args = ['-msse3 -O3 -w'],
