@@ -20,7 +20,6 @@ import argparse
 import os
 import random
 import shutil
-import string
 
 from jinja2 import Environment, FileSystemLoader
 
