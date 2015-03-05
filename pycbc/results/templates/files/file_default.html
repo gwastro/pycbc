@@ -15,7 +15,11 @@
 
                 <!--image file condition-->
                 {% if filename.endswith('png') %}
-                    <img src="{{filename}}" style="width:900px">
+                    <a href="{{filename}}"><img src="{{filename}}" style="width:825px"></a>
+
+                <!--html file condition-->
+                {% if filename.endswith('html') %}
+                    <iframe src="{{filename}}" style="width:825px"></iframe>
 
                 <!--segment XML file condition-->
                 {% elif ( filename.endswith('xml') or filename.endswith('xml.gz') ) and content %}
@@ -46,7 +50,7 @@
                 <!--catch-all condition-->
                 {% else %}
                     <p>Unsupported file extension.</p>
-                    <p><a href={{filename}}>Link to file.</a></p>
+
                 {% endif %}
 
                     <!-- always link to file-->
