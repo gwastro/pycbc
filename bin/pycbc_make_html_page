@@ -25,7 +25,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from glue import segments
 
-import pycbc.results.render
+from pycbc.results.render import setup_template_render
 from pycbc.workflow import segment
 
 def examine_dir(dir):
@@ -96,7 +96,7 @@ class File():
 
     def __init__(self, path, config_path):
 
-        # save path to file
+        # save paths
         self.path        = path
         self.config_path = config_path
 
@@ -112,11 +112,7 @@ class File():
         Renders a template for the File using the configuration file if present.
         """
 
-        output = ''
-        output = pycbc.results.render.setup_template_render(self.path,
-                                                            self.config_path)
-
-        return output
+        return setup_template_render(self.path, self.config_path)
 
 # parse command line
 parser = argparse.ArgumentParser(usage='pycbc_make_html_page \

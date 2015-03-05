@@ -81,9 +81,9 @@ def render_default(path, cp):
    env = Environment(loader=FileSystemLoader(template_dir))
    env.globals.update(abs=abs)
    template = env.get_template('file_default.html')
-   context = {'filename'    : filename,
-              'slug'    : slug,
-              'content' : content}
+   context = {'filename' : filename,
+              'slug'     : slug,
+              'content'  : content}
    output = template.render(context)
 
    return output

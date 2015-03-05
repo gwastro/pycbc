@@ -23,6 +23,8 @@
 
                 <!--segment XML file condition-->
                 {% elif ( filename.endswith('xml') or filename.endswith('xml.gz') ) and content %}
+
+                    <!--table header-->
                     <table class="table"> 
                     <thead>         
                     <tr>
@@ -34,6 +36,7 @@
                     </thead>    
                     <tbody>
 
+                    <!--table rows-->
                     {% for channel, segmentlist in content.iteritems() %}
                         {% for seg in segmentlist %}
                             <tr>
