@@ -318,6 +318,35 @@ for trigs_ifo, trigs_ifo_filelist in zip(trigs_ifos, trigs_ifos_filelists):
                 images.append(image_file)
 
 #######################
+# setup plotbank nodes
+#######################
+
+# setup plot rates executable
+plotbank_exe = _workflow.Executable(workflow.cp, 'plotbank', out_dir=outputDir)
+
+# group trigger files by IFO and loop over IFOs
+trigs_ifos, trigs_ifos_filelists = trigs.categorize_by_attr('ifo')
+for trigs_ifo, trigs_ifo_filelist in zip(trigs_ifos, trigs_ifos_filelists):
+
+    # group trigger files by tags and loop over tags
+    trigs_tags, trigs_tags_filelists = trigs_ifo_filelist.categorize_by_attr('tags')
+    for trigs_tag, trigs_tag_filelist in zip(trigs_tags, trigs_tags_filelists):
+
+        # setup plot rates nodes for trigger filelists of identical IFO and tags
+        image_dir = outputDir+'/'+'_'.join([trigs_ifo]+trigs_tag)
+        image_file = _workflow.File(trigs_ifo, 'PLOTBANK',
+                                    workflow.analysis_time,
+                                    directory=image_dir,
+                                    extension='png', tags=trigs_tag+['ALLTIME'])
+        plotbank_node = plotbank_exe.create_node()
+        plotbank_node.add_input_list_opt('--trigger-files', trigs_tag_filelist)
+        plotbank_node.add_output_opt('--output-file', image_file)
+        plotbank_node.add_opt('--gps-start-time', workflow.analysis_time[0])
+        plotbank_node.add_opt('--gps-end-time', workflow.analysis_time[1])
+        workflow.add_node(plotbank_node)
+        images.append(image_file)
+
+#######################
 # setup plotchisq nodes
 #######################
 
@@ -337,7 +366,7 @@ for trigs_ifo, trigs_ifo_filelist in zip(trigs_ifos, trigs_ifos_filelists):
         image_file = _workflow.File(trigs_ifo, 'PLOTCHISQ',
                                     workflow.analysis_time,
                                     directory=image_dir,
-                                    extension='png', tags=trigs_tag+[stat, 'ALLTIME'])
+                                    extension='png', tags=trigs_tag+['ALLTIME'])
         plotchisq_node = plotchisq_exe.create_node()
         plotchisq_node.add_input_list_opt('--trigger-files', trigs_tag_filelist)
         plotchisq_node.add_output_opt('--output-file', image_file)
@@ -345,6 +374,7 @@ for trigs_ifo, trigs_ifo_filelist in zip(trigs_ifos, trigs_ifos_filelists):
         plotchisq_node.add_opt('--gps-end-time', workflow.analysis_time[1])
         workflow.add_node(plotchisq_node)
         images.append(image_file)
+
 
 ########################
 # setup plot rates nodes
@@ -366,7 +396,7 @@ for trigs_ifo, trigs_ifo_filelist in zip(trigs_ifos, trigs_ifos_filelists):
         image_file = _workflow.File(trigs_ifo, 'PLOTRATES',
                                     workflow.analysis_time,
                                     directory=image_dir,
-                                    extension='png', tags=trigs_tag+[stat, 'ALLTIME'])
+                                    extension='png', tags=trigs_tag+['ALLTIME'])
         plotrates_node = plotrates_exe.create_node()
         plotrates_node.add_input_list_opt('--trigger-files', trigs_tag_filelist)
         plotrates_node.add_output_opt('--output-file', image_file)
@@ -380,7 +410,7 @@ for trigs_ifo, trigs_ifo_filelist in zip(trigs_ifos, trigs_ifos_filelists):
 ######################
 
 # setup html page executable
-html_exe = _workflow.Executable(workflow.cp, 'html', universe='local')
+html_exe = _workflow.Executable(workflow.cp, 'html')
 
 # setup html page node
 html_node = html_exe.create_node()
