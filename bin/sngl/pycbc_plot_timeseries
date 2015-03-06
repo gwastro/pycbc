@@ -30,9 +30,8 @@ from glue import segments
 from pylal import SnglInspiralUtils
 
 # parse command line
-parser = argparse.ArgumentParser(usage='pycbc_plot_rate \
-[--options]',
-                                 description="Plot trigger rate versus time.")
+parser = argparse.ArgumentParser(usage='pycbc_plot_rate [--options]',
+                  description="Plot trigger significance versus time.")
 parser.add_argument('--trigger-files', type=str, nargs="+",
                   help='Input xml files with SnglInspiral triggers.')
 parser.add_argument('--output-file', type=str,
@@ -41,31 +40,27 @@ parser.add_argument('--gps-start-time', type=int,
                   help='Time to start plotting.')
 parser.add_argument('--gps-end-time', type=int,
                   help='Time to end plotting.')
+parser.add_argument('--new-snr', action='store_true', default=False,
+                  help='Plots new SNR instead of SNR.')
 opts = parser.parse_args()
 
 # read inspiral triggers
 inspiralTable = SnglInspiralUtils.ReadSnglInspiralFromFiles(opts.trigger_files)
 
 # put data into lists
-min_rate = 1e-6
-num_min  = (opts.gps_end_time - opts.gps_start_time) / 60
-mins     = range(num_min)
-times    = [float(i) / 60.0 for i in mins]
-counts   = [min_rate for i in mins]
-
-# loop over triggers and count them
+hour_end_time = []
+significance  = []
 for trig in inspiralTable:
-    trigTime = trig.end_time
-    counts[(trigTime - opts.gps_start_time) / 60] += 1
-
-# convert counts to rate in Hz
-rates = [c / 60.0 for c in counts]
-
-print len(rates)
+    trig_time = trig.end_time + trig.end_time_ns * 10**(-9)
+    hour_end_time.append((opts.gps_start_time - trig_time) / 3600.0)
+    if opts.new_snr:
+        significance.append(trig.get_new_snr())
+    else:
+        significance.append(trig.snr)
 
 # turn data into pylab arrays
-x = plt.array(times)
-y = plt.array(rates)
+x = plt.array(hour_end_time)
+y = plt.array(significance)
 
 # create pylab figure
 fig  = plt.figure(1, figsize=(8.1,4.0))
@@ -74,10 +69,14 @@ fig  = plt.figure(1, figsize=(8.1,4.0))
 p = plt.scatter(x, y, s=0.6)
 
 # format the plot
-plt.yscale('log')
-plt.ylim(min_rate * 10, max(rates) * 10)
-plt.xlim(0, times[-1])
-plt.ylabel('Minute-averaged rate (Hz)')
+if not opts.new_snr:
+    plt.yscale('log')
+plt.ylim(min(significance), max(significance) * 10)
+plt.xlim(0, (opts.gps_start_time - opts.gps_end_time) / 3600.0)
+if opts.new_snr:
+    plt.ylabel('newSNR')
+else:
+    plt.ylabel('SNR')
 plt.xlabel('Time since %s (hrs)'%opts.gps_start_time)
 
 # save plot
