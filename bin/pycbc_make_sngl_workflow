@@ -317,6 +317,35 @@ for trigs_ifo, trigs_ifo_filelist in zip(trigs_ifos, trigs_ifos_filelists):
                 workflow.add_node(timeseries_node)
                 images.append(image_file)
 
+#######################
+# setup plotchisq nodes
+#######################
+
+# setup plot rates executable
+plotchisq_exe = _workflow.Executable(workflow.cp, 'plotchisq', out_dir=outputDir)
+
+# group trigger files by IFO and loop over IFOs
+trigs_ifos, trigs_ifos_filelists = trigs.categorize_by_attr('ifo')
+for trigs_ifo, trigs_ifo_filelist in zip(trigs_ifos, trigs_ifos_filelists):
+
+    # group trigger files by tags and loop over tags
+    trigs_tags, trigs_tags_filelists = trigs_ifo_filelist.categorize_by_attr('tags')
+    for trigs_tag, trigs_tag_filelist in zip(trigs_tags, trigs_tags_filelists):
+
+        # setup plot rates nodes for trigger filelists of identical IFO and tags
+        image_dir = outputDir+'/'+'_'.join([trigs_ifo]+trigs_tag)
+        image_file = _workflow.File(trigs_ifo, 'PLOTCHISQ',
+                                    workflow.analysis_time,
+                                    directory=image_dir,
+                                    extension='png', tags=trigs_tag+[stat, 'ALLTIME'])
+        plotchisq_node = plotchisq_exe.create_node()
+        plotchisq_node.add_input_list_opt('--trigger-files', trigs_tag_filelist)
+        plotchisq_node.add_output_opt('--output-file', image_file)
+        plotchisq_node.add_opt('--gps-start-time', workflow.analysis_time[0])
+        plotchisq_node.add_opt('--gps-end-time', workflow.analysis_time[1])
+        workflow.add_node(plotchisq_node)
+        images.append(image_file)
+
 ########################
 # setup plot rates nodes
 ########################
