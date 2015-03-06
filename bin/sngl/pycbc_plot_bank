@@ -18,6 +18,7 @@
 
 import argparse
 import glob
+import math
 import os
 from itertools import groupby
 
@@ -46,25 +47,30 @@ opts = parser.parse_args()
 # read inspiral triggers
 inspiralTable = SnglInspiralUtils.ReadSnglInspiralFromFiles(opts.trigger_files)
 
-# put data into dict where key is (mtotal,eta) and value is counts
+# put data into dict where key is (mtotal,eta) both rescaled and value is counts
+scale_factor = 1000
 bank = {}
 for trig in inspiralTable:
     trig_time = trig.end_time + trig.end_time_ns * 10**(-9)
+    trig_mtotal = int(trig.mtotal * scale_factor)
+    trig_eta = int(trig.eta * scale_factor)
     if trig_time >= opts.gps_start_time and trig_time < opts.gps_end_time:
-        if not bank[(trig.mtotal,trig.eta)]:
-            bank[(trig.mtotal,trig.eta)] == 1
+        if (trig_mtotal,trig_eta) in bank.keys():
+            bank[(trig_mtotal,trig_eta)] += 1
         else:
-            bank[(trig.mtotal,trig.eta)] += 1
+            bank[(trig_mtotal,trig_eta)] = 1
 
 # put data into lists for plotting
 param_x = []
 param_y = []
 param_z = []
-for key, count in bank.itervalues():
+for key, count in bank.iteritems():
     mtotal, eta = key
+    mtotal = float(mtotal) / scale_factor
+    eta = float(eta) / scale_factor
     param_x.append(mtotal)
     param_y.append(eta)
-    param_z.append(count)
+    param_z.append(math.log(count, 10))
 
 # turn data into pylab arrays
 x = plt.array(param_x)
@@ -78,11 +84,12 @@ fig  = plt.figure(1, figsize=(8.1,8.1))
 p = plt.scatter(x, y, c=z)
 
 # format the plot
-plt.colorbar()
+cb = plt.colorbar()
+cb.set_label('log10(count)')
 plt.ylim(min(param_y) * 0.9, max(param_y) * 1.1)
-plt.ylabel(opts.param_y)
+plt.ylabel('Eta')
 plt.xlim(min(param_x) * 0.9, max(param_x) * 1.1)
-plt.xlabel(opts.param_x)
+plt.xlabel('Total mass (solar masses)')
 
 # save plot
 plt.savefig(opts.output_file)

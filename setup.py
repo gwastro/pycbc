@@ -329,6 +329,7 @@ setup (
                'bin/hdfcoinc/pycbc_page_inspiralrange',
                'bin/hdfcoinc/pycbc_page_segments',
                'bin/sngl/pycbc_ligolw_cluster',
+               'bin/sngl/pycbc_plot_bank',
                'bin/sngl/pycbc_plot_glitchgram',
                'bin/sngl/pycbc_plot_histogram',
                'bin/sngl/pycbc_plot_params',

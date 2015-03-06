@@ -410,7 +410,7 @@ for trigs_ifo, trigs_ifo_filelist in zip(trigs_ifos, trigs_ifos_filelists):
 ######################
 
 # setup html page executable
-html_exe = _workflow.Executable(workflow.cp, 'html')
+html_exe = _workflow.Executable(workflow.cp, 'html', universe='local')
 
 # setup html page node
 html_node = html_exe.create_node()
