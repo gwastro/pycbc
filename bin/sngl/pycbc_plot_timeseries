@@ -52,7 +52,7 @@ hour_end_time = []
 significance  = []
 for trig in inspiralTable:
     trig_time = trig.end_time + trig.end_time_ns * 10**(-9)
-    hour_end_time.append((opts.gps_start_time - trig_time) / 3600.0)
+    hour_end_time.append((trig_time - opts.gps_start_time) / 3600.0)
     if opts.new_snr:
         significance.append(trig.get_new_snr())
     else:
@@ -71,12 +71,12 @@ p = plt.scatter(x, y, s=0.6)
 # format the plot
 if not opts.new_snr:
     plt.yscale('log')
-plt.ylim(min(significance), max(significance) * 10)
-plt.xlim(0, (opts.gps_start_time - opts.gps_end_time) / 3600.0)
-if opts.new_snr:
-    plt.ylabel('newSNR')
-else:
+    plt.ylim(min(significance), max(significance) * 10)
     plt.ylabel('SNR')
+else:
+    plt.ylim(min(significance), max(significance) * 1.1)
+    plt.ylabel('newSNR')
+plt.xlim(0, (opts.gps_end_time - opts.gps_start_time) / 3600.0)
 plt.xlabel('Time since %s (hrs)'%opts.gps_start_time)
 
 # save plot

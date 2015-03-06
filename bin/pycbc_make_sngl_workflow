@@ -265,6 +265,59 @@ for trigs_ifo, trigs_ifo_filelist in zip(trigs_ifos, trigs_ifos_filelists):
                 images.append(image_file)
 
 ########################
+# setup timeseries nodes
+########################
+
+# setup timeseries executable
+timeseries_exe = _workflow.Executable(workflow.cp, 'timeseries', out_dir=outputDir)
+
+# group trigger files by IFO and loop over IFOs
+trigs_ifos, trigs_ifos_filelists = trigs.categorize_by_attr('ifo')
+for trigs_ifo, trigs_ifo_filelist in zip(trigs_ifos, trigs_ifos_filelists):
+
+    # group trigger files by tags and loop over tags
+    trigs_tags, trigs_tags_filelists = trigs_ifo_filelist.categorize_by_attr('tags')
+    for trigs_tag, trigs_tag_filelist in zip(trigs_tags, trigs_tags_filelists):
+
+        # setup glitchgram nodes for trigger filelists of identical IFO and tags
+        image_dir = outputDir+'/'+'_'.join([trigs_ifo]+trigs_tag)
+        for stat in ['snr', 'new_snr']:
+            image_file = _workflow.File(trigs_ifo, 'TIMESERIES',
+                                        workflow.analysis_time,
+                                        directory=image_dir,
+                                        extension='png', tags=trigs_tag+[stat, 'ALLTIME'])
+            timeseries_node = timeseries_exe.create_node()
+            timeseries_node.add_input_list_opt('--trigger-files', trigs_tag_filelist)
+            timeseries_node.add_output_opt('--output-file', image_file)
+            timeseries_node.add_opt('--gps-start-time', workflow.analysis_time[0])
+            timeseries_node.add_opt('--gps-end-time', workflow.analysis_time[1])
+            if stat == 'new_snr':
+                timeseries_node.add_arg('--new-snr')
+            workflow.add_node(timeseries_node)
+            images.append(image_file)
+
+        # group trigger files by valid segments and loop over valid segments
+        trigs_segs, trigs_seg_filelists = trigs_tag_filelist.categorize_by_attr('segment')
+        for trigs_seg, trigs_seg_filelist in zip(trigs_segs, trigs_seg_filelists):
+
+            # setup glitchgram nodes for trigger filelists of identical IFO and valid segment
+            image_dir = outputDir+'/'+'_'.join([trigs_ifo]+trigs_tag)+'/jobs/'+str(trigs_seg[0])+'-'+str(trigs_seg[1])
+            for stat in ['snr', 'new_snr']:
+                image_file = _workflow.File(trigs_ifo, 'TIMESERIES',
+                                            trigs_seg,
+                                            directory=image_dir,
+                                            extension='png', tags=trigs_tag+[stat])
+                timeseries_node = timeseries_exe.create_node()
+                timeseries_node.add_input_list_opt('--trigger-files', trigs_seg_filelist)
+                timeseries_node.add_output_opt('--output-file', image_file)
+                timeseries_node.add_opt('--gps-start-time', trigs_seg[0])
+                timeseries_node.add_opt('--gps-end-time', trigs_seg[1])
+                if stat == 'new_snr':
+                    timeseries_node.add_arg('--new-snr')
+                workflow.add_node(timeseries_node)
+                images.append(image_file)
+
+########################
 # setup plot rates nodes
 ########################
 
