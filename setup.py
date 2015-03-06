@@ -309,6 +309,7 @@ setup (
                'bin/gstlal/pycbc_pickle_horizon_distances',
                'bin/pycbc_make_coinc_workflow',
                'bin/pycbc_make_daily_workflow',
+               'bin/pycbc_make_html_page',
                'bin/pycbc_ligolw_find_playground',
                'bin/hdfcoinc/pycbc_make_hdf_coinc_workflow',
                'bin/pycbc_basic_pegasus_plan',
@@ -327,6 +328,10 @@ setup (
                'bin/hdfcoinc/pycbc_results_server',
                'bin/hdfcoinc/pycbc_page_inspiralrange',
                'bin/hdfcoinc/pycbc_page_segments',
+               'bin/sngl/pycbc_ligolw_cluster',
+               'bin/sngl/pycbc_plot_glitchgram',
+               'bin/sngl/pycbc_plot_histogram',
+               'bin/sngl/pycbc_plot_rates',
                'bin/pycbc_submit_dax',
                ],
     packages = [
