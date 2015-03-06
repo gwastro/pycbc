@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2014 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import glob
+import os
+
+import numpy as np
+import matplotlib as mpl; mpl.use('Agg')
+import matplotlib.pylab as plt
+
+from glue import lal
+from glue import segments
+
+from pylal import SnglInspiralUtils
+
+# parse command line
+parser = argparse.ArgumentParser(usage='pycbc_plot_rate \
+[--options]',
+                                 description="Plot trigger rate versus time.")
+parser.add_argument('--trigger-files', type=str, nargs="+",
+                  help='Input xml files with SnglInspiral triggers.')
+parser.add_argument('--output-file', type=str,
+                  help='Output image file.')
+parser.add_argument('--gps-start-time', type=int,
+                  help='Time to start plotting.')
+parser.add_argument('--gps-end-time', type=int,
+                  help='Time to end plotting.')
+parser.add_argument('--new-snr', action='store_true', default=False,
+                  help='Plots new SNR instead of SNR.')
+opts = parser.parse_args()
+
+# read inspiral triggers
+inspiralTable = SnglInspiralUtils.ReadSnglInspiralFromFiles(opts.trigger_files)
+
+# put data into lists
+num_min = (opts.gps_end_time - opts.gps_start_time) / 60
+mins    = range(num_min)
+counts  = [1e-6 for i in mins]
+times   = [float(x) / 60.0 for x in mins]
+
+# loop over triggers and count them
+for trig in inspiralTable:
+  trigTime = trig.end_time
+  counts[(trigTime - opts.gps_start_time)/(60.0))] += 1
+
+# convert counts to rates
+rates = [c / 60.0 for c in counts]
+
+# turn data into pylab arrays
+x = plt.array(times)
+y = plt.array(rates)
+
+# create pylab figure
+fig  = plt.figure(1, figsize=(8.1,4.0))
+
+# plot data
+p = plt.scatter(x,y)
+
+# format the plot
+plt.yscale('log')
+plt.ylim(min(counts) * 0.9, max(counts) * 1.1)
+plt.xlim(0, (opts.gps_end_time- opts.gps_start_time)/(60.0))
+plt.ylabel('Minute-averaged rate (Hz)')
+plt.xlabel('Time since %s (hrs)'%opts.gps_start_time)
+
+# save plot
+plt.savefig(opts.output_file)
+plt.close()
