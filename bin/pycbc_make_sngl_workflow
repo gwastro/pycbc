@@ -63,8 +63,10 @@ if not os.path.exists(runDir):
   os.makedirs(runDir)
 os.chdir(runDir)
 
-# setup workflow
-workflow = _workflow.Workflow(args, args.name)
+# setup workflow and sub-workflows
+container = _workflow.Workflow(args, args.name)
+workflow = _workflow.Workflow(args, 'main')
+html_workflow = _workflow.Workflow(args, 'html')
 
 ###################################
 # retrieve segments and frame files
@@ -425,12 +427,7 @@ html_exe = _workflow.Executable(workflow.cp, 'html', universe='local')
 # setup html page node
 html_node = html_exe.create_node()
 html_node.add_opt('--plots-dir', outputDir)
-workflow.add_node(html_node)
-
-# impose html page node is child of plotting nodes
-for image in images:
-    dep = dax.Dependency(parent=image.node._dax_node, child=html_node._dax_node)
-    workflow._adag.addDependency(dep)
+html_workflow.add_node(html_node)
 
 ###############
 # save and exit
@@ -476,6 +473,12 @@ if not os.path.exists(configDir):
   os.makedirs(configDir)
 workflow.cp.write(file(configDir+'/'+'workflow_configuration.ini', 'w'))
 
+# append sub-workflows to workflow
+container += workflow
+container += html_workflow
+dep = dax.Dependency(parent=workflow.as_job, child=html_workflow.as_job)
+container._adag.addDependency(dep)
+
 # write dax
-workflow.save()
+container.save()
 logging.info('Finished.')
