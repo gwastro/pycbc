@@ -70,8 +70,7 @@ class Directory():
 
             # check if this is a configuration file for a file
             extension = filename.split('.')[-1]
-            config_filename = filename.replace(extension, 'ini')
-            print filename.endswith('ini'), filenames.count(filename.replace(extension, ''))
+            config_filename = filename.replace(extension, 'file.ini')
             if filename.endswith('file.ini'):
                 continue
 
