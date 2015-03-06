@@ -233,9 +233,14 @@ for trigs_ifo, trigs_ifo_filelist in zip(trigs_ifos, trigs_ifos_filelists):
                                         workflow.analysis_time,
                                         directory=image_dir,
                                         extension='png', tags=trigs_tag+[stat, 'ALLTIME'])
+            config_file = _workflow.File(trigs_ifo, 'GLITCHGRAM',
+                                         workflow.analysis_time,
+                                         directory=image_dir,
+                                         extension='file.ini', tags=trigs_tag+[stat, 'ALLTIME'])
             glitchgram_node = glitchgram_exe.create_node()
             glitchgram_node.add_input_list_opt('--trigger-files', trigs_tag_filelist)
             glitchgram_node.add_output_opt('--output-file', image_file)
+            glitchgram_node.add_output_opt('--config-file', config_file)
             glitchgram_node.add_opt('--gps-start-time', workflow.analysis_time[0])
             glitchgram_node.add_opt('--gps-end-time', workflow.analysis_time[1])
             if stat == 'new_snr':
@@ -254,9 +259,14 @@ for trigs_ifo, trigs_ifo_filelist in zip(trigs_ifos, trigs_ifos_filelists):
                                             trigs_seg,
                                             directory=image_dir,
                                             extension='png', tags=trigs_tag+[stat])
+                config_file = _workflow.File(trigs_ifo, 'GLITCHGRAM',
+                                            trigs_seg,
+                                            directory=image_dir,
+                                            extension='file.ini', tags=trigs_tag+[stat])
                 glitchgram_node = glitchgram_exe.create_node()
                 glitchgram_node.add_input_list_opt('--trigger-files', trigs_seg_filelist)
                 glitchgram_node.add_output_opt('--output-file', image_file)
+                glitchgram_node.add_output_opt('--config-file', config_file)
                 glitchgram_node.add_opt('--gps-start-time', trigs_seg[0])
                 glitchgram_node.add_opt('--gps-end-time', trigs_seg[1])
                 if stat == 'new_snr':

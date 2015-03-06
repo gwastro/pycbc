@@ -23,6 +23,7 @@ import os
 import numpy as np
 import matplotlib as mpl; mpl.use('Agg')
 import matplotlib.pylab as plt
+from ConfigParser import ConfigParser
 
 from glue import lal
 from glue import segments
@@ -39,6 +40,8 @@ parser.add_argument('--trigger-files', type=str, nargs="+",
                   help='Input xml files with SnglInspiral triggers.')
 parser.add_argument('--output-file', type=str,
                   help='Output image file.')
+parser.add_argument('--config-file', type=str,
+                  help='Output configuration file for the image file.')
 parser.add_argument('--gps-start-time', type=int,
                   help='Time to start plotting.')
 parser.add_argument('--gps-end-time', type=int,
@@ -85,7 +88,6 @@ for r in ranges:
                       s=r[3], label=r[4])
 
 # format the plot
-#plt.legend()
 plt.yscale('log')
 plt.ylim(min(y) * 0.9, max(y) * 1.1)
 plt.xlim(0, (opts.gps_end_time- opts.gps_start_time)/(60.0*60.0))
@@ -95,3 +97,17 @@ plt.xlabel('Time since %s (hrs)'%opts.gps_start_time)
 # save plot
 plt.savefig(opts.output_file)
 plt.close()
+
+# save config file
+if opts.config_file:
+    cp = ConfigParser()
+    cp.add_section(opts.output_file)
+    cp.set(opts.output_file, 'title', opts.output_file.replace('.png', ''))
+    if opts.new_snr:
+        cp.set(opts.output_file, 'caption', 'Color key is newSNR is less than 8 (blue), newSNR is between 8 and 16 (green), and newSNR is greater than 16 (red).')
+    else:
+        cp.set(opts.output_file, 'caption', 'Color key is SNR is less than 8 (blue), SNR is between 8 and 16 (green), and SNR is greater than 16 (red).')
+    cp.set(opts.output_file, 'render-function', 'render_glitchgram')
+    cp.set(opts.output_file, 'template', 'file_glitchgram.html')
+    with open(opts.config_file, 'w') as fp:
+        cp.write(fp)

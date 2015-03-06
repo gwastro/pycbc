@@ -68,10 +68,15 @@ class Directory():
         self.files = []
         for filename in filenames:
 
+            # check if this is a configuration file for a file
+            extension = filename.split('.')[-1]
+            config_filename = filename.replace(extension, 'ini')
+            print filename.endswith('ini'), filenames.count(filename.replace(extension, ''))
+            if filename.endswith('file.ini'):
+                continue
+
             # check if configuration file exists for file
-            extension = self.path.split('.')[-1]
-            config_filename = dir+'/'+filename.rstrip(extension)+'.ini'
-            if not os.path.exists(config_filename) or filename == config_filename:
+            elif not os.path.exists(config_filename):
                 self.config_filename = None
 
             # append file to directory

@@ -16,6 +16,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import os.path
+
 from ConfigParser import ConfigParser
 from jinja2 import Environment, FileSystemLoader
 
@@ -34,12 +36,13 @@ def setup_template_render(path, config_path):
    output = ''
 
    # read configuration file
-   if config_path:
+   if os.path.exists(config_path):
        cp.read(config_path)
 
        # render template
-       if cp.has_option(path, 'render-function'):
-           render_function_name = cp.get_opt(path)
+       filename = path.split('/')[-1]
+       if cp.has_option(filename, 'render-function'):
+           render_function_name = cp.get(filename, 'render-function')
            render_function = eval(render_function_name)
            output = render_function(path, cp)
        else:
@@ -48,7 +51,7 @@ def setup_template_render(path, config_path):
    # if no configuration file is present
    # then render the default template
    else:
-       output = render_deault(path, path, cp)
+       output = render_default(path, cp)
 
    return output
 
@@ -84,6 +87,27 @@ def render_default(path, cp):
    context = {'filename' : filename,
               'slug'     : slug,
               'content'  : content}
+   output = template.render(context)
+
+   return output
+
+def render_glitchgram(path, cp):
+   '''
+   Render a glitchgram file template.
+   '''
+
+   # define filename and slug from path
+   filename = path.split('/')[-1]
+   slug     = path.split('/')[-1].replace('.', '_')
+
+   # render template
+   template_dir = pycbc.results.__path__[0] + '/templates/files'
+   env = Environment(loader=FileSystemLoader(template_dir))
+   env.globals.update(abs=abs)
+   template = env.get_template(cp.get(filename, 'template'))
+   context = {'filename' : filename,
+              'slug'     : slug,
+              'cp'       : cp}
    output = template.render(context)
 
    return output
