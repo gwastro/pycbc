@@ -443,6 +443,7 @@ class LegacyCohPTFTrigCluster(LegacyAnalysisExecutable):
         out_file = File(self.ifos, 'INSPIRAL', parent.segment,
                         directory=self.output_dir, extension='xml.gz',
                         tags=tags)
+        out_file.storage_path = None
         node._add_output(out_file)
 
         return node
