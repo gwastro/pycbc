@@ -198,7 +198,8 @@ with ctx:
                                    opt.snr_threshold, tlen, delta_f, complex64,
                                    downsample_factor=opt.downsample_factor,
                                    upsample_threshold=opt.upsample_threshold,
-                                   upsample_method=opt.upsample_method)
+                                   upsample_method=opt.upsample_method,
+                                   gpu_callback_method=opt.gpu_callback_method)
 
     bank_chisq = vetoes.SingleDetBankVeto(opt.bank_veto_bank_file,
                                           flen, delta_f, flow, complex64, 
