@@ -22,6 +22,12 @@ function run_pycbc {
 		exit 0
 	esac
 
+	DEVICE=""
+	if  `echo ${SCHEME} | grep -q cuda:`
+	then
+		DEVICE=`echo ${SCHEME} | cut -f2 -d:`
+		SCHEME=cuda
+	fi
 
 	CMD="taskset -c ${TASKSET} python "
 
@@ -81,18 +87,24 @@ function run_pycbc {
 	CMD="${CMD} --output /usr1/${USER}/profiling_results/${DATA}/test_${TASKSET}.hdf5  "
 	CMD="${CMD} --processing-scheme ${SCHEME} "
 
+	if [ "${DEVICE}" != "" ]
+	then
+		CMD="${CMD} --processing-device-id ${DEVICE} "
+	fi
+
 	# Might also need arguments like:
 	#--fft-backends fftw \
 	#--fftw-measure-level 0 \
 	#--fftw-threads-backend openmp \
 	#--fftw-input-float-wisdom-file ${WISDOM}
 
+	# echo $CMD
 	$CMD &
 }
 
 
 function verify_args {
-	for key in cluster-method cluster-window bank-file approximant gps-start-time gps-end-time snr-threshold strain-high-pass chisq-bins psd-inverse-length psd-segment-stride psd-segment-length psd-estimation segment-length egment-start-pad segment-end-pad low-frequency-cutoff pad-data sample-rate order frame-files channel-name output-format processing-scheme
+	for key in cluster-method cluster-window bank-file approximant gps-start-time gps-end-time snr-threshold strain-high-pass chisq-bins psd-inverse-length psd-segment-stride psd-segment-length psd-estimation segment-length segment-start-pad segment-end-pad low-frequency-cutoff pad-data sample-rate order frame-files channel-name output-format processing-scheme data
 	do
 		if [ "${args["$key"]}" == "" ]
 		then
@@ -117,6 +129,7 @@ function parse_args {
 	
 	for line in $*
 	do
+		echo $line
 		echo ${line} | grep -q =
 		if [ $? == 0 ]
 		then

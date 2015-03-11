@@ -14,8 +14,7 @@ source profiling_utils.sh
 # schemes='cuda|1'
 
 # Run two cuda instances on the same GPU and different CPUs
-export CUDA_VISIBLE_DEVICES=0
-schemes='cuda|1 cuda|2'
+schemes='cuda:1|1 cuda:2|2'
 
 for data in clean loud grumbly
 do
