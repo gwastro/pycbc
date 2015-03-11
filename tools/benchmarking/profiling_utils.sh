@@ -60,30 +60,31 @@ function run_pycbc {
 
 	GPS_END_TIME=$(( $GPS_START_TIME + 2048 ))
 	INSTALLED=`which pycbc_inspiral`
+	mkdir -p /usr1/${USER}/profiling_results/${DATA}
 
 	CMD="${CMD} ${INSTALLED} "
-	CMD="${CMD} --cluster-method window "
-	CMD="${CMD} --cluster-window 1 "
+	CMD="${CMD} --cluster-method ${args["cluster-method"]}"
+	CMD="${CMD} --cluster-window ${args["cluster-window"]} "
 	CMD="${CMD} --bank-file $BANK "
-	CMD="${CMD} --approximant SPAtmplt "
+	CMD="${CMD} --approximant ${args["approximant"]} "
 	CMD="${CMD} --gps-start-time $GPS_START_TIME "
 	CMD="${CMD} --gps-end-time   $GPS_END_TIME "
-	CMD="${CMD} --snr-threshold 5.5 "
-	CMD="${CMD} --strain-high-pass 25.0 "
-	CMD="${CMD} --chisq-bins 16 "
-	CMD="${CMD} --psd-inverse-length 16 "
-	CMD="${CMD} --psd-segment-stride 128 "
-	CMD="${CMD} --psd-segment-length 256 "
-	CMD="${CMD} --psd-estimation median "
-	CMD="${CMD} --segment-length 256 "
-	CMD="${CMD} --segment-start-pad 112 "
-	CMD="${CMD} --segment-end-pad 16 "
-	CMD="${CMD} --low-frequency-cutoff 30.0 "
-	CMD="${CMD} --pad-data 8 "
-	CMD="${CMD} --sample-rate 4096 "
-	CMD="${CMD} --order 7 "
+	CMD="${CMD} --snr-threshold ${args["snr-threshold"]} "
+	CMD="${CMD} --strain-high-pass ${args["strain-high-pass"]} "
+	CMD="${CMD} --chisq-bins ${args["chisq-bins"]} "
+	CMD="${CMD} --psd-inverse-length ${args["psd-inverse-length"]} "
+	CMD="${CMD} --psd-segment-stride ${args["psd-segment-stride"]} "
+	CMD="${CMD} --psd-segment-length ${args["psd-segment-length"]} "
+	CMD="${CMD} --psd-estimation ${args["psd-estimation"]} "
+	CMD="${CMD} --segment-length ${args["segment-length"]} "
+	CMD="${CMD} --segment-start-pad ${args["segment-start-pad"]} "
+	CMD="${CMD} --segment-end-pad ${args["segment-end-pad"]} "
+	CMD="${CMD} --low-frequency-cutoff ${args["low-frequency-cutoff"]} "
+	CMD="${CMD} --pad-data ${args["pad-data"]} "
+	CMD="${CMD} --sample-rate ${args["sample-rate"]} "
+	CMD="${CMD} --order ${args["order"]} "
 	CMD="${CMD} --frame-files ${DATA}/*.gwf "
-	CMD="${CMD} --channel-name H1:LDAS-STRAIN "
+	CMD="${CMD} --channel-name ${args["channel-name"]} "
 	CMD="${CMD} --output /usr1/${USER}/profiling_results/${DATA}/test_${TASKSET}.hdf5  "
 	CMD="${CMD} --processing-scheme ${SCHEME} "
 
@@ -92,19 +93,24 @@ function run_pycbc {
 		CMD="${CMD} --processing-device-id ${DEVICE} "
 	fi
 
-	# Might also need arguments like:
-	#--fft-backends fftw \
-	#--fftw-measure-level 0 \
-	#--fftw-threads-backend openmp \
-	#--fftw-input-float-wisdom-file ${WISDOM}
+	if [ "${args["wisdom"]}" != "" ]
+	then
+		CMD="${CMD} --fft-backends fftw "
+		CMD="${CMD} --fftw-measure-level 0 "
+		CMD="${CMD} --fftw-threads-backend openmp "
+		CMD="${CMD} --fftw-input-float-wisdom-file ${args["wisdom"]}"
+	fi
 
-	# echo $CMD
+	# For testing the test script:
+	#echo $CMD
+	#touch /usr1/${USER}/profiling_results/${DATA}/test_${TASKSET}.hdf5
+	#sleep 5 &
 	$CMD &
 }
 
 
 function verify_args {
-	for key in cluster-method cluster-window bank-file approximant gps-start-time gps-end-time snr-threshold strain-high-pass chisq-bins psd-inverse-length psd-segment-stride psd-segment-length psd-estimation segment-length segment-start-pad segment-end-pad low-frequency-cutoff pad-data sample-rate order frame-files channel-name output-format processing-scheme data
+	for key in cluster-method cluster-window approximant snr-threshold strain-high-pass chisq-bins psd-inverse-length psd-segment-stride psd-segment-length psd-estimation segment-length segment-start-pad segment-end-pad low-frequency-cutoff pad-data sample-rate order channel-name processing-schemes tag
 	do
 		if [ "${args["$key"]}" == "" ]
 		then
@@ -208,6 +214,8 @@ function run_tests {
 	wait
 	run_pycbc ${data} cuda  1 no TMPLTBANK_SMALL.xml.gz 
 	wait
+	run_pycbc ${data} cpu 1 no TMPLTBANK_SMALL.xml.gz 
+	wait
 	rm -f /usr1/${USER}/profiling_results/${data}/*
 
 	start=`date +%s`
@@ -222,6 +230,8 @@ function run_tests {
 	done
 
 	wait
+
+	rm -f ${outfile}
 
 	for file in /usr1/${USER}/profiling_results/${data}/*hdf5
 	do
