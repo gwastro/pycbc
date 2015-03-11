@@ -47,7 +47,8 @@ def correlate(x, y, z):
 class MatchedFilterControl(object):
     def __init__(self, low_frequency_cutoff, high_frequency_cutoff, 
                 snr_threshold, tlen, delta_f, dtype, downsample_factor=1, 
-                upsample_threshold=1, upsample_method='pruned_fft'):
+                upsample_threshold=1, upsample_method='pruned_fft',
+                gpu_callback_method='none'):
         """ Create a matched filter engine.
 
         Parameters
@@ -76,6 +77,7 @@ class MatchedFilterControl(object):
         self.snr_threshold = snr_threshold    
         self.flow = low_frequency_cutoff
         self.fhigh = high_frequency_cutoff    
+        self.gpu_callback_method = gpu_callback_method
                 
         if downsample_factor == 1:
             self.matched_filter_and_cluster = self.full_matched_filter_and_cluster
@@ -139,13 +141,22 @@ class MatchedFilterControl(object):
         """
         norm = (4.0 * stilde.delta_f) / sqrt(template_norm)
         kmin, kmax = get_cutoff_indices(self.flow, self.fhigh, stilde.delta_f, self.tlen)   
-                   
-        correlate(htilde[kmin:kmax], stilde[kmin:kmax], self.corr_mem[kmin:kmax])  
+             
+        if self.gpu_callback_method == "none":  
+            correlate(htilde[kmin:kmax], stilde[kmin:kmax], self.corr_mem[kmin:kmax])  
+            ifft(self.corr_mem, self.snr_mem)
+            
+        elif self.gpu_callback_method == "fused_correlate":
+            from pycbc.fft.fft_callback import c2c_correlate_ifft          
+            c2c_correlate_ifft(htilde, stilde, self.snr_mem)
+            
+        elif self.gpu_callback_method == "fused_half_correlate":
+            from pycbc.fft.fft_callback import c2c_half_correlate_ifft          
+            c2c_half_correlate_ifft(htilde, stilde, self.snr_mem)  
         
-        #from pycbc.fft.fft_callback import c2c_ifft              
-        #c2c_ifft(self.corr_mem, self.snr_mem)
+        else:
+            raise ValueError("Invalid callback type %s" % self.gpu_callback_method)        
         
-        ifft(self.corr_mem, self.snr_mem)
         snrv, idx = events.threshold_and_cluster(self.snr_mem[stilde.analyze], self.snr_threshold / norm, window)            
 
         if len(idx) == 0:
