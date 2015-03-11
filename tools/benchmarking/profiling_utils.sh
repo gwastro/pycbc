@@ -88,7 +88,45 @@ function run_pycbc {
 	#--fftw-input-float-wisdom-file ${WISDOM}
 
 	$CMD &
-	echo "PID: " $!
+}
+
+
+function verify_args {
+	for key in cluster-method cluster-window bank-file approximant gps-start-time gps-end-time snr-threshold strain-high-pass chisq-bins psd-inverse-length psd-segment-stride psd-segment-length psd-estimation segment-length egment-start-pad segment-end-pad low-frequency-cutoff pad-data sample-rate order frame-files channel-name output-format processing-scheme
+	do
+		if [ "${args["$key"]}" == "" ]
+		then
+			echo "Configuration is missing required argument $key"
+			exit 0
+		fi
+	done
+}
+
+
+function parse_args {
+	in_f=$1
+
+	for line in `cat $in_f | grep -v '^#' | sed 's+ +QZX+g'`
+	do
+		l2=`echo $line | sed 's+QZX+ +g'`
+		name=`echo $l2 | cut -f1 -d= | sed -e 's/^ *//' -e 's/ *$//'`
+		value=`echo $l2 | cut -f2- -d= | sed -e 's/^ *//' -e 's/ *$//'`
+
+		args["${name}"]="${value}"
+	done
+	
+	for line in $*
+	do
+		echo ${line} | grep -q =
+		if [ $? == 0 ]
+		then
+			l2=`echo $line | sed 's+QZX+ +g'`
+			name=`echo $l2 | cut -f1 -d= | sed -e 's/^ *//' -e 's/ *$//'`
+			value=`echo $l2 | cut -f2- -d= | sed -e 's/^ *//' -e 's/ *$//'`
+			args["${name}"]="${value}"
+		fi
+
+	done
 }
 
 
