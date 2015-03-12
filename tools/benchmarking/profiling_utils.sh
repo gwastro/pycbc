@@ -101,11 +101,14 @@ function run_pycbc {
 		CMD="${CMD} --fftw-input-float-wisdom-file ${args["wisdom"]}"
 	fi
 
-	# For testing the test script:
-	#echo $CMD
-	#touch /usr1/${USER}/profiling_results/${DATA}/test_${TASKSET}.hdf5
-	#sleep 5 &
-	$CMD &
+	if [ "${args["dryrun"]}" != "" ]
+	then
+		echo "$CMD &"
+		touch /usr1/${USER}/profiling_results/${DATA}/test_${TASKSET}.hdf5
+		sleep 1 &
+	else
+		$CMD &
+	fi
 }
 
 
@@ -201,6 +204,13 @@ function get_schemes {
 }
 
 
+function echo_if_dryrun {
+	if [ "${args["dryrun"]}" != "" ]
+	then
+		echo $1
+	fi
+}
+
 function run_tests {
 	data=$1
 	schemes=$2
@@ -210,18 +220,35 @@ function run_tests {
 	# Regen function caches, clean up previous runs
 	cachedir=`python -c 'import os ; import sys ; import tempfile ; _python_name =  "python%d%d_compiled" % tuple(sys.version_info[:2]) ; _tmp_dir = tempfile.gettempdir() ; _cache_dir_name = repr(os.getuid()) + "_" + _python_name ; _cache_dir_path = os.path.join(_tmp_dir, _cache_dir_name); print _cache_dir_path' `
 
-	rm -rf /usr1/${USER}/${cachedir} /usr1/${USER}/profiling_results
+	rm -rf ${cachedir} /usr1/${USER}/profiling_results
 	mkdir -p /usr1/${USER}/profiling_results/${data}
 
-	run_pycbc ${data} mkl:1 1 no TMPLTBANK_SMALL.xml.gz 
-	wait
-	run_pycbc ${data} cuda  1 no TMPLTBANK_SMALL.xml.gz 
-	wait
-	run_pycbc ${data} cpu 1 no TMPLTBANK_SMALL.xml.gz 
-	wait
-	rm -f /usr1/${USER}/profiling_results/${data}/*
+
+	if [ "${args["regenerated_caches"]}" == "" ]
+	then
+		echo_if_dryrun '# Starting small runs to regenerate function caches'
+
+		run_pycbc ${data} mkl:1 1 no TMPLTBANK_SMALL.xml.gz 
+		wait
+		echo_if_dryrun 'wait'
+		run_pycbc ${data} cuda  1 no TMPLTBANK_SMALL.xml.gz 
+		wait
+		echo_if_dryrun 'wait'
+		run_pycbc ${data} cpu 1 no TMPLTBANK_SMALL.xml.gz 
+		wait
+		echo_if_dryrun 'wait'
+
+		rm -f /usr1/${USER}/profiling_results/${data}/*
+
+		args["regenerated_caches"]="true"
+
+	fi
 
 	start=`date +%s`
+
+	echo_if_dryrun ""
+	echo_if_dryrun "# Starting test runs for $data"
+	echo_if_dryrun ""
 
 	for scheme_and_taskset in `echo $schemes`
 	do
@@ -232,6 +259,7 @@ function run_tests {
 		profile=''
 	done
 
+	echo_if_dryrun 'wait'
 	wait
 
 	rm -f ${outfile}
