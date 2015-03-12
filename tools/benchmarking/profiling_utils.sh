@@ -138,7 +138,6 @@ function parse_args {
 	
 	for line in $*
 	do
-		echo $line
 		echo ${line} | grep -q =
 		if [ $? == 0 ]
 		then
