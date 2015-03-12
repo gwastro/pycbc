@@ -153,7 +153,15 @@ class MatchedFilterControl(object):
         elif self.gpu_callback_method == "fused_half_correlate":
             from pycbc.fft.fft_callback import c2c_half_correlate_ifft          
             c2c_half_correlate_ifft(htilde, stilde, self.snr_mem)  
-        
+
+        elif self.gpu_callback_method == "fused_half_correlate2":
+            from pycbc.fft.fft_callback import c2c_half_correlate_ifft2          
+            c2c_half_correlate_ifft2(htilde, stilde, self.snr_mem)
+
+        elif self.gpu_callback_method == "fused_half_correlate3":
+            from pycbc.fft.fft_callback import c2c_half_correlate_ifft3         
+            c2c_half_correlate_ifft3(htilde, stilde, self.snr_mem)
+
         else:
             raise ValueError("Invalid callback type %s" % self.gpu_callback_method)        
         
