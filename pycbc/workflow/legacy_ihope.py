@@ -431,9 +431,7 @@ class LegacyCohPTFTrigCluster(LegacyAnalysisExecutable):
 
         # Set input / output options
         trig_file = "%s/%s-INSPIRAL_%s-%s-%s.xml.gz" % (self.output_dir,
-                                                        self.ifos, tags[0],
-                                                        parent.segment[0],
-                                                        abs(parent.segment))
+                self.ifos, tags[0], parent.segment[0], abs(parent.segment))
         node.add_opt('--trig-file', trig_file)
         node.add_opt('--output-dir', self.output_dir)
 
@@ -447,7 +445,7 @@ class LegacyCohPTFTrigCluster(LegacyAnalysisExecutable):
         out_file.storage_path = None
         node._add_output(out_file)
 
-        return node
+        return node, trig_file
 
 
 class LegacyCohPTFSbvPlotter(LegacyAnalysisExecutable):
@@ -465,22 +463,28 @@ class LegacyCohPTFSbvPlotter(LegacyAnalysisExecutable):
         self.output_dir = out_dir
         self.num_threads = 1
 
-    def create_node(self, parent=None, seg_dir=None,
-                    tags=[]):
+    def create_node(self, parent=None, seg_dir=None, tags=[]):
         node = Node(self)
 
         if not parent:
             raise ValueError("%s must be supplied with trigger files"
                              % self.name)
 
+        if isinstance(parent, str) and tags[1]=="_unclustered":
+            node.add_opt('--trig-file', parent)
+            tags[1] = ""
+        else:
+            node._add_input(parent)
+            node.add_opt('--trig-file', '%s/%s' % (self.output_dir,
+                                                   parent.name))
+
         node.add_opt('--grb-name', self.cp.get('workflow', 'trigger-name'))
 
         # Set input / output options
         node.add_opt('--veto-directory', seg_dir)
-        node.add_opt('--trig-file', parent)
         node.add_opt('--segment-dir', seg_dir)
-        out_dir = "%s/output/%s" % (self.output_dir, tags)
-        node.add_opt('--output-dir', out_dir)
+        out_dir = "%s/output/%s/plots%s" % (self.output_dir, tags[0], tags[1])
+        node.add_opt('--output-path', out_dir)
 
         node.add_profile('condor', 'request_cpus', self.num_threads)
 
