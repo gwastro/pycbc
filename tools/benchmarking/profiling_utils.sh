@@ -219,12 +219,13 @@ function run_tests {
 	# Regen function caches, clean up previous runs
 	cachedir=`python -c 'import os ; import sys ; import tempfile ; _python_name =  "python%d%d_compiled" % tuple(sys.version_info[:2]) ; _tmp_dir = tempfile.gettempdir() ; _cache_dir_name = repr(os.getuid()) + "_" + _python_name ; _cache_dir_path = os.path.join(_tmp_dir, _cache_dir_name); print _cache_dir_path' `
 
-	rm -rf ${cachedir} /usr1/${USER}/profiling_results
+	rm -rf /usr1/${USER}/profiling_results
 	mkdir -p /usr1/${USER}/profiling_results/${data}
 
 
 	if [ "${args["regenerated_caches"]}" == "" ]
 	then
+		rm -rf ${cachedir}
 		echo_if_dryrun '# Starting small runs to regenerate function caches'
 
 		run_pycbc ${data} mkl:1 1 no TMPLTBANK_SMALL.xml.gz 
