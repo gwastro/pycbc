@@ -207,9 +207,12 @@ function run_tests {
 	outfile=$3
 	profile=$4
 
-	# Regen function caches
-	rm -rf /usr1/${USER}/*
+	# Regen function caches, clean up previous runs
+	cachedir=`python -c 'import os ; import sys ; import tempfile ; _python_name =  "python%d%d_compiled" % tuple(sys.version_info[:2]) ; _tmp_dir = tempfile.gettempdir() ; _cache_dir_name = repr(os.getuid()) + "_" + _python_name ; _cache_dir_path = os.path.join(_tmp_dir, _cache_dir_name); print _cache_dir_path' `
+
+	rm -rf /usr1/${USER}/${cachedir} /usr1/${USER}/profiling_results
 	mkdir -p /usr1/${USER}/profiling_results/${data}
+
 	run_pycbc ${data} mkl:1 1 no TMPLTBANK_SMALL.xml.gz 
 	wait
 	run_pycbc ${data} cuda  1 no TMPLTBANK_SMALL.xml.gz 
