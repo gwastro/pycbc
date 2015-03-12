@@ -1,38 +1,9 @@
 #!/usr/bin/python
 import pycbc, os, subprocess, ctypes
-
-preamble = """
-    #include <stdlib.h>
-    #include <stdio.h>
-    #include <string.h>
-    #include <math.h>
-    #include <cuda_runtime.h>
-    #include <cufft.h>
-    #include <cufftXt.h>
-
-    #define checkCudaErrors(val)  __checkCudaErrors__ ( (val), #val, __FILE__, __LINE__ )
-
-    template <typename T>
-    inline void __checkCudaErrors__(T code, const char *func, const char *file, int line) 
-    {
-        if (code) {
-            fprintf(stderr, "CUDA error at %s:%d code=%d \\"%s\\" \\n",
-                    file, line, (unsigned int)code, func);
-            cudaDeviceReset();
-            exit(EXIT_FAILURE);
-        }
-    }
-"""
-
-zero_callback = """
-    __device__ cufftComplex correlate(void* input, size_t offset, 
-                                void* caller_info, void* shared) {
-        return (cufftComplex){0, 0};
-    }
-"""
+from mako.template import Template
 
 full_corr = """
-    __device__ cufftComplex correlate(void* input, size_t offset, 
+    __device__ cufftComplex in_call(void* input, size_t offset, 
                                 void* caller_info, void* shared) {                                
         cufftComplex r;
         
@@ -47,7 +18,7 @@ full_corr = """
 """
 
 half_zero_corr = """
-    __device__ cufftComplex correlate(void* input, size_t offset, 
+    __device__ cufftComplex in_call(void* input, size_t offset, 
                                 void* caller_info, void* shared) {
         if (offset > %s)                        
             return (cufftComplex){0, 0};
@@ -73,8 +44,53 @@ copy_callback = """
     }
 """
 
-fftsrc = """
-    __device__ cufftCallbackLoadC input_callback = correlate; 
+copy_out = """
+    __device__ void out_call(void *out, size_t offset, cufftComplex element, 
+                             void *caller_info, void *shared){
+           ((cufftComplex*) out)[offset] = element;
+    }
+
+"""
+
+
+no_out = """
+    __device__ void out_call(void *out, size_t offset, cufftComplex element, 
+                             void *caller_info, void *shared){
+    }
+
+"""
+
+fftsrc = Template("""
+    #include <stdlib.h>
+    #include <stdio.h>
+    #include <string.h>
+    #include <math.h>
+    #include <cuda_runtime.h>
+    #include <cufft.h>
+    #include <cufftXt.h>
+
+    #define checkCudaErrors(val)  __checkCudaErrors__ ( (val), #val, __FILE__, __LINE__ )
+
+    template <typename T>
+    inline void __checkCudaErrors__(T code, const char *func, const char *file, int line) 
+    {
+        if (code) {
+            fprintf(stderr, "CUDA error at %s:%d code=%d \\"%s\\" \\n",
+                    file, line, (unsigned int)code, func);
+            cudaDeviceReset();
+            exit(EXIT_FAILURE);
+        }
+    }
+    
+    % if input_callback:
+        ${input_callback}
+        __device__ cufftCallbackLoadC input_callback = in_call; 
+    % endif
+    
+    % if output_callback:
+        ${output_callback}
+        __device__ cufftCallbackStoreC output_callback = out_call; 
+    % endif
     
     extern "C"  cufftHandle* create_plan(unsigned int size, void* other){
         cufftHandle* plan = new cufftHandle;
@@ -82,14 +98,24 @@ fftsrc = """
         cufftCreate(plan);
         checkCudaErrors(cufftMakePlan1d(*plan, size, CUFFT_C2C, 1, &work_size));
         
-        cufftCallbackLoadC h_input_callback;
         
-        checkCudaErrors(cudaMemcpyFromSymbol(&h_input_callback, input_callback, 
-                                             sizeof(h_input_callback)));     
-         
-        checkCudaErrors(cufftXtSetCallback(*plan, (void **) &h_input_callback,
+        % if input_callback:
+            cufftCallbackLoadC h_input_callback;
+            checkCudaErrors(cudaMemcpyFromSymbol(&h_input_callback, input_callback, 
+                                             sizeof(h_input_callback)));         
+            checkCudaErrors(cufftXtSetCallback(*plan, (void **) &h_input_callback,
                                           CUFFT_CB_LD_COMPLEX, 
                                           &other));
+        % endif
+        
+        % if output_callback:
+            cufftCallbackStoreC h_output_callback;                                         
+            checkCudaErrors(cudaMemcpyFromSymbol(&h_output_callback, output_callback, 
+                                                 sizeof(h_output_callback)));                                            
+            checkCudaErrors(cufftXtSetCallback(*plan, (void **) &h_output_callback,
+                                              CUFFT_CB_ST_COMPLEX, 
+                                              &other));
+        % endif
 
         return plan;
     }
@@ -97,7 +123,7 @@ fftsrc = """
     extern "C" void execute(cufftHandle* plan, cufftComplex* in, cufftComplex* out){   
          checkCudaErrors(cufftExecC2C(*plan, in, out, CUFFT_INVERSE));
     }    
-"""
+""")
 
 def compile(source, name):
     """ Compile the string source code into a shared object linked against
@@ -138,10 +164,10 @@ def compile(source, name):
     fhash.write(str(hash(source)))
     return lib_file
  
-def get_fn_plan(callback=copy_callback, name='pycbc_cufft'):
+def get_fn_plan(callback=None, out_callback=None, name='pycbc_cufft'):
     """ Get the IFFT execute and plan functions
     """
-    source = preamble + callback + fftsrc
+    source = fftsrc.render(input_callback=callback, output_callback=out_callback)
     path = compile(source, name)
     lib = ctypes.cdll.LoadLibrary(path)
     fn = lib.execute
@@ -166,7 +192,30 @@ def c2c_correlate_ifft(htilde, stilde, outvec):
 def c2c_half_correlate_ifft(htilde, stilde, outvec):
     key = 'cn'
     if key not in _plans:
-        fn, pfn = get_fn_plan(callback=half_zero_corr % (len(outvec) / 2, int(htilde.data.gpudata)))
+        fn, pfn = get_fn_plan(callback=half_zero_corr % (len(outvec) / 2, int(htilde.data.gpudata)),
+                              out_callback=None)
+        plan = pfn(len(outvec), int(htilde.data.gpudata))
+        _plans[key] = (fn, plan, int(htilde.data.gpudata))
+    fn, plan, h = _plans[key]
+    fn(plan, int(stilde.data.gpudata), int(outvec.data.gpudata))
+
+# This relies on the fact that we don't change the memory locations
+def c2c_half_correlate_ifft2(htilde, stilde, outvec):
+    key = 'cn'
+    if key not in _plans:
+        fn, pfn = get_fn_plan(callback=half_zero_corr % (len(outvec) / 2, int(htilde.data.gpudata)),
+                              out_callback=copy_out)
+        plan = pfn(len(outvec), int(htilde.data.gpudata))
+        _plans[key] = (fn, plan, int(htilde.data.gpudata))
+    fn, plan, h = _plans[key]
+    fn(plan, int(stilde.data.gpudata), int(outvec.data.gpudata))
+    
+    # This relies on the fact that we don't change the memory locations
+def c2c_half_correlate_ifft3(htilde, stilde, outvec):
+    key = 'cn'
+    if key not in _plans:
+        fn, pfn = get_fn_plan(callback=half_zero_corr % (len(outvec) / 2, int(htilde.data.gpudata)),
+                              out_callback=no_out)
         plan = pfn(len(outvec), int(htilde.data.gpudata))
         _plans[key] = (fn, plan, int(htilde.data.gpudata))
     fn, plan, h = _plans[key]
