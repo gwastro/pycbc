@@ -180,36 +180,67 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
     #trig_combiner_outs = trig_combiner_node.output_files
     #post_proc_outs.append(trig_combiner_outs)
 
-    # Set up trig_cluster jobs
+    # Initialise trig_cluster class
     trig_cluster_outs = FileList([])
     trig_cluster_jobs = trig_cluster_class(workflow.cp, "trig_cluster",
                                            ifo=ifos,
                                            out_dir=output_dir, tags=tags)
 
-    # Adding output files as pycbc.workflow.core.File objects
-    trig_name = cp.get('workflow', 'trigger-name')
-    cluster_out_tags = ['ALL_TIMES', 'OFFSOURCE', 'ONSOURCE']
+    # Initialise sbv_plotter class
+    sbv_plotter_outs = FileList([])
+    sbv_plotter_jobs = sbv_plotter_class(workflow.cp, "sbv_plotter", ifo=ifos,
+                                         out_dir=output_dir, tags=tags)
+
+    # Add trig_cluster jobs and their corresponding plotting jobs
+    trig_name = cp.get("workflow", "trigger-name")
+    cluster_out_tags = ["ALL_TIMES", "OFFSOURCE", "ONSOURCE"]
+
     for out_tag in cluster_out_tags:
-        #curr_file = File(ifos, 'INSPIRAL', trigger_files[-1].segment,
-        #                 directory=output_dir, extension='xml.gz',
-        #                 tags=["GRB%s_%s" % (trig_name, out_tag)])
-        #curr_file.PFN(curr_file.cache_entry.path, site="local")
-        trig_cluster_node = trig_cluster_jobs.create_node(trigger_files[-1],
+        trig_cluster_node, \
+        unclustered_trigs = trig_cluster_jobs.create_node(trigger_files[-1],
                 tags=["GRB%s_%s" % (trig_name, out_tag)])
         trig_cluster_outs.extend(trig_cluster_node.output_files)
-        workflow.add_node(trig_cluster_node)
-        dep = dax.Dependency(parent=trig_combiner_node._dax_node,
-                             child=trig_cluster_node._dax_node)
-        workflow._adag.addDependency(dep)
 
-    trials = int(cp.get('trig_combiner', 'num-trials'))
+        if out_tag != "ONSOURCE":
+            # Add memory requirememnt for jobs with potentially large files
+            trig_cluster_node.set_memory(1300)
+            workflow.add_node(trig_cluster_node)
+            dep = dax.Dependency(parent=trig_combiner_node._dax_node,
+                                 child=trig_cluster_node._dax_node)
+            workflow._adag.addDependency(dep)
+
+            # Add sbv_plotter job
+            parent = trig_cluster_node.output_files[0]
+            sbv_out_tags = [out_tag, "_clustered"]
+            sbv_plotter_node = sbv_plotter_jobs.create_node(parent,
+                                                            segment_dir,
+                                                            tags=sbv_out_tags)
+            workflow.add_node(sbv_plotter_node)
+
+            # Also add sbv_plotter job for unclustered triggers
+            parent = unclustered_trigs
+            sbv_out_tags = [out_tag, "_unclustered"]
+            sbv_plotter_node = sbv_plotter_jobs.create_node(parent,
+                                                            segment_dir,
+                                                            tags=sbv_out_tags)
+            sbv_plotter_node.set_memory(1300)
+            workflow.add_node(sbv_plotter_node)
+            dep = dax.Dependency(parent=trig_combiner_node._dax_node,
+                                 child=sbv_plotter_node._dax_node)
+            workflow._adag.addDependency(dep)
+        else:
+            workflow.add_node(trig_cluster_node)
+            dep = dax.Dependency(parent=trig_combiner_node._dax_node,
+                                 child=trig_cluster_node._dax_node)
+            workflow._adag.addDependency(dep)
+
+    # Add further trig_cluster jobs for trials
+    trials = int(cp.get("trig_combiner", "num-trials"))
     trial = 1
+
     while trial <= trials:
-        #curr_file = File(ifos, 'INSPIRAL', trigger_files[-1].segment,
-        #                 directory=output_dir, extension='xml.gz',
-        #                 tags=["GRB%s_OFFTRIAL_%d" % (trig_name, trial)])
-        #curr_file.PFN(curr_file.cache_entry.path, site="local")
-        trig_cluster_node = trig_cluster_jobs.create_node(trigger_files[-1],
+        trig_cluster_node, \
+        unclustered_trigs = trig_cluster_jobs.create_node(trigger_files[-1],
                 tags=["GRB%s_OFFTRIAL_%d" % (trig_name, trial)])
         trig_cluster_outs.extend(trig_cluster_node.output_files)
         workflow.add_node(trig_cluster_node)
@@ -219,13 +250,5 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
         trial += 1
 
     post_proc_outs.extend(trig_cluster_outs)
-    """
-    # Set up sbv_plotter jobs
-    sbv_plotter_outs = FileList([])
-    sbv_plotter_jobs = sbv_plotter_class(workflow.cp, "sbv_plotter", ifo=ifos,
-                                         out_dir=output_dir, tags=tags)
-    for tag in cluster_out_tags[:1]:
-        sbv_plotter_node = sbv_plotter_jobs.create_node(trig_cluster_outs[0],
-                                                        segment_dir)
-    """
+    
     return post_proc_outs
