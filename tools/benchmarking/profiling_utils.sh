@@ -51,14 +51,21 @@ function run_pycbc {
 		CMD="taskset -c ${TASKSET} operf python "
 	fi
 
-	BANK=TMPLTBANK.xml.gz
+	BANK=${args["template-bank"]}
 
 	if [ "${CUSTOM_BANK}" != "" ]
 	then
 		BANK=${CUSTOM_BANK}
 	fi
 
-	GPS_END_TIME=$(( $GPS_START_TIME + 2048 ))
+	# Calculate end time
+	segment_length=${args["segment-length"]}
+	segment_start_pad=${args["segment-start-pad"]}
+	segment_end_pad=${args["segment-end-pad"]}
+	num_segments=${args["num-segments"]}
+
+	GPS_END_TIME=$(( ${GPS_START_TIME}+(${segment_length}-${segment_start_pad}-${segment_end_pad})*${num_segments}+${segment_start_pad}+${segment_end_pad} ))
+ 
 	INSTALLED=`which pycbc_inspiral`
 	mkdir -p /usr1/${USER}/profiling_results/${DATA}
 
@@ -113,7 +120,7 @@ function run_pycbc {
 
 
 function verify_args {
-	for key in cluster-method cluster-window approximant snr-threshold strain-high-pass chisq-bins psd-inverse-length psd-segment-stride psd-segment-length psd-estimation segment-length segment-start-pad segment-end-pad low-frequency-cutoff pad-data sample-rate order channel-name processing-schemes tag
+	for key in cluster-method cluster-window approximant snr-threshold strain-high-pass chisq-bins psd-inverse-length psd-segment-stride psd-segment-length psd-estimation segment-length segment-start-pad segment-end-pad low-frequency-cutoff pad-data sample-rate order channel-name processing-schemes tag num-segments template-bank
 	do
 		if [ "${args["$key"]}" == "" ]
 		then
