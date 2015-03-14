@@ -9,7 +9,7 @@ function run_pycbc {
 
 	case ${DATA} in
 	clean)
-		GPS_START_TIME=970910772
+		GPS_START_TIME=970910372
 		;;
 	loud)
 		GPS_START_TIME=962784401
@@ -67,7 +67,8 @@ function run_pycbc {
 	GPS_END_TIME=$(( ${GPS_START_TIME}+(${segment_length}-${segment_start_pad}-${segment_end_pad})*${num_segments}+${segment_start_pad}+${segment_end_pad} ))
  
 	INSTALLED=`which pycbc_inspiral`
-	mkdir -p /usr1/${USER}/profiling_results/${DATA}
+	profile_root=`python -c 'import tempfile ; print tempfile.gettempdir()'`
+	mkdir -p ${profile_root}/profiling_results/${DATA}
 
 	CMD="${CMD} ${INSTALLED} "
 	CMD="${CMD} --cluster-method ${args["cluster-method"]}"
@@ -92,7 +93,7 @@ function run_pycbc {
 	CMD="${CMD} --order ${args["order"]} "
 	CMD="${CMD} --frame-files ${DATA}/*.gwf "
 	CMD="${CMD} --channel-name ${args["channel-name"]} "
-	CMD="${CMD} --output /usr1/${USER}/profiling_results/${DATA}/test_${TASKSET}.hdf5  "
+	CMD="${CMD} --output ${profile_root}/profiling_results/${DATA}/test_${TASKSET}.hdf5  "
 	CMD="${CMD} --processing-scheme ${SCHEME} "
 
 	if [ "${DEVICE}" != "" ]
@@ -111,7 +112,7 @@ function run_pycbc {
 	if [ "${args["dryrun"]}" != "" ]
 	then
 		echo "$CMD &"
-		touch /usr1/${USER}/profiling_results/${DATA}/test_${TASKSET}.hdf5
+		touch ${profile_root}/profiling_results/${DATA}/test_${TASKSET}.hdf5
 		sleep 1 &
 	else
 		$CMD &
@@ -226,8 +227,10 @@ function run_tests {
 	# Regen function caches, clean up previous runs
 	cachedir=`python -c 'import os ; import sys ; import tempfile ; _python_name =  "python%d%d_compiled" % tuple(sys.version_info[:2]) ; _tmp_dir = tempfile.gettempdir() ; _cache_dir_name = repr(os.getuid()) + "_" + _python_name ; _cache_dir_path = os.path.join(_tmp_dir, _cache_dir_name); print _cache_dir_path' `
 
-	rm -rf /usr1/${USER}/profiling_results
-	mkdir -p /usr1/${USER}/profiling_results/${data}
+	profile_root=`python -c 'import tempfile ; print tempfile.gettempdir()'`
+
+	rm -rf ${profile_root}/profiling_results
+	mkdir -p ${profile_root}/profiling_results/${data}
 
 
 	if [ "${args["regenerated_caches"]}" == "" ]
@@ -245,7 +248,7 @@ function run_tests {
 		wait
 		echo_if_dryrun 'wait'
 
-		rm -f /usr1/${USER}/profiling_results/${data}/*
+		rm -f ${profile_root}/profiling_results/${data}/*
 
 		args["regenerated_caches"]="true"
 
@@ -271,7 +274,7 @@ function run_tests {
 
 	rm -f ${outfile}
 
-	for file in /usr1/${USER}/profiling_results/${data}/*hdf5
+	for file in ${profile_root}/profiling_results/${data}/*hdf5
 	do
 		end=`stat -c%Z ${file}`
 		echo $(( $end - $start )) >> $outfile
