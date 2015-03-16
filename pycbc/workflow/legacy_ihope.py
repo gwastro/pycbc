@@ -489,3 +489,71 @@ class LegacyCohPTFSbvPlotter(LegacyAnalysisExecutable):
 
         return node
 
+
+class LegacyCohPTFEfficiency(LegacyAnalysisExecutable):
+    """
+    The class responsible for setting up jobs for legacy coh_PTF_efficiency
+    executable.
+    """
+    current_retention_level = Executable.CRITICAL
+    def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
+                 out_dir=None, tags=[]):
+        super(LegacyCohPTFEfficiency, self).__init__(cp, name, universe,
+              ifo=ifo, out_dir=out_dir, tags=tags)
+        self.cp = cp
+        self.ifos = ifo
+        self.output_dir = out_dir
+        self.num_threads = 1
+
+    def create_node(self, parent=None, offsource_file=None, seg_dir=None,
+                    tags=[]):
+        node = Node(self)
+
+        if not parent:
+            raise ValueError("%s must be supplied with trigger files"
+                             % self.name)
+
+        node._add_input(parent)
+        node.add_opt('--onsource-file', '%s/%s' % (self.output_dir,
+                                                   parent.name))
+
+
+        # Set input / output options
+        node.add_opt('--offsource-file', '%s/%s' % (self.output_dir,
+                                                    offsource_file.name))
+        node.add_opt('--veto-directory', seg_dir)
+        node.add_opt('--segment-dir', seg_dir)
+        out_dir = "%s/output/%s/efficiency" % (self.output_dir, tags[0])
+        node.add_opt('--output-path', out_dir)
+
+        node.add_profile('condor', 'request_cpus', self.num_threads)
+
+        return node
+
+class LegacyCohPTFHtmlSummary(LegacyAnalysisExecutable):
+    """
+    The class responsible for setting up jobs for legacy coh_PTF_efficiency
+    executable.
+    """
+    current_retention_level = Executable.CRITICAL
+    def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
+                 out_dir=None, tags=[]):
+        super(LegacyCohPTFHtmlSummary, self).__init__(cp, name, universe,
+              ifo=ifo, out_dir=out_dir, tags=tags)
+        self.cp = cp
+        self.ifos = ifo
+        self.output_dir = out_dir
+        self.num_threads = 1
+
+    def create_node(self, parent=None, tags=[]):
+        node = Node(self)
+
+        node.add_opt('--ifo-tag', self.ifo)
+
+        # Set input / output options
+        node.add_opt('--output-path', "%s/outpu" % self.output_dir)
+
+        node.add_profile('condor', 'request_cpus', self.num_threads)
+
+        return node
+

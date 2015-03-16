@@ -38,7 +38,7 @@ import Pegasus.DAX3 as dax
 from glue import segments
 from pycbc.workflow.core import File, FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import select_generic_executable
-from pycbc.workflow.legacy_ihope import LegacyCohPTFTrigCombiner 
+#from pycbc.workflow.legacy_ihope import LegacyCohPTFTrigCombiner 
 
 def setup_coh_PTF_post_processing(workflow, trigger_files, injection_files,
                                   output_dir, segment_dir, run_dir=None,
@@ -145,29 +145,25 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
     # Set up needed exe classes
     trig_combiner_exe = os.path.basename(cp.get("executables",
                                                 "trig_combiner"))
-    trig_combiner_class = select_generic_executable(workflow,
-                                                    "trig_combiner")
+    trig_combiner_class = select_generic_executable(workflow, "trig_combiner")
 
-    trig_cluster_exe = os.path.basename(cp.get("executables",
-                                               "trig_cluster"))
-    trig_cluster_class = select_generic_executable(workflow,
-                                                   "trig_cluster")
+    trig_cluster_exe = os.path.basename(cp.get("executables", "trig_cluster"))
+    trig_cluster_class = select_generic_executable(workflow, "trig_cluster")
 
-    sbv_plotter_exe = os.path.basename(cp.get("executables",
-                                              "sbv_plotter"))
-    sbv_plotter_class = select_generic_executable(workflow,
-                                                  "sbv_plotter")
+    sbv_plotter_exe = os.path.basename(cp.get("executables", "sbv_plotter"))
+    sbv_plotter_class = select_generic_executable(workflow, "sbv_plotter")
+    
+    efficiency_exe = os.path.basename(cp.get("executables", "efficiency"))
+    efficiency_class = select_generic_executable(workflow, "efficiency")
     """
-    efficiency_exe = os.path.basename(cp.get("executables",
-                                             "efficiency"))
-    efficiency_class = select_generic_executable(workflow,
-                                                 "efficiency")
-
     horizon_dist_exe = os.path.basename(cp.get("executables",
                                                "horizon_dist"))
     horizon_dist_class = select_generic_executable(workflow,
                                                    "horizon_dist")
     """
+    html_summary_exe = os.path.basename(cp.get("executables", "html_summary"))
+    html_summary_class = select_generic_executable(workflow, "html_summary")
+
     # Set up trig_combiner job
     trig_combiner_jobs = trig_combiner_class(workflow.cp, "trig_combiner",
                                              ifo=ifos, 
@@ -190,6 +186,15 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
     sbv_plotter_outs = FileList([])
     sbv_plotter_jobs = sbv_plotter_class(workflow.cp, "sbv_plotter", ifo=ifos,
                                          out_dir=output_dir, tags=tags)
+
+    # Initialise efficiency class
+    efficiency_outs = FileList([])
+    efficiency_jobs = efficiency_class(workflow.cp, "efficiency", ifo=ifos,
+                                       out_dir=output_dir, tags=tags)
+
+    # Initialise html_summary class and set up job
+    html_summary_jobs = html_summary_class(workflow.cp, "html_summary", ifo=ifos,
+                                           out_dir=output_dir, tags=tags)
 
     # Add trig_cluster jobs and their corresponding plotting jobs
     trig_name = cp.get("workflow", "trigger-name")
@@ -217,6 +222,10 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
                                                             tags=sbv_out_tags)
             workflow.add_node(sbv_plotter_node)
 
+            if out_tag == "OFFSOURCE":
+                offsource_clustered = parent
+                off_node = sbv_plotter_node
+
             # Also add sbv_plotter job for unclustered triggers
             parent = unclustered_trigs
             sbv_out_tags = [out_tag, "_unclustered"]
@@ -234,6 +243,18 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
                                  child=trig_cluster_node._dax_node)
             workflow._adag.addDependency(dep)
 
+            # Add efficiency job for on/off
+            parent = trig_cluster_node.output_files[0]
+            efficiency_tag = [out_tag]
+            efficiency_node = efficiency_jobs.create_node(parent,
+                                                          offsource_clustered,
+                                                          segment_dir,
+                                                          tags=efficiency_tag)
+            workflow.add_node(efficiency_node)
+            dep = dax.Dependency(parent=off_node._dax_node,
+                                 child=efficiency_node._dax_node)
+            workflow._adag.addDependency(dep)
+
     # Add further trig_cluster jobs for trials
     trials = int(cp.get("trig_combiner", "num-trials"))
     trial = 1
@@ -247,8 +268,33 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
         dep = dax.Dependency(parent=trig_combiner_node._dax_node,
                              child=trig_cluster_node._dax_node)
         workflow._adag.addDependency(dep)
+
+        # Add efficiency job
+        parent = trig_cluster_node.output_files[0]
+        efficiency_tag = ["OFFTRIAL_%d" % trial]
+        efficiency_node = efficiency_jobs.create_node(parent,
+                                                      offsource_clustered,
+                                                      segment_dir,
+                                                      tags=efficiency_tag)
+        workflow.add_node(efficiency_node)
+        dep = dax.Dependency(parent=off_node._dax_node,
+                             child=efficiency_node._dax_node)
+        workflow._adag.addDependency(dep)
+
         trial += 1
 
+    # Initialise html_summary class and set up job
+    #FIXME: We may want this job to run even if some jobs fail
+    """
+    html_summary_jobs = html_summary_class(workflow.cp, "html_summary", ifo=ifos,
+                                           out_dir=output_dir, tags=tags)
+    html_summary_node = html_summary_jobs.create_node(trigger_xml)
+    workflow.add_node(html_summary_node)
+    dep = dax.Dependency(parent=trig_combiner_node._dax_node,
+                         child=html_summary_node._dax_node)
+    workflow._adag.addDependency(dep)
+    """
+
     post_proc_outs.extend(trig_cluster_outs)
-    
+
     return post_proc_outs
