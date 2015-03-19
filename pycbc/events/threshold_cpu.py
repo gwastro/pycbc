@@ -25,6 +25,7 @@ import numpy
 import events, pycbc
 from scipy.weave import inline
 from .simd_threshold import thresh_cluster_support, ThreshClusterObject, default_segsize
+from .events import _BaseThresholdCluster
 
 if pycbc.HAVE_OMP:
     omp_libs = ['gomp']
@@ -121,3 +122,38 @@ def threshold_and_cluster(series, threshold, window):
     else:
         return numpy.array([], dtype = numpy.complex64), numpy.array([], dtype = numpy.uint32)
     
+def CPUThresholdCluster(_BaseThresholdCluster):
+    def __init__(self, series, threshold, window):
+        self.series = numpy.array(series.data, copy = False)
+        self.slen = len(series)
+        self.threshold = threshold
+        self.window = window
+        self.outlen = len(series)/window
+        self.outv = numpy.zeros(self.outlen, numpy.complex64)
+        self.outl = numpy.zeros(self.outlen, numpy.uint32)
+        self.segsize = default_segsize
+        self.code = """
+             return_val = parallel_thresh_cluster(series, (uint32_t) slen, values, locs, 
+                                         (float) threshold, (uint32_t) window, (uint32_t) segsize);
+              """
+        self.support = thresh_cluster_support
+
+    def threshold_and_cluster(self):
+        series = self.series
+        slen = self.slen
+        values = self.outv
+        locs = self.outl
+        threshold = self.threshold
+        window = self.window
+        segsize = self.segsize
+        self.count = inline(self.code, ['series', 'slen', 'values', 'locs', 'threshold', 'window', 'segsize'],
+                            extra_compile_args = ['-march=native -O3 -w'] + omp_flags,
+                            support_code = self.support, libraries = omp_libs,
+                            auto_downcast = 1)
+        if self.count > 0:
+            return values[0:self.count], locs[0:self.count]
+        else:
+            return numpy.array([], dtype = numpy.complex64), numpy.array([], dtype = numpy.uint32)
+
+def _threshold_cluster_factory(series, threshold, window):
+    return CPUThresholdCluster
