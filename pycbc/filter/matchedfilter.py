@@ -43,6 +43,50 @@ BACKEND_PREFIX="pycbc.filter.matchedfilter_"
 def correlate(x, y, z):
     pass
 
+@pycbc.scheme.schemed(BACKEND_PREFIX)
+def _correlate_factory(x, y, z):
+    pass
+
+class Correlator(object):
+    """ Create a correlator engine
+
+    Parameters
+    ---------
+    x : complex64
+      Input pycbc.types.Array (or subclass); it will be conjugated
+    y : complex64
+      Input pycbc.types.Array (or subclass); it will not be conjugated
+    z : complex64
+      Output pycbc.types.Array (or subclass).
+      It will contain conj(x) * y, element by element
+
+    The addresses in memory of the data of all three parameter vectors
+    must be the same modulo pycbc.PYCBC_ALIGNMENT
+    """
+    def __new__(cls, *args, **kwargs):
+        real_cls = _correlate_factory(*args, **kwargs)
+        return real_cls(*args, **kwargs)
+
+# The class below should serve as the parent for all schemed classes.
+# The intention is that this class serves simply as the location for
+# all documentation of the class and its methods, though that is not
+# yet implemented.  Perhaps something along the lines of:
+#
+#    http://stackoverflow.com/questions/2025562/inherit-docstrings-in-python-class-inheritance
+#
+# will work? Is there a better way?
+class _BaseCorrelator(object):
+    def correlate(self):
+        """
+        Compute the correlation of the vectors specified at object
+        instantiation, writing into the output vector given when the
+        object was instantiated. The intention is that this method
+        should be called many times, with the contents of those vectors
+        changing between invocations, but not their locations in memory
+        or length.
+        """
+        pass
+
 
 class MatchedFilterControl(object):
     def __init__(self, low_frequency_cutoff, high_frequency_cutoff, 
