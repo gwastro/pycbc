@@ -23,7 +23,8 @@
 #
 import numpy, pycbc
 from scipy.weave import inline
-from .simd_correlate import correlate_parallel
+from .simd_correlate import correlate_parallel, default_segsize, corr_parallel_code, corr_support
+from .matchedfilter import _BaseCorrelator
 
 if pycbc.HAVE_OMP:
     omp_libs = ['gomp']
@@ -77,3 +78,29 @@ def correlate_inline(x, y, z):
     
 #correlate = correlate_inline
 correlate = correlate_parallel   
+
+class CPUCorrelator(_BaseCorrelator):
+    def __init__(self, x, y, z):
+        self.xnp = numpy.array(x.data, copy = False)
+        self.ynp = numpy.array(y.data, copy = False)
+        self.znp = numpy.array(z.data, copy = False)
+        self.arrlen = len(self.xnp)
+        self.code = corr_parallel_code
+        self.support = corr_support
+        self.segsize = default_segsize
+
+    def correlate(self):
+        htilde = self.xnp
+        stilde = self.ynp
+        qtilde = self.znp
+        arrlen = self.arrlen
+        segsize = self.segsize
+        inline(self.code, ['htilde', 'stilde', 'qtilde', 'arrlen', 'segsize'],
+               extra_compile_args = ['-march=native -O3 -w'] + omp_flags, libraries = omp_libs,
+               #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],
+               #extra_compile_args = ['-msse3 -O3 -w'],
+               support_code = self.support, auto_downcast = 1)
+ 
+        
+def _correlate_factory(x, y, z):
+    return CPUCorrelator
