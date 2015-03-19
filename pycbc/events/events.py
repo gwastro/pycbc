@@ -48,6 +48,50 @@ def threshold_and_cluster(series, threshold, window):
 def batched_threshold_and_cluster(series, threshold, window):
     """Return list of values and indices values over threshold in series.
     """
+@schemed("pycbc.events.threshold_")
+def _threshold_cluster_factory(series, threshold, window):
+    pass
+
+class ThresholdCluster(series, threshold, window):
+    """Create a threshold and cluster engine
+
+    Parameters
+    ---------
+    series : complex64
+      Input pycbc.types.Array (or subclass); it will be searched for
+      points above threshold that are then clustered
+    y : float32
+      Input pycbc.types.Array (or subclass); it will not be conjugated
+    z : int
+      Size in samples of the window over which to cluster
+    """
+    def __new__(cls, *args, **kwargs):
+        real_cls = _threshold_cluster_factory(*args, **kwargs)
+        return real_cls(*args, **kwargs)
+
+# The class below should serve as the parent for all schemed classes.
+# The intention is that this class serves simply as the location for
+# all documentation of the class and its methods, though that is not
+# yet implemented.  Perhaps something along the lines of:
+#
+#    http://stackoverflow.com/questions/2025562/inherit-docstrings-in-python-class-inheritance
+#
+# will work? Is there a better way?
+class _BaseThresholdCluster(series, threshold, window):
+    def threshold_and_cluster(self):
+        """
+        Threshold and cluster the memory specified at instantiation with the
+        threshold specified at creation and the window size specified at creation.
+
+        Returns:
+        --------
+        event_vals : complex64
+          Numpy array, complex values of the clustered events
+        event_locs : uint32
+          Numpy array, indices into series of location of events          
+        """
+        pass
+
 
 def fc_cluster_over_window_fast(times, values, window_length):
     """ Reduce the events by clustering over a window using
