@@ -122,11 +122,10 @@ def threshold_and_cluster(series, threshold, window):
     else:
         return numpy.array([], dtype = numpy.complex64), numpy.array([], dtype = numpy.uint32)
     
-def CPUThresholdCluster(_BaseThresholdCluster):
-    def __init__(self, series, threshold, window):
-        self.series = numpy.array(series.data, copy = False)
+class CPUThresholdCluster(_BaseThresholdCluster):
+    def __init__(self, series, window):
+        self.series = series
         self.slen = len(series)
-        self.threshold = threshold
         self.window = window
         self.outlen = len(series)/window
         self.outv = numpy.zeros(self.outlen, numpy.complex64)
