@@ -75,7 +75,7 @@ class ThresholdCluster(object):
 #    http://stackoverflow.com/questions/2025562/inherit-docstrings-in-python-class-inheritance
 #
 # will work? Is there a better way?
-class _BaseThresholdCluster(series, window):
+class _BaseThresholdCluster(object):
     def threshold_and_cluster(self, threshold):
         """
         Threshold and cluster the memory specified at instantiation with the
