@@ -97,10 +97,10 @@ class CPUCorrelator(_BaseCorrelator):
         arrlen = self.arrlen
         segsize = self.segsize
         inline(self.code, ['htilde', 'stilde', 'qtilde', 'arrlen', 'segsize'],
-               extra_compile_args = ['-march=native -O3 -w'] + omp_flags, libraries = omp_libs,
-               #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],
-               #extra_compile_args = ['-msse3 -O3 -w'],
-               support_code = self.support, auto_downcast = 1)
+               extra_compile_args = ['-march=native -O3 -w'] + omp_flags,
+               #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'] + omp_flags,
+               #extra_compile_args = ['-msse3 -O3 -w'] + omp_flags,
+               libraries = omp_libs, support_code = self.support, auto_downcast = 1)
  
         
 def _correlate_factory(x, y, z):

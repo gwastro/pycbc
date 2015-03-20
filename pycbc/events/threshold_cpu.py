@@ -146,6 +146,8 @@ class CPUThresholdCluster(_BaseThresholdCluster):
         segsize = self.segsize
         self.count = inline(self.code, ['series', 'slen', 'values', 'locs', 'threshold', 'window', 'segsize'],
                             extra_compile_args = ['-march=native -O3 -w'] + omp_flags,
+                            #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'] + omp_flags,
+                            #extra_compile_args = ['-msse3 -O3 -w'] + omp_flags,
                             support_code = self.support, libraries = omp_libs,
                             auto_downcast = 1)
         if self.count > 0:
