@@ -1016,5 +1016,5 @@ class EventManagerMultiDet(EventManager):
 
 __all__ = ['threshold_and_cluster', 'newsnr', 'batched_threshold_and_cluster',
            'findchirp_cluster_over_window', 'fc_cluster_over_window_fast',
-           'threshold', 'cluster_reduce',
+           'threshold', 'cluster_reduce', 'ThresholdCluster',
            'EventManager', 'EventManagerMultiDet']

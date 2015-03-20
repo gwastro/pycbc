@@ -25,6 +25,7 @@ import numpy, pycbc
 from scipy.weave import inline
 from .simd_correlate import correlate_parallel, default_segsize, corr_parallel_code, corr_support
 from .matchedfilter import _BaseCorrelator
+import sys
 
 if pycbc.HAVE_OMP:
     omp_libs = ['gomp']
@@ -81,18 +82,18 @@ correlate = correlate_parallel
 
 class CPUCorrelator(_BaseCorrelator):
     def __init__(self, x, y, z):
-        self.xnp = numpy.array(x.data, copy = False)
-        self.ynp = numpy.array(y.data, copy = False)
-        self.znp = numpy.array(z.data, copy = False)
-        self.arrlen = len(self.xnp)
+        self.x = x
+        self.y = y
+        self.z = z
+        self.arrlen = len(self.x)
         self.code = corr_parallel_code
         self.support = corr_support
         self.segsize = default_segsize
 
     def correlate(self):
-        htilde = self.xnp
-        stilde = self.ynp
-        qtilde = self.znp
+        htilde = self.x
+        stilde = self.y
+        qtilde = self.z
         arrlen = self.arrlen
         segsize = self.segsize
         inline(self.code, ['htilde', 'stilde', 'qtilde', 'arrlen', 'segsize'],
