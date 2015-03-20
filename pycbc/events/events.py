@@ -52,7 +52,7 @@ def batched_threshold_and_cluster(series, threshold, window):
 def _threshold_cluster_factory(series, window):
     pass
 
-class ThresholdCluster(series, window):
+class ThresholdCluster(object):
     """Create a threshold and cluster engine
 
     Parameters
