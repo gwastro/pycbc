@@ -49,10 +49,10 @@ def batched_threshold_and_cluster(series, threshold, window):
     """Return list of values and indices values over threshold in series.
     """
 @schemed("pycbc.events.threshold_")
-def _threshold_cluster_factory(series, threshold, window):
+def _threshold_cluster_factory(series, window):
     pass
 
-class ThresholdCluster(series, threshold, window):
+class ThresholdCluster(series, window):
     """Create a threshold and cluster engine
 
     Parameters
@@ -60,9 +60,7 @@ class ThresholdCluster(series, threshold, window):
     series : complex64
       Input pycbc.types.Array (or subclass); it will be searched for
       points above threshold that are then clustered
-    y : float32
-      Input pycbc.types.Array (or subclass); it will not be conjugated
-    z : int
+    window : int
       Size in samples of the window over which to cluster
     """
     def __new__(cls, *args, **kwargs):
@@ -77,11 +75,17 @@ class ThresholdCluster(series, threshold, window):
 #    http://stackoverflow.com/questions/2025562/inherit-docstrings-in-python-class-inheritance
 #
 # will work? Is there a better way?
-class _BaseThresholdCluster(series, threshold, window):
-    def threshold_and_cluster(self):
+class _BaseThresholdCluster(series, window):
+    def threshold_and_cluster(self, threshold):
         """
         Threshold and cluster the memory specified at instantiation with the
         threshold specified at creation and the window size specified at creation.
+
+        Parameters:
+        -----------
+        threshold : float32
+          The minimum absolute value of the series given at object initialization
+          to return when thresholding and clustering.
 
         Returns:
         --------
