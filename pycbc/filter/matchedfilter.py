@@ -136,7 +136,6 @@ class MatchedFilterControl(object):
             self.segments = segment_list
             # Assuming analysis time is constant across templates and segments, also
             # delta_f is constant across segments.
-            self.analyze = segment_list[0].analyze
             self.stilde_delta_f = segment_list[0].delta_f
             self.htilde = template_output
             self.kmin, self.kmax = get_cutoff_indices(self.flow, self.fhigh,
@@ -150,8 +149,11 @@ class MatchedFilterControl(object):
                                                    numpy.array(self.segments[i].data[self.corr_slice], copy = False),
                                                    self.corr_np))
             self.ifft = IFFT(self.corr_mem, self.snr_mem)
-            self.snr_np = numpy.array(self.snr_mem.data[self.analyze], copy = False)
-            self.threshold_and_clusterer = events.ThresholdCluster(self.snr_np, window)
+            self.threshold_and_clusterers = []
+            for i in range(0, len(self.segments)):
+                self.threshold_and_clusterers.append(events.ThresholdCluster(
+                        numpy.array(self.snr_mem.data[self.segments[i].analyze], copy=False),
+                        window))
 
         elif downsample_factor >= 1:
             self.matched_filter_and_cluster = self.heirarchical_matched_filter_and_cluster
@@ -206,34 +208,11 @@ class MatchedFilterControl(object):
         snrv : Array
             The snr values at the trigger locations.
         """
-        norm = (4.0 * stilde.delta_f) / sqrt(template_norm)
-        kmin, kmax = get_cutoff_indices(self.flow, self.fhigh, stilde.delta_f, self.tlen)   
-             
-        if self.gpu_callback_method == "none":  
-            correlate(htilde[kmin:kmax], stilde[kmin:kmax], self.corr_mem[kmin:kmax])  
-            ifft(self.corr_mem, self.snr_mem)
-            
-        elif self.gpu_callback_method == "fused_correlate":
-            from pycbc.fft.fft_callback import c2c_correlate_ifft          
-            c2c_correlate_ifft(htilde, stilde, self.snr_mem)
-            
-        elif self.gpu_callback_method == "fused_half_correlate":
-            from pycbc.fft.fft_callback import c2c_half_correlate_ifft          
-            c2c_half_correlate_ifft(htilde, stilde, self.snr_mem)  
-
-        elif self.gpu_callback_method == "fused_half_correlate2":
-            from pycbc.fft.fft_callback import c2c_half_correlate_ifft2          
-            c2c_half_correlate_ifft2(htilde, stilde, self.snr_mem)
-
-        elif self.gpu_callback_method == "fused_half_correlate3":
-            from pycbc.fft.fft_callback import c2c_half_correlate_ifft3         
-            c2c_half_correlate_ifft3(htilde, stilde, self.snr_mem)
-
-        else:
-            raise ValueError("Invalid callback type %s" % self.gpu_callback_method)        
-        
-        snrv, idx = events.threshold_and_cluster(self.snr_mem[stilde.analyze], self.snr_threshold / norm, window)            
-
+        norm = (4.0 * self.stilde_delta_f) / sqrt(template_norm)
+        self.correlators[segnum].correlate()
+        self.ifft.execute()
+        snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(self.snr_threshold / norm)
+         
         if len(idx) == 0:
             return [], [], [], [], [] 
                        
