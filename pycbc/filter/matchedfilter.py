@@ -89,10 +89,10 @@ class _BaseCorrelator(object):
 
 
 class MatchedFilterControl(object):
-    def __init__(self, low_frequency_cutoff, high_frequency_cutoff, 
-                snr_threshold, tlen, delta_f, dtype, downsample_factor=1, 
-                upsample_threshold=1, upsample_method='pruned_fft',
-                gpu_callback_method='none'):
+    def __init__(self, low_frequency_cutoff, high_frequency_cutoff, snr_threshold, tlen,
+                 delta_f, dtype, segment_list, template_output, window,
+                 downsample_factor=1, upsample_threshold=1, upsample_method='pruned_fft',
+                 gpu_callback_method='none'):
         """ Create a matched filter engine.
 
         Parameters
@@ -105,6 +105,12 @@ class MatchedFilterControl(object):
             the nyquist frequency.
         snr_threshold : float
             The minimum snr to return when filtering
+        segment_list : list
+            List of FrequencySeries that are the Fourier-transformed data segments
+        template_output : complex64
+            Array of memory given as the 'out' parameter to waveform.FilterBank
+        window : int
+            The size of the cluster window in samples.
         downsample_factor : {1, int}, optional
             The factor by which to reduce the sample rate when doing a heirarchical
             matched filter
@@ -126,7 +132,24 @@ class MatchedFilterControl(object):
         if downsample_factor == 1:
             self.matched_filter_and_cluster = self.full_matched_filter_and_cluster
             self.snr_mem = zeros(self.tlen, dtype=self.dtype)
-            self.corr_mem = zeros(self.tlen, dtype=self.dtype)           
+            self.corr_mem = zeros(self.tlen, dtype=self.dtype)
+            self.segments = segment_list
+            # Assuming analysis time is constant across templates and segments...
+            self.analyze = segment_list[0].analyze
+            self.htilde = template_output
+            self.kmin, self.kmax = get_cutoff_indices(self.flow, self.fhigh,
+                                                      segments[0].delta_f, self.tlen)   
+            self.corr_slice = slice(self.kmin, self.max)
+            self.corr_np = numpy.array(self.corr_mem.data[self.corr_slice], copy = False)
+            self.hcorr = numpy.array(self.htilde.data[self.corr_slice], copy = False)
+            self.correlators = []
+            for i in range(0, len(self.segments)):
+                self.correlators.append(Correlator(self.hcorr,
+                                                   numpy.array(segments[i].data[self.corr_slice], copy = False),
+                                                   self.corr_np))
+            self.snr_np = numpy.array(self.snr_mem.data[self.analyze], copy = False)
+            self.threshold_and_clusterer = events.ThresholdCluster(self.snr_np, window)
+
         elif downsample_factor >= 1:
             self.matched_filter_and_cluster = self.heirarchical_matched_filter_and_cluster
             self.downsample_factor = downsample_factor
@@ -139,7 +162,7 @@ class MatchedFilterControl(object):
                                               self.fhigh, self.delta_f, N_full)  
     
             self.kmin_red, _ = get_cutoff_indices(self.flow,
-                                              self.fhigh, self.delta_f, N_red)
+                                                  self.fhigh, self.delta_f, N_red)
             
             if self.kmax_full < N_red:
                 self.kmax_red = self.kmax_full
@@ -154,21 +177,18 @@ class MatchedFilterControl(object):
         else:
             raise ValueError("Invalid downsample factor")
               
-    def full_matched_filter_and_cluster(self, htilde, template_norm, stilde, window):
+    def full_matched_filter_and_cluster(self, segnum, template_norm):
         """ Return the complex snr and normalization. 
     
         Calculated the matched filter, threshold, and cluster. 
 
         Parameters
         ----------
-        htilde : FrequencySeries 
-            The template waveform. Must come from the FilterBank class.
+        segnum : int
+            Index into the list of segments at MatchedFilterControl construction
+            against which to filter.
         template_norm : float
             The htilde, template normalization factor.
-        stilde : FrequencySeries 
-            The strain data to be filtered.
-        window : int
-            The size of the cluster window in samples.
 
         Returns
         -------
@@ -184,33 +204,11 @@ class MatchedFilterControl(object):
             The snr values at the trigger locations.
         """
         norm = (4.0 * stilde.delta_f) / sqrt(template_norm)
-        kmin, kmax = get_cutoff_indices(self.flow, self.fhigh, stilde.delta_f, self.tlen)   
-             
-        if self.gpu_callback_method == "none":  
-            correlate(htilde[kmin:kmax], stilde[kmin:kmax], self.corr_mem[kmin:kmax])  
-            ifft(self.corr_mem, self.snr_mem)
-            
-        elif self.gpu_callback_method == "fused_correlate":
-            from pycbc.fft.fft_callback import c2c_correlate_ifft          
-            c2c_correlate_ifft(htilde, stilde, self.snr_mem)
-            
-        elif self.gpu_callback_method == "fused_half_correlate":
-            from pycbc.fft.fft_callback import c2c_half_correlate_ifft          
-            c2c_half_correlate_ifft(htilde, stilde, self.snr_mem)  
-
-        elif self.gpu_callback_method == "fused_half_correlate2":
-            from pycbc.fft.fft_callback import c2c_half_correlate_ifft2          
-            c2c_half_correlate_ifft2(htilde, stilde, self.snr_mem)
-
-        elif self.gpu_callback_method == "fused_half_correlate3":
-            from pycbc.fft.fft_callback import c2c_half_correlate_ifft3         
-            c2c_half_correlate_ifft3(htilde, stilde, self.snr_mem)
-
-        else:
-            raise ValueError("Invalid callback type %s" % self.gpu_callback_method)        
-        
-        snrv, idx = events.threshold_and_cluster(self.snr_mem[stilde.analyze], self.snr_threshold / norm, window)            
-
+        self.correlators[segnum].correlate()
+        #correlate(htilde[kmin:kmax], stilde[kmin:kmax], self.corr_mem[kmin:kmax])  
+        ifft(self.corr_mem, self.snr_mem)
+        snrv, idx = self.threshold_and_clusterer.threshold_and_cluster(self.snr_threshold / norm)
+        #snrv, idx = events.threshold_and_cluster(self.snr_mem[stilde.analyze], self.snr_threshold / norm, window)            
         if len(idx) == 0:
             return [], [], [], [], [] 
                        
