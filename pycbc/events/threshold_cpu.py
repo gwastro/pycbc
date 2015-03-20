@@ -138,12 +138,11 @@ def CPUThresholdCluster(_BaseThresholdCluster):
               """
         self.support = thresh_cluster_support
 
-    def threshold_and_cluster(self):
+    def threshold_and_cluster(self, threshold):
         series = self.series
         slen = self.slen
         values = self.outv
         locs = self.outl
-        threshold = self.threshold
         window = self.window
         segsize = self.segsize
         self.count = inline(self.code, ['series', 'slen', 'values', 'locs', 'threshold', 'window', 'segsize'],
@@ -155,5 +154,5 @@ def CPUThresholdCluster(_BaseThresholdCluster):
         else:
             return numpy.array([], dtype = numpy.complex64), numpy.array([], dtype = numpy.uint32)
 
-def _threshold_cluster_factory(series, threshold, window):
+def _threshold_cluster_factory(series, window):
     return CPUThresholdCluster
