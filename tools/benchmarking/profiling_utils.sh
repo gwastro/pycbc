@@ -158,6 +158,54 @@ function parse_args {
 	done
 }
 
+function one_per_core {
+	type=$1
+	schemes=''
+
+	cores_per_socket=`lscpu | grep Core\(s\) | cut -f2 -d:  | sed 's/ //g'`
+	sockets=`lscpu | grep Socket\(s\) | cut -f2 -d:  | sed 's/ //g'`
+
+	socket=0
+	core=0
+	cpu=0
+
+	while [ $socket -lt $sockets ]
+	do
+		core=0
+
+		while [ $core -lt $cores_per_socket ]
+		do
+			schemes="$schemes ${type}:1|${cpu}"
+			core=$(( $core + 1 ))
+			cpu=$(( $cpu + 1 ))
+		done
+
+		socket=$(( $socket + 1 ))
+	done
+
+	echo $schemes
+}
+
+function one_per_socket {
+	type=$1
+	schemes=''
+
+	cores_per_socket=`lscpu | grep Core\(s\) | cut -f2 -d:  | sed 's/ //g'`
+	sockets=`lscpu | grep Socket\(s\) | cut -f2 -d:  | sed 's/ //g'`
+
+	socket=0
+	core=0
+	cpu=0
+
+	while [ $socket -lt $sockets ]
+	do
+		schemes="$schemes ${type}:${cores_per_socket}|${cpu}-$(( ${cpu} + ${cores_per_socket} - 1)) "
+		cpu=$(( ${cpu} + ${cores_per_socket} ))
+		socket=$(( $socket + 1 ))
+	done
+
+	echo $schemes
+}
 
 function get_schemes {
 	num_cuda=$( [ "$1" == "" ] && echo 0 || echo $1 )
@@ -259,6 +307,18 @@ function run_tests {
 	echo_if_dryrun ""
 	echo_if_dryrun "# Starting test runs for $data"
 	echo_if_dryrun ""
+
+	if  `echo ${schemes} | grep -q one_per_core`
+	do
+		type=`echo ${schemes} | awk '{print $2}'`
+		schemes=`one_per_core ${type}`
+	done
+
+	if  `echo ${schemes} | grep -q one_per_socket`
+	do
+		type=`echo ${schemes} | awk '{print $2}'`
+		schemes=`one_per_socket ${type}`
+	done
 
 	for scheme_and_taskset in `echo $schemes`
 	do
