@@ -1,10 +1,10 @@
-from pycbc.types import zeros
+from pycbc.types import zeros, complex64, complex128
 import numpy as _np
 import ctypes
 import functools
 import pycbc.scheme as _scheme
 from pycbc.libutils import get_ctypes_library
-from pycbc.fft import _BaseFFT, _BaseIFFT
+from .core import _BaseFFT, _BaseIFFT
 
 # IMPORTANT NOTE TO PYCBC DEVELOPERS:
 # Because this module is loaded automatically when present, and because

@@ -16,9 +16,7 @@
 #  MA  02111-1307  USA
 
 import pycbc
-from .core import _list_available, _update_global_available
-from .core import _all_backends_list, _all_backends_dict
-from pycbc.scheme import CUDAScheme
+from .core import _list_available
 
 _backend_dict = {'cuda' : 'cufft',
                  'pyfft' : 'cuda_pyfft'}
@@ -29,15 +27,16 @@ _adict = {}
 
 if pycbc.HAVE_CUDA:
     _alist, _adict = _list_available(_backend_list,_backend_dict)
+    cuda_backend = 'cuda'
+else:
+    cuda_backend = None
 
-CUDAScheme.fft_backends_list = _alist
-CUDAScheme.fft_backends_dict = _adict
+def set_backend(backend_list):
+    global cuda_backend
+    for backend in backend_list:
+        if backend in _alist:
+            cuda_backend = backend
+            break
 
-_update_global_available(_alist,_adict,_all_backends_list,_all_backends_dict)
-
-# No need to keep temp variables around
-
-del _alist
-del _adict
-del _backend_list
-del _backend_dict
+def get_backend():
+    return _adict[cuda_backend]
