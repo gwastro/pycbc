@@ -43,16 +43,19 @@ MKLScheme.fft_backends_dict = _adict
 # No need to repeat update global available since it merely repeats
 # what we've already added
 
-# No need to keep temp variables around
+cpu_backend = 'fftw'
 
-del _alist
-del _adict
-del _backend_list
-del _backend_dict
+def _set_backend(backend):
+    global cpu_backend
+    cpu_backend = backend
 
-def _fft_factory(invec, outvec, nbatch):
-    
+def _fft_factory(invec, outvec, nbatch, size):
+    fftmod = _adict[cpu_backend]
+    cls = getattr(fftmod, 'FFT')
+    return cls
 
-class CPU_FFT(_BaseFFT):
-    def __new__(cls, *args, **kwargs):
-        
+def _ifft_factory(invec, outvec, nbatch, size):    
+    fftmod = _adict[cpu_backend]
+    cls = getattr(fftmod, 'IFFT')
+    return cls
+
