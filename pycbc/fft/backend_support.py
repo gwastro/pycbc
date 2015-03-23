@@ -76,7 +76,5 @@ for scheme_name in ["cpu", "mkl", "cuda", "opencl"]:
         _adict = getattr(mod, "_adict")
         _update_global_available(_alist, _adict, _all_backends_list,
                                  _all_backends_dict)
-    #except ImportError:
-    #    pass
-    except RuntimeError:
+    except ImportError:
         pass
