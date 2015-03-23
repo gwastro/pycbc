@@ -15,47 +15,14 @@
 #  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #  MA  02111-1307  USA
 
-from pycbc.fft import _list_available, _update_global_available
-from pycbc.fft import _all_backends_list, _all_backends_dict
-from pycbc.scheme import CPUScheme, MKLScheme
-
-_backend_dict = {'fftw' : 'fftw',
-                 'mkl' : 'mkl',
-                 'lal' : 'lalfft',
-                 'numpy' : 'npfft'}
-_backend_list = ['fftw','mkl','lal','numpy']
-
-_alist, _adict = _list_available(_backend_list,_backend_dict)
-
-CPUScheme.fft_backends_list = _alist
-CPUScheme.fft_backends_dict = _adict
-
-_update_global_available(_alist,_adict,_all_backends_list,_all_backends_dict)
-
-_backend_dict = {'mkl' : 'mkl'}
-_backend_list = ['mkl']
-
-_alist, _adict = _list_available(_backend_list,_backend_dict)
-
-MKLScheme.fft_backends_list = _alist
-MKLScheme.fft_backends_dict = _adict
-
-# No need to repeat update global available since it merely repeats
-# what we've already added
-
-cpu_backend = 'fftw'
-
-def _set_backend(backend):
-    global cpu_backend
-    cpu_backend = backend
+from .backend_support import get_backend
 
 def _fft_factory(invec, outvec, nbatch, size):
-    fftmod = _adict[cpu_backend]
+    fftmod = get_backend()
     cls = getattr(fftmod, 'FFT')
     return cls
 
 def _ifft_factory(invec, outvec, nbatch, size):    
-    fftmod = _adict[cpu_backend]
+    fftmod = get_backend()
     cls = getattr(fftmod, 'IFFT')
     return cls
-

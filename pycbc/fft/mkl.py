@@ -1,6 +1,6 @@
 import ctypes, functools, pycbc.libutils
 from pycbc.types import zeros
-from pycbc.fft import _BaseFFT, _BaseIFFT
+from .core import _BaseFFT, _BaseIFFT
 
 def memoize(obj):
     cache = obj.cache = {}
