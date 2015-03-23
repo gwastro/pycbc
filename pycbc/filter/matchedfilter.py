@@ -30,7 +30,7 @@ import logging
 from math import log, ceil, sqrt
 from pycbc.types import TimeSeries, FrequencySeries, zeros, Array, complex64
 from pycbc.types import complex_same_precision_as, real_same_precision_as
-from pycbc.fft import fft, ifft
+from pycbc.fft import fft, ifft, IFFT
 import pycbc.scheme
 from pycbc import events
 import pycbc
@@ -147,8 +147,9 @@ class MatchedFilterControl(object):
                 self.correlators.append(Correlator(self.hcorr,
                                                    numpy.array(segments[i].data[self.corr_slice], copy = False),
                                                    self.corr_np))
+            self.ifft = IFFT(self.corr_mem, self.snr_mem)
             self.snr_np = numpy.array(self.snr_mem.data[self.analyze], copy = False)
-            self.threshold_and_clusterer = events.ThresholdCluster(self.snr_np, window)
+            self.threshold_and_clusterer = events.ThresholdCluster(self.snr_np, window, scale = self.ifft.scale)
 
         elif downsample_factor >= 1:
             self.matched_filter_and_cluster = self.heirarchical_matched_filter_and_cluster
@@ -206,7 +207,8 @@ class MatchedFilterControl(object):
         norm = (4.0 * stilde.delta_f) / sqrt(template_norm)
         self.correlators[segnum].correlate()
         #correlate(htilde[kmin:kmax], stilde[kmin:kmax], self.corr_mem[kmin:kmax])  
-        ifft(self.corr_mem, self.snr_mem)
+        #ifft(self.corr_mem, self.snr_mem)
+        self.ifft.execute()
         snrv, idx = self.threshold_and_clusterer.threshold_and_cluster(self.snr_threshold / norm)
         #snrv, idx = events.threshold_and_cluster(self.snr_mem[stilde.analyze], self.snr_threshold / norm, window)            
         if len(idx) == 0:
