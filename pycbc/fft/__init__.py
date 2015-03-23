@@ -14,5 +14,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from .core import fft, ifft, FFT, IFFT
 from .parser_support import insert_fft_option_group, verify_fft_options, from_cli
+from .func_api import fft, ifft
+from .class_api import FFT, IFFT

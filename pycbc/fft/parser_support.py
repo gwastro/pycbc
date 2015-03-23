@@ -64,7 +64,7 @@ def insert_fft_option_group(parser):
     # argument expects a *list* of inputs, as indicated by the nargs='*'.
     fft_group.add_argument("--fft-backends",
                       help="Preference list of the FFT backends. "
-                           "Choices are: \n" + str(_all_backends_list),
+                           "Choices are: \n" + str(get_backend_names()),
                       nargs='*', default=[])
 
     for backend in get_backend_modules():
