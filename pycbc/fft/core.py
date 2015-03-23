@@ -34,7 +34,6 @@ from pycbc.types import TimeSeries as _TimeSeries
 from pycbc.types import FrequencySeries as _FrequencySeries
 from numpy import dtype
 from optparse import OptionGroup
-from .backend_support import get_backend
 
 # The following helper function is in this top-level module because it
 # is used by the scheme-dependent files to write their version of the
@@ -160,129 +159,8 @@ def _check_inv_args(invec, itype, outvec, otype, nbatch, size):
             if (olen/nbatch) != size:
                 raise ValueError("For C2R out-of-place IFFT, len(outvec) must be nbatch*size")
 
-
-def fft(invec, outvec):
-    """ Fourier transform from invec to outvec.
-
-    Perform a fourier transform. The type of transform is determined
-    by the dtype of invec and outvec.
-
-    Parameters
-    ----------
-    invec : TimeSeries or FrequencySeries
-        The input vector.
-    outvec : TimeSeries or FrequencySeries
-        The output.
-    """
-    prec, itype, otype = _check_fft_args(invec, outvec)
-    _check_fwd_args(invec, itype, outvec, otype, 1, None)
-
-    # The following line is where all the work is done:
-    backend = get_backend()
-    backend.fft(invec, outvec, prec, itype, otype)
-    # For a forward FFT, the length of the *input* vector is the length
-    # we should divide by, whether C2C or R2HC transform
-    if isinstance(invec, _TimeSeries):
-        outvec._epoch = invec._epoch
-        outvec._delta_f = 1.0/(invec._delta_t * len(invec))
-        outvec *= invec._delta_t
-    elif isinstance(invec, _FrequencySeries):
-        outvec._epoch = invec._epoch
-        outvec._delta_t = 1.0/(invec._delta_f * len(invec))
-        outvec *= invec._delta_f
-
-def ifft(invec, outvec):
-    """ Inverse fourier transform from invec to outvec.
-
-    Perform an inverse fourier transform. The type of transform is determined
-    by the dtype of invec and outvec.
-
-    Parameters
-    ----------
-    invec : TimeSeries or FrequencySeries
-        The input vector.
-    outvec : TimeSeries or FrequencySeries
-        The output.
-    """
-    prec, itype, otype = _check_fft_args(invec, outvec)
-    _check_inv_args(invec, itype, outvec, otype, 1, None)
-    thebackend = _get_backend(backends)
-
-    # The following line is where all the work is done:
-    backend = get_backend()
-    backend.ifft(invec, outvec, prec, itype, otype)
-    # For an inverse FFT, the length of the *output* vector is the length
-    # we should divide by, whether C2C or HC2R transform
-    if isinstance(invec, _TimeSeries):
-        outvec._epoch = invec._epoch
-        outvec._delta_f = 1.0/(invec._delta_t * len(outvec))
-        outvec *= invec._delta_t
-    elif isinstance(invec,_FrequencySeries):
-        outvec._epoch = invec._epoch
-        outvec._delta_t = 1.0/(invec._delta_f * len(outvec))
-        outvec *= invec._delta_f
-
 # The class-based approach requires the following:
 
-def _fft_factory(invec, outvec, nbatch=1, size=None):
-    backend = get_backend()
-    cls = getattr(backend, 'FFT')
-    return cls
-
-def _ifft_factory(invec, outvec, nbatch=1, size=None):
-    backend = get_backend()
-    cls = getattr(backend, 'IFFT')
-    return cls
-
-class FFT(object):
-    """ Create a forward FFT  engine
-
-    Parameters
-    ---------
-    invec : complex64 or float32
-      Input pycbc.types.Array (or subclass); its FFT will be computed
-    outvec : complex64 
-      Output pycbc.types.Array (or subclass); it will hold the FFT of invec
-    nbatch : int (default 1)
-      When not one, specifies that invec and outvec should each be interpreted
-      as nbatch distinct vectors. The total length of invec and outvec should
-      then be that appropriate to a single vector, multiplied by nbatch
-    size : int (default None)
-      When nbatch is not 1, this parameter gives the logical size of each
-      transform.  If nbatch is 1 (the default) this can be None, and the
-      logical size is the length of invec.
-
-    The addresses in memory of both vectors should be divisible by
-    pycbc.PYCBC_ALIGNMENT.
-    """
-    def __new__(cls, *args, **kwargs):
-        real_cls = _fft_factory(*args, **kwargs)
-        return real_cls(*args, **kwargs)
-
-class IFFT(object):
-    """ Create a reverse FFT  engine
-
-    Parameters
-    ---------
-    invec : complex64
-      Input pycbc.types.Array (or subclass); its IFFT will be computed
-    outvec : complex64 or float32 
-      Output pycbc.types.Array (or subclass); it will hold the IFFT of invec
-    nbatch : int (default 1)
-      When not one, specifies that invec and outvec should each be interpreted
-      as nbatch distinct vectors. The total length of invec and outvec should
-      then be that appropriate to a single vector, multiplied by nbatch
-    size : int (default None)
-      When nbatch is not 1, this parameter gives the logical size of each
-      transform.  If nbatch is 1 (the default) this can be None, and the
-      logical size is the length of outvec.
-
-    The addresses in memory of both vectors should be divisible by
-    pycbc.PYCBC_ALIGNMENT.
-    """
-    def __new__(cls, *args, **kwargs):
-        real_cls = _ifft_factory(*args, **kwargs)
-        return real_cls(*args, **kwargs)
 
 # The classes below should serve as the parent for all schemed classes.
 # In part, these classes should serve as the location for
@@ -387,7 +265,6 @@ class _BaseIFFT(object):
             self.outvec._epoch = self.invec._epoch
             self.outvec._delta_t = 1.0/(self.invec._delta_f * len(self.outvec))
             self.scale = self.invec._delta_f
-
 
     def execute(self):
         """
