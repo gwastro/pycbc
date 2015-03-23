@@ -105,7 +105,7 @@ import fft_opencl as _fft_opencl
 # facilitate this checking, we define dicts mapping the numpy dtype
 # to the corresponding precisions and types.
 
-def _check_fft_args(invec,outvec):
+def _check_fft_args(invec, outvec):
     if not isinstance(invec,_Array):
         raise TypeError("Input is not a PyCBC Array")
     if not isinstance(outvec,_Array):
@@ -137,30 +137,67 @@ def _check_fft_args(invec,outvec):
     otype = outvec.kind
     return [iprec,itype,otype]
 
-def fft(invec,outvec,backends=[]):
-    """ Fourier transform from invec to outvec.
-
-    Perform a fourier transform. The type of transform is determined
-    by the dtype of invec and outvec.
-
-    Parameters
-    ----------
-    invec : TimeSeries or FrequencySeries
-        The input vector.
-    outvec : TimeSeries or FrequencySeries
-        The output.
-    """
-    [prec,itype,otype] = _check_fft_args(invec,outvec)
+def _check_fwd_args(invec, itype, outvec, otype, nbatch, size):
+    ilen = len(invec)
+    olen = len(outvec)
+    if nbatch < 1:
+        raise ValueError("nbatch must be >= 1")
+    if (nbatch > 1) and size is not None:
+        raise ValueError("When nbatch > 1, size cannot be 'None'")
+    if size is None:
+        size = ilen
+    inplace = (invec.ptr == outvec.ptr)
+    if (ilen % nbatch) != 0:
+        raise ValueError("Input length must be divisible by nbatch")
+    if (olen % nbatch) != 0:
+        raise ValueError("Output length must be divisible by nbatch")
     if itype == 'complex' and otype == 'complex':
-        if len(invec) != len(outvec):
-            raise ValueError(
-                "Lengths of input and output vectors must agree")
+        if (ilen/nbatch) != size:
+            raise ValueError("For C2C FFT, len(invec) must be nbatch*size")
+        if (olen/nbatch) != size:
+            raise ValueError("For C2C FFT, len(outvec) must be nbatch*size")
     elif itype == 'real' and otype == 'complex':
-        if len(outvec) != (len(invec)/2+1):
-            raise ValueError(
-                "Output length of R2HC must be half input length plus one")
+        if (olen/nbatch) != (size/2 + 1):
+            raise ValueError("For R2C FFT, len(outvec) must be nbatch*(size/2 + 1)")
+        if inplace:
+            if (ilen/nbatch) != 2*(size/2 + 1):
+                raise ValueError("For R2C in-place FFT, len(invec) must be nbatch*2*(size/2+1)")
+        else:
+            if (ilen/nbatch) != size:
+                raise ValueError("For R2C out-of-place FFT, len(invec) must be nbatch*size")
     else:
         raise ValueError("Inconsistent dtypes for forward FFT")
+
+def _check_inv_args(invec, itype, outvec, otype, nbatch, size):
+    ilen = len(invec)
+    olen = len(outvec)
+    if nbatch < 1:
+        raise ValueError("nbatch must be >= 1")
+    if (nbatch > 1) and size is not None:
+        raise ValueError("When nbatch > 1, size cannot be 'None'")
+    if size is None:
+        size = olen
+    inplace = (invec.ptr == outvec.ptr)
+    if (ilen % nbatch) != 0:
+        raise ValueError("Input length must be divisible by nbatch")
+    if (olen % nbatch) != 0:
+        raise ValueError("Output length must be divisible by nbatch")
+    if itype == 'complex' and otype == 'complex':
+        if (ilen/nbatch) != size:
+            raise ValueError("For C2C IFFT, len(invec) must be nbatch*size")
+        if (olen/nbatch) != size:
+            raise ValueError("For C2C IFFT, len(outvec) must be nbatch*size")
+    elif itype == 'complex' and otype == 'real':
+        if (ilen/nbatch) != (size/2 + 1):
+            raise ValueError("For C2R IFFT, len(invec) must be nbatch*(size/2 + 1)")
+        if inplace:
+            if (olen/nbatch) != 2*(size/2 + 1):
+                raise ValueError("For C2R in-place IFFT, len(outvec) must be nbatch*2*(size/2+1)")
+        else:
+            if (olen/nbatch) != size:
+                raise ValueError("For C2R out-of-place IFFT, len(outvec) must be nbatch*size")
+
+def _get_backend(backends):
     backends_dict = pycbc.scheme.mgr.state.fft_backends_dict
     backends_list = pycbc.scheme.mgr.state.fft_backends_list
     if len(backends) > 0:
@@ -180,6 +217,25 @@ def fft(invec,outvec,backends=[]):
     else:
         # This will fail if the backends_list is empty, but then so it should
         thebackend = backends_dict[backends_list[0]]
+    return thebackend
+
+def fft(invec,outvec,backends=[]):
+    """ Fourier transform from invec to outvec.
+
+    Perform a fourier transform. The type of transform is determined
+    by the dtype of invec and outvec.
+
+    Parameters
+    ----------
+    invec : TimeSeries or FrequencySeries
+        The input vector.
+    outvec : TimeSeries or FrequencySeries
+        The output.
+    """
+    prec, itype, otype = _check_fft_args(invec, outvec)
+    _check_fwd_args(invec, itype, outvec, otype, 1, None)
+    thebackend = _get_backend(backends)
+
     # The following line is where all the work is done:
     thebackend.fft(invec,outvec,prec,itype,otype)
     # For a forward FFT, the length of the *input* vector is the length
@@ -206,36 +262,10 @@ def ifft(invec, outvec, backends=[]):
     outvec : TimeSeries or FrequencySeries
         The output.
     """
-    [prec,itype,otype] = _check_fft_args(invec,outvec)
-    if itype == 'complex' and otype == 'complex':
-        if len(invec) != len(outvec):
-            raise ValueError(
-                "Lengths of input and output vectors must agree")
-    elif itype == 'complex' and otype == 'real':
-        if len(invec) != (len(outvec)/2+1):
-            raise ValueError(
-                "Input length of R2HC@r must be half output length plus one")
-    else:
-        raise ValueError("Inconsistent dtypes for reverse FFT")
-    backends_dict = pycbc.scheme.mgr.state.fft_backends_dict
-    backends_list = pycbc.scheme.mgr.state.fft_backends_list
-    if len(backends) > 0:
-        for backend in backends:
-            if backend in backends_list:
-                thebackend = backends_dict[backend]
-                break
-        else:
-            raise RuntimeError("None of specified FFT backends available")
-    elif len(_default_backends_list) > 0:
-        for backend in _default_backends_list:
-            if backend in backends_list:
-                thebackend = backends_dict[backend]
-                break
-        else:
-            raise RuntimeError("None of the command-line specified backends available")
-    else:
-        # This will fail if the backends_list is empty, but then so it should
-        thebackend = backends_dict[backends_list[0]]
+    prec, itype, otype = _check_fft_args(invec, outvec)
+    _check_inv_args(invec, itype, outvec, otype, 1, None)
+    thebackend = _get_backend(backends)
+
     # The following line is where all the work is done:
     thebackend.ifft(invec,outvec,prec,itype,otype)
     # For an inverse FFT, the length of the *output* vector is the length
@@ -248,6 +278,168 @@ def ifft(invec, outvec, backends=[]):
         outvec._epoch = invec._epoch
         outvec._delta_t = 1.0/(invec._delta_f*len(outvec))
         outvec *= invec._delta_f
+
+# The class-based approach requires the following:
+BACKEND_PREFIX="pycbc.fft.fft_"
+
+@pycbc.scheme.schemed(BACKEND_PREFIX)
+def _set_backend(backend):
+    pass
+
+@pycbc.scheme.schemed(BACKEND_PREFIX)
+def _fft_factory(invec, outvec, nbatch, size):
+    pass
+
+@pycbc.scheme.schemed(BACKEND_PREFIX)
+def _ifft_factory(invec, outvec, nbatch, size):
+    pass
+
+class FFT(object):
+    """ Create a forward FFT  engine
+
+    Parameters
+    ---------
+    invec : complex64 or float32
+      Input pycbc.types.Array (or subclass); its FFT will be computed
+    outvec : complex64 
+      Output pycbc.types.Array (or subclass); it will hold the FFT of invec
+    nbatch : int (default 1)
+      When not one, specifies that invec and outvec should each be interpreted
+      as nbatch distinct vectors. The total length of invec and outvec should
+      then be that appropriate to a single vector, multiplied by nbatch
+    size : int (default None)
+      When nbatch is not 1, this parameter gives the logical size of each
+      transform.  If nbatch is 1 (the default) this can be None, and the
+      logical size is the length of invec.
+
+    The addresses in memory of both vectors should be divisible by
+    pycbc.PYCBC_ALIGNMENT.
+    """
+    def __new__(cls, *args, **kwargs):
+        real_cls = _fft_factory(*args, **kwargs)
+        return real_cls(*args, **kwargs)
+
+class IFFT(object):
+    """ Create a reverse FFT  engine
+
+    Parameters
+    ---------
+    invec : complex64
+      Input pycbc.types.Array (or subclass); its IFFT will be computed
+    outvec : complex64 or float32 
+      Output pycbc.types.Array (or subclass); it will hold the IFFT of invec
+    nbatch : int (default 1)
+      When not one, specifies that invec and outvec should each be interpreted
+      as nbatch distinct vectors. The total length of invec and outvec should
+      then be that appropriate to a single vector, multiplied by nbatch
+    size : int (default None)
+      When nbatch is not 1, this parameter gives the logical size of each
+      transform.  If nbatch is 1 (the default) this can be None, and the
+      logical size is the length of outvec.
+
+    The addresses in memory of both vectors should be divisible by
+    pycbc.PYCBC_ALIGNMENT.
+    """
+    def __new__(cls, *args, **kwargs):
+        real_cls = _ifft_factory(*args, **kwargs)
+        return real_cls(*args, **kwargs)
+
+# The classes below should serve as the parent for all schemed classes.
+# In part, these classes should serve as the location for
+# all documentation of the class and its methods, though that is not
+# yet implemented.  Perhaps something along the lines of:
+#
+#    http://stackoverflow.com/questions/2025562/inherit-docstrings-in-python-class-inheritance
+#
+# will work? Is there a better way?
+#
+# Unlike some other places within PyCBC, however, the __init__ method of these classes do
+# nontrivial work and hence should be called inside the __init__ method of all child classes,
+# before anything else.
+
+class _BaseFFT(object):
+    def __init__(self, invec, outvec, nbatch, size):
+        prec, itype, otype = _check_fft_args(invec, outvec)
+        _check_fwd_args(invec, itype, outvec, otype, nbatch, size)
+        self.forward = True
+        self.inplace = (self.invec.ptr == self.outvec.ptr)
+        self.invec = invec
+        self.outvec = outvec
+        self.nbatch = nbatch
+        if nbatch > 1:
+            self.size = size
+        else:
+            self.size = len(invec)
+        # Whether we are complex-to-complex or real-to-complex is determined
+        # by itype:
+        if itype == 'complex':
+            # Complex-to-complex case:
+            self.idist = self.size
+            self.odist = self.size
+        else:
+            # Real-to-complex case:
+            self.odist = (self.size/2 + 1)
+            if self.inplace:
+                self.idist = 2*(self.size/2 + 1)
+            else:
+                self.idist = self.size
+
+    def execute(self):
+        """
+        Compute the (forward) FFT of the input vector specified at object
+        instantiation, putting the output into the output vector specified
+        at objet instantiation. The intention is that this method should
+        be called many times, with the contents of the input vector
+        changing between invocations, but not the locations in memory or
+        length of either input or output vector.
+
+        *Unlike* the function based API, the class based API does NOT rescale
+        its output by the input vector's delta_t (when input is a TimeSeries)
+        or delta_f (when input is a FrequencySeries).
+        """
+        pass
+
+class _BaseIFFT(object):
+    def __init__(self, invec, outvec, nbatch, size):
+        prec, itype, otype = _check_fft_args(invec, outvec)
+        _check_inv_args(invec, itype, outvec, otype, nbatch, size)
+        self.forward = False
+        self.inplace = (self.invec.ptr == self.outvec.ptr)
+        self.invec = invec
+        self.outvec = outvec
+        self.nbatch = nbatch
+        if nbatch > 1:
+            self.size = size
+        else:
+            self.size = len(outvec)
+        # Whether we are complex-to-complex or complex-to-real is determined
+        # by otype:
+        if otype == 'complex':
+            # Complex-to-complex case:
+            self.idist = self.size
+            self.odist = self.size
+        else:
+            # Complex-to-real case:
+            self.idist = (self.size/2 + 1)
+            if self.inplace:
+                self.odist = 2*(self.size/2 + 1)
+            else:
+                self.odist = self.size
+
+    def execute(self):
+        """
+        Compute the (backward) FFT of the input vector specified at object
+        instantiation, putting the output into the output vector specified
+        at objet instantiation. The intention is that this method should
+        be called many times, with the contents of the input vector
+        changing between invocations, but not the locations in memory or
+        length of either input or output vector.
+
+        *Unlike* the function based API, the class based API does NOT rescale
+        its output by the input vector's delta_t (when input is a TimeSeries)
+        or delta_f (when input is a FrequencySeries).
+        """
+        pass
 
 # Next we add all of the machinery to set backends and their options
 # from the command line.
@@ -286,7 +478,6 @@ def insert_fft_option_group(parser):
 def verify_fft_options(opt, parser):
     """Parses the FFT options and verifies that they are
        reasonable.
-
 
     Parameters
     ----------
@@ -340,3 +531,16 @@ def from_cli(opt):
                 backends_dict[backend].from_cli(opt)
             except AttributeError:
                 pass
+
+    # There's lots of redundancy between the code already here in
+    # this function, and the code inside of the next call.  But
+    # then everything about our handling of schemes and backends
+    # needs to be cleaned up.
+    #
+    # The following call sets the scheme backend for whichever scheme
+    # is in effect when from_cli() is called; that should presumably
+    # be the scheme in which you expect the majority of the FFT
+    # computation to occur. Note that this *only* affects the backend
+    # used in class-based computations.
+    scheme_backend = _get_backend(opt.fft_backends)
+    _set_backend(scheme_backend)
