@@ -252,11 +252,11 @@ with ctx:
                     out = template_mem)
 
     for t_num, template in enumerate(bank):
-        event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq(psds[0]))
-        if opt.cluster_method == "window":
+        event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq(segments[0].psd))
+        #if opt.cluster_method == "window":
             # At present, moved above with class-based approach
             #cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
-        elif opt.cluster_method == "template":
+        if opt.cluster_method == "template":
             #cluster_window = int(template.chirp_length * gwstrain.sample_rate)
             raise ValueError("FIXME: template clustering not supported yet with optimizations!")
 
