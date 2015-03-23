@@ -384,6 +384,17 @@ class _BaseFFT(object):
             else:
                 self.idist = self.size
 
+        # For a forward FFT, the length of the *input* vector is the length
+        # we should divide by, whether C2C or R2HC transform
+        if isinstance(self.invec, _TimeSeries):
+            self.outvec._epoch = self.invec._epoch
+            self.outvec._delta_f = 1.0/(self.invec._delta_t * len(self.invec))
+            self.scale = self.invec._delta_t
+        elif isinstance(self.invec, _FrequencySeries):
+            self.outvec._epoch = self.invec._epoch
+            self.outvec._delta_t = 1.0/(self.invec._delta_f * len(self.invec))
+            self.scale = self.invec._delta_f
+
     def execute(self):
         """
         Compute the (forward) FFT of the input vector specified at object
@@ -425,6 +436,18 @@ class _BaseIFFT(object):
                 self.odist = 2*(self.size/2 + 1)
             else:
                 self.odist = self.size
+
+        # For an inverse FFT, the length of the *output* vector is the length
+        # we should divide by, whether C2C or HC2R transform
+        if isinstance(self.invec, _TimeSeries):
+            self.outvec._epoch = self.invec._epoch
+            self.outvec._delta_f = 1.0/(self.invec._delta_t * len(self.outvec))
+            self.scale = self.invec._delta_t
+        elif isinstance(self.invec, _FrequencySeries):
+            self.outvec._epoch = self.invec._epoch
+            self.outvec._delta_t = 1.0/(self.invec._delta_f * len(self.outvec))
+            self.scale = self.invec._delta_f
+
 
     def execute(self):
         """
