@@ -49,3 +49,10 @@ del _alist
 del _adict
 del _backend_list
 del _backend_dict
+
+def _fft_factory(invec, outvec, nbatch):
+    
+
+class CPU_FFT(_BaseFFT):
+    def __new__(cls, *args, **kwargs):
+        
