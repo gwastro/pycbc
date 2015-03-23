@@ -149,11 +149,16 @@ class MatchedFilterControl(object):
                                                    numpy.array(self.segments[i].data[self.corr_slice], copy = False),
                                                    self.corr_np))
             self.ifft = IFFT(self.corr_mem, self.snr_mem)
+<<<<<<< HEAD
             self.threshold_and_clusterers = []
             for i in range(0, len(self.segments)):
                 self.threshold_and_clusterers.append(events.ThresholdCluster(
                         numpy.array(self.snr_mem.data[self.segments[i].analyze], copy=False),
                         window))
+=======
+            self.snr_np = numpy.array(self.snr_mem.data[self.analyze], copy = False)
+            self.threshold_and_clusterer = events.ThresholdCluster(self.snr_np, window, scale = self.ifft.scale)
+>>>>>>> Modify FFT, MatchedFilterControl to use ifft.scale
 
         elif downsample_factor >= 1:
             self.matched_filter_and_cluster = self.heirarchical_matched_filter_and_cluster
@@ -210,9 +215,17 @@ class MatchedFilterControl(object):
         """
         norm = (4.0 * self.stilde_delta_f) / sqrt(template_norm)
         self.correlators[segnum].correlate()
+<<<<<<< HEAD
         self.ifft.execute()
         snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(self.snr_threshold / norm)
          
+=======
+        #correlate(htilde[kmin:kmax], stilde[kmin:kmax], self.corr_mem[kmin:kmax])  
+        #ifft(self.corr_mem, self.snr_mem)
+        self.ifft.execute()
+        snrv, idx = self.threshold_and_clusterer.threshold_and_cluster(self.snr_threshold / norm)
+        #snrv, idx = events.threshold_and_cluster(self.snr_mem[stilde.analyze], self.snr_threshold / norm, window)            
+>>>>>>> Modify FFT, MatchedFilterControl to use ifft.scale
         if len(idx) == 0:
             return [], [], [], [], [] 
                        

@@ -62,6 +62,8 @@ class ThresholdCluster(object):
       points above threshold that are then clustered
     window : int
       Size in samples of the window over which to cluster
+    scale : float (default 1.0)
+      Factor by which to scale all output triggers
     """
     def __new__(cls, *args, **kwargs):
         real_cls = _threshold_cluster_factory(*args, **kwargs)
