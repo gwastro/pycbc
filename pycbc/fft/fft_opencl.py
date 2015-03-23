@@ -16,8 +16,8 @@
 #  MA  02111-1307  USA
 
 import pycbc
-from pycbc.fft import _list_available, _update_global_available
-from pycbc.fft import _all_backends_list, _all_backends_dict
+from .core import _list_available, _update_global_available
+from .core import _all_backends_list, _all_backends_dict
 from pycbc.scheme import OpenCLScheme
 
 _backend_dict = {'pyfft' : 'cl_pyfft'}
