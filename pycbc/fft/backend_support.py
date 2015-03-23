@@ -74,7 +74,6 @@ for scheme_name in ["cpu", "mkl", "cuda", "opencl"]:
         mod = __import__('pycbc.fft.backend_' + scheme_name, fromlist = ['_alist', '_adict'])
         _alist = getattr(mod, "_alist")
         _adict = getattr(mod, "_adict")
-        print _alist, _adict
         _update_global_available(_alist, _adict, _all_backends_list,
                                  _all_backends_dict)
     #except ImportError:
