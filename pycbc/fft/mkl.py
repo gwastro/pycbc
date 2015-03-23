@@ -1,5 +1,6 @@
 import ctypes, functools, pycbc.libutils
 from pycbc.types import zeros
+from pycbc.fft import _BaseFFT, _BaseIFFT
 
 def memoize(obj):
     cache = obj.cache = {}
@@ -120,3 +121,72 @@ def ifft(invec, outvec, prec, itype, otype):
     status = f(descr, invec.ptr, outvec.ptr)
     check_status(status)
  
+# Class based API
+
+_create_descr = lib.DftiCreateDescriptor
+_create_descr.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int]
+
+def _get_desc(fftobj):
+    desc = ctypes.c_void_p(1)
+    prec = mkl_prec[fftobj.iarr.precision]
+    domain = mkl_domain[str(fftobj.invec.kind)][str(fftobj.outvec.kind)]
+    status = _create_descr(ctypes.byref(desc), prec, domain, 1, fftobj.size)
+    check_status(status)
+    # Now we set various things depending on exactly what kind of transform we're
+    # performing.
+
+    # The following only matters if the transform is C2R or R2C
+    status = lib.DftiSetValue(desc, DFTI_CONJUGATE_EVEN_STORAGE,
+                              DFTI_COMPLEX_COMPLEX)
+    check_status(status)
+
+    # In-place or out-of-place:
+    if fftobj.inplace:
+        status = lib.DftiSetValue(desc, DFTI_PLACEMENT, DFTI_INPLACE)
+    else:
+        status = lib.DftiSetValue(desc, DFTI_PLACEMENT, DFTI_NOT_INPLACE)
+    check_status(status)
+
+    # If we are performing a batched transform:
+    if fftobj.nbatch > 1:
+        status = lib.DftiSetValue(desc, DFTI_NUMBER_OF_TRANSFORMS, fftobj.nbatch)
+        check_status(status)
+        status = lib.DftiSetValue(desc, DFTI_INPUT_DISTANCE, fftobj.idist)
+        check_status(status)
+        status = lib.DftiSetValue(desc, DFTI_OUTPUT_DISTANCE, fftobj.odist)
+        check_status(status)
+
+    # Knowing how many threads will be allowed may help select a better transform
+    nthreads = _scheme.mgr.state.num_threads
+    status = lib.DftiSetValue(desc, DFTI_THREAD_LIMIT, nthreads)
+    check_status(status)
+
+    # Now everything's ready, so commit
+    status = lib.DftiCommitDescriptor(desc)
+    check_status(status)
+
+    return desc
+
+class FFT(_BaseFFT):
+    def __init__(self, invec, outvec, nbatch=1, size=None):
+        super(FFT, self).__init__(invec, outvec, nbatch, size)
+        self.iptr = self.invec.ptr
+        self.optr = self.outvec.ptr
+        self._efunc = lib.DftiComputeForward
+        self._efunc.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+        self.desc = _get_desc(self)
+
+    def execute(self):
+        self._efunc(self.desc, self.iptr, self.optr)
+
+class IFFT(_BaseIFFT):
+    def __init__(self, invec, outvec, nbatch=1, size=None):
+        super(IFFT, self).__init__(invec, outvec, nbatch, size)
+        self.iptr = self.invec.ptr
+        self.optr = self.outvec.ptr
+        self._efunc = lib.DftiComputeBackward
+        self._efunc.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+        self.desc = _get_desc(self)
+
+    def execute(self):
+        self._efunc(self.desc, self.iptr, self.optr)
