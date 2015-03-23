@@ -38,6 +38,7 @@ tc_common_support = """
 #include <stdint.h> // For uint32_t
 #include <error.h>
 #include <complex> // Must use C++ header with weave
+#include <math.h> // For M_SQRT2
 
 #ifdef __AVX2__
 #define _HAVE_AVX2 1
@@ -464,7 +465,8 @@ void windowed_max(std::complex<float> * __restrict inarr, const uint32_t arrlen,
 
 int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32_t arrlen,
                             std::complex<float> * __restrict values, uint32_t * __restrict locs, 
-                            const float thresh, const uint32_t winsize, const uint32_t segsize){
+                            const float thresh, const uint32_t winsize, const uint32_t segsize,
+                            const float scale){
 
   uint32_t i, nsegs, nwins_ps, last_arrlen, last_nwins_ps, outlen;
   uint32_t *seglens, *mlocs, curr_loc;
@@ -472,7 +474,8 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   std::complex<float> *cvals, curr_cval;
   int cnt;
 
-  thr_sqr = thresh*thresh;
+  // We wish to scale our output by 'scale', so we must unscale our threshold
+  thr_sqr = (thresh * thresh)/(scale * scale);
   
   nsegs = ( (arrlen % segsize) ? (arrlen/segsize) + 1 : (arrlen/segsize) );
   nwins_ps = ( (segsize % winsize) ? (segsize/winsize) + 1 : (segsize/winsize) );
@@ -530,7 +533,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
       if ( (mlocs[i] - curr_loc) > winsize){
         // The last one survived, so write
         // it out. 
-        values[cnt-1] = curr_cval;
+        values[cnt-1] = curr_cval * scale;
         locs[cnt-1] = curr_loc;
         curr_cval = cvals[i];
         curr_norm = norms[i];
@@ -556,7 +559,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
     if (cnt > 1){
       cnt += 1;
     }
-    values[cnt-1] = curr_cval;
+    values[cnt-1] = curr_cval * scale;
     locs[cnt-1] = curr_loc;
   }
 
@@ -650,7 +653,8 @@ class WindowedMaxObject(object):
 
 thresh_cluster_code = """
 return_val = parallel_thresh_cluster(series, (uint32_t) slen, values, locs,
-                                     (float) thresh, (uint32_t) window, (uint32_t) segsize);
+                                     (float) thresh, (uint32_t) window, (uint32_t) segsize,
+                                     (float) scale);
 """
 
 # We should really calculate this from hardware characteristics...
@@ -668,7 +672,7 @@ class ThreshClusterObject(object):
     the SNR time series will be filled new inputs many times, and execute() called
     repeatedly.
     """
-    def __init__(self, series, threshold, window, segsize = default_segsize, verbose=0):
+    def __init__(self, series, threshold, window, segsize = default_segsize, scale = 1.0, verbose=0):
         self.series = _np.array(series.data, copy=False)
         self.slen = len(self.series)
         nwindows = int( self.slen / window)
@@ -680,6 +684,7 @@ class ThreshClusterObject(object):
         self.thresh = threshold
         self.window = window
         self.segsize = segsize
+        self.scale = scale
         self.code = thresh_cluster_code
         self.support = omp_support + thresh_cluster_support
         self.verbose = verbose
@@ -692,7 +697,8 @@ class ThreshClusterObject(object):
         thresh = self.thresh
         window = self.window
         segsize = self.segsize
-        nthr = inline(self.code, ['series', 'slen', 'values', 'locs', 'thresh', 'window', 'segsize'],
+        scale = self.scale
+        nthr = inline(self.code, ['series', 'slen', 'values', 'locs', 'thresh', 'window', 'segsize', 'scale'],
                       extra_compile_args = ['-march=native -O3 -w'] + omp_flags,
                       #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],
                       #extra_compile_args = ['-msse4.1 -O3 -w'],
