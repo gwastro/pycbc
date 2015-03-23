@@ -1,6 +1,7 @@
 import ctypes, functools, pycbc.libutils
 from pycbc.types import zeros
 from .core import _BaseFFT, _BaseIFFT
+import pycbc.scheme as _scheme
 
 def memoize(obj):
     cache = obj.cache = {}
@@ -128,7 +129,7 @@ _create_descr.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_
 
 def _get_desc(fftobj):
     desc = ctypes.c_void_p(1)
-    prec = mkl_prec[fftobj.iarr.precision]
+    prec = mkl_prec[fftobj.invec.precision]
     domain = mkl_domain[str(fftobj.invec.kind)][str(fftobj.outvec.kind)]
     status = _create_descr(ctypes.byref(desc), prec, domain, 1, fftobj.size)
     check_status(status)

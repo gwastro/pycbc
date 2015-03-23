@@ -123,7 +123,7 @@ def threshold_and_cluster(series, threshold, window):
         return numpy.array([], dtype = numpy.complex64), numpy.array([], dtype = numpy.uint32)
     
 class CPUThresholdCluster(_BaseThresholdCluster):
-    def __init__(self, series, window, scale):
+    def __init__(self, series, window, scale = 1.0):
         self.series = series
         self.slen = len(series)
         self.window = window
