@@ -49,7 +49,7 @@ def batched_threshold_and_cluster(series, threshold, window):
     """Return list of values and indices values over threshold in series.
     """
 @schemed("pycbc.events.threshold_")
-def _threshold_cluster_factory(series, window, scale = 1.0):
+def _threshold_cluster_factory(series, window):
     pass
 
 class ThresholdCluster(object):
@@ -62,8 +62,6 @@ class ThresholdCluster(object):
       points above threshold that are then clustered
     window : int
       Size in samples of the window over which to cluster
-    scale : float (default 1.0)
-      Factor by which to scale all output triggers
     """
     def __new__(cls, *args, **kwargs):
         real_cls = _threshold_cluster_factory(*args, **kwargs)
