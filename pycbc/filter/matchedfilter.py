@@ -134,8 +134,10 @@ class MatchedFilterControl(object):
             self.snr_mem = zeros(self.tlen, dtype=self.dtype)
             self.corr_mem = zeros(self.tlen, dtype=self.dtype)
             self.segments = segment_list
-            # Assuming analysis time is constant across templates and segments...
+            # Assuming analysis time is constant across templates and segments, also
+            # delta_f is constant across segments.
             self.analyze = segment_list[0].analyze
+            self.stilde_delta_f = segment_list[0].delta_f
             self.htilde = template_output
             self.kmin, self.kmax = get_cutoff_indices(self.flow, self.fhigh,
                                                       self.segments[0].delta_f, self.tlen)   
@@ -204,7 +206,7 @@ class MatchedFilterControl(object):
         snrv : Array
             The snr values at the trigger locations.
         """
-        norm = (4.0 * stilde.delta_f) / sqrt(template_norm)
+        norm = (4.0 * self.stilde_delta_f) / sqrt(template_norm)
         self.correlators[segnum].correlate()
         #correlate(htilde[kmin:kmax], stilde[kmin:kmax], self.corr_mem[kmin:kmax])  
         #ifft(self.corr_mem, self.snr_mem)
