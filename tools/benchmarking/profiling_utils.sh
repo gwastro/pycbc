@@ -309,16 +309,16 @@ function run_tests {
 	echo_if_dryrun ""
 
 	if  `echo ${schemes} | grep -q one_per_core`
-	do
+	then
 		type=`echo ${schemes} | awk '{print $2}'`
 		schemes=`one_per_core ${type}`
-	done
+	fi
 
 	if  `echo ${schemes} | grep -q one_per_socket`
-	do
+	then
 		type=`echo ${schemes} | awk '{print $2}'`
 		schemes=`one_per_socket ${type}`
-	done
+	fi
 
 	for scheme_and_taskset in `echo $schemes`
 	do
