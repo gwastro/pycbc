@@ -145,7 +145,7 @@ class MatchedFilterControl(object):
             self.correlators = []
             for i in range(0, len(self.segments)):
                 self.correlators.append(Correlator(self.hcorr,
-                                                   numpy.array(segments[i].data[self.corr_slice], copy = False),
+                                                   numpy.array(self.segments[i].data[self.corr_slice], copy = False),
                                                    self.corr_np))
             self.ifft = IFFT(self.corr_mem, self.snr_mem)
             self.snr_np = numpy.array(self.snr_mem.data[self.analyze], copy = False)
