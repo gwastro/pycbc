@@ -149,7 +149,7 @@ class MatchedFilterControl(object):
                                                    self.corr_np))
             self.ifft = IFFT(self.corr_mem, self.snr_mem)
             self.snr_np = numpy.array(self.snr_mem.data[self.analyze], copy = False)
-            self.threshold_and_clusterer = events.ThresholdCluster(self.snr_np, window, scale = self.ifft.scale)
+            self.threshold_and_clusterer = events.ThresholdCluster(self.snr_np, window)
 
         elif downsample_factor >= 1:
             self.matched_filter_and_cluster = self.heirarchical_matched_filter_and_cluster
