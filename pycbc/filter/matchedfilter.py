@@ -138,7 +138,7 @@ class MatchedFilterControl(object):
             self.analyze = segment_list[0].analyze
             self.htilde = template_output
             self.kmin, self.kmax = get_cutoff_indices(self.flow, self.fhigh,
-                                                      segments[0].delta_f, self.tlen)   
+                                                      self.segments[0].delta_f, self.tlen)   
             self.corr_slice = slice(self.kmin, self.max)
             self.corr_np = numpy.array(self.corr_mem.data[self.corr_slice], copy = False)
             self.hcorr = numpy.array(self.htilde.data[self.corr_slice], copy = False)
