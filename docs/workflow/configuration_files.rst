@@ -49,3 +49,11 @@ filtering module to dewhiten the channel ``OAF-CAL_DARM_DQ``.
 
 * example_daily_pycbc_zpk.ini
 
+----------------------------------
+``sngl/example_sngl.ini``
+----------------------------------
+This ini file is configured to run on ER6 data from 2014. It uses the zero-pole-gain (ZPK)
+filtering module to dewhiten the channel ``OAF-CAL_DARM_DQ``.
+
+* ``sngl/example_sngl.ini``
+
