@@ -137,17 +137,19 @@ function parse_args {
 
 	for line in `cat $in_f | grep -v '^#' | sed 's+ +QZX+g'`
 	do
-		l2=`echo $line | sed 's+QZX+ +g'`
-		name=`echo $l2 | cut -f1 -d= | sed -e 's/^ *//' -e 's/ *$//'`
-		value=`echo $l2 | cut -f2- -d= | sed -e 's/^ *//' -e 's/ *$//'`
+		if  `echo ${line} | grep -q =`
+		then
+			l2=`echo $line | sed 's+QZX+ +g'`
+			name=`echo $l2 | cut -f1 -d= | sed -e 's/^ *//' -e 's/ *$//'`
+			value=`echo $l2 | cut -f2- -d= | sed -e 's/^ *//' -e 's/ *$//'`
 
-		args["${name}"]="${value}"
+			args["${name}"]="${value}"
+		fi
 	done
 	
 	for line in $*
 	do
-		echo ${line} | grep -q =
-		if [ $? == 0 ]
+		if  `echo ${line} | grep -q =`
 		then
 			l2=`echo $line | sed 's+QZX+ +g'`
 			name=`echo $l2 | cut -f1 -d= | sed -e 's/^ *//' -e 's/ *$//'`
