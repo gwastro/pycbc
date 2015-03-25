@@ -35,19 +35,19 @@ The ini file is configured to reproduce the two-stage S6D results here but with 
 * s6d_pycbc_review_twoweek_v1.ini
 
 ----------------------------------
-example_daily_lalapps.ini
+``daily/example_daily_lalapps.ini``
 ----------------------------------
 This ini file is configured to run on ER5 data.
 
-* example_daily_lalapps.ini
+* ``daily/example_daily_lalapps.ini``
 
 ----------------------------------
-example_daily_pycbc_zpk.ini
+``daily/example_daily_pycbc_zpk.ini``
 ----------------------------------
 This ini file is configured to run on LLO lock data from 2014. It uses the zero-pole-gain (ZPK)
 filtering module to dewhiten the channel ``OAF-CAL_DARM_DQ``.
 
-* example_daily_pycbc_zpk.ini
+* ``daily/example_daily_pycbc_zpk.ini``
 
 ----------------------------------
 ``sngl/example_sngl.ini``
