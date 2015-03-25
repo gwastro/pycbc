@@ -184,5 +184,4 @@ for dir in dirs:
 # copy all files to html directory
 for dir in dirs:
     for file in dir.files:
-        shutil.copy(file.path,
-                    opts.output_path+'/'+dir.path+'/'+file.filename())
+        shutil.copy(file.path, opts.output_path+'/'+dir.path+'/'+file.filename())
