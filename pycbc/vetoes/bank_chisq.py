@@ -167,7 +167,7 @@ class SingleDetBankVeto(object):
        memory management of its filters internally, and calculates the bank
        veto TimeSeries.
     """
-    def __init__(self, bank_file, approximant, flen, delta_f, f_low, cdtype, **kwds):
+    def __init__(self, bank_file, flen, delta_f, f_low, cdtype, approximant=None, **kwds):
         if bank_file is not None:
             self.do = True
             
@@ -182,8 +182,10 @@ class SingleDetBankVeto(object):
 
             logging.info("Read in bank veto template bank")
             bank_veto_bank = FilterBank(bank_file,
-                    approximant, self.seg_len_freq, 
-                    self.delta_f, f_low, dtype=self.cdtype, **kwds)
+                    self.seg_len_freq, 
+                    self.delta_f, f_low,
+                    dtype=self.cdtype, 
+                    approximant=approximant, **kwds)
 
             self.filters = list(bank_veto_bank)
             self.dof = len(bank_veto_bank) * 2
