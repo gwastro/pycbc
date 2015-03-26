@@ -11,6 +11,7 @@ source ${HOME}/pycbc_installations/${args["pycbc-version"]}/etc/pycbc-user-env.s
 schemes=${args["processing-schemes"]}
 tag=${args["tag"]}
 iters=${args["iterations"]}
+profile=${args["profile"]}
 
 if [ "${iters}" == "" ]
 then
@@ -41,7 +42,7 @@ do
 
 	for data in clean loud grumbly
 	do
-		run_tests $data "${schemes}" ${outdir}/`hostname`_${data}_iter${iter_count}.dat
+		run_tests $data "${schemes}" ${outdir}/`hostname`_${data}_iter${iter_count}.dat ${profile}
 	done
 
 	iter_count=$(( $iter_count + 1 ))

@@ -48,7 +48,8 @@ function run_pycbc {
 
 	if [ "${PROFILE}" == 'operf' ]
 	then
-		CMD="taskset -c ${TASKSET} operf python "
+		echo_if_dryrun 'mkdir -p `pwd`/${args["tag"]}_${DATA}'
+		CMD="taskset -c ${TASKSET} operf -d `pwd`/${args["tag"]}_${DATA}  python "
 	fi
 
 	BANK=${args["template-bank"]}
@@ -95,6 +96,7 @@ function run_pycbc {
 	CMD="${CMD} --channel-name ${args["channel-name"]} "
 	CMD="${CMD} --output ${profile_root}/profiling_results/${DATA}/test_${TASKSET}.hdf5  "
 	CMD="${CMD} --processing-scheme ${SCHEME} "
+	CMD="${CMD} ${args["extra_args"]} "
 
 	if [ "${DEVICE}" != "" ]
 	then
@@ -131,32 +133,36 @@ function verify_args {
 	done
 }
 
+function parse_arg {
+	line=$1
 
+	if  `echo ${line} | grep -q =`
+	then
+		l2=`echo $line | sed 's+QZX+ +g'`
+		name=`echo $l2 | cut -f1 -d= | sed -e 's/^ *//' -e 's/ *$//'`
+		value=`echo $l2 | cut -f2- -d= | sed -e 's/^ *//' -e 's/ *$//'`
+
+		if `echo ${name} | grep -q pycbc:`
+		then
+			name=`echo $name | sed 's+pycbc:++'`
+			args['extra_args']="${args['extra_args']} --${name} ${value}"
+		else
+			args["${name}"]="${value}"
+		fi
+	fi
+}
+	
 function parse_args {
 	in_f=$1
 
 	for line in `cat $in_f | grep -v '^#' | sed 's+ +QZX+g'`
 	do
-		if  `echo ${line} | grep -q =`
-		then
-			l2=`echo $line | sed 's+QZX+ +g'`
-			name=`echo $l2 | cut -f1 -d= | sed -e 's/^ *//' -e 's/ *$//'`
-			value=`echo $l2 | cut -f2- -d= | sed -e 's/^ *//' -e 's/ *$//'`
-
-			args["${name}"]="${value}"
-		fi
+		parse_arg "${line}"
 	done
 	
 	for line in $*
 	do
-		if  `echo ${line} | grep -q =`
-		then
-			l2=`echo $line | sed 's+QZX+ +g'`
-			name=`echo $l2 | cut -f1 -d= | sed -e 's/^ *//' -e 's/ *$//'`
-			value=`echo $l2 | cut -f2- -d= | sed -e 's/^ *//' -e 's/ *$//'`
-			args["${name}"]="${value}"
-		fi
-
+		parse_arg "${line}"
 	done
 }
 
@@ -322,17 +328,41 @@ function run_tests {
 		schemes=`one_per_socket ${type}`
 	fi
 
+	if [ "${doing_profile}" != "" ]
+	then
+		profile=${doing_profile}
+	fi
+
+	doing_profile=""
+	if [ "${profile}" != "" ]
+	then
+		echo_if_dryrun 'start=`date +%s`'
+		doing_profile=${profile}
+	fi
+
 	for scheme_and_taskset in `echo $schemes`
 	do
 		scheme=`echo $scheme_and_taskset | cut -f1 -d\|`
 		taskset=`echo $scheme_and_taskset | cut -f2 -d\|`
 
 		run_pycbc $data $scheme $taskset $profile
-		profile=''
+
+		if [ "${profile}" != "" ]
+		then
+			output="${profile_root}/profiling_results/${data}/test_${taskset}.hdf5  "
+			profile=''
+		fi
 	done
 
 	echo_if_dryrun 'wait'
 	wait
+
+	if [ "${doing_profile}" != "" ]
+	then
+		echo_if_dryrun "end=\`stat -c%Z ${output}\`"
+		echo_if_dryrun "echo \$(( \$end - \$start ))  >> ${args["tag"]}_runtimes.dat"
+	fi
+
 
 	rm -f ${outfile}
 
