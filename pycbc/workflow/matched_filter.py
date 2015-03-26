@@ -289,8 +289,7 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
     logging.info("Setting up matched-filtering for %s." %(' '.join(ifos),))
 
     if match_fltr_exe == 'lalapps_coh_PTF_inspiral':
-        #TODO: Have antenna.py and bank_veto_bank.xml files automatically
-        #      copied over into run directory.
+        #TODO: Have antenna.py automatically copied over into run directory.
         cp.set('inspiral', 'right-ascension', cp.get('workflow', 'ra'))
         cp.set('inspiral', 'declination', cp.get('workflow', 'dec'))
         cp.set('inspiral', 'sky-error', cp.get('workflow', 'sky-error'))

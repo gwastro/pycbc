@@ -274,7 +274,7 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.name)
         
-        # Feed bank_veto_bank.xml
+        # Feed in bank_veto_bank.xml
         if self.cp.has_option('inspiral', 'do-bank-veto'):
             if not bankVetoBank:
                 raise ValueError("%s must be given a bank veto file if the"
@@ -313,43 +313,6 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         valid_start = self.data_seg[0] + pad_data + overlap
         valid_end = self.data_seg[1] - pad_data - overlap
         return self.data_seg, segments.segment(valid_start, valid_end)
-
-
-class LegacyCohPTFPostProc(LegacyAnalysisExecutable):
-    """
-    The class responsible for setting up jobs for legacy
-    lalapps_coh_PTF_post_processing executable.
-    """
-    current_retention_level = Executable.CRITICAL
-    def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
-                 out_dir=None, tags=[]):
-        super(LegacyCohPTFPostProc, self).__init__(cp, name, universe,
-              ifo=ifo, out_dir=out_dir, tags=tags)
-        self.cp = cp
-        self.add_opt('--grb-name', cp.get('workflow', 'trigger-name'))
-        self.add_opt('--ifo-tag', ifo)
-        self.add_opt('--output-dir', out_dir)
-        self.add_profile('condor', 'request_cpus', 1)
- 
-    def create_node(self, parents=None, run_dir=None, seg_dir=None,
-                    out_dir=None, tags=[]):
-        node = Node(self)
-
-        if not parents:
-            raise ValueError("%s must be supplied with inspiral and injection"
-                             "output files"
-                              % self.name)
-
-        # Set input / output options
-        config_file = parents.pop()
-        node.add_input_opt('--config-file', config_file)
-        for parent in parents:
-            node._add_input(parent)
-        node.add_opt('--run-dir', run_dir)
-        node.add_opt('--veto-directory', seg_dir)
-        node.add_opt('--log-path', os.path.join(out_dir, "logs"))
-
-        return node
 
 
 class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):

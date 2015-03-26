@@ -8,9 +8,9 @@ DEC=-28.5
 SKY_ERROR=0
 GRB_NAME=100928A
 GRB_TIME=969675608
-LOCAL_CONFIG_FILES="pygrb.ini pygrb_postprocessing.ini"
+LOCAL_CONFIG_FILES="main.ini postprocessing.ini"
 BANK_FILE=${PWD}/TMPLTBANKS/H1-TMPLTBANK_GRB100928A_DATAFIND-969673046-4992.xml
-./pygrb.py \
+./pygrb_make_archival_workflow \
 --local-config-files ${LOCAL_CONFIG_FILES} \
 --config-overrides \
 workflow:ra:${RA} \
