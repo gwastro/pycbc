@@ -33,7 +33,7 @@ function run_pycbc {
 
 	if [ "${PROFILE}" == 'python' ]
 	then
-		CMD="${CMD} -m cProfile -o profile.log "
+		CMD="${CMD} -m cProfile -o profile_${args["tag"]}_${DATA}.log "
 	fi
 
 	if [ "${PROFILE}" == 'cuda' ]
