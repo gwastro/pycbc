@@ -28,19 +28,14 @@ In order to install PyCBC, you need to have installed the following prerequisite
 Installing from git
 ===================
 
-The source for PyCBC is under ``git`` version control, hosted by the University of Wisconsin-Milwaukee.
+The source for PyCBC is under ``git`` version control, hosted on `github <https://github.com/ligo-cbc/pycbc>`_
 
 You can install the package by first cloning the repository, either read-only:
 
 .. code-block:: bash
 
-    git clone git://ligo-vcs.phys.uwm.edu/pycbc.git
+    git clone https://github.com/ligo-cbc/pycbc.git
 
-or with a LIGO.ORG albert.einstein-style credential:
-
-.. code-block:: bash
-
-    git clone albert.einstein@ligo-vcs.phys.uwm.edu:/usr/local/git/pycbc.git
 
 You can specify the install path directory, using the ``--prefix`` option as follows.
 

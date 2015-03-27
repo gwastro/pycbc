@@ -9,8 +9,3 @@ When installing pycbc:
 To run the unittests pycbc:
    python setup.py test
 
-The most current development version is always available from our
-git repository:
-
-   git clone git://ligo-vcs.phys.uwm.edu/pycbc.git
-
