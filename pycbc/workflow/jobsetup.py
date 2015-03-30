@@ -718,8 +718,8 @@ class PyCBCTmpltbankExecutable(Executable):
         # set the input and output files
         # Add the PSD file if needed
         if self.write_psd:
-            node.make_and_add_output(valid_seg, 'txt', '--psd-output',
-                                     tags=tags+['PSD_FILE'])
+            node.new_output_file_opt(valid_seg, '.txt', '--psd-output',
+                                     tags=tags+['PSD_FILE'], store_file=self.retain_files)
         node.new_output_file_opt(valid_seg, '.xml.gz', '--output-file',
                                  tags=tags, store_file=self.retain_files)
         node.add_input_list_opt('--frame-files', dfParents)
@@ -746,8 +746,8 @@ class PyCBCTmpltbankExecutable(Executable):
         # Set the output file
         # Add the PSD file if needed
         if self.write_psd:
-            node.make_and_add_output(valid_seg, 'txt', 'psd-output', 
-                                     tags=tags+['PSD_FILE'])
+            node.new_output_file_opt(valid_seg, '.txt', '--psd-output',
+                                     tags=tags+['PSD_FILE'], store_file=self.retain_files)
 
         node.new_output_file_opt(valid_seg, '.xml.gz', '--output-file',
                                  store_file=self.retain_files)
