@@ -1,0 +1,27 @@
+<!--accordion--> 
+<div class="panel-group" id="accordion-{{slug}}">
+    <div class="panel panel-default">
+
+        <!--accordion title-->
+        <div class="panel-heading accordion-toggle collapsed" data-toggle="collapse" data-parent="#accordion" href="#{{slug}}">
+            <h4 class="panel-title">
+                <a href='#'>{{cp.get(filename, 'title')}}</a>
+            </h4>
+        </div>
+
+        <!--accordion content-->
+        <div id="{{slug}}" class="panel-collapse collapse">
+            <div class="panel-body">
+
+                <!--display-->
+                <a href="{{filename}}"><img src="{{filename}}" style="width:825px"></a>
+                <p><i>{{cp.get(filename, 'caption')}}</i></p>
+
+                <!--always link to file-->
+                <p><a href={{filename}}>Link to file.</a></p>
+
+            </div>
+        </div>
+
+     </div>
+</div>

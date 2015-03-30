@@ -1,0 +1,102 @@
+#! /usr/bin/python
+
+# Copyright (C) 2014 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+
+import matplotlib as mpl; mpl.use('Agg')
+import matplotlib.pyplot as plt
+
+from glue import segments
+from glue.ligolw import lsctables
+from pylal import SnglInspiralUtils
+
+def find_bins(snrsq_list):
+  '''
+  Takes an iterable and turns it into bins for a histogram.
+  '''
+
+  remaining = 0
+  huge_snrs = 0
+  upper_lim = 1e3
+  total_count = 0
+  bins        = [1e-40 for i in range(int(upper_lim))]
+  biggest     = 0
+
+  for snrsq in snrsq_list:
+      snrsq = int(snrsq*snrsq)
+      total_count += 1
+
+      if snrsq > 200:
+          remaining += 1
+
+      if snrsq > upper_lim:
+          huge_snrs += 1
+      else:
+          if snrsq > biggest:
+              biggest = snrsq
+          bins[snrsq] += 1
+
+  high_end = min(biggest, 200)
+
+  return bins, biggest, high_end, remaining
+
+# parse command line
+parser = argparse.ArgumentParser(usage='pycbc_plot_histogram \
+[--options]',
+                                 description="Plot a histogram \
+                                 of triggers.")
+parser.add_argument('--trigger-files', type=str, nargs="+",
+                  help='Input xml files with SnglInspiral triggers.')
+parser.add_argument('--output-file', type=str,
+                  help='Output image file.')
+parser.add_argument('--gps-start-time', type=int,
+                  help='Time to start plotting.')
+parser.add_argument('--gps-end-time', type=int,
+                  help='Time to end plotting.')
+parser.add_argument('--new-snr', action='store_true', default=False,
+                  help='Plots new SNR instead of SNR.')
+opts = parser.parse_args()
+
+# read inspiral triggers
+inspiralTable = SnglInspiralUtils.ReadSnglInspiralFromFiles(opts.trigger_files)
+
+# put data into arrays
+significance  = []
+for trig in inspiralTable:
+  trigTime = trig.end_time + trig.end_time_ns * 10**(-9)
+  if trigTime in segments.segment(opts.gps_start_time, opts.gps_end_time):
+    if opts.new_snr:
+      significance.append(trig.get_new_snr())
+    else:
+      significance.append(trig.snr)
+
+# make bins for histogram
+bins, biggest, high_end, remaining = find_bins(significance)
+ymax = int(max(significance)**2) + 1
+ymin = int(min(significance)**2) + 1
+
+# plot
+plt.semilogy(range(0,ymax), bins[:ymax])
+plt.ylim(0.1)
+plt.xlim(ymin *0.9, ymax * 1.1)
+plt.ylabel('Count')
+if opts.new_snr:
+  plt.xlabel('newSNR squared')
+else:
+  plt.xlabel('SNR squared')
+plt.savefig(opts.output_file)

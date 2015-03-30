@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2014 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import glob
+import os
+from itertools import groupby
+
+import numpy as np
+import matplotlib as mpl; mpl.use('Agg')
+import matplotlib.pylab as plt
+
+from glue import lal
+from glue import segments
+
+from pylal import SnglInspiralUtils
+
+# parse command line
+parser = argparse.ArgumentParser(usage='pycbc_plot_params [--options]',
+                  description="Plot two columns from the SnglInspiralTable.")
+parser.add_argument('--trigger-files', type=str, nargs="+",
+                  help='Input xml files with SnglInspiral triggers.')
+parser.add_argument('--output-file', type=str,
+                  help='Output image file.')
+parser.add_argument('--gps-start-time', type=int,
+                  help='Time to start accepting triggers for plotting.')
+parser.add_argument('--gps-end-time', type=int,
+                  help='Time to stop accepting triggers for plotting.')
+parser.add_argument('--param-x', type=str,
+                  help='SnglInspiral column to plot on x-axis.')
+parser.add_argument('--param-y', type=str,
+                  help='SnglInspiral column to plot on x-axis.')
+parser.add_argument('--log-y', action='store_true', default=False,
+                  help='Plot log scale on y-axis.')
+parser.add_argument('--log-x', action='store_true', default=False,
+                  help='Plot log axis on x-axis.')
+opts = parser.parse_args()
+
+# read inspiral triggers
+inspiralTable = SnglInspiralUtils.ReadSnglInspiralFromFiles(opts.trigger_files)
+
+# put data into lists
+param_x = []
+param_y = []
+param_z = []
+for trig in inspiralTable:
+    trig_time = trig.end_time + trig.end_time_ns * 10**(-9)
+    if trig_time >= opts.gps_start_time and trig_time < opts.gps_end_time:
+        param_x.append(float(getattr(trig, opts.param_x)))
+        param_y.append(float(getattr(trig, opts.param_y)))
+
+# turn data into pylab arrays
+x = plt.array(param_x)
+y = plt.array(param_y)
+
+# create pylab figure
+fig  = plt.figure(1, figsize=(8.1,8.1))
+
+# plot data
+p = plt.scatter(x, y, marker='x')
+
+# format the plot
+if opts.log_y:
+    plt.yscale('log')
+plt.ylim(min(param_y) * 0.9, max(param_y) * 1.1)
+plt.ylabel(opts.param_y)
+if opts.log_x:
+    plt.xscale('log')
+plt.xlim(min(param_x) * 0.9, max(param_x) * 1.1)
+plt.xlabel(opts.param_x)
+
+# save plot
+plt.savefig(opts.output_file)
+plt.close()

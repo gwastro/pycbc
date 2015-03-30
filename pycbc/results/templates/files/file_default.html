@@ -1,0 +1,66 @@
+<!--accordion--> 
+<div class="panel-group" id="accordion-{{slug}}">
+    <div class="panel panel-default">
+
+        <!--accordion title-->
+        <div class="panel-heading accordion-toggle collapsed" data-toggle="collapse" data-parent="#accordion" href="#{{slug}}">
+            <h4 class="panel-title">
+                <a href='#'>{{filename}}</a>
+            </h4>
+        </div>
+
+        <!--accordion content-->
+        <div id="{{slug}}" class="panel-collapse collapse">
+            <div class="panel-body">
+
+                <!--image file condition-->
+                {% if filename.endswith('png') %}
+                    <a href="{{filename}}"><img src="{{filename}}" style="width:825px"></a>
+
+                <!--html file condition-->
+                {% elif filename.endswith('html') %}
+                    <iframe src="{{filename}}" style="width:825px"></iframe>
+
+                <!--segment XML file condition-->
+                {% elif ( filename.endswith('xml') or filename.endswith('xml.gz') ) and content %}
+
+                    <!--table header-->
+                    <table class="table"> 
+                    <thead>         
+                    <tr>
+                        <th>Channel</th>
+                        <th>GPS Start</th>
+                        <th>GPS End</th>
+                        <th>Duration (s)</th>
+                    </tr>         
+                    </thead>    
+                    <tbody>
+
+                    <!--table rows-->
+                    {% for channel, segmentlist in content.iteritems() %}
+                        {% for seg in segmentlist %}
+                            <tr>
+                                <td>{{channel}}</td>
+                                <td>{{seg[0]}}</td>
+                                <td>{{seg[1]}}</td>
+                                <td>{{abs(seg)}}</td>
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
+                    </tbody>
+                    </table>
+
+                <!--catch-all condition-->
+                {% else %}
+                    <p>Unsupported file extension.</p>
+
+                {% endif %}
+
+                    <!--always link to file-->
+                    <p><a href={{filename}}>Link to file.</a></p>
+
+            </div>
+        </div>
+
+     </div>
+</div>

@@ -66,24 +66,33 @@ More details of how to run this is found in the following link:
    workflow/pycbc_make_coinc_workflow
 
 -------------------
-``pycbc_make_daily_workflow``
+``pycbc_make_sngl_workflow``
 -------------------
 
-This is an example of how to run a workflow mimicking the daily ihope analysis done in the past. This will:
+This is an example of how to run a single-detector workflow done in the past. This will:
 
 * Get science and data-quality segments from the server.
 * Query the datafind server for frames.
-* Create the template bank jobs needed to cover the times
-* Split the template banks (into 2). This step could be easily removed, just delete this module in the python file and send the matched-filtering code the template bank input directly.
-* Run the matched-filtering code on the split template banks
-* Call into the code that generates the dag for running daily_ihope pages and plots and adds this dag to the workflow.
-* Write a dag/dax to file that can be submitted to run the workflow
+* Setup the template bank jobs needed to cover the times.
+* Split the template banks. This step could be easily removed, just delete this module in the python file and send the matched-filtering code the template bank input directly.
+* Setup the matched-filtering code on the split template banks.
+* Setup the plotting code.
+* Write a dax to file that can be submitted to run the workflow
 
-This will therefore set up a *complete* daily_ahope workflow and automatically generate the webpage at the end of the analysis.
+This will therefore set up a *complete* single-detector analysis workflow and automatically generate the webpage at the end of the analysis.
 
-This is currently being used in ER6 as a supplement and backup to the daily ihope runs. 
+More details of how to run ``pycbc_make_sngl_workflow`` is found in the following link:
 
-More details of how to run this is found in the following link:
+.. toctree::
+   :maxdepth: 1
+
+   workflow/pycbc_make_sngl_workflow
+
+-------------------
+``pycbc_make_daily_workflow``
+-------------------
+
+Another single-detector workflow generator that mimics the daily ihope analysis is ``pycbc_make_daily_workflow``. More details of how to run ``pycbc_make_daily_workflow`` is found in the following link:
 
 .. toctree::
    :maxdepth: 1

@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2014 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import glob
+import os
+
+import numpy as np
+import matplotlib as mpl; mpl.use('Agg')
+import matplotlib.pylab as plt
+
+from glue import lal
+from glue import segments
+
+from pylal import SnglInspiralUtils
+
+# parse command line
+parser = argparse.ArgumentParser(usage='pycbc_plot_rate [--options]',
+                  description="Plot trigger significance versus time.")
+parser.add_argument('--trigger-files', type=str, nargs="+",
+                  help='Input xml files with SnglInspiral triggers.')
+parser.add_argument('--output-file', type=str,
+                  help='Output image file.')
+parser.add_argument('--gps-start-time', type=int,
+                  help='Time to start plotting.')
+parser.add_argument('--gps-end-time', type=int,
+                  help='Time to end plotting.')
+parser.add_argument('--new-snr', action='store_true', default=False,
+                  help='Plots new SNR instead of SNR.')
+opts = parser.parse_args()
+
+# read inspiral triggers
+inspiralTable = SnglInspiralUtils.ReadSnglInspiralFromFiles(opts.trigger_files)
+
+# put data into lists
+hour_end_time = []
+significance  = []
+for trig in inspiralTable:
+    trig_time = trig.end_time + trig.end_time_ns * 10**(-9)
+    hour_end_time.append((trig_time - opts.gps_start_time) / 3600.0)
+    if opts.new_snr:
+        significance.append(trig.get_new_snr())
+    else:
+        significance.append(trig.snr)
+
+# turn data into pylab arrays
+x = plt.array(hour_end_time)
+y = plt.array(significance)
+
+# create pylab figure
+fig  = plt.figure(1, figsize=(8.1,4.0))
+
+# plot data
+p = plt.scatter(x, y, s=0.6)
+
+# format the plot
+if not opts.new_snr:
+    plt.yscale('log')
+    plt.ylim(min(significance), max(significance) * 10)
+    plt.ylabel('SNR')
+else:
+    plt.ylim(min(significance), max(significance) * 1.1)
+    plt.ylabel('newSNR')
+plt.xlim(0, (opts.gps_end_time - opts.gps_start_time) / 3600.0)
+plt.xlabel('Time since %s (hrs)'%opts.gps_start_time)
+
+# save plot
+plt.savefig(opts.output_file)
+plt.close()

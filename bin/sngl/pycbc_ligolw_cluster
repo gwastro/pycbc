@@ -1,0 +1,86 @@
+#!/usr/bin/python
+
+# Copyright (C) 2015 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Generals
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import logging
+import glob
+import sys
+
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import table
+from glue.ligolw import utils
+from pylal import ligolw_sicluster
+
+# parse command line
+parser = argparse.ArgumentParser(usage='pycbc_ligolw_cluster \
+[--options]',
+                                 description="Cluster single detector \
+                                 gravitational-wave triggers using the \
+                                 ligolw_sicluster algorithm.")
+parser.add_argument('-i', '--input-file', type=str,
+                  help='Input xml file with SnglInspiral triggers.')
+parser.add_argument('-o', '--output-file', type=str,
+                  help='Output xml file with clustered SnglInspiral triggers.')
+parser.add_argument('-t', '--cluster-window', type=float,
+                  help='Time window to cluster.')
+parser.add_argument('-s', '--snr-threshold', type=float,
+                  help='Discard SnglInspiral triggers below this threshold.')
+parser.add_argument('-v', '--verbose', action='store_true',
+                  help='Print extra debugging information.', default=False)
+opts = parser.parse_args()
+
+class DefaultContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(DefaultContentHandler)
+table.RowBuilder = table.InterningRowBuilder
+
+# setup log
+if opts.verbose:
+    logging_level = logging.DEBUG
+else:
+    logging_level = logging.WARN
+logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
+
+# check required options were provided on command line
+if not opts.cluster_window or not opts.input_file or not opts.output_file:
+    logging.warn('Missing required command line argument. Exiting.')
+    sys.exit()
+
+# read input file
+logging.info('Reading input XML file...')
+inspiral_xml = utils.load_filename(opts.input_file,
+                                   contenthandler=DefaultContentHandler)
+
+# cluster SnglInspiral triggers using ligolw_sicluster module
+logging.info('Clustering single inspiral triggers...')
+inspiral_xml = ligolw_sicluster.ligolw_sicluster(inspiral_xml,
+                                  sort_ascending_snr=True,
+                                  sort_descending_snr=False,
+                                  cluster_window=opts.cluster_window,
+                                  snr_threshold=opts.snr_threshold,
+                                  comment='',
+                                  verbose=False)
+
+# write output file
+logging.info('Writing output XML file...')
+utils.write_filename(inspiral_xml, opts.output_file,
+                     gz=opts.output_file.endswith('gz'))
+
+# exit
+logging.warn('Done.')

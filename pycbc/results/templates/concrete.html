@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{{analysis_title}}</title>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="{{output_path}}/css/bootstrap.min.css">
+
+    <script src="{{output_path}}/js/jquery.min.js"></script>
+    <script src="{{output_path}}/js/bootstrap.min.js"></script>
+
+    <style>
+
+    /*glyph for open panels*/
+    .panel-heading.accordion-toggle:before {
+        font-family: "Glyphicons Halflings";
+        content: "\e114";
+        float: right;
+        color: grey;
+    }
+
+    /*glyph for closed panels*/
+    .panel-heading.accordion-toggle.collapsed:before {
+        content:"\e080";
+    }
+
+    /*change jumbotron padding to make it smaller*/
+    .jumbotron {
+        padding: 0.5em 0.6em;
+    }
+
+    </style>
+
+</head>
+<body>
+
+<div class="container">
+    <div class="jumbotron">
+        <h1>{{analysis_title}}</h1>
+        <p>{{analysis_subtitle}}</p> 
+
+    <!--navbar-->
+    <ul class="nav nav-pills">
+
+        <!--home button-->
+        <li>
+            <a href="{{output_path}}" class="btn btn-info" role="button" style="background-color: #87AFFF">Home</a>
+        </li>
+
+        <!--display top-level directories-->
+        {% for dir0 in dirs_0 %}
+        <li class="dropdown">
+        <a class="dropdown-toggle" id="drop4" role="button" data-toggle="dropdown" data-target="#" href="#">{{dir0.title()}}<b class="caret"></b></a>
+            <ul id="menu1" class="dropdown-menu" role="menu" aria-labelledby="drop4">
+                <li><a tabindex="-1" href="{{output_path}}/{{dir0.path}}">{{dir0.title()}}</a></li>
+                <li class="divider"></li>
+                {% for subdir in dir0.subdirs %}
+                <li><a tabindex="-1" href="{{output_path}}/{{subdir.path}}">{{subdir.title()}}</a></li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% endfor %}
+    </ul>
+
+    </div>
+
+    <!--content-->
+    <div class="row">
+
+    <!--left panel-->
+    <div class="col-lg-3">
+        <div class="list-group">
+            <a href="#" class="list-group-item disabled"><h3>{{dir.title()}}</h3></a>
+            {% if dir.subdirs %}
+                {% for subdir in dir.subdirs %}
+                    <a href="{{output_path}}/{{subdir.path}}/" class="list-group-item">{{subdir.title()}}</a>
+                {% endfor %}
+            {% else %}
+                <a href="#" class="list-group-item disabled">No subdirectories</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!--right panel-->
+    <div class="col-lg-9">
+        {% for file in dir.files %}
+             {{file.render()}}
+        {% endfor %}
+    </div>
+
+</div>
+
+<br>
+<br>
+<br>
+
+</body>
+</html>
+

@@ -375,6 +375,7 @@ def setup_hardware_injection_page(workflow, input_files, cache_filename,
 
     out_files = FileList([])
 
+<<<<<<< HEAD
     # check if hardware injection section exists
     # if not then do not do add hardware injection job to the workflow
     if not workflow.cp.has_section('workflow-hardware-injections'):
@@ -382,6 +383,11 @@ def setup_hardware_injection_page(workflow, input_files, cache_filename,
       msg += "The hardware injection page will not be added to the workflow."
       logging.info(msg)
       logging.info("Leaving hardware injection page setup.")
+=======
+    # check if hardware injection file
+    # if not then do not do hardware injection job
+    if not workflow.cp.has_opt_tags('workflow-hardware-injections', 'hwinj-definer-url', tags):
+>>>>>>> mkplots/mkplots
       return out_files
 
     # make the output dir
