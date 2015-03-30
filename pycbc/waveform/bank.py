@@ -107,7 +107,6 @@ class FilterBank(object):
             else:
                 approximant = self.approximant
         else:
-            approximant = self.table[index].waveform
             raise ValueError("Reading approximant from template bank not yet supported")
 
         # Get the end of the waveform if applicable (only for SPAtmplt atm)
