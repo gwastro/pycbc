@@ -274,8 +274,8 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
 
     # Now need to create the file for SCIENCE_AVAILABLE
     for ifo in scienceSegs.keys():
-        availableSegsFile = os.path.join(outputDir, 
-                           "%s-SCIENCE_AVAILABLE_SEGMENTS.xml" %(ifo.upper()) )
+        availableSegsFile = os.path.abspath(os.path.join(outputDir, 
+                           "%s-SCIENCE_AVAILABLE_SEGMENTS.xml" %(ifo.upper()) ))
         currUrl = urlparse.urlunparse(['file', 'localhost', availableSegsFile,
                           None, None, None])
         if tag:
@@ -284,6 +284,7 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
             currTags = ['SCIENCE_AVAILABLE']
         currFile = OutSegFile(ifo, 'SEGMENTS', workflow.analysis_time,
                             currUrl, segment_list=scienceSegs[ifo], tags = currTags)
+        currFile.PFN(availableSegsFile, site='local')
         segFilesList.append(currFile)
         currFile.toSegmentXml()
    
@@ -347,7 +348,7 @@ def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
     for ifo, scienceSegsIfo in scienceSegs.items():
         observatory = ifo[0].upper()
         frameType = cp.get_opt_tags("workflow-datafind", 
-                                    "datafind-%s-frame-type"%(ifo), [tag])
+                                    "datafind-%s-frame-type" % (ifo.lower()), [tag])
         for seg in scienceSegsIfo:
             msg = "Finding data between %d and %d " %(seg[0],seg[1])
             msg += "for ifo %s" %(ifo)
@@ -430,7 +431,7 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
     for ifo, scienceSegsIfo in scienceSegs.items():
         observatory = ifo[0].upper()
         frameType = cp.get_opt_tags("workflow-datafind",
-                                    "datafind-%s-frame-type"%(ifo), [tag])
+                                    "datafind-%s-frame-type" % (ifo.lower()), [tag])
         # This REQUIRES a coalesced segment list to work
         startTime = int(scienceSegsIfo[0][0])
         endTime = int(scienceSegsIfo[-1][1])
@@ -619,7 +620,7 @@ def convert_cachelist_to_filelist(datafindcache_list):
                 continue
 
             currFile = File(curr_ifo, frame.description,
-                                 frame.segment, file_url=frame.url)
+                    frame.segment, file_url=frame.url, use_tmp_subdirs=True)
             currFile.PFN(frame.path, site='local')
             datafind_filelist.append(currFile)
             prev_file = currFile

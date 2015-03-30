@@ -27,7 +27,7 @@
 provides additional abstraction and argument handling.
 """
 import Pegasus.DAX3 as dax
-import os
+import os, logging
 
 class ProfileShortcuts(object):
     """ Container of common methods for setting pegasus profile information
@@ -92,8 +92,11 @@ class Executable(ProfileShortcuts):
     def add_profile(self, namespace, key, value):
         """ Add profile information to this executable
         """
-        entry = dax.Profile(namespace, key, value)
-        self._dax_executable.addProfile(entry)  
+        try:
+            entry = dax.Profile(namespace, key, value)
+            self._dax_executable.addProfile(entry)  
+        except dax.DuplicateError:
+            pass
  
 class Node(ProfileShortcuts):    
     def __init__(self, executable):
@@ -191,8 +194,11 @@ class Node(ProfileShortcuts):
     def add_profile(self, namespace, key, value):
         """ Add profile information to this node at the DAX level
         """
-        entry = dax.Profile(namespace, key, value)
-        self._dax_node.addProfile(entry)
+        try:
+            entry = dax.Profile(namespace, key, value)
+            self._dax_node.addProfile(entry)
+        except dax.DuplicateError:
+            pass    
         
     def _finalize(self):
         args = self._args + self._options
@@ -369,12 +375,8 @@ class File(DataStorage, dax.File):
         return self
         
     def _set_as_input_of(self, node):
-        if self.storage_path:
-            transfer_file = True
-        else:
-            transfer_file = False
         node._dax_node.uses(self, link=dax.Link.INPUT, register=False, 
-                                                       transfer=transfer_file)          
+                                                       transfer=True)          
     def _set_as_output_of(self, node):
         if self.storage_path:
             transfer_file = True

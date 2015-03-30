@@ -106,6 +106,9 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             Initialized WorkflowConfigParser instance.
         """
         glue.pipeline.DeepCopyableConfigParser.__init__(self)
+        
+        # Enable case sensitive options
+        self.optionxform = str
 
         for confFile in configFiles:
             if not os.path.isfile(confFile):
@@ -293,6 +296,31 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
 
         return newString
 
+    def get_subsections(self, section_name):
+        """ Return a list of subsections for the given section name
+        """
+        subsections = [sec for sec in  self.sections() if sec.startswith(section_name + '-')]   
+
+        for sec in subsections:
+            sp = sec.split('-')
+            # This is unusual, but a format [section-subsection-tag] is okay. Just
+            # check that [section-subsection] section exists. If not it is possible
+            # the user is trying to use an subsection name with '-' in it
+            if (len(sp) > 1) and not self.has_section('%s-%s' % (sp[0], sp[1])):
+                 raise ValueError( "Workflow uses the '-' as a delimiter so this is"
+                     "interpreted as section-subsection-tag. "
+                     "While checking section %s, no section with "
+                     "name %s-%s was found. " 
+                     "If you did not intend to use tags in an "
+                     "'advanced user' manner, or do not understand what "
+                     "this means, don't use dashes in section "
+                     "names. So [injection-nsbhinj] is good. "
+                     "[injection-nsbh-inj] is not." % (sec, sp[0], sp[1]))
+        
+        if len(subsections) > 0:
+            return [sec.split('-')[1] for sec in subsections]
+        else:
+            return ['']
 
     def perform_extended_interpolation(self):
         """

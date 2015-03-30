@@ -21,11 +21,13 @@ import argparse
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC
 from pycbc.filter import MatchedFilterControl, make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
-import pycbc.fft.fftw
+import pycbc.fft.fftw, pycbc.version
 
 parser = argparse.ArgumentParser(usage='',
     description="Find single detector gravitational-wave triggers.")
 
+parser.add_argument('--version', action='version', 
+                    version=pycbc.version.git_verbose_msg)
 parser.add_argument("-V", "--verbose", action="store_true", 
                   help="print extra debugging information", default=False )
 parser.add_argument("--output", type=str, help="FIXME: ADD")
@@ -122,7 +124,7 @@ with ctx:
     psd = psd.astype(float32)
 
     matched_filter = MatchedFilterControl(opt.low_frequency_cutoff, None,
-                                   opt.snr_threshold, segments,
+                                   opt.snr_threshold, tlen, delta_f, complex64,
                                    downsample_factor=opt.downsample_factor,
                                    upsample_threshold=opt.upsample_threshold,
                                    upsample_method=opt.upsample_method)
@@ -132,8 +134,9 @@ with ctx:
                                           complex64, phase_order=opt.order)
 
     power_chisq = vetoes.SingleDetPowerChisq(opt.chisq_bins)
-    autochisq = vetoes.SingleDetAutoChisq(opt.autochi_stride, opt.snr_threshold,
-                               opt.autochi_number_points, opt.autochi_onesided)
+    autochisq = vetoes.SingleDetAutoChisq(opt.autochi_stride,
+                                          opt.autochi_number_points, 
+                                          onesided=opt.autochi_onesided)
 
     logging.info("Overwhitening frequency-domain data segments")
     for seg in segments:
@@ -188,15 +191,13 @@ with ctx:
                                                 norm, idx+stilde.analyze.start)
 
             out_vals['chisq'], out_vals['chisq_dof'] = power_chisq.values(corr,
-               snr, snrv, norm, psd, idx+stilde.analyze.start, template, flow)
+                       snr, snrv, norm, psd, idx+stilde.analyze.start, template)
 
             snrv *= norm
 
-            if opt.autochi_number_points:
-                auto_chisqv = autochisq.values(snr*norm, corr, hautocorr=None,
-                           indices=idx+stilde.analyze.start, template=template,
-                                            psd=psd, low_frequency_cutoff=flow)
-                out_vals['cont_chisq'] = auto_chisqv[:,2]
+            out_vals['cont_chisq'] = autochisq.values(snr, corr,
+                                       idx+stilde.analyze.start, template, psd,
+                                       norm, low_frequency_cutoff=flow)
 
             idx += stilde.cumulative_index
 

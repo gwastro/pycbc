@@ -24,7 +24,7 @@
 """
 This module is responsible for setting up the coincidence stage of pycbc
 workflows. For details about this module and its capabilities see here:
-https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
+https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/coincidence.html
 """
 
 
@@ -43,12 +43,12 @@ from pycbc.workflow.jobsetup import LigolwAddExecutable, LigolwSSthincaExecutabl
 from pylal import ligolw_cafe
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
-        pass
+    pass
 
 lsctables.use_in(ContentHandler)
 
 def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
-                               inspiral_outs, output_dir, maxVetoCat=5,
+                               inspiral_outs, output_dir, veto_cats=[2,3,4],
                                tags=[], timeSlideTags=None):
     '''
     This function aims to be the gateway for setting up a set of coincidence
@@ -76,11 +76,11 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
         input to the coincidence codes running at this stage.
     output_dir : path
         The directory in which coincidence output will be stored.
-    maxVetoCat : int (optional, default=5)
-        The maximum veto category that will be applied. If this takes the
-        default value the code will run data quality at cumulative categories
-        1, 2, 3, 4 and 5. Note that if we change the flag definitions to be
-        non-cumulative then this option will need to be revisited,
+    veto_cats : list of ints (optional, default = [2,3,4])
+        Veto categories that will be applied in the coincidence jobs. If this
+        takes the default value the code will run data quality at cumulative 
+        categories 2, 3 and 4. Note that if we change the flag definitions to
+        be non-cumulative then this option will need to be revisited.
     tags : list of strings (optional, default = [])
         A list of the tagging strings that will be used for all jobs created
         by this call to the workflow. An example might be ['BNSINJECTIONS'] or
@@ -123,7 +123,7 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
         coinc_outs, other_outs = setup_coincidence_workflow_ligolw_thinca(
                      workflow,
                      segsList, timeSlideFiles, inspiral_outs,
-                     output_dir, maxVetoCat=maxVetoCat, tags=tags,
+                     output_dir, veto_cats=veto_cats, tags=tags,
                      timeSlideTags=timeSlideTags,
                      parallelize_split_input=parallelize_split_input)
     else:
@@ -135,11 +135,10 @@ def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
 
     return coinc_outs, other_outs
 
-def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
-                                             timeSlideFiles, inspiral_outs,
-                                             output_dir, maxVetoCat=5, tags=[],
-                                             timeSlideTags=None,
-                                             parallelize_split_input=False):
+def setup_coincidence_workflow_ligolw_thinca(
+        workflow, segsList, timeSlideFiles, inspiral_outs, output_dir,
+        veto_cats=[2,3,4], tags=[], timeSlideTags=None,
+        parallelize_split_input=False):
     """
     This function is used to setup a single-stage ihope style coincidence stage
     of the workflow using ligolw_sstinca (or compatible code!).
@@ -164,11 +163,11 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
         input to the coincidence codes running at this stage.
     output_dir : path
         The directory in which coincidence output will be stored.
-    maxVetoCat : int (optional, default=5)
-        The maximum veto category that will be applied. If this takes the
-        default value the code will run data quality at cumulative categories
-        1, 2, 3, 4 and 5. Note that if we change the flag definitions to be
-        non-cumulative then this option will need to be revisited,
+    veto_cats : list of ints (optional, default = [2,3,4])
+        Veto categories that will be applied in the coincidence jobs. If this
+        takes the default value the code will run data quality at cumulative 
+        categories 2, 3 and 4. Note that if we change the flag definitions to
+        be non-cumulative then this option will need to be revisited.
     tags : list of strings (optional, default = [])
         A list of the tagging strings that will be used for all jobs created
         by this call to the workflow. An example might be ['BNSINJECTIONS'] or
@@ -186,10 +185,8 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
         A list of the output files generated from ligolw_add.
     """
     logging.debug("Entering coincidence module.")
-    veto_categories = range(1,maxVetoCat+1)
 
-    # setup code for each veto_category
-
+    # setup code for each veto category
     ligolwThincaOuts = FileList([])
     other_outs = {}
 
@@ -287,7 +284,7 @@ def setup_coincidence_workflow_ligolw_thinca(workflow, segsList,
 
 
         # Now loop over vetoes
-        for category in veto_categories:
+        for category in veto_cats:
             logging.debug("Preparing %s %s" %(timeSlideTag,category))
             # FIXME: There are currently 3 names to say cumulative cat_3
             dqSegFile = segsList.find_output_with_tag(
@@ -507,7 +504,8 @@ class PyCBCTrig2HDFExecutable(Executable):
         node = Node(self)
         node.add_input_opt('--bank-file', bank_file)
         node.add_input_list_opt('--trigger-files', trig_files)
-        node.new_output_file_opt(trig_files[0].segment, '.hdf', '--output-file')
+        node.new_output_file_opt(trig_files[0].segment, '.hdf',
+                                 '--output-file', use_tmp_subdirs=True)
         return node
 
 class PyCBCFindCoincExecutable(Executable):
@@ -543,93 +541,34 @@ class PyCBCStatMapExecutable(Executable):
             node.add_input_opt('--external-background', external_background)
         return node
         
-def get_subsections(cp, section_name):
-    sections = cp.sections()   
-    subsections = [sec.split('-')[1] for sec in sections if sec.startswith(section_name + '-')]   
-    if len(subsections) > 0:
-        return subsections
-    else:
-        return ['']
-        
-def merge_single_detector_hdf_files(workflow, trigger_files, out_dir, tags=[]):
-    make_analysis_dir(out_dir)
-    out = FileList()
-    for ifo in workflow.ifos:
-        node = Node(Executable(workflow.cp, 'hdf_trigger_merge', 
-                        ifos=ifo, out_dir=out_dir, tags=tags))  
-        node.add_input_list_opt('--trigger-files', trigger_files.find_output_with_ifo(ifo))
-        node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
-        workflow += node
-        out += node.output_files
-    return out
-        
-def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir, tags=[]):
-    make_analysis_dir(out_dir)
-    node = Node(Executable(workflow.cp, 'page_foreground', ifos=workflow.ifos,
-                    out_dir=out_dir, tags=tags))
-    node.add_input_opt('--bank-file', bank_file)
-    node.add_opt('--foreground-tag', ftag)
-    node.add_input_opt('--trigger-file', trig_file)
-    node.new_output_file_opt(bank_file.segment, '.html', '--output-file')
-    workflow += node
-
-def make_sensitivity_plot(workflow, inj_file, out_dir, tags=[]):
-    make_analysis_dir(out_dir)
-    
-    for tag in get_subsections(workflow.cp, 'plot_sensitivity'):
-        node = Node(Executable(workflow.cp, 'plot_sensitivity', ifos=workflow.ifos,
-                    out_dir=out_dir, tags=[tag] + tags))
-        node.add_input_opt('--injection-file', inj_file)
-        node.new_output_file_opt(inj_file.segment, '.png', '--output-file')
-        workflow += node
-
-def make_snrchi_plot(workflow, trig_files, veto_file, out_dir, tags=[]):
-    make_analysis_dir(out_dir)
-    
-    for tag in get_subsections(workflow.cp, 'plot_snrchi'):
-        for trig_file in trig_files:
-            node = Node(Executable(workflow.cp, 'plot_snrchi',
-                        ifos=trig_file.ifo, 
-                        out_dir=out_dir, 
-                        tags=[tag] + tags))
-
-            node.set_memory(15000)
-            node.add_input_opt('--trigger-file', trig_file)
-            node.add_input_opt('--veto-file', veto_file)
-            node.new_output_file_opt(trig_file.segment, '.png', '--output-file')
-            workflow += node  
-
-def make_foundmissed_plot(workflow, inj_file, inj_tag, out_dir, tags=[]):
-    make_analysis_dir(out_dir)
-    
-    for tag in get_subsections(workflow.cp, 'plot_foundmissed'):
-        node = Node(Executable(workflow.cp, 'plot_foundmissed', ifos=workflow.ifos,
-                    out_dir=out_dir, tags=[tag] + tags))
-        node.add_opt('--injection-tag', inj_tag)
-        node.add_input_opt('--injection-file', inj_file)
-        node.new_output_file_opt(inj_file.segment, '.html', '--output-file')
-        workflow += node   
-    
-def make_snrifar_plot(workflow, bg_file, out_dir, tags=[]):
-    make_analysis_dir(out_dir)
-    node = Node(Executable(workflow.cp, 'plot_snrifar', ifos=workflow.ifos,
-                out_dir=out_dir, tags=tags))
-    node.add_input_opt('--trigger-file', bg_file)
-    node.new_output_file_opt(bg_file.segment, '.png', '--output-file')
-    workflow += node
- 
 class PyCBCHDFInjFindExecutable(Executable):
     """ Find injections in the hdf files output
     """
     current_retention_level = Executable.CRITICAL
     def create_node(self, inj_coinc_file, inj_xml_file, veto_file, tags=[]):
-        node = Node(self)
+        node = Node(self)        
         node.add_input_list_opt('--trigger-file', inj_coinc_file)
         node.add_input_list_opt('--injection-file', inj_xml_file)
         node.add_input_opt('--veto-file', veto_file)
         node.new_output_file_opt(inj_xml_file[0].segment, '.hdf', '--output-file', 
                                  tags=tags)
         return node
+
+class MergeExecutable(Executable):
+    current_retention_level = Executable.CRITICAL
+
+def merge_single_detector_hdf_files(workflow, bank_file, trigger_files, out_dir, tags=[]):
+    make_analysis_dir(out_dir)
+    out = FileList()
+    for ifo in workflow.ifos:
+        node = MergeExecutable(workflow.cp, 'hdf_trigger_merge', 
+                        ifos=ifo, out_dir=out_dir, tags=tags).create_node()
+        node.add_input_opt('--bank-file', bank_file)
+        node.add_input_list_opt('--trigger-files', trigger_files.find_output_with_ifo(ifo))
+        node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
+        workflow += node
+        out += node.output_files
+    return out
 
 def find_injections_in_hdf_coinc(workflow, inj_coinc_file, inj_xml_file, 
                                  veto_file, out_dir, tags=[]):
@@ -744,7 +683,7 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
     combinecoinc_exe = PyCBCStatMapExecutable(workflow.cp, 'statmap',
                                               ifos=workflow.ifos,
                                               tags=tags, out_dir=out_dir)
-                                              
+                                         
     # Wall time knob and memory knob
     factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
 
@@ -764,6 +703,7 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
         workflow.add_node(combine_node)
         stat_files += combine_node.output_files
         
+        from pycbc.workflow.plotting import make_snrifar_plot
         make_snrifar_plot(workflow, combine_node.output_files[0],
                           'plots/background', tags=tag)
 

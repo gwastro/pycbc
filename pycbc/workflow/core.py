@@ -36,7 +36,7 @@ import lal as lalswig
 from glue import lal
 from glue import segments
 from pycbc.workflow.configuration import WorkflowConfigParser
-import pylal.dq.dqSegmentUtils as dqUtils
+
 # The following syntax is convoluted, but designed to make
 # it easy to change when pegasus_workflow is moved upstream
 # into Pegasus.
@@ -106,6 +106,7 @@ class Executable(pegasus_workflow.Executable):
     NON_CRITICAL = 2
     CRITICAL = 3
     FINAL_RESULT = 4
+    
     # This is the default value. It will give a warning if a class is
     # used where the retention level is not set. The file will still be stored
     KEEP_BUT_RAISE_WARNING = 5
@@ -211,7 +212,8 @@ class Executable(pegasus_workflow.Executable):
         for sec1, sec2 in combinations(sections, 2):
             cp.check_duplicate_options(sec1, sec2, raise_error=True)
              
-        # collect the options from the ini file section(s)
+        # collect the options and profile information 
+        # from the ini file section(s)
         self.common_options = []        
         for sec in sections:
             if cp.has_section(sec):
@@ -220,6 +222,8 @@ class Executable(pegasus_workflow.Executable):
                 warnString = "warning: config file is missing section [%s]"\
                              %(sec,)
                 logging.warn(warnString)
+            if cp.has_section('pegasus_profile-%s' % sec):
+                self.add_ini_profile(cp, 'pegasus_profile-%s' % sec)
 
         # Determine the level at which output files should be kept
         try:
@@ -266,8 +270,9 @@ class Executable(pegasus_workflow.Executable):
                 self.retain_files = False
             else:
                 self.retain_files = True
+                
         if hasattr(self, "group_jobs"):
-            self.add_profile('pegasus', 'clusters.size', self.group_jobs)
+            self.add_profile('pegasus', 'clusters.size', self.group_jobs)        
 
     @property
     def ifo(self):
@@ -281,6 +286,13 @@ class Executable(pegasus_workflow.Executable):
             errMsg = "self.ifoList must contain only one ifo to access the "
             errMsg += "ifo property. %s." %(str(self.ifo_list),)
             raise TypeError(errMsg)
+
+    def add_ini_profile(self, cp, sec):
+        for opt in cp.options(sec):
+            value = string.strip(cp.get(sec, opt))
+            namespace = opt.split('|')[0]
+            key = opt.split('|')[1]
+            self.add_profile(namespace, key, value)
 
     def add_ini_opts(self, cp, sec):
         for opt in cp.options(sec):
@@ -429,10 +441,6 @@ class Node(pegasus_workflow.Node):
         self.executed = False
         self.set_category(executable.name)
         
-        # Set default requirements for a Node
-        #self.set_memory(1000)
-        #self.set_storage(100)
-        
         if executable.universe == 'vanilla':
             self.add_profile('condor', 'getenv', 'True')
             
@@ -458,7 +466,7 @@ class Node(pegasus_workflow.Node):
         return [exe_path] + arglist
         
     def new_output_file_opt(self, valid_seg, extension, option_name, tags=[],
-                            store_file=True):
+                            store_file=None, use_tmp_subdirs=False):
         """
         This function will create a workflow.File object corresponding to the given
         information and then add that file as output of this node.
@@ -490,9 +498,12 @@ class Node(pegasus_workflow.Node):
             if tag not in all_tags:
                 all_tags.append(tag)
 
+        store_file = store_file if store_file is not None else self.executable.retain_files
+
         fil = File(self.executable.ifo_list, self.executable.name,
                    valid_seg, extension=extension, store_file=store_file, 
-                   directory=self.executable.out_dir, tags=all_tags)    
+                   directory=self.executable.out_dir, tags=all_tags,
+                   use_tmp_subdirs=use_tmp_subdirs)
         self.add_output_opt(option_name, fil)
         
     @property    
@@ -535,7 +546,7 @@ class File(pegasus_workflow.File):
     '''
     def __init__(self, ifos, exe_name, segs, file_url=None, 
                  extension=None, directory=None, tags=None, 
-                 store_file=True):       
+                 store_file=True, use_tmp_subdirs=False):
         """
         Create a File instance
         
@@ -624,7 +635,13 @@ class File(pegasus_workflow.File):
                    self.tagged_description, self.segment_list.extent(), file_url)
         self.cache_entry.workflow_file = self
 
-        super(File, self).__init__(basename(self.cache_entry.path))
+        # Let's do a test here
+        if use_tmp_subdirs:
+            pegasus_lfn = str(int(self.cache_entry.segment[0]))[:-4]
+            pegasus_lfn = pegasus_lfn + '/' + basename(self.cache_entry.path)
+        else:
+            pegasus_lfn = basename(self.cache_entry.path) 
+        super(File, self).__init__(pegasus_lfn)
         
         if store_file:
             self.storage_path = self.cache_entry.path
@@ -1126,9 +1143,9 @@ class OutSegFile(File):
         """
         Write the segment list in self.segmentList to the url in self.url.
         """
-        filePointer = open(self.storage_path, 'w')
-        dqUtils.tosegmentxml(filePointer, self.segmentList)
-        filePointer.close()
+        from pycbc.events import segments_to_file
+        segments_to_file(self.segmentList, self.storage_path, 
+                             self.tagged_description,  ifo=self.ifo_string)
 
 def make_external_call(cmdList, out_dir=None, out_basename='external_call',
                        shell=False, fail_on_error=True):

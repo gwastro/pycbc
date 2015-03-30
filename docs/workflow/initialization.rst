@@ -158,7 +158,7 @@ Here is an example of the [workflow] section of a .ini file::
   ;segments-V1-science-name = V1:ITF_SCIENCEMODE:6
   segments-database-url = https://segdb.ligo.caltech.edu
   segments-veto-definer-url = https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/S6/H1L1V1-S6_CBC_LOWMASS_B_OFFLINE-937473702-0.xml
-  segments-maximum-veto-category = 5
+  segments-veto-categories = 2,3,4
   segments-minimum-segment-length = 2000
   segments-generate-coincident-segments =
 

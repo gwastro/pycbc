@@ -60,6 +60,21 @@ With the PIPEDOWN_WORKFLOW method the following options apply
 
 these specify which executables will be used for each step. These are described more fully below.
 
+* PIPEDOWN_REPOP - This will prepare the output files for pipedown-style postprocessing including recalculation of the coinc ranking statistic before clustering. This involves combining all triggers, injection sets, segments into a single file, performing injection finding and performing clustering.
+
+.. autofunction:: pycbc.workflow.setup_postprocprep_pipedown_workflow
+      :noindex:
+
+With the PIPEDOWN_REPOP method the following options apply
+
+* postprocprep-combiner1-exe=NAME
+* postprocprep-combiner2-exe=NAME
+* postprocprep-repop-exe=NAME
+* postprocprep-cluster-exe=NAME
+* postprocprep-injfind-exe=NAME
+
+these specify which executables will be used for each step. These are described more fully below.
+
 * GSTLAL_POSTPROCPREP - This will perform the gstlal-style post-processing. This involves computing likelihood files, from there FAP and then some plotting routines.
 
 .. autofunction:: pycbc.workflow.setup_postprocprep_gstlal_workflow
@@ -111,6 +126,25 @@ in the [executables] section.
 
 Sections, in this case [pycbcsqlite], [clustercoincs] and [databaseinjfind], will be used to specify the constant command line options that are sent to all jobs with the corresponding exe name. How to set up the [{exe_name}] section, and which executables are currently supported is discussed below.
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+For the PIPEDOWN_REPOP method
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Executables required by this module are provided in the [executables] section. Any executable names specified in the [workflow-postprocprep] section must appear here. All the executables involved in the PIPEDOWN_WORKFLOW method are concerned here, plus in addition an executable to perform the recalculation of the coinc inspiral ranking statistic. 
+Thus if in the [workflow-postprocprep] section there is
+
+(...)
+* postprocprep-repop-exe=repopcoinc
+
+you need to have (in addition to executables for the PIPEDOWN_WORKFLOW method)
+
+* repopcoinc = ${which:ligolw_cbc_repop_coinc}
+
+in the [executables] section.
+
+The ini file section [repopcoinc] will be used to specify the constant command line options that are sent to all jobs with this exe name. How to set up this section, and which executables are currently supported is discussed below.
+
+
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 For the GSTLAL_POSTPROCPREP method
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -133,10 +167,10 @@ Supported post-processing preparation codes and instructions for using them
 ----------------------------------------------------------------------------
 
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-For the PIPEDOWN_WORKFLOW method
+For the PIPEDOWN_WORKFLOW and PIPEDOWN_REPOP methods
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-The following coincidence codes are currently supported in the workflow module
+The following coincidence codes are currently supported in the workflow module:
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 postprocprep-combiner1-exe
@@ -162,6 +196,12 @@ postprocprep-injfind-exe
 
 * ligolw_dbinjfind
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+postprocprep-repop-exe (only for PIPEDOWN_REPOP)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ligolw_cbc_repop_coinc
+
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 For the GSTLAL_POSTPROCPREP method
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
@@ -178,20 +218,17 @@ postprocprep-ligolwsqlite-exe
 
 * ADD
 
-
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 postprocprep-inspinjfind-exe
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * ADD
 
-
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 postprocprep-sqltoxml-exe
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * ADD
-
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 postprocprep-picklehor-exe
@@ -294,7 +331,7 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$
 ligolw_dbinjfind
 $$$$$$$$$$$$$$$$$$$$$$$$$$
 
-This code is used to perform "injection finding" - it associates injection entries in the sim_inspiral table, with coincident triggers in the coinc_inspiral table.
+This code is used to perform "injection finding" - it associates injection entries in the sim_inspiral table with coincident triggers in the coinc_inspiral table.
 
 .. command-output:: ligolw_dbinjfind --help
 
@@ -302,3 +339,17 @@ Of these options the workflow module will automatically add the following, which
 
 * --input
 * --output
+
+$$$$$$$$$$$$$$$$$$$$$$$$$$
+ligolw_cbc_repop_coinc
+$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+This code is used to calculate a function of the single trigger parameters and populate a column in the coinc table with the result (typically for use as a ranking statistic).
+
+.. command-output:: ligolw_cbc_repop_coinc --help
+
+Of these options the workflow module will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
+
+* --input
+* --output
+

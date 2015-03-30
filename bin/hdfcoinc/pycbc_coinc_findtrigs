@@ -172,6 +172,10 @@ for tnum in trigs0.template_map:
     
     b = c[bi]
     sep = len(b) - args.loudest_keep
+
+    if sep < 0:
+        # If we have less triggers than args.loudest_keep, keep them all
+        sep = 0
     bsort = numpy.argpartition(b, sep)
     
     bl = bi[bsort[0:sep]]

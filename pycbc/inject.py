@@ -98,7 +98,8 @@ class InjectionSet(object):
         swigrow.geocent_end_time.gpsNanoSeconds = glue_row.geocent_end_time_ns
         return swigrow
 
-    def apply(self, strain, detector_name, f_lower=None, distance_scale=1):
+    def apply(self, strain, detector_name, f_lower=None, distance_scale=1,
+              simulation_ids=None):
         """Add injections (as seen by a particular detector) to a time series.
 
         Parameters
@@ -110,9 +111,11 @@ class InjectionSet(object):
         f_lower : {None, float}, optional
             Low-frequency cutoff for injected signals. If None, use value
             provided by each injection.
-        distance_scale: {1, foat}, optional
+        distance_scale: {1, float}, optional
             Factor to scale the distance of an injection with. The default is 
             no scaling. 
+        simulation_ids: iterable, optional
+            If given, only inject signals with the given simulation IDs.
 
         Returns
         -------
@@ -137,7 +140,12 @@ class InjectionSet(object):
         # pick lalsimulation injection function
         add_injection = injection_func_map[strain.dtype]
 
-        for inj in self.table:
+        injections = self.table
+        if simulation_ids:
+            injections = [inj for inj in injections \
+                          if inj.simulation_id in simulation_ids]
+
+        for inj in injections:
             if f_lower is None:
                 f_l = inj.f_lower
             else:

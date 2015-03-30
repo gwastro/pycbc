@@ -11,11 +11,8 @@ parser.add_argument('--trigger-file', help='Single ifo trigger file')
 parser.add_argument('--veto-file', help='Optional, file of veto segments to remove triggers')
 parser.add_argument('--min-snr', type=float, help='Optional, Minimum SNR to plot')
 parser.add_argument('--output-file')
-parser.add_argument('--verbose')
+parser.add_argument('--newsnr-contours', nargs='*', help="List of newsnr values to draw contours at.", default=[])
 args = parser.parse_args()
-
-if args.verbose:
-    logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.DEBUG)
 
 f = h5py.File(args.trigger_file, 'r')
 
@@ -23,6 +20,12 @@ snr = f['snr'][:]
 chisq = f['chisq'][:]
 chisq_dof = f['chisq_dof'][:]
 chisq /= (chisq_dof * 2 - 2)
+
+def snr_from_chisq(chisq, newsnr, q=6.):
+    snr = numpy.zeros(len(chisq)) + float(newsnr)
+    ind = numpy.where(chisq > 1.)[0]
+    snr[ind] = float(newsnr) / ( 0.5 * (1. + chisq[ind] ** (q/2.)) ) ** (-1./q)
+    return snr
 
 if args.veto_file:
     time = f['end_time'][:]
@@ -35,6 +38,11 @@ if args.min_snr is not None:
     snr = snr[locs]
     chisq = chisq[locs]
 
+r = numpy.logspace(numpy.log(chisq.min()), numpy.log(chisq.max()), 200)
+for cval in args.newsnr_contours:
+    snrv = snr_from_chisq(r, cval)
+    pylab.plot(snrv, r, label="$\\rho_{new} = %s$" % cval, color='black')
+
 pylab.hexbin(snr, chisq, gridsize=300,
              xscale='log', yscale='log', mincnt=1, norm=colors.LogNorm())
 
@@ -42,6 +50,8 @@ ax = pylab.gca()
 pylab.grid()   
 ax.set_xscale('log')
 cb = pylab.colorbar() 
+pylab.xlim(snr.min(), snr.max())
+pylab.ylim(chisq.min(), chisq.max())
 cb.set_label('Trigger Density')
 pylab.xlabel('Signal-to-noise Ratio')
 pylab.ylabel('Reduced $\chi^2$')

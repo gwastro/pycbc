@@ -41,7 +41,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         required attributes  (gps-start-time, gps-end-time, strain-high-pass, 
         pad-data, sample-rate, (frame-cache or frame-files), channel-name, 
         fake-strain, fake-strain-seed, gating_file).
-        
+
     dyn_range_fac: {float, 1}, optional
         A large constant to reduce the dynamic range of the strain.
 
@@ -52,13 +52,13 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
     """
     if opt.frame_cache or opt.frame_files:
         if opt.frame_cache:
-            frame_source = opt.frame_cache 
+            frame_source = opt.frame_cache
         if opt.frame_files:
-            frame_source = opt.frame_files 
+            frame_source = opt.frame_files
 
         logging.info("Reading Frames")
-        strain = read_frame(frame_source, opt.channel_name, 
-                            start_time=opt.gps_start_time-opt.pad_data, 
+        strain = read_frame(frame_source, opt.channel_name,
+                            start_time=opt.gps_start_time-opt.pad_data,
                             end_time=opt.gps_end_time+opt.pad_data)
 
         if opt.zpk_z and opt.zpk_p and opt.zpk_k:
@@ -118,12 +118,12 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         plen = int(opt.sample_rate / pdf) / 2 + 1
 
         logging.info("Making PSD for strain")
-        strain_psd = psd.from_string(opt.fake_strain, plen, 
+        strain_psd = psd.from_string(opt.fake_strain, plen,
                                      pdf, opt.low_frequency_cutoff)
-        
+
         logging.info("Making colored noise")
-        strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate, 
-                                            strain_psd, 
+        strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate,
+                                            strain_psd,
                                             seed=opt.fake_strain_seed)
         strain._epoch = lal.LIGOTimeGPS(opt.gps_start_time)
 
@@ -136,14 +136,14 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
             logging.info("Applying sine-Gaussian burst injections")
             injections = SGBurstInjectionSet(opt.sgburst_injection_file)
             injections.apply(strain, opt.channel_name[0:2])
-        
+
         if precision == 'single':
             logging.info("Converting to float32")
             strain = (dyn_range_fac * strain).astype(float32)
 
     if opt.injection_file:
         strain.injections = injections
-    
+
     return strain
 
 def from_cli_single_ifo(opt, ifo, **kwargs):
@@ -168,13 +168,13 @@ def insert_strain_option_group(parser):
     Adds the options used to call the pycbc.strain.from_cli function to an
     optparser as an OptionGroup. This should be used if you
     want to use these options in your code.
- 
+
     Parameters
     -----------
     parser : object
         OptionParser instance.
     """
-    
+
     data_reading_group = parser.add_argument_group("Options for obtaining h(t)",
                   "These options are used for generating h(t) either by "
                   "reading from a file or by generating it. This is only "
@@ -182,43 +182,43 @@ def insert_strain_option_group(parser):
                   " if the --psd-estimation option is given.")
 
     # Required options
-    data_reading_group.add_argument("--gps-start-time", 
+    data_reading_group.add_argument("--gps-start-time",
                             help="The gps start time of the data "
                                  "(integer seconds)", type=int)
-    data_reading_group.add_argument("--gps-end-time", 
+    data_reading_group.add_argument("--gps-end-time",
                             help="The gps end time of the data "
                                  " (integer seconds)", type=int)
-    data_reading_group.add_argument("--strain-high-pass", type=float, 
+    data_reading_group.add_argument("--strain-high-pass", type=float,
                             help="High pass frequency")
-    data_reading_group.add_argument("--pad-data", 
+    data_reading_group.add_argument("--pad-data",
               help="Extra padding to remove highpass corruption "
                    "(integer seconds)", type=int)
-    data_reading_group.add_argument("--sample-rate", type=int, 
+    data_reading_group.add_argument("--sample-rate", type=int,
                             help="The sample rate to use for h(t) generation (integer Hz).")
-    data_reading_group.add_argument("--channel-name", type=str, 
+    data_reading_group.add_argument("--channel-name", type=str,
                    help="The channel containing the gravitational strain data")
-                   
-    #Read from cache file              
+
+    #Read from cache file
     data_reading_group.add_argument("--frame-cache", type=str, nargs="+",
                             help="Cache file containing the frame locations.")
-    
-    #Read from frame files              
+
+    #Read from frame files
     data_reading_group.add_argument("--frame-files",
                             type=str, nargs="+",
-                            help="list of frame files")   
-    
-    #Generate gaussian noise with given psd           
+                            help="list of frame files")
+
+    #Generate gaussian noise with given psd
     data_reading_group.add_argument("--fake-strain",
-                help="Name of model PSD for generating fake gaussian noise.", 
+                help="Name of model PSD for generating fake gaussian noise.",
                      choices=psd.get_lalsim_psd_list())
     data_reading_group.add_argument("--fake-strain-seed", type=int, default=0,
                 help="Seed value for the generation of fake colored"
                      " gaussian noise")
-                                
-    #optional       
-    data_reading_group.add_argument("--injection-file", type=str, 
+
+    #optional
+    data_reading_group.add_argument("--injection-file", type=str,
                       help="(optional) Injection file used to add "
-                           "waveforms into the strain")                 
+                           "waveforms into the strain")
 
     data_reading_group.add_argument("--sgburst-injection-file", type=str,
                       help="(optional) Injection file used to add "
@@ -253,7 +253,7 @@ def insert_strain_option_group_multi_ifo(parser):
     Adds the options used to call the pycbc.strain.from_cli function to an
     optparser as an OptionGroup. This should be used if you
     want to use these options in your code.
- 
+
     Parameters
     -----------    parser : object
         OptionParser instance.
@@ -294,19 +294,19 @@ def insert_strain_option_group_multi_ifo(parser):
                             help="The channel containing the gravitational "
                                 "strain data")
 
-    #Read from cache file              
+    #Read from cache file
     data_reading_group.add_argument("--frame-cache", type=str, nargs="+",
                             action=MultiDetOptionAppendAction,
                             metavar='IFO:FRAME_CACHE',
                             help="Cache file containing the frame locations.")
 
-    #Read from frame files              
+    #Read from frame files
     data_reading_group.add_argument("--frame-files", type=str, nargs="+",
                             action=MultiDetOptionAppendAction,
                             metavar='IFO:FRAME_FILES',
                             help="list of frame files")
 
-    #Generate gaussian noise with given psd           
+    #Generate gaussian noise with given psd
     data_reading_group.add_argument("--fake-strain", type=str, nargs="+",
                             action=MultiDetOptionAction, metavar='IFO:CHOICE',
                             help="Name of model PSD for generating fake "
@@ -318,20 +318,20 @@ def insert_strain_option_group_multi_ifo(parser):
                             help="Seed value for the generation of fake "
                             "colored gaussian noise")
 
-    #optional       
+    #optional
     data_reading_group.add_argument("--injection-file", type=str, nargs="+",
                             action=MultiDetOptionAction, metavar='IFO:FILE',
                             help="(optional) Injection file used to add "
                             "waveforms into the strain")
 
     data_reading_group.add_argument("--sgburst-injection-file", type=str,
-                      nargs="+", action=MultiDetOptionAction, 
+                      nargs="+", action=MultiDetOptionAction,
                       metavar='IFO:FILE',
                       help="(optional) Injection file used to add "
                       "sine-Gaussian burst waveforms into the strain")
 
     data_reading_group.add_argument("--gating-file", type=str,
-                      nargs="+", action=MultiDetOptionAction, 
+                      nargs="+", action=MultiDetOptionAction,
                       metavar='IFO:FILE',
                       help="(optional) Text file of gating segments to apply."
                           " Format of each line is (all times in secs):"
@@ -366,14 +366,14 @@ def insert_strain_option_group_multi_ifo(parser):
 ensure_one_opt_groups = []
 ensure_one_opt_groups.append(['--frame-cache','--fake-strain','--frame-files'])
 
-required_opts_list = ['--gps-start-time', '--gps-end-time', 
+required_opts_list = ['--gps-start-time', '--gps-end-time',
                       '--strain-high-pass', '--pad-data', '--sample-rate',
                       '--channel-name']
 
 def verify_strain_options(opts, parser):
-    """Parses the strain data CLI options and verifies that they are consistent 
+    """Parses the strain data CLI options and verifies that they are consistent
     and reasonable.
-    
+
     Parameters
     ----------
     opt : object
@@ -389,9 +389,9 @@ def verify_strain_options(opts, parser):
     required_opts(opts, parser, required_opts_list)
 
 def verify_strain_options_multi_ifo(opts, parser, ifos):
-    """Parses the strain data CLI options and verifies that they are consistent 
+    """Parses the strain data CLI options and verifies that they are consistent
     and reasonable.
-    
+
     Parameters
     ----------
     opt : object
@@ -423,7 +423,7 @@ def gate_data(data, gate_params, data_start_time):
     for glitch_time, glitch_width, pad_width in gate_params:
         t_start = glitch_time - glitch_width - pad_width - data_start_time
         t_end = glitch_time + glitch_width + pad_width - data_start_time
-        if t_start > data.duration or t_end < 0.: 
+        if t_start > data.duration or t_end < 0.:
             continue # Skip gate segments that don't overlap
         win_samples = int(2*sample_rate*(glitch_width+pad_width))
         pad_samples = int(sample_rate*pad_width)
@@ -436,55 +436,55 @@ def gate_data(data, gate_params, data_start_time):
     return data
 
 class StrainSegments(object):
-    """ Class for managing manipulation of strain data for the purpose of 
-        matched filtering. This includes methods for segmenting and 
+    """ Class for managing manipulation of strain data for the purpose of
+        matched filtering. This includes methods for segmenting and
         conditioning.
     """
-    def __init__(self, strain, segment_length=None, segment_start_pad=0, 
-                 segment_end_pad=0, trigger_start=None, trigger_end=None, 
+    def __init__(self, strain, segment_length=None, segment_start_pad=0,
+                 segment_end_pad=0, trigger_start=None, trigger_end=None,
                  filter_inj_only=False, injection_window=None):
-        """ Determine how to chop up the strain data into smaller segents
+        """ Determine how to chop up the strain data into smaller segments
             for analysis.
         """
         self._fourier_segments = None
         self.strain = strain
-        
+
         self.delta_t = strain.delta_t
         self.sample_rate = strain.sample_rate
-        
+
         if segment_length:
             seg_len = segment_length
         else:
             seg_len = strain.duration
-            
+
         self.delta_f = 1.0 / seg_len
         self.time_len = seg_len * self.sample_rate
         self.freq_len = self.time_len / 2 + 1
-            
+
         seg_end_pad = segment_end_pad
         seg_start_pad = segment_start_pad
-        
+
         if not trigger_start:
             trigger_start = int(strain.start_time)
-            
+
         if not trigger_end:
             trigger_end = int(strain.end_time)
-        
-        throwaway_size = seg_start_pad + seg_end_pad    
-        seg_width = seg_len - throwaway_size   
-        
+
+        throwaway_size = seg_start_pad + seg_end_pad
+        seg_width = seg_len - throwaway_size
+
         # The amount of time we can actually analyze given the
-        # amount of padding that is needed       
+        # amount of padding that is needed
         analyzable = strain.duration - throwaway_size
-          
-        #number of segments we need to analyze this data                    
+
+        #number of segments we need to analyze this data
         num_segs = int(numpy.ceil(float(analyzable) / float(seg_width)))
 
         # The offset we will use between segments
         seg_offset = int(numpy.ceil(analyzable / float(num_segs)))
         self.segment_slices = []
         self.analyze_slices = []
-        
+
         # Determine how to chop up the strain into smaller segments
         for nseg in range(num_segs-1):
             # boundaries for time slices into the strain
@@ -492,14 +492,14 @@ class StrainSegments(object):
             seg_end = int(seg_start + seg_len * strain.sample_rate)
             seg_slice = slice(seg_start, seg_end)
             self.segment_slices.append(seg_slice)
-            
+
             # boundaries for the analyzable portion of the segment
             ana_start = int(seg_start_pad * strain.sample_rate)
             ana_end = int(ana_start + seg_offset * strain.sample_rate)
             ana_slice = slice(ana_start, ana_end)
             self.analyze_slices.append(ana_slice)
-        
-        # The last segment takes up any integer boundary slop 
+
+        # The last segment takes up any integer boundary slop
         seg_end = len(strain)
         seg_start = int(seg_end - seg_len * strain.sample_rate)
         seg_slice = slice(seg_start, seg_end)
@@ -510,31 +510,30 @@ class StrainSegments(object):
         ana_end = int((seg_len - seg_end_pad) * strain.sample_rate)
         ana_slice = slice(ana_start, ana_end)
         self.analyze_slices.append(ana_slice)
-        
+
         #Remove segments that are outside trig start and end
         segment_slices_red = []
         analyze_slices_red = []
         trig_start_idx = (trigger_start - int(strain.start_time)) * strain.sample_rate
         trig_end_idx = (trigger_end - int(strain.start_time)) * strain.sample_rate
-        
+
         if filter_inj_only and hasattr(strain, 'injections'):
             inj = strain.injections
             end_times= inj.end_times()
             end_times = [time for time in end_times if float(time) < trigger_end and float(time) > trigger_start]
-            
+
             inj_idx = [(float(time) - float(strain.start_time)) * strain.sample_rate for time in end_times]
 
         for seg, ana in zip(self.segment_slices, self.analyze_slices):
             start = ana.start
             stop = ana.stop
             cum_start = start + seg.start
-            cum_end = stop + seg.start  
-
+            cum_end = stop + seg.start
 
             # adjust first segment
             if trig_start_idx > cum_start:
-                start += (trig_start_idx - cum_start)   
-            
+                start += (trig_start_idx - cum_start)
+
             # adjust last segment
             if trig_end_idx < cum_end:
                 stop -= (cum_end - trig_end_idx)
@@ -545,7 +544,7 @@ class StrainSegments(object):
                 for inj_id in inj_idx:
                     if inj_id < cum_end and inj_id > cum_start:
                         analyze_this = True
-                        
+
                         # This can only optimize the case of 1 injection in a segment
                         # If there are more, the entire segment is analyzed
                         if injection_window is not None:
@@ -558,29 +557,29 @@ class StrainSegments(object):
                                 inj_start = start
                             if inj_end > stop:
                                 inj_end = stop
-                
+
                 if injections_in_segment == 1:
                     start = inj_start
                     stop = inj_end
 
                 if not analyze_this:
-                    continue     
+                    continue
 
             if start < stop:
-                segment_slices_red.append(seg)  
-                analyze_slices_red.append(slice(start, stop))       
-                
+                segment_slices_red.append(seg)
+                analyze_slices_red.append(slice(start, stop))
+
         self.segment_slices = segment_slices_red
-        self.analyze_slices = analyze_slices_red                   
-    
+        self.analyze_slices = analyze_slices_red
+
     def fourier_segments(self):
         """ Return a list of the FFT'd segments.
-        
+
         Return the list of FrequencySeries. Additional properties are
-        added that describe the strain segment. The property 'analyze' 
+        added that describe the strain segment. The property 'analyze'
         is a slice corresponding to the portion of the time domain equivelant
         of the segment to analyze for triggers. The value 'cumulative_index'
-        indexes from the beginning of the original strain series. 
+        indexes from the beginning of the original strain series.
         """
         if not self._fourier_segments:
             self._fourier_segments = []
@@ -588,23 +587,23 @@ class StrainSegments(object):
                 freq_seg = make_frequency_series(self.strain[seg_slice])
                 freq_seg.analyze = ana
                 freq_seg.cumulative_index = seg_slice.start + ana.start
-                self._fourier_segments.append(freq_seg)  
-   
+                self._fourier_segments.append(freq_seg)
+
         return self._fourier_segments
-        
+
     @classmethod
     def from_cli(cls, opt, strain):
         """Calculate the segmentation of the strain data for analysis from
         the command line options.
         """
-        return cls(strain, segment_length=opt.segment_length, 
+        return cls(strain, segment_length=opt.segment_length,
                    segment_start_pad=opt.segment_start_pad,
                    segment_end_pad=opt.segment_end_pad,
                    trigger_start=opt.trig_start_time,
                    trigger_end=opt.trig_end_time,
                    filter_inj_only=opt.filter_inj_only,
                    injection_window=opt.injection_window)
-        
+
     @classmethod
     def insert_segment_option_group(cls, parser):
         segment_group = parser.add_argument_group(
@@ -613,30 +612,30 @@ class StrainSegments(object):
                                   "segment the strain into smaller chunks, "
                                   "and for determining the portion of each to "
                                   "analyze for triggers. ")
-        segment_group.add_argument("--trig-start-time", type=int, default=0, 
+        segment_group.add_argument("--trig-start-time", type=int, default=0,
                     help="(optional) The gps time to start recording triggers")
         segment_group.add_argument("--trig-end-time", type=int, default=0,
                     help="(optional) The gps time to stop recording triggers")
-        segment_group.add_argument("--segment-length", type=int, 
+        segment_group.add_argument("--segment-length", type=int,
                           help="The length of each strain segment in seconds.")
-        segment_group.add_argument("--segment-start-pad", type=int, 
+        segment_group.add_argument("--segment-start-pad", type=int,
                           help="The time in seconds to ignore of the "
                                "beginning of each segment in seconds. ")
-        segment_group.add_argument("--segment-end-pad", type=int, 
+        segment_group.add_argument("--segment-end-pad", type=int,
                           help="The time in seconds to ignore at the "
                                "end of each segment in seconds.")
         segment_group.add_argument("--filter-inj-only", action='store_true',
-                          help="Analaze only segements that contain an injection.")
+                          help="Analyze only segments that contain an injection.")
         segment_group.add_argument("--injection-window", default=None,
                           type=float, help="""If using --filter-inj-only then
                           only search for injections within +/- injection
                           window of the injections's end time. This is useful
                           to speed up a coherent search or a search where we
                           initially filter at lower sample rate, and then
-                          filter at full rate where needed. NOTE: Reverts to 
+                          filter at full rate where needed. NOTE: Reverts to
                           full analysis if two injections are in the same
                           segment.""")
-        
+
     @classmethod
     def from_cli_single_ifo(cls, opt, strain, ifo):
         """Calculate the segmentation of the strain data for analysis from
@@ -687,13 +686,13 @@ class StrainSegments(object):
                     help="The time in seconds to ignore at the "
                          "end of each segment in seconds.")
         segment_group.add_argument("--filter-inj-only", action='store_true',
-                    help="Analaze only segements that contain an injection.")
+                    help="Analyze only segments that contain an injection.")
 
     required_opts_list = ['--segment-length',
                    '--segment-start-pad',
                    '--segment-end-pad',
                    ]
-    
+
     @classmethod
     def verify_segment_options(cls, opt, parser):
         required_opts(opt, parser, cls.required_opts_list)

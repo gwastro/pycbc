@@ -290,24 +290,23 @@ for datatype in datatypes:
     prefix = '-'.join([ ''.join(on_instruments.split(',')), type_prefix ])
     suffix = re.sub(prefix + '_', '', summary_filename).rstrip('.xml')
   
-    if not datatype == 'playground':
-      # Playground files don't exist before SQL, so no minifollowups
-      if datatype == 'slide':
-        minifup_node = inspiral.MiniFollowupsNode( minifup_ts_job )
-      else:
-        minifup_node = inspiral.MiniFollowupsNode( minifup_job )
-      minifup_node.set_category('minifollowups')
-      minifup_node.set_cache_file( ihope_cachefile )
-      minifup_node.set_cache_string( type_prefix.split('_CAT_')[0] )
-      minifup_node.set_prefix( prefix )
-      minifup_node.set_suffix( suffix )
-      minifup_node.set_input_xml( '.'.join([ full_filename, 'xml' ]) )
-      minifup_node.set_input_xml_summary( summary_filename )
-      minifup_node.set_output_html_table( re.sub('.xml', '.html', summary_filename ) )
-      minifup_node.set_table_name( 'loudest_events' )
+    # Playground files don't exist before SQL, so no minifollowups
+    if datatype == 'slide':
+      minifup_node = inspiral.MiniFollowupsNode( minifup_ts_job )
+    else:
+      minifup_node = inspiral.MiniFollowupsNode( minifup_job )
+    minifup_node.set_category('minifollowups')
+    minifup_node.set_cache_file( ihope_cachefile )
+    minifup_node.set_cache_string( type_prefix.split('_CAT_')[0] )
+    minifup_node.set_prefix( prefix )
+    minifup_node.set_suffix( suffix )
+    minifup_node.set_input_xml( '.'.join([ full_filename, 'xml' ]) )
+    minifup_node.set_input_xml_summary( summary_filename )
+    minifup_node.set_output_html_table( re.sub('.xml', '.html', summary_filename ) )
+    minifup_node.set_table_name( 'loudest_events' )
 
-      minifup_node.add_parent( printlc_node )
-      dag.add_node( minifup_node )
+    minifup_node.add_parent( printlc_node )
+    dag.add_node( minifup_node )
       
 ############################################################################
 # Injection summary: Setup printsims, minifollowup, and printmissed nodes

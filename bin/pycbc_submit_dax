@@ -18,11 +18,12 @@ fi
 SUBMIT_DIR=`mktemp -d`
 
 #Make sure the directory is world readable
-chmod 644 $SUBMIT_DIR
+chmod 755 $SUBMIT_DIR
 
 # find the site-local template directory
 PEG_DIR=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGASUS_FILE_DIRECTORY'`
 SITE_TEMPLATE=$PEG_DIR/basic_site_template.xml
+
 
 # Set up the site-local with the correct paths
 echo 'cat <<END_OF_TEXT' >  temp.sh
@@ -36,14 +37,23 @@ touch _reuse.cache
 
 if [ "x$2" == "x--cache" ]; then
   cp $3 _reuse.cache
-  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites local -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-submit-dir . --submit
+  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites local -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-submit-dir work --submit
 else
-  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites local -o local --dir $SUBMIT_DIR --cleanup inplace --relative-submit-dir . --submit
+  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites local -o local --dir $SUBMIT_DIR --cleanup inplace --relative-submit-dir work --submit
 fi
 
 ln -s $SUBMIT_DIR submitdir
 
-echo pegasus-status $SUBMIT_DIR > status
+echo pegasus-status $SUBMIT_DIR/work > status
 chmod 755 status
+
+echo pegasus-analyzer $SUBMIT_DIR/work > debug
+chmod 755 debug
+
+echo pegasus-remove $SUBMIT_DIR/work > stop
+chmod 755 stop
+
+echo pegasus-run $SUBMIT_DIR/work > start
+chmod 755 start
 
 echo Submitting from: $HOSTNAME

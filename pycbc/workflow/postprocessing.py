@@ -26,7 +26,7 @@ This module is used to prepare output from the coincidence and/or matched filter
 stages of the workflow for post-processing (post-processing = calculating
 significance of candidates and making any rates statements). For details of this
 module and its capabilities see here:
-https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
+https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/postprocessing.html
 """
 
 from __future__ import division
@@ -47,8 +47,8 @@ def setup_postprocessing(workflow, trigger_files, summary_xml_files,
     significance of triggers and making any statements about trigger rates.
     Dedicated plotting jobs do not belong here.
 
-    Properties
-    -----------
+    Parameters
+    ----------
     workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the coincidence jobs will be added to.
     trigger_files : pycbc.workflow.core.FileList
@@ -106,6 +106,8 @@ def setup_postproc_pipedown_workflow(workflow, trigger_files, summary_xml_files,
     containing all triggers. This sub-module follows that same idea, so
     len(triggerFiles) must equal 1 (for every DQ category that we will run).
 
+    Parameters
+    ----------  
     workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the coincidence jobs will be added to.
     trigger_files : pycbc.workflow.core.FileList
@@ -113,27 +115,26 @@ def setup_postproc_pipedown_workflow(workflow, trigger_files, summary_xml_files,
         will be used to calculate FARs
     summary_xml_files : pycbc.workflow.core.FileList (required)
         A FileList of the output of the analysislogging_utils module.
-        For pipedown-style post-processing this should be one file conataing a
-        segment table holding the single detector analysed times.
+        For pipedown-style post-processing this should be one file containing
+        a segment table holding the single detector analysed times.
     output_dir : path
         The directory in which output files will be stored.
     tags : list of strings (optional, default = [])
         A list of the tagging strings that will be used for all jobs created
         by this call to the workflow. An example might be ['POSTPROC1'] or
         ['DENTYSNEWPOSTPROC']. This will be used in output names.
-    veto_cats : list of integers (optional, default = [])
-        Decide which set of veto files should be used in the post-processing
-        preparation. This is used, for example, to tell the workflow that you
-        are only interested in quoting results at categories 2, 3 and 4. In
-        which case just supply [2,3,4] for those veto files here.
-   
+    veto_cats : list of integers (default = [], non-empty list required)
+        Decide which veto category levels should be used in post-processing.
+        For example tell the workflow to only generate results at cumulative
+        categories 2, 3 and 4 by supplying [2,3,4] here.
+
     Returns
     --------
     final_files : pycbc.workflow.core.FileList
         A list of the final SQL databases containing computed FARs.
     """
     if not veto_cats:
-        raise ValueError("Veto cats is required.")
+        raise ValueError("A non-empty list of veto categories is required.")
     if not len(summary_xml_files) == 1:
         errMsg = "I need exactly one summaryXML file, got %d." \
                                                      %(len(summary_xml_files),)
@@ -146,14 +147,14 @@ def setup_postproc_pipedown_workflow(workflow, trigger_files, summary_xml_files,
                                                      compute_durations_exe_tag)
     cfar_exe_tag = workflow.cp.get_opt_tags("workflow-postproc", "postproc-cfar-exe",
                                        tags)
-    cfar_exe = select_generic_executable(workflow, cfar_exe_tag) 
+    cfar_exe = select_generic_executable(workflow, cfar_exe_tag)
 
     comp_durations_outs = FileList([])
     cfar_outs = FileList([])
 
-    for veto_cat in veto_cats:
-        veto_tag = 'CUMULATIVE_CAT_%d' %(veto_cat,)
+    for cat in veto_cats:
 
+        veto_tag = 'CUMULATIVE_CAT_%d' %(cat)
         trig_input_files = trigger_files.find_output_with_tag(veto_tag)
         if not len(trig_input_files) == 1:
             err_msg = "Did not find exactly 1 database input file."
@@ -169,7 +170,7 @@ def setup_postproc_pipedown_workflow(workflow, trigger_files, summary_xml_files,
                                                  ifo=workflow.ifo_string, 
                                                  out_dir=output_dir, 
                                                  tags=curr_tags)
-        compute_durations_node = computeDurationsJob.create_node(\
+        compute_durations_node = computeDurationsJob.create_node(
                                     workflow.analysis_time, trig_input_files[0],
                                     summary_xml_files[0])
         compute_durations_node.add_profile('pegasus', 'label', job_label)

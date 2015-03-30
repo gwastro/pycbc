@@ -1,0 +1,46 @@
+#!/usr/bin/python
+""" Make a table of found injection information
+"""
+import argparse, h5py, numpy, pycbc.results, pycbc.detector
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--injection-file', help='HDF File containing the matched injections')
+parser.add_argument('--verbose', action='count')
+parser.add_argument('--output-file')
+args = parser.parse_args()
+
+f = h5py.File(args.injection_file)
+found = f['found_after_vetoes']
+inj = f['injections']
+idx = found['injection_index']
+
+tdiff = (found['time1'][:] - found['time2'][:]) * 1000
+tdiff_str = '%s - %s time (ms)' % (f.attrs['detector_1'], f.attrs['detector_2'])
+
+columns = [inj['end_time'][:][idx], inj['mass1'][:][idx], inj['mass2'][:][idx],
+           inj['spin1x'][:][idx], inj['spin1y'][:][idx], inj['spin1z'][:][idx],
+           inj['spin2x'][:][idx], inj['spin2y'][:][idx], inj['spin2z'][:][idx],
+           inj['distance'][:][idx],
+           inj['eff_dist_h'][:][idx], inj['eff_dist_l'][:][idx], inj['eff_dist_v'][:][idx],
+           tdiff, found['stat'], found['ifar'],     
+          ]
+names = ['Inj Time', 'Mass1', 'Mass2',
+         's1x', 's1y', 's1z',
+         's2x', 's2y', 's2z', 
+         'Dist',
+         'Eff Dist (H)', '(L)', '(V)',
+         tdiff_str, 'Ranking Stat.', 'IFAR (years)',
+        ]
+format_strings = ['##.##', '##.##', '##.##',
+                  '##.##', '##.##', '##.##',
+                  '##.##', '##.##', '##.##',
+                  '##.##',
+                  '##.##', '##.##', '##.##',
+                  '##.##', '##.##', '##',
+                 ]
+
+html_table = pycbc.results.table(columns, names, 
+                                 format_strings=format_strings, 
+                                 page_size=20)
+f = open(args.output_file, 'w')
+f.write(html_table)

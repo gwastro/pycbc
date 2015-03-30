@@ -645,15 +645,17 @@ def seobnrrom_length_in_time(**kwds):
     This is a stub for holding the calculation for getting length of the ROM
     waveforms.
     """
-    # FIXME: Approximate SEOBNRv2 ROM lengths as SPA for now
-    # Hardcode the phase order to 7 when estimating SPA length. Note this does
-    # not include any spin terms.
-    kwds['phase_order'] = 7
-    time = spa_length_in_time(**kwds)
-    # FIXME: When this is done properly remove this.
-    if time < 0.1:
-        time = 0.1
-    return time
+    mass1 = kwds['mass1']
+    mass2 = kwds['mass2']
+    spin1z = kwds['spin1z']
+    spin2z = kwds['spin2z']
+    fmin = kwds['f_lower']
+    chi = lalsimulation.SimIMRPhenomBComputeChi(mass1, mass2, spin1z, spin2z)
+    time_length = lalsimulation.SimIMRSEOBNRv2ChirpTimeSingleSpin(
+                               mass1*lal.MSUN_SI, mass2*lal.MSUN_SI, chi, fmin)
+    # FIXME: This is still approximate so add a 10% error margin
+    time_length = time_length * 1.1
+    return time_length
 
 _filter_time_lengths["SEOBNRv1_ROM_SingleSpin"] = seobnrrom_length_in_time
 _filter_time_lengths["SEOBNRv1_ROM_DoubleSpin"] = seobnrrom_length_in_time
