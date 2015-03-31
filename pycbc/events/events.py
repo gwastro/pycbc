@@ -291,25 +291,27 @@ class EventManager(object):
     def write_to_hdf(self, outname):  
         def changes(arr):
             from pycbc.future import unique
-            l = numpy.where(arr[:-1] != v[1:])
-            l = numpy.concatenate([[0], l, [len(arr)]])
+            l = numpy.where(arr[:-1] != arr[1:])[0]
+            l = numpy.concatenate(([0], l, [len(arr)]))
             return unique(l)
           
         class fw(object):
-            def __init__(self, name, prefix):
+            def __init__(self, name, prefix, groups):
                 import h5py
                 self.f = h5py.File(name, 'w')
                 self.prefix = prefix
+                self.groups = groups
                 
             def __setitem__(self, name, data):
-                col = self.prefix + '/' + name
-                self.f.create_dataset(col, data=data, compression='gzip')
-                
-        f = fw(outname, self.opt.channel_name[0:2])
+                for i in range(len(self.groups) - 1):
+                    col = self.prefix + '/' + str(i) + '/' + name
+                    group_data = data[self.groups[i]:self.groups[i+1]]
+                    self.f.create_dataset(col, data=group_data, compression='gzip')
         
-        tid = self.events['template_id']
         self.events.sort(order='template_id')
-        
+        tid = self.events['template_id']
+        ifo = self.opt.channel_name[0:2]
+        f = fw(outname, ifo, changes(tid))
         
         if len(self.events):
             f['snr'] = abs(self.events['snr'])
@@ -351,14 +353,14 @@ class EventManager(object):
             f['template_hash'] = th[tid]
 
         if self.opt.trig_start_time:
-            f['search/start_time'] = numpy.array([self.opt.trig_start_time])
+            f.f['%s/search/start_time' % ifo] = numpy.array([self.opt.trig_start_time])
         else:
-            f['search/start_time'] = numpy.array([self.opt.gps_start_time + self.opt.segment_start_pad])
+            f.f['%s/search/start_time' % ifo] = numpy.array([self.opt.gps_start_time + self.opt.segment_start_pad])
             
         if self.opt.trig_end_time:
-            f['search/end_time'] = numpy.array([self.opt.trig_end_time])
+            f.f['%s/search/end_time' % ifo] = numpy.array([self.opt.trig_end_time])
         else:
-            f['search/end_time'] = numpy.array([self.opt.gps_end_time - self.opt.segment_end_pad])
+            f.f['%s/search/end_time' % ifo] = numpy.array([self.opt.gps_end_time - self.opt.segment_end_pad])
 
     def write_to_xml(self, outname):
         """ Write the found events to a sngl inspiral table 
