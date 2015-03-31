@@ -188,27 +188,9 @@ CD into the directory where the dax was generated::
 
 From the directory where the dax was created, run the planning script::
 
-    pycbc_basic_pegasus_plan daily_ahope.dax ${LOGPATH}
+    pycbc_submit_dax daily_ahope.dax
     
-Submit the workflow by following the instructions at the end of the script output, which looks something like 
-the following.::
-
-    ...
-
-    I have concretized your abstract workflow. The workflow has been entered 
-    into the workflow database with a state of "planned". The next step is 
-    to start or execute your workflow. The invocation required is
-
-
-    pegasus-run  /usr1/albert.einstein/log/albert.einstein/pegasus/weekly_ahope/run0011
-
-     
-    2014.03.26 10:49:28.983 EDT:   Time taken to execute is 7.095 seconds 
-    
-In this case, the workflow would be submitted as follows.::
-
-    pegasus-run  /usr1/${USER}/log/${USER}/pegasus/weekly_ahope/run0011
-
+This will plan an submit your workflow to the cluster.
 
 -----------------------------------------
 Monitor and Debug the Workflow
