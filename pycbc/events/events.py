@@ -296,22 +296,34 @@ class EventManager(object):
             return unique(l)
           
         class fw(object):
-            def __init__(self, name, prefix, groups):
+            def __init__(self, name, prefix, groups, hashes):
                 import h5py
                 self.f = h5py.File(name, 'w')
                 self.prefix = prefix
                 self.groups = groups
+                self.hashes = hashes
                 
             def __setitem__(self, name, data):
                 for i in range(len(self.groups) - 1):
-                    col = self.prefix + '/' + str(i) + '/' + name
+                    col = self.prefix + '/' + str(self.hashes[i]) + '/' + name
                     group_data = data[self.groups[i]:self.groups[i+1]]
                     self.f.create_dataset(col, data=group_data, compression='gzip')
-        
+                       
         self.events.sort(order='template_id')
+        
+        # Template id hack
+        m1 = numpy.array([p['tmplt'].mass1 for p in self.template_params], dtype=numpy.float32)
+        m2 = numpy.array([p['tmplt'].mass2 for p in self.template_params], dtype=numpy.float32)
+        s1 = numpy.array([p['tmplt'].spin1z for p in self.template_params], dtype=numpy.float32)
+        s2 = numpy.array([p['tmplt'].spin2z for p in self.template_params], dtype=numpy.float32)
+    
+        th = numpy.zeros(len(m1), dtype=int)
+        for j, v in enumerate(zip(m1, m2, s1, s2)):
+            th[j] = hash(v)
+        
         tid = self.events['template_id']
         ifo = self.opt.channel_name[0:2]
-        f = fw(outname, ifo, changes(tid))
+        f = fw(outname, ifo, changes(tid), th)
         
         if len(self.events):
             f['snr'] = abs(self.events['snr'])
@@ -332,25 +344,6 @@ class EventManager(object):
                 f['chisq_dof'] = self.events['chisq_dof'] / 2 + 1
             else:
                 f['chisq_dof'] = numpy.zeros(len(self.events))
-        
-            # Template id hack
-            m1 = numpy.array([p['tmplt'].mass1 for p in self.template_params], dtype=numpy.float32)
-            m2 = numpy.array([p['tmplt'].mass2 for p in self.template_params], dtype=numpy.float32)
-            s1 = numpy.array([p['tmplt'].spin1z for p in self.template_params], dtype=numpy.float32)
-            s2 = numpy.array([p['tmplt'].spin2z for p in self.template_params], dtype=numpy.float32)
-        
-            th = numpy.zeros(len(m1), dtype=int)
-            for j, v in enumerate(zip(m1, m2, s1, s2)):
-                th[j] = hash(v)
-            th_sort = th.argsort()
-        
-            th_map  = {}
-            for j, h in enumerate(th[th_sort]):
-                th_map[h] = j
-            
-            rtid = numpy.array([th_map[h] for h in th])
-            f['template_id'] = rtid[tid]
-            f['template_hash'] = th[tid]
 
         if self.opt.trig_start_time:
             f.f['%s/search/start_time' % ifo] = numpy.array([self.opt.trig_start_time])
