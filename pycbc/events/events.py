@@ -292,7 +292,7 @@ class EventManager(object):
         def changes(arr):
             from pycbc.future import unique
             l = numpy.where(arr[:-1] != arr[1:])[0]
-            l = numpy.concatenate(([0], l, [len(arr)]))
+            l = numpy.concatenate(([0], l+1, [len(arr)]))
             return unique(l)
           
         class fw(object):
@@ -323,7 +323,9 @@ class EventManager(object):
         
         tid = self.events['template_id']
         ifo = self.opt.channel_name[0:2]
-        f = fw(outname, ifo, changes(tid), th)
+        ctid = changes(tid)
+        hs = th[tid][ctid[0:-1]]
+        f = fw(outname, ifo, ctid, hs)
         
         if len(self.events):
             f['snr'] = abs(self.events['snr'])
