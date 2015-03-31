@@ -288,32 +288,48 @@ class EventManager(object):
         else:
             raise ValueError('Cannot write to this format')
     
-    def write_to_hdf(self, outname):
-        import h5py
-        f = h5py.File(outname, 'w')
+    def write_to_hdf(self, outname):  
+        def changes(arr):
+            from pycbc.future import unique
+            l = numpy.where(arr[:-1] != v[1:])
+            l = numpy.concatenate([[0], l, [len(arr)]])
+            return unique(l)
+          
+        class fw(object):
+            def __init__(self, name, prefix):
+                import h5py
+                self.f = h5py.File(name, 'w')
+                self.prefix = prefix
+                
+            def __setitem__(self, name, data):
+                col = self.prefix + '/' + name
+                self.f.create_dataset(col, data=data, compression='gzip')
+                
+        f = fw(outname, self.opt.channel_name[0:2])
+        
+        tid = self.events['template_id']
+        self.events.sort(order='template_id')
+        
         
         if len(self.events):
-            f.create_dataset('snr', data=abs(self.events['snr']), compression='gzip')
-            f.create_dataset('coa_phase', data=numpy.angle(self.events['snr']), compression='gzip')
-            f.create_dataset('chisq', data=abs(self.events['chisq']), compression='gzip')
-            f.create_dataset('bank_chisq', data=abs(self.events['bank_chisq']), compression='gzip')
-            f.create_dataset('cont_chisq', data=abs(self.events['cont_chisq']), compression='gzip')
+            f['snr'] = abs(self.events['snr'])
+            f['coa_phase'] = numpy.angle(self.events['snr'])
+            f['chisq'] = self.events['chisq']
+            f['bank_chisq'] = self.events['bank_chisq']
+            f['cont_chisq'] = self.events['cont_chisq']
+            f['end_time'] = self.events['time_index'] / float(self.opt.sample_rate) + self.opt.gps_start_time
             
-            end_time = self.events['time_index'] / float(self.opt.sample_rate) + self.opt.gps_start_time
-            f.create_dataset('end_time', data=end_time, compression='gzip')
-            
-            tid = self.events['template_id']
             template_sigmasq = numpy.array([t['sigmasq'] for t in self.template_params], dtype=numpy.float32)
-            f.create_dataset('sigmasq', data=template_sigmasq[tid], compression='gzip')
+            f['sigmasq'] = template_sigmasq[tid]
          
             cont_dof = self.opt.autochi_number_points if self.opt.autochi_onesided else 2 * self.opt.autochi_number_points
-            f.create_dataset('cont_chisq_dof', data=numpy.repeat(cont_dof, len(self.events)), compression='gzip')
-            f.create_dataset('bank_chisq_dof', data=numpy.repeat(10, len(self.events)), compression='gzip')        
+            f['cont_chisq_dof'] = numpy.repeat(cont_dof, len(self.events))
+            f['bank_chisq_dof'] = numpy.repeat(10, len(self.events))      
 
             if 'chisq_dof' in self.events.dtype.names:
-                f.create_dataset('chisq_dof', data=self.events['chisq_dof'] / 2 + 1, compression='gzip')
+                f['chisq_dof'] = self.events['chisq_dof'] / 2 + 1
             else:
-                f.create_dataset('chisq_dof', data=numpy.zeros(len(self.events)), compression='gzip')    
+                f['chisq_dof'] = numpy.zeros(len(self.events))
         
             # Template id hack
             m1 = numpy.array([p['tmplt'].mass1 for p in self.template_params], dtype=numpy.float32)
@@ -331,10 +347,9 @@ class EventManager(object):
                 th_map[h] = j
             
             rtid = numpy.array([th_map[h] for h in th])
-            f.create_dataset('template_id', data=rtid[tid], compression='gzip')
-            f.create_dataset('template_hash', data=th[tid], compression='gzip') 
-    
-        f.attrs['ifo'] = self.opt.channel_name[0:2]
+            f['template_id'] = rtid[tid]
+            f['template_hash'] = th[tid]
+
         if self.opt.trig_start_time:
             f['search/start_time'] = numpy.array([self.opt.trig_start_time])
         else:
