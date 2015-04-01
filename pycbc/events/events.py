@@ -294,10 +294,13 @@ class EventManager(object):
                 import h5py
                 self.f = h5py.File(name, 'w')
                 self.prefix = prefix
-                
+
             def __setitem__(self, name, data):
                 col = self.prefix + '/' + name
-                self.f.create_dataset(col, data=data, compression='gzip')
+                self.f.create_dataset(col, data=data, 
+                                      compression='gzip', 
+                                      compression_opts=9,
+                                      shuffle=True)
                        
         self.events.sort(order='template_id')
               

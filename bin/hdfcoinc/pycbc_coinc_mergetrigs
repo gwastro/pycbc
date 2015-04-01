@@ -14,23 +14,21 @@ logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.INFO)
 
 f = h5py.File(args.output_file, 'w')
 
-def hash_lookup(bank_file):
-    return h5py.File(bank_file, 'r')['template_hash'][:]
-
 logging.info("getting the list of columns from a representative file")
-empty = True
 trigger_columns = []
-ifo = None
 for fname in args.trigger_files:
     f2 = h5py.File(fname, 'r')
     ifo = f2.keys()[0]
     if len(f2[ifo].keys()) > 0:
         k = f2[ifo].keys()
-        k.remove('search')
-        trigger_columns = f2[ifo][k[0]].keys()
+        trigger_columns = f2[ifo].keys()
+        trigger_columns.remove('search')
         f2.close()
         break
     f2.close()
+
+for col in trigger_columns:
+    logging.info("trigger column: %s" % col)
 
 logging.info('reading the metadata from the files')
 start = numpy.array([], dtype=numpy.float64)
@@ -44,16 +42,16 @@ f['%s/search/start_time' % ifo], f['%s/search/end_time' % ifo] = start, end
 
 
 logging.info('reading the trigger columns from the input files')
-hashes = hash_lookup(args.bank_file)
+hashes = h5py.File(args.bank_file, 'r')['template_hash'][:]
 
-for i, h in enumerate(hashes):
-    for col in trigger_columns:
-        data = []
-        for fname in args.trigger_files:
-            fin = h5py.File(fname)
-            if '%s/%s' % (ifo, h) in fin:
-                data += [fin['%s/%s/%s' % (ifo, h, col)][:]]
-            fin.close()
-        f.create_dataset('%s/%s/%s' % (ifo, i, col), 
-                 data=numpy.concatenate(data), compression='gzip', shuffle=True) 
+for col in trigger_columns:
+    data = []
+    key = '%s/%s' % (ifo, col)
+    for fname in args.trigger_files:
+        fin = h5py.File(fname)
+        if key in fin:
+            data += [fin[key][:]]
+        fin.close()
+    f.create_dataset(key, data=numpy.concatenate(data), 
+                     compression='gzip', shuffle=True, compression_opts=9) 
 logging.info('done')
