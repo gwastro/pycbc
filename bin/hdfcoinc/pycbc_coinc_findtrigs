@@ -57,10 +57,8 @@ class NewSNRStatistic(object):
         return (s1**2.0 + s2**2.0) ** 0.5
 
 class ReadByTemplate(object):
-    def __init__(self, filename, tmin, tmax, vetofile=None):
+    def __init__(self, filename, vetofile=None):
         self.filename = filename
-        self.tmin = tmin
-        self.tmax = tmax
         self.file = h5py.File(filename, 'r')
         self.ifo = self.file.keys()[0]
         self.veto_times = None
@@ -99,9 +97,9 @@ tmin, tmax = parse_template_range(num_templates, args.template_fraction_range)
 logging.info('Analyzing template %s - %s' % (tmin, tmax-1))
 
 logging.info('Opening first trigger file: %s' % args.trigger_files[0]) 
-trigs0= ReadByTemplate(args.trigger_files[0], tmin, tmax, args.veto_files)
+trigs0= ReadByTemplate(args.trigger_files[0], args.veto_files)
 logging.info('Opening second trigger file: %s' % args.trigger_files[1]) 
-trigs1 = ReadByTemplate(args.trigger_files[1], tmin, tmax, args.veto_files)
+trigs1 = ReadByTemplate(args.trigger_files[1], args.veto_files)
 coinc_segs = (trigs0.segs & trigs1.segs).coalesce()
 
 rank_method = get_statistic(args.ranking_statistic)
@@ -112,7 +110,7 @@ logging.info('The coincidence window is %3.1f ms' % (time_window * 1000))
 data = {'stat':[], 'decimation_factor':[], 'time1':[], 'time2':[], 
         'trigger_id1':[], 'trigger_id2':[], 'timeslide_id':[], 'template_id':[]}
 
-for tnum in trigs0.template_map:
+for tnum in range(tmin, tmax):
     tid0 = trigs0.set_template(tnum)
     tid1 = trigs1.set_template(tnum)
     t0 = trigs0['end_time']
