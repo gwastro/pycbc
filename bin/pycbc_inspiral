@@ -26,15 +26,19 @@ def associate_psd(gwstrain, strain_segments, segments, nsegs, flen, delta_f, flo
     logging.info("Computing noise PSD")
     def grouper(n, iterable):
         args = [iter(iterable)] * n
-        return ([e for e in t if e != None] for t in itertools.izip_longest(*args))
+        return list([e for e in t if e != None] for t in itertools.izip_longest(*args))
         
     nsegs = nsegs if nsegs != 0 else len(segments)    
-    groups = grouper(nsegs, strain_segments.full_segment_slices)
-    for psd_segs in groups:
-        strain_part = gwstrain[psd_segs[0].start:psd_segs[-1].stop]
+    groups = grouper(nsegs, strain_segments.full_segment_slices)   
+    if len(groups[-1]) != len(groups[0]):
+        logging.warn('PSD recalculation does not divide equally among analysis'
+                     'segments. Make sure that this is what you want')
+                                         
+    for psegs in groups:
+        strain_part = gwstrain[psegs[0].start:psegs[-1].stop]
         ppsd = psd.from_cli(opt, flen, delta_f, flow, strain_part, DYN_RANGE_FAC)    
         for seg in segments:
-            if seg.seg_slice in psd_segs:
+            if seg.seg_slice in psegs:
                 seg.psd = ppsd.astype(float32)
 
 parser = argparse.ArgumentParser(usage='',
