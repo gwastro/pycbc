@@ -3,6 +3,21 @@
 """
 import numpy, argparse, h5py, logging
 
+def changes(arr):
+    from pycbc.future import unique
+    l = numpy.where(arr[:-1] != arr[1:])[0]
+    l = numpy.concatenate(([0], l+1, [len(arr)]))
+    return unique(l)
+
+def collect(key, files):
+    data = []
+    for fname in files:
+        fin = h5py.File(fname)
+        if key in fin:
+            data += [fin[key][:]]
+        fin.close()
+    return numpy.concatenate(data)
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--trigger-files', nargs='+')
 parser.add_argument('--output-file')
@@ -23,6 +38,7 @@ for fname in args.trigger_files:
         k = f2[ifo].keys()
         trigger_columns = f2[ifo].keys()
         trigger_columns.remove('search')
+        trigger_columns.remove('template_hash')
         f2.close()
         break
     f2.close()
@@ -43,15 +59,11 @@ f['%s/search/start_time' % ifo], f['%s/search/end_time' % ifo] = start, end
 
 logging.info('reading the trigger columns from the input files')
 hashes = h5py.File(args.bank_file, 'r')['template_hash'][:]
+trigger_sort = collect('%s/template_hash' % ifo, args.trigger_files).argsort()
 
 for col in trigger_columns:
-    data = []
     key = '%s/%s' % (ifo, col)
-    for fname in args.trigger_files:
-        fin = h5py.File(fname)
-        if key in fin:
-            data += [fin[key][:]]
-        fin.close()
-    f.create_dataset(key, data=numpy.concatenate(data), 
+    data = collect(key, args.trigger_files)
+    f.create_dataset(key, data=data[trigger_sort], 
                      compression='gzip', shuffle=True, compression_opts=9) 
 logging.info('done')
