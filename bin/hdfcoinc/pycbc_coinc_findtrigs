@@ -62,74 +62,35 @@ class ReadByTemplate(object):
         self.tmin = tmin
         self.tmax = tmax
         self.file = h5py.File(filename, 'r')
-        self.template_num = None
-        self.__dict__.update(self.file.attrs)
-        self.data = {}
+        self.ifo = self.file.keys()[0]
+        self.veto_times = None
         
         from glue.segments import segmentlist, segment
         s, e = self.file['search/start_time'][:], self.file['search/end_time'][:]
         self.segs = veto.start_end_to_segments(s, e).coalesce()
-        
-        template_id, self.template_sort, self.sort = self.make_template_index(tmin, tmax)
-        
         if vetofile is not None:
-            time, _ = self.chunk_read('end_time', tmin, tmax)
-            idx, veto_segs = veto.indices_within_segments(time[self.sort], self.ifo, [vetofile])
-            self.template_sort = numpy.delete(self.template_sort, idx)
-            template_id = numpy.delete(template_id, idx)
+            self.veto_times = veto.start_end_from_segments(vetofile)
+            veto_segs = veto.start_end_to_segments(self.veto_times)
             self.segs = (self.segs - veto_segs).coalesce()
-            self.sort = numpy.delete(self.sort, idx)
-
-        self.template_indices = self.group_starts(template_id)
-        self.template_map = {}
-        for i in range(len(self.template_indices) - 1):
-            num = template_id[self.template_indices[i]]
-            self.template_map[num] = slice(self.template_indices[i], self.template_indices[i+1])
-        self.num_templates = len(self.template_indices) - 1
-        
-    def chunk_read(self, col, tmin, tmax):
-        logging.info('Chunk reading %s start' % col)
-        chunks = 100
-        step = len(self.file['template_id']) / float(chunks)
-        data, locs = [], []
-        valid = numpy.arange(tmin, tmax)
-        for i in range(chunks):
-            s, e = int(i * step), int((i + 1) * step)
-            tid = self.file['template_id'][s:e]
-            if col != 'template_id':
-                dat = self.file[col][s:e]
-            else:
-                dat = tid
-            loc = numpy.where(numpy.in1d(tid, valid))[0]
-            data += [dat[loc]]
-            locs += [loc + s]
-        data = numpy.concatenate(data)
-        locs = numpy.concatenate(locs)
-        logging.info('Chunk reading %s end' % col)
-        return data, locs
-   
-    def make_template_index(self, tmin, tmax):
-        tid, locs = self.chunk_read('template_id', tmin, tmax)
-        sort = tid.argsort()
-        return tid[sort], locs[sort], sort
-        
-    def group_starts(self, v):
-        return numpy.concatenate([[0], (numpy.where(v[:-1] != v[1:])[0]) + 1, [len(v)]])  
-        
+        self.valid = veto.segments_to_start_end(self.segs)
+       
     def set_template(self, num):
         self.template_num = num
-        self.slice = self.template_map[num]
-        self.idx = self.template_sort[self.slice] 
+        if self.veto_times:
+            ref = self.file['%s/end_time' % self.ifo].attrs[str(num)]
+            times = self.file[self.ref][self.ref]
+            self.keep = veto.indices_within_times(times, self.valid[0], self.valid[1]) 
         return self.idx
         
     def __getitem__(self, col):
         if self.template_num == None:
             raise ValueError('You must call set_template to first pick the '
                              'template to read data from')
-        if col not in self.data:
-            data, _ = self.chunk_read(col, tmin, tmax)
-            self.data[col] = data[self.sort]
-        return self.data[col][self.slice]
+        
+        if self.veto_times:
+            return self.file[ref][ref][self.keep]
+        else:
+            return self.file[ref][ref]
 
 logging.info('Starting...')
 
