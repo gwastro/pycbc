@@ -243,7 +243,7 @@ with ctx:
             cluster_window = int(template.chirp_length * gwstrain.sample_rate)
 
         for s_num, stilde in enumerate(segments):
-            logging.info("Filtering template %d/%d segment %d/%d" % \
+            logging.info("Filtering template %d/%d segment %d/%d" % 
                          (t_num + 1, len(bank), s_num + 1, len(segments)))
 
             snr, norm, corr, idx, snrv = \
