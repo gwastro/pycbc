@@ -18,6 +18,13 @@ def collect(key, files):
         fin.close()
     return numpy.concatenate(data)
 
+def region(dset, indices, boundaries):
+    ref_dtype = h5py.special_dtype(ref=h5py.Reference)
+    ref = numpy.zeros(len(indices) , dtype=ref_dtype)
+    for j, i in enumerate(indices):
+        l, r = boundaries[j], boundaries[j+1]
+        dset.attrs[str(i)]  = dset.regionref[l:r]  
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--trigger-files', nargs='+')
 parser.add_argument('--output-file')
@@ -59,11 +66,22 @@ f['%s/search/start_time' % ifo], f['%s/search/end_time' % ifo] = start, end
 
 logging.info('reading the trigger columns from the input files')
 hashes = h5py.File(args.bank_file, 'r')['template_hash'][:]
-trigger_sort = collect('%s/template_hash' % ifo, args.trigger_files).argsort()
+trigger_hashes = collect('%s/template_hash' % ifo, args.trigger_files)
+trigger_sort = trigger_hashes.argsort()
+trigger_hashes = trigger_hashes[trigger_sort]
+template_boundaries = changes(trigger_hashes)
+template_ids = numpy.searchsorted(hashes, trigger_hashes[template_boundaries[:-1]])
+
+idlen = (template_boundaries[1:] - template_boundaries[:-1])
+f.create_dataset('%s/template_id' % ifo, data=numpy.repeat(template_ids, idlen), 
+                 compression='gzip', shuffle=True, compression_opts=9)
 
 for col in trigger_columns:
+    logging.info('writing %s to file' % col)
     key = '%s/%s' % (ifo, col)
     data = collect(key, args.trigger_files)
-    f.create_dataset(key, data=data[trigger_sort], 
-                     compression='gzip', shuffle=True, compression_opts=9) 
+    dset = f.create_dataset(key, data=data[trigger_sort], 
+                     compression='gzip', shuffle=True, compression_opts=9)
+    region(dset, template_ids, template_boundaries) 
+f.close()
 logging.info('done')
