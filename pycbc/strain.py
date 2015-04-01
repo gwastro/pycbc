@@ -510,6 +510,8 @@ class StrainSegments(object):
         ana_end = int((seg_len - seg_end_pad) * strain.sample_rate)
         ana_slice = slice(ana_start, ana_end)
         self.analyze_slices.append(ana_slice)
+        
+        self.full_segment_slices = copy.deepcopy(self.segment_slices)
 
         #Remove segments that are outside trig start and end
         segment_slices_red = []
@@ -587,6 +589,7 @@ class StrainSegments(object):
                 freq_seg = make_frequency_series(self.strain[seg_slice])
                 freq_seg.analyze = ana
                 freq_seg.cumulative_index = seg_slice.start + ana.start
+                freq_seg.seg_slice = seg_slice
                 self._fourier_segments.append(freq_seg)
 
         return self._fourier_segments

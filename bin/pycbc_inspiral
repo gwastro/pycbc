@@ -16,12 +16,26 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import logging
-import argparse
+import logging, argparse, numpy, itertools
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC
 from pycbc.filter import MatchedFilterControl, make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
 import pycbc.fft.fftw, pycbc.version
+
+def associate_psd(gwstrain, strain_segments, segments, nsegs, flen, delta_f, flow):
+    logging.info("Computing noise PSD")
+    def grouper(n, iterable):
+        args = [iter(iterable)] * n
+        return ([e for e in t if e != None] for t in itertools.izip_longest(*args))
+        
+    nsegs = nsegs if nsegs != 0 else len(segments)    
+    groups = grouper(nsegs, strain_segments.full_segment_slices)
+    for psd_segs in groups:
+        strain_part = gwstrain[psd_segs[0].start:psd_segs[-1].stop]
+        ppsd = psd.from_cli(opt, flen, delta_f, flow, strain_part, DYN_RANGE_FAC)    
+        for seg in segments:
+            if seg.seg_slice in psd_segs:
+                seg.psd = ppsd.astype(float32)
 
 parser = argparse.ArgumentParser(usage='',
     description="Find single detector gravitational-wave triggers.")
@@ -124,6 +138,7 @@ parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
                     This is used to identify FULL_DATA jobs for 
                     compatibility with pipedown post-processing. 
                     Option will be removed when no longer needed.""")
+parser.add_argument("--psd-recalculate-segments", type=int, help="Number of segments to use before recalculating the PSD", default=0)
 
 # Add options groups
 psd.insert_psd_option_group(parser)
@@ -161,10 +176,8 @@ with ctx:
 
     logging.info("Making frequency-domain data segments")
     segments = strain_segments.fourier_segments()
-
-    logging.info("Computing noise PSD")
-    psd = psd.from_cli(opt, flen, delta_f, flow, gwstrain, DYN_RANGE_FAC)
-    psd = psd.astype(float32)
+    associate_psd(gwstrain, strain_segments, segments, 
+                  opt.psd_recalculate_segments, flen, delta_f, flow)
 
     matched_filter = MatchedFilterControl(opt.low_frequency_cutoff, None,
                                    opt.snr_threshold, tlen, delta_f, complex64,
@@ -188,7 +201,7 @@ with ctx:
 
     logging.info("Overwhitening frequency-domain data segments")
     for seg in segments:
-        seg /= psd
+        seg /= seg.psd
 
     # storage for values and types to be passed to event manager
     out_types = {
@@ -210,7 +223,7 @@ with ctx:
     names = sorted(out_vals.keys())
 
     event_mgr = events.EventManager(opt, names,
-                                        [out_types[n] for n in names], psd=psd)
+                                        [out_types[n] for n in names], psd=segments[0].psd)
 
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, flen, delta_f,
@@ -219,7 +232,7 @@ with ctx:
                     out=zeros(tlen, dtype=complex64))
 
     for t_num, template in enumerate(bank):
-        event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq(psd))
+        event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq(segments[0].psd))
         if opt.cluster_method == "window":
             cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
         elif opt.cluster_method == "template":
@@ -231,27 +244,24 @@ with ctx:
 
             snr, norm, corr, idx, snrv = \
                matched_filter.matched_filter_and_cluster(template, 
-                                  template.sigmasq(psd), stilde, cluster_window)
+                                  template.sigmasq(stilde.psd), stilde, cluster_window)
 
             if not len(idx):
                 continue
 
-            out_vals['bank_chisq'] = bank_chisq.values(template, psd, stilde, snrv,
+            out_vals['bank_chisq'] = bank_chisq.values(template, stilde.psd, stilde, snrv,
                                                 norm, idx+stilde.analyze.start)
-
             out_vals['chisq'], out_vals['chisq_dof'] = power_chisq.values(corr,
-                       snr, snrv, norm, psd, idx+stilde.analyze.start, template)
-
-            snrv *= norm
+                       snr, snrv, norm, stilde.psd, idx+stilde.analyze.start, template)
 
             out_vals['cont_chisq'] = autochisq.values(snr,
-                  idx+stilde.analyze.start, template, psd, norm, stilde=stilde,
+                  idx+stilde.analyze.start, template, stilde.psd, norm, stilde=stilde,
                   low_frequency_cutoff=flow)
-
+            
             idx += stilde.cumulative_index
 
             out_vals['time_index'] = idx
-            out_vals['snr'] = snrv
+            out_vals['snr'] = snrv * norm
 
             event_mgr.add_template_events(names, [out_vals[n] for n in names])
 
