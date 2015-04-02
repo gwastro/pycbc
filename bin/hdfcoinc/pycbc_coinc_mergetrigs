@@ -78,6 +78,7 @@ del trigger_hashes
 idlen = (template_boundaries[1:] - template_boundaries[:-1])
 f.create_dataset('%s/template_id' % ifo, data=numpy.repeat(template_ids, idlen), 
                  compression='gzip', shuffle=True)
+f['%s/template_boundaries' % ifo] = template_boundaries 
 
 for col in trigger_columns:
     key = '%s/%s' % (ifo, col)
