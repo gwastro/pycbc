@@ -91,7 +91,7 @@ def legacy_get_valid_times(self):
         validEnd = validEnd - int(segmentLength / (sampleRate * 4))
     validChunk = segments.segment([validStart,validEnd])
 
-    return dataLength, validChunk
+    return [dataLength], [validChunk]
 
         
 class LegacyAnalysisNode(Node):
@@ -170,8 +170,7 @@ class LegacyInspiralExecutable(LegacyAnalysisExecutable):
         if self.injection_file is not None:
             node.add_input_opt('--injection-file', self.injection_file)
         return node
-
-
+    
 class LegacySplitBankExecutable(Executable):    
     """
     The class responsible for creating jobs for lalapps_splitbank.

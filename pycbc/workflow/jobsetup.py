@@ -350,7 +350,7 @@ def identify_needed_data(curr_exe_job, link_job_instance=None):
         # and probably still isn't perfect.
 
         # What data does the linked exe use?
-        link_data_length,link_valid_chunk = link_job_instance.get_valid_times()
+        link_data_length, link_valid_chunk = link_job_instance.get_valid_times()
         # What data is lost at start of both jobs? Take the maximum.
         start_data_loss = max(valid_chunk[0], link_valid_chunk[0])
         # What data is lost at end of both jobs? Take the maximum.
@@ -609,16 +609,37 @@ class PyCBCInspiralExecutable(Executable):
         # FIXME: IAN. I'm not happy about analysis_length being buried here.
         #        Maybe this should be something read in at the
         #        matchedfilter_utils level, and acted on *if* possible.
-        analysis_length = int(self.cp.get('workflow-matchedfilter',
-                                          'analysis-length'))
+        min_analysis_segs = int(self.cp.get('workflow-matchedfilter',
+                                          'analysis-segments'))
+        max_analysis_segs = int(self.cp.get('workflow-matchedfilter',
+                                    'max-analysis-segments'))
+        
+        segment_length = int(self.get_opt('segment-length'))
         pad_data = int(self.get_opt( 'pad-data'))
         start_pad = int(self.get_opt( 'segment-start-pad'))
         end_pad = int(self.get_opt('segment-end-pad'))
-
-        data_length = analysis_length + pad_data * 2
-        start = pad_data + start_pad
-        end = data_length - pad_data - end_pad
-        return data_length, segments.segment(start, end)
+        
+        constant_psd_segs = int(self.get_opt('psd-recalculate-segments'))
+        if constant_psd_segs is None:
+            constant_psd_segs = analysis_segs
+        
+        if anlysis_segments % constant_psd_segs != 0:
+            raise ValueError('Constant PSD segments does not evenly divide the 
+                             'number of analysis segments') 
+        
+        seg_ranges = range(min_analysis_segs, max_analysis_segs, constant_psd_segs)
+        
+        data_lengths = []
+        valid_regions = []
+        for nsegs in seg_ranges:
+            manalysis_length = (segment_length - start_pad - end_pad) * nsegs
+            data_length = analysis_length + pad_data * 2 + start_pad + end_pad
+            start = pad_data + start_pad
+            end = data_length - pad_data - end_pad
+            data_lengths += [data_length]
+            valid_regions += [segment(start, end)]
+            
+        return lengths, valid_regions
 
 class PyCBCTmpltbankExecutable(Executable):
     """
@@ -695,7 +716,7 @@ class PyCBCTmpltbankExecutable(Executable):
         data_length = analysis_length + pad_data * 2
         start = pad_data
         end = data_length - pad_data
-        return data_length, segments.segment(start, end)
+        return [data_length], [segments.segment(start, end)]
 
 class LigoLWCombineSegsExecutable(Executable):
     """
