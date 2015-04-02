@@ -25,18 +25,14 @@
 produces event triggers
 """
 import glue.ligolw.utils.process
-import lal
-import numpy
-import copy
+import lal, numpy, copy, os.path, pycbc
 
-import pycbc
 from pycbc.types import Array
 from pycbc.types import convert_to_process_params_dict
 from pycbc.scheme import schemed
 from pycbc.detector import Detector
 
 from . import coinc
-
 
 @schemed("pycbc.events.threshold_")
 def threshold(series, value):
@@ -274,10 +270,17 @@ class EventManager(object):
         self.events = numpy.append(self.events, self.template_events)
         self.template_events = numpy.array([], dtype=self.event_dtype)
 
+    def make_output_dir(self, outname):
+        path = os.path.dirname(outname)
+        if path != '':
+            if not os.path.exists(path) and path is not None:
+                os.makedirs(path)
+
     def write_events(self, outname):
         """ Write the found events to a sngl inspiral table
-        """
-
+        """ 
+        self.make_output_dir(outname)
+        
         if '.xml' in outname:
             self.write_to_xml(outname)
         elif '.hdf' in outname:
@@ -717,6 +720,7 @@ class EventManagerMultiDet(EventManager):
     def write_events(self, outname):
         """ Write the found events to a sngl inspiral table 
         """
+        self.make_output_dir(outname)
         outdoc = glue.ligolw.ligolw.Document()
         outdoc.appendChild(glue.ligolw.ligolw.LIGO_LW())
 
