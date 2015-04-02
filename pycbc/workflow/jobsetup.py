@@ -627,6 +627,9 @@ class PyCBCInspiralExecutable(Executable):
             raise ValueError('Constant PSD segments does not evenly divide the 
                              'number of analysis segments') 
         
+        if max_analysis_segs is None:
+            max_analysis_segs = min_analysis_segs
+        
         seg_ranges = range(min_analysis_segs, max_analysis_segs, constant_psd_segs)
         
         data_lengths = []
@@ -710,10 +713,11 @@ class PyCBCTmpltbankExecutable(Executable):
 
     def get_valid_times(self):
         pad_data = int(self.get_opt( 'pad-data'))
-        analysis_length = int(self.cp.get('workflow-tmpltbank', 'analysis-length'))
-
-        #FIXME this should not be hard coded
-        data_length = analysis_length + pad_data * 2
+        nsegs = int(self.cp.get('workflow-tmpltbank', 'analysis-length'))
+        segment_length = int(self.get_opt('segment-length'))
+        
+        manalysis_length = (segment_length - start_pad - end_pad) * nsegs
+        data_length = analysis_length + pad_data * 2 + start_pad + end_pad
         start = pad_data
         end = data_length - pad_data
         return [data_length], [segments.segment(start, end)]
