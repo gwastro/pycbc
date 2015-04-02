@@ -64,31 +64,35 @@ class ReadByTemplate(object):
         self.veto_times = None
         
         from glue.segments import segmentlist, segment
-        s, e = self.file['search/start_time'][:], self.file['search/end_time'][:]
+        key = '%s/search/' % self.ifo + '%s_time'
+        s, e = self.file[key % 'start'][:], self.file[key % 'end'][:]
         self.segs = veto.start_end_to_segments(s, e).coalesce()
         if vetofile is not None:
             self.veto_times = veto.start_end_from_segments(vetofile)
-            veto_segs = veto.start_end_to_segments(self.veto_times)
+            veto_segs = veto.start_end_to_segments(*self.veto_times)
             self.segs = (self.segs - veto_segs).coalesce()
         self.valid = veto.segments_to_start_end(self.segs)
+    
+    def get_data(self, col, num):
+        ref = self.file['%s/%s_template' % (self.ifo, col)][num]
+        return self.file[ref][ref]   
        
     def set_template(self, num):
         self.template_num = num
+        times = self.get_data('end_time', num)
         if self.veto_times:
-            ref = self.file['%s/end_time' % self.ifo].attrs[str(num)]
-            times = self.file[self.ref][self.ref]
             self.keep = veto.indices_within_times(times, self.valid[0], self.valid[1]) 
-        return self.idx
+        else:
+            self.keep = numpy.arange(0, len(times))
+        return self.keep + f['%s/template_boundaries' % self.ifo][num]
         
     def __getitem__(self, col):
         if self.template_num == None:
             raise ValueError('You must call set_template to first pick the '
-                             'template to read data from')
-        
-        if self.veto_times:
-            return self.file[ref][ref][self.keep]
-        else:
-            return self.file[ref][ref]
+                             'template to read data from')       
+        data = self.get_data(col, self.template_num)         
+        data = data[self.keep] if self.veto_times else data
+        return data
 
 logging.info('Starting...')
 
@@ -131,10 +135,7 @@ for tnum in range(tmin, tmax):
     
     b = c[bi]
     sep = len(b) - args.loudest_keep
-
-    if sep < 0:
-        # If we have less triggers than args.loudest_keep, keep them all
-        sep = 0
+    sep = 0 if sep < 0 else sep
     bsort = numpy.argpartition(b, sep)
     
     bl = bi[bsort[0:sep]]
