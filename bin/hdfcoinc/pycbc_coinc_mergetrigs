@@ -18,12 +18,14 @@ def collect(key, files):
         fin.close()
     return numpy.concatenate(data)
 
-def region(dset, indices, boundaries):
-    ref_dtype = h5py.special_dtype(ref=h5py.Reference)
-    ref = numpy.zeros(len(indices) , dtype=ref_dtype)
+def region(f, key, indices, boundaries):
+    dset = f[key]
+    refs = []
     for j, i in enumerate(indices):
         l, r = boundaries[j], boundaries[j+1]
-        dset.attrs[str(i)]  = dset.regionref[l:r]  
+        refs.append(dset.regionref[l:r]) 
+    f.create_dataset(key+'_template', data=refs,
+                     dtype=h5py.special_dtype(ref=h5py.RegionReference))
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--trigger-files', nargs='+')
@@ -71,17 +73,19 @@ trigger_sort = trigger_hashes.argsort()
 trigger_hashes = trigger_hashes[trigger_sort]
 template_boundaries = changes(trigger_hashes)
 template_ids = numpy.searchsorted(hashes, trigger_hashes[template_boundaries[:-1]])
+del trigger_hashes
 
 idlen = (template_boundaries[1:] - template_boundaries[:-1])
 f.create_dataset('%s/template_id' % ifo, data=numpy.repeat(template_ids, idlen), 
-                 compression='gzip', shuffle=True, compression_opts=9)
+                 compression='gzip', shuffle=True)
 
 for col in trigger_columns:
-    logging.info('writing %s to file' % col)
     key = '%s/%s' % (ifo, col)
-    data = collect(key, args.trigger_files)
-    dset = f.create_dataset(key, data=data[trigger_sort], 
-                     compression='gzip', shuffle=True, compression_opts=9)
-    region(dset, template_ids, template_boundaries) 
+    logging.info('reading %s' % col)
+    data = collect(key, args.trigger_files)[trigger_sort]
+    logging.info('writing %s to file' % col)
+    dset = f.create_dataset(key, data=data, compression='gzip')
+    del data
+    region(f, key, template_ids, template_boundaries) 
 f.close()
 logging.info('done')
