@@ -15,10 +15,10 @@ parser.add_argument('--newsnr-contours', nargs='*', help="List of newsnr values 
 args = parser.parse_args()
 
 f = h5py.File(args.trigger_file, 'r')
-
-snr = f['snr'][:]
-chisq = f['chisq'][:]
-chisq_dof = f['chisq_dof'][:]
+ifo = f.keys()[0]
+snr = f['%s/snr' % ifo][:]
+chisq = f['%s/chisq' % ifo][:]
+chisq_dof = f['%s/chisq_dof' % ifo][:]
 chisq /= (chisq_dof * 2 - 2)
 
 def snr_from_chisq(chisq, newsnr, q=6.):
@@ -29,7 +29,7 @@ def snr_from_chisq(chisq, newsnr, q=6.):
 
 if args.veto_file:
     time = f['end_time'][:]
-    locs, segs = veto.indices_outside_segments(time, f.attrs['ifo'], [args.veto_file])
+    locs, segs = veto.indices_outside_segments(time, ifo, [args.veto_file])
     snr = snr[locs]
     chisq = chisq[locs]
 
