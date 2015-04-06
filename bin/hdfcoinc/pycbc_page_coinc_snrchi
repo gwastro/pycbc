@@ -30,7 +30,8 @@ b_tids[f.attrs['detector_1']] = f['background/trigger_id1']
 b_tids[f.attrs['detector_2']] = f['background/trigger_id2']
 
 f = h5py.File(args.single_trigger_file)
-ifo = f.attrs['ifo']
+ifo = f.keys()[0]
+f = f[ifo]
 tid = b_tids[ifo]
 snr = f['snr'][:][tid]
 chisq = f['chisq'][:][tid]
