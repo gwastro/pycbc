@@ -209,7 +209,9 @@ class MatchedFilterControl(object):
 
         # The fancy upsampling is here
         if self.upsample_method=='pruned_fft':
-            idx = (idx_red * self.downsample_factor) + stilde.analyze.start
+            idx = (idx_red + stilde.analyze.start/self.downsample_factor)\
+                   * self.downsample_factor
+
             idx = smear(idx, self.downsample_factor)
             
             # cache transposed  versions of htilde and stilde
