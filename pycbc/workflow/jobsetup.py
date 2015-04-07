@@ -329,11 +329,11 @@ def identify_needed_data(curr_exe_job, link_job_instance=None):
         that if the linked job only analyses a small amount of data (for e.g.).
     """
     # Set up the condorJob class for the current executable
-    data_length, valid_chunk = curr_exe_job.get_valid_times()
+    data_lengths, valid_chunks = curr_exe_job.get_valid_times()
 
     # Begin by getting analysis start and end, and start and end of time
     # that the output file is valid for
-    valid_length = abs(valid_chunk)
+    valid_lengths = [abs(valid_chunk) for valid_chunk in valid_chunks]
 
     data_chunk = segments.segment([0, data_length])
     job_tag = curr_exe_job.name.upper()
@@ -347,33 +347,34 @@ def identify_needed_data(curr_exe_job, link_job_instance=None):
 
         # What data does the linked exe use?
         link_data_length, link_valid_chunk = link_job_instance.get_valid_times()
+        if len(link_data_length) > 1 or len(valid_lengths) > 1:
+            raise ValueError('Linking job instances for tiling is not supported'
+                             ' between jobs that allow variable tile size')
+        
         # What data is lost at start of both jobs? Take the maximum.
-        start_data_loss = max(valid_chunk[0], link_valid_chunk[0])
+        start_data_loss = max(valid_chunks[0][0], link_valid_chunk[0][0])
         # What data is lost at end of both jobs? Take the maximum.
-        end_data_loss = max(data_length - valid_chunk[1],\
-                            link_data_length - link_valid_chunk[1])
+        end_data_loss = max(data_lengths[0] - valid_chunks[0][1],\
+                            link_data_length[0] - link_valid_chunk[0][1])
         # Calculate valid_segments for both jobs based on the combined data
         # loss.
         valid_chunk = segments.segment(start_data_loss, \
-                                       data_length - end_data_loss)
+                                       data_lengths[0] - end_data_loss)
         link_valid_chunk = segments.segment(start_data_loss, \
-                                       link_data_length - end_data_loss)
+                                       link_data_length[0] - end_data_loss)
 
         # The maximum valid length should be the minimum of the two
-        link_valid_length = abs(link_valid_chunk)
+        link_valid_length = abs(link_valid_chunk[0])
 
         # Which one is now longer? Use this is valid_length
-        if link_valid_length < valid_length:
+        if link_valid_length < valid_lengths[0]:
             valid_length = link_valid_length
 
     # DO NOT! use valid length here, as valid_length and abs(valid_chunk)
     # may be different by this point if using link_exe_instance
     data_loss = data_length - abs(valid_chunk)
 
-    if data_loss < 0:
-        raise ValueError("pycbc.workflow.jobsetup needs fixing! Please contact a developer")
-
-    return data_length, valid_chunk, valid_length
+    return data_lengths, valid_chunks, valid_lengths
 
 
 class JobSegmenter(object):
@@ -381,18 +382,22 @@ class JobSegmenter(object):
     This class is used when running sngl_ifo_job_setup to determine what times
     should be analysed be each job and what data is needed.
     """
-    def __init__(self, data_length, valid_chunk, valid_length, curr_seg,
+    def __init__(self, data_lengths, valid_chunks, valid_lengths, curr_seg,
                  compatibility_mode = False):
         """
         Initialize class.
         """
         self.curr_seg = curr_seg
         self.curr_seg_length = float(abs(curr_seg))
-        self.data_loss = data_length - abs(valid_chunk)
+        
         self.valid_chunk = valid_chunk
         self.valid_length = valid_length
         self.data_length = data_length
         self.data_chunk = segments.segment([0, self.data_length])
+        self.data_loss = self.data_length - abs(self.valid_chunk)
+        
+        if data_loss < 0:
+            raise ValueError("pycbc.workflow.jobsetup needs fixing! Please contact a developer")
 
         if self.curr_seg_length < data_length:
             self.num_jobs = 0
