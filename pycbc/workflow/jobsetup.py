@@ -221,12 +221,8 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
     
     ########### (1) ############
     # Get the times that can be analysed and needed data lengths
-    data_length, valid_chunk, valid_length = identify_needed_data(curr_exe_job,\
+    data_length, valid_chunk, valid_length = identify_needed_data(curr_exe_job,
                                            link_job_instance=link_job_instance)
-
-    # DO NOT! use valid length here, as valid_length and abs(valid_chunk)
-    # may be different if using link_exe_instance
-    data_loss = data_length - abs(valid_chunk)
 
     # Loop over science segments and set up jobs
     for curr_seg in science_segs:
@@ -234,7 +230,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
         # Initialize the class that identifies how many jobs are needed and the
         # shift between them.
         segmenter = JobSegmenter(data_length, valid_chunk, valid_length, 
-                    curr_seg, data_loss, compatibility_mode=compatibility_mode)
+                    curr_seg, compatibility_mode=compatibility_mode)
 
         for job_num in range(segmenter.num_jobs):
             ############## (3) #############
@@ -386,13 +382,13 @@ class JobSegmenter(object):
     should be analysed be each job and what data is needed.
     """
     def __init__(self, data_length, valid_chunk, valid_length, curr_seg,
-                 data_loss, compatibility_mode = False):
+                 compatibility_mode = False):
         """
         Initialize class.
         """
         self.curr_seg = curr_seg
         self.curr_seg_length = float(abs(curr_seg))
-        self.data_loss = data_loss
+        self.data_loss = data_length - abs(valid_chunk)
         self.valid_chunk = valid_chunk
         self.valid_length = valid_length
         self.data_length = data_length
