@@ -335,9 +335,6 @@ def identify_needed_data(curr_exe_job, link_job_instance=None):
     # that the output file is valid for
     valid_lengths = [abs(valid_chunk) for valid_chunk in valid_chunks]
 
-    data_chunk = segments.segment([0, data_length])
-    job_tag = curr_exe_job.name.upper()
-
     if link_job_instance:
         # FIXME: Should we remove this, after testing is complete??
         # EURGHH! What we are trying to do here is, if this option is given,
@@ -369,11 +366,7 @@ def identify_needed_data(curr_exe_job, link_job_instance=None):
         # Which one is now longer? Use this is valid_length
         if link_valid_length < valid_lengths[0]:
             valid_length = link_valid_length
-
-    # DO NOT! use valid length here, as valid_length and abs(valid_chunk)
-    # may be different by this point if using link_exe_instance
-    data_loss = data_length - abs(valid_chunk)
-
+            
     return data_lengths, valid_chunks, valid_lengths
 
 
@@ -391,16 +384,16 @@ class JobSegmenter(object):
         self.curr_seg_length = float(abs(curr_seg))
         
         self.data_length, self.valid_chunk, self.valid_length = \
-                              self.pick_tile_size(curr_seg_length, data_lengths,
+                      self.pick_tile_size(self.curr_seg_length, data_lengths,
                                                   valid_chunks, valid_lengths)
         
         self.data_chunk = segments.segment([0, self.data_length])
         self.data_loss = self.data_length - abs(self.valid_chunk)
         
-        if data_loss < 0:
+        if self.data_loss < 0:
             raise ValueError("pycbc.workflow.jobsetup needs fixing! Please contact a developer")
 
-        if self.curr_seg_length < data_length:
+        if self.curr_seg_length < self.data_length:
             self.num_jobs = 0
             return
 
@@ -424,7 +417,7 @@ class JobSegmenter(object):
             self.job_time_shift = (self.curr_seg_length - self.data_length) / \
                                    float(self.num_jobs - 1)
 
-    def pick_tile_size(seg_size, data_lengths, valid_chunks, valid_lengths):
+    def pick_tile_size(self, seg_size, data_lengths, valid_chunks, valid_lengths):
         """ If multiple tile size are avaialable to choose from, make a choice
         based on the size of the science segment
         """
@@ -630,7 +623,7 @@ class PyCBCInspiralExecutable(Executable):
         #        Maybe this should be something read in at the
         #        matchedfilter_utils level, and acted on *if* possible.
         min_analysis_segs = int(self.cp.get('workflow-matchedfilter',
-                                          'analysis-segments'))
+                                          'min-analysis-segments'))
         max_analysis_segs = int(self.cp.get('workflow-matchedfilter',
                                     'max-analysis-segments'))
         
@@ -643,8 +636,8 @@ class PyCBCInspiralExecutable(Executable):
         if constant_psd_segs is None:
             constant_psd_segs = analysis_segs
         
-        if anlysis_segments % constant_psd_segs != 0:
-            raise ValueError('Constant PSD segments does not evenly divide the 
+        if min_analysis_segs % constant_psd_segs != 0:
+            raise ValueError('Constant PSD segments does not evenly divide the '
                              'number of analysis segments') 
         
         if max_analysis_segs is None:
@@ -655,14 +648,14 @@ class PyCBCInspiralExecutable(Executable):
         data_lengths = []
         valid_regions = []
         for nsegs in seg_ranges:
-            manalysis_length = (segment_length - start_pad - end_pad) * nsegs
+            analysis_length = (segment_length - start_pad - end_pad) * nsegs
             data_length = analysis_length + pad_data * 2 + start_pad + end_pad
             start = pad_data + start_pad
             end = data_length - pad_data - end_pad
             data_lengths += [data_length]
-            valid_regions += [segment(start, end)]
+            valid_regions += [segments.segment(start, end)]
             
-        return lengths, valid_regions
+        return data_lengths, valid_regions
 
 class PyCBCTmpltbankExecutable(Executable):
     """
@@ -731,7 +724,6 @@ class PyCBCTmpltbankExecutable(Executable):
                                  store_file=self.retain_files)
         return node
 
-    def get_valid_times(self):
     def get_valid_times(self):
         pad_data = int(self.get_opt( 'pad-data'))
         analysis_length = int(self.cp.get('workflow-tmpltbank', 'analysis-length'))
