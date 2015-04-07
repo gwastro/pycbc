@@ -712,12 +712,12 @@ class PyCBCTmpltbankExecutable(Executable):
         return node
 
     def get_valid_times(self):
+    def get_valid_times(self):
         pad_data = int(self.get_opt( 'pad-data'))
-        nsegs = int(self.cp.get('workflow-tmpltbank', 'analysis-length'))
-        segment_length = int(self.get_opt('segment-length'))
-        
-        manalysis_length = (segment_length - start_pad - end_pad) * nsegs
-        data_length = analysis_length + pad_data * 2 + start_pad + end_pad
+        analysis_length = int(self.cp.get('workflow-tmpltbank', 'analysis-length'))
+
+        #FIXME this should not be hard coded
+        data_length = analysis_length + pad_data * 2
         start = pad_data
         end = data_length - pad_data
         return [data_length], [segments.segment(start, end)]
