@@ -426,10 +426,10 @@ class JobSegmenter(object):
         else:
             # Pick the tile size that is closest to 1/3 of the science segment
             target_size = seg_size / 3
-            pick, pick_size = 0, valid_lengths[0]
+            pick, pick_diff = 0, abs(valid_lengths[0] - target_size)
             for i, size in enumerate(valid_lengths):
-                if abs(size - target_size) < pick_size:
-                    pick, pick_size = i, size
+                if abs(size - target_size) < pick_diff:
+                    pick, pick_diff  = i, abs(size - target_size)
             return data_lengths[pick], valid_chunks[pick], valid_lengths[pick]      
 
     def get_valid_times_for_job(self, num_job, allow_overlap=True):
