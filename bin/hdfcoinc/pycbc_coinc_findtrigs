@@ -69,8 +69,8 @@ class ReadByTemplate(object):
         self.segs = veto.start_end_to_segments(s, e).coalesce()
         if vetofile is not None:
             self.veto_times = veto.start_end_from_segments(vetofile)
-            veto_segs = veto.start_end_to_segments(*self.veto_times)
-            self.segs = (self.segs - veto_segs).coalesce()
+            self.veto_segs = veto.start_end_to_segments(*self.veto_times).coalesce()
+            self.segs = (self.segs - self.veto_segs).coalesce()
         self.valid = veto.segments_to_start_end(self.segs)
     
     def get_data(self, col, num):
@@ -82,9 +82,16 @@ class ReadByTemplate(object):
         times = self.get_data('end_time', num)
         if self.veto_times:
             self.keep = veto.indices_within_times(times, self.valid[0], self.valid[1]) 
+            logging.info('applying vetoes')
+            w = numpy.where(numpy.logical_and(times < 967230323, times > 967230321))[0]
+            print w, times[w]
+            w = numpy.where(numpy.logical_and(times[self.keep] < 967230323, times[self.keep] > 967230321))[0]
+            print w, times[self.keep][w]
+            #print self.segs
+            #exit()
         else:
             self.keep = numpy.arange(0, len(times))
-        return self.keep + f['%s/template_boundaries' % self.ifo][num]
+        return self.keep + self.file['%s/template_boundaries' % self.ifo][num]
         
     def __getitem__(self, col):
         if self.template_num == None:
@@ -96,7 +103,7 @@ class ReadByTemplate(object):
 
 logging.info('Starting...')
 
-num_templates = len(h5py.File(args.template_bank)['template_hash'])
+num_templates = len(h5py.File(args.template_bank, "r")['template_hash'])
 tmin, tmax = parse_template_range(num_templates, args.template_fraction_range)
 logging.info('Analyzing template %s - %s' % (tmin, tmax-1))
 

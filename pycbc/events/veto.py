@@ -96,7 +96,7 @@ def indices_within_times(times, start, end):
     times_sorted = times[tsort]
     left = numpy.searchsorted(times_sorted, start)
     right = numpy.searchsorted(times_sorted, end)
-    return numpy.hstack(numpy.r_[s:e] for s, e in zip(left, right))
+    return tsort[numpy.hstack(numpy.r_[s:e] for s, e in zip(left, right))]
 
 def indices_within_segments(times, ifo, segment_files):
     """ Return the list of indices that should be vetoed by the segments in the
