@@ -390,9 +390,10 @@ class JobSegmenter(object):
         self.curr_seg = curr_seg
         self.curr_seg_length = float(abs(curr_seg))
         
-        self.valid_chunk = valid_chunk
-        self.valid_length = valid_length
-        self.data_length = data_length
+        self.data_length, self.valid_chunk, self.valid_length = \
+                              self.pick_tile_size(curr_seg_length, data_lengths,
+                                                  valid_chunks, valid_lengths)
+        
         self.data_chunk = segments.segment([0, self.data_length])
         self.data_loss = self.data_length - abs(self.valid_chunk)
         
@@ -402,6 +403,7 @@ class JobSegmenter(object):
         if self.curr_seg_length < data_length:
             self.num_jobs = 0
             return
+
         # How many jobs do we need
         self.num_jobs = int( math.ceil( (self.curr_seg_length \
                                 - self.data_loss) / float(self.valid_length) ))
@@ -411,6 +413,9 @@ class JobSegmenter(object):
             errMsg = "In compatibility mode the template bank and matched-"
             errMsg += "filter jobs must read in the same amount of data."
             raise ValueError(errMsg)
+        elif compatibility_mode and len(data_lengths) > 1:
+            raise ValueError("Cannot enable compatibility mode tiling with "
+                             "variable tile size")
         elif compatibility_mode:
             # What is the incremental shift between jobs
             self.job_time_shift = self.valid_length
@@ -419,6 +424,20 @@ class JobSegmenter(object):
             self.job_time_shift = (self.curr_seg_length - self.data_length) / \
                                    float(self.num_jobs - 1)
 
+    def pick_tile_size(seg_size, data_lengths, valid_chunks, valid_lengths):
+        """ If multiple tile size are avaialable to choose from, make a choice
+        based on the size of the science segment
+        """
+        if len(valid_lengths) == 1:
+            return data_lengths[0], valid_chunks[0], valid_lengths[0]
+        else:
+            # Pick the tile size that is closest to 1/3 of the science segment
+            target_size = seg_size / 3
+            pick, pick_size = 0, valid_lengths[0]
+            for i, size in enumerate(valid_lengths):
+                if abs(size - target_size) < pick_size:
+                    pick, pick_size = i, size
+            return data_lengths[pick], valid_chunks[pick], valid_lengths[pick]      
 
     def get_valid_times_for_job(self, num_job, allow_overlap=True):
         """
