@@ -211,6 +211,9 @@ def setup_postprocprep_pipedown_workflow(workflow, coincFiles, output_dir,
         currTags = tags + [injLessTag, vetoTag]
         trigVetoInpFiles = coincFiles.find_output_with_tag(pipedownDQVetoName)
         trigInpFiles = trigVetoInpFiles.find_output_with_tag(injLessTag)
+        if len(trigInpFiles) == 0:
+            err_msg = "No input files found. Workflow would fail."
+            raise ValueError(err_msg)
         trigInpFiles.append(dqSegFile[0])
         sqliteCombine1Job = sqliteCombine1Exe(workflow.cp,
                                               sqliteCombine1ExeTag,

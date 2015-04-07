@@ -838,13 +838,9 @@ class LigolwSSthincaExecutable(Executable):
 
         node.add_opt('--coinc-end-time-segment', segString)
 
-        # FIXME: This must match the *actual* output name!
-        outFile = File(self.ifo, self.name, jobSegment,
-                         extension='.xml.gz', directory=self.out_dir,
-                         tags=self.tags+tags,
-                         store_file=self.retain_files, use_tmp_subdirs=True)
-
-        node._add_output(outFile)
+        node.new_output_file_opt(jobSegment, '.xml.gz', '--output-file',
+                        tags=self.tags+tags, store_file=self.retain_files,
+                        use_tmp_subdirs=True))
 
         if write_likelihood:
             node.new_output_file_opt(jobSegment, '.xml.gz',

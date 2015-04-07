@@ -185,9 +185,12 @@ def setup_coincidence_workflow_ligolw_thinca(
         A list of the output files generated from ligolw_add.
     """
     logging.debug("Entering coincidence module.")
+    cp = workflow.cp
+    ifoString = workflow.ifo_string
 
-    # setup code for each veto category
-    ligolwThincaOuts = FileList([])
+    # setup code for each veto_category
+
+    coinc_outs = FileList([])
     other_outs = {}
 
     if not timeSlideTags:
@@ -282,209 +285,169 @@ def setup_coincidence_workflow_ligolw_thinca(
             time_slide_dict.values(), extentlimit=max_extent, verbose=False)
         logging.debug("Done with cafe.")
 
+        # Take the combined seglist file
+        dqSegFile=segsList.find_output_with_tag('COMBINED_CUMULATIVE_SEGMENTS')
+        if not len(dqSegFile) == 1:
+            errMsg = "Did not find exactly 1 data quality file."
+            print len(dqSegFile), dqSegFile
+            raise ValueError(errMsg)
+        dqSegFile=dqSegFile[0]
 
-        # Now loop over vetoes
+        # Set up llwadd job
+        llwadd_tags = [timeSlideTag] + tags 
+        ligolwadd_job = LigolwAddExecutable(cp, 'llwadd', ifo=ifoString,
+                                          out_dir=output_dir, tags=llwadd_tags)
+        ligolwAddOuts = FileList([])
+
+        # Go global setup at each category
+        # This flag will add a clustering job after ligolw_thinca
+        if workflow.cp.has_option_tags("workflow-coincidence",
+                                      "coincidence-post-cluster", llwadd_tags):
+            coinc_post_cluster = True
+        else:
+            coinc_post_cluster = False
+
+        # Go global setup at each category
+        ligolwthinca_job = {}
+        cluster_job = {}
+        thinca_tags = {}
         for category in veto_cats:
             logging.debug("Preparing %s %s" %(timeSlideTag,category))
-            # FIXME: There are currently 3 names to say cumulative cat_3
-            dqSegFile = segsList.find_output_with_tag(
-                                               'CUMULATIVE_CAT_%d' %(category))
-            if not len(dqSegFile) == 1:
-                errMsg = "Did not find exactly 1 data quality file."
-                raise ValueError(errMsg)
             dqVetoName = 'VETO_CAT%d_CUMULATIVE' %(category)
+            # FIXME: Should we resolve this now?
             # FIXME: Here we set the dqVetoName to be compatible with pipedown
+            #        For pipedown must put the slide identifier first and
+            #        dqVetoName last.
             pipedownDQVetoName = 'CAT_%d_VETO' %(category)
-            # FIXME: For pipedown must put the slide identifier first and
-            # dqVetoName last.
             curr_thinca_job_tags = [timeSlideTag] + tags + [pipedownDQVetoName]
-
-            logging.debug("Starting workflow")
-            currLigolwThincaOuts, currOtherOuts = \
-                  setup_snglveto_workflow_ligolw_thinca(workflow,
-                               dqSegFile, tisiOutFile, dqVetoName,
-                               cafe_seglists, cafe_caches, output_dir,
-                               tags=curr_thinca_job_tags,
-                               parallelize_split_input=parallelize_split_input,
-                               insp_files_dict=inspiral_outs_dict)
-            logging.debug("Done")
-            ligolwThincaOuts.extend(currLigolwThincaOuts)
-            for key, file_list in currOtherOuts.items():
-                if other_outs.has_key(key):
-                    other_outs[key].extend(currOtherOuts[key])
-                else:
-                    other_outs[key] = currOtherOuts[key]
-    return ligolwThincaOuts, other_outs
-
-def setup_snglveto_workflow_ligolw_thinca(workflow, dqSegFile, tisiOutFile,
-                                          dqVetoName, cafe_seglists,
-                                          cafe_caches, output_dir, tags=[],
-                                          parallelize_split_input=False,
-                                          insp_files_dict=None):
-    '''
-    This function is used to setup a single-stage ihope style coincidence stage
-    of the workflow for a given dq category and for a given timeslide file
-    using ligolw_sstinca (or compatible code!).
-
-    Parameters
-    -----------
-    workflow : pycbc.workflow.core.Workflow
-        The workflow instance that the coincidence jobs will be added to.
-    dqSegFile : pycbc.workflow.core.SegFile
-        The file that contains the data-quality segments to be applied to jobs
-        setup by this call to this function.
-    tisiOutFile : pycbc.workflow.core.File
-        The file that contains the time-slides that will be performed in jobs
-        setup by this call to this function. A file containing only one,
-        zero-lag, time slide is still a valid "time slide" file.
-    cafe_seglists : List of glue.segments.segmentlistdicts
-        The times that each sstinca job will be valid for. Each entry represents
-        a unique job
-    cafe_caches : List of glue.lal.Cache objects
-        The files that are inputs to each of the sstinca jobs.
-    output_dir : path
-        The directory in which coincidence output will be stored.
-    tags : list of strings (optional, default = [])
-        A list of the tagging strings that will be used for all jobs created
-        by this call to the workflow. An example might be ['BNSINJECTIONS'] or
-        ['NOINJECTIONANALYSIS']. This will be used in output names. At this
-        stage a tag describing the time slide file, and a tag describing the
-        data quality veto should be included.
-    Returns
-    --------
-    ligolwThincaOuts : pycbc.workflow.core.FileList
-        A list of the output files generated from ligolw_sstinca.
-    ligolwAddOuts : pycbc.workflow.core.FileList
-        A list of the output files generated from ligolw_add.
-
-    '''
-    cp = workflow.cp
-    ifoString = workflow.ifo_string
-
-    # This flag will add a clustering job after ligolw_thinca
-    if workflow.cp.has_option_tags("workflow-coincidence",
-                                             "coincidence-post-cluster", tags):
-        coinc_post_cluster = True
-    else:
-        coinc_post_cluster = False
-
-
-    # Set up jobs for ligolw_add and ligolw_thinca
-    ligolwadd_job = LigolwAddExecutable(cp, 'llwadd', ifo=ifoString,
-                                     out_dir=output_dir, tags=tags)
-    ligolwthinca_job = LigolwSSthincaExecutable(cp, 'thinca', ifo=ifoString,
-                                     out_dir=output_dir,
-                                     dqVetoName=dqVetoName, tags=tags)
-    if coinc_post_cluster:
-        cluster_job = SQLInOutExecutable(cp, 'pycbccluster',
-                                     ifo=ifoString, out_dir=output_dir,
-                                     tags=tags)
-
-    # Set up the nodes to do the coincidence analysis
-    ligolwAddOuts = FileList([])
-    ligolwThincaOuts = FileList([])
-    ligolwThincaLikelihoodOuts = FileList([])
-    ligolwClusterOuts = FileList([])
-    for idx, cafe_cache in enumerate(cafe_caches):
-        if not len(cafe_cache.objects):
-            raise ValueError("One of the cache objects contains no files!")
-
-        # Determine segments to accept coincidences.
-        # If cache is not the first or last in the timeseries, check if the
-        # two closes caches in the timeseries and see if their extent
-        # match. If they match, they're adjacent and use the time where
-        # they meet as a bound for accepting coincidences. If they're not
-        # adjacent, then there is no bound for accepting coincidences.
-        coincStart, coincEnd = None, None
-        if idx and (cafe_cache.extent[0] == cafe_caches[idx-1].extent[1]):
-            coincStart = cafe_cache.extent[0]
-        if idx + 1 - len(cafe_caches) and \
-                        (cafe_cache.extent[1] == cafe_caches[idx+1].extent[0]):
-            coincEnd = cafe_cache.extent[1]
-        coincSegment = (coincStart, coincEnd)
-
-        # Need to create a list of the File(s) contained in the cache.
-        # Assume that if we have partitioned input then if *one* job in the
-        # partitioned input is an input then *all* jobs will be.
-        if not parallelize_split_input:
-            job_label = get_random_label()
-            inputTrigFiles = FileList([])
-            for object in cafe_cache.objects:
-                inputTrigFiles.append(object.workflow_file)
-
-            llw_files = inputTrigFiles + dqSegFile + [tisiOutFile]
-
-            # Now we can create the nodes
-            node = ligolwadd_job.create_node(cafe_cache.extent, llw_files)
-            node.add_profile('pegasus', 'label', job_label)
-            ligolwAddFile = node.output_files[0]
-            ligolwAddOuts.append(ligolwAddFile)
-            workflow.add_node(node)
-            node = ligolwthinca_job.create_node(cafe_cache.extent,
-                                                   coincSegment, ligolwAddFile)
-            node.add_profile('pegasus', 'label', job_label)
-            ligolwThincaOuts += \
-                        node.output_files.find_output_without_tag('DIST_STATS')
-            ligolwThincaLikelihoodOuts += \
-                           node.output_files.find_output_with_tag('DIST_STATS')
-            workflow.add_node(node)
+            thinca_tags[category]=curr_thinca_job_tags
+            # Set up jobs for ligolw_thinca
+            ligolwthinca_job[category] = LigolwSSthincaExecutable(cp, 'thinca',
+                                             ifo=ifoString, out_dir=output_dir,
+                                             dqVetoName=dqVetoName,
+                                             tags=curr_thinca_job_tags)
             if coinc_post_cluster:
-                node = cluster_job.create_node(cafe_cache.extent,
-                                               ligolwThincaOuts[-1])
-                node.add_profile('pegasus', 'label', job_label)
-                ligolwClusterOuts += node.output_files
-                workflow.add_node(node)
-        else:
-            for key in insp_files_dict.keys():
+                cluster_job[category] = SQLInOutExecutable(cp, 'pycbccluster',
+                                             ifo=ifoString, out_dir=output_dir,
+                                             tags=curr_thinca_job_tags)
+        
+        for idx, cafe_cache in enumerate(cafe_caches):
+            ligolwAddOuts = FileList([])
+            ligolwThincaOuts = FileList([])
+            ligolwThincaLikelihoodOuts = FileList([])
+            ligolwClusterOuts = FileList([])
+
+            if not len(cafe_cache.objects):
+                raise ValueError("One of the cache objects contains no files!")
+        
+            # Determine segments to accept coincidences.
+            # If cache is not the first or last in the timeseries, check if the
+            # two closes caches in the timeseries and see if their extent
+            # match. If they match, they're adjacent and use the time where
+            # they meet as a bound for accepting coincidences. If they're not
+            # adjacent, then there is no bound for accepting coincidences.
+            coincStart, coincEnd = None, None
+            if idx and (cafe_cache.extent[0] == cafe_caches[idx-1].extent[1]):
+                coincStart = cafe_cache.extent[0]
+            if idx + 1 - len(cafe_caches) and \
+                        (cafe_cache.extent[1] == cafe_caches[idx+1].extent[0]):
+                coincEnd = cafe_cache.extent[1]
+            coincSegment = (coincStart, coincEnd)
+        
+            # Need to create a list of the File(s) contained in the cache.
+            # Assume that if we have partitioned input then if *one* job in the
+            # partitioned input is an input then *all* jobs will be.
+            if not parallelize_split_input:
                 job_label = get_random_label()
-                curr_tags = ["JOB%d" %(key)]
-                curr_list = insp_files_dict[key]
                 inputTrigFiles = FileList([])
                 for object in cafe_cache.objects:
-                    inputTrigFiles.append(
-                                     curr_list[object.workflow_file.thinca_index])
-
-                llw_files = inputTrigFiles + dqSegFile + [tisiOutFile]
-
+                    inputTrigFiles.append(object.workflow_file)
+        
+                llw_files = inputTrigFiles + [dqSegFile] + [tisiOutFile]
+        
                 # Now we can create the nodes
-                node = ligolwadd_job.create_node(cafe_cache.extent, llw_files,
-                                                 tags=curr_tags)
+                node = ligolwadd_job.create_node(cafe_cache.extent, llw_files)
                 node.add_profile('pegasus', 'label', job_label)
                 ligolwAddFile = node.output_files[0]
                 ligolwAddOuts.append(ligolwAddFile)
                 workflow.add_node(node)
-                if workflow.cp.has_option_tags("workflow-coincidence",
-                                         "coincidence-write-likelihood", tags):
-                    write_likelihood=True
-                else:
-                    write_likelihood=False
-                node = ligolwthinca_job.create_node(cafe_cache.extent,
-                                   coincSegment, ligolwAddFile, tags=curr_tags,
-                                   write_likelihood=write_likelihood)
-                node.add_profile('pegasus', 'label', job_label)
-                ligolwThincaOuts += \
-                       node.output_files.find_output_without_tag('DIST_STATS')
-                ligolwThincaLikelihoodOuts += \
-                          node.output_files.find_output_with_tag('DIST_STATS')
-                workflow.add_node(node)
-                if coinc_post_cluster:
-                    node = cluster_job.create_node(cafe_cache.extent,
-                                                   ligolwThincaOuts[-1])
+                for category in veto_categories:
+                    node = ligolwthinca_job[category].create_node(\
+                                cafe_cache.extent, coincSegment, ligolwAddFile)
                     node.add_profile('pegasus', 'label', job_label)
-                    ligolwClusterOuts += node.output_files
+                    ligolwThincaOuts += \
+                        node.output_files.find_output_without_tag('DIST_STATS')
+                    ligolwThincaLikelihoodOuts += \
+                           node.output_files.find_output_with_tag('DIST_STATS')
                     workflow.add_node(node)
+                    if coinc_post_cluster:
+                        node = cluster_job[category].create_node(\
+                                       cafe_cache.extent, ligolwThincaOuts[-1])
+                        node.add_profile('pegasus', 'label', job_label)
+                        ligolwClusterOuts += node.output_files
+                        workflow.add_node(node)
+            else:
+                for key in insp_files_dict.keys():
+                    job_label = get_random_label()
+                    curr_tags = ["JOB%d" %(key)]
+                    curr_list = insp_files_dict[key]
+                    inputTrigFiles = FileList([])
+                    for object in cafe_cache.objects:
+                        inputTrigFiles.append(
+                                  curr_list[object.workflow_file.thinca_index])
+        
+                    llw_files = inputTrigFiles + [dqSegFile] + [tisiOutFile]
 
-    other_returns = {}
-    other_returns['LIGOLW_ADD'] = ligolwAddOuts
-    other_returns['DIST_STATS'] = ligolwThincaLikelihoodOuts
+                    # Now we can create the nodes
+                    node = ligolwadd_job.create_node(cafe_cache.extent,
+                                                     llw_files, tags=curr_tags)
+                    node.add_profile('pegasus', 'label', job_label)
+                    ligolwAddFile = node.output_files[0]
+                    ligolwAddOuts.append(ligolwAddFile)
+                    workflow.add_node(node)
+                    if workflow.cp.has_option_tags("workflow-coincidence",
+                          "coincidence-write-likelihood",curr_thinca_job_tags):
+                        write_likelihood=True
+                    else:
+                        write_likelihood=False
+                    for category in veto_categories:
+                        node = ligolwthinca_job[category].create_node(\
+                             cafe_cache.extent, coincSegment, ligolwAddFile,
+                             tags=curr_tags, write_likelihood=write_likelihood)
+                        node.add_profile('pegasus', 'label', job_label)
+                        ligolwThincaOuts += \
+                               node.output_files.find_output_without_tag(\
+                                                                  'DIST_STATS')
+                        ligolwThincaLikelihoodOuts += \
+                              node.output_files.find_output_with_tag(\
+                                                                  'DIST_STATS')
+                        workflow.add_node(node)
+                        if coinc_post_cluster:
+                            node = cluster_job[category].create_node(\
+                                       cafe_cache.extent, ligolwThincaOuts[-1])
+                            node.add_profile('pegasus', 'label', job_label)
+                            ligolwClusterOuts += node.output_files
+                            workflow.add_node(node)
 
-    if coinc_post_cluster:
-        main_return = ligolwClusterOuts
-        other_returns['THINCA'] = ligolwThincaOuts
-    else:
-        main_return = ligolwThincaOuts
+            other_returns = {}
+            other_returns['LIGOLW_ADD'] = ligolwAddOuts
+            other_returns['DIST_STATS'] = ligolwThincaLikelihoodOuts
+        
+            if coinc_post_cluster:
+                main_return = ligolwClusterOuts
+                other_returns['THINCA'] = ligolwThincaOuts
+            else:
+                main_return = ligolwThincaOuts
+        
+            logging.debug("Done")
+            coinc_outs.extend(main_return)
+            for key, file_list in other_returns.items():
+                if other_outs.has_key(key):
+                    other_outs[key].extend(other_returns[key])
+                else:
+                    other_outs[key] = other_returns[key]
+    return coinc_outs, other_outs
 
-    return main_return, other_returns
 
 class PyCBCBank2HDFExecutable(Executable):
     """ This converts xml tmpltbank to an hdf format

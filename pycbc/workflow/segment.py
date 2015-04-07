@@ -296,8 +296,8 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
         else:
             currTags = ['SCIENCE_OK']
         currFile = OutSegFile(ifo, 'SEGMENTS',
-                                   segValidSeg, currUrl, segment_list=analysedSegs,
-                                   tags = currTags)
+                              segValidSeg, currUrl, segment_list=analysedSegs,
+                              tags = currTags)
         segFilesList.append(currFile)
         currFile.toSegmentXml()
 
@@ -307,6 +307,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
         # segments and triggers.
         ifo_string = workflow.ifo_string
         categories = []
+        cum_cat_files = []
         for category in veto_categories:
             categories.append(category)
             # Set file name in workflow standard
@@ -321,8 +322,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
             currUrl = urlparse.urlunparse(['file', 'localhost',
                                          cumulativeVetoFile, None, None, None])
             currSegFile = OutSegFile(ifo_string, 'SEGMENTS',
-                                   segValidSeg, currUrl, segment_list=analysedSegs,
-                                   tags=currTags)
+                                   segValidSeg, currUrl, tags=currTags)
             # And actually make the file (or queue it in the workflow)
             logging.info("Generating combined, cumulative CAT_%d segments."\
                              %(category))
@@ -335,6 +335,31 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
                                 execute_now=execute_status)
 
             segFilesList.append(currSegFile)
+            cum_cat_files.append(currSegFile)
+        # Create a combined file
+        # Set file tag in workflow standard
+        if tag:
+            currTags = [tag, 'COMBINED_CUMULATIVE_SEGMENTS']
+        else:
+            currTags = ['COMBINED_CUMULATIVE_SEGMENTS']
+
+        combined_veto_file = os.path.join(out_dir,
+                               '%s-CUMULATIVE_ALL_CATS_SEGMENTS.xml' \
+                               %(ifo_string) )
+        curr_url = urlparse.urlunparse(['file', 'localhost',
+                                       combined_veto_file, None, None, None])
+        curr_file = OutSegFile(ifo_string, 'SEGMENTS',
+                               segValidSeg, curr_url, tags=currTags)
+
+        for category in veto_categories:
+            if category <= maxVetoAtRunTime:
+                execute_status = True
+                break
+        else:
+            execute_status = False
+        add_cumulative_files(workflow, curr_file, cum_cat_files, out_dir,
+                             execute_now=execute_status)
+        segFilesList.append(curr_file)
 
     return segFilesList
 
@@ -474,6 +499,9 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
             workflow.execute_node(node)
         else:
             node.executed = True
+            for fil in node._outputs:
+                fil.node = None
+                fil.PFN(fil.storage_path, site='local')
     else:
         workflow.add_node(node)
     return vetoXmlFile
@@ -589,6 +617,9 @@ def get_cumulative_segs(workflow, currSegFile, categories,
                 workflow.execute_node(cum_node)
             else:
                 cum_node.executed = True
+                for fil in cum_node._outputs:
+                    fil.node = None
+                    fil.PFN(fil.storage_path, site='local')
         else:
             workflow.add_node(cum_node)
         add_inputs += cum_node.output_files
@@ -602,6 +633,47 @@ def get_cumulative_segs(workflow, currSegFile, categories,
             workflow.execute_node(add_node)
         else:
             add_node.executed = True
+            for fil in add_node._outputs:
+                fil.node = None
+                fil.PFN(fil.storage_path, site='local')
+    else:
+        workflow.add_node(add_node)
+    return add_node.output_files[0]
+
+def add_cumulative_files(workflow, output_file, input_files, out_dir,
+                         execute_now=False, tags=[]):
+    """
+    Function to combine a set of segment files into a single one. This function
+    will not merge the segment lists but keep each separate.
+
+    Parameters
+    -----------
+    workflow: pycbc.workflow.core.Workflow
+        An instance of the Workflow class that manages the workflow.
+    output_file: pycbc.workflow.core.File
+        The output file object
+    input_files: pycbc.workflow.core.FileList
+        This list of input segment files
+    out_dir : path
+        The directory to write output to.
+    execute_now : boolean, optional
+        If true, jobs are executed immediately. If false, they are added to the
+        workflow to be run later.
+    tags : list of strings, optional
+        A list of strings that is used to identify this job
+    """
+    llwadd_job = LigolwAddExecutable(workflow.cp, 'llwadd', 
+                       ifo=output_file.ifo_list, out_dir=out_dir, tags=tags)
+    add_node = llwadd_job.create_node(output_file.segment, input_files,
+                                   output=output_file)
+    if execute_now:
+        if file_needs_generating(add_node.output_files[0].cache_entry.path):
+            workflow.execute_node(add_node)
+        else:
+            add_node.executed = True
+            for fil in add_node._outputs:
+                fil.node = None
+                fil.PFN(fil.storage_path, site='local')
     else:
         workflow.add_node(add_node)
     return add_node.output_files[0]
