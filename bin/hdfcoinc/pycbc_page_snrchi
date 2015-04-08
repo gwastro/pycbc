@@ -17,9 +17,9 @@ args = parser.parse_args()
 f = h5py.File(args.trigger_file, 'r')
 ifo = f.keys()[0]
 f = f[ifo]
-snr = f['snr' % ifo][:]
-chisq = f['chisq' % ifo][:]
-chisq_dof = f['chisq_dof' % ifo][:]
+snr = f['snr'][:]
+chisq = f['chisq'][:]
+chisq_dof = f['chisq_dof'][:]
 chisq /= (chisq_dof * 2 - 2)
 
 def snr_from_chisq(chisq, newsnr, q=6.):
@@ -56,7 +56,7 @@ pylab.ylim(chisq.min(), chisq.max())
 cb.set_label('Trigger Density')
 pylab.xlabel('Signal-to-noise Ratio')
 pylab.ylabel('Reduced $\chi^2$')
-pylab.title('%s: Single Detector Trigger Distribution' % f.attrs['ifo'])
+pylab.title('%s: Single Detector Trigger Distribution' % ifo)
 pylab.savefig(args.output_file, dpi=300)
 
 

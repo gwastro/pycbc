@@ -51,7 +51,7 @@ inj_idx = f['found_after_vetoes/injection_index']
 eff_dist = f['injections'][eff_map[ifo]][:][inj_idx]
 
 
-f = h5py.File(args.single_injection_file)
+f = h5py.File(args.single_injection_file)[ifo]
 tid = inj_tids[ifo]
 snr = f['snr'][:][tid]
 chisq = f['chisq'][:][tid]
