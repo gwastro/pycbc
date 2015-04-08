@@ -83,12 +83,6 @@ class ReadByTemplate(object):
         if self.veto_times:
             self.keep = veto.indices_within_times(times, self.valid[0], self.valid[1]) 
             logging.info('applying vetoes')
-            w = numpy.where(numpy.logical_and(times < 967230323, times > 967230321))[0]
-            print w, times[w]
-            w = numpy.where(numpy.logical_and(times[self.keep] < 967230323, times[self.keep] > 967230321))[0]
-            print w, times[self.keep][w]
-            #print self.segs
-            #exit()
         else:
             self.keep = numpy.arange(0, len(times))
         return self.keep + self.file['%s/template_boundaries' % self.ifo][num]
