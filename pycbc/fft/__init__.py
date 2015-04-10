@@ -25,6 +25,7 @@
 This package provides a front-end to various fast Fourier transform
 implementations within PyCBC.
 """
+from pkg_resources import VersionConflict
 
 import pycbc
 import pycbc.scheme
@@ -70,7 +71,7 @@ def _list_available(possible_list,possible_dict):
             mod = __import__('pycbc.fft.'+possible_dict[backend],fromlist=['pycbc.fft'])
             available_dict.update({backend:mod})
             available_list.append(backend)
-        except (ImportError, OSError):
+        except (ImportError, OSError, VersionConflict):
             pass
     return available_list, available_dict
 
