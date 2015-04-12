@@ -85,6 +85,6 @@ _python_name =  "python%d%d_compiled" % tuple(sys.version_info[:2])
 _tmp_dir = tempfile.gettempdir()
 _cache_dir_name = repr(os.getuid()) + '_' + _python_name
 _cache_dir_path = os.path.join(_tmp_dir, _cache_dir_name)
-if not os.path.exists(_cache_dir_path):
-    os.makedirs(_cache_dir_path)
+try: os.makedirs(_cache_dir_path)
+except OSError: pass
 os.environ['PYTHONCOMPILED'] = _cache_dir_path
