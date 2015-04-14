@@ -371,7 +371,7 @@ def setup_coincidence_workflow_ligolw_thinca(
                 ligolwAddFile = node.output_files[0]
                 ligolwAddOuts.append(ligolwAddFile)
                 workflow.add_node(node)
-                for category in veto_categories:
+                for category in veto_cats:
                     node = ligolwthinca_job[category].create_node(\
                                 cafe_cache.extent, coincSegment, ligolwAddFile)
                     node.add_profile('pegasus', 'label', job_label)
@@ -410,7 +410,7 @@ def setup_coincidence_workflow_ligolw_thinca(
                         write_likelihood=True
                     else:
                         write_likelihood=False
-                    for category in veto_categories:
+                    for category in veto_cats:
                         node = ligolwthinca_job[category].create_node(\
                              cafe_cache.extent, coincSegment, ligolwAddFile,
                              tags=curr_tags, write_likelihood=write_likelihood)
