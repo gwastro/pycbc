@@ -54,7 +54,7 @@ for d in lal lalframe lalmetaio lalxml lalsimulation lalburst lalinspiral lalsto
         make distclean || echo "Warning: could not make distclean. Carrying on anyway"
     fi
     ./00boot
-    ./configure --prefix=${INSTALL_DIR} --enable-swig-python
+    ./configure --prefix=${INSTALL_DIR} --enable-swig-python --enable-pthread-lock
      make -j ${MAKE_CORES} install;
     echo "source ${INSTALL_DIR}/etc/${d}-user-env.sh" >> ${SOURCE_SCRIPTDIR}/lscsoftrc;
     popd;
@@ -67,7 +67,7 @@ if [ -f config.status ] ; then
     make distclean || echo "Warning: could not make distclean. Carrying on anyway"
 fi
 ./00boot
-./configure --prefix=${INSTALL_DIR} --enable-condor
+./configure --prefix=${INSTALL_DIR}
 make -j ${MAKE_CORES} install
 popd
 echo "source ${INSTALL_DIR}/etc/lalapps-user-env.sh" >> ${SOURCE_SCRIPTDIR}/lscsoftrc
