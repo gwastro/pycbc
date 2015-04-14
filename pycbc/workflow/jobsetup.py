@@ -840,7 +840,7 @@ class LigolwSSthincaExecutable(Executable):
 
         node.new_output_file_opt(jobSegment, '.xml.gz', '--output-file',
                         tags=self.tags+tags, store_file=self.retain_files,
-                        use_tmp_subdirs=True))
+                        use_tmp_subdirs=True)
 
         if write_likelihood:
             node.new_output_file_opt(jobSegment, '.xml.gz',
