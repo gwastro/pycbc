@@ -634,7 +634,7 @@ class PyCBCInspiralExecutable(Executable):
         
         constant_psd_segs = int(self.get_opt('psd-recalculate-segments'))
         if constant_psd_segs is None:
-            constant_psd_segs = analysis_segs
+            constant_psd_segs = min_analysis_segs
         
         if min_analysis_segs % constant_psd_segs != 0:
             raise ValueError('Constant PSD segments does not evenly divide the '
