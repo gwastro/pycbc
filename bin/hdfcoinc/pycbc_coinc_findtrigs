@@ -33,6 +33,8 @@ if args.verbose:
 def get_statistic(option, files):
     if option == 'newsnr':
         return NewSNRStatistic(files)
+    if option == 'newsnr_cut':
+        return NewSNRCutStatistic(files)
     if option == 'phasetd_newsnr':
         return PhaseTDStatistic(files)
     else:
@@ -68,6 +70,20 @@ class NewSNRStatistic(Stat):
         """ Calculate the coincident statistic.
         """
         return (s1**2.0 + s2**2.0) ** 0.5
+
+class NewSNRCutStatistic(Stat):
+    def single(self, trigs):
+        dof = 2 * trigs['chisq_dof'] - 2
+        rchisq = trigs['chisq'] / dof
+        newsnr = events.newsnr(trigs['snr'], rchisq)
+        newsnr[numpy.logical_and(newsnr < 10, rchisq > 2)] = -1
+        return newsnr
+
+    def coinc(self, s1, s2, slide, step):
+        cstat = (s1**2.0 + s2**2.0) ** 0.5
+        cstat[s1==-1] = 0
+        cstat[s2==-1] = 0
+        return cstat
 
 class PhaseTDStatistic(NewSNRStatistic):
     def single(self, trigs):
@@ -171,7 +187,7 @@ for tnum in range(tmin, tmax):
     i0, i1, slide = coinc.time_coincidence(t0, t1, time_window, args.timeslide_interval)
     logging.info('Coincident Trigs: %s' % (len(i1)))
     
-    s0, s1 = rank_method.single(trigs0), rank_method.single(trigs1)
+    s0, s1 = rank_method.single(trigs0), rank_method.single(trigs1) 
     c = rank_method.coinc(s0[i0], s1[i1], slide, args.timeslide_interval)
     
     fi = numpy.where(slide == 0)[0]
