@@ -83,7 +83,8 @@ When using the setup_matchedfltr_dax_generated sub-module the following addition
 
 * matchedfilter-link-to-tmpltbank - OPTIONAL. If this is given the workflow module will attempt to ensure a one-to-one correspondence between template banks and matched-filter outputs. This may not work in all cases and should be considered an option to be used for comparing with ihope output.
 * matchedfilter-compatibility-mode - OPTIONAL. If this is given the workflow module will tile the matched-filter jobs in the same way as inspiral_hipe used to. This requires the link option above and that the template bank and matched-filtering jobs are reading the same amount of data in each job.
-* analysis-length = LENGTH_IN_SECONDS (*NOT* used for lalapps_inspiral) - REQUIRED. The maximum amount of time in seconds that will be matched-filtered. Note that triggers may not be produced for the entire span of time. 
+* max-analysis-segments = (*NOT* used for lalapps_inspiral) - REQUIRED. The maximum number of analysis segments to analyze within a single inspiral job. Note that triggers may not be produced for the entire span of time. 
+* min-analysis-segments = (*NOT* used for lalapps_inspiral) - REQUIRED. The minimum number of analysis segments to analyze within a single inspiral job. This may be the same as the maximum.
 
 $$$$$$$$$$$$$$$
 [executables]
