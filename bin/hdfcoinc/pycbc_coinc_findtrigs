@@ -24,14 +24,17 @@ parser.add_argument("--template-fraction-range", help="Optional, format string t
                     "analyze part of template bank. Format is PART/NUM_PARTS",
                     default="0/1")
 parser.add_argument("--output-file", help="File to store the coincident triggers")
+parser.add_argument("--statistic-files", help="Statistic mapping files", nargs='+')
 args = parser.parse_args()    
                    
 if args.verbose:
     logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.DEBUG)
 
-def get_statistic(option):
+def get_statistic(option, files):
     if option == 'newsnr':
-        return NewSNRStatistic()
+        return NewSNRStatistic(files)
+    if option == 'phasetd_newsnr':
+        return PhaseTDStatistic(files)
     else:
         raise ValueError('%s is not an available detection statistic' % option)
 
@@ -42,19 +45,61 @@ def parse_template_range(num_templates, rangestr):
     tmax =  int(num_templates / float(pieces) * (part+1))
     return tmin, tmax    
 
-class NewSNRStatistic(object):
+class Stat(object):
+    def __init__(self, files):
+        self.files = {}
+        for filename in files:
+            print files
+            f = h5py.File(filename, 'r')
+            stat = f.attrs['stat']
+            self.files[stat] = f
+
+class NewSNRStatistic(Stat):
     def single(self, trigs):
         """ Read in the single detector information and make a single detector
         statistic. Results can either be a single number or a record array.
         """
+        
         dof = 2 * trigs['chisq_dof'] - 2
         newsnr = events.newsnr(trigs['snr'], trigs['chisq'] / dof)
         return numpy.array(newsnr, ndmin=1, dtype=numpy.float32)
 
-    def coinc(self, s1, s2):
+    def coinc(self, s1, s2, slide, step):
         """ Calculate the coincident statistic.
         """
         return (s1**2.0 + s2**2.0) ** 0.5
+
+class PhaseTDStatistic(NewSNRStatistic):
+    def single(self, trigs):
+        newsnr = NewSNRStatistic.single(self, trigs)
+        return numpy.array((newsnr, trigs['coa_phase'], trigs['end_time'])).transpose()
+
+    def coinc(self, s1, s2, slide, step):
+        """ Calculate the coincident statistic.
+        """
+        td = s1[:,2] - s2[:,2] - slide * step
+        pd = s1[:,1] - s2[:,1]
+        
+        tbins = self.files['phasetd_newsnr']['tbins'][:]
+        pbins = self.files['phasetd_newsnr']['pbins'][:]
+        
+        tv = numpy.searchsorted(tbins, td) - 1 
+        pv = numpy.searchsorted(pbins, pd) - 1
+        
+        tv[tv < 0] = 0
+        tv[tv >= len(tbins) - 1] = len(tbins) - 2
+        pv[pv < 0] = 0
+        pv[pv >= len(pbins) - 1] = len(pbins) - 2
+        
+        m = self.files['phasetd_newsnr']['map'][:][tv, pv]
+        m[m < 1] = 1
+        
+        cstat = (s1[:,0]**2.0 + s2[:,0]**2.0 + 2.0 * numpy.log(m))**0.5  
+        
+        if numpy.isnan(numpy.sum(cstat)):
+            raise RuntimeError("HOW THE F DID THIS HAPPEN?")
+         
+        return cstat
 
 class ReadByTemplate(object):
     def __init__(self, filename, vetofile=None):
@@ -90,7 +135,7 @@ class ReadByTemplate(object):
     def __getitem__(self, col):
         if self.template_num == None:
             raise ValueError('You must call set_template to first pick the '
-                             'template to read data from')       
+                             'template to read data from')    
         data = self.get_data(col, self.template_num)         
         data = data[self.keep] if self.veto_times else data
         return data
@@ -107,7 +152,7 @@ logging.info('Opening second trigger file: %s' % args.trigger_files[1])
 trigs1 = ReadByTemplate(args.trigger_files[1], args.veto_files)
 coinc_segs = (trigs0.segs & trigs1.segs).coalesce()
 
-rank_method = get_statistic(args.ranking_statistic)
+rank_method = get_statistic(args.ranking_statistic, args.statistic_files)
 det0, det1 = detector.Detector(trigs0.ifo), detector.Detector(trigs1.ifo)
 time_window = det0.light_travel_time_to_detector(det1) + args.coinc_threshold
 logging.info('The coincidence window is %3.1f ms' % (time_window * 1000))
@@ -127,7 +172,7 @@ for tnum in range(tmin, tmax):
     logging.info('Coincident Trigs: %s' % (len(i1)))
     
     s0, s1 = rank_method.single(trigs0), rank_method.single(trigs1)
-    c = rank_method.coinc(s0[i0], s1[i1])
+    c = rank_method.coinc(s0[i0], s1[i1], slide, args.timeslide_interval)
     
     fi = numpy.where(slide == 0)[0]
     bi = numpy.where(slide != 0)[0]
