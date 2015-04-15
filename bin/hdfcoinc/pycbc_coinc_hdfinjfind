@@ -115,8 +115,8 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
     missed_after_vetoes = numpy.delete(missed_within_time, numpy.where(numpy.in1d(missed_within_time, vi))[0])
     logging.info('Found: %s, Missed: %s' % (len(found_after_vetoes), len(missed_after_vetoes)))
 
-    found_fore = numpy.arange(0, len(inj_time), 1)[left[found]]
-    found_fore_v = numpy.arange(0, len(inj_time), 1)[left[found_after_vetoes]]
+    found_fore = numpy.arange(0, len(stat), 1)[left[found]]
+    found_fore_v = numpy.arange(0, len(stat), 1)[left[found_after_vetoes]]
 
     logging.info('Saving injection information')
     columns = ['mass1', 'mass2', 'spin1x', 'spin1y', 
