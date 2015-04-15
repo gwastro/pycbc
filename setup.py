@@ -340,6 +340,7 @@ setup (
                'bin/hdfcoinc/pycbc_page_injtable',
                'bin/pycbc_submit_dax',
                'bin/hdfcoinc/pycbc_page_coinc_snrchi',
+               'bin/hdfcoinc/pycbc_stat_dtphase',
                ],
     packages = [
                'pycbc',

@@ -1,3 +1,4 @@
+#!/bin/env python
 """ Create a file containing the phase and amplitude, 
 correlations between two detectors by
 doing a simple monte-carlo
