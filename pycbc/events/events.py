@@ -127,7 +127,7 @@ def findchirp_cluster_over_window(times, values, window_length):
 def newsnr(snr, reduced_x2, q=6.):
     """Calculate the re-weighted SNR statistic ('newSNR') from given SNR and
     reduced chi-squared values. See http://arxiv.org/abs/1208.3491 for
-    definition.
+    definition. Previous implementation in glue/ligolw/lsctables.py
     """
     newsnr = numpy.array(snr, ndmin=1)
     reduced_x2 = numpy.array(reduced_x2, ndmin=1)
@@ -140,6 +140,19 @@ def newsnr(snr, reduced_x2, q=6.):
         return newsnr
     else:
         return newsnr[0]
+
+def effsnr(snr, reduced_x2, fac=250.):
+    """Calculate the effective SNR statistic. See (S5y1 paper) for definition.
+    Previous implementation in glue/ligolw/lsctables.py
+    """
+    snr = numpy.array(snr, ndmin=1)
+    rchisq = numpy.array(reduced_x2, ndmin=1)
+    effsnr = snr / (1 + snr ** 2 / fac) ** 0.25 / rchisq ** 0.25
+
+    if len(effsnr) > 1:
+        return effsnr
+    else:
+        return effsnr[0]
 
 class EventManager(object):
     def __init__(self, opt, column, column_types, **kwds):

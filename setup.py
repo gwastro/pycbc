@@ -354,9 +354,9 @@ setup (
                'pycbc.tmpltbank',
                'pycbc.workflow',
                'pycbc.results',
+               'pycbc.io',
                ],
      package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'), 
 	             'pycbc.results': find_package_data('pycbc/results')},
 )
-
 
