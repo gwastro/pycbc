@@ -145,16 +145,16 @@ logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
 
 # If the user asked to avoid EM dim NS-BH systems, inform him/her about the
 # caveats and risks
-if opts.nsbh_flag and not opts.remnant_mass_threshold is None:
-    logging.info("""You have asked to not include EM dim NS-BH systems in
-                    the template bank. The script will assume that m1 is
-                    the BH and m2 is the NS: make sure that your settings
-                    respect this convention. The script will also treat the
-                    NS as non-spinning: use NS spins in the template bank
-                    at your own risk!""") 
+if not opts.remnant_mass_threshold is None:
+    logging.info("""You have asked to exclude EM dim NS-BH systems from the
+                        target parameter space. The script will assume that m1 is
+                        the BH and m2 is the NS: make sure that your settings
+                        respect this convention. The script will also treat the
+                        NS as non-spinning: use NS spins in the template bank
+                        at your own risk!""") 
     if opts.use_eos_max_ns_mass:
         logging.info("""You have asked to take into account the maximum NS
-                    mass value for the EOS in use.""")
+                        mass value for the EOS in use.""")
 
 # Sanity check options
 if not opts.output_file:
@@ -268,7 +268,7 @@ if opts.filter_points:
     # Create a large set of points and map to xi_i to give a starting point when
     # mapping from xi_i to masses and spins
     # Use the EM constraint only if asked to do so
-    if opts.nsbh_flag and not opts.remnant_mass_threshold is None:
+    if not opts.remnant_mass_threshold is None:
         rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
               pycbc.tmpltbank.get_random_mass(2000000, massRangeParams, \
                   opts=opts, em_constraint=True)

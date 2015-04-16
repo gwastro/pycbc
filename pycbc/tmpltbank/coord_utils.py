@@ -108,7 +108,7 @@ def get_random_mass(numPoints, massRangeParams, **kwargs):
 
     # WARNING: We expect mass1 > mass2 ALWAYS
 
-    # Check if EM contrains are required 
+    # Check if EM contraints are required 
     em_constraint = kwargs.get('em_constraint', False) 
     # If so, load EOS dependent data and generate the EM constraint
     if em_constraint: 
@@ -124,7 +124,7 @@ def get_random_mass(numPoints, massRangeParams, **kwargs):
             eos_name = '2H'
 
         # Generate EM constraint surface: minumum eta as a function of BH spin
-        # and NS mass required to produce an EM counterpart (FP)
+        # and NS mass required to produce an EM counterpart
         # TODO: avoid hardcoded numbers and add options to this script
         if not os.path.isfile('constraint_em_bright.npz'):
             logging.info("""Generating the constraint surface for EM bright binaries
@@ -260,13 +260,15 @@ def get_random_mass(numPoints, massRangeParams, **kwargs):
         if em_constraint:
             # Commpute the minimum eta to generate a counterpart
             min_eta_em = min_eta_for_em_bright(spin1z, mass2, mNS_pts, bh_spin_z_pts, eta_mins)
-            # Remove a point if eta is smaller than the eta threshold to have
-            # a counterpart and if the secondary mass does not exceed the
-            # maximum NS mass allowed by the EOS (if the user runs with
-            # --use-eos-max-ns-mass this second condition will always be true,
-            # otherwise the user is implicitly asking to keep binaries in which
-            # the secondary may be a BH)
-            mask[numpy.logical_and(numpy.logical_not(mass2 > max_ns_g_mass), eta < min_eta_em)] = False
+            # Remove a point if:
+            # 1) eta is smaller than the eta threshold required to have a counterpart;
+            # 2) the primary is a BH (mass1 >= ns_bh_boundary_mass);
+            # 3) the secondary mass does not exceed the maximum NS mass
+            # allowed by the EOS (if the user runs with --use-eos-max-ns-mass
+            # this last condition will always be true, otherwise the user is
+            # implicitly asking to keep binaries in which the secondary may be
+            # a BH).
+            mask[numpy.logical_and(numpy.logical_and(numpy.logical_not(mass1 < massRangeParams.ns_bh_boundary_mass), numpy.logical_not(mass2 > max_ns_g_mass)), eta < min_eta_em)] = False
         # Keep only binaries that can produce an EM counterpart and add them to
         # the pile of accpeted points to output
         massOut   = numpy.concatenate((massOut,mass[mask]))

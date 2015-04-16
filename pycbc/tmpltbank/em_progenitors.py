@@ -252,10 +252,10 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
 def remnant_mass_ulim(eta, ns_g_mass, bh_spin_z, ns_sequence, max_ns_g_mass, shift):
     # Sanity checks
     if not (eta > 0. and eta <=0.25 and abs(bh_spin_z)<=1):
-        print 'The absolute value of the BH spin z-component must be <=1.'
-        print 'Eta must be between 0 and 0.25.'
-        print 'This script was launched with eta={0} and chi_z={1}\n'.format(eta, bh_spin_z) 
-        raise Exception('Unphysical parameters!')
+        raise Exception("""The absolute value of the BH spin z-component must be <=1.
+           Eta must be between 0 and 0.25.
+           The function remnant_mass_ulim was launched with eta={0} and chi_z={1}.
+           Unphysical parameters!""".format(eta, bh_spin_z))
     # To maximise the remnant mass, allow for the BH spin magnitude to be maximum
     bh_spin_magnitude = 1.
     # Unreasonably large remnant disk mass
@@ -288,14 +288,14 @@ def find_em_constraint_data_point(mNS, sBH, mBH_min, mBH_max, eos_name, shift, e
             try:
                 # Initial guess in the middle of the range
                 eta_sol = scipy.optimize.fsolve(remnant_mass_ulim, 0.5*(eta_max-eta_min), args=(mNS, sBH, ns_sequence, max_ns_g_mass, shift))
-            except: 
+            except:
                 try:
                     # Low initial guess
-                    print 'Problems with mNS={0}, sBH,z={1}.: trying a different initial guess in the root-finder'.format(mNS, sBH)
+                    print 'Problems with mNS={0}, sBH,z={1}: trying a different initial guess in the root-finder'.format(mNS, sBH)
                     eta_sol = scipy.optimize.fsolve(remnant_mass_ulim, eta_min+0.01, args=(mNS, sBH, ns_sequence, max_ns_g_mass, shift))
-                except: 
+                except:
                     # High initial guess
-                    print 'Problems with mNS={0}, sBH,z={1}.: trying a different initial guess in the root-finder'.format(mNS, sBH)
+                    print 'Problems with mNS={0}, sBH,z={1}: trying a different initial guess in the root-finder'.format(mNS, sBH)
                     eta_sol = scipy.optimize.fsolve(remnant_mass_ulim, eta_max-0.00001, args=(mNS, sBH, ns_sequence, max_ns_g_mass, shift))
         elif disk_mass_down > 0:
             eta_sol = 0.        # EM counterpart requires eta<eta_min: penalize this point 
@@ -305,7 +305,7 @@ def find_em_constraint_data_point(mNS, sBH, mBH_min, mBH_max, eos_name, shift, e
             eta_sol = eta_min
         else:
             eta_sol = eta_max
-        print mNS, sBH, eta_sol
+        #print mNS, sBH, eta_sol
 
     return eta_sol
 
@@ -340,8 +340,8 @@ def generate_em_constraint_data(mNS_min, mNS_max, delta_mNS, sBH_min, sBH_max, d
     mNS_vec = np.array(mNS_sBH_grid[:,0])
     sBH_vec = np.array(mNS_sBH_grid[:,1])
 
-    # Until a numpy v>=1.7 is available everywhere, we have to used a silly
-    # vectorization of Find_em_constraint_data_point and pass to it a bunch of
+    # Until a numpy v>=1.7 is available everywhere, we have to use a silly
+    # vectorization of find_em_constraint_data_point and pass to it a bunch of
     # constant arguments as vectors with one entry repeated several times
     mBH_min_vec=np.empty(len(mNS_vec))
     mBH_min_vec.fill(mBH_min)
@@ -372,7 +372,7 @@ def generate_em_constraint_data(mNS_min, mNS_max, delta_mNS, sBH_min, sBH_max, d
 ################################################################################
 def min_eta_for_em_bright(bh_spin_z, ns_g_mass, mNS_pts, sBH_pts, eta_mins):
     f = scipy.interpolate.RectBivariateSpline(mNS_pts, sBH_pts, eta_mins, kx=1, ky=1)
-    # If bh_spin_z a numpy array (assuming ns_g_mass has the same size)
+    # If bh_spin_z is a numpy array (assuming ns_g_mass has the same size)
     if isinstance(bh_spin_z, np.ndarray):
         eta_min = np.empty(len(bh_spin_z))
         for i in range(len(bh_spin_z)):
