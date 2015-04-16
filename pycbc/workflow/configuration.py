@@ -188,7 +188,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             confFiles += installed_config_files 
 
         # Identify the overrides
-        confOverrides = args.config_overrides
+        confOverrides = args.config_overrides or []
         # and parse them
         parsedOverrides = []
         for override in confOverrides:
