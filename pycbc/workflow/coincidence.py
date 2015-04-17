@@ -383,9 +383,9 @@ def setup_coincidence_workflow_ligolw_thinca(
                         ligolwClusterOuts += node.output_files
                         workflow.add_node(node)
             else:
-                for key in insp_files_dict.keys():
+                for key in inspiral_outs_dict.keys():
                     curr_tags = ["JOB%d" %(key)]
-                    curr_list = insp_files_dict[key]
+                    curr_list = inspiral_outs_dict[key]
                     inputTrigFiles = FileList([])
                     for object in cafe_cache.objects:
                         inputTrigFiles.append(
