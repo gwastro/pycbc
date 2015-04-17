@@ -24,7 +24,7 @@ parser.add_argument("--template-fraction-range", help="Optional, format string t
                     "analyze part of template bank. Format is PART/NUM_PARTS",
                     default="0/1")
 parser.add_argument("--output-file", help="File to store the coincident triggers")
-parser.add_argument("--statistic-files", help="Statistic mapping files", nargs='+')
+parser.add_argument("--statistic-files", help="Statistic mapping files", nargs='*', default=[])
 args = parser.parse_args()    
                    
 if args.verbose:
