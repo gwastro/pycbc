@@ -15,14 +15,14 @@ def load_coincs(coinc_files):
         try:
             logging.info('reading %s' % cfile)
             f = h5py.File(cfile, "r")
-            stat.append(f['stat'])
-            time1.append(f['time1'])
-            time2.append(f['time2'])
-            i1.append(f['trigger_id1'])
-            i2.append(f['trigger_id2'])
-            timeslide_id.append(f['timeslide_id'])
-            template_id.append(f['template_id'])
-            decimation_factor.append(f['decimation_factor'])
+            stat.append(f['stat'][:])
+            time1.append(f['time1'][:])
+            time2.append(f['time2'][:])
+            i1.append(f['trigger_id1'][:])
+            i2.append(f['trigger_id2'][:])
+            timeslide_id.append(f['timeslide_id'][:])
+            template_id.append(f['template_id'][:])
+            decimation_factor.append(f['decimation_factor'][:])
             attr = dict(f.attrs)
             
         except:

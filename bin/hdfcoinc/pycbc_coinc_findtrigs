@@ -111,9 +111,6 @@ class PhaseTDStatistic(NewSNRStatistic):
         m[m < 1] = 1
         
         cstat = (s1[:,0]**2.0 + s2[:,0]**2.0 + 2.0 * numpy.log(m))**0.5  
-        
-        if numpy.isnan(numpy.sum(cstat)):
-            raise RuntimeError("HOW THE F DID THIS HAPPEN?")
          
         return cstat
 
@@ -187,7 +184,10 @@ for tnum in range(tmin, tmax):
     i0, i1, slide = coinc.time_coincidence(t0, t1, time_window, args.timeslide_interval)
     logging.info('Coincident Trigs: %s' % (len(i1)))
     
+    logging.info('Calculating Single Detector Statistic')
     s0, s1 = rank_method.single(trigs0), rank_method.single(trigs1) 
+    
+    logging.info('Calculating Multi-Detector Combined Statistic')
     c = rank_method.coinc(s0[i0], s1[i1], slide, args.timeslide_interval)
     
     fi = numpy.where(slide == 0)[0]
@@ -195,23 +195,30 @@ for tnum in range(tmin, tmax):
     logging.info('%s foreground triggers' % len(fi))
     logging.info('%s background triggers' % len(bi))
     
-    b = c[bi]
-    sep = len(b) - args.loudest_keep
+    sep = len(bi) - args.loudest_keep
     sep = 0 if sep < 0 else sep
-    bsort = numpy.argpartition(b, sep)
-    
+    bsort = numpy.argpartition(c[bi], sep)
+ 
     bl = bi[bsort[0:sep]]
+    bh = bi[bsort[sep:]]
+    del bsort 
+    del bi
     bl = bl[slide[bl] % args.decimation_factor == 0]
-    bh = bi[bsort[sep:]] 
     
     ti = numpy.concatenate([bl, bh, fi])
-    
+    logging.info('%s after decimation' % len(ti))
+   
+    g0 = i0[ti]
+    g1 = i1[ti] 
+    del i0
+    del i1
+       
     data['stat'] += [c[ti]]
     data['decimation_factor'] += [numpy.repeat([args.decimation_factor, 1, 1], [len(bl), len(bh), len(fi)])]
-    data['time1'] += [t0[i0[ti]]]
-    data['time2'] += [t1[i1[ti]]]
-    data['trigger_id1'] += [tid0[i0[ti]]]
-    data['trigger_id2'] += [tid1[i1[ti]]]
+    data['time1'] += [t0[g0]]
+    data['time2'] += [t1[g1]]
+    data['trigger_id1'] += [tid0[g0]]
+    data['trigger_id2'] += [tid1[g1]]
     data['timeslide_id'] += [slide[ti]]
     data['template_id'] += [numpy.zeros(len(ti), dtype=numpy.uint32) + tnum]
 
