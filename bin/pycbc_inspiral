@@ -60,6 +60,7 @@ parser.add_argument("--cluster-window", type=float, default = -1,
 parser.add_argument("--maximization-interval", type=float, default=0,
                   help="Maximize triggers over the template bank (ms)")
 parser.add_argument("--bank-veto-bank-file", type=str, help="FIXME: ADD")
+parser.add_argument("--chisq-snr-threshold", type=float, help="Minimum SNR to calculate the power chisq")
 parser.add_argument("--chisq-bins", default=0, help=
                     "Number of frequency bins to use for power chisq. Specify"
                     " an integer for a constant number of bins, or a function "
@@ -195,7 +196,7 @@ with ctx:
                                           phase_order=opt.order, 
                                           approximant=opt.approximant)
 
-    power_chisq = vetoes.SingleDetPowerChisq(opt.chisq_bins)
+    power_chisq = vetoes.SingleDetPowerChisq(opt.chisq_bins, opt.chisq_snr_threshold)
     autochisq = vetoes.SingleDetAutoChisq(opt.autochi_stride,
                                  opt.autochi_number_points, 
                                  onesided=opt.autochi_onesided,

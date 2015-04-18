@@ -285,7 +285,7 @@ class SingleDetPowerChisq(object):
     """Class that handles precomputation and memory management for efficiently
     running the power chisq in a single detector inspiral analysis.
     """
-    def __init__(self, num_bins=0):
+    def __init__(self, num_bins=0, snr_threshold=None):
         if not (num_bins == "0" or num_bins == 0):
             self.do = True
             self.column_name = "chisq"
@@ -293,7 +293,7 @@ class SingleDetPowerChisq(object):
             self.num_bins = num_bins
         else:
             self.do = False
-            
+        self.snr_threshold = snr_threshold
         self._bin_cache = {}
 
     @staticmethod
@@ -334,9 +334,32 @@ class SingleDetPowerChisq(object):
             in the given template
         """
         if self.do:
-            logging.info("...Doing power chisq")  
-            bins = self.cached_chisq_bins(template, psd)
-            return (fastest_power_chisq_at_points(corr, snr, snrv, snr_norm, bins, indices),
-                  ((len(bins)-1) * 2 - 2) * numpy.ones_like(indices))
+            logging.info("...Doing power chisq")
+            
+            num_above = len(indices)
+            if self.snr_threshold:
+                above = abs(snrv * snr_norm) > self.snr_threshold
+                num_above = above.sum()
+                logging.info('%s above chisq activation threshold' % num_above)
+                above_indices = indices[above]
+                above_snrv = snrv[above]
+                rchisq = numpy.zeros(len(indices), dtype=numpy.float32)
+                dof = 1
+            else:
+                above_indices = indices
+                above_snrv = snrv
+                
+            if num_above > 0:   
+                bins = self.cached_chisq_bins(template, psd)  
+                dof = (len(bins) - 1) * 2 - 2   
+                chisq = fastest_power_chisq_at_points(corr, snr, above_snrv, snr_norm, bins, above_indices)
+            
+            if self.snr_threshold:
+                if num_above > 0:
+                    rchisq[above] = chisq
+            else:
+                rchisq = chisq
+
+            return rchisq, dof * numpy.ones_like(indices) 
         else:
             return None, None
