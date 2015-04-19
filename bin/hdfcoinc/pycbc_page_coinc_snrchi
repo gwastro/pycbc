@@ -34,9 +34,14 @@ ifo = f.keys()[0]
 f = f[ifo]
 tid = b_tids[ifo]
 snr = f['snr'][:][tid]
+
 chisq = f['chisq'][:][tid]
+l = chisq == 0
 chisq_dof = f['chisq_dof'][:][tid]
 chisq /= (chisq_dof * 2 - 2) 
+chisq[l] = 0.1
+
+
 pylab.scatter(snr, chisq, marker='o', color='black',
               linewidth=0, s=2.0, label='background', 
               zorder=args.background_front)
@@ -54,9 +59,13 @@ eff_dist = f['injections'][eff_map[ifo]][:][inj_idx]
 f = h5py.File(args.single_injection_file)[ifo]
 tid = inj_tids[ifo]
 snr = f['snr'][:][tid]
+
 chisq = f['chisq'][:][tid]
+l = chisq == 0
 chisq_dof = f['chisq_dof'][:][tid]
 chisq /= (chisq_dof * 2 - 2)
+chisq[l] = 0.1
+
 pylab.scatter(snr, chisq, c=eff_dist, norm=colors.LogNorm(), 
               marker='^', linewidth=0, label="Injections", 
               zorder= not args.background_front)
