@@ -150,7 +150,7 @@ class EventManager(object):
         for column, coltype in zip (column, column_types):
             self.event_dtype.append( (column, coltype) )
 
-        self.events = numpy.events = numpy.array([], dtype=self.event_dtype)
+        self.events = numpy.array([], dtype=self.event_dtype)
         self.template_params = []
         self.template_index = -1
         self.template_events = numpy.array([], dtype=self.event_dtype)
@@ -184,7 +184,7 @@ class EventManager(object):
             raise RuntimeError('Chi-square test must be enabled in order to use newsnr threshold')
 
         remove = [i for i, e in enumerate(self.events) if \
-            newsnr(abs(e['snr']), e['chisq'] / (2 * e['chisq_dof'] - 2)) < threshold]
+            newsnr(abs(e['snr']), e['chisq'] / e['chisq_dof']) < threshold]
         self.events = numpy.delete(self.events, remove)
 
     def maximize_over_bank(self, tcolumn, column, window):
@@ -651,7 +651,7 @@ class EventManagerMultiDet(EventManager):
         for column, coltype in zip (column, column_types):
             self.event_dtype.append( (column, coltype) )
 
-        self.events = numpy.events = numpy.array([], dtype=self.event_dtype)
+        self.events = numpy.array([], dtype=self.event_dtype)
         self.event_id_map = {}
         self.event_index = 0
         self.template_params = []
