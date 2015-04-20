@@ -128,15 +128,17 @@ class FilterBank(object):
             delta_f=self.delta_f, delta_t=self.delta_t, distance=distance,
             **self.extra_args)
 
-        # For time domain templates, record the total duration (which may
+        # If available, record the total duration (which may
         # include ringdown) and the duration up to merger since they will be 
-        # erased by the type conversion below
-        length_in_time = None
-        chirp_length = None
+        # erased by the type conversion below.
+        # NOTE: If these durations are not available the values in self.table
+        #       will continue to take the values in the input file.
         if hasattr(htilde, 'length_in_time'):
-            length_in_time = htilde.length_in_time
+            if htilde.length_in_time is not None:
+                self.table[index].ttotal = htilde.length_in_time
         if hasattr(htilde, 'chirp_length'):
-            chirp_length = htilde.chirp_length
+            if htilde.chirp_length is not None:
+                self.table[index].template_duration = htilde.chirp_length
 
         htilde = htilde.astype(self.dtype)
         htilde.f_lower = self.f_lower
@@ -149,13 +151,4 @@ class FilterBank(object):
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)
         htilde._sigmasq = {}
 
-        # For time domain templates, assign 'ttotal' to the total template
-        # duration (which may include ringdown) and 'template_duration' to
-        # the duration up to merger as in previous IMR searches
-        if length_in_time is not None:
-            htilde.length_in_time = length_in_time
-            self.table[index].ttotal = length_in_time
-        if chirp_length is not None:
-            htilde.chirp_length = chirp_length
-            self.table[index].template_duration = chirp_length
         return htilde
