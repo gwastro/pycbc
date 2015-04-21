@@ -6,8 +6,9 @@ with producing the combined foreground and background triggers
 """
 import argparse, h5py, logging, itertools, copy
 from scipy.interpolate import interp1d  
-from pycbc.future import numpy  
+from pycbc.future import numpy
 from itertools import izip
+from pycbc.events import veto
     
 def load_coincs(coinc_files):
     stat, time1, time2, timeslide_id, template_id, decimation_factor, i1, i2 = [], [], [], [], [], [], [], []
@@ -86,8 +87,9 @@ if __name__ == '__main__':
     # General required options
     parser.add_argument('--coinc-files', nargs='+')
     parser.add_argument('--verbose', action='count')
-    parser.add_argument('--cluster-window', type=float, default=0)
+    parser.add_argument('--cluster-window', type=float)
     parser.add_argument('--external-background')
+    parser.add_argument('--veto-window', type=float)
     parser.add_argument('--output-file')
     args = parser.parse_args()
 
@@ -99,45 +101,69 @@ if __name__ == '__main__':
     logging.info("Loading coinc triggers")    
     stat, t1, t2, sid, tid, dec, i1, i2, attrs, start, end = load_coincs(args.coinc_files)   
     logging.info("We have %s triggers" % len(stat))
+    
+    unclustered_fore_locs = numpy.where((sid == 0))[0]
+    logging.info('%s unclustered foreground triggers' % len(unclustered_fore_locs))  
 
-    if args.cluster_window != 0:
-        logging.info("Clustering coinc triggers")
-        cid = cluster_coincs(stat, t1, t2, sid, 
+    logging.info("Clustering coinc triggers (inclusive of zerolag)")
+    cid = cluster_coincs(stat, t1, t2, sid, 
+                         attrs['timeslide_interval'], 
+                         args.cluster_window)
+    stat_i, t1_i, t2_i, sid_i, tid_i, dec_i, i1_i, i2_i = stat[cid], t1[cid], t2[cid], sid[cid], tid[cid], dec[cid], i1[cid], i2[cid]
+    mi = stat_i.argmax()
+    
+    w = numpy.where(numpy.logical_and(t1_i < 966816194.823, t1_i > 966816194.803))[0]
+    
+    if not args.external_background:
+        ft1, ft2 = t1[unclustered_fore_locs], t2[unclustered_fore_locs]
+        vt = (ft1 + ft2) / 2.0
+        veto_start, veto_end = vt - args.veto_window, vt + args.veto_window
+        v1 = veto.indices_within_times(t1, veto_start, veto_end) 
+        v2 = veto.indices_within_times(t2, veto_start, veto_end) 
+        vidx = numpy.unique(numpy.concatenate([v1, v2]))
+        vi = numpy.zeros(len(t1), dtype=numpy.bool)
+        vi[:] = True
+        vi[vidx] = False
+
+        veto_time = abs(veto.start_end_to_segments(veto_start, veto_end).coalesce())  
+    
+        logging.info("Clustering coinc triggers (exclusive of zerolag)")
+        cid = cluster_coincs(stat[vi], t1[vi], t2[vi], sid[vi], 
                              attrs['timeslide_interval'], 
                              args.cluster_window)
-        stat, t1, t2, sid, tid, dec, i1, i2 = stat[cid], t1[cid], t2[cid], sid[cid], tid[cid], dec[cid], i1[cid], i2[cid]
-        logging.info("We now have %s triggers" % len(stat))
-
+        stat_e, t1_e, t2_e, sid_e, tid_e, dec_e, i1_e, i2_e = stat[vi][cid], t1[vi][cid], t2[vi][cid], sid[vi][cid], tid[vi][cid], dec[vi][cid], i1[vi][cid], i2[vi][cid]
+        mi = stat_e.argmax()
+        m2 = stat[vi].argmax()
+    
     logging.info("Dumping foreground triggers")
     f = h5py.File(args.output_file, "w")
     
     f.attrs['detector_1'] = attrs['detector_1']
     f.attrs['detector_2'] = attrs['detector_2']
-    f.attrs['num_slides'] = attrs['num_slides']
     
-    fore_locs = (sid == 0)
-    back_locs = numpy.where((sid != 0))[0]
-    logging.info("%s foreground triggers" % fore_locs.sum())
+    fore_locs = (sid_i == 0)
+    logging.info("%s clustered foreground triggers" % fore_locs.sum())
     
     if fore_locs.sum() > 0:
-        f['foreground/stat'] = stat[fore_locs]
-        f['foreground/time1'] = t1[fore_locs]
-        f['foreground/time2'] = t2[fore_locs]
-        f['foreground/trigger_id1'] = i1[fore_locs]
-        f['foreground/trigger_id2'] = i2[fore_locs]
-        f['foreground/template_id'] = tid[fore_locs]
+        f['foreground/stat'] = stat_i[fore_locs]
+        f['foreground/time1'] = t1_i[fore_locs]
+        f['foreground/time2'] = t2_i[fore_locs]
+        f['foreground/trigger_id1'] = i1_i[fore_locs]
+        f['foreground/trigger_id2'] = i2_i[fore_locs]
+        f['foreground/template_id'] = tid_i[fore_locs]
         f['foreground/analyzed_start'] = start
         f['foreground/analyzed_end'] = end
     
+    back_locs = numpy.where((sid_i != 0))[0]
     if args.external_background:
         # We are using an external background file
         # to calculate the foreground, FAP
         # IFAR, etc
         fb = h5py.File(args.external_background, "r")
-        background_time = fb.attrs['background_time']
-        coinc_time = float(attrs['coinc_time'])
-        back_stat = fb['background/stat'][:]
-        fanmap = calculate_fan_map(back_stat, fb['background/decimation_factor'][:])
+        background_time = fb.attrs['background_time_exc']
+        coinc_time = float(attrs['coinc_time_exc'])
+        back_stat = fb['background_exc/stat'][:]
+        fanmap = calculate_fan_map(back_stat, fb['background_exc/decimation_factor'][:])
         
         logging.info("calculating ifar values")
         fore_stat = stat[fore_locs]
@@ -147,51 +173,85 @@ if __name__ == '__main__':
         logging.info("calculating fap values")
         fap = numpy.clip(coinc_time/ifar, 0, 1)
         
-        f['foreground/fan'] = fore_fan
-        f['foreground/ifar'] = sec_to_year(ifar)
-        f['foreground/fap'] = fap
-        f.attrs['background_time'] = background_time
-        f.attrs['foreground_time'] = coinc_time
+        if fore_locs.sum() > 0:
+            f['foreground/fan_exc'] = fore_fan
+            f['foreground/ifar_exc'] = sec_to_year(ifar)
+            f['foreground/fap_exc'] = fap
+        f.attrs['background_time_exc'] = background_time
+        f.attrs['foreground_time_exc'] = coinc_time
             
     elif len(back_locs) > 0:
-        logging.info("Dumping background triggers")
-        f['background/stat'] = stat[back_locs]
-        f['background/time1'] = t1[back_locs]
-        f['background/time2'] = t2[back_locs]
-        f['background/trigger_id1'] = i1[back_locs]
-        f['background/trigger_id2'] = i2[back_locs]
-        f['background/timeslide_id'] = sid[back_locs]
-        f['background/template_id'] = tid[back_locs]
-        f['background/decimation_factor'] = dec[back_locs]
+        logging.info("Dumping background triggers (inclusive of zerolag)")
+        f['background/stat'] = stat_i[back_locs]
+        f['background/time1'] = t1_i[back_locs]
+        f['background/time2'] = t2_i[back_locs]
+        f['background/trigger_id1'] = i1_i[back_locs]
+        f['background/trigger_id2'] = i2_i[back_locs]
+        f['background/timeslide_id'] = sid_i[back_locs]
+        f['background/template_id'] = tid_i[back_locs]
+        f['background/decimation_factor'] = dec_i[back_locs]
+
+        logging.info("Dumping background triggers (exclusive of zerolag)")      
+        f['background_exc/stat'] = stat_e
+        f['background_exc/time1'] = t1_e
+        f['background_exc/time2'] = t2_e
+        f['background_exc/trigger_id1'] = i1_e
+        f['background_exc/trigger_id2'] = i2_e
+        f['background_exc/timeslide_id'] = sid_e
+        f['background_exc/template_id'] = tid_e
+        f['background_exc/decimation_factor'] = dec_e
         
         maxtime = max(attrs['foreground_time1'], attrs['foreground_time2'])
         mintime = min(attrs['foreground_time1'], attrs['foreground_time2'])
         
+        maxtime_exc = maxtime - veto_time
+        mintime_exc = mintime - veto_time
+        
         background_time = int(maxtime / attrs['timeslide_interval']) * mintime
         coinc_time = float(attrs['coinc_time'])
         
-        logging.info("Making mapping from FAN to the combined statistic")
-        back_stat = stat[back_locs]
-        fanmap = calculate_fan_map(back_stat, dec[back_locs])
+        background_time_exc = int(maxtime_exc / attrs['timeslide_interval']) * mintime_exc
+        coinc_time_exc = coinc_time - veto_time
         
+        logging.info("Making mapping from FAN to the combined statistic")
+        back_stat = stat_i[back_locs]
+        fanmap = calculate_fan_map(back_stat, dec_i[back_locs])       
         back_fan = fanmap(back_stat)
+  
+        fanmap_exc = calculate_fan_map(stat_e, dec_e)     
+        back_fan_exc = fanmap_exc(stat_e)         
+        
         f['background/fan'] = back_fan
         f['background/ifar'] = sec_to_year(background_time / back_fan)
+        
+        f['background_exc/fan'] = back_fan_exc
+        f['background_exc/ifar'] = sec_to_year(background_time_exc / back_fan_exc)
 
         f.attrs['background_time'] = background_time
         f.attrs['foreground_time'] = coinc_time
+        f.attrs['background_time_exc'] = background_time_exc
+        f.attrs['foreground_time_exc'] = coinc_time_exc
         
         logging.info("calculating ifar values")
-        fore_stat = stat[fore_locs]
+        fore_stat = stat_i[fore_locs]
+        
         fore_fan = fanmap(fore_stat)
         ifar = background_time / fore_fan
+        
+        fore_fan_exc = fanmap_exc(fore_stat)
+        ifar_exc = background_time_exc / fore_fan_exc
 
         logging.info("calculating fap values")
         fap = numpy.clip(coinc_time/ifar, 0, 1)
+        fap_exc = numpy.clip(coinc_time_exc/ifar_exc, 0, 1)
         if fore_locs.sum() > 0:
             f['foreground/fan'] = fore_fan
             f['foreground/ifar'] = sec_to_year(ifar)
             f['foreground/fap'] = fap
+            
+            f['foreground/fan_exc'] = fore_fan_exc
+            f['foreground/ifar_exc'] = sec_to_year(ifar_exc)
+            f['foreground/fap_exc'] = fap_exc
     else:
         logging.warn("There were no background events, so we could not assign "
                      "any statistic values")

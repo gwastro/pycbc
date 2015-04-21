@@ -23,7 +23,9 @@ f = h5py.File(args.trigger_file, 'r')
 ifar = f['foreground/ifar'][:]
 sorting = ifar.argsort()[::-1]
 ifar = ifar[sorting]
+ifar_exc = f['foreground/ifar_exc'][:][sorting]
 fap = f['foreground/fap'][:][sorting]
+fap_exc = f['foreground/fap_exc'][:][sorting]
 stat = f['foreground/stat'][:][sorting]
 time1 = f['foreground/time1'][:][sorting]
 time2 = f['foreground/time2'][:][sorting]
@@ -42,17 +44,14 @@ spin2z = f['spin2z'][:][template_id]
 
 mchirp, eta = mass1_mass2_to_mchirp_eta(mass1, mass2)
 
-#urls = pycbc.results.followup.times_to_links(time1, 5.0, args.foreground_tag)
-#urls = numpy.array(urls)
-
-columns = [ifar, fap, stat,  time1,
-           (time2-time1)*1000, mchirp, mass1, mass2, spin1z, spin2z, trigid1, trigid2, template_id]
-names = ['IFAR (YR)', 'FAP', 'Combined NewSNR', 'End Time', 
+columns = [ifar_exc, ifar, fap_exc, fap, stat,  time1,
+           (time2-time1)*1000, mchirp, mass1, mass2, spin1z, spin2z]
+names = ['IFAR with Rem. (YR)', 'IFAR (YR)', 'FAP with Rem.', 'FAP', 'Combined NewSNR', 'End Time', 
          'Time Diff. (ms)', 'mchirp', 'm1', 'm2',
-         's1z', 's2z', 'tid1', 'tid2', 'template id']
-format_strings = ['#.###E0', '#.##E0', '##.###',
+         's1z', 's2z']
+format_strings = ['#.###E0', '#.###E0', '#.##E0', '#.##E0', '##.###',
                   None, '##.##', '##.##', '##.##',
-                  '##.##', '##.##', '##.##', None, None, None]
+                  '##.##', '##.##', '##.##']
 
 logging.info('Making table of foreground triggers')
 html_table = pycbc.results.table(columns, names, 

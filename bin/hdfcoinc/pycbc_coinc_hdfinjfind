@@ -66,7 +66,7 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
 
     template_id = f['foreground/template_id'][:]
     stat = f['foreground/stat'][:]
-    ifar = f['foreground/ifar'][:]
+    ifar = f['foreground/ifar_exc'][:]
     fap = f['foreground/fap'][:]
     time1 = f['foreground/time1'][:]
     time2 = f['foreground/time2'][:]
