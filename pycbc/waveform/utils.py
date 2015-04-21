@@ -86,7 +86,7 @@ def unwrap_phase(vec, discont, offset):
 
     return nvec
 
-def phase_from_polarizations(h_plus, h_cross):
+def phase_from_polarizations(h_plus, h_cross, remove_start_phase=True):
     """Return gravitational wave phase
 
     Return the gravitation-wave phase from the h_plus and h_cross 
@@ -117,7 +117,8 @@ def phase_from_polarizations(h_plus, h_cross):
     """
     p_wrapped = numpy.arctan2(h_plus, h_cross)
     p = unwrap_phase(p_wrapped, 2*lal.PI*0.7, lal.PI*2)
-    p += -p[0]
+    if remove_start_phase:
+        p += -p[0]    
     return TimeSeries(abs(p), delta_t=h_plus.delta_t, epoch=h_plus.start_time)
 
 def amplitude_from_polarizations(h_plus, h_cross):
