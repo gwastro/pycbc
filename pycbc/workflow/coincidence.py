@@ -486,12 +486,14 @@ class PyCBCStatMapExecutable(Executable):
     """ Calculate FAP, IFAR, etc
     """
     current_retention_level = Executable.CRITICAL
-    def create_node(self, coinc_files, external_background=None, tags=[]):
+    def create_node(self, coinc_files, inj_file=None, external_background=None, tags=[]):
         segs = coinc_files.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
 
         node = Node(self)
         node.set_memory(5000)
+        if inj_file:
+            node.add_input_opt('--injection-file', inj_file)
         node.add_input_list_opt('--coinc-files', coinc_files)
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags)
         if external_background:
@@ -572,8 +574,8 @@ def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=[]):
             trig_files += trig2hdf_node.output_files
     return trig_files
 
-def setup_interval_coinc_inj(workflow, hdfbank, trig_files,
-                           background_file, out_dir, tags=[]):
+def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_files,
+                           background_file, full_coincs,  inj_file, veto_file, out_dir, tags=[]):
     """
     This function sets up exact match coincidence and background estimation
     using a folded interval technique.
@@ -601,14 +603,30 @@ def setup_interval_coinc_inj(workflow, hdfbank, trig_files,
     factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
 
     bg_files = FileList()
-    for i in range(factor):
-        group_str = '%s/%s' % (i, factor)
-        coinc_node = findcoinc_exe.create_node(trig_files, hdfbank, [],
-                                           group_str, tags=[str(i)])
-        bg_files += coinc_node.output_files
-        workflow.add_node(coinc_node)
+    
+    ffiles = {}
+    ifiles = {}
+    ifos, files = full_data_trig_files.categorize_by_attr('ifo')
+    for ifo, file in zip(ifos, files):
+        ffiles[ifo] = file[0]
+    ifos, files = inj_trig_files.categorize_by_attr('ifo')
+    for ifo, file in zip(ifos, files):
+        ifiles[ifo] = file[0]
+    ifo0, ifo1 = ifos[0], ifos[1]
+    combo = [(FileList([ifiles[ifo0], ifiles[ifo1]]), "INJINJ"),
+             (FileList([ifiles[ifo0], ffiles[ifo1]]), "INJFULL"),
+             (FileList([ifiles[ifo1], ffiles[ifo0]]), "FULLINJ"),
+            ]
 
-    combine_node = combinecoinc_exe.create_node(bg_files,
+    for trig_files, ctag in combo:
+        for i in range(factor):
+            group_str = '%s/%s' % (i, factor)
+            coinc_node = findcoinc_exe.create_node(trig_files, hdfbank, veto_file,
+                                           group_str, tags=([str(i), ctag]))
+            bg_files += coinc_node.output_files
+            workflow.add_node(coinc_node)
+
+    combine_node = combinecoinc_exe.create_node(FileList(bg_files + full_coincs), inj_file=inj_file,
                                            external_background=background_file[0])
     workflow.add_node(combine_node)
 
@@ -660,10 +678,5 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
         workflow.add_node(combine_node)
         stat_files += combine_node.output_files
         
-        from pycbc.workflow.plotting import make_snrifar_plot
-        make_snrifar_plot(workflow, combine_node.output_files[0],
-                          'plots/background', tags=tag)
-
-    return stat_files
+    return stat_files, bg_files
     logging.info('...leaving coincidence ')
-
