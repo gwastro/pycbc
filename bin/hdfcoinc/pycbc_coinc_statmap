@@ -8,7 +8,7 @@ import argparse, h5py, logging, itertools, copy
 from scipy.interpolate import interp1d  
 from pycbc.future import numpy
 from itertools import izip
-from pycbc.events import veto
+from pycbc.events import veto, coinc
     
 def load_coincs(coinc_files):
     stat, time1, time2, timeslide_id, template_id, decimation_factor, i1, i2 = [], [], [], [], [], [], [], []
@@ -35,41 +35,6 @@ def load_coincs(coinc_files):
            f['analyzed_start'][:], f['analyzed_end'][:], 
            )
 
-def cluster_coincs(stat, time1, time2, timeslide_id, slide, window):
-    """Cluster coincident events for each timeslide separately, across 
-    templates, based on the ranking statistic 
-    Return the set of indices corresponding to the surviving coincidences.
-    """
-    
-    logging.info('clustering coinc triggers over %ss window' % window)
-    
-    indices = []
-    if numpy.isfinite(slide):
-        time = (time2 + (time1 + timeslide_id * slide)) / 2
-    else:
-        time = 0.5 * (time2 + time1)
-        
-    tslide = timeslide_id.astype(numpy.float128)
-    time = time.astype(numpy.float128)
-    span = (time.max() - time.min()) + window * 10
-    time = time + span * tslide
-    
-    time_sorting = time.argsort()
-    stat = stat[time_sorting]
-    time = time[time_sorting]
-    tslide = tslide[time_sorting]
-    
-    logging.info('sorting...')
-    left = numpy.searchsorted(time, time - window)
-    right = numpy.searchsorted(time, time + window)
-    logging.info('done sorting')
-    indices = []
-    for i, (l, r) in enumerate(izip(left, right)):
-        if stat[l:r].argmax() + l == i:
-            indices += [i]
-    logging.info('done clustering coinc triggers: %s triggers remaining' % len(indices))
-    return time_sorting[numpy.array(indices)]
-
 def calculate_fan_map(combined_stat, dec):
     """ Return a function to map between false alarm number (FAN) and the
     combined ranking statistic.
@@ -85,11 +50,11 @@ def sec_to_year(sec):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # General required options
-    parser.add_argument('--coinc-files', nargs='+')
+    parser.add_argument('--coinc-files', nargs='+', help='List of coincidence files used to calculate the FAP, FAR, etc.')
     parser.add_argument('--verbose', action='count')
-    parser.add_argument('--cluster-window', type=float)
-    parser.add_argument('--external-background')
-    parser.add_argument('--veto-window', type=float)
+    parser.add_argument('--cluster-window', type=float, help='Size in seconds to maximize coinc triggers')
+    parser.add_argument('--external-background', help='background file from full data for use in analyzing injection coincs')
+    parser.add_argument('--veto-window', type=float, help='window around each zerolag trigger to window out')
     parser.add_argument('--output-file')
     args = parser.parse_args()
 
@@ -106,13 +71,10 @@ if __name__ == '__main__':
     logging.info('%s unclustered foreground triggers' % len(unclustered_fore_locs))  
 
     logging.info("Clustering coinc triggers (inclusive of zerolag)")
-    cid = cluster_coincs(stat, t1, t2, sid, 
+    cid = coinc.cluster_coincs(stat, t1, t2, sid, 
                          attrs['timeslide_interval'], 
                          args.cluster_window)
     stat_i, t1_i, t2_i, sid_i, tid_i, dec_i, i1_i, i2_i = stat[cid], t1[cid], t2[cid], sid[cid], tid[cid], dec[cid], i1[cid], i2[cid]
-    mi = stat_i.argmax()
-    
-    w = numpy.where(numpy.logical_and(t1_i < 966816194.823, t1_i > 966816194.803))[0]
     
     if not args.external_background:
         ft1, ft2 = t1[unclustered_fore_locs], t2[unclustered_fore_locs]
@@ -128,12 +90,10 @@ if __name__ == '__main__':
         veto_time = abs(veto.start_end_to_segments(veto_start, veto_end).coalesce())  
     
         logging.info("Clustering coinc triggers (exclusive of zerolag)")
-        cid = cluster_coincs(stat[vi], t1[vi], t2[vi], sid[vi], 
+        cid = coinc.cluster_coincs(stat[vi], t1[vi], t2[vi], sid[vi], 
                              attrs['timeslide_interval'], 
                              args.cluster_window)
         stat_e, t1_e, t2_e, sid_e, tid_e, dec_e, i1_e, i2_e = stat[vi][cid], t1[vi][cid], t2[vi][cid], sid[vi][cid], tid[vi][cid], dec[vi][cid], i1[vi][cid], i2[vi][cid]
-        mi = stat_e.argmax()
-        m2 = stat[vi].argmax()
     
     logging.info("Dumping foreground triggers")
     f = h5py.File(args.output_file, "w")
@@ -160,26 +120,59 @@ if __name__ == '__main__':
         # to calculate the foreground, FAP
         # IFAR, etc
         fb = h5py.File(args.external_background, "r")
-        background_time = fb.attrs['background_time_exc']
-        coinc_time = float(attrs['coinc_time_exc'])
+
+        background_time = float(fb.attrs['background_time_exc'])
+        coinc_time = float(fb.attrs['foreground_time_exc'])
         back_stat = fb['background_exc/stat'][:]
-        fanmap = calculate_fan_map(back_stat, fb['background_exc/decimation_factor'][:])
+        dec_fac = fb['background_exc/decimation_factor'][:]
+        fanmap = calculate_fan_map(back_stat, dec_fac)
         
         logging.info("calculating ifar values")
-        fore_stat = stat[fore_locs]
+        fore_stat = stat_i[fore_locs]
         fore_fan = fanmap(fore_stat)
         ifar = background_time / fore_fan
 
         logging.info("calculating fap values")
-        fap = numpy.clip(coinc_time/ifar, 0, 1)
+        fap = numpy.clip(coinc_time / ifar, 0, 1)
+
+        f.attrs['background_time_exc'] = background_time
+        f.attrs['foreground_time_exc'] = coinc_time
+        f.attrs['background_time'] = background_time
+        f.attrs['foreground_time'] = coinc_time
         
         if fore_locs.sum() > 0:
             f['foreground/fan_exc'] = fore_fan
             f['foreground/ifar_exc'] = sec_to_year(ifar)
             f['foreground/fap_exc'] = fap
-        f.attrs['background_time_exc'] = background_time
-        f.attrs['foreground_time_exc'] = coinc_time
             
+            stats = stat_i[back_locs]
+            ftime = (t1_i[fore_locs] + t2_i[fore_locs]) / 2
+            t1, t2 = t1_i[back_locs], t2_i[back_locs]
+             
+            fan = numpy.zeros(len(ftime), dtype=numpy.float32)
+            ifar = numpy.zeros(len(ftime), dtype=numpy.float32)
+            fap = numpy.zeros(len(ftime), dtype=numpy.float32)
+            t1sort = t1.argsort()
+            t1sorted = t1[t1sort]
+            t2sort = t2.argsort()
+            t2sorted = t2[t2sort]
+
+            for i, (fstat, ftime) in enumerate(zip(fore_stat, ftime)):
+                start, end = ftime - args.veto_window, ftime + args.veto_window
+                v1 = t1sort[numpy.searchsorted(t1sorted, start):numpy.searchsorted(t1sorted, end)]
+                v2 = t2sort[numpy.searchsorted(t2sorted, start):numpy.searchsorted(t2sorted, end)]
+                idx = numpy.unique(numpy.concatenate([v1, v2]))
+                inj_stat = numpy.concatenate([stat_i[idx], back_stat])
+                inj_dec = numpy.concatenate([numpy.repeat(1, len(inj_stat)), dec_fac])
+                fanmap = calculate_fan_map(inj_stat, inj_dec)
+                fan[i] = fanmap(stat)
+                ifar[i] = background_time / fore_fan
+                fap[i] = numpy.clip(coinc_time / ifar, 0, 1)
+                print i, fstat, ftime, fan[i], ifar[i], fap[i]
+            f['foreground/fan'] = fan
+            f['foreground/ifar'] = ifar
+            f['foreground/fap'] = fap                                                
+
     elif len(back_locs) > 0:
         logging.info("Dumping background triggers (inclusive of zerolag)")
         f['background/stat'] = stat_i[back_locs]

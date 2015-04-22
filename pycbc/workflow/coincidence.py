@@ -486,14 +486,12 @@ class PyCBCStatMapExecutable(Executable):
     """ Calculate FAP, IFAR, etc
     """
     current_retention_level = Executable.CRITICAL
-    def create_node(self, coinc_files, inj_file=None, external_background=None, tags=[]):
+    def create_node(self, coinc_files, external_background=None, tags=[]):
         segs = coinc_files.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
 
         node = Node(self)
         node.set_memory(5000)
-        if inj_file:
-            node.add_input_opt('--injection-file', inj_file)
         node.add_input_list_opt('--coinc-files', coinc_files)
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags)
         if external_background:
@@ -575,7 +573,7 @@ def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=[]):
     return trig_files
 
 def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_files,
-                           background_file, full_coincs,  inj_file, veto_file, out_dir, tags=[]):
+                           background_file, veto_file, out_dir, tags=[]):
     """
     This function sets up exact match coincidence and background estimation
     using a folded interval technique.
@@ -590,10 +588,6 @@ def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_f
 
     if len(workflow.ifos) > 2:
         raise ValueError('This coincidence method only supports two ifo searches')
-
-    findcoinc_exe = PyCBCFindCoincExecutable(workflow.cp, 'coinc',
-                                              ifos=workflow.ifos,
-                                              tags=tags, out_dir=out_dir)
 
     combinecoinc_exe = PyCBCStatMapExecutable(workflow.cp, 'statmap',
                                               ifos=workflow.ifos,
@@ -613,20 +607,23 @@ def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_f
     for ifo, file in zip(ifos, files):
         ifiles[ifo] = file[0]
     ifo0, ifo1 = ifos[0], ifos[1]
-    combo = [(FileList([ifiles[ifo0], ifiles[ifo1]]), "INJINJ"),
-             (FileList([ifiles[ifo0], ffiles[ifo1]]), "INJFULL"),
-             (FileList([ifiles[ifo1], ffiles[ifo0]]), "FULLINJ"),
+    combo = [(FileList([ifiles[ifo0], ifiles[ifo1]]), "injinj"),
+             (FileList([ifiles[ifo0], ffiles[ifo1]]), "injfull"),
+             (FileList([ifiles[ifo1], ffiles[ifo0]]), "fullinj"),
             ]
 
     for trig_files, ctag in combo:
+        findcoinc_exe = PyCBCFindCoincExecutable(workflow.cp, 'coinc',
+                                              ifos=workflow.ifos,
+                                              tags=tags + [ctag], out_dir=out_dir)
         for i in range(factor):
             group_str = '%s/%s' % (i, factor)
             coinc_node = findcoinc_exe.create_node(trig_files, hdfbank, veto_file,
-                                           group_str, tags=([str(i), ctag]))
+                                           group_str, tags=([str(i)]))
             bg_files += coinc_node.output_files
             workflow.add_node(coinc_node)
 
-    combine_node = combinecoinc_exe.create_node(FileList(bg_files + full_coincs), inj_file=inj_file,
+    combine_node = combinecoinc_exe.create_node(bg_files,
                                            external_background=background_file[0])
     workflow.add_node(combine_node)
 

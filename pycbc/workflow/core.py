@@ -213,7 +213,6 @@ class Executable(pegasus_workflow.Executable):
              if cp.has_section(section):
                 sections.append(section)
         self.sections = sections   
-        
         # Do some basic sanity checking on the options      
         for sec1, sec2 in combinations(sections, 2):
             cp.check_duplicate_options(sec1, sec2, raise_error=True)
