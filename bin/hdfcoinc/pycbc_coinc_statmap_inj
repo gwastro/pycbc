@@ -101,21 +101,22 @@ f.attrs['background_time'] = background_time
 f.attrs['foreground_time'] = coinc_time
 
 if len(zdata['stat']) > 0:
-    ftimes = (zdata['time1'][zcid] + zdata['time2'][zcid]) / 2
+    
     fore_fan = fanmap(zdata['stat'][zcid])
     ifar = background_time / fore_fan
     fap = numpy.clip(coinc_time / ifar, 0, 1)
     f['foreground/fan_exc'] = fore_fan
     f['foreground/ifar_exc'] = sec_to_year(ifar)
     f['foreground/fap_exc'] = fap
-
-     
+    
+    logging.info('calculating injection backgrounds')
+    ftimes = (zdata['time1'][zcid] + zdata['time2'][zcid]) / 2
+    fstats = zdata['stat'][zcid]
+    start, end = ftimes - args.veto_window, ftimes + args.veto_window
+    
     fan = numpy.zeros(len(ftimes), dtype=numpy.float32)
     ifar = numpy.zeros(len(ftimes), dtype=numpy.float32)
     fap = numpy.zeros(len(ftimes), dtype=numpy.float32)
-    
-    logging.info('calculating injection backgrounds')
-    start, end = ftimes - args.veto_window, ftimes + args.veto_window
     
     # We are relying on the injection data set to be the first one, this is determine 
     # by the argument order to pycbc_coinc_findtrigs
@@ -131,7 +132,7 @@ if len(zdata['stat']) > 0:
     fisorted = fi_time[fisort]
     fi_start, fi_end = numpy.searchsorted(fisorted, start), numpy.searchsorted(fisorted, end)
     
-    for i, fstat in enumerate(zdata['stat']):
+    for i, fstat in enumerate(fstats):
         v1 = fisort[fi_start[i]:fi_end[i]]
         v2 = ifsort[if_start[i]:if_end[i]]
         

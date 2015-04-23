@@ -321,6 +321,7 @@ setup (
                'bin/hdfcoinc/pycbc_coinc_bank2hdf',
                'bin/hdfcoinc/pycbc_coinc_trig2hdf',
                'bin/hdfcoinc/pycbc_coinc_statmap',
+               'bin/hdfcoinc/pycbc_coinc_statmap_inj',
                'bin/hdfcoinc/pycbc_page_foreground',
                'bin/hdfcoinc/pycbc_page_foundmissed',
                'bin/hdfcoinc/pycbc_page_snrifar',
