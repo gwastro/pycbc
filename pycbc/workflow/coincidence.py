@@ -486,7 +486,7 @@ class PyCBCStatMapExecutable(Executable):
     """ Calculate FAP, IFAR, etc
     """
     current_retention_level = Executable.CRITICAL
-    def create_node(self, coinc_files, external_background=None, tags=[]):
+    def create_node(self, coinc_files, tags=[]):
         segs = coinc_files.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
 
@@ -494,8 +494,23 @@ class PyCBCStatMapExecutable(Executable):
         node.set_memory(5000)
         node.add_input_list_opt('--coinc-files', coinc_files)
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags)
-        if external_background:
-            node.add_input_opt('--external-background', external_background)
+        return node
+        
+class PyCBCStatMapInjExecutable(Executable):
+    """ Calculate FAP, IFAR, etc
+    """
+    current_retention_level = Executable.CRITICAL
+    def create_node(self, zerolag, full_data, injfull, fullinj, tags=[]):
+        segs = zerolag.get_times_covered_by_files()
+        seg = segments.segment(segs[0][0], segs[-1][1])
+
+        node = Node(self)
+        node.set_memory(5000)
+        node.add_input_list_opt('--zero-lag-coincs', zerolag)
+        node.add_input_list_opt('--full-data-background', full_data)
+        node.add_input_list_opt('--mixed-coincs-inj-full', injfull)
+        node.add_input_list_opt('--mixed-coincs-full-inj', fullinj)
+        node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags)
         return node
         
 class PyCBCHDFInjFindExecutable(Executable):
@@ -589,14 +604,12 @@ def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_f
     if len(workflow.ifos) > 2:
         raise ValueError('This coincidence method only supports two ifo searches')
 
-    combinecoinc_exe = PyCBCStatMapExecutable(workflow.cp, 'statmap',
+    combinecoinc_exe = PyCBCStatMapInjExecutable(workflow.cp, 'statmap_inj',
                                               ifos=workflow.ifos,
                                               tags=tags, out_dir=out_dir)
 
     # Wall time knob and memory knob
     factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
-
-    bg_files = FileList()
     
     ffiles = {}
     ifiles = {}
@@ -611,6 +624,7 @@ def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_f
              (FileList([ifiles[ifo0], ffiles[ifo1]]), "injfull"),
              (FileList([ifiles[ifo1], ffiles[ifo0]]), "fullinj"),
             ]
+    bg_files = {'injinj':[],'injfull':[],'fullinj':[]}
 
     for trig_files, ctag in combo:
         findcoinc_exe = PyCBCFindCoincExecutable(workflow.cp, 'coinc',
@@ -620,11 +634,11 @@ def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_f
             group_str = '%s/%s' % (i, factor)
             coinc_node = findcoinc_exe.create_node(trig_files, hdfbank, veto_file,
                                            group_str, tags=([str(i)]))
-            bg_files += coinc_node.output_files
+            bg_files[ctag] += coinc_node.output_files
             workflow.add_node(coinc_node)
 
-    combine_node = combinecoinc_exe.create_node(bg_files,
-                                           external_background=background_file[0])
+    combine_node = combinecoinc_exe.create_node(FileList(bg_files['injinj']), background_file, 
+                                     FileList(bg_files['injfull']), FileList(bg_files['fullinj']))
     workflow.add_node(combine_node)
 
     logging.info('...leaving coincidence ')
