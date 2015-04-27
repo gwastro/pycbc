@@ -36,8 +36,8 @@ class Detector(object):
     """A gravitaional wave detector
     """
     def __init__(self, detector_name):
-        self.name = detector_name
-        self.frDetector =  lalsimulation.DetectorPrefixToLALDetector(detector_name)
+        self.name = str(detector_name)
+        self.frDetector =  lalsimulation.DetectorPrefixToLALDetector(self.name)
         self.response = self.frDetector.response
         self.location = self.frDetector.location
 
