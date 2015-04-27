@@ -249,11 +249,9 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
 
   __m128 norm_lo, cval_lo, arr_lo, reg0_lo, reg1_lo;
   __m128d mloc_lo, count_lo, incr_lo;
-  __m128 norm_hi, cval_hi, arr_hi, reg0_hi, reg1_hi;
-  __m128d mloc_hi, count_hi, incr_hi;
-  float output_vals[2*ALGN_FLT] __attribute__ ((aligned(ALGN)));
-  float output_norms[2*ALGN_FLT] __attribute__ ((aligned(ALGN)));
-  double output_locs[2*ALGN_DBL] __attribute__ ((aligned(ALGN)));
+  float output_vals[ALGN_FLT] __attribute__ ((aligned(ALGN)));
+  float output_norms[ALGN_FLT] __attribute__ ((aligned(ALGN)));
+  double output_locs[ALGN_DBL] __attribute__ ((aligned(ALGN)));
   double curr_mloc_dbl;
   uint32_t peel, misalgn, j;
 
@@ -282,8 +280,6 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
     arrptr += 2;
   }
 
-  // Now a loop, unrolled once (which is all the SSE registers we can use)
-
   // Note that the "set_p{s,d}" functions take their arguments from
   // most-significant value to least.
 
@@ -291,11 +287,8 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
   count_lo = _mm_set1_pd( (double) i);
   count_lo = _mm_add_pd(count_lo, incr_lo);
   incr_lo = _mm_set_pd(1.0*ALGN_FLT, 1.0*ALGN_FLT);
-  count_hi = _mm_add_pd(count_lo, incr_lo);
-  incr_lo = _mm_set_pd(2.0*ALGN_FLT, 2.0*ALGN_FLT);
-  incr_hi = _mm_set_pd(2.0*ALGN_FLT, 2.0*ALGN_FLT);
 
-  // Now count_lo and count_hi have the current indices into the array
+  // Now count_lo has the current indices into the array
 
   // We don't need to initialize to what we found in the peel-off loop,
   // since we'll store the results of the high and low SIMD loops into
@@ -303,44 +296,6 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
   mloc_lo = _mm_setzero_pd();
   norm_lo = _mm_setzero_ps();
   cval_lo = _mm_setzero_ps();
-
-  mloc_hi = _mm_setzero_pd();
-  norm_hi = _mm_setzero_ps();
-  cval_hi = _mm_setzero_ps();
-
-  for (; i <= howmany - 2*ALGN_FLT; i += 2*ALGN_FLT){
-      // Load everything into a register
-      arr_lo =  _mm_load_ps(arrptr);
-      arr_hi = _mm_load_ps(arrptr + ALGN_FLT);
-
-      reg0_lo = _mm_mul_ps(arr_lo, arr_lo);               // 2 x [re*re, im*im]
-      reg1_lo = _mm_shuffle_ps(reg0_lo, reg0_lo, 0xB1);   // 2 x [im*im, re*re]
-      reg0_lo = _mm_add_ps(reg0_lo, reg1_lo);             // 2 x [re^2 +im^2, re^2 +im^2]
-      reg1_lo = _mm_cmpgt_ps(reg0_lo, norm_lo);           // Now a mask for where > curr_norm
-
-      // Now use the mask to selectively update complex value, norm, and location
-      mloc_lo = _mm_blendv_pd(mloc_lo, count_lo, _mm_castps_pd(reg1_lo) );
-      norm_lo = _mm_blendv_ps(norm_lo, reg0_lo, reg1_lo);
-      cval_lo = _mm_blendv_ps(cval_lo, arr_lo, reg1_lo);
-
-      reg0_hi = _mm_mul_ps(arr_hi, arr_hi);               // 2 x [re*re, im*im]
-      reg1_hi = _mm_shuffle_ps(reg0_hi, reg0_hi, 0xB1);   // 2 x [im*im, re*re]
-      reg0_hi = _mm_add_ps(reg0_hi, reg1_hi);             // 2 x [re^2 +im^2, re^2 +im^2]
-      reg1_hi = _mm_cmpgt_ps(reg0_hi, norm_hi);           // Now a mask for where > curr_norm
-
-      // Now use the mask to selectively update complex value, norm, and location
-      mloc_hi = _mm_blendv_pd(mloc_hi, count_hi, _mm_castps_pd(reg1_hi) );
-      norm_hi = _mm_blendv_ps(norm_hi, reg0_hi, reg1_hi);
-      cval_hi = _mm_blendv_ps(cval_hi, arr_hi, reg1_hi);
-
-      count_lo = _mm_add_pd(count_lo, incr_lo);
-      count_hi = _mm_add_pd(count_hi, incr_hi);
-      arrptr += 2*ALGN_FLT;
-  }
-
-  // Finally, one last SIMD loop that is not unrolled, just in case we can.
-  // We don't reset increments because we won't use them after this loop, and
-  // this loop executes at most once.
 
   for (; i <= howmany - ALGN_FLT; i += ALGN_FLT){
       // Load everything into a register
@@ -356,16 +311,14 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
       norm_lo = _mm_blendv_ps(norm_lo, reg0_lo, reg1_lo);
       cval_lo = _mm_blendv_ps(cval_lo, arr_lo, reg1_lo);
 
+      count_lo = _mm_add_pd(count_lo, incr_lo);
       arrptr += ALGN_FLT;
   }
 
   // Now write out the results to our temporary tables:
   _mm_store_ps(output_vals, cval_lo);
-  _mm_store_ps(output_vals + ALGN_FLT, cval_hi);
   _mm_store_ps(output_norms, norm_lo);
-  _mm_store_ps(output_norms + ALGN_FLT, norm_hi);
   _mm_store_pd(output_locs, mloc_lo);
-  _mm_store_pd(output_locs + ALGN_DBL, mloc_hi);
 
   // Now loop over our output arrays
   // When we start, curr_norm, curr_mloc, and
@@ -374,7 +327,7 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
 
   curr_mloc_dbl = (double) curr_mloc;
 
-  for (j = 0; j < 2*ALGN_FLT; j += 2){
+  for (j = 0; j < ALGN_FLT; j += 2){
     if (output_norms[j] > curr_norm) {
       curr_norm = output_norms[j];
       curr_mloc_dbl = output_locs[j/2];
