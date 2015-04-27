@@ -46,6 +46,9 @@ for fname in args.trigger_files:
     if len(f2[ifo].keys()) > 0:
         k = f2[ifo].keys()
         trigger_columns = f2[ifo].keys()
+        if not 'template_hash' in trigger_columns:
+            f2.close()
+            continue
         trigger_columns.remove('search')
         trigger_columns.remove('template_hash')
         f2.close()
