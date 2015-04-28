@@ -93,7 +93,7 @@ background_time = float(fb.attrs['background_time_exc'])
 coinc_time = float(fb.attrs['foreground_time_exc'])
 back_stat = fb['background_exc/stat'][:]
 dec_fac = fb['background_exc/decimation_factor'][:]
-fanmap = calculate_fan_map(back_stat, dec_fac)
+fanmap_exc = calculate_fan_map(back_stat, dec_fac)
 
 f.attrs['background_time_exc'] = background_time
 f.attrs['foreground_time_exc'] = coinc_time
@@ -102,11 +102,11 @@ f.attrs['foreground_time'] = coinc_time
 
 if len(zdata['stat']) > 0:
     
-    fore_fan = fanmap(zdata['stat'][zcid])
-    ifar = background_time / fore_fan
-    fap = numpy.clip(coinc_time / ifar, 0, 1)
+    fore_fan = fanmap_exc(zdata['stat'][zcid])
+    ifar_exc = background_time / fore_fan
+    fap = numpy.clip(coinc_time / ifar_exc, 0, 1)
     f['foreground/fan_exc'] = fore_fan
-    f['foreground/ifar_exc'] = sec_to_year(ifar)
+    f['foreground/ifar_exc'] = sec_to_year(ifar_exc)
     f['foreground/fap_exc'] = fap
     
     logging.info('calculating injection backgrounds')
@@ -137,13 +137,12 @@ if len(zdata['stat']) > 0:
         v2 = ifsort[if_start[i]:if_end[i]]
         
         inj_stat = numpy.concatenate([ifstat[v2], fistat[v1], back_stat])
-        inj_dec = numpy.concatenate([numpy.repeat(1, len(inj_stat)), dec_fac])
+        inj_dec = numpy.concatenate([numpy.repeat(1, len(v1) + len(v2)), dec_fac])
         fanmap = calculate_fan_map(inj_stat, inj_dec)
         
         fan[i] = fanmap(fstat)
         ifar[i] = background_time / fan[i]
         fap[i] = numpy.clip(coinc_time / ifar[i], 0, 1)
-        print fan[i], ifar[i], fap[i], inj_stat.max(), fstat
 
     f['foreground/fan'] = fan
     f['foreground/ifar'] = sec_to_year(ifar)

@@ -18,9 +18,9 @@ parser.add_argument("--timeslide-interval", type=float, default=0,
                     help="Inverval between timeslides in seconds.")
 parser.add_argument("--decimation-factor", type=int,
                     help="The factor to reduce the background trigger rate.")
-parser.add_argument("--loudest-keep", type=int, default=200,
+parser.add_argument("--loudest-keep", type=int,
                     help="Number of the loudest triggers to keep from each template.")
-parser.add_argument("--loudest-keep-value", type=int,
+parser.add_argument("--loudest-keep-value", type=float,
                     help="Keep all coincident triggers above this value.")
 parser.add_argument("--template-fraction-range", help="Optional, format string to"
                     "analyze part of template bank. Format is PART/NUM_PARTS",
@@ -214,6 +214,7 @@ for tnum in range(tmin, tmax):
             bl = []
     elif args.loudest_keep_value:
         bl, bh = [], bi[c[bi] > args.loudest_keep_value]
+        print len(bl), len(bh)
     else:
         bl, bh = [], bi
 
