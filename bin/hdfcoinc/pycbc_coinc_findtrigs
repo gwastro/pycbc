@@ -20,6 +20,8 @@ parser.add_argument("--decimation-factor", type=int,
                     help="The factor to reduce the background trigger rate.")
 parser.add_argument("--loudest-keep", type=int, default=200,
                     help="Number of the loudest triggers to keep from each template.")
+parser.add_argument("--loudest-keep-value", type=int,
+                    help="Keep all coincident triggers above this value.")
 parser.add_argument("--template-fraction-range", help="Optional, format string to"
                     "analyze part of template bank. Format is PART/NUM_PARTS",
                     default="0/1")
@@ -196,19 +198,24 @@ for tnum in range(tmin, tmax):
     bi = numpy.where(slide != 0)[0]
     logging.info('%s foreground triggers' % len(fi))
     logging.info('%s background triggers' % len(bi))
-    
-    sep = len(bi) - args.loudest_keep
-    sep = 0 if sep < 0 else sep
-    bsort = numpy.argpartition(c[bi], sep)
- 
-    bl = bi[bsort[0:sep]]
-    bh = bi[bsort[sep:]]
-    del bsort 
-    del bi
-    if args.decimation_factor:
-        bl = bl[slide[bl] % args.decimation_factor == 0]
+
+    if args.loudest_keep:    
+        sep = len(bi) - args.loudest_keep
+        sep = 0 if sep < 0 else sep
+
+        bsort = numpy.argpartition(c[bi], sep) 
+        bl = bi[bsort[0:sep]]
+        bh = bi[bsort[sep:]]
+        del bsort 
+        del bi
+        if args.decimation_factor:
+            bl = bl[slide[bl] % args.decimation_factor == 0]
+        else:
+            bl = []
+    elif args.loudest_keep_value:
+        bl, bh = [], bi[c[bi] > args.loudest_keep_value]
     else:
-        bl = []    
+        bl, bh = [], bi
 
     ti = numpy.concatenate([bl, bh, fi]).astype(numpy.uint32)
     logging.info('%s after decimation' % len(ti))
