@@ -146,6 +146,8 @@ class FilterBank(object):
         htilde.end_idx = int(htilde.end_frequency / htilde.delta_f)
         htilde.params = self.table[index]
         htilde.approximant = approximant
+        htilde.chirp_length = htilde.params.template_duration
+        htilde.length_in_time = htilde.params.ttotal
         
         # Add sigmasq as a method of this instance
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)

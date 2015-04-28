@@ -12,7 +12,7 @@ parser.add_argument("--trigger-files", nargs=2,
 parser.add_argument("--template-bank",
                     help="Template bank file in HDF format")
 parser.add_argument("--ranking-statistic", help="The ranking statistic to use", default='newsnr')
-parser.add_argument("--coinc-threshold", type=float,
+parser.add_argument("--coinc-threshold", type=float, default=0.0,
                     help="Seconds to add to time-of-flight coincidence window")
 parser.add_argument("--timeslide-interval", type=float, default=0,
                     help="Inverval between timeslides in seconds.")

@@ -344,7 +344,7 @@ class SingleDetPowerChisq(object):
                 above_indices = indices[above]
                 above_snrv = snrv[above]
                 rchisq = numpy.zeros(len(indices), dtype=numpy.float32)
-                dof = 1
+                dof = -100
             else:
                 above_indices = indices
                 above_snrv = snrv
