@@ -22,17 +22,11 @@
 # =============================================================================
 #
 import numpy, pycbc
+from pycbc.opt import omp_libs, omp_flags
 from scipy.weave import inline
 from .simd_correlate import correlate_parallel, default_segsize, corr_parallel_code, corr_support
 from .matchedfilter import _BaseCorrelator
 import sys
-
-if pycbc.HAVE_OMP:
-    omp_libs = ['gomp']
-    omp_flags = ['-fopenmp']
-else:
-    omp_libs = []
-    omp_flags = []
 
 support = """
     #include <stdio.h>

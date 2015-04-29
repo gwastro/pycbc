@@ -17,58 +17,16 @@
 from pycbc.types import zeros, complex64, complex128, float32, float64, Array
 from scipy.weave import inline
 import numpy as _np
-
-
-# What we need to support OpenMP, at least in gcc...
-
-omp_support = """
-#include <omp.h>
-"""
-
-omp_libs = ['gomp']
-omp_flags = ['-fopenmp']
+import pycbc.opt
+from pycbc.opt import omp_support, omp_libs, omp_flags
 
 # Common support, so defined here
-corr_common_support = """
-#include <x86intrin.h>
+
+
+corr_common_support = omp_support + pycbc.opt.simd_intel_intrin_support + """
 #include <stdint.h> // For uint32_t
 #include <error.h>
 #include <complex> // Must use C++ header with weave
-
-#ifdef __AVX2__
-#define _HAVE_AVX2 1
-#else
-#define _HAVE_AVX2 0
-#endif
-
-#ifdef __AVX__
-#define _HAVE_AVX 1
-#else
-#define _HAVE_AVX 0
-#endif
-
-#ifdef __SSE4_1__
-#define _HAVE_SSE4_1 1
-#else
-#define _HAVE_SSE4_1 0
-#endif
-
-#ifdef __SSE3__
-#define _HAVE_SSE3 1
-#else
-#define _HAVE_SSE3 0
-#endif
-
-#if _HAVE_AVX
-#define ALGN 32
-#define ALGN_FLT 8
-#define ALGN_DBL 4
-#else
-#define ALGN 16
-#define ALGN_FLT 4
-#define ALGN_DBL 2
-#endif
-
 """
 
 corr_support = corr_common_support + """
@@ -409,8 +367,24 @@ def correlate_simd(ht, st, qt):
 corr_parallel_code = """
 ccorrf_parallel(htilde, stilde, qtilde, (uint32_t) arrlen, (uint32_t) segsize);
 """
+# We need a segment size (number of complex elements) such that *three* segments
+# of that size will fit in the L2 cache. We also want it to be a power of two.
+# We are dealing with single-precision complex numbers, which each require 8 bytes.
 
-default_segsize = 8192
+# Our kernel is written to assume a complex correlation of single-precision vectors,
+# so that's all we support here.  Note that we are assuming that the correct target
+# is that the vectors should fit in L2 cache.  Figuring out cache topology dynamically
+# is a harder problem than we attempt to solve here.
+
+if pycbc.opt.HAVE_GETCONF:
+    # Since we need 3 vectors fitting in L2 cache, divide by 3
+    # We find the nearest power-of-two that fits, and the length
+    # of the single-precision complex array that fits into that size.
+    pow2 = int( log( pycbc.opt.LEVEL2_CACHE_SIZE/3.0 )/log(2.0) )
+    default_segsize = pow(2, pow2)/ _np.dtype( _np.complex64).itemsize
+else:
+    # Seems to work for Sandy Bridge/Ivy Bridge/Haswell, for now?
+    default_segsize = 8192
 
 def correlate_parallel(ht, st, qt):
     htilde = _np.array(ht.data, copy = False)
