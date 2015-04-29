@@ -318,7 +318,7 @@ sortedBins = {}
 
 logging.info("Sorting guide points")
 
-bin_size = (opts.max_mismatch)**0.5 * 3.
+bin_size = (opts.max_mismatch)**0.5 * 6.
 
 for iter, currXi in enumerate(xis):
     xi1 = currXi[0]
@@ -358,8 +358,6 @@ for iter, (v1, v2) in enumerate(zip(v1s, v2s)):
             physBin = [i,j]
             points = numpy.array(sortedBins[physBin[0]][physBin[1]])
             dist = (v1 - points[:,1])**2 + (v2 - points[:,2])**2
-            if dist.min() > 0.5:
-                physBin = None
             break
         if physBin:
             break
@@ -371,8 +369,6 @@ for iter, (v1, v2) in enumerate(zip(v1s, v2s)):
     bestMasses = physMasses[points[dist.argmin(),0]]
     
     # Reject point if it is too far from physical space
-    if dist.min() > opts.max_mismatch * 5:
-        continue
     masses = tmpltbank.get_physical_covaried_masses([v1,v2],\
                copy.deepcopy(bestMasses), copy.deepcopy(bestXis), req_match, \
                massRangeParams, metricParams, metricParams.fUpper, \
