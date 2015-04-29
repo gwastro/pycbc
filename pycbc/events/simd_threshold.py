@@ -17,6 +17,8 @@
 from pycbc.types import zeros, complex64, float32, Array
 from scipy.weave import inline
 import numpy as _np
+import pycbc.opt
+from pycbc.opt import omp_support, omp_libs, omp_flags
 
 """
 This module contains various long-strings of code intended to be used by other
@@ -24,55 +26,11 @@ modules when they implement the thresholding and clustering steps of matched
 filtering. 
 """
 
-# What we need to support OpenMP, at least in gcc...
-
-omp_support = """
-#include <omp.h>
-"""
-
-omp_libs = ['gomp']
-omp_flags = ['-fopenmp']
-
-tc_common_support = """
-#include <x86intrin.h>
+tc_common_support = omp_support + pycbc.opt.simd_intel_intrin_support + """
 #include <stdint.h> // For uint32_t
 #include <error.h>
 #include <complex> // Must use C++ header with weave
 #include <math.h> // For M_SQRT2
-
-#ifdef __AVX2__
-#define _HAVE_AVX2 1
-#else
-#define _HAVE_AVX2 0
-#endif
-
-#ifdef __AVX__
-#define _HAVE_AVX 1
-#else
-#define _HAVE_AVX 0
-#endif
-
-#ifdef __SSE4_1__
-#define _HAVE_SSE4_1 1
-#else
-#define _HAVE_SSE4_1 0
-#endif
-
-#ifdef __SSE3__
-#define _HAVE_SSE3 1
-#else
-#define _HAVE_SSE3 0
-#endif
-
-#if _HAVE_AVX
-#define ALGN 32
-#define ALGN_FLT 8
-#define ALGN_DBL 4
-#else
-#define ALGN 16
-#define ALGN_FLT 4
-#define ALGN_DBL 2
-#endif
 
 """
 
@@ -607,8 +565,11 @@ return_val = parallel_thresh_cluster(series, (uint32_t) slen, values, locs,
                                      (float) thresh, (uint32_t) window, (uint32_t) segsize);
 """
 
-# We should really calculate this from hardware characteristics...
-default_segsize = 32768
+if pycbc.opt.HAVE_GETCONF:
+    default_segsize = pycbc.opt.LEVEL2_CACHE_SIZE / _np.dtype( _np.complex64).itemsize
+else:
+    # Seems to work for Sandy Bridge/Ivy Bridge/Haswell, for now?
+    default_segsize = 32768
 
 class ThreshClusterObject(object):
     """
@@ -635,7 +596,7 @@ class ThreshClusterObject(object):
         self.window = window
         self.segsize = segsize
         self.code = thresh_cluster_code
-        self.support = omp_support + thresh_cluster_support
+        self.support = thresh_cluster_support
         self.verbose = verbose
 
     def execute(self):
