@@ -143,7 +143,7 @@ labels['spin'] = "$Eff Spin \in [%5.2f, %5.2f] $"
 if args.sig_type == 'ifar':
     ifar = f['found_after_vetoes/ifar'][:]
     ifar_exc = f['found_after_vetoes/ifar_exc'][:]
-    label = 'Inverse False Alarm Rate (years)'
+    xlabel = 'Inverse False Alarm Rate (years)'
     if args.sig_bins:
         ifar_values = [float(v) for v in args.sig_bins]
     else:
@@ -151,7 +151,7 @@ if args.sig_type == 'ifar':
 elif args.sig_type == 'fap':
     fap = f['found_after_vetoes/fap'][:]
     fap_exc = f['found_after_vetoes/fap_exc'][:]
-    label = 'False Alarm Propability'
+    xlabel = 'False Alarm Propability'
     ifar = fap
     ifar_exc = fap_exc
     if args.sig_bins:
@@ -175,7 +175,8 @@ for j in range(len(args.bins)-1):
 
         mbm = numpy.logical_and(binval[missed] > left, binval[missed] < right)
         m_dist = dist[missed][mbm]
-
+        if len(m_dist) < 2:
+            continue
         dists, low_errors, high_errors = [], [], []
 
         for ifar_value in ifar_values:
@@ -217,8 +218,7 @@ if args.sig_type == 'fap':
     ax.invert_xaxis()
 
 pylab.ylabel('Sensitive Distance (Mpc)')
-pylab.xlabel(label)
->>>>>>> plot both ifar values in sensitivity plot
+pylab.xlabel(xlabel)
 
 if args.min_dist:
     pylab.ylim(args.min_dist, args.max_dist)
