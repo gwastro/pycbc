@@ -26,6 +26,10 @@ l = chisq == 0
 chisq_dof = f['chisq_dof'][:]
 chisq /= (chisq_dof * 2 - 2)
 chisq[l] = .1
+cont_chisq = f['cont_chisq'][:]
+cont_chisq_dof = 15
+cont_chisq /= cont_chisq_dof
+chisq = numpy.maximum(chisq, cont_chisq)
 
 def snr_from_chisq(chisq, newsnr, q=6.):
     snr = numpy.zeros(len(chisq)) + float(newsnr)

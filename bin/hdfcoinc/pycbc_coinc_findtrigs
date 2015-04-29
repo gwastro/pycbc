@@ -39,10 +39,12 @@ if args.verbose:
 def get_statistic(option, files):
     if option == 'newsnr':
         return NewSNRStatistic(files)
-    if option == 'newsnr_cut':
+    elif option == 'newsnr_cut':
         return NewSNRCutStatistic(files)
-    if option == 'phasetd_newsnr':
+    elif option == 'phasetd_newsnr':
         return PhaseTDStatistic(files)
+    elif option == 'combnewsnr':
+        return CombSNRStatistic()
     else:
         raise ValueError('%s is not an available detection statistic' % option)
 
@@ -118,6 +120,18 @@ class PhaseTDStatistic(NewSNRStatistic):
         cstat = (s1[:,0]**2.0 + s2[:,0]**2.0 + 2.0 * numpy.log(m))**0.5  
          
         return cstat
+
+class CombSNRStatistic(NewSNRStatistic):
+    def single(self, trigs):
+        """Combined chisq calculation for each trigger."""
+        chisq_dof = 2 * trigs['chisq_dof'] - 2
+        chisq_newsnr = events.newsnr(trigs['snr'], trigs['chisq'] / chisq_dof)
+        # FIXME: Remove hardcoding
+        autochisq_dof = 15
+        autochisq_newsnr = events.newsnr(trigs['snr'],
+                                         trigs['cont_chisq'] / autochisq_dof)
+        return numpy.array(numpy.minimum(chisq_newsnr, autochisq_newsnr,
+                             dtype=numpy.float32), ndmin=1, copy=False)
 
 class ReadByTemplate(object):
     def __init__(self, filename, bank=None, segment_name=None, veto_files=[]):
