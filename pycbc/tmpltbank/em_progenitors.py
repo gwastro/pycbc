@@ -14,8 +14,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# TODO: clean-up fsolve warnings, initial guess, outout to stdout
-
 from __future__ import division
 import math
 import numpy as np
@@ -232,8 +230,8 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
     # Fit parameters and tidal correction
     alpha = 0.296 # +/- 0.011
     beta  = 0.171 # +/- 0.008
-    #xi = scipy.optimize.root(xi_eq, 100., args=(kappa,chi_eff,q), method='hybr').x[0]
-    xi = scipy.optimize.fsolve(xi_eq, 100., args=(kappa,chi_eff,q))
+    # Taking the 1st element with full_output=1 avoids some annoying messages on stdout
+    xi = scipy.optimize.fsolve(xi_eq, 100., args=(kappa,chi_eff,q), full_output=1)[0]
 
     # The remnant mass over the NS rest mass
     remnant_mass = alpha*xi*(1-2*ns_compactness)-beta*kappa*PG_ISSO_solver(chi_eff,0)
@@ -273,7 +271,7 @@ def remnant_mass_ulim(eta, ns_g_mass, bh_spin_z, ns_sequence, max_ns_g_mass, shi
 # of the symmetric mass ratio (eta) required to produce and EM counterpart.    #
 # The user must specify the remnant disk mass threshold (shift) and a default  #
 # value to be assigned to eta if the NS gravitational mass exceeds the maximum #
-# NS mass allowed by the EOS (eta_default).i                                   #
+# NS mass allowed by the EOS (eta_default).                                    #
 ################################################################################
 def find_em_constraint_data_point(mNS, sBH, mBH_min, mBH_max, eos_name, shift, eta_default):
     ns_sequence, max_ns_g_mass = load_ns_sequence(eos_name)
@@ -285,18 +283,8 @@ def find_em_constraint_data_point(mNS, sBH, mBH_min, mBH_max, eos_name, shift, e
         eta_max = 0.25 #mBH_min*mNS/(mBH_min+mNS)**2
         disk_mass_up = remnant_mass_ulim(eta_max, mNS, sBH, ns_sequence, max_ns_g_mass, shift) 
         if disk_mass_down*disk_mass_up < 0:
-            try:
-                # Initial guess in the middle of the range
-                eta_sol = scipy.optimize.fsolve(remnant_mass_ulim, 0.5*(eta_max-eta_min), args=(mNS, sBH, ns_sequence, max_ns_g_mass, shift))
-            except:
-                try:
-                    # Low initial guess
-                    print 'Problems with mNS={0}, sBH,z={1}: trying a different initial guess in the root-finder'.format(mNS, sBH)
-                    eta_sol = scipy.optimize.fsolve(remnant_mass_ulim, eta_min+0.01, args=(mNS, sBH, ns_sequence, max_ns_g_mass, shift))
-                except:
-                    # High initial guess
-                    print 'Problems with mNS={0}, sBH,z={1}: trying a different initial guess in the root-finder'.format(mNS, sBH)
-                    eta_sol = scipy.optimize.fsolve(remnant_mass_ulim, eta_max-0.00001, args=(mNS, sBH, ns_sequence, max_ns_g_mass, shift))
+            # Methods that work are (in order of performance speed): brentq, brenth, ridder, bisect
+            eta_sol = scipy.optimize.brentq(remnant_mass_ulim, eta_min, eta_max, args=(mNS, sBH, ns_sequence, max_ns_g_mass, shift))
         elif disk_mass_down > 0:
             eta_sol = 0.        # EM counterpart requires eta<eta_min: penalize this point 
         elif disk_mass_up < 0:
@@ -325,9 +313,6 @@ find_em_constraint_data_points = np.vectorize(find_em_constraint_data_point)
 # maximum NS mass allowed by the EOS (eta_default).                            #
 ################################################################################
 def generate_em_constraint_data(mNS_min, mNS_max, delta_mNS, sBH_min, sBH_max, delta_sBH, mBH_min, mBH_max, eos_name, shift, eta_default): 
-    import warnings
-    warnings.filterwarnings('ignore', 'The iteration is not making good progress')
-
     # Build a grid of points in the mNS x sBHz space,
     # making sure maxima and minima are included
     mNS_nsamples = complex(0,int(np.ceil((mNS_max-mNS_min)/delta_mNS)+1))
