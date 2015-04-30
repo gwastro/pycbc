@@ -51,14 +51,14 @@ parser.add_argument("--order", type=str,
                        " the approximant.")
 taper_choices = ["start","end","startend"]
 parser.add_argument("--taper-template", choices=taper_choices,
-                  help="For time-domain approximants, taper the start and/or "
-                       "end of the waveform before FFTing.")
+                    help="For time-domain approximants, taper the start and/or"
+                    " end of the waveform before FFTing.")
 parser.add_argument("--cluster-method", choices=["template", "window"],
                     help="FIXME: ADD")
 parser.add_argument("--cluster-window", type=float, default = -1,
-                  help="Length of clustering window in seconds")
+                    help="Length of clustering window in seconds")
 parser.add_argument("--maximization-interval", type=float, default=0,
-                  help="Maximize triggers over the template bank (ms)")
+                    help="Maximize triggers over the template bank (ms)")
 parser.add_argument("--bank-veto-bank-file", type=str, help="FIXME: ADD")
 parser.add_argument("--chisq-snr-threshold", type=float, help="Minimum SNR to calculate the power chisq")
 parser.add_argument("--chisq-bins", default=0, help=
