@@ -129,8 +129,8 @@ def newsnr(snr, reduced_x2, q=6.):
     reduced chi-squared values. See http://arxiv.org/abs/1208.3491 for
     definition. Previous implementation in glue/ligolw/lsctables.py
     """
-    newsnr = numpy.array(snr, ndmin=1)
-    reduced_x2 = numpy.array(reduced_x2, ndmin=1)
+    newsnr = numpy.array(snr, ndmin=1, dtype=numpy.float64)
+    reduced_x2 = numpy.array(reduced_x2, ndmin=1, dtype=numpy.float64)
 
     # newsnr is only different from snr if reduced chisq > 1
     ind = numpy.where(reduced_x2 > 1.)[0]
@@ -145,8 +145,8 @@ def effsnr(snr, reduced_x2, fac=250.):
     """Calculate the effective SNR statistic. See (S5y1 paper) for definition.
     Previous implementation in glue/ligolw/lsctables.py
     """
-    snr = numpy.array(snr, ndmin=1)
-    rchisq = numpy.array(reduced_x2, ndmin=1)
+    snr = numpy.array(snr, ndmin=1, dtype=numpy.float64)
+    rchisq = numpy.array(reduced_x2, ndmin=1, dtype=numpy.float64)
     effsnr = snr / (1 + snr ** 2 / fac) ** 0.25 / rchisq ** 0.25
 
     if len(effsnr) > 1:
@@ -946,7 +946,7 @@ class EventManagerMultiDet(EventManager):
         coinc_def_row.search_coinc_type = 0
         coinc_def_table.append(coinc_def_row)
 
-__all__ = ['threshold_and_cluster', 'newsnr',
+__all__ = ['threshold_and_cluster', 'newsnr', 'effsnr',
            'findchirp_cluster_over_window', 'fc_cluster_over_window_fast',
            'threshold', 'cluster_reduce',
            'EventManager', 'EventManagerMultiDet']
