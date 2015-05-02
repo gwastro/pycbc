@@ -26,13 +26,21 @@ from glue.segments import segmentlistdict
 import pycbc.results
 from pycbc.workflow.segment import fromsegmentxml
 
+def get_embedded_config(filename):
+    """ Attempt to load config data attached to file
+    """
+    try:
+        cp = pycbc.results.load_metadata_from_file(filename)
+    except TypeError:
+        cp = ConfigParser()
+    return cp
+
 def setup_template_render(path, config_path):
-   '''
-    This function is the gateway for rendering a template for a file.
-   '''
+   """ This function is the gateway for rendering a template for a file.
+   """
 
    # initialization
-   cp = ConfigParser()
+   cp = get_embedded_config(path)
    output = ''
 
    # read configuration file
@@ -56,13 +64,12 @@ def setup_template_render(path, config_path):
    return output
 
 def render_default(path, cp):
-   '''
-   This is the default function that will render a template to a string of HTML. The
+   """ This is the default function that will render a template to a string of HTML. The
    string will be for a drop-down tab that contains a link to the file.
 
    If the file extension requires information to be read, then that is passed to the
    content variable (eg. a segmentlistdict).
-   '''
+   """
 
    # define filename and slug from path
    filename = path.split('/')[-1]
@@ -86,15 +93,15 @@ def render_default(path, cp):
    template = env.get_template('file_default.html')
    context = {'filename' : filename,
               'slug'     : slug,
+              'cp'       : cp,
               'content'  : content}
    output = template.render(context)
 
    return output
 
 def render_glitchgram(path, cp):
-   '''
-   Render a glitchgram file template.
-   '''
+   """ Render a glitchgram file template.
+   """
 
    # define filename and slug from path
    filename = path.split('/')[-1]

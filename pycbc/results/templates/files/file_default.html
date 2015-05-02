@@ -5,7 +5,11 @@
         <!--accordion title-->
         <div class="panel-heading accordion-toggle collapsed" data-toggle="collapse" data-parent="#accordion" href="#{{slug}}">
             <h4 class="panel-title">
-                <a href='#'>{{filename}}</a>
+                {% if cp.has_section(filename) and cp.has_option(filename, 'title') %}
+                    <a href='#'>cp.get(filename, 'title')</a>
+                {% else %}
+                    <a href='#'>{{filename}}</a>
+                {% endif %}
             </h4>
         </div>
 
@@ -19,8 +23,9 @@
 
                 <!--html file condition-->
                 {% elif filename.endswith('html') %}
-                    <iframe src="{{filename}}" style="width:825px"></iframe>
-
+                <div  class="embed-responsive embed-responsive-16by9">
+                    <iframe class="embed-responsive-item" src="{{filename}}"></iframe>
+                </div>
                 <!--segment XML file condition-->
                 {% elif ( filename.endswith('xml') or filename.endswith('xml.gz') ) and content %}
 
@@ -54,6 +59,10 @@
                 {% else %}
                     <p>Unsupported file extension.</p>
 
+                {% endif %}
+                
+                {% if cp.has_section(filename) and cp.has_option(filename, 'caption') %}
+                    <p><i>{{cp.get(filename, 'caption')}}</i></p>
                 {% endif %}
 
                     <!--always link to file-->
