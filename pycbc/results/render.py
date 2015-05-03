@@ -30,7 +30,8 @@ def get_embedded_config(filename):
     """ Attempt to load config data attached to file
     """
     def check_option(self, section, name):
-        return self.has_section(section) and (self.has_option(section, name) or (name in self.defaults()))
+        return (self.has_section(section) and
+               (self.has_option(section, name) or (name in self.defaults())))
     
     try:
         cp = pycbc.results.load_metadata_from_file(filename)

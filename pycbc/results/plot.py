@@ -3,10 +3,12 @@ This Module contains generic utility functions for creating plots within
 PyCBC. 
 """
 import os.path
-from PIL import Image, PngImagePlugin
 import ConfigParser
 
 def save_png_with_metadata(fig, filename, fig_kwds, kwds):
+    """ Save a matplotlib figure to a png with metadata
+    """
+    from PIL import Image, PngImagePlugin
     fig.savefig(filename, **fig_kwds)
      
     im = Image.open(filename)
@@ -18,6 +20,7 @@ def save_png_with_metadata(fig, filename, fig_kwds, kwds):
     im.save(filename, "png", pnginfo=meta)
 
 def load_png_metadata(filename):
+    from PIL import Image, PngImagePlugin
     data = Image.open(filename).info
     cp = ConfigParser.ConfigParser(data)
     cp.add_section(os.path.basename(filename))

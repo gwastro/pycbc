@@ -26,22 +26,15 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import os, sys, subprocess, logging, math, string, urlparse, ConfigParser
-import numpy, cPickle
-import string, random
+import os, sys, subprocess, logging, math, string, urlparse, ConfigParser, copy
+import numpy, cPickle, string, random
 from itertools import combinations, groupby
 from operator import attrgetter
 from os.path import splitext, basename, isfile
 import lal as lalswig
-from glue import lal
-from glue import segments
+from glue import lal, segments
 from pycbc.workflow.configuration import WorkflowConfigParser
-
-# The following syntax is convoluted, but designed to make
-# it easy to change when pegasus_workflow is moved upstream
-# into Pegasus.
-from pycbc.workflow import pegasus_workflow as pegasus_workflow
-import copy
+from pycbc.workflow import pegasus_workflow
 
 # workflow should never be using the glue LIGOTimeGPS class, override this with
 # the nice SWIG-wrapped class in lal
