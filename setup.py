@@ -327,7 +327,6 @@ setup (
                'bin/hdfcoinc/pycbc_page_banktriggerrate',
                'bin/hdfcoinc/pycbc_coinc_hdfinjfind',
                'bin/hdfcoinc/pycbc_page_snrchi',
-               'bin/hdfcoinc/pycbc_results_server',
                'bin/hdfcoinc/pycbc_page_inspiralrange',
                'bin/hdfcoinc/pycbc_page_segments',
                'bin/sngl/pycbc_ligolw_cluster',
