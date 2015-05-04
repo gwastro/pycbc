@@ -180,16 +180,12 @@ dirs_0.sort(key=lambda x: x.title())
 # loop over all directories
 for cwd in dirs:
 
-    print dir(cwd)
-    print cwd.path
-    print cwd.level()
-
     # render template
     context = {'analysis_title'    : analysis_title,
                'analysis_subtitle' : analysis_subtitle,
                'dirs_0'            : dirs_0,
                'dir'               : cwd,
-               'output_path'       : cwd.level() * '../',
+               'dot_dot_str'       : cwd.level() * '../',
                'plots_dir'         : opts.plots_dir}
     output = template.render(context)
 
