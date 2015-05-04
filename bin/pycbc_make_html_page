@@ -25,6 +25,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from glue import segments
 
+import pycbc.results
 from pycbc.results.render import setup_template_render
 from pycbc.workflow import segment
 
@@ -185,3 +186,13 @@ for dir in dirs:
 for dir in dirs:
     for file in dir.files:
         shutil.copy(file.path, opts.output_path+'/'+dir.path+'/'+file.filename())
+
+# copy css and js files to html directory
+cssDir       = pycbc.results.__path__[0] + '/static/css/'
+jsDir        = pycbc.results.__path__[0] + '/static/js/'
+cssOutputDir = opts.output_path + '/static/css/'
+jsOutputDir  = opts.output_path + '/static/js/'
+if not os.path.exists(cssOutputDir):
+    shutil.copytree(cssDir, cssOutputDir)
+if not os.path.exists(jsOutputDir):
+    shutil.copytree(jsDir, jsOutputDir)
