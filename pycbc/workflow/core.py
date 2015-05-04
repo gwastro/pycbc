@@ -224,6 +224,9 @@ class Executable(pegasus_workflow.Executable):
                 logging.warn(warnString)
             if cp.has_section('pegasus_profile-%s' % sec):
                 self.add_ini_profile(cp, 'pegasus_profile-%s' % sec)
+                
+        # Add executable non-specific profile information
+        self.add_ini_profile(cp, 'pegasus_profile')
 
         # Determine the level at which output files should be kept
         try:
