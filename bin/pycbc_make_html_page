@@ -29,24 +29,24 @@ import pycbc.results
 from pycbc.results.render import setup_template_render
 from pycbc.workflow import segment
 
-def examine_dir(dir):
+def examine_dir(cwd):
     """
     Looks in a directory and returns all subdirs and files.
     """
 
     # list everything in this directory and loop over them
-    names = os.listdir(dir)
+    names = os.listdir(cwd)
     dirs, nondirs = [], []
     for name in names:
 
         # if it is a directory append the dir list
         # else append the nondirs list
-        if os.path.isdir(os.path.join(dir, name)):
+        if os.path.isdir(os.path.join(cwd, name)):
             dirs.append(name)
         else:
             nondirs.append(name)
 
-    return dir, dirs, nondirs
+    return cwd, dirs, nondirs
 
 class Directory():
     """
@@ -59,7 +59,7 @@ class Directory():
     def __init__(self, path, plots_dir):
 
         # find all subdirs and filenames in directory
-        dir, subdirs, filenames = examine_dir(path)
+        cwd, subdirs, filenames = examine_dir(path)
 
         # save subdirs
         self.path    = path.replace(plots_dir, '')
@@ -86,6 +86,14 @@ class Directory():
         # append to class list
         self.instances.append(self)
 
+    def name(self):
+        """
+        Returns the name of the directory.
+        """
+
+        print self.path.split('/')[-1]
+        return self.path.split('/')[-1]
+
     def title(self):
         """
         Returns a string of the directory name with underscores as spaces
@@ -93,6 +101,13 @@ class Directory():
         """
 
         return self.path.split('/')[-1].replace('_', ' ').upper()
+
+    def level(self):
+        """
+        Counts how far into the output filesystem this directory is.
+        """
+
+        return self.path.count('/')
 
 class File():
     """
@@ -125,8 +140,6 @@ parser = argparse.ArgumentParser(usage='pycbc_make_html_page \
                   description="Create static html pages of a filesystem's content.")
 parser.add_argument('-f', '--template-file', type=str,
                   help='Template file to use for skeleton html page.')
-parser.add_argument('-a', '--output-server', type=str,
-                  help='URL for web access.')
 parser.add_argument('-b', '--output-path', type=str,
                   help='Path on web server for main html page.')
 parser.add_argument('-p', '--plots-dir', type=str,
@@ -153,39 +166,43 @@ template = env.get_template(input_template)
 
 # find all subdirs and the top-level subdirs
 Directory(opts.plots_dir, opts.plots_dir)
-dirs   = [dir for dir in Directory.instances]
-dirs_0 = [dir for dir in Directory.instances if dir.path.count('/') == 1]
+dirs   = [cwd for cwd in Directory.instances]
+dirs_0 = [cwd for cwd in Directory.instances if cwd.path.count('/') == 1]
 
 # sort alphanumerically
 # FIXME: could move this into Directory when subdirs and files are appended
 dirs.sort(key=lambda x: x.title())
-for dir in dirs:
-    dir.subdirs.sort(key=lambda x: x.title())
-    dir.files.sort(key=lambda x: x.path)
+for cwd in dirs:
+    cwd.subdirs.sort(key=lambda x: x.title())
+    cwd.files.sort(key=lambda x: x.path)
 dirs_0.sort(key=lambda x: x.title())
 
 # loop over all directories
-for dir in dirs:
+for cwd in dirs:
+
+    print dir(cwd)
+    print cwd.path
+    print cwd.level()
 
     # render template
     context = {'analysis_title'    : analysis_title,
                'analysis_subtitle' : analysis_subtitle,
                'dirs_0'            : dirs_0,
-               'dir'               : dir,
-               'output_path'       : opts.output_server,
+               'dir'               : cwd,
+               'output_path'       : cwd.level() * '../',
                'plots_dir'         : opts.plots_dir}
     output = template.render(context)
 
     # save html page
-    if not os.path.exists(opts.output_path+dir.path):
-        os.makedirs(opts.output_path+dir.path)
-    with open(opts.output_path+dir.path+'/index.html', "wb") as fp:
+    if not os.path.exists(opts.output_path+cwd.path):
+        os.makedirs(opts.output_path+cwd.path)
+    with open(opts.output_path+cwd.path+'/index.html', "wb") as fp:
         fp.write(output)
 
 # copy all files to html directory
-for dir in dirs:
-    for file in dir.files:
-        shutil.copy(file.path, opts.output_path+'/'+dir.path+'/'+file.filename())
+for cwd in dirs:
+    for file in cwd.files:
+        shutil.copy(file.path, opts.output_path+'/'+cwd.path+'/'+file.filename())
 
 # copy css and js files to html directory
 cssDir       = pycbc.results.__path__[0] + '/static/css/'

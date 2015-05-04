@@ -6,10 +6,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="stylesheet" href="{{output_path}}/static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{output_path}}static/css/bootstrap.min.css">
 
-    <script src="{{output_path}}/static/js/jquery.min.js"></script>
-    <script src="{{output_path}}/static/js/bootstrap.min.js"></script>
+    <script src="{{output_path}}static/js/jquery.min.js"></script>
+    <script src="{{output_path}}static/js/bootstrap.min.js"></script>
 
     <style>
 
@@ -54,10 +54,10 @@
         <li class="dropdown">
         <a class="dropdown-toggle" id="drop4" role="button" data-toggle="dropdown" data-target="#" href="#">{{dir0.title()}}<b class="caret"></b></a>
             <ul id="menu1" class="dropdown-menu" role="menu" aria-labelledby="drop4">
-                <li><a tabindex="-1" href="{{output_path}}/{{dir0.path}}">{{dir0.title()}}</a></li>
+                <li><a tabindex="-1" href="{{output_path}}{{dir0.name()}}">{{dir0.title()}}</a></li>
                 <li class="divider"></li>
                 {% for subdir in dir0.subdirs %}
-                <li><a tabindex="-1" href="{{output_path}}/{{subdir.path}}">{{subdir.title()}}</a></li>
+                <li><a tabindex="-1" href="{{output_path}}.{{subdir.path}}">{{subdir.title()}}</a></li>
                 {% endfor %}
             </ul>
         </li>
@@ -75,7 +75,7 @@
             <a href="#" class="list-group-item disabled"><h3>{{dir.title()}}</h3></a>
             {% if dir.subdirs %}
                 {% for subdir in dir.subdirs %}
-                    <a href="{{output_path}}/{{subdir.path}}/" class="list-group-item">{{subdir.title()}}</a>
+                    <a href="./{{subdir.name()}}" class="list-group-item">{{subdir.title()}}</a>
                 {% endfor %}
             {% else %}
                 <a href="#" class="list-group-item disabled">No subdirectories</a>
