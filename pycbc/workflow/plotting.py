@@ -112,3 +112,15 @@ def make_snrifar_plot(workflow, bg_file, out_dir, tags=[]):
     node.add_input_opt('--trigger-file', bg_file)
     node.new_output_file_opt(bg_file.segment, '.png', '--output-file')
     workflow += node
+    
+def make_results_web_page(workflow, results_dir):
+    import pycbc.results
+    template_path =  pycbc.results.__path__[0] + '/templates/concrete.html'
+
+    out_dir = workflow.cp.get('results_page', 'output-path')
+    makedir(out_dir)
+    node = PlotExecutable(workflow.cp, 'results_page', ifos=workflow.ifos,
+                out_dir=out_dir).create_node()
+    node.add_opt('--plots-dir', results_dir)
+    node.add_opt('--template-file', template_path)
+    workflow += node
