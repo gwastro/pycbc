@@ -40,7 +40,6 @@ from glue.ligolw import utils as ligolw_utils
 from pycbc.workflow.core import FileList, make_analysis_dir, Executable, Node
 from pycbc.workflow.core import get_random_label
 from pycbc.workflow.jobsetup import LigolwAddExecutable, LigolwSSthincaExecutable, SQLInOutExecutable
-from pylal import ligolw_cafe
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
     pass
@@ -184,6 +183,8 @@ def setup_coincidence_workflow_ligolw_thinca(
     ligolwAddOuts : pycbc.workflow.core.FileList
         A list of the output files generated from ligolw_add.
     """
+    from pylal import ligolw_cafe
+
     logging.debug("Entering coincidence module.")
     cp = workflow.cp
     ifoString = workflow.ifo_string
@@ -281,6 +282,7 @@ def setup_coincidence_workflow_ligolw_thinca(
                                  verbose=False))
         time_slide_table.sync_next_id()
         time_slide_dict = time_slide_table.as_dict()
+
         cafe_seglists, cafe_caches = ligolw_cafe.ligolw_cafe(cacheInspOuts,
             time_slide_dict.values(), extentlimit=max_extent, verbose=False)
         logging.debug("Done with cafe.")
