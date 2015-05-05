@@ -829,7 +829,6 @@ class EventManagerMultiDet(EventManager):
     def _add_coincs_to_output(self, coinc_def_table, coinc_event_table,
                               coinc_event_map_table, time_slide_table,
                               coinc_inspiral_table, sngl_table, proc_id):
-        from pylal.ligolw_sstinca import coinc_inspiral_end_time
         # FIXME: This shouldn't live here
         # FIXME: More choices would be good
         magic_number = 6.0
