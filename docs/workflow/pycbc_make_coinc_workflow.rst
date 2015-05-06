@@ -196,6 +196,14 @@ workflow using::
                                                  workflow:pipedown-log-path:${LOGPATH} \
                                                  workflow:pipedown-tmp-space:${PIPEDOWNTMPSPACE}
 
+If you are running on a resource that mandates accounting, then you will also need to add the
+correct metadata. Please see `this page`_. to determine the correct tags. These can be applied by adding 
+the following line to your workflow invocation above.::
+
+    --config-overrides pegasus_profile:condor|accounting_group=ligo.dev.o1.SOME.TAG.NAME
+
+.. _this page: https://ldas-gridmon.ligo.caltech.edu/ldg_accounting/user
+
 .. _coincworkflowplan:
 
 -----------------------------------------
