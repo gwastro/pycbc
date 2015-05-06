@@ -2,11 +2,12 @@
 segment.
 """
 import numpy, urlparse, os.path
+from sys import argv
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from glue import segments
 from glue.segments import segment, segmentlist
-
-
+from glue.ligolw.lsctables import LIGOTimeGPS
+from glue.ligolw.utils import segments as ligolw_segments
 
 def start_end_to_segments(start, end):
     return segmentlist([segment(s, e) for s, e in zip(start, end)])
@@ -32,16 +33,27 @@ def segments_to_file(segs, filename, name, ifo=""):
     -------
     File : Return a pycbc.core.File reference to the file
     """
-    from glue.segmentdb import segmentdb_utils as segutil
     from pycbc.workflow.core import File
+
+    # create XML doc and add process table
     outdoc = ligolw.Document()
     outdoc.appendChild(ligolw.LIGO_LW())
+    process = ligolw_utils.process.register_to_xmldoc(outdoc, argv[0], {})
 
-    proc_id = ligolw_utils.process.register_to_xmldoc(outdoc, "", {}).process_id 
-    def_id = segutil.add_to_segment_definer(outdoc, proc_id, ifo, name, 0)
-    segutil.add_to_segment(outdoc, proc_id, def_id, segs)
+    # cast segment values into LIGOTimeGPS for glue library utils
+    if type(segs[0][0]) != LIGOTimeGPS:
+        fsegs = [( LIGOTimeGPS(segs[i][0]), LIGOTimeGPS(segs[i][1]) ) for i in range(len(segs))]
+    else:
+        fsegs = segs
+
+    # add segments, segments summary, and segment definer tables using glue library
+    with ligolw_segments.LigolwSegments(outdoc, process) as xmlsegs:
+        xmlsegs.insert_from_segmentlistdict({ifo : fsegs}, name)
+
+    # write file
     ligolw_utils.write_filename(outdoc, filename)
-    
+
+    # return a File instance
     url = urlparse.urlunparse(['file', 'localhost', filename, None, None, None])
     f = File(ifo, name, segs, file_url=url, tags=[name])
     f.PFN(os.path.abspath(filename), site='local')
