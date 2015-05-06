@@ -634,21 +634,17 @@ class File(pegasus_workflow.File):
                 path = os.path.join(os.getcwd(), path) 
             file_url = urlparse.urlunparse(['file', 'localhost', path, None,
                                             None, None])
-       
-        self.cache_entry = lal.CacheEntry(self.ifo_string,
-                   self.tagged_description, self.segment_list.extent(), file_url)
-        self.cache_entry.workflow_file = self
 
         # Let's do a test here
-        if use_tmp_subdirs:
-            pegasus_lfn = str(int(self.cache_entry.segment[0]))[:-4]
-            pegasus_lfn = pegasus_lfn + '/' + basename(self.cache_entry.path)
+        if use_tmp_subdirs and len(self.segment_list):
+            pegasus_lfn = str(int(self.segment_list.extent()[0]))[:-4]
+            pegasus_lfn = pegasus_lfn + '/' + basename(file_url)
         else:
-            pegasus_lfn = basename(self.cache_entry.path) 
+            pegasus_lfn = basename(file_url)
         super(File, self).__init__(pegasus_lfn)
         
         if store_file:
-            self.storage_path = self.cache_entry.path
+            self.storage_path = urlparse.urlsplit(file_url).path
         else:
             self.storage_path = None
 
@@ -688,7 +684,20 @@ class File(pegasus_workflow.File):
             err = "self.segment_list must only contain one segment to access"
             err += " the segment property. %s." %(str(self.segment_list),)
             raise TypeError(err)
-        
+
+    @property
+    def cache_entry(self):
+        """
+        Returns a CacheEntry instance for File.
+        """
+
+        file_url = urlparse.urlunparse(['file', 'localhost', self.storage_path, None,
+                                            None, None])
+        cache_entry = lal.CacheEntry(self.ifo_string,
+                   self.tagged_description, self.segment_list.extent(), file_url)
+        cache_entry.workflow_file = self
+        return cache_entry
+
     def _filename(self, ifo, description, extension, segment):
         """
         Construct the standard output filename. Should only be used internally
