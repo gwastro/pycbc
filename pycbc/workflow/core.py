@@ -158,7 +158,13 @@ class Executable(pegasus_workflow.Executable):
             self.tagged_name = name
         if self.ifo_string is not None:
             self.tagged_name = "%s-%s" % (self.tagged_name, self.ifo_string)
-        super(Executable, self).__init__(self.tagged_name)
+
+        try:
+            installed = cp.getboolean('pegasus_profile-%s' % name, 'pycbc|installed')
+        except:
+            installed = True
+
+        super(Executable, self).__init__(self.tagged_name, installed=installed)
         
         self.name=name
         
@@ -293,10 +299,17 @@ class Executable(pegasus_workflow.Executable):
 
     def add_ini_profile(self, cp, sec):
         for opt in cp.options(sec):
-            value = string.strip(cp.get(sec, opt))
             namespace = opt.split('|')[0]
+            if namespace == 'pycbc':
+                continue
+
+            value = string.strip(cp.get(sec, opt))
             key = opt.split('|')[1]
             self.add_profile(namespace, key, value)
+
+            # Remove if Pegasus can apply this hint in the TC
+            if namespace == 'hints' and key == 'execution.site':
+                self.execution_site = value
 
     def add_ini_opts(self, cp, sec):
         for opt in cp.options(sec):
@@ -447,6 +460,10 @@ class Node(pegasus_workflow.Node):
         
         if executable.universe == 'vanilla':
             self.add_profile('condor', 'getenv', 'True')
+        
+        if hasattr(executable, 'execution_site'):
+            self.add_profile('hints', 'execution.site', executable.execution_site)
+            self.add_profile('hints', 'executionPool', executable.execution_site)
             
         self._options += self.executable.common_options
     
