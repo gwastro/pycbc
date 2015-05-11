@@ -27,7 +27,7 @@ xsi:schemaLocation="http://pegasus.isi.edu/schema/sitecatalog http://pegasus.isi
         <profile namespace="env" key="PEGASUS_HOME">$PEGASUS_HOME</profile>
         <profile namespace="pegasus" key="job.aggregator" >mpiexec</profile>
         <profile namespace="globus" key="queue">development</profile>
-        <profile namespace="globus" key="maxwalltime">120</profile>
+        <profile namespace="globus" key="maxwalltime">1</profile>
         <profile namespace="globus" key="host_count">1</profile>
         <profile namespace="globus" key="count">16</profile>
         <profile namespace="globus" key="jobtype">single</profile>
