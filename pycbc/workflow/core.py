@@ -160,11 +160,11 @@ class Executable(pegasus_workflow.Executable):
             self.tagged_name = "%s-%s" % (self.tagged_name, self.ifo_string)
 
         try:
-            installed = cp.getboolean('pegasus_profile-%s' % name, 'pycbc|installed')
+            self.installed = cp.getboolean('pegasus_profile-%s' % name, 'pycbc|installed')
         except:
-            installed = True
+            self.installed = True
 
-        super(Executable, self).__init__(self.tagged_name, installed=installed)
+        super(Executable, self).__init__(self.tagged_name, installed=self.installed)
         
         self.name=name
         
@@ -458,7 +458,7 @@ class Node(pegasus_workflow.Node):
         self.executed = False
         self.set_category(executable.name)
         
-        if executable.universe == 'vanilla':
+        if executable.universe == 'vanilla' and executable.installed:
             self.add_profile('condor', 'getenv', 'True')
         
         if hasattr(executable, 'execution_site'):
