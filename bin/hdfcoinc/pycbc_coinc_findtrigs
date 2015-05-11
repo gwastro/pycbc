@@ -238,18 +238,19 @@ for tnum in range(tmin, tmax):
 for key in data:
     data[key] = numpy.concatenate(data[key])
 
-if args.cluster_window:
+if args.cluster_window and len(data['stat']) > 0:
     cid = coinc.cluster_coincs(data['stat'], data['time1'], data['time2'], 
                                data['timeslide_id'], args.timeslide_interval, 
                                args.cluster_window)
 
 logging.info('saving coincident triggers')
 f = h5py.File(args.output_file, 'w')
-for key in data:
-    if args.cluster_window:
-        f[key] = data[key][cid]
-    else:
-        f[key] = data[key]
+if len(data['stat']) > 0:
+    for key in data:
+        if args.cluster_window:
+            f[key] = data[key][cid]
+        else:
+            f[key] = data[key]
 f['analyzed_start'], f['analyzed_end'] = veto.segments_to_start_end(coinc_segs)
 f.attrs['timeslide_interval'] = args.timeslide_interval
 f.attrs['detector_1'] = det0.name
