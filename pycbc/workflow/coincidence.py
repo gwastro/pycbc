@@ -689,5 +689,5 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
         workflow.add_node(combine_node)
         stat_files += combine_node.output_files
         
-    return stat_files, bg_files
+    return stat_files
     logging.info('...leaving coincidence ')

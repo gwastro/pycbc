@@ -150,13 +150,14 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
             ctags = [tag, 'inj']
 
             inj_coinc = _workflow.setup_interval_coinc_inj(workflow, hdfbank, 
-                            insps_hdf, final_bg_file, output_dir, tags = ctags)
+                            full_insps, insps_hdf, final_bg_file, final_veto_file,
+                            output_dir, tags = ctags)
             found_inj = _workflow.find_injections_in_hdf_coinc(workflow, _workflow.FileList([inj_coinc]),
                             _workflow.FileList([inj_file]), final_veto_file[0], output_dir, tags=ctags)                                          
 
             _workflow.make_sensitivity_plot(workflow, found_inj, 'plots/sensitivity',
                                      tags=ctags)
-            _workflow.make_foundmissed_plot(workflow, found_inj, tag, 'plots/foundmissed',
+            _workflow.make_foundmissed_plot(workflow, found_inj, 'plots/foundmissed',
                                      tags=[tag])
             for inj_insp, trig_insp in zip(insps_hdf, full_insps):
                 _workflow.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 

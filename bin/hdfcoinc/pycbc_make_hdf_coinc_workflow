@@ -97,9 +97,9 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
     # setup coinc for the filtering jobs
     if tag == 'full_data':
         full_insps = insps
-        bg_files, _ = wf.setup_interval_coinc(workflow, hdfbank, insps, cum_veto_files,
+        bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, cum_veto_files,
                                        output_dir, tags=ctags)  
-        final_bg_file, _  =  wf.setup_interval_coinc(workflow, hdfbank, insps, final_veto_file,
+        final_bg_file =  wf.setup_interval_coinc(workflow, hdfbank, insps, final_veto_file,
                                        output_dir, tags=ctags)   
         for bg_file in (final_bg_file + bg_files):
             wf.make_snrifar_plot(workflow, bg_file, 'plots/background', tags=bg_file.tags)
