@@ -17,6 +17,7 @@
 from pycbc.types import zeros, complex64, complex128, float32, float64, Array
 from scipy.weave import inline
 import numpy as _np
+from numpy import log
 import pycbc.opt
 from pycbc.opt import omp_support, omp_libs, omp_flags
 
