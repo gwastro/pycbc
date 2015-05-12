@@ -34,4 +34,20 @@ xsi:schemaLocation="http://pegasus.isi.edu/schema/sitecatalog http://pegasus.isi
         <profile namespace="globus" key="project">TG-PHY140012</profile>
     </site>
 
+    <site handle="stampede" arch="x86_64" os="LINUX">
+        <grid type="gt5" contact="login5.stampede.tacc.utexas.edu:2119/jobmanager-fork" scheduler="Fork" jobtype="auxillary"/>
+        <grid type="gt5" contact="login5.stampede.tacc.utexas.edu:2119/jobmanager-slurm" scheduler="unknown" jobtype="compute"/>
+        <directory type="shared-scratch" path="$SCRATCH">
+            <file-server operation="all" url="gsiftp://gridftp.stampede.tacc.xsede.org/$SCRATCH"/>
+        </directory>
+        <profile namespace="env" key="PEGASUS_HOME">$PEGASUS_HOME</profile>
+        <profile namespace="pegasus" key="job.aggregator" >mpiexec</profile>
+        <profile namespace="globus" key="queue">normal</profile>
+        <profile namespace="globus" key="maxwalltime">30</profile>
+        <profile namespace="globus" key="host_count">$HOSTS</profile>
+        <profile namespace="globus" key="count">16</profile>
+        <profile namespace="globus" key="jobtype">single</profile>
+        <profile namespace="globus" key="project">TG-PHY140012</profile>
+    </site>
+
 </sitecatalog>
