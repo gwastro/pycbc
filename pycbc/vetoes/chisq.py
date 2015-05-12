@@ -204,6 +204,44 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None):
     else:
         return TimeSeries(chisq, delta_t=snr.delta_t, epoch=snr.start_time, copy=False)
 
+
+def fastest_power_chisq_at_points(corr, snr, snrv, snr_norm, bins, indices):
+    """Calculate the chisq values for only selected points.
+
+    This function looks at the number of points to be evaluated and selects
+    the fastest method (FFT, or direct time shift and sum). In either case,
+    only the selected points are returned.
+
+    Parameters
+    ----------
+    corr: FrequencySeries
+        The product of the template and data in the frequency domain.
+    snr: Array
+        The unnormalized snr
+    snr_norm: float
+        The snr normalization factor  --- EXPLAINME
+    bins: List of integers
+        The edges of the equal power bins
+    indices: Array
+        The indices where we will calculate the chisq. These must be relative
+        to the given `snr` series.
+
+    Returns
+    -------
+    chisq: Array
+        An array containing only the chisq at the selected points.
+    """
+    import pycbc.scheme
+    if isinstance(pycbc.scheme.mgr.state, pycbc.scheme.CPUScheme):
+        # We don't have that many points so do the direct time shift.
+        return power_chisq_at_points_from_precomputed(corr, snrv,
+                                                      snr_norm, bins, indices)
+    else:
+        # We have a lot of points so it is faster to use the fourier transform
+        return power_chisq_from_precomputed(corr, snr, snr_norm, bins,
+                                            indices=indices)
+
+
 def power_chisq(template, data, num_bins, psd,
                 low_frequency_cutoff=None, high_frequency_cutoff=None):
     """Calculate the chisq timeseries
