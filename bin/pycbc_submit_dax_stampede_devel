@@ -66,7 +66,7 @@ chmod 755 stop
 echo pegasus-run $SUBMIT_DIR/work > start
 chmod 755 start
 
-echo gsissh -p 2222 login5.stampede.tacc.utexas.edu -t "cd $SCRATCH; bash --login" > remote_work
+echo 'gsissh -p 2222 login5.stampede.tacc.utexas.edu -t "cd $SCRATCH; bash --login"' > remote_work
 chmod 755 remote_work
 
 echo Submitting from: $HOSTNAME
