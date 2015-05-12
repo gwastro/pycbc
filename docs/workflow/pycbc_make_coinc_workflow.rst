@@ -347,21 +347,6 @@ The output provides you with the ``stderr``, the command line, and where the job
 
 If you have a subdax that failed, ``pegasus_analyzer`` will provide you with a command to recieve more information about the failed jobs in the subdax.
 
------------------------------
-Pegasus Plots
------------------------------
-
-Pegasus has a tool called pegasus-plan to visualize workflows. To generate these charts and create an summary html page with this information, one would run::
-
-    export PPLOTSDIR=/home/ahnitz/public_html/workflow/pegasus_plots
-    pegasus-plots --plotting-level all --output ${PPLOTSDIR} /usr1/ahnitz/log/ahnitz/pegasus/weekly_ahope/run0011
-
-The Invocation Breakdown Chart section gives a snapshot of the workflow. You can click on the slices of the pie chart and it will report the number of failures, average runtime, and max/min runtime for that type of jobs in the workflow. The radio button labeled runtime will organize the pie chart by total runtime rather than the total number of jobs for each job type.
-
-The Workflow Execution Gantt Chart section breaks down the workflow how long it took to run each job. You can click on a job in the gantt chart and it will report the job name and runtime.
-
-The Host Over Time Chart section displays a gantt chart where you can see what jobs in the workflow ran on a given machine.
-
 .. _weeklyahopereuse:
 
 ================================
