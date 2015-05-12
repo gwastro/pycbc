@@ -6,12 +6,13 @@ exec > >(tee submit.log)
 exec 2>&1
 
 # Check I have two arguments supplied
-if [ "x$1" == "x" ]; then
-  echo "I take one argument, the name of the dax file. None supplied."
+if [ "x$2" == "x" ]; then
+  echo "I take two arguments, the name of the dax file and the number of hosts to request"
   exit 1
 fi
 
-HOSTS=1
+# Get the host count
+HOSTS=$2
 
 echo 'making a directory for the submit files'
 export SUBMIT_DIR=`mktemp -d`
@@ -44,13 +45,13 @@ bash temp.sh > site-local-parsed.xml
 echo "Generating concrete workflow"
 touch _reuse.cache
 
-if [ "x$2" == "x--cache" ]; then
+if [ "x$3" == "x--cache" ]; then
   cp $3 _reuse.cache
-  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites stampede-devel,local -o local \
+  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites stampede,local -o local \
                --dir $SUBMIT_DIR --cleanup inplace \
                --cache _reuse.cache --relative-submit-dir work --submit
 else
-  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites stampede-devel,local -o local \
+  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites stampede,local -o local \
                --dir $SUBMIT_DIR --cleanup inplace --relative-submit-dir work --submit
 fi
 
