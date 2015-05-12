@@ -48,11 +48,11 @@ touch _reuse.cache
 if [ "x$3" == "x--cache" ]; then
   cp $3 _reuse.cache
   pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites stampede,local -o local \
-               --dir $SUBMIT_DIR --cleanup inplace \
+               --dir $SUBMIT_DIR --cleanup inplace --cluster label \
                --cache _reuse.cache --relative-submit-dir work --submit
 else
   pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites stampede,local -o local \
-               --dir $SUBMIT_DIR --cleanup inplace --relative-submit-dir work --submit
+               --dir $SUBMIT_DIR --cleanup inplace --cluster label --relative-submit-dir work --submit
 fi
 
 ln -s $SUBMIT_DIR submitdir
