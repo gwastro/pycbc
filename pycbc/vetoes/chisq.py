@@ -112,7 +112,7 @@ def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
     ----------
     corr: FrequencySeries
         The product of the template and data in the frequency domain.
-    snr: Array
+    snr: numpy.ndarray
         The unnormalized array of snr values at only the selected points in `indices`.
     snr_norm: float
         The normalization of the snr (EXPLAINME : refer to Findchirp paper?)
@@ -128,11 +128,9 @@ def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
         An array containing only the chisq at the selected points.
     """
     logging.info('doing fast point chisq')
-    snr = Array(snr, copy=False)
     num_bins = len(bins) - 1
-
     chisq = shift_sum(corr, indices, bins)
-    return (chisq * num_bins - snr.squared_norm()) * (snr_norm ** 2.0)
+    return (chisq * num_bins - (snr.conj() * snr).real) * (snr_norm ** 2.0)
 
 _q_l = None
 _qtilde_l = None
@@ -205,42 +203,6 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None):
         return chisq
     else:
         return TimeSeries(chisq, delta_t=snr.delta_t, epoch=snr.start_time, copy=False)
-
-def fastest_power_chisq_at_points(corr, snr, snrv, snr_norm, bins, indices):
-    """Calculate the chisq values for only selected points.
-
-    This function looks at the number of points to be evaluated and selects
-    the fastest method (FFT, or direct time shift and sum). In either case,
-    only the selected points are returned.
-
-    Parameters
-    ----------
-    corr: FrequencySeries
-        The product of the template and data in the frequency domain.
-    snr: Array
-        The unnormalized snr
-    snr_norm: float
-        The snr normalization factor  --- EXPLAINME
-    bins: List of integers
-        The edges of the equal power bins
-    indices: Array
-        The indices where we will calculate the chisq. These must be relative
-        to the given `snr` series.
-
-    Returns
-    -------
-    chisq: Array
-        An array containing only the chisq at the selected points.
-    """
-    import pycbc.scheme
-    if isinstance(pycbc.scheme.mgr.state, pycbc.scheme.CPUScheme):
-        # We don't have that many points so do the direct time shift.
-        return power_chisq_at_points_from_precomputed(corr, snrv,
-                                                      snr_norm, bins, indices)
-    else:
-        # We have a lot of points so it is faster to use the fourier transform
-        return power_chisq_from_precomputed(corr, snr, snr_norm, bins,
-                                            indices=indices)
 
 def power_chisq(template, data, num_bins, psd,
                 low_frequency_cutoff=None, high_frequency_cutoff=None):
@@ -333,6 +295,7 @@ class SingleDetPowerChisq(object):
             Number of statistical degrees of freedom for the chisq test 
             in the given template
         """
+
         if self.do:
             logging.info("...Doing power chisq")
             

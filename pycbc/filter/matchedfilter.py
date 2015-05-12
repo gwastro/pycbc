@@ -30,7 +30,7 @@ import logging
 from math import log, ceil, sqrt
 from pycbc.types import TimeSeries, FrequencySeries, zeros, Array, complex64
 from pycbc.types import complex_same_precision_as, real_same_precision_as
-from pycbc.fft import fft, ifft
+from pycbc.fft import fft, ifft, IFFT
 import pycbc.scheme
 from pycbc import events
 import pycbc
@@ -43,11 +43,56 @@ BACKEND_PREFIX="pycbc.filter.matchedfilter_"
 def correlate(x, y, z):
     pass
 
+@pycbc.scheme.schemed(BACKEND_PREFIX)
+def _correlate_factory(x, y, z):
+    pass
+
+class Correlator(object):
+    """ Create a correlator engine
+
+    Parameters
+    ---------
+    x : complex64
+      Input pycbc.types.Array (or subclass); it will be conjugated
+    y : complex64
+      Input pycbc.types.Array (or subclass); it will not be conjugated
+    z : complex64
+      Output pycbc.types.Array (or subclass).
+      It will contain conj(x) * y, element by element
+
+    The addresses in memory of the data of all three parameter vectors
+    must be the same modulo pycbc.PYCBC_ALIGNMENT
+    """
+    def __new__(cls, *args, **kwargs):
+        real_cls = _correlate_factory(*args, **kwargs)
+        return real_cls(*args, **kwargs)
+
+# The class below should serve as the parent for all schemed classes.
+# The intention is that this class serves simply as the location for
+# all documentation of the class and its methods, though that is not
+# yet implemented.  Perhaps something along the lines of:
+#
+#    http://stackoverflow.com/questions/2025562/inherit-docstrings-in-python-class-inheritance
+#
+# will work? Is there a better way?
+class _BaseCorrelator(object):
+    def correlate(self):
+        """
+        Compute the correlation of the vectors specified at object
+        instantiation, writing into the output vector given when the
+        object was instantiated. The intention is that this method
+        should be called many times, with the contents of those vectors
+        changing between invocations, but not their locations in memory
+        or length.
+        """
+        pass
+
 
 class MatchedFilterControl(object):
-    def __init__(self, low_frequency_cutoff, high_frequency_cutoff, 
-                snr_threshold, tlen, delta_f, dtype, downsample_factor=1, 
-                upsample_threshold=1, upsample_method='pruned_fft'):
+    def __init__(self, low_frequency_cutoff, high_frequency_cutoff, snr_threshold, tlen,
+                 delta_f, dtype, segment_list, template_output, window,
+                 downsample_factor=1, upsample_threshold=1, upsample_method='pruned_fft',
+                 gpu_callback_method='none'):
         """ Create a matched filter engine.
 
         Parameters
@@ -60,6 +105,12 @@ class MatchedFilterControl(object):
             the nyquist frequency.
         snr_threshold : float
             The minimum snr to return when filtering
+        segment_list : list
+            List of FrequencySeries that are the Fourier-transformed data segments
+        template_output : complex64
+            Array of memory given as the 'out' parameter to waveform.FilterBank
+        window : int
+            The size of the cluster window in samples.
         downsample_factor : {1, int}, optional
             The factor by which to reduce the sample rate when doing a heirarchical
             matched filter
@@ -70,16 +121,38 @@ class MatchedFilterControl(object):
         """
 
         self.tlen = tlen
+        self.flen = self.tlen / 2 + 1
         self.delta_f = delta_f
         self.dtype = dtype
         self.snr_threshold = snr_threshold    
         self.flow = low_frequency_cutoff
         self.fhigh = high_frequency_cutoff    
+        self.gpu_callback_method = gpu_callback_method
                 
         if downsample_factor == 1:
             self.matched_filter_and_cluster = self.full_matched_filter_and_cluster
             self.snr_mem = zeros(self.tlen, dtype=self.dtype)
-            self.corr_mem = zeros(self.tlen, dtype=self.dtype)           
+            self.corr_mem = zeros(self.tlen, dtype=self.dtype)
+            self.segments = segment_list
+            # Assuming analysis time is constant across templates and segments, also
+            # delta_f is constant across segments.
+            self.analyze = segment_list[0].analyze
+            self.stilde_delta_f = segment_list[0].delta_f
+            self.htilde = template_output
+            self.kmin, self.kmax = get_cutoff_indices(self.flow, self.fhigh,
+                                                      self.segments[0].delta_f, self.tlen)   
+            self.corr_slice = slice(self.kmin, self.kmax)
+            self.corr_np = numpy.array(self.corr_mem.data[self.corr_slice], copy = False)
+            self.hcorr = numpy.array(self.htilde.data[self.corr_slice], copy = False)
+            self.correlators = []
+            for i in range(0, len(self.segments)):
+                self.correlators.append(Correlator(self.hcorr,
+                                                   numpy.array(self.segments[i].data[self.corr_slice], copy = False),
+                                                   self.corr_np))
+            self.ifft = IFFT(self.corr_mem, self.snr_mem)
+            self.snr_np = numpy.array(self.snr_mem.data[self.analyze], copy = False)
+            self.threshold_and_clusterer = events.ThresholdCluster(self.snr_np, window)
+
         elif downsample_factor >= 1:
             self.matched_filter_and_cluster = self.heirarchical_matched_filter_and_cluster
             self.downsample_factor = downsample_factor
@@ -92,7 +165,7 @@ class MatchedFilterControl(object):
                                               self.fhigh, self.delta_f, N_full)  
     
             self.kmin_red, _ = get_cutoff_indices(self.flow,
-                                              self.fhigh, self.delta_f, N_red)
+                                                  self.fhigh, self.delta_f, N_red)
             
             if self.kmax_full < N_red:
                 self.kmax_red = self.kmax_full
@@ -107,21 +180,18 @@ class MatchedFilterControl(object):
         else:
             raise ValueError("Invalid downsample factor")
               
-    def full_matched_filter_and_cluster(self, template, template_norm, stilde, window):
+    def full_matched_filter_and_cluster(self, segnum, template_norm):
         """ Return the complex snr and normalization. 
     
         Calculated the matched filter, threshold, and cluster. 
 
         Parameters
         ----------
-        htilde : FrequencySeries 
-            The template waveform. Must come from the FilterBank class.
+        segnum : int
+            Index into the list of segments at MatchedFilterControl construction
+            against which to filter.
         template_norm : float
             The htilde, template normalization factor.
-        stilde : FrequencySeries 
-            The strain data to be filtered.
-        window : int
-            The size of the cluster window in samples.
 
         Returns
         -------
@@ -136,22 +206,18 @@ class MatchedFilterControl(object):
         snrv : Array
             The snr values at the trigger locations.
         """
-        snr, corr, norm = matched_filter_core(template, stilde, 
-                                              low_frequency_cutoff=self.flow, 
-                                              high_frequency_cutoff=self.fhigh, 
-                                              h_norm=template_norm,
-                                              out=self.snr_mem,
-                                              corr_out=self.corr_mem)
-        idx, snrv = events.threshold(snr[stilde.analyze], self.snr_threshold / norm)            
-
+        norm = (4.0 * self.stilde_delta_f) / sqrt(template_norm)
+        self.correlators[segnum].correlate()
+        #correlate(htilde[kmin:kmax], stilde[kmin:kmax], self.corr_mem[kmin:kmax])  
+        #ifft(self.corr_mem, self.snr_mem)
+        self.ifft.execute()
+        snrv, idx = self.threshold_and_clusterer.threshold_and_cluster(self.snr_threshold / norm)
+        #snrv, idx = events.threshold_and_cluster(self.snr_mem[stilde.analyze], self.snr_threshold / norm, window)            
         if len(idx) == 0:
-            return [], [], [], [], []            
-        logging.info("%s points above threshold" % str(len(idx)))              
-  
-        idx, snrv = events.cluster_reduce(idx, snrv, window)
-        logging.info("%s clustered points" % str(len(idx)))
-        
-        return snr, norm, corr, idx, snrv   
+            return [], [], [], [], [] 
+                       
+        logging.info("%s points above threshold" % str(len(idx)))                     
+        return self.snr_mem, norm, self.corr_mem, idx, snrv   
         
     def heirarchical_matched_filter_and_cluster(self, htilde, template_norm, stilde, window):
         """ Return the complex snr and normalization. 

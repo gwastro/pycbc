@@ -124,7 +124,9 @@ parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
                     This is used to identify FULL_DATA jobs for 
                     compatibility with pipedown post-processing. 
                     Option will be removed when no longer needed.""")
-parser.add_argument("--psd-recalculate-segments", type=int, help="Number of segments to use before recalculating the PSD", default=0)
+parser.add_argument("--psd-recalculate-segments", type=int, 
+                    help="Number of segments to use before recalculating the PSD", default=0)
+parser.add_argument("--gpu-callback-method", default='none')
 
 # Add options groups
 psd.insert_psd_option_group(parser)
@@ -185,11 +187,16 @@ with ctx:
     associate_psd(strain_segments, gwstrain, segments, 
                   opt.psd_recalculate_segments, flen, delta_f, flow)
 
+    template_mem = zeros(tlen, dtype = complex64)
+    cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
+
     matched_filter = MatchedFilterControl(opt.low_frequency_cutoff, None,
                                    opt.snr_threshold, tlen, delta_f, complex64,
+                                   segments, template_mem, cluster_window,
                                    downsample_factor=opt.downsample_factor,
                                    upsample_threshold=opt.upsample_threshold,
-                                   upsample_method=opt.upsample_method)
+                                   upsample_method=opt.upsample_method,
+                                   gpu_callback_method=opt.gpu_callback_method)
 
     bank_chisq = vetoes.SingleDetBankVeto(opt.bank_veto_bank_file,
                                           flen, delta_f, flow, complex64, 
@@ -233,24 +240,25 @@ with ctx:
 
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, flen, delta_f,
-                    flow, dtype=complex64, phase_order=opt.order,
-                    taper=opt.taper_template, approximant=opt.approximant,
-                    out=zeros(tlen, dtype=complex64))
+                    flow, dtype = complex64, phase_order = opt.order,
+                    taper = opt.taper_template, approximant = opt.approximant,
+                    out = template_mem)
 
     for t_num, template in enumerate(bank):
         event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq(segments[0].psd))
-        if opt.cluster_method == "window":
-            cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
-        elif opt.cluster_method == "template":
-            cluster_window = int(template.chirp_length * gwstrain.sample_rate)
+        #if opt.cluster_method == "window":
+            # At present, moved above with class-based approach
+            #cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
+        if opt.cluster_method == "template":
+            #cluster_window = int(template.chirp_length * gwstrain.sample_rate)
+            raise ValueError("FIXME: template clustering not supported yet with optimizations!")
 
         for s_num, stilde in enumerate(segments):
             logging.info("Filtering template %d/%d segment %d/%d" % 
                          (t_num + 1, len(bank), s_num + 1, len(segments)))
 
             snr, norm, corr, idx, snrv = \
-               matched_filter.matched_filter_and_cluster(template, 
-                                  template.sigmasq(stilde.psd), stilde, cluster_window)
+               matched_filter.matched_filter_and_cluster(s_num, template.sigmasq(psd))
 
             if not len(idx):
                 continue
@@ -274,6 +282,7 @@ with ctx:
         event_mgr.cluster_template_events("time_index", "snr", cluster_window)
         event_mgr.finalize_template_events()
 
+event_mgr.finalize_events()
 logging.info("Found %s triggers" % str(len(event_mgr.events)))
 
 if opt.chisq_threshold and opt.chisq_bins:
