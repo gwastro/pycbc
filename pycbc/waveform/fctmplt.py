@@ -24,7 +24,7 @@
 #
 """This module contains a legacy wrapper to use the FindChirpSPTemplate approximant
 """
-import lalinspiral, lalsimulation
+import lalsimulation
 import numpy
 import lal
 import pycbc
@@ -34,6 +34,7 @@ from pycbc.types import Array, zeros, complex64, float32, FrequencySeries, compl
 from pycbc.waveform.spa_tmplt import spa_tmplt_precondition, spa_amplitude_factor, spa_tmplt
 
 def findchirp_template(**p):
+    import lalinspiral
     m1 = p['mass1']
     m2 = p['mass2']
     s1z = p['spin1z']
