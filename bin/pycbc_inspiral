@@ -293,7 +293,7 @@ with ctx:
         event_mgr.cluster_template_events("time_index", "snr", cluster_window)
         event_mgr.finalize_template_events()
 
-event_mgr.finalize_events()
+event_mgr.finalize_template_events()
 logging.info("Found %s triggers" % str(len(event_mgr.events)))
 
 if opt.chisq_threshold and opt.chisq_bins:
