@@ -347,7 +347,7 @@ class EventManager(object):
         self.template_params[-1].update(kwds)
 
     def finalize_template_events(self):
-        self.all_events += [self.template_events]
+        self.events = numpy.append(self.events, self.template_events)
         self.template_events = numpy.array([], dtype=self.event_dtype)
 
     def make_output_dir(self, outname):
