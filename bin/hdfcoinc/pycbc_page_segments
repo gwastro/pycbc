@@ -89,9 +89,9 @@ for i, seg_file in enumerate(args.segment_files):
     h = .7
     name = get_name(seg_file)
     start, end = pycbc.events.start_end_from_segments(seg_file)
-
+    
     dur = end - start
-    total = timestr(dur.sum())
+    total = timestr(abs(pycbc.events.start_end_to_segments(start, end).coalesce()))
     
     label = """<table>
              <tr><th>Start</th><td>%.0f</td></tr>
