@@ -149,7 +149,7 @@ def associate_psd(strain_segments, gwstrain, segments, nsegs, flen, delta_f, flo
         args = [iter(iterable)] * n
         return list([e for e in t if e != None] for t in itertools.izip_longest(*args))
         
-    nsegs = nsegs if nsegs != 0 else len(segments)    
+    nsegs = nsegs if nsegs != 0 else len(strain_segments.full_segment_slices)    
     groups = grouper(nsegs, strain_segments.full_segment_slices)   
     if len(groups[-1]) != len(groups[0]):
         logging.warn('PSD recalculation does not divide equally among analysis'
