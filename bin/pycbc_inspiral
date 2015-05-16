@@ -154,14 +154,18 @@ def associate_psd(strain_segments, gwstrain, segments, nsegs, flen, delta_f, flo
     if len(groups[-1]) != len(groups[0]):
         logging.warn('PSD recalculation does not divide equally among analysis'
                      'segments. Make sure that this is what you want')
-                                         
+    
+    psds = []                                     
     for psegs in groups:
         strain_part = gwstrain[psegs[0].start:psegs[-1].stop]
-        ppsd = psd.from_cli(opt, flen, delta_f, flow, strain_part, DYN_RANGE_FAC)    
+        ppsd = psd.from_cli(opt, flen, delta_f, flow, strain_part, DYN_RANGE_FAC) 
+        psds.append(ppsd)   
         for seg in segments:
             if seg.seg_slice in psegs:
                 seg.psd = ppsd.astype(float32)
-
+    return psds
+     
+   
 if opt.verbose:
     log_level = logging.DEBUG
 else:
@@ -182,7 +186,7 @@ with ctx:
 
     logging.info("Making frequency-domain data segments")
     segments = strain_segments.fourier_segments()
-    associate_psd(strain_segments, gwstrain, segments, 
+    psds = associate_psd(strain_segments, gwstrain, segments, 
                   opt.psd_recalculate_segments, flen, delta_f, flow)
 
     matched_filter = MatchedFilterControl(opt.low_frequency_cutoff, None,
@@ -229,7 +233,7 @@ with ctx:
     names = sorted(out_vals.keys())
 
     event_mgr = events.EventManager(opt, names,
-                                        [out_types[n] for n in names], psd=segments[0].psd)
+                                        [out_types[n] for n in names], psd=psds[0])
 
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, flen, delta_f,
@@ -238,7 +242,7 @@ with ctx:
                     out=zeros(tlen, dtype=complex64))
 
     for t_num, template in enumerate(bank):
-        event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq(segments[0].psd))
+        event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq(psds[0]))
         if opt.cluster_method == "window":
             cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
         elif opt.cluster_method == "template":
