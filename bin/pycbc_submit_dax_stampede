@@ -1,0 +1,75 @@
+#!/bin/bash
+set -e
+
+# Redirect stdout ( > ) into a named pipe ( >() ) running "tee"
+exec > >(tee submit.log)
+exec 2>&1
+
+# Check I have two arguments supplied
+if [ "x$2" == "x" ]; then
+  echo "I take two arguments, the name of the dax file and the number of hosts to request"
+  exit 1
+fi
+
+# Get the host count
+HOSTS=$2
+
+echo 'making a directory for the submit files'
+export SUBMIT_DIR=`mktemp -d`
+echo $SUBMIT_DIR
+
+#Make sure the directory is world readable
+chmod 755 $SUBMIT_DIR
+
+echo 'finding remote scratch directory'
+export SCRATCH=`gsissh -p 2222 login5.stampede.tacc.utexas.edu 'echo $SCRATCH'`/pycbc_workflow_$RANDOM
+echo $SCRATCH
+
+echo 'finding the remote pegasus home'
+#PEGASUS_HOME=`gsissh -p 2222 login5.stampede.tacc.utexas.edu 'which pegasus_submit_dax'`
+export PEGASUS_HOME=/home1/02969/ahnitz/pegasus-4.5.0
+echo $PEGASUS_HOME
+
+echo 'finding the site-local template directory'
+PEG_DIR=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGASUS_FILE_DIRECTORY'`
+SITE_TEMPLATE=$PEG_DIR/xsede_site_template.xml
+echo $SITE_TEMPLATE
+
+# Set up the site-local with the correct paths
+echo 'cat <<END_OF_TEXT' >  temp.sh
+cat $SITE_TEMPLATE       >> temp.sh
+echo 'END_OF_TEXT'       >> temp.sh
+bash temp.sh > site-local-parsed.xml
+
+# Plan the workflow
+echo "Generating concrete workflow"
+touch _reuse.cache
+
+if [ "x$3" == "x--cache" ]; then
+  cp $3 _reuse.cache
+  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites stampede,local -o local \
+               --dir $SUBMIT_DIR --cleanup inplace --cluster label \
+               --cache _reuse.cache --relative-submit-dir work --submit
+else
+  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites stampede,local -o local \
+               --dir $SUBMIT_DIR --cleanup inplace --cluster label --relative-submit-dir work --submit
+fi
+
+ln -s $SUBMIT_DIR submitdir
+
+echo pegasus-status $SUBMIT_DIR/work > status
+chmod 755 status
+
+echo pegasus-analyzer $SUBMIT_DIR/work > debug
+chmod 755 debug
+
+echo pegasus-remove $SUBMIT_DIR/work > stop
+chmod 755 stop
+
+echo pegasus-run $SUBMIT_DIR/work > start
+chmod 755 start
+
+echo 'gsissh -p 2222 login5.stampede.tacc.utexas.edu -t "cd $SCRATCH; bash --login"' > remote_work
+chmod 755 remote_work
+
+echo Submitting from: $HOSTNAME
