@@ -97,6 +97,7 @@ f = h5py.File(args.output_file, "w")
 
 f.attrs['detector_1'] = attrs['detector_1']
 f.attrs['detector_2'] = attrs['detector_2']
+f.attrs['timeslide_interval'] = attrs['timeslide_interval']
 
 fore_locs = (sid_i == 0)
 logging.info("%s clustered foreground triggers" % fore_locs.sum())
