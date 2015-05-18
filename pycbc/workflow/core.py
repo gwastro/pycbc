@@ -690,7 +690,10 @@ class File(pegasus_workflow.File):
         """
         Returns a CacheEntry instance for File.
         """
-
+        if self.storage_path is None:
+            raise ValueError('This file is temporary and so a lal '
+                             'cache entry cannot be made')
+            
         file_url = urlparse.urlunparse(['file', 'localhost', self.storage_path, None,
                                             None, None])
         cache_entry = lal.CacheEntry(self.ifo_string,
@@ -986,10 +989,13 @@ class FileList(list):
         """
         Return all files in this object as a lal.Cache object
         """
-        lalCache = lal.Cache([])
+        lal_cache = lal.Cache([])
         for entry in self:
-            lalCache.append(entry.cache_entry)
-        return lalCache
+            try:
+                lal_cache.append(entry.cache_entry)
+            except ValueError:
+                pass
+        return lal_cache
 
     def _temporal_split_list(self,numSubLists):
         """
