@@ -394,7 +394,7 @@ logging.info("Writing output")
 
 tmpltbank.output_sngl_inspiral_table(
     opts.output_file, tempBank, metricParams, ethincaParams, 
-    programName=__program__, optDict=opts.__dict__, comment="", ifos=[""],
+    programName=__program__, optDict=opts.__dict__, comment="",
     version=pycbc.version.git_hash, 
     cvs_repository='pycbc/'+pycbc.version.git_branch,
     cvs_entry_time=pycbc.version.date)
