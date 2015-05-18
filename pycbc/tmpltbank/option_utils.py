@@ -668,6 +668,9 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
                                                       return_mass_heavier=False)
         # Check for restrictions on the minimum total mass
         # Are either of these possible?
+        testing = numpy.array([opts.min_mass1, opts.min_mass2, m1_at_min_m2, m2_at_min_m1,67.1])
+        print testing
+        print numpy.argsort(testing)
         if m1_at_min_m2 <= opts.max_mass1 and m1_at_min_m2 >= opts.min_mass1:
             min_tot_mass = opts.min_mass2 + m1_at_min_m2
         elif m2_at_min_m1 <= opts.max_mass2 and m2_at_min_m1 >= opts.min_mass2:
@@ -678,10 +681,17 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
         elif m2_at_min_m1 > opts.max_mass2:
             # This is the redundant case, ignore
             min_tot_mass = opts.min_total_mass
+        elif opts.max_eta == 0.25 and (m1_at_min_m2 < opts.min_mass2 or \
+                                                m2_at_min_m1 > opts.min_mass1): 
+            # This just catches potential roundoff issues in the case that
+            # max-eta is not used
+            min_tot_mass = opts.min_total_mass
         else:
             # And this is the bad case
             err_msg = "The maximum eta provided is not possible given "
             err_msg += "restrictions on component masses."
+            print m1_at_min_m2, m2_at_min_m1, m1_at_max_m2, m2_at_max_m1
+            print opts.min_mass1, opts.max_mass1, opts.min_mass2, opts.max_mass2
             raise ValueError(err_msg)
         # Update min_tot_mass if needed
         if min_tot_mass > opts.min_total_mass:
