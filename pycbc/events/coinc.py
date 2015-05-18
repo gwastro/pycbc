@@ -26,6 +26,35 @@ coincident triggers.
 """
 import numpy
 
+def timeslide_durations(start1, start2, end1, end2, timeslide_offsets):
+    """ Find the coincident time for each timeslide
+    
+    Parameters
+    ----------
+    start1: numpy.ndarray
+        Array of the start of valid analyzed times for detector 1
+    start2: numpy.ndarray
+        Array of the start of valid analyzed times for detector 2
+    end1: numpy.ndarray
+        Array of the end of valid analyzed times for detector 1
+    end2: numpy.ndarray
+        Array of the end of valid analyzed times for detector 2
+    timseslide_offset: numpy.ndarray
+        Array of offsets (in seconds) for each timeslide
+        
+    Returns
+    --------
+    durations: numpy.ndarray
+        Array of coincident time for each timeslide in the offset array
+    """
+    from . import veto
+    durations = []
+    seg2 = veto.start_end_to_segments(start2, end2)
+    for offset in timeslide_offsets:
+        seg1 = veto.start_end_to_segments(start1 + offset, end1 + offset)
+        durations.append(abs((seg1 & seg2).coalesce()))
+    return numpy.array(durations)   
+    
 def time_coincidence(t1, t2, window, slide_step=0):
     """ Find coincidences by time window
     
