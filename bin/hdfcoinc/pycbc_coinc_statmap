@@ -32,7 +32,8 @@ def load_coincs(coinc_files):
            numpy.concatenate(time2), numpy.concatenate(timeslide_id),
            numpy.concatenate(template_id), numpy.concatenate(decimation_factor),
            numpy.concatenate(i1), numpy.concatenate(i2), attr, 
-           f['analyzed_start'][:], f['analyzed_end'][:], 
+           f['segments/coinc/start'][:], f['segments/coinc/end'][:],
+           f['segments']
            )
 
 def calculate_fan_map(combined_stat, dec):
@@ -62,7 +63,7 @@ if args.verbose:
                             level=log_level)
 
 logging.info("Loading coinc triggers")    
-stat, t1, t2, sid, tid, dec, i1, i2, attrs, start, end = load_coincs(args.coinc_files)   
+stat, t1, t2, sid, tid, dec, i1, i2, attrs, start, end, seg = load_coincs(args.coinc_files)   
 logging.info("We have %s triggers" % len(stat))
 
 unclustered_fore_locs = numpy.where((sid == 0))[0]
@@ -102,6 +103,11 @@ f.attrs['timeslide_interval'] = attrs['timeslide_interval']
 fore_locs = (sid_i == 0)
 logging.info("%s clustered foreground triggers" % fore_locs.sum())
 
+# Copy over the segment for coincs and singles
+for key in seg.keys():
+    f['segments'][key]['start'] = seg[key]['start']
+    f['segments'][key]['end'] = seg[key]['end']
+
 if fore_locs.sum() > 0:
     f['foreground/stat'] = stat_i[fore_locs]
     f['foreground/time1'] = t1_i[fore_locs]
@@ -109,8 +115,6 @@ if fore_locs.sum() > 0:
     f['foreground/trigger_id1'] = i1_i[fore_locs]
     f['foreground/trigger_id2'] = i2_i[fore_locs]
     f['foreground/template_id'] = tid_i[fore_locs]
-    f['foreground/analyzed_start'] = start
-    f['foreground/analyzed_end'] = end
 
 back_locs = numpy.where((sid_i != 0))[0]
 

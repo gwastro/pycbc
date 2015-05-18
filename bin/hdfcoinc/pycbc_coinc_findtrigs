@@ -251,7 +251,9 @@ if len(data['stat']) > 0:
             f[key] = data[key][cid]
         else:
             f[key] = data[key]
-f['analyzed_start'], f['analyzed_end'] = veto.segments_to_start_end(coinc_segs)
+f['segments/coinc/start'], f['segments/coinc/end'] = veto.segments_to_start_end(coinc_segs)
+for t in [trigs0, trigs1]]:
+    f['segments/%s/start' % t.ifo], f['segments/%s/start' % t.ifo] = t.valid
 f.attrs['timeslide_interval'] = args.timeslide_interval
 f.attrs['detector_1'] = det0.name
 f.attrs['detector_2'] = det1.name
