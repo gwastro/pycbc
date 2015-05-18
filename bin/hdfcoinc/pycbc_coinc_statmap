@@ -105,8 +105,8 @@ logging.info("%s clustered foreground triggers" % fore_locs.sum())
 
 # Copy over the segment for coincs and singles
 for key in seg.keys():
-    f['segments'][key]['start'] = seg[key]['start']
-    f['segments'][key]['end'] = seg[key]['end']
+    f['segments/%s/start' % key] = seg[key]['start'][:]
+    f['segments/%s/end' % key] = seg[key]['end'][:]
 
 if fore_locs.sum() > 0:
     f['foreground/stat'] = stat_i[fore_locs]

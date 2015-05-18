@@ -80,13 +80,18 @@ f = h5py.File(args.output_file, "w")
 f.attrs['detector_1'] = attrs['detector_1']
 f.attrs['detector_2'] = attrs['detector_2']
 f.attrs['timeslide_interval'] = attrs['timeslide_interval']
+
+# Copy over the segment for coincs and singles
+for key in seg.keys():
+    f['segments/%s/start' % key] = seg[key]['start'][:]
+    f['segments/%s/end' % key] = seg[key]['end'][:]
+
 logging.info('writing zero lag triggers')
 
 if len(zdata['stat']) > 0:
     for key in zdata:
         f['foreground/%s' % key] = zdata[key][zcid]
-    f['foreground/analyzed_start'] = start
-    f['foreground/analyzed_end'] = end
+        
 
 logging.info('calculating statistics excluding zerolag')
 fb = h5py.File(args.full_data_background, "r")
