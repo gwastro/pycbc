@@ -27,7 +27,11 @@ coincident triggers.
 import numpy
 
 def timeslide_durations(start1, start2, end1, end2, timeslide_offsets):
-    """ Find the coincident time for each timeslide
+    """ Find the coincident time for each timeslide.
+    
+    Find the coincident time for each timeslide, where the first time vector
+    is slid to the right by the offset in the given timeslide_offsets 
+    vector.
     
     Parameters
     ----------
