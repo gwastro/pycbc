@@ -1,5 +1,7 @@
 #!/bin/bash
 # Redirect stdout ( > ) into a named pipe ( >() ) running "tee"
+set -e
+
 exec > >(tee submit.log)
 
 # Without this, only stdout would be captured - i.e. your
