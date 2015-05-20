@@ -185,7 +185,7 @@ for j in range(len(args.bins)-1):
         if not args.dist_bins: 
             sdist, elow, ehigh = compute_sensitive_distance(f_dist, m_dist_full)
         else:
-            sdist, elow, ehigh = compute_efficiency_bins_pylal(f_dist, m_dist, bins=args.dist_bins)
+            sdist, elow, ehigh = compute_efficiency_bins_pylal(f_dist, m_dist_full, bins=args.dist_bins)
 
         dists.append(sdist)
         low_errors.append(elow)
