@@ -19,8 +19,8 @@ parser.add_argument('--max-dist', type=float)
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--method', choices=['pylal', 'shell', 'mc'], default='pylal')
 parser.add_argument('--dist-bins', type=int, default=100)
-parser.add_argument('--distance-param')
-parser.add_argument('--distance-distribution')
+parser.add_argument('--distance-param', type=str)
+parser.add_argument('--distance-distribution', type=str)
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
@@ -246,13 +246,14 @@ for j in range(len(args.bins)-1):
             elif args.method == 'pylal':
                 sdist, elow, ehigh = compute_efficiency_bins_pylal(f_dist, m_dist_full, bins=args.dist_bins)
             elif args.method == 'mc':
-                sdist, elow, ehigh = volume_montecarlo(f_dist, 
-                       m_dist_full, 
-                       mchirp[foundg][mbf],
-                       numpy.append(mchirp[missed][mbm], mchirp[foundm][mbfm]),
-                       args.distance_param,
-                       args.distance_distribution,
-                       )
+                found_mchirp = mchirp[foundg][mbf]
+                missed_mchirp = numpy.append(mchirp[missed][mbm], mchirp[foundm][mbfm])
+                vol, vol_err = volume_montecarlo(f_dist, m_dist_full, 
+                       found_mchirp, missed_mchirp,
+                       args.distance_param, args.distance_distribution)
+                sdist = (vol * 3.0/4.0/numpy.pi) ** (1.0/3.0)
+                ehigh = ((vol + vol_err) * 3.0/4.0/numpy.pi) ** (1.0/3.0) - sdist
+                elow = sdist - ((vol - vol_err) * 3.0/4.0/numpy.pi) ** (1.0/3.0)
 
             dists.append(sdist)
             low_errors.append(elow)
