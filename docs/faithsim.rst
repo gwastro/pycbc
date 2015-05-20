@@ -56,6 +56,11 @@ There are four sections that must be present [inspinj], [executables], [workflow
     is directly proportional to the running time of 
     each job.
 
+    Faith simulations running on LDG clusters must include the
+    'accounting-group' option in the workflow section. The value
+    must be choosen according to the
+    `Accounting information web page <https://ldas-gridmon.ligo.caltech.edu/ldg_accounting/>`_.
+
  #. faithsim-XXX
     Multiple sections with a a name of the form 'faithsim-USER_STRING' can exist.
     The generator will create jobs that correspond to each of these sections 

@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 import os
+import logging
 import shutil
 import ConfigParser
 import subprocess
@@ -8,20 +9,26 @@ import tempfile
 from optparse import OptionParser
 from glue.pipeline import CondorDAGJob, CondorDAGNode, CondorDAG, CondorJob
 
+
 class BaseJob(CondorDAGJob, CondorJob):
-    def __init__(self, log_dir, executable, cp, section):
+    def __init__(self, log_dir, executable, cp, section, accounting_group=None):
         CondorDAGJob.__init__(self, "vanilla", executable)
 
         # These are all python jobs so need to pull in the env
-        self.add_condor_cmd('getenv', 'True')       
+        self.add_condor_cmd('getenv', 'True')
         self.add_condor_cmd('+Allow_OGrid', 'True')
-        self.set_stderr_file(os.path.join(log_dir, os.path.basename(executable) + '-$(cluster)-$(process).err'))
-        self.set_stdout_file(os.path.join(log_dir, os.path.basename(executable) + '-$(cluster)-$(process).out'))
+        log_base = os.path.join(
+            log_dir, os.path.basename(executable) + '-$(cluster)-$(process)')
+        self.set_stderr_file(log_base + '.err')
+        self.set_stdout_file(log_base + '.out')
         self.set_sub_file(section + ".sub")   
-        
+
         if cp is not None: 
-            self.add_ini_opts(cp, section)         
-       
+            self.add_ini_opts(cp, section)
+
+        if accounting_group:
+            self.add_condor_cmd('accounting_group', accounting_group)
+
 class FaithsimNode(CondorDAGNode):
     def __init__(self, job, tmplt_file, match_file, inj_per_job=None):
         CondorDAGNode.__init__(self, job)    
@@ -54,7 +61,9 @@ parser.add_option('--config', type=str)
 (options, args) = parser.parse_args() 
 
 if options.config is None:
-    raise ValueError("Config file is required")  
+    raise ValueError("Config file is required")
+
+logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
 confs = ConfigParser.ConfigParser()
 confs.read(options.config)
@@ -70,28 +79,38 @@ except:
 tempfile.tempdir = log_path
 tempfile.template='faithsim.dag.log.'
 logfile = tempfile.mktemp()
-     
-print "Making workspace directories..."
+
+try:
+    accounting_group = confs.get('workflow', 'accounting-group')
+except:
+    accounting_group = None
+    logging.warn('Warning: accounting-group not specified, LDG clusters may'
+                 ' reject this workflow!')
+
+logging.info("Making workspace directories")
 mkdir('scripts')
 mkdir('match')
 mkdir('bank')
 mkdir('log')
 mkdir('plots')
 
-print "Copying scripts"
+logging.info("Copying scripts")
 shutil.copy(banksim_prog, 'scripts/pycbc_faithsim')
 os.chmod('scripts/pycbc_faithsim', 0777)
 
-print "Creating Injection File"
+logging.info("Creating injection file")
 inj_str = "lalapps_inspinj " + get_ini_opts(confs, "inspinj") + "--output inj.xml"
 os.system(inj_str)
 
-print "Splitting template bank..."
-subprocess.call(['pycbc_splitbank', '--templates-per-bank', str(templates_per_job), '-t', 'inj.xml', '-o', 'bank/bank'])
+logging.info("Splitting template bank")
+subprocess.call(['pycbc_splitbank',
+                 '--templates-per-bank', str(templates_per_job),
+                 '-t', 'inj.xml',
+                 '-o', 'bank/bank'])
 
 num_banks = len(glob.glob("bank/bank*"))
 
-print "Creating Dag..."
+logging.info("Creating DAG")
 
 dag = CondorDAG(logfile)
 dag.set_dag_file("faithsim")
@@ -100,11 +119,14 @@ dag.set_dax_file("faithsim")
 fs_secs = matches_in_list(confs.sections(), 'faithsim')
 fsjobs = []
 for sec in fs_secs:
-    fsjobs.append(BaseJob("log", "scripts/pycbc_faithsim", confs, sec))
+    fsjobs.append(BaseJob("log", "scripts/pycbc_faithsim", confs, sec,
+                          accounting_group=accounting_group))
 
-rjob = BaseJob("log", "scripts/pycbc_faithsim_collect_results", None, 'collect_results')
+rjob = BaseJob("log", "scripts/pycbc_faithsim_collect_results", None,
+               'collect_results', accounting_group=accounting_group)
 rnode = CondorDAGNode(rjob)
-pjob = BaseJob("log", "scripts/pycbc_faithsim_plots", None, 'faithsim_plots')
+pjob = BaseJob("log", "scripts/pycbc_faithsim_plots", None, 'faithsim_plots',
+               accounting_group=accounting_group)
 pnode = CondorDAGNode(pjob)
 
 for inj_num in range(num_banks):
@@ -175,16 +197,14 @@ if __name__ == "__main__":
         savetxt('result-' + tag + '.dat', data)
 """)
 os.chmod('scripts/pycbc_faithsim_collect_results', 0777)
-
     
-print "Creating submit script"
+logging.info("Creating submit script")
 f = open("submit.sh", 'w')
 f.write("""#!/bin/bash
 condor_submit_dag faithsim.dag
 """)
 os.chmod('submit.sh', 0777)
 
-print "Done"
 dag.write_sub_files()
 dag.write_script()
 dag.write_concrete_dag()
@@ -369,4 +389,4 @@ for fil in fils:
  """)
 os.chmod('scripts/pycbc_faithsim_plots', 0777)
 
-    
+logging.info('Done')
