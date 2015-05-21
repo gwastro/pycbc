@@ -186,13 +186,13 @@ def ns_g_mass_to_ns_compactness(ns_g_mass, ns_sequence):
 # of remnant_mass: this can effectively used as a remnant mass threshold when solving  #
 # the constraint remnant_mass(...)=0.                                                  #
 # Allowing for negative remanant mass to be able to solve remnant mass == 0 if neeeded #
-# THIS ASSUMES THE NS SPIN IS 0. The user should be warned about this!                 #
+# THIS ASSUMES THE NS SPIN IS 0 (the user is warned about this)                        #
 ########################################################################################
 def xi_eq(x, kappa, chi_eff, q):
    return x**3*(x**2-3*kappa*x+2*chi_eff*kappa*math.sqrt(kappa*x))-3*q*(x**2-2*kappa*x+(chi_eff*kappa)**2)
 
 def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
-    #Sanity checks
+    # Sanity checks
     if not (eta>0. and eta<=0.25 and abs(chi)<=1):
         print 'The BH spin magnitude must be <=1 and eta must be between 0 and 0.25'
         print 'This script was launched with ns_mass={0}, eta={1}, chi={2}, inclination={3}\n'.format(ns_b_mass, eta, chi, incl) 
@@ -227,12 +227,12 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
         print 'SOMETHING WENT WRONG!!\n'
         raise Exception('Unphysical parameters!')
 
-    # Fit parameters and tidal correction
-    alpha = 0.296 # +/- 0.011
-    beta  = 0.171 # +/- 0.008
     # Taking the 1st element with full_output=1 avoids some annoying messages on stdout
     xi = scipy.optimize.fsolve(xi_eq, 100., args=(kappa,chi_eff,q), full_output=1)[0]
 
+    # Fit parameters and tidal correction
+    alpha = 0.296 # +/- 0.011
+    beta  = 0.171 # +/- 0.008
     # The remnant mass over the NS rest mass
     remnant_mass = alpha*xi*(1-2*ns_compactness)-beta*kappa*PG_ISSO_solver(chi_eff,0)
    
