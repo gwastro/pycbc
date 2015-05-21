@@ -153,6 +153,7 @@ for j in range(len(args.bins)-1):
             elif args.method == 'mc':
                 found_mchirp = mchirp[foundg][mbf]
                 missed_mchirp = numpy.append(mchirp[missed][mbm], mchirp[foundm][mbfm])
+                
                 vol, vol_err = sensitivity.volume_montecarlo(f_dist, m_dist_full, 
                        found_mchirp, missed_mchirp,
                        args.distance_param, args.distance_distribution)
