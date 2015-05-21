@@ -42,6 +42,56 @@ def return_empty_sngl():
             raise ValueError("Column %s not recognized" %(entry) )
     return sngl
 
+def return_search_summary(start_time=0, end_time=0, nevents=0,
+                          ifos=[], **kwargs):
+    """
+    Function to create a SearchSummary object where all columns are populated
+    but all are set to values that test False (ie. strings to '', floats/ints
+    to 0, ...). This avoids errors when you try to create a table containing
+    columns you don't care about, but which still need populating. NOTE: This
+    will also produce a process_id with 0 values. For most applications these
+    should be set to their correct values.
+
+    It then populates columns if given them as options.
+
+    Returns
+    --------
+    lsctables.SeachSummary
+        The "empty" SearchSummary object.
+    """
+
+    # create an empty search summary
+    search_summary = lsctables.SearchSummary()
+    cols = lsctables.SearchSummaryTable.validcolumns
+    for entry in cols.keys():
+        if cols[entry] in ['real_4','real_8']:
+            setattr(search_summary,entry,0.)
+        elif cols[entry] == 'int_4s':
+            setattr(search_summary,entry,0)
+        elif cols[entry] == 'lstring':
+            setattr(search_summary,entry,'')
+        elif entry == 'process_id':
+            search_summary.process_id = ilwd.ilwdchar("process:process_id:0")
+        else:
+            raise ValueError("Column %s not recognized" %(entry) )
+
+    # fill in columns
+    if len(ifos):
+        search_summary.ifos = ','.join(ifos)
+    if nevents:
+        search_summary.nevents = nevents
+    if start_time and end_time:
+        search_summary.in_start_time = int(start_time)
+        search_summary.in_start_time_ns = int(start_time % 1 * 1e9)
+        search_summary.in_end_time = int(end_time)
+        search_summary.in_end_time_ns = int(end_time % 1 * 1e9)
+        search_summary.out_start_time = int(start_time)
+        search_summary.out_start_time_ns = int(start_time % 1 * 1e9)
+        search_summary.out_end_time = int(end_time)
+        search_summary.out_end_time_ns = int(end_time % 1 * 1e9)
+
+    return search_summary
+
 def convert_to_sngl_inspiral_table(params, proc_id):
     '''
     Convert a list of m1,m2,spin1z,spin2z values into a basic sngl_inspiral 
@@ -233,7 +283,7 @@ def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2,
     return fMax_theor, gammaVals
 
 def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
-                               ethincaParams, programName="", optDict = {}, 
+                               ethincaParams, programName="", optDict = {},
                                outdoc=None, **kwargs):
     """
     Function that converts the information produced by the various pyCBC bank
@@ -298,6 +348,26 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
                     sngl.mass1, sngl.mass2, sngl.spin1z, sngl.spin2z)
 
     outdoc.childNodes[0].appendChild(sngl_inspiral_table)
+
+    # get times to put in search summary table
+    start_time = 0
+    end_time = 0
+    if 'gps_start_time' in optDict.keys() and 'gps_end_time' in optDict.keys():
+        start_time = optDict['gps_start_time']
+        end_time = optDict['gps_end_time']
+
+    # get IFO to put in search summary table
+    ifos = []
+    if 'channel_name' in optDict.keys():
+        if optDict['channel_name'] is not None:
+            ifos = [optDict['channel_name'][0:2]]
+
+    # make search summary table
+    search_summary_table = lsctables.New(lsctables.SearchSummaryTable) 
+    search_summary = return_search_summary(start_time, end_time,
+                               len(sngl_inspiral_table), ifos, **kwargs)
+    search_summary_table.append(search_summary)
+    outdoc.childNodes[0].appendChild(search_summary_table)
 
     # write the xml doc to disk
     proctable = table.get_table(outdoc, lsctables.ProcessTable.tableName)
