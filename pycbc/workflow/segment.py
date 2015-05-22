@@ -1054,6 +1054,9 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
     """
     from pycbc.events import segments_to_file
     logging.info('Entering generation of science segments')
+    segments_method = workflow.cp.get_opt_tags("workflow-segments", 
+                                      "segments-method", tags)
+    
     make_analysis_dir(out_dir)
     start_time = workflow.analysis_time[0]
     end_time = workflow.analysis_time[1]
@@ -1089,6 +1092,24 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
                                           "SCIENCE_OK", ifo=ifo)]
             
         sci_segs[ifo].coalesce()
+        
+    if segments_method == 'ALL_SINGLE_IFO_TIME':
+        pass
+    elif segments_method == 'COINC_TIME':
+        cum_segs = None
+        for ifo in sci_segs:
+            if cum_segs is not None:
+                cum_segs = (cum_segs & sci_segs[ifo]).coalesce() 
+            else:
+                cum_segs = sci_segs[ifo]
+                
+        for ifo in sci_segs:
+            sci_segs[ifo] = cum_segs 
+    else:
+        raise ValueError("Invalid segments-method, %s. Options are "
+                         "ALL_SINGLE_IFO_TIME and COINC_TIME" % segments_method)
+        
+        
     logging.info('Leaving generation of science segments')
     return sci_segs, seg_files
     
