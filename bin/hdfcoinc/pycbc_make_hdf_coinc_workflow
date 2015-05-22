@@ -101,11 +101,14 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                        output_dir, tags=ctags)  
         final_bg_file =  wf.setup_interval_coinc(workflow, hdfbank, insps, final_veto_file,
                                        output_dir, tags=ctags)   
+        for bg_file in (final_bg_file + bg_files):
+            wf.make_snrifar_plot(workflow, bg_file, 'plots/background', tags=bg_file.tags)
+
         wf.make_foreground_table(workflow, final_bg_file[0], hdfbank[0], tag, 'plots/foreground')
         wf.make_snrchi_plot(workflow, insps, final_veto_file[0], 'plots/background', tags=[tag])
     else:
-        inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank, 
-                                                insps, final_bg_file,
+        inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank,
+                                                full_insps, insps, final_bg_file, final_veto_file,
                                                 output_dir, tags = ctags)
         found_inj = wf.find_injections_in_hdf_coinc(workflow, wf.FileList([inj_coinc]),
                                                 wf.FileList([inj_file]), final_veto_file[0], 

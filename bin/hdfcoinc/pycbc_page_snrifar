@@ -31,21 +31,30 @@ except:
     cstat_fore = None
 
 back_ifar = f['background/ifar'][:]
-
 cstat_back = f['background/stat'][:]
 back_sort = cstat_back.argsort()
 cstat_back = cstat_back[back_sort]
 far_back = 1.0 / back_ifar[back_sort]
-logging.info('Found %s background triggers' % len(cstat_back))
 
 back_fan = f['background/fan'][:][back_sort]
 err_low = far_back * ((back_fan - numpy.sqrt(back_fan)) / back_fan) 
 err_low[err_low == 0] = 1e-100
 err_high = far_back * ((back_fan + numpy.sqrt(back_fan)) / back_fan)
 
+logging.info('Found %s background (inclusive zerolage) triggers' % len(cstat_back))
+
+back_ifar_exc = f['background_exc/ifar'][:]
+cstat_back_exc = f['background_exc/stat'][:]
+back_sort_exc = cstat_back_exc.argsort()
+cstat_back_exc = cstat_back_exc[back_sort_exc]
+far_back_exc = 1.0 / back_ifar_exc[back_sort_exc]
+logging.info('Found %s background (exclusive zerolag) triggers' % len(cstat_back_exc))
+
+
 pylab.figure(1)
 
 pylab.fill_between(cstat_back, err_low, err_high, linewidth=0, color='tan')
+pylab.plot(cstat_back_exc, far_back_exc, color='grey', label='Background (removal)')
 pylab.plot(cstat_back, far_back, color='black', label='Background')
 
 if cstat_fore is not None:

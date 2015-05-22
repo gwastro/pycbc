@@ -16,13 +16,17 @@ parser.add_argument("--coinc-threshold", type=float, default=0.0,
                     help="Seconds to add to time-of-flight coincidence window")
 parser.add_argument("--timeslide-interval", type=float, default=0,
                     help="Inverval between timeslides in seconds.")
-parser.add_argument("--decimation-factor", type=int, default=1000,
+parser.add_argument("--decimation-factor", type=int,
                     help="The factor to reduce the background trigger rate.")
-parser.add_argument("--loudest-keep", type=int, default=200,
+parser.add_argument("--loudest-keep", type=int,
                     help="Number of the loudest triggers to keep from each template.")
+parser.add_argument("--loudest-keep-value", type=float,
+                    help="Keep all coincident triggers above this value.")
 parser.add_argument("--template-fraction-range", help="Optional, format string to"
                     "analyze part of template bank. Format is PART/NUM_PARTS",
                     default="0/1")
+parser.add_argument("--cluster-window", help="Optional, window size in seconds to "
+                    "cluster coincidences over the bank", type=float)
 parser.add_argument("--output-file", help="File to store the coincident triggers")
 parser.add_argument("--statistic-files", help="Statistic mapping files", nargs='*', default=[])
 args = parser.parse_args()    
@@ -194,18 +198,27 @@ for tnum in range(tmin, tmax):
     bi = numpy.where(slide != 0)[0]
     logging.info('%s foreground triggers' % len(fi))
     logging.info('%s background triggers' % len(bi))
-    
-    sep = len(bi) - args.loudest_keep
-    sep = 0 if sep < 0 else sep
-    bsort = numpy.argpartition(c[bi], sep)
- 
-    bl = bi[bsort[0:sep]]
-    bh = bi[bsort[sep:]]
-    del bsort 
-    del bi
-    bl = bl[slide[bl] % args.decimation_factor == 0]
-    
-    ti = numpy.concatenate([bl, bh, fi])
+
+    if args.loudest_keep:    
+        sep = len(bi) - args.loudest_keep
+        sep = 0 if sep < 0 else sep
+
+        bsort = numpy.argpartition(c[bi], sep) 
+        bl = bi[bsort[0:sep]]
+        bh = bi[bsort[sep:]]
+        del bsort 
+        del bi
+        if args.decimation_factor:
+            bl = bl[slide[bl] % args.decimation_factor == 0]
+        else:
+            bl = []
+    elif args.loudest_keep_value:
+        bl, bh = [], bi[c[bi] > args.loudest_keep_value]
+        print len(bl), len(bh)
+    else:
+        bl, bh = [], bi
+
+    ti = numpy.concatenate([bl, bh, fi]).astype(numpy.uint32)
     logging.info('%s after decimation' % len(ti))
    
     g0 = i0[ti]
@@ -214,7 +227,7 @@ for tnum in range(tmin, tmax):
     del i1
        
     data['stat'] += [c[ti]]
-    data['decimation_factor'] += [numpy.repeat([args.decimation_factor, 1, 1], [len(bl), len(bh), len(fi)])]
+    data['decimation_factor'] += [numpy.repeat([args.decimation_factor, 1, 1], [len(bl), len(bh), len(fi)]).astype(numpy.uint32)]
     data['time1'] += [t0[g0]]
     data['time2'] += [t1[g1]]
     data['trigger_id1'] += [tid0[g0]]
@@ -222,11 +235,22 @@ for tnum in range(tmin, tmax):
     data['timeslide_id'] += [slide[ti]]
     data['template_id'] += [numpy.zeros(len(ti), dtype=numpy.uint32) + tnum]
 
+for key in data:
+    data[key] = numpy.concatenate(data[key])
+
+if args.cluster_window and len(data['stat']) > 0:
+    cid = coinc.cluster_coincs(data['stat'], data['time1'], data['time2'], 
+                               data['timeslide_id'], args.timeslide_interval, 
+                               args.cluster_window)
+
 logging.info('saving coincident triggers')
 f = h5py.File(args.output_file, 'w')
-for key in data:
-    f[key] = numpy.concatenate(data[key])
-
+if len(data['stat']) > 0:
+    for key in data:
+        if args.cluster_window:
+            f[key] = data[key][cid]
+        else:
+            f[key] = data[key]
 f['analyzed_start'], f['analyzed_end'] = veto.segments_to_start_end(coinc_segs)
 f.attrs['timeslide_interval'] = args.timeslide_interval
 f.attrs['detector_1'] = det0.name
