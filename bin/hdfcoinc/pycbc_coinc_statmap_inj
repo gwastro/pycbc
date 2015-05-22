@@ -26,7 +26,7 @@ def load_coincs(coinc_files):
             continue            
     for key in data:
         data[key] = numpy.concatenate(data[key])              
-    return data, dict(f.attrs), f['analyzed_start'][:], f['analyzed_end'][:]
+    return data, dict(f.attrs), f['segments/coinc/start'][:], f['segments/coinc/end'][:], f['segments']
 
 def calculate_fan_map(combined_stat, dec):
     """ Return a function to map between false alarm number (FAN) and the
@@ -60,18 +60,18 @@ if args.verbose:
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 logging.info("Loading coinc zerolag triggers")    
-zdata, attrs, start, end = load_coincs(args.zero_lag_coincs)   
+zdata, attrs, start, end, seg = load_coincs(args.zero_lag_coincs)   
 interval = attrs['timeslide_interval']
 zcid = coinc.cluster_coincs(zdata['stat'], zdata['time1'], zdata['time2'], 
                           zdata['timeslide_id'], interval, args.cluster_window)
                      
 logging.info("Loading coinc full inj triggers")    
-fidata, _, _, _ = load_coincs(args.mixed_coincs_full_inj)   
+fidata, _, _, _, _ = load_coincs(args.mixed_coincs_full_inj)   
 ficid = coinc.cluster_coincs(fidata['stat'], fidata['time1'], fidata['time2'], 
                          fidata['timeslide_id'], interval, args.cluster_window)
                      
 logging.info("Loading coinc inj full triggers")    
-izdata, _, _, _ = load_coincs(args.mixed_coincs_inj_full)   
+izdata, _, _, _, _ = load_coincs(args.mixed_coincs_inj_full)   
 ifcid = coinc.cluster_coincs(izdata['stat'], izdata['time1'], izdata['time2'], 
                          izdata['timeslide_id'], interval, args.cluster_window)
 
@@ -79,13 +79,19 @@ f = h5py.File(args.output_file, "w")
 
 f.attrs['detector_1'] = attrs['detector_1']
 f.attrs['detector_2'] = attrs['detector_2']
+f.attrs['timeslide_interval'] = attrs['timeslide_interval']
+
+# Copy over the segment for coincs and singles
+for key in seg.keys():
+    f['segments/%s/start' % key] = seg[key]['start'][:]
+    f['segments/%s/end' % key] = seg[key]['end'][:]
+
 logging.info('writing zero lag triggers')
 
 if len(zdata['stat']) > 0:
     for key in zdata:
         f['foreground/%s' % key] = zdata[key][zcid]
-    f['foreground/analyzed_start'] = start
-    f['foreground/analyzed_end'] = end
+        
 
 logging.info('calculating statistics excluding zerolag')
 fb = h5py.File(args.full_data_background, "r")

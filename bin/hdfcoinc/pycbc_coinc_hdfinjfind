@@ -74,8 +74,8 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
     time2 = f['foreground/time2'][:]
     trig1 = f['foreground/trigger_id1'][:]
     trig2 = f['foreground/trigger_id2'][:]
-    ana_start = f['foreground/analyzed_start'][:]
-    ana_end = f['foreground/analyzed_end'][:]
+    ana_start = f['segments/coinc/start'][:]
+    ana_end = f['segments/coinc/end'][:]
     time = 0.5 * (time1 + time2)
     time_sorting = time.argsort()
 
