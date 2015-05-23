@@ -90,7 +90,7 @@ if opts.veto_file:
     logging.info('Loading veto segments')
     time = trigs['end_time'][:]
     locs, segs = pycbc.events.veto.indices_outside_segments(
-        time, trigs.attrs['ifo'], [opts.veto_file])
+        time, opts.detector, [opts.veto_file])
 else:
     locs = None
 
