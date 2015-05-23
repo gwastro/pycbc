@@ -6,7 +6,7 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib.pyplot import cm
 import pylab
-import pycbc.pnutils
+import pycbc.pnutils, pycbc.results
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--injection-file')
@@ -166,6 +166,8 @@ fvalues = [ifar, ifar_exc]
 do_labels = [True, False]
 alphas = [.8, .3]
 
+fig = pylab.figure()
+
 for j in range(len(args.bins)-1):
     c = next(color)
     for fval, do_label, alpha in zip(fvalues, do_labels, alphas):
@@ -225,4 +227,6 @@ if args.min_dist:
 
 pylab.grid()  
 pylab.legend(loc='lower left')
-pylab.savefig(args.output_file)
+pycbc.results.save_fig_with_metadata(fig, args.output_file, 
+                                     title='%s binning' % args.bin_type, 
+                                     caption='')

@@ -16,7 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import os.path
+import os.path, types
 
 from ConfigParser import ConfigParser
 from jinja2 import Environment, FileSystemLoader
@@ -29,10 +29,15 @@ from pycbc.workflow.segment import fromsegmentxml
 def get_embedded_config(filename):
     """ Attempt to load config data attached to file
     """
+    def check_option(self, section, name):
+        return self.has_section(section) and (self.has_option(section, name) or (name in self.defaults()))
+    
     try:
         cp = pycbc.results.load_metadata_from_file(filename)
     except TypeError:
         cp = ConfigParser()
+        
+    cp.check_option = types.MethodType(check_option, cp)
     return cp
 
 def setup_template_render(path, config_path):
@@ -80,7 +85,6 @@ def render_default(path, cp):
 
    # XML file condition
    if path.endswith('.xml') or path.endswith('.xml.gz'):
-
        # segment or veto file return a segmentslistdict instance
        if 'SEG' in path or 'VETO' in path:
            with open(path, 'r') as xmlfile:

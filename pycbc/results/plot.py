@@ -18,8 +18,9 @@ def save_png_with_metadata(fig, filename, fig_kwds, kwds):
     im.save(filename, "png", pnginfo=meta)
 
 def load_png_metadata(filename):
-    cp = ConfigParser.ConfigParser(Image.open(filename).info)
-    cp.add_section(filename)
+    data = Image.open(filename).info
+    cp = ConfigParser.ConfigParser(data)
+    cp.add_section(os.path.basename(filename))
     return cp
     
 _metadata_saver = {'.png':save_png_with_metadata,

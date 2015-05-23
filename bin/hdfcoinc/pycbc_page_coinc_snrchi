@@ -2,7 +2,7 @@
 import numpy, h5py, argparse, matplotlib, mpld3
 from matplotlib import colors
 matplotlib.use('Agg')
-import pylab
+import pylab, pycbc.results
 
 def snr_from_chisq(chisq, newsnr, q=6.):
     snr = numpy.zeros(len(chisq)) + float(newsnr)
@@ -41,7 +41,7 @@ chisq_dof = f['chisq_dof'][:][tid]
 chisq /= (chisq_dof * 2 - 2) 
 chisq[l] = 0.1
 
-
+fig = pylab.figure()
 pylab.scatter(snr, chisq, marker='o', color='black',
               linewidth=0, s=2.0, label='background', 
               zorder=args.background_front)
@@ -88,4 +88,6 @@ pylab.ylim(chisq.min()*0.9, chisq.max()*1.1)
 pylab.legend(loc='upper left', prop={'size': 12})
 pylab.grid(which='major', ls='solid', alpha=0.7, linewidth=.5)
 pylab.grid(which='minor', ls='solid', alpha=0.7, linewidth=.1)
-pylab.savefig(args.output_file, dpi=300)
+pycbc.results.save_fig_with_metadata(fig, args.output_file, 
+                                     title='%s background with injections %s' % (ifo.upper(), 'behind' if args.background_front else 'ontop'), 
+                                     caption='')
