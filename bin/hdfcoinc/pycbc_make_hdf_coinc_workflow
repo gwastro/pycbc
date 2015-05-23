@@ -114,16 +114,16 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                                 wf.FileList([inj_file]), final_veto_file[0], 
                                                 output_dir, tags=ctags)
         inj_coincs += [inj_coinc]                      
-        wf.make_sensitivity_plot(workflow, found_inj, 'plots/sensitivity',
+        wf.make_sensitivity_plot(workflow, found_inj, 'plots/sensitivity/%s' % tag,
                                  tags=ctags)
-        wf.make_foundmissed_plot(workflow, found_inj, tag, 'plots/foundmissed', 
+        wf.make_foundmissed_plot(workflow, found_inj, tag, 'plots/foundmissed/%s' % tag, 
                                  tags=[tag])
-        wf.make_inj_table(workflow, found_inj, 'plots/foundmissed', tags=[tag])
+        wf.make_inj_table(workflow, found_inj, 'plots/foundmissed/%s' % tag, tags=[tag])
                                  
         for inj_insp, trig_insp in zip(insps, full_insps):
             wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 
                                       final_bg_file[0], trig_insp,
-                                      'plots/background', tags=[tag])
+                                      'plots/background/%s' % tag, tags=[tag])
    
 full_segs = []                                 
 for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
