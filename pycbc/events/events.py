@@ -341,7 +341,7 @@ class EventManager(object):
             f['sigmasq'] = template_sigmasq[tid]
 
             template_durations = [p['tmplt'].template_duration for p in self.template_params]
-            f['template_duration'] = numpy.array(template_durations, dtype=numpy.float32)        
+            f['template_duration'] = numpy.array(template_durations, dtype=numpy.float32)[tid]        
          
             # FIXME: Can we get this value from the autochisq instance?
             cont_dof = self.opt.autochi_number_points
