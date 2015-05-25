@@ -328,7 +328,7 @@ class EventManager(object):
         
         tid = self.events['template_id']
         f = fw(outname, self.opt.channel_name[0:2])
-        
+
         if len(self.events):
             f['snr'] = abs(self.events['snr'])
             f['coa_phase'] = numpy.angle(self.events['snr'])
@@ -339,6 +339,9 @@ class EventManager(object):
             
             template_sigmasq = numpy.array([t['sigmasq'] for t in self.template_params], dtype=numpy.float32)
             f['sigmasq'] = template_sigmasq[tid]
+
+            template_durations = [p['tmplt'].template_duration for p in self.template_params]
+            f['template_duration'] = numpy.array(template_durations, dtype=numpy.float32)[tid]        
          
             # FIXME: Can we get this value from the autochisq instance?
             cont_dof = self.opt.autochi_number_points
