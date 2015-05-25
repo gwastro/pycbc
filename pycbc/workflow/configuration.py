@@ -319,8 +319,10 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         
         if len(subsections) > 0:
             return [sec.split('-')[1] for sec in subsections]
-        else:
+        elif self.has_section(section_name):
             return ['']
+        else:
+            return []
 
     def perform_extended_interpolation(self):
         """
