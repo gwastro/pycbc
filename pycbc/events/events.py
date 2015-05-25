@@ -211,6 +211,25 @@ class EventManager(object):
         i = indices_within_times(gpstime, inj_time - window, inj_time + window)
         self.events = self.events[i]
 
+    def keep_loudest_in_interval(self, window, num_keep):
+        if len(self.events) == 0:
+            return
+        
+        e = self.events
+        stat = newsnr(abs(e['snr']), e['chisq'] / e['chisq_dof'])
+        time = e['time_index']
+        
+        wtime = (time / window).astype(numpy.int32)
+        bins = numpy.unique(wtime)
+        
+        keep = []
+        for b in bins:
+            bloc = numpy.where((wtime == b))[0]
+            bloudest = stat[bloc].argsort()[-num_keep:]
+            keep.append(bloc[bloudest])
+        keep = numpy.concatenate(keep)
+        self.events = e[keep]
+
     def maximize_over_bank(self, tcolumn, column, window):
         if len(self.events) == 0:
             return
