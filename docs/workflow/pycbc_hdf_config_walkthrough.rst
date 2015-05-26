@@ -1,5 +1,5 @@
 =====
-Instructions for running pycbc on sugar cluster
+Instructions for running pycbc on sugar or atlas cluster
 =====
 
 Alex will give you the install script and then make a directory and do the following:
