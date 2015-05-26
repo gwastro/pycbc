@@ -27,19 +27,21 @@ from ConfigParser import ConfigParser
 
 from glue import lal
 from glue import segments
+from pycbc.events import newsnr
 
 # parse command line
 parser = argparse.ArgumentParser(usage='pycbc_plot_glitchgram [--options]',
-                  description="Plot template duration versus time for
+                  description="Plot template duration versus time for \
                   each trigger, and a colorbar to indicate significance.")
 parser.add_argument('--trigger-files', type=str, nargs="+",
-                  help='Input xml files with SnglInspiral triggers.')
+                  help='Input trigger files. May be XML or HDF files.')
 parser.add_argument('--output-file', type=str,
                   help='Output image file.')
 parser.add_argument('--config-file', type=str,
                   help='Output configuration file for the image file.')
-parser.add_argument('--hdf', action='store_true', default=False,
-                  help='Trigger files are HDF files.')
+parser.add_argument('--ifo', type=str,
+                  help='IFO to plot in HDF trigger files. Required if \
+                        using HDF trigger files.')
 parser.add_argument('--gps-start-time', type=int,
                   help='Time to start plotting.')
 parser.add_argument('--gps-end-time', type=int,
@@ -60,15 +62,25 @@ tmpltDuration = np.array([])
 significance  = np.array([])
 
 # check if trigger files are HDF format
-if opts.hdf:
+if opts.ifo:
 
     # loop over HDF trigger files
-    for trigger_file in opts.trigger_file:
+    for trigger_file in opts.trigger_files:
 
         # read HDF trigger file
         fp = h5py.File(trigger_file, 'r')
 
-        # 
+        # put data into arrays
+        hourEndTime = np.append(hourEndTime,
+               (fp[opts.ifo]['end_time'][:] - opts.gps_start_time)/(60.0*60.0))
+        tmpltDuration = np.append(tmpltDuration,
+               fp[opts.ifo]['template_duration'][:])
+        if opts.new_snr:
+            reduced_chisq = fp[opts.ifo]['chisq'][:] / ( 2*fp[opts.ifo]['chisq_dof'][:] - 2 )
+            significance = np.append(significance,
+                      newsnr(fp[opts.ifo]['snr'][:], reduced_chisq))
+        else:
+            significance = np.append(significance, fp[opts.ifo]['snr'][:])
 
 # otherwise assume trigger files are XML format
 else:
@@ -82,12 +94,13 @@ else:
     # put data into arrays
     for trig in inspiralTable:
         trigTime = trig.end_time + trig.end_time_ns * 10**(-9)
-        np.append(hourEndTime, (trigTime - opts.gps_start_time)/(60.0*60.0))
-        np.append(tmpltDuration, trig.template_duration)
+        hourEndTime = np.append(hourEndTime,
+                                (trigTime - opts.gps_start_time)/(60.0*60.0))
+        tmpltDuration = np.append(tmpltDuration, trig.template_duration)
         if opts.new_snr:
-            np.append(significance, trig.get_new_snr())
+            significance = np.append(significance, trig.get_new_snr())
         else:
-            np.append(significance, trig.snr)
+            significance = np.append(significance, trig.snr)
 
 # turn data into pylab arrays
 x = plt.array(hourEndTime)
