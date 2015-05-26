@@ -279,6 +279,7 @@ Define the waveforms you want to use for injections
   seed = 1234
   
 These are the injections parameters you want to define. Only defining ones which aren’t so obvious
+
 - ``f-lower`` = low frequency cut off
 - ``min-distance`` =  (kpc)
 - ``max-distance`` = (kpc)
@@ -314,6 +315,7 @@ These are the injections parameters you want to define. Only defining ones which
   low-frequency-cutoff = 40
   
 These are the parameters you want to define for the inspiral search
+
 - ``chisq-bins`` = number of bins to chop the signal (in frequency) into. Each bin has equal weighting and leads to newSNR
 - ``snr-threshold`` = newSNR threshold
 - ``approximant`` = approximation you want to use. SPAtmplt is stationary phase approximation template which is a fast implementation of Taylor F2.
