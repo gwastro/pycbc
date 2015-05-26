@@ -62,8 +62,13 @@ significance  = np.array([])
 # check if trigger files are HDF format
 if opts.hdf:
 
-    # insert code here
-    pass 
+    # loop over HDF trigger files
+    for trigger_file in opts.trigger_file:
+
+        # read HDF trigger file
+        fp = h5py.File(trigger_file, 'r')
+
+        # 
 
 # otherwise assume trigger files are XML format
 else:
