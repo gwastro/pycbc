@@ -345,6 +345,7 @@ class EventManager(object):
             f['coa_phase'] = numpy.angle(self.events['snr'])
             f['chisq'] = self.events['chisq']
             f['bank_chisq'] = self.events['bank_chisq']
+            f['bank_chisq_dof'] = self.events['bank_chisq_dof']
             f['cont_chisq'] = self.events['cont_chisq']
             f['end_time'] = self.events['time_index'] / float(self.opt.sample_rate) + self.opt.gps_start_time
 
@@ -363,7 +364,6 @@ class EventManager(object):
             if self.opt.autochi_max_valued_dof:
                 cont_dof = self.opt.autochi_max_valued_dof
             f['cont_chisq_dof'] = numpy.repeat(cont_dof, len(self.events))
-            f['bank_chisq_dof'] = numpy.repeat(10, len(self.events))
 
             if 'chisq_dof' in self.events.dtype.names:
                 f['chisq_dof'] = self.events['chisq_dof'] / 2 + 1
@@ -472,22 +472,20 @@ class EventManager(object):
             # FIXME: This is *not* the dof!!!
             # but is needed for later programs not to fail
             if 'chisq_dof' in event.dtype.names:
-                # fail through: copy the value from the trigger
                 row.chisq_dof = event['chisq_dof'] / 2 + 1
             else:
                 row.chisq_dof = 0
 
             if hasattr(self.opt, 'bank_veto_bank_file')\
                     and self.opt.bank_veto_bank_file:
-                # FIXME: Why is this hardcoded?
-                row.bank_chisq_dof = 10
                 row.bank_chisq = event['bank_chisq']
+                row.bank_chisq_dof = event['bank_chisq_dof']
             else:
                 row.bank_chisq_dof = 0
                 row.bank_chisq = 0
 
             if hasattr(self.opt, 'autochi_number_points')\
-                    and self.opt.autochi_number_points>0:
+                    and self.opt.autochi_number_points > 0:
                 row.cont_chisq = event['cont_chisq']
                 # FIXME: Can this come from the autochisq instance?
                 cont_dof = self.opt.autochi_number_points

@@ -206,14 +206,24 @@ class SingleDetBankVeto(object):
     def cache_overlaps(self, template, psd):
         key = (id(template.params), id(psd))
         if key not in self._overlaps_cache:
-            logging.info("...Calculate Bank Chisq Overlaps")
+            logging.info("...Calculate bank veto overlaps")
             o = template_overlaps(self.filters, template, psd, self.f_low)
             self._overlaps_cache[key] = o
         return self._overlaps_cache[key]
 
     def values(self, template, psd, stilde, snrv, norm, indices):
+        """
+        Returns
+        -------
+        bank_chisq_from_filters: TimeSeries of bank veto values - if indices
+        is None then evaluated at all time samples, if not then only at 
+        requested sample indices
+
+        bank_chisq_dof: int, approx number of statistical degrees of freedom
+        """
         if self.do:
-            logging.info("...Doing Bank Chisq")
+            logging.info("...Doing bank veto")
             overlaps = self.cache_overlaps(template, psd)
             bank_veto_snrs, bank_veto_norms = self.cache_segment_snrs(stilde, psd)
-            return bank_chisq_from_filters(snrv, norm, bank_veto_snrs, bank_veto_norms, overlaps, indices)
+            return bank_chisq_from_filters(snrv, norm, bank_veto_snrs,
+                  bank_veto_norms, overlaps, indices), self.dof
