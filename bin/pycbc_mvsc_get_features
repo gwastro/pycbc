@@ -24,7 +24,7 @@ The columns of the .pat file correspond to the features that characterize double
 
 time1 = time()
 
-__author__ = "Kari Hodge <khodge@ligo.caltech.edu>, Shasvath J. Kapadia <skapadia@email.uark.edu>, Thomas Dent <thomas.dent@aei.mpg.de>"
+__author__ = "Kari Hodge <khodge@ligo.caltech.edu>, Shasvath J. Kapadia <skapadia@email.uark.edu>, Thomas Dent <thomas.dent@aei.mpg.de"
 
 sqlite3.enable_callback_tracebacks(True)
 
@@ -34,7 +34,8 @@ parser.add_argument("--number", default=10, type=int, help="folds for cross-vali
 parser.add_argument("--factor", default=50.0, type=float, help="the value of the magic number factor in the effective snr formula, should be 50 for highmass and 250 for lowmass. Default 50")
 parser.add_argument("--instruments", help="pair of detectors. Example: H1,L1")
 parser.add_argument("--output-tag", default="CBC", help="a string added to all filenames")
-parser.add_argument("--apply-weights", action="store_true", default=False, help="calculates weight (which is a function of distance to source, or, equivalently, SNR) for all found injections. Weights are saved in .pat file (all noise events get weight=1). If this option is not supplied, all (noise+signal) events get a weight of 1.")
+parser.add_argument("--apply-weights", action="store_true", default=False, help="calculates weight (which is a function of distance to source) for all found injections. Weights are saved in .pat file (all noise events get weight=1). If this option is not supplied, all (noise+signal) events get a weight of 1.")
+parser.add_argument("--reference-dist", type=float, default=300, help="distance (Mpc) for normalizing injection weights when training. Default 300")
 parser.add_argument("--exact-tag", default="ring_exact", help="this is the dbinjfind tag stored in the sqlite database for the exactly found injections - the ones you want to use for training")
 parser.add_argument("-s","--tmp-space",help="necessary for sqlite calls, for example /local/user/shasvath.kapadia on Atlas")
 parser.add_argument("--nearby-tag", default="ring_nearby", help="this is the dbinjfind tag stored in the sqlite for the nearby injections - we will still rank all of these")
@@ -99,21 +100,21 @@ class Trigger:
 		self.a_reduced_cont_chisq = reduced_cont_chisq_func(self.a_cont_chisq, self.a_cont_chisq_dof)
 		self.b_reduced_cont_chisq = reduced_cont_chisq_func(self.b_cont_chisq, self.b_cont_chisq_dof)
 
-        def calc_reduced_bank_chisq(self):
-                self.a_reduced_bank_chisq = reduced_bank_chisq_func(self.a_bank_chisq, self.a_bank_chisq_dof)
-                self.b_reduced_bank_chisq = reduced_bank_chisq_func(self.b_bank_chisq, self.b_bank_chisq_dof)
+	def calc_reduced_bank_chisq(self):
+		self.a_reduced_bank_chisq = reduced_bank_chisq_func(self.a_bank_chisq, self.a_bank_chisq_dof)
+		self.b_reduced_bank_chisq = reduced_bank_chisq_func(self.b_bank_chisq, self.b_bank_chisq_dof)
 
-        def calc_effective_snr(self):
-                self.a_effective_snr = effective_snr_func(self.a_snr, self.a_chisq, self.a_chisq_dof, self.fac)
-                self.b_effective_snr = effective_snr_func(self.b_snr, self.b_chisq, self.b_chisq_dof, self.fac)
+	def calc_effective_snr(self):
+		self.a_effective_snr = effective_snr_func(self.a_snr, self.a_chisq, self.a_chisq_dof, self.fac)
+		self.b_effective_snr = effective_snr_func(self.b_snr, self.b_chisq, self.b_chisq_dof, self.fac)
 
-        def calc_bank_effective_snr(self):
-                self.a_bank_effective_snr = bank_effective_snr_func(self.a_snr, self.a_bank_chisq, self.a_bank_chisq_dof, self.fac)
-                self.b_bank_effective_snr = bank_effective_snr_func(self.b_snr, self.b_bank_chisq, self.b_bank_chisq_dof, self.fac)
+	def calc_bank_effective_snr(self):
+		self.a_bank_effective_snr = bank_effective_snr_func(self.a_snr, self.a_bank_chisq, self.a_bank_chisq_dof, self.fac)
+		self.b_bank_effective_snr = bank_effective_snr_func(self.b_snr, self.b_bank_chisq, self.b_bank_chisq_dof, self.fac)
 
-        def calc_cont_effective_snr(self):
-                self.a_cont_effective_snr = cont_effective_snr_func(self.a_snr, self.a_cont_chisq, self.a_cont_chisq_dof, self.fac)
-                self.b_cont_effective_snr = cont_effective_snr_func(self.b_snr, self.b_cont_chisq, self.b_cont_chisq_dof, self.fac)
+	def calc_cont_effective_snr(self):
+		self.a_cont_effective_snr = cont_effective_snr_func(self.a_snr, self.a_cont_chisq, self.a_cont_chisq_dof, self.fac)
+		self.b_cont_effective_snr = cont_effective_snr_func(self.b_snr, self.b_cont_chisq, self.b_cont_chisq_dof, self.fac)
 
 	##  Difference features:
 	def calc_delta_t(self):
@@ -121,27 +122,23 @@ class Trigger:
 				-dbtables.lsctables.LIGOTimeGPS(self.b_end_time + self.b_offset, self.b_end_time_ns))
 
 	def calc_delta_phi(self):
-		self.delta_phi = mod2pi(self.a_coal_phase-self.b_coal_phase)
+		self.delta_phi = mod2pi(self.a_coa_phase-self.b_coa_phase)
 
 	def calc_eff_dist_ratio(self):
 		self.eff_dist_ratio = self.a_eff_distance/self.b_eff_distance
 
 	##  Assign weight to signal triggers, if specified by user and if the injection
 	##  distance distribution is recognized.
-	def set_weight(self, opt_weights, distance, value=None):
-
-		if opt_weights:
-                        if self.sn_bool == 1:
-                                if value == "uniform":
-                                        self.weight = (distance/100)**2
-                                if value == "log10":
-                                        self.weight = (distance/100)**3
-                                if value == "volume":
-                                        self.weight = 1
-                        else:
-                                self.weight = 1
-                else:
-                        self.weight = 1
+	def set_weight(self, opt_weights, reference_dist=300.):
+		# default value for zerolag, time slides and unrecognized distributions
+		self.weight = 1
+		if (opt_weights and self.sn_bool == 1):
+			if self.d_distr == "uniform":
+				self.weight = (self.distance/reference_dist)**2
+			if self.d_distr == "log10":
+				self.weight = (self.distance/reference_dist)**3
+			if self.d_distr == "volume":
+				self.weight = 1
 
 #####################################################################
 
@@ -186,8 +183,8 @@ ifos.sort()
 
 allfeatures = (args.sngl_features_list + args.sngl_derived_features_list + args.coinc_features_list + args.difference_features_list) 
 if len(allfeatures) == 0:
-        print "ERROR: Please supply features!"
-        exit(0)
+	print "ERROR: Please supply features!"
+	exit(0)
 
 print "### Getting information from database ..."
 
@@ -305,9 +302,9 @@ for dtype, sn_bool in zip(datatypes, sn_bool_list):
 			trig.distance = trig_coinc["distance"]
 			trig.d_distr = trig_coinc["value"]
 		else:
-			trig.distance = None
-			trig.d_distr = None	
-		trig.set_weight(args.apply_weights, trig.distance, trig.d_distr)
+			trig.distance = -1  # dummy value for non-injection coincs
+			trig.d_distr = None
+		trig.set_weight(args.apply_weights, args.reference_dist)
 
 		# Append triggers to temporary list
 		trig_tmp_list.append(trig)
@@ -330,13 +327,11 @@ for feature in args.sngl_derived_features_list:
 	features_list.append("a_" + feature)
 	features_list.append("b_" + feature)
 
-#features_list = features_list + difference_features_list + ["weight"]
 features_list = features_list + args.difference_features_list
 output_columns = features_list + ["weight", "sn_bool"]
 # Format to save features in .pat files
 # Formats include columns for weights and sn_bool, which are not features
 formats = ["%1.6e"]*(len(features_list)+1) + ["%d"]
-#features_list = features_list + ["sn_bool"]
 
 
 ############################ K-fold Cross Validation ########################################
@@ -375,7 +370,7 @@ for i,(exact_inj_partition,ts_partition) in enumerate(zip(exact_injections_parti
 						if trig.coinc_inspiral_time >= gps_inj_lower and trig.coinc_inspiral_time <= gps_inj_upper]
 
 	# Noise triggers for testing (taken from timeslides, which does NOT include zerolag triggers)
-        timeslides_testing = ts_partition.tolist()
+	timeslides_testing = ts_partition.tolist()
 
 	# Merge signal and noise triggers for testing
 	triggers_testing = all_injections_testing + timeslides_testing 
@@ -388,26 +383,20 @@ for i,(exact_inj_partition,ts_partition) in enumerate(zip(exact_injections_parti
 	np.savetxt(filename, trigger_testing_features, fmt=formats, delimiter='\t')
 
 	for line in fileinput.input([filename], inplace=True):
-        	if fileinput.isfirstline():
+		if fileinput.isfirstline():
 			print (str(len(features_list)) + '\n' + '\t'.join(features_list))
-        	print line,
+		print line,
 
-        # Extract testing trigger object attributes, to be subsequently used as features
+	# Extract testing trigger object attributes, to be subsequently used as features
 	triggers_testing_info = tuple([[trig.coinc_event_id, args.database] for trig in triggers_testing])
 
-        # Save testing trigger features in .pat files tagged with a partition/set number tag
-        filename = ''.join(ifos) + '_' + args.output_tag + '_set' + str(i) + '_' + 'evaluation_info' + '.pat'
-        np.savetxt(filename, triggers_testing_info, fmt="%s", delimiter='\t')
-
-        #for line in fileinput.input([filename], inplace=True):
-         #       if fileinput.isfirstline():
-          #              print '\t\t\t'.join(["coinc_event_id", "Database Name"])
-           #     print line,
-
+	# Save testing trigger features in .pat files tagged with a partition/set number tag
+	filename = ''.join(ifos) + '_' + args.output_tag + '_set' + str(i) + '_' + 'evaluation_info' + '.pat'
+	np.savetxt(filename, triggers_testing_info, fmt="%s", delimiter='\t')
 
 	###############################################################
 	
-        ############# Acquire and save training trigger features ###########
+	############# Acquire and save training trigger features ###########
 
 	print "### Acquiring training trigger features for round #%d in round-robin ..."%i
 	# Signal triggers for training (taken from exact_injections, which consists of ONLY exact injections (duh))
@@ -423,14 +412,14 @@ for i,(exact_inj_partition,ts_partition) in enumerate(zip(exact_injections_parti
 	# Extract training trigger object attributes, to be subsequently used as features
 	trigger_training_features = tuple([[getattr(trig,c) for c in output_columns] for trig in triggers_training])
 
-        # Save training trigger features in .pat files tagged with a partition/set number tag
-        filename = ''.join(ifos) + '_' + args.output_tag + '_set' + str(i) + '_' + "training" + '.pat'
-        np.savetxt(filename, trigger_training_features, fmt=formats, delimiter='\t')
+	# Save training trigger features in .pat files tagged with a partition/set number tag
+	filename = ''.join(ifos) + '_' + args.output_tag + '_set' + str(i) + '_' + "training" + '.pat'
+	np.savetxt(filename, trigger_training_features, fmt=formats, delimiter='\t')
 
-        for line in fileinput.input([filename], inplace=True):
-                if fileinput.isfirstline():
+	for line in fileinput.input([filename], inplace=True):
+		if fileinput.isfirstline():
 			print (str(len(features_list)) + '\n' + '\t'.join(features_list))
-                print line,
+		print line,
 
 	################################################################
 
@@ -447,12 +436,12 @@ for i,(exact_inj_partition,ts_partition) in enumerate(zip(exact_injections_parti
 			print (str(len(features_list)) + '\n' + '\t'.join(features_list))
 		print line,
 
-        # Extract testing trigger object attributes, to be subsequently used as features
-        zerolag_trigger_info = tuple([[trig.coinc_event_id, args.database] for trig in all_trigs_dict["zerolags"]])
+	# Extract testing trigger object attributes, to be subsequently used as features
+	zerolag_trigger_info = tuple([[trig.coinc_event_id, args.database] for trig in all_trigs_dict["zerolags"]])
 
-        # Save zerolag trigger features in .pat files tagged with a partition/set number tag
-        filename = ''.join(ifos) + '_' + args.output_tag + '_set' + str(i) + '_' + 'zerolag_info' + '.pat'
-        np.savetxt(filename, zerolag_trigger_info, fmt="%s", delimiter='\t')
+	# Save zerolag trigger features in .pat files tagged with a partition/set number tag
+	filename = ''.join(ifos) + '_' + args.output_tag + '_set' + str(i) + '_' + 'zerolag_info' + '.pat'
+	np.savetxt(filename, zerolag_trigger_info, fmt="%s", delimiter='\t')
 
 
 print "### Done!"
