@@ -2,12 +2,12 @@
 Instructions for running pycbc on sugar or atlas cluster
 =====
 
-Alex will give you the install script and then make a directory and do the following:
+Using the include environment install script :download:`example script <resources/install_pycbc_env>`
 
 ::
 
   chmod 755 install
-  ./install /abs/path/to/working/directory
+  ./install_pycbc_env /abs/path/to/working/directory
 
 After this, pycbc and its dependencies should be installed. You just need to source it
 
@@ -15,7 +15,7 @@ After this, pycbc and its dependencies should be installed. You just need to sou
 
   source /path/to/dir/source
 
-You need to make sure you activate mkl (math kernel library) before you get going.
+You may need to make sure you activate mkl (math kernel library) before you get going.
 
 ::
 
