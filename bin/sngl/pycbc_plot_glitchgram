@@ -18,30 +18,28 @@
 
 import argparse
 import glob
-import os
-
-import numpy as np
+import h5py
 import matplotlib as mpl; mpl.use('Agg')
 import matplotlib.pylab as plt
+import numpy as np
+import os
 from ConfigParser import ConfigParser
 
 from glue import lal
 from glue import segments
 
-from pylal import SnglInspiralUtils
-
 # parse command line
-parser = argparse.ArgumentParser(usage='pycbc_plot_glitchgram \
-[--options]',
-                                 description="Plot template duration \
-                                 versus time for each trigger, and a \
-                                 colorbar to indicate significance.")
+parser = argparse.ArgumentParser(usage='pycbc_plot_glitchgram [--options]',
+                  description="Plot template duration versus time for
+                  each trigger, and a colorbar to indicate significance.")
 parser.add_argument('--trigger-files', type=str, nargs="+",
                   help='Input xml files with SnglInspiral triggers.')
 parser.add_argument('--output-file', type=str,
                   help='Output image file.')
 parser.add_argument('--config-file', type=str,
                   help='Output configuration file for the image file.')
+parser.add_argument('--hdf', action='store_true', default=False,
+                  help='Trigger files are HDF files.')
 parser.add_argument('--gps-start-time', type=int,
                   help='Time to start plotting.')
 parser.add_argument('--gps-end-time', type=int,
@@ -56,21 +54,35 @@ ranges = [(0,8,'b',3,'0 to 8'),
           (8,16,'g',15,'8 to 16'),
           (16,float('inf'),'r',15,'16 to Infinity')]
 
-# read inspiral triggers
-inspiralTable = SnglInspiralUtils.ReadSnglInspiralFromFiles(opts.trigger_files)
+# initialize arrays for plotting
+hourEndTime   = np.array([])
+tmpltDuration = np.array([])
+significance  = np.array([])
 
-# put data into arrays
-hourEndTime   = []
-tmpltDuration = []
-significance  = []
-for trig in inspiralTable:
-  trigTime = trig.end_time + trig.end_time_ns * 10**(-9)
-  hourEndTime.append((trigTime - opts.gps_start_time)/(60.0*60.0))
-  tmpltDuration.append(trig.template_duration)
-  if opts.new_snr:
-    significance.append(trig.get_new_snr())
-  else:
-    significance.append(trig.snr)
+# check if trigger files are HDF format
+if opts.hdf:
+
+    # insert code here
+    pass 
+
+# otherwise assume trigger files are XML format
+else:
+
+    # import pylal dependency for reading XML files
+    from pylal import SnglInspiralUtils
+
+    # read inspiral triggers
+    inspiralTable = SnglInspiralUtils.ReadSnglInspiralFromFiles(opts.trigger_files)
+
+    # put data into arrays
+    for trig in inspiralTable:
+        trigTime = trig.end_time + trig.end_time_ns * 10**(-9)
+        np.append(hourEndTime, (trigTime - opts.gps_start_time)/(60.0*60.0))
+        np.append(tmpltDuration, trig.template_duration)
+        if opts.new_snr:
+            np.append(significance, trig.get_new_snr())
+        else:
+            np.append(significance, trig.snr)
 
 # turn data into pylab arrays
 x = plt.array(hourEndTime)
