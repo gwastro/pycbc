@@ -25,7 +25,7 @@
 This module is responsible for setting up plotting jobs.
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
-from pycbc.workflow.core import FileList, make_analysis_dir, Executable, Node
+from pycbc.workflow.core import FileList, makedir, Executable, Node
  
 class PlotExecutable(Executable):
     """ This converts xml tmpltbank to an hdf format
@@ -33,7 +33,7 @@ class PlotExecutable(Executable):
     current_retention_level = Executable.FINAL_RESULT
  
 def make_segments_plot(workflow, seg_files, out_dir, tags=[]):
-    make_analysis_dir(out_dir)
+    makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'plot_segments', ifos=workflow.ifos,
                          out_dir=out_dir, tags=tags).create_node()
     node.add_input_list_opt('--segment-files', seg_files)
@@ -41,7 +41,7 @@ def make_segments_plot(workflow, seg_files, out_dir, tags=[]):
     workflow += node
         
 def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir, tags=[]):
-    make_analysis_dir(out_dir)
+    makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'page_foreground', ifos=workflow.ifos,
                     out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--bank-file', bank_file)
@@ -51,7 +51,7 @@ def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir, tags=[]
     workflow += node
 
 def make_sensitivity_plot(workflow, inj_file, out_dir, tags=[]):
-    make_analysis_dir(out_dir)   
+    makedir(out_dir)   
     for tag in workflow.cp.get_subsections('plot_sensitivity'):
         node = PlotExecutable(workflow.cp, 'plot_sensitivity', ifos=workflow.ifos,
                     out_dir=out_dir, tags=[tag] + tags).create_node()
@@ -60,7 +60,7 @@ def make_sensitivity_plot(workflow, inj_file, out_dir, tags=[]):
         workflow += node
 
 def make_coinc_snrchi_plot(workflow, inj_file, inj_trig, stat_file, trig_file, out_dir, tags=[]):
-    make_analysis_dir(out_dir)    
+    makedir(out_dir)    
     for tag in workflow.cp.get_subsections('plot_coinc_snrchi'):
         node = PlotExecutable(workflow.cp, 'plot_coinc_snrchi', ifos=inj_trig.ifo,
                     out_dir=out_dir, tags=[tag] + tags).create_node()
@@ -72,7 +72,7 @@ def make_coinc_snrchi_plot(workflow, inj_file, inj_trig, stat_file, trig_file, o
         workflow += node
 
 def make_inj_table(workflow, inj_file, out_dir, tags=[]):
-    make_analysis_dir(out_dir)
+    makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'page_injections', ifos=workflow.ifos,
                     out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--injection-file', inj_file)
@@ -80,7 +80,7 @@ def make_inj_table(workflow, inj_file, out_dir, tags=[]):
     workflow += node   
 
 def make_snrchi_plot(workflow, trig_files, veto_file, out_dir, tags=[]):
-    make_analysis_dir(out_dir)    
+    makedir(out_dir)    
     for tag in workflow.cp.get_subsections('plot_snrchi'):
         for trig_file in trig_files:
             node = PlotExecutable(workflow.cp, 'plot_snrchi',
@@ -94,21 +94,33 @@ def make_snrchi_plot(workflow, trig_files, veto_file, out_dir, tags=[]):
             node.new_output_file_opt(trig_file.segment, '.png', '--output-file')
             workflow += node  
 
-def make_foundmissed_plot(workflow, inj_file, inj_tag, out_dir, tags=[]):
-    make_analysis_dir(out_dir)
-    
+def make_foundmissed_plot(workflow, inj_file, out_dir, tags=[]):
+    makedir(out_dir)   
     for tag in workflow.cp.get_subsections('plot_foundmissed'):
-        node = PlotExecutable(workflow.cp, 'plot_foundmissed', ifos=workflow.ifos,
-                    out_dir=out_dir, tags=[tag] + tags).create_node()
-        node.add_opt('--injection-tag', inj_tag)
+        exe = PlotExecutable(workflow.cp, 'plot_foundmissed', ifos=workflow.ifos,
+                    out_dir=out_dir, tags=[tag] + tags)
+        node = exe.create_node()        
+        ext = '.html' if exe.has_opt('dynamic') else '.png'
         node.add_input_opt('--injection-file', inj_file)
-        node.new_output_file_opt(inj_file.segment, '.html', '--output-file')
+        node.new_output_file_opt(inj_file.segment, ext, '--output-file')
         workflow += node   
     
 def make_snrifar_plot(workflow, bg_file, out_dir, tags=[]):
-    make_analysis_dir(out_dir)
+    makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'plot_snrifar', ifos=workflow.ifos,
                 out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--trigger-file', bg_file)
     node.new_output_file_opt(bg_file.segment, '.png', '--output-file')
+    workflow += node
+    
+def make_results_web_page(workflow, results_dir):
+    import pycbc.results
+    template_path =  pycbc.results.__path__[0] + '/templates/concrete.html'
+
+    out_dir = workflow.cp.get('results_page', 'output-path')
+    makedir(out_dir)
+    node = PlotExecutable(workflow.cp, 'results_page', ifos=workflow.ifos,
+                out_dir=out_dir).create_node()
+    node.add_opt('--plots-dir', results_dir)
+    node.add_opt('--template-file', template_path)
     workflow += node
