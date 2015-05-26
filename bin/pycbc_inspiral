@@ -291,6 +291,11 @@ if opt.newsnr_threshold and opt.chisq_bins:
     event_mgr.newsnr_threshold(opt.newsnr_threshold)
     logging.info("%d remaining triggers" % len(event_mgr.events))
 
+if opt.injection_window and hasattr(gwstrain, 'injections'):
+    logging.info("Keeping triggers within %s seconds of injection" % opt.injection_window)
+    event_mgr.keep_near_injection(opt.injection_window, gwstrain.injections)
+    logging.info("%d remaining triggers" % len(event_mgr.events))   
+    
 if opt.maximization_interval:
     logging.info("Maximizing triggers over %s ms window" % opt.maximization_interval)
     window = int(opt.maximization_interval * gwstrain.sample_rate / 1000)
