@@ -103,7 +103,7 @@ class TimeSeries(Array):
                 new_epoch = self._epoch
             else:
                 if index.start < 0:
-                    index.start += len(self)
+                    raise ValueError('Negative start index not supported')
                 new_epoch = self._epoch + index.start * self._delta_t
             return TimeSeries(Array.__getitem__(self, index), self._delta_t, new_epoch, copy=False)
         else:
