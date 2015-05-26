@@ -273,11 +273,9 @@ with ctx:
             out_vals['chisq'], out_vals['chisq_dof'] = \
                   power_chisq.values(corr, snr, snrv, norm, stilde.psd,
                                      idx+stilde.analyze.start, template)
-
-            out_vals['cont_chisq'] = \
-                  autochisq.values(snr, idx+stilde.analyze.start, template,
-                                   stilde.psd, norm, stilde=stilde,
-                                   low_frequency_cutoff=flow)
+            out_vals['cont_chisq'] = autochisq.values(snr,
+                  idx+stilde.analyze.start, template, stilde.psd, norm, stilde=stilde,
+                  low_frequency_cutoff=flow)
 
             idx += stilde.cumulative_index
 
