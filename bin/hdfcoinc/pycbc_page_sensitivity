@@ -1,5 +1,5 @@
 #!/usr/bin/python
-""" Make table of the foreground coincident events
+""" Make plot of search sensitive distance
 """
 import argparse, h5py, numpy, logging, os.path, matplotlib
 matplotlib.use('Agg')
