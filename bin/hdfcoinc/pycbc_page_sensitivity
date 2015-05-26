@@ -1,103 +1,44 @@
 #!/usr/bin/python
-""" Make table of the foreground coincident events
+""" Make plot of search sensitive distance
 """
-import argparse, h5py, numpy, logging, os.path
-import matplotlib
+import argparse, h5py, numpy, logging, os.path, matplotlib
 matplotlib.use('Agg')
 from matplotlib.pyplot import cm
-import pylab
-import pycbc.pnutils, pycbc.results
+import pylab, pycbc.pnutils, pycbc.results, pycbc
+from pycbc import sensitivity
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--injection-file')
-parser.add_argument('--bins', nargs='*')
-parser.add_argument('--sig-bins', nargs='*')
-parser.add_argument('--sig-type', default='ifar')
-parser.add_argument('--bin-type', default='mchirp')
-parser.add_argument('--min-dist', type=float)
-parser.add_argument('--max-dist', type=float)
+parser.add_argument('--injection-file', 
+                   help="HDF format injection result file.")
+parser.add_argument('--bins', nargs='*',
+                   help="Optional, parameter bin boundaries Ex. 1.3 2.6 4.1")
+parser.add_argument('--bin-type', choices=['spin', 'mchirp', 
+                                           'total_mass', 'eta'], 
+                   default='mchirp',
+                   help="Optional, parameter bin boundaries")
+parser.add_argument('--sig-bins', nargs='*',
+                   help="Optional, boundaries of x-axis significance bins"),
+parser.add_argument('--sig-type', choices=['ifar', 'fap'], default='ifar',
+                   help="Optional, x-axis significance type")
+parser.add_argument('--min-dist', type=float, 
+                   help="Optional, minimum sensitive distance to plot")
+parser.add_argument('--max-dist', type=float, 
+                   help="Optional, maximum sensitive distance to plot")
 parser.add_argument('--verbose', action='count')
-parser.add_argument('--dist-bins', type=int, default=0)
+parser.add_argument('--method', choices=['pylal', 'shell', 'mc'], 
+                   default='pylal',
+                   help="Optional, choice of volume estimation")
+parser.add_argument('--dist-bins', type=int, default=100, 
+                   help="Optional, used in conjunction with pylal binned"
+                        " volume estimation method. Number of distance bins.")
+parser.add_argument('--distance-param', type=str,                
+                    help="Optional, used in conjunction with pylal binned"
+                         " volume estimation method")
+parser.add_argument('--distance-distribution', type=str,
+                   help="Optional, used in conjunction with pylal binned"
+                        " volume estimation method")
 parser.add_argument('--output-file')
 args = parser.parse_args()
-
-def compute_efficiency_bins_pylal(f_dist, m_dist, bins=15):
-    def sims_to_bin(sim):
-        return (sim, 0)
-
-    from pylal import rate
-    from pylal.imr_utils import compute_search_volume_in_bins, compute_search_efficiency_in_bins
-    found = f_dist
-    
-    total = numpy.concatenate([f_dist, m_dist])
-    ndbins = rate.NDBins([rate.LinearBins(min(total), max(total), bins), rate.LinearBins(0, 1, 1)])
-    
-    vol, verr = compute_search_volume_in_bins(found, total, ndbins, sims_to_bin)
-
-    vol, verr = vol.array[0], verr.array[0]
-    d_high = ((vol + verr) * 3.0/4.0/numpy.pi) ** (1.0/3.0)
-    d_low = ((vol - verr) * 3.0/4.0/numpy.pi) ** (1.0/3.0)
-    dist = (vol * 3.0/4.0/numpy.pi) ** (1.0/3.0)
-    return dist, dist - d_low, d_high - dist
-    
-def compute_efficiency_bins(f_dist, m_dist, bins=15):
-    f_dist.sort()
-    m_dist.sort()   
-    top = max(m_dist.max(), f_dist.max())
-    bot = min(m_dist.min(), f_dist.min())
-    w = (top - bot) / float(bins)
-  
-    effs, dists, vols, verr = [], [], [], 0
-    t, b = w + bot, 0 + bot
-    for i in range(bins): 
-        fn = numpy.logical_and(f_dist < t, f_dist > b).sum()
-        mn = numpy.logical_and(m_dist < t, m_dist > b).sum()
-        
-        eff = fn / float(fn + mn)
-        
-        print t, b, fn, mn, eff
-        t, b = t + w, b + w
-        effs += [eff]
-        err = numpy.sqrt(eff * (1 - eff) / float(fn + mn))
-        dists += [(b, t)]
-        vols += [((t+b)/2.0)**2.0 * 4 * numpy.pi * eff]
-        verr += (((t+b)/2.0)**2.0 * 4 * numpy.pi * w * err) ** 2.0
-
-    vol = numpy.trapz(vols, dx=w)    
-    verr = numpy.sqrt(verr)    
-        
-    d_high = ((vol + verr) * 3.0/4.0/numpy.pi) ** (1.0/3.0)
-    d_low = ((vol - verr) * 3.0/4.0/numpy.pi) ** (1.0/3.0)
-    dist = (vol * 3.0/4.0/numpy.pi) ** (1.0/3.0)
-    return dist, dist - d_low, d_high - dist
-
-def compute_sensitive_distance(f_dist, m_dist):
-    """ Compute the sensitive volume
-    """
-    f_dist.sort()
-    m_dist.sort()
-    distances = numpy.concatenate([f_dist, m_dist])
-    dist_sorting = distances.argsort()
-    distances = distances[dist_sorting]
-    low = 0
-    vol = 0
-    vol_err = 0
-    for i in range(len(distances)):
-        if i == len(distances) - 1:
-            break
-    
-        high = (distances[i+1] + distances[i]) / 2
-        bin_width = high - low
-        
-        if dist_sorting[i] < len(f_dist):
-            vol += 4 * numpy.pi * distances[i]**2.0 * bin_width
-            vol_err += (4 * numpy.pi * distances[i]**2.0 * bin_width)**2.0
-        low = high
-    vol_err = vol_err ** 0.5
-    d_high = ((vol + vol_err) * 3.0/4.0/numpy.pi) ** (1.0/3.0)
-    d_low = ((vol - vol_err) * 3.0/4.0/numpy.pi) ** (1.0/3.0)
-    dist = (vol * 3.0/4.0/numpy.pi) ** (1.0/3.0)
-    return dist, dist - d_low, d_high - dist
 
 if args.verbose:
     log_level = logging.INFO
@@ -107,16 +48,12 @@ logging.info('Read in the data')
 f = h5py.File(args.injection_file, 'r')
 
 time = f['injections/end_time'][:]
+
+# Get the found (at any FAR)/missed injection indices 
 found = f['found_after_vetoes/injection_index'][:]
 missed = f['missed/after_vetoes'][:]
 
-m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
-mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
-
-# This hardcodes HL search !!!!!, replace with function that takes or/sky/det
-hdist = f['injections/eff_dist_h'][:]
-ldist = f['injections/eff_dist_l'][:]
-dec_dist = numpy.maximum(hdist, ldist)
+# retrieve injection parameters so we can bin based on them
 dist = f['injections/distance'][:]
 m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
 s1z, s2z = f['injections/spin1z'][:], f['injections/spin2z'][:]
@@ -131,84 +68,106 @@ values['mchirp'] = mchirp
 values['eta'] = eta
 values['total_mass'] = m1 + m2
 
+#FIXME, this is only correct for SpinTaylor Convention!!!!!
 s1 = s1x * numpy.sin(inc) + s1z * numpy.cos(inc)
 s2 = s2x * numpy.sin(inc) + s2z * numpy.cos(inc)
-
 values['spin'] = (m1 * s1 + m2 * s2) / (m1 + m2)
+
+# Legend labels for the binning
 labels = {}
 labels['mchirp'] = "$ M_{chirp} \in [%5.2f, %5.2f] M_\odot $"
 labels['total_mass'] = "$ M_{total} \in [%5.2f, %5.2f] M_\odot $"
 labels['spin'] = "$Eff Spin \in [%5.2f, %5.2f] $"
 
 if args.sig_type == 'ifar':
-    ifar = f['found_after_vetoes/ifar'][:]
-    ifar_exc = f['found_after_vetoes/ifar_exc'][:]
+    sig = f['found_after_vetoes/ifar'][:]
+    sig_exc = f['found_after_vetoes/ifar_exc'][:]
     xlabel = 'Inverse False Alarm Rate (years)'
     if args.sig_bins:
-        ifar_values = [float(v) for v in args.sig_bins]
+        x_values = [float(v) for v in args.sig_bins]
     else:
-        ifar_values = 10 ** (numpy.arange(0, 4, .05))
+        x_values = 10 ** (numpy.arange(0, 4, .05))
+        
 elif args.sig_type == 'fap':
-    fap = f['found_after_vetoes/fap'][:]
-    fap_exc = f['found_after_vetoes/fap_exc'][:]
-    xlabel = 'False Alarm Propability'
-    ifar = fap
-    ifar_exc = fap_exc
+    sig = f['found_after_vetoes/fap'][:]
+    sig_exc = f['found_after_vetoes/fap_exc'][:]
+    xlabel = 'False Alarm Probability'
     if args.sig_bins:
-        ifar_values = [float(v) for v in args.sig_bins]
+        x_values = [float(v) for v in args.sig_bins]
     else:
-        ifar_values = [1.0, .1, .01, .001, .001]
-else:
-    raise ValueErorr('Invalid Significance Axis Type (choose fap or ifar)')
+        x_values = 10.0 ** -numpy.arange(1, 7)
    
 color=iter(cm.rainbow(numpy.linspace(0, 1 , len(args.bins)-1)))
-fvalues = [ifar, ifar_exc]
+fvalues = [sig, sig_exc]
 do_labels = [True, False]
 alphas = [.8, .3]
 
 fig = pylab.figure()
 
+# Plot each injection parameter bin
 for j in range(len(args.bins)-1):
     c = next(color)
-    for fval, do_label, alpha in zip(fvalues, do_labels, alphas):
+    
+    # Plot both the inclusive and exclusive significance 
+    for sig_val, do_label, alpha in zip(fvalues, do_labels, alphas):
         left =  float(args.bins[j])
         right = float(args.bins[j+1])
         binval = values[args.bin_type]
 
+        # Get distance of missed injections within parameter bin
         mbm = numpy.logical_and(binval[missed] > left, binval[missed] < right)
         m_dist = dist[missed][mbm]
+        
+        #Abort if the bin has too few triggers to calculate
         if len(m_dist) < 2:
             continue
+            
         dists, low_errors, high_errors = [], [], []
 
-        for ifar_value in ifar_values:
+        # Calculate each sensitive distance at a given significance threshold
+        for x_val in x_values:
             if args.sig_type == 'ifar':
-                foundg = found[fval >= ifar_value]
-            else:
-                foundg = found[fval <= ifar_value]
-                
+                foundg = found[sig_val >= x_val]
+                foundm = found[sig_val < x_val]
+            elif args.sig_type == 'fap':
+                foundg = found[sig_val <= x_val]
+                foundm = found[sig_val > x_val]
+            
+            # get distances that are found within the bin and above the threshold    
             mbf = numpy.logical_and(binval[foundg] > left, binval[foundg] < right)
             f_dist = dist[foundg][mbf]
             
-            foundm = found[fval < ifar_value]
+            # get the distances of inj that are below the threshold
             mbfm = numpy.logical_and(binval[foundm] > left, binval[foundm] < right)
             f_distm = dist[foundm][mbfm]
             
+            # add distances of found injections to the missed list
             m_dist_full = numpy.append(m_dist, f_distm)
             
-            if not args.dist_bins: 
-                sdist, elow, ehigh = compute_sensitive_distance(f_dist, m_dist_full)
-            else:
-                sdist, elow, ehigh = compute_efficiency_bins_pylal(f_dist, m_dist_full, bins=args.dist_bins)
-
+            # Choose the volume estimation method
+            if args.method == 'shell': 
+                vol, vol_err = sensitivity.volume_shell(f_dist, m_dist_full)
+            elif args.method == 'pylal':
+                vol, vol_err = sensitivity.volume_binned_pylal(f_dist,
+                                             m_dist_full, bins=args.dist_bins)
+            elif args.method == 'mc':
+                found_mchirp = mchirp[foundg][mbf]
+                missed_mchirp = numpy.append(mchirp[missed][mbm], mchirp[foundm][mbfm])
+                
+                vol, vol_err = sensitivity.volume_montecarlo(f_dist, m_dist_full, 
+                       found_mchirp, missed_mchirp,
+                       args.distance_param, args.distance_distribution)
+                   
+            sdist, ehigh, elow = sensitivity.volume_to_distance_with_errors(vol, vol_err)
+                        
             dists.append(sdist)
             low_errors.append(elow)
             high_errors.append(ehigh)
             
         label = labels[args.bin_type] % (left, right) if do_label else None
-        pylab.plot(ifar_values, dists, label=label, c=c)
-        pylab.plot(ifar_values, dists, alpha=alpha, c='black')
-        pylab.fill_between(ifar_values, 
+        pylab.plot(x_values, dists, label=label, c=c)
+        pylab.plot(x_values, dists, alpha=alpha, c='black')
+        pylab.fill_between(x_values, 
                            dists - numpy.array(low_errors), 
                            dists + numpy.array(high_errors), 
                            facecolor=c, edgecolor=c, alpha=alpha)
@@ -219,14 +178,14 @@ ax.set_xscale('log')
 if args.sig_type == 'fap':
     ax.invert_xaxis()
 
-pylab.ylabel('Sensitive Distance (Mpc)')
-pylab.xlabel(xlabel)
-
 if args.min_dist:
     pylab.ylim(args.min_dist, args.max_dist)
+    
+pylab.ylabel('Sensitive Distance (Mpc)')
+pylab.xlabel(xlabel)
 
 pylab.grid()  
 pylab.legend(loc='lower left')
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
-                                     title='%s binning' % args.bin_type, 
-                                     caption='')
+             title='%s binning' % args.bin_type, 
+             caption='')
