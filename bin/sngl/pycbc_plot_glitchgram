@@ -17,13 +17,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
+from ConfigParser import ConfigParser
 import glob
 import h5py
 import matplotlib as mpl; mpl.use('Agg')
 import matplotlib.pylab as plt
 import numpy as np
 import os
-from ConfigParser import ConfigParser
+import sys
 
 from glue import lal
 from glue import segments
@@ -49,6 +50,14 @@ parser.add_argument('--gps-end-time', type=int,
 parser.add_argument('--new-snr', action='store_true', default=False,
                   help='Plots new SNR instead of SNR.')
 opts = parser.parse_args()
+
+# sanity check
+if opts.ifo:
+    for trigger_file in opts.trigger_files:
+        if not trigger_file.endswith('hdf'):
+            print 'You provided the IFO option for HDF files but not all \
+                   your trigger files are HDF.'
+            sys.exit()        
 
 # Define some ranges for plot
 # each tuple is (lowest significance,high significance,color,dot size,legend)
