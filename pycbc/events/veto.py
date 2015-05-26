@@ -110,6 +110,29 @@ def indices_within_times(times, start, end):
     right = numpy.searchsorted(times_sorted, end)
     return tsort[numpy.hstack(numpy.r_[s:e] for s, e in zip(left, right))]
 
+def indices_outside_times(times, start, end):
+    """ Return the an index array into times that give the values outside the 
+    durations defined by the start and end arrays
+    
+    Parameters
+    ----------
+    times: numpy.ndarray
+        Array of times
+    start: numpy.ndarray
+        Array of duration start times
+    end: numpy.ndarray 
+        Array of duration end times
+    
+    Returns
+    -------
+    indices: numpy.ndarray
+        Array of indices into times
+    """
+    exclude = indices_within_times(times, start, end)
+    indices = numpy.arange(0, len(times))
+    return numpy.delete(indices, exclude)
+    
+
 def indices_within_segments(times, ifo, segment_files):
     """ Return the list of indices that should be vetoed by the segments in the
     lsit of veto_files.

@@ -4,8 +4,9 @@
 import argparse, h5py, numpy, logging, os.path
 import matplotlib
 matplotlib.use('Agg')
+from matplotlib.pyplot import cm
 import pylab
-import pycbc.pnutils
+import pycbc.pnutils, pycbc.results
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--injection-file')
@@ -109,8 +110,6 @@ time = f['injections/end_time'][:]
 found = f['found_after_vetoes/injection_index'][:]
 missed = f['missed/after_vetoes'][:]
 
-ifar = f['found_after_vetoes/ifar'][:]
-
 m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
 mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 
@@ -142,70 +141,92 @@ labels['total_mass'] = "$ M_{total} \in [%5.2f, %5.2f] M_\odot $"
 labels['spin'] = "$Eff Spin \in [%5.2f, %5.2f] $"
 
 if args.sig_type == 'ifar':
-    label = 'Inverse False Alarm Rate (years)'
+    ifar = f['found_after_vetoes/ifar'][:]
+    ifar_exc = f['found_after_vetoes/ifar_exc'][:]
+    xlabel = 'Inverse False Alarm Rate (years)'
     if args.sig_bins:
         ifar_values = [float(v) for v in args.sig_bins]
     else:
         ifar_values = 10 ** (numpy.arange(0, 4, .05))
 elif args.sig_type == 'fap':
     fap = f['found_after_vetoes/fap'][:]
-    label = 'False Alarm Propability'
+    fap_exc = f['found_after_vetoes/fap_exc'][:]
+    xlabel = 'False Alarm Propability'
     ifar = fap
+    ifar_exc = fap_exc
     if args.sig_bins:
         ifar_values = [float(v) for v in args.sig_bins]
     else:
         ifar_values = [1.0, .1, .01, .001, .001]
 else:
     raise ValueErorr('Invalid Significance Axis Type (choose fap or ifar)')
+   
+color=iter(cm.rainbow(numpy.linspace(0, 1 , len(args.bins)-1)))
+fvalues = [ifar, ifar_exc]
+do_labels = [True, False]
+alphas = [.8, .3]
+
+fig = pylab.figure()
 
 for j in range(len(args.bins)-1):
-    left =  float(args.bins[j])
-    right = float(args.bins[j+1])
-    binval = values[args.bin_type]
+    c = next(color)
+    for fval, do_label, alpha in zip(fvalues, do_labels, alphas):
+        left =  float(args.bins[j])
+        right = float(args.bins[j+1])
+        binval = values[args.bin_type]
 
-    mbm = numpy.logical_and(binval[missed] > left, binval[missed] < right)
-    m_dist = dist[missed][mbm]
+        mbm = numpy.logical_and(binval[missed] > left, binval[missed] < right)
+        m_dist = dist[missed][mbm]
+        if len(m_dist) < 2:
+            continue
+        dists, low_errors, high_errors = [], [], []
 
-    dists, low_errors, high_errors = [], [], []
+        for ifar_value in ifar_values:
+            if args.sig_type == 'ifar':
+                foundg = found[fval >= ifar_value]
+            else:
+                foundg = found[fval <= ifar_value]
+                
+            mbf = numpy.logical_and(binval[foundg] > left, binval[foundg] < right)
+            f_dist = dist[foundg][mbf]
+            
+            foundm = found[fval < ifar_value]
+            mbfm = numpy.logical_and(binval[foundm] > left, binval[foundm] < right)
+            f_distm = dist[foundm][mbfm]
+            
+            m_dist_full = numpy.append(m_dist, f_distm)
+            
+            if not args.dist_bins: 
+                sdist, elow, ehigh = compute_sensitive_distance(f_dist, m_dist_full)
+            else:
+                sdist, elow, ehigh = compute_efficiency_bins_pylal(f_dist, m_dist_full, bins=args.dist_bins)
 
-    for ifar_value in ifar_values:
-        if args.sig_type == 'ifar':
-            foundg = found[ifar >= ifar_value]
-        else:
-            foundg = found[ifar <= ifar_value]
-        mbf = numpy.logical_and(binval[foundg] > left, binval[foundg] < right)
-        f_dist = dist[foundg][mbf]
-        
-        foundm = found[ifar < ifar_value]
-        mbfm = numpy.logical_and(binval[foundm] > left, binval[foundm] < right)
-        f_distm = dist[foundm][mbfm]
-        
-        m_dist_full = numpy.append(m_dist, f_distm)
-        
-        if not args.dist_bins: 
-            sdist, elow, ehigh = compute_sensitive_distance(f_dist, m_dist_full)
-        else:
-            sdist, elow, ehigh = compute_efficiency_bins_pylal(f_dist, m_dist, bins=args.dist_bins)
+            dists.append(sdist)
+            low_errors.append(elow)
+            high_errors.append(ehigh)
+            
+        label = labels[args.bin_type] % (left, right) if do_label else None
+        pylab.plot(ifar_values, dists, label=label, c=c)
+        pylab.plot(ifar_values, dists, alpha=alpha, c='black')
+        pylab.fill_between(ifar_values, 
+                           dists - numpy.array(low_errors), 
+                           dists + numpy.array(high_errors), 
+                           facecolor=c, edgecolor=c, alpha=alpha)
+                           
+ax = pylab.gca()
+ax.set_xscale('log')
 
-        dists.append(sdist)
-        low_errors.append(elow)
-        high_errors.append(ehigh)
- 
-    print ifar_values, dists
-    pylab.errorbar(ifar_values, dists, yerr=[low_errors, high_errors], 
-                   label=(labels[args.bin_type] % (left, right)))
-    ax = pylab.gca()
-    ax.set_xscale('log')
+if args.sig_type == 'fap':
+    ax.invert_xaxis()
 
-    if args.sig_type == 'fap':
-        ax.invert_xaxis()
-
-    pylab.ylabel('Sensitive Distance (Mpc)')
-    pylab.xlabel(label)
+pylab.ylabel('Sensitive Distance (Mpc)')
+pylab.xlabel(xlabel)
 
 if args.min_dist:
     pylab.ylim(args.min_dist, args.max_dist)
 
 pylab.grid()  
 pylab.legend(loc='lower left')
-pylab.savefig(args.output_file)
+pycbc.results.save_fig_with_metadata(fig, args.output_file, 
+                                     title='%s binning' % args.bin_type, 
+                                     caption='')

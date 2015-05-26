@@ -79,7 +79,12 @@ and [banksim].
     unreliable. As such, each job is automatically run
     twice. The results are compared and only kept if 
     they equivelant. Only the GPUs on SUGAR and ATLAS
-    are supported at this time. 
+    are supported at this time.
+
+    Bank simulations running on LDG clusters must include
+    the 'accounting-group' option in the workflow section.
+    The value must be choosen according to the
+    `Accounting information web page <https://ldas-gridmon.ligo.caltech.edu/ldg_accounting/>`_.
 
  #. banksim
 

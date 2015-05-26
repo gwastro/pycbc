@@ -5,8 +5,8 @@
         <!--accordion title-->
         <div class="panel-heading accordion-toggle collapsed" data-toggle="collapse" data-parent="#accordion" href="#{{slug}}">
             <h4 class="panel-title">
-                {% if cp.has_section(filename) and cp.has_option(filename, 'title') %}
-                    <a href='#'>cp.get(filename, 'title')</a>
+                {% if cp.check_option(filename, 'title') %}
+                    <a href='#'>{{cp.get(filename, 'title')}}</a>
                 {% else %}
                     <a href='#'>{{filename}}</a>
                 {% endif %}
@@ -26,6 +26,7 @@
                 <div  class="embed-responsive embed-responsive-16by9">
                     <iframe class="embed-responsive-item" src="{{filename}}"></iframe>
                 </div>
+
                 <!--segment XML file condition-->
                 {% elif ( filename.endswith('xml') or filename.endswith('xml.gz') ) and content %}
 
@@ -61,7 +62,7 @@
 
                 {% endif %}
                 
-                {% if cp.has_section(filename) and cp.has_option(filename, 'caption') %}
+                {% if cp.check_option(filename, 'caption') %}
                     <p><i>{{cp.get(filename, 'caption')}}</i></p>
                 {% endif %}
 

@@ -1,4 +1,3 @@
-include include/*.i
 include test/*test*py
 include bin/*
 recursive-include examples *py *sh *xml

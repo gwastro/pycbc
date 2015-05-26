@@ -26,22 +26,15 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import os, sys, subprocess, logging, math, string, urlparse, ConfigParser
-import numpy, cPickle
-import string, random
+import os, sys, subprocess, logging, math, string, urlparse, ConfigParser, copy
+import numpy, cPickle, string, random
 from itertools import combinations, groupby
 from operator import attrgetter
 from os.path import splitext, basename, isfile
 import lal as lalswig
-from glue import lal
-from glue import segments
+from glue import lal, segments
 from pycbc.workflow.configuration import WorkflowConfigParser
-
-# The following syntax is convoluted, but designed to make
-# it easy to change when pegasus_workflow is moved upstream
-# into Pegasus.
-from pycbc.workflow import pegasus_workflow as pegasus_workflow
-import copy
+from pycbc.workflow import pegasus_workflow
 
 # workflow should never be using the glue LIGOTimeGPS class, override this with
 # the nice SWIG-wrapped class in lal
@@ -158,7 +151,13 @@ class Executable(pegasus_workflow.Executable):
             self.tagged_name = name
         if self.ifo_string is not None:
             self.tagged_name = "%s-%s" % (self.tagged_name, self.ifo_string)
-        super(Executable, self).__init__(self.tagged_name)
+
+        try:
+            self.installed = cp.getboolean('pegasus_profile-%s' % name, 'pycbc|installed')
+        except:
+            self.installed = True
+
+        super(Executable, self).__init__(self.tagged_name, installed=self.installed)
         
         self.name=name
         
@@ -207,7 +206,6 @@ class Executable(pegasus_workflow.Executable):
              if cp.has_section(section):
                 sections.append(section)
         self.sections = sections   
-        
         # Do some basic sanity checking on the options      
         for sec1, sec2 in combinations(sections, 2):
             cp.check_duplicate_options(sec1, sec2, raise_error=True)
@@ -293,10 +291,17 @@ class Executable(pegasus_workflow.Executable):
 
     def add_ini_profile(self, cp, sec):
         for opt in cp.options(sec):
-            value = string.strip(cp.get(sec, opt))
             namespace = opt.split('|')[0]
+            if namespace == 'pycbc':
+                continue
+
+            value = string.strip(cp.get(sec, opt))
             key = opt.split('|')[1]
             self.add_profile(namespace, key, value)
+
+            # Remove if Pegasus can apply this hint in the TC
+            if namespace == 'hints' and key == 'execution.site':
+                self.execution_site = value
 
     def add_ini_opts(self, cp, sec):
         for opt in cp.options(sec):
@@ -445,8 +450,12 @@ class Node(pegasus_workflow.Node):
         self.executed = False
         self.set_category(executable.name)
         
-        if executable.universe == 'vanilla':
+        if executable.universe == 'vanilla' and executable.installed:
             self.add_profile('condor', 'getenv', 'True')
+        
+        if hasattr(executable, 'execution_site'):
+            self.add_profile('hints', 'execution.site', executable.execution_site)
+            self.add_profile('hints', 'executionPool', executable.execution_site)
             
         self._options += self.executable.common_options
     
@@ -690,7 +699,10 @@ class File(pegasus_workflow.File):
         """
         Returns a CacheEntry instance for File.
         """
-
+        if self.storage_path is None:
+            raise ValueError('This file is temporary and so a lal '
+                             'cache entry cannot be made')
+            
         file_url = urlparse.urlunparse(['file', 'localhost', self.storage_path, None,
                                             None, None])
         cache_entry = lal.CacheEntry(self.ifo_string,
@@ -986,10 +998,13 @@ class FileList(list):
         """
         Return all files in this object as a lal.Cache object
         """
-        lalCache = lal.Cache([])
+        lal_cache = lal.Cache([])
         for entry in self:
-            lalCache.append(entry.cache_entry)
-        return lalCache
+            try:
+                lal_cache.append(entry.cache_entry)
+            except ValueError:
+                pass
+        return lal_cache
 
     def _temporal_split_list(self,numSubLists):
         """

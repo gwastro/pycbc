@@ -149,6 +149,6 @@ else:
 tmpltbank.output_sngl_inspiral_table(options.output_file, tempBank,
     metricParams, ethincaParams, programName=__program__,
     optDict=options.__dict__,
-    outdoc=outdoc, comment="", ifos=[""], version=pycbc.version.git_hash,
+    outdoc=outdoc, comment="", version=pycbc.version.git_hash,
     cvs_repository='pycbc/'+pycbc.version.git_branch,
     cvs_entry_time=pycbc.version.date)

@@ -9,50 +9,61 @@ import tempfile
 from optparse import OptionParser
 from glue.pipeline import CondorDAGJob, CondorDAGNode, CondorDAG, CondorJob
 
+
 class BaseJob(CondorDAGJob, CondorJob):
-    def __init__(self, log_dir, executable, cp, section, gpu=False):
+    def __init__(self, log_dir, executable, cp, section, gpu=False,
+                 accounting_group=None):
         CondorDAGJob.__init__(self, "vanilla", executable)
-        
+
         if gpu:
             CondorJob.__init__(self, "vanilla", executable, 2)
         # These are all python jobs so need to pull in the env
-        self.add_condor_cmd('getenv', 'True')       
-        self.set_stderr_file(os.path.join(log_dir, os.path.basename(executable) + '-$(cluster)-$(process).err'))
-        self.set_stdout_file(os.path.join(log_dir, os.path.basename(executable) + '-$(cluster)-$(process).out'))
-        self.set_sub_file(os.path.basename(executable)+".sub")   
-        
-        if cp is not None: 
-            self.add_ini_opts(cp, section)         
-       
+        self.add_condor_cmd('getenv', 'True')
+        log_base = os.path.join(
+            log_dir, os.path.basename(executable) + '-$(cluster)-$(process)')
+        self.set_stderr_file(log_base + '.err')
+        self.set_stdout_file(log_base + '.out')
+        self.set_sub_file(os.path.basename(executable) + '.sub')
+
+        if cp is not None:
+            self.add_ini_opts(cp, section)
+
+        if accounting_group:
+            self.add_condor_cmd('accounting_group', accounting_group)
+
 class BanksimNode(CondorDAGNode):
-    def __init__(self, job, inj_file, tmplt_file, match_file, gpu=True, gpu_postscript=False, inj_per_job=None):
+    def __init__(self, job, inj_file, tmplt_file, match_file, gpu=True,
+                 gpu_postscript=False, inj_per_job=None):
         CondorDAGNode.__init__(self, job)
-        
+
         self.add_file_opt("signal-file", inj_file)
         self.add_file_opt("template-file", tmplt_file)
-        
+
         if gpu:
             self.add_var_opt("processing-scheme", 'cuda')
-            
+
         if gpu and gpu_postscript:
-                self.set_retry(5)
-                mf = match_file+".$(Process)"
-                mf1 = match_file+".0"
-                mf2 = match_file+".1"
-                self.add_file_opt("match-file", match_file+".$(Process)", file_is_output_file=True)
-                self.job().__queue =2
-                
-                # Needed to satisfy the requirements for both running on atlas and spice
-                job.add_condor_cmd('+WantsGPU', 'true')
-                job.add_condor_cmd('+WantGPU', 'true')
-                job.add_condor_cmd('Requirements', '( GPU_PRESENT =?= true) || (HasGPU =?= "gtx580")')
-                                
-                self.set_post_script(gpu_postscript)
-                self.add_post_script_arg(mf1)
-                self.add_post_script_arg(mf2)
-                self.add_post_script_arg(".0001")
-                self.add_post_script_arg(match_file)
-                self.add_post_script_arg(str(inj_per_job))
+            self.set_retry(5)
+            mf = match_file+".$(Process)"
+            mf1 = match_file+".0"
+            mf2 = match_file+".1"
+            self.add_file_opt("match-file", match_file+".$(Process)",
+                              file_is_output_file=True)
+            self.job().__queue = 2
+
+            # Needed to satisfy the requirements for both running on atlas and spice
+            job.add_condor_cmd('+WantsGPU', 'true')
+            job.add_condor_cmd('+WantGPU', 'true')
+            job.add_condor_cmd(
+                'Requirements',
+                '(GPU_PRESENT =?= true) || (HasGPU =?= "gtx580")')
+
+            self.set_post_script(gpu_postscript)
+            self.add_post_script_arg(mf1)
+            self.add_post_script_arg(mf2)
+            self.add_post_script_arg(".0001")
+            self.add_post_script_arg(match_file)
+            self.add_post_script_arg(str(inj_per_job))
         else:
             self.add_file_opt("match-file", match_file, file_is_output_file=True)
         
@@ -112,8 +123,6 @@ def check_outside_mchirp(bf, sf, w):
         return False
     else:
         return True
- 
-
 
 parser = OptionParser()
 parser.add_option('--config', type=str)          
@@ -122,16 +131,7 @@ parser.add_option('--config', type=str)
 if options.config is None:
     raise ValueError("Config file is required")  
 
-
-# Code doesn't have a verbose mode. Commenting in case this gets added
-# if opts.verbose:
-if 0:
-    log_level = logging.DEBUG
-else:
-#    log_level = logging.WARN
-    log_level = logging.INFO
-logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
-
+logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
 confs = ConfigParser.ConfigParser()
 confs.read(options.config)
@@ -158,8 +158,15 @@ try:
         gpu = True
 except:
     pass
-     
-logging.info("Making workspace directories...")
+
+try:
+    accounting_group = confs.get('workflow', 'accounting-group')
+except:
+    accounting_group = None
+    logging.warn('Warning: accounting-group not specified, LDG clusters may'
+                 ' reject this workflow!')
+
+logging.info("Making workspace directories")
 mkdir('scripts')
 mkdir('bank')
 mkdir('match')
@@ -172,19 +179,28 @@ logging.info("Copying scripts")
 shutil.copy(banksim_prog, 'scripts/pycbc_banksim')
 os.chmod('scripts/pycbc_banksim', 0777)
 
-logging.info("Creating Injection File")
+logging.info("Creating injection file")
 inj_str = "lalapps_inspinj " + get_ini_opts(confs, "inspinj") + "--output inj.xml"
 os.system(inj_str)
 
-logging.info("Splitting template bank...")
-subprocess.call(['pycbc_splitbank', '--templates-per-bank', str(templates_per_job), '-t', bank_file, '-o', 'bank/bank', '--sort-mchirp'])
-logging.info("Splitting injection file...")
-subprocess.call(['pycbc_splitbank', '--templates-per-bank', str(injections_per_job), '-t', "inj.xml",  '-o', 'injection/injection', '--sort-mchirp'])
+logging.info("Splitting template bank")
+subprocess.call(['pycbc_splitbank',
+                 '--templates-per-bank', str(templates_per_job),
+                 '-t', bank_file,
+                 '-o', 'bank/bank',
+                 '--sort-mchirp'])
+
+logging.info("Splitting injection file")
+subprocess.call(['pycbc_splitbank',
+                 '--templates-per-bank', str(injections_per_job),
+                 '-t', "inj.xml",
+                 '-o', 'injection/injection',
+                 '--sort-mchirp'])
 
 num_banks = len(glob.glob("bank/bank*"))
 num_injs = len(glob.glob("injection/injection*"))
 
-logging.info("Creating Dag...")
+logging.info("Creating DAG")
 f = open("banksim.dag", "w")
 
 do_count = 0
@@ -194,10 +210,14 @@ dag = CondorDAG(logfile)
 dag.set_dag_file("banksim")
 dag.set_dax_file("banksim")
 
-bsjob = BaseJob("log", "scripts/pycbc_banksim", confs, "banksim", gpu=gpu)
-cjob = BaseJob("log", "scripts/pycbc_banksim_match_combine", None, None)
-rjob = BaseJob("log", "scripts/pycbc_banksim_collect_results", None, None)
-pjob = BaseJob("log", "scripts/pycbc_banksim_plots", None, None)
+bsjob = BaseJob("log", "scripts/pycbc_banksim", confs, "banksim", gpu=gpu,
+                accounting_group=accounting_group)
+cjob = BaseJob("log", "scripts/pycbc_banksim_match_combine", None, None,
+               accounting_group=accounting_group)
+rjob = BaseJob("log", "scripts/pycbc_banksim_collect_results", None, None,
+               accounting_group=accounting_group)
+pjob = BaseJob("log", "scripts/pycbc_banksim_plots", None, None,
+               accounting_group=accounting_group)
 rnode = CondorDAGNode(rjob)
 pnode = CondorDAGNode(pjob)
 
@@ -218,7 +238,9 @@ for inj_num in range(num_injs):
         mfn = 'match-part/match' + num +'part' + part_num + '.dat'
         sn = 'injection/injection' + num + '.xml'
         bn = 'bank/bank' + part_num + '.xml'
-        bsnode = BanksimNode(bsjob, sn, bn, mfn, gpu=gpu, gpu_postscript="scripts/diff_match.sh", inj_per_job=injections_per_job)
+        bsnode = BanksimNode(bsjob, sn, bn, mfn, gpu=gpu,
+                             gpu_postscript="scripts/diff_match.sh",
+                             inj_per_job=injections_per_job)
         cnode.add_parent(bsnode)
         dag.add_node(bsnode)
         combine_has_jobs = True
@@ -413,7 +435,6 @@ scripts/pycbc_banksim_collect_results
 """)
 os.chmod('partial_results.sh', 0777)
 
-logging.info("Done")
 dag.write_sub_files()
 dag.write_script()
 dag.write_dag()
@@ -445,8 +466,6 @@ goldenratio = 2 / (1 + 5**.5)
 #        "text.verticalalignment": "center",
 #        "text.usetex": True     # render all text with TeX
 #})
-
-
 
 res = numpy.loadtxt("results.dat")
 match = res[:,0]
@@ -539,3 +558,5 @@ mplot(q, ispin2z, (imchirp-tmchirp)/imchirp, "plots/q-s2z-mchirpreldiff.png")
 
 """)
 os.chmod("scripts/pycbc_banksim_plots", 0777)
+
+logging.info("Done")

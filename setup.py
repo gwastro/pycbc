@@ -315,11 +315,13 @@ setup (
                'bin/hdfcoinc/pycbc_make_hdf_coinc_workflow',
                'bin/pycbc_basic_pegasus_plan',
                'bin/pycbc_optimal_snr',
+               'bin/pycbc_fit_sngl_trigs',
                'bin/hdfcoinc/pycbc_coinc_mergetrigs',
                'bin/hdfcoinc/pycbc_coinc_findtrigs',
                'bin/hdfcoinc/pycbc_coinc_bank2hdf',
                'bin/hdfcoinc/pycbc_coinc_trig2hdf',
                'bin/hdfcoinc/pycbc_coinc_statmap',
+               'bin/hdfcoinc/pycbc_coinc_statmap_inj',
                'bin/hdfcoinc/pycbc_page_foreground',
                'bin/hdfcoinc/pycbc_page_foundmissed',
                'bin/hdfcoinc/pycbc_page_snrifar',
@@ -338,8 +340,11 @@ setup (
                'bin/sngl/pycbc_plot_timeseries',
                'bin/hdfcoinc/pycbc_page_injtable',
                'bin/pycbc_submit_dax',
+               'bin/pycbc_submit_dax_stampede',
+               'bin/pycbc_submit_dax_stampede_devel',
                'bin/hdfcoinc/pycbc_page_coinc_snrchi',
                'bin/hdfcoinc/pycbc_stat_dtphase',
+               'bin/hdfcoinc/pycbc_plot_singles_vs_params',
                ],
     packages = [
                'pycbc',
@@ -354,9 +359,9 @@ setup (
                'pycbc.tmpltbank',
                'pycbc.workflow',
                'pycbc.results',
+               'pycbc.io',
                ],
      package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'), 
 	             'pycbc.results': find_package_data('pycbc/results')},
 )
-
 

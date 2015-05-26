@@ -24,6 +24,19 @@ In order to install PyCBC, you need to have installed the following prerequisite
 
     A version of lalsuite and glue are installed on LDG clusters, but you may want to build your own version. Please see :ref:`lalsuite_install` for instructions and details about building your own version of lalsuite, glue and pylal.
 
+===========================================================
+Additional Dependencies for HDF post processing and Plots
+===========================================================
+In order to run the HDF post processing and plotting codes
+that are in active development and have not yet been reviewed, the following
+additional dependencies are needed. Eventually these will become
+mandatory dependencies. 
+
+* numpy>=1.6.4
+* matplotlib>=1.3.1
+* `mpld3>=0.3.0 <https://github.com/jakevdp/mpld3/tarball/master>`_
+* `PIL <https://pypi.python.org/pypi/PIL>`_
+
 ===================
 Installing from git
 ===================

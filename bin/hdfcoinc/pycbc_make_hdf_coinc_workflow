@@ -20,30 +20,24 @@
 Program for running multi-detector workflow analysis through coincidence and then
 generate post-processing and plots.
 """
-import pycbc
-import pycbc.version
-__author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
-__version__ = pycbc.version.git_verbose_msg
-__date__    = pycbc.version.date
-__program__ = "weekly_workflow"
-
+import pycbc, pycbc.version, pycbc.events, pycbc.workflow as wf
 import os, argparse, ConfigParser, logging, glue.segments
-from pycbc import workflow as wf
-import pycbc.events
 
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
-                    level=logging.INFO)
-
-_desc = __doc__[1:]
-parser = argparse.ArgumentParser(description=_desc)
-parser.add_argument('--version', action='version', version=__version__)
+parser = argparse.ArgumentParser(description=__doc__[1:])
+parser.add_argument('--version', action='version', 
+                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--workflow-name', default='my_unamed_run')
 parser.add_argument("-d", "--output-dir", default=None,
                     help="Path to output directory.")
 wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 
-workflow = wf.Workflow(args, args.workflow_name)
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
+                    level=logging.INFO)
+
+container = wf.Workflow(args, args.workflow_name)
+workflow = wf.Workflow(args, 'main')
+finalize_workflow = wf.Workflow(args, 'finalization')
 
 if not os.path.exists(args.output_dir):
     os.makedirs(args.output_dir)
@@ -69,8 +63,7 @@ splitbank_files = wf.setup_splittable_workflow(workflow, bank_files, "bank")
 # setup the injection files
 inj_files, inj_tags = wf.setup_injection_workflow(workflow, 
                                                      output_dir="inj_files")
-                                                     
-                                                                                                         
+                                                                                                                                                              
 bg_file = None                                                                                     
 tags = ["full_data"] + inj_tags
 output_dirs = ["full_data"]
@@ -101,26 +94,29 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                        output_dir, tags=ctags)  
         final_bg_file =  wf.setup_interval_coinc(workflow, hdfbank, insps, final_veto_file,
                                        output_dir, tags=ctags)   
+        for bg_file in (final_bg_file + bg_files):
+            wf.make_snrifar_plot(workflow, bg_file, 'plots/background', tags=bg_file.tags)
+
         wf.make_foreground_table(workflow, final_bg_file[0], hdfbank[0], tag, 'plots/foreground')
         wf.make_snrchi_plot(workflow, insps, final_veto_file[0], 'plots/background', tags=[tag])
     else:
-        inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank, 
-                                                insps, final_bg_file,
+        inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank,
+                                                full_insps, insps, final_bg_file, final_veto_file,
                                                 output_dir, tags = ctags)
         found_inj = wf.find_injections_in_hdf_coinc(workflow, wf.FileList([inj_coinc]),
                                                 wf.FileList([inj_file]), final_veto_file[0], 
                                                 output_dir, tags=ctags)
         inj_coincs += [inj_coinc]                      
-        wf.make_sensitivity_plot(workflow, found_inj, 'plots/sensitivity',
+        wf.make_sensitivity_plot(workflow, found_inj, 'plots/sensitivity/%s' % tag,
                                  tags=ctags)
-        wf.make_foundmissed_plot(workflow, found_inj, tag, 'plots/foundmissed', 
+        wf.make_foundmissed_plot(workflow, found_inj, 'plots/foundmissed/%s' % tag, 
                                  tags=[tag])
-        wf.make_inj_table(workflow, found_inj, 'plots/foundmissed', tags=[tag])
+        wf.make_inj_table(workflow, found_inj, 'plots/foundmissed/%s' % tag, tags=[tag])
                                  
         for inj_insp, trig_insp in zip(insps, full_insps):
             wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 
                                       final_bg_file[0], trig_insp,
-                                      'plots/background', tags=[tag])
+                                      'plots/background/%s' % tag, tags=[tag])
    
 full_segs = []                                 
 for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
@@ -136,10 +132,21 @@ for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
 wf.make_segments_plot(workflow, full_segs, 'plots/segments', tags=['INSPIRAL_SEGMENTS'])
 wf.make_segments_plot(workflow, science_seg_file, 'plots/segments', tags=['SCIENCE_MINUS_CAT1'])
 
-found_inj = wf.find_injections_in_hdf_coinc(workflow, inj_coincs,
+if len(inj_files) > 0:
+    found_inj = wf.find_injections_in_hdf_coinc(workflow, inj_coincs,
                                             inj_files, final_veto_file[0], 
                                             output_dir, tags=['ALLINJ'])                                                
-wf.make_sensitivity_plot(workflow, found_inj, 'plots/sensitivity', tags=['ALLINJ'])
+    wf.make_sensitivity_plot(workflow, found_inj, 'plots/sensitivity', 
+                                            tags=['ALLINJ'])
 
-workflow.save()
+wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(), 'plots'))
+
+container += workflow
+container += finalize_workflow
+
+import Pegasus.DAX3 as dax
+dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
+container._adag.addDependency(dep)
+
+container.save()
 logging.info("Written dax.")

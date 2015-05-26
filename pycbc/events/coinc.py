@@ -24,8 +24,42 @@
 """ This modules contains functions for calculating and manipulating
 coincident triggers.
 """
-import numpy
+import numpy, logging
+from itertools import izip
 
+def timeslide_durations(start1, start2, end1, end2, timeslide_offsets):
+    """ Find the coincident time for each timeslide.
+    
+    Find the coincident time for each timeslide, where the first time vector
+    is slid to the right by the offset in the given timeslide_offsets 
+    vector.
+    
+    Parameters
+    ----------
+    start1: numpy.ndarray
+        Array of the start of valid analyzed times for detector 1
+    start2: numpy.ndarray
+        Array of the start of valid analyzed times for detector 2
+    end1: numpy.ndarray
+        Array of the end of valid analyzed times for detector 1
+    end2: numpy.ndarray
+        Array of the end of valid analyzed times for detector 2
+    timseslide_offset: numpy.ndarray
+        Array of offsets (in seconds) for each timeslide
+        
+    Returns
+    --------
+    durations: numpy.ndarray
+        Array of coincident time for each timeslide in the offset array
+    """
+    from . import veto
+    durations = []
+    seg2 = veto.start_end_to_segments(start2, end2)
+    for offset in timeslide_offsets:
+        seg1 = veto.start_end_to_segments(start1 + offset, end1 + offset)
+        durations.append(abs((seg1 & seg2).coalesce()))
+    return numpy.array(durations)   
+    
 def time_coincidence(t1, t2, window, slide_step=0):
     """ Find coincidences by time window
     
@@ -80,4 +114,58 @@ def time_coincidence(t1, t2, window, slide_step=0):
         
     return idx1, idx2, slide
 
+
+def cluster_coincs(stat, time1, time2, timeslide_id, slide, window):
+    """Cluster coincident events for each timeslide separately, across 
+    templates, based on the ranking statistic 
+
+    Parameters
+    ----------
+    stat: numpy.ndarray
+        vector of ranking values to maximize
+    time1: numpy.ndarray
+        first time vector
+    time2: numpy.ndarray
+        second time vector
+    timeslide_id: numpy.ndarray
+        vector that determines the timeslide offset
+    slide: float
+        length of the timeslides offset interval
+    window: float
+        length to cluster over
+
+    Returns
+    -------
+    cindex: numpy.ndarray 
+        The set of indices corresponding to the surviving coincidences.
+    """
+    
+    logging.info('clustering coinc triggers over %ss window' % window)
+    
+    indices = []
+    if numpy.isfinite(slide):
+        time = (time2 + (time1 + timeslide_id * slide)) / 2
+    else:
+        time = 0.5 * (time2 + time1)
+        
+    tslide = timeslide_id.astype(numpy.float128)
+    time = time.astype(numpy.float128)
+    span = (time.max() - time.min()) + window * 10
+    time = time + span * tslide
+    
+    time_sorting = time.argsort()
+    stat = stat[time_sorting]
+    time = time[time_sorting]
+    tslide = tslide[time_sorting]
+    
+    logging.info('sorting...')
+    left = numpy.searchsorted(time, time - window)
+    right = numpy.searchsorted(time, time + window)
+    logging.info('done sorting')
+    indices = []
+    for i, (l, r) in enumerate(izip(left, right)):
+        if stat[l:r].argmax() + l == i:
+            indices += [i]
+    logging.info('done clustering coinc triggers: %s triggers remaining' % len(indices))
+    return time_sorting[numpy.array(indices)]
 

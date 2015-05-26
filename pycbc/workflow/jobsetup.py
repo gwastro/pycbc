@@ -125,6 +125,7 @@ def select_generic_executable(workflow, exe_tag):
         'pycbc_sqlite_simplify'    : PycbcSqliteSimplifyExecutable,
         'ligolw_cbc_cluster_coincs': SQLInOutExecutable,
         'ligolw_cbc_repop_coinc'   : SQLInOutExecutable,
+        'repop_coinc_expfit'       : SQLInOutExecutable,
         'ligolw_dbinjfind'         : SQLInOutExecutable,
         'lalapps_inspinj'          : LalappsInspinjExecutable,
         'pycbc_timeslides'         : PycbcTimeslidesExecutable,
