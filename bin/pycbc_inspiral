@@ -215,20 +215,22 @@ with ctx:
 
     # storage for values and types to be passed to event manager
     out_types = {
-        'time_index' : int,
-        'snr'        : complex64,
-        'chisq'      : float32,
-        'chisq_dof'  : int,
-        'bank_chisq' : float32,
-        'cont_chisq' : float32
+        'time_index'     : int,
+        'snr'            : complex64,
+        'chisq'          : float32,
+        'chisq_dof'      : int,
+        'bank_chisq'     : float32,
+        'bank_chisq_dof' : int,
+        'cont_chisq'     : float32
                 }
     out_vals = {
-        'time_index' : None,
-        'snr'        : None,
-        'chisq'      : None,
-        'chisq_dof'  : None,
-        'bank_chisq' : None,
-        'cont_chisq' : None
+        'time_index'     : None,
+        'snr'            : None,
+        'chisq'          : None,
+        'chisq_dof'      : None,
+        'bank_chisq'     : None,
+        'bank_chisq_dof' : None,
+        'cont_chisq'     : None
                }
     names = sorted(out_vals.keys())
 
@@ -253,20 +255,24 @@ with ctx:
                          (t_num + 1, len(bank), s_num + 1, len(segments)))
 
             snr, norm, corr, idx, snrv = \
-               matched_filter.matched_filter_and_cluster(template, 
-                                  template.sigmasq(stilde.psd), stilde, cluster_window)
+               matched_filter.matched_filter_and_cluster(template,
+                          template.sigmasq(stilde.psd), stilde, cluster_window)
 
             if not len(idx):
                 continue
 
-            out_vals['bank_chisq'] = bank_chisq.values(template, stilde.psd, stilde, snrv,
-                                                norm, idx+stilde.analyze.start)
-            out_vals['chisq'], out_vals['chisq_dof'] = power_chisq.values(corr,
-                       snr, snrv, norm, stilde.psd, idx+stilde.analyze.start, template)
+            out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
+                  bank_chisq.values(template, stilde.psd, stilde, snrv, norm,
+                                    idx+stilde.analyze.start)
 
-            out_vals['cont_chisq'] = autochisq.values(snr,
-                  idx+stilde.analyze.start, template, stilde.psd, norm, stilde=stilde,
-                  low_frequency_cutoff=flow)
+            out_vals['chisq'], out_vals['chisq_dof'] = \
+                  power_chisq.values(corr, snr, snrv, norm, stilde.psd,
+                                     idx+stilde.analyze.start, template)
+
+            out_vals['cont_chisq'] = \
+                  autochisq.values(snr, idx+stilde.analyze.start, template,
+                                   stilde.psd, norm, stilde=stilde,
+                                   low_frequency_cutoff=flow)
 
             idx += stilde.cumulative_index
 

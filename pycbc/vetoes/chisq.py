@@ -302,10 +302,10 @@ class SingleDetPowerChisq(object):
         safe_dict.update(row.__dict__)
         safe_dict.update(math.__dict__)
         return eval(arg, {"__builtins__":None}, safe_dict)
-        
+
     def cached_chisq_bins(self, template, psd):
-        key = (id(template.params), id(psd))    
-        if key not in self._bin_cache:        
+        key = (id(template.params), id(psd))
+        if key not in self._bin_cache:
             num_bins = int(self.parse_option(template, self.num_bins))
 
             if hasattr(psd, 'sigmasq_vec') and template.approximant in psd.sigmasq_vec:
@@ -318,7 +318,7 @@ class SingleDetPowerChisq(object):
                 logging.info("...Calculating power chisq bins")
                 bins = power_chisq_bins(template, num_bins, psd, template.f_lower)
             self._bin_cache[key] = bins
-                
+
         return self._bin_cache[key]
 
     def values(self, corr, snr, snrv, snr_norm, psd, indices, template):
@@ -330,12 +330,12 @@ class SingleDetPowerChisq(object):
             Chisq values, one for each sample index
 
         chisq_dof: Array
-            Number of statistical degrees of freedom for the chisq test 
+            Number of statistical degrees of freedom for the chisq test
             in the given template
         """
         if self.do:
             logging.info("...Doing power chisq")
-            
+
             num_above = len(indices)
             if self.snr_threshold:
                 above = abs(snrv * snr_norm) > self.snr_threshold
@@ -348,18 +348,18 @@ class SingleDetPowerChisq(object):
             else:
                 above_indices = indices
                 above_snrv = snrv
-                
-            if num_above > 0:   
-                bins = self.cached_chisq_bins(template, psd)  
-                dof = (len(bins) - 1) * 2 - 2   
+
+            if num_above > 0:
+                bins = self.cached_chisq_bins(template, psd)
+                dof = (len(bins) - 1) * 2 - 2
                 chisq = fastest_power_chisq_at_points(corr, snr, above_snrv, snr_norm, bins, above_indices)
-            
+
             if self.snr_threshold:
                 if num_above > 0:
                     rchisq[above] = chisq
             else:
                 rchisq = chisq
 
-            return rchisq, dof * numpy.ones_like(indices) 
+            return rchisq, numpy.repeat(dof, len(indices))# dof * numpy.ones_like(indices)
         else:
             return None, None
