@@ -2,7 +2,7 @@
 Instructions for running pycbc on sugar or atlas cluster
 =====
 
-Using the include environment install script :download:`example script <resources/install_pycbc_env>`
+Using the include environment :download:`install script <../resources/install_pycbc_env>`
 
 ::
 
