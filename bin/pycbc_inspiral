@@ -266,7 +266,7 @@ with ctx:
             if not len(idx):
                 continue
 
-            out_vals['bank_chisq'], bank_chisq_dof = \
+            out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
                   bank_chisq.values(template, stilde.psd, stilde, snrv, norm,
                                     idx+stilde.analyze.start)
             out_vals['chisq'], out_vals['chisq_dof'] = \
