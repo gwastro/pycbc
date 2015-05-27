@@ -23,7 +23,7 @@
 #
 # =============================================================================
 #
-"""This file contains backported functionality from future versions of librarays.
+"""This file contains backported functionality from future versions of libraries.
 Mostly done with monkey-patching.
 """
 
