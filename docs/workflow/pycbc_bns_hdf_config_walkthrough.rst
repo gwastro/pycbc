@@ -1,5 +1,5 @@
 =====
-Instructions for running pycbc on sugar or atlas cluster
+Instructions for running PyCBC BNS pipeline on SUGAR
 =====
 
 Using the include environment :download:`install script <../resources/install_pycbc_env>`
@@ -72,7 +72,7 @@ Add output-path to the results_page module. This is where all the plots will be 
 config file
 -----
 
-This config file is made up of 3 sections: the workflow, the pegasus profile and the options. The workflow controls how different parts of the the workflow hang together. The pegasus profile section are equivalent to lines you would have in a condor_submit file (e.g. requirements, storage size etc). Anything you would do in condor you would do here. The third section maps the options to the executables.
+This config file is made up of three types of sections: workflow, the pegasus profile and the executable options. The workflow sections control how different parts of the the workflow hang together. The pegasus profile sections are equivalent to lines you would have in a condor_submit file (e.g. requirements, storage size etc). Anything you would do in condor you would do here. The third section type maps the options to an executable.
 
 ::
 
@@ -121,7 +121,6 @@ This section defines which frames we are going to use and employs different leve
 
   [workflow-segments]
   ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/segments.html
-  ; PIPEDOWN demands we use AT_RUNTIME
   segments-method = AT_RUNTIME
   segments-h1-science-name = H1:DMT-SCIENCE:1
   segments-l1-science-name = L1:DMT-ANALYSIS_READY:1
@@ -137,9 +136,9 @@ This section does a series of checks to the segment database for the segments yo
 - ``‘segments-h1-science-name’`` option specifies the segment name at LHO we consider to flag science time. The same is given for L1. 
 - ``‘segments-data-url’`` specifies the url for the segment database we want to query. 
 - ``‘segments-veto-definer-url’`` is the url for the veto definer file we want to use for the search. 
-- ``‘segments-science-veto’`` species which category of veto you want to eliminate from your search before it is performed to consider the data science. In this instance, 1 denotes that all the times of Cat 1 vetoes. 
+- ``‘segments-science-veto’`` species which category of veto you want to eliminate from your search before it is performed to consider the data science. In this instance, 1 denotes that all the times of Cat 1 vetoes. Time vetoed here is not used in any part of the analysis, and is treated as if it were not collected. 
 - ``‘segments-veto-groups’`` is an option you can populate with different veto categories and diagnostic plots will be made after each veto is employed. 
-- ``‘segments-final-veto-group’`` is an important option as the vetoes defined here will be removed from the search before it is performed. An option of 1 will remove all Cat 1 veto times from the analysis before it is performed. If you want to add cat 2 then the option is 12.
+- ``‘segments-final-veto-group’`` is an important option as the vetoes defined here will be used to remove triggers from the search before coincidence is performed. An option of 1 will remove all Cat 1 veto times from the analysis before it is performed. If you want to add cat 2 then the option is 12.
 
 ::
 
@@ -147,18 +146,17 @@ This section does a series of checks to the segment database for the segments yo
   ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/template_bank.html
   tmpltbank-method=PREGENERATED_BANK
   tmpltbank-pregenerated-bank=/home/jveitch/projects/mdc/spin/tmpltbanks/nonspin/BNS_NonSpin_30Hz_earlyaLIGO.xml
-  ; Remove the option below to disable linking with matchedfilter_utils
 
 This section specifies which template bank to use
 
 - ``’tmpltbank-method’`` option specifies whether you want to use a regenerated bank or to make it on the fly. In O1 we will be us a pregenerated bank. 
-- ``‘tmpltbank-pregnerated-bank’`` specifies the location of the xml with the pregenerated bank
+- ``‘tmpltbank-pregnerated-bank’`` specifies the location of the xml with the pregenerated bank. Note that this exact location is only valid for SUGAR, and that in general one must provide their own template bank. 
 
 ::
 
   [workflow-splittable]
   splittable-method = IN_WORKFLOW
-  splittable-num-banks = 10
+  splittable-num-banks = 2
 
 This section sets the options for splitting the bank to help with computational costs.
 
@@ -193,7 +191,7 @@ This part of the workflow looks for coincidence between templates between detect
   [workflow-injections]
   injections-method=IN_WORKFLOW
 
-This section deals with software injections. Here you are specifying where to perform them. In this instance it is in the workflow
+This section deals with software injections. Here you are specifying whether to use either pregenerated injections sets or ones made within the workflow itself. In this case, we will use one that is created within the workflow. 
 
 ::
 
@@ -284,11 +282,11 @@ These are the injections parameters you want to define. Only defining ones which
 - ``min-distance`` =  (kpc)
 - ``max-distance`` = (kpc)
 - ``d-distr`` = the distance distribution of the injections
-- ``l-distr`` = the longitudinal distribution of the injections (i.e. how spread out on the sky they are)
+- ``l-distr`` = the distribution of injections in the sky
 - ``i-distr`` = inclination of the injection 
 - ``time-step`` = time between injections. This can be whatever time you want, but remember if the injections are too close together you can screw up your psd estimation. ~90s seems ok. 
 - ``time-interval`` = time interval to inject the signal. It will not always be exactly at time-step, but at a time of time-step +/- random_number(0,time-interval)
-- ``seed`` = random seed, choose whatever number you want so you
+- ``seed`` = random seed, choose different numbers to get different realizations of the same background distribution
 
 ::
 
@@ -316,8 +314,8 @@ These are the injections parameters you want to define. Only defining ones which
   
 These are the parameters you want to define for the inspiral search
 
-- ``chisq-bins`` = number of bins to chop the signal (in frequency) into. Each bin has equal weighting and leads to newSNR
-- ``snr-threshold`` = newSNR threshold
+- ``chisq-bins`` = number of chisq bins for the standard Bruce Allen chisq
+- ``snr-threshold`` = SNR threshold
 - ``approximant`` = approximation you want to use. SPAtmplt is stationary phase approximation template which is a fast implementation of Taylor F2.
 - ``order`` = PN order, the numbers are double the order. So 7=3.5PN
 - ``cluster-method`` = method over which to identify the loudest trigger - in this case a window
@@ -365,17 +363,16 @@ Here we are doing exact match coincidence. So we take the light travel time betw
   loudest-keep = 200
   timeslide-interval=1.1
 
-This section concerns time slides without injections, and its purpose is to keep a small number of timesmlide triggers for background estimation. Time slides are done in a fixed window, which is defined by this bottom option of 1.1 seconds. We don’t store all the coincident triggers due to the time slides. We keep 200 of the loudest triggers for each template time slide, given by the second option, which gives a good estimation of the background at low FAR. The top option specifies which trigger number to keep from each template time slide to get an overall estimation of background (not just the loudest). In this instance we would keep the 1000th, 2000th, 3000th trigger etc.
+This section concerns time slides without injections, and its purpose is to keep a small number of timesmlide triggers for background estimation. Time slides are done at all relative offsets that are multiple of the 'timeslide-interval', which is defined here to be 1.1 seconds. We don’t store all the coincident triggers due from time slides. We keep 200 of the loudest triggers from each template time slide, given by the second option, which gives a good estimation of the background at low FAR. The top option specifies for which timeslides we will keep all triggers, to get an overall estimation of background (not just the loudest). In this instance we would keep the triggers from 1000th, 2000th, 3000th timeslide. 
 
 ::
 
   [coinc-injfull&coinc-fullinj]
-  timeslide-interval=1.1
+  timeslide-interval={coinc-full:timeslide-interval}
   loudest-keep-value = 8.5
-  cluster-window = 10.0
+  cluster-window = {statmap|cluster-window}
 
-This section concerns time slides with injections in the data. We assume only one injection will be coincident with a timeslide (done every 1.1 seconds - see first option)trigger and we keep it if its newSNR>8.5 as specified in the second option. 
-Cluster window indicates the time window that we want to cluster over in the SNR time series of a template
+This section concerns time slides with injections in the data. We assume only one injection will be coincident with a timeslide (done every 1.1 seconds - see first option) trigger and we keep its coincidence if its ranking statistic (newSNR) > 8.5 as specified in the second option. This is to limit storage of unimpactful triggers only. 
 
 ::
 
