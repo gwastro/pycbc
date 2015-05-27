@@ -32,7 +32,7 @@ def filter_zpk(timeseries, z, p, k):
 
     The transfer function in the s-domain looks like:
     H(s) = (s - s_1) * (s - s_3) * ... * (s - s_n)  , m >= n
-           ---------------------------------
+           ---------------------------------------
            (s - s_2) * (s - s_4) * ... * (s - s_m)
 
     The zeroes, and poles entered in Hz are converted to angular frequency,
