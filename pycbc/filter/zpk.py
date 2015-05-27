@@ -26,7 +26,6 @@ import numpy as np
 import scipy.signal
 
 from pycbc import future
-
 from pycbc.types import TimeSeries
 
 def filter_zpk(timeseries, z, p, k):
