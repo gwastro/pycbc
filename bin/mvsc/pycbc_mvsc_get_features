@@ -3,7 +3,6 @@ import sqlite3
 from glue.ligolw import dbtables
 from glue.ligolw import table
 from pylal import git_version
-import mvsc_queries
 from time import clock,time
 import matplotlib
 matplotlib.use('Agg')
@@ -45,6 +44,14 @@ parser.add_argument("--coinc-features", nargs="*", default=[], dest="coinc_featu
 parser.add_argument("--difference-features", nargs="*", default=[], dest="difference_features_list", choices=['delta_t','delta_phi','eff_dist_ratio'], help='Specify list of difference features, separated by spaces. Example: delta_t delta_phi')
 parser.add_argument("--input-database", dest="database")
 parser.add_argument("--verbose", default=False, action="store_true")
+
+
+## Function to put headers to feature files (.pat files)
+def put_headers(filename, features_list):
+	for line in fileinput.input([filename], inplace=True):
+		if fileinput.isfirstline():
+			print (str(len(features_list)) + '\n' + '\t'.join(features_list))
+		print line,
 
 
 ################ Functions used by the trigger class #############
@@ -142,19 +149,92 @@ class Trigger:
 
 #####################################################################
 
-############## Strings for Sqlite Queries ###########################
+############### Strings for sqlite queries ##########################
+
+select_dimensions_detA="""
+	SELECT
+		snglA.*,  
+		tsA.offset """
+
+select_dimensions_detB="""
+	SELECT
+		snglB.*, 
+		tsB.offset"""
+
+select_dimensions_coinc="""
+	SELECT
+		coinc_inspiral.*"""
+
+add_select_injections="""
+		, process_params.value,
+		sim_inspiral.distance"""
+
+add_from_injections="""
+	FROM
+		coinc_inspiral
+		JOIN coinc_event_map AS mapA ON (mapA.coinc_event_id == coinc_inspiral.coinc_event_id)
+		JOIN coinc_event_map AS mapB ON (mapB.coinc_event_id == coinc_inspiral.coinc_event_id)
+		JOIN sngl_inspiral AS snglA ON (snglA.event_id == mapA.event_id)
+		JOIN sngl_inspiral AS snglB ON (snglB.event_id == mapB.event_id)
+		JOIN coinc_event_map AS mapC ON (mapC.event_id == coinc_inspiral.coinc_event_id)
+		JOIN coinc_event_map AS mapD ON (mapD.coinc_event_id == mapC.coinc_event_id)
+		JOIN sim_inspiral ON (sim_inspiral.simulation_id == mapD.event_id)
+		JOIN coinc_event AS sim_coinc_event ON (sim_coinc_event.coinc_event_id == mapD.coinc_event_id)
+		JOIN coinc_event AS insp_coinc_event ON (insp_coinc_event.coinc_event_id == mapA.coinc_event_id)
+		JOIN coinc_definer ON (coinc_definer.coinc_def_id == sim_coinc_event.coinc_def_id)
+		JOIN process_params ON (process_params.process_id == sim_inspiral.process_id)
+		JOIN time_slide AS tsA ON (tsA.time_slide_id=insp_coinc_event.time_slide_id)
+		JOIN time_slide AS tsB ON (tsB.time_slide_id=insp_coinc_event.time_slide_id)
+	WHERE
+		mapA.table_name == 'sngl_inspiral'
+		AND mapB.table_name == 'sngl_inspiral'
+		AND mapC.table_name == 'coinc_event'
+		AND mapD.table_name == 'sim_inspiral'
+		AND tsA.instrument == snglA.ifo
+		AND tsB.instrument == snglB.ifo
+		AND snglA.ifo == ?
+		AND snglB.ifo == ?
+		AND process_params.program == 'inspinj'
+		AND (process_params.param == '--d-distr' OR process_params.param == '--dchirp-distr')"""
+
+add_where_injections="""
+		AND coinc_definer.description == ?
+		ORDER BY coinc_inspiral.end_time+coinc_inspiral.end_time_ns*.000000001"""
+
+add_select_fulldata="""
+		, experiment_summary.datatype"""
+
+add_from_fulldata="""
+	FROM
+		coinc_inspiral
+		JOIN coinc_event_map AS mapA ON (mapA.coinc_event_id == coinc_inspiral.coinc_event_id)
+		JOIN coinc_event_map AS mapB ON (mapB.coinc_event_id == coinc_inspiral.coinc_event_id)
+		JOIN sngl_inspiral AS snglA ON (snglA.event_id == mapA.event_id)
+		JOIN sngl_inspiral AS snglB ON (snglB.event_id == mapB.event_id)
+		JOIN coinc_event AS insp_coinc_event ON (mapA.coinc_event_id == insp_coinc_event.coinc_event_id)
+		JOIN coinc_definer ON (coinc_definer.coinc_def_id == insp_coinc_event.coinc_def_id)
+		JOIN experiment_map ON (experiment_map.coinc_event_id == coinc_inspiral.coinc_event_id)
+		JOIN experiment_summary ON (experiment_summary.experiment_summ_id == experiment_map.experiment_summ_id)
+		JOIN time_slide AS tsA ON (tsA.time_slide_id=insp_coinc_event.time_slide_id)
+		JOIN time_slide AS tsB ON (tsB.time_slide_id=insp_coinc_event.time_slide_id)
+	WHERE
+		coinc_definer.search == 'inspiral'
+		AND coinc_definer.search_coinc_type == 0
+		AND mapA.table_name == 'sngl_inspiral'
+		AND mapB.table_name == 'sngl_inspiral'
+		AND tsA.instrument == snglA.ifo
+		AND tsB.instrument == snglB.ifo
+		AND snglA.ifo == ?
+		AND snglB.ifo == ?
+		ORDER BY coinc_inspiral.coinc_event_id"""
 
 
-select_dimensions_detA = mvsc_queries.CandidateEventQuery.select_dimensions_detA
-select_dimensions_detB = mvsc_queries.CandidateEventQuery.select_dimensions_detB
-select_dimensions_coinc = mvsc_queries.CandidateEventQuery.select_dimensions_coinc
+select_dimensions_detA = select_dimensions_detA
+select_dimensions_detB = select_dimensions_detB
+select_dimensions_coinc = select_dimensions_coinc
 
-acquire_injections = (mvsc_queries.CandidateEventQuery.add_select_injections 
-		      + mvsc_queries.CandidateEventQuery.add_from_injections 
-		      + mvsc_queries.CandidateEventQuery.add_where_injections)
-
-acquire_all_data = (mvsc_queries.CandidateEventQuery.add_select_fulldata 
-		    + mvsc_queries.CandidateEventQuery.add_from_fulldata)
+acquire_injections = add_select_injections + add_from_injections + add_where_injections
+acquire_all_data = add_select_fulldata + add_from_fulldata
 
 # String-query to acquire injections
 injections_detA_string = select_dimensions_detA + acquire_injections
@@ -344,6 +424,10 @@ K = args.number
 print "### Starting %d-fold Cross Validation ..."%K
 # Make K partitions/folds for signal triggers --- testing and training
 exact_injections_partitions = np.array_split(all_trigs_dict["exact_injections"], K)
+# Determine GPS lower-boundaries of partitions
+gps_lower_bounds = [partition[0].coinc_inspiral_time for partition in exact_injections_partitions]
+gps_bounds = [[gps_lower_bounds[i],gps_lower_bounds[i+1]] for i in range(K-1)]
+gps_bounds = gps_bounds + [[gps_lower_bounds[K-1], all_trigs_dict["all_injections"][-1].coinc_inspiral_time+10]]
 
 # Do we really need to shuffle?
 random.seed(2)
@@ -355,19 +439,14 @@ timeslides_partitions = np.array_split(all_trigs_dict["timeslides"], K)
 
 ################ Save testing and training signal data in folds: to be used later for cross-validation ###########
 
-for i,(exact_inj_partition,ts_partition) in enumerate(zip(exact_injections_partitions, timeslides_partitions)):
+for i,(gps_boundary,ts_partition) in enumerate(zip(gps_bounds, timeslides_partitions)):
 
-
-	gps_inj_lower = exact_inj_partition[0].coinc_inspiral_time
-	gps_inj_upper = exact_inj_partition[-1].coinc_inspiral_time
-
- 
 	############# Acquire and save test trigger features ###########
 
 	print "### Acquiring test trigger features for round #%d in round-robin ..."%i
 	# Signal triggers for testing (taken from all_injections, which include nearby + exact injections)
 	all_injections_testing = [trig for trig in all_trigs_dict["all_injections"] 
-						if trig.coinc_inspiral_time >= gps_inj_lower and trig.coinc_inspiral_time <= gps_inj_upper]
+						if trig.coinc_inspiral_time >= gps_boundary[0] and trig.coinc_inspiral_time < gps_boundary[1]]
 
 	# Noise triggers for testing (taken from timeslides, which does NOT include zerolag triggers)
 	timeslides_testing = ts_partition.tolist()
@@ -381,11 +460,8 @@ for i,(exact_inj_partition,ts_partition) in enumerate(zip(exact_injections_parti
 	# Save testing trigger features in .pat files tagged with a partition/set number tag
 	filename = ''.join(ifos) + '_' + args.output_tag + '_set' + str(i) + '_' + 'evaluation' + '.pat' 
 	np.savetxt(filename, trigger_testing_features, fmt=formats, delimiter='\t')
-
-	for line in fileinput.input([filename], inplace=True):
-		if fileinput.isfirstline():
-			print (str(len(features_list)) + '\n' + '\t'.join(features_list))
-		print line,
+	# Add headers and number of features to file
+	put_headers(filename, features_list)
 
 	# Extract testing trigger object attributes, to be subsequently used as features
 	triggers_testing_info = tuple([[trig.coinc_event_id, args.database] for trig in triggers_testing])
@@ -415,11 +491,8 @@ for i,(exact_inj_partition,ts_partition) in enumerate(zip(exact_injections_parti
 	# Save training trigger features in .pat files tagged with a partition/set number tag
 	filename = ''.join(ifos) + '_' + args.output_tag + '_set' + str(i) + '_' + "training" + '.pat'
 	np.savetxt(filename, trigger_training_features, fmt=formats, delimiter='\t')
-
-	for line in fileinput.input([filename], inplace=True):
-		if fileinput.isfirstline():
-			print (str(len(features_list)) + '\n' + '\t'.join(features_list))
-		print line,
+	# Add headers and number of features to file
+	put_headers(filename, features_list)
 
 	################################################################
 
@@ -430,11 +503,8 @@ for i,(exact_inj_partition,ts_partition) in enumerate(zip(exact_injections_parti
 	# Save the trigger features in .pat files tagged with a partition/set number tag
 	filename = ''.join(ifos) + '_' + args.output_tag + '_set' + str(i) + '_' + "zerolag" + '.pat'
 	np.savetxt(filename, zerolag_trigger_features, fmt=formats, delimiter='\t')
-
-	for line in fileinput.input([filename], inplace=True):
-		if fileinput.isfirstline():
-			print (str(len(features_list)) + '\n' + '\t'.join(features_list))
-		print line,
+	# Add headers and number of features to file
+	put_headers(filename, features_list)
 
 	# Extract testing trigger object attributes, to be subsequently used as features
 	zerolag_trigger_info = tuple([[trig.coinc_event_id, args.database] for trig in all_trigs_dict["zerolags"]])
