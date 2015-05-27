@@ -51,113 +51,48 @@ def filter_zpk(timeseries, z, p, k):
         A  new TimeSeries that has been filtered. 
     """
 
-    if not isinstance(timeseries,TimeSeries):
-        raise TypeError("Can only filter time series.")
+    # sanity check type
+    if not isinstance(timeseries, TimeSeries):
+        raise TypeError("Can only filter TimeSeries instances.")
 
-    if len(z) > len(p):
-        raise TypeError("Improper tansfer function, more numerator terms than denominator.")
+    # sanity check casual filter
+    degree = len(p) - len(z)
+    if degree < 0:
+        raise TypeError("May not have more zeroes than poles.
+                         Filter is not casual.")
 
-    # get digital filter coefficients
-    _, digital_coefficients = coefficients_zpk(z, p, k, timeseries.sample_rate)
+    # cast zeroes and poles as arrays and gain as a float
+    z = np.array(z)
+    p = np.array(p)
+    k = float(k)
 
-    # apply the filter
-    series = scipy.signal.lfilter(digital_coefficients[0], digital_coefficients[1], \
-                                      timeseries.numpy())
+    # put zeroes and poles in the s-domain
+    # convert from frequency to angular frequency
+    z *= -2 * np.pi
+    p *= -2 * np.pi
 
-    return TimeSeries(series, delta_t = timeseries.delta_t,
+    # get denominator of bilinear transform
+    fs = 2.0 * timseries.sample_rate
+
+    # zeroes in the z-domain
+    z_zd = (1 + z/fs) / (1 - z/fs)
+
+    # any zeros that were at infinity are moved to the Nyquist frequency
+    z_zd = z_zd[numpy.isfinite(z_dz)]
+    z_zd = np.append(z_zd, -np.ones(degree))
+
+    # poles in the z-domain
+    p_zd = (1 + p/fs) / (1 - p/fs)
+
+    # gain change in z-domain
+    k_zd = k * np.prod(fs - z) / np.prod(fs - p)
+
+    # get second-order sections
+    sos = signal.zpk2sos(z_zd, p_zd, k_zd)
+
+    # filter
+    filtered_data = signal.sosfilt(sos, timeseries.numpy())
+
+    return TimeSeries(filtered_data, delta_t = timeseries.delta_t,
                       dtype=timeseries.dtype,
                       epoch=timeseries._epoch)
-
-def filter_zpk_factored(timeseries, z, p, k, increment=3):
-    """Return a new timeseries that is filter with zpk (zeros, poles, gain)
-       parameters. This function factors the zpk filter into smaller filters,
-       and applies each factor seperately. Only use this function instead of
-       filter_zpk with higher order filters; this is because in the frequency
-       response of the digital filter there may be large error at low frequency.
-
-    Parameters
-    ----------
-    timeseries: TimeSeries
-        The time series to be filtered.
-    z: array
-        Array of zeros to include in zpk filter design, eg. 3 zeroes at 1Hz
-        would be array([1., 1., 1.])
-    p: array
-        Array of poles to include in zpk filter design, eg. 3 poles at 100Hz
-        would be array([-100., -100., -100.])
-    k: float
-        Gain to include in zpk filter design. This gain is a contast
-        multiplied to the transfer function.
-
-    Returns
-    -------
-    Time Series: TimeSeries
-        A  new TimeSeries that has been filtered. 
-    """
-
-    if not isinstance(timeseries,TimeSeries):
-        raise TypeError("Can only filter time series.")
-
-    if len(z) > len(p):
-        raise TypeError("Improper tansfer function, more numerator terms than denominator.")
-
-    # get max of fraction denominator and numerator
-    length = max(len(z), len(p))
-
-    # split up input into smaller filters
-    # and filter the data with each small filter
-    i = 0
-    j = increment
-    series = timeseries.numpy()
-    for r in range(length/increment+1):
-        # get digital filter coefficients
-        _, digital_coefficients = coefficients_zpk(z[i:j], p[i:j], k, \
-                                                 timeseries.sample_rate)
-
-        # apply the filter
-        series = scipy.signal.lfilter(digital_coefficients[0], \
-                                        digital_coefficients[1], series)
-
-        # increment
-        i += increment
-        j += increment
-
-        # for subsequent filters do not apply gain,
-        # since it was applied in first filter
-        k = 1
-
-    return TimeSeries(series, delta_t = timeseries.delta_t,
-                      dtype=timeseries.dtype,
-                      epoch=timeseries._epoch)
- 
-def coefficients_zpk(z, p, k, sample_rate):
-    """Return anolog and digital coefficients for a zero-pole-gain filter.
-
-    Parameters
-    ----------
-    z: list
-        List of zeros to include in zpk filter design, eg. 3 zeroes at 1Hz
-        would be array([1., 1., 1.])
-    p: list
-        list of poles to include in zpk filter design, eg. 3 poles at 100Hz
-        would be array([-100., -100., -100.])
-    k: float
-        Gain to include in zpk filter design. This gain is a contast
-        multiplied to the transfer function.
-
-    Returns
-    -------
-    analog_coefficients: tuple
-        A  tuple of (numerator_coefficients, denominator_coefficients).
-    digital_coefficients: tuple
-        A  tuple of (numerator_coefficients, denominator_coefficients). 
-    """
-
-    # create transfer function coefficients using analog filter
-    analog_coefficients = scipy.signal.zpk2tf(z, p, k)
-
-    # convert to digital filter
-    digital_coefficients = scipy.signal.bilinear(analog_coefficients[0], \
-                                       analog_coefficients[1], sample_rate)
-
-    return analog_coefficients, digital_coefficients
