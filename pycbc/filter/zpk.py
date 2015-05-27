@@ -33,7 +33,7 @@ def filter_zpk(timeseries, z, p, k):
     Parameters
     ----------
     timeseries: TimeSeries
-        The time series to be filtered.
+        The TimeSeries instance to be filtered.
     z: array
         Array of zeros to include in zero-pole-gain filter design.
         In units of Hz.
@@ -48,6 +48,13 @@ def filter_zpk(timeseries, z, p, k):
     -------
     Time Series: TimeSeries
         A  new TimeSeries that has been filtered. 
+
+    Examples
+    --------
+    To apply a 5 zeroes at 1Hz, 5 poles at 1Hz, and a gain of 1e-10 filter
+    to a TimeSeries instance, do:
+
+    >>> filtered_data = zpk_filter(timeseries, [100]*5, [1]*5, 1e-10)
     """
 
     # sanity check type
