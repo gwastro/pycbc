@@ -30,6 +30,9 @@ Mostly done with monkey-patching.
 # Add in missing numpy functionality
 import numpy
 
+# add in missing scipy functionality
+import scipy
+
 def unique(ar, return_index=False, return_inverse=False):
     """
         KILL ME!!!!
@@ -146,9 +149,7 @@ def zpk2sos(z, p, k, pairing='nearest'):
     """Stolen from scipy, please kill me and upgrade scipy...
     """
 
-    import numpy as np
-    from numpy import zeros
-    from scipy.signal import zpk2tf, lfilter
+    from scipy.signal.filter_design import *
 
     valid_pairings = ['nearest', 'keep_odd']
     if pairing not in valid_pairings:
@@ -250,9 +251,13 @@ def sosfilt(sos, x, axis=-1, zi=None):
     """Stolen from scipy, please kill me and upgrade scipy...
     """
 
+<<<<<<< HEAD
     import numpy as np
     from numpy import atleast_1d, atleast_2d, array
     from scipy.signal import lfilter
+=======
+    from scipy.signal.signaltools import *
+>>>>>>> Add scipy functions for second-order section filtering to pycbc.futures.
 
     x = np.asarray(x)
 
@@ -267,7 +272,11 @@ def sosfilt(sos, x, axis=-1, zi=None):
     use_zi = zi is not None
     if use_zi:
         zi = np.asarray(zi)
+<<<<<<< HEAD
         e_zi_shape = list(x.shape)
+=======
+        x_zi_shape = list(x.shape)
+>>>>>>> Add scipy functions for second-order section filtering to pycbc.futures.
         x_zi_shape[axis] = 2
         x_zi_shape = tuple([n_sections] + x_zi_shape)
         if zi.shape != x_zi_shape:
@@ -285,6 +294,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
             x = lfilter(sos[section, :3], sos[section, 3:], x, axis)
     out = (x, zf) if use_zi else x
     return out
+<<<<<<< HEAD
 
 def _cplxreal(z, tol=None):
 
@@ -355,3 +365,5 @@ def _nearest_real_complex_idx(fro, to, which):
     if which == 'complex':
         mask = ~mask
     return order[np.where(mask)[0][0]]
+=======
+>>>>>>> Add scipy functions for second-order section filtering to pycbc.futures.
