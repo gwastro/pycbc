@@ -28,22 +28,21 @@ import scipy.signal
 from pycbc.types import TimeSeries
 
 def filter_zpk(timeseries, z, p, k):
-    """Return a new timeseries that is filter with zpk (zeros, poles, gain)
-       parameters.
+    """Return a new timeseries that was filtered with a zero-pole-gain filter.
 
     Parameters
     ----------
     timeseries: TimeSeries
         The time series to be filtered.
     z: array
-        Array of zeros to include in zpk filter design, eg. 3 zeroes at 1Hz
-        would be array([1., 1., 1.])
+        Array of zeros to include in zero-pole-gain filter design.
+        In units of Hz.
     p: array
-        Array of poles to include in zpk filter design, eg. 3 poles at 100Hz
-        would be array([-100., -100., -100.])
+        Array of poles to include in zero-pole-gain filter design.
+        In units of Hz.
     k: float
-        Gain to include in zpk filter design. This gain is a contast
-        multiplied to the transfer function.
+        Gain to include in zero-pole-gain filter design. This gain is a
+        constant multiplied to the transfer function.
 
     Returns
     -------
