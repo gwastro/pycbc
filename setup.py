@@ -345,6 +345,7 @@ setup (
                'bin/hdfcoinc/pycbc_page_coinc_snrchi',
                'bin/hdfcoinc/pycbc_stat_dtphase',
                'bin/hdfcoinc/pycbc_plot_singles_vs_params',
+               'bin/mvsc/pycbc_mvsc_get_features',
                ],
     packages = [
                'pycbc',
