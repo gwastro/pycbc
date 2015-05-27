@@ -62,11 +62,14 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
                             end_time=opt.gps_end_time+opt.pad_data)
 
         if opt.zpk_z and opt.zpk_p and opt.zpk_k:
+            logging.info("Highpass Filtering")
+            strain = highpass(strain, frequency=opt.strain_high_pass)
+
             logging.info("Applying zpk filter")
-            z = -2*numpy.pi* numpy.array(opt.zpk_z)
-            p = -2*numpy.pi* numpy.array(opt.zpk_p)
-            k = opt.zpk_k
-            strain = filter_zpk_factored(strain.astype(numpy.float64), z, p, k)
+            z = numpy.array(opt.zpk_z)
+            p = numpy.array(opt.zpk_p)
+            k = float(opt.zpk_k)
+            strain = filter_zpk(strain.astype(numpy.float64), z, p, k)
 
         if opt.normalize_strain:
             logging.info("Dividing strain by constant")
