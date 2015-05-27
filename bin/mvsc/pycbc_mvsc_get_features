@@ -229,10 +229,6 @@ add_from_fulldata="""
 		ORDER BY coinc_inspiral.coinc_event_id"""
 
 
-select_dimensions_detA = select_dimensions_detA
-select_dimensions_detB = select_dimensions_detB
-select_dimensions_coinc = select_dimensions_coinc
-
 acquire_injections = add_select_injections + add_from_injections + add_where_injections
 acquire_all_data = add_select_fulldata + add_from_fulldata
 
@@ -419,15 +415,18 @@ formats = ["%1.6e"]*(len(features_list)+1) + ["%d"]
 # One partition of each data type (signal or noise) is assigned for classifier testing/evaluation. The remaining
 # partitions are assigned for classifier training. 
 
-
 K = args.number
 print "### Starting %d-fold Cross Validation ..."%K
 # Make K partitions/folds for signal triggers --- testing and training
 exact_injections_partitions = np.array_split(all_trigs_dict["exact_injections"], K)
-# Determine GPS lower-boundaries of partitions
-gps_lower_bounds = [partition[0].coinc_inspiral_time for partition in exact_injections_partitions]
-gps_bounds = [[gps_lower_bounds[i],gps_lower_bounds[i+1]] for i in range(K-1)]
-gps_bounds = gps_bounds + [[gps_lower_bounds[K-1], all_trigs_dict["all_injections"][-1].coinc_inspiral_time+10]]
+
+# Determine GPS lower-boundaries for all_injection partitions
+gps_lower_bounds = ([all_trigs_dict["all_injections"][0].coinc_inspiral_time] 
+				+ [partition[0].coinc_inspiral_time for partition in exact_injections_partitions[1:]])
+
+# Determine GPS upper-boundaries for all_injection partitions
+# Add 1 to the highest upper bound as we will be using a 'strictly less than gps_upper' condition
+gps_upper_bounds = gps_lower_bounds[1:] + [all_trigs_dict["all_injections"][-1].coinc_inspiral_time + 1]
 
 # Do we really need to shuffle?
 random.seed(2)
@@ -439,14 +438,14 @@ timeslides_partitions = np.array_split(all_trigs_dict["timeslides"], K)
 
 ################ Save testing and training signal data in folds: to be used later for cross-validation ###########
 
-for i,(gps_boundary,ts_partition) in enumerate(zip(gps_bounds, timeslides_partitions)):
+for i, (gps_lower, gps_upper, ts_partition) in enumerate(zip(gps_lower_bounds, gps_upper_bounds, timeslides_partitions)):
 
 	############# Acquire and save test trigger features ###########
 
 	print "### Acquiring test trigger features for round #%d in round-robin ..."%i
 	# Signal triggers for testing (taken from all_injections, which include nearby + exact injections)
 	all_injections_testing = [trig for trig in all_trigs_dict["all_injections"] 
-						if trig.coinc_inspiral_time >= gps_boundary[0] and trig.coinc_inspiral_time < gps_boundary[1]]
+						if trig.coinc_inspiral_time >= gps_lower and trig.coinc_inspiral_time < gps_upper]
 
 	# Noise triggers for testing (taken from timeslides, which does NOT include zerolag triggers)
 	timeslides_testing = ts_partition.tolist()
