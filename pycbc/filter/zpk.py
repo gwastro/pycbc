@@ -25,6 +25,7 @@
 import numpy
 import scipy.signal
 
+from pycbc import future 
 from pycbc.types import TimeSeries
 
 def filter_zpk(timeseries, z, p, k):
@@ -112,10 +113,10 @@ def filter_zpk(timeseries, z, p, k):
     k_zd = k * np.prod(fs - z) / np.prod(fs - p)
 
     # get second-order sections
-    sos = signal.zpk2sos(z_zd, p_zd, k_zd)
+    sos = future.zpk2sos(z_zd, p_zd, k_zd)
 
     # filter
-    filtered_data = signal.sosfilt(sos, timeseries.numpy())
+    filtered_data = future.sosfilt(sos, timeseries.numpy())
 
     return TimeSeries(filtered_data, delta_t = timeseries.delta_t,
                       dtype=timeseries.dtype,
