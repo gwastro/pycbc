@@ -30,9 +30,6 @@ Mostly done with monkey-patching.
 # Add in missing numpy functionality
 import numpy
 
-# add in missing scipy functionality
-import scipy
-
 def unique(ar, return_index=False, return_inverse=False):
     """
         KILL ME!!!!
@@ -149,13 +146,9 @@ def zpk2sos(z, p, k, pairing='nearest'):
     """Stolen from scipy, please kill me and upgrade scipy...
     """
 
-<<<<<<< HEAD
     import numpy as np
     from numpy import zeros
     from scipy.signal import zpk2tf, lfilter
-=======
-    from scipy.signal.filter_design import *
->>>>>>> Add scipy functions for second-order section filtering to pycbc.futures.
 
     valid_pairings = ['nearest', 'keep_odd']
     if pairing not in valid_pairings:
@@ -257,7 +250,9 @@ def sosfilt(sos, x, axis=-1, zi=None):
     """Stolen from scipy, please kill me and upgrade scipy...
     """
 
-    from scipy.signal.signaltools import *
+    import numpy as np
+    from numpy import atleast_1d, atleast_2d, array
+    from scipy.signal import lfilter
 
     x = np.asarray(x)
 
@@ -272,7 +267,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     use_zi = zi is not None
     if use_zi:
         zi = np.asarray(zi)
-        x_zi_shape = list(x.shape)
+        e_zi_shape = list(x.shape)
         x_zi_shape[axis] = 2
         x_zi_shape = tuple([n_sections] + x_zi_shape)
         if zi.shape != x_zi_shape:
