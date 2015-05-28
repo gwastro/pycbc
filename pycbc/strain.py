@@ -29,7 +29,7 @@ from pycbc.types import copy_opts_for_single_ifo
 from pycbc.frame import read_frame
 from pycbc.inject import InjectionSet, SGBurstInjectionSet
 from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series
-from pycbc.filter.zpk import filter_zpk_factored
+from pycbc.filter.zpk import filter_zpk
 
 def from_cli(opt, dyn_range_fac=1, precision='single'):
     """Parses the CLI options related to strain data reading and conditioning.
