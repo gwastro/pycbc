@@ -54,13 +54,15 @@ Executable/Package documentation:
    banksim
    faithsim
 
-Tutorial and Code Snippets:
+Walkthroughs and Tutorials:
 
 .. toctree::
+   :glob:
    :maxdepth: 1
-   workflow/https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/pycbc_bns_hdf_config_walkthrough.html
-   
-   waveform
+
+   workflow/*walkthrough*
+
+Code Examples:
 
 .. toctree::
    :maxdepth: 2

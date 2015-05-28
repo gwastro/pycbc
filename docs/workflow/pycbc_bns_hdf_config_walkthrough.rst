@@ -489,4 +489,4 @@ The rest of the config file concerns plotting formats
   analysis-title="PyCBC Coincident Analysis"
   analysis-subtitle="..."
   
-  You can download the full example ini file :download:`here. <../resources/er6_bns.ini>`
+You can download the full example ini file :download:`here. <../resources/er6_bns.ini>`
