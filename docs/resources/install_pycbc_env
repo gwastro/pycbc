@@ -50,7 +50,7 @@ source $LOCAL/etc/lal-user-env.sh
 # LAL python dependencies
 pipn git+https://github.com/ahnitz/glue.git#egg=glue
 pipn git+https://github.com/ahnitz/pylal.git#egg=pylal
-pipn git+https://github.com/ahnitz/pycbc.git#egg=pycbc
+pipn git+https://github.com/ligo-cbc/pycbc.git#egg=pycbc
 cd $LOCAL
 
 echo PEG_DIR=$PEG_DIR > source
