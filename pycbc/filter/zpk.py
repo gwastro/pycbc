@@ -82,7 +82,7 @@ def filter_zpk(timeseries, z, p, k):
     # sanity check casual filter
     degree = len(p) - len(z)
     if degree < 0:
-        raise TypeError("May not have more zeroes than poles.
+        raise TypeError("May not have more zeroes than poles. \
                          Filter is not casual.")
 
     # cast zeroes and poles as arrays and gain as a float
