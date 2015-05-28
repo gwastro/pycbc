@@ -29,7 +29,7 @@ Stanislav Babak (1), Christopher M. Biwer (2), Duncan Brown (2), Collin Capano (
 #. Louisiana State University, LA, USA
 #. University of Wisconsin-Milwaukee, WI, USA
 #. Abilene Christian University, TX, USA
-#. Instituto def Fisico Teorica, Sao Paulo, Brazil
+#. Instituto de Fisico Teorica, Sao Paulo, Brazil
 #. Cardiff University, Cardiff, UK
 
 =========================
@@ -63,6 +63,12 @@ Walkthroughs and Tutorials:
    workflow/*walkthrough*
 
 Code Examples:
+
+.. toctree::
+   :maxdepth: 1
+   workflow/https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/pycbc_bns_hdf_config_walkthrough.html
+   
+   waveform
 
 .. toctree::
    :maxdepth: 2
