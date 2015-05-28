@@ -65,6 +65,12 @@ Walkthroughs and Tutorials:
 Code Examples:
 
 .. toctree::
+   :maxdepth: 1
+   workflow/https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/pycbc_bns_hdf_config_walkthrough.html
+   
+   waveform
+
+.. toctree::
    :maxdepth: 2
 
    waveform
