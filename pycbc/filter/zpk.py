@@ -97,7 +97,7 @@ def filter_zpk(timeseries, z, p, k):
     p *= -2 * np.pi
 
     # get denominator of bilinear transform
-    fs = 2.0 * timseries.sample_rate
+    fs = 2.0 * timeseries.sample_rate
 
     # zeroes in the z-domain
     z_zd = (1 + z/fs) / (1 - z/fs)
