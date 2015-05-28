@@ -30,9 +30,6 @@ Mostly done with monkey-patching.
 # Add in missing numpy functionality
 import numpy
 
-# add in missing scipy functionality
-import scipy
-
 def unique(ar, return_index=False, return_inverse=False):
     """
         KILL ME!!!!
@@ -125,6 +122,7 @@ numpy.in1d = in1d
 
 def block_diag(*arrs):
     import numpy as np
+    from numpy import atleast_1d, atleast_2d, array
     if arrs == ():
         arrs = ([],)
     arrs = [np.atleast_2d(a) for a in arrs]
@@ -148,7 +146,9 @@ def zpk2sos(z, p, k, pairing='nearest'):
     """Stolen from scipy, please kill me and upgrade scipy...
     """
 
-    from scipy.signal.filter_design import *
+    import numpy as np
+    from numpy import zeros
+    from scipy.signal import zpk2tf, lfilter
 
     valid_pairings = ['nearest', 'keep_odd']
     if pairing not in valid_pairings:
@@ -250,7 +250,9 @@ def sosfilt(sos, x, axis=-1, zi=None):
     """Stolen from scipy, please kill me and upgrade scipy...
     """
 
-    from scipy.signal.signaltools import *
+    import numpy as np
+    from numpy import atleast_1d, atleast_2d, array
+    from scipy.signal import lfilter
 
     x = np.asarray(x)
 
@@ -265,7 +267,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     use_zi = zi is not None
     if use_zi:
         zi = np.asarray(zi)
-        x_zi_shape = list(x.shape)
+        e_zi_shape = list(x.shape)
         x_zi_shape[axis] = 2
         x_zi_shape = tuple([n_sections] + x_zi_shape)
         if zi.shape != x_zi_shape:
@@ -283,3 +285,73 @@ def sosfilt(sos, x, axis=-1, zi=None):
             x = lfilter(sos[section, :3], sos[section, 3:], x, axis)
     out = (x, zf) if use_zi else x
     return out
+
+def _cplxreal(z, tol=None):
+
+    import numpy as np
+    from numpy import atleast_1d, atleast_2d, array
+
+    z = atleast_1d(z)
+    if z.size == 0:
+        return z, z
+    elif z.ndim != 1:
+        raise ValueError('_cplxreal only accepts 1D input')
+
+    if tol is None:
+        # Get tolerance from dtype of input
+        tol = 100 * np.finfo((1.0 * z).dtype).eps
+
+    # Sort by real part, magnitude of imaginary part (speed up further sorting)
+    z = z[np.lexsort((abs(z.imag), z.real))]
+
+    # Split reals from conjugate pairs
+    real_indices = abs(z.imag) <= tol * abs(z)
+    zr = z[real_indices].real
+
+    if len(zr) == len(z):
+        # Input is entirely real
+        return array([]), zr
+
+    # Split positive and negative halves of conjugates
+    z = z[~real_indices]
+    zp = z[z.imag > 0]
+    zn = z[z.imag < 0]
+
+    if len(zp) != len(zn):
+        raise ValueError('Array contains complex value with no matching '
+                         'conjugate.')
+
+    # Find runs of (approximately) the same real part
+    same_real = np.diff(zp.real) <= tol * abs(zp[:-1])
+    diffs = numpy.diff(concatenate(([0], same_real, [0])))
+    run_starts = numpy.where(diffs > 0)[0]
+    run_stops = numpy.where(diffs < 0)[0]
+
+    # Sort each run by their imaginary parts
+    for i in range(len(run_starts)):
+        start = run_starts[i]
+        stop = run_stops[i] + 1
+        for chunk in (zp[start:stop], zn[start:stop]):
+            chunk[...] = chunk[np.lexsort([abs(chunk.imag)])]
+
+    # Check that negatives match positives
+    if any(abs(zp - zn.conj()) > tol * abs(zn)):
+        raise ValueError('Array contains complex value with no matching '
+                         'conjugate.')
+
+    # Average out numerical inaccuracy in real vs imag parts of pairs
+    zc = (zp + zn.conj()) / 2
+
+    return zc, zr
+
+def _nearest_real_complex_idx(fro, to, which):
+
+    import numpy as np
+
+    """Get the next closest real or complex element based on distance"""
+    assert which in ('real', 'complex')
+    order = np.argsort(np.abs(fro - to))
+    mask = np.isreal(fro[order])
+    if which == 'complex':
+        mask = ~mask
+    return order[np.where(mask)[0][0]]
