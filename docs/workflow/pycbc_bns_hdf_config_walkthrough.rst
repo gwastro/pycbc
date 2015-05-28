@@ -1,5 +1,5 @@
 =====
-Instructions for running PyCBC BNS pipeline on SUGAR
+Walkthrough of running the PyCBC BNS focused pipeline on SUGAR
 =====
 
 Using the include environment :download:`install script <../resources/install_pycbc_env>`
@@ -488,3 +488,5 @@ The rest of the config file concerns plotting formats
   [results_page]
   analysis-title="PyCBC Coincident Analysis"
   analysis-subtitle="..."
+  
+You can download the full example ini file :download:`here. <../resources/er6_bns.ini>`

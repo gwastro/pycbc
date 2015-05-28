@@ -54,7 +54,15 @@ Executable/Package documentation:
    banksim
    faithsim
 
-Tutorial and Code Snippets:
+Walkthroughs and Tutorials:
+
+.. toctree::
+   :glob:
+   :maxdepth: 1
+
+   workflow/*walkthrough*
+
+Code Examples:
 
 .. toctree::
    :maxdepth: 2
