@@ -22,10 +22,11 @@
 # =============================================================================
 #
 
-import numpy
+import numpy as np
 import scipy.signal
 
-from pycbc import future 
+from pycbc import future
+
 from pycbc.types import TimeSeries
 
 def filter_zpk(timeseries, z, p, k):
@@ -97,13 +98,13 @@ def filter_zpk(timeseries, z, p, k):
     p *= -2 * np.pi
 
     # get denominator of bilinear transform
-    fs = 2.0 * timseries.sample_rate
+    fs = 2.0 * timeseries.sample_rate
 
     # zeroes in the z-domain
     z_zd = (1 + z/fs) / (1 - z/fs)
 
     # any zeros that were at infinity are moved to the Nyquist frequency
-    z_zd = z_zd[numpy.isfinite(z_dz)]
+    z_zd = z_zd[np.isfinite(z_zd)]
     z_zd = np.append(z_zd, -np.ones(degree))
 
     # poles in the z-domain
