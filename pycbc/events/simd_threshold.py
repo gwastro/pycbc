@@ -465,9 +465,12 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   // one too low.
 
   if (cnt > 0){
-    if (cnt > 1){
-      cnt += 1;
-    }
+    // If we have more than one trigger the following causes cnt to
+    // leapfrog over one index, leaving uninitalized values in that
+    // location
+    // if (cnt > 1){
+    //   cnt += 1;
+    // }
     values[cnt-1] = curr_cval;
     locs[cnt-1] = curr_loc;
   }
