@@ -38,6 +38,10 @@ def findchirp_chirptime(m1, m2, fLower, porder):
     eta = m1 * m2 / m / m
     c0T = c2T = c3T = c4T = c5T = c6T = c6LogT = c7T = 0.
 
+    # All implemented option
+    if porder == -1:
+        porder = 7
+
     if porder >= 7:
         c7T = lal.PI * (14809.0 * eta * eta / 378.0 - 75703.0 * eta / 756.0 - 15419335.0 / 127008.0)
 
