@@ -99,6 +99,8 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
 
         wf.make_foreground_table(workflow, final_bg_file[0], hdfbank[0], tag, 'plots/foreground')
         wf.make_snrchi_plot(workflow, insps, final_veto_file[0], 'plots/background', tags=[tag])
+        wf.make_singles_plot(workflow, insps, hdfbank[0], final_veto_file[0], 'plots/background', tags=[tag])
+
     else:
         inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank,
                                                 full_insps, insps, final_bg_file, final_veto_file,
