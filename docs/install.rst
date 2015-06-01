@@ -15,6 +15,7 @@ In order to install PyCBC, you need to have installed the following prerequisite
 * `LALSuite <https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html>`_ (with swig bindings enabled)
 * `GLUE <https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html>`_
 * `pylal <https://www.lsc-group.phys.uwm.edu/daswg/projects/pylal.html>`_
+* `jinja2 <https://pypi.python.org/pypi/jinja2>`
 
 .. note::
     

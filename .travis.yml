@@ -1,0 +1,4 @@
+language: python
+before_install:
+  - "./tools/install_travis.sh"
+script: "python setup.py test"
