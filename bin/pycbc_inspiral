@@ -265,7 +265,7 @@ with ctx:
                          (t_num + 1, len(bank), s_num + 1, len(segments)))
 
             snr, norm, corr, idx, snrv = \
-               matched_filter.matched_filter_and_cluster(s_num, template.sigmasq(segments[0].psd))
+               matched_filter.matched_filter_and_cluster(s_num, template.sigmasq(stilde.psd))
 
             if not len(idx):
                 continue
