@@ -21,7 +21,7 @@
 #
 # =============================================================================
 #
-import logging
+import logging, numpy
 from pycbc.types import Array, zeros, real_same_precision_as, TimeSeries, complex_same_precision_as
 from pycbc.filter import overlap_cplx, matched_filter_core
 from pycbc.waveform import FilterBank
@@ -225,5 +225,10 @@ class SingleDetBankVeto(object):
             logging.info("...Doing bank veto")
             overlaps = self.cache_overlaps(template, psd)
             bank_veto_snrs, bank_veto_norms = self.cache_segment_snrs(stilde, psd)
-            return bank_chisq_from_filters(snrv, norm, bank_veto_snrs,
-                  bank_veto_norms, overlaps, indices), self.dof
+            chisq = bank_chisq_from_filters(snrv, norm, bank_veto_snrs,
+                                            bank_veto_norms, overlaps, indices) 
+            dof = numpy.repeat(self.dof, len(chisq))
+            return chisq, dof
+        else:
+            return None, None      
+                  
