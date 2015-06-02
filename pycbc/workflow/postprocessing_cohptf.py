@@ -40,9 +40,10 @@ from pycbc.workflow.core import File, FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import select_generic_executable
 #from pycbc.workflow.legacy_ihope import LegacyCohPTFTrigCombiner 
 
-def setup_coh_PTF_post_processing(workflow, trigger_files, injection_files,
-                                  output_dir, segment_dir, run_dir=None,
-                                  ifos=None, tags=[], **kwargs):
+def setup_coh_PTF_post_processing(workflow, trigger_files, output_dir,
+                                  segment_dir, injection_files=None,
+                                  config_file=None, run_dir=None, ifos=None,
+                                  tags=[], **kwargs):
     """
     This function aims to be the gateway for running postprocessing in CBC
     offline workflows. Post-processing generally consists of calculating the
@@ -85,7 +86,8 @@ def setup_coh_PTF_post_processing(workflow, trigger_files, injection_files,
     if post_proc_method == "COH_PTF_WORKFLOW":
         post_proc_files = setup_postproc_coh_PTF_workflow(workflow,
                            trigger_files, injection_files, output_dir,
-                           segment_dir, ifos=ifos, tags=tags, **kwargs)
+                           segment_dir, config_file, ifos=ifos, tags=tags,
+                           **kwargs)
     else:
         errMsg = "Post-processing method not recognized. Must be "
         errMsg += "COH_PTF_WORKFLOW."
@@ -120,7 +122,7 @@ def setup_old_coh_PTF_pp_workflow(workflow, analysis_files, injection_files,
 
 
 def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
-                                    output_dir, segment_dir, ifos,
+                                    output_dir, segment_dir, config_file, ifos,
                                     tags=[]):
     """
     This module sets up the post-processing stage in the workflow, using a
@@ -141,6 +143,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
     """
     cp = workflow.cp
     post_proc_outs = FileList([])
+    pp_nodes = []
 
     # Set up needed exe classes
     trig_combiner_exe = os.path.basename(cp.get("executables",
@@ -171,6 +174,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
                                              out_dir=output_dir, tags=tags)
     trig_combiner_node = trig_combiner_jobs.create_node(trigger_files,
                                                         segment_dir, tags=tags)
+    pp_nodes.append(trig_combiner_node)
     workflow.add_node(trig_combiner_node)
     #FIXME: trig_combiner_node.output_files is empty! This is a hack.
     #trig_combiner_outs = trig_combiner_node.output_files
@@ -209,6 +213,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
         if out_tag != "ONSOURCE":
             # Add memory requirememnt for jobs with potentially large files
             trig_cluster_node.set_memory(1300)
+            pp_nodes.append(trig_cluster_node)
             workflow.add_node(trig_cluster_node)
             dep = dax.Dependency(parent=trig_combiner_node._dax_node,
                                  child=trig_cluster_node._dax_node)
@@ -220,6 +225,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
             sbv_plotter_node = sbv_plotter_jobs.create_node(parent,
                                                             segment_dir,
                                                             tags=sbv_out_tags)
+            pp_nodes.append(sbv_plotter_node)
             workflow.add_node(sbv_plotter_node)
 
             if out_tag == "OFFSOURCE":
@@ -233,11 +239,13 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
                                                             segment_dir,
                                                             tags=sbv_out_tags)
             sbv_plotter_node.set_memory(1300)
+            pp_nodes.append(sbv_plotter_node)
             workflow.add_node(sbv_plotter_node)
             dep = dax.Dependency(parent=trig_combiner_node._dax_node,
                                  child=sbv_plotter_node._dax_node)
             workflow._adag.addDependency(dep)
         else:
+            pp_nodes.append(trig_cluster_node)
             workflow.add_node(trig_cluster_node)
             dep = dax.Dependency(parent=trig_combiner_node._dax_node,
                                  child=trig_cluster_node._dax_node)
@@ -250,6 +258,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
                                                           offsource_clustered,
                                                           segment_dir,
                                                           tags=efficiency_tag)
+            pp_nodes.append(efficiency_node)
             workflow.add_node(efficiency_node)
             dep = dax.Dependency(parent=off_node._dax_node,
                                  child=efficiency_node._dax_node)
@@ -264,6 +273,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
         unclustered_trigs = trig_cluster_jobs.create_node(trigger_files[-1],
                 tags=["GRB%s_OFFTRIAL_%d" % (trig_name, trial)])
         trig_cluster_outs.extend(trig_cluster_node.output_files)
+        pp_nodes.append(trig_cluster_node)
         workflow.add_node(trig_cluster_node)
         dep = dax.Dependency(parent=trig_combiner_node._dax_node,
                              child=trig_cluster_node._dax_node)
@@ -276,6 +286,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
                                                       offsource_clustered,
                                                       segment_dir,
                                                       tags=efficiency_tag)
+        pp_nodes.append(efficiency_node)
         workflow.add_node(efficiency_node)
         dep = dax.Dependency(parent=off_node._dax_node,
                              child=efficiency_node._dax_node)
@@ -285,15 +296,17 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
 
     # Initialise html_summary class and set up job
     #FIXME: We may want this job to run even if some jobs fail
-    """
+    
     html_summary_jobs = html_summary_class(workflow.cp, "html_summary", ifo=ifos,
                                            out_dir=output_dir, tags=tags)
-    html_summary_node = html_summary_jobs.create_node(trigger_xml)
+    html_summary_node = html_summary_jobs.create_node(config_file=config_file)
     workflow.add_node(html_summary_node)
-    dep = dax.Dependency(parent=trig_combiner_node._dax_node,
-                         child=html_summary_node._dax_node)
-    workflow._adag.addDependency(dep)
-    """
+    for pp_node in pp_nodes:
+        #print workflow._adag.jobs[job]
+        #print dir(workflow._adag.jobs[job])
+        dep = dax.Dependency(parent=pp_node._dax_node,
+                             child=html_summary_node._dax_node)
+        workflow._adag.addDependency(dep)
 
     post_proc_outs.extend(trig_cluster_outs)
 

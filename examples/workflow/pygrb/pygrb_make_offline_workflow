@@ -18,7 +18,8 @@ import argparse
 import logging
 import pycbc.workflow as _workflow
 from glue.segments import segment
-
+from glue.ligolw import ligolw,lsctables,utils
+from glue.ligolw.utils import ligolw_add 
 
 def set_start_end(cp, a, b):
     """
@@ -29,7 +30,7 @@ def set_start_end(cp, a, b):
     return cp
 
 
-def get_bank_veto(cp, run_dir):
+def get_bank_veto(cp, ifos, run_dir):
     """
     Retrieve the bank_veto_bank.xml file needed to run coh_PTF_inspiral jobs.
     """
@@ -43,7 +44,7 @@ def get_bank_veto(cp, run_dir):
         sci_seg = segment(int(cp.get("workflow", "start-time")),
                           int(cp.get("workflow", "end-time")))
         bank_veto_url = "file://localhost%s/bank_veto_bank.xml" % run_dir
-        bank_veto = _workflow.File("H1L1", "bank_veto_bank",
+        bank_veto = _workflow.File(ifos, "bank_veto_bank",
                                    sci_seg, file_url=bank_veto_url)
         bank_veto.PFN(bank_veto.cache_entry.path, site="local")
         return bank_veto
@@ -74,6 +75,7 @@ def make_cache(input_files, ifos, name, seg, cacheDir, tags=[]):
 # Workflow generation starts here #
 ###################################
 
+workflow_name = "pygrb"
 logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
                     level=logging.INFO)
 
@@ -84,7 +86,7 @@ parser.add_argument("-d", "--output-dir", default=None,
                     help="Path to output directory.")
 _workflow.add_workflow_command_line_group(parser)
 args = parser.parse_args()
-wflow = _workflow.Workflow(args, "pygrb")
+wflow = _workflow.Workflow(args, workflow_name)
 all_files = _workflow.FileList([])
 tags = []
 
@@ -101,9 +103,9 @@ os.chdir(runDir)
 
 # Hack to set start and end times based on maximum allowed duration
 start = int(wflow.cp.get("workflow", "trigger-time")) - int(wflow.cp.get(
-            "workflow-exttrig_segments", "max-duration"))
+        "workflow-exttrig_segments", "max-duration"))
 end = int(wflow.cp.get("workflow", "trigger-time")) + int(wflow.cp.get(
-    "workflow-exttrig_segments", "max-duration"))
+        "workflow-exttrig_segments", "max-duration"))
 wflow.cp = set_start_end(wflow.cp, start, end)
 
 # Retrieve segments ahope-style
@@ -124,16 +126,18 @@ dfDir = os.path.join(currDir, "datafind")
 datafind_files, sciSegs = _workflow.setup_datafind_workflow(wflow, sciSegs,
                                                             dfDir,
                                                             segsFileList)
+ifos = ''.join(sciSegs.keys())
 
 # If using coh_PTF_inspiral we need bank_veto_bank.xml
 if os.path.basename(wflow.cp.get("executables", "inspiral")) \
                     == "lalapps_coh_PTF_inspiral":
     datafind_veto_files = _workflow.FileList([])
-    bank_veto_file = _workflow.FileList([get_bank_veto(wflow.cp, runDir)])
+    bank_veto_file = _workflow.FileList([get_bank_veto(wflow.cp, ifos,
+                                                       runDir)])
     datafind_veto_files.extend(datafind_files)
     datafind_veto_files.extend(bank_veto_file)
 
-all_files.extend(datafind_files)
+all_files.extend(datafind_veto_files)
 
 # Template bank and splitting the bank
 # TODO: Move from pregenerated to generated coherent network bank
@@ -143,9 +147,8 @@ splitbank_files = _workflow.setup_splittable_workflow(wflow, bank_files, dfDir)
 all_files.extend(bank_files)
 all_files.extend(splitbank_files)
 
+'''
 # Injections
-ifos = ''.join(sciSegs.keys())
-
 if wflow.cp.has_section("workflow-injections"):
     inj_config_file_name = wflow.cp.get("workflow-injections", "config-file")
     inj_config_file_url = "file://localhost%s" % (inj_config_file_name)
@@ -156,6 +159,7 @@ if wflow.cp.has_section("workflow-injections"):
     inj_files.extend(_workflow.FileList([inj_config_file]))
 else:
     inj_config_file = None
+'''
 
 # On/off source matched filtering
 # TODO: Write coherent matched filtering code
@@ -163,7 +167,7 @@ inspDir = os.path.join(currDir, "inspiral")
 inspiral_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
                                                       datafind_veto_files,
                                                       splitbank_files, inspDir)
-inspiral_files.extend(_workflow.FileList([inj_file]))
+#inspiral_files.extend(_workflow.FileList([inj_file]))
 all_files.extend(inspiral_files)
 
 # Post processing
@@ -171,13 +175,74 @@ ppDir = os.path.join(currDir, "post_processing")
 post_proc_method = wflow.cp.get_opt_tags("workflow-postproc",
                                          "postproc-method", tags)
 
+cfile_name = "%s_parsed.ini" % workflow_name
+cfile_url = "file://localhost%s/%s" % (baseDir, cfile_name)
+cfile_parsed = _workflow.File(ifos, cfile_name, sciSegs[ifo][0],
+                              file_url=cfile_url)
+cfile_parsed.PFN(cfile_parsed.cache_entry.path, site="local")
+parsed_config_file = _workflow.FileList([cfile_parsed])
+
 if post_proc_method == "COH_PTF_WORKFLOW":
+    # Make xml file for summary page
+    xmldoc = ligolw.Document()
+    xmldoc.appendChild(ligolw.LIGO_LW())
+    tbl = lsctables.New(lsctables.ExtTriggersTable)
+    xmldoc.childNodes[-1].appendChild(tbl)
+    row = lsctables.ExtTriggersTable()
+    row.process_id = None 
+    row.det_alts = None 
+    row.det_band = None 
+    row.det_fluence = None 
+    row.det_fluence_int = None 
+    row.det_name = None 
+    row.det_peak = None 
+    row.det_peak_int = None 
+    row.det_snr = '' 
+    row.email_time = 0 
+    row.event_dec = 0.0 
+    row.event_dec_err = 0.0 
+    row.event_epoch = '' 
+    row.event_err_type = '' 
+    row.event_ra_err = 0.0 
+    row.start_time_ns = 0 
+    row.event_type = '' 
+    row.event_z = 0.0 
+    row.event_z_err = 0.0 
+    row.notice_comments = '' 
+    row.notice_id = '' 
+    row.notice_sequence = '' 
+    row.notice_time = 0 
+    row.notice_type = '' 
+    row.notice_url = '' 
+    row.obs_fov_dec = 0.0 
+    row.obs_fov_dec_width = 0.0 
+    row.obs_fov_ra = 0.0 
+    row.obs_fov_ra_width = 0.0 
+    row.obs_loc_ele = 0.0 
+    row.obs_loc_lat = 0.0 
+    row.obs_loc_long = 0.0 
+    row.ligo_fave_lho = 0.0 
+    row.ligo_fave_llo = 0.0 
+    row.ligo_delay = 0.0 
+    row.event_status = 0 
+    row.event_ra = float(wflow.cp.get("workflow", "ra"))
+    row.event_dec = float(wflow.cp.get("workflow", "dec"))
+    row.start_time = int(wflow.cp.get("workflow", "trigger-time"))
+    row.event_number_gcn = 9999
+    row.event_number_grb = str(wflow.cp.get("workflow", "trigger-name"))
+    tbl.extend([row])
+    xml_file_name = os.path.join(baseDir, "triggerGRB%s.xml"
+                                 % str(wflow.cp.get("workflow", "trigger-name")))
+    utils.write_filename(xmldoc, xml_file_name)
+
     inspiral_cache = make_cache(inspiral_files, ifos, "INSPIRAL",
                                 sciSegs[ifo][0], inspDir)
     inspiral_files.extend(_workflow.FileList([inspiral_cache]))
     pp_files = _workflow.setup_coh_PTF_post_processing(wflow, inspiral_files,
-                                                       inj_file, ppDir,
-                                                       segDir, ifos=ifos)
+                                                       ppDir, segDir,
+                                                       config_file=cfile_parsed,
+                                                       ifos=ifos)
+    pp_files.extend(parsed_config_file)
 
 all_files.extend(pp_files)
 
