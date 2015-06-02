@@ -3,18 +3,18 @@
 #  Copyright (C) 2007 Jolien Creighton, B.S. Sathyaprakash, Thomas Cokelaer
 #  Copyright (C) 2012 Leo Singer, Alex Nitz
 #
-#  This program is free software; you can redistribute it and/or modify
+#  This program is free software you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
+#  the Free Software Foundation either version 2 of the License, or
 #  (at your option) any later version.
 #
 #  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  but WITHOUT ANY WARRANTY without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with with program; see the file COPYING. If not, write to the
+#  along with with program see the file COPYING. If not, write to the
 #  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #  MA  02111-1307  USA
 
@@ -30,6 +30,52 @@ import pycbc.pnutils
 from pycbc.types import FrequencySeries, Array, complex64, float32, zeros
 from pycbc.waveform.utils import ceilpow2
 
+def findchirp_chirptime(m1, m2, fLower, porder):
+    # variables used to compute chirp time
+    m1 = float(m1)
+    m2 = float(m2) 
+    m = m1 + m2
+    eta = m1 * m2 / m / m
+    c0T = c2T = c3T = c4T = c5T = c6T = c6LogT = c7T = 0.
+
+    # All implemented option
+    if porder == -1:
+        porder = 7
+
+    if porder >= 7:
+        c7T = lal.PI * (14809.0 * eta * eta / 378.0 - 75703.0 * eta / 756.0 - 15419335.0 / 127008.0)
+
+    if porder >= 6:
+        c6T = lal.GAMMA * 6848.0 / 105.0 - 10052469856691.0 / 23471078400.0 + lal.PI * lal.PI * 128.0 / 3.0 + eta * (3147553127.0 / 3048192.0 - lal.PI * lal.PI * 451.0 / 12.0) - eta * eta * 15211.0 / 1728.0 + eta * eta * eta * 25565.0 / 1296.0 + numpy.log(4.0) * 6848.0 / 105.0
+        c6LogT = 6848.0 / 105.0
+
+    if porder >= 5:
+        c5T = 13.0 * lal.PI * eta / 3.0 - 7729.0 * lal.PI / 252.0
+
+    if porder >= 4:
+        c4T = 3058673.0 / 508032.0 + eta * (5429.0 / 504.0 + eta * 617.0 / 72.0)
+        c3T = -32.0 * lal.PI / 5.0
+        c2T = 743.0 / 252.0 + eta * 11.0 / 3.0
+        c0T = 5.0 * m * lal.MTSUN_SI / (256.0 * eta)
+
+    # This is the PN parameter v evaluated at the lower freq. cutoff 
+    xT = pow (lal.PI * m * lal.MTSUN_SI * fLower, 1.0 / 3.0)
+    x2T = xT * xT
+    x3T = xT * x2T
+    x4T = x2T * x2T
+    x5T = x2T * x3T
+    x6T = x3T * x3T
+    x7T = x3T * x4T
+    x8T = x4T * x4T
+
+    # Computes the chirp time as tC = t(v_low)    
+    # tC = t(v_low) - t(v_upper) would be more    
+    # correct, but the difference is negligble.   
+
+    # This formula works for any PN order, because 
+    # higher order coeffs will be set to zero.     
+    return c0T * (1 + c2T * x2T + c3T * x3T + c4T * x4T + c5T * x5T + (c6T + c6LogT * numpy.log(xT)) * x6T + c7T * x7T) / x8T
+
 def spa_length_in_time(**kwds):
     """
     Returns the length in time of the template,
@@ -40,10 +86,11 @@ def spa_length_in_time(**kwds):
     m2 = kwds['mass2']
     flow = kwds['f_lower']
     porder = int(kwds['phase_order'])
+
     # For now, we call the swig-wrapped function below in
     # lalinspiral.  Eventually would be nice to replace this
     # with a function using PN coeffs from lalsimulation.
-    return FindChirpChirpTime(m1,m2,flow,porder)
+    return findchirp_chirptime(m1, m2, flow, porder)
 
 def spa_amplitude_factor(**kwds):
     m1 = kwds['mass1']
@@ -54,12 +101,12 @@ def spa_amplitude_factor(**kwds):
     mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 
     FTaN = 32.0 * eta*eta / 5.0
-    dETaN = 2 * -eta/2.0;
+    dETaN = 2 * -eta/2.0
 
     M = m1 + m2
 
-    m_sec = M * lal.MTSUN_SI;
-    piM = lal.PI * m_sec;
+    m_sec = M * lal.MTSUN_SI
+    piM = lal.PI * m_sec
 
     amp0 = 4. * m1 * m2 / (1e6 * lal.PC_SI ) * lal.MRSUN_SI * lal.MTSUN_SI * sqrt(lal.PI/12.0)
 
@@ -136,11 +183,11 @@ def spa_tmplt(**kwds):
     #Calculate the PN terms #TODO: replace with functions in lalsimulation!###
     M = float(mass1) + float(mass2)
     eta = mass1 * mass2 / (M * M)
-    theta = -11831./9240.;
-    lambdaa = -1987./3080.0;
-    pfaN = 3.0/(128.0 * eta);
-    pfa2 = 5*(743.0/84 + 11.0 * eta)/9.0;
-    pfa3 = -16.0*lal.PI + 4.0*beta;
+    theta = -11831./9240.
+    lambdaa = -1987./3080.0
+    pfaN = 3.0/(128.0 * eta)
+    pfa2 = 5*(743.0/84 + 11.0 * eta)/9.0
+    pfa3 = -16.0*lal.PI + 4.0*beta
     pfa4 = 5.0*(3058.673/7.056 + 5429.0/7.0 * eta + 617.0 * eta*eta)/72.0 - \
             10.0*sigma
     pfa5 = 5.0/9.0 * (7729.0/84.0 - 13.0 * eta) * lal.PI - gamma
@@ -151,20 +198,20 @@ def spa_tmplt(**kwds):
             lal.PI - 1760./3.*theta +12320./9.*lambdaa) + \
             eta*eta * 76055.0/1728.0 - \
             eta*eta*eta*  127825.0/1296.0 
-    pfl6 = -6848.0/21.0;
+    pfl6 = -6848.0/21.0
     pfa7 = lal.PI * 5.0/756.0 * ( 15419335.0/336.0 + 75703.0/2.0 * eta - \
             14809.0 * eta*eta)
 
-    m_sec = M * lal.MTSUN_SI;
-    piM = lal.PI * m_sec;
+    m_sec = M * lal.MTSUN_SI
+    piM = lal.PI * m_sec
 
     kmin = int(f_lower / float(delta_f))
 
     vISCO = 1. / sqrt(6.)
-    fISCO = vISCO * vISCO * vISCO / piM;
+    fISCO = vISCO * vISCO * vISCO / piM
     kmax = int(fISCO / delta_f)
-    f_max = ceilpow2(fISCO);
-    n = int(f_max / delta_f) + 1;
+    f_max = ceilpow2(fISCO)
+    n = int(f_max / delta_f) + 1
 
     if not out:
         htilde = FrequencySeries(zeros(n, dtype=numpy.complex64), delta_f=delta_f, copy=False)

@@ -25,7 +25,7 @@
 """Convenience functions to genenerate gravitational wave templates and
 waveforms.
 """
-import lal, lalsimulation, lalinspiral
+import lal, lalsimulation
 from pycbc.types import TimeSeries,FrequencySeries,zeros,Array
 from pycbc.types import complex64, float32, complex128
 from pycbc.types import real_same_precision_as
@@ -58,6 +58,7 @@ _lalsim_enum = {}
 _lalsim_sgburst_approximants = {}
 
 def _imrphenombfreq(**p):
+    import lalinspiral
     params = lalinspiral.InspiralTemplate()
     m1 = p['mass1']
     m2 = p['mass2']
@@ -133,7 +134,7 @@ def _get_waveform_from_inspiral(**p):
     params.inclination = p['inclination']
     params.distance = p['distance']
     params.coa_phase = p['coa_phase']
-
+    import lalinspiral
     guess_length = lalinspiral.FindChirpChirpTime(params.mass1, params.mass2,
                                                   params.f_lower, 7)
     guess_length = max(guess_length, 3)

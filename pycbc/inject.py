@@ -28,7 +28,6 @@
 
 import numpy as np
 import lal
-import lalinspiral
 import lalsimulation as sim
 from pycbc.waveform import get_td_waveform, get_sgburst_waveform, utils as wfutils
 from glue.ligolw import utils as ligolw_utils
@@ -155,6 +154,7 @@ class InjectionSet(object):
                 # performing NR waveform injection
                 # reading Hp and Hc from the frame files
                 swigrow = self.getswigrow(inj)
+                import lalinspiral
                 Hp, Hc = lalinspiral.NRInjectionFromSimInspiral(swigrow,
                                                                 strain.delta_t)
                 # converting to pycbc timeseries
