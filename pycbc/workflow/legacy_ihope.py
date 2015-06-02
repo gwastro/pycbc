@@ -493,28 +493,36 @@ class LegacyCohPTFEfficiency(LegacyAnalysisExecutable):
 
         return node
 
-class LegacyCohPTFHtmlSummary(LegacyAnalysisExecutable):
+class PyGRBMakeSummaryPage(LegacyAnalysisExecutable):
     """
-    The class responsible for setting up jobs for legacy coh_PTF_efficiency
-    executable.
+    The class responsible for setting up the summary page generation job for
+    the PyGRB workflow.
     """
     current_retention_level = Executable.CRITICAL
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
                  out_dir=None, tags=[]):
-        super(LegacyCohPTFHtmlSummary, self).__init__(cp, name, universe,
-              ifo=ifo, out_dir=out_dir, tags=tags)
+        super(PyGRBMakeSummaryPage, self).__init__(cp, name, universe, ifo=ifo,
+              out_dir=out_dir, tags=tags)
         self.cp = cp
         self.ifos = ifo
         self.output_dir = out_dir
         self.num_threads = 1
 
-    def create_node(self, parent=None, tags=[]):
+    def create_node(self, parent=None, config_file=None, open_box=False, tags=[]):
         node = Node(self)
 
-        node.add_opt('--ifo-tag', self.ifo)
+        node.add_opt('--grb-name', self.cp.get('workflow', 'trigger-name'))
+        node.add_opt('--start-time', self.cp.get('workflow', 'trigger-time'))
+        node.add_opt('--ra', self.cp.get('workflow', 'ra'))
+        node.add_opt('--dec', self.cp.get('workflow', 'dec'))
+        node.add_opt('--ifo-tag', self.ifos)
+
+        if open_box:
+            node.add_opt('--open-box')
 
         # Set input / output options
-        node.add_opt('--output-path', "%s/outpu" % self.output_dir)
+        node.add_opt('--config-file', config_file) 
+        node.add_opt('--output-path', "%s/output" % self.output_dir)
 
         node.add_profile('condor', 'request_cpus', self.num_threads)
 
