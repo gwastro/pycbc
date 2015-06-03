@@ -37,7 +37,6 @@ parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
                     help="Cut triggers with NewSNR less than THRESHOLD")
 parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for filtering (Hz)")
-
 parser.add_argument("--approximant", type=str,
                   help="The name of the approximant to use for filtering. "
                        "One may choose a single approximant by simple assignment. "
@@ -110,7 +109,6 @@ parser.add_argument("--autochi-max-valued-dof", action="store", metavar="INT",
                     help="If using --autochi-max-valued this value denotes "
                          "the pre-calculated mean value that will be stored "
                          "as the auto-chisq degrees-of-freedom value.")
-
 parser.add_argument("--downsample-factor", type=int, 
                     help="Factor that determines the interval between the "
                          "initial SNR sampling. If not set (or 1) no sparse sample "
@@ -118,15 +116,18 @@ parser.add_argument("--downsample-factor", type=int,
 parser.add_argument("--upsample-threshold", type=float, 
                     help="The fraction of the SNR threshold to check the sparse SNR sample.")
 parser.add_argument("--upsample-method", choices=["pruned_fft"],
-                    help="The method to find the SNR points between the sparse SNR sample.", default='pruned_fft')
-
+                    help="The method to find the SNR points between the sparse SNR sample.", 
+                    default='pruned_fft')
 parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
                     This is used to identify FULL_DATA jobs for 
                     compatibility with pipedown post-processing. 
                     Option will be removed when no longer needed.""")
-parser.add_argument("--psd-recalculate-segments", type=int, help="Number of segments to use before recalculating the PSD", default=0)
-parser.add_argument("--keep-loudest-interval", type=float, help="Window in seconds to maximize triggers over bank")
-parser.add_argument("--keep-loudest-num", type=int, help="Number of triggers to keep from each maximization interval")
+parser.add_argument("--psd-recalculate-segments", type=int, 
+                    help="Number of segments to use before recalculating the PSD", default=0)
+parser.add_argument("--keep-loudest-interval", type=float, 
+                    help="Window in seconds to maximize triggers over bank")
+parser.add_argument("--keep-loudest-num", type=int, 
+                    help="Number of triggers to keep from each maximization interval")
 
 # Add options groups
 psd.insert_psd_option_group(parser)
@@ -263,11 +264,9 @@ with ctx:
             if not len(idx):
                 continue
 
-            out_vals['bank_chisq'], bank_chisq_dof = \
+            out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
                   bank_chisq.values(template, stilde.psd, stilde, snrv, norm,
                                     idx+stilde.analyze.start)
-            out_vals['bank_chisq_dof'] = \
-                  numpy.repeat(bank_chisq_dof, len(out_vals['bank_chisq']))
 
             out_vals['chisq'], out_vals['chisq_dof'] = \
                   power_chisq.values(corr, snr, snrv, norm, stilde.psd,
