@@ -1054,16 +1054,16 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
     """
     from pycbc.events import segments_to_file
     logging.info('Entering generation of science segments')
-    segments_method = workflow.cp.get_opt_tags("workflow-segments", 
-                                      "segments-method", tags)
+    segments_method = workflow.cp.get_opt_tags("workflow-science", 
+                                      "science-method", tags)
     
     make_analysis_dir(out_dir)
     start_time = workflow.analysis_time[0]
     end_time = workflow.analysis_time[1]
     save_veto_definer(workflow.cp, out_dir, tags)
     
-    cat_sets = parse_cat_ini_opt(workflow.cp.get_opt_tags('workflow-segments',
-                                                'segments-science-veto', tags))
+    cat_sets = parse_cat_ini_opt(workflow.cp.get_opt_tags('workflow-science',
+                                                'science-veto-segments', tags))
     if len(cat_sets) > 1: 
         raise ValueError('Provide only 1 category group to determine'
                          ' analyzable segments')
@@ -1141,7 +1141,7 @@ def get_cumulative_veto_group_files(workflow, option, out_dir, tags=[]):
     start_time = workflow.analysis_time[0]
     end_time = workflow.analysis_time[1]
 
-    cat_sets = parse_cat_ini_opt(workflow.cp.get_opt_tags('workflow-segments',
+    cat_sets = parse_cat_ini_opt(workflow.cp.get_opt_tags('workflow-vetoes',
                                             option, tags))
     veto_gen_job = create_segs_from_cats_job(workflow.cp, out_dir,
                                              workflow.ifo_string) 
