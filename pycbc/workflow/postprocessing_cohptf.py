@@ -38,7 +38,6 @@ import Pegasus.DAX3 as dax
 from glue import segments
 from pycbc.workflow.core import File, FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import select_generic_executable
-#from pycbc.workflow.legacy_ihope import LegacyCohPTFTrigCombiner 
 
 def setup_coh_PTF_post_processing(workflow, trigger_files, output_dir,
                                   segment_dir, injection_files=None,
@@ -296,14 +295,11 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
 
     # Initialise html_summary class and set up job
     #FIXME: We may want this job to run even if some jobs fail
-    
     html_summary_jobs = html_summary_class(workflow.cp, "html_summary", ifo=ifos,
                                            out_dir=output_dir, tags=tags)
     html_summary_node = html_summary_jobs.create_node(config_file=config_file)
     workflow.add_node(html_summary_node)
     for pp_node in pp_nodes:
-        #print workflow._adag.jobs[job]
-        #print dir(workflow._adag.jobs[job])
         dep = dax.Dependency(parent=pp_node._dax_node,
                              child=html_summary_node._dax_node)
         workflow._adag.addDependency(dep)

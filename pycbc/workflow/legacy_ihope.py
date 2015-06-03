@@ -481,7 +481,6 @@ class LegacyCohPTFEfficiency(LegacyAnalysisExecutable):
         node.add_opt('--onsource-file', '%s/%s' % (self.output_dir,
                                                    parent.name))
 
-
         # Set input / output options
         node.add_opt('--offsource-file', '%s/%s' % (self.output_dir,
                                                     offsource_file.name))
@@ -509,7 +508,8 @@ class PyGRBMakeSummaryPage(LegacyAnalysisExecutable):
         self.output_dir = out_dir
         self.num_threads = 1
 
-    def create_node(self, parent=None, config_file=None, open_box=False, tags=[]):
+    def create_node(self, parent=None, config_file=None, open_box=False,
+                    tags=[]):
         node = Node(self)
 
         node.add_opt('--grb-name', self.cp.get('workflow', 'trigger-name'))
@@ -522,7 +522,7 @@ class PyGRBMakeSummaryPage(LegacyAnalysisExecutable):
             node.add_opt('--open-box')
 
         # Set input / output options
-        node.add_opt('--config-file', config_file) 
+        node.add_opt('--config-file', '%s' % config_file.storage_path) 
         node.add_opt('--output-path', "%s/output" % self.output_dir)
 
         node.add_profile('condor', 'request_cpus', self.num_threads)
