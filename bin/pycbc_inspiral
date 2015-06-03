@@ -45,9 +45,11 @@ parser.add_argument("--approximant", type=str,
                        " follows : \"'SPAtmplt' if (params.mass1 + params.mass2) < 10 "
                        "  else 'SEOBNRv2_ROM_DoubleSpin'\". Approximant names should "
                        "be single quoted with the entire expression in double quotes." )
-parser.add_argument("--order", type=str,
+parser.add_argument("--order", type=int,
                   help="The integer half-PN order at which to generate"
-                       " the approximant.")
+                       " the approximant. Default is -1 which indicates to use"
+                       " approximant defined default.", default=-1, 
+                       choices = numpy.arange(-1, 9, 1))
 taper_choices = ["start","end","startend"]
 parser.add_argument("--taper-template", choices=taper_choices,
                     help="For time-domain approximants, taper the start and/or"
