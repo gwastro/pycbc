@@ -30,7 +30,7 @@ def set_start_end(cp, a, b):
     return cp
 
 
-def get_bank_veto(cp, ifos, run_dir):
+def get_coh_PTF_files(cp, ifos, run_dir, bank_veto=False, summary_files=False):
     """
     Retrieve the bank_veto_bank.xml file needed to run coh_PTF_inspiral jobs.
     """
@@ -39,15 +39,42 @@ def get_bank_veto(cp, ifos, run_dir):
                          "location containing the file lalsuite.git")
     else:
         lalDir = os.getenv("LAL_SRC")
-        shutil.copy("%s/lalapps/src/ring/coh_PTF_config_files/" \
-                    "bank_veto_bank.xml" % lalDir, "%s" % run_dir)
         sci_seg = segment(int(cp.get("workflow", "start-time")),
                           int(cp.get("workflow", "end-time")))
-        bank_veto_url = "file://localhost%s/bank_veto_bank.xml" % run_dir
-        bank_veto = _workflow.File(ifos, "bank_veto_bank",
-                                   sci_seg, file_url=bank_veto_url)
-        bank_veto.PFN(bank_veto.cache_entry.path, site="local")
-        return bank_veto
+        file_list = _workflow.FileList([])
+
+        # Bank veto
+        if bank_veto:
+            shutil.copy("%s/lalapps/src/ring/coh_PTF_config_files/" \
+                        "bank_veto_bank.xml" % lalDir, "%s" % run_dir)
+            bank_veto_url = "file://localhost%s/bank_veto_bank.xml" % run_dir
+            bank_veto = _workflow.File(ifos, "bank_veto_bank",
+                                       sci_seg, file_url=bank_veto_url)
+            bank_veto.PFN(bank_veto.cache_entry.path, site="local")
+            file_list.extend(_workflow.FileList([bank_veto]))
+
+        if summary_files:
+            # summary.js file
+            shutil.copy("%s/lalapps/src/ring/coh_PTF_config_files/" \
+                        "coh_PTF_html_summary.js" % lalDir, "%s" % run_dir)
+            summary_js_url = "file://localhost%s/coh_PTF_html_summary.js" \
+                             % run_dir
+            summary_js = _workflow.File(ifos, "coh_PTF_html_summary_js",
+                                       sci_seg, file_url=summary_js_url)
+            summary_js.PFN(summary_js.cache_entry.path, site="local")
+            file_list.extend(_workflow.FileList([summary_js]))
+
+            # summary.css file
+            shutil.copy("%s/lalapps/src/ring/coh_PTF_config_files/" \
+                        "coh_PTF_html_summary.css" % lalDir, "%s" % run_dir)
+            summary_css_url = "file://localhost%s/coh_PTF_html_summary.css" \
+                              % run_dir
+            summary_css = _workflow.File(ifos, "coh_PTF_html_summary_css",
+                                         sci_seg, file_url=summary_css_url)
+            summary_css.PFN(summary_css.cache_entry.path, site="local")
+            file_list.extend(_workflow.FileList([summary_css]))
+
+        return file_list
 
 
 def make_cache(input_files, ifos, name, seg, cacheDir, tags=[]):
@@ -132,8 +159,7 @@ ifos = ''.join(sciSegs.keys())
 if os.path.basename(wflow.cp.get("executables", "inspiral")) \
                     == "lalapps_coh_PTF_inspiral":
     datafind_veto_files = _workflow.FileList([])
-    bank_veto_file = _workflow.FileList([get_bank_veto(wflow.cp, ifos,
-                                                       runDir)])
+    bank_veto_file = get_coh_PTF_files(wflow.cp, ifos, runDir, bank_veto=True)
     datafind_veto_files.extend(datafind_files)
     datafind_veto_files.extend(bank_veto_file)
 
@@ -175,69 +201,20 @@ ppDir = os.path.join(currDir, "post_processing")
 post_proc_method = wflow.cp.get_opt_tags("workflow-postproc",
                                          "postproc-method", tags)
 
-cfile_name = "%s_parsed.ini" % workflow_name
-cfile_url = "file://localhost%s/%s" % (baseDir, cfile_name)
-cfile_parsed = _workflow.File(ifos, cfile_name, sciSegs[ifo][0],
-                              file_url=cfile_url)
-cfile_parsed.PFN(cfile_parsed.cache_entry.path, site="local")
-parsed_config_file = _workflow.FileList([cfile_parsed])
-
 if post_proc_method == "COH_PTF_WORKFLOW":
-    # Make xml file for summary page
-    xmldoc = ligolw.Document()
-    xmldoc.appendChild(ligolw.LIGO_LW())
-    tbl = lsctables.New(lsctables.ExtTriggersTable)
-    xmldoc.childNodes[-1].appendChild(tbl)
-    row = lsctables.ExtTriggersTable()
-    row.process_id = None 
-    row.det_alts = None 
-    row.det_band = None 
-    row.det_fluence = None 
-    row.det_fluence_int = None 
-    row.det_name = None 
-    row.det_peak = None 
-    row.det_peak_int = None 
-    row.det_snr = '' 
-    row.email_time = 0 
-    row.event_dec = 0.0 
-    row.event_dec_err = 0.0 
-    row.event_epoch = '' 
-    row.event_err_type = '' 
-    row.event_ra_err = 0.0 
-    row.start_time_ns = 0 
-    row.event_type = '' 
-    row.event_z = 0.0 
-    row.event_z_err = 0.0 
-    row.notice_comments = '' 
-    row.notice_id = '' 
-    row.notice_sequence = '' 
-    row.notice_time = 0 
-    row.notice_type = '' 
-    row.notice_url = '' 
-    row.obs_fov_dec = 0.0 
-    row.obs_fov_dec_width = 0.0 
-    row.obs_fov_ra = 0.0 
-    row.obs_fov_ra_width = 0.0 
-    row.obs_loc_ele = 0.0 
-    row.obs_loc_lat = 0.0 
-    row.obs_loc_long = 0.0 
-    row.ligo_fave_lho = 0.0 
-    row.ligo_fave_llo = 0.0 
-    row.ligo_delay = 0.0 
-    row.event_status = 0 
-    row.event_ra = float(wflow.cp.get("workflow", "ra"))
-    row.event_dec = float(wflow.cp.get("workflow", "dec"))
-    row.start_time = int(wflow.cp.get("workflow", "trigger-time"))
-    row.event_number_gcn = 9999
-    row.event_number_grb = str(wflow.cp.get("workflow", "trigger-name"))
-    tbl.extend([row])
-    xml_file_name = os.path.join(baseDir, "triggerGRB%s.xml"
-                                 % str(wflow.cp.get("workflow", "trigger-name")))
-    utils.write_filename(xmldoc, xml_file_name)
-
     inspiral_cache = make_cache(inspiral_files, ifos, "INSPIRAL",
                                 sciSegs[ifo][0], inspDir)
     inspiral_files.extend(_workflow.FileList([inspiral_cache]))
+
+    cfile_name = "%s_parsed.ini" % workflow_name
+    cfile_url = "file://localhost%s/%s" % (baseDir, cfile_name)
+    cfile_parsed = _workflow.File(ifos, cfile_name, sciSegs[ifo][0],
+                                          file_url=cfile_url)
+    cfile_parsed.PFN(cfile_parsed.cache_entry.path, site="local")
+    parsed_config_file = _workflow.FileList([cfile_parsed])
+
+    summary_files = get_coh_PTF_files(wflow.cp, ifos, runDir, summary_files=True)
+
     pp_files = _workflow.setup_coh_PTF_post_processing(wflow, inspiral_files,
                                                        ppDir, segDir,
                                                        config_file=cfile_parsed,
