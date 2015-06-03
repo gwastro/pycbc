@@ -22,6 +22,7 @@ Plot PyCBC's single-detector triggers over the search parameter space.
 
 import logging
 import argparse
+import inspect
 import numpy as np
 import matplotlib
 matplotlib.use('agg')
@@ -31,31 +32,90 @@ from matplotlib.ticker import LogLocator
 import h5py
 import pycbc.pnutils
 import pycbc.events
+import pycbc.results
 
 
-def get_var(name, bank):
-    if name in ['mass1', 'mass2', 'spin1z', 'spin2z']:
-        return np.array(bank[name])
-    elif name == 'mtotal':
-        return np.array(bank['mass1']) + np.array(bank['mass2'])
-    elif name == 'mchirp':
+class SingleDetTriggerSet:
+    """
+    Provides easy access to the parameters of single-detector CBC triggers.
+    """
+
+    def __init__(self, trig_file, bank_file, veto_file, detector):
+        logging.info('Loading triggers')
+        self.trigs_f = h5py.File(trig_file, 'r')
+        self.trigs = self.trigs_f[detector]
+
+        self.veto_mask = slice(len(self.trigs))
+        if veto_file:
+            logging.info('Loading veto segments')
+            self.veto_mask, segs = pycbc.events.veto.indices_outside_segments(
+                self.trigs['end_time'][:], detector, [veto_file])
+
+        logging.info('Loading bank')
+        self.bank = h5py.File(bank_file, 'r')
+
+    @classmethod
+    def get_param_names(cls):
+        "Returns a list of plottable CBC parameter variables."
+        return [m[0] for m in inspect.getmembers(cls) \
+            if type(m[1]) == property]
+
+    @property
+    def template_id(self):
+        return np.array(self.trigs['template_id'])[self.veto_mask]
+
+    @property
+    def mass1(self):
+        return np.array(self.bank['mass1'])[self.template_id]
+
+    @property
+    def mass2(self):
+        return np.array(self.bank['mass2'])[self.template_id]
+
+    @property
+    def spin1z(self):
+        return np.array(self.bank['spin1z'])[self.template_id]
+
+    @property
+    def spin2z(self):
+        return np.array(self.bank['spin2z'])[self.template_id]
+
+    @property
+    def mtotal(self):
+        return self.mass1 + self.mass2
+
+    @property
+    def mchirp(self):
         mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(
-            np.array(bank['mass1']), np.array(bank['mass2']))
+            self.mass1, self.mass2)
         return mchirp
-    elif name == 'eta':
+
+    @property
+    def eta(self):
         mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(
-            np.array(bank['mass1']), np.array(bank['mass2']))
+            self.mass1, self.mass2)
         return eta
-    elif name == 'tau0':
-        tau0, tau3 = pycbc.pnutils.mass1_mass2_to_tau0_tau3(
-            np.array(bank['mass1']), np.array(bank['mass2']), 30)
-        return tau0
-    elif name == 'tau3':
-        tau0, tau3 = pycbc.pnutils.mass1_mass2_to_tau0_tau3(
-            np.array(bank['mass1']), np.array(bank['mass2']), 30)
-        return tau3
-    else:
-        raise ValueError('Invalid variable %s' % name)
+
+    @property
+    def end_time(self):
+        return np.array(self.trigs['end_time'])[self.veto_mask]
+
+    @property
+    def template_duration(self):
+        return np.array(self.trigs['template_duration'])[self.veto_mask]
+
+    @property
+    def snr(self):
+        return np.array(self.trigs['snr'])[self.veto_mask]
+
+    @property
+    def rchisq(self):
+        return np.array(self.trigs['chisq'])[self.veto_mask] \
+            / (np.array(self.trigs['chisq_dof'])[self.veto_mask] * 2 - 2)
+
+    @property
+    def newsnr(self):
+        return pycbc.events.newsnr(self.snr, self.rchisq)
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -67,9 +127,11 @@ parser.add_argument('--veto-file', type=str,
                     help='Optional path to file containing veto segments')
 parser.add_argument('--output-file', type=str, required=True,
                     help='Destination path for plot')
-parser.add_argument('--x-var', type=str, required=True,
+parser.add_argument('--x-var', required=True,
+                    choices=SingleDetTriggerSet.get_param_names(),
                     help='Parameter to plot on the x-axis')
-parser.add_argument('--y-var', type=str, required=True,
+parser.add_argument('--y-var', required=True,
+                    choices=SingleDetTriggerSet.get_param_names(),
                     help='Parameter to plot on the y-axis')
 parser.add_argument('--z-var', required=True,
                     help='Quantity to plot on the color scale',
@@ -82,38 +144,16 @@ opts = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
-logging.info('Loading trigs')
-trigs_f = h5py.File(opts.single_trig_file, 'r')
-trigs = trigs_f[opts.detector]
+trigs = SingleDetTriggerSet(opts.single_trig_file, opts.bank_file,
+                            opts.veto_file, opts.detector)
 
-if opts.veto_file:
-    logging.info('Loading veto segments')
-    time = trigs['end_time'][:]
-    locs, segs = pycbc.events.veto.indices_outside_segments(
-        time, opts.detector, [opts.veto_file])
-else:
-    locs = None
-
-logging.info('Loading bank')
-bank = h5py.File(opts.bank_file, 'r')
-bank_x = get_var(opts.x_var, bank)
-bank_y = get_var(opts.y_var, bank)
-
-logging.info('Getting template params')
-template_ids = np.array(trigs['template_id'])
-snr = np.array(trigs['snr'])
-rchisq = np.array(trigs['chisq']) / (np.array(trigs['chisq_dof']) * 2 - 2)
-if locs is not None:
-    template_ids = template_ids[locs]
-    snr = snr[locs]
-    rchisq = rchisq[locs]
-x = bank_x[template_ids]
-y = bank_y[template_ids]
+x = getattr(trigs, opts.x_var)
+y = getattr(trigs, opts.y_var)
 
 hexbin_style = {
     'gridsize': 50,
     'mincnt': 1,
-    'linewidths': 0.02
+    'linewidths': 0.03
 }
 if opts.min_z is not None:
     hexbin_style['vmin'] = opts.min_z
@@ -130,18 +170,20 @@ if opts.z_var == 'density':
     fig.colorbar(hb, ticks=LogLocator(subs=range(10)))
 elif opts.z_var == 'max(snr)':
     norm = LogNorm()
-    hb = ax.hexbin(x, y, C=snr, norm=norm, reduce_C_function=max,
+    hb = ax.hexbin(x, y, C=trigs.snr, norm=norm, reduce_C_function=max,
                    **hexbin_style)
     fig.colorbar(hb, ticks=LogLocator(subs=range(10)))
 elif opts.z_var == 'max(newsnr)':
-    newsnr = pycbc.events.newsnr(snr, rchisq)
-    hb = ax.hexbin(x, y, C=newsnr, reduce_C_function=max,
+    hb = ax.hexbin(x, y, C=trigs.newsnr, reduce_C_function=max,
                    **hexbin_style)
     fig.colorbar(hb)
 
 ax.set_xlabel(opts.x_var)
 ax.set_ylabel(opts.y_var)
 ax.set_title(opts.z_var + ' for ' + opts.detector)
-fig.savefig(opts.output_file, dpi=200)
+title = '%s of %s triggers over %s and %s' \
+    % (opts.z_var, opts.detector, opts.x_var, opts.y_var)
+pycbc.results.save_fig_with_metadata(fig, opts.output_file, title=title,
+                                     caption='', fig_kwds={'dpi': 200})
 
 logging.info('Done')
