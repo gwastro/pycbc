@@ -1054,7 +1054,7 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
     """
     from pycbc.events import segments_to_file
     logging.info('Entering generation of science segments')
-    segments_method = workflow.cp.get_opt_tags("workflow-science", 
+    science_method = workflow.cp.get_opt_tags("workflow-science", 
                                       "science-method", tags)
     
     make_analysis_dir(out_dir)
@@ -1093,9 +1093,9 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
             
         sci_segs[ifo].coalesce()
         
-    if segments_method == 'ALL_SINGLE_IFO_TIME':
+    if science_method == 'ALL_SINGLE_IFO_TIME':
         pass
-    elif segments_method == 'COINC_TIME':
+    elif science_method == 'COINC_TIME':
         cum_segs = None
         for ifo in sci_segs:
             if cum_segs is not None:
@@ -1107,8 +1107,14 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
             sci_segs[ifo] = cum_segs 
     else:
         raise ValueError("Invalid segments-method, %s. Options are "
-                         "ALL_SINGLE_IFO_TIME and COINC_TIME" % segments_method)
+                         "ALL_SINGLE_IFO_TIME and COINC_TIME" % science_method)
         
+    min_segment_length =  workflow.cp.get_opt_tags("workflow-science", 
+                                      "science-min-segment-length", tags)
+    if min_segment_length:
+        for ifo in sci_segs:
+            segs = [seg for seg in sci_segs[ifo] if abs(seg) < min_segment_length]
+            sci_segs[ifo] = segments.segmentlist(segs)
         
     logging.info('Leaving generation of science segments')
     return sci_segs, seg_files
