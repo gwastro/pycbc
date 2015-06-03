@@ -2,48 +2,53 @@
 set -e
 
 LOCAL=$PWD
-
 mkdir -p $LOCAL/src
 
-pip install distribute --upgrade
+sudo apt-get install \
+python-numpy \
+python-scipy \
+libfftw3-dev \
+python-decorator \
+python-jinja2 \
+python-matplotlib \
+libgsl0-dev
 
-pipi() {
-    pip install --ignore-installed $@
-}
+# install the version of swig that for some reason we have to use
+wget http://downloads.sourceforge.net/project/swig/swig/swig-2.0.11/swig-2.0.11.tar.gz
+tar -xvf swig-2.0.11.tar.gz
+cd swig-2.0.11; ./configure --prefix=$LOCAL; make -j; make install; cd ..
 
-pipn() {
-    pip install --upgrade --no-deps $@
-    pip install $@
-}
+export LD_LIBRARY_PATH=$LOCAL/lib:$LOCAL/lib64
+export PKG_CONFIG_PATH=$LOCAL/lib/pkgconfig
+export PATH=$PATH:$LOCAL/bin
+
 
 # Standard python dependencies
-pipi 'Mako>=1.0.1' 
-pipi pillow 
-pipi 'decorator>=3.4.2' 
-pipi 'numpy>=1.6.4'
-pipi jinja2
-pipi 'scipy>=0.13.0'
-pipi 'matplotlib>=1.3.0'
-pipi -e 'git+http://github.com/jakevdp/mpld3.git#egg=mpld3-0.3'
-pipi 'argparse>=1.3.0'
+pip install pillow 
+pip install -e 'git+http://github.com/jakevdp/mpld3.git#egg=mpld3-0.3'
 SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
+
+# Install metaio
+wget https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/metaio-8.2.tar.gz
+tar -zxvf metaio-8.2.tar.gz
+cd metaio-8.2; CPPFLAGS=-std=gnu99 ./configure --prefix=$LOCAL; make -j; make install; cd ..
+
+# install framel
+wget http://lappweb.in2p3.fr/virgo/FrameL/v8r26.tar.gz
+tar -xvf v8r26.tar.gz 
+cd v8r26; autoreconf; ./configure --prefix=$LOCAL;make -j; make install; cd ..
+
 
 # Install lalsuite itself
 cd $LOCAL/src/
-wget https://github.com/ahnitz/lalsuite/tarball/master
-tar -xvf *lalsuite*.tar.gz
+git clone https://github.com/ahnitz/lalsuite.git
 cd lalsuite
-./00boot
-./configure --prefix=$LOCAL --enable-swig-python
-make -j install
+./00boot; ./configure --prefix=$LOCAL --enable-swig-python; make -j; make install
 source $LOCAL/etc/lal-user-env.sh
-
-# LAL python dependencies
-pipn git+https://github.com/ahnitz/glue.git#egg=glue
-pipn git+https://github.com/ahnitz/pylal.git#egg=pylal
-cd $LOCAL
+cd pylal; python setup.py install --prefix=$LOCAL; cd ..
+cd glue; python setup.py install --prefix=$LOCAL; cd ..
+cd ..
 
 echo source $LOCAL/etc/glue-user-env.sh >> source
 echo source $LOCAL/etc/lal-user-env.sh >> source
-echo source $LOCAL/etc/pycbc-user-env.sh >> source
 chmod 755 source
