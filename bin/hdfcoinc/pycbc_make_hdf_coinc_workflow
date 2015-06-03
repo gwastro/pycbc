@@ -49,9 +49,9 @@ science_segs, science_seg_file = wf.get_analyzable_segments(workflow, "segments"
 datafind_files, science_segs = wf.setup_datafind_workflow(workflow, 
                                          science_segs, "datafind", science_seg_file)
 
-cum_veto_files, ind_cats = wf.get_cumulative_veto_group_files(workflow, 
+cum_veto_files, veto_names, ind_cats = wf.get_cumulative_veto_group_files(workflow, 
                                         'segments-veto-groups', "segments")
-final_veto_file, ind_cats = wf.get_cumulative_veto_group_files(workflow, 
+final_veto_file, final_veto_name, ind_cats = wf.get_cumulative_veto_group_files(workflow, 
                                         'segments-final-veto-group', "segments")
 
 # Template bank stuff
