@@ -1,4 +1,6 @@
 language: python
+cache:
+  - apt
 sudo: true
 before_install:
   - "./tools/install_travis.sh"
