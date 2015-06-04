@@ -332,6 +332,8 @@ setup (
                'bin/hdfcoinc/pycbc_page_injtable',
                'bin/pycbc_submit_dax',
                'bin/hdfcoinc/pycbc_page_coinc_snrchi',
+               'bin/pygrb/pygrb_make_offline_workflow',
+               'bin/pygrb/pygrb_make_summary_page',
                ],
     packages = [
                'pycbc',
