@@ -391,7 +391,7 @@ threshold_cluster_krnl = threshold_cluster_mod.get_function("threshold_and_clust
   
 
 def threshold_and_cluster(series, threshold, window):
-     
+    assert window > 0, 'Clustering window length is not positive'
     threshold = numpy.float32(threshold)
     window = numpy.uint32(window)
     tlen = numpy.uint32(len(series))
