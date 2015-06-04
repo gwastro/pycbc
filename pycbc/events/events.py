@@ -44,7 +44,7 @@ def threshold_and_cluster(series, threshold, window):
     """Return list of values and indices values over threshold in series.
     """
 
-def fc_cluster_over_window_fast(times, values, window_length):
+def findchirp_cluster_over_window(times, values, window_length):
     """ Reduce the events by clustering over a window using
     the FindChirp clustering algorithm
 
@@ -55,15 +55,14 @@ def fc_cluster_over_window_fast(times, values, window_length):
     snr: Array
         The list of SNR value
     window_size: int
-        The size of the window in integer samples.
+        The size of the window in integer samples. Must be positive.
 
     Returns
     -------
     indices: Array
         The reduced list of indices of the SNR values
     """
-    if window_length <= 0:
-        return numpy.arange(len(times))
+    assert window_length > 0, 'Clustering window length is not positive'
 
     from scipy.weave import inline
     indices = numpy.zeros(len(times), dtype=int)
@@ -107,22 +106,8 @@ def cluster_reduce(idx, snr, window_size):
     snr: Array
         The list of SNR values
     """
-    ind = fc_cluster_over_window_fast(idx, snr, window_size)
+    ind = findchirp_cluster_over_window(idx, snr, window_size)
     return idx.take(ind), snr.take(ind)
-
-def findchirp_cluster_over_window(times, values, window_length):
-    indices = numpy.zeros(len(times), dtype=int)
-    j = 0
-    for i in xrange(len(times)):
-        if times[i] - times[indices[j]] > window_length:
-            j += 1
-            indices[j] = i
-        else:
-            if abs(values[i]) > abs(values[indices[j]]):
-                indices[j] = i
-            else:
-                continue
-    return indices[0:j+1]
 
 def newsnr(snr, reduced_x2, q=6.):
     """Calculate the re-weighted SNR statistic ('newSNR') from given SNR and
@@ -298,8 +283,7 @@ class EventManager(object):
         """
         cvec = self.template_events[column]
         tvec = self.template_events[tcolumn]
-        #indices = findchirp_cluster_over_window(tvec, cvec, window_size)
-        indices = fc_cluster_over_window_fast(tvec, cvec, window_size)
+        indices = findchirp_cluster_over_window(tvec, cvec, window_size)
         self.template_events = numpy.take(self.template_events, indices)
 
     def new_template(self, **kwds):
@@ -978,6 +962,6 @@ class EventManagerMultiDet(EventManager):
         coinc_def_table.append(coinc_def_row)
 
 __all__ = ['threshold_and_cluster', 'newsnr', 'effsnr',
-           'findchirp_cluster_over_window', 'fc_cluster_over_window_fast',
+           'findchirp_cluster_over_window',
            'threshold', 'cluster_reduce',
            'EventManager', 'EventManagerMultiDet']
