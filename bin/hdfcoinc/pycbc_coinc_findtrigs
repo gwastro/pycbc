@@ -118,11 +118,16 @@ class PhaseTDStatistic(NewSNRStatistic):
         return cstat
 
 class ReadByTemplate(object):
-    def __init__(self, filename, vetofile=None):
+    def __init__(self, filename, bank=None, vetofile=None):
         self.filename = filename
         self.file = h5py.File(filename, 'r')
         self.ifo = self.file.keys()[0]
         self.veto_times = None
+
+        if bank is not None:
+            self.bank = h5py.File(bank)
+        else:
+            self.bank = None
         
         from glue.segments import segmentlist, segment
         key = '%s/search/' % self.ifo + '%s_time'
@@ -146,6 +151,13 @@ class ReadByTemplate(object):
             logging.info('applying vetoes')
         else:
             self.keep = numpy.arange(0, len(times))
+       
+
+        if self.bank is not None:
+            self.param = {} 
+            for col in self.bank:
+                self.param[col] = self.bank[col][self.template_num]
+            
         return self.keep + self.file['%s/template_boundaries' % self.ifo][num]
         
     def __getitem__(self, col):
@@ -163,9 +175,9 @@ tmin, tmax = parse_template_range(num_templates, args.template_fraction_range)
 logging.info('Analyzing template %s - %s' % (tmin, tmax-1))
 
 logging.info('Opening first trigger file: %s' % args.trigger_files[0]) 
-trigs0= ReadByTemplate(args.trigger_files[0], args.veto_files)
+trigs0= ReadByTemplate(args.trigger_files[0], args.template_bank, args.veto_files)
 logging.info('Opening second trigger file: %s' % args.trigger_files[1]) 
-trigs1 = ReadByTemplate(args.trigger_files[1], args.veto_files)
+trigs1 = ReadByTemplate(args.trigger_files[1], args.template_bank, args.veto_files)
 coinc_segs = (trigs0.segs & trigs1.segs).coalesce()
 
 rank_method = get_statistic(args.ranking_statistic, args.statistic_files)
