@@ -1,11 +1,12 @@
 #! /usr/bin/python
 import sqlite3 
-from glue.ligolw import dbtables
-from glue.ligolw import table
+from glue.ligolw import table, lsctables, dbtables
+from pycbc import events
 from pylal import git_version
 from time import clock,time
 import matplotlib
 matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 from argparse import *
 import random
 import itertools
@@ -33,13 +34,17 @@ parser.add_argument("--number", default=10, type=int, help="folds for cross-vali
 parser.add_argument("--factor", default=50.0, type=float, help="the value of the magic number factor in the effective snr formula, should be 50 for highmass and 250 for lowmass. Default 50")
 parser.add_argument("--instruments", help="pair of detectors. Example: H1,L1")
 parser.add_argument("--output-tag", default="CBC", help="a string added to all filenames")
-parser.add_argument("--apply-weights", action="store_true", default=False, help="calculates weight (which is a function of distance to source) for all found injections. Weights are saved in .pat file (all noise events get weight=1). If this option is not supplied, all (noise+signal) events get a weight of 1.")
+#parser.add_argument("--apply-weights", action="store_true", default=False, help="calculates weight for all found injections. Weights are saved in .pat file (all noise events get weight=1). If this option is not supplied, all (noise+signal) events get a weight of 1.")
+parser.add_argument("--weighting-method", default=None, choices=['physical_distance', 'chirp_distance'], help = "Specify weighting method/function for assigning weights to triggers. If not given, then all (noise+signal) events get a weight of 1.")
 parser.add_argument("--reference-dist", type=float, default=300, help="distance (Mpc) for normalizing injection weights when training. Default 300")
+parser.add_argument("--plot-weights-histogram", action="store_true", default=False, help="plots a histogram for weights assigned to triggers")
+parser.add_argument("--plot-path", default = ".", dest="plot_path", help="Specify path to store weights-histogram. Default: current directory")
+parser.add_argument("--plot-name", default = "weights_histogram.png", dest="plot_name", help="Specify name of histogram plot. Default: weights_histogram.png")
 parser.add_argument("--exact-tag", default="ring_exact", help="this is the dbinjfind tag stored in the sqlite database for the exactly found injections - the ones you want to use for training")
 parser.add_argument("-s","--tmp-space",help="necessary for sqlite calls, for example /local/user/shasvath.kapadia on Atlas")
 parser.add_argument("--nearby-tag", default="ring_nearby", help="this is the dbinjfind tag stored in the sqlite for the nearby injections - we will still rank all of these")
 parser.add_argument("--sngl-features", nargs="*", default=[], dest="sngl_features_list", help='Specify list of single trigger features to be extracted directly from sngl table. Features should be separated by spaces. Example: snr chisq')
-parser.add_argument("--sngl-derived-features", nargs="*", default=[], dest="sngl_derived_features_list", choices=['reduced_chisq','reduced_cont_chisq','reduced_bank_chisq','effective_snr','bank_effective_snr','cont_effective_snr'], help='Specify list of derived single features separated by spaces.')
+parser.add_argument("--sngl-derived-features", nargs="*", default=[], dest="sngl_derived_features_list", choices=['reduced_chisq','reduced_cont_chisq','reduced_bank_chisq','effective_snr','bank_effective_snr','cont_effective_snr', 'newsnr'], help='Specify list of derived single features separated by spaces. Example: reduced_chisq effective_snr')
 parser.add_argument("--coinc-features", nargs="*", default=[], dest="coinc_features_list", help='Specify list of features extracted from coinc_inspiral table, separated by spaces. Example: snr mass')
 parser.add_argument("--difference-features", nargs="*", default=[], dest="difference_features_list", choices=['delta_t','delta_phi','eff_dist_ratio'], help='Specify list of difference features, separated by spaces. Example: delta_t delta_phi')
 parser.add_argument("--input-database", dest="database")
@@ -71,17 +76,11 @@ def reduced_bank_chisq_func(bank_chisq, bank_chisq_dof):
 	else:
 		return bank_chisq/bank_chisq_dof
 
-def effective_snr_func(snr, chisq, chisq_dof, fac):
-	return snr/ (1 + snr**2/fac)**(0.25) / (reduced_chisq_func(chisq, chisq_dof))**(0.25)
-
-def bank_effective_snr_func(snr, bank_chisq, bank_chisq_dof, fac):
-	return snr/ (1 + snr**2/fac)**(0.25) / (reduced_bank_chisq_func(bank_chisq, bank_chisq_dof))**(0.25)
-
-def cont_effective_snr_func(snr, cont_chisq, cont_chisq_dof, fac):
-	return snr/ (1 + snr**2/fac)**(0.25) / (reduced_cont_chisq_func(cont_chisq, cont_chisq_dof))**(0.25)
-
 def mod2pi(phi):
 	return np.mod(phi, 2*np.pi)
+
+def chirp_dist_func(distance,mchirp):
+	return lsctables.SnglInspiral.chirp_distance(distance, mchirp)
 
 derived_feature_columns = ['snr','chisq','chisq_dof','bank_chisq','bank_chisq_dof','cont_chisq','cont_chisq_dof',
     'coa_phase','end_time','end_time_ns','offset','eff_distance']
@@ -112,21 +111,25 @@ class Trigger:
 		self.b_reduced_bank_chisq = reduced_bank_chisq_func(self.b_bank_chisq, self.b_bank_chisq_dof)
 
 	def calc_effective_snr(self):
-		self.a_effective_snr = effective_snr_func(self.a_snr, self.a_chisq, self.a_chisq_dof, self.fac)
-		self.b_effective_snr = effective_snr_func(self.b_snr, self.b_chisq, self.b_chisq_dof, self.fac)
+		self.a_effective_snr = events.effsnr(self.a_snr, self.a_reduced_chisq, self.fac)
+		self.b_effective_snr = events.effsnr(self.b_snr, self.b_reduced_chisq, self.fac)
 
 	def calc_bank_effective_snr(self):
-		self.a_bank_effective_snr = bank_effective_snr_func(self.a_snr, self.a_bank_chisq, self.a_bank_chisq_dof, self.fac)
-		self.b_bank_effective_snr = bank_effective_snr_func(self.b_snr, self.b_bank_chisq, self.b_bank_chisq_dof, self.fac)
+		self.a_bank_effective_snr = events.effsnr(self.a_snr, self.a_reduced_bank_chisq, self.fac)
+		self.b_bank_effective_snr = events.effsnr(self.b_snr, self.b_reduced_bank_chisq, self.fac)
 
 	def calc_cont_effective_snr(self):
-		self.a_cont_effective_snr = cont_effective_snr_func(self.a_snr, self.a_cont_chisq, self.a_cont_chisq_dof, self.fac)
-		self.b_cont_effective_snr = cont_effective_snr_func(self.b_snr, self.b_cont_chisq, self.b_cont_chisq_dof, self.fac)
+		self.a_cont_effective_snr = events.effsnr(self.a_snr, self.a_reduced_cont_chisq, self.fac)
+		self.b_cont_effective_snr = events.effsnr(self.b_snr, self.b_reduced_cont_chisq, self.fac)
+
+	def calc_newsnr(self):
+		self.a_newsnr = events.newsnr(self.a_snr, self.a_reduced_chisq)
+		self.b_newsnr = events.newsnr(self.b_snr, self.b_reduced_chisq)
 
 	##  Difference features:
 	def calc_delta_t(self):
-		self.delta_t = (dbtables.lsctables.LIGOTimeGPS(self.a_end_time + self.a_offset, self.a_end_time_ns)
-				-dbtables.lsctables.LIGOTimeGPS(self.b_end_time + self.b_offset, self.b_end_time_ns))
+		self.delta_t = (lsctables.LIGOTimeGPS(self.a_end_time + self.a_offset, self.a_end_time_ns)
+				-lsctables.LIGOTimeGPS(self.b_end_time + self.b_offset, self.b_end_time_ns))
 
 	def calc_delta_phi(self):
 		self.delta_phi = mod2pi(self.a_coa_phase-self.b_coa_phase)
@@ -136,16 +139,28 @@ class Trigger:
 
 	##  Assign weight to signal triggers, if specified by user and if the injection
 	##  distance distribution is recognized.
-	def set_weight(self, opt_weights, reference_dist=300.):
+
+	def set_weight(self, weighting_method, reference_dist=300.):
 		# default value for zerolag, time slides and unrecognized distributions
 		self.weight = 1
-		if (opt_weights and self.sn_bool == 1):
-			if self.d_distr == "uniform":
-				self.weight = (self.distance/reference_dist)**2
-			if self.d_distr == "log10":
-				self.weight = (self.distance/reference_dist)**3
-			if self.d_distr == "volume":
-				self.weight = 1
+		if (weighting_method is not None and self.sn_bool == 1):
+			if weighting_method == "physical_distance":
+				if self.d_distr == "uniform":
+					self.weight = (self.distance/reference_dist)**2
+				if self.d_distr == "log10":
+					self.weight = (self.distance/reference_dist)**3
+				if self.d_distr == "volume":
+					self.weight = 1
+			if weighting_method == "chirp_distance":
+				self.chirp_dist = chirp_dist_func(self.distance, self.sim_mchirp)
+				if self.d_distr == "uniform":
+					self.weight = (self.chirp_dist/reference_dist)**2
+				if self.d_distr == "log10":
+					self.weight = (self.chirp_dist/reference_dist)**3
+				if self.d_distr == "volume":
+					self.weight = 1
+
+
 
 #####################################################################
 
@@ -165,9 +180,11 @@ select_dimensions_coinc="""
 	SELECT
 		coinc_inspiral.*"""
 
-add_select_injections="""
-		, process_params.value,
-		sim_inspiral.distance"""
+select_dimensions_sim="""
+	SELECT
+		process_params.value,
+		sim_inspiral.distance,
+		sim_inspiral.mchirp"""
 
 add_from_injections="""
 	FROM
@@ -229,13 +246,14 @@ add_from_fulldata="""
 		ORDER BY coinc_inspiral.coinc_event_id"""
 
 
-acquire_injections = add_select_injections + add_from_injections + add_where_injections
+acquire_injections = add_from_injections + add_where_injections
 acquire_all_data = add_select_fulldata + add_from_fulldata
 
 # String-query to acquire injections
 injections_detA_string = select_dimensions_detA + acquire_injections
 injections_detB_string = select_dimensions_detB + acquire_injections
 injections_coinc_string = select_dimensions_coinc + acquire_injections
+injections_sim_string = select_dimensions_sim + acquire_injections
 
 # String-query to acquire all data
 all_data_detA_string = select_dimensions_detA + acquire_all_data
@@ -249,6 +267,7 @@ all_data_coinc_string = select_dimensions_coinc + acquire_all_data
 all_detA_trigs_dict = {}
 all_detB_trigs_dict = {}
 all_coinc_trigs_dict = {}
+all_sim_trigs_dict = {}
 all_trigs_dict = {}
 
 ############ MAIN CODE STARTS HERE ###############
@@ -284,7 +303,7 @@ cur = con.cursor()
 # the code will still run as long as one of the databases you provide includes injections 
 
 try:
-	sim_inspiral_table = table.get_table(xmldoc, dbtables.lsctables.SimInspiralTable.tableName)
+	sim_inspiral_table = table.get_table(xmldoc, lsctables.SimInspiralTable.tableName)
 	is_injections = True
 except ValueError:
 	is_injections = False
@@ -298,6 +317,8 @@ if is_injections:
 	all_detB_trigs_dict["all_injections"] = cur.fetchall()
 	cur.execute(injections_coinc_string, (ifos[0],ifos[1],args.nearby_tag))
 	all_coinc_trigs_dict["all_injections"] = cur.fetchall()
+	cur.execute(injections_sim_string, (ifos[0],ifos[1],args.nearby_tag))
+	all_sim_trigs_dict["all_injections"] = cur.fetchall()
 
 	# Get exact injections from database: store data for each detector in separate lists of dictionaries
 	cur.execute(injections_detA_string, (ifos[0],ifos[1],args.exact_tag))
@@ -306,6 +327,8 @@ if is_injections:
 	all_detB_trigs_dict["exact_injections"] = cur.fetchall()
 	cur.execute(injections_coinc_string, (ifos[0],ifos[1],args.exact_tag))
 	all_coinc_trigs_dict["exact_injections"] = cur.fetchall()
+	cur.execute(injections_sim_string, (ifos[0],ifos[1],args.exact_tag))
+        all_sim_trigs_dict["exact_injections"] = cur.fetchall()
 
 	# Get all data from database: store data for each detector in separate lists of dictionaries
 	cur.execute(all_data_detA_string,(ifos[0],ifos[1]))
@@ -315,7 +338,9 @@ if is_injections:
 	cur.execute(all_data_coinc_string,(ifos[0],ifos[1]))
 	all_data_coinc = cur.fetchall()
 
-# Separate data into timeslide and zerolag (Hodge's comment: #FIXME: look up coinc_definer_id from definition in pylal) 
+dbtables.discard_connection_filename(args.database, working_filename, verbose = args.verbose)
+
+# Separate data into timeslide and zerolag  
 all_detA_trigs_dict["timeslides"] = [data_detA for data_detA in all_data_detA if data_detA["datatype"] == "slide"]
 all_detB_trigs_dict["timeslides"] = [data_detB for data_detB in all_data_detB if data_detB["datatype"] == "slide"]
 all_coinc_trigs_dict["timeslides"] = [data_coinc for data_coinc in all_data_coinc if data_coinc["datatype"] == "slide"]
@@ -324,7 +349,9 @@ all_detA_trigs_dict["zerolags"] = [data_detA for data_detA in all_data_detA if d
 all_detB_trigs_dict["zerolags"] = [data_detB for data_detB in all_data_detB if data_detB["datatype"] in ["playground", "exclude_play"]]
 all_coinc_trigs_dict["zerolags"] = [data_coinc for data_coinc in all_data_coinc if data_coinc["datatype"] in ["playground", "exclude_play"]]
 
-dbtables.discard_connection_filename(args.database, working_filename, verbose = args.verbose)
+# Fill sim info with dummy values
+all_sim_trigs_dict["timeslides"] = [{} for d in all_coinc_trigs_dict["timeslides"]]
+all_sim_trigs_dict["zerolags"] = [{} for d in all_coinc_trigs_dict["zerolags"]]
 
 print "### Done!"
 
@@ -344,10 +371,11 @@ for dtype, sn_bool in zip(datatypes, sn_bool_list):
 	# determine list of sngl_inspiral columns in advance
 	# restrict this to the ones that may possibly be used for features
 	sngl_columns = derived_feature_columns + args.sngl_features_list
-	for trig_detA, trig_detB, trig_coinc in zip(all_detA_trigs_dict[dtype], all_detB_trigs_dict[dtype], all_coinc_trigs_dict[dtype]):
+	for trig_detA, trig_detB, trig_coinc, trig_sim in zip(
+			all_detA_trigs_dict[dtype], all_detB_trigs_dict[dtype], all_coinc_trigs_dict[dtype], all_sim_trigs_dict[dtype]):
 		
 		# Exact coinc inspiral time: required to create instance of trigger class
-		coinc_inspiral_time = dbtables.lsctables.LIGOTimeGPS(trig_coinc["end_time"], trig_coinc["end_time_ns"])
+		coinc_inspiral_time = lsctables.LIGOTimeGPS(trig_coinc["end_time"], trig_coinc["end_time_ns"])
 
 		# Create instance of trigger class object with datatype, signal/noise boolean, coinc inspiral time as attributes
 		trig = Trigger(args,dtype,sn_bool,coinc_inspiral_time)	
@@ -358,16 +386,21 @@ for dtype, sn_bool in zip(datatypes, sn_bool_list):
 			setattr(trig, "a_" + feature, trig_detA[feature])
 			setattr(trig, "b_" + feature, trig_detB[feature])
 
-		##### User specified coinc features ###########
+		##### User specified coinc features. ###########
 		for feature in args.coinc_features_list:
 			setattr(trig, "coinc_" + feature, trig_coinc[feature])
 
 		#### Coinc event id ####
 		setattr(trig, "coinc_event_id", trig_coinc["coinc_event_id"])
 
+		#### Calculate reduced chisq values for use in other features ####
+		for chisqtype in ["", "bank_", "cont_"]:
+			eval("trig." + "calc_reduced_" + chisqtype + "chisq()")
+
 		#### User specified single Derived features ####
 		for feature in args.sngl_derived_features_list:
-			eval("trig." + "calc_" + feature + "()")
+			if not ("reduced" in feature):
+				eval("trig." + "calc_" + feature + "()")
 
 		#### User specified difference features #####
 		for feature in args.difference_features_list:
@@ -375,12 +408,13 @@ for dtype, sn_bool in zip(datatypes, sn_bool_list):
 
 		### Weights for signal triggers ######
 		if sn_bool == 1:
-			trig.distance = trig_coinc["distance"]
-			trig.d_distr = trig_coinc["value"]
+			trig.distance = trig_sim["distance"]
+			trig.d_distr = trig_sim["value"]
+			trig.sim_mchirp = trig_sim["mchirp"]
 		else:
 			trig.distance = -1  # dummy value for non-injection coincs
 			trig.d_distr = None
-		trig.set_weight(args.apply_weights, args.reference_dist)
+		trig.set_weight(args.weighting_method, args.reference_dist)
 
 		# Append triggers to temporary list
 		trig_tmp_list.append(trig)
@@ -388,6 +422,75 @@ for dtype, sn_bool in zip(datatypes, sn_bool_list):
 	all_trigs_dict[dtype] = trig_tmp_list
 
 print "### Done!"
+
+########### Plot Histogram for Weights ###############
+
+if args.plot_weights_histogram and args.weighting_method is not None:
+	
+	print "Plotting all found injection weights histogram ..."
+	signal_weights_list = [trig.weight for trig in all_trigs_dict["all_injections"]]
+	noise_weights_list = [trig.weight for trig in all_trigs_dict["timeslides"]]
+	num_bins = 30
+
+	########## Weights Histogram ############
+        plt.figure()
+        plt.rc('text', usetex=True)
+        plt.ylabel("Number of Found Injections")
+        plt.title(args.weighting_method.replace("_"," ")) 
+        x_min_signal = min(signal_weights_list)
+        x_max_signal = max(signal_weights_list)
+	plt.rc('text', usetex=True)
+	plt.xlabel("$\log_{\mathrm{10}}$ w")
+	bins_signal = np.logspace(np.log10(x_min_signal), np.log10(x_max_signal), num_bins)
+	bins_noise = np.logspace(-1,1,num_bins)
+	plt.hist(noise_weights_list, bins = bins_noise, normed=False, facecolor='b', label = "Noise", alpha = 0.5)
+	plt.hist(signal_weights_list, bins = bins_signal, normed = False, facecolor='r', label = "Signal", alpha = 0.5)
+	plt.xscale('log')
+	plt.legend()
+        plt.yscale('log', nonposy='clip')
+        plt.savefig("%s/%s"%(args.plot_path, "w_" + args.plot_name))
+        plt.close()
+
+	######### Chirp Distance Histogram ########
+	chirp_dist_list = [trig.chirp_dist for trig in all_trigs_dict["all_injections"]]
+        plt.figure()
+        plt.rc('text', usetex=True)
+        plt.ylabel("Number of Found Injections")
+        plt.title(args.weighting_method.replace("_"," "))
+        x_min_signal = min(chirp_dist_list)
+	x_max_signal = max(chirp_dist_list)
+        plt.rc('text', usetex=True)
+        plt.xlabel("$\log_{\mathrm{10}}$ $d_{\mathrm{chirp}}$")
+        bins_signal = np.logspace(np.log10(x_min_signal), np.log10(x_max_signal), num_bins)
+        plt.hist(chirp_dist_list, bins = bins_signal, normed = False, facecolor='r', label = "Signal", alpha = 0.5)
+        plt.xscale('log')
+        plt.legend()
+        plt.yscale('log', nonposy='clip')
+        plt.savefig("%s/%s"%(args.plot_path, "chirp-dist_" + args.plot_name))
+        plt.close()
+
+	######## Physical Distance Histogram #######
+        dist_list = [trig.distance for trig in all_trigs_dict["all_injections"]]
+        plt.figure()
+        plt.rc('text', usetex=True)
+        plt.ylabel("Number of Found Injections")
+        plt.title(args.weighting_method.replace("_"," "))
+        x_min_signal = min(dist_list)
+	x_max_signal = max(dist_list)
+        plt.rc('text', usetex=True)
+        plt.xlabel("$\log_{\mathrm{10}}$ $d$")
+        bins_signal = np.logspace(np.log10(x_min_signal), np.log10(x_max_signal), num_bins)
+        plt.hist(dist_list, bins = bins_signal, normed = False, facecolor='r', label = "Signal", alpha = 0.5)
+        plt.xscale('log')
+        plt.legend()
+        plt.yscale('log', nonposy='clip')
+        plt.savefig("%s/%s"%(args.plot_path, "dist_" + args.plot_name))
+        plt.close()
+
+        print "Done!"
+
+
+#####################################################
 
 #### Merge features lists with appropriate tags for features #####
 features_list = []
