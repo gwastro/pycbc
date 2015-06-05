@@ -29,7 +29,7 @@ PyOpenCL, and Numpy.
 
 BACKEND_PREFIX="pycbc.types.array_"
 
-import logging
+import logging, h5py
 import os as _os
 
 import functools as _functools
@@ -865,7 +865,7 @@ class Array(object):
     def dtype(self):
         return self._data.dtype
     
-    def save(self, path):
+    def save(self, path, group=None):
         """
         Save array to a Numpy .npy or text file. When saving a complex array as
         text, the real and imaginary parts are saved as the first and second
@@ -873,8 +873,12 @@ class Array(object):
 
         Parameters
         ----------
-        path : string
+        path: string
             Destination file path. Must end with either .npy or .txt.
+            
+        group: string 
+            Additional name for internal storage use. Ex. hdf storage uses
+            this as the key value.
 
         Raises
         ------
@@ -892,8 +896,11 @@ class Array(object):
                 output = _numpy.vstack((self.numpy().real,
                                         self.numpy().imag)).T
                 _numpy.savetxt(path, output)
+        elif ext == '.hdf':
+            key = 'data' if group is None else group
+            h5py.File(path)[key] = self.numpy()
         else:
-            raise ValueError('Path must end with .npy or .txt')  
+            raise ValueError('Path must end with .npy, .txt, or hdf')  
            
     @_convert 
     def trim_zeros(self):
@@ -943,7 +950,7 @@ def zeros(length, dtype=float64):
     """
     pass
 
-def load_array(path):
+def load_array(path, group=None):
     """
     Load an Array from a .txt or .npy file. The
     default data types will be double precision floating point.
@@ -952,6 +959,10 @@ def load_array(path):
     ----------
     path : string
         source file path. Must end with either .npy or .txt.
+
+    group: string 
+        Additional name for internal storage use. Ex. hdf storage uses
+        this as the key value.
 
     Raises
     ------
@@ -966,8 +977,11 @@ def load_array(path):
         data = numpy.load(path)    
     elif ext == '.txt':
         data = numpy.loadtxt(path)
+    elif ext == '.hdf':
+        key = 'data' if group is None else group
+        return Array(h5py.File(path)[key]) 
     else:
-        raise ValueError('Path must end with .npy or .txt')
+        raise ValueError('Path must end with .npy, .hdf, or .txt')
         
     if data.ndim == 1:
         return Array(data)
