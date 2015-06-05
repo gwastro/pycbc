@@ -29,7 +29,7 @@ Stanislav Babak (1), Christopher M. Biwer (2), Duncan Brown (2), Collin Capano (
 #. Louisiana State University, LA, USA
 #. University of Wisconsin-Milwaukee, WI, USA
 #. Abilene Christian University, TX, USA
-#. Instituto def Fisico Teorica, Sao Paulo, Brazil
+#. Instituto de Fisico Teorica, Sao Paulo, Brazil
 #. Cardiff University, Cardiff, UK
 
 =========================

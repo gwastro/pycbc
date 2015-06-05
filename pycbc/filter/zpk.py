@@ -26,7 +26,6 @@ import numpy as np
 import scipy.signal
 
 from pycbc import future
-
 from pycbc.types import TimeSeries
 
 def filter_zpk(timeseries, z, p, k):
@@ -72,7 +71,7 @@ def filter_zpk(timeseries, z, p, k):
 
     Examples
     --------
-    To apply a 5 zeroes at 100Hz, 5 poles at 1Hz, and a gain of 1e-10 filter
+    To apply a 5 zeroes at 1Hz, 5 poles at 1Hz, and a gain of 1e-10 filter
     to a TimeSeries instance, do:
     >>> filtered_data = zpk_filter(timeseries, [100]*5, [1]*5, 1e-10)
     """
