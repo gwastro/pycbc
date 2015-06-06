@@ -867,9 +867,10 @@ class Array(object):
     
     def save(self, path, group=None):
         """
-        Save array to a Numpy .npy or text file. When saving a complex array as
+        Save array to a Numpy .npy, hdf, or text file. When saving a complex array as
         text, the real and imaginary parts are saved as the first and second
-        column respectively.
+        column respectively. When using hdf format, the data is stored
+        as a single vector, along with relevant attributes.
 
         Parameters
         ----------
@@ -952,7 +953,7 @@ def zeros(length, dtype=float64):
 
 def load_array(path, group=None):
     """
-    Load an Array from a .txt or .npy file. The
+    Load an Array from a .hdf, .txt or .npy file. The
     default data types will be double precision floating point.
 
     Parameters

@@ -303,10 +303,11 @@ class FrequencySeries(Array):
 
     def save(self, path, group=None):
         """
-        Save frequency series to a Numpy .npy or text file. The first column
+        Save frequency series to a Numpy .npy, hdf, or text file. The first column
         contains the sample frequencies, the second contains the values.
         In the case of a complex frequency series saved as text, the imaginary
-        part is written as a third column.
+        part is written as a third column.  When using hdf format, the data is stored
+        as a single vector, along with relevant attributes.
 
         Parameters
         ----------
@@ -391,7 +392,7 @@ class FrequencySeries(Array):
 
 def load_frequencyseries(path, group=None):
     """
-    Load a FrequencySeries from a .txt or .npy file. The
+    Load a FrequencySeries from a .hdf, .txt or .npy file. The
     default data types will be double precision floating point.
 
     Parameters
