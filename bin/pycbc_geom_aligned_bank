@@ -41,7 +41,6 @@ import pycbc.psd
 import pycbc.strain
 import pycbc.version
 import pycbc.tmpltbank
-from pycbc.tmpltbank.em_progenitors import load_ns_sequence, generate_em_constraint_data
 from scipy import spatial
 
 __author__  = "Ian Harry <ian.harry@ligo.org>"
@@ -175,7 +174,6 @@ if orig_opts.write_metric:
 pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
 metricParams=pycbc.tmpltbank.metricParameters.from_argparse(opts)
 pycbc.tmpltbank.verify_mass_range_options(opts, parser)
-# TODO if use-eos-max-mass...
 massRangeParams=pycbc.tmpltbank.massRangeParameters.from_argparse(opts)
 pycbc.psd.verify_psd_options(opts, parser)
 if opts.psd_estimation:
@@ -268,13 +266,8 @@ if opts.filter_points:
     # Create a large set of points and map to xi_i to give a starting point when
     # mapping from xi_i to masses and spins
     # Use the EM constraint only if asked to do so
-    if not opts.remnant_mass_threshold is None:
-        rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
-              pycbc.tmpltbank.get_random_mass(2000000, massRangeParams, \
-                  opts=opts, em_constraint=True)
-    else:
-        rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
-              pycbc.tmpltbank.get_random_mass(2000000, massRangeParams)
+    rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
+          pycbc.tmpltbank.get_random_mass(2000000, massRangeParams, True)
     diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
     rMass1 = (rTotmass + diff)/2.
     rMass2 = (rTotmass - diff)/2.
@@ -299,10 +292,6 @@ if opts.filter_points:
     newV2s = []
     if opts.threed_lattice:
         newV3s = []
-
-    # TODO: remove when done testing 
-    numpy.savetxt('xis.dat', xis)
-    numpy.savetxt('physMasses.dat', physMasses)
 
     # Use scipy's KDtree to quickly calculate Euclidean distances
     logging.info("Setting up KDtree to compute distances.")
@@ -380,7 +369,6 @@ exe_path = distutils.spawn.find_executable('pycbc_geom_aligned_2dstack')
 job = pipeline.CondorDAGJob('vanilla',exe_path)
 #pipeline.AnalysisJob.__init__(job,cp,False)
 job.set_stdout_file('/dev/null')
-#job.set_stdout_file('logs/bank_gen-$(cluster)-$(process).out')
 job.set_stderr_file('logs/bank_gen-$(cluster)-$(process).err')
 job.set_sub_file('bank_gen.sub')
 # Add global job options
@@ -409,7 +397,6 @@ job.add_condor_cmd('getenv','True')
 cat_path = distutils.spawn.find_executable('pycbc_aligned_bank_cat')
 job_cat = pipeline.CondorDAGJob('vanilla', cat_path)
 job_cat.set_stdout_file('/dev/null')
-#job_cat.set_stdout_file('logs/bank_cat-$(cluster)-$(process).out')
 job_cat.set_stderr_file('logs/bank_cat-$(cluster)-$(process).err')
 job_cat.set_sub_file('bank_cat.sub')
 job_cat.add_condor_cmd('getenv','True')
@@ -429,9 +416,6 @@ cat_node = pipeline.CondorDAGNode(job_cat)
 cat_node.add_var_opt('metadata-file', cmds_file_name)
 cat_node.add_var_opt('input-glob', 'output_banks/output_bank_*.dat')
 cat_node.add_var_opt('output-file', opts.output_file)
-#cat_node.add_var_opt('pn-order', opts.pn_order) #FP
-#cat_node.add_var_opt('f-low', opts.f_low) #FP
-#cat_node.add_var_opt('f-upper', opts.f_upper) #FP
 
 # Make the nodes
 numBanks = int((len(newV1s) - 0.5)//opts.split_bank_num) + 1
@@ -449,7 +433,6 @@ if opts.print_chi_points:
     cat_path = distutils.spawn.find_executable('pycbc_tmpltbank_to_chi_params')
     job_print = pipeline.CondorDAGJob('vanilla', cat_path)
     job_print.set_stdout_file('/dev/null')
-    #job_print.set_stdout_file('logs/print_chi-$(cluster)-$(process).out')
     job_print.set_stderr_file('logs/print_chi-$(cluster)-$(process).err')
     job_print.set_sub_file('print_chi.sub')
     job_print.add_condor_cmd('getenv','True')
