@@ -425,14 +425,14 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
                  &norms[i*nwins_ps], &mlocs[i*nwins_ps], winsize, i*segsize);
   }
   
-  // We should now have the requisite max in cvals, norms, and mlocs.
+  // We should now have the requisite maxima in cvals, norms, and mlocs.
   // So one last loop...
   cnt = 0;
   curr_norm = 0.0;
   curr_loc = 0;
   for (i = 0; i < outlen; i++){
     if (norms[i] > thr_sqr){
-      if (!cnt){
+      if (cnt == 0){
         // We only do this the first time we find a point above threshold.
         cnt = 1;
         curr_norm = norms[i];
@@ -447,6 +447,9 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
         curr_cval = cvals[i];
         curr_norm = norms[i];
         curr_loc = mlocs[i];
+        // Note that we only increment 'cnt' *after* we write out
+        // the previous clustered trigger, so we maintain that if
+        // cnt > 0, then cnt-1 triggers have been written.
         cnt += 1;        
       } else if (norms[i] > curr_norm) {
         curr_cval = cvals[i];
@@ -458,19 +461,10 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
 
   // Note that in the above logic, we have only written
   // values out if we found another point above threshold
-  // after the current one and further away. That's also
-  // the only time we increment cnt.  So if we found
-  // *anything*, we have one more point to write; if we
-  // found more than one point, the value of cnt is also
-  // one too low.
+  // after the current one and further away. So if we found
+  // *anything*, we have one more point to write.
 
   if (cnt > 0){
-    // If we have more than one trigger the following causes cnt to
-    // leapfrog over one index, leaving uninitalized values in that
-    // location
-    // if (cnt > 1){
-    //   cnt += 1;
-    // }
     values[cnt-1] = curr_cval;
     locs[cnt-1] = curr_loc;
   }
