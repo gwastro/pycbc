@@ -870,6 +870,10 @@ class massRangeParameters(object):
                              without the --use-eos-max-ns-mass flag.
                              """.format(max_ns_g_mass-0.0000000001)
                     raise ValueError(errMsg)
+            self.delta_bh_spin = (
+                delta_bh_spin or self.default_delta_bh_spin)
+            self.delta_ns_mass = ( 
+                delta_ns_mass or self.default_delta_ns_mass)
 
         # FIXME: This may be inaccurate if Eta limits are given
         # This will not cause any problems, but maybe could be fixed.
@@ -905,7 +909,8 @@ class massRangeParameters(object):
                        minEta=opts.min_eta, max_chirp_mass=opts.max_chirp_mass,
                        min_chirp_mass=opts.min_chirp_mass,
                        remnant_mass_threshold=opts.remnant_mass_threshold,
-                       ns_eos=opts.ns_eos, use_eos_max_ns_mass=opts.use_eos_max_ns_mass)
+                       ns_eos=opts.ns_eos, use_eos_max_ns_mass=opts.use_eos_max_ns_mass,
+                       delta_bh_spin=opts.delta_bh_spin, delta_ns_mass=opts.delta_ns_mass)
         else:
             return cls(opts.min_mass1, opts.max_mass1, opts.min_mass2,
                        opts.max_mass2, maxTotMass=opts.max_total_mass,
@@ -917,7 +922,8 @@ class massRangeParameters(object):
                        min_chirp_mass=opts.min_chirp_mass,
                        ns_bh_boundary_mass=opts.ns_bh_boundary_mass,
                        remnant_mass_threshold=opts.remnant_mass_threshold,
-                       ns_eos=opts.ns_eos, use_eos_max_ns_mass=opts.use_eos_max_ns_mass)
+                       ns_eos=opts.ns_eos, use_eos_max_ns_mass=opts.use_eos_max_ns_mass,
+                       delta_bh_spin=opts.delta_bh_spin, delta_ns_mass=opts.delta_ns_mass)
 
     def is_outside_range(self, mass1, mass2, spin1z, spin2z):
         """

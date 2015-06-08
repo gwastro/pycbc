@@ -29,7 +29,6 @@ import pycbc.version
 from pycbc import tmpltbank, pnutils
 import pycbc.psd
 import pycbc.strain
-from pycbc.tmpltbank.em_progenitors import load_ns_sequence, generate_em_constraint_data
 
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
@@ -245,14 +244,9 @@ logging.info("Starting bank placement")
 while True:
     if not (Ns % 100000):
         # For optimization we generate points in sets of 100000
-        # Use the EM constraint only if asked to do so
-        if not opts.remnant_mass_threshold is None:
-            rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
-                  tmpltbank.get_random_mass(100000, massRangeParams, \
-                      opts=opts, em_constraint=True)
-        else:
-            rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
-                  tmpltbank.get_random_mass(100000, massRangeParams)
+        rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
+              tmpltbank.get_random_mass(100000, massRangeParams, \
+                  True, opts.remnant_mass_threshold, opts.ns_eos)
         # Use pnutils function here
         diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
         rMass1 = (rTotmass + diff)/2.
