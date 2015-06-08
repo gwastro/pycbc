@@ -343,7 +343,7 @@ class FrequencySeries(Array):
             d = h5py.File(path)
             d[key] = self.numpy()
             d[key].attrs['epoch'] = float(self.epoch)
-            d[key].attrs['delta_f'] = int(self.delta_f)
+            d[key].attrs['delta_f'] = float(self.delta_f)
         else:
             raise ValueError('Path must end with .npy or .txt')
             
