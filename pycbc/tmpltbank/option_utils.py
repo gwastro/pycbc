@@ -454,17 +454,34 @@ def insert_mass_range_option_group(parser,nonSpin=False):
                        "UNITS=Solar mass.")
     massOpts.add_argument("--ns-eos", action="store", 
                   default=None,
-                  help="Select the EOS to be used for the NS when calculating"
-                       "the remnant disk mass. Only 2H is currently supported."
+                  help="Select the EOS to be used for the NS when calculating "
+                       "the remnant disk mass. Only 2H is currently supported. "
                        "OPTIONAL")
     massOpts.add_argument("--remnant-mass-threshold", action="store", type=float,
                   default=None,
-                  help="Setting this filters EM dim NS-BH binaries: if the"
-                       "remnant disk mass does not exceed this value, the NS-BH"
+                  help="Setting this filters EM dim NS-BH binaries: if the "
+                       "remnant disk mass does not exceed this value, the NS-BH "
                        "binary is dropped from the bank.  OPTIONAL")
     massOpts.add_argument("--use-eos-max-ns-mass", action="store_true", default=False,
-                  help="Cut NS mass range to maximum mass allowed by EOS."
+                  help="Cut the mass range of the smaller object to the maximum "
+                       "mass allowed by EOS. "
                        "OPTIONAL")
+    massOpts.add_argument("--delta-bh-spin", action="store", type=float,
+                  default=0.1,
+                  help="Grid spacing used for the BH spin z component when "
+                       "generating the surface of the minumum minimum symmetric "
+                       "mass ratio as a function of BH spin and NS mass required "
+                       "to produce a remnant disk mass that exceeds the threshold " 
+                       "specificed in --remnant-mass-threshold. "
+                       "OPTIONAL (0.1 by default) ")
+    massOpts.add_argument("--delta-ns-mass", action="store", type=float,
+                  default=0.1,
+                  help="Grid spacing used for the NS mass when generating the "
+                       "surface of the minumum minimum symmetric mass ratio as "
+                       "a function of BH spin and NS mass required to produce "
+                       "a remnant disk mass that exceeds the thrsehold specified "
+                       "in --remnant-mass-threshold. "
+                       "OPTIONAL (0.1 by default) ")
 
     if nonSpin:
         parser.add_argument_group(massOpts)
@@ -810,12 +827,15 @@ class massRangeParameters(object):
 
     default_nsbh_boundary_mass = 3.
     default_ns_eos = '2H'
+    default_delta_bh_spin = 0.1
+    default_delta_ns_mass = 0.1
 
     def __init__(self, minMass1, maxMass1, minMass2, maxMass2,
                  maxNSSpinMag=0, maxBHSpinMag=0, maxTotMass=None,
                  minTotMass=None, maxEta=None, minEta=0, 
                  max_chirp_mass=None, min_chirp_mass=None, 
                  ns_bh_boundary_mass=None, nsbhFlag=False,
+                 remnant_mass_threshold=None, ns_eos=None, use_eos_max_ns_mass=False,
                  remnant_mass_threshold=None, ns_eos=None, use_eos_max_ns_mass=False):
         """
         Initialize an instance of the massRangeParameters by providing all
