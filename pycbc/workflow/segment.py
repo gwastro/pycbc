@@ -31,6 +31,7 @@ import os,sys,shutil
 import subprocess
 import logging
 import urllib, urlparse
+import lal
 from glue import segments, pipeline
 from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.workflow.core import Executable, FileList, Node, OutSegFile, make_analysis_dir, make_external_call, File
@@ -678,20 +679,20 @@ def add_cumulative_files(workflow, output_file, input_files, out_dir,
         workflow.add_node(add_node)
     return add_node.output_files[0]
 
-def fromsegmentxml(file, dict=False, id=None):
+def fromsegmentxml(xml_file, return_dict=False, select_seg_def_id=None):
     """
     Read a glue.segments.segmentlist from the file object file containing an
     xml segment table.
 
     Parameters
     -----------
-    file : file object
+    xml_file : file object
         file object for segment xml file
-    dict : boolean, optional (default = False)
+    return_dict : boolean, optional (default = False)
         returns a glue.segments.segmentlistdict containing coalesced
         glue.segments.segmentlists keyed by seg_def.name for each entry in the
-        contained segment_def_table. Default False
-    id : int, optional (default = None)
+        contained segment_def_table.
+    select_seg_def_id : int, optional (default = None)
         returns a glue.segments.segmentlist object containing only those
         segments matching the given segment_def_id integer
 
@@ -702,17 +703,14 @@ def fromsegmentxml(file, dict=False, id=None):
     """
 
     # load xmldocument and SegmentDefTable and SegmentTables
-    xmldoc, digest = utils.load_fileobj(file, gz=file.name.endswith(".gz"),
-                             contenthandler=ContentHandler)
+    xmldoc, digest = utils.load_fileobj(xml_file,
+                                        gz=xml_file.name.endswith(".gz"),
+                                        contenthandler=ContentHandler)
+    seg_def_table = table.get_table(xmldoc,
+                                    lsctables.SegmentDefTable.tableName)
+    seg_table = table.get_table(xmldoc, lsctables.SegmentTable.tableName)
 
-    seg_def_table  = table.get_table(xmldoc,
-                                     lsctables.SegmentDefTable.tableName)
-    seg_table      = table.get_table(xmldoc, lsctables.SegmentTable.tableName)
-
-    for seg in seg_table:
-        pass
-
-    if dict:
+    if return_dict:
         segs = segments.segmentlistdict()
     else:
         segs = segments.segmentlist()
@@ -720,23 +718,26 @@ def fromsegmentxml(file, dict=False, id=None):
     seg_id = {}
     for seg_def in seg_def_table:
         # Here we want to encode ifo, channel name and version
-        full_channel_name = ':'.join([str(seg_def.ifos), str(seg_def.name), 
-                                                         str(seg_def.version)])
+        full_channel_name = ':'.join([str(seg_def.ifos),
+                                      str(seg_def.name),
+                                      str(seg_def.version)])
         seg_id[int(seg_def.segment_def_id)] = full_channel_name
-        if dict:
+        if return_dict:
             segs[full_channel_name] = segments.segmentlist()
 
     for seg in seg_table:
-        if dict:
-            segs[seg_id[int(seg.segment_def_id)]]\
-                .append(segments.segment(seg.start_time, seg.end_time))
-            continue
-        if id and int(seg.segment_def_id)==id:
-            segs.append(segments.segment(seg.start_time, seg.end_time))
-            continue
-        segs.append(segments.segment(seg.start_time, seg.end_time))
+        seg_obj = segments.segment(
+                lal.LIGOTimeGPS(seg.start_time, seg.start_time_ns),
+                lal.LIGOTimeGPS(seg.end_time, seg.end_time_ns))
+        if return_dict:
+            segs[seg_id[int(seg.segment_def_id)]].append(seg_obj)
+        elif select_seg_def_id is not None:
+            if int(seg.segment_def_id) == select_seg_def_id:
+                segs.append(seg_obj)
+        else:
+            segs.append(seg_obj)
 
-    if dict:
+    if return_dict:
         for seg_name in seg_id.values():
             segs[seg_name] = segs[seg_name].coalesce()
     else:
