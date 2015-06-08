@@ -76,6 +76,7 @@ When using the setup_segment_gen_mixed function the following additional options
 * segments-minimum-segment-length = INT - OPTIONAL. If given, any segments of analysable data shorter than INT will not be included in the list of analysable times returned by this module.
 * segments-generate-coincident-segments - OPTIONAL. Option takes no value. If given the module will generate cumulative, multiple detector coincidence files for easy use in ligolw_thinca and pipedown.
 * segments-generate-segment-files - OPTIONAL (DEFAULT='always'). This option can be used if the user wants to re-use segment files generated previously. It is not recommended to use this option unless necessary. Options are
+
   * generate_segment_files='always' : DEFAULT: All files will be generated even if they already exist.
   * generate_segment_files='if_not_present': Files will be generated if they do not already exist. Pre-existing files will be read in and used.
   * generate_segment_files='error_on_duplicate': Files will be generated if they do not already exist. Pre-existing files will raise a failure.

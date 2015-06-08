@@ -95,17 +95,22 @@ When using the PREGENERATED sub-module the following configuartion options apply
 
 The following configuration options apply in the [workflow-datafind] section for all sub-modules and can be used as sanity checks:
 
-* datafind-check-segment-gaps = STRING - OPTIONAL (default = "no_test"). If this option takes any value other than 'no_test' the workflow module will check that the local datafind server has returned frames covering all of the listed science times. Its behaviour is then as follows
+* datafind-check-segment-gaps = STRING - OPTIONAL (default = "no_test"). If this option takes any value other than 'no_test' the workflow module will check that the local datafind server has returned frames covering all of the listed science times. Its behaviour is then as follows:
+
   * 'no_test': Do not perform this test. Any discrepancies will cause later failures.
   * 'warn': Perform the test, print warnings covering any discrepancies but do nothing about them. Discrepancies will cause failures later in the workflow.
   * 'update_times': Perform the test, print warnings covering any discrepancies and update the input science times to remove times that are not present on the host cluster.
   * 'raise_error': Perform the test. If any discrepancies occur, raise a ValueError.
-* datafind-check-frames-exist = STRING - OPTIONAL (default = "no_test"). If this options takes any value other than 'no_test' the workflow module will check that the frames returned by the local datafind server are accessible from the machine that is running the workflow generation. Its behaviour is then as follows
+
+* datafind-check-frames-exist = STRING - OPTIONAL (default = "no_test"). If this options takes any value other than 'no_test' the workflow module will check that the frames returned by the local datafind server are accessible from the machine that is running the workflow generation. Its behaviour is then as follows:
+
   * 'no_test': Do not perform this test. Any discrepancies will cause later failures.
   * 'warn': Perform the test, print warnings covering any discrepancies but do nothing about them. Discrepancies will cause failures later in the workflow.
   * 'update_times': Perform the test, print warnings covering any discrepancies and update the input science times to remove times that are not present on the host cluster.
   * 'raise_error': Perform the test. If any discrepancies occur, raise a ValueError.
+
 * datafind-check-segment-summary = STRING - OPTIONAL (default = "no_test"). If this option takes any value other than 'no_test' the workflow module will check that all frames returned by datafind are covered by the segment_summary table (for the science flag). Its behaviour is then as follows:
+
   * 'no_test': Do not perform this test. 
   * 'warn': Perform the test, print warnings covering any discrepancies but do nothing about them.
   * 'raise_error': Perform the test. If any discrepancies occur, raise a ValueError.
