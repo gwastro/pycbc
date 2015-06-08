@@ -245,8 +245,7 @@ while True:
     if not (Ns % 100000):
         # For optimization we generate points in sets of 100000
         rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
-              tmpltbank.get_random_mass(100000, massRangeParams, \
-                  True, opts.remnant_mass_threshold, opts.ns_eos)
+              tmpltbank.get_random_mass(100000, massRangeParams, True)
         # Use pnutils function here
         diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
         rMass1 = (rTotmass + diff)/2.

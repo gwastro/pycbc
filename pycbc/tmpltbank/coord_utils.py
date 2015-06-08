@@ -332,7 +332,6 @@ def get_random_mass(numPoints, massRangeParams, em_constraint=False):
             # this last condition will always be true, otherwise the user is
             # implicitly asking to keep binaries in which the secondary may be
             # a BH).
-            #mask[numpy.logical_and(numpy.logical_and(numpy.logical_not(mass1 < massRangeParams.ns_bh_boundary_mass), numpy.logical_not(mass2 > max_ns_g_mass)), eta < min_eta_em)] = False
             mask[(mass1 >= massRangeParams.ns_bh_boundary_mass) & (mass2 <= max_ns_g_mass) & (eta < min_eta_em)] = False
             # Keep only binaries that can produce an EM counterpart and add them to
             # the pile of accpeted points to output
