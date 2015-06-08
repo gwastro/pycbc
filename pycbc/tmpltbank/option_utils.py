@@ -836,7 +836,7 @@ class massRangeParameters(object):
                  max_chirp_mass=None, min_chirp_mass=None, 
                  ns_bh_boundary_mass=None, nsbhFlag=False,
                  remnant_mass_threshold=None, ns_eos=None, use_eos_max_ns_mass=False,
-                 remnant_mass_threshold=None, ns_eos=None, use_eos_max_ns_mass=False):
+                 delta_bh_spin=None, delta_ns_mass=None):
         """
         Initialize an instance of the massRangeParameters by providing all
         options directly. See the help message associated with any code
