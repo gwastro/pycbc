@@ -97,6 +97,12 @@ class SingleDetTriggerSet:
         return eta
 
     @property
+    def effective_spin(self):
+        # FIXME assumes aligned spins
+        return (self.spin1z * self.mass1 + self.spin2z * self.mass2) \
+            / self.mtotal
+
+    @property
     def end_time(self):
         return np.array(self.trigs['end_time'])[self.veto_mask]
 
