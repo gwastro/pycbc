@@ -400,7 +400,7 @@ class TimeSeries(Array):
             f = h5py.File(path)
             f[key] = self.numpy()
             f[key].attrs['start_time'] = float(self.start_time)
-            f[key].attrs['delta_t'] = int(self.delta_t)
+            f[key].attrs['delta_t'] = float(self.delta_t)
         else:
             raise ValueError('Path must end with .npy or .txt')
                 
