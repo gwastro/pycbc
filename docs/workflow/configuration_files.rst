@@ -24,8 +24,8 @@ The post-processing and injections are available in the following ini files.
 * example_inj.ini
 
 =====================================
-latest S6D review configuration file
-==================================
+latest review configuration file
+=====================================
 The ini file is configured to reproduce the latest reviewed coincident pipeline configuration.
 
 * http://atlas1.atlas.aei.uni-hannover.de/~cbiwer/ahope_review/pycbc_review/s6d/twoweek_pycbc_tmpltbank/970012743-971622087/
