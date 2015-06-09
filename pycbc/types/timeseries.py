@@ -18,7 +18,7 @@
 Provides a class representing a time series.
 """
 
-import os as _os
+import os as _os, h5py
 from pycbc.types.array import Array, _convert, complex_same_precision_as, zeros
 from pycbc.types.array import _nocomplex
 from pycbc.types.frequencyseries import FrequencySeries
@@ -359,17 +359,22 @@ class TimeSeries(Array):
         scaled = _numpy.int16(self.numpy()/max(abs(self)) * 32767)
         write_wav(file_name, self.sample_rate, scaled)
 
-    def save(self, path):
+    def save(self, path, group = None):
         """
-        Save time series to a Numpy .npy or text file. The first column
+        Save time series to a Numpy .npy, hdf, or text file. The first column
         contains the sample times, the second contains the values.
         In the case of a complex time series saved as text, the imaginary
-        part is written as a third column.
+        part is written as a third column. When using hdf format, the data is stored
+        as a single vector, along with relevant attributes.
 
         Parameters
         ----------
-        path : string
-            Destination file path. Must end with either .npy or .txt.
+        path: string
+            Destination file path. Must end with either .hdf, .npy or .txt.
+
+        group: string 
+            Additional name for internal storage use. Ex. hdf storage uses
+            this as the key value.
 
         Raises
         ------
@@ -390,6 +395,12 @@ class TimeSeries(Array):
                                         self.numpy().real,
                                         self.numpy().imag)).T
             _numpy.savetxt(path, output)
+        elif ext =='.hdf':
+            key = 'data' if group is None else group
+            f = h5py.File(path)
+            f[key] = self.numpy()
+            f[key].attrs['start_time'] = float(self.start_time)
+            f[key].attrs['delta_t'] = float(self.delta_t)
         else:
             raise ValueError('Path must end with .npy or .txt')
                 
@@ -434,15 +445,19 @@ class TimeSeries(Array):
         
         
 
-def load_timeseries(path):
+def load_timeseries(path, group=None):
     """
-    Load a TimeSeries from a .txt or .npy file. The
+    Load a TimeSeries from a .hdf, .txt or .npy file. The
     default data types will be double precision floating point.
 
     Parameters
     ----------
-    path : string
+    path: string
         source file path. Must end with either .npy or .txt.
+
+    group: string 
+        Additional name for internal storage use. Ex. hdf storage uses
+        this as the key value.
 
     Raises
     ------
@@ -458,8 +473,13 @@ def load_timeseries(path):
         data = numpy.load(path)    
     elif ext == '.txt':
         data = numpy.loadtxt(path)
+    elif ext == '.hdf':
+        key = 'data' if group is None else group
+        f = h5py.File(path)[key]
+        return TimeSeries(f, delta_t=f.attrs['delta_t'],
+                             epoch=f.attrs['start_time']) 
     else:
-        raise ValueError('Path must end with .npy or .txt')
+        raise ValueError('Path must end with .npy, .hdf, or .txt')
         
     if data.ndim == 2:
         delta_t = (data[-1][0] - data[0][0]) / (len(data)-1)

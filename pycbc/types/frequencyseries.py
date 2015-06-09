@@ -18,7 +18,7 @@
 Provides a class representing a frequency series.
 """
 
-import os as _os
+import os as _os, h5py
 from pycbc.types.array import Array, _convert, zeros, _noreal
 import lal as _lal
 import numpy as _numpy
@@ -301,17 +301,22 @@ class FrequencySeries(Array):
 
         return lal_data
 
-    def save(self, path):
+    def save(self, path, group=None):
         """
-        Save frequency series to a Numpy .npy or text file. The first column
+        Save frequency series to a Numpy .npy, hdf, or text file. The first column
         contains the sample frequencies, the second contains the values.
         In the case of a complex frequency series saved as text, the imaginary
-        part is written as a third column.
+        part is written as a third column.  When using hdf format, the data is stored
+        as a single vector, along with relevant attributes.
 
         Parameters
         ----------
-        path : string
-            Destination file path. Must end with either .npy or .txt.
+        path: string
+            Destination file path. Must end with either .hdf, .npy or .txt.
+            
+        group: string 
+            Additional name for internal storage use. Ex. hdf storage uses
+            this as the key value.
 
         Raises
         ------
@@ -333,6 +338,12 @@ class FrequencySeries(Array):
                                         self.numpy().real,
                                         self.numpy().imag)).T
             _numpy.savetxt(path, output)
+        elif ext =='.hdf':
+            key = 'data' if group is None else group
+            d = h5py.File(path)
+            d[key] = self.numpy()
+            d[key].attrs['epoch'] = float(self.epoch)
+            d[key].attrs['delta_f'] = float(self.delta_f)
         else:
             raise ValueError('Path must end with .npy or .txt')
             
@@ -379,15 +390,19 @@ class FrequencySeries(Array):
         return f
             
 
-def load_frequencyseries(path):
+def load_frequencyseries(path, group=None):
     """
-    Load a FrequencySeries from a .txt or .npy file. The
+    Load a FrequencySeries from a .hdf, .txt or .npy file. The
     default data types will be double precision floating point.
 
     Parameters
     ----------
-    path : string
+    path: string
         source file path. Must end with either .npy or .txt.
+
+    group: string 
+        Additional name for internal storage use. Ex. hdf storage uses
+        this as the key value.
 
     Raises
     ------
@@ -403,8 +418,12 @@ def load_frequencyseries(path):
         data = numpy.load(path)    
     elif ext == '.txt':
         data = numpy.loadtxt(path)
+    elif ext == '.hdf':
+        key = 'data' if group is None else group
+        f = h5py.File(path)[key]
+        return FrequencySeries(f, delta_f=f.attrs['delta_f'], epoch=f.attrs['epoch']) 
     else:
-        raise ValueError('Path must end with .npy or .txt')
+        raise ValueError('Path must end with .npy, .hdf, or .txt')
         
     if data.ndim == 2:
         delta_f = (data[-1][0] - data[0][0]) / (len(data)-1)
