@@ -32,10 +32,10 @@ from pycbc.setuputils import pkg_config
 from distutils.file_util import write_file
 
 requires = ['lal.lal', 'lalsimulation.lalsimulation', 'glue', 'pylal']
-install_requires =  ['Mako>=1.0.1',
+setup_requires = ['numpy>=1.6.4']
+install_requires =  setup_requires + ['Mako>=1.0.1',
                       'argparse>=1.3.0',
                       'decorator>=3.4.2',
-                      'numpy>=1.6.4',
                       'scipy>=0.13.0',
                       'matplotlib>=1.3.0',
                       'pillow',
@@ -94,7 +94,11 @@ class install(_install):
         print >> env_file, "export PYTHONPATH"
         print >> env_file, "export PATH"
         env_file.close()
-        _install.run(self)
+
+        try:
+            _install.do_egg_install(self)
+        except:
+            _install.run(self)
 
 
 test_results = []
@@ -295,6 +299,7 @@ setup (
                  'test_opencl':test_opencl,
                  'clean' : clean,
                 },
+    setup_requires = setup_requires,
     install_requires = install_requires,
     dependency_links = links,
     scripts  = [
