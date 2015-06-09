@@ -31,7 +31,6 @@ import os
 import copy
 import logging
 import argparse
-from glue import pipeline
 from glue import segments
 import pycbc.workflow as _workflow
 

@@ -31,7 +31,6 @@ __program__ = "get_data_example"
 import os, sys
 import argparse
 import logging
-from glue import pipeline
 from glue import segments
 import pycbc.workflow as _workflow
 
