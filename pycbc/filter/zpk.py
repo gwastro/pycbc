@@ -23,7 +23,6 @@
 #
 
 import numpy as np
-import scipy.signal
 
 from pycbc import future
 
