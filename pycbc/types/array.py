@@ -875,7 +875,7 @@ class Array(object):
         Parameters
         ----------
         path: string
-            Destination file path. Must end with either .npy or .txt.
+            Destination file path. Must end with either .hdf, .npy or .txt.
             
         group: string 
             Additional name for internal storage use. Ex. hdf storage uses
