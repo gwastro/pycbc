@@ -229,7 +229,7 @@ def get_version_info():
     # If this is a release or another kind of source distribution of PyCBC
     except:
         version = '1.0.0'
-        release = 'False'
+        release = 'True'
         date = hash = branch = tag = author = committer = status = builder = build_date = ''
     
         with open('pycbc/version.py', 'w') as f:
@@ -288,7 +288,7 @@ setup (
     author = 'Ligo Virgo Collaboration - PyCBC team',
     author_email = 'alex.nitz@ligo.org',
     url = 'https://github.com/ligo-cbc/pycbc',
-    download_url = 'https://github.com/ahnitz/ligo-cbc/tarball/v%s' % VERSION,
+    download_url = 'https://github.com/ligo-cbc/pycbc/tarball/v%s' % VERSION,
     keywords = ['ligo', 'physics', 'gravity', 'signal processing'],
     cmdclass = { 'test'  : test,
                  'build_docs' : build_docs,
