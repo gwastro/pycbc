@@ -35,7 +35,7 @@ def snr_from_chisq(chisq, newsnr, q=6.):
 
 if args.veto_file:
     time = f['end_time'][:]
-    locs, segs = veto.indices_outside_segments(time, ifo, [args.veto_file])
+    locs, segs = veto.indices_outside_segments(time, [args.veto_file], ifo=ifo)
     snr = snr[locs]
     chisq = chisq[locs]
 
