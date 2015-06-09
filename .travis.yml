@@ -4,4 +4,5 @@ cache:
 sudo: true
 before_install:
   - "./tools/install_travis.sh"
-script: "python setup.py test"
+install: "python setup.py install"
+script: "source $TRAVIS_BUILD_DIR/source; export; python setup.py test"

@@ -11,7 +11,11 @@ libfftw3-dev \
 python-decorator \
 python-jinja2 \
 python-matplotlib \
+liblapack-dev \
+gfortran \
 libgsl0-dev
+
+pip install decorator --upgrade
 
 # install the version of swig that for some reason we have to use
 wget http://downloads.sourceforge.net/project/swig/swig/swig-2.0.11/swig-2.0.11.tar.gz
@@ -49,6 +53,7 @@ cd pylal; python setup.py install --prefix=$LOCAL; cd ..
 cd glue; python setup.py install --prefix=$LOCAL; cd ..
 cd ..
 
-echo source $LOCAL/etc/glue-user-env.sh >> source
-echo source $LOCAL/etc/lal-user-env.sh >> source
-chmod 755 source
+echo source $LOCAL/etc/glue-user-env.sh >> $TRAVIS_BUILD_DIR/source
+echo source $LOCAL/etc/lal-user-env.sh >> $TRAVIS_BUILD_DIR/source
+echo $PWD
+chmod 755 $TRAVIS_BUILD_DIR/source
