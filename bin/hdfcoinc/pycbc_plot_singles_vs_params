@@ -45,11 +45,12 @@ class SingleDetTriggerSet:
         self.trigs_f = h5py.File(trig_file, 'r')
         self.trigs = self.trigs_f[detector]
 
-        self.veto_mask = slice(len(self.trigs))
         if veto_file:
             logging.info('Loading veto segments')
             self.veto_mask, segs = pycbc.events.veto.indices_outside_segments(
                 self.trigs['end_time'][:], [veto_file], ifo=detector)
+        else:
+            self.veto_mask = slice(len(self.trigs['end_time']))
 
         logging.info('Loading bank')
         self.bank = h5py.File(bank_file, 'r')
