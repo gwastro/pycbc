@@ -583,10 +583,10 @@ class PyCBCInspiralExecutable(Executable):
                               %(self.name))
 
         # set remaining options flags   
-        node.add_opt('--gps-start-time', data_seg[0] + pad_data)
-        node.add_opt('--gps-end-time', data_seg[1] - pad_data)
-        node.add_opt('--trig-start-time', valid_seg[0])
-        node.add_opt('--trig-end-time', valid_seg[1])
+        node.add_opt('--gps-start-time', '%.0f' % float(data_seg[0] + pad_data))
+        node.add_opt('--gps-end-time', '%.0f' % float(data_seg[1] - pad_data))
+        node.add_opt('--trig-start-time', '%.0f' % float(valid_seg[0]))
+        node.add_opt('--trig-end-time', '%.0f' % float(valid_seg[1]))
 
         node.add_profile('condor', 'request_cpus', self.num_threads)        
 
@@ -686,8 +686,8 @@ class PyCBCTmpltbankExecutable(Executable):
                              "%s. Please check the ini file." % self.name)
 
         # set the remaining option flags
-        node.add_opt('--gps-start-time', data_seg[0] + pad_data)
-        node.add_opt('--gps-end-time', data_seg[1] - pad_data)
+        node.add_opt('--gps-start-time', '%.0f' % float(data_seg[0] + pad_data))
+        node.add_opt('--gps-end-time', '%.0f' % float(data_seg[1] - pad_data))
 
         # set the input and output files
         # Add the PSD file if needed
@@ -1177,8 +1177,8 @@ class LalappsInspinjExecutable(Executable):
         else:
             ext = '.xml'
 
-        node.add_opt('--gps-start-time', segment[0])
-        node.add_opt('--gps-end-time', segment[1])
+        node.add_opt('--gps-start-time', '%.0f' % float(segment[0]))
+        node.add_opt('--gps-end-time', '%.0f' % float(segment[1]))
         node.new_output_file_opt(segment, '.xml', '--output',
                                  store_file=self.retain_files)
         return node
