@@ -5,7 +5,7 @@ from pycbc.events import veto, coinc
        
 parser = argparse.ArgumentParser()
 parser.add_argument("--verbose", action="count")
-parser.add_argument("--veto-files", nargs='+',
+parser.add_argument("--veto-files", nargs='*',
                     help="Optional veto file. Triggers within these times are ignored")
 parser.add_argument('--segment-name', default=None, type=str,
                     help='Optional, name of segment list to use for vetoes')
