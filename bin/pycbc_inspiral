@@ -17,6 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import logging, argparse, numpy, itertools
+import pycbc
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC
 from pycbc.filter import MatchedFilterControl, make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
@@ -171,11 +172,7 @@ def associate_psd(strain_segments, gwstrain, segments, nsegs, flen, delta_f, flo
     return psds
 
 
-if opt.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+pycbc.init_logging(opt.verbose)
 
 ctx = scheme.from_cli(opt)
 gwstrain = strain.from_cli(opt, DYN_RANGE_FAC)
