@@ -67,7 +67,7 @@ def select_splitfilejob_instance(curr_exe):
     else:
         # Should we try some sort of default class??
         err_string = "No class exists for Executable %s" %(curr_exe,)
-        raise NotImplementedError(errString)
+        raise NotImplementedError(err_string)
 
     return exe_class
 
