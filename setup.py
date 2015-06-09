@@ -288,7 +288,7 @@ setup (
     author = 'Ligo Virgo Collaboration - PyCBC team',
     author_email = 'alex.nitz@ligo.org',
     url = 'https://github.com/ligo-cbc/pycbc',
-    download_url = 'https://github.com/ahnitz/ligo-cbc/tarball/v%s' % VERSION,
+    download_url = 'https://github.com/ligo-cbc/tarball/v%s' % VERSION,
     keywords = ['ligo', 'physics', 'gravity', 'signal processing'],
     cmdclass = { 'test'  : test,
                  'build_docs' : build_docs,
