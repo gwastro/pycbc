@@ -15,3 +15,4 @@ To install PyCBC:
 To run the unittests for PyCBC:
     python setup.py test
 
+[![Build Status](https://travis-ci.org/ligo-cbc/pycbc.svg?branch=master)](https://travis-ci.org/ligo-cbc/pycbc)
