@@ -46,7 +46,6 @@ from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import search_summary as ligolw_search_summary
 from pylal import snglcoinc
-from gstlal import far
 
 
 #
@@ -90,6 +89,8 @@ def parse_command_line():
 #
 
 args = parse_command_line()
+
+from gstlal import far
 
 horizon_distances = pickle.load( open(args.horizon_dist_file, "rb"))
 
