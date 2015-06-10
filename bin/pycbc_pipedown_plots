@@ -44,7 +44,6 @@ from glue.ligolw import lsctables
 from glue.ligolw import utils
 from glue.ligolw.utils import process
 from glue import git_version
-from lalapps import inspiral
 
 ##############################################################################
 #
@@ -94,6 +93,8 @@ parser.add_argument("--config-file", action="store", metavar="CONFIGFILE",
                     help="""The configuration file containing instructions
                     about how to set up the various plotting codes.""")
 args = parser.parse_args()
+
+from lalapps import inspiral
 
 ##############################################################################
 # Create log file
