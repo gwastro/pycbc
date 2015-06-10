@@ -23,8 +23,11 @@ from trace import fullmodname
 
 try:
     from setuptools.command.install import install as _install
+    from setuptools.command.install_egg_info import install_egg_info as egg_info
+    USE_SETUPTOOLS = True
 except:
     from distutils.command.install import install as _install
+    USE_SETUPTOOLS = False
 
 from distutils.errors import DistutilsError
 from distutils.core import setup, Command, Extension
@@ -38,7 +41,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'argparse>=1.3.0',
                       'decorator>=3.4.2',
                       'scipy>=0.13.0',
-                      'matplotlib==1.3.1',
+                      'matplotlib>=1.3.1',
                       'pillow',
                       'jinja2',
                       ]
@@ -267,7 +270,8 @@ class build_docs(Command):
     def finalize_options(self):
         pass
     def run(self):
-        subprocess.check_call("cd docs; cp conf_std.py conf.py; sphinx-apidoc -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
+        subprocess.check_call("cd docs; cp conf_std.py conf.py; sphinx-apidoc "
+                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
                             stderr=subprocess.STDOUT, shell=True)
 
 class build_docs_test(Command):
@@ -278,8 +282,37 @@ class build_docs_test(Command):
     def finalize_options(self):
         pass
     def run(self):
-        subprocess.check_call("cd docs; cp conf_test.py conf.py; sphinx-apidoc -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
+        subprocess.check_call("cd docs; cp conf_test.py conf.py; sphinx-apidoc "
+                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
                             stderr=subprocess.STDOUT, shell=True)                            
+
+cmdclass = { 'test'  : test,
+             'build_docs' : build_docs,
+             'build_docs_test' : build_docs_test,
+             'install' : install,
+             'test_cpu':test_cpu,
+             'test_cuda':test_cuda,
+             'test_opencl':test_opencl,
+             'clean' : clean,
+            }
+
+if USE_SETUPTOOLS:
+    class install_egg_info(egg_info):
+        def run(self):
+            egg_info.run(self)
+            
+            try:
+                import numpy.version
+                if numpy.version.version < '1.6.4':
+                    print (" Numpy >= 1.6.4 is required for pycbc dependencies."
+                          " We found version %s already installed. Please update "
+                          " to a more recent version and then retry PyCBC "
+                          " installation. "
+                          " "
+                          " Using pip: [pip install numpy>=1.6.4 --upgrade --user] "
+                          "" % numpy.version.version)
+            except ImportError:
+                pass
                            
 # do the actual work of building the package
 VERSION = get_version_info()
@@ -293,15 +326,7 @@ setup (
     url = 'https://github.com/ligo-cbc/pycbc',
     download_url = 'https://github.com/ligo-cbc/pycbc/tarball/v%s' % VERSION,
     keywords = ['ligo', 'physics', 'gravity', 'signal processing'],
-    cmdclass = { 'test'  : test,
-                 'build_docs' : build_docs,
-                 'build_docs_test' : build_docs_test,
-                 'install' : install,
-                 'test_cpu':test_cpu,
-                 'test_cuda':test_cuda,
-                 'test_opencl':test_opencl,
-                 'clean' : clean,
-                },
+    cmdclass = cmdclass,
     setup_requires = setup_requires,
     install_requires = install_requires,
     dependency_links = links,
