@@ -35,6 +35,20 @@ from distutils.command.clean import clean as _clean
 from pycbc.setuputils import pkg_config
 from distutils.file_util import write_file
 
+try:
+    import numpy.version
+    if numpy.version.version < '1.6.4':
+        print (" Numpy >= 1.6.4 is required for pycbc dependencies. \n"
+              " We found version %s already installed. Please update \n"
+              " to a more recent version and then retry PyCBC  \n"
+              " installation. \n"
+              " \n"
+              " Using pip: [pip install numpy>=1.6.4 --upgrade --user] \n"
+              "" % numpy.version.version)
+        exit(1)
+except ImportError:
+    pass
+                           
 requires = ['lal.lal', 'lalsimulation.lalsimulation', 'glue', 'pylal']
 setup_requires = []
 install_requires =  setup_requires + ['Mako>=1.0.1',
@@ -235,7 +249,7 @@ def get_version_info():
             
     # If this is a release or another kind of source distribution of PyCBC
     except:
-        version = '1.0.0'
+        version = '0.1.4'
         release = 'False'
         date = hash = branch = tag = author = committer = status = builder = build_date = ''
     
@@ -297,33 +311,6 @@ cmdclass = { 'test'  : test,
              'clean' : clean,
             }
 
-if USE_SETUPTOOLS:
-    class install_egg_info(egg_info):
-        def run(self):
-            egg_info.run(self)
-            
-            try:
-                import numpy.version
-                if numpy.version.version < '1.6.4':
-                    print (" Numpy >= 1.6.4 is required for pycbc dependencies."
-                          " We found version %s already installed. Please update "
-                          " to a more recent version and then retry PyCBC "
-                          " installation. "
-                          " "
-                          " Using pip: [pip install numpy>=1.6.4 --upgrade --user] "
-                          "" % numpy.version.version)
-                    exit(1)
-
-                print (" Numpy >= 1.6.4 is required for pycbc dependencies."
-                      " We found version %s already installed. Please update "
-                      " to a more recent version and then retry PyCBC "
-                      " installation. "
-                      " "
-                      " Using pip: [pip install numpy>=1.6.4 --upgrade --user] "
-                      "" % numpy.version.version)
-            except ImportError:
-                pass
-                           
 # do the actual work of building the package
 VERSION = get_version_info()
 
