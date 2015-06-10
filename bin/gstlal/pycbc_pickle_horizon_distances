@@ -34,7 +34,6 @@ import pickle
 
 from glue.ligolw import dbtables
 from glue.ligolw import lsctables
-from gstlal import inspiral
 
 #
 # =============================================================================
@@ -81,6 +80,7 @@ def parse_command_line():
 
 args = parse_command_line()
 
+from gstlal import inspiral
 
 #
 # retrieve horizon distance data
