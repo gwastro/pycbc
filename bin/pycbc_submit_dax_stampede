@@ -1,4 +1,64 @@
 #!/bin/bash
+
+DAX_FILE=""
+CACHE_FILE=""
+HOSTS=""
+DEVELOPMENT=""
+
+GETOPT_CMD=`getopt -o d:n:Dc:h --long dax:,number-of-hosts:,development,cache-file:,help -n 'pycbc_submit_dax' -- "$@"`
+eval set -- "$GETOPT_CMD"
+
+while true ; do
+  case "$1" in
+    -d|--dax)
+      case "$2" in
+        "") shift 2 ;;
+        *) DAX_FILE=$2 ; shift 2 ;;
+      esac ;;
+    -n|--number-of-hosts)
+      case "$2" in
+        "") shift 2 ;;
+        *) HOSTS=$2 ; shift 2 ;;
+      esac ;;
+    -D|--development) DEVELOPMENT="-devel" ; shift ;;
+    -c|--cache-file)
+      case "$2" in
+        "") shift 2 ;;
+        *) CACHE_FILE=$2 ; shift 2 ;;
+      esac ;;
+    -h|--help)
+      echo "usage: pycbc_submit_dax [-h]"
+      echo "                        --dax DAX"
+      echo "                        [--cache-file FILE]"
+      echo
+      echo "required arguments:"
+      echo "  -d, --dax DAX           name of the dax file to plan"
+      echo "  -n, --number-of-hosts   set the number of hosts to use on stampede"
+      echo
+      echo "optional arguments:"
+      echo "  -h, --help              show this help message and exit"
+      echo "  -c, --cache-file FILE   replica cache file for data reuse"
+      echo "  -D, --development       use the stampede development queue rather"
+      echo
+      echo "If the environment variable TMPDIR is set then this is prepended to the "
+      echo "path to the temporary workflow execte directory passed to pegasus-plan."
+      echo
+      exit 0 ;;
+    --) shift ; break ;;
+    *) echo "Internal error!" ; exit 1 ;;
+  esac
+done
+
+if [ "x$DAX_FILE" == "x" ]; then
+  echo "Error: --dax must be specified. Use --help for options."
+   exit 1
+fi
+
+if [ "x$HOSTS" == "x" ]; then
+  echo "Error: --number-of-hosts must be specified. Use --help for options."
+   exit 1
+fi
+
 set -e
 
 # Redirect stdout ( > ) into a named pipe ( >() ) running "tee"
@@ -11,11 +71,8 @@ if [ "x$2" == "x" ]; then
   exit 1
 fi
 
-# Get the host count
-HOSTS=$2
-
 echo 'making a directory for the submit files'
-export SUBMIT_DIR=`mktemp -d`
+export SUBMIT_DIR=`mktemp -d pycbc-tmp.XXXXXXXXXX`
 echo $SUBMIT_DIR
 
 #Make sure the directory is world readable
@@ -47,11 +104,11 @@ touch _reuse.cache
 
 if [ "x$3" == "x--cache" ]; then
   cp $3 _reuse.cache
-  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites stampede,local -o local \
+  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites stampede${DEVELOPMENT},local -o local \
                --dir $SUBMIT_DIR --cleanup inplace --cluster label \
                --cache _reuse.cache --relative-submit-dir work --submit
 else
-  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites stampede,local -o local \
+  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $1 --sites stampede${DEVELOPMENT},local -o local \
                --dir $SUBMIT_DIR --cleanup inplace --cluster label --relative-submit-dir work --submit
 fi
 

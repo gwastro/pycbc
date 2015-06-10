@@ -194,7 +194,7 @@ CD into the directory where the dax was generated::
 
 From the directory where the dax was created, run the planning script::
 
-    pycbc_submit_dax daily_ahope.dax 
+    pycbc_submit_dax --dax daily_ahope.dax 
     
 This will plan an begin running the workflow.
 

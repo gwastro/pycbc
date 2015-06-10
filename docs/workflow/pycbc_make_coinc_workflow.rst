@@ -215,12 +215,12 @@ CD into the directory where the dax was generated::
 
 From the directory where the dax was created, run the planning script::
 
-    pycbc_submit_dax weekly_ahope.dax
+    pycbc_submit_dax --dax weekly_ahope.dax
 
 This will plan and submit your workflow to the cluster using the default temporary file directory
 for log files. If you need to set a custom logpath this can be done as follows.::
 
-    TMPDIR=$LOGPATH pycbc_submit_dax weekly_ahope.dax
+    TMPDIR=$LOGPATH pycbc_submit_dax --dax weekly_ahope.dax
         
 If the workflow runs successfully, you will find the output under your html directory some time later.
 
