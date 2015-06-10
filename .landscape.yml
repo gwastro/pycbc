@@ -1,10 +1,6 @@
 doc-warnings: true
 test-warnings: no
-strictness: veryhigh
-pep8:
-  full: true
-  disable:
-    - E126
+strictness: medium
 autodetect: yes
 ignore-patterns:
     - examples/*
