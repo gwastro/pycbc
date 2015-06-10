@@ -311,6 +311,15 @@ if USE_SETUPTOOLS:
                           " "
                           " Using pip: [pip install numpy>=1.6.4 --upgrade --user] "
                           "" % numpy.version.version)
+                    exit(1)
+
+                print (" Numpy >= 1.6.4 is required for pycbc dependencies."
+                      " We found version %s already installed. Please update "
+                      " to a more recent version and then retry PyCBC "
+                      " installation. "
+                      " "
+                      " Using pip: [pip install numpy>=1.6.4 --upgrade --user] "
+                      "" % numpy.version.version)
             except ImportError:
                 pass
                            
