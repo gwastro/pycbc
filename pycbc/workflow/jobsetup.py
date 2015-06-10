@@ -122,12 +122,12 @@ def select_generic_executable(workflow, exe_tag):
     exe_name = os.path.basename(exe_path)
     exe_to_class_map = {
         'ligolw_add'               : LigolwAddExecutable,
-        'ligolw_sstinca'           : LigolwSSthincaExecutable,
+        'ligolw_cbc_sstinca'           : LigolwSSthincaExecutable,
         'pycbc_sqlite_simplify'    : PycbcSqliteSimplifyExecutable,
         'ligolw_cbc_cluster_coincs': SQLInOutExecutable,
         'ligolw_cbc_repop_coinc'   : SQLInOutExecutable,
         'repop_coinc_expfit'       : SQLInOutExecutable,
-        'ligolw_dbinjfind'         : SQLInOutExecutable,
+        'ligolw_cbc_dbinjfind'         : SQLInOutExecutable,
         'lalapps_inspinj'          : LalappsInspinjExecutable,
         'pycbc_timeslides'         : PycbcTimeslidesExecutable,
         'pycbc_compute_durations'  : ComputeDurationsExecutable,
