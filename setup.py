@@ -26,6 +26,7 @@ try:
 except:
     from distutils.command.install import install as _install
 
+from distutils.errors import DistutilsError
 from distutils.core import setup, Command, Extension
 from distutils.command.clean import clean as _clean
 from pycbc.setuputils import pkg_config
@@ -97,7 +98,9 @@ class install(_install):
 
         try:
             _install.do_egg_install(self)
-        except:
+        except DistutilsError as err:
+            print err
+        else:
             _install.run(self)
 
 
