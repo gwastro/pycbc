@@ -23,21 +23,40 @@ from trace import fullmodname
 
 try:
     from setuptools.command.install import install as _install
+    from setuptools.command.install_egg_info import install_egg_info as egg_info
+    USE_SETUPTOOLS = True
 except:
     from distutils.command.install import install as _install
+    USE_SETUPTOOLS = False
 
+from distutils.errors import DistutilsError
 from distutils.core import setup, Command, Extension
 from distutils.command.clean import clean as _clean
 from pycbc.setuputils import pkg_config
 from distutils.file_util import write_file
 
+try:
+    import numpy.version
+    if numpy.version.version < '1.6.4':
+        print (" Numpy >= 1.6.4 is required for pycbc dependencies. \n"
+              " We found version %s already installed. Please update \n"
+              " to a more recent version and then retry PyCBC  \n"
+              " installation. \n"
+              " \n"
+              " Using pip: [pip install numpy>=1.6.4 --upgrade --user] \n"
+              "" % numpy.version.version)
+        exit(1)
+except ImportError:
+    pass
+                           
 requires = ['lal.lal', 'lalsimulation.lalsimulation', 'glue', 'pylal']
-install_requires =  ['Mako>=1.0.1',
+setup_requires = []
+install_requires =  setup_requires + ['Mako>=1.0.1',
                       'argparse>=1.3.0',
                       'decorator>=3.4.2',
-                      'numpy>=1.6.4',
                       'scipy>=0.13.0',
-                      'matplotlib>=1.3.0',
+                      'matplotlib>=1.3.1',
+                      'numpy>=1.6.4',
                       'pillow',
                       'jinja2',
                       ]
@@ -94,7 +113,13 @@ class install(_install):
         print >> env_file, "export PYTHONPATH"
         print >> env_file, "export PATH"
         env_file.close()
-        _install.run(self)
+
+        try:
+            _install.do_egg_install(self)
+        except DistutilsError as err:
+            print err
+        else:
+            _install.run(self)
 
 
 test_results = []
@@ -224,7 +249,7 @@ def get_version_info():
             
     # If this is a release or another kind of source distribution of PyCBC
     except:
-        version = 0.1
+        version = '0.1.4'
         release = 'False'
         date = hash = branch = tag = author = committer = status = builder = build_date = ''
     
@@ -260,7 +285,8 @@ class build_docs(Command):
     def finalize_options(self):
         pass
     def run(self):
-        subprocess.check_call("cd docs; cp conf_std.py conf.py; sphinx-apidoc -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
+        subprocess.check_call("cd docs; cp conf_std.py conf.py; sphinx-apidoc "
+                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
                             stderr=subprocess.STDOUT, shell=True)
 
 class build_docs_test(Command):
@@ -271,9 +297,20 @@ class build_docs_test(Command):
     def finalize_options(self):
         pass
     def run(self):
-        subprocess.check_call("cd docs; cp conf_test.py conf.py; sphinx-apidoc -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
+        subprocess.check_call("cd docs; cp conf_test.py conf.py; sphinx-apidoc "
+                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
                             stderr=subprocess.STDOUT, shell=True)                            
-                           
+
+cmdclass = { 'test'  : test,
+             'build_docs' : build_docs,
+             'build_docs_test' : build_docs_test,
+             'install' : install,
+             'test_cpu':test_cpu,
+             'test_cuda':test_cuda,
+             'test_opencl':test_opencl,
+             'clean' : clean,
+            }
+
 # do the actual work of building the package
 VERSION = get_version_info()
 
@@ -283,18 +320,11 @@ setup (
     description = 'Gravitational wave CBC analysis toolkit',
     author = 'Ligo Virgo Collaboration - PyCBC team',
     author_email = 'alex.nitz@ligo.org',
-    url = 'https://github.com/ahnitz/pycbc',
-    download_url = 'https://github.com/ahnitz/pycbc/tarball/v%s' % VERSION,
+    url = 'https://github.com/ligo-cbc/pycbc',
+    download_url = 'https://github.com/ligo-cbc/pycbc/tarball/v%s' % VERSION,
     keywords = ['ligo', 'physics', 'gravity', 'signal processing'],
-    cmdclass = { 'test'  : test,
-                 'build_docs' : build_docs,
-                 'build_docs_test' : build_docs_test,
-                 'install' : install,
-                 'test_cpu':test_cpu,
-                 'test_cuda':test_cuda,
-                 'test_opencl':test_opencl,
-                 'clean' : clean,
-                },
+    cmdclass = cmdclass,
+    setup_requires = setup_requires,
     install_requires = install_requires,
     dependency_links = links,
     scripts  = [

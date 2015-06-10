@@ -23,16 +23,15 @@ The post-processing and injections are available in the following ini files.
 * example_pipedown.ini
 * example_inj.ini
 
-==================================
-S6D review configuration file
-==================================
-The ini file is configured to reproduce the two-stage S6D results here but with a single-stage configuration.
+=====================================
+latest review configuration file
+=====================================
+The ini file is configured to reproduce the latest reviewed coincident pipeline configuration.
 
-* https://sugar-jobs.phy.syr.edu/~spxiwh/S6/all_sky/badgamma_reruns/968543943-971622087/
- This was the run that obtained the single-detector triggers for the Big Dog
- Plot in S6D.
+* http://atlas1.atlas.aei.uni-hannover.de/~cbiwer/ahope_review/pycbc_review/s6d/twoweek_pycbc_tmpltbank/970012743-971622087/
+  This was the latest review run using both pycbc_inspiral and pycbc_geom_nonspin_tmpltbank.
 
-* s6d_pycbc_review_twoweek_v1.ini
+* ``review/s6d_twoweek_review.ini``
 
 ===========================
 daily configuration files

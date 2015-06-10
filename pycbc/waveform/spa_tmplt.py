@@ -24,7 +24,6 @@
 from math import sqrt
 import numpy
 import lal
-from lalinspiral import FindChirpChirpTime
 from pycbc.scheme import schemed
 import pycbc.pnutils
 from pycbc.types import FrequencySeries, Array, complex64, float32, zeros
