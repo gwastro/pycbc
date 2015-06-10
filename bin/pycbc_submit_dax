@@ -1,4 +1,15 @@
 #!/bin/bash
+# Redirect stdout ( > ) into a named pipe ( >() ) running "tee"
+set -e
+
+exec > >(tee submit.log)
+
+# Without this, only stdout would be captured - i.e. your
+# log file would not contain any error messages.
+# SEE answer by Adam Spiers, which keeps STDERR a seperate stream -
+# I did not want to steal from him by simply adding his answer to mine.
+exec 2>&1
+
 
 DAX_FILE=""
 CACHE_FILE=""
@@ -42,23 +53,6 @@ done
 if [ "x$DAX_FILE" == "x" ]; then
   echo "Error: --dax must be specified. Use --help for options."
    exit 1
-fi
-
-# Redirect stdout ( > ) into a named pipe ( >() ) running "tee"
-set -e
-
-exec > >(tee submit.log)
-
-# Without this, only stdout would be captured - i.e. your
-# log file would not contain any error messages.
-# SEE answer by Adam Spiers, which keeps STDERR a seperate stream -
-# I did not want to steal from him by simply adding his answer to mine.
-exec 2>&1
-
-# Check I have two arguments supplied
-if [ "x$1" == "x" ]; then
-  echo "I take one argument, the name of the dax file. None supplied."
-  exit 1
 fi
 
 #Make a directory for the submit files
