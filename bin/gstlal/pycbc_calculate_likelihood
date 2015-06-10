@@ -52,7 +52,6 @@ from glue import segments
 from pylal import ligolw_burca2
 from pylal import ligolw_thinca
 from pylal import snglcoinc
-from gstlal import far
 
 #
 # =============================================================================
@@ -146,6 +145,8 @@ def sngl_inspiral_veto_func(event, vetoseglists):
 #
 
 args = parse_command_line()
+
+from gstlal import far
 
 horizon_distances = pickle.load( open(args.horizon_dist_file, "rb"))
 

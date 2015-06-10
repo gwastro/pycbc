@@ -1,9 +1,7 @@
 #!/usr/bin/python
 """ Make table of the foreground coincident events
 """
-import argparse, h5py, numpy, logging, pycbc.results, pycbc.results.followup
-from pycbc.pnutils import mass1_mass2_to_mchirp_eta
-
+import argparse
 
 parser = argparse.ArgumentParser()
 # General required options
@@ -13,6 +11,9 @@ parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
 parser.add_argument('--foreground-tag')
 args = parser.parse_args()
+
+import h5py, numpy, logging, pycbc.results, pycbc.results.followup
+from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 
 if args.verbose:
     log_level = logging.INFO

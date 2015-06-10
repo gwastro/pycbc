@@ -26,7 +26,7 @@ Now if you have a script (which includes your start/end time, the parameters you
 ::
 
   ./run.sh
-  pycbc_submit_dax test.dax
+  pycbc_submit_dax --dax test.dax
 
 run.sh
 -----
