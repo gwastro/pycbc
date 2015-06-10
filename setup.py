@@ -361,7 +361,6 @@ setup (
                'bin/hdfcoinc/pycbc_page_injtable',
                'bin/pycbc_submit_dax',
                'bin/pycbc_submit_dax_stampede',
-               'bin/pycbc_submit_dax_stampede_devel',
                'bin/hdfcoinc/pycbc_page_coinc_snrchi',
                'bin/hdfcoinc/pycbc_stat_dtphase',
                'bin/hdfcoinc/pycbc_plot_singles_vs_params',
