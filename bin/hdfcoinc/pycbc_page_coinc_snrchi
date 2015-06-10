@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import numpy, h5py, argparse, matplotlib, mpld3
+import numpy, h5py, argparse, matplotlib
 from matplotlib import colors
 matplotlib.use('Agg')
 import pylab, pycbc.results
@@ -22,6 +22,8 @@ parser.add_argument('--newsnr-contours', nargs='*', help="List of newsnr values 
 parser.add_argument('--background-front', action='store_true', default=False)
 parser.add_argument('--output-file')
 args = parser.parse_args()
+
+import mpld3
 
 # Add the background triggers
 f = h5py.File(args.coinc_statistic_file)

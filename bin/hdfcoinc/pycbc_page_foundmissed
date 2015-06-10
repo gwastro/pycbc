@@ -1,11 +1,7 @@
 #!/usr/bin/python
 """ Make table of the foreground coincident events
 """
-import argparse, h5py, numpy, logging, os.path
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plot
-import pycbc.results.followup, pycbc.pnutils
+import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--injection-file',
@@ -17,6 +13,12 @@ parser.add_argument('--log-distance', action='store_true', default=False)
 parser.add_argument('--dynamic', action='store_true', default=False)
 parser.add_argument('--output-file')
 args = parser.parse_args()
+
+import h5py, numpy, logging, os.path
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plot
+import pycbc.results.followup, pycbc.pnutils
 
 if args.verbose:
     log_level = logging.INFO

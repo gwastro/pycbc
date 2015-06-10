@@ -1,9 +1,16 @@
 #!/usr/bin/env python
 """ Make interactive visualization of segments
 """
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--segment-files', nargs='+', help="List of segment files to plot")
+parser.add_argument('--output-file', help="output html file")
+args = parser.parse_args()
+
 import matplotlib
 matplotlib.use('Agg')
-import numpy, pylab, pycbc.events, argparse, mpld3, mpld3.plugins
+import numpy, pylab, pycbc.events, mpld3, mpld3.plugins
 import itertools, datetime, time
 from matplotlib.patches import Rectangle
 from pycbc.results.mpld3_utils import MPLSlide, Tooltip
@@ -22,11 +29,6 @@ def timestr(s):
     s -= m * 60
     t += "%ss " % s
     return t
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--segment-files', nargs='+', help="List of segment files to plot")
-parser.add_argument('--output-file', help="output html file")
-args = parser.parse_args()
 
 def get_name(segment_file):
     from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
