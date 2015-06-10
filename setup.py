@@ -334,7 +334,6 @@ setup (
                'bin/pycbc_make_html_page',
                'bin/pycbc_ligolw_find_playground',
                'bin/hdfcoinc/pycbc_make_hdf_coinc_workflow',
-               'bin/pycbc_basic_pegasus_plan',
                'bin/pycbc_optimal_snr',
                'bin/pycbc_fit_sngl_trigs',
                'bin/hdfcoinc/pycbc_coinc_mergetrigs',
