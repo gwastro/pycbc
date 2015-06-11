@@ -9,12 +9,12 @@ libfftw3-dev \
 python-decorator \
 python-jinja2 \
 liblapack-dev \
+python-scipy \
+python-numpy \
 gfortran \
 libgsl0-dev
 
 pip install decorator --upgrade
-pip install numpy --upgrade
-pip install scipy --upgrade
 pip install matplotlib --upgrade
 
 # install the version of swig that for some reason we have to use
