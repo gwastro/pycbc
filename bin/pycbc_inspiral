@@ -130,6 +130,8 @@ parser.add_argument("--keep-loudest-interval", type=float,
                     help="Window in seconds to maximize triggers over bank")
 parser.add_argument("--keep-loudest-num", type=int, 
                     help="Number of triggers to keep from each maximization interval")
+parser.add_argument("--gpu-callback-method", default='none')
+
 
 # Add options groups
 psd.insert_psd_option_group(parser)
