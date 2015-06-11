@@ -5,7 +5,7 @@ CACHE_FILE=""
 HOSTS=""
 DEVELOPMENT=""
 
-GETOPT_CMD=`getopt -o d:n:Dc:h --long dax:,number-of-hosts:,development,cache-file:,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:n:Dc:a:h --long dax:,number-of-hosts:,development,cache-file:,accounting-group:,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
