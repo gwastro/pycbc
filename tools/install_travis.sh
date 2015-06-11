@@ -5,17 +5,17 @@ LOCAL=$PWD
 mkdir -p $LOCAL/src
 
 sudo apt-get install \
-python-numpy \
-python-scipy \
 libfftw3-dev \
 python-decorator \
 python-jinja2 \
-python-matplotlib \
 liblapack-dev \
 gfortran \
 libgsl0-dev
 
 pip install decorator --upgrade
+pip install numpy --upgrade
+pip install scipy --upgrade
+pip install matplotlib --upgrade
 
 # install the version of swig that for some reason we have to use
 wget http://downloads.sourceforge.net/project/swig/swig/swig-2.0.11/swig-2.0.11.tar.gz
