@@ -5,7 +5,7 @@ CACHE_FILE=""
 HOSTS=""
 DEVELOPMENT=""
 
-GETOPT_CMD=`getopt -o d:n:Dc:h --long dax:,number-of-hosts:,development,cache-file:,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:n:Dc:a:h --long dax:,number-of-hosts:,development,cache-file:,accounting-group:,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -26,6 +26,11 @@ while true ; do
         "") shift 2 ;;
         *) CACHE_FILE=$2 ; shift 2 ;;
       esac ;;
+    -a|--accounting-group)
+      case "$2" in
+        "") shift 2 ;;
+        *) ACCOUNTING_GROUP=$2 ; shift 2 ;;
+      esac ;;
     -h|--help)
       echo "usage: pycbc_submit_dax [-h]"
       echo "                        --dax DAX"
@@ -39,7 +44,9 @@ while true ; do
       echo "  -h, --help              show this help message and exit"
       echo "  -c, --cache-file FILE   replica cache file for data reuse"
       echo "  -D, --development       use the stampede development queue rather"
-      echo
+      echo "  -a, --accounting-group GROUP tagged string used for site "
+      echo "                               resource accounting."
+      echo " "
       echo "If the environment variable TMPDIR is set then this is prepended to the "
       echo "path to the temporary workflow execte directory passed to pegasus-plan."
       echo
@@ -72,7 +79,7 @@ if [ "x$2" == "x" ]; then
 fi
 
 echo 'making a directory for the submit files'
-export SUBMIT_DIR=`mktemp -d pycbc-tmp.XXXXXXXXXX`
+export SUBMIT_DIR=`mktemp -t -d pycbc-tmp.XXXXXXXXXX`
 echo $SUBMIT_DIR
 
 #Make sure the directory is world readable
@@ -91,6 +98,9 @@ echo 'finding the site-local template directory'
 PEG_DIR=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGASUS_FILE_DIRECTORY'`
 SITE_TEMPLATE=$PEG_DIR/xsede_site_template.xml
 echo $SITE_TEMPLATE
+
+export ACCOUNTING_GROUP
+export HOSTS
 
 # Set up the site-local with the correct paths
 echo 'cat <<END_OF_TEXT' >  temp.sh

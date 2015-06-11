@@ -196,14 +196,6 @@ workflow using::
                                                  workflow:pipedown-log-path:${LOGPATH} \
                                                  workflow:pipedown-tmp-space:${PIPEDOWNTMPSPACE}
 
-If you are running on a resource that mandates accounting, then you will also need to add the
-correct metadata. Please see `this page`_. to determine the correct tags. These can be applied by adding 
-the following line to your workflow invocation above.::
-
-    --config-overrides pegasus_profile:condor|accounting_group=ligo.dev.o1.SOME.TAG.NAME
-
-.. _this page: https://ldas-gridmon.ligo.caltech.edu/ldg_accounting/user
-
 .. _coincworkflowplan:
 
 -----------------------------------------
@@ -221,6 +213,14 @@ This will plan and submit your workflow to the cluster using the default tempora
 for log files. If you need to set a custom logpath this can be done as follows.::
 
     TMPDIR=$LOGPATH pycbc_submit_dax --dax weekly_ahope.dax
+    
+If you are running on a resource that mandates accounting, then you will also need to add the
+correct metadata. Please see `this page`_. to determine the correct tags. These can be applied by adding 
+the following line to your submit invocation.
+
+    pycbc_submit_dax --dax weekly_ahope.dax --accounting-group LIST.OF.ACCCONTING.TAGS
+
+.. _this page: https://ldas-gridmon.ligo.caltech.edu/ldg_accounting/user
         
 If the workflow runs successfully, you will find the output under your html directory some time later.
 
