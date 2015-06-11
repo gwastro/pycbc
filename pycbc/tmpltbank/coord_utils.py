@@ -210,7 +210,7 @@ def get_random_mass_point_particles(numPoints, massRangeParams):
 
     return mass,eta,beta,sigma,gamma,spin1z,spin2z,mass1,mass2
 
-def get_random_mass(numPoints, massRangeParams, em_constraint=False):
+def get_random_mass(numPoints, massRangeParams):
     """
     This function will generate a large set of points within the chosen mass
     and spin space, and with the desired minimum remnant disk mass (this applies
@@ -224,18 +224,6 @@ def get_random_mass(numPoints, massRangeParams, em_constraint=False):
         Number of systems to simulate
     massRangeParams : massRangeParameters instance
         Instance holding all the details of mass ranges and spin ranges.
-    em_constraint : boolean, optional (default=False)
-        If set to True, EM dim NS-BH sources are removed from physical space
-        targetted by the template bank.  If set to False, a standard template
-        bank is generated and no additional EM-related cuts are made to the
-        targetted sources. 
-    remnant_mass_threshold : float, optional (default=None)
-        NS-BH sources that cannot produce a remnant disk mass greater than
-        remnant_mass_threshold are not targetted by the template bank when
-        em_constraint is set to True.
-    ns-eos : string, optional (default=None)
-        Name of the NS equation of state to be used for the NS when calculating
-        the remnant disk mass. Only 2H is currently supported.
 
     Returns
     --------
@@ -262,7 +250,7 @@ def get_random_mass(numPoints, massRangeParams, em_constraint=False):
     # Check if EM contraints are required, i.e. if the systems must produce
     # a minimum remnant disk mass.  If this is not the case, proceed treating
     # the systems as point particle binaries 
-    if not em_constraint: 
+    if massRangeParams.remnant_mass_threshold is None: 
         mass, eta, beta, sigma, gamma, spin1z, spin2z, mass1, mass2 = \
         get_random_mass_point_particles(numPoints, massRangeParams)
     # otherwise, load EOS dependent data, generate the EM constraint
@@ -272,13 +260,6 @@ def get_random_mass(numPoints, massRangeParams, em_constraint=False):
     # only systems that can yield (at least) the desired remnant
     # disk mass and that pass the mass and spin range cuts.
     else: 
-        #if remnant_mass_threshold is None:
-        #    raise ValueError('Please supply a valid remnant disk mass threshold (remnant_mass_threshold)!')
-        ## Load the NS equilibrium sequence and maximum mass
-        #if ns_eos:
-        #    eos_name = str(ns_eos)
-        #else:
-        #    eos_name = '2H'
         ns_sequence, max_ns_g_mass = load_ns_sequence(massRangeParams.ns_eos)
 
         # Generate EM constraint surface: minumum eta as a function of BH spin
@@ -293,8 +274,7 @@ def get_random_mass(numPoints, massRangeParams, em_constraint=False):
                                         massRangeParams.ns_eos, massRangeParams.remnant_mass_threshold, 0.0)
         else:
             logging.info("""Reading in the constraint surface for EM bright binaries
-                        contained in constraint_em_bright.npz.
-                        """)
+                        contained in constraint_em_bright.npz.""")
         constraint_datafile = numpy.load('constraint_em_bright.npz')
         mNS_pts = constraint_datafile['mNS_pts']
         bh_spin_z_pts = constraint_datafile['sBH_pts']

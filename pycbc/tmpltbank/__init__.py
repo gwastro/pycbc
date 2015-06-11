@@ -1,3 +1,5 @@
+import os.path
+
 from pycbc.tmpltbank.calc_moments import *
 from pycbc.tmpltbank.lambda_mapping import *
 from pycbc.tmpltbank.coord_utils import *

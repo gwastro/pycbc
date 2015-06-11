@@ -61,7 +61,6 @@ def add_commands_to_cp(commands, options, cp, section_name):
             elif attr:
                 cp.set(section_name, command[2:], str(attr))
 
-
 # Read command line options
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc,
@@ -140,20 +139,8 @@ if opts.verbose:
     log_level = logging.DEBUG
 else:
     log_level = logging.WARN
-logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
-
-# If the user asked to avoid EM dim NS-BH systems, inform him/her about the
-# caveats and risks
-if not opts.remnant_mass_threshold is None:
-    logging.info("""You have asked to exclude EM dim NS-BH systems from the
-                        target parameter space. The script will assume that m1 is
-                        the BH and m2 is the NS: make sure that your settings
-                        respect this convention. The script will also treat the
-                        NS as non-spinning: use NS spins in the template bank
-                        at your own risk!""") 
-    if opts.use_eos_max_ns_mass:
-        logging.info("""You have asked to take into account the maximum NS
-                        mass value for the EOS in use.""")
+log_format='%(asctime)s %(message)s'
+logging.basicConfig(format=log_format, level=log_level)
 
 # Sanity check options
 if not opts.output_file:
@@ -173,7 +160,7 @@ if orig_opts.write_metric:
 
 pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
 metricParams=pycbc.tmpltbank.metricParameters.from_argparse(opts)
-pycbc.tmpltbank.verify_mass_range_options(opts, parser)
+pycbc.tmpltbank.verify_mass_range_options(opts, parser, log_lvl=log_level, log_frmt=log_format)
 massRangeParams=pycbc.tmpltbank.massRangeParameters.from_argparse(opts)
 pycbc.psd.verify_psd_options(opts, parser)
 if opts.psd_estimation:
@@ -267,7 +254,7 @@ if opts.filter_points:
     # mapping from xi_i to masses and spins
     # Use the EM constraint only if asked to do so
     rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
-          pycbc.tmpltbank.get_random_mass(2000000, massRangeParams, True)
+          pycbc.tmpltbank.get_random_mass(2000000, massRangeParams)
     diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
     rMass1 = (rTotmass + diff)/2.
     rMass2 = (rTotmass - diff)/2.

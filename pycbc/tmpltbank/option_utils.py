@@ -15,6 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
+import logging
 import textwrap
 from pycbc.tmpltbank.lambda_mapping import *
 from pycbc import pnutils
@@ -461,7 +462,9 @@ def insert_mass_range_option_group(parser,nonSpin=False):
                   default=None,
                   help="Setting this filters EM dim NS-BH binaries: if the "
                        "remnant disk mass does not exceed this value, the NS-BH "
-                       "binary is dropped from the bank.  OPTIONAL")
+                       "binary is dropped from the target parameter space. "
+                       "When it is set to None (default value) the EM dim "
+                       "filter is not activated. OPTIONAL")
     massOpts.add_argument("--use-eos-max-ns-mass", action="store_true", default=False,
                   help="Cut the mass range of the smaller object to the maximum "
                        "mass allowed by EOS. "
@@ -482,7 +485,6 @@ def insert_mass_range_option_group(parser,nonSpin=False):
                        "a remnant disk mass that exceeds the thrsehold specified "
                        "in --remnant-mass-threshold. "
                        "OPTIONAL (0.1 by default) ")
-
     if nonSpin:
         parser.add_argument_group(massOpts)
         return massOpts
@@ -520,7 +522,7 @@ def insert_mass_range_option_group(parser,nonSpin=False):
                        "--ns-bh-boundary-mass will be ignored.")
     return massOpts
 
-def verify_mass_range_options(opts, parser, nonSpin=False):
+def verify_mass_range_options(opts, parser, nonSpin=False, log_lvl='%(asctime)s %(message)s', log_frmt='%(asctime)s %(message)s'):
     """
     Parses the metric calculation options given and verifies that they are
     correct.
@@ -563,6 +565,20 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
         if opts.max_total_mass < opts.min_total_mass:
             err_msg = "Min total mass must be larger than max total mass."
             raise ValueError(err_msg)
+    # Warn the user that his/her setup is such that EM dim NS-BH binaries
+    # will not be targeted by the template bank that is being built.  Also
+    # inform him/her about the caveats involved in this. 
+    logging.basicConfig(format=log_frmt, level=log_lvl)
+    if not opts.remnant_mass_threshold is None:
+        logging.info("""You have asked to exclude EM dim NS-BH systems from the
+                        target parameter space. The script will assume that m1 is
+                        the BH and m2 is the NS: make sure that your settings
+                        respect this convention. The script will also treat the
+                        NS as non-spinning: use NS spins in the template bank
+                        at your own risk!""") 
+        if opts.use_eos_max_ns_mass:
+            logging.info("""You have asked to take into account the maximum NS
+                        mass value for the EOS in use.""")
 
     # Assign min/max total mass from mass1, mass2 if not specified
     if (not opts.min_total_mass) or \
