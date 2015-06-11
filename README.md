@@ -15,5 +15,6 @@ To install PyCBC:
 To run the unittests for PyCBC:
     python setup.py test
 
+[![PyPI version](https://badge.fury.io/py/pycbc.svg)](http://badge.fury.io/py/pycbc)
 [![Build Status](https://travis-ci.org/ligo-cbc/pycbc.svg?branch=master)](https://travis-ci.org/ligo-cbc/pycbc)
 [![Code Health](https://landscape.io/github/ligo-cbc/pycbc/master/landscape.svg?style=flat)](https://landscape.io/github/ligo-cbc/pycbc/master)
