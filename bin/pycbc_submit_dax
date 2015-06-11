@@ -14,7 +14,7 @@ exec 2>&1
 DAX_FILE=""
 CACHE_FILE=""
 
-GETOPT_CMD=`getopt -o d:c:h --long dax:,cache-file:,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:a:h --long dax:,cache-file:,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -72,6 +72,7 @@ chmod 755 $SUBMIT_DIR
 PEG_DIR=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGASUS_FILE_DIRECTORY'`
 SITE_TEMPLATE=$PEG_DIR/basic_site_template.xml
 
+export ACCOUNTING_GROUP
 
 # Set up the site-local with the correct paths
 echo 'cat <<END_OF_TEXT' >  temp.sh
