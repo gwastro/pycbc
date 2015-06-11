@@ -62,7 +62,7 @@ if [ "x$DAX_FILE" == "x" ]; then
 fi
 
 #Make a directory for the submit files
-SUBMIT_DIR=`mktemp -d pycbc-tmp.XXXXXXXXXX`
+SUBMIT_DIR=`mktemp -t -d pycbc-tmp.XXXXXXXXXX`
 
 #Make sure the directory is world readable
 chmod 755 $SUBMIT_DIR

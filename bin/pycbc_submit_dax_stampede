@@ -79,7 +79,7 @@ if [ "x$2" == "x" ]; then
 fi
 
 echo 'making a directory for the submit files'
-export SUBMIT_DIR=`mktemp -d pycbc-tmp.XXXXXXXXXX`
+export SUBMIT_DIR=`mktemp -t -d pycbc-tmp.XXXXXXXXXX`
 echo $SUBMIT_DIR
 
 #Make sure the directory is world readable
