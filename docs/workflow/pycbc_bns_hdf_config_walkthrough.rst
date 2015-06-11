@@ -1,6 +1,6 @@
-=====
+===============================================================
 Walkthrough of running the PyCBC BNS focused pipeline on SUGAR
-=====
+===============================================================
 
 Using the include environment :download:`install script <../resources/install_pycbc_env>`
 
