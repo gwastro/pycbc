@@ -356,6 +356,13 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
 
     outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 
+    # get times to put in search summary table
+    start_time = 0
+    end_time = 0
+    if 'gps_start_time' in optDict.keys() and 'gps_end_time' in optDict.keys():
+        start_time = optDict['gps_start_time']
+        end_time = optDict['gps_end_time']
+
     # make search summary table
     search_summary_table = lsctables.New(lsctables.SearchSummaryTable) 
     search_summary = return_search_summary(start_time, end_time,
