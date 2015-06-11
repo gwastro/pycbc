@@ -320,8 +320,15 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
     if outdoc is None:
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
+
+    # get IFO to put in search summary table
+    ifos = []
+    if 'channel_name' in optDict.keys():
+        if optDict['channel_name'] is not None:
+            ifos = [optDict['channel_name'][0:2]]
+
     proc_id = ligolw_process.register_to_xmldoc(outdoc, programName, optDict,
-                                                **kwargs).process_id
+                                                ifos=ifos, **kwargs).process_id
     sngl_inspiral_table = convert_to_sngl_inspiral_table(tempBank, proc_id)
     # Calculate Gamma components if needed
     if ethincaParams is not None:
@@ -355,12 +362,6 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
     if 'gps_start_time' in optDict.keys() and 'gps_end_time' in optDict.keys():
         start_time = optDict['gps_start_time']
         end_time = optDict['gps_end_time']
-
-    # get IFO to put in search summary table
-    ifos = []
-    if 'channel_name' in optDict.keys():
-        if optDict['channel_name'] is not None:
-            ifos = [optDict['channel_name'][0:2]]
 
     # make search summary table
     search_summary_table = lsctables.New(lsctables.SearchSummaryTable) 
