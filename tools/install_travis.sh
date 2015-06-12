@@ -8,12 +8,14 @@ sudo apt-get install \
 libfftw3-dev \
 python-decorator \
 python-jinja2 \
+python-h5py \
 liblapack-dev \
 python-scipy \
 python-numpy \
 gfortran \
 libgsl0-dev
 
+pip install h5py>=1.3.0
 pip install decorator --upgrade
 pip install matplotlib --upgrade
 
