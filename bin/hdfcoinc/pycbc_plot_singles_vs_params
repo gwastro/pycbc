@@ -35,7 +35,7 @@ import pycbc.events
 import pycbc.results
 
 
-class SingleDetTriggerSet:
+class SingleDetTriggerSet(object):
     """
     Provides easy access to the parameters of single-detector CBC triggers.
     """
@@ -145,6 +145,12 @@ parser.add_argument('--z-var', required=True,
                     choices=['density', 'max(snr)', 'max(newsnr)'])
 parser.add_argument('--detector', type=str, required=True,
                     help='Detector')
+parser.add_argument('--grid-size', type=int, default=80,
+                    help='Bin resolution (larger = smaller bins)')
+parser.add_argument('--log-x', action='store_true',
+                    help='Use log scale for x-axis')
+parser.add_argument('--log-y', action='store_true',
+                    help='Use log scale for y-axis')
 parser.add_argument('--min-z', type=float, help='Optional minimum z value')
 parser.add_argument('--max-z', type=float, help='Optional maximum z value')
 opts = parser.parse_args()
@@ -158,10 +164,14 @@ x = getattr(trigs, opts.x_var)
 y = getattr(trigs, opts.y_var)
 
 hexbin_style = {
-    'gridsize': 50,
+    'gridsize': opts.grid_size,
     'mincnt': 1,
     'linewidths': 0.03
 }
+if opts.log_x:
+    hexbin_style['xscale'] = 'log'
+if opts.log_y:
+    hexbin_style['yscale'] = 'log'
 if opts.min_z is not None:
     hexbin_style['vmin'] = opts.min_z
 if opts.max_z is not None:
