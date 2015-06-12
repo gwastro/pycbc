@@ -13,7 +13,7 @@ xsi:schemaLocation="http://pegasus.isi.edu/schema/sitecatalog http://pegasus.isi
     <profile namespace="env" key="GLOBUS_LOCATION">/usr</profile>
     <profile namespace="pegasus" key="style">condor</profile>
     <profile namespace="condor" key="getenv">True</profile>
-    <profile namespace="condor" key="accounting_group">"$ACCOUNTING_GROUP"</profile>
+    <profile namespace="condor" key="accounting_group">$ACCOUNTING_GROUP</profile>
     <profile namespace="condor" key="should_transfer_files">YES</profile>
     <profile namespace="condor" key="when_to_transfer_output">ON_EXIT_OR_EVICT</profile>
   </site>
