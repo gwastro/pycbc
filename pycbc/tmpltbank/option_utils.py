@@ -470,7 +470,7 @@ def insert_mass_range_option_group(parser,nonSpin=False):
                        "mass allowed by EOS. "
                        "OPTIONAL")
     massOpts.add_argument("--delta-bh-spin", action="store", type=float,
-                  default=0.1,
+                  default=None,
                   help="Grid spacing used for the BH spin z component when "
                        "generating the surface of the minumum minimum symmetric "
                        "mass ratio as a function of BH spin and NS mass required "
@@ -478,7 +478,7 @@ def insert_mass_range_option_group(parser,nonSpin=False):
                        "specificed in --remnant-mass-threshold. "
                        "OPTIONAL (0.1 by default) ")
     massOpts.add_argument("--delta-ns-mass", action="store", type=float,
-                  default=0.1,
+                  default=None,
                   help="Grid spacing used for the NS mass when generating the "
                        "surface of the minumum minimum symmetric mass ratio as "
                        "a function of BH spin and NS mass required to produce "
@@ -886,6 +886,10 @@ class massRangeParameters(object):
         self.remnant_mass_threshold = remnant_mass_threshold
         self.ns_eos = (
             ns_eos or self.default_ns_eos)
+        self.delta_bh_spin = (
+            delta_bh_spin or self.default_delta_bh_spin)
+        self.delta_ns_mass = (
+            delta_ns_mass or self.default_delta_ns_mass)
         self.use_eos_max_ns_mass = use_eos_max_ns_mass
         if not self.remnant_mass_threshold is None:
             if not self.ns_eos is '2H':
