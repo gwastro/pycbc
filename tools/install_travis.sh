@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+#set -e
 
 LOCAL=$PWD
 mkdir -p $LOCAL/src
@@ -15,7 +15,6 @@ python-numpy \
 gfortran \
 libgsl0-dev
 
-pip install h5py>=1.3.0
 pip install decorator --upgrade
 pip install matplotlib --upgrade
 
