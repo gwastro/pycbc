@@ -24,6 +24,7 @@ from jinja2 import Environment, FileSystemLoader
 import pycbc.results
 from pycbc.workflow.segment import fromsegmentxml
 
+
 def get_embedded_config(filename):
     """ Attempt to load config data attached to file
     """
@@ -52,7 +53,7 @@ def setup_template_render(path, config_path):
         cp.read(config_path)
 
         # render template
-        filename = path.split('/')[-1]
+        filename = os.path.basename(path)
         if cp.has_option(filename, 'render-function'):
             render_function_name = cp.get(filename, 'render-function')
             render_function = eval(render_function_name)
@@ -76,18 +77,20 @@ def render_default(path, cp):
     """
 
     # define filename and slug from path
-    filename = path.split('/')[-1]
-    slug     = path.split('/')[-1].replace('.', '_')
+    filename = os.path.basename(path)
+    slug = filename.replace('.', '_')
 
     # initializations
     content = None
 
-   # XML file condition
     if path.endswith('.xml') or path.endswith('.xml.gz'):
         # segment or veto file return a segmentslistdict instance
         if 'SEG' in path or 'VETO' in path:
             with open(path, 'r') as xmlfile:
                 content = fromsegmentxml(xmlfile, dict=True)
+    elif path.endswith('.ini'):
+        with open(path, 'rb') as f_handle:
+            content = f_handle.read()
 
     # render template
     template_dir = pycbc.results.__path__[0] + '/templates/files'
@@ -107,8 +110,8 @@ def render_glitchgram(path, cp):
     """
 
     # define filename and slug from path
-    filename = path.split('/')[-1]
-    slug     = path.split('/')[-1].replace('.', '_')
+    filename = os.path.basename(path)
+    slug = filename.replace('.', '_')
 
     # render template
     template_dir = pycbc.results.__path__[0] + '/templates/files'

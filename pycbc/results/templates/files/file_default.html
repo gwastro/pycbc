@@ -56,6 +56,10 @@
                     </tbody>
                     </table>
 
+                <!--configuration files-->
+                {% elif filename.endswith('.ini') %}
+                    <pre>{{content}}</pre>
+
                 <!--catch-all condition-->
                 {% else %}
                     <p>Unsupported file extension.</p>
