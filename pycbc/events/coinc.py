@@ -104,7 +104,12 @@ def time_coincidence(t1, t2, window, slide_step=0):
     right = numpy.searchsorted(fold2, fold1 + window)
 
     idx1 = numpy.repeat(sort1, right-left)
-    idx2 = numpy.concatenate([sort2[l:r] for l,r in zip(left, right)])
+    idx2 = [sort2[l:r] for l,r in zip(left, right)]
+
+    if len(idx2) > 0:
+        idx2 = numpy.concatenate(idx2)
+    else:
+        idx2 = numpy.array([])
     
     if slide_step:
         diff = ((t1 / slide_step)[idx1] - (t2 / slide_step)[idx2])

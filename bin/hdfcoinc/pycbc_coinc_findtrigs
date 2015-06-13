@@ -179,12 +179,17 @@ data = {'stat':[], 'decimation_factor':[], 'time1':[], 'time2':[],
 for tnum in range(tmin, tmax):
     tid0 = trigs0.set_template(tnum)
     tid1 = trigs1.set_template(tnum)
+
+    if len(tid0) == 0:
+        continue
+
     t0 = trigs0['end_time']
     t1 = trigs1['end_time']
     logging.info('Trigs for template %s, %s:%s %s:%s' % \
                 (tnum, trigs0.ifo, len(t0), trigs1.ifo, len(t1)))
 
     i0, i1, slide = coinc.time_coincidence(t0, t1, time_window, args.timeslide_interval)
+
     logging.info('Coincident Trigs: %s' % (len(i1)))
     
     logging.info('Calculating Single Detector Statistic')
