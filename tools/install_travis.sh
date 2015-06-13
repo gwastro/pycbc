@@ -17,6 +17,7 @@ libgsl0-dev
 
 pip install decorator --upgrade
 pip install matplotlib --upgrade
+pip install cython --upgrade
 
 # install the version of swig that for some reason we have to use
 wget http://downloads.sourceforge.net/project/swig/swig/swig-2.0.11/swig-2.0.11.tar.gz
