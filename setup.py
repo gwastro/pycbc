@@ -43,7 +43,7 @@ try:
               " to a more recent version and then retry PyCBC  \n"
               " installation. \n"
               " \n"
-              " Using pip: [pip install numpy>=1.6.4 --upgrade --user] \n"
+              " Using pip: [pip install 'numpy>=1.6.4' --upgrade --user] \n"
               "" % numpy.version.version)
         exit(1)
 except ImportError:
@@ -58,6 +58,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'matplotlib>=1.3.1',
                       'numpy>=1.6.4',
                       'pillow',
+                      'h5py>=2.5',
                       'jinja2',
                       ]
 links = []
