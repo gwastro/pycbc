@@ -351,13 +351,14 @@ def identify_needed_data(curr_exe_job, link_job_instance=None):
                             link_data_length[0] - link_valid_chunk[0][1])
         # Calculate valid_segments for both jobs based on the combined data
         # loss.
-        valid_chunk = segments.segment(start_data_loss, \
+
+        valid_chunks[0] = segments.segment(start_data_loss, \
                                        data_lengths[0] - end_data_loss)
         link_valid_chunk = segments.segment(start_data_loss, \
                                        link_data_length[0] - end_data_loss)
 
         # The maximum valid length should be the minimum of the two
-        link_valid_length = abs(link_valid_chunk[0])
+        link_valid_length = abs(link_valid_chunk)
 
         # Which one is now longer? Use this is valid_length
         if link_valid_length < valid_lengths[0]:
@@ -400,6 +401,7 @@ class JobSegmenter(object):
         if compatibility_mode and (self.valid_length != abs(self.valid_chunk)):
             errMsg = "In compatibility mode the template bank and matched-"
             errMsg += "filter jobs must read in the same amount of data."
+            print self.valid_length, self.valid_chunk
             raise ValueError(errMsg)
         elif compatibility_mode and len(data_lengths) > 1:
             raise ValueError("Cannot enable compatibility mode tiling with "
