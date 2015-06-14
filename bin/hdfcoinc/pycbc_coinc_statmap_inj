@@ -45,13 +45,21 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--cluster-window', type=float, 
                     help='Size in seconds to maximize coinc triggers')
-parser.add_argument('--zero-lag-coincs', nargs='+',)
-parser.add_argument('--mixed-coincs-inj-full', nargs='+',)
-parser.add_argument('--mixed-coincs-full-inj', nargs='+',)
+parser.add_argument('--zero-lag-coincs', nargs='+',
+                    help="Files containing the injection zerolag coincidences")
+parser.add_argument('--mixed-coincs-inj-full', nargs='+',
+                    help="Files containing the mixed injection/clean data "
+                         "time slides")
+parser.add_argument('--mixed-coincs-full-inj', nargs='+', 
+                    help="Files containing the mixed clean/injection data "
+                         "time slides")
 parser.add_argument('--full-data-background', 
                     help='background file from full data for use in analyzing injection coincs')
 parser.add_argument('--veto-window', type=float, 
                     help='window around each zerolag trigger to window out')
+parser.add_argument("--ranking-statistic-threshold", type=float,
+                    help="Minimum value of the ranking statistic to calculate"
+                         " a unique inclusive background.")
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
@@ -124,7 +132,8 @@ if len(zdata['stat']) > 0:
     ifar = numpy.zeros(len(ftimes), dtype=numpy.float32)
     fap = numpy.zeros(len(ftimes), dtype=numpy.float32)
     
-    # We are relying on the injection data set to be the first one, this is determine 
+    # We are relying on the injection data set to be the first one, 
+    # this is determined
     # by the argument order to pycbc_coinc_findtrigs
     ifstat = izdata['stat'][ifcid]
     if_time = izdata['time1'][ifcid]
@@ -139,6 +148,13 @@ if len(zdata['stat']) > 0:
     fi_start, fi_end = numpy.searchsorted(fisorted, start), numpy.searchsorted(fisorted, end)
     
     for i, fstat in enumerate(fstats):
+        # If the trigger is quiet enough, then don't calculate a separate 
+        # background type, as it would not be significantly different
+        if args.ranking_statistic_threshold and fstat < args.ranking_statistic_threshold:
+            fan[i] = fore_fan[i]
+            ifar[i] = ifar_exc[i]
+            fap[i] = fap_exc[i]    
+            
         v1 = fisort[fi_start[i]:fi_end[i]]
         v2 = ifsort[if_start[i]:if_end[i]]
         
