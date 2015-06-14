@@ -800,7 +800,7 @@ class LigolwSSthincaExecutable(Executable):
                         '--likelihood-output-file',
                         tags=['DIST_STATS']+self.tags+tags,
                         store_file=self.retain_files)
-       return node
+        return node
 
 class PycbcSqliteSimplifyExecutable(Executable):
     """ The class responsible for making jobs for pycbc_sqlite_simplify. """
