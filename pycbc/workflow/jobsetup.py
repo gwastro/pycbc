@@ -36,8 +36,7 @@ from pycbc.workflow.core import Executable, File, FileList, Node
 from pycbc.workflow.legacy_ihope import LegacyTmpltbankExecutable, LegacyInspiralExecutable
 
 def select_tmpltbank_class(curr_exe):
-    """
-    This function returns a class that is appropriate for setting up
+    """ This function returns a class that is appropriate for setting up
     template bank jobs within workflow.
 
     Parameters
@@ -66,8 +65,7 @@ def select_tmpltbank_class(curr_exe):
             "No job class exists for executable %s, exiting" % curr_exe)
 
 def select_matchedfilter_class(curr_exe):
-    """
-    This function returns a class that is appropriate for setting up
+    """ This function returns a class that is appropriate for setting up
     matched-filtering jobs within workflow.
 
     Parameters
@@ -96,8 +94,7 @@ def select_matchedfilter_class(curr_exe):
             "No job class exists for executable %s, exiting" % curr_exe)
 
 def select_generic_executable(workflow, exe_tag):
-    """
-    Returns a class that is appropriate for setting up jobs to run executables
+    """ Returns a class that is appropriate for setting up jobs to run executables
     having specific tags in the workflow config.
     Executables should not be "specialized" jobs fitting into one of the 
     select_XXX_class functions above, i.e. not a matched filter or template
@@ -156,11 +153,10 @@ def select_generic_executable(workflow, exe_tag):
             "No job class exists for executable %s, exiting" % exe_name)
 
 def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs, 
-                       datafind_outs, output_dir, parents=None, 
+                       datafind_outs, parents=None, 
                        link_job_instance=None, allow_overlap=True,
                        compatibility_mode=True):
-    """
-    This function sets up a set of single ifo jobs. A basic overview of how this
+    """ This function sets up a set of single ifo jobs. A basic overview of how this
     works is as follows:
 
     * (1) Identify the length of data that each job needs to read in, and what
@@ -193,8 +189,6 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
         The list of times that the jobs should cover
     datafind_outs : pycbc.workflow.core.FileList
         The file list containing the datafind files.
-    output_dir : path string
-        The directory where data products will be placed.
     parents : pycbc.workflow.core.FileList (optional, kwarg, default=None)
         The FileList containing the list of jobs that are parents to
         the one being set up.
