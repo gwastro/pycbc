@@ -87,7 +87,7 @@ def render_default(path, cp):
         # segment or veto file return a segmentslistdict instance
         if 'SEG' in path or 'VETO' in path:
             with open(path, 'r') as xmlfile:
-                content = fromsegmentxml(xmlfile, dict=True)
+                content = fromsegmentxml(xmlfile, return_dict=True)
     elif path.endswith('.ini'):
         with open(path, 'rb') as f_handle:
             content = f_handle.read()
