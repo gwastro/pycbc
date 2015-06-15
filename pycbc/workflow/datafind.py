@@ -589,7 +589,6 @@ def setup_datafind_from_pregenerated_lcf_files(cp, ifos, outputDir, tag=None):
         curr_cache.ifo = ifo
         datafindcaches.append(curr_cache)
     datafindouts = convert_cachelist_to_filelist(datafindcaches)
-    print len(datafindouts)
 
     return datafindcaches, datafindouts
 
@@ -861,8 +860,9 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
         duration = str(int(abs(entry.segment)))
         print >> fP, "%s %s %s %s %s" \
             %(entry.observatory, entry.description, start, duration, entry.url)
+        entry.segment = segments.segment(int(entry.segment[0]), int(entry.segment[1]))
+
     fP.close()
-    
     return dfCache, cache_file
 
 
