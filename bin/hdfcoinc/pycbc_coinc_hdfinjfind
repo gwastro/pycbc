@@ -49,6 +49,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--trigger-files', nargs='+')
 parser.add_argument('--injection-files', nargs='+')
 parser.add_argument('--veto-file')
+parser.add_argument('--segment-name', default=None, type=str,
+                    help='Optional, name of segment list to use for vetoes')
 parser.add_argument('--injection-window', type=float)
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
@@ -108,9 +110,10 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
     logging.info('Found: %s, Missed: %s' % (len(found_within_time), len(missed_within_time)))
 
     logging.info('Removing injections in vetoed time')
-    i1, v1 = veto_indices(inj_time, [args.veto_file], ifo='H1')
-    i2, v2 = veto_indices(inj_time, [args.veto_file], ifo='L1')
-    
+    i1, v1 = veto_indices(inj_time, [args.veto_file], ifo='H1', 
+                                    segment_name=args.segment_name)
+    i2, v2 = veto_indices(inj_time, [args.veto_file], ifo='L1', 
+                                     segment_name=args.segment_name)
     vi = numpy.concatenate([i1, i2])
 
     found_after_vetoes = numpy.delete(found_within_time, numpy.where(numpy.in1d(found_within_time, vi))[0])

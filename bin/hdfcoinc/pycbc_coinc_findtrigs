@@ -5,8 +5,10 @@ from pycbc.events import veto, coinc
        
 parser = argparse.ArgumentParser()
 parser.add_argument("--verbose", action="count")
-parser.add_argument("--veto-files", 
-                    help="Optional veto file. Injections within these times are ignored")
+parser.add_argument("--veto-files", nargs='*',
+                    help="Optional veto file. Triggers within these times are ignored")
+parser.add_argument('--segment-name', default=None, type=str,
+                    help='Optional, name of segment list to use for vetoes')
 parser.add_argument("--trigger-files", nargs=2,
                     help="File containing the single-detector triggers")
 parser.add_argument("--template-bank",
@@ -118,28 +120,24 @@ class PhaseTDStatistic(NewSNRStatistic):
         return cstat
 
 class ReadByTemplate(object):
-    def __init__(self, filename, bank=None, vetofile=None):
+    def __init__(self, filename, bank=None, segment_name=None, veto_files=[]):
         self.filename = filename
         self.file = h5py.File(filename, 'r')
         self.ifo = self.file.keys()[0]
-        self.veto_times = None
+        self.valid = None
+        self.bank = h5py.File(bank) if bank else None
 
-        if bank is not None:
-            self.bank = h5py.File(bank)
-        else:
-            self.bank = None
-        
         # Determine the segments which define the boundaries of valid times
         # to use triggers
         from glue.segments import segmentlist, segment
         key = '%s/search/' % self.ifo
         s, e = self.file[key + 'start_time'][:], self.file[key + 'end_time'][:]
         self.segs = veto.start_end_to_segments(s, e).coalesce()
-        if vetofile is not None:
-            self.veto_times = veto.start_end_from_segments(vetofile)
-            self.veto_segs = veto.start_end_to_segments(*self.veto_times).coalesce()
-            self.segs = (self.segs - self.veto_segs).coalesce()
-        self.valid = veto.segments_to_start_end(self.segs)
+        for vfile in veto_files:
+            veto_segs = veto.select_segments_by_definer(vfile, ifo=self.ifo, 
+                                                     segment_name=segment_name)
+            self.segs = (self.segs - veto_segs).coalesce()
+            self.valid = veto.segments_to_start_end(self.segs)
     
     def get_data(self, col, num):
         """ Get a column of data for template with id 'num'
@@ -177,7 +175,7 @@ class ReadByTemplate(object):
         
         # Determine which of these template's triggers are kept after
         # applying vetoes
-        if self.veto_times:
+        if self.valid:
             self.keep = veto.indices_within_times(times, self.valid[0], self.valid[1]) 
             logging.info('applying vetoes')
         else:
@@ -212,7 +210,7 @@ class ReadByTemplate(object):
             raise ValueError('You must call set_template to first pick the '
                              'template to read data from')    
         data = self.get_data(col, self.template_num)         
-        data = data[self.keep] if self.veto_times else data
+        data = data[self.keep] if self.valid else data
         return data
 
 logging.info('Starting...')
@@ -222,9 +220,11 @@ tmin, tmax = parse_template_range(num_templates, args.template_fraction_range)
 logging.info('Analyzing template %s - %s' % (tmin, tmax-1))
 
 logging.info('Opening first trigger file: %s' % args.trigger_files[0]) 
-trigs0= ReadByTemplate(args.trigger_files[0], args.template_bank, args.veto_files)
+trigs0= ReadByTemplate(args.trigger_files[0], 
+                       args.template_bank, args.segment_name, args.veto_files)
 logging.info('Opening second trigger file: %s' % args.trigger_files[1]) 
-trigs1 = ReadByTemplate(args.trigger_files[1], args.template_bank, args.veto_files)
+trigs1 = ReadByTemplate(args.trigger_files[1], 
+                        args.template_bank, args.segment_name, args.veto_files)
 coinc_segs = (trigs0.segs & trigs1.segs).coalesce()
 
 rank_method = get_statistic(args.ranking_statistic, args.statistic_files)
@@ -289,7 +289,9 @@ for tnum in range(tmin, tmax):
     del i1
     
     data['stat'] += [c[ti]]
-    data['decimation_factor'] += [numpy.repeat([args.decimation_factor, 1, 1], [len(bl), len(bh), len(fi)]).astype(numpy.uint32)]
+    dec_fac = numpy.repeat([args.decimation_factor, 1, 1], 
+                           [len(bl), len(bh), len(fi)]).astype(numpy.uint32)
+    data['decimation_factor'] += [dec_fac]
     data['time1'] += [t0[g0]]
     data['time2'] += [t1[g1]]
     data['trigger_id1'] += [tid0[g0]]
@@ -309,10 +311,7 @@ logging.info('saving coincident triggers')
 f = h5py.File(args.output_file, 'w')
 if len(data['stat']) > 0:
     for key in data:
-        if args.cluster_window:
-            f[key] = data[key][cid]
-        else:
-            f[key] = data[key]
+        f[key] = data[key][cid] if args.cluster_window else data[key]
             
 f['segments/coinc/start'], f['segments/coinc/end'] = veto.segments_to_start_end(coinc_segs)
 
