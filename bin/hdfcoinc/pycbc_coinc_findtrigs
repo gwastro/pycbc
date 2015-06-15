@@ -188,7 +188,11 @@ class ReadByTemplate(object):
             for col in self.bank:
                 self.param[col] = self.bank[col][self.template_num]
             
-        return self.keep + self.file['%s/template_boundaries' % self.ifo][num]
+        # Calculate the trigger id by adding the relative offset in self.keep
+        # to the absolute beginning index of this templates triggers stored
+        # in 'template_boundaries'
+        trigger_id = self.keep + self.file['%s/template_boundaries' % self.ifo][num]
+        return trigger_id
         
     def __getitem__(self, col):
         """ Return the column of data for current active template after
