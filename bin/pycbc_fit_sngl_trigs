@@ -191,8 +191,7 @@ for ifo in opt.ifos:
     elif trigformat == "hdf":
         sngls = io.hdf.DataFromFiles(opt.inputs, group=ifo,
             columnlist=["snr", "chisq", "template_duration", "template_hash"],
-            filter_func="self.snr>"+str(opt.snr_threshold),
-            verbose=opt.verbose)
+            filter_func="self.snr>"+str(opt.snr_threshold))
     if opt.plot_dir:
         plotbase = outdir + ifo + "-" + opt.user_tag
 

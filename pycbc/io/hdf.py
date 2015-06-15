@@ -4,27 +4,30 @@
 
 import h5py
 import numpy as np
-
+import logging
 
 class FileData(object):
 
-    def __init__(self, fname, group=None, columnlist=None, filter_func=None):
+    def __init__(self, fname, group, columnlist=None, filter_func=None):
         '''
-        group: names of group to be read from the file
-        columns: list of names of columns to be read
-        filter_func: Boolean expression using column attributes and math functions
-                     eg. self.snr < 6.5
+        Parameters
+        ----------
+        group : string
+            Name of group to be read from the file
+        columnlist : list of strings
+            Names of columns to be read; if None, use all existing columns 
+        filter_func : string 
+            String should evaluate to a Boolean expression using attributes
+            of the class instance derived from columns: ex. 'self.snr < 6.5'
         '''
-        self.fname = fname
-        if not self.fname: raise RuntimeError("Didn't get a file!")
-        if not columnlist: raise RuntimeError("Didn't get any columns!")
+        if not fname: raise RuntimeError("Didn't get a file!")
         if not group: raise RuntimeError("Didn't get a group!")
-        self.filter_func = filter_func
+        self.fname = fname
         self.h5file = h5py.File(fname, "r")
         self.group = self.h5file[group]
-        # restrict columns to those requested, otherwise use all columns
         self.columns = columnlist if columnlist is not None \
                        else self.group.keys()
+        self.filter_func = filter_func
         self._mask = None
 
     def close(self):
@@ -32,12 +35,20 @@ class FileData(object):
 
     @property
     def mask(self):
+        '''
+        Create a mask implementing the requested filter on the datasets
+
+        Returns
+        -------
+        array of Boolean
+            True for dataset indices to be returned by the get_column method
+        '''
         if self.filter_func is None:
             raise RuntimeError("Can't get a mask without a filter function!")
         else:
-            # only evaluate if there is no pre-calculated value
+            # only evaluate if no previous calculation was done
             if self._mask is None:
-                # get the required columns into the namespace as numpy arrays
+                # get required columns into the namespace as numpy arrays
                 for column in self.columns:
                     if column in self.filter_func:
                         setattr(self, column, self.group[column][:])
@@ -45,34 +56,58 @@ class FileData(object):
             return self._mask
 
     def get_column(self, col):
+        '''
+        Parameters
+        ----------
+        col : string
+            Name of the dataset to be returned
+
+        Returns
+        -------
+        numpy array
+            Values from the dataset, filtered if requested
+        '''
         try:
-            vals = self.group[col][:]
+            vals = self.group[col]
             if self.filter_func:
                 return vals[self.mask]
             else:
-                return vals
+                return vals[:]
         except KeyError:  # if the column doesn't exist, as happens for zero triggers
-            return np.array([])  # this may or may not have the right effect ..
+            return np.array([])  # this may or may not have the right effect
 
 class DataFromFiles(object):
 
-    def __init__(self, filelist, group=None, columnlist=None, filter_func=None,
-                 verbose=False):
+    def __init__(self, filelist, group=None, columnlist=None, filter_func=None):
         self.files = filelist
         self.group = group
         self.columns = columnlist
         self.filter_func = filter_func
-        self.verbose = verbose
 
     def get_column(self, col):
-        if self.verbose: print 'getting %s :' % col
+        '''
+        Loop over files getting the requested dataset values from each
+
+        Parameters
+        ----------
+        col : string
+            Name of the dataset to be returned
+
+        Returns
+        -------
+        numpy array
+            Values from the dataset, filtered if requested and
+            concatenated in order of file list
+        '''
+        logging.info('getting %s' % col)
         vals = []
         for f in self.files:
             d = FileData(f, group=self.group, columnlist=self.columns,
                          filter_func=self.filter_func)
             vals.append(d.get_column(col))
-            # can't have more than ~1000 h5py.File objects open at once, so close tis
+            # Close each file since h5py has an upper limit on the number of
+            # open file objects (approx. 1000)
             d.close()
-        if self.verbose: print '    got %i values' % sum(len(v) for v in vals)
+        logging.info('- got %i values' % sum(len(v) for v in vals))
         return np.concatenate(vals)
 
