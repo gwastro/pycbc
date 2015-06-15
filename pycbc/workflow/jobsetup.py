@@ -29,10 +29,25 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 
 import math, os
+import lal
 from glue import segments
 import Pegasus.DAX3 as dax
 from pycbc.workflow.core import Executable, File, FileList, Node
 from pycbc.workflow.legacy_ihope import LegacyTmpltbankExecutable, LegacyInspiralExecutable
+
+
+def int_gps_time_to_str(t):
+    """Takes an integer GPS time, either given as int or lal.LIGOTimeGPS, and
+    converts it to a string. If a LIGOTimeGPS with nonzero decimal part is
+    given, raises a ValueError."""
+
+    if type(t) == int:
+        return str(t)
+    elif type(t) == lal.LIGOTimeGPS:
+        if t.gpsNanoSeconds == 0:
+            return str(t.gpsSeconds)
+        else:
+            raise ValueError('Need an integer GPS time, got %s' % str(t))
 
 def select_tmpltbank_class(curr_exe):
     """
@@ -582,11 +597,13 @@ class PyCBCInspiralExecutable(Executable):
             raise ValueError("%s must be supplied with data file(s)"
                               %(self.name))
 
-        # set remaining options flags   
-        node.add_opt('--gps-start-time', '%.0f' % float(data_seg[0] + pad_data))
-        node.add_opt('--gps-end-time', '%.0f' % float(data_seg[1] - pad_data))
-        node.add_opt('--trig-start-time', '%.0f' % float(valid_seg[0]))
-        node.add_opt('--trig-end-time', '%.0f' % float(valid_seg[1]))
+        # set remaining options flags
+        node.add_opt('--gps-start-time',
+                     int_gps_time_to_str(data_seg[0] + pad_data))
+        node.add_opt('--gps-end-time',
+                     int_gps_time_to_str(data_seg[1] - pad_data))
+        node.add_opt('--trig-start-time', int_gps_time_to_str(valid_seg[0]))
+        node.add_opt('--trig-end-time', int_gps_time_to_str(valid_seg[1]))
 
         node.add_profile('condor', 'request_cpus', self.num_threads)        
 
@@ -686,8 +703,10 @@ class PyCBCTmpltbankExecutable(Executable):
                              "%s. Please check the ini file." % self.name)
 
         # set the remaining option flags
-        node.add_opt('--gps-start-time', '%.0f' % float(data_seg[0] + pad_data))
-        node.add_opt('--gps-end-time', '%.0f' % float(data_seg[1] - pad_data))
+        node.add_opt('--gps-start-time',
+                     int_gps_time_to_str(data_seg[0] + pad_data))
+        node.add_opt('--gps-end-time',
+                     int_gps_time_to_str(data_seg[1] - pad_data))
 
         # set the input and output files
         # Add the PSD file if needed
@@ -1177,8 +1196,8 @@ class LalappsInspinjExecutable(Executable):
         else:
             ext = '.xml'
 
-        node.add_opt('--gps-start-time', '%.0f' % float(segment[0]))
-        node.add_opt('--gps-end-time', '%.0f' % float(segment[1]))
+        node.add_opt('--gps-start-time', int_gps_time_to_str(segment[0]))
+        node.add_opt('--gps-end-time', int_gps_time_to_str(segment[1]))
         node.new_output_file_opt(segment, '.xml', '--output',
                                  store_file=self.retain_files)
         return node
