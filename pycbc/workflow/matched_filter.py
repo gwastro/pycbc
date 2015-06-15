@@ -215,7 +215,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
             link_job_instance = None
 
         sngl_ifo_job_setup(workflow, ifo, inspiral_outs, job_instance, 
-                           science_segs[ifo], datafind_outs, output_dir,
+                           science_segs[ifo], datafind_outs,
                            parents=tmplt_banks, allow_overlap=False,
                            link_job_instance=link_job_instance,
                            compatibility_mode=compatibility_mode)
