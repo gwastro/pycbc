@@ -118,15 +118,22 @@ class PhaseTDStatistic(NewSNRStatistic):
         return cstat
 
 class ReadByTemplate(object):
-    def __init__(self, filename, vetofile=None):
+    def __init__(self, filename, bank=None, vetofile=None):
         self.filename = filename
         self.file = h5py.File(filename, 'r')
         self.ifo = self.file.keys()[0]
         self.veto_times = None
+
+        if bank is not None:
+            self.bank = h5py.File(bank)
+        else:
+            self.bank = None
         
+        # Determine the segments which define the boundaries of valid times
+        # to use triggers
         from glue.segments import segmentlist, segment
-        key = '%s/search/' % self.ifo + '%s_time'
-        s, e = self.file[key % 'start'][:], self.file[key % 'end'][:]
+        key = '%s/search/' % self.ifo
+        s, e = self.file[key + 'start_time'][:], self.file[key + 'end_time'][:]
         self.segs = veto.start_end_to_segments(s, e).coalesce()
         if vetofile is not None:
             self.veto_times = veto.start_end_from_segments(vetofile)
@@ -135,20 +142,72 @@ class ReadByTemplate(object):
         self.valid = veto.segments_to_start_end(self.segs)
     
     def get_data(self, col, num):
+        """ Get a column of data for template with id 'num'
+        
+        Parameters
+        ----------
+        col: str
+            Name of column to read
+        num: int
+            The template id to read triggers for
+        
+        Returns
+        -------
+        data: numpy.ndarray
+            The requested column of data       
+        """
         ref = self.file['%s/%s_template' % (self.ifo, col)][num]
-        return self.file[ref][ref]   
+        return self.file['%s/%s' % (self.ifo, col)][ref]   
        
     def set_template(self, num):
+        """ Set the active template to read from
+        
+        Parameters
+        ----------
+        num: int
+            The template id to read triggers for
+        
+        Returns
+        -------
+        trigger_id: numpy.ndarray
+            The indices of this templates triggers
+        """
         self.template_num = num
         times = self.get_data('end_time', num)
+        
+        # Determine which of these template's triggers are kept after
+        # applying vetoes
         if self.veto_times:
             self.keep = veto.indices_within_times(times, self.valid[0], self.valid[1]) 
             logging.info('applying vetoes')
         else:
             self.keep = numpy.arange(0, len(times))
-        return self.keep + self.file['%s/template_boundaries' % self.ifo][num]
+
+        if self.bank is not None:
+            self.param = {} 
+            for col in self.bank:
+                self.param[col] = self.bank[col][self.template_num]
+            
+        # Calculate the trigger id by adding the relative offset in self.keep
+        # to the absolute beginning index of this templates triggers stored
+        # in 'template_boundaries'
+        trigger_id = self.keep + self.file['%s/template_boundaries' % self.ifo][num]
+        return trigger_id
         
     def __getitem__(self, col):
+        """ Return the column of data for current active template after
+        applying vetoes
+        
+        Parameters
+        ----------
+        col: str
+            Name of column to read
+        
+        Returns
+        -------
+        data: numpy.ndarray
+            The requested column of data  
+        """
         if self.template_num == None:
             raise ValueError('You must call set_template to first pick the '
                              'template to read data from')    
@@ -163,9 +222,9 @@ tmin, tmax = parse_template_range(num_templates, args.template_fraction_range)
 logging.info('Analyzing template %s - %s' % (tmin, tmax-1))
 
 logging.info('Opening first trigger file: %s' % args.trigger_files[0]) 
-trigs0= ReadByTemplate(args.trigger_files[0], args.veto_files)
+trigs0= ReadByTemplate(args.trigger_files[0], args.template_bank, args.veto_files)
 logging.info('Opening second trigger file: %s' % args.trigger_files[1]) 
-trigs1 = ReadByTemplate(args.trigger_files[1], args.veto_files)
+trigs1 = ReadByTemplate(args.trigger_files[1], args.template_bank, args.veto_files)
 coinc_segs = (trigs0.segs & trigs1.segs).coalesce()
 
 rank_method = get_statistic(args.ranking_statistic, args.statistic_files)
@@ -228,7 +287,7 @@ for tnum in range(tmin, tmax):
     g1 = i1[ti] 
     del i0
     del i1
-       
+    
     data['stat'] += [c[ti]]
     data['decimation_factor'] += [numpy.repeat([args.decimation_factor, 1, 1], [len(bl), len(bh), len(fi)]).astype(numpy.uint32)]
     data['time1'] += [t0[g0]]
@@ -254,9 +313,12 @@ if len(data['stat']) > 0:
             f[key] = data[key][cid]
         else:
             f[key] = data[key]
+            
 f['segments/coinc/start'], f['segments/coinc/end'] = veto.segments_to_start_end(coinc_segs)
+
 for t in [trigs0, trigs1]:
     f['segments/%s/start' % t.ifo], f['segments/%s/end' % t.ifo] = t.valid
+    
 f.attrs['timeslide_interval'] = args.timeslide_interval
 f.attrs['detector_1'] = det0.name
 f.attrs['detector_2'] = det1.name
