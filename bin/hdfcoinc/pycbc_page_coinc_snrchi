@@ -34,7 +34,7 @@ b_tids[f.attrs['detector_2']] = f['background/trigger_id2']
 f = h5py.File(args.single_trigger_file)
 ifo = f.keys()[0]
 f = f[ifo]
-tid = b_tids[ifo]
+tid = b_tids[ifo][:]
 snr = f['snr'][:][tid]
 
 chisq = f['chisq'][:][tid]
@@ -54,12 +54,12 @@ inj_tids = {}
 inj_tids[f.attrs['detector_1']] = f['found_after_vetoes/trigger_id1']
 inj_tids[f.attrs['detector_2']] = f['found_after_vetoes/trigger_id2']
 
-inj_idx = f['found_after_vetoes/injection_index']
+inj_idx = f['found_after_vetoes/injection_index'][:]
 eff_dist = f['injections'][eff_map[ifo]][:][inj_idx]
 
 
 f = h5py.File(args.single_injection_file)[ifo]
-tid = inj_tids[ifo]
+tid = inj_tids[ifo][:]
 snr = f['snr'][:][tid]
 
 chisq = f['chisq'][:][tid]
