@@ -67,6 +67,9 @@ parser.add_argument("--inputs", nargs="+",
                     help="Input file or space-separated list of input files "
                     "containing single triggers.  Currently .xml(.gz) and "
                     ".sqlite formats supported.  Required")
+parser.add_argument("--veto-file",
+                    help="File in .xml format with veto segments to apply to "
+                    "triggers before fitting")
 parser.add_argument("--output", required=True,
                     help="Location for output file containing fit coefficients"
                     ".  Required")
@@ -189,28 +192,45 @@ for ifo in opt.ifos:
             verbose=opt.verbose)
         sngls.ifocut(ifo, inplace=True)
     elif trigformat == "hdf":
-        sngls = io.hdf.DataFromFiles(opt.inputs, group=ifo,
-            columnlist=["snr", "chisq", "template_duration", "template_hash"],
+        cols = ["snr", "chisq", "template_duration", "template_id", "end_time"]
+        sngls = io.hdf.DataFromFiles(opt.inputs, group=ifo, columnlist=cols,
             filter_func="self.snr>"+str(opt.snr_threshold))
     if opt.plot_dir:
         plotbase = outdir + ifo + "-" + opt.user_tag
 
     snr = sngls.get_column("snr")
     if not len(snr):
-        print >>sys.stderr, "no trigs, skipping", ifo
+        logging.warn("no trigs, skipping %s" % ifo)
         continue
     chisq = sngls.get_column("chisq")
     chisq_dof = sngls.get_column("chisq_dof")
     if trigformat == "hdf":
-        tmplhash = sngls.get_column("template_hash")
+        tid = sngls.get_column("template_id")
+        mass1 = None
+        mass2 = None
     else:
+        tid = None
         mass1 = sngls.get_column("mass1")
         mass2 = sngls.get_column("mass2")
     parvals = sngls.get_column(opt.fit_param)
     rchisq = chisq / (2 * chisq_dof - 2)
     #bank_rchisq = sngls.get_column('bank_chisq') / (26 * 2)  # hack since pycbc doesn't output correct bank chisq dof
     #max_rchisq = np.maximum(rchisq, bank_rchisq)
-    
+
+    if opt.veto_file:
+        logging.info("Applying vetoes from %s for ifo %s" % 
+                     (opt.veto_file, ifo))
+        keep_idx, segs = events.veto.indices_outside_segments(
+                              sngls.get_column("end_time").astype(int),
+                                                      [opt.veto_file], ifo=ifo)
+        snr = snr[keep_idx]
+        rchisq = rchisq[keep_idx]
+        if mass1 is not None: mass1 = mass1[keep_idx]
+        if mass2 is not None: mass2 = mass2[keep_idx]
+        if tid is not None: tid = tid[keep_idx]
+        parvals = parvals[keep_idx]
+        logging.info("%i trigs remain" % len(snr))
+
     logging.info("Calculating ranking statistic values")
     statv = get_stat(opt.sngl_stat, snr, rchisq, opt.stat_factor)
 
@@ -235,8 +255,7 @@ for ifo in opt.ifos:
 
     logging.info("Getting max counts in bins")
     # determine trigger counts first to get plot limits to make them the same
-    # for all thresholds
-    # use only the smallest threshold
+    # for all thresholds; use only the smallest threshold requested
     minth = min(opt.stat_threshold)
     bincounts = []
     for i in binind:
@@ -261,10 +280,10 @@ for ifo in opt.ifos:
 
         for i, lower, upper in zip(binind, pbins.lower(), pbins.upper()):
             # determine number of templates generating the triggers involved
-            # for hdf5, use the template hash; otherwise use masses
+            # for hdf5, use the template id; otherwise use masses
             if trigformat == "hdf":
-                hash_inbin = parvals[pind == i]
-                numtmpl = len(set(hash_inbin))
+                tid_inbin = tid[pind == i]
+                numtmpl = len(set(tid_inbin))
             else:
                 mass1_inbin = mass1[pind == i]
                 mass2_inbin = mass2[pind == i]
