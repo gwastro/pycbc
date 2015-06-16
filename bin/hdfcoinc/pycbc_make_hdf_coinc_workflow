@@ -22,8 +22,6 @@ generate post-processing and plots.
 """
 import pycbc, pycbc.version, pycbc.events, pycbc.workflow as wf
 import os, argparse, ConfigParser, logging, glue.segments
-import urllib
-import urlparse
 
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
@@ -148,12 +146,6 @@ if len(inj_files) > 0:
 ini_file_path = 'plots/configuration.ini'
 with open(ini_file_path, 'wb') as ini_fh:
     container.cp.write(ini_fh)
-ini_file_url = urlparse.urljoin(
-        'file:', urllib.pathname2url(os.path.abspath(ini_file_path)))
-ini_file = wf.File(container.ifos, 'configuration', container.analysis_time,
-                   ini_file_url)
-ini_file.PFN(ini_file_url, site='local')
-container._outputs.append(ini_file) # FIXME accessing private member, what's the proper way?
 
 wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(), 'plots'))
 
