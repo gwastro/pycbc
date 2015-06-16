@@ -18,20 +18,19 @@
 
 import argparse
 import os
+import pycbc.results
 import random
 import shutil
-
-from jinja2 import Environment, FileSystemLoader
-
+import zipfile
 from glue import segments
-
-import pycbc.results
+from jinja2 import Environment, FileSystemLoader
 from pycbc.results.render import setup_template_render
 from pycbc.workflow import segment
 
 def examine_dir(cwd):
     """
-    Looks in a directory and returns all subdirs and files.
+    Looks in a directory and returns all subdirs and files. If there is a
+    zipped file, it will unzip it, and return the extracted files as well.
     """
 
     # list everything in this directory and loop over them
@@ -40,9 +39,25 @@ def examine_dir(cwd):
     for name in names:
 
         # if it is a directory append the dir list
-        # else append the nondirs list
         if os.path.isdir(os.path.join(cwd, name)):
             dirs.append(name)
+
+        # check if it is a zip file, unzip it, and add files to list
+        elif zipfile.is_zipfile(name):
+            zip = zipfile.ZipFile(name)
+            zip.extractall()
+
+            # loop over extracted files
+            for extracted_name in zip.namelist():
+
+                # check if extracted a dir
+                if os.path.isdir(os.path.join(cwd, extracted_name)):
+                    dirs.append(os.path.dirname(extracted_name))
+
+                # check if extracted a file into this current working dir
+                elif os.path.exists(os.path.join(cwd, os.path.basename(extracted_name))):
+                    nondirs.append(os.path.basename(extracted_name))
+
         else:
             nondirs.append(name)
 
@@ -91,7 +106,6 @@ class Directory():
         Returns the name of the directory.
         """
 
-        print self.path.split('/')[-1]
         return self.path.split('/')[-1]
 
     def title(self):
