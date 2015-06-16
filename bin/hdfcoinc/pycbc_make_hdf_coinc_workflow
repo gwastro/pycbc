@@ -23,6 +23,7 @@ generate post-processing and plots.
 import pycbc, pycbc.version, pycbc.events, pycbc.workflow as wf
 import os, argparse, ConfigParser, logging, glue.segments
 
+
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', 
                     version=pycbc.version.git_verbose_msg)
@@ -140,6 +141,11 @@ if len(inj_files) > 0:
                                             output_dir, tags=['ALLINJ'])                                                
     wf.make_sensitivity_plot(workflow, found_inj, 'plots/sensitivity', 
                                             tags=['ALLINJ'])
+
+# save global config file to results directory
+ini_file_path = 'plots/configuration.ini'
+with open(ini_file_path, 'wb') as ini_fh:
+    container.cp.write(ini_fh)
 
 wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(), 'plots'))
 
