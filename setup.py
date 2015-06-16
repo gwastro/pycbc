@@ -60,8 +60,9 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'pillow',
                       'h5py>=2.5',
                       'jinja2',
+                      'mpld3>=0.3git',
                       ]
-links = []
+links = ['https://github.com/ahnitz/mpld3/tarball/master#egg=mpld3-0.3git']
 
 def find_package_data(dirname):
     def find_paths(dirname):
