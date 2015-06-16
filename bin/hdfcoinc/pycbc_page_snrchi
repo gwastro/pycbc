@@ -27,7 +27,7 @@ chisq_dof = f['chisq_dof'][:]
 chisq /= (chisq_dof * 2 - 2)
 chisq[l] = .1
 cont_chisq = f['cont_chisq'][:]
-cont_chisq_dof = 15
+cont_chisq_dof = f['cont_chisq_dof'][:]
 cont_chisq /= cont_chisq_dof
 chisq = numpy.maximum(chisq, cont_chisq)
 

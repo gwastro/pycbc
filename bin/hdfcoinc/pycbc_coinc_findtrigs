@@ -127,7 +127,7 @@ class CombSNRStatistic(NewSNRStatistic):
         chisq_dof = 2 * trigs['chisq_dof'] - 2
         chisq_newsnr = events.newsnr(trigs['snr'], trigs['chisq'] / chisq_dof)
         # FIXME: Remove hardcoding
-        autochisq_dof = 15
+        autochisq_dof = trigs['cont_chisq_dof']
         autochisq_newsnr = events.newsnr(trigs['snr'],
                                          trigs['cont_chisq'] / autochisq_dof)
         return numpy.array(numpy.minimum(chisq_newsnr, autochisq_newsnr,
