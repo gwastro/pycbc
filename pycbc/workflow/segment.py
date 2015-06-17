@@ -772,34 +772,34 @@ def find_playground_segments(segs):
 
     # loop over segments
     for seg in segs:
-      start = seg[0]
-      end = seg[1]
+        start = seg[0]
+        end = seg[1]
 
-      # the first playground segment whose end is after the start of seg
-      playground_start = start_s2 + playground_stride * ( 1 + \
-                      int(start-start_s2-playground_length) / playground_stride)
+        # the first playground segment whose end is after the start of seg
+        playground_start = start_s2 + playground_stride * ( 1 + \
+                     int(start-start_s2-playground_length) / playground_stride)
 
-      while playground_start < end:
-        # find start of playground segment
-        if playground_start > start:
-          ostart = playground_start
-        else:
-          ostart = start
+        while playground_start < end:
+            # find start of playground segment
+            if playground_start > start:
+                ostart = playground_start
+            else:
+                ostart = start
 
-        playground_end = playground_start + playground_length
+            playground_end = playground_start + playground_length
 
-        # find end of playground segment
-        if playground_end < end:
-          oend = playground_end
-        else:
-          oend = end
+            # find end of playground segment
+            if playground_end < end:
+                oend = playground_end
+            else:
+                oend = end
 
-        # append segment
-        x = segments.segment(ostart, oend)
-        outlist.append(x)
+            # append segment
+            x = segments.segment(ostart, oend)
+            outlist.append(x)
 
-        # increment
-        playground_start = playground_start + playground_stride
+            # increment
+            playground_start = playground_start + playground_stride
 
     return outlist
 
