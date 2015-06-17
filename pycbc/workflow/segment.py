@@ -28,11 +28,10 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html
 """
 
 import os,sys,shutil
-import subprocess
 import logging
 import urllib, urlparse
 import lal
-from glue import segments, pipeline
+from glue import segments
 from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.workflow.core import Executable, FileList, Node, OutSegFile, make_analysis_dir, make_external_call, File
 from pycbc.workflow.jobsetup import LigolwAddExecutable, LigoLWCombineSegsExecutable
