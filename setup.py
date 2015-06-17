@@ -70,7 +70,8 @@ try:
 except ImportError:
     setup_requires.append('cython')
 else:
-    if h5py.__version__ < '2.5':
+    import h5py.version
+    if h5py.version.version < '2.5':
         setup_requires.append('cython')
 
 
