@@ -60,8 +60,20 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'pillow',
                       'h5py>=2.5',
                       'jinja2',
+                      'mpld3>=0.3git',
                       ]
-links = []
+links = ['https://github.com/ahnitz/mpld3/tarball/master#egg=mpld3-0.3git']
+
+#FIXME Remove me when we bump to h5py > 2.5
+try:
+    import h5py
+except ImportError:
+    setup_requires.append('cython')
+else:
+    import h5py.version
+    if h5py.version.version < '2.5':
+        setup_requires.append('cython')
+
 
 def find_package_data(dirname):
     def find_paths(dirname):
