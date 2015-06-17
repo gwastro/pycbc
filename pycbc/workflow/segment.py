@@ -37,7 +37,7 @@ from pycbc.workflow.core import Executable, FileList, Node, OutSegFile, make_ana
 from pycbc.workflow.jobsetup import LigolwAddExecutable, LigoLWCombineSegsExecutable
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
-        pass
+    pass
 
 lsctables.use_in(ContentHandler)
 
