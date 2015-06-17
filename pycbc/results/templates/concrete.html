@@ -69,25 +69,27 @@
     <!--content-->
     <div class="row">
 
-    <!--left panel-->
-    <div class="col-lg-3">
-        <div class="list-group">
-            <a href="#" class="list-group-item disabled"><h3>{{dir.title()}}</h3></a>
-            {% if dir.subdirs %}
-                {% for subdir in dir.subdirs %}
-                    <a href="./{{subdir.name()}}" class="list-group-item">{{subdir.title()}}</a>
-                {% endfor %}
-            {% else %}
-                <a href="#" class="list-group-item disabled">No subdirectories</a>
-            {% endif %}
+        <!--left panel-->
+        <div class="col-lg-3">
+            <div class="list-group">
+                <a href="#" class="list-group-item disabled"><h3>{{dir.title()}}</h3></a>
+                {% if dir.subdirs %}
+                    {% for subdir in dir.subdirs %}
+                        <a href="./{{subdir.name()}}" class="list-group-item">{{subdir.title()}}</a>
+                    {% endfor %}
+                {% else %}
+                    <a href="#" class="list-group-item disabled">No subdirectories</a>
+                {% endif %}
+            </div>
         </div>
-    </div>
 
-    <!--right panel-->
-    <div class="col-lg-9">
-        {% for file in dir.files %}
-             {{file.render()}}
-        {% endfor %}
+        <!--right panel-->
+        <div class="col-lg-9">
+            {% for file in dir.files %}
+                {{file.render()}}
+            {% endfor %}
+        </div>
+
     </div>
 
 </div>
