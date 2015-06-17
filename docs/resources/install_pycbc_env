@@ -29,11 +29,12 @@ pipn() {
 # Standard python dependencies
 pipi 'Mako>=1.0.1' 
 pipi pillow 
+pipi cython
 pipi 'decorator>=3.4.2' 
 pipi 'numpy>=1.6.4'
 pipi jinja2
 pipi 'scipy>=0.13.0'
-pipi 'matplotlib>=1.3.0'
+pipi 'matplotlib>=1.3.1'
 pipi -e 'git+http://github.com/jakevdp/mpld3.git#egg=mpld3-0.3'
 pipi 'argparse>=1.3.0'
 SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
@@ -48,8 +49,8 @@ make -j install
 source $LOCAL/etc/lal-user-env.sh
 
 # LAL python dependencies
-pipn git+https://github.com/ahnitz/glue.git#egg=glue
-pipn git+https://github.com/ahnitz/pylal.git#egg=pylal
+pipn git+https://github.com/ligo-cbc/glue.git#egg=glue
+pipn git+https://github.com/ligo-cbc/pylal.git#egg=pylal
 pipn git+https://github.com/ligo-cbc/pycbc.git#egg=pycbc
 cd $LOCAL
 
