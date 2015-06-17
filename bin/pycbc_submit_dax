@@ -12,8 +12,9 @@ exec 2>&1
 
 DAX_FILE=""
 CACHE_FILE=""
+LOCAL_PEGASUS_DIR=""
 
-GETOPT_CMD=`getopt -o d:c:a:h --long dax:,cache-file:,accounting-group:,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:a:h:l --long dax:,cache-file:,accounting-group:,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -33,6 +34,11 @@ while true ; do
         "") shift 2 ;;
         *) ACCOUNTING_GROUP=$2 ; shift 2 ;;
       esac ;;
+    -l|--local-dir)
+      case "$2" in
+        "") shift 2 ;;
+        *) LOCAL_PEGASUS_DIR=$2 ; shift 2 ;;
+      esac ;;
     -h|--help)
       echo "usage: pycbc_submit_dax [-h]"
       echo "                        --dax DAX"
@@ -46,9 +52,11 @@ while true ; do
       echo "  -c, --cache-file FILE   replica cache file for data reuse"
       echo "  -a, --accounting-group GROUP tagged string used for site "
       echo "                               resource accounting."
+      echo "  -l, --local-dir         Directory to put condor files under. "
       echo
       echo "If the environment variable TMPDIR is set then this is prepended to the "
       echo "path to the temporary workflow execte directory passed to pegasus-plan."
+      echo "If the --local-dir option is not given."
       echo
       exit 0 ;;
     --) shift ; break ;;
@@ -62,7 +70,7 @@ if [ "x$DAX_FILE" == "x" ]; then
 fi
 
 #Make a directory for the submit files
-SUBMIT_DIR=`mktemp -t -d pycbc-tmp.XXXXXXXXXX`
+SUBMIT_DIR=`mktemp --tmpdir=${LOCAL_PEGASUS_DIR} -d pycbc-tmp.XXXXXXXXXX`
 
 #Make sure the directory is world readable
 chmod 755 $SUBMIT_DIR
