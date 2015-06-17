@@ -16,6 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import sys
 import logging, argparse, numpy, itertools
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC
 from pycbc.filter import MatchedFilterControl, make_frequency_series
@@ -196,6 +197,37 @@ with ctx:
     psds = associate_psd(strain_segments, gwstrain, segments, 
                   opt.psd_recalculate_segments, flen, delta_f, flow)
 
+    # storage for values and types to be passed to event manager
+    out_types = {
+        'time_index'     : int,
+        'snr'            : complex64,
+        'chisq'          : float32,
+        'chisq_dof'      : int,
+        'bank_chisq'     : float32,
+        'bank_chisq_dof' : int,
+        'cont_chisq'     : float32
+                }
+    out_vals = {
+        'time_index'     : None,
+        'snr'            : None,
+        'chisq'          : None,
+        'chisq_dof'      : None,
+        'bank_chisq'     : None,
+        'bank_chisq_dof' : None,
+        'cont_chisq'     : None
+               }
+    names = sorted(out_vals.keys())
+
+    event_mgr = events.EventManager(opt, names,
+                                        [out_types[n] for n in names], psd=psds[0])
+
+    if len(strain_segments.segment_slices) == 0:
+        logging.info("--filter-inj-only specified and no injections in analysis time")
+        event_mgr.finalize_template_events()
+        event_mgr.write_events(opt.output)
+        logging.info("Finished")
+        sys.exit(0)
+
     template_mem = zeros(tlen, dtype = complex64)
     cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
 
@@ -224,30 +256,6 @@ with ctx:
     logging.info("Overwhitening frequency-domain data segments")
     for seg in segments:
         seg /= seg.psd
-
-    # storage for values and types to be passed to event manager
-    out_types = {
-        'time_index'     : int,
-        'snr'            : complex64,
-        'chisq'          : float32,
-        'chisq_dof'      : int,
-        'bank_chisq'     : float32,
-        'bank_chisq_dof' : int,
-        'cont_chisq'     : float32
-                }
-    out_vals = {
-        'time_index'     : None,
-        'snr'            : None,
-        'chisq'          : None,
-        'chisq_dof'      : None,
-        'bank_chisq'     : None,
-        'bank_chisq_dof' : None,
-        'cont_chisq'     : None
-               }
-    names = sorted(out_vals.keys())
-
-    event_mgr = events.EventManager(opt, names,
-                                        [out_types[n] for n in names], psd=psds[0])
 
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, flen, delta_f,
