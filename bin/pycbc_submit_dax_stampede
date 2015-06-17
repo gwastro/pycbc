@@ -2,10 +2,11 @@
 
 DAX_FILE=""
 CACHE_FILE=""
+LOCAL_PEGASUS_DIR=""
 HOSTS=""
 DEVELOPMENT=""
 
-GETOPT_CMD=`getopt -o d:n:Dc:a:h --long dax:,number-of-hosts:,development,cache-file:,accounting-group:,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:n:Dc:a:h:l --long dax:,number-of-hosts:,development,cache-file:,accounting-group:,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -30,6 +31,11 @@ while true ; do
       case "$2" in
         "") shift 2 ;;
         *) ACCOUNTING_GROUP=$2 ; shift 2 ;;
+      esac ;;
+    -l|--local-dir)
+      case "$2" in
+        "") shift 2 ;;
+        *) LOCAL_PEGASUS_DIR=$2 ; shift 2 ;;
       esac ;;
     -h|--help)
       echo "usage: pycbc_submit_dax [-h]"
@@ -79,7 +85,7 @@ if [ "x$2" == "x" ]; then
 fi
 
 echo 'making a directory for the submit files'
-export SUBMIT_DIR=`mktemp -t -d pycbc-tmp.XXXXXXXXXX`
+export SUBMIT_DIR=`mktemp --tmpdir=${LOCAL_PEGASUS_DIR} -d pycbc-tmp.XXXXXXXXXX`
 echo $SUBMIT_DIR
 
 #Make sure the directory is world readable
