@@ -1,7 +1,7 @@
 #!/usr/bin/python
 """ Make plot of search sensitive distance
 """
-import argparse, h5py, numpy, logging, os.path, matplotlib
+import argparse, h5py, numpy, logging, os.path, matplotlib, sys
 matplotlib.use('Agg')
 from matplotlib.pyplot import cm
 import pylab, pycbc.pnutils, pycbc.results, pycbc
@@ -186,6 +186,16 @@ pylab.xlabel(xlabel)
 
 pylab.grid()  
 pylab.legend(loc='lower left')
+
+print ' '.join(sys.argv)
+
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
-             title='%s binning' % args.bin_type, 
-             caption='')
+     title="Sensitive Distance vs %s: binned by %s, %s estimation" 
+            % (args.sig_type, args.bin_type, args.method), 
+     caption="Sensitive distance as a function of significance:"
+             "Darker lines represent the significance without including "
+             "injections in their own background, while lighter lines "
+             "include each injection (individuall) in its own background. "
+     cmd=' '.join(sys.argv))
+             
+             
