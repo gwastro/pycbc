@@ -65,21 +65,24 @@ parser.add_argument("-V", "--verbose", action="store_true",
                     help="Print extra debugging information", default=False)
 parser.add_argument("--inputs", nargs="+",
                     help="Input file or space-separated list of input files "
-                    "containing single triggers.  Currently .xml(.gz) and "
-                    ".sqlite formats supported.  Required")
+                    "containing single triggers.  Currently .xml(.gz), "
+                    ".sqlite and .hdf supported.  Required")
 parser.add_argument("--veto-file",
                     help="File in .xml format with veto segments to apply to "
                     "triggers before fitting")
+parser.add_argument("--veto-segment-name", default=None,
+                    help="Name of veto segments to apply. Optional: if not "
+                    "given, all segments for a given ifo will be used")
 parser.add_argument("--output", required=True,
                     help="Location for output file containing fit coefficients"
                     ".  Required")
 parser.add_argument("--plot-dir", default=None,
                     help="Plot the fits made, the variation of fitting "
                     "coefficients and the Kolmogorov-Smirnov test values "
-                    "and save the plots to the specified directory")
+                    "and save to the specified directory")
 parser.add_argument("--user-tag", default="",
                     help="Put a possibly informative string in the names of "
-                    "plots files")
+                    "plot files")
 parser.add_argument("--ifos", nargs="+",
                     help="Ifo or space-separated list of ifos to select "
                     "triggers to be fit.  Required")
@@ -89,6 +92,7 @@ parser.add_argument("--fit-function",
 parser.add_argument("--sngl-stat", default="new_snr",
                     choices=["snr", "snronchi", "effective_snr", "new_snr"],
                     help="Function of SNR and chisq to perform fits with")
+# FIXME: how to parse various possible mixtures of chisq
 #parser.add_argument("--chisq-choice", default="power",
 #                    choices=["power","bank","auto","maxpowerbank"],
 #                    help="Which chisq value or values to form the "
@@ -107,9 +111,9 @@ parser.add_argument("--stat-threshold", nargs="+", type=float,
                     "values 6.5 6.75 7")
 parser.add_argument("--fit-param", required=True,
                     help="Parameter over which to estimate variation of the "
-                    "fits. Required. Should be a column in the "
-                    "SnglInspiralTable")
-# FIXME - or a math function of columns. Ex. 1./mtotal")
+                    "fits. Required. Must be a SnglInspiralTable column for "
+                    ".xml or .sqlite input or the name of a dataset for .hdf")
+# FIXME: allow for math functions of columns. Ex. 1./mtotal")
 parser.add_argument("--bin-spacing", choices=["linear", "log", "irregular"],
                     help="How to space parameter bin edges")
 binopt = parser.add_mutually_exclusive_group(required=True)
@@ -149,17 +153,17 @@ if opt.inputs[0].split('.')[-1] == "sqlite":
     if len(opt.inputs) > 1:
         raise RuntimeError("Sorry, can't deal with more than one .sqlite "
                            "input file")
-    columns = ['ifo', 'end_time', 'end_time_ns', 'snr', 'chisq',
-               'chisq_dof', 'bank_chisq', 'bank_chisq_dof', 'cont_chisq',
-               'cont_chisq_dof', 'mchirp', 'eta', 'mtotal', 'mass1',
-               'mass2', 'template_duration']
-    if opt.fit_param not in columns:
-        columns.append(opt.fit_param)
+    cols = ['ifo', 'end_time', 'end_time_ns', 'snr', 'chisq', 'chisq_dof',
+            'bank_chisq', 'bank_chisq_dof', 'cont_chisq', 'cont_chisq_dof',
+            'mchirp', 'eta', 'mtotal', 'mass1', 'mass2', 'template_duration']
+    if opt.fit_param not in cols:
+        cols.append(opt.fit_param)
 elif opt.inputs[0].split('.')[-1] == "xml" or \
        opt.inputs[0].split('.')[-2:] == ["xml", "gz"]:
     trigformat = "xml"
 elif "hdf" in opt.inputs[0]:
     trigformat = "hdf"
+    cols = ["snr", "chisq", "template_duration", "template_id", "end_time"]
 else:
     print 'inputs:', opt.inputs
     raise RuntimeError("I didn't recognize the file format for the inputs!")
@@ -178,10 +182,10 @@ histcolors = ['r',(1.0,0.6,0),'y','g','c','b','m','k',(0.8,0.25,0),(0.25,0.8,0)]
 outfile.write("# ifo threshold lower upper templates triggers alpha sig_alpha ks_prob\n")
 
 for ifo in opt.ifos:
-    # FIXME - Would like a uniform input interface from trigger files,
-    # including HDF5, to the 'get_column' syntax used by SnglInspiralUtils
+    # FIXME: Would like a uniform input interface from trigger files
+    # to the 'get_column' syntax used by SnglInspiralUtils
     if trigformat == "sqlite":
-        sngls = io.sqlite.TableData(table, columns)
+        sngls = io.sqlite.TableData(table, cols)
         sngls.connect_db(opt.inputs[0])
         sngls.restrict_rows(conditions=["ifo='"+str(ifo)+"'",
             "snr>"+str(opt.snr_threshold)])
@@ -192,7 +196,6 @@ for ifo in opt.ifos:
             verbose=opt.verbose)
         sngls.ifocut(ifo, inplace=True)
     elif trigformat == "hdf":
-        cols = ["snr", "chisq", "template_duration", "template_id", "end_time"]
         sngls = io.hdf.DataFromFiles(opt.inputs, group=ifo, columnlist=cols,
             filter_func="self.snr>"+str(opt.snr_threshold))
     if opt.plot_dir:
@@ -204,6 +207,7 @@ for ifo in opt.ifos:
         continue
     chisq = sngls.get_column("chisq")
     chisq_dof = sngls.get_column("chisq_dof")
+    # FIXME: Get mass, spin values from hdf files ..
     if trigformat == "hdf":
         tid = sngls.get_column("template_id")
         mass1 = None
@@ -214,15 +218,16 @@ for ifo in opt.ifos:
         mass2 = sngls.get_column("mass2")
     parvals = sngls.get_column(opt.fit_param)
     rchisq = chisq / (2 * chisq_dof - 2)
-    #bank_rchisq = sngls.get_column('bank_chisq') / (26 * 2)  # hack since pycbc doesn't output correct bank chisq dof
-    #max_rchisq = np.maximum(rchisq, bank_rchisq)
+    #bank_rchisq = sngls.get_column('bank_chisq') / sngls.get_column('bank_chisq_dof')
+    #rchisq = np.maximum(rchisq, bank_rchisq)
 
     if opt.veto_file:
         logging.info("Applying vetoes from %s for ifo %s" % 
                      (opt.veto_file, ifo))
         keep_idx, segs = events.veto.indices_outside_segments(
-                              sngls.get_column("end_time").astype(int),
-                                                      [opt.veto_file], ifo=ifo)
+                         sngls.get_column("end_time").astype(int), 
+                         [opt.veto_file], ifo=ifo,
+                         segment_name=opt.veto_segment_name)
         snr = snr[keep_idx]
         rchisq = rchisq[keep_idx]
         if mass1 is not None: mass1 = mass1[keep_idx]
@@ -287,7 +292,8 @@ for ifo in opt.ifos:
             else:
                 mass1_inbin = mass1[pind == i]
                 mass2_inbin = mass2[pind == i]
-                mass_tuples = [(m1, m2) for m1, m2 in zip(mass1_inbin, mass2_inbin)]
+                mass_tuples = [(m1, m2) for m1, m2 in 
+                                                 zip(mass1_inbin, mass2_inbin)]
                 numtmpl = len(set(mass_tuples))
             templates[ifo][i] = numtmpl
             vals_inbin = statv[pind == i]
@@ -295,17 +301,15 @@ for ifo in opt.ifos:
             if len(vals_inbin) == 0:
                 print "No trigs in bin", lower, upper
                 continue
-            #if len(valsinBin) < nmax:
-            #  print 'Not enough triggers in bin', i, '- skipping this one!'
-            #  continue
-            #vals_inbin.sort()
-            ## calculate threshold via Nth loudest trig
-            #thresh = valsinBin[-nmax]
-            #numoverThresh = nmax
+            # FIXME: Also allow to use dynamically determined threshold
+            # calculated via Nth loudest trig
+            #thresh = trstats.tail_threshold(vals_inbin, N=nmax)
+            #counts[ifo][th][i] = nmax
             # do the fit
             alpha, sig_alpha = trstats.fit_above_thresh(
                                               opt.fit_function, vals_inbin, th)
-            #alpha, sig_alpha = fit_exponential_nmax(valsinBin, N=nmax)
+            #alpha, sig_alpha = trstats.fit_above_thresh(
+            #                             opt.fit_function, vals_inbin, thresh)
             fits[ifo][th][i] = alpha
             stdev[ifo][th][i] = sig_alpha
             _, ks_prob[ifo][th][i] = trstats.KS_test(
@@ -377,4 +381,4 @@ if opt.plot_dir:
         plt.savefig(plotbase + '_KS_prob_vs_' + paramname[0:3] + '.png')
         plt.close()
 
-print 'Done!'
+logging.info('Done!')
