@@ -325,6 +325,8 @@ cmdclass = { 'test'  : test,
              'test_opencl':test_opencl,
              'clean' : clean,
             }
+            
+extras_require = {'cuda': ['pycuda>=2015.1', 'scikits.cuda']}
 
 # do the actual work of building the package
 VERSION = get_version_info()
@@ -340,6 +342,7 @@ setup (
     keywords = ['ligo', 'physics', 'gravity', 'signal processing'],
     cmdclass = cmdclass,
     setup_requires = setup_requires,
+    extras_require = extras_require,
     install_requires = install_requires,
     dependency_links = links,
     scripts  = [
