@@ -195,7 +195,7 @@ pycbc.results.save_fig_with_metadata(fig, args.output_file,
      caption="Sensitive distance as a function of significance:"
              "Darker lines represent the significance without including "
              "injections in their own background, while lighter lines "
-             "include each injection (individuall) in its own background. "
+             "include each injection (individuall) in its own background. ",
      cmd=' '.join(sys.argv))
              
              
