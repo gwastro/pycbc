@@ -9,21 +9,19 @@ Prerequisites
 In order to install PyCBC, you need to have installed the following prerequisite packages:
 
 * Python 2.6 or 2.7
-* `NumPy <http://www.numpy.org>`_ >= 1.4.1 and `SciPy <http://www.scipy.org>`_ >= 0.7.2
-* `decorator <https://pypi.python.org/pypi/decorator>`_
-* `argparse <https://pypi.python.org/pypi/argparse>`_ >= 1.2.0
 * `LALSuite <https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html>`_ (with swig bindings enabled)
-* `GLUE <https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html>`_
-* `pylal <https://www.lsc-group.phys.uwm.edu/daswg/projects/pylal.html>`_
-* `jinja2 <https://pypi.python.org/pypi/jinja2>`
+* `NumPy <http://www.numpy.org>`_ >= 1.6.4 and `SciPy <http://www.scipy.org>`_ >= 0.13.0
+* `decorator <https://pypi.python.org/pypi/decorator>`_ >=3.4.2
+* `argparse <https://pypi.python.org/pypi/argparse>`_ >= 1.3.0
+* `pycbc-glue <https://github.com/ligo-cbc/pycbc-glue>`_ >=0.9.1
+* `pycbc-pylal <https://github.com/ligo-cbc/pycbc-glue>`_ >=0.9.2
+* `jinja2 <https://pypi.python.org/pypi/jinja2>`_
+* `mako <https://pypi.python.org/pypi/mako>`_
+* `h5py <https://pypi.python.org/pypi/h5py>`_ >=2.5
 
 .. note::
-    
-    Python, numpy, decorator and argparse should already be installed on LDG clusters.
 
-.. note::
-
-    A version of lalsuite and glue are installed on LDG clusters, but you may want to build your own version. Please see :ref:`lalsuite_install` for instructions and details about building your own version of lalsuite, glue and pylal.
+    A version of lalsuite is installed on LDG clusters, but you may want to build your own version. Please see :ref:`lalsuite_install` for instructions and details about building your own version of lalsuite.
 
 ===========================================================
 Additional Dependencies for HDF post processing and Plots
@@ -33,7 +31,6 @@ that are in active development and have not yet been reviewed, the following
 additional dependencies are needed. Eventually these will become
 mandatory dependencies. 
 
-* numpy>=1.6.4
 * matplotlib>=1.3.1
 * `mpld3>=0.3.0 <https://github.com/jakevdp/mpld3/tarball/master>`_
 * `PIL <https://pypi.python.org/pypi/PIL>`_

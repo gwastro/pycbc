@@ -73,16 +73,6 @@ popd
 echo "source ${INSTALL_DIR}/etc/lalapps-user-env.sh" >> ${SOURCE_SCRIPTDIR}/lscsoftrc
 source ${SOURCE_SCRIPTDIR}/lscsoftrc
 
-# Build and Install pylal & glue
-for d in glue pylal;
-    do pushd $d;
-    python setup.py clean --all
-    python setup.py install --prefix=${INSTALL_DIR}
-    echo "source ${INSTALL_DIR}/etc/${d}-user-env.sh" >> ${SOURCE_SCRIPTDIR}/lscsoftrc;
-    popd;
-    source ${SOURCE_SCRIPTDIR}/lscsoftrc;
-done
-
 cd ~
 
 lal-version
