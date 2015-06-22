@@ -76,9 +76,8 @@ while on Mac OS this is
 where ``X.Y`` is the python major and minor version numbers, e.g. ``2.7``. In either case, python will autmatically know about these directories, so you don't have to fiddle with any environment variables.
 
 
-===============================
 Setting up the user environment
-===============================
+********************************
 
 Add the following to your ``.bash_profile``
 
@@ -86,6 +85,61 @@ Add the following to your ``.bash_profile``
 
    source /path/to/pycbc/install/directory/etc/pycbc-user-env.sh
    
+===========================
+Installing in a virtualenv
+===========================
+
+Installing PyCBC into a virtual environment provides isolation between different sets of 
+python packages. The following instructions will create a working PyCBC environment on an LDG
+cluster. 
+
+The first task is to clear out your current PYTHONPATH in case you had been using that
+before, and to make sure you have the latest virtualenv code installed.:
+
+.. code-block:: bash
+
+    export PYTHONPATH=””
+    pip install virtualenv --upgrade --user
+    export PATH=$HOME/.local/bin:$PATH
+    
+The previous step may be skipped if you do not have conflicting python packages in 
+your PYTHONPATH.
+
+Next, you need to choose a directory name where you'd like to make your virtual environment, and
+then make it.: 
+
+.. code-block:: bash
+
+    virtualenv $NAME
+    source $NAME/bin/activate
+    
+You will now be 'inside' your virtual environment, and so you can install packages, etc, without
+conflicting with either the system build, or other builds that you may have sitting around. You may
+install c-dependencies such as lalsuite (:ref:`lalsuite_install`), or rely on the system versions.
+
+Install pycbc from source as follows. This will create a $NAME/src/pycbc git checkout
+which is fully edittable, and will also install all the listed dependencies.:
+
+.. code-block:: bash
+
+    pip install “numpy>=1.6.4” unittest2
+    pip install -e git+https://github.com/ligo-cbc/pycbc#egg=pycbc --process-dependency-links
+
+Finally, if you need to use system python libraries (such as Pegasus.DAX3), etc you can
+add that to your own activation script.:
+
+.. code-block:: bash
+
+    echo 'source $NAME/bin/activate' > activate
+    echo 'source $NAME/etc/pycbc-user-env.sh' >> activate
+    echo 'source $NAME/etc/glue-user-env.sh' >> activate
+    echo 'export PYTHONPATH=/usr/lib64/python2.6/site-packages/:$PYTHONPATH' >> activate
+    chmod 755 activate
+    
+You may now enter your environement by sourcing 'activate', and leave by running
+the command 'deactivate'.
+
+
 ===============================
 Optional GPU acceleration
 ===============================
