@@ -9,6 +9,7 @@ libfftw3-dev \
 python-decorator \
 python-jinja2 \
 python-h5py \
+libhdf5-serial-dev \
 liblapack-dev \
 python-scipy \
 python-numpy \
@@ -51,9 +52,6 @@ git clone https://github.com/ahnitz/lalsuite.git
 cd lalsuite
 ./00boot; ./configure --prefix=$LOCAL --enable-swig-python; make -j; make install
 source $LOCAL/etc/lal-user-env.sh
-cd pylal; python setup.py install --prefix=$LOCAL; cd ..
-cd glue; python setup.py install --prefix=$LOCAL; cd ..
-cd ..
 
 echo source $LOCAL/etc/glue-user-env.sh >> $TRAVIS_BUILD_DIR/source
 echo source $LOCAL/etc/lal-user-env.sh >> $TRAVIS_BUILD_DIR/source
