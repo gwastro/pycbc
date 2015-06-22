@@ -62,6 +62,37 @@ Its definition or existence is subject to change without notice.
 combined single inspiral triggers
 ==================================
 
+*****************
+Executables
+*****************
+
+ * pycbc_coinc_mergetrigs
+
+*****************
+Specification
+*****************
+
+.. csv-table:: Column vectors of trigger data
+   :header: "path", "description"
+
+   "IFO/snr", "The mangitude of the complex SNR"
+   "IFO/coa_phase", "The phase of the complex SNR"
+   "IFO/end_time", "The gps time of the trigger"
+   "IFO/chisq", "Value of the bruce power chisq"
+   "IFO/chisq_dof", "Not DOF. The number of bins in the chisq. DOF = 2 * (num_bins -1)"
+   "IFO/bank_chisq", "Value of the bank chisq"
+   "IFO/bank_chisq_dof", "Number of templates used to construct the bank chisq"
+   "IFO/cont_chisq", "Value of the autochisq"
+   "IFO/cont_chisq_dof", "Number of dof for the auto chisq"
+   "IFO/template_duration", "Duration of the template approximant used for this trigger"
+   "IFO/sigmasq", "The weighted power of the template, placed at 1Mpc, used for this trigger"
+   "IFO/template_id", "The unique template id value. This is the index into the hdf template file format"
+   
+.. csv-table:: Additional Data
+   :header: "path", "description"
+   
+   "IFO/search/start_time", "Array of gps times which denote the start of a valid period of triggers"
+   "IFO/search/end_time", "Array of gps times which denote the corresponding end of a vlid period of triggers"
 
 
 
