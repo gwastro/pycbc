@@ -1,3 +1,5 @@
+
+
 <!--accordion--> 
 <div class="panel-group" id="accordion-{{slug}}">
     <div class="panel panel-default">
@@ -66,12 +68,22 @@
 
                 {% endif %}
                 
+                <!--make a caption to the content -->
                 {% if cp.check_option(filename, 'caption') %}
                     <p><i>{{cp.get(filename, 'caption')}}</i></p>
+                {% endif %}            
+            
+                <!--always link to file-->
+                <p><a href={{filename}}>Link to file.</a></p>
+            
+                <!--show cmd line if there is one -->
+                {% if cp.check_option(filename, 'cmd') %}
+                    <button type="button" class="btn btn-xs"
+                            data-toggle="popover" title="command line"
+                            data-content="{{cp.get(filename, 'cmd')}}">
+                            Command Line
+                    </button>
                 {% endif %}
-
-                    <!--always link to file-->
-                    <p><a href={{filename}}>Link to file.</a></p>
 
             </div>
         </div>
