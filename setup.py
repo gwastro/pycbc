@@ -129,13 +129,12 @@ class install(_install):
         print >> env_file, "export PATH"
         env_file.close()
 
-        try:
-            _install.do_egg_install(self)
-        except DistutilsError as err:
-            print err
-        else:
-            _install.run(self)
+        _install.run(self)
 
+def do_setup(*args):
+    return True
+
+_install._called_from_setup=do_setup
 
 test_results = []
 # Run all of the testing scripts
