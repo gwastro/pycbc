@@ -187,8 +187,6 @@ pylab.xlabel(xlabel)
 pylab.grid()  
 pylab.legend(loc='lower left')
 
-print ' '.join(sys.argv)
-
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
      title="Sensitive Distance vs %s: binned by %s, %s estimation" 
             % (args.sig_type, args.bin_type, args.method), 
