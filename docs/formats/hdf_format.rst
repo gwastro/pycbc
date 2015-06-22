@@ -72,6 +72,14 @@ Executables
 Specification
 *****************
 
+All keys in the inspiral output are prefixed with the IFO name, e.g. H1, L1. Currently,
+only a single ifo is present in each file, but at a future date, multiple may
+be allowed.
+
+The following table consists of columns of trigger data. Each column is of the same length
+and an index into one column corresponds to the same trigger in each of the other columns.
+
+
 .. csv-table:: Column vectors of trigger data
    :header: "path", "description"
 
@@ -87,15 +95,47 @@ Specification
    "IFO/template_duration", "Duration of the template approximant used for this trigger"
    "IFO/sigmasq", "The weighted power of the template, placed at 1Mpc, used for this trigger"
    "IFO/template_id", "The unique template id value. This is the index into the hdf template file format"
-   
+
+The key feature that the combined trigger format adds is the convenience of precalculated region
+references to access only the data produced by a given template. These values are stored in region 
+reference arrays. The length of each array is the same as the number of templates, and an index
+into the array matches the template_id number. Each array directly maps to a single column.
+
+.. csv-table:: region reference arrays
+   :header: "path"
+
+    "IFO/bank_chisq_dof_template"
+    "IFO/bank_chisq_template"
+    "IFO/chisq_dof_template"
+    "IFO/chisq_template"
+    "IFO/coa_phase_template"
+    "IFO/cont_chisq_dof_template"
+    "IFO/cont_chisq_template"
+    "IFO/end_time_template"
+    "IFO/sigmasq_template"
+    "IFO/snr_template"
+    "IFO/template_boundaries"
+    "IFO/template_duration_template"
+
 .. csv-table:: Additional Data
    :header: "path", "description"
+   
    
    "IFO/search/start_time", "Array of gps times which denote the start of a valid period of triggers"
    "IFO/search/end_time", "Array of gps times which denote the corresponding end of a vlid period of triggers"
 
+*********************
+Example uses
+*********************
 
+Accessing triggers by template
 
+.. code-block:: python
+
+        import h5py
+        f = h5py.File('H1-testdata.hdf')
+        snr_regs = f['H1/snr_template']
+        snr_template_0 = f['H1/snr'][snr_regs[0]]
 
 
 
