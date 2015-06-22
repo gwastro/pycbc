@@ -75,6 +75,14 @@ For Developers:
     :maxdepth: 1
     
     documentation
+    
+Format Specifications:
+
+.. toctree::
+   :glob:
+   :maxdepth: 1
+
+   formats/*
 
 ===================
 Indexes and Tables

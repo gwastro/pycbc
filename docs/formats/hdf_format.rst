@@ -8,8 +8,18 @@ HDF files within the PyCBC workflow
     definition, as always, lives within the code itself. 
 
 =========================
-pycbc_inspiral
+single inspiral triggers
 =========================
+
+*****************
+Executables
+*****************
+
+ * pycbc_inspiral
+
+*****************
+Specification
+*****************
 
 All keys in the inspiral output are prefixed with the IFO name, e.g. H1, L1. Currently,
 only a single ifo is present in each file, but at a future date, multiple may
@@ -47,6 +57,12 @@ Its definition or existence is subject to change without notice.
    :header: "path"
    
    "IFO/template_hash"
+   
+==================================
+combined single inspiral triggers
+==================================
+
+
 
 
 
