@@ -1,8 +1,6 @@
 language: python
-cache:
-  - apt
 sudo: true
 before_install:
   - "./tools/install_travis.sh"
 install: "python setup.py install"
-script: "source $TRAVIS_BUILD_DIR/source; export; python setup.py test"
+script: "source $TRAVIS_BUILD_DIR/source; python setup.py test"
