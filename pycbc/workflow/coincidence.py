@@ -469,15 +469,16 @@ class PyCBCFindCoincExecutable(Executable):
     """ Find coinc triggers using a folded interval method
     """
     current_retention_level = Executable.CRITICAL
-    def create_node(self, trig_files, bank_file, veto_files, template_str, tags=[]):
+    def create_node(self, trig_files, bank_file, veto_file, veto_name, template_str, tags=[]):
         segs = trig_files.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
         node = Node(self)
         node.set_memory(10000)
         node.add_input_opt('--template-bank', bank_file)
         node.add_input_list_opt('--trigger-files', trig_files)
-        if len(veto_files) != 0:
-            node.add_input_list_opt('--veto-files', veto_files)
+        if veto_file is not None:
+            node.add_input_opt('--veto-files', veto_file)
+            node.add_opt('--segment-name', veto_name)
         node.add_opt('--template-fraction-range', template_str)
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags)
         return node
@@ -517,11 +518,12 @@ class PyCBCHDFInjFindExecutable(Executable):
     """ Find injections in the hdf files output
     """
     current_retention_level = Executable.CRITICAL
-    def create_node(self, inj_coinc_file, inj_xml_file, veto_file, tags=[]):
+    def create_node(self, inj_coinc_file, inj_xml_file, veto_file, veto_name, tags=[]):
         node = Node(self)        
         node.add_input_list_opt('--trigger-file', inj_coinc_file)
         node.add_input_list_opt('--injection-file', inj_xml_file)
         node.add_input_opt('--veto-file', veto_file)
+        node.add_opt('--segment-name', veto_name)
         node.new_output_file_opt(inj_xml_file[0].segment, '.hdf', '--output-file', 
                                  tags=tags)
         return node
@@ -543,12 +545,12 @@ def merge_single_detector_hdf_files(workflow, bank_file, trigger_files, out_dir,
     return out
 
 def find_injections_in_hdf_coinc(workflow, inj_coinc_file, inj_xml_file, 
-                                 veto_file, out_dir, tags=[]):
+                                 veto_file, veto_name, out_dir, tags=[]):
     make_analysis_dir(out_dir)
     exe = PyCBCHDFInjFindExecutable(workflow.cp, 'hdfinjfind', 
                                     ifos=workflow.ifos, 
                                     out_dir=out_dir, tags=tags)
-    node = exe.create_node(inj_coinc_file, inj_xml_file, veto_file, tags)
+    node = exe.create_node(inj_coinc_file, inj_xml_file, veto_file, veto_name, tags)
     workflow += node
     return node.output_files[0]     
 
@@ -588,7 +590,7 @@ def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=[]):
     return trig_files
 
 def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_files,
-                           background_file, veto_file, out_dir, tags=[]):
+                           background_file, veto_file, veto_name, out_dir, tags=[]):
     """
     This function sets up exact match coincidence and background estimation
     using a folded interval technique.
@@ -632,7 +634,8 @@ def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_f
                                               tags=tags + [ctag], out_dir=out_dir)
         for i in range(factor):
             group_str = '%s/%s' % (i, factor)
-            coinc_node = findcoinc_exe.create_node(trig_files, hdfbank, veto_file,
+            coinc_node = findcoinc_exe.create_node(trig_files, hdfbank, 
+                                           veto_file, veto_name,
                                            group_str, tags=([str(i)]))
             bg_files[ctag] += coinc_node.output_files
             workflow.add_node(coinc_node)
@@ -646,7 +649,7 @@ def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_f
 
 
 def setup_interval_coinc(workflow, hdfbank, trig_files,
-                         veto_files, out_dir, tags=[]):
+                         veto_files, veto_names, out_dir, tags=[]):
     """
     This function sets up exact match coincidence and background estimation
     using a folded interval technique.
@@ -673,19 +676,19 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
     # Wall time knob and memory knob
     factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
 
-    tags, veto_file_groups = veto_files.categorize_by_attr('tags')
     stat_files = FileList()
-    for tag, veto_files in zip(tags, veto_file_groups):
+    for veto_file, veto_name in zip(veto_files, veto_names):
         bg_files = FileList()
         for i in range(factor):
             group_str = '%s/%s' % (i, factor)
-            coinc_node = findcoinc_exe.create_node(trig_files, hdfbank, veto_files,
+            coinc_node = findcoinc_exe.create_node(trig_files, hdfbank, 
+                                                   veto_file, veto_name,
                                                    group_str,
-                                                   tags= tag + [str(i)])
+                                                   tags= [veto_name, str(i)])
             bg_files += coinc_node.output_files
             workflow.add_node(coinc_node)
              
-        combine_node = combinecoinc_exe.create_node(bg_files, tags=tag)
+        combine_node = combinecoinc_exe.create_node(bg_files, tags=[veto_name])
         workflow.add_node(combine_node)
         stat_files += combine_node.output_files
         
