@@ -118,10 +118,10 @@ if len(zdata['stat']) > 0:
     
     fore_fan = fanmap_exc(zdata['stat'][zcid])
     ifar_exc = background_time / fore_fan
-    fap = numpy.clip(coinc_time / ifar_exc, 0, 1)
+    fap_exc = numpy.clip(coinc_time / ifar_exc, 0, 1)
     f['foreground/fan_exc'] = fore_fan
     f['foreground/ifar_exc'] = sec_to_year(ifar_exc)
-    f['foreground/fap_exc'] = fap
+    f['foreground/fap_exc'] = fap_exc
     
     logging.info('calculating injection backgrounds')
     ftimes = (zdata['time1'][zcid] + zdata['time2'][zcid]) / 2
