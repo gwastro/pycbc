@@ -1332,7 +1332,13 @@ class LalappsInspinjExecutable(Executable):
     The class used to create jobs for the lalapps_inspinj Executable.
     """
     current_retention_level = Executable.FINAL_RESULT
-    def create_node(self, segment):
+    def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
+                 tags=[]):
+        Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
+                            tags=tags)
+        self.cp = cp
+
+    def create_node(self, segment, exttrig_file=None):
         node = Node(self)
 
         if self.get_opt('write-compress') is not None:
@@ -1340,10 +1346,48 @@ class LalappsInspinjExecutable(Executable):
         else:
             ext = '.xml'
 
+        # This allows the desired number of injections to be given explicitly
+        # in the config file. Used for coh_PTF as segment length is unknown
+        # before run time.
+        if 'coh_PTF_inspiral' in self.cp.get('executables', 'inspiral'):
+            inj_num_opts = ['exttrig-inj-start', 'exttrig-inj-stop']
+            num_injs = dict()
+            for inj_num_opt in inj_num_opts:
+                if self.has_opt(inj_num_opt):
+                    opt_idx = node._options.index('--%s' % inj_num_opt)
+                    num_injs[inj_num_opt] = int(node._options.pop(opt_idx + 1))
+                    del node._options[opt_idx]
+            
+            num_injs['total'] = num_injs['exttrig-inj-stop'] \
+                                    - num_injs['exttrig-inj-start'] + 1
+            inj_tspace = float(segment[1] - segment[0]) / num_injs['total']
+            node.add_opt('--time-interval', inj_tspace)
+            node.add_opt('--time-step', inj_tspace)
+            
+            if self.get_opt('l-distr') == 'exttrig':
+                if exttrig_file is None:
+                    raise ValueError("Must supply an external trigger file if"
+                                     " option 'l-distr' is set to 'exttrig'")
+                node.add_opt('--exttrig-file', '%s' % exttrig_file.storage_path)
+            
+            if self.has_opt('jitter-skyloc'):
+                opt_idx = node._options.index('--jitter-skyloc')
+                jitter = str(node._options.pop(opt_idx + 1))
+                del node._options[opt_idx]
+                logging.info('--jitter-sigma-deg %s' % jitter)
+
+            if self.has_opt('jitter-skyloc-fermi'):
+                opt_idx = node._options.index('--jitter-skyloc-fermi')
+                jitter_fermi = str(node._options.pop(opt_idx + 1))
+                del node._options[opt_idx]
+                if jitter_fermi.lower() == 'true':
+                    logging.info('--apply-fermi-error')
+
         node.add_opt('--gps-start-time', segment[0])
         node.add_opt('--gps-end-time', segment[1])
         node.new_output_file_opt(segment, '.xml', '--output',
                                  store_file=self.retain_files)
+        logging.info(node._options)
         return node
 
 class PycbcTimeslidesExecutable(Executable):

@@ -37,7 +37,8 @@ from pycbc.workflow.jobsetup import LalappsInspinjExecutable
 from glue import segments
 
 def setup_injection_workflow(workflow, output_dir=None,
-                             injSectionName='injections', tags =[]):
+                             injSectionName='injections', exttrig_file=None,
+                             tags =[]):
     '''
     This function is the gateway for setting up injection-generation jobs in a
     workflow. It should be possible for this function to support a number
@@ -116,13 +117,13 @@ def setup_injection_workflow(workflow, output_dir=None,
 
         # Parse for options in ini file
         injectionMethod = workflow.cp.get_opt_tags("workflow-injections", 
-                                                 "injections-method", currTags)
+                                                   "injections-method", currTags)
 
         if injectionMethod in ["IN_WORKFLOW", "AT_RUNTIME"]:
             # FIXME: Add ability to specify different exes
             inj_job = LalappsInspinjExecutable(workflow.cp, injSectionName, tags=currTags,
-                                         out_dir=output_dir, ifos='HL')
-            node = inj_job.create_node(fullSegment)
+                                               out_dir=output_dir, ifos='HL')
+            node = inj_job.create_node(fullSegment, exttrig_file)
             if injectionMethod == "AT_RUNTIME":
                 workflow.execute_node(node)
             else:

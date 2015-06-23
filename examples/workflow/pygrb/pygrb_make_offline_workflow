@@ -77,6 +77,68 @@ def get_coh_PTF_files(cp, ifos, run_dir, bank_veto=False, summary_files=False):
         return file_list
 
 
+def make_exttrig_file(cp, ifos, sci_seg, out_dir):
+    '''
+    Make ExtTrig xml file
+    '''
+    xmldoc = ligolw.Document()
+    xmldoc.appendChild(ligolw.LIGO_LW())
+    tbl = lsctables.New(lsctables.ExtTriggersTable)
+    xmldoc.childNodes[-1].appendChild(tbl)
+    row = lsctables.ExtTriggersTable()
+    row.process_id = None 
+    row.det_alts = None 
+    row.det_band = None 
+    row.det_fluence = None 
+    row.det_fluence_int = None 
+    row.det_name = None 
+    row.det_peak = None 
+    row.det_peak_int = None 
+    row.det_snr = '' 
+    row.email_time = 0 
+    row.event_dec = 0.0 
+    row.event_dec_err = 0.0 
+    row.event_epoch = '' 
+    row.event_err_type = '' 
+    row.event_ra_err = 0.0 
+    row.start_time_ns = 0 
+    row.event_type = '' 
+    row.event_z = 0.0 
+    row.event_z_err = 0.0 
+    row.notice_comments = '' 
+    row.notice_id = '' 
+    row.notice_sequence = '' 
+    row.notice_time = 0 
+    row.notice_type = '' 
+    row.notice_url = '' 
+    row.obs_fov_dec = 0.0 
+    row.obs_fov_dec_width = 0.0 
+    row.obs_fov_ra = 0.0 
+    row.obs_fov_ra_width = 0.0 
+    row.obs_loc_ele = 0.0 
+    row.obs_loc_lat = 0.0 
+    row.obs_loc_long = 0.0 
+    row.ligo_fave_lho = 0.0 
+    row.ligo_fave_llo = 0.0 
+    row.ligo_delay = 0.0 
+    row.event_status = 0 
+    row.event_ra = float(cp.get("workflow", "ra"))
+    row.event_dec = float(cp.get("workflow", "dec"))
+    row.start_time = int(cp.get("workflow", "trigger-time"))
+    row.event_number_gcn = 9999
+    row.event_number_grb = str(cp.get("workflow", "trigger-name"))
+    tbl.extend([row])
+    xml_file_name = "triggerGRB%s.xml" % str(cp.get("workflow",
+                                                    "trigger-name"))
+    xml_file_path = os.path.join(out_dir, xml_file_name)
+    utils.write_filename(xmldoc, xml_file_path)
+    xml_file_url = "file://localhost%s/%s" % (out_dir, xml_file_name)
+    xml_file = _workflow.File(ifos, xml_file_name, sci_seg, file_url=xml_file_url)
+    xml_file.PFN(xml_file.cache_entry.path, site="local")
+    
+    return xml_file
+
+
 def make_cache(input_files, ifos, name, seg, cacheDir, tags=[]):
     """
     Place input_files into a cache file.
@@ -143,10 +205,11 @@ sciSegs, segsFileList = _workflow.setup_segment_generation(wflow, segDir)
 # Make coherent network segments
 onSrc, sciSegs = _workflow.get_triggered_coherent_segment(wflow, segDir,
                                                           sciSegs)
-# FIXME: The following two lines are/were crude hacks.
+# FIXME: The following lines are crude hacks.
 ifo = sciSegs.keys()[0]
 wflow.analysis_time = sciSegs[ifo][0]
 wflow.cp = set_start_end(wflow.cp, sciSegs[ifo][0][0], sciSegs[ifo][0][1])
+ext_file = None
 
 # Datafind
 dfDir = os.path.join(currDir, "datafind")
@@ -162,6 +225,10 @@ if os.path.basename(wflow.cp.get("executables", "inspiral")) \
     bank_veto_file = get_coh_PTF_files(wflow.cp, ifos, runDir, bank_veto=True)
     datafind_veto_files.extend(datafind_files)
     datafind_veto_files.extend(bank_veto_file)
+    
+    # Make ExtTrig xml file (needed for lalapps_inspinj and summary pages)
+    ext_file = make_exttrig_file(wflow.cp, ifos, sciSegs[ifo][0], baseDir)
+    all_files.extend(_workflow.FileList([ext_file]))
 
 all_files.extend(datafind_veto_files)
 
@@ -173,19 +240,12 @@ splitbank_files = _workflow.setup_splittable_workflow(wflow, bank_files, dfDir)
 all_files.extend(bank_files)
 all_files.extend(splitbank_files)
 
-'''
 # Injections
 if wflow.cp.has_section("workflow-injections"):
-    inj_config_file_name = wflow.cp.get("workflow-injections", "config-file")
-    inj_config_file_url = "file://localhost%s" % (inj_config_file_name)
-    inj_config_file = _workflow.File(ifos, inj_config_file_name,
-                                     wflow.analysis_time,
-                                     file_url=inj_config_file_url)
-    inj_config_file.PFN(inj_config_file.cache_entry.path, site="local")
-    inj_files.extend(_workflow.FileList([inj_config_file]))
-else:
-    inj_config_file = None
-'''
+    injDir = os.path.join(currDir, "injections")
+    injection_files = _workflow.setup_injection_workflow(wflow, injDir,
+                                                         exttrig_file=ext_file)
+    all_files.extend(injection_files)
 
 # On/off source matched filtering
 # TODO: Write coherent matched filtering code
