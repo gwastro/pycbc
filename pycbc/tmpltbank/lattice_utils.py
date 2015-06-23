@@ -126,23 +126,24 @@ def generate_anstar_3d_lattice(maxv1, minv1, maxv2, minv2, maxv3, minv3, \
         raise ImportError("A SWIG-wrapped install of lalpulsar is needed to use the anstar tiling functionality.")
 
     tiling = lalpulsar.CreateLatticeTiling(3)
-    lalpulsar.SetLatticeConstantBound(tiling, 0, minv1, maxv1)
-    lalpulsar.SetLatticeConstantBound(tiling, 1, minv2, maxv2)
-    lalpulsar.SetLatticeConstantBound(tiling, 2, minv3, maxv3)
+    lalpulsar.SetLatticeTilingConstantBound(tiling, 0, minv1, maxv1)
+    lalpulsar.SetLatticeTilingConstantBound(tiling, 1, minv2, maxv2)
+    lalpulsar.SetLatticeTilingConstantBound(tiling, 2, minv3, maxv3)
     # Make a 3x3 Euclidean lattice
     a = lal.gsl_matrix(3,3)
     a.data[0,0] = 1
     a.data[1,1] = 1
     a.data[2,2] = 1
-    lalpulsar.SetLatticeTypeAndMetric(tiling, lalpulsar.LATTICE_TYPE_ANSTAR,
-                                      a, mindist)
+    lalpulsar.SetTilingLatticeAndMetric(tiling, lalpulsar.TILING_LATTICE_ANSTAR,
+                                        a, mindist)
+    iterator = lalpulsar.CreateLatticeTilingIterator(tiling, 3, lalpulsar.TILING_ORDER_POSITIVE)
 
     vs1 = []
     vs2 = []
     vs3 = []
     count = 0
     curr_point = lal.gsl_vector(3)
-    while (lalpulsar.NextLatticePoint(tiling, curr_point) >= 0):
+    while (lalpulsar.NextLatticeTilingPoint(iterator, curr_point) > 0):
         vs1.append(curr_point.data[0])
         vs2.append(curr_point.data[1])
         vs3.append(curr_point.data[2])

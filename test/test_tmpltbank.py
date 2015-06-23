@@ -385,8 +385,10 @@ class TmpltbankTestClass(unittest.TestCase):
                                                           10, 0.03)
         arrz = numpy.array(arrz)
         stockGrid = numpy.loadtxt("%sstockAnstar3D.dat"%(self.dataDir))
-        diff = arrz - stockGrid
+        numpy.savetxt("new_example.dat", arrz)
         errMsg = "Calculated lattice differs from that expected."
+        self.assertTrue(len(arrz) == len(stockGrid), msg=errMsg)
+        diff = arrz - stockGrid
         self.assertTrue( not (diff > 1E-4).any(), msg=errMsg)
 
     def test_get_mass_distribution(self):
