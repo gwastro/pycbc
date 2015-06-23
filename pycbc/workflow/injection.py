@@ -48,7 +48,8 @@ def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None
     return node.output_files[0]  
 
 def setup_injection_workflow(workflow, output_dir=None,
-                             inj_section_name='injections', tags =[]):
+                             injSectionName='injections', exttrig_file=None,
+                             tags =[]):
     """
     This function is the gateway for setting up injection-generation jobs in a
     workflow. It should be possible for this function to support a number
@@ -102,8 +103,8 @@ def setup_injection_workflow(workflow, output_dir=None,
             raise ValueError(err_msg)
 
         # Parse for options in ini file
-        injection_method = workflow.cp.get_opt_tags("workflow-injections", 
-                                                 "injections-method", curr_tags)
+        injectionMethod = workflow.cp.get_opt_tags("workflow-injections", 
+                                                   "injections-method", currTags)
 
         if injection_method in ["IN_WORKFLOW", "AT_RUNTIME"]:
             # FIXME: Add ability to specify different exes
