@@ -143,7 +143,7 @@ def generate_anstar_3d_lattice(maxv1, minv1, maxv2, minv2, maxv3, minv3, \
     vs3 = []
     count = 0
     curr_point = lal.gsl_vector(3)
-    while (lalpulsar.NextLatticeTilingPoint(iterator, curr_point) >= 0):
+    while (lalpulsar.NextLatticeTilingPoint(iterator, curr_point) > 0):
         vs1.append(curr_point.data[0])
         vs2.append(curr_point.data[1])
         vs3.append(curr_point.data[2])
