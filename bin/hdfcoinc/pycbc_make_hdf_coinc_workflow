@@ -140,6 +140,9 @@ for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
     fsegs = glue.segments.segmentlist([f.segment for f in files])
     full_segs.append(pycbc.events.segments_to_file(fsegs, fname, name, ifo=ifo))
 
+    segs = glue.segments.segmentlist([f.metadata['data_seg'] for f in files])
+    pycbc.events.segments_to_file(segs, 'segments/%s-INSP_DATA.xml' % ifo, 'INSPIRAL_DATA', ifo=ifo)
+
 for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
     wf.make_segments_plot(workflow, files, 'results/analysis_time/segments', 
                           tags=['%s_VETO_SEGMENTS' % ifo])
@@ -153,6 +156,8 @@ if len(inj_files) > 0:
                                             output_dir, tags=['ALLINJ'])                                                
     wf.make_sensitivity_plot(workflow, found_inj, 'results/search_sensitivity', 
                                             tags=['ALLINJ'])
+
+
 
 # save global config file to results directory
 ini_file_path = 'results/configuration/configuration.ini'

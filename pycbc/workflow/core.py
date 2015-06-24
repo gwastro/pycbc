@@ -518,6 +518,7 @@ class Node(pegasus_workflow.Node):
                    directory=self.executable.out_dir, tags=all_tags,
                    use_tmp_subdirs=use_tmp_subdirs)
         self.add_output_opt(option_name, fil)
+        return fil
         
     @property    
     def output_files(self):
@@ -669,7 +670,7 @@ class File(pegasus_workflow.File):
         safe_dict['cache_entry'] = None
         return safe_dict   
 
-    def add_metadata(key, value):
+    def add_metadata(self, key, value):
         """ Add arbitrary metadata to this file """
         self.metadata[key] = value
 

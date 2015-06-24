@@ -588,15 +588,15 @@ class PyCBCInspiralExecutable(Executable):
                      int_gps_time_to_str(data_seg[1] - pad_data))
         node.add_opt('--trig-start-time', int_gps_time_to_str(valid_seg[0]))
         node.add_opt('--trig-end-time', int_gps_time_to_str(valid_seg[1]))
-        node.add_metadata('data_seg', data_seg)
         node.add_profile('condor', 'request_cpus', self.num_threads)        
 
         if self.injection_file is not None:
             node.add_input_opt('--injection-file', self.injection_file)
 
         # set the input and output files        
-        node.new_output_file_opt(valid_seg, self.ext, '--output', tags=tags,
+        fil = node.new_output_file_opt(valid_seg, self.ext, '--output', tags=tags,
                          store_file=self.retain_files, use_tmp_subdirs=True)
+        fil.add_metadata('data_seg', data_seg)
         node.add_input_list_opt('--frame-files', dfParents)
         node.add_input_opt('--bank-file', parent, )
 
