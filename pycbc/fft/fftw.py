@@ -1,9 +1,10 @@
-from pycbc.types import zeros
-import numpy
+from pycbc.types import zeros, complex64, complex128
+import numpy as _np
 import ctypes
 import functools
 import pycbc.scheme as _scheme
 from pycbc.libutils import get_ctypes_library
+from .core import _BaseFFT, _BaseIFFT
 
 # IMPORTANT NOTE TO PYCBC DEVELOPERS:
 # Because this module is loaded automatically when present, and because
@@ -287,8 +288,8 @@ def plan(size, idtype, odtype, direction, mlvl, aligned, nthreads, inplace):
             ip = zeros(size, dtype=idtype)
 
     # Get the plan function
-    idtype = numpy.dtype(idtype)
-    odtype = numpy.dtype(odtype)
+    idtype = _np.dtype(idtype)
+    odtype = _np.dtype(odtype)
     f = plan_function[str(idtype)][str(odtype)]
     f.restype = ctypes.c_void_p
 
@@ -329,6 +330,126 @@ def ifft(invec, outvec, prec, itype, otype):
                    get_measure_level(),(invec._data.isaligned and outvec._data.isaligned),
                    _scheme.mgr.state.num_threads, (invec.ptr == outvec.ptr))
     execute(theplan, invec, outvec)
+
+# Class based API
+
+# First, set up a lot of different ctypes functions:
+plan_many_c2c_f = float_lib.fftwf_plan_many_dft
+plan_many_c2c_f.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_int,
+                            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_int,
+                            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_int,
+                            ctypes.c_int, ctypes.c_uint]
+plan_many_c2c_f.restype = ctypes.c_void_p
+
+plan_many_c2c_d = double_lib.fftw_plan_many_dft
+plan_many_c2c_d.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_int,
+                            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_int,
+                            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_int,
+                            ctypes.c_int, ctypes.c_uint]
+plan_many_c2c_d.restype = ctypes.c_void_p
+
+plan_many_c2r_f = float_lib.fftwf_plan_many_dft_c2r
+plan_many_c2r_f.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_int,
+                            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_int,
+                            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_int,
+                            ctypes.c_uint]
+plan_many_c2r_f.restype = ctypes.c_void_p
+
+plan_many_c2r_d = double_lib.fftw_plan_many_dft_c2r
+plan_many_c2r_d.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_int,
+                            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_int,
+                            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_int,
+                            ctypes.c_uint]
+plan_many_c2r_d.restype = ctypes.c_void_p
+
+plan_many_r2c_f = float_lib.fftwf_plan_many_dft_r2c
+plan_many_r2c_f.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_int,
+                            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_int,
+                            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_int,
+                            ctypes.c_uint]
+plan_many_r2c_f.restype = ctypes.c_void_p
+
+plan_many_r2c_d = double_lib.fftw_plan_many_dft_r2c
+plan_many_r2c_d.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_int,
+                            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_int,
+                            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_int,
+                            ctypes.c_uint]
+plan_many_r2c_d.restype = ctypes.c_void_p
+
+# Now set up a dictionary indexed by (str(input_dtype), str(output_dtype)) to
+# translate input and output dtypes into the correct planning function.
+
+_plan_funcs_dict = { ('complex64', 'complex64') : plan_many_c2c_f,
+                     ('complex64', 'float32') : plan_many_r2c_f,
+                     ('float32', 'complex64') : plan_many_c2r_f,
+                     ('complex128', 'complex128') : plan_many_c2c_d,
+                     ('complex128', 'float64') : plan_many_r2c_d,
+                     ('float64', 'complex128') : plan_many_c2r_d }
+
+# To avoid multiple-inheritance, we set up a function that returns much
+# of the initialization that will need to be handled in __init__ of both
+# classes.
+
+def _fftw_setup(fftobj):
+        n = _np.asarray([fftobj.size], dtype=_np.int32)
+        inembed = _np.asarray([len(fftobj.invec)], dtype=_np.int32)
+        onembed = _np.asarray([len(fftobj.outvec)], dtype=_np.int32)
+        nthreads = _scheme.mgr.state.num_threads
+        if not _fftw_threaded_set:
+            set_threads_backend()
+        if nthreads != _fftw_current_nthreads:
+            _fftw_plan_with_nthreads(nthreads)  
+        mlvl = get_measure_level()
+        aligned = fftobj.invec.data.isaligned and fftobj.outvec.data.isaligned
+        flags = get_flag(mlvl, aligned)
+        plan_func = _plan_funcs_dict[ (str(fftobj.invec.dtype), str(fftobj.outvec.dtype)) ]
+        tmpin = zeros(len(fftobj.invec), dtype = fftobj.invec.dtype)
+        tmpout = zeros(len(fftobj.outvec), dtype = fftobj.outvec.dtype)
+        # C2C, forward
+        if fftobj.forward and (fftobj.outvec.dtype in [complex64, complex128]):
+            plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
+                             tmpin.ptr, inembed.ctypes.data, 1, fftobj.idist,
+                             tmpout.ptr, onembed.ctypes.data, 1, fftobj.odist,
+                             FFTW_FORWARD, flags)
+        # C2C, backward
+        elif not fftobj.forward and (fftobj.invec.dtype in [complex64, complex128]):
+            plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
+                             tmpin.ptr, inembed.ctypes.data, 1, fftobj.idist,
+                             tmpout.ptr, onembed.ctypes.data, 1, fftobj.odist,
+                             FFTW_BACKWARD, flags)
+        # R2C or C2R (hence no direction argument for plan creation)
+        else:
+            plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
+                             tmpin.ptr, inembed.ctypes.data, 1, fftobj.idist,
+                             tmpout.ptr, onembed.ctypes.data, 1, fftobj.odist,
+                             flags)
+        del tmpin
+        del tmpout
+        return plan
+
+class FFT(_BaseFFT):
+    def __init__(self, invec, outvec, nbatch=1, size=None):
+        super(FFT, self).__init__(invec, outvec, nbatch, size)
+        self.iptr = self.invec.ptr
+        self.optr = self.outvec.ptr
+        self._efunc = execute_function[str(self.invec.dtype)][str(self.outvec.dtype)]
+        self._efunc.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+        self.plan = _fftw_setup(self)
+
+    def execute(self):
+        self._efunc(self.plan, self.iptr, self.optr)
+
+class IFFT(_BaseIFFT):
+    def __init__(self, invec, outvec, nbatch=1, size=None):
+        super(IFFT, self).__init__(invec, outvec, nbatch, size)
+        self.iptr = self.invec.ptr
+        self.optr = self.outvec.ptr
+        self._efunc = execute_function[str(self.invec.dtype)][str(self.outvec.dtype)]
+        self._efunc.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+        self.plan = _fftw_setup(self)
+
+    def execute(self):
+        self._efunc(self.plan, self.iptr, self.optr)
 
 def insert_fft_options(optgroup):
     """

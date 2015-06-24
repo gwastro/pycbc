@@ -21,20 +21,15 @@
 #
 # =============================================================================
 #
-import pycuda.driver
-import pycbc.types
+import pycuda.driver, pycbc.types, numpy
 from pycuda.elementwise import ElementwiseKernel
-from pycuda.reduction import ReductionKernel
-from pycuda.tools import get_or_register_dtype
-from pycuda.tools import context_dependent_memoize
-from pycuda.tools import dtype_to_ctype
+from pycuda.tools import get_or_register_dtype, context_dependent_memoize, dtype_to_ctype
 from pytools import match_precision, memoize_method
 from pycuda.gpuarray import _get_common_dtype, empty, GPUArray
 import pycuda.gpuarray
-from pycuda.scan import InclusiveScanKernel
-import numpy as np
 from mako.template import Template
 from pycbc.types import Array
+from pycuda.compiler import SourceModule
 
 @context_dependent_memoize
 def get_accum_diff_sq_kernel(dtype_x, dtype_z):
@@ -45,212 +40,160 @@ def get_accum_diff_sq_kernel(dtype_x, dtype_z):
                 },
             "x[i] += norm(z[i]) ",
             "chisq_accum")    
- 
+             
 def chisq_accum_bin(chisq, q):
     krnl = get_accum_diff_sq_kernel(chisq.dtype, q.dtype)
     krnl(chisq.data, q.data)
+
+
+chisqkernel = Template("""
+#include <stdio.h>
+__global__ void power_chisq_at_points_${NP}(float2* corr, float2* outc, unsigned int N,
+                                      %for p in range(NP):
+                                        float phase${p},
+                                      %endfor
+                                      unsigned int* kmin, 
+                                      unsigned int* kmax,
+                                      unsigned int* bv, 
+                                      unsigned int nbins){
+    __shared__ unsigned int s;
+    __shared__ unsigned int e;
+    __shared__ float2 chisq[${NT} * ${NP}];
     
-@context_dependent_memoize
-def call_prepare(self, sz, allocator):
-    MAX_BLOCK_COUNT = 1024
-    SMALL_SEQ_COUNT = 4        
-
-    if sz <= self.block_size*SMALL_SEQ_COUNT*MAX_BLOCK_COUNT:
-        total_block_size = SMALL_SEQ_COUNT*self.block_size
-        block_count = (sz + total_block_size - 1) // total_block_size
-        seq_count = SMALL_SEQ_COUNT
-    else:
-        block_count = MAX_BLOCK_COUNT
-        macroblock_size = block_count*self.block_size
-        seq_count = (sz + macroblock_size - 1) // macroblock_size
-
-    if block_count == 1:
-        result = empty((), self.dtype_out, allocator)
-    else:
-        result = empty((block_count,), self.dtype_out, allocator)
-
-    grid_size = (block_count, 1)
-    block_size =  (self.block_size, 1, 1)
-
-    return result, block_count, seq_count, grid_size, block_size
-
-class LowerLatencyReductionKernel(ReductionKernel):
-    def __init__(self, dtype_out,
-            neutral, reduce_expr, map_expr=None, arguments=None,
-            name="reduce_kernel", keep=False, options=None, preamble=""):
-            
-            ReductionKernel.__init__(self, dtype_out,
-                neutral, reduce_expr, map_expr, arguments,
-                name, keep, options, preamble)
-
-            self.shared_size=self.block_size*self.dtype_out.itemsize
-
-
-    def __call__(self, *args, **kwargs):
+    // load integration boundaries (might not be bin boundaries if bin is large)
+    if (threadIdx.x == 0){
+        s = kmin[blockIdx.x];
+        e = kmax[blockIdx.x];
+    }
     
-        final_result = kwargs.pop("result", None)
+    % for p in range(NP):
+        chisq[threadIdx.x + ${NT*p}].x = 0;
+        chisq[threadIdx.x + ${NT*p}].y = 0;
+    % endfor   
+    __syncthreads();
+
+    // calculate the chisq integral for each thread
+    // sliding reduction for each thread from s, e
+    for (int i = threadIdx.x + s; i < e; i += blockDim.x){
+        float re, im;
+        float2 qt = corr[i];
         
-        f = self.stage1_func
-        arg_types = self.stage1_arg_types
-        stage1_args = args
-        s1_invocation_args = [] 
-        for arg in args:
-            if isinstance(arg, GPUArray):
-                s1_invocation_args.append(arg.gpudata)
+        %for p in range(NP):
+            __sincosf(phase${p} * i, &im, &re);
+            chisq[threadIdx.x + ${NT*p}].x += re * qt.x - im * qt.y;
+            chisq[threadIdx.x + ${NT*p}].y += im * qt.x + re * qt.y;
+        %endfor   
+    }
+
+    float x, y, x2, y2;
+    // logarithmic reduction within thread block
+    for (int j=${NT} / 2; j>=1; j/=2){
+        if (threadIdx.x <j){
+            %for p in range(NP):
+                __syncthreads();
+                x = chisq[threadIdx.x + ${NT*p}].x;
+                y = chisq[threadIdx.x + ${NT*p}].y;
+                x2 = chisq[threadIdx.x + j + ${NT*p}].x;
+                y2 = chisq[threadIdx.x + j + ${NT*p}].y;
+                 __syncthreads();
+                chisq[threadIdx.x + ${NT*p}].x = x + x2;
+                chisq[threadIdx.x + ${NT*p}].y = y + y2;
+            %endfor
+        }            
+    }
+  
+    if (threadIdx.x == 0){
+        % for p in range(NP):
+            atomicAdd(&outc[bv[blockIdx.x] + nbins * ${p}].x, chisq[0 + ${NT*p}].x);
+            atomicAdd(&outc[bv[blockIdx.x] + nbins * ${p}].y, chisq[0 + ${NT*p}].y);
+        % endfor
+    }
+
+}
+""")
+
+_pchisq_cache = {}
+def get_pchisq_fn(np):
+    if np not in _pchisq_cache:
+        nt = 256
+        mod = SourceModule(chisqkernel.render(NT=nt, NP=np))
+        fn = mod.get_function("power_chisq_at_points_%s" % (np))
+        fn.prepare("PPI" + "f" * np + "PPPI")
+        _pchisq_cache[np] = (fn, nt)
+    return _pchisq_cache[np]
+
+_bcache = {}
+def get_cached_bin_layout(bins):
+    key = id(bins)
+    if key not in _bcache:
+        bv, kmin, kmax = [], [], []
+        for i in range(len(bins)-1):
+            s, e = bins[i], bins[i+1]
+            BS = 4096
+            if (e - s) < BS:
+                bv.append(i)
+                kmin.append(s)
+                kmax.append(e)
             else:
-                s1_invocation_args.append(arg)
-        sz = args[0].size
+                k = list(numpy.arange(s, e, BS/2))
+                kmin += k
+                kmax += k[1:] + [e]
+                bv += [i]*len(k)
+        bv = pycuda.gpuarray.to_gpu_async(numpy.array(bv, dtype=numpy.uint32)) 
+        kmin = pycuda.gpuarray.to_gpu_async(numpy.array(kmin, dtype=numpy.uint32))
+        kmax = pycuda.gpuarray.to_gpu_async(numpy.array(kmax, dtype=numpy.uint32))  
+        _bcache[key] = (kmin, kmax, bv) 
+    return _bcache[key]
 
-        result, block_count, seq_count, grid_size, block_size = call_prepare(self, sz, args[0].allocator)
+def shift_sum(corr, points, bins):
+    corr = corr.data
+    kmin, kmax, bv = get_cached_bin_layout(bins)
+    nb = len(kmin)
+    N = numpy.uint32(len(corr))
+    nbins = numpy.uint32(len(bins) - 1)
+    outc = pycuda.gpuarray.zeros((len(points), nbins), dtype=numpy.complex64)
+    outp = outc.reshape(nbins * len(points))
+    phase = [numpy.float32(p * 2.0 * numpy.pi / N) for p in points]
 
-        f(grid_size, block_size, None,
-                *([result.gpudata]+s1_invocation_args+[seq_count, sz]),
-                shared_size=self.shared_size)
-
-        while True:
-            f = self.stage2_func
-            arg_types = self.stage2_arg_types
-            sz = result.size
-            result2 = result
-            result, block_count, seq_count, grid_size, block_size = call_prepare(self, sz, args[0].allocator)
-
-            if block_count == 1 and final_result is not None:
-                result = final_result
-                
-            f(grid_size, block_size, None,
-                    *([result.gpudata, result2.gpudata]+s1_invocation_args+[seq_count, sz]),
-                    shared_size=self.shared_size)
-
-            if block_count == 1:
-                return result
-                
-   
-@context_dependent_memoize               
-def get_shift_kernel(num_shifts):
-    shift_preamble = Template("""
-    struct shift_t${n}{
-        % for i in range(n):
-             float vr${i};
-             float vi${i};
-        % endfor
-        
-        __device__
-        shift_t${n}(){}
-        
-        __device__
-        shift_t${n}(shift_t${n} const &src): 
-                    % for i in range(n-1):
-                        vr${i}(src.vr${i}), 
-                        vi${i}(src.vi${i}),
-                    % endfor
-                    vr${n-1}(src.vr${n-1}), 
-                    vi${n-1}(src.vi${n-1})
-                    {}
-                   
-        __device__
-        shift_t${n}(shift_t${n} const volatile &src): 
-                    % for i in range(n-1):
-                        vr${i}(src.vr${i}), 
-                        vi${i}(src.vi${i}),
-                    % endfor
-                    vr${n-1}(src.vr${n-1}), 
-                    vi${n-1}(src.vi${n-1})
-                    {}
-        
-        __device__
-        shift_t${n} volatile &operator=( shift_t${n} const &src) volatile{
-            % for i in range(n):
-                 vr${i} = src.vr${i};
-                 vi${i} = src.vi${i};
-            % endfor
-            return *this;
-        }
-    };
-    
-
-
-    __device__ shift_t${n} shift_red(shift_t${n} a, shift_t${n} b){
-        % for i in range(n):
-             a.vr${i} += b.vr${i};
-             a.vi${i} += b.vi${i};
-        % endfor
-        return a;
-    }
-
-    __device__ shift_t${n} shift_start(){
-        shift_t${n} t;
-        % for i in range(n):
-             t.vr${i}=0;
-             t.vi${i}=0;
-        % endfor
-        return t;
-    }
-
-    __device__ shift_t${n} shift_map(pycuda::complex<float> x, 
-                               % for i in range(n):
-                                    float shift${i},
-                               % endfor
-                               float offset, float slen){
-        shift_t${n} t; 
-        float pphase = offset * 2 * 3.141592653  / slen;
-        float  pr, pi;
-        
-        % for i in range(n):
-            __sincosf(pphase * shift${i}, &pi, &pr);
-           
-            // Phase shift the input data (x) to correspond to a time shift
-            t.vr${i} = x._M_re * pr - x._M_im * pi;
-            t.vi${i} = x._M_re * pi + x._M_im * pr;  
-        % endfor
-        return t;
-    }
-    """).render(n = num_shifts)
-    
-    shift_map_args = ""
-    shift_krnl_args = ""
-    for i in range(num_shifts):
-        shift_map_args += " shift%s," % i
-        shift_krnl_args += " float shift%s, " % i        
-
-    sd = np.dtype([("v1", np.complex64, num_shifts)])
-    shift_t = get_or_register_dtype('shift_t%s' % num_shifts, sd)
-
-    shift_krnl = LowerLatencyReductionKernel(shift_t, neutral="shift_start()",
-                reduce_expr="shift_red(a, b)", map_expr="shift_map(x[i], " + shift_map_args + " offset+i, slen)",
-                arguments="pycuda::complex<float> *x," + shift_krnl_args + "float offset, float slen ",
-                preamble=shift_preamble)
-                
-    return shift_krnl
-
-chisq_buf = pycbc.types.zeros(4096*256, dtype=np.complex64)
-
-def shift_sum(v1, shifts, slen=None, offset=0):
-    global chisq_buf
-    vlen = len(v1)
-    shifts = list(shifts)
-    if slen is None:
-        slen = vlen
-    
-    n = len(shifts)
-    group_size = 10
-    
-    num_full_pass =  n // group_size
-    remainder = n - group_size * num_full_pass
-    result = chisq_buf
-
-    for i in range(num_full_pass):
-        f = result[i*group_size:(i+1)*group_size]
-        shift_krnl = get_shift_kernel(group_size) 
-        args = [v1.data] + shifts[i*group_size:(i+1)*group_size] + [offset, slen]
-        shift_krnl(*args, result=f.data)
-        
-    if remainder > 0:
-        f = result[group_size*num_full_pass:n]
-        shift_krnl = get_shift_kernel(remainder) 
-        args = [v1.data] + shifts[group_size*num_full_pass:n] + [offset, slen]
-        shift_krnl(*args, result=f.data)
-        
-    return Array(result[0:n], copy=False)
-   
+    np = len(points)
+    while np > 0:
+        if np >= 4:
+            fn, nt = get_pchisq_fn(4)
+            fn.prepared_call((nb, 1), (nt, 1, 1), 
+               corr.gpudata, outp.gpudata, N, phase[0], phase[1], phase[2], phase[3], 
+               kmin.gpudata, kmax.gpudata, bv.gpudata, nbins)
+            outp = outp[4*nbins:]
+            phase = phase[4:]
+            np -= 4    
+            continue
+        elif np >=3:
+            fn, nt = get_pchisq_fn(3)
+            fn.prepared_call((nb, 1), (nt, 1, 1), 
+                corr.gpudata, outp.gpudata, N, phase[0], phase[1], phase[2], 
+                kmin.gpudata, kmax.gpudata, bv.gpudata, nbins)
+            np -= 3
+            outp = outp[3*nbins:]
+            phase = phase[3:]
+            continue
+        elif np >=2:
+            fn, nt = get_pchisq_fn(2)
+            fn.prepared_call((nb, 1), (nt, 1, 1), 
+                corr.gpudata, outp.gpudata, N, phase[0], phase[1],
+                kmin.gpudata, kmax.gpudata, bv.gpudata, nbins)
+            np -= 2
+            outp = outp[2*nbins:]
+            phase=phase[2:]
+            continue
+        elif np == 1:
+            fn, nt = get_pchisq_fn(1)
+            fn.prepared_call((nb, 1), (nt, 1, 1), 
+                corr.gpudata, outp.gpudata, N, phase[0], 
+                kmin.gpudata, kmax.gpudata, bv.gpudata, nbins)
+            np -= 1
+            outp = outp[1*nbins:]
+            phase=phase[1:]
+            continue
+    o = outc.get()
+    return (o.conj() * o).sum(axis=1).real
     
     

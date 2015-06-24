@@ -16,6 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import sys
 import logging, argparse, numpy, itertools
 import pycbc
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC
@@ -131,6 +132,7 @@ parser.add_argument("--keep-loudest-interval", type=float,
                     help="Window in seconds to maximize triggers over bank")
 parser.add_argument("--keep-loudest-num", type=int, 
                     help="Number of triggers to keep from each maximization interval")
+parser.add_argument("--gpu-callback-method", default='none')
 
 # Add options groups
 psd.insert_psd_option_group(parser)
@@ -191,30 +193,6 @@ with ctx:
     psds = associate_psd(strain_segments, gwstrain, segments, 
                   opt.psd_recalculate_segments, flen, delta_f, flow)
 
-    matched_filter = MatchedFilterControl(opt.low_frequency_cutoff, None,
-                                   opt.snr_threshold, tlen, delta_f, complex64,
-                                   downsample_factor=opt.downsample_factor,
-                                   upsample_threshold=opt.upsample_threshold,
-                                   upsample_method=opt.upsample_method)
-
-    bank_chisq = vetoes.SingleDetBankVeto(opt.bank_veto_bank_file,
-                                          flen, delta_f, flow, complex64, 
-                                          phase_order=opt.order, 
-                                          approximant=opt.approximant)
-
-    power_chisq = vetoes.SingleDetPowerChisq(opt.chisq_bins, opt.chisq_snr_threshold)
-    autochisq = vetoes.SingleDetAutoChisq(opt.autochi_stride,
-                                 opt.autochi_number_points, 
-                                 onesided=opt.autochi_onesided,
-                                 twophase=opt.autochi_two_phase,
-                                 reverse_template=opt.autochi_reverse_template,
-                                 take_maximum_value=opt.autochi_max_valued,
-                                 maximal_value_dof=opt.autochi_max_valued_dof)
-
-    logging.info("Overwhitening frequency-domain data segments")
-    for seg in segments:
-        seg /= seg.psd
-
     # storage for values and types to be passed to event manager
     out_types = {
         'time_index'     : int,
@@ -239,26 +217,63 @@ with ctx:
     event_mgr = events.EventManager(opt, names,
                                         [out_types[n] for n in names], psd=psds[0])
 
+    if len(strain_segments.segment_slices) == 0:
+        logging.info("--filter-inj-only specified and no injections in analysis time")
+        event_mgr.finalize_template_events()
+        event_mgr.write_events(opt.output)
+        logging.info("Finished")
+        sys.exit(0)
+
+    template_mem = zeros(tlen, dtype = complex64)
+    cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
+
+    matched_filter = MatchedFilterControl(opt.low_frequency_cutoff, None,
+                                   opt.snr_threshold, tlen, delta_f, complex64,
+                                   segments, template_mem, cluster_window,
+                                   downsample_factor=opt.downsample_factor,
+                                   upsample_threshold=opt.upsample_threshold,
+                                   upsample_method=opt.upsample_method,
+                                   gpu_callback_method=opt.gpu_callback_method)
+
+    bank_chisq = vetoes.SingleDetBankVeto(opt.bank_veto_bank_file,
+                                          flen, delta_f, flow, complex64, 
+                                          phase_order=opt.order, 
+                                          approximant=opt.approximant)
+
+    power_chisq = vetoes.SingleDetPowerChisq(opt.chisq_bins, opt.chisq_snr_threshold)
+    autochisq = vetoes.SingleDetAutoChisq(opt.autochi_stride,
+                                 opt.autochi_number_points, 
+                                 onesided=opt.autochi_onesided,
+                                 twophase=opt.autochi_two_phase,
+                                 reverse_template=opt.autochi_reverse_template,
+                                 take_maximum_value=opt.autochi_max_valued,
+                                 maximal_value_dof=opt.autochi_max_valued_dof)
+
+    logging.info("Overwhitening frequency-domain data segments")
+    for seg in segments:
+        seg /= seg.psd
+
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, flen, delta_f,
-                    flow, dtype=complex64, phase_order=opt.order,
-                    taper=opt.taper_template, approximant=opt.approximant,
-                    out=zeros(tlen, dtype=complex64))
+                    flow, dtype = complex64, phase_order = opt.order,
+                    taper = opt.taper_template, approximant = opt.approximant,
+                    out = template_mem)
 
     for t_num, template in enumerate(bank):
-        event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq(psds[0]))
-        if opt.cluster_method == "window":
-            cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
-        elif opt.cluster_method == "template":
-            cluster_window = int(template.chirp_length * gwstrain.sample_rate)
+        event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq(segments[0].psd))
+        #if opt.cluster_method == "window":
+            # At present, moved above with class-based approach
+            #cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
+        if opt.cluster_method == "template":
+            #cluster_window = int(template.chirp_length * gwstrain.sample_rate)
+            raise ValueError("FIXME: template clustering not supported yet with optimizations!")
 
         for s_num, stilde in enumerate(segments):
             logging.info("Filtering template %d/%d segment %d/%d" % 
                          (t_num + 1, len(bank), s_num + 1, len(segments)))
 
             snr, norm, corr, idx, snrv = \
-               matched_filter.matched_filter_and_cluster(template,
-                          template.sigmasq(stilde.psd), stilde, cluster_window)
+               matched_filter.matched_filter_and_cluster(s_num, template.sigmasq(stilde.psd))
 
             if not len(idx):
                 continue
