@@ -33,7 +33,7 @@ import os
 import logging
 import urllib, urlparse
 from pycbc.workflow.core import File, FileList, make_analysis_dir
-from pycbc.workflow.jobsetup import LalappsInspinjExecutable
+from pycbc.workflow.jobsetup import LalappsInspinjExecutable, LigolwCBCJitterSkylocExecutable
 from glue import segments
 
 def setup_injection_workflow(workflow, output_dir=None,
@@ -74,6 +74,7 @@ def setup_injection_workflow(workflow, output_dir=None,
     make_analysis_dir(output_dir)
     # Get full analysis segment for output file naming
     fullSegment = workflow.analysis_time
+    ifos = workflow.ifos
 
     # Identify which injections to do by presence of sub-sections in
     # the configuration file
@@ -117,18 +118,21 @@ def setup_injection_workflow(workflow, output_dir=None,
 
         # Parse for options in ini file
         injectionMethod = workflow.cp.get_opt_tags("workflow-injections", 
-                                                   "injections-method", currTags)
+                                                   "injections-method",
+                                                   currTags)
 
         if injectionMethod in ["IN_WORKFLOW", "AT_RUNTIME"]:
             # FIXME: Add ability to specify different exes
-            inj_job = LalappsInspinjExecutable(workflow.cp, injSectionName, tags=currTags,
-                                               out_dir=output_dir, ifos='HL')
-            node = inj_job.create_node(fullSegment, exttrig_file)
+            inj_job = LalappsInspinjExecutable(workflow.cp, injSectionName,
+                                               out_dir=output_dir, ifos='HL',
+                                               tags=currTags)
+            node = inj_job.create_node(fullSegment)
             if injectionMethod == "AT_RUNTIME":
                 workflow.execute_node(node)
             else:
                 workflow.add_node(node)
             injFile = node.output_files[0]
+            inj_files.append(injFile)
         elif injectionMethod == "PREGENERATED":
             injectionFilePath = workflow.cp.get_opt_tags("workflow-injections",
                                       "injections-pregenerated-file", currTags)
@@ -137,12 +141,39 @@ def setup_injection_workflow(workflow, output_dir=None,
             injFile = File('HL', 'PREGEN_INJFILE', fullSegment, file_url,
                                 tags=currTags)
             injFile.PFN(injectionFilePath, site='local')
+            inj_files.append(injFile)
+        elif injectionMethod in ["IN_COH_PTF_WORKFLOW", "AT_COH_PTF_RUNTIME"]:
+            inj_job = LalappsInspinjExecutable(workflow.cp, injSectionName,
+                                               out_dir=output_dir, ifos=ifos,
+                                               tags=currTags)
+            node = inj_job.create_node(fullSegment, exttrig_file)
+            if injectionMethod == "AT_COH_PTF_RUNTIME":
+                workflow.execute_node(node)
+            else:
+                workflow.add_node(node)
+            injFile = node.output_files[0]
+
+            if workflow.cp.has_option(section, "jitter-skyloc"):
+                jitter_job = LigolwCBCJitterSkylocExecutable(workflow.cp, 
+                                                             'jitter_skyloc',
+                                                             tags=currTags,
+                                                             out_dir=output_dir,
+                                                             ifos=ifos)
+                node = jitter_job.create_node(injFile, fullSegment,
+                                              section=section)
+                if injectionMethod == "AT_COH_PTF_RUNTIME":
+                    workflow.execute_node(node)
+                else:
+                    workflow.add_node(node)
+                jitFile = node.output_files[0]
+                inj_files.append(jitFile)
+            else:
+                inj_files.append(injFile)
         else:
             errMsg = "Injection method must be one of IN_WORKFLOW, "
             errMsg += "AT_RUNTIME or PREGENERATED. Got %s." %(injectionMethod)
             raise ValueError(errMsg)
 
-        inj_files.append(injFile)
         inj_tags.append(inj_tag)
     logging.info("Leaving injection module.")
     return inj_files, inj_tags
