@@ -18,7 +18,7 @@ parser.add_argument('--bin-type', choices=['spin', 'mchirp',
                    help="Optional, parameter bin boundaries")
 parser.add_argument('--sig-bins', nargs='*',
                    help="Optional, boundaries of x-axis significance bins"),
-parser.add_argument('--sig-type', choices=['ifar', 'fap'], default='ifar',
+parser.add_argument('--sig-type', choices=['ifar', 'fap', 'stat'], default='ifar',
                    help="Optional, x-axis significance type")
 parser.add_argument('--min-dist', type=float, 
                    help="Optional, minimum sensitive distance to plot")
@@ -79,6 +79,15 @@ labels['mchirp'] = "$ M_{chirp} \in [%5.2f, %5.2f] M_\odot $"
 labels['total_mass'] = "$ M_{total} \in [%5.2f, %5.2f] M_\odot $"
 labels['spin'] = "$Eff Spin \in [%5.2f, %5.2f] $"
 
+if args.sig_type == 'stat':
+    sig = f['found_after_vetoes/stat'][:]
+    sig_exc = None
+    xlabel = 'Ranking Statistic Value'
+    if args.sig_bins:
+        x_values = [float(v) for v in args.sig_bins]
+    else:
+        x_values = 10 ** (numpy.arange(9, 14, .05))
+
 if args.sig_type == 'ifar':
     sig = f['found_after_vetoes/ifar'][:]
     sig_exc = f['found_after_vetoes/ifar_exc'][:]
@@ -110,6 +119,9 @@ for j in range(len(args.bins)-1):
     
     # Plot both the inclusive and exclusive significance 
     for sig_val, do_label, alpha in zip(fvalues, do_labels, alphas):
+        if sig_val is None:
+            continue
+            
         left =  float(args.bins[j])
         right = float(args.bins[j+1])
         binval = values[args.bin_type]
