@@ -588,7 +588,7 @@ class PyCBCInspiralExecutable(Executable):
                      int_gps_time_to_str(data_seg[1] - pad_data))
         node.add_opt('--trig-start-time', int_gps_time_to_str(valid_seg[0]))
         node.add_opt('--trig-end-time', int_gps_time_to_str(valid_seg[1]))
-
+        node.add_metadata('data_seg', data_seg)
         node.add_profile('condor', 'request_cpus', self.num_threads)        
 
         if self.injection_file is not None:

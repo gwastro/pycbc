@@ -599,6 +599,7 @@ class File(pegasus_workflow.File):
             e.g. this might be ["BNSINJECTIONS" ,"LOWMASS","CAT_2_VETO"].
             These are used in file naming.
         """
+        self.metadata = {}
         
         # Set the science metadata on the file
         if isinstance(ifos, (str, unicode)):
@@ -667,6 +668,10 @@ class File(pegasus_workflow.File):
         safe_dict = copy.copy(self.__dict__)
         safe_dict['cache_entry'] = None
         return safe_dict   
+
+    def add_metadata(key, value):
+        """ Add arbitrary metadata to this file """
+        self.metadata[key] = value
 
     @property
     def ifo(self):
