@@ -1341,25 +1341,61 @@ class LalappsInspinjExecutable(Executable):
                                      " option 'l-distr' is set to 'exttrig'")
                 node.add_opt('--exttrig-file', '%s' % exttrig_file.storage_path)
             
+            if (self.has_opt('jitter-skyloc') or \
+                    self.has_opt('jitter-skyloc-fermi')):
+                node.new_output_file_opt(segment, '.xml.prejitter', '--output',
+                                         store_file=self.retain_files)
+            else:
+                node.new_output_file_opt(segment, '.xml', '--output',
+                                         store_file=self.retain_files)
+
             if self.has_opt('jitter-skyloc'):
                 opt_idx = node._options.index('--jitter-skyloc')
                 jitter = str(node._options.pop(opt_idx + 1))
                 del node._options[opt_idx]
-                logging.info('--jitter-sigma-deg %s' % jitter)
 
             if self.has_opt('jitter-skyloc-fermi'):
                 opt_idx = node._options.index('--jitter-skyloc-fermi')
                 jitter_fermi = str(node._options.pop(opt_idx + 1))
                 del node._options[opt_idx]
-                if jitter_fermi.lower() == 'true':
-                    logging.info('--apply-fermi-error')
-
+        else:
+            node.new_output_file_opt(segment, '.xml', '--output',
+                                     store_file=self.retain_files)
+        
         node.add_opt('--gps-start-time', segment[0])
         node.add_opt('--gps-end-time', segment[1])
-        node.new_output_file_opt(segment, '.xml', '--output',
->>>>>>> Generate injection files at runtime (no jitter)
-                                 store_file=self.retain_files)
-        logging.info(node._options)
+        return node
+
+class LigolwCBCJitterSkylocExecutable(Executable):
+    """
+    The class used to create jobs for the ligolw_cbc_skyloc_jitter executable.
+    """
+    current_retention_level = Executable.FINAL_RESULT
+    def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
+                 tags=[]):
+        Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
+                            tags=tags)
+        self.cp = cp
+        self.out_dir = out_dir
+                    
+    def create_node(self, parent, segment, section, tags=[]):
+        if not parent:
+            raise ValueError("Must provide an input file.")
+        node = Node(self)
+        
+        if self.cp.has_option(section, 'jitter-skyloc-fermi'):
+            if self.cp.get(section, 'jitter-skyloc-fermi').lower() == 'true':
+                node.add_opt('--apply-fermi-error')
+
+        jitter_sigma = self.cp.get(section, 'jitter-skyloc')
+        node.add_opt('--jitter-sigma-deg', jitter_sigma)
+        
+        out_name = '_'.join(section.split('-'))
+        output_file = File(parent.ifo_list, out_name,
+                           segment, extension='.xml', store_file=True,
+                           directory=self.out_dir, tags=tags)
+        node.add_output_opt('--output-file', output_file)
+        node.add_input_arg(parent)
         return node
 
 class PycbcTimeslidesExecutable(Executable):

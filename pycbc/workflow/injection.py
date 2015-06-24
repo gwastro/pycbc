@@ -31,7 +31,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 
 import logging, urllib, urlparse
 from pycbc.workflow.core import File, FileList, make_analysis_dir, Executable
-from pycbc.workflow.jobsetup import LalappsInspinjExecutable
+from pycbc.workflow.jobsetup import LalappsInspinjExecutable, LigolwCBCJitterSkylocExecutable
 
 def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -48,7 +48,7 @@ def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None
     return node.output_files[0]  
 
 def setup_injection_workflow(workflow, output_dir=None,
-                             injSectionName='injections', exttrig_file=None,
+                             inj_section_name='injections', exttrig_file=None,
                              tags =[]):
     """
     This function is the gateway for setting up injection-generation jobs in a
@@ -86,7 +86,10 @@ def setup_injection_workflow(workflow, output_dir=None,
     
     # Get full analysis segment for output file naming
     full_segment = workflow.analysis_time
+    ifos = workflow.ifos
 
+    # Identify which injections to do by presence of sub-sections in
+    # the configuration file
     inj_tags = []
     inj_files = FileList([])  
 
@@ -103,37 +106,63 @@ def setup_injection_workflow(workflow, output_dir=None,
             raise ValueError(err_msg)
 
         # Parse for options in ini file
-        injectionMethod = workflow.cp.get_opt_tags("workflow-injections", 
-                                                   "injections-method", currTags)
+        injection_method = workflow.cp.get_opt_tags("workflow-injections", 
+                                                    "injections-method",
+                                                    curr_tags)
 
         if injection_method in ["IN_WORKFLOW", "AT_RUNTIME"]:
             # FIXME: Add ability to specify different exes
-            inj_job = LalappsInspinjExecutable(workflow.cp, inj_section_name, tags=curr_tags,
-                                         out_dir=output_dir, ifos='HL')
+            inj_job = LalappsInspinjExecutable(workflow.cp, inj_section_name,
+                                               out_dir=output_dir, ifos='HL',
+                                               tags=curr_tags)
             node = inj_job.create_node(full_segment)
-            
             if injection_method == "AT_RUNTIME":
                 workflow.execute_node(node)
             else:
                 workflow.add_node(node)
-                
             inj_file = node.output_files[0]
-            
+            inj_files.append(inj_file)
         elif injection_method == "PREGENERATED":
             injectionFilePath = workflow.cp.get_opt_tags("workflow-injections",
                                       "injections-pregenerated-file", curr_tags)
-            file_url = urlparse.urljoin('file:', 
+            file_url = urlparse.urljoin('file:',
                                         urllib.pathname2url(injectionFilePath))
             inj_file = File('HL', 'PREGEN_inj_file', full_segment, file_url,
-                                        tags=curr_tags)
+                            tags=curr_tags)
             inj_file.PFN(injectionFilePath, site='local')
-            
+            inj_files.append(inj_file)
+        elif injection_method in ["IN_COH_PTF_WORKFLOW", "AT_COH_PTF_RUNTIME"]:
+            inj_job = LalappsInspinjExecutable(workflow.cp, inj_section_name,
+                                               out_dir=output_dir, ifos=ifos,
+                                               tags=curr_tags)
+            node = inj_job.create_node(fullSegment, exttrig_file)
+            if injection_method == "AT_COH_PTF_RUNTIME":
+                workflow.execute_node(node)
+            else:
+                workflow.add_node(node)
+            inj_file = node.output_files[0]
+
+            if workflow.cp.has_option(section, "jitter-skyloc"):
+                jitter_job = LigolwCBCJitterSkylocExecutable(workflow.cp, 
+                                                             'jitter_skyloc',
+                                                             tags=curr_tags,
+                                                             out_dir=output_dir,
+                                                             ifos=ifos)
+                node = jitter_job.create_node(inj_file, fullSegment,
+                                              section=section)
+                if injection_method == "AT_COH_PTF_RUNTIME":
+                    workflow.execute_node(node)
+                else:
+                    workflow.add_node(node)
+                jit_file = node.output_files[0]
+                inj_files.append(jit_file)
+            else:
+                inj_files.append(inj_file)
         else:
             err = "Injection method must be one of IN_WORKFLOW, "
             err += "AT_RUNTIME or PREGENERATED. Got %s." % (injection_method)
             raise ValueError(err)
 
-        inj_files.append(inj_file)
         inj_tags.append(inj_tag)
         
     logging.info("Leaving injection module.")
