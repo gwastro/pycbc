@@ -86,7 +86,7 @@ if args.sig_type == 'stat':
     if args.sig_bins:
         x_values = [float(v) for v in args.sig_bins]
     else:
-        x_values = 10 ** (numpy.arange(9, 14, .05))
+        x_values = numpy.arange(9, 14, .05)
 
 if args.sig_type == 'ifar':
     sig = f['found_after_vetoes/ifar'][:]
@@ -138,7 +138,7 @@ for j in range(len(args.bins)-1):
 
         # Calculate each sensitive distance at a given significance threshold
         for x_val in x_values:
-            if args.sig_type == 'ifar':
+            if args.sig_type == 'ifar' or args.sig_type == 'stat':
                 foundg = found[sig_val >= x_val]
                 foundm = found[sig_val < x_val]
             elif args.sig_type == 'fap':
@@ -185,7 +185,9 @@ for j in range(len(args.bins)-1):
                            facecolor=c, edgecolor=c, alpha=alpha)
                            
 ax = pylab.gca()
-ax.set_xscale('log')
+
+if args.sig_type != 'stat':
+    ax.set_xscale('log')
 
 if args.sig_type == 'fap':
     ax.invert_xaxis()
