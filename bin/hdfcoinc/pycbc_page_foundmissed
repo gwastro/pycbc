@@ -83,6 +83,9 @@ if args.log_distance:
     ax.set_yscale('log')
 plot.ylim(ymin=1)
 
+fig_kwds = {}
+if '.png' in args.output_file:
+    fig_kwds['dpi'] = 500
 if ('.html' in args.output_file) and args.dynamic:
     import mpld3, mpld3.plugins, mpld3.utils
     mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt='.5g'))
@@ -92,6 +95,6 @@ if ('.html' in args.output_file) and args.dynamic:
     mpld3.plugins.connect(fig, legend)
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
-                     fig_kwds={'dpi':500},
+                     fig_kwds=fig_kwds,
                      title='%s vs %s' % (args.axis_type, args.distance_type))
 

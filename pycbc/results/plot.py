@@ -17,6 +17,10 @@ for k, v in escape_table.items():
 class MetaParser(HTMLParser.HTMLParser):
     def __init__(self):
         self.metadata = {}
+        HTMLParser.HTMLParser.__init__(self)
+
+    def handle_data(self, data):
+        pass
 
     def handle_starttag(self, tag, attrs):
         attr= {}
@@ -35,15 +39,20 @@ def save_html_with_metadata(fig, filename, fig_kwds, kwds):
         text = fig_to_html(fig, **fig_kwds)
     
     f = open(filename, 'w')
-    f.write(text)
-    for key, value in kwds:
+    for key, value in kwds.items():
         value = escape(value, escape_table)
-        line = """<div class=pycbc-meta key="%s" value="%s"></div>\n""" % (str(key), value) 
-    
-def load_html_with_metadata(filename):
+        line = "\n<div class=pycbc-meta key=\"%s\" value=\"%s\"></div>\n" % (str(key), value) 
+        f.write(line)    
+    f.write(text)
+
+def load_html_metadata(filename):
     """ Get metadata from html file """
     parser = MetaParser()
-    parser.feed(open(filename, 'r').read())
+    data = open(filename, 'r').read()
+
+    if 'pycbc-meta' in data:
+        print "LOADING HTML FILE %s" % filename
+    parser.feed(data)
     cp = ConfigParser.ConfigParser(parser.metadata)
     cp.add_section(os.path.basename(filename))
     return cp
