@@ -163,7 +163,6 @@ def get_code_version_numbers(cp):
         version_string = None
         try:
             version_output = check_output([value, '--version'])
-            print version_output
             version_output = version_output.split('\n')
             for line in version_output:
                 line = line.split(" ")
