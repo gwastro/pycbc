@@ -26,8 +26,14 @@ class MetaParser(HTMLParser.HTMLParser):
             self.metadata[attr['key']] = unescape(attr['value'], unescape_table)
         
 
-def save_html_with_metadata(text, filename, fig_kwds, kwds):
+def save_html_with_metadata(fig, filename, fig_kwds, kwds):
     """ Save a html output to file with metadata """
+    if isinstance(fig, str):
+        text = fig
+    else:
+        from mpld3 import fig_to_html
+        text = fig_to_html(fig, **fig_kwds)
+    
     f = open(filename, 'w')
     f.write(text)
     for key, value in kwds:
