@@ -19,6 +19,7 @@
 import os
 import subprocess
 from ConfigParser import ConfigParser
+from pycbc.workflow.core import check_output
 
 def get_library_version_info():
     """This will return a list of dictionaries containing versioning
@@ -158,8 +159,8 @@ def get_code_version_numbers(cp):
         path, exe_name = os.path.split(value)
         version_string = None
         try:
-            version_output = subprocess.check_output([value, '--version'],
-                                                      stderr=subprocess.STDOUT)
+            version_output = check_output([value, '--version'])
+            print version_output
             version_output = version_output.split('\n')
             for line in version_output:
                 line = line.split(" ")
@@ -189,13 +190,10 @@ def write_code_versions(path, cp):
     file_p.write(html_text)
     file_p.close()
 
-
-def create_versioning_page(path):
+def create_versioning_page(path, cp):
+    logging.info("Entering versioning module")
     if not os.path.exists(path):
         os.mkdir(path)
     write_library_information(path)
-    # FIXME: Really bad hardcoding here, not sure how to fix?
-    config_file = os.path.join(path, '../configuration.ini')
-    cp = ConfigParser()
-    cp.read(config_file)
     write_code_versions(path, cp)
+    logging.info("Leaving versioning module")
