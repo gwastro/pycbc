@@ -100,9 +100,9 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                        output_dir, tags=ctags)
                                          
         for bg_file in bg_files:
-            wf.make_snrifar_plot(workflow, bg_file, 'results/result', tags=bg_file.tags)
+            wf.make_snrifar_plot(workflow, bg_file, 'results/coincident_triggers', tags=bg_file.tags)
         
-        wf.make_snrifar_plot(workflow, final_bg_file[0], 'results/coincident_triggers', tags=bg_file.tags)
+        wf.make_snrifar_plot(workflow, final_bg_file[0], 'results/result', tags=bg_file.tags)
 
         wf.make_foreground_table(workflow, final_bg_file[0], hdfbank[0], tag, 'results/result')
         wf.make_snrchi_plot(workflow, insps, final_veto_file[0], final_veto_name[0], 'results/single_triggers', tags=[tag])
