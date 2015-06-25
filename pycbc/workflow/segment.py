@@ -1136,12 +1136,13 @@ def get_cumulative_veto_group_files(workflow, option, out_dir, tags=[]):
                                         start_time, end_time, out_dir,
                                         veto_gen_job, execute_now=True))
 
-    cum_seg_files = FileList()        
+    cum_seg_files = FileList()     
+    names = []   
     for cat_set in cat_sets:
-        segment_name = ''.join(sorted(cat_set))
-        logging.info('getting information for cumulative CAT %s' % segment_name)
+        segment_name = "CUMULATIVE_CAT_%s" % (''.join(sorted(cat_set)))
+        logging.info('getting information for %s' % segment_name)
         categories = [cat_to_pipedown_cat(c) for c in cat_set]
-        path = os.path.join(out_dir, '%s-CUMULATIVE_CAT_%s_VETO_SEGMENTS.xml' \
+        path = os.path.join(out_dir, '%s-%s_VETO_SEGMENTS.xml' \
                             % (workflow.ifo_string, segment_name))
         path = os.path.abspath(path)
         url = urlparse.urlunparse(['file', 'localhost', path, None, None, None])
@@ -1150,8 +1151,9 @@ def get_cumulative_veto_group_files(workflow, option, out_dir, tags=[]):
                         
         cum_seg_files += [get_cumulative_segs(workflow, seg_file,  categories,
               cat_files, out_dir, execute_now=False, segment_name=segment_name)]
+        names.append(segment_name)
               
-    return cum_seg_files, cat_files
+    return cum_seg_files, names, cat_files
 
 def file_needs_generating(file_path):
     """

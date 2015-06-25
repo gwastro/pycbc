@@ -79,7 +79,7 @@ def make_inj_table(workflow, inj_file, out_dir, tags=[]):
     node.new_output_file_opt(inj_file.segment, '.html', '--output-file')
     workflow += node   
 
-def make_snrchi_plot(workflow, trig_files, veto_file, out_dir, tags=[]):
+def make_snrchi_plot(workflow, trig_files, veto_file, veto_name, out_dir, tags=[]):
     makedir(out_dir)    
     for tag in workflow.cp.get_subsections('plot_snrchi'):
         for trig_file in trig_files:
@@ -89,6 +89,7 @@ def make_snrchi_plot(workflow, trig_files, veto_file, out_dir, tags=[]):
                         tags=[tag] + tags).create_node()
 
             node.set_memory(15000)
+            node.add_opt('--segment-name', veto_name)
             node.add_input_opt('--trigger-file', trig_file)
             node.add_input_opt('--veto-file', veto_file)
             node.new_output_file_opt(trig_file.segment, '.png', '--output-file')
@@ -125,7 +126,7 @@ def make_results_web_page(workflow, results_dir):
     node.add_opt('--template-file', template_path)
     workflow += node
 
-def make_singles_plot(workflow, trig_files, bank_file, veto_file, out_dir, tags=[]):
+def make_singles_plot(workflow, trig_files, bank_file, veto_file, veto_name, out_dir, tags=[]):
     makedir(out_dir)    
     for tag in workflow.cp.get_subsections('plot_singles'):
         for trig_file in trig_files:
@@ -135,6 +136,7 @@ def make_singles_plot(workflow, trig_files, bank_file, veto_file, out_dir, tags=
                         tags=[tag] + tags).create_node()
 
             node.set_memory(15000)
+            node.add_opt('--segment-name', veto_name)
             node.add_input_opt('--bank-file', bank_file)
             node.add_input_opt('--veto-file', veto_file)
             node.add_opt('--detector', trig_file.ifo)
