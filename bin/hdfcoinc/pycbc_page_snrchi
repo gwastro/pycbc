@@ -12,7 +12,7 @@ parser.add_argument('--segment-name', default=None, type=str,
 parser.add_argument('--min-snr', type=float, help='Optional, Minimum SNR to plot')
 parser.add_argument('--output-file')
 parser.add_argument('--newsnr-contours', nargs='*', help="List of newsnr values to draw contours at.", default=[])
-parser.add_argument('--chisq-choice', choices=['traditional','combined'],
+parser.add_argument('--chisq-choice', choices=['traditional','max_cont_trad'],
                     default='traditional',
                     help='Which chisquared to plot. Default=traditional')
 args = parser.parse_args()
@@ -22,20 +22,20 @@ ifo = f.keys()[0]
 f = f[ifo]
 snr = f['snr'][:]
 
-if args.chisq_choice in ['traditional','combined']:
+if args.chisq_choice in ['traditional','max_cont_trad']:
     trad_chisq = f['chisq'][:]
     # We now need to handle the case where chisq is not actually calculated
     # 0 is used as a sentinel value
     l = trad_chisq == 0
     trad_chisq_dof = f['chisq_dof'][:]
     trad_chisq /= (trad_chisq_dof * 2 - 2)
-if args.chisq_choice in ['combined']:
+if args.chisq_choice in ['max_cont_trad']:
     cont_chisq = f['cont_chisq'][:]
     cont_chisq_dof = f['cont_chisq_dof'][:]
     cont_chisq /= cont_chisq_dof
 if args.chisq_choice == 'traditional':
     chisq = trad_chisq
-elif args.chisq_choice == 'combined':
+elif args.chisq_choice == 'max_cont_trad':
     chisq = numpy.maximum(trad_chisq, cont_chisq)
 else:
     err_msg="Do not recognized --chisq-choice %s" %(args.chisq_choice,)
