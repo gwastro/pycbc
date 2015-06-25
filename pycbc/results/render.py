@@ -88,14 +88,6 @@ def render_default(path, cp):
         if 'SEG' in path or 'VETO' in path:
             with open(path, 'r') as xmlfile:
                 content = fromsegmentxml(xmlfile, return_dict=True)
-    elif path.endswith('.ini'):
-        with open(path, 'rb') as f_handle:
-            content = f_handle.read()
-    elif path.endswith('htmlf'):
-        cp.add_section(filename)
-        cp.set(filename,'title', filename.split('.')[0].replace('_',' '))
-        with open(path, 'r') as f_handle:
-            content = f_handle.read()
 
     # render template
     template_dir = pycbc.results.__path__[0] + '/templates/files'
@@ -130,7 +122,29 @@ def render_glitchgram(path, cp):
 
     return output
 
-def render_config_and_version_page(path, config_file):
-    """ Render a html page to show the configuration file and versioning
-    information.
+def render_text(path, config_file):
+    """ Render a file as text.
     """
+
+    # define filename and slug from path
+    filename = os.path.basename(path)
+    slug = filename.replace('.', '_')
+
+    # initializations
+    content = None
+
+    # read file as a string
+    with open(path, 'rb') as fp:
+        content = fp.read()
+
+    # render template
+    template_dir = pycbc.results.__path__[0] + '/templates/files'
+    env = Environment(loader=FileSystemLoader(template_dir))
+    env.globals.update(abs=abs)
+    template = env.get_template(cp.get(filename, 'template'))
+    context = {'filename' : filename,
+               'slug'     : slug,
+               'cp'       : cp}
+    output = template.render(context)
+
+    return output

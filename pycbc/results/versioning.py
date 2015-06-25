@@ -139,6 +139,8 @@ def write_library_information(path):
         text = ''
         for key, value in curr_lib.items():
             text+='<li> %s : %s </li>\n' %(key,value)
+        text+= '<div class=pycbc-meta key=\"render-function\" value=\"render_text\"></div>'
+        text+= '<div class=pycbc-meta key=\"title\" value=\"%s\"></div>'%'%s Version Information'%(lib_name)
         file_p = open(os.path.join(path,
                               '%s_version_information.htmlf' %(lib_name)), 'w')
         file_p.write(text)
@@ -185,6 +187,8 @@ def write_code_versions(path, cp):
     html_text = ''
     for key,value in code_version_dict.items():
         html_text+= '<li><b>%s</b>: %s </li>\n' %(key,value)
+    html_text+= '<div class=pycbc-meta key=\"render-function\" value=\"render_text\"></div>'
+    html_text+= '<div class=pycbc-meta key=\"title\" value=\"Version Information from Executables\"></div>'
     file_p = open(os.path.join(path,
                             'Version_information_from_executables.htmlf'), 'w')
     file_p.write(html_text)
