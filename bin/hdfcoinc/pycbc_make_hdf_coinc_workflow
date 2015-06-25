@@ -175,7 +175,7 @@ dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
 container._adag.addDependency(dep)
 
 # Create versioning information
-create_versioning_page(os.path.join(opts.plots_dir,'versioning'))
+create_versioning_page(os.path.join(opts.plots_dir,'versioning'), container.cp)
 
 container.save()
 logging.info("Written dax.")
