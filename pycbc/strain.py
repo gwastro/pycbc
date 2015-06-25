@@ -220,7 +220,7 @@ def insert_strain_option_group(parser):
     data_reading_group.add_argument("--frame-type",
                             type=str, nargs="+",
                             help="(optional), replaces frame-files. Use datafind "
-                                 "to get the need frame file of this type.")
+                                 "to get the needed frame file(s) of this type.")
 
     #Generate gaussian noise with given psd
     data_reading_group.add_argument("--fake-strain",
