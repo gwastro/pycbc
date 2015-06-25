@@ -2,7 +2,7 @@
 This Module contains generic utility functions for creating plots within 
 PyCBC. 
 """
-import os.path
+import os.path, pycbc.version
 import ConfigParser
 
 def save_png_with_metadata(fig, filename, fig_kwds, kwds):
@@ -44,6 +44,7 @@ def save_fig_with_metadata(fig, filename, fig_kwds={}, **kwds):
     """
     try:
         extension = os.path.splitext(filename)[1]
+        kwds['version'] = pycbc.version.git_verbose_msg
         _metadata_saver[extension](fig, filename, fig_kwds, kwds)
     except KeyError:
         raise TypeError('Cannot save file %s with metadata, extension %s not ' 
