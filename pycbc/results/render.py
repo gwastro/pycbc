@@ -91,6 +91,11 @@ def render_default(path, cp):
     elif path.endswith('.ini'):
         with open(path, 'rb') as f_handle:
             content = f_handle.read()
+    elif path.endswith('htmlf'):
+        cp.add_section(filename)
+        cp.set(filename,'title', filename.split('.')[0].replace('_',' '))
+        with open(path, 'r') as f_handle:
+            content = f_handle.read()
 
     # render template
     template_dir = pycbc.results.__path__[0] + '/templates/files'
@@ -124,3 +129,8 @@ def render_glitchgram(path, cp):
     output = template.render(context)
 
     return output
+
+def render_config_and_version_page(path, config_file):
+    """ Render a html page to show the configuration file and versioning
+    information.
+    """
