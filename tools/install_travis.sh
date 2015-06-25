@@ -57,3 +57,6 @@ echo source $LOCAL/etc/glue-user-env.sh >> $TRAVIS_BUILD_DIR/source
 echo source $LOCAL/etc/lal-user-env.sh >> $TRAVIS_BUILD_DIR/source
 echo $PWD
 chmod 755 $TRAVIS_BUILD_DIR/source
+
+cd $PWD
+python setup.py install
