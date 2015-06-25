@@ -126,7 +126,6 @@ class CombSNRStatistic(NewSNRStatistic):
         """Combined chisq calculation for each trigger."""
         chisq_dof = 2 * trigs['chisq_dof'] - 2
         chisq_newsnr = events.newsnr(trigs['snr'], trigs['chisq'] / chisq_dof)
-        # FIXME: Remove hardcoding
         autochisq_dof = trigs['cont_chisq_dof']
         autochisq_newsnr = events.newsnr(trigs['snr'],
                                          trigs['cont_chisq'] / autochisq_dof)
