@@ -94,6 +94,7 @@ for gpsd in psds:
         
 f[ifo + '/psds/start_time'] = numpy.array(start, dtype=numpy.uint32)
 f[ifo + '/psds/end_time'] = numpy.array(end, dtype=numpy.uint32)
+f.attrs['low_frequency_cutoff'] = args.low_frequency_cutoff
 logging.info('Done!')
 
 

@@ -16,7 +16,7 @@ keys.remove('start_time')
 keys.remove('end_time')
 psds = [f[ifo + '/psds/' + key][:] for key in keys]
 
-flow = 40.0
+flow = f.attrs['low_frequency_cutoff']
 kmin = int(flow / df)
 
 fac = 1.0 / pycbc.DYN_RANGE_FAC / pycbc.DYN_RANGE_FAC
