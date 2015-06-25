@@ -44,7 +44,7 @@ def get_statistic(option, files):
     elif option == 'phasetd_newsnr':
         return PhaseTDStatistic(files)
     elif option == 'combnewsnr':
-        return CombSNRStatistic()
+        return CombSNRStatistic(files)
     else:
         raise ValueError('%s is not an available detection statistic' % option)
 
