@@ -5,6 +5,13 @@ PyCBC.
 import os.path, pycbc.version
 import ConfigParser
 
+def save_html_with_metadata(text, filename, fig_kwds, kwds):
+    """ Save a html output to file with metadata """
+    pass
+    
+def load_html_with_metadata(filename):
+    pass
+
 def save_png_with_metadata(fig, filename, fig_kwds, kwds):
     """ Save a matplotlib figure to a png with metadata
     """
@@ -27,8 +34,10 @@ def load_png_metadata(filename):
     return cp
     
 _metadata_saver = {'.png':save_png_with_metadata,
+                   '.html':save_html_with_metadata,
                   }
 _metadata_loader = {'.png':load_png_metadata,
+                    '.html':load_html_metadata,
                    }
 
 def save_fig_with_metadata(fig, filename, fig_kwds={}, **kwds):
