@@ -1,16 +1,20 @@
 .. _lalsuite_install:
 
 ##############################################
-Installing lalsuite, glue and pylal for PyCBC
+Installing lalsuite for PyCBC
 ##############################################
 
-The following page describes how to build lalsuite, glue and pylal from source for use with PyCBC. 
+The following page describes how to build lalsuite from source for use with PyCBC. 
 
 ---------------------------------
 Choose a lalsuite install method
 ---------------------------------
 
-A version of lalsuite and glue (but not pylal) is installed system-wide on LDG and XSEDE clusters. During science runs this version is recommended for use, but between science runs, and for development, it is better to install lalsuite, glue and pylal from source. To use this system version and just install pylal follow :ref:`systeminstall`. To install lalsuite, glue and pylal from source follow :ref:`sourceinstall`.
+A version of lalsuite is installed system-wide on LDG and XSEDE clusters. 
+During science runs this version is recommended for use, but between science 
+uns, and for development, it is better to install lalsuite
+from source. To use this system version and just install pylal follow :ref:`systeminstall`.
+To install lalsuite from source follow :ref:`sourceinstall`.
 
 .. _systeminstall:
 
@@ -94,7 +98,7 @@ The attached :download:`example script <resources/build_new_lalsuite.sh>` can be
 * INSTALLDIR is the directory where you want the code installed. *This must be under your NFS-mounted home directory so it is accessible to the cluster nodes running your jobs.*
 * NUMCORES is the number of cores for a parallel build (e.g. 8).
 
-For example, the following will build lalsuite, glue and pylal and install it in /home/$USER/local/master/
+For example, the following will build lalsuite and install it in /home/$USER/local/master/
 
 .. code-block:: bash
 
@@ -108,4 +112,4 @@ This script will create a file INSTALLDIR/etc/lscsoftrc that can be sourced to s
 
 to set up your environment to use the installed code.
 
-Congratulations, you now have lalsuite, glue and python set up and ready to use!
+Congratulations, you now have lalsuite set up and ready to use!
