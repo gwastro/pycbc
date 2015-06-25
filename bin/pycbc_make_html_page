@@ -24,6 +24,7 @@ import shutil
 import zipfile
 from glue import segments
 from jinja2 import Environment, FileSystemLoader
+from pycbc.results import create_versioning_page
 from pycbc.results.render import setup_template_render
 from pycbc.workflow import segment
 
@@ -173,6 +174,9 @@ analysis_title = opts.analysis_title.strip('"').rstrip('"')
 analysis_subtitle = opts.analysis_subtitle.strip('"').rstrip('"')
 input_template = opts.template_file.split('/')[-1]
 input_path = opts.template_file.rstrip(input_template)
+
+# Create versioning information
+create_versioning_page(os.path.join(opts.plots_dir,'Versioning'))
 
 # setup template
 env = Environment(loader=FileSystemLoader(input_path))

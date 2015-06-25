@@ -62,6 +62,9 @@
                 {% elif filename.endswith('.ini') %}
                     <pre>{{content}}</pre>
 
+                <!--html file fragments-->
+                {% elif filename.endswith('.htmlf') %}
+                    <pre>{{content}}</pre>
                 <!--catch-all condition-->
                 {% else %}
                     <p>Unsupported file extension.</p>
