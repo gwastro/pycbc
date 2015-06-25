@@ -1,7 +1,7 @@
 #!/usr/bin/python
 """ Make table of the foreground coincident events
 """
-import argparse
+import argparse, pycbc.results
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--injection-file',
@@ -83,18 +83,15 @@ if args.log_distance:
     ax.set_yscale('log')
 plot.ylim(ymin=1)
 
-if '.png' in args.output_file:   
-    pycbc.results.save_fig_with_metadata(fig, args.output_file, 
-                     fig_kwds={'dpi':500},
-                     title='%s vs %s' % (args.axis_type, args.distance_type))
-elif ('.html' in args.output_file) and args.dynamic:
+if ('.html' in args.output_file) and args.dynamic:
     import mpld3, mpld3.plugins, mpld3.utils
     mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt='.5g'))
     legend =  mpld3.plugins.InteractiveLegendPlugin([mpoints, points],
                                                     ['missed', 'found'],
                                                     alpha_unsel=0.1)
     mpld3.plugins.connect(fig, legend)
-    mpld3.save_html(fig, open(args.output_file, 'w'))
-else:
-    raise ValueError('Cannot save as chosen file type')
+
+pycbc.results.save_fig_with_metadata(fig, args.output_file, 
+                     fig_kwds={'dpi':500},
+                     title='%s vs %s' % (args.axis_type, args.distance_type))
 
