@@ -22,7 +22,7 @@ generate post-processing and plots.
 """
 import pycbc, pycbc.version, pycbc.events, pycbc.workflow as wf
 import os, argparse, ConfigParser, logging, glue.segments
-
+from pycbc.results import create_versioning_page
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', 
@@ -173,6 +173,9 @@ container += finalize_workflow
 import Pegasus.DAX3 as dax
 dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
 container._adag.addDependency(dep)
+
+# Create versioning information
+create_versioning_page(os.path.join(opts.plots_dir,'versioning'))
 
 container.save()
 logging.info("Written dax.")
