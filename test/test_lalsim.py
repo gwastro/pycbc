@@ -42,7 +42,7 @@ from utils import simple_exit, _check_scheme_cpu
 
 parser = OptionParser()
 parser.add_option('--scheme','-s', action='callback', type = 'choice',
-                   choices = ('cpu','cuda','opencl'),
+                   choices = ('cpu','cuda'),
                    default = 'cpu', dest = 'scheme', callback = _check_scheme_cpu,
                    help = optparse.SUPPRESS_HELP)
 parser.add_option('--device-num','-d', action='store', type = 'int',

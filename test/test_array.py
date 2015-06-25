@@ -44,10 +44,6 @@ if _scheme == 'cuda':
     import pycuda
     import pycuda.gpuarray
     from pycuda.gpuarray import GPUArray as SchemeArray
-elif _scheme == 'opencl':
-    import pyopencl
-    import pyopencl.array
-    from pyopencl.array import Array as SchemeArray
 elif _scheme == 'cpu':
     from pycbc.types.aligned import ArrayWithAligned as SchemeArray
 
@@ -183,8 +179,6 @@ class ArrayTestBase(array_base,unittest.TestCase):
             # We also need to check initialization using GPU arrays
             if self.scheme == 'cuda':
                 in4 = pycuda.gpuarray.zeros(3,self.dtype)
-            elif self.scheme == 'opencl':
-                in4 = pyopencl.array.zeros(pycbc.scheme.mgr.state.queue,3, self.dtype)
             if self.scheme != 'cpu':
                 out4 = Array(in4, copy=False)
                 in4 += 1

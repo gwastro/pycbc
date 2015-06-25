@@ -23,13 +23,12 @@
 #
 """
 This module contains a few helper functions designed to make writing PyCBC
-unit tests easier, while still allowing the tests to be run on CPU, CUDA,
-and OpenCL.
+unit tests easier, while still allowing the tests to be run on CPU and CUDA
 
 All tests starting with 'test_' in the test subdirectory of pycbc are run
 whenever the command 'python setup.py test' is given.  That command will
 attempt to call each test, passing it the argument '-s <scheme>' where
-scheme is each of 'cpu', 'cuda', and 'opencl' in turn. Unit tests
+scheme is each of 'cpu', 'cuda' in turn. Unit tests
 designed to validate code that should run under multiple schemes should accept
 each of these options, rerunning the same tests under each successive scheme.
 
@@ -68,7 +67,7 @@ import pycbc
 import optparse
 from sys import exit as _exit
 from optparse import OptionParser, OptionValueError
-from pycbc.scheme import CPUScheme, CUDAScheme, OpenCLScheme
+from pycbc.scheme import CPUScheme, CUDAScheme
 from numpy import dtype, float32, float64, complex64, complex128
 from pycbc.types import Array
 
@@ -77,20 +76,18 @@ def _check_scheme_all(option, opt_str, scheme, parser):
     if scheme=='cuda' and not pycbc.HAVE_CUDA:
         raise optparse.OptionValueError("CUDA not found")
 
-    if scheme=='opencl' and not pycbc.HAVE_OPENCL:
-        raise optparse.OptionValueError("OpenCL not found")
     setattr (parser.values, option.dest, scheme)
 
 
 def parse_args_all_schemes(feature_str):
     _parser = OptionParser()
     _parser.add_option('--scheme','-s', action='callback', type = 'choice',
-                       choices = ('cpu','cuda','opencl'),
+                       choices = ('cpu','cuda'),
                        default = 'cpu', dest = 'scheme', callback = _check_scheme_all,
-                       help = 'specifies processing scheme, can be cpu [default], cuda, or opencl')
+                       help = 'specifies processing scheme, can be cpu [default], cuda')
     _parser.add_option('--device-num','-d', action='store', type = 'int',
                        dest = 'devicenum', default=0,
-                       help = 'specifies a GPU device to use for CUDA or OpenCL, 0 by default')
+                       help = 'specifies a GPU device to use for CUDA, 0 by default')
     (_opt_list, _args) = _parser.parse_args()
 
     # Changing the optvalues to a dict makes them easier to read
@@ -102,10 +99,8 @@ def parse_args_all_schemes(feature_str):
         _context = CPUScheme()
     if _scheme == 'cuda':
         _context = CUDAScheme(device_num=_options['devicenum'])
-    if _scheme == 'opencl':
-        _context = OpenCLScheme(device_num=_options['devicenum'])
 
-    _scheme_dict = { 'cpu': 'CPU', 'cuda': 'CUDA', 'opencl' : 'OpenCL'}
+    _scheme_dict = { 'cpu': 'CPU', 'cuda': 'CUDA'}
 
     print 72*'='
     print "Running {0} unit tests for {1}:".format(_scheme_dict[_scheme],feature_str)
@@ -116,20 +111,18 @@ def _check_scheme_cpu(option, opt_str, scheme, parser):
     if scheme=='cuda':
         exit(0)
 
-    if scheme=='opencl':
-        exit(0)
     setattr (parser.values, option.dest, scheme)
 
 
 def parse_args_cpu_only(feature_str):
     _parser = OptionParser()
     _parser.add_option('--scheme','-s', action='callback', type = 'choice',
-                       choices = ('cpu','cuda','opencl'),
+                       choices = ('cpu','cuda'),
                        default = 'cpu', dest = 'scheme', callback = _check_scheme_cpu,
-                       help = 'specifies processing scheme, can be cpu [default], cuda, or opencl')
+                       help = 'specifies processing scheme, can be cpu [default], cuda')
     _parser.add_option('--device-num','-d', action='store', type = 'int',
                        dest = 'devicenum', default=0,
-                       help = 'specifies a GPU device to use for CUDA or OpenCL, 0 by default')
+                       help = 'specifies a GPU device to use for CUDA, 0 by default')
     (_opt_list, _args) = _parser.parse_args()
 
     # In this case, the only reason we parsed the arguments was to exit if we were given
