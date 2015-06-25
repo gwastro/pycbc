@@ -73,21 +73,6 @@ try:
 except ImportError:
     HAVE_CUDA=False
     
-try:
-    # This is a crude check to make sure that the driver is installed
-    try:
-        err = subprocess.call(["nvidia-smi"], stdout=open(os.devnull, 'wb'), stderr=open(os.devnull, 'wb'))
-        if err != 0:
-            raise ImportError("Cannot access 'nvidia-smi', driver may not be installed correctly")
-    except OSError:
-        pass
-
-    import pyopencl as _pyopencl
-    import pyfft.cl as _pyfftcl
-    HAVE_OPENCL=True
-except ImportError:
-    HAVE_OPENCL=False
-
 # Check for MKL capability
 try:
     import pycbc.fft.mkl
