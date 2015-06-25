@@ -20,8 +20,10 @@ import os.path, types
 
 from ConfigParser import ConfigParser
 from jinja2 import Environment, FileSystemLoader
+from xml.sax.saxutils import unescape
 
 import pycbc.results
+from pycbc.results import unescape_table
 from pycbc.workflow.segment import fromsegmentxml
 
 
@@ -31,13 +33,14 @@ def get_embedded_config(filename):
     def check_option(self, section, name):
         return (self.has_section(section) and
                (self.has_option(section, name) or (name in self.defaults())))
-    
+
     try:
         cp = pycbc.results.load_metadata_from_file(filename)
     except TypeError:
         cp = ConfigParser()
         
     cp.check_option = types.MethodType(check_option, cp)
+ 
     return cp
 
 def setup_template_render(path, config_path):
@@ -47,13 +50,19 @@ def setup_template_render(path, config_path):
     # initialization
     cp = get_embedded_config(path)
     output = ''
+    filename = os.path.basename(path)
 
-    # read configuration file
-    if os.path.exists(config_path):
+    # use meta-data if not empty for rendering
+    if cp.has_option(filename, 'render-function'):
+        render_function_name = cp.get(filename, 'render-function')
+        render_function = eval(render_function_name)
+        output = render_function(path, cp)
+
+    # read configuration file for rendering
+    elif os.path.exists(config_path):
         cp.read(config_path)
 
         # render template
-        filename = os.path.basename(path)
         if cp.has_option(filename, 'render-function'):
             render_function_name = cp.get(filename, 'render-function')
             render_function = eval(render_function_name)
@@ -122,7 +131,7 @@ def render_glitchgram(path, cp):
 
     return output
 
-def render_text(path, config_file):
+def render_text(path, cp):
     """ Render a file as text.
     """
 
@@ -137,14 +146,18 @@ def render_text(path, config_file):
     with open(path, 'rb') as fp:
         content = fp.read()
 
+    # replace all the escaped characters
+    content = unescape(content, unescape_table)
+
     # render template
     template_dir = pycbc.results.__path__[0] + '/templates/files'
     env = Environment(loader=FileSystemLoader(template_dir))
     env.globals.update(abs=abs)
-    template = env.get_template(cp.get(filename, 'template'))
+    template = env.get_template('file_pre.html')
     context = {'filename' : filename,
                'slug'     : slug,
-               'cp'       : cp}
+               'cp'       : cp,
+               'content'  : content}
     output = template.render(context)
 
     return output
