@@ -77,7 +77,7 @@ for gpsd in psds:
         key = ifo + '/psds/' + str(inc)
         start.append(int(s))
         end.append(int(e))
-        f.create_dataset(key, data= (psd.numpy() / pycbc.DYN_RANGE_FAC), 
+        f.create_dataset(key, data= (psd.numpy()), 
                          compression='gzip', compression_opts=9, shuffle=True)
         f[key].attrs['epoch'] = int(s)
         f[key].attrs['delta_f'] = float(psd.delta_f)
