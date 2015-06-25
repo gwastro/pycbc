@@ -37,7 +37,7 @@ def check_module_name_line(currLine):
         return False
 
 # Can these be named somewhat more obviously!
-excludes=['cuda', 'opencl', 'cufft', 'cuda_pyfft', 'cl_pyfft',\
+excludes=['cuda', 'cufft', 'cuda_pyfft', 'cl_pyfft',\
           'pycbc_phenomC_tmplt', 'TaylorF2']
 
 fileList = glob.glob('pycbc.*.rst')
