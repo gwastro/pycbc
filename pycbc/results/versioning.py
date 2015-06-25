@@ -20,6 +20,7 @@ import logging
 import os
 import subprocess
 from ConfigParser import ConfigParser
+from pycbc.results import save_fig_with_metadata
 from pycbc.workflow.core import check_output
 
 def get_library_version_info():
@@ -140,12 +141,10 @@ def write_library_information(path):
         text = ''
         for key, value in curr_lib.items():
             text+='<li> %s : %s </li>\n' %(key,value)
-        text+= '<div class=pycbc-meta key=\"render-function\" value=\"render_text\"></div>'
-        text+= '<div class=pycbc-meta key=\"title\" value=\"%s\"></div>'%'%s Version Information'%(lib_name)
-        file_p = open(os.path.join(path,
-                              '%s_version_information.htmlf' %(lib_name)), 'w')
-        file_p.write(text)
-        file_p.close()
+        kwds = {'render-function' : 'render_text',
+                'title' : '%s Version Information'%lib_name,
+        }
+        save_fig_with_metadata(text, os.path.join(path,'%s_version_information.html' %(lib_name)), **kwds)
 
 def get_code_version_numbers(cp):
     """Will extract the version information from the executables listed in
@@ -186,13 +185,11 @@ def write_code_versions(path, cp):
     code_version_dict = get_code_version_numbers(cp)
     html_text = ''
     for key,value in code_version_dict.items():
-        html_text+= '<li><b>%s</b>: %s </li>\n' %(key,value)
-    html_text+= '<div class=pycbc-meta key=\"render-function\" value=\"render_text\"></div>'
-    html_text+= '<div class=pycbc-meta key=\"title\" value=\"Version Information from Executables\"></div>'
-    file_p = open(os.path.join(path,
-                            'Version_information_from_executables.htmlf'), 'w')
-    file_p.write(html_text)
-    file_p.close()
+        html_text+= '<li><b>%s</b>: %s </li>\n' %(key,value.replace('@', '&#64;'))
+    kwds = {'render-function' : 'render_text',
+            'title' : 'Version Information from Executables',
+    }
+    save_fig_with_metadata(html_text, os.path.join(path,'version_information_from_executables.html'), **kwds)
 
 def create_versioning_page(path, cp):
     logging.info("Entering versioning module")
