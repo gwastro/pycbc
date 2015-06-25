@@ -3,14 +3,44 @@ This Module contains generic utility functions for creating plots within
 PyCBC. 
 """
 import os.path, pycbc.version
-import ConfigParser
+import ConfigParser, HTMLParser
+from xml.sax.saxutils import escape, unescape
+
+escape_table = {
+                '"': "&quot;",
+                "'": "&apos;",
+                }
+unescape_table = {}
+for k, v in escape_table.items():
+    unescape_table[v] = k
+
+class MetaParser(HTMLParser.HTMLParser):
+    def __init__(self):
+        self.metadata = {}
+
+    def handle_starttag(self, tag, attrs):
+        attr= {}
+        for key, value in attrs:
+            attr[key] = value
+        if tag == 'div' and 'class' in attr and attr['class'] == 'pycbc-meta':
+            self.metadata[attr['key']] = unescape(attr['value'], unescape_table)
+        
 
 def save_html_with_metadata(text, filename, fig_kwds, kwds):
     """ Save a html output to file with metadata """
-    pass
+    f = open(filename, 'w')
+    f.write(text)
+    for key, value in kwds:
+        value = escape(value, escape_table)
+        line = """<div class=pycbc-meta key="%s" value="%s"></div>\n""" % (str(key), value) 
     
 def load_html_with_metadata(filename):
-    pass
+    """ Get metadata from html file """
+    parser = MetaParser()
+    parser.feed(open(filename, 'r').read())
+    cp = ConfigParser.ConfigParser(parser.metadata)
+    cp.add_section(os.path.basename(filename))
+    return cp
 
 def save_png_with_metadata(fig, filename, fig_kwds, kwds):
     """ Save a matplotlib figure to a png with metadata
