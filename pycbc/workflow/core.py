@@ -41,7 +41,7 @@ from pycbc.workflow import pegasus_workflow
 lal.LIGOTimeGPS = lalswig.LIGOTimeGPS
 
 #REMOVE THESE FUNCTIONS  FOR PYTHON >= 2.7 ####################################
-def check_output(*popenargs, **kwargs):
+def check_output_error_and_retcode(*popenargs, **kwargs):
     """
     This function is used to obtain the stdout of a command. It is only used
     internally, recommend using the make_external_call command if you want
@@ -52,8 +52,13 @@ def check_output(*popenargs, **kwargs):
     process = subprocess.Popen(stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE,
                                *popenargs, **kwargs)
-    output, unused_err = process.communicate()
+    output, error = process.communicate()
     retcode = process.poll()
+    return output, error, retcode
+
+def check_output(*popenargs, **kwargs):
+    output, unused_error, unused_retcode = \
+                           check_output_error_and_retcode(*popenargs, **kwargs)
     return output
 
 ###############################################################################

@@ -21,7 +21,7 @@ import os
 import subprocess
 from ConfigParser import ConfigParser
 from pycbc.results import save_fig_with_metadata
-from pycbc.workflow.core import check_output
+from pycbc.workflow.core import check_output_error_and_retcode
 
 def get_library_version_info():
     """This will return a list of dictionaries containing versioning
@@ -161,7 +161,16 @@ def get_code_version_numbers(cp):
         path, exe_name = os.path.split(value)
         version_string = None
         try:
-            version_output = check_output([value, '--version'])
+            # FIXME: Replace with this version when python 2.7 is guaranteed
+            # version_output = subprocess.check_output([value, '--version'],
+            #                                         stderr=subprocess.STDOUT) 
+            # Start of legacy block
+            output, error, retcode = \
+                           check_output_error_and_retcode([value, '--version'])
+            if not retcode == 0:
+                raise subprocess.CalledProcessError(retcode, '')
+            # End of legacy block
+            version_output = output + error
             version_output = version_output.split('\n')
             for line in version_output:
                 line = line.split(" ")
