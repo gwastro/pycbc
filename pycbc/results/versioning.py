@@ -16,9 +16,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import logging
 import os
 import subprocess
 from ConfigParser import ConfigParser
+from pycbc.results import save_fig_with_metadata
+from pycbc.workflow.core import check_output_error_and_retcode
 
 def get_library_version_info():
     """This will return a list of dictionaries containing versioning
@@ -138,10 +141,10 @@ def write_library_information(path):
         text = ''
         for key, value in curr_lib.items():
             text+='<li> %s : %s </li>\n' %(key,value)
-        file_p = open(os.path.join(path,
-                              '%s_version_information.htmlf' %(lib_name)), 'w')
-        file_p.write(text)
-        file_p.close()
+        kwds = {'render-function' : 'render_text',
+                'title' : '%s Version Information'%lib_name,
+        }
+        save_fig_with_metadata(text, os.path.join(path,'%s_version_information.html' %(lib_name)), **kwds)
 
 def get_code_version_numbers(cp):
     """Will extract the version information from the executables listed in
@@ -158,8 +161,16 @@ def get_code_version_numbers(cp):
         path, exe_name = os.path.split(value)
         version_string = None
         try:
-            version_output = subprocess.check_output([value, '--version'],
-                                                      stderr=subprocess.STDOUT)
+            # FIXME: Replace with this version when python 2.7 is guaranteed
+            # version_output = subprocess.check_output([value, '--version'],
+            #                                         stderr=subprocess.STDOUT) 
+            # Start of legacy block
+            output, error, retcode = \
+                           check_output_error_and_retcode([value, '--version'])
+            if not retcode == 0:
+                raise subprocess.CalledProcessError(retcode, '')
+            # End of legacy block
+            version_output = output + error
             version_output = version_output.split('\n')
             for line in version_output:
                 line = line.split(" ")
@@ -183,19 +194,16 @@ def write_code_versions(path, cp):
     code_version_dict = get_code_version_numbers(cp)
     html_text = ''
     for key,value in code_version_dict.items():
-        html_text+= '<li><b>%s</b>: %s </li>\n' %(key,value)
-    file_p = open(os.path.join(path,
-                            'Version_information_from_executables.htmlf'), 'w')
-    file_p.write(html_text)
-    file_p.close()
+        html_text+= '<li><b>%s</b>: %s </li>\n' %(key,value.replace('@', '&#64;'))
+    kwds = {'render-function' : 'render_text',
+            'title' : 'Version Information from Executables',
+    }
+    save_fig_with_metadata(html_text, os.path.join(path,'version_information_from_executables.html'), **kwds)
 
-
-def create_versioning_page(path):
+def create_versioning_page(path, cp):
+    logging.info("Entering versioning module")
     if not os.path.exists(path):
         os.mkdir(path)
     write_library_information(path)
-    # FIXME: Really bad hardcoding here, not sure how to fix?
-    config_file = os.path.join(path, '../configuration.ini')
-    cp = ConfigParser()
-    cp.read(config_file)
     write_code_versions(path, cp)
+    logging.info("Leaving versioning module")

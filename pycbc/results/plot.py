@@ -9,8 +9,11 @@ from xml.sax.saxutils import escape, unescape
 escape_table = {
                 '"': "&quot;",
                 "'": "&apos;",
+                "@": "&#64;",
                 }
-unescape_table = {}
+unescape_table = {
+                  "&#64;" : "@",
+                 }
 for k, v in escape_table.items():
     unescape_table[v] = k
 
@@ -41,8 +44,10 @@ def save_html_with_metadata(fig, filename, fig_kwds, kwds):
     f = open(filename, 'w')
     for key, value in kwds.items():
         value = escape(value, escape_table)
-        line = "\n<div class=pycbc-meta key=\"%s\" value=\"%s\"></div>\n" % (str(key), value) 
+        line = "<div class=pycbc-meta key=\"%s\" value=\"%s\"></div>" % (str(key), value) 
         f.write(line)    
+
+    text = escape(text, escape_table)
     f.write(text)
 
 def load_html_metadata(filename):
