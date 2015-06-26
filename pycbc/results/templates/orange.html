@@ -55,22 +55,24 @@
 
       <ul class="nav navbar-nav">
 
-        <li class="active"><a href="#">Summary</a></li>
+        <li class="active"><a href="{{dot_dot_str}}">Summary</a></li>
 
-        <li class="active"><a href="#">Result</a></li>
-
-        <li class="dropdown "><a href="#" id="drop1" data-toggle="dropdown" class="dropdown-toggle" role="button">Configuration<b class="caret"></b></a>
+        <!--display top-level directories-->
+        {% for dir0 in dirs_0 %}
+        <li class="dropdown ">
+            <a href="#" id="drop1" data-toggle="dropdown" class="dropdown-toggle" role="button">{{dir0.title()}}<b class="caret"></b></a>
             <ul role="menu" class="dropdown-menu" aria-labelledby="drop1">
-                <li role="presentation"><a href="#" role="menuitem">Summary</a></li>
+                <li role="presentation"><a href="{{dot_dot_str}}{{dir0.name()}}" role="menuitem">Summary</a></li>
                 <li class="divider"></li>
-                <li role="presentation"><a href="#" role="menuitem">Workflow Configuration</a></li>
-                <li role="presentation"><a href="#" role="menuitem">Version</a></li>
-                <li role="presentation"><a href="#" role="menuitem">Statistics</a></li>
+                {% for subdir in dir0.subdirs %}
+                    <li role="presentation"><a href="{{dot_dot_str}}.{{subdir.path}}" role="menuitem">{{subdir.title()}}</a></li>
+                {% endfor %}
             </ul>
         </li>
+        {% endfor %}
 
       </ul>
-    </div><!--/.nav-collapse -->
+    </div>
   </div>
 </div>
 
