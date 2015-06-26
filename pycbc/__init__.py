@@ -88,6 +88,13 @@ try:
 except ImportError:
     HAVE_OPENCL=False
 
+# Check for MKL capability
+try:
+    import pycbc.fft.mkl
+    HAVE_MKL=True
+except ImportError:
+    HAVE_MKL=False
+
 # Check for openmp suppport, currently we pressume it exists, unless on 
 # platforms (mac) that are silly and don't use the standard gcc. 
 if sys.platform == 'darwin':
