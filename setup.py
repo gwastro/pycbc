@@ -398,6 +398,7 @@ setup (
                'bin/hdfcoinc/pycbc_page_snrchi',
                'bin/hdfcoinc/pycbc_page_inspiralrange',
                'bin/hdfcoinc/pycbc_page_segments',
+               'bin/hdfcoinc/pycbc_plot_psd_file',
                'bin/sngl/pycbc_ligolw_cluster',
                'bin/sngl/pycbc_plot_bank',
                'bin/sngl/pycbc_plot_glitchgram',
