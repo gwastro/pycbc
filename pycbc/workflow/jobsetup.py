@@ -1096,6 +1096,44 @@ class InspinjfindExecutable(Executable):
                                  tags=self.tags, store_file=self.retain_files)
         return node
 
+class PycbcSplitInspinjExecutable(Executable):
+    """
+    The class responsible for running the pycbc_split_inspinj executable
+    """
+    current_retention_level = Executable.INTERMEDIATE_PRODUCT
+    def __init__(self, cp, exe_name, num_splits, universe=None, ifo=None,
+                 out_dir=None, tags=[]):
+        super(PycbcSplitInspinjExecutable, self).__init__(cp, exe_name,
+                universe, ifo, out_dir, tags)
+        self.out_dir = out_dir
+        self.num_splits = int(num_splits)
+    def create_node(self, parent):
+        node = Node(self)
+
+        node.add_input_arg(parent)
+        node.add_arg(self.num_splits)
+        node.add_arg(self.out_dir)
+        
+        if parent.name.endswith("gz"):
+            ext = ".xml.gz"
+        else:
+            ext = ".xml"
+
+        out_files = FileList([])
+        for i in range(self.num_splits):
+            curr_tag = 'split%d' % i
+            # FIXME: What should the tags actually be? The job.tags values are
+            #        currently ignored.
+            curr_tags = parent.tags + [curr_tag]
+            job_tag = parent.description + "_" + self.name.upper()
+            out_file = File(parent.ifo_list, job_tag, parent.segment,
+                            extension=ext, directory=self.out_dir,
+                            tags=curr_tags, store_file=self.retain_files)
+            out_files.append(out_file)
+        
+        node.add_output_list_opt('--output-filenames', out_files)
+        return node
+
 class PycbcPickleHorizonDistsExecutable(Executable):
     """
     The class responsible for running the pycbc_pickle_horizon_distances

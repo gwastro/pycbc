@@ -17,11 +17,12 @@ class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
 # The XML reading will hang if you forget this line
 lsctables.use_in(LIGOLWContentHandler)
 
-if len(sys.argv) < 3:
-    print "Arguments: XML_file num_splits"
+if len(sys.argv) < 4:
+    print "Arguments: XML_file num_splits out_dir"
     sys.exit()
 inj_xml = sys.argv[1]
 num_split = int(sys.argv[2])
+out_dir = sys.argv[3]
 
 xmldoc = glue.ligolw.utils.load_filename(inj_xml, contenthandler = LIGOLWContentHandler, verbose=True)
 allinjs = tabletype.get_table(xmldoc)
@@ -43,7 +44,7 @@ filename_pattern = '-'.join(temp)
 for idx, simtable in enumerate(new_inj_tables):
     print "Output", idx, "with", len(simtable), "injections"
     xmlroot.appendChild(simtable)
-    out_path = filename_pattern % idx
+    out_path = out_dir + '/' + filename_pattern % idx
     glue.ligolw.utils.write_filename(xmldoc, out_path,
                                      gz=out_path.endswith('gz'))
     xmlroot.removeChild(simtable)

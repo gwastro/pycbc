@@ -34,7 +34,7 @@ from __future__ import division
 import os
 import logging
 from pycbc.workflow.core import FileList, make_analysis_dir
-from pycbc.workflow.jobsetup import PycbcSplitBankExecutable
+from pycbc.workflow.jobsetup import PycbcSplitBankExecutable, PycbcSplitInspinjExecutable
 from pycbc.workflow.legacy_ihope import LegacySplitBankExecutable
 
 def select_splitfilejob_instance(curr_exe):
@@ -64,6 +64,8 @@ def select_splitfilejob_instance(curr_exe):
     # Some elif statements
     elif curr_exe == 'pycbc_splitbank':
         exe_class = PycbcSplitBankExecutable
+    elif curr_exe == 'pycbc_split_inspinj':
+        exe_class = PycbcSplitInspinjExecutable
     else:
         # Should we try some sort of default class??
         err_string = "No class exists for Executable %s" %(curr_exe,)
@@ -71,7 +73,8 @@ def select_splitfilejob_instance(curr_exe):
 
     return exe_class
 
-def setup_splittable_workflow(workflow, tmplt_banks, out_dir=None):
+def setup_splittable_workflow(workflow, input_tables, out_dir=None,
+                              input_type="splittable", tags=[]):
     '''
     This function aims to be the gateway for code that is responsible for taking
     some input file containing some table, and splitting into multiple files
@@ -83,7 +86,7 @@ def setup_splittable_workflow(workflow, tmplt_banks, out_dir=None):
     -----------
     workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the jobs will be added to.
-    tmplt_banks : pycbc.workflow.core.FileList
+    input_tables : pycbc.workflow.core.FileList
         The input files to be split up.
     out_dir : path
         The directory in which output will be written.
@@ -95,20 +98,21 @@ def setup_splittable_workflow(workflow, tmplt_banks, out_dir=None):
     '''
     logging.info("Entering split output files module.")
     make_analysis_dir(out_dir)
-
+    logging.info(input_type)
     # Parse for options in .ini file
-    splitbankMethod = workflow.cp.get_opt_tags("workflow-splittable",
-                                        "splittable-method", [])
+    splitMethod = workflow.cp.get_opt_tags("workflow-%s" % input_type,
+                                           "%s-method" % input_type, [])
 
-    if splitbankMethod == "IN_WORKFLOW":
+    if splitMethod == "IN_WORKFLOW":
         # Scope here for choosing different options
         logging.info("Adding split output file jobs to workflow.")
-        split_table_outs = setup_splittable_dax_generated(workflow, tmplt_banks,
-                                                        out_dir)
-    elif splitbankMethod == "NOOP":
+        split_table_outs = setup_splittable_dax_generated(workflow, input_tables,
+                                                          out_dir, input_type,
+                                                          tags)
+    elif splitMethod == "NOOP":
         # Probably better not to call the module at all, but this option will
         # return the input file list.
-        split_table_outs = tmplt_banks
+        split_table_outs = input_tables
     else:
         errMsg = "Splittable method not recognized. Must be one of "
         errMsg += "IN_WORKFLOW or NOOP."
@@ -117,7 +121,8 @@ def setup_splittable_workflow(workflow, tmplt_banks, out_dir=None):
     logging.info("Leaving split output files module.")  
     return split_table_outs
 
-def setup_splittable_dax_generated(workflow, tmplt_banks, out_dir):
+def setup_splittable_dax_generated(workflow, input_tables, out_dir, input_type,
+                                   tags):
     '''
     Function for setting up the splitting jobs as part of the workflow.
 
@@ -125,7 +130,7 @@ def setup_splittable_dax_generated(workflow, tmplt_banks, out_dir):
     -----------
     workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the jobs will be added to.
-    tmplt_banks : pycbc.workflow.core.FileList
+    input_tables : pycbc.workflow.core.FileList
         The input files to be split up.
     out_dir : path
         The directory in which output will be written.
@@ -136,21 +141,38 @@ def setup_splittable_dax_generated(workflow, tmplt_banks, out_dir):
         The list of split up files as output from this job.
     '''
     # Get values from ini file
-    num_banks = workflow.cp.get_opt_tags("workflow-splittable",
-                                             "splittable-num-banks", [])
+    if input_type == "splitinjections":
+        '''
+        if (workflow.cp.has_opt("workflow-%s" % input_type,
+                                "%s-num" % input_type) \
+            and workflow.cp.has_opt("workflow-%s" % input_type,
+                                    "%s-interval" % input_type)):
+            raise ValueError("Must give one of %s-num and %s-interval"
+                             % (input_type, input_type))
+
+        elif workflow.cp.has_opt("workflow-%s" % input_type,
+                                 "%s-num" % input_type):
+        '''
+        num_splits = workflow.cp.get_opt_tags("workflow-%s" % input_type,
+                                              "%s-num" % input_type, [])
+    else:
+        num_splits = workflow.cp.get_opt_tags("workflow-%s" % input_type,
+                                              "%s-num-banks" % input_type, [])
 
     cp = workflow.cp
-    splittable_exe = os.path.basename(cp.get('executables', 'splittable'))
+    split_exe = os.path.basename(cp.get('executables', input_type))
     # Select the appropriate class
-    exe_class = select_splitfilejob_instance(splittable_exe)
+    exe_class = select_splitfilejob_instance(split_exe)
 
     # Set up output structure
     out_file_groups = FileList([])
 
     # Set up the condorJob class for the current executable
-    curr_exe_job = exe_class(workflow.cp, 'splittable', num_banks, out_dir=out_dir)
+    curr_exe_job = exe_class(workflow.cp, input_type, num_splits, out_dir=out_dir)
 
-    for input in tmplt_banks:
+    for input in input_tables:
+        logging.info(input_tables)
+        logging.info(input)
         node = curr_exe_job.create_node(input)
         workflow.add_node(node)
         out_file_groups += node.output_files

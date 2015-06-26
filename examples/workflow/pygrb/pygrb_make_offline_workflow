@@ -243,10 +243,23 @@ all_files.extend(splitbank_files)
 # Injections
 if wflow.cp.has_section("workflow-injections"):
     injDir = os.path.join(currDir, "injections")
-    injection_files = _workflow.setup_injection_workflow(wflow, injDir,
-                                                         exttrig_file=ext_file)
-    all_files.extend(injection_files)
+    inj_files, inj_tags = _workflow.setup_injection_workflow(wflow, injDir,
+            exttrig_file=ext_file)
+    all_files.extend(inj_files)
 
+    if wflow.cp.has_section("workflow-splitinjections"):
+        inj_split_files = _workflow.setup_splittable_workflow(wflow, inj_files,
+                                                              injDir,
+                                                              "splitinjections",
+                                                              tags=inj_tags)
+'''
+        inj_insp_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
+                datafind_veto_files, splitbank_files, injDir)
+
+    else:
+        inj_insp_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
+                datafind_veto_files, splitbank_files, injDir)
+'''
 # On/off source matched filtering
 # TODO: Write coherent matched filtering code
 inspDir = os.path.join(currDir, "inspiral")
