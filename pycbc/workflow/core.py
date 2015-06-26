@@ -518,6 +518,7 @@ class Node(pegasus_workflow.Node):
                    directory=self.executable.out_dir, tags=all_tags,
                    use_tmp_subdirs=use_tmp_subdirs)
         self.add_output_opt(option_name, fil)
+        return fil
         
     @property    
     def output_files(self):
@@ -599,6 +600,7 @@ class File(pegasus_workflow.File):
             e.g. this might be ["BNSINJECTIONS" ,"LOWMASS","CAT_2_VETO"].
             These are used in file naming.
         """
+        self.metadata = {}
         
         # Set the science metadata on the file
         if isinstance(ifos, (str, unicode)):
@@ -667,6 +669,10 @@ class File(pegasus_workflow.File):
         safe_dict = copy.copy(self.__dict__)
         safe_dict['cache_entry'] = None
         return safe_dict   
+
+    def add_metadata(self, key, value):
+        """ Add arbitrary metadata to this file """
+        self.metadata[key] = value
 
     @property
     def ifo(self):

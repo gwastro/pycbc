@@ -101,12 +101,16 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                          
         for bg_file in bg_files:
             wf.make_snrifar_plot(workflow, bg_file, 'results/coincident_triggers', tags=bg_file.tags)
+            wf.make_foreground_table(workflow, bg_file, hdfbank[0], tag, 'results/coincident_triggers')
+
         
         wf.make_snrifar_plot(workflow, final_bg_file[0], 'results/result', tags=bg_file.tags)
-
         wf.make_foreground_table(workflow, final_bg_file[0], hdfbank[0], tag, 'results/result')
-        wf.make_snrchi_plot(workflow, insps, final_veto_file[0], final_veto_name[0], 'results/single_triggers', tags=[tag])
-        wf.make_singles_plot(workflow, insps, hdfbank[0], final_veto_file[0], final_veto_name[0], 'results/single_triggers', tags=[tag])
+
+        wf.make_snrchi_plot(workflow, insps, final_veto_file[0], 
+                            final_veto_name[0], 'results/single_triggers', tags=[tag])
+        wf.make_singles_plot(workflow, insps, hdfbank[0], final_veto_file[0], 
+                            final_veto_name[0], 'results/single_triggers', tags=[tag])
 
     else:
         inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank,
@@ -136,6 +140,9 @@ for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
     fsegs = glue.segments.segmentlist([f.segment for f in files])
     full_segs.append(pycbc.events.segments_to_file(fsegs, fname, name, ifo=ifo))
 
+    segs = glue.segments.segmentlist([f.metadata['data_seg'] for f in files])
+    pycbc.events.segments_to_file(segs, 'segments/%s-INSP_DATA.xml' % ifo, 'INSPIRAL_DATA', ifo=ifo)
+
 for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
     wf.make_segments_plot(workflow, files, 'results/analysis_time/segments', 
                           tags=['%s_VETO_SEGMENTS' % ifo])
@@ -150,9 +157,11 @@ if len(inj_files) > 0:
     wf.make_sensitivity_plot(workflow, found_inj, 'results/search_sensitivity', 
                                             tags=['ALLINJ'])
 
+
+
 # save global config file to results directory
 ini_file_path = 'results/configuration/configuration.ini'
-os.makedirs('results/configuration/')
+wf.make_analysis_dir('results/configuration/')
 with open(ini_file_path, 'wb') as ini_fh:
     container.cp.write(ini_fh)
 

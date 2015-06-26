@@ -166,7 +166,7 @@ def from_cli_multi_ifos(opt, ifos, **kwargs):
     return strain
 
 
-def insert_strain_option_group(parser):
+def insert_strain_option_group(parser, gps_times=True):
     """
     Adds the options used to call the pycbc.strain.from_cli function to an
     optparser as an OptionGroup. This should be used if you
@@ -185,12 +185,16 @@ def insert_strain_option_group(parser):
                   " if the --psd-estimation option is given.")
 
     # Required options
-    data_reading_group.add_argument("--gps-start-time",
-                            help="The gps start time of the data "
-                                 "(integer seconds)", type=int)
-    data_reading_group.add_argument("--gps-end-time",
-                            help="The gps end time of the data "
-                                 " (integer seconds)", type=int)
+    
+    if gps_times:
+        data_reading_group.add_argument("--gps-start-time",
+                                help="The gps start time of the data "
+                                     "(integer seconds)", type=int)
+        data_reading_group.add_argument("--gps-end-time",
+                                help="The gps end time of the data "
+                                     " (integer seconds)", type=int)
+                                     
+                                 
     data_reading_group.add_argument("--strain-high-pass", type=float,
                             help="High pass frequency")
     data_reading_group.add_argument("--pad-data",
