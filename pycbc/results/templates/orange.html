@@ -104,15 +104,17 @@
   -->
 
                 <!-- display other files in directory -->
+                {% if dir.files %}
                 <div class="row">
                     <div class="col-md-12">
-                        <h1>Other Files</h1>
+                        <h1>Additional Files</h1>
                             The following files were also found in this directory:
                             {% for file in dir.files %}
                                 {{file.render()}}
                             {% endfor %}
                     </div>
                 </div>
+                {% endif %}
 
             </div>
          </div>
