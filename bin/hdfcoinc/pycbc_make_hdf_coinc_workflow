@@ -22,6 +22,7 @@ generate post-processing and plots.
 """
 import pycbc, pycbc.version, pycbc.events, pycbc.workflow as wf
 import os, argparse, ConfigParser, logging, glue.segments
+from pycbc.workflow.core import make_analysis_dir
 from pycbc.results import create_versioning_page
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
@@ -40,8 +41,7 @@ container = wf.Workflow(args, args.workflow_name)
 workflow = wf.Workflow(args, 'main')
 finalize_workflow = wf.Workflow(args, 'finalization')
 
-if not os.path.exists(args.output_dir):
-    os.makedirs(args.output_dir)
+make_analysis_dir(args.output_dir)
 os.chdir(args.output_dir)
 
 # Get segments and find where the data is
@@ -104,7 +104,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
             wf.make_foreground_table(workflow, bg_file, hdfbank[0], tag, 'results/coincident_triggers')
 
         
-        wf.make_snrifar_plot(workflow, final_bg_file[0], 'results/result', tags=bg_file.tags)
+        wf.make_snrifar_plot(workflow, final_bg_file[0], 'results/result', tags=final_bg_file[0].tags)
         wf.make_foreground_table(workflow, final_bg_file[0], hdfbank[0], tag, 'results/result')
 
         wf.make_snrchi_plot(workflow, insps, final_veto_file[0], 
@@ -161,7 +161,7 @@ if len(inj_files) > 0:
 
 # save global config file to results directory
 ini_file_path = 'results/configuration/configuration.ini'
-wf.make_analysis_dir('results/configuration/')
+make_analysis_dir('results/configuration/')
 with open(ini_file_path, 'wb') as ini_fh:
     container.cp.write(ini_fh)
 
