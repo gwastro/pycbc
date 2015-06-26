@@ -1,20 +1,3 @@
-/* add font */
-@font-face {
-    font-family : 'Lato';
-    src : url('/~detchar/html/fonts/lato/Lato-Light.eot');
-    src : url('/~detchar/html/fonts/lato/Lato-Light.eot?#iefix') format('embedded-opentype'),url('/~detchar/html/fonts/lato/Lato-Light.woff') format('woff'),url('/~detchar/html/fonts/lato/Lato-Light.ttf') format('truetype');
-    text-rendering : optimizeLegibility;
-}
-
-/* add font */
-@font-face{
-    font-family : 'Lato';
-    src : url('/~detchar/html/fonts/lato/Lato-Semibold.eot');
-    src : url('/~detchar/html/fonts/lato/Lato-Semibold.eot?#iefix') format('embedded-opentype'),url('/~detchar/html/fonts/lato/Lato-Semibold.woff') format('woff'),url('/~detchar/html/fonts/lato/Lato-Semibold.ttf') format('truetype');
-    font-weight : bold;
-    text-rendering : optimizeLegibility;
-}
-
 /* set style for body */
 html, body {
     height:100%;
