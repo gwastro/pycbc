@@ -116,7 +116,7 @@ def make_snrifar_plot(workflow, bg_file, out_dir, tags=[]):
     
 def make_results_web_page(workflow, results_dir):
     import pycbc.results
-    template_path =  pycbc.results.__path__[0] + '/templates/concrete.html'
+    template_path =  pycbc.results.__path__[0] + '/templates/orange.html'
 
     out_dir = workflow.cp.get('results_page', 'output-path')
     makedir(out_dir)
