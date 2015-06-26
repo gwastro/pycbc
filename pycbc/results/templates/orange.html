@@ -4,7 +4,6 @@
 
     <!-- set initial view -->
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <base href="/~detchar/summary/">
 
     <!-- css -->
     <link media="all" href="/~cbiwer/html/bootstrap/3.1.1/css/bootstrap.min.css" type="text/css" rel="stylesheet">
@@ -21,7 +20,7 @@
     <script type="text/javascript" async="" src="//ligo-summary-pages.disqus.com/embed.js"></script>
 
     <!-- title -->
-    <title>CBC Analysis</title>
+    <title>{{analysis_title}}</title>
 
 </head>
 
@@ -36,10 +35,10 @@
         <!-- title and subtitle -->
         <div class="row" style="padding-top:10px">
             <div class="col-md-6">
-                <p class="text-left"><b>PyCBC Analysis #129</b></p>
+                <p class="text-left"><b>{{analysis_title}}</b></p>
             </div>
             <div class="col-md-6">
-                <p class="text-right"><b>Weasel</b></p>
+                <p class="text-right"><b>{{analysis_subtitle}}</b></p>
             </div>
         </div>
 
