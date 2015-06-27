@@ -17,7 +17,7 @@ unescape_table = {
 for k, v in escape_table.items():
     unescape_table[v] = k
     
-def html_excape(text):
+def html_escape(text):
     """ Sanitize text for html parsing """
     return escape(text, escape_table)
 
