@@ -137,25 +137,33 @@ class MatchedFilterControl(object):
             self.snr_mem = zeros(self.tlen, dtype=self.dtype)
             self.corr_mem = zeros(self.tlen, dtype=self.dtype)
             self.segments = segment_list
-            # Assuming delta_f is constant across segments.
-            self.stilde_delta_f = segment_list[0].delta_f
+
+            # Assuming analysis time is constant across templates and segments, also
+            # delta_f is constant across segments.
             self.htilde = template_output
-            self.kmin, self.kmax = get_cutoff_indices(self.flow, self.fhigh,
-                                                      self.segments[0].delta_f, self.tlen)
-            self.corr_slice = slice(self.kmin, self.kmax)
-            self.corr_np = numpy.array(self.corr_mem.data[self.corr_slice], copy = False)
-            self.hcorr = numpy.array(self.htilde.data[self.corr_slice], copy = False)
-            self.correlators = []
-            for i in range(0, len(self.segments)):
-                self.correlators.append(Correlator(self.hcorr,
-                                                   numpy.array(self.segments[i].data[self.corr_slice], copy = False),
-                                                   self.corr_np))
+            self.kmin, self.kmax = get_cutoff_indices(self.flow, self.fhigh, 
+                                                      self.delta_f, self.tlen)   
+                                                      
+            # Set up the correlation operations for each analysis segment
+            corr_slice = slice(self.kmin, self.kmax)
+            self.corr_np = numpy.array(self.corr_mem.data[corr_slice], copy=False)
+            self.hcorr = numpy.array(self.htilde.data[corr_slice], copy=False)
+            self.correlators = []      
+            for seg in self.segments:
+                view = numpy.array(seg.data[corr_slice], copy=False)
+                corr = Correlator(self.hcorr, view, self.corr_np)
+                self.correlators.append(corr)
+            
+            # setup up the ifft we will do
             self.ifft = IFFT(self.corr_mem, self.snr_mem)
-            if use_cluster:
-                self.threshold_and_clusterers = []
-                for i in range(0, len(self.segments)):
-                    self.threshold_and_clusterers.append(events.ThresholdCluster(
-                            numpy.array(self.snr_mem.data[self.segments[i].analyze], copy=False)))
+            
+            # setup the threasholding/clustering operations for each segment
+            self.threshold_and_clusterers = []
+            for seg in self.segments:
+                valid = numpy.array(self.snr_mem.data[seg.analyze], copy=False)
+                thresh = events.ThresholdCluster(valid, window)
+                self.threshold_and_clusterers.append(thresh)
+
 
         elif downsample_factor >= 1:
             self.matched_filter_and_cluster = self.heirarchical_matched_filter_and_cluster
@@ -212,7 +220,7 @@ class MatchedFilterControl(object):
         snrv : Array
             The snr values at the trigger locations.
         """
-        norm = (4.0 * self.stilde_delta_f) / sqrt(template_norm)
+        norm = (4.0 * self.delta_f) / sqrt(template_norm)
         self.correlators[segnum].correlate()
         self.ifft.execute()
         snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(self.snr_threshold / norm, window)
