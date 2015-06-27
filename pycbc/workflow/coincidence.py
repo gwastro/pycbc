@@ -608,7 +608,7 @@ def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=[]):
 
 def make_psd_file(workflow, segment_file, segment_name, out_dir, tags=None):
     tags = [] if not tags else tags
-    node = PlotExecutable(workflow.cp, 'calculate_spectrum', ifo=segment_file.ifo,
+    node = PlotExecutable(workflow.cp, 'calculate_psd', ifo=segment_file.ifo,
                           out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--analysis-segment-file', psd_file)
     node.add_opt('--segment-name', segment_name)
