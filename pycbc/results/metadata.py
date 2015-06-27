@@ -16,6 +16,10 @@ unescape_table = {
                  }
 for k, v in escape_table.items():
     unescape_table[v] = k
+    
+def html_excape(text):
+    """ Sanitize text for html parsing """
+    return escape(text, escape_table)
 
 class MetaParser(HTMLParser.HTMLParser):
     def __init__(self):
@@ -47,7 +51,6 @@ def save_html_with_metadata(fig, filename, fig_kwds, kwds):
         line = "<div class=pycbc-meta key=\"%s\" value=\"%s\"></div>" % (str(key), value) 
         f.write(line)    
 
-    #text = escape(text, escape_table)
     f.write(text)
 
 def load_html_metadata(filename):
