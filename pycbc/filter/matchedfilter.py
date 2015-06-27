@@ -119,7 +119,8 @@ class MatchedFilterControl(object):
         upsample_method : {pruned_fft, str}
             The method to upsample or interpolate the reduced rate filter.
         """
-
+        # Assuming analysis time is constant across templates and segments, also
+        # delta_f is constant across segments.
         self.tlen = tlen
         self.flen = self.tlen / 2 + 1
         self.delta_f = delta_f
