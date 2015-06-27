@@ -15,14 +15,12 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-"""
+""" 
 Program for running multi-detector workflow analysis through coincidence and then
 generate post-processing and plots.
 """
 import pycbc, pycbc.version, pycbc.events, pycbc.workflow as wf
 import os, argparse, ConfigParser, logging, glue.segments
-from pycbc.workflow.core import make_analysis_dir
 from pycbc.results import create_versioning_page
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
@@ -33,15 +31,13 @@ parser.add_argument("-d", "--output-dir", default=None,
                     help="Path to output directory.")
 wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
-
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
-                    level=logging.INFO)
+pycbc.init_logging()
 
 container = wf.Workflow(args, args.workflow_name)
 workflow = wf.Workflow(args, 'main')
 finalize_workflow = wf.Workflow(args, 'finalization')
 
-make_analysis_dir(args.output_dir)
+makedir(args.output_dir)
 os.chdir(args.output_dir)
 
 # Get segments and find where the data is
@@ -106,9 +102,9 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
         for bg_file in (bg_files + final_bg_file):
             wf.make_snrifar_plot(workflow, bg_file, 'results/coincident_triggers', tags=bg_file.tags)
             wf.make_foreground_table(workflow, bg_file, hdfbank[0], tag, 'results/coincident_triggers')
-
         
-        wf.make_snrifar_plot(workflow, final_bg_file[0], 'results/result', tags=final_bg_file[0].tags)
+        wf.make_snrifar_plot(workflow, final_bg_file[0],
+                            'results/result', tags=final_bg_file[0].tags)
         wf.make_foreground_table(workflow, final_bg_file[0], hdfbank[0], tag, 'results/result')
 
         wf.make_snrchi_plot(workflow, insps, censored_veto, 
@@ -118,19 +114,20 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
 
     else:
         inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank,
-                                                full_insps, insps, final_bg_file, 
-                                                final_veto_file[0], final_veto_name[0],
-                                                output_dir, tags = ctags)
+                                        full_insps, insps, final_bg_file, 
+                                        final_veto_file[0], final_veto_name[0],
+                                        output_dir, tags = ctags)
         found_inj = wf.find_injections_in_hdf_coinc(workflow, wf.FileList([inj_coinc]),
-                                                wf.FileList([inj_file]), final_veto_file[0], 
-                                                final_veto_name[0],
-                                                output_dir, tags=ctags)
+                                        wf.FileList([inj_file]), final_veto_file[0], 
+                                        final_veto_name[0],
+                                        output_dir, tags=ctags)
         inj_coincs += [inj_coinc]                      
-        wf.make_sensitivity_plot(workflow, found_inj, 'results/search_sensitivity/%s' % tag,
-                                 tags=ctags)
-        wf.make_foundmissed_plot(workflow, found_inj, 'results/injections/%s' % tag, 
-                                 tags=[tag])
-        wf.make_inj_table(workflow, found_inj, 'results/injections/%s' % tag, tags=[tag])
+        wf.make_sensitivity_plot(workflow, found_inj, 
+                             'results/search_sensitivity/%s' % tag, tags=ctags)
+        wf.make_foundmissed_plot(workflow, found_inj, 
+                             'results/injections/%s' % tag, tags=[tag])
+        wf.make_inj_table(workflow, found_inj, 
+                              'results/injections/%s' % tag, tags=[tag])
                                  
         for inj_insp, trig_insp in zip(insps, full_insps):
             wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 
@@ -145,34 +142,41 @@ for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
     full_segs.append(pycbc.events.segments_to_file(fsegs, fname, name, ifo=ifo))
 
     segs = glue.segments.segmentlist([f.metadata['data_seg'] for f in files])
-    pycbc.events.segments_to_file(segs, 'segments/%s-INSP_DATA.xml' % ifo, 'INSPIRAL_DATA', ifo=ifo)
+    pycbc.events.segments_to_file(segs, 'segments/%s-INSP_DATA.xml' % ifo,
+                                 'INSPIRAL_DATA', ifo=ifo)
 
 for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
     wf.make_segments_plot(workflow, files, 'results/analysis_time/segments', 
                           tags=['%s_VETO_SEGMENTS' % ifo])
 
-wf.make_segments_plot(workflow, full_segs, 'results/analysis_time/segments', tags=['INSPIRAL_SEGMENTS'])
-wf.make_segments_plot(workflow, science_seg_file, 'results/analysis_time/segments', tags=['SCIENCE_MINUS_CAT1'])
+wf.make_segments_plot(workflow, full_segs,
+                 'results/analysis_time/segments', tags=['INSPIRAL_SEGMENTS'])
+wf.make_segments_plot(workflow, science_seg_file,
+                 'results/analysis_time/segments', tags=['SCIENCE_MINUS_CAT1'])
 
 if len(inj_files) > 0:
     found_inj = wf.find_injections_in_hdf_coinc(workflow, inj_coincs,
-                                            inj_files, final_veto_file[0], final_veto_name[0],
-                                            output_dir, tags=['ALLINJ'])                                                
+                            inj_files, final_veto_file[0], final_veto_name[0],
+                            output_dir, tags=['ALLINJ'])                                                
     wf.make_sensitivity_plot(workflow, found_inj, 'results/search_sensitivity', 
-                                            tags=['ALLINJ'])
-
-
+                            tags=['ALLINJ'])
+    wf.make_foundmissed_plot(workflow, found_inj, 'results/injections',
+                            tags=['ALLINJ'])
 
 # save global config file to results directory
 ini_file_path = 'results/configuration/configuration.ini'
-make_analysis_dir('results/configuration/')
+wf.makedir('results/configuration/')
 with open(ini_file_path, 'wb') as ini_fh:
     container.cp.write(ini_fh)
 
 # Create versioning information
-create_versioning_page(os.path.join(os.getcwd(), 'results/configuration/versioning'), container.cp)
+create_versioning_page(os.path.join(os.getcwd(), 
+                      'results/configuration/versioning'),
+                       container.cp)
 
-wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(), 'results'))
+wf.make_results_web_page(finalize_workflow, 
+                         os.path.join(os.getcwd(),
+                         'results'))
 
 container += workflow
 container += finalize_workflow
