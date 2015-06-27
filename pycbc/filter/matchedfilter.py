@@ -159,8 +159,7 @@ class MatchedFilterControl(object):
             # setup the threasholding/clustering operations for each segment
             self.threshold_and_clusterers = []
             for seg in self.segments:
-                valid = numpy.array(self.snr_mem.data[seg.analyze], copy=False)
-                thresh = events.ThresholdCluster(valid, window)
+                thresh = events.ThresholdCluster(self.snr_mem[seg.analyze], window)
                 self.threshold_and_clusterers.append(thresh)
 
 
