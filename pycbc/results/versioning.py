@@ -21,7 +21,6 @@ import os
 import subprocess
 from ConfigParser import ConfigParser
 from pycbc.results import save_fig_with_metadata
-from pycbc.workflow.core import check_output_error_and_retcode
 
 def get_library_version_info():
     """This will return a list of dictionaries containing versioning
@@ -156,6 +155,7 @@ def get_code_version_numbers(cp):
         A dictionary keyed by the executable name with values giving the
         version string for each executable.
     """
+    from pycbc.workflow.core import check_output_error_and_retcode
     code_version_dict = {}
     for item, value in cp.items('executables'):
         path, exe_name = os.path.split(value)
