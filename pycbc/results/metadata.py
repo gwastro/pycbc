@@ -47,7 +47,7 @@ def save_html_with_metadata(fig, filename, fig_kwds, kwds):
         line = "<div class=pycbc-meta key=\"%s\" value=\"%s\"></div>" % (str(key), value) 
         f.write(line)    
 
-    text = escape(text, escape_table)
+    #text = escape(text, escape_table)
     f.write(text)
 
 def load_html_metadata(filename):
