@@ -31,13 +31,15 @@ parser.add_argument("-d", "--output-dir", default=None,
                     help="Path to output directory.")
 wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
-pycbc.init_logging()
+
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
+                    level=logging.INFO)
 
 container = wf.Workflow(args, args.workflow_name)
 workflow = wf.Workflow(args, 'main')
 finalize_workflow = wf.Workflow(args, 'finalization')
 
-makedir(args.output_dir)
+wf.makedir(args.output_dir)
 os.chdir(args.output_dir)
 
 # Get segments and find where the data is

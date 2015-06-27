@@ -74,8 +74,10 @@ segments = pycbc.events.select_segments_by_definer(args.analysis_segment_file,
 # Calculate the PSDs                                                   
 logging.info('%s psds to calculate' % len(segments))
 p = multiprocessing.Pool(args.cores)
-psds = p.map_async(get_psd, zip(segments, range(len(segments))))
-psds = psds.get()
+
+#psds = p.map_async(get_psd, zip(segments, range(len(segments))))
+#psds = psds.get()
+psds = [get_psd(a) for a in zip(segments, range(len(segments)))]
 
 # Store the PSDs in an hdf file, include some basic metadata
 f = h5py.File(args.output_file, 'w')
