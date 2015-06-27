@@ -52,7 +52,7 @@ class CUDACorrelator(_BaseCorrelator):
         self.krnl = get_correlate_kernel(x.dtype, y.dtype, dtype_out)
         
     def correlate(self):
-        self.krnl(self.x, self,y, self.z)
+        self.krnl(self.x, self.y, self.z)
         
 def _correlate_factory(x, y, z):
     return CUDACorrelator

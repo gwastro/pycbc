@@ -321,7 +321,7 @@ class SingleDetPowerChisq(object):
 
         return self._bin_cache[key]
 
-    def values(self, corr, snr, snrv, snr_norm, psd, indices, template):
+    def values(self, corr, snrv, snr_norm, psd, indices, template):
         """ Calculate the chisq at points given by indices.
 
         Returns
@@ -353,7 +353,8 @@ class SingleDetPowerChisq(object):
             if num_above > 0:
                 bins = self.cached_chisq_bins(template, psd)
                 dof = (len(bins) - 1) * 2 - 2
-                chisq = fastest_power_chisq_at_points(corr, snr, above_snrv, snr_norm, bins, above_indices)
+                chisq = power_chisq_at_points_from_precomputed(corr,
+                                     above_snrv, snr_norm, bins, above_indices)
 
             if self.snr_threshold:
                 if num_above > 0:

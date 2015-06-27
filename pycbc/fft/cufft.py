@@ -78,16 +78,16 @@ class FFT(_BaseFFT):
         self.outvec = outvec.data
 
     def execute(self):
-        cu_fft.fft(self.invec, self.outvec, cuplan)
+        cu_fft.fft(self.invec, self.outvec, self.plan)
 
 class IFFT(_BaseIFFT):
     def __init__(self, invec, outvec, nbatch=1, size=None):
         super(IFFT, self).__init__(invec, outvec, nbatch, size)
-        self.plan = cuplan = _get_inv_plan(invec.dtype, outvec.dtype, len(outvec), batch=nbatch)
+        self.plan = _get_inv_plan(invec.dtype, outvec.dtype, len(outvec), batch=nbatch)
 
         self.invec = invec.data
         self.outvec = outvec.data
 
     def execute(self):
-        cu_fft.ifft(self.invec, self.outvec, cuplan)
+        cu_fft.ifft(self.invec, self.outvec, self.plan)
 

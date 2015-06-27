@@ -300,7 +300,7 @@ with ctx:
                                     idx+stilde.analyze.start)
 
             out_vals['chisq'], out_vals['chisq_dof'] = \
-                  power_chisq.values(corr, snr, snrv, norm, stilde.psd,
+                  power_chisq.values(corr, snrv, norm, stilde.psd,
                                      idx+stilde.analyze.start, template)
 
             out_vals['cont_chisq'] = \

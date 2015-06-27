@@ -26,6 +26,7 @@ from pycuda import gpuarray
 from pycuda.tools import dtype_to_ctype
 from pycuda.elementwise import ElementwiseKernel
 from pycuda.compiler import SourceModule
+from .events import _BaseThresholdCluster
 import pycbc.scheme
 
 threshold_op = """
@@ -251,26 +252,29 @@ def threshold_and_cluster(series, threshold, window):
     w = (cl != -1)
     return cv[w], cl[w]
     
-def batched_threshold_and_cluster(seriesl, threshold, window):
-    (fn, fn2), nt, nb = get_tkernel(len(series), window)
-    threshold = numpy.float32(threshold * threshold)
-    window = numpy.int32(window)
-    cv, cl = [], []
+class CUDAThresholdCluster(_BaseThresholdCluster):
+    def __init__(self, series, window):
+        self.series = series.data.gpudata
+        self.window = numpy.int32(window)
+
+        self.outl = tl.gpudata
+        self.outv = tv.gpudata
+        self.slen = len(series)
+        (fn, fn2), self.nt, self.nb = get_tkernel(self.slen, window)     
+        self.fn = fn.prepared_call
+        self.fn2 = fn2.prepared_call
+        self.cl = loc[0:self.nb]
+        self.cv = val[0:self.nb]
+
+    def threshold_and_cluster(self, threshold):
+        threshold = numpy.float32(threshold * threshold)
     
-    for series in seriesl:
-        series = series.data
-        outv = gpuarray.empty(nb, dtype=numpy.complex64)
-        outl = gpuarray.empty(nb, dtype=numpy.int32)
-        fn(series, outv, outl, window, threshold, block=(nt, 1, 1), grid=(nb, 1))
-        fn2(outv, outl, threshold, window, block=(nb, 1, 1), grid=(1, 1))   
-        cv.append(outv.get_async())
-        cl.append(outl.get_async())
-        
-    pycbc.scheme.mgr.state.context.synchronize()
-    cvs, lvs = [], []
-    for v, l in zip(cv, cl):        
-        w = (l != -1)
-        cvs.append(c[w])
-        lvs.append(l[w])
-    return cvs, cls
+        self.fn((self.nb, 1), (self.nt, 1, 1), self.series, self.outv, self.outl, self.window, threshold,)
+        self.fn2((1, 1), (self.nb, 1, 1), self.outv, self.outl, threshold, self.window)   
+        pycbc.scheme.mgr.state.context.synchronize()
+        w = (self.cl != -1)
+        return self.cv[w], self.cl[w]
+    
+def _threshold_cluster_factory(series, window):
+    return CUDAThresholdCluster
 
