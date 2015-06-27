@@ -75,9 +75,9 @@ correlate = correlate_inline
 
 class CPUCorrelator(_BaseCorrelator):
     def __init__(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z
+        self.x = x.data
+        self.y = y.data
+        self.z = z.data
         self.arrlen = len(self.x)
         self.code = corr_parallel_code
         self.support = corr_support

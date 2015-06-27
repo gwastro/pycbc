@@ -146,12 +146,11 @@ class MatchedFilterControl(object):
                                                       
             # Set up the correlation operations for each analysis segment
             corr_slice = slice(self.kmin, self.kmax)
-            self.corr_np = numpy.array(self.corr_mem.data[corr_slice], copy=False)
-            self.hcorr = numpy.array(self.htilde.data[corr_slice], copy=False)
             self.correlators = []      
             for seg in self.segments:
-                view = numpy.array(seg.data[corr_slice], copy=False)
-                corr = Correlator(self.hcorr, view, self.corr_np)
+                corr = Correlator(self.htilde[corr_slice], 
+                                  seg[corr_slice], 
+                                  self.corr_mem[corr_slice])
                 self.correlators.append(corr)
             
             # setup up the ifft we will do
