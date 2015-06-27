@@ -140,8 +140,10 @@ def get_pchisq_fn(np, fuse_correlate=False):
 
 _bcache = {}
 def get_cached_bin_layout(bins):
+    global _bcache
     key = id(bins)
     if key not in _bcache:
+        _bcache = {}
         bv, kmin, kmax = [], [], []
         for i in range(len(bins)-1):
             s, e = bins[i], bins[i+1]
