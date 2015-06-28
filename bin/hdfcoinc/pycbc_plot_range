@@ -60,7 +60,7 @@ pylab.ylabel('Inspiral Range (Mpc)')
 pylab.grid() 
 for m1, m2, apx in zip(args.mass1, args.mass2, args.approximant):
     label = '$%sM_{\odot}-%sM_{\odot} (%s)$' % (m1, m2, apx)
-    pylab.errorbar((start+end)/2, ranges[apx], xerr=(end-start)/2, label=label)
+    pylab.errorbar((start+end)/2, ranges[apx], xerr=(end-start)/2, label=label, fmt=None)
 pylab.legend()
          
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
