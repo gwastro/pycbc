@@ -607,6 +607,7 @@ def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=[]):
     return trig_files
 
 def make_psd_file(workflow, frame_files, segment_file, segment_name, out_dir, tags=None):
+    make_analysis_dir(out_dir)
     tags = [] if not tags else tags
     node = MergeExecutable(workflow.cp, 'calculate_psd', ifos=segment_file.ifo,
                           out_dir=out_dir, tags=tags).create_node()
