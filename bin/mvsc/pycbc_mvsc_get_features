@@ -149,17 +149,17 @@ class Trigger:
 			if weighting_method == "physical_distance":
 				if self.d_distr == "uniform":
 					self.weight = ((self.distance/reference_dist)**2)**distance_power
-				if self.d_distr == "log10":
+				elif self.d_distr == "log10":
 					self.weight = ((self.distance/reference_dist)**3)**distance_power
-				if self.d_distr == "volume":
+				elif self.d_distr == "volume":
 					self.weight = 1
-			if weighting_method == "chirp_distance":
+			elif weighting_method == "chirp_distance":
 				self.chirp_dist = chirp_dist_func(self.distance, self.sim_mchirp)
 				if self.d_distr == "uniform":
 					self.weight = ((self.chirp_dist/reference_dist)**2)**distance_power
-				if self.d_distr == "log10":
+				elif self.d_distr == "log10":
 					self.weight = ((self.chirp_dist/reference_dist)**3)**distance_power
-				if self.d_distr == "volume":
+				elif self.d_distr == "volume":
 					self.weight = 1
 			if min_weight != -1:
 				if self.weight < min_weight: self.weight = min_weight
