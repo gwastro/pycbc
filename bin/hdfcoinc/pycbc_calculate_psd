@@ -78,7 +78,6 @@ p = multiprocessing.Pool(args.cores)
 
 psds = p.map_async(get_psd, zip(segments, range(len(segments))))
 psds = psds.get()
-#psds = [get_psd(a) for a in zip(segments, range(len(segments)))]
 
 # Store the PSDs in an hdf file, include some basic metadata
 f = h5py.File(args.output_file, 'w')
