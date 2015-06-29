@@ -1,14 +1,11 @@
 #!/bin/env python
 """Make segment file to blind the results from foreground related triggers """
 
-import argparse, logging, pycbc.version, h5py
+import argparse, logging, pycbc.version, h5py, pycbc.events
 
 parser = argparse.AgumentParser(desc=__doc__)
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose', action='store_true')
-parser.add_argument('--veto-window', type=float, 
-                    help="Time in seconds around each zerolag trigger to "
-                         "veto ")
 parser.add_argument('--foreground-triggers', 
                     help="HDF file containing the zerolag foreground triggers "
                          "from the analysis")
@@ -27,6 +24,17 @@ pycbc.init_logging(args.verbose)
 logging.info('start')
 
 f = h5py.File(args.foreground_triggers, 'r')
+start = f['segments/foreground_veto/start'][:]
+end = f['segments/foreground_veto/end'][:]
+vsegs = pycbc.events.start_end_to_segments(start, end)
 
+ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
 
+ifos, fsegs, names = [], [], []
+for ifo in [ifo1, ifo2]:
+    segs = pycbc.events.select_segments_by_definer(args.veto_file, args.segment_name, ifo)
+    fsegs += [(segs + vsegs).coalesce()]
+    names += [args.output_segment_name]
+    ifso += [ifo]
+pycbc.events.multi_segments_to_file(fsegs, args.output_file, names, ifos)
 logging.info('done')
