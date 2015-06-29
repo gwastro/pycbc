@@ -139,8 +139,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
             final_bg_file =  _workflow.setup_interval_coinc(workflow, hdfbank,
                             insps_hdf, final_veto_file, final_veto_name,
                             output_dir, tags=ctags)
-            _workflow.make_foreground_table(workflow, final_bg_file[0], final_veto_name[0],
-                            hdfbank[0], tag, 'plots/foreground')
+            _workflow.make_foreground_table(workflow, final_bg_file[0], hdfbank[0], final_veto_name[0], 'plots/foreground', tags=[tag])
 
             _workflow.make_snrchi_plot(workflow, insps_hdf, final_veto_file[0], final_veto_name[0],
                                       'plots/background', tags=[tag])
@@ -154,8 +153,8 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                             output_dir, tags = ctags)
             found_inj = _workflow.find_injections_in_hdf_coinc(workflow, _workflow.FileList([inj_coinc]),
                             _workflow.FileList([inj_file]), 
-                            final_veto_file[0], final_veto_name[[0], 
-                            output_dir, tags=ctags)                                          
+                            final_veto_file[0], final_veto_name[0], 
+                            output_dir, tags=ctags)
 
             _workflow.make_sensitivity_plot(workflow, found_inj, 'plots/sensitivity',
                                      tags=ctags)
