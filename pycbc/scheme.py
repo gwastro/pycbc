@@ -33,7 +33,6 @@ from optparse import OptionGroup
 import logging
 
 class _SchemeManager(object):
-
     _single = None
 
     def __init__(self):
@@ -155,7 +154,10 @@ class CPUScheme(Scheme):
         Scheme.__exit__(self, type, value, traceback)
 
 class MKLScheme(CPUScheme):
-    pass
+    def __init__(self, num_threads=1):
+        CPUScheme.__init__(self, num_threads)
+        if not pycbc.HAVE_MKL:
+            raise RuntimeError("Can't find MKL libraries")
 
 class DefaultScheme(CPUScheme):
     pass
@@ -231,10 +233,9 @@ def insert_processing_option_group(parser):
                            "of threads can be provided by the PYCBC_NUM_THREADS "
                            "environment variable. If the environment variable "
                            "is not set, the number of threads matches the number "
-                           "of logical cores. "
-
-,  
-                      default="cpu")                                                          
+                           "of logical cores. ",   
+                      default="cpu")
+                                                                                
     processing_group.add_argument("--processing-device-id", 
                       help="(optional) ID of GPU to use for accelerated "
                            "processing", 
@@ -299,9 +300,6 @@ def verify_processing_options(opt, parser):
     scheme_types = scheme_prefix.values()
     if opt.processing_scheme.split(':')[0] not in scheme_types:
         parser.error("(%s) is not a valid scheme type.")
-
-
-
 
 class ChooseBySchemeDict(dict):
     """ This class represents a dictionary whose purpose is to chose objects
