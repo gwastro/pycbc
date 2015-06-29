@@ -532,6 +532,22 @@ class PyCBCHDFInjFindExecutable(Executable):
 class MergeExecutable(Executable):
     current_retention_level = Executable.CRITICAL
 
+class CensorForeground(Executable):
+    current_retention_level = Executable.CRITICAL
+
+def make_foreground_censored_veto(workflow, bg_file, veto_file, veto_name, 
+                                  censored_name, out_dir, tags=None):
+    tags = [] if tags is None else tags
+    node = CensorForeground(workflow.cp, 'foreground_censor', ifos=workflow.ifos,
+                            out_dir=out_dir, tags=tags).create_node()
+    node.add_input_opt('--foreground-triggers', bg_file)
+    node.add_input_opt('--veto-file', veto_file)
+    node.add_opt('--segment-name', veto_name)
+    node.add_opt('--output-segment-name', censored_name)
+    node.new_output_file_opt(workflow.analysis_time, '.xml', '--output-file')
+    workflow += node
+    return node.output_files[0]
+
 def merge_single_detector_hdf_files(workflow, bank_file, trigger_files, out_dir, tags=[]):
     make_analysis_dir(out_dir)
     out = FileList()

@@ -41,7 +41,7 @@ err_low = far_back * ((back_fan - numpy.sqrt(back_fan)) / back_fan)
 err_low[err_low == 0] = 1e-100
 err_high = far_back * ((back_fan + numpy.sqrt(back_fan)) / back_fan)
 
-logging.info('Found %s background (inclusive zerolage) triggers' % len(cstat_back))
+logging.info('Found %s background (inclusive zerolag) triggers' % len(cstat_back))
 
 back_ifar_exc = f['background_exc/ifar'][:]
 cstat_back_exc = f['background_exc/stat'][:]
