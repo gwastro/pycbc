@@ -158,7 +158,7 @@ def cluster_reduce(idx, snr, window_size):
     ind = findchirp_cluster_over_window(idx, snr, window_size)
     return idx.take(ind), snr.take(ind)
 
-def newsnr(snr, reduced_x2, q=6.):
+def newsnr(snr, reduced_x2, q=6., n=2.):
     """Calculate the re-weighted SNR statistic ('newSNR') from given SNR and
     reduced chi-squared values. See http://arxiv.org/abs/1208.3491 for
     definition. Previous implementation in glue/ligolw/lsctables.py
@@ -168,7 +168,7 @@ def newsnr(snr, reduced_x2, q=6.):
 
     # newsnr is only different from snr if reduced chisq > 1
     ind = numpy.where(reduced_x2 > 1.)[0]
-    newsnr[ind] *= ( 0.5 * (1. + reduced_x2[ind] ** (q/2.)) ) ** (-1./q)
+    newsnr[ind] *= ( 0.5 * (1. + reduced_x2[ind] ** (q/n)) ) ** (-1./q)
 
     if len(newsnr) > 1:
         return newsnr
