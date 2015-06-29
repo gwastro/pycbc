@@ -3,7 +3,7 @@
 
 import argparse, logging, pycbc.version, h5py, pycbc.events
 
-parser = argparse.AgumentParser(desc=__doc__)
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--foreground-triggers', 
@@ -35,6 +35,6 @@ for ifo in [ifo1, ifo2]:
     segs = pycbc.events.select_segments_by_definer(args.veto_file, args.segment_name, ifo)
     fsegs += [(segs + vsegs).coalesce()]
     names += [args.output_segment_name]
-    ifso += [ifo]
+    ifos += [ifo]
 pycbc.events.multi_segments_to_file(fsegs, args.output_file, names, ifos)
 logging.info('done')

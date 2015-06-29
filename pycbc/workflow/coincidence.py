@@ -544,6 +544,7 @@ def make_foreground_censored_veto(workflow, bg_file, veto_file, veto_name,
     node.add_input_opt('--veto-file', veto_file)
     node.add_opt('--segment-name', veto_name)
     node.add_opt('--output-segment-name', censored_name)
+    node.new_output_file_opt(workflow.analysis_time, '.xml', '--output-file')
     workflow += node
     return node.output_files[0]
 
