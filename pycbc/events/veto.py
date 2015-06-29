@@ -34,6 +34,27 @@ def segments_to_file(segs, filename, name, ifo=""):
     -------
     File : Return a pycbc.core.File reference to the file
     """
+    return multi_segments_to_file([segs], filename, [name], [ifo])
+
+
+def multi_segments_to_file(seg_list, filename, names, ifos):
+    """ Save segments to an xml file
+    
+    Parameters
+    ----------
+    seg_list: glue.segments.segmentlist
+        List of segment lists to write to disk
+    filename : str
+        name of the output file
+    names : 
+        name of each segment list
+    ifos :
+        list of ifos
+        
+    Returns
+    -------
+    File : Return a pycbc.core.File reference to the file
+    """
     from pycbc.workflow.core import File
 
     # create XML doc and add process table
@@ -41,12 +62,13 @@ def segments_to_file(segs, filename, name, ifo=""):
     outdoc.appendChild(ligolw.LIGO_LW())
     process = ligolw_utils.process.register_to_xmldoc(outdoc, argv[0], {})
 
-    fsegs = [(lal.LIGOTimeGPS(seg[0]), lal.LIGOTimeGPS(seg[1])) \
-        for seg in segs]
+    for segs, ifo, name in zip(seg_list, ifos, names):
+        fsegs = [(lal.LIGOTimeGPS(seg[0]), lal.LIGOTimeGPS(seg[1])) \
+            for seg in segs]
 
-    # add segments, segments summary, and segment definer tables using glue library
-    with ligolw_segments.LigolwSegments(outdoc, process) as xmlsegs:
-        xmlsegs.insert_from_segmentlistdict({ifo : fsegs}, name)
+        # add segments, segments summary, and segment definer tables using glue library
+        with ligolw_segments.LigolwSegments(outdoc, process) as xmlsegs:
+            xmlsegs.insert_from_segmentlistdict({ifo : fsegs}, name)
 
     # write file
     ligolw_utils.write_filename(outdoc, filename)
@@ -56,7 +78,6 @@ def segments_to_file(segs, filename, name, ifo=""):
     f = File(ifo, name, segs, file_url=url, tags=[name])
     f.PFN(os.path.abspath(filename), site='local')
     return f
-    
 
 def start_end_from_segments(segment_file):
     """ Return the start and end time arrays from a segment file.
