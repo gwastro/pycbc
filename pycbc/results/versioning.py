@@ -20,8 +20,7 @@ import logging
 import os
 import subprocess
 from ConfigParser import ConfigParser
-from pycbc.results import save_fig_with_metadata
-from pycbc.workflow.core import check_output_error_and_retcode
+from pycbc.results import save_fig_with_metadata, html_escape
 
 def get_library_version_info():
     """This will return a list of dictionaries containing versioning
@@ -144,7 +143,9 @@ def write_library_information(path):
         kwds = {'render-function' : 'render_text',
                 'title' : '%s Version Information'%lib_name,
         }
-        save_fig_with_metadata(text, os.path.join(path,'%s_version_information.html' %(lib_name)), **kwds)
+        
+        save_fig_with_metadata(html_escape(text), 
+          os.path.join(path,'%s_version_information.html' %(lib_name)), **kwds)
 
 def get_code_version_numbers(cp):
     """Will extract the version information from the executables listed in
@@ -156,6 +157,7 @@ def get_code_version_numbers(cp):
         A dictionary keyed by the executable name with values giving the
         version string for each executable.
     """
+    from pycbc.workflow.core import check_output_error_and_retcode
     code_version_dict = {}
     for item, value in cp.items('executables'):
         path, exe_name = os.path.split(value)
@@ -198,7 +200,8 @@ def write_code_versions(path, cp):
     kwds = {'render-function' : 'render_text',
             'title' : 'Version Information from Executables',
     }
-    save_fig_with_metadata(html_text, os.path.join(path,'version_information_from_executables.html'), **kwds)
+    save_fig_with_metadata(html_escape(html_text), 
+        os.path.join(path,'version_information_from_executables.html'), **kwds)
 
 def create_versioning_page(path, cp):
     logging.info("Entering versioning module")
