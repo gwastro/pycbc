@@ -142,17 +142,6 @@ def setup_splittable_dax_generated(workflow, input_tables, out_dir, input_type,
     '''
     # Get values from ini file
     if input_type == "splitinjections":
-        '''
-        if (workflow.cp.has_opt("workflow-%s" % input_type,
-                                "%s-num" % input_type) \
-            and workflow.cp.has_opt("workflow-%s" % input_type,
-                                    "%s-interval" % input_type)):
-            raise ValueError("Must give one of %s-num and %s-interval"
-                             % (input_type, input_type))
-
-        elif workflow.cp.has_opt("workflow-%s" % input_type,
-                                 "%s-num" % input_type):
-        '''
         num_splits = workflow.cp.get_opt_tags("workflow-%s" % input_type,
                                               "%s-num" % input_type, [])
     else:
@@ -171,8 +160,6 @@ def setup_splittable_dax_generated(workflow, input_tables, out_dir, input_type,
     curr_exe_job = exe_class(workflow.cp, input_type, num_splits, out_dir=out_dir)
 
     for input in input_tables:
-        logging.info(input_tables)
-        logging.info(input)
         node = curr_exe_job.create_node(input)
         workflow.add_node(node)
         out_file_groups += node.output_files

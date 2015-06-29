@@ -31,7 +31,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 
 import logging, urllib, urlparse
 from pycbc.workflow.core import File, FileList, make_analysis_dir, Executable
-from pycbc.workflow.jobsetup import LalappsInspinjExecutable, LigolwCBCJitterSkylocExecutable
+from pycbc.workflow.jobsetup import LalappsInspinjExecutable, LigolwCBCJitterSkylocExecutable, LigolwCBCAlignTotalSpinExecutable
 
 def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -135,29 +135,42 @@ def setup_injection_workflow(workflow, output_dir=None,
             inj_job = LalappsInspinjExecutable(workflow.cp, inj_section_name,
                                                out_dir=output_dir, ifos=ifos,
                                                tags=curr_tags)
-            node = inj_job.create_node(fullSegment, exttrig_file)
+            node = inj_job.create_node(full_segment, exttrig_file)
             if injection_method == "AT_COH_PTF_RUNTIME":
                 workflow.execute_node(node)
             else:
                 workflow.add_node(node)
             inj_file = node.output_files[0]
 
-            if workflow.cp.has_option(section, "jitter-skyloc"):
+            if workflow.cp.has_option("workflow-jitter_skyloc",
+                                      "do-jitter-skyloc"):
+                nodeTags = inj_file.tag_str
                 jitter_job = LigolwCBCJitterSkylocExecutable(workflow.cp, 
                                                              'jitter_skyloc',
                                                              tags=curr_tags,
                                                              out_dir=output_dir,
                                                              ifos=ifos)
-                node = jitter_job.create_node(inj_file, fullSegment,
-                                              section=section)
+                node = jitter_job.create_node(inj_file, full_segment, curr_tags)
                 if injection_method == "AT_COH_PTF_RUNTIME":
                     workflow.execute_node(node)
                 else:
                     workflow.add_node(node)
-                jit_file = node.output_files[0]
-                inj_files.append(jit_file)
-            else:
-                inj_files.append(inj_file)
+                inj_file = node.output_files[0]
+            
+            if workflow.cp.has_option("workflow-align_total_spin",
+                                      "do-align-total-spin"):
+                align_job = LigolwCBCAlignTotalSpinExecutable(workflow.cp,
+                        'align_total_spin', tags=curr_tags, out_dir=output_dir,
+                        ifos=ifos)
+                node = align_job.create_node(inj_file, full_segment, curr_tags)
+                
+                if injection_method == "AT_COH_PTF_RUNTIME":
+                    workflow.execute_node(node)
+                else:
+                    workflow.add_node(node)
+                inj_file = node.output_files[0]
+            
+            inj_files.append(inj_file)
         else:
             err = "Injection method must be one of IN_WORKFLOW, "
             err += "AT_RUNTIME or PREGENERATED. Got %s." % (injection_method)
