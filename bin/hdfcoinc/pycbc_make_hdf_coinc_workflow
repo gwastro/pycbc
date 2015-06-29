@@ -103,7 +103,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                final_bg_file[0], final_veto_file[0], final_veto_name,
                                'closed_box', 'segments')      
                                          
-        for bg_file in bg_files:
+        for bg_file in (bg_files + final_bg_file):
             wf.make_snrifar_plot(workflow, bg_file, 'results/coincident_triggers', tags=bg_file.tags)
             wf.make_foreground_table(workflow, bg_file, hdfbank[0], tag, 'results/coincident_triggers')
 
