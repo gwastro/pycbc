@@ -165,6 +165,9 @@ make_analysis_dir('results/configuration/')
 with open(ini_file_path, 'wb') as ini_fh:
     container.cp.write(ini_fh)
 
+# Create versioning information
+create_versioning_page(os.path.join(os.getcwd(), 'results/configuration/versioning'), container.cp)
+
 wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(), 'results'))
 
 container += workflow
@@ -173,9 +176,6 @@ container += finalize_workflow
 import Pegasus.DAX3 as dax
 dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
 container._adag.addDependency(dep)
-
-# Create versioning information
-create_versioning_page(os.path.join(os.getcwd(), 'results/versioning'), container.cp)
 
 container.save()
 logging.info("Written dax.")

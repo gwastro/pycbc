@@ -1,5 +1,3 @@
-
-
 <!--accordion--> 
 <div class="panel-group" id="accordion-{{slug}}">
     <div class="panel panel-default">
@@ -21,7 +19,7 @@
 
                 <!--image file condition-->
                 {% if filename.endswith('png') %}
-                    <a href="{{filename}}"><img src="{{filename}}" style="width:825px"></a>
+                    <a href="{{filename}}"><img src="{{filename}}" class="img-responsive"></a>
 
                 <!--html file condition-->
                 {% elif filename.endswith('html') %}
