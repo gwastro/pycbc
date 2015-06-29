@@ -51,7 +51,7 @@ def sec_to_year(sec):
 
 parser = argparse.ArgumentParser()
 # General required options
-parser.add_argument('--version', action='version', versoin=pycbc.version.git_verbose_msg)
+parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--coinc-files', nargs='+', help='List of coincidence files used to calculate the FAP, FAR, etc.')
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--cluster-window', type=float, help='Size in seconds to maximize coinc triggers')
@@ -102,6 +102,7 @@ f.attrs['detector_1'] = attrs['detector_1']
 f.attrs['detector_2'] = attrs['detector_2']
 f.attrs['timeslide_interval'] = attrs['timeslide_interval']
 
+
 fore_locs = (sid_i == 0)
 logging.info("%s clustered foreground triggers" % fore_locs.sum())
 
@@ -109,6 +110,9 @@ logging.info("%s clustered foreground triggers" % fore_locs.sum())
 for key in seg.keys():
     f['segments/%s/start' % key] = seg[key]['start'][:]
     f['segments/%s/end' % key] = seg[key]['end'][:]
+
+f['segments/foreground_veto/start'] = veto_start
+f['segments/foreground_veto/end'] = veto_end
 
 if fore_locs.sum() > 0:
     f['foreground/stat'] = stat_i[fore_locs]
