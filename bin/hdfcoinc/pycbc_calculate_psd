@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """ Calculate psd estimates for analysis segments
 """
-import logging, argparse, numpy, h5py, itertools, multiprocessing
+import logging, argparse, numpy, h5py, itertools, multiprocessing, time
 import pycbc, pycbc.psd, pycbc.strain, pycbc.events
 from pycbc.version import git_verbose_msg as version
 from pycbc.fft.fftw import set_measure_level
@@ -43,6 +43,7 @@ def get_psd((seg, i)):
     try:
         gwstrain = pycbc.strain.from_cli(args, pycbc.DYN_RANGE_FAC)
     except RuntimeError:
+        time.sleep(10)
         return get_psd((seg, i))
 
     logging.info('%s: determining strain segmentation' % i)
@@ -74,6 +75,7 @@ segments = pycbc.events.select_segments_by_definer(args.analysis_segment_file,
 # Calculate the PSDs                                                   
 logging.info('%s psds to calculate' % len(segments))
 p = multiprocessing.Pool(args.cores)
+
 psds = p.map_async(get_psd, zip(segments, range(len(segments))))
 psds = psds.get()
 

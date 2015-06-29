@@ -606,6 +606,18 @@ def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=[]):
             trig_files += trig2hdf_node.output_files
     return trig_files
 
+def make_psd_file(workflow, frame_files, segment_file, segment_name, out_dir, tags=None):
+    make_analysis_dir(out_dir)
+    tags = [] if not tags else tags
+    node = MergeExecutable(workflow.cp, 'calculate_psd', ifos=segment_file.ifo,
+                          out_dir=out_dir, tags=tags).create_node()
+    node.add_input_opt('--analysis-segment-file', segment_file)
+    node.add_opt('--segment-name', segment_name)
+    node.add_input_list_opt('--frame-files', frame_files)
+    node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
+    workflow += node
+    return node.output_files[0]
+
 def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_files,
                            background_file, veto_file, veto_name, out_dir, tags=[]):
     """

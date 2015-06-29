@@ -17,7 +17,7 @@ psds = [f[ifo + '/psds/' + key][:] for key in keys]
 flow = f.attrs['low_frequency_cutoff']
 kmin = int(flow / df)
 
-fac = 1.0 / pycbc.DYN_RANGE_FAC / pycbc.DYN_RANGE_FAC
+fac = 1.0 / pycbc.DYN_RANGE_FAC
 high = numpy.percentile(psds, 95, axis=0)[kmin:] ** 0.5 * fac
 low = numpy.percentile(psds, 5, axis=0)[kmin:] ** 0.5 * fac
 middle = numpy.percentile(psds, 50, axis=0)[kmin:] ** 0.5 * fac
@@ -35,5 +35,5 @@ pylab.xlabel('Frequency (Hz)')
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
     title = "%s Spectrum" % ifo,
     caption = "Median amplitude spectral density plotted with a shaded region " 
-              "between the 5th and 9th perentiles. ",
+              "between the 5th and 95th perentiles. ",
     cmd = ' '.join(sys.argv))
