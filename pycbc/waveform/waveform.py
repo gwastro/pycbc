@@ -36,7 +36,6 @@ from pycbc import pnutils
 from pycbc.waveform import utils as wfutils
 import pycbc
 
-
 default_args = {'spin1x':0, 'spin1y':0, 'spin1z':0, 'spin2x':0, 'spin2y':0,
                 'spin2z':0, 'lambda1':0, 'lambda2':0,
                 'inclination':0, 'distance':1, 'f_final':0, 'f_ref':0,
@@ -55,122 +54,6 @@ _lalsim_td_approximants = {}
 _lalsim_fd_approximants = {}
 _lalsim_enum = {}
 _lalsim_sgburst_approximants = {}
-
-def _imrphenombfreq(**p):
-    import lalinspiral
-    params = lalinspiral.InspiralTemplate()
-    m1 = p['mass1']
-    m2 = p['mass2']
-
-    mc, et = pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
-    params.approximant = lalsimulation.IMRPhenomB
-    params.fLower = p['f_lower']
-    params.eta = et
-    params.distance = p['distance'] * lal.PC_SI * 1e6
-    params.mass1 = m1
-    params.mass2 = m2
-    params.spin1[2] = p['spin1z']
-    params.spin2[2] = p['spin2z']
-    params.startPhase = p['coa_phase']*2 - lal.PI
-    params.startTime = 0
-
-    params.tSampling = 8192
-    N = int(params.tSampling / p['delta_f'])
-    n = N / 2
-
-    # Create temporary memory to hold the results and call the generator
-    hpt = zeros(N, dtype=float32)
-    hct = zeros(N, dtype=float32)
-    hpt=hpt.lal()
-    hct=hct.lal()
-    lalinspiral.BBHPhenWaveBFreqDomTemplates(hpt, hct, params)
-
-    # Copy the results to a complex frequencyseries format
-    hctc = FrequencySeries(zeros(n, dtype=complex64), delta_f=p['delta_f'])
-    hptc = FrequencySeries(zeros(n, dtype=complex64), delta_f=p['delta_f'])
-
-    hptc.data += hpt.data[0:n]
-    hptc.data[1:n] += hpt.data[N:N-n:-1] * 1j
-
-    hctc.data += hct.data[0:n]
-    hctc.data[1:n] += hct.data[N:N-n:-1] * 1j
-
-    return hptc.astype(complex128),  hctc.astype(complex128)
-
-string_from_order = {
-    0 : 'newtonian',
-    1 : 'oneHalfPN',
-    2 : 'onePN',
-    3 : 'onePointFivePN',
-    4 : 'twoPN',
-    5 : 'twoPointFivePN',
-    6 : 'threePN',
-    7 : 'threePointFivePN',
-    -1: 'threePointFivePN',
-    -8: 'pseudoFourPN'
-    }
-
-def _get_waveform_from_inspiral(**p):
-    import lalmetaio
-
-    # prefix with 'Inspiral-'
-    name = p['approximant'][9:]
-
-    if name.startswith('EOB'):
-        p['phase_order'] = -8
-
-    params = lalmetaio.SimInspiralTable()
-    params.waveform = name + string_from_order[p['phase_order']]
-    params.mass1= p['mass1']
-    params.mass2= p['mass2']
-    params.f_lower = p['f_lower']
-    params.spin1x = p['spin1x']
-    params.spin1y = p['spin1y']
-    params.spin1z = p['spin1z']
-    params.spin2x = p['spin2x']
-    params.spin2y = p['spin2y']
-    params.spin2z = p['spin2z']
-    params.inclination = p['inclination']
-    params.distance = p['distance']
-    params.coa_phase = p['coa_phase']
-    import lalinspiral
-    guess_length = lalinspiral.FindChirpChirpTime(params.mass1, params.mass2,
-                                                  params.f_lower, 7)
-    guess_length = max(guess_length, 3)
-    params.geocent_end_time = guess_length * 1.5
-    params.taper = 'TAPER_NONE'  #FIXME - either explain or don't hardcode this
-    bufferl = guess_length * 2
-    dt = p['delta_t']
-    df = 1.0 / bufferl
-    sample_rate = int(1.0 / dt)
-    epoch = lal.LIGOTimeGPS(0, 0)
-    N = bufferl * sample_rate
-    n = N / 2 + 1
-
-    resp  = FrequencySeries(zeros(n), delta_f=df, epoch=epoch,
-                            dtype=complex64) + 1
-    out   = TimeSeries(zeros(N), delta_t=dt, epoch=epoch, dtype=float32)
-    outl  = out.lal()
-    outl.sampleUnits = lal.ADCCountUnit
-
-    out2  = TimeSeries(zeros(N), delta_t=dt, epoch=epoch, dtype=float32)
-    outl2 = out.lal()
-    outl2.sampleUnits = lal.ADCCountUnit
-
-    respl = resp.lal()
-    respl.sampleUnits = lal.DimensionlessUnit
-
-    lalinspiral.FindChirpInjectSignals(outl, params, respl)
-
-    params.coa_phase -= lal.PI / 4
-    lalinspiral.FindChirpInjectSignals(outl2, params, respl)
-    seriesp = TimeSeries(outl.data.data, delta_t=dt,
-                         epoch=epoch - params.geocent_end_time)
-
-    seriesc = TimeSeries(outl2.data.data, delta_t=dt,
-                         epoch=epoch - params.geocent_end_time)
-
-    return seriesp, seriesc
 
 def _lalsim_td_waveform(**p):
     flags = lalsimulation.SimInspiralCreateWaveformFlags()
@@ -233,34 +116,25 @@ def _lalsim_sgburst_waveform(**p):
 
     return hp, hc
 
-for approx_enum in xrange(0,lalsimulation.NumApproximants):
+for approx_enum in xrange(0, lalsimulation.NumApproximants):
     if lalsimulation.SimInspiralImplementedTDApproximants(approx_enum):
         approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
         _lalsim_enum[approx_name] = approx_enum
         _lalsim_td_approximants[approx_name] = _lalsim_td_waveform
 
-for approx_enum in xrange(0,lalsimulation.NumApproximants):
+for approx_enum in xrange(0, lalsimulation.NumApproximants):
     if lalsimulation.SimInspiralImplementedFDApproximants(approx_enum):
         approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
         _lalsim_enum[approx_name] = approx_enum
         _lalsim_fd_approximants[approx_name] = _lalsim_fd_waveform
 
 # sine-Gaussian burst
-for approx_enum in xrange(0,lalsimulation.NumApproximants):
+for approx_enum in xrange(0, lalsimulation.NumApproximants):
     if lalsimulation.SimInspiralImplementedFDApproximants(approx_enum):
         approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
         _lalsim_enum[approx_name] = approx_enum
         _lalsim_sgburst_approximants[approx_name] = _lalsim_sgburst_waveform
 
-#Add lalinspiral approximants
-insp_td = {}
-for apx in ['EOB']:
-    name = 'Inspiral-' + apx
-    insp_td[name] = _get_waveform_from_inspiral
-
-cpu_td = dict(_lalsim_td_approximants.items() + insp_td.items())
-cpu_fd = _lalsim_fd_approximants
-cpu_fd['Inspiral-IMRPhenomB'] = _imrphenombfreq
 cpu_sgburst = _lalsim_sgburst_approximants
 
 # Waveforms written in CUDA
@@ -452,8 +326,6 @@ def get_td_waveform(template=None, **kwargs):
 
     if 'approximant' not in input_params or input_params['approximant'] is None:
         raise ValueError("Please provide an approximant name")
-    elif input_params['approximant'].startswith('Inspiral-'):
-        pass
     elif input_params['approximant'] not in wav_gen:
         raise ValueError("Approximant %s not available" %
                             (input_params['approximant']))
@@ -597,11 +469,6 @@ def get_sgburst_waveform(template=None, **kwargs):
 # Organize Filter Generators
 _inspiral_fd_filters = {}
 _cuda_fd_filters = {}
-
-from fctmplt import findchirp_template
-from spa_tmplt import spa_tmplt
-_inspiral_fd_filters['SPAtmplt'] = spa_tmplt
-#_inspiral_fd_filters['FindChirpSP'] = findchirp_template
 
 _cuda_fd_filters['SPAtmplt'] = spa_tmplt
 
