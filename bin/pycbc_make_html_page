@@ -25,6 +25,7 @@ import zipfile
 from glue import segments
 from jinja2 import Environment, FileSystemLoader
 from pycbc.results.render import setup_template_render
+from pycbc.results.summary import render_static_html
 from pycbc.workflow import segment
 
 def examine_dir(cwd):
@@ -176,6 +177,7 @@ input_path = opts.template_file.rstrip(input_template)
 
 # setup template
 env = Environment(loader=FileSystemLoader(input_path))
+env.globals.update(render_static_html=render_static_html)
 template = env.get_template(input_template)
 
 # find all subdirs and the top-level subdirs

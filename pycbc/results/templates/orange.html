@@ -117,21 +117,10 @@
                      </div>
                 </div>
 
-                <!-- hold images inside a panel -->
-<!--                <div class="scaffold well">
--->
-                    <!-- display formatted files -->
-<!--                    <div class="row">
-                        <div class="col-md-6">
-                            <a class="fancybox plot" href="image.png" data-fancybox-group="1"><img src="image.png"></a>
-                        </div>
-                        <div class="col-md-6">
-                            <a class="fancybox plot" href="image.png" data-fancybox-group="1"><img src="image.png"></a>
-                        </div>
-                    </div>
+                <!-- include well if it exists -->
+                {{plots_dir}}{{dir.path}}
+                {{ render_static_html(plots_dir+dir.path+'/well.html') }}
 
-                </div>
--->
                 <hr class="row-divider">
 
 
