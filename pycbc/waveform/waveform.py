@@ -137,6 +137,9 @@ for approx_enum in xrange(0, lalsimulation.NumApproximants):
 
 cpu_sgburst = _lalsim_sgburst_approximants
 
+cpu_td = dict(_lalsim_td_approximants.items())
+cpu_fd = _lalsim_fd_approximants
+
 # Waveforms written in CUDA
 _cuda_td_approximants = {}
 _cuda_fd_approximants = {}
@@ -470,7 +473,9 @@ def get_sgburst_waveform(template=None, **kwargs):
 _inspiral_fd_filters = {}
 _cuda_fd_filters = {}
 
+from spa_tmplt import spa_tmplt
 _cuda_fd_filters['SPAtmplt'] = spa_tmplt
+_inspiral_fd_filters['SPAtmplt'] = spa_tmplt
 
 filter_wav = _scheme.ChooseBySchemeDict()
 filter_wav.update( {_scheme.CPUScheme:_inspiral_fd_filters,
