@@ -18,7 +18,7 @@
             <div class="panel-body">
 
                 <!--image file condition-->
-                {% if filename.endswith('png') %}
+                {% if filename.endswith('png') or filename.endswith('jpg') %}
                 <a class="fancybox" href="{{filename}}" data-fancybox-group="gallery" title=""><img src="{{filename}}" class="img-responsive" alt="" /></a>
 
                 <!--html file condition-->
