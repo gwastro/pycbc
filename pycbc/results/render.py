@@ -166,4 +166,4 @@ def render_ignore(path, cp):
     """ Does not render anything.
     """
 
-    pass
+    return ''
