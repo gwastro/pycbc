@@ -34,10 +34,11 @@ from distutils.core import setup, Command, Extension
 from distutils.command.clean import clean as _clean
 from pycbc.setuputils import pkg_config
 from distutils.file_util import write_file
+from distutils.version import LooseVersion
 
 try:
     import numpy.version
-    if numpy.version.version < '1.6.4':
+    if LooseVersion(numpy.version.version) < LooseVersion("1.6.4"):
         print (" Numpy >= 1.6.4 is required for pycbc dependencies. \n"
               " We found version %s already installed. Please update \n"
               " to a more recent version and then retry PyCBC  \n"
