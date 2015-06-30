@@ -75,7 +75,7 @@
                 {% endif %}            
             
                 <!--always link to file-->
-                <p><a href={{filename}}>Link to file.</a></p>
+                <a class="btn btn-xs" href='{{filename}}'>Link to File</a>
             
                 <!--show cmd line if there is one -->
                 {% if cp.check_option(filename, 'cmd') %}
