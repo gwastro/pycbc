@@ -72,7 +72,7 @@ def correlate_inline(x, y, z):
           )
     
 #correlate = correlate_inline
-correlate = correlate_parallel   
+correlate = correlate_inline
 
 class CPUCorrelator(_BaseCorrelator):
     def __init__(self, x, y, z):
