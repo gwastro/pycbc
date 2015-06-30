@@ -6,15 +6,15 @@
         <div class="row">
             {% if len(filelist) == 2 %}
                 <div class="col-md-6">
-                    <a class="fancybox plot" href="{{filelist[0].name}}" data-fancybox-group="1"><img src="{{filelist[0].name}}"></a>
+                    <a class="fancybox plot" href="{{filelist[0].name}}" data-fancybox-group="1"><img src="{{filelist[0].name}}" class="img-responsive"></a>
                 </div>
                 <div class="col-md-6">
-                    <a class="fancybox plot" href="{{filelist[1].name}}" data-fancybox-group="1"><img src="{{filelist[1].name}}"></a>
+                    <a class="fancybox plot" href="{{filelist[1].name}}" data-fancybox-group="1"><img src="{{filelist[1].name}}" class="img-responsive"></a>
                 </div>
             {% endif %}
             {% if len(filelist) == 1 %}
                 <div class="col-md-12">
-                    <a class="fancybox plot" href="{{filelist[0].name}}" data-fancybox-group="1"><img src="{{filelist[0].name}}"></a>
+                    <a class="fancybox plot" href="{{filelist[0].name}}" data-fancybox-group="1"><img src="{{filelist[0].name}}" class="img-responsive"></a>
                 </div>
             {% endif %}
 
