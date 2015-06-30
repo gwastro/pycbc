@@ -118,11 +118,9 @@
                 </div>
 
                 <!-- include well if it exists -->
-                {{plots_dir}}{{dir.path}}
                 {{ render_static_html(plots_dir+dir.path+'/well.html') }}
 
                 <hr class="row-divider">
-
 
                 <!-- display other files in directory -->
                 {% if dir.files %}
