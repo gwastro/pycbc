@@ -115,7 +115,7 @@ class Directory():
         and capslock.
         """
 
-        return self.path.split('/')[-1].replace('_', ' ').upper()
+        return self.path.split('/')[-1].replace('_', ' ').title()
 
     def level(self):
         """
