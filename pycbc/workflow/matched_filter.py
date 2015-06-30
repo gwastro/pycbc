@@ -297,17 +297,27 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
         cp.set('inspiral', 'block-duration',
                str(abs(science_segs[ifos[0]][0]) - \
                        2 * int(cp.get('inspiral', 'pad-data'))))
-        job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
-                                 out_dir=output_dir,
-                                 injection_file=injection_file, tags=tags)
-        multi_ifo_coherent_job_setup(workflow, inspiral_outs, job_instance,
-                                     science_segs, datafind_outs, output_dir,
-                                     parents=tmplt_banks)
+        if injection_file is not None:
+            for inj_file in injection_file:
+                job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
+                                         out_dir=output_dir,
+                                         injection_file=inj_file, tags=tags)
+                multi_ifo_coherent_job_setup(workflow, inspiral_outs,
+                                             job_instance, science_segs,
+                                             datafind_outs, output_dir,
+                                             parents=tmplt_banks)
+        else:
+            job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
+                                     out_dir=output_dir,
+                                     injection_file=injection_file, tags=tags)
+            multi_ifo_coherent_job_setup(workflow, inspiral_outs, job_instance,
+                                         science_segs, datafind_outs,
+                                         output_dir, parents=tmplt_banks)
     else:
         job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
                                  out_dir=output_dir,
                                  injection_file=injection_file, tags=tags)
         multi_ifo_job_setup(workflow, inspiral_outs, job_instance,
-	                    science_segs, datafind_outs, output_dir,
+                            science_segs, datafind_outs, output_dir,
                             parents=tmplt_banks)
     return inspiral_outs

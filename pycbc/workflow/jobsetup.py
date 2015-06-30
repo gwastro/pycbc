@@ -326,14 +326,15 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
     data_seg, job_valid_seg = curr_exe_job.get_valid_times()
     tag = []
     curr_out_files = FileList([])
-    bank_veto = datafind_outs.pop()
+    bank_veto = datafind_outs[-1]
+    frame_files = datafind_outs[:-1]
     split_bank_counter = 0
 
     for split_bank in parents:
         tag = ['%s' % str(split_bank_counter)]
         node = curr_exe_job.create_node(data_seg, job_valid_seg,
                                         parent=split_bank,
-                                        dfParents=datafind_outs,
+                                        dfParents=frame_files,
                                         bankVetoBank=bank_veto, tags=tag)
         workflow.add_node(node)
         split_bank_counter += 1
