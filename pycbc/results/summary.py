@@ -37,12 +37,12 @@ def render_workflow_html_template(filename, subtemplate, filelists):
     save_html_with_metadata(str(output), filename, None, kwds)
 
 def render_static_html(filename):
-    """ Add some static html file.
+    """ Add some static html file if it exists.
     """
-    print filename
+
+    # try to read file and if it does not exist then return an empty string
     try:
         content = open(filename, 'rb').read()
-        print content
         return content
     except IOError:
-        return 'dimsodmisomadisoam'
+        return ''
