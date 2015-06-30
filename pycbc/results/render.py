@@ -161,3 +161,9 @@ def render_text(path, cp):
     output = template.render(context)
 
     return output
+
+def render_ignore(path, cp):
+    """ Does not render anything.
+    """
+
+    pass
