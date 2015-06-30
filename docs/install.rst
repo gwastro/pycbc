@@ -143,11 +143,9 @@ the command 'deactivate'.
 ===============================
 Optional GPU acceleration
 ===============================
-PyCBC has the ability to accelerate its processing using either CUDA or
-OpenCL. 
+PyCBC has the ability to accelerate its processing using CUDA. 
 
 .. toctree::
     :maxdepth: 1
 
     cuda_install
-    opencl_install

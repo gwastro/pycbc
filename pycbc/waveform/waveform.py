@@ -29,7 +29,6 @@ import lal, lalsimulation
 from pycbc.types import TimeSeries,FrequencySeries,zeros,Array
 from pycbc.types import complex64, float32, complex128
 from pycbc.types import real_same_precision_as
-from pycbc import HAVE_CUDA,HAVE_OPENCL
 import pycbc.scheme as _scheme
 import inspect
 from pycbc.fft import fft
@@ -278,17 +277,10 @@ if pycbc.HAVE_CUDA:
 cuda_td = dict(_lalsim_td_approximants.items() + _cuda_td_approximants.items())
 cuda_fd = dict(_lalsim_fd_approximants.items() + _cuda_fd_approximants.items())
 
-# Waveforms written in OpenCL
-_opencl_td_approximants = {}
-_opencl_fd_approximants = {}
-
-opencl_td = dict(_lalsim_td_approximants.items() + _opencl_td_approximants.items())
-opencl_fd = dict(_lalsim_fd_approximants.items() + _opencl_fd_approximants.items())
-
 td_wav = _scheme.ChooseBySchemeDict()
 fd_wav = _scheme.ChooseBySchemeDict()
-td_wav.update({_scheme.CPUScheme:cpu_td,_scheme.CUDAScheme:cuda_td,_scheme.OpenCLScheme:opencl_td})
-fd_wav.update({_scheme.CPUScheme:cpu_fd,_scheme.CUDAScheme:cuda_fd,_scheme.OpenCLScheme:opencl_fd})
+td_wav.update({_scheme.CPUScheme:cpu_td,_scheme.CUDAScheme:cuda_td})
+fd_wav.update({_scheme.CPUScheme:cpu_fd,_scheme.CUDAScheme:cuda_fd})
 sgburst_wav = {_scheme.CPUScheme:cpu_sgburst}
 
 # List the various available approximants ####################################
@@ -300,9 +292,6 @@ def print_td_approximants():
     print("CUDA Approximants")
     for approx in _cuda_td_approximants.keys():
         print "  " + approx
-    print("OpenCL Approximants")
-    for approx in _opencl_td_approximants.keys():
-        print "  " + approx
 
 def print_fd_approximants():
     print("Lalsimulation Approximants")
@@ -310,9 +299,6 @@ def print_fd_approximants():
         print "  " + approx
     print("CUDA Approximants")
     for approx in _cuda_fd_approximants.keys():
-        print "  " + approx
-    print("OpenCL Approximants")
-    for approx in _opencl_fd_approximants.keys():
         print "  " + approx
 
 def print_sgburst_approximants():
@@ -611,7 +597,6 @@ def get_sgburst_waveform(template=None, **kwargs):
 # Organize Filter Generators
 _inspiral_fd_filters = {}
 _cuda_fd_filters = {}
-opencl_fd_filter = {}
 
 from fctmplt import findchirp_template
 from spa_tmplt import spa_tmplt
@@ -619,12 +604,11 @@ _inspiral_fd_filters['SPAtmplt'] = spa_tmplt
 #_inspiral_fd_filters['FindChirpSP'] = findchirp_template
 
 _cuda_fd_filters['SPAtmplt'] = spa_tmplt
-opencl_fd_filter['SPAtmplt'] = spa_tmplt
 
 filter_wav = _scheme.ChooseBySchemeDict()
 filter_wav.update( {_scheme.CPUScheme:_inspiral_fd_filters,
                     _scheme.CUDAScheme:_cuda_fd_filters,
-                    _scheme.OpenCLScheme:opencl_fd_filter} )
+                   } )
 
 # Organize functions for function conditioning/precalculated values
 _filter_norms = {}

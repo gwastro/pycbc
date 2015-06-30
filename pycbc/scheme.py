@@ -111,29 +111,6 @@ class CUDAScheme(Scheme):
         self.context = self.device.make_context(flags=pycuda.driver.ctx_flags.SCHED_YIELD)
         import atexit
         atexit.register(clean_cuda,self.context)
-        
-
-
-class OpenCLScheme(Scheme):
-    """Context that sets PyCBC objects to use a OpenCL processing scheme. """
-    def __init__(self,platform_name=None,device_num=0):
-        Scheme.__init__(self)
-        if not pycbc.HAVE_OPENCL:
-            raise RuntimeError("Install PyOpenCL to use OpenCL processing")   
-        import pyopencl  
-        
-        #If no platform is given, use the first one
-        if platform_name is None:
-            platform_id = 0
-        elif platform_name is not None:
-            for platform in pyopencl.get_platforms():
-                if platform.name == platform_name:
-                    platform_id = pyopencl.get_platforms().index(platform)
-        
-        self.platform = pyopencl.get_platforms()[platform_id]
-        self.device =  self.platform.get_devices()[device_num]
-        self.context = pyopencl.Context([self.device])
-        self.queue = pyopencl.CommandQueue(self.context)    
 
 class CPUScheme(Scheme):
     def __init__(self, num_threads=1):
@@ -165,7 +142,6 @@ class DefaultScheme(CPUScheme):
 default_context = DefaultScheme()
 mgr.state = default_context
 scheme_prefix = {CUDAScheme: "cuda",
-                 OpenCLScheme: "opencl", 
                  CPUScheme: "cpu",
                  MKLScheme: "mkl",
                  DefaultScheme: 'cpu'}
@@ -261,9 +237,6 @@ def from_cli(opt):
     if name == "cuda":
         logging.info("Running with CUDA support")
         ctx = CUDAScheme(opt.processing_device_id)
-    elif name == "opencl":
-        logging.info("Running with OpenCL support")
-        ctx = OpenCLScheme()
     elif name == "mkl":
         if len(scheme_str) > 1:
             numt = scheme_str[1]

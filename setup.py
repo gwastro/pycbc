@@ -187,13 +187,10 @@ class test(Command):
     def has_cuda(self):
         import pycbc
         return pycbc.HAVE_CUDA
-    def has_opencl(self):
-        import pycbc
-        return pycbc.HAVE_OPENCL
 
-    sub_commands = [('test_cpu',None),('test_cuda',has_cuda),('test_opencl',has_opencl)]
+    sub_commands = [('test_cpu',None),('test_cuda',has_cuda)]
     user_options = []
-    description = "run the available tests for all compute schemes (cpu,cuda,opencl)"
+    description = "run the available tests for all compute schemes (cpu, cuda)"
     def initialize_options(self):
         pass
     def finalize_options(self):
@@ -213,12 +210,6 @@ class test_cuda(TestBase):
     def initialize_options(self):
         TestBase.initialize_options(self)
         self.scheme = 'cuda'
-
-class test_opencl(TestBase):
-    description = "run OpenCL tests"
-    def initialize_options(self):
-        TestBase.initialize_options(self)
-        self.scheme = 'opencl'
 
 # write versioning info
 def get_version_info():
@@ -321,7 +312,6 @@ cmdclass = { 'test'  : test,
              'install' : install,
              'test_cpu':test_cpu,
              'test_cuda':test_cuda,
-             'test_opencl':test_opencl,
              'clean' : clean,
             }
             
