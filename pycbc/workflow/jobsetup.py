@@ -316,7 +316,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
 
 def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
                                  science_segs, datafind_outs, output_dir,
-                                 parents=None):
+                                 parents=None, tags=[]):
     """
     Method for setting up coherent inspiral jobs.
     """
@@ -324,14 +324,14 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
     ifos = science_segs.keys()
     job_tag = curr_exe_job.name.upper()
     data_seg, job_valid_seg = curr_exe_job.get_valid_times()
-    tag = []
     curr_out_files = FileList([])
     bank_veto = datafind_outs[-1]
     frame_files = datafind_outs[:-1]
     split_bank_counter = 0
 
     for split_bank in parents:
-        tag = ['%s' % str(split_bank_counter)]
+        tag = list(tags)
+        tag.append(split_bank.tag_str)
         node = curr_exe_job.create_node(data_seg, job_valid_seg,
                                         parent=split_bank,
                                         dfParents=frame_files,

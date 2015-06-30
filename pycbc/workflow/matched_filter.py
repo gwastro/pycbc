@@ -302,10 +302,12 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
                 job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
                                          out_dir=output_dir,
                                          injection_file=inj_file, tags=tags)
+                tag = list(tags)
+                tag.append(inj_file.tag_str)
                 multi_ifo_coherent_job_setup(workflow, inspiral_outs,
                                              job_instance, science_segs,
                                              datafind_outs, output_dir,
-                                             parents=tmplt_banks)
+                                             parents=tmplt_banks, tags=tag)
         else:
             job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
                                      out_dir=output_dir,

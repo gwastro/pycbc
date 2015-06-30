@@ -140,15 +140,16 @@ def setup_splittable_dax_generated(workflow, input_tables, out_dir, input_type,
     split_table_outs : pycbc.workflow.core.FileList
         The list of split up files as output from this job.
     '''
-    # Get values from ini file
-    if input_type == "splitinjections":
-        num_splits = workflow.cp.get_opt_tags("workflow-%s" % input_type,
-                                              "%s-num" % input_type, [])
-    else:
-        num_splits = workflow.cp.get_opt_tags("workflow-%s" % input_type,
-                                              "%s-num-banks" % input_type, [])
-
     cp = workflow.cp
+    
+    # Get values from ini file
+    if input_type == "splitinjtable":
+        num_splits = cp.get_opt_tags("workflow-%s" % input_type,
+                                     "%s-num" % input_type, [])
+    else:
+        num_splits = cp.get_opt_tags("workflow-%s" % input_type,
+                                     "%s-num-banks" % input_type, tags)
+
     split_exe = os.path.basename(cp.get('executables', input_type))
     # Select the appropriate class
     exe_class = select_splitfilejob_instance(split_exe)
