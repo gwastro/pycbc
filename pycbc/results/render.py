@@ -24,8 +24,30 @@ from xml.sax.saxutils import unescape
 
 import pycbc.results
 from pycbc.results import unescape_table
+from pycbc.results.metadata import save_html_with_metadata
 from pycbc.workflow.segment import fromsegmentxml
 
+def render_workflow_html_template(filename, subtemplate, filelists):
+    """ Writes a template given inputs from the workflow generator. Takes
+    a list of tuples. Each tuple is a pycbc File object. Also the name of the
+    subtemplate to render and the filename of the output.
+    """
+
+    dir = os.path.dirname(filename)
+
+    # render subtemplate
+    subtemplate_dir = pycbc.results.__path__[0] + '/templates/wells'
+    env = Environment(loader=FileSystemLoader(subtemplate_dir))
+    env.globals.update(get_embedded_config=get_embedded_config)
+    env.globals.update(len=len)
+    subtemplate = env.get_template(subtemplate)
+    context = {'filelists' : filelists,
+               'dir' : dir}
+    output = subtemplate.render(context)
+
+    # save as html page
+    kwds = {'render-function' : 'render_tmplt'}
+    save_html_with_metadata(str(output), filename, None, kwds)
 
 def get_embedded_config(filename):
     """ Attempt to load config data attached to file
