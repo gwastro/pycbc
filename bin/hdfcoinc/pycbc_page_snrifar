@@ -67,7 +67,7 @@ if not args.closed_box:
     else:
         pylab.xlim(cstat_back.min(), cstat_back.max() + 1)
 
-pylab.ylabel('Cumulative Rate $(yr^-1)$')
+pylab.ylabel('Cumulative Rate $(yr^{-1})$')
 pylab.xlabel('Ranking Statistic Threshold')
 pylab.yscale('log')
 pylab.ylim(far_back.min() / 10.0, far_back.max())
