@@ -16,20 +16,26 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import os.path
 import pycbc.results
 from jinja2 import Environment, FileSystemLoader
 from pycbc.results.metadata import save_html_with_metadata
+from pycbc.results.render import get_embedded_config
 
 def render_workflow_html_template(filename, subtemplate, filelists):
     """ Takes a template and list of tuples where the elements are File objects.
     """
 
+    dir = os.path.dirname(filename)
+
     # render subtemplate
     subtemplate_dir = pycbc.results.__path__[0] + '/templates/wells'
     env = Environment(loader=FileSystemLoader(subtemplate_dir))
+    env.globals.update(get_embedded_config=get_embedded_config)
     env.globals.update(len=len)
     subtemplate = env.get_template(subtemplate)
-    context = {'filelists' : filelists}
+    context = {'filelists' : filelists,
+               'dir' : dir}
     output = subtemplate.render(context)
 
     # save as html page

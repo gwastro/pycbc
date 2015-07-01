@@ -7,19 +7,21 @@
             {% if len(filelist) == 2 %}
                 <div class="col-md-6">
                     {% raw %}
-                       {{ setup_template_render('{% endraw %}{{filelist[0].name}}{% raw %}' , '') }}
+                    {% set cp = get_embedded_config('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}') %}
+                    {{cp.get('{% endraw %}{{filelist[0].name}}{% raw %}', 'title')}}
+                       {{ setup_template_render('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}' , '') }}
                     {% endraw %}
                 </div>
                 <div class="col-md-6">
                     {% raw %}
-                       {{ setup_template_render('{% endraw %}{{filelist[1].name}}{% raw %}' , '') }}
+                       {{ setup_template_render('{% endraw %}{{dir}}/{{filelist[1].name}}{% raw %}' , '') }}
                     {% endraw %}
                 </div>
             {% endif %}
             {% if len(filelist) == 1 %}
                 <div class="col-md-12">
                     {% raw %}
-                       {{ setup_template_render('{% endraw %}{{filelist[0].name}}{% raw %}' , '') }}
+                       {{ setup_template_render('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}' , '') }}
                     {% endraw %}
                 </div>
             {% endif %}
