@@ -50,18 +50,22 @@
 
 {% endif %}
 
-<!--make a caption to the content -->
-{% if cp.check_option(filename, 'caption') %}
-    <p><i>{{cp.get(filename, 'caption')}}</i></p>
-{% endif %}            
-
 <!--always link to file-->
 <a class="btn btn-xs btn-primary" href='{{filename}}' target="_blank">Link to File</a>
+
+<!--make a caption to the content -->
+{% if cp.check_option(filename, 'caption') %}
+    <button type="button" class="btn btn-xs btn-primary"
+            data-toggle="popover" title="Caption" data-placement="bottom"
+            data-content="{{cp.get(filename, 'caption')}}">
+            Caption
+    </button>
+{% endif %}
 
 <!--show cmd line if there is one -->
 {% if cp.check_option(filename, 'cmd') %}
     <button type="button" class="btn btn-xs btn-primary"
-            data-toggle="popover" title="command line"
+            data-toggle="popover" title="Command Line" data-placement="right"
             data-content="{{cp.get(filename, 'cmd')}}">
             Command Line
     </button>
