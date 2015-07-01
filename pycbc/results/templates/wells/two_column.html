@@ -3,7 +3,7 @@
 
     <!-- display formatted files -->
     {% for filelist in filelists %}
-        <div class="row">
+        <div class="row" style="padding-left:10px;">
             {% if len(filelist) == 2 %}
                 <div class="col-md-6">
                     {% raw %}
@@ -21,7 +21,7 @@
                 </div>
             {% endif %}
             {% if len(filelist) == 1 %}
-                <div class="col-md-12">
+                <div class="col-md-12" style="padding-top:10px;">
                     {% raw %}
                     {% set cp = get_embedded_config('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}') %}
                     <p class="text-center"><b>{{cp.get('{% endraw %}{{filelist[0].name}}{% raw %}', 'title')}}</b></p>
