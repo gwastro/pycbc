@@ -1,68 +1,68 @@
-                <!--image file condition-->
-                {% if filename.endswith('png') or filename.endswith('jpg') %}
-                    {% include 'file_img.html' %}
+<!--image file condition-->
+{% if filename.endswith('png') or filename.endswith('jpg') %}
+    {% include 'file_img.html' %}
 
-                <!--html file condition-->
-                {% elif filename.endswith('html') %}
-                <div  class="embed-responsive embed-responsive-16by9">
-                    <iframe class="embed-responsive-item" src="{{filename}}"></iframe>
-                </div>
+<!--html file condition-->
+{% elif filename.endswith('html') %}
+<div  class="embed-responsive embed-responsive-16by9">
+    <iframe class="embed-responsive-item" src="{{filename}}"></iframe>
+</div>
 
-                <!--segment XML file condition-->
-                {% elif ( filename.endswith('xml') or filename.endswith('xml.gz') ) and content %}
+<!--segment XML file condition-->
+{% elif ( filename.endswith('xml') or filename.endswith('xml.gz') ) and content %}
 
-                    <!--table header-->
-                    <table class="table"> 
-                    <thead>         
-                    <tr>
-                        <th>Channel</th>
-                        <th>GPS Start</th>
-                        <th>GPS End</th>
-                        <th>Duration (s)</th>
-                    </tr>         
-                    </thead>    
-                    <tbody>
+    <!--table header-->
+    <table class="table"> 
+    <thead>         
+    <tr>
+        <th>Channel</th>
+        <th>GPS Start</th>
+        <th>GPS End</th>
+        <th>Duration (s)</th>
+    </tr>         
+    </thead>    
+    <tbody>
 
-                    <!--table rows-->
-                    {% for channel, segmentlist in content.iteritems() %}
-                        {% for seg in segmentlist %}
-                            <tr>
-                                <td>{{channel}}</td>
-                                <td>{{seg[0]}}</td>
-                                <td>{{seg[1]}}</td>
-                                <td>{{abs(seg)}}</td>
-                            </tr>
-                        {% endfor %}
-                    {% endfor %}
-                    </tbody>
-                    </table>
+    <!--table rows-->
+    {% for channel, segmentlist in content.iteritems() %}
+        {% for seg in segmentlist %}
+            <tr>
+                <td>{{channel}}</td>
+                <td>{{seg[0]}}</td>
+                <td>{{seg[1]}}</td>
+                <td>{{abs(seg)}}</td>
+            </tr>
+        {% endfor %}
+    {% endfor %}
+    </tbody>
+    </table>
 
-                <!--configuration files-->
-                {% elif filename.endswith('.ini') %}
-                    <pre>{{content}}</pre>
+<!--configuration files-->
+{% elif filename.endswith('.ini') %}
+    <pre>{{content}}</pre>
 
-                <!--html file fragments-->
-                {% elif filename.endswith('.htmlf') %}
-                    <pre>{{content}}</pre>
-                <!--catch-all condition-->
-                {% else %}
-                    <p>Unsupported file extension.</p>
+<!--html file fragments-->
+{% elif filename.endswith('.htmlf') %}
+    <pre>{{content}}</pre>
+<!--catch-all condition-->
+{% else %}
+    <p>Unsupported file extension.</p>
 
-                {% endif %}
-                
-                <!--make a caption to the content -->
-                {% if cp.check_option(filename, 'caption') %}
-                    <p><i>{{cp.get(filename, 'caption')}}</i></p>
-                {% endif %}            
-            
-                <!--always link to file-->
-                <a class="btn btn-xs" href='{{filename}}' target="_blank">Link to File</a>
-            
-                <!--show cmd line if there is one -->
-                {% if cp.check_option(filename, 'cmd') %}
-                    <button type="button" class="btn btn-xs"
-                            data-toggle="popover" title="command line"
-                            data-content="{{cp.get(filename, 'cmd')}}">
-                            Command Line
-                    </button>
-                {% endif %}
+{% endif %}
+
+<!--make a caption to the content -->
+{% if cp.check_option(filename, 'caption') %}
+    <p><i>{{cp.get(filename, 'caption')}}</i></p>
+{% endif %}            
+
+<!--always link to file-->
+<a class="btn btn-xs" href='{{filename}}' target="_blank">Link to File</a>
+
+<!--show cmd line if there is one -->
+{% if cp.check_option(filename, 'cmd') %}
+    <button type="button" class="btn btn-xs"
+            data-toggle="popover" title="command line"
+            data-content="{{cp.get(filename, 'cmd')}}">
+            Command Line
+    </button>
+{% endif %}
