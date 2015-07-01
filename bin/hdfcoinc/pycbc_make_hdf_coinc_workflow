@@ -22,6 +22,10 @@ generate post-processing and plots.
 import pycbc, pycbc.version, pycbc.events, pycbc.workflow as wf
 import os, argparse, ConfigParser, logging, glue.segments
 from pycbc.results import create_versioning_page
+from pycbc.restuls import render_workflow_html_template
+
+def layout(path, cols):
+    render_workflow_html_template(path + '/well.html', 'two_column.html', cols)
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', 
@@ -171,8 +175,8 @@ if len(inj_files) > 0:
                             tags=['ALLINJ'])
 
 # save global config file to results directory
-ini_file_path = 'results/configuration/configuration.ini'
-wf.makedir('results/configuration/')
+ini_file_path = 'results/configuration/config/configuration.ini'
+wf.makedir('results/configuration/config')
 with open(ini_file_path, 'wb') as ini_fh:
     container.cp.write(ini_fh)
 
