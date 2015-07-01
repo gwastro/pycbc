@@ -11,19 +11,23 @@
             <!-- two file case -->
             {% if len(filelist) == 2 %}
                 <div class="col-md-6">
+                {% if filelist[0].name != '' %}
                     {% raw %}
                     {% set cp = get_embedded_config('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}') %}
                     <p class="text-center"><b>{% endraw %}A{{i}}. {% raw %}{{cp.get('{% endraw %}{{filelist[0].name}}{% raw %}', 'title')}}</b></p>
                        {{ setup_template_render('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}' , '') }}
                     {% endraw %}
+                {% endif %}
                 </div>
                 {% set i = i + 1 %}
                 <div class="col-md-6">
+                {% if len(filelist[1].name) > 0 %}
                     {% raw %}
                     {% set cp = get_embedded_config('{% endraw %}{{dir}}/{{filelist[1].name}}{% raw %}') %}
                     <p class="text-center"><b>{% endraw %}A{{i}}. {% raw %}{{cp.get('{% endraw %}{{filelist[1].name}}{% raw %}', 'title')}}</b></p>
                        {{ setup_template_render('{% endraw %}{{dir}}/{{filelist[1].name}}{% raw %}' , '') }}
                     {% endraw %}
+                {% endif %}
                 </div>
             {% endif %}
 
