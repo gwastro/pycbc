@@ -118,7 +118,10 @@
                 </div>
 
                 <!-- include well if it exists -->
-                {{ render_static_html(plots_dir+dir.path+'/well.html') }}
+                {% if path_exists(plots_dir+dir.path+'/well.html') %}
+                   <p>Well exists {{plots_dir}}{{dir.path}}/well.html</p>
+                   {{ setup_template_render(plots_dir+dir.path+'/well.html', None) }}
+                {% endif %}
 
                 <hr class="row-divider">
 
