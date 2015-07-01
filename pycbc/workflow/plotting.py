@@ -84,12 +84,15 @@ def make_sensitivity_plot(workflow, inj_file, out_dir, exclude=None, require=Non
     makedir(out_dir)   
     secs = requirestr(workflow.cp.get_subsections('plot_sensitivity'), require)  
     secs = excludestr(secs, exclude)
+    files = FileList([])
     for tag in secs:
         node = PlotExecutable(workflow.cp, 'plot_sensitivity', ifos=workflow.ifos,
                     out_dir=out_dir, tags=[tag] + tags).create_node()
         node.add_input_opt('--injection-file', inj_file)
         node.new_output_file_opt(inj_file.segment, '.png', '--output-file')
         workflow += node
+        files += node.output_files
+    return files
 
 def make_coinc_snrchi_plot(workflow, inj_file, inj_trig, stat_file, trig_file, out_dir,
                            exclude=None, require=None, tags=[]):
