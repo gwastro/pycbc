@@ -234,7 +234,6 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
         missingFlag = False
         for ifo in dfScienceSegs.keys():
             scienceFile = segFilesList.find_output_with_ifo(ifo)
-            scienceFile = scienceFile.find_output_with_tag('SCIENCE')
             if not len(scienceFile) == 1:
                 errMsg = "Did not find exactly 1 science file."
                 raise ValueError(errMsg)

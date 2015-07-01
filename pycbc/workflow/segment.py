@@ -1054,13 +1054,14 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
     """
     from pycbc.events import segments_to_file
     logging.info('Entering generation of science segments')
+    
     make_analysis_dir(out_dir)
     start_time = workflow.analysis_time[0]
     end_time = workflow.analysis_time[1]
     save_veto_definer(workflow.cp, out_dir, tags)
     
-    cat_sets = parse_cat_ini_opt(workflow.cp.get_opt_tags('workflow-segments',
-                                                'segments-science-veto', tags))
+    cat_sets = parse_cat_ini_opt(workflow.cp.get_opt_tags('workflow-science',
+                                                'science-veto-segments', tags))
     if len(cat_sets) > 1: 
         raise ValueError('Provide only 1 category group to determine'
                          ' analyzable segments')
@@ -1089,6 +1090,32 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
                                           "SCIENCE_OK", ifo=ifo)]
             
         sci_segs[ifo].coalesce()
+
+    science_method = workflow.cp.get_opt_tags("workflow-science", 
+                                      "science-analyze-method", tags)        
+    if science_method == 'ALL_SINGLE_IFO_TIME':
+        pass
+    elif science_method == 'COINC_TIME':
+        cum_segs = None
+        for ifo in sci_segs:
+            if cum_segs is not None:
+                cum_segs = (cum_segs & sci_segs[ifo]).coalesce() 
+            else:
+                cum_segs = sci_segs[ifo]
+                
+        for ifo in sci_segs:
+            sci_segs[ifo] = cum_segs 
+    else:
+        raise ValueError("Invalid segments-method, %s. Options are "
+                         "ALL_SINGLE_IFO_TIME and COINC_TIME" % science_method)
+        
+    min_segment_length =  workflow.cp.get_opt_tags("workflow-science", 
+                                      "science-minimum-segment-length", tags)
+    if min_segment_length:
+        for ifo in sci_segs:
+            segs = [seg for seg in sci_segs[ifo] if abs(seg) < min_segment_length]
+            sci_segs[ifo] = segments.segmentlist(segs)
+        
     logging.info('Leaving generation of science segments')
     return sci_segs, seg_files
     
@@ -1120,7 +1147,7 @@ def get_cumulative_veto_group_files(workflow, option, out_dir, tags=[]):
     start_time = workflow.analysis_time[0]
     end_time = workflow.analysis_time[1]
 
-    cat_sets = parse_cat_ini_opt(workflow.cp.get_opt_tags('workflow-segments',
+    cat_sets = parse_cat_ini_opt(workflow.cp.get_opt_tags('workflow-vetoes',
                                             option, tags))
     veto_gen_job = create_segs_from_cats_job(workflow.cp, out_dir,
                                              workflow.ifo_string) 
