@@ -19,7 +19,7 @@
 
                 <!--image file condition-->
                 {% if filename.endswith('png') or filename.endswith('jpg') %}
-                <a class="fancybox" href="{{filename}}" data-fancybox-group="gallery" title=""><img src="{{filename}}" class="img-responsive" alt="" /></a>
+                    {% include 'file_img.html' %}
 
                 <!--html file condition-->
                 {% elif filename.endswith('html') %}

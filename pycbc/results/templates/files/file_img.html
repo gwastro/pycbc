@@ -1,0 +1,18 @@
+<a class="fancybox" href="{{filename}}" data-fancybox-group="gallery" title=""><img src="{{filename}}" class="img-responsive" alt="" /></a>
+
+                <!--make a caption to the content -->
+                {% if cp.check_option(filename, 'caption') %}
+                    <p><i>{{cp.get(filename, 'caption')}}</i></p>
+                {% endif %}
+
+                <!--always link to file-->
+                <a class="btn btn-xs" href='{{filename}}' target="_blank">Link to File</a>
+
+                <!--show cmd line if there is one -->
+                {% if cp.check_option(filename, 'cmd') %}
+                    <button type="button" class="btn btn-xs"
+                            data-toggle="popover" title="command line"
+                            data-content="{{cp.get(filename, 'cmd')}}">
+                            Command Line
+                    </button>
+                {% endif %}
