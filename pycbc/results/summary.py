@@ -35,14 +35,3 @@ def render_workflow_html_template(filename, subtemplate, filelists):
     # save as html page
     kwds = {'render-function' : 'render_ignore'}
     save_html_with_metadata(str(output), filename, None, kwds)
-
-def render_static_html(filename):
-    """ Add some static html file if it exists.
-    """
-
-    # try to read file and if it does not exist then return an empty string
-    try:
-        content = open(filename, 'rb').read()
-        return content
-    except IOError:
-        return ''
