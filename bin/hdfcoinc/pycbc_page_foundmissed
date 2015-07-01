@@ -1,7 +1,7 @@
 #!/usr/bin/python
 """ Make table of the foreground coincident events
 """
-import argparse, pycbc.results
+import argparse, pycbc.results, sys, pycbc.version
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--injection-file',
@@ -12,6 +12,7 @@ parser.add_argument('--verbose', action='count')
 parser.add_argument('--log-distance', action='store_true', default=False)
 parser.add_argument('--dynamic', action='store_true', default=False)
 parser.add_argument('--output-file')
+parser.add_argument('--version', action='version', version=pycbc.version.git_version_msg)
 args = parser.parse_args()
 
 import h5py, numpy, logging, os.path
@@ -55,7 +56,7 @@ labels={'mchirp': 'Chirp Mass',
        }
 
 # For speed don't bother plotting really distant missed points
-missed = missed[dvals[args.distance_type][missed] < dvals[args.distance_type][found].max() * 1.1]
+# missed = missed[dvals[args.distance_type][missed] < dvals[args.distance_type][found].max() * 1.1]
 
 ifar_found = f['found_after_vetoes/ifar'][:]
 color = numpy.zeros(len(found))
@@ -75,7 +76,6 @@ points = plot.scatter(vals[args.axis_type][found], dvals[args.distance_type][fou
 ax = plot.gca()
 plot.xlabel(labels[args.axis_type])
 plot.ylabel(labels[args.distance_type])
-plot.title('Found and Missed Injections')
 plot.grid()
 plot.subplots_adjust(left=0.1, right=0.8, top=0.9, bottom=0.1)
 
@@ -86,7 +86,7 @@ plot.ylim(ymin=1)
 fig_kwds = {}
 if '.png' in args.output_file:
     fig_kwds['dpi'] = 500
-if ('.html' in args.output_file) and args.dynamic:
+if ('.html' in args.output_file):
     import mpld3, mpld3.plugins, mpld3.utils
     mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt='.5g'))
     legend =  mpld3.plugins.InteractiveLegendPlugin([mpoints, points],
@@ -96,5 +96,6 @@ if ('.html' in args.output_file) and args.dynamic:
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
                      fig_kwds=fig_kwds,
-                     title='%s vs %s' % (args.axis_type, args.distance_type))
+                     title='Found and Missed Injections: %s vs %s' % (args.axis_type, args.distance_type),
+                     cmd=' '.join(sys.argv))
 
