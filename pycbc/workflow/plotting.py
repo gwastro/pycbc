@@ -96,6 +96,7 @@ def make_coinc_snrchi_plot(workflow, inj_file, inj_trig, stat_file, trig_file, o
     makedir(out_dir)    
     secs = requirestr(workflow.cp.get_subsections('plot_coinc_snrchi'), require)  
     secs = excludestr(secs, exclude)
+    files = FileList([])
     for tag in secs:
         node = PlotExecutable(workflow.cp, 'plot_coinc_snrchi', ifos=inj_trig.ifo,
                     out_dir=out_dir, tags=[tag] + tags).create_node()
@@ -105,6 +106,8 @@ def make_coinc_snrchi_plot(workflow, inj_file, inj_trig, stat_file, trig_file, o
         node.add_input_opt('--single-trigger-file', trig_file)
         node.new_output_file_opt(inj_file.segment, '.png', '--output-file')
         workflow += node
+        files += node.output_files
+    return files
 
 def make_inj_table(workflow, inj_file, out_dir, tags=[]):
     makedir(out_dir)
@@ -119,6 +122,7 @@ def make_snrchi_plot(workflow, trig_files, veto_file, veto_name,
     makedir(out_dir)    
     secs = requirestr(workflow.cp.get_subsections('plot_snrchi'), require)  
     secs = excludestr(secs, exclude)
+    files = FileList([])
     for tag in secs:
         for trig_file in trig_files:
             node = PlotExecutable(workflow.cp, 'plot_snrchi',
@@ -132,11 +136,14 @@ def make_snrchi_plot(workflow, trig_files, veto_file, veto_name,
             node.add_input_opt('--veto-file', veto_file)
             node.new_output_file_opt(trig_file.segment, '.png', '--output-file')
             workflow += node  
+            files += node.output_files
+    return files
 
 def make_foundmissed_plot(workflow, inj_file, out_dir, exclude=None, require=None, tags=[]):
     makedir(out_dir)   
     secs = requirestr(workflow.cp.get_subsections('plot_foundmissed'), require)  
     secs = excludestr(secs, exclude)
+    files = FileList([])
     for tag in secs:
         exe = PlotExecutable(workflow.cp, 'plot_foundmissed', ifos=workflow.ifos,
                     out_dir=out_dir, tags=[tag] + tags)
@@ -145,6 +152,8 @@ def make_foundmissed_plot(workflow, inj_file, out_dir, exclude=None, require=Non
         node.add_input_opt('--injection-file', inj_file)
         node.new_output_file_opt(inj_file.segment, ext, '--output-file')
         workflow += node   
+        files += node.output_files
+    return files
     
 def make_snrifar_plot(workflow, bg_file, out_dir, tags=[]):
     makedir(out_dir)
@@ -172,6 +181,7 @@ def make_singles_plot(workflow, trig_files, bank_file, veto_file, veto_name,
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_singles'), require)  
     secs = excludestr(secs, exclude)
+    files = FileList([])
     for tag in secs:
         for trig_file in trig_files:
             node = PlotExecutable(workflow.cp, 'plot_singles',
@@ -186,4 +196,6 @@ def make_singles_plot(workflow, trig_files, bank_file, veto_file, veto_name,
             node.add_opt('--detector', trig_file.ifo)
             node.add_input_opt('--single-trig-file', trig_file)
             node.new_output_file_opt(trig_file.segment, '.png', '--output-file')
-            workflow += node  
+            workflow += node
+            files += node.output_files
+    return files
