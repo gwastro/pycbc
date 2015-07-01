@@ -210,7 +210,6 @@ def render_tmplt(path, cp):
 
     # render template
     template_dir = '/'.join(path.split('/')[:-1])
-    print template_dir
     env = Environment(loader=FileSystemLoader(template_dir))
     env.globals.update(setup_template_render=setup_template_render)
     env.globals.update(get_embedded_config=get_embedded_config)
