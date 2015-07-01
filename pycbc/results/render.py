@@ -167,3 +167,35 @@ def render_ignore(path, cp):
     """
 
     return ''
+
+def render_tmplt(path, cp):
+    """ Render a file as text.
+    """
+
+    # define filename and slug from path
+    filename = os.path.basename(path)
+    slug = filename.replace('.', '_')
+
+    # initializations
+    content = None
+
+    # read file as a string
+    with open(path, 'rb') as fp:
+        content = fp.read()
+
+    # replace all the escaped characters
+    content = unescape(content, unescape_table)
+
+    # render template
+    template_dir = '/'.join(path.split('/')[:-1])
+    print template_dir
+    env = Environment(loader=FileSystemLoader(template_dir))
+    env.globals.update(setup_template_render=setup_template_render)
+    template = env.get_template(filename)
+    context = {'filename' : filename,
+               'slug'     : slug,
+               'cp'       : cp,
+               'content'  : content}
+    output = template.render(context)
+
+    return output
