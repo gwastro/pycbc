@@ -46,7 +46,7 @@ finalize_workflow = wf.Workflow(args, 'finalization')
 wf.makedir(args.output_dir)
 os.chdir(args.output_dir)
 
-#init for layout sections
+# layout initialization
 summary = []
 
 # Get segments and find where the data is
@@ -156,8 +156,9 @@ for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
 
     psd_file = wf.make_psd_file(workflow, datafind_files.find_output_with_ifo(ifo), 
                                 data_seg, 'INSPIRAL_DATA', 'psds')
-    wf.make_spectrum_plot(workflow, psd_file, 'results/detector_sensitivity')
-    wf.make_range_plot(workflow, psd_file, 'results/detector_sensitivity')
+    s = wf.make_spectrum_plot(workflow, psd_file, 'results/detector_sensitivity')
+    r = wf.make_range_plot(workflow, psd_file, 'results/detector_sensitivity')
+    summary += [(s, r)]
 
 for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
     wf.make_segments_plot(workflow, files, 'results/analysis_time/segments', 
@@ -176,6 +177,9 @@ if len(inj_files) > 0:
                             tags=['ALLINJ'])
     wf.make_foundmissed_plot(workflow, found_inj, 'results/injections',
                             tags=['ALLINJ'])
+
+# Make layouts
+layout('results', summary)
 
 # save global config file to results directory
 ini_file_path = 'results/configuration/config/configuration.ini'
