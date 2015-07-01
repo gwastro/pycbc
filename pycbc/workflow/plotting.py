@@ -40,6 +40,7 @@ def make_range_plot(workflow, psd_file, out_dir, tags=None):
     node.add_input_opt('--psd-file', psd_file)
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
+    return node.output_files[0]
 
 def make_spectrum_plot(workflow, psd_file, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -49,6 +50,7 @@ def make_spectrum_plot(workflow, psd_file, out_dir, tags=None):
     node.add_input_opt('--psd-file', psd_file)
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
+    return node.output_files[0]
  
 def make_segments_plot(workflow, seg_files, out_dir, tags=[]):
     makedir(out_dir)

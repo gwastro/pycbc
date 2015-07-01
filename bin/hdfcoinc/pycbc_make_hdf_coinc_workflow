@@ -46,6 +46,9 @@ finalize_workflow = wf.Workflow(args, 'finalization')
 wf.makedir(args.output_dir)
 os.chdir(args.output_dir)
 
+#init for layout sections
+summary = []
+
 # Get segments and find where the data is
 science_segs, science_seg_file = wf.get_analyzable_segments(workflow, "segments")
 datafind_files, science_segs = wf.setup_datafind_workflow(workflow, 
