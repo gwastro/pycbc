@@ -20,6 +20,9 @@ parser.add_argument('--coinc-statistic-file', help='HDF format statistic file')
 parser.add_argument('--single-trigger-file', help='Single detector triggers files from the zero lag run')
 parser.add_argument('--newsnr-contours', nargs='*', help="List of newsnr values to draw contours at.", default=[])
 parser.add_argument('--background-front', action='store_true', default=False)
+parser.add_argument('--chisq-choice', choices=['traditional','max_cont_trad'],
+                    default='traditional',
+                    help='Which chisquared to plot. Default=traditional')
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
@@ -37,11 +40,22 @@ f = f[ifo]
 tid = b_tids[ifo][:]
 snr = f['snr'][:][tid]
 
-chisq = f['chisq'][:][tid]
-l = chisq == 0
-chisq_dof = f['chisq_dof'][:][tid]
-chisq /= (chisq_dof * 2 - 2) 
-chisq[l] = 0.1
+if args.chisq_choice in ['traditional','max_cont_trad']:
+    trad_chisq = f['chisq'][:][tid]
+    l = trad_chisq == 0
+    trad_chisq_dof = f['chisq_dof'][:][tid]
+    trad_chisq /= (trad_chisq_dof * 2 - 2)
+if args.chisq_choice in ['max_cont_trad']:
+    cont_chisq = f['cont_chisq'][:][tid]
+    cont_chisq_dof = f['cont_chisq_dof'][:][tid]
+    cont_chisq /= cont_chisq_dof
+if args.chisq_choice == 'traditional':
+    chisq = trad_chisq
+elif args.chisq_choice == 'max_cont_trad':
+    chisq = numpy.maximum(trad_chisq, cont_chisq)
+else:
+    err_msg="Do not recognized --chisq-choice %s" %(args.chisq_choice,)
+    raise ValueError(err_msg)
 
 fig = pylab.figure()
 pylab.scatter(snr, chisq, marker='o', color='black',
