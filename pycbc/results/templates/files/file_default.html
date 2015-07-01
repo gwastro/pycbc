@@ -1,22 +1,3 @@
-<!--accordion--> 
-<div class="panel-group" id="accordion-{{slug}}">
-    <div class="panel panel-default">
-
-        <!--accordion title-->
-        <div class="panel-heading collapsed" data-toggle="collapse" data-parent="#accordion" href="#{{slug}}">
-            <h4 class="panel-title">
-                {% if cp.check_option(filename, 'title') %}
-                    <a href='#'>{{cp.get(filename, 'title')}}</a>
-                {% else %}
-                    <a href='#'>{{filename}}</a>
-                {% endif %}
-            </h4>
-        </div>
-
-        <!--accordion content-->
-        <div id="{{slug}}" class="panel-collapse collapse">
-            <div class="panel-body">
-
                 <!--image file condition-->
                 {% if filename.endswith('png') or filename.endswith('jpg') %}
                     {% include 'file_img.html' %}
@@ -85,9 +66,3 @@
                             Command Line
                     </button>
                 {% endif %}
-
-            </div>
-        </div>
-
-     </div>
-</div>

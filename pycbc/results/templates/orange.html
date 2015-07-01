@@ -119,7 +119,6 @@
 
                 <!-- include well if it exists -->
                 {% if path_exists(plots_dir+dir.path+'/well.html') %}
-                   <p>Well exists {{plots_dir}}{{dir.path}}/well.html</p>
                    {{ setup_template_render(plots_dir+dir.path+'/well.html', None) }}
                 {% endif %}
 
@@ -129,11 +128,43 @@
                 {% if dir.files %}
                 <div class="row">
                     <div class="col-md-12">
+
+                        <!-- loop over files in directory -->
                         <h1>Additional Files</h1>
                             The following files were also found in this directory:
                             {% for file in dir.files %}
-                                {{file.render()}}
+
+                                <!-- get config file and slug -->
+                                {% set cp = get_embedded_config(file.path) %}
+                                {% set slug = file.filename().replace('.', '_') %}
+
+                                <!-- accordion -->
+                                <div class="panel-group" id="accordion-{{slug}}">
+                                    <div class="panel panel-default">
+
+                                        <!-- accordion title -->
+                                        <div class="panel-heading collapsed" data-toggle="collapse" data-parent="#accordion" href="#{{slug}}">
+                                            <h4 class="panel-title">
+                                            {% if cp.check_option(file.filename(), 'title') %}
+                                                <a href='#'>{{cp.get(file.filename(), 'title')}}</a>
+                                            {% else %}
+                                                <a href='#'>{{file.filename()}}</a>
+                                            {% endif %}
+                                            </h4>
+                                        </div>
+
+                                        <!-- accordion content -->
+                                        <div id="{{slug}}" class="panel-collapse collapse">
+                                            <div class="panel-body">
+                                                {{file.render()}}
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+
                             {% endfor %}
+
                     </div>
                 </div>
                 {% endif %}
