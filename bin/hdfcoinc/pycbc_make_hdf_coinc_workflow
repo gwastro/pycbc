@@ -48,7 +48,7 @@ def layout(path, cols):
     path = os.path.join(os.getcwd(), path, 'well.html')
     render_workflow_html_template(path, 'two_column.html', cols)
 
-summary, det_summ = [], []
+summary, det_summ, inj_summ, sens_summ = [], [], [], []
 
 # Get segments and find where the data is
 science_segs, science_seg_file = wf.get_analyzable_segments(workflow, "segments")
@@ -133,11 +133,11 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                         output_dir, tags=ctags)
         inj_coincs += [inj_coinc]                      
         wf.make_sensitivity_plot(workflow, found_inj, 
-                             'results/search_sensitivity/%s' % tag, tags=ctags)
+                      'results/search_sensitivity/%s' % tag, exclude='all', tags=ctags)
         wf.make_foundmissed_plot(workflow, found_inj, 
-                             'results/injections/%s' % tag, tags=[tag])
+                      'results/injections/%s' % tag, exclude='all', tags=[tag])
         wf.make_inj_table(workflow, found_inj, 
-                              'results/injections/%s' % tag, tags=[tag])
+                      'results/injections/%s' % tag, tags=[tag])
                                  
         for inj_insp, trig_insp in zip(insps, full_insps):
             wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 
