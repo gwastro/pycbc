@@ -24,7 +24,7 @@ import shutil
 import zipfile
 from glue import segments
 from jinja2 import Environment, FileSystemLoader
-from pycbc.results.render import setup_template_render
+from pycbc.results.render import get_embedded_config, setup_template_render
 from pycbc.workflow import segment
 
 def examine_dir(cwd):
@@ -114,7 +114,7 @@ class Directory():
         and capslock.
         """
 
-        return self.path.split('/')[-1].replace('_', ' ').upper()
+        return self.path.split('/')[-1].replace('_', ' ').title()
 
     def level(self):
         """
@@ -176,6 +176,9 @@ input_path = opts.template_file.rstrip(input_template)
 
 # setup template
 env = Environment(loader=FileSystemLoader(input_path))
+env.globals.update(setup_template_render=setup_template_render)
+env.globals.update(get_embedded_config=get_embedded_config)
+env.globals.update(path_exists=os.path.exists)
 template = env.get_template(input_template)
 
 # find all subdirs and the top-level subdirs
