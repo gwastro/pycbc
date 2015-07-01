@@ -33,5 +33,5 @@ def render_workflow_html_template(filename, subtemplate, filelists):
     output = subtemplate.render(context)
 
     # save as html page
-    kwds = {'render-function' : 'render_ignore'}
+    kwds = {'render-function' : 'render_tmplt'}
     save_html_with_metadata(str(output), filename, None, kwds)
