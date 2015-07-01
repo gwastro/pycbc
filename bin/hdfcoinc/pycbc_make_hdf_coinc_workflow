@@ -117,12 +117,15 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                'closed_box', 'segments')      
                                          
         for bg_file in (bg_files + final_bg_file):
-            wf.make_snrifar_plot(workflow, bg_file, 'results/coincident_triggers', tags=bg_file.tags + ['closed'])
+            wf.make_snrifar_plot(workflow, bg_file,
+                                'results/coincident_triggers', 
+                                 closed_box=True, tags=bg_file.tags + ['closed'])
         
         wf.make_snrifar_plot(workflow, final_bg_file[0],
                             'results/result', tags=final_bg_file[0].tags)
 
-        wf.make_foreground_table(workflow, final_bg_file[0], hdfbank[0], tag, 'results/result')
+        wf.make_foreground_table(workflow, final_bg_file[0], 
+                            hdfbank[0], tag, 'results/result')
 
         wf.make_snrchi_plot(workflow, insps, censored_veto, 
                             'closed_box', 'results/single_triggers', tags=[tag])
@@ -185,7 +188,7 @@ if len(inj_files) > 0:
                             output_dir, tags=['ALLINJ'])                                                
     sen = wf.make_sensitivity_plot(workflow, found_inj, 'results/search_sensitivity', 
                             require='all', tags=['ALLINJ'])
-    group_layout('resutls/search_sensitivity', sen)
+    group_layout('results/search_sensitivity', sen)
     inj = wf.make_foundmissed_plot(workflow, found_inj, 'results/injections',
                             require='all', tags=['ALLINJ'])
     group_layout('results/injections', inj)

@@ -158,11 +158,15 @@ def make_foundmissed_plot(workflow, inj_file, out_dir, exclude=None, require=Non
         files += node.output_files
     return files
     
-def make_snrifar_plot(workflow, bg_file, out_dir, tags=[]):
+def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False, tags=[]):
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'plot_snrifar', ifos=workflow.ifos,
                 out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--trigger-file', bg_file)
+    
+    if closed_box:
+        node.add_opt('--closed-box')
+    
     node.new_output_file_opt(bg_file.segment, '.png', '--output-file')
     workflow += node
     return node.output_files[0]
