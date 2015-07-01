@@ -30,7 +30,7 @@ html, body {
 
 /* style for well that holds assigned file renderings */
 .well{
-    background-color : #000000;
+    background-color : #FFFFFF;
     padding : 19px;
     box-shadow : 0 3px 10px rgba(0,0,0,0.23),0 3px 10px rgba(0,0,0,0.16);
     border-radius : 2px;
