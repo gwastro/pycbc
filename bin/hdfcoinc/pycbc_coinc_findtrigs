@@ -2,9 +2,11 @@
 import h5py, argparse, logging, numpy, numpy.random
 from pycbc import events, detector
 from pycbc.events import veto, coinc
+import pycbc.version
        
 parser = argparse.ArgumentParser()
 parser.add_argument("--verbose", action="count")
+parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
 parser.add_argument("--veto-files", nargs='*',
                     help="Optional veto file. Triggers within these times are ignored")
 parser.add_argument('--segment-name', default=None, type=str,
