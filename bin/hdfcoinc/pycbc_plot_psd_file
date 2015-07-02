@@ -10,11 +10,11 @@ args = parser.parse_args()
 
 fig = pylab.figure(0)
 pylab.grid(which='both')
-pylab.ylabel('Amplitude Spectral Density Strain / $\sqrt{Hz}$')
+pylab.ylabel('Amplitude Spectral Density (Strain / $\sqrt{Hz}$)')
 pylab.xlabel('Frequency (Hz)')
 
 for psd_file in args.psd_files:
-    f = h5py.File(args.psd_file, 'r')
+    f = h5py.File(psd_file, 'r')
     ifo = f.keys()[0]
     df = f[ifo + '/psds/0'].attrs['delta_f']
     keys = f[ifo + '/psds'].keys()
@@ -32,10 +32,11 @@ for psd_file in args.psd_files:
     color = pycbc.results.ifo_color(ifo)
 
     pylab.fill_between(samples, low, high, alpha=0.4, linewidth=0, color=color)
-    pylab.loglog(samples, middle, linewidth=0.3, color=color)
+    pylab.loglog(samples, middle, linewidth=0.3, color=color, label=ifo)
     pylab.xlim(flow, 1000)
     pylab.ylim(low.min(), low.min() * 100)
 
+pylab.legend()
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
     title = "%s Spectrum" % ifo,
     caption = "Median amplitude spectral density plotted with a shaded region " 

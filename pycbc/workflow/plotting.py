@@ -49,9 +49,9 @@ class PlotExecutable(Executable):
 def make_range_plot(workflow, psd_files, out_dir, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
-    node = PlotExecutable(workflow.cp, 'plot_range', ifos=psd_file.ifo,
+    node = PlotExecutable(workflow.cp, 'plot_range', ifos=workflow.ifos,
                           out_dir=out_dir, tags=tags).create_node()
-    node.add_input_list_opt('--psd-files', psd_file)
+    node.add_input_list_opt('--psd-files', psd_files)
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
     return node.output_files[0]
@@ -59,9 +59,9 @@ def make_range_plot(workflow, psd_files, out_dir, tags=None):
 def make_spectrum_plot(workflow, psd_files, out_dir, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
-    node = PlotExecutable(workflow.cp, 'plot_spectrum', ifos=psd_file.ifo,
+    node = PlotExecutable(workflow.cp, 'plot_spectrum', ifos=workflow.ifos,
                           out_dir=out_dir, tags=tags).create_node()
-    node.add_input_list_opt('--psd-files', psd_file)
+    node.add_input_list_opt('--psd-files', psd_files)
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
     return node.output_files[0]

@@ -78,7 +78,7 @@ val = getattr(trigs, args.x_var)
 
 fig = pylab.figure(0)
 
-x_max = args.x_max if args.x_max else val.max()
+x_max = args.x_max if args.x_max else val.max() * 1.1
 pycbc.results.hist_overflow(val, x_max, bins=args.bins, color=pycbc.results.ifo_color(ifo))
 ax = pylab.gca()
 ax.set_yscale('log')

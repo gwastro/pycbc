@@ -24,7 +24,7 @@ pylab.xlabel('Time (s)')
 pylab.ylabel('Inspiral Range (Mpc)')
 pylab.grid() 
 
-for psd_files in args.psd_files:
+for psd_file in args.psd_files:
     f = h5py.File(psd_file, 'r')
     ifo = f.keys()[0]
     flow = f.attrs['low_frequency_cutoff']
@@ -35,7 +35,7 @@ for psd_files in args.psd_files:
     ranges = {}  
     for key in keys:
         name = ifo + '/psds/' + key
-        psd = pycbc.types.load_frequencyseries(args.psd_file, group=name)
+        psd = pycbc.types.load_frequencyseries(psd_file, group=name)
         start_time = psd.epoch
         end_time = start_time + 1.0 / psd.delta_f
         delta_t = 1.0 / ((len(psd) - 1) * 2 * psd.delta_f)
@@ -62,11 +62,12 @@ for psd_files in args.psd_files:
         pylab.errorbar((start+end)/2, ranges[apx], 
                       xerr=(end-start)/2, color=pycbc.results.ifo_color(ifo),
                       label=label, fmt=None)        
-pylab.legend()
+pylab.legend(loc="lower left")
          
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
     title = "%s Inspiral Range" % ifo,
     caption = "The canonical sky-averaged inspiral range for a single "
               "detector at SNR 8",
     cmd = ' '.join(sys.argv),
+    fig_kwds={'dpi', 200}
     )
