@@ -60,14 +60,14 @@ for psd_file in args.psd_files:
     for m1, m2, apx in zip(args.mass1, args.mass2, args.approximant):
         label = '%s: $%sM_{\odot}-%sM_{\odot} (%s)$' % (ifo, m1, m2, apx)
         pylab.errorbar((start+end)/2, ranges[apx], 
-                      xerr=(end-start)/2, color=pycbc.results.ifo_color(ifo),
+                      xerr=(end-start)/2, ecolor=pycbc.results.ifo_color(ifo),
                       label=label, fmt=None)        
 pylab.legend(loc="lower left")
          
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
-    title = "%s Inspiral Range" % ifo,
+    title = "Inspiral Range",
     caption = "The canonical sky-averaged inspiral range for a single "
               "detector at SNR 8",
     cmd = ' '.join(sys.argv),
-    fig_kwds={'dpi', 200}
+    fig_kwds={'dpi':200}
     )

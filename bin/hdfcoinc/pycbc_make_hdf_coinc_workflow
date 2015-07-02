@@ -247,7 +247,6 @@ if len(inj_files) > 0:
                             'allinj', tags=['ALLINJ'])                                                
     sen = wf.make_sensitivity_plot(workflow, found_inj, rdir['search_sensitivity'], 
                             require='all', tags=['ALLINJ'])
-
     group_layout(rdir['search_sensitivity'], sen)
     inj = wf.make_foundmissed_plot(workflow, found_inj, rdir['injections'],
                             require='all', tags=['ALLINJ'])
@@ -256,7 +255,6 @@ if len(inj_files) > 0:
     # Make summary page foundmissed and sensitivity plot    
     sen = wf.make_sensitivity_plot(workflow, found_inj, 
                 rdir['search_sensitivity'], require='summ', tags=['ALLINJ'])
-    group_layout(rdir['search_sensitivity'], sen)
     inj = wf.make_foundmissed_plot(workflow, found_inj, 
                 rdir['injections'], require='summ', tags=['ALLINJ'])
                 

@@ -1,7 +1,7 @@
 #!/bin/env python
 """ Make histograms of single detector triggers
 """
-import numpy, argparse, h5py, matplotlib, logging
+import numpy, argparse, h5py, matplotlib, logging, sys
 import pycbc.version, pycbc.results
 matplotlib.use('Agg')
 import pylab
@@ -92,5 +92,6 @@ if args.x_min:
 pylab.grid()
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
                 title = '%s: %s histogram of single detector triggers' % (ifo, args.x_var),
-                caption = 'Histogram of single detector triggers')
+                caption = 'Histogram of single detector triggers',
+                cmd = ' '.join(sys.argv))
                       
