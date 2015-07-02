@@ -179,7 +179,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
             wf.make_singles_plot(workflow, [insp], hdfbank[0], censored_veto, 
                    'closed_box', rdir['single_triggers/%s-hexbin' % insp.ifo], tags=[tag])
             wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', 
-                   rdir['single_triggers/%s-hist'] % insp.ifo, 
+                   rdir['single_triggers/%s-hist' % insp.ifo], 
                    exclude='summ', tags=[tag])
             hists = wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', 
                    rdir['single_triggers/%s-hist' % insp.ifo], 
