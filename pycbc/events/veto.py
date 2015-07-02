@@ -119,6 +119,9 @@ def indices_within_times(times, start, end):
     indices: numpy.ndarray
         Array of indices into times
     """
+    # coalesce the start/end segments
+    start, end = segments_to_start_end(start_end_to_segments(start, end).coalesce())
+
     tsort = times.argsort()
     times_sorted = times[tsort]
     left = numpy.searchsorted(times_sorted, start)
