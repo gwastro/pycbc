@@ -31,6 +31,33 @@
         }
     </style>
 
+    <!-- add expand all js -->
+<script>
+$(function () {
+
+    var active = true;
+
+    $('#collapse-init').click(function () {
+        if (active) {
+            active = false;
+            $('.panel-collapse').collapse('show');
+            $('.panel-title').attr('data-toggle', '');
+            $(this).text('Enable accordion behavior');
+        } else {
+            active = true;
+            $('.panel-collapse').collapse('hide');
+            $('.panel-title').attr('data-toggle', 'collapse');
+            $(this).text('Disable accordion behavior');
+        }
+    });
+    
+    $('#accordion').on('show.bs.collapse', function () {
+        if (active) $('#accordion .in').collapse('hide');
+    });
+
+});
+</script>
+
     <!-- title -->
     <title>{{analysis_title}}</title>
 
@@ -141,6 +168,9 @@
                         <!-- loop over files in directory -->
                         <h1>Additional Files</h1>
                             The following files were also found in this directory:
+
+                            <!-- accordion group -->
+                            <div class="panel-group" id="accordion">
                             {% for file in dir.files %}
 
                                 <!-- get config file and slug -->
@@ -150,38 +180,28 @@
                                 <!-- do not show well.html -->
                                 {% if not file.filename() == 'well.html' %}
 
-                                    <!-- accordion -->
-                                    <div class="panel-group" id="accordion-{{slug}}">
-                                        <div class="panel panel-default">
-
-                                            <!-- accordion title -->
-                                            <div class="panel-heading collapsed" data-toggle="collapse" data-parent="#accordion" href="#{{slug}}">
-                                                <h4 class="panel-title">
+                                    <!-- accordion panel -->
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <h4 class="panel-title" data-toggle="collapse" href="#{{slug}}">
                                                 {% if cp.check_option(file.filename(), 'title') %}
                                                     <a href='#'>B{{i}}. {{cp.get(file.filename(), 'title')}}</a>
                                                 {% else %}
                                                     <a href='#'>B{{i}}. {{file.filename()}}</a>
                                                 {% endif %}
-                                                </h4>
-                                            </div>
-
-                                            <!-- increment -->
-                                            {% set i = i + 1 %}
-
-                                            <!-- accordion content -->
-                                            <div id="{{slug}}" class="panel-collapse collapse">
-                                                <div class="panel-body">
-                                                    {{file.render()}}
-                                                </div>
-                                            </div>
-
+                                            </h4>
+                                        </div>
+                                        {% set i = i + 1 %}
+                                        <div id="{{slug}}" class="panel-collapse collapse">
+                                             <div class="panel-body">
+                                                 {{file.render()}}
+                                             </div>
                                         </div>
                                     </div>
-
                                 {% endif %}
 
                             {% endfor %}
-
+</div>
                     </div>
                 </div>
                 {% endif %}
@@ -192,6 +212,11 @@
 </div>
 
 <footer>
+
+<button id="collapse-init" class="btn btn-primary">
+    Disable accordion behavior
+</button>
+
     <div class="container-fluid">
         <div class="footer-custom">
             <a href="{{dot_dot_str}}sitemap/index.html">Sitemap</a>
