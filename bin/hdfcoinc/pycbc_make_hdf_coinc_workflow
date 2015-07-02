@@ -210,7 +210,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                       final_bg_file[0], trig_insp,
                                       rdir['injections/%s' % tag], tags=[tag])
    
-full_segs, det_summ = [], []                                 
+full_segs, psd_files = [], []                                 
 for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
     name = 'INSPIRAL_SEGMENTS'
     fname = 'segments/%s-' % ifo + name + '.xml'
@@ -221,11 +221,12 @@ for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
     data_seg = pycbc.events.segments_to_file(segs,
                    'segments/%s-INSP_DATA.xml' % ifo, 'INSPIRAL_DATA', ifo=ifo)
 
-    psd_file = wf.make_psd_file(workflow, datafind_files.find_output_with_ifo(ifo), 
-                                data_seg, 'INSPIRAL_DATA', 'psds')
-    s = wf.make_spectrum_plot(workflow, psd_file, rdir['detector_sensitivity'])
-    r = wf.make_range_plot(workflow, psd_file, rdir['detector_sensitivity'])
-    det_summ += [(s, r)]
+    psd_files += [wf.make_psd_file(workflow, datafind_files.find_output_with_ifo(ifo), 
+                                data_seg, 'INSPIRAL_DATA', 'psds')]
+                                
+s = wf.make_spectrum_plot(workflow, psd_files, rdir['detector_sensitivity'])
+r = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'])
+det_summ = [(s, r)]
    
 layout(rdir['detector_sensitivity'], det_summ)    
 
