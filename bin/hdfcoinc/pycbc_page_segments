@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 """ Make interactive visualization of segments
 """
-import argparse
+import argparse, pycbc.version
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--segment-files', nargs='+', help="List of segment files to plot")
 parser.add_argument('--output-file', help="output html file")
 args = parser.parse_args()
