@@ -9,49 +9,78 @@ from pycbc import sensitivity
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
-parser.add_argument('--injection-file', 
-                   help="HDF format injection result file.")
-parser.add_argument('--bins', nargs='*',
-                   help="Optional, parameter bin boundaries Ex. 1.3 2.6 4.1")
-parser.add_argument('--bin-type', choices=['spin', 'mchirp', 
-                                           'total_mass', 'eta'], 
-                   default='mchirp',
-                   help="Optional, parameter bin boundaries")
-parser.add_argument('--sig-bins', nargs='*',
-                   help="Optional, boundaries of x-axis significance bins"),
-parser.add_argument('--sig-type', choices=['ifar', 'fap', 'stat'], default='ifar',
-                   help="Optional, x-axis significance type")
-parser.add_argument('--dist-type', choices=['distance', 'volume', 'vt'], default='distance')
-parser.add_argument('--min-dist', type=float, 
-                   help="Optional, minimum sensitive distance to plot")
-parser.add_argument('--max-dist', type=float, 
-                   help="Optional, maximum sensitive distance to plot")
 parser.add_argument('--verbose', action='count')
-parser.add_argument('--method', choices=['pylal', 'shell', 'mc'], 
-                   default='pylal',
-                   help="Optional, choice of volume estimation")
-parser.add_argument('--dist-bins', type=int, default=100, 
-                   help="Optional, used in conjunction with pylal binned"
-                        " volume estimation method. Number of distance bins.")
-parser.add_argument('--distance-param', type=str,                
-                    help="Optional, used in conjunction with pylal binned"
-                         " volume estimation method")
-parser.add_argument('--distance-distribution', type=str,
-                   help="Optional, used in conjunction with pylal binned"
-                        " volume estimation method")
-parser.add_argument('--output-file')
+parser.add_argument('--injection-file', required=True,
+                    help="Required. HDF format injection result file.")
+parser.add_argument('--output-file', required=True) # DOCUMENTME
+parser.add_argument('--bin-type', choices=['spin', 'mchirp',
+                                           'total_mass', 'eta'],
+                    default='mchirp',
+                    help="Parameter used to bin injections. Note that 'spin' "
+                         "uses the line-of-sight coordinate convention! "
+                         "Default 'mchirp'")
+# FIXME: Make bins options properly optional, if no bins are specified then
+# plot everything together
+parser.add_argument('--bins', nargs='+',
+                    help="Required. Parameter bin boundaries, ex. 1.3 2.6 4.1")
+parser.add_argument('--sig-type', choices=['ifar', 'fap', 'stat'],
+                    default='ifar',
+                    help="x-axis significance measure. Default 'ifar'")
+parser.add_argument('--sig-bins', nargs='*',
+                   help="Boundaries of x-axis significance bins. If not given"
+                        ", hard-coded defaults will be used"),
+parser.add_argument('--dist-type', choices=['distance', 'volume', 'vt'],
+                    default='distance')
+parser.add_argument('--min-dist', type=float,
+                    help="Lower y-axis limit for sensitive distance")
+parser.add_argument('--max-dist', type=float,
+                    help="Upper y-axis limit for sensitive distance")
+parser.add_argument('--integration-method', choices=['pylal', 'shell', 'mc'],
+                    default='pylal',
+                    help="Sensitive volume estimation method. Default 'pylal'")
+parser.add_argument('--dist-bins', type=int, default=100,
+                    help="Number of distance bins for 'pylal' volume "
+                         "estimation. Default 100")
+parser.add_argument('--distance-param', choices=['distance', 'chirp_distance'],
+                    help="Parameter D used to generate injection distribution "
+                         "over distance, required for 'mc' volume estimation")
+parser.add_argument('--distribution',
+                    choices=['log', 'uniform', 'distancesquared', 'volume'],
+                    help="Form of distribution over D, required by 'mc' method")
+parser.add_argument('--limits-param', choices=['distance', 'chirp_distance'],
+                    help="Parameter Dlim specifying limits of injection "
+                         "distribution, used by 'mc' method. If not given, "
+                         "will be set equal to --distance-param")
+parser.add_argument('--max-param', type=float,
+                    help="Maximum value of Dlim, used by 'mc' method. If not "
+                         "given, the maximum injected value will be used")
+parser.add_argument('--min-param', type=float,
+                    help="Minimum value of Dlim, used by 'mc' method with log "
+                         "distribution. If not given, min injected value will "
+                         "be used")
+
 args = parser.parse_args()
+
+if len(args.bins) < 2:
+    raise RuntimeError("At least 2 injection bin boundaries are required!")
+
+if args.integration_method == 'mc' and (args.distance_param is None or \
+                                        args.distribution is None):
+    raise RuntimeError("The 'mc' method requires --distance-param and "
+                       "--distribution !")
+if args.integration_method == 'mc' and args.limits_param is None:
+    args.limits_param = args.distance_param
 
 if args.verbose:
     log_level = logging.INFO
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
-    
+
 logging.info('Read in the data')
 f = h5py.File(args.injection_file, 'r')
 
 time = f['injections/end_time'][:]
 
-# Get the found (at any FAR)/missed injection indices 
+# Get the found (at any FAR)/missed injection indices
 found = f['found_after_vetoes/injection_index'][:]
 missed = f['missed/after_vetoes'][:]
 
@@ -97,7 +126,7 @@ elif args.sig_type == 'ifar':
     if args.sig_bins:
         x_values = [float(v) for v in args.sig_bins]
     else:
-        x_values = 10 ** (numpy.arange(0, 4, .05))       
+        x_values = 10 ** (numpy.arange(0, 4, .05))
 elif args.sig_type == 'fap':
     sig = f['found_after_vetoes/fap'][:]
     sig_exc = f['found_after_vetoes/fap_exc'][:]
@@ -106,8 +135,8 @@ elif args.sig_type == 'fap':
         x_values = [float(v) for v in args.sig_bins]
     else:
         x_values = 10.0 ** -numpy.arange(1, 7)
-   
-color=iter(cm.rainbow(numpy.linspace(0, 1 , len(args.bins)-1)))
+
+color=iter(cm.rainbow(numpy.linspace(0, 1, len(args.bins)-1)))
 fvalues = [sig, sig_exc]
 do_labels = [True, False]
 alphas = [.8, .3]
@@ -117,24 +146,24 @@ fig = pylab.figure()
 # Plot each injection parameter bin
 for j in range(len(args.bins)-1):
     c = next(color)
-    
-    # Plot both the inclusive and exclusive significance 
+
+    # Plot both the inclusive and exclusive significance
     for sig_val, do_label, alpha in zip(fvalues, do_labels, alphas):
         if sig_val is None:
             continue
-            
-        left =  float(args.bins[j])
+
+        left  = float(args.bins[j])
         right = float(args.bins[j+1])
         binval = values[args.bin_type]
 
         # Get distance of missed injections within parameter bin
         mbm = numpy.logical_and(binval[missed] > left, binval[missed] < right)
         m_dist = dist[missed][mbm]
-        
+
         #Abort if the bin has too few triggers to calculate
         if len(m_dist) < 2:
             continue
-            
+
         vols, vol_errors = [], []
 
         # Calculate each sensitive distance at a given significance threshold
@@ -145,32 +174,35 @@ for j in range(len(args.bins)-1):
             elif args.sig_type == 'fap':
                 foundg = found[sig_val <= x_val]
                 foundm = found[sig_val > x_val]
-            
-            # get distances that are found within the bin and above the threshold    
+
+            # get distances that are found within the bin and above the threshold
             mbf = numpy.logical_and(binval[foundg] > left, binval[foundg] < right)
             f_dist = dist[foundg][mbf]
-            
+
             # get the distances of inj that are below the threshold
             mbfm = numpy.logical_and(binval[foundm] > left, binval[foundm] < right)
             f_distm = dist[foundm][mbfm]
-            
+
             # add distances of found injections to the missed list
             m_dist_full = numpy.append(m_dist, f_distm)
-            
+
             # Choose the volume estimation method
-            if args.method == 'shell': 
+            if args.integration_method == 'shell':
                 vol, vol_err = sensitivity.volume_shell(f_dist, m_dist_full)
-            elif args.method == 'pylal':
+            elif args.integration_method == 'pylal':
                 vol, vol_err = sensitivity.volume_binned_pylal(f_dist,
                                              m_dist_full, bins=args.dist_bins)
-            elif args.method == 'mc':
+            elif args.integration_method == 'mc':
                 found_mchirp = mchirp[foundg][mbf]
                 missed_mchirp = numpy.append(mchirp[missed][mbm], mchirp[foundm][mbfm])
-                
-                vol, vol_err = sensitivity.volume_montecarlo(f_dist, m_dist_full, 
-                       found_mchirp, missed_mchirp,
-                       args.distance_param, args.distance_distribution)
-                        
+
+                vol, vol_err = sensitivity.volume_montecarlo(f_dist, m_dist_full,
+                      found_mchirp, missed_mchirp, args.distance_param,
+                      args.distribution, args.limits_param,
+                      args.max_param, args.min_param)
+
+            sdist, ehigh, elow = sensitivity.volume_to_distance_with_errors(vol, vol_err)
+
             vols.append(vol)
             vol_errors.append(vol_err)
 
@@ -179,7 +211,7 @@ for j in range(len(args.bins)-1):
 
         if args.dist_type == 'distance':
             ylabel = 'Sensitive Distance (Mpc)'
-            reach, ehigh, elow = sensitivity.volume_to_distance_with_errors(vols, vol_errors)            
+            reach, ehigh, elow = sensitivity.volume_to_distance_with_errors(vols, vol_errors)
         elif args.dist_type == 'volume':
             ylabel = "Sensitive Volume ($Mpc^3$)"
             reach, ehigh, elow = vols, vol_errors, vol_errors
@@ -187,13 +219,13 @@ for j in range(len(args.bins)-1):
             ylabel = "Volume-Time ($YR-Mpc^3$)"
             t = f.attrs['foreground_time_exc'] * 3.16888e-8
             reach, ehigh, elow = vols * t, vol_errors * t, vol_errors * t
-            
+
         label = labels[args.bin_type] % (left, right) if do_label else None
         pylab.plot(x_values, reach, label=label, c=c)
         pylab.plot(x_values, reach, alpha=alpha, c='black')
-        pylab.fill_between(x_values, reach - elow, reach + ehigh, 
+        pylab.fill_between(x_values, reach - elow, reach + ehigh,
                            facecolor=c, edgecolor=c, alpha=alpha)
-                           
+
 ax = pylab.gca()
 if args.sig_type != 'stat':
     ax.set_xscale('log')
@@ -203,20 +235,19 @@ if args.sig_type == 'fap':
 
 if args.min_dist:
     pylab.ylim(args.min_dist, args.max_dist)
-    
+
 pylab.ylabel(ylabel)
 pylab.xlabel(xlabel)
 
-pylab.grid()  
+pylab.grid()
 pylab.legend(loc='lower left')
 
-pycbc.results.save_fig_with_metadata(fig, args.output_file, 
-     title="Sensitive Distance vs %s: binned by %s, %s estimation" 
-            % (args.sig_type, args.bin_type, args.method), 
+pycbc.results.save_fig_with_metadata(fig, args.output_file,
+     title="Sensitive Distance vs %s: binned by %s, %s estimation"
+            % (args.sig_type, args.bin_type, args.integration_method),
      caption="Sensitive distance as a function of significance:"
              "Darker lines represent the significance without including "
              "injections in their own background, while lighter lines "
              "include each injection (individual) in its own background. ",
      cmd=' '.join(sys.argv))
-             
-             
+
