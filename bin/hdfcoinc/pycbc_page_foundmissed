@@ -87,6 +87,7 @@ else:
     caption = ("Found and missed injections: Red x's are missed injections. "
                "Circles are found injections. The color indicates the value of "
                "the false alarm rate" )
+    plot.subplots_adjust(right=0.99)
     c = plot.colorbar()
     c.set_label('False Alarm Rate $(yr^{-1})$')
 

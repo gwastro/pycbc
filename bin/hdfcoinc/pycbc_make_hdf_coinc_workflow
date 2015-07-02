@@ -138,9 +138,17 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                             'closed_box', 'results/single_triggers', tags=[tag])
         group_layout('results/single_triggers', snrchi)
         
+        hist_summ = []
         for insp in full_insps:
             wf.make_singles_plot(workflow, [insp], hdfbank[0], censored_veto, 
-                   'closed_box', 'results/single_triggers/%s' % insp.ifo, tags=[tag])
+                   'closed_box', 'results/single_triggers/%s-hexbin' % insp.ifo, tags=[tag])
+            wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', 
+                   'results/single_triggers/%s-hist' % insp.ifo, 
+                   exclude='summ', tags=[tag])
+            hists = wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', 
+                   'results/single_triggers/%s-hist' % insp.ifo, 
+                   require='summ', tags=[tag])
+            hist_summ += list(grouper(hists, 2))
 
     else:
         inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank,
@@ -202,7 +210,9 @@ if len(inj_files) > 0:
                             'allinj', tags=['ALLINJ'])                                                
     sen = wf.make_sensitivity_plot(workflow, found_inj, 'results/search_sensitivity', 
                             require='all', tags=['ALLINJ'])
+
     group_layout('results/search_sensitivity', sen)
+    exit()
     inj = wf.make_foundmissed_plot(workflow, found_inj, 'results/injections',
                             require='all', tags=['ALLINJ'])
     group_layout('results/injections', inj)
@@ -221,7 +231,7 @@ if len(inj_files) > 0:
                      "The limit is exactly one, skipping generation")
                             
 # make full summary
-summ = det_summ + [(closed_snrifar,)] + inj_summ
+summ = det_summ + hist_summ + [(closed_snrifar,)] + inj_summ 
 for row in summ:
     for f in row:
         try:

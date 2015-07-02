@@ -188,6 +188,26 @@ def make_results_web_page(workflow, results_dir):
     node.add_opt('--template-file', template_path)
     workflow += node
 
+def make_single_hist(workflow, trig_file, veto_file, veto_name, 
+                     out_dir, exclude=None, require=None, tags=[]):
+    makedir(out_dir)
+    secs = requirestr(workflow.cp.get_subsections('plot_hist'), require)  
+    secs = excludestr(secs, exclude)
+    files = FileList([])
+    for tag in secs:
+        node = PlotExecutable(workflow.cp, 'plot_hist',
+                    ifos=trig_file.ifo, 
+                    out_dir=out_dir, 
+                    tags=[tag] + tags).create_node()
+                    
+        node.add_opt('--segment-name', veto_name)
+        node.add_input_opt('--veto-file', veto_file)
+        node.add_input_opt('--trigger-file', trig_file)
+        node.new_output_file_opt(trig_file.segment, '.png', '--output-file')
+        workflow += node
+        files += node.output_files
+    return files
+
 def make_singles_plot(workflow, trig_files, bank_file, veto_file, veto_name, 
                      out_dir, exclude=None, require=None, tags=[]):
     makedir(out_dir)
