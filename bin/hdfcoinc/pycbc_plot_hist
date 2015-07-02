@@ -63,8 +63,8 @@ parser.add_argument('--x-var',
 parser.add_argument('--output-file')
 parser.add_argument('--bins', default=100, type=int,
                     help="number of bins in histogram")
-parser.add_argument('--x-max')
-parser.add_argument('--x-min')
+parser.add_argument('--x-max', type=float)
+parser.add_argument('--x-min', type=float)
 parser.add_argument('--verbose')
 args = parser.parse_args()
 
@@ -77,15 +77,15 @@ trigs = SingleDetTriggerSet(args.trigger_file, args.veto_file, args.segment_name
 val = getattr(trigs, args.x_var)
 
 fig = pylab.figure(0)
-pylab.hist(val, bins=args.bins, color=pycbc.results.ifo_color(ifo))
+
+x_max = args.x_max if args.x_max else val.max()
+pycbc.results.hist_overflow(val, x_max, bins=args.bins, color=pycbc.results.ifo_color(ifo))
 ax = pylab.gca()
 ax.set_yscale('log')
 pylab.ylabel('Number of Triggers')
 pylab.xlabel(args.x_var)
 pylab.ylim(ymin=.1)
 
-if args.x_max:
-    pylab.xlim(xmax=args.x_max)
 if args.x_min:
     pylab.xlim(xmin=args.x_min)
 
