@@ -87,9 +87,8 @@ pylab.ylim(chisq.min(), chisq.max() * 1.1)
 cb.set_label('Trigger Density')
 pylab.xlabel('Signal-to-Noise Ratio')
 pylab.ylabel('Reduced $\\chi^2$')
-pylab.title('%s: Single Detector Trigger Distribution' % ifo)
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
-     title="SNR vs Reduced Chisq: %s" % ifo, 
+     title="%s :SNR vs Reduced Chisq" % ifo, 
      caption="Distribution of SNR and Chisq for single detector triggers: "
              "Black lines show contours of constant NewSNR.",
      cmd=' '.join(sys.argv),
