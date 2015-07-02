@@ -9,7 +9,8 @@ from scipy.interpolate import interp1d
 from pycbc.future import numpy
 from itertools import izip
 from pycbc.events import veto, coinc
-    
+import pycbc.version
+
 def load_coincs(coinc_files):
     cols = ['stat', 'time1', 'time2', 'trigger_id1', 'trigger_id2', 
             'timeslide_id', 'template_id', 'decimation_factor']
@@ -43,6 +44,7 @@ def sec_to_year(sec):
 parser = argparse.ArgumentParser()
 # General required options
 parser.add_argument('--verbose', action='count')
+parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--cluster-window', type=float, 
                     help='Size in seconds to maximize coinc triggers')
 parser.add_argument('--zero-lag-coincs', nargs='+',
