@@ -4,13 +4,16 @@
 import argparse, h5py, numpy, logging, sys
 import matplotlib
 matplotlib.use('Agg')
-import pylab, pycbc.results
+import pylab, pycbc.results, pycbc.version
 
 parser = argparse.ArgumentParser()
 # General required options
+parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--trigger-file')
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
+parser.add_argument('--closed-box', action='store_true',
+      help="Make a closed box version that excludes foreground triggers")
 args = parser.parse_args()
 
 if args.verbose:
@@ -52,21 +55,23 @@ logging.info('Found %s background (exclusive zerolag) triggers' % len(cstat_back
 
 
 fig = pylab.figure(1)
-pylab.fill_between(cstat_back, err_low, err_high, linewidth=0, color='tan')
-pylab.plot(cstat_back_exc, far_back_exc, color='grey', label='Background (removal)')
-pylab.plot(cstat_back, far_back, color='black', label='Background')
+pylab.scatter(cstat_back_exc, far_back_exc, color='grey', marker='x', label='Background (without little dogs)')
 
-if cstat_fore is not None:
-    pylab.scatter(cstat_fore, cstat_rate, s=10, color='blue', marker='^', label='Foreground')
-    pylab.xlim(cstat_back.min(), max(cstat_fore.max(), cstat_back.max()) + 1)
-else:
-    pylab.xlim(cstat_back.min(), cstat_back.max() + 1)
+if not args.closed_box:
+    pylab.fill_between(cstat_back, err_low, err_high, linewidth=0, color='tan')
+    pylab.scatter(cstat_back, far_back, color='black', marker='x', label='Background (with little dogs)')
 
-pylab.ylabel('Cumulative Rate (1/year)')
-pylab.xlabel('Ranking Statistic')
+    if cstat_fore is not None:
+        pylab.scatter(cstat_fore, cstat_rate, s=10, color='blue', marker='^', label='Foreground')
+        pylab.xlim(cstat_back.min(), max(cstat_fore.max(), cstat_back.max()) + 1)
+    else:
+        pylab.xlim(cstat_back.min(), cstat_back.max() + 1)
+
+pylab.ylabel('Cumulative Rate $(yr^{-1})$')
+pylab.xlabel('Ranking Statistic Threshold')
 pylab.yscale('log')
 pylab.ylim(far_back.min() / 10.0, far_back.max())
-pylab.legend()
+pylab.legend(loc="lower left")
 pylab.grid()
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 

@@ -4,10 +4,11 @@
 import argparse, h5py, numpy, logging, os.path, matplotlib, sys
 matplotlib.use('Agg')
 from matplotlib.pyplot import cm
-import pylab, pycbc.pnutils, pycbc.results, pycbc
+import pylab, pycbc.pnutils, pycbc.results, pycbc, pycbc.version
 from pycbc import sensitivity
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--injection-file', 
                    help="HDF format injection result file.")
 parser.add_argument('--bins', nargs='*',

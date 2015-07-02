@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 import numpy, h5py, argparse, matplotlib, sys
 matplotlib.use('Agg')
-import pylab, pycbc.results
+import pylab, pycbc.results, pycbc.version
 from pycbc.events import veto
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--trigger-file', help='Single ifo trigger file')
+parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--veto-file', help='Optional, file of veto segments to remove triggers')
 parser.add_argument('--segment-name', default=None, type=str,
                     help='Optional, name of segment list to use for vetoes')
@@ -86,9 +87,8 @@ pylab.ylim(chisq.min(), chisq.max() * 1.1)
 cb.set_label('Trigger Density')
 pylab.xlabel('Signal-to-Noise Ratio')
 pylab.ylabel('Reduced $\\chi^2$')
-pylab.title('%s: Single Detector Trigger Distribution' % ifo)
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
-     title="SNR vs Reduced Chisq: %s" % ifo, 
+     title="%s :SNR vs Reduced Chisq" % ifo, 
      caption="Distribution of SNR and Chisq for single detector triggers: "
              "Black lines show contours of constant NewSNR.",
      cmd=' '.join(sys.argv),
