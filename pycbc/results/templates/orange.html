@@ -31,6 +31,33 @@
         }
     </style>
 
+    <!-- add expand all js -->
+    <script>
+        $(function () {
+
+            var active = true;
+
+            $('#collapse-init').click(function () {
+                if (active) {
+                    active = false;
+                    $('.panel-collapse').collapse('show');
+                    $('.panel-title').attr('data-toggle', '');
+                    $(this).text('Collapse All');
+                } else {
+                    active = true;
+                    $('.panel-collapse').collapse('hide');
+                    $('.panel-title').attr('data-toggle', 'collapse');
+                    $(this).text('Expand All');
+                }
+            });
+    
+            $('#accordion').on('show.bs.collapse', function () {
+                if (active) $('#accordion .in').collapse('hide');
+            });
+
+        });
+    </script>
+
     <!-- title -->
     <title>{{analysis_title}}</title>
 
@@ -141,47 +168,38 @@
                         <!-- loop over files in directory -->
                         <h1>Additional Files</h1>
                             The following files were also found in this directory:
+                            <div class="row" style="padding:15px">
+                                <button id="collapse-init" class="btn btn-xs btn-primary">Expand All</button>
+                            </div>
                             {% for file in dir.files %}
 
-                                <!-- get config file and slug -->
+                                <!-- get config file -->
                                 {% set cp = get_embedded_config(file.path) %}
-                                {% set slug = file.filename().replace('.', '_') %}
 
                                 <!-- do not show well.html -->
                                 {% if not file.filename() == 'well.html' %}
-
-                                    <!-- accordion -->
-                                    <div class="panel-group" id="accordion-{{slug}}">
+                                    <div class="panel-group" id="accordion">
                                         <div class="panel panel-default">
-
-                                            <!-- accordion title -->
-                                            <div class="panel-heading collapsed" data-toggle="collapse" data-parent="#accordion" href="#{{slug}}">
-                                                <h4 class="panel-title">
-                                                {% if cp.check_option(file.filename(), 'title') %}
-                                                    <a href='#'>B{{i}}. {{cp.get(file.filename(), 'title')}}</a>
-                                                {% else %}
-                                                    <a href='#'>B{{i}}. {{file.filename()}}</a>
-                                                {% endif %}
+                                            <div class="panel-heading">
+                                                <h4 class="panel-title" data-toggle="collapse" data-target="#collapse{{i}}">
+                                                    {% if cp.check_option(file.filename(), 'title') %}
+                                                        B{{i}}. {{cp.get(file.filename(), 'title')}}
+                                                    {% else %}
+                                                        B{{i}}. {{file.filename()}}
+                                                    {% endif %}
                                                 </h4>
                                             </div>
-
-                                            <!-- increment -->
-                                            {% set i = i + 1 %}
-
-                                            <!-- accordion content -->
-                                            <div id="{{slug}}" class="panel-collapse collapse">
-                                                <div class="panel-body">
+                                            <div id="collapse{{i}}" class="panel-collapse collapse">
+                                            <div class="panel-body">
                                                     {{file.render()}}
                                                 </div>
                                             </div>
-
                                         </div>
                                     </div>
-
+                                    {% set i = i + 1 %}
                                 {% endif %}
 
                             {% endfor %}
-
                     </div>
                 </div>
                 {% endif %}
