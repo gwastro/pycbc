@@ -213,10 +213,10 @@ for j in range(len(args.bins)-1):
             ylabel = 'Sensitive Distance (Mpc)'
             reach, ehigh, elow = sensitivity.volume_to_distance_with_errors(vols, vol_errors)
         elif args.dist_type == 'volume':
-            ylabel = "Sensitive Volume ($Mpc^3$)"
+            ylabel = "Sensitive Volume (Mpc$^3$)"
             reach, ehigh, elow = vols, vol_errors, vol_errors
         elif args.dist_type == 'vt':
-            ylabel = "Volume-Time ($YR-Mpc^3$)"
+            ylabel = "Volume-Time (yr-Mpc$^3$)"
             t = f.attrs['foreground_time_exc'] * 3.16888e-8
             reach, ehigh, elow = vols * t, vol_errors * t, vol_errors * t
 
@@ -227,6 +227,7 @@ for j in range(len(args.bins)-1):
                            facecolor=c, edgecolor=c, alpha=alpha)
 
 ax = pylab.gca()
+
 if args.sig_type != 'stat':
     ax.set_xscale('log')
 
