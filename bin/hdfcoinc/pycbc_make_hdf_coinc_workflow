@@ -129,8 +129,9 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
 
         wf.make_snrchi_plot(workflow, insps, censored_veto, 
                             'closed_box', 'results/single_triggers', tags=[tag])
-        wf.make_singles_plot(workflow, insps, hdfbank[0], censored_veto, 
-                            'closed_box', 'results/single_triggers', tags=[tag])
+        for insp in full_insps:
+            wf.make_singles_plot(workflow, insp, hdfbank[0], censored_veto, 
+                   'closed_box', 'results/single_triggers/%s' % insp.ifo, tags=[tag])
 
     else:
         inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank,
