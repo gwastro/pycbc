@@ -42,12 +42,12 @@ $(function () {
             active = false;
             $('.panel-collapse').collapse('show');
             $('.panel-title').attr('data-toggle', '');
-            $(this).text('Enable accordion behavior');
+            $(this).text('Collapse All');
         } else {
             active = true;
             $('.panel-collapse').collapse('hide');
             $('.panel-title').attr('data-toggle', 'collapse');
-            $(this).text('Disable accordion behavior');
+            $(this).text('Expand All');
         }
     });
     
@@ -168,40 +168,38 @@ $(function () {
                         <!-- loop over files in directory -->
                         <h1>Additional Files</h1>
                             The following files were also found in this directory:
-
-                            <!-- accordion group -->
-                            <div class="panel-group" id="accordion">
+                            <div class="row" style="padding:15px">
+                                <button id="collapse-init" class="btn btn-xs btn-primary">Expand All</button>
+                            </div>
                             {% for file in dir.files %}
 
-                                <!-- get config file and slug -->
+                                <!-- get config file -->
                                 {% set cp = get_embedded_config(file.path) %}
-                                {% set slug = file.filename().replace('.', '_') %}
 
                                 <!-- do not show well.html -->
                                 {% if not file.filename() == 'well.html' %}
-
-                                    <!-- accordion panel -->
+                                <div class="panel-group" id="accordion">
+                                    {% set i = i + 1 %}
                                     <div class="panel panel-default">
                                         <div class="panel-heading">
-                                            <h4 class="panel-title" data-toggle="collapse" href="#{{slug}}">
+                                            <h4 class="panel-title" data-toggle="collapse" data-target="#collapse{{i}}">
                                                 {% if cp.check_option(file.filename(), 'title') %}
-                                                    <a href='#'>B{{i}}. {{cp.get(file.filename(), 'title')}}</a>
+                                                    B{{i}}. {{cp.get(file.filename(), 'title')}}
                                                 {% else %}
-                                                    <a href='#'>B{{i}}. {{file.filename()}}</a>
+                                                    B{{i}}. {{file.filename()}}
                                                 {% endif %}
                                             </h4>
                                         </div>
-                                        {% set i = i + 1 %}
-                                        <div id="{{slug}}" class="panel-collapse collapse">
-                                             <div class="panel-body">
-                                                 {{file.render()}}
-                                             </div>
+                                        <div id="collapse{{i}}" class="panel-collapse collapse">
+                                            <div class="panel-body">
+                                                {{file.render()}}
+                                            </div>
                                         </div>
                                     </div>
+                                </div>
                                 {% endif %}
 
                             {% endfor %}
-</div>
                     </div>
                 </div>
                 {% endif %}
@@ -212,11 +210,6 @@ $(function () {
 </div>
 
 <footer>
-
-<button id="collapse-init" class="btn btn-primary">
-    Disable accordion behavior
-</button>
-
     <div class="container-fluid">
         <div class="footer-custom">
             <a href="{{dot_dot_str}}sitemap/index.html">Sitemap</a>
