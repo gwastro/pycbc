@@ -24,7 +24,7 @@ import shutil
 import zipfile
 from glue import segments
 from jinja2 import Environment, FileSystemLoader
-from pycbc.results.render import get_embedded_config, setup_template_render
+from pycbc.results.render import get_embedded_config, render_workflow_html_template, setup_template_render
 from pycbc.workflow import segment
 
 def examine_dir(cwd):
@@ -62,6 +62,13 @@ def examine_dir(cwd):
             nondirs.append(name)
 
     return cwd, dirs, nondirs
+
+def render_sitemap_page(output_path, dirs):
+    """
+    Creates sitemap page.
+    """
+    dirs.sort(key=lambda x: x.path)
+    render_workflow_html_template(output_path, 'sitemap.html', dirs)
 
 class Directory():
     """
@@ -216,6 +223,24 @@ for cwd in dirs:
 for cwd in dirs:
     for file in cwd.files:
         shutil.copy(file.path, opts.output_path+'/'+cwd.path+'/'+file.filename())
+
+# make sitemap page
+sitemap_dir = '/sitemap'
+if not os.path.exists(opts.plots_dir+sitemap_dir):
+    os.makedirs(opts.plots_dir+sitemap_dir)
+render_sitemap_page(opts.plots_dir+sitemap_dir+'/well.html', dirs)
+cwd = Directory(opts.plots_dir+sitemap_dir, opts.plots_dir)
+context = {'analysis_title'    : analysis_title,
+           'analysis_subtitle' : analysis_subtitle,
+           'dirs_0'            : dirs_0,
+           'dir'               : cwd,
+           'dot_dot_str'       : cwd.level() * '../',
+           'plots_dir'         : opts.plots_dir}
+output = template.render(context)
+if not os.path.exists(opts.output_path+cwd.path):
+    os.makedirs(opts.output_path+cwd.path)
+with open(opts.output_path+cwd.path+'/index.html', "wb") as fp:
+    fp.write(output)
 
 # copy css, js, and font files to html directory
 cssDir       = pycbc.results.__path__[0] + '/static/css/'
