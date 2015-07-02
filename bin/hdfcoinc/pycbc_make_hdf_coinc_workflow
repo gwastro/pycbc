@@ -132,7 +132,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
         group_layout('results/single_triggers', snrchi)
         
         for insp in full_insps:
-            wf.make_singles_plot(workflow, insp, hdfbank[0], censored_veto, 
+            wf.make_singles_plot(workflow, [insp], hdfbank[0], censored_veto, 
                    'closed_box', 'results/single_triggers/%s' % insp.ifo, tags=[tag])
 
     else:
@@ -217,4 +217,8 @@ dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
 container._adag.addDependency(dep)
 
 container.save()
+
+# Protect the open box results folder
+os.chmod('results/result', 600)
+
 logging.info("Written dax.")
