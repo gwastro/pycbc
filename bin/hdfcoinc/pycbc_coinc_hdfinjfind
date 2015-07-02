@@ -7,6 +7,7 @@ from glue import segments
 import os.path
 from pycbc.future import numpy
 from pycbc.events import indices_within_segments as veto_indices
+import pycbc.version
 
 # dummy class needed for loading LIGOLW files
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
@@ -46,6 +47,7 @@ def xml_to_hdf(table, hdf_file, hdf_key, columns):
                                         dtype=numpy.float32))
      
 parser = argparse.ArgumentParser()
+parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--trigger-files', nargs='+')
 parser.add_argument('--injection-files', nargs='+')
 parser.add_argument('--veto-file')
