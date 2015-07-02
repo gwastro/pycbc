@@ -185,7 +185,7 @@ wf.make_segments_plot(workflow, science_seg_file,
 if len(inj_files) > 0:
     found_inj = wf.find_injections_in_hdf_coinc(workflow, inj_coincs,
                             inj_files, censored_veto, 'closed_box',
-                            output_dir, tags=['ALLINJ'])                                                
+                            'allinj', tags=['ALLINJ'])                                                
     sen = wf.make_sensitivity_plot(workflow, found_inj, 'results/search_sensitivity', 
                             require='all', tags=['ALLINJ'])
     group_layout('results/search_sensitivity', sen)
