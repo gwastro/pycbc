@@ -77,16 +77,16 @@ if not args.gradient_far:
                            marker='o', label='found')
     caption = ("Found and missed injections: Black x's are missed injections. "
               "Blue circles are found with IFAR < 100 years, green are < 1000 years, and "
-              "red are found with IFAR >=1000 years. ")[0]
+              "red are found with IFAR >=1000 years. ")
 else:
     mpoints = plot.scatter(vals[args.axis_type][missed], dvals[args.distance_type][missed], 
                            marker='x', color='red', label='missed')
     points = plot.scatter(vals[args.axis_type][found], dvals[args.distance_type][found], 
                            c=1.0 / ifar_found, linewidth=0, norm=matplotlib.colors.LogNorm(),
                            marker='o', label='found')
-    caption = ("Found and missed injections: Red x's are misse dinjections. "
+    caption = ("Found and missed injections: Red x's are missed injections. "
                "Circles are found injections. The color indicates the value of "
-               "the false alarm rate" )[0]
+               "the false alarm rate" )
     c = plot.colorbar()
     c.set_label('False Alarm Rate $(yr^{-1})$')
 
