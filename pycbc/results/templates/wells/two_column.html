@@ -6,11 +6,11 @@
 
     <!-- display formatted files -->
     {% for filelist in filelists %}
-        <div class="row" style="padding-left:10px;">
+        <div class="row">
 
             <!-- two file case -->
             {% if len(filelist) == 2 %}
-                <div class="col-md-6">
+                <div class="col-md-6" style="padding-top:20px;">
                 {% if filelist[0] != None %}
                     {% raw %}
                     {% set cp = get_embedded_config('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}') %}
@@ -22,7 +22,7 @@
                 {% endif %}
                 </div>
                 {% set i = i + 1 %}
-                <div class="col-md-6">
+                <div class="col-md-6" style="padding-top:20px;">
                 {% if filelist[1] != None %}
                     {% raw %}
                     {% set cp = get_embedded_config('{% endraw %}{{dir}}/{{filelist[1].name}}{% raw %}') %}
@@ -37,7 +37,7 @@
 
             <!-- one file case -->
             {% if len(filelist) == 1 %}
-                <div class="col-md-12" style="padding-top:10px;">
+                <div class="col-md-12" style="padding-top:20px;">
                     {% raw %}
                     {% set cp = get_embedded_config('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}') %}
                         {% if cp.has_option('{% endraw %}{{filelist[0].name}}{% raw %}', 'title') %}
