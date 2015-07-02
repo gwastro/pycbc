@@ -88,28 +88,20 @@
       <ul class="nav navbar-nav">
 
         <!-- always have a button to the top-level directory -->
-        <li class="active"><a href="{{dot_dot_str}}">{{i}}. Summary</a></li>
-
-        <!-- increment -->
-        {% set i = i + 1 %}
+        <li class="active"><a href="{{dot_dot_str}}">Summary</a></li>
 
         <!-- display top-level directories -->
         {% for dir0 in dirs_0 %}
         <li class="dropdown ">
-            <a href="#" id="drop1" data-toggle="dropdown" class="dropdown-toggle" role="button">{{i}}. {{dir0.title()}}<b class="caret"></b></a>
+            <a href="#" id="drop1" data-toggle="dropdown" class="dropdown-toggle" role="button">{{dir0.title()}}<b class="caret"></b></a>
             <ul role="menu" class="dropdown-menu" aria-labelledby="drop1">
-                <li role="presentation"><a href="{{dot_dot_str}}{{dir0.name()}}" role="menuitem">{{i}}.0. Summary</a></li>
+                <li role="presentation"><a href="{{dot_dot_str}}{{dir0.name()}}" role="menuitem">Summary</a></li>
                 <li class="divider"></li>
 
                 <!-- set subsection counter integer -->
-                {% set j = 1 %}
                 {% for subdir in dir0.subdirs %}
-                    <li role="presentation"><a href="{{dot_dot_str}}.{{subdir.path}}" role="menuitem">{{i}}.{{j}}. {{subdir.title()}}</a></li>
-                    {% set j = j + 1 %}
+                    <li role="presentation"><a href="{{dot_dot_str}}.{{subdir.path}}" role="menuitem">{{subdir.title()}}</a></li>
                 {% endfor %}
-
-                <!-- increment -->
-                {% set i = i + 1 %}
 
             </ul>
         </li>
@@ -154,33 +146,39 @@
                                 <!-- get config file and slug -->
                                 {% set cp = get_embedded_config(file.path) %}
                                 {% set slug = file.filename().replace('.', '_') %}
-                                <!-- accordion -->
-                                <div class="panel-group" id="accordion-{{slug}}">
-                                    <div class="panel panel-default">
 
-                                        <!-- accordion title -->
-                                        <div class="panel-heading collapsed" data-toggle="collapse" data-parent="#accordion" href="#{{slug}}">
-                                            <h4 class="panel-title">
-                                            {% if cp.check_option(file.filename(), 'title') %}
-                                                <a href='#'>B{{i}}. {{cp.get(file.filename(), 'title')}}</a>
-                                            {% else %}
-                                                <a href='#'>B{{i}}. {{file.filename()}}</a>
-                                            {% endif %}
-                                            </h4>
-                                        </div>
+                                <!-- do not show well.html -->
+                                {% if not file.filename() == 'well.html' %}
 
-                                        <!-- increment -->
-                                        {% set i = i + 1 %}
+                                    <!-- accordion -->
+                                    <div class="panel-group" id="accordion-{{slug}}">
+                                        <div class="panel panel-default">
 
-                                        <!-- accordion content -->
-                                        <div id="{{slug}}" class="panel-collapse collapse">
-                                            <div class="panel-body">
-                                                {{file.render()}}
+                                            <!-- accordion title -->
+                                            <div class="panel-heading collapsed" data-toggle="collapse" data-parent="#accordion" href="#{{slug}}">
+                                                <h4 class="panel-title">
+                                                {% if cp.check_option(file.filename(), 'title') %}
+                                                    <a href='#'>B{{i}}. {{cp.get(file.filename(), 'title')}}</a>
+                                                {% else %}
+                                                    <a href='#'>B{{i}}. {{file.filename()}}</a>
+                                                {% endif %}
+                                                </h4>
                                             </div>
-                                        </div>
 
+                                            <!-- increment -->
+                                            {% set i = i + 1 %}
+
+                                            <!-- accordion content -->
+                                            <div id="{{slug}}" class="panel-collapse collapse">
+                                                <div class="panel-body">
+                                                    {{file.render()}}
+                                                </div>
+                                            </div>
+
+                                        </div>
                                     </div>
-                                </div>
+
+                                {% endif %}
 
                             {% endfor %}
 
@@ -192,6 +190,14 @@
          </div>
      </div>
 </div>
+
+<footer>
+    <div class="container-fluid">
+        <div class="footer-custom">
+            <a href="{{dot_dot_str}}sitemap/index.html">Sitemap</a>
+        </div>
+    </div>
+</footer>
 
 </body>
 </html>
