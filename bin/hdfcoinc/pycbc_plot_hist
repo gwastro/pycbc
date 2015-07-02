@@ -77,7 +77,7 @@ trigs = SingleDetTriggerSet(args.trigger_file, args.veto_file, args.segment_name
 val = getattr(trigs, args.x_var)
 
 fig = pylab.figure(0)
-pylab.hist(val, bins=args.bins)
+pylab.hist(val, bins=args.bins, color=pycbc.results.ifo_color(ifo))
 ax = pylab.gca()
 ax.set_yscale('log')
 pylab.ylabel('Number of Triggers')
