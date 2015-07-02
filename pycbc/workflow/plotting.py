@@ -79,6 +79,7 @@ def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir, tags=[]
     node.add_input_opt('--trigger-file', trig_file)
     node.new_output_file_opt(bank_file.segment, '.html', '--output-file')
     workflow += node
+    return node.output_files[0]
 
 def make_sensitivity_plot(workflow, inj_file, out_dir, exclude=None, require=None, tags=[]):
     makedir(out_dir)   
