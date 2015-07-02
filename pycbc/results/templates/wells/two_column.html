@@ -14,8 +14,10 @@
                 {% if filelist[0].name != '' %}
                     {% raw %}
                     {% set cp = get_embedded_config('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}') %}
-                    <p class="text-center"><b>{% endraw %}A{{i}}. {% raw %}{{cp.get('{% endraw %}{{filelist[0].name}}{% raw %}', 'title')}}</b></p>
-                       {{ setup_template_render('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}' , '') }}
+                        {% if cp.has_option('{% endraw %}{{filelist[0].name}}{% raw %}', 'title') %}
+                            <p class="text-center"><b>{% endraw %}A{{i}}. {% raw %}{{cp.get('{% endraw %}{{filelist[0].name}}{% raw %}', 'title')}}</b></p>
+                        {% endif %}
+                        {{ setup_template_render('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}' , '') }}
                     {% endraw %}
                 {% endif %}
                 </div>
@@ -24,8 +26,10 @@
                 {% if len(filelist[1].name) > 0 %}
                     {% raw %}
                     {% set cp = get_embedded_config('{% endraw %}{{dir}}/{{filelist[1].name}}{% raw %}') %}
-                    <p class="text-center"><b>{% endraw %}A{{i}}. {% raw %}{{cp.get('{% endraw %}{{filelist[1].name}}{% raw %}', 'title')}}</b></p>
-                       {{ setup_template_render('{% endraw %}{{dir}}/{{filelist[1].name}}{% raw %}' , '') }}
+                        {% if cp.has_option('{% endraw %}{{filelist[1].name}}{% raw %}', 'title') %}
+                           <p class="text-center"><b>{% endraw %}A{{i}}. {% raw %}{{cp.get('{% endraw %}{{filelist[1].name}}{% raw %}', 'title')}}</b></p>
+                        {% endif %}
+                        {{ setup_template_render('{% endraw %}{{dir}}/{{filelist[1].name}}{% raw %}' , '') }}
                     {% endraw %}
                 {% endif %}
                 </div>
@@ -36,8 +40,10 @@
                 <div class="col-md-12" style="padding-top:10px;">
                     {% raw %}
                     {% set cp = get_embedded_config('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}') %}
-                    <p class="text-center"><b>{% endraw %}A{{i}}. {% raw %}{{cp.get('{% endraw %}{{filelist[0].name}}{% raw %}', 'title')}}</b></p>
-                       {{ setup_template_render('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}' , '') }}
+                        {% if cp.has_option('{% endraw %}{{filelist[0].name}}{% raw %}', 'title') %}
+                            <p class="text-center"><b>{% endraw %}A{{i}}. {% raw %}{{cp.get('{% endraw %}{{filelist[0].name}}{% raw %}', 'title')}}</b></p>
+                        {% endif %}
+                        {{ setup_template_render('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}' , '') }}
                     {% endraw %}
                 </div>
             {% endif %}
