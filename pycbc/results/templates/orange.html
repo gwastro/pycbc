@@ -178,25 +178,25 @@
 
                                 <!-- do not show well.html -->
                                 {% if not file.filename() == 'well.html' %}
-                                <div class="panel-group" id="accordion">
-                                    {% set i = i + 1 %}
-                                    <div class="panel panel-default">
-                                        <div class="panel-heading">
-                                            <h4 class="panel-title" data-toggle="collapse" data-target="#collapse{{i}}">
-                                                {% if cp.check_option(file.filename(), 'title') %}
-                                                    B{{i}}. {{cp.get(file.filename(), 'title')}}
-                                                {% else %}
-                                                    B{{i}}. {{file.filename()}}
-                                                {% endif %}
-                                            </h4>
-                                        </div>
-                                        <div id="collapse{{i}}" class="panel-collapse collapse">
+                                    <div class="panel-group" id="accordion">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <h4 class="panel-title" data-toggle="collapse" data-target="#collapse{{i}}">
+                                                    {% if cp.check_option(file.filename(), 'title') %}
+                                                        B{{i}}. {{cp.get(file.filename(), 'title')}}
+                                                    {% else %}
+                                                        B{{i}}. {{file.filename()}}
+                                                    {% endif %}
+                                                </h4>
+                                            </div>
+                                            <div id="collapse{{i}}" class="panel-collapse collapse">
                                             <div class="panel-body">
-                                                {{file.render()}}
+                                                    {{file.render()}}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                    {% set i = i + 1 %}
                                 {% endif %}
 
                             {% endfor %}
