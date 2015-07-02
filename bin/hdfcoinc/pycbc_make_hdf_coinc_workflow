@@ -44,7 +44,7 @@ finalize_workflow = wf.Workflow(args, 'finalization')
 wf.makedir(args.output_dir)
 os.chdir(args.output_dir)
 
-# layout initialization / helper functions
+# layout initialization / helper functions 
 def layout(path, cols):
     path = os.path.join(os.getcwd(), path, 'well.html')
     render_workflow_html_template(path, 'two_column.html', cols)
@@ -120,9 +120,12 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                'closed_box', 'segments')      
                                          
         for bg_file in (bg_files + final_bg_file):
-            wf.make_snrifar_plot(workflow, bg_file,
+            snrifar = wf.make_snrifar_plot(workflow, bg_file,
                                 'results/coincident_triggers', 
                                  closed_box=True, tags=bg_file.tags + ['closed'])
+            if bg_file == final_bg_file[0]:
+                closed_snrifar = snrifar
+                
         
         snrifar = wf.make_snrifar_plot(workflow, final_bg_file[0],
                             'results/result', tags=final_bg_file[0].tags)
@@ -177,8 +180,8 @@ for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
     s = wf.make_spectrum_plot(workflow, psd_file, 'results/detector_sensitivity')
     r = wf.make_range_plot(workflow, psd_file, 'results/detector_sensitivity')
     det_summ += [(s, r)]
-layout('results/detector_sensitivity', det_summ)
-    
+   
+layout('results/detector_sensitivity', det_summ)    
 
 for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
     wf.make_segments_plot(workflow, files, 'results/analysis_time/segments', 
@@ -199,6 +202,13 @@ if len(inj_files) > 0:
     inj = wf.make_foundmissed_plot(workflow, found_inj, 'results/injections',
                             require='all', tags=['ALLINJ'])
     group_layout('results/injections', inj)
+
+# make full summary
+summ = det_summ + [(closed_snrifar,)]
+for row in summ:
+    for f in row:
+        os.symlink(f.storage_path, os.path.join('results', f.name))
+layout('results', summ)
 
 # save global config file to results directory
 ini_file_path = 'results/configuration/configuration.ini'

@@ -11,7 +11,7 @@
             <!-- two file case -->
             {% if len(filelist) == 2 %}
                 <div class="col-md-6">
-                {% if filelist[0].name != '' %}
+                {% if filelist[0] != None %}
                     {% raw %}
                     {% set cp = get_embedded_config('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}') %}
                         {% if cp.has_option('{% endraw %}{{filelist[0].name}}{% raw %}', 'title') %}
@@ -23,7 +23,7 @@
                 </div>
                 {% set i = i + 1 %}
                 <div class="col-md-6">
-                {% if len(filelist[1].name) > 0 %}
+                {% if filelist[1] != None %}
                     {% raw %}
                     {% set cp = get_embedded_config('{% endraw %}{{dir}}/{{filelist[1].name}}{% raw %}') %}
                         {% if cp.has_option('{% endraw %}{{filelist[1].name}}{% raw %}', 'title') %}
