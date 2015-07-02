@@ -153,9 +153,11 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                         output_dir, tags=ctags)
         inj_coincs += [inj_coinc]                      
         wf.make_sensitivity_plot(workflow, found_inj, 
-                      'results/search_sensitivity/%s' % tag, exclude='all', tags=ctags)
+                      'results/search_sensitivity/%s' % tag, 
+                       exclude=['all', 'summ'], tags=ctags)
         wf.make_foundmissed_plot(workflow, found_inj, 
-                      'results/injections/%s' % tag, exclude='all', tags=[tag])
+                      'results/injections/%s' % tag,
+                       exclude=['all', 'summ'], tags=[tag])
         wf.make_inj_table(workflow, found_inj, 
                       'results/injections/%s' % tag, tags=[tag])
                                  
@@ -192,6 +194,8 @@ wf.make_segments_plot(workflow, full_segs,
 wf.make_segments_plot(workflow, science_seg_file,
                  'results/analysis_time/segments', tags=['SCIENCE_MINUS_CAT1'])
 
+# Make combined injection plots
+inj_summ = []
 if len(inj_files) > 0:
     found_inj = wf.find_injections_in_hdf_coinc(workflow, inj_coincs,
                             inj_files, censored_veto, 'closed_box',
@@ -203,11 +207,27 @@ if len(inj_files) > 0:
                             require='all', tags=['ALLINJ'])
     group_layout('results/injections', inj)
 
+    # Make summary page foundmissed and sensitivity plot    
+    sen = wf.make_sensitivity_plot(workflow, found_inj, 
+                'results/search_sensitivity', require='summ', tags=['ALLINJ'])
+    group_layout('results/search_sensitivity', sen)
+    inj = wf.make_foundmissed_plot(workflow, found_inj, 
+                'results/injections', require='summ', tags=['ALLINJ'])
+                
+    if len(sen) == 1 and len(inj) == 1:
+        inj_summ = [(inj[0], sen[0])]
+    else:
+        logging.warn("Invalid number of summary foundmissed/sensitivity plots. "
+                     "The limit is exactly one, skipping generation")
+                            
 # make full summary
-summ = det_summ + [(closed_snrifar,)]
+summ = det_summ + [(closed_snrifar,)] + inj_summ
 for row in summ:
     for f in row:
-        os.symlink(f.storage_path, os.path.join('results', f.name))
+        try:
+            os.symlink(f.storage_path, os.path.join('results', f.name))
+        except OSError:
+            pass           
 layout('results', summ)
 
 # save global config file to results directory

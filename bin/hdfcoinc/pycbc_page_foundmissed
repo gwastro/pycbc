@@ -61,7 +61,7 @@ labels={'mchirp': 'Chirp Mass',
 # For speed don't bother plotting really distant missed points
 # missed = missed[dvals[args.distance_type][missed] < dvals[args.distance_type][found].max() * 1.1]
 
-fig = plot.figure(figsize=[10,5])
+fig = plot.figure()
 
 if not args.gradient_far:
     color = numpy.zeros(len(found))
@@ -94,7 +94,6 @@ ax = plot.gca()
 plot.xlabel(labels[args.axis_type])
 plot.ylabel(labels[args.distance_type])
 plot.grid()
-plot.subplots_adjust(left=0.1, right=0.8, top=0.9, bottom=0.1)
 
 if args.log_distance:
     ax.set_yscale('log')
@@ -103,8 +102,10 @@ plot.ylim(ymin=1, ymax=dvals[args.distance_type][missed].max()*1.2)
 
 fig_kwds = {}
 if '.png' in args.output_file:
-    fig_kwds['dpi'] = 100
+    fig_kwds['dpi'] = 200
+    
 if ('.html' in args.output_file):
+    plot.subplots_adjust(left=0.1, right=0.8, top=0.9, bottom=0.1)
     import mpld3, mpld3.plugins, mpld3.utils
     mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt='.5g'))
     legend =  mpld3.plugins.InteractiveLegendPlugin([mpoints, points],

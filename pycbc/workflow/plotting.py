@@ -30,6 +30,10 @@ from pycbc.workflow.core import FileList, makedir, Executable, Node
 def excludestr(tags, substr):
     if substr is None:
         return tags
+    if isinstance(substr, list):
+        if len(substr) > 1:
+            tags = excludestr(tags, substr[1:])
+        substr = substr[0]   
     return [tag for tag in tags if substr not in tag]
 
 def requirestr(tags, substr):
