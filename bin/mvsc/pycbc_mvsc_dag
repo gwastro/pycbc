@@ -42,6 +42,11 @@ cp = ConfigParser.ConfigParser()
 ininame = opts.ini_file
 cp.read(ininame)
 
+#### Condor Accounting Tag ###########
+account_tag = cp.get('condor', 'accounting_tag')
+ 
+#####################################
+
 class mvsc_dag_DAG(pipeline.CondorDAG):
   def __init__(self, config_file, log_path):
     self.config_file = str(config_file)
@@ -74,6 +79,7 @@ class mvsc_get_doubles_job(pipeline.CondorDAGJob):
     self.add_condor_cmd('getenv','True')
     self.tag_base = tag_base
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.add_condor_cmd("accounting_group", account_tag)
     self.set_sub_file(tag_base+'_'+run_tag+'.sub')
     self.set_stdout_file(opts.log_path+'/'+tag_base+'_'+run_tag+'-$(macroid)-$(process).out')
     self.set_stderr_file(opts.log_path+'/'+tag_base+'_'+run_tag+'-$(macroid)-$(process).err')
@@ -109,6 +115,7 @@ class train_forest_job(pipeline.CondorDAGJob):
     self.add_condor_cmd('getenv','True')
     self.tag_base = tag_base
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.add_condor_cmd("accounting_group", account_tag)
     self.set_sub_file(tag_base+'_'+run_tag+'.sub')
     self.set_stdout_file(opts.log_path+'/'+tag_base+'_'+run_tag+'-$(macroid)-$(process).out')
     self.set_stderr_file(opts.log_path+'/'+tag_base+'_'+run_tag+'-$(macroid)-$(process).err')
@@ -143,6 +150,7 @@ class use_forest_job(pipeline.CondorDAGJob):
     self.add_condor_cmd('getenv','True')
     self.tag_base = tag_base
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.add_condor_cmd("accounting_group", account_tag)
     self.set_sub_file(tag_base+'_'+run_tag+'.sub')
     self.set_stdout_file(opts.log_path+'/'+tag_base+'_'+run_tag+'-$(macroid)-$(process).out')
     self.set_stderr_file(opts.log_path+'/'+tag_base+'_'+run_tag+'-$(macroid)-$(process).err')
@@ -180,6 +188,7 @@ class mvsc_update_sql_job(pipeline.CondorDAGJob):
     self.add_condor_cmd('getenv','True')
     self.tag_base = tag_base
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    self.add_condor_cmd("accounting_group", account_tag)
     self.set_sub_file(tag_base+'_'+run_tag+'.sub')
     self.set_stdout_file(opts.log_path+'/'+tag_base+'_'+run_tag+'-$(macroid)-$(process).out')
     self.set_stderr_file(opts.log_path+'/'+tag_base+'_'+run_tag+'-$(macroid)-$(process).err')
@@ -205,7 +214,6 @@ class mvsc_update_sql_node(pipeline.CondorDAGNode):
 ###############################################################################
 ## MAIN #######################################################################
 ###############################################################################
-
 
 print databases
 

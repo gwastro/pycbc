@@ -37,6 +37,8 @@ parser.add_argument("--output-tag", default="CBC", help="a string added to all f
 #parser.add_argument("--apply-weights", action="store_true", default=False, help="calculates weight for all found injections. Weights are saved in .pat file (all noise events get weight=1). If this option is not supplied, all (noise+signal) events get a weight of 1.")
 parser.add_argument("--weighting-method", default=None, choices=['physical_distance', 'chirp_distance'], help = "Specify weighting method/function for assigning weights to triggers. If not given, then all (noise+signal) events get a weight of 1.")
 parser.add_argument("--reference-dist", type=float, default=300, help="distance (Mpc) for normalizing injection weights when training. Default 300")
+parser.add_argument("--min-weight", type=float, default = -1, help="If applied, sets the lower bound of the signal weights to be min-weight")
+parser.add_argument("--distance-power", type=float, default = 1, help="'Raise injected distance or chirp distance to given power before calculating weights'")
 parser.add_argument("--plot-weights-histogram", action="store_true", default=False, help="plots a histogram for weights assigned to triggers")
 parser.add_argument("--plot-path", default = ".", dest="plot_path", help="Specify path to store weights-histogram. Default: current directory")
 parser.add_argument("--plot-name", default = "weights_histogram.png", dest="plot_name", help="Specify name of histogram plot. Default: weights_histogram.png")
@@ -140,26 +142,28 @@ class Trigger:
 	##  Assign weight to signal triggers, if specified by user and if the injection
 	##  distance distribution is recognized.
 
-	def set_weight(self, weighting_method, reference_dist=300.):
+	def set_weight(self, weighting_method, min_weight, distance_power, reference_dist=300.):
 		# default value for zerolag, time slides and unrecognized distributions
 		self.weight = 1
 		if (weighting_method is not None and self.sn_bool == 1):
 			if weighting_method == "physical_distance":
 				if self.d_distr == "uniform":
-					self.weight = (self.distance/reference_dist)**2
-				if self.d_distr == "log10":
-					self.weight = (self.distance/reference_dist)**3
-				if self.d_distr == "volume":
+					self.weight = ((self.distance/reference_dist)**2)**distance_power
+				elif self.d_distr == "log10":
+					self.weight = ((self.distance/reference_dist)**3)**distance_power
+				elif self.d_distr == "volume":
 					self.weight = 1
-			if weighting_method == "chirp_distance":
+			elif weighting_method == "chirp_distance":
 				self.chirp_dist = chirp_dist_func(self.distance, self.sim_mchirp)
 				if self.d_distr == "uniform":
-					self.weight = (self.chirp_dist/reference_dist)**2
-				if self.d_distr == "log10":
-					self.weight = (self.chirp_dist/reference_dist)**3
-				if self.d_distr == "volume":
+					self.weight = ((self.chirp_dist/reference_dist)**2)**distance_power
+				elif self.d_distr == "log10":
+					self.weight = ((self.chirp_dist/reference_dist)**3)**distance_power
+				elif self.d_distr == "volume":
 					self.weight = 1
-
+			if min_weight != -1:
+				if self.weight < min_weight: self.weight = min_weight
+					
 
 
 #####################################################################
@@ -414,7 +418,7 @@ for dtype, sn_bool in zip(datatypes, sn_bool_list):
 		else:
 			trig.distance = -1  # dummy value for non-injection coincs
 			trig.d_distr = None
-		trig.set_weight(args.weighting_method, args.reference_dist)
+		trig.set_weight(args.weighting_method, args.min_weight, args.distance_power, args.reference_dist)
 
 		# Append triggers to temporary list
 		trig_tmp_list.append(trig)
