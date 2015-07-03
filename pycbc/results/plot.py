@@ -1,9 +1,10 @@
 """ Plotting utililities and premade plot configurations
 """
-import pylab, numpy
 
 def hist_overflow(val, val_max, **kwds):
     """ Make a histogram with an overflow bar above val_max """
+    import pylab, numpy
+
     overflow = len(val[val>=val_max])
     pylab.hist(val[val<val_max], **kwds)
         
