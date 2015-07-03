@@ -1,39 +1,45 @@
+#!/usr/bin/env python
 """ Plot variation in PSD
 """
 import matplotlib; matplotlib.use('Agg');
 import h5py, numpy, argparse, pylab, pycbc.results, sys
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--psd-file", help='HDF file of psds')
+parser.add_argument("--psd-files", nargs='+', help='HDF file of psds')
 parser.add_argument("--output-file", help='output file name')
 args = parser.parse_args()
 
-f = h5py.File(args.psd_file, 'r')
-ifo = f.keys()[0]
-df = f[ifo + '/psds/0'].attrs['delta_f']
-keys = f[ifo + '/psds'].keys()
-psds = [f[ifo + '/psds/' + key][:] for key in keys]
-
-flow = f.attrs['low_frequency_cutoff']
-kmin = int(flow / df)
-
-fac = 1.0 / pycbc.DYN_RANGE_FAC
-high = numpy.percentile(psds, 95, axis=0)[kmin:] ** 0.5 * fac
-low = numpy.percentile(psds, 5, axis=0)[kmin:] ** 0.5 * fac
-middle = numpy.percentile(psds, 50, axis=0)[kmin:] ** 0.5 * fac
-samples = numpy.arange(0, len(psds[0]))[kmin:] * df
-
 fig = pylab.figure(0)
-pylab.fill_between(samples, low, high, alpha=0.4, linewidth=0)
-pylab.loglog(samples, middle, linewidth=0.3)
-pylab.xlim(flow, 1000)
-pylab.ylim(low.min(), low.min() * 100)
 pylab.grid(which='both')
-pylab.ylabel('Amplitude Spectral Density')
+pylab.ylabel('Amplitude Spectral Density (Strain / $\sqrt{Hz}$)')
 pylab.xlabel('Frequency (Hz)')
 
+for psd_file in args.psd_files:
+    f = h5py.File(psd_file, 'r')
+    ifo = f.keys()[0]
+    df = f[ifo + '/psds/0'].attrs['delta_f']
+    keys = f[ifo + '/psds'].keys()
+    psds = [f[ifo + '/psds/' + key][:] for key in keys]
+
+    flow = f.attrs['low_frequency_cutoff']
+    kmin = int(flow / df)
+
+    fac = 1.0 / pycbc.DYN_RANGE_FAC
+    high = numpy.percentile(psds, 95, axis=0)[kmin:] ** 0.5 * fac
+    low = numpy.percentile(psds, 5, axis=0)[kmin:] ** 0.5 * fac
+    middle = numpy.percentile(psds, 50, axis=0)[kmin:] ** 0.5 * fac
+    samples = numpy.arange(0, len(psds[0]))[kmin:] * df
+
+    color = pycbc.results.ifo_color(ifo)
+
+    pylab.fill_between(samples, low, high, alpha=0.4, linewidth=0, color=color)
+    pylab.loglog(samples, middle, linewidth=0.3, color=color, label=ifo)
+    pylab.xlim(flow, 1000)
+    pylab.ylim(low.min(), low.min() * 100)
+
+pylab.legend()
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
-    title = "%s Spectrum" % ifo,
+    title = "Spectrum",
     caption = "Median amplitude spectral density plotted with a shaded region " 
               "between the 5th and 95th perentiles. ",
     cmd = ' '.join(sys.argv))

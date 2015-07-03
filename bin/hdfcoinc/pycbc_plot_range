@@ -10,7 +10,7 @@ set_measure_level(0)
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--version", action='version', version=pycbc.version.git_verbose_msg)
-parser.add_argument("--psd-file", help='HDF file of psds')
+parser.add_argument("--psd-files", nargs='+', help='HDF file of psds')
 parser.add_argument("--output-file", help='output file name')
 parser.add_argument("--mass1", nargs="+", help="Mass of first component in solar masses", type=float)
 parser.add_argument("--mass2", nargs="+", help="Mass of second component in solar masses", type=float)
@@ -19,53 +19,55 @@ args = parser.parse_args()
 
 canonical_snr = 8.0
 
-f = h5py.File(args.psd_file, 'r')
-ifo = f.keys()[0]
-flow = f.attrs['low_frequency_cutoff']
-keys = f[ifo + '/psds'].keys()
-start, end = f[ifo + '/start_time'][:], f[ifo + '/end_time'][:]
-f.close()
-
-ranges = {}  
-for key in keys:
-    name = ifo + '/psds/' + key
-    psd = pycbc.types.load_frequencyseries(args.psd_file, group=name)
-    start_time = psd.epoch
-    end_time = start_time + 1.0 / psd.delta_f
-    delta_t = 1.0 / ((len(psd) - 1) * 2 * psd.delta_f)
-    out = pycbc.types.zeros(len(psd), dtype=numpy.complex64)
-  
-    for m1, m2, apx in zip(args.mass1, args.mass2, args.approximant):        
-        htilde = pycbc.waveform.get_waveform_filter(out, 
-                                           mass1=m1, 
-                                           mass2=m2, 
-                                           approximant=apx,
-                                           f_lower=flow,
-                                           delta_f=psd.delta_f,
-                                           delta_t=delta_t, 
-                                           distance = 1.0/pycbc.DYN_RANGE_FAC)
-        htilde = htilde.astype(numpy.complex64)
-        sigma = pycbc.filter.sigma(htilde, psd=psd, low_frequency_cutoff=flow)
-        horizon_distance = sigma / canonical_snr 
-        inspiral_range = horizon_distance / 2.26
-        
-        if apx in ranges:
-            ranges[apx].append(inspiral_range)
-        else:
-            ranges[apx] = [inspiral_range]
-
-fig = pylab.figure(0)       
+fig = pylab.figure(0) 
 pylab.xlabel('Time (s)')    
 pylab.ylabel('Inspiral Range (Mpc)')
 pylab.grid() 
-for m1, m2, apx in zip(args.mass1, args.mass2, args.approximant):
-    label = '$%sM_{\odot}-%sM_{\odot} (%s)$' % (m1, m2, apx)
-    pylab.errorbar((start+end)/2, ranges[apx], xerr=(end-start)/2, label=label, fmt=None)
-pylab.legend()
+
+for psd_file in args.psd_files:
+    f = h5py.File(psd_file, 'r')
+    ifo = f.keys()[0]
+    flow = f.attrs['low_frequency_cutoff']
+    keys = f[ifo + '/psds'].keys()
+    start, end = f[ifo + '/start_time'][:], f[ifo + '/end_time'][:]
+    f.close()
+
+    ranges = {}  
+    for key in keys:
+        name = ifo + '/psds/' + key
+        psd = pycbc.types.load_frequencyseries(psd_file, group=name)
+        start_time = psd.epoch
+        end_time = start_time + 1.0 / psd.delta_f
+        delta_t = 1.0 / ((len(psd) - 1) * 2 * psd.delta_f)
+        out = pycbc.types.zeros(len(psd), dtype=numpy.complex64)
+      
+        for m1, m2, apx in zip(args.mass1, args.mass2, args.approximant):        
+            htilde = pycbc.waveform.get_waveform_filter(out, 
+                                     mass1=m1,mass2=m2, approximant=apx,
+                                     f_lower=flow, delta_f=psd.delta_f,
+                                     delta_t=delta_t, 
+                                     distance = 1.0/pycbc.DYN_RANGE_FAC)
+            htilde = htilde.astype(numpy.complex64)
+            sigma = pycbc.filter.sigma(htilde, psd=psd, low_frequency_cutoff=flow)
+            horizon_distance = sigma / canonical_snr 
+            inspiral_range = horizon_distance / 2.26
+            
+            if apx in ranges:
+                ranges[apx].append(inspiral_range)
+            else:
+                ranges[apx] = [inspiral_range]
+
+    for m1, m2, apx in zip(args.mass1, args.mass2, args.approximant):
+        label = '%s: $%sM_{\odot}-%sM_{\odot} (%s)$' % (ifo, m1, m2, apx)
+        pylab.errorbar((start+end)/2, ranges[apx], 
+                      xerr=(end-start)/2, ecolor=pycbc.results.ifo_color(ifo),
+                      label=label, fmt=None)        
+pylab.legend(loc="lower left")
          
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
-    title = "%s Inspiral Range" % ifo,
+    title = "Inspiral Range",
     caption = "The canonical sky-averaged inspiral range for a single "
               "detector at SNR 8",
     cmd = ' '.join(sys.argv),
+    fig_kwds={'dpi':200}
     )
