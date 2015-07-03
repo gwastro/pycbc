@@ -58,7 +58,7 @@ far_back_exc = 1.0 / back_ifar_exc[back_sort_exc]
 logging.info('Found %s background (exclusive zerolag) triggers' % len(cstat_back_exc))
 
 fig = pylab.figure(1)
-pylab.scatter(cstat_back_exc, far_back_exc, color='grey', marker='x', label='Open Box Background')
+pylab.scatter(cstat_back_exc, far_back_exc, color='grey', marker='x', label='Closed Box Background')
 
 if not args.closed_box:
     for sig in [6, 5, 4, 3, 2, 1]:
@@ -68,7 +68,7 @@ if not args.closed_box:
         pylab.text(cstat_back[-1], (far_back / (1 - p))[-1], "$\sigma = %s$" % sig)
         
     #pylab.fill_between(cstat_back, err_low, err_high, linewidth=0, color='tan')
-    pylab.scatter(cstat_back, far_back, color='black', marker='x', label='Closed Box Background')
+    pylab.scatter(cstat_back, far_back, color='black', marker='x', label='Open Box Background')
 
     if cstat_fore is not None:
         pylab.scatter(cstat_fore, cstat_rate, s=10, color='blue', marker='^', label='Foreground')
