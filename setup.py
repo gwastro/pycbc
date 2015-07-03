@@ -56,6 +56,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'argparse>=1.3.0',
                       'decorator>=3.4.2',
                       'scipy>=0.13.0',
+                      'unittest2',
                       'matplotlib>=1.3.1',
                       'numpy>=1.6.4',
                       'pillow',
@@ -63,7 +64,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'jinja2',
                       'mpld3>=0.3git',
                       'pycbc-pylal>=0.9.3',
-                      'pycbc-glue>=0.9.3',
+                      'pycbc-glue>=0.9.4',
                       ]
 links = ['https://github.com/ahnitz/mpld3/tarball/master#egg=mpld3-0.3git']
 
