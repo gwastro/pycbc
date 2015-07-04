@@ -210,15 +210,15 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                       final_bg_file[0], trig_insp,
                                       rdir['injections/%s' % tag], tags=[tag])
    
-full_segs, psd_files = [], []                                 
+full_segs, psd_files, insp_segs, insp_data_segs = [], [], {}, {}                            
 for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
     name = 'INSPIRAL_SEGMENTS'
     fname = 'segments/%s-' % ifo + name + '.xml'
-    fsegs = glue.segments.segmentlist([f.segment for f in files])
-    full_segs.append(pycbc.events.segments_to_file(fsegs, fname, name, ifo=ifo))
+    insp_segs[ifo] = glue.segments.segmentlist([f.segment for f in files])
+    full_segs.append(pycbc.events.segments_to_file(insp_segs[ifo], fname, name, ifo=ifo))
 
-    segs = glue.segments.segmentlist([f.metadata['data_seg'] for f in files])
-    data_seg = pycbc.events.segments_to_file(segs,
+    insp_data_segs[ifo] = glue.segments.segmentlist([f.metadata['data_seg'] for f in files])
+    data_seg = pycbc.events.segments_to_file(insp_data_segs[ifo],
                    'segments/%s-INSP_DATA.xml' % ifo, 'INSPIRAL_DATA', ifo=ifo)
 
     psd_files += [wf.make_psd_file(workflow, datafind_files.find_output_with_ifo(ifo), 
@@ -238,6 +238,21 @@ wf.make_segments_plot(workflow, full_segs,
                  rdir['analysis_time/segments'], tags=['INSPIRAL_SEGMENTS'])
 wf.make_segments_plot(workflow, science_seg_file,
                  rdir['analysis_time/segments'], tags=['SCIENCE_MINUS_CAT1'])
+
+for ifo in ['H1', 'L1']:
+    print ifo, "data", "analyzable data", "analyzed", "triggers produced"
+    print ifo, abs(data_segs[ifo]), abs(science_segs[ifo]), abs(insp_data_segs[ifo].coalesce()), abs(insp_segs[ifo])
+
+print ("H1L1", abs(science_segs['H1'] & science_segs['L1']), 
+               abs(data_segs['H1'] & data_segs['L1']),
+               abs(insp_data_segs['H1'].coalesce() & insp_data_segs['L1'].coalesce()),
+               abs(insp_segs['H1'].coalesce() & insp_segs['L1'].coalesce()),
+      )
+
+vsegs = wf.fromsegmentxml(open(final_veto_file[0].storage_path))
+print abs(insp_segs['H1'].coalesce() & insp_segs['L1'].coalesce() - vsegs) 
+exit()
+
 
 # Make combined injection plots
 inj_summ = []

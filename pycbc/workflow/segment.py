@@ -1047,7 +1047,7 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
     Returns
     --------
     segs : glue.segments.segmentlist instance
-        The segment list specifying the analyzable times
+        The segment list specifying the times to analyze
     data_segs : glue.segments.segmentlist
         The segment list specifying the time where data exists
     seg_files : workflow.core.FileList instance
@@ -1076,7 +1076,7 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
         sci_segs[ifo], sci_xml = get_science_segments(ifo, workflow.cp, 
                                                  start_time, end_time, out_dir) 
         seg_files += [sci_xml]    
-        data_segs[ifo] = sci_sgs[ifo]  
+        data_segs[ifo] = sci_segs[ifo]  
         for category in cat_set:
             curr_veto_file = get_veto_segs(workflow, ifo, 
                                         cat_to_pipedown_cat(category), 
