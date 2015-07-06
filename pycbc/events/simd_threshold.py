@@ -23,11 +23,11 @@ from pycbc.opt import omp_support, omp_libs, omp_flags
 """
 This module contains various long-strings of code intended to be used by other
 modules when they implement the thresholding and clustering steps of matched
-filtering. 
+filtering.
 """
 
 tc_common_support = omp_support + pycbc.opt.simd_intel_intrin_support + """
-#include <stdint.h> // For uint32_t
+#include <stdint.h> // For uint32_t, int64_t
 #include <error.h>
 #include <complex> // Must use C++ header with weave
 #include <math.h> // For M_SQRT2
@@ -40,10 +40,10 @@ tc_common_support = omp_support + pycbc.opt.simd_intel_intrin_support + """
 
 thresh_cluster_support = tc_common_support + """
 void max_simd(float * __restrict inarr, float * __restrict mval,
-              float * __restrict norm, uint32_t *mloc,
-              uint32_t nstart, uint32_t howmany){
+              float * __restrict norm, int64_t *mloc,
+              int64_t nstart, int64_t howmany){
 
-  uint32_t i, curr_mloc;
+  int64_t i, curr_mloc;
   float re, im, curr_norm, curr, curr_mval[2], *arrptr;
 
   // Set everything up.  Doesn't depend on any SIMD.
@@ -63,9 +63,9 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
   float output_norms[2*ALGN_FLT] __attribute__ ((aligned(ALGN)));
   double output_locs[2*ALGN_DBL] __attribute__ ((aligned(ALGN)));
   double curr_mloc_dbl;
-  uint32_t peel, misalgn, j;
+  int64_t peel, misalgn, j;
 
-  misalgn = (uint32_t)  (((uintptr_t) inarr) % ALGN);
+  misalgn = (int64_t)  (((uintptr_t) inarr) % ALGN);
   if (misalgn % 2*sizeof(float)) {
     error(EXIT_FAILURE, 0, "Array given to max_simd must be aligned on a least a complex float boundary\\n");
   }
@@ -201,7 +201,7 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
     }
   }
 
-  curr_mloc = (uint32_t) curr_mloc_dbl;
+  curr_mloc = (int64_t) curr_mloc_dbl;
 
 #elif _HAVE_SSE4_1
 
@@ -211,9 +211,9 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
   float output_norms[ALGN_FLT] __attribute__ ((aligned(ALGN)));
   double output_locs[ALGN_DBL] __attribute__ ((aligned(ALGN)));
   double curr_mloc_dbl;
-  uint32_t peel, misalgn, j;
+  int64_t peel, misalgn, j;
 
-  misalgn = (uint32_t)  (((uintptr_t) inarr) % ALGN);
+  misalgn = (int64_t)  (((uintptr_t) inarr) % ALGN);
   if (misalgn % 2*sizeof(float)) {
     error(EXIT_FAILURE, 0, "Array given to max_simd must be aligned on a least a complex float boundary");
   }
@@ -294,7 +294,7 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
     }
   }
 
-  curr_mloc = (uint32_t) curr_mloc_dbl;
+  curr_mloc = (int64_t) curr_mloc_dbl;
 
 #else
  // If we have no SSE, all we have to do is initialize
@@ -331,10 +331,10 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
 
 }
 
-void windowed_max(std::complex<float> * __restrict inarr, const uint32_t arrlen,
+void windowed_max(std::complex<float> * __restrict inarr, const int64_t arrlen,
                   std::complex<float> * __restrict cvals, float * __restrict norms,
-                  uint32_t * __restrict locs, const uint32_t winsize,
-                  const uint32_t startoffset){
+                  int64_t * __restrict locs, const int64_t winsize,
+                  const int64_t startoffset){
 
 
   /*
@@ -355,7 +355,7 @@ void windowed_max(std::complex<float> * __restrict inarr, const uint32_t arrlen,
 
   */
 
-  uint32_t i, nwindows;
+  int64_t i, nwindows;
 
   nwindows = ( (arrlen % winsize) ? (arrlen/winsize) + 1 : (arrlen/winsize) );
 
@@ -371,24 +371,24 @@ void windowed_max(std::complex<float> * __restrict inarr, const uint32_t arrlen,
   max_simd((float *) &inarr[i*winsize], (float *) &cvals[i],
              &norms[i], &locs[i], startoffset + i*winsize, 2*(arrlen - i*winsize));
 
-  return; 
+  return;
 }
 
 int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32_t arrlen,
-                            std::complex<float> * __restrict values, uint32_t * __restrict locs, 
+                            std::complex<float> * __restrict values, uint32_t * __restrict locs,
                             const float thresh, const uint32_t winsize, const uint32_t segsize){
 
   uint32_t i, nsegs, nwins_ps, last_arrlen, last_nwins_ps, outlen;
-  uint32_t *seglens, *mlocs, curr_loc;
+  int64_t *seglens, *mlocs, curr_loc;
   float *norms, thr_sqr, curr_norm;
   std::complex<float> *cvals, curr_cval;
   int cnt;
 
   thr_sqr = (thresh * thresh);
-  
+
   nsegs = ( (arrlen % segsize) ? (arrlen/segsize) + 1 : (arrlen/segsize) );
   nwins_ps = ( (segsize % winsize) ? (segsize/winsize) + 1 : (segsize/winsize) );
-  // Our logic will be to treat the last segment differently always.  However if 
+  // Our logic will be to treat the last segment differently always.  However if
   // segsize evenly divides arrlen, then the last segment will be no different.
   // The following ternary operator captures that logic:
   last_arrlen = ( (arrlen % segsize) ? (arrlen - (nsegs-1) * segsize) : (segsize) );
@@ -401,12 +401,12 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
 
   cvals = (std::complex<float> *) malloc(outlen * sizeof(std::complex<float>) );
   norms = (float *) malloc(outlen * sizeof(float) );
-  mlocs = (uint32_t *) malloc(outlen * sizeof(uint32_t) );
+  mlocs = (int64_t *) malloc(outlen * sizeof(int64_t) );
 
   // The next array allows us to dynamically communicate possibly changed sizes to the
   // many parallel calls to windowed_max:
 
-  seglens = (uint32_t *) malloc(nsegs * sizeof(uint32_t) );
+  seglens = (int64_t *) malloc(nsegs * sizeof(int64_t) );
 
   // check to see if anything failed
   if ( (cvals == NULL) || (norms == NULL) || (mlocs == NULL) || (seglens == NULL) ){
@@ -414,17 +414,18 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   }
 
   for (i = 0; i < (nsegs-1); i++){
-    seglens[i] = segsize;
+    seglens[i] = (int64_t) segsize;
   }
-  seglens[i] = last_arrlen;
+  seglens[i] = (int64_t) last_arrlen;
 
   // Now the real work, in an OpenMP parallel for loop:
 #pragma omp parallel for schedule(dynamic,1)
   for (i = 0; i < nsegs; i++){
     windowed_max(&inarr[i*segsize], seglens[i], &cvals[i*nwins_ps],
-                 &norms[i*nwins_ps], &mlocs[i*nwins_ps], winsize, i*segsize);
+                 &norms[i*nwins_ps], &mlocs[i*nwins_ps],
+                 (int64_t) winsize, (int64_t) i*segsize);
   }
-  
+
   // We should now have the requisite maxima in cvals, norms, and mlocs.
   // So one last loop...
   cnt = 0;
@@ -439,18 +440,18 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
         curr_loc = mlocs[i];
         curr_cval = cvals[i];
       }
-      if ( (mlocs[i] - curr_loc) > winsize){
+      if ( (mlocs[i] - curr_loc) > (int64_t) winsize){
         // The last one survived, so write
-        // it out. 
+        // it out.
         values[cnt-1] = curr_cval;
-        locs[cnt-1] = curr_loc;
+        locs[cnt-1] = (uint32_t) curr_loc;
         curr_cval = cvals[i];
         curr_norm = norms[i];
         curr_loc = mlocs[i];
         // Note that we only increment 'cnt' *after* we write out
         // the previous clustered trigger, so we maintain that if
         // cnt > 0, then cnt-1 triggers have been written.
-        cnt += 1;        
+        cnt += 1;
       } else if (norms[i] > curr_norm) {
         curr_cval = cvals[i];
         curr_norm = norms[i];
@@ -466,7 +467,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
 
   if (cnt > 0){
     values[cnt-1] = curr_cval;
-    locs[cnt-1] = curr_loc;
+    locs[cnt-1] = (uint32_t) curr_loc;
   }
 
   free(cvals);
@@ -485,20 +486,20 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
 # First, a simple thing, that just does the max...
 
 max_only_code = """
-max_simd(inarr, mval, norm, (uint32_t *) mloc, (uint32_t) nstart[0], (uint32_t) howmany[0]);
+max_simd(inarr, mval, norm, (int64_t *) mloc, (int64_t) nstart[0], (int64_t) howmany[0]);
 """
 
 class MaxOnlyObject(object):
     def __init__(self, inarray, verbose=0):
         self.inarr = _np.array(inarray.data, copy=False).view(dtype = float32)
-        self.howmany = _np.zeros(1, dtype = _np.uint32)
+        self.howmany = _np.zeros(1, dtype = _np.int64)
         self.howmany[0] = len(self.inarr)
-        self.nstart = _np.zeros(1, dtype = _np.uint32)
+        self.nstart = _np.zeros(1, dtype = _np.int64)
         self.nstart[0] = 0
         self.cmplx_mval = zeros(1, dtype = complex64)
         self.mval = _np.array(self.cmplx_mval.data, copy = False).view(dtype = float32)
         self.norm = _np.zeros(1, dtype = float32)
-        self.mloc = _np.zeros(1, dtype = _np.uint32)
+        self.mloc = _np.zeros(1, dtype = _np.int64)
         self.code = max_only_code
         self.support = thresh_cluster_support
         self.verbose = verbose
@@ -517,14 +518,14 @@ class MaxOnlyObject(object):
                support_code = self.support, auto_downcast = 1, verbose = self.verbose)
 
 windowed_max_code = """
-windowed_max(inarr, (uint32_t) arrlen[0], cvals, norms, (uint32_t *) locs, (uint32_t ) winsize[0],
-             (uint32_t) startoffset[0]);
+windowed_max(inarr, (int64_t) arrlen[0], cvals, norms, (int64_t *) locs, (int64_t ) winsize[0],
+             (int64_t) startoffset[0]);
 """
 
 class WindowedMaxObject(object):
     def __init__(self, inarray, winsize, verbose=0):
         self.inarr = _np.array(inarray.data, copy=False)
-        self.arrlen = _np.zeros(1, dtype = _np.uint32)
+        self.arrlen = _np.zeros(1, dtype = _np.int64)
         self.arrlen[0] = len(self.inarr)
         self.len_win = winsize
         nwindows = int( len(self.inarr) / winsize)
@@ -533,10 +534,10 @@ class WindowedMaxObject(object):
         self.nwindows = nwindows
         self.cvals = _np.zeros(self.nwindows, dtype = complex64)
         self.norms = _np.zeros(self.nwindows, dtype = float32)
-        self.locs = _np.zeros(self.nwindows, dtype = _np.uint32)
-        self.winsize = _np.zeros(1, dtype = _np.uint32)
+        self.locs = _np.zeros(self.nwindows, dtype = _np.int64)
+        self.winsize = _np.zeros(1, dtype = _np.int64)
         self.winsize[0] = self.len_win
-        self.startoffset = _np.zeros(1, dtype = _np.uint32)
+        self.startoffset = _np.zeros(1, dtype = _np.int64)
         self.code = windowed_max_code
         self.support = thresh_cluster_support
         self.verbose = verbose
@@ -572,7 +573,7 @@ class ThreshClusterObject(object):
     """
     This class takes a complex SNR time series, a real threshold value, and a window size
     (expressed as a number of complex sample points), and optionally a segment size and
-    verbosity indicator (for debugging weave).  
+    verbosity indicator (for debugging weave).
 
     The execute method returns two numpy arrays: one giving the location of clustered
     maxima above the threshold, and the other the corresponding (complex) values of the
