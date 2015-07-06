@@ -21,6 +21,7 @@ generate post-processing and plots.
 """
 import pycbc, pycbc.version, pycbc.events, pycbc.workflow as wf
 import os, argparse, ConfigParser, logging, glue.segments, numpy
+from pycbc.events.veto import multi_segments_to_file
 from pycbc.results import create_versioning_page 
 from pycbc.results.render import render_workflow_html_template
 from itertools import izip_longest
@@ -239,21 +240,6 @@ wf.make_segments_plot(workflow, full_segs,
 wf.make_segments_plot(workflow, science_seg_file,
                  rdir['analysis_time/segments'], tags=['SCIENCE_MINUS_CAT1'])
 
-for ifo in ['H1', 'L1']:
-    print ifo, "data", "analyzable data", "analyzed", "triggers produced"
-    print ifo, abs(data_segs[ifo]), abs(science_segs[ifo]), abs(insp_data_segs[ifo].coalesce()), abs(insp_segs[ifo])
-
-print ("H1L1", abs(science_segs['H1'] & science_segs['L1']), 
-               abs(data_segs['H1'] & data_segs['L1']),
-               abs(insp_data_segs['H1'].coalesce() & insp_data_segs['L1'].coalesce()),
-               abs(insp_segs['H1'].coalesce() & insp_segs['L1'].coalesce()),
-      )
-
-vsegs = wf.fromsegmentxml(open(final_veto_file[0].storage_path))
-print abs(insp_segs['H1'].coalesce() & insp_segs['L1'].coalesce() - vsegs) 
-exit()
-
-
 # Make combined injection plots
 inj_summ = []
 if len(inj_files) > 0:
@@ -314,3 +300,47 @@ container.save()
 os.chmod(rdir['result'], 0700)
 
 logging.info("Written dax.")
+
+seg_list = []
+names = []
+ifos = []
+for ifo in workflow.ifos:
+
+    # all times for calibrated data
+    seg_list.append(data_segs[ifo])
+    names.append('DATA')
+    ifos.append(ifo)
+
+    # all times for calibrated data minus segdb missing segments
+    seg_list.append(science_segs[ifo])
+    names.append('ANALYZABLE_DATA')
+    ifos.append(ifo)
+
+    # all times for calibrated data minus segdb missing segments minus small segments
+    seg_list.append(insp_data_segs[ifo])
+    names.append('READ_DATA')
+    ifos.append(ifo)
+
+    # all times for calibrated data minus segdb missing segments minus small segments minus padding
+    seg_list.append(insp_segs[ifo])
+    names.append('TRIGGERS_PRODUCED')
+    ifos.append(ifo)
+
+# write segment summary XML file
+filename = 'segments/'+''.join(workflow.ifos)+'-WORKFLOW_SEGMENT_SUMMARY.xml'
+seg_summ_file = multi_segments_to_file(seg_list, filename, names, ifos)
+
+exit()
+for ifo in ['H1', 'L1']:
+    print ifo, "data", "analyzable data", "analyzed", "triggers produced"
+    print ifo, abs(data_segs[ifo]), abs(science_segs[ifo]), abs(insp_data_segs[ifo].coalesce()), abs(insp_segs[ifo])
+
+print ("H1L1", abs(science_segs['H1'] & science_segs['L1']),
+               abs(data_segs['H1'] & data_segs['L1']),
+               abs(insp_data_segs['H1'].coalesce() & insp_data_segs['L1'].coalesce()),
+               abs(insp_segs['H1'].coalesce() & insp_segs['L1'].coalesce()),
+      )
+
+vsegs = wf.fromsegmentxml(open(final_veto_file[0].storage_path))
+print abs(insp_segs['H1'].coalesce() & insp_segs['L1'].coalesce() - vsegs)
+exit()
