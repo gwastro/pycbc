@@ -25,16 +25,16 @@ from pycbc.opt import omp_support, omp_libs, omp_flags
 
 
 corr_common_support = omp_support + pycbc.opt.simd_intel_intrin_support + """
-#include <stdint.h> // For uint32_t
+#include <stdint.h> // For uint32_t, int64_t
 #include <error.h>
 #include <complex> // Must use C++ header with weave
 """
 
 corr_support = corr_common_support + """
 void ccorrf_simd(float * __restrict inconj, float * __restrict innoconj,
-                 float * __restrict out, const uint32_t len){
+                 float * __restrict out, const int64_t len){
 
-  /* 
+  /*
    This function takes two input vectors, and puts in the third argument the output
    vector that is the elementwise product of the conjugate of the first input and
    the second input.  All vectors are of type float, but are interpreted as complex
@@ -47,7 +47,7 @@ void ccorrf_simd(float * __restrict inconj, float * __restrict innoconj,
    vectors that *are* aligned.
   */
 
-  uint32_t i;
+  int64_t i;
   float ar, ai, br, bi, cr, ci;
   float *aptr, *bptr, *cptr;
 
@@ -57,11 +57,11 @@ void ccorrf_simd(float * __restrict inconj, float * __restrict innoconj,
 
 #if _HAVE_AVX
   __m256 ymm0, ymm1, ymm2, ymm3, ymm4, ymm5, signed_zero;
-  uint32_t peel, misalgna, misalgnb, misalgnc;
+  int64_t peel, misalgna, misalgnb, misalgnc;
 
-  misalgna = (uint32_t) (((uintptr_t) aptr) % ALGN);
-  misalgnb = (uint32_t) (((uintptr_t) bptr) % ALGN);
-  misalgnc = (uint32_t) (((uintptr_t) cptr) % ALGN);
+  misalgna = (int64_t) (((uintptr_t) aptr) % ALGN);
+  misalgnb = (int64_t) (((uintptr_t) bptr) % ALGN);
+  misalgnc = (int64_t) (((uintptr_t) cptr) % ALGN);
 
   if ((misalgna != misalgnb) || (misalgnb != misalgnc)){
     error(EXIT_FAILURE, 0, "Arrays given to ccorrf_simd must all three have same alignment\\n");
@@ -172,11 +172,11 @@ void ccorrf_simd(float * __restrict inconj, float * __restrict innoconj,
 #elif _HAVE_SSE3  // Need at least SSE3 for move{h,l}dup and addsub instructions
 
   __m128 ymm0, ymm1, ymm2, ymm3, ymm4, ymm5, signed_zero;
-  uint32_t peel, misalgna, misalgnb, misalgnc;
+  int64_t peel, misalgna, misalgnb, misalgnc;
 
-  misalgna = (uint32_t) (((uintptr_t) aptr) % ALGN);
-  misalgnb = (uint32_t) (((uintptr_t) bptr) % ALGN);
-  misalgnc = (uint32_t) (((uintptr_t) cptr) % ALGN);
+  misalgna = (int64_t) (((uintptr_t) aptr) % ALGN);
+  misalgnb = (int64_t) (((uintptr_t) bptr) % ALGN);
+  misalgnc = (int64_t) (((uintptr_t) cptr) % ALGN);
 
   if ((misalgna != misalgnb) || (misalgnb != misalgnc)){
     error(EXIT_FAILURE, 0, "Arrays given to ccorrf_simd must all three have same alignment\\n");
@@ -318,14 +318,14 @@ void ccorrf_simd(float * __restrict inconj, float * __restrict innoconj,
 void ccorrf_parallel(std::complex<float> * __restrict inconj,
                      std::complex<float> * __restrict innoconj,
                      std::complex<float> * __restrict out,
-                     const uint32_t arrlen, const uint32_t segsize){
+                     const int64_t arrlen, const int64_t segsize){
 
-  uint32_t i, *seglens;
+  int64_t i, *seglens;
   int nsegs;
 
   nsegs = ( (arrlen % segsize) ? (arrlen/segsize) + 1 : (arrlen/segsize) );
-  
-  seglens = (uint32_t *) malloc(nsegs * sizeof(uint32_t));
+
+  seglens = (int64_t *) malloc(nsegs * sizeof(int64_t));
   if (seglens == NULL){
     error(EXIT_FAILURE, ENOMEM, "ccorrf_parallel: could not allocate temporary memory");
   }
@@ -351,7 +351,7 @@ void ccorrf_parallel(std::complex<float> * __restrict inconj,
 """
 
 corr_simd_code = """
-ccorrf_simd(htilde, stilde, qtilde, (uint32_t) arrlen);
+ccorrf_simd(htilde, stilde, qtilde, (int64_t) arrlen);
 """
 
 def correlate_simd(ht, st, qt):
@@ -364,9 +364,9 @@ def correlate_simd(ht, st, qt):
            #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],
            #extra_compile_args = ['-msse3 -O3 -w'],
            support_code = corr_support, auto_downcast = 1)
- 
+
 corr_parallel_code = """
-ccorrf_parallel(htilde, stilde, qtilde, (uint32_t) arrlen, (uint32_t) segsize);
+ccorrf_parallel(htilde, stilde, qtilde, (int64_t) arrlen, (int64_t) segsize);
 """
 # We need a segment size (number of complex elements) such that *three* segments
 # of that size will fit in the L2 cache. We also want it to be a power of two.
@@ -398,5 +398,5 @@ def correlate_parallel(ht, st, qt):
            #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],
            #extra_compile_args = ['-msse3 -O3 -w'],
            support_code = corr_support, auto_downcast = 1)
- 
+
 
