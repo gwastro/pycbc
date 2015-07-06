@@ -1,0 +1,63 @@
+#!/usr/bin/python
+
+import argparse
+import h5py
+import numpy
+import pycbc.results
+import sys
+from pycbc.workflow import fromsegmentxml
+
+# parse command line
+parser = argparse.ArgumentParser()
+parser.add_argument('--segment-files', type=str, nargs="+",
+                        help='XML files with a segment definer table to read.')
+parser.add_argument('--segment-names', type=str, nargs="+", required=False,
+                        help='Names of segments in the segment definer table.')
+parser.add_argument('--output-file', type=str,
+                        help='Path of the output HTML file.')
+opts = parser.parse_args()
+
+# set column names
+columns = (('Name', []),
+           ('H1 Time (s)', []),
+           ('L1 Time (s)', []),
+           ('H1L1 Time (s)', []),
+)
+
+
+# loop over segment files from command line
+for segment_file in opts.segment_files:
+
+   # read segment definer table
+   seg_dict = fromsegmentxml(open(segment_file, 'rb'), return_dict=True) 
+
+   # loop over segment names
+   for segment_name in opts.segment_names:
+
+       # get segments
+       try:
+           h1_segs = seg_dict['H1:'+segment_name+':None']
+           l1_segs = seg_dict['L1:'+segment_name+':None']
+       except KeyError:
+           continue
+
+       # get length of time of segments in seconds
+       h1_len = abs(h1_segs)
+       l1_len = abs(l1_segs)
+       h1l1_len = abs( h1_segs & l1_segs )
+
+       # put into columns
+       columns[0][1].append(segment_name)
+       columns[1][1].append(h1_len)
+       columns[2][1].append(l1_len)
+       columns[3][1].append(h1l1_len)
+
+# put columns and values into arrays
+keys = numpy.array([key for key,_ in columns])
+vals = numpy.array([val for _,val in columns])
+
+# write HTML table
+html_table = pycbc.results.table(keys, vals, page_size=20)
+fp = open(opts.output_file, 'w')
+fp.write(html_table)
+fp.close()
