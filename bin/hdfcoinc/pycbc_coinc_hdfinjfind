@@ -135,6 +135,7 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
     hdf_append(fo, 'injections/end_time', inj_time)
     fo.attrs['detector_1'] = f.attrs['detector_1']
     fo.attrs['detector_2'] = f.attrs['detector_2']
+    fo.attrs['foreground_time_exc'] = f.attrs['foreground_time_exc']
     hdf_append(fo, 'missed/all', missed + injection_index)
     hdf_append(fo, 'missed/within_analysis', missed_within_time + injection_index)
     hdf_append(fo, 'missed/after_vetoes', missed_after_vetoes + injection_index)
