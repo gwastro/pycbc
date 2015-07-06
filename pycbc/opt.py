@@ -25,7 +25,10 @@ import pycbc
 # info on hardware cache sizes
 _USE_SUBPROCESS = False
 HAVE_GETCONF = False
-if sys.version_info >= (2, 7):
+if sys.platform == 'darwin':
+    # Mac has getconf, but we can do nothing useful with it
+    HAVE_GETCONF = False
+elif sys.version_info >= (2, 7):
     import subprocess
     _USE_SUBPROCESS = True
     HAVE_GETCONF = True
