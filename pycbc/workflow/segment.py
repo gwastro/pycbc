@@ -1153,7 +1153,7 @@ def get_cumulative_veto_group_files(workflow, option, out_dir, tags=[]):
                         file_url=url, tags=[segment_name])
                         
         cum_seg_files += [get_cumulative_segs(workflow, seg_file,  categories,
-              cat_files, out_dir, execute_now=False, segment_name=segment_name)]
+              cat_files, out_dir, execute_now=True, segment_name=segment_name)]
         names.append(segment_name)
               
     return cum_seg_files, names, cat_files
