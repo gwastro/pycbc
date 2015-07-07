@@ -95,13 +95,16 @@ for segment_file in opts.segment_files:
            for key in seg_dict.keys():
                if key.startswith(ifo+':'+segment_name):
                    segs[ifo] = seg_dict[key]
-                   caption += segment_name
-                   if comment_dict[key] != None:
-                       caption += " ("+comment_dict[key]+")"
        if not len(segs.keys()):
            logging.info('Did not find a segment definition for %s',
                segment_name)
            continue
+
+       # put comment in caption
+       caption += segment_name
+       if comment_dict[key] != None:
+           caption += " ("+comment_dict[key]+")"
+       caption += " "
 
        # get length of time of segments in seconds
        h1_len = abs(segs['H1'])
