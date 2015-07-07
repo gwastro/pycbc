@@ -284,7 +284,7 @@ if len(inj_files) > 0:
                      "The limit is exactly one, skipping generation")
                             
 # make full summary
-summ = [(seg_summ_table,)] + det_summ + hist_summ + [(closed_snrifar,)] + inj_summ
+summ = [(seg_summ_table, )] + det_summ + hist_summ + [(closed_snrifar,)] + inj_summ
 for row in summ:
     for f in row:
         try:
