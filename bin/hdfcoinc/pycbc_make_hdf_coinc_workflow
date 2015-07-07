@@ -240,38 +240,23 @@ wf.make_segments_plot(workflow, full_segs,
 wf.make_segments_plot(workflow, science_seg_file,
                  rdir['analysis_time/segments'], tags=['SCIENCE_MINUS_CAT1'])
 
-# organize segments in preparation to be written to file
+# write segment summary XML file
 seg_list = []
 names = []
 ifos = []
-for ifo in workflow.ifos:
-
-    # all times for calibrated data
-    seg_list.append(data_segs[ifo])
-    names.append('DATA')
-    ifos.append(ifo)
-
-    # all times for calibrated data minus segdb missing segments
-    seg_list.append(science_segs[ifo])
-    names.append('ANALYZABLE_DATA')
-    ifos.append(ifo)
-
-    # all times for calibrated data minus segdb missing segments minus small segments
-    seg_list.append(insp_data_segs[ifo])
-    names.append('READ_DATA')
-    ifos.append(ifo)
-
-    # all times for calibrated data minus segdb missing segments minus small segments minus padding
-    seg_list.append(insp_segs[ifo])
-    names.append('TRIGGERS_PRODUCED')
-    ifos.append(ifo)
-
-# write segment summary XML file
+zip_seglists = [data_segs, science_segs, insp_data_segs, insp_segs]
+zip_names = ['DATA', 'ANALYZABLE_DATA', 'READ_DATA', 'TRIGGERS_PRODUCED']
+for segment_list,segment_name in zip(zip_seglists, zip_names):
+    for ifo in workflow.ifos:
+        seg_list.append(segment_list[ifo])
+        names.append(segment_name)
+        ifos.append(ifo)
 filename = 'segments/'+''.join(workflow.ifos)+'-WORKFLOW_SEGMENT_SUMMARY.xml'
 seg_summ_file = multi_segments_to_file(seg_list, filename, names, ifos)
 
 # make segment table for summary page
-seg_summ_table = wf.make_seg_table(workflow, [seg_summ_file], names, rdir.base)
+seg_summ_table = wf.make_seg_table(workflow, [seg_summ_file], zip_names,
+                                       rdir.base, ['SUMMARY'])
 
 # Make combined injection plots
 inj_summ = []
