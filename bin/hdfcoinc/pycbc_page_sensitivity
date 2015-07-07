@@ -171,7 +171,7 @@ for j in range(len(args.bins)-1):
                        found_mchirp, missed_mchirp,
                        args.distance_param, args.distance_distribution)
                         
-            vols.append(sdist)
+            vols.append(vol)
             vol_errors.append(vol_err)
 
         vols = numpy.array(vols)
@@ -179,25 +179,22 @@ for j in range(len(args.bins)-1):
 
         if args.dist_type == 'distance':
             ylabel = 'Sensitive Distance (Mpc)'
-            reach, ehigh, elow = sensitivity.volume_to_distance_with_errors(vols, vol_errs)            
+            reach, ehigh, elow = sensitivity.volume_to_distance_with_errors(vols, vol_errors)            
         elif args.dist_type == 'volume':
             ylabel = "Sensitive Volume ($Mpc^3$)"
-            reach, ehich, elow = vols, vol_errors, vol_errors
+            reach, ehigh, elow = vols, vol_errors, vol_errors
         elif args.dist_type == 'vt':
             ylabel = "Volume-Time ($YR-Mpc^3$)"
-            t = f.attrs['foreground_time_exc']
-            reach, ehich, elow = vols * t, vol_errors * t, vol_errors * t
+            t = f.attrs['foreground_time_exc'] * 3.16888e-8
+            reach, ehigh, elow = vols * t, vol_errors * t, vol_errors * t
             
         label = labels[args.bin_type] % (left, right) if do_label else None
-        pylab.plot(x_values, dists, label=label, c=c)
-        pylab.plot(x_values, dists, alpha=alpha, c='black')
-        pylab.fill_between(x_values, 
-                           reach - numpy.array(low_errors), 
-                           reach + numpy.array(high_errors), 
+        pylab.plot(x_values, reach, label=label, c=c)
+        pylab.plot(x_values, reach, alpha=alpha, c='black')
+        pylab.fill_between(x_values, reach - elow, reach + ehigh, 
                            facecolor=c, edgecolor=c, alpha=alpha)
                            
 ax = pylab.gca()
-
 if args.sig_type != 'stat':
     ax.set_xscale('log')
 

@@ -257,17 +257,14 @@ if len(inj_files) > 0:
                 rdir['search_sensitivity'], require='summ', tags=['ALLINJ'])
     inj = wf.make_foundmissed_plot(workflow, found_inj, 
                 rdir['injections'], require='summ', tags=['ALLINJ'])
-                
-    if len(sen) == 1 and len(inj) == 1:
-        inj_summ = [(inj[0], sen[0])]
-    else:
-        logging.warn("Invalid number of summary foundmissed/sensitivity plots. "
-                     "The limit is exactly one, skipping generation")
+    inj_summ = list(grouper(inj + sen, 2))
                             
 # make full summary
 summ = det_summ + hist_summ + [(closed_snrifar,)] + inj_summ 
 for row in summ:
     for f in row:
+        if f is None:
+            continue
         try:
             os.symlink(f.storage_path, os.path.join(rdir.base, f.name))
         except OSError:
