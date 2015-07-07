@@ -271,7 +271,7 @@ filename = 'segments/'+''.join(workflow.ifos)+'-WORKFLOW_SEGMENT_SUMMARY.xml'
 seg_summ_file = multi_segments_to_file(seg_list, filename, names, ifos)
 
 # make segment table for summary page
-seg_summ = wf.make_seg_table(workflow, [seg_summ_file], names, rdir.base)
+seg_summ_table = wf.make_seg_table(workflow, [seg_summ_file], names, rdir.base)
 
 # Make combined injection plots
 inj_summ = []
@@ -299,7 +299,7 @@ if len(inj_files) > 0:
                      "The limit is exactly one, skipping generation")
                             
 # make full summary
-summ = [(seg_summ,)] + det_summ + hist_summ + [(closed_snrifar,)] + inj_summ
+summ = [(seg_summ_table,)] + det_summ + hist_summ + [(closed_snrifar,)] + inj_summ
 for row in summ:
     for f in row:
         try:
