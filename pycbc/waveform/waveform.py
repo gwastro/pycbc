@@ -539,6 +539,8 @@ def get_waveform_filter(out, template=None, **kwargs):
         wav_gen = fd_wav[type(_scheme.mgr.state)]
         hp, hc = wav_gen[input_params['approximant']](**input_params)
         hp.resize(n)
+        out[0:len(hp)] = hp[:]
+        hp = FrequencySeries(out, delta_f=hp.delta_f, copy=False)
         hp.chirp_length = get_waveform_filter_length_in_time(**input_params)
         hp.length_in_time = hp.chirp_length
         return hp
