@@ -22,7 +22,37 @@ import logging
 import numpy
 import pycbc.results
 import sys
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import table
+from glue.ligolw import utils
+from pycbc.results import save_fig_with_metadata
 from pycbc.workflow import fromsegmentxml
+
+class ContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(ContentHandler)
+
+def get_segment_definer_comments(xml_file):
+    """ Returns a dict with the comment column as the value for each segment.
+    """
+
+    # read segment definer table
+    xmldoc, digest = utils.load_fileobj(xml_file,
+                                        gz=xml_file.name.endswith(".gz"),
+                                        contenthandler=ContentHandler)
+    seg_def_table = table.get_table(xmldoc,
+                                    lsctables.SegmentDefTable.tableName)
+
+    # put comment column into a dict
+    comment_dict = {}
+    for seg_def in seg_def_table:
+        full_channel_name = ':'.join([str(seg_def.ifos),
+                                      str(seg_def.name),
+                                      str(seg_def.version)])
+        comment_dict[full_channel_name] = seg_def.comment
+
+    return comment_dict
 
 # parse command line
 parser = argparse.ArgumentParser()
@@ -44,30 +74,39 @@ columns = (('Name', []),
            ('L1 Time (s)', []),
            ('H1L1 Time (s)', []),
 )
+caption = "This table shows the cumulative amount of time for each segment. Shown are: "
+
+# FIXME: set IFO list
+ifos = ['H1', 'L1']
 
 # loop over segment files from command line
 for segment_file in opts.segment_files:
 
    # read segment definer table
    seg_dict = fromsegmentxml(open(segment_file, 'rb'), return_dict=True) 
+   comment_dict = get_segment_definer_comments(open(segment_file, 'rb'))
 
    # loop over segment names
    for segment_name in opts.segment_names:
 
        # get segments
-       try:
-           version = 'None'
-           h1_segs = seg_dict['H1:'+segment_name+':'+version]
-           l1_segs = seg_dict['L1:'+segment_name+':'+version]
-       except KeyError:
-           logging.info('Did not find a segment definition for %s:%s',
-               segment_name, version)
+       segs = {}
+       for ifo in ifos:
+           for key in seg_dict.keys():
+               if key.startswith(ifo+':'+segment_name):
+                   segs[ifo] = seg_dict[key]
+                   caption += segment_name
+                   if comment_dict[key] != None:
+                       caption += " ("+comment_dict[key]+")"
+       if not len(segs.keys()):
+           logging.info('Did not find a segment definition for %s',
+               segment_name)
            continue
 
        # get length of time of segments in seconds
-       h1_len = abs(h1_segs)
-       l1_len = abs(l1_segs)
-       h1l1_len = abs( h1_segs & l1_segs )
+       h1_len = abs(segs['H1'])
+       l1_len = abs(segs['L1'])
+       h1l1_len = abs( segs['H1'] & segs['L1'] )
 
        # put values into columns
        columns[0][1].append(segment_name)
@@ -80,7 +119,10 @@ keys = [numpy.array(key, dtype=type(key[0])) for key,_ in columns]
 vals = [numpy.array(val, dtype=type(val[0])) for _,val in columns]
 
 # write HTML table
-html_table = pycbc.results.table(vals, keys, page_size=20)
-fp = open(opts.output_file, 'w')
-fp.write(html_table)
-fp.close()
+fig_kwds = {}
+html_table = pycbc.results.table(vals, keys, page_size=10)
+save_fig_with_metadata(str(html_table), opts.output_file,
+                     fig_kwds=fig_kwds,
+                     title='Segments',
+                     cmd=' '.join(sys.argv),
+                     caption=caption)
