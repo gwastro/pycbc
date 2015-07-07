@@ -329,18 +329,3 @@ for ifo in workflow.ifos:
 # write segment summary XML file
 filename = 'segments/'+''.join(workflow.ifos)+'-WORKFLOW_SEGMENT_SUMMARY.xml'
 seg_summ_file = multi_segments_to_file(seg_list, filename, names, ifos)
-
-exit()
-for ifo in ['H1', 'L1']:
-    print ifo, "data", "analyzable data", "analyzed", "triggers produced"
-    print ifo, abs(data_segs[ifo]), abs(science_segs[ifo]), abs(insp_data_segs[ifo].coalesce()), abs(insp_segs[ifo])
-
-print ("H1L1", abs(science_segs['H1'] & science_segs['L1']),
-               abs(data_segs['H1'] & data_segs['L1']),
-               abs(insp_data_segs['H1'].coalesce() & insp_data_segs['L1'].coalesce()),
-               abs(insp_segs['H1'].coalesce() & insp_segs['L1'].coalesce()),
-      )
-
-vsegs = wf.fromsegmentxml(open(final_veto_file[0].storage_path))
-print abs(insp_segs['H1'].coalesce() & insp_segs['L1'].coalesce() - vsegs)
-exit()
