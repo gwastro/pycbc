@@ -158,7 +158,8 @@ def setup_splittable_dax_generated(workflow, input_tables, out_dir, input_type,
     out_file_groups = FileList([])
 
     # Set up the condorJob class for the current executable
-    curr_exe_job = exe_class(workflow.cp, input_type, num_splits, out_dir=out_dir)
+    curr_exe_job = exe_class(workflow.cp, input_type, num_splits,
+                             out_dir=out_dir, tags=tags)
 
     for input in input_tables:
         node = curr_exe_job.create_node(input)

@@ -1498,7 +1498,8 @@ class PycbcSplitBankExecutable(Executable):
             curr_tag = 'bank%d' %(i)
             # FIXME: What should the tags actually be? The job.tags values are
             #        currently ignored.
-            curr_tags = bank.tags + [curr_tag]
+            curr_tags = bank.tags + [curr_tag] + self.tags
+            logging.info(curr_tags)
             job_tag = bank.description + "_" + self.name.upper()
             out_file = File(bank.ifo_list, job_tag, bank.segment,
                                extension=".xml.gz", directory=self.out_dir,
