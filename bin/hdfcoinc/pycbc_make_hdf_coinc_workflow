@@ -285,22 +285,6 @@ with open(ini_file_path, 'wb') as ini_fh:
 # Create versioning information
 create_versioning_page(rdir['configuration'], container.cp)
 
-wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(), rdir.base))
-
-container += workflow
-container += finalize_workflow
-
-import Pegasus.DAX3 as dax
-dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
-container._adag.addDependency(dep)
-
-container.save()
-
-# Protect the open box results folder
-os.chmod(rdir['result'], 0700)
-
-logging.info("Written dax.")
-
 seg_list = []
 names = []
 ifos = []
@@ -329,3 +313,19 @@ for ifo in workflow.ifos:
 # write segment summary XML file
 filename = 'segments/'+''.join(workflow.ifos)+'-WORKFLOW_SEGMENT_SUMMARY.xml'
 seg_summ_file = multi_segments_to_file(seg_list, filename, names, ifos)
+
+wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(), rdir.base))
+
+container += workflow
+container += finalize_workflow
+
+import Pegasus.DAX3 as dax
+dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
+container._adag.addDependency(dep)
+
+container.save()
+
+# Protect the open box results folder
+os.chmod(rdir['result'], 0700)
+
+logging.info("Written dax.")
