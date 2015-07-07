@@ -23,6 +23,7 @@ pipi() {
 
 # Standard python dependencies
 pipi cython
+pipi python-cjson
 pipi 'numpy>=1.6.4'
 SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
 
@@ -47,3 +48,5 @@ echo source $LOCAL/etc/pycbc-user-env.sh >> source
 echo 'PYTHONPATH=$PYTHONPATH:$PEG_DIR' >> source
 chmod 755 source
 
+cd $LOCAL/src/pycbc
+python setup.py install
