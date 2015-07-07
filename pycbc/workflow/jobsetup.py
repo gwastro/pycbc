@@ -1346,30 +1346,19 @@ class LalappsInspinjExecutable(Executable):
         Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
                             tags=tags)
         self.cp = cp
+        self.tags = tags
 
-    def create_node(self, segment, exttrig_file=None):
+    def create_node(self, segment, exttrig_file=None, tags=[]):
         node = Node(self)
 
-        if self.get_opt('write-compress') is not None:
-            ext = '.xml.gz'
-        else:
-            ext = '.xml'
-
+        curr_tags = self.tags + tags
         # This allows the desired number of injections to be given explicitly
         # in the config file. Used for coh_PTF as segment length is unknown
         # before run time.
         if 'coh_PTF_inspiral' in self.cp.get('executables', 'inspiral'):
-            inj_num_opts = ['exttrig-inj-start', 'exttrig-inj-stop']
-            num_injs = dict()
-            for inj_num_opt in inj_num_opts:
-                if self.has_opt(inj_num_opt):
-                    opt_idx = node._options.index('--%s' % inj_num_opt)
-                    num_injs[inj_num_opt] = int(node._options.pop(opt_idx + 1))
-                    del node._options[opt_idx]
-            
-            num_injs['total'] = num_injs['exttrig-inj-stop'] \
-                                    - num_injs['exttrig-inj-start'] + 1
-            inj_tspace = float(segment[1] - segment[0]) / num_injs['total']
+            num_injs = self.cp.get_opt_tags('workflow-injections', 'num-injs',
+                                            curr_tags)
+            inj_tspace = float(segment[1] - segment[0]) / num_injs
             node.add_opt('--time-interval', inj_tspace)
             node.add_opt('--time-step', inj_tspace)
             
@@ -1379,13 +1368,7 @@ class LalappsInspinjExecutable(Executable):
                                      " option 'l-distr' is set to 'exttrig'")
                 node.add_opt('--exttrig-file', '%s' % exttrig_file.storage_path)
             
-            if self.cp.has_option('workflow-jitter_skyloc', 'do-jitter-skyloc'):
-                ext += '.prejitter'
-            elif self.cp.has_option('workflow-align_total_spin',
-                                    'do-align-total-spin'):
-                ext += '.prealign'
-            
-            node.new_output_file_opt(segment, ext, '--output',
+            node.new_output_file_opt(segment, '.xml', '--output',
                                      store_file=self.retain_files)
         else:
             node.new_output_file_opt(segment, '.xml', '--output',
@@ -1412,15 +1395,8 @@ class LigolwCBCJitterSkylocExecutable(Executable):
             raise ValueError("Must provide an input file.")
 
         node = Node(self) 
-        if parent.name.endswith('.prejitter'):
-            ext = '.'.join(parent.name.split('.')[1:-1])
-        
-        if self.cp.has_option('workflow-align_total_spin',
-                              'do-align-total-spin'):
-            ext += '.prealign'
-        
-        output_file = File(parent.ifo_list, parent.description,
-                           segment, extension=ext, store_file=True,
+        output_file = File(parent.ifo_list, self.exe_name,
+                           segment, extension='.xml', store_file=True,
                            directory=self.out_dir, tags=tags)
         node.add_output_opt('--output-file', output_file)
         node.add_input_arg(parent)
@@ -1443,11 +1419,8 @@ class LigolwCBCAlignTotalSpinExecutable(Executable):
             raise ValueError("Must provide an input file.")
         
         node = Node(self)
-        if parent.name.endswith('.prealign'):
-            ext = '.'.join(parent.name.split('.')[1:-1])
-        
-        output_file = File(parent.ifo_list, parent.description,
-                           segment, extension=ext, store_file=True,
+        output_file = File(parent.ifo_list, self.exe_name,
+                           segment, extension='.xml', store_file=True,
                            directory=self.out_dir, tags=tags)
         node.add_output_opt('--output-file', output_file)
         node.add_input_arg(parent)

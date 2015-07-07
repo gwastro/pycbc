@@ -142,7 +142,7 @@ def setup_injection_workflow(workflow, output_dir=None,
                 workflow.add_node(node)
             inj_file = node.output_files[0]
 
-            if workflow.cp.has_option("workflow-jitter_skyloc",
+            if workflow.cp.has_option("workflow-injections",
                                       "do-jitter-skyloc"):
                 nodeTags = inj_file.tag_str
                 jitter_job = LigolwCBCJitterSkylocExecutable(workflow.cp, 
@@ -157,7 +157,7 @@ def setup_injection_workflow(workflow, output_dir=None,
                     workflow.add_node(node)
                 inj_file = node.output_files[0]
             
-            if workflow.cp.has_option("workflow-align_total_spin",
+            if workflow.cp.has_option("workflow-injections",
                                       "do-align-total-spin"):
                 align_job = LigolwCBCAlignTotalSpinExecutable(workflow.cp,
                         'align_total_spin', tags=curr_tags, out_dir=output_dir,

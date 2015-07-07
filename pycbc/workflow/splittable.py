@@ -73,8 +73,7 @@ def select_splitfilejob_instance(curr_exe):
 
     return exe_class
 
-def setup_splittable_workflow(workflow, input_tables, out_dir=None,
-                              input_type="splittable", tags=[]):
+def setup_splittable_workflow(workflow, input_tables, out_dir=None, tags=[]):
     '''
     This function aims to be the gateway for code that is responsible for taking
     some input file containing some table, and splitting into multiple files
@@ -99,15 +98,14 @@ def setup_splittable_workflow(workflow, input_tables, out_dir=None,
     logging.info("Entering split output files module.")
     make_analysis_dir(out_dir)
     # Parse for options in .ini file
-    splitMethod = workflow.cp.get_opt_tags("workflow-%s" % input_type,
-                                           "%s-method" % input_type, [])
+    splitMethod = workflow.cp.get_opt_tags("workflow-splittable",
+                                           "splittable-method", tags)
 
     if splitMethod == "IN_WORKFLOW":
         # Scope here for choosing different options
         logging.info("Adding split output file jobs to workflow.")
         split_table_outs = setup_splittable_dax_generated(workflow, input_tables,
-                                                          out_dir, input_type,
-                                                          tags)
+                                                          out_dir, tags)
     elif splitMethod == "NOOP":
         # Probably better not to call the module at all, but this option will
         # return the input file list.
@@ -120,8 +118,7 @@ def setup_splittable_workflow(workflow, input_tables, out_dir=None,
     logging.info("Leaving split output files module.")  
     return split_table_outs
 
-def setup_splittable_dax_generated(workflow, input_tables, out_dir, input_type,
-                                   tags):
+def setup_splittable_dax_generated(workflow, input_tables, out_dir, tags):
     '''
     Function for setting up the splitting jobs as part of the workflow.
 
@@ -142,12 +139,8 @@ def setup_splittable_dax_generated(workflow, input_tables, out_dir, input_type,
     cp = workflow.cp
     
     # Get values from ini file
-    if input_type == "splitinjtable":
-        num_splits = cp.get_opt_tags("workflow-%s" % input_type,
-                                     "%s-num" % input_type, [])
-    else:
-        num_splits = cp.get_opt_tags("workflow-%s" % input_type,
-                                     "%s-num-banks" % input_type, tags)
+    num_splits = cp.get_opt_tags("workflow-splittable", "splittable-num-banks",
+                                 tags)
 
     split_exe = os.path.basename(cp.get('executables', input_type))
     # Select the appropriate class
