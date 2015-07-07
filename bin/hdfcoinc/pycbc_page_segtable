@@ -1,7 +1,24 @@
 #!/usr/bin/python
 
+# Copyright (C) 2015 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 import argparse
 import h5py
+import logging
 import numpy
 import pycbc.results
 import sys
@@ -17,13 +34,16 @@ parser.add_argument('--output-file', type=str,
                         help='Path of the output HTML file.')
 opts = parser.parse_args()
 
+# setup log
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
+                    level=logging.INFO,datefmt='%I:%M:%S')
+
 # set column names
 columns = (('Name', []),
            ('H1 Time (s)', []),
            ('L1 Time (s)', []),
            ('H1L1 Time (s)', []),
 )
-
 
 # loop over segment files from command line
 for segment_file in opts.segment_files:
@@ -36,9 +56,12 @@ for segment_file in opts.segment_files:
 
        # get segments
        try:
-           h1_segs = seg_dict['H1:'+segment_name+':None']
-           l1_segs = seg_dict['L1:'+segment_name+':None']
+           version = 'None'
+           h1_segs = seg_dict['H1:'+segment_name+':'+version]
+           l1_segs = seg_dict['L1:'+segment_name+':'+version]
        except KeyError:
+           logging.info('Did not find a segment definition for %s:%s',
+               segment_name, version)
            continue
 
        # get length of time of segments in seconds
@@ -46,18 +69,18 @@ for segment_file in opts.segment_files:
        l1_len = abs(l1_segs)
        h1l1_len = abs( h1_segs & l1_segs )
 
-       # put into columns
+       # put values into columns
        columns[0][1].append(segment_name)
        columns[1][1].append(h1_len)
        columns[2][1].append(l1_len)
        columns[3][1].append(h1l1_len)
 
-# put columns and values into arrays
-keys = numpy.array([key for key,_ in columns])
-vals = numpy.array([val for _,val in columns])
+# cast columns into arrays
+keys = [numpy.array(key, dtype=type(key[0])) for key,_ in columns]
+vals = [numpy.array(val, dtype=type(val[0])) for _,val in columns]
 
 # write HTML table
-html_table = pycbc.results.table(keys, vals, page_size=20)
+html_table = pycbc.results.table(vals, keys, page_size=20)
 fp = open(opts.output_file, 'w')
 fp.write(html_table)
 fp.close()
