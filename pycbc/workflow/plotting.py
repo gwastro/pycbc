@@ -126,6 +126,9 @@ def make_inj_table(workflow, inj_file, out_dir, tags=[]):
     workflow += node   
 
 def make_seg_table(workflow, seg_files, seg_names, out_dir, tags=None):
+    """ Creates a node in the workflow for writing the segment summary
+    table. Returns a File instances for the output file.
+    """
     seg_files = list(seg_files)
     seg_names = list(seg_names)
     if tags is None: tags = []
