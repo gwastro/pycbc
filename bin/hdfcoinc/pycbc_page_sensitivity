@@ -21,6 +21,7 @@ parser.add_argument('--sig-bins', nargs='*',
                    help="Optional, boundaries of x-axis significance bins"),
 parser.add_argument('--sig-type', choices=['ifar', 'fap', 'stat'], default='ifar',
                    help="Optional, x-axis significance type")
+parser.add_argument('--dist-type', choices=['distance', 'volume', 'vt'], default='distance')
 parser.add_argument('--min-dist', type=float, 
                    help="Optional, minimum sensitive distance to plot")
 parser.add_argument('--max-dist', type=float, 
@@ -80,6 +81,7 @@ labels['mchirp'] = "$ M_{chirp} \in [%5.2f, %5.2f] M_\odot $"
 labels['total_mass'] = "$ M_{total} \in [%5.2f, %5.2f] M_\odot $"
 labels['spin'] = "$Eff Spin \in [%5.2f, %5.2f] $"
 
+
 if args.sig_type == 'stat':
     sig = f['found_after_vetoes/stat'][:]
     sig_exc = None
@@ -88,16 +90,14 @@ if args.sig_type == 'stat':
         x_values = [float(v) for v in args.sig_bins]
     else:
         x_values = numpy.arange(9, 14, .05)
-
-if args.sig_type == 'ifar':
+elif args.sig_type == 'ifar':
     sig = f['found_after_vetoes/ifar'][:]
     sig_exc = f['found_after_vetoes/ifar_exc'][:]
     xlabel = 'Inverse False Alarm Rate (years)'
     if args.sig_bins:
         x_values = [float(v) for v in args.sig_bins]
     else:
-        x_values = 10 ** (numpy.arange(0, 4, .05))
-        
+        x_values = 10 ** (numpy.arange(0, 4, .05))       
 elif args.sig_type == 'fap':
     sig = f['found_after_vetoes/fap'][:]
     sig_exc = f['found_after_vetoes/fap_exc'][:]
@@ -135,7 +135,7 @@ for j in range(len(args.bins)-1):
         if len(m_dist) < 2:
             continue
             
-        dists, low_errors, high_errors = [], [], []
+        vols, vol_errors = [], []
 
         # Calculate each sensitive distance at a given significance threshold
         for x_val in x_values:
@@ -170,23 +170,31 @@ for j in range(len(args.bins)-1):
                 vol, vol_err = sensitivity.volume_montecarlo(f_dist, m_dist_full, 
                        found_mchirp, missed_mchirp,
                        args.distance_param, args.distance_distribution)
-                   
-            sdist, ehigh, elow = sensitivity.volume_to_distance_with_errors(vol, vol_err)
                         
-            dists.append(sdist)
-            low_errors.append(elow)
-            high_errors.append(ehigh)
+            vols.append(vol)
+            vol_errors.append(vol_err)
+
+        vols = numpy.array(vols)
+        vol_errors = numpy.array(vol_errors)
+
+        if args.dist_type == 'distance':
+            ylabel = 'Sensitive Distance (Mpc)'
+            reach, ehigh, elow = sensitivity.volume_to_distance_with_errors(vols, vol_errors)            
+        elif args.dist_type == 'volume':
+            ylabel = "Sensitive Volume ($Mpc^3$)"
+            reach, ehigh, elow = vols, vol_errors, vol_errors
+        elif args.dist_type == 'vt':
+            ylabel = "Volume-Time ($YR-Mpc^3$)"
+            t = f.attrs['foreground_time_exc'] * 3.16888e-8
+            reach, ehigh, elow = vols * t, vol_errors * t, vol_errors * t
             
         label = labels[args.bin_type] % (left, right) if do_label else None
-        pylab.plot(x_values, dists, label=label, c=c)
-        pylab.plot(x_values, dists, alpha=alpha, c='black')
-        pylab.fill_between(x_values, 
-                           dists - numpy.array(low_errors), 
-                           dists + numpy.array(high_errors), 
+        pylab.plot(x_values, reach, label=label, c=c)
+        pylab.plot(x_values, reach, alpha=alpha, c='black')
+        pylab.fill_between(x_values, reach - elow, reach + ehigh, 
                            facecolor=c, edgecolor=c, alpha=alpha)
                            
 ax = pylab.gca()
-
 if args.sig_type != 'stat':
     ax.set_xscale('log')
 
@@ -196,7 +204,7 @@ if args.sig_type == 'fap':
 if args.min_dist:
     pylab.ylim(args.min_dist, args.max_dist)
     
-pylab.ylabel('Sensitive Distance (Mpc)')
+pylab.ylabel(ylabel)
 pylab.xlabel(xlabel)
 
 pylab.grid()  
