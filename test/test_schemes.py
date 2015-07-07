@@ -47,10 +47,6 @@ if isinstance(_context,CUDAScheme):
     import pycuda
     import pycuda.gpuarray
     from pycuda.gpuarray import GPUArray as SchemeArray
-elif isinstance(_context,OpenCLScheme):
-    import pyopencl
-    import pyopencl.array
-    from pyopencl.array import Array as SchemeArray
 elif isinstance(_context,CPUScheme):
     from pycbc.types.aligned import ArrayWithAligned as SchemeArray
 

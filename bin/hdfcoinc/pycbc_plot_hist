@@ -1,0 +1,96 @@
+#!/bin/env python
+""" Make histograms of single detector triggers
+"""
+import numpy, argparse, h5py, matplotlib, logging
+import pycbc.version, pycbc.results
+matplotlib.use('Agg')
+import pylab
+from pycbc.events import veto
+
+class SingleDetTriggerSet(object):
+    """
+    Provides easy access to the parameters of single-detector CBC triggers.
+    """
+    def __init__(self, trig_file, veto_file, segment_name, detector):
+        logging.info('Loading triggers')
+        self.trigs_f = h5py.File(trig_file, 'r')
+        self.trigs = self.trigs_f[detector]
+
+        if veto_file:
+            logging.info('Loading veto segments')
+            self.veto_mask, segs = pycbc.events.veto.indices_outside_segments(
+                self.trigs['end_time'][:], [veto_file], 
+                ifo=detector, segment_name=segment_name)
+        else:
+            self.veto_mask = slice(len(self.trigs['end_time']))
+
+    @classmethod
+    def get_param_names(cls):
+        "Returns a list of plottable CBC parameter variables."
+        return [m[0] for m in inspect.getmembers(cls) \
+            if type(m[1]) == property]
+    @property
+    def end_time(self):
+        return numpy.array(self.trigs['end_time'])[self.veto_mask]
+
+    @property
+    def template_duration(self):
+        return numpy.array(self.trigs['template_duration'])[self.veto_mask]
+
+    @property
+    def snr(self):
+        return numpy.array(self.trigs['snr'])[self.veto_mask]
+
+    @property
+    def rchisq(self):
+        return numpy.array(self.trigs['chisq'])[self.veto_mask] \
+            / (numpy.array(self.trigs['chisq_dof'])[self.veto_mask] * 2 - 2)
+
+    @property
+    def newsnr(self):
+        return pycbc.events.newsnr(self.snr, self.rchisq)
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
+parser.add_argument('--trigger-file', 
+                    help="Combined single detector hdf trigger file")
+parser.add_argument('--veto-file',
+                    help="segment xml file, indicates which triggers to ignore")
+parser.add_argument('--segment-name', 
+                    help="name of segment list in the veto file")
+parser.add_argument('--x-var',
+                    help="name of value to histogram")
+parser.add_argument('--output-file')
+parser.add_argument('--bins', default=100, type=int,
+                    help="number of bins in histogram")
+parser.add_argument('--x-max')
+parser.add_argument('--x-min')
+parser.add_argument('--verbose')
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
+
+f = h5py.File(args.trigger_file, 'r')
+ifo = f.keys()[0]
+
+trigs = SingleDetTriggerSet(args.trigger_file, args.veto_file, args.segment_name, ifo)
+val = getattr(trigs, args.x_var)
+
+fig = pylab.figure(0)
+pylab.hist(val, bins=args.bins)
+ax = pylab.gca()
+ax.set_yscale('log')
+pylab.ylabel('Number of Triggers')
+pylab.xlabel(args.x_var)
+pylab.ylim(ymin=.1)
+
+if args.x_max:
+    pylab.xlim(xmax=args.x_max)
+if args.x_min:
+    pylab.xlim(xmin=args.x_min)
+
+pylab.grid()
+pycbc.results.save_fig_with_metadata(fig, args.output_file, 
+                title = '%s: %s histogram of single detector triggers' % (ifo, args.x_var),
+                caption = 'Histogram of single detector triggers')
+                      

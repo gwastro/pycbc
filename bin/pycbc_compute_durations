@@ -196,7 +196,8 @@ usertags = ["FULL_DATA"]
 
 for tag in (set(usertags) & set(["FULL_DATA","PLAYGROUND"])):
     fP = open(args.segment_file, 'r')
-    WorkflowAnalysisSegDict = workflow.segment.fromsegmentxml(fP, dict=True)
+    WorkflowAnalysisSegDict = workflow.segment.fromsegmentxml(
+            fP, return_dict=True)
     fP.close()
     ifo_segments[tag] = segments.segmentlistdict([])
     for key in WorkflowAnalysisSegDict.keys():

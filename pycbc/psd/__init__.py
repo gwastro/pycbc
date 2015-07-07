@@ -87,7 +87,7 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
             int(opt.psd_inverse_length * sample_rate),
             low_frequency_cutoff=f_low)
 
-    if opt.psd_output:
+    if hasattr(opt, 'psd_output') and opt.psd_output:
         (psd.astype(float64) / (dyn_range_factor ** 2)).save(opt.psd_output)
 
     return psd
@@ -118,7 +118,7 @@ def from_cli_multi_ifos(opt, length_dict, delta_f_dict,
                                        strain=strain, **kwargs)
     return psd
 
-def insert_psd_option_group(parser):
+def insert_psd_option_group(parser, output=True):
     """
     Adds the options used to call the pycbc.psd.from_cli function to an
     optparser as an OptionGroup. This should be used if you
@@ -153,7 +153,8 @@ def insert_psd_option_group(parser):
     psd_options.add_argument("--psd-inverse-length", type=float, 
                           help="(Optional) The maximum length of the impulse"
                           " response of the overwhitening filter (s)")
-    psd_options.add_argument("--psd-output", 
+    if output:
+        psd_options.add_argument("--psd-output", 
                           help="(Optional) Write PSD to specified file")
 
     return psd_options

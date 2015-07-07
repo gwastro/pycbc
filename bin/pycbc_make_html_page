@@ -18,20 +18,19 @@
 
 import argparse
 import os
+import pycbc.results
 import random
 import shutil
-
-from jinja2 import Environment, FileSystemLoader
-
+import zipfile
 from glue import segments
-
-import pycbc.results
-from pycbc.results.render import setup_template_render
+from jinja2 import Environment, FileSystemLoader
+from pycbc.results.render import get_embedded_config, render_workflow_html_template, setup_template_render
 from pycbc.workflow import segment
 
 def examine_dir(cwd):
     """
-    Looks in a directory and returns all subdirs and files.
+    Looks in a directory and returns all subdirs and files. If there is a
+    zipped file, it will unzip it, and return the extracted files as well.
     """
 
     # list everything in this directory and loop over them
@@ -40,13 +39,36 @@ def examine_dir(cwd):
     for name in names:
 
         # if it is a directory append the dir list
-        # else append the nondirs list
         if os.path.isdir(os.path.join(cwd, name)):
             dirs.append(name)
+
+        # check if it is a zip file, unzip it, and add files to list
+        elif zipfile.is_zipfile(name):
+            zip = zipfile.ZipFile(name)
+            zip.extractall()
+
+            # loop over extracted files
+            for extracted_name in zip.namelist():
+
+                # check if extracted a dir
+                if os.path.isdir(os.path.join(cwd, extracted_name)):
+                    dirs.append(os.path.dirname(extracted_name))
+
+                # check if extracted a file into this current working dir
+                elif os.path.exists(os.path.join(cwd, os.path.basename(extracted_name))):
+                    nondirs.append(os.path.basename(extracted_name))
+
         else:
             nondirs.append(name)
 
     return cwd, dirs, nondirs
+
+def render_sitemap_page(output_path, dirs):
+    """
+    Creates sitemap page.
+    """
+    dirs.sort(key=lambda x: x.path)
+    render_workflow_html_template(output_path, 'sitemap.html', dirs)
 
 class Directory():
     """
@@ -91,7 +113,6 @@ class Directory():
         Returns the name of the directory.
         """
 
-        print self.path.split('/')[-1]
         return self.path.split('/')[-1]
 
     def title(self):
@@ -100,7 +121,7 @@ class Directory():
         and capslock.
         """
 
-        return self.path.split('/')[-1].replace('_', ' ').upper()
+        return self.path.split('/')[-1].replace('_', ' ').title()
 
     def level(self):
         """
@@ -162,6 +183,9 @@ input_path = opts.template_file.rstrip(input_template)
 
 # setup template
 env = Environment(loader=FileSystemLoader(input_path))
+env.globals.update(setup_template_render=setup_template_render)
+env.globals.update(get_embedded_config=get_embedded_config)
+env.globals.update(path_exists=os.path.exists)
 template = env.get_template(input_template)
 
 # find all subdirs and the top-level subdirs
@@ -200,12 +224,34 @@ for cwd in dirs:
     for file in cwd.files:
         shutil.copy(file.path, opts.output_path+'/'+cwd.path+'/'+file.filename())
 
-# copy css and js files to html directory
+# make sitemap page
+sitemap_dir = '/sitemap'
+if not os.path.exists(opts.plots_dir+sitemap_dir):
+    os.makedirs(opts.plots_dir+sitemap_dir)
+render_sitemap_page(opts.plots_dir+sitemap_dir+'/well.html', dirs)
+cwd = Directory(opts.plots_dir+sitemap_dir, opts.plots_dir)
+context = {'analysis_title'    : analysis_title,
+           'analysis_subtitle' : analysis_subtitle,
+           'dirs_0'            : dirs_0,
+           'dir'               : cwd,
+           'dot_dot_str'       : cwd.level() * '../',
+           'plots_dir'         : opts.plots_dir}
+output = template.render(context)
+if not os.path.exists(opts.output_path+cwd.path):
+    os.makedirs(opts.output_path+cwd.path)
+with open(opts.output_path+cwd.path+'/index.html', "wb") as fp:
+    fp.write(output)
+
+# copy css, js, and font files to html directory
 cssDir       = pycbc.results.__path__[0] + '/static/css/'
 jsDir        = pycbc.results.__path__[0] + '/static/js/'
+fontsDir      = pycbc.results.__path__[0] + '/static/fonts/'
 cssOutputDir = opts.output_path + '/static/css/'
 jsOutputDir  = opts.output_path + '/static/js/'
+fontsOutputDir  = opts.output_path + '/static/fonts/'
 if not os.path.exists(cssOutputDir):
     shutil.copytree(cssDir, cssOutputDir)
 if not os.path.exists(jsOutputDir):
     shutil.copytree(jsDir, jsOutputDir)
+if not os.path.exists(fontsOutputDir):
+    shutil.copytree(fontsDir, fontsOutputDir)

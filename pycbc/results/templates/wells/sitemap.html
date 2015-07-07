@@ -1,0 +1,10 @@
+<!-- hold images inside a well -->
+<div class="scaffold well">
+
+    <div class="list-group">
+        {% for path in filelists %}
+            <a href="../{{path.path}}" class="list-group-item">{% if path.path %}{{path.path}}{% else %}/{% endif %}</a>
+        {% endfor %}
+    </div>
+
+</div>

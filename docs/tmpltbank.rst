@@ -200,6 +200,7 @@ Some notes on these options:
 * For the purposes of spin calculations a NS is considered to be anything with mass < 3 solar masses
 * And a BH is considered to be anything with mass > 3 solar masses.
 * To avoid generating a NSBH bank where you have a wall of triggers with NS mass = 3 and spins up to the black hole maximum use the nsbh-flag. This will ensure that only neutron-star--black-hole systems are generated.
+* If a remnant-mass-threshold is specified the code sets up the bank so that it does not target NS-BH systems that cannot produce a remnant disk mass that exceeds the threshold: this is used to remove EM dim NS-BH binaries from the target parameter space, as discussed in Pannarale and Ohme, ApJL 7, 5 (2014).  Please contact francesco.pannarale@ligo.org if you want to know more about this.
 
 .. _tmpltbank_alignedstochbank:
 
@@ -222,7 +223,7 @@ lalapps_cbc_sbank is an aligned-spin bank generator that uses a stochastic algor
 Comparisons, advantages and disadvantages of the two codes are discussed below.
 
 When using a metric these codes do not require the processing power of the
-geometric lattice algorithm and does no produce a dag.
+geometric lattice algorithm and does not produce a dag.
 Run the command, wait, get bank. When using the direct match method in sbank
 computational cost is much higher. For this purpose a dag generator is also
 supplied to parallelize generation.
@@ -374,6 +375,7 @@ Some notes on these options:
 * --num-seeds is the termination condition. The code will throw NUM_SEEDS points at the parameter space, and then filter out those that are too close to each other. If this value is too low, the bank will not converge, if it is too high, the code will take longer to run.
 * --num-failed-cutoff can be used as an alternative termination condition. Here the code runs until NUM_FAILED_CUTOFF points have been **consecutively** rejected and will then stop.
 * --vary-fupper will allow the code to vary the upper frequency cutoff across the parameter space. Currently this feature is **only** available in the stochastic code. 
+* If a remnant-mass-threshold is specified the code sets up the bank so that it does not target NS-BH systems that cannot produce a remnant disk mass that exceeds the threshold: this is used to remove EM dim NS-BH binaries from the target parameter space, as discussed in Pannarale and Ohme, ApJL 7, 5 (2014).  Please contact francesco.pannarale@ligo.org if you want to know more about this.
 
 -----------------------------------------------
 Command line options: lalapps_cbc_sbank

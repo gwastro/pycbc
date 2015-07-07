@@ -127,6 +127,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
     if args.enable_hdf_post_processing:
         # Workaround for the current segment module HARDCODED!!!
         final_veto_file = segsFileList.find_output_with_tag('CUMULATIVE_CAT_3')
+        final_veto_name = ['CUMULATIVE_CAT_3']
         cum_veto_files = _workflow.FileList()
 
         insps_hdf = _workflow.convert_trig_to_hdf(workflow, hdfbank, insps, output_dir, tags=[tag])
@@ -135,25 +136,25 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
         if tag == 'full_data':
             ctags = [tag, 'full']
             full_insps = insps_hdf
-            bg_files = _workflow.setup_interval_coinc(workflow, hdfbank,
-                                                      insps_hdf, cum_veto_files,
-                                                      output_dir, tags=ctags)
             final_bg_file =  _workflow.setup_interval_coinc(workflow, hdfbank,
-                            insps_hdf, final_veto_file, output_dir, tags=ctags)
-            _workflow.make_foreground_table(workflow, final_bg_file[0],
-                            hdfbank[0], tag, 'plots/foreground')
+                            insps_hdf, final_veto_file, final_veto_name,
+                            output_dir, tags=ctags)
+            _workflow.make_foreground_table(workflow, final_bg_file[0], hdfbank[0], final_veto_name[0], 'plots/foreground', tags=[tag])
 
-            _workflow.make_snrchi_plot(workflow, insps_hdf, final_veto_file[0], 
+            _workflow.make_snrchi_plot(workflow, insps_hdf, final_veto_file[0], final_veto_name[0],
                                       'plots/background', tags=[tag])
 
         else:
             ctags = [tag, 'inj']
 
             inj_coinc = _workflow.setup_interval_coinc_inj(workflow, hdfbank, 
-                            full_insps, insps_hdf, final_bg_file, final_veto_file,
+                            full_insps, insps_hdf, final_bg_file,
+                            final_veto_file[0], final_veto_name[0],
                             output_dir, tags = ctags)
             found_inj = _workflow.find_injections_in_hdf_coinc(workflow, _workflow.FileList([inj_coinc]),
-                            _workflow.FileList([inj_file]), final_veto_file[0], output_dir, tags=ctags)                                          
+                            _workflow.FileList([inj_file]), 
+                            final_veto_file[0], final_veto_name[0], 
+                            output_dir, tags=ctags)
 
             _workflow.make_sensitivity_plot(workflow, found_inj, 'plots/sensitivity',
                                      tags=ctags)

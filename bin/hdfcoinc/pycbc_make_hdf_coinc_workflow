@@ -15,13 +15,15 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-"""
+""" 
 Program for running multi-detector workflow analysis through coincidence and then
 generate post-processing and plots.
 """
 import pycbc, pycbc.version, pycbc.events, pycbc.workflow as wf
-import os, argparse, ConfigParser, logging, glue.segments
+import os, argparse, ConfigParser, logging, glue.segments, numpy
+from pycbc.results import create_versioning_page 
+from pycbc.results.render import render_workflow_html_template
+from itertools import izip_longest
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', 
@@ -39,18 +41,69 @@ container = wf.Workflow(args, args.workflow_name)
 workflow = wf.Workflow(args, 'main')
 finalize_workflow = wf.Workflow(args, 'finalization')
 
-if not os.path.exists(args.output_dir):
-    os.makedirs(args.output_dir)
+wf.makedir(args.output_dir)
 os.chdir(args.output_dir)
+
+# layout initialization / helper functions 
+def layout(path, cols):
+    path = os.path.join(os.getcwd(), path, 'well.html')
+    render_workflow_html_template(path, 'two_column.html', cols)
+
+def single_layout(path, files):
+    layout(path, [(f,) for f in files])
+
+def grouper(iterable, n, fillvalue=None):
+    args = [iter(iterable)] * n
+    return izip_longest(*args, fillvalue=fillvalue)
+    
+def group_layout(path, files):
+    if len(files) > 0:
+        layout(path, list(grouper(files, 2)))      
+ 
+class SectionNumber(object):
+    def __init__(self, base, secs):
+        self.base = base
+        self.secs = secs
+        self.name = {}
+        self.count = {}
+        self.num = {}
+        
+        for num, sec in enumerate(secs):
+            self.name[sec] = '%s._%s' % (num, sec)  
+            self.num[sec] = num
+            self.count[sec] = 1
+    
+    def __getitem__ (self, path):
+        if path in self.name:
+            name = self.name[path]
+        else:
+            sec, subsec = path.split('/')
+            subnum = self.count[sec]
+            num = self.num[sec]
+            name = '%s/%s.%s_%s' % (self.name[sec], num, subnum, subsec)
+            self.count[sec] += 1
+            self.name[path] = name
+        path = os.path.join(os.getcwd(), self.base, name)
+        return path
+             
+rdir = SectionNumber('results', ['configuration',
+                                 'analysis_time',
+                                 'detector_sensitivity',
+                                 'single_triggers',
+                                 'coincident_triggers',
+                                 'injections',
+                                 'search_sensitivity',
+                                 'result',
+                                 ])
 
 # Get segments and find where the data is
 science_segs, science_seg_file = wf.get_analyzable_segments(workflow, "segments")
 datafind_files, science_segs = wf.setup_datafind_workflow(workflow, 
                                          science_segs, "datafind", science_seg_file)
 
-cum_veto_files, ind_cats = wf.get_cumulative_veto_group_files(workflow, 
+cum_veto_files, veto_names, ind_cats = wf.get_cumulative_veto_group_files(workflow, 
                                         'segments-veto-groups', "segments")
-final_veto_file, ind_cats = wf.get_cumulative_veto_group_files(workflow, 
+final_veto_file, final_veto_name, ind_cats = wf.get_cumulative_veto_group_files(workflow, 
                                         'segments-final-veto-group', "segments")
 
 # Template bank stuff
@@ -85,63 +138,154 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
    
     ind_insps = insps if tag == 'full_data' else ind_insps
    
-    insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0], insps, output_dir, tags=[tag])
+    insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0], 
+                                               insps, output_dir, tags=[tag])
 
     # setup coinc for the filtering jobs
     if tag == 'full_data':
         full_insps = insps
-        bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, cum_veto_files,
+        bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, 
+                                       cum_veto_files, veto_names, 
                                        output_dir, tags=ctags)  
-        final_bg_file =  wf.setup_interval_coinc(workflow, hdfbank, insps, final_veto_file,
-                                       output_dir, tags=ctags)   
-        for bg_file in (final_bg_file + bg_files):
-            wf.make_snrifar_plot(workflow, bg_file, 'plots/background', tags=bg_file.tags)
+        final_bg_file =  wf.setup_interval_coinc(workflow, hdfbank, insps, 
+                                       final_veto_file, final_veto_name,
+                                       output_dir, tags=ctags)
+             
+        censored_veto = wf.make_foreground_censored_veto(workflow, 
+                               final_bg_file[0], final_veto_file[0], final_veto_name[0],
+                               'closed_box', 'segments')      
+                                         
+        for bg_file in (bg_files + final_bg_file):
+            snrifar = wf.make_snrifar_plot(workflow, bg_file,
+                                rdir['coincident_triggers'], 
+                                 closed_box=True, tags=bg_file.tags + ['closed'])
+            if bg_file == final_bg_file[0]:
+                closed_snrifar = snrifar
+                
+        
+        snrifar = wf.make_snrifar_plot(workflow, final_bg_file[0],
+                            rdir['result'], tags=final_bg_file[0].tags)
 
-        wf.make_foreground_table(workflow, final_bg_file[0], hdfbank[0], tag, 'plots/foreground')
-        wf.make_snrchi_plot(workflow, insps, final_veto_file[0], 'plots/background', tags=[tag])
-        wf.make_singles_plot(workflow, insps, hdfbank[0], final_veto_file[0], 'plots/background', tags=[tag])
+        table = wf.make_foreground_table(workflow, final_bg_file[0], 
+                            hdfbank[0], tag, rdir['result'])
+        single_layout(rdir['result'], [snrifar, table])
+
+        snrchi = wf.make_snrchi_plot(workflow, insps, censored_veto, 
+                            'closed_box', rdir['single_triggers'], tags=[tag])
+        group_layout(rdir['single_triggers'], snrchi)
+        
+        hist_summ = []
+        for insp in full_insps:
+            wf.make_singles_plot(workflow, [insp], hdfbank[0], censored_veto, 
+                   'closed_box', rdir['single_triggers/%s-hexbin' % insp.ifo], tags=[tag])
+            wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', 
+                   rdir['single_triggers/%s-hist' % insp.ifo], 
+                   exclude='summ', tags=[tag])
+            hists = wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', 
+                   rdir['single_triggers/%s-hist' % insp.ifo], 
+                   require='summ', tags=[tag])
+            hist_summ += list(grouper(hists, 2))
 
     else:
         inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank,
-                                                full_insps, insps, final_bg_file, final_veto_file,
-                                                output_dir, tags = ctags)
+                                        full_insps, insps, final_bg_file, 
+                                        final_veto_file[0], final_veto_name[0],
+                                        output_dir, tags = ctags)
         found_inj = wf.find_injections_in_hdf_coinc(workflow, wf.FileList([inj_coinc]),
-                                                wf.FileList([inj_file]), final_veto_file[0], 
-                                                output_dir, tags=ctags)
+                                        wf.FileList([inj_file]), final_veto_file[0], 
+                                        final_veto_name[0],
+                                        output_dir, tags=ctags)
         inj_coincs += [inj_coinc]                      
-        wf.make_sensitivity_plot(workflow, found_inj, 'plots/sensitivity/%s' % tag,
-                                 tags=ctags)
-        wf.make_foundmissed_plot(workflow, found_inj, 'plots/foundmissed/%s' % tag, 
-                                 tags=[tag])
-        wf.make_inj_table(workflow, found_inj, 'plots/foundmissed/%s' % tag, tags=[tag])
+        wf.make_sensitivity_plot(workflow, found_inj, 
+                      rdir['search_sensitivity/%s' % tag], 
+                       exclude=['all', 'summ'], tags=ctags)
+        wf.make_foundmissed_plot(workflow, found_inj, 
+                      rdir['injections/%s' % tag],
+                       exclude=['all', 'summ'], tags=[tag])
+        wf.make_inj_table(workflow, found_inj, 
+                      rdir['injections/%s' % tag], tags=[tag])
                                  
         for inj_insp, trig_insp in zip(insps, full_insps):
             wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 
                                       final_bg_file[0], trig_insp,
-                                      'plots/background/%s' % tag, tags=[tag])
+                                      rdir['injections/%s' % tag], tags=[tag])
    
-full_segs = []                                 
+full_segs, det_summ = [], []                                 
 for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
     name = 'INSPIRAL_SEGMENTS'
     fname = 'segments/%s-' % ifo + name + '.xml'
     fsegs = glue.segments.segmentlist([f.segment for f in files])
     full_segs.append(pycbc.events.segments_to_file(fsegs, fname, name, ifo=ifo))
 
+    segs = glue.segments.segmentlist([f.metadata['data_seg'] for f in files])
+    data_seg = pycbc.events.segments_to_file(segs,
+                   'segments/%s-INSP_DATA.xml' % ifo, 'INSPIRAL_DATA', ifo=ifo)
+
+    psd_file = wf.make_psd_file(workflow, datafind_files.find_output_with_ifo(ifo), 
+                                data_seg, 'INSPIRAL_DATA', 'psds')
+    s = wf.make_spectrum_plot(workflow, psd_file, rdir['detector_sensitivity'])
+    r = wf.make_range_plot(workflow, psd_file, rdir['detector_sensitivity'])
+    det_summ += [(s, r)]
+   
+layout(rdir['detector_sensitivity'], det_summ)    
+
 for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
-    wf.make_segments_plot(workflow, files, 'plots/segments', 
+    wf.make_segments_plot(workflow, files, rdir['analysis_time/segments'], 
                           tags=['%s_VETO_SEGMENTS' % ifo])
 
-wf.make_segments_plot(workflow, full_segs, 'plots/segments', tags=['INSPIRAL_SEGMENTS'])
-wf.make_segments_plot(workflow, science_seg_file, 'plots/segments', tags=['SCIENCE_MINUS_CAT1'])
+wf.make_segments_plot(workflow, full_segs,
+                 rdir['analysis_time/segments'], tags=['INSPIRAL_SEGMENTS'])
+wf.make_segments_plot(workflow, science_seg_file,
+                 rdir['analysis_time/segments'], tags=['SCIENCE_MINUS_CAT1'])
 
+# Make combined injection plots
+inj_summ = []
 if len(inj_files) > 0:
     found_inj = wf.find_injections_in_hdf_coinc(workflow, inj_coincs,
-                                            inj_files, final_veto_file[0], 
-                                            output_dir, tags=['ALLINJ'])                                                
-    wf.make_sensitivity_plot(workflow, found_inj, 'plots/sensitivity', 
-                                            tags=['ALLINJ'])
+                            inj_files, censored_veto, 'closed_box',
+                            'allinj', tags=['ALLINJ'])                                                
+    sen = wf.make_sensitivity_plot(workflow, found_inj, rdir['search_sensitivity'], 
+                            require='all', tags=['ALLINJ'])
 
-wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(), 'plots'))
+    group_layout(rdir['search_sensitivity'], sen)
+    inj = wf.make_foundmissed_plot(workflow, found_inj, rdir['injections'],
+                            require='all', tags=['ALLINJ'])
+    group_layout(rdir['injections'], inj)
+
+    # Make summary page foundmissed and sensitivity plot    
+    sen = wf.make_sensitivity_plot(workflow, found_inj, 
+                rdir['search_sensitivity'], require='summ', tags=['ALLINJ'])
+    group_layout(rdir['search_sensitivity'], sen)
+    inj = wf.make_foundmissed_plot(workflow, found_inj, 
+                rdir['injections'], require='summ', tags=['ALLINJ'])
+                
+    if len(sen) == 1 and len(inj) == 1:
+        inj_summ = [(inj[0], sen[0])]
+    else:
+        logging.warn("Invalid number of summary foundmissed/sensitivity plots. "
+                     "The limit is exactly one, skipping generation")
+                            
+# make full summary
+summ = det_summ + hist_summ + [(closed_snrifar,)] + inj_summ 
+for row in summ:
+    for f in row:
+        try:
+            os.symlink(f.storage_path, os.path.join(rdir.base, f.name))
+        except OSError:
+            pass           
+layout(rdir.base, summ)
+
+# save global config file to results directory
+base = rdir['configuration']
+wf.makedir(base)
+ini_file_path = os.path.join(base, 'configuration.ini')
+with open(ini_file_path, 'wb') as ini_fh:
+    container.cp.write(ini_fh)
+
+# Create versioning information
+create_versioning_page(rdir['configuration'], container.cp)
+
+wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(), rdir.base))
 
 container += workflow
 container += finalize_workflow
@@ -151,4 +295,8 @@ dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
 container._adag.addDependency(dep)
 
 container.save()
+
+# Protect the open box results folder
+os.chmod(rdir['result'], 0700)
+
 logging.info("Written dax.")

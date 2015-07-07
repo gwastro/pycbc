@@ -34,10 +34,11 @@ from distutils.core import setup, Command, Extension
 from distutils.command.clean import clean as _clean
 from pycbc.setuputils import pkg_config
 from distutils.file_util import write_file
+from distutils.version import LooseVersion
 
 try:
     import numpy.version
-    if numpy.version.version < '1.6.4':
+    if LooseVersion(numpy.version.version) < LooseVersion("1.6.4"):
         print (" Numpy >= 1.6.4 is required for pycbc dependencies. \n"
               " We found version %s already installed. Please update \n"
               " to a more recent version and then retry PyCBC  \n"
@@ -60,8 +61,22 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'pillow',
                       'h5py>=2.5',
                       'jinja2',
+                      'mpld3>=0.3git',
+                      'pycbc-pylal>=0.9.3',
+                      'pycbc-glue>=0.9.3',
                       ]
-links = []
+links = ['https://github.com/ahnitz/mpld3/tarball/master#egg=mpld3-0.3git']
+
+#FIXME Remove me when we bump to h5py > 2.5
+try:
+    import h5py
+except ImportError:
+    setup_requires.append('cython')
+else:
+    import h5py.version
+    if h5py.version.version < '2.5':
+        setup_requires.append('cython')
+
 
 def find_package_data(dirname):
     def find_paths(dirname):
@@ -115,13 +130,12 @@ class install(_install):
         print >> env_file, "export PATH"
         env_file.close()
 
-        try:
-            _install.do_egg_install(self)
-        except DistutilsError as err:
-            print err
-        else:
-            _install.run(self)
+        _install.run(self)
 
+def do_setup(*args):
+    return True
+
+_install._called_from_setup=do_setup
 
 test_results = []
 # Run all of the testing scripts
@@ -174,13 +188,10 @@ class test(Command):
     def has_cuda(self):
         import pycbc
         return pycbc.HAVE_CUDA
-    def has_opencl(self):
-        import pycbc
-        return pycbc.HAVE_OPENCL
 
-    sub_commands = [('test_cpu',None),('test_cuda',has_cuda),('test_opencl',has_opencl)]
+    sub_commands = [('test_cpu',None),('test_cuda',has_cuda)]
     user_options = []
-    description = "run the available tests for all compute schemes (cpu,cuda,opencl)"
+    description = "run the available tests for all compute schemes (cpu, cuda)"
     def initialize_options(self):
         pass
     def finalize_options(self):
@@ -200,12 +211,6 @@ class test_cuda(TestBase):
     def initialize_options(self):
         TestBase.initialize_options(self)
         self.scheme = 'cuda'
-
-class test_opencl(TestBase):
-    description = "run OpenCL tests"
-    def initialize_options(self):
-        TestBase.initialize_options(self)
-        self.scheme = 'opencl'
 
 # write versioning info
 def get_version_info():
@@ -308,9 +313,10 @@ cmdclass = { 'test'  : test,
              'install' : install,
              'test_cpu':test_cpu,
              'test_cuda':test_cuda,
-             'test_opencl':test_opencl,
              'clean' : clean,
             }
+            
+extras_require = {'cuda': ['pycuda>=2015.1', 'scikits.cuda']}
 
 # do the actual work of building the package
 VERSION = get_version_info()
@@ -326,6 +332,7 @@ setup (
     keywords = ['ligo', 'physics', 'gravity', 'signal processing'],
     cmdclass = cmdclass,
     setup_requires = setup_requires,
+    extras_require = extras_require,
     install_requires = install_requires,
     dependency_links = links,
     scripts  = [
@@ -361,10 +368,10 @@ setup (
                'bin/gstlal/pycbc_gen_ranking_data',
                'bin/gstlal/pycbc_pickle_horizon_distances',
                'bin/pycbc_make_coinc_workflow',
-               'bin/pycbc_make_daily_workflow',
                'bin/pycbc_make_html_page',
                'bin/pycbc_ligolw_find_playground',
                'bin/hdfcoinc/pycbc_make_hdf_coinc_workflow',
+               'bin/hdfcoinc/pycbc_calculate_psd',
                'bin/pycbc_optimal_snr',
                'bin/pycbc_fit_sngl_trigs',
                'bin/hdfcoinc/pycbc_coinc_mergetrigs',
@@ -380,8 +387,11 @@ setup (
                'bin/hdfcoinc/pycbc_page_banktriggerrate',
                'bin/hdfcoinc/pycbc_coinc_hdfinjfind',
                'bin/hdfcoinc/pycbc_page_snrchi',
-               'bin/hdfcoinc/pycbc_page_inspiralrange',
                'bin/hdfcoinc/pycbc_page_segments',
+               'bin/hdfcoinc/pycbc_plot_psd_file',
+               'bin/hdfcoinc/pycbc_plot_range',
+               'bin/hdfcoinc/pycbc_foreground_censor',
+               'bin/hdfcoinc/pycbc_plot_hist',
                'bin/sngl/pycbc_ligolw_cluster',
                'bin/sngl/pycbc_plot_bank',
                'bin/sngl/pycbc_plot_glitchgram',
@@ -414,6 +424,7 @@ setup (
                'pycbc.io',
                ],
      package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'), 
-	             'pycbc.results': find_package_data('pycbc/results')},
+	             'pycbc.results': find_package_data('pycbc/results'),
+                     'pycbc.tmpltbank': find_package_data('pycbc/tmpltbank')},
 )
 

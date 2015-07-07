@@ -41,6 +41,7 @@ from glue.ligolw.utils import print_tables
 from glue.ligolw.utils import segments as segment_utils
 from glue.markup import oneliner as e
 import glue.pipeline
+from pycbc.results import get_library_version_info, get_code_version_numbers
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
     pass
@@ -442,109 +443,7 @@ def write_general(page,opts):
 
   # Do all the libraries.
   # Collect information
-  library_list = []
-  import lal, lalframe, lalmetaio, lalinspiral, lalsimulation
-  import glue.git_version, pylal.git_version, pycbc.version
-
-  lalinfo = {}
-  lalinfo['Name'] = 'LAL'
-  lalinfo['ID'] = lal.VCSId
-  lalinfo['Status'] = lal.VCSStatus
-  lalinfo['Version'] = lal.VCSVersion
-  lalinfo['Tag'] = lal.VCSTag
-  lalinfo['Author'] = lal.VCSAuthor
-  lalinfo['Branch'] = lal.VCSBranch
-  lalinfo['Committer'] = lal.VCSCommitter
-  lalinfo['Date'] = lal.VCSDate
-  library_list.append(lalinfo)
-
-  lalframeinfo = {}
-  lalframeinfo['Name'] = 'LALFrame'
-  lalframeinfo['ID'] = lalframe.FrameVCSId
-  lalframeinfo['Status'] = lalframe.FrameVCSStatus
-  lalframeinfo['Version'] = lalframe.FrameVCSVersion
-  lalframeinfo['Tag'] = lalframe.FrameVCSTag
-  lalframeinfo['Author'] = lalframe.FrameVCSAuthor
-  lalframeinfo['Branch'] = lalframe.FrameVCSBranch
-  lalframeinfo['Committer'] = lalframe.FrameVCSCommitter
-  lalframeinfo['Date'] = lalframe.FrameVCSDate
-  library_list.append(lalframeinfo)
-
-  lalmetaioinfo = {}
-  lalmetaioinfo['Name'] = 'LALMetaIO'
-  lalmetaioinfo['ID'] = lalmetaio.MetaIOVCSId
-  lalmetaioinfo['Status'] = lalmetaio.MetaIOVCSStatus
-  lalmetaioinfo['Version'] = lalmetaio.MetaIOVCSVersion
-  lalmetaioinfo['Tag'] = lalmetaio.MetaIOVCSTag
-  lalmetaioinfo['Author'] = lalmetaio.MetaIOVCSAuthor
-  lalmetaioinfo['Branch'] = lalmetaio.MetaIOVCSBranch
-  lalmetaioinfo['Committer'] = lalmetaio.MetaIOVCSCommitter
-  lalmetaioinfo['Date'] = lalmetaio.MetaIOVCSDate
-  library_list.append(lalmetaioinfo)
-
-  lalinspiralinfo = {}
-  lalinspiralinfo['Name'] = 'LALInspiral'
-  lalinspiralinfo['ID'] = lalinspiral.InspiralVCSId
-  lalinspiralinfo['Status'] = lalinspiral.InspiralVCSStatus
-  lalinspiralinfo['Version'] = lalinspiral.InspiralVCSVersion
-  lalinspiralinfo['Tag'] = lalinspiral.InspiralVCSTag
-  lalinspiralinfo['Author'] = lalinspiral.InspiralVCSAuthor
-  lalinspiralinfo['Branch'] = lalinspiral.InspiralVCSBranch
-  lalinspiralinfo['Committer'] = lalinspiral.InspiralVCSCommitter
-  lalinspiralinfo['Date'] = lalinspiral.InspiralVCSDate
-  library_list.append(lalinspiralinfo)
-
-  lalsimulationinfo = {}
-  lalsimulationinfo['Name'] = 'LALSimulation'
-  lalsimulationinfo['ID'] = lalsimulation.SimulationVCSId
-  lalsimulationinfo['Status'] = lalsimulation.SimulationVCSStatus
-  lalsimulationinfo['Version'] = lalsimulation.SimulationVCSVersion
-  lalsimulationinfo['Tag'] = lalsimulation.SimulationVCSTag
-  lalsimulationinfo['Author'] = lalsimulation.SimulationVCSAuthor
-  lalsimulationinfo['Branch'] = lalsimulation.SimulationVCSBranch
-  lalsimulationinfo['Committer'] = lalsimulation.SimulationVCSCommitter
-  lalsimulationinfo['Date'] = lalsimulation.SimulationVCSDate
-  library_list.append(lalsimulationinfo)
-
-  glueinfo = {}
-  glueinfo['Name'] = 'Glue'
-  glueinfo['ID'] = glue.git_version.id
-  glueinfo['Status'] = glue.git_version.status
-  glueinfo['Version'] = glue.git_version.version
-  glueinfo['Tag'] = glue.git_version.tag
-  glueinfo['Author'] = glue.git_version.author
-  glueinfo['Builder'] = glue.git_version.builder
-  glueinfo['Branch'] = glue.git_version.branch
-  glueinfo['Committer'] = glue.git_version.committer
-  glueinfo['Date'] = glue.git_version.date
-  library_list.append(glueinfo)
-
-  pylalinfo = {}
-  pylalinfo['Name'] = 'Pylal'
-  pylalinfo['ID'] = pylal.git_version.id
-  pylalinfo['Status'] = pylal.git_version.status
-  pylalinfo['Version'] = pylal.git_version.version
-  pylalinfo['Tag'] = pylal.git_version.tag
-  pylalinfo['Author'] = pylal.git_version.author
-  pylalinfo['Builder'] = pylal.git_version.builder
-  pylalinfo['Branch'] = pylal.git_version.branch
-  pylalinfo['Committer'] = pylal.git_version.committer
-  pylalinfo['Date'] = pylal.git_version.date
-  library_list.append(pylalinfo)
-
-  pycbcinfo = {}
-  pycbcinfo['Name'] = 'PyCBC'
-  pycbcinfo['ID'] = pycbc.version.version
-  pycbcinfo['Status'] = pycbc.version.git_status
-  pycbcinfo['Version'] = pycbc.version.release or ''
-  pycbcinfo['Tag'] = pycbc.version.git_tag
-  pycbcinfo['Author'] = pycbc.version.git_author
-  pycbcinfo['Builder'] = pycbc.version.git_builder
-  pycbcinfo['Branch'] = pycbc.version.git_branch
-  pycbcinfo['Committer'] = pycbc.version.git_committer
-  pycbcinfo['Date'] = pycbc.version.git_build_date
-  library_list.append(pycbcinfo)
-
+  library_list = get_library_version_info()
 
   for entry in library_list:
     page = heading(page, entry['Name'] + " versioning information.")
@@ -567,21 +466,15 @@ def write_general(page,opts):
     print "Extracting the version and tag of the executables..." 
   
   page = heading(page, "Version information from executables.")
-  executables = []
-  for item,value in hipecp.items('executables'):
-    if item != 'universe':
-      executables.append([item,os.path.split(value)[1]])     
+  code_version_dict = get_code_version_numbers(hipecp)
 
   page.ol() #starts enumerate
   # first section with version number
   # get the version of each executables
   try:
     page.ul()
-    for exe in executables:
-      if exe[0] == 'mvsc_train_forest' or exe[0] == 'mvsc_use_forest':
-        text = "<b>"+exe[0]+ ': ' + exe[1] + "</b> "
-      else:
-        text = "<b>"+exe[0]+ ': ' + exe[1] + "</b> "+get_version(exe[1])
+    for exe, message in code_version_dict.items():
+      text = "<b>" + exe + "</b>: " + message
       page.li(text)   
     page.ul.close()
     page.li.close()
@@ -1924,45 +1817,6 @@ def get_ifos():
     ifos.append(ifo.upper())
 
   return ifos
-
-# ***************************************************************************
-# ***************************************************************************
-def get_version(executable): 
-  """
-  Search for the tag and version of an executable using the --version argument.
-
-  @param executable: the name of an executable (type: string)
-  return: the tag name if any and the version of the executable
-  """
-  output=[]
-  try:
-    # this is surely useless now to make a distinction with trigbank 
-    cmd = executable + " --version"
-    output,err,status = make_external_call(cmd, opts.debug, opts.debug, True,return_stderr=True)
-  except:  
-    output= '(not found)' 
-
-  output = output.split('\n')
-  err = err.split('\n')
-
-  #searching for the version, which may be empty(undefined)
-  version = '. Undefined version (does this executable have --version?).'
-  for entry in output:
-    entry = entry.split(' ')
-    if "Id:" in entry:
-      index = entry.index("Id:") + 1
-      version = 'Version is %s.' %(entry[index],)
-      break
-  else:
-    # Some codes use stderr for the version message
-    for entry in err:
-      entry = entry.split(' ')
-      if "Id:" in entry:
-        index = entry.index("Id:") + 1
-        version = 'Version is %s.' %(entry[index],)
-        break
-
-  return version
 
 # ***************************************************************************
 def copy_segments():

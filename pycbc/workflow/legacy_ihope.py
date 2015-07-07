@@ -120,8 +120,10 @@ class LegacyAnalysisExecutable(Executable):
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.name)                                     
           
-        node.add_opt('--gps-start-time', data_seg[0] + pad_data)
-        node.add_opt('--gps-end-time', data_seg[1] - pad_data)   
+        # hide import here to avoid circular import
+        from pycbc.workflow import int_gps_time_to_str
+        node.add_opt('--gps-start-time', int_gps_time_to_str(data_seg[0] + pad_data))
+        node.add_opt('--gps-end-time', int_gps_time_to_str(data_seg[1] - pad_data))   
          
         cache_file = dfParents[0]       
         

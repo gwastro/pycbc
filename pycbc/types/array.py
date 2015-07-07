@@ -23,8 +23,7 @@
 # =============================================================================
 #
 """
-This modules provides a device independent Array class based on PyCUDA,
-PyOpenCL, and Numpy.
+This modules provides a device independent Array class based on PyCUDA and Numpy.
 """
 
 BACKEND_PREFIX="pycbc.types.array_"
@@ -108,7 +107,7 @@ def _scheme_matches_base_array(array):
 
 class Array(object):
     """Array used to do numeric calculations on a various compute
-    devices. It is a convience wrapper around numpy, pyopencl, and
+    devices. It is a convience wrapper around numpy, and
     pycuda.
     """
     

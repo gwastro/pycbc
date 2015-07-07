@@ -27,10 +27,10 @@ creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 import os, sys, subprocess, logging, math, string, urlparse, ConfigParser, copy
-import numpy, cPickle, string, random
+import numpy, cPickle, random
 from itertools import combinations, groupby
 from operator import attrgetter
-from os.path import splitext, basename, isfile
+from os.path import basename, isfile
 import lal as lalswig
 from glue import lal, segments
 from pycbc.workflow.configuration import WorkflowConfigParser
@@ -41,7 +41,7 @@ from pycbc.workflow import pegasus_workflow
 lal.LIGOTimeGPS = lalswig.LIGOTimeGPS
 
 #REMOVE THESE FUNCTIONS  FOR PYTHON >= 2.7 ####################################
-def check_output(*popenargs, **kwargs):
+def check_output_error_and_retcode(*popenargs, **kwargs):
     """
     This function is used to obtain the stdout of a command. It is only used
     internally, recommend using the make_external_call command if you want
@@ -52,8 +52,13 @@ def check_output(*popenargs, **kwargs):
     process = subprocess.Popen(stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE,
                                *popenargs, **kwargs)
-    output, unused_err = process.communicate()
+    output, error = process.communicate()
     retcode = process.poll()
+    return output, error, retcode
+
+def check_output(*popenargs, **kwargs):
+    output, unused_error, unused_retcode = \
+                           check_output_error_and_retcode(*popenargs, **kwargs)
     return output
 
 ###############################################################################
@@ -518,6 +523,7 @@ class Node(pegasus_workflow.Node):
                    directory=self.executable.out_dir, tags=all_tags,
                    use_tmp_subdirs=use_tmp_subdirs)
         self.add_output_opt(option_name, fil)
+        return fil
         
     @property    
     def output_files(self):
@@ -599,6 +605,7 @@ class File(pegasus_workflow.File):
             e.g. this might be ["BNSINJECTIONS" ,"LOWMASS","CAT_2_VETO"].
             These are used in file naming.
         """
+        self.metadata = {}
         
         # Set the science metadata on the file
         if isinstance(ifos, (str, unicode)):
@@ -667,6 +674,10 @@ class File(pegasus_workflow.File):
         safe_dict = copy.copy(self.__dict__)
         safe_dict['cache_entry'] = None
         return safe_dict   
+
+    def add_metadata(self, key, value):
+        """ Add arbitrary metadata to this file """
+        self.metadata[key] = value
 
     @property
     def ifo(self):

@@ -1,0 +1,86 @@
+/* set style for body */
+html, body {
+    height:100%;
+    font-family : Lato, sans-serif;
+    background-color:#EEEEEE;
+}
+
+/* add some space to the left upon inserting a caret */
+.caret{
+    margin-left : 4px;
+}
+
+/* add shadow to navbar */
+.navbar {
+    box-shadow : 0 1px 10px rgba(0,0,0,0.23),0 1px 10px rgba(0,0,0,0.16);
+    font-size : 14px;
+}
+
+/* set style for horizontal bars in inactive navbar overflow button */
+.navbar .navbar-toggle .icon-bar{
+    margin-top : 2px;
+    width : 15px;
+    background-color : #EEEEEE;
+}
+
+/* set style for horizontal bars in hovered navbar overflow button */
+.navbar .navbar-toggle:hover {
+    color:#EEEEEE;
+}
+
+/* style for well that holds assigned file renderings */
+.well{
+    background-color : #FFFFFF;
+    padding : 19px;
+    box-shadow : 0 3px 10px rgba(0,0,0,0.23),0 3px 10px rgba(0,0,0,0.16);
+    border-radius : 2px;
+    border : 0;
+}
+
+.navbar-custom {
+	background-color: #FF7F00;
+        color:#000000;
+  	border-radius:0;
+font-size:16px;
+}
+  
+.navbar-custom .navbar-nav > li > a {
+  	color:#000000;
+  	padding-left:5px;
+  	padding-right:5px;
+    padding-top:20px;
+    padding-bottom:20px;
+}
+
+.navbar-custom .navbar-nav > .active > a, .navbar-nav > .active > a:hover, .navbar-nav > .active > a:focus {
+    color: #000000;
+	background-color:transparent;
+}
+      
+.navbar-custom .navbar-nav > li > a:hover, .nav > li > a:focus {
+    text-decoration: none;
+    background-color: #E67200;
+}
+      
+.navbar-custom .navbar-brand {
+   color : #000000;
+   padding : 5px;
+}
+
+.navbar-custom .navbar-toggle,
+.navbar-custom .nav .open>a, .navbar-custom .nav .open>a:hover, .navbar-custom .nav .open>a:focus {
+   background-color:#E67200;
+}
+
+.navbar-custom .icon-bar {
+   border: 1px solid #FFFFFF;
+}
+
+/*-- change navbar dropdown color --*/
+.navbar-custom .navbar-nav .open .dropdown-menu>li>a,.navbar-custom .navbar-nav .open .dropdown-menu {
+    color:#000000;
+}
+
+.footer-custom {
+    padding : 25px;
+}

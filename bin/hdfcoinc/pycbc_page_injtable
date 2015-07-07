@@ -12,7 +12,7 @@ args = parser.parse_args()
 f = h5py.File(args.injection_file)
 found = f['found_after_vetoes']
 inj = f['injections']
-idx = found['injection_index']
+idx = found['injection_index'][:]
 
 tdiff = (found['time1'][:] - found['time2'][:]) * 1000
 tdiff_str = '%s - %s time (ms)' % (f.attrs['detector_1'], f.attrs['detector_2'])

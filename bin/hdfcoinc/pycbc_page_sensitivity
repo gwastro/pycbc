@@ -1,13 +1,14 @@
 #!/usr/bin/python
 """ Make plot of search sensitive distance
 """
-import argparse, h5py, numpy, logging, os.path, matplotlib
+import argparse, h5py, numpy, logging, os.path, matplotlib, sys
 matplotlib.use('Agg')
 from matplotlib.pyplot import cm
-import pylab, pycbc.pnutils, pycbc.results, pycbc
+import pylab, pycbc.pnutils, pycbc.results, pycbc, pycbc.version
 from pycbc import sensitivity
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--injection-file', 
                    help="HDF format injection result file.")
 parser.add_argument('--bins', nargs='*',
@@ -18,7 +19,7 @@ parser.add_argument('--bin-type', choices=['spin', 'mchirp',
                    help="Optional, parameter bin boundaries")
 parser.add_argument('--sig-bins', nargs='*',
                    help="Optional, boundaries of x-axis significance bins"),
-parser.add_argument('--sig-type', choices=['ifar', 'fap'], default='ifar',
+parser.add_argument('--sig-type', choices=['ifar', 'fap', 'stat'], default='ifar',
                    help="Optional, x-axis significance type")
 parser.add_argument('--min-dist', type=float, 
                    help="Optional, minimum sensitive distance to plot")
@@ -79,6 +80,15 @@ labels['mchirp'] = "$ M_{chirp} \in [%5.2f, %5.2f] M_\odot $"
 labels['total_mass'] = "$ M_{total} \in [%5.2f, %5.2f] M_\odot $"
 labels['spin'] = "$Eff Spin \in [%5.2f, %5.2f] $"
 
+if args.sig_type == 'stat':
+    sig = f['found_after_vetoes/stat'][:]
+    sig_exc = None
+    xlabel = 'Ranking Statistic Value'
+    if args.sig_bins:
+        x_values = [float(v) for v in args.sig_bins]
+    else:
+        x_values = numpy.arange(9, 14, .05)
+
 if args.sig_type == 'ifar':
     sig = f['found_after_vetoes/ifar'][:]
     sig_exc = f['found_after_vetoes/ifar_exc'][:]
@@ -110,6 +120,9 @@ for j in range(len(args.bins)-1):
     
     # Plot both the inclusive and exclusive significance 
     for sig_val, do_label, alpha in zip(fvalues, do_labels, alphas):
+        if sig_val is None:
+            continue
+            
         left =  float(args.bins[j])
         right = float(args.bins[j+1])
         binval = values[args.bin_type]
@@ -126,7 +139,7 @@ for j in range(len(args.bins)-1):
 
         # Calculate each sensitive distance at a given significance threshold
         for x_val in x_values:
-            if args.sig_type == 'ifar':
+            if args.sig_type == 'ifar' or args.sig_type == 'stat':
                 foundg = found[sig_val >= x_val]
                 foundm = found[sig_val < x_val]
             elif args.sig_type == 'fap':
@@ -173,7 +186,9 @@ for j in range(len(args.bins)-1):
                            facecolor=c, edgecolor=c, alpha=alpha)
                            
 ax = pylab.gca()
-ax.set_xscale('log')
+
+if args.sig_type != 'stat':
+    ax.set_xscale('log')
 
 if args.sig_type == 'fap':
     ax.invert_xaxis()
@@ -186,6 +201,14 @@ pylab.xlabel(xlabel)
 
 pylab.grid()  
 pylab.legend(loc='lower left')
+
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
-             title='%s binning' % args.bin_type, 
-             caption='')
+     title="Sensitive Distance vs %s: binned by %s, %s estimation" 
+            % (args.sig_type, args.bin_type, args.method), 
+     caption="Sensitive distance as a function of significance:"
+             "Darker lines represent the significance without including "
+             "injections in their own background, while lighter lines "
+             "include each injection (individual) in its own background. ",
+     cmd=' '.join(sys.argv))
+             
+             

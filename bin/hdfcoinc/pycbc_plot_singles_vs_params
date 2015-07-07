@@ -40,7 +40,7 @@ class SingleDetTriggerSet(object):
     Provides easy access to the parameters of single-detector CBC triggers.
     """
 
-    def __init__(self, trig_file, bank_file, veto_file, detector):
+    def __init__(self, trig_file, bank_file, veto_file, segment_name, detector):
         logging.info('Loading triggers')
         self.trigs_f = h5py.File(trig_file, 'r')
         self.trigs = self.trigs_f[detector]
@@ -48,7 +48,8 @@ class SingleDetTriggerSet(object):
         if veto_file:
             logging.info('Loading veto segments')
             self.veto_mask, segs = pycbc.events.veto.indices_outside_segments(
-                self.trigs['end_time'][:], [veto_file], ifo=detector)
+                self.trigs['end_time'][:], [veto_file], 
+                ifo=detector, segment_name=segment_name)
         else:
             self.veto_mask = slice(len(self.trigs['end_time']))
 
@@ -132,6 +133,8 @@ parser.add_argument('--bank-file', type=str, required=True,
                     help='Path to file containing template bank in HDF5 format')
 parser.add_argument('--veto-file', type=str,
                     help='Optional path to file containing veto segments')
+parser.add_argument('--segment-name', default=None, type=str,
+                    help='Optional, name of segment list to use for vetoes')
 parser.add_argument('--output-file', type=str, required=True,
                     help='Destination path for plot')
 parser.add_argument('--x-var', required=True,
@@ -158,7 +161,7 @@ opts = parser.parse_args()
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
 trigs = SingleDetTriggerSet(opts.single_trig_file, opts.bank_file,
-                            opts.veto_file, opts.detector)
+                            opts.veto_file, opts.segment_name, opts.detector)
 
 x = getattr(trigs, opts.x_var)
 y = getattr(trigs, opts.y_var)
