@@ -30,7 +30,6 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 
 import logging
 import math, os
-import logging
 import lal
 from glue import segments
 import Pegasus.DAX3 as dax
@@ -1499,7 +1498,6 @@ class PycbcSplitBankExecutable(Executable):
             # FIXME: What should the tags actually be? The job.tags values are
             #        currently ignored.
             curr_tags = bank.tags + [curr_tag] + self.tags
-            logging.info(curr_tags)
             job_tag = bank.description + "_" + self.name.upper()
             out_file = File(bank.ifo_list, job_tag, bank.segment,
                                extension=".xml.gz", directory=self.out_dir,

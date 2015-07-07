@@ -98,7 +98,6 @@ def setup_splittable_workflow(workflow, input_tables, out_dir=None,
     '''
     logging.info("Entering split output files module.")
     make_analysis_dir(out_dir)
-    logging.info(input_type)
     # Parse for options in .ini file
     splitMethod = workflow.cp.get_opt_tags("workflow-%s" % input_type,
                                            "%s-method" % input_type, [])
