@@ -139,8 +139,7 @@ def make_seg_table(workflow, seg_files, seg_names, out_dir, tags=None):
     node.add_opt('--segment-names', ' '.join(seg_names))
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
-    files = FileList(node.output_files)
-    return files[0]
+    return node.output_files[0]
 
 def make_snrchi_plot(workflow, trig_files, veto_file, veto_name, 
                      out_dir, exclude=None, require=None, tags=[]):
