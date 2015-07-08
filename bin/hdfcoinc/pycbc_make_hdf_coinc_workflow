@@ -244,8 +244,8 @@ wf.make_segments_plot(workflow, science_seg_file,
 seg_list = []
 names = []
 ifos = []
-zip_seglists = [data_segs, science_segs, insp_data_segs, insp_segs]
-zip_names = ['DATA', 'ANALYZABLE_DATA', 'READ_DATA', 'TRIGGERS_PRODUCED']
+zip_seglists = [data_segs, science_segs, insp_segs]
+zip_names = ['DATA', 'ANALYZABLE_DATA', 'TRIGGERS_PRODUCED']
 for segment_list,segment_name in zip(zip_seglists, zip_names):
     for ifo in workflow.ifos:
         seg_list.append(segment_list[ifo])
