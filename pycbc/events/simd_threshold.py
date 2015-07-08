@@ -21,9 +21,35 @@ import pycbc.opt
 from pycbc.opt import omp_support, omp_libs, omp_flags
 
 """
-This module contains various long-strings of code intended to be used by other
-modules when they implement the thresholding and clustering steps of matched
-filtering.
+This module defines several C functions that are weave compiled and compute
+a combined thresholding and time clustering of a complex array using a
+multithreaded, SIMD vectoried code.
+
+This module also defines several classes that call this function, of which the
+last, ThreshClusterObject, is used in the matched filtering control object to
+perform the time clustering and thresholding on the output SNR time series
+of the matched filtering.
+
+There are three C functions defined:
+
+max_simd: A single-threaded function that uses SIMD vectorization to compute
+          the maximum ov a complex time series over a given window.
+
+windowed_max: A single threaded (but not vectorized) function that finds the
+              locations, norms, and complex values of the maxima in each of
+              a set of predefined windows in a given complex array. It does
+              this by calling max_simd on each window with the appropriate
+              parameters.
+
+parallel_thresh_cluster: A multithreaded function that finds the maxima in
+                         each of a set of contiguous, fixed-length windows
+                         by calling windowed_max in parallel. It then sweeps
+                         through the results of that (single-threaded) and
+                         tests for above threshold, and time-clusters the
+                         surviving triggers.
+
+A user calls only the last function; the other two exist to conveniently
+compartmentalize SIMD code from OpenMP code.
 """
 
 tc_common_support = omp_support + pycbc.opt.simd_intel_intrin_support + """
@@ -42,6 +68,19 @@ thresh_cluster_support = tc_common_support + """
 void max_simd(float * __restrict inarr, float * __restrict mval,
               float * __restrict norm, int64_t *mloc,
               int64_t nstart, int64_t howmany){
+
+  /*
+
+   This function, using SIMD vectorization, takes an input float
+   array (which consists of alternating real and imaginary parts
+   of a complex array) and writes the two-float value of the maximum
+   into 'mval', the single-float norm of the maximum into 'norm', and
+   the location of the maximum (as an index into a *complex* array)
+   into 'mloc'. The number 'nstart' is added to whatever location is
+   found for the maximum (returned in mloc), and 'howmany' is the length
+   of inarr (as a *real* array).
+
+  */
 
   int64_t i, curr_mloc;
   float re, im, curr_norm, curr, curr_mval[2], *arrptr;
@@ -69,6 +108,8 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
   if (misalgn % 2*sizeof(float)) {
     error(EXIT_FAILURE, 0, "Array given to max_simd must be aligned on a least a complex float boundary\\n");
   }
+  // 'peel' is how many elements must be handled before we get to
+  // something aligned on an SIMD boundary.
   peel = ( misalgn ? ((ALGN - misalgn) / (sizeof(float))) : 0 );
   peel = (peel > howmany ? howmany : peel);
 
@@ -217,6 +258,8 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
   if (misalgn % 2*sizeof(float)) {
     error(EXIT_FAILURE, 0, "Array given to max_simd must be aligned on a least a complex float boundary");
   }
+  // 'peel' is how many elements must be handled before we get to
+  // something aligned on an SIMD boundary.
   peel = ( misalgn ? ((ALGN - misalgn) / (sizeof(float))) : 0 );
   peel = (peel > howmany ? howmany : peel);
 
@@ -432,6 +475,19 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
                             std::complex<float> * __restrict values, uint32_t * __restrict locs,
                             const float thresh, const uint32_t winsize, const uint32_t segsize){
 
+  /*
+
+  This function takes a complex input array 'inarr', of length 'arrlen', and returns
+  in the complex array 'values' the time-clustered values of all maxima within a window
+  of size 'winsize'. The locations (as indices into the original array) are returned in
+  the array 'locs'. Both 'values' and 'locs' must be pre-allocated. The time-clustered
+  triggers are only returned when their norm is above the value 'thresh'. The last argument,
+  'segsize', specifies in what size chunks the array should be processed, and should be no
+  larger than what can fit in the cache local to a single processor core (the parallelization
+  will call 'windowed_max' in parallel on chunks of this size).
+
+  */
+
   uint32_t i, nsegs, nwins_ps, last_arrlen, last_nwins_ps, outlen;
   int64_t *seglens, *mlocs, curr_loc;
   float *norms, thr_sqr, curr_norm;
@@ -440,13 +496,22 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
 
   thr_sqr = (thresh * thresh);
 
+  // If segsize divides arrlen evenly, then the number of segments 'nsegs' is that
+  // ratio; if not, it is one more than the floor of that ratio and the last segment
+  // will be shorter than all of the others.
   nsegs = ( (arrlen % segsize) ? (arrlen/segsize) + 1 : (arrlen/segsize) );
+
+  // If winsize divides segsize evenly, then the number of windows per segment
+  // 'nwins_ps' is that ratio; if not, it is one more than the floor of that ratio
+  // and the last window in each segment will be shorter than all of the others.
   nwins_ps = ( (segsize % winsize) ? (segsize/winsize) + 1 : (segsize/winsize) );
-  // Our logic will be to treat the last segment differently always.  However if
+
+  // Our code will always handle the last segment separately.  However if
   // segsize evenly divides arrlen, then the last segment will be no different.
   // The following ternary operator captures that logic:
   last_arrlen = ( (arrlen % segsize) ? (arrlen - (nsegs-1) * segsize) : (segsize) );
   last_nwins_ps = ( (last_arrlen % winsize) ? (last_arrlen/winsize) + 1 : (last_arrlen/winsize) );
+
   // Then the total length of the working arrays we must dynamically allocate is:
   outlen = (nsegs-1) * nwins_ps + last_nwins_ps;
 
