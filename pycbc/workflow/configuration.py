@@ -462,7 +462,8 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             if not overwrite_options:
                 if option in self.options(section):
                     raise ValueError('Option exists in both original ' + \
-                                  'ConfigParser and input list: %s' %(option,))
+                                  'ConfigParser section [%s] and ' %(section,) + \
+                                  'input list: %s' %(option,))
             self.set(section,option,value)
 
 
