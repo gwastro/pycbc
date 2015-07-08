@@ -21,6 +21,22 @@ from numpy import log
 import pycbc.opt
 from pycbc.opt import omp_support, omp_libs, omp_flags
 
+"""
+This module contains C functions (to be compiled by weave) for multiplying
+the complex conjugate of one vector by a second vector, writing the output
+to a third vector. They do this multi-threaded and with SIMD vectorization.
+
+The long string of code defined here, and the other calling that function,
+are imported and used in the CPUCorrelator class defined in
+matchedfilter_cpu.py.
+
+Two functions are defined in the 'support' long code string:
+
+ccorrf_simd: Runs on a single core, but vectorized
+ccorrf_parallel: Runs multicore, but not explicitly vectorized.
+                 Parallelized using OpenMP, and calls ccorrf_simd
+"""
+
 # Common support, so defined here
 
 
@@ -39,7 +55,7 @@ void ccorrf_simd(float * __restrict inconj, float * __restrict innoconj,
    vector that is the elementwise product of the conjugate of the first input and
    the second input.  All vectors are of type float, but are interpreted as complex
    vectors; the length should be the length of the *real* vectors (which must be
-   the same).
+   the same). The last argument is the common length of all three vectors.
 
    The vectors do not have to be aligned on any particular SIMD boundary, but the
    *relative* misalignment of all three vectors must be the same.  In practice this
@@ -320,8 +336,28 @@ void ccorrf_parallel(std::complex<float> * __restrict inconj,
                      std::complex<float> * __restrict out,
                      const int64_t arrlen, const int64_t segsize){
 
+  /*
+
+   This function takes three complex vectors: the complex conjugate of
+   the first is elementwise multiplied by the second with the output
+   written into the third. The fourth argument is the common length of
+   all three vectors, and the fifth argument is  the 'segment' size. It
+   is the length of a vector that should be handled by a single thread,
+   and should generally be such that three vectors of that length will
+   fit in the cache local to a single CPU core (not shared).
+
+  */
+
+
   int64_t i, *seglens;
   int nsegs;
+
+  // We will always give 'segsize' length arrays. If segsize does not
+  // divide arrlen evenly, the last triple of arrays will be shorter.
+  // The next lines enforce that logic: if segsize divides arrlen
+  // evenly, the number of segments is their ratio; if not, the number
+  // of segments is one more than the floor of that ratio, and the
+  // last segment has a shorter length than the others.
 
   nsegs = ( (arrlen % segsize) ? (arrlen/segsize) + 1 : (arrlen/segsize) );
 
