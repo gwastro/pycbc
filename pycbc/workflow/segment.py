@@ -897,10 +897,22 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
     logging.info("%ds of padding applied at beginning and end of segment."
                  % padding)
 
+
+    # Construct on-source
+    onstart = triggertime - onbefore
+    onend = triggertime + onafter
+    oncentre = onstart + ((onbefore + onafter) / 2)
+    onsrc = segments.segment(onstart, onend)
+    logging.info("Constructed ON-SOURCE: duration %ds (%ds before to %ds after"
+                 " trigger)."
+                 % (abs(onsrc), triggertime - onsrc[0],
+                    onsrc[1] - triggertime))
+    onsrc = segments.segmentlist([onsrc])
+
     # Maximal, centred coherent network segment
-    idealsegment = segments.segment(int(triggertime - padding -
+    idealsegment = segments.segment(int(oncentre - padding -
                                     0.5 * maxduration),
-                                    int(triggertime + padding +
+                                    int(oncentre + padding +
                                     0.5 * maxduration))
 
     # Construct off-source
@@ -916,11 +928,16 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
                                    offsrc[0] + maxduration + 2 * padding)
 
     # Trimming off-source
-    excess = abs(offsrc) % quanta - 2 * padding
+    logging.info(abs(offsrc))
+    logging.info(quanta)
+    logging.info(padding)
+    excess = (abs(offsrc) - 2 * padding) % quanta
+    logging.info(excess)
     if excess != 0:
         logging.info("Trimming %ds excess time to make OFF-SOURCE duration a "
                      "multiple of %ds" % (excess, quanta))
-        offset = (offsrc[0] + abs(offsrc) / 2.) - triggertime
+        offset = (offsrc[0] + abs(offsrc) / 2.) - oncentre
+        logging.info(offset)
         if 2 * abs(offset) > excess:
             if offset < 0:
                 offsrc &= segments.segment(offsrc[0] + excess,
@@ -928,12 +945,23 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
             elif offset > 0:
                 offsrc &= segments.segment(offsrc[0],
                                            offsrc[1] - excess)
+            logging.info(abs(offsrc))
+            logging.info(quanta)
+            logging.info(padding)
+            logging.info(abs(offsrc) % quanta)
             assert abs(offsrc) % quanta == 2 * padding
         else:
             logging.info("This will make OFF-SOURCE symmetrical about trigger "
                          "time.")
-            offsrc = segments.segment(offsrc[0] - offset + excess / 2,
-                                      offsrc[1] - offset - excess / 2)
+            start = int(offsrc[0] - offset + excess / 2)
+            end = int(offsrc[1] - offset - round(float(excess) / 2))
+            offsrc = segments.segment(start, end)
+            #offsrc = segments.segment(offsrc[0] - offset + excess / 2,
+            #                          offsrc[1] - offset - excess / 2)
+            logging.info(abs(offsrc))
+            logging.info(quanta)
+            logging.info(padding)
+            logging.info(abs(offsrc) % quanta)
             assert abs(offsrc) % quanta == 2 * padding
 
     logging.info("Constructed OFF-SOURCE: duration %ds (%ds before to %ds "
@@ -942,16 +970,6 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
                     triggertime - offsrc[0] - padding,
                     offsrc[1] - triggertime - padding))
     offsrc = segments.segmentlist([offsrc])
-
-    # Construct on-source
-    onstart = triggertime - onbefore
-    onend = triggertime + onafter
-    onsrc = segments.segment(onstart, onend)
-    logging.info("Constructed ON-SOURCE: duration %ds (%ds before to %ds after"
-                 " trigger)."
-                 % (abs(onsrc), triggertime - onsrc[0],
-                    onsrc[1] - triggertime))
-    onsrc = segments.segmentlist([onsrc])
 
     # Put segments into segmentlistdicts
     onsource = offsource = segments.segmentlistdict()
