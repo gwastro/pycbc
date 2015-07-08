@@ -1047,7 +1047,9 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
     Returns
     --------
     segs : glue.segments.segmentlist instance
-        The segment list specifying the analyzable times
+        The segment list specifying the times to analyze
+    data_segs : glue.segments.segmentlist
+        The segment list specifying the time where data exists
     seg_files : workflow.core.FileList instance
         The cumulative segment files from each ifo that determined the
         analyzable time.
@@ -1068,12 +1070,13 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
     
     veto_gen_job = create_segs_from_cats_job(workflow.cp, out_dir, 
                                              workflow.ifo_string) 
-    sci_segs = {}
+    sci_segs, data_segs = {}, {}
     seg_files = FileList()
     for ifo in workflow.ifos:
         sci_segs[ifo], sci_xml = get_science_segments(ifo, workflow.cp, 
                                                  start_time, end_time, out_dir) 
-        seg_files += [sci_xml]      
+        seg_files += [sci_xml]    
+        data_segs[ifo] = sci_segs[ifo]  
         for category in cat_set:
             curr_veto_file = get_veto_segs(workflow, ifo, 
                                         cat_to_pipedown_cat(category), 
@@ -1084,13 +1087,13 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
             f.close()    
             sci_segs[ifo] -= cat_segs
             
-            seg_ok_path = os.path.abspath(os.path.join(out_dir, '%s-SCIENCE-OK.xml' % ifo))
-            seg_files += [segments_to_file(sci_segs[ifo], seg_ok_path, 
-                                          "SCIENCE_OK", ifo=ifo)]
-            
         sci_segs[ifo].coalesce()
+        seg_ok_path = os.path.abspath(os.path.join(out_dir, '%s-SCIENCE-OK.xml' % ifo))
+        seg_files += [segments_to_file(sci_segs[ifo], seg_ok_path, 
+                                          "SCIENCE_OK", ifo=ifo)]  
+                                                   
     logging.info('Leaving generation of science segments')
-    return sci_segs, seg_files
+    return sci_segs, data_segs, seg_files
     
 def get_cumulative_veto_group_files(workflow, option, out_dir, tags=[]):
     """
@@ -1150,7 +1153,7 @@ def get_cumulative_veto_group_files(workflow, option, out_dir, tags=[]):
                         file_url=url, tags=[segment_name])
                         
         cum_seg_files += [get_cumulative_segs(workflow, seg_file,  categories,
-              cat_files, out_dir, execute_now=False, segment_name=segment_name)]
+              cat_files, out_dir, execute_now=True, segment_name=segment_name)]
         names.append(segment_name)
               
     return cum_seg_files, names, cat_files

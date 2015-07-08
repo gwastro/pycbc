@@ -125,6 +125,22 @@ def make_inj_table(workflow, inj_file, out_dir, tags=[]):
     node.new_output_file_opt(inj_file.segment, '.html', '--output-file')
     workflow += node   
 
+def make_seg_table(workflow, seg_files, seg_names, out_dir, tags=None):
+    """ Creates a node in the workflow for writing the segment summary
+    table. Returns a File instances for the output file.
+    """
+    seg_files = list(seg_files)
+    seg_names = list(seg_names)
+    if tags is None: tags = []
+    makedir(out_dir)
+    node = PlotExecutable(workflow.cp, 'page_segtable', ifos=workflow.ifos,
+                    out_dir=out_dir, tags=tags).create_node()
+    node.add_input_list_opt('--segment-files', seg_files)
+    node.add_opt('--segment-names', ' '.join(seg_names))
+    node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
+    workflow += node
+    return node.output_files[0]
+
 def make_snrchi_plot(workflow, trig_files, veto_file, veto_name, 
                      out_dir, exclude=None, require=None, tags=[]):
     makedir(out_dir)    

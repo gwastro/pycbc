@@ -4,9 +4,7 @@
 
 <!--html file condition-->
 {% elif filename.endswith('html') %}
-<div  class="embed-responsive embed-responsive-16by9">
-    <iframe class="embed-responsive-item" src="{{filename}}"></iframe>
-</div>
+    {{ open(path, 'rb').read() }}
 
 <!--segment XML file condition-->
 {% elif ( filename.endswith('xml') or filename.endswith('xml.gz') ) and content %}
@@ -44,6 +42,7 @@
 <!--html file fragments-->
 {% elif filename.endswith('.htmlf') %}
     <pre>{{content}}</pre>
+
 <!--catch-all condition-->
 {% else %}
     <p>Unsupported file extension.</p>

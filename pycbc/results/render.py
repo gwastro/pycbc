@@ -39,6 +39,7 @@ def render_workflow_html_template(filename, subtemplate, filelists):
     subtemplate_dir = pycbc.results.__path__[0] + '/templates/wells'
     env = Environment(loader=FileSystemLoader(subtemplate_dir))
     env.globals.update(get_embedded_config=get_embedded_config)
+    env.globals.update(path_exists=os.path.exists)
     env.globals.update(len=len)
     subtemplate = env.get_template(subtemplate)
     context = {'filelists' : filelists,
@@ -124,8 +125,11 @@ def render_default(path, cp):
     template_dir = pycbc.results.__path__[0] + '/templates/files'
     env = Environment(loader=FileSystemLoader(template_dir))
     env.globals.update(abs=abs)
+    env.globals.update(open=open)
+    env.globals.update(path_exists=os.path.exists)
     template = env.get_template('file_default.html')
-    context = {'filename' : filename,
+    context = {'path'     : path,
+               'filename' : filename,
                'slug'     : slug,
                'cp'       : cp,
                'content'  : content}
@@ -175,6 +179,7 @@ def render_text(path, cp):
     template_dir = pycbc.results.__path__[0] + '/templates/files'
     env = Environment(loader=FileSystemLoader(template_dir))
     env.globals.update(abs=abs)
+    env.globals.update(path_exists=os.path.exists)
     template = env.get_template('file_pre.html')
     context = {'filename' : filename,
                'slug'     : slug,
@@ -213,6 +218,7 @@ def render_tmplt(path, cp):
     env = Environment(loader=FileSystemLoader(template_dir))
     env.globals.update(setup_template_render=setup_template_render)
     env.globals.update(get_embedded_config=get_embedded_config)
+    env.globals.update(path_exists=os.path.exists)
     template = env.get_template(filename)
     context = {'filename' : filename,
                'slug'     : slug,

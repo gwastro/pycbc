@@ -1,0 +1,131 @@
+#!/usr/bin/python
+
+# Copyright (C) 2015 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import h5py
+import logging
+import numpy
+import pycbc.results
+import sys
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import table
+from glue.ligolw import utils
+from pycbc.results import save_fig_with_metadata
+from pycbc.workflow import fromsegmentxml
+
+class ContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(ContentHandler)
+
+def get_segment_definer_comments(xml_file):
+    """ Returns a dict with the comment column as the value for each segment.
+    """
+
+    # read segment definer table
+    xmldoc, digest = utils.load_fileobj(xml_file,
+                                        gz=xml_file.name.endswith(".gz"),
+                                        contenthandler=ContentHandler)
+    seg_def_table = table.get_table(xmldoc,
+                                    lsctables.SegmentDefTable.tableName)
+
+    # put comment column into a dict
+    comment_dict = {}
+    for seg_def in seg_def_table:
+        full_channel_name = ':'.join([str(seg_def.ifos),
+                                      str(seg_def.name),
+                                      str(seg_def.version)])
+        comment_dict[full_channel_name] = seg_def.comment
+
+    return comment_dict
+
+# parse command line
+parser = argparse.ArgumentParser()
+parser.add_argument('--segment-files', type=str, nargs="+",
+                        help='XML files with a segment definer table to read.')
+parser.add_argument('--segment-names', type=str, nargs="+", required=False,
+                        help='Names of segments in the segment definer table.')
+parser.add_argument('--output-file', type=str,
+                        help='Path of the output HTML file.')
+opts = parser.parse_args()
+
+# setup log
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
+                    level=logging.INFO,datefmt='%I:%M:%S')
+
+# set column names
+columns = (('Name', []),
+           ('H1 Time (s)', []),
+           ('L1 Time (s)', []),
+           ('H1L1 Time (s)', []),
+)
+caption = "This table shows the cumulative amount of time for each segment. Shown are: "
+
+# FIXME: set IFO list
+ifos = ['H1', 'L1']
+
+# loop over segment files from command line
+for segment_file in opts.segment_files:
+
+   # read segment definer table
+   seg_dict = fromsegmentxml(open(segment_file, 'rb'), return_dict=True) 
+   comment_dict = get_segment_definer_comments(open(segment_file, 'rb'))
+
+   # loop over segment names
+   for segment_name in opts.segment_names:
+
+       # get segments
+       segs = {}
+       for ifo in ifos:
+           for key in seg_dict.keys():
+               if key.startswith(ifo+':'+segment_name):
+                   segs[ifo] = seg_dict[key]
+       if not len(segs.keys()):
+           logging.info('Did not find a segment definition for %s',
+               segment_name)
+           continue
+
+       # put comment in caption
+       caption += segment_name
+       if comment_dict[key] != None:
+           caption += " ("+comment_dict[key]+")"
+       caption += " "
+
+       # get length of time of segments in seconds
+       h1_len = abs(segs['H1'])
+       l1_len = abs(segs['L1'])
+       h1l1_len = abs( segs['H1'] & segs['L1'] )
+
+       # put values into columns
+       columns[0][1].append(segment_name)
+       columns[1][1].append(h1_len)
+       columns[2][1].append(l1_len)
+       columns[3][1].append(h1l1_len)
+
+# cast columns into arrays
+keys = [numpy.array(key, dtype=type(key[0])) for key,_ in columns]
+vals = [numpy.array(val, dtype=type(val[0])) for _,val in columns]
+
+# write HTML table
+fig_kwds = {}
+html_table = pycbc.results.table(vals, keys, page_size=10)
+save_fig_with_metadata(str(html_table), opts.output_file,
+                     fig_kwds=fig_kwds,
+                     title='Segments',
+                     cmd=' '.join(sys.argv),
+                     caption=caption)

@@ -21,6 +21,7 @@ generate post-processing and plots.
 """
 import pycbc, pycbc.version, pycbc.events, pycbc.workflow as wf
 import os, argparse, ConfigParser, logging, glue.segments, numpy
+from pycbc.events.veto import multi_segments_to_file
 from pycbc.results import create_versioning_page 
 from pycbc.results.render import render_workflow_html_template
 from itertools import izip_longest
@@ -97,7 +98,7 @@ rdir = SectionNumber('results', ['configuration',
                                  ])
 
 # Get segments and find where the data is
-science_segs, science_seg_file = wf.get_analyzable_segments(workflow, "segments")
+science_segs, data_segs, science_seg_file = wf.get_analyzable_segments(workflow, "segments")
 datafind_files, science_segs = wf.setup_datafind_workflow(workflow, 
                                          science_segs, "datafind", science_seg_file)
 
@@ -210,15 +211,15 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                       final_bg_file[0], trig_insp,
                                       rdir['injections/%s' % tag], tags=[tag])
    
-full_segs, psd_files = [], []                                 
+full_segs, psd_files, insp_segs, insp_data_segs = [], [], {}, {}                            
 for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
     name = 'INSPIRAL_SEGMENTS'
     fname = 'segments/%s-' % ifo + name + '.xml'
-    fsegs = glue.segments.segmentlist([f.segment for f in files])
-    full_segs.append(pycbc.events.segments_to_file(fsegs, fname, name, ifo=ifo))
+    insp_segs[ifo] = glue.segments.segmentlist([f.segment for f in files])
+    full_segs.append(pycbc.events.segments_to_file(insp_segs[ifo], fname, name, ifo=ifo))
 
-    segs = glue.segments.segmentlist([f.metadata['data_seg'] for f in files])
-    data_seg = pycbc.events.segments_to_file(segs,
+    insp_data_segs[ifo] = glue.segments.segmentlist([f.metadata['data_seg'] for f in files])
+    data_seg = pycbc.events.segments_to_file(insp_data_segs[ifo],
                    'segments/%s-INSP_DATA.xml' % ifo, 'INSPIRAL_DATA', ifo=ifo)
 
     psd_files += [wf.make_psd_file(workflow, datafind_files.find_output_with_ifo(ifo), 
@@ -239,13 +240,31 @@ wf.make_segments_plot(workflow, full_segs,
 wf.make_segments_plot(workflow, science_seg_file,
                  rdir['analysis_time/segments'], tags=['SCIENCE_MINUS_CAT1'])
 
+# write segment summary XML file
+seg_list = []
+names = []
+ifos = []
+zip_seglists = [data_segs, science_segs, insp_segs]
+zip_names = ['DATA', 'ANALYZABLE_DATA', 'TRIGGERS_PRODUCED']
+for segment_list,segment_name in zip(zip_seglists, zip_names):
+    for ifo in workflow.ifos:
+        seg_list.append(segment_list[ifo])
+        names.append(segment_name)
+        ifos.append(ifo)
+filename = 'segments/'+''.join(workflow.ifos)+'-WORKFLOW_SEGMENT_SUMMARY.xml'
+seg_summ_file = multi_segments_to_file(seg_list, filename, names, ifos)
+
+# make segment table for summary page
+seg_summ_table = wf.make_seg_table(workflow, [seg_summ_file], zip_names,
+                                       rdir['analysis_time/segments'], ['SUMMARY'])
+
 # Make combined injection plots
 inj_summ = []
 if len(inj_files) > 0:
     found_inj = wf.find_injections_in_hdf_coinc(workflow, inj_coincs,
                             inj_files, censored_veto, 'closed_box',
-                            'allinj', tags=['ALLINJ'])                                                
-    sen = wf.make_sensitivity_plot(workflow, found_inj, rdir['search_sensitivity'], 
+                            'allinj', tags=['ALLINJ'])
+    sen = wf.make_sensitivity_plot(workflow, found_inj, rdir['search_sensitivity'],
                             require='all', tags=['ALLINJ'])
     group_layout(rdir['search_sensitivity'], sen)
     inj = wf.make_foundmissed_plot(workflow, found_inj, rdir['injections'],
@@ -260,7 +279,7 @@ if len(inj_files) > 0:
     inj_summ = list(grouper(inj + sen, 2))
                             
 # make full summary
-summ = det_summ + hist_summ + [(closed_snrifar,)] + inj_summ 
+summ = [(seg_summ_table, )] + det_summ + hist_summ + [(closed_snrifar,)] + inj_summ
 for row in summ:
     for f in row:
         if f is None:
@@ -277,9 +296,6 @@ wf.makedir(base)
 ini_file_path = os.path.join(base, 'configuration.ini')
 with open(ini_file_path, 'wb') as ini_fh:
     container.cp.write(ini_fh)
-
-# Create versioning information
-create_versioning_page(rdir['configuration'], container.cp)
 
 wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(), rdir.base))
 
