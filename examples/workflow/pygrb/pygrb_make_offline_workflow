@@ -10,7 +10,7 @@ import pycbc.version
 __author__ = "Andrew Williamson <andrew.williamson@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
-__program__ = "pyGRB"
+__program__ = "pygrb"
 
 import shutil
 import os
@@ -164,7 +164,7 @@ def make_cache(input_files, ifos, name, seg, cacheDir, tags=[]):
 # Workflow generation starts here #
 ###################################
 
-workflow_name = "pygrb"
+workflow_name = __program__
 logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
                     level=logging.INFO)
 
@@ -208,7 +208,8 @@ onSrc, sciSegs = _workflow.get_triggered_coherent_segment(wflow, segDir,
 # FIXME: The following lines are crude hacks.
 ifo = sciSegs.keys()[0]
 wflow.analysis_time = sciSegs[ifo][0]
-wflow.cp = set_start_end(wflow.cp, sciSegs[ifo][0][0], sciSegs[ifo][0][1])
+wflow.cp = set_start_end(wflow.cp, int(sciSegs[ifo][0][0]),
+                         int(sciSegs[ifo][0][1]))
 ext_file = None
 
 # Datafind

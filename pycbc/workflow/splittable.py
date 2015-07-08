@@ -142,7 +142,9 @@ def setup_splittable_dax_generated(workflow, input_tables, out_dir, tags):
     num_splits = cp.get_opt_tags("workflow-splittable", "splittable-num-banks",
                                  tags)
 
-    split_exe = os.path.basename(cp.get('executables', input_type))
+    split_exe_tag = cp.get_opt_tags("workflow-splittable",
+                                    "splittable-exe-tag", tags)
+    split_exe = os.path.basename(cp.get("executables", split_exe_tag))
     # Select the appropriate class
     exe_class = select_splitfilejob_instance(split_exe)
 
@@ -150,7 +152,7 @@ def setup_splittable_dax_generated(workflow, input_tables, out_dir, tags):
     out_file_groups = FileList([])
 
     # Set up the condorJob class for the current executable
-    curr_exe_job = exe_class(workflow.cp, input_type, num_splits,
+    curr_exe_job = exe_class(workflow.cp, split_exe_tag, num_splits,
                              out_dir=out_dir, tags=tags)
 
     for input in input_tables:

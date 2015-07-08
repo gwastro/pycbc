@@ -1356,8 +1356,8 @@ class LalappsInspinjExecutable(Executable):
         # in the config file. Used for coh_PTF as segment length is unknown
         # before run time.
         if 'coh_PTF_inspiral' in self.cp.get('executables', 'inspiral'):
-            num_injs = self.cp.get_opt_tags('workflow-injections', 'num-injs',
-                                            curr_tags)
+            num_injs = int(self.cp.get_opt_tags('workflow-injections',
+                                                'num-injs', curr_tags))
             inj_tspace = float(segment[1] - segment[0]) / num_injs
             node.add_opt('--time-interval', inj_tspace)
             node.add_opt('--time-step', inj_tspace)
@@ -1389,7 +1389,8 @@ class LigolwCBCJitterSkylocExecutable(Executable):
                             tags=tags)
         self.cp = cp
         self.out_dir = out_dir
-                    
+        self.exe_name = exe_name
+            
     def create_node(self, parent, segment, tags=[]):
         if not parent:
             raise ValueError("Must provide an input file.")
@@ -1413,6 +1414,7 @@ class LigolwCBCAlignTotalSpinExecutable(Executable):
                             tags=tags)
         self.cp = cp
         self.out_dir = out_dir
+        self.exe_name = exe_name
 
     def create_node(self, parent, segment, tags=[]):
         if not parent:
