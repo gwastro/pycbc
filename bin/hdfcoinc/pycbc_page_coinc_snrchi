@@ -10,7 +10,7 @@ def snr_from_chisq(chisq, newsnr, q=6.):
     snr[ind] = float(newsnr) / ( 0.5 * (1. + chisq[ind] ** (q/2.)) ) ** (-1./q)
     return snr
 
-# RECALCULE THIS FROM DISTANCE AND ORIENTATION!!!!
+# FIXME: RECALCULATE THIS FROM DISTANCE AND ORIENTATION
 eff_map = {'H1':'eff_dist_h', 'L1':'eff_dist_l', 'V1':'eff_dist_v'} 
 
 parser = argparse.ArgumentParser()
@@ -42,9 +42,11 @@ snr = f['snr'][:][tid]
 
 if args.chisq_choice in ['traditional','max_cont_trad']:
     trad_chisq = f['chisq'][:][tid]
-    l = trad_chisq == 0
+    chisq_not_calc = trad_chisq == 0
     trad_chisq_dof = f['chisq_dof'][:][tid]
     trad_chisq /= (trad_chisq_dof * 2 - 2)
+    # deal badly with triggers where chisq was not calculated and set to 0
+    trad_chisq[chisq_not_calc] = 0.1
 if args.chisq_choice in ['max_cont_trad']:
     cont_chisq = f['cont_chisq'][:][tid]
     cont_chisq_dof = f['cont_chisq_dof'][:][tid]
@@ -71,16 +73,24 @@ inj_tids[f.attrs['detector_2']] = f['found_after_vetoes/trigger_id2']
 inj_idx = f['found_after_vetoes/injection_index'][:]
 eff_dist = f['injections'][eff_map[ifo]][:][inj_idx]
 
-
 f = h5py.File(args.single_injection_file)[ifo]
 tid = inj_tids[ifo][:]
 snr = f['snr'][:][tid]
 
-chisq = f['chisq'][:][tid]
-l = chisq == 0
-chisq_dof = f['chisq_dof'][:][tid]
-chisq /= (chisq_dof * 2 - 2)
-chisq[l] = 0.1
+if args.chisq_choice in ['traditional','max_cont_trad']:
+    trad_chisq = f['chisq'][:][tid]
+    chisq_not_calc = trad_chisq == 0
+    trad_chisq_dof = f['chisq_dof'][:][tid]
+    trad_chisq /= (trad_chisq_dof * 2 - 2)
+    trad_chisq[chisq_not_calc] = 0.1
+if args.chisq_choice in ['max_cont_trad']:
+    cont_chisq = f['cont_chisq'][:][tid]
+    cont_chisq_dof = f['cont_chisq_dof'][:][tid]
+    cont_chisq /= cont_chisq_dof
+if args.chisq_choice == 'traditional':
+    chisq = trad_chisq
+elif args.chisq_choice == 'max_cont_trad':
+    chisq = numpy.maximum(trad_chisq, cont_chisq)
 
 pylab.scatter(snr, chisq, c=eff_dist, norm=colors.LogNorm(), 
               marker='^', linewidth=0, label="Injections", 
@@ -99,9 +109,9 @@ cb.set_label('Effective Distance (Mpc)', size='large')
 pylab.title('%s Coincident Triggers' % ifo, size='large')
 pylab.xlabel('SNR', size='large')
 pylab.ylabel('Reduced $\chi^2$', size='large')
-pylab.xlim(snr.min()*0.9, snr.max()*1.1)
-pylab.ylim(chisq.min()*0.9, chisq.max()*1.1)
-pylab.legend(loc='upper left', prop={'size': 12})
+pylab.xlim(snr.min()*0.9, snr.max()*1.4)
+pylab.ylim(chisq.min()*0.7, chisq.max()*1.4)
+pylab.legend(loc='lower right', prop={'size': 12})
 pylab.grid(which='major', ls='solid', alpha=0.7, linewidth=.5)
 pylab.grid(which='minor', ls='solid', alpha=0.7, linewidth=.1)
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
