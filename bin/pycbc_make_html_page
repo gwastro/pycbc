@@ -222,7 +222,10 @@ for cwd in dirs:
 # copy all files to html directory
 for cwd in dirs:
     for file in cwd.files:
-        shutil.copy(file.path, opts.output_path+'/'+cwd.path+'/'+file.filename())
+        try:
+            shutil.copy2(file.path, opts.output_path+'/'+cwd.path+'/'+file.filename())
+        except IOError:
+            pass
 
 # make sitemap page
 sitemap_dir = '/sitemap'
