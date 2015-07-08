@@ -36,7 +36,7 @@ from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, TimeSeries, zeros, real_same_precision_as, complex_same_precision_as
 from pycbc.filter import match, overlap, sigma
-from pycbc.scheme import CPUScheme, CUDAScheme, OpenCLScheme
+from pycbc.scheme import CPUScheme, CUDAScheme
 from pycbc.fft import fft
 import pycbc.psd 
 
