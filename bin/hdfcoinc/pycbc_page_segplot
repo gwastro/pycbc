@@ -20,7 +20,7 @@ parser.add_argument('--science-segment-names', type=str, nargs="+", required=Fal
                         help='Names of science segments in the segment definer table.')
 parser.add_argument('--veto-data-segment-names', type=str, nargs="+", required=False,
                         help='Names of segments for vetoing data in the segment definer table.')
-parser.add_argument('--veto-trigger-segment-names', type=str, nargs="+", required=False,
+parser.add_argument('--veto-triggers-segment-names', type=str, nargs="+", required=False,
                         help='Names of segments for vetoing triggers in the segment definer table.')
 parser.add_argument('--output-file', type=str,
                         help='Path of the output HTML file.')
@@ -45,8 +45,6 @@ def timestr(s):
     t += "%ss " % s
     return t
 
-    }
-
 # make a figure
 mpld3.plugins.DEFAULT_PLUGINS = []
 fig = pylab.figure(figsize=[10, 5])
@@ -63,7 +61,7 @@ h = .7
 #FIXME: set IFO list
 ifos = ['H1', 'L1']
 
-
+# an empty list for holding lists of matplotlib objects for the interactive legend
 line_collections = []
 
 # create a figure
@@ -73,19 +71,30 @@ fig, ax = plt.subplots()
 i = 0
 seg_list = []
 s = []
+segment_groups = {'science' : opts.science_segment_names,
+                  'veto_data' : opts.veto_data_segment_names,
+                  'veto_triggers' : opts.veto_triggers_segment_names,
+}
+segment_names = []
+if opts.science_segment_names:
+    segment_names += opts.science_segment_names
+if opts.veto_data_segment_names:
+    segment_names += opts.veto_data_segment_names
+if opts.veto_triggers_segment_names:
+    segment_names += opts.veto_triggers_segment_names
 for segment_file in opts.segment_files:
 
     # read segment definer table
     seg_dict = fromsegmentxml(open(segment_file, 'rb'), return_dict=True)
 
     # loop over segment names
-    for segment_name in opts.segment_names:
+    for segment_name in segment_names:
 
         # get segments
         for ifo in ifos:
             for key in seg_dict.keys():
 
-                # if IFO:SEGMENT_NAME exists then plot it
+                # FIXME: if IFO:SEGMENT_NAME exists then plot it
                 if key.startswith(ifo+':'+segment_name):
                     segs = seg_dict[key]
 
@@ -111,8 +120,15 @@ for segment_file in opts.segment_files:
 
                 # plot segments
                 sub_line_collections = []
+                color = None
+                if segment_name in segment_groups['science']:
+                    color = ifo_color(ifo)
+                elif segment_name in segment_groups['veto_data']:
+                    color = 'black'
+                elif segment_name in segment_groups['veto_triggers']:
+                    color = 'blue'
                 for s,e in zip(start, end):
-                    l = ax.plot([s,e], [y,y], '-', lw=60, color=ifo_color(ifo), alpha=0.1)
+                    l = ax.plot([s,e], [y,y], '-', lw=120, color=color, alpha=0.1)
                     sub_line_collections += l
 
                     # set HTML table string
@@ -130,6 +146,7 @@ for segment_file in opts.segment_files:
                 # add name to list
                 names += [ifo+':'+segment_name]
 
+                # add list of lines to list
                 line_collections.append(sub_line_collections)
 
 # add interactive legend
