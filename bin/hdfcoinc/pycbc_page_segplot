@@ -114,6 +114,7 @@ ifos = ['H1', 'L1']
 
 # loop over segment XML files
 i = 0
+seg_list = []
 for segment_file in opts.segment_files:
 
     # read segment definer table
@@ -127,14 +128,11 @@ for segment_file in opts.segment_files:
             for key in seg_dict.keys():
 
                 # if IFO:SEGMENT_NAME exists then plot it
-                segs = []
                 if key.startswith(ifo+':'+segment_name):
                     segs = seg_dict[key]
 
                     # increment y position of bits
-                    y = i + .05
-                    i += 1
-                    print i
+                    y = ifos.index(ifo) + .05
 
                 else:
                     continue
@@ -161,11 +159,12 @@ for segment_file in opts.segment_files:
                 smin = start.min() if len(start) and start.min() < smin else smin
                 smax = end.max() if len(end) and end.max() > smax else smax
 
-                # add name to list
-                names += [(ifo+':'+segment_name, total, y + h + .1)]
-
                 # get patches for plotting rectangles
                 patches = plot_segs(start, end, y=y, h=h)
+
+                # add name to list
+                names += [ifo+':'+segment_name]
+                seg_list += [patches]
 
                 # loop over patches to draw rectangles
                 for j, p in enumerate(patches):
@@ -175,12 +174,8 @@ for segment_file in opts.segment_files:
                     else:
                         mpld3.plugins.connect(fig, Tooltip(p, [l], css=css))
 
-# put a text label for each segment on the plot
-for name, total, h in names:
-     pylab.text(smin, h, "%s: %s" % (name, total))
-
 # format the plot
-pylab.ylim(0, h + 0.2)
+pylab.ylim(0, len(ifos) * (h + 0.2))
 pylab.xlim(smin, smax)
 pylab.xlabel('GPS Time (s)')
 
@@ -189,6 +184,10 @@ mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14, fmt='10f'))
 mpld3.plugins.connect(fig, mpld3.plugins.BoxZoom())
 mpld3.plugins.connect(fig, MPLSlide())
 mpld3.plugins.connect(fig, mpld3.plugins.Reset())
+legend =  mpld3.plugins.InteractiveLegendPlugin(seg_list,
+                                                names,
+                                                alpha_unsel=0.0)
+mpld3.plugins.connect(fig, legend)
 
 # save the plot as an interactive HTML
 mpld3.save_html(fig, open(opts.output_file, 'w'))
