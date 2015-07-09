@@ -1,7 +1,16 @@
 language: python
+sudo: false
+addons:
+    apt:
+        packages:
+            - libfftw3-dev 
+            - libhdf5-serial-dev 
+            - liblapack-dev 
+            - gfortran 
+            - libgsl0-dev
 cache:
-  - apt
-sudo: true
+  directories:
+    - $HOME/.ccache
 before_install:
   - "./tools/install_travis.sh"
 install: "echo 'already instaled'"
