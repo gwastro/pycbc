@@ -1,0 +1,169 @@
+#!/usr/bin/env python
+""" Make interactive visualization of segments
+"""
+
+import argparse, pycbc.version
+import matplotlib; matplotlib.use('Agg')
+import numpy, pylab, pycbc.events, mpld3, mpld3.plugins
+import itertools, datetime, time
+from matplotlib.patches import Rectangle
+from pycbc.results.mpld3_utils import MPLSlide, Tooltip
+
+# parse command line
+parser = argparse.ArgumentParser()
+parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
+parser.add_argument('--segment-files', nargs='+', help="List of segment files to plot")
+parser.add_argument('--output-file', help="output html file")
+args = parser.parse_args()
+
+def timestr(s):
+    """ Takes seconds and returns a human-readable string for the amount
+    of time.
+    """
+
+    t = ""
+    s = int(s)
+    d = s / 86400
+    t += "%sd " % d if d else ""
+    s -= d * 86400
+    h = s / 3600
+    t += "%sh " % h if h else ""
+    s -= h * 3600
+    m = s / 60
+    t += "%sm " % m if m else ""
+    s -= m * 60
+    t += "%ss " % s
+    return t
+
+def get_name(segment_file):
+    """ Reads a segment file and returns the first name in the segment_definer
+    table.
+    """
+
+    from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
+    from glue import segments
+    from glue.segments import segment, segmentlist
+    # dummy class needed for loading LIGOLW files
+    class KF(ligolw.LIGOLWContentHandler):
+        pass
+    lsctables.use_in(KF)
+    indoc = ligolw_utils.load_filename(segment_file, False, contenthandler=KF)
+    n = table.get_table(indoc, 'segment_definer')[0]
+    return "%s:%s:%s" % (n.ifos, n.name, n.version)
+
+def plot_segs(start, end, color=None, y=0, h=1):
+    """ Returns the patches for making rectangles in matplotlib.
+    """
+    from itertools import cycle
+    patches = []
+    if not hasattr(plot_segs, 'colors'):
+        plot_segs.colors = cycle(['red', 'blue', 'green', 'yellow', 'cyan', 'violet'])
+        
+    if color is None:
+        color = plot_segs.colors.next()
+        
+    for s, e in zip(start, end):
+        ax = pylab.gca()
+        patch = Rectangle((s, y), (e-s), h, facecolor=color)
+        ax.add_patch(patch)
+        patches += [patch]
+        
+    return patches
+
+# Define some CSS to control our custom labels
+css = """
+    table
+    {
+      border-collapse: collapse;
+    }
+    th
+    {
+      background-color: #cccccc;
+    }
+    td
+    {
+      background-color: #ffffff;
+    }
+    table, th, td
+    {
+      font-family:Arial, Helvetica, sans-serif;
+      border: 1px solid black;
+      text-align: right;
+    }
+"""
+
+# make a figure
+mpld3.plugins.DEFAULT_PLUGINS = []
+fig = pylab.figure(figsize=[10, 5])
+
+# an empty list for holding segment names
+names = []
+
+# limits to accept GPS times
+smin, smax = numpy.inf, -numpy.inf
+
+# loop over segment XML files
+for i, seg_file in enumerate(args.segment_files):
+
+    # increment y position of bits
+    y = i + .05
+
+    # set height of bits
+    h = .7
+
+    # FIXME: only looks at first entry in seg_definer table
+    # get name of segment
+    name = get_name(seg_file)
+
+    # get a start time and end time array
+    start, end = pycbc.events.start_end_from_segments(seg_file)
+
+    # get an array for the duration of each segment
+    dur = end - start
+
+    # total amount of time for segment
+    total = timestr(abs(pycbc.events.start_end_to_segments(start, end).coalesce()))
+
+    # set HTML table string
+    label = """<table>
+             <tr><th>Start</th><td>%.0f</td></tr>
+             <tr><th>End</th><td>%.0f</td></tr>
+             <tr><th>Duration</th><td>%s</td></tr>
+      </table>
+    """
+
+    # get the start and end of the timeseries
+    smin = start.min() if len(start) and start.min() < smin else smin
+    smax = end.max() if len(end) and end.max() > smax else smax
+
+    # add name to list
+    names += [(name, total, y + h + .1)]
+
+    # get patches for plotting rectangles
+    patches = plot_segs(start, end, y=y, h=h)
+
+    # loop over patches to draw rectangles
+    for i, p in enumerate(patches):
+        l = label % (start[i], end[i], timestr(dur[i]))
+        if i == 0:
+            mpld3.plugins.connect(fig, mpld3.plugins.PointHTMLTooltip(p, [l], css=css))
+        else:
+            mpld3.plugins.connect(fig, Tooltip(p, [l], css=css))
+
+# put a text label for each segment on the plot
+for name, total, h in names:
+     pylab.text(smin, h, "%s: %s" % (name, total))
+
+# format the plot
+pylab.ylim(0, h + 0.2)
+pylab.xlim(smin, smax)
+pylab.xlabel('GPS Time (s)')
+
+# format the plot
+mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14, fmt='10f'))
+mpld3.plugins.connect(fig, mpld3.plugins.BoxZoom())
+mpld3.plugins.connect(fig, MPLSlide())
+mpld3.plugins.connect(fig, mpld3.plugins.Reset())
+
+# save the plot as an interactive HTML
+mpld3.save_html(fig, open(args.output_file, 'w'))
