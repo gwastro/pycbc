@@ -16,8 +16,12 @@ from pycbc.workflow import fromsegmentxml
 parser = argparse.ArgumentParser()
 parser.add_argument('--segment-files', type=str, nargs="+",
                         help='XML files with a segment definer table to read.')
-parser.add_argument('--segment-names', type=str, nargs="+", required=False,
-                        help='Names of segments in the segment definer table.')
+parser.add_argument('--science-segment-names', type=str, nargs="+", required=False,
+                        help='Names of science segments in the segment definer table.')
+parser.add_argument('--veto-data-segment-names', type=str, nargs="+", required=False,
+                        help='Names of segments for vetoing data in the segment definer table.')
+parser.add_argument('--veto-trigger-segment-names', type=str, nargs="+", required=False,
+                        help='Names of segments for vetoing triggers in the segment definer table.')
 parser.add_argument('--output-file', type=str,
                         help='Path of the output HTML file.')
 opts = parser.parse_args()
@@ -41,62 +45,7 @@ def timestr(s):
     t += "%ss " % s
     return t
 
-def get_name(segment_file):
-    """ Reads a segment file and returns the first name in the segment_definer
-    table.
-    """
-
-    from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
-    from glue import segments
-    from glue.segments import segment, segmentlist
-    # dummy class needed for loading LIGOLW files
-    class KF(ligolw.LIGOLWContentHandler):
-        pass
-    lsctables.use_in(KF)
-    indoc = ligolw_utils.load_filename(segment_file, False, contenthandler=KF)
-    n = table.get_table(indoc, 'segment_definer')[0]
-    return "%s:%s:%s" % (n.ifos, n.name, n.version)
-
-def plot_segs(start, end, color=None, y=0, h=1):
-    """ Returns the patches for making rectangles in matplotlib.
-    """
-    from itertools import cycle
-    patches = []
-    if not hasattr(plot_segs, 'colors'):
-        plot_segs.colors = cycle(['red', 'blue', 'green', 'yellow', 'cyan', 'violet'])
-        
-    if color is None:
-        color = plot_segs.colors.next()
-        
-    for s, e in zip(start, end):
-        ax = pylab.gca()
-        patch = Rectangle((s, y), (e-s), h, facecolor=color)
-        ax.add_patch(patch)
-        patches += [patch]
-        
-    return patches
-
-# Define some CSS to control our custom labels
-css = """
-    table
-    {
-      border-collapse: collapse;
     }
-    th
-    {
-      background-color: #cccccc;
-    }
-    td
-    {
-      background-color: #ffffff;
-    }
-    table, th, td
-    {
-      font-family:Arial, Helvetica, sans-serif;
-      border: 1px solid black;
-      text-align: right;
-    }
-"""
 
 # make a figure
 mpld3.plugins.DEFAULT_PLUGINS = []
