@@ -65,7 +65,7 @@ ifos = ['H1', 'L1']
 line_collections = []
 
 # create a figure
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(16,9))
 
 # loop over segment XML files
 i = 0
@@ -159,6 +159,9 @@ mpld3.plugins.connect(fig, interactive_legend)
 pylab.ylim(0, len(ifos) * (h + 0.2))
 pylab.xlim(smin, smax)
 pylab.xlabel('GPS Time (s)')
+
+# add whitespace for the legend
+fig.subplots_adjust(left=0.1, right=0.7, top=0.9, bottom=0.1)
 
 # add plugins to the plot
 mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14, fmt='10f'))
