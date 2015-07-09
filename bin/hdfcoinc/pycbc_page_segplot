@@ -8,13 +8,17 @@ import numpy, pylab, pycbc.events, mpld3, mpld3.plugins
 import itertools, datetime, time
 from matplotlib.patches import Rectangle
 from pycbc.results.mpld3_utils import MPLSlide, Tooltip
+from pycbc.workflow import fromsegmentxml
 
 # parse command line
 parser = argparse.ArgumentParser()
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
-parser.add_argument('--segment-files', nargs='+', help="List of segment files to plot")
-parser.add_argument('--output-file', help="output html file")
-args = parser.parse_args()
+parser.add_argument('--segment-files', type=str, nargs="+",
+                        help='XML files with a segment definer table to read.')
+parser.add_argument('--segment-names', type=str, nargs="+", required=False,
+                        help='Names of segments in the segment definer table.')
+parser.add_argument('--output-file', type=str,
+                        help='Path of the output HTML file.')
+opts = parser.parse_args()
 
 def timestr(s):
     """ Takes seconds and returns a human-readable string for the amount
@@ -99,56 +103,77 @@ fig = pylab.figure(figsize=[10, 5])
 # an empty list for holding segment names
 names = []
 
-# limits to accept GPS times
+# default x-axis limits
 smin, smax = numpy.inf, -numpy.inf
 
+# set height of rectangles
+h = .7
+
+#FIXME: set IFO list
+ifos = ['H1', 'L1']
+
 # loop over segment XML files
-for i, seg_file in enumerate(args.segment_files):
+i = 0
+for segment_file in opts.segment_files:
 
-    # increment y position of bits
-    y = i + .05
+    # read segment definer table
+    seg_dict = fromsegmentxml(open(segment_file, 'rb'), return_dict=True)
 
-    # set height of bits
-    h = .7
+    # loop over segment names
+    for segment_name in opts.segment_names:
 
-    # FIXME: only looks at first entry in seg_definer table
-    # get name of segment
-    name = get_name(seg_file)
+        # get segments
+        for ifo in ifos:
+            for key in seg_dict.keys():
 
-    # get a start time and end time array
-    start, end = pycbc.events.start_end_from_segments(seg_file)
+                # if IFO:SEGMENT_NAME exists then plot it
+                segs = []
+                if key.startswith(ifo+':'+segment_name):
+                    segs = seg_dict[key]
 
-    # get an array for the duration of each segment
-    dur = end - start
+                    # increment y position of bits
+                    y = i + .05
+                    i += 1
+                    print i
 
-    # total amount of time for segment
-    total = timestr(abs(pycbc.events.start_end_to_segments(start, end).coalesce()))
+                else:
+                    continue
 
-    # set HTML table string
-    label = """<table>
-             <tr><th>Start</th><td>%.0f</td></tr>
-             <tr><th>End</th><td>%.0f</td></tr>
-             <tr><th>Duration</th><td>%s</td></tr>
-      </table>
-    """
+                # get a start time and end time array
+                start = numpy.array([float(seg[0]) for seg in segs])
+                end = numpy.array([float(seg[1]) for seg in segs])
 
-    # get the start and end of the timeseries
-    smin = start.min() if len(start) and start.min() < smin else smin
-    smax = end.max() if len(end) and end.max() > smax else smax
+                # get an array for the duration of each segment
+                dur = end - start
 
-    # add name to list
-    names += [(name, total, y + h + .1)]
+                # total amount of time for segment
+                total = timestr(abs(pycbc.events.start_end_to_segments(start, end).coalesce()))
 
-    # get patches for plotting rectangles
-    patches = plot_segs(start, end, y=y, h=h)
+                # set HTML table string
+                label = """<table>
+                         <tr><th>Start</th><td>%.0f</td></tr>
+                         <tr><th>End</th><td>%.0f</td></tr>
+                         <tr><th>Duration</th><td>%s</td></tr>
+                     </table>
+                """
 
-    # loop over patches to draw rectangles
-    for i, p in enumerate(patches):
-        l = label % (start[i], end[i], timestr(dur[i]))
-        if i == 0:
-            mpld3.plugins.connect(fig, mpld3.plugins.PointHTMLTooltip(p, [l], css=css))
-        else:
-            mpld3.plugins.connect(fig, Tooltip(p, [l], css=css))
+                # get the start and end of the timeseries
+                smin = start.min() if len(start) and start.min() < smin else smin
+                smax = end.max() if len(end) and end.max() > smax else smax
+
+                # add name to list
+                names += [(ifo+':'+segment_name, total, y + h + .1)]
+
+                # get patches for plotting rectangles
+                patches = plot_segs(start, end, y=y, h=h)
+
+                # loop over patches to draw rectangles
+                for j, p in enumerate(patches):
+                    l = label % (start[j], end[j], timestr(dur[j]))
+                    if i == 0:
+                        mpld3.plugins.connect(fig, mpld3.plugins.PointHTMLTooltip(p, [l], css=css))
+                    else:
+                        mpld3.plugins.connect(fig, Tooltip(p, [l], css=css))
 
 # put a text label for each segment on the plot
 for name, total, h in names:
@@ -166,4 +191,4 @@ mpld3.plugins.connect(fig, MPLSlide())
 mpld3.plugins.connect(fig, mpld3.plugins.Reset())
 
 # save the plot as an interactive HTML
-mpld3.save_html(fig, open(args.output_file, 'w'))
+mpld3.save_html(fig, open(opts.output_file, 'w'))
