@@ -141,6 +141,28 @@ def make_seg_table(workflow, seg_files, seg_names, out_dir, tags=None):
     workflow += node
     return node.output_files[0]
 
+def make_seg_plot(workflow, seg_files, out_dir, science_seg_names=None,
+                            veto_data_seg_names=None,
+                            veto_triggers_seg_names=None, tags=None):
+    """ Creates a node in the workflow for plotting science, and veto segments.
+    """
+
+    seg_files = list(seg_files)
+    if tags is None: tags = []
+    makedir(out_dir)
+    node = PlotExecutable(workflow.cp, 'page_segplot', ifos=workflow.ifos,
+                    out_dir=out_dir, tags=tags).create_node()
+    node.add_input_list_opt('--segment-files', seg_files)
+    if len(science_seg_names):
+        node.add_opt('--science-segment-names', ' '.join(science_seg_names))
+    if len(veto_data_seg_names):
+        node.add_opt('--veto-data-segment-names', ' '.join(veto_data_seg_names))
+    if len(veto_triggers_seg_names):
+        node.add_opt('--veto-triggers-segment-names', ' '.join(veto_triggers_seg_names))
+    node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
+    workflow += node
+    return node.output_files[0]
+
 def make_snrchi_plot(workflow, trig_files, veto_file, veto_name, 
                      out_dir, exclude=None, require=None, tags=[]):
     makedir(out_dir)    
