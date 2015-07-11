@@ -247,8 +247,8 @@ class SingleDetAutoChisq(object):
                     Pt = Pt * (1./ Pt[0])
                     self._autocor = Array(Pt, copy=True)
                 else:
-                    Pt, _Ptilde, P_norm = matched_filter_core(htilde,
-                              htilde.conj(), psd=psd,
+                    Pt, _Ptilde, P_norm = matched_filter_core(htilde.conj(),
+                              htilde, psd=psd,
                               low_frequency_cutoff=low_frequency_cutoff,
                               high_frequency_cutoff=high_frequency_cutoff)
 

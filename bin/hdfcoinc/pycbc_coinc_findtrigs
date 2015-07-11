@@ -254,7 +254,7 @@ for tnum in range(tmin, tmax):
     tid0 = trigs0.set_template(tnum)
     tid1 = trigs1.set_template(tnum)
 
-    if len(tid0) == 0:
+    if (len(tid0) == 0) or (len(tid1) == 0):
         continue
 
     t0 = trigs0['end_time']

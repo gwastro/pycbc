@@ -127,7 +127,7 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
     if args.enable_hdf_post_processing:
         # Workaround for the current segment module HARDCODED!!!
         final_veto_file = segsFileList.find_output_with_tag('CUMULATIVE_CAT_3')
-        final_veto_name = ['CUMULATIVE_CAT_3']
+        final_veto_name = ['VETO_CAT3_CUMULATIVE']
         cum_veto_files = _workflow.FileList()
 
         insps_hdf = _workflow.convert_trig_to_hdf(workflow, hdfbank, insps, output_dir, tags=[tag])
