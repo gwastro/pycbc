@@ -166,8 +166,8 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
 
     # return MC integral and its standard deviation; variance of mc_sum scales
     # relative to sample variance by Ninj (Bienayme' rule)
-    vol, vol_err = mc_prefactor * mc_sum,
-                              mc_prefactor * (Ninj * mc_sample_variance) ** 0.5
+    vol = mc_prefactor * mc_sum
+    vol_err = mc_prefactor * (Ninj * mc_sample_variance) ** 0.5
     return vol, vol_err
 
 def volume_binned_pylal(f_dist, m_dist, bins=15):
