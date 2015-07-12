@@ -804,7 +804,7 @@ class ThreshClusterObject(object):
     the SNR time series will be filled new inputs many times, and execute() called
     repeatedly.
     """
-    def __init__(self, series, threshold, window, segsize = default_segsize, verbose=0):
+    def __init__(self, series, window, segsize = default_segsize, verbose=0):
         self.series = _np.array(series.data, copy=False)
         self.slen = len(self.series)
         nwindows = int( self.slen / window)
@@ -813,19 +813,17 @@ class ThreshClusterObject(object):
         self.nwindows = nwindows
         self.values = _np.zeros(self.nwindows, dtype = complex64)
         self.locs = _np.zeros(self.nwindows, dtype = _np.uint32)
-        self.thresh = threshold
         self.window = window
         self.segsize = segsize
         self.code = thresh_cluster_code
         self.support = thresh_cluster_support
         self.verbose = verbose
 
-    def execute(self):
+    def execute(self, thresh):
         series = self.series
         slen = self.slen
         values = self.values
         locs = self.locs
-        thresh = self.thresh
         window = self.window
         segsize = self.segsize
         nthr = inline(self.code, ['series', 'slen', 'values', 'locs', 'thresh', 'window', 'segsize'],

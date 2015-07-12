@@ -24,7 +24,7 @@
 import numpy
 import events, pycbc
 from scipy.weave import inline
-from .simd_threshold import thresh_cluster_support, ThreshClusterObject, default_segsize
+from .simd_threshold import thresh_cluster_support, default_segsize
 from .events import _BaseThresholdCluster
 from pycbc.opt import omp_libs, omp_flags
 
