@@ -488,29 +488,35 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
 
   */
 
-  uint32_t i, nsegs, nwins_ps, last_arrlen, last_nwins_ps, outlen;
-  int64_t *seglens, *mlocs, curr_loc;
+  int64_t i, nsegs, nwins_ps, last_arrlen, last_nwins_ps, outlen;
+  int64_t *seglens, *mlocs, cnt, s_segsize, s_arrlen, s_winsize, curr_mark;
+  uint32_t curr_mloc;
   float *norms, thr_sqr, curr_norm;
-  std::complex<float> *cvals, curr_cval;
-  int cnt;
+  std::complex<float> *cvals;
+  short int *marks;
 
   thr_sqr = (thresh * thresh);
+  // Signed versions of all our array length inputs, so loop
+  // logic and calls to other functions are safe.
+  s_segsize = (int64_t) segsize;
+  s_arrlen = (int64_t) arrlen;
+  s_winsize = (int64_t) winsize;
 
   // If segsize divides arrlen evenly, then the number of segments 'nsegs' is that
   // ratio; if not, it is one more than the floor of that ratio and the last segment
   // will be shorter than all of the others.
-  nsegs = ( (arrlen % segsize) ? (arrlen/segsize) + 1 : (arrlen/segsize) );
+  nsegs = ( (s_arrlen % s_segsize) ? (s_arrlen/s_segsize) + 1 : (s_arrlen/s_segsize) );
 
   // If winsize divides segsize evenly, then the number of windows per segment
   // 'nwins_ps' is that ratio; if not, it is one more than the floor of that ratio
   // and the last window in each segment will be shorter than all of the others.
-  nwins_ps = ( (segsize % winsize) ? (segsize/winsize) + 1 : (segsize/winsize) );
+  nwins_ps = ( (s_segsize % s_winsize) ? (s_segsize/s_winsize) + 1 : (s_segsize/s_winsize) );
 
   // Our code will always handle the last segment separately.  However if
   // segsize evenly divides arrlen, then the last segment will be no different.
   // The following ternary operator captures that logic:
-  last_arrlen = ( (arrlen % segsize) ? (arrlen - (nsegs-1) * segsize) : (segsize) );
-  last_nwins_ps = ( (last_arrlen % winsize) ? (last_arrlen/winsize) + 1 : (last_arrlen/winsize) );
+  last_arrlen = ( (s_arrlen % s_segsize) ? (s_arrlen - (nsegs-1) * s_segsize) : (s_segsize) );
+  last_nwins_ps = ( (last_arrlen % s_winsize) ? (last_arrlen/s_winsize) + 1 : (last_arrlen/s_winsize) );
 
   // Then the total length of the working arrays we must dynamically allocate is:
   outlen = (nsegs-1) * nwins_ps + last_nwins_ps;
@@ -522,36 +528,90 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   norms = (float *) malloc(outlen * sizeof(float) );
   mlocs = (int64_t *) malloc(outlen * sizeof(int64_t) );
 
+  // The next array will be used in our forward/reverse algorithm for
+  // clustering.  Note the calloc, rather than malloc!
+  marks = (short int *) calloc((size_t) outlen, sizeof(short int));
+
   // The next array allows us to dynamically communicate possibly changed sizes to the
   // many parallel calls to windowed_max:
 
   seglens = (int64_t *) malloc(nsegs * sizeof(int64_t) );
 
   // check to see if anything failed
-  if ( (cvals == NULL) || (norms == NULL) || (mlocs == NULL) || (seglens == NULL) ){
+  if ( (cvals == NULL) || (norms == NULL) || (mlocs == NULL) || (seglens == NULL) || (marks == NULL) ){
     error(EXIT_FAILURE, ENOMEM, "Could not allocate temporary memory needed by parallel_thresh_cluster");
   }
 
   for (i = 0; i < (nsegs-1); i++){
-    seglens[i] = (int64_t) segsize;
+    seglens[i] = segsize;
   }
-  seglens[i] = (int64_t) last_arrlen;
+  seglens[i] = last_arrlen;
 
   // Now the real work, in an OpenMP parallel for loop:
 #pragma omp parallel for schedule(dynamic,1)
   for (i = 0; i < nsegs; i++){
     windowed_max(&inarr[i*segsize], seglens[i], &cvals[i*nwins_ps],
                  &norms[i*nwins_ps], &mlocs[i*nwins_ps],
-                 (int64_t) winsize, (int64_t) i*segsize);
+                 s_winsize, i*s_segsize);
   }
 
-  // We should now have the requisite maxima in cvals, norms, and mlocs.
-  // So one last loop...
+  /*
+
+  We have now the requisite maxima over our windows in cvals,
+  norms, and mlocs. We want to apply the threshold and cluster over
+  time.
+
+  Our time clustering algorithm is that we should keep a candidate
+  trigger if it is above threshold and louder than anything before
+  or after it within 'window' in index. We test this by sliding through
+  our candidate triggers and comparing to what comes before and after.
+
+  */
+
+  // First, go through the data *backwards*, and mark as valid anything
+  // that survives a sliding window in this direction. These candidates
+  // are guaranteed to be larger than anything that comes *earlier* than
+  // them within a window size.
+
+  curr_norm = norms[outlen-1];
+  curr_loc = mlocs[outlen-1];
+  curr_mark = outlen - 1;
+
+  // For this pass we just use 'cnt' as a logical, noting
+  // whether we have found a point larger than something
+  // after it.  Otherwise writing out 'marks'after the loop
+  // could be mistaken.
+  cnt = 0;
+  for (i = outlen-2; i >= 0; i--){
+    if ( (curr_mloc - mlocs[i]) > s_winsize){
+      marks[curr_mark] = 1;
+      curr_mark = i;
+      curr_norm = norms[i];
+      curr_mloc = mlocs[i];
+      cnt = 1;
+    } else if (norms[i] > curr_norm) {
+      curr_mark = i;
+      curr_norm = norms[i];
+      curr_mloc = mlocs[i];
+      cnt = 1;
+    }
+  }
+  // We may not have marked the last point, so do so:
+  if (cnt) marks[curr_mark] = 1;
+
+  // Now we have a sliding forward window; if something
+  // is marked and survives this, then it is a clustered
+  // trigger. This is also the only place where we apply
+  // the threshold condition.
+
   cnt = 0;
   curr_norm = 0.0;
   curr_loc = 0;
   for (i = 0; i < outlen; i++){
-    if (norms[i] > thr_sqr){
+    // We only care about a point if it is above
+    // threshold and was marked on the previous
+    // pass through in reverse order.
+    if ((norms[i] > thr_sqr) && marks[i]){
       if (cnt == 0){
         // We only do this the first time we find a point above threshold.
         cnt = 1;
@@ -559,7 +619,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
         curr_loc = mlocs[i];
         curr_cval = cvals[i];
       }
-      if ( (mlocs[i] - curr_loc) > (int64_t) winsize){
+      if ( (mlocs[i] - curr_loc) > s_winsize){
         // The last one survived, so write
         // it out.
         values[cnt-1] = curr_cval;
@@ -593,6 +653,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   free(norms);
   free(mlocs);
   free(seglens);
+  free(marks);
 
   return cnt;
 }
