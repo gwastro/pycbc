@@ -92,16 +92,11 @@ def threshold_inline(series, value):
 threshold=threshold_inline
 
 class CPUThresholdCluster(_BaseThresholdCluster):
-    def __init__(self, series, window):
+    def __init__(self, series):
         self.series = series
         self.slen = len(series)
-        self.window = window
-        outlen = int(self.slen / window)
-        if (outlen * window < self.slen):
-            outlen += 1
-        self.outlen = outlen
-        self.outv = numpy.zeros(self.outlen, numpy.complex64)
-        self.outl = numpy.zeros(self.outlen, numpy.uint32)
+        self.outv = numpy.zeros(self.slen, numpy.complex64)
+        self.outl = numpy.zeros(self.slen, numpy.uint32)
         self.segsize = default_segsize
         self.code = """
              return_val = parallel_thresh_cluster(series, (uint32_t) slen, values, locs,
@@ -109,12 +104,11 @@ class CPUThresholdCluster(_BaseThresholdCluster):
               """
         self.support = thresh_cluster_support
 
-    def threshold_and_cluster(self, threshold):
+    def threshold_and_cluster(self, threshold, window):
         series = self.series
         slen = self.slen
         values = self.outv
         locs = self.outl
-        window = self.window
         segsize = self.segsize
         self.count = inline(self.code, ['series', 'slen', 'values', 'locs', 'threshold', 'window', 'segsize'],
                             extra_compile_args = ['-march=native -O3 -w'] + omp_flags,
@@ -127,5 +121,5 @@ class CPUThresholdCluster(_BaseThresholdCluster):
         else:
             return numpy.array([], dtype = numpy.complex64), numpy.array([], dtype = numpy.uint32)
 
-def _threshold_cluster_factory(series, window):
+def _threshold_cluster_factory(series):
     return CPUThresholdCluster
