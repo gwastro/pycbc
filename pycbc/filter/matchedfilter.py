@@ -90,7 +90,7 @@ class _BaseCorrelator(object):
 
 class MatchedFilterControl(object):
     def __init__(self, low_frequency_cutoff, high_frequency_cutoff, snr_threshold, tlen,
-                 delta_f, dtype, segment_list, template_output,
+                 delta_f, dtype, segment_list, template_output, use_cluster,
                  downsample_factor=1, upsample_threshold=1, upsample_method='pruned_fft',
                  gpu_callback_method='none'):
         """ Create a matched filter engine.
@@ -109,6 +109,9 @@ class MatchedFilterControl(object):
             List of FrequencySeries that are the Fourier-transformed data segments
         template_output : complex64
             Array of memory given as the 'out' parameter to waveform.FilterBank
+        use_cluster : boolean
+            If true, cluster triggers above threshold using a window; otherwise,
+            only apply a threshold.
         downsample_factor : {1, int}, optional
             The factor by which to reduce the sample rate when doing a heirarchical
             matched filter
@@ -128,12 +131,14 @@ class MatchedFilterControl(object):
         self.gpu_callback_method = gpu_callback_method
 
         if downsample_factor == 1:
-            self.matched_filter_and_cluster = self.full_matched_filter_and_cluster
+            if use_cluster:
+                self.matched_filter_and_cluster = self.full_matched_filter_and_cluster
+            else:
+                self.matched_filter_and_cluster = self.full_matched_filter_thresh_only
             self.snr_mem = zeros(self.tlen, dtype=self.dtype)
             self.corr_mem = zeros(self.tlen, dtype=self.dtype)
             self.segments = segment_list
-            # Assuming analysis time is constant across templates and segments, also
-            # delta_f is constant across segments.
+            # Assuming delta_f is constant across segments.
             self.stilde_delta_f = segment_list[0].delta_f
             self.htilde = template_output
             self.kmin, self.kmax = get_cutoff_indices(self.flow, self.fhigh,
@@ -147,10 +152,11 @@ class MatchedFilterControl(object):
                                                    numpy.array(self.segments[i].data[self.corr_slice], copy = False),
                                                    self.corr_np))
             self.ifft = IFFT(self.corr_mem, self.snr_mem)
-            self.threshold_and_clusterers = []
-            for i in range(0, len(self.segments)):
-                self.threshold_and_clusterers.append(events.ThresholdCluster(
-                        numpy.array(self.snr_mem.data[self.segments[i].analyze], copy=False)))
+            if use_cluster:
+                self.threshold_and_clusterers = []
+                for i in range(0, len(self.segments)):
+                    self.threshold_and_clusterers.append(events.ThresholdCluster(
+                            numpy.array(self.snr_mem.data[self.segments[i].analyze], copy=False)))
 
         elif downsample_factor >= 1:
             self.matched_filter_and_cluster = self.heirarchical_matched_filter_and_cluster
@@ -211,6 +217,47 @@ class MatchedFilterControl(object):
         self.correlators[segnum].correlate()
         self.ifft.execute()
         snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(self.snr_threshold / norm, window)
+
+        if len(idx) == 0:
+            return [], [], [], [], []
+
+        logging.info("%s points above threshold" % str(len(idx)))
+        return self.snr_mem, norm, self.corr_mem, idx, snrv
+
+    def full_matched_filter_thresh_only(self, segnum, template_norm, window):
+        """ Return the complex snr and normalization.
+
+        Calculated the matched filter, threshold, and cluster.
+
+        Parameters
+        ----------
+        segnum : int
+            Index into the list of segments at MatchedFilterControl construction
+            against which to filter.
+        template_norm : float
+            The htilde, template normalization factor.
+        window : int
+            Size of the window over which to cluster triggers, in samples.
+            This is IGNORED by this function, and provided only for API compatibility.
+
+        Returns
+        -------
+        snr : TimeSeries
+            A time series containing the complex snr.
+        norm : float
+            The normalization of the complex snr.
+        corrrelation: FrequencySeries
+            A frequency series containing the correlation vector.
+        idx : Array
+            List of indices of the triggers.
+        snrv : Array
+            The snr values at the trigger locations.
+        """
+        norm = (4.0 * self.stilde_delta_f) / sqrt(template_norm)
+        self.correlators[segnum].correlate()
+        self.ifft.execute()
+        snrv, idx = events.threshold_only(self.snr_mem[self.segments[segnum].analyze],
+                                          self.snr_threshold / norm)
 
         if len(idx) == 0:
             return [], [], [], [], []

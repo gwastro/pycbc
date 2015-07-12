@@ -59,7 +59,8 @@ parser.add_argument("--taper-template", choices=taper_choices,
 parser.add_argument("--cluster-method", choices=["template", "window"],
                     help="FIXME: ADD")
 parser.add_argument("--cluster-window", type=float, default = -1,
-                    help="Length of clustering window in seconds")
+                    help="Length of clustering window in seconds."
+                    " Set to 0 to disable clustering.")
 parser.add_argument("--maximization-interval", type=float, default=0,
                     help="Maximize triggers over the template bank (ms)")
 parser.add_argument("--bank-veto-bank-file", type=str, help="FIXME: ADD")
@@ -227,9 +228,14 @@ with ctx:
     template_mem = zeros(tlen, dtype = complex64)
     cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
 
+    if opt.cluster_window == 0.0:
+        use_cluster = False
+    else:
+        use_cluster = True
+
     matched_filter = MatchedFilterControl(opt.low_frequency_cutoff, None,
                                    opt.snr_threshold, tlen, delta_f, complex64,
-                                   segments, template_mem,
+                                   segments, template_mem, use_cluster,
                                    downsample_factor=opt.downsample_factor,
                                    upsample_threshold=opt.upsample_threshold,
                                    upsample_method=opt.upsample_method,

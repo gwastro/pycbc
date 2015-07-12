@@ -34,6 +34,8 @@ def threshold_numpy(series, value):
     vals = arr[locs]
     return locs, vals
 
+threshold_only = threshold_numpy
+
 outl = None
 outv = None
 count = None
