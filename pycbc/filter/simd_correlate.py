@@ -71,13 +71,32 @@ void ccorrf_simd(float * __restrict inconj, float * __restrict innoconj,
   bptr = innoconj;
   cptr = out;
 
+  /*
+
+   Note that at most one of _HAVE_AVX ad _HAVE_SSE3 will be defined (in
+   'pycbc.opt.simd_intel_intrin_support' prepended above); if neither is,
+   then a non-vectorized code path will be executed.
+
+   As of this writing, documentation on the SIMD instrinsic functions may
+   be found at:
+
+      https://software.intel.com/sites/landingpage/IntrinsicsGuide/
+
+   though Intel websites change frequently.
+
+  */
+
 #if _HAVE_AVX
   __m256 ymm0, ymm1, ymm2, ymm3, ymm4, ymm5, signed_zero;
   int64_t peel, misalgna, misalgnb, misalgnc;
 
+  // We calculate size of our various pointers modulo our alignment size
+
   misalgna = (int64_t) (((uintptr_t) aptr) % ALGN);
   misalgnb = (int64_t) (((uintptr_t) bptr) % ALGN);
   misalgnc = (int64_t) (((uintptr_t) cptr) % ALGN);
+
+  // Some kinds of misalignment are impossible to handle
 
   if ((misalgna != misalgnb) || (misalgnb != misalgnc)){
     error(EXIT_FAILURE, 0, "Arrays given to ccorrf_simd must all three have same alignment\\n");
@@ -86,6 +105,9 @@ void ccorrf_simd(float * __restrict inconj, float * __restrict innoconj,
   if (misalgna % 2*sizeof(float)) {
     error(EXIT_FAILURE, 0, "Arrays given to ccorrf_simd must be aligned on a least a complex float boundary\\n");
   }
+
+  // If we were not aligned, we must loop through a few iterations
+  // before we may use SIMD functions.
 
   peel = ( misalgna ? ((ALGN - misalgna) / (sizeof(float))) : 0 );
   peel = (peel > len ? len : peel);
@@ -132,22 +154,22 @@ void ccorrf_simd(float * __restrict inconj, float * __restrict innoconj,
       ymm3 = _mm256_load_ps(bptr+ALGN_FLT);
 
       // First iteration
-      ymm2 = _mm256_movehdup_ps(ymm1); // only imag parts (dupl) of inconj
-      ymm1 = _mm256_moveldup_ps(ymm1); // only real parts (dupl) of inconj
+      ymm2 = _mm256_movehdup_ps(ymm1);  // only imag parts (duplicated) of inconj
+      ymm1 = _mm256_moveldup_ps(ymm1);  // only real parts (duplicated) of inconj
       ymm1 = _mm256_mul_ps(ymm1, ymm0); // 4 x [inconj_re * innoconj_re, inconj_re * innoconj_im]
       ymm0 = _mm256_shuffle_ps(ymm0, ymm0, 0xB1); // Swap re and im in innoconj
-      ymm2 = _mm256_xor_ps(ymm2, signed_zero); // Change sign of inconj imag
-      ymm2 = _mm256_mul_ps(ymm2, ymm0); // 4 x [-inconj_im * innoconj_im, -inconj_im * innoconj_re]
+      ymm2 = _mm256_xor_ps(ymm2, signed_zero);    // Change sign of inconj imag
+      ymm2 = _mm256_mul_ps(ymm2, ymm0);    // 4 x [-inconj_im * innoconj_im, -inconj_im * innoconj_re]
       ymm0 = _mm256_addsub_ps(ymm1, ymm2); // 4 x [inconj_re * innoconj_re + inconj_im * innoconj_im,
                                            //      inconj_re * innoconj_im - inconj_im * innoconj_re]
 
       // Second iteration
-      ymm5 = _mm256_movehdup_ps(ymm4); // only imag parts (dupl) of inconj
-      ymm4 = _mm256_moveldup_ps(ymm4); // only real parts (dupl) of inconj
+      ymm5 = _mm256_movehdup_ps(ymm4);  // only imag parts (duplicated) of inconj
+      ymm4 = _mm256_moveldup_ps(ymm4);  // only real parts (duplicated) of inconj
       ymm4 = _mm256_mul_ps(ymm4, ymm3); // 4 x [inconj_re * innoconj_re, inconj_re * innoconj_im]
       ymm3 = _mm256_shuffle_ps(ymm3, ymm3, 0xB1); // Swap re and im in innoconj
-      ymm5 = _mm256_xor_ps(ymm5, signed_zero); // Change sign of inconj imag
-      ymm5 = _mm256_mul_ps(ymm5, ymm3); // 4 x [-inconj_im * innoconj_im, -inconj_im * innoconj_re]
+      ymm5 = _mm256_xor_ps(ymm5, signed_zero);    // Change sign of inconj imag
+      ymm5 = _mm256_mul_ps(ymm5, ymm3);    // 4 x [-inconj_im * innoconj_im, -inconj_im * innoconj_re]
       ymm3 = _mm256_addsub_ps(ymm4, ymm5); // 4 x [inconj_re * innoconj_re + inconj_im * innoconj_im,
                                            //      inconj_re * innoconj_im - inconj_im * innoconj_re]
 
@@ -167,12 +189,12 @@ void ccorrf_simd(float * __restrict inconj, float * __restrict innoconj,
       ymm0 = _mm256_load_ps(bptr);
 
       // Do the work
-      ymm2 = _mm256_movehdup_ps(ymm1); // only imag parts (dupl) of inconj
-      ymm1 = _mm256_moveldup_ps(ymm1); // only real parts (dupl) of inconj
+      ymm2 = _mm256_movehdup_ps(ymm1);  // only imag parts (duplicated) of inconj
+      ymm1 = _mm256_moveldup_ps(ymm1);  // only real parts (duplicated) of inconj
       ymm1 = _mm256_mul_ps(ymm1, ymm0); // 4 x [inconj_re * innoconj_re, inconj_re * innoconj_im]
       ymm0 = _mm256_shuffle_ps(ymm0, ymm0, 0xB1); // Swap re and im in innoconj
-      ymm2 = _mm256_xor_ps(ymm2, signed_zero); // Change sign of inconj imag
-      ymm2 = _mm256_mul_ps(ymm2, ymm0); // 4 x [-inconj_im * innoconj_im, -inconj_im * innoconj_re]
+      ymm2 = _mm256_xor_ps(ymm2, signed_zero);    // Change sign of inconj imag
+      ymm2 = _mm256_mul_ps(ymm2, ymm0);    // 4 x [-inconj_im * innoconj_im, -inconj_im * innoconj_re]
       ymm0 = _mm256_addsub_ps(ymm1, ymm2); // 4 x [inconj_re * innoconj_re + inconj_im * innoconj_im,
                                            //      inconj_re * innoconj_im - inconj_im * innoconj_re]
 
@@ -190,9 +212,13 @@ void ccorrf_simd(float * __restrict inconj, float * __restrict innoconj,
   __m128 ymm0, ymm1, ymm2, ymm3, ymm4, ymm5, signed_zero;
   int64_t peel, misalgna, misalgnb, misalgnc;
 
+  // We calculate size of our various pointers modulo our alignment size
+
   misalgna = (int64_t) (((uintptr_t) aptr) % ALGN);
   misalgnb = (int64_t) (((uintptr_t) bptr) % ALGN);
   misalgnc = (int64_t) (((uintptr_t) cptr) % ALGN);
+
+  // Some kinds of misalignment are impossible to handle
 
   if ((misalgna != misalgnb) || (misalgnb != misalgnc)){
     error(EXIT_FAILURE, 0, "Arrays given to ccorrf_simd must all three have same alignment\\n");
@@ -201,6 +227,9 @@ void ccorrf_simd(float * __restrict inconj, float * __restrict innoconj,
   if (misalgna % 2*sizeof(float)) {
     error(EXIT_FAILURE, 0, "Arrays given to ccorrf_simd must be aligned on a least a complex float boundary\\n");
   }
+
+  // If we were not aligned, we must loop through a few iterations
+  // before we may use SIMD functions.
 
   peel = ( misalgna ? ((ALGN - misalgna) / (sizeof(float))) : 0 );
   peel = (peel > len ? len : peel);
@@ -235,7 +264,7 @@ void ccorrf_simd(float * __restrict inconj, float * __restrict innoconj,
   // of the first vector.
   signed_zero = _mm_castsi128_ps( _mm_set1_epi32(0x80000000) );
 
-  // Main loop using AVX; unrolled once.
+  // Main loop using SSE; unrolled once.
   for (; i <= len - 2*ALGN_FLT ; i += 2*ALGN_FLT){
 
       // Load everything into registers
@@ -245,22 +274,22 @@ void ccorrf_simd(float * __restrict inconj, float * __restrict innoconj,
       ymm3 = _mm_load_ps(bptr+ALGN_FLT);
 
       // First iteration
-      ymm2 = _mm_movehdup_ps(ymm1); // only imag parts (dupl) of inconj
-      ymm1 = _mm_moveldup_ps(ymm1); // only real parts (dupl) of inconj
+      ymm2 = _mm_movehdup_ps(ymm1);  // only imag parts (duplicated) of inconj
+      ymm1 = _mm_moveldup_ps(ymm1);  // only real parts (duplicated) of inconj
       ymm1 = _mm_mul_ps(ymm1, ymm0); // 4 x [inconj_re * innoconj_re, inconj_re * innoconj_im]
       ymm0 = _mm_shuffle_ps(ymm0, ymm0, 0xB1); // Swap re and im in innoconj
-      ymm2 = _mm_xor_ps(ymm2, signed_zero); // Change sign of inconj imag
-      ymm2 = _mm_mul_ps(ymm2, ymm0); // 4 x [-inconj_im * innoconj_im, -inconj_im * innoconj_re]
+      ymm2 = _mm_xor_ps(ymm2, signed_zero);    // Change sign of inconj imag
+      ymm2 = _mm_mul_ps(ymm2, ymm0);    // 4 x [-inconj_im * innoconj_im, -inconj_im * innoconj_re]
       ymm0 = _mm_addsub_ps(ymm1, ymm2); // 4 x [inconj_re * innoconj_re + inconj_im * innoconj_im,
-                                           //      inconj_re * innoconj_im - inconj_im * innoconj_re]
+                                        //      inconj_re * innoconj_im - inconj_im * innoconj_re]
 
       // Second iteration
-      ymm5 = _mm_movehdup_ps(ymm4); // only imag parts (dupl) of inconj
-      ymm4 = _mm_moveldup_ps(ymm4); // only real parts (dupl) of inconj
+      ymm5 = _mm_movehdup_ps(ymm4);  // only imag parts (dupl) of inconj
+      ymm4 = _mm_moveldup_ps(ymm4);  // only real parts (dupl) of inconj
       ymm4 = _mm_mul_ps(ymm4, ymm3); // 4 x [inconj_re * innoconj_re, inconj_re * innoconj_im]
       ymm3 = _mm_shuffle_ps(ymm3, ymm3, 0xB1); // Swap re and im in innoconj
-      ymm5 = _mm_xor_ps(ymm5, signed_zero); // Change sign of inconj imag
-      ymm5 = _mm_mul_ps(ymm5, ymm3); // 4 x [-inconj_im * innoconj_im, -inconj_im * innoconj_re]
+      ymm5 = _mm_xor_ps(ymm5, signed_zero);    // Change sign of inconj imag
+      ymm5 = _mm_mul_ps(ymm5, ymm3);    // 4 x [-inconj_im * innoconj_im, -inconj_im * innoconj_re]
       ymm3 = _mm_addsub_ps(ymm4, ymm5); // 4 x [inconj_re * innoconj_re + inconj_im * innoconj_im,
                                         //      inconj_re * innoconj_im - inconj_im * innoconj_re]
 
@@ -280,12 +309,12 @@ void ccorrf_simd(float * __restrict inconj, float * __restrict innoconj,
       ymm0 = _mm_load_ps(bptr);
 
       // Do the work
-      ymm2 = _mm_movehdup_ps(ymm1); // only imag parts (dupl) of inconj
-      ymm1 = _mm_moveldup_ps(ymm1); // only real parts (dupl) of inconj
+      ymm2 = _mm_movehdup_ps(ymm1);  // only imag parts (duplicated) of inconj
+      ymm1 = _mm_moveldup_ps(ymm1);  // only real parts (duplicated) of inconj
       ymm1 = _mm_mul_ps(ymm1, ymm0); // 4 x [inconj_re * innoconj_re, inconj_re * innoconj_im]
       ymm0 = _mm_shuffle_ps(ymm0, ymm0, 0xB1); // Swap re and im in innoconj
-      ymm2 = _mm_xor_ps(ymm2, signed_zero); // Change sign of inconj imag
-      ymm2 = _mm_mul_ps(ymm2, ymm0); // 4 x [-inconj_im * innoconj_im, -inconj_im * innoconj_re]
+      ymm2 = _mm_xor_ps(ymm2, signed_zero);    // Change sign of inconj imag
+      ymm2 = _mm_mul_ps(ymm2, ymm0);    // 4 x [-inconj_im * innoconj_im, -inconj_im * innoconj_re]
       ymm0 = _mm_addsub_ps(ymm1, ymm2); // 4 x [inconj_re * innoconj_re + inconj_im * innoconj_im,
                                         //      inconj_re * innoconj_im - inconj_im * innoconj_re]
 
