@@ -92,6 +92,35 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
   curr_mloc = 0;
   arrptr = inarr;
 
+  /*
+
+   Note that at most one of _HAVE_AVX and _HAVE_SSE4_1 will be defined (in
+   'pycbc.opt.simd_intel_intrin_support' prepended above); if neither is,
+   then a non-vectorized code path will be executed.
+
+   As of this writing, documentation on the SIMD instrinsic functions may
+   be found at:
+
+      https://software.intel.com/sites/landingpage/IntrinsicsGuide/
+
+   though Intel websites change frequently.
+
+  */
+
+  /*
+
+   The basic vectorized algorithm is to read in complex elements of the input
+   array several at a time, using vectorized reads. We then compute the norm
+   of the array on an SIMD vector chunk, and compare to the current maximum,
+   obtaining a mask for where this vector is larger. Iterating give us the maximum
+   over elements 0, V, 2V, 3V, etc; 1, V+1, 2V+1, 3V+1, etc; and so forth, where
+   V is the vector length (or a multiple of it, when we are able to unroll the loop).
+   After this vectorized maximum, a non-vectorized comparison takes the max over the
+   V distinct elements that are the respective maxima for the different array elements
+   modulo V.
+
+  */
+
 #if _HAVE_AVX
 
   __m256 norm_lo, cval_lo, arr_lo, reg0_lo, reg1_lo;
@@ -104,10 +133,16 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
   double curr_mloc_dbl;
   int64_t peel, misalgn, j;
 
+  // We calculate size of our various pointers modulo our alignment size
+
   misalgn = (int64_t)  (((uintptr_t) inarr) % ALGN);
+
+  // Some kinds of misalignment are impossible to handle
+
   if (misalgn % 2*sizeof(float)) {
     error(EXIT_FAILURE, 0, "Array given to max_simd must be aligned on a least a complex float boundary\\n");
   }
+
   // 'peel' is how many elements must be handled before we get to
   // something aligned on an SIMD boundary.
   peel = ( misalgn ? ((ALGN - misalgn) / (sizeof(float))) : 0 );
@@ -144,14 +179,16 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
   // Note that the "set_p{s,d}" functions take their arguments from
   // most-significant value to least.
 
-  incr_lo = _mm256_set_pd(6.0, 4.0, 2.0, 0.0);
-  count_lo = _mm256_set1_pd( (double) i);
-  count_lo = _mm256_add_pd(count_lo, incr_lo);
+  incr_lo = _mm256_set_pd(6.0, 4.0, 2.0, 0.0); // incr_lo = [0, 2, 4, 6]
+  count_lo = _mm256_set1_pd( (double) i);      // count_lo = [i, i, i, i]
+  count_lo = _mm256_add_pd(count_lo, incr_lo); // count_lo = [i, i+2, i+4, i+6]
   incr_lo = _mm256_set_pd(1.0*ALGN_FLT, 1.0*ALGN_FLT, 1.0*ALGN_FLT, 1.0*ALGN_FLT);
-  count_hi = _mm256_add_pd(count_lo, incr_lo);
+                                               // incr_lo = [8, 8, 8, 8]
+  count_hi = _mm256_add_pd(count_lo, incr_lo); // count_hi = [i+8, i+10, i+12, i+14]
   incr_lo = _mm256_set_pd(2.0*ALGN_FLT, 2.0*ALGN_FLT, 2.0*ALGN_FLT, 2.0*ALGN_FLT);
+                                               // incr_lo = [16, 16, 16, 16]
   incr_hi = _mm256_set_pd(2.0*ALGN_FLT, 2.0*ALGN_FLT, 2.0*ALGN_FLT, 2.0*ALGN_FLT);
-
+                                               // incr_hi = [16, 16, 16, 16]
   // Now count_lo and count_hi have the current indices into the array
 
   // We don't need to initialize to what we found in the peel-off loop,
@@ -190,8 +227,8 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
       norm_hi = _mm256_blendv_ps(norm_hi, reg0_hi, reg1_hi);
       cval_hi = _mm256_blendv_ps(cval_hi, arr_hi, reg1_hi);
 
-      count_lo = _mm256_add_pd(count_lo, incr_lo);
-      count_hi = _mm256_add_pd(count_hi, incr_hi);
+      count_lo = _mm256_add_pd(count_lo, incr_lo); // count_lo += [16, 16, 16, 16]
+      count_hi = _mm256_add_pd(count_hi, incr_hi); // count_hi += [16, 16, 16, 16]
       arrptr += 2*ALGN_FLT;
   }
 
@@ -254,10 +291,16 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
   double curr_mloc_dbl;
   int64_t peel, misalgn, j;
 
+  // We calculate size of our various pointers modulo our alignment size
+
   misalgn = (int64_t)  (((uintptr_t) inarr) % ALGN);
+
+  // Some kinds of misalignment are impossible to handle
+
   if (misalgn % 2*sizeof(float)) {
     error(EXIT_FAILURE, 0, "Array given to max_simd must be aligned on a least a complex float boundary");
   }
+
   // 'peel' is how many elements must be handled before we get to
   // something aligned on an SIMD boundary.
   peel = ( misalgn ? ((ALGN - misalgn) / (sizeof(float))) : 0 );
@@ -284,10 +327,10 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
   // Note that the "set_p{s,d}" functions take their arguments from
   // most-significant value to least.
 
-  incr_lo = _mm_set_pd(2.0, 0.0);
-  count_lo = _mm_set1_pd( (double) i);
-  count_lo = _mm_add_pd(count_lo, incr_lo);
-  incr_lo = _mm_set_pd(1.0*ALGN_FLT, 1.0*ALGN_FLT);
+  incr_lo = _mm_set_pd(2.0, 0.0);                   // incr_lo = [0, 2]
+  count_lo = _mm_set1_pd( (double) i);              // count_lo = [i, i]
+  count_lo = _mm_add_pd(count_lo, incr_lo);         // count_lo = [i, i+2]
+  incr_lo = _mm_set_pd(1.0*ALGN_FLT, 1.0*ALGN_FLT); // incr_lo = [4, 4]
 
   // Now count_lo has the current indices into the array
 
@@ -312,7 +355,7 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
       norm_lo = _mm_blendv_ps(norm_lo, reg0_lo, reg1_lo);
       cval_lo = _mm_blendv_ps(cval_lo, arr_lo, reg1_lo);
 
-      count_lo = _mm_add_pd(count_lo, incr_lo);
+      count_lo = _mm_add_pd(count_lo, incr_lo); // count_lo += [4, 4]
       arrptr += ALGN_FLT;
   }
 
