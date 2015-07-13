@@ -4,7 +4,7 @@
 
 <!--html file condition-->
 {% elif filename.endswith('html') %}
-    {{ open(path, 'rb').read() }}
+    {% include 'file_iframe.html' %}
 
 <!--segment XML file condition-->
 {% elif ( filename.endswith('xml') or filename.endswith('xml.gz') ) and content %}

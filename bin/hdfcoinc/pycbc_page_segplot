@@ -151,10 +151,10 @@ for segment_file in opts.segment_files:
                 line_collections.append(sub_line_collections)
 
 # add interactive legend
-#interactive_legend = mpld3.plugins.InteractiveLegendPlugin(line_collections,
-#                                                     names,
-#                                                     alpha_unsel=0.1)
-#mpld3.plugins.connect(fig, interactive_legend)
+interactive_legend = mpld3.plugins.InteractiveLegendPlugin(line_collections,
+                                                     names,
+                                                     alpha_unsel=0.1)
+mpld3.plugins.connect(fig, interactive_legend)
 
 # format the plot
 pylab.ylim(0, len(ifos) * (h + 0.2))
