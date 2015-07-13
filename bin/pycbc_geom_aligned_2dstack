@@ -71,10 +71,6 @@ parser.add_argument("-I", "--input-bank-file", action="store", type=str,\
                    default=None,\
                    help="ASCII file containing the input bank. "+\
                         "REQUIRED ARGUMENT.")
-parser.add_argument("-O", "--output-bank-file", action="store", type=str,\
-                   default=None,\
-                   help="ASCII file containing the output bank. "+\
-                        "REQUIRED ARGUMENT.")
 parser.add_argument("--metric-evals-file", action="store", type=str,\
                    default=None,\
                    help="ASCII file containing the metric eigenvalues. "+\
@@ -87,9 +83,6 @@ parser.add_argument("--cov-evecs-file", action="store", type=str,\
                    default=None,\
                    help="ASCII file containing the covariance eigenvectors. "+\
                         "REQUIRED ARGUMENT.")
-parser.add_argument("--min-match", action="store", type=float,\
-                  default=None, help="Minimum match to generate bank with."+\
-                                     "REQUIRED ARGUMENT.")
 parser.add_argument("--stack-distance", action="store", type=float,\
                   default=0.2, help="Minimum metric spacing before we stack"+\
                                     "OPTIONAL")
@@ -111,6 +104,7 @@ parser.add_argument("--random-seed", action="store", type=int,\
                             If this is used the code should give the same
                             output if run with the same random seed.""")
 
+pycbc.tmpltbank.insert_base_bank_options(parser)
 
 # Insert the mass range options
 pycbc.tmpltbank.insert_mass_range_option_group(parser)
@@ -130,11 +124,7 @@ if not opts.pn_order:
     parser.error("Must supply --pn-order")
 if not opts.input_bank_file:
     parser.error("Must supply --input-bank-file")
-if not opts.min_match:
-    parser.error("Must supply --min-match")
 opts.max_mismatch = 1 - opts.min_match
-if not opts.output_bank_file:
-    parser.error("Must supply --output-bank-file")
 if not opts.metric_evals_file:
     parser.error("Must supply --metric-evals-file")
 if not opts.metric_evecs_file:
@@ -209,7 +199,7 @@ maxBHspin = opts.max_bh_spin_mag
 
 # Here we start looping over bank
 temp_number = 0
-outFile = opts.output_bank_file
+outFile = opts.output_file
 outPointer = open(outFile,'w')
 outPointer2 = open(outFile+'.reject','w')
 outPointer3 = open(outFile+'.depths','w')

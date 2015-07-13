@@ -28,6 +28,7 @@
 import subprocess, os, sys, tempfile
 import logging
 import signal
+import argparse
 
 
 def init_logging(verbose=False):
@@ -54,6 +55,34 @@ def init_logging(verbose=False):
     else:
         initial_level = logging.WARN
     logging.basicConfig(format='%(asctime)s %(message)s', level=initial_level)
+
+def positive_float(s):
+    """
+    Ensures given argument is a positive real number. To be used as type in
+    argparse arguments.
+    """
+    err_msg = "must be a positive number, not %r" % s
+    try:
+        value = float(s)
+    except ValueError, e:
+        raise argparse.ArgumentTypeError(err_msg)
+    if value <= 0:
+        raise argparse.ArgumentTypeError(err_msg)
+    return value
+
+def nonnegative_float(s):
+    """
+    Ensures given argument is a positive real number, or zero. To be used as
+    type in argparse arguments.
+    """
+    err_msg = "must be either positive or zero, not %r" % s
+    try:
+        value = float(s)
+    except ValueError, e:
+        raise argparse.ArgumentTypeError(err_msg)
+    if value < 0:
+        raise argparse.ArgumentTypeError(err_msg)
+    return value
 
 
 # Check for optional components of the PyCBC Package

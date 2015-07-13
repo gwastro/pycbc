@@ -68,16 +68,11 @@ parser = argparse.ArgumentParser(description=_desc,
 
 # Begin with code specific options
 parser.add_argument('--version', action='version', version=__version__)
-parser.add_argument("-V", "--verbose", action="store_true", default=False,\
+parser.add_argument("-V", "--verbose", action="store_true", default=False,
                     help="verbose output")
-parser.add_argument("-O", "--output-file",  help="Output file name. "+\
-                                               "REQUIRED ARGUMENT.")
-parser.add_argument("-L", "--log-path", action="store", type=str,\
-                   default=None,\
-                   help="Directory to store condor logs. REQUIRED ARGUMENT")
-parser.add_argument("-m", "--min-match", action="store", type=float,\
-                  default=None, help="Minimum match to generate bank with. "+\
-                                      "REQUIRED ARGUMENT")
+parser.add_argument("-L", "--log-path", action="store", required=True, type=str,
+                    default=None,
+                    help="Directory to store condor logs. REQUIRED ARGUMENT")
 parser.add_argument("-s", "--stack-distance", action="store", type=float,\
                   default=0.2, help="Minimum metric spacing before we "+\
                                "stack.")
@@ -105,6 +100,8 @@ parser.add_argument("--print-chi-points", action="store", default=None,
                     "using pycbc_tmpltbank_to_chi_params. This will be "
                     "written to FILENAME. If this argument is not given, no "
                     "chi points file will be written.")
+
+pycbc.tmpltbank.insert_base_bank_options(parser)
 
 # Insert the metric calculation options
 metric_opts = pycbc.tmpltbank.insert_metric_calculation_options(parser)
@@ -142,14 +139,7 @@ else:
 log_format='%(asctime)s %(message)s'
 logging.basicConfig(format=log_format, level=log_level)
 
-# Sanity check options
-if not opts.output_file:
-    parser.error("Must supply --output-file")
-if not opts.min_match:
-    parser.error("Must supply --min-match")
 opts.max_mismatch = 1 - opts.min_match
-if not opts.log_path:
-    parser.error("Must supply --log-path")
 if not opts.write_metric:
     warn_message = "--write-metric is required by this code. Enabling it."
     logging.warn(warn_message)
@@ -409,7 +399,7 @@ numBanks = int((len(newV1s) - 0.5)//opts.split_bank_num) + 1
 for i in xrange(numBanks):
     node = pipeline.CondorDAGNode(job)
     node.add_var_opt('input-bank-file','split_banks/split_bank_%05d.dat'%(i))
-    node.add_var_opt('output-bank-file','output_banks/output_bank_%05d.dat'%(i))
+    node.add_var_opt('output-file','output_banks/output_bank_%05d.dat'%(i))
     cat_node.add_parent(node)
     dag.add_node(node)
 

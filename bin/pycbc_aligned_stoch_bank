@@ -26,7 +26,7 @@ import numpy
 import logging
 import pycbc
 import pycbc.version
-from pycbc import tmpltbank, pnutils
+from pycbc import tmpltbank, pnutils, positive_float
 import pycbc.psd
 import pycbc.strain
 
@@ -45,15 +45,10 @@ parser = argparse.ArgumentParser(description=_desc,
 parser.add_argument("--version", action="version", version=__version__)
 parser.add_argument("--verbose", action="store_true", default=False,
                     help="verbose output")
-parser.add_argument("-O", "--output-file",
-                    help="Output file name.  REQUIRED.")
-parser.add_argument("-m", "--min-match", action="store", type=float,
-                    default=None, help=
-                    "Generate bank with specified minimum match.  REQUIRED.")
 parser.add_argument("-V", "--vary-fupper", action="store_true", default=False,
                     help="Use a variable upper frequency cutoff in laying "
                     "out the bank.  OPTIONAL.")
-parser.add_argument("--bank-fupper-step", type=float, default=10.,
+parser.add_argument("--bank-fupper-step", type=positive_float, default=10.,
                     help="Size of discrete frequency steps used when varying "
                     "the fupper. If --calculate-ethinca-metric and "
                     "--ethinca-freq-step are also given, the code will use "
@@ -80,6 +75,8 @@ parser.add_argument("--random-seed", action="store", type=int,
                     "physical space.  If given, the code should give the "
                     "same output when run with the same random seed.")
 
+tmpltbank.insert_base_bank_options(parser)
+
 # Insert the metric calculation options
 tmpltbank.insert_metric_calculation_options(parser)
 
@@ -104,11 +101,6 @@ else:
 log_format='%(asctime)s %(message)s'
 logging.basicConfig(format=log_format, level=log_level)
 
-# Sanity check options
-if not opts.output_file:
-    parser.error("Must supply --output-file")
-if not opts.min_match:
-    parser.error("Must supply --min-match")
 # delete defaults for redundant options if not varying fupper
 if not opts.vary_fupper:
     opts.bank_fupper_step = None
