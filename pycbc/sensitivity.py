@@ -81,14 +81,9 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
             'volume'          : 15. / 6.
     }[distribution]
 
-    found_d = numpy.array([inj.distance for inj in found])
-    missed_d = numpy.array([inj.distance for inj in missed])
-
     # establish maximum physical distance: first in case of chirp distance distribution
     if limits_param == 'chirp_distance':
         mchirp_standard_bns = 1.4 * (2. ** (-1. / 5.))
-        found_mchirp = numpy.array([inj.mchirp for inj in found])
-        missed_mchirp = numpy.array([inj.mchirp for inj in missed])
         all_mchirp = numpy.concatenate((found_mchirp, missed_mchirp))
         max_mchirp = all_mchirp.max()
         if max_param is not None:
@@ -109,7 +104,7 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
     if distribution_param == 'distance':
         found_weights = found_d ** d_power
         missed_weights = missed_d ** d_power
-    elif distance_param == 'chirp_distance':
+    elif distribution_param == 'chirp_distance':
         # weight by a power of mchirp to rescale injection density to the
         # target mass distribution
         found_weights = found_d ** d_power * \
