@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy, pylab, pycbc.events, mpld3, mpld3.plugins
 import itertools, datetime, time
 import sys
+from itertools import cycle
 from matplotlib.patches import Rectangle
 from pycbc.results.color import ifo_color
 from pycbc.results.mpld3_utils import MPLSlide, LineTooltip
@@ -17,12 +18,8 @@ from pycbc.workflow import fromsegmentxml
 parser = argparse.ArgumentParser()
 parser.add_argument('--segment-files', type=str, nargs="+",
                         help='XML files with a segment definer table to read.')
-parser.add_argument('--science-segment-names', type=str, nargs="+", required=False,
-                        help='Names of science segments in the segment definer table.')
-parser.add_argument('--veto-data-segment-names', type=str, nargs="+", required=False,
-                        help='Names of segments for vetoing data in the segment definer table.')
-parser.add_argument('--veto-triggers-segment-names', type=str, nargs="+", required=False,
-                        help='Names of segments for vetoing triggers in the segment definer table.')
+parser.add_argument('--segment-names', type=str, nargs="+", required=False,
+                        help='Names of segments in the segment definer table.')
 parser.add_argument('--output-file', type=str,
                         help='Path of the output HTML file.')
 opts = parser.parse_args()
@@ -45,6 +42,9 @@ def timestr(s):
     s -= m * 60
     t += "%ss " % s
     return t
+
+# set colors
+color_cycle = cycle(['red', 'blue', 'green', 'yellow', 'cyan', 'violet'])
 
 # make a figure
 mpld3.plugins.DEFAULT_PLUGINS = []
@@ -72,24 +72,16 @@ fig, ax = plt.subplots(figsize=(16,9))
 i = 0
 seg_list = []
 s = []
-segment_groups = {'science' : opts.science_segment_names,
-                  'veto_data' : opts.veto_data_segment_names,
-                  'veto_triggers' : opts.veto_triggers_segment_names,
-}
-segment_names = []
-if opts.science_segment_names:
-    segment_names += opts.science_segment_names
-if opts.veto_data_segment_names:
-    segment_names += opts.veto_data_segment_names
-if opts.veto_triggers_segment_names:
-    segment_names += opts.veto_triggers_segment_names
 for segment_file in opts.segment_files:
 
     # read segment definer table
     seg_dict = fromsegmentxml(open(segment_file, 'rb'), return_dict=True)
 
     # loop over segment names
-    for segment_name in segment_names:
+    for segment_name in opts.segment_names:
+
+        # get new color for this segment name
+        color = color_cycle.next()
 
         # get segments
         for ifo in ifos:
@@ -121,13 +113,6 @@ for segment_file in opts.segment_files:
 
                 # plot segments
                 sub_line_collections = []
-                color = None
-                if segment_name in segment_groups['science']:
-                    color = ifo_color(ifo)
-                elif segment_name in segment_groups['veto_data']:
-                    color = 'black'
-                elif segment_name in segment_groups['veto_triggers']:
-                    color = 'blue'
                 for s,e in zip(start, end):
                     l = ax.plot([s,e], [y,y], '-', lw=120, color=color, alpha=0.1)
                     sub_line_collections += l
