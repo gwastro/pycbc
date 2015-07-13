@@ -531,11 +531,10 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
 
   */
 
-  int64_t i, nsegs, nwins_ps, last_arrlen, last_nwins_ps, outlen;
+  int64_t i, nsegs, nwins_ps, last_arrlen, last_nwins_ps, outlen, curr_mloc;
   int64_t *seglens, *mlocs, cnt, s_segsize, s_arrlen, s_winsize, curr_mark;
-  uint32_t curr_mloc;
   float *norms, thr_sqr, curr_norm;
-  std::complex<float> *cvals;
+  std::complex<float> *cvals, curr_cval;
   short int *marks;
 
   thr_sqr = (thresh * thresh);
@@ -617,7 +616,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   // them within a window size.
 
   curr_norm = norms[outlen-1];
-  curr_loc = mlocs[outlen-1];
+  curr_mloc = mlocs[outlen-1];
   curr_mark = outlen - 1;
 
   // For this pass we just use 'cnt' as a logical, noting
@@ -649,7 +648,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
 
   cnt = 0;
   curr_norm = 0.0;
-  curr_loc = 0;
+  curr_mloc = 0;
   for (i = 0; i < outlen; i++){
     // We only care about a point if it is above
     // threshold and was marked on the previous
@@ -659,17 +658,17 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
         // We only do this the first time we find a point above threshold.
         cnt = 1;
         curr_norm = norms[i];
-        curr_loc = mlocs[i];
+        curr_mloc = mlocs[i];
         curr_cval = cvals[i];
       }
-      if ( (mlocs[i] - curr_loc) > s_winsize){
+      if ( (mlocs[i] - curr_mloc) > s_winsize){
         // The last one survived, so write
         // it out.
         values[cnt-1] = curr_cval;
-        locs[cnt-1] = (uint32_t) curr_loc;
+        locs[cnt-1] = (uint32_t) curr_mloc;
         curr_cval = cvals[i];
         curr_norm = norms[i];
-        curr_loc = mlocs[i];
+        curr_mloc = mlocs[i];
         // Note that we only increment 'cnt' *after* we write out
         // the previous clustered trigger, so we maintain that if
         // cnt > 0, then cnt-1 triggers have been written.
@@ -677,7 +676,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
       } else if (norms[i] > curr_norm) {
         curr_cval = cvals[i];
         curr_norm = norms[i];
-        curr_loc = mlocs[i];
+        curr_mloc = mlocs[i];
       }
     }
   }
@@ -689,7 +688,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
 
   if (cnt > 0){
     values[cnt-1] = curr_cval;
-    locs[cnt-1] = (uint32_t) curr_loc;
+    locs[cnt-1] = (uint32_t) curr_mloc;
   }
 
   free(cvals);
