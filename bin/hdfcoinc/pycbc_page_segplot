@@ -163,6 +163,6 @@ fig_kwds = {}
 caption = "Text."
 pycbc.results.save_fig_with_metadata(fig, opts.output_file,
                      fig_kwds=fig_kwds,
-                     title='Segments',
+                     title='Segments Timeseries',
                      cmd=' '.join(sys.argv),
                      caption=caption)
