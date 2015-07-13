@@ -262,13 +262,12 @@ seg_summ_file = multi_segments_to_file(seg_list, filename, names, ifos)
 
 # make segment table for summary page
 seg_summ_table = wf.make_seg_table(workflow, [seg_summ_file], zip_names,
-                                       rdir['analysis_time/segments'], ['SUMMARY'])
+                        rdir['analysis_time/segments'], ['SUMMARY'])
 
 # make segment plot for summary page
-seg_summ_plot = wf.make_seg_plot(workflow, [seg_summ_file] + cum_veto_files + final_veto_file,
-                                 rdir['analysis_time/segments'],
-                                 science_seg_names, veto_data_seg_names,
-                                 veto_triggers_seg_names, ['SUMMARY'])
+seg_summ_plot = wf.make_seg_plot(workflow, [seg_summ_file],
+                        rdir['analysis_time/segments'],
+                        data_seg_names + science_seg_names, ['SUMMARY'])
 
 # Make combined injection plots
 inj_summ = []
