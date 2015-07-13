@@ -114,3 +114,8 @@ class Tooltip(mpld3.plugins.PointHTMLTooltip):
     def __init__(self, points, labels=None,
                  hoffset=0, voffset=10, css=None):
         super(Tooltip, self).__init__(points, labels, hoffset, voffset, "")
+
+class LineTooltip(mpld3.plugins.LineHTMLTooltip):
+    JAVASCRIPT = ""
+    def __init__(self, line, label=None, hoffset=0, voffset=10, css=None):
+        super(LineTooltip, self).__init__(line, label, hoffset, voffset, "")

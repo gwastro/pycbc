@@ -10,7 +10,7 @@ import itertools, datetime, time
 import sys
 from matplotlib.patches import Rectangle
 from pycbc.results.color import ifo_color
-from pycbc.results.mpld3_utils import MPLSlide, Tooltip
+from pycbc.results.mpld3_utils import MPLSlide, LineTooltip
 from pycbc.workflow import fromsegmentxml
 
 # parse command line
@@ -142,7 +142,10 @@ for segment_file in opts.segment_files:
                     """ % (segment_name, s, e, e-s)
 
                     # add tooltip for segment
-                    mpld3.plugins.connect(fig, mpld3.plugins.LineHTMLTooltip(l[0], label))
+                    if len(line_collections) < 1:
+                        mpld3.plugins.connect(fig, mpld3.plugins.LineHTMLTooltip(l[0], label))
+                    else:
+                        mpld3.plugins.connect(fig, LineTooltip(l[0], label))
 
                 # add name to list
                 names += [ifo+':'+segment_name]
@@ -162,7 +165,7 @@ pylab.xlim(smin, smax)
 pylab.xlabel('GPS Time (s)')
 
 # add whitespace for the legend
-fig.subplots_adjust(left=0.1, right=0.7, top=0.9, bottom=0.1)
+fig.subplots_adjust(left=0.0, right=0.6, top=0.9, bottom=0.1)
 
 # add plugins to the plot
 mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14, fmt='10f'))
