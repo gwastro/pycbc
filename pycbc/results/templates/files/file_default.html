@@ -4,8 +4,9 @@
 
 <!--html file condition-->
 {% elif filename.endswith('html') %}
-    <!-- <iframe height=100% width=100% frameborder=0 src="{{filename}}"><iframe> -->
-    {{ open(path, 'rb').read() }}
+    {% if path_exists(path) %}
+        {{ open(path, 'rb').read() }}
+    {% endif %}
 
 <!--segment XML file condition-->
 {% elif ( filename.endswith('xml') or filename.endswith('xml.gz') ) and content %}

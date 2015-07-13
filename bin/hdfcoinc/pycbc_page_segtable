@@ -126,6 +126,6 @@ fig_kwds = {}
 html_table = pycbc.results.table(vals, keys, page_size=10)
 save_fig_with_metadata(str(html_table), opts.output_file,
                      fig_kwds=fig_kwds,
-                     title='Segments',
+                     title='Segments Table',
                      cmd=' '.join(sys.argv),
                      caption=caption)
