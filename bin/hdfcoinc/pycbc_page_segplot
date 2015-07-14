@@ -10,6 +10,7 @@ import itertools, datetime, time
 import sys
 from itertools import cycle
 from matplotlib.patches import Rectangle
+from pycbc.events.veto import get_segment_definer_comments
 from pycbc.results.color import ifo_color
 from pycbc.results.mpld3_utils import MPLSlide, LineTooltip
 from pycbc.workflow import fromsegmentxml
@@ -62,6 +63,9 @@ h = .7
 #FIXME: set IFO list
 ifos = ['H1', 'L1']
 
+# set caption beginning
+caption = "This plots shows each segment. Shown are: "
+
 # an empty list for holding lists of matplotlib objects for the interactive legend
 line_collections = []
 
@@ -76,6 +80,9 @@ for segment_file in opts.segment_files:
 
     # read segment definer table
     seg_dict = fromsegmentxml(open(segment_file, 'rb'), return_dict=True)
+
+    # read comments from segment definer table
+    comment_dict = get_segment_definer_comments(open(segment_file, 'rb'))
 
     # loop over segment names
     for segment_name in opts.segment_names:
@@ -97,15 +104,18 @@ for segment_file in opts.segment_files:
                 else:
                     continue
 
+                # put comment in caption
+                caption += segment_name
+                if comment_dict[key] != None:
+                    caption += " ("+comment_dict[key]+")"
+                caption += " "
+
                 # get a start time and end time array
                 start = numpy.array([float(seg[0]) for seg in segs])
                 end = numpy.array([float(seg[1]) for seg in segs])
 
                 # get an array for the duration of each segment
                 dur = end - start
-
-                # total amount of time for segment
-                total = timestr(abs(pycbc.events.start_end_to_segments(start, end).coalesce()))
 
                 # get the start and end of the timeseries
                 smin = start.min() if len(start) and start.min() < smin else smin
@@ -160,7 +170,6 @@ mpld3.plugins.connect(fig, mpld3.plugins.Reset())
 
 # save the plot as an interactive HTML
 fig_kwds = {}
-caption = "Text."
 pycbc.results.save_fig_with_metadata(fig, opts.output_file,
                      fig_kwds=fig_kwds,
                      title='Segments Timeseries',

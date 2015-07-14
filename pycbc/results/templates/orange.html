@@ -153,9 +153,15 @@
                 <!-- set file counter integer -->
                 {% set i = 1 %}
 
-                <!-- include well if it exists -->
-                {% if path_exists(plots_dir+dir.path+'/well.html') %}
-                   {{ setup_template_render(plots_dir+dir.path+'/well.html', None) }}
+                <!-- include well if it exists and check meta-data if well renders any files inside it -->
+                {% set well_path = plots_dir+dir.path+'/well.html' %}
+                {% if path_exists(well_path) %}
+                    {{ setup_template_render(well_path, None) }}
+                    {% if get_embedded_config(well_path).has_option('well.html', 'filenames') %}
+                        {% set well_filenames = get_embedded_config(well_path).get('well.html', 'filenames').split(',') %}
+                    {% else %}
+                        {% set well_filenames = [] %}
+                    {% endif %}
                 {% endif %}
 
                 <hr class="row-divider">
@@ -178,7 +184,7 @@
                                     {% set cp = get_embedded_config(file.path) %}
 
                                     <!-- do not show well.html -->
-                                    {% if not file.filename() == 'well.html' %}
+                                    {% if not file.filename() == 'well.html' and file.filename() not in well_filenames %}
                                         <div class="panel-group" id="accordion">
                                             <div class="panel panel-default">
                                                 <div class="panel-heading">

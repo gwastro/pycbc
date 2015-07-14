@@ -4,9 +4,7 @@
 
 <!--html file condition-->
 {% elif filename.endswith('html') %}
-    {% if path_exists(path) %}
-        {{ open(path, 'rb').read() }}
-    {% endif %}
+    {{ open(path, 'rb').read() }}
 
 <!--segment XML file condition-->
 {% elif ( filename.endswith('xml') or filename.endswith('xml.gz') ) and content %}

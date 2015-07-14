@@ -26,33 +26,9 @@ from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import table
 from glue.ligolw import utils
+from pycbc.events.veto import get_segment_definer_comments
 from pycbc.results import save_fig_with_metadata
 from pycbc.workflow import fromsegmentxml
-
-class ContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-lsctables.use_in(ContentHandler)
-
-def get_segment_definer_comments(xml_file):
-    """ Returns a dict with the comment column as the value for each segment.
-    """
-
-    # read segment definer table
-    xmldoc, digest = utils.load_fileobj(xml_file,
-                                        gz=xml_file.name.endswith(".gz"),
-                                        contenthandler=ContentHandler)
-    seg_def_table = table.get_table(xmldoc,
-                                    lsctables.SegmentDefTable.tableName)
-
-    # put comment column into a dict
-    comment_dict = {}
-    for seg_def in seg_def_table:
-        full_channel_name = ':'.join([str(seg_def.ifos),
-                                      str(seg_def.name),
-                                      str(seg_def.version)])
-        comment_dict[full_channel_name] = seg_def.comment
-
-    return comment_dict
 
 # parse command line
 parser = argparse.ArgumentParser()

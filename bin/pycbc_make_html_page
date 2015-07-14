@@ -186,6 +186,7 @@ env = Environment(loader=FileSystemLoader(input_path))
 env.globals.update(setup_template_render=setup_template_render)
 env.globals.update(get_embedded_config=get_embedded_config)
 env.globals.update(path_exists=os.path.exists)
+env.globals.update(list=list)
 template = env.get_template(input_template)
 
 # find all subdirs and the top-level subdirs
