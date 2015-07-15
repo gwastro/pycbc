@@ -11,7 +11,7 @@ addons:
 cache:
   directories:
     - $HOME/.ccache
-before_install:
-  - "./tools/install_travis.sh"
-install: "echo 'already instaled'"
-script: "source $TRAVIS_BUILD_DIR/source;"
+install:
+  - ./tools/install_travis.sh
+script:
+  - ./tools/run_travis.sh

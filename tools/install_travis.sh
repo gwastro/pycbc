@@ -1,47 +1,64 @@
 #!/bin/bash
-#set -e
 
-LOCAL=$PWD
-mkdir -p $LOCAL/src
+set -ev
 
-export LD_LIBRARY_PATH=$LOCAL/lib:$LOCAL/lib64
-export PKG_CONFIG_PATH=$LOCAL/lib/pkgconfig
-export PATH=/usr/lib/ccache:$PATH:$LOCAL/bin
+LOCAL=${PWD}
+
+# working dir for downloaded dependencies
+SRC=${HOME}/src
+mkdir -p ${SRC}
+
+# install dir for dependencies
+# FIXME try caching this!
+INST=${HOME}/inst
+
+export LD_LIBRARY_PATH=${INST}/lib:${INST}/lib64
+export PKG_CONFIG_PATH=${INST}/lib/pkgconfig
+export PATH=/usr/lib/ccache:${PATH}:${INST}/bin
 
 # install the version of swig that for some reason we have to use
-wget http://downloads.sourceforge.net/project/swig/swig/swig-2.0.11/swig-2.0.11.tar.gz
-tar -xvf swig-2.0.11.tar.gz
-cd swig-2.0.11; ./configure -q --prefix=$LOCAL; make -j; make install; cd ..
+
+cd ${SRC}
+wget -q http://downloads.sourceforge.net/project/swig/swig/swig-2.0.11/swig-2.0.11.tar.gz
+tar -xzf swig-2.0.11.tar.gz
+cd swig-2.0.11
+./configure -q --prefix=${INST}
+make -j
+make install
 
 # Install metaio
-wget https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/metaio-8.2.tar.gz
-tar -zxvf metaio-8.2.tar.gz
-cd metaio-8.2; CPPFLAGS=-std=gnu99 ./configure -q --prefix=$LOCAL; make -j; make install; cd ..
+
+cd ${SRC}
+wget -q https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/metaio-8.2.tar.gz
+tar -xzf metaio-8.2.tar.gz
+cd metaio-8.2
+CPPFLAGS=-std=gnu99 ./configure -q --prefix=${INST}
+make -j
+make install
 
 # install framel
-wget http://lappweb.in2p3.fr/virgo/FrameL/v8r26.tar.gz
-tar -xvf v8r26.tar.gz 
-cd v8r26; autoreconf; ./configure -q --prefix=$LOCAL;make -j; make install; cd ..
 
+cd ${SRC}
+wget -q http://lappweb.in2p3.fr/virgo/FrameL/v8r26.tar.gz
+tar -xzf v8r26.tar.gz 
+cd v8r26
+autoreconf
+./configure -q --prefix=${INST}
+make -j
+make install
 
-# Install lalsuite itself
-cd $LOCAL/src/
-git clone https://github.com/ahnitz/lalsuite.git
+# Install lalsuite
+
+cd ${SRC}
+git clone -q https://github.com/ahnitz/lalsuite.git
 cd lalsuite
-./00boot; ./configure -q --prefix=$LOCAL --enable-swig-python; make -j; make install
-source $LOCAL/etc/lal-user-env.sh
+./00boot
+./configure -q --prefix=${INST} --enable-swig-python --disable-lalstochastic --disable-lalinference --disable-laldetchar
+make -j
+make install
 
-echo source $LOCAL/etc/glue-user-env.sh >> $TRAVIS_BUILD_DIR/source
-echo source $LOCAL/etc/lal-user-env.sh >> $TRAVIS_BUILD_DIR/source
-echo $PWD
-chmod 755 $TRAVIS_BUILD_DIR/source
-cd $LOCAL
+cd ${LOCAL}
 
-# Standard python dependencies
-#pip install decorator --upgrade
-#pip install matplotlib --upgrade
-#pip install cython --upgrade
-#pip install pillow 
-#pip install -e 'git+http://github.com/jakevdp/mpld3.git#egg=mpld3-0.3'
-#SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
+source ${INST}/etc/lal-user-env.sh
+
 python setup.py install
