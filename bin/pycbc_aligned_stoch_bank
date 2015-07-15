@@ -26,7 +26,8 @@ import numpy
 import logging
 import pycbc
 import pycbc.version
-from pycbc import tmpltbank, pnutils, positive_float
+from pycbc import tmpltbank, pnutils
+from pycbc.types import positive_float
 import pycbc.psd
 import pycbc.strain
 
