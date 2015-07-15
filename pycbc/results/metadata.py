@@ -3,7 +3,8 @@ This Module contains generic utility functions for creating plots within
 PyCBC. 
 """
 import os.path, pycbc.version
-import ConfigParser, HTMLParser
+import ConfigParser
+from pycbc.future import HTMLParser
 from xml.sax.saxutils import escape, unescape
 
 escape_table = {
@@ -21,10 +22,10 @@ def html_escape(text):
     """ Sanitize text for html parsing """
     return escape(text, escape_table)
 
-class MetaParser(HTMLParser.HTMLParser):
+class MetaParser(HTMLParser):
     def __init__(self):
         self.metadata = {}
-        HTMLParser.HTMLParser.__init__(self)
+        HTMLParser.__init__(self)
 
     def handle_data(self, data):
         pass

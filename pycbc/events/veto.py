@@ -255,4 +255,27 @@ def indices_outside_segments(times, segment_files, ifo=None, segment_name=None):
                                          ifo=ifo, segment_name=segment_name)
     indices = numpy.arange(0, len(times))
     return numpy.delete(indices, exclude), segs
-    
+
+def get_segment_definer_comments(xml_file):
+    """ Returns a dict with the comment column as the value for each segment.
+    """
+
+    from glue.ligolw.ligolw import LIGOLWContentHandler as h
+    lsctables.use_in(h)
+
+    # read segment definer table
+    xmldoc, digest = ligolw_utils.load_fileobj(xml_file,
+                                        gz=xml_file.name.endswith(".gz"),
+                                        contenthandler=h)
+    seg_def_table = table.get_table(xmldoc,
+                                    lsctables.SegmentDefTable.tableName)
+
+    # put comment column into a dict
+    comment_dict = {}
+    for seg_def in seg_def_table:
+        full_channel_name = ':'.join([str(seg_def.ifos),
+                                      str(seg_def.name),
+                                      str(seg_def.version)])
+        comment_dict[full_channel_name] = seg_def.comment
+
+    return comment_dict

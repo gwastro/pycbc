@@ -240,12 +240,18 @@ wf.make_segments_plot(workflow, full_segs,
 wf.make_segments_plot(workflow, science_seg_file,
                  rdir['analysis_time/segments'], tags=['SCIENCE_MINUS_CAT1'])
 
+# FIXME: move to ini file
+data_seg_names = ['DATA', 'ANALYZABLE_DATA']
+science_seg_names = ['TRIGGERS_PRODUCED']
+veto_data_seg_names = ['CUMULATIVE_CAT_1H']
+veto_triggers_seg_names = ['CUMULATIVE_CAT_12H', 'CUMULATIVE_CAT_123H']
+
 # write segment summary XML file
 seg_list = []
 names = []
 ifos = []
 zip_seglists = [data_segs, science_segs, insp_segs]
-zip_names = ['DATA', 'ANALYZABLE_DATA', 'TRIGGERS_PRODUCED']
+zip_names = data_seg_names + science_seg_names
 for segment_list,segment_name in zip(zip_seglists, zip_names):
     for ifo in workflow.ifos:
         seg_list.append(segment_list[ifo])
@@ -256,7 +262,15 @@ seg_summ_file = multi_segments_to_file(seg_list, filename, names, ifos)
 
 # make segment table for summary page
 seg_summ_table = wf.make_seg_table(workflow, [seg_summ_file], zip_names,
-                                       rdir['analysis_time/segments'], ['SUMMARY'])
+                        rdir['analysis_time/segments'], ['SUMMARY'])
+veto_summ_table = wf.make_seg_table(workflow, cum_veto_files + final_veto_file,
+                        veto_data_seg_names + veto_triggers_seg_names,
+                        rdir['analysis_time/segments'], ['VETO_SUMMARY'])
+
+# make segment plot for summary page
+seg_summ_plot = wf.make_seg_plot(workflow, [seg_summ_file],
+                        rdir['analysis_time/segments'],
+                        data_seg_names + science_seg_names, ['SUMMARY'])
 
 # Make combined injection plots
 inj_summ = []
@@ -279,7 +293,8 @@ if len(inj_files) > 0:
     inj_summ = list(grouper(inj + sen, 2))
                             
 # make full summary
-summ = [(seg_summ_table, )] + det_summ + hist_summ + [(closed_snrifar,)] + inj_summ
+summ = [(seg_summ_plot,)] + [(seg_summ_table, veto_summ_table)] + \
+       det_summ + hist_summ + [(closed_snrifar,)] + inj_summ
 for row in summ:
     for f in row:
         if f is None:

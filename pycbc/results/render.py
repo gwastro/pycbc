@@ -35,6 +35,11 @@ def render_workflow_html_template(filename, subtemplate, filelists):
 
     dir = os.path.dirname(filename)
 
+    try:
+        filenames = [f.name for filelist in filelists for f in filelist if f != None]
+    except TypeError:
+        filenames = []
+
     # render subtemplate
     subtemplate_dir = pycbc.results.__path__[0] + '/templates/wells'
     env = Environment(loader=FileSystemLoader(subtemplate_dir))
@@ -47,7 +52,8 @@ def render_workflow_html_template(filename, subtemplate, filelists):
     output = subtemplate.render(context)
 
     # save as html page
-    kwds = {'render-function' : 'render_tmplt'}
+    kwds = {'render-function' : 'render_tmplt',
+            'filenames' : ','.join(filenames)}
     save_html_with_metadata(str(output), filename, None, kwds)
 
 def get_embedded_config(filename):
