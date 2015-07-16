@@ -26,7 +26,7 @@ from pycbc.types import MultiDetOptionActionSpecial
 from pycbc.types import required_opts, required_opts_multi_ifo
 from pycbc.types import ensure_one_opt, ensure_one_opt_multi_ifo
 from pycbc.types import copy_opts_for_single_ifo
-from pycbc.frame import read_frame
+from pycbc.frame import read_frame, query_and_read_frame
 from pycbc.inject import InjectionSet, SGBurstInjectionSet
 from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series
 from pycbc.filter.zpk import filter_zpk
@@ -50,14 +50,20 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
     strain : TimeSeries
         The time series containing the conditioned strain data.
     """
-    if opt.frame_cache or opt.frame_files:
+    if opt.frame_cache or opt.frame_files or opt.frame_type:
         if opt.frame_cache:
             frame_source = opt.frame_cache
         if opt.frame_files:
             frame_source = opt.frame_files
 
         logging.info("Reading Frames")
-        strain = read_frame(frame_source, opt.channel_name,
+        
+        if opt.frame_type:
+            strain = query_and_read_frame(opt.frame_type, opt.channel_name,
+                                          start_time=opt.gps_start_time-opt.pad_data,
+                                          end_time=opt.gps_end_time+opt.pad_data)
+        else:
+            strain = read_frame(frame_source, opt.channel_name,
                             start_time=opt.gps_start_time-opt.pad_data,
                             end_time=opt.gps_end_time+opt.pad_data)
 
@@ -213,6 +219,12 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--frame-files",
                             type=str, nargs="+",
                             help="list of frame files")
+
+    #Use datafind to get frame files 
+    data_reading_group.add_argument("--frame-type",
+                            type=str, nargs="+",
+                            help="(optional), replaces frame-files. Use datafind "
+                                 "to get the needed frame file(s) of this type.")
 
     #Generate gaussian noise with given psd
     data_reading_group.add_argument("--fake-strain",
@@ -371,7 +383,7 @@ def insert_strain_option_group_multi_ifo(parser):
 
 
 ensure_one_opt_groups = []
-ensure_one_opt_groups.append(['--frame-cache','--fake-strain','--frame-files'])
+ensure_one_opt_groups.append(['--frame-cache','--fake-strain','--frame-files', '--frame-type'])
 
 required_opts_list = ['--gps-start-time', '--gps-end-time',
                       '--strain-high-pass', '--pad-data', '--sample-rate',

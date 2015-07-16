@@ -16,7 +16,7 @@
 """
 This modules contains functions for reading in data from frame files or caches
 """
-import lalframe
+import lalframe, logging
 import lal
 import numpy
 import os.path
@@ -283,7 +283,9 @@ def query_and_read_frame(frame_type, channels, start_time, end_time):
     >>> ts = query_and_read_frame('H1_LDAS_C02_L2', 'H1:LDAS-STRAIN', 
     >>>                               968995968, 968995968+2048)
     """
+    logging.info('querying datafind server')
     paths = frame_paths(frame_type, start_time, end_time)
+    logging.info('found files: %s' % (' '.join(paths)))
     return read_frame(paths, channels, 
                       start_time=start_time, 
                       end_time=end_time)
