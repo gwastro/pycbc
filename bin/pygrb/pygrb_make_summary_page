@@ -25,8 +25,8 @@ from __future__ import division
 import os,sys,datetime,re,glob,shutil,ConfigParser
 from argparse import ArgumentParser
 from glue import markup
-from pylal import grbsummary,date,rate,antenna,git_version
-from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+from pylal import grbsummary,rate,antenna,git_version
+from lal.gpstime import gps_to_utc,LIGOTimeGPS
 import os.path
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
@@ -169,7 +169,7 @@ def write_summary( page, args, ifos, skyError=None, ipn=False, ipnError=False ):
   """
 
   gps = args.start_time
-  grbdate = datetime.datetime( *date.XLALGPSToUTC( LIGOTimeGPS(gps) )[:6] )\
+  grbdate = gps_to_utc(LIGOTimeGPS(gps))\
                 .strftime( "%B %d %Y, %H:%M:%S %ZUTC" )
   page.h3()
   page.add( 'Basic information' )
@@ -740,11 +740,11 @@ def main(args, inifile, outdir, ifoTag, detectionInjList=[],\
   trials  = sorted(glob.glob('OFFTRIAL_*'))
 
   # initialise page
-  title   = 'PyGRB + coh_PTF targeted CBC-GRB search for GRB%s' % GRBnum
+  title   = 'PyGRB + coh_PTF: A targeted, coherent CBC-GRB search\nGRB: %s' % GRBnum
   if open_box:
-      title += ': OPEN BOX PAGE'
+      title += '\nOPEN BOX PAGE'
   else:
-      title += ': CLOSED BOX PAGE'
+      title += '\nCLOSED BOX PAGE'
   banner  = write_banner( title )
   js = 'coh_PTF_html_summary.js'
   script = {js:'javascript'}
