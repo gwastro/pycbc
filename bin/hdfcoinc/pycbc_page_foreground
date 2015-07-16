@@ -7,56 +7,73 @@ parser = argparse.ArgumentParser()
 # General required options
 parser.add_argument('--trigger-file')
 parser.add_argument('--bank-file')
+parser.add_argument('--single-detector-triggers', nargs='+', default=None)
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
 parser.add_argument('--foreground-tag')
+parser.add_argument('--num-coincs-to-write', type=int)
 args = parser.parse_args()
 
 import h5py, numpy, logging, pycbc.results, pycbc.results.followup
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta
+from pycbc.io import hdf
 
 if args.verbose:
     log_level = logging.INFO
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+
+if args.output_file.endswith('.xml') or args.output_file.endswith('.xml.gz'):
+    if args.single_detector_triggers is None:
+        err_msg = "If creating xml files must provide the single detector "
+        err_msg += "trigger lists with --single-detector-triggers."
+        raise ValueError(err_msg)
     
-logging.info('Read in the foreground data')
-f = h5py.File(args.trigger_file, 'r')
-ifar = f['foreground/ifar'][:]
-sorting = ifar.argsort()[::-1]
-ifar = ifar[sorting]
-ifar_exc = f['foreground/ifar_exc'][:][sorting]
-fap = f['foreground/fap'][:][sorting]
-fap_exc = f['foreground/fap_exc'][:][sorting]
-stat = f['foreground/stat'][:][sorting]
-time1 = f['foreground/time1'][:][sorting]
-time2 = f['foreground/time2'][:][sorting]
-template_id = f['foreground/template_id'][:][sorting].astype(numpy.uint32)
-trigid1 = f['foreground/trigger_id1'][:][sorting].astype(numpy.uint32)
-trigid2 = f['foreground/trigger_id2'][:][sorting].astype(numpy.uint32)
+fortrigs = hdf.ForegroundTriggers(args.trigger_file, args.bank_file,
+                       sngl_files=args.single_detector_triggers,
+                       n_loudest=args.num_coincs_to_write)
 
-logging.info('Found %s foreground triggers' % len(stat))
+if args.output_file.endswith('.html'):
+    ifar = fortrigs.get_coincfile_array('ifar')
+    ifar_exc = fortrigs.get_coincfile_array('ifar_exc') 
+    fap = fortrigs.get_coincfile_array('fap')
+    fap_exc = fortrigs.get_coincfile_array('fap_exc')
+    stat = fortrigs.get_coincfile_array('stat')
+    time1 = fortrigs.get_coincfile_array('time1')
+    time2 = fortrigs.get_coincfile_array('time2')
 
-logging.info('Read in the template bank data to get template parameters')
-f = h5py.File(args.bank_file, 'r')
-mass1 = f['mass1'][:][template_id]
-mass2 = f['mass2'][:][template_id]
-spin1z = f['spin1z'][:][template_id]
-spin2z = f['spin2z'][:][template_id]
+    mass1 = fortrigs.get_bankfile_array('mass1')
+    mass2 = fortrigs.get_bankfile_array('mass2')
+    spin1z = fortrigs.get_bankfile_array('spin1z')
+    spin2z = fortrigs.get_bankfile_array('spin2z')
 
-mchirp, eta = mass1_mass2_to_mchirp_eta(mass1, mass2)
+    mchirp, eta = mass1_mass2_to_mchirp_eta(mass1, mass2)
 
-columns = [ifar_exc, ifar, fap_exc, fap, stat,  time1,
-           (time2-time1)*1000, mchirp, mass1, mass2, spin1z, spin2z]
-names = ['IFAR with Rem. (YR)', 'IFAR (YR)', 'FAP with Rem.', 'FAP', 'Combined NewSNR', 'End Time', 
-         'Time Diff. (ms)', 'mchirp', 'm1', 'm2',
-         's1z', 's2z']
-format_strings = ['#.###E0', '#.###E0', '#.##E0', '#.##E0', '##.###',
-                  None, '##.##', '##.##', '##.##',
-                  '##.##', '##.##', '##.##']
+    columns = [ifar_exc, ifar, fap_exc, fap, stat,  time1,
+               (time2-time1)*1000, mchirp, mass1, mass2, spin1z, spin2z]
+    names = ['IFAR with Rem. (YR)', 'IFAR (YR)', 'FAP with Rem.', 'FAP',
+             'Combined NewSNR', 'End Time', 'Time Diff. (ms)', 'mchirp', 'm1',
+             'm2', 's1z', 's2z']
+    format_strings = ['#.###E0', '#.###E0', '#.##E0', '#.##E0', '##.###',
+                      None, '##.##', '##.##', '##.##',
+                      '##.##', '##.##', '##.##']
 
-logging.info('Making table of foreground triggers')
-html_table = pycbc.results.table(columns, names, 
-                                 format_strings=format_strings, page_size=10)
+    if args.single_detector_triggers:
+        single_snr = fortrigs.get_snglfile_array_dict('snr')
+        single_chisq = fortrigs.get_snglfile_array_dict('chisq')
 
-f = open(args.output_file, 'w')
-f.write(html_table)
+        columns.extend([single_snr[ifo] for ifo in single_snr.keys()])
+        names.extend(["SNR in %s" %(ifo) for ifo in single_snr.keys()])
+        format_strings.extend(["##.##" for ifo in single_snr.keys()])
+        columns.extend([single_chisq[ifo] for ifo in single_chisq.keys()])
+        names.extend(["Chisq in %s" %(ifo) for ifo in single_chisq.keys()])
+        format_strings.extend(["##.##" for ifo in single_chisq.keys()])
+
+    logging.info('Making table of foreground triggers')
+    html_table = pycbc.results.table(columns, names, 
+                                   format_strings=format_strings, page_size=10)
+
+    f = open(args.output_file, 'w')
+    f.write(html_table)
+elif args.output_file.endswith('.xml') or args.output_file.endswith('.xml.gz'):
+    fortrigs.to_coinc_xml_object(args.output_file)
+
