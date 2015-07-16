@@ -97,29 +97,6 @@ def setup_coh_PTF_post_processing(workflow, trigger_files, output_dir,
     return post_proc_files
 
 
-def setup_old_coh_PTF_pp_workflow(workflow, analysis_files, injection_files,
-                                  output_dir, segment_dir, run_dir, ifos,
-                                  tags=[]):
-    """
-    Set up a job to run coh_PTF_post_processing and submit the resulting DAG.
-    """
-    cp = workflow.cp
-    post_proc_outs = FileList([])
-
-    coh_ptf_pp_exe = os.path.basename(cp.get("executables", "post_processing"))
-    coh_ptf_pp_class = select_generic_executable(workflow, "post_processing")
-
-    coh_ptf_pp_job = coh_ptf_pp_class(workflow.cp, "post_processing",
-                                      ifo=ifos,
-                                      injection_file=injection_files,
-                                      out_dir=output_dir, tags=tags)
-    coh_ptf_pp_node = coh_ptf_pp_job.create_node(analysis_files, run_dir,
-                                                 segment_dir, output_dir)
-    workflow.add_node(coh_ptf_pp_node)
-
-    return post_proc_outs
-
-
 def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
                                     output_dir, segment_dir, config_file, ifos,
                                     tags=[]):
@@ -151,7 +128,13 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
 
     trig_cluster_exe = os.path.basename(cp.get("executables", "trig_cluster"))
     trig_cluster_class = select_generic_executable(workflow, "trig_cluster")
+    """
+    injfinder_exe = os.path.basename(cp.get("executables", "injfinder"))
+    injfinder_class = select_generic_executable(workflow, "injfinder")
 
+    injcombiner_exe = os.path.basename(cp.get("executables", "injcombiner"))
+    injcombiner_class = select_generic_executable(workflow, "injcombiner")
+    """
     sbv_plotter_exe = os.path.basename(cp.get("executables", "sbv_plotter"))
     sbv_plotter_class = select_generic_executable(workflow, "sbv_plotter")
     
@@ -195,7 +178,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
     efficiency_jobs = efficiency_class(workflow.cp, "efficiency", ifo=ifos,
                                        out_dir=output_dir, tags=tags)
 
-    # Initialise html_summary class and set up job
+    # Initialise html_summary class
     html_summary_jobs = html_summary_class(workflow.cp, "html_summary", ifo=ifos,
                                            out_dir=output_dir, tags=tags)
 

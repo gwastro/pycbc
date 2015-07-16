@@ -34,7 +34,11 @@ import lal
 from glue import segments
 import Pegasus.DAX3 as dax
 from pycbc.workflow.core import Executable, File, FileList, Node
-from pycbc.workflow.legacy_ihope import LegacyTmpltbankExecutable, LegacyInspiralExecutable, LegacyCohPTFInspiralExecutable, LegacyCohPTFTrigCombiner, LegacyCohPTFTrigCluster, LegacyCohPTFSbvPlotter, LegacyCohPTFEfficiency, PyGRBMakeSummaryPage
+from pycbc.workflow.legacy_ihope import (LegacyTmpltbankExecutable,
+        LegacyInspiralExecutable, LegacyCohPTFInspiralExecutable,
+        LegacyCohPTFTrigCombiner, LegacyCohPTFTrigCluster,
+#        LegacyCohPTFInjcombiner, LegacyCohPTFInjfinder,
+        LegacyCohPTFSbvPlotter, LegacyCohPTFEfficiency, PyGRBMakeSummaryPage)
 
 
 def int_gps_time_to_str(t):
@@ -162,6 +166,8 @@ def select_generic_executable(workflow, exe_tag):
         "gstlal_inspiral_summary_page"    : GstlalSummaryPage,
         "coh_PTF_trig_combiner" : LegacyCohPTFTrigCombiner,
         "coh_PTF_trig_cluster"  : LegacyCohPTFTrigCluster,
+        #"coh_PTF_injfinder"     : LegacyCohPTFInjfinder,
+        #"coh_PTF_injcombiner"   : LegacyCohPTFInjcombiner,
         "coh_PTF_sbv_plotter"   : LegacyCohPTFSbvPlotter,
         "coh_PTF_efficiency"    : LegacyCohPTFEfficiency,
         "pygrb_make_summary_page"  : PyGRBMakeSummaryPage

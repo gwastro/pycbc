@@ -407,6 +407,44 @@ class LegacyCohPTFTrigCluster(LegacyAnalysisExecutable):
         return node, trig_file
 
 
+class LegacyCohPTFInjfinder(LegacyAnalysisExecutable):
+    """
+    The class responsible for setting up jobs for legacy coh_PTF_injfinder
+    executable.
+    """
+    current_retention_level = Executable.CRITICAL
+    def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
+                 out_dir=None, tags=[]):
+        super(LegacyCohPTFInjfinder, self).__init__(cp, name, universe,
+              ifo=ifo, out_dir=out_dir, tags=tags)
+        self.cp = cp
+        self.ifos = ifo
+        self.output_dir = out_dir
+        self.num_threads = 1
+
+    def create_node(self, buffer_seg):
+        node = Node(self)
+
+        node.add_input_opt('--exclude-segments', buffer_seg)
+        node.add_opt('--output_dir', self.output_dir)
+
+
+class LegacyCohPTFInjcombiner(LegacyAnalysisExecutable):
+    """
+    The class responsible for setting up jobs for legacy coh_PTF_injcombiner
+    executable.
+    """
+    current_retention_level = Executable.CRITICAL
+    def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
+                 out_dir=None, tags=[]):
+        super(LegacyCohPTFInjcombiner, self).__init__(cp, name, universe,
+              ifo=ifo, out_dir=out_dir, tags=tags)
+        self.cp = cp
+        self.ifos = ifo
+        self.output_dir = out_dir
+        self.num_threads = 1
+
+
 class LegacyCohPTFSbvPlotter(LegacyAnalysisExecutable):
     """
     The class responsible for setting up jobs for legacy coh_PTF_sbv_plotter

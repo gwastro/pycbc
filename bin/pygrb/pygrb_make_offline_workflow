@@ -256,11 +256,9 @@ if wflow.cp.has_section("workflow-injections"):
     else:
         inj_splitbank_files = _workflow.FileList(splitbank_files)
 
-    if wflow.cp.has_section("workflow-splitinjections"):
+    if wflow.cp.has_section("workflow-splittable-split_inspinj"):
         inj_split_files = _workflow.setup_splittable_workflow(wflow, inj_files,
-                                                              injDir,
-                                                              "splitinjections",
-                                                              tags=inj_tags)
+                injDir, tags=["split_inspinj"])
 
         inj_insp_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
                 datafind_veto_files, inj_splitbank_files, injDir,
