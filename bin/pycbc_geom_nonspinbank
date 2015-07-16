@@ -49,9 +49,6 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--version', action='version', version=__version__)
 parser.add_argument("-V", "--verbose", action="store_true", default=False,
                     help="verbose output")
-parser.add_argument("-m", "--min-match", action="store", type=float,
-                    default=None, help=
-                    "Generate bank with specified minimum match.  REQUIRED.")
 parser.add_argument("--random-seed", action="store", type=int,
                     default=None,
                     help="""Random seed to use when calling numpy.random
@@ -60,8 +57,8 @@ parser.add_argument("--random-seed", action="store", type=int,
                             physical space.  
                             If given, the code should give the same output 
                             when run with the same random seed.""")
-parser.add_argument("-O", "--output-file",
-                    help="Output file name.  REQUIRED.")
+
+tmpltbank.insert_base_bank_options(parser)
 
 # Insert the metric calculation options
 tmpltbank.insert_metric_calculation_options(parser)
@@ -86,11 +83,6 @@ else:
     log_level = logging.WARN
 logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
 
-# Sanity check options
-if not opts.output_file:
-    parser.error("Must supply --output-file")
-if not opts.min_match:
-    parser.error("Must supply --min-match")
 opts.max_mismatch = 1 - opts.min_match
 tmpltbank.verify_metric_calculation_options(opts, parser)
 metricParams=tmpltbank.metricParameters.from_argparse(opts)

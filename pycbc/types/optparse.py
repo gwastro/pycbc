@@ -16,7 +16,6 @@
 """
 This modules contains extensions for use with argparse
 """
-import logging
 import copy
 import argparse
 from collections import defaultdict
@@ -309,3 +308,33 @@ def convert_to_process_params_dict(opt):
                         new_val.append(':'.join([key, str(val[key])]))
             setattr(opt, arg, new_val)
     return vars(opt)
+
+def positive_float(s):
+    """
+    Ensure argument is a positive real number and return it as float.
+
+    To be used as type in argparse arguments.
+    """
+    err_msg = "must be a positive number, not %r" % s
+    try:
+        value = float(s)
+    except ValueError, e:
+        raise argparse.ArgumentTypeError(err_msg)
+    if value <= 0:
+        raise argparse.ArgumentTypeError(err_msg)
+    return value
+
+def nonnegative_float(s):
+    """
+    Ensure argument is a positive real number or zero and return it as float.
+
+    To be used as type in argparse arguments.
+    """
+    err_msg = "must be either positive or zero, not %r" % s
+    try:
+        value = float(s)
+    except ValueError, e:
+        raise argparse.ArgumentTypeError(err_msg)
+    if value < 0:
+        raise argparse.ArgumentTypeError(err_msg)
+    return value
