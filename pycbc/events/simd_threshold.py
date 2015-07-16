@@ -418,12 +418,12 @@ void windowed_max(std::complex<float> * __restrict inarr, const int64_t arrlen,
   for (i = 0; i < nwindows-1; i++){
     // The factor of 2 multiplying lengths[i] is because max_simd needs its length as a real
     // length, not complex.  But startpts and startoffset are complex values.
-    max_simd((float *) &inarr[i*winsize], (float *) &cvals[i],
-             &norms[i], &locs[i], startoffset + i*winsize, 2*winsize);
+    max_simple((float *) &inarr[i*winsize], (float *) &cvals[i],
+               &norms[i], &locs[i], startoffset + i*winsize, 2*winsize);
   }
   // Now the last window (which will be the only window if arrlen <= winzise)
-  max_simd((float *) &inarr[i*winsize], (float *) &cvals[i],
-             &norms[i], &locs[i], startoffset + i*winsize, 2*(arrlen - i*winsize));
+  max_simple((float *) &inarr[i*winsize], (float *) &cvals[i],
+              &norms[i], &locs[i], startoffset + i*winsize, 2*(arrlen - i*winsize));
 
   return;
 }
