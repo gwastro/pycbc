@@ -53,7 +53,9 @@ cd ${SRC}
 git clone -q https://github.com/ahnitz/lalsuite.git
 cd lalsuite
 ./00boot
-./configure -q --prefix=${INST} --enable-swig-python --disable-lalstochastic --disable-lalinference --disable-laldetchar
+./configure -q --prefix=${INST} --enable-swig-python \
+--disable-lalstochastic --disable-lalinference --disable-laldetchar \
+--disable-lalxml --disable-lalburst --disable-lalapps
 make -j
 make install
 
