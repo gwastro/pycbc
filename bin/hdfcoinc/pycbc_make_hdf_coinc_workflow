@@ -168,7 +168,14 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                             rdir['result'], tags=final_bg_file[0].tags)
 
         table = wf.make_foreground_table(workflow, final_bg_file[0], 
-                            hdfbank[0], tag, rdir['result'])
+                            hdfbank[0], tag, rdir['result'], singles=insps,
+                            extension='.html', tags=["html"])
+        fore_xmlall = wf.make_foreground_table(workflow, final_bg_file[0],
+                            hdfbank[0], tag, rdir['result'], singles=insps,
+                            extension='.xml', tags=["xmlall"])
+        fore_xmlloudest = wf.make_foreground_table(workflow, final_bg_file[0],
+                            hdfbank[0], tag, rdir['result'], singles=insps,
+                            extension='.xml', tags=["xmlloudest"])
         single_layout(rdir['result'], [snrifar, table])
 
         snrchi = wf.make_snrchi_plot(workflow, insps, censored_veto, 
