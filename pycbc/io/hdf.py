@@ -168,29 +168,12 @@ class ForegroundTriggers(object):
         self._trig_ids = {}
         # FIXME: There is no clear mapping from trig_id to ifo. This is bad!!!
         #        for now a hack is in place.
+        ifo1 = self.coinc_file.h5file.attrs['detector_1']
+        ifo2 = self.coinc_file.h5file.attrs['detector_2']
         trigid1 = self.get_coincfile_array('trigger_id1')
         trigid2 = self.get_coincfile_array('trigger_id2')
-        for ifo, file in self.sngl_files.items():
-            try:
-                ifo = file.h5file.keys()[0]
-                fs = file.h5file
-                if (fs[ifo]['template_id'][:][trigid1] ==\
-                                                       self.template_id).all():
-                    self._trig_ids[ifo] = trigid1
-                else:
-                    raise IndexError()
-            except IndexError:
-                # Trig1 doesn't fit, try trigid2
-                try:
-                    if (fs[ifo]['template_id'][:][trigid2] ==\
-                                                       self.template_id).all():
-                        self._trig_ids[ifo] = trigid2
-                    else:
-                        raise IndexError()
-                except IndexError:
-                     # Neither fit, fail
-                    err_msg = "Cannot match id1 or id2 to the single triggers."
-                    raise ValueError(err_msg)
+        self._trig_ids[ifo1] = trigid1
+        self._trig_ids[ifo2] = trigid2
         return self._trig_ids
 
     def get_coincfile_array(self, variable):
@@ -277,13 +260,11 @@ class ForegroundTriggers(object):
             coinc_id = lsctables.CoincID(idx)
 
             # Set up sngls
-            # FIXME: Need to do this to set up mapping from trigid1 to ifo
-            self.trig_id            
             # FIXME: As two-ifo is hardcoded loop over all ifos
             sngl_combined_mchirp = 0
             sngl_combined_mtot = 0
             for ifo in ifos:
-                sngl_id = self._trig_ids[ifo][idx]
+                sngl_id = self.trig_id[ifo][idx]
                 event_id = lsctables.SnglInspiralID(sngl_id)
                 sngl = return_empty_sngl()
                 curr_sngl_file = self.sngl_files[ifo].h5file[ifo]
