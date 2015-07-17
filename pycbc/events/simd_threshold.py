@@ -331,6 +331,60 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
 
 }
 
+void max_simple(float * __restrict inarr, float * __restrict mval,
+                float * __restrict norm, int64_t *mloc,
+                int64_t nstart, int64_t howmany){
+
+  /*
+
+   This function does *NOT* use explicit SIMD vectorization, and
+   takes an input float array (which consists of alternating real and
+   imaginary parts of a complex array) and writes the two-float value
+   of the maximum into 'mval', the single-float norm of the maximum into
+   'norm', and the location of the maximum (as an index into a *complex* array)
+   into 'mloc'. The number 'nstart' is added to whatever location is
+   found for the maximum (returned in mloc), and 'howmany' is the length
+   of inarr (as a *real* array).
+
+  */
+
+  int64_t i, curr_mloc;
+  float re, im, curr_norm, curr, curr_mval[2], *arrptr;
+
+  // Set everything up.
+  curr_norm = 0.0;
+  curr_mval[0] = 0.0;
+  curr_mval[1] = 0.0;
+  curr_mloc = 0;
+  arrptr = inarr;
+
+  for (i = 0; i < howmany; i += 2){
+    re = *arrptr;
+    im = *(arrptr+1);
+    curr = re*re + im*im;
+    if (curr > curr_norm){
+        curr_mval[0] = re;
+        curr_mval[1] = im;
+        curr_mloc = i;
+        curr_norm = curr;
+    }
+    arrptr += 2;
+  }
+
+  // Store our answers and return
+  *mval = curr_mval[0];
+  *(mval+1) = curr_mval[1];
+  *norm = curr_norm;
+
+  // Note that curr_mloc is a real array index, but we
+  // must return the index into the complex array.
+  *mloc = (curr_mloc/2) + nstart;
+
+  return;
+
+}
+
+
 void windowed_max(std::complex<float> * __restrict inarr, const int64_t arrlen,
                   std::complex<float> * __restrict cvals, float * __restrict norms,
                   int64_t * __restrict locs, const int64_t winsize,
@@ -364,12 +418,12 @@ void windowed_max(std::complex<float> * __restrict inarr, const int64_t arrlen,
   for (i = 0; i < nwindows-1; i++){
     // The factor of 2 multiplying lengths[i] is because max_simd needs its length as a real
     // length, not complex.  But startpts and startoffset are complex values.
-    max_simd((float *) &inarr[i*winsize], (float *) &cvals[i],
-             &norms[i], &locs[i], startoffset + i*winsize, 2*winsize);
+    max_simple((float *) &inarr[i*winsize], (float *) &cvals[i],
+               &norms[i], &locs[i], startoffset + i*winsize, 2*winsize);
   }
   // Now the last window (which will be the only window if arrlen <= winzise)
-  max_simd((float *) &inarr[i*winsize], (float *) &cvals[i],
-             &norms[i], &locs[i], startoffset + i*winsize, 2*(arrlen - i*winsize));
+  max_simple((float *) &inarr[i*winsize], (float *) &cvals[i],
+              &norms[i], &locs[i], startoffset + i*winsize, 2*(arrlen - i*winsize));
 
   return;
 }
