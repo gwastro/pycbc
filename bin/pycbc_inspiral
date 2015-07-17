@@ -140,6 +140,13 @@ parser.add_argument("--cpu-affinity-from-env", help="""
                     The name of an enivornment variable containing a set
                     of CPUs on which to run,  specified in a format suitable
                     to pass to taskset.""")
+parser.add_argument("--per-process-cache", action="store_true",
+                    default=False,
+                    help="""If given, each process will use a separate directory
+                         for scipy.weave compilation.  This is slower, but safer if
+                         several instances may be starting on the same machine at
+                         the same time.""")
+
 
 # Add options groups
 psd.insert_psd_option_group(parser)
@@ -217,6 +224,15 @@ if requested_cpus is not None:
 
     logging.info("Pinned to CPUs %s " % requested_cpus)
 
+
+# Check whether to use a private directory for scipy.weave
+if opt.per_process_cache:
+    # PYTHONCOMPILED is initially set in pycbc.__init__
+    new_dir = os.path.join(os.environ['PYTHONCOMPILED'],
+                           str(os.getpid()))
+    print "Setting cache to %s " % new_dir
+    os.environ['PYTHONCOMPILED'] = new_dir
+    os.makedirs(new_dir)
 
 ctx = scheme.from_cli(opt)
 gwstrain = strain.from_cli(opt, DYN_RANGE_FAC)
