@@ -1,0 +1,20 @@
+#! /usr/bin/python
+
+"""
+Simple script to plot a txt file created by a TimeSeries.
+"""
+
+import matplotlib as mpl; mpl.use('Agg')
+import matplotlib.pyplot as plt
+import sys
+
+from pycbc import types
+
+timeseries = types.load_timeseries(sys.argv[1])
+
+start = 95
+sample_rate = 16384
+t0 = start*sample_rate
+
+plt.plot(timeseries.sample_times[t0:], timeseries.numpy()[t0:])
+plt.savefig(sys.argv[2])

@@ -1,0 +1,53 @@
+#! /usr/bin/python
+
+import argparse
+import ctypes
+import logging
+import matplotlib.pyplot as plt
+from glue import lal
+from glue import segments
+from pycbc import frame
+from pycbc import types
+
+import ROOT
+ROOT.gSystem.Load('/usr/lib64/libdmtsigp.so')
+ROOT.gSystem.Load('/usr/lib64/libgdsplot.so')
+from foton import FilterFile, Filter
+
+# parse command line
+parser = argparse.ArgumentParser(usage='pycbc_plot_swstat [--options]',
+                  description='Reads a frame file and plots the switch status for a filterbank.')
+parser.add_argument("--gps-start-time", type=int, required=True,
+                  help="Time to begin filtering input data.")
+parser.add_argument("--gps-end-time", type=int, required=True,
+                  help="Time to finish filtering input data.")
+parser.add_argument("--frame-cache", type=str, required=True,
+                  help="Path to frame cache that contains data.")
+parser.add_argument("--filter-file", type=str, required=True,
+                  help="Path to foton filter file to extract filterbanks.")
+opts = parser.parse_args()
+
+# initializations
+channel_names = []
+channel_names += ['L1:LSC-DARM_IN1_DQ']
+channel_names += ['L1:LSC-DARM_OUT_DQ']
+
+# setup log
+logging_level = logging.DEBUG
+logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
+
+# read frame cache
+logging.info('Reading cache file...')
+frame_cache = lal.Cache.fromfilenames([opts.frame_cache])
+frame_filenames = [entry.path for entry in frame_cache]
+
+# get channel data from frame files
+logging.info('Reading frame files...')
+data = frame.read_frame(frame_filenames, channel_names, start_time=opts.gps_start_time, end_time=opts.gps_end_time)
+
+# put data into arrays
+darm_in1 = data[0].numpy()
+darm_out = data[1].numpy()
+
+# exit
+logging.info('Done.')

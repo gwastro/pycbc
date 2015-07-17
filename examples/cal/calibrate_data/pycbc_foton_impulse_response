@@ -1,0 +1,54 @@
+#! /usr/bin/python
+
+import argparse
+import ctypes
+import logging
+import numpy as np
+
+from glue import lal
+from glue import segments
+from pycbc import frame
+from pycbc import types
+
+import ROOT
+ROOT.gSystem.Load('/usr/lib64/libdmtsigp.so')
+ROOT.gSystem.Load('/usr/lib64/libgdsplot.so')
+from foton import FilterFile, Filter
+
+# parse command line
+parser = argparse.ArgumentParser(usage='pycbc_calibrate_data [--options]',
+                  description='Determine the impulse response of a foton filter.')
+parser.add_argument("--filter-file", type=str, required=True,
+                  help="Path to foton filter file to extract filterbanks.")
+parser.add_argument("--filterbank-name", type=str, required=True,
+                  help="Name of filterbank in foton filter file.")
+parser.add_argument("--filterbank-bit", type=int, required=True,
+                  help="Bit of the filter in specified filterbank to use.")
+opts = parser.parse_args()
+
+# initializations
+sample_rate = 16384
+
+# setup log
+logging_level = logging.DEBUG
+logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
+
+# create timeseries with delta function
+data = np.arange(0, 100, 1./sample_rate)
+data[50*sample_rate] = 1000
+
+# get filter files
+logging.info('Reading filter files...')
+filter_file = FilterFile(opts.filter_file)
+
+# apply filter
+logging.info('Filtering data...')
+data_filtered = Filter(filter_file[opts.filterbank_name][opts.filterbank_bit]).apply(data)
+
+# write output
+logging.info('Writing data...')
+output_data = types.TimeSeries(data_filtered, delta_t=1./sample_rate, epoch=0)
+output_data.save('output/test_impulse.txt')
+
+# exit
+logging.info('Done.')
