@@ -19,7 +19,8 @@ export PATH=/usr/lib/ccache:${PATH}:${INST}/bin
 # install the version of swig that for some reason we have to use
 
 cd ${SRC}
-wget -q http://downloads.sourceforge.net/project/swig/swig/swig-2.0.11/swig-2.0.11.tar.gz
+# FIXME SF mirror hardcoded to heanet to work around occasional failures
+wget -q http://heanet.dl.sourceforge.net/project/swig/swig/swig-2.0.11/swig-2.0.11.tar.gz
 tar -xzf swig-2.0.11.tar.gz
 cd swig-2.0.11
 ./configure -q --prefix=${INST}
