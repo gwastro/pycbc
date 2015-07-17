@@ -26,16 +26,6 @@ This package provides a front-end to various fast Fourier transform
 implementations within PyCBC.
 """
 
-import pycbc
-import pycbc.scheme
-import pycbc.types
-from pycbc.types import Array as _Array
-from pycbc.types import TimeSeries as _TimeSeries
-from pycbc.types import FrequencySeries as _FrequencySeries
-
-from numpy import dtype
-
-from optparse import OptionGroup
 from .backend_support import get_backend_modules, get_backend_names
 from .backend_support import set_backend, get_backend
 

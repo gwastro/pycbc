@@ -13,7 +13,6 @@ twiddle factors.
 """
 import numpy, scipy.weave, ctypes, pycbc.types
 from pycbc.libutils import get_ctypes_library
-import logging
 
 # FFTW constants
 FFTW_FORWARD = -1

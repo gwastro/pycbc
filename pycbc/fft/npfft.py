@@ -26,7 +26,6 @@ This module provides the numpy backend of the fast Fourier transform
 for the PyCBC package.
 """
 
-import pycbc.types
 import numpy.fft
 
 def fft(invec,outvec,prec,itype,otype):

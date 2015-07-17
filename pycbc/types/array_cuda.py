@@ -29,7 +29,7 @@ from pycuda.reduction import ReductionKernel
 from pycuda.tools import get_or_register_dtype
 from pycuda.tools import context_dependent_memoize
 from pycuda.tools import dtype_to_ctype
-from pytools import match_precision, memoize_method
+from pytools import match_precision
 from pycuda.gpuarray import _get_common_dtype, empty, GPUArray
 import pycuda.gpuarray
 from pycuda.scan import InclusiveScanKernel

@@ -31,14 +31,11 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/coincidence.html
 from __future__ import division
 
 import re
-import os
-import os.path
 import logging
 from glue import segments
 from glue.ligolw import lsctables,ligolw
 from glue.ligolw import utils as ligolw_utils
 from pycbc.workflow.core import FileList, make_analysis_dir, Executable, Node
-from pycbc.workflow.core import get_random_label
 from pycbc.workflow.jobsetup import LigolwAddExecutable, LigolwSSthincaExecutable, SQLInOutExecutable
 
 class ContentHandler(ligolw.LIGOLWContentHandler):

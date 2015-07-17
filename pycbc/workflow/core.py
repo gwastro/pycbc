@@ -26,11 +26,10 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import os, sys, subprocess, logging, math, string, urlparse, ConfigParser, copy
+import os, subprocess, logging, math, string, urlparse, ConfigParser, copy
 import numpy, cPickle, random
 from itertools import combinations, groupby
 from operator import attrgetter
-from os.path import basename, isfile
 import lal as lalswig
 from glue import lal, segments
 from pycbc.workflow.configuration import WorkflowConfigParser
@@ -654,9 +653,9 @@ class File(pegasus_workflow.File):
         # Let's do a test here
         if use_tmp_subdirs and len(self.segment_list):
             pegasus_lfn = str(int(self.segment_list.extent()[0]))[:-4]
-            pegasus_lfn = pegasus_lfn + '/' + basename(file_url)
+            pegasus_lfn = pegasus_lfn + '/' + os.path.basename(file_url)
         else:
-            pegasus_lfn = basename(file_url)
+            pegasus_lfn = os.path.basename(file_url)
         super(File, self).__init__(pegasus_lfn)
         
         if store_file:

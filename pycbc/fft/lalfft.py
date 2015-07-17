@@ -26,7 +26,6 @@ This module provides the SwigLAL backend of the fast Fourier transform
 for the PyCBC package.
 """
 
-import pycbc.types
 import lal
 from lal import CreateForwardCOMPLEX16FFTPlan as _CreateForwardCOMPLEX16FFTPlan
 from lal import CreateForwardCOMPLEX8FFTPlan as _CreateForwardCOMPLEX8FFTPlan
@@ -44,7 +43,6 @@ from lal import REAL4ForwardFFT as _REAL4ForwardFFT
 from lal import REAL8ReverseFFT as _REAL8ReverseFFT
 from lal import REAL4ReverseFFT as _REAL4ReverseFFT
 
-from optparse import OptionGroup
 
 # Measure level.  By default 1, which does some but not much planning,
 # but we provide functions to read and set it

@@ -22,7 +22,7 @@
 # =============================================================================
 #
 import logging, numpy
-from pycbc.types import Array, zeros, real_same_precision_as, TimeSeries, complex_same_precision_as
+from pycbc.types import Array, zeros, real_same_precision_as, TimeSeries
 from pycbc.filter import overlap_cplx, matched_filter_core
 from pycbc.waveform import FilterBank
 from math import sqrt

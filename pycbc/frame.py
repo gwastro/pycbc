@@ -21,7 +21,6 @@ import lal
 import numpy
 import os.path
 from pycbc.types import TimeSeries
-import copy
 from glue import datafind
 
 # map LAL series types to corresponding functions and Numpy types

@@ -29,7 +29,6 @@ objects.
 import os
 import pycbc
 from decorator import decorator
-from optparse import OptionGroup
 import logging
 
 class _SchemeManager(object):

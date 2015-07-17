@@ -18,7 +18,7 @@
 This module defines optimization flags and determines hardware features that some
 other modules and packages may use.
 """
-import os, sys
+import sys
 import pycbc
 
 # Work around different Python versions to get runtime

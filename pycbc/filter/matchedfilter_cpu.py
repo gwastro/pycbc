@@ -21,12 +21,11 @@
 #
 # =============================================================================
 #
-import numpy, pycbc
+import numpy
 from pycbc.opt import omp_libs, omp_flags
 from scipy.weave import inline
-from .simd_correlate import correlate_parallel, default_segsize, corr_parallel_code, corr_support
+from .simd_correlate import default_segsize, corr_parallel_code, corr_support
 from .matchedfilter import _BaseCorrelator
-import sys
 
 support = """
     #include <stdio.h>

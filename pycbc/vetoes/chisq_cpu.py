@@ -22,7 +22,7 @@
 # =============================================================================
 #
 import numpy, pycbc
-from pycbc.types import Array, real_same_precision_as, complex_same_precision_as
+from pycbc.types import real_same_precision_as
 from scipy.weave import inline
 
 if pycbc.HAVE_OMP:

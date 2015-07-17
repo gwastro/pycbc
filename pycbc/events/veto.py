@@ -5,7 +5,6 @@ import numpy, urlparse, os.path
 import lal
 from sys import argv
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
-from glue import segments
 from glue.segments import segment, segmentlist
 from glue.ligolw.utils import segments as ligolw_segments
 

@@ -19,7 +19,6 @@
 import logging
 import os
 import subprocess
-from ConfigParser import ConfigParser
 from pycbc.results import save_fig_with_metadata, html_escape
 
 def get_library_version_info():

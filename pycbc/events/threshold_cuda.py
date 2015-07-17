@@ -22,12 +22,9 @@
 # =============================================================================
 #
 import numpy, mako.template
-from pycbc.types import zeros, Array
-from pycuda import gpuarray, driver
-from pycuda.gpuarray import to_gpu, empty
-from pycuda.tools import get_or_register_dtype, dtype_to_ctype
+from pycuda import gpuarray
+from pycuda.tools import dtype_to_ctype
 from pycuda.elementwise import ElementwiseKernel
-from pycuda.scan import ExclusiveScanKernel
 from pycuda.compiler import SourceModule
 import pycbc.scheme
 

@@ -16,19 +16,15 @@
 #  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #  MA  02111-1307  USA
 
-import lalsimulation
 import lal
 import numpy
 from numpy import sqrt, double, complex128
 from math import pow, log, cos, sin, acos, atan2
 
-import pycuda.tools
 from pycuda.elementwise import ElementwiseKernel
-from pycuda.gpuarray import to_gpu
 
 from pycbc.setuputils import pkg_config_header_strings
 from pycbc.types import FrequencySeries, zeros
-import pycbc.pnutils
 from pycbc.waveform.utils import ceilpow2
 
 preamble = """

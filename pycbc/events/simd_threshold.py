@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pycbc.types import zeros, complex64, float32, Array
+from pycbc.types import zeros, complex64, float32
 from scipy.weave import inline
 import numpy as _np
 import pycbc.opt

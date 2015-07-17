@@ -22,14 +22,10 @@
 # =============================================================================
 #
 
-from pycuda.elementwise import get_elwise_kernel,ElementwiseKernel
-from pytools import match_precision
-from pycuda.reduction import ReductionKernel
+from pycuda.elementwise import ElementwiseKernel
 from pycuda.tools import context_dependent_memoize
 from pycuda.tools import dtype_to_ctype
-from pycbc.types import real_same_precision_as
 from pycuda.gpuarray import _get_common_dtype
-import numpy
 
 @context_dependent_memoize
 def get_correlate_kernel(dtype_x, dtype_y,dtype_out):

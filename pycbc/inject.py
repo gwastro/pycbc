@@ -29,7 +29,7 @@
 import numpy as np
 import lal
 import lalsimulation as sim
-from pycbc.waveform import get_td_waveform, get_sgburst_waveform, utils as wfutils
+from pycbc.waveform import get_td_waveform, utils as wfutils
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import ligolw, table, lsctables
 from pycbc.types import float64, float32, TimeSeries
