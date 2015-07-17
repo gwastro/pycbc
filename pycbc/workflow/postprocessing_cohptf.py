@@ -40,8 +40,11 @@ from pycbc.workflow.core import File, FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import select_generic_executable
 
 def setup_coh_PTF_post_processing(workflow, trigger_files, output_dir,
-                                  segment_dir, injection_files=None,
-                                  config_file=None, run_dir=None, ifos=None,
+                                  segment_dir, injection_trigger_files=None,
+                                  injection_files=None,
+                                  injection_trigger_caches=None,
+                                  injection_caches=None, config_file=None,
+                                  run_dir=None, ifos=None, inj_tags=[],
                                   tags=[], **kwargs):
     """
     This function aims to be the gateway for running postprocessing in CBC
@@ -84,9 +87,10 @@ def setup_coh_PTF_post_processing(workflow, trigger_files, output_dir,
     # finding and putting everything into one SQL database.
     if post_proc_method == "COH_PTF_WORKFLOW":
         post_proc_files = setup_postproc_coh_PTF_workflow(workflow,
-                           trigger_files, injection_files, output_dir,
-                           segment_dir, config_file, ifos=ifos, tags=tags,
-                           **kwargs)
+                trigger_files, injection_trigger_files, injection_files,
+                injection_trigger_caches, injection_caches, config_file,
+                output_dir, segment_dir, ifos=ifos, inj_tags=inj_tags,
+                tags=tags, **kwargs)
     else:
         errMsg = "Post-processing method not recognized. Must be "
         errMsg += "COH_PTF_WORKFLOW."
@@ -97,9 +101,10 @@ def setup_coh_PTF_post_processing(workflow, trigger_files, output_dir,
     return post_proc_files
 
 
-def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
-                                    output_dir, segment_dir, config_file, ifos,
-                                    tags=[]):
+def setup_postproc_coh_PTF_workflow(workflow, trig_files, inj_trig_files,
+                                    inj_files, inj_trig_caches, inj_caches,
+                                    config_file, output_dir, segment_dir,
+                                    ifos, inj_tags=[], tags=[]):
     """
     This module sets up the post-processing stage in the workflow, using a
     coh_PTF style set up. This consists of running trig_combiner to find
@@ -110,7 +115,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
     
     workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the jobs will be added to.
-    trigger_files : pycbc.workflow.core.FileList
+    trig_files : pycbc.workflow.core.FileList
         A FileList containing the combined databases.
    
     Returns
@@ -128,13 +133,8 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
 
     trig_cluster_exe = os.path.basename(cp.get("executables", "trig_cluster"))
     trig_cluster_class = select_generic_executable(workflow, "trig_cluster")
-    """
-    injfinder_exe = os.path.basename(cp.get("executables", "injfinder"))
-    injfinder_class = select_generic_executable(workflow, "injfinder")
 
-    injcombiner_exe = os.path.basename(cp.get("executables", "injcombiner"))
-    injcombiner_class = select_generic_executable(workflow, "injcombiner")
-    """
+
     sbv_plotter_exe = os.path.basename(cp.get("executables", "sbv_plotter"))
     sbv_plotter_class = select_generic_executable(workflow, "sbv_plotter")
     
@@ -152,9 +152,8 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
     # Set up trig_combiner job
     trig_combiner_jobs = trig_combiner_class(workflow.cp, "trig_combiner",
                                              ifo=ifos, 
-                                             injection_file=injection_files,
                                              out_dir=output_dir, tags=tags)
-    trig_combiner_node = trig_combiner_jobs.create_node(trigger_files,
+    trig_combiner_node = trig_combiner_jobs.create_node(trig_files,
                                                         segment_dir, tags=tags)
     pp_nodes.append(trig_combiner_node)
     workflow.add_node(trig_combiner_node)
@@ -167,6 +166,32 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
     trig_cluster_jobs = trig_cluster_class(workflow.cp, "trig_cluster",
                                            ifo=ifos,
                                            out_dir=output_dir, tags=tags)
+
+    # Set up injfinder jobs
+    if cp.has_section("workflow-injections"):
+        injfinder_exe = os.path.basename(cp.get("executables", "injfinder"))
+        injfinder_class = select_generic_executable(workflow, "injfinder")
+        """
+        injcombiner_exe = os.path.basename(cp.get("executables",
+                                                  "injcombiner"))
+        injcombiner_class = select_generic_executable(workflow, "injcombiner")
+        """
+        injfinder_jobs = injfinder_class(workflow.cp, "injfinder", ifo=ifos,
+                                         out_dir=output_dir, tags=tags)
+        for inj_tag in inj_tags:
+            triggers = FileList([file for file in inj_trig_files \
+                                 if inj_tag in file.tag_str])
+            injections = FileList([file for file in inj_files \
+                                   if inj_tag in file.tag_str])
+            trig_cache = [file for file in inj_trig_caches \
+                          if inj_tag in file.tag_str][0]
+            inj_cache = [file for file in inj_caches \
+                         if inj_tag in file.tag_str][0]
+            injfinder_node = injfinder_jobs.create_node(triggers,
+                    injections, trig_cache, inj_cache, segment_dir,
+                    tags=tags)
+            pp_nodes.append(injfinder_node)
+            workflow.add_node(injfinder_node)
 
     # Initialise sbv_plotter class
     sbv_plotter_outs = FileList([])
@@ -188,7 +213,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
 
     for out_tag in cluster_out_tags:
         trig_cluster_node, \
-        unclustered_trigs = trig_cluster_jobs.create_node(trigger_files[-1],
+        unclustered_trigs = trig_cluster_jobs.create_node(trig_files[-1],
                 tags=["GRB%s_%s" % (trig_name, out_tag)])
         trig_cluster_outs.extend(trig_cluster_node.output_files)
 
@@ -252,7 +277,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trigger_files, injection_files,
 
     while trial <= trials:
         trig_cluster_node, \
-        unclustered_trigs = trig_cluster_jobs.create_node(trigger_files[-1],
+        unclustered_trigs = trig_cluster_jobs.create_node(trig_files[-1],
                 tags=["GRB%s_OFFTRIAL_%d" % (trig_name, trial)])
         trig_cluster_outs.extend(trig_cluster_node.output_files)
         pp_nodes.append(trig_cluster_node)

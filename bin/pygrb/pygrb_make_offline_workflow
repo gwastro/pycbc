@@ -190,6 +190,7 @@ if not os.path.exists(runDir):
     os.makedirs(runDir)
 os.chdir(runDir)
 
+# SEGMENTS
 # Hack to set start and end times based on maximum allowed duration
 start = int(wflow.cp.get("workflow", "trigger-time")) - int(wflow.cp.get(
         "workflow-exttrig_segments", "max-duration"))
@@ -212,7 +213,7 @@ wflow.cp = set_start_end(wflow.cp, int(sciSegs[ifo][0][0]),
                          int(sciSegs[ifo][0][1]))
 ext_file = None
 
-# Datafind
+# DATAFIND
 dfDir = os.path.join(currDir, "datafind")
 datafind_files, sciSegs = _workflow.setup_datafind_workflow(wflow, sciSegs,
                                                             dfDir,
@@ -233,7 +234,7 @@ if os.path.basename(wflow.cp.get("executables", "inspiral")) \
 
 all_files.extend(datafind_veto_files)
 
-# Template bank and splitting the bank
+# TEMPLATE BANK AND SPLIT BANK
 # TODO: Move from pregenerated to generated coherent network bank
 bank_files = _workflow.setup_tmpltbank_workflow(wflow, sciSegs,
                                                 datafind_files, dfDir)
@@ -242,13 +243,24 @@ splitbank_files = _workflow.setup_splittable_workflow(wflow, bank_files, dfDir,
 all_files.extend(bank_files)
 all_files.extend(splitbank_files)
 
-# Injections
+# INJECTIONS
+inj_files = None
+inj_caches = None
+inj_insp_files = None
+inj_insp_caches = None
 if wflow.cp.has_section("workflow-injections"):
     injDir = os.path.join(currDir, "injections")
+    inj_caches = _workflow.FileList([])
+    inj_insp_caches = _workflow.FileList([])
+
+    # Generate injection files
     inj_files, inj_tags = _workflow.setup_injection_workflow(wflow, injDir,
             exttrig_file=ext_file)
     all_files.extend(inj_files)
-    
+    injs = inj_files
+
+    # Either split template bank for injections jobs or use same split banks
+    # as for standard matched filter jobs
     if wflow.cp.has_section("workflow-splittable-injections"):
         inj_splitbank_files = _workflow.setup_splittable_workflow(wflow,
                 bank_files, injDir, tags=["injections"])
@@ -256,56 +268,76 @@ if wflow.cp.has_section("workflow-injections"):
     else:
         inj_splitbank_files = _workflow.FileList(splitbank_files)
 
+    # Split the injection files
     if wflow.cp.has_section("workflow-splittable-split_inspinj"):
         inj_split_files = _workflow.setup_splittable_workflow(wflow, inj_files,
                 injDir, tags=["split_inspinj"])
+        all_files.extend(inj_split_files)
+        injs = inj_split_files
 
-        inj_insp_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
-                datafind_veto_files, inj_splitbank_files, injDir,
-                inj_split_files)
+    # Generate injection matched filter workflow
+    inj_insp_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
+            datafind_veto_files, inj_splitbank_files, injDir, injs)
 
-    else:
-        inj_insp_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
-                datafind_veto_files, inj_splitbank_files, injDir, inj_files)
+    # Make cache files (needed for post-processing)
+    for inj_tag in inj_tags:
+        files = _workflow.FileList([file for file in injs \
+                                    if inj_tag in file.tag_str])
+        inj_cache = make_cache(files, ifos, "injections", sciSegs[ifo][0],
+                               injDir, tags=[inj_tag])
+        inj_caches.extend(_workflow.FileList([inj_cache]))
 
+        files = _workflow.FileList([file for file in inj_insp_files \
+                                    if inj_tag in file.tag_str])
+        inj_insp_cache = make_cache(files, ifos, "inspiral_injections",
+                                    sciSegs[ifo][0], injDir, tags=[inj_tag])
+        inj_insp_caches.extend(_workflow.FileList([inj_insp_cache]))
+
+    all_files.extend(inj_caches)
     all_files.extend(inj_insp_files)
+    all_files.extend(inj_insp_caches)
 
-# On/off source matched filtering
+# MAIN MATCHED FILTERING
 # TODO: Write coherent matched filtering code
 inspDir = os.path.join(currDir, "inspiral")
 inspiral_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
                                                       datafind_veto_files,
                                                       splitbank_files, inspDir)
-#inspiral_files.extend(_workflow.FileList([inj_file]))
+inspiral_cache = make_cache(inspiral_files, ifos, "inspiral", sciSegs[ifo][0],
+                            inspDir)
+inspiral_files.extend(_workflow.FileList([inspiral_cache]))
 all_files.extend(inspiral_files)
 
-# Post processing
+# POST-PROCESSING
 ppDir = os.path.join(currDir, "post_processing")
 post_proc_method = wflow.cp.get_opt_tags("workflow-postproc",
                                          "postproc-method", tags)
 
 if post_proc_method == "COH_PTF_WORKFLOW":
-    inspiral_cache = make_cache(inspiral_files, ifos, "INSPIRAL",
-                                sciSegs[ifo][0], inspDir)
-    inspiral_files.extend(_workflow.FileList([inspiral_cache]))
+    # Add parsed config file so it can be linked from summary page
+    cp_file_name = "%s_parsed.ini" % workflow_name
+    cp_file_url = "file://localhost%s/%s" % (baseDir, cp_file_name)
+    cp_file = _workflow.File(ifos, cp_file_name, sciSegs[ifo][0],
+                             file_url=cp_file_url)
+    cp_file.PFN(cp_file.cache_entry.path, site="local")
 
-    cfile_name = "%s_parsed.ini" % workflow_name
-    cfile_url = "file://localhost%s/%s" % (baseDir, cfile_name)
-    cfile_parsed = _workflow.File(ifos, cfile_name, sciSegs[ifo][0],
-                                          file_url=cfile_url)
-    cfile_parsed.PFN(cfile_parsed.cache_entry.path, site="local")
-    parsed_config_file = _workflow.FileList([cfile_parsed])
+    # Retrieve style files for webpage
+    summary_files = get_coh_PTF_files(wflow.cp, ifos, runDir,
+                                      summary_files=True)
 
-    summary_files = get_coh_PTF_files(wflow.cp, ifos, runDir, summary_files=True)
-
+    # Generate post-processing workflow
     pp_files = _workflow.setup_coh_PTF_post_processing(wflow, inspiral_files,
-                                                       ppDir, segDir,
-                                                       config_file=cfile_parsed,
-                                                       ifos=ifos)
-    pp_files.extend(parsed_config_file)
+            ppDir, segDir, injection_trigger_files=inj_insp_files,
+            injection_files=injs, injection_trigger_caches=inj_insp_caches,
+            injection_caches=inj_caches, config_file=cp_file, ifos=ifos,
+            inj_tags=inj_tags)
+
+    pp_files.extend(_workflow.FileList([cp_file]))
+    pp_files.extend(summary_files)
 
 all_files.extend(pp_files)
 
-# Compile workflow and write DAX
+# COMPILE WORKFLOW AND WRITE DAX
 wflow.save()
 logging.info("Written dax.")
+

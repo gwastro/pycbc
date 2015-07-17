@@ -37,7 +37,7 @@ from pycbc.workflow.core import Executable, File, FileList, Node
 from pycbc.workflow.legacy_ihope import (LegacyTmpltbankExecutable,
         LegacyInspiralExecutable, LegacyCohPTFInspiralExecutable,
         LegacyCohPTFTrigCombiner, LegacyCohPTFTrigCluster,
-#        LegacyCohPTFInjcombiner, LegacyCohPTFInjfinder,
+        LegacyCohPTFInjfinder, #LegacyCohPTFInjcombiner, 
         LegacyCohPTFSbvPlotter, LegacyCohPTFEfficiency, PyGRBMakeSummaryPage)
 
 
@@ -166,7 +166,7 @@ def select_generic_executable(workflow, exe_tag):
         "gstlal_inspiral_summary_page"    : GstlalSummaryPage,
         "coh_PTF_trig_combiner" : LegacyCohPTFTrigCombiner,
         "coh_PTF_trig_cluster"  : LegacyCohPTFTrigCluster,
-        #"coh_PTF_injfinder"     : LegacyCohPTFInjfinder,
+        "coh_PTF_injfinder"     : LegacyCohPTFInjfinder,
         #"coh_PTF_injcombiner"   : LegacyCohPTFInjcombiner,
         "coh_PTF_sbv_plotter"   : LegacyCohPTFSbvPlotter,
         "coh_PTF_efficiency"    : LegacyCohPTFEfficiency,

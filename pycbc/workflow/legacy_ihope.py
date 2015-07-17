@@ -422,11 +422,23 @@ class LegacyCohPTFInjfinder(LegacyAnalysisExecutable):
         self.output_dir = out_dir
         self.num_threads = 1
 
-    def create_node(self, buffer_seg):
+    def create_node(self, trig_files, inj_files, trig_cache, inj_cache,
+                    seg_dir, tags=[]):
         node = Node(self)
 
-        node.add_input_opt('--exclude-segments', buffer_seg)
+        # Set input / output options
+        node.add_input_opt('--cache', trig_cache)
+        for trig_file in trig_files:
+            node._add_input(trig_file)
+
+        node.add_input_opt('--inj-cache', inj_cache)
+        for inj_file in inj_files:
+            node._add_input(inj_file)
+
+        node.add_opt('--exclude-segments', '%s/buffer_segs.txt' % seg_dir)
         node.add_opt('--output_dir', self.output_dir)
+
+        return node
 
 
 class LegacyCohPTFInjcombiner(LegacyAnalysisExecutable):
