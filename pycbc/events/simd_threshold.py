@@ -621,8 +621,12 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
 
   // For this pass we just use 'cnt' as a logical, noting
   // whether we have found a point larger than something
-  // after it.  Otherwise writing out 'marks'after the loop
+  // after it.  Otherwise writing out 'marks' after the loop
   // could be mistaken.
+  //
+  // Note that in this reverse loop, 'curr_mark' records
+  // where in the arrays (of lengths 'outlen') we found
+  // our last potential local maximum.
   cnt = 0;
   for (i = outlen-2; i >= 0; i--){
     if ( (curr_mloc - mlocs[i]) > s_winsize){
@@ -647,48 +651,45 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   // the threshold condition.
 
   cnt = 0;
-  curr_norm = 0.0;
-  curr_mloc = 0;
-  for (i = 0; i < outlen; i++){
-    // We only care about a point if it is above
-    // threshold and was marked on the previous
-    // pass through in reverse order.
-    if ((norms[i] > thr_sqr) && marks[i]){
-      if (cnt == 0){
-        // We only do this the first time we find a point above threshold.
-        cnt = 1;
-        curr_norm = norms[i];
-        curr_mloc = mlocs[i];
-        curr_cval = cvals[i];
-      }
-      if ( (mlocs[i] - curr_mloc) > s_winsize){
-        // The last one survived, so write
-        // it out.
+  curr_norm = norms[0];
+  curr_mloc = mlocs[0];
+  // Note that in this pass, we treat 'curr_mark' as a
+  // boolean, to know whether our forward potential
+  // maximum was also marked on the reverse loop earlier.
+  curr_mark = marks[0];
+
+  for (i = 1; i < outlen; i++){    
+    if ( (mlocs[i] - curr_mloc) > s_winsize){
+      // The last one is a maximum for all points following,
+      // so if also for points preceding (curr_mark) and
+      // if above threshold, then write it out.
+      if ((curr_norm > thr_sqr) && curr_mark){
+        cnt += 1;
         values[cnt-1] = curr_cval;
         locs[cnt-1] = (uint32_t) curr_mloc;
-        curr_cval = cvals[i];
-        curr_norm = norms[i];
-        curr_mloc = mlocs[i];
-        // Note that we only increment 'cnt' *after* we write out
-        // the previous clustered trigger, so we maintain that if
-        // cnt > 0, then cnt-1 triggers have been written.
-        cnt += 1;
-      } else if (norms[i] > curr_norm) {
-        curr_cval = cvals[i];
-        curr_norm = norms[i];
-        curr_mloc = mlocs[i];
       }
+      // Even if we didn't write it out, we still update
+      // our current max
+      curr_cval = cvals[i];
+      curr_norm = norms[i];
+      curr_mloc = mlocs[i];
+      curr_mark = marks[i];
+    } else if (norms[i] > curr_norm) {
+      curr_cval = cvals[i];
+      curr_norm = norms[i];
+      curr_mloc = mlocs[i];
+      curr_mark = marks[i];
     }
   }
 
-  // Note that in the above logic, we have only written
-  // values out if we found another point above threshold
-  // after the current one and further away. So if we found
-  // *anything*, we have one more point to write.
+  // It's possible that the last point would survive as a trigger,
+  // so we need a separate test for that.
 
-  if (cnt > 0){
-    values[cnt-1] = curr_cval;
-    locs[cnt-1] = (uint32_t) curr_mloc;
+  if ((cnt > 0) && (curr_mloc != locs[cnt-1]){
+    if ((curr_norm > thr_sqr) && curr_mark){
+      cnt += 1;
+      values[cnt-1] = curr_cval;
+      locs[cnt-1] = (uint32_t) curr_mloc;
   }
 
   free(cvals);
