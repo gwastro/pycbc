@@ -102,7 +102,7 @@ def filter_data(data, frame_filenames, swstat_channel_name, filter_name, start_t
     # FIXME: sampling rate is hardcoded
     if len(bits) < 14 or int(bits[-13]) == 0 or int(bits[-11]) == 0:
         sample_rate = 16384
-        return types.TimeSeries(numpy.zeros(int(end_time-start_time)*sample_rate), delta_t=1.0/sample_rate, epoch=start_time) 
+        return numpy.zeros(int(end_time-start_time)*sample_rate) 
 
     # loop over the 10 filters in the filterbank
     for i in range(10):
