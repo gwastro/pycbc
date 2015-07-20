@@ -17,7 +17,7 @@
 import argparse
 import logging
 import textwrap
-from pycbc.tmpltbank.lambda_mapping import *
+from pycbc.tmpltbank.lambda_mapping import get_ethinca_orders
 from pycbc import pnutils
 from pycbc.tmpltbank.em_progenitors import load_ns_sequence
 from pycbc.types import positive_float, nonnegative_float
