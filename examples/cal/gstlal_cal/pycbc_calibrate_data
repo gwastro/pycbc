@@ -3,6 +3,7 @@
 import argparse
 import ctypes
 import logging
+import numpy
 from glue import lal
 from glue import segments
 from pycbc import frame
@@ -32,12 +33,6 @@ parser.add_argument("--frame-cache", type=str, required=True,
 parser.add_argument("--filter-file", type=str, required=True,
                   help="Path to foton filter file to extract filterbanks.")
 
-# channel input options
-parser.add_argument("--whiten-darm-err", type=str, required=True,
-                  help="The name of the whiten DARM_ERR channel.")
-parser.add_argument("--whiten-darm-ctrl", type=str, required=True,
-                  help="The name of the whiten DARM_CTRL channel.")
-
 # output options
 parser.add_argument("--output-file", type=str, required=True,
                   help="The name of the ASCII output file that contains h(t).")
@@ -49,6 +44,12 @@ opts = parser.parse_args()
 logging_level = logging.DEBUG
 logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
 
+# FIXME: hardcoded filterbank information for OAF model
+channel_names = ['L1:CAL-DARM_ERR_WHITEN_OUT_DQ', 'L1:CAL-DARM_CTRL_WHITEN_OUT_DQ']
+filterbank_names = ['CAL_SUM_DARM_ERR', 'CAL_SUM_DARM_L1', 'CAL_SUM_DARM_L2', 'CAL_SUM_DARM_L3', 'CAL_SUM_DARM_M0']
+swstat_channel_names = ['L1:OAF-CAL_SUM_DARM_ERR_SWSTAT', 'L1:OAF-CAL_SUM_DARM_L1_SWSTAT', 'L1:OAF-CAL_SUM_DARM_L2_SWSTAT', 'L1:OAF-CAL_SUM_DARM_L3_SWSTAT', 'L1:OAF-CAL_SUM_DARM_M0_SWSTAT']
+gain_channel_names = ['L1:OAF-CAL_SUM_DARM_ERR_GAIN', 'L1:OAF-CAL_SUM_DARM_L1_GAIN', 'L1:OAF-CAL_SUM_DARM_L2_GAIN', 'L1:OAF-CAL_SUM_DARM_L3_GAIN', 'L1:OAF-CAL_SUM_DARM_M0_GAIN']
+
 # read frame cache
 logging.info('Reading cache file...')
 frame_cache = lal.Cache.fromfilenames([opts.frame_cache])
@@ -56,7 +57,7 @@ frame_filenames = [entry.path for entry in frame_cache]
 
 # get channel data from frame files
 logging.info('Reading frame files...')
-data = frame.read_frame(frame_filenames, [opts.whiten_darm_err, opts.whiten_darm_ctrl],
+data = frame.read_frame(frame_filenames, channel_names,
                             start_time=opts.gps_start_time, end_time=opts.gps_end_time)
 
 # get filter files
@@ -78,6 +79,15 @@ def filter_data(data, frame_filenames, swstat_channel_name, filter_name, start_t
     to see if the filter was on, it doesn't check beyond that.
 
     This is just for a first test on a small chunck of data.
+
+    To read the SWSTAT bits, reference: https://dcc.ligo.org/DocDB/0107/T1300711/001/LIGO-T1300711-v1.pdf
+
+    Bit 0-9 = Filter on/off switches for the 10 filters in an SFM.
+    Bit 10 = Filter module input switch on/off
+    Bit 11 = Filter module offset switch on/off
+    Bit 12 = Filter module output switch on/off
+    Bit 13 = Filter module limit switch on/off 
+    Bit 14 = Filter module history reset momentary switch
     '''
 
     # loop over bits that state if the filter was on or off
@@ -85,6 +95,13 @@ def filter_data(data, frame_filenames, swstat_channel_name, filter_name, start_t
                       start_time=start_time, end_time=end_time)
 
     bits = bin(int(swstat[0]))
+
+    print swstat_channel_name, bits
+
+    if len(bits) < 14 or int(bits[-13]) == 0 or int(bits[-11]) == 0:
+        print swstat_channel_name, 'zero array'
+        sample_rate = 16384
+        return types.TimeSeries(numpy.zeros(int(end_time-start_time)*sample_rate), delta_t=1.0/sample_rate, epoch=start_time) 
 
     print swstat_channel_name, filter_name, bits
 
@@ -97,9 +114,14 @@ def filter_data(data, frame_filenames, swstat_channel_name, filter_name, start_t
 
     return  data
 
-# FIXME: hardcoded filterbank information for OAF model
-filterbank_names = ['CAL_SUM_DARM_ERR', 'CAL_SUM_DARM_L1', 'CAL_SUM_DARM_L2', 'CAL_SUM_DARM_L3', 'CAL_SUM_DARM_M0']
-swstat_channel_names = ['L1:OAF-CAL_SUM_DARM_ERR_SWSTAT', 'L1:OAF-CAL_SUM_DARM_L1_SWSTAT', 'L1:OAF-CAL_SUM_DARM_L2_SWSTAT', 'L1:OAF-CAL_SUM_DARM_L3_SWSTAT', 'L1:OAF-CAL_SUM_DARM_M0_SWSTAT']
+def read_gain_from_frames(frame_filenames, gain_channel_name, start_time, end_time):
+
+    gain = frame.read_frame(frame_filenames, gain_channel_name,
+                      start_time=start_time, end_time=end_time)
+
+    print gain_channel_name, gain[0]
+
+    return gain[0]
 
 # apply filters to DARM error
 logging.info('Filtering DARM error...')
@@ -119,11 +141,16 @@ darm_out_m0_filtered = filter_data(darm_out, frame_filenames, swstat_channel_nam
 
 # sum filtered DARM control
 logging.info('Summing filtered DARM control...')
-sum_darm_out_filtered = 0.0*darm_out_m0_filtered + 7.94328e-11*0.7*darm_out_l1_filtered + 0.0*darm_out_l2_filtered + 1.5e-12*1.34*darm_out_l3_filtered
+gain_l1 = read_gain_from_frames(frame_filenames, gain_channel_names[1], data[0].start_time, data[0].start_time+data[0].duration)
+gain_l2 = read_gain_from_frames(frame_filenames, gain_channel_names[2], data[0].start_time, data[0].start_time+data[0].duration)
+gain_l3 = read_gain_from_frames(frame_filenames, gain_channel_names[3], data[0].start_time, data[0].start_time+data[0].duration)
+gain_m0 = read_gain_from_frames(frame_filenames, gain_channel_names[4], data[0].start_time, data[0].start_time+data[0].duration)
+sum_darm_out_filtered = gain_m0*darm_out_m0_filtered + 7.94328e-11*gain_l1*darm_out_l1_filtered + gain_l2*darm_out_l2_filtered + 1.5e-12*gain_l3*darm_out_l3_filtered
 
 # sum filtered error and filtered control
 logging.info('Summing filtered DARM control and filtered error...')
-sum_darm_filtered = sum_darm_out_filtered + 1.5e-12*0.63*darm_err_filtered
+gain_err = read_gain_from_frames(frame_filenames, gain_channel_names[0], data[0].start_time, data[0].start_time+data[0].duration)
+sum_darm_filtered = sum_darm_out_filtered + 1.5e-12*gain_err*darm_err_filtered
 
 # write output
 logging.info('Writing data...')
