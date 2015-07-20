@@ -663,7 +663,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
       // The last one is a maximum for all points following,
       // so if also for points preceding (curr_mark) and
       // if above threshold, then write it out.
-      if ((curr_norm > thr_sqr) && curr_mark){
+      if ( (curr_norm > thr_sqr) && curr_mark){
         cnt += 1;
         values[cnt-1] = curr_cval;
         locs[cnt-1] = (uint32_t) curr_mloc;
@@ -685,11 +685,12 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   // It's possible that the last point would survive as a trigger,
   // so we need a separate test for that.
 
-  if ((cnt > 0) && (curr_mloc != locs[cnt-1]){
+  if ((cnt > 0) && (curr_mloc != locs[cnt-1])){
     if ((curr_norm > thr_sqr) && curr_mark){
       cnt += 1;
       values[cnt-1] = curr_cval;
       locs[cnt-1] = (uint32_t) curr_mloc;
+    }
   }
 
   free(cvals);
