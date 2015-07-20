@@ -22,7 +22,7 @@ Usage Example
 Get data
 ---------------------
 
-First you need to get the location of the frame files. An example looks like::
+This must be done at the LLO or LHO clusters at the moment, since they have the foton and ROOT modules correctly installed. First you need to get the location of the frame files. An example looks like::
 
    cd examples/cal/calibrate_data/
    gw_data_find --observatory L --type L1_R --gps-start-time 1102660100 --gps-end-time 1102660200 --url-type file --lal-cache > L1-DATAFIND_FRAMES-1102660100-100.lcf
