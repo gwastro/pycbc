@@ -67,7 +67,11 @@ parser.add_argument("--inputs", nargs="+",
                     help="Input file or space-separated list of input files "
                     "containing single triggers.  Currently .xml(.gz), "
                     ".sqlite and .hdf supported.  Required")
-parser.add_argument("--veto-file",
+parser.add_argument("--template-file", default=None,
+                    help="hdf file containing template parameters; required "
+                    "if fitting over trigger masses and/or spins with hdf "
+                    "format triggers")
+parser.add_argument("--veto-file", default=None,
                     help="File in .xml format with veto segments to apply to "
                     "triggers before fitting")
 parser.add_argument("--veto-segment-name", default=None,
@@ -163,6 +167,7 @@ elif opt.inputs[0].split('.')[-1] == "xml" or \
     trigformat = "xml"
 elif "hdf" in opt.inputs[0]:
     trigformat = "hdf"
+    # columns for reading triggers without template file info
     cols = ["snr", "chisq", "template_duration", "template_id", "end_time"]
 else:
     print 'inputs:', opt.inputs
@@ -181,6 +186,7 @@ histcolors = ['r',(1.0,0.6,0),'y','g','c','b','m','k',(0.8,0.25,0),(0.25,0.8,0)]
 # header
 outfile.write("# ifo threshold lower upper templates triggers alpha sig_alpha ks_prob\n")
 
+done_vetoing = False
 for ifo in opt.ifos:
     # FIXME: Would like a uniform input interface from trigger files
     # to the 'get_column' syntax used by SnglInspiralUtils
@@ -196,8 +202,16 @@ for ifo in opt.ifos:
             verbose=opt.verbose)
         sngls.ifocut(ifo, inplace=True)
     elif trigformat == "hdf":
-        sngls = io.hdf.DataFromFiles(opt.inputs, group=ifo, columnlist=cols,
-            filter_func="self.snr>"+str(opt.snr_threshold))
+        if opt.template_file:
+            # io function can currently only handle 1 file
+            sngls = io.hdf.SingleDetTriggers(opt.inputs[0], 
+                  opt.template_file, opt.veto_file, opt.veto_segment_name,
+                  "self.snr>"+str(opt.snr_threshold), ifo)
+            done_vetoing = True
+        else:
+            sngls = io.hdf.DataFromFiles(opt.inputs, group=ifo,
+                  columnlist=cols,
+                  filter_func="self.snr>"+str(opt.snr_threshold))
     if opt.plot_dir:
         plotbase = outdir + ifo + "-" + opt.user_tag
 
@@ -207,7 +221,7 @@ for ifo in opt.ifos:
         continue
     chisq = sngls.get_column("chisq")
     chisq_dof = sngls.get_column("chisq_dof")
-    # FIXME: Get mass, spin values from hdf files ..
+    # template_id or mass1,mass2 are used to count templates
     if trigformat == "hdf":
         tid = sngls.get_column("template_id")
         mass1 = None
@@ -221,7 +235,7 @@ for ifo in opt.ifos:
     #bank_rchisq = sngls.get_column('bank_chisq') / sngls.get_column('bank_chisq_dof')
     #rchisq = np.maximum(rchisq, bank_rchisq)
 
-    if opt.veto_file:
+    if opt.veto_file and not done_vetoing:
         logging.info("Applying vetoes from %s for ifo %s" % 
                      (opt.veto_file, ifo))
         keep_idx, segs = events.veto.indices_outside_segments(
@@ -252,7 +266,6 @@ for ifo in opt.ifos:
     pbins = get_bins(opt, 0.99 * min(parvals), 1.01 * max(parvals))
     # list of bin indices
     binind = [pbins[c] for c in pbins.centres()]
-    # determine bin indices for trigger param values
     logging.info("Assigning trigger param values to bins")
     # FIXME: This is slow!! either find a better way of using pylal.rate
     # or write faster binning routime 
@@ -275,7 +288,6 @@ for ifo in opt.ifos:
     stdev[ifo] = {}
     ks_prob[ifo] = {}
 
-    # now do fits and plot them
     for th in opt.stat_threshold:
         logging.info("Fitting above threshold %f" % th)
         counts[ifo][th] = {}
