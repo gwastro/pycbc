@@ -16,7 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import os,sys
+import sys
 import logging, argparse, numpy, itertools
 import pycbc
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC
@@ -133,13 +133,6 @@ parser.add_argument("--keep-loudest-interval", type=float,
 parser.add_argument("--keep-loudest-num", type=int, 
                     help="Number of triggers to keep from each maximization interval")
 parser.add_argument("--gpu-callback-method", default='none')
-parser.add_argument("--cpu-affinity", help="""
-                    A set of CPUs on which to run, specified in a format suitable
-                    to pass to taskset.""")
-parser.add_argument("--cpu-affinity-from-env", help="""
-                    The name of an enivornment variable containing a set
-                    of CPUs on which to run,  specified in a format suitable
-                    to pass to taskset.""")
 
 # Add options groups
 psd.insert_psd_option_group(parser)
@@ -182,41 +175,6 @@ def associate_psd(strain_segments, gwstrain, segments, nsegs, flen, delta_f, flo
 
 
 pycbc.init_logging(opt.verbose)
-
-# Pin to specified CPUs if requested
-requested_cpus = None
-
-if opt.cpu_affinity_from_env is not None:
-    if opt.cpu_affinity is not None:
-        logging.error("Both --cpu_affinity_from_env and --cpu_affinity specified")
-        sys.exit(1)
-
-    requested_cpus = os.environ.get(opt.cpu_affinity_from_env)
-
-    if requested_cpus is None:
-        logging.error("CPU affinity requested from environment variable %s "
-                      "but this variable is not defined" % opt.cpu_affinity_from_env)
-        sys.exit(1)
-
-    if requested_cpus == '':
-        logging.error("CPU affinity requested from environment variable %s "
-                      "but this variable is empty" % opt.cpu_affinity_from_env)
-        sys.exit(1)
-
-if requested_cpus is None:
-    requested_cpus = opt.cpu_affinity
-
-if requested_cpus is not None:
-    command = 'taskset -pc %s %d' % (requested_cpus, os.getpid())
-    retcode = os.system(command)
-
-    if retcode != 0:
-        logging.error('taskset command <%s> failed with return code %d' % \
-                      (command, retcode))
-        sys,exit(1)
-
-    logging.info("Pinned to CPUs %s " % requested_cpus)
-
 
 ctx = scheme.from_cli(opt)
 gwstrain = strain.from_cli(opt, DYN_RANGE_FAC)
