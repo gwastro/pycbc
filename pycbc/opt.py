@@ -19,6 +19,7 @@ This module defines optimization flags and determines hardware features that som
 other modules and packages may use.
 """
 import os, sys
+import logging
 import pycbc
 
 # Work around different Python versions to get runtime
@@ -117,3 +118,72 @@ if HAVE_GETCONF:
     LEVEL3_CACHE_SIZE = getconf('LEVEL3_CACHE_SIZE')
     LEVEL3_CACHE_ASSOC = getconf('LEVEL3_CACHE_ASSOC')
     LEVEL3_CACHE_LINESIZE = getconf('LEVEL3_CACHE_LINESIZE')
+
+
+def insert_optimization_option_group(parser):
+    """
+    Adds the options used to specify optimization-specific options.
+    
+    Parameters
+    ----------
+    parser : object
+        OptionParser instance
+    """
+    optimization_group = parser.add_argument_group("Options for selecting "
+                                   "optimization-specific settings")   
+    
+    optimization_group.add_argument("--cpu-affinity", help="""
+                    A set of CPUs on which to run, specified in a format suitable
+                    to pass to taskset.""")
+    optimization_group.add_argument("--cpu-affinity-from-env", help="""
+                    The name of an enivornment variable containing a set
+                    of CPUs on which to run,  specified in a format suitable
+                    to pass to taskset.""")
+
+
+def verify_optimization_options(opt, parser):
+    """Parses the CLI options, verifies that they are consistent and 
+    reasonable, and acts on them if they are
+
+    Parameters
+    ----------
+    opt : object
+        Result of parsing the CLI with OptionParser, or any object with the
+        required attributes 
+    parser : object
+        OptionParser instance.
+    """
+
+    # Pin to specified CPUs if requested
+    requested_cpus = None
+
+    if opt.cpu_affinity_from_env is not None:
+        if opt.cpu_affinity is not None:
+            logging.error("Both --cpu_affinity_from_env and --cpu_affinity specified")
+            sys.exit(1)
+
+        requested_cpus = os.environ.get(opt.cpu_affinity_from_env)
+
+        if requested_cpus is None:
+            logging.error("CPU affinity requested from environment variable %s "
+                          "but this variable is not defined" % opt.cpu_affinity_from_env)
+            sys.exit(1)
+
+        if requested_cpus == '':
+            logging.error("CPU affinity requested from environment variable %s "
+                          "but this variable is empty" % opt.cpu_affinity_from_env)
+            sys.exit(1)
+
+    if requested_cpus is None:
+        requested_cpus = opt.cpu_affinity
+
+    if requested_cpus is not None:
+        command = 'taskset -pc %s %d' % (requested_cpus, os.getpid())
+        retcode = os.system(command)
+
+        if retcode != 0:
+            logging.error('taskset command <%s> failed with return code %d' % \
+                          (command, retcode))
+            sys,exit(1)
+
+        logging.info("Pinned to CPUs %s " % requested_cpus)
