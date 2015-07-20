@@ -94,32 +94,43 @@ def filter_data(data, frame_filenames, swstat_channel_name, filter_name, start_t
     swstat = frame.read_frame(frame_filenames, swstat_channel_name,
                       start_time=start_time, end_time=end_time)
 
+    # convert number in channel to binary
     bits = bin(int(swstat[0]))
 
-    print swstat_channel_name, bits
-
+    # check if filterbank input or output was off
+    # if it was then return a TimeSeries of zeroes
     if len(bits) < 14 or int(bits[-13]) == 0 or int(bits[-11]) == 0:
-        print swstat_channel_name, 'zero array'
         sample_rate = 16384
         return types.TimeSeries(numpy.zeros(int(end_time-start_time)*sample_rate), delta_t=1.0/sample_rate, epoch=start_time) 
 
-    print swstat_channel_name, filter_name, bits
-
+    # loop over the 10 filters in the filterbank
     for i in range(10):
+
+        # read the filter
+        filter = Filter(filter_file[filter_name][i])
 
         # if bit is on then filter the data
         bit = int(bits[-(i+1)])
         if bit:
-            data = Filter(filter_file[filter_name][i]).apply(data)
+
+            # if there are second-order sections then filter with them
+            if len(filter.sections):
+                data = filter.apply(data)
+
+            # else it is a filter with only gain so apply the gain
+            else:
+                data = float(filter.design.design.rstrip(')').strip('gain(')) * data
 
     return  data
 
 def read_gain_from_frames(frame_filenames, gain_channel_name, start_time, end_time):
+    '''
+    Returns the gain from the file.
+    '''
 
+    # get timeseries from frame
     gain = frame.read_frame(frame_filenames, gain_channel_name,
                       start_time=start_time, end_time=end_time)
-
-    print gain_channel_name, gain[0]
 
     return gain[0]
 
@@ -145,12 +156,12 @@ gain_l1 = read_gain_from_frames(frame_filenames, gain_channel_names[1], data[0].
 gain_l2 = read_gain_from_frames(frame_filenames, gain_channel_names[2], data[0].start_time, data[0].start_time+data[0].duration)
 gain_l3 = read_gain_from_frames(frame_filenames, gain_channel_names[3], data[0].start_time, data[0].start_time+data[0].duration)
 gain_m0 = read_gain_from_frames(frame_filenames, gain_channel_names[4], data[0].start_time, data[0].start_time+data[0].duration)
-sum_darm_out_filtered = gain_m0*darm_out_m0_filtered + 7.94328e-11*gain_l1*darm_out_l1_filtered + gain_l2*darm_out_l2_filtered + 1.5e-12*gain_l3*darm_out_l3_filtered
+sum_darm_out_filtered = gain_m0*darm_out_m0_filtered + gain_l1*darm_out_l1_filtered + gain_l2*darm_out_l2_filtered + gain_l3*darm_out_l3_filtered
 
 # sum filtered error and filtered control
 logging.info('Summing filtered DARM control and filtered error...')
 gain_err = read_gain_from_frames(frame_filenames, gain_channel_names[0], data[0].start_time, data[0].start_time+data[0].duration)
-sum_darm_filtered = sum_darm_out_filtered + 1.5e-12*gain_err*darm_err_filtered
+sum_darm_filtered = sum_darm_out_filtered + gain_err*darm_err_filtered
 
 # write output
 logging.info('Writing data...')
