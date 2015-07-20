@@ -14,23 +14,36 @@ ROOT.gSystem.Load('/usr/lib64/libdmtsigp.so')
 ROOT.gSystem.Load('/usr/lib64/libgdsplot.so')
 from foton import FilterFile, Filter
 
-# parse command line
+# command line usage
 parser = argparse.ArgumentParser(usage='pycbc_calibrate_data [--options]',
                   description='Read the detector data and applies filters to calibrate the data.')
+
+# time options
 parser.add_argument("--gps-start-time", type=int, required=True,
                   help="Time to begin filtering input data.")
 parser.add_argument("--gps-end-time", type=int, required=True,
                   help="Time to finish filtering input data.")
+
+# frame options
 parser.add_argument("--frame-cache", type=str, required=True,
                   help="Path to frame cache that contains data.")
+
+# foton options
 parser.add_argument("--filter-file", type=str, required=True,
                   help="Path to foton filter file to extract filterbanks.")
-opts = parser.parse_args()
 
-# initializations
-channel_names = []
-channel_names += ['L1:CAL-DARM_ERR_WHITEN_OUT_DQ']
-channel_names += ['L1:CAL-DARM_CTRL_WHITEN_OUT_DQ']
+# channel input options
+parser.add_argument("--whiten-darm-err", type=str, required=True,
+                  help="The name of the whiten DARM_ERR channel.")
+parser.add_argument("--whiten-darm-ctrl", type=str, required=True,
+                  help="The name of the whiten DARM_CTRL channel.")
+
+# output options
+parser.add_argument("--output-file", type=str, required=True,
+                  help="The name of the ASCII output file that contains h(t).")
+
+# parse command line
+opts = parser.parse_args()
 
 # setup log
 logging_level = logging.DEBUG
@@ -43,20 +56,20 @@ frame_filenames = [entry.path for entry in frame_cache]
 
 # get channel data from frame files
 logging.info('Reading frame files...')
-data = frame.read_frame(frame_filenames, channel_names, start_time=opts.gps_start_time, end_time=opts.gps_end_time)
+data = frame.read_frame(frame_filenames, [opts.whiten_darm_err, opts.whiten_darm_ctrl],
+                            start_time=opts.gps_start_time, end_time=opts.gps_end_time)
 
 # get filter files
 logging.info('Reading filter files...')
 filter_file = FilterFile(opts.filter_file)
 
 # put data into arrays
-darm_in1 = filter_zpk(data[0], [100]*5, [1]*5, 1e-10)
-darm_in1 = darm_in1.numpy()
+darm_err = filter_zpk(data[0], [100]*5, [1]*5, 1e-10)
+darm_err = darm_err.numpy()
 darm_out = filter_zpk(data[1], [100]*5, [1]*5, 1e-10)
 darm_out = darm_out.numpy()
 
-def filter_data(data, frame_filenames, swstat_channel_name, bits,
-                filter_name, start_time, end_time):
+def filter_data(data, frame_filenames, swstat_channel_name, filter_name, start_time, end_time):
     '''
     A naive function to determine if the filter was on at the time
     and then filter the data.
@@ -68,56 +81,41 @@ def filter_data(data, frame_filenames, swstat_channel_name, bits,
     '''
 
     # loop over bits that state if the filter was on or off
-#    swstat = frame.read_frame(frame_filenames, swstat_channel_name,
-#                      start_time=start_time, end_time=end_time)
-#    bits = bin(ctypes.c_int.from_buffer(ctypes.c_float(swstat[0])).value)[2:12]
+    swstat = frame.read_frame(frame_filenames, swstat_channel_name,
+                      start_time=start_time, end_time=end_time)
+
+    bits = bin(int(swstat[0]))
+
+    print swstat_channel_name, filter_name, bits
 
     for i in range(10):
 
-        print bits
-
         # if bit is on then filter the data
-        bit = int(bits[i])
+        bit = int(bits[-(i+1)])
         if bit:
-            print filter_name, Filter(filter_file[filter_name][i]).design.name, i, bit
-            print Filter(filter_file[filter_name][i]).sections
             data = Filter(filter_file[filter_name][i]).apply(data)
 
     return  data
 
+# FIXME: hardcoded filterbank information for OAF model
+filterbank_names = ['CAL_SUM_DARM_ERR', 'CAL_SUM_DARM_L1', 'CAL_SUM_DARM_L2', 'CAL_SUM_DARM_L3', 'CAL_SUM_DARM_M0']
+swstat_channel_names = ['L1:OAF-CAL_SUM_DARM_ERR_SWSTAT', 'L1:OAF-CAL_SUM_DARM_L1_SWSTAT', 'L1:OAF-CAL_SUM_DARM_L2_SWSTAT', 'L1:OAF-CAL_SUM_DARM_L3_SWSTAT', 'L1:OAF-CAL_SUM_DARM_M0_SWSTAT']
+
 # apply filters to DARM error
 logging.info('Filtering DARM error...')
-darm_in1_timeseries = types.TimeSeries(darm_in1, delta_t=data[0].delta_t, epoch=data[0].start_time)
-darm_in1_timeseries.save('output/darm_in1.txt')
-darm_in1_err_filtered = filter_data(darm_in1, frame_filenames, 'L1:OAF-CAL_SUM_DARM_ERR_SWSTAT',
-                                           '1000100001', 'CAL_SUM_DARM_ERR',
+darm_err_filtered = filter_data(darm_err, frame_filenames, swstat_channel_names[0], filterbank_names[0],
                                            data[0].start_time, data[0].start_time+data[0].duration)
-darm_in1_err_filtered_timeseries = types.TimeSeries(darm_in1_err_filtered, delta_t=data[0].delta_t, epoch=data[0].start_time)
-darm_in1_err_filtered_timeseries.save('output/darm_in1_err_filtered.txt')
 
 # apply filters to DARM control
 logging.info('Filtering DARM control...')
-darm_out_l1_filtered = filter_data(darm_out, frame_filenames, 'L1:OAF-CAL_SUM_DARM_L1_SWSTAT',
-                                           '1110011001', 'CAL_SUM_DARM_L1',
+darm_out_l1_filtered = filter_data(darm_out, frame_filenames, swstat_channel_names[1], filterbank_names[1],
                                            data[0].start_time, data[0].start_time+data[0].duration)
-darm_out_l2_filtered = filter_data(darm_out, frame_filenames, 'L1:OAF-CAL_SUM_DARM_L2_SWSTAT',
-                                           '0000011101', 'CAL_SUM_DARM_L2',
+darm_out_l2_filtered = filter_data(darm_out, frame_filenames, swstat_channel_names[2], filterbank_names[2],
                                            data[0].start_time, data[0].start_time+data[0].duration)
-darm_out_l3_filtered = filter_data(darm_out, frame_filenames, 'L1:OAF-CAL_SUM_DARM_L3_SWSTAT',
-                                           '1110010101', 'CAL_SUM_DARM_L3',
+darm_out_l3_filtered = filter_data(darm_out, frame_filenames, swstat_channel_names[3], filterbank_names[3],
                                            data[0].start_time, data[0].start_time+data[0].duration)
-darm_out_m0_filtered = filter_data(darm_out, frame_filenames, 'L1:OAF-CAL_SUM_DARM_M0_SWSTAT',
-                                           '1100000001', 'CAL_SUM_DARM_M0',
+darm_out_m0_filtered = filter_data(darm_out, frame_filenames, swstat_channel_names[4], filterbank_names[4],
                                            data[0].start_time, data[0].start_time+data[0].duration)
-
-darm_out_l1_filtered_timeseries = types.TimeSeries(darm_out_l1_filtered, delta_t=data[0].delta_t, epoch=data[0].start_time)
-darm_out_l1_filtered_timeseries.save('output/darm_out_l1_filtered.txt')
-darm_out_l2_filtered_timeseries = types.TimeSeries(darm_out_l2_filtered, delta_t=data[0].delta_t, epoch=data[0].start_time)
-darm_out_l2_filtered_timeseries.save('output/darm_out_l2_filtered.txt')
-darm_out_l3_filtered_timeseries = types.TimeSeries(darm_out_l3_filtered, delta_t=data[0].delta_t, epoch=data[0].start_time)
-darm_out_l3_filtered_timeseries.save('output/darm_out_l3_filtered.txt')
-darm_out_m0_filtered_timeseries = types.TimeSeries(darm_out_m0_filtered, delta_t=data[0].delta_t, epoch=data[0].start_time)
-darm_out_m0_filtered_timeseries.save('output/darm_out_m0_filtered.txt')
 
 # sum filtered DARM control
 logging.info('Summing filtered DARM control...')
@@ -125,12 +123,12 @@ sum_darm_out_filtered = 0.0*darm_out_m0_filtered + 7.94328e-11*0.7*darm_out_l1_f
 
 # sum filtered error and filtered control
 logging.info('Summing filtered DARM control and filtered error...')
-sum_darm_filtered = sum_darm_out_filtered + 1.5e-12*0.63*darm_in1_err_filtered
+sum_darm_filtered = sum_darm_out_filtered + 1.5e-12*0.63*darm_err_filtered
 
 # write output
 logging.info('Writing data...')
 output_data = types.TimeSeries(sum_darm_filtered, delta_t=data[0].delta_t, epoch=data[0].start_time)
-output_data.save('output/test.txt')
+output_data.save(opts.output_file)
 
 # exit
 logging.info('Done.')
