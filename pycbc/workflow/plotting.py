@@ -75,7 +75,9 @@ def make_segments_plot(workflow, seg_files, out_dir, tags=[]):
     workflow += node
         
 def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir, 
-                          singles=None, extension='.html', tags=[]):
+                          singles=None, extension='.html', tags=None):
+    if tags is None:
+        tags = []
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'page_foreground', ifos=workflow.ifos,
                     out_dir=out_dir, tags=tags).create_node()
