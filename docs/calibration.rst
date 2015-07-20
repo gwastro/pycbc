@@ -43,6 +43,6 @@ There are two executables in this example subdirectory to make diagnostic plots.
 
     mkdir -p ~/public_html/tmp/cal_dev/
     ./pycbc_plot_txt L1-RECALIBRATE_DATA-1102660100-100.txt ~/public_html/tmp/cal_dev/calibrate_oaf_cal_darm_dq_5.png
-    ./pycbc_plot_frame L1:OAF-CAL_DARM_DQ ./L1-DATAFIND_FRAMES-1102660100-100.lcf 1102660195 1102660200 ~/public_html/tmp/cal_dev_frame.png
+    ./pycbc_plot_frame L1:OAF-CAL_DARM_DQ ./L1-DATAFIND_FRAMES-1102660100-100.lcf 1102660195 1102660200 ~/public_html/tmp/cal_dev/cal_dev_frame.png
 
 The arguments for `pycbc_plot_txt` are the `pycbc_calibrate_data` data file and the output location for the plot. The arguments for `pycbc_plot_frame` are the channel name, frame cache, start time, end time, and output location for the plot.
