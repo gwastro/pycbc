@@ -53,6 +53,7 @@ Executable/Package documentation:
    frame
    banksim
    faithsim
+   calibration
 
 Walkthroughs and Tutorials:
 
