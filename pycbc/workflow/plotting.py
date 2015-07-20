@@ -74,14 +74,19 @@ def make_segments_plot(workflow, seg_files, out_dir, tags=[]):
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
         
-def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir, tags=[]):
+def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir, 
+                          singles=None, extension='.html', tags=None):
+    if tags is None:
+        tags = []
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'page_foreground', ifos=workflow.ifos,
                     out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--bank-file', bank_file)
     node.add_opt('--foreground-tag', ftag)
     node.add_input_opt('--trigger-file', trig_file)
-    node.new_output_file_opt(bank_file.segment, '.html', '--output-file')
+    if singles is not None:
+        node.add_input_list_opt('--single-detector-triggers', singles)
+    node.new_output_file_opt(bank_file.segment, extension, '--output-file')
     workflow += node
     return node.output_files[0]
 
