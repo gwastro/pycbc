@@ -38,7 +38,7 @@ class FileData(object):
         if not fname: raise RuntimeError("Didn't get a file!")
         self.fname = fname
         self.h5file = h5py.File(fname, "r")
-        if group is None:           
+        if group is None:
             if len(self.h5file.keys()) == 1:
                 group = self.h5file.keys()[0]
             else:
@@ -87,6 +87,9 @@ class FileData(object):
         numpy array
             Values from the dataset, filtered if requested
         '''
+        # catch corner case with an empty file (group with no datasets)
+        if not len(self.group.keys()):
+            return np.array([])
         vals = self.group[col]
         if self.filter_func:
             return vals[self.mask]
@@ -340,7 +343,7 @@ class ForegroundTriggers(object):
         coinc_inspiral_table = lsctables.New(lsctables.CoincInspiralTable)
         coinc_event_map_table = lsctables.New(lsctables.CoincMapTable)
         time_slide_table = lsctables.New(lsctables.TimeSlideTable)
-        
+
         # Set up time_slide table
         time_slide_id = lsctables.TimeSlideID(0)
         for ifo in ifos:
@@ -369,7 +372,7 @@ class ForegroundTriggers(object):
         coinc_event_vals = {}
         for name in coinc_event_names:
             coinc_event_vals[name] = self.get_coincfile_array(name)
-        
+
         sngl_col_names = ['snr', 'chisq', 'chisq_dof', 'bank_chisq',
                           'bank_chisq_dof', 'cont_chisq', 'cont_chisq_dof',
                           'end_time']
@@ -415,7 +418,7 @@ class ForegroundTriggers(object):
 
             sngl_combined_mchirp = sngl_combined_mchirp / len(ifos)
             sngl_combined_mtot = sngl_combined_mtot / len(ifos)
-                
+
             # Set up coinc inspiral and coinc event tables
             coinc_event_row = lsctables.Coinc()
             coinc_inspiral_row = lsctables.CoincInspiral()
