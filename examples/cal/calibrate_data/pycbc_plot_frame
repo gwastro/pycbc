@@ -25,9 +25,7 @@ frame_filenames = [entry.path for entry in frame_cache]
 # get channel data from frame files
 logging.info('Reading frame files...')
 data = frame.read_frame(frame_filenames, channel_name, start_time=sys.argv[3], end_time=sys.argv[4])
-data.save('output/frame.txt')
 
 # plot
-timeseries = types.load_timeseries('output/frame.txt')
-plt.plot(timeseries.sample_times, timeseries.numpy())
+plt.plot(data.sample_times, data.numpy())
 plt.savefig(sys.argv[5])
